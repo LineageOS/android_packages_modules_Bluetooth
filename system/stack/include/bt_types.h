@@ -68,12 +68,6 @@
 /* HCI ISO Data                     */
 #define BT_EVT_TO_LM_HCI_ISO 0x2d00
 
-#define BT_EVT_HCISU 0x5000
-
-/* BTIF Events */
-#define BT_EVT_BTIF 0xA000
-#define BT_EVT_CONTEXT_SWITCH_EVT (0x0001 | BT_EVT_BTIF)
-
 /* ISO Layer specific */
 #define BT_ISO_HDR_CONTAINS_TS (0x0001)
 #define BT_ISO_HDR_OFFSET_POINTS_DATA (0x0002)
