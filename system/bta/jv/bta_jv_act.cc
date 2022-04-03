@@ -905,8 +905,6 @@ void bta_jv_start_discovery(const RawAddress& bd_addr, uint16_t num_uuid,
   p_bta_jv_cfg->p_sdp_db->raw_data = p_bta_jv_cfg->p_sdp_raw_data;
   p_bta_jv_cfg->p_sdp_db->raw_size = p_bta_jv_cfg->sdp_raw_size;
 
-  bta_jv_cb.p_sel_raw_data = 0;
-
   // Optimistically set this as active
   bta_jv_cb.sdp_cb = {
       .sdp_active = true,
