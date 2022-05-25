@@ -232,7 +232,9 @@ public:
     AssignCsisGroup(address, group_id, false, Uuid::kEmpty);
   }
 
-  void OnGroupRemovedCb(const bluetooth::Uuid& /*uuid*/, int group_id) {
+  void OnGroupRemovedCb(const bluetooth::Uuid& uuid, int group_id) {
+    log::debug("uuid: {}, group_id: {}", uuid.ToString(), group_id);
+
     RemoveCsisGroup(group_id);
   }
 
@@ -822,7 +824,7 @@ private:
   }
 
   void RemoveCsisDevice(std::shared_ptr<CsisDevice>& device, int group_id) {
-    log::info("");
+    log::info("{}", device->addr);
     auto it = find_if(devices_.begin(), devices_.end(), CsisDevice::MatchAddress(device->addr));
     if (it == devices_.end()) {
       return;
@@ -837,6 +839,9 @@ private:
         return;
       }
 
+      /* If the device is being removed, it is assumed that the group it belongs to is also being
+       * blocked */
+      csis_group->SetDiscoveryState(CsisDiscoveryState::CSIS_DISCOVERY_BLOCKED);
       csis_group->RemoveDevice(device->addr);
 
       if (csis_group->IsEmpty()) {
@@ -884,12 +889,16 @@ private:
   }
 
   void RemoveCsisGroup(int group_id) {
+    log::info("group_id: {}", group_id);
+
     for (auto it = csis_groups_.begin(); it != csis_groups_.end(); it++) {
       if ((*it)->GetGroupId() == group_id) {
         csis_groups_.erase(it);
         return;
       }
     }
+
+    log::warn("Not found group id {}", group_id);
   }
 
   /* Handle encryption */
@@ -1518,6 +1527,10 @@ private:
 
     /* Notify all the groups this device belongs to. */
     for (auto& group : csis_groups_) {
+      if (group->GetDiscoveryState() == CsisDiscoveryState::CSIS_DISCOVERY_BLOCKED) {
+        log::info("Group {} under destroying, set member should be blocked.", group->GetGroupId());
+        continue;
+      }
       for (auto& rsi : all_rsi) {
         if (group->IsRsiMatching(rsi)) {
           log::info("Device {} match to group id {}", result->bd_addr, group->GetGroupId());
@@ -1667,6 +1680,7 @@ private:
 
     log::verbose("Expected group size {},  actual group Size: {}", csis_group->GetDesiredSize(),
                  csis_group->GetCurrentSize());
+    log::verbose("Current all CSIS groups count: {}", csis_groups_.size());
 
     if (csis_group->GetDesiredSize() == csis_group->GetCurrentSize()) {
       auto iter = devices_.cbegin();
