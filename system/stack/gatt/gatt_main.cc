@@ -318,8 +318,8 @@ bool gatt_disconnect(tGATT_TCB* p_tcb) {
  *                  when it already exists, false otherwise.
  *
  ******************************************************************************/
-bool gatt_update_app_hold_link_status(tGATT_IF gatt_if, tGATT_TCB* p_tcb,
-                                      bool is_add) {
+static bool gatt_update_app_hold_link_status(tGATT_IF gatt_if, tGATT_TCB* p_tcb,
+                                             bool is_add) {
   log::debug("gatt_if={}, is_add={}, peer_bda={}", gatt_if, is_add,
              ADDRESS_TO_LOGGABLE_CSTR(p_tcb->peer_bda));
   auto& holders = p_tcb->app_hold_link;
