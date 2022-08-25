@@ -232,7 +232,7 @@ android_app {
         "--custom-package",
         "com.android.bluetooth",
     ],
-    certificate: ":com.android.bluetooth.certificate",
+    certificate: "bluetooth",
 
     jarjar_rules: ":bluetooth-jarjar-rules",
     privapp_allowlist: ":privapp_allowlist_com.android.bluetooth.xml",
@@ -392,9 +392,4 @@ genrule {
         " --javaPackage com.android.bluetooth --javaClass BtRestrictedStatsLog" +
         " --minApiLevel 34",
     out: ["com/android/bluetooth/BtRestrictedStatsLog.java"],
-}
-
-android_app_certificate {
-    name: "com.android.bluetooth.certificate",
-    certificate: "certs/com.android.bluetooth",
 }
