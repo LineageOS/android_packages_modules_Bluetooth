@@ -28,5 +28,5 @@ android_test {
     test_suites: [
         "general-tests",
     ],
-    certificate: ":com.android.bluetooth.certificate",
+    certificate: "bluetooth",
 }
