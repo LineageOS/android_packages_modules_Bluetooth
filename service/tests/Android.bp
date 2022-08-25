@@ -59,7 +59,7 @@ android_test {
         "libstaticjvmtiagent",
     ],
     compile_multilib: "both",
-    certificate: ":com.android.bluetooth.certificate",
+    certificate: "bluetooth",
 
     min_sdk_version: "Tiramisu",
 
