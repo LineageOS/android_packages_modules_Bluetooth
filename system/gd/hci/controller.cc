@@ -540,7 +540,7 @@ struct Controller::impl {
   void le_set_event_mask(uint64_t le_event_mask) {
     std::unique_ptr<LeSetEventMaskBuilder> packet = LeSetEventMaskBuilder::Create(le_event_mask);
     hci_->EnqueueCommand(std::move(packet), module_.GetHandler()->BindOnceOn(
-                                                this, &Controller::impl::check_status<LeSetEventMaskCompleteView>));
+                                                this, &Controller::impl::check_event_mask_status<LeSetEventMaskCompleteView>));
   }
 
   template <class T>
@@ -549,6 +549,15 @@ struct Controller::impl {
     auto status_view = T::Create(view);
     ASSERT(status_view.IsValid());
     ASSERT(status_view.GetStatus() == ErrorCode::SUCCESS);
+  }
+
+  template <class T>
+  void check_event_mask_status(CommandCompleteView view) {
+    ASSERT(view.IsValid());
+    auto status_view = T::Create(view);
+    ASSERT(status_view.IsValid());
+    ASSERT(status_view.GetStatus() == ErrorCode::SUCCESS ||
+           status_view.GetStatus() == ErrorCode::UNSUPPORTED_LMP_OR_LL_PARAMETER);
   }
 
 #define OP_CODE_MAPPING(name)                                                  \
