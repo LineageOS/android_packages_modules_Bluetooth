@@ -195,14 +195,13 @@ struct HciLayer::impl {
           EventView::Create(PacketView<kLittleEndian>(std::make_shared<std::vector<uint8_t>>(std::vector<uint8_t>()))));
       command_queue_.front().GetCallback<CommandCompleteView>()->Invoke(move(command_complete_view));
     } else {
-      ASSERT_LOG(
-          command_queue_.front().waiting_for_status_ == is_status,
-          "0x%02hx (%s) was not expecting %s event",
-          op_code,
-          OpCodeText(op_code).c_str(),
-          logging_id.c_str());
-
-      command_queue_.front().GetCallback<TResponse>()->Invoke(move(response_view));
+      if (command_queue_.front().waiting_for_status_ == is_status) {
+        command_queue_.front().GetCallback<TResponse>()->Invoke(move(response_view));
+      } else {
+        CommandCompleteView command_complete_view = CommandCompleteView::Create(
+            EventView::Create(PacketView<kLittleEndian>(std::make_shared<std::vector<uint8_t>>(std::vector<uint8_t>()))));
+        command_queue_.front().GetCallback<CommandCompleteView>()->Invoke(move(command_complete_view));
+      }
     }
 
     command_queue_.pop_front();
