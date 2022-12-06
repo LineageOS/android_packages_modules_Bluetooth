@@ -40,6 +40,9 @@ using bluetooth::hci::IsoManager;
 using bluetooth::hci::iso_manager::big_create_cmpl_evt;
 using bluetooth::hci::iso_manager::big_terminate_cmpl_evt;
 
+using le_audio::CodecManager;
+using le_audio::types::CodecLocation;
+
 using namespace le_audio::broadcaster;
 
 namespace {
@@ -290,10 +293,11 @@ class BroadcastStateMachineImpl : public BroadcastStateMachine {
       adv_params.advertising_event_properties = 0;
       adv_params.channel_map = bluetooth::kAdvertisingChannelAll;
       adv_params.adv_filter_policy = 0;
-      adv_params.tx_power = -15;
+      adv_params.tx_power = 8;
       adv_params.primary_advertising_phy = PHY_LE_1M;
       adv_params.secondary_advertising_phy = streaming_phy;
       adv_params.scan_request_notification_enable = 0;
+      adv_params.own_address_type = BLE_ADDR_RANDOM;
 
       periodic_params.max_interval = BroadcastStateMachine::kPaIntervalMax;
       periodic_params.min_interval = BroadcastStateMachine::kPaIntervalMin;
@@ -462,11 +466,17 @@ class BroadcastStateMachineImpl : public BroadcastStateMachine {
   void TriggerIsoDatapathSetup(uint16_t conn_handle) {
     LOG_INFO("conn_hdl=%d", conn_handle);
     LOG_ASSERT(active_config_ != std::nullopt);
+    auto data_path_id = bluetooth::hci::iso_manager::kIsoDataPathHci;
+    if (CodecManager::GetInstance()->GetCodecLocation() !=
+        CodecLocation::HOST) {
+      data_path_id = bluetooth::hci::iso_manager::kIsoDataPathPlatformDefault;
+    }
 
-    /* Note: For the LC3 software encoding on the Host side, the coding format
+    /* Note: If the LC3 encoding isn't in the controller side, the coding format
      * should be set to 'Transparent' and no codec configuration shall be sent
      * to the controller. 'codec_id_company' and 'codec_id_vendor' shall be
-     * ignored if 'codec_id_format' is not set to 'Vendor'.
+     * ignored if 'codec_id_format' is not set to 'Vendor'. We currently only
+     * support the codecLocation in the Host or ADSP side.
      */
     auto codec_id = sm_config_.codec_wrapper.GetLeAudioCodecId();
     uint8_t hci_coding_format =
@@ -475,7 +485,7 @@ class BroadcastStateMachineImpl : public BroadcastStateMachine {
             : bluetooth::hci::kIsoCodingFormatVendorSpecific;
     bluetooth::hci::iso_manager::iso_data_path_params param = {
         .data_path_dir = bluetooth::hci::iso_manager::kIsoDataPathDirectionIn,
-        .data_path_id = bluetooth::hci::iso_manager::kIsoDataPathHci,
+        .data_path_id = data_path_id,
         .codec_id_format = hci_coding_format,
         .codec_id_company = codec_id.vendor_company_id,
         .codec_id_vendor = codec_id.vendor_codec_id,
@@ -539,6 +549,10 @@ class BroadcastStateMachineImpl : public BroadcastStateMachine {
               .iso_interval = evt->iso_interval,
               .connection_handles = evt->conn_handles,
           };
+          if (CodecManager::GetInstance()->GetCodecLocation() ==
+              CodecLocation::ADSP) {
+            callbacks_->OnBigCreated(evt->conn_handles);
+          }
           TriggerIsoDatapathSetup(evt->conn_handles[0]);
         } else {
           LOG_ERROR(

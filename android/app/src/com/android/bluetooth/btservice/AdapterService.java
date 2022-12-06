@@ -169,6 +169,7 @@ public class AdapterService extends Service {
     private static final int MIN_OFFLOADED_FILTERS = 10;
     private static final int MIN_OFFLOADED_SCAN_STORAGE_BYTES = 1024;
     private static final Duration PENDING_SOCKET_HANDOFF_TIMEOUT = Duration.ofMinutes(1);
+    private static final Duration GENERATE_LOCAL_OOB_DATA_TIMEOUT = Duration.ofSeconds(2);
 
     private final Object mEnergyInfoLock = new Object();
     private int mStackReportedState;
@@ -3679,9 +3680,17 @@ public class AdapterService extends Service {
                 receiver.propagateException(e);
             }
         }
+        @RequiresPermission(allOf = {
+                android.Manifest.permission.BLUETOOTH_CONNECT,
+                android.Manifest.permission.BLUETOOTH_PRIVILEGED,
+        })
         private boolean allowLowLatencyAudio(boolean allowed, BluetoothDevice device) {
             AdapterService service = getService();
-            if (service == null) {
+            if (service == null
+                    || !Utils.checkCallerIsSystemOrActiveUser(TAG)
+                    || !Utils.checkConnectPermissionForDataDelivery(
+                            service, Utils.getCallingAttributionSource(service),
+                                "AdapterService allowLowLatencyAudio")) {
                 return false;
             }
             enforceBluetoothPrivilegedPermission(service);
@@ -3697,12 +3706,24 @@ public class AdapterService extends Service {
                 receiver.propagateException(e);
             }
         }
-        public int startRfcommListener(
+        @RequiresPermission(allOf = {
+                android.Manifest.permission.BLUETOOTH_CONNECT,
+                android.Manifest.permission.BLUETOOTH_PRIVILEGED,
+        })
+        private int startRfcommListener(
                 String name,
                 ParcelUuid uuid,
                 PendingIntent pendingIntent,
                 AttributionSource attributionSource) {
-            return mService.startRfcommListener(name, uuid, pendingIntent, attributionSource);
+            AdapterService service = getService();
+            if (service == null
+                    || !Utils.checkCallerIsSystemOrActiveUser(TAG)
+                    || !Utils.checkConnectPermissionForDataDelivery(
+                            service, attributionSource, "AdapterService startRfcommListener")) {
+                return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
+            }
+            enforceBluetoothPrivilegedPermission(service);
+            return service.startRfcommListener(name, uuid, pendingIntent, attributionSource);
         }
 
         @Override
@@ -3714,8 +3735,20 @@ public class AdapterService extends Service {
                 receiver.propagateException(e);
             }
         }
-        public int stopRfcommListener(ParcelUuid uuid, AttributionSource attributionSource) {
-            return mService.stopRfcommListener(uuid, attributionSource);
+        @RequiresPermission(allOf = {
+                android.Manifest.permission.BLUETOOTH_CONNECT,
+                android.Manifest.permission.BLUETOOTH_PRIVILEGED,
+        })
+        private int stopRfcommListener(ParcelUuid uuid, AttributionSource attributionSource) {
+            AdapterService service = getService();
+            if (service == null
+                    || !Utils.checkCallerIsSystemOrActiveUser(TAG)
+                    || !Utils.checkConnectPermissionForDataDelivery(
+                            service, attributionSource, "AdapterService stopRfcommListener")) {
+                return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
+            }
+            enforceBluetoothPrivilegedPermission(service);
+            return service.stopRfcommListener(uuid, attributionSource);
         }
 
         @Override
@@ -3727,9 +3760,22 @@ public class AdapterService extends Service {
                 receiver.propagateException(e);
             }
         }
-        public IncomingRfcommSocketInfo retrievePendingSocketForServiceRecord(
+        @RequiresPermission(allOf = {
+                android.Manifest.permission.BLUETOOTH_CONNECT,
+                android.Manifest.permission.BLUETOOTH_PRIVILEGED,
+        })
+        private IncomingRfcommSocketInfo retrievePendingSocketForServiceRecord(
                 ParcelUuid uuid, AttributionSource attributionSource) {
-            return mService.retrievePendingSocketForServiceRecord(uuid, attributionSource);
+            AdapterService service = getService();
+            if (service == null
+                    || !Utils.checkCallerIsSystemOrActiveUser(TAG)
+                    || !Utils.checkConnectPermissionForDataDelivery(
+                            service, attributionSource,
+                            "AdapterService retrievePendingSocketForServiceRecord")) {
+                return null;
+            }
+            enforceBluetoothPrivilegedPermission(service);
+            return service.retrievePendingSocketForServiceRecord(uuid, attributionSource);
         }
 
         @Override
@@ -3954,13 +4000,29 @@ public class AdapterService extends Service {
         if (mOobDataCallbackQueue.peek() != null) {
             try {
                 callback.onError(BluetoothStatusCodes.ERROR_ANOTHER_ACTIVE_OOB_REQUEST);
-                return;
             } catch (RemoteException e) {
                 Log.e(TAG, "Failed to make callback", e);
             }
+            return;
         }
         mOobDataCallbackQueue.offer(callback);
+        mHandler.postDelayed(() -> removeFromOobDataCallbackQueue(callback),
+                GENERATE_LOCAL_OOB_DATA_TIMEOUT.toMillis());
         generateLocalOobDataNative(transport);
+    }
+
+    private synchronized void removeFromOobDataCallbackQueue(IBluetoothOobDataCallback callback) {
+        if (callback == null) {
+            return;
+        }
+
+        if (mOobDataCallbackQueue.peek() == callback) {
+            try {
+                mOobDataCallbackQueue.poll().onError(BluetoothStatusCodes.ERROR_UNKNOWN);
+            } catch (RemoteException e) {
+                Log.e(TAG, "Failed to make OobDataCallback to remove callback from queue", e);
+            }
+        }
     }
 
     /* package */ synchronized void notifyOobDataCallback(int transport, OobData oobData) {
@@ -5036,6 +5098,7 @@ public class AdapterService extends Service {
     private static final String GD_LINK_POLICY_FLAG = "INIT_gd_link_policy";
     private static final String GATT_ROBUST_CACHING_CLIENT_FLAG = "INIT_gatt_robust_caching_client";
     private static final String GATT_ROBUST_CACHING_SERVER_FLAG = "INIT_gatt_robust_caching_server";
+    private static final String IRK_ROTATION_FLAG = "INIT_irk_rotation";
 
     /**
      * Logging flags logic (only applies to DEBUG and VERBOSE levels):
@@ -5089,12 +5152,15 @@ public class AdapterService extends Service {
             initFlags.add(String.format("%s=%s", GD_LINK_POLICY_FLAG, "true"));
         }
         if (DeviceConfig.getBoolean(DeviceConfig.NAMESPACE_BLUETOOTH,
-                GATT_ROBUST_CACHING_CLIENT_FLAG, false)) {
+                GATT_ROBUST_CACHING_CLIENT_FLAG, true)) {
             initFlags.add(String.format("%s=%s", GATT_ROBUST_CACHING_CLIENT_FLAG, "true"));
         }
         if (DeviceConfig.getBoolean(DeviceConfig.NAMESPACE_BLUETOOTH,
                 GATT_ROBUST_CACHING_SERVER_FLAG, false)) {
             initFlags.add(String.format("%s=%s", GATT_ROBUST_CACHING_SERVER_FLAG, "true"));
+        }
+        if (DeviceConfig.getBoolean(DeviceConfig.NAMESPACE_BLUETOOTH, IRK_ROTATION_FLAG, false)) {
+            initFlags.add(String.format("%s=%s", IRK_ROTATION_FLAG, "true"));
         }
         if (DeviceConfig.getBoolean(DeviceConfig.NAMESPACE_BLUETOOTH,
                 LOGGING_DEBUG_ENABLED_FOR_ALL_FLAG, false)) {
@@ -5181,33 +5247,30 @@ public class AdapterService extends Service {
         }
     }
 
-    public static int getScanQuotaCount() {
-        if (sAdapterService == null) {
-            return DeviceConfigListener.DEFAULT_SCAN_QUOTA_COUNT;
-        }
-
-        synchronized (sAdapterService.mDeviceConfigLock) {
-            return sAdapterService.mScanQuotaCount;
-        }
-    }
-
-    public static long getScanQuotaWindowMillis() {
-        if (sAdapterService == null) {
-            return DeviceConfigListener.DEFAULT_SCAN_QUOTA_WINDOW_MILLIS;
-        }
-
-        synchronized (sAdapterService.mDeviceConfigLock) {
-            return sAdapterService.mScanQuotaWindowMillis;
+    /**
+     * Returns scan quota count.
+     */
+    public int getScanQuotaCount() {
+        synchronized (mDeviceConfigLock) {
+            return mScanQuotaCount;
         }
     }
 
-    public static long getScanTimeoutMillis() {
-        if (sAdapterService == null) {
-            return DeviceConfigListener.DEFAULT_SCAN_TIMEOUT_MILLIS;
+    /**
+     * Returns scan quota window in millis.
+     */
+    public long getScanQuotaWindowMillis() {
+        synchronized (mDeviceConfigLock) {
+            return mScanQuotaWindowMillis;
         }
+    }
 
-        synchronized (sAdapterService.mDeviceConfigLock) {
-            return sAdapterService.mScanTimeoutMillis;
+    /**
+     * Returns scan timeout in millis.
+     */
+    public long getScanTimeoutMillis() {
+        synchronized (mDeviceConfigLock) {
+            return mScanTimeoutMillis;
         }
     }
 
