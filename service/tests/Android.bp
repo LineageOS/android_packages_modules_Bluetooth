@@ -59,7 +59,7 @@ android_test {
         "libbluetooth_jni",
     ],
     compile_multilib: "both",
-    certificate: ":com.android.bluetooth.certificate",
+    certificate: "bluetooth",
 
     min_sdk_version: "current",
 
