@@ -18,6 +18,7 @@
 
 #pragma once
 
+#ifdef __cplusplus
 #include <base/callback.h>
 #include <base/location.h>
 
@@ -25,6 +26,8 @@
 #include "osi/include/osi.h"  // INVALID_FD
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
+#endif
+
 
 ///// LEGACY DEFINITIONS /////
 
@@ -49,6 +52,7 @@
 #define LOCAL_BR_EDR_CONTROLLER_ID 0
 
 ///// END LEGACY DEFINITIONS /////
+#ifdef __cplusplus
 typedef struct packet_fragmenter_t packet_fragmenter_t;
 typedef uint16_t command_opcode_t;
 
@@ -75,3 +79,4 @@ typedef struct hci_t {
 const hci_t* hci_layer_get_interface();
 
 bool hci_is_root_inflammation_event_received();
+#endif
