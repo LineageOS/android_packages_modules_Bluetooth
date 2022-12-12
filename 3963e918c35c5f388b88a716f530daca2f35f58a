@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "56007226_e1c18142",
+        "filename": "system/hci/include/hci_layer.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 5911
+      },
+      "writtenOn": "2022-12-12T09:33:31Z",
+      "side": 1,
+      "message": "superfluous",
+      "revId": "3963e918c35c5f388b88a716f530daca2f35f58a",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
