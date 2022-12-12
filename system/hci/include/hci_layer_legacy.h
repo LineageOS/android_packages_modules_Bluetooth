@@ -18,16 +18,6 @@
 
 #pragma once
 
-#ifdef __cplusplus
-#include <base/callback.h>
-#include <base/location.h>
-
-#include "osi/include/future.h"
-#include "osi/include/osi.h"  // INVALID_FD
-#include "stack/include/bt_hdr.h"
-#include "stack/include/bt_types.h"
-#endif
-
 ///// LEGACY DEFINITIONS /////
 
 /* Message event mask across Host/Controller lib and stack */
@@ -51,31 +41,3 @@
 #define LOCAL_BR_EDR_CONTROLLER_ID 0
 
 ///// END LEGACY DEFINITIONS /////
-#ifdef __cplusplus
-typedef struct packet_fragmenter_t packet_fragmenter_t;
-typedef uint16_t command_opcode_t;
-
-typedef void (*command_complete_cb)(BT_HDR* response, void* context);
-typedef void (*command_status_cb)(uint8_t status, BT_HDR* command,
-                                  void* context);
-
-typedef struct hci_t {
-  // Set the callback that the HCI layer uses to send data upwards
-  void (*set_data_cb)(
-      base::Callback<void(const base::Location&, BT_HDR*)> send_data_cb);
-
-  // Send a command through the HCI layer
-  void (*transmit_command)(const BT_HDR* command,
-                           command_complete_cb complete_callback,
-                           command_status_cb status_cb, void* context);
-
-  future_t* (*transmit_command_futured)(const BT_HDR* command);
-
-  // Send some data downward through the HCI layer
-  void (*transmit_downward)(uint16_t type, void* data);
-} hci_t;
-
-const hci_t* hci_layer_get_interface();
-
-bool hci_is_root_inflammation_event_received();
-#endif
