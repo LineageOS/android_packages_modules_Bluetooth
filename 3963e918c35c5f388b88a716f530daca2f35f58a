@@ -16,6 +16,24 @@
       "message": "superfluous",
       "revId": "3963e918c35c5f388b88a716f530daca2f35f58a",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8b454ff7_91c1cfd9",
+        "filename": "system/hci/include/hci_layer.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 16185
+      },
+      "writtenOn": "2022-12-18T21:47:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "56007226_e1c18142",
+      "revId": "3963e918c35c5f388b88a716f530daca2f35f58a",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
