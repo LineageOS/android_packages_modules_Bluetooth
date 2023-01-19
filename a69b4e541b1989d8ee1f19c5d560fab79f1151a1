@@ -16,6 +16,24 @@
       "message": "This should be fixed with a property instead on 20",
       "revId": "a69b4e541b1989d8ee1f19c5d560fab79f1151a1",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ce965ac3_5ca307a6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 4550
+      },
+      "writtenOn": "2023-01-19T23:13:24Z",
+      "side": 1,
+      "message": "eg. check \"bluetooth.profile.enhanced.sco.enabled\"",
+      "parentUuid": "dc342872_824e0ef0",
+      "revId": "a69b4e541b1989d8ee1f19c5d560fab79f1151a1",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
