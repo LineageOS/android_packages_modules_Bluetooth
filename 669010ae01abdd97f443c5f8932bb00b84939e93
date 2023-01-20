@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "58a95be3_55737f95",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 32245
+      },
+      "writtenOn": "2023-01-20T10:22:34Z",
+      "side": 1,
+      "message": "It\u0027s broken on some legacy devices, e.g. MSM8937 devices with old firmware.\nResults in broken sound while calling with Bluetooth Speaker / Headset.\n\nRef commit: https://review.lineageos.org/c/LineageOS/android_packages_modules_Bluetooth/+/347483",
+      "revId": "669010ae01abdd97f443c5f8932bb00b84939e93",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
