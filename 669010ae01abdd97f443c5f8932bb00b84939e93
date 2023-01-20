@@ -33,6 +33,23 @@
       "message": "Usage: https://github.com/Mi-Thorium/android_device_xiaomi_Mi8937/commit/889587cbe076d07947207c9a579f5d4dfd96492a",
       "revId": "669010ae01abdd97f443c5f8932bb00b84939e93",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4c249b7d_c0040db8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 4550
+      },
+      "writtenOn": "2023-01-20T15:29:12Z",
+      "side": 1,
+      "message": "We also need this https://review.lineageos.org/c/LineageOS/android_system_sepolicy/+/347522 to avoid denials on all devices and for this to work properly.",
+      "revId": "669010ae01abdd97f443c5f8932bb00b84939e93",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
