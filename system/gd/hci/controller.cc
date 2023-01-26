@@ -34,6 +34,9 @@ namespace hci {
 static const char kPropertyDisabledCommands[] =
     "bluetooth.hci.disabled_commands";
 
+static const std::string kPropertyVendorCapabilitiesEnabled =
+    "bluetooth.core.le.vendor_capabilities.enabled";
+
 using os::Handler;
 
 struct Controller::impl {
@@ -159,8 +162,15 @@ struct Controller::impl {
           handler->BindOnceOn(this, &Controller::impl::le_set_host_feature_handler));
     }
 
-    hci_->EnqueueCommand(LeGetVendorCapabilitiesBuilder::Create(),
-                         handler->BindOnceOn(this, &Controller::impl::le_get_vendor_capabilities_handler));
+    // Skip vendor capabilities check if configured.
+    if (os::GetSystemPropertyBool(
+            kPropertyVendorCapabilitiesEnabled, true)) {
+      hci_->EnqueueCommand(
+          LeGetVendorCapabilitiesBuilder::Create(),
+          handler->BindOnceOn(this, &Controller::impl::le_get_vendor_capabilities_handler));
+    } else {
+      vendor_capabilities_.is_supported_ = 0x00;
+    }
 
     // We only need to synchronize the last read. Make BD_ADDR to be the last one.
     std::promise<void> promise;
