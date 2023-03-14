@@ -16,6 +16,8 @@
 
 package com.android.pandora
 
+import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothProfile
 import android.content.Context
 import android.util.Log
 import io.grpc.Server as GrpcServer
@@ -28,32 +30,61 @@ class Server(context: Context) {
   private val GRPC_PORT = 8999
 
   private var host: Host
-  private var a2dp: A2dp
+  private var a2dp: A2dp? = null
+  private var a2dpSink: A2dpSink? = null
   private var avrcp: Avrcp
   private var gatt: Gatt
   private var hfp: Hfp
   private var hid: Hid
+  private var l2cap: L2cap
+  private var mediaplayer: MediaPlayer
+  private var pbap: Pbap
+  private var rfcomm: Rfcomm
   private var security: Security
+  private var securityStorage: SecurityStorage
+  private var androidInternal: AndroidInternal
   private var grpcServer: GrpcServer
 
   init {
-    host = Host(context, this)
-    a2dp = A2dp(context)
+    security = Security(context)
+    host = Host(context, security, this)
     avrcp = Avrcp(context)
     gatt = Gatt(context)
     hfp = Hfp(context)
     hid = Hid(context)
-    security = Security(context)
-    grpcServer =
+    l2cap = L2cap(context)
+    mediaplayer = MediaPlayer(context)
+    pbap = Pbap(context)
+    rfcomm = Rfcomm(context)
+    securityStorage = SecurityStorage(context)
+    androidInternal = AndroidInternal(context)
+
+    val grpcServerBuilder =
       NettyServerBuilder.forPort(GRPC_PORT)
         .addService(host)
-        .addService(a2dp)
         .addService(avrcp)
         .addService(gatt)
         .addService(hfp)
         .addService(hid)
+        .addService(l2cap)
+        .addService(mediaplayer)
+        .addService(pbap)
+        .addService(rfcomm)
         .addService(security)
-        .build()
+        .addService(securityStorage)
+        .addService(androidInternal)
+
+    val bluetoothAdapter = context.getSystemService(BluetoothManager::class.java)!!.adapter
+    val is_a2dp_source = bluetoothAdapter.getSupportedProfiles().contains(BluetoothProfile.A2DP)
+    if (is_a2dp_source) {
+      a2dp = A2dp(context)
+      grpcServerBuilder.addService(a2dp!!)
+    } else {
+      a2dpSink = A2dpSink(context)
+      grpcServerBuilder.addService(a2dpSink!!)
+    }
+
+    grpcServer = grpcServerBuilder.build()
 
     Log.d(TAG, "Starting Pandora Server")
     grpcServer.start()
@@ -66,11 +97,18 @@ class Server(context: Context) {
 
   fun deinit() {
     host.deinit()
-    a2dp.deinit()
+    a2dp?.deinit()
+    a2dpSink?.deinit()
     avrcp.deinit()
     gatt.deinit()
     hfp.deinit()
     hid.deinit()
+    l2cap.deinit()
+    mediaplayer.deinit()
+    pbap.deinit()
+    rfcomm.deinit()
     security.deinit()
+    securityStorage.deinit()
+    androidInternal.deinit()
   }
 }

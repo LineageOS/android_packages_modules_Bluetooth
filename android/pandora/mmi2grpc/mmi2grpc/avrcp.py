@@ -26,6 +26,7 @@ from pandora_experimental.a2dp_pb2 import Sink, Source
 from pandora_experimental.avrcp_grpc import AVRCP
 from pandora_experimental.host_grpc import Host
 from pandora_experimental.host_pb2 import Connection
+from pandora_experimental.mediaplayer_grpc import MediaPlayer
 
 
 class AVRCPProxy(ProfileProxy):
@@ -39,11 +40,12 @@ class AVRCPProxy(ProfileProxy):
     source: Optional[Source] = None
 
     def __init__(self, channel):
-        super().__init__()
+        super().__init__(channel)
 
         self.host = Host(channel)
         self.a2dp = A2DP(channel)
         self.avrcp = AVRCP(channel)
+        self.mediaplayer = MediaPlayer(channel)
 
     @assert_description
     def TSC_AVDTP_mmi_iut_accept_connect(self, test: str, pts_addr: bytes, **kwargs):
@@ -59,15 +61,15 @@ class AVRCPProxy(ProfileProxy):
         the IUT connects to PTS to establish pairing.
 
         """
-        if "CT" in test:
-
-            self.connection = self.host.WaitConnection(address=pts_addr).connection
+        # Simulate CSR timeout: b/259102046
+        time.sleep(2)
+        self.connection = self.host.WaitConnection(address=pts_addr).connection
+        if ("TG" in test and "TG/VLH" not in test) or "CT/VLH" in test:
             try:
                 self.source = self.a2dp.WaitSource(connection=self.connection).source
             except RpcError:
                 pass
         else:
-            self.connection = self.host.WaitConnection(address=pts_addr).connection
             try:
                 self.sink = self.a2dp.WaitSink(connection=self.connection).sink
             except RpcError:
@@ -152,9 +154,7 @@ class AVRCPProxy(ProfileProxy):
         if self.connection is None:
             self.connection = self.host.GetConnection(address=pts_addr).connection
         self.host.Disconnect(connection=self.connection)
-        self.connection = None
-        self.sink = None
-        self.source = None
+
         return "OK"
 
     @assert_description
@@ -202,6 +202,7 @@ class AVRCPProxy(ProfileProxy):
         The IUT should
         then initiate an L2CAP_ConnectRsp and L2CAP_ConfigRsp.
         """
+
         return "OK"
 
     @assert_description
@@ -224,6 +225,7 @@ class AVRCPProxy(ProfileProxy):
         Tester and the L2CAP_ConnectReq from the Lower Tester, the IUT issues an
         L2CAP_ConnectRsp to the Lower Tester.
         """
+
         return "OK"
 
     @assert_description
@@ -241,6 +243,7 @@ class AVRCPProxy(ProfileProxy):
         Press 'OK' to
         continue once the IUT has responded.
         """
+
         return "OK"
 
     @assert_description
@@ -258,6 +261,7 @@ class AVRCPProxy(ProfileProxy):
         Press 'OK' to
         continue once the IUT has responded.
         """
+
         return "OK"
 
     @assert_description
@@ -275,6 +279,7 @@ class AVRCPProxy(ProfileProxy):
         the following parameter values:
            * BD_ADDR = BD_ADDRLower_Tester
         """
+
         return "OK"
 
     @assert_description
@@ -298,6 +303,7 @@ class AVRCPProxy(ProfileProxy):
         DATA[]Lower_Tester
            * Length = LengthOf(DATA[]Lower_Tester)
         """
+
         return "OK"
 
     @assert_description
@@ -327,6 +333,7 @@ class AVRCPProxy(ProfileProxy):
            * Length =
         LengthOf(DATA[]Lower_Tester)
         """
+
         return "OK"
 
     @assert_description
@@ -356,4 +363,433 @@ class AVRCPProxy(ProfileProxy):
         continue once the IUT has responded.
         """
         #TODO: Remove trailing space post "values:" from docstring description
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVDTP_mmi_iut_initiate_connect(self, test: str, pts_addr: bytes, **kwargs):
+        """
+        Create an AVDTP signaling channel.
+
+        Action: Create an audio or video
+        connection with PTS.
+        """
+        self.connection = self.host.Connect(address=pts_addr).connection
+        if ("TG" in test and "TG/VLH" not in test) or "CT/VLH" in test:
+            self.source = self.a2dp.OpenSource(connection=self.connection).source
+
+        return "OK"
+
+    @assert_description
+    def _mmi_690(self, **kwargs):
+        """
+        Press 'YES' if the IUT indicated receiving the [PLAY] command.  Press
+        'NO' otherwise.
+
+        Description: Verify that the Implementation Under Test
+        (IUT) successfully indicated that the current operation was pressed. Not
+        all commands (fast forward and rewind for example) have a noticeable
+        effect when pressed for a short period of time.  For commands like that
+        it is acceptable to assume the effect took place and press 'YES'.
+        """
+
+        return "Yes"
+
+    @assert_description
+    def _mmi_691(self, **kwargs):
+        """
+        Press 'YES' if the IUT indicated receiving the [STOP] command.  Press
+        'NO' otherwise.
+
+        Description: Verify that the Implementation Under Test
+        (IUT) successfully indicated that the current operation was pressed. Not
+        all commands (fast forward and rewind for example) have a noticeable
+        effect when pressed for a short period of time.  For commands like that
+        it is acceptable to assume the effect took place and press 'YES'.
+        """
+
+        return "Yes"
+
+    @assert_description
+    def _mmi_540(self, **kwargs):
+        """
+        Press 'YES' if the IUT supports press and hold functionality for the
+        [PLAY] command.  Press 'NO' otherwise.
+
+        Description: Verify press and
+        hold functionality of passthrough operations that support press and
+        hold.  Not all operations support press and hold, pressing 'NO' will not
+        fail the test case.
+        """
+
+        return "Yes"
+
+    @assert_description
+    def _mmi_615(self, **kwargs):
+        """
+        Press 'YES' if the IUT indicated press and hold functionality for the
+        [PLAY] command.  Press 'NO' otherwise.
+
+        Description: Verify that the
+        Implementation Under Test (IUT) successfully indicated that the current
+        operation was held.
+        """
+
+        return "Yes"
+
+    @assert_description
+    def _mmi_541(self, **kwargs):
+        """
+        Press 'YES' if the IUT supports press and hold functionality for the
+        [STOP] command.  Press 'NO' otherwise.
+
+        Description: Verify press and
+        hold functionality of passthrough operations that support press and
+        hold.  Not all operations support press and hold, pressing 'NO' will not
+        fail the test case.
+        """
+
+        return "Yes"
+
+    @assert_description
+    def _mmi_616(self, **kwargs):
+        """
+        Press 'YES' if the IUT indicated press and hold functionality for the
+        [STOP] command.  Press 'NO' otherwise.
+
+        Description: Verify that the
+        Implementation Under Test (IUT) successfully indicated that the current
+        operation was held.
+        """
+
+        return "Yes"
+
+    @assert_description
+    def TSC_AVRCP_mmi_user_confirm_media_is_streaming(self, **kwargs):
+        """
+        Press 'OK' when the IUT is in a state where media is playing.
+        Description: PTS is preparing the streaming state for the next
+        passthrough command, if the current streaming state is not relevant to
+        this IUT, please press 'OK to continue.
+        """
+        if not self.a2dp.IsSuspended(source=self.source).is_suspended:
+            return "Yes"
+        else:
+            return "No"
+
+    @assert_description
+    def TSC_AVRCP_mmi_iut_reject_invalid_get_capabilities(self, **kwargs):
+        """
+        The IUT should reject the invalid Get Capabilities command sent by PTS.
+        Description: Verify that the IUT can properly reject a Get Capabilities
+        command that contains an invalid capability.
+        """
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVRCP_mmi_iut_accept_get_capabilities(self, **kwargs):
+        """
+        Take action to send a valid response to the [Get Capabilities] command
+        sent by the PTS.
+        """
+        # This will be done as part as the a2dp.OpenSource or a2dp.WaitSource
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVRCP_mmi_iut_accept_get_element_attributes(self, **kwargs):
+        """
+        Take action to send a valid response to the [Get Element Attributes]
+        command sent by the PTS.
+        """
+        # This will be done as part as the a2dp.OpenSource or a2dp.WaitSource
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVRCP_mmi_iut_reject_invalid_command_control_channel(self, **kwargs):
+        """
+        PTS has sent an invalid command over the control channel.  The IUT must
+        respond with a general reject on the control channel.
+
+        Description:
+        Verify that the IUT can properly reject an invalid command sent over the
+        control channel.
+        """
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVRCP_mmi_iut_reject_invalid_command_browsing_channel(self, **kwargs):
+        """
+        PTS has sent an invalid command over the browsing channel.  The IUT must
+        respond with a general reject on the browsing channel.
+
+        Description:
+        Verify that the IUT can properly reject an invalid command sent over the
+        browsing channel.
+        """
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVCTP_mmi_register_ConnectCfm_CB(self, **kwargs):
+        """
+        Using the Upper Tester send an AVCT_EventRegistration command from the
+        AVCTP Upper Interface to the IUT with the following input parameter
+        values:
+           * Event = AVCT_Connect_Cfm
+           * Callback =
+        ConnectCfm_CBTest_System
+           * PID = PIDTest_System
+    
+        Press 'OK' to
+        continue once the IUT has responded.
+        """
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVRCP_mmi_iut_accept_set_browsed_player(self, **kwargs):
+        """
+        Take action to send a valid response to the [Set Browsed Player] command
+        sent by the PTS.
+        """
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVRCP_mmi_iut_accept_get_folder_items_virtual_file_system(self, **kwargs):
+        """
+        Take action to send a valid response to the [Get Folder Items] with the
+        scope <Virtual File System> command sent by the PTS.
+        """
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVRCP_mmi_user_confirm_virtual_file_system(self, **kwargs):
+        """
+        Are the following items found in the current folder?
+    
+        Folder:
+        com.android.pandora
+    
+    
+        Note: Some media elements and folders may not be
+        listed above.
+        """
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVRCP_mmi_iut_accept_change_path_down(self, **kwargs):
+        """
+        Take action to send a valid response to the [Change Path] <Down> command
+        sent by the PTS.
+        """
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVRCP_mmi_iut_accept_change_path_up(self, **kwargs):
+        """
+        Take action to send a valid response to the [Change Path] <Up> command
+        sent by the PTS.
+        """
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVRCP_mmi_user_action_track_playing(self, **kwargs):
+        """
+        Place the IUT into a state where a track is currently playing, then
+        press 'OK' to continue.
+        """
+        self.mediaplayer.Play()
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVRCP_mmi_iut_accept_get_item_attributes(self, **kwargs):
+        """
+        Take action to send a valid response to the [Get Item Attributes]
+        command sent by the PTS.
+        """
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVRCP_mmi_iut_reject_set_addressed_player_invalid_player_id(self, **kwargs):
+        """
+        PTS has sent a Set Addressed Player command with an invalid Player Id.
+        The IUT must respond with the error code: Invalid Player Id (0x11).
+        Description: Verify that the IUT can properly reject a Set Addressed
+        Player command that contains an invalid player id.
+        """
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVRCP_mmi_iut_reject_get_folder_items_out_of_range(self, **kwargs):
+        """
+        PTS has sent a Get Folder Items command with invalid values for Start
+        and End.  The IUT must respond with the error code: Range Out Of Bounds
+        (0x0B).
+    
+        Description: Verify that the IUT can properly reject a Get
+        Folder Items command that contains an invalid start and end index.
+        """
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVRCP_mmi_iut_reject_change_path_down_invalid_uid(self, **kwargs):
+        """
+        PTS has sent a Change Path Down command with an invalid folder UID.  The
+        IUT must respond with the error code: Does Not Exist (0x09).
+        Description: Verify that the IUT can properly reject an Change Path Down
+        command that contains an invalid UID.
+        """
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVRCP_mmi_iut_reject_get_item_attributes_invalid_uid_counter(self, **kwargs):
+        """
+        PTS has sent a Get Item Attributes command with an invalid UID Counter.
+        The IUT must respond with the error code: UID Changed (0x05).
+        Description: Verify that the IUT can properly reject a Get Item
+        Attributes command that contains an invalid UID Counter.
+        """
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVRCP_mmi_iut_accept_play_item(self, **kwargs):
+        """
+        Take action to send a valid response to the [Play Item] command sent by
+        the PTS.
+        """
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVRCP_mmi_iut_reject_play_item_invalid_uid(self, **kwargs):
+        """
+        PTS has sent a Play Item command with an invalid UID.  The IUT must
+        respond with the error code: Does Not Exist (0x09).
+    
+        Description: Verify
+        that the IUT can properly reject a Play Item command that contains an
+        invalid UID.
+        """
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVRCP_mmi_iut_initiate_register_notification_changed_track_changed(self, **kwargs):
+        """
+        Take action to trigger a [Register Notification, Changed] response for
+        <Track Changed> to the PTS from the IUT.  This can be accomplished by
+        changing the currently playing track on the IUT.
+
+        Description: Verify
+        that the Implementation Under Test (IUT) can update database by sending
+        a valid Track Changed Notification to the PTS.
+        """
+
+        self.mediaplayer.Play()
+        self.mediaplayer.Forward()
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVRCP_mmi_user_action_change_track(self, **kwargs):
+        """
+        Take action to change the currently playing track.
+        """
+        self.mediaplayer.Forward()
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVRCP_mmi_iut_reject_set_browsed_player_invalid_player_id(self, **kwargs):
+        """
+        PTS has sent a Set Browsed Player command with an invalid Player Id.
+        The IUT must respond with the error code: Invalid Player Id (0x11).
+        Description: Verify that the IUT can properly reject a Set Browsed
+        Player command that contains an invalid player id.
+        """
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVRCP_mmi_iut_reject_register_notification_notify_invalid_event_id(self, **kwargs):
+        """
+        PTS has sent a Register Notification command with an invalid Event Id.
+        The IUT must respond with the error code: Invalid Parameter (0x01).
+        Description: Verify that the IUT can properly reject a Register
+        Notification command that contains an invalid event Id.
+        """
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVRCP_mmi_user_action_play_large_metadata_media(self, **kwargs):
+        """
+        Start playing a media item with more than 512 bytes worth of metadata,
+        then press 'OK'.
+        """
+
+        self.mediaplayer.SetLargeMetadata()
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVRCP_mmi_user_confirm_now_playing_list_updated_with_local(self, **kwargs):
+        """
+        Is the newly added media item listed below?
+
+        Media Element: Title2
+        """
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVRCP_mmi_user_action_queue_now_playing(self, **kwargs):
+        """
+        Take action to populate the now playing list with multiple items.  Then
+        make sure a track is playing and press 'OK'.
+
+        Note: If the
+        NOW_PLAYING_CONTENT_CHANGED notification has been registered, this
+        message will disappear when the notification changed is received.
+        """
+        self.mediaplayer.Play()
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVRCP_mmi_iut_accept_get_folder_items_now_playing(self, **kwargs):
+        """
+        Take action to send a valid response to the [Get Folder Items] with the
+        scope <Now Playing> command sent by the PTS.
+        """
+        self.mediaplayer.Forward()
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVRCP_mmi_iut_initiate_register_notification_changed_now_playing_content_changed(self, **kwargs):
+        """
+        Take action to trigger a [Register Notification, Changed] response for
+        <Now Playing Content Changed> to the PTS from the IUT.  This can be
+        accomplished by adding tracks to the Now Playing List on the IUT.
+        Description: Verify that the Implementation Under Test (IUT) can update
+        database by sending a valid Now Playing Changed Notification to the PTS.
+        """
+        self.mediaplayer.Play()
+
         return "OK"

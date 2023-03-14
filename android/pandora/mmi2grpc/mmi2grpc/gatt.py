@@ -14,13 +14,17 @@
 
 import re
 import sys
+from threading import Thread
 
 from mmi2grpc._helpers import assert_description
 from mmi2grpc._proxy import ProfileProxy
 
 from pandora_experimental.gatt_grpc import GATT
 from pandora_experimental.host_grpc import Host
-from pandora_experimental.gatt_pb2 import AttStatusCode
+from pandora_experimental.host_pb2 import ConnectabilityMode, OwnAddressType
+from pandora_experimental.gatt_pb2 import AttStatusCode, AttProperties, AttPermissions
+from pandora_experimental.gatt_pb2 import GattServiceParams
+from pandora_experimental.gatt_pb2 import GattCharacteristicParams
 from pandora_experimental.gatt_pb2 import ReadCharacteristicResponse
 from pandora_experimental.gatt_pb2 import ReadCharacteristicsFromUuidResponse
 
@@ -30,11 +34,22 @@ NEEDS_CACHE_CLEARED = {
     "GATT/CL/GAD/BV-06-C",
 }
 
+MMI_SERVER = {
+    "GATT/SR/GAD/BV-01-C",
+}
+
+# These UUIDs are used as reference for GATT server tests
+BASE_READ_WRITE_SERVICE_UUID = "0000fffa-0000-1000-8000-00805f9b34fb"
+BASE_READ_CHARACTERISTIC_UUID = "0000fffb-0000-1000-8000-00805f9b34fb"
+BASE_WRITE_CHARACTERISTIC_UUID = "0000fffc-0000-1000-8000-00805f9b34fb"
+CUSTOM_SERVICE_UUID = "0000fffd-0000-1000-8000-00805f9b34fb"
+CUSTOM_CHARACTERISTIC_UUID = "0000fffe-0000-1000-8000-00805f9b34fb"
+
 
 class GATTProxy(ProfileProxy):
 
     def __init__(self, channel):
-        super().__init__()
+        super().__init__(channel)
         self.gatt = GATT(channel)
         self.host = Host(channel)
         self.connection = None
@@ -44,6 +59,7 @@ class GATTProxy(ProfileProxy):
         self.read_response = None
         self.write_response = None
         self.written_over_length = False
+        self.last_added_service = None
 
     @assert_description
     def MMI_IUT_INITIATE_CONNECTION(self, test, pts_addr: bytes, **kwargs):
@@ -55,7 +71,7 @@ class GATTProxy(ProfileProxy):
         PTS.
         """
 
-        self.connection = self.host.ConnectLE(address=pts_addr).connection
+        self.connection = self.host.ConnectLE(public=pts_addr).connection
         if test in NEEDS_CACHE_CLEARED:
             self.gatt.ClearCache(connection=self.connection)
         return "OK"
@@ -71,7 +87,7 @@ class GATTProxy(ProfileProxy):
         """
 
         assert self.connection is not None
-        self.host.DisconnectLE(connection=self.connection)
+        self.host.Disconnect(connection=self.connection)
         self.connection = None
         self.services = None
         self.characteristics = None
@@ -79,6 +95,7 @@ class GATTProxy(ProfileProxy):
         self.read_response = None
         self.write_response = None
         self.written_over_length = False
+        self.last_added_service = None
         return "OK"
 
     @assert_description
@@ -195,7 +212,7 @@ class GATTProxy(ProfileProxy):
         # Android doesn't store services discovered by UUID.
         return "Yes"
 
-    def MMI_CONFIRM_PRIMARY_SERVICE(self, description: str, **kwargs):
+    def MMI_CONFIRM_PRIMARY_SERVICE(self, test, description: str, **kwargs):
         """
         Please confirm IUT received primary services Primary Service = 'XXXX'O
         Primary Service = 'XXXX'O  in database. Click Yes if IUT received it,
@@ -205,10 +222,11 @@ class GATTProxy(ProfileProxy):
         Test (IUT) can send Discover all primary services in database.
         """
 
-        assert self.services is not None
-        all_matches = list(map(formatUuid, re.findall("'([a0-Z9]*)'O", description)))
-        assert all(uuid in list(map(lambda service: service.uuid, self.services))\
-                for uuid in all_matches)
+        if test not in MMI_SERVER:
+            assert self.services is not None
+            all_matches = list(map(formatUuid, re.findall("'([a0-Z9]*)'O", description)))
+            assert all(uuid in list(map(lambda service: service.uuid, self.services))\
+                    for uuid in all_matches)
         return "OK"
 
     @assert_description
@@ -423,8 +441,25 @@ class GATTProxy(ProfileProxy):
 
         assert self.connection is not None
         handle = stringHandleToInt(re.findall("'([a0-Z9]*)'O", description)[0])
-        self.read_response = self.gatt.ReadCharacteristicFromHandle(\
-                connection=self.connection, handle=handle)
+        def read():
+            nonlocal handle
+            self.read_response = self.gatt.ReadCharacteristicFromHandle(\
+                    connection=self.connection, handle=handle)
+        worker = Thread(target=read)
+        worker.start()
+        worker.join(timeout=30)
+        return "OK"
+
+    @assert_description
+    def MMI_IUT_READ_TIMEOUT(self, **kwargs):
+        """
+        Please wait for 30 seconds timeout to abort the procedure.
+
+        Description:
+        Verify that the Implementation Under Test (IUT) can handle timeout after
+        send Read characteristic without receiving response in 30 seconds.
+        """
+
         return "OK"
 
     @assert_description
@@ -697,8 +732,26 @@ class GATTProxy(ProfileProxy):
         matches = re.findall("'([a0-Z9]*)'O with <= '([a0-Z9]*)'", description)
         handle = stringHandleToInt(matches[0][0])
         data = bytes([1]) * int(matches[0][1])
-        self.write_response = self.gatt.WriteAttFromHandle(connection=self.connection,\
+        def write():
+            nonlocal handle
+            nonlocal data
+            self.write_response = self.gatt.WriteAttFromHandle(connection=self.connection,\
                 handle=handle, value=data)
+        worker = Thread(target=write)
+        worker.start()
+        worker.join(timeout=30)
+        return "OK"
+
+    @assert_description
+    def MMI_IUT_WRITE_TIMEOUT(self, **kwargs):
+        """
+        Please wait for 30 second timeout to abort the procedure.
+
+        Description:
+        Verify that the Implementation Under Test (IUT) can handle timeout after
+        send Write characteristic without receiving response in 30 seconds.
+        """
+
         return "OK"
 
     @assert_description
@@ -744,6 +797,22 @@ class GATTProxy(ProfileProxy):
         matches = re.findall("'([a0-Z9]*)'O <= '([a0-Z9]*)'", description)
         handle = stringHandleToInt(matches[0][0])
         data = bytes([1]) * int(matches[0][1])
+        self.write_response = self.gatt.WriteAttFromHandle(connection=self.connection,\
+                handle=handle, value=data)
+        return "OK"
+
+    def _mmi_150(self, description: str, **kwargs):
+        """
+        Please send an ATT_Write_Request to Client Support Features handle =
+        'XXXX'O to enable Multiple Handle Value Notifications.
+
+        Discover all
+        characteristics if needed.
+        """
+
+        assert self.connection is not None
+        handle = stringHandleToInt(re.findall("'([a0-Z9]*)'O", description)[0])
+        data = bytes([4]) # Multiple Handle Value Notifications
         self.write_response = self.gatt.WriteAttFromHandle(connection=self.connection,\
                 handle=handle, value=data)
         return "OK"
@@ -869,6 +938,226 @@ class GATTProxy(ProfileProxy):
         self.write_response = self.gatt.WriteAttFromHandle(connection=self.connection,\
                 handle=handle, value=data)
         return "OK"
+
+    def MMI_MAKE_IUT_CONNECTABLE(self, **kwargs):
+        """
+        Please prepare IUT into a connectable mode.
+
+        Description: Verify that
+        the Implementation Under Test (IUT) can accept GATT connect request from
+        PTS.
+        """
+        self.host.StartAdvertising(
+            connectable=True,
+            own_address_type=OwnAddressType.PUBLIC,
+        )
+        self.gatt.RegisterService(
+            service=GattServiceParams(
+                uuid=BASE_READ_WRITE_SERVICE_UUID,
+                characteristics=[
+                    GattCharacteristicParams(
+                        uuid=BASE_READ_CHARACTERISTIC_UUID,
+                        properties=AttProperties.PROPERTY_READ,
+                        permissions=AttPermissions.PERMISSION_READ,
+                    ),
+                    GattCharacteristicParams(
+                        uuid=BASE_WRITE_CHARACTERISTIC_UUID,
+                        properties=AttProperties.PROPERTY_WRITE,
+                        permissions=AttPermissions.PERMISSION_WRITE,
+                    ),
+                ],
+            ))
+
+        return "OK"
+
+    def MMI_CONFIRM_IUT_PRIMARY_SERVICE_128(self, **kwargs):
+        """
+        Please confirm IUT have following primary services UUID= 'XXXX'O
+        Service start handle = 'XXXX'O, end handle = 'XXXX'O. Click Yes if IUT
+        have it, otherwise click No.
+
+        Description: Verify that the
+        Implementation Under Test (IUT) can respond Discover all primary
+        services by UUID.
+        """
+
+        return "Yes"
+
+    def MMI_CONFIRM_CHARACTERISTICS_SERVICE(self, **kwargs):
+        """
+        Please confirm IUT have following characteristics in services UUID=
+        'XXXX'O handle='XXXX'O handle='XXXX'O handle='XXXX'O handle='XXXX'O .
+        Click Yes if IUT have it, otherwise click No.
+
+        Description: Verify that
+        the Implementation Under Test (IUT) can respond Discover all
+        characteristics of a service.
+        """
+
+        return "Yes"
+
+    def MMI_CONFIRM_SERVICE_UUID(self, **kwargs):
+        """
+        Please confirm the following handles for GATT Service UUID = 0xXXXX.
+        Start Handle = 0xXXXX
+        End Handle = 0xXXXX
+        """
+
+        return "Yes"
+
+    def MMI_IUT_ENTER_HANDLE_INVALID(self, **kwargs):
+        """
+        Please input a handle(0x)(Range 0x0001-0xFFFF) that is known to be
+        invalid.
+
+        Description: Verify that the Implementation Under Test (IUT)
+        can issue an Invalid Handle Response.
+        """
+
+        return "FFFF"
+
+    def MMI_IUT_NO_SECURITY(self, **kwargs):
+        """
+        Please make sure IUT does not initiate security procedure.
+
+        Description:
+        PTS will delete bond information. Test case requires that no
+        authentication or authorization procedure has been performed between the
+        IUT and the test system.
+        """
+
+        return "OK"
+
+    def MMI_IUT_ENTER_UUID_READ_NOT_PERMITTED(self, **kwargs):
+        """
+        Enter UUID(0x) response with Read Not Permitted.
+
+        Description: Verify
+        that the Implementation Under Test (IUT) can respond Read Not Permitted.
+        """
+
+        self.last_added_service = self.gatt.RegisterService(
+            service=GattServiceParams(
+                uuid=CUSTOM_SERVICE_UUID,
+                characteristics=[
+                    GattCharacteristicParams(
+                        uuid=CUSTOM_CHARACTERISTIC_UUID,
+                        properties=AttProperties.PROPERTY_READ,
+                        permissions=AttPermissions.PERMISSION_NONE,
+                    ),
+                ],
+            ))
+        return CUSTOM_CHARACTERISTIC_UUID[4:8].upper()
+
+    def MMI_IUT_ENTER_HANDLE_READ_NOT_PERMITTED(self, **kwargs):
+        """
+        Please input a handle(0x)(Range 0x0001-0xFFFF) that doesn't permit
+        reading (i.e. Read Not Permitted)
+
+        Description: Verify that the
+        Implementation Under Test (IUT) can issue a Read Not Permitted Response.
+        """
+
+        return "{:04x}".format(self.last_added_service.service.characteristics[0].handle)
+
+    def MMI_IUT_ENTER_UUID_ATTRIBUTE_NOT_FOUND(self, **kwargs):
+        """
+        Enter UUID(0x) response with Attribute Not Found.
+
+        Description: Verify
+        that the Implementation Under Test (IUT) can respond Attribute Not
+        Found.
+        """
+
+        return CUSTOM_CHARACTERISTIC_UUID[4:8].upper()
+
+    def MMI_IUT_ENTER_UUID_INSUFFICIENT_AUTHENTICATION(self, **kwargs):
+        """
+        Enter UUID(0x) response with Insufficient Authentication.
+
+        Description:
+        Verify that the Implementation Under Test (IUT) can respond Insufficient
+        Authentication.
+        """
+
+        self.last_added_service = self.gatt.RegisterService(
+            service=GattServiceParams(
+                uuid=CUSTOM_SERVICE_UUID,
+                characteristics=[
+                    GattCharacteristicParams(
+                        uuid=CUSTOM_CHARACTERISTIC_UUID,
+                        properties=AttProperties.PROPERTY_READ,
+                        permissions=AttPermissions.PERMISSION_READ_ENCRYPTED,
+                    ),
+                ],
+            ))
+        return CUSTOM_CHARACTERISTIC_UUID[4:8].upper()
+
+    def MMI_IUT_ENTER_HANDLE_INSUFFICIENT_AUTHENTICATION(self, **kwargs):
+        """
+        Enter Handle(0x)(Range 0x0001-0xFFFF) response with Insufficient
+        Authentication.
+
+        Description: Verify that the Implementation Under Test
+        (IUT) can respond Insufficient Authentication.
+        """
+
+        return "{:04x}".format(self.last_added_service.service.characteristics[0].handle)
+
+    def MMI_IUT_ENTER_HANDLE_READ_NOT_PERMITTED(self, **kwargs):
+        """
+        Please input a handle(0x)(Range 0x0001-0xFFFF) that doesn't permit
+        reading (i.e. Read Not Permitted)
+
+        Description: Verify that the
+        Implementation Under Test (IUT) can issue a Read Not Permitted Response.
+        """
+
+        self.last_added_service = self.gatt.RegisterService(
+            service=GattServiceParams(
+                uuid=CUSTOM_SERVICE_UUID,
+                characteristics=[
+                    GattCharacteristicParams(
+                        uuid=CUSTOM_CHARACTERISTIC_UUID,
+                        properties=AttProperties.PROPERTY_READ,
+                        permissions=AttPermissions.PERMISSION_NONE,
+                    ),
+                ],
+            ))
+        return "{:04x}".format(self.last_added_service.service.characteristics[0].handle)
+
+    def MMI_IUT_CONFIRM_READ_MULTIPLE_HANDLE_VALUES(self, **kwargs):
+        """
+        Please confirm IUT Handle pair = 'XXXX'O 'XXXX'O
+        value='XXXXXXXXXXXXXXXXXXXXXXXXXXX in random selected
+        adopted database. Click Yes if it matches the IUT, otherwise click No.
+        Description: Verify that the Implementation Under Test (IUT) can send
+        Read multiple characteristics.
+        """
+
+        return "OK"
+
+    def MMI_IUT_ENTER_HANDLE_WRITE_NOT_PERMITTED(self, **kwargs):
+        """
+        Enter Handle(0x) response with Write Not Permitted.
+
+        Description:
+        Verify that the Implementation Under Test (IUT) can respond Write Not
+        Permitted.
+        """
+
+        self.last_added_service = self.gatt.RegisterService(
+            service=GattServiceParams(
+                uuid=CUSTOM_SERVICE_UUID,
+                characteristics=[
+                    GattCharacteristicParams(
+                        uuid=CUSTOM_CHARACTERISTIC_UUID,
+                        properties=AttProperties.PROPERTY_WRITE,
+                        permissions=AttPermissions.PERMISSION_NONE,
+                    ),
+                ],
+            ))
+        return "{:04x}".format(self.last_added_service.service.characteristics[0].handle)
 
 
 common_uuid = "0000XXXX-0000-1000-8000-00805f9b34fb"

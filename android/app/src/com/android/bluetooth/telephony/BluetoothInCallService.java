@@ -103,11 +103,17 @@ public class BluetoothInCallService extends InCallService {
     private BluetoothCall mOldHeldCall = null;
     private boolean mHeadsetUpdatedRecently = false;
     private boolean mIsDisconnectedTonePlaying = false;
-    private boolean mIsTerminatedByClient = false;
+
+    @VisibleForTesting
+    boolean mIsTerminatedByClient = false;
 
     private static final Object LOCK = new Object();
-    private BluetoothHeadsetProxy mBluetoothHeadset;
-    private BluetoothLeCallControlProxy mBluetoothLeCallControl;
+
+    @VisibleForTesting
+    BluetoothHeadsetProxy mBluetoothHeadset;
+
+    @VisibleForTesting
+    BluetoothLeCallControlProxy mBluetoothLeCallControl;
     private ExecutorService mExecutor;
 
     @VisibleForTesting
@@ -130,6 +136,8 @@ public class BluetoothInCallService extends InCallService {
     public CallInfo mCallInfo = new CallInfo();
 
     protected boolean mOnCreateCalled = false;
+
+    private int mMaxNumberOfCalls = 0;
 
     /**
      * Listens to connections and disconnections of bluetooth headsets.  We need to save the current
@@ -551,6 +559,9 @@ public class BluetoothInCallService extends InCallService {
             call.registerCallback(callback);
 
             mBluetoothCallHashMap.put(call.getId(), call);
+            if (!call.isConference()) {
+                mMaxNumberOfCalls = Integer.max(mMaxNumberOfCalls, mBluetoothCallHashMap.size());
+            }
             updateHeadsetWithCallState(false /* force */);
 
             BluetoothLeCall tbsCall = createTbsCall(call);
@@ -640,8 +651,8 @@ public class BluetoothInCallService extends InCallService {
         super.onCreate();
         BluetoothAdapter.getDefaultAdapter()
                 .getProfileProxy(this, mProfileListener, BluetoothProfile.HEADSET);
-        BluetoothAdapter.getDefaultAdapter().
-                getProfileProxy(this, mProfileListener, BluetoothProfile.LE_CALL_CONTROL);
+        BluetoothAdapter.getDefaultAdapter()
+                .getProfileProxy(this, mProfileListener, BluetoothProfile.LE_CALL_CONTROL);
         mBluetoothAdapterReceiver = new BluetoothAdapterReceiver();
         IntentFilter intentFilter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
         registerReceiver(mBluetoothAdapterReceiver, intentFilter);
@@ -656,7 +667,14 @@ public class BluetoothInCallService extends InCallService {
         super.onDestroy();
     }
 
-    private void clear() {
+    @Override
+    @VisibleForTesting
+    public void attachBaseContext(Context base) {
+        super.attachBaseContext(base);
+    }
+
+    @VisibleForTesting
+    void clear() {
         Log.d(TAG, "clear");
         if (mBluetoothAdapterReceiver != null) {
             unregisterReceiver(mBluetoothAdapterReceiver);
@@ -674,6 +692,7 @@ public class BluetoothInCallService extends InCallService {
         mCallbacks.clear();
         mBluetoothCallHashMap.clear();
         mClccIndexMap.clear();
+        mMaxNumberOfCalls = 0;
     }
 
     private static boolean isConferenceWithNoChildren(BluetoothCall call) {
@@ -831,15 +850,20 @@ public class BluetoothInCallService extends InCallService {
         if (mClccIndexMap.containsKey(key)) {
             return mClccIndexMap.get(key);
         }
-
-        int i = 1;  // Indexes for bluetooth clcc are 1-based.
-        while (mClccIndexMap.containsValue(i)) {
-            i++;
+        int index = 1; // Indexes for bluetooth clcc are 1-based.
+        if (call.isConference()) {
+            index = mMaxNumberOfCalls + 1; // The conference call should have a higher index
+            Log.i(TAG,
+                  "getIndexForCall for conference call starting from "
+                  + mMaxNumberOfCalls);
+        }
+        while (mClccIndexMap.containsValue(index)) {
+            index++;
         }
 
         // NOTE: Indexes are removed in {@link #onCallRemoved}.
-        mClccIndexMap.put(key, i);
-        return i;
+        mClccIndexMap.put(key, index);
+        return index;
     }
 
     private boolean _processChld(int chld) {
@@ -1339,7 +1363,8 @@ public class BluetoothInCallService extends InCallService {
         return null;
     }
 
-    private int getTbsTerminationReason(BluetoothCall call) {
+    @VisibleForTesting
+    int getTbsTerminationReason(BluetoothCall call) {
         DisconnectCause cause = call.getDisconnectCause();
         if (cause == null) {
             Log.w(TAG, " termination cause is null");

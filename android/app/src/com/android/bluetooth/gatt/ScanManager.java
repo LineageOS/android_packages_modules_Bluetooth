@@ -282,6 +282,9 @@ public class ScanManager {
         if (client == null) {
             client = mScanNative.getRegularScanClient(scannerId);
         }
+        if (client == null) {
+            client = mScanNative.getSuspendedScanClient(scannerId);
+        }
         sendMessage(MSG_STOP_BLE_SCAN, client);
     }
 
@@ -1127,6 +1130,15 @@ public class ScanManager {
             return null;
         }
 
+        ScanClient getSuspendedScanClient(int scannerId) {
+            for (ScanClient client : mSuspendedScanClients) {
+                if (client.scannerId == scannerId) {
+                    return client;
+                }
+            }
+            return null;
+        }
+
         void stopBatchScan(ScanClient client) {
             mBatchClients.remove(client);
             removeScanFilters(client.scannerId);
@@ -1325,11 +1337,12 @@ public class ScanManager {
         private void initFilterIndexStack() {
             int maxFiltersSupported =
                     AdapterService.getAdapterService().getNumOfOffloadedScanFilterSupported();
-            // Start from index 3 as:
+            // Start from index 4 as:
             // index 0 is reserved for ALL_PASS filter in Settings app.
             // index 1 is reserved for ALL_PASS filter for regular scan apps.
             // index 2 is reserved for ALL_PASS filter for batch scan apps.
-            for (int i = 3; i < maxFiltersSupported; ++i) {
+            // index 3 is reserved for BAP/CAP Announcements
+            for (int i = 4; i < maxFiltersSupported; ++i) {
                 mFilterIndexStack.add(i);
             }
         }
