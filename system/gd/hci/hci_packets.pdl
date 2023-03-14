@@ -94,7 +94,7 @@ packet Acl {
 enum PacketStatusFlag : 2 {
   CORRECTLY_RECEIVED = 0,
   POSSIBLY_INCOMPLETE = 1,
-  NO_DATA = 2,
+  NO_DATA_RECEIVED = 2,
   PARTIALLY_LOST = 3,
 }
 
@@ -243,6 +243,7 @@ enum OpCode : 16 {
   READ_LOCAL_OOB_EXTENDED_DATA = 0x0C7D,
   SET_ECOSYSTEM_BASE_INTERVAL = 0x0C82,
   CONFIGURE_DATA_PATH = 0x0C83,
+  SET_MIN_ENCRYPTION_KEY_SIZE = 0x0C84,
 
   // INFORMATIONAL_PARAMETERS
   READ_LOCAL_VERSION_INFORMATION = 0x1001,
@@ -381,6 +382,9 @@ enum OpCode : 16 {
   LE_SET_PATH_LOSS_REPORTING_PARAMETERS = 0x2078,
   LE_SET_PATH_LOSS_REPORTING_ENABLE = 0x2079,
   LE_SET_TRANSMIT_POWER_REPORTING_ENABLE = 0x207A,
+  LE_SET_DATA_RELATED_ADDRESS_CHANGES = 0x207C,
+  LE_SET_DEFAULT_SUBRATE = 0x207D,
+  LE_SUBRATE_REQUEST = 0x207E,
 
   // VENDOR_SPECIFIC
   LE_GET_VENDOR_CAPABILITIES = 0xFD53,
@@ -649,6 +653,10 @@ enum OpCodeIndex : 16 {
   READ_LOCAL_SUPPORTED_CODEC_CAPABILITIES = 453,
   READ_LOCAL_SUPPORTED_CONTROLLER_DELAY = 454,
   CONFIGURE_DATA_PATH = 455,
+  LE_SET_DATA_RELATED_ADDRESS_CHANGES = 456,
+  SET_MIN_ENCRYPTION_KEY_SIZE = 457,
+  LE_SET_DEFAULT_SUBRATE = 460,
+  LE_SUBRATE_REQUEST = 461,
 }
 
 packet Command {
@@ -772,11 +780,13 @@ enum SubeventCode : 8 {
   PATH_LOSS_THRESHOLD = 0x20,
   TRANSMIT_POWER_REPORTING = 0x21,
   BIG_INFO_ADVERTISING_REPORT = 0x22,
+  LE_SUBRATE_CHANGE = 0x23,
 }
 
 // Vendor specific events
 enum VseSubeventCode : 8 {
   BLE_THRESHOLD = 0x54,
+  BLE_STCHANGE = 0x55,
   BLE_TRACKING = 0x56,
   DEBUG_INFO = 0x57,
   BQR_EVENT = 0x58,
@@ -829,6 +839,7 @@ enum ErrorCode: 8 {
   LINK_LAYER_COLLISION = 0x23,
   ENCRYPTION_MODE_NOT_ACCEPTABLE = 0x25,
   ROLE_SWITCH_FAILED = 0x35,
+  HOST_BUSY = 0x38,
   CONTROLLER_BUSY = 0x3A,
   ADVERTISING_TIMEOUT = 0x3C,
   CONNECTION_FAILED_ESTABLISHMENT = 0x3E,
@@ -2419,6 +2430,14 @@ packet SendKeypressNotificationComplete : CommandComplete (command_op_code = SEN
   bd_addr : Address,
 }
 
+packet SetEventMaskPage2 : Command (op_code = SET_EVENT_MASK_PAGE_2) {
+  event_mask_page_2: 64,
+}
+
+packet SetEventMaskPage2Complete : CommandComplete (command_op_code = SET_EVENT_MASK_PAGE_2) {
+  status: ErrorCode,
+}
+
 packet ReadLeHostSupport : Command (op_code = READ_LE_HOST_SUPPORT) {
 }
 
@@ -2501,6 +2520,14 @@ packet ConfigureDataPath : Command (op_code = CONFIGURE_DATA_PATH) {
 }
 
 packet ConfigureDataPathComplete : CommandComplete (command_op_code = CONFIGURE_DATA_PATH) {
+  status : ErrorCode,
+}
+
+packet SetMinEncryptionKeySize : Command (op_code = SET_MIN_ENCRYPTION_KEY_SIZE) {
+  min_encryption_key_size : 8,
+}
+
+packet SetMinEncryptionKeySizeComplete : CommandComplete (command_op_code = SET_MIN_ENCRYPTION_KEY_SIZE) {
   status : ErrorCode,
 }
 
@@ -4409,7 +4436,7 @@ packet LeCreateBig : LeIsoCommand (op_code = LE_CREATE_BIG) {
   packing : Packing,
   framing : Enable,
   encryption : Enable,
-  broadcast_code: 16[],
+  broadcast_code: 8[16],
 }
 
 packet LeCreateBigStatus : CommandStatus (command_op_code = LE_CREATE_BIG) {
@@ -4428,7 +4455,7 @@ packet LeBigCreateSync : LeIsoCommand (op_code = LE_BIG_CREATE_SYNC) {
   sync_handle : 12,
   _reserved_ : 4,
   encryption : Enable,
-  broadcast_code : 16[],
+  broadcast_code : 8[16],
   mse : 5,
   _reserved_ : 3,
   big_sync_timeout : 16,
@@ -4593,6 +4620,50 @@ packet LeSetTransmitPowerReportingEnableComplete : CommandComplete (command_op_c
   status : ErrorCode,
   connection_handle : 12,
   _reserved_ : 4,
+}
+
+packet LeSetDataRelatedAddressChanges : Command (op_code = LE_SET_DATA_RELATED_ADDRESS_CHANGES) {
+  advertising_handle : 8,
+  change_reasons : 8,
+}
+
+packet LeSetDataRelatedAddressChangesComplete : CommandComplete (command_op_code = LE_SET_DATA_RELATED_ADDRESS_CHANGES) {
+  status : ErrorCode,
+}
+
+packet LeSetDefaultSubrate : Command (op_code = LE_SET_DEFAULT_SUBRATE) {
+  subrate_min : 9,
+  _reserved_ : 7,
+  subrate_max : 9,
+  _reserved_ : 7,
+  max_latency : 9,
+  _reserved_ : 7,
+  continuation_number : 9,
+  _reserved_ : 7,
+  supervision_timeout: 12,
+  _reserved_ : 4,
+}
+
+packet LeSetDefaultSubrateComplete : CommandComplete (command_op_code = LE_SET_DEFAULT_SUBRATE) {
+  status : ErrorCode,
+}
+
+packet LeSubrateRequest : Command (op_code = LE_SUBRATE_REQUEST) {
+  connection_handle : 12,
+  _reserved_ : 4,
+  subrate_min : 9,
+  _reserved_ : 7,
+  subrate_max : 9,
+  _reserved_ : 7,
+  max_latency : 9,
+  _reserved_ : 7,
+  continuation_number : 9,
+  _reserved_ : 7,
+  supervision_timeout: 12,
+  _reserved_ : 4,
+}
+
+packet LeSubrateRequestStatus : CommandStatus (command_op_code = LE_SUBRATE_REQUEST) {
 }
 
   // VENDOR_SPECIFIC
@@ -4839,7 +4910,9 @@ enum ApcfOpcode : 8 {
   LOCAL_NAME = 0x05,
   MANUFACTURER_DATA = 0x06,
   SERVICE_DATA = 0x07,
-  AD_TYPE = 0x08,
+  RESERVED = 0x08,
+  AD_TYPE = 0x09,
+  READ_EXTENDED_FEATURES = 0xFF,
 }
 
 // https://source.android.com/devices/bluetooth/hci_requirements#advertising-packet-content-filter
@@ -4883,7 +4956,8 @@ enum ApcfFilterType : 8 {
   LOCAL_NAME = 0x04,
   MANUFACTURER_DATA = 0x05,
   SERVICE_DATA = 0x06,
-  AD_TYPE = 0x07,
+  RESERVED = 0x07,
+  AD_TYPE = 0x08,
 }
 
 packet LeAdvFilterSetFilteringParameters : LeAdvFilter (apcf_opcode = SET_FILTERING_PARAMETERS) {
@@ -5005,6 +5079,23 @@ packet LeAdvFilterADType : LeAdvFilter (apcf_opcode = AD_TYPE) {
 packet LeAdvFilterADTypeComplete : LeAdvFilterComplete (apcf_opcode = AD_TYPE) {
   apcf_action : ApcfAction,
   apcf_available_spaces : 8,
+}
+
+packet LeAdvFilterReadExtendedFeatures : LeAdvFilter (apcf_opcode = READ_EXTENDED_FEATURES) {
+}
+
+test LeAdvFilterReadExtendedFeatures {
+  "\x57\xfd\x01\xff",
+}
+
+packet LeAdvFilterReadExtendedFeaturesComplete : LeAdvFilterComplete (apcf_opcode = READ_EXTENDED_FEATURES) {
+  _reserved_ : 1,
+  ad_type_filter : 1,
+  _reserved_ : 14,
+}
+
+test LeAdvFilterReadExtendedFeaturesComplete {
+  "\x0e\x07\x01\x57\xfd\x00\xff\x02\x00",
 }
 
 packet LeEnergyInfo : VendorCommand (op_code = LE_ENERGY_INFO) {
@@ -5416,6 +5507,23 @@ packet ExtendedInquiryResult : Event (event_code = EXTENDED_INQUIRY_RESULT) {
   _padding_[240],
 }
 
+packet ExtendedInquiryResultRaw : Event (event_code = EXTENDED_INQUIRY_RESULT) {
+  _fixed_ = 0x01 : 8,
+  address : Address,
+  page_scan_repetition_mode : PageScanRepetitionMode,
+  _reserved_ : 8,
+  class_of_device : ClassOfDevice,
+  clock_offset : 15,
+  _reserved_ : 1,
+  rssi : 8,
+  extended_inquiry_response : 8[],
+  // Extended inquiry Result is always 255 bytes long
+  // padded GapData with zeroes as necessary
+  // Refer to BLUETOOTH CORE SPECIFICATION Version 5.2 | Vol 3, Part C Section 8 on page 1340
+  _padding_[240],
+}
+
+
 packet EncryptionKeyRefreshComplete : Event (event_code = ENCRYPTION_KEY_REFRESH_COMPLETE) {
   status : ErrorCode,
   connection_handle : 12,
@@ -5632,7 +5740,7 @@ enum DirectAdvertisingAddressType : 8 {
   PUBLIC_IDENTITY_ADDRESS = 0x02,
   RANDOM_IDENTITY_ADDRESS = 0x03,
   CONTROLLER_UNABLE_TO_RESOLVE = 0xFE,
-  NO_ADDRESS = 0xFF,
+  NO_ADDRESS_PROVIDED = 0xFF,
 }
 
 enum DirectAdvertisingEventType : 8 {
@@ -5937,6 +6045,20 @@ packet LeBigInfoAdvertisingReport : LeMetaEvent (subevent_code = BIG_INFO_ADVERT
   encryption : Enable,
 }
 
+packet LeSubrateChange : LeMetaEvent (subevent_code = LE_SUBRATE_CHANGE) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+  subrate_factor : 9,
+  _reserved_ : 7,
+  peripheral_latency : 9,
+  _reserved_ : 7,
+  continuation_number : 9,
+  _reserved_ : 7,
+  supervision_timeout: 12,
+  _reserved_ : 4,
+}
+
 // Vendor specific events
 
 packet VendorSpecificEvent : Event (event_code = VENDOR_SPECIFIC) {
@@ -5959,6 +6081,17 @@ packet LEAdvertisementTrackingEvent : VendorSpecificEvent (subevent_code = BLE_T
   advertiser_address : Address,
   advertiser_address_type : 8,
   _body_,
+}
+
+enum VseStateChangeReason : 8 {
+  CONNECTION_RECEIVED = 0x00,
+}
+
+packet LEAdvertiseStateChangeEvent : VendorSpecificEvent (subevent_code = BLE_STCHANGE) {
+  advertising_instance : 8,
+  state_change_reason : VseStateChangeReason,
+  connection_handle : 12,
+  _reserved_ : 4,
 }
 
 packet LEAdvertisementTrackingWithInfoEvent : LEAdvertisementTrackingEvent {

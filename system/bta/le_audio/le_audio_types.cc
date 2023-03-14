@@ -24,11 +24,12 @@
 
 #include <base/strings/string_number_conversions.h>
 
+#include "audio_hal_client/audio_hal_client.h"
 #include "bt_types.h"
 #include "bta_api.h"
 #include "bta_le_audio_api.h"
-#include "client_audio.h"
 #include "client_parser.h"
+#include "gd/common/strings.h"
 
 namespace le_audio {
 using types::acs_ac_record;
@@ -69,124 +70,154 @@ static uint8_t min_req_devices_cnt(
   return curr_min_req_devices_cnt;
 }
 
-void get_cis_count(const AudioSetConfigurations* audio_set_confs,
-                   types::LeAudioConfigurationStrategy strategy,
-                   int group_ase_snk_cnt, int group_ase_src_count,
-                   uint8_t* cis_count_bidir, uint8_t* cis_count_unidir_sink,
-                   uint8_t* cis_count_unidir_source) {
-  LOG_INFO(" strategy %d, sink ases: %d, source ases %d",
-           static_cast<int>(strategy), group_ase_snk_cnt, group_ase_src_count);
+inline void get_cis_count(const AudioSetConfiguration& audio_set_conf,
+                          int expected_device_cnt,
+                          types::LeAudioConfigurationStrategy strategy,
+                          int avail_group_sink_ase_count,
+                          int avail_group_source_ase_count,
+                          uint8_t& out_current_cis_count_bidir,
+                          uint8_t& out_current_cis_count_unidir_sink,
+                          uint8_t& out_current_cis_count_unidir_source) {
+  LOG_INFO("%s", audio_set_conf.name.c_str());
 
-  for (auto audio_set_conf : *audio_set_confs) {
-    std::pair<uint8_t /* sink */, uint8_t /* source */> snk_src_pair(0, 0);
-    uint8_t bidir_count = 0;
-    uint8_t unidir_sink_count = 0;
-    uint8_t unidir_source_count = 0;
+  /* Sum up the requirements from all subconfigs. They usually have different
+   * directions.
+   */
+  types::BidirectionalPair<uint8_t> config_ase_count = {0, 0};
+  int config_device_cnt = 0;
 
-    LOG_INFO("%s ", audio_set_conf->name.c_str());
-    bool stategy_mismatch = false;
-    for (auto ent : (*audio_set_conf).confs) {
-      if (ent.strategy != strategy) {
-        LOG_DEBUG("Strategy does not match (%d != %d)- skip this configuration",
-                  static_cast<int>(ent.strategy), static_cast<int>(strategy));
-        stategy_mismatch = true;
-        break;
-      }
-      if (ent.direction == kLeAudioDirectionSink) {
-        snk_src_pair.first += ent.ase_cnt;
-      }
-      if (ent.direction == kLeAudioDirectionSource) {
-        snk_src_pair.second += ent.ase_cnt;
-      }
+  for (auto ent : audio_set_conf.confs) {
+    if ((ent.direction == kLeAudioDirectionSink) &&
+        (ent.strategy != strategy)) {
+      LOG_DEBUG("Strategy does not match (%d != %d)- skip this configuration",
+                static_cast<int>(ent.strategy), static_cast<int>(strategy));
+      return;
     }
 
-    if (stategy_mismatch) {
-      continue;
+    /* Sum up sink and source ases */
+    if (ent.direction == kLeAudioDirectionSink) {
+      config_ase_count.sink += ent.ase_cnt;
+    }
+    if (ent.direction == kLeAudioDirectionSource) {
+      config_ase_count.source += ent.ase_cnt;
     }
 
-    /* Before we start adding another CISes, ignore scenarios which cannot
-     * satisfied because of the number of ases
-     */
+    /* Calculate the max device count */
+    config_device_cnt =
+        std::max(static_cast<uint8_t>(config_device_cnt), ent.device_cnt);
+  }
 
-    if (group_ase_snk_cnt == 0 && snk_src_pair.first > 0) {
-      LOG_DEBUG("Group does not have sink ASEs");
-      continue;
+  LOG_DEBUG("Config sink ases: %d, source ases: %d, device count: %d",
+            config_ase_count.sink, config_ase_count.source, config_device_cnt);
+
+  /* Reject configurations not matching our device count */
+  if (expected_device_cnt != config_device_cnt) {
+    LOG_DEBUG(" Device cnt %d != %d", expected_device_cnt, config_device_cnt);
+    return;
+  }
+
+  /* Reject configurations requiring sink ASES if our group has none */
+  if ((avail_group_sink_ase_count == 0) && (config_ase_count.sink > 0)) {
+    LOG_DEBUG("Group does not have sink ASEs");
+    return;
+  }
+
+  /* Reject configurations requiring source ASES if our group has none */
+  if ((avail_group_source_ase_count == 0) && (config_ase_count.source > 0)) {
+    LOG_DEBUG("Group does not have source ASEs");
+    return;
+  }
+
+  /* If expected group size is 1, then make sure device has enough ASEs */
+  if (expected_device_cnt == 1) {
+    if ((config_ase_count.sink > avail_group_sink_ase_count) ||
+        (config_ase_count.source > avail_group_source_ase_count)) {
+      LOG_DEBUG("Single device group with not enought sink/source ASEs");
+      return;
     }
+  }
 
-    if (group_ase_src_count == 0 && snk_src_pair.second > 0) {
-      LOG_DEBUG("Group does not have source ASEs");
-      continue;
-    }
-
-    /* Configuration list is set in the prioritized order.
-     * it might happen that more prio configuration can be supported
-     * and is already taken into account.
-     * Now let's try to ignore ortogonal configuration which would just
-     * increase our demant on number of CISes but will never happen
-     */
-
-    if (snk_src_pair.first == 0 &&
-        (*cis_count_unidir_sink > 0 || *cis_count_bidir > 0)) {
-      LOG_DEBUG(
-          "More prio configuration using sink ASEs has been taken into "
-          "account");
-      continue;
-    }
-    if (snk_src_pair.second == 0 &&
-        (*cis_count_unidir_source > 0 || *cis_count_bidir > 0)) {
-      LOG_DEBUG(
-          "More prio configuration using source ASEs has been taken into "
-          "account");
-      continue;
-    }
-
-    bidir_count = std::min(snk_src_pair.first, snk_src_pair.second);
-    unidir_sink_count = ((snk_src_pair.first - bidir_count) > 0)
-                            ? (snk_src_pair.first - bidir_count)
-                            : 0;
-    unidir_source_count = ((snk_src_pair.second - bidir_count) > 0)
-                              ? (snk_src_pair.second - bidir_count)
-                              : 0;
-
-    *cis_count_bidir = std::max(bidir_count, *cis_count_bidir);
-
-    /* Check if we can reduce a number of unicast CISes in case bidirectional
-     * are use in other or this scenario */
-    if (bidir_count < *cis_count_bidir) {
-      /* Since we already have bidirectional cises available from other
-       * scenarios, let's decrease number of unicast sinks in this scenario.
-       */
-      uint8_t available_bidir = *cis_count_bidir - bidir_count;
-      unidir_sink_count =
-          unidir_sink_count - std::min(unidir_sink_count, available_bidir);
-      unidir_source_count =
-          unidir_source_count - std::min(unidir_source_count, available_bidir);
-    } else if (bidir_count > *cis_count_bidir) {
-      /* Lets decrease number of the unicast cises from previouse scenarios */
-      uint8_t available_bidir = bidir_count - *cis_count_bidir;
-      *cis_count_unidir_sink =
-          *cis_count_unidir_sink -
-          std::min(*cis_count_unidir_sink, available_bidir);
-      *cis_count_unidir_source =
-          *cis_count_unidir_source -
-          std::min(*cis_count_unidir_source, available_bidir);
-    }
-
-    *cis_count_unidir_sink =
-        std::max(unidir_sink_count, *cis_count_unidir_sink);
-    *cis_count_unidir_source =
-        std::max(unidir_source_count, *cis_count_unidir_source);
-
+  /* Configuration list is set in the prioritized order.
+   * it might happen that a higher prio configuration can be supported
+   * and is already taken into account (out_current_cis_count_* is non zero).
+   * Now let's try to ignore ortogonal configuration which would just
+   * increase our demant on number of CISes but will never happen
+   */
+  if (config_ase_count.sink == 0 && (out_current_cis_count_unidir_sink > 0 ||
+                                     out_current_cis_count_bidir > 0)) {
     LOG_INFO(
+        "Higher prio configuration using sink ASEs has been taken into "
+        "account");
+    return;
+  }
+
+  if (config_ase_count.source == 0 &&
+      (out_current_cis_count_unidir_source > 0 ||
+       out_current_cis_count_bidir > 0)) {
+    LOG_INFO(
+        "Higher prio configuration using source ASEs has been taken into "
+        "account");
+    return;
+  }
+
+  /* Check how many bidirectional cises we can use */
+  uint8_t config_bidir_cis_count =
+      std::min(config_ase_count.sink, config_ase_count.source);
+  /* Count the remaining unidirectional cises */
+  uint8_t config_unidir_sink_cis_count =
+      config_ase_count.sink - config_bidir_cis_count;
+  uint8_t config_unidir_source_cis_count =
+      config_ase_count.source - config_bidir_cis_count;
+
+  /* WARNING: Minipolicy which prioritizes bidirectional configs */
+  if (config_bidir_cis_count > out_current_cis_count_bidir) {
+    /* Correct all counters to represent this single config */
+    out_current_cis_count_bidir = config_bidir_cis_count;
+    out_current_cis_count_unidir_sink = config_unidir_sink_cis_count;
+    out_current_cis_count_unidir_source = config_unidir_source_cis_count;
+
+  } else if (out_current_cis_count_bidir == 0) {
+    /* No bidirectionals possible yet. Calculate for unidirectional cises. */
+    if ((out_current_cis_count_unidir_sink == 0) &&
+        (out_current_cis_count_unidir_source == 0)) {
+      out_current_cis_count_unidir_sink = config_unidir_sink_cis_count;
+      out_current_cis_count_unidir_source = config_unidir_source_cis_count;
+    }
+  }
+}
+
+void get_cis_count(const AudioSetConfigurations& audio_set_confs,
+                   int expected_device_cnt,
+                   types::LeAudioConfigurationStrategy strategy,
+                   int avail_group_ase_snk_cnt, int avail_group_ase_src_count,
+                   uint8_t& out_cis_count_bidir,
+                   uint8_t& out_cis_count_unidir_sink,
+                   uint8_t& out_cis_count_unidir_source) {
+  LOG_INFO(
+      " strategy %d, group avail sink ases: %d, group avail source ases %d "
+      "expected_device_count %d",
+      static_cast<int>(strategy), avail_group_ase_snk_cnt,
+      avail_group_ase_src_count, expected_device_cnt);
+
+  /* Look for the most optimal configuration and store the needed cis counts */
+  for (auto audio_set_conf : audio_set_confs) {
+    get_cis_count(*audio_set_conf, expected_device_cnt, strategy,
+                  avail_group_ase_snk_cnt, avail_group_ase_src_count,
+                  out_cis_count_bidir, out_cis_count_unidir_sink,
+                  out_cis_count_unidir_source);
+
+    LOG_DEBUG(
         "Intermediate step:  Bi-Directional: %d,"
         " Uni-Directional Sink: %d, Uni-Directional Source: %d ",
-        *cis_count_bidir, *cis_count_unidir_sink, *cis_count_unidir_source);
+        out_cis_count_bidir, out_cis_count_unidir_sink,
+        out_cis_count_unidir_source);
   }
 
   LOG_INFO(
       " Maximum CIS count, Bi-Directional: %d,"
       " Uni-Directional Sink: %d, Uni-Directional Source: %d",
-      *cis_count_bidir, *cis_count_unidir_sink, *cis_count_unidir_source);
+      out_cis_count_bidir, out_cis_count_unidir_sink,
+      out_cis_count_unidir_source);
 }
 
 bool check_if_may_cover_scenario(const AudioSetConfigurations* audio_set_confs,
@@ -546,8 +577,7 @@ void AppendMetadataLtvEntryForStreamingContext(
                       types::kLeAudioMetadataStreamingAudioContextLen);
   UINT8_TO_STREAM(streaming_context_ltv_entry_buf,
                   types::kLeAudioMetadataTypeStreamingAudioContext);
-  UINT16_TO_STREAM(streaming_context_ltv_entry_buf,
-                   static_cast<uint16_t>(context_type.to_ulong()));
+  UINT16_TO_STREAM(streaming_context_ltv_entry_buf, context_type.value());
 
   metadata.insert(metadata.end(), streaming_context_ltv_entry.begin(),
                   streaming_context_ltv_entry.end());
@@ -578,6 +608,17 @@ uint32_t AdjustAllocationForOffloader(uint32_t allocation) {
 }
 
 namespace types {
+std::ostream& operator<<(std::ostream& os,
+                         const AudioStreamDataPathState& state) {
+  static const char* char_value_[6] = {
+      "IDLE",        "CIS_DISCONNECTING", "CIS_ASSIGNED",
+      "CIS_PENDING", "CIS_ESTABLISHED",   "DATA_PATH_ESTABLISHED"};
+
+  os << char_value_[static_cast<uint8_t>(state)] << " ("
+     << "0x" << std::setfill('0') << std::setw(2) << static_cast<int>(state)
+     << ")";
+  return os;
+}
 std::ostream& operator<<(std::ostream& os, const types::CigState& state) {
   static const char* char_value_[5] = {"NONE", "CREATING", "CREATED",
                                        "REMOVING", "RECOVERING"};
@@ -643,6 +684,9 @@ std::ostream& operator<<(std::ostream& os, const LeAudioContextType& context) {
     case LeAudioContextType::RINGTONE:
       os << "RINGTONE";
       break;
+    case LeAudioContextType::ALERTS:
+      os << "ALERTS";
+      break;
     case LeAudioContextType::EMERGENCYALARM:
       os << "EMERGENCYALARM";
       break;
@@ -652,5 +696,50 @@ std::ostream& operator<<(std::ostream& os, const LeAudioContextType& context) {
   }
   return os;
 }
+
+AudioContexts operator|(std::underlying_type<LeAudioContextType>::type lhs,
+                        const LeAudioContextType rhs) {
+  using T = std::underlying_type<LeAudioContextType>::type;
+  return AudioContexts(lhs | static_cast<T>(rhs));
+}
+
+AudioContexts& operator|=(AudioContexts& lhs, AudioContexts const& rhs) {
+  lhs = AudioContexts(lhs.value() | rhs.value());
+  return lhs;
+}
+
+AudioContexts& operator&=(AudioContexts& lhs, AudioContexts const& rhs) {
+  lhs = AudioContexts(lhs.value() & rhs.value());
+  return lhs;
+}
+
+std::string ToHexString(const LeAudioContextType& value) {
+  using T = std::underlying_type<LeAudioContextType>::type;
+  return bluetooth::common::ToHexString(static_cast<T>(value));
+}
+
+std::string AudioContexts::to_string() const {
+  std::stringstream s;
+  for (auto ctx : le_audio::types::kLeAudioContextAllTypesArray) {
+    if (test(ctx)) {
+      if (s.tellp() != 0) s << " | ";
+      s << ctx;
+    }
+  }
+  s << " (" << bluetooth::common::ToHexString(mValue) << ")";
+  return s.str();
+}
+
+std::ostream& operator<<(std::ostream& os, const AudioContexts& contexts) {
+  os << contexts.to_string();
+  return os;
+}
+
+/* Bidirectional getter trait for AudioContexts bidirectional pair */
+template <>
+AudioContexts get_bidirectional(BidirectionalPair<AudioContexts> p) {
+  return p.sink | p.source;
+}
+
 }  // namespace types
 }  // namespace le_audio

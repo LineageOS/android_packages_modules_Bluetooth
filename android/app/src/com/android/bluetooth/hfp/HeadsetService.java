@@ -23,6 +23,7 @@ import static com.android.bluetooth.Utils.enforceBluetoothPrivilegedPermission;
 
 import android.annotation.Nullable;
 import android.annotation.RequiresPermission;
+import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHeadset;
 import android.bluetooth.BluetoothProfile;
@@ -462,7 +463,8 @@ public class HeadsetService extends ProfileService {
     /**
      * Handlers for incoming service calls
      */
-    private static class BluetoothHeadsetBinder extends IBluetoothHeadset.Stub
+    @VisibleForTesting
+    static class BluetoothHeadsetBinder extends IBluetoothHeadset.Stub
             implements IProfileServiceBinder {
         private volatile HeadsetService mService;
 
@@ -477,7 +479,10 @@ public class HeadsetService extends ProfileService {
 
         @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
         private HeadsetService getService(AttributionSource source) {
-            if (!Utils.checkCallerIsSystemOrActiveUser(TAG)
+            if (Utils.isInstrumentationTestMode()) {
+                return mService;
+            }
+            if (!Utils.checkCallerIsSystemOrActiveOrManagedUser(mService, TAG)
                     || !Utils.checkServiceAvailable(mService, TAG)
                     || !Utils.checkConnectPermissionForDataDelivery(mService, source, TAG)) {
                 return null;
@@ -1927,7 +1932,12 @@ public class HeadsetService extends ProfileService {
         return true;
     }
 
-    boolean isInbandRingingEnabled() {
+    /**
+     * Checks if headset devices are able to get inband ringing.
+     *
+     * @return True if inband ringing is enabled.
+     */
+    public boolean isInbandRingingEnabled() {
         boolean isInbandRingingSupported = getResources().getBoolean(
                 com.android.bluetooth.R.bool.config_bluetooth_hfp_inband_ringing_support);
         return isInbandRingingSupported && !SystemProperties.getBoolean(
@@ -2176,11 +2186,33 @@ public class HeadsetService extends ProfileService {
     /**
      * Retrieves the most recently connected device in the A2DP connected devices list.
      */
-    private BluetoothDevice getFallbackDevice() {
+    public BluetoothDevice getFallbackDevice() {
         DatabaseManager dbManager = mAdapterService.getDatabase();
         return dbManager != null ? dbManager
-            .getMostRecentlyConnectedDevicesInList(getConnectedDevices())
+            .getMostRecentlyConnectedDevicesInList(getFallbackCandidates(dbManager))
             : null;
+    }
+
+    @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
+    List<BluetoothDevice> getFallbackCandidates(DatabaseManager dbManager) {
+        List<BluetoothDevice> fallbackCandidates = getConnectedDevices();
+        List<BluetoothDevice> uninterestedCandidates = new ArrayList<>();
+        for (BluetoothDevice device : fallbackCandidates) {
+            byte[] deviceType = dbManager.getCustomMeta(device,
+                    BluetoothDevice.METADATA_DEVICE_TYPE);
+            BluetoothClass deviceClass = device.getBluetoothClass();
+            if ((deviceClass != null
+                    && deviceClass.getMajorDeviceClass()
+                    == BluetoothClass.Device.WEARABLE_WRIST_WATCH)
+                    || (deviceType != null
+                    && BluetoothDevice.DEVICE_TYPE_WATCH.equals(new String(deviceType)))) {
+                uninterestedCandidates.add(device);
+            }
+        }
+        for (BluetoothDevice device : uninterestedCandidates) {
+            fallbackCandidates.remove(device);
+        }
+        return fallbackCandidates;
     }
 
     @Override

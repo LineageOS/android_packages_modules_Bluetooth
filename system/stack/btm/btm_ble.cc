@@ -991,10 +991,17 @@ tL2CAP_LE_RESULT_CODE btm_ble_start_sec_check(const RawAddress& bd_addr,
   }
 
   if (ble_sec_act == BTM_BLE_SEC_NONE) {
-    return result;
+    if (bluetooth::common::init_flags::queue_l2cap_coc_while_encrypting_is_enabled()) {
+      if (sec_act != BTM_SEC_ENC_PENDING) {
+        return result;
+      }
+    } else {
+      return result;
+    }
+  } else {
+    l2cble_update_sec_act(bd_addr, sec_act);
   }
 
-  l2cble_update_sec_act(bd_addr, sec_act);
   BTM_SetEncryption(bd_addr, BT_TRANSPORT_LE, p_callback, p_ref_data,
                     ble_sec_act);
 
@@ -1820,7 +1827,6 @@ tBTM_STATUS btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr,
           p_dev_rec = btm_find_dev(bd_addr);
           if (p_dev_rec == NULL) {
             BTM_TRACE_ERROR("%s: p_dev_rec is NULL", __func__);
-            android_errorWriteLog(0x534e4554, "120612744");
             return BTM_SUCCESS;
           }
           BTM_TRACE_DEBUG(

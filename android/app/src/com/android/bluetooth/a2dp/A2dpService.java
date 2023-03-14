@@ -1292,7 +1292,7 @@ public class A2dpService extends ProfileService {
     /**
      * Retrieves the most recently connected device in the A2DP connected devices list.
      */
-    private BluetoothDevice getFallbackDevice() {
+    public BluetoothDevice getFallbackDevice() {
         DatabaseManager dbManager = mAdapterService.getDatabase();
         return dbManager != null ? dbManager
             .getMostRecentlyConnectedDevicesInList(getConnectedDevices())
@@ -1309,8 +1309,11 @@ public class A2dpService extends ProfileService {
 
         @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
         private A2dpService getService(AttributionSource source) {
-            if (!Utils.checkCallerIsSystemOrActiveUser(TAG)
-                    || !Utils.checkServiceAvailable(mService, TAG)
+            if (Utils.isInstrumentationTestMode()) {
+                return mService;
+            }
+            if (!Utils.checkServiceAvailable(mService, TAG)
+                    || !Utils.checkCallerIsSystemOrActiveOrManagedUser(mService, TAG)
                     || !Utils.checkConnectPermissionForDataDelivery(mService, source, TAG)) {
                 return null;
             }

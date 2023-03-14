@@ -111,6 +111,13 @@ struct eatt_impl {
   }
 
   void remove_channel_by_cid(eatt_device* eatt_dev, uint16_t lcid) {
+    auto channel = eatt_dev->eatt_channels[lcid];
+    if (!channel->cl_cmd_q_.empty()) {
+      LOG_WARN("Channel %c, for device %s is not empty on disconnection.", lcid,
+               channel->bda_.ToString().c_str());
+      channel->cl_cmd_q_.clear();
+    }
+
     eatt_dev->eatt_channels.erase(lcid);
 
     if (eatt_dev->eatt_channels.size() == 0) eatt_dev->eatt_tcb_ = NULL;
@@ -709,7 +716,10 @@ struct eatt_impl {
     auto iter = find_if(
         eatt_dev->eatt_channels.begin(), eatt_dev->eatt_channels.end(),
         [](const std::pair<uint16_t, std::shared_ptr<EattChannel>>& el) {
-          return !el.second->cl_cmd_q_.empty();
+          if (el.second->cl_cmd_q_.empty()) return false;
+
+          tGATT_CMD_Q& cmd = el.second->cl_cmd_q_.front();
+          return cmd.to_send;
         });
     return (iter != eatt_dev->eatt_channels.end());
   }
@@ -721,7 +731,10 @@ struct eatt_impl {
     auto iter = find_if(
         eatt_dev->eatt_channels.begin(), eatt_dev->eatt_channels.end(),
         [](const std::pair<uint16_t, std::shared_ptr<EattChannel>>& el) {
-          return !el.second->cl_cmd_q_.empty();
+          if (el.second->cl_cmd_q_.empty()) return false;
+
+          tGATT_CMD_Q& cmd = el.second->cl_cmd_q_.front();
+          return cmd.to_send;
         });
     return (iter == eatt_dev->eatt_channels.end()) ? nullptr
                                                    : iter->second.get();
