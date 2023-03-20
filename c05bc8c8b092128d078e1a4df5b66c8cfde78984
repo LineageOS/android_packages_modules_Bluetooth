@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c4cd7bae_2d94d47f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 32245
+      },
+      "writtenOn": "2023-03-20T12:12:18Z",
+      "side": 1,
+      "message": "Required after Android 13 QPR2\non legacy devices\ndue to commit 52a366a085e5b8868a5aaba4dedc7e014e56f95c",
+      "revId": "c05bc8c8b092128d078e1a4df5b66c8cfde78984",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
