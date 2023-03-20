@@ -78,6 +78,8 @@ constexpr uint8_t MSFT_FILTER_ENABLE_CMD_DISALLOWED = 0x0c;
 
 // system properties
 const std::string kLeRxPathLossCompProperty = "bluetooth.hardware.radio.le_rx_path_loss_comp_db";
+const std::string kPropertyDisableApcfExtendedFeatures = "bluetooth.le.disable_apcf_extended_features";
+bool kDisableApcfExtendedFeatures = false;
 
 enum class ScanApiType {
   LEGACY = 1,
@@ -203,7 +205,9 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
       api_type_ = ScanApiType::LEGACY;
     }
     is_filter_supported_ = controller_->IsSupported(OpCode::LE_ADV_FILTER);
-    if (is_filter_supported_) {
+    if (os::GetSystemProperty(kPropertyDisableApcfExtendedFeatures) == "1")
+      kDisableApcfExtendedFeatures = true;
+    if (is_filter_supported_ && !kDisableApcfExtendedFeatures) {
       le_scanning_interface_->EnqueueCommand(
               LeAdvFilterReadExtendedFeaturesBuilder::Create(),
               handler_->BindOnceOn(this, &impl::on_apcf_read_extended_features_complete));
