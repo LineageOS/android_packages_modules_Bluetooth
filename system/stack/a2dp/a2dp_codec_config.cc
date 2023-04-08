@@ -562,6 +562,8 @@ bool A2dpCodecs::init() {
   LOG_INFO("%s", __func__);
   std::lock_guard<std::recursive_mutex> lock(codec_mutex_);
 
+  bool aptx_enabled =
+      osi_property_get_bool("persist.bluetooth.aptx.enabled", true);
   bool opus_enabled =
       osi_property_get_bool("persist.bluetooth.opus.enabled", false);
 
@@ -586,6 +588,13 @@ bool A2dpCodecs::init() {
       }
     }
 #endif
+
+    // If aptX is not supported it is disabled
+    if (codec_index == BTAV_A2DP_CODEC_INDEX_SOURCE_APTX && !aptx_enabled) {
+      codec_priority = BTAV_A2DP_CODEC_PRIORITY_DISABLED;
+      LOG_INFO("%s: aptX codec disabled, updated priority to %d", __func__,
+               codec_priority);
+    }
 
     // If OPUS is not supported it is disabled
     if (codec_index == BTAV_A2DP_CODEC_INDEX_SOURCE_OPUS && !opus_enabled) {
