@@ -28,7 +28,7 @@ using namespace bluetooth::property;
 
 namespace {
 
-constexpr size_t kNumberTestedProperties = 22;
+constexpr size_t kNumberTestedProperties = 21;
 
 constexpr size_t kBdPropNameLength = kBdNameLength + sizeof(kBdNameDelim);
 
@@ -121,9 +121,6 @@ constexpr bt_local_le_features_t kLocalLeFeatures{
     .le_periodic_advertising_sync_transfer_recipient_supported = true,
     .adv_filter_extended_features_mask = 0x3366,
 };
-
-// BT_PROPERTY_LOCAL_IO_CAPS
-constexpr bt_io_cap_t kLocalIoCaps{BT_IO_CAP_UNKNOWN};
 
 // BT_PROPERTY_RESERVED_0F
 // BT_PROPERTY_DYNAMIC_AUDIO_BUFFER
@@ -229,11 +226,7 @@ void fill_property(
       ASSERT_EQ(sizeof(kLocalLeFeatures), properties.back()->Size());
       break;
 
-    case BT_PROPERTY_LOCAL_IO_CAPS:
-      properties.push_back(LocalIOCaps::Create(kLocalIoCaps));
-      ASSERT_EQ(sizeof(kLocalIoCaps), properties.back()->Size());
-      break;
-
+    case BT_PROPERTY_RESERVED_0E:
     case BT_PROPERTY_RESERVED_0F:
     case BT_PROPERTY_DYNAMIC_AUDIO_BUFFER:
       break;
@@ -435,11 +428,7 @@ void verify_property(const bt_property_type_t& type, const bt_property_t& proper
           ((bt_local_le_features_t*)property.val)->adv_filter_extended_features_mask);
       break;
 
-    case BT_PROPERTY_LOCAL_IO_CAPS:
-      ASSERT_EQ((int)sizeof(bt_io_cap_t), property.len);
-      ASSERT_EQ(kLocalIoCaps, *((bt_io_cap_t*)property.val));
-      break;
-
+    case BT_PROPERTY_RESERVED_0E:
     case BT_PROPERTY_RESERVED_0F:
     case BT_PROPERTY_DYNAMIC_AUDIO_BUFFER:
       break;
@@ -511,7 +500,6 @@ void fill_properties(std::vector<std::shared_ptr<BtProperty>>& properties) {
   fill_property(BT_PROPERTY_REMOTE_RSSI, properties);
   fill_property(BT_PROPERTY_REMOTE_VERSION_INFO, properties);
   fill_property(BT_PROPERTY_LOCAL_LE_FEATURES, properties);
-  fill_property(BT_PROPERTY_LOCAL_IO_CAPS, properties);
   fill_property(BT_PROPERTY_REMOTE_IS_COORDINATED_SET_MEMBER, properties);
   fill_property(BT_PROPERTY_APPEARANCE, properties);
   fill_property(BT_PROPERTY_VENDOR_PRODUCT_INFO, properties);
@@ -677,16 +665,6 @@ TEST_F(BtPropertyTest, bt_property_text_test) {
         "le_periodic_advertising_sync_transfer_recipient_supported:1 "
         "adv_filter_extended_features_mask:13158",
         bt_property_text(prop).c_str());
-  }
-
-  {
-    bt_property_t prop = {
-        .type = BT_PROPERTY_LOCAL_IO_CAPS,
-        .len = (int)sizeof(kLocalIoCaps),
-        .val = (void*)&kLocalIoCaps,
-    };
-    ASSERT_STREQ(
-        "type:BT_PROPERTY_LOCAL_IO_CAPS local_io_caps:255", bt_property_text(prop).c_str());
   }
 
   {

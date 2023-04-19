@@ -199,8 +199,6 @@ void bta_dm_remname_cback(const tBTM_REMOTE_DEV_NAME* p);
 tBT_TRANSPORT bta_dm_determine_discovery_transport(
     const RawAddress& remote_bd_addr);
 
-void btm_set_local_io_caps(uint8_t io_caps);
-
 tBTM_STATUS bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data);
 
 void BTA_dm_on_hw_on();

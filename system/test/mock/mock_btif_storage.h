@@ -261,16 +261,6 @@ struct btif_storage_get_gatt_cl_supp_feat {
 extern struct btif_storage_get_gatt_cl_supp_feat
     btif_storage_get_gatt_cl_supp_feat;
 
-// Name: btif_storage_get_local_io_caps
-// Params:
-// Return: tBTM_IO_CAP
-struct btif_storage_get_local_io_caps {
-  static tBTM_IO_CAP return_value;
-  std::function<tBTM_IO_CAP()> body{[]() { return return_value; }};
-  tBTM_IO_CAP operator()() { return body(); };
-};
-extern struct btif_storage_get_local_io_caps btif_storage_get_local_io_caps;
-
 // Name: btif_storage_get_remote_addr_type
 // Params: const RawAddress* remote_bd_addr, tBLE_ADDR_TYPE addr_type
 // Return: bt_status_t

@@ -95,12 +95,6 @@ public class AdapterServiceBinderTest {
     }
 
     @Test
-    public void getIoCapability() {
-        mBinder.getIoCapability(mAttributionSource);
-        verify(mService.mAdapterProperties).getIoCapability();
-    }
-
-    @Test
     public void getLeMaximumAdvertisingDataLength() {
         mBinder.getLeMaximumAdvertisingDataLength();
         verify(mService).getLeMaximumAdvertisingDataLength();
@@ -154,13 +148,6 @@ public class AdapterServiceBinderTest {
         ParcelUuid uuid = ParcelUuid.fromString("0000110A-0000-1000-8000-00805F9B34FB");
         mBinder.retrievePendingSocketForServiceRecord(uuid, mAttributionSource);
         verify(mService).retrievePendingSocketForServiceRecord(uuid, mAttributionSource);
-    }
-
-    @Test
-    public void setIoCapability() {
-        int capability = BluetoothAdapter.IO_CAPABILITY_MAX - 1;
-        mBinder.setIoCapability(capability, mAttributionSource);
-        verify(mService.mAdapterProperties).setIoCapability(capability);
     }
 
     @Test
