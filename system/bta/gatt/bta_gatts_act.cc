@@ -424,7 +424,7 @@ void bta_gatts_open(tBTA_GATTS_CB* /* p_cb */, tBTA_GATTS_DATA* p_msg) {
     } else {
       success = stack::leConnectionConnect(p_rcb->gatt_if, p_msg->api_open.remote_bda,
                                            p_msg->api_open.remote_addr_type,
-                                           p_msg->api_open.connection_type, false, 0, false, false);
+                                           p_msg->api_open.connection_type, 0, false, false);
     }
 
     if (success) {

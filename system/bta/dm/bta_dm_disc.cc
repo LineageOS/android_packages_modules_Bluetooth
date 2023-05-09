@@ -108,8 +108,8 @@ struct gatt_interface_t {
   void (*BTA_GATTC_Close)(tCONN_ID conn_id);
   void (*BTA_GATTC_ServiceSearchRequest)(tCONN_ID conn_id, const bluetooth::Uuid* p_srvc_uuid);
   void (*BTA_GATTC_Open)(tGATT_IF client_if, const RawAddress& remote_bda,
-                         tBTM_BLE_CONN_TYPE connection_type, bool opportunistic,
-                         uint16_t preferred_mtu, bool prefer_relax_mode);
+                         tBTM_BLE_CONN_TYPE connection_type, uint16_t preferred_mtu,
+                         bool prefer_relax_mode);
 } default_gatt_interface = {
         .BTA_GATTC_CancelOpen =
                 [](tGATT_IF client_if, const RawAddress& remote_bda, bool is_direct) {
@@ -137,10 +137,10 @@ struct gatt_interface_t {
                 },
         .BTA_GATTC_Open =
                 [](tGATT_IF client_if, const RawAddress& remote_bda,
-                   tBTM_BLE_CONN_TYPE connection_type, bool opportunistic, uint16_t preferred_mtu,
+                   tBTM_BLE_CONN_TYPE connection_type, uint16_t preferred_mtu,
                    bool prefer_relax_mode) {
                   BTA_GATTC_Open(client_if, remote_bda, BLE_ADDR_PUBLIC, connection_type,
-                                 BT_TRANSPORT_LE, opportunistic, preferred_mtu, prefer_relax_mode);
+                                 BT_TRANSPORT_LE, preferred_mtu, prefer_relax_mode);
                 },
 };
 
@@ -601,7 +601,7 @@ static void bta_dm_start_gatt_discovery(const RawAddress& bd_addr) {
   /* GATT Discovery always uses non oportunistic direct connected */
   log::debug(" {} , transport:{}", bd_addr, bt_transport_text(BT_TRANSPORT_LE));
   get_gatt_interface().BTA_GATTC_Open(bta_dm_discovery_cb.client_if, bd_addr,
-                                      BTM_BLE_DIRECT_CONNECTION, false, 0, false);
+                                      BTM_BLE_DIRECT_CONNECTION, 0, false);
 }
 
 /*******************************************************************************

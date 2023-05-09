@@ -468,13 +468,13 @@ public:
   void Connect(const RawAddress& address) {
     log::info("bd_addr={}", address);
     hearingDevices.Add(HearingDevice(address, true));
-    BTA_GATTC_Open(gatt_if, address, BTM_BLE_DIRECT_CONNECTION, false);
+    BTA_GATTC_Open(gatt_if, address, BTM_BLE_DIRECT_CONNECTION);
   }
 
   void AddToAcceptlist(const RawAddress& address) {
     log::info("bd_addr={}", address);
     hearingDevices.Add(HearingDevice(address, true));
-    BTA_GATTC_Open(gatt_if, address, BTM_BLE_BKG_CONNECT_ALLOW_LIST, false);
+    BTA_GATTC_Open(gatt_if, address, BTM_BLE_BKG_CONNECT_ALLOW_LIST);
   }
 
   void AddFromStorage(const HearingDevice& dev_info, bool is_acceptlisted) {
@@ -494,7 +494,7 @@ public:
       // BTM_BleSetConnScanParams(2048, 1024);
 
       /* add device into BG connection to accept remote initiated connection */
-      BTA_GATTC_Open(gatt_if, dev_info.address, BTM_BLE_BKG_CONNECT_ALLOW_LIST, false);
+      BTA_GATTC_Open(gatt_if, dev_info.address, BTM_BLE_BKG_CONNECT_ALLOW_LIST);
     }
 
     callbacks->OnDeviceAvailable(dev_info.capabilities, dev_info.hi_sync_id, dev_info.address);
@@ -504,7 +504,7 @@ public:
 
   void HandleConnectionFailed(const HearingDevice* hearingDevice) {
     log::info("Device (addr={}) failed to connect. Use background connect", hearingDevice->address);
-    BTA_GATTC_Open(gatt_if, hearingDevice->address, BTM_BLE_BKG_CONNECT_ALLOW_LIST, false);
+    BTA_GATTC_Open(gatt_if, hearingDevice->address, BTM_BLE_BKG_CONNECT_ALLOW_LIST);
     if (hearingDevice->connecting_actively) {
       callbacks->OnConnectionState(ConnectionState::DISCONNECTED, hearingDevice->address);
     }
@@ -535,7 +535,7 @@ public:
         if (hearingDevice->switch_to_background_connection_after_failure) {
           hearingDevice->connecting_actively = false;
           hearingDevice->switch_to_background_connection_after_failure = false;
-          BTA_GATTC_Open(gatt_if, address, BTM_BLE_BKG_CONNECT_ALLOW_LIST, false);
+          BTA_GATTC_Open(gatt_if, address, BTM_BLE_BKG_CONNECT_ALLOW_LIST);
         } else {
           log::info("Failed to connect to Hearing Aid device, bda={}", address);
 
@@ -565,7 +565,7 @@ public:
             log::info("Connecting other device from set, bda={} using direct connect",
                       device.address);
             BTA_GATTC_Close(device.conn_id);
-            BTA_GATTC_Open(gatt_if, device.address, BTM_BLE_DIRECT_CONNECTION, false);
+            BTA_GATTC_Open(gatt_if, device.address, BTM_BLE_DIRECT_CONNECTION);
           }
         } else {
           if (device.hi_sync_id == hi_sync_id && device.conn_id == INVALID_CONN_ID &&
@@ -574,7 +574,7 @@ public:
                       device.address);
             device.connecting_actively = true;
             device.switch_to_background_connection_after_failure = true;
-            BTA_GATTC_Open(gatt_if, device.address, BTM_BLE_DIRECT_CONNECTION, false);
+            BTA_GATTC_Open(gatt_if, device.address, BTM_BLE_DIRECT_CONNECTION);
           }
         }
       }
@@ -1928,7 +1928,7 @@ public:
 
     // This is needed just for the first connection. After stack is restarted,
     // code that loads device will add them to acceptlist.
-    BTA_GATTC_Open(gatt_if, hearingDevice->address, connection_type, false);
+    BTA_GATTC_Open(gatt_if, hearingDevice->address, connection_type);
 
     callbacks->OnConnectionState(ConnectionState::DISCONNECTED, remote_bda);
 

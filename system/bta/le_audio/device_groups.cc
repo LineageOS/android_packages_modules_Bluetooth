@@ -2570,7 +2570,7 @@ void LeAudioDeviceGroup::Enable(int gatt_if) {
               bluetooth::common::ToString(GetState()), address);
 
     if (connection_state == DeviceConnectState::DISCONNECTED) {
-      BTA_GATTC_Open(gatt_if, address, BTM_BLE_BKG_CONNECT_TARGETED_ANNOUNCEMENTS, false);
+      BTA_GATTC_Open(gatt_if, address, BTM_BLE_BKG_CONNECT_TARGETED_ANNOUNCEMENTS);
       device_iter.lock()->SetConnectionState(DeviceConnectState::CONNECTING_AUTOCONNECT);
     }
   }
@@ -2599,7 +2599,7 @@ void LeAudioDeviceGroup::AddToAllowListNotConnectedGroupMembers(int gatt_if) {
      * available members.
      */
     BTA_GATTC_CancelOpen(gatt_if, address, false);
-    BTA_GATTC_Open(gatt_if, address, BTM_BLE_DIRECT_CONNECTION, false);
+    BTA_GATTC_Open(gatt_if, address, BTM_BLE_DIRECT_CONNECTION);
     device_iter.lock()->SetConnectionState(DeviceConnectState::CONNECTING_AUTOCONNECT);
   }
 }
@@ -2608,7 +2608,7 @@ void LeAudioDeviceGroup::ApplyReconnectionMode(int gatt_if) {
   for (const auto& device_iter : leAudioDevices_) {
     BTA_GATTC_CancelOpen(gatt_if, device_iter.lock()->address_, false);
     BTA_GATTC_Open(gatt_if, device_iter.lock()->address_,
-                   BTM_BLE_BKG_CONNECT_TARGETED_ANNOUNCEMENTS, false);
+                   BTM_BLE_BKG_CONNECT_TARGETED_ANNOUNCEMENTS);
     log::info("Group {} in state {}. Adding {} to default reconnection mode", group_id_,
               bluetooth::common::ToString(GetState()), device_iter.lock()->address_);
     device_iter.lock()->SetConnectionState(DeviceConnectState::CONNECTING_AUTOCONNECT);

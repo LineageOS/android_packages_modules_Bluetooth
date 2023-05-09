@@ -297,8 +297,7 @@ class RasClientTest : public RasClientTestNoInit {
     GetRasClient()->RegisterCallbacks(&mock_ras_client_callbacks_);
 
     // Open should be triggered when connect
-    EXPECT_CALL(mock_gatt_interface_, Open(_, test_address_, BTM_BLE_DIRECT_CONNECTION, _))
-            .Times(1);
+    EXPECT_CALL(mock_gatt_interface_, Open(_, test_address_, BTM_BLE_OPPORTUNISTIC)).Times(1);
     GetRasClient()->Connect(test_address_);
 
     // ServiceSearchRequest should be trigger after BTA_GATTC_OPEN_EVT
@@ -379,7 +378,7 @@ TEST_F(RasClientTestNoInit, ConnectDisconnect) {
   GetRasClient()->RegisterCallbacks(&mock_ras_client_callbacks_);
 
   // Open should be triggered when connect
-  EXPECT_CALL(mock_gatt_interface_, Open(_, test_address_, BTM_BLE_DIRECT_CONNECTION, _)).Times(1);
+  EXPECT_CALL(mock_gatt_interface_, Open(_, test_address_, BTM_BLE_OPPORTUNISTIC)).Times(1);
   GetRasClient()->Connect(test_address_);
 
   // ServiceSearchRequest should be trigger after BTA_GATTC_OPEN_EVT
@@ -446,7 +445,7 @@ TEST_F(RasClientTestNoInit, SetFirstSegmentTimeoutInLowPowerMode) {
   GetRasClient()->RegisterCallbacks(&mock_ras_client_callbacks_);
 
   // Open should be triggered when connect
-  EXPECT_CALL(mock_gatt_interface_, Open(_, test_address_, BTM_BLE_DIRECT_CONNECTION, _)).Times(1);
+  EXPECT_CALL(mock_gatt_interface_, Open(_, test_address_, BTM_BLE_OPPORTUNISTIC)).Times(1);
   GetRasClient()->Connect(test_address_);
 
   // ServiceSearchRequest should be trigger after BTA_GATTC_OPEN_EVT
@@ -492,7 +491,7 @@ TEST_F(RasClientTestNoInit, OnGattNotification_BeforeServiceDiscovery) {
   GetRasClient()->RegisterCallbacks(&mock_ras_client_callbacks_);
 
   // Open should be triggered when connect
-  EXPECT_CALL(mock_gatt_interface_, Open(_, test_address_, BTM_BLE_DIRECT_CONNECTION, _)).Times(1);
+  EXPECT_CALL(mock_gatt_interface_, Open(_, test_address_, BTM_BLE_OPPORTUNISTIC)).Times(1);
   GetRasClient()->Connect(test_address_);
 
   // EXPECT the ServiceSearchRequest to be called *immediately*

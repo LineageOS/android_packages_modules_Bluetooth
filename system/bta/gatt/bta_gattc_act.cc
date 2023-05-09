@@ -271,7 +271,9 @@ void bta_gattc_process_api_open(const tBTA_GATTC_DATA* p_msg) {
     return;
   }
 
-  if (p_msg->api_conn.connection_type != BTM_BLE_DIRECT_CONNECTION) {
+  auto connection_type = p_msg->api_conn.connection_type;
+  if ((connection_type == BTM_BLE_BKG_CONNECT_ALLOW_LIST) ||
+      (connection_type == BTM_BLE_BKG_CONNECT_TARGETED_ANNOUNCEMENTS)) {
     bta_gattc_init_bk_conn(&p_msg->api_conn, p_clreg);
     return;
   }
@@ -379,7 +381,6 @@ void bta_gattc_open(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
   log::verbose("auto_mtu_enabled: {}", p_data->api_conn.auto_mtu_enabled);
 
   /* open/hold a connection */
-
   if (p_data->api_conn.transport == BT_TRANSPORT_BR_EDR) {
     if (!GATT_BR_Connect(p_clcb->p_rcb->client_if, p_data->api_conn.remote_bda)) {
       log::error("Connection open failure");
@@ -388,11 +389,11 @@ void bta_gattc_open(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
     }
   } else {
     // BT_TRANSPORT_LE
-    if (!stack::leConnectionConnect(p_clcb->p_rcb->client_if, p_data->api_conn.remote_bda,
-                                    p_data->api_conn.remote_addr_type, BTM_BLE_DIRECT_CONNECTION,
-                                    p_data->api_conn.opportunistic, p_data->api_conn.preferred_mtu,
-                                    p_data->api_conn.prefer_relax_mode,
-                                    p_data->api_conn.auto_mtu_enabled)) {
+    if (!stack::leConnectionConnect(
+                p_clcb->p_rcb->client_if, p_data->api_conn.remote_bda,
+                p_data->api_conn.remote_addr_type, p_data->api_conn.connection_type,
+                p_data->api_conn.preferred_mtu, p_data->api_conn.prefer_relax_mode,
+                p_data->api_conn.auto_mtu_enabled)) {
       log::error("Connection open failure");
       bta_gattc_sm_execute(p_clcb, BTA_GATTC_INT_OPEN_FAIL_EVT, p_data);
       return;
@@ -436,7 +437,7 @@ static void bta_gattc_init_bk_conn(const tBTA_GATTC_API_OPEN* p_data, tBTA_GATTC
 
   /* always call open to hold a connection */
   if (!stack::leConnectionConnect(p_data->client_if, p_data->remote_bda, BLE_ADDR_PUBLIC,
-                                  p_data->connection_type, false, p_data->preferred_mtu,
+                                  p_data->connection_type, p_data->preferred_mtu,
                                   p_data->prefer_relax_mode, p_data->auto_mtu_enabled)) {
     log::error("Unable to connect to remote bd_addr={}", p_data->remote_bda);
     bta_gattc_send_open_cback(p_clreg, GATT_ILLEGAL_PARAMETER, p_data->remote_bda,

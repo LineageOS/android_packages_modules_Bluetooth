@@ -138,11 +138,8 @@ public:
   }
 
   void StartOpportunisticConnect(const RawAddress& address) {
-    /* Oportunistic works only for direct connect,
-     * but in fact this is background connect
-     */
     bluetooth::log::info(": {}", address);
-    BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION, true);
+    BTA_GATTC_Open(gatt_if_, address, BTM_BLE_OPPORTUNISTIC);
   }
 
   void Connect(const RawAddress& address) override {

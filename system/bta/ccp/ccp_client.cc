@@ -117,7 +117,7 @@ public:
       callbacks_->OnConnectionState(address, ConnectionState::DISCONNECTED);
       return;
     }
-    BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION, true);
+    BTA_GATTC_Open(gatt_if_, address, BTM_BLE_OPPORTUNISTIC);
   }
 
   void Disconnect(const RawAddress& address) override {
