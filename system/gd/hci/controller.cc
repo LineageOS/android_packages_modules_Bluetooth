@@ -34,6 +34,9 @@ namespace hci {
 static const char kPropertyDisabledCommands[] =
     "bluetooth.hci.disabled_commands";
 
+static const char kPropertyVendorCapabilitiesMax[] =
+    "bluetooth.hci.max_vendor_cap";
+
 using os::Handler;
 
 struct Controller::impl {
@@ -452,6 +455,13 @@ struct Controller::impl {
     if (complete_view.IsValid()) {
       vendor_capabilities_.is_supported_ = 0x01;
 
+      int vendor_cap_max = 0xffff;
+      std::string vendor_cap_max_prop = os::GetSystemProperty(kPropertyVendorCapabilitiesMax).value_or("");
+      if (vendor_cap_max_prop != "") {
+          vendor_cap_max = std::stoi(vendor_cap_max_prop);
+      }
+      if (vendor_cap_max < 55) return;
+
       // v0.55
       BaseVendorCapabilities base_vendor_capabilities = complete_view.GetBaseVendorCapabilities();
       vendor_capabilities_.max_advt_instances_ = base_vendor_capabilities.max_advt_instances_;
@@ -467,6 +477,7 @@ struct Controller::impl {
         return;
       }
 
+      if (vendor_cap_max < 95) return;
       // v0.95
       auto v95 = LeGetVendorCapabilitiesComplete095View::Create(complete_view);
       if (!v95.IsValid()) {
@@ -481,6 +492,7 @@ struct Controller::impl {
         return;
       }
 
+      if (vendor_cap_max < 96) return;
       // v0.96
       auto v96 = LeGetVendorCapabilitiesComplete096View::Create(v95);
       if (!v96.IsValid()) {
@@ -492,6 +504,7 @@ struct Controller::impl {
         return;
       }
 
+      if (vendor_cap_max < 98) return;
       // v0.98
       auto v98 = LeGetVendorCapabilitiesComplete098View::Create(v96);
       if (!v98.IsValid()) {
