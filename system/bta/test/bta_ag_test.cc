@@ -146,6 +146,25 @@ TEST_F_WITH_FLAGS(BtaAgSwbTest, parse_qac_at_command,
   ASSERT_TRUE(codec & BTA_AG_SCO_APTX_SWB_SETTINGS_Q3_MASK);
 }
 
+TEST_F_WITH_FLAGS(BtaAgSwbTest, enable_swb_codec_fail,
+                  REQUIRES_FLAGS_DISABLED(ACONFIG_FLAG(TEST_BT,
+                                                       hfp_codec_aptx_voice))) {
+  ASSERT_TRUE(enable_aptx_voice_property(false));
+  ASSERT_EQ(BT_STATUS_FAIL, enable_aptx_swb_codec(true, &addr));
+  ASSERT_FALSE(get_swb_codec_status(
+      bluetooth::headset::BTHF_SWB_CODEC_VENDOR_APTX, &addr));
+}
+
+TEST_F_WITH_FLAGS(BtaAgSwbTest, enable_swb_codec_success,
+                  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
+                                                      hfp_codec_aptx_voice))) {
+  ASSERT_TRUE(enable_aptx_voice_property(true));
+  ASSERT_EQ(BT_STATUS_SUCCESS, enable_aptx_swb_codec(true, &addr));
+  ASSERT_TRUE(get_swb_codec_status(
+      bluetooth::headset::BTHF_SWB_CODEC_VENDOR_APTX, &addr));
+  ASSERT_TRUE(enable_aptx_voice_property(false));
+}
+
 class BtaAgActTest : public BtaAgTest {
  protected:
   void SetUp() override { BtaAgTest::SetUp(); }
@@ -250,7 +269,7 @@ TEST_F_WITH_FLAGS(BtaAgCmdTest, at_hfp_cback__qac_ev_codec_enabled,
                        .peer_codecs = BTA_AG_SCO_APTX_SWB_SETTINGS_Q0_MASK};
 
   ASSERT_TRUE(enable_aptx_voice_property(true));
-
+  ASSERT_EQ(BT_STATUS_SUCCESS, enable_aptx_swb_codec(true, &addr));
   bta_ag_at_hfp_cback(&p_scb, BTA_AG_AT_QAC_EVT, 0, (char*)&test_strings[0][0],
                       (char*)&test_strings[0][12],
                       BTA_AG_SCO_APTX_SWB_SETTINGS_Q0);
@@ -294,15 +313,18 @@ TEST_F_WITH_FLAGS(BtaAgCmdTest, at_hfp_cback__qcs_ev_codec_q0_enabled,
   bta_ag_api_set_active_device(addr);
   ASSERT_EQ(addr, bta_ag_get_active_device());
 
+  ASSERT_EQ(BT_STATUS_SUCCESS, enable_aptx_swb_codec(true, &addr));
   bta_ag_at_hfp_cback(&p_scb, BTA_AG_AT_QCS_EVT, 0, (char*)&test_strings[0][0],
                       (char*)&test_strings[0][12],
                       BTA_AG_SCO_APTX_SWB_SETTINGS_Q0);
 
   ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
   ASSERT_EQ(2, get_func_call_count("esco_parameters_for_codec"));
+  ASSERT_EQ(BT_STATUS_SUCCESS, enable_aptx_swb_codec(true, &addr));
   ASSERT_EQ(1, get_func_call_count("BTM_SetEScoMode"));
   ASSERT_EQ(1, get_func_call_count("BTM_CreateSco"));
   ASSERT_EQ(this->codec, ESCO_CODEC_SWB_Q0);
+  ASSERT_TRUE(enable_aptx_voice_property(false));
 }
 
 TEST_F_WITH_FLAGS(BtaAgCmdTest,
@@ -322,14 +344,95 @@ TEST_F_WITH_FLAGS(BtaAgCmdTest,
   bta_ag_api_set_active_device(addr);
   ASSERT_EQ(addr, bta_ag_get_active_device());
 
+  ASSERT_EQ(BT_STATUS_SUCCESS, enable_aptx_swb_codec(true, &addr));
   bta_ag_at_hfp_cback(&p_scb, BTA_AG_AT_QCS_EVT, 0, (char*)&test_strings[0][0],
                       (char*)&test_strings[0][12],
                       BTA_AG_SCO_APTX_SWB_SETTINGS_Q1);
 
   ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
   ASSERT_EQ(2, get_func_call_count("esco_parameters_for_codec"));
+  ASSERT_EQ(BT_STATUS_SUCCESS, enable_aptx_swb_codec(true, &addr));
   ASSERT_EQ(1, get_func_call_count("BTM_SetEScoMode"));
   ASSERT_EQ(1, get_func_call_count("BTM_CreateSco"));
   ASSERT_EQ(this->codec, ESCO_CODEC_SWB_Q0);
   ASSERT_TRUE(enable_aptx_voice_property(false));
+}
+
+class BtaAgScoTest : public BtaAgTest {
+ protected:
+  void SetUp() override {
+    BtaAgTest::SetUp();
+    test::mock::stack_acl::BTM_ReadRemoteFeatures.body =
+        [this](const RawAddress& addr) { return this->data; };
+  }
+  void TearDown() override { BtaAgTest::TearDown(); }
+
+  uint8_t data[3] = {1, 2, 3};
+};
+
+TEST_F_WITH_FLAGS(BtaAgScoTest, codec_negotiate__aptx_state_on,
+                  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
+                                                      hfp_codec_aptx_voice))) {
+  tBTA_AG_SCB* p_scb = &bta_ag_cb.scb[0];
+  p_scb->app_id = 0;
+  p_scb->peer_addr = addr;
+  p_scb->codec_negotiation_timer =
+      alarm_new("bta_ag.scb_codec_negotiation_timer");
+  p_scb->peer_codecs = BTA_AG_SCO_APTX_SWB_SETTINGS_Q0_MASK;
+  p_scb->is_aptx_swb_codec = false;
+
+  ASSERT_TRUE(enable_aptx_voice_property(true));
+  ASSERT_EQ(BT_STATUS_SUCCESS, enable_aptx_swb_codec(true, &addr));
+  bta_ag_codec_negotiate(p_scb);
+  ASSERT_EQ(1, get_func_call_count("BTM_ReadRemoteFeatures"));
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));
+  ASSERT_EQ(1, get_func_call_count("alarm_set_on_mloop"));
+  ASSERT_TRUE(p_scb->is_aptx_swb_codec);
+  ASSERT_EQ(p_scb->sco_codec, BTA_AG_SCO_APTX_SWB_SETTINGS_Q0);
+  ASSERT_TRUE(enable_aptx_voice_property(false));
+}
+
+TEST_F_WITH_FLAGS(BtaAgScoTest, codec_negotiate__aptx_state_off,
+                  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
+                                                      hfp_codec_aptx_voice))) {
+  tBTA_AG_SCB* p_scb = &bta_ag_cb.scb[0];
+  p_scb->app_id = 0;
+  p_scb->peer_addr = addr;
+  p_scb->codec_negotiation_timer =
+      alarm_new("bta_ag.scb_codec_negotiation_timer");
+  p_scb->peer_codecs = BTA_AG_SCO_APTX_SWB_SETTINGS_Q0_MASK;
+  p_scb->is_aptx_swb_codec = true;
+
+  ASSERT_TRUE(enable_aptx_voice_property(true));
+  ASSERT_EQ(BT_STATUS_SUCCESS, enable_aptx_swb_codec(false, &addr));
+  bta_ag_codec_negotiate(p_scb);
+  ASSERT_EQ(1, get_func_call_count("BTM_ReadRemoteFeatures"));
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));
+  ASSERT_EQ(1, get_func_call_count("alarm_set_on_mloop"));
+  ASSERT_FALSE(p_scb->is_aptx_swb_codec);
+  ASSERT_EQ(p_scb->sco_codec, BTM_SCO_CODEC_MSBC);
+  ASSERT_TRUE(enable_aptx_voice_property(false));
+}
+
+TEST_F_WITH_FLAGS(BtaAgScoTest, codec_negotiate__aptx_disabled,
+                  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
+                                                      hfp_codec_aptx_voice))) {
+  // const char* test_flag[] = {"INIT_aptx_voice=false", nullptr};
+  tBTA_AG_SCB* p_scb = &bta_ag_cb.scb[0];
+  p_scb->app_id = 0;
+  p_scb->peer_addr = addr;
+  p_scb->codec_negotiation_timer =
+      alarm_new("bta_ag.scb_codec_negotiation_timer");
+  p_scb->peer_codecs = BTA_AG_SCO_APTX_SWB_SETTINGS_Q0_MASK;
+  p_scb->is_aptx_swb_codec = true;
+  p_scb->codec_updated = true;
+
+  // bluetooth::common::InitFlags::Load(test_flag);
+  ASSERT_TRUE(enable_aptx_voice_property(false));
+  ASSERT_EQ(BT_STATUS_FAIL, enable_aptx_swb_codec(false, &addr));
+  bta_ag_codec_negotiate(p_scb);
+  ASSERT_EQ(1, get_func_call_count("BTM_ReadRemoteFeatures"));
+  ASSERT_EQ(0, get_func_call_count("PORT_WriteData"));
+  ASSERT_EQ(0, get_func_call_count("alarm_set_on_mloop"));
+  ASSERT_FALSE(p_scb->codec_updated);
 }
