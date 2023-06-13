@@ -119,6 +119,8 @@ static const interop_addr_entry_t interop_addr_database[] = {
 
     // Kenwood KMM-BT518HD - no audio when A2DP codec sample rate is changed
     {{{0x00, 0x1d, 0x86, 0, 0, 0}}, 3, INTEROP_DISABLE_AVDTP_RECONFIGURE},
+    // http://b/255387998
+    {{{0x00, 0x1d, 0x86, 0, 0, 0}}, 3, INTEROP_DISABLE_ROLE_SWITCH},
 
     // NAC FORD-2013 - Lincoln
     {{{0x00, 0x26, 0xb4, 0, 0, 0}}, 3, INTEROP_DISABLE_ROLE_SWITCH},
@@ -153,9 +155,6 @@ static const interop_addr_entry_t interop_addr_database[] = {
     // AirPods 2 - unacceptably loud volume
     {{{0x9c, 0x64, 0x8b, 0, 0, 0}}, 3, INTEROP_DISABLE_ABSOLUTE_VOLUME},
 
-    // Phonak AG - volume level not change
-    {{{0x00, 0x0f, 0x59, 0, 0, 0}}, 3, INTEROP_DISABLE_ABSOLUTE_VOLUME},
-
     // for skip name request,
     // because BR/EDR address and ADV random address are the same
     {{{0xd4, 0x7a, 0xe2, 0, 0, 0}}, 3, INTEROP_DISABLE_NAME_REQUEST},
@@ -182,9 +181,6 @@ static const interop_addr_entry_t interop_addr_database[] = {
     // Honda Civic Carkit
     {{{0x0c, 0xd9, 0xc1, 0, 0, 0}}, 3, INTEROP_AVRCP_1_4_ONLY},
 
-    // BMW Carkit
-    {{{0x9c, 0xdf, 0x03, 0, 0, 0}}, 3, INTEROP_AVRCP_1_4_ONLY},
-
     // KDDI Carkit
     {{{0x44, 0xea, 0xd8, 0, 0, 0}}, 3, INTEROP_DISABLE_SNIFF},
 
@@ -193,6 +189,9 @@ static const interop_addr_entry_t interop_addr_database[] = {
 
     // BMW Carkit
     {{{0x00, 0x0a, 0x08, 0, 0, 0}}, 3, INTEROP_AVRCP_1_3_ONLY},
+
+    // Harman/Becker Automotive Systems GmbH (BMW Carkit) - b/234548635
+    {{{0x9c, 0xdf, 0x03, 0, 0, 0}}, 3, INTEROP_AVRCP_1_3_ONLY},
 
     // Eero Wi-Fi Router
     {{{0x08, 0x9b, 0xf1, 0, 0, 0}}, 3, INTEROP_DISABLE_ROBUST_CACHING},
@@ -226,6 +225,19 @@ static const interop_addr_entry_t interop_addr_database[] = {
     {{{0xf0, 0x21, 0xe0, 0, 0, 0}}, 3, INTEROP_DISABLE_ROBUST_CACHING},
     {{{0xf0, 0xb6, 0x61, 0, 0, 0}}, 3, INTEROP_DISABLE_ROBUST_CACHING},
     {{{0xfc, 0x3f, 0xa6, 0, 0, 0}}, 3, INTEROP_DISABLE_ROBUST_CACHING},
+};
+
+typedef struct {
+  RawAddress addr_start;
+  RawAddress addr_end;
+  interop_feature_t feature;
+} interop_addr_range_entry_t;
+
+static const interop_addr_range_entry_t interop_addr_range_database[] = {
+    // Phonak AG - volume level not change
+    {{{0x00, 0x0f, 0x59, 0x50, 0x00, 0x00}},
+     {{0x00, 0x0f, 0x59, 0x6f, 0xff, 0xff}},
+     INTEROP_DISABLE_ABSOLUTE_VOLUME},
 };
 
 typedef struct {

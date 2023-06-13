@@ -193,6 +193,7 @@ size_t get_btsnooz_packet_length_to_write(
 }  // namespace
 
 const std::string SnoopLogger::kBtSnoopLogModeDisabled = "disabled";
+const std::string SnoopLogger::kBtSnoopLogModeTruncated = "truncated";
 const std::string SnoopLogger::kBtSnoopLogModeFiltered = "filtered";
 const std::string SnoopLogger::kBtSnoopLogModeFull = "full";
 const std::string SnoopLogger::kSoCManufacturerQualcomm = "Qualcomm";
@@ -202,6 +203,10 @@ const std::string SnoopLogger::kIsDebuggableProperty = "ro.debuggable";
 const std::string SnoopLogger::kBtSnoopLogModeProperty = "persist.bluetooth.btsnooplogmode";
 const std::string SnoopLogger::kBtSnoopDefaultLogModeProperty = "persist.bluetooth.btsnoopdefaultmode";
 const std::string SnoopLogger::kSoCManufacturerProperty = "ro.soc.manufacturer";
+
+// The max ACL packet size (in bytes) in truncated logging mode. All information
+// past this point is truncated from a packet.
+static constexpr uint32_t kMaxTruncatedAclPacketSize = 100;
 
 SnoopLogger::SnoopLogger(
     std::string snoop_log_path,
@@ -231,6 +236,15 @@ SnoopLogger::SnoopLogger(
   } else if (btsnoop_mode == kBtSnoopLogModeFull) {
     LOG_INFO("Snoop Logs fully enabled");
     is_enabled_ = true;
+    is_filtered_ = false;
+    // delete filtered logs
+    delete_btsnoop_files(get_btsnoop_log_path(snoop_log_path_, true));
+    // delete snooz logs
+    delete_btsnoop_files(snooz_log_path_);
+  } else if (btsnoop_mode == kBtSnoopLogModeTruncated) {
+    LOG_INFO("Snoop Logs truncated. Limiting to %u", kMaxTruncatedAclPacketSize);
+    is_enabled_ = true;
+    is_truncated_ = true;
     is_filtered_ = false;
     // delete filtered logs
     delete_btsnoop_files(get_btsnoop_log_path(snoop_log_path_, true));
@@ -320,6 +334,9 @@ void SnoopLogger::Capture(const HciPacket& packet, Direction direction, PacketTy
                              .dropped_packets = 0,
                              .timestamp = htonll(timestamp_us + kBtSnoopEpochDelta),
                              .type = static_cast<uint8_t>(type)};
+  if (is_truncated_ && type == PacketType::ACL) {
+    header.length_captured = htonl(std::min(length, kMaxTruncatedAclPacketSize));
+  }
   {
     std::lock_guard<std::recursive_mutex> lock(file_mutex_);
     if (!is_enabled_) {
@@ -445,9 +462,8 @@ size_t SnoopLogger::GetMaxPacketsPerFile() {
 size_t SnoopLogger::GetMaxPacketsPerBuffer() {
   // We want to use at most 256 KB memory for btsnooz log for release builds
   // and 512 KB memory for userdebug/eng builds
-  auto is_debuggable = os::GetSystemProperty(kIsDebuggableProperty);
-  size_t btsnooz_max_memory_usage_bytes =
-      ((is_debuggable.has_value() && common::StringTrim(is_debuggable.value()) == "1") ? 1024 : 256) * 1024;
+  auto is_debuggable = os::GetSystemPropertyBool(kIsDebuggableProperty, false);
+  size_t btsnooz_max_memory_usage_bytes = (is_debuggable ? 1024 : 256) * 1024;
   // Calculate max number of packets based on max memory usage and max packet size
   return btsnooz_max_memory_usage_bytes / kDefaultBtSnoozMaxBytesPerPacket;
 }
@@ -457,8 +473,8 @@ std::string SnoopLogger::GetBtSnoopMode() {
   // In userdebug/eng build, it can also be overwritten by modifying the global setting
   std::string default_mode = kBtSnoopLogModeDisabled;
   {
-    auto is_debuggable = os::GetSystemProperty(kIsDebuggableProperty);
-    if (is_debuggable.has_value() && common::StringTrim(is_debuggable.value()) == "1") {
+    auto is_debuggable = os::GetSystemPropertyBool(kIsDebuggableProperty, false);
+    if (is_debuggable) {
       auto default_mode_property = os::GetSystemProperty(kBtSnoopDefaultLogModeProperty);
       if (default_mode_property) {
         default_mode = std::move(default_mode_property.value());

@@ -128,8 +128,8 @@ void bluetooth::shim::LogMetricReadTxPowerLevelResult(
       raw_address, handle, cmd_status, transmit_power_level);
 }
 void bluetooth::shim::LogMetricSmpPairingEvent(
-    const RawAddress& raw_address, uint8_t smp_cmd,
-    android::bluetooth::DirectionEnum direction, uint8_t smp_fail_reason) {
+    const RawAddress& raw_address, uint16_t smp_cmd,
+    android::bluetooth::DirectionEnum direction, uint16_t smp_fail_reason) {
   mock_function_count_map[__func__]++;
   test::mock::main_shim_metrics_api::LogMetricSmpPairingEvent(
       raw_address, smp_cmd, direction, smp_fail_reason);
@@ -178,6 +178,16 @@ void bluetooth::shim::LogMetricManufacturerInfo(
 bool bluetooth::shim::CountCounterMetrics(int32_t key, int64_t count) {
   mock_function_count_map[__func__]++;
   return false;
+
+}
+void bluetooth::shim::LogMetricBluetoothLEConnectionMetricEvent(
+    const RawAddress& raw_address,
+    android::bluetooth::le::LeConnectionOriginType origin_type,
+    android::bluetooth::le::LeConnectionType connection_type,
+    android::bluetooth::le::LeConnectionState transaction_state,
+    std::vector<std::pair<bluetooth::os::ArgumentType, int>> argument_list) {
+  mock_function_count_map[__func__]++;
+  // test::mock::main_shim_metrics_api::LogMetricBluetoothLEConnectionMetricEvent(raw_address, origin_type, connection_type, transaction_state, argument_list);
 }
 
 // END mockcify generation

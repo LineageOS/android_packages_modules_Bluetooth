@@ -23,6 +23,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
+import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -280,6 +281,60 @@ public class DatabaseManager {
 
             Metadata data = mMetadataCache.get(address);
             return data.getCustomizedMeta(key);
+        }
+    }
+
+    /**
+     * Set audio policy metadata to database with requested key
+     */
+    @VisibleForTesting
+    public boolean setAudioPolicyMetadata(BluetoothDevice device,
+            BluetoothSinkAudioPolicy policies) {
+        synchronized (mMetadataCache) {
+            if (device == null) {
+                Log.e(TAG, "setAudioPolicyMetadata: device is null");
+                return false;
+            }
+
+            String address = device.getAddress();
+            if (!mMetadataCache.containsKey(address)) {
+                createMetadata(address, false);
+            }
+            Metadata data = mMetadataCache.get(address);
+            AudioPolicyEntity entity = data.audioPolicyMetadata;
+            entity.callEstablishAudioPolicy = policies.getCallEstablishPolicy();
+            entity.connectingTimeAudioPolicy = policies.getActiveDevicePolicyAfterConnection();
+            entity.inBandRingtoneAudioPolicy = policies.getInBandRingtonePolicy();
+
+            updateDatabase(data);
+            return true;
+        }
+    }
+
+    /**
+     * Get audio policy metadata from database with requested key
+     */
+    @VisibleForTesting
+    public BluetoothSinkAudioPolicy getAudioPolicyMetadata(BluetoothDevice device) {
+        synchronized (mMetadataCache) {
+            if (device == null) {
+                Log.e(TAG, "getAudioPolicyMetadata: device is null");
+                return null;
+            }
+
+            String address = device.getAddress();
+
+            if (!mMetadataCache.containsKey(address)) {
+                Log.d(TAG, "getAudioPolicyMetadata: device " + address + " is not in cache");
+                return null;
+            }
+
+            AudioPolicyEntity entity = mMetadataCache.get(address).audioPolicyMetadata;
+            return new BluetoothSinkAudioPolicy.Builder()
+                    .setCallEstablishPolicy(entity.callEstablishAudioPolicy)
+                    .setActiveDevicePolicyAfterConnection(entity.connectingTimeAudioPolicy)
+                    .setInBandRingtonePolicy(entity.inBandRingtoneAudioPolicy)
+                    .build();
         }
     }
 

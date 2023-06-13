@@ -122,6 +122,7 @@ public class MapClientTest {
 
         // is the statemachine created
         Map<BluetoothDevice, MceStateMachine> map = mService.getInstanceMap();
+
         Assert.assertEquals(1, map.size());
         Assert.assertNotNull(map.get(device));
         TestUtils.waitForLooperToFinishScheduledTask(mService.getMainLooper());

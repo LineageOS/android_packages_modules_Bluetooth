@@ -1381,6 +1381,17 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event,
         status = btif_storage_set_remote_addr_type(&bdaddr, addr_type);
         ASSERTC(status == BT_STATUS_SUCCESS,
                 "failed to save remote addr type (inquiry)", status);
+
+        bool restrict_report = osi_property_get_bool(
+            "bluetooth.restrict_discovered_device.enabled", false);
+        if (restrict_report &&
+            p_search_data->inq_res.device_type == BT_DEVICE_TYPE_BLE &&
+            !(p_search_data->inq_res.ble_evt_type & BTM_BLE_CONNECTABLE_MASK)) {
+          LOG_INFO("%s: Ble device is not connectable",
+                   bdaddr.ToString().c_str());
+          break;
+        }
+
         /* Callback to notify upper layer of device */
         invoke_device_found_cb(num_properties, properties);
       }
@@ -1626,6 +1637,14 @@ static void btif_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
           }
           pairing_cb.gatt_over_le =
               btif_dm_pairing_cb_t::ServiceDiscoveryState::FINISHED;
+
+          if (pairing_cb.sdp_over_classic !=
+              btif_dm_pairing_cb_t::ServiceDiscoveryState::SCHEDULED) {
+            // Both SDP and bonding are either done, or not scheduled,
+            // we are safe to clear the service discovery part of CB.
+            LOG_INFO("clearing pairing_cb");
+            pairing_cb = {};
+          }
         }
       } else {
         LOG_INFO("New GATT over SDP UUIDs for %s:", PRIVATE_ADDRESS(bd_addr));
@@ -1694,18 +1713,6 @@ static void btif_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
       /* Send the event to the BTIF */
       invoke_remote_device_properties_cb(BT_STATUS_SUCCESS, bd_addr,
                                          num_properties, prop);
-
-      if ((bd_addr == pairing_cb.bd_addr ||
-           bd_addr == pairing_cb.static_bdaddr) &&
-          pairing_cb.sdp_over_classic !=
-              btif_dm_pairing_cb_t::ServiceDiscoveryState::SCHEDULED &&
-          pairing_cb.gatt_over_le !=
-              btif_dm_pairing_cb_t::ServiceDiscoveryState::SCHEDULED) {
-        // Both SDP and bonding are either done, or not scheduled, we are safe
-        // to clear the service discovery part of CB.
-        LOG_INFO("clearing pairing_cb");
-        pairing_cb = {};
-      }
     } break;
 
     default: { ASSERTC(0, "unhandled search services event", event); } break;
@@ -2792,7 +2799,11 @@ void btif_dm_generate_local_oob_data(tBT_TRANSPORT transport) {
         stop_oob_advertiser();
       }
       waiting_on_oob_advertiser_start = true;
-      SMP_CrLocScOobData();
+      if (!SMP_CrLocScOobData()) {
+        waiting_on_oob_advertiser_start = false;
+        invoke_oob_data_request_cb(transport, false, Octet16{}, Octet16{},
+                                 RawAddress{}, 0x00);
+      }
     } else {
       invoke_oob_data_request_cb(transport, false, Octet16{}, Octet16{},
                                  RawAddress{}, 0x00);

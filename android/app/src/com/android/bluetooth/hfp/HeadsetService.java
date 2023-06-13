@@ -27,6 +27,7 @@ import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHeadset;
 import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothUuid;
 import android.bluetooth.IBluetoothHeadset;
@@ -57,6 +58,7 @@ import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.bluetooth.hfpclient.HeadsetClientService;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.bluetooth.telephony.BluetoothInCallService;
 import com.android.internal.annotations.VisibleForTesting;
@@ -1364,6 +1366,24 @@ public class HeadsetService extends ProfileService {
     }
 
     /**
+     * Get the Bluetooth Audio Policy stored in the state machine
+     *
+     * @param device the device to change silence mode
+     * @return a {@link BluetoothSinkAudioPolicy} object
+     */
+    public BluetoothSinkAudioPolicy getHfpCallAudioPolicy(BluetoothDevice device) {
+        synchronized (mStateMachines) {
+            final HeadsetStateMachine stateMachine = mStateMachines.get(device);
+            if (stateMachine == null) {
+                Log.e(TAG, "getHfpCallAudioPolicy(), " + device
+                        + " does not have a state machine");
+                return null;
+            }
+            return stateMachine.getHfpCallAudioPolicy();
+        }
+    }
+
+    /**
      * Remove the active device
      */
     private void removeActiveDevice() {
@@ -1891,7 +1911,24 @@ public class HeadsetService extends ProfileService {
                 mSystemInterface.getAudioManager().setA2dpSuspended(false);
             }
         });
-
+        if (callState == HeadsetHalConstants.CALL_STATE_IDLE) {
+            final HeadsetStateMachine stateMachine = mStateMachines.get(mActiveDevice);
+            if (stateMachine == null) {
+                Log.d(TAG, "phoneStateChanged: CALL_STATE_IDLE, mActiveDevice is Null");
+            } else {
+                BluetoothSinkAudioPolicy currentPolicy = stateMachine.getHfpCallAudioPolicy();
+                if (currentPolicy != null && currentPolicy.getActiveDevicePolicyAfterConnection()
+                        == BluetoothSinkAudioPolicy.POLICY_NOT_ALLOWED) {
+                    /**
+                     * If the active device was set because of the pick up audio policy
+                     * and the connecting policy is NOT_ALLOWED, then after the call is
+                     * terminated, we must de-activate this device.
+                     * If there is a fallback mechanism, we should follow it.
+                     */
+                    removeActiveDevice();
+                }
+            }
+        }
     }
 
     @RequiresPermission(android.Manifest.permission.MODIFY_PHONE_STATE)
@@ -1940,8 +1977,32 @@ public class HeadsetService extends ProfileService {
     public boolean isInbandRingingEnabled() {
         boolean isInbandRingingSupported = getResources().getBoolean(
                 com.android.bluetooth.R.bool.config_bluetooth_hfp_inband_ringing_support);
+
+        boolean inbandRingtoneAllowedByPolicy = true;
+        List<BluetoothDevice> audioConnectableDevices = getConnectedDevices();
+        if (audioConnectableDevices.size() == 1) {
+            BluetoothDevice connectedDevice = audioConnectableDevices.get(0);
+            BluetoothSinkAudioPolicy callAudioPolicy =
+                    getHfpCallAudioPolicy(connectedDevice);
+            if (callAudioPolicy != null && callAudioPolicy.getInBandRingtonePolicy()
+                    == BluetoothSinkAudioPolicy.POLICY_NOT_ALLOWED) {
+                inbandRingtoneAllowedByPolicy = false;
+            }
+        }
+
         return isInbandRingingSupported && !SystemProperties.getBoolean(
-                DISABLE_INBAND_RINGING_PROPERTY, false) && !mInbandRingingRuntimeDisable;
+                DISABLE_INBAND_RINGING_PROPERTY, false)
+                && !mInbandRingingRuntimeDisable
+                && inbandRingtoneAllowedByPolicy
+                && !isHeadsetClientConnected();
+    }
+
+    private boolean isHeadsetClientConnected() {
+        HeadsetClientService headsetClientService = HeadsetClientService.getHeadsetClientService();
+        if (headsetClientService == null) {
+            return false;
+        }
+        return !(headsetClientService.getConnectedDevices().isEmpty());
     }
 
     /**
@@ -1956,30 +2017,53 @@ public class HeadsetService extends ProfileService {
     @RequiresPermission(android.Manifest.permission.MODIFY_PHONE_STATE)
     public void onConnectionStateChangedFromStateMachine(BluetoothDevice device, int fromState,
             int toState) {
-        synchronized (mStateMachines) {
-            List<BluetoothDevice> audioConnectableDevices =
-                    getDevicesMatchingConnectionStates(CONNECTING_CONNECTED_STATES);
-            if (fromState != BluetoothProfile.STATE_CONNECTED
-                    && toState == BluetoothProfile.STATE_CONNECTED) {
-                if (audioConnectableDevices.size() > 1) {
-                    mInbandRingingRuntimeDisable = true;
-                    doForEachConnectedStateMachine(
-                            stateMachine -> stateMachine.sendMessage(HeadsetStateMachine.SEND_BSIR,
-                                    0));
-                }
-                MetricsLogger.logProfileConnectionEvent(BluetoothMetricsProto.ProfileId.HEADSET);
+        if (fromState != BluetoothProfile.STATE_CONNECTED
+                && toState == BluetoothProfile.STATE_CONNECTED) {
+            updateInbandRinging(device, true);
+            MetricsLogger.logProfileConnectionEvent(BluetoothMetricsProto.ProfileId.HEADSET);
+        }
+        if (fromState != BluetoothProfile.STATE_DISCONNECTED
+                && toState == BluetoothProfile.STATE_DISCONNECTED) {
+            updateInbandRinging(device, false);
+            if (device.equals(mActiveDevice)) {
+                setActiveDevice(null);
             }
-            if (fromState != BluetoothProfile.STATE_DISCONNECTED
-                    && toState == BluetoothProfile.STATE_DISCONNECTED) {
-                if (audioConnectableDevices.size() <= 1) {
-                    mInbandRingingRuntimeDisable = false;
-                    doForEachConnectedStateMachine(
-                            stateMachine -> stateMachine.sendMessage(HeadsetStateMachine.SEND_BSIR,
-                                    1));
-                }
-                if (device.equals(mActiveDevice)) {
-                    setActiveDevice(null);
-                }
+        }
+    }
+
+    /**
+     * Called from {@link HeadsetClientStateMachine} to update inband ringing status.
+     */
+    public void updateInbandRinging(BluetoothDevice device, boolean connected) {
+        synchronized (mStateMachines) {
+            List<BluetoothDevice> audioConnectableDevices = getConnectedDevices();
+            final int enabled;
+            final boolean inbandRingingRuntimeDisable = mInbandRingingRuntimeDisable;
+
+            if (audioConnectableDevices.size() > 1 || isHeadsetClientConnected()) {
+                mInbandRingingRuntimeDisable = true;
+                enabled = 0;
+            } else {
+                mInbandRingingRuntimeDisable = false;
+                enabled = 1;
+            }
+
+            final boolean updateAll = inbandRingingRuntimeDisable != mInbandRingingRuntimeDisable;
+
+            Log.i(TAG, "updateInbandRinging():"
+                    + " Device=" + device
+                    + " enabled=" + enabled
+                    + " connected=" + connected
+                    + " Update all=" + updateAll);
+
+            StateMachineTask sendBsirTask = stateMachine -> stateMachine
+                            .sendMessage(HeadsetStateMachine.SEND_BSIR, enabled);
+
+            if (updateAll) {
+                doForEachConnectedStateMachine(sendBsirTask);
+            } else if (connected) {
+                // Same Inband ringing status, send +BSIR only to the new connected device
+                doForStateMachine(device, sendBsirTask);
             }
         }
     }

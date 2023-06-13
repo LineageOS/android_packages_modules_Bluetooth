@@ -26,6 +26,7 @@
 #include <frameworks/proto_logging/stats/enums/bluetooth/a2dp/enums.pb.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 
+#include <chrono>
 #include <cstdint>
 #include <future>
 #include <memory>
@@ -52,6 +53,7 @@
 #include "main/shim/dumpsys.h"
 #include "osi/include/allocator.h"
 #include "osi/include/properties.h"
+#include "stack/include/avrc_api.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/btm_api.h"
 #include "stack/include/btu.h"  // do_in_main_thread
@@ -500,7 +502,15 @@ class BtifAvSource {
                      << ": unable to set active peer to empty in BtaAvCo";
       }
       btif_a2dp_source_end_session(active_peer_);
-      btif_a2dp_source_shutdown();
+      std::promise<void> shutdown_complete_promise;
+      std::future<void> shutdown_complete_future =
+          shutdown_complete_promise.get_future();
+      btif_a2dp_source_shutdown(std::move(shutdown_complete_promise));
+      using namespace std::chrono_literals;
+      if (shutdown_complete_future.wait_for(1s) ==
+          std::future_status::timeout) {
+        LOG_ERROR("Timed out waiting for A2DP source shutdown to complete.");
+      }
       active_peer_ = peer_address;
       peer_ready_promise.set_value();
       return true;
@@ -3332,9 +3342,10 @@ bt_status_t btif_av_source_execute_service(bool enable) {
       features |= BTA_AV_FEAT_DELAY_RPT;
     }
 
-#if (AVRC_ADV_CTRL_INCLUDED == TRUE)
-    features |= BTA_AV_FEAT_RCCT | BTA_AV_FEAT_ADV_CTRL | BTA_AV_FEAT_BROWSE;
-#endif
+    if (avrcp_absolute_volume_is_enabled()) {
+      features |= BTA_AV_FEAT_RCCT | BTA_AV_FEAT_ADV_CTRL | BTA_AV_FEAT_BROWSE;
+    }
+
     BTA_AvEnable(features, bta_av_source_callback);
     btif_av_source.RegisterAllBtaHandles();
     return BT_STATUS_SUCCESS;

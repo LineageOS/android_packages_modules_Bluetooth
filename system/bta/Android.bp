@@ -126,6 +126,7 @@ cc_library_static {
         "hh/bta_hh_le.cc",
         "hh/bta_hh_main.cc",
         "hh/bta_hh_utils.cc",
+        "hfp/bta_hfp_api.cc",
         "hd/bta_hd_act.cc",
         "hd/bta_hd_api.cc",
         "hd/bta_hd_main.cc",
@@ -147,6 +148,7 @@ cc_library_static {
     static_libs: [
         "avrcp-target-service",
         "lib-bt-packets",
+        "libcom.android.sysprop.bluetooth",
     ],
     generated_headers: [
         "LeAudioSetConfigSchemas_h",
@@ -187,6 +189,7 @@ cc_test {
         "libbt-audio-hal-interface",
         "libbluetooth-types",
         "libbt-protos-lite",
+        "libcom.android.sysprop.bluetooth",
         "libosi",
         "libbt-common",
     ],
@@ -297,6 +300,7 @@ cc_test {
         "libbt-common",
         "libbt-protos-lite",
         "libbtcore",
+        "libcom.android.sysprop.bluetooth",
         "libflatbuffers-cpp",
         "libgmock",
     ],
@@ -326,6 +330,7 @@ cc_test {
         "packages/modules/Bluetooth/system/utils/include",
     ],
     srcs: [
+        "hf_client/bta_hf_client_api.cc",
         "test/bta_hf_client_add_record_test.cc",
     ],
     header_libs: ["libbluetooth_headers"],
@@ -335,6 +340,7 @@ cc_test {
     ],
     static_libs: [
         "libbluetooth-types",
+        "libcom.android.sysprop.bluetooth",
         "libosi",
     ],
     cflags: ["-DBUILDCFG"],
@@ -889,6 +895,7 @@ cc_test {
         "test/common/btm_api_mock.cc",
         "test/common/mock_controller.cc",
         "test/common/mock_csis_client.cc",
+        ":TestStubOsi",
     ],
     shared_libs: [
         "libprotobuf-cpp-lite",

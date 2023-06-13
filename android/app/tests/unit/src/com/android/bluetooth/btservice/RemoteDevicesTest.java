@@ -10,6 +10,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHeadset;
 import android.bluetooth.BluetoothHeadsetClient;
 import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.HandlerThread;
@@ -21,6 +22,7 @@ import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
 import com.android.bluetooth.hfp.HeadsetHalConstants;
 
 import org.junit.After;
@@ -515,6 +517,26 @@ public class RemoteDevicesTest {
         verify(mAdapterService, never()).sendBroadcast(any(), anyString());
         // Verify that device property is still null after invalid update
         Assert.assertNull(mRemoteDevices.getDeviceProperties(mDevice1));
+    }
+
+    @Test
+    public void testSetgetHfAudioPolicyForRemoteAg() {
+        // Verify that device property is null initially
+        Assert.assertNull(mRemoteDevices.getDeviceProperties(mDevice1));
+
+        mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(TEST_BT_ADDR_1));
+
+        DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(mDevice1);
+        BluetoothSinkAudioPolicy policies = new BluetoothSinkAudioPolicy.Builder()
+                .setCallEstablishPolicy(BluetoothSinkAudioPolicy.POLICY_ALLOWED)
+                .setActiveDevicePolicyAfterConnection(BluetoothSinkAudioPolicy.POLICY_ALLOWED)
+                .setInBandRingtonePolicy(BluetoothSinkAudioPolicy.POLICY_ALLOWED)
+                .build();
+        deviceProp.setHfAudioPolicyForRemoteAg(policies);
+
+        // Verify that the audio policy properties are set and get propperly
+        Assert.assertEquals(policies, mRemoteDevices.getDeviceProperties(mDevice1)
+                .getHfAudioPolicyForRemoteAg());
     }
 
     private static void verifyBatteryLevelChangedIntent(BluetoothDevice device, int batteryLevel,

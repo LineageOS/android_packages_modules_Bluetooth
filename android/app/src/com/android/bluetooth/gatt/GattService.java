@@ -79,6 +79,7 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AbstractionLayer;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.BluetoothAdapterProxy;
+import com.android.bluetooth.btservice.CompanionManager;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.util.NumberUtils;
 import com.android.internal.annotations.VisibleForTesting;
@@ -145,7 +146,8 @@ public class GattService extends ProfileService {
     /**
      * The default floor value for LE batch scan report delays greater than 0
      */
-    private static final long DEFAULT_REPORT_DELAY_FLOOR = 5000;
+    @VisibleForTesting
+    static final long DEFAULT_REPORT_DELAY_FLOOR = 5000;
 
     // onFoundLost related constants
     private static final int ADVT_STATE_ONFOUND = 0;
@@ -274,9 +276,12 @@ public class GattService extends ProfileService {
 
     private AdapterService mAdapterService;
     private BluetoothAdapterProxy mBluetoothAdapterProxy;
-    private AdvertiseManager mAdvertiseManager;
-    private PeriodicScanManager mPeriodicScanManager;
-    private ScanManager mScanManager;
+    @VisibleForTesting
+    AdvertiseManager mAdvertiseManager;
+    @VisibleForTesting
+    PeriodicScanManager mPeriodicScanManager;
+    @VisibleForTesting
+    ScanManager mScanManager;
     private AppOpsManager mAppOps;
     private CompanionDeviceManager mCompanionManager;
     private String mExposureNotificationPackage;
@@ -309,7 +314,8 @@ public class GattService extends ProfileService {
     /**
      * Reliable write queue
      */
-    private Set<String> mReliableQueue = new HashSet<String>();
+    @VisibleForTesting
+    Set<String> mReliableQueue = new HashSet<String>();
 
     static {
         classInitNative();
@@ -2048,7 +2054,7 @@ public class GattService extends ProfileService {
                     (status == BluetoothGatt.GATT_SUCCESS), address);
         }
         statsLogGattConnectionStateChange(
-                BluetoothProfile.GATT, address, clientIf, connectionState);
+                BluetoothProfile.GATT, address, clientIf, connectionState, status);
     }
 
     void onDisconnected(int clientIf, int connId, int status, String address)
@@ -2083,7 +2089,7 @@ public class GattService extends ProfileService {
         }
         statsLogGattConnectionStateChange(
                 BluetoothProfile.GATT, address, clientIf,
-                BluetoothProtoEnums.CONNECTION_STATE_DISCONNECTED);
+                BluetoothProtoEnums.CONNECTION_STATE_DISCONNECTED, status);
     }
 
     void onClientPhyUpdate(int connId, int txPhy, int rxPhy, int status) throws RemoteException {
@@ -3431,7 +3437,7 @@ public class GattService extends ProfileService {
         statsLogAppPackage(address, attributionSource.getUid(), clientIf);
         statsLogGattConnectionStateChange(
                 BluetoothProfile.GATT, address, clientIf,
-                BluetoothProtoEnums.CONNECTION_STATE_CONNECTING);
+                BluetoothProtoEnums.CONNECTION_STATE_CONNECTING, -1);
         gattClientConnectNative(clientIf, address, isDirect, transport, opportunistic, phy);
     }
 
@@ -3448,7 +3454,7 @@ public class GattService extends ProfileService {
         }
         statsLogGattConnectionStateChange(
                 BluetoothProfile.GATT, address, clientIf,
-                BluetoothProtoEnums.CONNECTION_STATE_DISCONNECTING);
+                BluetoothProtoEnums.CONNECTION_STATE_DISCONNECTING, -1);
         gattClientDisconnectNative(clientIf, address, connId != null ? connId : 0);
     }
 
@@ -3860,33 +3866,21 @@ public class GattService extends ProfileService {
         // Link supervision timeout is measured in N * 10ms
         int timeout = 500; // 5s
 
-        switch (connectionPriority) {
-            case BluetoothGatt.CONNECTION_PRIORITY_HIGH:
-                minInterval = getResources().getInteger(R.integer.gatt_high_priority_min_interval);
-                maxInterval = getResources().getInteger(R.integer.gatt_high_priority_max_interval);
-                latency = getResources().getInteger(R.integer.gatt_high_priority_latency);
-                break;
 
-            case BluetoothGatt.CONNECTION_PRIORITY_LOW_POWER:
-                minInterval = getResources().getInteger(R.integer.gatt_low_power_min_interval);
-                maxInterval = getResources().getInteger(R.integer.gatt_low_power_max_interval);
-                latency = getResources().getInteger(R.integer.gatt_low_power_latency);
-                break;
+        CompanionManager manager =
+                AdapterService.getAdapterService().getCompanionManager();
 
-            default:
-                // Using the values for CONNECTION_PRIORITY_BALANCED.
-                minInterval =
-                        getResources().getInteger(R.integer.gatt_balanced_priority_min_interval);
-                maxInterval =
-                        getResources().getInteger(R.integer.gatt_balanced_priority_max_interval);
-                latency = getResources().getInteger(R.integer.gatt_balanced_priority_latency);
-                break;
-        }
+        minInterval = manager.getGattConnParameters(
+                address, CompanionManager.GATT_CONN_INTERVAL_MIN, connectionPriority);
+        maxInterval = manager.getGattConnParameters(
+                address, CompanionManager.GATT_CONN_INTERVAL_MAX, connectionPriority);
+        latency = manager.getGattConnParameters(
+                address, CompanionManager.GATT_CONN_LATENCY, connectionPriority);
 
-        if (DBG) {
-            Log.d(TAG, "connectionParameterUpdate() - address=" + address + "params="
-                    + connectionPriority + " interval=" + minInterval + "/" + maxInterval);
-        }
+        Log.d(TAG, "connectionParameterUpdate() - address=" + address + " params="
+                + connectionPriority + " interval=" + minInterval + "/" + maxInterval
+                + " timeout=" + timeout);
+
         gattConnectionParameterUpdateNative(clientIf, address, minInterval, maxInterval, latency,
                 timeout, 0, 0);
     }
@@ -3901,14 +3895,11 @@ public class GattService extends ProfileService {
             return;
         }
 
-        if (DBG) {
-            Log.d(TAG, "leConnectionUpdate() - address=" + address + ", intervals="
-                        + minInterval + "/" + maxInterval + ", latency=" + peripheralLatency
-                        + ", timeout=" + supervisionTimeout + "msec" + ", min_ce="
-                        + minConnectionEventLen + ", max_ce=" + maxConnectionEventLen);
+        Log.d(TAG, "leConnectionUpdate() - address=" + address + ", intervals="
+                    + minInterval + "/" + maxInterval + ", latency=" + peripheralLatency
+                    + ", timeout=" + supervisionTimeout + "msec" + ", min_ce="
+                    + minConnectionEventLen + ", max_ce=" + maxConnectionEventLen);
 
-
-        }
         gattConnectionParameterUpdateNative(clientIf, address, minInterval, maxInterval,
                                             peripheralLatency, supervisionTimeout,
                                             minConnectionEventLen, maxConnectionEventLen);
@@ -4031,7 +4022,7 @@ public class GattService extends ProfileService {
         app.callback.onServerConnectionState((byte) 0, serverIf, connected, address);
         statsLogAppPackage(address, applicationUid, serverIf);
         statsLogGattConnectionStateChange(
-                BluetoothProfile.GATT_SERVER, address, serverIf, connectionState);
+                BluetoothProfile.GATT_SERVER, address, serverIf, connectionState, -1);
     }
 
     void onServerReadCharacteristic(String address, int connId, int transId, int handle, int offset,
@@ -4581,7 +4572,8 @@ public class GattService extends ProfileService {
      *         a new ScanSettings object with the report delay being the floor value if the original
      *         report delay was between 0 and the floor value (exclusive of both)
      */
-    private ScanSettings enforceReportDelayFloor(ScanSettings settings) {
+    @VisibleForTesting
+    ScanSettings enforceReportDelayFloor(ScanSettings settings) {
         if (settings.getReportDelayMillis() == 0) {
             return settings;
         }
@@ -4720,16 +4712,18 @@ public class GattService extends ProfileService {
     }
 
     private void statsLogGattConnectionStateChange(
-            int profile, String address, int sessionIndex, int connectionState) {
+            int profile, String address, int sessionIndex, int connectionState,
+            int connectionStatus) {
         BluetoothDevice device = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
         BluetoothStatsLog.write(
                 BluetoothStatsLog.BLUETOOTH_CONNECTION_STATE_CHANGED, connectionState,
                 0 /* deprecated */, profile, new byte[0],
-                mAdapterService.getMetricId(device), sessionIndex);
+                mAdapterService.getMetricId(device), sessionIndex, connectionStatus);
         if (DBG) {
             Log.d(TAG, "Gatt Logging: metric_id=" + mAdapterService.getMetricId(device)
                     + ", session_index=" + sessionIndex
-                    + ", connection state=" + connectionState);
+                    + ", connection state=" + connectionState
+                    + ", connection status=" + connectionStatus);
         }
     }
 

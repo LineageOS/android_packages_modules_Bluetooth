@@ -33,14 +33,18 @@ flatbuffers::Offset<bluetooth::common::InitFlagsData> bluetooth::dumpsys::InitFl
   builder.add_gd_hci_enabled(true);
   builder.add_gd_controller_enabled(true);
 
+  builder.add_always_send_services_if_gatt_disc_done_is_enabled(
+      initFlags::always_send_services_if_gatt_disc_done_is_enabled());
   builder.add_asynchronously_start_l2cap_coc_is_enabled(initFlags::asynchronously_start_l2cap_coc_is_enabled());
   builder.add_btaa_hci_is_enabled(initFlags::btaa_hci_is_enabled());
   builder.add_bta_dm_clear_conn_id_on_client_close_is_enabled(
       initFlags::bta_dm_clear_conn_id_on_client_close_is_enabled());
   builder.add_btm_dm_flush_discovery_queue_on_search_cancel_is_enabled(
       initFlags::btm_dm_flush_discovery_queue_on_search_cancel_is_enabled());
-  builder.add_finite_att_timeout_is_enabled(initFlags::finite_att_timeout_is_enabled());
-  builder.add_gatt_robust_caching_client_is_enabled(initFlags::gatt_robust_caching_client_is_enabled());
+  builder.add_clear_hidd_interrupt_cid_on_disconnect_is_enabled(
+      initFlags::clear_hidd_interrupt_cid_on_disconnect_is_enabled());
+  builder.add_delay_hidh_cleanup_until_hidh_ready_start_is_enabled(
+      initFlags::delay_hidh_cleanup_until_hidh_ready_start_is_enabled());
   builder.add_gatt_robust_caching_server_is_enabled(initFlags::gatt_robust_caching_server_is_enabled());
   builder.add_gd_core_is_enabled(initFlags::gd_core_is_enabled());
   builder.add_gd_l2cap_is_enabled(initFlags::gd_l2cap_is_enabled());

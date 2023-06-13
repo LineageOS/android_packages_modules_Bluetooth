@@ -29,6 +29,7 @@
 
 #include "bind_helpers.h"
 #include "internal_include/bt_trace.h"
+#include "main/shim/dumpsys.h"
 #include "main/shim/le_scanning_manager.h"
 #include "main/shim/shim.h"
 #include "osi/include/alarm.h"
@@ -121,12 +122,11 @@ std::set<tAPP_ID> get_apps_connecting_to(const RawAddress& address) {
 
 bool IsTargetedAnnouncement(const uint8_t* p_eir, uint16_t eir_len) {
   const uint8_t* p_service_data = p_eir;
-  uint16_t remaining_data_len = eir_len;
   uint8_t service_data_len = 0;
 
   while ((p_service_data = AdvertiseDataParser::GetFieldByType(
               p_service_data + service_data_len,
-              (remaining_data_len -= service_data_len),
+              eir_len - (p_service_data - p_eir) - service_data_len,
               BTM_BLE_AD_TYPE_SERVICE_DATA_TYPE, &service_data_len))) {
     uint16_t uuid;
     uint8_t announcement_type;
@@ -174,8 +174,6 @@ static void target_announcement_observe_results_cb(tBTM_INQ_RESULTS* p_inq,
   LOG_INFO("Found targeted announcement for device %s",
            addr.ToString().c_str());
 
-  BTM_LogHistory(kBtmLogTag, addr, "Found TA from");
-
   if (it->second.is_in_accept_list) {
     LOG_INFO("Device %s is already connecting", addr.ToString().c_str());
     return;
@@ -185,6 +183,8 @@ static void target_announcement_observe_results_cb(tBTM_INQ_RESULTS* p_inq,
     LOG_DEBUG("Device %s already connected", addr.ToString().c_str());
     return;
   }
+
+  BTM_LogHistory(kBtmLogTag, addr, "Found TA from");
 
   /* Take fist app_id and use it for direct_connect */
   auto app_id = *(it->second.doing_targeted_announcements_conn.begin());
@@ -397,6 +397,10 @@ bool background_connect_remove(uint8_t app_id, const RawAddress& address) {
   return true;
 }
 
+bool is_background_connection(const RawAddress& address) {
+  return bgconn_dev.find(address) != bgconn_dev.end();
+}
+
 /** deregister all related background connetion device. */
 void on_app_deregistered(uint8_t app_id) {
   LOG_DEBUG("app_id=%d", static_cast<int>(app_id));
@@ -527,13 +531,15 @@ bool direct_connect_remove(uint8_t app_id, const RawAddress& address) {
             address.ToString().c_str());
   auto it = bgconn_dev.find(address);
   if (it == bgconn_dev.end()) {
-    LOG_WARN("Unable to find background connection to remove");
+    LOG_WARN("Unable to find background connection to remove peer:%s",
+             PRIVATE_ADDRESS(address));
     return false;
   }
 
   auto app_it = it->second.doing_direct_conn.find(app_id);
   if (app_it == it->second.doing_direct_conn.end()) {
-    LOG_WARN("Unable to find direct connection to remove");
+    LOG_WARN("Unable to find direct connection to remove peer:%s",
+             PRIVATE_ADDRESS(address));
     return false;
   }
 

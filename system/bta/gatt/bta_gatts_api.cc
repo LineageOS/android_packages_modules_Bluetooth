@@ -242,6 +242,12 @@ void BTA_GATTS_StopService(uint16_t service_id) {
 void BTA_GATTS_HandleValueIndication(uint16_t conn_id, uint16_t attr_id,
                                      std::vector<uint8_t> value,
                                      bool need_confirm) {
+
+  if (value.size() > sizeof(tBTA_GATTS_API_INDICATION::value)) {
+    LOG(ERROR) << __func__ << "data to indicate is too long";
+    return;
+  }
+
   tBTA_GATTS_API_INDICATION* p_buf =
       (tBTA_GATTS_API_INDICATION*)osi_calloc(sizeof(tBTA_GATTS_API_INDICATION));
 
@@ -366,5 +372,13 @@ void BTA_GATTS_Close(uint16_t conn_id) {
   p_buf->event = BTA_GATTS_API_CLOSE_EVT;
   p_buf->layer_specific = conn_id;
 
+  bta_sys_sendmsg(p_buf);
+}
+
+void BTA_GATTS_InitBonded(void) {
+  LOG(INFO) << __func__;
+
+  BT_HDR_RIGID* p_buf = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
+  p_buf->event = BTA_GATTS_API_INIT_BONDED_EVT;
   bta_sys_sendmsg(p_buf);
 }

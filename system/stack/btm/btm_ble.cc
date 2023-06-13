@@ -62,6 +62,22 @@ extern void gatt_notify_phy_updated(tGATT_STATUS status, uint16_t handle,
 #define PROPERTY_BLE_PRIVACY_ENABLED "bluetooth.core.gap.le.privacy.enabled"
 #endif
 
+// Pairing parameters defined in Vol 3, Part H, Chapter 3.5.1 - 3.5.2
+// All present in the exact decimal values, not hex
+// Ex: bluetooth.core.smp.le.ctkd.initiator_key_distribution 15(0x0f)
+static const char kPropertyCtkdAuthRequest[] =
+    "bluetooth.core.smp.le.ctkd.auth_request";
+static const char kPropertyCtkdIoCapabilities[] =
+    "bluetooth.core.smp.le.ctkd.io_capabilities";
+// Vol 3, Part H, Chapter 3.6.1, Figure 3.11
+// |EncKey(1)|IdKey(1)|SignKey(1)|LinkKey(1)|Reserved(4)|
+static const char kPropertyCtkdInitiatorKeyDistribution[] =
+    "bluetooth.core.smp.le.ctkd.initiator_key_distribution";
+static const char kPropertyCtkdResponderKeyDistribution[] =
+    "bluetooth.core.smp.le.ctkd.responder_key_distribution";
+static const char kPropertyCtkdMaxKeySize[] =
+    "bluetooth.core.smp.le.ctkd.max_key_size";
+
 /******************************************************************************/
 /* External Function to be called by other modules                            */
 /******************************************************************************/
@@ -488,9 +504,9 @@ void BTM_ReadDevInfo(const RawAddress& remote_bda, tBT_DEVICE_TYPE* p_dev_type,
     }
   } else /* there is a security device record exisitng */
   {
-    /* new inquiry result, overwrite device type in security device record */
+    /* new inquiry result, merge device type in security device record */
     if (p_inq_info) {
-      p_dev_rec->device_type = p_inq_info->results.device_type;
+      p_dev_rec->device_type |= p_inq_info->results.device_type;
       if (is_ble_addr_type_known(p_inq_info->results.ble_addr_type))
         p_dev_rec->ble.SetAddressType(p_inq_info->results.ble_addr_type);
       else
@@ -1019,7 +1035,8 @@ tL2CAP_LE_RESULT_CODE btm_ble_start_sec_check(const RawAddress& bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-void btm_ble_rand_enc_complete(uint8_t* p, uint16_t op_code,
+void btm_ble_rand_enc_complete(uint8_t* p, uint16_t evt_len,
+                               uint16_t op_code,
                                tBTM_RAND_ENC_CB* p_enc_cplt_cback) {
   tBTM_RAND_ENC params;
   uint8_t* p_dest = params.param_buf;
@@ -1030,6 +1047,11 @@ void btm_ble_rand_enc_complete(uint8_t* p, uint16_t op_code,
 
   /* If there was a callback address for vcs complete, call it */
   if (p_enc_cplt_cback && p) {
+
+    if (evt_len < 1) {
+      goto err_out;
+    }
+
     /* Pass paramters to the callback function */
     STREAM_TO_UINT8(params.status, p); /* command status */
 
@@ -1041,12 +1063,21 @@ void btm_ble_rand_enc_complete(uint8_t* p, uint16_t op_code,
       else
         params.param_len = OCTET16_LEN;
 
+      if (evt_len < 1 + params.param_len) {
+        goto err_out;
+      }
+
       /* Fetch return info from HCI event message */
       memcpy(p_dest, p, params.param_len);
     }
     if (p_enc_cplt_cback) /* Call the Encryption complete callback function */
       (*p_enc_cplt_cback)(&params);
   }
+
+  return;
+
+err_out:
+  BTM_TRACE_ERROR("%s malformatted event packet, too short", __func__);
 }
 
 /*******************************************************************************
@@ -1592,13 +1623,30 @@ void btm_ble_ltk_request_reply(const RawAddress& bda, bool use_stk,
   BTM_TRACE_ERROR("key size = %d", p_rec->ble.keys.key_size);
   if (use_stk) {
     btsnd_hcic_ble_ltk_req_reply(btm_cb.enc_handle, stk);
-  } else /* calculate LTK using peer device  */
-  {
-    if (p_rec->ble.key_type & BTM_LE_KEY_LENC)
-      btsnd_hcic_ble_ltk_req_reply(btm_cb.enc_handle, p_rec->ble.keys.lltk);
-    else
-      btsnd_hcic_ble_ltk_req_neg_reply(btm_cb.enc_handle);
+    return;
   }
+  /* calculate LTK using peer device  */
+  if (p_rec->ble.key_type & BTM_LE_KEY_LENC) {
+    btsnd_hcic_ble_ltk_req_reply(btm_cb.enc_handle, p_rec->ble.keys.lltk);
+    return;
+  }
+
+  p_rec = btm_find_dev_with_lenc(bda);
+  if (!p_rec) {
+    btsnd_hcic_ble_ltk_req_neg_reply(btm_cb.enc_handle);
+    return;
+  }
+
+  LOG_INFO("Found second sec_dev_rec for device that have LTK");
+  /* This can happen when remote established LE connection using RPA to this
+   * device, but then pair with us using Classing transport while still keeping
+   * LE connection. If remote attempts to encrypt the LE connection, we might
+   * end up here. We will eventually consolidate both entries, this is to avoid
+   * race conditions. */
+
+  LOG_ASSERT(p_rec->ble.key_type & BTM_LE_KEY_LENC);
+  p_cb->key_size = p_rec->ble.keys.key_size;
+  btsnd_hcic_ble_ltk_req_reply(btm_cb.enc_handle, p_rec->ble.keys.lltk);
 }
 
 /*******************************************************************************
@@ -1699,11 +1747,18 @@ uint8_t btm_ble_br_keys_req(tBTM_SEC_DEV_REC* p_dev_rec,
                             tBTM_LE_IO_REQ* p_data) {
   uint8_t callback_rc = BTM_SUCCESS;
   BTM_TRACE_DEBUG("%s", __func__);
-  if (btm_cb.api.p_le_callback) {
-    /* the callback function implementation may change the IO capability... */
-    callback_rc = (*btm_cb.api.p_le_callback)(
-        BTM_LE_IO_REQ_EVT, p_dev_rec->bd_addr, (tBTM_LE_EVT_DATA*)p_data);
-  }
+  p_data->io_cap =
+      osi_property_get_int32(kPropertyCtkdIoCapabilities, BTM_IO_CAP_UNKNOWN);
+  p_data->auth_req = osi_property_get_int32(kPropertyCtkdAuthRequest,
+                                            BTM_LE_AUTH_REQ_SC_MITM_BOND);
+  p_data->init_keys = osi_property_get_int32(
+      kPropertyCtkdInitiatorKeyDistribution, SMP_BR_SEC_DEFAULT_KEY);
+  p_data->resp_keys = osi_property_get_int32(
+      kPropertyCtkdResponderKeyDistribution, SMP_BR_SEC_DEFAULT_KEY);
+  p_data->max_key_size =
+      osi_property_get_int32(kPropertyCtkdMaxKeySize, BTM_BLE_MAX_KEY_SIZE);
+  // No OOB data for BR/EDR
+  p_data->oob_data = false;
 
   return callback_rc;
 }

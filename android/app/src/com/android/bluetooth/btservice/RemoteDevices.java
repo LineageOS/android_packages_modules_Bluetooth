@@ -27,6 +27,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHeadset;
 import android.bluetooth.BluetoothHeadsetClient;
 import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.IBluetoothConnectionCallback;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -38,6 +39,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
+import android.os.SystemProperties;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothStatsLog;
@@ -245,29 +247,28 @@ final class RemoteDevices {
 
     DeviceProperties getDeviceProperties(BluetoothDevice device) {
         synchronized (mDevices) {
-            DeviceProperties prop = mDevices.get(device.getAddress());
-            if (prop == null) {
-                String mainAddress = mDualDevicesMap.get(device.getAddress());
-                if (mainAddress != null && mDevices.get(mainAddress) != null) {
-                    prop = mDevices.get(mainAddress);
-                }
+            String address = mDualDevicesMap.get(device.getAddress());
+            // If the device is not in the dual map, use its original address
+            if (address == null || mDevices.get(address) == null) {
+                address = device.getAddress();
             }
-            return prop;
+            return mDevices.get(address);
         }
     }
 
     BluetoothDevice getDevice(byte[] address) {
         String addressString = Utils.getAddressStringFromByte(address);
-        DeviceProperties prop = mDevices.get(addressString);
-        if (prop == null) {
-            String mainAddress = mDualDevicesMap.get(addressString);
-            if (mainAddress != null && mDevices.get(mainAddress) != null) {
-                prop = mDevices.get(mainAddress);
-                return prop.getDevice();
-            }
-            return null;
+        String deviceAddress = mDualDevicesMap.get(addressString);
+        // If the device is not in the dual map, use its original address
+        if (deviceAddress == null || mDevices.get(deviceAddress) == null) {
+            deviceAddress = addressString;
         }
-        return prop.getDevice();
+
+        DeviceProperties prop = mDevices.get(deviceAddress);
+        if (prop != null) {
+            return prop.getDevice();
+        }
+        return null;
     }
 
     @VisibleForTesting
@@ -311,6 +312,7 @@ final class RemoteDevices {
         @VisibleForTesting int mBondState;
         @VisibleForTesting int mDeviceType;
         @VisibleForTesting ParcelUuid[] mUuids;
+        private BluetoothSinkAudioPolicy mAudioPolicy;
 
         DeviceProperties() {
             mBondState = BluetoothDevice.BOND_NONE;
@@ -497,6 +499,14 @@ final class RemoteDevices {
             synchronized (mObject) {
                 return mIsCoordinatedSetMember;
             }
+        }
+
+        public void setHfAudioPolicyForRemoteAg(BluetoothSinkAudioPolicy policies) {
+            mAudioPolicy = policies;
+        }
+
+        public BluetoothSinkAudioPolicy getHfAudioPolicyForRemoteAg() {
+            return mAudioPolicy;
         }
     }
 
@@ -752,6 +762,12 @@ final class RemoteDevices {
         DeviceProperties deviceProp = getDeviceProperties(device);
         if (deviceProp == null) {
             errorLog("Device Properties is null for Device:" + device);
+            return;
+        }
+        boolean restrict_device_found =
+                SystemProperties.getBoolean("bluetooth.restrict_discovered_device.enabled", false);
+        if (restrict_device_found && (deviceProp.mName == null || deviceProp.mName.isEmpty())) {
+            debugLog("Device name is null or empty: " + device);
             return;
         }
 

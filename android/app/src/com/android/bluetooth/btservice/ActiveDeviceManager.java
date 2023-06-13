@@ -26,6 +26,7 @@ import android.bluetooth.BluetoothHeadset;
 import android.bluetooth.BluetoothHearingAid;
 import android.bluetooth.BluetoothLeAudio;
 import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -689,10 +690,14 @@ class ActiveDeviceManager {
         if (headsetService == null) {
             return;
         }
-        if (!headsetService.setActiveDevice(device)) {
-            return;
+        BluetoothSinkAudioPolicy audioPolicy = headsetService.getHfpCallAudioPolicy(device);
+        if (audioPolicy == null || audioPolicy.getActiveDevicePolicyAfterConnection()
+                != BluetoothSinkAudioPolicy.POLICY_NOT_ALLOWED) {
+            if (!headsetService.setActiveDevice(device)) {
+                return;
+            }
+            mHfpActiveDevice = device;
         }
-        mHfpActiveDevice = device;
     }
 
     private void setHearingAidActiveDevice(BluetoothDevice device) {

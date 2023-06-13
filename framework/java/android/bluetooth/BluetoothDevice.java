@@ -510,7 +510,9 @@ public final class BluetoothDevice implements Parcelable, Attributable {
             METADATA_UNTETHERED_CASE_LOW_BATTERY_THRESHOLD,
             METADATA_SPATIAL_AUDIO,
             METADATA_FAST_PAIR_CUSTOMIZED_FIELDS,
-            METADATA_LE_AUDIO})
+            METADATA_LE_AUDIO,
+            METADATA_GMCS_CCCD,
+            METADATA_GTBS_CCCD})
     @Retention(RetentionPolicy.SOURCE)
     public @interface MetadataKey{}
 
@@ -663,6 +665,21 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     public static final int METADATA_ENHANCED_SETTINGS_UI_URI = 16;
 
     /**
+     * @hide
+     */
+    public static final String COMPANION_TYPE_PRIMARY = "COMPANION_PRIMARY";
+
+    /**
+     * @hide
+     */
+    public static final String COMPANION_TYPE_SECONDARY = "COMPANION_SECONDARY";
+
+    /**
+     * @hide
+     */
+    public static final String COMPANION_TYPE_NONE = "COMPANION_NONE";
+
+    /**
      * Type of the Bluetooth device, must be within the list of
      * BluetoothDevice.DEVICE_TYPE_*
      * Data type should be {@String} as {@link Byte} array.
@@ -742,6 +759,21 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      */
     public static final int METADATA_LE_AUDIO = 26;
 
+    /**
+     * The UUIDs (16-bit) of registered to CCC characteristics from Media Control services.
+     * Data type should be {@link Byte} array.
+     * @hide
+     */
+    public static final int METADATA_GMCS_CCCD = 27;
+
+    /**
+     * The UUIDs (16-bit) of registered to CCC characteristics from Telephony Bearer service.
+     * Data type should be {@link Byte} array.
+     * @hide
+     */
+    public static final int METADATA_GTBS_CCCD = 28;
+
+    private static final int METADATA_MAX_KEY = METADATA_GTBS_CCCD;
 
     /**
      * Device type which is used in METADATA_DEVICE_TYPE
@@ -3210,7 +3242,165 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * @hide
      */
     public static @MetadataKey int getMaxMetadataKey() {
-        return METADATA_LE_AUDIO;
+        return METADATA_MAX_KEY;
+    }
+
+    /** @hide */
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef(
+        prefix = { "FEATURE_" },
+        value = {
+            /** Remote support status of audio policy feature is unknown/unconfigured **/
+            BluetoothStatusCodes.FEATURE_NOT_CONFIGURED,
+            /** Remote support status of audio policy feature is supported **/
+            BluetoothStatusCodes.FEATURE_SUPPORTED,
+            /** Remote support status of audio policy feature is not supported **/
+            BluetoothStatusCodes.FEATURE_NOT_SUPPORTED,
+        }
+    )
+
+    public @interface AudioPolicyRemoteSupport {}
+
+    /** @hide */
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef(value = {
+            BluetoothStatusCodes.SUCCESS,
+            BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED,
+            BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED,
+            BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED,
+            BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION,
+            BluetoothStatusCodes.ERROR_PROFILE_NOT_CONNECTED,
+    })
+    public @interface AudioPolicyReturnValues{}
+
+    /**
+     * Returns whether the audio policy feature is supported by
+     * both the local and the remote device.
+     * This is configured during initiating the connection between the devices through
+     * one of the transport protocols (e.g. HFP Vendor specific protocol). So if the API
+     * is invoked before this initial configuration is completed, it returns
+     * {@link BluetoothStatusCodes#FEATURE_NOT_CONFIGURED} to indicate the remote
+     * device has not yet relayed this information. After the internal configuration,
+     * the support status will be set to either
+     * {@link BluetoothStatusCodes#FEATURE_NOT_SUPPORTED} or
+     * {@link BluetoothStatusCodes#FEATURE_SUPPORTED}.
+     * The rest of the APIs related to this feature in both {@link BluetoothDevice}
+     * and {@link BluetoothSinkAudioPolicy} should be invoked  only after getting a
+     * {@link BluetoothStatusCodes#FEATURE_SUPPORTED} response from this API.
+     * <p>Note that this API is intended to be used by a client device to send these requests
+     * to the server represented by this BluetoothDevice object.
+     *
+     * @return if call audio policy feature is supported by both local and remote
+     * device or not
+     *
+     * @hide
+     */
+    @RequiresBluetoothConnectPermission
+    @RequiresPermission(allOf = {
+            android.Manifest.permission.BLUETOOTH_CONNECT,
+            android.Manifest.permission.BLUETOOTH_PRIVILEGED,
+    })
+    public @AudioPolicyRemoteSupport int isRequestAudioPolicyAsSinkSupported() {
+        if (DBG) log("isRequestAudioPolicyAsSinkSupported()");
+        final IBluetooth service = getService();
+        final int defaultValue = BluetoothStatusCodes.FEATURE_NOT_CONFIGURED;
+        if (service == null || !isBluetoothEnabled()) {
+            Log.e(TAG, "BT not enabled. Cannot retrieve audio policy support status.");
+            if (DBG) log(Log.getStackTraceString(new Throwable()));
+        } else {
+            try {
+                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
+                service.isRequestAudioPolicyAsSinkSupported(this, mAttributionSource, recv);
+                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
+            } catch (TimeoutException e) {
+                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+            } catch (RemoteException e) {
+                Log.e(TAG, "", e);
+                throw e.rethrowFromSystemServer();
+            }
+        }
+        return defaultValue;
+    }
+
+    /**
+     * Sets call audio preferences and sends them to the remote device.
+     * <p>Note that the caller should check if the feature is supported by
+     * invoking {@link BluetoothDevice#isRequestAudioPolicyAsSinkSupported} first.
+     * <p>This API will throw an exception if the feature is not supported but still
+     * invoked.
+     * <p>Note that this API is intended to be used by a client device to send these requests
+     * to the server represented by this BluetoothDevice object.
+     *
+     * @param policies call audio policy preferences
+     * @return whether audio policy was requested successfully or not
+     *
+     * @hide
+     */
+    @RequiresBluetoothConnectPermission
+    @RequiresPermission(allOf = {
+            android.Manifest.permission.BLUETOOTH_CONNECT,
+            android.Manifest.permission.BLUETOOTH_PRIVILEGED,
+    })
+    public @AudioPolicyReturnValues int requestAudioPolicyAsSink(
+            @NonNull BluetoothSinkAudioPolicy policies) {
+        if (DBG) log("requestAudioPolicyAsSink");
+        final IBluetooth service = getService();
+        final int defaultValue = BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+        if (service == null || !isBluetoothEnabled()) {
+            Log.e(TAG, "Bluetooth is not enabled. Cannot set Audio Policy.");
+            if (DBG) log(Log.getStackTraceString(new Throwable()));
+        } else {
+            try {
+                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
+                service.requestAudioPolicyAsSink(this, policies, mAttributionSource, recv);
+                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
+            } catch (RemoteException | TimeoutException e) {
+                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+            }
+        }
+        return defaultValue;
+    }
+
+    /**
+     * Gets the call audio preferences for the remote device.
+     * <p>Note that the caller should check if the feature is supported by
+     * invoking {@link BluetoothDevice#isRequestAudioPolicyAsSinkSupported} first.
+     * <p>This API will throw an exception if the feature is not supported but still
+     * invoked.
+     * <p>This API will return null if
+     * 1. The bleutooth service is not started yet,
+     * 2. It is invoked for a device which is not bonded, or
+     * 3. The used transport, for example, HFP Client profile is not enabled or
+     * connected yet.
+     * <p>Note that this API is intended to be used by a client device to send these requests
+     * to the server represented by this BluetoothDevice object.
+     *
+     * @return call audio policy as {@link BluetoothSinkAudioPolicy} object
+     *
+     * @hide
+     */
+    @RequiresBluetoothConnectPermission
+    @RequiresPermission(allOf = {
+            android.Manifest.permission.BLUETOOTH_CONNECT,
+            android.Manifest.permission.BLUETOOTH_PRIVILEGED,
+    })
+    public @Nullable BluetoothSinkAudioPolicy getRequestedAudioPolicyAsSink() {
+        if (DBG) log("getRequestedAudioPolicyAsSink");
+        final IBluetooth service = getService();
+        if (service == null || !isBluetoothEnabled()) {
+            Log.e(TAG, "Bluetooth is not enabled. Cannot get Audio Policy.");
+            if (DBG) log(Log.getStackTraceString(new Throwable()));
+        } else {
+            try {
+                final SynchronousResultReceiver<BluetoothSinkAudioPolicy>
+                        recv = SynchronousResultReceiver.get();
+                service.getRequestedAudioPolicyAsSink(this, mAttributionSource, recv);
+                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
+            } catch (RemoteException | TimeoutException e) {
+                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+            }
+        }
+        return null;
     }
 
     /**

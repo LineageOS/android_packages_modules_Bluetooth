@@ -75,10 +75,6 @@
 #define BTA_HH_ROLE BTA_CENTRAL_ROLE_PREF
 #endif
 
-#ifndef BTA_DISABLE_DELAY
-#define BTA_DISABLE_DELAY 200 /* in milliseconds */
-#endif
-
 #ifndef AVDT_VERSION
 #define AVDT_VERSION 0x0103
 #endif
@@ -818,10 +814,6 @@
 #define PAN_INCLUDED TRUE
 #endif
 
-#ifndef PAN_NAP_DISABLED
-#define PAN_NAP_DISABLED FALSE
-#endif
-
 #ifndef PANU_DISABLED
 #define PANU_DISABLED FALSE
 #endif
@@ -974,10 +966,6 @@
  *
  *****************************************************************************/
 
-#ifndef AVRC_ADV_CTRL_INCLUDED
-#define AVRC_ADV_CTRL_INCLUDED TRUE
-#endif
-
 #ifndef DUMP_PCM_DATA
 #define DUMP_PCM_DATA FALSE
 #endif
@@ -1025,13 +1013,5 @@
 #endif
 
 #include "bt_trace.h"
-
-#ifndef BTM_DELAY_AUTH_MS
-#define BTM_DELAY_AUTH_MS 0
-#endif
-
-#ifndef BTM_DISABLE_CONCURRENT_PEER_AUTH
-#define BTM_DISABLE_CONCURRENT_PEER_AUTH FALSE
-#endif
 
 #endif /* BT_TARGET_H */

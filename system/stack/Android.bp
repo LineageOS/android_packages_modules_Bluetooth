@@ -207,6 +207,7 @@ cc_library_static {
         "libbt-hci",
     ],
     whole_static_libs: [
+        "libcom.android.sysprop.bluetooth",
         "libldacBT_abr",
         "libldacBT_enc",
         "libaptx_enc",
@@ -235,6 +236,7 @@ cc_test {
     srcs: [
         "test/stack_a2dp_test.cc",
         "test/stack_avrcp_test.cc",
+        "test/gatt/gatt_api_test.cc",
     ],
     shared_libs: [
         "android.hardware.bluetooth@1.0",
@@ -481,8 +483,12 @@ cc_test {
 // Bluetooth stack connection multiplexing
 cc_test {
     name: "net_test_gatt_conn_multiplexing",
-    defaults: ["fluoride_defaults"],
+    defaults: [
+        "fluoride_defaults",
+        "mts_defaults",
+    ],
     host_supported: true,
+    test_suites: ["general-tests"],
     local_include_dirs: [
         "include",
         "btm",
@@ -937,6 +943,7 @@ cc_test {
         ":BluetoothHalSources_hci_host",
         ":BluetoothOsSources_host",
         ":TestCommonMainHandler",
+        ":TestCommonMockFunctions",
         ":TestMockBta",
         ":TestMockBtif",
         ":TestMockDevice",
@@ -978,6 +985,7 @@ cc_test {
         "btm/btm_sec.cc",
         "metrics/stack_metrics_logging.cc",
         "test/btm/stack_btm_test.cc",
+        "test/btm/stack_btm_regression_tests.cc",
         "test/btm/peer_packet_types_test.cc",
         "test/common/mock_eatt.cc",
     ],
@@ -997,9 +1005,14 @@ cc_test {
         "libprotobuf-cpp-lite",
     ],
     sanitize: {
-      hwaddress: true,
-      integer_overflow: true,
-      scs: true,
+        address: true,
+        all_undefined: true,
+        cfi: true,
+        integer_overflow: true,
+        scs: true,
+        diag: {
+            undefined : true
+        },
     },
 }
 
@@ -1289,6 +1302,7 @@ cc_test {
         "libbt-common",
         "libbt-protos-lite",
         "libbtdevice",
+        "libflatbuffers-cpp",
         "libgmock",
         "liblog",
         "libosi",
@@ -1296,7 +1310,6 @@ cc_test {
     shared_libs: [
         "libbinder_ndk",
         "libcrypto",
-        "libflatbuffers-cpp",
         "libprotobuf-cpp-lite",
     ],
     sanitize: {
@@ -1359,6 +1372,7 @@ cc_test {
     static_libs: [
         "libbt-common",
         "libbt-protos-lite",
+        "libflatbuffers-cpp",
         "libgmock",
         "liblog",
         "libosi",
@@ -1366,7 +1380,6 @@ cc_test {
     shared_libs: [
         "libbinder_ndk",
         "libcrypto",
-        "libflatbuffers-cpp",
         "libprotobuf-cpp-lite",
     ],
     sanitize: {

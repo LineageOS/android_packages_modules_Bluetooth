@@ -63,11 +63,11 @@ class BtaHfClientAddRecordTest : public ::testing::Test {
 };
 
 TEST_F(BtaHfClientAddRecordTest, test_hf_client_add_record) {
-  tBTA_HF_CLIENT_FEAT features = BTIF_HF_CLIENT_FEATURES;
+  tBTA_HF_CLIENT_FEAT features = get_default_hf_client_features();
   uint32_t sdp_handle = 0;
   uint8_t scn = 0;
 
   bta_hf_client_add_record("Handsfree", scn, features, sdp_handle);
-  ASSERT_EQ(gVersion, BTA_HFP_VERSION);
+  ASSERT_EQ(gVersion, get_default_hfp_version());
 }
 
