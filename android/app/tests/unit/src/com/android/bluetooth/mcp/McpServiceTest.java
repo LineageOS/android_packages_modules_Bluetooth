@@ -65,7 +65,6 @@ public class McpServiceTest {
 
         mAdapter = BluetoothAdapter.getDefaultAdapter();
 
-        doReturn(true).when(mAdapterService).isStartedProfile(anyString());
         McpService.setMediaControlProfileForTesting(mMediaControlProfile);
         mMcpService = new McpService(mTargetContext);
         mMcpService.doStart();
@@ -77,7 +76,6 @@ public class McpServiceTest {
             return;
         }
 
-        doReturn(false).when(mAdapterService).isStartedProfile(anyString());
         mMcpService.doStop();
         mMcpService = McpService.getMcpService();
         Assert.assertNull(mMcpService);

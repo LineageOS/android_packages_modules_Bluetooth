@@ -65,7 +65,6 @@ public class SapServiceTest {
         mTargetContext = InstrumentationRegistry.getTargetContext();
         MockitoAnnotations.initMocks(this);
         TestUtils.setAdapterService(mAdapterService);
-        doReturn(true, false).when(mAdapterService).isStartedProfile(anyString());
         mService = new SapService(mTargetContext);
         mService.doStart();
         // Try getting the Bluetooth adapter

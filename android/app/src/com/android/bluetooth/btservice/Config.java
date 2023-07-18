@@ -51,7 +51,6 @@ import com.android.bluetooth.vc.VolumeControlService;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.Arrays;
-import java.util.Map;
 
 public class Config {
     private static final String TAG = "AdapterServiceConfig";
@@ -64,91 +63,54 @@ public class Config {
             "persist.bluetooth.leaudio_switcher.disabled";
 
     private static class ProfileConfig {
-        Class mClass;
         boolean mSupported;
         int mProfileId;
 
-        ProfileConfig(Class theClass, boolean supported, int profileId) {
-            mClass = theClass;
+        ProfileConfig(boolean supported, int profileId) {
             mSupported = supported;
             mProfileId = profileId;
         }
     }
 
     /** List of profile services related to LE audio */
-    private static final Map<Integer, Class> LE_AUDIO_UNICAST_PROFILES =
-            Map.of(
-                    BluetoothProfile.LE_AUDIO, LeAudioService.class,
-                    BluetoothProfile.VOLUME_CONTROL, VolumeControlService.class,
-                    BluetoothProfile.CSIP_SET_COORDINATOR, CsipSetCoordinatorService.class,
-                    BluetoothProfile.MCP_SERVER, McpService.class,
-                    BluetoothProfile.LE_CALL_CONTROL, TbsService.class);
+    private static final int[] LE_AUDIO_UNICAST_PROFILES = {
+        BluetoothProfile.LE_AUDIO,
+        BluetoothProfile.VOLUME_CONTROL,
+        BluetoothProfile.CSIP_SET_COORDINATOR,
+        BluetoothProfile.MCP_SERVER,
+        BluetoothProfile.LE_CALL_CONTROL,
+    };
 
     /** List of profile services with the profile-supported resource flag and bit mask. */
     private static final ProfileConfig[] PROFILE_SERVICES_AND_FLAGS = {
-        new ProfileConfig(A2dpService.class, A2dpService.isEnabled(), BluetoothProfile.A2DP),
+        new ProfileConfig(A2dpService.isEnabled(), BluetoothProfile.A2DP),
+        new ProfileConfig(A2dpSinkService.isEnabled(), BluetoothProfile.A2DP_SINK),
+        new ProfileConfig(AvrcpTargetService.isEnabled(), BluetoothProfile.AVRCP),
+        new ProfileConfig(AvrcpControllerService.isEnabled(), BluetoothProfile.AVRCP_CONTROLLER),
         new ProfileConfig(
-                A2dpSinkService.class, A2dpSinkService.isEnabled(), BluetoothProfile.A2DP_SINK),
+                BassClientService.isEnabled(), BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT),
+        new ProfileConfig(BatteryService.isEnabled(), BluetoothProfile.BATTERY),
         new ProfileConfig(
-                AvrcpTargetService.class, AvrcpTargetService.isEnabled(), BluetoothProfile.AVRCP),
-        new ProfileConfig(
-                AvrcpControllerService.class,
-                AvrcpControllerService.isEnabled(),
-                BluetoothProfile.AVRCP_CONTROLLER),
-        new ProfileConfig(
-                BassClientService.class,
-                BassClientService.isEnabled(),
-                BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT),
-        new ProfileConfig(
-                BatteryService.class, BatteryService.isEnabled(), BluetoothProfile.BATTERY),
-        new ProfileConfig(
-                CsipSetCoordinatorService.class,
-                CsipSetCoordinatorService.isEnabled(),
-                BluetoothProfile.CSIP_SET_COORDINATOR),
-        new ProfileConfig(
-                HapClientService.class, HapClientService.isEnabled(), BluetoothProfile.HAP_CLIENT),
-        new ProfileConfig(
-                HeadsetService.class, HeadsetService.isEnabled(), BluetoothProfile.HEADSET),
-        new ProfileConfig(
-                HeadsetClientService.class,
-                HeadsetClientService.isEnabled(),
-                BluetoothProfile.HEADSET_CLIENT),
-        new ProfileConfig(
-                HearingAidService.class,
-                HearingAidService.isEnabled(),
-                BluetoothProfile.HEARING_AID),
-        new ProfileConfig(
-                HidDeviceService.class, HidDeviceService.isEnabled(), BluetoothProfile.HID_DEVICE),
-        new ProfileConfig(
-                HidHostService.class, HidHostService.isEnabled(), BluetoothProfile.HID_HOST),
-        new ProfileConfig(GattService.class, GattService.isEnabled(), BluetoothProfile.GATT),
-        new ProfileConfig(
-                LeAudioService.class, LeAudioService.isEnabled(), BluetoothProfile.LE_AUDIO),
-        new ProfileConfig(
-                null, LeAudioService.isBroadcastEnabled(), BluetoothProfile.LE_AUDIO_BROADCAST),
-        new ProfileConfig(
-                TbsService.class, TbsService.isEnabled(), BluetoothProfile.LE_CALL_CONTROL),
-        new ProfileConfig(
-                BluetoothMapService.class, BluetoothMapService.isEnabled(), BluetoothProfile.MAP),
-        new ProfileConfig(
-                MapClientService.class, MapClientService.isEnabled(), BluetoothProfile.MAP_CLIENT),
-        new ProfileConfig(McpService.class, McpService.isEnabled(), BluetoothProfile.MCP_SERVER),
-        new ProfileConfig(
-                BluetoothOppService.class, BluetoothOppService.isEnabled(), BluetoothProfile.OPP),
-        new ProfileConfig(PanService.class, PanService.isEnabled(), BluetoothProfile.PAN),
-        new ProfileConfig(
-                BluetoothPbapService.class,
-                BluetoothPbapService.isEnabled(),
-                BluetoothProfile.PBAP),
-        new ProfileConfig(
-                PbapClientService.class,
-                PbapClientService.isEnabled(),
-                BluetoothProfile.PBAP_CLIENT),
-        new ProfileConfig(SapService.class, SapService.isEnabled(), BluetoothProfile.SAP),
-        new ProfileConfig(
-                VolumeControlService.class,
-                VolumeControlService.isEnabled(),
-                BluetoothProfile.VOLUME_CONTROL),
+                CsipSetCoordinatorService.isEnabled(), BluetoothProfile.CSIP_SET_COORDINATOR),
+        new ProfileConfig(HapClientService.isEnabled(), BluetoothProfile.HAP_CLIENT),
+        new ProfileConfig(HeadsetService.isEnabled(), BluetoothProfile.HEADSET),
+        new ProfileConfig(HeadsetClientService.isEnabled(), BluetoothProfile.HEADSET_CLIENT),
+        new ProfileConfig(HearingAidService.isEnabled(), BluetoothProfile.HEARING_AID),
+        new ProfileConfig(HidDeviceService.isEnabled(), BluetoothProfile.HID_DEVICE),
+        new ProfileConfig(HidHostService.isEnabled(), BluetoothProfile.HID_HOST),
+        new ProfileConfig(GattService.isEnabled(), BluetoothProfile.GATT),
+        new ProfileConfig(LeAudioService.isEnabled(), BluetoothProfile.LE_AUDIO),
+        new ProfileConfig(LeAudioService.isBroadcastEnabled(), BluetoothProfile.LE_AUDIO_BROADCAST),
+        new ProfileConfig(TbsService.isEnabled(), BluetoothProfile.LE_CALL_CONTROL),
+        new ProfileConfig(BluetoothMapService.isEnabled(), BluetoothProfile.MAP),
+        new ProfileConfig(MapClientService.isEnabled(), BluetoothProfile.MAP_CLIENT),
+        new ProfileConfig(McpService.isEnabled(), BluetoothProfile.MCP_SERVER),
+        new ProfileConfig(BluetoothOppService.isEnabled(), BluetoothProfile.OPP),
+        new ProfileConfig(PanService.isEnabled(), BluetoothProfile.PAN),
+        new ProfileConfig(BluetoothPbapService.isEnabled(), BluetoothProfile.PBAP),
+        new ProfileConfig(PbapClientService.isEnabled(), BluetoothProfile.PBAP_CLIENT),
+        new ProfileConfig(SapService.isEnabled(), BluetoothProfile.SAP),
+        new ProfileConfig(VolumeControlService.isEnabled(), BluetoothProfile.VOLUME_CONTROL),
     };
 
     /** A test function to allow for dynamic enabled */
@@ -167,8 +129,8 @@ public class Config {
                 SystemProperties.getBoolean(LE_AUDIO_DYNAMIC_SWITCH_PROPERTY, false);
 
         if (leAudioDynamicSwitchSupported) {
-            final String leAudioSwitcherDisabled = SystemProperties
-                    .get(LE_AUDIO_SWITCHER_DISABLED_PROPERTY, "none");
+            final String leAudioSwitcherDisabled =
+                    SystemProperties.get(LE_AUDIO_SWITCHER_DISABLED_PROPERTY, "none");
             if (leAudioSwitcherDisabled.equals("true")) {
                 setLeAudioProfileStatus(false);
             } else if (leAudioSwitcherDisabled.equals("false")) {
@@ -217,17 +179,17 @@ public class Config {
         }
     }
 
-    static Map<Integer, Class> getLeAudioUnicastProfiles() {
+    static int[] getLeAudioUnicastProfiles() {
         return LE_AUDIO_UNICAST_PROFILES;
     }
 
-    static Class[] getSupportedProfiles() {
+    static int[] getSupportedProfiles() {
         return Arrays.stream(PROFILE_SERVICES_AND_FLAGS)
                 .filter(config -> config.mSupported)
-                .map(config -> config.mClass)
-                // class is null for BluetoothProfile.LE_AUDIO_BROADCAST
-                .filter(profileClass -> profileClass != null)
-                .toArray(Class[]::new);
+                .mapToInt(config -> config.mProfileId)
+                // LE_AUDIO_BROADCAST don't have an associated class
+                .filter(profileId -> profileId != BluetoothProfile.LE_AUDIO_BROADCAST)
+                .toArray();
     }
 
     static long getSupportedProfilesBitMask() {

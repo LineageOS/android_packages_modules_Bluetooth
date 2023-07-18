@@ -70,7 +70,6 @@ public class PanServiceTest {
         MockitoAnnotations.initMocks(this);
         TestUtils.setAdapterService(mAdapterService);
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
-        doReturn(true, false).when(mAdapterService).isStartedProfile(anyString());
         PanNativeInterface.setInstance(mNativeInterface);
         mService = new PanService(targetContext);
         mService.doStart();

@@ -198,9 +198,11 @@ public class AdapterServiceTest {
         PeriodicScanNativeInterface.setInstance(mPeriodicNativeInterface);
 
         // Post the creation of AdapterService since it rely on Looper.myLooper()
-        handler.post(() -> mAdapterService = new AdapterService(mLooper.getLooper()));
+        handler.post(() -> mAdapterService = spy(new AdapterService(mLooper.getLooper())));
         assertThat(mLooper.dispatchAll()).isEqualTo(1);
         assertThat(mAdapterService).isNotNull();
+
+        doNothing().when(mAdapterService).setProfileServiceState(anyInt(), anyInt());
 
         mMockPackageManager = mock(PackageManager.class);
         when(mMockPackageManager.getPermissionInfo(any(), anyInt()))
@@ -404,7 +406,7 @@ public class AdapterServiceTest {
 
         if (!onlyGatt) {
             // Stop PBAP and PAN services
-            verify(ctx, times(4)).startService(any());
+            verify(adapter, times(4)).setProfileServiceState(anyInt(), anyInt());
 
             for (ProfileService service : services) {
                 adapter.onProfileServiceStateChanged(service, STATE_OFF);
@@ -454,7 +456,7 @@ public class AdapterServiceTest {
 
         if (!onlyGatt) {
             // Start Mock PBAP and PAN services
-            verify(ctx, times(2)).startService(any());
+            verify(adapter, times(2)).setProfileServiceState(anyInt(), anyInt());
 
             for (ProfileService service : services) {
                 adapter.addProfile(service);
@@ -661,7 +663,8 @@ public class AdapterServiceTest {
         mAdapterService.startBrEdr();
         syncHandler(AdapterState.USER_TURN_ON);
         verifyStateChange(STATE_BLE_ON, STATE_TURNING_ON);
-        verify(mMockContext, times(2)).startService(any()); // Register Mock PBAP and PAN services
+        verify(mAdapterService, times(2))
+                .setProfileServiceState(anyInt(), anyInt()); // Register Mock PBAP and PAN services
 
         mAdapterService.addProfile(mMockService);
         syncHandler(MESSAGE_PROFILE_SERVICE_REGISTERED);
@@ -676,7 +679,8 @@ public class AdapterServiceTest {
         syncHandler(AdapterState.BREDR_START_TIMEOUT);
 
         verifyStateChange(STATE_TURNING_ON, STATE_TURNING_OFF);
-        verify(mMockContext, times(4)).startService(any()); // Stop PBAP and PAN services
+        verify(mAdapterService, times(4))
+                .setProfileServiceState(anyInt(), anyInt()); // Stop PBAP and PAN services
 
         mAdapterService.onProfileServiceStateChanged(mMockService, STATE_OFF);
         syncHandler(MESSAGE_PROFILE_SERVICE_STATE_CHANGED);
@@ -698,7 +702,7 @@ public class AdapterServiceTest {
         mAdapterService.disable();
         syncHandler(AdapterState.USER_TURN_OFF);
         verifyStateChange(STATE_ON, STATE_TURNING_OFF);
-        verify(mMockContext, times(4)).startService(any());
+        verify(mAdapterService, times(4)).setProfileServiceState(anyInt(), anyInt());
 
         mAdapterService.onProfileServiceStateChanged(mMockService, STATE_OFF);
         syncHandler(MESSAGE_PROFILE_SERVICE_STATE_CHANGED);

@@ -73,7 +73,6 @@ public class BluetoothMapServiceTest {
         MockitoAnnotations.initMocks(this);
         TestUtils.setAdapterService(mAdapterService);
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
-        doReturn(true, false).when(mAdapterService).isStartedProfile(anyString());
         mService = new BluetoothMapService(targetContext);
         mService.doStart();
         // Try getting the Bluetooth adapter

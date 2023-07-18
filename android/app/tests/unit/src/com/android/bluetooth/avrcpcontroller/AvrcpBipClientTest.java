@@ -66,7 +66,6 @@ public class AvrcpBipClientTest {
         Context targetContext = InstrumentationRegistry.getTargetContext();
         MockitoAnnotations.initMocks(this);
         TestUtils.setAdapterService(mAdapterService);
-        doReturn(true, false).when(mAdapterService).isStartedProfile(anyString());
         AvrcpControllerNativeInterface.setInstance(mNativeInterface);
         mService = new AvrcpControllerService(targetContext, mNativeInterface);
         mService.doStart();

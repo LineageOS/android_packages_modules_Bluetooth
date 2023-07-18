@@ -20,8 +20,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import android.bluetooth.BluetoothProfile;
 
-import com.android.bluetooth.csip.CsipSetCoordinatorService;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -34,18 +32,22 @@ public final class ConfigTest {
     public void setProfileEnabled() {
         boolean enabled =
                 Arrays.stream(Config.getSupportedProfiles())
-                        .anyMatch(cls -> cls == CsipSetCoordinatorService.class);
+                        .anyMatch(profileId -> profileId == BluetoothProfile.CSIP_SET_COORDINATOR);
 
         Config.setProfileEnabled(BluetoothProfile.CSIP_SET_COORDINATOR, false);
         assertThat(
                         Arrays.stream(Config.getSupportedProfiles())
-                                .anyMatch(cls -> cls == CsipSetCoordinatorService.class))
+                                .anyMatch(
+                                        profileId ->
+                                                profileId == BluetoothProfile.CSIP_SET_COORDINATOR))
                 .isFalse();
 
         Config.setProfileEnabled(BluetoothProfile.CSIP_SET_COORDINATOR, true);
         assertThat(
                         Arrays.stream(Config.getSupportedProfiles())
-                                .anyMatch(cls -> cls == CsipSetCoordinatorService.class))
+                                .anyMatch(
+                                        profileId ->
+                                                profileId == BluetoothProfile.CSIP_SET_COORDINATOR))
                 .isTrue();
 
         Config.setProfileEnabled(BluetoothProfile.CSIP_SET_COORDINATOR, enabled);
