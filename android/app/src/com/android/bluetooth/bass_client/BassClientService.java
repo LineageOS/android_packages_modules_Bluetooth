@@ -1388,7 +1388,7 @@ public class BassClientService extends ProfileService {
                 try {
                     invokeCallback(callback, msg);
                 } catch (RemoteException e) {
-                    Log.e(TAG, "Stack:" + Log.getStackTraceString(e));
+                    continue;
                 }
             }
             mCallbacks.finishBroadcast();
