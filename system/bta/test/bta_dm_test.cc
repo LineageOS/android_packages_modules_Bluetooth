@@ -24,6 +24,7 @@
 #include "bta/dm/bta_dm_disc.h"
 #include "bta/dm/bta_dm_disc_int.h"
 #include "bta/dm/bta_dm_int.h"
+#include "bta/dm/bta_dm_pm.cc"
 #include "bta/dm/bta_dm_sec_int.h"
 #include "bta/hf_client/bta_hf_client_int.h"
 #include "bta/include/bta_api.h"
@@ -579,3 +580,23 @@ TEST_F(BtaDmTest, bta_dm_disc_start__true) { bta_dm_disc_start(true); }
 TEST_F(BtaDmTest, bta_dm_disc_start__false) { bta_dm_disc_start(false); }
 
 TEST_F(BtaDmTest, bta_dm_disc_stop) { bta_dm_disc_stop(); }
+
+TEST_F(BtaDmCustomAlarmTest, bta_dm_sniff_cback) {
+  // Setup a connected device
+  const tBT_TRANSPORT transport{BT_TRANSPORT_BR_EDR};
+  tBTA_DM_PEER_DEVICE* device =
+      bluetooth::legacy::testing::allocate_device_for(kRawAddress, transport);
+  ASSERT_TRUE(device != nullptr);
+
+  // Trigger a sniff timer
+  bta_dm_pm_start_timer(&bta_dm_cb.pm_timer[0],
+                        bta_pm_action_to_timer_idx(BTA_DM_PM_SNIFF), 10, 1,
+                        BTA_DM_PM_SNIFF);
+  bta_dm_cb.pm_timer[0].peer_bdaddr = kRawAddress;
+  ASSERT_EQ(1, get_func_call_count("alarm_set_on_mloop"));
+
+  // Trigger reset sniff
+  bta_dm_sniff_cback(BTA_ID_JV, 1, kRawAddress);
+  ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
+  ASSERT_EQ(2, get_func_call_count("alarm_set_on_mloop"));
+}
