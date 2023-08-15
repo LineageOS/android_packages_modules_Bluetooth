@@ -77,7 +77,11 @@ extern const tBLE_BD_ADDR convert_to_address_with_type(
 #define BTM_VSC_CHIP_CAPABILITY_RSP_LEN 9
 #define BTM_VSC_CHIP_CAPABILITY_RSP_LEN_L_RELEASE \
   BTM_VSC_CHIP_CAPABILITY_RSP_LEN
+
+#ifndef BTM_VSC_CHIP_CAPABILITY_RSP_LEN_M_RELEASE
 #define BTM_VSC_CHIP_CAPABILITY_RSP_LEN_M_RELEASE 15
+#endif
+
 #define BTM_VSC_CHIP_CAPABILITY_RSP_LEN_S_RELEASE 25
 
 /* Sysprop paths for scan parameters */
