@@ -1022,6 +1022,10 @@ void bta_dm_pm_active(const RawAddress& peer_addr) {
   }
 }
 
+static void bta_dm_pm_btm_status(const RawAddress& bd_addr,
+                                 tBTM_PM_STATUS status, uint16_t interval,
+                                 tHCI_STATUS hci_status);
+
 /** BTM power manager callback */
 static void bta_dm_pm_btm_cback(const RawAddress& bd_addr,
                                 tBTM_PM_STATUS status, uint16_t value,
@@ -1073,8 +1077,9 @@ static void bta_dm_pm_timer_cback(void* data) {
 }
 
 /** Process pm status event from btm */
-void bta_dm_pm_btm_status(const RawAddress& bd_addr, tBTM_PM_STATUS status,
-                          uint16_t interval, tHCI_STATUS hci_status) {
+static void bta_dm_pm_btm_status(const RawAddress& bd_addr,
+                                 tBTM_PM_STATUS status, uint16_t interval,
+                                 tHCI_STATUS hci_status) {
   log::debug(
       "Power mode notification event status:{} peer:{} interval:{} "
       "hci_status:{}",
