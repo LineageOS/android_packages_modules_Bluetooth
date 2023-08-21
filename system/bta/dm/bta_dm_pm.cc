@@ -65,6 +65,8 @@ static int bta_dm_get_sco_index();
 static void bta_dm_pm_stop_timer_by_index(tBTA_PM_TIMER* p_timer,
                                           uint8_t timer_idx);
 
+static tBTM_PM_PWR_MD get_sniff_entry(uint8_t index);
+
 #include "../hh/bta_hh_int.h"
 /* BTA_DM_PM_SSR1 will be dedicated for HH SSR setting entry, no other profile
  * can use it */
@@ -790,7 +792,7 @@ static bool bta_dm_pm_park(const RawAddress& peer_addr) {
  * Returns          tBTM_PM_PWR_MD with specified |index|.
  *
  ******************************************************************************/
-tBTM_PM_PWR_MD get_sniff_entry(uint8_t index) {
+static tBTM_PM_PWR_MD get_sniff_entry(uint8_t index) {
   static std::vector<tBTM_PM_PWR_MD> pwr_mds_cache;
   if (pwr_mds_cache.size() == BTA_DM_PM_PARK_IDX) {
     if (index >= BTA_DM_PM_PARK_IDX) {
