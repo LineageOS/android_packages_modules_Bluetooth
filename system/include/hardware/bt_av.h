@@ -61,7 +61,14 @@ typedef enum {
 
   BTAV_A2DP_CODEC_INDEX_SOURCE_MAX,
 
-  BTAV_A2DP_CODEC_INDEX_SINK_MIN = BTAV_A2DP_CODEC_INDEX_SOURCE_MAX,
+  // Range of codec indexes reserved for Offload codec extensibility.
+  // Indexes in this range will be allocated for offloaded codecs
+  // that the stack does not recognize.
+  BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MIN = BTAV_A2DP_CODEC_INDEX_SOURCE_MAX,
+  BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MAX =
+      BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MIN + 4,
+
+  BTAV_A2DP_CODEC_INDEX_SINK_MIN = BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MAX,
 
   // Add an entry for each sink codec here
   BTAV_A2DP_CODEC_INDEX_SINK_SBC = BTAV_A2DP_CODEC_INDEX_SINK_MIN,
@@ -71,8 +78,14 @@ typedef enum {
 
   BTAV_A2DP_CODEC_INDEX_SINK_MAX,
 
+  // Range of codec indexes reserved for Offload codec extensibility.
+  // Indexes in this range will be allocated for offloaded codecs
+  // that the stack does not recognize.
+  BTAV_A2DP_CODEC_INDEX_SINK_EXT_MIN = BTAV_A2DP_CODEC_INDEX_SINK_MAX,
+  BTAV_A2DP_CODEC_INDEX_SINK_EXT_MAX = BTAV_A2DP_CODEC_INDEX_SINK_EXT_MIN + 4,
+
   BTAV_A2DP_CODEC_INDEX_MIN = BTAV_A2DP_CODEC_INDEX_SOURCE_MIN,
-  BTAV_A2DP_CODEC_INDEX_MAX = BTAV_A2DP_CODEC_INDEX_SINK_MAX
+  BTAV_A2DP_CODEC_INDEX_MAX = BTAV_A2DP_CODEC_INDEX_SINK_EXT_MAX
 } btav_a2dp_codec_index_t;
 
 typedef enum {
@@ -187,6 +200,10 @@ struct btav_a2dp_codec_config_t {
         break;
       case BTAV_A2DP_CODEC_INDEX_MAX:
         codec_name_str = "Unknown(CODEC_INDEX_MAX)";
+        break;
+      case BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MIN:
+      case BTAV_A2DP_CODEC_INDEX_SINK_EXT_MIN:
+        codec_name_str = "Unknown(CODEC_EXT)";
         break;
     }
 
