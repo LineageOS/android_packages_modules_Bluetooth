@@ -70,7 +70,6 @@
 extern tBTM_CB btm_cb;
 
 void btm_inq_remote_name_timer_timeout(void* data);
-void btm_ble_batchscan_init(void);
 void btm_ble_adv_filter_init(void);
 
 #define BTM_EXT_BLE_RMT_NAME_TIMEOUT_MS (30 * 1000)
@@ -768,8 +767,6 @@ static void btm_ble_vendor_capability_vsc_cmpl_cback(
       btm_cb.cmn_ble_vsc_cb.max_irk_list_sz > 0 &&
       controller_get_interface()->get_ble_resolving_list_max_size() == 0)
     btm_ble_resolving_list_init(btm_cb.cmn_ble_vsc_cb.max_irk_list_sz);
-
-  if (btm_cb.cmn_ble_vsc_cb.tot_scan_results_strg > 0) btm_ble_batchscan_init();
 
   if (p_ctrl_le_feature_rd_cmpl_cback != NULL)
     p_ctrl_le_feature_rd_cmpl_cback(static_cast<tHCI_STATUS>(status));
