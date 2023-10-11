@@ -28,6 +28,7 @@
 #include <mutex>
 #include <vector>
 
+#include "audio_hal_interface/a2dp_encoding.h"
 #include "bta/include/bta_av_api.h"
 #include "bta/include/bta_av_ci.h"
 #include "btif/include/btif_a2dp_source.h"
@@ -937,8 +938,16 @@ tA2DP_STATUS BtaAvCo::ProcessSourceGetConfig(
 
   p_peer->num_rx_sinks++;
 
+  // Bypass the validation for codecs that are offloaded:
+  // the stack does not need to know about the peer capabilities,
+  // since the validation and selection will be performed by the
+  // bluetooth audio HAL for offloaded codecs.
+  auto codec_index = A2DP_SourceCodecIndex(p_codec_info);
+  bool is_offloaded_codec =
+      ::bluetooth::audio::a2dp::provider::supports_codec(codec_index);
+
   // Check the peer's Sink codec
-  if (A2DP_IsPeerSinkCodecValid(p_codec_info)) {
+  if (is_offloaded_codec || A2DP_IsPeerSinkCodecValid(p_codec_info)) {
     // If there is room for a new one
     if (p_peer->num_sup_sinks < BTA_AV_CO_NUM_ELEMENTS(p_peer->sinks)) {
       BtaAvCoSep* p_sink = &p_peer->sinks[p_peer->num_sup_sinks++];

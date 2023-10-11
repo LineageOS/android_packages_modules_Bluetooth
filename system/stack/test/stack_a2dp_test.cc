@@ -916,8 +916,10 @@ TEST_F(StackA2dpTest, test_a2dp_codec_index_str) {
 
   // Test that each codec has a known string
   for (int i = BTAV_A2DP_CODEC_INDEX_MIN; i < BTAV_A2DP_CODEC_INDEX_MAX; i++) {
-    if ((i >= BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MIN && i < BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MAX)
-        || (i >= BTAV_A2DP_CODEC_INDEX_SINK_EXT_MIN && i < BTAV_A2DP_CODEC_INDEX_SINK_EXT_MAX)) {
+    if ((i >= BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MIN &&
+         i < BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MAX) ||
+        (i >= BTAV_A2DP_CODEC_INDEX_SINK_EXT_MIN &&
+         i < BTAV_A2DP_CODEC_INDEX_SINK_EXT_MAX)) {
       continue;
     }
     btav_a2dp_codec_index_t codec_index =

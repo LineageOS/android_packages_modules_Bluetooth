@@ -293,6 +293,13 @@ class A2dpCodecs {
     return current_codec_config_;
   }
 
+  // Selects the codec config.
+  // /!\ Must only be used with offloaded codecs.
+  void setCurrentCodecConfig(A2dpCodecConfig* codec_config) {
+    std::lock_guard<std::recursive_mutex> lock(codec_mutex_);
+    current_codec_config_ = codec_config;
+  }
+
   // Gets the list of Source codecs ordered by priority: higher priority first.
   const std::list<A2dpCodecConfig*> orderedSourceCodecs() const {
     return ordered_source_codecs_;
