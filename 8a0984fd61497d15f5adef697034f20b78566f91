@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ada78bf7_dcf1d158",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 6360
+      },
+      "writtenOn": "2023-10-15T12:01:31Z",
+      "side": 1,
+      "message": "packages/modules/Bluetooth/system/gd/hci/hci_layer.cc:219:75: error: use of undeclared identifier \u0027move\u0027; did you mean \u0027std::move\u0027?\n        command_queue_.front().GetCallback\u003cCommandCompleteView\u003e()-\u003eInvoke(move(command_complete_view));\n\n\nNeeds import\nusing std::move;",
+      "revId": "8a0984fd61497d15f5adef697034f20b78566f91",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
