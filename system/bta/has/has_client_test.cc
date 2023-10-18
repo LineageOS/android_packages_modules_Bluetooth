@@ -2165,10 +2165,16 @@ TEST_F(HasClientTest, test_presets_changed_generic_update_add_and_delete) {
   InjectPresetChanged(
       test_conn_id, test_address, false, new_test_preset2, 8 /* prev_index */,
       ::bluetooth::le_audio::has::PresetCtpChangeId::PRESET_GENERIC_UPDATE,
+      false /* is_last */);
+
+  /* Third event deletes preset 1 with the generic update */
+  InjectPresetChanged(
+      test_conn_id, test_address, false, new_test_preset1, 0 /* prev_index */,
+      ::bluetooth::le_audio::has::PresetCtpChangeId::PRESET_GENERIC_UPDATE,
       true /* is_last */);
 
   /* Verify received preset info - expect presets 1, 32 unchanged, 8, 9
-   * updated, and 2, 4, 5 deleted.
+   * updated, and 1, 2, 4, 5 deleted.
    */
   ASSERT_EQ(2u, updated_preset_details.size());
   ASSERT_EQ(new_test_preset1.GetIndex(),
@@ -2184,10 +2190,11 @@ TEST_F(HasClientTest, test_presets_changed_generic_update_add_and_delete) {
   ASSERT_EQ(new_test_preset2.IsWritable(), updated_preset_details[1].writable);
   ASSERT_EQ(new_test_preset2.GetName(), updated_preset_details[1].preset_name);
 
-  ASSERT_EQ(3u, deleted_preset_details.size());
+  ASSERT_EQ(4u, deleted_preset_details.size());
   ASSERT_EQ(2, deleted_preset_details[0].preset_index);
   ASSERT_EQ(4, deleted_preset_details[1].preset_index);
   ASSERT_EQ(5, deleted_preset_details[2].preset_index);
+  ASSERT_EQ(1, deleted_preset_details[3].preset_index);
 }
 
 TEST_F(HasClientTest, test_presets_changed_deleted) {
