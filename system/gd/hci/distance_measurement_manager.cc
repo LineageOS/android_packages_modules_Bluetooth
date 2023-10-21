@@ -18,6 +18,7 @@
 #include <android_bluetooth_flags.h>
 #include <math.h>
 
+#include <complex>
 #include <unordered_map>
 
 #include "common/strings.h"
@@ -55,8 +56,36 @@ static constexpr uint32_t kMinSubeventLen = 0x0004E2;         // 1250us
 static constexpr uint32_t kMaxSubeventLen = 0x3d0900;         // 4s
 static constexpr uint8_t kToneAntennaConfigSelection = 0x07;  // 2x2
 static constexpr uint8_t kTxPwrDelta = 0x00;
+static constexpr uint8_t kProcedureDataBufferSize = 0x10;  // Buffer size of Procedure data
 
 struct DistanceMeasurementManager::impl {
+  struct CsProcedureData {
+    CsProcedureData(uint16_t procedure_counter, uint8_t num_antenna_paths)
+        : counter(procedure_counter), num_antenna_paths(num_antenna_paths) {
+      local_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
+      remote_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
+      for (uint8_t i = 0; i < num_antenna_paths; i++) {
+        std::vector<std::complex<double>> empty_complex_vector;
+        tone_pct_initiator.push_back(empty_complex_vector);
+        tone_pct_reflector.push_back(empty_complex_vector);
+      }
+    }
+    // Procedure counter
+    uint16_t counter;
+    // Number of antenna paths (1 to 4) reported in the procedure
+    uint8_t num_antenna_paths;
+    // The channel indices of every step in a CS procedure (in time order)
+    std::vector<uint8_t> step_channel;
+    // Initiator's PCT (complex value) measured from mode-2 or mode-3 steps in a CS procedure (in
+    // time order)
+    std::vector<std::vector<std::complex<double>>> tone_pct_initiator;
+    // Reflector's PCT (complex value) measured from mode-2 or mode-3 steps in a CS procedure (in
+    // time order)
+    std::vector<std::vector<std::complex<double>>> tone_pct_reflector;
+    CsProcedureDoneStatus local_status;
+    CsProcedureDoneStatus remote_status;
+  };
+
   ~impl() {}
   void start(os::Handler* handler, hci::HciLayer* hci_layer, hci::AclManager* acl_manager) {
     handler_ = handler;
@@ -151,7 +180,13 @@ struct DistanceMeasurementManager::impl {
       send_le_cs_read_remote_supported_capabilities(connection_handle);
       send_le_cs_set_default_settings(connection_handle);
       send_le_cs_security_enable(connection_handle);
+      return;
     }
+    if (!cs_trackers_[connection_handle].config_set) {
+      send_le_cs_create_config(connection_handle);
+      return;
+    }
+    send_le_cs_procedure_enable(connection_handle, Enable::ENABLED);
   }
 
   void stop_distance_measurement(const Address& address, DistanceMeasurementMethod method) {
@@ -216,10 +251,12 @@ struct DistanceMeasurementManager::impl {
     }
     switch (event.GetSubeventCode()) {
       case hci::SubeventCode::LE_CS_TEST_END_COMPLETE:
-      case hci::SubeventCode::LE_CS_SUBEVENT_RESULT_CONTINUE:
-      case hci::SubeventCode::LE_CS_SUBEVENT_RESULT:
       case hci::SubeventCode::LE_CS_READ_REMOTE_FAE_TABLE_COMPLETE: {
         LOG_WARN("Unhandled subevent %s", hci::SubeventCodeText(event.GetSubeventCode()).c_str());
+      } break;
+      case hci::SubeventCode::LE_CS_SUBEVENT_RESULT_CONTINUE:
+      case hci::SubeventCode::LE_CS_SUBEVENT_RESULT: {
+        on_cs_subevent(event);
       } break;
       case hci::SubeventCode::LE_CS_PROCEDURE_ENABLE_COMPLETE: {
         on_cs_procedure_enable_complete(LeCsProcedureEnableCompleteView::Create(event));
@@ -475,6 +512,60 @@ struct DistanceMeasurementManager::impl {
     }
   }
 
+  void on_cs_subevent(LeMetaEventView event) {
+    if (!event.IsValid()) {
+      LOG_ERROR("Received invalid LeMetaEventView");
+      return;
+    }
+
+    // Common data for LE_CS_SUBEVENT_RESULT and LE_CS_SUBEVENT_RESULT_CONTINUE,
+    uint16_t connection_handle = 0;
+    uint8_t num_antenna_paths = 0;
+    if (event.GetSubeventCode() == SubeventCode::LE_CS_SUBEVENT_RESULT) {
+      auto cs_event_result = LeCsSubeventResultView::Create(event);
+      if (!cs_event_result.IsValid()) {
+        LOG_WARN("Get invalid LeCsSubeventResultView");
+        return;
+      }
+      connection_handle = cs_event_result.GetConnectionHandle();
+      num_antenna_paths = cs_event_result.GetNumAntennaPaths();
+      init_cs_procedure_data(
+          connection_handle, cs_event_result.GetProcedureCounter(), num_antenna_paths, true);
+    }
+  }
+
+  void init_cs_procedure_data(
+      uint16_t connection_handle,
+      uint16_t procedure_counter,
+      uint8_t num_antenna_paths,
+      bool local) {
+    if (cs_trackers_.find(connection_handle) == cs_trackers_.end()) {
+      LOG_WARN("Can't find any tracker for %d", connection_handle);
+      return;
+    }
+    // Update procedure count
+    if (local) {
+      cs_trackers_[connection_handle].local_counter = procedure_counter;
+    } else {
+      cs_trackers_[connection_handle].remote_counter = procedure_counter;
+    }
+
+    std::vector<CsProcedureData>& data_list = cs_trackers_[connection_handle].procedure_data_list;
+    for (CsProcedureData procedure_data : data_list) {
+      if (procedure_data.counter == procedure_counter) {
+        // Data already exist, return
+        return;
+      }
+    }
+    LOG_INFO("Create data for procedure_counter: %d", procedure_counter);
+    data_list.emplace_back(procedure_counter, num_antenna_paths);
+
+    if (data_list.size() > kProcedureDataBufferSize) {
+      LOG_WARN("buffer full, drop procedure data with counter: %d", data_list.front().counter);
+      data_list.erase(data_list.begin());
+    }
+  }
+
   void on_read_remote_transmit_power_level_status(Address address, CommandStatusView view) {
     auto status_view = LeReadRemoteTransmitPowerLevelStatusView::Create(view);
     if (!status_view.IsValid()) {
@@ -617,6 +708,7 @@ struct DistanceMeasurementManager::impl {
     CsSubModeType sub_mode_type;
     CsRttType rtt_type;
     bool remote_support_phase_based_ranging = false;
+    std::vector<CsProcedureData> procedure_data_list;
   };
 
   os::Handler* handler_;
