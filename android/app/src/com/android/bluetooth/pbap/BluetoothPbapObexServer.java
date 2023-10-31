@@ -1,37 +1,23 @@
 /*
- * Copyright (c) 2008-2009, Motorola, Inc.
+ * Copyright (C) 2024 The Android Open Source Project
  *
- * All rights reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * - Redistributions of source code must retain the above copyright notice,
- * this list of conditions and the following disclaimer.
- *
- * - Redistributions in binary form must reproduce the above copyright notice,
- * this list of conditions and the following disclaimer in the documentation
- * and/or other materials provided with the distribution.
- *
- * - Neither the name of the Motorola, Inc. nor the names of its contributors
- * may be used to endorse or promote products derived from this software
- * without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.android.bluetooth.pbap;
 
+import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothProtoEnums;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
@@ -44,6 +30,8 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothMethodProxy;
+import com.android.bluetooth.BluetoothStatsLog;
+import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.ApplicationParameter;
 import com.android.obex.HeaderSet;
@@ -60,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 
+// Next tag value for ContentProfileErrorReportUtils.report(): 34
 public class BluetoothPbapObexServer extends ServerRequestHandler {
 
     private static final String TAG = "BluetoothPbapObexServer";
@@ -294,16 +283,32 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
 
             if (uuid.length != UUID_LENGTH) {
                 Log.w(TAG, "Wrong UUID length");
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.PBAP,
+                        BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                        0);
                 return ResponseCodes.OBEX_HTTP_NOT_ACCEPTABLE;
             }
             for (int i = 0; i < UUID_LENGTH; i++) {
                 if (uuid[i] != PBAP_TARGET[i]) {
                     Log.w(TAG, "Wrong UUID");
+                    ContentProfileErrorReportUtils.report(
+                            BluetoothProfile.PBAP,
+                            BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                            BluetoothStatsLog
+                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                            1);
                     return ResponseCodes.OBEX_HTTP_NOT_ACCEPTABLE;
                 }
             }
             reply.setHeader(HeaderSet.WHO, uuid);
         } catch (IOException e) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.PBAP,
+                    BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    2);
             Log.e(TAG, e.toString());
             return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
         }
@@ -317,6 +322,11 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
                 reply.setHeader(HeaderSet.TARGET, remote);
             }
         } catch (IOException e) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.PBAP,
+                    BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    3);
             Log.e(TAG, e.toString());
             return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
         }
@@ -330,6 +340,11 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
                 return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
             }
         } catch (IOException e) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.PBAP,
+                    BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    4);
             Log.e(TAG, e.toString());
             return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
         }
@@ -396,6 +411,11 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
         try {
             tmpPath = (String) mPbapMethodProxy.getHeader(request, HeaderSet.NAME);
         } catch (IOException e) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.PBAP,
+                    BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    5);
             Log.e(TAG, "Get name header fail");
             return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
         }
@@ -422,9 +442,19 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
         if ((currentPathTmp.length() != 0) && (!isLegalPath(currentPathTmp))) {
             if (create) {
                 Log.w(TAG, "path create is forbidden!");
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.PBAP,
+                        BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                        6);
                 return ResponseCodes.OBEX_HTTP_FORBIDDEN;
             } else {
                 Log.w(TAG, "path is not legal");
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.PBAP,
+                        BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                        7);
                 return ResponseCodes.OBEX_HTTP_NOT_FOUND;
             }
         }
@@ -458,6 +488,11 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
             appParam = (byte[]) mPbapMethodProxy.getHeader(
                     request, HeaderSet.APPLICATION_PARAMETER);
         } catch (IOException e) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.PBAP,
+                    BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    8);
             Log.e(TAG, "request headers error");
             return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
         }
@@ -477,6 +512,11 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
 
         if (!mPbapMethodProxy.getSystemService(mContext, UserManager.class).isUserUnlocked()) {
             Log.e(TAG, "Storage locked, " + type + " failed");
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.PBAP,
+                    BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
+                    9);
             return ResponseCodes.OBEX_HTTP_UNAVAILABLE;
         }
 
@@ -497,7 +537,8 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
 
         if (!validName || (validName && type.equals(TYPE_VCARD))) {
             if (D) {
-                Log.d(TAG,
+                Log.d(
+                        TAG,
                         "Guess what carkit actually want from current path (" + mCurrentPath + ")");
             }
 
@@ -523,12 +564,23 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
                 /* PBAP 1.1.1 change */
                 if (!validName && type.equals(TYPE_LISTING)) {
                     Log.e(TAG, "invalid vcard listing request in default folder");
+                    ContentProfileErrorReportUtils.report(
+                            BluetoothProfile.PBAP,
+                            BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                            BluetoothStatsLog
+                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
+                            10);
                     return ResponseCodes.OBEX_HTTP_NOT_FOUND;
                 }
             } else if (isSimEnabled && mCurrentPath.equals(SIM_PB_PATH)) {
                 appParamValue.needTag = ContentType.SIM_PHONEBOOK;
             } else {
                 Log.w(TAG, "mCurrentpath is not valid path!!!");
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.PBAP,
+                        BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                        11);
                 return ResponseCodes.OBEX_HTTP_NOT_ACCEPTABLE;
             }
             if (D) {
@@ -545,6 +597,12 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
                 if (!isSimEnabled) {
                     // Not support SIM card currently
                     Log.w(TAG, "Not support access SIM card info!");
+                    ContentProfileErrorReportUtils.report(
+                            BluetoothProfile.PBAP,
+                            BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                            BluetoothStatsLog
+                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                            12);
                     return ResponseCodes.OBEX_HTTP_NOT_ACCEPTABLE;
                 }
             } else if (isNameMatchTarget(name, PB)) {
@@ -592,6 +650,11 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
                 }
             } else {
                 Log.w(TAG, "Input name doesn't contain valid info!!!");
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.PBAP,
+                        BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                        13);
                 return ResponseCodes.OBEX_HTTP_NOT_FOUND;
             }
         }
@@ -611,6 +674,11 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
             return pullPhonebook(appParam, appParamValue, reply, op, name);
         } else {
             Log.w(TAG, "unknown type request!!!");
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.PBAP,
+                    BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                    14);
             return ResponseCodes.OBEX_HTTP_NOT_ACCEPTABLE;
         }
     }
@@ -814,6 +882,12 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
                 default:
                     parseOk = false;
                     Log.e(TAG, "Parse Application Parameter error");
+                    ContentProfileErrorReportUtils.report(
+                            BluetoothProfile.PBAP,
+                            BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                            BluetoothStatsLog
+                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
+                            15);
                     break;
             }
         }
@@ -1007,6 +1081,11 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
             outputStream = op.openOutputStream();
             outputStream.flush();
         } catch (IOException e) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.PBAP,
+                    BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    16);
             Log.e(TAG, e.toString());
             pushResult = ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
         } finally {
@@ -1033,6 +1112,11 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
                 Log.v(TAG, "Send Data complete!");
             }
         } catch (IOException e) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.PBAP,
+                    BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    17);
             Log.e(TAG, "open/write outputstrem failed" + e.toString());
             pushResult = ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
         }
@@ -1161,6 +1245,11 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
             try {
                 op.sendHeaders(reply);
             } catch (IOException e) {
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.PBAP,
+                        BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                        18);
                 Log.e(TAG, e.toString());
                 return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
             }
@@ -1172,6 +1261,11 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
             try {
                 op.sendHeaders(reply);
             } catch (IOException e) {
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.PBAP,
+                        BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                        19);
                 Log.e(TAG, e.toString());
                 return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
             }
@@ -1183,6 +1277,11 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
             try {
                 op.sendHeaders(reply);
             } catch (IOException e) {
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.PBAP,
+                        BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                        20);
                 Log.e(TAG, e.toString());
                 return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
             }
@@ -1194,6 +1293,11 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
             try {
                 op.sendHeaders(reply);
             } catch (IOException e) {
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.PBAP,
+                        BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                        21);
                 Log.e(TAG, e.toString());
                 return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
             }
@@ -1217,6 +1321,11 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
             if (searchAttr.equals("2")) {
                 // search by sound is not supported currently
                 Log.w(TAG, "do not support search by sound");
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.PBAP,
+                        BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                        22);
                 return ResponseCodes.OBEX_HTTP_NOT_IMPLEMENTED;
             }
             return ResponseCodes.OBEX_HTTP_PRECON_FAILED;
@@ -1253,6 +1362,11 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
             if (orderPara.equals("2")) {
                 // Order by sound is not supported currently
                 Log.w(TAG, "Do not support order by sound");
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.PBAP,
+                        BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                        23);
                 return ResponseCodes.OBEX_HTTP_NOT_IMPLEMENTED;
             }
             return ResponseCodes.OBEX_HTTP_PRECON_FAILED;
@@ -1283,6 +1397,11 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
             try {
                 intIndex = Integer.parseInt(strIndex);
             } catch (NumberFormatException e) {
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.PBAP,
+                        BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                        24);
                 Log.e(TAG, "catch number format exception " + e.toString());
                 return ResponseCodes.OBEX_HTTP_NOT_ACCEPTABLE;
             }
@@ -1300,11 +1419,21 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
         boolean vcard21 = appParamValue.vcard21;
         if (appParamValue.needTag == 0) {
             Log.w(TAG, "wrong path!");
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.PBAP,
+                    BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                    25);
             return ResponseCodes.OBEX_HTTP_NOT_ACCEPTABLE;
         } else if ((appParamValue.needTag == ContentType.PHONEBOOK)
                 || (appParamValue.needTag == ContentType.FAVORITES)) {
             if (intIndex < 0 || intIndex >= size) {
                 Log.w(TAG, "The requested vcard is not acceptable! name= " + name);
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.PBAP,
+                        BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                        26);
                 return ResponseCodes.OBEX_HTTP_NOT_FOUND;
             } else if ((intIndex == 0) && (appParamValue.needTag == ContentType.PHONEBOOK)) {
                 // For PB_PATH, 0.vcf is the phone number of this phone.
@@ -1312,12 +1441,23 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
                         appParamValue.ignorefilter ? null : appParamValue.propertySelector);
                 return pushBytes(op, ownerVcard);
             } else {
-                return mVcardManager.composeAndSendPhonebookOneVcard(op, intIndex, vcard21, null,
-                        mOrderBy, appParamValue.ignorefilter, appParamValue.propertySelector);
+                return mVcardManager.composeAndSendPhonebookOneVcard(
+                        op,
+                        intIndex,
+                        vcard21,
+                        null,
+                        mOrderBy,
+                        appParamValue.ignorefilter,
+                        appParamValue.propertySelector);
             }
         } else if (appParamValue.needTag == ContentType.SIM_PHONEBOOK) {
             if (intIndex < 0 || intIndex >= size) {
                 Log.w(TAG, "The requested vcard is not acceptable! name= " + name);
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.PBAP,
+                        BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                        27);
                 return ResponseCodes.OBEX_HTTP_NOT_FOUND;
             } else if (intIndex == 0) {
                 // For PB_PATH, 0.vcf is the phone number of this phone.
@@ -1331,6 +1471,11 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
         } else {
             if (intIndex <= 0 || intIndex > size) {
                 Log.w(TAG, "The requested vcard is not acceptable! name= " + name);
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.PBAP,
+                        BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                        28);
                 return ResponseCodes.OBEX_HTTP_NOT_FOUND;
             }
             // For others (ich/och/cch/mch), 0.vcf is meaningless, and must
@@ -1354,6 +1499,12 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
             if (dotIndex >= 0 && dotIndex <= name.length()) {
                 if (!name.regionMatches(dotIndex + 1, vcf, 0, vcf.length())) {
                     Log.w(TAG, "name is not .vcf");
+                    ContentProfileErrorReportUtils.report(
+                            BluetoothProfile.PBAP,
+                            BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                            BluetoothStatsLog
+                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                            29);
                     return ResponseCodes.OBEX_HTTP_NOT_ACCEPTABLE;
                 }
             }
@@ -1376,12 +1527,11 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
         int requestSize =
                 pbSize >= appParamValue.maxListCount ? appParamValue.maxListCount : pbSize;
         /**
-         * startIndex (resp., lastIndex) corresponds to the index of the first (resp., last)
-         * vcard entry in the phonebook object.
-         * PBAP v1.2.3: only pb starts indexing at 0.vcf (owner card), the other phonebook
-         * objects (e.g., fav) start at 1.vcf. Additionally, the owner card is included in
-         * pb's pbSize. This means pbSize corresponds to the index of the last vcf in the fav
-         * phonebook object, but does not for the pb phonebook object.
+         * startIndex (resp., lastIndex) corresponds to the index of the first (resp., last) vcard
+         * entry in the phonebook object. PBAP v1.2.3: only pb starts indexing at 0.vcf (owner
+         * card), the other phonebook objects (e.g., fav) start at 1.vcf. Additionally, the owner
+         * card is included in pb's pbSize. This means pbSize corresponds to the index of the last
+         * vcf in the fav phonebook object, but does not for the pb phonebook object.
          */
         int startIndex = 1;
         int lastIndex = pbSize;
@@ -1394,6 +1544,11 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
         int endPoint = startPoint + requestSize - 1;
         if (appParamValue.listStartOffset < 0 || startPoint > lastIndex) {
             Log.w(TAG, "listStartOffset is not correct! " + startPoint);
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.PBAP,
+                    BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                    30);
             return ResponseCodes.OBEX_HTTP_OK;
         }
         if (endPoint > lastIndex) {
@@ -1466,6 +1621,11 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
                 out.close();
             }
         } catch (IOException e) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.PBAP,
+                    BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    31);
             Log.e(TAG, "outputStream close failed" + e.toString());
             returnvalue = false;
         }
@@ -1474,6 +1634,11 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
                 op.close();
             }
         } catch (IOException e) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.PBAP,
+                    BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    32);
             Log.e(TAG, "operation close failed" + e.toString());
             returnvalue = false;
         }
@@ -1570,6 +1735,11 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
             Log.v(TAG, "OBJECT_CLASS : " + hs.getHeader(HeaderSet.OBJECT_CLASS));
             Log.v(TAG, "APPLICATION_PARAMETER : " + hs.getHeader(HeaderSet.APPLICATION_PARAMETER));
         } catch (IOException e) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.PBAP,
+                    BluetoothProtoEnums.BLUETOOTH_PBAP_OBEX_SERVER,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    33);
             Log.e(TAG, "dump HeaderSet error " + e);
         }
     }
