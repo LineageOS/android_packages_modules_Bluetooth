@@ -3378,8 +3378,10 @@ void LinkLayerController::ScanIncomingLeExtendedAdvertisingPdu(
 
   if (resolved_advertising_address != advertising_address) {
     DEBUG(id_, "Resolved the advertising address {} to {}", advertising_address,
-          advertising_address.GetAddressType(), resolved_advertising_address,
-          resolved_advertising_address.GetAddressType());
+          bluetooth::hci::AddressTypeText(advertising_address.GetAddressType()),
+          resolved_advertising_address,
+          bluetooth::hci::AddressTypeText(
+              resolved_advertising_address.GetAddressType()));
   }
 
   // Vol 6, Part B § 4.3.3 Scanner filter policy

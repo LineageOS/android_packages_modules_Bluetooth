@@ -1149,7 +1149,8 @@ void DualModeController::CentralLinkKey(CommandView command) {
   ASSERT(command_view.IsValid());
 
   DEBUG(id_, "<< Central Link Key");
-  DEBUG(id_, "   key_flag={}", command_view.GetKeyFlag());
+  DEBUG(id_, "   key_flag={}",
+        bluetooth::hci::KeyFlagText(command_view.GetKeyFlag()));
 
   uint8_t key_flag = static_cast<uint8_t>(command_view.GetKeyFlag());
   auto status = link_layer_controller_.CentralLinkKey(key_flag);
@@ -1165,7 +1166,8 @@ void DualModeController::WriteAuthenticationEnable(CommandView command) {
 
   DEBUG(id_, "<< Write Authentication Enable");
   DEBUG(id_, "   authentication_enable={}",
-        command_view.GetAuthenticationEnable());
+        bluetooth::hci::AuthenticationEnableText(
+            command_view.GetAuthenticationEnable()));
 
   link_layer_controller_.SetAuthenticationEnable(
       command_view.GetAuthenticationEnable());
@@ -2854,7 +2856,8 @@ void DualModeController::LeApcf(CommandView command) {
       ASSERT(subcommand_view.IsValid());
 
       DEBUG(id_, "<< LE APCF Enable");
-      DEBUG(id_, "   enable={}", subcommand_view.GetApcfEnable());
+      DEBUG(id_, "   enable={}",
+            bluetooth::hci::EnableText(subcommand_view.GetApcfEnable()));
 
       ErrorCode status = link_layer_controller_.LeApcfEnable(
           subcommand_view.GetApcfEnable() == bluetooth::hci::Enable::ENABLED);
@@ -2869,7 +2872,8 @@ void DualModeController::LeApcf(CommandView command) {
       ASSERT(subcommand_view.IsValid());
 
       DEBUG(id_, "<< LE APCF Set Filtering Parameters");
-      DEBUG(id_, "   action={}", subcommand_view.GetApcfAction());
+      DEBUG(id_, "   action={}",
+            bluetooth::hci::ApcfActionText(subcommand_view.GetApcfAction()));
 
       ErrorCode status = ErrorCode::INVALID_HCI_COMMAND_PARAMETERS;
       uint8_t apcf_available_spaces = 0;
@@ -2914,7 +2918,8 @@ void DualModeController::LeApcf(CommandView command) {
           break;
         }
         default:
-          INFO(id_, "unknown apcf action {}", subcommand_view.GetApcfAction());
+          INFO(id_, "unknown apcf action {}",
+               bluetooth::hci::ApcfActionText(subcommand_view.GetApcfAction()));
           break;
       }
 
@@ -2930,7 +2935,8 @@ void DualModeController::LeApcf(CommandView command) {
       ASSERT(subcommand_view.IsValid());
 
       DEBUG(id_, "<< LE APCF Broadcaster Address");
-      DEBUG(id_, "   action={}", subcommand_view.GetApcfAction());
+      DEBUG(id_, "   action={}",
+            bluetooth::hci::ApcfActionText(subcommand_view.GetApcfAction()));
 
       ErrorCode status = ErrorCode::INVALID_HCI_COMMAND_PARAMETERS;
       uint8_t apcf_available_spaces = 0;
@@ -2975,7 +2981,8 @@ void DualModeController::LeApcf(CommandView command) {
           break;
         }
         default:
-          INFO(id_, "unknown apcf action {}", subcommand_view.GetApcfAction());
+          INFO(id_, "unknown apcf action {}",
+               bluetooth::hci::ApcfActionText(subcommand_view.GetApcfAction()));
           break;
       }
 
@@ -2991,7 +2998,8 @@ void DualModeController::LeApcf(CommandView command) {
       ASSERT(subcommand_view.IsValid());
 
       DEBUG(id_, "<< LE APCF Service UUID");
-      DEBUG(id_, "   action={}", subcommand_view.GetApcfAction());
+      DEBUG(id_, "   action={}",
+            bluetooth::hci::ApcfActionText(subcommand_view.GetApcfAction()));
 
       uint8_t apcf_available_spaces = 0;
       ErrorCode status = link_layer_controller_.LeApcfServiceUuid(
@@ -3009,7 +3017,8 @@ void DualModeController::LeApcf(CommandView command) {
       ASSERT(subcommand_view.IsValid());
 
       DEBUG(id_, "<< LE APCF Service Solicitation UUID");
-      DEBUG(id_, "   action={}", subcommand_view.GetApcfAction());
+      DEBUG(id_, "   action={}",
+            bluetooth::hci::ApcfActionText(subcommand_view.GetApcfAction()));
 
       uint8_t apcf_available_spaces = 0;
       ErrorCode status = link_layer_controller_.LeApcfServiceSolicitationUuid(
@@ -3027,7 +3036,8 @@ void DualModeController::LeApcf(CommandView command) {
       ASSERT(subcommand_view.IsValid());
 
       DEBUG(id_, "<< LE APCF Local Name");
-      DEBUG(id_, "   action={}", subcommand_view.GetApcfAction());
+      DEBUG(id_, "   action={}",
+            bluetooth::hci::ApcfActionText(subcommand_view.GetApcfAction()));
 
       uint8_t apcf_available_spaces = 0;
       ErrorCode status = link_layer_controller_.LeApcfLocalName(
@@ -3044,7 +3054,8 @@ void DualModeController::LeApcf(CommandView command) {
       ASSERT(subcommand_view.IsValid());
 
       DEBUG(id_, "<< LE APCF Manufacturer Data");
-      DEBUG(id_, "   action={}", subcommand_view.GetApcfAction());
+      DEBUG(id_, "   action={}",
+            bluetooth::hci::ApcfActionText(subcommand_view.GetApcfAction()));
 
       uint8_t apcf_available_spaces = 0;
       ErrorCode status = link_layer_controller_.LeApcfManufacturerData(
@@ -3061,7 +3072,8 @@ void DualModeController::LeApcf(CommandView command) {
       ASSERT(subcommand_view.IsValid());
 
       DEBUG(id_, "<< LE APCF Service Data");
-      DEBUG(id_, "   action={}", subcommand_view.GetApcfAction());
+      DEBUG(id_, "   action={}",
+            bluetooth::hci::ApcfActionText(subcommand_view.GetApcfAction()));
 
       uint8_t apcf_available_spaces = 0;
       ErrorCode status = link_layer_controller_.LeApcfServiceData(
@@ -3078,7 +3090,8 @@ void DualModeController::LeApcf(CommandView command) {
       ASSERT(subcommand_view.IsValid());
 
       DEBUG(id_, "<< LE APCF AD Type Filter");
-      DEBUG(id_, "   action={}", subcommand_view.GetApcfAction());
+      DEBUG(id_, "   action={}",
+            bluetooth::hci::ApcfActionText(subcommand_view.GetApcfAction()));
 
       uint8_t apcf_available_spaces = 0;
       ErrorCode status = link_layer_controller_.LeApcfAdTypeFilter(
@@ -3105,7 +3118,8 @@ void DualModeController::LeApcf(CommandView command) {
       break;
     }
     default:
-      FATAL(id_, "unknown APCF opcode {}", command_view.GetApcfOpcode());
+      FATAL(id_, "unknown APCF opcode {}",
+            static_cast<uint8_t>(command_view.GetApcfOpcode()));
   }
 }
 
@@ -3255,14 +3269,16 @@ void DualModeController::CsrReadVarid(CsrVarid varid,
       break;
 
     default:
-      INFO(id_, "Unsupported read of CSR varid 0x{:04x}", varid);
+      INFO(id_, "Unsupported read of CSR varid 0x{:04x}",
+           static_cast<uint16_t>(varid));
       break;
   }
 }
 
 void DualModeController::CsrWriteVarid(
     CsrVarid varid, std::vector<uint8_t> const& /*value*/) const {
-  INFO(id_, "Unsupported write of CSR varid 0x{:04x}", varid);
+  INFO(id_, "Unsupported write of CSR varid 0x{:04x}",
+       static_cast<uint16_t>(varid));
 }
 
 void DualModeController::CsrReadPskey(CsrPskey pskey,
@@ -3286,7 +3302,8 @@ void DualModeController::CsrReadPskey(CsrPskey pskey,
       break;
 
     default:
-      INFO(id_, "Unsupported read of CSR pskey 0x{:04x}", pskey);
+      INFO(id_, "Unsupported read of CSR pskey 0x{:04x}",
+           static_cast<uint16_t>(pskey));
       break;
   }
 }
@@ -3305,7 +3322,8 @@ void DualModeController::CsrWritePskey(CsrPskey pskey,
       break;
 
     default:
-      INFO(id_, "Unsupported write of CSR pskey 0x{:04x}", pskey);
+      INFO(id_, "Unsupported write of CSR pskey 0x{:04x}",
+           static_cast<uint16_t>(pskey));
       break;
   }
 }
@@ -3555,7 +3573,8 @@ void DualModeController::WriteLoopbackMode(CommandView command) {
   ASSERT(command_view.IsValid());
 
   DEBUG(id_, "<< Write Loopback Mode");
-  DEBUG(id_, "   loopback_mode={}", command_view.GetLoopbackMode());
+  DEBUG(id_, "   loopback_mode={}",
+        bluetooth::hci::LoopbackModeText(command_view.GetLoopbackMode()));
 
   loopback_mode_ = command_view.GetLoopbackMode();
   // ACL channel
