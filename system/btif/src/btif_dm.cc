@@ -2347,6 +2347,11 @@ void btif_dm_sec_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data) {
           p_data->proc_id_addr.pairing_bda, p_data->proc_id_addr.id_addr);
       break;
 
+    case BTA_DM_KEY_MISSING_EVT:
+      GetInterfaceToProfiles()->events->invoke_key_missing_cb(
+          p_data->key_missing.bd_addr);
+      break;
+
     default:
       LOG_WARN("unhandled event(%d)", event);
       break;

@@ -119,6 +119,14 @@ void bta_dm_sec_enable(tBTA_DM_SEC_CBACK* p_sec_cback) {
   btm_local_io_caps = btif_storage_get_local_io_caps();
 }
 
+void bta_dm_remote_key_missing(RawAddress bd_addr) {
+  if (bta_dm_sec_cb.p_sec_cback) {
+    tBTA_DM_SEC sec_event;
+    sec_event.key_missing.bd_addr = bd_addr;
+    bta_dm_sec_cb.p_sec_cback(BTA_DM_KEY_MISSING_EVT, &sec_event);
+  }
+}
+
 /*******************************************************************************
  *
  * Function         bta_dm_add_device

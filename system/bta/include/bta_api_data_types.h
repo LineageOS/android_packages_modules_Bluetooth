@@ -58,3 +58,6 @@ typedef struct {
   RawAddress id_addr;
 } tBTA_DM_PROC_ID_ADDR;
 
+typedef struct {
+  RawAddress bd_addr;
+} tBTA_DM_KEY_MISSING;
