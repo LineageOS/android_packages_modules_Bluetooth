@@ -35,6 +35,8 @@
 #include "stack/include/l2c_api.h"
 #include "types/raw_address.h"
 
+static void smp_tx_complete_callback(uint16_t cid, uint16_t num_pkt);
+
 static void smp_connect_callback(uint16_t channel, const RawAddress& bd_addr,
                                  bool connected, uint16_t reason,
                                  tBT_TRANSPORT transport);
@@ -61,6 +63,7 @@ void smp_l2cap_if_init(void) {
 
   fixed_reg.pL2CA_FixedConn_Cb = smp_connect_callback;
   fixed_reg.pL2CA_FixedData_Cb = smp_data_received;
+  fixed_reg.pL2CA_FixedTxComplete_Cb = smp_tx_complete_callback;
 
   fixed_reg.pL2CA_FixedCong_Cb =
       NULL; /* do not handle congestion on this channel */
@@ -207,6 +210,15 @@ static void smp_data_received(uint16_t channel, const RawAddress& bd_addr,
 
   osi_free(p_buf);
 }
+
+/*******************************************************************************
+ *
+ * Function         smp_tx_complete_callback
+ *
+ * Description      SMP channel tx complete callback
+ *
+ ******************************************************************************/
+static void smp_tx_complete_callback(uint16_t cid, uint16_t num_pkt) {}
 
 /*******************************************************************************
  *
