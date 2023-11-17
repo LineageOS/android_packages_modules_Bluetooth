@@ -218,7 +218,25 @@ static void smp_data_received(uint16_t channel, const RawAddress& bd_addr,
  * Description      SMP channel tx complete callback
  *
  ******************************************************************************/
-static void smp_tx_complete_callback(uint16_t cid, uint16_t num_pkt) {}
+static void smp_tx_complete_callback(uint16_t cid, uint16_t num_pkt) {
+  tSMP_CB* p_cb = &smp_cb;
+
+  if (p_cb->total_tx_unacked >= num_pkt) {
+    p_cb->total_tx_unacked -= num_pkt;
+  } else {
+    LOG_ERROR("Unexpected %s: num_pkt = %d", __func__, num_pkt);
+  }
+
+  if (p_cb->total_tx_unacked == 0 && p_cb->wait_for_authorization_complete) {
+    tSMP_INT_DATA smp_int_data;
+    smp_int_data.status = SMP_SUCCESS;
+    if (cid == L2CAP_SMP_CID) {
+      smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &smp_int_data);
+    } else {
+      smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &smp_int_data);
+    }
+  }
+}
 
 /*******************************************************************************
  *
