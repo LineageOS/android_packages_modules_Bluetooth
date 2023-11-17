@@ -42,6 +42,16 @@ class SocketMetrics {
     private static final int RESULT_L2CAP_CONN_BLUETOOTH_NULL_FILE_DESCRIPTOR = 1005;
     /*package*/ static final int RESULT_L2CAP_CONN_SERVER_FAILURE = 2000;
 
+    // Defined in BluetoothRfcommProtoEnums.RfcommConnectionResult of proto logging
+    private static final int RFCOMM_CONN_RESULT_FAILURE_UNKNOWN = 0;
+    private static final int RFCOMM_CONN_RESULT_SUCCESS = 1;
+    private static final int RFCOMM_CONN_RESULT_SOCKET_CONNECTION_FAILED = 2;
+    private static final int RFCOMM_CONN_RESULT_SOCKET_CONNECTION_CLOSED = 3;
+    private static final int RFCOMM_CONN_RESULT_UNABLE_TO_SEND_RPC = 4;
+    private static final int RFCOMM_CONN_RESULT_NULL_BLUETOOTH_DEVICE = 5;
+    private static final int RFCOMM_CONN_RESULT_GET_SOCKET_MANAGER_FAILED = 6;
+    private static final int RFCOMM_CONN_RESULT_NULL_FILE_DESCRIPTOR = 7;
+
     static void logSocketConnect(
             int socketExceptionCode,
             long socketConnectionTimeNanos,
@@ -51,29 +61,44 @@ class SocketMetrics {
             boolean auth,
             long socketCreationTimeNanos,
             long socketCreationLatencyNanos) {
-        if (connType != BluetoothSocket.TYPE_L2CAP_LE) {
-            return;
-        }
         IBluetooth bluetoothProxy = BluetoothAdapter.getDefaultAdapter().getBluetoothService();
         if (bluetoothProxy == null) {
             Log.w(TAG, "logSocketConnect: bluetoothProxy is null");
             return;
         }
-        int errCode = getL2capLeConnectStatusCode(socketExceptionCode);
-        try {
-            final SynchronousResultReceiver recv = SynchronousResultReceiver.get();
-            bluetoothProxy.logL2capcocClientConnection(
-                    device,
-                    port,
-                    auth,
-                    errCode,
-                    socketCreationTimeNanos, // to calculate end to end latency
-                    socketCreationLatencyNanos, // latency of the constructor
-                    socketConnectionTimeNanos, // to calculate the latency of connect()
-                    recv);
-            recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
-        } catch (RemoteException | TimeoutException e) {
-            Log.w(TAG, "logL2capcocClientConnection failed", e);
+        if (connType == BluetoothSocket.TYPE_L2CAP_LE) {
+            try {
+                final SynchronousResultReceiver recv = SynchronousResultReceiver.get();
+                bluetoothProxy.logL2capcocClientConnection(
+                        device,
+                        port,
+                        auth,
+                        getL2capLeConnectStatusCode(socketExceptionCode),
+                        socketCreationTimeNanos, // to calculate end to end latency
+                        socketCreationLatencyNanos, // latency of the constructor
+                        socketConnectionTimeNanos, // to calculate the latency of connect()
+                        recv);
+                recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
+            } catch (RemoteException | TimeoutException e) {
+                Log.w(TAG, "logL2capcocServerConnection failed", e);
+            }
+        } else if (connType == BluetoothSocket.TYPE_RFCOMM) {
+            boolean isSerialPort = true; // BluetoothSocket#connect API always uses serial port uuid
+            try {
+                final SynchronousResultReceiver recv = SynchronousResultReceiver.get();
+                bluetoothProxy.logRfcommConnectionAttempt(
+                        device,
+                        auth,
+                        getRfcommConnectStatusCode(socketExceptionCode),
+                        socketCreationTimeNanos, // to calculate end to end latency
+                        isSerialPort,
+                        recv);
+                recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
+            } catch (RemoteException | TimeoutException e) {
+                Log.w(TAG, "logL2capcocServerConnection failed", e);
+            }
+        } else {
+            Log.d(TAG, "No metrics for connection type " + connType);
         }
     }
 
@@ -132,6 +157,27 @@ class SocketMetrics {
                 return RESULT_L2CAP_CONN_BLUETOOTH_NULL_FILE_DESCRIPTOR;
             default:
                 return RESULT_L2CAP_CONN_UNKNOWN;
+        }
+    }
+
+    private static int getRfcommConnectStatusCode(int socketExceptionCode) {
+        switch (socketExceptionCode) {
+            case (SOCKET_NO_ERROR):
+                return RFCOMM_CONN_RESULT_SUCCESS;
+            case (BluetoothSocketException.NULL_DEVICE):
+                return RFCOMM_CONN_RESULT_NULL_BLUETOOTH_DEVICE;
+            case (BluetoothSocketException.SOCKET_MANAGER_FAILURE):
+                return RFCOMM_CONN_RESULT_GET_SOCKET_MANAGER_FAILED;
+            case (BluetoothSocketException.SOCKET_CLOSED):
+                return RFCOMM_CONN_RESULT_SOCKET_CONNECTION_CLOSED;
+            case (BluetoothSocketException.SOCKET_CONNECTION_FAILURE):
+                return RFCOMM_CONN_RESULT_SOCKET_CONNECTION_FAILED;
+            case (BluetoothSocketException.RPC_FAILURE):
+                return RFCOMM_CONN_RESULT_UNABLE_TO_SEND_RPC;
+            case (BluetoothSocketException.UNIX_FILE_SOCKET_CREATION_FAILURE):
+                return RFCOMM_CONN_RESULT_NULL_FILE_DESCRIPTOR;
+            default:
+                return RFCOMM_CONN_RESULT_FAILURE_UNKNOWN;
         }
     }
 }
