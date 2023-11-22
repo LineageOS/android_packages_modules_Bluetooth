@@ -572,6 +572,7 @@ public class ScanManagerTest {
             assertThat(client.settings.getScanMode()).isEqualTo(ScanMode);
             // Wait for scan timeout
             testSleep(DELAY_SCAN_TIMEOUT_MS + DELAY_ASYNC_MS);
+            TestUtils.waitForLooperToFinishScheduledTask(mHandler.getLooper());
             assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode);
             assertThat(client.stats.isScanTimeout(client.scannerId)).isTrue();
             // Turn off screen
@@ -617,6 +618,7 @@ public class ScanManagerTest {
             assertThat(client.settings.getScanMode()).isEqualTo(ScanMode);
             // Wait for scan timeout
             testSleep(DELAY_SCAN_TIMEOUT_MS + DELAY_ASYNC_MS);
+            TestUtils.waitForLooperToFinishScheduledTask(mHandler.getLooper());
             assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode);
             assertThat(client.stats.isScanTimeout(client.scannerId)).isTrue();
             // Turn off screen
@@ -745,6 +747,7 @@ public class ScanManagerTest {
             assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode);
             // Wait for upgrade duration
             testSleep(DELAY_SCAN_UPGRADE_DURATION_MS + DELAY_ASYNC_MS);
+            TestUtils.waitForLooperToFinishScheduledTask(mHandler.getLooper());
             assertThat(client.settings.getScanMode()).isEqualTo(ScanMode);
         }
     }
@@ -789,6 +792,7 @@ public class ScanManagerTest {
             int max_duration = DELAY_SCAN_UPGRADE_DURATION_MS > DELAY_SCAN_DOWNGRADE_DURATION_MS ?
                     DELAY_SCAN_UPGRADE_DURATION_MS : DELAY_SCAN_DOWNGRADE_DURATION_MS;
             testSleep(max_duration + DELAY_ASYNC_MS);
+            TestUtils.waitForLooperToFinishScheduledTask(mHandler.getLooper());
             assertThat(client.settings.getScanMode()).isEqualTo(ScanMode);
         }
     }
@@ -829,6 +833,7 @@ public class ScanManagerTest {
             assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode);
             // Wait for downgrade duration
             testSleep(DELAY_SCAN_DOWNGRADE_DURATION_MS + DELAY_ASYNC_MS);
+            TestUtils.waitForLooperToFinishScheduledTask(mHandler.getLooper());
             assertThat(client.settings.getScanMode()).isEqualTo(ScanMode);
         }
     }
@@ -870,6 +875,7 @@ public class ScanManagerTest {
             sendMessageWaitForProcessed(createScreenOnOffMessage(false));
             // Wait for downgrade duration
             testSleep(DELAY_SCAN_DOWNGRADE_DURATION_MS + DELAY_ASYNC_MS);
+            TestUtils.waitForLooperToFinishScheduledTask(mHandler.getLooper());
             assertThat(mScanManager.getRegularScanQueue().contains(client)).isTrue();
             assertThat(mScanManager.getSuspendedScanQueue().contains(client)).isFalse();
             assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode);
@@ -913,6 +919,7 @@ public class ScanManagerTest {
             sendMessageWaitForProcessed(createImportanceMessage(false));
             // Wait for downgrade duration
             testSleep(DELAY_SCAN_DOWNGRADE_DURATION_MS + DELAY_ASYNC_MS);
+            TestUtils.waitForLooperToFinishScheduledTask(mHandler.getLooper());
             assertThat(mScanManager.getRegularScanQueue().contains(client)).isTrue();
             assertThat(mScanManager.getSuspendedScanQueue().contains(client)).isFalse();
             assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode);
