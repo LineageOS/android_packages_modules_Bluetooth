@@ -14,9 +14,13 @@
 */
 package com.android.bluetooth.map;
 
+import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothProtoEnums;
 import android.util.Log;
 
+import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.SignedLongLong;
+import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
@@ -26,9 +30,8 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 
-/**
- * This class encapsulates the appParams needed for MAP.
- */
+/** This class encapsulates the appParams needed for MAP. */
+// Next tag value for ContentProfileErrorReportUtils.report(): 41
 public class BluetoothMapAppParams {
 
     private static final String TAG = "BluetoothMapAppParams";
@@ -232,8 +235,18 @@ public class BluetoothMapAppParams {
             switch (tagId) {
                 case MAX_LIST_COUNT:
                     if (tagLength != MAX_LIST_COUNT_LEN) {
-                        Log.w(TAG, "MAX_LIST_COUNT: Wrong length received: " + tagLength
-                                + " expected: " + MAX_LIST_COUNT_LEN);
+                        Log.w(
+                                TAG,
+                                "MAX_LIST_COUNT: Wrong length received: "
+                                        + tagLength
+                                        + " expected: "
+                                        + MAX_LIST_COUNT_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                0);
                     } else {
                         setMaxListCount(appParamBuf.getShort(i) & 0xffff); // Make it unsigned
                     }
@@ -243,6 +256,12 @@ public class BluetoothMapAppParams {
                         Log.w(TAG,
                                 "START_OFFSET: Wrong length received: " + tagLength + " expected: "
                                         + START_OFFSET_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                1);
                     } else {
                         setStartOffset(appParamBuf.getShort(i) & 0xffff); // Make it unsigned
                     }
@@ -251,6 +270,12 @@ public class BluetoothMapAppParams {
                     if (tagLength != FILTER_MESSAGE_TYPE_LEN) {
                         Log.w(TAG, "FILTER_MESSAGE_TYPE: Wrong length received: " + tagLength
                                 + " expected: " + FILTER_MESSAGE_TYPE_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                2);
                     } else {
                         setFilterMessageType(appParams[i] & 0x1f);
                     }
@@ -261,6 +286,12 @@ public class BluetoothMapAppParams {
                     } else {
                         Log.w(TAG, "FILTER_PERIOD_BEGIN: Wrong length received: " + tagLength
                                 + " expected to be more than 0");
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                3);
                     }
                     break;
                 case FILTER_PERIOD_END:
@@ -269,12 +300,28 @@ public class BluetoothMapAppParams {
                     } else {
                         Log.w(TAG, "FILTER_PERIOD_END: Wrong length received: " + tagLength
                                 + " expected to be more than 0");
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                4);
                     }
                     break;
                 case FILTER_READ_STATUS:
                     if (tagLength != FILTER_READ_STATUS_LEN) {
-                        Log.w(TAG, "FILTER_READ_STATUS: Wrong length received: " + tagLength
-                                + " expected: " + FILTER_READ_STATUS_LEN);
+                        Log.w(
+                                TAG,
+                                "FILTER_READ_STATUS: Wrong length received: "
+                                        + tagLength
+                                        + " expected: "
+                                        + FILTER_READ_STATUS_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                5);
                     } else {
                         setFilterReadStatus(appParams[i] & 0x03); // Lower two bits
                     }
@@ -285,20 +332,41 @@ public class BluetoothMapAppParams {
                     } else {
                         Log.w(TAG, "FILTER_RECIPIENT: Wrong length received: " + tagLength
                                 + " expected to be more than 0");
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                6);
                     }
                     break;
                 case FILTER_ORIGINATOR:
                     if (tagLength != 0) {
                         setFilterOriginator(new String(appParams, i, tagLength));
                     } else {
-                        Log.w(TAG, "FILTER_ORIGINATOR: Wrong length received: " + tagLength
-                                + " expected to be more than 0");
+                        Log.w(
+                                TAG,
+                                "FILTER_ORIGINATOR: Wrong length received: "
+                                        + tagLength
+                                        + " expected to be more than 0");
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                7);
                     }
                     break;
                 case FILTER_PRIORITY:
                     if (tagLength != FILTER_PRIORITY_LEN) {
                         Log.w(TAG, "FILTER_PRIORITY: Wrong length received: " + tagLength
                                 + " expected: " + FILTER_PRIORITY_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                8);
                     } else {
                         setFilterPriority(appParams[i] & 0x03); // Lower two bits
                     }
@@ -307,15 +375,30 @@ public class BluetoothMapAppParams {
                     if (tagLength != ATTACHMENT_LEN) {
                         Log.w(TAG, "ATTACHMENT: Wrong length received: " + tagLength + " expected: "
                                 + ATTACHMENT_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                9);
                     } else {
                         setAttachment(appParams[i] & 0x01); // Lower bit
                     }
                     break;
                 case TRANSPARENT:
                     if (tagLength != TRANSPARENT_LEN) {
-                        Log.w(TAG,
-                                "TRANSPARENT: Wrong length received: " + tagLength + " expected: "
+                        Log.w(
+                                TAG,
+                                "TRANSPARENT: Wrong length received: "
+                                        + tagLength
+                                        + " expected: "
                                         + TRANSPARENT_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                10);
                     } else {
                         setTransparent(appParams[i] & 0x01); // Lower bit
                     }
@@ -324,15 +407,30 @@ public class BluetoothMapAppParams {
                     if (tagLength != RETRY_LEN) {
                         Log.w(TAG, "RETRY: Wrong length received: " + tagLength + " expected: "
                                 + RETRY_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                11);
                     } else {
                         setRetry(appParams[i] & 0x01); // Lower bit
                     }
                     break;
                 case NEW_MESSAGE:
                     if (tagLength != NEW_MESSAGE_LEN) {
-                        Log.w(TAG,
-                                "NEW_MESSAGE: Wrong length received: " + tagLength + " expected: "
+                        Log.w(
+                                TAG,
+                                "NEW_MESSAGE: Wrong length received: "
+                                        + tagLength
+                                        + " expected: "
                                         + NEW_MESSAGE_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                12);
                     } else {
                         setNewMessage(appParams[i] & 0x01); // Lower bit
                     }
@@ -341,6 +439,12 @@ public class BluetoothMapAppParams {
                     if (tagLength != NOTIFICATION_STATUS_LEN) {
                         Log.w(TAG, "NOTIFICATION_STATUS: Wrong length received: " + tagLength
                                 + " expected: " + NOTIFICATION_STATUS_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                13);
                     } else {
                         setNotificationStatus(appParams[i] & 0x01); // Lower bit
                     }
@@ -349,14 +453,30 @@ public class BluetoothMapAppParams {
                     if (tagLength != NOTIFICATION_FILTER_LEN) {
                         Log.w(TAG, "NOTIFICATION_FILTER: Wrong length received: " + tagLength
                                 + " expected: " + NOTIFICATION_FILTER_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                14);
                     } else {
                         setNotificationFilter(appParamBuf.getInt(i) & 0xffffffffL); // 4 bytes
                     }
                     break;
                 case MAS_INSTANCE_ID:
                     if (tagLength != MAS_INSTANCE_ID_LEN) {
-                        Log.w(TAG, "MAS_INSTANCE_ID: Wrong length received: " + tagLength
-                                + " expected: " + MAS_INSTANCE_ID_LEN);
+                        Log.w(
+                                TAG,
+                                "MAS_INSTANCE_ID: Wrong length received: "
+                                        + tagLength
+                                        + " expected: "
+                                        + MAS_INSTANCE_ID_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                15);
                     } else {
                         setMasInstanceId(appParams[i] & 0xff);
                     }
@@ -365,6 +485,12 @@ public class BluetoothMapAppParams {
                     if (tagLength != PARAMETER_MASK_LEN) {
                         Log.w(TAG, "PARAMETER_MASK: Wrong length received: " + tagLength
                                 + " expected: " + PARAMETER_MASK_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                16);
                     } else {
                         setParameterMask(appParamBuf.getInt(i) & 0xffffffffL); // Make it unsigned
                     }
@@ -373,14 +499,30 @@ public class BluetoothMapAppParams {
                     if (tagLength != FOLDER_LISTING_SIZE_LEN) {
                         Log.w(TAG, "FOLDER_LISTING_SIZE: Wrong length received: " + tagLength
                                 + " expected: " + FOLDER_LISTING_SIZE_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                17);
                     } else {
                         setFolderListingSize(appParamBuf.getShort(i) & 0xffff); // Make it unsigned
                     }
                     break;
                 case MESSAGE_LISTING_SIZE:
                     if (tagLength != MESSAGE_LISTING_SIZE_LEN) {
-                        Log.w(TAG, "MESSAGE_LISTING_SIZE: Wrong length received: " + tagLength
-                                + " expected: " + MESSAGE_LISTING_SIZE_LEN);
+                        Log.w(
+                                TAG,
+                                "MESSAGE_LISTING_SIZE: Wrong length received: "
+                                        + tagLength
+                                        + " expected: "
+                                        + MESSAGE_LISTING_SIZE_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                18);
                     } else {
                         setMessageListingSize(appParamBuf.getShort(i) & 0xffff); // Make it unsigned
                     }
@@ -389,6 +531,12 @@ public class BluetoothMapAppParams {
                     if (tagLength != SUBJECT_LENGTH_LEN) {
                         Log.w(TAG, "SUBJECT_LENGTH: Wrong length received: " + tagLength
                                 + " expected: " + SUBJECT_LENGTH_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                19);
                     } else {
                         setSubjectLength(appParams[i] & 0xff);
                     }
@@ -397,6 +545,12 @@ public class BluetoothMapAppParams {
                     if (tagLength != CHARSET_LEN) {
                         Log.w(TAG, "CHARSET: Wrong length received: " + tagLength + " expected: "
                                 + CHARSET_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                20);
                     } else {
                         setCharset(appParams[i] & 0x01); // Lower bit
                     }
@@ -405,6 +559,12 @@ public class BluetoothMapAppParams {
                     if (tagLength != FRACTION_REQUEST_LEN) {
                         Log.w(TAG, "FRACTION_REQUEST: Wrong length received: " + tagLength
                                 + " expected: " + FRACTION_REQUEST_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                21);
                     } else {
                         setFractionRequest(appParams[i] & 0x01); // Lower bit
                     }
@@ -413,6 +573,12 @@ public class BluetoothMapAppParams {
                     if (tagLength != FRACTION_DELIVER_LEN) {
                         Log.w(TAG, "FRACTION_DELIVER: Wrong length received: " + tagLength
                                 + " expected: " + FRACTION_DELIVER_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                22);
                     } else {
                         setFractionDeliver(appParams[i] & 0x01); // Lower bit
                     }
@@ -421,15 +587,30 @@ public class BluetoothMapAppParams {
                     if (tagLength != STATUS_INDICATOR_LEN) {
                         Log.w(TAG, "STATUS_INDICATOR: Wrong length received: " + tagLength
                                 + " expected: " + STATUS_INDICATOR_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                23);
                     } else {
                         setStatusIndicator(appParams[i] & 0x01); // Lower bit
                     }
                     break;
                 case STATUS_VALUE:
                     if (tagLength != STATUS_VALUE_LEN) {
-                        Log.w(TAG,
-                                "STATUS_VALUER: Wrong length received: " + tagLength + " expected: "
+                        Log.w(
+                                TAG,
+                                "STATUS_VALUER: Wrong length received: "
+                                        + tagLength
+                                        + " expected: "
                                         + STATUS_VALUE_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                24);
                     } else {
                         setStatusValue(appParams[i] & 0x01); // Lower bit
                     }
@@ -441,6 +622,12 @@ public class BluetoothMapAppParams {
                     if ((tagLength != DATABASE_INDETIFIER_LEN)) {
                         Log.w(TAG, "DATABASE_IDENTIFIER: Wrong length received: " + tagLength
                                 + " expected: " + DATABASE_INDETIFIER_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                25);
                     } else {
                         setDatabaseIdentifier(appParamBuf.getLong(i)/*MSB*/,
                                 appParamBuf.getLong(i + 8)/*LSB*/);
@@ -450,15 +637,27 @@ public class BluetoothMapAppParams {
                     if ((tagLength != CONVO_LIST_VER_COUNTER_LEN)) {
                         Log.w(TAG, "CONVO_LIST_VER_COUNTER: Wrong length received: " + tagLength
                                 + " expected: " + CONVO_LIST_VER_COUNTER_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                26);
                     } else {
-                        setConvoListingVerCounter(appParamBuf.getLong(i)/*MSB*/,
-                                appParamBuf.getLong(i + 8)/*LSB*/);
+                        setConvoListingVerCounter(
+                                appParamBuf.getLong(i) /*MSB*/, appParamBuf.getLong(i + 8) /*LSB*/);
                     }
                     break;
                 case PRESENCE_AVAILABLE:
                     if ((tagLength != PRESENCE_AVAILABLE_LEN)) {
                         Log.w(TAG, "PRESENCE_AVAILABLE: Wrong length received: " + tagLength
                                 + " expected: " + PRESENCE_AVAILABLE_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                27);
                     } else {
                         setPresenceAvailability(appParams[i]);
                     }
@@ -469,6 +668,12 @@ public class BluetoothMapAppParams {
                     } else {
                         Log.w(TAG, "PRESENCE_STATUS: Wrong length received: " + tagLength
                                 + " expected to be more than 0");
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                28);
                     }
                     break;
                 case LAST_ACTIVITY:
@@ -477,12 +682,24 @@ public class BluetoothMapAppParams {
                     } else {
                         Log.w(TAG, "LAST_ACTIVITY: Wrong length received: " + tagLength
                                 + " expected to be more than 0");
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                29);
                     }
                     break;
                 case CHAT_STATE:
                     if ((tagLength != CHAT_STATE_LEN)) {
                         Log.w(TAG, "CHAT_STATE: Wrong length received: " + tagLength + " expected: "
                                 + CHAT_STATE_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                30);
                     } else {
                         setChatState(appParams[i]);
                     }
@@ -493,6 +710,12 @@ public class BluetoothMapAppParams {
                     } else {
                         Log.w(TAG, "FILTER_CONVO_ID: Wrong length received: " + tagLength
                                 + " expected: " + FILTER_CONVO_ID_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                31);
                     }
                     break;
                 case CONVO_LISTING_SIZE:
@@ -500,7 +723,12 @@ public class BluetoothMapAppParams {
                         Log.w(TAG,
                                 "LISTING_SIZE: Wrong length received: " + tagLength + " expected: "
                                         + CONVO_LISTING_SIZE_LEN);
-
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                32);
                     } else {
                         setConvoListingSize(appParamBuf.getShort(i) & 0xffff);
                     }
@@ -509,6 +737,12 @@ public class BluetoothMapAppParams {
                     if ((tagLength != FILTER_PRESENCE_LEN)) {
                         Log.w(TAG, "FILTER_PRESENCE: Wrong length received: " + tagLength
                                 + " expected: " + FILTER_PRESENCE_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                33);
                     } else {
                         setFilterPresence(appParams[i]);
                     }
@@ -517,6 +751,12 @@ public class BluetoothMapAppParams {
                     if ((tagLength != FILTER_UID_PRESENT_LEN)) {
                         Log.w(TAG, "FILTER_UID_PRESENT: Wrong length received: " + tagLength
                                 + " expected: " + FILTER_UID_PRESENT_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                34);
                     } else {
                         setFilterUidPresent(appParams[i] & 0x1);
                     }
@@ -525,6 +765,12 @@ public class BluetoothMapAppParams {
                     if ((tagLength != CHAT_STATE_CONVO_ID_LEN)) {
                         Log.w(TAG, "CHAT_STATE_CONVO_ID: Wrong length received: " + tagLength
                                 + " expected: " + CHAT_STATE_CONVO_ID_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                35);
                     } else {
                     /* TODO: Is this correct convoId handling? */
                         setChatStateConvoId(appParamBuf.getLong(i)/*MSB*/,
@@ -544,6 +790,12 @@ public class BluetoothMapAppParams {
                     } else {
                         Log.w(TAG, "FILTER_MESSAGE_HANDLE: Wrong length received: " + tagLength
                                 + " expected: " + FILTER_MESSAGE_HANDLE_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                36);
                     }
 
                     break;
@@ -551,6 +803,12 @@ public class BluetoothMapAppParams {
                     if (tagLength != CONVO_PARAMETER_MASK_LEN) {
                         Log.w(TAG, "CONVO_PARAMETER_MASK: Wrong length received: " + tagLength
                                 + " expected: " + CONVO_PARAMETER_MASK_LEN);
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.MAP,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                37);
                     } else {
                         setConvoParameterMask(
                                 appParamBuf.getInt(i) & 0xffffffffL); // Make it unsigned
@@ -560,6 +818,12 @@ public class BluetoothMapAppParams {
                     // Just skip unknown Tags, no need to report error
                     Log.w(TAG, "Unknown TagId received ( 0x" + Integer.toString(tagId, 16)
                             + "), skipping...");
+                    ContentProfileErrorReportUtils.report(
+                            BluetoothProfile.MAP,
+                            BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                            BluetoothStatsLog
+                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                            38);
                     break;
             }
             i += tagLength; // Offset to next TagId
@@ -1047,6 +1311,11 @@ public class BluetoothMapAppParams {
         try {
             mFilterMsgHandle = BluetoothMapUtils.getLongFromString(handle);
         } catch (UnsupportedEncodingException | NumberFormatException e) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.MAP,
+                    BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    39);
             Log.w(TAG, "Error creating long from handle string", e);
         }
     }
@@ -1101,6 +1370,11 @@ public class BluetoothMapAppParams {
         try {
             mFilterConvoId = SignedLongLong.fromString(id);
         } catch (UnsupportedEncodingException | NumberFormatException e) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.MAP,
+                    BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    40);
             Log.w(TAG, "Error creating long from id string", e);
         }
     }
