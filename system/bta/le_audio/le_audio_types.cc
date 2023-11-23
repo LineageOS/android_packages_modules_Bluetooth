@@ -503,12 +503,21 @@ void LeAudioLtvMap::Append(const LeAudioLtvMap& other) {
   for (auto& el : other.values) {
     values[el.first] = el.second;
   }
+
+  invalidate();
 }
 
 LeAudioLtvMap LeAudioLtvMap::Parse(const uint8_t* p_value, uint8_t len,
                                    bool& success) {
   LeAudioLtvMap ltv_map;
+  success = ltv_map.Parse(p_value, len);
+  if (!success) {
+    LOG(ERROR) << __func__ << "Error parsing LTV map";
+  }
+  return ltv_map;
+}
 
+bool LeAudioLtvMap::Parse(const uint8_t* p_value, uint8_t len) {
   if (len > 0) {
     const auto p_value_end = p_value + len;
 
@@ -522,8 +531,8 @@ LeAudioLtvMap LeAudioLtvMap::Parse(const uint8_t* p_value, uint8_t len,
       if (p_value_end < (p_value + ltv_len)) {
         LOG(ERROR) << __func__
                    << " Invalid ltv_len: " << static_cast<int>(ltv_len);
-        success = false;
-        return LeAudioLtvMap();
+        invalidate();
+        return false;
       }
 
       uint8_t ltv_type;
@@ -534,12 +543,12 @@ LeAudioLtvMap LeAudioLtvMap::Parse(const uint8_t* p_value, uint8_t len,
       p_value += ltv_len;
 
       std::vector<uint8_t> ltv_value(p_temp, p_value);
-      ltv_map.values.emplace(ltv_type, std::move(ltv_value));
+      values.emplace(ltv_type, std::move(ltv_value));
     }
   }
+  invalidate();
 
-  success = true;
-  return ltv_map;
+  return true;
 }
 
 size_t LeAudioLtvMap::RawPacketSize() const {
@@ -593,6 +602,24 @@ LeAudioLtvMap::GetAsCoreCodecCapabilities() const {
     core_capabilities = LtvMapToCoreCodecCapabilities(*this);
   }
   return *core_capabilities;
+}
+
+void LeAudioLtvMap::RemoveAllTypes(const LeAudioLtvMap& other) {
+  for (auto const& [key, _] : other.values) {
+    Remove(key);
+  }
+}
+
+LeAudioLtvMap LeAudioLtvMap::GetIntersection(const LeAudioLtvMap& other) const {
+  LeAudioLtvMap result;
+  for (auto const& [key, value] : values) {
+    auto entry = other.Find(key);
+    if (entry->size() != value.size()) continue;
+    if (memcmp(entry->data(), value.data(), value.size()) == 0) {
+      result.Add(key, value);
+    }
+  }
+  return result;
 }
 
 }  // namespace types
