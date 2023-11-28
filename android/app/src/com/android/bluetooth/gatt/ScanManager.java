@@ -29,6 +29,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.hardware.display.DisplayManager;
 import android.location.LocationManager;
 import android.os.Handler;
@@ -744,12 +745,15 @@ public class ScanManager {
         }
 
         private void fetchAppForegroundState(ScanClient client) {
-            if (mActivityManager == null || mAdapterService.getPackageManager() == null) {
+            PackageManager packageManager = mAdapterService.getPackageManager();
+            if (mActivityManager == null || packageManager == null) {
                 return;
             }
-            String packageName =
-                    mAdapterService.getPackageManager().getPackagesForUid(client.appUid)[0];
-            int importance = mActivityManager.getPackageImportance(packageName);
+            String[] packages = packageManager.getPackagesForUid(client.appUid);
+            if (packages == null || packages.length == 0) {
+                return;
+            }
+            int importance = mActivityManager.getPackageImportance(packages[0]);
             boolean isForeground =
                     importance
                             <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE;
