@@ -18,6 +18,8 @@ package com.android.bluetooth.btservice;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import android.bluetooth.BluetoothProfile;
+
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 
 import org.junit.Test;
@@ -34,18 +36,18 @@ public final class ConfigTest {
                 Arrays.stream(Config.getSupportedProfiles())
                         .anyMatch(cls -> cls == CsipSetCoordinatorService.class);
 
-        Config.setProfileEnabled(CsipSetCoordinatorService.class, false);
+        Config.setProfileEnabled(BluetoothProfile.CSIP_SET_COORDINATOR, false);
         assertThat(
                         Arrays.stream(Config.getSupportedProfiles())
                                 .anyMatch(cls -> cls == CsipSetCoordinatorService.class))
                 .isFalse();
 
-        Config.setProfileEnabled(CsipSetCoordinatorService.class, true);
+        Config.setProfileEnabled(BluetoothProfile.CSIP_SET_COORDINATOR, true);
         assertThat(
                         Arrays.stream(Config.getSupportedProfiles())
                                 .anyMatch(cls -> cls == CsipSetCoordinatorService.class))
                 .isTrue();
 
-        Config.setProfileEnabled(CsipSetCoordinatorService.class, enabled);
+        Config.setProfileEnabled(BluetoothProfile.CSIP_SET_COORDINATOR, enabled);
     }
 }

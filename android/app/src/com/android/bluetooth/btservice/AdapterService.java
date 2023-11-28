@@ -159,6 +159,7 @@ import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -1026,28 +1027,29 @@ public class AdapterService extends Service {
     }
 
     void updateLeAudioProfileServiceState() {
-        HashSet<Class> nonSupportedProfiles = new HashSet<>();
+        Map<Integer, Class> nonSupportedProfiles = new HashMap<>();
 
         if (!isLeConnectedIsochronousStreamCentralSupported()) {
-            nonSupportedProfiles.addAll(Config.getLeAudioUnicastProfiles());
+            nonSupportedProfiles.putAll(Config.getLeAudioUnicastProfiles());
         }
 
         if (!isLeAudioBroadcastAssistantSupported()) {
-            nonSupportedProfiles.add(BassClientService.class);
+            nonSupportedProfiles.put(
+                    BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT, BassClientService.class);
         }
 
         if (!isLeAudioBroadcastSourceSupported()) {
-            Config.updateSupportedProfileMask(
-                    false, LeAudioService.class, BluetoothProfile.LE_AUDIO_BROADCAST);
+            Config.setProfileEnabled(BluetoothProfile.LE_AUDIO_BROADCAST, false);
         }
 
         // Disable the non-supported profiles service
-        for (Class profileService : nonSupportedProfiles) {
-            Config.setProfileEnabled(profileService, false);
-            if (isStartedProfile(profileService.getSimpleName())) {
-                setProfileServiceState(profileService, BluetoothAdapter.STATE_OFF);
-            }
-        }
+        nonSupportedProfiles.forEach(
+                (profileId, profileService) -> {
+                    Config.setProfileEnabled(profileId, false);
+                    if (isStartedProfile(profileService.getSimpleName())) {
+                        setProfileServiceState(profileService, BluetoothAdapter.STATE_OFF);
+                    }
+                });
     }
 
     void updateAdapterState(int prevState, int newState) {
@@ -4284,7 +4286,7 @@ public class AdapterService extends Service {
 
             HashSet<Class> supportedProfileServices =
                     new HashSet<Class>(Arrays.asList(Config.getSupportedProfiles()));
-            HashSet<Class> leAudioUnicastProfiles = Config.getLeAudioUnicastProfiles();
+            Collection<Class> leAudioUnicastProfiles = Config.getLeAudioUnicastProfiles().values();
 
             if (supportedProfileServices.containsAll(leAudioUnicastProfiles)) {
                 return BluetoothStatusCodes.FEATURE_SUPPORTED;
