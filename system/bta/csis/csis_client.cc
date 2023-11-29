@@ -332,7 +332,11 @@ public:
     if (device->IsConnected()) {
       BTA_GATTC_Close(device->conn_id);
     } else {
-      BTA_GATTC_CancelOpen(gatt_if_, addr, false);
+      if (com::android::bluetooth::flags::leaudio_cancel_open_with_direct_flag_when_connecting()) {
+        BTA_GATTC_CancelOpen(gatt_if_, addr, true);
+      } else {
+        BTA_GATTC_CancelOpen(gatt_if_, addr, false);
+      }
       DoDisconnectCleanUp(device);
       callbacks_->OnConnectionState(addr, ConnectionState::DISCONNECTED);
     }
