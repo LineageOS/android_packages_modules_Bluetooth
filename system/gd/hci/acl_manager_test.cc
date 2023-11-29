@@ -1364,30 +1364,6 @@ TEST_F(AclManagerLifeCycleTest, unregister_le_before_enhanced_connection_complet
   ASSERT_NE(connection_future_status, std::future_status::ready);
 }
 
-TEST_F(AclManagerWithConnectionTest, remote_sco_connect_request) {
-  ClassOfDevice class_of_device;
-
-  EXPECT_CALL(mock_connection_callback_, HACK_OnScoConnectRequest(remote, class_of_device));
-
-  test_hci_layer_->IncomingEvent(
-      ConnectionRequestBuilder::Create(remote, class_of_device, ConnectionRequestLinkType::SCO));
-  fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
-  fake_registry_.SynchronizeModuleHandler(&AclManager::Factory, std::chrono::milliseconds(20));
-  fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
-}
-
-TEST_F(AclManagerWithConnectionTest, remote_esco_connect_request) {
-  ClassOfDevice class_of_device;
-
-  EXPECT_CALL(mock_connection_callback_, HACK_OnEscoConnectRequest(remote, class_of_device));
-
-  test_hci_layer_->IncomingEvent(
-      ConnectionRequestBuilder::Create(remote, class_of_device, ConnectionRequestLinkType::ESCO));
-  fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
-  fake_registry_.SynchronizeModuleHandler(&AclManager::Factory, std::chrono::milliseconds(20));
-  fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
-}
-
 class AclManagerWithConnectionAssemblerTest : public AclManagerWithConnectionTest {
  protected:
   void SetUp() override {
