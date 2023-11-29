@@ -120,6 +120,8 @@ public class Config {
                     (1 << BluetoothProfile.GATT)),
             new ProfileConfig(LeAudioService.class, LeAudioService.isEnabled(),
                     (1 << BluetoothProfile.LE_AUDIO)),
+            new ProfileConfig(null, LeAudioService.isBroadcastEnabled(),
+                    (1 << BluetoothProfile.LE_AUDIO_BROADCAST)),
             new ProfileConfig(TbsService.class, TbsService.isEnabled(),
                     (1 << BluetoothProfile.LE_CALL_CONTROL)),
             new ProfileConfig(BluetoothMapService.class, BluetoothMapService.isEnabled(),
@@ -158,11 +160,6 @@ public class Config {
     }
 
     static void init(Context ctx) {
-        if (LeAudioService.isBroadcastEnabled()) {
-            updateSupportedProfileMask(
-                    true, LeAudioService.class, BluetoothProfile.LE_AUDIO_BROADCAST);
-        }
-
         final boolean leAudioDynamicSwitchSupported =
                 SystemProperties.getBoolean(LE_AUDIO_DYNAMIC_SWITCH_PROPERTY, false);
 
@@ -192,6 +189,7 @@ public class Config {
         }
 
         for (ProfileConfig config : PROFILE_SERVICES_AND_FLAGS) {
+            if (config.mClass == null) continue;
             Log.i(
                     TAG,
                     String.format(
@@ -220,12 +218,8 @@ public class Config {
 
     static void updateSupportedProfileMask(Boolean enable, Class profile, int supportedProfile) {
         for (ProfileConfig config : PROFILE_SERVICES_AND_FLAGS) {
-            if (config.mClass == profile) {
-                if (enable) {
-                    config.mMask |= 1 << supportedProfile;
-                } else {
-                    config.mMask &= ~(1 << supportedProfile);
-                }
+            if (config.mMask == (1 << supportedProfile)) {
+                config.mSupported = enable;
                 return;
             }
         }
@@ -239,6 +233,8 @@ public class Config {
         return Arrays.stream(PROFILE_SERVICES_AND_FLAGS)
                 .filter(config -> config.mSupported)
                 .map(config -> config.mClass)
+                // class is null for BluetoothProfile.LE_AUDIO_BROADCAST
+                .filter(profileClass -> profileClass != null)
                 .toArray(Class[]::new);
     }
 
