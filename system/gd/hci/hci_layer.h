@@ -86,6 +86,7 @@ class HciLayer : public Module, public CommandInterface<CommandBuilder> {
   virtual AclConnectionInterface* GetAclConnectionInterface(
       common::ContextualCallback<void(EventView)> event_handler,
       common::ContextualCallback<void(uint16_t, hci::ErrorCode)> on_disconnect,
+      common::ContextualCallback<void(Address, ClassOfDevice)> on_connection_request,
       common::ContextualCallback<void(hci::ErrorCode, uint16_t, uint8_t, uint16_t, uint16_t)>
           on_read_remote_version_complete);
   virtual void PutAclConnectionInterface();
@@ -101,6 +102,10 @@ class HciLayer : public Module, public CommandInterface<CommandBuilder> {
       common::ContextualCallback<void(LeMetaEventView)> event_handler);
 
   virtual LeScanningInterface* GetLeScanningInterface(common::ContextualCallback<void(LeMetaEventView)> event_handler);
+
+  virtual void RegisterForScoConnectionRequests(
+      common::ContextualCallback<void(Address, ClassOfDevice, ConnectionRequestLinkType)>
+          on_sco_connection_request);
 
   virtual LeIsoInterface* GetLeIsoInterface(common::ContextualCallback<void(LeMetaEventView)> event_handler);
 
@@ -161,8 +166,14 @@ class HciLayer : public Module, public CommandInterface<CommandBuilder> {
   };
 
   std::mutex callback_handlers_guard_;
+  void on_connection_request(EventView event_view);
   void on_disconnection_complete(EventView event_view);
   void on_read_remote_version_complete(EventView event_view);
+
+  common::ContextualCallback<void(Address bd_addr, ClassOfDevice cod)> on_acl_connection_request_{};
+  common::ContextualCallback<void(
+      Address bd_addr, ClassOfDevice cod, ConnectionRequestLinkType link_type)>
+      on_sco_connection_request_{};
 
   // Interfaces
   CommandInterfaceImpl<AclCommandBuilder> acl_connection_manager_interface_{*this};

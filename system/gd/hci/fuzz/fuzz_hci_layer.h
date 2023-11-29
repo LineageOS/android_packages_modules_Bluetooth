@@ -16,14 +16,15 @@
 
 #pragma once
 
+#include <fuzzer/FuzzedDataProvider.h>
+
+#include "fuzz/helpers.h"
+#include "hci/class_of_device.h"
 #include "hci/command_interface.h"
 #include "hci/hci_layer.h"
 #include "os/fuzz/dev_null_queue.h"
 #include "os/fuzz/fuzz_inject_queue.h"
 #include "os/log.h"
-
-#include <fuzzer/FuzzedDataProvider.h>
-#include "fuzz/helpers.h"
 
 namespace bluetooth {
 namespace hci {
@@ -112,8 +113,10 @@ class FuzzHciLayer : public HciLayer {
   hci::AclConnectionInterface* GetAclConnectionInterface(
       common::ContextualCallback<void(hci::EventView)> event_handler,
       common::ContextualCallback<void(uint16_t, hci::ErrorCode)> on_disconnect,
-      common::ContextualCallback<void(hci::ErrorCode hci_status, uint16_t, uint8_t, uint16_t, uint16_t)>
-          on_read_remote_version) override;
+      common::ContextualCallback<void(Address, ClassOfDevice)> on_connection_request,
+      common::ContextualCallback<void(
+          hci::ErrorCode hci_status, uint16_t, uint8_t, uint16_t, uint16_t)> on_read_remote_version)
+      override;
   void PutAclConnectionInterface() override {}
 
   hci::LeAclConnectionInterface* GetLeAclConnectionInterface(

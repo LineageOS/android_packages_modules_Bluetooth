@@ -1642,31 +1642,6 @@ void shim::legacy::Acl::OnConnectFail(hci::Address address,
                                     hci::ErrorCodeText(reason).c_str()));
 }
 
-void shim::legacy::Acl::HACK_OnEscoConnectRequest(hci::Address address,
-                                                  hci::ClassOfDevice cod) {
-  const RawAddress bd_addr = ToRawAddress(address);
-  types::ClassOfDevice legacy_cod;
-  types::ClassOfDevice::FromString(cod.ToLegacyConfigString(), legacy_cod);
-
-  TRY_POSTING_ON_MAIN(acl_interface_.connection.sco.on_esco_connect_request,
-                      bd_addr, legacy_cod);
-  LOG_DEBUG("Received ESCO connect request remote:%s",
-            ADDRESS_TO_LOGGABLE_CSTR(address));
-  BTM_LogHistory(kBtmLogTag, ToRawAddress(address), "ESCO Connection request");
-}
-
-void shim::legacy::Acl::HACK_OnScoConnectRequest(hci::Address address,
-                                                 hci::ClassOfDevice cod) {
-  const RawAddress bd_addr = ToRawAddress(address);
-  types::ClassOfDevice legacy_cod;
-  types::ClassOfDevice::FromString(cod.ToLegacyConfigString(), legacy_cod);
-
-  TRY_POSTING_ON_MAIN(acl_interface_.connection.sco.on_sco_connect_request,
-                      bd_addr, legacy_cod);
-  LOG_DEBUG("Received SCO connect request remote:%s", ADDRESS_TO_LOGGABLE_CSTR(address));
-  BTM_LogHistory(kBtmLogTag, ToRawAddress(address), "SCO Connection request");
-}
-
 void shim::legacy::Acl::OnLeConnectSuccess(
     hci::AddressWithType address_with_type,
     std::unique_ptr<hci::acl_manager::LeAclConnection> connection) {

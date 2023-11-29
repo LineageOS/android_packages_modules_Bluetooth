@@ -71,9 +71,6 @@ class LinkManager : public hci::acl_manager::ConnectionCallbacks {
   void OnConnectRequest(hci::Address, hci::ClassOfDevice) override;
   void OnConnectFail(hci::Address device, hci::ErrorCode reason, bool locally_initiated) override;
 
-  void HACK_OnEscoConnectRequest(hci::Address, hci::ClassOfDevice) override;
-  void HACK_OnScoConnectRequest(hci::Address, hci::ClassOfDevice) override;
-
   virtual void OnDisconnect(hci::Address device, hci::ErrorCode status);
   void OnAuthenticationComplete(hci::ErrorCode hci_status, hci::Address device);
   void OnEncryptionChange(hci::Address device, hci::EncryptionEnabled enabled);

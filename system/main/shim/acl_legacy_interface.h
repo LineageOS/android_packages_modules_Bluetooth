@@ -55,14 +55,6 @@ typedef struct {
 } acl_le_connection_interface_t;
 
 typedef struct {
-  void (*on_esco_connect_request)(const RawAddress&,
-                                  const types::ClassOfDevice&);
-  void (*on_sco_connect_request)(const RawAddress&,
-                                 const types::ClassOfDevice&);
-  void (*on_disconnected)(uint16_t handle, tHCI_REASON reason);
-} acl_sco_connection_interface_t;
-
-typedef struct {
   void (*on_authentication_complete)(uint16_t handle, tHCI_STATUS status);
   void (*on_change_connection_link_key_complete)();
   void (*on_encryption_change)(bool enabled);
@@ -134,7 +126,6 @@ typedef struct {
 typedef struct {
   acl_classic_connection_interface_t classic;
   acl_le_connection_interface_t le;
-  acl_sco_connection_interface_t sco;
 } acl_connection_interface_t;
 
 typedef struct {

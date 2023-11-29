@@ -169,6 +169,7 @@ static bool event_already_registered_in_hci_layer(
   switch (event_code) {
     case bluetooth::hci::EventCode::COMMAND_COMPLETE:
     case bluetooth::hci::EventCode::COMMAND_STATUS:
+    case bluetooth::hci::EventCode::CONNECTION_REQUEST:
     case bluetooth::hci::EventCode::PAGE_SCAN_REPETITION_MODE_CHANGE:
     case bluetooth::hci::EventCode::MAX_SLOTS_CHANGE:
     case bluetooth::hci::EventCode::LE_META_EVENT:

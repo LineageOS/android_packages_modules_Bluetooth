@@ -320,16 +320,6 @@ void LinkManager::OnConnectFail(hci::Address device, hci::ErrorCode reason, bool
   pending_links_.erase(pending_link);
 }
 
-void LinkManager::HACK_OnEscoConnectRequest(
-    hci::Address /* device */, hci::ClassOfDevice /* cod */) {
-  LOG_ERROR("Remote ESCO connect request unimplemented");
-}
-
-void LinkManager::HACK_OnScoConnectRequest(
-    hci::Address /* device */, hci::ClassOfDevice /* cod */) {
-  LOG_ERROR("Remote SCO connect request unimplemented");
-}
-
 void LinkManager::OnDisconnect(hci::Address device, hci::ErrorCode status) {
   auto* link = GetLink(device);
   ASSERT_LOG(

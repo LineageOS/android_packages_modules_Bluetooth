@@ -183,10 +183,6 @@ const shim::legacy::acl_interface_t GetMockAclInterface() {
       .connection.le.on_failed = mock_connection_le_on_failed,
       .connection.le.on_disconnected = mock_connection_le_on_disconnected,
 
-      .connection.sco.on_esco_connect_request = nullptr,
-      .connection.sco.on_sco_connect_request = nullptr,
-      .connection.sco.on_disconnected = nullptr,
-
       .link.classic.on_authentication_complete = nullptr,
       .link.classic.on_central_link_key_complete = nullptr,
       .link.classic.on_change_connection_link_key_complete = nullptr,

@@ -353,9 +353,6 @@ class MockConnectionCallback : public ConnectionCallbacks {
   MOCK_METHOD(void, OnConnectRequest, (Address, ClassOfDevice), (override));
   MOCK_METHOD(void, OnConnectFail, (Address, ErrorCode reason, bool locally_initiated), (override));
 
-  MOCK_METHOD(void, HACK_OnEscoConnectRequest, (Address, ClassOfDevice), (override));
-  MOCK_METHOD(void, HACK_OnScoConnectRequest, (Address, ClassOfDevice), (override));
-
   size_t NumberOfConnections() const {
     return connections_.size();
   }
