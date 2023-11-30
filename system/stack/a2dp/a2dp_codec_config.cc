@@ -667,15 +667,16 @@ bool A2dpCodecs::init() {
     LOG_ERROR("%s: no Source codecs were initialized", __func__);
   } else {
     for (auto iter : ordered_source_codecs_) {
-      LOG_INFO("%s: initialized Source codec %s", __func__,
-               iter->name().c_str());
+      LOG_INFO("%s: initialized Source codec %s, idx %d", __func__,
+               iter->name().c_str(), iter->codecIndex());
     }
   }
   if (ordered_sink_codecs_.empty()) {
     LOG_ERROR("%s: no Sink codecs were initialized", __func__);
   } else {
     for (auto iter : ordered_sink_codecs_) {
-      LOG_INFO("%s: initialized Sink codec %s", __func__, iter->name().c_str());
+      LOG_INFO("%s: initialized Sink codec %s, idx %d", __func__,
+               iter->name().c_str(), iter->codecIndex());
     }
   }
 
@@ -687,6 +688,15 @@ A2dpCodecConfig* A2dpCodecs::findSourceCodecConfig(
   std::lock_guard<std::recursive_mutex> lock(codec_mutex_);
   btav_a2dp_codec_index_t codec_index = A2DP_SourceCodecIndex(p_codec_info);
   if (codec_index == BTAV_A2DP_CODEC_INDEX_MAX) return nullptr;
+
+  auto iter = indexed_codecs_.find(codec_index);
+  if (iter == indexed_codecs_.end()) return nullptr;
+  return iter->second;
+}
+
+A2dpCodecConfig* A2dpCodecs::findSourceCodecConfig(
+    btav_a2dp_codec_index_t codec_index) {
+  std::lock_guard<std::recursive_mutex> lock(codec_mutex_);
 
   auto iter = indexed_codecs_.find(codec_index);
   if (iter == indexed_codecs_.end()) return nullptr;

@@ -44,6 +44,11 @@ A2dpCodecConfig* A2dpCodecs::findSourceCodecConfig(
   inc_func_call_count(__func__);
   return nullptr;
 }
+A2dpCodecConfig* A2dpCodecs::findSourceCodecConfig(
+    btav_a2dp_codec_index_t /* codec_index */) {
+  inc_func_call_count(__func__);
+  return nullptr;
+}
 A2dpCodecConfig::A2dpCodecConfig(btav_a2dp_codec_index_t codec_index,
                                  const std::string& name,
                                  btav_a2dp_codec_priority_t codec_priority)
