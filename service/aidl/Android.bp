@@ -13,6 +13,7 @@ java_library {
     srcs: [
         "android/bluetooth/IBluetoothManager.aidl",
         "android/bluetooth/IBluetoothManagerCallback.aidl",
+        "com/android/server/bluetooth/SystemServiceMessage.aidl",
     ],
     libs: ["framework-annotations-lib"],
     sdk_version: "module_current",

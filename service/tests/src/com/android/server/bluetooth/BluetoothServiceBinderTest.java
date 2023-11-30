@@ -52,6 +52,7 @@ import android.os.IBinder;
 import android.os.Process;
 import android.os.UserManager;
 import android.os.test.TestLooper;
+import android.platform.test.annotations.DisableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.SmallTest;
@@ -153,6 +154,13 @@ public class BluetoothServiceBinderTest {
     }
 
     @Test
+    public void getMessenger() {
+        assertThat(mBinder.getServiceMessenger()).isNotNull();
+        verifyMock();
+    }
+
+    @Test
+    @DisableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER)
     public void registerAdapter() {
         assertThrows(NullPointerException.class, () -> mBinder.registerAdapter(null));
         mBinder.registerAdapter(mock(IBluetoothManagerCallback.class));
@@ -161,6 +169,7 @@ public class BluetoothServiceBinderTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER)
     public void unregisterAdapter() {
         assertThrows(NullPointerException.class, () -> mBinder.unregisterAdapter(null));
         mBinder.unregisterAdapter(mock(IBluetoothManagerCallback.class));

@@ -27,8 +27,6 @@ import static com.android.server.bluetooth.BtPermissionUtils.isCallerSystem;
 
 import static java.util.Objects.requireNonNull;
 
-import android.annotation.NonNull;
-import android.annotation.Nullable;
 import android.app.AppOpsManager;
 import android.bluetooth.IBluetoothManager;
 import android.bluetooth.IBluetoothManagerCallback;
@@ -37,9 +35,15 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.Messenger;
 import android.os.ParcelFileDescriptor;
 import android.os.UserManager;
 import android.permission.PermissionManager;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import com.android.bluetooth.flags.Flags;
 
 import libcore.util.SneakyThrow;
 
@@ -61,6 +65,7 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
     private final PermissionManager mPermissionManager;
     private final BtPermissionUtils mPermissionUtils;
     private final Handler mHandler;
+    private final Messenger mMessenger;
 
     BluetoothServiceBinder(
             Looper looper, BluetoothManagerService bms, Context ctx, UserManager userManager) {
@@ -71,6 +76,7 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
         mPermissionManager = requireNonNull(ctx.getSystemService(PermissionManager.class));
         mPermissionUtils = new BtPermissionUtils(ctx);
         mHandler = new Handler(looper);
+        mMessenger = new ServiceMessenger(looper, mService).getMessenger();
     }
 
     private void postFromBinder(Runnable runnable) {
@@ -100,14 +106,25 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
     }
 
     @Override
+    public @NonNull Messenger getServiceMessenger() {
+        return mMessenger;
+    }
+
+    @Override
     @Nullable
     public IBinder registerAdapter(@NonNull IBluetoothManagerCallback callback) {
+        if (Flags.systemServerMessenger()) {
+            throw new IllegalStateException("Binder call unavailable when using messenger");
+        }
         requireNonNull(callback);
         return postFromBinder(() -> mService.registerAdapter(callback));
     }
 
     @Override
     public void unregisterAdapter(@NonNull IBluetoothManagerCallback callback) {
+        if (Flags.systemServerMessenger()) {
+            throw new IllegalStateException("Binder call unavailable when using messenger");
+        }
         requireNonNull(callback);
         postFromBinder(() -> mService.unregisterAdapter(callback));
     }

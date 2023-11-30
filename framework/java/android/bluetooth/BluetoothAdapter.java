@@ -83,6 +83,7 @@ import android.util.Pair;
 
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
+import com.android.server.bluetooth.SystemServiceMessage;
 
 import java.io.IOException;
 import java.lang.annotation.Retention;
@@ -856,6 +857,7 @@ public final class BluetoothAdapter {
     private DistanceMeasurementManager mDistanceMeasurementManager;
 
     private final IBluetoothManager mManagerService;
+    private final SystemServiceMessenger mSystemServiceMessenger;
     private final AttributionSource mAttributionSource;
     private final Optional<Context> mContext;
 
@@ -1068,6 +1070,11 @@ public final class BluetoothAdapter {
         mManagerService = requireNonNull(managerService);
         mContext = Optional.ofNullable(context);
         mAttributionSource = requireNonNull(source);
+        if (Flags.systemServerMessenger()) {
+            mSystemServiceMessenger = new SystemServiceMessenger(mManagerService);
+        } else {
+            mSystemServiceMessenger = null;
+        }
 
         mQualityCallbackWrapper =
                 new CallbackWrapper<>(
@@ -4045,6 +4052,20 @@ public final class BluetoothAdapter {
         final boolean wantRegistered = !sProxyServiceStateCallbacks.isEmpty();
 
         if (isRegistered == wantRegistered) {
+            return;
+        }
+        if (Flags.systemServerMessenger()) {
+            if (wantRegistered) {
+                var data = new SystemServiceMessage.RegisterAdapter();
+                data.binder = sManagerCallback;
+                sService = IBluetooth.Stub.asInterface(mSystemServiceMessenger.send(data).value);
+            } else {
+                var data = new SystemServiceMessage.UnregisterAdapter();
+                data.binder = sManagerCallback;
+                mSystemServiceMessenger.send(data);
+                sService = null;
+            }
+            sServiceRegistered = wantRegistered;
             return;
         }
         if (wantRegistered) {
