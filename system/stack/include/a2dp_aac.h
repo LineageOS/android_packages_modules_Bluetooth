@@ -36,7 +36,7 @@ class A2dpCodecConfigAacBase : public A2dpCodecConfig {
                          const std::string& name,
                          btav_a2dp_codec_priority_t codec_priority,
                          bool is_source)
-      : A2dpCodecConfig(codec_index, name, codec_priority),
+      : A2dpCodecConfig(codec_index, A2DP_CODEC_ID_AAC, name, codec_priority),
         is_source_(is_source) {}
   bool setCodecConfig(const uint8_t* p_peer_codec_info, bool is_capability,
                       uint8_t* p_result_codec_config) override;

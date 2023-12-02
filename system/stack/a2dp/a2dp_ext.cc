@@ -21,17 +21,25 @@
 #include "a2dp_codec_api.h"
 #include "audio_hal_interface/a2dp_encoding.h"
 
+static uint64_t codec_id(btav_a2dp_codec_index_t codec_index) {
+  uint64_t id = 0;
+  auto result = ::bluetooth::audio::a2dp::provider::codec_info(
+      codec_index, &id, nullptr, nullptr);
+  LOG_ASSERT(result) << "provider::codec_info unexpectdly failed";
+  return id;
+}
+
 A2dpCodecConfigExt::A2dpCodecConfigExt(btav_a2dp_codec_index_t codec_index,
                                        bool is_source)
     : A2dpCodecConfig(
-          codec_index,
+          codec_index, codec_id(codec_index),
           bluetooth::audio::a2dp::provider::codec_index_str(codec_index)
               .value(),
           BTAV_A2DP_CODEC_PRIORITY_DEFAULT),
       is_source_(is_source) {
   // Load the local capabilities from the provider info.
   auto result = ::bluetooth::audio::a2dp::provider::codec_info(
-      codec_index, ota_codec_config_, &codec_capability_);
+      codec_index, nullptr, ota_codec_config_, &codec_capability_);
   LOG_ASSERT(result) << "provider::codec_info unexpectdly failed";
   codec_selectable_capability_ = codec_capability_;
 }

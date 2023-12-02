@@ -276,7 +276,8 @@ std::unique_ptr<A2dpIntf> GetA2dpProfile(const unsigned char* btif) {
 int A2dpIntf::init() const {
   std::vector<btav_a2dp_codec_config_t> a;
   std::vector<btav_a2dp_codec_config_t> b;
-  return intf_->init(&internal::g_callbacks, 1, a, b);
+  std::vector<btav_a2dp_codec_info_t> c;
+  return intf_->init(&internal::g_callbacks, 1, a, b, &c);
 }
 
 uint32_t A2dpIntf::connect(RawAddress addr) const {

@@ -199,12 +199,12 @@ bool supports_codec(btav_a2dp_codec_index_t codec_index) {
 }
 
 // Return the A2DP capabilities for the selected codec.
-bool codec_info(btav_a2dp_codec_index_t codec_index, uint8_t* codec_info,
-                btav_a2dp_codec_config_t* codec_config) {
+bool codec_info(btav_a2dp_codec_index_t codec_index, uint64_t* codec_id,
+                uint8_t* codec_info, btav_a2dp_codec_config_t* codec_config) {
   return (HalVersionManager::GetHalTransport() ==
           BluetoothAudioHalTransport::AIDL)
-             ? aidl::a2dp::provider::codec_info(codec_index, codec_info,
-                                                codec_config)
+             ? aidl::a2dp::provider::codec_info(codec_index, codec_id,
+                                                codec_info, codec_config)
              : false;
 }
 

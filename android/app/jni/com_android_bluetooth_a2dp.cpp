@@ -44,6 +44,7 @@ static struct {
 } android_bluetooth_BluetoothCodecConfig;
 
 static const btav_source_interface_t* sBluetoothA2dpInterface = nullptr;
+static std::vector<btav_a2dp_codec_info_t> supported_codecs;
 static std::shared_timed_mutex interface_mutex;
 
 static jobject mCallbacksObj = nullptr;
@@ -296,7 +297,7 @@ static void initNative(JNIEnv* env, jobject object,
 
   bt_status_t status = sBluetoothA2dpInterface->init(
       &sBluetoothA2dpCallbacks, maxConnectedAudioDevices, codec_priorities,
-      codec_offloading);
+      codec_offloading, &supported_codecs);
   if (status != BT_STATUS_SUCCESS) {
     ALOGE("%s: Failed to initialize Bluetooth A2DP, status: %d", __func__,
           status);
@@ -340,34 +341,31 @@ static jobjectArray getSupportedCodecTypesNative(JNIEnv* env) {
     return nullptr;
   }
 
-  jmethodID createFromType = env->GetStaticMethodID(
-      android_bluetooth_BluetoothCodecType_clazz, "createFromType",
-      "(I)Landroid/bluetooth/BluetoothCodecType;");
-  if (createFromType == nullptr) {
-    ALOGE(
-        "%s: Failed to find method createFromType of BluetoothCodecType class",
-        __func__);
+  jmethodID init = env->GetMethodID(android_bluetooth_BluetoothCodecType_clazz,
+                                    "<init>", "(IJLjava/lang/String;)V");
+
+  if (init == nullptr) {
+    ALOGE("%s: Failed to find method <init> of BluetoothCodecType class",
+          __func__);
     return nullptr;
   }
 
-  std::array<btav_a2dp_codec_index_t, 6> default_supported_codecs = {
-      BTAV_A2DP_CODEC_INDEX_SOURCE_SBC,  BTAV_A2DP_CODEC_INDEX_SOURCE_AAC,
-      BTAV_A2DP_CODEC_INDEX_SOURCE_APTX, BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_HD,
-      BTAV_A2DP_CODEC_INDEX_SOURCE_LDAC, BTAV_A2DP_CODEC_INDEX_SOURCE_OPUS,
-  };
   jobjectArray result =
-      env->NewObjectArray(default_supported_codecs.size(),
+      env->NewObjectArray(supported_codecs.size(),
                           android_bluetooth_BluetoothCodecType_clazz, nullptr);
+
   if (result == nullptr) {
     ALOGE("%s: Failed to allocate result array of BluetoothCodecType",
           __func__);
     return nullptr;
   }
 
-  for (size_t index = 0; index < default_supported_codecs.size(); index++) {
-    jobject codec_type = env->CallStaticObjectMethod(
-        android_bluetooth_BluetoothCodecType_clazz, createFromType,
-        (jint)default_supported_codecs[index]);
+  for (size_t index = 0; index < supported_codecs.size(); index++) {
+    jobject codec_type = env->NewObject(
+        android_bluetooth_BluetoothCodecType_clazz, init,
+        (jint)supported_codecs[index].codec_type,
+        (jlong)supported_codecs[index].codec_id,
+        env->NewStringUTF(supported_codecs[index].codec_name.c_str()));
     env->SetObjectArrayElement(result, index, codec_type);
   }
 

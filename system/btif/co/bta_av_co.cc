@@ -179,8 +179,10 @@ class BtaAvCo {
    * Initialize the state.
    *
    * @param codec_priorities the codec priorities to use for the initialization
+   * @param supported_codecs return the list of supported codecs
    */
-  void Init(const std::vector<btav_a2dp_codec_config_t>& codec_priorities);
+  void Init(const std::vector<btav_a2dp_codec_config_t>& codec_priorities,
+            std::vector<btav_a2dp_codec_info_t>* supported_codecs);
 
   /**
    * Checks whether a codec is supported.
@@ -771,7 +773,8 @@ void BtaAvCoPeer::Reset(tBTA_AV_HNDL bta_av_handle) {
 }
 
 void BtaAvCo::Init(
-    const std::vector<btav_a2dp_codec_config_t>& codec_priorities) {
+    const std::vector<btav_a2dp_codec_config_t>& codec_priorities,
+    std::vector<btav_a2dp_codec_info_t>* supported_codecs) {
   LOG_VERBOSE("%s", __func__);
 
   std::lock_guard<std::recursive_mutex> lock(codec_lock_);
@@ -783,6 +786,16 @@ void BtaAvCo::Init(
   for (size_t i = 0; i < BTA_AV_CO_NUM_ELEMENTS(peers_); i++) {
     BtaAvCoPeer* p_peer = &peers_[i];
     p_peer->Init(codec_priorities);
+  }
+
+  // Gather the supported codecs from the first peer context;
+  // all contexes should be identical.
+  supported_codecs->clear();
+  for (auto* codec_config : peers_[0].GetCodecs()->orderedSourceCodecs()) {
+    auto& codec_info = supported_codecs->emplace_back();
+    codec_info.codec_type = codec_config->codecIndex();
+    codec_info.codec_id = codec_config->codecId();
+    codec_info.codec_name = codec_config->name();
   }
 }
 
@@ -2233,8 +2246,9 @@ bool BtaAvCo::SetCodecOtaConfig(BtaAvCoPeer* p_peer,
 }
 
 void bta_av_co_init(
-    const std::vector<btav_a2dp_codec_config_t>& codec_priorities) {
-  bta_av_co_cb.Init(codec_priorities);
+    const std::vector<btav_a2dp_codec_config_t>& codec_priorities,
+    std::vector<btav_a2dp_codec_info_t>* supported_codecs) {
+  bta_av_co_cb.Init(codec_priorities, supported_codecs);
 }
 
 bool bta_av_co_is_supported_codec(btav_a2dp_codec_index_t codec_index) {

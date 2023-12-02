@@ -89,20 +89,21 @@ struct codec_index_str {
 extern struct codec_index_str codec_index_str;
 
 // Name: codec_info
-// Params: btav_a2dp_codec_index_t codec_index, uint8_t*
+// Params: btav_a2dp_codec_index_t codec_index, uint64_t *codec_id, uint8_t*
 // codec_info, btav_a2dp_codec_config_t* codec_config Return: bool
 struct codec_info {
   static bool return_value;
-  std::function<bool(btav_a2dp_codec_index_t codec_index, uint8_t* codec_info,
+  std::function<bool(btav_a2dp_codec_index_t codec_index, uint64_t* codec_id,
+                     uint8_t* codec_info,
                      btav_a2dp_codec_config_t* codec_config)>
       body{[](btav_a2dp_codec_index_t /* codec_index */,
-              uint8_t* /* codec_info */,
+              uint64_t* /* codec_id */, uint8_t* /* codec_info */,
               btav_a2dp_codec_config_t* /* codec_config */) {
         return return_value;
       }};
-  bool operator()(btav_a2dp_codec_index_t codec_index, uint8_t* codec_info,
-                  btav_a2dp_codec_config_t* codec_config) {
-    return body(codec_index, codec_info, codec_config);
+  bool operator()(btav_a2dp_codec_index_t codec_index, uint64_t* codec_id,
+                  uint8_t* codec_info, btav_a2dp_codec_config_t* codec_config) {
+    return body(codec_index, codec_id, codec_info, codec_config);
   };
 };
 extern struct codec_info codec_info;

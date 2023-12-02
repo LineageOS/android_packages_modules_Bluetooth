@@ -96,7 +96,7 @@ class ProviderInfo {
    * Returns true if the codec is supported, false otherwise.
    ***/
   bool CodecCapabilities(btav_a2dp_codec_index_t codec_index,
-                         uint8_t* codec_info,
+                         uint64_t* codec_id, uint8_t* codec_info,
                          btav_a2dp_codec_config_t* codec_config) const;
 
   const std::vector<CodecInfo> source_codecs;

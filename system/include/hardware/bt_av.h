@@ -88,6 +88,12 @@ typedef enum {
   BTAV_A2DP_CODEC_INDEX_MAX = BTAV_A2DP_CODEC_INDEX_SINK_EXT_MAX
 } btav_a2dp_codec_index_t;
 
+typedef struct {
+  btav_a2dp_codec_index_t codec_type;
+  uint64_t codec_id;
+  std::string codec_name;
+} btav_a2dp_codec_info_t;
+
 typedef enum {
   // Disable the codec.
   // NOTE: This value can be used only during initialization when
@@ -370,7 +376,8 @@ typedef struct {
   bt_status_t (*init)(
       btav_source_callbacks_t* callbacks, int max_connected_audio_devices,
       const std::vector<btav_a2dp_codec_config_t>& codec_priorities,
-      const std::vector<btav_a2dp_codec_config_t>& offloading_preference);
+      const std::vector<btav_a2dp_codec_config_t>& offloading_preference,
+      std::vector<btav_a2dp_codec_info_t>* supported_codecs);
 
   /** connect to headset */
   bt_status_t (*connect)(const RawAddress& bd_addr);

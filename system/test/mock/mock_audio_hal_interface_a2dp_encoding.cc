@@ -111,11 +111,11 @@ std::optional<const char*> bluetooth::audio::a2dp::provider::codec_index_str(
       codec_index);
 }
 bool bluetooth::audio::a2dp::provider::codec_info(
-    btav_a2dp_codec_index_t codec_index, uint8_t* codec_info,
-    btav_a2dp_codec_config_t* codec_config) {
+    btav_a2dp_codec_index_t codec_index, uint64_t* codec_id,
+    uint8_t* codec_info, btav_a2dp_codec_config_t* codec_config) {
   inc_func_call_count(__func__);
   return test::mock::audio_hal_interface_a2dp_encoding::codec_info(
-      codec_index, codec_info, codec_config);
+      codec_index, codec_id, codec_info, codec_config);
 }
 void end_session() {
   inc_func_call_count(__func__);

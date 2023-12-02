@@ -335,8 +335,8 @@ bool ProviderInfo::BuildCodecCapabilities(
 }
 
 bool ProviderInfo::CodecCapabilities(
-    btav_a2dp_codec_index_t codec_index, uint8_t* codec_info,
-    btav_a2dp_codec_config_t* codec_config) const {
+    btav_a2dp_codec_index_t codec_index, uint64_t* codec_id,
+    uint8_t* codec_info, btav_a2dp_codec_config_t* codec_config) const {
   auto it = assigned_codec_indexes.find(codec_index);
   if (it == assigned_codec_indexes.end()) {
     return false;
@@ -345,6 +345,23 @@ bool ProviderInfo::CodecCapabilities(
   CodecInfo const* codec = it->second;
   auto transport = codec->transport.get<CodecInfo::Transport::a2dp>();
 
+  if (codec_id != nullptr) {
+    switch (codec->id.getTag()) {
+      case CodecId::a2dp: {
+        auto id = codec->id.get<CodecId::a2dp>();
+        *codec_id = static_cast<uint8_t>(id);
+        break;
+      }
+      case CodecId::vendor: {
+        auto id = codec->id.get<CodecId::vendor>();
+        *codec_id = 0xff | (static_cast<uint64_t>(id.id) << 8) |
+                    (static_cast<uint64_t>(id.codecId) << 24);
+        break;
+      }
+      default:
+        break;
+    }
+  }
   if (codec_config != nullptr) {
     memset(codec_config, 0, sizeof(*codec_config));
     for (auto const& channel_mode : transport.channelMode) {
@@ -408,7 +425,8 @@ bool ProviderInfo::CodecCapabilities(
     }
   }
 
-  return BuildCodecCapabilities(codec->id, transport.capabilities, codec_info);
+  return codec_info == nullptr ||
+         BuildCodecCapabilities(codec->id, transport.capabilities, codec_info);
 }
 
 }  // namespace bluetooth::audio::aidl::a2dp

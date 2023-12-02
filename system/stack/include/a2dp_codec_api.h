@@ -65,6 +65,18 @@ class A2dpCodecConfig {
   // Gets the pre-defined codec index.
   btav_a2dp_codec_index_t codecIndex() const { return codec_index_; }
 
+  // Gets the standardized codec identifier.
+  // The codec identifier is 40 bits,
+  //  - Bits 0-7: Audio Codec ID, as defined by [ID 6.5.1]
+  //      0x00: SBC
+  //      0x02: AAC
+  //      0xFF: Vendor
+  //  - Bits 8-23: Company ID,
+  //      set to 0, if octet 0 is not 0xFF.
+  //  - Bits 24-39: Vendor-defined codec ID,
+  //      set to 0, if octet 0 is not 0xFF.
+  uint64_t codecId() const { return codec_id_; }
+
   // Gets the codec name.
   const std::string& name() const { return name_; }
 
@@ -189,7 +201,8 @@ class A2dpCodecConfig {
   // The default codec priority is |codec_priority|. If the value is
   // |BTAV_A2DP_CODEC_PRIORITY_DEFAULT|, the codec priority is computed
   // internally.
-  A2dpCodecConfig(btav_a2dp_codec_index_t codec_index, const std::string& name,
+  A2dpCodecConfig(btav_a2dp_codec_index_t codec_index, uint64_t codec_id,
+                  const std::string& name,
                   btav_a2dp_codec_priority_t codec_priority);
 
   // Initializes the codec entry.
@@ -238,6 +251,7 @@ class A2dpCodecConfig {
 
   std::recursive_mutex codec_mutex_;
   const btav_a2dp_codec_index_t codec_index_;  // The unique codec index
+  const uint64_t codec_id_;                    // The standardized codec id
   const std::string name_;                     // The codec name
   btav_a2dp_codec_priority_t codec_priority_;  // Codec priority: must be unique
   btav_a2dp_codec_priority_t default_codec_priority_;

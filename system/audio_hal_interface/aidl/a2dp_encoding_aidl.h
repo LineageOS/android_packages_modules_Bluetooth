@@ -123,8 +123,8 @@ bool supports_codec(btav_a2dp_codec_index_t codec_index);
 /***
  * Return the A2DP capabilities for the selected codec.
  ***/
-bool codec_info(btav_a2dp_codec_index_t codec_index, uint8_t* codec_info,
-                btav_a2dp_codec_config_t* codec_config);
+bool codec_info(btav_a2dp_codec_index_t codec_index, uint64_t* codec_id,
+                uint8_t* codec_info, btav_a2dp_codec_config_t* codec_config);
 
 /***
  * Query the codec selection fromt the audio HAL.
