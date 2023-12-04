@@ -112,7 +112,7 @@ class TestController : public testing::MockController {
 class AclManagerNoCallbacksTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    test_hci_layer_ = new TestHciLayer;  // Ownership is transferred to registry
+    test_hci_layer_ = new HciLayerFake;     // Ownership is transferred to registry
     test_controller_ = new TestController;  // Ownership is transferred to registry
 
     EXPECT_CALL(*test_controller_, GetMacAddress());
@@ -172,7 +172,7 @@ class AclManagerNoCallbacksTest : public ::testing::Test {
   }
 
   TestModuleRegistry fake_registry_;
-  TestHciLayer* test_hci_layer_ = nullptr;
+  HciLayerFake* test_hci_layer_ = nullptr;
   TestController* test_controller_ = nullptr;
   os::Thread& thread_ = fake_registry_.GetTestThread();
   AclManager* acl_manager_ = nullptr;
@@ -1170,7 +1170,7 @@ TEST_F(AclManagerWithConnectionTest, send_read_clock) {
 class AclManagerWithResolvableAddressTest : public AclManagerNoCallbacksTest {
  protected:
   void SetUp() override {
-    test_hci_layer_ = new TestHciLayer;  // Ownership is transferred to registry
+    test_hci_layer_ = new HciLayerFake;  // Ownership is transferred to registry
     test_controller_ = new TestController;
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
     fake_registry_.InjectTestModule(&Controller::Factory, test_controller_);
