@@ -39,6 +39,7 @@
 #include "hci/le_security_interface.h"
 #include "hci/security_interface.h"
 #include "module.h"
+#include "os/handler.h"
 #include "os/utils.h"
 
 namespace bluetooth {
@@ -118,6 +119,8 @@ class HciLayer : public Module, public CommandInterface<CommandBuilder> {
   void ListDependencies(ModuleList* list) const override;
 
   void Start() override;
+
+  void StartWithNoHalDependencies(os::Handler* handler);
 
   void Stop() override;
 

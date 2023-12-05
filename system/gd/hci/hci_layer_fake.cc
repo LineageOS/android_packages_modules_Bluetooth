@@ -244,6 +244,8 @@ void HciLayerFake::ListDependencies(ModuleList* /* list */) const {}
 void HciLayerFake::Start() {
   std::lock_guard<std::mutex> lock(mutex_);
   InitEmptyCommand();
+  os::Handler* handler = GetHandler();
+  StartWithNoHalDependencies(handler);
 }
 void HciLayerFake::Stop() {}
 

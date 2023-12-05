@@ -685,6 +685,13 @@ void HciLayer::Start() {
   impl_->sco_queue_.GetDownEnd()->RegisterDequeue(handler, BindOn(impl_, &impl::on_outbound_sco_ready));
   impl_->iso_queue_.GetDownEnd()->RegisterDequeue(
       handler, BindOn(impl_, &impl::on_outbound_iso_ready));
+  StartWithNoHalDependencies(handler);
+  hal->registerIncomingPacketCallback(hal_callbacks_);
+  EnqueueCommand(ResetBuilder::Create(), handler->BindOnce(&fail_if_reset_complete_not_success));
+}
+
+// Initialize event handlers that don't depend on the HAL
+void HciLayer::StartWithNoHalDependencies(Handler* handler) {
   RegisterEventHandler(EventCode::DISCONNECTION_COMPLETE, handler->BindOn(this, &HciLayer::on_disconnection_complete));
   RegisterEventHandler(
       EventCode::READ_REMOTE_VERSION_INFORMATION_COMPLETE,
@@ -692,9 +699,6 @@ void HciLayer::Start() {
   auto drop_packet = handler->BindOn(impl_, &impl::drop);
   RegisterEventHandler(EventCode::PAGE_SCAN_REPETITION_MODE_CHANGE, drop_packet);
   RegisterEventHandler(EventCode::MAX_SLOTS_CHANGE, drop_packet);
-
-  hal->registerIncomingPacketCallback(hal_callbacks_);
-  EnqueueCommand(ResetBuilder::Create(), handler->BindOnce(&fail_if_reset_complete_not_success));
 }
 
 void HciLayer::Stop() {
