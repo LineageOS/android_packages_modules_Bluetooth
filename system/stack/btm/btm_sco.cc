@@ -87,6 +87,8 @@ using bluetooth::legacy::hci::GetInterface;
 
 // forward declaration for dequeueing packets
 static void btm_route_sco_data(bluetooth::hci::ScoView valid_packet);
+void btm_sco_on_disconnected(uint16_t hci_handle, tHCI_REASON reason);
+bool btm_sco_removed(uint16_t hci_handle, tHCI_REASON reason);
 
 namespace cpp {
 bluetooth::common::BidiQueueEnd<bluetooth::hci::ScoBuilder,
@@ -118,6 +120,15 @@ static void register_for_sco() {
   pending_sco_data =
       new bluetooth::os::EnqueueBuffer<bluetooth::hci::ScoBuilder>(
           hci_sco_queue_end);
+
+  // Register SCO for disconnect notifications
+  bluetooth::shim::GetHciLayer()->RegisterForDisconnects(
+      get_main_thread()->Bind(
+          [](uint16_t handle, bluetooth::hci::ErrorCode error_code) {
+            auto reason = static_cast<tHCI_REASON>(error_code);
+            btm_sco_on_disconnected(handle, reason);
+            btm_sco_removed(handle, reason);
+          }));
 }
 
 static void shut_down_sco() {
@@ -1210,19 +1221,19 @@ void btm_sco_on_sco_connect_request(
 void btm_sco_on_disconnected(uint16_t hci_handle, tHCI_REASON reason) {
   tSCO_CONN* p_sco = btm_cb.sco_cb.get_sco_connection_from_handle(hci_handle);
   if (p_sco == nullptr) {
-    LOG_ERROR("Unable to find sco connection");
+    LOG_DEBUG("Unable to find sco connection");
     return;
   }
 
   if (!p_sco->is_active()) {
-    LOG_ERROR("Connection is not active handle:0x%04x reason:%s", hci_handle,
-              hci_reason_code_text(reason).c_str());
+    LOG_INFO("Connection is not active handle:0x%04x reason:%s", hci_handle,
+             hci_reason_code_text(reason).c_str());
     return;
   }
 
   if (p_sco->state == SCO_ST_LISTENING) {
-    LOG_ERROR("Connection is in listening state handle:0x%04x reason:%s",
-              hci_handle, hci_reason_code_text(reason).c_str());
+    LOG_INFO("Connection is in listening state handle:0x%04x reason:%s",
+             hci_handle, hci_reason_code_text(reason).c_str());
     return;
   }
 

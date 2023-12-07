@@ -1384,17 +1384,6 @@ shim::legacy::Acl::Acl(os::Handler* handler,
       handler->BindOn(this, &Acl::on_incoming_acl_credits));
   shim::RegisterDumpsysFunction(static_cast<void*>(this),
                                 [this](int fd) { Dump(fd); });
-
-  GetAclManager()->HACK_SetNonAclDisconnectCallback(
-      [this](uint16_t handle, uint8_t reason) {
-        TRY_POSTING_ON_MAIN(acl_interface_.connection.sco.on_disconnected,
-                            handle, static_cast<tHCI_REASON>(reason));
-
-        // HACKCEPTION! LE ISO connections, just like SCO are not registered in
-        // GD, so ISO can use same hack to get notified about disconnections
-        TRY_POSTING_ON_MAIN(acl_interface_.connection.le.on_iso_disconnected,
-                            handle, static_cast<tHCI_REASON>(reason));
-      });
 }
 
 shim::legacy::Acl::~Acl() {
