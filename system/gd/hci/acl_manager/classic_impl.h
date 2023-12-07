@@ -488,10 +488,6 @@ struct classic_impl : public security::ISecurityManagerListener {
           callbacks->OnDisconnection(reason);
         },
         kRemoveConnectionAfterwards);
-    // This handle is probably for SCO, so we use the callback workaround.
-    if (non_acl_disconnect_callback_ != nullptr) {
-      non_acl_disconnect_callback_(handle, static_cast<uint8_t>(reason));
-    }
     connections.crash_on_unknown_handle_ = event_also_routes_to_other_receivers;
   }
 
@@ -800,10 +796,6 @@ struct classic_impl : public security::ISecurityManagerListener {
     return connections.HACK_get_handle(address);
   }
 
-  void HACK_SetNonAclDisconnectCallback(std::function<void(uint16_t, uint8_t)> callback) {
-    non_acl_disconnect_callback_ = callback;
-  }
-
   void handle_register_callbacks(ConnectionCallbacks* callbacks, os::Handler* handler) {
     ASSERT(client_callbacks_ == nullptr);
     ASSERT(client_handler_ == nullptr);
@@ -832,8 +824,6 @@ struct classic_impl : public security::ISecurityManagerListener {
   std::unique_ptr<RoleChangeView> delayed_role_change_ = nullptr;
 
   std::unique_ptr<security::SecurityManager> security_manager_;
-
-  std::function<void(uint16_t, uint8_t)> non_acl_disconnect_callback_;
 };
 
 }  // namespace acl_manager

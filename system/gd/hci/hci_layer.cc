@@ -549,6 +549,11 @@ void HciLayer::Disconnect(uint16_t handle, ErrorCode reason) {
   }
 }
 
+void HciLayer::RegisterForDisconnects(ContextualCallback<void(uint16_t, ErrorCode)> on_disconnect) {
+  std::unique_lock<std::mutex> lock(callback_handlers_guard_);
+  disconnect_handlers_.push_back(on_disconnect);
+}
+
 void HciLayer::on_read_remote_version_complete(EventView event_view) {
   auto view = ReadRemoteVersionInformationCompleteView::Create(event_view);
   ASSERT_LOG(view.IsValid(), "Read remote version information packet invalid");

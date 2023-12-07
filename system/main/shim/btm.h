@@ -74,8 +74,6 @@ using DiscoverabilityState = struct {
 };
 using ConnectabilityState = DiscoverabilityState;
 
-using HACK_NonAclDisconnectCallback = std::function<void(uint16_t, uint8_t)>;
-
 using BtmStatus = tBTM_STATUS;
 
 namespace bluetooth {
