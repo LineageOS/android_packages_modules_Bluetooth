@@ -36,6 +36,7 @@
 #include "macros.h"
 #include "os/log.h"
 #include "stack/btm/power_mode.h"
+#include "stack/include/bt_device_type.h"
 #include "stack/include/bt_name.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_ble_api_types.h"
