@@ -458,7 +458,14 @@ public class HeadsetStateMachine extends StateMachine {
          * @param message the current message for the event
          * @param state connection state to transition to
          */
-        public abstract void processConnectionEvent(Message message, int state);
+        public void processConnectionEvent(Message message, int state) {
+            stateLogD(
+                    "processConnectionEvent, state="
+                            + HeadsetHalConstants.getConnectionStateName(state)
+                            + "["
+                            + state
+                            + "]");
+        }
 
         /**
          * Get a state value from {@link BluetoothProfile} that represents the connection state of
@@ -577,7 +584,7 @@ public class HeadsetStateMachine extends StateMachine {
 
         @Override
         public void processConnectionEvent(Message message, int state) {
-            stateLogD("processConnectionEvent, state=" + state);
+            super.processConnectionEvent(message, state);
             switch (state) {
                 case HeadsetHalConstants.CONNECTION_STATE_DISCONNECTED:
                     stateLogW("ignore DISCONNECTED event");
@@ -772,7 +779,7 @@ public class HeadsetStateMachine extends StateMachine {
 
         @Override
         public void processConnectionEvent(Message message, int state) {
-            stateLogD("processConnectionEvent, state=" + state);
+            super.processConnectionEvent(message, state);
             switch (state) {
                 case HeadsetHalConstants.CONNECTION_STATE_DISCONNECTED:
                     stateLogW("Disconnected");
@@ -867,6 +874,7 @@ public class HeadsetStateMachine extends StateMachine {
         // in Disconnecting state
         @Override
         public void processConnectionEvent(Message message, int state) {
+            super.processConnectionEvent(message, state);
             switch (state) {
                 case HeadsetHalConstants.CONNECTION_STATE_DISCONNECTED:
                     stateLogD("processConnectionEvent: Disconnected");
@@ -1092,7 +1100,7 @@ public class HeadsetStateMachine extends StateMachine {
 
         @Override
         public void processConnectionEvent(Message message, int state) {
-            stateLogD("processConnectionEvent, state=" + state);
+            super.processConnectionEvent(message, state);
             switch (state) {
                 case HeadsetHalConstants.CONNECTION_STATE_CONNECTED:
                     stateLogE("processConnectionEvent: RFCOMM connected again, shouldn't happen");
