@@ -26,6 +26,7 @@
 #include <cstdint>
 #include <cstring>
 
+#include "android_bluetooth_flags.h"
 #include "crypto_toolbox/crypto_toolbox.h"
 #include "device/include/controller.h"
 #include "internal_include/bt_target.h"
@@ -364,7 +365,6 @@ bool smp_send_msg_to_L2CAP(const RawAddress& rem_bda, BT_HDR* p_toL2CAP) {
 
   LOG_VERBOSE("rem_bda:%s, over_bredr:%d", ADDRESS_TO_LOGGABLE_CSTR(rem_bda),
               smp_cb.smp_over_br);
-  smp_cb.total_tx_unacked += 1;
 
   smp_log_metrics(rem_bda, true /* outgoing */,
                   p_toL2CAP->data + p_toL2CAP->offset, p_toL2CAP->len,
@@ -373,9 +373,31 @@ bool smp_send_msg_to_L2CAP(const RawAddress& rem_bda, BT_HDR* p_toL2CAP) {
   l2cap_ret = L2CA_SendFixedChnlData(fixed_cid, rem_bda, p_toL2CAP);
   if (l2cap_ret == L2CAP_DW_FAILED) {
     LOG_ERROR("SMP failed to pass msg to L2CAP");
-    smp_cb.total_tx_unacked -= 1;
     return false;
   } else {
+#ifdef TARGET_FLOSS
+    if (true)
+#else
+    if (IS_FLAG_ENABLED(l2cap_tx_complete_cb_info))
+#endif
+    {
+      LOG_VERBOSE("l2cap_tx_complete_cb_info is enabled, exit here");
+      smp_cb.total_tx_unacked += 1;
+      return true;
+    }
+
+    tSMP_CB* p_cb = &smp_cb;
+
+    LOG_VERBOSE("l2cap_tx_complete_cb_info is disabled");
+    if (p_cb->wait_for_authorization_complete) {
+      tSMP_INT_DATA smp_int_data;
+      smp_int_data.status = SMP_SUCCESS;
+      if (fixed_cid == L2CAP_SMP_CID) {
+        smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &smp_int_data);
+      } else {
+        smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &smp_int_data);
+      }
+    }
     return true;
   }
 }
