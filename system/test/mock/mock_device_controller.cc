@@ -125,10 +125,6 @@ bool supports_extended_inquiry_response(void) {
   return HCI_EXT_INQ_RSP_SUPPORTED(features_classic[0].as_array);
 }
 
-bool supports_central_peripheral_role_switch(void) {
-  return HCI_SWITCH_SUPPORTED(features_classic[0].as_array);
-}
-
 bool supports_enhanced_setup_synchronous_connection(void) {
   return HCI_ENH_SETUP_SYNCH_CONN_SUPPORTED(supported_commands);
 }
@@ -266,10 +262,6 @@ bool supports_ble_peripheral_initiated_feature_exchange(void) {
   return HCI_LE_PERIPHERAL_INIT_FEAT_EXC_SUPPORTED(features_ble.as_array);
 }
 
-bool supports_ble_connection_parameter_request(void) {
-  return HCI_LE_CONN_PARAM_REQ_SUPPORTED(features_ble.as_array);
-}
-
 bool supports_ble_periodic_advertising_sync_transfer_sender(void) {
   return HCI_LE_PERIODIC_ADVERTISING_SYNC_TRANSFER_SENDER(
       features_ble.as_array);
@@ -399,7 +391,6 @@ const controller_t interface = {
     supports_interlaced_inquiry_scan,
     supports_rssi_with_inquiry_results,
     supports_extended_inquiry_response,
-    supports_central_peripheral_role_switch,
     supports_enhanced_setup_synchronous_connection,
     supports_enhanced_accept_synchronous_connection,
     supports_3_slot_packets,
@@ -438,7 +429,6 @@ const controller_t interface = {
     supports_ble_extended_advertising,
     supports_ble_periodic_advertising,
     supports_ble_peripheral_initiated_feature_exchange,
-    supports_ble_connection_parameter_request,
     supports_ble_periodic_advertising_sync_transfer_sender,
     supports_ble_periodic_advertising_sync_transfer_recipient,
     supports_ble_connected_isochronous_stream_central,
