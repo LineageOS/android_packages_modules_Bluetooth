@@ -1467,6 +1467,14 @@ static jboolean cancelBondNative(JNIEnv* env, jobject /* obj */,
   return (ret == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
 }
 
+static jboolean pairingIsBusyNative(JNIEnv* /*env*/, jobject /* obj */) {
+  ALOGV("%s", __func__);
+
+  if (!sBluetoothInterface) return JNI_FALSE;
+
+  return sBluetoothInterface->pairing_is_busy();
+}
+
 static int getConnectionStateNative(JNIEnv* env, jobject /* obj */,
                                     jbyteArray address) {
   ALOGV("%s", __func__);
@@ -2116,6 +2124,7 @@ int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) {
        (void*)createBondOutOfBandNative},
       {"removeBondNative", "([B)Z", (void*)removeBondNative},
       {"cancelBondNative", "([B)Z", (void*)cancelBondNative},
+      {"pairingIsBusyNative", "()Z", (void*)pairingIsBusyNative},
       {"generateLocalOobDataNative", "(I)V", (void*)generateLocalOobDataNative},
       {"getConnectionStateNative", "([B)I", (void*)getConnectionStateNative},
       {"pinReplyNative", "([BZI[B)Z", (void*)pinReplyNative},
