@@ -27,10 +27,10 @@
 #include <base/functional/callback_forward.h>
 #include <string.h>
 
-#include "bt_target.h"
 #include "device/include/esco_parameters.h"
 #include "hcidefs.h"
 #include "hcimsgs.h"
+#include "internal_include/bt_target.h"
 #include "main/shim/acl_api.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
