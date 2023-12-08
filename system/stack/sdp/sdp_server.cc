@@ -30,9 +30,10 @@
 
 #include "btif/include/btif_profile_storage.h"
 #include "btif/include/btif_storage.h"
+#include "common/init_flags.h"
 #include "device/include/interop.h"
 #include "device/include/interop_config.h"
-#include "gd/common/init_flags.h"
+#include "internal_include/bt_target.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/properties.h"
