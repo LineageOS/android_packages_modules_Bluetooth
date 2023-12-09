@@ -1660,7 +1660,7 @@ static void btu_ble_data_length_change_evt(uint8_t* p, uint16_t evt_len) {
   uint16_t tx_data_len;
   uint16_t rx_data_len;
 
-  if (!controller_get_interface()->supports_ble_packet_extension()) {
+  if (!controller_get_interface()->SupportsBleDataPacketLengthExtension()) {
     LOG_WARN("%s, request not supported", __func__);
     return;
   }

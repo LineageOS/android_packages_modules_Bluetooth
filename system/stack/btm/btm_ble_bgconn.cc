@@ -135,7 +135,7 @@ bool BTM_AcceptlistAdd(const RawAddress& address) {
  * connect parameters. Returns false if acceptlist is full and device can't
  * be added, true otherwise. */
 bool BTM_AcceptlistAdd(const RawAddress& address, bool is_direct) {
-  if (!controller_get_interface()->supports_ble()) {
+  if (!controller_get_interface()->SupportsBle()) {
     LOG_WARN("Controller does not support Le");
     return false;
   }
@@ -146,7 +146,7 @@ bool BTM_AcceptlistAdd(const RawAddress& address, bool is_direct) {
 
 /** Removes the device from acceptlist */
 void BTM_AcceptlistRemove(const RawAddress& address) {
-  if (!controller_get_interface()->supports_ble()) {
+  if (!controller_get_interface()->SupportsBle()) {
     LOG_WARN("Controller does not support Le");
     return;
   }
@@ -158,7 +158,7 @@ void BTM_AcceptlistRemove(const RawAddress& address) {
 
 /** Clear the acceptlist, end any pending acceptlist connections */
 void BTM_AcceptlistClear() {
-  if (!controller_get_interface()->supports_ble()) {
+  if (!controller_get_interface()->SupportsBle()) {
     LOG_WARN("Controller does not support Le");
     return;
   }

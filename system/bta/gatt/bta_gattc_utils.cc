@@ -40,7 +40,7 @@
 
 static uint8_t ble_acceptlist_size() {
   const controller_t* controller = controller_get_interface();
-  if (!controller->supports_ble()) {
+  if (!controller->SupportsBle()) {
     return 0;
   }
   return controller->get_ble_acceptlist_size();
