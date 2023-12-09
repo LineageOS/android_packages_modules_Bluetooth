@@ -380,11 +380,6 @@ const controller_t interface = {
 
     get_ble_supported_states,
 
-    supports_simultaneous_le_bredr,
-    supports_reading_remote_extended_features,
-    supports_interlaced_inquiry_scan,
-    supports_rssi_with_inquiry_results,
-    supports_extended_inquiry_response,
     supports_enhanced_setup_synchronous_connection,
     supports_enhanced_accept_synchronous_connection,
     supports_3_slot_packets,

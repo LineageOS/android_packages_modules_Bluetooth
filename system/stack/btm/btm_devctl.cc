@@ -33,8 +33,11 @@
 #include "btif/include/btif_bqr.h"
 #include "btm_sec_cb.h"
 #include "btm_sec_int_types.h"
+#include "device/include/controller.h"
+#include "hci/controller_interface.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/btm_api.h"
+#include "main/shim/entry.h"
 #include "os/log.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sec.h"
@@ -295,8 +298,8 @@ static void decode_controller_support() {
   BTM_acl_after_controller_started(controller_get_interface());
   btm_sec_dev_reset();
 
-  if (controller->SupportsRssiWithInquiryResults()) {
-    if (controller->SupportsExtendedInquiryResponse())
+  if (bluetooth::shim::GetController()->SupportsRssiWithInquiryResults()) {
+    if (bluetooth::shim::GetController()->SupportsExtendedInquiryResponse())
       BTM_SetInquiryMode(BTM_INQ_RESULT_EXTENDED);
     else
       BTM_SetInquiryMode(BTM_INQ_RESULT_WITH_RSSI);

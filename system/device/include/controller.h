@@ -36,11 +36,6 @@ typedef struct controller_t {
 
   const uint8_t* (*get_ble_supported_states)(void);
 
-  bool (*SupportsSimultaneousLeBrEdr)(void);
-  bool (*supports_reading_remote_extended_features)(void);
-  bool (*SupportsInterlacedInquiryScan)(void);
-  bool (*SupportsRssiWithInquiryResults)(void);
-  bool (*SupportsExtendedInquiryResponse)(void);
   bool (*supports_enhanced_setup_synchronous_connection)(void);
   bool (*supports_enhanced_accept_synchronous_connection)(void);
   bool (*Supports3SlotPackets)(void);

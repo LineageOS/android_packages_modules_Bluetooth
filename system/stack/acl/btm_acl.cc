@@ -31,6 +31,7 @@
  *
  *****************************************************************************/
 
+#include "main/shim/entry.h"
 #define LOG_TAG "btm_acl"
 
 #include <base/logging.h>
@@ -44,6 +45,7 @@
 #include "device/include/controller.h"
 #include "device/include/device_iot_config.h"
 #include "device/include/interop.h"
+#include "hci/controller_interface.h"
 #include "include/check.h"
 #include "include/l2cap_hci_link_interface.h"
 #include "internal_include/bt_target.h"
@@ -2740,8 +2742,8 @@ void acl_process_supported_features(uint16_t handle, uint64_t features) {
           .c_str());
 
   if ((HCI_LMP_EXTENDED_SUPPORTED(p_acl->peer_lmp_feature_pages[0])) &&
-      (controller_get_interface()
-           ->supports_reading_remote_extended_features())) {
+      (bluetooth::shim::GetController()->IsSupported(
+          bluetooth::hci::OpCode::READ_REMOTE_EXTENDED_FEATURES))) {
     LOG_DEBUG("Waiting for remote extended feature response to arrive");
   } else {
     LOG_DEBUG("No more remote features outstanding so notify upper layer");

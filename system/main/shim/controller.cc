@@ -117,10 +117,6 @@ static const uint8_t* get_ble_supported_states(void) {
 #define MAP_TO_GD(legacy, gd) \
   static bool legacy(void) { return GetController()->gd(); }
 
-MAP_TO_GD(supports_simultaneous_le_bredr, SupportsSimultaneousLeBrEdr)
-MAP_TO_GD(supports_interlaced_inquiry_scan, SupportsInterlacedInquiryScan)
-MAP_TO_GD(supports_rssi_with_inquiry_results, SupportsRssiWithInquiryResults)
-MAP_TO_GD(supports_extended_inquiry_response, SupportsExtendedInquiryResponse)
 MAP_TO_GD(supports_three_slot_packets, Supports3SlotPackets)
 MAP_TO_GD(supports_five_slot_packets, Supports5SlotPackets)
 MAP_TO_GD(supports_classic_2m_phy, SupportsClassic2mPhy)
@@ -184,10 +180,6 @@ FORWARD(supports_set_min_encryption_key_size,
 FORWARD(supports_read_encryption_key_size,
         GetController()->IsSupported(
             bluetooth::hci::OpCode::READ_ENCRYPTION_KEY_SIZE))
-
-FORWARD(supports_reading_remote_extended_features,
-        GetController()->IsSupported(
-            bluetooth::hci::OpCode::READ_REMOTE_EXTENDED_FEATURES))
 
 FORWARD(supports_enhanced_setup_synchronous_connection,
         GetController()->IsSupported(
@@ -325,12 +317,6 @@ static const controller_t interface = {
 
     .get_ble_supported_states = get_ble_supported_states,
 
-    .SupportsSimultaneousLeBrEdr = supports_simultaneous_le_bredr,
-    .supports_reading_remote_extended_features =
-        supports_reading_remote_extended_features,
-    .SupportsInterlacedInquiryScan = supports_interlaced_inquiry_scan,
-    .SupportsRssiWithInquiryResults = supports_rssi_with_inquiry_results,
-    .SupportsExtendedInquiryResponse = supports_extended_inquiry_response,
     .supports_enhanced_setup_synchronous_connection =
         supports_enhanced_setup_synchronous_connection,
     .supports_enhanced_accept_synchronous_connection =
