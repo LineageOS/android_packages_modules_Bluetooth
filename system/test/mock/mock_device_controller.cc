@@ -101,10 +101,6 @@ uint8_t* get_local_supported_codecs(uint8_t* number_of_codecs) {
 
 const uint8_t* get_ble_supported_states(void) { return ble_supported_states; }
 
-bool supports_simple_pairing(void) { return simple_pairing_supported; }
-
-bool supports_secure_connections(void) { return secure_connections_supported; }
-
 bool supports_simultaneous_le_bredr(void) {
   return HCI_SIMUL_LE_BREDR_SUPPORTED(features_classic[0].as_array);
 }
@@ -384,8 +380,6 @@ const controller_t interface = {
 
     get_ble_supported_states,
 
-    supports_simple_pairing,
-    supports_secure_connections,
     supports_simultaneous_le_bredr,
     supports_reading_remote_extended_features,
     supports_interlaced_inquiry_scan,

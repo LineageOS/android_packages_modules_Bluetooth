@@ -117,8 +117,6 @@ static const uint8_t* get_ble_supported_states(void) {
 #define MAP_TO_GD(legacy, gd) \
   static bool legacy(void) { return GetController()->gd(); }
 
-MAP_TO_GD(supports_simple_pairing, SupportsSimplePairing)
-MAP_TO_GD(supports_secure_connections, SupportsSecureConnections)
 MAP_TO_GD(supports_simultaneous_le_bredr, SupportsSimultaneousLeBrEdr)
 MAP_TO_GD(supports_interlaced_inquiry_scan, SupportsInterlacedInquiryScan)
 MAP_TO_GD(supports_rssi_with_inquiry_results, SupportsRssiWithInquiryResults)
@@ -327,8 +325,6 @@ static const controller_t interface = {
 
     .get_ble_supported_states = get_ble_supported_states,
 
-    .SupportsSimplePairing = supports_simple_pairing,
-    .SupportsSecureConnections = supports_secure_connections,
     .SupportsSimultaneousLeBrEdr = supports_simultaneous_le_bredr,
     .supports_reading_remote_extended_features =
         supports_reading_remote_extended_features,
