@@ -19,11 +19,15 @@
 #include <cstdint>
 
 #include "common/init_flags.h"
+#include "hci/controller_interface_mock.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/hci_error_code.h"
 #include "test/common/mock_functions.h"
+#include "test/mock/mock_main_shim_entry.h"
 #include "types/raw_address.h"
+
+using testing::Return;
 
 namespace {
 const char* test_flags[] = {
@@ -49,6 +53,8 @@ std::deque<power_mode_callback> power_mode_callback_queue;
 class StackBtmPowerMode : public testing::Test {
  protected:
   void SetUp() override {
+    ON_CALL(controller_, SupportsSniffMode).WillByDefault(Return(true));
+    bluetooth::hci::testing::mock_controller_ = &controller_;
     power_mode_callback_queue.clear();
     reset_mock_function_count_map();
     bluetooth::common::InitFlags::Load(test_flags);
@@ -71,8 +77,10 @@ class StackBtmPowerMode : public testing::Test {
               BTM_PmRegister(BTM_PM_DEREG, &pm_id_,
                              [](const RawAddress& p_bda, tBTM_PM_STATUS status,
                                 uint16_t value, tHCI_STATUS hci_status) {}));
+    bluetooth::hci::testing::mock_controller_ = nullptr;
   }
 
+  bluetooth::hci::testing::MockControllerInterface controller_;
   uint8_t pm_id_{0};
 };
 

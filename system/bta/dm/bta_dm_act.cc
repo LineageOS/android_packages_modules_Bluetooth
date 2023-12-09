@@ -45,11 +45,13 @@
 #include "btif/include/btif_dm.h"
 #include "btif/include/stack_manager_t.h"
 #include "device/include/controller.h"
+#include "hci/controller_interface.h"
 #include "include/bind_helpers.h"
 #include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/acl_api.h"
 #include "main/shim/btm_api.h"
+#include "main/shim/entry.h"
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"  // UNUSED_ATTR
 #include "osi/include/properties.h"
@@ -662,7 +664,7 @@ void handle_remote_features_complete(const RawAddress& bd_addr) {
     return;
   }
 
-  if (controller_get_interface()->SupportsSniffSubrating() &&
+  if (bluetooth::shim::GetController()->SupportsSniffSubrating() &&
       acl_peer_supports_sniff_subrating(bd_addr)) {
     LOG_DEBUG("Device supports sniff subrating peer:%s",
               ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
@@ -715,7 +717,7 @@ void bta_dm_acl_up(const RawAddress& bd_addr, tBT_TRANSPORT transport,
   device->reset_device_info();
   device->transport = transport;
 
-  if (controller_get_interface()->SupportsSniffSubrating() &&
+  if (bluetooth::shim::GetController()->SupportsSniffSubrating() &&
       acl_peer_supports_sniff_subrating(bd_addr)) {
     // NOTE: This callback assumes upon ACL connection that
     // the read remote features has completed and is valid.
