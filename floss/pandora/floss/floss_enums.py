@@ -205,3 +205,17 @@ class AdvertisingDataType(enum.IntEnum):
     URI = 0x24
     LE_SUPPORTED_FEATURES = 0x27
     MANUFACTURER_SPECIFIC_DATA = 0xFF
+
+
+class BtDiscMode(enum.IntEnum):
+    """Bluetooth discoverable mode."""
+    NON_DISCOVERABLE = 0
+    LIMITED_DISCOVERABLE = 1
+    GENERAL_DISCOVERABLE = 2
+
+
+class BthhReportType(enum.IntEnum):
+    """Bluetooth HID report type."""
+    INPUT_REPORT = 1
+    OUTPUT_REPORT = 2
+    FEATURE_REPORT = 3
