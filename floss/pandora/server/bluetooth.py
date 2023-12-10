@@ -20,6 +20,7 @@ import traceback
 from floss.pandora.floss import adapter_client
 from floss.pandora.floss import advertising_client
 from floss.pandora.floss import manager_client
+from floss.pandora.floss import qa_client
 from floss.pandora.floss import scanner_client
 from floss.pandora.floss import utils
 from gi.repository import GLib
@@ -58,6 +59,7 @@ class Bluetooth(object):
         self.adapter_client = adapter_client.FlossAdapterClient(self.bus, self.DEFAULT_ADAPTER)
         self.advertising_client = advertising_client.FlossAdvertisingClient(self.bus, self.DEFAULT_ADAPTER)
         self.scanner_client = scanner_client.FlossScannerClient(self.bus, self.DEFAULT_ADAPTER)
+        self.qa_client = qa_client.FlossQAClient(self.bus, self.DEFAULT_ADAPTER)
 
     def __del__(self):
         if not self.is_clean:
@@ -119,6 +121,9 @@ class Bluetooth(object):
         if not self.scanner_client.register_scanner_callback():
             logging.error('scanner_client: Failed to register callbacks')
             return False
+        if not self.qa_client.register_qa_callback():
+            logging.error('qa_client: Failed to register callbacks')
+            return False
         return True
 
     def is_bluetoothd_proxy_valid(self):
@@ -128,7 +133,8 @@ class Bluetooth(object):
             self.manager_client.has_proxy(),
             self.adapter_client.has_proxy(),
             self.advertising_client.has_proxy(),
-            self.scanner_client.has_proxy()
+            self.scanner_client.has_proxy(),
+            self.qa_client.has_proxy()
         ])
 
         if not proxy_ready:
@@ -161,6 +167,7 @@ class Bluetooth(object):
             self.adapter_client = adapter_client.FlossAdapterClient(self.bus, default_adapter)
             self.advertising_client = advertising_client.FlossAdvertisingClient(self.bus, default_adapter)
             self.scanner_client = scanner_client.FlossScannerClient(self.bus, default_adapter)
+            self.qa_client = qa_client.FlossQAClient(self.bus, default_adapter)
 
             try:
                 utils.poll_for_condition(
@@ -277,3 +284,6 @@ class Bluetooth(object):
             logging.error('Failed to stop scanning.')
             return False
         return True
+
+    def set_hid_report(self, addr, report_type, report):
+        return self.qa_client.set_hid_report(addr, report_type, report)
