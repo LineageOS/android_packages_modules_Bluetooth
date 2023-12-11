@@ -20,11 +20,12 @@
 #include <bluetooth/log.h>
 #include <string.h>
 
-#include "device/include/controller.h"
 #include "gap_api.h"
+#include "hci/controller_interface.h"
 #include "internal_include/bt_target.h"
 #include "l2c_api.h"
 #include "l2cdefs.h"
+#include "main/shim/entry.h"
 #include "osi/include/allocator.h"
 #include "osi/include/fixed_queue.h"
 #include "osi/include/mutex.h"
@@ -210,7 +211,9 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
     p_ccb->local_coc_cfg.credits = L2CA_LeCreditDefault();
     p_ccb->local_coc_cfg.mtu = p_cfg->mtu;
 
-    uint16_t max_mps = controller_get_interface()->get_acl_data_size_ble();
+    uint16_t max_mps = bluetooth::shim::GetController()
+                           ->GetLeBufferSize()
+                           .le_data_packet_length_;
     if (le_mps > max_mps) {
       log::info("Limiting MPS to one buffer size - {}", max_mps);
       le_mps = max_mps;

@@ -3465,8 +3465,9 @@ void l2cu_set_acl_hci_header(BT_HDR* p_buf, tL2C_CCB* p_ccb) {
     UINT16_TO_STREAM(p, p_ccb->p_lcb->Handle() | (L2CAP_PKT_START_NON_FLUSHABLE
                                                   << L2CAP_PKT_TYPE_SHIFT));
 
-    uint16_t acl_data_size =
-        controller_get_interface()->get_acl_data_size_ble();
+    uint16_t acl_data_size = bluetooth::shim::GetController()
+                                 ->GetLeBufferSize()
+                                 .le_data_packet_length_;
     /* The HCI transport will segment the buffers. */
     if (p_buf->len > acl_data_size) {
       UINT16_TO_STREAM(p, acl_data_size);
