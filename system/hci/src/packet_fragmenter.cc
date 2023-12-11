@@ -25,7 +25,6 @@
 
 #include <unordered_map>
 
-#include "device/include/controller.h"
 #include "hci/include/buffer_allocator.h"
 #include "hci/include/hci_layer.h"
 #include "internal_include/bt_target.h"
@@ -78,7 +77,6 @@
 // Our interface and callbacks
 
 static const allocator_t* buffer_allocator;
-static const controller_t* controller;
 static const packet_fragmenter_callbacks_t* callbacks;
 
 static std::unordered_map<uint16_t /* handle */, BT_HDR*> partial_iso_packets;
@@ -89,7 +87,7 @@ static void init(const packet_fragmenter_callbacks_t* result_callbacks) {
 
 static void cleanup() { partial_iso_packets.clear(); }
 
-static void fragment_and_dispatch(BT_HDR* packet) {
+static void fragment_and_dispatch(BT_HDR* packet, uint16_t max_data_size) {
   CHECK(packet != NULL);
 
   uint16_t event = packet->event & MSG_EVT_MASK;
@@ -97,7 +95,6 @@ static void fragment_and_dispatch(BT_HDR* packet) {
   CHECK(event == MSG_STACK_TO_HC_HCI_ISO);
 
   uint8_t* stream = packet->data + packet->offset;
-  uint16_t max_data_size = controller->get_iso_data_size();
   uint16_t max_packet_size = max_data_size + HCI_ISO_PREAMBLE_SIZE;
   uint16_t remaining_length = packet->len;
 
@@ -141,7 +138,7 @@ static void fragment_and_dispatch(BT_HDR* packet) {
   callbacks->fragmented(packet, true);
 }
 
-static void reassemble_and_dispatch(UNUSED_ATTR BT_HDR* packet) {
+static void reassemble_and_dispatch(BT_HDR* packet) {
   uint8_t* stream = packet->data;
   uint16_t handle;
   uint16_t iso_length;
@@ -331,15 +328,6 @@ static const packet_fragmenter_t interface = {init, cleanup,
                                               reassemble_and_dispatch};
 
 const packet_fragmenter_t* packet_fragmenter_get_interface() {
-  controller = controller_get_interface();
   buffer_allocator = buffer_allocator_get_interface();
-  return &interface;
-}
-
-const packet_fragmenter_t* packet_fragmenter_get_test_interface(
-    const controller_t* controller_interface,
-    const allocator_t* buffer_allocator_interface) {
-  controller = controller_interface;
-  buffer_allocator = buffer_allocator_interface;
   return &interface;
 }
