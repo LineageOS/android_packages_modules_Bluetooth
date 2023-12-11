@@ -117,11 +117,11 @@ class FakeBtStack {
     GetInterfaceToProfiles()->profileSpecific_HACK->GetHearingAidDeviceCount =
         []() { return 1; };
 
-    test::mock::device_controller::acl_data_size_classic = 512;
     test::mock::device_controller::acl_data_size_ble = 512;
     test::mock::device_controller::iso_data_size = 512;
     test::mock::device_controller::ble_suggested_default_data_length = 512;
     ON_CALL(controller_, SupportsBle).WillByDefault(Return(true));
+    ON_CALL(controller_, GetAclPacketLength).WillByDefault(Return(512));
     bluetooth::hci::testing::mock_controller_ = &controller_;
   }
 

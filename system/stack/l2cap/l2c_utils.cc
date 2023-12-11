@@ -970,10 +970,12 @@ void l2cu_send_peer_echo_rsp(tL2C_LCB* p_lcb, uint8_t signal_id,
   } else
     p_lcb->cur_echo_id = signal_id;
 
+  constexpr int kHciDataPreambleSize = 4;
   uint16_t acl_data_size =
-      controller_get_interface()->get_acl_data_size_classic();
+      bluetooth::shim::GetController()->GetAclPacketLength();
   uint16_t acl_packet_size =
-      controller_get_interface()->get_acl_packet_size_classic();
+      bluetooth::shim::GetController()->GetAclPacketLength() +
+      kHciDataPreambleSize;
   /* Don't return data if it does not fit in ACL and L2CAP MTU */
   maxlen = (L2CAP_CMD_BUF_SIZE > acl_packet_size)
                ? acl_data_size
@@ -3482,7 +3484,7 @@ void l2cu_set_acl_hci_header(BT_HDR* p_buf, tL2C_CCB* p_ccb) {
     }
 
     uint16_t acl_data_size =
-        controller_get_interface()->get_acl_data_size_classic();
+        bluetooth::shim::GetController()->GetAclPacketLength();
     /* The HCI transport will segment the buffers. */
     if (p_buf->len > acl_data_size) {
       UINT16_TO_STREAM(p, acl_data_size);
