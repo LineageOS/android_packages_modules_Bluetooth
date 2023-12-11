@@ -35,6 +35,8 @@
 #include "btm_sec_cb.h"
 #include "crypto_toolbox/crypto_toolbox.h"
 #include "device/include/controller.h"
+#include "hci/controller_interface.h"
+#include "main/shim/entry.h"
 #include "os/log.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/include/acl_api.h"
@@ -274,7 +276,7 @@ bool btm_random_pseudo_to_identity_addr(RawAddress* random_pseudo,
     if (p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) {
       *p_identity_addr_type = p_dev_rec->ble.identity_address_with_type.type;
       *random_pseudo = p_dev_rec->ble.identity_address_with_type.bda;
-      if (controller_get_interface()->SupportsBlePrivacy())
+      if (bluetooth::shim::GetController()->SupportsBlePrivacy())
         *p_identity_addr_type |= BLE_ADDR_TYPE_ID_BIT;
       return true;
     }

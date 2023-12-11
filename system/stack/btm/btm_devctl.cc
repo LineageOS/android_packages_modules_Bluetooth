@@ -203,7 +203,8 @@ void BTM_reset_complete() {
   std::srand(std::time(nullptr));
 
   /* Set up the BLE privacy settings */
-  if (controller->SupportsBle() && controller->SupportsBlePrivacy() &&
+  if (bluetooth::shim::GetController()->SupportsBle() &&
+      bluetooth::shim::GetController()->SupportsBlePrivacy() &&
       controller->get_ble_resolving_list_max_size() > 0) {
     btm_ble_resolving_list_init(controller->get_ble_resolving_list_max_size());
     /* set the default random private address timeout */
@@ -214,7 +215,7 @@ void BTM_reset_complete() {
         "Le Address Resolving list disabled due to lack of controller support");
   }
 
-  if (controller->SupportsBle()) {
+  if (bluetooth::shim::GetController()->SupportsBle()) {
     l2c_link_processs_ble_num_bufs(controller->get_acl_buffer_count_ble());
   }
 

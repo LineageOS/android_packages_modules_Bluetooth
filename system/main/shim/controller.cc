@@ -114,62 +114,6 @@ static const uint8_t* get_ble_supported_states(void) {
   return (const uint8_t*)&data_.le_supported_states;
 }
 
-#define MAP_TO_GD(legacy, gd) \
-  static bool legacy(void) { return GetController()->gd(); }
-
-MAP_TO_GD(supports_ble, SupportsBle)
-MAP_TO_GD(supports_privacy, SupportsBlePrivacy)
-MAP_TO_GD(supports_packet_extension, SupportsBleDataPacketLengthExtension)
-MAP_TO_GD(supports_connection_parameters_request,
-          SupportsBleConnectionParametersRequest)
-MAP_TO_GD(supports_ble_2m_phy, SupportsBle2mPhy)
-MAP_TO_GD(supports_ble_coded_phy, SupportsBleCodedPhy)
-MAP_TO_GD(supports_extended_advertising, SupportsBleExtendedAdvertising)
-MAP_TO_GD(supports_periodic_advertising, SupportsBlePeriodicAdvertising)
-MAP_TO_GD(supports_peripheral_initiated_feature_exchange,
-          SupportsBlePeripheralInitiatedFeaturesExchange)
-
-MAP_TO_GD(supports_periodic_advertising_sync_transfer_sender,
-          SupportsBlePeriodicAdvertisingSyncTransferSender)
-MAP_TO_GD(supports_periodic_advertising_sync_transfer_recipient,
-          SupportsBlePeriodicAdvertisingSyncTransferRecipient)
-MAP_TO_GD(supports_connected_iso_stream_central,
-          SupportsBleConnectedIsochronousStreamCentral)
-MAP_TO_GD(supports_connected_iso_stream_peripheral,
-          SupportsBleConnectedIsochronousStreamPeripheral)
-MAP_TO_GD(supports_iso_broadcaster, SupportsBleIsochronousBroadcaster)
-MAP_TO_GD(supports_synchronized_receiver, SupportsBleSynchronizedReceiver)
-MAP_TO_GD(supports_ble_connection_subrating, SupportsBleConnectionSubrating)
-MAP_TO_GD(supports_ble_connection_subrating_host,
-          SupportsBleConnectionSubratingHost)
-
-#define FORWARD(legacy, gd) \
-  static bool legacy(void) { return gd; }
-
-FORWARD(
-    supports_configure_data_path,
-    GetController()->IsSupported(bluetooth::hci::OpCode::CONFIGURE_DATA_PATH))
-
-FORWARD(supports_set_min_encryption_key_size,
-        GetController()->IsSupported(
-            bluetooth::hci::OpCode::SET_MIN_ENCRYPTION_KEY_SIZE))
-
-FORWARD(supports_read_encryption_key_size,
-        GetController()->IsSupported(
-            bluetooth::hci::OpCode::READ_ENCRYPTION_KEY_SIZE))
-
-FORWARD(supports_enhanced_setup_synchronous_connection,
-        GetController()->IsSupported(
-            bluetooth::hci::OpCode::ENHANCED_SETUP_SYNCHRONOUS_CONNECTION))
-
-FORWARD(supports_enhanced_accept_synchronous_connection,
-        GetController()->IsSupported(
-            bluetooth::hci::OpCode::ENHANCED_ACCEPT_SYNCHRONOUS_CONNECTION))
-
-FORWARD(
-    supports_ble_set_privacy_mode,
-    GetController()->IsSupported(bluetooth::hci::OpCode::LE_SET_PRIVACY_MODE))
-
 #define FORWARD_GETTER(type, legacy, gd) \
   static type legacy(void) { return gd; }
 
@@ -293,41 +237,6 @@ static const controller_t interface = {
     .get_bt_version = get_bt_version,
 
     .get_ble_supported_states = get_ble_supported_states,
-
-    .supports_enhanced_setup_synchronous_connection =
-        supports_enhanced_setup_synchronous_connection,
-    .supports_enhanced_accept_synchronous_connection =
-        supports_enhanced_accept_synchronous_connection,
-    .supports_configure_data_path = supports_configure_data_path,
-    .supports_set_min_encryption_key_size =
-        supports_set_min_encryption_key_size,
-    .supports_read_encryption_key_size = supports_read_encryption_key_size,
-
-    .SupportsBle = supports_ble,
-    .SupportsBleDataPacketLengthExtension = supports_packet_extension,
-    .SupportsBleConnectionParametersRequest =
-        supports_connection_parameters_request,
-    .SupportsBlePrivacy = supports_privacy,
-    .supports_ble_set_privacy_mode = supports_ble_set_privacy_mode,
-    .SupportsBle2mPhy = supports_ble_2m_phy,
-    .SupportsBleCodedPhy = supports_ble_coded_phy,
-    .SupportsBleExtendedAdvertising = supports_extended_advertising,
-    .SupportsBlePeriodicAdvertising = supports_periodic_advertising,
-    .SupportsBlePeripheralInitiatedFeaturesExchange =
-        supports_peripheral_initiated_feature_exchange,
-    .SupportsBlePeriodicAdvertisingSyncTransferSender =
-        supports_periodic_advertising_sync_transfer_sender,
-    .SupportsBlePeriodicAdvertisingSyncTransferRecipient =
-        supports_periodic_advertising_sync_transfer_recipient,
-    .SupportsBleConnectedIsochronousStreamCentral =
-        supports_connected_iso_stream_central,
-    .SupportsBleConnectedIsochronousStreamPeripheral =
-        supports_connected_iso_stream_peripheral,
-    .SupportsBleIsochronousBroadcaster = supports_iso_broadcaster,
-    .SupportsBleSynchronizedReceiver = supports_synchronized_receiver,
-    .SupportsBleConnectionSubrating = supports_ble_connection_subrating,
-    .SupportsBleConnectionSubratingHost =
-        supports_ble_connection_subrating_host,
 
     .get_acl_data_size_classic = get_acl_buffer_length,
     .get_acl_data_size_ble = get_le_buffer_length,
