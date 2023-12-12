@@ -1015,3 +1015,23 @@ class FlossGattClient(GattClientCallbacks):
         if not self.wait_for_search_complete(address):
             return None
         return self.gatt_services[address]
+
+    def register_callback_observer(self, name, observer):
+        """Adds an observer for all callbacks.
+
+        Args:
+            name: Name of the observer.
+            observer: Observer that implements all callback classes.
+        """
+        if isinstance(observer, GattClientCallbacks):
+            self.callbacks.add_observer(name, observer)
+
+    def unregister_callback_observer(self, name, observer):
+        """Removes an observer for all callbacks.
+
+        Args:
+            name: Name of the observer.
+            observer: Observer that implements all callback classes.
+        """
+        if isinstance(observer, GattClientCallbacks):
+            self.callbacks.remove_observer(name, observer)
