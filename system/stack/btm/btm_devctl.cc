@@ -247,44 +247,42 @@ static void btm_read_local_name_timeout(UNUSED_ATTR void* data) {
 }
 
 static void decode_controller_support() {
-  const controller_t* controller = controller_get_interface();
-
   /* Create (e)SCO supported packet types mask */
   btm_cb.btm_sco_pkt_types_supported = 0;
   btm_cb.sco_cb.esco_supported = false;
-  if (controller->SupportsSco()) {
+  if (bluetooth::shim::GetController()->SupportsSco()) {
     btm_cb.btm_sco_pkt_types_supported = ESCO_PKT_TYPES_MASK_HV1;
 
-    if (controller->SupportsHv2Packets())
+    if (bluetooth::shim::GetController()->SupportsHv2Packets())
       btm_cb.btm_sco_pkt_types_supported |= ESCO_PKT_TYPES_MASK_HV2;
 
-    if (controller->SupportsHv3Packets())
+    if (bluetooth::shim::GetController()->SupportsHv3Packets())
       btm_cb.btm_sco_pkt_types_supported |= ESCO_PKT_TYPES_MASK_HV3;
   }
 
-  if (controller->SupportsEv3Packets())
+  if (bluetooth::shim::GetController()->SupportsEv3Packets())
     btm_cb.btm_sco_pkt_types_supported |= ESCO_PKT_TYPES_MASK_EV3;
 
-  if (controller->SupportsEv4Packets())
+  if (bluetooth::shim::GetController()->SupportsEv4Packets())
     btm_cb.btm_sco_pkt_types_supported |= ESCO_PKT_TYPES_MASK_EV4;
 
-  if (controller->SupportsEv5Packets())
+  if (bluetooth::shim::GetController()->SupportsEv5Packets())
     btm_cb.btm_sco_pkt_types_supported |= ESCO_PKT_TYPES_MASK_EV5;
 
   if (btm_cb.btm_sco_pkt_types_supported & BTM_ESCO_LINK_ONLY_MASK) {
     btm_cb.sco_cb.esco_supported = true;
 
     /* Add in EDR related eSCO types */
-    if (controller->SupportsEsco2mPhy()) {
-      if (!controller->Supports3SlotEdrPackets())
+    if (bluetooth::shim::GetController()->SupportsEsco2mPhy()) {
+      if (!bluetooth::shim::GetController()->Supports3SlotEdrPackets())
         btm_cb.btm_sco_pkt_types_supported |= ESCO_PKT_TYPES_MASK_NO_2_EV5;
     } else {
       btm_cb.btm_sco_pkt_types_supported |=
           (ESCO_PKT_TYPES_MASK_NO_2_EV3 + ESCO_PKT_TYPES_MASK_NO_2_EV5);
     }
 
-    if (controller->SupportsEsco3mPhy()) {
-      if (!controller->Supports3SlotEdrPackets())
+    if (bluetooth::shim::GetController()->SupportsEsco3mPhy()) {
+      if (!bluetooth::shim::GetController()->Supports3SlotEdrPackets())
         btm_cb.btm_sco_pkt_types_supported |= ESCO_PKT_TYPES_MASK_NO_3_EV5;
     } else {
       btm_cb.btm_sco_pkt_types_supported |=
@@ -305,7 +303,8 @@ static void decode_controller_support() {
       BTM_SetInquiryMode(BTM_INQ_RESULT_WITH_RSSI);
   }
 
-  l2cu_set_non_flushable_pbf(controller->SupportsNonFlushablePb());
+  l2cu_set_non_flushable_pbf(
+      bluetooth::shim::GetController()->SupportsNonFlushablePb());
   BTM_EnableInterlacedPageScan();
   BTM_EnableInterlacedInquiryScan();
 }

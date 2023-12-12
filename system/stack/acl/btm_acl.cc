@@ -253,35 +253,35 @@ void BTM_acl_after_controller_started(const controller_t* controller) {
   uint16_t btm_acl_pkt_types_supported =
       (HCI_PKT_TYPES_MASK_DH1 + HCI_PKT_TYPES_MASK_DM1);
 
-  if (controller->Supports3SlotPackets())
+  if (bluetooth::shim::GetController()->Supports3SlotPackets())
     btm_acl_pkt_types_supported |=
         (HCI_PKT_TYPES_MASK_DH3 + HCI_PKT_TYPES_MASK_DM3);
 
-  if (controller->Supports5SlotPackets())
+  if (bluetooth::shim::GetController()->Supports5SlotPackets())
     btm_acl_pkt_types_supported |=
         (HCI_PKT_TYPES_MASK_DH5 + HCI_PKT_TYPES_MASK_DM5);
 
   /* Add in EDR related ACL types */
-  if (!controller->SupportsClassic2mPhy()) {
+  if (!bluetooth::shim::GetController()->SupportsClassic2mPhy()) {
     btm_acl_pkt_types_supported |=
         (HCI_PKT_TYPES_MASK_NO_2_DH1 + HCI_PKT_TYPES_MASK_NO_2_DH3 +
          HCI_PKT_TYPES_MASK_NO_2_DH5);
   }
 
-  if (!controller->SupportsClassic3mPhy()) {
+  if (!bluetooth::shim::GetController()->SupportsClassic3mPhy()) {
     btm_acl_pkt_types_supported |=
         (HCI_PKT_TYPES_MASK_NO_3_DH1 + HCI_PKT_TYPES_MASK_NO_3_DH3 +
          HCI_PKT_TYPES_MASK_NO_3_DH5);
   }
 
   /* Check to see if 3 and 5 slot packets are available */
-  if (controller->SupportsClassic2mPhy() ||
-      controller->SupportsClassic3mPhy()) {
-    if (!controller->Supports3SlotEdrPackets())
+  if (bluetooth::shim::GetController()->SupportsClassic2mPhy() ||
+      bluetooth::shim::GetController()->SupportsClassic3mPhy()) {
+    if (!bluetooth::shim::GetController()->Supports3SlotEdrPackets())
       btm_acl_pkt_types_supported |=
           (HCI_PKT_TYPES_MASK_NO_2_DH3 + HCI_PKT_TYPES_MASK_NO_3_DH3);
 
-    if (!controller->Supports5SlotEdrPackets())
+    if (!bluetooth::shim::GetController()->Supports5SlotEdrPackets())
       btm_acl_pkt_types_supported |=
           (HCI_PKT_TYPES_MASK_NO_2_DH5 + HCI_PKT_TYPES_MASK_NO_3_DH5);
   }
