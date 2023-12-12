@@ -44,7 +44,7 @@ async def serve(port):
             host_service = host.HostService(server, bluetooth, security_service)
             host_grpc_aio.add_HostServicer_to_server(host_service, server)
 
-            security_storage_service = security.SecurityStorageService(server, bluetooth)
+            security_storage_service = security.SecurityStorageService(bluetooth)
             security_grpc_aio.add_SecurityStorageServicer_to_server(security_storage_service, server)
 
             hid_service = hid.HIDService(bluetooth)

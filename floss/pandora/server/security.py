@@ -341,18 +341,61 @@ class SecurityStorageService(security_grpc_aio.SecurityStorageServicer):
     /pandora/bt-test-interfaces/pandora/security.proto
     """
 
-    def __init__(self, server: grpc.aio.Server, bluetooth: bluetooth_module.Bluetooth):
-        self.server = server
+    def __init__(self, bluetooth: bluetooth_module.Bluetooth):
         self.bluetooth = bluetooth
 
     async def IsBonded(self, request: security_pb2.IsBondedRequest,
                        context: grpc.ServicerContext) -> wrappers_pb2.BoolValue:
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
-        context.set_details('Method not implemented!')  # type: ignore
-        raise NotImplementedError('Method not implemented!')
+        if not (request.HasField('public') or request.HasField('random')):
+            raise ValueError('Invalid request address field.')
+
+        address = utils.address_from(request.address)
+        is_bonded = self.bluetooth.is_bonded(address)
+        return wrappers_pb2.BoolValue(value=is_bonded)
 
     async def DeleteBond(self, request: security_pb2.DeleteBondRequest,
                          context: grpc.ServicerContext) -> empty_pb2.Empty:
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
-        context.set_details('Method not implemented!')  # type: ignore
-        raise NotImplementedError('Method not implemented!')
+
+        class BondingObserver(adapter_client.BluetoothCallbacks):
+            """Observer to observe the bond state"""
+
+            def __init__(self, task):
+                self.task = task
+
+            @utils.glib_callback()
+            def on_bond_state_changed(self, status, address, state):
+                if address != self.task['address']:
+                    return
+
+                future = self.task['remove_bond']
+                if status != 0:
+                    future.get_loop().call_soon_threadsafe(future.set_result,
+                                                           (False, f'{address} failed to remove bond. Status: {status},'
+                                                            f' State: {state}'))
+                    return
+
+                if state == floss_enums.BondState.NOT_BONDED:
+                    future.get_loop().call_soon_threadsafe(future.set_result, (True, None))
+                else:
+                    future.get_loop().call_soon_threadsafe(
+                        future.set_result, (False, f'{address} failed on remove_bond, got bond state {state},'
+                                            f' want {floss_enums.BondState.NOT_BONDED}'))
+
+        if not (request.HasField('public') or request.HasField('random')):
+            raise ValueError('Invalid request address field.')
+
+        address = utils.address_from(request.address)
+        if not self.bluetooth.is_bonded(address):
+            return empty_pb2.Empty()
+        try:
+            remove_bond = asyncio.get_running_loop().create_future()
+            observer = BondingObserver({'remove_bond': remove_bond, 'address': address})
+            name = utils.create_observer_name(observer)
+            self.bluetooth.adapter_client.register_callback_observer(name, observer)
+            self.bluetooth.remove_bond(address)
+            success, reason = await remove_bond
+            if not success:
+                raise RuntimeError(f'Failed to remove bond of address: {address}. Reason: {reason}')
+        finally:
+            self.bluetooth.adapter_client.unregister_callback_observer(name, observer)
+        return empty_pb2.Empty()
