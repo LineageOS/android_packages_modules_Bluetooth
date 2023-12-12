@@ -303,3 +303,10 @@ class Bluetooth(object):
 
     def set_connectable(self, mode):
         return self.qa_client.set_connectable(mode)
+
+    def is_encrypted(self, address):
+        connection_state = self.adapter_client.get_connection_state(address)
+        if connection_state is None:
+            logging.error('Failed to get connection state for address: %s', address)
+            return False
+        return connection_state > floss_enums.BtConnectionState.CONNECTED_ONLY

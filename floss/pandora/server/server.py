@@ -38,7 +38,7 @@ async def serve(port):
             logging.info("bluetooth initialized")
 
             server = grpc.aio.server()
-            security_service = security.SecurityService(server, bluetooth)
+            security_service = security.SecurityService(bluetooth)
             security_grpc_aio.add_SecurityServicer_to_server(security_service, server)
 
             host_service = host.HostService(server, bluetooth, security_service)
