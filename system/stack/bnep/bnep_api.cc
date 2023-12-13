@@ -326,9 +326,9 @@ tBNEP_RESULT BNEP_Disconnect(uint16_t handle) {
  *                  BNEP_SUCCESS            - If written successfully
  *
  ******************************************************************************/
-tBNEP_RESULT BNEP_WriteBuf(uint16_t handle, const RawAddress& p_dest_addr,
+tBNEP_RESULT BNEP_WriteBuf(uint16_t handle, const RawAddress& dest_addr,
                            BT_HDR* p_buf, uint16_t protocol,
-                           const RawAddress* p_src_addr, bool fw_ext_present) {
+                           const RawAddress& src_addr, bool fw_ext_present) {
   tBNEP_CONN* p_bcb;
   uint8_t* p_data;
 
@@ -348,8 +348,8 @@ tBNEP_RESULT BNEP_WriteBuf(uint16_t handle, const RawAddress& p_dest_addr,
 
   /* Check if the packet should be filtered out */
   p_data = (uint8_t*)(p_buf + 1) + p_buf->offset;
-  if (bnep_is_packet_allowed(p_bcb, p_dest_addr, protocol, fw_ext_present,
-                             p_data, p_buf->len) != BNEP_SUCCESS) {
+  if (bnep_is_packet_allowed(p_bcb, dest_addr, protocol, fw_ext_present, p_data,
+                             p_buf->len) != BNEP_SUCCESS) {
     /*
     ** If packet is filtered and ext headers are present
     ** drop the data and forward the ext headers
@@ -404,7 +404,7 @@ tBNEP_RESULT BNEP_WriteBuf(uint16_t handle, const RawAddress& p_dest_addr,
   }
 
   /* Build the BNEP header */
-  bnepu_build_bnep_hdr(p_bcb, p_buf, protocol, p_src_addr, &p_dest_addr,
+  bnepu_build_bnep_hdr(p_bcb, p_buf, protocol, src_addr, dest_addr,
                        fw_ext_present);
 
   /* Send the data or queue it up */
@@ -420,12 +420,12 @@ tBNEP_RESULT BNEP_WriteBuf(uint16_t handle, const RawAddress& p_dest_addr,
  * Description      This function sends data over a BNEP connection
  *
  * Parameters:      handle       - handle of the connection to write
- *                  p_dest_addr  - BD_ADDR/Ethernet addr of the destination
+ *                  dest_addr    - BD_ADDR/Ethernet addr of the destination
  *                  p_data       - pointer to data start
  *                  protocol     - protocol type of the packet
- *                  p_src_addr   - (optional) BD_ADDR/ethernet address of the
+ *                  src_addr     - (optional) BD_ADDR/ethernet address of the
  *                                 source
- *                                 (should be NULL if it is local BD Addr)
+ *                                 (should be kEmpty if it is local BD Addr)
  *                  fw_ext_present - forwarded extensions present
  *
  * Returns:         BNEP_WRONG_HANDLE       - if passed handle is not valid
@@ -437,9 +437,9 @@ tBNEP_RESULT BNEP_WriteBuf(uint16_t handle, const RawAddress& p_dest_addr,
  *                  BNEP_SUCCESS            - If written successfully
  *
  ******************************************************************************/
-tBNEP_RESULT BNEP_Write(uint16_t handle, const RawAddress& p_dest_addr,
+tBNEP_RESULT BNEP_Write(uint16_t handle, const RawAddress& dest_addr,
                         uint8_t* p_data, uint16_t len, uint16_t protocol,
-                        const RawAddress* p_src_addr, bool fw_ext_present) {
+                        const RawAddress& src_addr, bool fw_ext_present) {
   tBNEP_CONN* p_bcb;
   uint8_t* p;
 
@@ -454,8 +454,8 @@ tBNEP_RESULT BNEP_Write(uint16_t handle, const RawAddress& p_dest_addr,
   p_bcb = &(bnep_cb.bcb[handle - 1]);
 
   /* Check if the packet should be filtered out */
-  if (bnep_is_packet_allowed(p_bcb, p_dest_addr, protocol, fw_ext_present,
-                             p_data, len) != BNEP_SUCCESS) {
+  if (bnep_is_packet_allowed(p_bcb, dest_addr, protocol, fw_ext_present, p_data,
+                             len) != BNEP_SUCCESS) {
     /*
     ** If packet is filtered and ext headers are present
     ** drop the data and forward the ext headers
@@ -510,7 +510,7 @@ tBNEP_RESULT BNEP_Write(uint16_t handle, const RawAddress& p_dest_addr,
   memcpy(p, p_data, len);
 
   /* Build the BNEP header */
-  bnepu_build_bnep_hdr(p_bcb, p_buf, protocol, p_src_addr, &p_dest_addr,
+  bnepu_build_bnep_hdr(p_bcb, p_buf, protocol, src_addr, dest_addr,
                        fw_ext_present);
 
   /* Send the data or queue it up */
