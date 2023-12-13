@@ -18,7 +18,7 @@
 
 #include "main/shim/shim.h"
 
-#include "gd/common/init_flags.h"
+#include "common/init_flags.h"
 #include "gd/os/log.h"
 #include "main/shim/entry.h"
 #include "main/shim/hci_layer.h"

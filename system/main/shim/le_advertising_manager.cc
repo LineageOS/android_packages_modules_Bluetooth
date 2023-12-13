@@ -25,7 +25,7 @@
 #include <vector>
 
 #include "btif/include/btif_common.h"
-#include "gd/common/init_flags.h"
+#include "common/init_flags.h"
 #include "gd/hci/le_advertising_manager.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"

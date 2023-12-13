@@ -17,7 +17,7 @@
 
 #include <vector>
 
-#include "gd/common/init_flags.h"
+#include "common/init_flags.h"
 #include "gd/packet/raw_builder.h"
 #include "hci/address_with_type.h"
 #include "osi/include/allocator.h"

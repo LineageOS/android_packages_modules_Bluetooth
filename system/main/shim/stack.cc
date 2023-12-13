@@ -24,8 +24,8 @@
 
 #include <string>
 
+#include "common/init_flags.h"
 #include "device/include/controller.h"
-#include "gd/common/init_flags.h"
 #include "gd/common/strings.h"
 #include "gd/hal/hci_hal.h"
 #include "gd/hci/acl_manager.h"
