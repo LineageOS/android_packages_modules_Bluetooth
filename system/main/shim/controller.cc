@@ -20,6 +20,7 @@
 
 #include "btcore/include/module.h"
 #include "hci/controller.h"
+#include "hci/controller_interface.h"
 #include "include/check.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
