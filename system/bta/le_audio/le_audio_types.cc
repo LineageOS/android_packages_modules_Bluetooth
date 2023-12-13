@@ -28,6 +28,7 @@
 #include "audio_hal_client/audio_hal_client.h"
 #include "common/strings.h"
 #include "internal_include/bt_trace.h"
+#include "le_audio_utils.h"
 #include "stack/include/bt_types.h"
 
 namespace le_audio {
@@ -237,13 +238,16 @@ bool IsCodecConfigSettingSupported(
 
   LOG_DEBUG(": Settings for format: 0x%02x ", codec_id.coding_format);
 
-  switch (codec_id.coding_format) {
-    case kLeAudioCodingFormatLC3:
-      return IsCodecConfigCoreSupported(pac.codec_spec_caps,
-                                        codec_config_setting.params);
-    default:
-      return false;
+  if (utils::IsCodecUsingLtvFormat(codec_id)) {
+    ASSERT_LOG(!pac.codec_spec_caps.IsEmpty(),
+               "Codec specific capabilities are not parsed approprietly.");
+    return IsCodecConfigCoreSupported(pac.codec_spec_caps,
+                                      codec_config_setting.params);
   }
+
+  LOG_ERROR("Codec %s, seems to be not supported here.",
+            bluetooth::common::ToString(codec_id).c_str());
+  return false;
 }
 
 uint32_t CodecConfigSetting::GetSamplingFrequencyHz() const {
@@ -659,10 +663,12 @@ void AppendMetadataLtvEntryForStreamingContext(
 }
 
 uint8_t GetMaxCodecFramesPerSduFromPac(const acs_ac_record* pac) {
-  auto tlv_ent = pac->codec_spec_caps.Find(
-      codec_spec_caps::kLeAudioLtvTypeSupportedMaxCodecFramesPerSdu);
+  if (utils::IsCodecUsingLtvFormat(pac->codec_id)) {
+    auto tlv_ent = pac->codec_spec_caps.Find(
+        codec_spec_caps::kLeAudioLtvTypeSupportedMaxCodecFramesPerSdu);
 
-  if (tlv_ent) return VEC_UINT8_TO_UINT8(tlv_ent.value());
+    if (tlv_ent) return VEC_UINT8_TO_UINT8(tlv_ent.value());
+  }
 
   return 1;
 }
@@ -704,6 +710,13 @@ std::ostream& operator<<(std::ostream& os, const types::AseState& state) {
   os << char_value_[static_cast<uint8_t>(state)] << " ("
      << "0x" << std::setfill('0') << std::setw(2) << static_cast<int>(state)
      << ")";
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const LeAudioCodecId& codec_id) {
+  os << "LeAudioCodecId(CodingFormat=" << loghex(codec_id.coding_format)
+     << ", CompanyId=" << loghex(codec_id.vendor_company_id)
+     << ", CodecId=" << loghex(codec_id.vendor_codec_id) << ")";
   return os;
 }
 

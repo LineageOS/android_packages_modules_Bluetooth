@@ -32,6 +32,7 @@
 
 #include "internal_include/bt_trace.h"
 #include "le_audio_types.h"
+#include "le_audio_utils.h"
 #include "os/log.h"
 #include "stack/include/bt_types.h"
 
@@ -593,10 +594,14 @@ int ParseSinglePac(std::vector<struct acs_ac_record>& pac_recs, uint16_t len,
     return -1;
   }
 
-  bool parsed;
-  rec.codec_spec_caps =
-      types::LeAudioLtvMap::Parse(value, codec_spec_cap_len, parsed);
-  if (!parsed) return -1;
+  rec.codec_spec_caps_raw.assign(value, value + codec_spec_cap_len);
+
+  if (utils::IsCodecUsingLtvFormat(rec.codec_id)) {
+    bool parsed;
+    rec.codec_spec_caps =
+        types::LeAudioLtvMap::Parse(value, codec_spec_cap_len, parsed);
+    if (!parsed) return -1;
+  }
 
   value += codec_spec_cap_len;
   len -= codec_spec_cap_len;
