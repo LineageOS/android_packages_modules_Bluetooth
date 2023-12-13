@@ -167,6 +167,64 @@ public class DckTest {
     }
 
     /*
+     * 2.1 GATT Connect - discovered using scan with Identity Address and IRK
+     *
+     * http://docs/document/d/1oQOpgI83HSJBdr5mBU00za_6XrDGo2KDGnCcX-hXPHk#heading=h.9nvtna3zum23
+     */
+    @Test
+    fun testGattConnect_fromIrkScan() {
+        // Start advertisement on Ref
+        val advertiseRequest =
+            AdvertiseRequest.newBuilder()
+                .setLegacy(true)
+                .setConnectable(true)
+                .setOwnAddressType(OwnAddressType.RANDOM)
+                .build()
+        mBumble.hostBlocking().advertise(advertiseRequest)
+
+        // Start IRK scan for Ref on DUT
+        val scanSettings =
+            ScanSettings.Builder()
+                .setScanMode(ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY)
+                .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
+                .build()
+        val scanFilter =
+            ScanFilter.Builder()
+                .setDeviceAddress(
+                    TEST_ADDRESS_RANDOM_STATIC,
+                    BluetoothDevice.ADDRESS_TYPE_RANDOM,
+                    Utils.BUMBLE_IRK
+                )
+                .build()
+        leScanner.startScan(listOf(scanFilter), scanSettings, scanCallbackMock)
+
+        // Await scan results
+        verify(scanCallbackMock, timeout(TIMEOUT).atLeastOnce())
+            .onScanResult(eq(ScanSettings.CALLBACK_TYPE_ALL_MATCHES), scanResultCaptor.capture())
+
+        // Verify correct scan result as prerequisite
+        val scanResult = scanResultCaptor.firstValue
+        assertThat(scanResult).isNotNull()
+        assertThat(scanResult.device.identityAddress).isEqualTo(TEST_ADDRESS_RANDOM_STATIC)
+
+        // Verify successful GATT connection
+        val device = scanResult.device
+        val gatt = device.connectGatt(context, false, gattCallbackMock)
+        verify(gattCallbackMock, timeout(TIMEOUT))
+            .onConnectionStateChange(
+                any(),
+                eq(BluetoothGatt.GATT_SUCCESS),
+                eq(BluetoothProfile.STATE_CONNECTED)
+            )
+
+        // Stop scan on DUT after GATT connect
+        leScanner.stopScan(scanCallbackMock)
+
+        // Clean-Up
+        gatt.close()
+    }
+
+    /*
      * 2.3 GATT Connect - discovered using scan with UUID
      *
      * http://docs/document/d/1oQOpgI83HSJBdr5mBU00za_6XrDGo2KDGnCcX-hXPHk#heading=h.7ofaj7vwknsr
@@ -225,6 +283,7 @@ public class DckTest {
     companion object {
         private const val TAG = "DckTest"
         private const val TIMEOUT: Long = 2000
+        private const val TEST_ADDRESS_RANDOM_STATIC = "F0:43:A8:23:10:11"
 
         // CCC DK Specification R3 1.2.0 r14 section 19.2.1.2 Bluetooth Le Pairing
         private val CCC_DK_UUID = UUID.fromString("0000FFF5-0000-1000-8000-00805f9b34fb")
