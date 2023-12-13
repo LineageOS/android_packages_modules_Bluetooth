@@ -27,7 +27,7 @@
 #include "bta_gatt_api_mock.h"
 #include "bta_gatt_queue_mock.h"
 #include "bta_le_audio_uuids.h"
-#include "btif_profile_storage.h"
+#include "btif/include/btif_profile_storage.h"
 #include "btm_api_mock.h"
 #include "csis_types.h"
 #include "gatt/database_builder.h"

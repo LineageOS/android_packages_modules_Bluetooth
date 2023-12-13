@@ -26,7 +26,7 @@
 #include "bta_csis_api.h"
 #include "bta_gatt_api.h"
 #include "bta_groups.h"
-#include "btif_storage.h"
+#include "btif/include/btif_storage.h"
 #include "common/init_flags.h"
 #include "common/strings.h"
 #include "crypto_toolbox/crypto_toolbox.h"

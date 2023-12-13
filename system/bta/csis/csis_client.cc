@@ -35,7 +35,7 @@
 #include "bta_groups.h"
 #include "bta_le_audio_uuids.h"
 #include "bta_sec_api.h"
-#include "btif_storage.h"
+#include "btif/include/btif_storage.h"
 #include "common/init_flags.h"
 #include "crypto_toolbox/crypto_toolbox.h"
 #include "csis_types.h"
