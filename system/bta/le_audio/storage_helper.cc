@@ -19,7 +19,7 @@
 #include "storage_helper.h"
 
 #include "client_parser.h"
-#include "gd/common/strings.h"
+#include "common/strings.h"
 #include "le_audio_types.h"
 #include "osi/include/log.h"
 #include "stack/include/bt_types.h"

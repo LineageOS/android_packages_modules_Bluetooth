@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "gd/metrics/chromeos/metrics_event.h"
+#include "metrics/chromeos/metrics_event.h"
 
 #include <base/files/file_path.h>
 #include <base/files/file_util.h>

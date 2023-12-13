@@ -19,16 +19,16 @@
 #include <future>
 #include <memory>
 
-#include "gd/hci/acl_manager/connection_callbacks.h"
-#include "gd/hci/acl_manager/le_connection_callbacks.h"
-#include "gd/hci/address.h"
-#include "gd/hci/address_with_type.h"
-#include "gd/hci/class_of_device.h"
-#include "gd/os/handler.h"
-#include "gd/packet/raw_builder.h"
+#include "hci/acl_manager/connection_callbacks.h"
+#include "hci/acl_manager/le_connection_callbacks.h"
+#include "hci/address.h"
+#include "hci/address_with_type.h"
+#include "hci/class_of_device.h"
 #include "main/shim/acl_legacy_interface.h"
 #include "main/shim/link_connection_interface.h"
 #include "main/shim/link_policy_interface.h"
+#include "os/handler.h"
+#include "packet/raw_builder.h"
 #include "types/raw_address.h"
 
 using LeRandCallback = base::OnceCallback<void(uint64_t)>;

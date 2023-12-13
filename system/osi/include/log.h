@@ -24,6 +24,6 @@
 #define OSI_INCLUDE_LOG_H
 #endif
 
-#include "gd/os/log.h"
+#include "os/log.h"
 
 #undef OSI_INCLUDE_LOG_H

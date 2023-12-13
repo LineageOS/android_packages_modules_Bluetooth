@@ -22,8 +22,8 @@
 #include <future>
 #include <optional>
 
-#include "gd/hci/acl_manager.h"
-#include "gd/hci/remote_name_request.h"
+#include "hci/acl_manager.h"
+#include "hci/remote_name_request.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "main/shim/stack.h"

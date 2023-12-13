@@ -26,7 +26,7 @@
 
 #include "btif/include/btif_common.h"
 #include "common/init_flags.h"
-#include "gd/hci/le_advertising_manager.h"
+#include "hci/le_advertising_manager.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "stack/include/btm_log_history.h"

@@ -20,7 +20,7 @@
 #include <ctime>
 #include <string>
 
-#include "gd/common/circular_buffer.h"  // TimestamperInMilliseconds
+#include "common/circular_buffer.h"  // TimestamperInMilliseconds
 #include "internal_include/bt_trace.h"
 #include "stack/btm/btm_int_types.h"
 

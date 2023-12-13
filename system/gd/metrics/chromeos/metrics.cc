@@ -15,15 +15,15 @@
  */
 #define LOG_TAG "BluetoothMetrics"
 
-#include "gd/metrics/metrics.h"
+#include "metrics/metrics.h"
 
 #include <metrics/structured_events.h>
 
 #include "common/time_util.h"
-#include "gd/metrics/chromeos/metrics_allowlist.h"
-#include "gd/metrics/chromeos/metrics_event.h"
-#include "gd/metrics/utils.h"
-#include "gd/os/log.h"
+#include "metrics/chromeos/metrics_allowlist.h"
+#include "metrics/chromeos/metrics_event.h"
+#include "metrics/utils.h"
+#include "os/log.h"
 
 namespace bluetooth {
 namespace metrics {

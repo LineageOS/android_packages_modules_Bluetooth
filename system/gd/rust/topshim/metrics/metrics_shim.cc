@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include "gd/rust/topshim/metrics/metrics_shim.h"
+#include "rust/topshim/metrics/metrics_shim.h"
 
-#include "gd/metrics/metrics.h"
+#include "metrics/metrics.h"
 #include "src/metrics.rs.h"
 #include "types/raw_address.h"
 
