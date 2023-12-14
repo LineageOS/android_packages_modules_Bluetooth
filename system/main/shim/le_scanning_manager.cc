@@ -342,14 +342,13 @@ void BleScannerInterfaceImpl::SetScanParameters(int scanner_id,
                                                 int scan_interval,
                                                 int scan_window, Callback cb) {
   LOG(INFO) << __func__ << " in shim layer";
-  tBTM_BLE_INQ_CB* p_cb = &btm_cb.ble_ctr_cb.inq_var;
   if (BTM_BLE_ISVALID_PARAM(scan_interval, BTM_BLE_SCAN_INT_MIN,
                             BTM_BLE_EXT_SCAN_INT_MAX) &&
       BTM_BLE_ISVALID_PARAM(scan_window, BTM_BLE_SCAN_WIN_MIN,
                             BTM_BLE_EXT_SCAN_WIN_MAX)) {
-    p_cb->scan_type = BTM_BLE_SCAN_MODE_ACTI;
-    p_cb->scan_interval = scan_interval;
-    p_cb->scan_window = scan_window;
+    btm_cb.ble_ctr_cb.inq_var.scan_type = BTM_BLE_SCAN_MODE_ACTI;
+    btm_cb.ble_ctr_cb.inq_var.scan_interval = scan_interval;
+    btm_cb.ble_ctr_cb.inq_var.scan_window = scan_window;
   }
 
   // use active scan
