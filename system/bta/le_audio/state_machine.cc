@@ -1927,6 +1927,41 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
       return;
     }
 
+    /* Internal helper for filling in the QoS parameters for an ASE, based
+     * on the codec configure state and the prefferend ASE QoS parameters.
+     * Note: The whole group state dependent parameters (out_cfg.framing, and
+     *       out.cfg.presentation_delay) are calculated later, in the
+     *       PrepareAndSendConfigQos(), once the whole group transitions to a
+     *       proper state.
+     */
+    auto qos_config_update = [leAudioDevice](
+                                 const struct le_audio::client_parser::ascs::
+                                     ase_codec_configured_state_params& rsp,
+                                 le_audio::types::AseQosPreferences& out_qos,
+                                 le_audio::types::AseQosConfiguration&
+                                     out_cfg) {
+      out_qos.supported_framing = rsp.framing;
+      out_qos.preferred_phy = rsp.preferred_phy;
+      out_qos.preferred_retrans_nb = rsp.preferred_retrans_nb;
+      out_qos.pres_delay_min = rsp.pres_delay_min;
+      out_qos.pres_delay_max = rsp.pres_delay_max;
+      out_qos.preferred_pres_delay_min = rsp.preferred_pres_delay_min;
+      out_qos.preferred_pres_delay_max = rsp.preferred_pres_delay_max;
+
+      /* Validate and update QoS to be consistent */
+      if ((!out_cfg.max_transport_latency ||
+           out_cfg.max_transport_latency > rsp.max_transport_latency) ||
+          !out_cfg.retrans_nb || !out_cfg.phy) {
+        out_cfg.max_transport_latency = rsp.max_transport_latency;
+        out_cfg.retrans_nb = rsp.preferred_retrans_nb;
+        out_cfg.phy = leAudioDevice->GetPreferredPhyBitmask(rsp.preferred_phy);
+        LOG_INFO(
+            "Using server preferred QoS settings. Max Transport Latency: %d, "
+            "Retransmission Number: %d, Phy: %d",
+            +out_cfg.max_transport_latency, out_cfg.retrans_nb, +out_cfg.phy);
+      }
+    };
+
     /* ase contain current ASE state. New state is in "arh" */
     switch (ase->state) {
       case AseState::BTA_LE_AUDIO_ASE_STATE_IDLE: {
@@ -1962,24 +1997,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
           }
         }
 
-        ase->framing = rsp.framing;
-        ase->preferred_phy = rsp.preferred_phy;
-        /* Validate and update QoS settings to be consistent */
-        if ((!ase->max_transport_latency ||
-             ase->max_transport_latency > rsp.max_transport_latency) ||
-            !ase->retrans_nb) {
-          ase->max_transport_latency = rsp.max_transport_latency;
-          ase->retrans_nb = rsp.preferred_retrans_nb;
-          LOG_INFO(
-              " Using server preferred QoS settings. Max Transport Latency: %d"
-              ", Retransmission Number: %d",
-              +ase->max_transport_latency, ase->retrans_nb);
-        }
-        ase->pres_delay_min = rsp.pres_delay_min;
-        ase->pres_delay_max = rsp.pres_delay_max;
-        ase->preferred_pres_delay_min = rsp.preferred_pres_delay_min;
-        ase->preferred_pres_delay_max = rsp.preferred_pres_delay_max;
-
+        qos_config_update(rsp, ase->qos_preferences, ase->qos_config);
         SetAseState(leAudioDevice, ase,
                     AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED);
 
@@ -2088,25 +2106,9 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
           return;
         }
 
-        ase->framing = rsp.framing;
-        ase->preferred_phy = rsp.preferred_phy;
-        /* Validate and update QoS settings to be consistent */
-        if ((!ase->max_transport_latency ||
-             ase->max_transport_latency > rsp.max_transport_latency) ||
-            !ase->retrans_nb) {
-          ase->max_transport_latency = rsp.max_transport_latency;
-          ase->retrans_nb = rsp.preferred_retrans_nb;
-          LOG(INFO) << __func__ << " Using server preferred QoS settings."
-                    << " Max Transport Latency: " << +ase->max_transport_latency
-                    << ", Retransmission Number: " << +ase->retrans_nb;
-        }
-        ase->pres_delay_min = rsp.pres_delay_min;
-        ase->pres_delay_max = rsp.pres_delay_max;
-        ase->preferred_pres_delay_min = rsp.preferred_pres_delay_min;
-        ase->preferred_pres_delay_max = rsp.preferred_pres_delay_max;
-
         /* This may be a notification from a re-configured ASE */
         ase->reconfigure = false;
+        qos_config_update(rsp, ase->qos_preferences, ase->qos_config);
 
         if (leAudioDevice->HaveAnyUnconfiguredAses()) {
           /* Waiting for others to be reconfigured */
@@ -2561,23 +2563,27 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
                 ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_), ase->id,
                 ase->cis_id, ToString(ase->state).c_str());
 
-      /* TODO: Configure first ASE qos according to context type */
-      struct le_audio::client_parser::ascs::ctp_qos_conf conf;
-      conf.ase_id = ase->id;
-      conf.cig = group->group_id_;
-      conf.cis = ase->cis_id;
-      conf.framing = group->GetFraming();
-      conf.phy = group->GetPhyBitmask(ase->direction);
-      conf.max_sdu = ase->max_sdu_size;
-      conf.retrans_nb = ase->retrans_nb;
-      if (!group->GetPresentationDelay(&conf.pres_delay, ase->direction)) {
+      /* Fill in the whole group dependent ASE parameters */
+      if (!group->GetPresentationDelay(&ase->qos_config.presentation_delay,
+                                       ase->direction)) {
         LOG_ERROR("inconsistent presentation delay for group");
         group->PrintDebugState();
         StopStream(group);
         return;
       }
+      ase->qos_config.framing = group->GetFraming();
 
-      conf.sdu_interval = group->GetSduInterval(ase->direction);
+      struct le_audio::client_parser::ascs::ctp_qos_conf conf;
+      conf.ase_id = ase->id;
+      conf.cig = group->group_id_;
+      conf.cis = ase->cis_id;
+      conf.framing = ase->qos_config.framing;
+      conf.phy = ase->qos_config.phy;
+      conf.max_sdu = ase->qos_config.max_sdu_size;
+      conf.retrans_nb = ase->qos_config.retrans_nb;
+      conf.pres_delay = ase->qos_config.presentation_delay;
+      conf.sdu_interval = ase->qos_config.sdu_interval;
+
       if (!conf.sdu_interval) {
         LOG_ERROR("unsupported SDU interval for group");
         group->PrintDebugState();

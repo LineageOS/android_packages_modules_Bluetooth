@@ -591,6 +591,11 @@ struct LeAudioCoreCodecConfig {
   uint8_t GetChannelCountPerIsoStream(void) const {
     return allocated_channel_count;
   }
+
+  uint16_t CalculateMaxSduSize() const {
+    return GetChannelCountPerIsoStream() * octets_per_codec_frame.value_or(0) *
+           codec_frames_blocks_per_sdu.value_or(1);
+  }
 };
 
 struct LeAudioCoreCodecCapabilities {
@@ -927,6 +932,26 @@ struct hdl_pair {
   uint16_t ccc_hdl = 0;
 };
 
+struct AseQosConfiguration {
+  uint32_t presentation_delay = 0;
+  uint32_t sdu_interval = 0;
+  uint16_t max_transport_latency = 0;
+  uint16_t max_sdu_size = 0;
+  uint8_t retrans_nb = 0;
+  uint8_t framing = 0;
+  uint8_t phy = 0;
+};
+
+struct AseQosPreferences {
+  uint8_t supported_framing = 0;
+  uint8_t preferred_phy = 0;
+  uint8_t preferred_retrans_nb = 0;
+  uint32_t pres_delay_min = 0;
+  uint32_t pres_delay_max = 0;
+  uint32_t preferred_pres_delay_min = 0;
+  uint32_t preferred_pres_delay_max = 0;
+};
+
 struct ase {
   static constexpr uint8_t kAseIdInvalid = 0x00;
 
@@ -942,16 +967,8 @@ struct ase {
         cis_state(CisState::IDLE),
         data_path_state(DataPathState::IDLE),
         configured_for_context_type(LeAudioContextType::UNINITIALIZED),
-        preferred_phy(0),
         is_codec_in_controller(false),
         data_path_id(bluetooth::hci::iso_manager::kIsoDataPathDisabled),
-        max_sdu_size(0),
-        retrans_nb(0),
-        max_transport_latency(0),
-        pres_delay_min(0),
-        pres_delay_max(0),
-        preferred_pres_delay_min(0),
-        preferred_pres_delay_max(0),
         autonomous_operation_timer_(nullptr),
         autonomous_target_state_(AseState::BTA_LE_AUDIO_ASE_STATE_IDLE),
         state(AseState::BTA_LE_AUDIO_ASE_STATE_IDLE) {}
@@ -973,9 +990,6 @@ struct ase {
   LeAudioCodecId codec_id;
   LeAudioLtvMap codec_config;
 
-  uint8_t framing;
-  uint8_t preferred_phy;
-
   /* Set to true, if the codec is implemented in BT controller, false if it's
    * implemented in host, or in separate DSP
    */
@@ -984,13 +998,10 @@ struct ase {
   uint8_t data_path_id;
 
   /* Qos configuration */
-  uint16_t max_sdu_size;
-  uint8_t retrans_nb;
-  uint16_t max_transport_latency;
-  uint32_t pres_delay_min;
-  uint32_t pres_delay_max;
-  uint32_t preferred_pres_delay_min;
-  uint32_t preferred_pres_delay_max;
+  AseQosConfiguration qos_config;
+
+  /* QoS requirements in Codec Configured state */
+  AseQosPreferences qos_preferences;
 
   std::vector<uint8_t> metadata;
 
