@@ -15,6 +15,8 @@
  *  limitations under the License.
  *
  ******************************************************************************/
+#define LOG_TAG "bt_bta_hh"
+
 #include <string.h>  // memset
 
 #include <cstring>
@@ -23,6 +25,7 @@
 #include "btif/include/btif_storage.h"
 #include "device/include/interop.h"
 #include "internal_include/bt_target.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/sdp_api.h"
@@ -62,14 +65,14 @@ uint8_t bta_hh_find_cb(const RawAddress& bda) {
     /* check if any active/known devices is a match */
     if ((bda == bta_hh_cb.kdev[xx].addr && !bda.IsEmpty())) {
 #if (BTA_HH_DEBUG == TRUE)
-      LOG_VERBOSE("found kdev_cb[%d] hid_handle = %d ", xx,
+      LOG_VERBOSE("found kdev_cb[%d] hid_handle=%d", xx,
                   bta_hh_cb.kdev[xx].hid_handle);
 #endif
       return xx;
     }
 #if (BTA_HH_DEBUG == TRUE)
     else
-      LOG_VERBOSE("in_use ? [%d] kdev[%d].hid_handle = %d state = [%d]",
+      LOG_VERBOSE("in_use ? [%d] kdev[%d].hid_handle=%d state=[%d]",
                   bta_hh_cb.kdev[xx].in_use, xx, bta_hh_cb.kdev[xx].hid_handle,
                   bta_hh_cb.kdev[xx].state);
 #endif
@@ -84,8 +87,7 @@ uint8_t bta_hh_find_cb(const RawAddress& bda) {
   }
 /* If device list full, report BTA_HH_IDX_INVALID */
 #if (BTA_HH_DEBUG == TRUE)
-  LOG_VERBOSE("bta_hh_find_cb:: index = %d while max = %d", xx,
-              BTA_HH_MAX_DEVICE);
+  LOG_VERBOSE("index=%d while max=%d", xx, BTA_HH_MAX_DEVICE);
 #endif
 
   if (xx == BTA_HH_MAX_DEVICE) xx = BTA_HH_IDX_INVALID;
@@ -154,7 +156,7 @@ void bta_hh_update_di_info(tBTA_HH_DEV_CB* p_cb, uint16_t vendor_id,
                            uint16_t product_id, uint16_t version, uint8_t flag,
                            uint8_t ctry_code) {
 #if (BTA_HH_DEBUG == TRUE)
-  LOG_VERBOSE("vendor_id = 0x%2x product_id = 0x%2x version = 0x%2x", vendor_id,
+  LOG_VERBOSE("vendor_id=0x%2x product_id=0x%2x version=0x%2x", vendor_id,
               product_id, version);
 #endif
   p_cb->dscp_info.vendor_id = vendor_id;
@@ -178,7 +180,7 @@ void bta_hh_add_device_to_list(tBTA_HH_DEV_CB* p_cb, uint8_t handle,
                                uint8_t sub_class, uint16_t ssr_max_latency,
                                uint16_t ssr_min_tout, uint8_t app_id) {
 #if (BTA_HH_DEBUG == TRUE)
-  LOG_VERBOSE("subclass = 0x%2x", sub_class);
+  LOG_VERBOSE("subclass=0x%2x", sub_class);
 #endif
 
   p_cb->hid_handle = handle;
@@ -222,13 +224,13 @@ bool bta_hh_tod_spt(tBTA_HH_DEV_CB* p_cb, uint8_t sub_class) {
     if (cod == (uint8_t)p_bta_hh_cfg->p_devt_list[xx].tod) {
       p_cb->app_id = p_bta_hh_cfg->p_devt_list[xx].app_id;
 #if (BTA_HH_DEBUG == TRUE)
-      LOG_VERBOSE("bta_hh_tod_spt sub_class:0x%x supported", sub_class);
+      LOG_VERBOSE("sub_class:0x%x supported", sub_class);
 #endif
       return true;
     }
   }
 #if (BTA_HH_DEBUG == TRUE)
-  LOG_VERBOSE("bta_hh_tod_spt sub_class:0x%x NOT supported", sub_class);
+  LOG_VERBOSE("sub_class:0x%x NOT supported", sub_class);
 #endif
   return false;
 }
@@ -347,8 +349,7 @@ uint8_t bta_hh_dev_handle_to_cb_idx(uint8_t dev_handle) {
     if (BTA_HH_IS_LE_DEV_HDL_VALID(dev_handle))
       index = bta_hh_cb.le_cb_index[BTA_HH_GET_LE_CB_IDX(dev_handle)];
 #if (BTA_HH_DEBUG == TRUE)
-    LOG_VERBOSE("bta_hh_dev_handle_to_cb_idx dev_handle = %d index = %d",
-                dev_handle, index);
+    LOG_VERBOSE("dev_handle=%d index=%d", dev_handle, index);
 #endif
   } else
       /* regular HID device checking */
