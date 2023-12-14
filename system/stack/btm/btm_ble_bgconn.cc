@@ -70,23 +70,25 @@ static std::unordered_map<RawAddress, BackgroundConnection, BgConnHash>
  * Description      This function updates the filter policy of scanner
  ******************************************************************************/
 void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy) {
-  tBTM_BLE_INQ_CB* p_inq = &btm_cb.ble_ctr_cb.inq_var;
-
-  uint32_t scan_interval =
-      !p_inq->scan_interval ? BTM_BLE_GAP_DISC_SCAN_INT : p_inq->scan_interval;
-  uint32_t scan_window =
-      !p_inq->scan_window ? BTM_BLE_GAP_DISC_SCAN_WIN : p_inq->scan_window;
+  uint32_t scan_interval = !btm_cb.ble_ctr_cb.inq_var.scan_interval
+                               ? BTM_BLE_GAP_DISC_SCAN_INT
+                               : btm_cb.ble_ctr_cb.inq_var.scan_interval;
+  uint32_t scan_window = !btm_cb.ble_ctr_cb.inq_var.scan_window
+                             ? BTM_BLE_GAP_DISC_SCAN_WIN
+                             : btm_cb.ble_ctr_cb.inq_var.scan_window;
 
   LOG_VERBOSE("%s", __func__);
 
-  p_inq->sfp = scan_policy;
-  p_inq->scan_type = p_inq->scan_type == BTM_BLE_SCAN_MODE_NONE
-                         ? BTM_BLE_SCAN_MODE_ACTI
-                         : p_inq->scan_type;
+  btm_cb.ble_ctr_cb.inq_var.sfp = scan_policy;
+  btm_cb.ble_ctr_cb.inq_var.scan_type =
+      btm_cb.ble_ctr_cb.inq_var.scan_type == BTM_BLE_SCAN_MODE_NONE
+          ? BTM_BLE_SCAN_MODE_ACTI
+          : btm_cb.ble_ctr_cb.inq_var.scan_type;
 
-  btm_send_hci_set_scan_params(
-      p_inq->scan_type, (uint16_t)scan_interval, (uint16_t)scan_window,
-      btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type, scan_policy);
+  btm_send_hci_set_scan_params(btm_cb.ble_ctr_cb.inq_var.scan_type,
+                               (uint16_t)scan_interval, (uint16_t)scan_window,
+                               btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type,
+                               scan_policy);
 }
 
 /*******************************************************************************
