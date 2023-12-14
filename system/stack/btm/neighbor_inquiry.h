@@ -265,10 +265,37 @@ struct tBTM_INQUIRY_VAR_ST {
   bool no_inc_ssp;    /* true, to stop inquiry on incoming SSP */
 
   void Init() {
+    p_remname_cmpl_cb = nullptr;
+
     alarm_free(remote_name_timer);
     alarm_free(classic_inquiry_timer);
     remote_name_timer = alarm_new("btm_inq.remote_name_timer");
     classic_inquiry_timer = alarm_new("btm_inq.classic_inquiry_timer");
+
+    discoverable_mode = BTM_NON_DISCOVERABLE;
+    connectable_mode = BTM_NON_CONNECTABLE;
+
+    page_scan_window = HCI_DEF_PAGESCAN_WINDOW;
+    page_scan_period = HCI_DEF_PAGESCAN_INTERVAL;
+    inq_scan_window = HCI_DEF_INQUIRYSCAN_WINDOW;
+    inq_scan_period = HCI_DEF_INQUIRYSCAN_INTERVAL;
+    inq_scan_type = BTM_SCAN_TYPE_STANDARD;
+    page_scan_type = HCI_DEF_SCAN_TYPE;
+
+    remname_bda = {};
+    remname_active = false;
+
+    p_inq_cmpl_cb = nullptr;
+    p_inq_results_cb = nullptr;
+
+    inq_counter = 0;
+    inqparms = {};
+    inq_cmpl_info = {};
+
+    per_min_delay = 0;
+    per_max_delay = 0;
+    state = BTM_INQ_INACTIVE_STATE;
+    inq_active = 0;
     no_inc_ssp = BTM_NO_SSP_ON_INQUIRY;
   }
   void Free() {
