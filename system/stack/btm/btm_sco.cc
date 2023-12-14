@@ -37,7 +37,6 @@
 #include <vector>
 
 #include "common/bidi_queue.h"
-#include "device/include/controller.h"
 #include "device/include/device_iot_config.h"
 #include "hci/class_of_device.h"
 #include "hci/controller_interface.h"

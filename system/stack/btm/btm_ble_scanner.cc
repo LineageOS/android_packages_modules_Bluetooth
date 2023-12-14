@@ -18,8 +18,6 @@
 
 #include "ble_scanner.h"
 #include "ble_scanner_hci_interface.h"
-#include "internal_include/bt_target.h"
-#include "internal_include/stack_config.h"
 #include "stack/btm/btm_ble_int.h"
 
 using namespace bluetooth;

@@ -17,7 +17,6 @@
 
 #include <cstdint>
 
-#include "device/include/controller.h"
 #include "stack/acl/acl.h"
 #include "stack/btm/security_device_record.h"
 #include "stack/include/btm_api_types.h"
@@ -45,7 +44,7 @@ void BTM_block_role_switch_and_sniff_mode_for(const RawAddress& peer_addr);
 void BTM_default_unblock_role_switch();
 void BTM_default_block_role_switch();
 
-void BTM_acl_after_controller_started(const controller_t* controller);
+void BTM_acl_after_controller_started();
 
 /*******************************************************************************
  *

@@ -41,7 +41,6 @@
 #include "bta/sys/bta_sys.h"
 #include "common/init_flags.h"
 #include "common/metrics.h"
-#include "device/include/controller.h"
 #include "device/include/device_iot_config.h"
 #include "device/include/interop.h"
 #include "hci/controller_interface.h"
@@ -49,7 +48,6 @@
 #include "include/l2cap_hci_link_interface.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/acl_api.h"
-#include "main/shim/controller.h"
 #include "main/shim/dumpsys.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
@@ -247,7 +245,7 @@ void hci_btm_set_link_supervision_timeout(tACL_CONN& link, uint16_t timeout) {
 /* 3 seconds timeout waiting for responses */
 #define BTM_DEV_REPLY_TIMEOUT_MS (3 * 1000)
 
-void BTM_acl_after_controller_started(const controller_t* controller) {
+void BTM_acl_after_controller_started() {
   internal_.btm_set_default_link_policy(
       HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH | HCI_ENABLE_HOLD_MODE |
       HCI_ENABLE_SNIFF_MODE | HCI_ENABLE_PARK_MODE);
@@ -2534,7 +2532,7 @@ void btm_connection_request(const RawAddress& bda,
 
   /* Some device may request a connection before we are done with the HCI_Reset
    * sequence */
-  if (!controller_get_interface()->get_is_ready()) {
+  if (bluetooth::shim::GetController() == nullptr) {
     log::verbose("Security Manager: connect request when device not ready");
     btsnd_hcic_reject_conn(bda, HCI_ERR_HOST_REJECT_DEVICE);
     return;

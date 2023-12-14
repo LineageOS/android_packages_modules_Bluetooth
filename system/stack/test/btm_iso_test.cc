@@ -23,7 +23,6 @@
 #include "hci/hci_packets.h"
 #include "hci/include/hci_layer.h"
 #include "main/shim/hci_layer.h"
-#include "mock_controller.h"
 #include "mock_hcic_layer.h"
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_dev.h"
@@ -141,7 +140,6 @@ class IsoManagerTest : public Test {
   void SetUp() override {
     bluetooth::shim::SetMockIsoInterface(&iso_interface_);
     hcic::SetMockHcicInterface(&hcic_interface_);
-    controller::SetMockControllerInterface(&controller_interface_);
     bluetooth::shim::testing::hci_layer_set_interface(
         &bluetooth::shim::interface);
     bluetooth::hci::testing::mock_controller_ = &controller_;
@@ -166,7 +164,6 @@ class IsoManagerTest : public Test {
 
     bluetooth::shim::SetMockIsoInterface(nullptr);
     hcic::SetMockHcicInterface(nullptr);
-    controller::SetMockControllerInterface(nullptr);
     bluetooth::shim::testing::hci_layer_set_interface(nullptr);
     bluetooth::hci::testing::mock_controller_ = nullptr;
   }
@@ -344,7 +341,6 @@ class IsoManagerTest : public Test {
   hcic::MockHcicInterface hcic_interface_;
   bluetooth::hci::testing::MockControllerInterface controller_;
   bluetooth::hci::LeBufferSize iso_sizes_;
-  controller::MockControllerInterface controller_interface_;
 
   std::unique_ptr<MockBigCallbacks> big_callbacks_;
   std::unique_ptr<MockCigCallbacks> cig_callbacks_;

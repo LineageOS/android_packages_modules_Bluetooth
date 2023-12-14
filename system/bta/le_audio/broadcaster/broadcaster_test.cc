@@ -29,7 +29,6 @@
 #include "bta/le_audio/content_control_id_keeper.h"
 #include "bta/le_audio/le_audio_types.h"
 #include "bta/le_audio/mock_codec_manager.h"
-#include "bta/test/common/mock_controller.h"
 #include "hci/controller_interface_mock.h"
 #include "stack/include/btm_iso_api.h"
 #include "test/common/mock_functions.h"

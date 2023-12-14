@@ -36,7 +36,6 @@
 #include "gatt/database_builder.h"
 #include "hardware/bt_gatt_types.h"
 #include "has_types.h"
-#include "mock_controller.h"
 #include "mock_csis_client.h"
 #include "stack/include/bt_uuid16.h"
 #include "test/common/mock_functions.h"
@@ -656,7 +655,6 @@ class HasClientTestBase : public ::testing::Test {
 
   void SetUp(void) override {
     reset_mock_function_count_map();
-    controller::SetMockControllerInterface(&controller_interface_);
     bluetooth::manager::SetMockBtmInterface(&btm_interface);
     bluetooth::storage::SetMockBtifStorageInterface(&btif_storage_interface_);
     gatt::SetMockBtaGattInterface(&gatt_interface);
@@ -761,7 +759,6 @@ class HasClientTestBase : public ::testing::Test {
     gatt::SetMockBtaGattInterface(nullptr);
     bluetooth::storage::SetMockBtifStorageInterface(nullptr);
     bluetooth::manager::SetMockBtmInterface(nullptr);
-    controller::SetMockControllerInterface(nullptr);
     callbacks.reset();
 
     current_peer_active_preset_idx_.clear();
@@ -1172,7 +1169,6 @@ class HasClientTestBase : public ::testing::Test {
   std::unique_ptr<MockHasCallbacks> callbacks;
   bluetooth::manager::MockBtmInterface btm_interface;
   bluetooth::storage::MockBtifStorageInterface btif_storage_interface_;
-  controller::MockControllerInterface controller_interface_;
   gatt::MockBtaGattInterface gatt_interface;
   gatt::MockBtaGattQueue gatt_queue;
   MockCsisClient mock_csis_client_module_;
