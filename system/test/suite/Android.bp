@@ -120,6 +120,7 @@ cc_test {
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbt-btu-main-thread",
+        "libbt-jni-thread",
         "libbt-platform-protos-lite",
         "libbt_shim_bridge",
         "libchrome",
