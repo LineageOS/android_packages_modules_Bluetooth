@@ -720,6 +720,9 @@ const char* A2DP_VendorCodecIndexStr(btav_a2dp_codec_index_t codec_index) {
     // Add a switch statement for each vendor-specific codec
     case BTAV_A2DP_CODEC_INDEX_MAX:
       break;
+    case BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MIN:
+    case BTAV_A2DP_CODEC_INDEX_SINK_EXT_MIN:
+      break;
   }
 
   return "UNKNOWN CODEC INDEX";
@@ -750,6 +753,9 @@ bool A2DP_VendorInitCodecConfig(btav_a2dp_codec_index_t codec_index,
       return A2DP_VendorInitCodecConfigOpusSink(p_cfg);
     // Add a switch statement for each vendor-specific codec
     case BTAV_A2DP_CODEC_INDEX_MAX:
+      break;
+    case BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MIN:
+    case BTAV_A2DP_CODEC_INDEX_SINK_EXT_MIN:
       break;
   }
 

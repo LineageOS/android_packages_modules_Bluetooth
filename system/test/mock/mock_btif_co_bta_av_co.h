@@ -297,12 +297,13 @@ extern struct bta_av_co_get_scmst_info bta_av_co_get_scmst_info;
 // Return: void
 struct bta_av_co_init {
   std::function<void(
-      const std::vector<btav_a2dp_codec_config_t>& codec_priorities)>
-      body{
-          [](const std::vector<btav_a2dp_codec_config_t>& codec_priorities) {}};
-  void operator()(
-      const std::vector<btav_a2dp_codec_config_t>& codec_priorities) {
-    body(codec_priorities);
+      const std::vector<btav_a2dp_codec_config_t>& codec_priorities,
+      std::vector<btav_a2dp_codec_info_t>* supported_codecs)>
+      body{[](const std::vector<btav_a2dp_codec_config_t>& codec_priorities,
+              std::vector<btav_a2dp_codec_info_t>* supported_codecs) {}};
+  void operator()(const std::vector<btav_a2dp_codec_config_t>& codec_priorities,
+                  std::vector<btav_a2dp_codec_info_t>* supported_codecs) {
+    body(codec_priorities, supported_codecs);
   };
 };
 extern struct bta_av_co_init bta_av_co_init;

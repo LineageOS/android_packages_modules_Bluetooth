@@ -19,8 +19,10 @@
 
 #include "a2dp_transport.h"
 #include "audio_aidl_interfaces.h"
+#include "bta/av/bta_av_int.h"
 #include "btif/include/btif_common.h"
 #include "codec_status_aidl.h"
+#include "provider_info.h"
 #include "transport_instance.h"
 
 namespace bluetooth {
@@ -30,6 +32,7 @@ namespace a2dp {
 
 namespace {
 
+using ::aidl::android::hardware::bluetooth::audio::A2dpStreamConfiguration;
 using ::aidl::android::hardware::bluetooth::audio::AudioConfiguration;
 using ::aidl::android::hardware::bluetooth::audio::ChannelMode;
 using ::aidl::android::hardware::bluetooth::audio::CodecConfiguration;
@@ -211,6 +214,11 @@ BluetoothAudioSinkClientInterface* software_hal_interface = nullptr;
 BluetoothAudioSinkClientInterface* offloading_hal_interface = nullptr;
 BluetoothAudioSinkClientInterface* active_hal_interface = nullptr;
 
+// ProviderInfo for A2DP hardware offload encoding and decoding data paths,
+// if supported by the HAL and enabled. nullptr if not supported
+// or disabled.
+::bluetooth::audio::aidl::a2dp::ProviderInfo* provider_info;
+
 // Save the value if the remote reports its delay before this interface is
 // initialized
 uint16_t remote_delay = 0;
@@ -236,6 +244,39 @@ BluetoothAudioCtrlAck a2dp_ack_to_bt_audio_ctrl_ack(tA2DP_CTRL_ACK ack) {
     default:
       return BluetoothAudioCtrlAck::FAILURE;
   }
+}
+
+/// Return the MTU for the active peer audio connection.
+static uint16_t a2dp_get_peer_mtu(btav_a2dp_codec_index_t codec_index,
+                                  uint8_t const* codec_info) {
+  RawAddress peer_addr = btif_av_source_active_peer();
+  tA2DP_ENCODER_INIT_PEER_PARAMS peer_params;
+  bta_av_co_get_peer_params(peer_addr, &peer_params);
+  uint16_t peer_mtu = peer_params.peer_mtu;
+  uint16_t effective_mtu = bta_av_co_get_encoder_effective_frame_size();
+
+  if (effective_mtu > 0 && effective_mtu < peer_mtu) {
+    peer_mtu = effective_mtu;
+  }
+
+  // b/188020925
+  // When SBC headsets report middle quality bitpool under a larger MTU, we
+  // reduce the packet size to prevent the hardware encoder from putting too
+  // many frames in one packet.
+  if (codec_index == BTAV_A2DP_CODEC_INDEX_SOURCE_SBC &&
+      codec_info[2] /* maxBitpool */ <= A2DP_SBC_BITPOOL_MIDDLE_QUALITY) {
+    peer_mtu = MAX_2MBPS_AVDTP_MTU;
+  }
+
+  // b/177205770
+  // Fix the MTU value not to be greater than an AVDTP packet, so the data
+  // encoded by A2DP hardware encoder can be fitted into one AVDTP packet
+  // without fragmented
+  if (peer_mtu > MAX_3MBPS_AVDTP_MTU) {
+    peer_mtu = MAX_3MBPS_AVDTP_MTU;
+  }
+
+  return peer_mtu;
 }
 
 bool a2dp_get_selected_hal_codec_config(CodecConfiguration* codec_config) {
@@ -342,6 +383,9 @@ bool is_hal_force_disabled() {
 
 bool update_codec_offloading_capabilities(
     const std::vector<btav_a2dp_codec_config_t>& framework_preference) {
+  /* Load the provider information if supported by the HAL. */
+  provider_info =
+      ::bluetooth::audio::aidl::a2dp::ProviderInfo::GetProviderInfo();
   return ::bluetooth::audio::aidl::codec::UpdateOffloadingCapabilities(
       framework_preference);
 }
@@ -361,6 +405,10 @@ bool is_hal_offloading() {
 // Initialize BluetoothAudio HAL: openProvider
 bool init(bluetooth::common::MessageLoopThread* message_loop) {
   LOG(INFO) << __func__;
+
+  if (software_hal_interface != nullptr) {
+    return true;
+  }
 
   if (is_hal_force_disabled()) {
     LOG(ERROR) << __func__ << ": BluetoothAudio HAL is disabled";
@@ -449,11 +497,63 @@ bool setup_codec() {
     LOG(ERROR) << __func__ << ": BluetoothAudio HAL is not enabled";
     return false;
   }
+
+  A2dpCodecConfig* a2dp_config = bta_av_get_a2dp_current_codec();
+  if (a2dp_config == nullptr) {
+    LOG(ERROR) << __func__ << ": the current codec is not configured";
+    return false;
+  }
+
+  if (provider::supports_codec(a2dp_config->codecIndex())) {
+    // The codec is supported in the provider info (AIDL v4).
+    // In this case, the codec is offloaded, and the configuration passed
+    // as A2dpStreamConfiguration to the UpdateAudioConfig() interface
+    // method.
+    uint8_t codec_info[AVDT_CODEC_SIZE];
+    A2dpStreamConfiguration a2dp_stream_configuration;
+
+    a2dp_config->copyOutOtaCodecConfig(codec_info);
+    a2dp_stream_configuration.peerMtu =
+        a2dp_get_peer_mtu(a2dp_config->codecIndex(), codec_info);
+    a2dp_stream_configuration.codecId =
+        provider_info->GetCodec(a2dp_config->codecIndex()).value()->id;
+
+    size_t parameters_start = 0;
+    size_t parameters_end = 0;
+    switch (a2dp_config->codecIndex()) {
+      case BTAV_A2DP_CODEC_INDEX_SOURCE_SBC:
+      case BTAV_A2DP_CODEC_INDEX_SOURCE_AAC:
+        parameters_start = 3;
+        parameters_end = 1 + codec_info[0];
+        break;
+      default:
+        parameters_start = 9;
+        parameters_end = 1 + codec_info[0];
+        break;
+    }
+
+    a2dp_stream_configuration.configuration.insert(
+        a2dp_stream_configuration.configuration.end(),
+        codec_info + parameters_start, codec_info + parameters_end);
+
+    if (!is_hal_offloading()) {
+      LOG(WARNING) << __func__ << ": Switching BluetoothAudio HAL to Hardware";
+      end_session();
+      active_hal_interface = offloading_hal_interface;
+    }
+
+    return active_hal_interface->UpdateAudioConfig(
+        AudioConfiguration(a2dp_stream_configuration));
+  }
+
+  // Fallback to legacy offloading path.
   CodecConfiguration codec_config{};
+
   if (!a2dp_get_selected_hal_codec_config(&codec_config)) {
     LOG(ERROR) << __func__ << ": Failed to get CodecConfiguration";
     return false;
   }
+
   bool should_codec_offloading =
       bluetooth::audio::aidl::codec::IsCodecOffloadingEnabled(codec_config);
   if (should_codec_offloading && !is_hal_offloading()) {
@@ -478,6 +578,7 @@ bool setup_codec() {
     }
     audio_config.set<AudioConfiguration::pcmConfig>(pcm_config);
   }
+
   return active_hal_interface->UpdateAudioConfig(audio_config);
 }
 
@@ -585,6 +686,324 @@ void set_low_latency_mode_allowed(bool allowed) {
     latency_modes.push_back(LatencyMode::LOW_LATENCY);
   }
   active_hal_interface->SetAllowedLatencyModes(latency_modes);
+}
+
+/***
+ * Lookup the codec info in the list of supported offloaded sink codecs.
+ ***/
+std::optional<btav_a2dp_codec_index_t> provider::sink_codec_index(
+    const uint8_t* p_codec_info) {
+  return provider_info ? provider_info->SinkCodecIndex(p_codec_info)
+                       : std::nullopt;
+}
+
+/***
+ * Lookup the codec info in the list of supported offloaded source codecs.
+ ***/
+std::optional<btav_a2dp_codec_index_t> provider::source_codec_index(
+    const uint8_t* p_codec_info) {
+  return provider_info ? provider_info->SourceCodecIndex(p_codec_info)
+                       : std::nullopt;
+}
+
+/***
+ * Return the name of the codec which is assigned to the input index.
+ * The codec index must be in the ranges
+ * BTAV_A2DP_CODEC_INDEX_SINK_EXT_MIN..BTAV_A2DP_CODEC_INDEX_SINK_EXT_MAX or
+ * BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MIN..BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MAX.
+ * Returns nullopt if the codec_index is not assigned or codec extensibility
+ * is not supported or enabled.
+ ***/
+std::optional<const char*> provider::codec_index_str(
+    btav_a2dp_codec_index_t codec_index) {
+  return provider_info ? provider_info->CodecIndexStr(codec_index)
+                       : std::nullopt;
+}
+
+/***
+ * Return true if the codec is supported for the session type
+ * A2DP_HARDWARE_ENCODING_DATAPATH or A2DP_HARDWARE_DECODING_DATAPATH.
+ ***/
+bool provider::supports_codec(btav_a2dp_codec_index_t codec_index) {
+  return provider_info ? provider_info->SupportsCodec(codec_index) : false;
+}
+
+/***
+ * Return the A2DP capabilities for the selected codec.
+ ***/
+bool provider::codec_info(btav_a2dp_codec_index_t codec_index,
+                          uint64_t* codec_id, uint8_t* codec_info,
+                          btav_a2dp_codec_config_t* codec_config) {
+  return provider_info ? provider_info->CodecCapabilities(
+                             codec_index, codec_id, codec_info, codec_config)
+                       : false;
+}
+
+static btav_a2dp_codec_channel_mode_t convert_channel_mode(
+    ChannelMode channel_mode) {
+  switch (channel_mode) {
+    case ChannelMode::MONO:
+      return BTAV_A2DP_CODEC_CHANNEL_MODE_MONO;
+    case ChannelMode::STEREO:
+      return BTAV_A2DP_CODEC_CHANNEL_MODE_MONO;
+    default:
+      LOG(ERROR) << "unknown channel mode";
+      break;
+  }
+  return BTAV_A2DP_CODEC_CHANNEL_MODE_NONE;
+}
+
+static btav_a2dp_codec_sample_rate_t convert_sampling_frequency_hz(
+    int sampling_frequency_hz) {
+  switch (sampling_frequency_hz) {
+    case 44100:
+      return BTAV_A2DP_CODEC_SAMPLE_RATE_44100;
+    case 48000:
+      return BTAV_A2DP_CODEC_SAMPLE_RATE_48000;
+    case 88200:
+      return BTAV_A2DP_CODEC_SAMPLE_RATE_88200;
+    case 96000:
+      return BTAV_A2DP_CODEC_SAMPLE_RATE_96000;
+    case 176400:
+      return BTAV_A2DP_CODEC_SAMPLE_RATE_176400;
+    case 192000:
+      return BTAV_A2DP_CODEC_SAMPLE_RATE_192000;
+    case 16000:
+      return BTAV_A2DP_CODEC_SAMPLE_RATE_16000;
+    case 24000:
+      return BTAV_A2DP_CODEC_SAMPLE_RATE_24000;
+    default:
+      LOG(ERROR) << "unknown sampling frequency " << sampling_frequency_hz;
+      break;
+  }
+  return BTAV_A2DP_CODEC_SAMPLE_RATE_NONE;
+}
+
+static btav_a2dp_codec_bits_per_sample_t convert_bitdepth(int bitdepth) {
+  switch (bitdepth) {
+    case 16:
+      return BTAV_A2DP_CODEC_BITS_PER_SAMPLE_16;
+    case 24:
+      return BTAV_A2DP_CODEC_BITS_PER_SAMPLE_24;
+    case 32:
+      return BTAV_A2DP_CODEC_BITS_PER_SAMPLE_32;
+    default:
+      LOG(ERROR) << "unknown bit depth " << bitdepth;
+      break;
+  }
+  return BTAV_A2DP_CODEC_BITS_PER_SAMPLE_NONE;
+}
+
+/***
+ * Query the codec selection fromt the audio HAL.
+ * The HAL is expected to pick the best audio configuration based on the
+ * discovered remote SEPs.
+ ***/
+std::optional<::bluetooth::audio::a2dp::provider::a2dp_configuration>
+provider::get_a2dp_configuration(
+    RawAddress peer_address,
+    std::vector<
+        ::bluetooth::audio::a2dp::provider::a2dp_remote_capabilities> const&
+        remote_seps,
+    btav_a2dp_codec_config_t const& user_preferences) {
+  if (provider_info == nullptr) {
+    return std::nullopt;
+  }
+
+  using ::aidl::android::hardware::bluetooth::audio::A2dpRemoteCapabilities;
+  using ::aidl::android::hardware::bluetooth::audio::CodecId;
+
+  // Convert the remote audio capabilities to the exchange format used
+  // by the HAL.
+  std::vector<A2dpRemoteCapabilities> a2dp_remote_capabilities;
+  for (auto const& sep : remote_seps) {
+    size_t capabilities_start = 0;
+    size_t capabilities_end = 0;
+    CodecId id;
+    switch (sep.capabilities[2]) {
+      case A2DP_MEDIA_CT_SBC:
+      case A2DP_MEDIA_CT_AAC: {
+        id = CodecId::make<CodecId::a2dp>(
+            static_cast<CodecId::A2dp>(sep.capabilities[2]));
+        capabilities_start = 3;
+        capabilities_end = 1 + sep.capabilities[0];
+        break;
+      }
+      case A2DP_MEDIA_CT_NON_A2DP: {
+        uint32_t vendor_id =
+            (static_cast<uint32_t>(sep.capabilities[3]) << 0) |
+            (static_cast<uint32_t>(sep.capabilities[4]) << 8) |
+            (static_cast<uint32_t>(sep.capabilities[5]) << 16) |
+            (static_cast<uint32_t>(sep.capabilities[6]) << 24);
+        uint16_t codec_id = (static_cast<uint16_t>(sep.capabilities[7]) << 0) |
+                            (static_cast<uint16_t>(sep.capabilities[8]) << 8);
+        id = CodecId::make<CodecId::vendor>(
+            CodecId::Vendor({.id = (int32_t)vendor_id, .codecId = codec_id}));
+        capabilities_start = 9;
+        capabilities_end = 1 + sep.capabilities[0];
+        break;
+      }
+      default:
+        continue;
+    }
+    A2dpRemoteCapabilities& capabilities =
+        a2dp_remote_capabilities.emplace_back();
+    capabilities.seid = sep.seid;
+    capabilities.id = id;
+    capabilities.capabilities.insert(capabilities.capabilities.end(),
+                                     sep.capabilities + capabilities_start,
+                                     sep.capabilities + capabilities_end);
+  }
+
+  // Convert the user preferences into a configuration hint.
+  A2dpConfigurationHint hint;
+  hint.bdAddr = peer_address.ToArray();
+  auto& codecParameters = hint.codecParameters.emplace();
+  switch (user_preferences.channel_mode) {
+    case BTAV_A2DP_CODEC_CHANNEL_MODE_MONO:
+      codecParameters.channelMode = ChannelMode::MONO;
+      break;
+    case BTAV_A2DP_CODEC_CHANNEL_MODE_STEREO:
+      codecParameters.channelMode = ChannelMode::STEREO;
+      break;
+    default:
+      break;
+  }
+  switch (user_preferences.sample_rate) {
+    case BTAV_A2DP_CODEC_SAMPLE_RATE_44100:
+      codecParameters.samplingFrequencyHz = 44100;
+      break;
+    case BTAV_A2DP_CODEC_SAMPLE_RATE_48000:
+      codecParameters.samplingFrequencyHz = 48000;
+      break;
+    case BTAV_A2DP_CODEC_SAMPLE_RATE_88200:
+      codecParameters.samplingFrequencyHz = 88200;
+      break;
+    case BTAV_A2DP_CODEC_SAMPLE_RATE_96000:
+      codecParameters.samplingFrequencyHz = 96000;
+      break;
+    case BTAV_A2DP_CODEC_SAMPLE_RATE_176400:
+      codecParameters.samplingFrequencyHz = 176400;
+      break;
+    case BTAV_A2DP_CODEC_SAMPLE_RATE_192000:
+      codecParameters.samplingFrequencyHz = 192000;
+      break;
+    case BTAV_A2DP_CODEC_SAMPLE_RATE_16000:
+      codecParameters.samplingFrequencyHz = 16000;
+      break;
+    case BTAV_A2DP_CODEC_SAMPLE_RATE_24000:
+      codecParameters.samplingFrequencyHz = 24000;
+      break;
+    default:
+      break;
+  }
+  switch (user_preferences.bits_per_sample) {
+    case BTAV_A2DP_CODEC_BITS_PER_SAMPLE_16:
+      codecParameters.bitdepth = 16;
+      break;
+    case BTAV_A2DP_CODEC_BITS_PER_SAMPLE_24:
+      codecParameters.bitdepth = 24;
+      break;
+    case BTAV_A2DP_CODEC_BITS_PER_SAMPLE_32:
+      codecParameters.bitdepth = 32;
+      break;
+    default:
+      break;
+  }
+
+  LOG(INFO) << __func__;
+  LOG(INFO) << "remote capabilities:";
+  for (auto const& sep : a2dp_remote_capabilities) {
+    LOG(INFO) << "  - " << sep.toString();
+  }
+  LOG(INFO) << "hint: " << hint.toString();
+
+  if (offloading_hal_interface == nullptr) {
+    LOG(ERROR) << __func__ << "the offloading HAL interface was never opened!";
+    return std::nullopt;
+  }
+
+  // Invoke the HAL GetAdpCapabilities method with the
+  // remote capabilities.
+  auto result = offloading_hal_interface->GetA2dpConfiguration(
+      a2dp_remote_capabilities, hint);
+
+  // Convert the result configuration back to the stack's format.
+  if (!result.has_value()) {
+    LOG(INFO) << __func__ << ": provider cannot resolve the a2dp configuration";
+    return std::nullopt;
+  }
+
+  LOG(INFO) << __func__ << ": provider selected " << result->toString();
+
+  ::bluetooth::audio::a2dp::provider::a2dp_configuration a2dp_configuration;
+  a2dp_configuration.remote_seid = result->remoteSeid;
+  a2dp_configuration.vendor_specific_parameters =
+      result->parameters.vendorSpecificParameters;
+  ProviderInfo::BuildCodecCapabilities(result->id, result->configuration,
+                                       a2dp_configuration.codec_config);
+  a2dp_configuration.codec_parameters.codec_type =
+      provider_info->SourceCodecIndex(result->id).value();
+  a2dp_configuration.codec_parameters.channel_mode =
+      convert_channel_mode(result->parameters.channelMode);
+  a2dp_configuration.codec_parameters.sample_rate =
+      convert_sampling_frequency_hz(result->parameters.samplingFrequencyHz);
+  a2dp_configuration.codec_parameters.bits_per_sample =
+      convert_bitdepth(result->parameters.bitdepth);
+
+  return std::make_optional(a2dp_configuration);
+}
+
+/***
+ * Query the codec parameters from the audio HAL.
+ * The HAL is expected to parse the codec configuration
+ * received from the peer and decide whether accept
+ * the it or not.
+ ***/
+tA2DP_STATUS provider::parse_a2dp_configuration(
+    btav_a2dp_codec_index_t codec_index, const uint8_t* codec_info,
+    btav_a2dp_codec_config_t* codec_parameters,
+    std::vector<uint8_t>* vendor_specific_parameters) {
+  std::vector<uint8_t> configuration;
+  CodecParameters codec_parameters_aidl;
+
+  if (provider_info == nullptr) {
+    LOG(ERROR) << __func__ << "provider_info is null";
+    return A2DP_FAIL;
+  }
+
+  auto codec = provider_info->GetCodec(codec_index);
+  if (!codec.has_value()) {
+    LOG(ERROR) << __func__ << ": codec index not recognized by provider";
+    return A2DP_FAIL;
+  }
+
+  std::copy(codec_info, codec_info + AVDT_CODEC_SIZE,
+            std::back_inserter(configuration));
+
+  auto a2dp_status = offloading_hal_interface->ParseA2dpConfiguration(
+      codec.value()->id, configuration, &codec_parameters_aidl);
+
+  if (!a2dp_status.has_value()) {
+    LOG(ERROR) << __func__ << ": provider failed to parse configuration";
+    return A2DP_FAIL;
+  }
+
+  if (codec_parameters != nullptr) {
+    codec_parameters->channel_mode =
+        convert_channel_mode(codec_parameters_aidl.channelMode);
+    codec_parameters->sample_rate = convert_sampling_frequency_hz(
+        codec_parameters_aidl.samplingFrequencyHz);
+    codec_parameters->bits_per_sample =
+        convert_bitdepth(codec_parameters_aidl.bitdepth);
+  }
+
+  if (vendor_specific_parameters != nullptr) {
+    *vendor_specific_parameters =
+        codec_parameters_aidl.vendorSpecificParameters;
+  }
+
+  return static_cast<tA2DP_STATUS>(a2dp_status.value());
 }
 
 }  // namespace a2dp

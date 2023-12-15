@@ -25,6 +25,8 @@
 
 #include <inttypes.h>
 
+#include <cstdint>
+
 /* Profile supported features */
 #define A2DP_SUPF_PLAYER 0x0001
 #define A2DP_SUPF_MIC 0x0002
@@ -43,5 +45,24 @@
 #define A2DP_MEDIA_CT_NON_A2DP 0xFF
 
 typedef uint8_t tA2DP_CODEC_TYPE; /* A2DP Codec type: A2DP_MEDIA_CT_* */
+
+// Standardized codec identifiers.
+// The codec identifier is 40 bits,
+//  - Bits 0-7: Audio Codec ID, as defined by [ID 6.5.1]
+//          0x00: SBC
+//          0x02: AAC
+//          0xFF: Vendor
+//  - Bits 8-23: Company ID,
+//          set to 0, if octet 0 is not 0xFF.
+//  - Bits 24-39: Vendor-defined codec ID,
+//          set to 0, if octet 0 is not 0xFF.
+enum : uint64_t {
+  A2DP_CODEC_ID_SBC = 0x0000000000,
+  A2DP_CODEC_ID_AAC = 0x0000000001,
+  A2DP_CODEC_ID_APTX = 0x0001004fff,
+  A2DP_CODEC_ID_APTX_HD = 0x002400d7ff,
+  A2DP_CODEC_ID_LDAC = 0x00aa012dff,
+  A2DP_CODEC_ID_OPUS = 0x000100e0ff,
+};
 
 #endif  // A2DP_CONSTANTS_H
