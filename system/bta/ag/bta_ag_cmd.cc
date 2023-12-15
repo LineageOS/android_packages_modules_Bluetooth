@@ -27,6 +27,7 @@
 #include "bta/ag/bta_ag_at.h"
 #include "bta/ag/bta_ag_int.h"
 #include "bta/include/bta_ag_api.h"
+#include "bta/include/bta_hfp_api.h"
 #include "bta/include/utl.h"
 #include "bta_ag_swb_aptx.h"
 

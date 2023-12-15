@@ -22,13 +22,12 @@
  *
  ******************************************************************************/
 
+#include <base/logging.h>
+
 #include <cstdint>
 
-#include "bt_target.h"  // Must be first to define build configuration
-
 #include "bta/gatt/bta_gatts_int.h"
-
-#include <base/logging.h>
+#include "internal_include/bt_target.h"
 
 /*******************************************************************************
  *

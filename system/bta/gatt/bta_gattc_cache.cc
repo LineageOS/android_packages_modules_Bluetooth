@@ -32,11 +32,11 @@
 #include <cstdint>
 #include <cstdio>
 
-#include "bt_target.h"  // Must be first to define build configuration
 #include "bta/gatt/bta_gattc_int.h"
 #include "bta/gatt/database.h"
 #include "common/init_flags.h"
 #include "device/include/interop.h"
+#include "internal_include/bt_target.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"  // UNUSED_ATTR
