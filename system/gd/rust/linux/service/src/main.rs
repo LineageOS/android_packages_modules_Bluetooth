@@ -207,7 +207,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         // The `resource` is a task that should be spawned onto a tokio compatible
         // reactor ASAP. If the resource ever finishes, we lost connection to D-Bus.
-        tokio::spawn(async {
+        let conn_join_handle = tokio::spawn(async {
             let err = resource.await;
             panic!("Lost connection to D-Bus: {}", err);
         });
@@ -218,6 +218,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         // Run the stack main dispatch loop.
         topstack::get_runtime().spawn(Stack::dispatch(
             rx,
+            api_tx.clone(),
             bluetooth.clone(),
             bluetooth_gatt.clone(),
             battery_service.clone(),
@@ -237,8 +238,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         tokio::spawn(interface_manager::InterfaceManager::dispatch(
             api_rx,
+            tx.clone(),
             virt_index,
-            conn.clone(),
+            conn,
+            conn_join_handle,
             disconnect_watcher.clone(),
             bluetooth.clone(),
             bluetooth_admin.clone(),
@@ -310,7 +313,7 @@ extern "C" fn handle_sigterm(_signum: i32) {
         let txl = tx.clone();
         tokio::spawn(async move {
             // Send the shutdown message here.
-            let _ = txl.send(Message::Shutdown).await;
+            let _ = txl.send(Message::InterfaceShutdown).await;
         });
 
         let guard = notifier.enabled.lock().unwrap();
