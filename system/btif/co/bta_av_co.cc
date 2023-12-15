@@ -26,8 +26,10 @@
 #include <base/logging.h>
 
 #include <mutex>
+#include <optional>
 #include <vector>
 
+#include "audio_hal_interface/a2dp_encoding.h"
 #include "bta/include/bta_av_api.h"
 #include "bta/include/bta_av_ci.h"
 #include "btif/include/btif_a2dp_source.h"
@@ -39,6 +41,7 @@
 #include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/include/a2dp_codec_api.h"
 #include "stack/include/a2dp_error_codes.h"
+#include "stack/include/a2dp_ext.h"
 #include "stack/include/avdt_api.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
@@ -176,8 +179,10 @@ class BtaAvCo {
    * Initialize the state.
    *
    * @param codec_priorities the codec priorities to use for the initialization
+   * @param supported_codecs return the list of supported codecs
    */
-  void Init(const std::vector<btav_a2dp_codec_config_t>& codec_priorities);
+  void Init(const std::vector<btav_a2dp_codec_config_t>& codec_priorities,
+            std::vector<btav_a2dp_codec_info_t>* supported_codecs);
 
   /**
    * Checks whether a codec is supported.
@@ -664,6 +669,23 @@ class BtaAvCo {
       const A2dpCodecConfig& codec_config, BtaAvCoPeer* p_peer);
 
   /**
+   * Let the HAL offload provider select codec configuration.
+   *
+   * @param p_peer the peer to use
+   * @param configuration configuration from the offload provider
+   */
+  std::optional<::bluetooth::audio::a2dp::provider::a2dp_configuration>
+  GetProviderCodecConfiguration(BtaAvCoPeer* p_peer);
+
+  /**
+   * Select the HAL proposed configuration.
+   */
+  BtaAvCoSep* SelectProviderCodecConfiguration(
+      BtaAvCoPeer* p_peer,
+      const ::bluetooth::audio::a2dp::provider::a2dp_configuration&
+          provider_codec_config);
+
+  /**
    * Check if a peer SEP has content protection enabled.
    *
    * @param p_sep the peer SEP to check
@@ -751,7 +773,8 @@ void BtaAvCoPeer::Reset(tBTA_AV_HNDL bta_av_handle) {
 }
 
 void BtaAvCo::Init(
-    const std::vector<btav_a2dp_codec_config_t>& codec_priorities) {
+    const std::vector<btav_a2dp_codec_config_t>& codec_priorities,
+    std::vector<btav_a2dp_codec_info_t>* supported_codecs) {
   LOG_VERBOSE("%s", __func__);
 
   std::lock_guard<std::recursive_mutex> lock(codec_lock_);
@@ -763,6 +786,16 @@ void BtaAvCo::Init(
   for (size_t i = 0; i < BTA_AV_CO_NUM_ELEMENTS(peers_); i++) {
     BtaAvCoPeer* p_peer = &peers_[i];
     p_peer->Init(codec_priorities);
+  }
+
+  // Gather the supported codecs from the first peer context;
+  // all contexes should be identical.
+  supported_codecs->clear();
+  for (auto* codec_config : peers_[0].GetCodecs()->orderedSourceCodecs()) {
+    auto& codec_info = supported_codecs->emplace_back();
+    codec_info.codec_type = codec_config->codecIndex();
+    codec_info.codec_id = codec_config->codecId();
+    codec_info.codec_name = codec_config->name();
   }
 }
 
@@ -910,6 +943,10 @@ void BtaAvCo::ProcessDiscoveryResult(tBTA_AV_HNDL bta_av_handle,
 }
 
 static void bta_av_co_store_peer_codectype(const BtaAvCoPeer* p_peer);
+static bool bta_av_co_should_select_hardware_codec(
+    const A2dpCodecConfig& software_config,
+    const ::bluetooth::audio::a2dp::provider::a2dp_configuration&
+        hardware_config);
 
 tA2DP_STATUS BtaAvCo::ProcessSourceGetConfig(
     tBTA_AV_HNDL bta_av_handle, const RawAddress& peer_address,
@@ -937,8 +974,16 @@ tA2DP_STATUS BtaAvCo::ProcessSourceGetConfig(
 
   p_peer->num_rx_sinks++;
 
+  // Bypass the validation for codecs that are offloaded:
+  // the stack does not need to know about the peer capabilities,
+  // since the validation and selection will be performed by the
+  // bluetooth audio HAL for offloaded codecs.
+  auto codec_index = A2DP_SourceCodecIndex(p_codec_info);
+  bool is_offloaded_codec =
+      ::bluetooth::audio::a2dp::provider::supports_codec(codec_index);
+
   // Check the peer's Sink codec
-  if (A2DP_IsPeerSinkCodecValid(p_codec_info)) {
+  if (is_offloaded_codec || A2DP_IsPeerSinkCodecValid(p_codec_info)) {
     // If there is room for a new one
     if (p_peer->num_sup_sinks < BTA_AV_CO_NUM_ELEMENTS(p_peer->sinks)) {
       BtaAvCoSep* p_sink = &p_peer->sinks[p_peer->num_sup_sinks++];
@@ -1802,25 +1847,117 @@ bool BtaAvCo::AudioSepHasContentProtection(const BtaAvCoSep* p_sep) {
   return true;
 }
 
-const BtaAvCoSep* BtaAvCo::SelectSourceCodec(BtaAvCoPeer* p_peer) {
-  const BtaAvCoSep* p_sink = nullptr;
+std::optional<::bluetooth::audio::a2dp::provider::a2dp_configuration>
+BtaAvCo::GetProviderCodecConfiguration(BtaAvCoPeer* p_peer) {
+  // Gather peer codec capabilities.
+  std::vector<::bluetooth::audio::a2dp::provider::a2dp_remote_capabilities>
+      a2dp_remote_caps;
+  for (size_t index = 0; index < p_peer->num_sup_sinks; index++) {
+    const BtaAvCoSep* p_sink = &p_peer->sinks[index];
+    auto& capabilities = a2dp_remote_caps.emplace_back();
+    capabilities.seid = p_sink->seid;
+    capabilities.capabilities = p_sink->codec_caps;
+  }
 
+  // Get the configuration of the preferred codec as codec hint.
+  btav_a2dp_codec_config_t codec_config =
+      p_peer->GetCodecs()->orderedSourceCodecs().front()->getCodecUserConfig();
+
+  // Pass all gathered codec capabilities to the provider
+  return ::bluetooth::audio::a2dp::provider::get_a2dp_configuration(
+      p_peer->addr, a2dp_remote_caps, codec_config);
+}
+
+BtaAvCoSep* BtaAvCo::SelectProviderCodecConfiguration(
+    BtaAvCoPeer* p_peer,
+    const ::bluetooth::audio::a2dp::provider::a2dp_configuration&
+        provider_codec_config) {
+  // Configure the selected offload codec for the active peer.
+  // This function _must_ have the same external behaviour as
+  // AttemptSourceCodecSelection, except the configuration
+  // is provided by the HAL rather than derived locally.
+
+  LOG_INFO("Configuration=%s", provider_codec_config.toString().c_str());
+
+  // Identify the selected sink.
+  auto* p_sink =
+      FindPeerSink(p_peer, provider_codec_config.codec_parameters.codec_type);
+  ASSERT_LOG(p_sink != nullptr, "Unable to find the selected codec config");
+
+  // Identify the selected codec.
+  auto* codec_config = reinterpret_cast<A2dpCodecConfigExt*>(
+      p_peer->GetCodecs()->findSourceCodecConfig(
+          provider_codec_config.codec_parameters.codec_type));
+  ASSERT_LOG(codec_config != nullptr,
+             "Unable to find the selected codec config");
+
+  // Update the vendor codec parameters and codec configuration.
+  codec_config->setCodecConfig(
+      provider_codec_config.codec_parameters,
+      provider_codec_config.codec_config,
+      provider_codec_config.vendor_specific_parameters);
+
+  // Select the codec config.
+  p_peer->GetCodecs()->setCurrentCodecConfig(codec_config);
+  p_peer->p_sink = p_sink;
+  SaveNewCodecConfig(p_peer, provider_codec_config.codec_config,
+                     p_sink->num_protect, p_sink->protect_info);
+
+  return p_sink;
+}
+
+const BtaAvCoSep* BtaAvCo::SelectSourceCodec(BtaAvCoPeer* p_peer) {
   // Update all selectable codecs.
   // This is needed to update the selectable parameters for each codec.
   // NOTE: The selectable codec info is used only for informational purpose.
   UpdateAllSelectableSourceCodecs(p_peer);
 
-  // Select the codec
+  // Query the preferred codec configuration for offloaded codecs.
+  auto provider_codec_config = GetProviderCodecConfiguration(p_peer);
+
+  // Query the preferred codec configuration for software codecs.
+  A2dpCodecConfig* software_codec_config = nullptr;
   for (const auto& iter : p_peer->GetCodecs()->orderedSourceCodecs()) {
-    VLOG(1) << __func__ << ": trying codec " << iter->name();
-    p_sink = AttemptSourceCodecSelection(*iter, p_peer);
-    if (p_sink != nullptr) {
-      VLOG(1) << __func__ << ": selected codec " << iter->name();
+    if (::bluetooth::audio::a2dp::provider::supports_codec(
+            iter->codecIndex())) {
+      continue;
+    }
+
+    // Find the peer Sink for the codec
+    uint8_t new_codec_config[AVDT_CODEC_SIZE];
+    const BtaAvCoSep* p_sink = FindPeerSink(p_peer, iter->codecIndex());
+
+    if (p_sink == nullptr) {
+      LOG_VERBOSE("peer Sink for codec %s not found", iter->name().c_str());
+      continue;
+    }
+
+    if (!p_peer->GetCodecs()->setCodecConfig(
+            p_sink->codec_caps, true /* is_capability */, new_codec_config,
+            false /* select_current_codec */)) {
+      LOG_VERBOSE("cannot set source codec %s", iter->name().c_str());
+    } else {
+      LOG_VERBOSE("feasible to set source codec %s", iter->name().c_str());
+      software_codec_config = iter;
       break;
     }
-    VLOG(1) << __func__ << ": cannot use codec " << iter->name();
   }
-  return p_sink;
+
+  if (provider_codec_config.has_value() &&
+      (software_codec_config == nullptr ||
+       bta_av_co_should_select_hardware_codec(*software_codec_config,
+                                              provider_codec_config.value()))) {
+    // Select hardware offload codec configuration
+    return SelectProviderCodecConfiguration(p_peer,
+                                            provider_codec_config.value());
+  }
+
+  if (software_codec_config != nullptr) {
+    // Select software codec configuration
+    return AttemptSourceCodecSelection(*software_codec_config, p_peer);
+  }
+
+  return nullptr;
 }
 
 const BtaAvCoSep* BtaAvCo::SelectSinkCodec(BtaAvCoPeer* p_peer) {
@@ -2109,8 +2246,9 @@ bool BtaAvCo::SetCodecOtaConfig(BtaAvCoPeer* p_peer,
 }
 
 void bta_av_co_init(
-    const std::vector<btav_a2dp_codec_config_t>& codec_priorities) {
-  bta_av_co_cb.Init(codec_priorities);
+    const std::vector<btav_a2dp_codec_config_t>& codec_priorities,
+    std::vector<btav_a2dp_codec_info_t>* supported_codecs) {
+  bta_av_co_cb.Init(codec_priorities, supported_codecs);
 }
 
 bool bta_av_co_is_supported_codec(btav_a2dp_codec_index_t codec_index) {
@@ -2150,6 +2288,58 @@ static void bta_av_co_store_peer_codectype(const BtaAvCoPeer* p_peer) {
 
   DEVICE_IOT_CONFIG_ADDR_SET_HEX(p_peer->addr, IOT_CONF_KEY_A2DP_CODECTYPE,
                                  peer_codec_type, IOT_CONF_BYTE_NUM_1);
+}
+
+static bool bta_av_co_should_select_hardware_codec(
+    const A2dpCodecConfig& software_config,
+    const ::bluetooth::audio::a2dp::provider::a2dp_configuration&
+        hardware_config) {
+  btav_a2dp_codec_index_t software_codec_index = software_config.codecIndex();
+  btav_a2dp_codec_index_t hardware_offload_index =
+      hardware_config.codec_parameters.codec_type;
+
+  // Prioritize any offload codec except SBC and AAC
+  if (A2DP_GetCodecType(hardware_config.codec_config) ==
+      A2DP_MEDIA_CT_NON_A2DP) {
+    LOG_VERBOSE("select hardware codec: %s",
+                A2DP_CodecIndexStr(hardware_offload_index));
+    return true;
+  }
+  // Prioritize LDAC, AptX HD and AptX over AAC and SBC offload codecs
+  if (software_codec_index == BTAV_A2DP_CODEC_INDEX_SOURCE_LDAC ||
+      software_codec_index == BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_HD ||
+      software_codec_index == BTAV_A2DP_CODEC_INDEX_SOURCE_APTX) {
+    LOG_VERBOSE("select software codec: %s",
+                A2DP_CodecIndexStr(software_codec_index));
+    return false;
+  }
+  // Prioritize AAC offload
+  if (hardware_offload_index == BTAV_A2DP_CODEC_INDEX_SOURCE_AAC) {
+    LOG_VERBOSE("select hardware codec: %s",
+                A2DP_CodecIndexStr(hardware_offload_index));
+    return true;
+  }
+  // Prioritize AAC software
+  if (software_codec_index == BTAV_A2DP_CODEC_INDEX_SOURCE_AAC) {
+    LOG_VERBOSE("select software codec: %s",
+                A2DP_CodecIndexStr(software_codec_index));
+    return false;
+  }
+  // Prioritize SBC offload
+  if (hardware_offload_index == BTAV_A2DP_CODEC_INDEX_SOURCE_SBC) {
+    LOG_VERBOSE("select hardware codec: %s",
+                A2DP_CodecIndexStr(hardware_offload_index));
+    return true;
+  }
+  // Prioritize SBC software
+  if (software_codec_index == BTAV_A2DP_CODEC_INDEX_SOURCE_SBC) {
+    LOG_VERBOSE("select software codec: %s",
+                A2DP_CodecIndexStr(software_codec_index));
+    return false;
+  }
+  LOG_ERROR("select unknown software codec: %s",
+            A2DP_CodecIndexStr(software_codec_index));
+  return false;
 }
 
 tA2DP_STATUS bta_av_co_audio_getconfig(tBTA_AV_HNDL bta_av_handle,

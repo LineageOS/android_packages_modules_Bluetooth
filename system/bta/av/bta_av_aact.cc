@@ -46,6 +46,7 @@
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
+#include "stack/include/a2dp_ext.h"
 #include "stack/include/a2dp_sbc.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/bt_hdr.h"
@@ -3136,9 +3137,11 @@ void offload_vendor_callback(tBTM_VSC_CMPL* param) {
     LOG_VERBOSE("%s: subopcode = %d", __func__, sub_opcode);
     switch (sub_opcode) {
       case VS_HCI_A2DP_OFFLOAD_STOP:
+      case VS_HCI_A2DP_OFFLOAD_STOP_V2:
         LOG_VERBOSE("%s: VS_HCI_STOP_A2DP_MEDIA successful", __func__);
         break;
       case VS_HCI_A2DP_OFFLOAD_START:
+      case VS_HCI_A2DP_OFFLOAD_START_V2:
         if (bta_av_cb.offload_start_pending_hndl) {
           LOG_VERBOSE("%s: VS_HCI_START_A2DP_MEDIA successful", __func__);
           bta_av_cb.offload_started_hndl = bta_av_cb.offload_start_pending_hndl;
@@ -3153,7 +3156,8 @@ void offload_vendor_callback(tBTM_VSC_CMPL* param) {
     }
   } else {
     LOG_VERBOSE("%s: Offload failed for subopcode= %d", __func__, sub_opcode);
-    if (param->opcode != VS_HCI_A2DP_OFFLOAD_STOP) {
+    if (param->opcode != VS_HCI_A2DP_OFFLOAD_STOP &&
+        param->opcode != VS_HCI_A2DP_OFFLOAD_STOP_V2) {
       bta_av_cb.offload_start_pending_hndl = BTA_AV_INVALID_HANDLE;
       (*bta_av_cb.p_cback)(BTA_AV_OFFLOAD_START_RSP_EVT, &value);
     }
@@ -3182,6 +3186,7 @@ void bta_av_vendor_offload_start(tBTA_AV_SCB* p_scb,
   ARRAY_TO_STREAM(p_param, offload_start->codec_info,
                   (int8_t)sizeof(offload_start->codec_info));
   bta_av_cb.offload_start_pending_hndl = p_scb->hndl;
+  bta_av_cb.offload_start_v2 = false;
   LOG_INFO(
       "codec: %#x, sample rate: %#x, bit depth: %#x, channel: %#x, bitrate: "
       "%#x, ACL: %#x, L2CAP: %#x, MTU: %#x",
@@ -3189,17 +3194,100 @@ void bta_av_vendor_offload_start(tBTA_AV_SCB* p_scb,
       offload_start->bits_per_sample, offload_start->ch_mode,
       offload_start->encoded_audio_bitrate, offload_start->acl_hdl,
       offload_start->l2c_rcid, offload_start->mtu);
+  BTM_VendorSpecificCommand(HCI_CONTROLLER_A2DP, p_param - param, param,
+                            offload_vendor_callback);
+}
+
+void bta_av_vendor_offload_start_v2(tBTA_AV_SCB* p_scb,
+                                    A2dpCodecConfigExt* offload_codec) {
+  LOG_VERBOSE("");
+
+  uint16_t connection_handle =
+      get_btm_client_interface().lifecycle.BTM_GetHCIConnHandle(
+          p_scb->PeerAddress(), BT_TRANSPORT_BR_EDR);
+  btav_a2dp_scmst_info_t scmst_info =
+      p_scb->p_cos->get_scmst_info(p_scb->PeerAddress());
+  uint16_t mtu = p_scb->stream_mtu;
+  uint16_t l2cap_channel_handle = 0;
+
+  if (mtu > MAX_3MBPS_AVDTP_MTU) {
+    mtu = MAX_3MBPS_AVDTP_MTU;
+  }
+  if (L2CA_GetRemoteCid(p_scb->l2c_cid, &l2cap_channel_handle) == false) {
+    LOG_ERROR("Failed to fetch l2c rcid");
+  }
+
+  uint8_t param[255];
+  uint8_t* p_param = param;
+  *p_param++ = VS_HCI_A2DP_OFFLOAD_START_V2;
+
+  // Connection_Handle: 2 bytes
+  UINT16_TO_STREAM(p_param, connection_handle);
+  // L2CAP_Channel_ID: 2 bytes
+  UINT16_TO_STREAM(p_param, l2cap_channel_handle);
+  // Data_Path_Direction: 1 byte
+  // TODO(b/305779580): Sink offload
+  UINT8_TO_STREAM(p_param, 0x0);
+  // Peer_MTU: 2 bytes
+  UINT16_TO_STREAM(p_param, mtu);
+  // CP_Enable_SCMS_T: 1 byte
+  UINT8_TO_STREAM(p_param, scmst_info.enable_status);
+  // CP_Header_SCMS_T: 1 byte
+  UINT8_TO_STREAM(p_param, scmst_info.cp_header);
+  // Vendor_Specific_Parameters_Len: 1 byte
+  // Vendor_Specific_Parameters: N bytes
+  auto const& vendor_specific_parameters =
+      offload_codec->getVendorCodecParameters();
+  UINT8_TO_STREAM(p_param,
+                  static_cast<uint8_t>(vendor_specific_parameters.size()));
+  ARRAY_TO_STREAM(p_param, vendor_specific_parameters.data(),
+                  static_cast<uint8_t>(vendor_specific_parameters.size()));
+
+  // Update the pending state.
+  bta_av_cb.offload_start_pending_hndl = p_scb->hndl;
+  bta_av_cb.offload_start_v2 = true;
+
   BTM_VendorSpecificCommand(HCI_CONTROLLER_A2DP, p_param - param,
                             param, offload_vendor_callback);
 }
 
 void bta_av_vendor_offload_stop() {
-  uint8_t param[sizeof(tBT_A2DP_OFFLOAD)];
+  uint8_t param[255];
+  uint8_t* p_param = param;
+
   LOG_VERBOSE("%s", __func__);
-  param[0] = VS_HCI_A2DP_OFFLOAD_STOP;
-  BTM_VendorSpecificCommand(HCI_CONTROLLER_A2DP, 1, param,
+
+  if (bta_av_cb.offload_start_v2) {
+    tBTA_AV_SCB* p_scb =
+        bta_av_hndl_to_scb(bta_av_cb.offload_start_pending_hndl);
+    if (p_scb == nullptr) {
+      return;
+    }
+    uint16_t connection_handle =
+        get_btm_client_interface().lifecycle.BTM_GetHCIConnHandle(
+            p_scb->PeerAddress(), BT_TRANSPORT_BR_EDR);
+    uint16_t l2cap_channel_handle = 0;
+
+    if (L2CA_GetRemoteCid(p_scb->l2c_cid, &l2cap_channel_handle) == false) {
+      LOG_ERROR("Failed to fetch l2c rcid");
+    }
+
+    *p_param++ = VS_HCI_A2DP_OFFLOAD_STOP_V2;
+    // Connection_Handle: 2 bytes
+    UINT16_TO_STREAM(p_param, connection_handle);
+    // L2CAP_Channel_ID: 2 bytes
+    UINT16_TO_STREAM(p_param, l2cap_channel_handle);
+    // Data_Path_Direction: 1 byte
+    // TODO(b/305779580): Sink offload
+    UINT8_TO_STREAM(p_param, 0x0);
+  } else {
+    *p_param++ = VS_HCI_A2DP_OFFLOAD_STOP;
+  }
+
+  BTM_VendorSpecificCommand(HCI_CONTROLLER_A2DP, p_param - param, param,
                             offload_vendor_callback);
 }
+
 /*******************************************************************************
  *
  * Function         bta_av_offload_req
@@ -3216,6 +3304,10 @@ void bta_av_offload_req(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   tBT_A2DP_OFFLOAD offload_start;
   LOG_VERBOSE("%s: stream %s, audio channels open %d", __func__,
               p_scb->started ? "STARTED" : "STOPPED", bta_av_cb.audio_open_cnt);
+
+  A2dpCodecConfig* codec_config = bta_av_get_a2dp_current_codec();
+  ASSERT(codec_config != nullptr);
+
   /* Check if stream has already been started. */
   /* Support offload if only one audio source stream is open. */
   if (p_scb->started != true) {
@@ -3224,6 +3316,10 @@ void bta_av_offload_req(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
              bta_av_cb.offload_started_hndl) {
     LOG_WARN("%s: offload already started, ignore request", __func__);
     return;
+  } else if (::bluetooth::audio::a2dp::provider::supports_codec(
+                 codec_config->codecIndex())) {
+    bta_av_vendor_offload_start_v2(
+        p_scb, static_cast<A2dpCodecConfigExt*>(codec_config));
   } else {
     bta_av_offload_codec_builder(p_scb, &offload_start);
     bta_av_vendor_offload_start(p_scb, &offload_start);

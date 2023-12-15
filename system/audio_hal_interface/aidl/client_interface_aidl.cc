@@ -91,6 +91,92 @@ BluetoothAudioClientInterface::GetAudioCapabilities(SessionType session_type) {
   return capabilities;
 }
 
+std::optional<IBluetoothAudioProviderFactory::ProviderInfo>
+BluetoothAudioClientInterface::GetProviderInfo(
+    SessionType session_type,
+    std::shared_ptr<IBluetoothAudioProviderFactory> provider_factory) {
+  if (!is_aidl_available() ||
+      !IS_FLAG_ENABLED(a2dp_offload_codec_extensibility)) {
+    return std::nullopt;
+  }
+
+  if (provider_factory == nullptr) {
+    provider_factory = IBluetoothAudioProviderFactory::fromBinder(
+        ::ndk::SpAIBinder(AServiceManager_waitForService(
+            kDefaultAudioProviderFactoryInterface.c_str())));
+  }
+
+  if (provider_factory == nullptr) {
+    LOG(ERROR) << __func__ << ", can't get provider info from unknown factory";
+    return std::nullopt;
+  }
+
+  std::optional<IBluetoothAudioProviderFactory::ProviderInfo> provider_info =
+      {};
+  auto aidl_retval =
+      provider_factory->getProviderInfo(session_type, &provider_info);
+
+  if (!aidl_retval.isOk()) {
+    LOG(ERROR) << __func__ << ": BluetoothAudioHal::getProviderInfo failure: "
+               << aidl_retval.getDescription();
+    return std::nullopt;
+  }
+
+  return provider_info;
+}
+
+std::optional<A2dpConfiguration>
+BluetoothAudioClientInterface::GetA2dpConfiguration(
+    std::vector<A2dpRemoteCapabilities> const& remote_capabilities,
+    A2dpConfigurationHint const& hint) const {
+  if (!is_aidl_available() ||
+      !IS_FLAG_ENABLED(a2dp_offload_codec_extensibility)) {
+    return std::nullopt;
+  }
+
+  if (provider_ == nullptr) {
+    LOG(ERROR) << __func__
+               << ", can't get a2dp configuration from unknown provider";
+    return std::nullopt;
+  }
+
+  std::optional<A2dpConfiguration> configuration = std::nullopt;
+  auto aidl_retval = provider_->getA2dpConfiguration(remote_capabilities, hint,
+                                                     &configuration);
+
+  if (!aidl_retval.isOk()) {
+    LOG(ERROR) << __func__ << ", getA2dpConfiguration failure: "
+               << aidl_retval.getDescription();
+    return std::nullopt;
+  }
+
+  return configuration;
+}
+
+std::optional<A2dpStatus> BluetoothAudioClientInterface::ParseA2dpConfiguration(
+    const CodecId& codec_id, const std::vector<uint8_t>& configuration,
+    CodecParameters* codec_parameters) const {
+  A2dpStatus a2dp_status;
+
+  if (provider_ == nullptr) {
+    LOG(ERROR)
+        << __func__
+        << ", can not parse A2DP configuration because of unknown provider";
+    return std::nullopt;
+  }
+
+  auto aidl_retval = provider_->parseA2dpConfiguration(
+      codec_id, configuration, codec_parameters, &a2dp_status);
+
+  if (!aidl_retval.isOk()) {
+    LOG(ERROR) << __func__ << ", parseA2dpConfiguration failure: "
+               << aidl_retval.getDescription();
+    return std::nullopt;
+  }
+
+  return std::make_optional(a2dp_status);
+}
+
 void BluetoothAudioClientInterface::FetchAudioProvider() {
   if (!is_aidl_available()) {
     LOG(ERROR) << __func__ << ": aidl is not supported on this platform.";
@@ -220,7 +306,8 @@ bool BluetoothAudioClientInterface::UpdateAudioConfig(
        audio_config_tag == AudioConfiguration::pcmConfig);
   bool is_a2dp_offload_audio_config =
       (is_a2dp_offload_session &&
-       audio_config_tag == AudioConfiguration::a2dpConfig);
+       (audio_config_tag == AudioConfiguration::a2dpConfig ||
+        audio_config_tag == AudioConfiguration::a2dp));
   bool is_leaudio_unicast_offload_audio_config =
       (is_leaudio_unicast_offload_session &&
        audio_config_tag == AudioConfiguration::leAudioConfig);
