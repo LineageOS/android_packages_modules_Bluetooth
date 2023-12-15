@@ -21,11 +21,11 @@
  *  This file contains utility functions.
  *
  ******************************************************************************/
+#include "bta/include/utl.h"
+
 #include <cstdint>
 
-#include "bt_target.h"  // Must be first to define build configuration
-
-#include "bta/include/utl.h"
+#include "internal_include/bt_target.h"
 #include "stack/include/btm_api.h"
 
 /*******************************************************************************

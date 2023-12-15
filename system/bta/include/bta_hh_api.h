@@ -23,7 +23,7 @@
 #include <cstdint>
 #include <string>
 
-#include "bta/include/bta_api.h"
+#include "internal_include/bt_target.h"
 #include "macros.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/hiddefs.h"
