@@ -29,14 +29,21 @@ namespace bluetooth::hci {
 
 /// The LE Scanning reassembler is responsible for defragmenting
 /// LE advertising reports that are too large to fit inside an HCI event
-/// and were fragmented by the compiler.
+/// and were fragmented by the controller.
 /// The reassembler also joins scan response data with the
 /// matching advertising data.
 
 class LeScanningReassembler {
  public:
+  struct CompleteAdvertisingData {
+    uint16_t extended_event_type;
+    std::vector<uint8_t> data;
+  };
+
   LeScanningReassembler(){};
+
   LeScanningReassembler(const LeScanningReassembler&) = delete;
+
   LeScanningReassembler& operator=(const LeScanningReassembler&) = delete;
 
   /// Process an incoming advertsing report, extracted from any of the
@@ -44,7 +51,7 @@ class LeScanningReassembler {
   /// events.
   /// Returns the completed advertising data if the event was complete, or the
   /// completion of a fragmented advertising event.
-  std::optional<std::vector<uint8_t>> ProcessAdvertisingReport(
+  std::optional<CompleteAdvertisingData> ProcessAdvertisingReport(
       uint16_t event_type,
       uint8_t address_type,
       Address address,
@@ -62,6 +69,7 @@ class LeScanningReassembler {
   bool ignore_scan_responses_{false};
 
   /// Constants for parsing event_type.
+  static constexpr uint8_t kConnectableBit = 0;
   static constexpr uint8_t kScannableBit = 1;
   static constexpr uint8_t kDirectedBit = 2;
   static constexpr uint8_t kScanResponseBit = 3;
@@ -89,10 +97,12 @@ class LeScanningReassembler {
   /// Packs incomplete advertising data.
   struct AdvertisingFragment {
     AdvertisingKey key;
+    uint16_t extended_event_type;
     std::vector<uint8_t> data;
 
-    AdvertisingFragment(const AdvertisingKey& key, const std::vector<uint8_t>& data)
-        : key(key), data(data.begin(), data.end()) {}
+    AdvertisingFragment(
+        const AdvertisingKey& key, uint16_t extended_event_type, const std::vector<uint8_t>& data)
+        : key(key), extended_event_type(extended_event_type), data(data.begin(), data.end()) {}
   };
 
   /// Advertising cache for de-fragmenting extended advertising reports,
@@ -105,9 +115,12 @@ class LeScanningReassembler {
 
   /// Advertising cache management methods.
   std::list<AdvertisingFragment>::iterator AppendFragment(
-      const AdvertisingKey& key, const std::vector<uint8_t>& data);
+      const AdvertisingKey& key, uint16_t extended_event_type, const std::vector<uint8_t>& data);
+
   void RemoveFragment(const AdvertisingKey& key);
+
   bool ContainsFragment(const AdvertisingKey& key);
+
   std::list<AdvertisingFragment>::iterator FindFragment(const AdvertisingKey& key);
 
   /// Trim the advertising data by removing empty or overflowing

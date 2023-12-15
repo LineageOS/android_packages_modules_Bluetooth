@@ -32,7 +32,8 @@
 
 namespace bluetooth::hci {
 
-std::optional<std::vector<uint8_t>> LeScanningReassembler::ProcessAdvertisingReport(
+std::optional<LeScanningReassembler::CompleteAdvertisingData>
+LeScanningReassembler::ProcessAdvertisingReport(
     uint16_t event_type,
     uint8_t address_type,
     Address address,
@@ -67,7 +68,7 @@ std::optional<std::vector<uint8_t>> LeScanningReassembler::ProcessAdvertisingRep
 
   // Concatenate the data with existing fragments.
   std::list<AdvertisingFragment>::iterator advertising_fragment =
-      AppendFragment(key, advertising_data);
+      AppendFragment(key, event_type, advertising_data);
 
   // Trim the advertising data when the complete payload is received.
   if (data_status != DataStatus::CONTINUING) {
@@ -89,9 +90,11 @@ std::optional<std::vector<uint8_t>> LeScanningReassembler::ProcessAdvertisingRep
 
   // Otherwise the full advertising report has been reassembled,
   // removed the cache entry and return the complete advertising data.
-  std::vector<uint8_t> complete_advertising_data = std::move(advertising_fragment->data);
+  CompleteAdvertisingData result{
+      .extended_event_type = advertising_fragment->extended_event_type,
+      .data = std::move(advertising_fragment->data)};
   cache_.erase(advertising_fragment);
-  return complete_advertising_data;
+  return result;
 }
 
 /// Trim the advertising data by removing empty or overflowing
@@ -140,9 +143,19 @@ bool LeScanningReassembler::AdvertisingKey::operator==(const AdvertisingKey& oth
 /// If the advertiser is unknown a new entry is added, optionally by
 /// dropping the oldest advertiser.
 std::list<LeScanningReassembler::AdvertisingFragment>::iterator
-LeScanningReassembler::AppendFragment(const AdvertisingKey& key, const std::vector<uint8_t>& data) {
+LeScanningReassembler::AppendFragment(
+    const AdvertisingKey& key, uint16_t extended_event_type, const std::vector<uint8_t>& data) {
   auto it = FindFragment(key);
   if (it != cache_.end()) {
+    // Legacy scan responses don't contain a 'connectable' bit, so this adds the
+    // 'connectable' bit from the initial report.
+    if ((extended_event_type & (1 << kLegacyBit)) &&
+        (extended_event_type & (1 << kScanResponseBit))) {
+      it->extended_event_type =
+          extended_event_type | (it->extended_event_type & (1 << kConnectableBit));
+    } else {
+      it->extended_event_type = extended_event_type;
+    }
     it->data.insert(it->data.end(), data.cbegin(), data.cend());
     return it;
   }
@@ -151,7 +164,7 @@ LeScanningReassembler::AppendFragment(const AdvertisingKey& key, const std::vect
     cache_.pop_back();
   }
 
-  cache_.emplace_front(key, data);
+  cache_.emplace_front(key, extended_event_type, data);
   return cache_.begin();
 }
 
