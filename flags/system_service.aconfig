@@ -21,3 +21,10 @@ flag {
     bug: "289584302"
 }
 
+flag {
+    name: "fix_nonconnectable_scannable_advertisement"
+    namespace: "bluetooth"
+    description: "Fix adv_scan_ind being reported as connectable"
+    bug: "316013235"
+}
+
