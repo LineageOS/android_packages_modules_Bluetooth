@@ -27,3 +27,10 @@ flag {
     description: "Fix LE scan parameters downgrade during inquiry"
     bug: "316885813"
 }
+
+flag {
+    name: "scan_timeout_reset"
+    namespace: "bluetooth"
+    description: "Ensure scan timeout is reset if new scan started"
+    bug: "316266556"
+}
