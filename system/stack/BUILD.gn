@@ -55,6 +55,7 @@ source_set("stack") {
   sources = [
     "a2dp/a2dp_api.cc",
     "a2dp/a2dp_codec_config.cc",
+    "a2dp/a2dp_ext.cc",
     "a2dp/a2dp_sbc.cc",
     "a2dp/a2dp_sbc_decoder.cc",
     "a2dp/a2dp_sbc_encoder.cc",

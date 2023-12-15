@@ -13,6 +13,11 @@ subdirs = [
 ]
 
 filegroup {
+    name: "TestMockAudioHalInterface",
+    srcs: ["mock/mock_audio_hal_interface*.cc"],
+}
+
+filegroup {
     name: "TestMockAudioA2dp",
     srcs: ["mock/mock_audio_a2dp*.cc"],
 }

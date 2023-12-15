@@ -424,7 +424,7 @@ bool A2DP_VendorInitCodecConfigAptx(AvdtpSepConfig* p_cfg) {
 
 A2dpCodecConfigAptx::A2dpCodecConfigAptx(
     btav_a2dp_codec_priority_t codec_priority)
-    : A2dpCodecConfig(BTAV_A2DP_CODEC_INDEX_SOURCE_APTX,
+    : A2dpCodecConfig(BTAV_A2DP_CODEC_INDEX_SOURCE_APTX, A2DP_CODEC_ID_APTX,
                       A2DP_VendorCodecIndexStrAptx(), codec_priority) {
   // Compute the local capability
   if (a2dp_aptx_source_caps.sampleRate & A2DP_APTX_SAMPLERATE_44100) {
