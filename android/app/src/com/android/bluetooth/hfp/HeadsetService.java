@@ -55,10 +55,13 @@ import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.AudioRoutingManager;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.bluetooth.flags.FeatureFlags;
+import com.android.bluetooth.flags.FeatureFlagsImpl;
 import com.android.bluetooth.hfpclient.HeadsetClientService;
 import com.android.bluetooth.hfpclient.HeadsetClientStateMachine;
 import com.android.bluetooth.le_audio.LeAudioService;
@@ -123,6 +126,7 @@ public class HeadsetService extends ProfileService {
     // Timeout for state machine thread join, to prevent potential ANR.
     private static final int SM_THREAD_JOIN_TIMEOUT_MS = 1000;
 
+    private FeatureFlags mFeatureFlags = new FeatureFlagsImpl();
     private int mMaxHeadsetConnections = 1;
     private BluetoothDevice mActiveDevice;
     private AdapterService mAdapterService;
@@ -851,11 +855,16 @@ public class HeadsetService extends ProfileService {
                 SynchronousResultReceiver receiver) {
             try {
                 HeadsetService service = getService(source);
-                boolean defaultValue = false;
                 if (service != null) {
-                    defaultValue = service.setActiveDevice(device);
+                    if (service.mFeatureFlags.audioRoutingCentralization()) {
+                        ((AudioRoutingManager) service.mAdapterService.getActiveDeviceManager())
+                                .activateDeviceProfile(device, BluetoothProfile.HEADSET, receiver);
+                    } else {
+                        receiver.send(service.setActiveDevice(device));
+                    }
+                } else {
+                    receiver.send(false);
                 }
-                receiver.send(defaultValue);
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
             }
