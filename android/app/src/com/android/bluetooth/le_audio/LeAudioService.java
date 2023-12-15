@@ -23,6 +23,7 @@ import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
 import static com.android.bluetooth.Utils.enforceBluetoothPrivilegedPermission;
 import static com.android.modules.utils.build.SdkLevel.isAtLeastU;
 
+
 import android.annotation.RequiresPermission;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
@@ -48,6 +49,7 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.AttributionSource;
+import android.content.Context;
 import android.content.Intent;
 import android.media.AudioDeviceCallback;
 import android.media.AudioDeviceInfo;
@@ -67,6 +69,7 @@ import android.util.Pair;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.bass_client.BassClientService;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.AudioRoutingManager;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.ServiceFactory;
@@ -131,7 +134,7 @@ public class LeAudioService extends ProfileService {
     private BluetoothDevice mExposedActiveDevice;
     private LeAudioCodecConfig mLeAudioCodecConfig;
     private final Object mGroupLock = new Object();
-    private FeatureFlags mFeatureFlags = new FeatureFlagsImpl();
+    private FeatureFlags mFeatureFlags;
     ServiceFactory mServiceFactory = new ServiceFactory();
 
     LeAudioNativeInterface mLeAudioNativeInterface;
@@ -178,6 +181,18 @@ public class LeAudioService extends ProfileService {
     BluetoothLeScanner mAudioServersScanner;
     /* When mScanCallback is not null, it means scan is started. */
     ScanCallback mScanCallback;
+
+    LeAudioService() {
+        mFeatureFlags = new FeatureFlagsImpl();
+    }
+
+    @VisibleForTesting
+    LeAudioService(Context ctx, LeAudioNativeInterface nativeInterface, FeatureFlags featureFlags) {
+        attachBaseContext(ctx);
+        mLeAudioNativeInterface = nativeInterface;
+        mFeatureFlags = featureFlags;
+        onCreate();
+    }
 
     private class LeAudioGroupDescriptor {
         LeAudioGroupDescriptor(boolean isInbandRingtonEnabled) {
@@ -293,8 +308,12 @@ public class LeAudioService extends ProfileService {
 
         mAdapterService = Objects.requireNonNull(AdapterService.getAdapterService(),
                 "AdapterService cannot be null when LeAudioService starts");
-        mLeAudioNativeInterface = Objects.requireNonNull(LeAudioNativeInterface.getInstance(),
-                "LeAudioNativeInterface cannot be null when LeAudioService starts");
+        if (mLeAudioNativeInterface == null) {
+            mLeAudioNativeInterface =
+                    Objects.requireNonNull(
+                            LeAudioNativeInterface.getInstance(),
+                            "LeAudioNativeInterface cannot be null when LeAudioService starts");
+        }
         mDatabaseManager = Objects.requireNonNull(mAdapterService.getDatabase(),
                 "DatabaseManager cannot be null when LeAudioService starts");
 
@@ -3882,17 +3901,23 @@ public class LeAudioService extends ProfileService {
             try {
                 Objects.requireNonNull(source, "source cannot be null");
                 Objects.requireNonNull(receiver, "receiver cannot be null");
-
                 LeAudioService service = getService(source);
-                boolean result = false;
                 if (service != null) {
-                    if (device == null) {
-                        result = service.removeActiveDevice(true);
+                    if (service.mFeatureFlags.audioRoutingCentralization()) {
+                        ((AudioRoutingManager) service.mAdapterService.getActiveDeviceManager())
+                                .activateDeviceProfile(device, BluetoothProfile.LE_AUDIO, receiver);
                     } else {
-                        result = service.setActiveDevice(device);
+                        boolean result;
+                        if (device == null) {
+                            result = service.removeActiveDevice(true);
+                        } else {
+                            result = service.setActiveDevice(device);
+                        }
+                        receiver.send(result);
                     }
+                } else {
+                    receiver.send(false);
                 }
-                receiver.send(result);
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
             }
