@@ -15,6 +15,7 @@ aconfig_declarations {
         "gap.aconfig",
         "hap.aconfig",
         "hfp.aconfig",
+        "l2cap.aconfig",
         "leaudio.aconfig",
         "system_service.aconfig",
     ],
