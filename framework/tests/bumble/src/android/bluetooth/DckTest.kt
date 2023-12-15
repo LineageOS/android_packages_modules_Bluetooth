@@ -16,7 +16,12 @@
 
 package android.bluetooth
 
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
+import android.bluetooth.le.ScanResult
+import android.bluetooth.le.ScanSettings
 import android.content.Context
+import android.os.ParcelUuid
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
@@ -29,10 +34,12 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.timeout
 import org.mockito.kotlin.verify
+import pandora.HostProto
 import pandora.HostProto.AdvertiseRequest
 import pandora.HostProto.OwnAddressType
 
@@ -42,6 +49,11 @@ public class DckTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val bluetoothManager = context.getSystemService(BluetoothManager::class.java)!!
     private val bluetoothAdapter = bluetoothManager.adapter
+    private val leScanner = bluetoothAdapter.bluetoothLeScanner
+
+    private val scanResultCaptor = argumentCaptor<ScanResult>()
+    private val scanCallbackMock = mock<ScanCallback>()
+    private val gattCallbackMock = mock<BluetoothGattCallback>()
 
     // A Rule live from a test setup through it's teardown.
     // Gives shell permissions during the test.
@@ -152,6 +164,62 @@ public class DckTest {
                 eq(BluetoothGatt.GATT_SUCCESS),
                 eq(BluetoothProfile.STATE_DISCONNECTED)
             )
+    }
+
+    /*
+     * 2.3 GATT Connect - discovered using scan with UUID
+     *
+     * http://docs/document/d/1oQOpgI83HSJBdr5mBU00za_6XrDGo2KDGnCcX-hXPHk#heading=h.7ofaj7vwknsr
+     */
+    @Test
+    fun testGattConnect_fromUuidScan() {
+        // Start UUID advertisement on Ref
+        val advertiseData =
+            HostProto.DataTypes.newBuilder()
+                .addCompleteServiceClassUuids128(CCC_DK_UUID.toString())
+                .build()
+        val advertiseRequest =
+            AdvertiseRequest.newBuilder()
+                .setLegacy(true)
+                .setConnectable(true)
+                .setOwnAddressType(OwnAddressType.RANDOM)
+                .setData(advertiseData)
+                .build()
+        mBumble.hostBlocking().advertise(advertiseRequest)
+
+        // Start UUID scan for Ref on DUT
+        val scanSettings =
+            ScanSettings.Builder()
+                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
+                .build()
+        val scanFilter = ScanFilter.Builder().setServiceUuid(ParcelUuid(CCC_DK_UUID)).build()
+        leScanner.startScan(listOf(scanFilter), scanSettings, scanCallbackMock)
+
+        // Await scan results
+        verify(scanCallbackMock, timeout(TIMEOUT).atLeastOnce())
+            .onScanResult(eq(ScanSettings.CALLBACK_TYPE_ALL_MATCHES), scanResultCaptor.capture())
+
+        // Stop scan on DUT before GATT connect
+        leScanner.stopScan(scanCallbackMock)
+
+        // Verify correct scan result as prerequisite
+        val scanResult = scanResultCaptor.firstValue
+        assertThat(scanResult).isNotNull()
+        assertThat(scanResult.scanRecord?.serviceUuids).contains(ParcelUuid(CCC_DK_UUID))
+
+        // Verify successful GATT connection
+        val device = scanResult.device
+        val gatt = device.connectGatt(context, false, gattCallbackMock)
+        verify(gattCallbackMock, timeout(TIMEOUT))
+            .onConnectionStateChange(
+                any(),
+                eq(BluetoothGatt.GATT_SUCCESS),
+                eq(BluetoothProfile.STATE_CONNECTED)
+            )
+
+        // Clean-Up
+        gatt.close()
     }
 
     companion object {
