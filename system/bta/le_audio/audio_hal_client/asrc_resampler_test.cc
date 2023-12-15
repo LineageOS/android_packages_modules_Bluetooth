@@ -55,7 +55,7 @@ extern "C" void resample_i16(int channels, int bitdepth, double ratio,
                          &out_count);
 
   if (out_count < out_length)
-    fprintf(stderr, "wrong output size: %zd:%zd %zd:%zd\n", in_length, in_count,
+    fprintf(stderr, "wrong output size: %zu:%zu %zu:%zu\n", in_length, in_count,
             out_length, out_count);
 
   return;
@@ -71,7 +71,7 @@ extern "C" void resample_i32(int channels, int bitdepth, double ratio,
                          &out_count);
 
   if (out_count < out_length)
-    fprintf(stderr, "wrong output size: %zd:%zd %zd:%zd\n", in_length, in_count,
+    fprintf(stderr, "wrong output size: %zu:%zu %zu:%zu\n", in_length, in_count,
             out_length, out_count);
 
   return;
