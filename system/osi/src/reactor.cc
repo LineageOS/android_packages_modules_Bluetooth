@@ -115,6 +115,7 @@ void reactor_free(reactor_t* reactor) {
   list_free(reactor->invalidation_list);
   close(reactor->event_fd);
   close(reactor->epoll_fd);
+  delete reactor->list_mutex;
   osi_free(reactor);
 }
 
