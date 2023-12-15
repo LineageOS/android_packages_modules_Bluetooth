@@ -16,9 +16,13 @@
 
 #pragma once
 
+#include <iomanip>
+#include <sstream>
 #include <vector>
 
+#include "a2dp_error_codes.h"
 #include "audio_a2dp_hw/include/audio_a2dp_hw.h"
+#include "avdt_api.h"
 #include "common/message_loop_thread.h"
 
 namespace bluetooth {
@@ -62,6 +66,98 @@ void set_remote_delay(uint16_t delay_report);
 // Check whether OPUS is supported
 bool is_opus_supported();
 
+// Definitions for A2DP hardware offload codec extensibility.
+namespace provider {
+
+// Lookup the codec info in the list of supported offloaded sink codecs.
+std::optional<btav_a2dp_codec_index_t> sink_codec_index(
+    const uint8_t* p_codec_info);
+
+// Lookup the codec info in the list of supported offloaded source codecs.
+std::optional<btav_a2dp_codec_index_t> source_codec_index(
+    const uint8_t* p_codec_info);
+
+// Return the name of the codec which is assigned to the input index.
+// The codec index must be in the ranges
+// BTAV_A2DP_CODEC_INDEX_SINK_EXT_MIN..BTAV_A2DP_CODEC_INDEX_SINK_EXT_MAX or
+// BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MIN..BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MAX.
+// Returns nullopt if the codec_index is not assigned or codec extensibility
+// is not supported or enabled.
+std::optional<const char*> codec_index_str(btav_a2dp_codec_index_t codec_index);
+
+// Return true if the codec is supported for the session type
+// A2DP_HARDWARE_ENCODING_DATAPATH or A2DP_HARDWARE_DECODING_DATAPATH.
+bool supports_codec(btav_a2dp_codec_index_t codec_index);
+
+// Return the A2DP capabilities for the selected codec.
+// `codec_info` returns the OTA codec capabilities, `codec_config`
+// returns the supported capabilities in a generic format.
+bool codec_info(btav_a2dp_codec_index_t codec_index, uint64_t* codec_id,
+                uint8_t* codec_info, btav_a2dp_codec_config_t* codec_config);
+
+struct a2dp_configuration {
+  int remote_seid;
+  uint8_t codec_config[AVDT_CODEC_SIZE];
+  btav_a2dp_codec_config_t codec_parameters;
+  std::vector<uint8_t> vendor_specific_parameters;
+
+  inline std::string toString() const {
+    std::ostringstream os;
+    os << "A2dpConfiguration{";
+    os << "remote_seid: " << remote_seid;
+    os << ", codec_index: " << codec_parameters.codec_type;
+    os << ", codec_config: {";
+    for (int i = 0; i < AVDT_CODEC_SIZE; i++) {
+      os << "0x" << std::hex << std::setw(2) << std::setfill('0')
+         << static_cast<int>(codec_config[i]);
+      if (i != AVDT_CODEC_SIZE - 1) os << ",";
+    }
+    os << "}";
+    os << "}";
+    return os.str();
+  }
+};
+
+struct a2dp_remote_capabilities {
+  int seid;
+  uint8_t const* capabilities;
+
+  inline std::string toString() const {
+    std::ostringstream os;
+    os << "A2dpRemoteCapabilities{";
+    os << "seid: " << seid;
+    os << ", capabilities: {";
+    if (capabilities != nullptr) {
+      for (int i = 0; i < AVDT_CODEC_SIZE; i++) {
+        os << "0x" << std::hex << std::setw(2) << std::setfill('0')
+           << static_cast<int>(capabilities[i]);
+        if (i != AVDT_CODEC_SIZE - 1) os << ",";
+      }
+    }
+    os << "}";
+    os << "}";
+    return os.str();
+  }
+};
+
+// Query the codec selection fromt the audio HAL.
+// The HAL is expected to pick the best audio configuration based on the
+// discovered remote SEPs.
+std::optional<a2dp_configuration> get_a2dp_configuration(
+    RawAddress peer_address,
+    std::vector<a2dp_remote_capabilities> const& remote_seps,
+    btav_a2dp_codec_config_t const& user_preferences);
+
+// Query the codec parameters from the audio HAL.
+// The HAL is expected to parse the codec configuration
+// received from the peer and decide whether accept
+// the it or not.
+tA2DP_STATUS parse_a2dp_configuration(
+    btav_a2dp_codec_index_t codec_index, const uint8_t* codec_info,
+    btav_a2dp_codec_config_t* codec_parameters,
+    std::vector<uint8_t>* vendor_specific_parameters);
+
+}  // namespace provider
 }  // namespace a2dp
 }  // namespace audio
 }  // namespace bluetooth

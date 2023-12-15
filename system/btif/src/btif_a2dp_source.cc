@@ -20,6 +20,7 @@
 #define LOG_TAG "bt_btif_a2dp_source"
 #define ATRACE_TAG ATRACE_TAG_AUDIO
 
+#include <android_bluetooth_flags.h>
 #include <base/logging.h>
 #include <base/run_loop.h>
 #ifdef __ANDROID__
@@ -341,7 +342,13 @@ bool btif_a2dp_source_init(void) {
 
 static void btif_a2dp_source_init_delayed(void) {
   LOG_INFO("%s", __func__);
-  // Nothing to do
+  // When codec extensibility is enabled in the audio HAL interface,
+  // the provider needs to be initialized earlier in order to ensure
+  // get_a2dp_configuration and parse_a2dp_configuration can be
+  // invoked before the stream is started.
+  if (IS_FLAG_ENABLED(a2dp_offload_codec_extensibility)) {
+    bluetooth::audio::a2dp::init(&btif_a2dp_source_thread);
+  }
 }
 
 bool btif_a2dp_source_startup(void) {
