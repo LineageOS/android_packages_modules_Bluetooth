@@ -28,10 +28,9 @@
 #include <string>
 #include <vector>
 
-#include "bta/include/bta_ag_api.h"
 #include "bta/include/bta_api.h"
 #include "bta_api.h"
-#include "bta_hfp_api.h"
+#include "internal_include/bt_target.h"
 #include "macros.h"
 #include "types/raw_address.h"
 

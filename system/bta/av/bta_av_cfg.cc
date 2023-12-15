@@ -25,9 +25,8 @@
 
 #include <cstdint>
 
-#include "bt_target.h"  // Must be first to define build configuration
-
 #include "bta/include/bta_av_api.h"
+#include "internal_include/bt_target.h"
 #include "stack/include/avrc_api.h"
 
 #ifndef BTA_AV_RC_COMP_ID

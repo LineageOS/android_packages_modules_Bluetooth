@@ -22,10 +22,10 @@
 #include <base/strings/stringprintf.h>
 
 #include <cstdint>
-#include <vector>
 
-#include "bt_target.h"  // Must be first to define build configuration
 #include "bta_api_data_types.h"
+#include "internal_include/bt_target.h"
+#include "stack/include/bt_device_type.h"
 #include "stack/include/bt_name.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/btm_ble_sec_api_types.h"
