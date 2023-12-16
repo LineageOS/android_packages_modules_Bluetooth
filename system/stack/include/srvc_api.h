@@ -21,9 +21,9 @@
 
 #include <cstdint>
 
-#include "bt_target.h"
 #include "gatt_api.h"
 #include "gattdefs.h"
+#include "internal_include/bt_target.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 

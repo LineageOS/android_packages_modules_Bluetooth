@@ -24,8 +24,8 @@
 
 #include <vector>
 
-#include "bt_target.h"
 #include "fuzzers/sdp/sdpFuzzHelpers.h"
+#include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
 #include "stack/a2dp/a2dp_int.h"
 #include "types/raw_address.h"

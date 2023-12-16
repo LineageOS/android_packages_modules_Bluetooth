@@ -1,0 +1,8 @@
+package: "com.android.bluetooth.flags"
+
+flag {
+    name: "l2cap_tx_complete_cb_info"
+    namespace: "bluetooth"
+    description: "Provide l2cap transmit complete information b/301168932"
+    bug: "314819704"
+}

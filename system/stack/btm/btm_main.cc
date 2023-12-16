@@ -25,15 +25,15 @@
 #include <memory>
 #include <string>
 
-#include "bt_target.h"
 #include "btm_int_types.h"
-#include "btm_sec_cb.h"
-#include "main/shim/dumpsys.h"
-#include "osi/include/log.h"
-#include "stack/include/btm_client_interface.h"
-#include "stack/include/inq_hci_link_interface.h"
+#include "internal_include/bt_target.h"
+#include "os/log.h"
 #include "stack/include/security_client_callbacks.h"
 #include "types/raw_address.h"
+
+#ifdef TARGET_FLOSS
+#include "stack/include/inq_hci_link_interface.h"  // btm_inq_db_set_inq_by_rssi
+#endif                                             // TARGET_FLOSS
 
 /* Global BTM control block structure
 */

@@ -17,6 +17,10 @@ use std::env;
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::process;
+use std::process::Command;
+
+extern crate grpcio_compiler;
 
 fn paths_to_strs<P: AsRef<Path>>(paths: &[P]) -> Vec<&str> {
     paths.iter().map(|p| p.as_ref().as_os_str().to_str().unwrap()).collect()
@@ -34,6 +38,20 @@ fn gen_mod_rs<P: AsRef<Path>>(out_dir: PathBuf, inputs: &[P], grpc: bool) {
         f.write_all(format!("pub mod {}; \n", stem.to_str().unwrap()).as_bytes()).unwrap();
         if grpc {
             f.write_all(format!("pub mod {}_grpc;\n", stem.to_str().unwrap()).as_bytes()).unwrap();
+        }
+    }
+}
+
+fn exec(c: &mut Command) {
+    match c.status() {
+        Err(e) => {
+            eprintln!("failed to execute {:?}: {}", c, e);
+            process::exit(-1);
+        }
+        Ok(s) => {
+            if !s.success() {
+                process::exit(s.code().unwrap_or(-1));
+            }
         }
     }
 }
@@ -70,13 +88,14 @@ fn main() {
     let proto_input_files = [facade_dir.join("common.proto")];
     let proto_include_dirs = [facade_dir.clone()];
 
-    protoc_rust::Codegen::new()
+    protobuf_codegen::Codegen::new()
+        .protoc()
         .out_dir(proto_out_dir.as_os_str().to_str().unwrap())
         .inputs(&paths_to_strs(&proto_input_files))
         .includes(&paths_to_strs(&proto_include_dirs))
         .customize(Default::default())
         .run()
-        .expect("protoc");
+        .expect("Common protos failed to generate");
 
     //
     // Generate grpc output
@@ -90,13 +109,33 @@ fn main() {
     let grpc_proto_include_dirs =
         [facade_dir.join("hci"), facade_dir.join("hal"), facade_dir, proto_root];
 
-    protoc_grpcio::compile_grpc_protos(
-        &grpc_proto_input_files,
-        &grpc_proto_include_dirs,
-        &grpc_out_dir,
-        None,
-    )
-    .expect("Failed to compile gRPC definitions");
+    // Generate protobuf files first
+    protobuf_codegen::Codegen::new()
+        .protoc()
+        .out_dir(&grpc_out_dir.as_os_str().to_str().unwrap())
+        .inputs(&paths_to_strs(&grpc_proto_input_files))
+        .includes(&paths_to_strs(&grpc_proto_include_dirs))
+        .customize(Default::default())
+        .run()
+        .expect("Facade protos failed to generate");
+
+    // Invoke protoc directly to generate grpcio.
+    let mut c = Command::new("protoc");
+    // Include dirs
+    for inc in &grpc_proto_include_dirs {
+        c.arg(format!("-I{}", &inc.as_os_str().to_str().unwrap()));
+    }
+    // Output dir
+    c.arg(format!("--grpc_out={}", &grpc_out_dir.as_os_str().to_str().unwrap()));
+    // Plugin location
+    let grpc_rust_plugin_path = std::env::var_os("GRPC_RUST_PLUGIN_PATH").unwrap();
+    c.arg(format!("--plugin=protoc-gen-grpc={}", grpc_rust_plugin_path.into_string().unwrap()));
+    // Input files
+    for input in &grpc_proto_input_files {
+        c.arg(input);
+    }
+
+    exec(&mut c);
 
     gen_mod_rs(proto_out_dir, &proto_input_files, false);
     gen_mod_rs(grpc_out_dir, &grpc_proto_input_files, true);
