@@ -25,6 +25,8 @@
 #include <cstdint>
 #include <optional>
 
+#include "stack/include/btm_api_types.h"
+#include "stack/include/btm_status.h"
 #include "test/common/mock_functions.h"
 
 // Original usings
@@ -60,13 +62,9 @@ struct BTM_SecAddBleKey BTM_SecAddBleKey;
 struct BTM_SecurityGrant BTM_SecurityGrant;
 struct BTM_SetBleDataLength BTM_SetBleDataLength;
 struct BTM_UseLeLink BTM_UseLeLink;
-struct btm_ble_br_keys_req btm_ble_br_keys_req;
 struct btm_ble_connected btm_ble_connected;
-struct btm_ble_determine_security_act btm_ble_determine_security_act;
 struct btm_ble_get_acl_remote_addr btm_ble_get_acl_remote_addr;
 struct btm_ble_get_enc_key_type btm_ble_get_enc_key_type;
-struct btm_ble_increment_sign_ctr btm_ble_increment_sign_ctr;
-struct btm_ble_io_capabilities_req btm_ble_io_capabilities_req;
 struct btm_ble_link_encrypted btm_ble_link_encrypted;
 struct btm_ble_link_sec_check btm_ble_link_sec_check;
 struct btm_ble_ltk_request btm_ble_ltk_request;
@@ -113,16 +111,12 @@ const Octet16 BTM_GetDeviceIDRoot::return_value{
 bool BTM_ReadConnectedTransportAddress::return_value = false;
 tBTM_STATUS BTM_SetBleDataLength::return_value = 0;
 bool BTM_UseLeLink::return_value = false;
-uint8_t btm_ble_br_keys_req::return_value = 0;
-tBTM_SEC_ACTION btm_ble_determine_security_act::return_value = 0;
 bool btm_ble_get_acl_remote_addr::return_value = false;
 bool btm_ble_get_enc_key_type::return_value = false;
-uint8_t btm_ble_io_capabilities_req::return_value = 0;
 uint8_t btm_ble_read_sec_key_size::return_value = 0;
 tBTM_STATUS btm_ble_set_encryption::return_value = 0;
 tBTM_STATUS btm_ble_start_encrypt::return_value = 0;
-tL2CAP_LE_RESULT_CODE btm_ble_start_sec_check::return_value =
-    L2CAP_LE_RESULT_CONN_OK;
+tBTM_STATUS btm_ble_start_sec_check::return_value = BTM_SUCCESS;
 bool btm_get_local_div::return_value = false;
 tBTM_STATUS btm_proc_smp_cback::return_value = 0;
 
@@ -255,11 +249,6 @@ bool BTM_UseLeLink(const RawAddress& bd_addr) {
   inc_func_call_count(__func__);
   return test::mock::stack_btm_ble::BTM_UseLeLink(bd_addr);
 }
-uint8_t btm_ble_br_keys_req(tBTM_SEC_DEV_REC* p_dev_rec,
-                            tBTM_LE_IO_REQ* p_data) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_btm_ble::btm_ble_br_keys_req(p_dev_rec, p_data);
-}
 void btm_ble_connected(const RawAddress& bda, uint16_t handle, uint8_t enc_mode,
                        uint8_t role, tBLE_ADDR_TYPE addr_type,
                        bool addr_matched,
@@ -268,13 +257,6 @@ void btm_ble_connected(const RawAddress& bda, uint16_t handle, uint8_t enc_mode,
   test::mock::stack_btm_ble::btm_ble_connected(
       bda, handle, enc_mode, role, addr_type, addr_matched,
       can_read_discoverable_characteristics);
-}
-tBTM_SEC_ACTION btm_ble_determine_security_act(bool is_originator,
-                                               const RawAddress& bdaddr,
-                                               uint16_t security_required) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_btm_ble::btm_ble_determine_security_act(
-      is_originator, bdaddr, security_required);
 }
 bool btm_ble_get_acl_remote_addr(uint16_t hci_handle, RawAddress& conn_addr,
                                  tBLE_ADDR_TYPE* p_addr_type) {
@@ -287,16 +269,6 @@ bool btm_ble_get_enc_key_type(const RawAddress& bd_addr, uint8_t* p_key_types) {
   return test::mock::stack_btm_ble::btm_ble_get_enc_key_type(bd_addr,
                                                              p_key_types);
 }
-void btm_ble_increment_sign_ctr(const RawAddress& bd_addr, bool is_local) {
-  inc_func_call_count(__func__);
-  test::mock::stack_btm_ble::btm_ble_increment_sign_ctr(bd_addr, is_local);
-}
-uint8_t btm_ble_io_capabilities_req(tBTM_SEC_DEV_REC* p_dev_rec,
-                                    tBTM_LE_IO_REQ* p_data) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_btm_ble::btm_ble_io_capabilities_req(p_dev_rec,
-                                                                p_data);
-}
 void btm_ble_link_encrypted(const RawAddress& bd_addr, uint8_t encr_enable) {
   inc_func_call_count(__func__);
   test::mock::stack_btm_ble::btm_ble_link_encrypted(bd_addr, encr_enable);
@@ -308,7 +280,7 @@ void btm_ble_link_sec_check(const RawAddress& bd_addr,
   test::mock::stack_btm_ble::btm_ble_link_sec_check(bd_addr, auth_req,
                                                     p_sec_req_act);
 }
-void btm_ble_ltk_request(uint16_t handle, uint8_t rand[8], uint16_t ediv) {
+void btm_ble_ltk_request(uint16_t handle, BT_OCTET8 rand, uint16_t ediv) {
   inc_func_call_count(__func__);
   test::mock::stack_btm_ble::btm_ble_ltk_request(handle, rand, ediv);
 }
@@ -355,10 +327,10 @@ tBTM_STATUS btm_ble_start_encrypt(const RawAddress& bda, bool use_stk,
   inc_func_call_count(__func__);
   return test::mock::stack_btm_ble::btm_ble_start_encrypt(bda, use_stk, p_stk);
 }
-tL2CAP_LE_RESULT_CODE btm_ble_start_sec_check(const RawAddress& bd_addr,
-                                              uint16_t psm, bool is_originator,
-                                              tBTM_SEC_CALLBACK* p_callback,
-                                              void* p_ref_data) {
+tBTM_STATUS btm_ble_start_sec_check(const RawAddress& bd_addr, uint16_t psm,
+                                    bool is_originator,
+                                    tBTM_SEC_CALLBACK* p_callback,
+                                    void* p_ref_data) {
   inc_func_call_count(__func__);
   return test::mock::stack_btm_ble::btm_ble_start_sec_check(
       bd_addr, psm, is_originator, p_callback, p_ref_data);

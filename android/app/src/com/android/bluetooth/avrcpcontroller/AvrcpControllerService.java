@@ -139,10 +139,9 @@ public class AvrcpControllerService extends ProfileService {
     }
 
     @VisibleForTesting
-    AvrcpControllerService(Context ctx, AvrcpControllerNativeInterface nativeInterface) {
-        attachBaseContext(ctx);
+    public AvrcpControllerService(Context ctx, AvrcpControllerNativeInterface nativeInterface) {
+        super(ctx);
         mNativeInterface = requireNonNull(nativeInterface);
-        onCreate();
     }
 
     public static boolean isEnabled() {
@@ -508,7 +507,8 @@ public class AvrcpControllerService extends ProfileService {
         AvrcpControllerStateMachine stateMachine = getStateMachine(device);
         if (stateMachine != null) {
             stateMachine.sendMessage(
-                    AvrcpControllerStateMachine.MESSAGE_PROCESS_REGISTER_ABS_VOL_NOTIFICATION);
+                    AvrcpControllerStateMachine.MESSAGE_PROCESS_REGISTER_ABS_VOL_NOTIFICATION,
+                    label);
         }
     }
 
@@ -517,8 +517,8 @@ public class AvrcpControllerService extends ProfileService {
     synchronized void handleSetAbsVolume(BluetoothDevice device, byte absVol, byte label) {
         AvrcpControllerStateMachine stateMachine = getStateMachine(device);
         if (stateMachine != null) {
-            stateMachine.sendMessage(AvrcpControllerStateMachine.MESSAGE_PROCESS_SET_ABS_VOL_CMD,
-                    absVol);
+            stateMachine.sendMessage(
+                    AvrcpControllerStateMachine.MESSAGE_PROCESS_SET_ABS_VOL_CMD, absVol, label);
         }
     }
 

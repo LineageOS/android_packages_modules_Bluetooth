@@ -31,7 +31,6 @@ import android.os.RemoteException;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.MediumTest;
-import androidx.test.rule.ServiceTestRule;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
@@ -40,12 +39,6 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.le_audio.LeAudioService;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeoutException;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -56,12 +49,17 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeoutException;
+
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class CsipSetCoordinatorServiceTest {
     private final String mFlagDexmarker = System.getProperty("dexmaker.share_classloader", "false");
 
-    public final ServiceTestRule mServiceRule = new ServiceTestRule();
     private Context mTargetContext;
     private BluetoothAdapter mAdapter;
     private BluetoothDevice mTestDevice;
@@ -165,13 +163,12 @@ public class CsipSetCoordinatorServiceTest {
     }
 
     private void startService() throws TimeoutException {
-        TestUtils.startService(mServiceRule, CsipSetCoordinatorService.class);
-        mService = CsipSetCoordinatorService.getCsipSetCoordinatorService();
-        Assert.assertNotNull(mService);
+        mService = new CsipSetCoordinatorService(mTargetContext);
+        mService.doStart();
     }
 
     private void stopService() throws TimeoutException {
-        TestUtils.stopService(mServiceRule, CsipSetCoordinatorService.class);
+        mService.doStop();
         mService = CsipSetCoordinatorService.getCsipSetCoordinatorService();
         Assert.assertNull(mService);
     }

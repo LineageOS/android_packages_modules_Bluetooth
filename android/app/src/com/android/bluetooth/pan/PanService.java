@@ -28,6 +28,7 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.IBluetoothPan;
 import android.bluetooth.IBluetoothPanCallback;
 import android.content.AttributionSource;
+import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources.NotFoundException;
 import android.net.TetheringInterface;
@@ -112,6 +113,13 @@ public class PanService extends ProfileService {
                     }
                 }
             };
+
+    PanService() {}
+
+    @VisibleForTesting
+    PanService(Context ctx) {
+        super(ctx);
+    }
 
     public static boolean isEnabled() {
         return BluetoothProperties.isProfilePanNapEnabled().orElse(false)
@@ -215,7 +223,7 @@ public class PanService extends ProfileService {
     }
 
     private final Handler mHandler =
-            new Handler() {
+            new Handler(Looper.getMainLooper()) {
                 @Override
                 public void handleMessage(Message msg) {
                     switch (msg.what) {

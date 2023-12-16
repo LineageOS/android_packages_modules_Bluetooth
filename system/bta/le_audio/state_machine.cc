@@ -30,6 +30,7 @@
 #include "gd/common/strings.h"
 #include "hci/hci_packets.h"
 #include "hcimsgs.h"
+#include "internal_include/bt_trace.h"
 #include "le_audio_health_status.h"
 #include "le_audio_log_history.h"
 #include "le_audio_types.h"
@@ -99,6 +100,8 @@ using le_audio::LeAudioGroupStateMachine;
 
 using bluetooth::hci::ErrorCode;
 using bluetooth::hci::ErrorCodeText;
+using le_audio::DsaMode;
+using le_audio::DsaModes;
 using le_audio::types::ase;
 using le_audio::types::AseState;
 using le_audio::types::AudioContexts;
@@ -114,6 +117,7 @@ namespace {
 
 constexpr int linkQualityCheckInterval = 4000;
 constexpr int kAutonomousTransitionTimeoutMs = 5000;
+constexpr int kNumberOfCisRetries = 2;
 
 static void link_quality_cb(void* data) {
   // very ugly, but we need to pass just two bytes
@@ -155,6 +159,16 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
           " group %d no in correct streaming state: %s or target state: %s",
           group->group_id_, ToString(group->GetState()).c_str(),
           ToString(group->GetTargetState()).c_str());
+      return false;
+    }
+
+    /* This is cautious - mostly needed for unit test only */
+    auto group_metadata_contexts =
+        get_bidirectional(group->GetMetadataContexts());
+    auto device_available_contexts = leAudioDevice->GetAvailableContexts();
+    if (!group_metadata_contexts.test_any(device_available_contexts)) {
+      LOG_INFO("%s does is not have required context type",
+               ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
       return false;
     }
 
@@ -605,9 +619,22 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     if (group->GetState() == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING &&
         !group->GetFirstActiveDeviceByCisAndDataPathState(
             CisState::CONNECTED, DataPathState::IDLE)) {
-      /* No more transition for group */
+      /* No more transition for group. Here we are for the late join device
+       * scenario */
       cancel_watchdog_if_needed(group->group_id_);
     }
+
+    if (group->GetNotifyStreamingWhenCisesAreReadyFlag() &&
+        group->IsGroupStreamReady()) {
+      group->SetNotifyStreamingWhenCisesAreReadyFlag(false);
+      LOG_INFO("Ready to notify Group Streaming.");
+      cancel_watchdog_if_needed(group->group_id_);
+      if (group->GetState() != AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
+        group->SetState(AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING);
+      }
+      state_machine_callbacks_->StatusReportCb(group->group_id_,
+                                               GroupStreamStatus::STREAMING);
+    };
   }
 
   void ProcessHciNotifRemoveIsoDataPath(LeAudioDeviceGroup* group,
@@ -819,9 +846,35 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
         kLogCisEstablishedOp + "cis_h:" + loghex(event->cis_conn_hdl) +
             " STATUS=" + loghex(event->status));
 
-    if (event->status) {
+    if (event->status != HCI_SUCCESS) {
       if (ases_pair.sink) ases_pair.sink->cis_state = CisState::ASSIGNED;
       if (ases_pair.source) ases_pair.source->cis_state = CisState::ASSIGNED;
+
+      LOG_WARN("%s: failed to create CIS 0x%04x, status: %s (0x%02x)",
+               ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_),
+               event->cis_conn_hdl,
+               ErrorCodeText((ErrorCode)event->status).c_str(), event->status);
+
+      if (event->status == HCI_ERR_CONN_FAILED_ESTABLISHMENT &&
+          ((leAudioDevice->cis_failed_to_be_established_retry_cnt_++) <
+           kNumberOfCisRetries) &&
+          (CisCreateForDevice(group, leAudioDevice))) {
+        LOG_INFO("Retrying (%d) to create CIS for %s ",
+                 leAudioDevice->cis_failed_to_be_established_retry_cnt_,
+                 ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+        return;
+      }
+
+      if (event->status == HCI_ERR_UNSUPPORTED_REM_FEATURE &&
+          group->asymmetric_phy_for_unidirectional_cis_supported == true &&
+          group->GetSduInterval(le_audio::types::kLeAudioDirectionSource) ==
+              0) {
+        group->asymmetric_phy_for_unidirectional_cis_supported = false;
+      }
+
+      LOG_ERROR("CIS creation failed %d times, stopping the stream",
+                leAudioDevice->cis_failed_to_be_established_retry_cnt_);
+      leAudioDevice->cis_failed_to_be_established_retry_cnt_ = 0;
 
       /* CIS establishment failed. Remove CIG if no other CIS is already created
        * or pending. If CIS is established, this will be handled in disconnected
@@ -831,18 +884,18 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
         RemoveCigForGroup(group);
       }
 
-      LOG(ERROR) << __func__ << ", failed to create CIS, status: "
-                 << ErrorCodeText((ErrorCode)event->status) << "("
-                 << loghex(event->status) << ")";
-
       StopStream(group);
       return;
     }
 
+    if (leAudioDevice->cis_failed_to_be_established_retry_cnt_ > 0) {
+      /* Reset retry counter */
+      leAudioDevice->cis_failed_to_be_established_retry_cnt_ = 0;
+    }
+
     if (group->GetTargetState() != AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
-      LOG(ERROR) << __func__
-                 << ", Unintended CIS establishement event came for group id:"
-                 << group->group_id_;
+      LOG_ERROR("Unintended CIS establishement event came for group id: %d",
+                group->group_id_);
       StopStream(group);
       return;
     }
@@ -1249,6 +1302,55 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     return ((1000 * max_latency_ms) >= sdu_interval_us);
   }
 
+  void ApplyDsaParams(LeAudioDeviceGroup* group,
+                      bluetooth::hci::iso_manager::cig_create_params& param) {
+    if (!IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+      return;
+    }
+
+    LOG_INFO("DSA mode selected: %d", (int)group->dsa_mode_);
+
+    /* Unidirectional streaming */
+    if (param.sdu_itv_stom != 0) {
+      LOG_INFO("Media streaming, apply DSA parameters");
+
+      switch (group->dsa_mode_) {
+        case DsaMode::ISO_HW:
+        case DsaMode::ISO_SW: {
+          auto& cis_cfgs = param.cis_cfgs;
+          auto it = cis_cfgs.begin();
+
+          for (auto dsa_modes : group->GetAllowedDsaModesList()) {
+            if (!dsa_modes.empty() && it != cis_cfgs.end()) {
+              if (std::find(dsa_modes.begin(), dsa_modes.end(),
+                            group->dsa_mode_) != dsa_modes.end()) {
+                LOG_INFO("Device found with support for selected DsaMode");
+
+                param.sdu_itv_stom = 20000;
+                param.max_trans_lat_stom = 10;
+                it->max_sdu_size_stom = 15;
+                it->rtn_stom = 2;
+
+                it++;
+              }
+            }
+          }
+        } break;
+
+        case DsaMode::ACL:
+          /* Todo: Prioritize the ACL */
+          break;
+
+        case DsaMode::DISABLED:
+        default:
+          /* No need to change ISO parameters */
+          break;
+      }
+    } else {
+      LOG_DEBUG("Bidirection streaming, ignore DSA mode");
+    }
+  }
+
   bool CigCreate(LeAudioDeviceGroup* group) {
     uint32_t sdu_interval_mtos, sdu_interval_stom;
     uint16_t max_trans_lat_mtos, max_trans_lat_stom;
@@ -1288,6 +1390,15 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
       LOG_ERROR("Latency and interval not properly set");
       group->PrintDebugState();
       return false;
+    }
+
+    // Use 1M Phy for the ACK packet from remote device to phone for better
+    // sensitivity
+    if (group->asymmetric_phy_for_unidirectional_cis_supported &&
+        sdu_interval_stom == 0 &&
+        (phy_stom & bluetooth::hci::kIsoCigPhy1M) != 0) {
+      LOG_INFO("Use asymmetric PHY for unidirectional CIS");
+      phy_stom = bluetooth::hci::kIsoCigPhy1M;
     }
 
     uint8_t rtn_mtos = 0;
@@ -1368,6 +1479,8 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
         .cis_cfgs = std::move(cis_cfgs),
     };
 
+    ApplyDsaParams(group, param);
+
     log_history_->AddLogHistory(
         kLogStateMachineTag, group->group_id_, RawAddress::kEmpty,
         kLogCigCreateOp + "#CIS: " + std::to_string(param.cis_cfgs.size()));
@@ -1396,8 +1509,11 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
       /* First in ase pair is Sink, second Source */
       auto ases_pair = leAudioDevice->GetAsesByCisConnHdl(ase->cis_conn_hdl);
 
-      /* Already in pending state - bi-directional CIS */
-      if (ase->cis_state == CisState::CONNECTING) continue;
+      /* Already in pending state - bi-directional CIS or seconde CIS to same
+       * device */
+      if (ase->cis_state == CisState::CONNECTING ||
+          ase->cis_state == CisState::CONNECTED)
+        continue;
 
       if (ases_pair.sink) ases_pair.sink->cis_state = CisState::CONNECTING;
       if (ases_pair.source) ases_pair.source->cis_state = CisState::CONNECTING;
@@ -1957,6 +2073,17 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
           LOG_DEBUG("Autonomus change of stated for device %s, ase id: %d",
                     ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_), ase->id);
           return;
+        }
+
+        {
+          auto activeDevice = group->GetFirstActiveDevice();
+          if (activeDevice) {
+            LOG_DEBUG(
+                "There is at least one active device %s, wait to become "
+                "inactive",
+                ADDRESS_TO_LOGGABLE_CSTR(activeDevice->address_));
+            return;
+          }
         }
 
         /* Last node is in releasing state*/
@@ -2569,7 +2696,11 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
         }
 
         /* Not all CISes establish events will came */
-        if (!group->IsGroupStreamReady()) return;
+        if (!group->IsGroupStreamReady()) {
+          LOG_INFO("CISes are not yet ready, wait for it.");
+          group->SetNotifyStreamingWhenCisesAreReadyFlag(true);
+          return;
+        }
 
         if (group->GetTargetState() ==
             AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {

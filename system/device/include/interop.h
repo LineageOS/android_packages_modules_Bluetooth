@@ -334,6 +334,15 @@ typedef enum {
   // need we initiate connection after signalling timeout
   INTEROP_IGNORE_DISC_BEFORE_SIGNALLING_TIMEOUT,
 
+  // Certain devices have issue where they cannot handle ATT traffic during SMP
+  // key exchange. For those devices, queued ATT writes are delayed until after
+  // both encryption complete and SMP key exchange completed.
+  INTEROP_SUSPEND_ATT_TRAFFIC_DURING_PAIRING,
+
+  // This triggers a +CIEV command to set the call status for HFP devices.
+  // It is required for some devices to provide sound.
+  INTEROP_INSERT_CALL_WHEN_SCO_START,
+
   END_OF_INTEROP_LIST
 } interop_feature_t;
 

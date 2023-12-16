@@ -32,25 +32,29 @@
 #include <android/sysprop/BluetoothProperties.sysprop.h>
 #endif
 
-#include "bt_target.h"
 #include "btif/include/core_callbacks.h"
 #include "btif/include/stack_manager.h"
 #include "device/include/controller.h"
+#include "internal_include/bt_target.h"
+#include "internal_include/stack_config.h"
 #include "main/shim/acl_api.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/properties.h"
+#include "stack/btm/btm_ble_sec.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/btm/btm_sec_int_types.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/bt_psm_types.h"
+#include "stack/include/bt_types.h"
+#include "stack/include/btm_ble_api.h"
 #include "stack/include/btm_log_history.h"
 #include "stack/include/l2c_api.h"
+#include "stack/include/l2cap_acl_interface.h"
 #include "stack/include/l2cdefs.h"
 #include "stack/l2cap/l2c_int.h"
-#include "stack_config.h"
 #include "types/raw_address.h"
 
 namespace {
@@ -59,20 +63,12 @@ constexpr char kBtmLogTag[] = "L2CAP";
 
 }
 
-tL2CAP_LE_RESULT_CODE btm_ble_start_sec_check(const RawAddress& bd_addr,
-                                              uint16_t psm, bool is_originator,
-                                              tBTM_SEC_CALLBACK* p_callback,
-                                              void* p_ref_data);
-
 extern tBTM_CB btm_cb;
 
 using base::StringPrintf;
 
 static void l2cble_start_conn_update(tL2C_LCB* p_lcb);
 static void l2cble_start_subrate_change(tL2C_LCB* p_lcb);
-void gatt_notify_conn_update(const RawAddress& remote, uint16_t interval,
-                             uint16_t latency, uint16_t timeout,
-                             tHCI_STATUS status);
 
 /*******************************************************************************
  *
@@ -297,14 +293,6 @@ bool l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
     }
   }
   return true;
-}
-
-bool l2cble_conn_comp_from_address_with_type(
-    uint16_t handle, uint8_t role, const tBLE_BD_ADDR& address_with_type,
-    uint16_t conn_interval, uint16_t conn_latency, uint16_t conn_timeout) {
-  return l2cble_conn_comp(handle, role, address_with_type.bda,
-                          address_with_type.type, conn_interval, conn_latency,
-                          conn_timeout);
 }
 
 /*******************************************************************************
@@ -535,8 +523,10 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
       STREAM_TO_UINT16(timeout, p);      /* 0x000A - 0x0C80 */
       /* If we are a central, the peripheral wants to update the parameters */
       if (p_lcb->IsLinkRoleCentral()) {
-        L2CA_AdjustConnectionIntervals(&min_interval, &max_interval,
-                                       BTM_BLE_CONN_INT_MIN_LIMIT);
+        L2CA_AdjustConnectionIntervals(
+            &min_interval, &max_interval,
+            osi_property_get_int32("bluetooth.core.le.min_connection_interval",
+                                   BTM_BLE_CONN_INT_MIN_LIMIT));
 
         if (min_interval < BTM_BLE_CONN_INT_MIN ||
             min_interval > BTM_BLE_CONN_INT_MAX ||
@@ -1558,24 +1548,23 @@ void l2cble_sec_comp(const RawAddress* bda, tBT_TRANSPORT transport,
     }
 
     if (status != BTM_SUCCESS) {
-      (*(p_buf->p_callback))(p_bda, BT_TRANSPORT_LE, p_buf->p_ref_data, status);
+      (*(p_buf->p_callback))(bda, BT_TRANSPORT_LE, p_buf->p_ref_data, status);
       osi_free(p_buf);
     } else {
       if (sec_act == BTM_SEC_ENCRYPT_MITM) {
         if (BTM_IsLinkKeyAuthed(p_bda, transport))
-          (*(p_buf->p_callback))(p_bda, BT_TRANSPORT_LE, p_buf->p_ref_data,
+          (*(p_buf->p_callback))(bda, BT_TRANSPORT_LE, p_buf->p_ref_data,
                                  status);
         else {
           LOG_VERBOSE("%s MITM Protection Not present", __func__);
-          (*(p_buf->p_callback))(p_bda, BT_TRANSPORT_LE, p_buf->p_ref_data,
+          (*(p_buf->p_callback))(bda, BT_TRANSPORT_LE, p_buf->p_ref_data,
                                  BTM_FAILED_ON_SECURITY);
         }
       } else {
         LOG_VERBOSE("%s MITM Protection not required sec_act = %d", __func__,
                     p_lcb->sec_act);
 
-        (*(p_buf->p_callback))(p_bda, BT_TRANSPORT_LE, p_buf->p_ref_data,
-                               status);
+        (*(p_buf->p_callback))(bda, BT_TRANSPORT_LE, p_buf->p_ref_data, status);
       }
       osi_free(p_buf);
     }
@@ -1589,7 +1578,7 @@ void l2cble_sec_comp(const RawAddress* bda, tBT_TRANSPORT transport,
     p_buf = (tL2CAP_SEC_DATA*)fixed_queue_dequeue(p_lcb->le_sec_pending_q);
 
     if (status != BTM_SUCCESS) {
-      (*(p_buf->p_callback))(p_bda, BT_TRANSPORT_LE, p_buf->p_ref_data, status);
+      (*(p_buf->p_callback))(bda, BT_TRANSPORT_LE, p_buf->p_ref_data, status);
       osi_free(p_buf);
     }
     else {
@@ -1614,9 +1603,8 @@ void l2cble_sec_comp(const RawAddress* bda, tBT_TRANSPORT transport,
  ******************************************************************************/
 tL2CAP_LE_RESULT_CODE l2ble_sec_access_req(const RawAddress& bd_addr,
                                            uint16_t psm, bool is_originator,
-                                           tL2CAP_SEC_CBACK* p_callback,
+                                           tBTM_SEC_CALLBACK* p_callback,
                                            void* p_ref_data) {
-  tL2CAP_LE_RESULT_CODE result;
   tL2C_LCB* p_lcb = NULL;
 
   if (!p_callback) {
@@ -1628,7 +1616,7 @@ tL2CAP_LE_RESULT_CODE l2ble_sec_access_req(const RawAddress& bd_addr,
 
   if (!p_lcb) {
     LOG_ERROR("Security check for unknown device");
-    p_callback(bd_addr, BT_TRANSPORT_LE, p_ref_data, BTM_UNKNOWN_ADDR);
+    p_callback(&bd_addr, BT_TRANSPORT_LE, p_ref_data, BTM_UNKNOWN_ADDR);
     return L2CAP_LE_RESULT_NO_RESOURCES;
   }
 
@@ -1636,7 +1624,7 @@ tL2CAP_LE_RESULT_CODE l2ble_sec_access_req(const RawAddress& bd_addr,
       (tL2CAP_SEC_DATA*)osi_malloc((uint16_t)sizeof(tL2CAP_SEC_DATA));
   if (!p_buf) {
     LOG_ERROR("No resources for connection");
-    p_callback(bd_addr, BT_TRANSPORT_LE, p_ref_data, BTM_NO_RESOURCES);
+    p_callback(&bd_addr, BT_TRANSPORT_LE, p_ref_data, BTM_NO_RESOURCES);
     return L2CAP_LE_RESULT_NO_RESOURCES;
   }
 
@@ -1645,10 +1633,26 @@ tL2CAP_LE_RESULT_CODE l2ble_sec_access_req(const RawAddress& bd_addr,
   p_buf->p_callback = p_callback;
   p_buf->p_ref_data = p_ref_data;
   fixed_queue_enqueue(p_lcb->le_sec_pending_q, p_buf);
-  result = btm_ble_start_sec_check(bd_addr, psm, is_originator,
-                                   &l2cble_sec_comp, p_ref_data);
+  tBTM_STATUS result = btm_ble_start_sec_check(bd_addr, psm, is_originator,
+                                               &l2cble_sec_comp, p_ref_data);
 
-  return result;
+  switch (result) {
+    case BTM_SUCCESS:
+      return L2CAP_LE_RESULT_CONN_OK;
+    case BTM_ILLEGAL_VALUE:
+      return L2CAP_LE_RESULT_NO_PSM;
+    case BTM_NOT_AUTHENTICATED:
+      return L2CAP_LE_RESULT_INSUFFICIENT_AUTHENTICATION;
+    case BTM_NOT_ENCRYPTED:
+      return L2CAP_LE_RESULT_INSUFFICIENT_ENCRYP;
+    case BTM_NOT_AUTHORIZED:
+      return L2CAP_LE_RESULT_INSUFFICIENT_AUTHORIZATION;
+    case BTM_INSUFFICIENT_ENCRYPT_KEY_SIZE:
+      return L2CAP_LE_RESULT_INSUFFICIENT_ENCRYP_KEY_SIZE;
+    default:
+      LOG_ERROR("unexpected return value: %s", btm_status_text(result).c_str());
+      return L2CAP_LE_RESULT_INVALID_PARAMETERS;
+  }
 }
 
 /* This function is called to adjust the connection intervals based on various

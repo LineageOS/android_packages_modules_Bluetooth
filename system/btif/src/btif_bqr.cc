@@ -15,13 +15,14 @@
  */
 
 #include <base/logging.h>
-#include <errno.h>
 #include <fcntl.h>
 #ifdef __ANDROID__
 #include <statslog_bt.h>
 #endif
 #include <stdio.h>
 #include <sys/stat.h>
+
+#include <cerrno>
 
 #include "btif/include/stack_manager.h"
 #include "btif_bqr.h"
@@ -35,6 +36,7 @@
 #include "osi/include/properties.h"
 #include "raw_address.h"
 #include "stack/btm/btm_dev.h"
+#include "stack/include/bt_types.h"
 
 namespace bluetooth {
 namespace bqr {

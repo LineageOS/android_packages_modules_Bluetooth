@@ -13,6 +13,11 @@ subdirs = [
 ]
 
 filegroup {
+    name: "TestMockAudioHalInterface",
+    srcs: ["mock/mock_audio_hal_interface*.cc"],
+}
+
+filegroup {
     name: "TestMockAudioA2dp",
     srcs: ["mock/mock_audio_a2dp*.cc"],
 }
@@ -232,6 +237,13 @@ filegroup {
 }
 
 filegroup {
+    name: "TestMockStackBnep",
+    srcs: [
+        "mock/mock_stack_bnep_*.cc",
+    ],
+}
+
+filegroup {
     name: "TestMockStackL2cap",
     srcs: [
         "mock/mock_stack_l2cap_*.cc",
@@ -277,13 +289,6 @@ filegroup {
     name: "TestMockUdrv",
     srcs: [
         "mock/mock_udrv_*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockAndroidHardware",
-    srcs: [
-        "mock/mock_android_hardware_*.cc",
     ],
 }
 
@@ -442,13 +447,6 @@ filegroup {
     name: "TestMockBtu",
     srcs: [
         "mock/mock_btu_*cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockUtils",
-    srcs: [
-        "mock/mock_utils_*cc",
     ],
 }
 

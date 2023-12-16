@@ -31,6 +31,8 @@
 #include "bta/include/bta_sec_api.h"
 #include "bta/sys/bta_sys.h"
 #include "include/hardware/bt_av.h"
+#include "internal_include/bt_target.h"
+#include "macros.h"
 #include "osi/include/list.h"
 #include "stack/include/a2dp_error_codes.h"
 #include "stack/include/avdt_api.h"
@@ -39,10 +41,6 @@
 #include "stack/sdp/sdp_discovery_db.h"
 #include "types/hci_role.h"
 #include "types/raw_address.h"
-
-#define CASE_RETURN_TEXT(code) \
-  case code:                   \
-    return #code
 
 /*****************************************************************************
  *  Constants
@@ -668,6 +666,9 @@ typedef struct {
   bool sco_occupied; /* true if SCO is being used or call is in progress */
   uint16_t offload_start_pending_hndl;
   uint16_t offload_started_hndl;
+  /* Set to true if the new offload start vendor command
+   * was used to start the stream on the controller. */
+  bool offload_start_v2;
   tBTA_AV_FEAT sink_features; /* sink features */
   uint8_t reg_role;           /* bit0-src, bit1-sink */
   tBTA_AV_RC_FEAT rc_feature; /* save peer rc feature */
@@ -698,6 +699,9 @@ class tBT_A2DP_OFFLOAD {
 
 #define VS_HCI_A2DP_OFFLOAD_START 0x01
 #define VS_HCI_A2DP_OFFLOAD_STOP 0x02
+#define VS_HCI_A2DP_OFFLOAD_START_V2 0x03
+#define VS_HCI_A2DP_OFFLOAD_STOP_V2 0x04
+
 /*****************************************************************************
  *  Global data
  ****************************************************************************/

@@ -26,11 +26,9 @@
 #include <base/strings/string_number_conversions.h>
 
 #include "audio_hal_client/audio_hal_client.h"
-#include "bt_types.h"
-#include "bta_api.h"
-#include "bta_le_audio_api.h"
-#include "client_parser.h"
-#include "gd/common/strings.h"
+#include "common/strings.h"
+#include "internal_include/bt_trace.h"
+#include "stack/include/bt_types.h"
 
 namespace le_audio {
 using types::acs_ac_record;

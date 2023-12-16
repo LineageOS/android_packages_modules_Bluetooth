@@ -35,16 +35,15 @@
 #include <cstdint>
 #include <unordered_map>
 
-#include "bt_target.h"
 #include "device/include/controller.h"
 #include "device/include/interop.h"
+#include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
 #include "os/log.h"
 #include "osi/include/osi.h"  // UNUSED_ATTR
 #include "osi/include/stack_power_telemetry.h"
 #include "stack/btm/btm_int_types.h"
-#include "stack/include/btm_api.h"
-#include "stack/include/btm_api_types.h"
+#include "stack/include/bt_types.h"
 #include "stack/include/btm_log_history.h"
 #include "stack/include/btm_status.h"
 #include "types/raw_address.h"

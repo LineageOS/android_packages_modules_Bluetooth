@@ -25,6 +25,7 @@ import android.annotation.SuppressLint;
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.IBinder;
@@ -81,13 +82,6 @@ public abstract class ProfileService extends Service {
     protected abstract IProfileServiceBinder initBinder();
 
     /**
-     * Called in {@link #onCreate()} to init basic stuff in this service
-     */
-    // Suppressed since this is called from framework
-    @SuppressLint("AndroidFrameworkRequiresPermission")
-    protected void create() {}
-
-    /**
      * Called in {@link #onStartCommand(Intent, int, int)} when the service is started by intent
      *
      * @return True in successful condition, False otherwise
@@ -125,6 +119,12 @@ public abstract class ProfileService extends Service {
         mName = getName();
     }
 
+    protected ProfileService(Context ctx) {
+        this();
+        attachBaseContext(ctx);
+        onCreate();
+    }
+
     @Override
     // Suppressed since this is called from framework
     @SuppressLint("AndroidFrameworkRequiresPermission")
@@ -135,7 +135,6 @@ public abstract class ProfileService extends Service {
         super.onCreate();
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         mBinder = initBinder();
-        create();
     }
 
     @Override

@@ -22,6 +22,7 @@
 #include "os/log.h"
 #include "stack/btm/btm_ble_int.h"
 #include "stack/btm/btm_dev.h"
+#include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/gatt/connection_manager.h"
 #include "stack/include/acl_api.h"
@@ -32,8 +33,6 @@
 
 extern tBTM_CB btm_cb;
 
-void btm_ble_advertiser_notify_terminated_legacy(uint8_t status,
-                                                 uint16_t connection_handle);
 void btm_ble_increment_link_topology_mask(uint8_t link_role);
 
 static bool acl_ble_common_connection(
@@ -91,9 +90,6 @@ void acl_ble_enhanced_connection_complete(
     btm_ble_refresh_peer_resolvable_private_addr(address_with_type.bda,
                                                  peer_rpa, BTM_BLE_ADDR_RRA);
   btm_ble_update_mode_operation(role, &address_with_type.bda, HCI_SUCCESS);
-
-  if (role == HCI_ROLE_PERIPHERAL)
-    btm_ble_advertiser_notify_terminated_legacy(HCI_SUCCESS, handle);
 }
 
 static bool maybe_resolve_received_address(

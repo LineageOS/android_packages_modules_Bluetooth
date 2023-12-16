@@ -23,6 +23,10 @@
  *
  ******************************************************************************/
 
+#define LOG_TAG "btm_sco"
+
+#include "stack/btm/btm_sco.h"
+
 #include <base/logging.h>
 #include <base/strings/stringprintf.h>
 
@@ -30,19 +34,17 @@
 #include <cstring>
 #include <string>
 
-#define LOG_TAG "btm_sco"
-
 #include "common/bidi_queue.h"
 #include "device/include/controller.h"
 #include "device/include/device_iot_config.h"
 #include "gd/hci/hci_layer.h"
 #include "hci/hci_packets.h"
 #include "hci/include/hci_layer.h"
+#include "internal_include/bt_target.h"
 #include "main/shim/entry.h"
 #include "osi/include/properties.h"
 #include "osi/include/stack_power_telemetry.h"
 #include "stack/btm/btm_int_types.h"
-#include "stack/btm/btm_sco.h"
 #include "stack/btm/btm_sco_hfp_hal.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api.h"

@@ -21,6 +21,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.IBluetoothMcpServiceManager;
 import android.content.AttributionSource;
+import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.ParcelUuid;
@@ -33,10 +34,10 @@ import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
-import java.util.HashMap;
 import java.util.Collections;
-import java.util.Map;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Provides Media Control Profile, as a service in the Bluetooth application.
@@ -55,6 +56,13 @@ public class McpService extends ProfileService {
     private MediaControlProfile mGmcs;
     private Map<BluetoothDevice, Integer> mDeviceAuthorizations = new HashMap<>();
     private Handler mHandler = new Handler(Looper.getMainLooper());
+
+    McpService() {}
+
+    @VisibleForTesting
+    McpService(Context ctx) {
+        super(ctx);
+    }
 
     public static boolean isEnabled() {
         return BluetoothProperties.isProfileMcpServerEnabled().orElse(false);
@@ -93,13 +101,6 @@ public class McpService extends ProfileService {
     @Override
     protected IProfileServiceBinder initBinder() {
         return new BluetoothMcpServiceBinder(this);
-    }
-
-    @Override
-    protected void create() {
-        if (DBG) {
-            Log.d(TAG, "create()");
-        }
     }
 
     @Override

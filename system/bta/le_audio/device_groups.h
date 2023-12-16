@@ -35,6 +35,8 @@
 #include <android/sysprop/BluetoothProperties.sysprop.h>
 #endif
 
+#include <android_bluetooth_flags.h>
+
 #include "devices.h"
 #include "le_audio_types.h"
 
@@ -73,6 +75,7 @@ class LeAudioDeviceGroup {
 
   /* Current audio stream configuration */
   struct stream_configuration stream_conf;
+  bool notify_streaming_when_cises_are_ready_;
 
   uint8_t audio_directions_;
   types::AudioLocations snk_audio_locations_;
@@ -81,12 +84,16 @@ class LeAudioDeviceGroup {
   /* Whether LE Audio is preferred for OUTPUT_ONLY and DUPLEX cases */
   bool is_output_preference_le_audio;
   bool is_duplex_preference_le_audio;
+  DsaMode dsa_mode_;
+  bool asymmetric_phy_for_unidirectional_cis_supported;
 
   explicit LeAudioDeviceGroup(const int group_id)
       : group_id_(group_id),
         cig(this),
         stream_conf({}),
+        notify_streaming_when_cises_are_ready_(false),
         audio_directions_(0),
+        dsa_mode_(DsaMode::DISABLED),
         is_enabled_(true),
         transport_latency_mtos_us_(0),
         transport_latency_stom_us_(0),
@@ -116,6 +123,8 @@ class LeAudioDeviceGroup {
     is_output_preference_le_audio = true;
     is_duplex_preference_le_audio = true;
 #endif
+    asymmetric_phy_for_unidirectional_cis_supported =
+        IS_FLAG_ENABLED(asymmetric_phy_for_unidirectional_cis);
   }
   ~LeAudioDeviceGroup(void);
 
@@ -228,6 +237,12 @@ class LeAudioDeviceGroup {
   }
 
   inline types::AseState GetTargetState(void) const { return target_state_; }
+  inline void SetNotifyStreamingWhenCisesAreReadyFlag(bool value) {
+    notify_streaming_when_cises_are_ready_ = value;
+  }
+  inline bool GetNotifyStreamingWhenCisesAreReadyFlag(void) {
+    return notify_streaming_when_cises_are_ready_;
+  }
   void SetTargetState(types::AseState state) {
     LOG(INFO) << __func__ << " target state: " << target_state_
               << " new target state: " << state;
@@ -298,6 +313,31 @@ class LeAudioDeviceGroup {
 
   types::AudioContexts GetSupportedContexts(
       int direction = types::kLeAudioDirectionBoth) const;
+
+  DsaModes GetAllowedDsaModes() {
+    DsaModes dsa_modes = {};
+    for (auto leAudioDevice : leAudioDevices_) {
+      if (leAudioDevice.expired()) continue;
+
+      dsa_modes.insert(dsa_modes.end(),
+                       leAudioDevice.lock()->GetDsaModes().begin(),
+                       leAudioDevice.lock()->GetDsaModes().end());
+    }
+    return dsa_modes;
+  }
+
+  std::vector<DsaModes> GetAllowedDsaModesList() {
+    std::vector<DsaModes> dsa_modes_list = {};
+    for (auto leAudioDevice : leAudioDevices_) {
+      DsaModes dsa_modes = {};
+
+      if (!leAudioDevice.expired()) {
+        dsa_modes = leAudioDevice.lock()->GetDsaModes();
+      }
+      dsa_modes_list.push_back(dsa_modes);
+    }
+    return dsa_modes_list;
+  }
 
   types::BidirectionalPair<types::AudioContexts> GetLatestAvailableContexts(
       void) const;

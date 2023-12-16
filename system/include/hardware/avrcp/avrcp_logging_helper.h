@@ -23,14 +23,11 @@
 #include <type_traits>
 
 #include "avrcp_common.h"
-#include "bt_trace.h"
+#include "internal_include/bt_trace.h"
+#include "macros.h"
 
 namespace bluetooth {
 namespace avrcp {
-
-#define CASE_RETURN_TEXT(code) \
-  case code:                   \
-    return #code
 
 inline std::string CTypeText(const CType& type) {
   switch (type) {

@@ -27,7 +27,6 @@
 #include "btif_rc.h"
 
 #include <base/logging.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_rc.h>
@@ -36,24 +35,26 @@
 #include <time.h>
 #include <unistd.h>
 
+#include <cstdio>
 #include <mutex>
 
-#include "avrc_defs.h"
-#include "bta_api.h"
-#include "bta_av_api.h"
+#include "bta/include/bta_api.h"
+#include "bta/include/bta_av_api.h"
 #include "btif/avrcp/avrcp_service.h"
 #include "btif_av.h"
 #include "btif_common.h"
 #include "btif_util.h"
 #include "device/include/interop.h"
+#include "os/log.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
 #include "osi/include/list.h"
-#include "osi/include/log.h"
-#include "osi/include/osi.h"
+#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "osi/include/properties.h"
 #include "stack/include/avrc_api.h"
+#include "stack/include/avrc_defs.h"
 #include "stack/include/bt_hdr.h"
+#include "stack/include/bt_types.h"
 #include "types/raw_address.h"
 
 #define RC_INVALID_TRACK_ID (0xFFFFFFFFFFFFFFFFULL)
@@ -813,9 +814,14 @@ void handle_rc_browse_connect(tBTA_AV_RC_BROWSE_OPEN* p_rc_br_open) {
         LOG_VERBOSE("%s: pending rc browse connection event", __func__);
       }
     } else {
-      do_in_jni_thread(FROM_HERE,
-                       base::BindOnce(bt_rc_ctrl_callbacks->connection_state_cb,
-                                      true, true, p_dev->rc_addr));
+        if (bt_rc_ctrl_callbacks != NULL) {
+          do_in_jni_thread(
+              FROM_HERE,
+              base::BindOnce(bt_rc_ctrl_callbacks->connection_state_cb, true,
+                             true, p_dev->rc_addr));
+        } else {
+            LOG_WARN("%s: bt_rc_ctrl_callbacks is null.", __func__);
+        }
     }
   }
 }
@@ -5741,7 +5747,15 @@ static void browse_cmd_timeout_handler(btif_rc_device_cb_t* p_dev,
   }
 
   tAVRC_RESPONSE avrc_response = {0};
-  tBTA_AV_META_MSG meta_msg = {.rc_handle = p_dev->rc_handle};
+  tBTA_AV_META_MSG meta_msg = {
+      .rc_handle = p_dev->rc_handle,
+      .len = 0,
+      .label = 0,
+      .code = 0,
+      .company_id = 0,
+      .p_data = nullptr,
+      .p_msg = nullptr,
+  };
 
   LOG_WARN("%s: timeout, addr=%s, label=%d, pdu_id=%s", __func__,
            ADDRESS_TO_LOGGABLE_CSTR(p_dev->rc_addr), label,

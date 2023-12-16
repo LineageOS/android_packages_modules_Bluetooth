@@ -27,6 +27,7 @@
 #include "bta/ag/bta_ag_at.h"
 #include "bta/ag/bta_ag_int.h"
 #include "bta/include/bta_ag_api.h"
+#include "bta/include/bta_hfp_api.h"
 #include "bta/include/utl.h"
 #include "bta_ag_swb_aptx.h"
 
@@ -34,12 +35,14 @@
 #include "bta_le_audio_api.h"
 #endif
 
+#include "bta/include/bta_hfp_api.h"
 #include "device/include/interop.h"
+#include "internal_include/bt_target.h"
+#include "internal_include/bt_trace.h"
+#include "os/log.h"
 #include "os/system_properties.h"
 #include "osi/include/compat.h"
-#include "osi/include/log.h"
 #include "osi/include/osi.h"  // UNUSED_ATTR
-#include "osi/include/properties.h"
 #include "stack/btm/btm_sco_hfp_hal.h"
 #include "stack/include/port_api.h"
 

@@ -84,6 +84,7 @@ cc_library_static {
         "a2dp/a2dp_aac_encoder.cc",
         "a2dp/a2dp_api.cc",
         "a2dp/a2dp_codec_config.cc",
+        "a2dp/a2dp_ext.cc",
         "a2dp/a2dp_sbc.cc",
         "a2dp/a2dp_sbc_decoder.cc",
         "a2dp/a2dp_sbc_encoder.cc",
@@ -215,7 +216,6 @@ cc_library_static {
         "acl/btm_ble_connection_establishment.cc",
         "acl/btm_pm.cc",
         "arbiter/acl_arbiter.cc",
-        "btm/ble_advertiser_hci_interface.cc",
         "btm/ble_scanner_hci_interface.cc",
         "btm/btm_ble.cc",
         "btm/btm_ble_addr.cc",
@@ -702,6 +702,7 @@ cc_test {
         "libbt-btu-main-thread",
         "libbt-common",
         "libbt-hci",
+        "libbt-jni-thread",
         "libbt-sbc-decoder",
         "libbt-sbc-encoder",
         "libbt-stack",
@@ -1146,12 +1147,14 @@ cc_test {
     ],
     srcs: [
         ":TestCommonMockFunctions",
+        ":TestMockAudioHalInterface",
         ":TestMockBta",
         ":TestMockStackA2dpApi",
         "a2dp/a2dp_aac.cc",
         "a2dp/a2dp_aac_decoder.cc",
         "a2dp/a2dp_aac_encoder.cc",
         "a2dp/a2dp_codec_config.cc",
+        "a2dp/a2dp_ext.cc",
         "a2dp/a2dp_sbc.cc",
         "a2dp/a2dp_sbc_decoder.cc",
         "a2dp/a2dp_sbc_encoder.cc",
@@ -1490,7 +1493,6 @@ cc_test {
         "acl/btm_acl.cc",
         "acl/btm_ble_connection_establishment.cc",
         "acl/btm_pm.cc",
-        "btm/ble_advertiser_hci_interface.cc",
         "btm/ble_scanner_hci_interface.cc",
         "btm/btm_ble.cc",
         "btm/btm_ble_addr.cc",
@@ -1554,6 +1556,7 @@ cc_test {
     ],
     shared_libs: [
         "libcrypto",
+        "server_configurable_flags",
     ],
     sanitize: {
         address: true,
@@ -1908,9 +1911,11 @@ cc_test {
         "libstatslog_bt",
     ],
     shared_libs: [
+        "libbase",
         "libbinder_ndk",
         "libcrypto",
         "libcutils",
+        "server_configurable_flags",
     ],
     target: {
         android: {
@@ -1996,8 +2001,10 @@ cc_test {
         "libstatslog_bt",
     ],
     shared_libs: [
+        "libbase",
         "libbinder_ndk",
         "libcrypto",
+        "server_configurable_flags",
     ],
     target: {
         android: {

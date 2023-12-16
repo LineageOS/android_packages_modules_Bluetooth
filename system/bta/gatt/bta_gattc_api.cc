@@ -29,14 +29,13 @@
 
 #include <ios>
 #include <list>
-#include <memory>
 #include <vector>
 
-#include "bt_target.h"  // Must be first to define build configuration
 #include "bta/gatt/bta_gattc_int.h"
 #include "device/include/controller.h"
+#include "internal_include/bt_target.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/log.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/main_thread.h"
 #include "types/bluetooth/uuid.h"
@@ -129,8 +128,8 @@ void BTA_GATTC_AppDeregister(tGATT_IF client_if) {
  *                  transport: Transport to be used for GATT connection
  *                             (BREDR/LE)
  *                  initiating_phys: LE PHY to use, optional
- *                  opportunistic: wether the connection shall be opportunistic,
- *                                 and don't impact the disconnection timer
+ *                  opportunistic: whether the connection shall be
+ *                  opportunistic, and don't impact the disconnection timer
  *
  ******************************************************************************/
 void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
@@ -398,6 +397,7 @@ void BTA_GATTC_ReadCharacteristic(uint16_t conn_id, uint16_t handle,
 
   p_buf->hdr.event = BTA_GATTC_API_READ_EVT;
   p_buf->hdr.layer_specific = conn_id;
+  p_buf->is_multi_read = false;
   p_buf->auth_req = auth_req;
   p_buf->handle = handle;
   p_buf->read_cb = callback;
@@ -419,6 +419,7 @@ void BTA_GATTC_ReadUsingCharUuid(uint16_t conn_id, const Uuid& uuid,
 
   p_buf->hdr.event = BTA_GATTC_API_READ_EVT;
   p_buf->hdr.layer_specific = conn_id;
+  p_buf->is_multi_read = false;
   p_buf->auth_req = auth_req;
   p_buf->handle = 0;
   p_buf->uuid = uuid;
@@ -450,6 +451,7 @@ void BTA_GATTC_ReadCharDescr(uint16_t conn_id, uint16_t handle,
 
   p_buf->hdr.event = BTA_GATTC_API_READ_EVT;
   p_buf->hdr.layer_specific = conn_id;
+  p_buf->is_multi_read = false;
   p_buf->auth_req = auth_req;
   p_buf->handle = handle;
   p_buf->read_cb = callback;
@@ -466,25 +468,28 @@ void BTA_GATTC_ReadCharDescr(uint16_t conn_id, uint16_t handle,
  *                  characteristic descriptors.
  *
  * Parameters       conn_id - connectino ID.
- *                    p_read_multi - pointer to the read multiple parameter.
+ *                  p_read_multi - pointer to the read multiple parameter.
+ *                  variable_len - whether "read multi variable length" variant
+ *                                 shall be used.
+ *
  *
  * Returns          None
  *
  ******************************************************************************/
-void BTA_GATTC_ReadMultiple(uint16_t conn_id, tBTA_GATTC_MULTI* p_read_multi,
-                            tGATT_AUTH_REQ auth_req) {
+void BTA_GATTC_ReadMultiple(uint16_t conn_id, tBTA_GATTC_MULTI& handles,
+                            bool variable_len, tGATT_AUTH_REQ auth_req,
+                            GATT_READ_MULTI_OP_CB callback, void* cb_data) {
   tBTA_GATTC_API_READ_MULTI* p_buf =
       (tBTA_GATTC_API_READ_MULTI*)osi_calloc(sizeof(tBTA_GATTC_API_READ_MULTI));
 
   p_buf->hdr.event = BTA_GATTC_API_READ_MULTI_EVT;
   p_buf->hdr.layer_specific = conn_id;
+  p_buf->is_multi_read = true;
   p_buf->auth_req = auth_req;
-  p_buf->num_attr = p_read_multi->num_attr;
-
-  if (p_buf->num_attr > 0)
-    memcpy(p_buf->handles, p_read_multi->handles,
-           sizeof(uint16_t) * p_read_multi->num_attr);
-
+  p_buf->handles = handles;
+  p_buf->variable_len = variable_len;
+  p_buf->read_cb = callback;
+  p_buf->read_cb_data = cb_data;
   bta_sys_sendmsg(p_buf);
 }
 

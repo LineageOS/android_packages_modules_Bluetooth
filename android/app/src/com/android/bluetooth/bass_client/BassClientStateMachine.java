@@ -2054,7 +2054,7 @@ public class BassClientStateMachine extends StateMachine {
     }
 
     synchronized boolean isConnected() {
-        return getCurrentState() == mConnected;
+        return (getCurrentState() == mConnected) || (getCurrentState() == mConnectedProcessing);
     }
 
     public static String messageWhatToString(int what) {

@@ -44,14 +44,6 @@ void btm_ble_free();
  *  EXTERNAL FUNCTION DECLARATIONS
  ****************************************************************************/
 
-/**
- * This function is called to set scan parameters. |cb| is called with operation
- * status
- **/
-void BTM_BleSetScanParams(uint32_t scan_interval, uint32_t scan_window,
-                          tBLE_SCAN_MODE scan_type,
-                          base::Callback<void(uint8_t)> cb);
-
 /*******************************************************************************
  *
  * Function         BTM_BleGetVendorCapabilities
@@ -479,8 +471,9 @@ void btm_ble_periodic_adv_report(uint16_t sync_handle, uint8_t tx_power,
                                  const uint8_t* periodic_data);
 void btm_ble_periodic_adv_sync_lost(uint16_t sync_handle);
 
-void btm_ble_biginfo_adv_report_rcvd(uint8_t* param, uint16_t param_len);
-void btm_ble_periodic_adv_sync_tx_rcvd(uint8_t* param, uint16_t param_len);
+void btm_ble_biginfo_adv_report_rcvd(const uint8_t* param, uint16_t param_len);
+void btm_ble_periodic_adv_sync_tx_rcvd(const uint8_t* param,
+                                       uint16_t param_len);
 /*******************************************************************************
  *
  * Function         BTM_BleStartPeriodicSync

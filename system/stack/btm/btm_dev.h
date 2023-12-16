@@ -20,8 +20,6 @@
 #include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
 
-void wipe_secrets_and_remove(tBTM_SEC_DEV_REC* p_dev_rec);
-
 /** Free resources associated with the device associated with |bd_addr| address.
  *
  * *** WARNING ***
@@ -60,7 +58,7 @@ const char* BTM_SecReadDevName(const RawAddress& bd_addr);
  *
  * Function         btm_sec_alloc_dev
  *
- * Description      Look for the record in the device database for the record
+ * Description      Allocate a record in the device database
  *                  with specified address
  *
  * Returns          Pointer to the record or NULL
@@ -93,8 +91,6 @@ bool btm_dev_support_role_switch(const RawAddress& bd_addr);
  *
  ******************************************************************************/
 tBTM_SEC_DEV_REC* btm_find_dev_by_handle(uint16_t handle);
-
-bool is_address_equal(void* data, void* context);
 
 /*******************************************************************************
  *

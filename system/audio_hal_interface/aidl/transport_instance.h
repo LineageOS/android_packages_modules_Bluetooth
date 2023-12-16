@@ -55,6 +55,10 @@ class IBluetoothTransportInstance {
         audio_config_.set<AudioConfiguration::a2dpConfig>(
             audio_config.get<AudioConfiguration::a2dpConfig>());
         break;
+      case AudioConfiguration::hfpConfig:
+        audio_config_.set<AudioConfiguration::hfpConfig>(
+            audio_config.get<AudioConfiguration::hfpConfig>());
+        break;
       case AudioConfiguration::leAudioConfig:
         audio_config_.set<AudioConfiguration::leAudioConfig>(
             audio_config.get<AudioConfiguration::leAudioConfig>());
@@ -62,6 +66,11 @@ class IBluetoothTransportInstance {
       case AudioConfiguration::leAudioBroadcastConfig:
         audio_config_.set<AudioConfiguration::leAudioBroadcastConfig>(
             audio_config.get<AudioConfiguration::leAudioBroadcastConfig>());
+        break;
+      case AudioConfiguration::a2dp:
+        audio_config_.set<AudioConfiguration::a2dp>(
+            audio_config.get<AudioConfiguration::a2dp>());
+        break;
     }
   }
 
@@ -71,7 +80,7 @@ class IBluetoothTransportInstance {
 
   virtual void StopRequest() = 0;
 
-  virtual void SetLowLatency(bool is_low_latency) = 0;
+  virtual void SetLatencyMode(LatencyMode latency_mode) = 0;
 
   virtual bool GetPresentationPosition(uint64_t* remote_delay_report_ns,
                                        uint64_t* total_bytes_readed,

@@ -27,9 +27,9 @@
 #include <cstdint>
 #include <memory>
 
-#include "bt_target.h"  // Must be first to define build configuration
 #include "bta/include/bta_api.h"
 #include "bta_sec_api.h"
+#include "internal_include/bt_target.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/l2c_api.h"
 #include "types/bluetooth/uuid.h"
@@ -125,7 +125,7 @@ typedef uint8_t tBTA_JV_PM_ID;
 /* define maximum number of registered PM entities. should be in sync with bta
  * pm! */
 #ifndef BTA_JV_PM_MAX_NUM
-#define BTA_JV_PM_MAX_NUM 5
+#define BTA_JV_PM_MAX_NUM 12
 #endif
 
 /* JV pm connection states */

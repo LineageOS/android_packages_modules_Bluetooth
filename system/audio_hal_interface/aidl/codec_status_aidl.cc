@@ -27,6 +27,7 @@
 #include "a2dp_vendor_ldac_constants.h"
 #include "bta/av/bta_av_int.h"
 #include "client_interface_aidl.h"
+#include "provider_info.h"
 
 namespace bluetooth {
 namespace audio {
@@ -580,6 +581,7 @@ bool UpdateOffloadingCapabilities(
                 << ": disabled offloading capability=" << capability.toString();
     }
   }
+
   // TODO: Bluetooth SoC and runtime property
   return true;
 }

@@ -30,16 +30,18 @@ import static org.mockito.Mockito.when;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
+import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.support.v4.media.session.PlaybackStateCompat;
 
+import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.MediumTest;
 import androidx.test.rule.ServiceTestRule;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService.BrowseResult;
 import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService.BrowseResult;
 import com.android.bluetooth.btservice.AdapterService;
 
 import org.junit.After;
@@ -64,7 +66,6 @@ public class AvrcpControllerServiceTest {
     private AvrcpControllerService mService = null;
     private BluetoothAdapter mAdapter = null;
 
-    @Rule public final ServiceTestRule mServiceRule = new ServiceTestRule();
     @Rule
     public final ServiceTestRule mBluetoothBrowserMediaServiceTestRule = new ServiceTestRule();
 
@@ -76,13 +77,13 @@ public class AvrcpControllerServiceTest {
 
     @Before
     public void setUp() throws Exception {
+        Context targetContext = InstrumentationRegistry.getTargetContext();
         MockitoAnnotations.initMocks(this);
         TestUtils.setAdapterService(mAdapterService);
         doReturn(true, false).when(mAdapterService).isStartedProfile(anyString());
         AvrcpControllerNativeInterface.setInstance(mNativeInterface);
-        TestUtils.startService(mServiceRule, AvrcpControllerService.class);
-        mService = AvrcpControllerService.getAvrcpControllerService();
-        assertThat(mService).isNotNull();
+        mService = new AvrcpControllerService(targetContext, mNativeInterface);
+        mService.doStart();
         // Try getting the Bluetooth adapter
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         assertThat(mAdapter).isNotNull();
@@ -95,7 +96,7 @@ public class AvrcpControllerServiceTest {
 
     @After
     public void tearDown() throws Exception {
-        TestUtils.stopService(mServiceRule, AvrcpControllerService.class);
+        mService.doStop();
         AvrcpControllerNativeInterface.setInstance(null);
         mService = AvrcpControllerService.getAvrcpControllerService();
         assertThat(mService).isNull();
@@ -361,8 +362,10 @@ public class AvrcpControllerServiceTest {
 
         mService.handleRegisterNotificationAbsVol(mRemoteDevice, label);
 
-        verify(mStateMachine).sendMessage(
-                AvrcpControllerStateMachine.MESSAGE_PROCESS_REGISTER_ABS_VOL_NOTIFICATION);
+        verify(mStateMachine)
+                .sendMessage(
+                        AvrcpControllerStateMachine.MESSAGE_PROCESS_REGISTER_ABS_VOL_NOTIFICATION,
+                        label);
     }
 
     @Test
@@ -373,7 +376,8 @@ public class AvrcpControllerServiceTest {
         mService.handleSetAbsVolume(mRemoteDevice, absVol, label);
 
         verify(mStateMachine)
-                .sendMessage(AvrcpControllerStateMachine.MESSAGE_PROCESS_SET_ABS_VOL_CMD, absVol);
+                .sendMessage(
+                        AvrcpControllerStateMachine.MESSAGE_PROCESS_SET_ABS_VOL_CMD, absVol, label);
     }
 
     @Test

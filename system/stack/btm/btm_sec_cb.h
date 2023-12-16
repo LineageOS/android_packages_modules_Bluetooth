@@ -19,6 +19,7 @@
 
 #include <cstdint>
 
+#include "internal_include/bt_target.h"
 #include "osi/include/alarm.h"
 #include "osi/include/fixed_queue.h"
 #include "osi/include/list.h"
@@ -37,21 +38,9 @@ class tBTM_SEC_CB {
   *****************************************************/
   tBTM_SEC_DEVCB devcb;
 
- private:
-  friend void btm_ble_ltk_request_reply(const RawAddress& bda, bool use_stk,
-                                        const Octet16& stk);
-  friend tBTM_STATUS btm_ble_start_encrypt(const RawAddress& bda, bool use_stk,
-                                           Octet16* p_stk);
-  friend void btm_ble_ltk_request_reply(const RawAddress& bda, bool use_stk,
-                                        const Octet16& stk);
   uint16_t enc_handle{0};
-
-  friend void btm_ble_ltk_request(uint16_t handle, uint8_t rand[8],
-                                  uint16_t ediv);
   BT_OCTET8 enc_rand; /* received rand value from LTK request*/
-
-  uint16_t ediv{0}; /* received ediv value from LTK request */
-
+  uint16_t ediv{0};   /* received ediv value from LTK request */
   uint8_t key_size{0};
 
  public:
@@ -93,6 +82,29 @@ class tBTM_SEC_CB {
 
   void Init(uint8_t initial_security_mode);
   void Free();
+
+  tBTM_SEC_SERV_REC* find_first_serv_rec(bool is_originator, uint16_t psm);
+
+  bool IsDeviceBonded(const RawAddress bd_addr);
+  bool IsDeviceEncrypted(const RawAddress bd_addr, tBT_TRANSPORT transport);
+  bool IsDeviceAuthenticated(const RawAddress bd_addr, tBT_TRANSPORT transport);
+  bool IsLinkKeyAuthenticated(const RawAddress bd_addr,
+                              tBT_TRANSPORT transport);
+
+  bool IsLinkKeyKnown(const RawAddress bd_addr, tBT_TRANSPORT transport);
+
+  tBTM_SEC_REC* getSecRec(const RawAddress bd_addr);
+
+  bool AddService(bool is_originator, const char* p_name, uint8_t service_id,
+                  uint16_t sec_level, uint16_t psm, uint32_t mx_proto_id,
+                  uint32_t mx_chan_id);
+  uint8_t RemoveServiceById(uint8_t service_id);
+  uint8_t RemoveServiceByPsm(uint16_t psm);
+
+  void change_pairing_state(tBTM_PAIRING_STATE new_state);
+
+  // misc static methods
+  static const char* btm_pair_state_descr(tBTM_PAIRING_STATE state);
 };
 
 extern tBTM_SEC_CB btm_sec_cb;

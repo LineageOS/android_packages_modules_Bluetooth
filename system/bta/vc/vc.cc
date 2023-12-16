@@ -38,6 +38,7 @@
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_sec.h"
+#include "stack/include/bt_types.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
@@ -145,9 +146,18 @@ class VolumeControlImpl : public VolumeControl {
 
   void OnGattConnected(tGATT_STATUS status, uint16_t connection_id,
                        tGATT_IF /*client_if*/, RawAddress address,
-                       tBT_TRANSPORT /*transport*/, uint16_t /*mtu*/) {
-    LOG(INFO) << __func__ << ": address=" << ADDRESS_TO_LOGGABLE_STR(address)
-              << ", connection_id=" << connection_id;
+                       tBT_TRANSPORT transport, uint16_t /*mtu*/) {
+    LOG_INFO("%s, conn_id=0x%04x, transport=%s, status=%s(0x%02x)",
+             ADDRESS_TO_LOGGABLE_CSTR(address), connection_id,
+             bt_transport_text(transport).c_str(),
+             gatt_status_text(status).c_str(), status);
+
+    if (transport != BT_TRANSPORT_LE) {
+      LOG_WARN("Only LE connection is allowed (transport %s)",
+               bt_transport_text(transport).c_str());
+      BTA_GATTC_Close(connection_id);
+      return;
+    }
 
     VolumeControlDevice* device =
         volume_control_devices_.FindByAddress(address);
@@ -175,7 +185,11 @@ class VolumeControlImpl : public VolumeControl {
       return;
     }
 
-    device->EnableEncryption();
+    if (!device->EnableEncryption()) {
+      LOG_ERROR("Link key is not known for %s, disconnect profile",
+                ADDRESS_TO_LOGGABLE_CSTR(address));
+      device->Disconnect(gatt_if_);
+    }
   }
 
   void OnEncryptionComplete(const RawAddress& address, uint8_t success) {

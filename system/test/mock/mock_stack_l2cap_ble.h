@@ -117,27 +117,6 @@ struct l2cble_conn_comp {
   };
 };
 extern struct l2cble_conn_comp l2cble_conn_comp;
-// Name: l2cble_conn_comp_from_address_with_type
-// Params:  uint16_t handle, uint8_t role, const tBLE_BD_ADDR&
-// address_with_type, uint16_t conn_interval, uint16_t conn_latency, uint16_t
-// conn_timeout Returns: bool
-struct l2cble_conn_comp_from_address_with_type {
-  std::function<bool(
-      uint16_t handle, uint8_t role, const tBLE_BD_ADDR& address_with_type,
-      uint16_t conn_interval, uint16_t conn_latency, uint16_t conn_timeout)>
-      body{[](uint16_t /* handle */, uint8_t /* role */,
-              const tBLE_BD_ADDR& /* address_with_type */,
-              uint16_t /* conn_interval */, uint16_t /* conn_latency */,
-              uint16_t /* conn_timeout */) { return false; }};
-  bool operator()(uint16_t handle, uint8_t role,
-                  const tBLE_BD_ADDR& address_with_type, uint16_t conn_interval,
-                  uint16_t conn_latency, uint16_t conn_timeout) {
-    return body(handle, role, address_with_type, conn_interval, conn_latency,
-                conn_timeout);
-  };
-};
-extern struct l2cble_conn_comp_from_address_with_type
-    l2cble_conn_comp_from_address_with_type;
 // Name: l2cble_process_conn_update_evt
 // Params: uint16_t handle, uint8_t status, uint16_t interval, uint16_t latency,
 // uint16_t timeout Returns: void
@@ -284,13 +263,13 @@ extern struct l2cble_sec_comp l2cble_sec_comp;
 struct l2ble_sec_access_req {
   std::function<tL2CAP_LE_RESULT_CODE(
       const RawAddress& bd_addr, uint16_t psm, bool is_originator,
-      tL2CAP_SEC_CBACK* p_callback, void* p_ref_data)>
+      tBTM_SEC_CALLBACK* p_callback, void* p_ref_data)>
       body{[](const RawAddress& /* bd_addr */, uint16_t /* psm */,
-              bool /* is_originator */, tL2CAP_SEC_CBACK* /* p_callback */,
+              bool /* is_originator */, tBTM_SEC_CALLBACK* /* p_callback */,
               void* /* p_ref_data */) { return L2CAP_LE_RESULT_CONN_OK; }};
   tL2CAP_LE_RESULT_CODE operator()(const RawAddress& bd_addr, uint16_t psm,
                                    bool is_originator,
-                                   tL2CAP_SEC_CBACK* p_callback,
+                                   tBTM_SEC_CALLBACK* p_callback,
                                    void* p_ref_data) {
     return body(bd_addr, psm, is_originator, p_callback, p_ref_data);
   };

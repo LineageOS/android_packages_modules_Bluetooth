@@ -31,7 +31,8 @@
 #include "a2dp_vendor.h"
 #include "a2dp_vendor_aptx_hd_encoder.h"
 #include "btif_av_co.h"
-#include "osi/include/log.h"
+#include "internal_include/bt_trace.h"
+#include "os/log.h"
 #include "osi/include/osi.h"
 #include "stack/include/bt_hdr.h"
 
@@ -446,7 +447,8 @@ bool A2DP_VendorInitCodecConfigAptxHd(AvdtpSepConfig* p_cfg) {
 A2dpCodecConfigAptxHd::A2dpCodecConfigAptxHd(
     btav_a2dp_codec_priority_t codec_priority)
     : A2dpCodecConfig(BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_HD,
-                      A2DP_VendorCodecIndexStrAptxHd(), codec_priority) {
+                      A2DP_CODEC_ID_APTX_HD, A2DP_VendorCodecIndexStrAptxHd(),
+                      codec_priority) {
   // Compute the local capability
   if (a2dp_aptx_hd_source_caps.sampleRate & A2DP_APTX_HD_SAMPLERATE_44100) {
     codec_local_capability_.sample_rate |= BTAV_A2DP_CODEC_SAMPLE_RATE_44100;

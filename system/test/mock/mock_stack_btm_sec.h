@@ -109,22 +109,6 @@ struct BTM_GetPeerDeviceTypeFromFeatures {
 extern struct BTM_GetPeerDeviceTypeFromFeatures
     BTM_GetPeerDeviceTypeFromFeatures;
 
-// Name: BTM_GetSecurityFlagsByTransport
-// Params: const RawAddress& bd_addr, uint8_t* p_sec_flags, tBT_TRANSPORT
-// transport Return: bool
-struct BTM_GetSecurityFlagsByTransport {
-  static bool return_value;
-  std::function<bool(const RawAddress& bd_addr, uint8_t* p_sec_flags,
-                     tBT_TRANSPORT transport)>
-      body{[](const RawAddress& /* bd_addr */, uint8_t* /* p_sec_flags */,
-              tBT_TRANSPORT /* transport */) { return return_value; }};
-  bool operator()(const RawAddress& bd_addr, uint8_t* p_sec_flags,
-                  tBT_TRANSPORT transport) {
-    return body(bd_addr, p_sec_flags, transport);
-  };
-};
-extern struct BTM_GetSecurityFlagsByTransport BTM_GetSecurityFlagsByTransport;
-
 // Name: BTM_IsAuthenticated
 // Params: const RawAddress& bd_addr, tBT_TRANSPORT transport
 // Return: bool
@@ -684,34 +668,6 @@ struct btm_sec_encrypt_change {
   };
 };
 extern struct btm_sec_encrypt_change btm_sec_encrypt_change;
-
-// Name: btm_sec_execute_procedure
-// Params: tBTM_SEC_DEV_REC* p_dev_rec
-// Return: tBTM_STATUS
-struct btm_sec_execute_procedure {
-  static tBTM_STATUS return_value;
-  std::function<tBTM_STATUS(tBTM_SEC_DEV_REC* p_dev_rec)> body{
-      [](tBTM_SEC_DEV_REC* /* p_dev_rec */) { return return_value; }};
-  tBTM_STATUS operator()(tBTM_SEC_DEV_REC* p_dev_rec) {
-    return body(p_dev_rec);
-  };
-};
-extern struct btm_sec_execute_procedure btm_sec_execute_procedure;
-
-// Name: btm_sec_find_first_serv
-// Params: bool is_originator, uint16_t psm
-// Return: tBTM_SEC_SERV_REC*
-struct btm_sec_find_first_serv {
-  static tBTM_SEC_SERV_REC* return_value;
-  std::function<tBTM_SEC_SERV_REC*(bool is_originator, uint16_t psm)> body{
-      [](bool /* is_originator */, uint16_t /* psm */) {
-        return return_value;
-      }};
-  tBTM_SEC_SERV_REC* operator()(bool is_originator, uint16_t psm) {
-    return body(is_originator, psm);
-  };
-};
-extern struct btm_sec_find_first_serv btm_sec_find_first_serv;
 
 // Name: btm_sec_is_a_bonded_dev
 // Params: const RawAddress& bda

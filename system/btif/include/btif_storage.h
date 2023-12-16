@@ -22,10 +22,10 @@
 #include <bluetooth/uuid.h>
 #include <hardware/bluetooth.h>
 
-#include "bt_target.h"
-#include "stack/include/btm_sec_api_types.h"
+#include "internal_include/bt_target.h"
 #include "stack/include/bt_device_type.h"
 #include "stack/include/bt_octets.h"
+#include "stack/include/btm_sec_api_types.h"
 #include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
 
@@ -322,6 +322,9 @@ void btif_storage_set_leaudio_audio_location(const RawAddress& addr,
 void btif_storage_set_leaudio_supported_context_types(
     const RawAddress& addr, uint16_t sink_supported_context_type,
     uint16_t source_supported_context_type);
+
+/** Remove Le Audio device service data */
+void btif_storage_leaudio_clear_service_data(const RawAddress& address);
 
 /** Remove Le Audio device from the storage */
 void btif_storage_remove_leaudio(const RawAddress& address);

@@ -40,6 +40,7 @@ using bluetooth::le_audio::LeAudioBroadcasterCallbacks;
 using bluetooth::le_audio::LeAudioBroadcasterInterface;
 using bluetooth::le_audio::LeAudioClientCallbacks;
 using bluetooth::le_audio::LeAudioClientInterface;
+using bluetooth::le_audio::UnicastMonitorModeStatus;
 
 namespace android {
 static jmethodID method_onInitialized;
@@ -53,6 +54,7 @@ static jmethodID method_onAudioGroupCurrentCodecConf;
 static jmethodID method_onAudioGroupSelectableCodecConf;
 static jmethodID method_onHealthBasedRecommendationAction;
 static jmethodID method_onHealthBasedGroupRecommendationAction;
+static jmethodID method_onUnicastMonitorModeStatus;
 
 static struct {
   jclass clazz;
@@ -344,6 +346,19 @@ class LeAudioClientCallbacksImpl : public LeAudioClientCallbacks {
     sCallbackEnv->CallVoidMethod(mCallbacksObj,
                                  method_onHealthBasedGroupRecommendationAction,
                                  (jint)group_id, (jint)action);
+  }
+
+  void OnUnicastMonitorModeStatus(uint8_t direction,
+                                  UnicastMonitorModeStatus status) override {
+    LOG(INFO) << __func__;
+
+    std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
+    CallbackEnv sCallbackEnv(__func__);
+    if (!sCallbackEnv.valid() || mCallbacksObj == nullptr) return;
+
+    sCallbackEnv->CallVoidMethod(mCallbacksObj,
+                                 method_onUnicastMonitorModeStatus,
+                                 (jint)direction, (jint)status);
   }
 };
 
@@ -679,6 +694,17 @@ static void setInCallNative(JNIEnv* /* env */, jobject /* object */,
   }
 
   sLeAudioClientInterface->SetInCall(inCall);
+}
+
+static void setUnicastMonitorModeNative(JNIEnv* /* env */, jobject /* object */,
+                                        jint direction, jboolean enable) {
+  std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
+  if (!sLeAudioClientInterface) {
+    LOG(ERROR) << __func__ << ": Failed to get the Bluetooth LeAudio Interface";
+    return;
+  }
+
+  sLeAudioClientInterface->SetUnicastMonitorMode(direction, enable);
 }
 
 static void sendAudioProfilePreferencesNative(
@@ -1019,16 +1045,14 @@ jobject prepareBluetoothLeBroadcastMetadataObject(
     return nullptr;
   }
 
-  // Skip the leading null char bytes
+  // Remove the ending null char bytes
   int nativeCodeSize = 16;
-  int nativeCodeLeadingZeros = 0;
   if (broadcast_metadata.broadcast_code) {
     auto& nativeCode = broadcast_metadata.broadcast_code.value();
-    nativeCodeLeadingZeros =
+    nativeCodeSize =
         std::find_if(nativeCode.cbegin(), nativeCode.cend(),
-                     [](int x) { return x != 0x00; }) -
+                     [](int x) { return x == 0x00; }) -
         nativeCode.cbegin();
-    nativeCodeSize = nativeCode.size() - nativeCodeLeadingZeros;
   }
 
   ScopedLocalRef<jbyteArray> code(env, env->NewByteArray(nativeCodeSize));
@@ -1040,8 +1064,7 @@ jobject prepareBluetoothLeBroadcastMetadataObject(
   if (broadcast_metadata.broadcast_code) {
     env->SetByteArrayRegion(
         code.get(), 0, nativeCodeSize,
-        (const jbyte*)broadcast_metadata.broadcast_code->data() +
-            nativeCodeLeadingZeros);
+        (const jbyte*)broadcast_metadata.broadcast_code->data());
     CHECK(!env->ExceptionCheck());
   }
 
@@ -1081,7 +1104,7 @@ jobject prepareBluetoothLeBroadcastMetadataObject(
       broadcast_metadata.broadcast_code ? true : false,
       broadcast_metadata.is_public, broadcast_name.get(),
       broadcast_metadata.broadcast_code ? code.get() : nullptr,
-      (jint)broadcast_metadata.basic_audio_announcement.presentation_delay,
+      (jint)broadcast_metadata.basic_audio_announcement.presentation_delay_us,
       audio_cfg_quality, (jint)bluetooth::le_audio::kLeAudioSourceRssiUnknown,
       public_meta_obj.get(), subgroup_list_obj.get());
 }
@@ -1548,6 +1571,8 @@ int register_com_android_bluetooth_le_audio(JNIEnv* env) {
        (void*)setCodecConfigPreferenceNative},
       {"setCcidInformationNative", "(II)V", (void*)setCcidInformationNative},
       {"setInCallNative", "(Z)V", (void*)setInCallNative},
+      {"setUnicastMonitorModeNative", "(IZ)V",
+       (void*)setUnicastMonitorModeNative},
       {"sendAudioProfilePreferencesNative", "(IZZ)V",
        (void*)sendAudioProfilePreferencesNative},
   };
@@ -1582,6 +1607,8 @@ int register_com_android_bluetooth_le_audio(JNIEnv* env) {
        &method_onHealthBasedRecommendationAction},
       {"onHealthBasedGroupRecommendationAction", "(II)V",
        &method_onHealthBasedGroupRecommendationAction},
+      {"onUnicastMonitorModeStatus", "(II)V",
+       &method_onUnicastMonitorModeStatus},
   };
   GET_JAVA_METHODS(env, "com/android/bluetooth/le_audio/LeAudioNativeInterface",
                    javaMethods);

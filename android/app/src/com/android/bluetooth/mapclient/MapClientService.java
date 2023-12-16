@@ -26,6 +26,7 @@ import android.bluetooth.BluetoothUuid;
 import android.bluetooth.IBluetoothMapClient;
 import android.bluetooth.SdpMasRecord;
 import android.content.AttributionSource;
+import android.content.Context;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
@@ -65,6 +66,21 @@ public class MapClientService extends ProfileService {
     private static MapClientService sMapClientService;
     @VisibleForTesting
     private Handler mHandler;
+
+    private Looper mSmLooper;
+
+    MapClientService() {}
+
+    @VisibleForTesting
+    MapClientService(Context ctx) {
+        super(ctx);
+    }
+
+    @VisibleForTesting
+    MapClientService(Context ctx, Looper looper) {
+        this(ctx);
+        mSmLooper = looper;
+    }
 
     public static boolean isEnabled() {
         return BluetoothProperties.isProfileMapClientEnabled().orElse(false);
@@ -169,7 +185,9 @@ public class MapClientService extends ProfileService {
     private synchronized void addDeviceToMapAndConnect(BluetoothDevice device) {
         // When creating a new statemachine, its state is set to CONNECTING - which will trigger
         // connect.
-        MceStateMachine mapStateMachine = new MceStateMachine(this, device);
+        MceStateMachine mapStateMachine;
+        if (mSmLooper != null) mapStateMachine = new MceStateMachine(this, device, mSmLooper);
+        else mapStateMachine = new MceStateMachine(this, device);
         mMapInstanceMap.put(device, mapStateMachine);
     }
 
@@ -367,9 +385,10 @@ public class MapClientService extends ProfileService {
      * cleanupDevice removes the associated state machine from the instance map
      *
      * @param device BluetoothDevice address of remote device
+     * @param sm the state machine to clean up or {@code null} to clean up any state machine.
      */
     @VisibleForTesting
-    public void cleanupDevice(BluetoothDevice device) {
+    public void cleanupDevice(BluetoothDevice device, MceStateMachine sm) {
         if (DBG) {
             StringBuilder sb = new StringBuilder();
             dump(sb);
@@ -379,8 +398,12 @@ public class MapClientService extends ProfileService {
         synchronized (mMapInstanceMap) {
             MceStateMachine stateMachine = mMapInstanceMap.get(device);
             if (stateMachine != null) {
-                mMapInstanceMap.remove(device);
-                stateMachine.doQuit();
+                if (sm == null || stateMachine == sm) {
+                    mMapInstanceMap.remove(device);
+                    stateMachine.doQuit();
+                } else {
+                    Log.w(TAG, "Trying to clean up wrong state machine");
+                }
             }
         }
         if (DBG) {

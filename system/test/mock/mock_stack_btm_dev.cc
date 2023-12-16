@@ -65,14 +65,6 @@ bool btm_set_bond_type_dev(const RawAddress& /* bd_addr */,
   inc_func_call_count(__func__);
   return false;
 }
-bool is_address_equal(void* /* data */, void* /* context */) {
-  inc_func_call_count(__func__);
-  return false;
-}
-bool is_handle_equal(void* /* data */, void* /* context */) {
-  inc_func_call_count(__func__);
-  return false;
-}
 const char* BTM_SecReadDevName(const RawAddress& /* bd_addr */) {
   inc_func_call_count(__func__);
   return nullptr;
@@ -107,9 +99,6 @@ void BTM_SecClearSecurityFlags(const RawAddress& /* bd_addr */) {
 void btm_consolidate_dev(tBTM_SEC_DEV_REC* /* p_target_rec */) {
   inc_func_call_count(__func__);
 }
-void wipe_secrets_and_remove(tBTM_SEC_DEV_REC* /* p_dev_rec */) {
-  inc_func_call_count(__func__);
-}
 void btm_dev_consolidate_existing_connections(const RawAddress& /* bd_addr */) {
   inc_func_call_count(__func__);
 }
@@ -136,4 +125,7 @@ bool BTM_Sec_AddressKnown(const RawAddress& address) {
 bool maybe_resolve_address(RawAddress* bda, tBLE_ADDR_TYPE* bda_type) {
   inc_func_call_count(__func__);
   return test::mock::stack_btm_dev::maybe_resolve_address(bda, bda_type);
+}
+const tBLE_BD_ADDR BTM_Sec_GetAddressWithType(const RawAddress& /* bd_addr */) {
+  return {};
 }

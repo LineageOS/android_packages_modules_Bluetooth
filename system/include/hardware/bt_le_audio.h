@@ -32,6 +32,7 @@ enum class LeAudioHealthBasedAction {
   NONE = 0,
   DISABLE,
   CONSIDER_DISABLING,
+  INACTIVATE_GROUP,
 };
 
 inline std::ostream& operator<<(std::ostream& os,
@@ -45,6 +46,9 @@ inline std::ostream& operator<<(std::ostream& os,
       break;
     case LeAudioHealthBasedAction::CONSIDER_DISABLING:
       os << "CONSIDER_DISABLING";
+      break;
+    case LeAudioHealthBasedAction::INACTIVATE_GROUP:
+      os << "INACTIVATE_GROUP";
       break;
     default:
       os << "UNKNOWN";
@@ -80,6 +84,12 @@ enum class GroupStreamStatus {
 enum class GroupNodeStatus {
   ADDED = 1,
   REMOVED,
+};
+
+enum class UnicastMonitorModeStatus {
+  STREAMING_REQUESTED = 0,
+  STREAMING,
+  STREAMING_SUSPENDED,
 };
 
 typedef enum {
@@ -292,6 +302,9 @@ class LeAudioClientCallbacks {
       const RawAddress& address, LeAudioHealthBasedAction action) = 0;
   virtual void OnHealthBasedGroupRecommendationAction(
       int group_id, LeAudioHealthBasedAction action) = 0;
+
+  virtual void OnUnicastMonitorModeStatus(uint8_t direction,
+                                          UnicastMonitorModeStatus status) = 0;
 };
 
 class LeAudioClientInterface {
@@ -337,6 +350,9 @@ class LeAudioClientInterface {
 
   /* Set In call flag */
   virtual void SetInCall(bool in_call) = 0;
+
+  /* Set Sink listening mode flag */
+  virtual void SetUnicastMonitorMode(uint8_t direction, bool enable) = 0;
 
   /* Sends a preferred audio profiles change */
   virtual void SendAudioProfilePreferences(
@@ -404,7 +420,7 @@ struct BasicAudioAnnouncementSubgroup {
 
 struct BasicAudioAnnouncementData {
   /* Announcement Header fields */
-  uint32_t presentation_delay;
+  uint32_t presentation_delay_us;
 
   /* Subgroup specific configurations */
   std::vector<BasicAudioAnnouncementSubgroup> subgroup_configs;

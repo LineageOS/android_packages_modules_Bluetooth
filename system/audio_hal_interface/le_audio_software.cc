@@ -40,6 +40,7 @@ using AudioConfiguration_2_1 =
     ::android::hardware::bluetooth::audio::V2_1::AudioConfiguration;
 using AudioConfigurationAIDL =
     ::aidl::android::hardware::bluetooth::audio::AudioConfiguration;
+using ::aidl::android::hardware::bluetooth::audio::LatencyMode;
 using ::aidl::android::hardware::bluetooth::audio::LeAudioCodecConfiguration;
 
 using ::le_audio::CodecManager;
@@ -97,31 +98,47 @@ LeAudioClientInterface* LeAudioClientInterface::Get() {
 }
 
 void LeAudioClientInterface::Sink::Cleanup() {
-  LOG(INFO) << __func__ << " sink";
+  LOG_INFO("HAL transport: 0x%02x, is broadcast: %d",
+            static_cast<int>(HalVersionManager::GetHalTransport()),
+            is_broadcaster_);
+
   StopSession();
-  if (hidl::le_audio::LeAudioSinkTransport::interface) {
-    delete hidl::le_audio::LeAudioSinkTransport::interface;
-    hidl::le_audio::LeAudioSinkTransport::interface = nullptr;
-  }
-  if (hidl::le_audio::LeAudioSinkTransport::instance) {
-    delete hidl::le_audio::LeAudioSinkTransport::instance;
-    hidl::le_audio::LeAudioSinkTransport::instance = nullptr;
-  }
-  if (aidl::le_audio::LeAudioSinkTransport::interface_unicast_) {
-    delete aidl::le_audio::LeAudioSinkTransport::interface_unicast_;
-    aidl::le_audio::LeAudioSinkTransport::interface_unicast_ = nullptr;
-  }
-  if (aidl::le_audio::LeAudioSinkTransport::interface_broadcast_) {
-    delete aidl::le_audio::LeAudioSinkTransport::interface_broadcast_;
-    aidl::le_audio::LeAudioSinkTransport::interface_broadcast_ = nullptr;
-  }
-  if (aidl::le_audio::LeAudioSinkTransport::instance_unicast_) {
-    delete aidl::le_audio::LeAudioSinkTransport::instance_unicast_;
-    aidl::le_audio::LeAudioSinkTransport::instance_unicast_ = nullptr;
-  }
-  if (aidl::le_audio::LeAudioSinkTransport::instance_broadcast_) {
-    delete aidl::le_audio::LeAudioSinkTransport::instance_broadcast_;
-    aidl::le_audio::LeAudioSinkTransport::instance_broadcast_ = nullptr;
+
+  /* Cleanup transport interface and instance according to type and role */
+  if (HalVersionManager::GetHalTransport() ==
+      BluetoothAudioHalTransport::HIDL) {
+    if (hidl::le_audio::LeAudioSinkTransport::interface) {
+      delete hidl::le_audio::LeAudioSinkTransport::interface;
+      hidl::le_audio::LeAudioSinkTransport::interface = nullptr;
+    }
+    if (hidl::le_audio::LeAudioSinkTransport::instance) {
+      delete hidl::le_audio::LeAudioSinkTransport::instance;
+      hidl::le_audio::LeAudioSinkTransport::instance = nullptr;
+    }
+  } else if (HalVersionManager::GetHalTransport() ==
+             BluetoothAudioHalTransport::AIDL) {
+    if (IsBroadcaster()) {
+      if (aidl::le_audio::LeAudioSinkTransport::interface_broadcast_) {
+        delete aidl::le_audio::LeAudioSinkTransport::interface_broadcast_;
+        aidl::le_audio::LeAudioSinkTransport::interface_broadcast_ = nullptr;
+      }
+      if (aidl::le_audio::LeAudioSinkTransport::instance_broadcast_) {
+        delete aidl::le_audio::LeAudioSinkTransport::instance_broadcast_;
+        aidl::le_audio::LeAudioSinkTransport::instance_broadcast_ = nullptr;
+      }
+    } else {
+      if (aidl::le_audio::LeAudioSinkTransport::interface_unicast_) {
+        delete aidl::le_audio::LeAudioSinkTransport::interface_unicast_;
+        aidl::le_audio::LeAudioSinkTransport::interface_unicast_ = nullptr;
+      }
+      if (aidl::le_audio::LeAudioSinkTransport::instance_unicast_) {
+        delete aidl::le_audio::LeAudioSinkTransport::instance_unicast_;
+        aidl::le_audio::LeAudioSinkTransport::instance_unicast_ = nullptr;
+      }
+    }
+  } else {
+    LOG_ERROR("Invalid HAL transport: 0x%02x",
+              static_cast<int>(HalVersionManager::GetHalTransport()));
   }
 }
 
@@ -850,6 +867,38 @@ bool LeAudioClientInterface::ReleaseSource(
   source_ = nullptr;
 
   return true;
+}
+
+void LeAudioClientInterface::SetAllowedDsaModes(DsaModes dsa_modes) {
+  if (HalVersionManager::GetHalTransport() ==
+      BluetoothAudioHalTransport::AIDL) {
+    std::vector<LatencyMode> latency_modes;
+    for (auto dsa_mode : dsa_modes) {
+      switch (dsa_mode) {
+        case DsaMode::DISABLED:
+          latency_modes.push_back(LatencyMode::FREE);
+          break;
+        case DsaMode::ACL:
+          latency_modes.push_back(LatencyMode::LOW_LATENCY);
+          break;
+        case DsaMode::ISO_SW:
+          latency_modes.push_back(LatencyMode::DYNAMIC_SPATIAL_AUDIO_SOFTWARE);
+          break;
+        case DsaMode::ISO_HW:
+          latency_modes.push_back(LatencyMode::DYNAMIC_SPATIAL_AUDIO_HARDWARE);
+          break;
+        default:
+          LOG(WARNING) << "Unsupported latency mode ignored: " << (int)dsa_mode;
+          break;
+      }
+    }
+    if (aidl::le_audio::LeAudioSourceTransport::interface) {
+      aidl::le_audio::LeAudioSourceTransport::interface->SetAllowedLatencyModes(
+          latency_modes);
+    } else {
+      LOG(WARNING) << "LeAudioSourceTransport::interface is null";
+    }
+  }
 }
 
 }  // namespace le_audio

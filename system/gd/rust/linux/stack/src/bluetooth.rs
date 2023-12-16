@@ -649,7 +649,7 @@ impl Bluetooth {
     }
 
     pub fn toggle_enabled_profiles(&mut self, allowed_services: &Vec<Uuid128Bit>) {
-        for profile in UuidHelper::get_supported_profiles().clone() {
+        for profile in UuidHelper::get_ordered_supported_profiles().clone() {
             // Only toggle initializable profiles.
             if let Some(enabled) = self.is_profile_enabled(&profile) {
                 let allowed = allowed_services.len() == 0
@@ -684,6 +684,8 @@ impl Bluetooth {
     }
 
     pub fn init_profiles(&mut self) {
+        self.bluetooth_gatt.lock().unwrap().enable(true);
+
         let sdptx = self.tx.clone();
         self.sdp = Some(Sdp::new(&self.intf.lock().unwrap()));
         self.sdp.as_mut().unwrap().initialize(SdpCallbacksDispatcher {
@@ -1898,7 +1900,11 @@ impl IBluetooth for Bluetooth {
     }
 
     fn disable(&mut self) -> bool {
-        self.intf.lock().unwrap().disable() == 0
+        let success = self.intf.lock().unwrap().disable() == 0;
+        if success {
+            self.bluetooth_gatt.lock().unwrap().enable(false);
+        }
+        success
     }
 
     fn cleanup(&mut self) {

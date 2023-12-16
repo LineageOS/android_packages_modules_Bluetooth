@@ -31,15 +31,18 @@
 
 #include "acl_api_types.h"
 #include "btif/include/btif_bqr.h"
-#include "btm_ble_int.h"
 #include "btm_sec_cb.h"
 #include "btm_sec_int_types.h"
+#include "internal_include/bt_target.h"
 #include "main/shim/btm_api.h"
 #include "os/log.h"
+#include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/gatt/connection_manager.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/acl_api_types.h"
+#include "stack/include/bt_types.h"
+#include "stack/include/btm_api.h"
 #include "stack/include/btm_ble_privacy.h"
 #include "stack/include/l2cap_controller_interface.h"
 #include "types/raw_address.h"
@@ -159,7 +162,7 @@ void BTM_db_reset(void) {
 
 static bool set_sec_state_idle(void* data, void* context) {
   tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(data);
-  p_dev_rec->sec_state = BTM_SEC_STATE_IDLE;
+  p_dev_rec->sec_rec.sec_state = BTM_SEC_STATE_IDLE;
   return true;
 }
 

@@ -322,6 +322,12 @@
   "postsubmit": [
     {
       "name": "bluetooth_le_audio_codec_manager_test"
+    },
+    {
+      "name": "bluetooth_test_gdx_unit"
+    },
+    {
+      "name": "asrc_resampler_test"
     }
   ]
 }

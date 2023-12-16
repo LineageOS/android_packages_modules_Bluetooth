@@ -18,9 +18,6 @@ package android.bluetooth;
 
 import android.annotation.SuppressLint;
 import android.content.ComponentName;
-import android.content.Context;
-import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -34,7 +31,6 @@ import java.util.Objects;
 /**
  * Connector for Bluetooth profile proxies to bind manager service and profile services
  *
- * @param <T> The Bluetooth profile interface for this connection.
  * @hide
  */
 @SuppressLint("AndroidFrameworkBluetoothPermission")
@@ -53,14 +49,14 @@ public final class BluetoothProfileConnector extends Handler {
 
     private final IBluetoothStateChangeCallback mBluetoothStateChangeCallback =
             new IBluetoothStateChangeCallback.Stub() {
-        public void onBluetoothStateChange(boolean up) {
-            if (up) {
-                doBind();
-            } else {
-                doUnbind();
-            }
-        }
-    };
+                public void onBluetoothStateChange(boolean up) {
+                    if (up) {
+                        doBind();
+                    } else {
+                        doUnbind();
+                    }
+                }
+            };
 
     private final IBluetoothProfileServiceConnection mConnection =
             new IBluetoothProfileServiceConnection.Stub() {
@@ -108,8 +104,9 @@ public final class BluetoothProfileConnector extends Handler {
                 BluetoothAdapter.getDefaultAdapter().getBluetoothManager());
     }
 
-    /** {@hide} */
+    /** @hide */
     @Override
+    @SuppressWarnings("Finalize") // TODO(b/314811467)
     public void finalize() {
         mCloseGuard.warnIfOpen();
         doUnbind();
@@ -163,19 +160,6 @@ public final class BluetoothProfileConnector extends Handler {
                 }
             }
         }
-    }
-
-    void connect(Context context, BluetoothProfile.ServiceListener listener) {
-        // Preserve legacy compatibility where apps were depending on
-        // registerStateChangeCallback() performing a permissions check which
-        // has been relaxed in modern platform versions
-        if (context.getApplicationInfo().targetSdkVersion <= Build.VERSION_CODES.R
-                && context.checkSelfPermission(android.Manifest.permission.BLUETOOTH)
-                        != PackageManager.PERMISSION_GRANTED) {
-            throw new SecurityException("Need BLUETOOTH permission");
-        }
-
-        connect(context.getPackageName(), listener);
     }
 
     /** @hide */

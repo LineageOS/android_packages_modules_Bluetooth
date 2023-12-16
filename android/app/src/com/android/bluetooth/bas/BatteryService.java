@@ -26,8 +26,9 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothUuid;
 import android.bluetooth.IBluetoothBattery;
 import android.content.AttributionSource;
-import android.os.HandlerThread;
+import android.content.Context;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.ParcelUuid;
 import android.sysprop.BluetoothProperties;
@@ -65,6 +66,13 @@ public class BatteryService extends ProfileService {
     private Handler mHandler;
     private final Map<BluetoothDevice, BatteryStateMachine> mStateMachines = new HashMap<>();
 
+    BatteryService() {}
+
+    @VisibleForTesting
+    BatteryService(Context ctx) {
+        super(ctx);
+    }
+
     public static boolean isEnabled() {
         return BluetoothProperties.isProfileBasClientEnabled().orElse(false);
     }
@@ -72,13 +80,6 @@ public class BatteryService extends ProfileService {
     @Override
     protected IProfileServiceBinder initBinder() {
         return new BluetoothBatteryBinder(this);
-    }
-
-    @Override
-    protected void create() {
-        if (DBG) {
-            Log.d(TAG, "create()");
-        }
     }
 
     @Override

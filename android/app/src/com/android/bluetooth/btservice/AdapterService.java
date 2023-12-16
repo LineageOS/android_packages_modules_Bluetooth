@@ -1041,16 +1041,11 @@ public class AdapterService extends Service {
                     false, LeAudioService.class, BluetoothProfile.LE_AUDIO_BROADCAST);
         }
 
-        if (!nonSupportedProfiles.isEmpty()) {
-            // Remove non-supported profiles from the supported list
-            // since the controller doesn't support
-            Config.removeProfileFromSupportedList(nonSupportedProfiles);
-
-            // Disable the non-supported profiles service
-            for (Class profileService : nonSupportedProfiles) {
-                if (isStartedProfile(profileService.getSimpleName())) {
-                    setProfileServiceState(profileService, BluetoothAdapter.STATE_OFF);
-                }
+        // Disable the non-supported profiles service
+        for (Class profileService : nonSupportedProfiles) {
+            Config.setProfileEnabled(profileService, false);
+            if (isStartedProfile(profileService.getSimpleName())) {
+                setProfileServiceState(profileService, BluetoothAdapter.STATE_OFF);
             }
         }
     }
@@ -2326,6 +2321,7 @@ public class AdapterService extends Service {
                 return false;
             }
 
+            Log.d(TAG, "AdapterServiceBinder.setName(" + name + ")");
             return service.mAdapterProperties.setName(name);
         }
 
@@ -6087,6 +6083,16 @@ public class AdapterService extends Service {
             if (device == null) {
                 mA2dpService.removeActiveDevice(false);
             } else {
+                /* Workaround for the controller issue which is not able to handle correctly
+                 * A2DP offloader vendor specific command while ISO Data path is set.
+                 * Proper solutions should be delivered in b/312396770
+                 */
+                if (mLeAudioService != null) {
+                    List<BluetoothDevice> activeLeAudioDevices = mLeAudioService.getActiveDevices();
+                    if (activeLeAudioDevices.get(0) != null) {
+                        mLeAudioService.removeActiveDevice(true);
+                    }
+                }
                 mA2dpService.setActiveDevice(device);
             }
         }

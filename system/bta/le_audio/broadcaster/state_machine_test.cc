@@ -21,11 +21,10 @@
 #include <gtest/gtest.h>
 
 #include "../le_audio_types.h"
-#include "ble_advertiser.h"
 #include "btm_iso_api.h"
 #include "mock_ble_advertising_manager.h"
 #include "mock_iso_manager.h"
-#include "stack/include/ble_advertiser.h"
+#include "stack/include/btm_ble_api_types.h"
 #include "state_machine.h"
 #include "test/common/mock_functions.h"
 
@@ -431,7 +430,7 @@ static BasicAudioAnnouncementData prepareAnnouncement(
     std::map<uint8_t, std::vector<uint8_t>> metadata) {
   BasicAudioAnnouncementData announcement;
 
-  announcement.presentation_delay = 0x004E20;
+  announcement.presentation_delay_us = 40000;
   auto const& codec_id = codec_config.GetLeAudioCodecId();
 
   announcement.subgroup_configs = {{

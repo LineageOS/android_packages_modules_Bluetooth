@@ -22,7 +22,8 @@
 
 #include "gd/common/init_flags.h"
 #include "hci/hci_layer_mock.h"
-#include "stack/btm/btm_ble_int_types.h"
+#include "internal_include/bt_target.h"
+#include "stack/btm/btm_ble_sec.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/btm/btm_sec_cb.h"
@@ -33,6 +34,18 @@
 
 using testing::Return;
 using testing::Test;
+
+namespace bluetooth {
+namespace testing {
+namespace legacy {
+
+void wipe_secrets_and_remove(tBTM_SEC_DEV_REC* p_dev_rec);
+
+}  // namespace legacy
+}  // namespace testing
+}  // namespace bluetooth
+
+using bluetooth::testing::legacy::wipe_secrets_and_remove;
 
 constexpr size_t kBtmSecMaxDeviceRecords =
     static_cast<size_t>(BTM_SEC_MAX_DEVICE_RECORDS + 1);
@@ -117,7 +130,7 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_encrypt_change) {
   // Setup device
   tBTM_SEC_DEV_REC* device_record = btm_sec_allocate_dev_rec();
   ASSERT_NE(nullptr, device_record);
-  ASSERT_EQ(BTM_SEC_IN_USE, device_record->sec_flags);
+  ASSERT_EQ(BTM_SEC_IN_USE, device_record->sec_rec.sec_flags);
   device_record->bd_addr = bd_addr;
   device_record->hci_handle = classic_handle;
   device_record->ble_hci_handle = ble_handle;
@@ -125,21 +138,23 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_encrypt_change) {
   // With classic device encryption enable
   btm_sec_encrypt_change(classic_handle, HCI_SUCCESS, 0x01);
   ASSERT_EQ(BTM_SEC_IN_USE | BTM_SEC_AUTHENTICATED | BTM_SEC_ENCRYPTED,
-            device_record->sec_flags);
+            device_record->sec_rec.sec_flags);
 
   // With classic device encryption disable
   btm_sec_encrypt_change(classic_handle, HCI_SUCCESS, 0x00);
-  ASSERT_EQ(BTM_SEC_IN_USE | BTM_SEC_AUTHENTICATED, device_record->sec_flags);
-  device_record->sec_flags = BTM_SEC_IN_USE;
+  ASSERT_EQ(BTM_SEC_IN_USE | BTM_SEC_AUTHENTICATED,
+            device_record->sec_rec.sec_flags);
+  device_record->sec_rec.sec_flags = BTM_SEC_IN_USE;
 
   // With le device encryption enable
   btm_sec_encrypt_change(ble_handle, HCI_SUCCESS, 0x01);
-  ASSERT_EQ(BTM_SEC_IN_USE | BTM_SEC_LE_ENCRYPTED, device_record->sec_flags);
+  ASSERT_EQ(BTM_SEC_IN_USE | BTM_SEC_LE_ENCRYPTED,
+            device_record->sec_rec.sec_flags);
 
   // With le device encryption disable
   btm_sec_encrypt_change(ble_handle, HCI_SUCCESS, 0x00);
-  ASSERT_EQ(BTM_SEC_IN_USE, device_record->sec_flags);
-  device_record->sec_flags = BTM_SEC_IN_USE;
+  ASSERT_EQ(BTM_SEC_IN_USE, device_record->sec_rec.sec_flags);
+  device_record->sec_rec.sec_flags = BTM_SEC_IN_USE;
 
   wipe_secrets_and_remove(device_record);
 }
@@ -247,7 +262,7 @@ TEST_F(StackBtmSecWithInitFreeTest, wipe_secrets_and_remove) {
   // Setup device
   tBTM_SEC_DEV_REC* device_record = btm_sec_allocate_dev_rec();
   ASSERT_NE(nullptr, device_record);
-  ASSERT_EQ(BTM_SEC_IN_USE, device_record->sec_flags);
+  ASSERT_EQ(BTM_SEC_IN_USE, device_record->sec_rec.sec_flags);
   device_record->bd_addr = bd_addr;
   device_record->hci_handle = classic_handle;
   device_record->ble_hci_handle = ble_handle;

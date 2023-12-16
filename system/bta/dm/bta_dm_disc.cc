@@ -34,6 +34,7 @@
 #include "common/strings.h"
 #include "device/include/interop.h"
 #include "include/bind_helpers.h"
+#include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
@@ -50,6 +51,7 @@
 #include "stack/include/btm_log_history.h"
 #include "stack/include/btm_sec_api.h"  // BTM_IsRemoteNameKnown
 #include "stack/include/gap_api.h"      // GAP_BleReadPeerPrefConnParams
+#include "stack/include/hidh_api.h"
 #include "stack/include/sdp_status.h"
 #include "stack/sdp/sdpint.h"  // is_sdp_pbap_pce_disabled
 #include "types/raw_address.h"
@@ -493,7 +495,7 @@ static void bta_dm_remote_name_cmpl(const tBTA_DM_MSG* p_data) {
     if (remote_name_msg.hci_status == HCI_SUCCESS) {
       bd_name_copy(search_data.disc_res.bd_name, remote_name_msg.bd_name);
     }
-    bta_dm_search_cb.p_search_cback(BTA_DM_DISC_RES_EVT, &search_data);
+    bta_dm_search_cb.p_search_cback(BTA_DM_NAME_READ_EVT, &search_data);
   } else {
     LOG_WARN("Received remote name complete without callback");
   }
@@ -1361,8 +1363,17 @@ static void bta_dm_discover_device(const RawAddress& remote_bd_addr) {
   /* Reset transport state for next discovery */
   bta_dm_search_cb.transport = BT_TRANSPORT_AUTO;
 
-  /* if application wants to discover service */
-  if (bta_dm_search_cb.services) {
+  bool sdp_disable = HID_HostSDPDisable(remote_bd_addr);
+  if (sdp_disable)
+    LOG_DEBUG("peer:%s with HIDSDPDisable attribute.",
+              ADDRESS_TO_LOGGABLE_CSTR(remote_bd_addr));
+
+  /* if application wants to discover service and HIDSDPDisable attribute is
+     false.
+     Classic mouses with this attribute should not start SDP here, because the
+     SDP has been done during bonding. SDP request here will interleave with
+     connections to the Control or Interrupt channels */
+  if (bta_dm_search_cb.services && !sdp_disable) {
     BTM_LogHistory(kBtmLogTag, remote_bd_addr, "Discovery started ",
                    base::StringPrintf("Transport:%s",
                                       bt_transport_text(transport).c_str()));

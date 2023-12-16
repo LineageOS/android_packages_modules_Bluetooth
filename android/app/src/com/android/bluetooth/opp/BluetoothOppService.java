@@ -201,6 +201,14 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
      */
     private BluetoothOppObexServerSession mServerSession;
 
+    BluetoothOppService() {}
+
+    @VisibleForTesting
+    BluetoothOppService(Context ctx) {
+        attachBaseContext(ctx);
+        onCreate();
+    }
+
     public static boolean isEnabled() {
         return BluetoothProperties.isProfileOppEnabled().orElse(false);
     }
@@ -221,7 +229,8 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
     }
 
     @Override
-    protected void create() {
+    public void onCreate() {
+        super.onCreate();
         if (V) {
             Log.v(TAG, "onCreate");
         }
