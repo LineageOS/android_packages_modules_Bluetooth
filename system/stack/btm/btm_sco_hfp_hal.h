@@ -20,8 +20,8 @@
 
 #include <vector>
 
-#include "bt_target.h"
 #include "device/include/esco_parameters.h"
+#include "internal_include/bt_target.h"
 #include "raw_address.h"
 
 // Used by the Bluetooth stack to get WBS supported and codec, or notify SCO

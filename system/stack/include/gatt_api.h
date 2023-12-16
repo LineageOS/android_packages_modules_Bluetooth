@@ -24,11 +24,14 @@
 #include <list>
 #include <string>
 
-#include "bt_target.h"
 #include "btm_ble_api.h"
 #include "gattdefs.h"
 #include "hardware/bt_gatt_types.h"
+#include "include/hardware/bt_common_types.h"
+#include "internal_include/bt_target.h"
 #include "macros.h"
+#include "stack/include/btm_ble_api_types.h"
+#include "stack/include/hci_error_code.h"
 #include "types/bluetooth/uuid.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"

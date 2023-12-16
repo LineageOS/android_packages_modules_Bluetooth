@@ -21,13 +21,13 @@
 #ifndef A2DP_SBC_H
 #define A2DP_SBC_H
 
-#include <bt_target.h>
 #include <stddef.h>
 #include <stdint.h>
 
 #include "a2dp_codec_api.h"
 #include "a2dp_sbc_constants.h"
 #include "avdt_api.h"
+#include "internal_include/bt_target.h"
 #include "stack/include/bt_hdr.h"
 
 class A2dpCodecConfigSbcBase : public A2dpCodecConfig {

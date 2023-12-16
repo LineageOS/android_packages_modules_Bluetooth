@@ -24,9 +24,9 @@
 #include <base/logging.h>
 #include <string.h>
 
-#include "bt_target.h"
 #include "gatt_api.h"
 #include "gatt_int.h"
+#include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_ble_sec.h"
