@@ -25,12 +25,11 @@
 namespace bluetooth {
 
 class ModuleMainloop {
- public:
+ protected:
   ModuleMainloop() noexcept = default;
   virtual ~ModuleMainloop() = default;
   ModuleMainloop(const ModuleMainloop& mod) = delete;
 
- protected:
   // Threadsafe post onto mainloop a function with copyable arguments
   template <typename Functor, typename... Args>
   void PostFunctionOnMain(Functor&& functor, Args&&... args) const {
@@ -38,7 +37,7 @@ class ModuleMainloop {
         FROM_HERE, base::BindOnce(std::forward<Functor>(functor), std::forward<Args>(args)...));
   }
 
-  // Threadsafe post onto mainloop a method and contex with copyable arguments
+  // Threadsafe post onto mainloop a method and context with copyable arguments
   template <typename T, typename Functor, typename... Args>
   void PostMethodOnMain(std::shared_ptr<T> ref, Functor&& functor, Args... args) const {
     do_in_main_thread(
