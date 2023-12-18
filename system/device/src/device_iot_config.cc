@@ -16,7 +16,7 @@
  *  limitations under the License.
  *
  ******************************************************************************/
-#include "bt_target.h"
+#include "internal_include/bt_target.h"
 
 #define LOG_TAG "device_iot_config"
 #include <base/logging.h>
