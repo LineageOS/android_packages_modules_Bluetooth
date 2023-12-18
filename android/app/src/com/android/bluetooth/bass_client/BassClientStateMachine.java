@@ -1159,6 +1159,12 @@ public class BassClientStateMachine extends StateMachine {
                 mService.getCallbacks().notifySourceFound(metaData);
             }
         }
+
+        @Override
+        public void onSyncTransferred(BluetoothDevice device, int status) {
+            log("onSyncTransferred: device=" + device +
+                    " ,status =" + status);
+        }
     }
 
     /**
