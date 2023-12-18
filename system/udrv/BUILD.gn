@@ -23,7 +23,6 @@ source_set("udrv") {
     "include",
     "uipc",
     "//bt/system/",
-    "//bt/system/internal_include",
     "//bt/system/stack/include",
   ]
 
