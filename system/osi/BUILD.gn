@@ -45,7 +45,6 @@ static_library("osi") {
 
   include_dirs = [
     "//bt/system/",
-    "//bt/system/internal_include",
     "//bt/system/linux_include",
     "//bt/system/osi/include_internal",
     "//bt/system/stack/include",

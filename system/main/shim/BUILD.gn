@@ -42,7 +42,6 @@ source_set("LibBluetoothShimSources") {
     "//bt/system/btif/include",
     "//bt/system/gd",
     "//bt/system/gd/rust/shim",
-    "//bt/system/internal_include",
     "//bt/system/stack/include",
     "//bt/system/types",
   ]
