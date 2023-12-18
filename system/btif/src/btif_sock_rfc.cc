@@ -26,27 +26,22 @@
 #include <cstdint>
 #include <mutex>
 
-#include "bt_target.h"  // Must be first to define build configuration
 #include "bta/include/bta_jv_api.h"
 #include "bta/include/bta_rfcomm_scn.h"
 #include "btif/include/btif_metrics_logging.h"
-/* The JV interface can have only one user, hence we need to call a few
- * L2CAP functions from this file. */
 #include "btif/include/btif_sock.h"
 #include "btif/include/btif_sock_l2cap.h"
 #include "btif/include/btif_sock_sdp.h"
 #include "btif/include/btif_sock_thread.h"
 #include "btif/include/btif_sock_util.h"
-#include "btif/include/btif_uid.h"
 #include "include/hardware/bt_sock.h"
+#include "internal_include/bt_target.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
 #include "osi/include/list.h"
-#include "osi/include/log.h"
 #include "osi/include/osi.h"  // INVALID_FD
 #include "stack/include/bt_hdr.h"
-#include "stack/include/btm_api.h"
-#include "stack/include/btm_api_types.h"
 #include "stack/include/port_api.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
@@ -79,8 +74,8 @@ typedef struct {
   Uuid service_uuid;
   char service_name[256];
   int fd;
-  int app_fd;   // Temporary storage for the half of the socketpair that's sent
-                // back to upper layers.
+  int app_fd;   // Temporary storage for the half of the socketpair that's
+                // sent back to upper layers.
   int app_uid;  // UID of the app for which this socket was created.
   int mtu;
   uint8_t* packet;
@@ -293,8 +288,8 @@ bt_status_t btsock_rfc_listen(const char* service_name,
 
   // TODO(sharvil): not sure that this check makes sense; seems like a logic
   // error to call
-  // functions on RFCOMM sockets before initializing the module. Probably should
-  // be an assert.
+  // functions on RFCOMM sockets before initializing the module. Probably
+  // should be an assert.
   if (!is_init_done()) return BT_STATUS_NOT_READY;
 
   if ((flags & BTSOCK_FLAG_NO_SDP) == 0) {

@@ -33,15 +33,16 @@
 
 #include <cstdint>
 
-#include "bta_sec_api.h"
 #include "bta_hh_co.h"
+#include "bta_sec_api.h"
 #include "btif/include/btif_common.h"
 #include "btif/include/btif_profile_storage.h"
+#include "btif/include/btif_storage.h"
 #include "btif/include/btif_util.h"
 #include "include/hardware/bt_hh.h"
 #include "main/shim/dumpsys.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/log.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/hidh_api.h"
 #include "stack/include/l2c_api.h"
