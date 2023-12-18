@@ -18,7 +18,6 @@ config("packet_config") {
   include_dirs = [
     "//bt/system/",
     "//bt/system/include",
-    "//bt/system/internal_include",
     "//bt/system/stack/include",
     "//bt/system/profile/avrcp",
   ]
