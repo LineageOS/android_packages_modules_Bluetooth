@@ -15,6 +15,13 @@ flag {
 }
 
 flag {
+    name: "fix_nonconnectable_scannable_advertisement"
+    namespace: "bluetooth"
+    description: "Fix adv_scan_ind being reported as connectable"
+    bug: "316013235"
+}
+
+flag {
     name: "scan_manager_refactor"
     namespace: "bluetooth"
     description: "Refactor scan manager as described in go/scan-manager-refactor"
