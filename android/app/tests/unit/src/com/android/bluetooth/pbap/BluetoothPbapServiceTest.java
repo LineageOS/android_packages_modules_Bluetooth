@@ -81,7 +81,6 @@ public class BluetoothPbapServiceTest {
         TestUtils.setAdapterService(mAdapterService);
         mIsAdapterServiceSet = true;
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
-        doReturn(true, false).when(mAdapterService).isStartedProfile(anyString());
         mService = new BluetoothPbapService(targetContext);
         mService.doStart();
         mIsBluetoothPabpServiceStarted = true;

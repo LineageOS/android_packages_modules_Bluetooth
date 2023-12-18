@@ -109,10 +109,7 @@ public class CsipSetCoordinatorService extends ProfileService {
     private final Map<Integer, Pair<UUID, IBluetoothCsipSetCoordinatorLockCallback>> mLocks =
             new ConcurrentHashMap<>();
 
-    CsipSetCoordinatorService() {}
-
-    @VisibleForTesting
-    CsipSetCoordinatorService(Context ctx) {
+    public CsipSetCoordinatorService(Context ctx) {
         super(ctx);
     }
 

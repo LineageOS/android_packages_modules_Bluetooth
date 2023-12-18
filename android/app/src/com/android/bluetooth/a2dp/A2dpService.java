@@ -127,7 +127,8 @@ public class A2dpService extends ProfileService {
     private final AudioManagerAudioDeviceCallback mAudioManagerAudioDeviceCallback =
             new AudioManagerAudioDeviceCallback();
 
-    A2dpService() {
+    public A2dpService(Context ctx) {
+        super(ctx);
         mNativeInterface = requireNonNull(A2dpNativeInterface.getInstance());
         mFeatureFlags = new FeatureFlagsImpl();
     }

@@ -120,10 +120,7 @@ public class PbapClientService extends ProfileService {
         }
     };
 
-    PbapClientService() {}
-
-    @VisibleForTesting
-    PbapClientService(Context ctx) {
+    public PbapClientService(Context ctx) {
         super(ctx);
     }
 

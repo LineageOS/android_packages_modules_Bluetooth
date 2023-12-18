@@ -58,8 +58,10 @@ import android.os.Binder;
 import android.os.BluetoothServiceManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.IpcDataCache;
+import android.os.Looper;
 import android.os.ParcelUuid;
 import android.os.Process;
 import android.os.RemoteException;
@@ -903,8 +905,35 @@ public final class BluetoothAdapter {
     private final Map<BluetoothQualityReportReadyCallback, Executor>
             mBluetoothQualityReportReadyCallbackExecutorMap = new HashMap<>();
 
-    private final Map<BluetoothProfile, BluetoothProfileConnector> mProfileConnectors =
+    private static final class ProfileConnection {
+        int mProfile;
+        BluetoothProfile.ServiceListener mListener;
+        boolean mConnected = false;
+
+        ProfileConnection(int profile, BluetoothProfile.ServiceListener listener) {
+            mProfile = profile;
+            mListener = listener;
+        }
+
+        void connect(BluetoothProfile proxy, IBinder binder) {
+            Log.d(TAG, BluetoothProfile.getProfileName(mProfile) + " connected");
+            mConnected = true;
+            proxy.onServiceConnected(binder);
+            mListener.onServiceConnected(mProfile, proxy);
+        }
+
+        void disconnect(BluetoothProfile proxy) {
+            Log.d(TAG, BluetoothProfile.getProfileName(mProfile) + " disconnected");
+            mConnected = false;
+            proxy.onServiceDisconnected();
+            mListener.onServiceDisconnected(mProfile);
+        }
+    }
+
+    private final Map<BluetoothProfile, ProfileConnection> mProfileConnections =
             new ConcurrentHashMap<>();
+
+    private final Handler mMainHandler = new Handler(Looper.getMainLooper());
 
     /**
      * Bluetooth metadata listener. Overrides the default BluetoothMetadataListener implementation.
@@ -3714,10 +3743,17 @@ public final class BluetoothAdapter {
         }
 
         BluetoothProfile profileProxy = constructor.apply(context, this);
+        ProfileConnection connection = new ProfileConnection(profile, listener);
 
-        BluetoothProfileConnector connector = new BluetoothProfileConnector(profileProxy, profile);
-        mProfileConnectors.put(profileProxy, connector);
-        connector.connect(context.getPackageName(), listener);
+        mMainHandler.post(
+                () -> {
+                    mProfileConnections.put(profileProxy, connection);
+
+                    IBinder binder = getProfile(profile);
+                    if (binder != null) {
+                        connection.connect(profileProxy, binder);
+                    }
+                });
 
         return true;
     }
@@ -3753,13 +3789,13 @@ public final class BluetoothAdapter {
             return;
         }
 
-        BluetoothProfileConnector connector = mProfileConnectors.remove(proxy);
-        if (connector != null) {
+        ProfileConnection connection = mProfileConnections.remove(proxy);
+        if (connection != null) {
             if (proxy instanceof BluetoothLeCallControl callControl) {
                 callControl.unregisterBearer();
             }
 
-            connector.disconnect();
+            connection.disconnect(proxy);
         }
     }
 
@@ -3816,6 +3852,46 @@ public final class BluetoothAdapter {
                                     cb.onBluetoothServiceDown();
                                 } else {
                                     Log.d(TAG, "onBluetoothServiceDown: cb is null!");
+                                }
+                            } catch (Exception e) {
+                                Log.e(TAG, "", e);
+                            }
+                        }
+                    }
+                }
+
+                public void onBluetoothOn() {
+                    if (DBG) {
+                        Log.d(TAG, "onBluetoothOn");
+                    }
+
+                    synchronized (sServiceLock) {
+                        for (IBluetoothManagerCallback cb : sProxyServiceStateCallbacks.keySet()) {
+                            try {
+                                if (cb != null) {
+                                    cb.onBluetoothOn();
+                                } else {
+                                    Log.d(TAG, "onBluetoothOn: cb is null!");
+                                }
+                            } catch (Exception e) {
+                                Log.e(TAG, "", e);
+                            }
+                        }
+                    }
+                }
+
+                public void onBluetoothOff() {
+                    if (DBG) {
+                        Log.d(TAG, "onBluetoothOff");
+                    }
+
+                    synchronized (sServiceLock) {
+                        for (IBluetoothManagerCallback cb : sProxyServiceStateCallbacks.keySet()) {
+                            try {
+                                if (cb != null) {
+                                    cb.onBluetoothOff();
+                                } else {
+                                    Log.d(TAG, "onBluetoothOff: cb is null!");
                                 }
                             } catch (Exception e) {
                                 Log.e(TAG, "", e);
@@ -3940,6 +4016,39 @@ public final class BluetoothAdapter {
                     } finally {
                         mServiceLock.writeLock().unlock();
                     }
+                }
+
+                public void onBluetoothOn() {
+                    mMainHandler.post(
+                            () -> {
+                                mProfileConnections.forEach(
+                                        (proxy, connection) -> {
+                                            if (connection.mConnected) return;
+
+                                            IBinder binder = getProfile(connection.mProfile);
+                                            if (binder != null) {
+                                                connection.connect(proxy, binder);
+                                            } else {
+                                                Log.e(
+                                                        TAG,
+                                                        "onBluetoothOn: Binder null for "
+                                                                + BluetoothProfile.getProfileName(
+                                                                        connection.mProfile));
+                                            }
+                                        });
+                            });
+                }
+
+                public void onBluetoothOff() {
+                    mMainHandler.post(
+                            () -> {
+                                mProfileConnections.forEach(
+                                        (proxy, connection) -> {
+                                            if (connection.mConnected) {
+                                                connection.disconnect(proxy);
+                                            }
+                                        });
+                            });
                 }
             };
 
@@ -4117,58 +4226,6 @@ public final class BluetoothAdapter {
         }
     }
 
-    /**
-     * Enable control of the Bluetooth Adapter for a single application.
-     *
-     * <p>Some applications need to use Bluetooth for short periods of time to transfer data but
-     * don't want all the associated implications like automatic connection to headsets etc.
-     *
-     * <p>Multiple applications can call this. This is reference counted and Bluetooth disabled only
-     * when no one else is using it. There will be no UI shown to the user while bluetooth is being
-     * enabled. Any user action will override this call. For example, if user wants Bluetooth on and
-     * the last user of this API wanted to disable Bluetooth, Bluetooth will not be turned off.
-     *
-     * <p>This API is only meant to be used by internal applications. Third party applications but
-     * use {@link #enable} and {@link #disable} APIs.
-     *
-     * <p>If this API returns true, it means the callback will be called. The callback will be
-     * called with the current state of Bluetooth. If the state is not what was requested, an
-     * internal error would be the reason. If Bluetooth is already on and if this function is called
-     * to turn it on, the api will return true and a callback will be called.
-     *
-     * @param on True for on, false for off.
-     * @param callback The callback to notify changes to the state.
-     * @hide
-     */
-    @RequiresLegacyBluetoothPermission
-    @RequiresBluetoothConnectPermission
-    @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
-    @SuppressLint("AndroidFrameworkRequiresPermission")
-    public boolean changeApplicationBluetoothState(
-            boolean on, BluetoothStateChangeCallback callback) {
-        return false;
-    }
-
-    /** @hide */
-    public interface BluetoothStateChangeCallback {
-        /** @hide */
-        void onBluetoothStateChange(boolean on);
-    }
-
-    /** @hide */
-    public static class StateChangeCallbackWrapper extends IBluetoothStateChangeCallback.Stub {
-        private BluetoothStateChangeCallback mCallback;
-
-        StateChangeCallbackWrapper(BluetoothStateChangeCallback callback) {
-            mCallback = callback;
-        }
-
-        @Override
-        public void onBluetoothStateChange(boolean on) {
-            mCallback.onBluetoothStateChange(on);
-        }
-    }
-
     private Set<BluetoothDevice> toDeviceSet(List<BluetoothDevice> devices) {
         Set<BluetoothDevice> deviceSet = new HashSet<BluetoothDevice>(devices);
         return Collections.unmodifiableSet(deviceSet);
@@ -4289,6 +4346,24 @@ public final class BluetoothAdapter {
                         recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null));
             }
 
+        } catch (RemoteException | TimeoutException e) {
+            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+        } finally {
+            mServiceLock.readLock().unlock();
+        }
+        return defaultValue;
+    }
+
+    /** Return a binder to a Profile service */
+    private @Nullable IBinder getProfile(int profile) {
+        IBinder defaultValue = null;
+        mServiceLock.readLock().lock();
+        try {
+            if (mService != null) {
+                final SynchronousResultReceiver<IBinder> recv = SynchronousResultReceiver.get();
+                mService.getProfile(profile, recv);
+                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
+            }
         } catch (RemoteException | TimeoutException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {

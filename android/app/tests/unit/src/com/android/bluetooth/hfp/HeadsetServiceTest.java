@@ -125,7 +125,6 @@ public class HeadsetServiceTest {
         doReturn(mActiveDeviceManager).when(mAdapterService).getActiveDeviceManager();
         doReturn(mSilenceDeviceManager).when(mAdapterService).getSilenceDeviceManager();
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
-        doReturn(true, false).when(mAdapterService).isStartedProfile(anyString());
         doReturn(mRemoteDevices).when(mAdapterService).getRemoteDevices();
         doAnswer(invocation -> {
             Set<BluetoothDevice> keys = mStateMachines.keySet();

@@ -35,7 +35,6 @@ import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
-import android.content.Intent;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -126,15 +125,15 @@ public class BassClientService extends ProfileService {
     @VisibleForTesting
     ServiceFactory mServiceFactory = new ServiceFactory();
 
-    BassClientService() {
+    public BassClientService(Context ctx) {
+        super(ctx);
         mFeatureFlags = new FeatureFlagsImpl();
     }
 
     @VisibleForTesting
     BassClientService(Context ctx, FeatureFlags featureFlags) {
-        attachBaseContext(ctx);
+        super(ctx);
         mFeatureFlags = featureFlags;
-        onCreate();
     }
 
     public static boolean isEnabled() {
@@ -436,12 +435,6 @@ public class BassClientService extends ProfileService {
             mSyncHandleToBroadcastIdMap = null;
         }
         return true;
-    }
-
-    @Override
-    public boolean onUnbind(Intent intent) {
-        Log.d(TAG, "Need to unregister app");
-        return super.onUnbind(intent);
     }
 
     BluetoothDevice getDeviceForSyncHandle(int syncHandle) {

@@ -57,10 +57,7 @@ public class McpService extends ProfileService {
     private Map<BluetoothDevice, Integer> mDeviceAuthorizations = new HashMap<>();
     private Handler mHandler = new Handler(Looper.getMainLooper());
 
-    McpService() {}
-
-    @VisibleForTesting
-    McpService(Context ctx) {
+    public McpService(Context ctx) {
         super(ctx);
     }
 
