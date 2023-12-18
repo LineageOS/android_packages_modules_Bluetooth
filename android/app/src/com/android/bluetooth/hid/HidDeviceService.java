@@ -88,10 +88,7 @@ public class HidDeviceService extends ProfileService {
 
     private HidDeviceServiceHandler mHandler;
 
-    HidDeviceService() {}
-
-    @VisibleForTesting
-    HidDeviceService(Context ctx) {
+    public HidDeviceService(Context ctx) {
         super(ctx);
     }
 
@@ -277,6 +274,7 @@ public class HidDeviceService extends ProfileService {
         }
 
         public void cleanup() {
+            mService.unregisterApp();
             mService = null;
         }
     }
@@ -812,13 +810,6 @@ public class HidDeviceService extends ProfileService {
         }
         mActivityManager.removeOnUidImportanceListener(mUidImportanceListener);
         return true;
-    }
-
-    @Override
-    public boolean onUnbind(Intent intent) {
-        Log.d(TAG, "Need to unregister app");
-        unregisterApp();
-        return super.onUnbind(intent);
     }
 
     /**

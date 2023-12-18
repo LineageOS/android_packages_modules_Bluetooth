@@ -81,8 +81,6 @@ public class PbapClientConnectionHandlerTest {
         MockitoAnnotations.initMocks(this);
         TestUtils.setAdapterService(mAdapterService);
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
-        doReturn(true, false).when(mAdapterService)
-                .isStartedProfile(anyString());
         mService = new PbapClientService(mTargetContext);
         mService.doStart();
 

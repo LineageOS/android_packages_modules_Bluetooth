@@ -66,10 +66,7 @@ public class BatteryService extends ProfileService {
     private Handler mHandler;
     private final Map<BluetoothDevice, BatteryStateMachine> mStateMachines = new HashMap<>();
 
-    BatteryService() {}
-
-    @VisibleForTesting
-    BatteryService(Context ctx) {
+    public BatteryService(Context ctx) {
         super(ctx);
     }
 
