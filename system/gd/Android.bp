@@ -460,6 +460,7 @@ cc_test {
     host_supported: true,
     srcs: [
         ":TestCommonMockFunctions",
+        "module_jniloop_unittest.cc",
         "module_mainloop_unittest.cc",
     ],
     generated_headers: [
@@ -472,11 +473,13 @@ cc_test {
         "libbluetooth_gd",
         "libbt-btu-main-thread",
         "libbt-common",
+        "libbt-jni-thread",
         "libbt_shim_bridge",
         "libbt_shim_ffi",
         "libchrome",
         "libevent",
         "libflatbuffers-cpp",
+        "libosi",
     ],
     sanitize: {
         address: true,
