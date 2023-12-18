@@ -49,8 +49,9 @@ static const std::vector<AudioSetConfiguration> offload_capabilities_none(0);
 const std::vector<AudioSetConfiguration>* offload_capabilities =
     &offload_capabilities_none;
 
-const char* test_flags[] = {
+static const char* test_flags[] = {
     "INIT_default_log_level_str=LOG_VERBOSE",
+    nullptr,
 };
 
 namespace bluetooth {
