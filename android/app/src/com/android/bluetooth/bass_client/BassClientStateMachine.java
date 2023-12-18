@@ -669,8 +669,10 @@ public class BassClientStateMachine extends StateMachine {
                             mPeriodicAdvManager, mDevice, serviceData, syncHandle);
                 }
             } else {
-                if (mService.isLocalBroadcast(mPendingMetadata)) {
-                    int advHandle = mPendingMetadata.getSourceAdvertisingSid();
+                BluetoothLeBroadcastMetadata currentMetadata =
+                    getCurrentBroadcastMetadata(recvState.getSourceId());
+                if (mService.isLocalBroadcast(currentMetadata)) {
+                    int advHandle = currentMetadata.getSourceAdvertisingSid();
                     serviceData = 0x000000FF & recvState.getSourceId();
                     serviceData = serviceData << 8;
                     // Address we set in the Source Address can differ from the address in the air
@@ -877,6 +879,7 @@ public class BassClientStateMachine extends StateMachine {
                         BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST);
                 if (mPendingMetadata != null) {
                     setCurrentBroadcastMetadata(recvState.getSourceId(), mPendingMetadata);
+                    mPendingMetadata = null;
                 }
                 checkAndUpdateBroadcastCode(recvState);
                 processPASyncState(recvState);
@@ -893,7 +896,10 @@ public class BassClientStateMachine extends StateMachine {
                             BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST);
                 } else {
                     log("update to an existing recvState");
-                    setCurrentBroadcastMetadata(recvState.getSourceId(), mPendingMetadata);
+                    if (mPendingMetadata != null) {
+                        setCurrentBroadcastMetadata(recvState.getSourceId(), mPendingMetadata);
+                        mPendingMetadata = null;
+                    }
                     mService.getCallbacks().notifySourceModified(mDevice,
                             recvState.getSourceId(), BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST);
                     checkAndUpdateBroadcastCode(recvState);
