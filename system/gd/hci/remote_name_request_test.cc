@@ -65,7 +65,7 @@ MATCHER_P(IsSetWithValue, matcher, "Future is not set with value") {
 class RemoteNameRequestModuleTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    test_hci_layer_ = new TestHciLayer;
+    test_hci_layer_ = new HciLayerFake;
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
 
     fake_registry_.Start<RemoteNameRequestModule>(&thread_);
@@ -120,7 +120,7 @@ class RemoteNameRequestModuleTest : public ::testing::Test {
 
   TestModuleRegistry fake_registry_;
   os::Thread& thread_ = fake_registry_.GetTestThread();
-  TestHciLayer* test_hci_layer_ = nullptr;
+  HciLayerFake* test_hci_layer_ = nullptr;
   RemoteNameRequestModule* remote_name_request_module_ = nullptr;
   os::Handler* client_handler_ = nullptr;
 };
@@ -254,7 +254,7 @@ TEST_F(RemoteNameRequestModuleTest, SendCommandThenCancelItCallback) {
       future, IsSetWithValue(Eq(std::make_tuple(ErrorCode::UNKNOWN_CONNECTION, remote_name1))));
 }
 
-// TODO(aryarahul) - unify TestHciLayer so this test can be run
+// TODO(aryarahul) - unify HciLayerFake so this test can be run
 TEST_F(RemoteNameRequestModuleTest, DISABLED_SendCommandThenCancelItCallbackInteropWorkaround) {
   // Some controllers INCORRECTLY give us an ACL Connection Complete event, rather than a Remote
   // Name Request Complete event, if we issue a cancellation. We should nonetheless handle this

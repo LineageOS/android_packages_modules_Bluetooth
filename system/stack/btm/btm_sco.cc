@@ -37,17 +37,20 @@
 #include "common/bidi_queue.h"
 #include "device/include/controller.h"
 #include "device/include/device_iot_config.h"
-#include "gd/hci/hci_layer.h"
+#include "hci/class_of_device.h"
+#include "hci/hci_layer.h"
 #include "hci/hci_packets.h"
 #include "hci/include/hci_layer.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/entry.h"
+#include "main/shim/helpers.h"
 #include "osi/include/properties.h"
 #include "osi/include/stack_power_telemetry.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sco_hfp_hal.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api.h"
+#include "stack/include/bt_dev_class.h"
 #include "stack/include/btm_api.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_log_history.h"
@@ -56,7 +59,6 @@
 #include "stack/include/main_thread.h"
 #include "stack/include/sdpdefs.h"
 #include "stack/include/stack_metrics_logging.h"
-#include "types/class_of_device.h"
 #include "types/raw_address.h"
 
 extern tBTM_CB btm_cb;
@@ -87,6 +89,10 @@ using bluetooth::legacy::hci::GetInterface;
 
 // forward declaration for dequeueing packets
 static void btm_route_sco_data(bluetooth::hci::ScoView valid_packet);
+void btm_sco_conn_req(const RawAddress& bda, const DEV_CLASS& dev_class,
+                      uint8_t link_type);
+void btm_sco_on_disconnected(uint16_t hci_handle, tHCI_REASON reason);
+bool btm_sco_removed(uint16_t hci_handle, tHCI_REASON reason);
 
 namespace cpp {
 bluetooth::common::BidiQueueEnd<bluetooth::hci::ScoBuilder,
@@ -118,6 +124,30 @@ static void register_for_sco() {
   pending_sco_data =
       new bluetooth::os::EnqueueBuffer<bluetooth::hci::ScoBuilder>(
           hci_sco_queue_end);
+
+  // Register SCO for connection requests
+  bluetooth::shim::GetHciLayer()->RegisterForScoConnectionRequests(
+      get_main_thread()->Bind(
+          [](bluetooth::hci::Address peer, bluetooth::hci::ClassOfDevice cod,
+             bluetooth::hci::ConnectionRequestLinkType link_type) {
+            auto peer_raw_address = bluetooth::ToRawAddress(peer);
+            DEV_CLASS dev_class{cod.cod[0], cod.cod[1], cod.cod[2]};
+            if (link_type == bluetooth::hci::ConnectionRequestLinkType::ESCO) {
+              btm_sco_conn_req(peer_raw_address, dev_class,
+                               android::bluetooth::LINK_TYPE_ESCO);
+            } else {
+              btm_sco_conn_req(peer_raw_address, dev_class,
+                               android::bluetooth::LINK_TYPE_SCO);
+            }
+          }));
+  // Register SCO for disconnect notifications
+  bluetooth::shim::GetHciLayer()->RegisterForDisconnects(
+      get_main_thread()->Bind(
+          [](uint16_t handle, bluetooth::hci::ErrorCode error_code) {
+            auto reason = static_cast<tHCI_REASON>(error_code);
+            btm_sco_on_disconnected(handle, reason);
+            btm_sco_removed(handle, reason);
+          }));
 }
 
 static void shut_down_sco() {
@@ -1193,36 +1223,22 @@ bool btm_sco_removed(uint16_t hci_handle, tHCI_REASON reason) {
   return false;
 }
 
-void btm_sco_on_esco_connect_request(
-    const RawAddress& bda, const bluetooth::types::ClassOfDevice& cod) {
-  LOG_DEBUG("Remote ESCO connect request remote:%s cod:%s",
-            ADDRESS_TO_LOGGABLE_CSTR(bda), cod.ToString().c_str());
-  btm_sco_conn_req(bda, cod.cod, BTM_LINK_TYPE_ESCO);
-}
-
-void btm_sco_on_sco_connect_request(
-    const RawAddress& bda, const bluetooth::types::ClassOfDevice& cod) {
-  LOG_DEBUG("Remote SCO connect request remote:%s cod:%s",
-            ADDRESS_TO_LOGGABLE_CSTR(bda), cod.ToString().c_str());
-  btm_sco_conn_req(bda, cod.cod, BTM_LINK_TYPE_SCO);
-}
-
 void btm_sco_on_disconnected(uint16_t hci_handle, tHCI_REASON reason) {
   tSCO_CONN* p_sco = btm_cb.sco_cb.get_sco_connection_from_handle(hci_handle);
   if (p_sco == nullptr) {
-    LOG_ERROR("Unable to find sco connection");
+    LOG_DEBUG("Unable to find sco connection");
     return;
   }
 
   if (!p_sco->is_active()) {
-    LOG_ERROR("Connection is not active handle:0x%04x reason:%s", hci_handle,
-              hci_reason_code_text(reason).c_str());
+    LOG_INFO("Connection is not active handle:0x%04x reason:%s", hci_handle,
+             hci_reason_code_text(reason).c_str());
     return;
   }
 
   if (p_sco->state == SCO_ST_LISTENING) {
-    LOG_ERROR("Connection is in listening state handle:0x%04x reason:%s",
-              hci_handle, hci_reason_code_text(reason).c_str());
+    LOG_INFO("Connection is in listening state handle:0x%04x reason:%s",
+             hci_handle, hci_reason_code_text(reason).c_str());
     return;
   }
 

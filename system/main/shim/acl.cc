@@ -1384,17 +1384,6 @@ shim::legacy::Acl::Acl(os::Handler* handler,
       handler->BindOn(this, &Acl::on_incoming_acl_credits));
   shim::RegisterDumpsysFunction(static_cast<void*>(this),
                                 [this](int fd) { Dump(fd); });
-
-  GetAclManager()->HACK_SetNonAclDisconnectCallback(
-      [this](uint16_t handle, uint8_t reason) {
-        TRY_POSTING_ON_MAIN(acl_interface_.connection.sco.on_disconnected,
-                            handle, static_cast<tHCI_REASON>(reason));
-
-        // HACKCEPTION! LE ISO connections, just like SCO are not registered in
-        // GD, so ISO can use same hack to get notified about disconnections
-        TRY_POSTING_ON_MAIN(acl_interface_.connection.le.on_iso_disconnected,
-                            handle, static_cast<tHCI_REASON>(reason));
-      });
 }
 
 shim::legacy::Acl::~Acl() {
@@ -1651,31 +1640,6 @@ void shim::legacy::Acl::OnConnectFail(hci::Address address,
   BTM_LogHistory(kBtmLogTag, ToRawAddress(address), "Connection failed",
                  base::StringPrintf("classic reason:%s",
                                     hci::ErrorCodeText(reason).c_str()));
-}
-
-void shim::legacy::Acl::HACK_OnEscoConnectRequest(hci::Address address,
-                                                  hci::ClassOfDevice cod) {
-  const RawAddress bd_addr = ToRawAddress(address);
-  types::ClassOfDevice legacy_cod;
-  types::ClassOfDevice::FromString(cod.ToLegacyConfigString(), legacy_cod);
-
-  TRY_POSTING_ON_MAIN(acl_interface_.connection.sco.on_esco_connect_request,
-                      bd_addr, legacy_cod);
-  LOG_DEBUG("Received ESCO connect request remote:%s",
-            ADDRESS_TO_LOGGABLE_CSTR(address));
-  BTM_LogHistory(kBtmLogTag, ToRawAddress(address), "ESCO Connection request");
-}
-
-void shim::legacy::Acl::HACK_OnScoConnectRequest(hci::Address address,
-                                                 hci::ClassOfDevice cod) {
-  const RawAddress bd_addr = ToRawAddress(address);
-  types::ClassOfDevice legacy_cod;
-  types::ClassOfDevice::FromString(cod.ToLegacyConfigString(), legacy_cod);
-
-  TRY_POSTING_ON_MAIN(acl_interface_.connection.sco.on_sco_connect_request,
-                      bd_addr, legacy_cod);
-  LOG_DEBUG("Received SCO connect request remote:%s", ADDRESS_TO_LOGGABLE_CSTR(address));
-  BTM_LogHistory(kBtmLogTag, ToRawAddress(address), "SCO Connection request");
 }
 
 void shim::legacy::Acl::OnLeConnectSuccess(

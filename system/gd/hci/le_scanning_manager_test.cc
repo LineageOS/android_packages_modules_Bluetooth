@@ -288,7 +288,7 @@ class MockCallbacks : public bluetooth::hci::ScanningCallback {
 class LeScanningManagerTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    test_hci_layer_ = new TestHciLayer;  // Ownership is transferred to registry
+    test_hci_layer_ = new HciLayerFake;  // Ownership is transferred to registry
     test_controller_ = new TestController;
     test_acl_manager_ = new TestAclManager;
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
@@ -319,7 +319,7 @@ class LeScanningManagerTest : public ::testing::Test {
   }
 
   TestModuleRegistry fake_registry_;
-  TestHciLayer* test_hci_layer_ = nullptr;
+  HciLayerFake* test_hci_layer_ = nullptr;
   TestController* test_controller_ = nullptr;
   TestAclManager* test_acl_manager_ = nullptr;
   os::Thread& thread_ = fake_registry_.GetTestThread();
