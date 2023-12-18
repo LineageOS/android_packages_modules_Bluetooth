@@ -19,10 +19,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <algorithm>
 #include <chrono>
 #include <future>
-#include <map>
 
 #include "common/bind.h"
 #include "hci/acl_manager/connection_callbacks_mock.h"
