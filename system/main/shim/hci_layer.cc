@@ -36,7 +36,9 @@
 #include "packet/raw_builder.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
+#include "stack/include/btm_iso_api.h"
 #include "stack/include/hcimsgs.h"
+#include "stack/include/main_thread.h"
 
 /**
  * Callback data wrapped as opaque token bundled with the command
@@ -167,6 +169,7 @@ static bool event_already_registered_in_hci_layer(
   switch (event_code) {
     case bluetooth::hci::EventCode::COMMAND_COMPLETE:
     case bluetooth::hci::EventCode::COMMAND_STATUS:
+    case bluetooth::hci::EventCode::CONNECTION_REQUEST:
     case bluetooth::hci::EventCode::PAGE_SCAN_REPETITION_MODE_CHANGE:
     case bluetooth::hci::EventCode::MAX_SLOTS_CHANGE:
     case bluetooth::hci::EventCode::LE_META_EVENT:
@@ -440,6 +443,18 @@ static void register_for_iso() {
   pending_iso_data =
       new bluetooth::os::EnqueueBuffer<bluetooth::hci::IsoBuilder>(
           hci_iso_queue_end);
+  // Register ISO for disconnect notifications
+  bluetooth::shim::GetHciLayer()->RegisterForDisconnects(
+      get_main_thread()->Bind([](uint16_t handle,
+                                 bluetooth::hci::ErrorCode error_code) {
+        auto iso = bluetooth::hci::IsoManager::GetInstance();
+        if (iso) {
+          auto reason = static_cast<uint8_t>(error_code);
+          LOG_INFO("ISO disconnection from GD, handle: 0x%02x, reason: 0x%02x",
+                   handle, reason);
+          iso->HandleDisconnect(handle, reason);
+        }
+      }));
 }
 
 static void on_shutting_down() {

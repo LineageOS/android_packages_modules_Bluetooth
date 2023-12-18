@@ -397,14 +397,6 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
     current_connection_request_++;
   }
 
-  void HACK_OnEscoConnectRequest(Address /* address */, ClassOfDevice /* cod */) override {
-    LOG_ERROR("Remote ESCO connect request unimplemented");
-  }
-
-  void HACK_OnScoConnectRequest(Address /* address */, ClassOfDevice /* cod */) override {
-    LOG_ERROR("Remote SCO connect request unimplemented");
-  }
-
   class Connection : public ConnectionManagementCallbacks {
    public:
     Connection(
