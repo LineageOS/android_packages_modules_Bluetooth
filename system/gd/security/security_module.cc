@@ -16,20 +16,21 @@
 
 #define LOG_TAG "security"
 
+#include "security/security_module.h"
+
 #include <memory>
-#include "module.h"
-#include "os/handler.h"
-#include "os/log.h"
 
 #include "hci/acl_manager.h"
 #include "hci/hci_layer.h"
+#include "l2cap/classic/l2cap_classic_module.h"
 #include "l2cap/le/l2cap_le_module.h"
+#include "module.h"
 #include "neighbor/name_db.h"
+#include "os/handler.h"
 #include "security/channel/security_manager_channel.h"
 #include "security/facade_configuration_api.h"
 #include "security/internal/security_manager_impl.h"
 #include "security/l2cap_security_module_interface.h"
-#include "security/security_module.h"
 #include "storage/storage_module.h"
 
 namespace bluetooth {

@@ -25,6 +25,7 @@
 #include "gd/hci/msft.h"
 #include "gd/hci/remote_name_request.h"
 #include "gd/hci/vendor_specific_event_manager.h"
+#include "gd/l2cap/classic/l2cap_classic_module.h"
 #include "gd/metrics/counter_metrics.h"
 #include "gd/neighbor/connectability.h"
 #include "gd/neighbor/discoverability.h"

@@ -23,7 +23,6 @@
  ******************************************************************************/
 
 #include "security/ecc/multprecision.h"
-#include <string.h>
 
 namespace bluetooth {
 namespace security {
