@@ -114,10 +114,7 @@ public class PanService extends ProfileService {
                 }
             };
 
-    PanService() {}
-
-    @VisibleForTesting
-    PanService(Context ctx) {
+    public PanService(Context ctx) {
         super(ctx);
     }
 
