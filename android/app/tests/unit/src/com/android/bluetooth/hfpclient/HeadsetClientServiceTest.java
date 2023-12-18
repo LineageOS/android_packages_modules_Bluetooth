@@ -80,7 +80,6 @@ public class HeadsetClientServiceTest {
         mIsAdapterServiceSet = true;
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
         doReturn(mRemoteDevices).when(mAdapterService).getRemoteDevices();
-        doReturn(true, false).when(mAdapterService).isStartedProfile(anyString());
         NativeInterface.setInstance(mNativeInterface);
     }
 

@@ -69,10 +69,7 @@ public class MapClientService extends ProfileService {
 
     private Looper mSmLooper;
 
-    MapClientService() {}
-
-    @VisibleForTesting
-    MapClientService(Context ctx) {
+    public MapClientService(Context ctx) {
         super(ctx);
     }
 

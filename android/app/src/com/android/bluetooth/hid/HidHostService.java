@@ -88,12 +88,7 @@ public class HidHostService extends ProfileService {
     private static final int MESSAGE_ON_GET_IDLE_TIME = 15;
     private static final int MESSAGE_SET_IDLE_TIME = 16;
 
-    HidHostService() {
-        mNativeInterface = requireNonNull(HidHostNativeInterface.getInstance());
-    }
-
-    @VisibleForTesting
-    HidHostService(Context ctx) {
+    public HidHostService(Context ctx) {
         super(ctx);
         mNativeInterface = requireNonNull(HidHostNativeInterface.getInstance());
     }

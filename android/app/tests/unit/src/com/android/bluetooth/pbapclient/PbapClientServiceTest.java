@@ -78,7 +78,6 @@ public class PbapClientServiceTest {
         TestUtils.setAdapterService(mAdapterService);
         mIsAdapterServiceSet = true;
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
-        doReturn(true, false).when(mAdapterService).isStartedProfile(anyString());
         mService = new PbapClientService(mTargetContext);
         mService.doStart();
         mIsPbapClientServiceStarted = true;

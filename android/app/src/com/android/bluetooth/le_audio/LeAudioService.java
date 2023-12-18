@@ -182,16 +182,16 @@ public class LeAudioService extends ProfileService {
     /* When mScanCallback is not null, it means scan is started. */
     ScanCallback mScanCallback;
 
-    LeAudioService() {
+    public LeAudioService(Context ctx) {
+        super(ctx);
         mFeatureFlags = new FeatureFlagsImpl();
     }
 
     @VisibleForTesting
     LeAudioService(Context ctx, LeAudioNativeInterface nativeInterface, FeatureFlags featureFlags) {
-        attachBaseContext(ctx);
+        super(ctx);
         mLeAudioNativeInterface = nativeInterface;
         mFeatureFlags = featureFlags;
-        onCreate();
     }
 
     private class LeAudioGroupDescriptor {

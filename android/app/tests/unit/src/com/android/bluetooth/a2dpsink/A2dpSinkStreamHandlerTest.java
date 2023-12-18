@@ -82,7 +82,6 @@ public class A2dpSinkStreamHandlerTest {
             Looper.prepare();
         }
         TestUtils.setAdapterService(mAdapterService);
-        doReturn(true, false).when(mAdapterService).isStartedProfile(anyString());
         AvrcpControllerNativeInterface.setInstance(mMockAvrcpControllerNativeInterface);
         mService = new AvrcpControllerService(mTargetContext, mMockAvrcpControllerNativeInterface);
         mService.doStart();
