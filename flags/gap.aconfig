@@ -20,3 +20,10 @@ flag {
     description: "Refactor scan manager as described in go/scan-manager-refactor"
     bug: "313335632"
 }
+
+flag {
+    name: "le_scan_parameters_fix"
+    namespace: "bluetooth"
+    description: "Fix LE scan parameters downgrade during inquiry"
+    bug: "316885813"
+}
