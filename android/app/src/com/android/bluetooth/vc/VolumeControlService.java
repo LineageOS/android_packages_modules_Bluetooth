@@ -807,22 +807,32 @@ public class VolumeControlService extends ProfileService {
                     continue;
                 }
             }
-            // notify volume level for all vc devices
-            if (mFeatureFlags.leaudioBroadcastVolumeControlForConnectedDevices()) {
-                notifyDevicesVolumeChanged(getDevices(), Optional.empty());
-            }
         }
 
         tempCallbackList.finishBroadcast();
+
+        if (mFeatureFlags.leaudioBroadcastVolumeControlForConnectedDevices()) {
+            notifyDevicesVolumeChanged(tempCallbackList, getDevices(), Optional.empty());
+        }
 
         /* User is notified, remove callback from temporary list */
         tempCallbackList.unregister(callback);
     }
 
     void registerCallback(IBluetoothVolumeControlCallback callback) {
+        if (DBG) {
+            Log.d(TAG, "registerCallback: " + callback);
+        }
         /* Here we keep all the user callbacks */
         mCallbacks.register(callback);
 
+        notifyNewCallbackOfKnownVolumeInfo(callback);
+    }
+
+    void notifyNewRegisteredCallback(IBluetoothVolumeControlCallback callback) {
+        if (DBG) {
+            Log.d(TAG, "notifyNewRegisteredCallback: " + callback);
+        }
         notifyNewCallbackOfKnownVolumeInfo(callback);
     }
 
@@ -942,13 +952,15 @@ public class VolumeControlService extends ProfileService {
                 LeAudioService leAudioService = mFactory.getLeAudioService();
                 if (leAudioService != null) {
                     notifyDevicesVolumeChanged(
-                            leAudioService.getGroupDevices(groupId), Optional.of(volume));
+                            mCallbacks,
+                            leAudioService.getGroupDevices(groupId),
+                            Optional.of(volume));
                 } else {
                     Log.w(TAG, "leAudioService not available");
                 }
             } else {
                 // notify device volume changed
-                notifyDevicesVolumeChanged(Arrays.asList(device), Optional.of(volume));
+                notifyDevicesVolumeChanged(mCallbacks, Arrays.asList(device), Optional.of(volume));
             }
         }
 
@@ -1230,13 +1242,16 @@ public class VolumeControlService extends ProfileService {
      * newly registered callback, volume level is unknown from caller, notify the clients with
      * cached volume level from either device or group.
      *
+     * @param callbacks list of callbacks
      * @param devices list of devices to notify volume changed
      * @param volume volume level
      */
     private void notifyDevicesVolumeChanged(
-            List<BluetoothDevice> devices, Optional<Integer> volume) {
-        if (mCallbacks == null) {
-            Log.e(TAG, "mCallbacks is null");
+            RemoteCallbackList<IBluetoothVolumeControlCallback> callbacks,
+            List<BluetoothDevice> devices,
+            Optional<Integer> volume) {
+        if (callbacks == null) {
+            Log.e(TAG, "callbacks is null");
             return;
         }
 
@@ -1260,20 +1275,20 @@ public class VolumeControlService extends ProfileService {
                     cachedVolume = getGroupVolume(groupId);
                 }
             }
-            int n = mCallbacks.beginBroadcast();
+            int n = callbacks.beginBroadcast();
             for (int i = 0; i < n; i++) {
                 try {
                     if (!volume.isPresent()) {
-                        mCallbacks.getBroadcastItem(i).onDeviceVolumeChanged(dev, cachedVolume);
+                        callbacks.getBroadcastItem(i).onDeviceVolumeChanged(dev, cachedVolume);
                     } else {
                         mDeviceVolumeCache.put(dev, volume.get());
-                        mCallbacks.getBroadcastItem(i).onDeviceVolumeChanged(dev, volume.get());
+                        callbacks.getBroadcastItem(i).onDeviceVolumeChanged(dev, volume.get());
                     }
                 } catch (RemoteException e) {
                     continue;
                 }
             }
-            mCallbacks.finishBroadcast();
+            callbacks.finishBroadcast();
         }
     }
 
@@ -1753,6 +1768,36 @@ public class VolumeControlService extends ProfileService {
                         () -> {
                             try {
                                 service.registerCallback(callback);
+                                receiver.send(null);
+                            } catch (RuntimeException e) {
+                                receiver.propagateException(e);
+                            }
+                        });
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+
+        @Override
+        public void notifyNewRegisteredCallback(
+                IBluetoothVolumeControlCallback callback,
+                AttributionSource source,
+                SynchronousResultReceiver receiver) {
+            try {
+                Objects.requireNonNull(callback, "callback cannot be null");
+                Objects.requireNonNull(source, "source cannot be null");
+                Objects.requireNonNull(receiver, "receiver cannot be null");
+
+                VolumeControlService service = getService(source);
+                if (service == null) {
+                    throw new IllegalStateException("Service is unavailable");
+                }
+
+                enforceBluetoothPrivilegedPermission(service);
+                service.mHandler.post(
+                        () -> {
+                            try {
+                                service.notifyNewRegisteredCallback(callback);
                                 receiver.send(null);
                             } catch (RuntimeException e) {
                                 receiver.propagateException(e);
