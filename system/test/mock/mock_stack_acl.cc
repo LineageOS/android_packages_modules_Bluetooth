@@ -118,7 +118,6 @@ struct btm_acl_connected btm_acl_connected;
 struct btm_acl_created btm_acl_created;
 struct btm_acl_device_down btm_acl_device_down;
 struct btm_acl_disconnected btm_acl_disconnected;
-struct btm_acl_iso_disconnected btm_acl_iso_disconnected;
 struct btm_acl_encrypt_change btm_acl_encrypt_change;
 struct btm_acl_notif_conn_collision btm_acl_notif_conn_collision;
 struct btm_acl_process_sca_cmpl_pkt btm_acl_process_sca_cmpl_pkt;
@@ -498,10 +497,6 @@ void btm_acl_disconnected(tHCI_STATUS status, uint16_t handle,
                           tHCI_REASON reason) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_acl_disconnected(status, handle, reason);
-}
-void btm_acl_iso_disconnected(uint16_t handle, tHCI_REASON reason) {
-  inc_func_call_count(__func__);
-  test::mock::stack_acl::btm_acl_iso_disconnected(handle, reason);
 }
 void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
                             uint8_t encr_enable) {
