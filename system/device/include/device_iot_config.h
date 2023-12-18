@@ -22,9 +22,10 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include "bt_target.h"
+#include <string>
+
 #include "device_iot_conf_defs.h"
-#include "raw_address.h"
+#include "internal_include/bt_target.h"
 
 static const char DEVICE_IOT_CONFIG_MODULE[] = "device_iot_config_module";
 

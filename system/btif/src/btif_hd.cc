@@ -31,15 +31,15 @@
 
 #include <cstdint>
 
-#include "bt_target.h"  // Must be first to define build configuration
 #include "bta/include/bta_hd_api.h"
-#include "bta_sec_api.h"
 #include "bta/sys/bta_sys.h"
+#include "bta_sec_api.h"
 #include "btif/include/btif_common.h"
 #include "btif/include/btif_profile_storage.h"
 #include "btif/include/btif_util.h"
 #include "gd/common/init_flags.h"
 #include "include/hardware/bt_hd.h"
+#include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
 #include "types/raw_address.h"
