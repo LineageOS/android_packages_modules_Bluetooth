@@ -50,7 +50,8 @@ class ConnectionHandler {
    * A reference to the new Avrcp device is located in the shared_ptr.
    * If there was an issue during connection the pointer value will be null.
    */
-  using ConnectionCallback = base::Callback<void(std::shared_ptr<Device>)>;
+  using ConnectionCallback =
+      base::RepeatingCallback<void(std::shared_ptr<Device>)>;
 
   /**
    * Initializes the singleton instance and sets up SDP. Also Opens the
