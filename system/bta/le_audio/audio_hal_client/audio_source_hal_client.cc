@@ -253,7 +253,7 @@ void SourceImpl::StartAudioTicks() {
   }
   audio_timer_.SchedulePeriodic(
       worker_thread_->GetWeakPtr(), FROM_HERE,
-      base::Bind(&SourceImpl::SendAudioData, base::Unretained(this)),
+      base::BindRepeating(&SourceImpl::SendAudioData, base::Unretained(this)),
 #if BASE_VER < 931007
       base::TimeDelta::FromMicroseconds(source_codec_config_.data_interval_us));
 #else
