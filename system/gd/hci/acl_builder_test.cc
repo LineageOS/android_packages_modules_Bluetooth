@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-#include "hci/hci_packets.h"
-
 #include <gtest/gtest.h>
+
 #include <memory>
 
-#include "os/log.h"
+#include "hci/hci_packets.h"
 #include "packet/bit_inserter.h"
 #include "packet/raw_builder.h"
 

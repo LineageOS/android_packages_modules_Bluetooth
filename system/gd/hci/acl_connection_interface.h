@@ -16,10 +16,8 @@
 
 #pragma once
 
-#include "common/callback.h"
 #include "hci/command_interface.h"
 #include "hci/hci_packets.h"
-#include "os/utils.h"
 
 namespace bluetooth {
 namespace hci {

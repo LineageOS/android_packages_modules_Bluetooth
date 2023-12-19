@@ -21,6 +21,7 @@
 #include <memory>
 
 #include "hci/acl_manager/le_acl_connection.h"
+#include "hci/acl_manager/le_connection_callbacks.h"
 #include "hci/address_with_type.h"
 #include "hci/hci_packets.h"
 

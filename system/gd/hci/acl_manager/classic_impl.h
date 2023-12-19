@@ -16,9 +16,7 @@
 
 #pragma once
 
-#include <atomic>
 #include <memory>
-#include <unordered_set>
 
 #include "common/bind.h"
 #include "common/init_flags.h"

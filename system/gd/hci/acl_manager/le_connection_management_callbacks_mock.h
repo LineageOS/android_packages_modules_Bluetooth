@@ -21,7 +21,6 @@
 #include <cstdint>
 
 #include "hci/acl_manager/le_connection_management_callbacks.h"
-#include "hci/address_with_type.h"
 #include "hci/hci_packets.h"
 
 namespace bluetooth {

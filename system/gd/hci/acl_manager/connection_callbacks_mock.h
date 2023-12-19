@@ -16,7 +16,8 @@
 
 #pragma once
 
-#include <cstdint>
+#include <gmock/gmock.h>
+
 #include <memory>
 
 #include "hci/acl_manager/connection_callbacks.h"
