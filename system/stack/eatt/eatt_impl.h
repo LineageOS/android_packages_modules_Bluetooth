@@ -240,12 +240,7 @@ struct eatt_impl {
         FROM_HERE,
         base::BindOnce(&eatt_impl::upper_tester_delay_connect_cb,
                        base::Unretained(this), bda),
-#if BASE_VER < 931007
-        base::TimeDelta::FromMilliseconds(timeout_ms)
-#else
-        base::Milliseconds(timeout_ms)
-#endif
-    );
+        std::chrono::milliseconds(timeout_ms));
 
     LOG_INFO("Scheduled peripheral connect eatt for device with status: %d",
              (int)status);
@@ -292,12 +287,7 @@ struct eatt_impl {
           FROM_HERE,
           base::BindOnce(&eatt_impl::reconfigure_all, base::Unretained(this),
                          bda, 300),
-#if BASE_VER < 931007
-          base::TimeDelta::FromMilliseconds(4000)
-#else
-          base::Milliseconds(4000)
-#endif
-      );
+          std::chrono::seconds(4));
       LOG_INFO("Scheduled ECOC reconfiguration with status: %d", (int)status);
     }
   }
@@ -456,12 +446,7 @@ struct eatt_impl {
           FROM_HERE,
           base::BindOnce(&eatt_impl::upper_tester_send_data_if_needed,
                          base::Unretained(this), bda, lcid),
-#if BASE_VER < 931007
-          base::TimeDelta::FromMilliseconds(1000)
-#else
-          base::Milliseconds(1000)
-#endif
-      );
+          std::chrono::seconds(1));
     }
   }
 

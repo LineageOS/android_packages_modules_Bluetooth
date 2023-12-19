@@ -18,6 +18,7 @@
 
 #include <base/logging.h>
 #include <base/strings/stringprintf.h>
+#include <base/time/time.h>
 #include <sys/syscall.h>
 #include <unistd.h>
 
@@ -31,6 +32,14 @@ namespace bluetooth {
 namespace common {
 
 static constexpr int kRealTimeFifoSchedulingPriority = 1;
+
+static base::TimeDelta timeDeltaFromMicroseconds(std::chrono::microseconds t) {
+#if BASE_VER < 931007
+  return base::TimeDelta::FromMicroseconds(t.count());
+#else
+  return base::Microseconds(t.count());
+#endif
+}
 
 MessageLoopThread::MessageLoopThread(const std::string& thread_name)
     : thread_name_(thread_name),
@@ -62,12 +71,13 @@ void MessageLoopThread::StartUp() {
 
 bool MessageLoopThread::DoInThread(const base::Location& from_here,
                                    base::OnceClosure task) {
-  return DoInThreadDelayed(from_here, std::move(task), base::TimeDelta());
+  return DoInThreadDelayed(from_here, std::move(task),
+                           std::chrono::microseconds(0));
 }
 
 bool MessageLoopThread::DoInThreadDelayed(const base::Location& from_here,
                                           base::OnceClosure task,
-                                          const base::TimeDelta& delay) {
+                                          std::chrono::microseconds delay) {
   std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
 
   if (message_loop_ == nullptr) {
@@ -75,8 +85,8 @@ bool MessageLoopThread::DoInThreadDelayed(const base::Location& from_here,
                << ", from " << from_here.ToString();
     return false;
   }
-  if (!message_loop_->task_runner()->PostDelayedTask(from_here, std::move(task),
-                                                     delay)) {
+  if (!message_loop_->task_runner()->PostDelayedTask(
+          from_here, std::move(task), timeDeltaFromMicroseconds(delay))) {
     LOG(ERROR) << __func__
                << ": failed to post task to message loop for thread " << *this
                << ", from " << from_here.ToString();

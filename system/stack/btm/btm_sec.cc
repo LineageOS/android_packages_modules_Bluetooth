@@ -4493,11 +4493,7 @@ static void btm_sec_wait_and_start_authentication(tBTM_SEC_DEV_REC* p_dev_rec) {
 
   bt_status_t status = do_in_main_thread_delayed(
       FROM_HERE, base::Bind(&btm_sec_auth_timer_timeout, addr),
-#if BASE_VER < 931007
-      base::TimeDelta::FromMilliseconds(delay_auth));
-#else
-      base::Milliseconds(delay_auth));
-#endif
+      std::chrono::milliseconds(delay_auth));
   if (status != BT_STATUS_SUCCESS) {
     LOG_ERROR("do_in_main_thread_delayed failed. directly calling");
     btm_sec_auth_timer_timeout(addr);

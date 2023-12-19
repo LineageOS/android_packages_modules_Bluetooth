@@ -166,7 +166,8 @@ class MessageLoopThread final : public IPostableContext {
    * scheduled
    */
   bool DoInThreadDelayed(const base::Location& from_here,
-                         base::OnceClosure task, const base::TimeDelta& delay);
+                         base::OnceClosure task,
+                         std::chrono::microseconds delay);
   /**
    * Wrapper around DoInThread without a location.
    */
