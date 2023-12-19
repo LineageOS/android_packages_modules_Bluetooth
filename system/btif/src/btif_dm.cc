@@ -4012,6 +4012,9 @@ void btif_debug_bond_event_dump(int fd) {
       case BTIF_DM_FUNC_BOND_STATE_CHANGED:
         func_name = "bond_state_changed ";
         break;
+      case BTIF_DM_FUNC_CANCEL_BOND:
+        func_name = "btif_dm_cancel_bond";
+        break;
       default:
         func_name = "Invalid value      ";
         break;
