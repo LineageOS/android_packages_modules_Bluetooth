@@ -25,6 +25,7 @@
 #include "security/initial_informations.h"
 #include "security/internal/security_manager_impl.h"
 #include "security/pairing_handler_le.h"
+#include "security/security_manager_listener.h"
 #include "security/ui.h"
 
 namespace bluetooth {

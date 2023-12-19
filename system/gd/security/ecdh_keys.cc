@@ -23,8 +23,9 @@
        should honour all the random number requirements from the spec!!
 **********************************************************************************************************************/
 #include <string.h>
-#include <chrono>
+
 #include <cstdlib>
+#include <ctime>
 
 #include "security/ecc/p_256_ecc_pp.h"
 

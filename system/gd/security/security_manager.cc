@@ -18,7 +18,6 @@
 #include "security_manager.h"
 
 #include "hci/octets.h"
-#include "os/log.h"
 
 namespace bluetooth {
 namespace security {

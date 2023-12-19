@@ -15,7 +15,7 @@
  *  limitations under the License.
  *
  */
-#include "common/bind.h"
+#include "l2cap/classic/link_security_interface.h"
 #include "os/handler.h"
 
 namespace bluetooth {
