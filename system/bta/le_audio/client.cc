@@ -4241,7 +4241,7 @@ class LeAudioClientImpl : public LeAudioClient {
 
   void notifyAudioLocalSink(UnicastMonitorModeStatus status) {
     if (sink_monitor_notified_status_ != status) {
-      LOG_INFO("Stram monitoring status changed to: %d",
+      LOG_INFO("Stream monitoring status changed to: %d",
                static_cast<int>(status));
       sink_monitor_notified_status_ = status;
       callbacks_->OnUnicastMonitorModeStatus(
