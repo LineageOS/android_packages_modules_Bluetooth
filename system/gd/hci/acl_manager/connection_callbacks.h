@@ -17,11 +17,11 @@
 #pragma once
 
 #include <memory>
+
 #include "hci/acl_manager/classic_acl_connection.h"
 #include "hci/address.h"
 #include "hci/class_of_device.h"
 #include "hci/hci_packets.h"
-#include "os/handler.h"
 
 namespace bluetooth {
 namespace hci {

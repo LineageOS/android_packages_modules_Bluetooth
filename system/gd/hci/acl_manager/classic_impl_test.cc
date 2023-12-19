@@ -20,12 +20,9 @@
 #include <gtest/gtest.h>
 
 #include <chrono>
-#include <mutex>
 
 #include "common/bidi_queue.h"
-#include "common/callback.h"
 #include "common/testing/log_capture.h"
-#include "hci/acl_manager.h"
 #include "hci/acl_manager/acl_scheduler.h"
 #include "hci/acl_manager/connection_callbacks_mock.h"
 #include "hci/acl_manager/connection_management_callbacks_mock.h"
@@ -34,7 +31,6 @@
 #include "hci/hci_layer_fake.h"
 #include "hci/hci_packets.h"
 #include "os/handler.h"
-#include "os/log.h"
 #include "packet/bit_inserter.h"
 #include "packet/raw_builder.h"
 

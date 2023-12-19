@@ -27,6 +27,8 @@
 #include "common/init_flags.h"
 #include "hci/acl_manager/assembler.h"
 #include "hci/acl_manager/le_acceptlist_callbacks.h"
+#include "hci/acl_manager/le_acl_connection.h"
+#include "hci/acl_manager/le_connection_callbacks.h"
 #include "hci/acl_manager/le_connection_management_callbacks.h"
 #include "hci/acl_manager/round_robin_scheduler.h"
 #include "hci/controller.h"

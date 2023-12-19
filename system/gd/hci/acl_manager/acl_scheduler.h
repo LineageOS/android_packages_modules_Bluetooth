@@ -18,10 +18,9 @@
 
 #include <memory>
 #include <string>
-#include <utility>
 
 #include "common/contextual_callback.h"
-#include "hci/hci_packets.h"
+#include "hci/address.h"
 #include "module.h"
 
 namespace bluetooth {
