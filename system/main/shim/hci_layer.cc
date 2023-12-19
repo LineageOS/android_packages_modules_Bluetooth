@@ -26,6 +26,7 @@
 #include "common/bidi_queue.h"
 #include "common/init_flags.h"
 #include "hci/acl_connection_interface.h"
+#include "hci/controller.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_packets.h"
 #include "hci/include/packet_fragmenter.h"
@@ -514,9 +515,10 @@ static void dispatch_reassembled(BT_HDR* packet) {
 static const packet_fragmenter_callbacks_t packet_fragmenter_callbacks = {
     transmit_fragment, dispatch_reassembled};
 
-static void transmit_downward(uint16_t type, void* raw_data) {
+static void transmit_downward(void* raw_data, uint16_t iso_buffer_size) {
   bluetooth::shim::GetGdShimHandler()->Call(
-      packet_fragmenter->fragment_and_dispatch, static_cast<BT_HDR*>(raw_data));
+      packet_fragmenter->fragment_and_dispatch, static_cast<BT_HDR*>(raw_data),
+      iso_buffer_size);
 }
 
 static hci_t interface = {.set_data_cb = set_data_cb,
