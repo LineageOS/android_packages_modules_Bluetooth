@@ -69,3 +69,10 @@ flag {
     description: "Le audio broadcast feature roll-out control flag"
     bug: "316005152"
 }
+
+flag {
+    name: "delay_bonding_when_busy"
+    namespace: "bluetooth"
+    description: "Fix bonding failure due to native stack being busy"
+    bug: "316927319"
+}
