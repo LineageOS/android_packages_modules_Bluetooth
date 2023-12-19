@@ -38,6 +38,8 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
+import com.android.bluetooth.flags.FeatureFlags;
+import com.android.bluetooth.flags.FeatureFlagsImpl;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.hfpclient.HeadsetClientService;
 import com.android.bluetooth.hid.HidHostService;
@@ -89,8 +91,13 @@ final class BondStateMachine extends StateMachine {
     public static final String OOBDATAP192 = "oobdatap192";
     public static final String OOBDATAP256 = "oobdatap256";
     public static final String DISPLAY_PASSKEY = "display_passkey";
+    public static final String DELAY_RETRY_COUNT = "delay_retry_count";
+    public static final short DELAY_MAX_RETRIES = 30;
+    public static final int BOND_RETRY_DELAY_MS = 500;
 
     @VisibleForTesting Set<BluetoothDevice> mPendingBondedDevices = new HashSet<>();
+
+    private final FeatureFlags mFeatureFlags = new FeatureFlagsImpl();
 
     private BondStateMachine(AdapterService service, AdapterProperties prop,
             RemoteDevices remoteDevices) {
@@ -141,6 +148,41 @@ final class BondStateMachine extends StateMachine {
             switch (msg.what) {
 
                 case CREATE_BOND:
+                    /* BOND_BONDED event is send after keys are exchanged, but BTIF layer would
+                    still use bonding control blocks until service discovery is finished. If
+                    next pairing is started while previous still makes service discovery, it
+                    would fail. Check the busy status of BTIF instead, and wait with starting
+                    the bond. */
+                    if (mFeatureFlags.delayBondingWhenBusy()
+                            && mAdapterService.getNative().pairingIsBusy()) {
+                        short retry_no =
+                                (msg.getData() != null)
+                                        ? msg.getData().getShort(DELAY_RETRY_COUNT)
+                                        : 0;
+                        Log.d(
+                                TAG,
+                                "Delay CREATE_BOND because native is busy - attempt no "
+                                        + retry_no);
+
+                        if (retry_no < DELAY_MAX_RETRIES) {
+                            retry_no++;
+
+                            Message new_msg = obtainMessage();
+                            new_msg.copyFrom(msg);
+
+                            if (new_msg.getData() == null) {
+                                Bundle bundle = new Bundle();
+                                new_msg.setData(bundle);
+                            }
+                            new_msg.getData().putShort(DELAY_RETRY_COUNT, retry_no);
+
+                            sendMessageDelayed(new_msg, BOND_RETRY_DELAY_MS);
+                            return true;
+                        } else {
+                            Log.w(TAG, "Native was busy - the bond will most likely fail!");
+                        }
+                    }
+
                     OobData p192Data = (msg.getData() != null)
                             ? msg.getData().getParcelable(OOBDATAP192) : null;
                     OobData p256Data = (msg.getData() != null)
