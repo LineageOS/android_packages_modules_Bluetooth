@@ -41,12 +41,10 @@ std::promise<pid_t> protected_method_promise;
 
 }  // namespace
 
-namespace module_jniloop {
 // Global function with C linkage
-void external_function(int /* a */, double /* b */, char /* c */) {
+void external_function_jni(int /* a */, double /* b */, char /* c */) {
   external_function_promise.set_value(base::PlatformThread::CurrentId());
 }
-}  // namespace module_jniloop
 
 // Module private implementation that is inaccessible externally
 struct TestJniModule::PrivateImpl : public ModuleJniloop {
@@ -88,7 +86,7 @@ void TestJniModule::call_on_handler_protected_method(int loop_tid, int a, int b,
 void TestJniModule::call_on_jni_external_function(int loop_tid, int a, double b, char c) {
   external_function_promise = std::promise<pid_t>();
   auto future = external_function_promise.get_future();
-  PostFunctionOnJni(&module_jniloop::external_function, a, b, c);
+  PostFunctionOnJni(&external_function_jni, a, b, c);
   ASSERT_EQ(future.wait_for(std::chrono::seconds(3)), std::future_status::ready);
   ASSERT_EQ(future.get(), loop_tid);
 }
