@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include <atomic>
 #include <memory>
 
 #include "hci/acl_connection_interface.h"

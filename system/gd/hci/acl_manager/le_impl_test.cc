@@ -29,6 +29,7 @@
 #include "hci/address_with_type.h"
 #include "hci/controller.h"
 #include "hci/hci_packets.h"
+#include "hci/le_acl_connection_interface.h"
 #include "hci/octets.h"
 #include "os/handler.h"
 #include "os/log.h"
