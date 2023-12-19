@@ -17,14 +17,11 @@
  */
 #pragma once
 
-#include "security/pairing/pairing_handler.h"
-
 #include <utility>
 
 #include "common/callback.h"
-#include "l2cap/classic/l2cap_classic_module.h"
 #include "security/initial_informations.h"
-#include "security/security_manager_listener.h"
+#include "security/pairing/pairing_handler.h"
 
 namespace bluetooth {
 namespace security {

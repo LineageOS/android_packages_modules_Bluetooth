@@ -18,6 +18,7 @@
 #include "security/pairing/classic_pairing_handler.h"
 
 #include <gtest/gtest.h>
+
 #include <memory>
 #include <utility>
 
@@ -25,7 +26,6 @@
 #include "packet/raw_builder.h"
 #include "security/channel/security_manager_channel.h"
 #include "security/initial_informations.h"
-#include "security/smp_packets.h"
 #include "security/test/fake_hci_layer.h"
 #include "security/test/fake_name_db.h"
 #include "security/test/fake_security_interface.h"

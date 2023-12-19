@@ -18,9 +18,6 @@
 
 #pragma once
 
-#include <memory>
-#include <vector>
-
 #include "hci/address_with_type.h"
 #include "hci/hci_packets.h"
 #include "security/internal/security_manager_impl.h"
