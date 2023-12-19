@@ -43,7 +43,7 @@ RepeatingTimer::~RepeatingTimer() {
 // This runs on user thread
 bool RepeatingTimer::SchedulePeriodic(
     const base::WeakPtr<MessageLoopThread>& thread,
-    const base::Location& from_here, base::Closure task,
+    const base::Location& from_here, base::RepeatingClosure task,
     base::TimeDelta period) {
   if (period < kMinimumPeriod) {
     LOG(ERROR) << __func__ << ": period must be at least " << kMinimumPeriod;

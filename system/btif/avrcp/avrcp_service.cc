@@ -413,7 +413,8 @@ void AvrcpService::Init(MediaInterface* media_interface,
   player_settings_interface_ = wrapped_player_settings_interface;
 
   ConnectionHandler::Initialize(
-      base::Bind(&AvrcpService::DeviceCallback, base::Unretained(instance_)),
+      base::BindRepeating(&AvrcpService::DeviceCallback,
+                          base::Unretained(instance_)),
       &avrcp_interface_, &sdp_interface_, wrapped_volume_interface);
   connection_handler_ = ConnectionHandler::Get();
 }
