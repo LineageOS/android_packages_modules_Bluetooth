@@ -35,6 +35,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "android_bluetooth_flags.h"
 #include "bta/include/bta_api.h"
 #include "common/time_util.h"
 #include "device/include/controller.h"
@@ -2076,6 +2077,10 @@ tBTM_STATUS btm_ble_start_inquiry(uint8_t duration) {
   } else if ((btm_cb.ble_ctr_cb.inq_var.scan_interval != scan_interval) ||
              (btm_cb.ble_ctr_cb.inq_var.scan_window != scan_window)) {
     LOG_VERBOSE("%s, restart LE scan with low latency scan params", __func__);
+    if (IS_FLAG_ENABLED(le_scan_parameters_fix)) {
+      btm_cb.ble_ctr_cb.inq_var.scan_interval = scan_interval;
+      btm_cb.ble_ctr_cb.inq_var.scan_window = scan_window;
+    }
     btm_send_hci_scan_enable(BTM_BLE_SCAN_DISABLE, BTM_BLE_DUPLICATE_ENABLE);
     btm_send_hci_set_scan_params(
         BTM_BLE_SCAN_MODE_ACTI, scan_interval, scan_window,
