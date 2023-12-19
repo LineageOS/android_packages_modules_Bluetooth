@@ -324,7 +324,7 @@ impl AclInformation {
         _initiator: InitiatorType,
         ts: NaiveDateTime,
     ) {
-        let host_cid_state_option = self.host_cids.get(&host_cid);
+        let host_cid_state_option = self.host_cids.remove(&host_cid);
         let host_psm = match host_cid_state_option {
             Some(cid_state) => match cid_state {
                 // TODO: assert that the peer cids match.
@@ -334,7 +334,7 @@ impl AclInformation {
             None => None,
         };
 
-        let peer_cid_state_option = self.peer_cids.get(&peer_cid);
+        let peer_cid_state_option = self.peer_cids.remove(&peer_cid);
         let peer_psm = match peer_cid_state_option {
             Some(cid_state) => match cid_state {
                 // TODO: assert that the host cids match.
@@ -351,7 +351,7 @@ impl AclInformation {
             );
         }
         let psm = match host_psm.or(peer_psm) {
-            Some(psm) => *psm,
+            Some(psm) => psm,
             None => return, // No recorded PSM, no need to report.
         };
 
