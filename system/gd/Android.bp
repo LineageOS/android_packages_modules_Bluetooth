@@ -460,6 +460,7 @@ cc_test {
     host_supported: true,
     srcs: [
         ":TestCommonMockFunctions",
+        "module_gdx_unittest.cc",
         "module_jniloop_unittest.cc",
         "module_mainloop_unittest.cc",
     ],
