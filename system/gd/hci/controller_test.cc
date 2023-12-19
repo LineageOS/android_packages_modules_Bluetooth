@@ -17,10 +17,12 @@
 #include "hci/controller.h"
 
 #include <gtest/gtest.h>
+#include <unistd.h>
 
 #include <chrono>
 #include <future>
 #include <memory>
+#include <sstream>
 
 #include "common/bind.h"
 #include "common/init_flags.h"
@@ -532,10 +534,11 @@ TEST_F(ControllerTest, leRandTest) {
 }
 
 TEST_F(ControllerTest, Dumpsys) {
-  ModuleDumper dumper(fake_registry_, title);
+  ModuleDumper dumper(STDOUT_FILENO, fake_registry_, title);
 
   std::string output;
-  dumper.DumpState(&output);
+  std::ostringstream oss;
+  dumper.DumpState(&output, oss);
 
   ASSERT_TRUE(output.find("Hci Controller Dumpsys") != std::string::npos);
 }

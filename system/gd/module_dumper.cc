@@ -17,6 +17,8 @@
 
 #include "module_dumper.h"
 
+#include <sstream>
+
 #include "common/init_flags.h"
 #include "dumpsys_data_generated.h"
 #include "module.h"
@@ -26,7 +28,7 @@ using ::bluetooth::os::WakelockManager;
 
 namespace bluetooth {
 
-void ModuleDumper::DumpState(std::string* output) const {
+void ModuleDumper::DumpState(std::string* output, std::ostringstream& oss) const {
   ASSERT(output != nullptr);
 
   flatbuffers::FlatBufferBuilder builder(1024);
@@ -51,6 +53,9 @@ void ModuleDumper::DumpState(std::string* output) const {
        it++) {
     auto instance = module_registry_.started_modules_.find(*it);
     ASSERT(instance != module_registry_.started_modules_.end());
+    instance->second->GetDumpsysData();
+    instance->second->GetDumpsysData(fd_);
+    instance->second->GetDumpsysData(oss);
     queue.push(instance->second->GetDumpsysData(&builder));
   }
 
