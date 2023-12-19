@@ -104,10 +104,7 @@ public class AvrcpTargetService extends ProfileService {
 
     private static AvrcpTargetService sInstance = null;
 
-    AvrcpTargetService() {}
-
-    @VisibleForTesting
-    AvrcpTargetService(Context ctx) {
+    public AvrcpTargetService(Context ctx) {
         super(ctx);
     }
 

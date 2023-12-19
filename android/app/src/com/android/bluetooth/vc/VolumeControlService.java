@@ -218,15 +218,15 @@ public class VolumeControlService extends ProfileService {
     @VisibleForTesting
     ServiceFactory mFactory = new ServiceFactory();
 
-    VolumeControlService() {
+    public VolumeControlService(Context ctx) {
+        super(ctx);
         mFeatureFlags = new FeatureFlagsImpl();
     }
 
     @VisibleForTesting
     VolumeControlService(Context ctx, FeatureFlags featureFlags) {
-        attachBaseContext(ctx);
+        super(ctx);
         mFeatureFlags = featureFlags;
-        onCreate();
     }
 
     public static boolean isEnabled() {

@@ -79,7 +79,6 @@ public class BluetoothOppServiceTest {
 
         TestUtils.setAdapterService(mAdapterService);
         mIsAdapterServiceSet = true;
-        doReturn(true, false).when(mAdapterService).isStartedProfile(anyString());
         mService = new BluetoothOppService(targetContext);
         mService.doStart();
         mIsBluetoothOppServiceStarted = true;

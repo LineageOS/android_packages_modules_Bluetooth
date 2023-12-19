@@ -33,7 +33,6 @@ import android.os.ParcelUuid;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.MediumTest;
-import androidx.test.rule.ServiceTestRule;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
@@ -46,7 +45,6 @@ import com.android.bluetooth.flags.Flags;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -61,8 +59,6 @@ import java.util.concurrent.TimeoutException;
 @RunWith(AndroidJUnit4.class)
 public class LeAudioBroadcastServiceTest {
     private static final int TIMEOUT_MS = 1000;
-    @Rule
-    public final ServiceTestRule mServiceRule = new ServiceTestRule();
     private BluetoothAdapter mAdapter;
     private BluetoothDevice mDevice;
     private Context mTargetContext;
@@ -181,7 +177,6 @@ public class LeAudioBroadcastServiceTest {
 
         TestUtils.setAdapterService(mAdapterService);
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
-        doReturn(true, false).when(mAdapterService).isStartedProfile(anyString());
         doReturn(true).when(mAdapterService).isLeAudioBroadcastSourceSupported();
         doReturn((long)(1 << BluetoothProfile.LE_AUDIO_BROADCAST) | (1 << BluetoothProfile.LE_AUDIO))
                 .when(mAdapterService).getSupportedProfilesBitMask();
@@ -230,13 +225,12 @@ public class LeAudioBroadcastServiceTest {
     }
 
     private void startService() throws TimeoutException {
-        TestUtils.startService(mServiceRule, LeAudioService.class);
-        mService = LeAudioService.getLeAudioService();
-        Assert.assertNotNull(mService);
+        mService = new LeAudioService(mTargetContext);
+        mService.doStart();
     }
 
     private void stopService() throws TimeoutException {
-        TestUtils.stopService(mServiceRule, LeAudioService.class);
+        mService.doStop();
         mService = LeAudioService.getLeAudioService();
         Assert.assertNull(mService);
     }

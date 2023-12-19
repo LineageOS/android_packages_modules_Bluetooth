@@ -156,10 +156,7 @@ public class HeadsetService extends ProfileService {
 
     private final ServiceFactory mFactory = new ServiceFactory();
 
-    HeadsetService() {}
-
-    @VisibleForTesting
-    HeadsetService(Context ctx) {
+    public HeadsetService(Context ctx) {
         super(ctx);
     }
 

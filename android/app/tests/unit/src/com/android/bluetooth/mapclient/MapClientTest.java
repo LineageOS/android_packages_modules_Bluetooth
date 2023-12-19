@@ -67,7 +67,6 @@ public class MapClientTest {
         TestUtils.setAdapterService(mAdapterService);
         mIsAdapterServiceSet = true;
         when(mAdapterService.getDatabase()).thenReturn(mDatabaseManager);
-        doReturn(true, false).when(mAdapterService).isStartedProfile(anyString());
         MapUtils.setMnsService(mMockMnsService);
         mIsMapClientServiceStarted = true;
         mService = new MapClientService(mTargetContext);

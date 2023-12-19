@@ -127,12 +127,7 @@ public class HapClientService extends ProfileService {
         return sHapClient;
     }
 
-    protected HapClientService() {
-        mFeatureFlags = new FeatureFlagsImpl();
-    }
-
-    @VisibleForTesting
-    HapClientService(Context ctx) {
+    public HapClientService(Context ctx) {
         super(ctx);
         mFeatureFlags = new FeatureFlagsImpl();
     }

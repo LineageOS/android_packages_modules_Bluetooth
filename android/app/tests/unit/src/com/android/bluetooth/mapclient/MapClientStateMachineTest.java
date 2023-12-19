@@ -152,8 +152,6 @@ public class MapClientStateMachineTest {
         mMockContentProvider = new MockSmsContentProvider();
         mMockContentResolver = new MockContentResolver();
         when(mAdapterService.getDatabase()).thenReturn(mDatabaseManager);
-        doReturn(true, false).when(mAdapterService).isStartedProfile(anyString());
-        TestUtils.startService(mServiceRule, MapClientService.class);
         mIsMapClientServiceStarted = true;
         mMockContentResolver.addProvider("sms", mMockContentProvider);
         mMockContentResolver.addProvider("mms", mMockContentProvider);
@@ -205,9 +203,6 @@ public class MapClientStateMachineTest {
             mMceStateMachine.doQuit();
         }
 
-        if (mIsMapClientServiceStarted) {
-            TestUtils.stopService(mServiceRule, MapClientService.class);
-        }
         if (mIsAdapterServiceSet) {
             TestUtils.clearAdapterService(mAdapterService);
         }
