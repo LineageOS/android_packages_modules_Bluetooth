@@ -739,6 +739,8 @@ typedef struct {
   /** Cancel Bond */
   int (*cancel_bond)(const RawAddress* bd_addr);
 
+  bool (*pairing_is_busy)();
+
   /**
    * Get the connection status for a given remote device.
    * return value of 0 means the device is not connected,
