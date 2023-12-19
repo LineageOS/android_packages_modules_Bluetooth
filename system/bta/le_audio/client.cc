@@ -5503,8 +5503,7 @@ class LeAudioClientImpl : public LeAudioClient {
             group->ClearPendingConfiguration();
           } else {
             if (sink_monitor_mode_) {
-              callbacks_->OnUnicastMonitorModeStatus(
-                  le_audio::types::kLeAudioDirectionSink,
+              notifyAudioLocalSink(
                   UnicastMonitorModeStatus::STREAMING_SUSPENDED);
             }
           }
