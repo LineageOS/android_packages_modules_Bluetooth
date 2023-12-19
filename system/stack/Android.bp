@@ -302,6 +302,7 @@ cc_library_static {
         "libbt-platform-protos-lite",
         "libbt_shim_bridge",
         "libcom.android.sysprop.bluetooth.wrapped",
+        "server_configurable_flags",
     ],
     shared_libs: [
         "libPlatformProperties",
@@ -489,7 +490,11 @@ cc_fuzz {
         "fuzzers/smp_fuzzer.cc",
         "smp/*.cc", // add other sources files  (p256 related) under smp into this test
     ],
+    shared_libs: [
+        "server_configurable_flags",
+    ],
     static_libs: [
+        "bluetooth_flags_c_lib",
         "libbluetooth-types",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_hci_pdl",
@@ -856,6 +861,7 @@ cc_test {
     shared_libs: [
         "libcrypto",
         "libcutils",
+        "server_configurable_flags",
     ],
     static_libs: [
         "libbluetooth-types",
