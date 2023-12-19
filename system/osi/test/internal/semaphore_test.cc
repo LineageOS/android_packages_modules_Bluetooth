@@ -77,8 +77,8 @@ TEST_F(SemaphoreTest, test_ensure_wait) {
 
   EXPECT_FALSE(semaphore_try_wait(semaphore));
   SemaphoreTestSequenceHelper sequence_helper = {semaphore, 0};
-  thread.DoInThread(FROM_HERE,
-                    base::Bind(sleep_then_increment_counter, &sequence_helper));
+  thread.DoInThread(FROM_HERE, base::BindOnce(sleep_then_increment_counter,
+                                              &sequence_helper));
   semaphore_wait(semaphore);
   EXPECT_EQ(sequence_helper.counter, 1)
       << "semaphore_wait() did not wait for counter to increment";
