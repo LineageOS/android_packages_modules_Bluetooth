@@ -17,17 +17,30 @@
 #include <gtest/gtest.h>
 #include <string.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string>
 
 #include "common/strings.h"
+#include "osi/include/allocator.h"
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/gatt_api.h"
+#include "stack/include/l2c_api.h"
 #include "stack/sdp/internal/sdp_api.h"
 #include "test/mock/mock_stack_sdp_legacy_api.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
+
+namespace bluetooth {
+namespace legacy {
+namespace testing {
+BT_HDR* attp_build_value_cmd(uint16_t payload_size, uint8_t op_code,
+                             uint16_t handle, uint16_t offset, uint16_t len,
+                             uint8_t* p_data);
+}  // namespace testing
+}  // namespace legacy
+}  // namespace bluetooth
 
 class StackGattTest : public ::testing::Test {
  protected:
@@ -204,4 +217,118 @@ TEST_F(StackGattTest, gatt_status_text) {
   auto unknown = base::StringPrintf("UNKNOWN[%hhu]", 0xfc);
   ASSERT_STREQ(unknown.c_str(),
                gatt_status_text(static_cast<tGATT_STATUS>(0xfc)).c_str());
+}
+
+const static std::map<uint8_t, uint16_t> gatt_min_value_cmd_size{
+    {GATT_RSP_READ_BY_TYPE, 4},  // op_code (1) + pair_len (1) + handle (2)
+    {GATT_RSP_READ_BLOB, 1},     // op_code (1)
+    {GATT_RSP_READ, 1},
+    {GATT_REQ_PREPARE_WRITE, 5},     // op_code (1) + handle (2) + offset (2)
+    {GATT_REQ_READ_BY_GRP_TYPE, 3},  // op_code + handle
+};
+
+static void attp_build_value_cmd_test_with_p_data(uint16_t payload_size,
+                                                  uint8_t op_code,
+                                                  uint16_t handle,
+                                                  uint16_t offset, uint16_t len,
+                                                  uint8_t* p_data) {
+  uint16_t min_payload_size;
+  uint8_t pair_len_read;
+  uint16_t offset_read = 0;
+  uint16_t handle_read = 0;
+
+  ASSERT_TRUE(gatt_min_value_cmd_size.find(op_code) !=
+              gatt_min_value_cmd_size.end());
+  min_payload_size = gatt_min_value_cmd_size.at(op_code);
+
+  ASSERT_GE(payload_size, min_payload_size);
+
+  BT_HDR* ret = bluetooth::legacy::testing::attp_build_value_cmd(
+      payload_size, op_code, handle, offset, len, p_data);
+
+  ASSERT_NE(ret, nullptr);
+  uint8_t* p = (uint8_t*)(ret + 1) + L2CAP_MIN_OFFSET;
+
+  uint8_t op_code_read;
+  STREAM_TO_UINT8(op_code_read, p);
+  ASSERT_EQ(op_code_read, op_code);
+
+  if (op_code == GATT_RSP_READ_BY_TYPE) {
+    STREAM_TO_UINT8(pair_len_read, p);
+
+    STREAM_TO_UINT16(handle_read, p);
+    ASSERT_EQ(handle_read, handle);
+  } else if (op_code == GATT_RSP_READ_BLOB || op_code == GATT_RSP_READ) {
+    ;
+  } else if (op_code == GATT_REQ_PREPARE_WRITE ||
+             op_code == GATT_RSP_PREPARE_WRITE) {
+    STREAM_TO_UINT16(handle_read, p);
+    ASSERT_EQ(handle_read, handle);
+    STREAM_TO_UINT16(offset_read, p);
+    ASSERT_EQ(offset_read, offset);
+  } else {
+    STREAM_TO_UINT16(handle_read, p);
+    ASSERT_EQ(handle_read, handle);
+  }
+
+  uint16_t actual_payload_size;
+  uint8_t pair_len;
+
+  if (p_data != nullptr) {
+    if (min_payload_size + len <= payload_size) {
+      actual_payload_size = min_payload_size + len;
+      pair_len = len + 2;
+    } else {
+      actual_payload_size = payload_size;
+      pair_len = payload_size - min_payload_size + 2;
+    }
+
+    size_t cmp_size = actual_payload_size - min_payload_size;
+    int ret = memcmp(p_data, p, cmp_size);
+    ASSERT_EQ(ret, 0);
+
+  } else {
+    pair_len = len + 2;
+    actual_payload_size = min_payload_size;
+  }
+
+  ASSERT_EQ(ret->len, actual_payload_size);
+
+  if (op_code == GATT_RSP_READ_BY_TYPE) {
+    ASSERT_EQ(pair_len_read, pair_len);
+  }
+
+  osi_free_and_reset((void**)&ret);
+}
+
+TEST_F(StackGattTest, attp_build_value_cmd_p_data_null) {
+  for (auto it = gatt_min_value_cmd_size.begin();
+       it != gatt_min_value_cmd_size.end(); it++) {
+    attp_build_value_cmd_test_with_p_data(it->second, it->first, 0x1, 0x1234, 0,
+                                          nullptr);
+  }
+}
+
+TEST_F(StackGattTest, attp_build_value_cmd_no_p_data) {
+  for (auto it = gatt_min_value_cmd_size.begin();
+       it != gatt_min_value_cmd_size.end(); it++) {
+    attp_build_value_cmd_test_with_p_data(it->second, it->first, 0x1, 0x1234, 3,
+                                          (uint8_t*)"abc");
+  }
+}
+
+TEST_F(StackGattTest, attp_build_value_cmd_partial_p_data) {
+  for (auto it = gatt_min_value_cmd_size.begin();
+       it != gatt_min_value_cmd_size.end(); it++) {
+    attp_build_value_cmd_test_with_p_data(it->second + 1, it->first, 0x1,
+                                          0x1234, 3, (uint8_t*)"abc");
+  }
+}
+
+TEST_F(StackGattTest, attp_build_value_cmd_full_p_data) {
+  for (auto it = gatt_min_value_cmd_size.begin();
+       it != gatt_min_value_cmd_size.end(); it++) {
+    attp_build_value_cmd_test_with_p_data(it->second + 5, it->first, 0x1,
+                                          0x1234, 3, (uint8_t*)"abc");
+  }
 }
