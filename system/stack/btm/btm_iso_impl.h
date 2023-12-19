@@ -575,7 +575,7 @@ struct iso_impl {
     memcpy(packet->data + kIsoHeaderWithoutTsLen, data, data_len);
     auto hci = bluetooth::shim::hci_layer_get_interface();
     packet->event = MSG_STACK_TO_HC_HCI_ISO | 0x0001;
-    hci->transmit_downward(packet->event, packet);
+    hci->transmit_downward(packet, iso_buffer_size_);
   }
 
   void process_cis_est_pkt(uint8_t len, uint8_t* data) {

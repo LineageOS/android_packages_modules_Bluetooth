@@ -51,13 +51,13 @@ void BTM_LogHistory(const std::string& tag, const RawAddress& bd_addr,
 namespace bluetooth::shim {
 class IsoInterface {
  public:
-  virtual void HciSend(BT_HDR* packet, uint16_t event) = 0;
+  virtual void HciSend(BT_HDR* packet) = 0;
   virtual ~IsoInterface() = default;
 };
 
 class MockIsoInterface : public IsoInterface {
  public:
-  MOCK_METHOD((void), HciSend, (BT_HDR * p_msg, uint16_t event), (override));
+  MOCK_METHOD((void), HciSend, (BT_HDR * p_msg), (override));
 };
 
 static MockIsoInterface* iso_interface = nullptr;
@@ -76,8 +76,8 @@ static void transmit_command(const BT_HDR* command,
   FAIL() << __func__ << " should never be called";
 }
 
-static void transmit_downward(uint16_t type, void* data) {
-  iso_interface->HciSend((BT_HDR*)data, type);
+static void transmit_downward(void* data, uint16_t iso_Data_size) {
+  iso_interface->HciSend((BT_HDR*)data);
   osi_free(data);
 }
 
@@ -2090,12 +2090,11 @@ TEST_F(IsoManagerTest, SendIsoDataCigValid) {
       constexpr uint8_t data_len = 108;
 
       EXPECT_CALL(iso_interface_, HciSend)
-          .WillOnce([handle, data_len](BT_HDR* p_msg, uint16_t event) {
+          .WillOnce([handle, data_len](BT_HDR* p_msg) {
             uint8_t* p = p_msg->data;
             uint16_t msg_handle;
             uint16_t iso_load_len;
 
-            ASSERT_TRUE((event & MSG_STACK_TO_HC_HCI_ISO) != 0);
             ASSERT_NE(p_msg, nullptr);
             ASSERT_EQ(p_msg->len, data_len + ((p_msg->layer_specific &
                                                BT_ISO_HDR_CONTAINS_TS)
@@ -2142,12 +2141,11 @@ TEST_F(IsoManagerTest, SendIsoDataBigValid) {
       constexpr uint8_t data_len = 108;
 
       EXPECT_CALL(iso_interface_, HciSend)
-          .WillOnce([handle, data_len](BT_HDR* p_msg, uint16_t event) {
+          .WillOnce([handle, data_len](BT_HDR* p_msg) {
             uint8_t* p = p_msg->data;
             uint16_t msg_handle;
             uint16_t iso_load_len;
 
-            ASSERT_TRUE((event & MSG_STACK_TO_HC_HCI_ISO) != 0);
             ASSERT_NE(p_msg, nullptr);
             ASSERT_EQ(p_msg->len, data_len + ((p_msg->layer_specific &
                                                BT_ISO_HDR_CONTAINS_TS)
