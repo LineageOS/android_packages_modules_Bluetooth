@@ -124,6 +124,10 @@ public class AdapterNativeInterface {
         return cancelBondNative(address);
     }
 
+    boolean pairingIsBusy() {
+        return pairingIsBusyNative();
+    }
+
     void generateLocalOobData(int transport) {
         generateLocalOobDataNative(transport);
     }
@@ -284,6 +288,8 @@ public class AdapterNativeInterface {
     private native boolean removeBondNative(byte[] address);
 
     private native boolean cancelBondNative(byte[] address);
+
+    private native boolean pairingIsBusyNative();
 
     private native void generateLocalOobDataNative(int transport);
 
