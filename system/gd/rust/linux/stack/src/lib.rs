@@ -63,8 +63,11 @@ use bt_topshim::{
 
 /// Message types that are sent to the stack main dispatch loop.
 pub enum Message {
-    // Shuts down the stack.
-    Shutdown,
+    /// Remove the DBus API. Call it before other AdapterShutdown.
+    InterfaceShutdown,
+    /// Disable the adapter by calling btif disable.
+    AdapterShutdown,
+    /// Clean up the adapter by calling btif cleanup.
     Cleanup,
 
     // Adapter is enabled and ready.
@@ -164,8 +167,12 @@ pub enum BluetoothAPI {
     Gatt,
 }
 
+/// Message types that are sent to the InterfaceManager's dispatch loop.
 pub enum APIMessage {
+    /// Indicates a subcomponent is ready to receive DBus messages.
     IsReady(BluetoothAPI),
+    /// Indicates bluetooth is shutting down, so we remove all DBus endpoints.
+    ShutDown,
 }
 
 /// Represents suspend mode of a module.
@@ -192,6 +199,7 @@ impl Stack {
     /// Runs the main dispatch loop.
     pub async fn dispatch(
         mut rx: Receiver<Message>,
+        api_tx: Sender<APIMessage>,
         bluetooth: Arc<Mutex<Box<Bluetooth>>>,
         bluetooth_gatt: Arc<Mutex<Box<BluetoothGatt>>>,
         battery_service: Arc<Mutex<Box<BatteryService>>>,
@@ -213,7 +221,14 @@ impl Stack {
             }
 
             match m.unwrap() {
-                Message::Shutdown => {
+                Message::InterfaceShutdown => {
+                    let tx = api_tx.clone();
+                    tokio::spawn(async move {
+                        let _ = tx.send(APIMessage::ShutDown).await;
+                    });
+                }
+
+                Message::AdapterShutdown => {
                     bluetooth.lock().unwrap().disable();
                 }
 
