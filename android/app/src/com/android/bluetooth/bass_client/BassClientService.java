@@ -198,10 +198,10 @@ public class BassClientService extends ProfileService {
                 }
                 if (syncHandle != BassConstants.INVALID_SYNC_HANDLE) {
                     paRes.updateSyncHandle(syncHandle);
-                    if (mSyncHandleToBroadcastIdMap != null
-                            && paRes.getBroadcastId() != BassConstants.INVALID_BROADCAST_ID) {
-                        // broadcast successfully synced, update the map
-                        mSyncHandleToBroadcastIdMap.put(syncHandle, paRes.getBroadcastId());
+                    if (paRes.getBroadcastId() != BassConstants.INVALID_BROADCAST_ID) {
+                        // broadcast successfully synced
+                        // update the sync handle for the broadcast source
+                        updateSyncHandleForBroadcastId(syncHandle, paRes.getBroadcastId());
                     }
                 }
                 if (addressType != BassConstants.INVALID_ADV_ADDRESS_TYPE) {
@@ -469,6 +469,17 @@ public class BassClientService extends ProfileService {
             return mSyncHandleToBroadcastIdMap.get(syncHandle);
         }
         return BassConstants.INVALID_BROADCAST_ID;
+    }
+
+    void updateSyncHandleForBroadcastId(int syncHandle, int broadcastId) {
+        if (mSyncHandleToBroadcastIdMap == null) {
+            Log.e(TAG, "mSyncHandleToBroadcastIdMap is null");
+            return;
+        }
+
+        mSyncHandleToBroadcastIdMap.entrySet().removeIf(entry -> entry.getValue() == broadcastId);
+        mSyncHandleToBroadcastIdMap.put(syncHandle, broadcastId);
+        log("Updated mSyncHandleToBroadcastIdMap: " + mSyncHandleToBroadcastIdMap);
     }
 
     private static synchronized void setBassClientService(BassClientService instance) {

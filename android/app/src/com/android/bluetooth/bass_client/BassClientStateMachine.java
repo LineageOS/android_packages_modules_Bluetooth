@@ -49,6 +49,7 @@ import android.os.Message;
 import android.os.ParcelUuid;
 import android.provider.DeviceConfig;
 import android.util.Log;
+import android.util.Pair;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.Utils;
@@ -130,6 +131,8 @@ public class BassClientStateMachine extends StateMachine {
     private final Connecting mConnecting = new Connecting();
     private final ConnectedProcessing mConnectedProcessing = new ConnectedProcessing();
     private final FeatureFlags mFeatureFlags;
+    private final List<Pair<ScanResult, Integer>> mSourceSyncRequestsQueue =
+            new ArrayList<Pair<ScanResult, Integer>>();
 
     @VisibleForTesting
     final List<BluetoothGattCharacteristic> mBroadcastCharacteristics =
@@ -263,6 +266,7 @@ public class BassClientStateMachine extends StateMachine {
         mCurrentMetadata.clear();
         mPendingRemove.clear();
         mPeriodicAdvCallbacksMap.clear();
+        mSourceSyncRequestsQueue.clear();
     }
 
     Boolean hasPendingSourceOperation() {
@@ -427,8 +431,8 @@ public class BassClientStateMachine extends StateMachine {
             // null if no name present
             String broadcastName = checkAndParseBroadcastName(scanRecord);
 
-            // Avoid duplicated sync requests for the same broadcast BIG
-            if (isDuplicatedSyncRequest(broadcastId)) {
+            // Avoid duplicated sync request if the same broadcast BIG is synced
+            if (isSourceSynced(broadcastId)) {
                 log("Skip duplicated sync request to broadcast id: " + broadcastId);
                 return false;
             }
@@ -462,22 +466,18 @@ public class BassClientStateMachine extends StateMachine {
         return true;
     }
 
-    private boolean isDuplicatedSyncRequest(int broadcastId) {
-        // Either there is active sync to the same broadcast id or pending operation
-        // This is required because selectSource can be triggered from both scanning(user)
-        // and adding inactive source(auto)
+    private boolean isSourceSynced(int broadcastId) {
         List<Integer> activeSyncedSrc = mService.getActiveSyncedSources(mDevice);
-        if ((mPendingSourceToAdd != null && broadcastId == mPendingSourceToAdd.getBroadcastId())
-                || (activeSyncedSrc != null
-                        && activeSyncedSrc.contains(
-                                mService.getSyncHandleForBroadcastId(broadcastId)))) {
-            return true;
-        }
-        return false;
+        return (activeSyncedSrc != null
+                && activeSyncedSrc.contains(mService.getSyncHandleForBroadcastId(broadcastId)));
     }
 
     private void cancelActiveSync(Integer syncHandle) {
         log("cancelActiveSync: syncHandle = " + syncHandle);
+        if (syncHandle == null) {
+            // clean up the pending sync request if syncHandle is null
+            mPeriodicAdvCallbacksMap.remove(BassConstants.INVALID_SYNC_HANDLE);
+        }
         List<Integer> activeSyncedSrc = mService.getActiveSyncedSources(mDevice);
 
         /* Stop sync if there is some running */
@@ -514,6 +514,7 @@ public class BassClientStateMachine extends StateMachine {
                 Log.w(TAG, "unregisterSync:IllegalArgumentException");
                 return false;
             }
+            mPeriodicAdvCallbacksMap.remove(syncHandle);
         } else {
             log("calling unregisterSync, not found syncHandle: " + syncHandle);
         }
@@ -1130,6 +1131,14 @@ public class BassClientStateMachine extends StateMachine {
                 mPeriodicAdvCallbacksMap.remove(BassConstants.INVALID_SYNC_HANDLE);
             }
             mPendingSourceToAdd = null;
+            if (!mSourceSyncRequestsQueue.isEmpty()) {
+                log("Processing the next source to sync");
+                Pair<ScanResult, Integer> queuedSourceToSync = mSourceSyncRequestsQueue.remove(0);
+                Message msg = obtainMessage(SELECT_BCAST_SOURCE);
+                msg.obj = queuedSourceToSync.first;
+                msg.arg1 = queuedSourceToSync.second;
+                sendMessage(msg);
+            }
         }
 
         @Override
@@ -1727,7 +1736,16 @@ public class BassClientStateMachine extends StateMachine {
                 case SELECT_BCAST_SOURCE:
                     ScanResult scanRes = (ScanResult) message.obj;
                     boolean auto = ((int) message.arg1) == BassConstants.AUTO;
-                    selectSource(scanRes, auto);
+                    // check if invalid sync handle exists indicating a pending sync request
+                    if (mPeriodicAdvCallbacksMap.containsKey(BassConstants.INVALID_SYNC_HANDLE)) {
+                        log(
+                                "SELECT_BCAST_SOURCE queued due to waiting for a previous sync"
+                                        + " response");
+                        mSourceSyncRequestsQueue.add(
+                                new Pair<ScanResult, Integer>(scanRes, message.arg1));
+                    } else {
+                        selectSource(scanRes, auto);
+                    }
                     break;
                 case REACHED_MAX_SOURCE_LIMIT:
                     int handle = message.arg1;
@@ -1777,7 +1795,10 @@ public class BassClientStateMachine extends StateMachine {
                                 && mService.getCachedBroadcast(broadcastId) != null) {
                             // If the source has been synced before, try to re-sync(auto/true)
                             // with the source by previously cached scan result
-                            selectSource(mService.getCachedBroadcast(broadcastId), true);
+                            Message msg = obtainMessage(SELECT_BCAST_SOURCE);
+                            msg.obj = mService.getCachedBroadcast(broadcastId);
+                            msg.arg1 = BassConstants.AUTO;
+                            sendMessage(msg);
                             mPendingSourceToAdd = metaData;
                         } else {
                             mService.getCallbacks().notifySourceAddFailed(mDevice, metaData,

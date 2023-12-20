@@ -1741,25 +1741,16 @@ public class BassClientStateMachineTest {
         };
         ScanRecord record = ScanRecord.parseFromBytes(scanRecord);
         ScanResult scanResult = new ScanResult(mTestDevice, 0, 0, 0, 0, 0, 0, 0, record, 0);
-        // validate pending duplicated request will be skipped
-        mBassClientStateMachine.mPendingSourceToAdd = createBroadcastMetadata();
-
-        doNothing().when(mMethodProxy).periodicAdvertisingManagerRegisterSync(
-                any(), any(), anyInt(), anyInt(), any(), any());
-        mBassClientStateMachine.sendMessage(
-                SELECT_BCAST_SOURCE, BassConstants.AUTO, 0, scanResult);
-        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
-        verify(mBassClientService, never()).updatePeriodicAdvertisementResultMap(
-                any(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(),
-                any(), any());
-
-        mBassClientStateMachine.mPendingSourceToAdd = null;
 
         List<Integer> activeSyncedSrc = new ArrayList<>();
         activeSyncedSrc.add(testSyncHandle);
         // need this to ensure expected mock behavior for getActiveSyncedSource
         when(mBassClientService.getActiveSyncedSources(any())).thenReturn(activeSyncedSrc);
         when(mBassClientService.getSyncHandleForBroadcastId(anyInt())).thenReturn(testSyncHandle);
+        doNothing()
+                .when(mMethodProxy)
+                .periodicAdvertisingManagerRegisterSync(
+                        any(), any(), anyInt(), anyInt(), any(), any());
 
         mBassClientStateMachine.sendMessage(SELECT_BCAST_SOURCE, BassConstants.AUTO, 0, scanResult);
         TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
