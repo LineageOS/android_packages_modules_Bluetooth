@@ -30,6 +30,7 @@
 #include "common/time_util.h"
 #include "device/include/controller.h"
 #include "hci/include/hci_layer.h"
+#include "internal_include/bt_trace.h"
 #include "internal_include/stack_config.h"
 #include "main/shim/hci_layer.h"
 #include "os/log.h"
