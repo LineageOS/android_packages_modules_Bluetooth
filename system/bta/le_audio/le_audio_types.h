@@ -1036,7 +1036,7 @@ static constexpr uint32_t kChannelAllocationStereo =
     codec_spec_conf::kLeAudioLocationFrontRight;
 
 /* Declarations */
-void get_cis_count(const AudioSetConfigurations& audio_set_configurations,
+void get_cis_count(types::LeAudioContextType context_type,
                    int expected_device_cnt,
                    types::LeAudioConfigurationStrategy strategy,
                    int group_ase_snk_cnt, int group_ase_src_count,
