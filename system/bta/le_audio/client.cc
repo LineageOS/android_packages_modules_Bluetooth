@@ -2211,12 +2211,7 @@ class LeAudioClientImpl : public LeAudioClient {
         base::BindOnce(
             &LeAudioClientImpl::checkGroupConnectionStateAfterMemberDisconnect,
             weak_factory_.GetWeakPtr(), group_id),
-#if BASE_VER < 931007
-        base::TimeDelta::FromMilliseconds(kGroupConnectedWatchDelayMs)
-#else
-        base::Milliseconds(kDeviceAttachDelayMs)
-#endif
-    );
+        std::chrono::milliseconds(kGroupConnectedWatchDelayMs));
   }
 
   void autoConnect(RawAddress address) {
@@ -2236,12 +2231,7 @@ class LeAudioClientImpl : public LeAudioClient {
         FROM_HERE,
         base::BindOnce(&LeAudioClientImpl::autoConnect,
                        weak_factory_.GetWeakPtr(), address),
-#if BASE_VER < 931007
-        base::TimeDelta::FromMilliseconds(kAutoConnectAfterOwnDisconnectDelayMs)
-#else
-        base::Milliseconds(kDeviceAttachDelayMs)
-#endif
-    );
+        std::chrono::milliseconds(kAutoConnectAfterOwnDisconnectDelayMs));
   }
 
   void recoveryReconnect(RawAddress address) {
@@ -2275,12 +2265,7 @@ class LeAudioClientImpl : public LeAudioClient {
         FROM_HERE,
         base::BindOnce(&LeAudioClientImpl::recoveryReconnect,
                        weak_factory_.GetWeakPtr(), address),
-#if BASE_VER < 931007
-        base::TimeDelta::FromMilliseconds(kRecoveryReconnectDelayMs)
-#else
-        base::Milliseconds(kDeviceAttachDelayMs)
-#endif
-    );
+        std::chrono::milliseconds(kRecoveryReconnectDelayMs));
   }
 
   void checkIfGroupMember(RawAddress address) {
@@ -2316,12 +2301,7 @@ class LeAudioClientImpl : public LeAudioClient {
         FROM_HERE,
         base::BindOnce(&LeAudioClientImpl::checkIfGroupMember,
                        weak_factory_.GetWeakPtr(), address),
-#if BASE_VER < 931007
-        base::TimeDelta::FromMilliseconds(kCsisGroupMemberDelayMs)
-#else
-        base::Milliseconds(kCsisGroupMemberDelayMs)
-#endif
-    );
+        std::chrono::milliseconds(kCsisGroupMemberDelayMs));
   }
 
   void OnGattDisconnected(uint16_t conn_id, tGATT_IF client_if,
@@ -3127,12 +3107,7 @@ class LeAudioClientImpl : public LeAudioClient {
         FROM_HERE,
         base::BindOnce(&LeAudioClientImpl::restartAttachToTheStream,
                        weak_factory_.GetWeakPtr(), addr),
-#if BASE_VER < 931007
-        base::TimeDelta::FromMilliseconds(kDeviceAttachDelayMs)
-#else
-        base::Milliseconds(kDeviceAttachDelayMs)
-#endif
-    );
+        std::chrono::milliseconds(kDeviceAttachDelayMs));
   }
 
   void SendAudioGroupSelectableCodecConfigChanged(LeAudioDeviceGroup* group) {

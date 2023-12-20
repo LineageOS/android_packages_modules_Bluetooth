@@ -111,12 +111,12 @@ struct bta_sys_sendmsg {
 extern struct bta_sys_sendmsg bta_sys_sendmsg;
 
 // Name: bta_sys_sendmsg_delayed
-// Params: void* p_msg, const base::TimeDelta& delay
+// Params: void* p_msg, std::chrono::microseconds delay
 // Return: void
 struct bta_sys_sendmsg_delayed {
-  std::function<void(void* p_msg, const base::TimeDelta& delay)> body{
-      [](void* p_msg, const base::TimeDelta& delay) {}};
-  void operator()(void* p_msg, const base::TimeDelta& delay) {
+  std::function<void(void* p_msg, std::chrono::microseconds delay)> body{
+      [](void* p_msg, std::chrono::microseconds delay) {}};
+  void operator()(void* p_msg, std::chrono::microseconds delay) {
     body(p_msg, delay);
   };
 };

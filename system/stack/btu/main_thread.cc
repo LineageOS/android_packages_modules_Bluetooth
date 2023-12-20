@@ -46,7 +46,7 @@ bt_status_t do_in_main_thread(const base::Location& from_here,
 
 bt_status_t do_in_main_thread_delayed(const base::Location& from_here,
                                       base::OnceClosure task,
-                                      const base::TimeDelta& delay) {
+                                      std::chrono::microseconds delay) {
   if (!main_thread.DoInThreadDelayed(from_here, std::move(task), delay)) {
     LOG(ERROR) << __func__ << ": failed from " << from_here.ToString();
     return BT_STATUS_FAIL;

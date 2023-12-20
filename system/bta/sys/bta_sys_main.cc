@@ -165,7 +165,7 @@ void bta_sys_sendmsg(void* p_msg) {
   }
 }
 
-void bta_sys_sendmsg_delayed(void* p_msg, const base::TimeDelta& delay) {
+void bta_sys_sendmsg_delayed(void* p_msg, std::chrono::microseconds delay) {
   if (do_in_main_thread_delayed(
           FROM_HERE,
           base::Bind(&bta_sys_event, static_cast<BT_HDR_RIGID*>(p_msg)),
