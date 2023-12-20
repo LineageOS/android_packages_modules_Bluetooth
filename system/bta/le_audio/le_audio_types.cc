@@ -69,152 +69,72 @@ static uint8_t min_req_devices_cnt(
   return curr_min_req_devices_cnt;
 }
 
-inline void get_cis_count(const AudioSetConfiguration& audio_set_conf,
-                          int expected_device_cnt,
-                          types::LeAudioConfigurationStrategy strategy,
-                          int avail_group_sink_ase_count,
-                          int avail_group_source_ase_count,
-                          uint8_t& out_current_cis_count_bidir,
-                          uint8_t& out_current_cis_count_unidir_sink,
-                          uint8_t& out_current_cis_count_unidir_source) {
-  LOG_INFO("%s", audio_set_conf.name.c_str());
-
-  /* Sum up the requirements from all subconfigs. They usually have different
-   * directions.
-   */
-  types::BidirectionalPair<uint8_t> config_ase_count = {0, 0};
-  int config_device_cnt = 0;
-
-  for (auto ent : audio_set_conf.confs) {
-    if ((ent.direction == kLeAudioDirectionSink) &&
-        (ent.strategy != strategy)) {
-      LOG_DEBUG("Strategy does not match (%d != %d)- skip this configuration",
-                static_cast<int>(ent.strategy), static_cast<int>(strategy));
-      return;
-    }
-
-    /* Sum up sink and source ases */
-    if (ent.direction == kLeAudioDirectionSink) {
-      config_ase_count.sink += ent.ase_cnt;
-    }
-    if (ent.direction == kLeAudioDirectionSource) {
-      config_ase_count.source += ent.ase_cnt;
-    }
-
-    /* Calculate the max device count */
-    config_device_cnt =
-        std::max(static_cast<uint8_t>(config_device_cnt), ent.device_cnt);
-  }
-
-  LOG_DEBUG("Config sink ases: %d, source ases: %d, device count: %d",
-            config_ase_count.sink, config_ase_count.source, config_device_cnt);
-
-  /* Reject configurations not matching our device count */
-  if (expected_device_cnt != config_device_cnt) {
-    LOG_DEBUG(" Device cnt %d != %d", expected_device_cnt, config_device_cnt);
-    return;
-  }
-
-  /* Reject configurations requiring sink ASES if our group has none */
-  if ((avail_group_sink_ase_count == 0) && (config_ase_count.sink > 0)) {
-    LOG_DEBUG("Group does not have sink ASEs");
-    return;
-  }
-
-  /* Reject configurations requiring source ASES if our group has none */
-  if ((avail_group_source_ase_count == 0) && (config_ase_count.source > 0)) {
-    LOG_DEBUG("Group does not have source ASEs");
-    return;
-  }
-
-  /* If expected group size is 1, then make sure device has enough ASEs */
-  if (expected_device_cnt == 1) {
-    if ((config_ase_count.sink > avail_group_sink_ase_count) ||
-        (config_ase_count.source > avail_group_source_ase_count)) {
-      LOG_DEBUG("Single device group with not enought sink/source ASEs");
-      return;
-    }
-  }
-
-  /* Configuration list is set in the prioritized order.
-   * it might happen that a higher prio configuration can be supported
-   * and is already taken into account (out_current_cis_count_* is non zero).
-   * Now let's try to ignore ortogonal configuration which would just
-   * increase our demant on number of CISes but will never happen
-   */
-  if (config_ase_count.sink == 0 && (out_current_cis_count_unidir_sink > 0 ||
-                                     out_current_cis_count_bidir > 0)) {
-    LOG_INFO(
-        "Higher prio configuration using sink ASEs has been taken into "
-        "account");
-    return;
-  }
-
-  if (config_ase_count.source == 0 &&
-      (out_current_cis_count_unidir_source > 0 ||
-       out_current_cis_count_bidir > 0)) {
-    LOG_INFO(
-        "Higher prio configuration using source ASEs has been taken into "
-        "account");
-    return;
-  }
-
-  /* Check how many bidirectional cises we can use */
-  uint8_t config_bidir_cis_count =
-      std::min(config_ase_count.sink, config_ase_count.source);
-  /* Count the remaining unidirectional cises */
-  uint8_t config_unidir_sink_cis_count =
-      config_ase_count.sink - config_bidir_cis_count;
-  uint8_t config_unidir_source_cis_count =
-      config_ase_count.source - config_bidir_cis_count;
-
-  /* WARNING: Minipolicy which prioritizes bidirectional configs */
-  if (config_bidir_cis_count > out_current_cis_count_bidir) {
-    /* Correct all counters to represent this single config */
-    out_current_cis_count_bidir = config_bidir_cis_count;
-    out_current_cis_count_unidir_sink = config_unidir_sink_cis_count;
-    out_current_cis_count_unidir_source = config_unidir_source_cis_count;
-
-  } else if (out_current_cis_count_bidir == 0) {
-    /* No bidirectionals possible yet. Calculate for unidirectional cises. */
-    if ((out_current_cis_count_unidir_sink == 0) &&
-        (out_current_cis_count_unidir_source == 0)) {
-      out_current_cis_count_unidir_sink = config_unidir_sink_cis_count;
-      out_current_cis_count_unidir_source = config_unidir_source_cis_count;
-    }
-  }
-}
-
-void get_cis_count(const AudioSetConfigurations& audio_set_confs,
-                   int expected_device_cnt,
+void get_cis_count(LeAudioContextType context_type, int expected_device_cnt,
                    types::LeAudioConfigurationStrategy strategy,
                    int avail_group_ase_snk_cnt, int avail_group_ase_src_count,
                    uint8_t& out_cis_count_bidir,
                    uint8_t& out_cis_count_unidir_sink,
                    uint8_t& out_cis_count_unidir_source) {
   LOG_INFO(
-      " strategy %d, group avail sink ases: %d, group avail source ases %d "
+      " %s strategy %d, group avail sink ases: %d, group avail source ases %d "
       "expected_device_count %d",
+      bluetooth::common::ToString(context_type).c_str(),
       static_cast<int>(strategy), avail_group_ase_snk_cnt,
       avail_group_ase_src_count, expected_device_cnt);
 
-  /* Look for the most optimal configuration and store the needed cis counts */
-  for (auto audio_set_conf : audio_set_confs) {
-    get_cis_count(*audio_set_conf, expected_device_cnt, strategy,
-                  avail_group_ase_snk_cnt, avail_group_ase_src_count,
-                  out_cis_count_bidir, out_cis_count_unidir_sink,
-                  out_cis_count_unidir_source);
+  bool is_bidirectional = types::kLeAudioContextAllBidir.test(context_type);
 
-    LOG_DEBUG(
-        "Intermediate step:  Bi-Directional: %d,"
-        " Uni-Directional Sink: %d, Uni-Directional Source: %d ",
-        out_cis_count_bidir, out_cis_count_unidir_sink,
-        out_cis_count_unidir_source);
+  switch (strategy) {
+    case types::LeAudioConfigurationStrategy::MONO_ONE_CIS_PER_DEVICE:
+    /* This strategy is for the CSIS topology, e.g. two earbuds which are both
+     * connected with a Phone
+     */
+    case types::LeAudioConfigurationStrategy::STEREO_ONE_CIS_PER_DEVICE:
+      /* This strategy is for e.g. the banded headphones */
+      if (is_bidirectional) {
+        if ((avail_group_ase_snk_cnt > 0) && (avail_group_ase_src_count) > 0) {
+          /* Prepare CIG to enable all microphones */
+          out_cis_count_bidir = expected_device_cnt;
+        } else {
+          if (avail_group_ase_snk_cnt > 0) {
+            out_cis_count_unidir_sink = expected_device_cnt;
+          } else if (avail_group_ase_src_count > 0) {
+            out_cis_count_unidir_source = expected_device_cnt;
+          }
+        }
+      } else {
+        out_cis_count_unidir_sink = expected_device_cnt;
+      }
+
+      break;
+    case types::LeAudioConfigurationStrategy::STEREO_TWO_CISES_PER_DEVICE:
+      /* This strategy is for the old TWS topology. e.g. one earbud connected to
+       * the Phone but each channel is carried in separate CIS
+       */
+      if (is_bidirectional) {
+        if ((avail_group_ase_snk_cnt > 0) && (avail_group_ase_src_count) > 0) {
+          /* Prepare CIG to enable all microphones per device */
+          out_cis_count_bidir = expected_device_cnt;
+          out_cis_count_unidir_sink = expected_device_cnt;
+        } else {
+          if (avail_group_ase_snk_cnt > 0) {
+            out_cis_count_unidir_sink = 2 * expected_device_cnt;
+          } else if (avail_group_ase_src_count > 0) {
+            out_cis_count_unidir_source = 2 * expected_device_cnt;
+          }
+        }
+      } else {
+        out_cis_count_unidir_sink = 2 * expected_device_cnt;
+      }
+      break;
+    case types::LeAudioConfigurationStrategy::RFU:
+      LOG_ERROR("Should not happen;");
+      break;
   }
 
   LOG_INFO(
-      " Maximum CIS count, Bi-Directional: %d,"
-      " Uni-Directional Sink: %d, Uni-Directional Source: %d",
+      "Required cis count: Bi-Directional: %d, Uni-Directional Sink: %d, "
+      "Uni-Directional Source: %d",
       out_cis_count_bidir, out_cis_count_unidir_sink,
       out_cis_count_unidir_source);
 }
