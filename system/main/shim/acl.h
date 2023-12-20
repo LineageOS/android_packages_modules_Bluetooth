@@ -57,9 +57,6 @@ class Acl : public hci::acl_manager::ConnectionCallbacks,
   void OnConnectFail(hci::Address, hci::ErrorCode reason,
                      bool locally_initiated) override;
 
-  void HACK_OnEscoConnectRequest(hci::Address, hci::ClassOfDevice) override;
-  void HACK_OnScoConnectRequest(hci::Address, hci::ClassOfDevice) override;
-
   void OnClassicLinkDisconnected(uint16_t handle, hci::ErrorCode reason);
 
   // hci::acl_manager::LeConnectionCallbacks

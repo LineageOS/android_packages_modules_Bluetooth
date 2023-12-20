@@ -56,8 +56,10 @@ void btm_acl_removed(uint16_t handle);
 void btm_ble_decrement_link_topology_mask(uint8_t link_role);
 void btm_sco_acl_removed(const RawAddress* bda);
 
-static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf);
-static BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb);
+static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
+                                   tL2C_TX_COMPLETE_CB_INFO* p_cbi);
+static BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb,
+                                            tL2C_TX_COMPLETE_CB_INFO* p_cbi);
 
 void l2c_link_hci_conn_comp(tHCI_STATUS status, uint16_t handle,
                             const RawAddress& p_bda) {
@@ -866,7 +868,7 @@ void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, uint16_t local_cid,
         LOG_VERBOSE("Sending to lower layer");
         p_buf = (BT_HDR*)list_front(p_lcb->link_xmit_data_q);
         list_remove(p_lcb->link_xmit_data_q, p_buf);
-        l2c_link_send_to_lower(p_lcb, p_buf);
+        l2c_link_send_to_lower(p_lcb, p_buf, NULL);
       } else if (single_write) {
         /* If only doing one write, break out */
         LOG_DEBUG("single_write is true, skipping");
@@ -874,11 +876,12 @@ void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, uint16_t local_cid,
       }
       /* If nothing on the link queue, check the channel queue */
       else {
+        tL2C_TX_COMPLETE_CB_INFO cbi = {};
         LOG_DEBUG("Check next buffer");
-        p_buf = l2cu_get_next_buffer_to_send(p_lcb);
+        p_buf = l2cu_get_next_buffer_to_send(p_lcb, &cbi);
         if (p_buf != NULL) {
           LOG_DEBUG("Sending next buffer");
-          l2c_link_send_to_lower(p_lcb, p_buf);
+          l2c_link_send_to_lower(p_lcb, p_buf, &cbi);
         }
       }
     }
@@ -921,7 +924,7 @@ void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, uint16_t local_cid,
       LOG_VERBOSE("Sending to lower layer");
       p_buf = (BT_HDR*)list_front(p_lcb->link_xmit_data_q);
       list_remove(p_lcb->link_xmit_data_q, p_buf);
-      l2c_link_send_to_lower(p_lcb, p_buf);
+      l2c_link_send_to_lower(p_lcb, p_buf, NULL);
     }
 
     if (!single_write) {
@@ -932,13 +935,14 @@ void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, uint16_t local_cid,
               (l2cb.controller_le_xmit_window != 0 &&
                (p_lcb->transport == BT_TRANSPORT_LE))) &&
              (p_lcb->sent_not_acked < p_lcb->link_xmit_quota)) {
-        p_buf = l2cu_get_next_buffer_to_send(p_lcb);
+        tL2C_TX_COMPLETE_CB_INFO cbi = {};
+        p_buf = l2cu_get_next_buffer_to_send(p_lcb, &cbi);
         if (p_buf == NULL) {
           LOG_VERBOSE("No next buffer, skipping");
           break;
         }
         LOG_VERBOSE("Sending to lower layer");
-        l2c_link_send_to_lower(p_lcb, p_buf);
+        l2c_link_send_to_lower(p_lcb, p_buf, &cbi);
       }
     }
 
@@ -1006,12 +1010,14 @@ static void l2c_link_send_to_lower_ble(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
             l2cb.ble_round_robin_quota, l2cb.ble_round_robin_unacked);
 }
 
-static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
+static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
+                                   tL2C_TX_COMPLETE_CB_INFO* p_cbi) {
   if (p_lcb->transport == BT_TRANSPORT_BR_EDR) {
     l2c_link_send_to_lower_br_edr(p_lcb, p_buf);
   } else {
     l2c_link_send_to_lower_ble(p_lcb, p_buf);
   }
+  if (p_cbi) l2cu_tx_complete(p_cbi);
 }
 
 void l2c_packets_completed(uint16_t handle, uint16_t num_sent) {
@@ -1230,12 +1236,15 @@ tL2C_CCB* l2cu_get_next_channel_in_rr(tL2C_LCB* p_lcb) {
  * Returns          pointer to buffer or NULL
  *
  ******************************************************************************/
-BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb) {
+BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb,
+                                     tL2C_TX_COMPLETE_CB_INFO* p_cbi) {
   tL2C_CCB* p_ccb;
   BT_HDR* p_buf;
 
   /* Highest priority are fixed channels */
   int xx;
+
+  p_cbi->cb = NULL;
 
   for (xx = 0; xx < L2CAP_NUM_FIXED_CHNLS; xx++) {
     p_ccb = p_lcb->p_fixed_ccbs[xx];
@@ -1268,6 +1277,11 @@ BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb) {
           LOG_ERROR("No data to be sent");
           return (NULL);
         }
+
+        /* Prepare callback info for TX completion */
+        p_cbi->cb = l2cb.fixed_reg[xx].pL2CA_FixedTxComplete_Cb;
+        p_cbi->local_cid = p_ccb->local_cid;
+        p_cbi->num_sdu = 1;
 
         l2cu_check_channel_congestion(p_ccb);
         l2cu_set_acl_hci_header(p_buf, p_ccb);

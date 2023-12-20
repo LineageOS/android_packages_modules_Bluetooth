@@ -30,7 +30,6 @@ static_library("common") {
     "//bt/system/",
     "//bt/system/stack/include",
     "//bt/system/linux_include",
-    "//bt/system/internal_include",
   ]
 
   deps = [

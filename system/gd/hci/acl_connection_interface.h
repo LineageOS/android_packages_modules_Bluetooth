@@ -16,10 +16,8 @@
 
 #pragma once
 
-#include "common/callback.h"
 #include "hci/command_interface.h"
 #include "hci/hci_packets.h"
-#include "os/utils.h"
 
 namespace bluetooth {
 namespace hci {
@@ -28,7 +26,6 @@ constexpr EventCode AclConnectionEvents[] = {
     EventCode::CONNECTION_PACKET_TYPE_CHANGED,
     EventCode::ROLE_CHANGE,
     EventCode::CONNECTION_COMPLETE,
-    EventCode::CONNECTION_REQUEST,
     EventCode::AUTHENTICATION_COMPLETE,
     EventCode::READ_CLOCK_OFFSET_COMPLETE,
     EventCode::MODE_CHANGE,

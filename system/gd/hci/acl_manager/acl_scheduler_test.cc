@@ -19,13 +19,9 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <algorithm>
 #include <chrono>
 #include <future>
-#include <map>
 
-#include "common/bind.h"
-#include "common/init_flags.h"
 #include "hci/address.h"
 #include "os/thread.h"
 

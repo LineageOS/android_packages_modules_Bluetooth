@@ -16,15 +16,14 @@
 
 #pragma once
 
-#include <atomic>
 #include <memory>
-#include <unordered_set>
 
 #include "common/bind.h"
 #include "common/init_flags.h"
 #include "hci/acl_manager/acl_scheduler.h"
 #include "hci/acl_manager/assembler.h"
 #include "hci/acl_manager/round_robin_scheduler.h"
+#include "hci/class_of_device.h"
 #include "hci/controller.h"
 #include "hci/event_checkers.h"
 #include "hci/remote_name_request.h"
@@ -70,6 +69,7 @@ struct classic_impl : public security::ISecurityManagerListener {
     acl_connection_interface_ = hci_layer_->GetAclConnectionInterface(
         handler_->BindOn(this, &classic_impl::on_classic_event),
         handler_->BindOn(this, &classic_impl::on_classic_disconnect),
+        handler_->BindOn(this, &classic_impl::on_incoming_connection),
         handler_->BindOn(this, &classic_impl::on_read_remote_version_information));
   }
 
@@ -84,9 +84,6 @@ struct classic_impl : public security::ISecurityManagerListener {
     switch (event_code) {
       case EventCode::CONNECTION_COMPLETE:
         on_connection_complete(event_packet);
-        break;
-      case EventCode::CONNECTION_REQUEST:
-        on_incoming_connection(event_packet);
         break;
       case EventCode::CONNECTION_PACKET_TYPE_CHANGED:
         on_connection_packet_type_changed(event_packet);
@@ -243,10 +240,7 @@ struct classic_impl : public security::ISecurityManagerListener {
     return connections.send_packet_upward(handle, cb);
   }
 
-  void on_incoming_connection(EventView packet) {
-    ConnectionRequestView request = ConnectionRequestView::Create(packet);
-    ASSERT(request.IsValid());
-    Address address = request.GetBdAddr();
+  void on_incoming_connection(Address address, ClassOfDevice cod) {
     if (client_callbacks_ == nullptr) {
       LOG_ERROR("No callbacks to call");
       auto reason = RejectConnectionReason::LIMITED_RESOURCES;
@@ -254,39 +248,15 @@ struct classic_impl : public security::ISecurityManagerListener {
       return;
     }
 
-    switch (request.GetLinkType()) {
-      case ConnectionRequestLinkType::SCO:
-        client_handler_->CallOn(
-            client_callbacks_, &ConnectionCallbacks::HACK_OnScoConnectRequest, address, request.GetClassOfDevice());
-        return;
-
-      case ConnectionRequestLinkType::ACL:
-        // Need to upstream Cod information when getting connection_request
-        client_handler_->CallOn(
-            client_callbacks_,
-            &ConnectionCallbacks::OnConnectRequest,
-            address,
-            request.GetClassOfDevice());
-        break;
-
-      case ConnectionRequestLinkType::ESCO:
-        client_handler_->CallOn(
-            client_callbacks_, &ConnectionCallbacks::HACK_OnEscoConnectRequest, address, request.GetClassOfDevice());
-        return;
-
-      default:
-        LOG_ERROR(
-            "Request has unknown ConnectionRequestLinkType %s",
-            ConnectionRequestLinkTypeText(request.GetLinkType()).c_str());
-        return;
-    }
+    client_handler_->CallOn(
+        client_callbacks_, &ConnectionCallbacks::OnConnectRequest, address, cod);
 
     acl_scheduler_->RegisterPendingIncomingConnection(address);
 
     if (is_classic_link_already_connected(address)) {
       auto reason = RejectConnectionReason::UNACCEPTABLE_BD_ADDR;
       this->reject_connection(RejectConnectionRequestBuilder::Create(address, reason));
-    } else if (should_accept_connection_.Run(address, request.GetClassOfDevice())) {
+    } else if (should_accept_connection_.Run(address, cod)) {
       this->accept_connection(address);
     } else {
       auto reason = RejectConnectionReason::LIMITED_RESOURCES;  // TODO: determine reason
@@ -488,10 +458,6 @@ struct classic_impl : public security::ISecurityManagerListener {
           callbacks->OnDisconnection(reason);
         },
         kRemoveConnectionAfterwards);
-    // This handle is probably for SCO, so we use the callback workaround.
-    if (non_acl_disconnect_callback_ != nullptr) {
-      non_acl_disconnect_callback_(handle, static_cast<uint8_t>(reason));
-    }
     connections.crash_on_unknown_handle_ = event_also_routes_to_other_receivers;
   }
 
@@ -800,10 +766,6 @@ struct classic_impl : public security::ISecurityManagerListener {
     return connections.HACK_get_handle(address);
   }
 
-  void HACK_SetNonAclDisconnectCallback(std::function<void(uint16_t, uint8_t)> callback) {
-    non_acl_disconnect_callback_ = callback;
-  }
-
   void handle_register_callbacks(ConnectionCallbacks* callbacks, os::Handler* handler) {
     ASSERT(client_callbacks_ == nullptr);
     ASSERT(client_handler_ == nullptr);
@@ -832,8 +794,6 @@ struct classic_impl : public security::ISecurityManagerListener {
   std::unique_ptr<RoleChangeView> delayed_role_change_ = nullptr;
 
   std::unique_ptr<security::SecurityManager> security_manager_;
-
-  std::function<void(uint16_t, uint8_t)> non_acl_disconnect_callback_;
 };
 
 }  // namespace acl_manager

@@ -15,7 +15,9 @@
  */
 
 #include "hci/fuzz/hci_layer_fuzz_client.h"
+
 #include "fuzz/helpers.h"
+#include "hci/class_of_device.h"
 
 namespace bluetooth {
 namespace hci {
@@ -37,6 +39,7 @@ void HciLayerFuzzClient::Start() {
   acl_connection_interface_ = hci_->GetAclConnectionInterface(
       GetHandler()->Bind([](EventView) {}),
       GetHandler()->Bind([](uint16_t, hci::ErrorCode) {}),
+      GetHandler()->Bind([](Address, ClassOfDevice) {}),
       GetHandler()->Bind([](hci::ErrorCode, uint16_t, uint8_t, uint16_t, uint16_t) {}));
   le_acl_connection_interface_ = hci_->GetLeAclConnectionInterface(
       GetHandler()->Bind([](LeMetaEventView) {}),

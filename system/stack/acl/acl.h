@@ -303,8 +303,6 @@ struct tACL_CONN {
     return is_switch_role_switching() || is_switch_role_in_progress();
   }
 
-  friend void DumpsysL2cap(int fd);
-
  public:
   uint8_t sca; /* Sleep clock accuracy */
 
@@ -325,7 +323,6 @@ struct tACL_CB {
   friend void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
                                      uint8_t encr_enable);
 
-  friend void DumpsysL2cap(int fd);
   friend void DumpsysAcl(int fd);
   friend struct StackAclBtmAcl;
 

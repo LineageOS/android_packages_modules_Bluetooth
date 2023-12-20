@@ -20,27 +20,27 @@
 #include <base/functional/bind.h>
 #include <base/location.h>
 
-#include "stack/include/main_thread.h"
+#include "btif/include/btif_jni_task.h"
 
 namespace bluetooth {
 
-class ModuleMainloop {
+class ModuleJniloop {
  protected:
-  ModuleMainloop() noexcept = default;
-  virtual ~ModuleMainloop() = default;
-  ModuleMainloop(const ModuleMainloop& mod) = delete;
+  ModuleJniloop() noexcept = default;
+  virtual ~ModuleJniloop() = default;
+  ModuleJniloop(const ModuleJniloop& mod) = delete;
 
-  // Threadsafe post onto mainloop a function with copyable arguments
+  // Threadsafe post onto jni loop a function with copyable arguments
   template <typename Functor, typename... Args>
-  void PostFunctionOnMain(Functor&& functor, Args&&... args) const {
-    do_in_main_thread(
+  void PostFunctionOnJni(Functor&& functor, Args&&... args) const {
+    do_in_jni_thread(
         FROM_HERE, base::BindOnce(std::forward<Functor>(functor), std::forward<Args>(args)...));
   }
 
-  // Threadsafe post onto mainloop a method and context with copyable arguments
+  // Threadsafe post onto jni loop a method and context with copyable arguments
   template <typename T, typename Functor, typename... Args>
-  void PostMethodOnMain(std::shared_ptr<T> ref, Functor&& functor, Args... args) const {
-    do_in_main_thread(
+  void PostMethodOnJni(std::shared_ptr<T> ref, Functor&& functor, Args... args) const {
+    do_in_jni_thread(
         FROM_HERE,
         base::BindOnce(
             [](std::weak_ptr<T> ref, Functor&& functor, Args&&... args) {

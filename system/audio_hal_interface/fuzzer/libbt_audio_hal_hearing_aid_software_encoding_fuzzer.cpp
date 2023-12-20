@@ -37,7 +37,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   std::string name = fdp.ConsumeRandomLengthString(kRandomStringLength);
   bluetooth::common::MessageLoopThread messageLoopThread(name);
   messageLoopThread.StartUp();
-  messageLoopThread.DoInThread(FROM_HERE, base::Bind(&source_init_delayed));
+  messageLoopThread.DoInThread(FROM_HERE, base::BindOnce(&source_init_delayed));
 
   uint16_t delay = fdp.ConsumeIntegral<uint16_t>();
   bluetooth::audio::hearing_aid::set_remote_delay(delay);

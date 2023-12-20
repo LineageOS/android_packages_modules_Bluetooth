@@ -15,6 +15,13 @@ flag {
 }
 
 flag {
+    name: "fix_nonconnectable_scannable_advertisement"
+    namespace: "bluetooth"
+    description: "Fix adv_scan_ind being reported as connectable"
+    bug: "316013235"
+}
+
+flag {
     name: "scan_manager_refactor"
     namespace: "bluetooth"
     description: "Refactor scan manager as described in go/scan-manager-refactor"
@@ -26,4 +33,11 @@ flag {
     namespace: "bluetooth"
     description: "Fix LE scan parameters downgrade during inquiry"
     bug: "316885813"
+}
+
+flag {
+    name: "scan_timeout_reset"
+    namespace: "bluetooth"
+    description: "Ensure scan timeout is reset if new scan started"
+    bug: "316266556"
 }

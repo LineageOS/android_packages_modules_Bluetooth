@@ -21,6 +21,7 @@
 #include <mutex>
 
 #include "common/bidi_queue.h"
+#include "common/byte_array.h"
 #include "dumpsys_data_generated.h"
 #include "hci/acl_manager/acl_scheduler.h"
 #include "hci/acl_manager/classic_impl.h"
@@ -408,10 +409,6 @@ uint16_t AclManager::HACK_GetHandle(Address address) {
 
 uint16_t AclManager::HACK_GetLeHandle(Address address) {
   return pimpl_->le_impl_->HACK_get_handle(address);
-}
-
-void AclManager::HACK_SetNonAclDisconnectCallback(std::function<void(uint16_t, uint8_t)> callback) {
-  pimpl_->classic_impl_->HACK_SetNonAclDisconnectCallback(callback);
 }
 
 void AclManager::HACK_SetAclTxPriority(uint8_t handle, bool high_priority) {

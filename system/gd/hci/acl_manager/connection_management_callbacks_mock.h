@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <gmock/gmock.h>
+
 #include <array>
 #include <cstdint>
 

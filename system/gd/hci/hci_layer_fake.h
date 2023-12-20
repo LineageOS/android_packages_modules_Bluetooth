@@ -30,7 +30,7 @@ packet::PacketView<packet::kLittleEndian> GetPacketView(
 
 std::unique_ptr<BasePacketBuilder> NextPayload(uint16_t handle);
 
-class TestHciLayer : public HciLayer {
+class HciLayerFake : public HciLayer {
  public:
   void EnqueueCommand(
       std::unique_ptr<CommandBuilder> command,
@@ -41,6 +41,8 @@ class TestHciLayer : public HciLayer {
       common::ContextualOnceCallback<void(CommandCompleteView)> on_complete) override;
 
   CommandView GetCommand();
+
+  CommandView GetCommand(OpCode op_code);
 
   void AssertNoQueuedCommand();
 
