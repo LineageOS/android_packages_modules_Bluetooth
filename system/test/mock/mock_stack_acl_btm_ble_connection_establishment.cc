@@ -23,12 +23,10 @@
 // Mock include file to share data between tests and mock
 #include "test/mock/mock_stack_acl_btm_ble_connection_establishment.h"
 
-#include <cstdint>
-
 // Original included files, if any
 
+#include "stack/include/hci_error_code.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 // Mocked compile conditionals, if any
 // Mocked internal structures, if any

@@ -22,7 +22,6 @@
 #include <cstdint>
 
 #include "bta/include/bta_rfcomm_scn.h"
-#include "bta/jv/bta_jv_int.h"
 #include "test/common/mock_functions.h"
 
 bool BTA_FreeSCN(uint8_t scn) {
