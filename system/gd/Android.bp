@@ -148,7 +148,7 @@ cc_defaults {
         ":BluetoothSyspropsSources",
         "module.cc",
         "module_dumper.cc",
-        "module_dumper_flatbuffer.cc",
+        "module_state_dumper.cc",
         "stack_manager.cc",
     ],
     generated_headers: [
@@ -463,6 +463,7 @@ cc_test {
         "module_gdx_unittest.cc",
         "module_jniloop_unittest.cc",
         "module_mainloop_unittest.cc",
+        "module_state_dumper_unittest.cc",
     ],
     generated_headers: [
         "BluetoothGeneratedBundlerSchema_h_bfbs",
