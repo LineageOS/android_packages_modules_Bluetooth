@@ -18,12 +18,10 @@
 #include <gtest/gtest.h>
 #include <stdlib.h>
 
-#include <condition_variable>
 #include <deque>
 #include <mutex>
 #include <queue>
 
-#include "osi/include/log.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/neighbor_inquiry.h"
 #include "stack/include/inq_hci_link_interface.h"
