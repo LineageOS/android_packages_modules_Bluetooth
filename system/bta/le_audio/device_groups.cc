@@ -934,9 +934,6 @@ void LeAudioDeviceGroup::CigConfiguration::GenerateCisIds(
     return;
   }
 
-  const set_configurations::AudioSetConfigurations* confs =
-      AudioSetConfigurationProvider::Get()->GetConfigurations(context_type);
-
   uint8_t cis_count_bidir = 0;
   uint8_t cis_count_unidir_sink = 0;
   uint8_t cis_count_unidir_source = 0;
@@ -950,11 +947,11 @@ void LeAudioDeviceGroup::CigConfiguration::GenerateCisIds(
    * If the last happen it means, group size is 1 */
   int group_size = csis_group_size > 0 ? csis_group_size : 1;
 
-  get_cis_count(*confs, group_size, group_->GetGroupStrategy(group_size),
-                group_->GetAseCount(types::kLeAudioDirectionSink),
-                group_->GetAseCount(types::kLeAudioDirectionSource),
-                cis_count_bidir, cis_count_unidir_sink,
-                cis_count_unidir_source);
+  set_configurations::get_cis_count(
+      context_type, group_size, group_->GetGroupStrategy(group_size),
+      group_->GetAseCount(types::kLeAudioDirectionSink),
+      group_->GetAseCount(types::kLeAudioDirectionSource), cis_count_bidir,
+      cis_count_unidir_sink, cis_count_unidir_source);
 
   uint8_t idx = 0;
   while (cis_count_bidir > 0) {
