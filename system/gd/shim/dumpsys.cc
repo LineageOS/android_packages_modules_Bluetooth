@@ -17,7 +17,10 @@
 
 #include "dumpsys/dumpsys.h"
 
+#include <unistd.h>
+
 #include <future>
+#include <sstream>
 #include <string>
 
 #include "dumpsys/filter.h"
@@ -135,9 +138,10 @@ void Dumpsys::impl::DumpWithArgsAsync(int fd, const char** args) {
   ParsedDumpsysArgs parsed_dumpsys_args(args);
   const auto registry = dumpsys_module_.GetModuleRegistry();
 
-  ModuleDumper dumper(*registry, kDumpsysTitle);
+  ModuleDumper dumper(STDOUT_FILENO, *registry, kDumpsysTitle);
   std::string dumpsys_data;
-  dumper.DumpState(&dumpsys_data);
+  std::ostringstream oss;
+  dumper.DumpState(&dumpsys_data, oss);
 
   dprintf(fd, " ----- Filtering as Developer -----\n");
   FilterAsDeveloper(&dumpsys_data);

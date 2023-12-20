@@ -14,11 +14,21 @@
  * limitations under the License.
  */
 
-#include "module_dumper_flatbuffer.h"
-
-#include "dumpsys_data_generated.h"
+#include "module_state_dumper.h"
 
 namespace bluetooth {
-DumpsysDataFinisher EmptyDumpsysDataFinisher = [](DumpsysDataBuilder* /* dumpsys_data_builder */) {
-};
+
+bluetooth::DumpsysDataFinisher EmptyDumpsysDataFinisher =
+    [](bluetooth::DumpsysDataBuilder* /* dumpsys_data_builder */) {};
+
+DumpsysDataFinisher ModuleStateDumper::GetDumpsysData(
+    flatbuffers::FlatBufferBuilder* /* builder */) const {
+  return EmptyDumpsysDataFinisher;
+}
+void ModuleStateDumper::GetDumpsysData(int /* fd */) const {}
+
+void ModuleStateDumper::GetDumpsysData() const {}
+
+void ModuleStateDumper::GetDumpsysData(std::ostringstream& /* oss */) const {}
+
 }  // namespace bluetooth
