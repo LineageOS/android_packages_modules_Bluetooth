@@ -826,11 +826,7 @@ static void btif_a2dp_source_audio_tx_start_event(void) {
   btif_a2dp_source_cb.media_alarm.SchedulePeriodic(
       btif_a2dp_source_thread.GetWeakPtr(), FROM_HERE,
       base::BindRepeating(&btif_a2dp_source_audio_handle_timer),
-#if BASE_VER < 931007
-      base::TimeDelta::FromMilliseconds(
-#else
-      base::Milliseconds(
-#endif
+      std::chrono::milliseconds(
           btif_a2dp_source_cb.encoder_interface->get_encoder_interval_ms()));
   btif_a2dp_source_cb.sw_audio_is_encoding = true;
 
