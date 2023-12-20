@@ -18,15 +18,11 @@
 
 #include <cstdint>
 #include <functional>
-#include <string>
 #include <vector>
 
 #include "osi/include/allocator.h"
-#include "stack/btm/btm_int_types.h"
 #include "stack/include/bt_hdr.h"
-#include "stack/include/sdpdefs.h"
 #include "stack/include/smp_api.h"
-#include "stack/smp/p_256_ecc_pp.h"
 #include "stack/smp/smp_int.h"
 #include "test/fake/fake_osi.h"
 #include "test/mock/mock_btif_config.h"
@@ -34,7 +30,6 @@
 #include "test/mock/mock_stack_btm_dev.h"
 #include "test/mock/mock_stack_l2cap_api.h"
 #include "test/mock/mock_stack_l2cap_ble.h"
-#include "types/bluetooth/uuid.h"
 
 namespace {
 
