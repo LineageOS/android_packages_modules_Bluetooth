@@ -143,6 +143,37 @@ class BondState(enum.IntEnum):
     BONDED = 2
 
 
+class BtPropertyType(enum.IntEnum):
+    """Bluetooth's property type."""
+    BdName = 0x1
+    BdAddr = 0x2
+    Uuids = 0x3
+    ClassOfDevice = 0x4
+    TypeOfDevice = 0x5
+    ServiceRecord = 0x6
+    AdapterScanMode = 0x7
+    AdapterBondedDevices = 0x8
+    AdapterDiscoverableTimeout = 0x9
+    RemoteFriendlyName = 0xA
+    RemoteRssi = 0xB
+    RemoteVersionInfo = 0xC
+    LocalLeFeatures = 0xD
+    LocalIoCaps = 0xE
+    LocalIoCapsBle = 0xF
+    DynamicAudioBuffer = 0x10
+    RemoteIsCoordinatedSetMember = 0x11
+    Appearance = 0x12
+    VendorProductInfo = 0x13
+    # Unimplemented:
+    #  BT_PROPERTY_WL_MEDIA_PLAYERS_LIST,
+    #  BT_PROPERTY_REMOTE_ASHA_CAPABILITY,
+    #  BT_PROPERTY_REMOTE_ASHA_TRUNCATED_HISYNCID,
+    #  BT_PROPERTY_REMOTE_MODEL_NUM,
+    RemoteAddrType = 0x18
+    Unknown = 0xFE
+    RemoteDeviceTimestamp = 0xFF
+
+
 class PairingVariant(enum.IntEnum):
     """Bluetooth pairing variant type."""
     # SSP variants.

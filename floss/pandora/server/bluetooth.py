@@ -298,6 +298,39 @@ class Bluetooth(object):
     def set_hid_report(self, addr, report_type, report):
         return self.qa_client.set_hid_report(addr, report_type, report)
 
+    def read_characteristic(self, address, handle, auth_re):
+        return self.gatt_client.read_characteristic(address, handle, auth_re)
+
+    def read_descriptor(self, address, handle, auth_req):
+        return self.gatt_client.read_descriptor(address, handle, auth_req)
+
+    def discover_services(self, address):
+        return self.gatt_client.discover_services(address)
+
+    def get_bond_state(self, address):
+        self.adapter_client.get_bond_state(address)
+
+    def fetch_remote(self, address):
+        return self.adapter_client.fetch_remote_uuids(address)
+
+    def get_remote_uuids(self, address):
+        return self.adapter_client.get_remote_property(address, 'Uuids')
+
+    def btif_gattc_discover_service_by_uuid(self, address, uuid):
+        return self.gatt_client.btif_gattc_discover_service_by_uuid(address, uuid)
+
+    def configure_mtu(self, address, mtu):
+        return self.gatt_client.configure_mtu(address, mtu)
+
+    def refresh_device(self, address):
+        return self.gatt_client.refresh_device(address)
+
+    def write_descriptor(self, address, handle, auth_req, value):
+        return self.gatt_client.write_descriptor(address, handle, auth_req, value)
+
+    def write_characteristic(self, address, handle, write_type, auth_req, value):
+        return self.gatt_client.write_characteristic(address, handle, write_type, auth_req, value)
+
     def gatt_connect(self, address, is_direct, transport):
         return self.gatt_client.connect_client(address, is_direct, transport)
 
