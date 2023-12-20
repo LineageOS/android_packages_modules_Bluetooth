@@ -28,6 +28,7 @@
 #include "avdt_api.h"
 #include "avdt_int.h"
 #include "avdtc_api.h"
+#include "check.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/osi.h"
 
