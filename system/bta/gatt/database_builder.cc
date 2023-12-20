@@ -29,6 +29,7 @@
 
 #include "bta/gatt/database.h"
 #include "internal_include/bt_target.h"
+#include "internal_include/bt_trace.h"
 #include "stack/include/gattdefs.h"
 #include "types/bluetooth/uuid.h"
 

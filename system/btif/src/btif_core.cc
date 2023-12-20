@@ -50,6 +50,7 @@
 #include "device/include/controller.h"
 #include "device/include/device_iot_config.h"
 #include "internal_include/bt_target.h"
+#include "internal_include/bt_trace.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/future.h"

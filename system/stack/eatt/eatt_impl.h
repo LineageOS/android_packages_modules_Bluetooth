@@ -22,16 +22,17 @@
 #include "bind_helpers.h"
 #include "device/include/controller.h"
 #include "eatt.h"
+#include "internal_include/bt_trace.h"
 #include "internal_include/stack_config.h"
 #include "l2c_api.h"
 #include "os/log.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_sec.h"
-#include "stack/include/btm_sec_api.h"
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_psm_types.h"
+#include "stack/include/btm_sec_api.h"
 #include "stack/include/main_thread.h"
 
 namespace bluetooth {

@@ -37,6 +37,7 @@
 #include "common/init_flags.h"
 #include "device/include/interop.h"
 #include "internal_include/bt_target.h"
+#include "internal_include/bt_trace.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"  // UNUSED_ATTR

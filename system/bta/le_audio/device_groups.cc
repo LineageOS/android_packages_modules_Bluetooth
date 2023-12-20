@@ -18,11 +18,12 @@
 
 #include "device_groups.h"
 
+#include "bta/include/bta_gatt_api.h"
 #include "bta_csis_api.h"
 #include "btif_storage.h"
 #include "btm_iso_api.h"
 #include "device/include/controller.h"
-#include "dm/bta_dm_gatt_client.h"
+#include "internal_include/bt_trace.h"
 #include "le_audio_set_configuration_provider.h"
 #include "metrics_collector.h"
 

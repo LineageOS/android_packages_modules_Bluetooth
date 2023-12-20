@@ -30,6 +30,7 @@
 #include "gatt_int.h"
 #include "hardware/bt_gatt_types.h"
 #include "internal_include/bt_target.h"
+#include "internal_include/bt_trace.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"

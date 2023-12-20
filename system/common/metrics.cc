@@ -28,7 +28,6 @@
 #include <algorithm>
 #include <array>
 #include <cerrno>
-#include <chrono>
 #include <cstdint>
 #include <cstring>
 #include <memory>
@@ -36,13 +35,13 @@
 
 #include "address_obfuscator.h"
 #include "bluetooth/metrics/bluetooth.pb.h"
-#include "gd/metrics/metrics_state.h"
 #include "gd/hci/address.h"
+#include "gd/metrics/metrics_state.h"
 #include "gd/os/metrics.h"
+#include "internal_include/bt_trace.h"
 #include "leaky_bonded_queue.h"
 #include "metric_id_allocator.h"
 #include "osi/include/osi.h"
-#include "stack/include/btm_api_types.h"
 #include "time_util.h"
 #include "types/raw_address.h"
 
