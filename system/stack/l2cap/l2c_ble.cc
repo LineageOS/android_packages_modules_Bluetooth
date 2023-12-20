@@ -341,12 +341,11 @@ static void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
       supervision_tout = BTM_BLE_CONN_TIMEOUT_DEF;
 
       /* if both side 4.1, or we are central device, send HCI command */
-      if (p_lcb->IsLinkRoleCentral()
-          || (controller_get_interface()
-                  ->supports_ble_connection_parameter_request() &&
-              acl_peer_supports_ble_connection_parameters_request(
-                  p_lcb->remote_bd_addr))
-      ) {
+      if (p_lcb->IsLinkRoleCentral() ||
+          (controller_get_interface()
+               ->supports_ble_connection_parameters_request() &&
+           acl_peer_supports_ble_connection_parameters_request(
+               p_lcb->remote_bd_addr))) {
         btsnd_hcic_ble_upd_ll_conn_params(p_lcb->Handle(), min_conn_int,
                                           max_conn_int, peripheral_latency,
                                           supervision_tout, 0, 0);
@@ -362,12 +361,11 @@ static void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
     /* application allows to do update, if we were delaying one do it now */
     if (p_lcb->conn_update_mask & L2C_BLE_NEW_CONN_PARAM) {
       /* if both side 4.1, or we are central device, send HCI command */
-      if (p_lcb->IsLinkRoleCentral()
-          || (controller_get_interface()
-                  ->supports_ble_connection_parameter_request() &&
-              acl_peer_supports_ble_connection_parameters_request(
-                  p_lcb->remote_bd_addr))
-      ) {
+      if (p_lcb->IsLinkRoleCentral() ||
+          (controller_get_interface()
+               ->supports_ble_connection_parameters_request() &&
+           acl_peer_supports_ble_connection_parameters_request(
+               p_lcb->remote_bd_addr))) {
         btsnd_hcic_ble_upd_ll_conn_params(p_lcb->Handle(), p_lcb->min_interval,
                                           p_lcb->max_interval, p_lcb->latency,
                                           p_lcb->timeout, p_lcb->min_ce_len,
