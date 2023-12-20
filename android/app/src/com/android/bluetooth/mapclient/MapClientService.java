@@ -58,7 +58,8 @@ public class MapClientService extends ProfileService {
 
     static final int MAXIMUM_CONNECTED_DEVICES = 4;
 
-    private Map<BluetoothDevice, MceStateMachine> mMapInstanceMap = new ConcurrentHashMap<>(1);
+    private final Map<BluetoothDevice, MceStateMachine> mMapInstanceMap =
+            new ConcurrentHashMap<>(1);
     private MnsService mMnsServer;
 
     private AdapterService mAdapterService;
@@ -122,10 +123,7 @@ public class MapClientService extends ProfileService {
             throw new IllegalArgumentException("Null device");
         }
         if (DBG) {
-            StringBuilder sb = new StringBuilder();
-            dump(sb);
-            Log.d(TAG, "MAP connect device: " + device
-                    + ", InstanceMap start state: " + sb.toString());
+            Log.d(TAG, "connect(device= " + device + "): devices=" + mMapInstanceMap.keySet());
         }
         if (getConnectionPolicy(device) == BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
             Log.w(TAG, "Connection not allowed: <" + device.getAddress()
@@ -171,10 +169,7 @@ public class MapClientService extends ProfileService {
 
         addDeviceToMapAndConnect(device);
         if (DBG) {
-            StringBuilder sb = new StringBuilder();
-            dump(sb);
-            Log.d(TAG, "MAP connect device: " + device
-                    + ", InstanceMap end state: " + sb.toString());
+            Log.d(TAG, "connect(device= " + device + "): end devices=" + mMapInstanceMap.keySet());
         }
         return true;
     }
@@ -193,10 +188,7 @@ public class MapClientService extends ProfileService {
         enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED,
                 "Need BLUETOOTH_PRIVILEGED permission");
         if (DBG) {
-            StringBuilder sb = new StringBuilder();
-            dump(sb);
-            Log.d(TAG, "MAP disconnect device: " + device
-                    + ", InstanceMap start state: " + sb.toString());
+            Log.d(TAG, "disconnect(device= " + device + "): devices=" + mMapInstanceMap.keySet());
         }
         MceStateMachine mapStateMachine = mMapInstanceMap.get(device);
         // a map state machine instance doesn't exist. maybe it is already gone?
@@ -210,10 +202,8 @@ public class MapClientService extends ProfileService {
         }
         mapStateMachine.disconnect();
         if (DBG) {
-            StringBuilder sb = new StringBuilder();
-            dump(sb);
-            Log.d(TAG, "MAP disconnect device: " + device
-                    + ", InstanceMap start state: " + sb.toString());
+            Log.d(TAG, "disconnect(device= " + device + "): end devices="
+                    + mMapInstanceMap.keySet());
         }
         return true;
     }
@@ -387,10 +377,7 @@ public class MapClientService extends ProfileService {
     @VisibleForTesting
     public void cleanupDevice(BluetoothDevice device, MceStateMachine sm) {
         if (DBG) {
-            StringBuilder sb = new StringBuilder();
-            dump(sb);
-            Log.d(TAG, "Cleanup device: " + device + ", InstanceMap start state: "
-                    + sb.toString());
+            Log.d(TAG, "cleanup(device= " + device + "): devices=" + mMapInstanceMap.keySet());
         }
         synchronized (mMapInstanceMap) {
             MceStateMachine stateMachine = mMapInstanceMap.get(device);
@@ -404,20 +391,14 @@ public class MapClientService extends ProfileService {
             }
         }
         if (DBG) {
-            StringBuilder sb = new StringBuilder();
-            dump(sb);
-            Log.d(TAG, "Cleanup device: " + device + ", InstanceMap end state: "
-                    + sb.toString());
+            Log.d(TAG, "cleanup(device= " + device + "): end devices=" + mMapInstanceMap.keySet());
         }
     }
 
     @VisibleForTesting
     void removeUncleanAccounts() {
         if (DBG) {
-            StringBuilder sb = new StringBuilder();
-            dump(sb);
-            Log.d(TAG, "removeUncleanAccounts:InstanceMap end state: "
-                    + sb.toString());
+            Log.d(TAG, "removeUncleanAccounts(): devices=" + mMapInstanceMap.keySet());
         }
         Iterator iterator = mMapInstanceMap.entrySet().iterator();
         while (iterator.hasNext()) {
@@ -428,10 +409,7 @@ public class MapClientService extends ProfileService {
             }
         }
         if (DBG) {
-            StringBuilder sb = new StringBuilder();
-            dump(sb);
-            Log.d(TAG, "removeUncleanAccounts:InstanceMap end state: "
-                    + sb.toString());
+            Log.d(TAG, "removeUncleanAccounts(): end devices=" + mMapInstanceMap.keySet());
         }
     }
 
