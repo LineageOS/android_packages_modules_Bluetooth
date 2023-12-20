@@ -25,8 +25,8 @@
 #define BTA_SYS_H
 
 #include <base/strings/stringprintf.h>
-#include <base/time/time.h>
 
+#include <chrono>
 #include <cstdint>
 #include <string>
 
@@ -234,7 +234,7 @@ void bta_sys_register(uint8_t id, const tBTA_SYS_REG* p_reg);
 void bta_sys_deregister(uint8_t id);
 bool bta_sys_is_register(uint8_t id);
 void bta_sys_sendmsg(void* p_msg);
-void bta_sys_sendmsg_delayed(void* p_msg, const base::TimeDelta& delay);
+void bta_sys_sendmsg_delayed(void* p_msg, std::chrono::microseconds delay);
 void bta_sys_start_timer(alarm_t* alarm, uint64_t interval_ms, uint16_t event,
                          uint16_t layer_specific);
 void bta_sys_disable();
