@@ -159,12 +159,8 @@ static void bta_av_api_enable(tBTA_AV_DATA* p_data) {
       tBTA_AV_API_ENABLE* p_buf =
           (tBTA_AV_API_ENABLE*)osi_malloc(sizeof(tBTA_AV_API_ENABLE));
       memcpy(p_buf, &p_data->api_enable, sizeof(tBTA_AV_API_ENABLE));
-#if BASE_VER < 931007
-      bta_sys_sendmsg_delayed(p_buf, base::TimeDelta::FromMilliseconds(
-#else
-      bta_sys_sendmsg_delayed(p_buf, base::Milliseconds(
-#endif
-                                         kEnablingAttemptsIntervalMs));
+      bta_sys_sendmsg_delayed(
+          p_buf, std::chrono::milliseconds(kEnablingAttemptsIntervalMs));
       return;
     }
     if (bta_av_cb.sdp_a2dp_handle) {
@@ -465,11 +461,7 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
         (tBTA_AV_API_REG*)osi_malloc(sizeof(tBTA_AV_API_REG));
     memcpy(p_buf, &p_data->api_reg, sizeof(tBTA_AV_API_REG));
     bta_sys_sendmsg_delayed(
-#if BASE_VER < 931007
-        p_buf, base::TimeDelta::FromMilliseconds(kEnablingAttemptsIntervalMs));
-#else
-        p_buf, base::Milliseconds(kEnablingAttemptsIntervalMs));
-#endif
+        p_buf, std::chrono::milliseconds(kEnablingAttemptsIntervalMs));
     return;
   }
 

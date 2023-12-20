@@ -83,7 +83,7 @@ void bta_sys_sendmsg(void* p_msg) {
   inc_func_call_count(__func__);
   test::mock::bta_sys_main::bta_sys_sendmsg(p_msg);
 }
-void bta_sys_sendmsg_delayed(void* p_msg, const base::TimeDelta& delay) {
+void bta_sys_sendmsg_delayed(void* p_msg, std::chrono::microseconds delay) {
   inc_func_call_count(__func__);
   test::mock::bta_sys_main::bta_sys_sendmsg_delayed(p_msg, delay);
 }
