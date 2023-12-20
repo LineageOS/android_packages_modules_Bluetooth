@@ -32,6 +32,7 @@
 #include "bta/include/bta_dm_api.h"
 #include "bta/include/bta_hfp_api.h"
 #include "bta_ag_swb_aptx.h"
+#include "internal_include/bt_trace.h"
 
 #ifdef __ANDROID__
 #include "bta/le_audio/devices.h"

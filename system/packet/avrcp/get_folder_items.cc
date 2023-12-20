@@ -16,6 +16,8 @@
 
 #include "get_folder_items.h"
 
+#include "internal_include/bt_trace.h"
+
 namespace bluetooth {
 namespace avrcp {
 
