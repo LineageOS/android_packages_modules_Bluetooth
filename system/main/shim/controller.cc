@@ -156,8 +156,6 @@ MAP_TO_GD(supports_extended_advertising, SupportsBleExtendedAdvertising)
 MAP_TO_GD(supports_periodic_advertising, SupportsBlePeriodicAdvertising)
 MAP_TO_GD(supports_peripheral_initiated_feature_exchange,
           SupportsBlePeripheralInitiatedFeaturesExchange)
-MAP_TO_GD(supports_connection_parameter_request,
-          SupportsBleConnectionParametersRequest)
 
 MAP_TO_GD(supports_periodic_advertising_sync_transfer_sender,
           SupportsBlePeriodicAdvertisingSyncTransferSender)
@@ -336,7 +334,6 @@ static const controller_t interface = {
     .supports_interlaced_inquiry_scan = supports_interlaced_inquiry_scan,
     .supports_rssi_with_inquiry_results = supports_rssi_with_inquiry_results,
     .supports_extended_inquiry_response = supports_extended_inquiry_response,
-    .supports_central_peripheral_role_switch = supports_role_switch,
     .supports_enhanced_setup_synchronous_connection =
         supports_enhanced_setup_synchronous_connection,
     .supports_enhanced_accept_synchronous_connection =
@@ -380,8 +377,6 @@ static const controller_t interface = {
     .supports_ble_periodic_advertising = supports_periodic_advertising,
     .supports_ble_peripheral_initiated_feature_exchange =
         supports_peripheral_initiated_feature_exchange,
-    .supports_ble_connection_parameter_request =
-        supports_connection_parameter_request,
     .supports_ble_periodic_advertising_sync_transfer_sender =
         supports_periodic_advertising_sync_transfer_sender,
     .supports_ble_periodic_advertising_sync_transfer_recipient =

@@ -487,44 +487,6 @@ size_t Btm::GetNumberOfAdvertisingInstances() const {
   return GetAdvertising()->GetNumberOfAdvertisingInstances();
 }
 
-tBTM_STATUS Btm::CreateBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                            tBT_TRANSPORT transport, int device_type) {
-  if (transport == BT_TRANSPORT_AUTO) {
-    if (device_type & BT_DEVICE_TYPE_BLE) {
-      transport = BT_TRANSPORT_LE;
-    } else if (device_type & BT_DEVICE_TYPE_BREDR) {
-      transport = BT_TRANSPORT_BR_EDR;
-    }
-    LOG_INFO("%s guessing transport as %02x ", __func__, transport);
-  }
-
-  auto security_manager = GetSecurityModule()->GetSecurityManager();
-  switch (transport) {
-    case BT_TRANSPORT_BR_EDR:
-      security_manager->CreateBond(ToAddressWithType(bd_addr, BLE_ADDR_PUBLIC));
-      break;
-    case BT_TRANSPORT_LE:
-      security_manager->CreateBondLe(ToAddressWithType(bd_addr, addr_type));
-      break;
-    default:
-      return BTM_ILLEGAL_VALUE;
-  }
-  return BTM_CMD_STARTED;
-}
-
-bool Btm::CancelBond(const RawAddress& bd_addr) {
-  auto security_manager = GetSecurityModule()->GetSecurityManager();
-  security_manager->CancelBond(ToAddressWithType(bd_addr, BLE_ADDR_PUBLIC));
-  return true;
-}
-
-bool Btm::RemoveBond(const RawAddress& bd_addr) {
-  // TODO(cmanton) Check if acl is connected
-  auto security_manager = GetSecurityModule()->GetSecurityManager();
-  security_manager->RemoveBond(ToAddressWithType(bd_addr, BLE_ADDR_PUBLIC));
-  return true;
-}
-
 uint16_t Btm::GetAclHandle(const RawAddress& remote_bda,
                            tBT_TRANSPORT transport) {
   auto acl_manager = GetAclManager();
