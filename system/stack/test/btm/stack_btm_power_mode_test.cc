@@ -18,12 +18,9 @@
 
 #include <cstdint>
 
-#include "btm_api_types.h"
 #include "gd/common/init_flags.h"
-#include "gd/os/log.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/acl_hci_link_interface.h"
-#include "stack/include/btm_api.h"
 #include "stack/include/hci_error_code.h"
 #include "test/common/mock_functions.h"
 #include "types/raw_address.h"
