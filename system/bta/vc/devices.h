@@ -25,7 +25,7 @@
 #include "bta/include/bta_gatt_api.h"
 #include "bta/vc/types.h"
 #include "common/interfaces/ILoggable.h"
-#include "include/hardware/bt_vc.h"
+#include "os/logging/log_adapter.h"
 #include "types/raw_address.h"
 
 namespace bluetooth {

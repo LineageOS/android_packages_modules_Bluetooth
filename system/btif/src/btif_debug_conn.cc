@@ -19,10 +19,10 @@
 #include "btif/include/btif_debug_conn.h"
 
 #include <stdio.h>
-#include <string.h>
 #include <time.h>
 
 #include "common/time_util.h"
+#include "os/logging/log_adapter.h"
 #include "types/raw_address.h"
 
 #define NUM_CONNECTION_EVENTS 16
