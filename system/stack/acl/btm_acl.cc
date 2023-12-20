@@ -566,7 +566,7 @@ tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, tHCI_ROLE* p_role) {
  *
  ******************************************************************************/
 tBTM_STATUS BTM_SwitchRoleToCentral(const RawAddress& remote_bd_addr) {
-  if (!controller_get_interface()->supports_central_peripheral_role_switch()) {
+  if (!controller_get_interface()->supports_role_switch()) {
     LOG_INFO("Local controller does not support role switching");
     return BTM_MODE_UNSUPPORTED;
   }
