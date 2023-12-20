@@ -456,6 +456,7 @@ enum OpCode : 16 {
   CONTROLLER_DEBUG_INFO = 0xFD5B,
   CONTROLLER_A2DP_OPCODE = 0xFD5D,
   CONTROLLER_BQR = 0xFD5E,
+  DYNAMIC_AUDIO_BUFFER = 0xFD5F,
   // MSFT_OPCODE_xxxx below are needed for the tests.
   MSFT_OPCODE_MEDIATEK = 0xFD30,
   MSFT_OPCODE_QUALCOMM = 0xFD70,
@@ -5311,7 +5312,17 @@ packet LeGetVendorCapabilitiesComplete096 : LeGetVendorCapabilitiesComplete095 {
 
 packet LeGetVendorCapabilitiesComplete098 : LeGetVendorCapabilitiesComplete096 {
   a2dp_source_offload_capability_mask: 32,
-  bluetooth_quality_report_support: 8
+  bluetooth_quality_report_support: 8,
+  _payload_,
+}
+
+packet LeGetVendorCapabilitiesComplete103 : LeGetVendorCapabilitiesComplete098 {
+  dynamic_audio_buffer_support : 32,
+  _payload_,
+}
+
+test LeGetVendorCapabilitiesComplete103 {
+  "\x0e\x1c\x01\x53\xfd\x00\x10\x01\x00\x28\x00\x01\x3e\x01\x03\x01\x14\x00\x01\x01\x00\x23\x00\x00\x00\x01\x23\x00\x00\x00",
 }
 
 enum SubOcf : 8 {
@@ -5761,7 +5772,7 @@ enum BqrReportAction : 8 {
   CLEAR = 0x02,
 }
 
-packet ControllerBqr : VendorCommand(op_code = CONTROLLER_BQR) {
+packet ControllerBqr : VendorCommand (op_code = CONTROLLER_BQR) {
   bqr_report_action : BqrReportAction,
   bqr_quality_event_mask : 32,
   bqr_minimum_report_interval : 16,
@@ -5778,6 +5789,60 @@ packet ControllerBqrComplete : CommandComplete (command_op_code = CONTROLLER_BQR
 
 test ControllerBqrComplete {
   "\x0e\x08\x01\x5e\xfd\x00\x1f\x00\x07\x00",
+}
+
+enum DabCommand : 8 {
+  GET_AUDIO_BUFFER_TIME_CAPABILITY = 0x01,
+  SET_AUDIO_BUFFER_TIME = 0x02,
+}
+
+packet DynamicAudioBuffer : VendorCommand (op_code = DYNAMIC_AUDIO_BUFFER) {
+  dab_command : DabCommand,
+  _body_,
+}
+
+packet DynamicAudioBufferComplete : CommandComplete (command_op_code = DYNAMIC_AUDIO_BUFFER) {
+  status : ErrorCode,
+  dab_command : DabCommand,
+  _body_,
+}
+
+packet DabGetAudioBufferTimeCapability : DynamicAudioBuffer (dab_command = GET_AUDIO_BUFFER_TIME_CAPABILITY) {
+}
+
+test DabGetAudioBufferTimeCapability {
+  "\x5f\xfd\x01\x01",
+}
+
+struct DynamicAudioBufferCodecCapability {
+  default_time_ms : 16,
+  maximum_time_ms : 16,
+  minimum_time_ms : 16,
+}
+
+packet DabGetAudioBufferTimeCapabilityComplete : DynamicAudioBufferComplete (dab_command = GET_AUDIO_BUFFER_TIME_CAPABILITY) {
+  audio_codec_type_supported : 32,
+  audio_codec_capabilities : DynamicAudioBufferCodecCapability[32],
+}
+
+test DabGetAudioBufferTimeCapabilityComplete {
+  "\x0e\xc9\x01\x5f\xfd\x00\x01\x03\x00\x00\x00\xf4\x01\xf4\x01\x64\x00\xf4\x01\xf4\x01\x64\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+}
+
+packet DabSetAudioBufferTime : DynamicAudioBuffer(dab_command = SET_AUDIO_BUFFER_TIME) {
+  buffer_time_ms : 16, // Requested audio buffer time for the currently used codec.
+}
+
+test DabSetAudioBufferTime {
+  "\x5f\xfd\x03\x02\x23\x01",
+}
+
+packet DabSetAudioBufferTimeComplete : DynamicAudioBufferComplete (dab_command = SET_AUDIO_BUFFER_TIME) {
+  current_buffer_time_ms : 16,
+}
+
+test DabSetAudioBufferTimeComplete {
+  "\x0e\x07\x01\x5f\xfd\x00\x02\x23\x01",
 }
 
 // HCI Event Packets

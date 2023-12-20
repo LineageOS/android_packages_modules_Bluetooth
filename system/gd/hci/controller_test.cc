@@ -49,6 +49,8 @@ constexpr uint16_t kCredits1 = 0x78;
 constexpr uint16_t kHandle2 = 0x456;
 constexpr uint16_t kCredits2 = 0x9a;
 constexpr uint64_t kRandomNumber = 0x123456789abcdef0;
+/*sbc_supported= 1, aac_supported= 1, aptx_supported= 0, aptx_hd_supported= 0, ldac_supported= 1 */
+constexpr uint32_t kDynamicAudioBufferSupport = 0x13;
 uint16_t feature_spec_version = 55;
 constexpr char title[] = "hci_controller_test";
 
@@ -171,24 +173,50 @@ class HciLayerFakeForController : public HciLayerFake {
         event_builder =
             LeReadNumberOfSupportedAdvertisingSetsCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, 0xF0);
       } break;
-      case (OpCode::LE_GET_VENDOR_CAPABILITIES): {
-        BaseVendorCapabilities base_vendor_capabilities;
-        base_vendor_capabilities.max_advt_instances_ = 0x10;
-        base_vendor_capabilities.offloaded_resolution_of_private_address_ = 0x01;
-        base_vendor_capabilities.total_scan_results_storage_ = 0x2800;
-        base_vendor_capabilities.max_irk_list_sz_ = 0x20;
-        base_vendor_capabilities.filtering_support_ = 0x01;
-        base_vendor_capabilities.max_filter_ = 0x10;
-        base_vendor_capabilities.activity_energy_info_support_ = 0x01;
+      case (OpCode::LE_GET_VENDOR_CAPABILITIES):
+        if (vendor_capabilities_ == nullptr) {
+          BaseVendorCapabilities base_vendor_capabilities;
+          base_vendor_capabilities.max_advt_instances_ = 0x10;
+          base_vendor_capabilities.offloaded_resolution_of_private_address_ = 0x01;
+          base_vendor_capabilities.total_scan_results_storage_ = 0x2800;
+          base_vendor_capabilities.max_irk_list_sz_ = 0x20;
+          base_vendor_capabilities.filtering_support_ = 0x01;
+          base_vendor_capabilities.max_filter_ = 0x10;
+          base_vendor_capabilities.activity_energy_info_support_ = 0x01;
 
-        auto payload = std::make_unique<RawBuilder>();
-        if (feature_spec_version > 55) {
-          std::vector<uint8_t> payload_bytes = {0x20, 0x00, 0x01, 0x00, 0x00, 0x1f, 0x00, 0x00, 0x00, 0x00};
-          payload->AddOctets2(feature_spec_version);
-          payload->AddOctets(payload_bytes);
+          auto payload = std::make_unique<RawBuilder>();
+          if (feature_spec_version > 55) {
+            std::vector<uint8_t> payload_bytes = {
+                0x20, 0x00, 0x01, 0x00, 0x00, 0x1f, 0x00, 0x00, 0x00, 0x00};
+            payload->AddOctets2(feature_spec_version);
+            payload->AddOctets(payload_bytes);
+          }
+          event_builder = LeGetVendorCapabilitiesCompleteBuilder::Create(
+              num_packets, ErrorCode::SUCCESS, base_vendor_capabilities, std::move(payload));
+        } else {
+          event_builder = std::move(vendor_capabilities_);
+          vendor_capabilities_.reset();
         }
-        event_builder = LeGetVendorCapabilitiesCompleteBuilder::Create(
-            num_packets, ErrorCode::SUCCESS, base_vendor_capabilities, std::move(payload));
+        break;
+      case (OpCode::DYNAMIC_AUDIO_BUFFER): {
+        auto dab_command =
+            DynamicAudioBufferView::CreateOptional(VendorCommandView::Create(command));
+        if (dab_command->GetDabCommand() == DabCommand::GET_AUDIO_BUFFER_TIME_CAPABILITY) {
+          std::array<DynamicAudioBufferCodecCapability, 32> capabilities{};
+          capabilities[0] =
+              DynamicAudioBufferCodecCapability(0x123, 0x103, 0x1234);  // sbc_capabilities
+          capabilities[1] =
+              DynamicAudioBufferCodecCapability(0x223, 0x123, 0x2340);  // aac_capabilities
+          capabilities[4] =
+              DynamicAudioBufferCodecCapability(0x323, 0x223, 0x3456);  // ldac_capabilities
+          event_builder = DabGetAudioBufferTimeCapabilityCompleteBuilder::Create(
+              1, ErrorCode::SUCCESS, kDynamicAudioBufferSupport, capabilities);
+        } else {
+          auto set_command = DabSetAudioBufferTimeView::CreateOptional(*dab_command);
+          dynamic_audio_buffer_time = set_command->GetBufferTimeMs();
+          event_builder = DabSetAudioBufferTimeCompleteBuilder::Create(
+              1, ErrorCode::SUCCESS, dynamic_audio_buffer_time);
+        }
       } break;
       case (OpCode::SET_EVENT_MASK): {
         auto view = SetEventMaskView::Create(command);
@@ -240,12 +268,14 @@ class HciLayerFakeForController : public HciLayerFake {
     IncomingEvent(NumberOfCompletedPacketsBuilder::Create(completed_packets));
   }
 
+  std::unique_ptr<EventBuilder> vendor_capabilities_ = nullptr;
   constexpr static uint16_t acl_data_packet_length = 1024;
   constexpr static uint8_t synchronous_data_packet_length = 60;
   constexpr static uint16_t total_num_acl_data_packets = 10;
   constexpr static uint16_t total_num_synchronous_data_packets = 12;
   uint64_t event_mask = 0;
   uint64_t le_event_mask = 0;
+  uint16_t dynamic_audio_buffer_time = 0;
 };
 
 class ControllerTest : public ::testing::Test {
@@ -254,6 +284,8 @@ class ControllerTest : public ::testing::Test {
     feature_spec_version = feature_spec_version_;
     bluetooth::common::InitFlags::SetAllForTesting();
     test_hci_layer_ = new HciLayerFakeForController;
+    test_hci_layer_->vendor_capabilities_ = std::move(vendor_capabilities_);
+    vendor_capabilities_.reset();
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
     fake_registry_.Start<Controller>(&thread_);
@@ -270,6 +302,7 @@ class ControllerTest : public ::testing::Test {
   Controller* controller_ = nullptr;
   os::Handler* client_handler_ = nullptr;
   uint16_t feature_spec_version_ = 98;
+  std::unique_ptr<EventBuilder> vendor_capabilities_ = nullptr;
 };
 }  // namespace
 
@@ -293,6 +326,35 @@ class Controller096Test : public ControllerTest {
  protected:
   void SetUp() override {
     feature_spec_version_ = 96;
+    ControllerTest::SetUp();
+  }
+};
+
+class Controller103Test : public ControllerTest {
+ protected:
+  void SetUp() override {
+    feature_spec_version_ = 0x100 + 0x03;
+    BaseVendorCapabilities base_vendor_capabilities;
+    base_vendor_capabilities.max_advt_instances_ = 0x10;
+    base_vendor_capabilities.offloaded_resolution_of_private_address_ = 0x01;
+    base_vendor_capabilities.total_scan_results_storage_ = 0x2800;
+    base_vendor_capabilities.max_irk_list_sz_ = 0x20;
+    base_vendor_capabilities.filtering_support_ = 0x01;
+    base_vendor_capabilities.max_filter_ = 0x10;
+    base_vendor_capabilities.activity_energy_info_support_ = 0x01;
+    vendor_capabilities_ = LeGetVendorCapabilitiesComplete103Builder::Create(
+        1,
+        ErrorCode::SUCCESS,
+        base_vendor_capabilities,
+        feature_spec_version_,
+        0x102,
+        /*extended_scan_support=*/1,
+        /*debug_logging_supported=*/1,
+        /*le_address_generation_offloading_support=*/0,
+        /*a2dp_source_offload_capability_mask=*/0x4,
+        /*bluetooth_quality_report_support=*/1,
+        kDynamicAudioBufferSupport,
+        std::make_unique<RawBuilder>());
     ControllerTest::SetUp();
   }
 };
@@ -428,6 +490,40 @@ TEST_F(ControllerTest, feature_spec_version_098_test) {
   ASSERT_TRUE(controller_->IsSupported(OpCode::LE_MULTI_ADVT));
   ASSERT_FALSE(controller_->IsSupported(OpCode::CONTROLLER_DEBUG_INFO));
   ASSERT_TRUE(controller_->IsSupported(OpCode::CONTROLLER_A2DP_OPCODE));
+}
+
+TEST_F(ControllerTest, feature_spec_version_098_no_dab_test) {
+  ASSERT_FALSE(controller_->IsSupported(OpCode::DYNAMIC_AUDIO_BUFFER));
+}
+
+TEST_F(ControllerTest, set_dynamic_audio_buffer_time) {
+  controller_->SetDabAudioBufferTime(123);
+  thread_.GetReactor()->WaitForIdle(std::chrono::seconds(1));
+  ASSERT_EQ(0, test_hci_layer_->dynamic_audio_buffer_time);
+}
+
+TEST_F(Controller103Test, feature_spec_version_103_dab_test) {
+  ASSERT_EQ(controller_->GetVendorCapabilities().version_supported_, 0x100 + 3);
+  ASSERT_TRUE(controller_->IsSupported(OpCode::LE_MULTI_ADVT));
+  ASSERT_TRUE(controller_->IsSupported(OpCode::CONTROLLER_DEBUG_INFO));
+  ASSERT_TRUE(controller_->IsSupported(OpCode::CONTROLLER_A2DP_OPCODE));
+  ASSERT_TRUE(controller_->IsSupported(OpCode::DYNAMIC_AUDIO_BUFFER));
+  ASSERT_EQ(controller_->GetDabSupportedCodecs(), kDynamicAudioBufferSupport);
+  for (size_t bit = 0; bit < 32; bit++) {
+    if (kDynamicAudioBufferSupport & (1u << bit)) {
+      ASSERT_GT(controller_->GetDabCodecCapabilities()[bit].maximum_time_ms_, 0) << " bit " << bit;
+    } else {
+      ASSERT_EQ(controller_->GetDabCodecCapabilities()[bit].maximum_time_ms_, 0);
+      ASSERT_EQ(controller_->GetDabCodecCapabilities()[bit].minimum_time_ms_, 0);
+      ASSERT_EQ(controller_->GetDabCodecCapabilities()[bit].default_time_ms_, 0);
+    }
+  }
+}
+
+TEST_F(Controller103Test, set_dynamic_audio_buffer_time) {
+  controller_->SetDabAudioBufferTime(123);
+  thread_.GetReactor()->WaitForIdle(std::chrono::seconds(1));
+  ASSERT_EQ(123, test_hci_layer_->dynamic_audio_buffer_time);
 }
 
 std::promise<void> credits1_set;
