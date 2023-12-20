@@ -20,7 +20,6 @@
 #include <gtest/gtest.h>
 
 #include <chrono>
-#include <mutex>
 
 #include "common/bidi_queue.h"
 #include "common/testing/log_capture.h"
@@ -28,6 +27,7 @@
 #include "hci/acl_manager/le_connection_management_callbacks.h"
 #include "hci/address_with_type.h"
 #include "hci/controller.h"
+#include "hci/hci_layer_fake.h"
 #include "hci/hci_packets.h"
 #include "hci/le_acl_connection_interface.h"
 #include "hci/octets.h"
@@ -124,23 +124,18 @@ std::shared_ptr<std::vector<uint8_t>> Serialize(std::unique_ptr<B> build) {
 }
 
 template <typename T>
-T CreateCommandView(std::shared_ptr<std::vector<uint8_t>> bytes) {
-  return T::Create(hci::CommandView::Create(hci::PacketView<hci::kLittleEndian>(bytes)));
+T CreateAclCommandView(hci::CommandView command) {
+  return T::Create(hci::AclCommandView::Create(command));
 }
 
 template <typename T>
-T CreateAclCommandView(std::shared_ptr<std::vector<uint8_t>> bytes) {
-  return T::Create(CreateCommandView<hci::AclCommandView>(bytes));
+T CreateLeConnectionManagementCommandView(hci::CommandView command) {
+  return T::Create(CreateAclCommandView<hci::LeConnectionManagementCommandView>(command));
 }
 
 template <typename T>
-T CreateLeConnectionManagementCommandView(std::shared_ptr<std::vector<uint8_t>> bytes) {
-  return T::Create(CreateAclCommandView<hci::LeConnectionManagementCommandView>(bytes));
-}
-
-template <typename T>
-T CreateLeSecurityCommandView(std::shared_ptr<std::vector<uint8_t>> bytes) {
-  return T::Create(CreateCommandView<hci::LeSecurityCommandView>(bytes));
+T CreateLeSecurityCommandView(hci::CommandView command) {
+  return T::Create(hci::LeSecurityCommandView::Create(command));
 }
 
 template <typename T>
@@ -148,14 +143,14 @@ T CreateLeEventView(std::shared_ptr<std::vector<uint8_t>> bytes) {
   return T::Create(hci::LeMetaEventView::Create(hci::EventView::Create(hci::PacketView<hci::kLittleEndian>(bytes))));
 }
 
-[[maybe_unused]] hci::CommandCompleteView ReturnCommandComplete(hci::OpCode op_code, hci::ErrorCode error_code) {
+hci::CommandCompleteView ReturnCommandComplete(hci::OpCode op_code, hci::ErrorCode error_code) {
   std::vector<uint8_t> success_vector{static_cast<uint8_t>(error_code)};
   auto builder = hci::CommandCompleteBuilder::Create(uint8_t{1}, op_code, std::make_unique<RawBuilder>(success_vector));
   auto bytes = Serialize<hci::CommandCompleteBuilder>(std::move(builder));
   return hci::CommandCompleteView::Create(hci::EventView::Create(hci::PacketView<hci::kLittleEndian>(bytes)));
 }
 
-[[maybe_unused]] hci::CommandStatusView ReturnCommandStatus(hci::OpCode op_code, hci::ErrorCode error_code) {
+hci::CommandStatusView ReturnCommandStatus(hci::OpCode op_code, hci::ErrorCode error_code) {
   std::vector<uint8_t> success_vector{static_cast<uint8_t>(error_code)};
   auto builder = hci::CommandStatusBuilder::Create(
       hci::ErrorCode::SUCCESS, uint8_t{1}, op_code, std::make_unique<RawBuilder>(success_vector));
@@ -170,14 +165,6 @@ namespace hci {
 namespace acl_manager {
 
 namespace {
-
-PacketView<kLittleEndian> GetPacketView(std::unique_ptr<packet::BasePacketBuilder> packet) {
-  auto bytes = std::make_shared<std::vector<uint8_t>>();
-  BitInserter i(*bytes);
-  bytes->reserve(packet->size());
-  packet->Serialize(i);
-  return packet::PacketView<packet::kLittleEndian>(bytes);
-}
 
 class TestController : public Controller {
  public:
@@ -234,174 +221,6 @@ class TestController : public Controller {
   std::set<OpCode> supported_opcodes_{};
 };
 
-class TestHciLayer : public HciLayer {
-  // This is a springboard class that converts from `AclCommandBuilder`
-  // to `ComandBuilder` for use in the hci layer.
-  template <typename T>
-  class CommandInterfaceImpl : public CommandInterface<T> {
-   public:
-    explicit CommandInterfaceImpl(HciLayer& hci) : hci_(hci) {}
-    ~CommandInterfaceImpl() = default;
-
-    void EnqueueCommand(
-        std::unique_ptr<T> command, common::ContextualOnceCallback<void(CommandCompleteView)> on_complete) override {
-      hci_.EnqueueCommand(std::move(command), std::move(on_complete));
-    }
-
-    void EnqueueCommand(
-        std::unique_ptr<T> command, common::ContextualOnceCallback<void(CommandStatusView)> on_status) override {
-      hci_.EnqueueCommand(std::move(command), std::move(on_status));
-    }
-    HciLayer& hci_;
-  };
-
-  void EnqueueCommand(
-      std::unique_ptr<CommandBuilder> command,
-      common::ContextualOnceCallback<void(CommandStatusView)> on_status) override {
-    const std::lock_guard<std::mutex> lock(command_queue_mutex_);
-    command_queue_.push(std::move(command));
-    command_status_callbacks.push_back(std::move(on_status));
-    if (command_promise_ != nullptr) {
-      std::promise<void>* prom = command_promise_.release();
-      prom->set_value();
-      delete prom;
-    }
-  }
-
-  void EnqueueCommand(
-      std::unique_ptr<CommandBuilder> command,
-      common::ContextualOnceCallback<void(CommandCompleteView)> on_complete) override {
-    const std::lock_guard<std::mutex> lock(command_queue_mutex_);
-    command_queue_.push(std::move(command));
-    command_complete_callbacks.push_back(std::move(on_complete));
-    if (command_promise_ != nullptr) {
-      std::promise<void>* prom = command_promise_.release();
-      prom->set_value();
-      delete prom;
-    }
-  }
-
- public:
-  std::unique_ptr<CommandBuilder> DequeueCommand() {
-    const std::lock_guard<std::mutex> lock(command_queue_mutex_);
-    auto packet = std::move(command_queue_.front());
-    command_queue_.pop();
-    return std::move(packet);
-  }
-
-  std::shared_ptr<std::vector<uint8_t>> DequeueCommandBytes() {
-    auto command = DequeueCommand();
-    auto bytes = std::make_shared<std::vector<uint8_t>>();
-    packet::BitInserter bi(*bytes);
-    command->Serialize(bi);
-    return bytes;
-  }
-
-  bool IsPacketQueueEmpty() const {
-    const std::lock_guard<std::mutex> lock(command_queue_mutex_);
-    return command_queue_.empty();
-  }
-
-  size_t NumberOfQueuedCommands() const {
-    const std::lock_guard<std::mutex> lock(command_queue_mutex_);
-    return command_queue_.size();
-  }
-
-  void SetCommandFuture() {
-    ASSERT_EQ(command_promise_, nullptr) << "Promises, Promises, ... Only one at a time.";
-    command_promise_ = std::make_unique<std::promise<void>>();
-    command_future_ = std::make_unique<std::future<void>>(command_promise_->get_future());
-  }
-
-  CommandView GetLastCommand() {
-    if (command_queue_.empty()) {
-      return CommandView::Create(PacketView<kLittleEndian>(std::make_shared<std::vector<uint8_t>>()));
-    }
-    auto last = std::move(command_queue_.front());
-    command_queue_.pop();
-    return CommandView::Create(GetPacketView(std::move(last)));
-  }
-
-  std::optional<CommandView> GetCommandOptional(OpCode op_code) {
-    if (!command_queue_.empty()) {
-      std::lock_guard<std::mutex> lock(command_queue_mutex_);
-      if (command_future_ != nullptr) {
-        command_future_.reset();
-        command_promise_.reset();
-      }
-    } else if (command_future_ != nullptr) {
-      command_future_->wait_for(std::chrono::milliseconds(1000));
-    }
-    std::lock_guard<std::mutex> lock(command_queue_mutex_);
-    if (command_queue_.empty()) {
-      return std::nullopt;
-    } else {
-      CommandView command_packet_view = GetLastCommand();
-      EXPECT_TRUE(command_packet_view.IsValid());
-      EXPECT_EQ(command_packet_view.GetOpCode(), op_code);
-      return command_packet_view;
-    }
-  }
-
-  CommandView GetCommand(OpCode op_code) {
-    std::optional<CommandView> command = GetCommandOptional(op_code);
-    ASSERT_LOG(
-        command.has_value(),
-        "Expecting command %s but command queue was empty",
-        OpCodeText(op_code).c_str());
-    return command.value();
-  }
-
-  void CommandCompleteCallback(std::unique_ptr<EventBuilder> event_builder) {
-    auto event = EventView::Create(GetPacketView(std::move(event_builder)));
-    CommandCompleteView complete_view = CommandCompleteView::Create(event);
-    ASSERT_TRUE(complete_view.IsValid());
-    ASSERT_NE((uint16_t)command_complete_callbacks.size(), 0);
-    std::move(command_complete_callbacks.front()).Invoke(complete_view);
-    command_complete_callbacks.pop_front();
-  }
-
-  void CommandStatusCallback(std::unique_ptr<EventBuilder> event_builder) {
-    auto event = EventView::Create(GetPacketView(std::move(event_builder)));
-    CommandStatusView status_view = CommandStatusView::Create(event);
-    ASSERT_TRUE(status_view.IsValid());
-    ASSERT_NE((uint16_t)command_status_callbacks.size(), 0);
-    std::move(command_status_callbacks.front()).Invoke(status_view);
-    command_status_callbacks.pop_front();
-  }
-
-  void IncomingLeMetaEvent(std::unique_ptr<LeMetaEventBuilder> event_builder) {
-    auto packet = GetPacketView(std::move(event_builder));
-    EventView event = EventView::Create(packet);
-    LeMetaEventView meta_event_view = LeMetaEventView::Create(event);
-    EXPECT_TRUE(meta_event_view.IsValid());
-    le_event_handler_.Invoke(meta_event_view);
-  }
-
-  LeAclConnectionInterface* GetLeAclConnectionInterface(
-      common::ContextualCallback<void(LeMetaEventView)> event_handler,
-      common::ContextualCallback<void(uint16_t, ErrorCode)> on_disconnect,
-      common::ContextualCallback<
-          void(hci::ErrorCode hci_status, uint16_t, uint8_t version, uint16_t manufacturer_name, uint16_t sub_version)>
-          on_read_remote_version) override {
-    disconnect_handlers_.push_back(on_disconnect);
-    read_remote_version_handlers_.push_back(on_read_remote_version);
-    le_event_handler_ = event_handler;
-    return &le_acl_connection_manager_interface_;
-  }
-
-  void PutLeAclConnectionInterface() override {}
-
- private:
-  std::list<common::ContextualOnceCallback<void(CommandCompleteView)>> command_complete_callbacks;
-  std::list<common::ContextualOnceCallback<void(CommandStatusView)>> command_status_callbacks;
-  common::ContextualCallback<void(LeMetaEventView)> le_event_handler_;
-  std::queue<std::unique_ptr<CommandBuilder>> command_queue_;
-  mutable std::mutex command_queue_mutex_;
-  std::unique_ptr<std::promise<void>> command_promise_;
-  std::unique_ptr<std::future<void>> command_future_;
-  CommandInterfaceImpl<AclCommandBuilder> le_acl_connection_manager_interface_{*this};
-};
 }  // namespace
 
 class MockLeConnectionCallbacks : public LeConnectionCallbacks {
@@ -465,7 +284,7 @@ class LeImplTest : public ::testing::Test {
     thread_ = new Thread("thread", Thread::Priority::NORMAL);
     handler_ = new Handler(thread_);
     controller_ = new TestController();
-    hci_layer_ = new TestHciLayer();
+    hci_layer_ = new HciLayerFake();
 
     round_robin_scheduler_ = new RoundRobinScheduler(handler_, controller_, hci_queue_.GetUpEnd());
     hci_queue_.GetDownEnd()->RegisterDequeue(
@@ -486,7 +305,6 @@ class LeImplTest : public ::testing::Test {
 
   void set_random_device_address_policy() {
     // Set address policy
-    ASSERT_NO_FATAL_FAILURE(hci_layer_->SetCommandFuture());
     hci::Address address;
     Address::FromString("D0:05:04:03:02:01", address);
     hci::AddressWithType address_with_type(address, hci::AddressType::RANDOM_DEVICE_ADDRESS);
@@ -500,7 +318,7 @@ class LeImplTest : public ::testing::Test {
         minimum_rotation_time,
         maximum_rotation_time);
     hci_layer_->GetCommand(OpCode::LE_SET_RANDOM_ADDRESS);
-    hci_layer_->CommandCompleteCallback(LeSetRandomAddressCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+    hci_layer_->IncomingEvent(LeSetRandomAddressCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
   }
 
   void TearDown() override {
@@ -573,7 +391,7 @@ class LeImplTest : public ::testing::Test {
 
   Thread* thread_;
   Handler* handler_;
-  TestHciLayer* hci_layer_{nullptr};
+  HciLayerFake* hci_layer_{nullptr};
   TestController* controller_;
   RoundRobinScheduler* round_robin_scheduler_{nullptr};
 
@@ -685,14 +503,13 @@ TEST_F(LeImplTest, connection_complete_with_periperal_role) {
   set_random_device_address_policy();
 
   // Create connection
-  ASSERT_NO_FATAL_FAILURE(hci_layer_->SetCommandFuture());
   le_impl_->create_le_connection(
       {{0x21, 0x22, 0x23, 0x24, 0x25, 0x26}, AddressType::PUBLIC_DEVICE_ADDRESS}, true, false);
   hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
-  ASSERT_NO_FATAL_FAILURE(hci_layer_->SetCommandFuture());
-  hci_layer_->CommandCompleteCallback(LeAddDeviceToFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+  hci_layer_->IncomingEvent(
+      LeAddDeviceToFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
   hci_layer_->GetCommand(OpCode::LE_CREATE_CONNECTION);
-  hci_layer_->CommandStatusCallback(LeCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
+  hci_layer_->IncomingEvent(LeCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
   sync_handler();
 
   // Check state is ARMED
@@ -724,14 +541,14 @@ TEST_F(LeImplTest, enhanced_connection_complete_with_periperal_role) {
 
   controller_->AddSupported(OpCode::LE_EXTENDED_CREATE_CONNECTION);
   // Create connection
-  ASSERT_NO_FATAL_FAILURE(hci_layer_->SetCommandFuture());
   le_impl_->create_le_connection(
       {{0x21, 0x22, 0x23, 0x24, 0x25, 0x26}, AddressType::PUBLIC_DEVICE_ADDRESS}, true, false);
   hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
-  ASSERT_NO_FATAL_FAILURE(hci_layer_->SetCommandFuture());
-  hci_layer_->CommandCompleteCallback(LeAddDeviceToFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+  hci_layer_->IncomingEvent(
+      LeAddDeviceToFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
   hci_layer_->GetCommand(OpCode::LE_EXTENDED_CREATE_CONNECTION);
-  hci_layer_->CommandStatusCallback(LeExtendedCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
+  hci_layer_->IncomingEvent(
+      LeExtendedCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
   sync_handler();
 
   // Check state is ARMED
@@ -767,13 +584,12 @@ TEST_F(LeImplTest, connection_complete_with_central_role) {
   Address::FromString("D0:05:04:03:02:01", remote_address);
   hci::AddressWithType address_with_type(remote_address, hci::AddressType::PUBLIC_DEVICE_ADDRESS);
   // Create connection
-  ASSERT_NO_FATAL_FAILURE(hci_layer_->SetCommandFuture());
   le_impl_->create_le_connection(address_with_type, true, false);
   hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
-  ASSERT_NO_FATAL_FAILURE(hci_layer_->SetCommandFuture());
-  hci_layer_->CommandCompleteCallback(LeAddDeviceToFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+  hci_layer_->IncomingEvent(
+      LeAddDeviceToFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
   hci_layer_->GetCommand(OpCode::LE_CREATE_CONNECTION);
-  hci_layer_->CommandStatusCallback(LeCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
+  hci_layer_->IncomingEvent(LeCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
   sync_handler();
 
   // Check state is ARMED
@@ -805,13 +621,13 @@ TEST_F(LeImplTest, enhanced_connection_complete_with_central_role) {
   Address::FromString("D0:05:04:03:02:01", remote_address);
   hci::AddressWithType address_with_type(remote_address, hci::AddressType::PUBLIC_DEVICE_ADDRESS);
   // Create connection
-  ASSERT_NO_FATAL_FAILURE(hci_layer_->SetCommandFuture());
   le_impl_->create_le_connection(address_with_type, true, false);
   hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
-  ASSERT_NO_FATAL_FAILURE(hci_layer_->SetCommandFuture());
-  hci_layer_->CommandCompleteCallback(LeAddDeviceToFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+  hci_layer_->IncomingEvent(
+      LeAddDeviceToFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
   hci_layer_->GetCommand(OpCode::LE_EXTENDED_CREATE_CONNECTION);
-  hci_layer_->CommandStatusCallback(LeExtendedCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
+  hci_layer_->IncomingEvent(
+      LeExtendedCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
   sync_handler();
 
   // Check state is ARMED
@@ -1100,7 +916,7 @@ TEST_F(LeImplTest, DISABLED_add_device_to_resolving_list) {
   // Let LeAddressManager::resume_registered_clients execute
   sync_handler();
 
-  ASSERT_EQ(0UL, hci_layer_->NumberOfQueuedCommands());
+  hci_layer_->AssertNoQueuedCommand();
 
   // le_impl should not be registered with address manager
   ASSERT_FALSE(le_impl_->address_manager_registered);
@@ -1119,10 +935,10 @@ TEST_F(LeImplTest, DISABLED_add_device_to_resolving_list) {
   le_impl_->le_address_manager_->AckPause(le_impl_);
   sync_handler();  // Allow |LeAddressManager::ack_pause| to complete
 
-  ASSERT_FALSE(hci_layer_->IsPacketQueueEmpty());
   {
     // Inform controller to disable address resolution
-    auto command = CreateLeSecurityCommandView<LeSetAddressResolutionEnableView>(hci_layer_->DequeueCommandBytes());
+    auto command =
+        CreateLeSecurityCommandView<LeSetAddressResolutionEnableView>(hci_layer_->GetCommand());
     ASSERT_TRUE(command.IsValid());
     ASSERT_EQ(Enable::DISABLED, command.GetAddressResolutionEnable());
     le_impl_->le_address_manager_->OnCommandComplete(
@@ -1130,9 +946,9 @@ TEST_F(LeImplTest, DISABLED_add_device_to_resolving_list) {
   }
   sync_handler();  // |LeAddressManager::check_cached_commands|
 
-  ASSERT_FALSE(hci_layer_->IsPacketQueueEmpty());
   {
-    auto command = CreateLeSecurityCommandView<LeAddDeviceToResolvingListView>(hci_layer_->DequeueCommandBytes());
+    auto command =
+        CreateLeSecurityCommandView<LeAddDeviceToResolvingListView>(hci_layer_->GetCommand());
     ASSERT_TRUE(command.IsValid());
     ASSERT_EQ(PeerAddressType::PUBLIC_DEVICE_OR_IDENTITY_ADDRESS, command.GetPeerIdentityAddressType());
     ASSERT_EQ(remote_public_address_with_type_.GetAddress(), command.GetPeerIdentityAddress());
@@ -1143,9 +959,9 @@ TEST_F(LeImplTest, DISABLED_add_device_to_resolving_list) {
   }
   sync_handler();  // |LeAddressManager::check_cached_commands|
 
-  ASSERT_FALSE(hci_layer_->IsPacketQueueEmpty());
   {
-    auto command = CreateLeSecurityCommandView<LeSetAddressResolutionEnableView>(hci_layer_->DequeueCommandBytes());
+    auto command =
+        CreateLeSecurityCommandView<LeSetAddressResolutionEnableView>(hci_layer_->GetCommand());
     ASSERT_TRUE(command.IsValid());
     ASSERT_EQ(Enable::ENABLED, command.GetAddressResolutionEnable());
     le_impl_->le_address_manager_->OnCommandComplete(
@@ -1153,7 +969,7 @@ TEST_F(LeImplTest, DISABLED_add_device_to_resolving_list) {
   }
   sync_handler();  // |LeAddressManager::check_cached_commands|
 
-  ASSERT_TRUE(hci_layer_->IsPacketQueueEmpty());
+  hci_layer_->AssertNoQueuedCommand();
   ASSERT_TRUE(le_impl_->address_manager_registered);
 
   le_impl_->ready_to_unregister = true;
@@ -1172,7 +988,7 @@ TEST_F(LeImplTest, add_device_to_resolving_list__SupportsBlePrivacy) {
   // Let LeAddressManager::resume_registered_clients execute
   sync_handler();
 
-  ASSERT_EQ(0UL, hci_layer_->NumberOfQueuedCommands());
+  hci_layer_->AssertNoQueuedCommand();
 
   // le_impl should not be registered with address manager
   ASSERT_FALSE(le_impl_->address_manager_registered);
@@ -1191,10 +1007,10 @@ TEST_F(LeImplTest, add_device_to_resolving_list__SupportsBlePrivacy) {
   le_impl_->le_address_manager_->AckPause(le_impl_);
   sync_handler();  // Allow |LeAddressManager::ack_pause| to complete
 
-  ASSERT_FALSE(hci_layer_->IsPacketQueueEmpty());
   {
     // Inform controller to disable address resolution
-    auto command = CreateLeSecurityCommandView<LeSetAddressResolutionEnableView>(hci_layer_->DequeueCommandBytes());
+    auto command =
+        CreateLeSecurityCommandView<LeSetAddressResolutionEnableView>(hci_layer_->GetCommand());
     ASSERT_TRUE(command.IsValid());
     ASSERT_EQ(Enable::DISABLED, command.GetAddressResolutionEnable());
     le_impl_->le_address_manager_->OnCommandComplete(
@@ -1202,9 +1018,9 @@ TEST_F(LeImplTest, add_device_to_resolving_list__SupportsBlePrivacy) {
   }
   sync_handler();  // |LeAddressManager::check_cached_commands|
 
-  ASSERT_FALSE(hci_layer_->IsPacketQueueEmpty());
   {
-    auto command = CreateLeSecurityCommandView<LeAddDeviceToResolvingListView>(hci_layer_->DequeueCommandBytes());
+    auto command =
+        CreateLeSecurityCommandView<LeAddDeviceToResolvingListView>(hci_layer_->GetCommand());
     ASSERT_TRUE(command.IsValid());
     ASSERT_EQ(PeerAddressType::PUBLIC_DEVICE_OR_IDENTITY_ADDRESS, command.GetPeerIdentityAddressType());
     ASSERT_EQ(remote_public_address_with_type_.GetAddress(), command.GetPeerIdentityAddress());
@@ -1215,9 +1031,8 @@ TEST_F(LeImplTest, add_device_to_resolving_list__SupportsBlePrivacy) {
   }
   sync_handler();  // |LeAddressManager::check_cached_commands|
 
-  ASSERT_FALSE(hci_layer_->IsPacketQueueEmpty());
   {
-    auto command = CreateLeSecurityCommandView<LeSetPrivacyModeView>(hci_layer_->DequeueCommandBytes());
+    auto command = CreateLeSecurityCommandView<LeSetPrivacyModeView>(hci_layer_->GetCommand());
     ASSERT_TRUE(command.IsValid());
     ASSERT_EQ(PrivacyMode::DEVICE, command.GetPrivacyMode());
     ASSERT_EQ(remote_public_address_with_type_.GetAddress(), command.GetPeerIdentityAddress());
@@ -1227,9 +1042,9 @@ TEST_F(LeImplTest, add_device_to_resolving_list__SupportsBlePrivacy) {
   }
   sync_handler();  // |LeAddressManager::check_cached_commands|
 
-  ASSERT_FALSE(hci_layer_->IsPacketQueueEmpty());
   {
-    auto command = CreateLeSecurityCommandView<LeSetAddressResolutionEnableView>(hci_layer_->DequeueCommandBytes());
+    auto command =
+        CreateLeSecurityCommandView<LeSetAddressResolutionEnableView>(hci_layer_->GetCommand());
     ASSERT_TRUE(command.IsValid());
     ASSERT_EQ(Enable::ENABLED, command.GetAddressResolutionEnable());
     le_impl_->le_address_manager_->OnCommandComplete(
@@ -1237,7 +1052,6 @@ TEST_F(LeImplTest, add_device_to_resolving_list__SupportsBlePrivacy) {
   }
   sync_handler();  // |LeAddressManager::check_cached_commands|
 
-  ASSERT_TRUE(hci_layer_->IsPacketQueueEmpty());
   ASSERT_TRUE(le_impl_->address_manager_registered);
 
   le_impl_->ready_to_unregister = true;
@@ -1417,10 +1231,8 @@ TEST_F(LeImplWithConnectionTest, on_le_event__REMOTE_CONNECTION_PARAMETER_REQUES
 
   sync_handler();
 
-  ASSERT_FALSE(hci_layer_->IsPacketQueueEmpty());
-
   auto view = CreateLeConnectionManagementCommandView<LeRemoteConnectionParameterRequestReplyView>(
-      hci_layer_->DequeueCommandBytes());
+      hci_layer_->GetCommand());
   ASSERT_TRUE(view.IsValid());
 
   ASSERT_EQ(kIntervalMin, view.GetIntervalMin());
@@ -1437,9 +1249,9 @@ TEST_F(LeImplRegisteredWithAddressManagerTest, DISABLED_clear_resolving_list) {
   sync_handler();  // Allow |LeAddressManager::pause_registered_clients| to complete
   sync_handler();  // Allow |LeAddressManager::handle_next_command| to complete
 
-  ASSERT_EQ(1UL, hci_layer_->NumberOfQueuedCommands());
   {
-    auto view = CreateLeSecurityCommandView<LeSetAddressResolutionEnableView>(hci_layer_->DequeueCommandBytes());
+    auto view =
+        CreateLeSecurityCommandView<LeSetAddressResolutionEnableView>(hci_layer_->GetCommand());
     ASSERT_TRUE(view.IsValid());
     ASSERT_EQ(Enable::DISABLED, view.GetAddressResolutionEnable());
     le_impl_->le_address_manager_->OnCommandComplete(
@@ -1447,24 +1259,23 @@ TEST_F(LeImplRegisteredWithAddressManagerTest, DISABLED_clear_resolving_list) {
   }
 
   sync_handler();  // Allow |LeAddressManager::check_cached_commands| to complete
-  ASSERT_EQ(1UL, hci_layer_->NumberOfQueuedCommands());
   {
-    auto view = CreateLeSecurityCommandView<LeClearResolvingListView>(hci_layer_->DequeueCommandBytes());
+    auto view = CreateLeSecurityCommandView<LeClearResolvingListView>(hci_layer_->GetCommand());
     ASSERT_TRUE(view.IsValid());
     le_impl_->le_address_manager_->OnCommandComplete(
         ReturnCommandComplete(OpCode::LE_CLEAR_RESOLVING_LIST, ErrorCode::SUCCESS));
   }
 
   sync_handler();  // Allow |LeAddressManager::handle_next_command| to complete
-  ASSERT_EQ(1UL, hci_layer_->NumberOfQueuedCommands());
   {
-    auto view = CreateLeSecurityCommandView<LeSetAddressResolutionEnableView>(hci_layer_->DequeueCommandBytes());
+    auto view =
+        CreateLeSecurityCommandView<LeSetAddressResolutionEnableView>(hci_layer_->GetCommand());
     ASSERT_TRUE(view.IsValid());
     ASSERT_EQ(Enable::ENABLED, view.GetAddressResolutionEnable());
     le_impl_->le_address_manager_->OnCommandComplete(
         ReturnCommandComplete(OpCode::LE_SET_ADDRESS_RESOLUTION_ENABLE, ErrorCode::SUCCESS));
   }
-  ASSERT_TRUE(hci_layer_->IsPacketQueueEmpty());
+  hci_layer_->AssertNoQueuedCommand();
 }
 
 TEST_F(LeImplRegisteredWithAddressManagerTest, ignore_on_pause_on_resume_after_unregistered) {
@@ -1529,8 +1340,8 @@ TEST_F(LeImplTest, cancel_connect) {
 TEST_F(LeImplTest, set_le_suggested_default_data_parameters) {
   le_impl_->set_le_suggested_default_data_parameters(kLength, kTime);
   sync_handler();
-  auto view =
-      CreateLeConnectionManagementCommandView<LeWriteSuggestedDefaultDataLengthView>(hci_layer_->DequeueCommandBytes());
+  auto view = CreateLeConnectionManagementCommandView<LeWriteSuggestedDefaultDataLengthView>(
+      hci_layer_->GetCommand());
   ASSERT_TRUE(view.IsValid());
   ASSERT_EQ(kLength, view.GetTxOctets());
   ASSERT_EQ(kTime, view.GetTxTime());
@@ -1540,7 +1351,7 @@ TEST_F(LeImplTest, LeSetDefaultSubrate) {
   le_impl_->LeSetDefaultSubrate(
       kIntervalMin, kIntervalMax, kLatency, kContinuationNumber, kTimeout);
   sync_handler();
-  auto view = CreateAclCommandView<LeSetDefaultSubrateView>(hci_layer_->DequeueCommandBytes());
+  auto view = CreateAclCommandView<LeSetDefaultSubrateView>(hci_layer_->GetCommand());
   ASSERT_TRUE(view.IsValid());
   ASSERT_EQ(kIntervalMin, view.GetSubrateMin());
   ASSERT_EQ(kIntervalMax, view.GetSubrateMax());
@@ -1829,24 +1640,19 @@ TEST_F(LeImplTest, direct_connection_after_background_connection) {
       {0x21, 0x22, 0x23, 0x24, 0x25, 0x26}, AddressType::PUBLIC_DEVICE_ADDRESS);
 
   // arrange: Create background connection
-  ASSERT_NO_FATAL_FAILURE(hci_layer_->SetCommandFuture());
   le_impl_->create_le_connection(address, true, /* is_direct */ false);
   hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
-  ASSERT_NO_FATAL_FAILURE(hci_layer_->SetCommandFuture());
-  hci_layer_->CommandCompleteCallback(
+  hci_layer_->IncomingEvent(
       LeAddDeviceToFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
   auto raw_bg_create_connection = hci_layer_->GetCommand(OpCode::LE_CREATE_CONNECTION);
-  hci_layer_->CommandStatusCallback(
-      LeCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
+  hci_layer_->IncomingEvent(LeCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
   sync_handler();
 
   // act: Create direct connection
-  ASSERT_NO_FATAL_FAILURE(hci_layer_->SetCommandFuture());
   le_impl_->create_le_connection(address, true, /* is_direct */ true);
-  auto cancel_connection = hci_layer_->GetCommandOptional(OpCode::LE_CREATE_CONNECTION_CANCEL);
-  if (cancel_connection) {
-    ASSERT_NO_FATAL_FAILURE(hci_layer_->SetCommandFuture());
-    hci_layer_->CommandCompleteCallback(
+  auto cancel_connection = hci_layer_->GetCommand(OpCode::LE_CREATE_CONNECTION_CANCEL);
+  if (cancel_connection.IsValid()) {
+    hci_layer_->IncomingEvent(
         LeCreateConnectionCancelCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
     hci_layer_->IncomingLeMetaEvent(LeConnectionCompleteBuilder::Create(
         ErrorCode::UNKNOWN_CONNECTION,
@@ -1859,16 +1665,15 @@ TEST_F(LeImplTest, direct_connection_after_background_connection) {
         0x0000,
         ClockAccuracy::PPM_30));
   }
-  auto raw_direct_create_connection = hci_layer_->GetCommandOptional(OpCode::LE_CREATE_CONNECTION);
+  auto raw_direct_create_connection = hci_layer_->GetCommand(OpCode::LE_CREATE_CONNECTION);
 
   // assert
-  ASSERT_TRUE(raw_direct_create_connection.has_value());
   auto bg_create_connection = LeCreateConnectionView::Create(
       LeConnectionManagementCommandView::Create(AclCommandView::Create(raw_bg_create_connection)));
   EXPECT_TRUE(bg_create_connection.IsValid());
   auto direct_create_connection =
       LeCreateConnectionView::Create(LeConnectionManagementCommandView::Create(
-          AclCommandView::Create(*raw_direct_create_connection)));
+          AclCommandView::Create(raw_direct_create_connection)));
   EXPECT_TRUE(direct_create_connection.IsValid());
   LOG_INFO("Scan Interval %u", direct_create_connection.GetLeScanInterval());
   ASSERT_NE(direct_create_connection.GetLeScanInterval(), bg_create_connection.GetLeScanInterval());
