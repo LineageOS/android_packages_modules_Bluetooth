@@ -18,10 +18,8 @@
 #include <gtest/gtest.h>
 
 #include <cstring>
-#include <map>
 #include <utility>
 
-#include "osi/include/log.h"
 #include "stack/include/hcidefs.h"
 #include "stack/include/l2cdefs.h"
 #include "test/common/mock_functions.h"

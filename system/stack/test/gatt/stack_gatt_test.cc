@@ -25,6 +25,7 @@
 #include "common/strings.h"
 #include "osi/include/allocator.h"
 #include "stack/gatt/gatt_int.h"
+#include "stack/include/bt_types.h"
 #include "stack/include/gatt_api.h"
 #include "stack/include/l2c_api.h"
 #include "stack/sdp/internal/sdp_api.h"

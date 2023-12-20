@@ -16,8 +16,6 @@
 
 #include <gtest/gtest.h>
 
-#include <cstring>
-
 #include "a2dp_sbc.h"
 
 namespace bluetooth {
