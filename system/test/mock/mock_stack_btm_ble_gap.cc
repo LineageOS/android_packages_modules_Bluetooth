@@ -27,7 +27,6 @@
 
 #include "stack/btm/btm_ble_int.h"
 #include "stack/btm/btm_ble_int_types.h"
-#include "stack/btm/btm_dev.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/hci_error_code.h"
 #include "test/common/mock_functions.h"

@@ -20,11 +20,9 @@
 
 #include <cstdint>
 
-#include "bta/include/bta_api.h"
 #include "bta/include/bta_sec_api.h"
 #include "bta/sys/bta_sys.h"
 #include "internal_include/bte_appl.h"
-#include "stack/include/btm_api_types.h"
 
 tBTE_APPL_CFG bte_appl_cfg = {
     BTA_LE_AUTH_REQ_SC_MITM_BOND,  // Authentication requirements

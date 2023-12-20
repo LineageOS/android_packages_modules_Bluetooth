@@ -35,6 +35,7 @@
 #include "stack/btm/neighbor_inquiry.h"
 #include "stack/include/bt_hdr.h"
 #include "types/bluetooth/uuid.h"
+#include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 // Original usings

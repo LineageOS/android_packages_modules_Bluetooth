@@ -23,7 +23,6 @@
 
 #include "device/include/esco_parameters.h"
 #include "stack/btm/btm_sco.h"
-#include "stack/include/bt_hdr.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/hci_error_code.h"
