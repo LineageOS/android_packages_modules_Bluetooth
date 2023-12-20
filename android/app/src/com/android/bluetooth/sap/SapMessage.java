@@ -1187,67 +1187,63 @@ public class SapMessage {
 
 
     public static String getMsgTypeName(int msgType) {
-        if (DEBUG || VERBOSE) {
-            switch (msgType) {
-                case ID_CONNECT_REQ:
-                    return "ID_CONNECT_REQ";
-                case ID_CONNECT_RESP:
-                    return "ID_CONNECT_RESP";
-                case ID_DISCONNECT_REQ:
-                    return "ID_DISCONNECT_REQ";
-                case ID_DISCONNECT_RESP:
-                    return "ID_DISCONNECT_RESP";
-                case ID_DISCONNECT_IND:
-                    return "ID_DISCONNECT_IND";
-                case ID_TRANSFER_APDU_REQ:
-                    return "ID_TRANSFER_APDU_REQ";
-                case ID_TRANSFER_APDU_RESP:
-                    return "ID_TRANSFER_APDU_RESP";
-                case ID_TRANSFER_ATR_REQ:
-                    return "ID_TRANSFER_ATR_REQ";
-                case ID_TRANSFER_ATR_RESP:
-                    return "ID_TRANSFER_ATR_RESP";
-                case ID_POWER_SIM_OFF_REQ:
-                    return "ID_POWER_SIM_OFF_REQ";
-                case ID_POWER_SIM_OFF_RESP:
-                    return "ID_POWER_SIM_OFF_RESP";
-                case ID_POWER_SIM_ON_REQ:
-                    return "ID_POWER_SIM_ON_REQ";
-                case ID_POWER_SIM_ON_RESP:
-                    return "ID_POWER_SIM_ON_RESP";
-                case ID_RESET_SIM_REQ:
-                    return "ID_RESET_SIM_REQ";
-                case ID_RESET_SIM_RESP:
-                    return "ID_RESET_SIM_RESP";
-                case ID_TRANSFER_CARD_READER_STATUS_REQ:
-                    return "ID_TRANSFER_CARD_READER_STATUS_REQ";
-                case ID_TRANSFER_CARD_READER_STATUS_RESP:
-                    return "ID_TRANSFER_CARD_READER_STATUS_RESP";
-                case ID_STATUS_IND:
-                    return "ID_STATUS_IND";
-                case ID_ERROR_RESP:
-                    return "ID_ERROR_RESP";
-                case ID_SET_TRANSPORT_PROTOCOL_REQ:
-                    return "ID_SET_TRANSPORT_PROTOCOL_REQ";
-                case ID_SET_TRANSPORT_PROTOCOL_RESP:
-                    return "ID_SET_TRANSPORT_PROTOCOL_RESP";
-                case ID_RIL_UNSOL_CONNECTED:
-                    return "ID_RIL_UNSOL_CONNECTED";
-                case ID_RIL_UNSOL_DISCONNECT_IND:
-                    return "ID_RIL_UNSOL_DISCONNECT_IND";
-                case ID_RIL_UNKNOWN:
-                    return "ID_RIL_UNKNOWN";
-                case ID_RIL_GET_SIM_STATUS_REQ:
-                    return "ID_RIL_GET_SIM_STATUS_REQ";
-                case ID_RIL_SIM_ACCESS_TEST_REQ:
-                    return "ID_RIL_SIM_ACCESS_TEST_REQ";
-                case ID_RIL_SIM_ACCESS_TEST_RESP:
-                    return "ID_RIL_SIM_ACCESS_TEST_RESP";
-                default:
-                    return "Unknown Message Type (" + msgType + ")";
-            }
-        } else {
-            return null;
+        switch (msgType) {
+            case ID_CONNECT_REQ:
+                return "ID_CONNECT_REQ";
+            case ID_CONNECT_RESP:
+                return "ID_CONNECT_RESP";
+            case ID_DISCONNECT_REQ:
+                return "ID_DISCONNECT_REQ";
+            case ID_DISCONNECT_RESP:
+                return "ID_DISCONNECT_RESP";
+            case ID_DISCONNECT_IND:
+                return "ID_DISCONNECT_IND";
+            case ID_TRANSFER_APDU_REQ:
+                return "ID_TRANSFER_APDU_REQ";
+            case ID_TRANSFER_APDU_RESP:
+                return "ID_TRANSFER_APDU_RESP";
+            case ID_TRANSFER_ATR_REQ:
+                return "ID_TRANSFER_ATR_REQ";
+            case ID_TRANSFER_ATR_RESP:
+                return "ID_TRANSFER_ATR_RESP";
+            case ID_POWER_SIM_OFF_REQ:
+                return "ID_POWER_SIM_OFF_REQ";
+            case ID_POWER_SIM_OFF_RESP:
+                return "ID_POWER_SIM_OFF_RESP";
+            case ID_POWER_SIM_ON_REQ:
+                return "ID_POWER_SIM_ON_REQ";
+            case ID_POWER_SIM_ON_RESP:
+                return "ID_POWER_SIM_ON_RESP";
+            case ID_RESET_SIM_REQ:
+                return "ID_RESET_SIM_REQ";
+            case ID_RESET_SIM_RESP:
+                return "ID_RESET_SIM_RESP";
+            case ID_TRANSFER_CARD_READER_STATUS_REQ:
+                return "ID_TRANSFER_CARD_READER_STATUS_REQ";
+            case ID_TRANSFER_CARD_READER_STATUS_RESP:
+                return "ID_TRANSFER_CARD_READER_STATUS_RESP";
+            case ID_STATUS_IND:
+                return "ID_STATUS_IND";
+            case ID_ERROR_RESP:
+                return "ID_ERROR_RESP";
+            case ID_SET_TRANSPORT_PROTOCOL_REQ:
+                return "ID_SET_TRANSPORT_PROTOCOL_REQ";
+            case ID_SET_TRANSPORT_PROTOCOL_RESP:
+                return "ID_SET_TRANSPORT_PROTOCOL_RESP";
+            case ID_RIL_UNSOL_CONNECTED:
+                return "ID_RIL_UNSOL_CONNECTED";
+            case ID_RIL_UNSOL_DISCONNECT_IND:
+                return "ID_RIL_UNSOL_DISCONNECT_IND";
+            case ID_RIL_UNKNOWN:
+                return "ID_RIL_UNKNOWN";
+            case ID_RIL_GET_SIM_STATUS_REQ:
+                return "ID_RIL_GET_SIM_STATUS_REQ";
+            case ID_RIL_SIM_ACCESS_TEST_REQ:
+                return "ID_RIL_SIM_ACCESS_TEST_REQ";
+            case ID_RIL_SIM_ACCESS_TEST_RESP:
+                return "ID_RIL_SIM_ACCESS_TEST_RESP";
+            default:
+                return "Unknown Message Type (" + msgType + ")";
         }
     }
 }
