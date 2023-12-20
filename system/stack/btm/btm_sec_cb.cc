@@ -21,6 +21,7 @@
 
 #include <cstdint>
 
+#include "internal_include/bt_trace.h"
 #include "internal_include/stack_config.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"

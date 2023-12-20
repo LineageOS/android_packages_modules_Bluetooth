@@ -21,6 +21,7 @@
 
 #include "btif_a2dp.h"
 
+#include <base/logging.h>
 #include <stdbool.h>
 
 #include "audio_a2dp_hw/include/audio_a2dp_hw.h"
@@ -33,10 +34,9 @@
 #include "btif_av_co.h"
 #include "btif_hf.h"
 #include "btif_util.h"
+#include "internal_include/bt_trace.h"
 #include "osi/include/log.h"
 #include "types/raw_address.h"
-
-#include <base/logging.h>
 
 void btif_a2dp_on_idle(const RawAddress& peer_addr) {
   LOG_VERBOSE("Peer stream endpoint type:%s",

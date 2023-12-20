@@ -35,6 +35,7 @@
 #include "btif_storage.h"
 #include "devices.h"
 #include "gd/common/strings.h"
+#include "internal_include/bt_trace.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_sec.h"
