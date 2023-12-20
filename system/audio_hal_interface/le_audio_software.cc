@@ -702,8 +702,7 @@ LeAudioClientInterface::Sink* LeAudioClientInterface::GetSink(
                                                    std::move(stream_cb));
       aidl::le_audio::LeAudioSinkTransport::interface_unicast_ =
           new aidl::BluetoothAudioSinkClientInterface(
-              aidl::le_audio::LeAudioSinkTransport::instance_unicast_,
-              message_loop);
+              aidl::le_audio::LeAudioSinkTransport::instance_unicast_);
       if (!aidl::le_audio::LeAudioSinkTransport::interface_unicast_
                ->IsValid()) {
         LOG(WARNING) << __func__
@@ -723,8 +722,7 @@ LeAudioClientInterface::Sink* LeAudioClientInterface::GetSink(
                                                    std::move(stream_cb));
       aidl::le_audio::LeAudioSinkTransport::interface_broadcast_ =
           new aidl::BluetoothAudioSinkClientInterface(
-              aidl::le_audio::LeAudioSinkTransport::instance_broadcast_,
-              message_loop);
+              aidl::le_audio::LeAudioSinkTransport::instance_broadcast_);
       if (!aidl::le_audio::LeAudioSinkTransport::interface_broadcast_
                ->IsValid()) {
         LOG(WARNING) << __func__
@@ -830,7 +828,7 @@ LeAudioClientInterface::Source* LeAudioClientInterface::GetSource(
                                                    std::move(stream_cb));
     aidl::le_audio::LeAudioSourceTransport::interface =
         new aidl::BluetoothAudioSourceClientInterface(
-            aidl::le_audio::LeAudioSourceTransport::instance, message_loop);
+            aidl::le_audio::LeAudioSourceTransport::instance);
     if (!aidl::le_audio::LeAudioSourceTransport::interface->IsValid()) {
       LOG(WARNING) << __func__
                    << ": BluetoothAudio HAL for Le Audio is invalid?!";

@@ -26,7 +26,6 @@
 #include "audio_aidl_interfaces.h"
 #include "audio_ctrl_ack.h"
 #include "bluetooth_audio_port_impl.h"
-#include "common/message_loop_thread.h"
 #include "transport_instance.h"
 
 #define BLUETOOTH_AUDIO_HAL_PROP_DISABLED \
@@ -195,12 +194,9 @@ class BluetoothAudioSinkClientInterface : public BluetoothAudioClientInterface {
  public:
   /***
    * Constructs an BluetoothAudioSinkClientInterface to communicate to
-   * BluetoothAudio HAL. |sink| is the implementation for the transport, and
-   * |message_loop| is the thread where callbacks are invoked.
+   * BluetoothAudio HAL. |sink| is the implementation for the transport.
    ***/
-  BluetoothAudioSinkClientInterface(
-      IBluetoothSinkTransportInstance* sink,
-      bluetooth::common::MessageLoopThread* message_loop);
+  BluetoothAudioSinkClientInterface(IBluetoothSinkTransportInstance* sink);
   virtual ~BluetoothAudioSinkClientInterface();
 
   IBluetoothSinkTransportInstance* GetTransportInstance() const {
@@ -224,12 +220,10 @@ class BluetoothAudioSourceClientInterface
  public:
   /***
    * Constructs an BluetoothAudioSourceClientInterface to communicate to
-   * BluetoothAudio HAL. |source| is the implementation for the transport, and
-   * |message_loop| is the thread where callbacks are invoked.
+   * BluetoothAudio HAL. |source| is the implementation for the transport.
    ***/
   BluetoothAudioSourceClientInterface(
-      IBluetoothSourceTransportInstance* source,
-      bluetooth::common::MessageLoopThread* message_loop);
+      IBluetoothSourceTransportInstance* source);
   virtual ~BluetoothAudioSourceClientInterface();
 
   IBluetoothSourceTransportInstance* GetTransportInstance() const {
