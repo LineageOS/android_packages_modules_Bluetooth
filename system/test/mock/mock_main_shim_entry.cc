@@ -14,20 +14,21 @@
  * limitations under the License.
  */
 
-#include "gd/hci/acl_manager_mock.h"
-#include "gd/hci/controller_mock.h"
-#include "gd/hci/distance_measurement_manager_mock.h"
-#include "gd/hci/hci_layer.h"
-#include "gd/hci/hci_layer_mock.h"
-#include "gd/hci/le_advertising_manager_mock.h"
-#include "gd/hci/le_scanning_manager_mock.h"
-#include "gd/neighbor/connectability.h"
-#include "gd/neighbor/discoverability.h"
-#include "gd/neighbor/inquiry.h"
-#include "gd/neighbor/page.h"
-#include "gd/os/handler.h"
-#include "gd/storage/storage_module.h"
+#include "hci/acl_manager_mock.h"
+#include "hci/controller_mock.h"
+#include "hci/distance_measurement_manager_mock.h"
+#include "hci/hci_layer.h"
+#include "hci/hci_layer_mock.h"
+#include "hci/le_advertising_manager_mock.h"
+#include "hci/le_scanning_manager_mock.h"
 #include "main/shim/entry.h"
+#include "neighbor/connectability.h"
+#include "neighbor/discoverability.h"
+#include "neighbor/inquiry.h"
+#include "neighbor/page.h"
+#include "os/handler.h"
+#include "security/security_module.h"
+#include "storage/storage_module.h"
 
 namespace bluetooth {
 namespace hci {
