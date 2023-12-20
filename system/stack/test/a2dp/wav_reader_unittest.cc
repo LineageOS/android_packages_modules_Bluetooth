@@ -18,12 +18,9 @@
 
 #include <gtest/gtest.h>
 
-#include <cstring>
-#include <filesystem>
 #include <memory>
 #include <string>
 
-#include "os/log.h"
 #include "test_util.h"
 
 namespace {

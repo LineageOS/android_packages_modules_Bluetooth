@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-#include <map>
-#include <string>
 #include <vector>
 
 #include "stack/avdt/avdt_int.h"

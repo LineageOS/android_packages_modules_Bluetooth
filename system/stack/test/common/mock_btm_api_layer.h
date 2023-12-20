@@ -18,7 +18,7 @@
 
 #include <gmock/gmock.h>
 
-#include "btm_api.h"
+#include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 namespace bluetooth {

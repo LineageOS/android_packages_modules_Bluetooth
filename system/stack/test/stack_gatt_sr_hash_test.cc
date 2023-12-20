@@ -18,10 +18,7 @@
 
 #include <gtest/gtest.h>
 
-#include "crypto_toolbox/crypto_toolbox.h"
 #include "stack/gatt/gatt_int.h"
-#include "stack/test/common/mock_eatt.h"
-#include "test/common/mock_functions.h"
 #include "types/bluetooth/uuid.h"
 
 using bluetooth::Uuid;
