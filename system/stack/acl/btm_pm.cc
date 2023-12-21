@@ -212,9 +212,9 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
 
   if (mode != BTM_PM_MD_ACTIVE) {
     const controller_t* controller = controller_get_interface();
-    if ((mode == BTM_PM_MD_HOLD && !controller->supports_hold_mode()) ||
-        (mode == BTM_PM_MD_SNIFF && !controller->supports_sniff_mode()) ||
-        (mode == BTM_PM_MD_PARK && !controller->supports_park_mode()) ||
+    if ((mode == BTM_PM_MD_HOLD && !controller->SupportsHoldMode()) ||
+        (mode == BTM_PM_MD_SNIFF && !controller->SupportsSniffMode()) ||
+        (mode == BTM_PM_MD_PARK && !controller->SupportsParkMode()) ||
         interop_match_addr(INTEROP_DISABLE_SNIFF, &remote_bda)) {
       LOG_ERROR("pm_id %u mode %u is not supported for %s", pm_id, mode,
                 ADDRESS_TO_LOGGABLE_CSTR(remote_bda));
@@ -327,7 +327,7 @@ tBTM_STATUS BTM_SetSsrParams(const RawAddress& remote_bda, uint16_t max_lat,
   }
 
   const controller_t* controller = controller_get_interface();
-  if (!controller->supports_sniff_subrating()) {
+  if (!controller->SupportsSniffSubrating()) {
     LOG_INFO("No controller support for sniff subrating");
     return BTM_SUCCESS;
   }
@@ -552,7 +552,7 @@ static tBTM_STATUS btm_pm_snd_md_req(uint16_t handle, uint8_t pm_id,
     md_res.mode = BTM_PM_MD_ACTIVE;
   } else if (BTM_PM_MD_SNIFF == md_res.mode && p_cb->max_lat) {
     const controller_t* controller = controller_get_interface();
-    if (controller->supports_sniff_subrating()) {
+    if (controller->SupportsSniffSubrating()) {
       LOG_DEBUG("Sending sniff subrating to controller");
       send_sniff_subrating(handle, p_cb->bda_, p_cb->max_lat, p_cb->min_rmt_to,
                            p_cb->min_loc_to);

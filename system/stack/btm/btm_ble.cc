@@ -170,8 +170,8 @@ void BTM_BleReadPhy(
   }
 
   // checking if local controller supports it!
-  if (!controller_get_interface()->supports_ble_2m_phy() &&
-      !controller_get_interface()->supports_ble_coded_phy()) {
+  if (!controller_get_interface()->SupportsBle2mPhy() &&
+      !controller_get_interface()->SupportsBleCodedPhy()) {
     LOG_ERROR("%s failed, request not supported in local controller!",
               __func__);
     cb.Run(0, 0, GATT_REQ_NOT_SUPPORTED);
@@ -207,8 +207,8 @@ void BTM_BleSetPhy(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
   uint16_t handle = BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_LE);
 
   // checking if local controller supports it!
-  if (!controller_get_interface()->supports_ble_2m_phy() &&
-      !controller_get_interface()->supports_ble_coded_phy()) {
+  if (!controller_get_interface()->SupportsBle2mPhy() &&
+      !controller_get_interface()->SupportsBleCodedPhy()) {
     LOG_INFO("Local controller unable to support setting of le phy parameters");
     gatt_notify_phy_updated(static_cast<tHCI_STATUS>(GATT_REQ_NOT_SUPPORTED),
                             handle, tx_phys, rx_phys);

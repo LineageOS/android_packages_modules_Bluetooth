@@ -45,7 +45,7 @@ class StackL2capTest : public ::testing::Test {
       return kAclBufferCountClassic;
     };
     controller_.get_acl_buffer_count_ble = []() { return kAclBufferCountBle; };
-    controller_.supports_ble = []() -> bool { return true; };
+    controller_.SupportsBle = []() -> bool { return true; };
     l2c_init();
   }
 
