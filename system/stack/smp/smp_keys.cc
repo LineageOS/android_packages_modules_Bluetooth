@@ -985,7 +985,7 @@ bool smp_calculate_link_key_from_long_term_key(tSMP_CB* p_cb) {
   if (p_cb->init_security_mode == BTM_SEC_MODE_SC) {
     /* Secure Connections Only Mode */
     link_key_type = BTM_LKEY_TYPE_AUTH_COMB_P_256;
-  } else if (controller_get_interface()->supports_secure_connections()) {
+  } else if (controller_get_interface()->SupportsSecureConnections()) {
     /* both transports are SC capable */
     if (p_cb->sec_level == SMP_SEC_AUTHENTICATED)
       link_key_type = BTM_LKEY_TYPE_AUTH_COMB_P_256;

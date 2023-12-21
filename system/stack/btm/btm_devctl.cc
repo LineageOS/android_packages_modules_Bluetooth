@@ -196,7 +196,7 @@ void BTM_reset_complete() {
   std::srand(std::time(nullptr));
 
   /* Set up the BLE privacy settings */
-  if (controller->supports_ble() && controller->supports_ble_privacy() &&
+  if (controller->SupportsBle() && controller->SupportsBlePrivacy() &&
       controller->get_ble_resolving_list_max_size() > 0) {
     btm_ble_resolving_list_init(controller->get_ble_resolving_list_max_size());
     /* set the default random private address timeout */
@@ -207,7 +207,7 @@ void BTM_reset_complete() {
         "Le Address Resolving list disabled due to lack of controller support");
   }
 
-  if (controller->supports_ble()) {
+  if (controller->SupportsBle()) {
     l2c_link_processs_ble_num_bufs(controller->get_acl_buffer_count_ble());
   }
 
@@ -249,39 +249,39 @@ static void decode_controller_support() {
   /* Create (e)SCO supported packet types mask */
   btm_cb.btm_sco_pkt_types_supported = 0;
   btm_cb.sco_cb.esco_supported = false;
-  if (controller->supports_sco()) {
+  if (controller->SupportsSco()) {
     btm_cb.btm_sco_pkt_types_supported = ESCO_PKT_TYPES_MASK_HV1;
 
-    if (controller->supports_hv2_packets())
+    if (controller->SupportsHv2Packets())
       btm_cb.btm_sco_pkt_types_supported |= ESCO_PKT_TYPES_MASK_HV2;
 
-    if (controller->supports_hv3_packets())
+    if (controller->SupportsHv3Packets())
       btm_cb.btm_sco_pkt_types_supported |= ESCO_PKT_TYPES_MASK_HV3;
   }
 
-  if (controller->supports_ev3_packets())
+  if (controller->SupportsEv3Packets())
     btm_cb.btm_sco_pkt_types_supported |= ESCO_PKT_TYPES_MASK_EV3;
 
-  if (controller->supports_ev4_packets())
+  if (controller->SupportsEv4Packets())
     btm_cb.btm_sco_pkt_types_supported |= ESCO_PKT_TYPES_MASK_EV4;
 
-  if (controller->supports_ev5_packets())
+  if (controller->SupportsEv5Packets())
     btm_cb.btm_sco_pkt_types_supported |= ESCO_PKT_TYPES_MASK_EV5;
 
   if (btm_cb.btm_sco_pkt_types_supported & BTM_ESCO_LINK_ONLY_MASK) {
     btm_cb.sco_cb.esco_supported = true;
 
     /* Add in EDR related eSCO types */
-    if (controller->supports_esco_2m_phy()) {
-      if (!controller->supports_3_slot_edr_packets())
+    if (controller->SupportsEsco2mPhy()) {
+      if (!controller->Supports3SlotEdrPackets())
         btm_cb.btm_sco_pkt_types_supported |= ESCO_PKT_TYPES_MASK_NO_2_EV5;
     } else {
       btm_cb.btm_sco_pkt_types_supported |=
           (ESCO_PKT_TYPES_MASK_NO_2_EV3 + ESCO_PKT_TYPES_MASK_NO_2_EV5);
     }
 
-    if (controller->supports_esco_3m_phy()) {
-      if (!controller->supports_3_slot_edr_packets())
+    if (controller->SupportsEsco3mPhy()) {
+      if (!controller->Supports3SlotEdrPackets())
         btm_cb.btm_sco_pkt_types_supported |= ESCO_PKT_TYPES_MASK_NO_3_EV5;
     } else {
       btm_cb.btm_sco_pkt_types_supported |=
@@ -295,14 +295,14 @@ static void decode_controller_support() {
   BTM_acl_after_controller_started(controller_get_interface());
   btm_sec_dev_reset();
 
-  if (controller->supports_rssi_with_inquiry_results()) {
-    if (controller->supports_extended_inquiry_response())
+  if (controller->SupportsRssiWithInquiryResults()) {
+    if (controller->SupportsExtendedInquiryResponse())
       BTM_SetInquiryMode(BTM_INQ_RESULT_EXTENDED);
     else
       BTM_SetInquiryMode(BTM_INQ_RESULT_WITH_RSSI);
   }
 
-  l2cu_set_non_flushable_pbf(controller->supports_non_flushable_pb());
+  l2cu_set_non_flushable_pbf(controller->SupportsNonFlushablePb());
   BTM_EnableInterlacedPageScan();
   BTM_EnableInterlacedInquiryScan();
 }
