@@ -57,6 +57,7 @@ static constexpr uint32_t kMaxSubeventLen = 0x3d0900;         // 4s
 static constexpr uint8_t kToneAntennaConfigSelection = 0x07;  // 2x2
 static constexpr uint8_t kTxPwrDelta = 0x00;
 static constexpr uint8_t kProcedureDataBufferSize = 0x10;  // Buffer size of Procedure data
+static constexpr uint8_t kReportWithNoAbort = 0x00;
 
 struct DistanceMeasurementManager::impl {
   struct CsProcedureData {
@@ -84,6 +85,8 @@ struct DistanceMeasurementManager::impl {
     std::vector<std::vector<std::complex<double>>> tone_pct_reflector;
     CsProcedureDoneStatus local_status;
     CsProcedureDoneStatus remote_status;
+    // If the procedure is aborted by either the local or remote side.
+    bool aborted = false;
   };
 
   ~impl() {}
@@ -520,7 +523,9 @@ struct DistanceMeasurementManager::impl {
 
     // Common data for LE_CS_SUBEVENT_RESULT and LE_CS_SUBEVENT_RESULT_CONTINUE,
     uint16_t connection_handle = 0;
-    uint8_t num_antenna_paths = 0;
+    uint8_t abort_reason = kReportWithNoAbort;
+    CsProcedureDoneStatus procedure_done_status;
+    CsSubeventDoneStatus subevent_done_status;
     if (event.GetSubeventCode() == SubeventCode::LE_CS_SUBEVENT_RESULT) {
       auto cs_event_result = LeCsSubeventResultView::Create(event);
       if (!cs_event_result.IsValid()) {
@@ -528,10 +533,59 @@ struct DistanceMeasurementManager::impl {
         return;
       }
       connection_handle = cs_event_result.GetConnectionHandle();
-      num_antenna_paths = cs_event_result.GetNumAntennaPaths();
+      abort_reason = cs_event_result.GetAbortReason();
+      procedure_done_status = cs_event_result.GetProcedureDoneStatus();
+      subevent_done_status = cs_event_result.GetSubeventDoneStatus();
       init_cs_procedure_data(
-          connection_handle, cs_event_result.GetProcedureCounter(), num_antenna_paths, true);
+          connection_handle,
+          cs_event_result.GetProcedureCounter(),
+          cs_event_result.GetNumAntennaPaths(),
+          true);
+    } else {
+      auto cs_event_result = LeCsSubeventResultContinueView::Create(event);
+      if (!cs_event_result.IsValid()) {
+        LOG_WARN("Get invalid LeCsSubeventResultContinueView");
+        return;
+      }
+      connection_handle = cs_event_result.GetConnectionHandle();
+      abort_reason = cs_event_result.GetAbortReason();
+      procedure_done_status = cs_event_result.GetProcedureDoneStatus();
+      subevent_done_status = cs_event_result.GetSubeventDoneStatus();
     }
+
+    uint16_t counter = cs_trackers_[connection_handle].local_counter;
+    LOG_DEBUG(
+        "Connection_handle %d, procedure_done_status: %s, subevent_done_status: %s, "
+        "counter: "
+        "%d",
+        connection_handle,
+        CsProcedureDoneStatusText(procedure_done_status).c_str(),
+        CsSubeventDoneStatusText(subevent_done_status).c_str(),
+        counter);
+
+    if (procedure_done_status == CsProcedureDoneStatus::ABORTED ||
+        subevent_done_status == CsSubeventDoneStatus::ABORTED) {
+      LOG_WARN(
+          "Received CS Subevent with abort reason: %02x, connection_handle:%d, counter:%d",
+          abort_reason,
+          connection_handle,
+          counter);
+    }
+
+    CsProcedureData* procedure_data = get_procedure_data(connection_handle, counter);
+    if (procedure_data == nullptr) {
+      return;
+    }
+
+    if (abort_reason != kReportWithNoAbort) {
+      // Even the procedure is aborted, we should keep following process and
+      // handle it when all corresponding remote data received.
+      procedure_data->aborted = true;
+    }
+
+    // Update procedure status
+    procedure_data->local_status = procedure_done_status;
+    check_cs_procedure_complete(procedure_data, connection_handle);
   }
 
   void init_cs_procedure_data(
@@ -563,6 +617,44 @@ struct DistanceMeasurementManager::impl {
     if (data_list.size() > kProcedureDataBufferSize) {
       LOG_WARN("buffer full, drop procedure data with counter: %d", data_list.front().counter);
       data_list.erase(data_list.begin());
+    }
+  }
+
+  CsProcedureData* get_procedure_data(uint16_t connection_handle, uint16_t counter) {
+    std::vector<CsProcedureData>& data_list = cs_trackers_[connection_handle].procedure_data_list;
+    CsProcedureData* procedure_data = nullptr;
+    for (uint8_t i = 0; i < data_list.size(); i++) {
+      if (data_list[i].counter == counter) {
+        procedure_data = &data_list[i];
+        break;
+      }
+    }
+    if (procedure_data == nullptr) {
+      LOG_WARN("Can't find data for connection_handle:%d, counter: %d", connection_handle, counter);
+    }
+    return procedure_data;
+  }
+
+  void check_cs_procedure_complete(CsProcedureData* procedure_data, uint16_t connection_handle) {
+    if (procedure_data->local_status == CsProcedureDoneStatus::ALL_RESULTS_COMPLETE &&
+        procedure_data->remote_status == CsProcedureDoneStatus::ALL_RESULTS_COMPLETE &&
+        !procedure_data->aborted) {
+      LOG_DEBUG(
+          "Procedure complete counter:%d data size:%d, main_mode_type:%d, sub_mode_type:%d",
+          (uint16_t)procedure_data->counter,
+          (uint16_t)procedure_data->step_channel.size(),
+          (uint16_t)cs_trackers_[connection_handle].main_mode_type,
+          (uint16_t)cs_trackers_[connection_handle].sub_mode_type);
+    }
+
+    // If the procedure is completed or aborted, delete all previous data
+    if (procedure_data->local_status != CsProcedureDoneStatus::PARTIAL_RESULTS &&
+        procedure_data->remote_status != CsProcedureDoneStatus::PARTIAL_RESULTS) {
+      std::vector<CsProcedureData>& data_list = cs_trackers_[connection_handle].procedure_data_list;
+      while (data_list.begin()->counter != procedure_data->counter) {
+        LOG_DEBUG("Delete obsolete procedure data, counter:%d", data_list.begin()->counter);
+        data_list.erase(data_list.begin());
+      }
     }
   }
 
