@@ -492,17 +492,17 @@ void btif_get_adapter_property(bt_property_type_t type) {
         cmn_vsc_cb.debug_logging_supported > 0;
     const controller_t* controller = controller_get_interface();
 
-    if (controller->supports_ble_extended_advertising()) {
+    if (controller->SupportsBleExtendedAdvertising()) {
       local_le_features.max_adv_instance =
           controller->get_ble_number_of_supported_advertising_sets();
     }
-    local_le_features.le_2m_phy_supported = controller->supports_ble_2m_phy();
+    local_le_features.le_2m_phy_supported = controller->SupportsBle2mPhy();
     local_le_features.le_coded_phy_supported =
-        controller->supports_ble_coded_phy();
+        controller->SupportsBleCodedPhy();
     local_le_features.le_extended_advertising_supported =
-        controller->supports_ble_extended_advertising();
+        controller->SupportsBleExtendedAdvertising();
     local_le_features.le_periodic_advertising_supported =
-        controller->supports_ble_periodic_advertising();
+        controller->SupportsBlePeriodicAdvertising();
     local_le_features.le_maximum_advertising_data_length =
         controller->get_ble_maximum_advertising_data_length();
 
@@ -510,14 +510,14 @@ void btif_get_adapter_property(bt_property_type_t type) {
         cmn_vsc_cb.dynamic_audio_buffer_support;
 
     local_le_features.le_periodic_advertising_sync_transfer_sender_supported =
-        controller->supports_ble_periodic_advertising_sync_transfer_sender();
+        controller->SupportsBlePeriodicAdvertisingSyncTransferSender();
     local_le_features.le_connected_isochronous_stream_central_supported =
-        controller->supports_ble_connected_isochronous_stream_central();
+        controller->SupportsBleConnectedIsochronousStreamCentral();
     local_le_features.le_isochronous_broadcast_supported =
-        controller->supports_ble_isochronous_broadcaster();
+        controller->SupportsBleIsochronousBroadcaster();
     local_le_features
         .le_periodic_advertising_sync_transfer_recipient_supported =
-        controller->supports_ble_periodic_advertising_sync_transfer_recipient();
+        controller->SupportsBlePeriodicAdvertisingSyncTransferRecipient();
     local_le_features.adv_filter_extended_features_mask =
         cmn_vsc_cb.adv_filter_extended_features_mask;
 

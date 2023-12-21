@@ -166,7 +166,7 @@ controller_t controller = {};
 class BtifCoreWithControllerTest : public BtifCoreTest {
   void SetUp() override {
     BtifCoreTest::SetUp();
-    controller.supports_sniff_subrating = []() { return true; };
+    controller.SupportsSniffSubrating = []() { return true; };
     bluetooth::testing::controller = &controller;
     ASSERT_TRUE(controller_get_interface() != nullptr);
   }

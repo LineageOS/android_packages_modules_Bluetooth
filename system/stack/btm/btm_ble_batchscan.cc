@@ -52,7 +52,7 @@ tBTM_BLE_ADV_TRACK_CB ble_advtrack_cb;
 namespace {
 
 bool can_do_batch_scan() {
-  if (!controller_get_interface()->supports_ble()) return false;
+  if (!controller_get_interface()->SupportsBle()) return false;
 
   tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
   BTM_BleGetVendorCapabilities(&cmn_ble_vsc_cb);

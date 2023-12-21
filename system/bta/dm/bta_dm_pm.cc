@@ -476,7 +476,7 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, const tBTA_SYS_ID id,
   } else {
     const controller_t* controller = controller_get_interface();
     uint8_t* p = NULL;
-    if (controller->supports_sniff_subrating() &&
+    if (controller->SupportsSniffSubrating() &&
         ((NULL != (p = get_btm_client_interface().peer.BTM_ReadRemoteFeatures(
                        peer_addr))) &&
          HCI_SNIFF_SUB_RATE_SUPPORTED(p)) &&
@@ -793,7 +793,7 @@ void bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index) {
 
   const controller_t* controller = controller_get_interface();
   if (mode != BTM_PM_MD_SNIFF ||
-      (controller->supports_sniff_subrating() && p_rem_feat &&
+      (controller->SupportsSniffSubrating() && p_rem_feat &&
        HCI_SNIFF_SUB_RATE_SUPPORTED(p_rem_feat) &&
        !(p_peer_dev->is_ssr_active()))) {
     /* Dont initiate Sniff if controller has alreay accepted

@@ -267,7 +267,7 @@ tBTM_STATUS BTM_SetDiscoverability(uint16_t inq_mode) {
   bool cod_limited;
 
   LOG_VERBOSE("");
-  if (controller_get_interface()->supports_ble()) {
+  if (controller_get_interface()->SupportsBle()) {
     if (btm_ble_set_discoverability((uint16_t)(inq_mode)) == BTM_SUCCESS) {
       btm_cb.btm_inq_vars.discoverable_mode &= (~BTM_BLE_DISCOVERABLE_MASK);
       btm_cb.btm_inq_vars.discoverable_mode |=
@@ -350,7 +350,7 @@ void BTM_EnableInterlacedInquiryScan() {
   uint16_t inq_scan_type =
       osi_property_get_int32(PROPERTY_INQ_SCAN_TYPE, BTM_SCAN_TYPE_INTERLACED);
 
-  if (!controller_get_interface()->supports_interlaced_inquiry_scan() ||
+  if (!controller_get_interface()->SupportsInterlacedInquiryScan() ||
       inq_scan_type != BTM_SCAN_TYPE_INTERLACED ||
       btm_cb.btm_inq_vars.inq_scan_type == BTM_SCAN_TYPE_INTERLACED) {
     return;
@@ -366,7 +366,7 @@ void BTM_EnableInterlacedPageScan() {
   uint16_t page_scan_type =
       osi_property_get_int32(PROPERTY_PAGE_SCAN_TYPE, BTM_SCAN_TYPE_INTERLACED);
 
-  if (!controller_get_interface()->supports_interlaced_inquiry_scan() ||
+  if (!controller_get_interface()->SupportsInterlacedInquiryScan() ||
       page_scan_type != BTM_SCAN_TYPE_INTERLACED ||
       btm_cb.btm_inq_vars.page_scan_type == BTM_SCAN_TYPE_INTERLACED) {
     return;
@@ -397,10 +397,10 @@ tBTM_STATUS BTM_SetInquiryMode(uint8_t mode) {
   if (mode == BTM_INQ_RESULT_STANDARD) {
     /* mandatory mode */
   } else if (mode == BTM_INQ_RESULT_WITH_RSSI) {
-    if (!controller->supports_rssi_with_inquiry_results())
+    if (!controller->SupportsRssiWithInquiryResults())
       return (BTM_MODE_UNSUPPORTED);
   } else if (mode == BTM_INQ_RESULT_EXTENDED) {
-    if (!controller->supports_extended_inquiry_response())
+    if (!controller->SupportsExtendedInquiryResponse())
       return (BTM_MODE_UNSUPPORTED);
   } else
     return (BTM_ILLEGAL_VALUE);
@@ -429,7 +429,7 @@ tBTM_STATUS BTM_SetInquiryMode(uint8_t mode) {
 tBTM_STATUS BTM_SetConnectability(uint16_t page_mode) {
   uint8_t scan_mode = 0;
 
-  if (controller_get_interface()->supports_ble()) {
+  if (controller_get_interface()->SupportsBle()) {
     if (btm_ble_set_connectability(page_mode) != BTM_SUCCESS) {
       return BTM_NO_RESOURCES;
     }
@@ -658,7 +658,7 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
   // This path does not play nicely with GD BLE scanning and may cause issues
   // with other scanners.
   if (!bluetooth::shim::is_classic_discovery_only_enabled()) {
-    if (controller_get_interface()->supports_ble()) {
+    if (controller_get_interface()->SupportsBle()) {
       btm_ble_start_inquiry(btm_cb.btm_inq_vars.inqparms.duration);
     } else {
       LOG_WARN("Trying to do LE scan on a non-LE adapter");
@@ -1491,7 +1491,7 @@ void btm_process_inq_complete(tHCI_STATUS status, uint8_t mode) {
       btm_clr_inq_result_flt();
 
       if ((status == HCI_SUCCESS) &&
-          controller_get_interface()->supports_rssi_with_inquiry_results()) {
+          controller_get_interface()->SupportsRssiWithInquiryResults()) {
         btm_sort_inq_result();
       }
 
@@ -1753,7 +1753,7 @@ void btm_inq_rmt_name_failed_cancelled(void) {
  *
  ******************************************************************************/
 tBTM_STATUS BTM_WriteEIR(BT_HDR* p_buff) {
-  if (controller_get_interface()->supports_extended_inquiry_response()) {
+  if (controller_get_interface()->SupportsExtendedInquiryResponse()) {
     LOG_VERBOSE("Write Extended Inquiry Response to controller");
     btsnd_hcic_write_ext_inquiry_response(p_buff, BTM_EIR_DEFAULT_FEC_REQUIRED);
     return BTM_SUCCESS;

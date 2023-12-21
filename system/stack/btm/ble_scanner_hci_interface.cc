@@ -307,12 +307,12 @@ void BleScannerHciInterface::Initialize() {
 
   if ((controller_get_interface()->get_ble_periodic_advertiser_list_size()) &&
       (controller_get_interface()
-           ->supports_ble_periodic_advertising_sync_transfer_sender())) {
+           ->SupportsBlePeriodicAdvertisingSyncTransferSender())) {
     LOG(INFO) << "Advertiser list in controller can be used";
     LOG(INFO) << "Periodic Adv Sync Transfer Sender role is supported";
     instance = new BleScannerCompleteImpl();
   } else if (controller_get_interface()
-                 ->supports_ble_periodic_advertising_sync_transfer_sender()) {
+                 ->SupportsBlePeriodicAdvertisingSyncTransferSender()) {
     LOG(INFO) << "Periodic Adv Sync Transfer Sender role is supported";
     instance = new BleScannerSyncTransferImpl();
   } else if (controller_get_interface()
