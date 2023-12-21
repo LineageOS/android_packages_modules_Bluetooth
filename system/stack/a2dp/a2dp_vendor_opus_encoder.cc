@@ -19,7 +19,6 @@
 #include "a2dp_vendor_opus_encoder.h"
 
 #include <dlfcn.h>
-#include <inttypes.h>
 #include <opus.h>
 #include <stdio.h>
 #include <string.h>
@@ -27,8 +26,9 @@
 #include "a2dp_vendor.h"
 #include "a2dp_vendor_opus.h"
 #include "common/time_util.h"
+#include "include/check.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "stack/include/bt_hdr.h"
 

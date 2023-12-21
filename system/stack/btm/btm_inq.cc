@@ -39,6 +39,7 @@
 #include "btif/include/btif_config.h"
 #include "common/time_util.h"
 #include "device/include/controller.h"
+#include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/shim.h"
 #include "os/log.h"

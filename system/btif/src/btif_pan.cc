@@ -44,6 +44,7 @@
 #include "btif/include/btif_pan_internal.h"
 #include "btif/include/btif_sock_thread.h"
 #include "device/include/controller.h"
+#include "include/check.h"
 #include "include/hardware/bt_pan.h"
 #include "internal_include/bt_target.h"
 #include "os/log.h"

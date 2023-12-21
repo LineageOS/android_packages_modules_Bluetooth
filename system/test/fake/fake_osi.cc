@@ -15,6 +15,7 @@
  */
 #include "test/fake/fake_osi.h"
 
+#include "include/check.h"
 #include "test/mock/mock_osi_alarm.h"
 #include "test/mock/mock_osi_allocator.h"
 #include "test/mock/mock_osi_fixed_queue.h"

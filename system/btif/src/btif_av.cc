@@ -49,6 +49,7 @@
 #include "common/state_machine.h"
 #include "device/include/device_iot_config.h"
 #include "hardware/bt_av.h"
+#include "include/check.h"
 #include "include/hardware/bt_rc.h"
 #include "internal_include/bt_trace.h"
 #include "osi/include/alarm.h"

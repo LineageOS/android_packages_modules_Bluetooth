@@ -30,6 +30,7 @@
 #include "gd/common/strings.h"
 #include "hci/hci_packets.h"
 #include "hcimsgs.h"
+#include "include/check.h"
 #include "internal_include/bt_trace.h"
 #include "le_audio_health_status.h"
 #include "le_audio_log_history.h"

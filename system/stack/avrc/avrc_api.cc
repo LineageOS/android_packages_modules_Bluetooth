@@ -29,6 +29,7 @@
 
 #include "avrc_int.h"
 #include "btif/include/btif_config.h"
+#include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"

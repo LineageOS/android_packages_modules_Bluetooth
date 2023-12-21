@@ -34,6 +34,7 @@
 #include "btif/include/btif_sock_sdp.h"
 #include "btif/include/btif_sock_thread.h"
 #include "btif/include/btif_sock_util.h"
+#include "include/check.h"
 #include "include/hardware/bt_sock.h"
 #include "internal_include/bt_target.h"
 #include "os/log.h"

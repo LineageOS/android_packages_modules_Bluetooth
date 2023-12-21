@@ -26,17 +26,15 @@
 #include <string>
 #include <vector>
 
-#include "bind_helpers.h"
 #include "bta/le_audio/le_audio_types.h"
 #include "bta_csis_api.h"
 #include "bta_gatt_api.h"
 #include "bta_gatt_queue.h"
 #include "bta_vc_api.h"
-#include "btif_storage.h"
 #include "devices.h"
-#include "gd/common/strings.h"
+#include "include/check.h"
 #include "internal_include/bt_trace.h"
-#include "osi/include/log.h"
+#include "os/log.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/bt_types.h"

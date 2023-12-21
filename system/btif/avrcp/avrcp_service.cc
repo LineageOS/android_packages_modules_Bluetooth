@@ -28,6 +28,7 @@
 #include "btif_av.h"
 #include "btif_common.h"
 #include "device.h"
+#include "include/check.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/main_thread.h"

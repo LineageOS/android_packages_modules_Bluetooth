@@ -30,6 +30,7 @@
 #include "bta/include/bta_hf_client_api.h"
 #include "bta/include/bta_rfcomm_scn.h"
 #include "bta/sys/bta_sys.h"
+#include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
