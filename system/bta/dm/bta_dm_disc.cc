@@ -23,6 +23,7 @@
 #include <stddef.h>
 
 #include <cstdint>
+#include <vector>
 
 #include "bta/dm/bta_dm_disc.h"
 #include "bta/dm/bta_dm_disc_int.h"

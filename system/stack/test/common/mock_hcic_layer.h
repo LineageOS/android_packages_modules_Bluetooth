@@ -19,6 +19,8 @@
 #include <base/functional/callback.h>
 #include <gmock/gmock.h>
 
+#include <vector>
+
 #include "btm_iso_api_types.h"
 
 namespace hcic {

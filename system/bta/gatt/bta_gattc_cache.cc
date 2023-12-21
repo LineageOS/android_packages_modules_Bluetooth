@@ -31,6 +31,7 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <vector>
 
 #include "bta/gatt/bta_gattc_int.h"
 #include "bta/gatt/database.h"

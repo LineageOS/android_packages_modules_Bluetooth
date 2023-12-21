@@ -18,8 +18,10 @@
 
 #include <base/functional/bind.h>
 #include <base/memory/weak_ptr.h>
+
 #include <map>
 #include <memory>
+#include <vector>
 
 #include "avrcp_internal.h"
 #include "packet/avrcp/avrcp_packet.h"

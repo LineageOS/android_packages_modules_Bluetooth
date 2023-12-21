@@ -16,16 +16,16 @@
 
 #define LOG_TAG "gatt"
 
-#include "bta_gatt_queue.h"
+#include <base/logging.h>
 
 #include <list>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
+#include "bta_gatt_queue.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/log.h"
-
-#include <base/logging.h>
 
 using gatt_operation = BtaGattQueue::gatt_operation;
 

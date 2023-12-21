@@ -33,6 +33,7 @@
 #include <cstdint>
 #include <cstring>
 #include <string>
+#include <vector>
 
 #include "common/bidi_queue.h"
 #include "device/include/controller.h"

@@ -22,6 +22,8 @@
 #include <base/memory/weak_ptr.h>
 #include <gmock/gmock.h>
 
+#include <vector>
+
 #include "include/hardware/ble_advertiser.h"
 
 class MockBleAdvertisingManager : public BleAdvertiserInterface {

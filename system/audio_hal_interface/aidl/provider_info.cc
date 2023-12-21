@@ -22,6 +22,7 @@
 #include <android_bluetooth_flags.h>
 
 #include <optional>
+#include <vector>
 
 #include "a2dp_codec_api.h"
 #include "a2dp_constants.h"
