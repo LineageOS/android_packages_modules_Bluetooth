@@ -1262,7 +1262,7 @@ public class BassClientService extends ProfileService {
                     DBG,
                     TAG,
                     "Add Broadcast Source: device: "
-                            + sink
+                            + device
                             + ", sourceMetadata: "
                             + sourceMetadata
                             + ", isGroupOp: "
@@ -1348,7 +1348,7 @@ public class BassClientService extends ProfileService {
                     DBG,
                     TAG,
                     "Modify Broadcast Source: device: "
-                            + sink
+                            + device
                             + ", sourceId: "
                             + sourceId
                             + ", updatedMetadata: "
@@ -1420,7 +1420,7 @@ public class BassClientService extends ProfileService {
                         DBG,
                         TAG,
                         "Remove Broadcast Source(Force lost PA sync): device: "
-                                + sink
+                                + device
                                 + ", sourceId: "
                                 + sourceId);
 
@@ -1439,7 +1439,7 @@ public class BassClientService extends ProfileService {
             sEventLogger.logd(
                     DBG,
                     TAG,
-                    "Remove Broadcast Source: device: " + sink + ", sourceId: " + sourceId);
+                    "Remove Broadcast Source: device: " + device + ", sourceId: " + sourceId);
 
             Message message =
                     stateMachine.obtainMessage(BassClientStateMachine.REMOVE_BCAST_SOURCE);
@@ -1722,22 +1722,22 @@ public class BassClientService extends ProfileService {
         }
 
         void notifySearchStarted(int reason) {
-            sEventLogger.logd(DBG, TAG, "notifySearchStarted: " + ", reason: " + reason);
+            sEventLogger.logd(DBG, TAG, "notifySearchStarted: reason: " + reason);
             obtainMessage(MSG_SEARCH_STARTED, reason, 0).sendToTarget();
         }
 
         void notifySearchStartFailed(int reason) {
-            sEventLogger.loge(TAG, "notifySearchStartFailed: " + ", reason: " + reason);
+            sEventLogger.loge(TAG, "notifySearchStartFailed: reason: " + reason);
             obtainMessage(MSG_SEARCH_STARTED_FAILED, reason, 0).sendToTarget();
         }
 
         void notifySearchStopped(int reason) {
-            sEventLogger.logd(DBG, TAG, "notifySearchStopped: " + ", reason: " + reason);
+            sEventLogger.logd(DBG, TAG, "notifySearchStopped: reason: " + reason);
             obtainMessage(MSG_SEARCH_STOPPED, reason, 0).sendToTarget();
         }
 
         void notifySearchStopFailed(int reason) {
-            sEventLogger.loge(TAG, "notifySearchStopFailed: " + ", reason: " + reason);
+            sEventLogger.loge(TAG, "notifySearchStopFailed: reason: " + reason);
             obtainMessage(MSG_SEARCH_STOPPED_FAILED, reason, 0).sendToTarget();
         }
 
@@ -1765,7 +1765,7 @@ public class BassClientService extends ProfileService {
                     DBG,
                     TAG,
                     "notifySourceAdded: "
-                            + ", source: "
+                            + "source: "
                             + sink
                             + ", sourceId: "
                             + recvState.getSourceId()
@@ -1789,7 +1789,7 @@ public class BassClientService extends ProfileService {
                     DBG,
                     TAG,
                     "notifySourceModified: "
-                            + ", source: "
+                            + "source: "
                             + sink
                             + ", sourceId: "
                             + sourceId
@@ -1810,7 +1810,7 @@ public class BassClientService extends ProfileService {
                     DBG,
                     TAG,
                     "notifySourceRemoved: "
-                            + ", source: "
+                            + "source: "
                             + sink
                             + ", sourceId: "
                             + sourceId
@@ -1843,7 +1843,7 @@ public class BassClientService extends ProfileService {
             sEventLogger.logd(
                     TAG,
                     "notifyReceiveStateChanged: "
-                            + ", source: "
+                            + "source: "
                             + sink
                             + ", state: SRC ID: "
                             + state.getSourceId()
@@ -1866,7 +1866,7 @@ public class BassClientService extends ProfileService {
         }
 
         void notifySourceLost(int broadcastId) {
-            sEventLogger.logd(TAG, "notifySourceLost: " + ", broadcastId: " + broadcastId);
+            sEventLogger.logd(TAG, "notifySourceLost: broadcastId: " + broadcastId);
             obtainMessage(MSG_SOURCE_LOST, 0, broadcastId).sendToTarget();
         }
     }
