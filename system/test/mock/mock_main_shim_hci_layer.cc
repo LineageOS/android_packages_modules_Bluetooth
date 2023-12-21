@@ -22,7 +22,7 @@
  */
 
 // Mock include file to share data between tests and mock
-#include "test/mock/mock_main_shim_hci_layer.h"
+#include "main/shim/hci_layer.h"
 
 // Mocked internal structures, if any
 
