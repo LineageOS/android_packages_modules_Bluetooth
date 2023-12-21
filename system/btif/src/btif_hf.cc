@@ -45,6 +45,7 @@
 #include "btif/include/btif_util.h"
 #include "common/metrics.h"
 #include "device/include/device_iot_config.h"
+#include "include/check.h"
 #include "include/hardware/bluetooth_headset_callbacks.h"
 #include "include/hardware/bluetooth_headset_interface.h"
 #include "include/hardware/bt_hf.h"

@@ -20,6 +20,7 @@
 
 #include <base/logging.h>
 
+#include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
 

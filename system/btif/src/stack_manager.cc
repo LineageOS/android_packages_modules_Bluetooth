@@ -31,6 +31,7 @@
 #include "btif_common.h"
 #include "common/message_loop_thread.h"
 #include "core_callbacks.h"
+#include "include/check.h"
 #include "main/shim/shim.h"
 #include "os/log.h"
 #include "osi/include/osi.h"

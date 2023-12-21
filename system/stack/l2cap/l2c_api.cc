@@ -37,6 +37,7 @@
 #include "device/include/controller.h"  // TODO Remove
 #include "gd/hal/snoop_logger.h"
 #include "gd/os/system_properties.h"
+#include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/bt_trace.h"
 #include "main/shim/entry.h"

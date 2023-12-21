@@ -24,14 +24,13 @@
 
 #include "avrc_defs.h"
 #include "avrcp_message_converter.h"
-#include "internal_include/bt_target.h"
-#include "packet/avrcp/avrcp_packet.h"
-// TODO (apanicke): Remove dependency on this header once we cleanup feature
-// handling.
 #include "bta/include/bta_av_api.h"
 #include "device/include/interop.h"
+#include "include/check.h"
+#include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
 #include "osi/include/properties.h"
+#include "packet/avrcp/avrcp_packet.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_uuid16.h"
 #include "types/raw_address.h"

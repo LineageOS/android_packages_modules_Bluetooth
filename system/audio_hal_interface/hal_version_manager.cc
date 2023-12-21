@@ -24,7 +24,8 @@
 #include <memory>
 
 #include "aidl/audio_aidl_interfaces.h"
-#include "osi/include/log.h"
+#include "include/check.h"
+#include "os/log.h"
 
 namespace bluetooth {
 namespace audio {

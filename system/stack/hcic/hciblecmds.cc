@@ -31,6 +31,7 @@
 
 #include "hcidefs.h"
 #include "hcimsgs.h"
+#include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"

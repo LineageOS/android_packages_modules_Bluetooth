@@ -16,6 +16,7 @@
 
 #include "get_folder_items.h"
 
+#include "include/check.h"
 #include "internal_include/bt_trace.h"
 
 namespace bluetooth {
