@@ -73,49 +73,6 @@ void BTM_BleGetDynamicAudioBuffer(
 
 /*******************************************************************************
  *
- * Function         BTM_BleSetStorageConfig
- *
- * Description      This function is called to setup storage configuration and
- *                  setup callbacks.
- *
- * Parameters       uint8_t batch_scan_full_max -Batch scan full maximum
-                    uint8_t batch_scan_trunc_max - Batch scan truncated value
- maximum
-                    uint8_t batch_scan_notify_threshold - Threshold value
-                    cb - Setup callback
-                    tBTM_BLE_SCAN_THRESHOLD_CBACK *p_thres_cback -Threshold
- callback
-                    void *p_ref - Reference value
- *
- *
- ******************************************************************************/
-void BTM_BleSetStorageConfig(uint8_t batch_scan_full_max,
-                             uint8_t batch_scan_trunc_max,
-                             uint8_t batch_scan_notify_threshold,
-                             base::Callback<void(uint8_t /* status */)> cb,
-                             tBTM_BLE_SCAN_THRESHOLD_CBACK* p_thres_cback,
-                             tBTM_BLE_REF_VALUE ref_value);
-
-/* This function is called to enable batch scan */
-void BTM_BleEnableBatchScan(tBTM_BLE_BATCH_SCAN_MODE scan_mode,
-                            uint32_t scan_interval, uint32_t scan_window,
-                            tBTM_BLE_DISCARD_RULE discard_rule,
-                            tBLE_ADDR_TYPE addr_type,
-                            base::Callback<void(uint8_t /* status */)> cb);
-
-/* This function is called to disable batch scanning */
-void BTM_BleDisableBatchScan(base::Callback<void(uint8_t /* status */)> cb);
-
-/* This function is called to read batch scan reports */
-void BTM_BleReadScanReports(tBLE_SCAN_MODE scan_mode,
-                            tBTM_BLE_SCAN_REP_CBACK cb);
-
-/* This function is called to setup the callback for tracking */
-void BTM_BleTrackAdvertiser(tBTM_BLE_TRACK_ADV_CBACK* p_track_cback,
-                            tBTM_BLE_REF_VALUE ref_value);
-
-/*******************************************************************************
- *
  * Function         BTM_BleObserve
  *
  * Description      This procedure keep the device listening for advertising
