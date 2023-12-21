@@ -113,6 +113,9 @@ java_library {
         "com.android.btservices",
     ],
     min_sdk_version: "Tiramisu",
+    lint: {
+        baseline_filename: "lint-baseline.xml",
+    },
 }
 
 java_library {
@@ -132,6 +135,9 @@ java_library {
         "com.android.btservices",
     ],
     min_sdk_version: "Tiramisu",
+    lint: {
+        baseline_filename: "lint-baseline.xml",
+    },
 }
 
 java_library {
@@ -146,6 +152,7 @@ java_library {
     libs: ["libprotobuf-java-nano"],
     lint: {
         strict_updatability_linting: true,
+        baseline_filename: "lint-baseline.xml",
     },
     sdk_version: "system_current",
     apex_available: [
