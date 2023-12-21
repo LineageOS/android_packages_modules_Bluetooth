@@ -26,11 +26,11 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <functional>
 #include <list>
 #include <map>
 #include <mutex>
 #include <string>
+#include <vector>
 
 #include "a2dp_api.h"
 #include "audio_a2dp_hw/include/audio_a2dp_hw.h"

@@ -21,6 +21,7 @@
 #include <iostream>
 #include <regex>
 #include <string>
+#include <vector>
 
 #include "logging.h"
 

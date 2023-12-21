@@ -21,6 +21,7 @@
 
 #include <queue>
 #include <set>
+#include <vector>
 
 #include "hci/le_scanning_callback.h"
 #include "include/hardware/ble_scanner.h"

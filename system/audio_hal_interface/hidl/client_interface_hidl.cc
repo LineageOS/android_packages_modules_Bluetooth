@@ -23,6 +23,7 @@
 #include <hidl/MQDescriptor.h>
 
 #include <future>
+#include <vector>
 
 #include "common/stop_watch_legacy.h"
 #include "hal_version_manager.h"

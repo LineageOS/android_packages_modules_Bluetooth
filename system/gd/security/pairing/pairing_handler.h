@@ -20,6 +20,7 @@
 #include <neighbor/name_db.h>
 
 #include <utility>
+#include <vector>
 
 #include "hci/address_with_type.h"
 #include "hci/hci_packets.h"

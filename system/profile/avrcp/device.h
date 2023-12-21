@@ -22,6 +22,7 @@
 #include <iostream>
 #include <memory>
 #include <stack>
+#include <vector>
 
 #include "avrcp_internal.h"
 #include "hardware/avrcp/avrcp.h"
