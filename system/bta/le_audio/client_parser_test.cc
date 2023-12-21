@@ -1177,7 +1177,7 @@ TEST(LeAudioClientParserTest, testPrepareAseCtpCodecConfigSingle) {
       .target_latency = 0x03,
       .target_phy = 0x02,
       .codec_id = codec_id,
-      .codec_config = codec_conf,
+      .codec_config = codec_conf.RawPacket(),
   });
   PrepareAseCtpCodecConfig(confs, value);
 
@@ -1237,7 +1237,7 @@ TEST(LeAudioClientParserTest, testPrepareAseCtpCodecConfigMultiple) {
       .target_latency = 0x03,
       .target_phy = 0x02,
       .codec_id = codec_id,
-      .codec_config = codec_conf,
+      .codec_config = codec_conf.RawPacket(),
   });
   PrepareAseCtpCodecConfig(confs, value);
 
@@ -1292,7 +1292,7 @@ TEST(LeAudioClientParserTest, testPrepareAseCtpCodecConfigMultiple) {
       .target_latency = 0x13,
       .target_phy = 0x01,
       .codec_id = codec_id2,
-      .codec_config = codec_conf2,
+      .codec_config = codec_conf2.RawPacket(),
   });
   PrepareAseCtpCodecConfig(confs, value);
 
