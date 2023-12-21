@@ -462,6 +462,20 @@ public class MapClientContentTest {
         MapClientContent.clearAllContent(mMockContext);
     }
 
+    /**
+     * Test verifying dumpsys does not cause Bluetooth to crash (esp since we're querying the
+     * database to generate dump).
+     */
+    @Test
+    public void testDumpsysDoesNotCauseCrash() {
+        testStoreOneSMSOneMMS();
+        // mMapClientContent is set in testStoreOneSMSOneMMS
+        StringBuilder sb = new StringBuilder("Hello world!\n");
+        mMapClientContent.dump(sb);
+
+        assertThat(sb.toString()).isNotNull();
+    }
+
     void createTestMessages() {
         mOriginator = new VCardEntry();
         VCardProperty property = new VCardProperty();
