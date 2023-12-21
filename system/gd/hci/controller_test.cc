@@ -17,15 +17,17 @@
 #include "hci/controller.h"
 
 #include <gtest/gtest.h>
+#include <unistd.h>
 
 #include <chrono>
 #include <future>
 #include <memory>
+#include <sstream>
 
 #include "common/bind.h"
 #include "common/init_flags.h"
 #include "hci/address.h"
-#include "hci/hci_layer.h"
+#include "hci/hci_layer_fake.h"
 #include "module_dumper.h"
 #include "os/thread.h"
 #include "packet/raw_builder.h"
@@ -50,25 +52,20 @@ constexpr uint64_t kRandomNumber = 0x123456789abcdef0;
 uint16_t feature_spec_version = 55;
 constexpr char title[] = "hci_controller_test";
 
-PacketView<kLittleEndian> GetPacketView(std::unique_ptr<packet::BasePacketBuilder> packet) {
-  auto bytes = std::make_shared<std::vector<uint8_t>>();
-  BitInserter i(*bytes);
-  bytes->reserve(packet->size());
-  packet->Serialize(i);
-  return packet::PacketView<packet::kLittleEndian>(bytes);
-}
-
 }  // namespace
 
 namespace {
 
-class TestHciLayer : public HciLayer {
+class HciLayerFakeForController : public HciLayerFake {
  public:
   void EnqueueCommand(
       std::unique_ptr<CommandBuilder> command,
       common::ContextualOnceCallback<void(CommandCompleteView)> on_complete) override {
     GetHandler()->Post(common::BindOnce(
-        &TestHciLayer::HandleCommand, common::Unretained(this), std::move(command), std::move(on_complete)));
+        &HciLayerFakeForController::HandleCommand,
+        common::Unretained(this),
+        std::move(command),
+        std::move(on_complete)));
   }
 
   void EnqueueCommand(
@@ -80,7 +77,11 @@ class TestHciLayer : public HciLayer {
   void HandleCommand(
       std::unique_ptr<CommandBuilder> command_builder,
       common::ContextualOnceCallback<void(CommandCompleteView)> on_complete) {
-    auto packet_view = GetPacketView(std::move(command_builder));
+    auto bytes = std::make_shared<std::vector<uint8_t>>();
+    BitInserter i(*bytes);
+    bytes->reserve((command_builder)->size());
+    command_builder->Serialize(i);
+    auto packet_view = packet::PacketView<packet::kLittleEndian>(bytes);
     CommandView command = CommandView::Create(packet_view);
     ASSERT_TRUE(command.IsValid());
 
@@ -208,14 +209,15 @@ class TestHciLayer : public HciLayer {
         event_builder = LeRandCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, kRandomNumber);
       } break;
 
+      // Let the test check and handle these commands.
       case (OpCode::RESET):
       case (OpCode::SET_EVENT_FILTER):
       case (OpCode::HOST_BUFFER_SIZE):
-        command_queue_.push(command);
-        not_empty_.notify_all();
+        HciLayerFake::EnqueueCommand(std::move(command_builder), std::move(on_complete));
         return;
+
       default:
-        LOG_INFO("Dropping unhandled packet");
+        LOG_INFO("Dropping unhandled packet (%s)", OpCodeText(command.GetOpCode()).c_str());
         return;
     }
     auto packet = GetPacketView(std::move(event_builder));
@@ -224,16 +226,6 @@ class TestHciLayer : public HciLayer {
     CommandCompleteView command_complete = CommandCompleteView::Create(event);
     ASSERT_TRUE(command_complete.IsValid());
     on_complete.Invoke(std::move(command_complete));
-  }
-
-  void RegisterEventHandler(EventCode event_code, common::ContextualCallback<void(EventView)> event_handler) override {
-    ASSERT_EQ(event_code, EventCode::NUMBER_OF_COMPLETED_PACKETS) << "Only NUMBER_OF_COMPLETED_PACKETS is needed";
-    number_of_completed_packets_callback_ = event_handler;
-  }
-
-  void UnregisterEventHandler(EventCode event_code) override {
-    ASSERT_EQ(event_code, EventCode::NUMBER_OF_COMPLETED_PACKETS) << "Only NUMBER_OF_COMPLETED_PACKETS is needed";
-    number_of_completed_packets_callback_ = {};
   }
 
   void IncomingCredit() {
@@ -245,34 +237,8 @@ class TestHciLayer : public HciLayer {
     cp.host_num_of_completed_packets_ = kCredits2;
     cp.connection_handle_ = kHandle2;
     completed_packets.push_back(cp);
-    auto event_builder = NumberOfCompletedPacketsBuilder::Create(completed_packets);
-    auto packet = GetPacketView(std::move(event_builder));
-    EventView event = EventView::Create(packet);
-    ASSERT_TRUE(event.IsValid());
-    number_of_completed_packets_callback_.Invoke(event);
+    IncomingEvent(NumberOfCompletedPacketsBuilder::Create(completed_packets));
   }
-
-  CommandView GetCommand(OpCode /* op_code */) {
-    std::unique_lock<std::mutex> lock(mutex_);
-    std::chrono::milliseconds time = std::chrono::milliseconds(3000);
-
-    // wait for command
-    while (command_queue_.size() == 0UL) {
-      if (not_empty_.wait_for(lock, time) == std::cv_status::timeout) {
-        break;
-      }
-    }
-    if (command_queue_.empty()) {
-      return CommandView::Create(PacketView<kLittleEndian>(std::make_shared<std::vector<uint8_t>>()));
-    }
-    CommandView command = command_queue_.front();
-    command_queue_.pop();
-    return command;
-  }
-
-  void ListDependencies(ModuleList* /* list */) const {}
-  void Start() override {}
-  void Stop() override {}
 
   constexpr static uint16_t acl_data_packet_length = 1024;
   constexpr static uint8_t synchronous_data_packet_length = 60;
@@ -280,12 +246,6 @@ class TestHciLayer : public HciLayer {
   constexpr static uint16_t total_num_synchronous_data_packets = 12;
   uint64_t event_mask = 0;
   uint64_t le_event_mask = 0;
-
- private:
-  common::ContextualCallback<void(EventView)> number_of_completed_packets_callback_;
-  std::queue<CommandView> command_queue_;
-  mutable std::mutex mutex_;
-  std::condition_variable not_empty_;
 };
 
 class ControllerTest : public ::testing::Test {
@@ -293,7 +253,7 @@ class ControllerTest : public ::testing::Test {
   void SetUp() override {
     feature_spec_version = feature_spec_version_;
     bluetooth::common::InitFlags::SetAllForTesting();
-    test_hci_layer_ = new TestHciLayer;
+    test_hci_layer_ = new HciLayerFakeForController;
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
     fake_registry_.Start<Controller>(&thread_);
@@ -305,7 +265,7 @@ class ControllerTest : public ::testing::Test {
   }
 
   TestModuleRegistry fake_registry_;
-  TestHciLayer* test_hci_layer_ = nullptr;
+  HciLayerFakeForController* test_hci_layer_ = nullptr;
   os::Thread& thread_ = fake_registry_.GetTestThread();
   Controller* controller_ = nullptr;
   os::Handler* client_handler_ = nullptr;
@@ -532,10 +492,11 @@ TEST_F(ControllerTest, leRandTest) {
 }
 
 TEST_F(ControllerTest, Dumpsys) {
-  ModuleDumper dumper(fake_registry_, title);
+  ModuleDumper dumper(STDOUT_FILENO, fake_registry_, title);
 
   std::string output;
-  dumper.DumpState(&output);
+  std::ostringstream oss;
+  dumper.DumpState(&output, oss);
 
   ASSERT_TRUE(output.find("Hci Controller Dumpsys") != std::string::npos);
 }

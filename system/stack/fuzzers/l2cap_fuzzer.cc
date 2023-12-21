@@ -55,7 +55,7 @@ bt_status_t do_in_main_thread(base::Location const&,
 }
 bt_status_t do_in_main_thread_delayed(base::Location const&,
                                       base::OnceCallback<void()>,
-                                      base::TimeDelta const&) {
+                                      std::chrono::microseconds) {
   // this is not properly mocked, so we use abort to catch if this is used in
   // any test cases
   abort();

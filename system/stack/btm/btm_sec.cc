@@ -43,6 +43,7 @@
 #include "common/time_util.h"
 #include "device/include/controller.h"
 #include "device/include/device_iot_config.h"
+#include "device/include/interop.h"
 #include "internal_include/bt_target.h"
 #include "l2c_api.h"
 #include "osi/include/allocator.h"
@@ -80,6 +81,7 @@ constexpr char kBtmLogTag[] = "SEC";
 extern tBTM_CB btm_cb;
 
 #define BTM_SEC_MAX_COLLISION_DELAY (5000)
+#define BTM_SEC_START_AUTH_DELAY (200)
 
 #define BTM_SEC_IS_SM4(sm) ((bool)(BTM_SM4_TRUE == ((sm)&BTM_SM4_TRUE)))
 #define BTM_SEC_IS_SM4_LEGACY(sm) ((bool)(BTM_SM4_KNOWN == ((sm)&BTM_SM4_TRUE)))
@@ -4488,17 +4490,18 @@ static bool btm_sec_start_get_name(tBTM_SEC_DEV_REC* p_dev_rec) {
  ******************************************************************************/
 static void btm_sec_wait_and_start_authentication(tBTM_SEC_DEV_REC* p_dev_rec) {
   auto addr = new RawAddress(p_dev_rec->bd_addr);
-
-  static const int32_t delay_auth =
+  int32_t delay_auth =
       osi_property_get_int32("bluetooth.btm.sec.delay_auth_ms.value", 0);
+
+  /* Overwrite the system-wide authentication delay if device-specific
+   * interoperability delay is needed. */
+  if (interop_match_addr(INTEROP_DELAY_AUTH, addr)) {
+    delay_auth = BTM_SEC_START_AUTH_DELAY;
+  }
 
   bt_status_t status = do_in_main_thread_delayed(
       FROM_HERE, base::Bind(&btm_sec_auth_timer_timeout, addr),
-#if BASE_VER < 931007
-      base::TimeDelta::FromMilliseconds(delay_auth));
-#else
-      base::Milliseconds(delay_auth));
-#endif
+      std::chrono::milliseconds(delay_auth));
   if (status != BT_STATUS_SUCCESS) {
     LOG_ERROR("do_in_main_thread_delayed failed. directly calling");
     btm_sec_auth_timer_timeout(addr);

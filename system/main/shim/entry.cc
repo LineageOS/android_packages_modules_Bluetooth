@@ -25,13 +25,13 @@
 #include "gd/hci/msft.h"
 #include "gd/hci/remote_name_request.h"
 #include "gd/hci/vendor_specific_event_manager.h"
+#include "gd/l2cap/classic/l2cap_classic_module.h"
 #include "gd/metrics/counter_metrics.h"
 #include "gd/neighbor/connectability.h"
 #include "gd/neighbor/discoverability.h"
 #include "gd/neighbor/inquiry.h"
 #include "gd/neighbor/page.h"
 #include "gd/os/handler.h"
-#include "gd/security/security_module.h"
 #include "gd/shim/dumpsys.h"
 #include "gd/storage/storage_module.h"
 #include "hci/acl_manager.h"
@@ -80,18 +80,6 @@ hci::HciLayer* GetHciLayer() {
   return Stack::GetInstance()->GetStackManager()->GetInstance<hci::HciLayer>();
 }
 
-l2cap::classic::L2capClassicModule* GetL2capClassicModule() {
-  return Stack::GetInstance()
-      ->GetStackManager()
-      ->GetInstance<bluetooth::l2cap::classic::L2capClassicModule>();
-}
-
-bluetooth::l2cap::le::L2capLeModule* GetL2capLeModule() {
-  return Stack::GetInstance()
-      ->GetStackManager()
-      ->GetInstance<bluetooth::l2cap::le::L2capLeModule>();
-}
-
 neighbor::PageModule* GetPage() {
   return Stack::GetInstance()
       ->GetStackManager()
@@ -114,12 +102,6 @@ hci::DistanceMeasurementManager* GetDistanceMeasurementManager() {
   return Stack::GetInstance()
       ->GetStackManager()
       ->GetInstance<hci::DistanceMeasurementManager>();
-}
-
-security::SecurityModule* GetSecurityModule() {
-  return Stack::GetInstance()
-      ->GetStackManager()
-      ->GetInstance<security::SecurityModule>();
 }
 
 hal::SnoopLogger* GetSnoopLogger() {

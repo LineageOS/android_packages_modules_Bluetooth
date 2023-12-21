@@ -30,6 +30,7 @@
 #include "common/time_util.h"
 #include "device/include/controller.h"
 #include "hci/include/hci_layer.h"
+#include "internal_include/bt_trace.h"
 #include "internal_include/stack_config.h"
 #include "main/shim/hci_layer.h"
 #include "os/log.h"
@@ -575,7 +576,7 @@ struct iso_impl {
     memcpy(packet->data + kIsoHeaderWithoutTsLen, data, data_len);
     auto hci = bluetooth::shim::hci_layer_get_interface();
     packet->event = MSG_STACK_TO_HC_HCI_ISO | 0x0001;
-    hci->transmit_downward(packet->event, packet);
+    hci->transmit_downward(packet, iso_buffer_size_);
   }
 
   void process_cis_est_pkt(uint8_t len, uint8_t* data) {

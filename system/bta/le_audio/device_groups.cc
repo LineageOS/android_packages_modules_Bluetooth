@@ -18,11 +18,12 @@
 
 #include "device_groups.h"
 
+#include "bta/include/bta_gatt_api.h"
 #include "bta_csis_api.h"
 #include "btif_storage.h"
 #include "btm_iso_api.h"
 #include "device/include/controller.h"
-#include "dm/bta_dm_gatt_client.h"
+#include "internal_include/bt_trace.h"
 #include "le_audio_set_configuration_provider.h"
 #include "metrics_collector.h"
 
@@ -934,9 +935,6 @@ void LeAudioDeviceGroup::CigConfiguration::GenerateCisIds(
     return;
   }
 
-  const set_configurations::AudioSetConfigurations* confs =
-      AudioSetConfigurationProvider::Get()->GetConfigurations(context_type);
-
   uint8_t cis_count_bidir = 0;
   uint8_t cis_count_unidir_sink = 0;
   uint8_t cis_count_unidir_source = 0;
@@ -950,11 +948,11 @@ void LeAudioDeviceGroup::CigConfiguration::GenerateCisIds(
    * If the last happen it means, group size is 1 */
   int group_size = csis_group_size > 0 ? csis_group_size : 1;
 
-  get_cis_count(*confs, group_size, group_->GetGroupStrategy(group_size),
-                group_->GetAseCount(types::kLeAudioDirectionSink),
-                group_->GetAseCount(types::kLeAudioDirectionSource),
-                cis_count_bidir, cis_count_unidir_sink,
-                cis_count_unidir_source);
+  set_configurations::get_cis_count(
+      context_type, group_size, group_->GetGroupStrategy(group_size),
+      group_->GetAseCount(types::kLeAudioDirectionSink),
+      group_->GetAseCount(types::kLeAudioDirectionSource), cis_count_bidir,
+      cis_count_unidir_sink, cis_count_unidir_source);
 
   uint8_t idx = 0;
   while (cis_count_bidir > 0) {

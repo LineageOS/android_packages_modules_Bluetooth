@@ -19,7 +19,7 @@
 
 #include <cstdint>
 #include <functional>
-#include <string>
+#include <optional>
 #include <vector>
 
 #include "osi/include/allocator.h"

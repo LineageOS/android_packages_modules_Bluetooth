@@ -19,6 +19,7 @@
 #include <base/logging.h>
 
 #include "gatt_api.h"
+#include "os/logging/log_adapter.h"
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"
 #include "srvc_dis_int.h"

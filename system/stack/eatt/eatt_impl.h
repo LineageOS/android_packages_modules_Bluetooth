@@ -22,16 +22,17 @@
 #include "bind_helpers.h"
 #include "device/include/controller.h"
 #include "eatt.h"
+#include "internal_include/bt_trace.h"
 #include "internal_include/stack_config.h"
 #include "l2c_api.h"
 #include "os/log.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_sec.h"
-#include "stack/include/btm_sec_api.h"
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_psm_types.h"
+#include "stack/include/btm_sec_api.h"
 #include "stack/include/main_thread.h"
 
 namespace bluetooth {
@@ -240,12 +241,7 @@ struct eatt_impl {
         FROM_HERE,
         base::BindOnce(&eatt_impl::upper_tester_delay_connect_cb,
                        base::Unretained(this), bda),
-#if BASE_VER < 931007
-        base::TimeDelta::FromMilliseconds(timeout_ms)
-#else
-        base::Milliseconds(timeout_ms)
-#endif
-    );
+        std::chrono::milliseconds(timeout_ms));
 
     LOG_INFO("Scheduled peripheral connect eatt for device with status: %d",
              (int)status);
@@ -292,12 +288,7 @@ struct eatt_impl {
           FROM_HERE,
           base::BindOnce(&eatt_impl::reconfigure_all, base::Unretained(this),
                          bda, 300),
-#if BASE_VER < 931007
-          base::TimeDelta::FromMilliseconds(4000)
-#else
-          base::Milliseconds(4000)
-#endif
-      );
+          std::chrono::seconds(4));
       LOG_INFO("Scheduled ECOC reconfiguration with status: %d", (int)status);
     }
   }
@@ -456,12 +447,7 @@ struct eatt_impl {
           FROM_HERE,
           base::BindOnce(&eatt_impl::upper_tester_send_data_if_needed,
                          base::Unretained(this), bda, lcid),
-#if BASE_VER < 931007
-          base::TimeDelta::FromMilliseconds(1000)
-#else
-          base::Milliseconds(1000)
-#endif
-      );
+          std::chrono::seconds(1));
     }
   }
 

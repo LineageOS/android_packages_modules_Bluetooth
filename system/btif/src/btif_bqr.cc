@@ -33,6 +33,7 @@
 #include "common/leaky_bonded_queue.h"
 #include "common/time_util.h"
 #include "core_callbacks.h"
+#include "internal_include/bt_trace.h"
 #include "osi/include/properties.h"
 #include "raw_address.h"
 #include "stack/btm/btm_dev.h"

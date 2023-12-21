@@ -17,6 +17,7 @@ aconfig_declarations {
         "hfp.aconfig",
         "l2cap.aconfig",
         "leaudio.aconfig",
+        "rfcomm.aconfig",
         "system_service.aconfig",
     ],
 }

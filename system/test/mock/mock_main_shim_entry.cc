@@ -26,7 +26,6 @@
 #include "gd/neighbor/inquiry.h"
 #include "gd/neighbor/page.h"
 #include "gd/os/handler.h"
-#include "gd/security/security_module.h"
 #include "gd/storage/storage_module.h"
 #include "main/shim/entry.h"
 
@@ -65,14 +64,11 @@ hci::DistanceMeasurementManager* GetDistanceMeasurementManager() {
 hci::VendorSpecificEventManager* GetVendorSpecificEventManager() {
   return nullptr;
 }
-l2cap::classic::L2capClassicModule* GetL2capClassicModule() { return nullptr; }
-l2cap::le::L2capLeModule* GetL2capLeModule() { return nullptr; }
 neighbor::ConnectabilityModule* GetConnectability() { return nullptr; }
 neighbor::DiscoverabilityModule* GetDiscoverability() { return nullptr; }
 neighbor::InquiryModule* GetInquiry() { return nullptr; }
 neighbor::PageModule* GetPage() { return nullptr; }
 os::Handler* GetGdShimHandler() { return hci::testing::mock_gd_shim_handler_; }
-security::SecurityModule* GetSecurityModule() { return nullptr; }
 hal::SnoopLogger* GetSnoopLogger() { return nullptr; }
 storage::StorageModule* GetStorage() { return nullptr; }
 metrics::CounterMetrics* GetCounterMetrics() { return nullptr; }

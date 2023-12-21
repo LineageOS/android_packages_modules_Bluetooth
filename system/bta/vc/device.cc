@@ -24,6 +24,7 @@
 #include "bta_gatt_queue.h"
 #include "devices.h"
 #include "gatt_api.h"
+#include "internal_include/bt_trace.h"
 #include "os/log.h"
 #include "os/logging/log_adapter.h"
 #include "stack/btm/btm_sec.h"
