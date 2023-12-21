@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <thread>
 
+#include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "os/log.h"
 

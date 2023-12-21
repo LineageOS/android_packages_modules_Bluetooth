@@ -27,6 +27,7 @@
 #include "a2dp_ext.h"
 #include "a2dp_sbc.h"
 #include "a2dp_vendor.h"
+#include "include/check.h"
 
 #if !defined(EXCLUDE_NONSTANDARD_CODECS)
 #include "a2dp_vendor_aptx.h"

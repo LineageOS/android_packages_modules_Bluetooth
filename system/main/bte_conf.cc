@@ -23,9 +23,10 @@
 #include <memory>
 
 #include "bta/include/bta_api.h"
+#include "include/check.h"
+#include "os/log.h"
 #include "osi/include/compat.h"  // strlcpy
 #include "osi/include/config.h"
-#include "osi/include/log.h"
 
 // Parses the specified Device ID configuration file and registers the
 // Device ID records with SDP.

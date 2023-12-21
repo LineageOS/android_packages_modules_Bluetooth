@@ -25,10 +25,11 @@
 #include <cstdint>
 #include <mutex>
 
+#include "include/check.h"
 #include "include/hardware/bt_sock.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/list.h"
-#include "osi/include/log.h"
 #include "osi/include/osi.h"  // UNUSED_ATTR
 #include "osi/include/socket.h"
 #include "osi/include/thread.h"

@@ -89,6 +89,7 @@
 #include "device/include/interop_config.h"
 #include "gd/common/init_flags.h"
 #include "gd/os/parameter_provider.h"
+#include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
 #include "os/log.h"

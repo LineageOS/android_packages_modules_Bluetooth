@@ -41,6 +41,7 @@
 #include "gap_api.h"
 #include "gatt_api.h"
 #include "gd/common/init_flags.h"
+#include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/bt_trace.h"
 #include "main/shim/le_scanning_manager.h"

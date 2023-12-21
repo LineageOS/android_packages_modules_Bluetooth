@@ -22,6 +22,7 @@
 #include <optional>
 #include <vector>
 
+#include "include/check.h"
 #include "osi/include/allocator.h"
 #include "stack/include/avct_api.h"
 #include "stack/include/avrc_api.h"

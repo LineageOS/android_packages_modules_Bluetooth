@@ -38,6 +38,7 @@
 #include "common/init_flags.h"
 #include "common/metrics.h"
 #include "device/include/controller.h"
+#include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/bt_trace.h"
 #include "main/shim/hci_layer.h"

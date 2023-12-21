@@ -45,6 +45,7 @@
 #include "device/include/controller.h"
 #include "device/include/device_iot_config.h"
 #include "device/include/interop.h"
+#include "include/check.h"
 #include "include/l2cap_hci_link_interface.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/acl_api.h"

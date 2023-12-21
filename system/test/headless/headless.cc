@@ -20,11 +20,11 @@
 
 #include <dlfcn.h>  //  dlopen
 
-#include <algorithm>
 #include <iostream>
 #include <map>
 
 #include "base/logging.h"  // LOG() stdout and android log
+#include "include/check.h"
 #include "include/hardware/bluetooth.h"
 #include "internal_include/bt_trace.h"
 #include "osi/include/log.h"  // android log only

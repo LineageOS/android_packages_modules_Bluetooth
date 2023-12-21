@@ -16,10 +16,12 @@
 
 #pragma once
 
+#include <base/logging.h>
+
 #include <map>
 #include <utility>
 
-#include <base/logging.h>
+#include "include/check.h"
 
 namespace bluetooth {
 
