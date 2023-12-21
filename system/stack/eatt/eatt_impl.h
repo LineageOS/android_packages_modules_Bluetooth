@@ -18,6 +18,7 @@
 #include <base/logging.h>
 
 #include <map>
+#include <vector>
 
 #include "bind_helpers.h"
 #include "device/include/controller.h"

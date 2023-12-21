@@ -21,6 +21,8 @@
 #include <bluetooth/uuid.h>
 #include <hardware/bluetooth.h>
 
+#include <vector>
+
 #include "types/raw_address.h"
 
 /*******************************************************************************

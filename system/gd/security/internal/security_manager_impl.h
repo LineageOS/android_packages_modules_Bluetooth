@@ -20,6 +20,7 @@
 
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
 #include "hci/acl_manager.h"
 #include "hci/controller.h"

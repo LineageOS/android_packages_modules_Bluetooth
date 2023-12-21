@@ -30,6 +30,7 @@
 #include <base/logging.h>
 
 #include <cstdint>
+#include <vector>
 
 #include "bta/dm/bta_dm_disc.h"
 #include "bta/dm/bta_dm_gatt_client.h"

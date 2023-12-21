@@ -20,8 +20,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
-
-#include "os/handler.h"
+#include <vector>
 
 #include "hci/acl_manager/le_acl_connection.h"
 #include "hci/address.h"
@@ -34,6 +33,7 @@
 #include "l2cap/le/internal/fixed_channel_service_manager_impl.h"
 #include "l2cap/le/internal/link.h"
 #include "l2cap/le/link_property_listener.h"
+#include "os/handler.h"
 
 namespace bluetooth {
 namespace l2cap {

@@ -16,9 +16,10 @@
 
 #pragma once
 
-#include <cstddef>
 #include <list>
 #include <string>
+#include <vector>
+
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 

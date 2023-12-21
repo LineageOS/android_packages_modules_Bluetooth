@@ -20,6 +20,8 @@
 
 #include <stdint.h>
 
+#include <vector>
+
 #include "audio_hal_client/audio_hal_client.h"
 #include "le_audio_types.h"
 

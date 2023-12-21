@@ -21,6 +21,7 @@
 
 #include <list>
 #include <optional>
+#include <vector>
 
 #include "hardware/bt_has.h"
 #include "has_preset.h"

@@ -19,6 +19,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <vector>
+
 #include "bind_helpers.h"
 #include "bta_csis_api.h"
 #include "bta_dm_api_mock.h"

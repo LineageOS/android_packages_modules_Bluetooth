@@ -22,6 +22,7 @@
 #include <memory>
 #include <string>
 #include <unordered_set>
+#include <vector>
 
 #include "common/bind.h"
 #include "common/init_flags.h"

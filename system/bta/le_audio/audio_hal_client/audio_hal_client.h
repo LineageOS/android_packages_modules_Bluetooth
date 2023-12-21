@@ -17,11 +17,10 @@
  */
 #pragma once
 
-#include <future>
 #include <memory>
+#include <vector>
 
 #include "audio_hal_interface/le_audio_software.h"
-#include "common/repeating_timer.h"
 
 namespace le_audio {
 /* Represents configuration of audio codec, as exchanged between le audio and
