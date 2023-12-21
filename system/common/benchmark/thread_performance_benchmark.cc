@@ -19,12 +19,14 @@
 #include <base/run_loop.h>
 #include <base/threading/thread.h>
 #include <benchmark/benchmark.h>
+
 #include <future>
 #include <memory>
 #include <thread>
 
 #include "abstract_message_loop.h"
 #include "common/message_loop_thread.h"
+#include "include/check.h"
 #include "osi/include/fixed_queue.h"
 #include "osi/include/thread.h"
 

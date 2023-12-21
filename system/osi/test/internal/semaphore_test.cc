@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include "common/message_loop_thread.h"
+#include "include/check.h"
 #include "osi/include/osi.h"
 #include "osi/include/reactor.h"
 

@@ -21,6 +21,7 @@
 #include "btcore/include/module.h"
 #include "gd/hci/controller.h"
 #include "hci/controller.h"
+#include "include/check.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "main/shim/shim.h"

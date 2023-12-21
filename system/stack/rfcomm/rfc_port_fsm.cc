@@ -29,7 +29,8 @@
 #include <cstring>
 #include <set>
 
-#include "gd/hal/snoop_logger.h"
+#include "hal/snoop_logger.h"
+#include "include/check.h"
 #include "main/shim/entry.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"

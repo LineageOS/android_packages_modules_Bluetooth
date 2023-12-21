@@ -42,6 +42,7 @@
 #include "btif/include/btif_storage.h"
 #include "device/include/device_iot_config.h"
 #include "device/include/interop.h"
+#include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"

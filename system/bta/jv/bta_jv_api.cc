@@ -31,6 +31,7 @@
 #include <memory>
 
 #include "bta/jv/bta_jv_int.h"
+#include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/bt_trace.h"
 #include "osi/include/allocator.h"

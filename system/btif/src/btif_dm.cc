@@ -66,6 +66,7 @@
 #include "device/include/controller.h"
 #include "device/include/interop.h"
 #include "gd/common/lru_cache.h"
+#include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/stack_config.h"
 #include "main/shim/le_advertising_manager.h"

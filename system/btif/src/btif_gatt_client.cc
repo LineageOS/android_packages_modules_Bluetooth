@@ -44,6 +44,7 @@
 #include "btif_gatt.h"
 #include "btif_gatt_util.h"
 #include "device/include/controller.h"
+#include "include/check.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "stack/include/acl_api.h"

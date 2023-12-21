@@ -31,6 +31,7 @@
 #include "hci/hci_packets.h"
 #include "hci/include/packet_fragmenter.h"
 #include "hci/vendor_specific_event_manager.h"
+#include "include/check.h"
 #include "main/shim/entry.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"

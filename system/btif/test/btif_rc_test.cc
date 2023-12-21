@@ -27,6 +27,7 @@
 #include "btif/include/btif_common.h"
 #include "common/message_loop_thread.h"
 #include "device/include/interop.h"
+#include "include/check.h"
 #include "include/hardware/bt_rc.h"
 #include "test/common/mock_functions.h"
 #include "test/mock/mock_osi_alarm.h"
