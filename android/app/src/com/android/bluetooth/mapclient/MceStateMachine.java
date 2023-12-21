@@ -66,6 +66,7 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.map.BluetoothMapbMessageMime;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
@@ -863,7 +864,15 @@ class MceStateMachine extends StateMachine {
                     mMasClient.makeRequest(new RequestGetMessage(event.getHandle(),
                             MasClient.CharsetType.UTF_8, false));
                     break;
+                case DELIVERY_FAILURE:
+                    // fall through
+                case SENDING_FAILURE:
+                    if (!Flags.handleDeliverySendingFailureEvents()) {
+                        break;
+                    }
+                    // fall through
                 case DELIVERY_SUCCESS:
+                    // fall through
                 case SENDING_SUCCESS:
                     notifySentMessageStatus(event.getHandle(), event.getType());
                     break;
@@ -873,6 +882,10 @@ class MceStateMachine extends StateMachine {
                 case MESSAGE_DELETED:
                     mDatabase.deleteMessage(event.getHandle());
                     break;
+                default:
+                    if (DBG) {
+                        Log.d(TAG, "processNotification: ignoring event type=" + event.getType());
+                    }
             }
         }
 
