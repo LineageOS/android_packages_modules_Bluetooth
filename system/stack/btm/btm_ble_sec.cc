@@ -572,7 +572,7 @@ bool BTM_ReadConnectedTransportAddress(RawAddress* remote_bda,
 
 tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr,
                                  uint16_t tx_pdu_length) {
-  if (!controller_get_interface()->supports_ble_packet_extension()) {
+  if (!controller_get_interface()->SupportsBleDataPacketLengthExtension()) {
     LOG_INFO("Local controller does not support le packet extension");
     return BTM_ILLEGAL_VALUE;
   }

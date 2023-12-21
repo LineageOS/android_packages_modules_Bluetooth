@@ -652,7 +652,7 @@ void handle_remote_features_complete(const RawAddress& bd_addr) {
     return;
   }
 
-  if (controller_get_interface()->supports_sniff_subrating() &&
+  if (controller_get_interface()->SupportsSniffSubrating() &&
       acl_peer_supports_sniff_subrating(bd_addr)) {
     LOG_DEBUG("Device supports sniff subrating peer:%s",
               ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
@@ -705,7 +705,7 @@ void bta_dm_acl_up(const RawAddress& bd_addr, tBT_TRANSPORT transport,
   device->reset_device_info();
   device->transport = transport;
 
-  if (controller_get_interface()->supports_sniff_subrating() &&
+  if (controller_get_interface()->SupportsSniffSubrating() &&
       acl_peer_supports_sniff_subrating(bd_addr)) {
     // NOTE: This callback assumes upon ACL connection that
     // the read remote features has completed and is valid.

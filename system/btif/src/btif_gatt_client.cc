@@ -296,7 +296,7 @@ void btif_gattc_open_impl(int client_if, RawAddress address,
     // Check for privacy 1.0 and 1.1 controller and do not start background
     // connection if RPA offloading is not supported, since it will not
     // connect after change of random address
-    if (!controller_get_interface()->supports_ble_privacy() &&
+    if (!controller_get_interface()->SupportsBlePrivacy() &&
         (addr_type == BLE_ADDR_RANDOM) && BTM_BLE_IS_RESOLVE_BDA(address)) {
       tBTM_BLE_VSC_CB vnd_capabilities;
       BTM_BleGetVendorCapabilities(&vnd_capabilities);
