@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "base/functional/callback.h"
 #include "device/include/esco_parameters.h"
 #include "stack/btm/neighbor_inquiry.h"

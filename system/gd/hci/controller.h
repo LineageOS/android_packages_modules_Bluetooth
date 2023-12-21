@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "hci/address.h"
 #include "hci/hci_packets.h"
 #include "hci/le_rand_callback.h"

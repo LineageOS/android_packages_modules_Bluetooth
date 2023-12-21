@@ -16,16 +16,18 @@
 
 #pragma once
 
+#include <fuzzer/FuzzedDataProvider.h>
 #include <stddef.h>
 #include <stdint.h>
+
+#include <vector>
+
 #include "hci/fuzz/status_vs_complete_commands.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_packets.h"
 #include "module.h"
 #include "os/fuzz/dev_null_queue.h"
 #include "os/fuzz/fuzz_inject_queue.h"
-
-#include <fuzzer/FuzzedDataProvider.h>
 
 namespace bluetooth {
 namespace hci {

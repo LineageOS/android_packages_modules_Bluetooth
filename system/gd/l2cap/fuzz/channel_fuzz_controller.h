@@ -17,6 +17,9 @@
 //          dylan.katz@leviathansecurity.com
 
 #pragma once
+
+#include <vector>
+
 #include "gd/fuzz/helpers.h"
 #include "l2cap/classic/internal/fixed_channel_impl.h"
 #include "l2cap/internal/dynamic_channel_impl.h"

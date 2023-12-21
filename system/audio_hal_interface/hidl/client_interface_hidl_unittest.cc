@@ -20,6 +20,8 @@
 
 #include <gtest/gtest.h>
 
+#include <vector>
+
 #include "codec_status_hidl.h"
 
 namespace {

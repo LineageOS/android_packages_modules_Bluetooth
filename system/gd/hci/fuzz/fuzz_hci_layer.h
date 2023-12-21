@@ -18,6 +18,8 @@
 
 #include <fuzzer/FuzzedDataProvider.h>
 
+#include <vector>
+
 #include "fuzz/helpers.h"
 #include "hci/class_of_device.h"
 #include "hci/command_interface.h"

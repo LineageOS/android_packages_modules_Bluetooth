@@ -17,6 +17,8 @@
 
 #include "a2dp_encoding_aidl.h"
 
+#include <vector>
+
 #include "a2dp_transport.h"
 #include "audio_aidl_interfaces.h"
 #include "bta/av/bta_av_int.h"

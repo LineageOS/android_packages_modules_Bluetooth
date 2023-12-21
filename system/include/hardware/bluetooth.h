@@ -23,6 +23,8 @@
 #include <sys/cdefs.h>
 #include <sys/types.h>
 
+#include <vector>
+
 #include "avrcp/avrcp.h"
 #include "base/functional/callback.h"
 #include "bluetooth/uuid.h"

@@ -16,6 +16,7 @@
 
 #include <future>
 #include <map>
+#include <vector>
 
 #include "common/bind.h"
 #include "hci/address.h"

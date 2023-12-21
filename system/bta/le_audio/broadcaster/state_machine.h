@@ -21,6 +21,7 @@
 #include <limits>
 #include <optional>
 #include <type_traits>
+#include <vector>
 
 #include "base/functional/callback.h"
 #include "broadcaster_types.h"

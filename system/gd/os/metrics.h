@@ -22,6 +22,8 @@
 #include <frameworks/proto_logging/stats/enums/bluetooth/hci/enums.pb.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/le/enums.pb.h>
 
+#include <vector>
+
 #include "hci/address.h"
 
 namespace bluetooth {
