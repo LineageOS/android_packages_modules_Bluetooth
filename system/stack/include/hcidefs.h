@@ -433,9 +433,6 @@
 /* Multi adv opcode */
 #define HCI_BLE_MULTI_ADV (0x0154 | HCI_GRP_VENDOR_SPECIFIC)
 
-/* Batch scan opcode */
-#define HCI_BLE_BATCH_SCAN (0x0156 | HCI_GRP_VENDOR_SPECIFIC)
-
 /* ADV filter opcode */
 #define HCI_BLE_ADV_FILTER (0x0157 | HCI_GRP_VENDOR_SPECIFIC)
 
