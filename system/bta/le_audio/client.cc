@@ -5489,6 +5489,14 @@ class LeAudioClientImpl : public LeAudioClient {
                 kLeAudioContextAllRemoteSource.test(configuration_context_type_)
                     ? le_audio::types::kLeAudioDirectionSource
                     : le_audio::types::kLeAudioDirectionSink;
+
+            /* Reconfiguration to non requiring source scenario */
+            if (sink_monitor_mode_ &&
+                (remote_direction == le_audio::types::kLeAudioDirectionSink)) {
+              notifyAudioLocalSink(
+                  UnicastMonitorModeStatus::STREAMING_SUSPENDED);
+            }
+
             auto remote_contexts =
                 DirectionalRealignMetadataAudioContexts(group, remote_direction);
             ApplyRemoteMetadataAudioContextPolicy(group, remote_contexts,
