@@ -22,6 +22,7 @@ import android.util.Log;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.BluetoothAdapterProxy;
+import com.android.bluetooth.flags.FeatureFlags;
 
 /**
  * Factory class for object initialization to help with unit testing
@@ -82,8 +83,10 @@ public class GattObjectsFactory {
             GattService service,
             AdapterService adapterService,
             BluetoothAdapterProxy bluetoothAdapterProxy,
-            Looper looper) {
-        return new ScanManager(service, adapterService, bluetoothAdapterProxy, looper);
+            Looper looper,
+            FeatureFlags featureFlags) {
+        return new ScanManager(
+                service, adapterService, bluetoothAdapterProxy, looper, featureFlags);
     }
 
     public PeriodicScanManager createPeriodicScanManager(AdapterService adapterService) {
