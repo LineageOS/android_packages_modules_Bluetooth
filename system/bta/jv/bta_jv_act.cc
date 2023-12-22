@@ -29,6 +29,7 @@
 #include <cstdint>
 #include <unordered_set>
 
+#include "android_bluetooth_flags.h"
 #include "bta/include/bta_jv_co.h"
 #include "bta/include/bta_rfcomm_scn.h"
 #include "bta/jv/bta_jv_int.h"
@@ -1372,6 +1373,20 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn,
   tBTA_JV_RFCOMM_CL_INIT evt_data;
   memset(&evt_data, 0, sizeof(evt_data));
   evt_data.status = BTA_JV_SUCCESS;
+
+#ifdef TARGET_FLOSS
+  if (true)
+#else
+  if (IS_FLAG_ENABLED(rfcomm_always_use_mitm))
+#endif
+  {
+    // Update security service record for RFCOMM client so that
+    // secure RFCOMM connection will be authenticated with MTIM protection
+    // while creating the L2CAP connection.
+    BTM_SetSecurityLevel(true, "RFC_MUX", BTM_SEC_SERVICE_RFC_MUX, sec_mask,
+                         BT_PSM_RFCOMM, BTM_SEC_PROTO_RFCOMM, 0);
+  }
+
   if (evt_data.status == BTA_JV_SUCCESS &&
       RFCOMM_CreateConnectionWithSecurity(
           UUID_SERVCLASS_SERIAL_PORT, remote_scn, false, BTA_JV_DEF_RFC_MTU,
