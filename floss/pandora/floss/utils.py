@@ -13,16 +13,17 @@
 # limitations under the License.
 """All floss utils functions."""
 
-from typing import List, Optional
-
 import functools
 import logging
 import threading
 import time
+from typing import List, Optional
 
 from floss.pandora.floss import floss_enums
 from gi.repository import GLib
+from google.protobuf import any_pb2
 from pandora import host_pb2
+from pandora_experimental import os_pb2
 
 # All GLIB method calls should wait this many seconds by default
 GLIB_METHOD_CALL_TIMEOUT = 2
@@ -343,15 +344,39 @@ class PropertySet:
         return setter(*args)
 
 
+class Connection:
+    """A Bluetooth connection."""
+
+    def __init__(self, address: str, transport: floss_enums.BtTransport):
+        self.address = address
+        self.transport = transport
+
+
+def connection_to(connection: Connection):
+    """Converts Connection from Floss format to gRPC format."""
+    internal_connection_ref = os_pb2.InternalConnectionRef(address=address_to(connection.address),
+                                                           transport=connection.transport)
+    cookie = any_pb2.Any(value=internal_connection_ref.SerializeToString())
+    return host_pb2.Connection(cookie=cookie)
+
+
+def connection_from(connection: host_pb2.Connection):
+    """Converts Connection from gRPC format to Floss format."""
+    internal_connection_ref = os_pb2.InternalConnectionRef()
+    internal_connection_ref.ParseFromString(connection.cookie.value)
+    return Connection(address=address_from(internal_connection_ref.address),
+                      transport=internal_connection_ref.transport)
+
+
 def address_from(request_address: bytes):
-    """Converts address from grpc server format to floss format."""
+    """Converts address from gRPC format to Floss format."""
     address = request_address.hex()
     address = f'{address[:2]}:{address[2:4]}:{address[4:6]}:{address[6:8]}:{address[8:10]}:{address[10:12]}'
     return address.upper()
 
 
 def address_to(address: str):
-    """Converts address from floss format to grpc server format."""
+    """Converts address from Floss format to gRPC format."""
     request_address = bytes.fromhex(address.replace(':', ''))
     return request_address
 
@@ -367,7 +392,7 @@ def uuid32_to_uuid128(uuid32: str):
 def advertise_data_from(request_data: host_pb2.DataTypes):
     """Mapping DataTypes to a dict.
 
-    The dict content follows the format of floss AdvertiseData.
+    The dict content follows the format of Floss AdvertiseData.
 
     Args:
         request_data : advertising data.

@@ -19,8 +19,9 @@ import enum
 class BtTransport(enum.IntEnum):
     """Bluetooth transport type."""
     AUTO = 0
-    BR_EDR = 1
+    BREDR = 1
     LE = 2
+    DUAL = 3
 
 
 class GattWriteRequestStatus(enum.IntEnum):
@@ -140,14 +141,6 @@ class BondState(enum.IntEnum):
     NOT_BONDED = 0
     BONDING = 1
     BONDED = 2
-
-
-class Transport(enum.IntEnum):
-    """Bluetooth transport type."""
-    AUTO = 0
-    BREDR = 1
-    LE = 2
-    DUAL = 3
 
 
 class PairingVariant(enum.IntEnum):

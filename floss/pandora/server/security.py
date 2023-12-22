@@ -141,9 +141,9 @@ class SecurityService(security_grpc_aio.SecurityServicer):
                 elif variant == floss_enums.PairingVariant.PIN_ENTRY:
                     transport = self.bluetooth.get_remote_type(address)
 
-                    if transport == floss_enums.Transport.BREDR:
+                    if transport == floss_enums.BtTransport.BREDR:
                         event.pin_code_request.CopyFrom(empty_pb2.Empty())
-                    elif transport == floss_enums.Transport.LE:
+                    elif transport == floss_enums.BtTransport.LE:
                         event.passkey_entry_request.CopyFrom(empty_pb2.Empty())
                     else:
                         logging.error('Cannot determine pairing variant from unknown transport.')
@@ -154,9 +154,9 @@ class SecurityService(security_grpc_aio.SecurityServicer):
                     transport = self.bluetooth.get_remote_type(address)
                     [pincode] = variables
 
-                    if transport == floss_enums.Transport.BREDR:
+                    if transport == floss_enums.BtTransport.BREDR:
                         event.pin_code_notification = pincode.encode()
-                    elif transport == floss_enums.Transport.LE:
+                    elif transport == floss_enums.BtTransport.LE:
                         event.passkey_entry_notification = int(pincode)
                     else:
                         logging.error('Cannot determine pairing variant from unknown transport.')

@@ -13,7 +13,6 @@
 # limitations under the License.
 """All functions relative to the bluetooth procedure."""
 
-import asyncio
 import logging
 import threading
 import traceback
@@ -177,8 +176,8 @@ class Bluetooth(object):
     def get_address(self):
         return self.adapter_client.get_address()
 
-    def get_remote_type(self):
-        return self.adapter_client.get_remote_property('Type')
+    def get_remote_type(self, address):
+        return self.adapter_client.get_remote_property(address, 'Type')
 
     def is_connected(self, address):
         return self.adapter_client.is_connected(address)
