@@ -523,7 +523,7 @@ tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration,
   LOG_VERBOSE("%s : scan_type:%d, %d, %d", __func__,
               btm_cb.ble_ctr_cb.inq_var.scan_type, scan_interval, scan_window);
 
-  if (!controller_get_interface()->supports_ble()) return BTM_ILLEGAL_VALUE;
+  if (!controller_get_interface()->SupportsBle()) return BTM_ILLEGAL_VALUE;
 
   if (start) {
     /* shared inquiry database, do not allow observe if any inquiry is active.
@@ -763,8 +763,8 @@ static void btm_ble_vendor_capability_vsc_cmpl_cback(
   if (btm_cb.cmn_ble_vsc_cb.max_filter > 0) btm_ble_adv_filter_init();
 
   /* VS capability included and non-4.2 device */
-  if (controller_get_interface()->supports_ble() &&
-      controller_get_interface()->supports_ble_privacy() &&
+  if (controller_get_interface()->SupportsBle() &&
+      controller_get_interface()->SupportsBlePrivacy() &&
       btm_cb.cmn_ble_vsc_cb.max_irk_list_sz > 0 &&
       controller_get_interface()->get_ble_resolving_list_max_size() == 0)
     btm_ble_resolving_list_init(btm_cb.cmn_ble_vsc_cb.max_irk_list_sz);
@@ -843,7 +843,7 @@ bool BTM_BleConfigPrivacy(bool privacy_mode) {
   LOG_WARN("%s %d", __func__, (int)privacy_mode);
 
   /* if LE is not supported, return error */
-  if (!controller_get_interface()->supports_ble()) return false;
+  if (!controller_get_interface()->SupportsBle()) return false;
 
   tGAP_BLE_ATTR_VALUE gap_ble_attr_value;
   gap_ble_attr_value.addr_resolution = 0;
@@ -860,7 +860,7 @@ bool BTM_BleConfigPrivacy(bool privacy_mode) {
 
     /* 4.2 controller only allow privacy 1.2 or mixed mode, resolvable private
      * address in controller */
-    if (controller_get_interface()->supports_ble_privacy()) {
+    if (controller_get_interface()->SupportsBlePrivacy()) {
       gap_ble_attr_value.addr_resolution = 1;
       btm_cb.ble_ctr_cb.privacy_mode = BTM_PRIVACY_1_2;
     } else /* 4.1/4.0 controller */
@@ -1774,7 +1774,7 @@ void btm_ble_update_dmt_flag_bits(uint8_t* adv_flag_value,
 
   /* if local controller support, mark both controller and host support in flag
    */
-  if (controller_get_interface()->supports_simultaneous_le_bredr())
+  if (controller_get_interface()->SupportsSimultaneousLeBrEdr())
     *adv_flag_value |= (BTM_BLE_DMT_CONTROLLER_SPT | BTM_BLE_DMT_HOST_SPT);
   else
     *adv_flag_value &= ~(BTM_BLE_DMT_CONTROLLER_SPT | BTM_BLE_DMT_HOST_SPT);
@@ -1984,7 +1984,7 @@ tBTM_STATUS btm_ble_set_connectability(uint16_t combined_mode) {
 
 static void btm_send_hci_scan_enable(uint8_t enable,
                                      uint8_t filter_duplicates) {
-  if (controller_get_interface()->supports_ble_extended_advertising()) {
+  if (controller_get_interface()->SupportsBleExtendedAdvertising()) {
     btsnd_hcic_ble_set_extended_scan_enable(enable, filter_duplicates, 0x0000,
                                             0x0000);
   } else {
@@ -1996,7 +1996,7 @@ void btm_send_hci_set_scan_params(uint8_t scan_type, uint16_t scan_int,
                                   uint16_t scan_win,
                                   tBLE_ADDR_TYPE addr_type_own,
                                   uint8_t scan_filter_policy) {
-  if (controller_get_interface()->supports_ble_extended_advertising()) {
+  if (controller_get_interface()->SupportsBleExtendedAdvertising()) {
     scanning_phy_cfg phy_cfg;
     phy_cfg.scan_type = scan_type;
     phy_cfg.scan_int = scan_int;
@@ -2152,7 +2152,7 @@ void btm_ble_read_remote_name_cmpl(bool status, const RawAddress& bda,
  ******************************************************************************/
 tBTM_STATUS btm_ble_read_remote_name(const RawAddress& remote_bda,
                                      tBTM_NAME_CMPL_CB* p_cb) {
-  if (!controller_get_interface()->supports_ble()) return BTM_ERR_PROCESSING;
+  if (!controller_get_interface()->SupportsBle()) return BTM_ERR_PROCESSING;
 
   tINQ_DB_ENT* p_i = btm_inq_db_find(remote_bda);
   if (p_i && !ble_evt_type_is_connectable(p_i->inq_info.results.ble_evt_type)) {

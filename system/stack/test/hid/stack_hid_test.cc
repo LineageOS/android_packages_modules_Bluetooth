@@ -17,11 +17,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <cstring>
-#include <map>
-
 #include "common/message_loop_thread.h"
-#include "osi/include/log.h"
 #include "stack/hid/hidh_int.h"
 #include "stack/include/hci_error_code.h"
 #include "test/common/mock_functions.h"

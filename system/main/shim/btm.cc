@@ -190,7 +190,7 @@ void Btm::SetInterlacedInquiryScan() { GetInquiry()->SetInterlacedScan(); }
 void Btm::SetStandardInquiryScan() { GetInquiry()->SetStandardScan(); }
 
 bool Btm::IsInterlacedScanSupported() const {
-  return controller_get_interface()->supports_interlaced_inquiry_scan();
+  return controller_get_interface()->SupportsInterlacedInquiryScan();
 }
 
 /**

@@ -270,6 +270,8 @@ struct tBTA_AG_SCB {
       inuse_codec;     /* codec being used for the current SCO connection */
   bool codec_updated;  /* set to true whenever the app updates codec type */
   bool codec_fallback; /* If sco nego fails for mSBC, fallback to CVSD */
+  uint8_t retransmission_effort_retries;         /* Retry eSCO
+                                                  with retransmission_effort value*/
   tBTA_AG_SCO_MSBC_SETTINGS codec_msbc_settings; /* settings to be used for the
                                                     impending eSCO on WB */
   tBTA_AG_SCO_LC3_SETTINGS codec_lc3_settings;   /* settings to be used for the

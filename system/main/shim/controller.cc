@@ -326,69 +326,69 @@ static const controller_t interface = {
 
     .get_ble_supported_states = get_ble_supported_states,
 
-    .supports_simple_pairing = supports_simple_pairing,
-    .supports_secure_connections = supports_secure_connections,
-    .supports_simultaneous_le_bredr = supports_simultaneous_le_bredr,
+    .SupportsSimplePairing = supports_simple_pairing,
+    .SupportsSecureConnections = supports_secure_connections,
+    .SupportsSimultaneousLeBrEdr = supports_simultaneous_le_bredr,
     .supports_reading_remote_extended_features =
         supports_reading_remote_extended_features,
-    .supports_interlaced_inquiry_scan = supports_interlaced_inquiry_scan,
-    .supports_rssi_with_inquiry_results = supports_rssi_with_inquiry_results,
-    .supports_extended_inquiry_response = supports_extended_inquiry_response,
+    .SupportsInterlacedInquiryScan = supports_interlaced_inquiry_scan,
+    .SupportsRssiWithInquiryResults = supports_rssi_with_inquiry_results,
+    .SupportsExtendedInquiryResponse = supports_extended_inquiry_response,
     .supports_enhanced_setup_synchronous_connection =
         supports_enhanced_setup_synchronous_connection,
     .supports_enhanced_accept_synchronous_connection =
         supports_enhanced_accept_synchronous_connection,
-    .supports_3_slot_packets = supports_three_slot_packets,
-    .supports_5_slot_packets = supports_five_slot_packets,
-    .supports_classic_2m_phy = supports_classic_2m_phy,
-    .supports_classic_3m_phy = supports_classic_3m_phy,
-    .supports_3_slot_edr_packets = supports_three_slot_edr_packets,
-    .supports_5_slot_edr_packets = supports_five_slot_edr_packets,
-    .supports_sco = supports_sco,
-    .supports_hv2_packets = supports_hv2_packets,
-    .supports_hv3_packets = supports_hv3_packets,
-    .supports_ev3_packets = supports_ev3_packets,
-    .supports_ev4_packets = supports_ev4_packets,
-    .supports_ev5_packets = supports_ev5_packets,
-    .supports_esco_2m_phy = supports_esco_2m_phy,
-    .supports_esco_3m_phy = supports_esco_3m_phy,
-    .supports_3_slot_esco_edr_packets = supports_three_slot_esco_edr_packets,
-    .supports_role_switch = supports_role_switch,
-    .supports_hold_mode = supports_hold_mode,
-    .supports_sniff_mode = supports_sniff_mode,
-    .supports_park_mode = supports_park_mode,
-    .supports_non_flushable_pb = supports_non_flushable_pb,
-    .supports_sniff_subrating = supports_sniff_subrating,
-    .supports_encryption_pause = supports_encryption_pause,
+    .Supports3SlotPackets = supports_three_slot_packets,
+    .Supports5SlotPackets = supports_five_slot_packets,
+    .SupportsClassic2mPhy = supports_classic_2m_phy,
+    .SupportsClassic3mPhy = supports_classic_3m_phy,
+    .Supports3SlotEdrPackets = supports_three_slot_edr_packets,
+    .Supports5SlotEdrPackets = supports_five_slot_edr_packets,
+    .SupportsSco = supports_sco,
+    .SupportsHv2Packets = supports_hv2_packets,
+    .SupportsHv3Packets = supports_hv3_packets,
+    .SupportsEv3Packets = supports_ev3_packets,
+    .SupportsEv4Packets = supports_ev4_packets,
+    .SupportsEv5Packets = supports_ev5_packets,
+    .SupportsEsco2mPhy = supports_esco_2m_phy,
+    .SupportsEsco3mPhy = supports_esco_3m_phy,
+    .Supports3SlotEscoEdrPackets = supports_three_slot_esco_edr_packets,
+    .SupportsRoleSwitch = supports_role_switch,
+    .SupportsHoldMode = supports_hold_mode,
+    .SupportsSniffMode = supports_sniff_mode,
+    .SupportsParkMode = supports_park_mode,
+    .SupportsNonFlushablePb = supports_non_flushable_pb,
+    .SupportsSniffSubrating = supports_sniff_subrating,
+    .SupportsEncryptionPause = supports_encryption_pause,
     .supports_configure_data_path = supports_configure_data_path,
     .supports_set_min_encryption_key_size =
         supports_set_min_encryption_key_size,
     .supports_read_encryption_key_size = supports_read_encryption_key_size,
 
-    .supports_ble = supports_ble,
-    .supports_ble_packet_extension = supports_packet_extension,
-    .supports_ble_connection_parameters_request =
+    .SupportsBle = supports_ble,
+    .SupportsBleDataPacketLengthExtension = supports_packet_extension,
+    .SupportsBleConnectionParametersRequest =
         supports_connection_parameters_request,
-    .supports_ble_privacy = supports_privacy,
+    .SupportsBlePrivacy = supports_privacy,
     .supports_ble_set_privacy_mode = supports_ble_set_privacy_mode,
-    .supports_ble_2m_phy = supports_ble_2m_phy,
-    .supports_ble_coded_phy = supports_ble_coded_phy,
-    .supports_ble_extended_advertising = supports_extended_advertising,
-    .supports_ble_periodic_advertising = supports_periodic_advertising,
-    .supports_ble_peripheral_initiated_feature_exchange =
+    .SupportsBle2mPhy = supports_ble_2m_phy,
+    .SupportsBleCodedPhy = supports_ble_coded_phy,
+    .SupportsBleExtendedAdvertising = supports_extended_advertising,
+    .SupportsBlePeriodicAdvertising = supports_periodic_advertising,
+    .SupportsBlePeripheralInitiatedFeaturesExchange =
         supports_peripheral_initiated_feature_exchange,
-    .supports_ble_periodic_advertising_sync_transfer_sender =
+    .SupportsBlePeriodicAdvertisingSyncTransferSender =
         supports_periodic_advertising_sync_transfer_sender,
-    .supports_ble_periodic_advertising_sync_transfer_recipient =
+    .SupportsBlePeriodicAdvertisingSyncTransferRecipient =
         supports_periodic_advertising_sync_transfer_recipient,
-    .supports_ble_connected_isochronous_stream_central =
+    .SupportsBleConnectedIsochronousStreamCentral =
         supports_connected_iso_stream_central,
-    .supports_ble_connected_isochronous_stream_peripheral =
+    .SupportsBleConnectedIsochronousStreamPeripheral =
         supports_connected_iso_stream_peripheral,
-    .supports_ble_isochronous_broadcaster = supports_iso_broadcaster,
-    .supports_ble_synchronized_receiver = supports_synchronized_receiver,
-    .supports_ble_connection_subrating = supports_ble_connection_subrating,
-    .supports_ble_connection_subrating_host =
+    .SupportsBleIsochronousBroadcaster = supports_iso_broadcaster,
+    .SupportsBleSynchronizedReceiver = supports_synchronized_receiver,
+    .SupportsBleConnectionSubrating = supports_ble_connection_subrating,
+    .SupportsBleConnectionSubratingHost =
         supports_ble_connection_subrating_host,
 
     .get_acl_data_size_classic = get_acl_buffer_length,

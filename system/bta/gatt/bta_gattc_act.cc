@@ -223,7 +223,7 @@ void bta_gattc_register(const Uuid& app_uuid, tBTA_GATTC_CBACK* p_cback,
 /** De-Register a GATT client application with BTA */
 void bta_gattc_deregister(tBTA_GATTC_RCB* p_clreg) {
   uint8_t accept_list_size = 0;
-  if (controller_get_interface()->supports_ble()) {
+  if (controller_get_interface()->SupportsBle()) {
     accept_list_size = controller_get_interface()->get_ble_acceptlist_size();
   }
 

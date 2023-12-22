@@ -17,6 +17,8 @@
  ******************************************************************************/
 #include "mock_l2cap_layer.h"
 
+#include <base/logging.h>
+
 #include "stack/include/bt_hdr.h"
 #include "stack/l2cap/l2c_int.h"
 #include "types/raw_address.h"

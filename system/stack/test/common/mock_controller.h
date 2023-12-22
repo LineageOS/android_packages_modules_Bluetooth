@@ -19,7 +19,6 @@
 #include <base/functional/callback.h>
 #include <gmock/gmock.h>
 
-
 namespace controller {
 class ControllerInterface {
  public:

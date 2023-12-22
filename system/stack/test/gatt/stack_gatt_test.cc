@@ -25,6 +25,7 @@
 #include "common/strings.h"
 #include "osi/include/allocator.h"
 #include "stack/gatt/gatt_int.h"
+#include "stack/include/bt_types.h"
 #include "stack/include/gatt_api.h"
 #include "stack/include/l2c_api.h"
 #include "stack/sdp/internal/sdp_api.h"
@@ -331,4 +332,51 @@ TEST_F(StackGattTest, attp_build_value_cmd_full_p_data) {
     attp_build_value_cmd_test_with_p_data(it->second + 5, it->first, 0x1,
                                           0x1234, 3, (uint8_t*)"abc");
   }
+}
+
+static void attp_build_value_cmd_small_payload_size(uint8_t op_code) {
+  // payload size too small
+  uint16_t offset_0 = 0;
+  uint16_t handle = 0x1;
+  uint16_t len = 0;
+  uint8_t* p_data = nullptr;
+  uint16_t test_payload_size = gatt_min_value_cmd_size.at(op_code) - 1;
+
+  ASSERT_TRUE(gatt_min_value_cmd_size.find(op_code) !=
+              gatt_min_value_cmd_size.end());
+  test_payload_size = gatt_min_value_cmd_size.at(op_code) - 1;
+
+  BT_HDR* ret = bluetooth::legacy::testing::attp_build_value_cmd(
+      test_payload_size, op_code, handle, offset_0, len, p_data);
+
+  ASSERT_EQ(ret, nullptr);
+}
+
+TEST_F(StackGattTest,
+       attp_build_value_cmd_test_payload_size_less_than_mimimal) {
+  for (auto it = gatt_min_value_cmd_size.begin();
+       it != gatt_min_value_cmd_size.end(); it++) {
+    attp_build_value_cmd_small_payload_size(it->first);
+  }
+}
+
+TEST_F(StackGattTest, attp_build_value_cmd_read_by_type_test_long_data) {
+  // p_data too large and does not fit in pair_len
+  // only for GATT_RSP_READ_BY_TYPE
+  uint16_t offset_0 = 0;
+  uint16_t handle = 0x1;
+  const uint8_t op_code = GATT_RSP_READ_BY_TYPE;
+
+  const int data_size = 255;
+  uint16_t payload_size = data_size + 4;
+
+  uint8_t data[data_size];
+
+  for (int i = 0; i < data_size; i++) {
+    data[i] = 'A';
+  }
+
+  BT_HDR* ret = bluetooth::legacy::testing::attp_build_value_cmd(
+      payload_size, op_code, handle, offset_0, data_size, data);
+  ASSERT_EQ(ret, nullptr);
 }

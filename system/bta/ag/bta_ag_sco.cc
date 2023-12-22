@@ -251,7 +251,13 @@ static void bta_ag_sco_disc_cback(uint16_t sco_idx) {
         }
       }
     } else if (bta_ag_sco_is_opening(bta_ag_cb.sco.p_curr_scb)) {
-      LOG_ERROR("%s: eSCO/SCO failed to open, no more fall back", __func__);
+      if (IS_FLAG_ENABLED(retry_esco_with_zero_retransmission_effort) &&
+          bta_ag_cb.sco.p_curr_scb->retransmission_effort_retries == 0) {
+        bta_ag_cb.sco.p_curr_scb->retransmission_effort_retries++;
+        bta_ag_cb.sco.p_curr_scb->state = BTA_AG_SCO_CODEC_ST;
+        LOG_WARN("eSCO/SCO failed to open, retry with retransmission_effort");
+      } else
+        LOG_ERROR("eSCO/SCO failed to open, no more fall back");
     }
 
     bta_ag_cb.sco.p_curr_scb->inuse_codec = BTM_SCO_CODEC_NONE;
@@ -483,6 +489,13 @@ void bta_ag_create_sco(tBTA_AG_SCB* p_scb, bool is_orig) {
       // HFP <=1.6 eSCO
       params = esco_parameters_for_codec(ESCO_CODEC_CVSD_S3, offload);
     }
+  }
+
+  if (IS_FLAG_ENABLED(retry_esco_with_zero_retransmission_effort) &&
+      p_scb->retransmission_effort_retries == 1) {
+    LOG_INFO("change retransmission_effort to 0, retry");
+    p_scb->retransmission_effort_retries++;
+    params.retransmission_effort = ESCO_RETRANSMISSION_OFF;
   }
 
   /* Configure input/output data path based on HAL settings. */
@@ -1419,12 +1432,13 @@ void bta_ag_sco_shutdown(tBTA_AG_SCB* p_scb,
 void bta_ag_sco_conn_open(tBTA_AG_SCB* p_scb,
                           UNUSED_ATTR const tBTA_AG_DATA& data) {
   bta_ag_sco_event(p_scb, BTA_AG_SCO_CONN_OPEN_E);
-
   bta_sys_sco_open(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
 
   /* call app callback */
   bta_ag_cback_sco(p_scb, BTA_AG_AUDIO_OPEN_EVT);
 
+  /* reset retransmission_effort_retries*/
+  p_scb->retransmission_effort_retries = 0;
   /* reset to mSBC T2 settings as the preferred */
   p_scb->codec_msbc_settings = BTA_AG_SCO_MSBC_SETTINGS_T2;
   /* reset to LC3 T2 settings as the preferred */
@@ -1464,6 +1478,8 @@ void bta_ag_sco_conn_close(tBTA_AG_SCB* p_scb,
         p_scb->codec_msbc_settings == BTA_AG_SCO_MSBC_SETTINGS_T1) ||
        (p_scb->sco_codec == BTM_SCO_CODEC_LC3 &&
         p_scb->codec_lc3_settings == BTA_AG_SCO_LC3_SETTINGS_T1) ||
+       (IS_FLAG_ENABLED(retry_esco_with_zero_retransmission_effort) &&
+        p_scb->retransmission_effort_retries == 1) ||
        aptx_voice)) {
     bta_ag_sco_event(p_scb, BTA_AG_SCO_REOPEN_E);
   } else {

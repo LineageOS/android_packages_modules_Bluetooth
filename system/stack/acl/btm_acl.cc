@@ -154,7 +154,7 @@ static bool IsEprAvailable(const tACL_CONN& p_acl) {
     return false;
   }
   return HCI_ATOMIC_ENCRYPT_SUPPORTED(p_acl.peer_lmp_feature_pages[0]) &&
-         controller_get_interface()->supports_encryption_pause();
+         controller_get_interface()->SupportsEncryptionPause();
 }
 
 static void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
@@ -251,35 +251,35 @@ void BTM_acl_after_controller_started(const controller_t* controller) {
   uint16_t btm_acl_pkt_types_supported =
       (HCI_PKT_TYPES_MASK_DH1 + HCI_PKT_TYPES_MASK_DM1);
 
-  if (controller->supports_3_slot_packets())
+  if (controller->Supports3SlotPackets())
     btm_acl_pkt_types_supported |=
         (HCI_PKT_TYPES_MASK_DH3 + HCI_PKT_TYPES_MASK_DM3);
 
-  if (controller->supports_5_slot_packets())
+  if (controller->Supports5SlotPackets())
     btm_acl_pkt_types_supported |=
         (HCI_PKT_TYPES_MASK_DH5 + HCI_PKT_TYPES_MASK_DM5);
 
   /* Add in EDR related ACL types */
-  if (!controller->supports_classic_2m_phy()) {
+  if (!controller->SupportsClassic2mPhy()) {
     btm_acl_pkt_types_supported |=
         (HCI_PKT_TYPES_MASK_NO_2_DH1 + HCI_PKT_TYPES_MASK_NO_2_DH3 +
          HCI_PKT_TYPES_MASK_NO_2_DH5);
   }
 
-  if (!controller->supports_classic_3m_phy()) {
+  if (!controller->SupportsClassic3mPhy()) {
     btm_acl_pkt_types_supported |=
         (HCI_PKT_TYPES_MASK_NO_3_DH1 + HCI_PKT_TYPES_MASK_NO_3_DH3 +
          HCI_PKT_TYPES_MASK_NO_3_DH5);
   }
 
   /* Check to see if 3 and 5 slot packets are available */
-  if (controller->supports_classic_2m_phy() ||
-      controller->supports_classic_3m_phy()) {
-    if (!controller->supports_3_slot_edr_packets())
+  if (controller->SupportsClassic2mPhy() ||
+      controller->SupportsClassic3mPhy()) {
+    if (!controller->Supports3SlotEdrPackets())
       btm_acl_pkt_types_supported |=
           (HCI_PKT_TYPES_MASK_NO_2_DH3 + HCI_PKT_TYPES_MASK_NO_3_DH3);
 
-    if (!controller->supports_5_slot_edr_packets())
+    if (!controller->Supports5SlotEdrPackets())
       btm_acl_pkt_types_supported |=
           (HCI_PKT_TYPES_MASK_NO_2_DH5 + HCI_PKT_TYPES_MASK_NO_3_DH5);
   }
@@ -467,7 +467,7 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
                                 &p_acl->active_remote_addr_type);
 
     if (controller_get_interface()
-            ->supports_ble_peripheral_initiated_feature_exchange() ||
+            ->SupportsBlePeripheralInitiatedFeaturesExchange() ||
         link_role == HCI_ROLE_CENTRAL) {
       btsnd_hcic_ble_read_remote_feat(p_acl->hci_handle);
     } else {
@@ -566,7 +566,7 @@ tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, tHCI_ROLE* p_role) {
  *
  ******************************************************************************/
 tBTM_STATUS BTM_SwitchRoleToCentral(const RawAddress& remote_bd_addr) {
-  if (!controller_get_interface()->supports_role_switch()) {
+  if (!controller_get_interface()->SupportsRoleSwitch()) {
     LOG_INFO("Local controller does not support role switching");
     return BTM_MODE_UNSUPPORTED;
   }
@@ -706,22 +706,20 @@ static void check_link_policy(tLINK_POLICY* settings) {
   const controller_t* controller = controller_get_interface();
 
   if ((*settings & HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH) &&
-      (!controller->supports_role_switch())) {
+      (!controller->SupportsRoleSwitch())) {
     *settings &= (~HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH);
     LOG_INFO("Role switch not supported (settings: 0x%04x)", *settings);
   }
-  if ((*settings & HCI_ENABLE_HOLD_MODE) &&
-      (!controller->supports_hold_mode())) {
+  if ((*settings & HCI_ENABLE_HOLD_MODE) && (!controller->SupportsHoldMode())) {
     *settings &= (~HCI_ENABLE_HOLD_MODE);
     LOG_INFO("hold not supported (settings: 0x%04x)", *settings);
   }
   if ((*settings & HCI_ENABLE_SNIFF_MODE) &&
-      (!controller->supports_sniff_mode())) {
+      (!controller->SupportsSniffMode())) {
     *settings &= (~HCI_ENABLE_SNIFF_MODE);
     LOG_INFO("sniff not supported (settings: 0x%04x)", *settings);
   }
-  if ((*settings & HCI_ENABLE_PARK_MODE) &&
-      (!controller->supports_park_mode())) {
+  if ((*settings & HCI_ENABLE_PARK_MODE) && (!controller->SupportsParkMode())) {
     *settings &= (~HCI_ENABLE_PARK_MODE);
     LOG_INFO("park not supported (settings: 0x%04x)", *settings);
   }

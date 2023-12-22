@@ -776,11 +776,10 @@ void l2cu_send_peer_config_rej(tL2C_CCB* p_ccb, uint8_t* p_data,
   const controller_t* controller = controller_get_interface();
 
 /* Put in HCI header - handle + pkt boundary */
-  if (controller->supports_non_flushable_pb()) {
+  if (controller->SupportsNonFlushablePb()) {
     UINT16_TO_STREAM(p, (p_ccb->p_lcb->Handle() | (L2CAP_PKT_START_NON_FLUSHABLE
                                                    << L2CAP_PKT_TYPE_SHIFT)));
-  } else
-  {
+  } else {
     UINT16_TO_STREAM(p, (p_ccb->p_lcb->Handle() |
                          (L2CAP_PKT_START << L2CAP_PKT_TYPE_SHIFT)));
   }
@@ -2065,7 +2064,7 @@ void l2cu_device_reset(void) {
 /* This function initiates an acl connection to a LE device.
  * Returns true if request started successfully, false otherwise. */
 bool l2cu_create_conn_le(tL2C_LCB* p_lcb) {
-  if (!controller_get_interface()->supports_ble()) return false;
+  if (!controller_get_interface()->SupportsBle()) return false;
   p_lcb->transport = BT_TRANSPORT_LE;
   return (l2cble_create_conn(p_lcb));
 }
@@ -2073,7 +2072,7 @@ bool l2cu_create_conn_le(tL2C_LCB* p_lcb) {
 /* This function initiates an acl connection to a Classic device via HCI. */
 void l2cu_create_conn_br_edr(tL2C_LCB* p_lcb) {
   const bool controller_supports_role_switch =
-      controller_get_interface()->supports_role_switch();
+      controller_get_interface()->SupportsRoleSwitch();
 
   /* While creating a new classic connection, check check all the other
    * active connections where we are not SCO nor central.

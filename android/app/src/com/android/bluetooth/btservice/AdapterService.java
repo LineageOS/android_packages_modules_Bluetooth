@@ -6995,6 +6995,11 @@ public class AdapterService extends Service {
             return null;
         }
 
+        // LE_AUDIO_BROADCAST is not associated with a service and use LE_AUDIO's Binder
+        if (profileId == BluetoothProfile.LE_AUDIO_BROADCAST) {
+            profileId = BluetoothProfile.LE_AUDIO;
+        }
+
         ProfileService profile = mStartedProfiles.get(profileId);
         if (profile != null) {
             return profile.getBinder();

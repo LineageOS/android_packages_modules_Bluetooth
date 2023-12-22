@@ -23,11 +23,8 @@
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/main_thread.h"
-#include "stack/test/common/mock_eatt.h"
 #undef LOG_TAG
 #include "stack/gatt/gatt_sr.cc"
-#include "test/common/mock_functions.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 #define MAX_UINT16 ((uint16_t)0xffff)
