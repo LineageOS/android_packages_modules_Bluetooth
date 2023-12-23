@@ -20,6 +20,7 @@
 #include <sys/stat.h>
 
 #include <memory>
+#include <vector>
 
 #include "a2dp_encoding.h"
 #include "btif_a2dp_source.h"

@@ -22,6 +22,7 @@
 
 #include <base/logging.h>
 
+#include "include/check.h"
 #include "osi/include/future.h"
 #include "osi/include/log.h"
 

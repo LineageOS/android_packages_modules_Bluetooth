@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <unordered_map>
+#include <vector>
 
 #include "hci/acl_manager/classic_acl_connection.h"
 #include "hci/address.h"

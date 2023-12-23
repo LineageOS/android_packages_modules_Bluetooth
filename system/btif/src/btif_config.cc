@@ -24,35 +24,23 @@
 #include <openssl/rand.h>
 #include <unistd.h>
 
-#include <cctype>
 #include <cstdio>
 #include <cstring>
 #include <ctime>
-#include <functional>
 #include <mutex>
-#include <sstream>
 #include <string>
 #include <unordered_map>
 
-#include "btcore/include/module.h"
-#include "btif_api.h"
-#include "btif_common.h"
 #include "btif_config_cache.h"
 #include "btif_keystore.h"
 #include "btif_metrics_logging.h"
 #include "common/address_obfuscator.h"
 #include "common/metric_id_allocator.h"
+#include "include/check.h"
 #include "main/shim/config.h"
 #include "main/shim/shim.h"
-#include "osi/include/alarm.h"
-#include "osi/include/allocator.h"
-#include "osi/include/compat.h"
-#include "osi/include/config.h"
-#include "osi/include/log.h"
-#include "osi/include/osi.h"
-#include "osi/include/properties.h"
+#include "os/log.h"
 #include "raw_address.h"
-#include "stack/include/bt_octets.h"
 
 #define TEMPORARY_SECTION_CAPACITY 10000
 

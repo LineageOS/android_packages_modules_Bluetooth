@@ -24,8 +24,6 @@
 #define BUILDCFG
 #endif
 
-#include "stack/include/bt_types.h" /* This must be defined AFTER buildcfg.h */
-
 #ifndef FALSE
 #define FALSE false
 #endif
@@ -865,7 +863,5 @@
  * Tracing:  Include trace header file here.
  *
  *****************************************************************************/
-
-#include "internal_include/bt_trace.h"
 
 #endif /* BT_TARGET_H */

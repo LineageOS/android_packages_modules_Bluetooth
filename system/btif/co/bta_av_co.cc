@@ -35,6 +35,7 @@
 #include "btif/include/btif_a2dp_source.h"
 #include "btif/include/btif_av.h"
 #include "device/include/device_iot_config.h"
+#include "include/check.h"
 #include "include/hardware/bt_av.h"
 #include "internal_include/bt_trace.h"
 #include "osi/include/allocator.h"

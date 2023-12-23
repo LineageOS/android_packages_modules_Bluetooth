@@ -20,6 +20,7 @@
 
 #include <cstdint>
 
+#include "include/check.h"
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/main_thread.h"

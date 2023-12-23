@@ -16,6 +16,8 @@
  */
 #pragma once
 
+#include <vector>
+
 #include "base/functional/callback.h"
 #include "bind_helpers.h"
 #include "bta/include/bta_groups.h"

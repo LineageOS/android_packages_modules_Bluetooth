@@ -30,6 +30,7 @@
 #include <base/logging.h>
 
 #include <cstdint>
+#include <vector>
 
 #include "bta/dm/bta_dm_disc.h"
 #include "bta/dm/bta_dm_gatt_client.h"
@@ -43,6 +44,7 @@
 #include "btif/include/stack_manager.h"
 #include "device/include/controller.h"
 #include "include/bind_helpers.h"
+#include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/acl_api.h"
 #include "main/shim/btm_api.h"

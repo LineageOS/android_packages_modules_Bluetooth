@@ -18,6 +18,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include "internal_include/bt_target.h"
 #include "internal_include/bt_trace.h"

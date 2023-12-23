@@ -17,6 +17,8 @@
 #pragma once
 
 #include <set>
+#include <vector>
+
 #include "vendor_packet.h"
 
 namespace bluetooth {

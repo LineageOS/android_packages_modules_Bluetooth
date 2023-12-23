@@ -16,13 +16,13 @@
 
 #include "btif_config_cache.h"
 
+#include <base/logging.h>
+
 #include <limits>
+#include <unordered_set>
 #include <vector>
 
-#include "stack/include/bt_octets.h"
 #include "types/raw_address.h"
-
-#include <base/logging.h>
 
 namespace {
 

@@ -21,6 +21,10 @@
 #include <android/binder_manager.h>
 #include <android_bluetooth_flags.h>
 
+#include <vector>
+
+#include "include/check.h"
+
 namespace bluetooth {
 namespace audio {
 namespace aidl {

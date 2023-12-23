@@ -27,6 +27,7 @@
 
 #include <cstdint>
 
+#include "include/check.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"  // UNUSED_ATTR

@@ -45,6 +45,7 @@
 #include "btif_common.h"
 #include "btif_util.h"
 #include "device/include/interop.h"
+#include "include/check.h"
 #include "os/log.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"

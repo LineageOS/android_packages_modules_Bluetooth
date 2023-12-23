@@ -38,7 +38,7 @@
 
 #include "btif/include/stack_manager.h"
 #include "btif_common.h"
-#include "main/shim/dumpsys.h"
+#include "include/check.h"
 #include "types/raw_address.h"
 
 /*******************************************************************************

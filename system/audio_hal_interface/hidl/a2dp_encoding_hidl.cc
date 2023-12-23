@@ -17,6 +17,8 @@
 
 #include "a2dp_encoding_hidl.h"
 
+#include <vector>
+
 #include "a2dp_sbc_constants.h"
 #include "btif_a2dp_source.h"
 #include "btif_av.h"
@@ -24,7 +26,6 @@
 #include "btif_hf.h"
 #include "client_interface_hidl.h"
 #include "codec_status_hidl.h"
-#include "osi/include/log.h"
 #include "osi/include/properties.h"
 #include "types/raw_address.h"
 

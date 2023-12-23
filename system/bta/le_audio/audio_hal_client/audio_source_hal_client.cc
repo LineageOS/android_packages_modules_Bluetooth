@@ -25,8 +25,9 @@
 #include "audio_hal_interface/le_audio_software.h"
 #include "audio_source_hal_asrc.h"
 #include "bta/le_audio/codec_manager.h"
+#include "common/repeating_timer.h"
 #include "common/time_util.h"
-#include "osi/include/log.h"
+#include "os/log.h"
 #include "osi/include/wakelock.h"
 #include "stack/include/main_thread.h"
 

@@ -16,6 +16,8 @@
 
 #include "bluetooth_audio_port_impl.h"
 
+#include <vector>
+
 #include "btif/include/btif_common.h"
 #include "common/stop_watch_legacy.h"
 

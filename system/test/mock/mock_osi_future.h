@@ -26,6 +26,7 @@
 // Original included files, if any
 #include <base/logging.h>
 
+#include "include/check.h"
 #include "osi/include/future.h"
 
 // Mocked compile conditionals, if any
