@@ -359,6 +359,39 @@ class Bluetooth(object):
     def write_characteristic(self, address, handle, write_type, auth_req, value):
         return self.gatt_client.write_characteristic(address, handle, write_type, auth_req, value)
 
+    def set_mps_qualification_enabled(self, enable):
+        return self.telephony_client.set_mps_qualification_enabled(enable)
+
+    def incoming_call(self, number):
+        return self.telephony_client.incoming_call(number)
+
+    def set_phone_ops_enabled(self, enable):
+        return self.telephony_client.set_phone_ops_enabled(enable)
+
+    def dial_call(self, number):
+        return self.telephony_client.dialing_call(number)
+
+    def answer_call(self):
+        return self.telephony_client.answer_call()
+
+    def swap_active_call(self):
+        return self.telephony_client.hold_active_accept_held()
+
+    def set_last_call(self, number=None):
+        return self.telephony_client.set_last_call(number)
+
+    def set_memory_call(self, number=None):
+        return self.telephony_client.set_memory_call(number)
+
+    def get_connected_audio_devices(self):
+        return self.media_client.devices
+
+    def audio_connect(self, address):
+        return self.telephony_client.audio_connect(address)
+
+    def audio_disconnect(self, address):
+        return self.telephony_client.audio_disconnect(address)
+
     def gatt_connect(self, address, is_direct, transport):
         return self.gatt_client.connect_client(address, is_direct, transport)
 
