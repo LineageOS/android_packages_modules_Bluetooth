@@ -392,6 +392,12 @@ class Bluetooth(object):
     def audio_disconnect(self, address):
         return self.telephony_client.audio_disconnect(address)
 
+    def hangup_call(self):
+        return self.telephony_client.hangup_call()
+
+    def set_battery_level(self, battery_level):
+        return self.telephony_client.set_battery_level(battery_level)
+
     def gatt_connect(self, address, is_direct, transport):
         return self.gatt_client.connect_client(address, is_direct, transport)
 
