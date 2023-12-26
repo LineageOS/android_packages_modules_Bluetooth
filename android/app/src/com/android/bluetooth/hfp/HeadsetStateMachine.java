@@ -36,6 +36,7 @@ import android.os.Build;
 import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
+import android.os.SystemProperties;
 import android.os.UserHandle;
 import android.telephony.PhoneNumberUtils;
 import android.telephony.PhoneStateListener;
@@ -48,6 +49,7 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
@@ -165,6 +167,10 @@ public class HeadsetStateMachine extends StateMachine {
     private int mAudioDisconnectRetry = 0;
 
     private BluetoothSinkAudioPolicy mHsClientAudioPolicy;
+
+    static final boolean IS_APTX_SUPPORT_ENABLED =
+            Flags.hfpCodecAptxVoice()
+                    && SystemProperties.getBoolean("bluetooth.hfp.codec_aptx_voice.enabled", false);
 
     // Keys are AT commands, and values are the company IDs.
     private static final Map<String, Integer> VENDOR_SPECIFIC_AT_COMMAND_COMPANY_ID;
@@ -1685,8 +1691,10 @@ public class HeadsetStateMachine extends StateMachine {
                         + (" hasSwbEnabled=" + mHasSwbLc3Enabled)
                         + (" hasAptXSwbEnabled=" + mHasSwbAptXEnabled));
         am.setParameters("bt_lc3_swb=" + (mHasSwbLc3Enabled ? "on" : "off"));
-        /* AptX bt_swb: 0 -> on, 65535 -> off */
-        am.setParameters("bt_swb=" + (mHasSwbAptXEnabled ? "0" : "65535"));
+        if (IS_APTX_SUPPORT_ENABLED) {
+            /* AptX bt_swb: 0 -> on, 65535 -> off */
+            am.setParameters("bt_swb=" + (mHasSwbAptXEnabled ? "0" : "65535"));
+        }
         am.setBluetoothHeadsetProperties(getCurrentDeviceName(), mHasNrecEnabled, mHasWbsEnabled);
     }
 

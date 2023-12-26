@@ -19,6 +19,7 @@ package com.android.bluetooth.hfp;
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 
 import static org.mockito.Mockito.*;
+import static org.junit.Assume.assumeTrue;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -36,7 +37,9 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.os.HandlerThread;
+import android.os.SystemProperties;
 import android.os.UserHandle;
+import android.platform.test.annotations.RequiresFlagsEnabled;
 import android.provider.CallLog;
 import android.provider.CallLog.Calls;
 import android.telephony.PhoneNumberUtils;
@@ -55,6 +58,7 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.RemoteDevices;
 import com.android.bluetooth.btservice.SilenceDeviceManager;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.bluetooth.flags.Flags;
 
 import org.hamcrest.core.IsInstanceOf;
 import org.junit.After;
@@ -1613,7 +1617,9 @@ public class HeadsetStateMachineTest {
 
     /** Test setting audio parameters according to received SWB event. SWB AptX is enabled. */
     @Test
+    @RequiresFlagsEnabled(Flags.FLAG_HFP_CODEC_APTX_VOICE)
     public void testSetAudioParameters_SwbAptxEnabled() {
+        assumeTrue(SystemProperties.getBoolean("bluetooth.hfp.codec_aptx_voice.enabled", false));
         setUpConnectedState();
         mHeadsetStateMachine.sendMessage(
                 HeadsetStateMachine.STACK_EVENT,
@@ -1683,8 +1689,11 @@ public class HeadsetStateMachineTest {
     private void verifyAudioSystemSetParametersInvocation(boolean lc3Enabled, boolean aptxEnabled) {
         verify(mAudioManager, timeout(ASYNC_CALL_TIMEOUT_MILLIS))
                 .setParameters(lc3Enabled ? "bt_lc3_swb=on" : "bt_lc3_swb=off");
-        verify(mAudioManager, timeout(ASYNC_CALL_TIMEOUT_MILLIS))
-                .setParameters(aptxEnabled ? "bt_swb=0" : "bt_swb=65535");
+
+        if (mHeadsetStateMachine.IS_APTX_SUPPORT_ENABLED) {
+            verify(mAudioManager, timeout(ASYNC_CALL_TIMEOUT_MILLIS))
+                    .setParameters(aptxEnabled ? "bt_swb=0" : "bt_swb=65535");
+        }
     }
 
     /**
