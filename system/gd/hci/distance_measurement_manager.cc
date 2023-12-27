@@ -75,8 +75,13 @@ struct DistanceMeasurementManager::impl {
     uint16_t counter;
     // Number of antenna paths (1 to 4) reported in the procedure
     uint8_t num_antenna_paths;
+    // Frequency Compensation indicates fractional frequency offset (FFO) value of initiator, in
+    // 0.01ppm
+    std::vector<uint16_t> frequency_compensation;
     // The channel indices of every step in a CS procedure (in time order)
     std::vector<uint8_t> step_channel;
+    // Measured Frequency Offset from mode 0, relative to the remote device, in 0.01ppm
+    std::vector<uint16_t> measured_freq_offset;
     // Initiator's PCT (complex value) measured from mode-2 or mode-3 steps in a CS procedure (in
     // time order)
     std::vector<std::vector<std::complex<double>>> tone_pct_initiator;
@@ -526,6 +531,7 @@ struct DistanceMeasurementManager::impl {
     uint8_t abort_reason = kReportWithNoAbort;
     CsProcedureDoneStatus procedure_done_status;
     CsSubeventDoneStatus subevent_done_status;
+    std::vector<LeCsResultDataStructure> result_data_structures;
     if (event.GetSubeventCode() == SubeventCode::LE_CS_SUBEVENT_RESULT) {
       auto cs_event_result = LeCsSubeventResultView::Create(event);
       if (!cs_event_result.IsValid()) {
@@ -536,11 +542,18 @@ struct DistanceMeasurementManager::impl {
       abort_reason = cs_event_result.GetAbortReason();
       procedure_done_status = cs_event_result.GetProcedureDoneStatus();
       subevent_done_status = cs_event_result.GetSubeventDoneStatus();
+      result_data_structures = cs_event_result.GetResultDataStructures();
       init_cs_procedure_data(
           connection_handle,
           cs_event_result.GetProcedureCounter(),
           cs_event_result.GetNumAntennaPaths(),
           true);
+      CsProcedureData* procedure_data =
+          get_procedure_data(connection_handle, cs_event_result.GetProcedureCounter());
+      if (procedure_data != nullptr && cs_trackers_[connection_handle].role == CsRole::INITIATOR) {
+        procedure_data->frequency_compensation.push_back(
+            cs_event_result.GetFrequencyCompensation());
+      }
     } else {
       auto cs_event_result = LeCsSubeventResultContinueView::Create(event);
       if (!cs_event_result.IsValid()) {
@@ -551,6 +564,7 @@ struct DistanceMeasurementManager::impl {
       abort_reason = cs_event_result.GetAbortReason();
       procedure_done_status = cs_event_result.GetProcedureDoneStatus();
       subevent_done_status = cs_event_result.GetSubeventDoneStatus();
+      result_data_structures = cs_event_result.GetResultDataStructures();
     }
 
     uint16_t counter = cs_trackers_[connection_handle].local_counter;
@@ -581,8 +595,10 @@ struct DistanceMeasurementManager::impl {
       // Even the procedure is aborted, we should keep following process and
       // handle it when all corresponding remote data received.
       procedure_data->aborted = true;
+    } else {
+      parse_cs_result_data(
+          result_data_structures, *procedure_data, cs_trackers_[connection_handle].role);
     }
-
     // Update procedure status
     procedure_data->local_status = procedure_done_status;
     check_cs_procedure_complete(procedure_data, connection_handle);
@@ -656,6 +672,74 @@ struct DistanceMeasurementManager::impl {
         data_list.erase(data_list.begin());
       }
     }
+  }
+
+  void parse_cs_result_data(
+      std::vector<LeCsResultDataStructure> result_data_structures,
+      CsProcedureData& procedure_data,
+      CsRole role) {
+    for (auto result_data_structure : result_data_structures) {
+      uint16_t mode = result_data_structure.step_mode_;
+      LOG_VERBOSE(
+          "mode: %d, channel: %d, data_length: %d",
+          mode,
+          result_data_structure.step_channel_,
+          (uint16_t)result_data_structure.step_data_.size());
+      PacketView<kLittleEndian> packet_bytes_view(
+          std::make_shared<std::vector<uint8_t>>(result_data_structure.step_data_));
+      switch (mode) {
+        case 0: {
+          if (role == CsRole::INITIATOR) {
+            LeCsMode0InitatorData tone_data_view;
+            auto after = LeCsMode0InitatorData::Parse(&tone_data_view, packet_bytes_view.begin());
+            if (after == packet_bytes_view.begin()) {
+              LOG_WARN("Received invalid mode %d data, role:%s", mode, CsRoleText(role).c_str());
+              print_raw_data(result_data_structure.step_data_);
+              continue;
+            }
+            LOG_VERBOSE("step_data: %s", tone_data_view.ToString().c_str());
+            procedure_data.measured_freq_offset.push_back(tone_data_view.measured_freq_offset_);
+          } else {
+            LeCsMode0ReflectorData tone_data_view;
+            auto after = LeCsMode0ReflectorData::Parse(&tone_data_view, packet_bytes_view.begin());
+            if (after == packet_bytes_view.begin()) {
+              LOG_WARN("Received invalid mode %d data, role:%s", mode, CsRoleText(role).c_str());
+              print_raw_data(result_data_structure.step_data_);
+              continue;
+            }
+            LOG_VERBOSE("step_data: %s", tone_data_view.ToString().c_str());
+          }
+        } break;
+        case 1:
+        case 2:
+        case 3:
+          LOG_DEBUG("Unsupported mode: %d ", mode);
+          break;
+        default: {
+          LOG_WARN("Invalid mode %d ", mode);
+        }
+      }
+    }
+  }
+
+  void print_raw_data(std::vector<uint8_t> raw_data) {
+    std::string raw_data_str = "";
+    auto for_end = raw_data.size() - 1;
+    for (size_t i = 0; i < for_end; i++) {
+      char buff[10];
+      snprintf(buff, sizeof(buff), "%02x ", (uint8_t)raw_data[i]);
+      std::string buffAsStdStr = buff;
+      raw_data_str.append(buffAsStdStr);
+      if (i % 100 == 0 && i != 0) {
+        LOG_VERBOSE("%s", raw_data_str.c_str());
+        raw_data_str = "";
+      }
+    }
+    char buff[10];
+    snprintf(buff, sizeof(buff), "%02x", (uint8_t)raw_data[for_end]);
+    std::string buffAsStdStr = buff;
+    raw_data_str.append(buffAsStdStr);
+    LOG_VERBOSE("%s", raw_data_str.c_str());
   }
 
   void on_read_remote_transmit_power_level_status(Address address, CommandStatusView view) {
