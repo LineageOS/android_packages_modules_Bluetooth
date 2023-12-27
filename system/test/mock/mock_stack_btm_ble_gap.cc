@@ -217,38 +217,6 @@ void btm_send_hci_set_scan_params(uint8_t /* scan_type */,
                                   uint8_t /* scan_filter_policy */) {
   inc_func_call_count(__func__);
 }
-void BTM_BleStartPeriodicSync(uint8_t /* adv_sid */, RawAddress /* address */,
-                              uint16_t /* skip */, uint16_t /* timeout */,
-                              StartSyncCb /* syncCb */,
-                              SyncReportCb /* reportCb */,
-                              SyncLostCb /* lostCb */) {
-  inc_func_call_count(__func__);
-}
-void BTM_BleStopPeriodicSync(uint16_t /* handle */) {
-  inc_func_call_count(__func__);
-}
-void BTM_BleCancelPeriodicSync(uint8_t /* adv_sid */,
-                               RawAddress /* address */) {
-  inc_func_call_count(__func__);
-}
-void BTM_BlePeriodicSyncTransfer(RawAddress /* addr */,
-                                 uint16_t /* service_data */,
-                                 uint16_t /* sync_handle */,
-                                 SyncTransferCb /* cb */) {
-  inc_func_call_count(__func__);
-}
-void BTM_BlePeriodicSyncSetInfo(RawAddress /* addr */,
-                                uint16_t /* service_data */,
-                                uint8_t /* adv_handle */,
-                                SyncTransferCb /* cb */) {
-  inc_func_call_count(__func__);
-}
-void BTM_BlePeriodicSyncTxParameters(RawAddress /* addr */, uint8_t /* mode */,
-                                     uint16_t /* skip */,
-                                     uint16_t /* timeout */,
-                                     StartSyncCb /* syncCb */) {
-  inc_func_call_count(__func__);
-}
 void btm_ble_periodic_adv_sync_tx_rcvd(const uint8_t* /* p */,
                                        uint16_t /* param_len */) {
   inc_func_call_count(__func__);
