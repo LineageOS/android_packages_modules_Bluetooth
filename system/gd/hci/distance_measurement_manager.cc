@@ -65,10 +65,15 @@ struct DistanceMeasurementManager::impl {
         : counter(procedure_counter), num_antenna_paths(num_antenna_paths) {
       local_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
       remote_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
-      for (uint8_t i = 0; i < num_antenna_paths; i++) {
+      // In ascending order of antenna position with tone extension data at the end
+      uint16_t num_tone_data = num_antenna_paths + 1;
+      for (uint8_t i = 0; i < num_tone_data; i++) {
         std::vector<std::complex<double>> empty_complex_vector;
         tone_pct_initiator.push_back(empty_complex_vector);
         tone_pct_reflector.push_back(empty_complex_vector);
+        std::vector<uint8_t> empty_vector;
+        tone_quality_indicator_initiator.push_back(empty_vector);
+        tone_quality_indicator_reflector.push_back(empty_vector);
       }
     }
     // Procedure counter
@@ -88,6 +93,8 @@ struct DistanceMeasurementManager::impl {
     // Reflector's PCT (complex value) measured from mode-2 or mode-3 steps in a CS procedure (in
     // time order)
     std::vector<std::vector<std::complex<double>>> tone_pct_reflector;
+    std::vector<std::vector<uint8_t>> tone_quality_indicator_initiator;
+    std::vector<std::vector<uint8_t>> tone_quality_indicator_reflector;
     CsProcedureDoneStatus local_status;
     CsProcedureDoneStatus remote_status;
     // If the procedure is aborted by either the local or remote side.
@@ -678,15 +685,29 @@ struct DistanceMeasurementManager::impl {
       std::vector<LeCsResultDataStructure> result_data_structures,
       CsProcedureData& procedure_data,
       CsRole role) {
+    uint8_t num_antenna_paths = procedure_data.num_antenna_paths;
     for (auto result_data_structure : result_data_structures) {
       uint16_t mode = result_data_structure.step_mode_;
+      uint16_t step_channel = result_data_structure.step_channel_;
       LOG_VERBOSE(
           "mode: %d, channel: %d, data_length: %d",
           mode,
-          result_data_structure.step_channel_,
+          step_channel,
           (uint16_t)result_data_structure.step_data_.size());
+
+      // Parse data as packetView
+      std::vector<uint8_t> packet_bytes = {};
+      if (mode == 0x02 || mode == 0x03) {
+        // Add one byte for the length of Tone_PCT[k], Tone_Quality_Indicator[k]
+        packet_bytes.emplace_back(num_antenna_paths + 1);
+      }
+      packet_bytes.reserve(packet_bytes.size() + result_data_structure.step_data_.size());
+      packet_bytes.insert(
+          packet_bytes.end(),
+          result_data_structure.step_data_.begin(),
+          result_data_structure.step_data_.end());
       PacketView<kLittleEndian> packet_bytes_view(
-          std::make_shared<std::vector<uint8_t>>(result_data_structure.step_data_));
+          std::make_shared<std::vector<uint8_t>>(packet_bytes));
       switch (mode) {
         case 0: {
           if (role == CsRole::INITIATOR) {
@@ -710,8 +731,42 @@ struct DistanceMeasurementManager::impl {
             LOG_VERBOSE("step_data: %s", tone_data_view.ToString().c_str());
           }
         } break;
+        case 2: {
+          LeCsMode2Data tone_data_view;
+          auto after = LeCsMode2Data::Parse(&tone_data_view, packet_bytes_view.begin());
+          if (after == packet_bytes_view.begin()) {
+            LOG_WARN("Received invalid mode %d data, role:%s", mode, CsRoleText(role).c_str());
+            print_raw_data(result_data_structure.step_data_);
+            continue;
+          }
+          LOG_VERBOSE("step_data: %s", tone_data_view.ToString().c_str());
+          if (role == CsRole::INITIATOR) {
+            procedure_data.step_channel.push_back(step_channel);
+          }
+          auto tone_data = tone_data_view.tone_data_;
+          uint8_t permutation_index = tone_data_view.antenna_permutation_index_;
+          // Parse in ascending order of antenna position with tone extension data at the end
+          uint16_t num_tone_data = num_antenna_paths + 1;
+          for (uint16_t k = 0; k < num_tone_data; k++) {
+            uint8_t antenna_path = k == num_antenna_paths
+                                       ? num_antenna_paths
+                                       : cs_antenna_permutation_array_[permutation_index][k] - 1;
+            double i_value = get_iq_value(tone_data[k].i_sample_);
+            double q_value = get_iq_value(tone_data[k].q_sample_);
+            uint8_t tone_quality_indicator = tone_data[k].tone_quality_indicator_;
+            LOG_VERBOSE("antenna_path %d, %f, %f", (uint16_t)(antenna_path + 1), i_value, q_value);
+            if (role == CsRole::INITIATOR) {
+              procedure_data.tone_pct_initiator[antenna_path].emplace_back(i_value, q_value);
+              procedure_data.tone_quality_indicator_initiator[antenna_path].emplace_back(
+                  tone_quality_indicator);
+            } else {
+              procedure_data.tone_pct_reflector[antenna_path].emplace_back(i_value, q_value);
+              procedure_data.tone_quality_indicator_reflector[antenna_path].emplace_back(
+                  tone_quality_indicator);
+            }
+          }
+        } break;
         case 1:
-        case 2:
         case 3:
           LOG_DEBUG("Unsupported mode: %d ", mode);
           break;
@@ -720,6 +775,21 @@ struct DistanceMeasurementManager::impl {
         }
       }
     }
+  }
+
+  double get_iq_value(uint16_t sample) {
+    int16_t signed_sample = convert_to_signed(sample, 12);
+    double value = 1.0 * signed_sample / 2048;
+    return value;
+  }
+
+  int16_t convert_to_signed(uint16_t num_unsigned, uint8_t bits) {
+    unsigned msb_mask = 1 << (bits - 1);  // setup a mask for most significant bit
+    int16_t num_signed = num_unsigned;
+    if ((num_signed & msb_mask) != 0) {
+      num_signed |= ~(msb_mask - 1);  // extend the MSB
+    }
+    return num_signed;
   }
 
   void print_raw_data(std::vector<uint8_t> raw_data) {
@@ -896,6 +966,12 @@ struct DistanceMeasurementManager::impl {
   std::unordered_map<uint16_t, CsTracker> cs_trackers_;
   DistanceMeasurementCallbacks* distance_measurement_callbacks_;
   CsOptionalSubfeaturesSupported cs_subfeature_supported_;
+  // Antenna path permutations. See Channel Sounding CR_PR for the details.
+  uint8_t cs_antenna_permutation_array_[24][4] = {
+      {1, 2, 3, 4}, {2, 1, 3, 4}, {1, 3, 2, 4}, {3, 1, 2, 4}, {3, 2, 1, 4}, {2, 3, 1, 4},
+      {1, 2, 4, 3}, {2, 1, 4, 3}, {1, 4, 2, 3}, {4, 1, 2, 3}, {4, 2, 1, 3}, {2, 4, 1, 3},
+      {1, 4, 3, 2}, {4, 1, 3, 2}, {1, 3, 4, 2}, {3, 1, 4, 2}, {3, 4, 1, 2}, {4, 3, 1, 2},
+      {4, 2, 3, 1}, {2, 4, 3, 1}, {4, 3, 2, 1}, {3, 4, 2, 1}, {3, 2, 4, 1}, {2, 3, 4, 1}};
 };
 
 DistanceMeasurementManager::DistanceMeasurementManager() {

@@ -6792,6 +6792,18 @@ struct LeCsMode0ReflectorData {
   packet_antenna : 8,
 }
 
+struct LeCsToneDataWithQuality {
+  i_sample : 12,
+  q_sample : 12,
+  tone_quality_indicator : 8,
+}
+
+struct LeCsMode2Data {
+  _count_(tone_data) : 8,
+  antenna_permutation_index : 8,
+  tone_data : LeCsToneDataWithQuality[],
+}
+
 enum CsProcedureDoneStatus : 4 {
   ALL_RESULTS_COMPLETE = 0x0,
   PARTIAL_RESULTS = 0x1,
