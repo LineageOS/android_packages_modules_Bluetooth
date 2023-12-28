@@ -77,7 +77,7 @@
     <string name="unknown_file_desc" msgid="9185609398960437760">"इस प्रकार की फ़ाइल प्रबंधित करने के लिए कोई ऐप्लिकेशन नहीं है. \n"</string>
     <string name="not_exist_file" msgid="5097565588949092486">"कोई फ़ाइल नहीं"</string>
     <string name="not_exist_file_desc" msgid="250802392160941265">"फ़ाइल मौजूद नहीं है. \n"</string>
-    <string name="enabling_progress_title" msgid="5262637688863903594">"कृपया प्रतीक्षा करें..."</string>
+    <string name="enabling_progress_title" msgid="5262637688863903594">"कृपया इंतज़ार करें..."</string>
     <string name="enabling_progress_content" msgid="685427201206684584">"ब्लूटूथ चालू कर रहा है…"</string>
     <string name="bt_toast_1" msgid="8791691594887576215">"फ़ाइल मिलेगी. सूचना पैनल में प्रगति देखें."</string>
     <string name="bt_toast_2" msgid="2041575937953174042">"फ़ाइल पाई नहीं जा सकती."</string>

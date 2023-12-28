@@ -18,6 +18,7 @@ package com.android.bluetooth.bass_client;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 
+import static com.android.bluetooth.flags.Flags.leaudioBroadcastFeatureSupport;
 import static com.android.bluetooth.Utils.enforceBluetoothPrivilegedPermission;
 
 import android.bluetooth.BluetoothAdapter;
@@ -137,7 +138,8 @@ public class BassClientService extends ProfileService {
     }
 
     public static boolean isEnabled() {
-        return BluetoothProperties.isProfileBapBroadcastAssistEnabled().orElse(false);
+        return leaudioBroadcastFeatureSupport()
+                && BluetoothProperties.isProfileBapBroadcastAssistEnabled().orElse(false);
     }
 
     void updatePeriodicAdvertisementResultMap(
