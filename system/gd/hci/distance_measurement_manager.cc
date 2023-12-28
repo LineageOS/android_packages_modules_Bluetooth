@@ -15,6 +15,7 @@
  */
 #include "hci/distance_measurement_manager.h"
 
+#include <android_bluetooth_flags.h>
 #include <math.h>
 
 #include <unordered_map>
@@ -64,6 +65,10 @@ struct DistanceMeasurementManager::impl {
     hci_layer_->RegisterLeEventHandler(
         hci::SubeventCode::TRANSMIT_POWER_REPORTING,
         handler_->BindOn(this, &impl::on_transmit_power_reporting));
+    if (!IS_FLAG_ENABLED(channel_sounding)) {
+      LOG_INFO("IS_FLAG_ENABLED channel_sounding: false");
+      return;
+    }
     distance_measurement_interface_ = hci_layer_->GetDistanceMeasurementInterface(
         handler_->BindOn(this, &DistanceMeasurementManager::impl::handle_event));
     distance_measurement_interface_->EnqueueCommand(
@@ -122,6 +127,13 @@ struct DistanceMeasurementManager::impl {
         "connection_handle: %d, address: %s",
         connection_handle,
         ADDRESS_TO_LOGGABLE_CSTR(cs_remote_address));
+    if (!IS_FLAG_ENABLED(channel_sounding)) {
+      LOG_ERROR("Channel Sounding is not enabled");
+      distance_measurement_callbacks_->OnDistanceMeasurementStartFail(
+          cs_remote_address, REASON_INTERNAL_ERROR, METHOD_CS);
+      return;
+    }
+
     if (cs_trackers_.find(connection_handle) != cs_trackers_.end() &&
         cs_trackers_[connection_handle].address != cs_remote_address) {
       LOG_WARN("Remove old tracker for %s ", ADDRESS_TO_LOGGABLE_CSTR(cs_remote_address));
