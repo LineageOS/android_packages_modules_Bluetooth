@@ -31,7 +31,6 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothMapClient;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -44,7 +43,6 @@ import android.test.mock.MockContentProvider;
 import android.test.mock.MockContentResolver;
 import android.util.Log;
 
-import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
@@ -56,7 +54,6 @@ import com.android.vcard.VCardProperty;
 
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -78,7 +75,6 @@ public class MapClientContentTest {
 
     private BluetoothAdapter mAdapter;
     private BluetoothDevice mTestDevice;
-    private Context mTargetContext;
 
     private Handler mHandler;
     private Bmessage mTestMessage1;
@@ -120,17 +116,10 @@ public class MapClientContentTest {
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        mTargetContext = InstrumentationRegistry.getTargetContext();
 
-        // Do not run test if there is no telephony feature (no support for sms)
-        PackageManager packageManager = mTargetContext.getPackageManager();
-        Assume.assumeTrue(packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY));
-
-        mMockSmsContentProvider = Mockito.spy(new FakeContentProvider(mTargetContext));
-
-        mMockMmsContentProvider = Mockito.spy(new FakeContentProvider(mTargetContext));
-        mMockThreadContentProvider = Mockito.spy(new FakeContentProvider(mTargetContext));
-
+        mMockSmsContentProvider = new FakeContentProvider(mMockContext);
+        mMockMmsContentProvider = new FakeContentProvider(mMockContext);
+        mMockThreadContentProvider = new FakeContentProvider(mMockContext);
 
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         mTestDevice = mAdapter.getRemoteDevice("00:01:02:03:04:05");
