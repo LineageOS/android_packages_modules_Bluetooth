@@ -29,6 +29,13 @@ flag {
 }
 
 flag {
+    name: "skip_unknown_robust_caching"
+    namespace: "bluetooth"
+    description: "skip initial DB lookup when robust caching support is UNKNOWN"
+    bug: "317128464"
+}
+
+flag {
     name: "le_scan_parameters_fix"
     namespace: "bluetooth"
     description: "Fix LE scan parameters downgrade during inquiry"
