@@ -26,7 +26,7 @@
 
 #include "btif/include/btif_dm.h"
 #include "btif/include/btif_storage.h"
-#include "btif/include/stack_manager.h"
+#include "btif/include/stack_manager_t.h"
 #include "connection_manager.h"
 #include "device/include/interop.h"
 #include "internal_include/bt_target.h"

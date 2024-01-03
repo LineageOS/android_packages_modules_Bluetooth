@@ -22,7 +22,7 @@
 #include <base/location.h>
 #include <gtest/gtest.h>
 
-#include "btif/include/stack_manager.h"
+#include "btif/include/stack_manager_t.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 

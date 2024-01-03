@@ -63,7 +63,7 @@
 #include "btif/avrcp/avrcp_service.h"
 #include "btif/include/btif_sock.h"
 #include "btif/include/core_callbacks.h"
-#include "btif/include/stack_manager.h"
+#include "btif/include/stack_manager_t.h"
 #include "btif_a2dp.h"
 #include "btif_api.h"
 #include "btif_av.h"

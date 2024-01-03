@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include "btif/include/btif_common.h"
+#include "bta/include/bta_api.h"
 #include "btif/include/core_callbacks.h"
-#include "btif/include/stack_manager.h"
+#include "types/raw_address.h"
 
 void InitializeCoreInterface();
 void CleanCoreInterface();
