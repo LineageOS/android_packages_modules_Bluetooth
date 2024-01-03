@@ -27,7 +27,6 @@
 #include "neighbor/inquiry.h"
 #include "neighbor/page.h"
 #include "os/handler.h"
-#include "security/security_module.h"
 #include "storage/storage_module.h"
 
 namespace bluetooth {
