@@ -28,22 +28,16 @@ cc_library {
         "com.android.btservices",
     ],
     min_sdk_version: "30",
+    shared_libs: [
+        "libstatssocket",
+    ],
+    export_shared_lib_headers: [
+        "libstatssocket",
+    ],
     target: {
-        android: {
-            shared_libs: [
-                "libstatssocket",
-            ],
-            export_shared_lib_headers: [
-                "libstatssocket",
-            ],
-        },
         host: {
             static_libs: [
                 "libbase",
-                "libstatssocket",
-            ],
-            export_static_lib_headers: [
-                "libstatssocket",
             ],
         },
         darwin: {
