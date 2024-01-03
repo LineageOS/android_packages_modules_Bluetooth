@@ -29,6 +29,7 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/hcidefs.h"
+#include "test/mock/mock_main_shim_hci_layer.h"
 
 using bluetooth::hci::IsoManager;
 using testing::_;
@@ -85,7 +86,6 @@ static hci_t interface = {.set_data_cb = set_data_cb,
                           .transmit_command = transmit_command,
                           .transmit_downward = transmit_downward};
 
-const hci_t* hci_layer_get_interface() { return &interface; }
 }  // namespace bluetooth::shim
 
 namespace {
@@ -139,6 +139,8 @@ class IsoManagerTest : public Test {
     bluetooth::shim::SetMockIsoInterface(&iso_interface_);
     hcic::SetMockHcicInterface(&hcic_interface_);
     controller::SetMockControllerInterface(&controller_interface_);
+    bluetooth::shim::testing::hci_layer_set_interface(
+        &bluetooth::shim::interface);
 
     big_callbacks_.reset(new MockBigCallbacks());
     cig_callbacks_.reset(new MockCigCallbacks());
@@ -163,6 +165,7 @@ class IsoManagerTest : public Test {
     bluetooth::shim::SetMockIsoInterface(nullptr);
     hcic::SetMockHcicInterface(nullptr);
     controller::SetMockControllerInterface(nullptr);
+    bluetooth::shim::testing::hci_layer_set_interface(nullptr);
   }
 
   virtual void InitIsoManager() {

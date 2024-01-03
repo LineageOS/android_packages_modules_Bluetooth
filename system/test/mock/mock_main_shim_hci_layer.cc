@@ -26,4 +26,12 @@
 
 // Mocked internal structures, if any
 
-const hci_t* bluetooth::shim::hci_layer_get_interface() { return nullptr; }
+namespace bluetooth::shim {
+namespace testing {
+const hci_t* test_interface = nullptr;
+void hci_layer_set_interface(const hci_t* interface) {
+  test_interface = interface;
+}
+}  // namespace testing
+const hci_t* hci_layer_get_interface() { return testing::test_interface; }
+}  // namespace bluetooth::shim

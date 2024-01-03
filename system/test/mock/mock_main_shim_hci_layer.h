@@ -24,4 +24,10 @@
  */
 
 // Original included files, if any
-#include "main/shim/hci_layer.h"
+#include "hci/include/hci_layer.h"
+
+namespace bluetooth::shim {
+namespace testing {
+void hci_layer_set_interface(const hci_t* interface);
+}
+}  // namespace bluetooth::shim

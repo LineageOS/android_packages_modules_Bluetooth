@@ -1336,12 +1336,17 @@ cc_test {
         "include",
         "test/common",
     ],
+    generated_headers: [
+        "BluetoothGeneratedDumpsysDataSchema_h",
+    ],
     include_dirs: [
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/gd",
     ],
     srcs: [
+        ":TestCommonMockFunctions",
         ":TestCommonStackConfig",
+        ":TestMockMainShim",
         "btm/btm_iso.cc",
         "test/btm_iso_test.cc",
         "test/common/mock_controller.cc",
@@ -1350,9 +1355,12 @@ cc_test {
     ],
     static_libs: [
         "libbluetooth-types",
+        "libbluetooth_hci_pdl",
         "libbt-common",
+        "libbt-platform-protos-lite",
         "libbt_shim_bridge",
         "libchrome",
+        "libflatbuffers-cpp",
         "libgmock",
         "liblog",
         "libosi",
