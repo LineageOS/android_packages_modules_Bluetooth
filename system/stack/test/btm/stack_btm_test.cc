@@ -23,7 +23,6 @@
 
 #include "common/init_flags.h"
 #include "hci/hci_layer_mock.h"
-#include "hci/include/hci_layer.h"
 #include "internal_include/bt_target.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_int_types.h"
@@ -45,8 +44,6 @@ using testing::Eq;
 extern tBTM_CB btm_cb;
 
 tL2C_CB l2cb;
-
-const hci_t* hci_layer_get_interface() { return nullptr; }
 
 const std::string kSmpOptions("mock smp options");
 const std::string kBroadcastAudioConfigOptions(
