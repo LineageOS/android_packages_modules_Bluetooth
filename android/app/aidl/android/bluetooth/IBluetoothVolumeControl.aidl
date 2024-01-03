@@ -75,4 +75,6 @@ oneway interface IBluetoothVolumeControl {
     void registerCallback(in IBluetoothVolumeControlCallback callback, in AttributionSource attributionSource, in SynchronousResultReceiver receiver);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
     void unregisterCallback(in IBluetoothVolumeControlCallback callback, in AttributionSource attributionSource, in SynchronousResultReceiver receiver);
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
+    void notifyNewRegisteredCallback(in IBluetoothVolumeControlCallback callback, in AttributionSource attributionSource, in SynchronousResultReceiver receiver);
 }
