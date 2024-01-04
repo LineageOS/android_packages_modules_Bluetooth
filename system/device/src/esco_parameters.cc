@@ -339,8 +339,8 @@ enh_esco_params_t esco_parameters_for_codec(esco_codec_t codec, bool offload) {
       codecIds = controller->GetLocalSupportedBrEdrCodecIds();
       if (std::find(codecIds.begin(), codecIds.end(), ESCO_CODING_FORMAT_LC3) ==
           codecIds.end()) {
-        LOG_INFO("BT controller does not support LC3 codec, use DSP codec");
         if (codec == ESCO_CODEC_LC3_T1 || codec == ESCO_CODEC_LC3_T2) {
+          LOG_INFO("BT controller does not support LC3 codec, use DSP codec");
           enh_esco_params_t param = default_esco_parameters[codec];
           param.input_coding_format.coding_format = ESCO_CODING_FORMAT_LC3;
           param.output_coding_format.coding_format = ESCO_CODING_FORMAT_LC3;
