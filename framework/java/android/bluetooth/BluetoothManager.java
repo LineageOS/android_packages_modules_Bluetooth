@@ -63,10 +63,7 @@ public final class BluetoothManager {
 
     /** @hide */
     public BluetoothManager(Context context) {
-        mAttributionSource =
-                (context != null)
-                        ? context.getAttributionSource()
-                        : AttributionSource.myAttributionSource();
+        mAttributionSource = context.getAttributionSource();
         mAdapter = BluetoothAdapter.createAdapter(mAttributionSource);
     }
 
