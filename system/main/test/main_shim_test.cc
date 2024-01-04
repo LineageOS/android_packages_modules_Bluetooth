@@ -219,7 +219,6 @@ const shim::legacy::acl_interface_t GetMockAclInterface() {
 struct hci_packet_parser_t;
 const hci_packet_parser_t* hci_packet_parser_get_interface() { return nullptr; }
 struct hci_t;
-const hci_t* hci_layer_get_interface() { return nullptr; }
 struct packet_fragmenter_t;
 const packet_fragmenter_t* packet_fragmenter_get_interface() { return nullptr; }
 
