@@ -1492,6 +1492,16 @@ impl BtifBluetoothCallbacks for Bluetooth {
         variant: BtSspVariant,
         passkey: u32,
     ) {
+        // Accept the Just-Works pairing that we initiated, reject otherwise.
+        if variant == BtSspVariant::Consent {
+            let initiated_by_us = Some(remote_addr.clone()) == self.active_pairing_address;
+            self.set_pairing_confirmation(
+                BluetoothDevice::new(remote_addr.to_string(), remote_name.clone()),
+                initiated_by_us,
+            );
+            return;
+        }
+
         // Currently this supports many agent because we accept many callbacks.
         // TODO(b/274706838): We need a way to select the default agent.
         self.callbacks.for_all_callbacks(|callback| {
