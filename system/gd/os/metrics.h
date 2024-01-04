@@ -121,7 +121,41 @@ void LogMetricA2dpAudioOverrunEvent(
  * @param playback_state A2DP audio playback state, on/off
  * @param audio_coding_mode A2DP audio codec encoding mode, hw/sw
  */
-void LogMetricA2dpPlaybackEvent(const hci::Address& address, int playback_state, int audio_coding_mode);
+void LogMetricA2dpPlaybackEvent(
+    const hci::Address& address, int playback_state, int audio_coding_mode);
+
+/**
+ * Log A2DP audio session metrics
+ *
+ * @param address A2DP device associated with this session
+ * @param audio_duration_ms duration of the A2DP session
+ * @param media_timer_min_ms min time interval for the media timer
+ * @param media_timer_max_ms max time interval for the media timer
+ * @param media_timer_avg_ms avg time interval for the media timer
+ * @param total_scheduling_count total scheduling count
+ * @param buffer_overruns_max_count max count of Tx queue messages dropped
+                                    caused by buffer overruns
+ * @param buffer_overruns_total total count of Tx queue messages dropped
+                                caused by buffer overruns
+ * @param buffer_underruns_average  avg number of bytes short in buffer
+                                    underruns
+ * @param buffer_underruns_count count of buffer underruns
+ * @param codec_index A2DP codec index (SBC=0, AAC=1, etc...)
+ * @param is_a2dp_offload if A2DP is offload
+ */
+void LogMetricA2dpSessionMetricsEvent(
+    const hci::Address& address,
+    int64_t audio_duration_ms,
+    int media_timer_min_ms,
+    int media_timer_max_ms,
+    int media_timer_avg_ms,
+    int total_scheduling_count,
+    int buffer_overruns_max_count,
+    int buffer_overruns_total,
+    float buffer_underruns_average,
+    int buffer_underruns_count,
+    int64_t codec_index,
+    bool is_a2dp_offload);
 
 /**
  * Log HFP audio capture packet loss statistics
