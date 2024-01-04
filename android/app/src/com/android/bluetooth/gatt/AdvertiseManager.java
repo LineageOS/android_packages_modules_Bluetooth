@@ -231,7 +231,7 @@ public class AdvertiseManager {
 
         int appUid = Binder.getCallingUid();
         String packageName = null;
-        if (mService != null && mService.getPackageManager() != null) {
+        if (mService.getPackageManager() != null) {
             packageName = mService.getPackageManager().getNameForUid(appUid);
         }
         if (packageName == null) {
