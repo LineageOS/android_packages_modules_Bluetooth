@@ -113,6 +113,35 @@ struct LogMetricA2dpPlaybackEvent {
     body(raw_address, playback_state, audio_coding_mode);
   };
 };
+extern struct LogMetricA2dpSessionMetricsEvent LogMetricA2dpSessionMetricsEvent;
+// Name: LogMetricA2dpSessionMetricsEvent
+// Params: const RawAddress& raw_address, int playback_state, int
+// audio_coding_mode Returns: void
+struct LogMetricA2dpSessionMetricsEvent {
+  std::function<void(const RawAddress& raw_address, int64_t audio_duration_ms,
+                     int media_timer_min_ms, int media_timer_max_ms,
+                     int media_timer_avg_ms, int total_scheduling_count,
+                     int buffer_overruns_max_count, int buffer_overruns_total,
+                     float buffer_underruns_average, int buffer_underruns_count,
+                     int64_t codec_index, bool is_a2dp_offload)>
+      body{[](const RawAddress& raw_address, int64_t audio_duration_ms,
+              int media_timer_min_ms, int media_timer_max_ms,
+              int media_timer_avg_ms, int total_scheduling_count,
+              int buffer_overruns_max_count, int buffer_overruns_total,
+              float buffer_underruns_average, int buffer_underruns_count,
+              int64_t codec_index, bool is_a2dp_offload) {}};
+  void operator()(const RawAddress& raw_address, int64_t audio_duration_ms,
+                  int media_timer_min_ms, int media_timer_max_ms,
+                  int media_timer_avg_ms, int total_scheduling_count,
+                  int buffer_overruns_max_count, int buffer_overruns_total,
+                  float buffer_underruns_average, int buffer_underruns_count,
+                  int64_t codec_index, bool is_a2dp_offload) {
+    body(raw_address, audio_duration_ms, media_timer_min_ms, media_timer_max_ms,
+         audio_duration_ms, total_scheduling_count, buffer_overruns_max_count,
+         buffer_overruns_total, buffer_underruns_average,
+         buffer_underruns_count, codec_index, is_a2dp_offload);
+  };
+};
 extern struct LogMetricA2dpPlaybackEvent LogMetricA2dpPlaybackEvent;
 // Name: LogMetricHfpPacketLossStats
 // Params: const RawAddress& raw_address, int num_decoded_frames, double

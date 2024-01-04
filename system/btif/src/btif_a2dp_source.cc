@@ -1359,6 +1359,16 @@ static void btif_a2dp_source_update_metrics(void) {
     }
   }
   BluetoothMetricsLogger::GetInstance()->LogA2dpSession(metrics);
+
+  if (metrics.audio_duration_ms != -1) {
+    log_a2dp_session_metrics_event(
+        btif_av_source_active_peer(), metrics.audio_duration_ms,
+        metrics.media_timer_min_ms, metrics.media_timer_max_ms,
+        metrics.media_timer_avg_ms, metrics.total_scheduling_count,
+        metrics.buffer_overruns_max_count, metrics.buffer_overruns_total,
+        metrics.buffer_underruns_average, metrics.buffer_underruns_count,
+        metrics.codec_index, metrics.is_a2dp_offload);
+  }
 }
 
 void btif_a2dp_source_set_dynamic_audio_buffer_size(

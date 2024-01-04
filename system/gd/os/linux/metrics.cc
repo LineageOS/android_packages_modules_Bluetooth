@@ -100,6 +100,20 @@ void LogMetricSmpPairingEvent(
 
 void LogMetricA2dpPlaybackEvent(const Address& address, int playback_state, int audio_coding_mode) {}
 
+void LogMetricA2dpSessionMetricsEvent(
+    const Address& address,
+    int64_t audio_duration_ms,
+    int media_timer_min_ms,
+    int media_timer_max_ms,
+    int media_timer_avg_ms,
+    int total_scheduling_count,
+    int buffer_overruns_max_count,
+    int buffer_overruns_total,
+    float buffer_underruns_average,
+    int buffer_underruns_count,
+    int64_t codec_index,
+    bool is_a2dp_offload) {}
+
 void LogMetricHfpPacketLossStats(
     const Address& address, int num_decoded_frames, double packet_loss_ratio, uint16_t codec_type) {
 }

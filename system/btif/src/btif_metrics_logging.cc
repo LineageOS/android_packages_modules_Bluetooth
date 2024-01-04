@@ -47,6 +47,19 @@ void log_a2dp_playback_event(const RawAddress& address, int playback_state,
                                                 audio_coding_mode);
 }
 
+void log_a2dp_session_metrics_event(
+    const RawAddress& address, int64_t audio_duration_ms,
+    int media_timer_min_ms, int media_timer_max_ms, int media_timer_avg_ms,
+    int total_scheduling_count, int buffer_overruns_max_count,
+    int buffer_overruns_total, float buffer_underruns_average,
+    int buffer_underruns_count, int64_t codec_index, bool is_a2dp_offload) {
+    bluetooth::shim::LogMetricA2dpSessionMetricsEvent(
+        address, audio_duration_ms, media_timer_min_ms, media_timer_max_ms,
+        media_timer_avg_ms, total_scheduling_count, buffer_overruns_max_count,
+        buffer_overruns_total, buffer_underruns_average, buffer_underruns_count,
+        codec_index, is_a2dp_offload);
+}
+
 void log_read_rssi_result(const RawAddress& address, uint16_t handle,
                           uint32_t cmd_status, int8_t rssi) {
   bluetooth::shim::LogMetricReadRssiResult(address, handle, cmd_status, rssi);
