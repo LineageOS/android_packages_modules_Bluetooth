@@ -36,7 +36,7 @@
 
 #include <list>
 
-#include "btif/include/stack_manager.h"
+#include "btif/include/stack_manager_t.h"
 #include "btif_common.h"
 #include "include/check.h"
 #include "types/raw_address.h"

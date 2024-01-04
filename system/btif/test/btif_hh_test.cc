@@ -26,6 +26,7 @@
 #include "bta/include/bta_ag_api.h"
 #include "bta/include/bta_hh_api.h"
 #include "btcore/include/module.h"
+#include "common/init_flags.h"
 #include "include/hardware/bt_hh.h"
 #include "osi/include/allocator.h"
 #include "test/common/core_interface.h"

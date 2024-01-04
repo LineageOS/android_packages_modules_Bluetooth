@@ -16,7 +16,10 @@
 
 #define LOG_TAG "bt_headless_mode"
 
+#include "test/headless/connect/connect.h"
+
 #include <inttypes.h>
+
 #include <chrono>
 #include <cstdint>
 #include <cstdio>
@@ -25,13 +28,12 @@
 #include <string>
 
 #include "base/logging.h"  // LOG() stdout and android log
-#include "btif/include/stack_manager.h"
+#include "btif/include/stack_manager_t.h"
 #include "osi/include/log.h"  // android log only
 #include "stack/include/btm_api.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/l2cap_acl_interface.h"
-#include "test/headless/connect/connect.h"
 #include "test/headless/get_options.h"
 #include "test/headless/headless.h"
 #include "test/headless/interface.h"

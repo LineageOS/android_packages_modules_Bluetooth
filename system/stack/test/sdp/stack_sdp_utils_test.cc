@@ -19,7 +19,7 @@
 #include <cstddef>
 
 #include "btif/include/btif_storage.h"
-#include "btif/include/stack_manager.h"
+#include "btif/include/stack_manager_t.h"
 #include "common/init_flags.h"
 #include "device/include/interop.h"
 #include "mock_btif_config.h"

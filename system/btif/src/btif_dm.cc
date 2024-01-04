@@ -53,7 +53,7 @@
 #include "advertise_data_parser.h"
 #include "bta/dm/bta_dm_disc.h"
 #include "bta/include/bta_api.h"
-#include "btif/include/stack_manager.h"
+#include "btif/include/stack_manager_t.h"
 #include "btif_api.h"
 #include "btif_bqr.h"
 #include "btif_config.h"
