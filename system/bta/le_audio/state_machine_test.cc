@@ -808,6 +808,26 @@ class StateMachineTestBase : public Test {
     }
   }
 
+  void InjectInitialIdleAndConfiguredNotification(LeAudioDeviceGroup* group) {
+    for (auto* device = group->GetFirstDevice(); device != nullptr;
+         device = group->GetNextDevice(device)) {
+      int i = 0;
+      for (auto& ase : device->ases_) {
+        if (i % 2 == 1) {
+          InjectAseStateNotification(&ase, device, group, ascs::kAseStateIdle,
+                                     nullptr);
+        } else {
+          client_parser::ascs::ase_codec_configured_state_params
+              codec_configured_state_params;
+          InjectAseStateNotification(&ase, device, group,
+                                     ascs::kAseStateCodecConfigured,
+                                     &codec_configured_state_params);
+        }
+        i++;
+      }
+    }
+  }
+
   void MultipleTestDevicePrepare(int leaudio_group_id,
                                  LeAudioContextType context_type,
                                  uint16_t device_cnt,
@@ -3841,6 +3861,72 @@ TEST_F(StateMachineTest, testAseAutonomousRelease2Devices) {
     InjectAseStateNotification(&ase, device, group, ascs::kAseStateIdle,
                                &codec_configured_state_params);
   }
+}
+
+TEST_F(StateMachineTest, testHandlingAutonomousCodecConfigStateOnConnection) {
+  /* Scenario
+   * 1. After connection remote device has different ASE configurations
+   * 2. Try to start stream and make sure it is configured well.
+   */
+
+  const auto context_type = kContextTypeConversational;
+  const int leaudio_group_id = 4;
+  const int num_of_devices = 2;
+
+  // Prepare fake connected device group
+  auto* group = PrepareSingleTestDeviceGroup(leaudio_group_id, context_type,
+                                             num_of_devices);
+
+  auto* firstDevice = group->GetFirstDevice();
+  auto* secondDevice = group->GetNextDevice(firstDevice);
+
+  /* Since we prepared device with Conversional context in mind, Sink and Source
+   * ASEs should have been configured.
+   */
+  PrepareConfigureCodecHandler(group, 0, true);
+  PrepareConfigureQosHandler(group);
+  PrepareEnableHandler(group);
+  PrepareDisableHandler(group);
+  PrepareReceiverStartReadyHandler(group);
+  PrepareReceiverStopReady(group);
+
+  /* Number of control point calls
+   * 1. Codec Config
+   * 2. QoS Config
+   * 3. Enable
+   * 4. Receiver Start Ready
+   */
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(firstDevice->conn_id_,
+                                              firstDevice->ctp_hdls_.val_hdl, _,
+                                              GATT_WRITE_NO_RSP, _, _))
+      .Times(4);
+
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(secondDevice->conn_id_,
+                                              secondDevice->ctp_hdls_.val_hdl,
+                                              _, GATT_WRITE_NO_RSP, _, _))
+      .Times(4);
+
+  InjectInitialIdleAndConfiguredNotification(group);
+  // Call it second time to make sure we get into state that current_state_ is
+  // different then target_state_ even group is not in transition.
+  InjectInitialIdleAndConfiguredNotification(group);
+
+  ASSERT_TRUE(group->GetTargetState() != group->GetState());
+  ASSERT_FALSE(group->IsInTransition());
+
+  // Validate initial GroupStreamStatus
+  EXPECT_CALL(
+      mock_callbacks_,
+      StatusReportCb(leaudio_group_id,
+                     bluetooth::le_audio::GroupStreamStatus::STREAMING));
+
+  // Start the configuration and stream Media content
+  ASSERT_TRUE(LeAudioGroupStateMachine::Get()->StartStream(
+      group, context_type,
+      {.sink = types::AudioContexts(context_type),
+       .source = types::AudioContexts(context_type)}));
+
+  testing::Mock::VerifyAndClearExpectations(&mock_callbacks_);
 }
 
 TEST_F(StateMachineTest, testHandlingCachedCodecConfig2Devices) {
