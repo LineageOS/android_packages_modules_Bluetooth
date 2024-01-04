@@ -33,6 +33,7 @@ import android.bluetooth.annotations.RequiresBluetoothAdvertisePermission;
 import android.bluetooth.annotations.RequiresLegacyBluetoothAdminPermission;
 import android.content.AttributionSource;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Looper;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
@@ -750,7 +751,8 @@ public final class BluetoothLeAdvertiser {
     IAdvertisingSetCallback wrap(AdvertisingSetCallback callback, Handler handler) {
         return new IAdvertisingSetCallback.Stub() {
             @Override
-            public void onAdvertisingSetStarted(int advertiserId, int txPower, int status) {
+            public void onAdvertisingSetStarted(
+                    IBinder gattBinder, int advertiserId, int txPower, int status) {
                 handler.post(
                         () -> {
                             if (status != AdvertisingSetCallback.ADVERTISE_SUCCESS) {
@@ -761,6 +763,7 @@ public final class BluetoothLeAdvertiser {
 
                             AdvertisingSet advertisingSet =
                                     new AdvertisingSet(
+                                            IBluetoothGatt.Stub.asInterface(gattBinder),
                                             advertiserId,
                                             mBluetoothAdapter,
                                             mAttributionSource);

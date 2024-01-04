@@ -111,7 +111,8 @@ public abstract class ProfileService extends ContextWrapper {
         mBinder = initBinder();
     }
 
-    IBinder getBinder() {
+    /** return the binder of the profile */
+    public IBinder getBinder() {
         requireNonNull(mBinder, "Binder is null. onCreate need to be called first");
         return mBinder;
     }
