@@ -64,6 +64,8 @@ struct eatt_impl {
   uint16_t max_mps_;
   tL2CAP_APPL_INFO reg_info_;
 
+  base::WeakPtrFactory<eatt_impl> weak_factory_{this};
+
   eatt_impl() {
     default_mtu_ = EATT_DEFAULT_MTU;
     max_mps_ = EATT_MIN_MTU_MPS;
@@ -241,7 +243,7 @@ struct eatt_impl {
     bt_status_t status = do_in_main_thread_delayed(
         FROM_HERE,
         base::BindOnce(&eatt_impl::upper_tester_delay_connect_cb,
-                       base::Unretained(this), bda),
+                       weak_factory_.GetWeakPtr(), bda),
         std::chrono::milliseconds(timeout_ms));
 
     LOG_INFO("Scheduled peripheral connect eatt for device with status: %d",
@@ -287,8 +289,8 @@ struct eatt_impl {
     if (stack_config_get_interface()->get_pts_l2cap_ecoc_reconfigure()) {
       bt_status_t status = do_in_main_thread_delayed(
           FROM_HERE,
-          base::BindOnce(&eatt_impl::reconfigure_all, base::Unretained(this),
-                         bda, 300),
+          base::BindOnce(&eatt_impl::reconfigure_all,
+                         weak_factory_.GetWeakPtr(), bda, 300),
           std::chrono::seconds(4));
       LOG_INFO("Scheduled ECOC reconfiguration with status: %d", (int)status);
     }
@@ -447,7 +449,7 @@ struct eatt_impl {
       do_in_main_thread_delayed(
           FROM_HERE,
           base::BindOnce(&eatt_impl::upper_tester_send_data_if_needed,
-                         base::Unretained(this), bda, lcid),
+                         weak_factory_.GetWeakPtr(), bda, lcid),
           std::chrono::seconds(1));
     }
   }
@@ -968,7 +970,8 @@ struct eatt_impl {
     /* If we don't know yet, read GATT server supported features. */
     if (gatt_cl_read_sr_supp_feat_req(
             bd_addr, base::BindOnce(&eatt_impl::supported_features_cb,
-                                    base::Unretained(this), role)) == false) {
+                                    weak_factory_.GetWeakPtr(), role)) ==
+        false) {
       LOG_INFO("Read server supported features failed for device %s",
                ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
     }
@@ -1019,7 +1022,8 @@ struct eatt_impl {
     /* If we don't know yet, read GATT server supported features. */
     if (gatt_cl_read_sr_supp_feat_req(
             bd_addr, base::BindOnce(&eatt_impl::supported_features_cb,
-                                    base::Unretained(this), role)) == false) {
+                                    weak_factory_.GetWeakPtr(), role)) ==
+        false) {
       LOG_INFO("Read server supported features failed for device %s",
                ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
     }
