@@ -44,7 +44,7 @@
 #include "btif/include/btif_profile_queue.h"
 #include "btif/include/btif_rc.h"
 #include "btif/include/btif_util.h"
-#include "btif/include/stack_manager.h"
+#include "btif/include/stack_manager_t.h"
 #include "btif_metrics_logging.h"
 #include "common/state_machine.h"
 #include "device/include/device_iot_config.h"
