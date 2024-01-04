@@ -20,6 +20,7 @@
 
 #include "base/functional/callback.h"
 #include "device/include/esco_parameters.h"
+#include "hci/le_rand_callback.h"
 #include "stack/btm/neighbor_inquiry.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_ble_api_types.h"
@@ -1033,20 +1034,6 @@ tBTM_STATUS BTM_ClearFilterAcceptList(void);
  *
  ******************************************************************************/
 tBTM_STATUS BTM_DisconnectAllAcls(void);
-
-/*******************************************************************************
- *
- * Function         BTM_LeRand
- *
- * Description      Retrieves a random number from the controller
- *
- * Parameters       cb - The callback to receive the random number
- *
- * Returns          Return btm status
- *
- ******************************************************************************/
-using LeRandCallback = base::OnceCallback<void(uint64_t)>;
-tBTM_STATUS BTM_LeRand(LeRandCallback);
 
 /*******************************************************************************
  *

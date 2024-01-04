@@ -761,8 +761,8 @@ static int le_rand() {
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
   do_in_main_thread(
-      FROM_HERE,
-      base::BindOnce(btif_dm_le_rand, base::BindOnce(&le_rand_btif_cb)));
+      FROM_HERE, base::BindOnce(btif_dm_le_rand,
+                                get_main_thread()->BindOnce(&le_rand_btif_cb)));
   return BT_STATUS_SUCCESS;
 }
 

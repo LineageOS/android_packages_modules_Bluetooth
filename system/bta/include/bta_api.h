@@ -33,6 +33,7 @@
 #include <vector>
 
 #include "bta_api_data_types.h"
+#include "hci/le_rand_callback.h"
 #include "internal_include/bt_target.h"
 #include "macros.h"
 #include "os/log.h"
@@ -854,7 +855,6 @@ void BTA_DmDisconnectAllAcls(void);
  ******************************************************************************/
 void BTA_DmClearFilterAcceptList(void);
 
-using LeRandCallback = base::OnceCallback<void(uint64_t)>;
 /*******************************************************************************
  *
  * Function         BTA_DmLeRand
@@ -864,7 +864,7 @@ using LeRandCallback = base::OnceCallback<void(uint64_t)>;
  * Returns          cb: callback to receive the resulting random number
  *
  ******************************************************************************/
-void BTA_DmLeRand(LeRandCallback cb);
+void BTA_DmLeRand(bluetooth::hci::LeRandCallback cb);
 
 /*******************************************************************************
  *

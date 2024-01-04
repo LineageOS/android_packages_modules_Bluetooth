@@ -20,6 +20,7 @@
 #include <functional>
 #include <vector>
 
+#include "common/message_loop_thread.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/smp_api.h"
@@ -31,6 +32,11 @@
 #include "test/mock/mock_stack_l2cap_api.h"
 #include "test/mock/mock_stack_l2cap_ble.h"
 
+bluetooth::common::MessageLoopThread* main_thread_ptr = nullptr;
+
+bluetooth::common::MessageLoopThread* get_main_thread() {
+  return main_thread_ptr;
+}
 namespace {
 
 #define SDP_DB_SIZE 0x10000
@@ -101,6 +107,9 @@ class FakeBtStack {
           }
           return true;
         };
+    main_thread_ptr =
+        new bluetooth::common::MessageLoopThread("smp_fuzz_main_thread");
+    main_thread_ptr->StartUp();
   }
 
   ~FakeBtStack() {
@@ -116,6 +125,9 @@ class FakeBtStack {
     test::mock::stack_l2cap_api::L2CA_ConnectFixedChnl = {};
     test::mock::stack_l2cap_api::L2CA_SendFixedChnlData = {};
     test::mock::stack_l2cap_api::L2CA_RegisterFixedChannel = {};
+    main_thread_ptr->ShutDown();
+    delete main_thread_ptr;
+    main_thread_ptr = nullptr;
   }
 };
 

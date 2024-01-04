@@ -162,12 +162,6 @@ static uint8_t controller_clear_event_mask() {
   return BTM_SUCCESS;
 }
 
-static uint8_t controller_le_rand(LeRandCallback cb) {
-  LOG_VERBOSE("Called!");
-  bluetooth::shim::GetController()->LeRand(std::move(cb));
-  return BTM_SUCCESS;
-}
-
 static uint8_t controller_set_event_filter_connection_setup_all_devices() {
   bluetooth::shim::GetController()->SetEventFilterConnectionSetupAllDevices(
       bluetooth::hci::AutoAcceptFlag::AUTO_ACCEPT_ON_ROLE_SWITCH_ENABLED);
@@ -227,7 +221,6 @@ static const controller_t interface = {
     .get_le_all_initiating_phys = get_le_all_initiating_phys,
     .clear_event_filter = controller_clear_event_filter,
     .clear_event_mask = controller_clear_event_mask,
-    .le_rand = controller_le_rand,
     .set_event_filter_connection_setup_all_devices =
         controller_set_event_filter_connection_setup_all_devices,
     .set_event_filter_allow_device_connection =

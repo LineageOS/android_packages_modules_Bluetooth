@@ -34,7 +34,6 @@
 #include "common/interfaces/ILoggable.h"
 #include "common/strings.h"
 #include "common/sync_map_count.h"
-#include "device/include/controller.h"
 #include "hci/acl_manager.h"
 #include "hci/acl_manager/acl_connection.h"
 #include "hci/acl_manager/classic_acl_connection.h"
@@ -1116,10 +1115,6 @@ struct shim::legacy::Acl::impl {
     LOG_DEBUG("Cleared entire Le address acceptlist count:%zu", count);
   }
 
-  void le_rand(LeRandCallback cb ) {
-    controller_get_interface()->le_rand(std::move(cb));
-  }
-
   void AddToAddressResolution(const hci::AddressWithType& address_with_type,
                               const std::array<uint8_t, 16>& peer_irk,
                               const std::array<uint8_t, 16>& local_irk) {
@@ -1863,10 +1858,6 @@ void shim::legacy::Acl::FinalShutdown() {
 
 void shim::legacy::Acl::ClearFilterAcceptList() {
   handler_->CallOn(pimpl_.get(), &Acl::impl::clear_acceptlist);
-}
-
-void shim::legacy::Acl::LeRand(LeRandCallback cb) {
-  handler_->CallOn(pimpl_.get(), &Acl::impl::le_rand, std::move(cb));
 }
 
 void shim::legacy::Acl::AddToAddressResolution(

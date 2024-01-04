@@ -55,11 +55,6 @@ tBTM_STATUS bluetooth::shim::BTM_DisconnectAllAcls() {
   return BTM_SUCCESS;
 }
 
-tBTM_STATUS bluetooth::shim::BTM_LeRand(LeRandCallback cb) {
-  Stack::GetInstance()->GetAcl()->LeRand(std::move(cb));
-  return BTM_SUCCESS;
-}
-
 tBTM_STATUS bluetooth::shim::BTM_SetEventFilterConnectionSetupAllDevices() {
   // Autoplumbed
   controller_get_interface()->set_event_filter_connection_setup_all_devices();
