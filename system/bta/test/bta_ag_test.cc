@@ -32,7 +32,6 @@
 #include "bta/include/bta_dm_api.h"
 #include "bta/include/bta_hf_client_api.h"
 #include "bta/include/bta_le_audio_api.h"
-#include "btif/include/stack_manager.h"
 #include "common/message_loop_thread.h"
 #include "os/system_properties.h"
 #include "osi/include/compat.h"

@@ -45,7 +45,7 @@
 #include "btif/include/btif_sock.h"
 #include "btif/include/btif_storage.h"
 #include "btif/include/core_callbacks.h"
-#include "btif/include/stack_manager.h"
+#include "btif/include/stack_manager_t.h"
 #include "common/message_loop_thread.h"
 #include "device/include/controller.h"
 #include "device/include/device_iot_config.h"
