@@ -35,6 +35,13 @@ void log_a2dp_audio_overrun_event(const RawAddress& address,
 void log_a2dp_playback_event(const RawAddress& address, int playback_state,
                              int audio_coding_mode);
 
+void log_a2dp_session_metrics_event(
+    const RawAddress& address, int64_t audio_duration_ms,
+    int media_timer_min_ms, int media_timer_max_ms, int media_timer_avg_ms,
+    int total_scheduling_count, int buffer_overruns_max_count,
+    int buffer_overruns_total, float buffer_underruns_average,
+    int buffer_underruns_count, int64_t codec_index, bool is_a2dp_offload);
+
 void log_read_rssi_result(const RawAddress& address, uint16_t handle,
                           uint32_t cmd_status, int8_t rssi);
 
