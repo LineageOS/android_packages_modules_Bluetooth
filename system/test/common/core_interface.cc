@@ -18,7 +18,7 @@
 
 #include "btif/include/btif_common.h"
 #include "btif/include/core_callbacks.h"
-#include "btif/include/stack_manager.h"
+#include "btif/include/stack_manager_t.h"
 
 namespace {
 

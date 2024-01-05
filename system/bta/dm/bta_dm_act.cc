@@ -41,7 +41,7 @@
 #include "bta/include/bta_sec_api.h"
 #include "bta/sys/bta_sys.h"
 #include "btif/include/btif_dm.h"
-#include "btif/include/stack_manager.h"
+#include "btif/include/stack_manager_t.h"
 #include "device/include/controller.h"
 #include "include/bind_helpers.h"
 #include "include/check.h"
