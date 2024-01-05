@@ -34,15 +34,16 @@ namespace bluetooth::hci {
 
 std::optional<LeScanningReassembler::CompleteAdvertisingData>
 LeScanningReassembler::ProcessAdvertisingReport(
-    uint16_t event_type,
+    ExtendedAdvertisingEventType event_type,
     uint8_t address_type,
     Address address,
     uint8_t advertising_sid,
     const std::vector<uint8_t>& advertising_data) {
-  bool is_scannable = event_type & (1 << kScannableBit);
-  bool is_scan_response = event_type & (1 << kScanResponseBit);
-  bool is_legacy = event_type & (1 << kLegacyBit);
-  DataStatus data_status = DataStatus((event_type >> kDataStatusBits) & 0x3);
+  bool is_scannable = static_cast<uint16_t>(event_type & ExtendedAdvertisingEventType::SCANNABLE);
+  bool is_scan_response =
+      static_cast<uint16_t>(event_type & ExtendedAdvertisingEventType::SCAN_RESPONSE);
+  bool is_legacy = static_cast<uint16_t>(event_type & ExtendedAdvertisingEventType::LEGACY);
+  DataStatus data_status = DataStatusFromAdvertisingEventType(event_type);
 
   if (address_type != (uint8_t)DirectAdvertisingAddressType::NO_ADDRESS_PROVIDED &&
       address == Address::kEmpty) {
@@ -144,15 +145,17 @@ bool LeScanningReassembler::AdvertisingKey::operator==(const AdvertisingKey& oth
 /// dropping the oldest advertiser.
 std::list<LeScanningReassembler::AdvertisingFragment>::iterator
 LeScanningReassembler::AppendFragment(
-    const AdvertisingKey& key, uint16_t extended_event_type, const std::vector<uint8_t>& data) {
+    const AdvertisingKey& key,
+    ExtendedAdvertisingEventType extended_event_type,
+    const std::vector<uint8_t>& data) {
   auto it = FindFragment(key);
   if (it != cache_.end()) {
     // Legacy scan responses don't contain a 'connectable' bit, so this adds the
     // 'connectable' bit from the initial report.
-    if ((extended_event_type & (1 << kLegacyBit)) &&
-        (extended_event_type & (1 << kScanResponseBit))) {
-      it->extended_event_type =
-          extended_event_type | (it->extended_event_type & (1 << kConnectableBit));
+    if (static_cast<uint16_t>(extended_event_type & ExtendedAdvertisingEventType::LEGACY) &&
+        static_cast<uint16_t>(extended_event_type & ExtendedAdvertisingEventType::SCAN_RESPONSE)) {
+      it->extended_event_type = extended_event_type | (it->extended_event_type &
+                                                       ExtendedAdvertisingEventType::CONNECTABLE);
     } else {
       it->extended_event_type = extended_event_type;
     }
