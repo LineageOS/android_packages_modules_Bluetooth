@@ -27,8 +27,10 @@
 #include <string.h>
 
 #include "bnep_int.h"
-#include "device/include/controller.h"
+#include "hci/controller_interface.h"
 #include "internal_include/bt_target.h"
+#include "main/shim/entry.h"
+#include "main/shim/helpers.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
@@ -433,7 +435,6 @@ void bnepu_check_send_packet(tBNEP_CONN* p_bcb, BT_HDR* p_buf) {
 void bnepu_build_bnep_hdr(tBNEP_CONN* p_bcb, BT_HDR* p_buf, uint16_t protocol,
                           const RawAddress& src_addr,
                           const RawAddress& dest_addr, bool fw_ext_present) {
-  const controller_t* controller = controller_get_interface();
   uint8_t ext_bit, *p = (uint8_t*)NULL;
   uint8_t type = BNEP_FRAME_COMPRESSED_ETHERNET;
   RawAddress source_addr = src_addr;
@@ -441,7 +442,8 @@ void bnepu_build_bnep_hdr(tBNEP_CONN* p_bcb, BT_HDR* p_buf, uint16_t protocol,
   ext_bit = fw_ext_present ? 0x80 : 0x00;
 
   if (source_addr != RawAddress::kEmpty &&
-      source_addr != *controller->get_address())
+      source_addr != bluetooth::ToRawAddress(
+                         bluetooth::shim::GetController()->GetMacAddress()))
     type = BNEP_FRAME_COMPRESSED_ETHERNET_SRC_ONLY;
 
   if (dest_addr != p_bcb->rem_bda)
@@ -450,7 +452,8 @@ void bnepu_build_bnep_hdr(tBNEP_CONN* p_bcb, BT_HDR* p_buf, uint16_t protocol,
                : BNEP_FRAME_GENERAL_ETHERNET;
 
   if (source_addr == RawAddress::kEmpty)
-    source_addr = *controller->get_address();
+    source_addr = bluetooth::ToRawAddress(
+        bluetooth::shim::GetController()->GetMacAddress());
 
   switch (type) {
     case BNEP_FRAME_GENERAL_ETHERNET:

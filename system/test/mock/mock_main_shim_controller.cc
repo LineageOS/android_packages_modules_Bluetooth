@@ -33,12 +33,3 @@ const controller_t* bluetooth::shim::controller_get_interface() {
   inc_func_call_count(__func__);
   return bluetooth::testing::controller;
 }
-
-void bluetooth::shim::controller_clear_event_mask() {
-  inc_func_call_count(__func__);
-}
-
-bool bluetooth::shim::controller_is_write_link_supervision_timeout_supported() {
-  inc_func_call_count(__func__);
-  return false;
-}

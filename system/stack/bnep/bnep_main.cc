@@ -30,10 +30,12 @@
 #include "bnep_api.h"
 #include "bnep_int.h"
 #include "bta/include/bta_sec_api.h"
-#include "device/include/controller.h"
+#include "hci/controller_interface.h"
 #include "internal_include/bt_target.h"
 #include "l2c_api.h"
 #include "l2cdefs.h"
+#include "main/shim/entry.h"
+#include "main/shim/helpers.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"
@@ -496,7 +498,8 @@ static void bnep_data_ind(uint16_t l2cap_cid, BT_HDR* p_buf) {
   if (src_addr == RawAddress::kEmpty) src_addr = p_bcb->rem_bda;
 
   if (dst_addr == RawAddress::kEmpty)
-    dst_addr = *controller_get_interface()->get_address();
+    dst_addr = bluetooth::ToRawAddress(
+        bluetooth::shim::GetController()->GetMacAddress());
 
   /* check whether there are any extensions to be forwarded */
   if (ext_type)

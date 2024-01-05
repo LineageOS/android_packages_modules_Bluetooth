@@ -34,7 +34,6 @@
 #include "bta/gatt/bta_gattc_int.h"
 #include "bta/include/bta_api.h"
 #include "btif/include/btif_debug_conn.h"
-#include "device/include/controller.h"
 #include "hardware/bt_gatt_types.h"
 #include "hci/controller_interface.h"
 #include "include/check.h"
@@ -229,7 +228,8 @@ void bta_gattc_register(const Uuid& app_uuid, tBTA_GATTC_CBACK* p_cback,
 void bta_gattc_deregister(tBTA_GATTC_RCB* p_clreg) {
   uint8_t accept_list_size = 0;
   if (bluetooth::shim::GetController()->SupportsBle()) {
-    accept_list_size = controller_get_interface()->get_ble_acceptlist_size();
+    accept_list_size =
+        bluetooth::shim::GetController()->GetLeFilterAcceptListSize();
   }
 
   /* remove bg connection associated with this rcb */

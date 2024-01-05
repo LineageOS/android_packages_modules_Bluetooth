@@ -743,8 +743,9 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
       p_setup->packet_types = pkt_types & BTM_SCO_SUPPORTED_PKTS_MASK &
                               btm_cb.btm_sco_pkt_types_supported;
       /* OR in any exception packet types */
-      if (controller_get_interface()->get_bt_version()->hci_version >=
-          HCI_PROTO_VERSION_2_0) {
+      if (bluetooth::shim::GetController()
+              ->GetLocalVersionInformation()
+              .hci_version_ >= bluetooth::hci::HciVersion::V_2_0) {
         p_setup->packet_types |=
             (pkt_types & BTM_SCO_EXCEPTION_PKTS_MASK) |
             (btm_cb.btm_sco_pkt_types_supported & BTM_SCO_EXCEPTION_PKTS_MASK);

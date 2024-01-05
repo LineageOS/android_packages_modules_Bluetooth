@@ -44,10 +44,12 @@
 #include "btif/include/btif_common.h"
 #include "btif/include/btif_pan_internal.h"
 #include "btif/include/btif_sock_thread.h"
-#include "device/include/controller.h"
+#include "hci/controller_interface.h"
 #include "include/check.h"
 #include "include/hardware/bt_pan.h"
 #include "internal_include/bt_target.h"
+#include "main/shim/entry.h"
+#include "main/shim/helpers.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
@@ -262,7 +264,7 @@ void destroy_tap_read_thread(void) {
   }
 }
 
-static int tap_if_up(const char* devname, const RawAddress* addr) {
+static int tap_if_up(const char* devname, const RawAddress& addr) {
   struct ifreq ifr;
   int sk, err;
 
@@ -281,7 +283,7 @@ static int tap_if_up(const char* devname, const RawAddress* addr) {
   }
 
   strlcpy(ifr.ifr_name, devname, IFNAMSIZ);
-  memcpy(ifr.ifr_hwaddr.sa_data, addr->address, 6);
+  memcpy(ifr.ifr_hwaddr.sa_data, addr.address, 6);
 
   /* The IEEE has specified that the most significant bit of the most
    * significant byte is used to
@@ -380,7 +382,9 @@ int btpan_tap_open() {
     close(fd);
     return err;
   }
-  if (tap_if_up(TAP_IF_NAME, controller_get_interface()->get_address()) == 0) {
+  if (tap_if_up(TAP_IF_NAME,
+                bluetooth::ToRawAddress(
+                    bluetooth::shim::GetController()->GetMacAddress())) == 0) {
     int flags = fcntl(fd, F_GETFL, 0);
     fcntl(fd, F_SETFL, flags | O_NONBLOCK);
     return fd;

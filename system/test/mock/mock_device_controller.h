@@ -51,7 +51,6 @@ extern uint8_t ble_acceptlist_size;
 extern uint8_t ble_resolving_list_max_size;
 extern uint8_t ble_supported_states[BLE_SUPPORTED_STATES_SIZE];
 extern bt_device_features_t features_ble;
-extern uint16_t ble_suggested_default_data_length;
 extern uint16_t ble_supported_max_tx_octets;
 extern uint16_t ble_supported_max_tx_time;
 extern uint16_t ble_supported_max_rx_octets;
