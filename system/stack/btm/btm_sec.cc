@@ -3483,6 +3483,22 @@ static void read_encryption_key_size_complete_after_encryption_change(
     return;
   }
 
+  if (IS_FLAG_ENABLED(bluffs_mitigation)) {
+    if (btm_sec_is_session_key_size_downgrade(handle, key_size)) {
+      LOG_ERROR(
+          "encryption key size lower than cached value, disconnecting. "
+          "handle: 0x%x attempted key size: %d",
+          handle, key_size);
+      acl_disconnect_from_handle(
+          handle, HCI_ERR_HOST_REJECT_SECURITY,
+          "stack::btu::btu_hcif::read_encryption_key_size_complete_after_"
+          "encryption_change Key Size Downgrade");
+      return;
+    }
+
+    btm_sec_update_session_key_size(handle, key_size);
+  }
+
   // good key size - succeed
   btm_acl_encrypt_change(handle, static_cast<tHCI_STATUS>(status),
                          1 /* enable */);
@@ -3504,25 +3520,49 @@ void smp_cancel_start_encryption_attempt();
  ******************************************************************************/
 void btm_sec_encryption_change_evt(uint16_t handle, tHCI_STATUS status,
                                    uint8_t encr_enable) {
-  if (status != HCI_SUCCESS || encr_enable == 0 ||
-      BTM_IsBleConnection(handle) ||
-      !controller_get_interface()->supports_read_encryption_key_size() ||
-      // Skip encryption key size check when using set_min_encryption_key_size
-      (bluetooth::common::init_flags::set_min_encryption_is_enabled() &&
-       controller_get_interface()->supports_set_min_encryption_key_size())) {
-    if (status == HCI_ERR_CONNECTION_TOUT) {
-      smp_cancel_start_encryption_attempt();
-      return;
-    }
+  if (IS_FLAG_ENABLED(bluffs_mitigation)) {
+    if (status != HCI_SUCCESS || encr_enable == 0 ||
+        BTM_IsBleConnection(handle) ||
+        !controller_get_interface()->supports_read_encryption_key_size()) {
+      if (status == HCI_ERR_CONNECTION_TOUT) {
+        smp_cancel_start_encryption_attempt();
+        return;
+      }
 
-    btm_acl_encrypt_change(handle, static_cast<tHCI_STATUS>(status),
-                           encr_enable);
-    btm_sec_encrypt_change(handle, static_cast<tHCI_STATUS>(status),
-                           encr_enable);
+      btm_acl_encrypt_change(handle, static_cast<tHCI_STATUS>(status),
+                             encr_enable);
+      btm_sec_encrypt_change(handle, static_cast<tHCI_STATUS>(status),
+                             encr_enable);
+    } else {
+      btsnd_hcic_read_encryption_key_size(
+          handle,
+          base::Bind(
+              &read_encryption_key_size_complete_after_encryption_change));
+    }
   } else {
-    btsnd_hcic_read_encryption_key_size(
-        handle,
-        base::Bind(&read_encryption_key_size_complete_after_encryption_change));
+    // This block added to ensure matching code flow with the bluffs_mitigation
+    // flag off.  The entire block should be removed when the flag is.
+    if (status != HCI_SUCCESS || encr_enable == 0 ||
+        BTM_IsBleConnection(handle) ||
+        !controller_get_interface()->supports_read_encryption_key_size() ||
+        // Skip encryption key size check when using set_min_encryption_key_size
+        (bluetooth::common::init_flags::set_min_encryption_is_enabled() &&
+         controller_get_interface()->supports_set_min_encryption_key_size())) {
+      if (status == HCI_ERR_CONNECTION_TOUT) {
+        smp_cancel_start_encryption_attempt();
+        return;
+      }
+
+      btm_acl_encrypt_change(handle, static_cast<tHCI_STATUS>(status),
+                             encr_enable);
+      btm_sec_encrypt_change(handle, static_cast<tHCI_STATUS>(status),
+                             encr_enable);
+    } else {
+      btsnd_hcic_read_encryption_key_size(
+          handle,
+          base::Bind(
+              &read_encryption_key_size_complete_after_encryption_change));
+    }
   }
 }
 /*******************************************************************************
