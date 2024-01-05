@@ -184,7 +184,8 @@ public class AdvertiseManager {
             AppAdvertiseStats.recordAdvertiseErrorCount(LE_ADV_ERROR_ON_START_COUNT);
         }
 
-        callback.onAdvertisingSetStarted(advertiserId, txPower, status);
+        IBinder gattBinder = mService.getBinder();
+        callback.onAdvertisingSetStarted(gattBinder, advertiserId, txPower, status);
     }
 
     void onAdvertisingEnabled(int advertiserId, boolean enable, int status) throws Exception {
@@ -221,8 +222,9 @@ public class AdvertiseManager {
                         != AdvertisingSetParameters.ADDRESS_TYPE_RANDOM_NON_RESOLVABLE) {
             Log.w(TAG, "Cannot advertise an isolated GATT server using a resolvable address");
             try {
+                IBinder gattBinder = mService.getBinder();
                 callback.onAdvertisingSetStarted(
-                        0x00, 0x00, AdvertiseCallback.ADVERTISE_FAILED_INTERNAL_ERROR);
+                        gattBinder, 0x00, 0x00, AdvertiseCallback.ADVERTISE_FAILED_INTERNAL_ERROR);
             } catch (RemoteException exception) {
                 Log.e(TAG, "Failed to callback:" + Log.getStackTraceString(exception));
             }
@@ -231,7 +233,7 @@ public class AdvertiseManager {
 
         int appUid = Binder.getCallingUid();
         String packageName = null;
-        if (mService != null && mService.getPackageManager() != null) {
+        if (mService.getPackageManager() != null) {
             packageName = mService.getPackageManager().getNameForUid(appUid);
         }
         if (packageName == null) {
@@ -279,8 +281,9 @@ public class AdvertiseManager {
         } catch (IllegalArgumentException e) {
             try {
                 binder.unlinkToDeath(deathRecipient, 0);
-                callback.onAdvertisingSetStarted(0x00, 0x00,
-                        AdvertiseCallback.ADVERTISE_FAILED_DATA_TOO_LARGE);
+                IBinder gattBinder = mService.getBinder();
+                callback.onAdvertisingSetStarted(
+                        gattBinder, 0x00, 0x00, AdvertiseCallback.ADVERTISE_FAILED_DATA_TOO_LARGE);
             } catch (RemoteException exception) {
                 Log.e(TAG, "Failed to callback:" + Log.getStackTraceString(exception));
             }
