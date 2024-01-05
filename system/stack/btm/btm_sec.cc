@@ -1920,7 +1920,7 @@ void btm_sec_conn_req(const RawAddress& bda, const DEV_CLASS dc) {
   /* Host is not interested or approved connection.  Save BDA and DC and */
   /* pass request to L2CAP */
   btm_sec_cb.connecting_bda = bda;
-  memcpy(btm_sec_cb.connecting_dc, &dc, DEV_CLASS_LEN);
+  memcpy(btm_sec_cb.connecting_dc, dc, DEV_CLASS_LEN);
 
   p_dev_rec = btm_find_or_alloc_dev(bda);
   p_dev_rec->sm4 |= BTM_SM4_CONN_PEND;
