@@ -830,6 +830,12 @@ class FlossAdapterClient(BluetoothCallbacks, BluetoothConnectionCallbacks):
         device = self._make_dbus_device(address, self.known_devices.get(address, {}).get('name', 'Test device'))
         return bool(self.proxy().DisconnectAllEnabledProfiles(device))
 
+    @utils.glib_call(None)
+    def get_connection_state(self, address):
+        """Gets connection state."""
+        device = self._make_dbus_device(address, self.known_devices.get(address, {}).get('name', 'Test device'))
+        return self.proxy().GetConnectionState(device)
+
     def wait_for_device_disconnected(self, address):
         """Waits for the device become disconnected."""
 
