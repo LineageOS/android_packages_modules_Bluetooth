@@ -50,13 +50,14 @@ public final class AdvertisingSet {
     private int mAdvertiserId;
     private AttributionSource mAttributionSource;
 
-    /* package */ AdvertisingSet(
+    AdvertisingSet(
+            IBluetoothGatt gatt,
             int advertiserId,
             BluetoothAdapter bluetoothAdapter,
             AttributionSource attributionSource) {
         mAdvertiserId = advertiserId;
         mAttributionSource = attributionSource;
-        mGatt = requireNonNull(bluetoothAdapter.getBluetoothGatt(), "Failed to get Bluetooth gatt");
+        mGatt = requireNonNull(gatt, "Bluetooth gatt cannot be null");
     }
 
     /* package */ void setAdvertiserId(int advertiserId) {
