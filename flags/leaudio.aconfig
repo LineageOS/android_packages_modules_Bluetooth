@@ -76,3 +76,10 @@ flag {
     description: "Fix bonding failure due to native stack being busy"
     bug: "316927319"
 }
+
+flag {
+    name: "leaudio_dynamic_switcher_refactor_for_broadcast"
+    namespace: "bluetooth"
+    description: "LE Audio dynamic switcher refactor for broadcast"
+    bug: "317776633"
+}
