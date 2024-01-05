@@ -816,7 +816,8 @@ class AdapterProperties {
                         + " -> " + newAdapterState);
                 if (!isNormalStateTransition(prevState, state)) {
                     Log.w(TAG, "ADAPTER_CONNECTION_STATE_CHANGE: unexpected transition for profile="
-                            + profile + ", device=" + device + ", " + prevState + " -> " + state);
+                            + BluetoothProfile.getProfileName(profile)
+                            + ", device=" + device + ", " + prevState + " -> " + state);
                 }
                 mService.sendBroadcastAsUser(intent, UserHandle.ALL, BLUETOOTH_CONNECT,
                         Utils.getTempAllowlistBroadcastOptions());
