@@ -143,6 +143,7 @@ source_set("stack") {
     "hid/hidh_conn.cc",
     "l2cap/l2c_api.cc",
     "l2cap/l2c_ble.cc",
+    "l2cap/l2c_ble_conn_params.cc",
     "l2cap/l2c_csm.cc",
     "l2cap/l2c_fcr.cc",
     "l2cap/l2c_link.cc",
