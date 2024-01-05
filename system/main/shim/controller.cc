@@ -33,8 +33,6 @@ using ::bluetooth::shim::GetController;
 
 constexpr int kMaxSupportedCodecs = 8;  // MAX_LOCAL_SUPPORTED_CODECS_SIZE
 
-constexpr uint8_t kPhyLe1M = 0x01;
-
 // Module lifecycle functions
 static future_t* start_up(void);
 static future_t* shut_down(void);
@@ -54,7 +52,6 @@ struct {
   uint8_t local_supported_codecs[kMaxSupportedCodecs];
   uint8_t number_of_local_supported_codecs;
   uint64_t le_supported_states;
-  uint8_t phy;
 } data_;
 
 static future_t* start_up(void) {
@@ -78,8 +75,6 @@ static future_t* start_up(void) {
   data_.bt_version.manufacturer = local_version_info.manufacturer_name_;
 
   LOG_INFO("Mac address:%s", ADDRESS_TO_LOGGABLE_CSTR(data_.raw_address));
-
-  data_.phy = kPhyLe1M;
 
   return future_new_immediate(FUTURE_SUCCESS);
 }
@@ -146,8 +141,6 @@ static void set_ble_resolving_list_max_size(int /* resolving_list_max_size */) {
 static uint8_t get_le_resolving_list_size(void) {
   return bluetooth::shim::GetController()->GetLeResolvingListSize();
 }
-
-static uint8_t get_le_all_initiating_phys() { return data_.phy; }
 
 static uint8_t controller_clear_event_filter() {
   LOG_VERBOSE("Called!");
@@ -218,7 +211,6 @@ static const controller_t interface = {
     .get_ble_resolving_list_max_size = get_le_resolving_list_size,
     .set_ble_resolving_list_max_size = set_ble_resolving_list_max_size,
     .get_local_supported_codecs = get_local_supported_codecs,
-    .get_le_all_initiating_phys = get_le_all_initiating_phys,
     .clear_event_filter = controller_clear_event_filter,
     .clear_event_mask = controller_clear_event_mask,
     .set_event_filter_connection_setup_all_devices =

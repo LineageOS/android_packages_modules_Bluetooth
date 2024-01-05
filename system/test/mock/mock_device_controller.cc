@@ -26,7 +26,6 @@
 // Original included files, if any
 #include "btcore/include/version.h"
 #include "device/include/controller.h"
-#include "stack/include/btm_api_types.h"
 #include "stack/include/btm_status.h"
 #include "types/raw_address.h"
 
@@ -124,11 +123,6 @@ void set_ble_resolving_list_max_size(int resolving_list_max_size) {
   ble_resolving_list_max_size = resolving_list_max_size;
 }
 
-uint8_t get_le_all_initiating_phys() {
-  uint8_t phy = PHY_LE_1M;
-  return phy;
-}
-
 tBTM_STATUS clear_event_filter() { return BTM_SUCCESS; }
 
 tBTM_STATUS clear_event_mask() { return BTM_SUCCESS; }
@@ -168,7 +162,6 @@ const controller_t interface = {
     get_ble_resolving_list_max_size,
     set_ble_resolving_list_max_size,
     get_local_supported_codecs,
-    get_le_all_initiating_phys,
     clear_event_filter,
     clear_event_mask,
     set_event_filter_connection_setup_all_devices,
