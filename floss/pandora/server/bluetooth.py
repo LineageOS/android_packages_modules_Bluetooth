@@ -13,7 +13,6 @@
 # limitations under the License.
 """All functions relative to the bluetooth procedure."""
 
-import asyncio
 import logging
 import threading
 import traceback
@@ -21,7 +20,10 @@ import traceback
 from floss.pandora.floss import adapter_client
 from floss.pandora.floss import advertising_client
 from floss.pandora.floss import manager_client
+from floss.pandora.floss import qa_client
 from floss.pandora.floss import scanner_client
+from floss.pandora.floss import gatt_client
+from floss.pandora.floss import floss_enums
 from floss.pandora.floss import utils
 from gi.repository import GLib
 import pydbus
@@ -48,6 +50,8 @@ class Bluetooth(object):
     SCANNER_WINDOW = 0
     SCANNER_SCAN_TYPE = 0
 
+    FAKE_GATT_APP_ID = '12345678123456781234567812345678'
+
     def __init__(self):
         self.setup_mainloop()
 
@@ -59,6 +63,8 @@ class Bluetooth(object):
         self.adapter_client = adapter_client.FlossAdapterClient(self.bus, self.DEFAULT_ADAPTER)
         self.advertising_client = advertising_client.FlossAdvertisingClient(self.bus, self.DEFAULT_ADAPTER)
         self.scanner_client = scanner_client.FlossScannerClient(self.bus, self.DEFAULT_ADAPTER)
+        self.qa_client = qa_client.FlossQAClient(self.bus, self.DEFAULT_ADAPTER)
+        self.gatt_client = gatt_client.FlossGattClient(self.bus, self.DEFAULT_ADAPTER)
 
     def __del__(self):
         if not self.is_clean:
@@ -105,6 +111,47 @@ class Bluetooth(object):
         while not self.mainloop_quit.is_set():
             self.mainloop.run()
 
+    def register_clients_callback(self):
+        """Registers callback for all interfaces.
+
+        Returns:
+            True on success, False otherwise.
+        """
+        if not self.adapter_client.register_callbacks():
+            logging.error('adapter_client: Failed to register callbacks')
+            return False
+        if not self.advertising_client.register_advertiser_callback():
+            logging.error('advertising_client: Failed to register advertiser callbacks')
+            return False
+        if not self.scanner_client.register_scanner_callback():
+            logging.error('scanner_client: Failed to register callbacks')
+            return False
+        if not self.qa_client.register_qa_callback():
+            logging.error('qa_client: Failed to register callbacks')
+            return False
+        if not self.gatt_client.register_client(self.FAKE_GATT_APP_ID, False):
+            logging.error('gatt_client: Failed to register callbacks')
+            return False
+        return True
+
+    def is_bluetoothd_proxy_valid(self):
+        """Checks whether the proxy objects for Floss are ok and registers client callbacks."""
+
+        proxy_ready = all([
+            self.manager_client.has_proxy(),
+            self.adapter_client.has_proxy(),
+            self.advertising_client.has_proxy(),
+            self.scanner_client.has_proxy(),
+            self.qa_client.has_proxy(),
+            self.gatt_client.has_proxy(),
+        ])
+
+        if not proxy_ready:
+            logging.info('Some proxy has not yet ready.')
+            return False
+
+        return self.register_clients_callback()
+
     def set_powered(self, powered: bool):
         """Set the power of bluetooth adapter and bluetooth clients.
 
@@ -119,9 +166,6 @@ class Bluetooth(object):
         def _is_adapter_down(client):
             return lambda: not client.has_proxy()
 
-        def _is_adapter_ready(client):
-            return lambda: client.has_proxy() and client.get_address()
-
         if powered:
             # FIXME: Close rootcanal will cause manager_client failed call has_default_adapter.
             # if not self.manager_client.has_default_adapter():
@@ -132,26 +176,18 @@ class Bluetooth(object):
             self.adapter_client = adapter_client.FlossAdapterClient(self.bus, default_adapter)
             self.advertising_client = advertising_client.FlossAdvertisingClient(self.bus, default_adapter)
             self.scanner_client = scanner_client.FlossScannerClient(self.bus, default_adapter)
+            self.qa_client = qa_client.FlossQAClient(self.bus, default_adapter)
+            self.gatt_client = gatt_client.FlossGattClient(self.bus, default_adapter)
 
             try:
-                utils.poll_for_condition(condition=_is_adapter_ready(self.adapter_client),
-                                         desc='Wait for adapter start',
-                                         sleep_interval=self.ADAPTER_CLIENT_POLL_INTERVAL,
-                                         timeout=self.ADAPTER_DAEMON_TIMEOUT_SEC)
+                utils.poll_for_condition(
+                    condition=lambda: self.is_bluetoothd_proxy_valid() and self.adapter_client.get_address(),
+                    desc='Wait for adapter start',
+                    sleep_interval=self.ADAPTER_CLIENT_POLL_INTERVAL,
+                    timeout=self.ADAPTER_DAEMON_TIMEOUT_SEC)
             except TimeoutError as e:
                 logging.error('timeout: error starting adapter daemon: %s', e)
                 logging.error(traceback.format_exc())
-                return False
-
-            # We need to observe callbacks for proper operation.
-            if not self.adapter_client.register_callbacks():
-                logging.error('adapter_client: Failed to register callbacks')
-                return False
-            if not self.advertising_client.register_advertiser_callback():
-                logging.error('advertising_client: Failed to register advertiser callbacks')
-                return False
-            if not self.scanner_client.register_scanner_callback():
-                logging.error('scanner_client: Failed to register callbacks')
                 return False
         else:
             self.manager_client.stop(default_adapter)
@@ -177,8 +213,8 @@ class Bluetooth(object):
     def get_address(self):
         return self.adapter_client.get_address()
 
-    def get_remote_type(self):
-        return self.adapter_client.get_remote_property('Type')
+    def get_remote_type(self, address):
+        return self.adapter_client.get_remote_property(address, 'Type')
 
     def is_connected(self, address):
         return self.adapter_client.is_connected(address)
@@ -258,3 +294,19 @@ class Bluetooth(object):
             logging.error('Failed to stop scanning.')
             return False
         return True
+
+    def set_hid_report(self, addr, report_type, report):
+        return self.qa_client.set_hid_report(addr, report_type, report)
+
+    def gatt_connect(self, address, is_direct, transport):
+        return self.gatt_client.connect_client(address, is_direct, transport)
+
+    def set_connectable(self, mode):
+        return self.qa_client.set_connectable(mode)
+
+    def is_encrypted(self, address):
+        connection_state = self.adapter_client.get_connection_state(address)
+        if connection_state is None:
+            logging.error('Failed to get connection state for address: %s', address)
+            return False
+        return connection_state > floss_enums.BtConnectionState.CONNECTED_ONLY
