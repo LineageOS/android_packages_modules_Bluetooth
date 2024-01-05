@@ -3156,6 +3156,11 @@ class LeAudioClientImpl : public LeAudioClient {
     LOG_DEBUG("%s,  %s", ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_),
               bluetooth::common::ToString(leAudioDevice->GetConnectionState())
                   .c_str());
+
+    if (IS_FLAG_ENABLED(le_audio_fast_bond_params)) {
+      L2CA_LockBleConnParamsForProfileConnection(leAudioDevice->address_,
+                                                 false);
+    }
     callbacks_->OnConnectionState(ConnectionState::CONNECTED,
                                   leAudioDevice->address_);
 

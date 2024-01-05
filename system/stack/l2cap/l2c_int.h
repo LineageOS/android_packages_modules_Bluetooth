@@ -526,6 +526,9 @@ typedef struct t_l2c_linkcb {
 
   uint8_t conn_update_mask;
 
+  bool conn_update_blocked_by_service_discovery;
+  bool conn_update_blocked_by_profile_connection;
+
   uint16_t min_interval; /* parameters as requested by peripheral */
   uint16_t max_interval;
   uint16_t latency;

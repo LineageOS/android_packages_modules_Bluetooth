@@ -801,7 +801,7 @@ void bta_gattc_cfg_mtu(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
 
 void bta_gattc_start_discover_internal(tBTA_GATTC_CLCB* p_clcb) {
   if (p_clcb->transport == BT_TRANSPORT_LE)
-    L2CA_EnableUpdateBleConnParams(p_clcb->p_srcb->server_bda, false);
+    L2CA_LockBleConnParamsForServiceDiscovery(p_clcb->p_srcb->server_bda, true);
 
   bta_gattc_init_cache(p_clcb->p_srcb);
   p_clcb->status = bta_gattc_discover_pri_service(
@@ -935,8 +935,10 @@ void bta_gattc_disc_cmpl(tBTA_GATTC_CLCB* p_clcb,
 
   VLOG(1) << __func__ << ": conn_id=" << loghex(p_clcb->bta_conn_id);
 
-  if (p_clcb->transport == BT_TRANSPORT_LE)
-    L2CA_EnableUpdateBleConnParams(p_clcb->p_srcb->server_bda, true);
+  if (p_clcb->transport == BT_TRANSPORT_LE) {
+    L2CA_LockBleConnParamsForServiceDiscovery(p_clcb->p_srcb->server_bda,
+                                              false);
+  }
   p_clcb->p_srcb->state = BTA_GATTC_SERV_IDLE;
   p_clcb->disc_active = false;
 
