@@ -49,8 +49,7 @@ public abstract class ProfileService extends ContextWrapper {
         void cleanup();
     }
 
-    private BluetoothAdapter mAdapter;
-    private IProfileServiceBinder mBinder;
+    private final IProfileServiceBinder mBinder;
     private final String mName;
     private AdapterService mAdapterService;
     private boolean mProfileStarted = false;
@@ -69,7 +68,7 @@ public abstract class ProfileService extends ContextWrapper {
     }
 
     /**
-     * Called in {@link #onCreate()} to init binder interface for this profile service
+     * Called in ProfileService constructor to init binder interface for this profile service
      *
      * @return initialized binder interface for this profile service
      */
@@ -107,12 +106,11 @@ public abstract class ProfileService extends ContextWrapper {
         if (DBG) {
             Log.d(mName, "Service created");
         }
-        mAdapter = BluetoothAdapter.getDefaultAdapter();
-        mBinder = initBinder();
+        mBinder = requireNonNull(initBinder(), "Binder null is not allowed for " + mName);
     }
 
-    IBinder getBinder() {
-        requireNonNull(mBinder, "Binder is null. onCreate need to be called first");
+    /** return the binder of the profile */
+    public IBinder getBinder() {
         return mBinder;
     }
 
@@ -211,11 +209,6 @@ public abstract class ProfileService extends ContextWrapper {
     @VisibleForTesting
     public void doStart() {
         Log.v(mName, "doStart");
-        if (mAdapter == null) {
-            Log.w(mName, "Can't start profile service: device does not have BT");
-            return;
-        }
-
         mAdapterService = AdapterService.getAdapterService();
         if (mAdapterService == null) {
             Log.w(mName, "Could not add this profile because AdapterService is null.");
@@ -254,10 +247,6 @@ public abstract class ProfileService extends ContextWrapper {
             mAdapterService.removeProfile(this);
         }
         cleanup();
-        if (mBinder != null) {
-            mBinder.cleanup();
-            mBinder = null;
-        }
-        mAdapter = null;
+        mBinder.cleanup();
     }
 }
