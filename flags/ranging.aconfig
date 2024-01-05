@@ -1,0 +1,8 @@
+package: "com.android.bluetooth.flags"
+
+flag {
+    name: "channel_sounding"
+    namespace: "bluetooth"
+    description: "Enable Channel Sounding"
+    bug: "317683528"
+}
