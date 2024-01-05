@@ -323,9 +323,12 @@ public final class BluetoothLeScanner {
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)
     public void stopScan(PendingIntent callbackIntent) {
         BluetoothLeUtils.checkAdapterStateOn(mBluetoothAdapter);
-        IBluetoothGatt gatt;
         try {
-            gatt = mBluetoothAdapter.getBluetoothGatt();
+            IBluetoothGatt gatt = mBluetoothAdapter.getBluetoothGatt();
+            if (gatt == null) {
+                Log.w(TAG, "stopScan called after bluetooth has been turned off");
+                return;
+            }
             final SynchronousResultReceiver recv = SynchronousResultReceiver.get();
             gatt.stopScanForIntent(callbackIntent, mAttributionSource, recv);
             recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
