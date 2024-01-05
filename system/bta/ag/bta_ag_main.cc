@@ -22,6 +22,7 @@
  *
  ******************************************************************************/
 
+#include <android_bluetooth_flags.h>
 #include <base/logging.h>
 
 #include <string>
@@ -456,6 +457,11 @@ void bta_ag_api_disable() {
       bta_ag_sm_execute(p_scb, BTA_AG_API_DEREGISTER_EVT, tBTA_AG_DATA::kEmpty);
       do_dereg = true;
     }
+  }
+
+  if (IS_FLAG_ENABLED(is_sco_managed_by_audio)) {
+    // Stop session if not done
+    bta_clear_active_device();
   }
 
   if (!do_dereg) {
