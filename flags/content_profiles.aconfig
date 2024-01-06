@@ -1,0 +1,8 @@
+package: "com.android.bluetooth.flags"
+
+flag {
+    name: "content_profiles_errors_metrics"
+    namespace: "bluetooth"
+    description: "Enable logging error metrics in content profiles"
+    bug: "317002318"
+}

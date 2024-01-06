@@ -22,9 +22,9 @@ from floss.pandora.floss import adapter_client
 from floss.pandora.floss import advertising_client
 from floss.pandora.floss import floss_enums
 from floss.pandora.floss import scanner_client
+from floss.pandora.floss import gatt_client
 from floss.pandora.floss import utils
 from floss.pandora.server import bluetooth as bluetooth_module
-from google.protobuf import any_pb2
 from google.protobuf import empty_pb2
 import grpc
 from pandora import host_grpc_aio
@@ -48,9 +48,11 @@ class HostService(host_grpc_aio.HostServicer):
         self.bluetooth = bluetooth
         self.security = security
         self.waited_connections = set()
+        self.initiated_le_connection = set()
 
     async def FactoryReset(self, request: empty_pb2.Empty, context: grpc.ServicerContext) -> empty_pb2.Empty:
         self.waited_connections.clear()
+        self.initiated_le_connection.clear()
 
         devices = self.bluetooth.get_bonded_devices()
         if devices is None:
@@ -66,6 +68,7 @@ class HostService(host_grpc_aio.HostServicer):
 
     async def Reset(self, request: empty_pb2.Empty, context: grpc.ServicerContext) -> empty_pb2.Empty:
         self.waited_connections.clear()
+        self.initiated_le_connection.clear()
         self.bluetooth.reset()
         return empty_pb2.Empty()
 
@@ -179,7 +182,7 @@ class HostService(host_grpc_aio.HostServicer):
                     name = utils.create_observer_name(observer)
                     self.bluetooth.adapter_client.register_callback_observer(name, observer)
 
-                    if not self.bluetooth.create_bond(address, floss_enums.BtTransport.BR_EDR):
+                    if not self.bluetooth.create_bond(address, floss_enums.BtTransport.BREDR):
                         raise RuntimeError('Failed to call create_bond.')
 
                     success, reason = await create_bond
@@ -192,8 +195,8 @@ class HostService(host_grpc_aio.HostServicer):
             finally:
                 self.bluetooth.adapter_client.unregister_callback_observer(name, observer)
 
-        cookie = any_pb2.Any(value=utils.address_to(address))
-        return host_pb2.ConnectResponse(connection=host_pb2.Connection(cookie=cookie))
+        return host_pb2.ConnectResponse(
+            connection=utils.connection_to(utils.Connection(address, floss_enums.BtTransport.BREDR)))
 
     async def WaitConnection(self, request: host_pb2.WaitConnectionRequest,
                              context: grpc.ServicerContext) -> host_pb2.WaitConnectionResponse:
@@ -229,17 +232,58 @@ class HostService(host_grpc_aio.HostServicer):
                 self.bluetooth.adapter_client.unregister_callback_observer(name, observer)
             self.waited_connections.add(address)
 
-        cookie = any_pb2.Any(value=utils.address_to(address))
-        return host_pb2.WaitConnectionResponse(connection=host_pb2.Connection(cookie=cookie))
+        return host_pb2.WaitConnectionResponse(
+            connection=utils.connection_to(utils.Connection(address, floss_enums.BtTransport.BREDR)))
 
     async def ConnectLE(self, request: host_pb2.ConnectLERequest,
                         context: grpc.ServicerContext) -> host_pb2.ConnectLEResponse:
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
-        context.set_details('Method not implemented!')  # type: ignore
-        raise NotImplementedError('Method not implemented!')
+
+        class ConnectionObserver(gatt_client.GattClientCallbacks):
+            """Observer to observe the connection state."""
+
+            def __init__(self, task):
+                self.task = task
+
+            @utils.glib_callback()
+            def on_client_connection_state(self, status, client_id, connected, addr):
+                if addr != self.task['address']:
+                    return
+
+                future = self.task['connect_le_device']
+                if status != floss_enums.GattStatus.SUCCESS:
+                    future.get_loop().call_soon_threadsafe(future.set_result,
+                                                           (False, f'{address} failed to connect. Status: {status}.'))
+                    return
+
+                future.get_loop().call_soon_threadsafe(future.set_result, (connected, None))
+
+        if not request.address:
+            raise ValueError('Connect LE: Request address field must be set')
+
+        own_address_type = request.own_address_type
+        if own_address_type not in (host_pb2.RANDOM, host_pb2.RESOLVABLE_OR_RANDOM):
+            raise RuntimeError(f'ConnectLE: Unsupported OwnAddressType: {own_address_type}.')
+
+        address = utils.address_from(request.address)
+        self.initiated_le_connection.add(address)
+        try:
+            connect_le_device = asyncio.get_running_loop().create_future()
+            observer = ConnectionObserver({'connect_le_device': connect_le_device, 'address': address})
+            name = utils.create_observer_name(observer)
+            self.bluetooth.gatt_client.register_callback_observer(name, observer)
+            self.bluetooth.gatt_connect(address, True, floss_enums.BtTransport.LE)
+            connected, reason = await connect_le_device
+            if not connected:
+                raise RuntimeError(f'Failed to connect to the address: {address}. Reason: {reason}')
+        finally:
+            self.bluetooth.gatt_client.unregister_callback_observer(name, observer)
+
+        return host_pb2.ConnectLEResponse(
+            connection=utils.connection_to(utils.Connection(address, floss_enums.BtTransport.LE)))
 
     async def Disconnect(self, request: host_pb2.DisconnectRequest, context: grpc.ServicerContext) -> empty_pb2.Empty:
-        address = utils.address_from(request.connection.cookie.value)
+        address = utils.connection_from(request.connection).address
+
         if self.bluetooth.is_connected(address):
             self.bluetooth.disconnect_device(address)
         return empty_pb2.Empty()
@@ -382,8 +426,8 @@ class HostService(host_grpc_aio.HostServicer):
                 address = await connections.get()
                 logging.info('Advertise: Connected to %s', address)
 
-                cookie = any_pb2.Any(value=utils.address_to(address))
-                yield host_pb2.AdvertiseResponse(connection=host_pb2.Connection(cookie=cookie))
+                yield host_pb2.AdvertiseResponse(
+                    connection=utils.connection_to(utils.Connection(address, floss_enums.BtTransport.LE)))
 
                 # Wait a small delay before restarting the advertisement.
                 await asyncio.sleep(1)
@@ -556,6 +600,6 @@ class HostService(host_grpc_aio.HostServicer):
 
     async def SetConnectabilityMode(self, request: host_pb2.SetConnectabilityModeRequest,
                                     context: grpc.ServicerContext) -> empty_pb2.Empty:
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
-        context.set_details('Method not implemented!')  # type: ignore
-        raise NotImplementedError('Method not implemented!')
+        mode = request.mode
+        self.bluetooth.set_connectable(mode)
+        return empty_pb2.Empty()

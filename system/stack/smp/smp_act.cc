@@ -22,7 +22,7 @@
 
 #include "btif/include/btif_common.h"
 #include "btif/include/core_callbacks.h"
-#include "btif/include/stack_manager.h"
+#include "btif/include/stack_manager_t.h"
 #include "crypto_toolbox/crypto_toolbox.h"
 #include "device/include/interop.h"
 #include "internal_include/bt_target.h"

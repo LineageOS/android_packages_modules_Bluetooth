@@ -34,7 +34,7 @@
 #include "bta/include/bta_dm_api.h"
 #include "bta/sys/bta_sys.h"
 #include "btif/include/core_callbacks.h"
-#include "btif/include/stack_manager.h"
+#include "btif/include/stack_manager_t.h"
 #include "device/include/controller.h"
 #include "main/shim/dumpsys.h"
 #include "os/log.h"

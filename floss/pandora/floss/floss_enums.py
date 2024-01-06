@@ -19,8 +19,9 @@ import enum
 class BtTransport(enum.IntEnum):
     """Bluetooth transport type."""
     AUTO = 0
-    BR_EDR = 1
+    BREDR = 1
     LE = 2
+    DUAL = 3
 
 
 class GattWriteRequestStatus(enum.IntEnum):
@@ -142,14 +143,6 @@ class BondState(enum.IntEnum):
     BONDED = 2
 
 
-class Transport(enum.IntEnum):
-    """Bluetooth transport type."""
-    AUTO = 0
-    BREDR = 1
-    LE = 2
-    DUAL = 3
-
-
 class PairingVariant(enum.IntEnum):
     """Bluetooth pairing variant type."""
     # SSP variants.
@@ -176,6 +169,14 @@ class OwnAddressType(enum.IntEnum):
     DEFAULT = -1
     PUBLIC = 0
     RANDOM = 1
+
+
+class BtConnectionState(enum.IntEnum):
+    NOT_CONNECTED = 0
+    CONNECTED_ONLY = 1
+    ENCRYPTED_BR_EDR = 3
+    ENCRYPTED_LE = 5
+    ENCRYPTED_BOTH = 7
 
 
 class CompanyIdentifiers(enum.IntEnum):
@@ -212,3 +213,17 @@ class AdvertisingDataType(enum.IntEnum):
     URI = 0x24
     LE_SUPPORTED_FEATURES = 0x27
     MANUFACTURER_SPECIFIC_DATA = 0xFF
+
+
+class BtDiscMode(enum.IntEnum):
+    """Bluetooth discoverable mode."""
+    NON_DISCOVERABLE = 0
+    LIMITED_DISCOVERABLE = 1
+    GENERAL_DISCOVERABLE = 2
+
+
+class BthhReportType(enum.IntEnum):
+    """Bluetooth HID report type."""
+    INPUT_REPORT = 1
+    OUTPUT_REPORT = 2
+    FEATURE_REPORT = 3
