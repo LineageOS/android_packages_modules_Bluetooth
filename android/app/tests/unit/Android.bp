@@ -27,6 +27,7 @@ java_defaults {
         "androidx.test.ext.truth",
         "androidx.test.rules",
         "androidx.test.uiautomator_uiautomator",
+        "flag-junit",
         "framework-bluetooth-pre-jarjar",
         "frameworks-base-testutils",
         "gson",
