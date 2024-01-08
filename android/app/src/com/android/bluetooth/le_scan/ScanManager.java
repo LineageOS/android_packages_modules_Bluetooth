@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.gatt;
+package com.android.bluetooth.le_scan;
 
 import android.annotation.RequiresPermission;
 import android.app.ActivityManager;
@@ -47,6 +47,14 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.BluetoothAdapterProxy;
 import com.android.bluetooth.flags.FeatureFlags;
+import com.android.bluetooth.gatt.AppScanStats;
+import com.android.bluetooth.gatt.FilterParams;
+import com.android.bluetooth.gatt.GattObjectsFactory;
+import com.android.bluetooth.gatt.GattService;
+import com.android.bluetooth.gatt.GattServiceConfig;
+import com.android.bluetooth.gatt.ScanClient;
+import com.android.bluetooth.gatt.ScanFilterQueue;
+import com.android.bluetooth.gatt.ScanNativeInterface;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -85,8 +93,8 @@ public class ScanManager {
     public static final int SCAN_MODE_SCREEN_OFF_BALANCED_INTERVAL_MS = 730;
 
     // Result type defined in bt stack. Need to be accessed by GattService.
-    static final int SCAN_RESULT_TYPE_TRUNCATED = 1;
-    static final int SCAN_RESULT_TYPE_FULL = 2;
+    public static final int SCAN_RESULT_TYPE_TRUNCATED = 1;
+    public static final int SCAN_RESULT_TYPE_FULL = 2;
     static final int SCAN_RESULT_TYPE_BOTH = 3;
 
     // Messages for handling BLE scan operations.
@@ -160,7 +168,7 @@ public class ScanManager {
         }
     }
 
-    ScanManager(
+    public ScanManager(
             GattService service,
             AdapterService adapterService,
             BluetoothAdapterProxy bluetoothAdapterProxy,
@@ -206,7 +214,7 @@ public class ScanManager {
         mService.registerReceiver(mLocationReceiver, locationIntentFilter);
     }
 
-    void cleanup() {
+    public void cleanup() {
         mRegularScanClients.clear();
         mBatchClients.clear();
         mSuspendedScanClients.clear();
@@ -241,19 +249,19 @@ public class ScanManager {
         }
     }
 
-    void registerScanner(UUID uuid) {
+    public void registerScanner(UUID uuid) {
         mScanNative.registerScanner(uuid.getLeastSignificantBits(),
                 uuid.getMostSignificantBits());
     }
 
-    void unregisterScanner(int scannerId) {
+    public void unregisterScanner(int scannerId) {
         mScanNative.unregisterScanner(scannerId);
     }
 
     /**
      * Returns the regular scan queue.
      */
-    Set<ScanClient> getRegularScanQueue() {
+    public Set<ScanClient> getRegularScanQueue() {
         return mRegularScanClients;
     }
 
@@ -267,14 +275,14 @@ public class ScanManager {
     /**
      * Returns batch scan queue.
      */
-    Set<ScanClient> getBatchScanQueue() {
+    public Set<ScanClient> getBatchScanQueue() {
         return mBatchClients;
     }
 
     /**
      * Returns a set of full batch scan clients.
      */
-    Set<ScanClient> getFullBatchScanQueue() {
+    public Set<ScanClient> getFullBatchScanQueue() {
         // TODO: split full batch scan clients and truncated batch clients so we don't need to
         // construct this every time.
         Set<ScanClient> fullBatchClients = new HashSet<ScanClient>();
@@ -286,14 +294,14 @@ public class ScanManager {
         return fullBatchClients;
     }
 
-    void startScan(ScanClient client) {
+    public void startScan(ScanClient client) {
         if (DBG) {
             Log.d(TAG, "startScan() " + client);
         }
         sendMessage(MSG_START_BLE_SCAN, client);
     }
 
-    void stopScan(int scannerId) {
+    public void stopScan(int scannerId) {
         ScanClient client = mScanNative.getBatchScanClient(scannerId);
         if (client == null) {
             client = mScanNative.getRegularScanClient(scannerId);
@@ -304,11 +312,11 @@ public class ScanManager {
         sendMessage(MSG_STOP_BLE_SCAN, client);
     }
 
-    void flushBatchScanResults(ScanClient client) {
+    public void flushBatchScanResults(ScanClient client) {
         sendMessage(MSG_FLUSH_BATCH_RESULTS, client);
     }
 
-    void callbackDone(int scannerId, int status) {
+    public void callbackDone(int scannerId, int status) {
         mScanNative.callbackDone(scannerId, status);
     }
 
@@ -332,7 +340,7 @@ public class ScanManager {
         return mBluetoothAdapterProxy.isOffloadedScanFilteringSupported();
     }
 
-    boolean isAutoBatchScanClientEnabled(ScanClient client) {
+    public boolean isAutoBatchScanClientEnabled(ScanClient client) {
         return mScanNative.isAutoBatchScanClientEnabled(client);
     }
 

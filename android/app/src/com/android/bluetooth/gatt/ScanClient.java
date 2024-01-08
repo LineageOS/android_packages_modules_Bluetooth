@@ -29,7 +29,7 @@ import java.util.Objects;
  *
  * @hide
  */
-/* package */class ScanClient {
+public class ScanClient {
     public int scannerId;
     public ScanSettings settings;
     public int scanModeApp;
@@ -57,7 +57,7 @@ import java.util.Objects;
         this(scannerId, DEFAULT_SCAN_SETTINGS, null);
     }
 
-    ScanClient(int scannerId, ScanSettings settings, List<ScanFilter> filters) {
+    public ScanClient(int scannerId, ScanSettings settings, List<ScanFilter> filters) {
         this(scannerId, settings, filters, Binder.getCallingUid());
     }
 
