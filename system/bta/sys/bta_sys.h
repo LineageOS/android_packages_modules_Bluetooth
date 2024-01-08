@@ -200,6 +200,9 @@ typedef void(tBTA_SYS_ROLE_SWITCH_CBACK)(tBTA_SYS_CONN_STATUS status,
 typedef void(tBTA_SYS_SSR_CFG_CBACK)(uint8_t id, uint8_t app_id,
                                      uint16_t latency, uint16_t tout);
 
+typedef void(tBTA_SYS_SNIFF_CBACK)(uint8_t id, uint8_t app_id,
+                                   const RawAddress& peer_addr);
+
 typedef struct {
   bluetooth::Uuid custom_uuid;
   uint32_t handle;
@@ -241,7 +244,7 @@ void bta_sys_disable();
 
 void bta_sys_rm_register(tBTA_SYS_CONN_CBACK* p_cback);
 void bta_sys_pm_register(tBTA_SYS_CONN_CBACK* p_cback);
-
+void bta_sys_sniff_register(tBTA_SYS_SNIFF_CBACK* p_cback);
 void bta_sys_sco_register(tBTA_SYS_CONN_SCO_CBACK* p_cback);
 
 void bta_sys_conn_open(tBTA_SYS_ID id, uint8_t app_id,
@@ -262,7 +265,8 @@ void bta_sys_sco_unuse(tBTA_SYS_ID id, uint8_t app_id,
                        const RawAddress& peer_addr);
 void bta_sys_idle(tBTA_SYS_ID id, uint8_t app_id, const RawAddress& peer_addr);
 void bta_sys_busy(tBTA_SYS_ID id, uint8_t app_id, const RawAddress& peer_addr);
-
+void bta_sys_reset_sniff(uint8_t id, uint8_t app_id,
+                         const RawAddress& peer_addr);
 void bta_sys_ssr_cfg_register(tBTA_SYS_SSR_CFG_CBACK* p_cback);
 void bta_sys_chg_ssr_config(tBTA_SYS_ID id, uint8_t app_id,
                             uint16_t max_latency, uint16_t min_tout);
