@@ -587,7 +587,7 @@ public class BassClientStateMachine extends StateMachine {
         metaData.setSourceDevice(device, device.getAddressType());
         byte[] arrayPresentationDelay = baseData.getLevelOne().presentationDelay;
         int presentationDelay = (int) ((arrayPresentationDelay[2] & 0xff) << 16
-                | (arrayPresentationDelay[1] & 0xff)
+                | (arrayPresentationDelay[1] & 0xff) << 8
                 | (arrayPresentationDelay[0] & 0xff));
         metaData.setPresentationDelayMicros(presentationDelay);
         PeriodicAdvertisementResult result =
