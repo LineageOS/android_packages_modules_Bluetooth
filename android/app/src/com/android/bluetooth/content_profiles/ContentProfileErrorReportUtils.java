@@ -34,9 +34,6 @@ public class ContentProfileErrorReportUtils {
     /* Minimum period between two error reports */
     @VisibleForTesting static final long MIN_PERIOD_BETWEEN_TWO_ERROR_REPORTS_MILLIS = 1_000;
 
-    /* Whether reporting is enabled by flags */
-    @VisibleForTesting static boolean sEnabled = Flags.contentProfilesErrorsMetrics();
-
     @VisibleForTesting static long sLastReportTime = 0;
 
     /**
@@ -52,10 +49,11 @@ public class ContentProfileErrorReportUtils {
      *     BluetoothStatsLog#BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN}
      * @param tag A tag which represents the code location of this error. The values are managed per
      *     each java file.
+     * @return true if successfully wrote the error, false otherwise
      */
-    public static synchronized void report(int profile, int fileNameEnum, int type, int tag) {
-        if (!sEnabled) {
-            return;
+    public static synchronized boolean report(int profile, int fileNameEnum, int type, int tag) {
+        if (!Flags.contentProfilesErrorsMetrics()) {
+            return false;
         }
 
         if (isTooFrequentReport()) {
@@ -66,7 +64,7 @@ public class ContentProfileErrorReportUtils {
                             + fileNameEnum
                             + ", tag="
                             + tag);
-            return;
+            return false;
         }
 
         BluetoothStatsLog.write(
@@ -76,6 +74,7 @@ public class ContentProfileErrorReportUtils {
                 type,
                 tag);
         sLastReportTime = SystemClock.uptimeMillis();
+        return true;
     }
 
     private static boolean isTooFrequentReport() {
