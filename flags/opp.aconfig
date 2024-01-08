@@ -1,0 +1,8 @@
+package: "com.android.bluetooth.flags"
+
+flag {
+    name: "opp_start_activity_directly_from_notification"
+    namespace: "bluetooth"
+    description: "Make OPP notification start activities directly from it, not via OppReceiver"
+    bug: "319050411"
+}
