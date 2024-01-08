@@ -466,6 +466,10 @@ impl Uuid {
             uuid[8], uuid[9],
             uuid[10], uuid[11], uuid[12], uuid[13], uuid[14], uuid[15])
     }
+
+    pub fn empty() -> Uuid {
+        unsafe { bindings::bluetooth::Uuid_kEmpty }
+    }
 }
 
 impl Display for Uuid {
