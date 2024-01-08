@@ -66,6 +66,13 @@ void bta_sys_notify_role_chg(const RawAddress& peer_addr, tHCI_ROLE new_role,
 void bta_sys_pm_register(tBTA_SYS_CONN_CBACK* p_cback) {
   inc_func_call_count(__func__);
 }
+void bta_sys_sniff_register(tBTA_SYS_SNIFF_CBACK* p_cback) {
+  inc_func_call_count(__func__);
+}
+void bta_sys_reset_sniff(uint8_t id, uint8_t app_id,
+                         const RawAddress& peer_addr) {
+  inc_func_call_count(__func__);
+}
 void bta_sys_rm_register(tBTA_SYS_CONN_CBACK* p_cback) {
   inc_func_call_count(__func__);
 }
