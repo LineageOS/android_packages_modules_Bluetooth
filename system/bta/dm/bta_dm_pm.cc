@@ -55,6 +55,8 @@ static void bta_dm_pm_btm_cback(const RawAddress& bd_addr,
                                 tHCI_STATUS hci_status);
 static bool bta_dm_pm_park(const RawAddress& peer_addr);
 void bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index);
+static void bta_dm_sniff_cback(uint8_t id, uint8_t app_id,
+                               const RawAddress& peer_addr);
 static int bta_dm_get_sco_index();
 static void bta_dm_pm_stop_timer_by_index(tBTA_PM_TIMER* p_timer,
                                           uint8_t timer_idx);
@@ -95,6 +97,7 @@ void bta_dm_init_pm(void) {
   /* if there are no power manger entries, so not register */
   if (p_bta_dm_pm_cfg[0].app_id != 0) {
     bta_sys_pm_register(bta_dm_pm_cback);
+    bta_sys_sniff_register(bta_dm_sniff_cback);
 
     get_btm_client_interface().lifecycle.BTM_PmRegister(
         (BTM_PM_REG_SET), &bta_dm_cb.pm_id, bta_dm_pm_btm_cback);
@@ -332,6 +335,71 @@ static void bta_dm_pm_stop_timer_by_index(tBTA_PM_TIMER* p_timer,
   state_lock.unlock();
 
   alarm_cancel(p_timer->timer[timer_idx]);
+}
+
+/*******************************************************************************
+ *
+ * Function         bta_dm_sniff_cback
+ *
+ * Description      Restart sniff timer for a peer
+ *
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+static void bta_dm_sniff_cback(uint8_t id, uint8_t app_id,
+                               const RawAddress& peer_addr) {
+  int i = 0, j = 0;
+  uint64_t timeout_ms = 0;
+
+  tBTA_DM_PEER_DEVICE* p_peer_device = bta_dm_find_peer_device(peer_addr);
+  if (p_peer_device == NULL) {
+    LOG_INFO("No peer device found: %s", ADDRESS_TO_LOGGABLE_CSTR(peer_addr));
+    return;
+  }
+
+  /* Search for sniff table for timeout value
+     p_bta_dm_pm_cfg[0].app_id is the number of entries */
+  for (j = 1; j <= p_bta_dm_pm_cfg[0].app_id; j++) {
+    if ((p_bta_dm_pm_cfg[j].id == id) &&
+        ((p_bta_dm_pm_cfg[j].app_id == BTA_ALL_APP_ID) ||
+         (p_bta_dm_pm_cfg[j].app_id == app_id)))
+      break;
+  }
+  // Handle overflow access
+  if (j > p_bta_dm_pm_cfg[0].app_id) {
+    LOG_INFO("No configuration found for %s",
+             ADDRESS_TO_LOGGABLE_CSTR(peer_addr));
+    return;
+  }
+  const tBTA_DM_PM_CFG* p_pm_cfg = &p_bta_dm_pm_cfg[j];
+  const tBTA_DM_PM_SPEC* p_pm_spec = &get_bta_dm_pm_spec()[p_pm_cfg->spec_idx];
+  const tBTA_DM_PM_ACTN* p_act0 = &p_pm_spec->actn_tbl[BTA_SYS_CONN_IDLE][0];
+  const tBTA_DM_PM_ACTN* p_act1 = &p_pm_spec->actn_tbl[BTA_SYS_CONN_IDLE][1];
+
+  tBTA_DM_PM_ACTION failed_pm = p_peer_device->pm_mode_failed;
+  /* first check if the first preference is ok */
+  if (!(failed_pm & p_act0->power_mode)) {
+    timeout_ms = p_act0->timeout;
+  }
+  /* if first preference has already failed, try second preference */
+  else if (!(failed_pm & p_act1->power_mode)) {
+    timeout_ms = p_act1->timeout;
+  }
+
+  /* Refresh the sniff timer */
+  for (i = 0; i < BTA_DM_NUM_PM_TIMER; i++) {
+    if (bta_dm_cb.pm_timer[i].in_use &&
+        bta_dm_cb.pm_timer[i].peer_bdaddr == peer_addr) {
+      int timer_idx = bta_pm_action_to_timer_idx(BTA_DM_PM_SNIFF);
+      if (timer_idx != BTA_DM_PM_MODE_TIMER_MAX) {
+        /* Cancel and restart the timer */
+        bta_dm_pm_stop_timer_by_index(&bta_dm_cb.pm_timer[i], timer_idx);
+        bta_dm_pm_start_timer(&bta_dm_cb.pm_timer[i], timer_idx, timeout_ms, id,
+                              BTA_DM_PM_SNIFF);
+      }
+    }
+  }
 }
 
 /*******************************************************************************
