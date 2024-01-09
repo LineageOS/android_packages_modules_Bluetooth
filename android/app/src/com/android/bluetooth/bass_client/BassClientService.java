@@ -1203,10 +1203,6 @@ public class BassClientService extends ProfileService {
 
         if (sourceMetadata == null) {
             log("addSource: Error bad parameter: sourceMetadata cannot be null");
-            for (BluetoothDevice device : devices) {
-                mCallbacks.notifySourceAddFailed(device, sourceMetadata,
-                        BluetoothStatusCodes.ERROR_BAD_PARAMETERS);
-            }
             return;
         }
 
@@ -1566,7 +1562,9 @@ public class BassClientService extends ProfileService {
             BluetoothDevice sink = mPausedBroadcastSinks.remove();
             BluetoothLeBroadcastMetadata metadata = mBroadcastMetadataMap.get(sink);
 
-            addSource(sink, metadata, true);
+            if (metadata != null) {
+                addSource(sink, metadata, true);
+            }
         }
     }
 

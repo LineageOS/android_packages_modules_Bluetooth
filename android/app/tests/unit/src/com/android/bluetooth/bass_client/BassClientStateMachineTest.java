@@ -1500,6 +1500,7 @@ public class BassClientStateMachineTest {
 
         // Test sendPendingCallbacks(ADD_BCAST_SOURCE, ERROR_UNKNOWN)
         moveConnectedStateToConnectedProcessingState();
+        mBassClientStateMachine.mPendingMetadata = createBroadcastMetadata();
         mBassClientStateMachine.mPendingOperation = ADD_BCAST_SOURCE;
         sendMessageAndVerifyTransition(
                 mBassClientStateMachine.obtainMessage(GATT_TXN_PROCESSED, GATT_FAILURE),
