@@ -70,10 +70,6 @@ public class Constants {
     /** the intent that gets sent when clicking a inbound transfer notification */
     static final String ACTION_OPEN_INBOUND_TRANSFER = "android.btopp.intent.action.OPEN_INBOUND";
 
-    /** the intent that gets sent from the Settings app to show the received files */
-    static final String ACTION_OPEN_RECEIVED_FILES =
-            "android.btopp.intent.action.OPEN_RECEIVED_FILES";
-
     /** the intent that acceptlists a remote bluetooth device for auto-receive confirmation (NFC) */
     static final String ACTION_ACCEPTLIST_DEVICE = "android.btopp.intent.action.ACCEPTLIST_DEVICE";
 

@@ -177,17 +177,6 @@ public class BluetoothOppReceiverTest {
     }
 
     @Test
-    public void onReceive_withActionOpenReceivedFile_startsTransferHistoryActivity() {
-        Intent intent = new Intent();
-        intent.setAction(Constants.ACTION_OPEN_RECEIVED_FILES);
-        intent.setData(Uri.parse("content:///not/important"));
-        mReceiver.onReceive(mContext, intent);
-        intended(hasComponent(BluetoothOppTransferHistory.class.getName()));
-        intended(hasExtra("direction", BluetoothShare.DIRECTION_INBOUND));
-        intended(hasExtra(Constants.EXTRA_SHOW_ALL_FILES, true));
-    }
-
-    @Test
     public void onReceive_withActionHide_contentUpdate() {
         List<BluetoothOppTestUtils.CursorMockData> cursorMockDataList;
         Cursor cursor = mock(Cursor.class);
