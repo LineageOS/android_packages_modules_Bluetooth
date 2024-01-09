@@ -803,7 +803,7 @@ static void dump(int fd, const char** arguments) {
   wakelock_debug_dump(fd);
   alarm_debug_dump(fd);
   bluetooth::csis::CsisClient::DebugDump(fd);
-  le_audio::has::HasClient::DebugDump(fd);
+  ::le_audio::has::HasClient::DebugDump(fd);
   HearingAid::DebugDump(fd);
   LeAudioClient::DebugDump(fd);
   LeAudioBroadcaster::DebugDump(fd);
