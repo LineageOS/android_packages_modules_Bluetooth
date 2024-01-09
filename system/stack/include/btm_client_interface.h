@@ -23,7 +23,6 @@
 #include "stack/btm/power_mode.h"
 #include "stack/include/acl_client_callbacks.h"
 #include "stack/include/bt_hdr.h"
-#include "stack/include/bt_octets.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_ble_api_types.h"
 #include "stack/include/btm_status.h"
@@ -51,10 +50,6 @@ struct btm_client_interface_t {
 
   // Acl peer and lifecycle
   struct {
-    struct {
-      bool (*SupportTransparentSynchronousData)(const RawAddress& bd_addr);
-    } features;
-
     bool (*BTM_IsAclConnectionUp)(const RawAddress& bd_addr,
                                   tBT_TRANSPORT transport);
     bool (*BTM_ReadConnectedTransportAddress)(RawAddress* bd_addr,

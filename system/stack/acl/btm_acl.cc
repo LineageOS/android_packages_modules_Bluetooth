@@ -2790,17 +2790,6 @@ void ACL_UnregisterClient(struct acl_client_callback_s* callbacks) {
   LOG_DEBUG("UNIMPLEMENTED");
 }
 
-bool ACL_SupportTransparentSynchronousData(const RawAddress& bd_addr) {
-  const tACL_CONN* p_acl =
-      internal_.btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
-  if (p_acl == nullptr) {
-    LOG_WARN("Unable to find active acl");
-    return false;
-  }
-
-  return HCI_LMP_TRANSPNT_SUPPORTED(p_acl->peer_lmp_feature_pages[0]);
-}
-
 tACL_CONN* btm_acl_for_bda(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, transport);
   if (p_acl == nullptr) {
