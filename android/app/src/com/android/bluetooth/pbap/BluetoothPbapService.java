@@ -746,7 +746,7 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
     }
 
     @Override
-    protected boolean stop() {
+    protected void stop() {
         if (VERBOSE) {
             Log.v(TAG, "stop()");
         }
@@ -760,7 +760,7 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
         mContactsLoaded = false;
         if (mContactChangeObserver == null) {
             Log.i(TAG, "Avoid unregister when receiver it is not registered");
-            return true;
+            return;
         }
         unregisterReceiver(mPbapReceiver);
         getContentResolver().unregisterContentObserver(mContactChangeObserver);
@@ -770,7 +770,6 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
             mPbapStateMachineMap.clear();
         }
         getApplicationContext().unregisterReceiver(mUserChangeReceiver);
-        return true;
     }
 
     /**

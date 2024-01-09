@@ -163,7 +163,7 @@ public class PbapClientService extends ProfileService {
     }
 
     @Override
-    protected boolean stop() {
+    protected void stop() {
         setPbapClientService(null);
         cleanUpSdpRecord();
         try {
@@ -184,7 +184,6 @@ public class PbapClientService extends ProfileService {
 
         cleanupAuthenicationService();
         setComponentAvailable(AUTHENTICATOR_SERVICE, false);
-        return true;
     }
 
     void cleanupDevice(BluetoothDevice device) {

@@ -270,10 +270,10 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
     }
 
     @Override
-    public boolean stop() {
+    public void stop() {
         if (sBluetoothOppService == null) {
             Log.w(TAG, "stop() called before start()");
-            return true;
+            return;
         }
         setBluetoothOppService(null);
         mHandler.sendMessage(mHandler.obtainMessage(STOP_LISTENER));
@@ -284,8 +284,6 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
         setComponentAvailable(TRANSFER_HISTORY_ACTIVITY, false);
         setComponentAvailable(OPP_RECEIVER, false);
         setComponentAvailable(OPP_HANDOFF_RECEIVER, false);
-
-        return true;
     }
 
     private void startListener() {

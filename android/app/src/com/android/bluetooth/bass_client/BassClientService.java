@@ -384,7 +384,7 @@ public class BassClientService extends ProfileService {
     }
 
     @Override
-    protected boolean stop() {
+    protected void stop() {
         if (DBG) {
             Log.d(TAG, "stop()");
         }
@@ -435,7 +435,6 @@ public class BassClientService extends ProfileService {
             mSyncHandleToBroadcastIdMap.clear();
             mSyncHandleToBroadcastIdMap = null;
         }
-        return true;
     }
 
     BluetoothDevice getDeviceForSyncHandle(int syncHandle) {

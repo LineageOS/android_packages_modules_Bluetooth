@@ -113,7 +113,7 @@ public class A2dpSinkService extends ProfileService {
     }
 
     @Override
-    protected boolean stop() {
+    protected void stop() {
         setA2dpSinkService(null);
         mNativeInterface.cleanup();
         for (A2dpSinkStateMachine stateMachine : mDeviceStateMap.values()) {
@@ -126,7 +126,6 @@ public class A2dpSinkService extends ProfileService {
                 mA2dpSinkStreamHandler = null;
             }
         }
-        return true;
     }
 
     public static synchronized A2dpSinkService getA2dpSinkService() {

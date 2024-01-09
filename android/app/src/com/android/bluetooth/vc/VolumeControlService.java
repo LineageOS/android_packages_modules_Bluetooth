@@ -280,13 +280,13 @@ public class VolumeControlService extends ProfileService {
     }
 
     @Override
-    protected boolean stop() {
+    protected void stop() {
         if (DBG) {
             Log.d(TAG, "stop()");
         }
         if (sVolumeControlService == null) {
             Log.w(TAG, "stop() called before start()");
-            return true;
+            return;
         }
 
         // Mark service as stopped
@@ -335,8 +335,6 @@ public class VolumeControlService extends ProfileService {
             mCallbacks.kill();
             mCallbacks = null;
         }
-
-        return true;
     }
 
     @Override

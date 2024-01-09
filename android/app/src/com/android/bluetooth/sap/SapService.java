@@ -702,11 +702,11 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
     }
 
     @Override
-    protected boolean stop() {
+    protected void stop() {
         Log.v(TAG, "stop()");
         if (!mIsRegistered) {
             Log.i(TAG, "Avoid unregister when receiver it is not registered");
-            return true;
+            return;
         }
         setSapService(null);
         try {
@@ -718,7 +718,6 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
         mAdapterService.unregisterBluetoothStateCallback(this);
         setState(BluetoothSap.STATE_DISCONNECTED, BluetoothSap.RESULT_CANCELED);
         sendShutdownMessage();
-        return true;
     }
 
     @Override

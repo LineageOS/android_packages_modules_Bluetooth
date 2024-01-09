@@ -207,11 +207,11 @@ public class A2dpService extends ProfileService {
     }
 
     @Override
-    protected boolean stop() {
+    protected void stop() {
         Log.i(TAG, "stop()");
         if (sA2dpService == null) {
             Log.w(TAG, "stop() called before start()");
-            return true;
+            return;
         }
 
         // Step 9: Clear active device and stop playing audio
@@ -258,8 +258,6 @@ public class A2dpService extends ProfileService {
         // Step 1: Clear AdapterService, AudioManager
         mAudioManager = null;
         mAdapterService = null;
-
-        return true;
     }
 
     @Override

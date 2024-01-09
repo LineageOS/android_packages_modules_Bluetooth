@@ -889,7 +889,7 @@ public class BluetoothMapService extends ProfileService {
     }
 
     @Override
-    protected boolean stop() {
+    protected void stop() {
         if (DEBUG) {
             Log.d(TAG, "stop()");
         }
@@ -897,7 +897,7 @@ public class BluetoothMapService extends ProfileService {
             if (DEBUG) {
                 Log.d(TAG, "mServiceStarted is false - Ignoring");
             }
-            return true;
+            return;
         }
         setBluetoothMapService(null);
         mServiceStarted = false;
@@ -909,7 +909,6 @@ public class BluetoothMapService extends ProfileService {
         sendShutdownMessage();
         setComponentAvailable(MAP_SETTINGS_ACTIVITY, false);
         setComponentAvailable(MAP_FILE_PROVIDER, false);
-        return true;
     }
 
     /**

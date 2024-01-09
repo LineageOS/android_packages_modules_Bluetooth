@@ -792,14 +792,14 @@ public class HidDeviceService extends ProfileService {
     }
 
     @Override
-    protected boolean stop() {
+    protected void stop() {
         if (DBG) {
             Log.d(TAG, "stop()");
         }
 
         if (sHidDeviceService == null) {
             Log.w(TAG, "stop() called before start()");
-            return true;
+            return;
         }
 
         setHidDeviceService(null);
@@ -808,7 +808,6 @@ public class HidDeviceService extends ProfileService {
             mNativeAvailable = false;
         }
         mActivityManager.removeOnUidImportanceListener(mUidImportanceListener);
-        return true;
     }
 
     /**

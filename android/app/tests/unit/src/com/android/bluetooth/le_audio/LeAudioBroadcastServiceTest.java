@@ -247,11 +247,7 @@ public class LeAudioBroadcastServiceTest {
     public void testStopLeAudioService() {
         Assert.assertEquals(mService, LeAudioService.getLeAudioService());
 
-        InstrumentationRegistry.getInstrumentation().runOnMainSync(new Runnable() {
-            public void run() {
-                Assert.assertTrue(mService.stop());
-            }
-        });
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(mService::stop);
         InstrumentationRegistry.getInstrumentation().runOnMainSync(mService::start);
     }
 

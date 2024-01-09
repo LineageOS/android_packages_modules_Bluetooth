@@ -120,11 +120,10 @@ public class HidHostService extends ProfileService {
     }
 
     @Override
-    protected boolean stop() {
+    protected void stop() {
         if (DBG) {
             Log.d(TAG, "Stopping Bluetooth HidHostService");
         }
-        return true;
     }
 
     @Override

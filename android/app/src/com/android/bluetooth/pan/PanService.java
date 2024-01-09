@@ -178,10 +178,10 @@ public class PanService extends ProfileService {
     }
 
     @Override
-    protected boolean stop() {
+    protected void stop() {
         if (!mStarted) {
             Log.w(TAG, "stop() called before start()");
-            return true;
+            return;
         }
         if (mTetheringManager != null) {
             mTetheringManager.unregisterTetheringEventCallback(mTetheringCallback);
@@ -189,7 +189,6 @@ public class PanService extends ProfileService {
         }
         mNativeInterface.cleanup();
         mHandler.removeCallbacksAndMessages(null);
-        return true;
     }
 
     @Override

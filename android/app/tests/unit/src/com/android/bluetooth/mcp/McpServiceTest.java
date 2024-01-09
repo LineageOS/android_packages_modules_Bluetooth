@@ -110,11 +110,7 @@ public class McpServiceTest {
 
     @Test
     public void testStopMcpService() {
-        InstrumentationRegistry.getInstrumentation().runOnMainSync(new Runnable() {
-            public void run() {
-                Assert.assertTrue(mMcpService.stop());
-            }
-        });
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(mMcpService::stop);
         Assert.assertNull(McpService.getMcpService());
         Assert.assertNull(McpService.getMediaControlProfile());
 

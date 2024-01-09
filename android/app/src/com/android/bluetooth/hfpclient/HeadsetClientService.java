@@ -155,12 +155,12 @@ public class HeadsetClientService extends ProfileService {
     }
 
     @Override
-    protected boolean stop() {
+    protected void stop() {
         synchronized (mStartStopLock) {
             synchronized (HeadsetClientService.class) {
                 if (sHeadsetClientService == null) {
                     Log.w(TAG, "stop() called without start()");
-                    return false;
+                    return;
                 }
 
                 // Stop the HfpClientConnectionService for non-wearables devices.
@@ -191,8 +191,6 @@ public class HeadsetClientService extends ProfileService {
 
             mNativeInterface.cleanup();
             mNativeInterface = null;
-
-            return true;
         }
     }
 

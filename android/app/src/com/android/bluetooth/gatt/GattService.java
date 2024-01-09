@@ -384,7 +384,7 @@ public class GattService extends ProfileService {
     }
 
     @Override
-    protected boolean stop() {
+    protected void stop() {
         if (DBG) {
             Log.d(TAG, "stop()");
         }
@@ -395,8 +395,6 @@ public class GattService extends ProfileService {
         mHandleMap.clear();
         mReliableQueue.clear();
         cleanup();
-
-        return true;
     }
 
     @Override

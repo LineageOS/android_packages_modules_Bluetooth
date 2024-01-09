@@ -339,7 +339,7 @@ public class MapClientService extends ProfileService {
     }
 
     @Override
-    protected synchronized boolean stop() {
+    protected synchronized void stop() {
         if (DBG) {
             Log.d(TAG, "stop()");
         }
@@ -360,7 +360,6 @@ public class MapClientService extends ProfileService {
             mHandler.removeCallbacksAndMessages(null);
             mHandler = null;
         }
-        return true;
     }
 
     @Override
