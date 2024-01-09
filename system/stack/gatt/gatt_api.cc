@@ -706,7 +706,7 @@ tGATT_STATUS GATTC_ConfigureMTU(uint16_t conn_id, uint16_t mtu) {
 
   /* Validate that the link is BLE, not BR/EDR */
   if (p_tcb->transport != BT_TRANSPORT_LE) {
-    return GATT_ERROR;
+    return GATT_REQ_NOT_SUPPORTED;
   }
 
   tGATT_CLCB* p_clcb = gatt_clcb_alloc(conn_id);
