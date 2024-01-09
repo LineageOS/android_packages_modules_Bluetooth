@@ -1326,6 +1326,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
             value = {
                 ADDRESS_TYPE_PUBLIC,
                 ADDRESS_TYPE_RANDOM,
+                ADDRESS_TYPE_ANONYMOUS,
                 ADDRESS_TYPE_UNKNOWN,
             })
     public @interface AddressType {}
@@ -1338,6 +1339,9 @@ public final class BluetoothDevice implements Parcelable, Attributable {
 
     /** Address type is unknown or unavailable */
     public static final int ADDRESS_TYPE_UNKNOWN = 0xFFFF;
+
+    /** Address type used to indicate an anonymous advertisement. */
+    private static final int ADDRESS_TYPE_ANONYMOUS = 0xFF;
 
     private static final String NULL_MAC_ADDRESS = "00:00:00:00:00:00";
 
@@ -1368,8 +1372,15 @@ public final class BluetoothDevice implements Parcelable, Attributable {
             throw new IllegalArgumentException(address + " is not a valid Bluetooth address");
         }
 
-        if (addressType != ADDRESS_TYPE_PUBLIC && addressType != ADDRESS_TYPE_RANDOM) {
+        if (addressType != ADDRESS_TYPE_PUBLIC
+                && addressType != ADDRESS_TYPE_RANDOM
+                && addressType != ADDRESS_TYPE_ANONYMOUS) {
             throw new IllegalArgumentException(addressType + " is not a Bluetooth address type");
+        }
+
+        if (addressType == ADDRESS_TYPE_ANONYMOUS && !NULL_MAC_ADDRESS.equals(address)) {
+            throw new IllegalArgumentException(
+                    "Invalid address for anonymous address type: " + getAnonymizedAddress());
         }
 
         mAddress = address;
