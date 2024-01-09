@@ -1570,6 +1570,7 @@ public class VolumeControlService extends ProfileService {
                 boolean defaultValue = false;
                 VolumeControlService service = getService(source);
                 if (service != null) {
+                    enforceBluetoothPrivilegedPermission(service);
                     defaultValue = service.isVolumeOffsetAvailable(device);
                 }
                 receiver.send(defaultValue);
@@ -1588,6 +1589,7 @@ public class VolumeControlService extends ProfileService {
 
                 VolumeControlService service = getService(source);
                 if (service != null) {
+                    enforceBluetoothPrivilegedPermission(service);
                     service.setVolumeOffset(device, volumeOffset);
                 }
                 receiver.send(null);
@@ -1610,6 +1612,7 @@ public class VolumeControlService extends ProfileService {
 
                 VolumeControlService service = getService(source);
                 if (service != null) {
+                    enforceBluetoothPrivilegedPermission(service);
                     service.setDeviceVolume(device, volume, isGroupOp);
                 }
                 receiver.send(null);
