@@ -148,7 +148,7 @@ public class PanService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
         mAdapterService = Objects.requireNonNull(AdapterService.getAdapterService(),
                 "AdapterService cannot be null when PanService starts");
         mDatabaseManager = Objects.requireNonNull(AdapterService.getAdapterService().getDatabase(),
@@ -175,8 +175,6 @@ public class PanService extends ProfileService {
                 new HandlerExecutor(new Handler(Looper.getMainLooper())), mTetheringCallback);
         setPanService(this);
         mStarted = true;
-
-        return true;
     }
 
     @Override

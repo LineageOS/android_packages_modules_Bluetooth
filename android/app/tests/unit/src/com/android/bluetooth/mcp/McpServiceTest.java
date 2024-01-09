@@ -120,11 +120,7 @@ public class McpServiceTest {
 
         McpService.setMediaControlProfileForTesting(mMediaControlProfile);
         // Try to restart the service. Note: must be done on the main thread
-        InstrumentationRegistry.getInstrumentation().runOnMainSync(new Runnable() {
-            public void run() {
-                Assert.assertTrue(mMcpService.start());
-            }
-        });
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(mMcpService::start);
     }
 
     @Test

@@ -690,7 +690,7 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
         if (VERBOSE) {
             Log.v(TAG, "start()");
         }
@@ -743,7 +743,6 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
                     adapterService.pbapPseDynamicVersionUpgradeIsEnabled();
             Log.d(TAG, "sIsPseDynamicVersionUpgradeEnabled: " + sIsPseDynamicVersionUpgradeEnabled);
         }
-        return true;
     }
 
     @Override

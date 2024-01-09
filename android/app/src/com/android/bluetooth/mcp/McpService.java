@@ -101,7 +101,7 @@ public class McpService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
         if (DBG) {
             Log.d(TAG, "start()");
         }
@@ -130,8 +130,6 @@ public class McpService extends ProfileService {
                 });
             }
         }
-
-        return true;
     }
 
     @Override

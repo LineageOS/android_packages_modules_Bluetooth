@@ -65,7 +65,7 @@ public class TbsService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
 
         if (DBG) {
             Log.d(TAG, "start()");
@@ -78,8 +78,6 @@ public class TbsService extends ProfileService {
         setTbsService(this);
 
         mTbsGeneric.init(new TbsGatt(this));
-
-        return true;
     }
 
     @Override

@@ -302,7 +302,7 @@ public class LeAudioService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
         Log.i(TAG, "start()");
         if (sLeAudioService != null) {
             throw new IllegalStateException("start() called twice");
@@ -371,8 +371,6 @@ public class LeAudioService extends ProfileService {
         // Delay the call to init by posting it. This ensures TBS and MCS are fully initialized
         // before we start accepting connections
         mHandler.post(this::init);
-
-        return true;
     }
 
     private void init() {

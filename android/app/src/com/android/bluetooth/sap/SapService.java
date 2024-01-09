@@ -680,7 +680,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
         Log.v(TAG, "start()");
         IntentFilter filter = new IntentFilter();
         filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
@@ -699,7 +699,6 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
         // start RFCOMM listener
         mSessionStatusHandler.sendMessage(mSessionStatusHandler.obtainMessage(START_LISTENER));
         setSapService(this);
-        return true;
     }
 
     @Override

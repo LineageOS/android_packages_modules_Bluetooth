@@ -350,7 +350,7 @@ public class BassClientService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
         if (DBG) {
             Log.d(TAG, "start()");
         }
@@ -381,7 +381,6 @@ public class BassClientService extends ProfileService {
         mSyncHandleToBaseDataMap = new HashMap<Integer, BaseData>();
         mSyncHandleToBroadcastIdMap = new HashMap<Integer, Integer>();
         mSearchScanCallback = null;
-        return true;
     }
 
     @Override

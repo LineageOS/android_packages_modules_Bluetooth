@@ -773,7 +773,7 @@ public class HidDeviceService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
         if (DBG) {
             Log.d(TAG, "start()");
         }
@@ -789,7 +789,6 @@ public class HidDeviceService extends ProfileService {
         mActivityManager.addOnUidImportanceListener(mUidImportanceListener,
                 FOREGROUND_IMPORTANCE_CUTOFF);
         setHidDeviceService(this);
-        return true;
     }
 
     @Override

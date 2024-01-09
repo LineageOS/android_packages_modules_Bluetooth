@@ -92,7 +92,7 @@ public class A2dpSinkService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
         mAdapterService =
                 requireNonNull(
                         AdapterService.getAdapterService(),
@@ -110,7 +110,6 @@ public class A2dpSinkService extends ProfileService {
         }
 
         setA2dpSinkService(this);
-        return true;
     }
 
     @Override

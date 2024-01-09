@@ -145,7 +145,7 @@ public class HapClientService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
         if (DBG) {
             Log.d(TAG, "start()");
         }
@@ -177,8 +177,6 @@ public class HapClientService extends ProfileService {
 
         // Mark service as started
         setHapClient(this);
-
-        return true;
     }
 
     @Override

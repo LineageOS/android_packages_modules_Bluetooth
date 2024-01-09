@@ -240,7 +240,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
     }
 
     @Override
-    public boolean start() {
+    public void start() {
         if (V) {
             Log.v(TAG, "start()");
         }
@@ -267,7 +267,6 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
         mNotifier.mNotificationMgr.cancelAll();
         updateFromProvider();
         setBluetoothOppService(this);
-        return true;
     }
 
     @Override

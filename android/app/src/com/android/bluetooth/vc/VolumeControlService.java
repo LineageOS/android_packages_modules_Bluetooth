@@ -239,7 +239,7 @@ public class VolumeControlService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
         if (DBG) {
             Log.d(TAG, "start()");
         }
@@ -277,8 +277,6 @@ public class VolumeControlService extends ProfileService {
 
         // Initialize native interface
         mVolumeControlNativeInterface.init();
-
-        return true;
     }
 
     @Override

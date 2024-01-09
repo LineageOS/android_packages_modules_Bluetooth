@@ -252,11 +252,7 @@ public class LeAudioBroadcastServiceTest {
                 Assert.assertTrue(mService.stop());
             }
         });
-        InstrumentationRegistry.getInstrumentation().runOnMainSync(new Runnable() {
-            public void run() {
-                Assert.assertTrue(mService.start());
-            }
-        });
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(mService::start);
     }
 
     void verifyBroadcastStarted(int broadcastId, BluetoothLeBroadcastSettings settings) {

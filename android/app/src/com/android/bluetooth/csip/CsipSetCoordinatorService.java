@@ -123,7 +123,7 @@ public class CsipSetCoordinatorService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
         if (DBG) {
             Log.d(TAG, "start()");
         }
@@ -163,7 +163,6 @@ public class CsipSetCoordinatorService extends ProfileService {
 
         // Initialize native interface
         mCsipSetCoordinatorNativeInterface.init();
-        return true;
     }
 
     @Override

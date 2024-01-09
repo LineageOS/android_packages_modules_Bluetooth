@@ -119,7 +119,7 @@ public class HearingAidService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
         if (DBG) {
             Log.d(TAG, "start()");
         }
@@ -152,7 +152,6 @@ public class HearingAidService extends ProfileService {
 
         // Initialize native interface
         mHearingAidNativeInterface.init();
-        return true;
     }
 
     @Override

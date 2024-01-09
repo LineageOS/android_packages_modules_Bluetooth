@@ -103,7 +103,7 @@ public class HidHostService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
         mDatabaseManager =
                 requireNonNull(
                         AdapterService.getAdapterService().getDatabase(),
@@ -117,7 +117,6 @@ public class HidHostService extends ProfileService {
         mNativeInterface.init(this);
         mNativeAvailable = true;
         setHidHostService(this);
-        return true;
     }
 
     @Override

@@ -371,14 +371,16 @@ public class LeAudioServiceTest {
      */
     @Test
     public void testStopStartStopService() throws Exception {
-        InstrumentationRegistry.getInstrumentation().runOnMainSync(new Runnable() {
-            public void run() {
-                assertThat(mService.stop()).isTrue();
-                assertThat(mService.start()).isTrue();
-                assertThat(mService.stop()).isTrue();
-                assertThat(mService.start()).isTrue();
-            }
-        });
+        InstrumentationRegistry.getInstrumentation()
+                .runOnMainSync(
+                        new Runnable() {
+                            public void run() {
+                                assertThat(mService.stop()).isTrue();
+                                mService.start();
+                                assertThat(mService.stop()).isTrue();
+                                mService.start();
+                            }
+                        });
     }
 
     /**

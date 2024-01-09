@@ -18,8 +18,6 @@ package com.android.bluetooth.sap;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothAdapter;
@@ -93,21 +91,21 @@ public class SapServiceTest {
     @Test
     public void testStopSapService() throws Exception {
         AtomicBoolean stopResult = new AtomicBoolean();
-        AtomicBoolean startResult = new AtomicBoolean();
         CountDownLatch latch = new CountDownLatch(1);
 
         // SAP Service is already running: test stop(). Note: must be done on the main thread
-        InstrumentationRegistry.getInstrumentation().runOnMainSync(new Runnable() {
-            public void run() {
-                stopResult.set(mService.stop());
-                startResult.set(mService.start());
-                latch.countDown();
-            }
-        });
+        InstrumentationRegistry.getInstrumentation()
+                .runOnMainSync(
+                        new Runnable() {
+                            public void run() {
+                                stopResult.set(mService.stop());
+                                mService.start();
+                                latch.countDown();
+                            }
+                        });
 
         assertThat(latch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS)).isTrue();
         assertThat(stopResult.get()).isTrue();
-        assertThat(startResult.get()).isTrue();
     }
 
     /**

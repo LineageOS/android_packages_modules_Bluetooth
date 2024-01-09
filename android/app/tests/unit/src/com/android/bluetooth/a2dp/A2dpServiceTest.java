@@ -251,7 +251,7 @@ public class A2dpServiceTest {
 
         // Verify that setActiveDevice(null) was called during shutdown
         verify(mMockNativeInterface).setActiveDevice(null);
-        Assert.assertTrue(mA2dpService.start());
+        mA2dpService.start();
     }
 
     /**

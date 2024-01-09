@@ -170,7 +170,7 @@ public class HeadsetService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
         Log.i(TAG, "start()");
         if (mStarted) {
             throw new IllegalStateException("start() called twice");
@@ -210,7 +210,6 @@ public class HeadsetService extends ProfileService {
         registerReceiver(mHeadsetReceiver, filter);
         // Step 7: Mark service as started
         mStarted = true;
-        return true;
     }
 
     @Override

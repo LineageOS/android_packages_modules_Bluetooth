@@ -320,7 +320,7 @@ public class MapClientService extends ProfileService {
     }
 
     @Override
-    protected synchronized boolean start() {
+    protected synchronized void start() {
         Log.e(TAG, "start()");
 
         mAdapterService = AdapterService.getAdapterService();
@@ -336,7 +336,6 @@ public class MapClientService extends ProfileService {
         removeUncleanAccounts();
         MapClientContent.clearAllContent(this);
         setMapClientService(this);
-        return true;
     }
 
     @Override

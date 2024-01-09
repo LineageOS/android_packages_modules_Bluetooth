@@ -676,7 +676,7 @@ public class BluetoothMapService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
         if (DEBUG) {
             Log.d(TAG, "start()");
         }
@@ -723,7 +723,6 @@ public class BluetoothMapService extends ProfileService {
         sendStartListenerMessage(-1);
         setBluetoothMapService(this);
         mServiceStarted = true;
-        return true;
     }
 
     /**

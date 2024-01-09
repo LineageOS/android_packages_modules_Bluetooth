@@ -134,7 +134,7 @@ public class PbapClientService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
         if (VDBG) {
             Log.v(TAG, "onStart");
         }
@@ -160,7 +160,6 @@ public class PbapClientService extends ProfileService {
         initializeAuthenticationService();
         registerSdpRecord();
         setPbapClientService(this);
-        return true;
     }
 
     @Override

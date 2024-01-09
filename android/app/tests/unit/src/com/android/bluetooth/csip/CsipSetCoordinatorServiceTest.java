@@ -192,11 +192,7 @@ public class CsipSetCoordinatorServiceTest {
                 Assert.assertTrue(mService.stop());
             }
         });
-        InstrumentationRegistry.getInstrumentation().runOnMainSync(new Runnable() {
-            public void run() {
-                Assert.assertTrue(mService.start());
-            }
-        });
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(mService::start);
     }
 
     /**

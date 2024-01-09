@@ -80,7 +80,7 @@ public class BatteryService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
         if (DBG) {
             Log.d(TAG, "start()");
         }
@@ -99,8 +99,6 @@ public class BatteryService extends ProfileService {
         mStateMachinesThread.start();
 
         setBatteryService(this);
-
-        return true;
     }
 
     @Override

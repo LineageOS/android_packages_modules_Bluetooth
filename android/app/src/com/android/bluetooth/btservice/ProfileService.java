@@ -76,10 +76,8 @@ public abstract class ProfileService extends ContextWrapper {
 
     /**
      * Called in {@link #onStartCommand(Intent, int, int)} when the service is started by intent
-     *
-     * @return True in successful condition, False otherwise
      */
-    protected abstract boolean start();
+    protected abstract void start();
 
     /**
      * Called in {@link #onStartCommand(Intent, int, int)} when the service is stopped by intent
@@ -216,11 +214,9 @@ public abstract class ProfileService extends ContextWrapper {
         }
         mAdapterService.addProfile(this);
 
-        mProfileStarted = start();
-        if (!mProfileStarted) {
-            Log.e(mName, "Error starting profile. start() returned false.");
-            return;
-        }
+        start();
+        mProfileStarted = true;
+
         mAdapterService.onProfileServiceStateChanged(this, BluetoothAdapter.STATE_ON);
     }
 

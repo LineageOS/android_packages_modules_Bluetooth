@@ -150,7 +150,7 @@ public class A2dpService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
         Log.i(TAG, "start()");
         if (sA2dpService != null) {
             throw new IllegalStateException("start() called twice");
@@ -204,8 +204,6 @@ public class A2dpService extends ProfileService {
 
         // Step 9: Clear active device
         removeActiveDevice(false);
-
-        return true;
     }
 
     @Override

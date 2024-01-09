@@ -188,7 +188,7 @@ public class AvrcpTargetService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
         if (sInstance != null) {
             throw new IllegalStateException("start() called twice");
         }
@@ -241,7 +241,6 @@ public class AvrcpTargetService extends ProfileService {
 
         // Only allow the service to be used once it is initialized
         sInstance = this;
-        return true;
     }
 
     @Override
