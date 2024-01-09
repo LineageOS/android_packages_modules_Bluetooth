@@ -1287,13 +1287,6 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
       }
       break;
 
-    // BLE Commands
-    case HCI_BLE_CREATE_LL_CONN:
-    case HCI_LE_EXTENDED_CREATE_CONNECTION:
-      if (status != HCI_SUCCESS) {
-        btm_ble_create_ll_conn_complete(hci_status);
-      }
-      break;
     case HCI_BLE_START_ENC:
       // Race condition: disconnection happened right before we send
       // "LE Encrypt", controller responds with no connection, we should
