@@ -65,6 +65,7 @@ static void bta_jv_pm_conn_busy(tBTA_JV_PM_CB* p_cb);
 static void bta_jv_pm_conn_idle(tBTA_JV_PM_CB* p_cb);
 static void bta_jv_pm_state_change(tBTA_JV_PM_CB* p_cb,
                                    const tBTA_JV_CONN_STATE state);
+static void bta_jv_reset_sniff_timer(tBTA_JV_PM_CB* p_cb);
 
 #ifndef BTA_JV_SDP_DB_SIZE
 #define BTA_JV_SDP_DB_SIZE 4500
@@ -1258,10 +1259,10 @@ static int bta_jv_port_data_co_cback(uint16_t port_handle, uint8_t* buf,
   if (p_pcb != NULL) {
     switch (type) {
       case DATA_CO_CALLBACK_TYPE_INCOMING:
-        // Exit sniff mode when receiving data by sysproxy
+        // Reset sniff timer when receiving data by sysproxy
         if (osi_property_get_bool("bluetooth.rfcomm.sysproxy.rx.exit_sniff",
                                   false)) {
-          bta_jv_pm_conn_busy(p_pcb->p_pm_cb);
+          bta_jv_reset_sniff_timer(p_pcb->p_pm_cb);
         }
         return bta_co_rfc_data_incoming(p_pcb->rfcomm_slot_id, (BT_HDR*)buf);
       case DATA_CO_CALLBACK_TYPE_OUTGOING_SIZE:
@@ -1903,6 +1904,24 @@ static void bta_jv_pm_state_change(tBTA_JV_PM_CB* p_cb,
     default:
       LOG(WARNING) << __func__ << ": Invalid state=" << +state;
       break;
+  }
+}
+
+/*******************************************************************************
+ *
+ * Function    bta_jv_reset_sniff_timer
+ *
+ * Description reset pm sniff timer state (input param safe)
+ *
+ * Params      p_cb: pm control block of jv connection
+ *
+ * Returns     void
+ *
+ ******************************************************************************/
+static void bta_jv_reset_sniff_timer(tBTA_JV_PM_CB* p_cb) {
+  if (NULL != p_cb) {
+    p_cb->state = BTA_JV_PM_IDLE_ST;
+    bta_sys_reset_sniff(BTA_ID_JV, p_cb->app_id, p_cb->peer_bd_addr);
   }
 }
 /******************************************************************************/
