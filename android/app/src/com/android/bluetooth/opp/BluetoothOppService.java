@@ -601,7 +601,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
     }
 
     @Override
-    protected void cleanup() {
+    public void cleanup() {
         if (V) {
             Log.v(TAG, "onDestroy");
         }

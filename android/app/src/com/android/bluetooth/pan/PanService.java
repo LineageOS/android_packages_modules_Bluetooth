@@ -148,7 +148,7 @@ public class PanService extends ProfileService {
     }
 
     @Override
-    protected void start() {
+    public void start() {
         mAdapterService = Objects.requireNonNull(AdapterService.getAdapterService(),
                 "AdapterService cannot be null when PanService starts");
         mDatabaseManager = Objects.requireNonNull(AdapterService.getAdapterService().getDatabase(),
@@ -178,7 +178,7 @@ public class PanService extends ProfileService {
     }
 
     @Override
-    protected void stop() {
+    public void stop() {
         if (!mStarted) {
             Log.w(TAG, "stop() called before start()");
             return;
@@ -192,7 +192,7 @@ public class PanService extends ProfileService {
     }
 
     @Override
-    protected void cleanup() {
+    public void cleanup() {
         // TODO(b/72948646): this should be moved to stop()
         setPanService(null);
 

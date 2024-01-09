@@ -21,7 +21,6 @@ import static android.net.TetheringManager.TETHER_ERROR_SERVICE_UNAVAIL;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
@@ -72,7 +71,8 @@ public class PanServiceTest {
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
         PanNativeInterface.setInstance(mNativeInterface);
         mService = new PanService(targetContext);
-        mService.doStart();
+        mService.start();
+        mService.setAvailable(true);
 
         // Try getting the Bluetooth adapter
         mAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -83,7 +83,8 @@ public class PanServiceTest {
 
     @After
     public void tearDown() throws Exception {
-        mService.doStop();
+        mService.stop();
+        mService.cleanup();
         PanNativeInterface.setInstance(null);
         mService = PanService.getPanService();
         assertThat(mService).isNull();

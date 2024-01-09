@@ -158,7 +158,7 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
     ;
 
     // Policy API functions for lifecycle management (protected)
-    protected void start() {
+    public void start() {
         mAdapterService.registerBluetoothStateCallback((command) -> mHandler.post(command), this);
 
         IntentFilter filter = new IntentFilter();
@@ -166,7 +166,7 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
         filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
     }
 
-    protected void cleanup() {
+    public void cleanup() {
         mAdapterService.unregisterBluetoothStateCallback(this);
         resetStates();
     }
