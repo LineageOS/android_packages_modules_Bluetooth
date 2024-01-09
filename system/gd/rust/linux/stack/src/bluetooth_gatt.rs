@@ -1982,6 +1982,10 @@ impl IBluetoothGatt for BluetoothGatt {
     }
 
     fn register_scanner(&mut self, callback_id: u32) -> Uuid128Bit {
+        if !self.enabled {
+            return Uuid::empty().uu;
+        }
+
         let mut bytes: [u8; 16] = [0; 16];
         self.small_rng.fill_bytes(&mut bytes);
         let uuid = Uuid::from(bytes);
