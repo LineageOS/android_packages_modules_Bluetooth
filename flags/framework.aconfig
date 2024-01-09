@@ -27,10 +27,3 @@ flag {
     description: "Do not start stopped media browser services"
     bug: "314855224"
 }
-
-flag {
-    name: "fix_anonymous_advertisements_scan_results"
-    namespace: "bluetooth"
-    description: "Allow constructing BluetoothDevice with anonymous (0xff) address type"
-    bug: "317246779"
-}
