@@ -186,9 +186,6 @@
              android:name="com.android.bluetooth.opp.BluetoothOppReceiver"
              android:exported="true"
              android:enabled="false">
-            <intent-filter>
-                <action android:name="android.btopp.intent.action.OPEN_RECEIVED_FILES"/>
-            </intent-filter>
         </receiver>
         <receiver android:process="@string/process"
               android:name="com.android.bluetooth.opp.BluetoothOppHandoverReceiver"
