@@ -1503,6 +1503,11 @@ public class HeadsetStateMachine extends StateMachine {
 
         private void processIntentScoVolume(Intent intent, BluetoothDevice device) {
             int volumeValue = intent.getIntExtra(AudioManager.EXTRA_VOLUME_STREAM_VALUE, 0);
+            stateLogD(
+                    "processIntentScoVolume: mSpeakerVolume="
+                            + mSpeakerVolume
+                            + ", volumeValue="
+                            + volumeValue);
             if (mSpeakerVolume != volumeValue) {
                 mSpeakerVolume = volumeValue;
                 mNativeInterface.setVolume(device, HeadsetHalConstants.VOLUME_TYPE_SPK,
