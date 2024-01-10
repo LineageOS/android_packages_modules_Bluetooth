@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="5" by="lint 8.1.0-dev" client="" dependencies="true" name="" type="baseline" variant="all" version="8.1.0-dev">
+<issues format="6" by="lint 8.4.0-alpha01" type="baseline" client="" dependencies="true" name="" variant="all" version="8.4.0-alpha01">
 
     <issue
         id="GestureBackNavigation"
@@ -19,7 +19,7 @@
 
     <issue
         id="ScrollViewSize"
-        message="This LinearLayout should use `android:layout_height=&quot;wrap_content&quot;`">
+        message='This LinearLayout should use `android:layout_height="wrap_content"`'>
         <location
             file="packages/modules/Bluetooth/android/app/res/layout/auth.xml"
             line="26"/>
@@ -27,7 +27,7 @@
 
     <issue
         id="ScrollViewSize"
-        message="This LinearLayout should use `android:layout_height=&quot;wrap_content&quot;`">
+        message='This LinearLayout should use `android:layout_height="wrap_content"`'>
         <location
             file="packages/modules/Bluetooth/android/app/res/layout/bt_enabling_progress.xml"
             line="28"/>
@@ -35,7 +35,7 @@
 
     <issue
         id="ScrollViewSize"
-        message="This LinearLayout should use `android:layout_height=&quot;wrap_content&quot;`">
+        message='This LinearLayout should use `android:layout_height="wrap_content"`'>
         <location
             file="packages/modules/Bluetooth/android/app/res/layout/file_transfer.xml"
             line="26"/>
@@ -571,7 +571,7 @@
 
     <issue
         id="InflateParams"
-        message="Avoid passing `null` as the view root (needed to resolve layout parameters on the inflated layout&apos;s root element)">
+        message="Avoid passing `null` as the view root (needed to resolve layout parameters on the inflated layout's root element)">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapSettingsAdapter.java"
             line="110"/>
@@ -579,7 +579,7 @@
 
     <issue
         id="InflateParams"
-        message="Avoid passing `null` as the view root (needed to resolve layout parameters on the inflated layout&apos;s root element)">
+        message="Avoid passing `null` as the view root (needed to resolve layout parameters on the inflated layout's root element)">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapSettingsAdapter.java"
             line="231"/>
@@ -587,7 +587,7 @@
 
     <issue
         id="InflateParams"
-        message="Avoid passing `null` as the view root (needed to resolve layout parameters on the inflated layout&apos;s root element)">
+        message="Avoid passing `null` as the view root (needed to resolve layout parameters on the inflated layout's root element)">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppBtEnableActivity.java"
             line="74"/>
@@ -595,7 +595,7 @@
 
     <issue
         id="InflateParams"
-        message="Avoid passing `null` as the view root (needed to resolve layout parameters on the inflated layout&apos;s root element)">
+        message="Avoid passing `null` as the view root (needed to resolve layout parameters on the inflated layout's root element)">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppBtEnablingActivity.java"
             line="99"/>
@@ -603,7 +603,7 @@
 
     <issue
         id="InflateParams"
-        message="Avoid passing `null` as the view root (needed to resolve layout parameters on the inflated layout&apos;s root element)">
+        message="Avoid passing `null` as the view root (needed to resolve layout parameters on the inflated layout's root element)">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppBtErrorActivity.java"
             line="68"/>
@@ -611,7 +611,7 @@
 
     <issue
         id="InflateParams"
-        message="Avoid passing `null` as the view root (needed to resolve layout parameters on the inflated layout&apos;s root element)">
+        message="Avoid passing `null` as the view root (needed to resolve layout parameters on the inflated layout's root element)">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppIncomingFileConfirmActivity.java"
             line="140"/>
@@ -619,7 +619,7 @@
 
     <issue
         id="InflateParams"
-        message="Avoid passing `null` as the view root (needed to resolve layout parameters on the inflated layout&apos;s root element)">
+        message="Avoid passing `null` as the view root (needed to resolve layout parameters on the inflated layout's root element)">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppTransferActivity.java"
             line="243"/>
@@ -627,7 +627,7 @@
 
     <issue
         id="InflateParams"
-        message="Avoid passing `null` as the view root (needed to resolve layout parameters on the inflated layout&apos;s root element)">
+        message="Avoid passing `null` as the view root (needed to resolve layout parameters on the inflated layout's root element)">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/pbap/BluetoothPbapActivity.java"
             line="158"/>
@@ -5043,7 +5043,7 @@
 
     <issue
         id="StringFormatInvalid"
-        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in &apos;`% a`&apos;?">
+        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in '`% a`'?">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-de/strings.xml"
             line="47"/>
@@ -5051,7 +5051,7 @@
 
     <issue
         id="StringFormatInvalid"
-        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in &apos;`% b`&apos;?">
+        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in '`% b`'?">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lt/strings.xml"
             line="47"/>
@@ -5059,7 +5059,7 @@
 
     <issue
         id="StringFormatInvalid"
-        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in &apos;`% c`&apos;?">
+        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in '`% c`'?">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ca/strings.xml"
             line="47"/>
@@ -5067,7 +5067,7 @@
 
     <issue
         id="StringFormatInvalid"
-        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in &apos;`% c`&apos;?">
+        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in '`% c`'?">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-en-rAU/strings.xml"
             line="47"/>
@@ -5075,7 +5075,7 @@
 
     <issue
         id="StringFormatInvalid"
-        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in &apos;`% c`&apos;?">
+        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in '`% c`'?">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-en-rCA/strings.xml"
             line="47"/>
@@ -5083,7 +5083,7 @@
 
     <issue
         id="StringFormatInvalid"
-        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in &apos;`% c`&apos;?">
+        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in '`% c`'?">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-en-rGB/strings.xml"
             line="47"/>
@@ -5091,7 +5091,7 @@
 
     <issue
         id="StringFormatInvalid"
-        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in &apos;`% c`&apos;?">
+        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in '`% c`'?">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-en-rIN/strings.xml"
             line="47"/>
@@ -5099,7 +5099,7 @@
 
     <issue
         id="StringFormatInvalid"
-        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in &apos;`% c`&apos;?">
+        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in '`% c`'?">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-en-rXC/strings.xml"
             line="47"/>
@@ -5107,7 +5107,7 @@
 
     <issue
         id="StringFormatInvalid"
-        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in &apos;`% c`&apos;?">
+        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in '`% c`'?">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-es/strings.xml"
             line="47"/>
@@ -5115,7 +5115,7 @@
 
     <issue
         id="StringFormatInvalid"
-        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in &apos;`% c`&apos;?">
+        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in '`% c`'?">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-gl/strings.xml"
             line="47"/>
@@ -5123,7 +5123,7 @@
 
     <issue
         id="StringFormatInvalid"
-        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in &apos;`% c`&apos;?">
+        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in '`% c`'?">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-it/strings.xml"
             line="47"/>
@@ -5131,7 +5131,7 @@
 
     <issue
         id="StringFormatInvalid"
-        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in &apos;`% c`&apos;?">
+        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in '`% c`'?">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-pt-rPT/strings.xml"
             line="47"/>
@@ -5139,7 +5139,7 @@
 
     <issue
         id="StringFormatInvalid"
-        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in &apos;`% c`&apos;?">
+        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in '`% c`'?">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-pt/strings.xml"
             line="47"/>
@@ -5147,7 +5147,7 @@
 
     <issue
         id="StringFormatInvalid"
-        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in &apos;`% e`&apos;?">
+        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in '`% e`'?">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-fr-rCA/strings.xml"
             line="47"/>
@@ -5155,7 +5155,7 @@
 
     <issue
         id="StringFormatInvalid"
-        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in &apos;`% e`&apos;?">
+        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in '`% e`'?">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-fr/strings.xml"
             line="47"/>
@@ -5163,7 +5163,7 @@
 
     <issue
         id="StringFormatInvalid"
-        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in &apos;`% f`&apos;?">
+        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in '`% f`'?">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-da/strings.xml"
             line="47"/>
@@ -5171,7 +5171,7 @@
 
     <issue
         id="StringFormatInvalid"
-        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in &apos;`% f`&apos;?">
+        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in '`% f`'?">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-nb/strings.xml"
             line="47"/>
@@ -5179,7 +5179,7 @@
 
     <issue
         id="StringFormatInvalid"
-        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in &apos;`% f`&apos;?">
+        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in '`% f`'?">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ro/strings.xml"
             line="47"/>
@@ -5187,7 +5187,7 @@
 
     <issue
         id="StringFormatInvalid"
-        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in &apos;`% h`&apos;?">
+        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in '`% h`'?">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sk/strings.xml"
             line="47"/>
@@ -5195,7 +5195,7 @@
 
     <issue
         id="StringFormatInvalid"
-        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in &apos;`% s`&apos;?">
+        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in '`% s`'?">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-in/strings.xml"
             line="47"/>
@@ -5203,7 +5203,7 @@
 
     <issue
         id="StringFormatInvalid"
-        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in &apos;`% s`&apos;?">
+        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in '`% s`'?">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sv/strings.xml"
             line="47"/>
@@ -5211,7 +5211,7 @@
 
     <issue
         id="StringFormatInvalid"
-        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in &apos;`% c`&apos;?">
+        message="Incorrect formatting string `notification_sent_complete`; missing conversion character in '`% c`'?">
         <location
             file="packages/modules/Bluetooth/android/app/res/values/strings.xml"
             line="102"/>
@@ -5219,7 +5219,7 @@
 
     <issue
         id="StringFormatMatches"
-        message="Inconsistent formatting types for argument #1 in format string `notification_sent_complete` (&apos;% d&apos;): Found both &apos;`d`&apos; here and &apos;`e`&apos; in values-eu/strings.xml">
+        message="Inconsistent formatting types for argument #1 in format string `notification_sent_complete` ('% d'): Found both '`d`' here and '`e`' in values-eu/strings.xml">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hr/strings.xml"
             line="47"/>
@@ -5449,7 +5449,7 @@
 
     <issue
         id="UnspecifiedRegisterReceiverFlag"
-        message="`mBluetoothConnectionReceiver` \&#xA;is missing `RECEIVER_EXPORTED` or `RECEIVER_NOT_EXPORTED` flag for unprotected \&#xA;broadcasts registered for an IntentFilter that cannot be inspected by lint">
+        message="`mBluetoothConnectionReceiver` \&#10;is missing `RECEIVER_EXPORTED` or `RECEIVER_NOT_EXPORTED` flag for unprotected \&#10;broadcasts registered for an IntentFilter that cannot be inspected by lint">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/gatt/ScanManager.java"
             line="205"/>
@@ -5457,7 +5457,7 @@
 
     <issue
         id="QueryAllPackagesPermission"
-        message="A `&lt;queries>` declaration should generally be used instead of QUERY_ALL_PACKAGES; \&#xA;see https://g.co/dev/packagevisibility for details">
+        message="A `&lt;queries&gt;` declaration should generally be used instead of QUERY_ALL_PACKAGES; \&#10;see https://g.co/dev/packagevisibility for details">
         <location
             file="./out/.intermediates/packages/modules/Bluetooth/android/app/Bluetooth/android_common/e10894d3da5db41239526c9048962355/manifest_merger/AndroidManifest.xml"
             line="61"/>
@@ -5465,7 +5465,7 @@
 
     <issue
         id="WakelockTimeout"
-        message="Provide a timeout when requesting a wakelock with `PowerManager.Wakelock.acquire(long timeout)`. This will ensure the OS will cleanup any wakelocks that last longer than you intend, and will save your user&apos;s battery.">
+        message="Provide a timeout when requesting a wakelock with `PowerManager.Wakelock.acquire(long timeout)`. This will ensure the OS will cleanup any wakelocks that last longer than you intend, and will save your user's battery.">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/AdapterService.java"
             line="6312"/>
@@ -5473,7 +5473,7 @@
 
     <issue
         id="WakelockTimeout"
-        message="Provide a timeout when requesting a wakelock with `PowerManager.Wakelock.acquire(long timeout)`. This will ensure the OS will cleanup any wakelocks that last longer than you intend, and will save your user&apos;s battery.">
+        message="Provide a timeout when requesting a wakelock with `PowerManager.Wakelock.acquire(long timeout)`. This will ensure the OS will cleanup any wakelocks that last longer than you intend, and will save your user's battery.">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
             line="256"/>
@@ -5481,7 +5481,7 @@
 
     <issue
         id="WakelockTimeout"
-        message="Provide a timeout when requesting a wakelock with `PowerManager.Wakelock.acquire(long timeout)`. This will ensure the OS will cleanup any wakelocks that last longer than you intend, and will save your user&apos;s battery.">
+        message="Provide a timeout when requesting a wakelock with `PowerManager.Wakelock.acquire(long timeout)`. This will ensure the OS will cleanup any wakelocks that last longer than you intend, and will save your user's battery.">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
             line="428"/>
@@ -5489,7 +5489,7 @@
 
     <issue
         id="WakelockTimeout"
-        message="Provide a timeout when requesting a wakelock with `PowerManager.Wakelock.acquire(long timeout)`. This will ensure the OS will cleanup any wakelocks that last longer than you intend, and will save your user&apos;s battery.">
+        message="Provide a timeout when requesting a wakelock with `PowerManager.Wakelock.acquire(long timeout)`. This will ensure the OS will cleanup any wakelocks that last longer than you intend, and will save your user's battery.">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppObexClientSession.java"
             line="195"/>
@@ -5497,7 +5497,7 @@
 
     <issue
         id="WakelockTimeout"
-        message="Provide a timeout when requesting a wakelock with `PowerManager.Wakelock.acquire(long timeout)`. This will ensure the OS will cleanup any wakelocks that last longer than you intend, and will save your user&apos;s battery.">
+        message="Provide a timeout when requesting a wakelock with `PowerManager.Wakelock.acquire(long timeout)`. This will ensure the OS will cleanup any wakelocks that last longer than you intend, and will save your user's battery.">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppObexServerSession.java"
             line="314"/>
@@ -5505,7 +5505,7 @@
 
     <issue
         id="WakelockTimeout"
-        message="Provide a timeout when requesting a wakelock with `PowerManager.Wakelock.acquire(long timeout)`. This will ensure the OS will cleanup any wakelocks that last longer than you intend, and will save your user&apos;s battery.">
+        message="Provide a timeout when requesting a wakelock with `PowerManager.Wakelock.acquire(long timeout)`. This will ensure the OS will cleanup any wakelocks that last longer than you intend, and will save your user's battery.">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/pbap/BluetoothPbapService.java"
             line="478"/>
@@ -5513,7 +5513,7 @@
 
     <issue
         id="WakelockTimeout"
-        message="Provide a timeout when requesting a wakelock with `PowerManager.Wakelock.acquire(long timeout)`. This will ensure the OS will cleanup any wakelocks that last longer than you intend, and will save your user&apos;s battery.">
+        message="Provide a timeout when requesting a wakelock with `PowerManager.Wakelock.acquire(long timeout)`. This will ensure the OS will cleanup any wakelocks that last longer than you intend, and will save your user's battery.">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/sap/SapService.java"
             line="289"/>
@@ -5521,7 +5521,7 @@
 
     <issue
         id="WakelockTimeout"
-        message="Provide a timeout when requesting a wakelock with `PowerManager.Wakelock.acquire(long timeout)`. This will ensure the OS will cleanup any wakelocks that last longer than you intend, and will save your user&apos;s battery.">
+        message="Provide a timeout when requesting a wakelock with `PowerManager.Wakelock.acquire(long timeout)`. This will ensure the OS will cleanup any wakelocks that last longer than you intend, and will save your user's battery.">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/sap/SapService.java"
             line="489"/>
@@ -5673,7 +5673,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ar/strings.xml"
             line="54"/>
@@ -5681,7 +5681,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-az/strings.xml"
             line="54"/>
@@ -5689,7 +5689,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-b+sr+Latn/strings.xml"
             line="54"/>
@@ -5697,7 +5697,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-be/strings.xml"
             line="54"/>
@@ -5705,7 +5705,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-bg/strings.xml"
             line="54"/>
@@ -5713,7 +5713,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ca/strings.xml"
             line="54"/>
@@ -5721,7 +5721,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-cs/strings.xml"
             line="54"/>
@@ -5729,7 +5729,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-de/strings.xml"
             line="54"/>
@@ -5737,7 +5737,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-el/strings.xml"
             line="54"/>
@@ -5745,7 +5745,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-es-rUS/strings.xml"
             line="54"/>
@@ -5753,7 +5753,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-et/strings.xml"
             line="54"/>
@@ -5761,7 +5761,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-gl/strings.xml"
             line="54"/>
@@ -5769,7 +5769,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-gu/strings.xml"
             line="54"/>
@@ -5777,7 +5777,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hr/strings.xml"
             line="54"/>
@@ -5785,7 +5785,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hu/strings.xml"
             line="54"/>
@@ -5793,7 +5793,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hy/strings.xml"
             line="54"/>
@@ -5801,7 +5801,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ja/strings.xml"
             line="54"/>
@@ -5809,7 +5809,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ko/strings.xml"
             line="54"/>
@@ -5817,7 +5817,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lo/strings.xml"
             line="54"/>
@@ -5825,7 +5825,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lt/strings.xml"
             line="54"/>
@@ -5833,7 +5833,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lv/strings.xml"
             line="54"/>
@@ -5841,7 +5841,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-mk/strings.xml"
             line="54"/>
@@ -5849,7 +5849,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-mr/strings.xml"
             line="54"/>
@@ -5857,7 +5857,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ms/strings.xml"
             line="54"/>
@@ -5865,7 +5865,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-nb/strings.xml"
             line="54"/>
@@ -5873,7 +5873,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ne/strings.xml"
             line="54"/>
@@ -5881,7 +5881,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-pt-rPT/strings.xml"
             line="54"/>
@@ -5889,7 +5889,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ro/strings.xml"
             line="54"/>
@@ -5897,7 +5897,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ru/strings.xml"
             line="54"/>
@@ -5905,7 +5905,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sk/strings.xml"
             line="54"/>
@@ -5913,7 +5913,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sl/strings.xml"
             line="54"/>
@@ -5921,7 +5921,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sr/strings.xml"
             line="54"/>
@@ -5929,7 +5929,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sv/strings.xml"
             line="54"/>
@@ -5937,7 +5937,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sw/strings.xml"
             line="54"/>
@@ -5945,7 +5945,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-th/strings.xml"
             line="54"/>
@@ -5953,7 +5953,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-tr/strings.xml"
             line="54"/>
@@ -5961,7 +5961,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-uk/strings.xml"
             line="54"/>
@@ -5969,7 +5969,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-zh-rCN/strings.xml"
             line="54"/>
@@ -5977,7 +5977,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-zu/strings.xml"
             line="54"/>
@@ -5985,7 +5985,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-am/strings.xml"
             line="68"/>
@@ -5993,7 +5993,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ar/strings.xml"
             line="68"/>
@@ -6001,7 +6001,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-az/strings.xml"
             line="68"/>
@@ -6009,7 +6009,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-b+sr+Latn/strings.xml"
             line="68"/>
@@ -6017,7 +6017,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-be/strings.xml"
             line="68"/>
@@ -6025,7 +6025,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-bg/strings.xml"
             line="68"/>
@@ -6033,7 +6033,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-bn/strings.xml"
             line="68"/>
@@ -6041,7 +6041,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ca/strings.xml"
             line="68"/>
@@ -6049,7 +6049,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-cs/strings.xml"
             line="68"/>
@@ -6057,7 +6057,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-de/strings.xml"
             line="68"/>
@@ -6065,7 +6065,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-el/strings.xml"
             line="68"/>
@@ -6073,7 +6073,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-es-rUS/strings.xml"
             line="68"/>
@@ -6081,7 +6081,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-et/strings.xml"
             line="68"/>
@@ -6089,7 +6089,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-fr/strings.xml"
             line="68"/>
@@ -6097,7 +6097,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-gl/strings.xml"
             line="68"/>
@@ -6105,7 +6105,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hr/strings.xml"
             line="68"/>
@@ -6113,7 +6113,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hu/strings.xml"
             line="68"/>
@@ -6121,7 +6121,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hy/strings.xml"
             line="68"/>
@@ -6129,7 +6129,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ja/strings.xml"
             line="68"/>
@@ -6137,7 +6137,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ko/strings.xml"
             line="68"/>
@@ -6145,7 +6145,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lo/strings.xml"
             line="68"/>
@@ -6153,7 +6153,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lt/strings.xml"
             line="68"/>
@@ -6161,7 +6161,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lv/strings.xml"
             line="68"/>
@@ -6169,7 +6169,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-mk/strings.xml"
             line="68"/>
@@ -6177,7 +6177,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ms/strings.xml"
             line="68"/>
@@ -6185,7 +6185,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-nb/strings.xml"
             line="68"/>
@@ -6193,7 +6193,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ne/strings.xml"
             line="68"/>
@@ -6201,7 +6201,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-pt-rPT/strings.xml"
             line="68"/>
@@ -6209,7 +6209,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ro/strings.xml"
             line="68"/>
@@ -6217,7 +6217,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ru/strings.xml"
             line="68"/>
@@ -6225,7 +6225,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sk/strings.xml"
             line="68"/>
@@ -6233,7 +6233,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sl/strings.xml"
             line="68"/>
@@ -6241,7 +6241,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sr/strings.xml"
             line="68"/>
@@ -6249,7 +6249,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sv/strings.xml"
             line="68"/>
@@ -6257,7 +6257,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sw/strings.xml"
             line="68"/>
@@ -6265,7 +6265,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-th/strings.xml"
             line="68"/>
@@ -6273,7 +6273,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-tl/strings.xml"
             line="68"/>
@@ -6281,7 +6281,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-tr/strings.xml"
             line="68"/>
@@ -6289,7 +6289,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-uk/strings.xml"
             line="68"/>
@@ -6297,7 +6297,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-zh-rCN/strings.xml"
             line="68"/>
@@ -6305,7 +6305,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-zu/strings.xml"
             line="68"/>
@@ -6313,7 +6313,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-az/strings.xml"
             line="79"/>
@@ -6321,7 +6321,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-be/strings.xml"
             line="79"/>
@@ -6329,7 +6329,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-bn/strings.xml"
             line="79"/>
@@ -6337,7 +6337,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-cs/strings.xml"
             line="79"/>
@@ -6345,7 +6345,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-da/strings.xml"
             line="79"/>
@@ -6353,7 +6353,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-de/strings.xml"
             line="79"/>
@@ -6361,7 +6361,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-el/strings.xml"
             line="79"/>
@@ -6369,7 +6369,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-es-rUS/strings.xml"
             line="79"/>
@@ -6377,7 +6377,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-es/strings.xml"
             line="79"/>
@@ -6385,7 +6385,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-et/strings.xml"
             line="79"/>
@@ -6393,7 +6393,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-fr/strings.xml"
             line="79"/>
@@ -6401,7 +6401,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-gl/strings.xml"
             line="79"/>
@@ -6409,7 +6409,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-gu/strings.xml"
             line="79"/>
@@ -6417,7 +6417,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hi/strings.xml"
             line="79"/>
@@ -6425,7 +6425,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hu/strings.xml"
             line="79"/>
@@ -6433,7 +6433,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hy/strings.xml"
             line="79"/>
@@ -6441,7 +6441,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-iw/strings.xml"
             line="79"/>
@@ -6449,7 +6449,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ja/strings.xml"
             line="79"/>
@@ -6457,7 +6457,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ka/strings.xml"
             line="79"/>
@@ -6465,7 +6465,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-km/strings.xml"
             line="79"/>
@@ -6473,7 +6473,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lo/strings.xml"
             line="79"/>
@@ -6481,7 +6481,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lt/strings.xml"
             line="79"/>
@@ -6489,7 +6489,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-mk/strings.xml"
             line="79"/>
@@ -6497,7 +6497,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-mn/strings.xml"
             line="79"/>
@@ -6505,7 +6505,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-mr/strings.xml"
             line="79"/>
@@ -6513,7 +6513,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ms/strings.xml"
             line="79"/>
@@ -6521,7 +6521,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-nb/strings.xml"
             line="79"/>
@@ -6529,7 +6529,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ne/strings.xml"
             line="79"/>
@@ -6537,7 +6537,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-nl/strings.xml"
             line="79"/>
@@ -6545,7 +6545,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-pa/strings.xml"
             line="79"/>
@@ -6553,7 +6553,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-pt-rPT/strings.xml"
             line="79"/>
@@ -6561,7 +6561,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-pt/strings.xml"
             line="79"/>
@@ -6569,7 +6569,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ro/strings.xml"
             line="79"/>
@@ -6577,7 +6577,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ru/strings.xml"
             line="79"/>
@@ -6585,7 +6585,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-si/strings.xml"
             line="79"/>
@@ -6593,7 +6593,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sk/strings.xml"
             line="79"/>
@@ -6601,7 +6601,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sl/strings.xml"
             line="79"/>
@@ -6609,7 +6609,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sq/strings.xml"
             line="79"/>
@@ -6617,7 +6617,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-te/strings.xml"
             line="79"/>
@@ -6625,7 +6625,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-th/strings.xml"
             line="79"/>
@@ -6633,7 +6633,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-tr/strings.xml"
             line="79"/>
@@ -6641,7 +6641,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-vi/strings.xml"
             line="79"/>
@@ -6649,7 +6649,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-zh-rCN/strings.xml"
             line="79"/>
@@ -6657,7 +6657,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-zu/strings.xml"
             line="79"/>
@@ -6665,7 +6665,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-am/strings.xml"
             line="80"/>
@@ -6673,7 +6673,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ar/strings.xml"
             line="80"/>
@@ -6681,7 +6681,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-az/strings.xml"
             line="80"/>
@@ -6689,7 +6689,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-be/strings.xml"
             line="80"/>
@@ -6697,7 +6697,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-bg/strings.xml"
             line="80"/>
@@ -6705,7 +6705,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-bn/strings.xml"
             line="80"/>
@@ -6713,7 +6713,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ca/strings.xml"
             line="80"/>
@@ -6721,7 +6721,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-da/strings.xml"
             line="80"/>
@@ -6729,7 +6729,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-de/strings.xml"
             line="80"/>
@@ -6737,7 +6737,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-es-rUS/strings.xml"
             line="80"/>
@@ -6745,7 +6745,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-es/strings.xml"
             line="80"/>
@@ -6753,7 +6753,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-et/strings.xml"
             line="80"/>
@@ -6761,7 +6761,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-fi/strings.xml"
             line="80"/>
@@ -6769,7 +6769,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hu/strings.xml"
             line="80"/>
@@ -6777,7 +6777,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hy/strings.xml"
             line="80"/>
@@ -6785,7 +6785,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-in/strings.xml"
             line="80"/>
@@ -6793,7 +6793,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ja/strings.xml"
             line="80"/>
@@ -6801,7 +6801,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ko/strings.xml"
             line="80"/>
@@ -6809,7 +6809,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lo/strings.xml"
             line="80"/>
@@ -6817,7 +6817,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lv/strings.xml"
             line="80"/>
@@ -6825,7 +6825,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-mk/strings.xml"
             line="80"/>
@@ -6833,7 +6833,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ms/strings.xml"
             line="80"/>
@@ -6841,7 +6841,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ne/strings.xml"
             line="80"/>
@@ -6849,7 +6849,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-pt/strings.xml"
             line="80"/>
@@ -6857,7 +6857,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ro/strings.xml"
             line="80"/>
@@ -6865,7 +6865,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ru/strings.xml"
             line="80"/>
@@ -6873,7 +6873,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sk/strings.xml"
             line="80"/>
@@ -6881,7 +6881,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sw/strings.xml"
             line="80"/>
@@ -6889,7 +6889,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-tr/strings.xml"
             line="80"/>
@@ -6897,7 +6897,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-uk/strings.xml"
             line="80"/>
@@ -6905,7 +6905,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-zh-rCN/strings.xml"
             line="80"/>
@@ -6913,7 +6913,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-zh-rHK/strings.xml"
             line="80"/>
@@ -6921,7 +6921,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-zu/strings.xml"
             line="80"/>
@@ -6929,7 +6929,7 @@
 
     <issue
         id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?">
+        message='Replace "..." with ellipsis character (…, &amp;#8230;) ?'>
         <location
             file="packages/modules/Bluetooth/android/app/res/values-de/strings.xml"
             line="84"/>
