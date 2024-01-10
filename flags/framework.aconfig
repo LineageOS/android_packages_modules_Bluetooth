@@ -27,3 +27,10 @@ flag {
     description: "Do not start stopped media browser services"
     bug: "314855224"
 }
+
+flag {
+    name: "identity_address_null_if_unknown"
+    namespace: "bluetooth"
+    description: "Return null for identity address if identity address is not known"
+    bug: "317120534"
+}
