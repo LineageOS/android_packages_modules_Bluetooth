@@ -2,7 +2,7 @@
  * Copyright 2021 HIMSA II K/S - www.himsa.com.
  * Represented by EHIMA - www.ehima.com
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Apache License,mu Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -128,6 +128,17 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
     private static final float PLAY_SPEED_MAX = 3.957f;
 
     private static final int INTERVAL_UNAVAILABLE = 0xFFFFFFFF;
+
+    /* This is to match AVRCP behavior */
+    @VisibleForTesting
+    static final int INITIAL_SUPPORTED_OPCODES =
+            Request.SupportedOpcodes.PLAY
+                    | Request.SupportedOpcodes.STOP
+                    | Request.SupportedOpcodes.PAUSE
+                    | Request.SupportedOpcodes.FAST_REWIND
+                    | Request.SupportedOpcodes.FAST_FORWARD
+                    | Request.SupportedOpcodes.NEXT_TRACK
+                    | Request.SupportedOpcodes.PREVIOUS_TRACK;
 
     private final int mCcid;
     private Map<String, Map<UUID, Short>> mCccDescriptorValues = new HashMap<>();
@@ -1034,7 +1045,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
         updateSeekingSpeedChar(1, notify);
         updatePlayingOrderSupportedChar(SupportedPlayingOrder.SINGLE_ONCE);
         updatePlayingOrderChar(PlayingOrder.SINGLE_ONCE, notify);
-        updateSupportedOpcodesChar(Request.SupportedOpcodes.NONE, notify);
+        updateSupportedOpcodesChar(INITIAL_SUPPORTED_OPCODES, notify);
     }
 
     private void setInitialCharacteristicValues() {

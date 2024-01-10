@@ -355,8 +355,10 @@ public class MediaControlGattServiceTest {
         Assert.assertEquals(characteristic.getProperties(),
                 BluetoothGattCharacteristic.PROPERTY_READ
                         | BluetoothGattCharacteristic.PROPERTY_NOTIFY);
-        Assert.assertEquals(Request.SupportedOpcodes.NONE,
-                characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 0)
+        Assert.assertEquals(
+                MediaControlGattService.INITIAL_SUPPORTED_OPCODES,
+                characteristic
+                        .getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 0)
                         .intValue());
 
         characteristic = service.getCharacteristic(
