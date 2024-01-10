@@ -234,6 +234,10 @@ AdapterState ToAdapterState(uint32_t state) {
   return state == 1 ? AdapterState::ON : AdapterState::OFF;
 }
 
+SuspendIdState ToSuspendIdState(uint32_t state) {
+  return state == 1 ? SuspendIdState::Recorded : SuspendIdState::NoRecord;
+}
+
 ConnectionType ToPairingDeviceType(std::string addr, uint32_t device_type) {
   // A map stores the pending ConnectionType used to match a pairing event with unknown type.
   // map<address, type>

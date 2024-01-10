@@ -51,5 +51,7 @@ void LogMetricsAclConnectionStateChanged(
 
 void LogMetricsChipsetInfoReport() {}
 
+void LogMetricsSuspendIdState(uint32_t state){};
+
 }  // namespace metrics
 }  // namespace bluetooth
