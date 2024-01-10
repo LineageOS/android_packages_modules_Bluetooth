@@ -57,20 +57,22 @@
  *   Logging helper functions
  ****************************************************************************/
 
-uint32_t devclass2uint(DEV_CLASS dev_class) {
+uint32_t devclass2uint(const DEV_CLASS dev_class) {
   uint32_t cod = 0;
 
-  if (dev_class != NULL) {
+  if (dev_class != kDevClassEmpty) {
     /* if COD is 0, irrespective of the device type set it to Unclassified
      * device */
     cod = (dev_class[2]) | (dev_class[1] << 8) | (dev_class[0] << 16);
   }
   return cod;
 }
-void uint2devclass(uint32_t cod, DEV_CLASS dev_class) {
+DEV_CLASS uint2devclass(uint32_t cod) {
+  DEV_CLASS dev_class;
   dev_class[2] = (uint8_t)cod;
   dev_class[1] = (uint8_t)(cod >> 8);
   dev_class[0] = (uint8_t)(cod >> 16);
+  return dev_class;
 }
 
 /*****************************************************************************

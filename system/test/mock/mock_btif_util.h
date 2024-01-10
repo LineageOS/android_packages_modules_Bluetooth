@@ -235,9 +235,10 @@ extern struct dump_thread_evt dump_thread_evt;
 // Params: uint32_t cod, DEV_CLASS dev_class
 // Return: void
 struct uint2devclass {
-  std::function<void(uint32_t cod, DEV_CLASS dev_class)> body{
-      [](uint32_t cod, DEV_CLASS dev_class) {}};
-  void operator()(uint32_t cod, DEV_CLASS dev_class) { body(cod, dev_class); };
+  static constexpr DEV_CLASS return_value{};
+  std::function<DEV_CLASS(uint32_t cod)> body{
+      [](uint32_t cod) { return return_value; }};
+  DEV_CLASS operator()(uint32_t cod) { return body(cod); };
 };
 extern struct uint2devclass uint2devclass;
 
