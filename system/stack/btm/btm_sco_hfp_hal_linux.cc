@@ -21,7 +21,7 @@
 #include <vector>
 
 #include "btm_sco_hfp_hal.h"
-#include "gd/common/init_flags.h"
+#include "common/init_flags.h"
 #include "osi/include/log.h"
 #include "osi/include/properties.h"
 #include "stack/include/hcimsgs.h"

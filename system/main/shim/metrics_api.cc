@@ -16,11 +16,11 @@
 
 #include "main/shim/metrics_api.h"
 
-#include "gd/hci/address.h"
-#include "gd/metrics/counter_metrics.h"
-#include "gd/os/metrics.h"
+#include "hci/address.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
+#include "metrics/counter_metrics.h"
+#include "os/metrics.h"
 #include "types/raw_address.h"
 
 using bluetooth::hci::Address;

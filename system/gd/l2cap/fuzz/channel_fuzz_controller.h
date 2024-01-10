@@ -20,7 +20,7 @@
 
 #include <vector>
 
-#include "gd/fuzz/helpers.h"
+#include "fuzz/helpers.h"
 #include "l2cap/classic/internal/fixed_channel_impl.h"
 #include "l2cap/internal/dynamic_channel_impl.h"
 #include "l2cap/l2cap_packets.h"

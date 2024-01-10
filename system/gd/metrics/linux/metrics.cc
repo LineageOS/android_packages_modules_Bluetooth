@@ -15,7 +15,7 @@
  */
 #define LOG_TAG "BluetoothMetrics"
 
-#include "gd/metrics/metrics.h"
+#include "metrics/metrics.h"
 
 namespace bluetooth {
 namespace metrics {

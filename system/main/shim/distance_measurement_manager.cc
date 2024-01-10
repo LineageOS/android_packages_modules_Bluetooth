@@ -17,7 +17,7 @@
 #include "distance_measurement_manager.h"
 
 #include "btif/include/btif_common.h"
-#include "gd/hci/distance_measurement_manager.h"
+#include "hci/distance_measurement_manager.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 

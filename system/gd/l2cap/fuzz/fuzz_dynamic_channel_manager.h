@@ -18,19 +18,12 @@
 
 #pragma once
 
-#include <gd/l2cap/classic/dynamic_channel_service.h>
-#include <gd/l2cap/classic/internal/dynamic_channel_service_impl.h>
-#include <gd/l2cap/classic/internal/dynamic_channel_service_manager_impl.h>
-#include <memory>
-
+#include "fuzz_dynamic_channel_manager_impl.h"
 #include "hci/address.h"
 #include "l2cap/classic/dynamic_channel_configuration_option.h"
 #include "l2cap/classic/dynamic_channel_manager.h"
 #include "l2cap/classic/security_policy.h"
 #include "l2cap/psm.h"
-#include "os/handler.h"
-
-#include "fuzz_dynamic_channel_manager_impl.h"
 
 namespace bluetooth {
 namespace shim {

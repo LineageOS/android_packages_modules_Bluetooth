@@ -21,7 +21,7 @@
 #include <mutex>
 #include <string>
 
-#include "gd/hci/octets.h"
+#include "hci/octets.h"
 #include "raw_address.h"
 
 namespace bluetooth {

@@ -28,7 +28,7 @@
 #include <mutex>
 #include <queue>
 
-#include "gd/common/init_flags.h"
+#include "common/init_flags.h"
 #include "hal/hci_hal.h"
 #include "hal/mgmt.h"
 #include "hal/nocp_iso_clocker.h"
