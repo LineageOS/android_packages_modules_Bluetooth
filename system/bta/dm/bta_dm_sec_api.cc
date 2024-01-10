@@ -147,9 +147,9 @@ void BTA_DmAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
   msg->link_key = link_key;
 
   /* Load device class if specified */
-  if (dev_class) {
+  if (dev_class != kDevClassEmpty) {
     msg->dc_known = true;
-    memcpy(msg->dc, dev_class, DEV_CLASS_LEN);
+    msg->dc = dev_class;
   }
 
   memset(msg->bd_name, 0, BD_NAME_LEN + 1);

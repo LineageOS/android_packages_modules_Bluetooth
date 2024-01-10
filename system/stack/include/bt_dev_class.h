@@ -16,18 +16,14 @@
 
 #pragma once
 
-#ifdef __cplusplus
+#include <array>
+#include <cstddef>
 #include <cstdint>
-#else
-#include <stdint.h>
-#endif  // __cplusplus
 
-#define DEV_CLASS_LEN 3
-typedef uint8_t DEV_CLASS[DEV_CLASS_LEN]; /* Device class */
+constexpr size_t kDevClassLength = 3;
+typedef std::array<uint8_t, kDevClassLength> DEV_CLASS; /* Device class */
 
-#ifdef __cplusplus
 inline constexpr DEV_CLASS kDevClassEmpty = {};
-#endif  // __cplusplus
 
 /* 0x00 is used as unclassified for all minor device classes */
 #define BTM_COD_MINOR_UNCLASSIFIED 0x00
@@ -143,16 +139,16 @@ inline std::string dev_class_text(const DEV_CLASS& dev_class) {
 }
 #endif  // __cplusplus
 
-#define DEVCLASS_TO_STREAM(p, a)                      \
-  {                                                   \
-    int ijk;                                          \
-    for (ijk = 0; ijk < DEV_CLASS_LEN; ijk++)         \
-      *(p)++ = (uint8_t)(a)[DEV_CLASS_LEN - 1 - ijk]; \
+#define DEVCLASS_TO_STREAM(p, a)                \
+  {                                             \
+    size_t ijk;                                 \
+    for (ijk = 0; ijk < kDevClassLength; ijk++) \
+      *(p)++ = (a)[kDevClassLength - 1 - ijk];  \
   }
 
-#define STREAM_TO_DEVCLASS(a, p)                               \
-  {                                                            \
-    int ijk;                                                   \
-    uint8_t* _pa = (uint8_t*)(a) + DEV_CLASS_LEN - 1;          \
-    for (ijk = 0; ijk < DEV_CLASS_LEN; ijk++) *_pa-- = *(p)++; \
+#define STREAM_TO_DEVCLASS(a, p)                                 \
+  {                                                              \
+    size_t ijk;                                                  \
+    uint8_t* _pa = a.data() + kDevClassLength - 1;               \
+    for (ijk = 0; ijk < kDevClassLength; ijk++) *_pa-- = *(p)++; \
   }

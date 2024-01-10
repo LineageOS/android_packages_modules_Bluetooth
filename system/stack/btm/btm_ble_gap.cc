@@ -22,6 +22,7 @@
  *
  ******************************************************************************/
 
+#include "bt_dev_class.h"
 #define LOG_TAG "bt_btm_ble"
 
 #include <android_bluetooth_sysprop.h>
@@ -2039,8 +2040,8 @@ static uint8_t btm_ble_is_discoverable(const RawAddress& bda,
   return scan_state;
 }
 
-static void btm_ble_appearance_to_cod(uint16_t appearance, uint8_t* dev_class) {
-  dev_class[0] = 0;
+static DEV_CLASS btm_ble_appearance_to_cod(uint16_t appearance) {
+  DEV_CLASS dev_class = kDevClassEmpty;
 
   switch (appearance) {
     case BTM_BLE_APPEARANCE_GENERIC_PHONE:
@@ -2171,6 +2172,7 @@ static void btm_ble_appearance_to_cod(uint16_t appearance, uint8_t* dev_class) {
       dev_class[1] = BTM_COD_MAJOR_UNCLASSIFIED;
       dev_class[2] = BTM_COD_MINOR_UNCLASSIFIED;
   };
+  return dev_class;
 }
 
 bool btm_ble_get_appearance_as_cod(std::vector<uint8_t> const& data,
@@ -2184,8 +2186,8 @@ bool btm_ble_get_appearance_as_cod(std::vector<uint8_t> const& data,
   const uint8_t* p_uuid16 = AdvertiseDataParser::GetFieldByType(
       data, BTM_BLE_AD_TYPE_APPEARANCE, &len);
   if (p_uuid16 && len == 2) {
-    btm_ble_appearance_to_cod((uint16_t)p_uuid16[0] | (p_uuid16[1] << 8),
-                              dev_class);
+    dev_class =
+        btm_ble_appearance_to_cod((uint16_t)p_uuid16[0] | (p_uuid16[1] << 8));
     return true;
   }
 
