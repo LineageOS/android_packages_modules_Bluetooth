@@ -492,8 +492,8 @@ public class MapClientService extends ProfileService {
                 return mService;
             }
             if (!Utils.checkServiceAvailable(mService, TAG)
-                    || !(MapUtils.isSystemUser()
-                    || Utils.checkCallerIsSystemOrActiveOrManagedUser(mService, TAG))
+                    || !(getCallingUserHandle().isSystem()
+                            || Utils.checkCallerIsSystemOrActiveOrManagedUser(mService, TAG))
                     || !Utils.checkConnectPermissionForDataDelivery(mService, source, TAG)) {
                 return null;
             }
