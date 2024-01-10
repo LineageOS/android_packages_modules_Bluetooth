@@ -2541,7 +2541,7 @@ void acl_create_classic_connection(const RawAddress& bd_addr,
 }
 
 void btm_connection_request(const RawAddress& bda,
-                            const bluetooth::types::ClassOfDevice& cod) {
+                            const bluetooth::hci::ClassOfDevice& cod) {
   // Copy Cod information
   DEV_CLASS dc;
 

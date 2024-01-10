@@ -19,18 +19,18 @@
 
 #include <cstdint>
 
+#include "hci/class_of_device.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/hci_mode.h"
 #include "stack/include/hcidefs.h"
-#include "types/class_of_device.h"
 #include "types/hci_role.h"
 #include "types/raw_address.h"
 
 // This header contains functions for HCIF-Acl Management to invoke
 //
 void btm_connection_request(const RawAddress& bda,
-                            const bluetooth::types::ClassOfDevice& cod);
+                            const bluetooth::hci::ClassOfDevice& cod);
 void btm_acl_connected(const RawAddress& bda, uint16_t handle,
                        tHCI_STATUS status, uint8_t enc_mode);
 void on_acl_br_edr_connected(const RawAddress& bda, uint16_t handle,

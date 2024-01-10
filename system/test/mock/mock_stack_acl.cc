@@ -26,10 +26,10 @@
 #include <cstdint>
 #include <string>
 
+#include "hci/class_of_device.h"
 #include "stack/include/acl_client_callbacks.h"
 #include "stack/include/bt_hdr.h"
 #include "test/common/mock_functions.h"
-#include "types/class_of_device.h"
 #include "types/raw_address.h"
 
 // Mocked compile conditionals, if any
@@ -639,7 +639,7 @@ void hci_btm_set_link_supervision_timeout(tACL_CONN& link, uint16_t timeout) {
   test::mock::stack_acl::hci_btm_set_link_supervision_timeout(link, timeout);
 }
 void btm_connection_request(const RawAddress& bda,
-                            const bluetooth::types::ClassOfDevice& cod) {
+                            const bluetooth::hci::ClassOfDevice& cod) {
   test::mock::stack_acl::btm_connection_request(bda, cod);
 }
 void on_acl_br_edr_connected(const RawAddress& bda, uint16_t handle,
