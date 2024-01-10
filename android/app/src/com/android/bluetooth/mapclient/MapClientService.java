@@ -74,9 +74,10 @@ public class MapClientService extends ProfileService {
     }
 
     @VisibleForTesting
-    MapClientService(Context ctx, Looper looper) {
+    MapClientService(Context ctx, Looper looper, MnsService mnsServer) {
         this(ctx);
         mSmLooper = looper;
+        mMnsServer = mnsServer;
     }
 
     public static boolean isEnabled() {
@@ -329,12 +330,7 @@ public class MapClientService extends ProfileService {
         mHandler = new Handler(Looper.getMainLooper());
 
         if (mMnsServer == null) {
-            mMnsServer = MapUtils.newMnsServiceInstance(this);
-            if (mMnsServer == null) {
-                // this can't happen
-                Log.w(TAG, "MnsService is *not* created!");
-                return false;
-            }
+            mMnsServer = new MnsService(this);
         }
 
         removeUncleanAccounts();
