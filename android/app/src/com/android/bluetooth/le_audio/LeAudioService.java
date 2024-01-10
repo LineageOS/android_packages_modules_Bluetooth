@@ -2197,8 +2197,8 @@ public class LeAudioService extends ProfileService {
         if (mAudioServersScanner == null || mScanCallback == null) {
             if (DBG) {
                 Log.d(TAG, "stopAudioServersBackgroundScan: already stopped");
-                return;
             }
+            return;
         }
 
         try {
@@ -2232,8 +2232,8 @@ public class LeAudioService extends ProfileService {
             if (mScanCallback != null) {
                 if (DBG) {
                     Log.d(TAG, "startAudioServersBackgroundScan: Scanning already enabled");
-                    return;
                 }
+                return;
             }
             mScanCallback = new AudioServerScanCallback();
         }
