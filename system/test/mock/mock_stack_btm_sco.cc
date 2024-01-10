@@ -22,12 +22,12 @@
 #include <cstdint>
 
 #include "device/include/esco_parameters.h"
+#include "hci/class_of_device.h"
 #include "stack/btm/btm_sco.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/hci_error_code.h"
 #include "test/common/mock_functions.h"
-#include "types/class_of_device.h"
 #include "types/raw_address.h"
 
 bool BTM_IsScoActiveByBdaddr(const RawAddress& /* remote_bda */) {
@@ -112,12 +112,12 @@ void btm_sco_disc_chk_pend_for_modechange(uint16_t /* hci_handle */) {
 }
 void btm_sco_on_esco_connect_request(
     const RawAddress& /* bda */,
-    const bluetooth::types::ClassOfDevice& /* cod */) {
+    const bluetooth::hci::ClassOfDevice& /* cod */) {
   inc_func_call_count(__func__);
 }
 void btm_sco_on_sco_connect_request(
     const RawAddress& /* bda */,
-    const bluetooth::types::ClassOfDevice& /* cod */) {
+    const bluetooth::hci::ClassOfDevice& /* cod */) {
   inc_func_call_count(__func__);
 }
 void btm_sco_on_disconnected(uint16_t /* hci_handle */,
