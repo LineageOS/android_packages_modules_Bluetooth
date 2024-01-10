@@ -18,6 +18,7 @@
 #include <android_bluetooth_flags.h>
 #include <math.h>
 
+#include <complex>
 #include <unordered_map>
 
 #include "common/strings.h"
@@ -55,8 +56,51 @@ static constexpr uint32_t kMinSubeventLen = 0x0004E2;         // 1250us
 static constexpr uint32_t kMaxSubeventLen = 0x3d0900;         // 4s
 static constexpr uint8_t kToneAntennaConfigSelection = 0x07;  // 2x2
 static constexpr uint8_t kTxPwrDelta = 0x00;
+static constexpr uint8_t kProcedureDataBufferSize = 0x10;  // Buffer size of Procedure data
+static constexpr uint8_t kReportWithNoAbort = 0x00;
 
 struct DistanceMeasurementManager::impl {
+  struct CsProcedureData {
+    CsProcedureData(uint16_t procedure_counter, uint8_t num_antenna_paths)
+        : counter(procedure_counter), num_antenna_paths(num_antenna_paths) {
+      local_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
+      remote_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
+      // In ascending order of antenna position with tone extension data at the end
+      uint16_t num_tone_data = num_antenna_paths + 1;
+      for (uint8_t i = 0; i < num_tone_data; i++) {
+        std::vector<std::complex<double>> empty_complex_vector;
+        tone_pct_initiator.push_back(empty_complex_vector);
+        tone_pct_reflector.push_back(empty_complex_vector);
+        std::vector<uint8_t> empty_vector;
+        tone_quality_indicator_initiator.push_back(empty_vector);
+        tone_quality_indicator_reflector.push_back(empty_vector);
+      }
+    }
+    // Procedure counter
+    uint16_t counter;
+    // Number of antenna paths (1 to 4) reported in the procedure
+    uint8_t num_antenna_paths;
+    // Frequency Compensation indicates fractional frequency offset (FFO) value of initiator, in
+    // 0.01ppm
+    std::vector<uint16_t> frequency_compensation;
+    // The channel indices of every step in a CS procedure (in time order)
+    std::vector<uint8_t> step_channel;
+    // Measured Frequency Offset from mode 0, relative to the remote device, in 0.01ppm
+    std::vector<uint16_t> measured_freq_offset;
+    // Initiator's PCT (complex value) measured from mode-2 or mode-3 steps in a CS procedure (in
+    // time order)
+    std::vector<std::vector<std::complex<double>>> tone_pct_initiator;
+    // Reflector's PCT (complex value) measured from mode-2 or mode-3 steps in a CS procedure (in
+    // time order)
+    std::vector<std::vector<std::complex<double>>> tone_pct_reflector;
+    std::vector<std::vector<uint8_t>> tone_quality_indicator_initiator;
+    std::vector<std::vector<uint8_t>> tone_quality_indicator_reflector;
+    CsProcedureDoneStatus local_status;
+    CsProcedureDoneStatus remote_status;
+    // If the procedure is aborted by either the local or remote side.
+    bool aborted = false;
+  };
+
   ~impl() {}
   void start(os::Handler* handler, hci::HciLayer* hci_layer, hci::AclManager* acl_manager) {
     handler_ = handler;
@@ -151,7 +195,13 @@ struct DistanceMeasurementManager::impl {
       send_le_cs_read_remote_supported_capabilities(connection_handle);
       send_le_cs_set_default_settings(connection_handle);
       send_le_cs_security_enable(connection_handle);
+      return;
     }
+    if (!cs_trackers_[connection_handle].config_set) {
+      send_le_cs_create_config(connection_handle);
+      return;
+    }
+    send_le_cs_procedure_enable(connection_handle, Enable::ENABLED);
   }
 
   void stop_distance_measurement(const Address& address, DistanceMeasurementMethod method) {
@@ -216,10 +266,12 @@ struct DistanceMeasurementManager::impl {
     }
     switch (event.GetSubeventCode()) {
       case hci::SubeventCode::LE_CS_TEST_END_COMPLETE:
-      case hci::SubeventCode::LE_CS_SUBEVENT_RESULT_CONTINUE:
-      case hci::SubeventCode::LE_CS_SUBEVENT_RESULT:
       case hci::SubeventCode::LE_CS_READ_REMOTE_FAE_TABLE_COMPLETE: {
         LOG_WARN("Unhandled subevent %s", hci::SubeventCodeText(event.GetSubeventCode()).c_str());
+      } break;
+      case hci::SubeventCode::LE_CS_SUBEVENT_RESULT_CONTINUE:
+      case hci::SubeventCode::LE_CS_SUBEVENT_RESULT: {
+        on_cs_subevent(event);
       } break;
       case hci::SubeventCode::LE_CS_PROCEDURE_ENABLE_COMPLETE: {
         on_cs_procedure_enable_complete(LeCsProcedureEnableCompleteView::Create(event));
@@ -475,6 +527,291 @@ struct DistanceMeasurementManager::impl {
     }
   }
 
+  void on_cs_subevent(LeMetaEventView event) {
+    if (!event.IsValid()) {
+      LOG_ERROR("Received invalid LeMetaEventView");
+      return;
+    }
+
+    // Common data for LE_CS_SUBEVENT_RESULT and LE_CS_SUBEVENT_RESULT_CONTINUE,
+    uint16_t connection_handle = 0;
+    uint8_t abort_reason = kReportWithNoAbort;
+    CsProcedureDoneStatus procedure_done_status;
+    CsSubeventDoneStatus subevent_done_status;
+    std::vector<LeCsResultDataStructure> result_data_structures;
+    if (event.GetSubeventCode() == SubeventCode::LE_CS_SUBEVENT_RESULT) {
+      auto cs_event_result = LeCsSubeventResultView::Create(event);
+      if (!cs_event_result.IsValid()) {
+        LOG_WARN("Get invalid LeCsSubeventResultView");
+        return;
+      }
+      connection_handle = cs_event_result.GetConnectionHandle();
+      abort_reason = cs_event_result.GetAbortReason();
+      procedure_done_status = cs_event_result.GetProcedureDoneStatus();
+      subevent_done_status = cs_event_result.GetSubeventDoneStatus();
+      result_data_structures = cs_event_result.GetResultDataStructures();
+      init_cs_procedure_data(
+          connection_handle,
+          cs_event_result.GetProcedureCounter(),
+          cs_event_result.GetNumAntennaPaths(),
+          true);
+      CsProcedureData* procedure_data =
+          get_procedure_data(connection_handle, cs_event_result.GetProcedureCounter());
+      if (procedure_data != nullptr && cs_trackers_[connection_handle].role == CsRole::INITIATOR) {
+        procedure_data->frequency_compensation.push_back(
+            cs_event_result.GetFrequencyCompensation());
+      }
+    } else {
+      auto cs_event_result = LeCsSubeventResultContinueView::Create(event);
+      if (!cs_event_result.IsValid()) {
+        LOG_WARN("Get invalid LeCsSubeventResultContinueView");
+        return;
+      }
+      connection_handle = cs_event_result.GetConnectionHandle();
+      abort_reason = cs_event_result.GetAbortReason();
+      procedure_done_status = cs_event_result.GetProcedureDoneStatus();
+      subevent_done_status = cs_event_result.GetSubeventDoneStatus();
+      result_data_structures = cs_event_result.GetResultDataStructures();
+    }
+
+    uint16_t counter = cs_trackers_[connection_handle].local_counter;
+    LOG_DEBUG(
+        "Connection_handle %d, procedure_done_status: %s, subevent_done_status: %s, "
+        "counter: "
+        "%d",
+        connection_handle,
+        CsProcedureDoneStatusText(procedure_done_status).c_str(),
+        CsSubeventDoneStatusText(subevent_done_status).c_str(),
+        counter);
+
+    if (procedure_done_status == CsProcedureDoneStatus::ABORTED ||
+        subevent_done_status == CsSubeventDoneStatus::ABORTED) {
+      LOG_WARN(
+          "Received CS Subevent with abort reason: %02x, connection_handle:%d, counter:%d",
+          abort_reason,
+          connection_handle,
+          counter);
+    }
+
+    CsProcedureData* procedure_data = get_procedure_data(connection_handle, counter);
+    if (procedure_data == nullptr) {
+      return;
+    }
+
+    if (abort_reason != kReportWithNoAbort) {
+      // Even the procedure is aborted, we should keep following process and
+      // handle it when all corresponding remote data received.
+      procedure_data->aborted = true;
+    } else {
+      parse_cs_result_data(
+          result_data_structures, *procedure_data, cs_trackers_[connection_handle].role);
+    }
+    // Update procedure status
+    procedure_data->local_status = procedure_done_status;
+    check_cs_procedure_complete(procedure_data, connection_handle);
+  }
+
+  void init_cs_procedure_data(
+      uint16_t connection_handle,
+      uint16_t procedure_counter,
+      uint8_t num_antenna_paths,
+      bool local) {
+    if (cs_trackers_.find(connection_handle) == cs_trackers_.end()) {
+      LOG_WARN("Can't find any tracker for %d", connection_handle);
+      return;
+    }
+    // Update procedure count
+    if (local) {
+      cs_trackers_[connection_handle].local_counter = procedure_counter;
+    } else {
+      cs_trackers_[connection_handle].remote_counter = procedure_counter;
+    }
+
+    std::vector<CsProcedureData>& data_list = cs_trackers_[connection_handle].procedure_data_list;
+    for (CsProcedureData procedure_data : data_list) {
+      if (procedure_data.counter == procedure_counter) {
+        // Data already exist, return
+        return;
+      }
+    }
+    LOG_INFO("Create data for procedure_counter: %d", procedure_counter);
+    data_list.emplace_back(procedure_counter, num_antenna_paths);
+
+    if (data_list.size() > kProcedureDataBufferSize) {
+      LOG_WARN("buffer full, drop procedure data with counter: %d", data_list.front().counter);
+      data_list.erase(data_list.begin());
+    }
+  }
+
+  CsProcedureData* get_procedure_data(uint16_t connection_handle, uint16_t counter) {
+    std::vector<CsProcedureData>& data_list = cs_trackers_[connection_handle].procedure_data_list;
+    CsProcedureData* procedure_data = nullptr;
+    for (uint8_t i = 0; i < data_list.size(); i++) {
+      if (data_list[i].counter == counter) {
+        procedure_data = &data_list[i];
+        break;
+      }
+    }
+    if (procedure_data == nullptr) {
+      LOG_WARN("Can't find data for connection_handle:%d, counter: %d", connection_handle, counter);
+    }
+    return procedure_data;
+  }
+
+  void check_cs_procedure_complete(CsProcedureData* procedure_data, uint16_t connection_handle) {
+    if (procedure_data->local_status == CsProcedureDoneStatus::ALL_RESULTS_COMPLETE &&
+        procedure_data->remote_status == CsProcedureDoneStatus::ALL_RESULTS_COMPLETE &&
+        !procedure_data->aborted) {
+      LOG_DEBUG(
+          "Procedure complete counter:%d data size:%d, main_mode_type:%d, sub_mode_type:%d",
+          (uint16_t)procedure_data->counter,
+          (uint16_t)procedure_data->step_channel.size(),
+          (uint16_t)cs_trackers_[connection_handle].main_mode_type,
+          (uint16_t)cs_trackers_[connection_handle].sub_mode_type);
+    }
+
+    // If the procedure is completed or aborted, delete all previous data
+    if (procedure_data->local_status != CsProcedureDoneStatus::PARTIAL_RESULTS &&
+        procedure_data->remote_status != CsProcedureDoneStatus::PARTIAL_RESULTS) {
+      std::vector<CsProcedureData>& data_list = cs_trackers_[connection_handle].procedure_data_list;
+      while (data_list.begin()->counter != procedure_data->counter) {
+        LOG_DEBUG("Delete obsolete procedure data, counter:%d", data_list.begin()->counter);
+        data_list.erase(data_list.begin());
+      }
+    }
+  }
+
+  void parse_cs_result_data(
+      std::vector<LeCsResultDataStructure> result_data_structures,
+      CsProcedureData& procedure_data,
+      CsRole role) {
+    uint8_t num_antenna_paths = procedure_data.num_antenna_paths;
+    for (auto result_data_structure : result_data_structures) {
+      uint16_t mode = result_data_structure.step_mode_;
+      uint16_t step_channel = result_data_structure.step_channel_;
+      LOG_VERBOSE(
+          "mode: %d, channel: %d, data_length: %d",
+          mode,
+          step_channel,
+          (uint16_t)result_data_structure.step_data_.size());
+
+      // Parse data as packetView
+      std::vector<uint8_t> packet_bytes = {};
+      if (mode == 0x02 || mode == 0x03) {
+        // Add one byte for the length of Tone_PCT[k], Tone_Quality_Indicator[k]
+        packet_bytes.emplace_back(num_antenna_paths + 1);
+      }
+      packet_bytes.reserve(packet_bytes.size() + result_data_structure.step_data_.size());
+      packet_bytes.insert(
+          packet_bytes.end(),
+          result_data_structure.step_data_.begin(),
+          result_data_structure.step_data_.end());
+      PacketView<kLittleEndian> packet_bytes_view(
+          std::make_shared<std::vector<uint8_t>>(packet_bytes));
+      switch (mode) {
+        case 0: {
+          if (role == CsRole::INITIATOR) {
+            LeCsMode0InitatorData tone_data_view;
+            auto after = LeCsMode0InitatorData::Parse(&tone_data_view, packet_bytes_view.begin());
+            if (after == packet_bytes_view.begin()) {
+              LOG_WARN("Received invalid mode %d data, role:%s", mode, CsRoleText(role).c_str());
+              print_raw_data(result_data_structure.step_data_);
+              continue;
+            }
+            LOG_VERBOSE("step_data: %s", tone_data_view.ToString().c_str());
+            procedure_data.measured_freq_offset.push_back(tone_data_view.measured_freq_offset_);
+          } else {
+            LeCsMode0ReflectorData tone_data_view;
+            auto after = LeCsMode0ReflectorData::Parse(&tone_data_view, packet_bytes_view.begin());
+            if (after == packet_bytes_view.begin()) {
+              LOG_WARN("Received invalid mode %d data, role:%s", mode, CsRoleText(role).c_str());
+              print_raw_data(result_data_structure.step_data_);
+              continue;
+            }
+            LOG_VERBOSE("step_data: %s", tone_data_view.ToString().c_str());
+          }
+        } break;
+        case 2: {
+          LeCsMode2Data tone_data_view;
+          auto after = LeCsMode2Data::Parse(&tone_data_view, packet_bytes_view.begin());
+          if (after == packet_bytes_view.begin()) {
+            LOG_WARN("Received invalid mode %d data, role:%s", mode, CsRoleText(role).c_str());
+            print_raw_data(result_data_structure.step_data_);
+            continue;
+          }
+          LOG_VERBOSE("step_data: %s", tone_data_view.ToString().c_str());
+          if (role == CsRole::INITIATOR) {
+            procedure_data.step_channel.push_back(step_channel);
+          }
+          auto tone_data = tone_data_view.tone_data_;
+          uint8_t permutation_index = tone_data_view.antenna_permutation_index_;
+          // Parse in ascending order of antenna position with tone extension data at the end
+          uint16_t num_tone_data = num_antenna_paths + 1;
+          for (uint16_t k = 0; k < num_tone_data; k++) {
+            uint8_t antenna_path = k == num_antenna_paths
+                                       ? num_antenna_paths
+                                       : cs_antenna_permutation_array_[permutation_index][k] - 1;
+            double i_value = get_iq_value(tone_data[k].i_sample_);
+            double q_value = get_iq_value(tone_data[k].q_sample_);
+            uint8_t tone_quality_indicator = tone_data[k].tone_quality_indicator_;
+            LOG_VERBOSE("antenna_path %d, %f, %f", (uint16_t)(antenna_path + 1), i_value, q_value);
+            if (role == CsRole::INITIATOR) {
+              procedure_data.tone_pct_initiator[antenna_path].emplace_back(i_value, q_value);
+              procedure_data.tone_quality_indicator_initiator[antenna_path].emplace_back(
+                  tone_quality_indicator);
+            } else {
+              procedure_data.tone_pct_reflector[antenna_path].emplace_back(i_value, q_value);
+              procedure_data.tone_quality_indicator_reflector[antenna_path].emplace_back(
+                  tone_quality_indicator);
+            }
+          }
+        } break;
+        case 1:
+        case 3:
+          LOG_DEBUG("Unsupported mode: %d ", mode);
+          break;
+        default: {
+          LOG_WARN("Invalid mode %d ", mode);
+        }
+      }
+    }
+  }
+
+  double get_iq_value(uint16_t sample) {
+    int16_t signed_sample = convert_to_signed(sample, 12);
+    double value = 1.0 * signed_sample / 2048;
+    return value;
+  }
+
+  int16_t convert_to_signed(uint16_t num_unsigned, uint8_t bits) {
+    unsigned msb_mask = 1 << (bits - 1);  // setup a mask for most significant bit
+    int16_t num_signed = num_unsigned;
+    if ((num_signed & msb_mask) != 0) {
+      num_signed |= ~(msb_mask - 1);  // extend the MSB
+    }
+    return num_signed;
+  }
+
+  void print_raw_data(std::vector<uint8_t> raw_data) {
+    std::string raw_data_str = "";
+    auto for_end = raw_data.size() - 1;
+    for (size_t i = 0; i < for_end; i++) {
+      char buff[10];
+      snprintf(buff, sizeof(buff), "%02x ", (uint8_t)raw_data[i]);
+      std::string buffAsStdStr = buff;
+      raw_data_str.append(buffAsStdStr);
+      if (i % 100 == 0 && i != 0) {
+        LOG_VERBOSE("%s", raw_data_str.c_str());
+        raw_data_str = "";
+      }
+    }
+    char buff[10];
+    snprintf(buff, sizeof(buff), "%02x", (uint8_t)raw_data[for_end]);
+    std::string buffAsStdStr = buff;
+    raw_data_str.append(buffAsStdStr);
+    LOG_VERBOSE("%s", raw_data_str.c_str());
+  }
+
   void on_read_remote_transmit_power_level_status(Address address, CommandStatusView view) {
     auto status_view = LeReadRemoteTransmitPowerLevelStatusView::Create(view);
     if (!status_view.IsValid()) {
@@ -617,6 +954,7 @@ struct DistanceMeasurementManager::impl {
     CsSubModeType sub_mode_type;
     CsRttType rtt_type;
     bool remote_support_phase_based_ranging = false;
+    std::vector<CsProcedureData> procedure_data_list;
   };
 
   os::Handler* handler_;
@@ -628,6 +966,12 @@ struct DistanceMeasurementManager::impl {
   std::unordered_map<uint16_t, CsTracker> cs_trackers_;
   DistanceMeasurementCallbacks* distance_measurement_callbacks_;
   CsOptionalSubfeaturesSupported cs_subfeature_supported_;
+  // Antenna path permutations. See Channel Sounding CR_PR for the details.
+  uint8_t cs_antenna_permutation_array_[24][4] = {
+      {1, 2, 3, 4}, {2, 1, 3, 4}, {1, 3, 2, 4}, {3, 1, 2, 4}, {3, 2, 1, 4}, {2, 3, 1, 4},
+      {1, 2, 4, 3}, {2, 1, 4, 3}, {1, 4, 2, 3}, {4, 1, 2, 3}, {4, 2, 1, 3}, {2, 4, 1, 3},
+      {1, 4, 3, 2}, {4, 1, 3, 2}, {1, 3, 4, 2}, {3, 1, 4, 2}, {3, 4, 1, 2}, {4, 3, 1, 2},
+      {4, 2, 3, 1}, {2, 4, 3, 1}, {4, 3, 2, 1}, {3, 4, 2, 1}, {3, 2, 4, 1}, {2, 3, 4, 1}};
 };
 
 DistanceMeasurementManager::DistanceMeasurementManager() {
