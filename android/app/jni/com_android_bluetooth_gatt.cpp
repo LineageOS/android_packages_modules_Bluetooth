@@ -26,7 +26,7 @@
 #include <shared_mutex>
 
 #include "com_android_bluetooth.h"
-#include "gd/common/init_flags.h"
+#include "common/init_flags.h"
 #include "hardware/bt_gatt.h"
 #include "hardware/bt_gatt_types.h"
 #include "rust/cxx.h"

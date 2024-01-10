@@ -22,7 +22,7 @@
 #include "acl_api.h"
 #include "android_bluetooth_flags.h"
 #include "bta_gatt_queue.h"
-#include "btif_storage.h"
+#include "btif/include/btif_storage.h"
 #include "internal_include/bt_trace.h"
 
 using bluetooth::hci::kIsoCigPhy1M;

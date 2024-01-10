@@ -35,13 +35,13 @@
 
 #include "common/init_flags.h"
 #include "device/include/controller.h"  // TODO Remove
-#include "gd/hal/snoop_logger.h"
-#include "gd/os/system_properties.h"
+#include "hal/snoop_logger.h"
 #include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/bt_trace.h"
 #include "main/shim/entry.h"
 #include "os/log.h"
+#include "os/system_properties.h"
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/bt_hdr.h"

@@ -37,6 +37,7 @@ cc_test {
     host_supported: true,
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
     ],
     srcs: [
         "common/test/data_element_reader_test.cc",

@@ -27,9 +27,9 @@
 
 #include "btif_common.h"
 #include "btif_storage.h"
-#include "gd/os/parameter_provider.h"
 #include "main/shim/config.h"
 #include "main/shim/shim.h"
+#include "os/parameter_provider.h"
 
 using base::Bind;
 using base::Unretained;

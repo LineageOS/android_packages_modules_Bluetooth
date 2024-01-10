@@ -28,7 +28,7 @@
 #include <string.h>
 
 #include "device/include/controller.h"
-#include "gd/hal/snoop_logger.h"
+#include "hal/snoop_logger.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/entry.h"
 #include "os/log.h"

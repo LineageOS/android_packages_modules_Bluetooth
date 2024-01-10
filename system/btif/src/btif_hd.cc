@@ -37,7 +37,7 @@
 #include "btif/include/btif_common.h"
 #include "btif/include/btif_profile_storage.h"
 #include "btif/include/btif_util.h"
-#include "gd/common/init_flags.h"
+#include "common/init_flags.h"
 #include "include/hardware/bt_hd.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"

@@ -23,9 +23,9 @@
 #include <vector>
 
 #include "a2dp_encoding.h"
-#include "btif_a2dp_source.h"
-#include "btif_av.h"
-#include "btif_hf.h"
+#include "btif/include/btif_a2dp_source.h"
+#include "btif/include/btif_av.h"
+#include "btif/include/btif_hf.h"
 #include "os/log.h"
 #include "stack/include/avdt_api.h"
 #include "types/raw_address.h"

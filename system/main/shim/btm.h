@@ -23,12 +23,12 @@
 #include <vector>
 
 #include "bt_transport.h"
-#include "gd/common/callback.h"
-#include "gd/hci/le_advertising_manager.h"
-#include "gd/hci/le_scanning_callback.h"
-#include "gd/neighbor/inquiry.h"
-#include "gd/os/alarm.h"
+#include "common/callback.h"
 #include "hci/hci_packets.h"
+#include "hci/le_advertising_manager.h"
+#include "hci/le_scanning_callback.h"
+#include "neighbor/inquiry.h"
+#include "os/alarm.h"
 #include "stack/btm/neighbor_inquiry.h"
 #include "types/raw_address.h"
 

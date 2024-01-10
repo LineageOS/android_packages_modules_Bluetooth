@@ -27,7 +27,7 @@
 #include <string.h>
 
 #include "common/init_flags.h"
-#include "gd/hal/snoop_logger.h"
+#include "hal/snoop_logger.h"
 #include "hcimsgs.h"  // HCID_GET_
 #include "internal_include/bt_target.h"
 #include "main/shim/entry.h"
