@@ -493,8 +493,7 @@ static tBTM_STATUS bta_dm_sp_cback(tBTM_SP_EVT event,
            BTM_SP_KEY_NOTIF_EVT,
            copy these values into key_notif from cfm_req */
         sec_event.key_notif.bd_addr = p_data->cfm_req.bd_addr;
-        dev_class_copy(sec_event.key_notif.dev_class,
-                       p_data->cfm_req.dev_class);
+        sec_event.key_notif.dev_class = p_data->cfm_req.dev_class;
         bd_name_copy(sec_event.key_notif.bd_name, p_data->cfm_req.bd_name);
         /* Due to the switch case falling through below to BTM_SP_KEY_NOTIF_EVT,
            call remote name request using values from cfm_req */
@@ -506,7 +505,7 @@ static tBTM_STATUS bta_dm_sp_cback(tBTM_SP_EVT event,
           bta_dm_sec_cb.rmt_auth_req = sec_event.cfm_req.rmt_auth_req;
           bta_dm_sec_cb.loc_auth_req = sec_event.cfm_req.loc_auth_req;
 
-          dev_class_copy(bta_dm_sec_cb.pin_dev_class, p_data->cfm_req.dev_class);
+          bta_dm_sec_cb.pin_dev_class = p_data->cfm_req.dev_class;
           {
             const tBTM_STATUS btm_status =
                 get_btm_client_interface().peer.BTM_ReadRemoteDeviceName(

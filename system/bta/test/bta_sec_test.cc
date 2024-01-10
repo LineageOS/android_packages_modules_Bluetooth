@@ -85,7 +85,7 @@ TEST_F(BtaSecTest, bta_dm_sp_cback__BTM_SP_CFM_REQ_EVT_WithName) {
               .rmt_io_caps = BTM_IO_CAP_NONE,
           },
   };
-  dev_class_copy(data.cfm_req.dev_class, kDeviceClass);
+  data.cfm_req.dev_class = kDeviceClass;
   bd_name_copy(data.cfm_req.bd_name, kRemoteName);
 
   ASSERT_EQ(btm_status_text(BTM_CMD_STARTED),
@@ -136,7 +136,7 @@ TEST_F(BtaSecTest, bta_dm_sp_cback__BTM_SP_CFM_REQ_EVT_WithoutName_RNRSuccess) {
               .rmt_io_caps = BTM_IO_CAP_NONE,
           },
   };
-  dev_class_copy(data.cfm_req.dev_class, kDeviceClass);
+  data.cfm_req.dev_class = kDeviceClass;
 
   ASSERT_EQ(btm_status_text(BTM_CMD_STARTED),
             btm_status_text(bluetooth::legacy::testing::bta_dm_sp_cback(
@@ -177,7 +177,7 @@ TEST_F(BtaSecTest, bta_dm_sp_cback__BTM_SP_CFM_REQ_EVT_WithoutName_RNRFail) {
               .rmt_io_caps = BTM_IO_CAP_NONE,
           },
   };
-  dev_class_copy(data.cfm_req.dev_class, kDeviceClass);
+  data.cfm_req.dev_class = kDeviceClass;
 
   ASSERT_EQ(btm_status_text(BTM_CMD_STARTED),
             btm_status_text(bluetooth::legacy::testing::bta_dm_sp_cback(
@@ -220,7 +220,7 @@ TEST_F(BtaSecTest, bta_dm_sp_cback__BTM_SP_KEY_NOTIF_EVT) {
               .passkey = kPassKey,
           },
   };
-  dev_class_copy(data.key_notif.dev_class, kDeviceClass);
+  data.key_notif.dev_class = kDeviceClass;
   bd_name_copy(data.key_notif.bd_name, kRemoteName);
 
   ASSERT_EQ(btm_status_text(BTM_CMD_STARTED),
