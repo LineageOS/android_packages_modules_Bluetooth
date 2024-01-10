@@ -66,9 +66,6 @@ public class Constants {
      */
     static final String EXTRA_DIRECTION = "android.btopp.intent.extra.DIRECTION";
 
-    /** the intent extra to show all received files in the transfer history */
-    static final String EXTRA_SHOW_ALL_FILES = "android.btopp.intent.extra.SHOW_ALL";
-
     /** the intent that gets sent when clicking an incomplete/failed transfer */
     static final String ACTION_LIST = "android.btopp.intent.action.LIST";
 
