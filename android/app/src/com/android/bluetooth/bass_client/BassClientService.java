@@ -1602,17 +1602,22 @@ public class BassClientService extends ProfileService {
             mPausedBroadcastSinks.clear();
         }
 
+        Map<BluetoothDevice, Integer> sourcesToRemove = new HashMap<>();
+
         for (BluetoothDevice device : getConnectedDevices()) {
             for (BluetoothLeBroadcastReceiveState receiveState : getAllSources(device)) {
                 /* Check if local/last broadcast is the synced one */
                 if (receiveState.getBroadcastId() != broadcastId) continue;
 
-                removeSource(device, receiveState.getSourceId());
-
                 if (store && !mPausedBroadcastSinks.contains(device)) {
                     mPausedBroadcastSinks.add(device);
                 }
+
+                sourcesToRemove.put(device, receiveState.getSourceId());
             }
+        }
+        for (Map.Entry<BluetoothDevice, Integer> entry : sourcesToRemove.entrySet()) {
+            removeSource(entry.getKey(), entry.getValue());
         }
     }
 
