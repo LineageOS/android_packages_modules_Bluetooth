@@ -31,6 +31,7 @@ import android.widget.Toast;
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.flags.Flags;
 
 /**
  * Receives and handles: system broadcasts; Intents from other applications;
@@ -139,25 +140,27 @@ public class BluetoothOppReceiver extends BroadcastReceiver {
             }
 
         } else if (action.equals(Constants.ACTION_OPEN_OUTBOUND_TRANSFER)) {
-            // TODO(b/319050411): Remove this if statement branch when the flag
-            //                    oppStartActivityDirectlyFromNotification is cleaned up.
-            if (V) {
-                Log.v(TAG, "Received ACTION_OPEN_OUTBOUND_TRANSFER.");
-            }
+            if (!Flags.oppStartActivityDirectlyFromNotification()) {
+                if (V) {
+                    Log.v(TAG, "Received ACTION_OPEN_OUTBOUND_TRANSFER.");
+                }
 
-            Intent in = new Intent(context, BluetoothOppTransferHistory.class);
-            in.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            in.putExtra(Constants.EXTRA_DIRECTION, BluetoothShare.DIRECTION_OUTBOUND);
-            context.startActivity(in);
+                Intent in = new Intent(context, BluetoothOppTransferHistory.class);
+                in.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                in.putExtra(Constants.EXTRA_DIRECTION, BluetoothShare.DIRECTION_OUTBOUND);
+                context.startActivity(in);
+            }
         } else if (action.equals(Constants.ACTION_OPEN_INBOUND_TRANSFER)) {
-            if (V) {
-                Log.v(TAG, "Received ACTION_OPEN_INBOUND_TRANSFER.");
-            }
+            if (!Flags.oppStartActivityDirectlyFromNotification()) {
+                if (V) {
+                    Log.v(TAG, "Received ACTION_OPEN_INBOUND_TRANSFER.");
+                }
 
-            Intent in = new Intent(context, BluetoothOppTransferHistory.class);
-            in.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            in.putExtra(Constants.EXTRA_DIRECTION, BluetoothShare.DIRECTION_INBOUND);
-            context.startActivity(in);
+                Intent in = new Intent(context, BluetoothOppTransferHistory.class);
+                in.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                in.putExtra(Constants.EXTRA_DIRECTION, BluetoothShare.DIRECTION_INBOUND);
+                context.startActivity(in);
+            }
         } else if (action.equals(Constants.ACTION_HIDE)) {
             if (V) {
                 Log.v(TAG, "Receiver hide for " + intent.getData());
