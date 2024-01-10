@@ -59,8 +59,8 @@ const char* dump_rc_event(uint8_t event);
 const char* dump_rc_notification_event_id(uint8_t event_id);
 const char* dump_rc_pdu(uint8_t pdu);
 
-uint32_t devclass2uint(DEV_CLASS dev_class);
-void uint2devclass(uint32_t dev, DEV_CLASS dev_class);
+uint32_t devclass2uint(const DEV_CLASS dev_class);
+DEV_CLASS uint2devclass(uint32_t dev);
 
 int ascii_2_hex(const char* p_ascii, int len, uint8_t* p_hex);
 

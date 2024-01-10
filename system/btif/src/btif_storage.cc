@@ -491,7 +491,7 @@ static bt_status_t btif_in_fetch_bonded_devices(
           int cod;
           int pin_length = 0;
           if (btif_config_get_int(name, BTIF_STORAGE_KEY_DEV_CLASS, &cod))
-            uint2devclass((uint32_t)cod, dev_class);
+            dev_class = uint2devclass((uint32_t)cod);
           btif_config_get_int(name, BTIF_STORAGE_KEY_PIN_LENGTH, &pin_length);
           BTA_DmAddDevice(bd_addr, dev_class, link_key, (uint8_t)linkkey_type,
                           pin_length);
