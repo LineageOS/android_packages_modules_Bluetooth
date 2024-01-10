@@ -19,27 +19,17 @@ import android.os.Binder;
 import android.os.SystemProperties;
 
 import com.android.bluetooth.Utils;
-import com.android.internal.annotations.VisibleForTesting;
 
 class MapUtils {
-    private static MnsService sMnsService = null;
     private static final String FETCH_MESSAGE_TYPE =
             "persist.bluetooth.pts.mapclient.fetchmessagetype";
     private static final String SEND_MESSAGE_TYPE =
             "persist.bluetooth.pts.mapclient.sendmessagetype";
 
-    @VisibleForTesting
-    static void setMnsService(MnsService service) {
-        sMnsService = service;
-    }
-
     static boolean isSystemUser() {
         return Binder.getCallingUserHandle().isSystem();
     }
 
-    static MnsService newMnsServiceInstance(MapClientService mapClientService) {
-        return (sMnsService == null) ? new MnsService(mapClientService) : sMnsService;
-    }
     static byte fetchMessageType() {
         if (Utils.isPtsTestMode()) {
             return (byte) SystemProperties.getInt(FETCH_MESSAGE_TYPE,

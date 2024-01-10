@@ -22,6 +22,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
+import android.os.Looper;
 import android.os.UserHandle;
 
 import androidx.test.InstrumentationRegistry;
@@ -67,9 +68,9 @@ public class MapClientTest {
         TestUtils.setAdapterService(mAdapterService);
         mIsAdapterServiceSet = true;
         when(mAdapterService.getDatabase()).thenReturn(mDatabaseManager);
-        MapUtils.setMnsService(mMockMnsService);
         mIsMapClientServiceStarted = true;
-        mService = new MapClientService(mTargetContext);
+        Looper looper = null;
+        mService = new MapClientService(mTargetContext, looper, mMockMnsService);
         mService.doStart();
         mAdapter = BluetoothAdapter.getDefaultAdapter();
     }
