@@ -24,7 +24,7 @@
 #include <memory>
 #include <string>
 
-#include "gd/common/circular_buffer.h"
+#include "common/circular_buffer.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/fixed_queue.h"
 #include "stack/acl/acl.h"

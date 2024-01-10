@@ -102,8 +102,8 @@ static_assert(LOG_TAG != nullptr, "LOG_TAG should never be NULL");
     abort();                                                                        \
   } while (false)
 #elif defined(TARGET_FLOSS) /* end of defined (ANDROID_EMULATOR) */
-#include "gd/common/init_flags.h"
-#include "gd/os/syslog.h"
+#include "common/init_flags.h"
+#include "os/syslog.h"
 
 // Prefix the log with tag, file, line and function
 #define LOGWRAPPER(tag, fmt, args...) \

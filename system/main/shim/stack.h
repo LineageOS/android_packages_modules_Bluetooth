@@ -19,13 +19,13 @@
 #include <functional>
 #include <mutex>
 
-#include "gd/module.h"
-#include "gd/os/handler.h"
-#include "gd/os/thread.h"
-#include "gd/stack_manager.h"
 #include "main/shim/acl.h"
 #include "main/shim/btm.h"
 #include "main/shim/link_policy_interface.h"
+#include "module.h"
+#include "os/handler.h"
+#include "os/thread.h"
+#include "stack_manager.h"
 
 // The shim layer implementation on the Gd stack side.
 namespace bluetooth {

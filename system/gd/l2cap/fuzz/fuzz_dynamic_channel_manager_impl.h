@@ -18,7 +18,6 @@
 
 #pragma once
 
-#include <gd/l2cap/classic/internal/dynamic_channel_service_manager_impl.h>
 #include <future>
 #include <memory>
 
@@ -27,7 +26,6 @@
 #include "l2cap/classic/dynamic_channel_manager.h"
 #include "l2cap/classic/security_policy.h"
 #include "l2cap/psm.h"
-#include "os/handler.h"
 
 namespace bluetooth {
 namespace shim {

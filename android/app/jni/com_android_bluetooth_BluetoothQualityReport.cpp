@@ -22,7 +22,7 @@
 
 #include "base/logging.h"
 #include "com_android_bluetooth.h"
-#include "gd/common/init_flags.h"
+#include "common/init_flags.h"
 #include "hardware/bt_bqr.h"
 
 using bluetooth::bqr::BluetoothQualityReportCallbacks;

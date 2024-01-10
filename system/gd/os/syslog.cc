@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include "gd/os/syslog.h"
+#include "os/syslog.h"
 
 #include <syslog.h>
 
 #include <cstdarg>
 #include <memory>
 
-#include "gd/os/log_tags.h"
+#include "os/log_tags.h"
 
 namespace {
 #define SYSLOG_IDENT "btadapterd"

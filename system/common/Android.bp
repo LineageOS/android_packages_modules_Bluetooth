@@ -124,7 +124,10 @@ cc_test {
         "mts_defaults",
     ],
     test_suites: ["general-tests"],
-    include_dirs: ["packages/modules/Bluetooth/system"],
+    include_dirs: [
+        "packages/modules/Bluetooth/system",
+        "packages/modules/Bluetooth/system/gd",
+    ],
     host_supported: true,
     srcs: [
         "test/thread_performance_test.cc",
@@ -149,7 +152,10 @@ cc_benchmark {
         "fluoride_defaults",
     ],
     host_supported: true,
-    include_dirs: ["packages/modules/Bluetooth/system"],
+    include_dirs: [
+        "packages/modules/Bluetooth/system",
+        "packages/modules/Bluetooth/system/gd",
+    ],
     srcs: [
         "benchmark/thread_performance_benchmark.cc",
     ],

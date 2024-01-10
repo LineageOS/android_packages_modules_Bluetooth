@@ -1,9 +1,9 @@
 
 
+#include "common/init_flags.h"
+
 #include <map>
 #include <string>
-
-#include "gd/common/init_flags.h"
 
 namespace bluetooth {
 namespace common {

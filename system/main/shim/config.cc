@@ -22,9 +22,9 @@
 #include <cstdint>
 #include <cstring>
 
-#include "gd/os/log.h"
-#include "gd/storage/storage_module.h"
 #include "main/shim/entry.h"
+#include "os/log.h"
+#include "storage/storage_module.h"
 
 using ::bluetooth::shim::GetStorage;
 using ::bluetooth::storage::ConfigCacheHelper;

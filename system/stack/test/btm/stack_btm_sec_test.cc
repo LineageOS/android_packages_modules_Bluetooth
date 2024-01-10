@@ -20,7 +20,7 @@
 
 #include <vector>
 
-#include "gd/common/init_flags.h"
+#include "common/init_flags.h"
 #include "hci/hci_layer_mock.h"
 #include "internal_include/bt_target.h"
 #include "stack/btm/btm_ble_sec.h"
