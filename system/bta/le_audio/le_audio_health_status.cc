@@ -19,7 +19,7 @@
 #include <vector>
 
 #include "bta/include/bta_groups.h"
-#include "gd/common/strings.h"
+#include "common/strings.h"
 #include "main/shim/metrics_api.h"
 #include "osi/include/log.h"
 #include "osi/include/properties.h"

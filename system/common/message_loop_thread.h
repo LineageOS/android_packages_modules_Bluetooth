@@ -27,8 +27,8 @@
 #include <thread>
 
 #include "abstract_message_loop.h"
-#include "gd/common/contextual_callback.h"
-#include "gd/common/i_postable_context.h"
+#include "common/contextual_callback.h"
+#include "common/i_postable_context.h"
 
 namespace bluetooth {
 

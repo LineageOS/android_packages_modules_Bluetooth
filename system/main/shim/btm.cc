@@ -26,16 +26,16 @@
 #include <cstring>
 #include <mutex>
 
-#include "gd/hci/le_advertising_manager.h"
-#include "gd/hci/le_scanning_manager.h"
-#include "gd/neighbor/connectability.h"
-#include "gd/neighbor/discoverability.h"
-#include "gd/neighbor/inquiry.h"
-#include "gd/neighbor/page.h"
-#include "gd/security/security_module.h"
+#include "hci/le_advertising_manager.h"
+#include "hci/le_scanning_manager.h"
 #include "main/shim/controller.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
+#include "neighbor/connectability.h"
+#include "neighbor/discoverability.h"
+#include "neighbor/inquiry.h"
+#include "neighbor/page.h"
+#include "security/security_module.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_int_types.h"
 #include "types/ble_address_with_type.h"

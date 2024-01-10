@@ -20,7 +20,7 @@
 
 #include "bta/include/bta_gatt_api.h"
 #include "bta_csis_api.h"
-#include "btif_storage.h"
+#include "btif/include/btif_profile_storage.h"
 #include "btm_iso_api.h"
 #include "device/include/controller.h"
 #include "internal_include/bt_trace.h"

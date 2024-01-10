@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "gd/rust/topshim/controller/controller_shim.h"
+#include "rust/topshim/controller/controller_shim.h"
 
 #include <memory>
 

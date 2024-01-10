@@ -18,11 +18,11 @@
 
 #include "main/shim/shim.h"
 
-#include "gd/common/init_flags.h"
-#include "gd/os/log.h"
+#include "common/init_flags.h"
 #include "main/shim/entry.h"
 #include "main/shim/hci_layer.h"
 #include "main/shim/stack.h"
+#include "os/log.h"
 #include "stack/include/main_thread.h"
 
 static const hci_t* hci;

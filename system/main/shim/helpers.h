@@ -17,10 +17,10 @@
 
 #include <vector>
 
-#include "gd/common/init_flags.h"
-#include "gd/packet/raw_builder.h"
+#include "common/init_flags.h"
 #include "hci/address_with_type.h"
 #include "osi/include/allocator.h"
+#include "packet/raw_builder.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/hci_mode.h"

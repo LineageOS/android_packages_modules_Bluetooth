@@ -18,7 +18,7 @@
 
 #include <cstdint>
 
-#include "gd/hci/octets.h"
+#include "hci/octets.h"
 
 using Octet16 = bluetooth::hci::Octet16;
 using LinkKey = bluetooth::hci::Octet16; /* Link Key */

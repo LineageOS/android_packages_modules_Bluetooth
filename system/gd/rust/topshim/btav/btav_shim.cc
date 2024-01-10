@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "gd/rust/topshim/btav/btav_shim.h"
+#include "rust/topshim/btav/btav_shim.h"
 
 #include <cstdio>
 #include <memory>

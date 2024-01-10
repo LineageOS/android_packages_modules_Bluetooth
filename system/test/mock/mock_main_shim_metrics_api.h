@@ -28,7 +28,7 @@
 // Original included files, if any
 #include <frameworks/proto_logging/stats/enums/bluetooth/le/enums.pb.h>
 
-#include "gd/os/metrics.h"
+#include "os/metrics.h"
 #include "types/raw_address.h"
 
 // Mocked compile conditionals, if any
