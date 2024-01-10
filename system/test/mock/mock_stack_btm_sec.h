@@ -443,12 +443,12 @@ extern struct btm_create_conn_cancel_complete btm_create_conn_cancel_complete;
 
 // Name: btm_get_dev_class
 // Params: const RawAddress& bda
-// Return: const uint8_t*
+// Return: DEV_CLASS
 struct btm_get_dev_class {
-  static const uint8_t* return_value;
-  std::function<const uint8_t*(const RawAddress& bda)> body{
+  static const DEV_CLASS return_value;
+  std::function<const DEV_CLASS(const RawAddress& bda)> body{
       [](const RawAddress& /* bda */) { return return_value; }};
-  const uint8_t* operator()(const RawAddress& bda) { return body(bda); };
+  const DEV_CLASS operator()(const RawAddress& bda) { return body(bda); };
 };
 extern struct btm_get_dev_class btm_get_dev_class;
 

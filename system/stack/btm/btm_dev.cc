@@ -115,7 +115,7 @@ bool BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
     p_dev_rec->sec_rec.bond_type = BOND_TYPE_UNKNOWN;
   }
 
-  if (dev_class) memcpy(p_dev_rec->dev_class, dev_class, DEV_CLASS_LEN);
+  if (dev_class != kDevClassEmpty) p_dev_rec->dev_class = dev_class;
 
   memset(p_dev_rec->sec_bd_name, 0, sizeof(tBTM_BD_NAME));
 
@@ -270,7 +270,7 @@ tBTM_SEC_DEV_REC* btm_sec_alloc_dev(const RawAddress& bd_addr) {
   /* outgoing connection */
   p_inq_info = BTM_InqDbRead(bd_addr);
   if (p_inq_info != NULL) {
-    memcpy(p_dev_rec->dev_class, p_inq_info->results.dev_class, DEV_CLASS_LEN);
+    p_dev_rec->dev_class = p_inq_info->results.dev_class;
 
     p_dev_rec->device_type = p_inq_info->results.device_type;
     if (is_ble_addr_type_known(p_inq_info->results.ble_addr_type))
@@ -280,7 +280,7 @@ tBTM_SEC_DEV_REC* btm_sec_alloc_dev(const RawAddress& bd_addr) {
           "Please do not update device record from anonymous le advertisement");
 
   } else if (bd_addr == btm_sec_cb.connecting_bda)
-    memcpy(p_dev_rec->dev_class, btm_sec_cb.connecting_dc, DEV_CLASS_LEN);
+    p_dev_rec->dev_class = btm_sec_cb.connecting_dc;
 
   /* update conn params, use default value for background connection params */
   memset(&p_dev_rec->conn_params, 0xff, sizeof(tBTM_LE_CONN_PRAMS));
