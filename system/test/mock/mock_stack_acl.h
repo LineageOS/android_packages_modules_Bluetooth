@@ -27,11 +27,11 @@
 
 // Original included files, if any
 #include "device/include/controller.h"
+#include "hci/class_of_device.h"
 #include "stack/acl/acl.h"
 #include "stack/btm/security_device_record.h"
 #include "stack/include/acl_client_callbacks.h"
 #include "stack/include/bt_hdr.h"
-#include "types/class_of_device.h"
 #include "types/raw_address.h"
 
 // Mocked compile conditionals, if any
@@ -790,15 +790,15 @@ struct btm_acl_connected {
 };
 extern struct btm_acl_connected btm_acl_connected;
 // Name: btm_connection_request
-// Params: const RawAddress& bda, const bluetooth::types::ClassOfDevice& cod
+// Params: const RawAddress& bda, const bluetooth::hci::ClassOfDevice& cod
 // Returns: void
 struct btm_connection_request {
   std::function<void(const RawAddress& bda,
-                     const bluetooth::types::ClassOfDevice& cod)>
+                     const bluetooth::hci::ClassOfDevice& cod)>
       body{[](const RawAddress& /* bda */,
-              const bluetooth::types::ClassOfDevice& /* cod */) { ; }};
+              const bluetooth::hci::ClassOfDevice& /* cod */) { ; }};
   void operator()(const RawAddress& bda,
-                  const bluetooth::types::ClassOfDevice& cod) {
+                  const bluetooth::hci::ClassOfDevice& cod) {
     body(bda, cod);
   };
 };

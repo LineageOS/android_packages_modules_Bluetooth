@@ -19,9 +19,9 @@
 
 #include <cstdint>
 
+#include "hci/class_of_device.h"
 #include "stack/include/bt_dev_class.h"
 #include "stack/include/hci_error_code.h"
-#include "types/class_of_device.h"
 #include "types/raw_address.h"
 
 struct tBTM_ESCO_DATA;
@@ -39,6 +39,6 @@ bool btm_sco_removed(uint16_t hci_handle, tHCI_REASON reason);
 
 void btm_sco_on_disconnected(uint16_t hci_handle, tHCI_REASON reason);
 void btm_sco_on_esco_connect_request(const RawAddress&,
-                                     const bluetooth::types::ClassOfDevice&);
+                                     const bluetooth::hci::ClassOfDevice&);
 void btm_sco_on_sco_connect_request(const RawAddress&,
-                                    const bluetooth::types::ClassOfDevice&);
+                                    const bluetooth::hci::ClassOfDevice&);
