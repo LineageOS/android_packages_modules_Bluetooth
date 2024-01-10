@@ -23,19 +23,24 @@ import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.ParcelUuid
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
+import com.google.common.collect.Sets
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.Empty
 import io.grpc.Deadline
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import org.junit.After
+import org.junit.Assume.assumeFalse
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
+import org.junit.runners.Parameterized.Parameters
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -45,8 +50,8 @@ import pandora.HostProto
 import pandora.HostProto.AdvertiseRequest
 import pandora.HostProto.OwnAddressType
 
-@RunWith(AndroidJUnit4::class)
-public class DckTest {
+@RunWith(Parameterized::class)
+public class DckTest(private val connected: Boolean) {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val bluetoothManager = context.getSystemService(BluetoothManager::class.java)!!
@@ -68,6 +73,29 @@ public class DckTest {
     // Setup a Bumble Pandora device for the duration of the test.
     // Acting as a Pandora client, it can be interacted with through the Pandora APIs.
     @Rule @JvmField val mBumble = PandoraDevice()
+
+    @Before
+    fun setUp() {
+        if (connected) {
+            advertiseWithBumble()
+
+            // Connect DUT to Ref as prerequisite
+            val device =
+                bluetoothAdapter.getRemoteLeDevice(
+                    Utils.BUMBLE_RANDOM_ADDRESS,
+                    BluetoothDevice.ADDRESS_TYPE_RANDOM
+                )
+            val gatt = device.connectGatt(context, false, gattCallbackMock)
+            verify(gattCallbackMock, timeout(TIMEOUT))
+                .onConnectionStateChange(
+                    eq(gatt),
+                    eq(BluetoothGatt.GATT_SUCCESS),
+                    eq(BluetoothProfile.STATE_CONNECTED)
+                )
+        }
+
+        clearInvocations(gattCallbackMock)
+    }
 
     @After
     fun tearDown() {
@@ -186,14 +214,11 @@ public class DckTest {
      */
     @Test
     fun testGattConnect_fromIrkScan() {
+        // TODO(b/317091743): Enable test when bug is fixed.
+        assumeFalse(connected)
+
         // Start advertisement on Ref
-        val advertiseRequest =
-            AdvertiseRequest.newBuilder()
-                .setLegacy(true)
-                .setConnectable(true)
-                .setOwnAddressType(OwnAddressType.RANDOM)
-                .build()
-        mBumble.hostBlocking().advertise(advertiseRequest)
+        advertiseWithBumble()
 
         // Start IRK scan for Ref on DUT
         val scanSettings =
@@ -222,10 +247,10 @@ public class DckTest {
 
         // Verify successful GATT connection
         val device = scanResult.device
-        device.connectGatt(context, false, gattCallbackMock)
+        val gatt = device.connectGatt(context, false, gattCallbackMock)
         verify(gattCallbackMock, timeout(TIMEOUT))
             .onConnectionStateChange(
-                any(),
+                eq(gatt),
                 eq(BluetoothGatt.GATT_SUCCESS),
                 eq(BluetoothProfile.STATE_CONNECTED)
             )
@@ -242,18 +267,7 @@ public class DckTest {
     @Test
     fun testGattConnect_fromUuidScan() {
         // Start UUID advertisement on Ref
-        val advertiseData =
-            HostProto.DataTypes.newBuilder()
-                .addCompleteServiceClassUuids128(CCC_DK_UUID.toString())
-                .build()
-        val advertiseRequest =
-            AdvertiseRequest.newBuilder()
-                .setLegacy(true)
-                .setConnectable(true)
-                .setOwnAddressType(OwnAddressType.RANDOM)
-                .setData(advertiseData)
-                .build()
-        mBumble.hostBlocking().advertise(advertiseRequest)
+        advertiseWithBumble(withUuid = true)
 
         // Start UUID scan for Ref on DUT
         val scanSettings =
@@ -278,13 +292,29 @@ public class DckTest {
 
         // Verify successful GATT connection
         val device = scanResult.device
-        device.connectGatt(context, false, gattCallbackMock)
+        val gatt = device.connectGatt(context, false, gattCallbackMock)
         verify(gattCallbackMock, timeout(TIMEOUT))
             .onConnectionStateChange(
-                any(),
+                eq(gatt),
                 eq(BluetoothGatt.GATT_SUCCESS),
                 eq(BluetoothProfile.STATE_CONNECTED)
             )
+    }
+
+    private fun advertiseWithBumble(withUuid: Boolean = false) {
+        val requestBuilder =
+            AdvertiseRequest.newBuilder()
+                .setLegacy(true)
+                .setConnectable(true)
+                .setOwnAddressType(OwnAddressType.RANDOM)
+
+        if (withUuid) {
+            requestBuilder.data =
+                HostProto.DataTypes.newBuilder()
+                    .addCompleteServiceClassUuids128(CCC_DK_UUID.toString())
+                    .build()
+        }
+        mBumble.hostBlocking().advertise(requestBuilder.build())
     }
 
     companion object {
@@ -294,5 +324,13 @@ public class DckTest {
 
         // CCC DK Specification R3 1.2.0 r14 section 19.2.1.2 Bluetooth Le Pairing
         private val CCC_DK_UUID = UUID.fromString("0000FFF5-0000-1000-8000-00805f9b34fb")
+
+        @Parameters(name = "connected = {0}")
+        @JvmStatic
+        fun parameters(): Iterable<Array<Any?>> =
+            Sets.cartesianProduct(
+                    setOf(false, true), // connected
+                )
+                .map { it.toTypedArray() }
     }
 }
