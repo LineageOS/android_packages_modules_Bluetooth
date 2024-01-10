@@ -107,8 +107,7 @@ public class HeadsetClientService extends ProfileService {
                 Log.d(TAG, "start()");
             }
             if (getHeadsetClientService() != null) {
-                Log.w(TAG, "start(): start called without stop");
-                return false;
+                throw new IllegalStateException("start() called twice");
             }
 
             mDatabaseManager = Objects.requireNonNull(
