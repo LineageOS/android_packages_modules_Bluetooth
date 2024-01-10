@@ -603,7 +603,14 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
       case ScanApiType::EXTENDED:
         le_scanning_interface_->EnqueueCommand(
             LeSetExtendedScanEnableBuilder::Create(
-                Enable::ENABLED, FilterDuplicates::DISABLED /* filter duplicates */, 0, 0),
+                Enable::ENABLED,
+#if TARGET_FLOSS
+                FilterDuplicates::ENABLED /* filter duplicates */,
+#else
+                FilterDuplicates::DISABLED /* filter duplicates */,
+#endif
+                0,
+                0),
             module_handler_->BindOnce(check_complete<LeSetExtendedScanEnableCompleteView>));
         break;
       case ScanApiType::ANDROID_HCI:
@@ -627,7 +634,14 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
       case ScanApiType::EXTENDED:
         le_scanning_interface_->EnqueueCommand(
             LeSetExtendedScanEnableBuilder::Create(
-                Enable::DISABLED, FilterDuplicates::DISABLED /* filter duplicates */, 0, 0),
+                Enable::DISABLED,
+#if TARGET_FLOSS
+                FilterDuplicates::ENABLED /* filter duplicates */,
+#else
+                FilterDuplicates::DISABLED /* filter duplicates */,
+#endif
+                0,
+                0),
             module_handler_->BindOnce(check_complete<LeSetExtendedScanEnableCompleteView>));
         break;
       case ScanApiType::ANDROID_HCI:

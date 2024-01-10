@@ -26,6 +26,7 @@
 #include "main/shim/helpers.h"
 #include "main/shim/stack.h"
 #include "stack/btm/btm_ble_sec.h"
+#include "stack/btm/btm_dev.h"
 #include "types/raw_address.h"
 
 uint16_t bluetooth::shim::BTM_GetHCIConnHandle(const RawAddress& remote_bda,
@@ -80,8 +81,9 @@ tBTM_STATUS bluetooth::shim::BTM_AllowWakeByHid(
     std::promise<bool> accept_promise;
     auto accept_future = accept_promise.get_future();
 
+    tBLE_BD_ADDR bdadr = BTM_Sec_GetAddressWithType(hid_address.first);
     Stack::GetInstance()->GetAcl()->AcceptLeConnectionFrom(
-        ToAddressWithType(hid_address.first, hid_address.second),
+        ToAddressWithType(bdadr.bda, bdadr.type),
         /*is_direct=*/false, std::move(accept_promise));
 
     accept_future.wait();
@@ -101,8 +103,9 @@ tBTM_STATUS bluetooth::shim::BTM_RestoreFilterAcceptList(
     std::promise<bool> accept_promise;
     auto accept_future = accept_promise.get_future();
 
+    tBLE_BD_ADDR bdadr = BTM_Sec_GetAddressWithType(address_pair.first);
     Stack::GetInstance()->GetAcl()->AcceptLeConnectionFrom(
-        ToAddressWithType(address_pair.first, address_pair.second),
+        ToAddressWithType(bdadr.bda, bdadr.type),
         /*is_direct=*/false, std::move(accept_promise));
 
     accept_future.wait();

@@ -521,6 +521,7 @@ pub struct Bluetooth {
     // Internal API members
     discoverable_timeout: Option<JoinHandle<()>>,
     cancelling_devices: HashSet<RawAddress>,
+    active_pairing_address: Option<RawAddress>,
 
     /// Used to notify signal handler that we have turned off the stack.
     sig_notifier: Arc<SigData>,
@@ -577,6 +578,7 @@ impl Bluetooth {
             // Internal API members
             discoverable_timeout: None,
             cancelling_devices: HashSet::new(),
+            active_pairing_address: None,
             sig_notifier,
             uhid_wakeup_source: UHid::new(),
         }
@@ -1558,6 +1560,12 @@ impl BtifBluetoothCallbacks for Bluetooth {
         let device_type =
             self.get_remote_type(BluetoothDevice::new(address.clone(), "".to_string()));
 
+        // Clear the pairing lock if this call corresponds to the
+        // active pairing device.
+        if &bond_state != &BtBondState::Bonding && self.active_pairing_address == Some(addr) {
+            self.active_pairing_address = None;
+        }
+
         // Easy case of not bonded -- we remove the device from the bonded list and change the bond
         // state in the found list (in case it was previously bonding).
         if &bond_state == &BtBondState::NotBonded {
@@ -2136,6 +2144,15 @@ impl IBluetooth for Bluetooth {
             _ => self.get_remote_type(device.clone()),
         };
 
+        if let Some(active_address) = self.active_pairing_address {
+            warn!(
+                "Bonding requested for {} while already bonding {}, rejecting",
+                DisplayAddress(&address),
+                DisplayAddress(&active_address)
+            );
+            return false;
+        }
+
         // There could be a race between bond complete and bond cancel, which makes
         // |cancelling_devices| in a wrong state. Remove the device just in case.
         if self.cancelling_devices.remove(&address) {
@@ -2148,6 +2165,8 @@ impl IBluetooth for Bluetooth {
 
         // BREDR connection won't work when Inquiry is in progress.
         self.pause_discovery();
+
+        self.active_pairing_address = Some(address.clone());
         let status = self.intf.lock().unwrap().create_bond(&address, transport);
 
         if status != 0 {

@@ -40,8 +40,7 @@ public class ContentProfileErrorReportUtilsTest {
         mSetFlagsRule.disableFlags(Flags.FLAG_CONTENT_PROFILES_ERRORS_METRICS);
         long previousReportTimeMillis = ContentProfileErrorReportUtils.sLastReportTime;
 
-        ContentProfileErrorReportUtils.report(0, 0, 0, 0);
-
+        assertThat(ContentProfileErrorReportUtils.report(0, 0, 0, 0)).isFalse();
         // The last report time should not be changed.
         assertThat(ContentProfileErrorReportUtils.sLastReportTime)
                 .isEqualTo(previousReportTimeMillis);
@@ -54,8 +53,7 @@ public class ContentProfileErrorReportUtilsTest {
         long lastReportTimeMillisToSet = SystemClock.uptimeMillis();
         ContentProfileErrorReportUtils.sLastReportTime = lastReportTimeMillisToSet;
 
-        ContentProfileErrorReportUtils.report(0, 0, 0, 0);
-
+        assertThat(ContentProfileErrorReportUtils.report(0, 0, 0, 0)).isFalse();
         // The last report time should not be changed.
         assertThat(ContentProfileErrorReportUtils.sLastReportTime)
                 .isEqualTo(lastReportTimeMillisToSet);
@@ -72,8 +70,7 @@ public class ContentProfileErrorReportUtilsTest {
                                 * 2);
         ContentProfileErrorReportUtils.sLastReportTime = lastReportTimeMillisToSet;
 
-        ContentProfileErrorReportUtils.report(0, 0, 0, 0);
-
+        assertThat(ContentProfileErrorReportUtils.report(0, 0, 0, 0)).isTrue();
         // After the successful report, the last report time should be changed.
         assertThat(ContentProfileErrorReportUtils.sLastReportTime)
                 .isGreaterThan(lastReportTimeMillisToSet);
