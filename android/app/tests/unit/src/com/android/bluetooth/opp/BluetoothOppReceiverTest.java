@@ -161,7 +161,7 @@ public class BluetoothOppReceiverTest {
 
         mReceiver.onReceive(mContext, intent);
         intended(hasComponent(BluetoothOppTransferHistory.class.getName()));
-        intended(hasExtra("direction", BluetoothShare.DIRECTION_OUTBOUND));
+        intended(hasExtra(Constants.EXTRA_DIRECTION, BluetoothShare.DIRECTION_OUTBOUND));
     }
 
     @Test
@@ -173,7 +173,7 @@ public class BluetoothOppReceiverTest {
                 new Instrumentation.ActivityResult(Activity.RESULT_OK, new Intent()));
         mReceiver.onReceive(mContext, intent);
         intended(hasComponent(BluetoothOppTransferHistory.class.getName()));
-        intended(hasExtra("direction", BluetoothShare.DIRECTION_INBOUND));
+        intended(hasExtra(Constants.EXTRA_DIRECTION, BluetoothShare.DIRECTION_INBOUND));
     }
 
     @Test
