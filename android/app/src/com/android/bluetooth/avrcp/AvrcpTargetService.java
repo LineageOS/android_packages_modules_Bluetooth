@@ -190,8 +190,7 @@ public class AvrcpTargetService extends ProfileService {
     @Override
     protected boolean start() {
         if (sInstance != null) {
-            Log.wtf(TAG, "The service has already been initialized");
-            return false;
+            throw new IllegalStateException("start() called twice");
         }
 
         IntentFilter userFilter = new IntentFilter();
