@@ -173,6 +173,11 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
       return false;
     }
 
+    /* Invalidate configuration to make sure it is chosen properly when new
+     * member connects
+     */
+    group->InvalidateCachedConfigurations();
+
     if (!group->Configure(group->GetConfigurationContextType(),
                           group->GetMetadataContexts(), ccids)) {
       LOG_ERROR(" failed to set ASE configuration");

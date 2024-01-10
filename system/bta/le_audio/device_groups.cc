@@ -763,13 +763,14 @@ bool LeAudioDeviceGroup::UpdateAudioSetConfigurationCache(
 
   if (update_config) {
     context_to_configuration_cache_map[ctx_type] = std::pair(true, new_conf);
-    LOG_DEBUG("config: %s -> %s", ToHexString(ctx_type).c_str(),
-              (new_conf ? new_conf->name.c_str() : "(none)"));
+    LOG_INFO("config: %s -> %s", ToHexString(ctx_type).c_str(),
+             (new_conf ? new_conf->name.c_str() : "(none)"));
   }
   return update_config;
 }
 
 void LeAudioDeviceGroup::InvalidateCachedConfigurations(void) {
+  LOG_INFO(" Group id: %d", group_id_);
   context_to_configuration_cache_map.clear();
 }
 
