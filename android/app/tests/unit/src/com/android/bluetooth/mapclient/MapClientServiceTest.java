@@ -17,7 +17,6 @@ package com.android.bluetooth.mapclient;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
@@ -73,7 +72,8 @@ public class MapClientServiceTest {
 
         mTestLooper = new TestLooper();
 
-        mService = new MapClientService(targetContext, mTestLooper.getLooper());
+        MnsService mnsServer = null;
+        mService = new MapClientService(targetContext, mTestLooper.getLooper(), mnsServer);
         mService.doStart();
 
         // Try getting the Bluetooth adapter
