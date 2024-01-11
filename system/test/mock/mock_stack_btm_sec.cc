@@ -137,7 +137,7 @@ bool BTM_SecIsSecurityPending::return_value = false;
 bool BTM_SecRegister::return_value = false;
 tBTM_STATUS BTM_SetEncryption::return_value = 0;
 bool BTM_SetSecurityLevel::return_value = false;
-const uint8_t* btm_get_dev_class::return_value = nullptr;
+const DEV_CLASS btm_get_dev_class::return_value = kDevClassEmpty;
 tBTM_STATUS btm_sec_bond_by_transport::return_value = 0;
 tBTM_STATUS btm_sec_disconnect::return_value = 0;
 bool btm_sec_is_a_bonded_dev::return_value = false;
@@ -286,7 +286,7 @@ void btm_create_conn_cancel_complete(uint8_t status, const RawAddress bd_addr) {
   inc_func_call_count(__func__);
   test::mock::stack_btm_sec::btm_create_conn_cancel_complete(status, bd_addr);
 }
-const uint8_t* btm_get_dev_class(const RawAddress& bda) {
+const DEV_CLASS btm_get_dev_class(const RawAddress& bda) {
   inc_func_call_count(__func__);
   return test::mock::stack_btm_sec::btm_get_dev_class(bda);
 }

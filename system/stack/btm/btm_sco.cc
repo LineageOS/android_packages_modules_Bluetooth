@@ -952,7 +952,7 @@ void btm_sco_conn_req(const RawAddress& bda, const DEV_CLASS& dev_class,
       } else {
         /* Notify upper layer of connect indication */
         evt_data.bd_addr = bda;
-        memcpy(evt_data.dev_class, dev_class, DEV_CLASS_LEN);
+        evt_data.dev_class = dev_class;
         evt_data.link_type = link_type;
         evt_data.sco_inx = sco_index;
         tBTM_ESCO_EVT_DATA btm_esco_evt_data = {};
