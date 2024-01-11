@@ -74,8 +74,6 @@ public class BluetoothOppTransferHistory extends Activity
         mListView = (ListView) findViewById(R.id.list);
         mListView.setEmptyView(findViewById(R.id.empty));
 
-        mShowAllIncoming = getIntent().getBooleanExtra(Constants.EXTRA_SHOW_ALL_FILES, false);
-
         String direction;
         int dir = getIntent().getIntExtra(Constants.EXTRA_DIRECTION, 0);
         if (dir == BluetoothShare.DIRECTION_OUTBOUND) {
@@ -83,22 +81,15 @@ public class BluetoothOppTransferHistory extends Activity
             direction = "(" + BluetoothShare.DIRECTION + " == " + BluetoothShare.DIRECTION_OUTBOUND
                     + ")";
         } else {
-            if (mShowAllIncoming) {
-                setTitle(getText(R.string.btopp_live_folder));
-            } else {
-                setTitle(getText(R.string.inbound_history_title));
-            }
+            setTitle(getText(R.string.inbound_history_title));
             direction = "(" + BluetoothShare.DIRECTION + " == " + BluetoothShare.DIRECTION_INBOUND
                     + ")";
         }
 
-        String selection = BluetoothShare.STATUS + " >= '200' AND " + direction;
-
-        if (!mShowAllIncoming) {
-            selection = selection + " AND (" + BluetoothShare.VISIBILITY + " IS NULL OR "
+        String selection = BluetoothShare.STATUS + " >= '200' AND " + direction + " AND ("
+                    + BluetoothShare.VISIBILITY + " IS NULL OR "
                     + BluetoothShare.VISIBILITY + " == '" + BluetoothShare.VISIBILITY_VISIBLE
                     + "')";
-        }
 
         final String sortOrder = BluetoothShare.TIMESTAMP + " DESC";
         mTransferCursor = BluetoothMethodProxy.getInstance().contentResolverQuery(
@@ -134,7 +125,7 @@ public class BluetoothOppTransferHistory extends Activity
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        if (mTransferCursor != null && !mShowAllIncoming) {
+        if (mTransferCursor != null) {
             MenuInflater inflater = getMenuInflater();
             inflater.inflate(R.menu.transferhistory, menu);
         }
@@ -143,9 +134,7 @@ public class BluetoothOppTransferHistory extends Activity
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        if (!mShowAllIncoming) {
-            menu.findItem(R.id.transfer_menu_clear_all).setEnabled(isTransferComplete());
-        }
+        menu.findItem(R.id.transfer_menu_clear_all).setEnabled(isTransferComplete());
         return super.onPrepareOptionsMenu(menu);
     }
 
@@ -204,13 +193,7 @@ public class BluetoothOppTransferHistory extends Activity
                 fileName = this.getString(R.string.unknown_file);
             }
             menu.setHeaderTitle(fileName);
-
-            MenuInflater inflater = getMenuInflater();
-            if (mShowAllIncoming) {
-                inflater.inflate(R.menu.receivedfilescontextfinished, menu);
-            } else {
-                inflater.inflate(R.menu.transferhistorycontextfinished, menu);
-            }
+            getMenuInflater().inflate(R.menu.transferhistorycontextfinished, menu);
         }
     }
 
