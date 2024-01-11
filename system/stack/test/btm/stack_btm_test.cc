@@ -232,7 +232,7 @@ TEST_F(StackBtmWithInitFreeTest, btm_sec_rmt_name_request_complete) {
   ASSERT_TRUE(BTM_SecAddRmtNameNotifyCallback(
       [](const RawAddress& bd_addr, DEV_CLASS dc, tBTM_BD_NAME bd_name) {
         btm_test.bd_addr = bd_addr;
-        memcpy(btm_test.dc, dc, DEV_CLASS_LEN);
+        btm_test.dc = dc;
         memcpy(btm_test.bd_name, bd_name, BTM_MAX_REM_BD_NAME_LEN);
       }));
 
