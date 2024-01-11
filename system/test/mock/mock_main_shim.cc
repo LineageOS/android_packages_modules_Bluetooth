@@ -37,15 +37,3 @@ bool bluetooth::shim::is_gd_stack_started_up() {
   inc_func_call_count(__func__);
   return test::mock::bluetooth_shim_is_gd_stack_started_up;
 }
-future_t* GeneralShutDown() {
-  inc_func_call_count(__func__);
-  return nullptr;
-}
-future_t* IdleModuleStartUp() {
-  inc_func_call_count(__func__);
-  return nullptr;
-}
-future_t* ShimModuleStartUp() {
-  inc_func_call_count(__func__);
-  return nullptr;
-}
