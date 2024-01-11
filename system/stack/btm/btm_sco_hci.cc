@@ -396,9 +396,40 @@ struct tBTM_MSBC_INFO {
   size_t packet_size; /* SCO mSBC packet size supported by lower layer */
   size_t buf_size; /* The size of the buffer, determined by the packet_size. */
 
+  enum decode_buf_state {
+    DECODE_BUF_EMPTY,
+    DECODE_BUF_FULL,
+
+    // Neither empty nor full.
+    DECODE_BUF_HALFFULL,
+  };
+
+  uint8_t* packet_buf;      /* Temporary buffer to store the data */
   uint8_t* msbc_decode_buf; /* Buffer to store mSBC packets to decode */
   size_t decode_buf_wo;     /* Write offset of the decode buffer */
   size_t decode_buf_ro;     /* Read offset of the decode buffer */
+
+  /* Within the circular buffer, which can be visualized as having
+     two halves, mirror indicators track the pointer's location,
+     signaling whether it resides in the first or second segment:
+
+              [buf_size-1] ┼ - - -─┼ [0]
+                           │       │
+                           │       │
+     wo = x, wo_mirror = 0 ^       v ro = x, ro_mirror = 1
+                           │       │
+                           │       │
+                       [0] ┼ - - - ┼ [buf_size-1]
+              (First Half)           (Second Half)
+  */
+  bool decode_buf_wo_mirror; /* The mirror indicator specifies whether
+                                the write pointer is currently located
+                                in the first or second half of the
+                                circular buffer */
+  bool decode_buf_ro_mirror; /* The mirror indicator specifies whether
+                                the read pointer is currently located
+                                in the first or second half of the
+                                circular buffer */
   bool read_corrupted;      /* If the current mSBC packet read is corrupted */
 
   uint8_t* msbc_encode_buf; /* Buffer to store the encoded SCO packets */
@@ -444,12 +475,18 @@ struct tBTM_MSBC_INFO {
   size_t init(size_t pkt_size) {
     decode_buf_wo = 0;
     decode_buf_ro = 0;
+    decode_buf_wo_mirror = false;
+    decode_buf_ro_mirror = false;
+
     encode_buf_wo = 0;
     encode_buf_ro = 0;
 
     pkt_size = get_supported_packet_size(pkt_size, &buf_size);
     if (pkt_size == packet_size) return packet_size;
     packet_size = pkt_size;
+
+    if (packet_buf) osi_free(packet_buf);
+    packet_buf = (uint8_t*)osi_calloc(packet_size);
 
     if (msbc_decode_buf) osi_free(msbc_decode_buf);
     msbc_decode_buf = (uint8_t*)osi_calloc(buf_size);
@@ -473,6 +510,7 @@ struct tBTM_MSBC_INFO {
 
   void deinit() {
     if (msbc_decode_buf) osi_free(msbc_decode_buf);
+    if (packet_buf) osi_free(packet_buf);
     if (msbc_encode_buf) osi_free(msbc_encode_buf);
     if (plc) {
       plc->deinit();
@@ -481,28 +519,66 @@ struct tBTM_MSBC_INFO {
     if (pkt_status) osi_free_and_reset((void**)&pkt_status);
   }
 
-  size_t decodable() { return decode_buf_wo - decode_buf_ro; }
+  void incr_buf_offset(size_t& offset, bool& mirror, size_t bsize,
+                       size_t amount) {
+    if (bsize - offset > amount) {
+      offset += amount;
+      return;
+    }
+
+    mirror = !mirror;
+    offset = amount - (bsize - offset);
+  }
+
+  decode_buf_state decode_buf_status() {
+    if (decode_buf_ro == decode_buf_wo) {
+      if (decode_buf_ro_mirror == decode_buf_wo_mirror) return DECODE_BUF_EMPTY;
+      return DECODE_BUF_FULL;
+    }
+    return DECODE_BUF_HALFFULL;
+  }
+
+  size_t decode_buf_data_len() {
+    switch (decode_buf_status()) {
+      case DECODE_BUF_EMPTY:
+        return 0;
+      case DECODE_BUF_FULL:
+        return buf_size;
+      case DECODE_BUF_HALFFULL:
+      default:
+        if (decode_buf_wo > decode_buf_ro) return decode_buf_wo - decode_buf_ro;
+        return buf_size - (decode_buf_ro - decode_buf_wo);
+    };
+  }
+
+  size_t decode_buf_avail_len() { return buf_size - decode_buf_data_len(); }
 
   void mark_pkt_decoded() {
-    if (decode_buf_ro + BTM_MSBC_PKT_LEN > decode_buf_wo) {
+    if (decode_buf_data_len() < BTM_MSBC_PKT_LEN) {
       LOG_ERROR("Trying to mark read offset beyond write offset.");
       return;
     }
 
-    decode_buf_ro += BTM_MSBC_PKT_LEN;
-    if (decode_buf_ro == decode_buf_wo) {
-      decode_buf_ro = 0;
-      decode_buf_wo = 0;
-    }
+    incr_buf_offset(decode_buf_ro, decode_buf_ro_mirror, buf_size,
+                    BTM_MSBC_PKT_LEN);
   }
 
   size_t write(const std::vector<uint8_t>& input) {
-    if (input.size() > buf_size - decode_buf_wo) {
+    if (input.size() > decode_buf_avail_len()) {
       return 0;
     }
 
-    std::copy(input.begin(), input.end(), msbc_decode_buf + decode_buf_wo);
-    decode_buf_wo += input.size();
+    if (buf_size - decode_buf_wo > input.size()) {
+      std::copy(input.begin(), input.end(), msbc_decode_buf + decode_buf_wo);
+    } else {
+      std::copy(input.begin(), input.begin() + buf_size - decode_buf_wo,
+                msbc_decode_buf + decode_buf_wo);
+      std::copy(input.begin() + buf_size - decode_buf_wo, input.end(),
+                msbc_decode_buf);
+    }
+
+    incr_buf_offset(decode_buf_wo, decode_buf_wo_mirror, buf_size,
+                    input.size());
     return input.size();
   }
 
@@ -513,12 +589,14 @@ struct tBTM_MSBC_INFO {
     }
 
     size_t rp = 0;
-    while (rp < BTM_MSBC_PKT_LEN &&
-           decode_buf_wo - (decode_buf_ro + rp) >= BTM_MSBC_PKT_LEN) {
-      if ((msbc_decode_buf[decode_buf_ro + rp] != BTM_MSBC_H2_HEADER_0) ||
+    size_t data_len = decode_buf_data_len();
+    while (rp < BTM_MSBC_PKT_LEN && data_len - rp >= BTM_MSBC_PKT_LEN) {
+      if ((msbc_decode_buf[(decode_buf_ro + rp) % buf_size] !=
+           BTM_MSBC_H2_HEADER_0) ||
           (!verify_h2_header_seq_num(
-              msbc_decode_buf[decode_buf_ro + rp + 1])) ||
-          (msbc_decode_buf[decode_buf_ro + rp + 2] != BTM_MSBC_SYNC_WORD)) {
+              msbc_decode_buf[(decode_buf_ro + rp + 1) % buf_size])) ||
+          (msbc_decode_buf[(decode_buf_ro + rp + 2) % buf_size] !=
+           BTM_MSBC_SYNC_WORD)) {
         rp++;
         continue;
       }
@@ -526,9 +604,20 @@ struct tBTM_MSBC_INFO {
       if (rp != 0) {
         LOG_WARN("Skipped %lu bytes of mSBC data ahead of a valid mSBC frame",
                  (unsigned long)rp);
-        decode_buf_ro += rp;
+        incr_buf_offset(decode_buf_ro, decode_buf_ro_mirror, buf_size, rp);
       }
-      return &msbc_decode_buf[decode_buf_ro];
+
+      // Get the frame head.
+      if (buf_size - decode_buf_ro >= BTM_MSBC_PKT_LEN) {
+        return &msbc_decode_buf[decode_buf_ro];
+      }
+
+      std::copy(msbc_decode_buf + decode_buf_ro, msbc_decode_buf + buf_size,
+                packet_buf);
+      std::copy(msbc_decode_buf,
+                msbc_decode_buf + BTM_MSBC_PKT_LEN - (buf_size - decode_buf_ro),
+                packet_buf + (buf_size - decode_buf_ro));
+      return packet_buf;
     }
 
     return nullptr;
@@ -650,7 +739,7 @@ size_t decode(const uint8_t** out_data) {
     return 0;
   }
 
-  if (msbc_info->decodable() < BTM_MSBC_PKT_LEN) {
+  if (msbc_info->decode_buf_data_len() < BTM_MSBC_PKT_LEN) {
     return 0;
   }
 
