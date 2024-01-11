@@ -356,6 +356,25 @@ struct tBTM_SEC_REC {
   uint8_t get_encryption_key_size() const { return enc_key_size; }
 
   void increment_sign_counter(bool local);
+
+  std::string ToString() const {
+    return base::StringPrintf(
+        "bredr_linkkey_known:%c,le_linkkey_known:%c,"
+        "bond_type:%s,"
+        "bredr_linkkey_type:%s,"
+        "ble_enc_key_size:%d,"
+        "bredr_authenticated:%c,le_authenticated:%c,"
+        "16_digit_key_authenticated:%c,"
+        "bredr_encrypted:%c,le_encrypted:%c",
+        is_link_key_known() ? 'T' : 'F', is_le_link_key_known() ? 'T' : 'F',
+        bond_type_text(bond_type).c_str(),
+        linkkey_type_text(link_key_type).c_str(), enc_key_size,
+        is_device_authenticated() ? 'T' : 'F',
+        is_le_device_authenticated() ? 'T' : 'F',
+        is_le_link_16_digit_key_authenticated() ? 'T' : 'F',
+        is_device_encrypted() ? 'T' : 'F',
+        is_le_device_encrypted() ? 'T' : 'F');
+  }
 };
 
 class tBTM_SEC_DEV_REC {
@@ -391,12 +410,13 @@ class tBTM_SEC_DEV_REC {
 
   std::string ToString() const {
     return base::StringPrintf(
-        "%s %6s cod:%s remote_info:%-14s sm4:0x%02x SecureConn:%c name:\"%s\"",
+        "%s %6s cod:%s remote_info:%-14s sm4:0x%02x SecureConn:%c name:\"%s\""
+        "sec_prop:%s",
         ADDRESS_TO_LOGGABLE_CSTR(bd_addr), DeviceTypeText(device_type).c_str(),
         dev_class_text(dev_class).c_str(),
         remote_version_info.ToString().c_str(), sm4,
         (remote_supports_secure_connections) ? 'T' : 'F',
-        PRIVATE_NAME(sec_bd_name));
+        PRIVATE_NAME(sec_bd_name), sec_rec.ToString().c_str());
   }
 
  public:
