@@ -1330,8 +1330,8 @@ void btm_rejectlist_role_change_device(const RawAddress& bd_addr,
   /* check for carkits */
   const uint32_t cod_audio_device =
       (BTM_COD_SERVICE_AUDIO | BTM_COD_MAJOR_AUDIO) << 8;
-  const uint8_t* dev_class = btm_get_dev_class(bd_addr);
-  if (dev_class == nullptr) return;
+  DEV_CLASS dev_class = btm_get_dev_class(bd_addr);
+  if (dev_class == kDevClassEmpty) return;
   const uint32_t cod =
       ((dev_class[0] << 16) | (dev_class[1] << 8) | dev_class[2]) & 0xffffff;
   if ((hci_status != HCI_SUCCESS) &&
@@ -2540,7 +2540,7 @@ void acl_create_classic_connection(const RawAddress& bd_addr,
 }
 
 void btm_connection_request(const RawAddress& bda,
-                            const bluetooth::types::ClassOfDevice& cod) {
+                            const bluetooth::hci::ClassOfDevice& cod) {
   // Copy Cod information
   DEV_CLASS dc;
 

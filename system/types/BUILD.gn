@@ -20,7 +20,6 @@ static_library("types") {
   ]
 
   sources = [
-    "class_of_device.cc",
     "bluetooth/uuid.cc",
     "raw_address.cc",
   ]
@@ -37,7 +36,6 @@ static_library("types") {
 if (use.test) {
   executable("net_test_types") {
     sources = [
-      "test/class_of_device_unittest.cc",
       "test/raw_address_unittest.cc",
       "test/bluetooth/uuid_unittest.cc",
     ]
