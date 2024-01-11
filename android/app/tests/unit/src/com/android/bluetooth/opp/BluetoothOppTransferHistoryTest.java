@@ -137,28 +137,11 @@ public class BluetoothOppTransferHistoryTest {
     }
 
     @Test
-    public void onCreate_withDirectionInbound_withExtraShowAllFileIsTrue_displayLiveFolder()
-            throws Exception {
+    public void onCreate_withDirectionInbound_displayInboundHistory() {
         Assume.assumeFalse(
                 mTargetContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WATCH));
 
         BluetoothOppTestUtils.setUpMockCursor(mCursor, mCursorMockDataList);
-        mIntent.putExtra(Constants.EXTRA_SHOW_ALL_FILES, true);
-        mIntent.putExtra(Constants.EXTRA_DIRECTION, BluetoothShare.DIRECTION_INBOUND);
-        ActivityScenario<BluetoothOppTransferHistory> scenario = ActivityScenario.launch(mIntent);
-        InstrumentationRegistry.getInstrumentation().waitForIdleSync();
-
-        onView(withText(mTargetContext.getText(R.string.btopp_live_folder).toString())).check(
-                matches(isDisplayed()));
-    }
-
-    @Test
-    public void onCreate_withDirectionInbound_withExtraShowAllFileIsFalse_displayInboundHistory() {
-        Assume.assumeFalse(
-                mTargetContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WATCH));
-
-        BluetoothOppTestUtils.setUpMockCursor(mCursor, mCursorMockDataList);
-        mIntent.putExtra(Constants.EXTRA_SHOW_ALL_FILES, false);
         mIntent.putExtra(Constants.EXTRA_DIRECTION, BluetoothShare.DIRECTION_INBOUND);
 
         ActivityScenario<BluetoothOppTransferHistory> scenario = ActivityScenario.launch(mIntent);
@@ -177,7 +160,6 @@ public class BluetoothOppTransferHistoryTest {
         mCursorMockDataList.set(1,
                 new BluetoothOppTestUtils.CursorMockData(BluetoothShare.DIRECTION, 2,
                         BluetoothShare.DIRECTION_OUTBOUND));
-        mIntent.putExtra(Constants.EXTRA_SHOW_ALL_FILES, true);
         mIntent.putExtra(Constants.EXTRA_DIRECTION, BluetoothShare.DIRECTION_OUTBOUND);
 
         ActivityScenario<BluetoothOppTransferHistory> scenario = ActivityScenario.launch(mIntent);
@@ -192,7 +174,6 @@ public class BluetoothOppTransferHistoryTest {
     @Test
     public void onOptionsItemSelected_clearAllSelected_promptWarning() {
         BluetoothOppTestUtils.setUpMockCursor(mCursor, mCursorMockDataList);
-        mIntent.putExtra(Constants.EXTRA_SHOW_ALL_FILES, false);
         mIntent.putExtra(Constants.EXTRA_DIRECTION, BluetoothShare.DIRECTION_INBOUND);
 
         ActivityScenario<BluetoothOppTransferHistory> scenario = ActivityScenario.launch(mIntent);
