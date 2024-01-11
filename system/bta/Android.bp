@@ -268,12 +268,17 @@ cc_test {
         "BluetoothGeneratedDumpsysDataSchema_h",
     ],
     shared_libs: [
+        "android.hardware.bluetooth.audio-V4-ndk",
         "android.hardware.bluetooth.audio@2.0",
         "android.hardware.bluetooth.audio@2.1",
         "libbase",
+        "libbinder_ndk",
         "libcrypto",
         "libcutils",
+        "libfmq",
+        "libhidlbase",
         "liblog",
+        "libutils",
         "server_configurable_flags",
     ],
     static_libs: [
