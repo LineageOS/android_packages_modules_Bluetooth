@@ -110,7 +110,8 @@ class LeAudioDeviceGroup {
         pending_group_available_contexts_change_(
             types::LeAudioContextType::UNINITIALIZED),
         target_state_(types::AseState::BTA_LE_AUDIO_ASE_STATE_IDLE),
-        current_state_(types::AseState::BTA_LE_AUDIO_ASE_STATE_IDLE) {
+        current_state_(types::AseState::BTA_LE_AUDIO_ASE_STATE_IDLE),
+        in_transition_(false) {
 #ifdef __ANDROID__
     // 22 maps to BluetoothProfile#LE_AUDIO
     is_output_preference_le_audio = android::sysprop::BluetoothProperties::
@@ -227,13 +228,19 @@ class LeAudioDeviceGroup {
 
   inline types::AseState GetState(void) const { return current_state_; }
   void SetState(types::AseState state) {
-    LOG(INFO) << __func__ << " current state: " << current_state_
-              << " new state: " << state;
+    LOG_INFO(" current state: %s, new state %s, in_transition_ %d",
+             bluetooth::common::ToString(current_state_).c_str(),
+             bluetooth::common::ToString(state).c_str(), in_transition_);
     LeAudioLogHistory::Get()->AddLogHistory(
         kLogStateMachineTag, group_id_, RawAddress::kEmpty, kLogStateChangedOp,
         bluetooth::common::ToString(current_state_) + "->" +
             bluetooth::common::ToString(state));
     current_state_ = state;
+
+    if (target_state_ == current_state_) {
+      in_transition_ = false;
+      LOG_INFO("In transition flag cleared");
+    }
   }
 
   inline types::AseState GetTargetState(void) const { return target_state_; }
@@ -244,14 +251,19 @@ class LeAudioDeviceGroup {
     return notify_streaming_when_cises_are_ready_;
   }
   void SetTargetState(types::AseState state) {
-    LOG(INFO) << __func__ << " target state: " << target_state_
-              << " new target state: " << state;
+    LOG_INFO("target state: %s, new target state: %s, in_transition_ %d",
+             bluetooth::common::ToString(target_state_).c_str(),
+             bluetooth::common::ToString(state).c_str(), in_transition_);
     LeAudioLogHistory::Get()->AddLogHistory(
         kLogStateMachineTag, group_id_, RawAddress::kEmpty,
         kLogTargetStateChangedOp,
         bluetooth::common::ToString(target_state_) + "->" +
             bluetooth::common::ToString(state));
+
     target_state_ = state;
+
+    in_transition_ = target_state_ != current_state_;
+    LOG_INFO("In transition flag  = %d", in_transition_);
   }
 
   /* Returns context types for which support was recently added or removed */
@@ -396,6 +408,7 @@ class LeAudioDeviceGroup {
 
   types::AseState target_state_;
   types::AseState current_state_;
+  bool in_transition_;
   std::vector<std::weak_ptr<LeAudioDevice>> leAudioDevices_;
 };
 

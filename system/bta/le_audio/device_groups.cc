@@ -832,9 +832,7 @@ bool LeAudioDeviceGroup::ReloadAudioDirections(void) {
   return true;
 }
 
-bool LeAudioDeviceGroup::IsInTransition(void) const {
-  return target_state_ != current_state_;
-}
+bool LeAudioDeviceGroup::IsInTransition(void) const { return in_transition_; }
 
 bool LeAudioDeviceGroup::IsStreaming(void) const {
   return current_state_ == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING;
