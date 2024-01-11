@@ -1,0 +1,9 @@
+package: "com.android.bluetooth.flags"
+
+flag {
+    name: "correct_bond_type_of_loaded_devices"
+    namespace: "bluetooth"
+    description: "Mark the bond type of loaded device as persistent"
+    bug: "319530790"
+}
+
