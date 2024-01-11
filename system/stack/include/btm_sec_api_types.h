@@ -173,7 +173,7 @@ typedef uint8_t tBTM_LINK_KEY_TYPE;
  * trusted services
  ******************************************************************************/
 
-enum {
+typedef enum : uint8_t {
   BTM_SP_IO_REQ_EVT,    /* received IO_CAPABILITY_REQUEST event */
   BTM_SP_IO_RSP_EVT,    /* received IO_CAPABILITY_RESPONSE event */
   BTM_SP_CFM_REQ_EVT,   /* received USER_CONFIRMATION_REQUEST event */
@@ -181,8 +181,21 @@ enum {
   BTM_SP_KEY_REQ_EVT,   /* received USER_PASSKEY_REQUEST event */
   BTM_SP_LOC_OOB_EVT,   /* received result for READ_LOCAL_OOB_DATA command */
   BTM_SP_RMT_OOB_EVT,   /* received REMOTE_OOB_DATA_REQUEST event */
-};
-typedef uint8_t tBTM_SP_EVT;
+} tBTM_SP_EVT;
+
+inline std::string sp_evt_to_text(const tBTM_SP_EVT evt) {
+  switch (evt) {
+    CASE_RETURN_TEXT(BTM_SP_IO_REQ_EVT);
+    CASE_RETURN_TEXT(BTM_SP_IO_RSP_EVT);
+    CASE_RETURN_TEXT(BTM_SP_CFM_REQ_EVT);
+    CASE_RETURN_TEXT(BTM_SP_KEY_NOTIF_EVT);
+    CASE_RETURN_TEXT(BTM_SP_KEY_REQ_EVT);
+    CASE_RETURN_TEXT(BTM_SP_LOC_OOB_EVT);
+    CASE_RETURN_TEXT(BTM_SP_RMT_OOB_EVT);
+  }
+
+  return base::StringPrintf("UNKNOWN[%hhu]", evt);
+}
 
 enum : uint8_t {
   BTM_IO_CAP_OUT = 0,    /* DisplayOnly */
@@ -372,35 +385,65 @@ typedef tBTM_SEC_CALLBACK tBTM_SEC_CALLBACK;
 */
 typedef void(tBTM_BOND_CANCEL_CMPL_CALLBACK)(tBTM_STATUS result);
 
-/* LE related event and data structure */
-/* received IO_CAPABILITY_REQUEST event */
-#define BTM_LE_IO_REQ_EVT SMP_IO_CAP_REQ_EVT
-/* security request event */
-#define BTM_LE_SEC_REQUEST_EVT SMP_SEC_REQUEST_EVT
-/* received USER_PASSKEY_NOTIFY event */
-#define BTM_LE_KEY_NOTIF_EVT SMP_PASSKEY_NOTIF_EVT
-/* received USER_PASSKEY_REQUEST event */
-#define BTM_LE_KEY_REQ_EVT SMP_PASSKEY_REQ_EVT
-/* OOB data request event */
-#define BTM_LE_OOB_REQ_EVT SMP_OOB_REQ_EVT
-/* Numeric Comparison request event */
-#define BTM_LE_NC_REQ_EVT SMP_NC_REQ_EVT
-/* Peer keypress notification recd event */
-#define BTM_LE_PR_KEYPR_NOT_EVT SMP_PEER_KEYPR_NOT_EVT
-/* SC OOB request event (both local and peer OOB data) can be expected in
- * response */
-#define BTM_LE_SC_OOB_REQ_EVT SMP_SC_OOB_REQ_EVT
-/* SC OOB local data set is created (as result of SMP_CrLocScOobData(...)) */
-#define BTM_LE_SC_LOC_OOB_EVT SMP_SC_LOC_OOB_DATA_UP_EVT
-/* SMP complete event */
-#define BTM_LE_COMPLT_EVT SMP_COMPLT_EVT
-#define BTM_LE_LAST_FROM_SMP SMP_BR_KEYS_REQ_EVT
-/* KEY update event */
-#define BTM_LE_KEY_EVT (BTM_LE_LAST_FROM_SMP + 1)
-#define BTM_LE_CONSENT_REQ_EVT SMP_CONSENT_REQ_EVT
-/* Identity address associate event */
-#define BTM_LE_ADDR_ASSOC_EVT SMP_LE_ADDR_ASSOC_EVT
-typedef uint8_t tBTM_LE_EVT;
+typedef enum : uint8_t {
+  /* LE related event and data structure */
+  /* received IO_CAPABILITY_REQUEST event */
+  BTM_LE_IO_REQ_EVT = SMP_IO_CAP_REQ_EVT,
+  /* security request event */
+  BTM_LE_SEC_REQUEST_EVT = SMP_SEC_REQUEST_EVT,
+
+  /* received USER_PASSKEY_NOTIFY event */
+  BTM_LE_KEY_NOTIF_EVT = SMP_PASSKEY_NOTIF_EVT,
+
+  /* received USER_PASSKEY_REQUEST event */
+  BTM_LE_KEY_REQ_EVT = SMP_PASSKEY_REQ_EVT,
+
+  /* OOB data request event */
+  BTM_LE_OOB_REQ_EVT = SMP_OOB_REQ_EVT,
+
+  /* Numeric Comparison request event */
+  BTM_LE_NC_REQ_EVT = SMP_NC_REQ_EVT,
+
+  /* Peer keypress notification recd event */
+  BTM_LE_PR_KEYPR_NOT_EVT = SMP_PEER_KEYPR_NOT_EVT,
+
+  /* SC OOB request event (both local and peer OOB data) can be expected in
+   * response */
+  BTM_LE_SC_OOB_REQ_EVT = SMP_SC_OOB_REQ_EVT,
+
+  /* SC OOB local data set is created (as result of SMP_CrLocScOobData(...)) */
+  BTM_LE_SC_LOC_OOB_EVT = SMP_SC_LOC_OOB_DATA_UP_EVT,
+  /* SMP complete event */
+  BTM_LE_COMPLT_EVT = SMP_COMPLT_EVT,
+  BTM_LE_LAST_FROM_SMP = SMP_BR_KEYS_REQ_EVT,
+  /* KEY update event */
+  BTM_LE_KEY_EVT = (BTM_LE_LAST_FROM_SMP + 1),
+  BTM_LE_CONSENT_REQ_EVT = SMP_CONSENT_REQ_EVT,
+
+  /* Identity address associate event */
+  BTM_LE_ADDR_ASSOC_EVT = SMP_LE_ADDR_ASSOC_EVT,
+} tBTM_LE_EVT;
+
+inline std::string ble_evt_to_text(const tBTM_LE_EVT evt) {
+  switch (evt) {
+    CASE_RETURN_TEXT(BTM_LE_IO_REQ_EVT);
+    CASE_RETURN_TEXT(BTM_LE_SEC_REQUEST_EVT);
+    CASE_RETURN_TEXT(BTM_LE_KEY_NOTIF_EVT);
+    CASE_RETURN_TEXT(BTM_LE_KEY_REQ_EVT);
+    CASE_RETURN_TEXT(BTM_LE_OOB_REQ_EVT);
+    CASE_RETURN_TEXT(BTM_LE_NC_REQ_EVT);
+    CASE_RETURN_TEXT(BTM_LE_PR_KEYPR_NOT_EVT);
+    CASE_RETURN_TEXT(BTM_LE_SC_OOB_REQ_EVT);
+    CASE_RETURN_TEXT(BTM_LE_SC_LOC_OOB_EVT);
+    CASE_RETURN_TEXT(BTM_LE_COMPLT_EVT);
+    CASE_RETURN_TEXT(BTM_LE_LAST_FROM_SMP);
+    CASE_RETURN_TEXT(BTM_LE_KEY_EVT);
+    CASE_RETURN_TEXT(BTM_LE_CONSENT_REQ_EVT);
+    CASE_RETURN_TEXT(BTM_LE_ADDR_ASSOC_EVT);
+  }
+
+  return base::StringPrintf("UNKNOWN[%hhu]", evt);
+}
 
 enum : uint8_t {
   BTM_LE_KEY_NONE = 0,

@@ -31,7 +31,6 @@
 
 #include <base/functional/bind.h>
 #include <base/location.h>
-#include <base/logging.h>
 
 #include <cstdint>
 
@@ -1128,7 +1127,7 @@ static void btu_hcif_hdl_command_complete(uint16_t opcode, uint8_t* p,
     case HCI_BLE_CREATE_LL_CONN:
     case HCI_LE_EXTENDED_CREATE_CONNECTION:
       // No command complete event for those commands according to spec
-      LOG(ERROR) << "No command complete expected, but received!";
+      LOG_ERROR("No command complete expected, but received!");
       break;
 
     case HCI_BLE_TRANSMITTER_TEST:
@@ -1459,6 +1458,9 @@ void btu_hcif_proc_sp_req_evt(tBTM_SP_EVT event, const uint8_t* p) {
     case BTM_SP_KEY_REQ_EVT:
       // No value needed.
       break;
+    default:
+      LOG_WARN("unexpected event:%s", sp_evt_to_text(event).c_str());
+      break;
   }
   btm_proc_sp_req_evt(event, bda, value);
 }
@@ -1466,7 +1468,7 @@ void btu_hcif_create_conn_cancel_complete(const uint8_t* p, uint16_t evt_len) {
   uint8_t status;
 
   if (evt_len < 1 + BD_ADDR_LEN) {
-    LOG_ERROR("%s malformatted event packet, too short", __func__);
+    LOG_ERROR("malformatted event packet, too short");
     return;
   }
 
@@ -1496,7 +1498,7 @@ void btu_hcif_read_local_oob_complete(const uint8_t* p, uint16_t evt_len) {
   return;
 
 err_out:
-  LOG_ERROR("%s: bogus event packet, too short", __func__);
+  LOG_ERROR("bogus event packet, too short");
 }
 
 /*******************************************************************************
@@ -1662,7 +1664,7 @@ static void btu_ble_data_length_change_evt(uint8_t* p, uint16_t evt_len) {
   uint16_t rx_data_len;
 
   if (!controller_get_interface()->SupportsBleDataPacketLengthExtension()) {
-    LOG_WARN("%s, request not supported", __func__);
+    LOG_WARN("request not supported");
     return;
   }
 
@@ -1688,7 +1690,7 @@ static void btu_ble_rc_param_req_evt(uint8_t* p, uint8_t len) {
   uint16_t int_min, int_max, latency, timeout;
 
   if (len < 10) {
-    LOG(ERROR) << __func__ << "bogus event packet, too short";
+    LOG_ERROR("bogus event packet, too short");
     return;
   }
 
