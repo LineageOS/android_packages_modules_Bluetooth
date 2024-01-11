@@ -29,23 +29,13 @@
 #include <base/strings/stringprintf.h>
 #include <log/log.h>
 
-#include "internal_include/bt_target.h"
 #include "internal_include/stack_config.h"
 #include "main/shim/acl_api.h"
 #include "os/log.h"
-#include "stack/btm/btm_ble_sec.h"
 #include "stack/btm/btm_dev.h"
-#include "stack/btm/btm_int_types.h"
-#include "stack/btm/btm_sec.h"
-#include "stack/btm/btm_sec_int_types.h"
 #include "stack/include/acl_api.h"
-#include "stack/include/bt_psm_types.h"
-#include "stack/include/bt_types.h"
-#include "stack/include/btm_ble_api.h"
-#include "stack/include/btm_log_history.h"
+#include "stack/include/btm_ble_api_types.h"
 #include "stack/include/l2c_api.h"
-#include "stack/include/l2cap_acl_interface.h"
-#include "stack/include/l2cdefs.h"
 #include "stack/l2cap/l2c_int.h"
 #include "types/raw_address.h"
 
