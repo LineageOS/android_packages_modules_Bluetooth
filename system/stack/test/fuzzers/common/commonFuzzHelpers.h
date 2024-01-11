@@ -20,6 +20,7 @@
 #include <fuzzer/FuzzedDataProvider.h>
 
 #include <cstring>  // For memcpy
+#include <functional>
 #include <vector>
 
 #include "types/bluetooth/uuid.h"

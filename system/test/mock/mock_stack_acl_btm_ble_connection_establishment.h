@@ -22,6 +22,7 @@
  */
 
 #include <cstdint>
+#include <functional>
 
 // Original included files, if any
 
