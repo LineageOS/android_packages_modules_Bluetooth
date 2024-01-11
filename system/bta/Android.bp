@@ -305,7 +305,10 @@ cc_test {
         ":audio_set_scenarios_bfbs",
         ":audio_set_scenarios_json",
     ],
-    cflags: ["-Wno-unused-parameter"],
+    cflags: [
+        "-Wno-macro-redefined",
+        "-Wno-unused-parameter",
+    ],
 }
 
 // bta GATT unit tests
