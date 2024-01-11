@@ -349,6 +349,9 @@ public class Metadata {
             case BluetoothDevice.METADATA_GTBS_CCCD:
                 publicMetadata.gtbs_cccd = value;
                 break;
+            case BluetoothDevice.METADATA_EXCLUSIVE_MANAGER:
+                publicMetadata.exclusive_manager = value;
+                break;
         }
     }
 
@@ -445,6 +448,9 @@ public class Metadata {
                 break;
             case BluetoothDevice.METADATA_GTBS_CCCD:
                 value = publicMetadata.gtbs_cccd;
+                break;
+            case BluetoothDevice.METADATA_EXCLUSIVE_MANAGER:
+                value = publicMetadata.exclusive_manager;
                 break;
         }
         return value;
