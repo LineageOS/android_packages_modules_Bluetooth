@@ -91,40 +91,6 @@ void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy) {
                                scan_policy);
 }
 
-/*******************************************************************************
- *
- * Function         btm_ble_suspend_bg_conn
- *
- * Description      This function is to suspend an active background connection
- *                  procedure.
- *
- * Parameters       none.
- *
- * Returns          none.
- *
- ******************************************************************************/
-bool btm_ble_suspend_bg_conn(void) {
-    LOG_DEBUG("Gd acl_manager handles sync of background connections");
-    return true;
-}
-
-/*******************************************************************************
- *
- * Function         btm_ble_resume_bg_conn
- *
- * Description      This function is to resume a background auto connection
- *                  procedure.
- *
- * Parameters       none.
- *
- * Returns          none.
- *
- ******************************************************************************/
-bool btm_ble_resume_bg_conn(void) {
-    LOG_DEBUG("Gd acl_manager handles sync of background connections");
-    return true;
-}
-
 /** Adds the device into acceptlist. Returns false if acceptlist is full and
  * device can't be added, true otherwise. */
 bool BTM_AcceptlistAdd(const RawAddress& address) {

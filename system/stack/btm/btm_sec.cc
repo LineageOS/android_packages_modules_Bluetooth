@@ -267,7 +267,6 @@ static bool access_secure_service_from_temp_bond(const tBTM_SEC_DEV_REC* p_dev_r
                                                  bool locally_initiated,
                                                  uint16_t security_req) {
   return !locally_initiated && (security_req & BTM_SEC_IN_AUTHENTICATE) &&
-         p_dev_rec->sec_rec.is_device_authenticated() &&
          p_dev_rec->sec_rec.is_bond_type_temporary();
 }
 

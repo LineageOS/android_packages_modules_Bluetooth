@@ -370,22 +370,29 @@ bool smp_send_msg_to_L2CAP(const RawAddress& rem_bda, BT_HDR* p_toL2CAP) {
                   p_toL2CAP->data + p_toL2CAP->offset, p_toL2CAP->len,
                   smp_cb.smp_over_br /* is_over_br */);
 
+#ifdef TARGET_FLOSS
+  if (true)
+#else
+  if (IS_FLAG_ENABLED(l2cap_tx_complete_cb_info))
+#endif
+  {
+    /* Unacked needs to be incremented before calling SendFixedChnlData */
+    smp_cb.total_tx_unacked++;
+    l2cap_ret = L2CA_SendFixedChnlData(fixed_cid, rem_bda, p_toL2CAP);
+    if (l2cap_ret == L2CAP_DW_FAILED) {
+      smp_cb.total_tx_unacked--;
+      LOG_ERROR("SMP failed to pass msg to L2CAP");
+      return false;
+    }
+    LOG_VERBOSE("l2cap_tx_complete_cb_info is enabled");
+    return true;
+  }
+
   l2cap_ret = L2CA_SendFixedChnlData(fixed_cid, rem_bda, p_toL2CAP);
   if (l2cap_ret == L2CAP_DW_FAILED) {
     LOG_ERROR("SMP failed to pass msg to L2CAP");
     return false;
   } else {
-#ifdef TARGET_FLOSS
-    if (true)
-#else
-    if (IS_FLAG_ENABLED(l2cap_tx_complete_cb_info))
-#endif
-    {
-      LOG_VERBOSE("l2cap_tx_complete_cb_info is enabled, exit here");
-      smp_cb.total_tx_unacked += 1;
-      return true;
-    }
-
     tSMP_CB* p_cb = &smp_cb;
 
     LOG_VERBOSE("l2cap_tx_complete_cb_info is disabled");
