@@ -1480,7 +1480,7 @@ static void bta_dm_inq_results_cb(tBTM_INQ_RESULTS* p_inq, const uint8_t* p_eir,
   // Pass the original address to GattService#onScanResult
   result.inq_res.original_bda = p_inq->original_bda;
 
-  memcpy(result.inq_res.dev_class, p_inq->dev_class, DEV_CLASS_LEN);
+  result.inq_res.dev_class = p_inq->dev_class;
   BTM_COD_SERVICE_CLASS(service_class, p_inq->dev_class);
   result.inq_res.is_limited =
       (service_class & BTM_COD_SERVICE_LMTD_DISCOVER) ? true : false;

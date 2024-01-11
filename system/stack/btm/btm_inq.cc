@@ -260,7 +260,6 @@ void SendRemoteNameRequest(const RawAddress& raw_address) {
 tBTM_STATUS BTM_SetDiscoverability(uint16_t inq_mode) {
   uint8_t scan_mode = 0;
   uint16_t service_class;
-  uint8_t* p_cod;
   uint8_t major, minor;
   DEV_CLASS cod;
   LAP temp_lap[2];
@@ -326,13 +325,13 @@ tBTM_STATUS BTM_SetDiscoverability(uint16_t inq_mode) {
   btm_cb.btm_inq_vars.discoverable_mode |= inq_mode;
 
   /* Change the service class bit if mode has changed */
-  p_cod = BTM_ReadDeviceClass();
-  BTM_COD_SERVICE_CLASS(service_class, p_cod);
+  DEV_CLASS old_cod = BTM_ReadDeviceClass();
+  BTM_COD_SERVICE_CLASS(service_class, old_cod);
   is_limited = (inq_mode & BTM_LIMITED_DISCOVERABLE) ? true : false;
   cod_limited = (service_class & BTM_COD_SERVICE_LMTD_DISCOVER) ? true : false;
   if (is_limited ^ cod_limited) {
-    BTM_COD_MINOR_CLASS(minor, p_cod);
-    BTM_COD_MAJOR_CLASS(major, p_cod);
+    BTM_COD_MINOR_CLASS(minor, old_cod);
+    BTM_COD_MAJOR_CLASS(major, old_cod);
     if (is_limited)
       service_class |= BTM_COD_SERVICE_LMTD_DISCOVER;
     else

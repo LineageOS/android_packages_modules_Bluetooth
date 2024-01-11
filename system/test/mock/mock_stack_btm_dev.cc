@@ -46,9 +46,10 @@ struct maybe_resolve_address maybe_resolve_address;
 }  // namespace test
 
 bool BTM_SecAddDevice(const RawAddress& /* bd_addr */,
-                      DEV_CLASS /* dev_class */, const BD_NAME& /* bd_name */,
-                      uint8_t* /* features */, LinkKey* /* p_link_key */,
-                      uint8_t /* key_type */, uint8_t /* pin_length */) {
+                      const DEV_CLASS /* dev_class */,
+                      const BD_NAME& /* bd_name */, uint8_t* /* features */,
+                      LinkKey* /* p_link_key */, uint8_t /* key_type */,
+                      uint8_t /* pin_length */) {
   inc_func_call_count(__func__);
   return false;
 }

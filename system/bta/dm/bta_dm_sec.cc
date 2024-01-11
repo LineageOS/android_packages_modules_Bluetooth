@@ -30,6 +30,7 @@
 #include "internal_include/bt_target.h"
 #include "osi/include/compat.h"  // strlcpy
 #include "osi/include/osi.h"     // UNUSED_ATTR
+#include "stack/include/bt_dev_class.h"
 #include "stack/include/btm_ble_sec_api_types.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_sec_api.h"
@@ -127,16 +128,16 @@ void bta_dm_sec_enable(tBTA_DM_SEC_CBACK* p_sec_cback) {
  *                  required information stored in the NVRAM.
  ******************************************************************************/
 void bta_dm_add_device(std::unique_ptr<tBTA_DM_API_ADD_DEVICE> msg) {
-  uint8_t* p_dc = NULL;
+  DEV_CLASS dc = kDevClassEmpty;
   LinkKey* p_lc = NULL;
 
   /* If not all zeros, the device class has been specified */
-  if (msg->dc_known) p_dc = (uint8_t*)msg->dc;
+  if (msg->dc_known) dc = msg->dc;
 
   if (msg->link_key_known) p_lc = &msg->link_key;
 
   auto add_result = get_btm_client_interface().security.BTM_SecAddDevice(
-      msg->bd_addr, p_dc, msg->bd_name, nullptr, p_lc, msg->key_type,
+      msg->bd_addr, dc, msg->bd_name, nullptr, p_lc, msg->key_type,
       msg->pin_length);
   if (!add_result) {
     LOG(ERROR) << "BTA_DM: Error adding device "
@@ -242,7 +243,7 @@ static void bta_dm_pinname_cback(const tBTM_REMOTE_DEV_NAME* p_data) {
   if (BTA_DM_SP_CFM_REQ_EVT == event) {
     /* Retrieved saved device class and bd_addr */
     sec_event.cfm_req.bd_addr = bta_dm_sec_cb.pin_bd_addr;
-    BTA_COPY_DEVICE_CLASS(sec_event.cfm_req.dev_class, bta_dm_sec_cb.pin_dev_class);
+    sec_event.cfm_req.dev_class = bta_dm_sec_cb.pin_dev_class;
 
     if (p_result && p_result->status == BTM_SUCCESS) {
       bytes_to_copy =
@@ -267,7 +268,7 @@ static void bta_dm_pinname_cback(const tBTM_REMOTE_DEV_NAME* p_data) {
   } else {
     /* Retrieved saved device class and bd_addr */
     sec_event.pin_req.bd_addr = bta_dm_sec_cb.pin_bd_addr;
-    BTA_COPY_DEVICE_CLASS(sec_event.pin_req.dev_class, bta_dm_sec_cb.pin_dev_class);
+    sec_event.pin_req.dev_class = bta_dm_sec_cb.pin_dev_class;
 
     if (p_result && p_result->status == BTM_SUCCESS) {
       bytes_to_copy = (p_result->length < BD_NAME_LEN) ? p_result->length
@@ -304,7 +305,7 @@ static uint8_t bta_dm_pin_cback(const RawAddress& bd_addr, DEV_CLASS dev_class,
   if (bd_name[0] == 0) {
     bta_dm_sec_cb.pin_evt = BTA_DM_PIN_REQ_EVT;
     bta_dm_sec_cb.pin_bd_addr = bd_addr;
-    BTA_COPY_DEVICE_CLASS(bta_dm_sec_cb.pin_dev_class, dev_class);
+    bta_dm_sec_cb.pin_dev_class = dev_class;
     if ((get_btm_client_interface().peer.BTM_ReadRemoteDeviceName(
             bd_addr, bta_dm_pinname_cback, BT_TRANSPORT_BR_EDR)) ==
         BTM_CMD_STARTED)
@@ -315,10 +316,11 @@ static uint8_t bta_dm_pin_cback(const RawAddress& bd_addr, DEV_CLASS dev_class,
 
   tBTA_DM_SEC sec_event = {.pin_req = {
                                .bd_addr = bd_addr,
+                               .dev_class = dev_class,
+                               .bd_name = "",
+                               .min_16_digit = min_16_digit,
                            }};
-  BTA_COPY_DEVICE_CLASS(sec_event.pin_req.dev_class, dev_class);
   strlcpy((char*)sec_event.pin_req.bd_name, (char*)bd_name, BD_NAME_LEN + 1);
-  sec_event.pin_req.min_16_digit = min_16_digit;
 
   bta_dm_sec_cb.p_sec_cback(BTA_DM_PIN_REQ_EVT, &sec_event);
   return BTM_CMD_STARTED;
@@ -491,8 +493,7 @@ static tBTM_STATUS bta_dm_sp_cback(tBTM_SP_EVT event,
            BTM_SP_KEY_NOTIF_EVT,
            copy these values into key_notif from cfm_req */
         sec_event.key_notif.bd_addr = p_data->cfm_req.bd_addr;
-        dev_class_copy(sec_event.key_notif.dev_class,
-                       p_data->cfm_req.dev_class);
+        sec_event.key_notif.dev_class = p_data->cfm_req.dev_class;
         bd_name_copy(sec_event.key_notif.bd_name, p_data->cfm_req.bd_name);
         /* Due to the switch case falling through below to BTM_SP_KEY_NOTIF_EVT,
            call remote name request using values from cfm_req */
@@ -504,7 +505,7 @@ static tBTM_STATUS bta_dm_sp_cback(tBTM_SP_EVT event,
           bta_dm_sec_cb.rmt_auth_req = sec_event.cfm_req.rmt_auth_req;
           bta_dm_sec_cb.loc_auth_req = sec_event.cfm_req.loc_auth_req;
 
-          dev_class_copy(bta_dm_sec_cb.pin_dev_class, p_data->cfm_req.dev_class);
+          bta_dm_sec_cb.pin_dev_class = p_data->cfm_req.dev_class;
           {
             const tBTM_STATUS btm_status =
                 get_btm_client_interface().peer.BTM_ReadRemoteDeviceName(
@@ -528,8 +529,7 @@ static tBTM_STATUS bta_dm_sp_cback(tBTM_SP_EVT event,
         if (p_data->key_notif.bd_name[0] == 0) {
           bta_dm_sec_cb.pin_evt = pin_evt;
           bta_dm_sec_cb.pin_bd_addr = p_data->key_notif.bd_addr;
-          BTA_COPY_DEVICE_CLASS(bta_dm_sec_cb.pin_dev_class,
-                                p_data->key_notif.dev_class);
+          bta_dm_sec_cb.pin_dev_class = p_data->key_notif.dev_class;
           if ((get_btm_client_interface().peer.BTM_ReadRemoteDeviceName(
                   p_data->key_notif.bd_addr, bta_dm_pinname_cback,
                   BT_TRANSPORT_BR_EDR)) == BTM_CMD_STARTED)
@@ -538,8 +538,7 @@ static tBTM_STATUS bta_dm_sp_cback(tBTM_SP_EVT event,
               " bta_dm_sp_cback() -> Failed to start Remote Name Request  ");
         } else {
           sec_event.key_notif.bd_addr = p_data->key_notif.bd_addr;
-          BTA_COPY_DEVICE_CLASS(sec_event.key_notif.dev_class,
-                                p_data->key_notif.dev_class);
+          sec_event.key_notif.dev_class = p_data->key_notif.dev_class;
           strlcpy((char*)sec_event.key_notif.bd_name,
                   (char*)p_data->key_notif.bd_name, BD_NAME_LEN + 1);
           sec_event.key_notif.bd_name[BD_NAME_LEN] = 0;

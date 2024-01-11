@@ -41,13 +41,6 @@
  *  Constants and data types
  ****************************************************************************/
 
-#define BTA_COPY_DEVICE_CLASS(coddst, codsrc)          \
-  {                                                    \
-    ((uint8_t*)(coddst))[0] = ((uint8_t*)(codsrc))[0]; \
-    ((uint8_t*)(coddst))[1] = ((uint8_t*)(codsrc))[1]; \
-    ((uint8_t*)(coddst))[2] = ((uint8_t*)(codsrc))[2]; \
-  }
-
 #define BTA_DM_MSG_LEN 50
 
 #define BTA_DM_NUM_PEER_DEVICE 7
