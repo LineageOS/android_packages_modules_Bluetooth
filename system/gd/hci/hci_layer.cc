@@ -224,6 +224,24 @@ struct HciLayer::impl {
       command_queue_.front().GetCallback<TResponse>()->Invoke(std::move(response_view));
     }
 
+#ifdef TARGET_FLOSS
+    // Although UNKNOWN_CONNECTION might be a controller issue in some command status, we treat it
+    // as a disconnect event to maintain consistent connection state between stack and controller
+    // since there might not be further HCI Disconnect Event after this status event.
+    // Currently only do this on LE_READ_REMOTE_FEATURES because it is the only one we know that
+    // would return UNKNOWN_CONNECTION in some cases.
+    if (op_code == OpCode::LE_READ_REMOTE_FEATURES && is_status && status_view.IsValid() &&
+        status_view.GetStatus() == ErrorCode::UNKNOWN_CONNECTION) {
+      auto& command_view = *command_queue_.front().command_view;
+      auto le_read_features_view = bluetooth::hci::LeReadRemoteFeaturesView::Create(
+          LeConnectionManagementCommandView::Create(AclCommandView::Create(command_view)));
+      if (le_read_features_view.IsValid()) {
+        uint16_t handle = le_read_features_view.GetConnectionHandle();
+        module_.Disconnect(handle, ErrorCode::UNKNOWN_CONNECTION);
+      }
+    }
+#endif
+
     command_queue_.pop_front();
     waiting_command_ = OpCode::NONE;
     if (hci_timeout_alarm_ != nullptr) {
