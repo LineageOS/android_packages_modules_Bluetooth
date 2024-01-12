@@ -78,13 +78,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_dynamic_switcher_refactor_for_broadcast"
-    namespace: "bluetooth"
-    description: "LE Audio dynamic switcher refactor for broadcast"
-    bug: "317776633"
-}
-
-flag {
     name: "le_audio_fast_bond_params"
     namespace: "bluetooth"
     description: "Faster LE Audio devices connection"
