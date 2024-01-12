@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 #include <cstdint>
+#include <functional>
 #include <string>
 
 namespace test {
