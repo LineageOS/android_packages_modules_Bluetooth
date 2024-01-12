@@ -1,0 +1,9 @@
+package: "com.android.bluetooth.flags"
+
+flag {
+    name: "audio_hal_version_class"
+    namespace: "bluetooth"
+    description: "Change bluetooth audio hal version from enum to class"
+    bug: "315983648"
+    is_fixed_read_only: true
+}
