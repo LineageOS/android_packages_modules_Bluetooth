@@ -101,7 +101,6 @@
     <string name="status_connection_error" msgid="8253709700568062220">"இணைப்பு தோல்வி."</string>
     <string name="status_protocol_error" msgid="3231573735130475654">"கோரிக்கை சரியாக கையாளப்படவில்லை."</string>
     <string name="status_unknown_error" msgid="314676481744304866">"தெரியாத பிழை."</string>
-    <string name="btopp_live_folder" msgid="4859989703965326287">"புளூடூத் - பெற்றவை"</string>
     <string name="opp_notification_group" msgid="150067508422520653">"புளூடூத் பகிர்வு"</string>
     <string name="download_success" msgid="3438268368708549686">"<xliff:g id="FILE_SIZE">%1$s</xliff:g> பெறப்பட்டது."</string>
     <string name="upload_success" msgid="143787470859042049">"<xliff:g id="FILE_SIZE">%1$s</xliff:g> அனுப்புவது முடிந்தது."</string>
