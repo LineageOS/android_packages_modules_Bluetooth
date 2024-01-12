@@ -34,6 +34,7 @@
 #include "hci/acl_manager.h"
 #include "hci/address.h"
 #include "hci/controller.h"
+#include "hci/enum_helper.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_layer_fake.h"
 #include "hci/uuid.h"
@@ -731,8 +732,7 @@ TEST_F(LeScanningManagerExtendedTest, start_scan_test) {
   ASSERT_EQ(OpCode::LE_SET_EXTENDED_SCAN_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
   test_hci_layer_->IncomingEvent(LeSetExtendedScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
   LeExtendedAdvertisingResponse report{};
-  report.connectable_ = 1;
-  report.scannable_ = 0;
+  report.event_type_ = ExtendedAdvertisingEventType::CONNECTABLE;
   report.address_type_ = DirectAdvertisingAddressType::PUBLIC_DEVICE_ADDRESS;
   Address::FromString("12:34:56:78:9a:bc", report.address_);
   std::vector<LengthAndData> adv_data{};
@@ -856,8 +856,8 @@ TEST_F(LeScanningManagerExtendedTest, drop_insignificant_bytes_test) {
 
   // Prepare advertisement report
   LeExtendedAdvertisingResponse advertisement_report{};
-  advertisement_report.connectable_ = 1;
-  advertisement_report.scannable_ = 1;
+  advertisement_report.event_type_ =
+      ExtendedAdvertisingEventType::CONNECTABLE | ExtendedAdvertisingEventType::SCANNABLE;
   advertisement_report.address_type_ = DirectAdvertisingAddressType::PUBLIC_DEVICE_ADDRESS;
   Address::FromString("12:34:56:78:9a:bc", advertisement_report.address_);
   std::vector<LengthAndData> adv_data{};
@@ -878,7 +878,7 @@ TEST_F(LeScanningManagerExtendedTest, drop_insignificant_bytes_test) {
 
   // Prepare scan response report
   auto scan_response_report = advertisement_report;
-  scan_response_report.scan_response_ = true;
+  scan_response_report.event_type_ = ExtendedAdvertisingEventType::SCAN_RESPONSE;
   LengthAndData extra_data{};
   extra_data.data_.push_back(static_cast<uint8_t>(GapDataType::MANUFACTURER_SPECIFIC_DATA));
   for (auto octet : "manufacturer specific") {
