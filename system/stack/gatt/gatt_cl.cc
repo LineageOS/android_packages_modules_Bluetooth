@@ -831,7 +831,7 @@ void gatt_process_read_by_type_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
 
   if (op_code == GATT_RSP_READ_BY_GRP_TYPE) handle_len = 4;
 
-  value_len -= handle_len; /* substract the handle pairs bytes */
+  value_len -= handle_len; /* subtract the handle pairs bytes */
   len -= 1;
 
   while (len >= (handle_len + value_len)) {
@@ -926,7 +926,7 @@ void gatt_process_read_by_type_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
         gatt_end_operation(p_clcb, GATT_SUCCESS, (void*)p);
       }
       return;
-    } else /* discover characterisitic */
+    } else /* discover characteristic */
     {
       if (value_len < 3) {
         LOG(ERROR) << __func__ << " Illegal Response length, must be at least 3.";
@@ -1016,7 +1016,7 @@ void gatt_process_read_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
       if (!p_clcb->p_attr_buf)
         p_clcb->p_attr_buf = (uint8_t*)osi_malloc(GATT_MAX_ATTR_LEN);
 
-      /* copy attrobute value into cb buffer  */
+      /* copy attribute value into cb buffer  */
       if (offset < GATT_MAX_ATTR_LEN) {
         if ((len + offset) > GATT_MAX_ATTR_LEN)
           len = GATT_MAX_ATTR_LEN - offset;
@@ -1038,7 +1038,7 @@ void gatt_process_read_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
         /* send next request if needed  */
         if (packet_is_full && (len + offset < GATT_MAX_ATTR_LEN)) {
           VLOG(1) << StringPrintf(
-              "full pkt issue read blob for remianing bytes old offset=%d "
+              "full pkt issue read blob for remaining bytes old offset=%d "
               "len=%d new offset=%d",
               offset, len, p_clcb->counter);
           gatt_act_read(p_clcb, p_clcb->counter);
