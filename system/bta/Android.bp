@@ -21,7 +21,6 @@ cc_defaults {
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/bta/include",
         "packages/modules/Bluetooth/system/btif/avrcp",
-        "packages/modules/Bluetooth/system/btif/include",
         "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/stack/btm",
         "packages/modules/Bluetooth/system/stack/include",
@@ -306,7 +305,10 @@ cc_test {
         ":audio_set_scenarios_bfbs",
         ":audio_set_scenarios_json",
     ],
-    cflags: ["-Wno-unused-parameter"],
+    cflags: [
+        "-Wno-macro-redefined",
+        "-Wno-unused-parameter",
+    ],
 }
 
 // bta GATT unit tests
@@ -484,7 +486,6 @@ cc_test {
         "packages/modules/Bluetooth/system/bta/groups",
         "packages/modules/Bluetooth/system/bta/include",
         "packages/modules/Bluetooth/system/bta/test/common",
-        "packages/modules/Bluetooth/system/btif/include",
         "packages/modules/Bluetooth/system/osi/include",
     ],
     srcs: [
@@ -730,7 +731,6 @@ cc_test {
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/bta/include",
         "packages/modules/Bluetooth/system/bta/test/common",
-        "packages/modules/Bluetooth/system/btif/include",
         "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/stack/include",
     ],
@@ -807,7 +807,6 @@ cc_test {
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/bta/include",
         "packages/modules/Bluetooth/system/bta/test/common",
-        "packages/modules/Bluetooth/system/btif/include",
         "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/stack/include",
     ],
@@ -1008,7 +1007,6 @@ cc_test {
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/bta/include",
         "packages/modules/Bluetooth/system/bta/le_audio",
-        "packages/modules/Bluetooth/system/btif/include",
         "packages/modules/Bluetooth/system/stack/btm",
         "packages/modules/Bluetooth/system/stack/include",
     ],
@@ -1065,7 +1063,6 @@ cc_test {
         "packages/modules/Bluetooth/system/bta/include",
         "packages/modules/Bluetooth/system/bta/le_audio",
         "packages/modules/Bluetooth/system/bta/test/common",
-        "packages/modules/Bluetooth/system/btif/include",
         "packages/modules/Bluetooth/system/stack/btm",
         "packages/modules/Bluetooth/system/stack/include",
     ],

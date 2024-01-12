@@ -23,8 +23,8 @@
 #include <memory>
 #include <string>
 
-#include "gd/common/circular_buffer.h"
-#include "gd/common/strings.h"
+#include "common/circular_buffer.h"
+#include "common/strings.h"
 #include "main/shim/dumpsys.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"

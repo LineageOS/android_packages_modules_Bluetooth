@@ -143,7 +143,7 @@ struct btm_client_interface_t {
     tBTM_STATUS (*BTM_SetLocalDeviceName)(const char* p_name);
     tBTM_STATUS (*BTM_SetDeviceClass)(DEV_CLASS dev_class);
     bool (*BTM_IsDeviceUp)();
-    uint8_t* (*BTM_ReadDeviceClass)();
+    DEV_CLASS (*BTM_ReadDeviceClass)();
   } local;
 
   struct {

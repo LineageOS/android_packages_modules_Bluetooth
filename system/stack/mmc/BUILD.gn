@@ -38,6 +38,7 @@ group("mmc") {
 pkg_config("target_defaults") {
   include_dirs = [
     "//bt/system",
+    "//bt/system/gd",
     "//bt/system/include",
     "//bt/system/stack",
     "//bt/system/stack/include",
@@ -112,7 +113,6 @@ if (use.test) {
       "//bt/system/test/common/mock_functions.cc",
     ]
     include_dirs = [
-      "//bt/system/gd",
       "//bt/system/types",
     ]
     configs += [
@@ -137,7 +137,6 @@ if (use.test) {
       "//bt/system/test/common/mock_functions.cc",
     ]
     include_dirs = [
-      "//bt/system/gd",
       "//bt/system/types",
     ]
     configs += [

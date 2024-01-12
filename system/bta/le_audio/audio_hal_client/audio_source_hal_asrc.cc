@@ -23,7 +23,7 @@
 #include <utility>
 
 #include "asrc_tables.h"
-#include "gd/hal/nocp_iso_clocker.h"
+#include "hal/nocp_iso_clocker.h"
 
 namespace le_audio {
 

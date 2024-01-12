@@ -30,27 +30,27 @@
 #include <string>
 #include <unordered_set>
 
+#include "common/bind.h"
 #include "common/interfaces/ILoggable.h"
+#include "common/strings.h"
+#include "common/sync_map_count.h"
 #include "device/include/controller.h"
-#include "gd/common/bind.h"
-#include "gd/common/strings.h"
-#include "gd/common/sync_map_count.h"
-#include "gd/hci/acl_manager.h"
-#include "gd/hci/acl_manager/acl_connection.h"
-#include "gd/hci/acl_manager/classic_acl_connection.h"
-#include "gd/hci/acl_manager/connection_management_callbacks.h"
-#include "gd/hci/acl_manager/le_acl_connection.h"
-#include "gd/hci/acl_manager/le_connection_management_callbacks.h"
-#include "gd/hci/address.h"
-#include "gd/hci/address_with_type.h"
-#include "gd/hci/class_of_device.h"
-#include "gd/hci/controller.h"
-#include "gd/os/handler.h"
+#include "hci/acl_manager.h"
+#include "hci/acl_manager/acl_connection.h"
+#include "hci/acl_manager/classic_acl_connection.h"
+#include "hci/acl_manager/connection_management_callbacks.h"
+#include "hci/acl_manager/le_acl_connection.h"
+#include "hci/acl_manager/le_connection_management_callbacks.h"
+#include "hci/address.h"
+#include "hci/address_with_type.h"
+#include "hci/class_of_device.h"
+#include "hci/controller.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "main/shim/stack.h"
+#include "os/handler.h"
 #include "osi/include/allocator.h"
 #include "stack/acl/acl.h"
 #include "stack/btm/btm_int_types.h"
@@ -1619,11 +1619,8 @@ void shim::legacy::Acl::OnConnectRequest(hci::Address address,
                                          hci::ClassOfDevice cod) {
   const RawAddress bd_addr = ToRawAddress(address);
 
-  types::ClassOfDevice legacy_cod;
-  legacy_cod.FromOctets(cod.data());
-
   TRY_POSTING_ON_MAIN(acl_interface_.connection.classic.on_connect_request,
-                      bd_addr, legacy_cod);
+                      bd_addr, cod);
   LOG_DEBUG("Received connect request remote:%s",
             ADDRESS_TO_LOGGABLE_CSTR(address));
   BTM_LogHistory(kBtmLogTag, ToRawAddress(address), "Connection request");

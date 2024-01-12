@@ -90,3 +90,10 @@ flag {
     description: "Faster LE Audio devices connection"
     bug: "319405267"
 }
+
+flag {
+    name: "le_audio_dev_type_detection_fix"
+    namespace: "bluetooth"
+    description: "Better LE Audio devices detection"
+    bug: "319511584"
+}

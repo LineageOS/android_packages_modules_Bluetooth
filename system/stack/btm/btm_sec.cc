@@ -154,8 +154,7 @@ static void NotifyBondingChange(tBTM_SEC_DEV_REC& p_dev_rec,
                                 tHCI_STATUS status) {
   if (btm_sec_cb.api.p_auth_complete_callback != nullptr) {
     (*btm_sec_cb.api.p_auth_complete_callback)(
-        p_dev_rec.bd_addr, static_cast<uint8_t*>(p_dev_rec.dev_class),
-        p_dev_rec.sec_bd_name, status);
+        p_dev_rec.bd_addr, p_dev_rec.dev_class, p_dev_rec.sec_bd_name, status);
   }
 }
 
@@ -1919,7 +1918,7 @@ void btm_sec_conn_req(const RawAddress& bda, const DEV_CLASS dc) {
   /* Host is not interested or approved connection.  Save BDA and DC and */
   /* pass request to L2CAP */
   btm_sec_cb.connecting_bda = bda;
-  memcpy(btm_sec_cb.connecting_dc, dc, DEV_CLASS_LEN);
+  btm_sec_cb.connecting_dc = dc;
 
   p_dev_rec = btm_find_or_alloc_dev(bda);
   p_dev_rec->sm4 |= BTM_SM4_CONN_PEND;
@@ -2136,7 +2135,7 @@ static tBTM_STATUS btm_sec_dd_create_conn(tBTM_SEC_DEV_REC* p_dev_rec) {
 }
 
 static void call_registered_rmt_name_callbacks(const RawAddress* p_bd_addr,
-                                               uint8_t* pdev_class,
+                                               const DEV_CLASS& dev_class,
                                                uint8_t* p_bd_name,
                                                tHCI_STATUS status) {
   int i;
@@ -2149,9 +2148,6 @@ static void call_registered_rmt_name_callbacks(const RawAddress* p_bd_addr,
     return;
   }
 
-  if (pdev_class == nullptr) {
-    pdev_class = (uint8_t*)kDevClassEmpty;
-  }
   if (p_bd_name == nullptr) {
     p_bd_name = (uint8_t*)kBtmBdNameEmpty;
   }
@@ -2160,7 +2156,7 @@ static void call_registered_rmt_name_callbacks(const RawAddress* p_bd_addr,
    * clients can continue */
   for (i = 0; i < BTM_SEC_MAX_RMT_NAME_CALLBACKS; i++) {
     if (btm_cb.p_rmt_name_callback[i]) {
-      (*btm_cb.p_rmt_name_callback[i])(*p_bd_addr, pdev_class, p_bd_name);
+      (*btm_cb.p_rmt_name_callback[i])(*p_bd_addr, dev_class, p_bd_name);
     }
   }
 }
@@ -2213,7 +2209,8 @@ void btm_sec_rmt_name_request_complete(const RawAddress* p_bd_addr,
         tBTM_SEC_CB::btm_pair_state_descr(btm_sec_cb.pairing_state),
         hci_status_code_text(status).c_str(), p_bd_name);
 
-    call_registered_rmt_name_callbacks(p_bd_addr, nullptr, nullptr, status);
+    call_registered_rmt_name_callbacks(p_bd_addr, kDevClassEmpty, nullptr,
+                                       status);
     return;
   }
 
@@ -2561,7 +2558,7 @@ void btm_io_capabilities_req(RawAddress p) {
   btm_sec_cb.pairing_bda = evt_data.bd_addr;
 
   if (evt_data.bd_addr == btm_sec_cb.connecting_bda)
-    memcpy(p_dev_rec->dev_class, btm_sec_cb.connecting_dc, DEV_CLASS_LEN);
+    p_dev_rec->dev_class = btm_sec_cb.connecting_dc;
 
   btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_WAIT_LOCAL_IOCAPS);
 
@@ -2637,7 +2634,7 @@ void btm_io_capabilities_rsp(const tBTM_SP_IO_RSP evt_data) {
   /* We must have a device record here.
    * Use the connecting device's CoD for the connection */
   if (evt_data.bd_addr == btm_sec_cb.connecting_bda)
-    memcpy(p_dev_rec->dev_class, btm_sec_cb.connecting_dc, DEV_CLASS_LEN);
+    p_dev_rec->dev_class = btm_sec_cb.connecting_dc;
 
   /* peer sets dedicated bonding bit and we did not initiate dedicated bonding
    */
@@ -2687,7 +2684,7 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, const RawAddress bda,
       (btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE) &&
       (btm_sec_cb.pairing_bda == p_bda)) {
     evt_data.cfm_req.bd_addr = p_dev_rec->bd_addr;
-    memcpy(evt_data.cfm_req.dev_class, p_dev_rec->dev_class, DEV_CLASS_LEN);
+    evt_data.cfm_req.dev_class = p_dev_rec->dev_class;
 
     strlcpy((char*)evt_data.cfm_req.bd_name, (char*)p_dev_rec->sec_bd_name,
             BTM_MAX_REM_BD_NAME_LEN + 1);
@@ -2886,7 +2883,7 @@ void btm_rem_oob_req(const RawAddress bd_addr) {
   p_dev_rec = btm_find_dev(p_bda);
   if ((p_dev_rec != NULL) && btm_sec_cb.api.p_sp_callback) {
     evt_data.bd_addr = p_dev_rec->bd_addr;
-    memcpy(evt_data.dev_class, p_dev_rec->dev_class, DEV_CLASS_LEN);
+    evt_data.dev_class = p_dev_rec->dev_class;
     strlcpy((char*)evt_data.bd_name, (char*)p_dev_rec->sec_bd_name,
             BTM_MAX_REM_BD_NAME_LEN + 1);
 
@@ -4062,7 +4059,7 @@ static void btm_sec_pairing_timeout(void* /* data */) {
         if (p_dev_rec == NULL) {
           name[0] = 0;
           (*btm_sec_cb.api.p_auth_complete_callback)(
-              p_cb->pairing_bda, NULL, name, HCI_ERR_CONNECTION_TOUT);
+              p_cb->pairing_bda, kDevClassEmpty, name, HCI_ERR_CONNECTION_TOUT);
         } else
           NotifyBondingChange(*p_dev_rec, HCI_ERR_CONNECTION_TOUT);
       }
@@ -4118,7 +4115,7 @@ static void btm_sec_pairing_timeout(void* /* data */) {
         if (p_dev_rec == NULL) {
           name[0] = 0;
           (*btm_sec_cb.api.p_auth_complete_callback)(
-              p_cb->pairing_bda, NULL, name, HCI_ERR_CONNECTION_TOUT);
+              p_cb->pairing_bda, kDevClassEmpty, name, HCI_ERR_CONNECTION_TOUT);
         } else {
           NotifyBondingChange(*p_dev_rec, HCI_ERR_CONNECTION_TOUT);
         }
@@ -4196,7 +4193,7 @@ void btm_sec_pin_code_request(const RawAddress p_bda) {
   if ((p_bda == p_cb->connecting_bda) &&
       (p_cb->connecting_dc[0] || p_cb->connecting_dc[1] ||
        p_cb->connecting_dc[2]))
-    memcpy(p_dev_rec->dev_class, p_cb->connecting_dc, DEV_CLASS_LEN);
+    p_dev_rec->dev_class = p_cb->connecting_dc;
 
   /* We could have started connection after asking user for the PIN code */
   if (btm_sec_cb.pin_code_len != 0) {
@@ -4242,7 +4239,7 @@ void btm_sec_pin_code_request(const RawAddress p_bda) {
     btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_WAIT_LOCAL_PIN);
     /* Pin code request can not come at the same time as connection request */
     p_cb->connecting_bda = p_bda;
-    memcpy(p_cb->connecting_dc, p_dev_rec->dev_class, DEV_CLASS_LEN);
+    p_cb->connecting_dc = p_dev_rec->dev_class;
 
     /* Check if the name is known */
     /* Even if name is not known we might not be able to get one */
@@ -5002,7 +4999,7 @@ void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported,
 }
 
 // Return DEV_CLASS (uint8_t[3]) of bda. If record doesn't exist, create one.
-const uint8_t* btm_get_dev_class(const RawAddress& bda) {
+DEV_CLASS btm_get_dev_class(const RawAddress& bda) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_or_alloc_dev(bda);
   return p_dev_rec->dev_class;
 }

@@ -22,7 +22,7 @@
 #include "aidl/android/hardware/bluetooth/audio/AudioConfiguration.h"
 #include "aidl/transport_instance.h"
 #include "bta/ag/bta_ag_int.h"
-#include "btif_hf.h"
+#include "btif/include/btif_hf.h"
 #include "btm_api_types.h"
 #include "hardware/bluetooth.h"
 #include "hardware/bluetooth_headset_interface.h"

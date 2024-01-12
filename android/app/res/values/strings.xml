@@ -203,9 +203,6 @@
     <string name="status_protocol_error">Request can\'t be handled correctly.</string>
     <string name="status_unknown_error">Unknown error.</string>
 
-    <!-- Bluetooth OPP Live Folder -->
-    <string name="btopp_live_folder">Bluetooth received</string>
-
     <!-- Bluetooth OPP Transfer History -->
     <string name="opp_notification_group">Bluetooth Share</string>
     <string name="download_success"> <xliff:g id="file_size">%1$s</xliff:g> Received complete.</string>

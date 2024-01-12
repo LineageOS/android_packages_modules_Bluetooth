@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "gd/metrics/chromeos/metrics_event.h"
+#include "metrics/chromeos/metrics_event.h"
 
 #include <base/files/file_path.h>
 #include <base/files/file_util.h>
@@ -25,7 +25,7 @@
 #include <map>
 #include <utility>
 
-#include "gd/common/init_flags.h"
+#include "common/init_flags.h"
 #include "hci/hci_packets.h"
 #include "include/hardware/bluetooth.h"
 #include "include/hardware/bt_av.h"

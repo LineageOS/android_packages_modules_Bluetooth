@@ -19,7 +19,7 @@
 #include <iostream>
 #include <iterator>
 
-#include "gd/os/files.h"
+#include "os/files.h"
 #include "os/log.h"
 
 namespace bluetooth {

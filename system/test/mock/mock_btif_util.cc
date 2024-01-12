@@ -90,7 +90,7 @@ int ascii_2_hex(const char* p_ascii, int len, uint8_t* p_hex) {
   inc_func_call_count(__func__);
   return test::mock::btif_util::ascii_2_hex(p_ascii, len, p_hex);
 }
-uint32_t devclass2uint(DEV_CLASS dev_class) {
+uint32_t devclass2uint(const DEV_CLASS dev_class) {
   inc_func_call_count(__func__);
   return test::mock::btif_util::devclass2uint(dev_class);
 }
@@ -154,9 +154,9 @@ const char* dump_thread_evt(bt_cb_thread_evt evt) {
   inc_func_call_count(__func__);
   return test::mock::btif_util::dump_thread_evt(evt);
 }
-void uint2devclass(uint32_t cod, DEV_CLASS dev_class) {
+DEV_CLASS uint2devclass(uint32_t cod) {
   inc_func_call_count(__func__);
-  test::mock::btif_util::uint2devclass(cod, dev_class);
+  return test::mock::btif_util::uint2devclass(cod);
 }
 // Mocked functions complete
 // END mockcify generation

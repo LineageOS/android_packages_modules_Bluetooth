@@ -20,7 +20,7 @@
 
 #include "bta/include/bta_gatt_api.h"
 #include "bta_csis_api.h"
-#include "btif_storage.h"
+#include "btif/include/btif_profile_storage.h"
 #include "btm_iso_api.h"
 #include "device/include/controller.h"
 #include "internal_include/bt_trace.h"
@@ -763,13 +763,14 @@ bool LeAudioDeviceGroup::UpdateAudioSetConfigurationCache(
 
   if (update_config) {
     context_to_configuration_cache_map[ctx_type] = std::pair(true, new_conf);
-    LOG_DEBUG("config: %s -> %s", ToHexString(ctx_type).c_str(),
-              (new_conf ? new_conf->name.c_str() : "(none)"));
+    LOG_INFO("config: %s -> %s", ToHexString(ctx_type).c_str(),
+             (new_conf ? new_conf->name.c_str() : "(none)"));
   }
   return update_config;
 }
 
 void LeAudioDeviceGroup::InvalidateCachedConfigurations(void) {
+  LOG_INFO(" Group id: %d", group_id_);
   context_to_configuration_cache_map.clear();
 }
 
@@ -832,9 +833,7 @@ bool LeAudioDeviceGroup::ReloadAudioDirections(void) {
   return true;
 }
 
-bool LeAudioDeviceGroup::IsInTransition(void) const {
-  return target_state_ != current_state_;
-}
+bool LeAudioDeviceGroup::IsInTransition(void) const { return in_transition_; }
 
 bool LeAudioDeviceGroup::IsStreaming(void) const {
   return current_state_ == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING;

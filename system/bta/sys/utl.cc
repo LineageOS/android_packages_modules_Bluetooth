@@ -158,15 +158,14 @@ uint8_t utl_itoa(uint16_t i, char* p_s) {
  *
  ******************************************************************************/
 bool utl_set_device_class(tBTA_UTL_COD* p_cod, uint8_t cmd) {
-  uint8_t* dev;
   uint16_t service;
   uint8_t minor, major;
-  DEV_CLASS dev_class;
+  DEV_CLASS old_class;
 
-  dev = BTM_ReadDeviceClass();
-  BTM_COD_SERVICE_CLASS(service, dev);
-  BTM_COD_MINOR_CLASS(minor, dev);
-  BTM_COD_MAJOR_CLASS(major, dev);
+  old_class = BTM_ReadDeviceClass();
+  BTM_COD_SERVICE_CLASS(service, old_class);
+  BTM_COD_MINOR_CLASS(minor, old_class);
+  BTM_COD_MAJOR_CLASS(major, old_class);
 
   switch (cmd) {
     case BTA_UTL_SET_COD_MAJOR_MINOR:
@@ -203,6 +202,7 @@ bool utl_set_device_class(tBTA_UTL_COD* p_cod, uint8_t cmd) {
   }
 
   /* convert the fields into the device class type */
+  DEV_CLASS dev_class;
   FIELDS_TO_COD(dev_class, minor, major, service);
 
   if (BTM_SetDeviceClass(dev_class) == BTM_SUCCESS) return true;

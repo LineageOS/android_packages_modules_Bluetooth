@@ -18,7 +18,7 @@
 
 #include <cstdint>
 
-#include "gd/common/init_flags.h"
+#include "common/init_flags.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/hci_error_code.h"

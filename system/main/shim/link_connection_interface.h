@@ -19,8 +19,8 @@
 #include <cstdint>
 #include <future>
 
-#include "gd/hci/address.h"
-#include "gd/hci/address_with_type.h"
+#include "hci/address.h"
+#include "hci/address_with_type.h"
 #include "stack/include/hci_error_code.h"
 
 namespace bluetooth {

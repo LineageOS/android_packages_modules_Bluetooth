@@ -26,8 +26,8 @@
 #include "btm_iso_api.h"
 #include "client_parser.h"
 #include "codec_manager.h"
+#include "common/strings.h"
 #include "devices.h"
-#include "gd/common/strings.h"
 #include "hci/hci_packets.h"
 #include "hcimsgs.h"
 #include "include/check.h"
@@ -172,6 +172,11 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
                ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
       return false;
     }
+
+    /* Invalidate configuration to make sure it is chosen properly when new
+     * member connects
+     */
+    group->InvalidateCachedConfigurations();
 
     if (!group->Configure(group->GetConfigurationContextType(),
                           group->GetMetadataContexts(), ccids)) {
@@ -1871,6 +1876,10 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
           /* This is autonomus change of the remote device */
           LOG_DEBUG("Autonomus change for device %s, ase id %d. Just store it.",
                     ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_), ase->id);
+
+          /* Since at least one ASE is in configured state, we should admit
+           * group is configured state */
+          group->SetState(AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED);
           return;
         }
 
@@ -2044,9 +2053,9 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
           return;
         }
 
-        LOG_ERROR(", Autonomouse change, from: %s to %s",
-                  ToString(group->GetState()).c_str(),
-                  ToString(group->GetTargetState()).c_str());
+        LOG_INFO("Autonomous change, from: %s to %s",
+                 ToString(group->GetState()).c_str(),
+                 ToString(group->GetTargetState()).c_str());
 
         break;
       }
