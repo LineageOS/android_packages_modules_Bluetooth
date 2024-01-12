@@ -11,7 +11,6 @@
 //!   all others
 
 use std::collections::HashMap;
-use std::convert::{TryFrom, TryInto};
 use std::fs;
 use std::path::Path;
 
@@ -29,14 +28,15 @@ const LINKKEY_SECTION_NAME: &str = "LinkKey";
 const DEVICEID_SECTION_NAME: &str = "DeviceID";
 const IRK_SECTION_NAME: &str = "IdentityResolvingKey";
 const LTK_SECTION_NAME: &str = "LongTermKey";
+const BLUEZ_PERIPHERAL_LTK_SECTION_NAME: &str = "PeripheralLongTermKey";
+const BLUEZ_LOCAL_LTK_SECTION_NAME: &str = "SlaveLongTermKey";
 const REPORT_MAP_SECTION_NAME: &str = "ReportMap";
 
 const CLASSIC_TYPE: &str = "BR/EDR;";
 const LE_TYPE: &str = "LE;";
 const DUAL_TYPE: &str = "BR/EDR;LE;";
 
-/// Represents LTK info since in Floss,
-/// LE_KEY_PENC = LTK + RAND (64) + EDIV (16) + Security Level (8) + Key Length (8)
+/// Represents LTK info
 #[derive(Debug, Default)]
 struct LtkInfo {
     key: u128,
@@ -46,12 +46,38 @@ struct LtkInfo {
     len: u8,
 }
 
-impl TryFrom<String> for LtkInfo {
-    type Error = &'static str;
+impl LtkInfo {
+    fn new_from_bluez(bluez_conf: &Ini, sec: &str) -> Self {
+        LtkInfo {
+            key: u128::from_str_radix(bluez_conf.get(sec, "Key").unwrap_or_default().as_str(), 16)
+                .unwrap_or_default(),
+            rand: bluez_conf
+                .get(sec, "Rand")
+                .unwrap_or_default()
+                .parse::<u64>()
+                .unwrap_or_default(),
+            ediv: bluez_conf
+                .get(sec, "EDiv")
+                .unwrap_or_default()
+                .parse::<u16>()
+                .unwrap_or_default(),
+            auth: bluez_conf
+                .get(sec, "Authenticated")
+                .unwrap_or_default()
+                .parse::<u8>()
+                .unwrap_or_default(),
+            len: bluez_conf
+                .get(sec, "EncSize")
+                .unwrap_or_default()
+                .parse::<u8>()
+                .unwrap_or_default(),
+        }
+    }
 
-    fn try_from(val: String) -> Result<Self, Self::Error> {
+    // LE_KEY_PENC = LTK + RAND (64) + EDIV (16) + Security Level (8) + Key Length (8)
+    fn try_from_penc(val: String) -> Result<Self, &'static str> {
         if val.len() != 56 {
-            return Err("String provided to LtkInfo is not the right size");
+            return Err("PENC String provided to LtkInfo is not the right size");
         }
 
         Ok(LtkInfo {
@@ -62,12 +88,8 @@ impl TryFrom<String> for LtkInfo {
             len: u8::from_str_radix(&val[54..56], 16).unwrap_or_default(),
         })
     }
-}
 
-impl TryInto<String> for LtkInfo {
-    type Error = &'static str;
-
-    fn try_into(self) -> Result<String, Self::Error> {
+    fn try_into_penc(self) -> Result<String, &'static str> {
         Ok(format!(
             "{:032x}{:016x}{:04x}{:02x}{:02x}",
             self.key,
@@ -75,6 +97,31 @@ impl TryInto<String> for LtkInfo {
             self.ediv.swap_bytes(),
             self.auth,
             self.len
+        ))
+    }
+
+    // LE_KEY_LENC = LTK + EDIV (16) + Key Size (8) + Security Level (8)
+    fn try_from_lenc(val: String) -> Result<Self, &'static str> {
+        if val.len() != 40 {
+            return Err("LENC String provided to LtkInfo is not the right size");
+        }
+
+        Ok(LtkInfo {
+            key: u128::from_str_radix(&val[0..32], 16).unwrap_or_default(),
+            ediv: u16::from_str_radix(&val[32..36], 16).unwrap_or_default().swap_bytes(),
+            len: u8::from_str_radix(&val[36..38], 16).unwrap_or_default(),
+            auth: u8::from_str_radix(&val[38..40], 16).unwrap_or_default(),
+            rand: 0,
+        })
+    }
+
+    fn try_into_lenc(self) -> Result<String, &'static str> {
+        Ok(format!(
+            "{:032x}{:04x}{:02x}{:02x}",
+            self.key,
+            self.ediv.swap_bytes(),
+            self.len,
+            self.auth,
         ))
     }
 }
@@ -233,17 +280,7 @@ fn floss_to_bluez_addr_type(str: String) -> Result<String, String> {
 
 // BlueZ stores link keys as little endian and Floss as big endian
 fn reverse_endianness(str: String, uppercase: bool) -> Result<String, String> {
-    // Handling for LE_KEY_PID
-    // In Floss, LE_KEY_PID = IRK + Identity Address Type (8) + Identity Address
-    let mut len = 32;
-    if str.len() < len {
-        // Logging to observe crash behavior, can clean up and remove if not an error
-        warn!("Link key too small: {}", str);
-        len = str.len();
-    }
-    let s = String::from(&str[0..len]);
-
-    match u128::from_str_radix(&s, 16) {
+    match u128::from_str_radix(str.as_str(), 16) {
         Ok(x) => {
             if uppercase {
                 Ok(format!("{:0>32X}", x.swap_bytes()))
@@ -317,39 +354,23 @@ fn convert_from_bluez_device(
                 );
                 true
             }
-            "PeripheralLongTermKey" | LTK_SECTION_NAME => {
+            BLUEZ_PERIPHERAL_LTK_SECTION_NAME | LTK_SECTION_NAME => {
                 // Special handling since in Floss LE_KEY_PENC is a combination of values in BlueZ
-                let ltk = LtkInfo {
-                    key: u128::from_str_radix(
-                        bluez_conf.get(sec.as_str(), "Key").unwrap_or_default().as_str(),
-                        16,
-                    )
-                    .unwrap_or_default(),
-                    rand: bluez_conf
-                        .get(sec.as_str(), "Rand")
-                        .unwrap_or_default()
-                        .parse::<u64>()
-                        .unwrap_or_default(),
-                    ediv: bluez_conf
-                        .get(sec.as_str(), "EDiv")
-                        .unwrap_or_default()
-                        .parse::<u16>()
-                        .unwrap_or_default(),
-                    auth: bluez_conf
-                        .get(sec.as_str(), "Authenticated")
-                        .unwrap_or_default()
-                        .parse::<u8>()
-                        .unwrap_or_default(),
-                    len: bluez_conf
-                        .get(sec.as_str(), "EncSize")
-                        .unwrap_or_default()
-                        .parse::<u8>()
-                        .unwrap_or_default(),
-                };
+                let ltk: LtkInfo = LtkInfo::new_from_bluez(&bluez_conf, sec.as_str());
                 floss_conf.set(
                     addr_lower.as_str(),
                     "LE_KEY_PENC",
-                    Some(ltk.try_into().unwrap_or_default()),
+                    Some(ltk.try_into_penc().unwrap_or_default()),
+                );
+                true
+            }
+            BLUEZ_LOCAL_LTK_SECTION_NAME => {
+                // Special handling since in Floss LE_KEY_LENC is a combination of values in BlueZ
+                let lltk: LtkInfo = LtkInfo::new_from_bluez(&bluez_conf, sec.as_str());
+                floss_conf.set(
+                    addr_lower.as_str(),
+                    "LE_KEY_LENC",
+                    Some(lltk.try_into_lenc().unwrap_or_default()),
                 );
                 true
             }
@@ -681,13 +702,6 @@ fn convert_floss_conf(filename: &str) {
         ("VendorId", DeviceKey::new("Vendor", KeyAction::ToSection(DEVICEID_SECTION_NAME))),
         ("ProductId", DeviceKey::new("Product", KeyAction::ToSection(DEVICEID_SECTION_NAME))),
         ("ProductVersion", DeviceKey::new("Version", KeyAction::ToSection(DEVICEID_SECTION_NAME))),
-        (
-            "LE_KEY_PID",
-            DeviceKey::new(
-                "Key",
-                KeyAction::ApplyToSection(Converter::ReverseEndianUppercase, IRK_SECTION_NAME),
-            ),
-        ),
     ]
     .into();
 
@@ -718,19 +732,72 @@ fn convert_floss_conf(filename: &str) {
         }
         // Keep track of Floss devices we've seen so we can remove BlueZ devices that don't exist on Floss
         devices.push(sec.clone());
-        let device_addr = sec.to_uppercase();
+        let mut device_addr = sec.to_uppercase();
         let mut bluez_info = Ini::new_cs();
         let mut bluez_hid = Ini::new_cs();
         let mut is_hid: bool = false;
+        let has_local_keys: bool = props.contains_key("LE_KEY_LENC");
         for (k, v) in props {
-            // Special handling since in Floss LE_KEY_PENC is a combination of values in BlueZ
-            if k == "LE_KEY_PENC" {
-                let ltk = LtkInfo::try_from(v.unwrap_or_default()).unwrap_or_default();
-                bluez_info.set(LTK_SECTION_NAME, "Key", Some(format!("{:032X}", ltk.key)));
-                bluez_info.set(LTK_SECTION_NAME, "Rand", Some(format!("{}", ltk.rand)));
-                bluez_info.set(LTK_SECTION_NAME, "EDiv", Some(format!("{}", ltk.ediv)));
-                bluez_info.set(LTK_SECTION_NAME, "Authenticated", Some(format!("{}", ltk.auth)));
-                bluez_info.set(LTK_SECTION_NAME, "EncSize", Some(format!("{}", ltk.len)));
+            // Special handling since in Floss LE_KEY_* are a combination of values in BlueZ
+            if k == "LE_KEY_PID" {
+                // In Floss, LE_KEY_PID = IRK (128) + Identity Address Type (8) + Identity Address (48)
+                // Identity Address Type is also found as "AddrType" key so no need to parse it here.
+                let val = v.unwrap_or_default();
+                if val.len() != 46 {
+                    warn!("LE_KEY_PID is not the correct size: {}", val);
+                    continue;
+                }
+                bluez_info.set(
+                    IRK_SECTION_NAME,
+                    "Key",
+                    Some(reverse_endianness(val[0..32].to_string(), true).unwrap_or_default()),
+                );
+                // BlueZ uses the identity address as the device path
+                devices.retain(|d| *d != device_addr);
+                device_addr = format!(
+                    "{}:{}:{}:{}:{}:{}",
+                    &val[34..36],
+                    &val[36..38],
+                    &val[38..40],
+                    &val[40..42],
+                    &val[42..44],
+                    &val[44..46]
+                )
+                .to_uppercase();
+                devices.push(device_addr.clone().to_lowercase());
+                continue;
+            } else if k == "LE_KEY_PENC" {
+                let ltk = LtkInfo::try_from_penc(v.unwrap_or_default()).unwrap_or_default();
+                let section_name = if has_local_keys {
+                    BLUEZ_PERIPHERAL_LTK_SECTION_NAME
+                } else {
+                    LTK_SECTION_NAME
+                };
+                bluez_info.set(section_name, "Key", Some(format!("{:032X}", ltk.key)));
+                bluez_info.set(section_name, "Rand", Some(format!("{}", ltk.rand)));
+                bluez_info.set(section_name, "EDiv", Some(format!("{}", ltk.ediv)));
+                bluez_info.set(section_name, "Authenticated", Some(format!("{}", ltk.auth)));
+                bluez_info.set(section_name, "EncSize", Some(format!("{}", ltk.len)));
+                continue;
+            } else if k == "LE_KEY_LENC" {
+                let ltk = LtkInfo::try_from_lenc(v.unwrap_or_default()).unwrap_or_default();
+                bluez_info.set(
+                    BLUEZ_LOCAL_LTK_SECTION_NAME,
+                    "Key",
+                    Some(format!("{:032X}", ltk.key)),
+                );
+                bluez_info.set(BLUEZ_LOCAL_LTK_SECTION_NAME, "Rand", Some(format!("{}", ltk.rand)));
+                bluez_info.set(BLUEZ_LOCAL_LTK_SECTION_NAME, "EDiv", Some(format!("{}", ltk.ediv)));
+                bluez_info.set(
+                    BLUEZ_LOCAL_LTK_SECTION_NAME,
+                    "Authenticated",
+                    Some(format!("{}", ltk.auth)),
+                );
+                bluez_info.set(
+                    BLUEZ_LOCAL_LTK_SECTION_NAME,
+                    "EncSize",
+                    Some(format!("{}", ltk.len)),
+                );
                 continue;
             }
             // Convert matching info file keys
@@ -1000,30 +1067,44 @@ mod tests {
     fn test_irk_conversion() {
         let mut key = DeviceKey::new("", KeyAction::Apply(Converter::ReverseEndianUppercase));
         assert_eq!(
-            key.apply_action("d584da72ceccfdf462405b558441ed4401e260f9ee9fb8".to_string()),
+            key.apply_action("d584da72ceccfdf462405b558441ed44".to_string()),
             Ok("44ED4184555B4062F4FDCCCE72DA84D5".to_string())
         );
         assert_eq!(
-            key.apply_action("td584da72ceccfdf462405b558441ed4401e260f9ee9fb8".to_string()),
+            key.apply_action("td584da72ceccfdf462405b558441ed44".to_string()),
             Err("Error converting link key: invalid digit found in string".to_string())
         );
     }
 
     #[test]
     fn test_ltk_conversion() {
-        let floss_key = String::from("48fdc93d776cd8cc918f31e422ece00d2322924fa9a09fb30eb20110");
-        let ltk = LtkInfo::try_from(floss_key).unwrap_or_default();
-        assert_eq!(ltk.key, 0x48FDC93D776CD8CC918F31E422ECE00D);
-        assert_eq!(ltk.rand, 12943240503130989091);
-        assert_eq!(ltk.ediv, 45582);
-        assert_eq!(ltk.auth, 1);
-        assert_eq!(ltk.len, 16);
+        let floss_penc_key =
+            String::from("48fdc93d776cd8cc918f31e422ece00d2322924fa9a09fb30eb20110");
+        let pltk = LtkInfo::try_from_penc(floss_penc_key).unwrap_or_default();
+        assert_eq!(pltk.key, 0x48FDC93D776CD8CC918F31E422ECE00D);
+        assert_eq!(pltk.rand, 12943240503130989091);
+        assert_eq!(pltk.ediv, 45582);
+        assert_eq!(pltk.auth, 1);
+        assert_eq!(pltk.len, 16);
         assert_eq!(
-            LtkInfo::try_from(
+            LtkInfo::try_from_penc(
                 "48fdc93d776cd8cc918f31e422ece00d2322924fa9a09fb30eb2011".to_string()
             )
             .unwrap_err(),
-            "String provided to LtkInfo is not the right size"
+            "PENC String provided to LtkInfo is not the right size"
+        );
+
+        let floss_lenc_key = String::from("07a104a6d2b464d74ff7e2e80b20295600001001");
+        let lltk = LtkInfo::try_from_lenc(floss_lenc_key).unwrap_or_default();
+        assert_eq!(lltk.key, 0x07A104A6D2B464D74FF7E2E80B202956);
+        assert_eq!(lltk.rand, 0);
+        assert_eq!(lltk.ediv, 0);
+        assert_eq!(lltk.auth, 1);
+        assert_eq!(lltk.len, 16);
+        assert_eq!(
+            LtkInfo::try_from_lenc("07a104a6d2b464d74ff7e2e80b2029560000100".to_string())
+                .unwrap_err(),
+            "LENC String provided to LtkInfo is not the right size"
         );
     }
 
