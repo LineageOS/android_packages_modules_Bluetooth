@@ -62,6 +62,7 @@ cc_library_static {
                 "a2dp_encoding_host.cc",
                 "hal_version_manager_host.cc",
                 "hearing_aid_software_encoding_host.cc",
+                "hfp_client_interface_host.cc",
                 "le_audio_software_host.cc",
             ],
         },
