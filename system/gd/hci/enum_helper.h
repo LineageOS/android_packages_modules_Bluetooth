@@ -30,6 +30,23 @@ enum DeviceType { UNKNOWN = 0, BR_EDR = 1, LE = 2, DUAL = 3 };
 // Scan mode from legacy stack, which is different from hci::ScanEnable
 enum LegacyScanMode { BT_SCAN_MODE_NONE = 0, BT_SCAN_MODE_CONNECTABLE = 1, BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE = 2 };
 
+inline DataStatus DataStatusFromAdvertisingEventType(ExtendedAdvertisingEventType event_type) {
+  constexpr uint8_t kDataStatusBits = 5;
+  return DataStatus(((uint16_t)event_type >> kDataStatusBits) & 0x3);
+}
+
+inline ExtendedAdvertisingEventType operator|(
+    const ExtendedAdvertisingEventType& a, const ExtendedAdvertisingEventType& b) {
+  return static_cast<ExtendedAdvertisingEventType>(
+      static_cast<uint16_t>(a) | static_cast<uint16_t>(b));
+}
+
+inline ExtendedAdvertisingEventType operator&(
+    const ExtendedAdvertisingEventType& a, const ExtendedAdvertisingEventType& b) {
+  return static_cast<ExtendedAdvertisingEventType>(
+      static_cast<uint16_t>(a) & static_cast<uint16_t>(b));
+}
+
 }  // namespace hci
 
 // Must be defined in bluetooth namespace
