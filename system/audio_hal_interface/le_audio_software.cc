@@ -106,8 +106,6 @@ void LeAudioClientInterface::Sink::Cleanup() {
             static_cast<int>(HalVersionManager::GetHalTransport()),
             is_broadcaster_);
 
-  StopSession();
-
   /* Cleanup transport interface and instance according to type and role */
   if (HalVersionManager::GetHalTransport() ==
       BluetoothAudioHalTransport::HIDL) {
@@ -466,7 +464,6 @@ size_t LeAudioClientInterface::Sink::Read(uint8_t* p_buf, uint32_t len) {
 
 void LeAudioClientInterface::Source::Cleanup() {
   log::info("source");
-  StopSession();
   if (hidl::le_audio::LeAudioSourceTransport::interface) {
     delete hidl::le_audio::LeAudioSourceTransport::interface;
     hidl::le_audio::LeAudioSourceTransport::interface = nullptr;
