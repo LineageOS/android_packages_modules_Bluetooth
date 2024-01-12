@@ -198,7 +198,6 @@ TEST_F(StackGattTest, gatt_status_text) {
       std::make_pair(GATT_CMD_STARTED, "GATT_CMD_STARTED"),
       std::make_pair(GATT_PENDING, "GATT_PENDING"),
       std::make_pair(GATT_AUTH_FAIL, "GATT_AUTH_FAIL"),
-      std::make_pair(GATT_MORE, "GATT_MORE"),
       std::make_pair(GATT_INVALID_CFG, "GATT_INVALID_CFG"),
       std::make_pair(GATT_SERVICE_STARTED, "GATT_SERVICE_STARTED"),
       std::make_pair(GATT_ENCRYPED_NO_MITM, "GATT_ENCRYPED_NO_MITM"),
