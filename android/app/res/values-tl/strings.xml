@@ -101,7 +101,6 @@
     <string name="status_connection_error" msgid="8253709700568062220">"Hindi matagumpay ang koneksyon."</string>
     <string name="status_protocol_error" msgid="3231573735130475654">"Hindi mapangasiwaan nang tama ang kahilingan."</string>
     <string name="status_unknown_error" msgid="314676481744304866">"Hindi kilalang error."</string>
-    <string name="btopp_live_folder" msgid="4859989703965326287">"Natanggap sa bluetooth"</string>
     <string name="opp_notification_group" msgid="150067508422520653">"Pagbabahagi sa Bluetooth"</string>
     <string name="download_success" msgid="3438268368708549686">"<xliff:g id="FILE_SIZE">%1$s</xliff:g> Kumpleto na ang pagtanggap."</string>
     <string name="upload_success" msgid="143787470859042049">"<xliff:g id="FILE_SIZE">%1$s</xliff:g> Kumpleto na ang pagpapadala."</string>
