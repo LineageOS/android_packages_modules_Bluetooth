@@ -76,17 +76,13 @@ public abstract class ProfileService extends ContextWrapper {
 
     /**
      * Called in {@link #onStartCommand(Intent, int, int)} when the service is started by intent
-     *
-     * @return True in successful condition, False otherwise
      */
-    protected abstract boolean start();
+    protected abstract void start();
 
     /**
      * Called in {@link #onStartCommand(Intent, int, int)} when the service is stopped by intent
-     *
-     * @return True in successful condition, False otherwise
      */
-    protected abstract boolean stop();
+    protected abstract void stop();
 
     /**
      * Called in {@link #onDestroy()} when this object is completely discarded
@@ -216,11 +212,9 @@ public abstract class ProfileService extends ContextWrapper {
         }
         mAdapterService.addProfile(this);
 
-        mProfileStarted = start();
-        if (!mProfileStarted) {
-            Log.e(mName, "Error starting profile. start() returned false.");
-            return;
-        }
+        start();
+        mProfileStarted = true;
+
         mAdapterService.onProfileServiceStateChanged(this, BluetoothAdapter.STATE_ON);
     }
 
@@ -240,9 +234,7 @@ public abstract class ProfileService extends ContextWrapper {
         if (mAdapterService != null) {
             mAdapterService.onProfileServiceStateChanged(this, BluetoothAdapter.STATE_OFF);
         }
-        if (!stop()) {
-            Log.e(mName, "Unable to stop profile");
-        }
+        stop();
         if (mAdapterService != null) {
             mAdapterService.removeProfile(this);
         }

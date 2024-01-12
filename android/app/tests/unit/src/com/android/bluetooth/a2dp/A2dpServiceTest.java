@@ -173,11 +173,11 @@ public class A2dpServiceTest {
         Assert.assertTrue(mA2dpService.setActiveDevice(mTestDevice));
         verify(mMockNativeInterface).setActiveDevice(mTestDevice);
 
-        Assert.assertTrue(mA2dpService.stop());
+        mA2dpService.stop();
 
         // Verify that setActiveDevice(null) was called during shutdown
         verify(mMockNativeInterface).setActiveDevice(null);
-        Assert.assertTrue(mA2dpService.start());
+        mA2dpService.start();
     }
 
     /**
