@@ -1,0 +1,8 @@
+package: "com.android.bluetooth.flags"
+
+flag {
+    name: "api_get_connection_state_using_identity_address"
+    namespace: "bluetooth"
+    description: "Use identity address to check current connection state"
+    bug: "319471537"
+}
