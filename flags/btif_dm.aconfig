@@ -1,0 +1,8 @@
+package: "com.android.bluetooth.flags"
+
+flag {
+    name: "ignore_bond_type_for_le"
+    namespace: "bluetooth"
+    description: "Bond type is not applicable for LE SMP pairing"
+    bug: "319695663"
+}
