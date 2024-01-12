@@ -84,16 +84,17 @@ public class BluetoothOppReceiver extends BroadcastReceiver {
             }
             Toast.makeText(context, toastMsg, Toast.LENGTH_SHORT).show();
         } else if (action.equals(Constants.ACTION_INCOMING_FILE_CONFIRM)) {
-            if (V) {
-                Log.v(TAG, "Receiver ACTION_INCOMING_FILE_CONFIRM");
+            if (!Flags.oppStartActivityDirectlyFromNotification()) {
+                if (V) {
+                    Log.v(TAG, "Receiver ACTION_INCOMING_FILE_CONFIRM");
+                }
+
+                Uri uri = intent.getData();
+                Intent in = new Intent(context, BluetoothOppIncomingFileConfirmActivity.class);
+                in.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                in.setDataAndNormalize(uri);
+                context.startActivity(in);
             }
-
-            Uri uri = intent.getData();
-            Intent in = new Intent(context, BluetoothOppIncomingFileConfirmActivity.class);
-            in.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            in.setDataAndNormalize(uri);
-            context.startActivity(in);
-
         } else if (action.equals(Constants.ACTION_DECLINE)) {
             if (V) {
                 Log.v(TAG, "Receiver ACTION_DECLINE");
