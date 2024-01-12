@@ -6,3 +6,10 @@ flag {
     description: "Make BTA_DmXXX security APIs synchronous"
     bug: "311196228"
 }
+
+flag {
+    name: "connect_hid_after_service_discovery"
+    namespace: "bluetooth"
+    description: "Don't initiate HID connection before pairing and service discovery"
+    bug: "314707251"
+}
