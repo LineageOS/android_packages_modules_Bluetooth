@@ -188,7 +188,7 @@ public class AvrcpTargetService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
         if (sInstance != null) {
             throw new IllegalStateException("start() called twice");
         }
@@ -241,16 +241,15 @@ public class AvrcpTargetService extends ProfileService {
 
         // Only allow the service to be used once it is initialized
         sInstance = this;
-        return true;
     }
 
     @Override
-    protected boolean stop() {
+    protected void stop() {
         Log.i(TAG, "Stopping the AVRCP Target Service");
 
         if (sInstance == null) {
             Log.w(TAG, "stop() called before start()");
-            return true;
+            return;
         }
 
         if (mAvrcpCoverArtService != null) {
@@ -272,7 +271,6 @@ public class AvrcpTargetService extends ProfileService {
         mNativeInterface = null;
         mAudioManager = null;
         mReceiver = null;
-        return true;
     }
 
     private void init() {

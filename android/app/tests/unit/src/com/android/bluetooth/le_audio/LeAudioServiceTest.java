@@ -359,11 +359,7 @@ public class LeAudioServiceTest {
         // Prepare: connect
         connectDevice(mLeftDevice);
         // LeAudio Service is already running: test stop(). Note: must be done on the main thread
-        InstrumentationRegistry.getInstrumentation().runOnMainSync(new Runnable() {
-            public void run() {
-                assertThat(mService.stop()).isTrue();
-            }
-        });
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(mService::stop);
     }
 
     /**
@@ -371,19 +367,17 @@ public class LeAudioServiceTest {
      */
     @Test
     public void testStopStartStopService() throws Exception {
-        InstrumentationRegistry.getInstrumentation().runOnMainSync(new Runnable() {
-            public void run() {
-                assertThat(mService.stop()).isTrue();
-                assertThat(mService.start()).isTrue();
-                assertThat(mService.stop()).isTrue();
-                assertThat(mService.start()).isTrue();
-            }
-        });
+        InstrumentationRegistry.getInstrumentation()
+                .runOnMainSync(
+                        () -> {
+                            mService.stop();
+                            mService.start();
+                            mService.stop();
+                            mService.start();
+                        });
     }
 
-    /**
-     * Test get/set priority for BluetoothDevice
-     */
+    /** Test get/set priority for BluetoothDevice */
     @Test
     public void testGetSetPriority() {
         when(mDatabaseManager.getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO))

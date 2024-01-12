@@ -65,7 +65,7 @@ public class TbsService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
 
         if (DBG) {
             Log.d(TAG, "start()");
@@ -78,18 +78,16 @@ public class TbsService extends ProfileService {
         setTbsService(this);
 
         mTbsGeneric.init(new TbsGatt(this));
-
-        return true;
     }
 
     @Override
-    protected boolean stop() {
+    protected void stop() {
         if (DBG) {
             Log.d(TAG, "stop()");
         }
         if (sTbsService == null) {
             Log.w(TAG, "stop() called before start()");
-            return true;
+            return;
         }
 
         // Mark service as stopped
@@ -98,8 +96,6 @@ public class TbsService extends ProfileService {
         if (mTbsGeneric != null) {
             mTbsGeneric.cleanup();
         }
-
-        return true;
     }
 
     @Override
