@@ -13,3 +13,10 @@ flag {
     description: "Don't initiate HID connection before pairing and service discovery"
     bug: "314707251"
 }
+
+flag {
+    name: "bta_dm_disc_stuck_in_cancelling_fix"
+    namespace: "bluetooth"
+    description: "Fix being stuck in BTA_DM_SEARCH_CANCELLING"
+    bug: "319890673"
+}
