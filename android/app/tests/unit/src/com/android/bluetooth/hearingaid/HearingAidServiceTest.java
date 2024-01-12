@@ -17,7 +17,6 @@
 package com.android.bluetooth.hearingaid;
 
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
@@ -245,22 +244,12 @@ public class HearingAidServiceTest {
         // Prepare: connect
         connectDevice(mLeftDevice);
         // HearingAid Service is already running: test stop(). Note: must be done on the main thread
-        InstrumentationRegistry.getInstrumentation().runOnMainSync(new Runnable() {
-            public void run() {
-                Assert.assertTrue(mService.stop());
-            }
-        });
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(mService::stop);
         // Try to restart the service. Note: must be done on the main thread
-        InstrumentationRegistry.getInstrumentation().runOnMainSync(new Runnable() {
-            public void run() {
-                Assert.assertTrue(mService.start());
-            }
-        });
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(mService::start);
     }
 
-    /**
-     * Test get/set priority for BluetoothDevice
-     */
+    /** Test get/set priority for BluetoothDevice */
     @Test
     public void testGetSetPriority() throws Exception {
         when(mDatabaseManager.getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.HEARING_AID))

@@ -119,7 +119,7 @@ public class HearingAidService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
         if (DBG) {
             Log.d(TAG, "start()");
         }
@@ -152,17 +152,16 @@ public class HearingAidService extends ProfileService {
 
         // Initialize native interface
         mHearingAidNativeInterface.init();
-        return true;
     }
 
     @Override
-    protected boolean stop() {
+    protected void stop() {
         if (DBG) {
             Log.d(TAG, "stop()");
         }
         if (sHearingAidService == null) {
             Log.w(TAG, "stop() called before start()");
-            return true;
+            return;
         }
         // Cleanup native interface
         mHearingAidNativeInterface.cleanup();
@@ -207,8 +206,6 @@ public class HearingAidService extends ProfileService {
         mAudioManager = null;
         mHearingAidNativeInterface = null;
         mAdapterService = null;
-
-        return true;
     }
 
     @Override
