@@ -170,7 +170,7 @@ public class HeadsetService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
         Log.i(TAG, "start()");
         if (mStarted) {
             throw new IllegalStateException("start() called twice");
@@ -210,17 +210,16 @@ public class HeadsetService extends ProfileService {
         registerReceiver(mHeadsetReceiver, filter);
         // Step 7: Mark service as started
         mStarted = true;
-        return true;
     }
 
     @Override
-    protected boolean stop() {
+    protected void stop() {
         Log.i(TAG, "stop()");
         if (!mStarted) {
             Log.w(TAG, "stop() called before start()");
             // Still return true because it is considered "stopped" and doesn't have any functional
             // impact on the user
-            return true;
+            return;
         }
         // Step 7: Mark service as stopped
         mStarted = false;
@@ -281,7 +280,6 @@ public class HeadsetService extends ProfileService {
             mAdapterService = null;
         }
         setComponentAvailable(HFP_AG_IN_CALL_SERVICE, false);
-        return true;
     }
 
     @Override

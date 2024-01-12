@@ -350,7 +350,7 @@ public class BassClientService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
         if (DBG) {
             Log.d(TAG, "start()");
         }
@@ -381,11 +381,10 @@ public class BassClientService extends ProfileService {
         mSyncHandleToBaseDataMap = new HashMap<Integer, BaseData>();
         mSyncHandleToBroadcastIdMap = new HashMap<Integer, Integer>();
         mSearchScanCallback = null;
-        return true;
     }
 
     @Override
-    protected boolean stop() {
+    protected void stop() {
         if (DBG) {
             Log.d(TAG, "stop()");
         }
@@ -436,7 +435,6 @@ public class BassClientService extends ProfileService {
             mSyncHandleToBroadcastIdMap.clear();
             mSyncHandleToBroadcastIdMap = null;
         }
-        return true;
     }
 
     BluetoothDevice getDeviceForSyncHandle(int syncHandle) {

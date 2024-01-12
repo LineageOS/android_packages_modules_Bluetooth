@@ -340,7 +340,7 @@ public class GattService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
         if (DBG) {
             Log.d(TAG, "start()");
         }
@@ -381,12 +381,10 @@ public class GattService extends ProfileService {
 
         mActivityManager = getSystemService(ActivityManager.class);
         mPackageManager = mAdapterService.getPackageManager();
-
-        return true;
     }
 
     @Override
-    protected boolean stop() {
+    protected void stop() {
         if (DBG) {
             Log.d(TAG, "stop()");
         }
@@ -397,8 +395,6 @@ public class GattService extends ProfileService {
         mHandleMap.clear();
         mReliableQueue.clear();
         cleanup();
-
-        return true;
     }
 
     @Override

@@ -145,7 +145,7 @@ public class HapClientService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
         if (DBG) {
             Log.d(TAG, "start()");
         }
@@ -177,18 +177,16 @@ public class HapClientService extends ProfileService {
 
         // Mark service as started
         setHapClient(this);
-
-        return true;
     }
 
     @Override
-    protected boolean stop() {
+    protected void stop() {
         if (DBG) {
             Log.d(TAG, "stop()");
         }
         if (sHapClient == null) {
             Log.w(TAG, "stop() called before start()");
-            return true;
+            return;
         }
 
         // Marks service as stopped
@@ -234,8 +232,6 @@ public class HapClientService extends ProfileService {
 
         // Clear AdapterService
         mAdapterService = null;
-
-        return true;
     }
 
     /** Process a change in the bonding state for a device */
