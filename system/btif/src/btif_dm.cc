@@ -51,6 +51,7 @@
 #include <optional>
 
 #include "advertise_data_parser.h"
+#include "android_bluetooth_flags.h"
 #include "bta/dm/bta_dm_disc.h"
 #include "bta/include/bta_api.h"
 #include "btif/include/stack_manager_t.h"
@@ -746,6 +747,18 @@ bool is_device_le_audio_capable(const RawAddress bd_addr) {
   if (!check_cod_le_audio(bd_addr) && !BTA_DmCheckLeAudioCapable(bd_addr)) {
     /* LE Audio not present in CoD or in LE Advertisement, do nothing.*/
     return false;
+  }
+
+  /* First try reading device type from BTIF - it persists over multiple
+   * inquiry sessions */
+  int dev_type = 0;
+  if (IS_FLAG_ENABLED(le_audio_dev_type_detection_fix) &&
+      (btif_get_device_type(bd_addr, &dev_type) &&
+       (dev_type & BT_DEVICE_TYPE_BLE) == BT_DEVICE_TYPE_BLE)) {
+    /* LE Audio capable device is discoverable over both LE and Classic using
+     * same address. Prefer to use LE transport, as we don't know if it can do
+     * CTKD from Classic to LE */
+    return true;
   }
 
   tBT_DEVICE_TYPE tmp_dev_type;
