@@ -149,6 +149,17 @@ struct set_hal_cbacks {
 };
 extern struct set_hal_cbacks set_hal_cbacks;
 
+// Name: invoke_switch_buffer_size_cb
+// Params: bool invoke_switch_buffer_size_cb
+// Returns: void
+struct invoke_switch_buffer_size_cb {
+  std::function<void(bool invoke_switch_buffer_size_cb)> body{[](bool) {}};
+  void operator()(bool invoke_switch_buffer_size_cb) {
+    body(invoke_switch_buffer_size_cb);
+  };
+};
+extern struct invoke_switch_buffer_size_cb invoke_switch_buffer_size_cb;
+
 }  // namespace btif_bluetooth
 }  // namespace mock
 }  // namespace test
