@@ -1,0 +1,8 @@
+package: "com.android.bluetooth.flags"
+
+flag {
+    name: "break_uhid_polling_early"
+    namespace: "bluetooth"
+    description: "Break from UHID polling early if HID host disconnects"
+    bug: "319846147"
+}
