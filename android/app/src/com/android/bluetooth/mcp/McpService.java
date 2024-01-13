@@ -101,7 +101,7 @@ public class McpService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
         if (DBG) {
             Log.d(TAG, "start()");
         }
@@ -130,19 +130,17 @@ public class McpService extends ProfileService {
                 });
             }
         }
-
-        return true;
     }
 
     @Override
-    protected boolean stop() {
+    protected void stop() {
         if (DBG) {
             Log.d(TAG, "stop()");
         }
 
         if (sMcpService == null) {
             Log.w(TAG, "stop() called before start()");
-            return true;
+            return;
         }
 
         synchronized (mLock) {
@@ -160,7 +158,6 @@ public class McpService extends ProfileService {
 
         // Mark service as stopped
         setMcpService(null);
-        return true;
     }
 
     @Override

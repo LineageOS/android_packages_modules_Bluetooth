@@ -101,7 +101,6 @@
     <string name="status_connection_error" msgid="8253709700568062220">"Connessione non riuscita."</string>
     <string name="status_protocol_error" msgid="3231573735130475654">"Impossibile gestire correttamente la richiesta."</string>
     <string name="status_unknown_error" msgid="314676481744304866">"Errore sconosciuto."</string>
-    <string name="btopp_live_folder" msgid="4859989703965326287">"Ricevuti tramite Bluetooth"</string>
     <string name="opp_notification_group" msgid="150067508422520653">"Condivisione Bluetooth"</string>
     <string name="download_success" msgid="3438268368708549686">"Ricezione completata (<xliff:g id="FILE_SIZE">%1$s</xliff:g>)"</string>
     <string name="upload_success" msgid="143787470859042049">"Invio completato (<xliff:g id="FILE_SIZE">%1$s</xliff:g>)"</string>

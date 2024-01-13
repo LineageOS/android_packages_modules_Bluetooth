@@ -242,6 +242,7 @@ struct tBTA_AG_SCB {
   bool cmer_enabled;        /* set to true if HF enables CMER reporting */
   bool cmee_enabled;        /* set to true if HF enables CME ERROR reporting */
   bool inband_enabled;      /* set to true if inband ring enabled */
+  bool nrec_enabled;        /* noise reduction & echo canceling */
   bool svc_conn;            /* set to true when service level connection up */
   uint8_t state;            /* state machine state */
   uint8_t conn_service;     /* connected service */
@@ -290,10 +291,10 @@ struct tBTA_AG_SCB {
 
   std::string ToString() const {
     return base::StringPrintf(
-        "codec_updated=%d, codec_fallback=%d, "
+        "codec_updated=%d, codec_fallback=%d, nrec=%d"
         "sco_codec=%d, peer_codec=%d, msbc_settings=%d, lc3_settings=%d, "
         "device=%s",
-        codec_updated, codec_fallback, sco_codec, peer_codecs,
+        codec_updated, codec_fallback, nrec_enabled, sco_codec, peer_codecs,
         codec_msbc_settings, codec_lc3_settings,
         ADDRESS_TO_LOGGABLE_CSTR(peer_addr));
   }

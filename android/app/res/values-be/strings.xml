@@ -101,7 +101,6 @@
     <string name="status_connection_error" msgid="8253709700568062220">"Няўдалая спроба падключэння."</string>
     <string name="status_protocol_error" msgid="3231573735130475654">"Запыт не можа быць правільна апрацаваны"</string>
     <string name="status_unknown_error" msgid="314676481744304866">"Невядомая памылка."</string>
-    <string name="btopp_live_folder" msgid="4859989703965326287">"Атрыманае праз Bluetooth"</string>
     <string name="opp_notification_group" msgid="150067508422520653">"Абагульванне праз Bluetooth"</string>
     <string name="download_success" msgid="3438268368708549686">"Атрыманне завершанае: <xliff:g id="FILE_SIZE">%1$s</xliff:g>."</string>
     <string name="upload_success" msgid="143787470859042049">"Адпраўленне завершана: <xliff:g id="FILE_SIZE">%1$s</xliff:g>."</string>

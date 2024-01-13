@@ -28,6 +28,7 @@
 
 #include <string>
 
+#include "android_bluetooth_flags.h"
 #include "btm_api.h"
 #include "btm_int_types.h"
 #include "btm_sec_api.h"
@@ -133,6 +134,10 @@ bool BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
     p_dev_rec->sec_rec.link_key = *p_link_key;
     p_dev_rec->sec_rec.link_key_type = key_type;
     p_dev_rec->sec_rec.pin_code_length = pin_length;
+
+    if (IS_FLAG_ENABLED(correct_bond_type_of_loaded_devices)) {
+      p_dev_rec->sec_rec.bond_type = BOND_TYPE_PERSISTENT;
+    }
 
     if (pin_length >= 16 || key_type == BTM_LKEY_TYPE_AUTH_COMB ||
         key_type == BTM_LKEY_TYPE_AUTH_COMB_P_256) {

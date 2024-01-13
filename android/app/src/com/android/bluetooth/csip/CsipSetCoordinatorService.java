@@ -123,7 +123,7 @@ public class CsipSetCoordinatorService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
         if (DBG) {
             Log.d(TAG, "start()");
         }
@@ -163,17 +163,16 @@ public class CsipSetCoordinatorService extends ProfileService {
 
         // Initialize native interface
         mCsipSetCoordinatorNativeInterface.init();
-        return true;
     }
 
     @Override
-    protected boolean stop() {
+    protected void stop() {
         if (DBG) {
             Log.d(TAG, "stop()");
         }
         if (sCsipSetCoordinatorService == null) {
             Log.w(TAG, "stop() called before start()");
-            return true;
+            return;
         }
 
         // Cleanup native interface
@@ -220,8 +219,6 @@ public class CsipSetCoordinatorService extends ProfileService {
         // Clear AdapterService, CsipSetCoordinatorNativeInterface
         mCsipSetCoordinatorNativeInterface = null;
         mAdapterService = null;
-
-        return true;
     }
 
     @Override

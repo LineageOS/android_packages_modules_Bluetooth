@@ -101,7 +101,7 @@ public class HeadsetClientService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    protected void start() {
         synchronized (mStartStopLock) {
             if (DBG) {
                 Log.d(TAG, "start()");
@@ -151,17 +151,16 @@ public class HeadsetClientService extends ProfileService {
             mSmThread.start();
 
             setHeadsetClientService(this);
-            return true;
         }
     }
 
     @Override
-    protected boolean stop() {
+    protected void stop() {
         synchronized (mStartStopLock) {
             synchronized (HeadsetClientService.class) {
                 if (sHeadsetClientService == null) {
                     Log.w(TAG, "stop() called without start()");
-                    return false;
+                    return;
                 }
 
                 // Stop the HfpClientConnectionService for non-wearables devices.
@@ -192,8 +191,6 @@ public class HeadsetClientService extends ProfileService {
 
             mNativeInterface.cleanup();
             mNativeInterface = null;
-
-            return true;
         }
     }
 
