@@ -284,6 +284,17 @@ class BroadcasterTest : public Test {
     /* Simulate random generator */
     uint8_t random[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
     generator_cb.Run(random);
+
+    ConfigCodecManagerMock(types::CodecLocation::HOST);
+
+    ON_CALL(*mock_codec_manager_, GetBroadcastConfig)
+        .WillByDefault(
+            Invoke([](const bluetooth::le_audio::CodecManager::
+                          BroadcastConfigurationRequirements& requirements) {
+              return std::make_unique<broadcaster::BroadcastConfiguration>(
+                  bluetooth::le_audio::broadcaster::GetBroadcastConfig(
+                      requirements.subgroup_quality));
+            }));
   }
 
   void ConfigCodecManagerMock(types::CodecLocation location) {
