@@ -407,6 +407,12 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
 
     ParseAseStatusHeader(arh, len, value);
 
+    if (ase->id == 0x00) {
+      /* Initial state of Ase - update id */
+      LOG_INFO(", discovered ase id: %d", arh.id);
+      ase->id = arh.id;
+    }
+
     auto state = static_cast<AseState>(arh.state);
 
     LOG_INFO(" %s , ASE id: %d, state changed %s -> %s ",
@@ -1649,13 +1655,6 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     switch (ase->state) {
       case AseState::BTA_LE_AUDIO_ASE_STATE_IDLE:
       case AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED:
-      case AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED:
-        if (ase->id == 0x00) {
-          /* Initial state of Ase - update id */
-          LOG(INFO) << __func__
-                    << ", discovered ase id: " << static_cast<int>(arh.id);
-          ase->id = arh.id;
-        }
         break;
       case AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING: {
         SetAseState(leAudioDevice, ase, AseState::BTA_LE_AUDIO_ASE_STATE_IDLE);
@@ -1709,10 +1708,25 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
 
         break;
       }
-      default:
-        LOG(ERROR) << __func__ << ", invalid state transition, from: "
-                   << static_cast<int>(ase->state) << ", to: "
-                   << static_cast<int>(AseState::BTA_LE_AUDIO_ASE_STATE_IDLE);
+      case AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED:
+      case AseState::BTA_LE_AUDIO_ASE_STATE_DISABLING:
+        LOG_ERROR(
+            "Ignore invalid attempt of state transition from  %s to %s, %s, "
+            "ase_id: %d",
+            ToString(ase->state).c_str(),
+            ToString(AseState::BTA_LE_AUDIO_ASE_STATE_IDLE).c_str(),
+            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_), ase->id);
+        group->PrintDebugState();
+        break;
+      case AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING:
+      case AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING:
+        LOG_ERROR(
+            "Invalid state transition from %s to %s, %s, ase_id: "
+            "%d. Stopping the stream.",
+            ToString(ase->state).c_str(),
+            ToString(AseState::BTA_LE_AUDIO_ASE_STATE_IDLE).c_str(),
+            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_), ase->id);
+        group->PrintDebugState();
         StopStream(group);
         break;
     }
@@ -1812,13 +1826,6 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     /* ase contain current ASE state. New state is in "arh" */
     switch (ase->state) {
       case AseState::BTA_LE_AUDIO_ASE_STATE_IDLE: {
-        if (ase->id == 0x00) {
-          /* Initial state of Ase - update id */
-          LOG(INFO) << __func__
-                    << ", discovered ase id: " << static_cast<int>(arh.id);
-          ase->id = arh.id;
-        }
-
         struct le_audio::client_parser::ascs::ase_codec_configured_state_params
             rsp;
 
@@ -2060,7 +2067,18 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
         break;
       }
       case AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED:
-        /* TODO: Config Codec */
+        SetAseState(leAudioDevice, ase,
+                    AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED);
+        group->PrintDebugState();
+        break;
+      case AseState::BTA_LE_AUDIO_ASE_STATE_DISABLING:
+        LOG_ERROR(
+            "Ignore invalid attempt of state transition from %s to %s, %s, "
+            "ase_id: %d",
+            ToString(ase->state).c_str(),
+            ToString(AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED).c_str(),
+            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_), ase->id);
+        group->PrintDebugState();
         break;
       case AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING:
         SetAseState(leAudioDevice, ase,
@@ -2118,11 +2136,15 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
         state_machine_callbacks_->StatusReportCb(
             group->group_id_, GroupStreamStatus::CONFIGURED_AUTONOMOUS);
         break;
-      default:
-        LOG(ERROR) << __func__ << ", invalid state transition, from: "
-                   << static_cast<int>(ase->state) << ", to: "
-                   << static_cast<int>(
-                          AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED);
+      case AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING:
+      case AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING:
+        LOG_ERROR(
+            "Invalid state transition from %s to %s, %s, ase_id: %d. Stopping "
+            "the stream",
+            ToString(ase->state).c_str(),
+            ToString(AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED).c_str(),
+            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_), ase->id);
+        group->PrintDebugState();
         StopStream(group);
         break;
     }
@@ -2165,9 +2187,6 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
 
         break;
       }
-      case AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED:
-        /* TODO: Config Codec error/Config Qos/Config QoS error/Enable error */
-        break;
       case AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING:
         if (ase->direction == le_audio::types::kLeAudioDirectionSource) {
           /* Source ASE cannot go from Streaming to QoS Configured state */
@@ -2223,11 +2242,33 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
         }
         break;
       }
-      default:
-        LOG(ERROR) << __func__ << ", invalid state transition, from: "
-                   << static_cast<int>(ase->state) << ", to: "
-                   << static_cast<int>(
-                          AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED);
+
+      case AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED:
+        LOG_INFO(
+            "Unexpected state transition from %s to %s, %s, ase_id: %d",
+            ToString(ase->state).c_str(),
+            ToString(AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED).c_str(),
+            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_), ase->id);
+        group->PrintDebugState();
+        break;
+      case AseState::BTA_LE_AUDIO_ASE_STATE_IDLE:
+      case AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING:
+        // Do nothing here, just print an error message
+        LOG_ERROR(
+            "Ignore invalid attempt of state transition from %s to %s, %s, "
+            "ase_id: %d",
+            ToString(ase->state).c_str(),
+            ToString(AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED).c_str(),
+            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_), ase->id);
+        group->PrintDebugState();
+        break;
+      case AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING:
+        LOG_ERROR(
+            "Invalid state transition from %s to %s, %s, ase_id: "
+            "%d. Stopping the stream.",
+            ToString(ase->state).c_str(),
+            ToString(AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED).c_str(),
+            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_), ase->id);
         StopStream(group);
         break;
     }
