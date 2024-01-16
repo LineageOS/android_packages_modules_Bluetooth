@@ -25,6 +25,7 @@
 #include <cstdint>
 #include <vector>
 
+#include "android_bluetooth_flags.h"
 #include "bta/dm/bta_dm_disc.h"
 #include "bta/dm/bta_dm_disc_int.h"
 #include "bta/include/bta_gatt_api.h"
@@ -1963,6 +1964,13 @@ static void bta_dm_gatt_disc_complete(uint16_t conn_id, tGATT_STATUS status) {
             bta_dm_clear_conn_id_on_client_close_is_enabled()) {
       bta_dm_search_cb.conn_id = GATT_INVALID_CONN_ID;
     }
+
+    if (IS_FLAG_ENABLED(bta_dm_disc_stuck_in_cancelling_fix)) {
+      LOG_INFO("Discovery complete for invalid conn ID. Will pick up next job");
+      bta_dm_search_set_state(BTA_DM_SEARCH_IDLE);
+      bta_dm_free_sdp_db();
+      bta_dm_execute_queued_request();
+    }
   }
 }
 
@@ -2061,37 +2069,6 @@ static void bta_dm_proc_open_evt(tBTA_GATTC_OPEN* p_data) {
                                                         nullptr);
   } else {
     bta_dm_gatt_disc_complete(GATT_INVALID_CONN_ID, p_data->status);
-  }
-}
-
-void bta_dm_proc_close_evt(const tBTA_GATTC_CLOSE& close) {
-  LOG_INFO("Gatt connection closed peer:%s reason:%s",
-           ADDRESS_TO_LOGGABLE_CSTR(close.remote_bda),
-           gatt_disconnection_reason_text(close.reason).c_str());
-
-  disc_gatt_history_.Push(base::StringPrintf(
-      "%-32s bd_addr:%s client_if:%hu status:%s event:%s",
-      "GATTC_EventCallback", ADDRESS_TO_LOGGABLE_CSTR(close.remote_bda),
-      close.client_if, gatt_status_text(close.status).c_str(),
-      gatt_client_event_text(BTA_GATTC_CLOSE_EVT).c_str()));
-
-  if (close.remote_bda == bta_dm_search_cb.peer_bdaddr) {
-    if (bluetooth::common::init_flags::
-            bta_dm_clear_conn_id_on_client_close_is_enabled()) {
-      LOG_DEBUG("Clearing connection id on client close");
-      bta_dm_search_cb.conn_id = GATT_INVALID_CONN_ID;
-    }
-  } else {
-    LOG_WARN("Received close event for unknown peer:%s",
-             ADDRESS_TO_LOGGABLE_CSTR(close.remote_bda));
-  }
-
-  /* in case of disconnect before search is completed */
-  if ((bta_dm_search_cb.state != BTA_DM_SEARCH_IDLE) &&
-      (bta_dm_search_cb.state != BTA_DM_SEARCH_ACTIVE) &&
-      close.remote_bda == bta_dm_search_cb.peer_bdaddr) {
-    bta_dm_gatt_disc_complete((uint16_t)GATT_INVALID_CONN_ID,
-                              (tGATT_STATUS)GATT_ERROR);
   }
 }
 
