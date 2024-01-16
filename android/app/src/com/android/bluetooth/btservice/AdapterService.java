@@ -401,6 +401,7 @@ public class AdapterService extends Service {
     private volatile boolean mTestModeEnabled = false;
 
     private MetricsLogger mMetricsLogger;
+    private FeatureFlagsImpl mFeatureFlags;
 
     /**
      * Register a {@link ProfileService} with AdapterService.
@@ -684,9 +685,9 @@ public class AdapterService extends Service {
 
         mSdpManager = SdpManager.init(this);
 
-        FeatureFlagsImpl featureFlags = new FeatureFlagsImpl();
+        mFeatureFlags = new FeatureFlagsImpl();
 
-        mDatabaseManager = new DatabaseManager(this, featureFlags);
+        mDatabaseManager = new DatabaseManager(this, mFeatureFlags);
         mDatabaseManager.start(MetadataDatabase.createDatabase(this));
 
         boolean isAutomotiveDevice =
@@ -702,18 +703,18 @@ public class AdapterService extends Service {
          */
         if (!isAutomotiveDevice && getResources().getBoolean(R.bool.enable_phone_policy)) {
             Log.i(TAG, "Phone policy enabled");
-            mPhonePolicy = new PhonePolicy(this, new ServiceFactory(), featureFlags);
+            mPhonePolicy = new PhonePolicy(this, new ServiceFactory(), mFeatureFlags);
             mPhonePolicy.start();
         } else {
             Log.i(TAG, "Phone policy disabled");
         }
 
-        if (featureFlags.audioRoutingCentralization()) {
+        if (mFeatureFlags.audioRoutingCentralization()) {
             mActiveDeviceManager =
-                    new AudioRoutingManager(this, new ServiceFactory(), featureFlags);
+                    new AudioRoutingManager(this, new ServiceFactory(), mFeatureFlags);
         } else {
             mActiveDeviceManager =
-                    new ActiveDeviceManager(this, new ServiceFactory(), featureFlags);
+                    new ActiveDeviceManager(this, new ServiceFactory(), mFeatureFlags);
         }
         mActiveDeviceManager.start();
 
@@ -6085,6 +6086,12 @@ public class AdapterService extends Service {
     }
 
     int getConnectionState(BluetoothDevice device) {
+        if (mFeatureFlags.apiGetConnectionStateUsingIdentityAddress()) {
+            final String identityAddress = device.getIdentityAddress();
+            return (identityAddress == null)
+                    ? mNativeInterface.getConnectionState(getBytesFromAddress(device.getAddress()))
+                    : mNativeInterface.getConnectionState(getBytesFromAddress(identityAddress));
+        }
         return mNativeInterface.getConnectionState(getBytesFromAddress(device.getAddress()));
     }
 
