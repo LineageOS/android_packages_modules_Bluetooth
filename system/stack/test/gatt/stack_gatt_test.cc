@@ -188,7 +188,6 @@ TEST_F(StackGattTest, gatt_status_text) {
       std::make_pair(GATT_DATABASE_OUT_OF_SYNC, "GATT_DATABASE_OUT_OF_SYNC"),
       std::make_pair(GATT_VALUE_NOT_ALLOWED, "GATT_VALUE_NOT_ALLOWED"),
       std::make_pair(GATT_ILLEGAL_PARAMETER, "GATT_ILLEGAL_PARAMETER"),
-      std::make_pair(GATT_TOO_SHORT, "GATT_TOO_SHORT"),
       std::make_pair(GATT_NO_RESOURCES, "GATT_NO_RESOURCES"),
       std::make_pair(GATT_INTERNAL_ERROR, "GATT_INTERNAL_ERROR"),
       std::make_pair(GATT_WRONG_STATE, "GATT_WRONG_STATE"),
