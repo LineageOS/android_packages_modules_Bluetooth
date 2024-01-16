@@ -1015,6 +1015,46 @@ public class HeadsetStateMachineTest {
         verify(mSystemInterface, timeout(ASYNC_CALL_TIMEOUT_MILLIS)).hangupCall(mTestDevice);
     }
 
+    /** A test to verify that we correctly send CIND response when a call is in progress */
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_PRETEND_NETWORK_SERVICE)
+    public void testCindEventWhenCallIsInProgress() {
+        when(mPhoneState.getCindService())
+                .thenReturn(HeadsetHalConstants.NETWORK_STATE_NOT_AVAILABLE);
+        when(mHeadsetService.isVirtualCallStarted()).thenReturn(false);
+        when(mPhoneState.getNumActiveCall()).thenReturn(1);
+
+        setUpAudioOnState();
+
+        mHeadsetStateMachine.sendMessage(
+                HeadsetStateMachine.STACK_EVENT,
+                new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_AT_CIND, mTestDevice));
+        // wait state machine to process the message
+        if (Flags.pretendNetworkService()) {
+            verify(mNativeInterface, timeout(ASYNC_CALL_TIMEOUT_MILLIS))
+                    .cindResponse(
+                            eq(mTestDevice),
+                            eq(HeadsetHalConstants.NETWORK_STATE_AVAILABLE),
+                            anyInt(),
+                            anyInt(),
+                            anyInt(),
+                            anyInt(),
+                            anyInt(),
+                            anyInt());
+        } else {
+            verify(mNativeInterface, timeout(ASYNC_CALL_TIMEOUT_MILLIS))
+                    .cindResponse(
+                            eq(mTestDevice),
+                            eq(HeadsetHalConstants.NETWORK_STATE_NOT_AVAILABLE),
+                            anyInt(),
+                            anyInt(),
+                            anyInt(),
+                            anyInt(),
+                            anyInt(),
+                            anyInt());
+        }
+    }
+
     /**
      * A test to verify that we correctly handles key pressed event from a HSP headset
      */
