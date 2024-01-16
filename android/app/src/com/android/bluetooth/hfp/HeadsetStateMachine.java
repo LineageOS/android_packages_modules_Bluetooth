@@ -1926,8 +1926,10 @@ public class HeadsetStateMachine extends StateMachine {
     }
 
     private void processAtCind(BluetoothDevice device) {
-        int call, callSetup;
+        logi("processAtCind: for device=" + device);
         final HeadsetPhoneState phoneState = mSystemInterface.getHeadsetPhoneState();
+        int call, callSetup;
+        int service = phoneState.getCindService(), signal = phoneState.getCindSignal();
 
         /* Handsfree carkits expect that +CIND is properly responded to
          Hence we ensure that a proper response is sent
@@ -1941,8 +1943,36 @@ public class HeadsetStateMachine extends StateMachine {
             callSetup = phoneState.getNumHeldCall();
         }
 
-        mNativeInterface.cindResponse(device, phoneState.getCindService(), call, callSetup,
-                phoneState.getCallState(), phoneState.getCindSignal(), phoneState.getCindRoam(),
+        if (Flags.pretendNetworkService()) {
+            logd("processAtCind: pretendNetworkService enabled");
+            boolean isCallOngoing =
+                    (phoneState.getNumActiveCall() > 0)
+                            || (phoneState.getNumHeldCall() > 0)
+                            || phoneState.getCallState() == HeadsetHalConstants.CALL_STATE_ALERTING
+                            || phoneState.getCallState() == HeadsetHalConstants.CALL_STATE_DIALING
+                            || phoneState.getCallState() == HeadsetHalConstants.CALL_STATE_INCOMING;
+            if ((isCallOngoing
+                    && (!mHeadsetService.isVirtualCallStarted())
+                    && (phoneState.getCindService()
+                            == HeadsetHalConstants.NETWORK_STATE_NOT_AVAILABLE))) {
+                logi(
+                        "processAtCind: If regular call is in progress/active/held while no network"
+                            + " during BT-ON, pretend service availability and signal strength");
+                service = HeadsetHalConstants.NETWORK_STATE_AVAILABLE;
+                signal = 3;
+            } else {
+                service = phoneState.getCindService();
+                signal = phoneState.getCindSignal();
+            }
+        }
+        mNativeInterface.cindResponse(
+                device,
+                service,
+                call,
+                callSetup,
+                phoneState.getCallState(),
+                signal,
+                phoneState.getCindRoam(),
                 phoneState.getCindBatteryCharge());
     }
 
