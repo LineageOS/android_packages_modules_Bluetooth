@@ -46,6 +46,7 @@ import android.os.Binder;
 import android.os.RemoteException;
 import android.os.WorkSource;
 
+import android.platform.test.annotations.RequiresFlagsEnabled;
 import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.SmallTest;
 import androidx.test.rule.ServiceTestRule;
@@ -55,8 +56,10 @@ import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.CompanionManager;
 
+import com.android.bluetooth.flags.Flags;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -66,6 +69,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -485,6 +489,64 @@ public class GattServiceTest {
 
         mService.flushPendingBatchResults(scannerId, mAttributionSource);
         verify(mScanManager).flushBatchScanResults(new ScanClient(scannerId));
+    }
+
+    @RequiresFlagsEnabled(Flags.FLAG_LE_SCAN_FIX_REMOTE_EXCEPTION)
+    @Test
+    public void onScanResult_remoteException_clientDied() throws Exception {
+        Assume.assumeTrue(Flags.leScanFixRemoteException());
+        int scannerId = 1;
+
+        int eventType = 0;
+        int addressType = 0;
+        String address = "02:00:00:00:00:00";
+        int primaryPhy = 0;
+        int secondPhy = 0;
+        int advertisingSid = 0;
+        int txPower = 0;
+        int rssi = 0;
+        int periodicAdvInt = 0;
+        byte[] advData = new byte[0];
+
+        ScanClient scanClient = new ScanClient(scannerId);
+        scanClient.scannerId = scannerId;
+        scanClient.hasNetworkSettingsPermission = true;
+        scanClient.settings =
+                new ScanSettings.Builder()
+                        .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
+                        .setLegacy(false)
+                        .build();
+
+        AppScanStats appScanStats = mock(AppScanStats.class);
+        IScannerCallback callback = mock(IScannerCallback.class);
+
+        mApp.callback = callback;
+        mApp.appScanStats = appScanStats;
+        Set<ScanClient> scanClientSet = Collections.singleton(scanClient);
+
+        doReturn(address).when(mAdapterService).getIdentityAddress(anyString());
+        doReturn(scanClientSet).when(mScanManager).getRegularScanQueue();
+        doReturn(mApp).when(mScannerMap).getById(scanClient.scannerId);
+        doReturn(appScanStats).when(mScannerMap).getAppScanStatsById(scanClient.scannerId);
+
+        // Simulate remote client crash
+        doThrow(new RemoteException()).when(callback).onScanResult(any());
+
+        mService.onScanResult(
+                eventType,
+                addressType,
+                address,
+                primaryPhy,
+                secondPhy,
+                advertisingSid,
+                txPower,
+                rssi,
+                periodicAdvInt,
+                advData,
+                address);
+
+        assertThat(scanClient.appDied).isTrue();
+        verify(appScanStats).recordScanStop(scannerId);
     }
 
     @Test
