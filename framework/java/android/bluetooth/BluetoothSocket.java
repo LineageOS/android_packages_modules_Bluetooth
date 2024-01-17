@@ -482,7 +482,7 @@ public final class BluetoothSocket implements Closeable {
                             RESULT_L2CAP_CONN_BLUETOOTH_SOCKET_CONNECTION_CLOSED,
                             socketConnectionTimeMillis);
                     throw new BluetoothSocketException(
-                            BluetoothSocketException.SOCKET_CONNECTION_FAILURE);
+                            BluetoothSocketException.SOCKET_CLOSED);
                 }
                 if (mPfd == null) {
                     logL2capcocClientConnection(
@@ -490,7 +490,7 @@ public final class BluetoothSocket implements Closeable {
                             RESULT_L2CAP_CONN_BLUETOOTH_NULL_FILE_DESCRIPTOR,
                             socketConnectionTimeMillis);
                     throw new BluetoothSocketException(
-                            BluetoothSocketException.SOCKET_CONNECTION_FAILURE);
+                        BluetoothSocketException.UNIX_FILE_SOCKET_CREATION_FAILURE);
                 }
                 FileDescriptor fd = mPfd.getFileDescriptor();
                 mSocket = new LocalSocket(fd);
