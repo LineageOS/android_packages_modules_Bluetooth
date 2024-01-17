@@ -590,9 +590,11 @@ public class BassClientStateMachine extends StateMachine {
         }
         metaData.setSourceDevice(device, device.getAddressType());
         byte[] arrayPresentationDelay = baseData.getLevelOne().presentationDelay;
-        int presentationDelay = (int) ((arrayPresentationDelay[2] & 0xff) << 16
-                | (arrayPresentationDelay[1] & 0xff)
-                | (arrayPresentationDelay[0] & 0xff));
+        int presentationDelay =
+                (int)
+                        ((arrayPresentationDelay[2] & 0xff) << 16
+                                | (arrayPresentationDelay[1] & 0xff) << 8
+                                | (arrayPresentationDelay[0] & 0xff));
         metaData.setPresentationDelayMicros(presentationDelay);
         PeriodicAdvertisementResult result =
                 mService.getPeriodicAdvertisementResult(
@@ -1964,9 +1966,11 @@ public class BassClientStateMachine extends StateMachine {
                     cancelActiveSync(null);
                     Message message = obtainMessage(STOP_SCAN_OFFLOAD);
                     sendMessage(message);
-                    mService.getCallbacks().notifySourceAddFailed(mDevice,
-                            mPendingMetadata, status);
-                    mPendingMetadata = null;
+                    if (mPendingMetadata != null) {
+                        mService.getCallbacks()
+                                .notifySourceAddFailed(mDevice, mPendingMetadata, status);
+                        mPendingMetadata = null;
+                    }
                 }
                 break;
             case UPDATE_BCAST_SOURCE:
