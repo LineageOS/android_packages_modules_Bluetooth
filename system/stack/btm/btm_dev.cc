@@ -638,6 +638,12 @@ static tBTM_SEC_DEV_REC* btm_find_oldest_dev_rec(void) {
 tBTM_SEC_DEV_REC* btm_sec_allocate_dev_rec(void) {
   tBTM_SEC_DEV_REC* p_dev_rec = NULL;
 
+  if (btm_sec_cb.sec_dev_rec == nullptr) {
+    LOG_WARN(
+        "Unable to allocate device record with destructed device record list");
+    return nullptr;
+  }
+
   if (list_length(btm_sec_cb.sec_dev_rec) > BTM_SEC_MAX_DEVICE_RECORDS) {
     p_dev_rec = btm_find_oldest_dev_rec();
     wipe_secrets_and_remove(p_dev_rec);
