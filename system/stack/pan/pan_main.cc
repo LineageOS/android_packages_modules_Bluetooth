@@ -426,7 +426,7 @@ void pan_data_buf_ind_cb(uint16_t handle, const RawAddress& src,
         if (pan_cb.pcb[i].con_state == PAN_STATE_CONNECTED &&
             pan_cb.pcb[i].handle != handle &&
             pcb->src_uuid == pan_cb.pcb[i].src_uuid) {
-          BNEP_Write(pan_cb.pcb[i].handle, dst, p_data, len, protocol, &src,
+          BNEP_Write(pan_cb.pcb[i].handle, dst, p_data, len, protocol, src,
                      ext);
         }
       }
@@ -450,7 +450,7 @@ void pan_data_buf_ind_cb(uint16_t handle, const RawAddress& src,
           __func__, dst_pcb->handle, len);
 
       result =
-          BNEP_Write(dst_pcb->handle, dst, p_data, len, protocol, &src, ext);
+          BNEP_Write(dst_pcb->handle, dst, p_data, len, protocol, src, ext);
       if (result != BNEP_SUCCESS && result != BNEP_IGNORE_CMD)
         LOG_ERROR("Failed to write data for PAN connection handle %d",
                   dst_pcb->handle);
