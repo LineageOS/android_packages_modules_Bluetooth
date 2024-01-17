@@ -1599,8 +1599,8 @@ tBTM_STATUS btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr,
            * capability... */
           LOG_VERBOSE("btm_sec_cb.api.p_le_callback=0x%p",
                       btm_sec_cb.api.p_le_callback);
-          (*btm_sec_cb.api.p_le_callback)(event, bd_addr,
-                                          (tBTM_LE_EVT_DATA*)p_data);
+          (*btm_sec_cb.api.p_le_callback)(static_cast<tBTM_LE_EVT>(event),
+                                          bd_addr, (tBTM_LE_EVT_DATA*)p_data);
         }
 
         if (event == SMP_COMPLT_EVT) {
@@ -1677,8 +1677,8 @@ tBTM_STATUS btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr,
         if (btm_sec_cb.api.p_le_callback) {
           LOG_VERBOSE("btm_sec_cb.api.p_le_callback=0x%p",
                       btm_sec_cb.api.p_le_callback);
-          (*btm_sec_cb.api.p_le_callback)(event, bd_addr,
-                                          (tBTM_LE_EVT_DATA*)p_data);
+          (*btm_sec_cb.api.p_le_callback)(static_cast<tBTM_LE_EVT>(event),
+                                          bd_addr, (tBTM_LE_EVT_DATA*)p_data);
         }
         break;
 
