@@ -56,6 +56,7 @@ public final class ChannelSoundingParams implements Parcelable {
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
             value = {
+                CS_SECURITY_LEVEL_UNKNOWN,
                 CS_SECURITY_LEVEL_ONE,
                 CS_SECURITY_LEVEL_TWO,
                 CS_SECURITY_LEVEL_THREE,
@@ -104,6 +105,16 @@ public final class ChannelSoundingParams implements Parcelable {
      * @hide
      */
     @SystemApi public static final int LOCATION_TYPE_OUTDOOR = 2;
+
+    /**
+     * Return value for {@link
+     * DistanceMeasurementManager#getChannelSoundingMaxSupportedSecurityLevel(BluetoothDevice)} and
+     * {@link DistanceMeasurementManager#getLocalChannelSoundingMaxSupportedSecurityLevel()} when
+     * Channel Sounding is not supported, or encounters an internal error.
+     *
+     * @hide
+     */
+    @SystemApi public static final int CS_SECURITY_LEVEL_UNKNOWN = 0;
 
     /**
      * Either CS tone or CS RTT.

@@ -1238,6 +1238,7 @@ package android.bluetooth.le {
     field public static final int CS_SECURITY_LEVEL_ONE = 1; // 0x1
     field public static final int CS_SECURITY_LEVEL_THREE = 3; // 0x3
     field public static final int CS_SECURITY_LEVEL_TWO = 2; // 0x2
+    field public static final int CS_SECURITY_LEVEL_UNKNOWN = 0; // 0x0
     field public static final int LOCATION_TYPE_INDOOR = 1; // 0x1
     field public static final int LOCATION_TYPE_OUTDOOR = 2; // 0x2
     field public static final int LOCATION_TYPE_UNKNOWN = 0; // 0x0
@@ -1255,6 +1256,8 @@ package android.bluetooth.le {
   }
 
   public final class DistanceMeasurementManager {
+    method @FlaggedApi("com.android.bluetooth.flags.channel_sounding") @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public int getChannelSoundingMaxSupportedSecurityLevel(@NonNull android.bluetooth.BluetoothDevice);
+    method @FlaggedApi("com.android.bluetooth.flags.channel_sounding") @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public int getLocalChannelSoundingMaxSupportedSecurityLevel();
     method @NonNull @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public java.util.List<android.bluetooth.le.DistanceMeasurementMethod> getSupportedMethods();
     method @Nullable @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public android.os.CancellationSignal startMeasurementSession(@NonNull android.bluetooth.le.DistanceMeasurementParams, @NonNull java.util.concurrent.Executor, @NonNull android.bluetooth.le.DistanceMeasurementSession.Callback);
   }
