@@ -407,14 +407,14 @@ static void bnep_data_ind(uint16_t l2cap_cid, BT_HDR* p_buf) {
             extension_present);
 
   /* Initialize addresses to 'not supplied' */
-  const RawAddress *p_src_addr, *p_dst_addr;
-  p_src_addr = p_dst_addr = NULL;
+  RawAddress src_addr = RawAddress::kEmpty;
+  RawAddress dst_addr = RawAddress::kEmpty;
 
   switch (type) {
     case BNEP_FRAME_GENERAL_ETHERNET:
-      p_dst_addr = (RawAddress*)p;
+      dst_addr = *(RawAddress*)p;
       p += BD_ADDR_LEN;
-      p_src_addr = (RawAddress*)p;
+      src_addr = *(RawAddress*)p;
       p += BD_ADDR_LEN;
       BE_STREAM_TO_UINT16(protocol, p);
       rem_len -= 14;
@@ -454,14 +454,14 @@ static void bnep_data_ind(uint16_t l2cap_cid, BT_HDR* p_buf) {
       break;
 
     case BNEP_FRAME_COMPRESSED_ETHERNET_SRC_ONLY:
-      p_src_addr = (RawAddress*)p;
+      src_addr = *(RawAddress*)p;
       p += BD_ADDR_LEN;
       BE_STREAM_TO_UINT16(protocol, p);
       rem_len -= 8;
       break;
 
     case BNEP_FRAME_COMPRESSED_ETHERNET_DEST_ONLY:
-      p_dst_addr = (RawAddress*)p;
+      dst_addr = *(RawAddress*)p;
       p += BD_ADDR_LEN;
       BE_STREAM_TO_UINT16(protocol, p);
       rem_len -= 8;
@@ -489,9 +489,10 @@ static void bnep_data_ind(uint16_t l2cap_cid, BT_HDR* p_buf) {
   p_buf->len = rem_len;
 
   /* Always give the upper layer MAC addresses */
-  if (!p_src_addr) p_src_addr = &p_bcb->rem_bda;
+  if (src_addr == RawAddress::kEmpty) src_addr = p_bcb->rem_bda;
 
-  if (!p_dst_addr) p_dst_addr = controller_get_interface()->get_address();
+  if (dst_addr == RawAddress::kEmpty)
+    dst_addr = *controller_get_interface()->get_address();
 
   /* check whether there are any extensions to be forwarded */
   if (ext_type)
@@ -500,11 +501,11 @@ static void bnep_data_ind(uint16_t l2cap_cid, BT_HDR* p_buf) {
     fw_ext_present = false;
 
   if (bnep_cb.p_data_buf_cb) {
-    (*bnep_cb.p_data_buf_cb)(p_bcb->handle, *p_src_addr, *p_dst_addr, protocol,
-                             p_buf, fw_ext_present);
+    (*bnep_cb.p_data_buf_cb)(p_bcb->handle, src_addr, dst_addr, protocol, p_buf,
+                             fw_ext_present);
   } else if (bnep_cb.p_data_ind_cb) {
-    (*bnep_cb.p_data_ind_cb)(p_bcb->handle, *p_src_addr, *p_dst_addr, protocol,
-                             p, rem_len, fw_ext_present);
+    (*bnep_cb.p_data_ind_cb)(p_bcb->handle, src_addr, dst_addr, protocol, p,
+                             rem_len, fw_ext_present);
     osi_free(p_buf);
   }
 }
