@@ -7,3 +7,10 @@ flag {
     bug: "319530790"
 }
 
+
+flag {
+    name: "fix_pairing_failure_reason_from_remote"
+    namespace: "bluetooth"
+    description: "Correct the pairing failure reason reported from remote"
+    bug: "320745565"
+}
