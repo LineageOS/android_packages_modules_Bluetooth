@@ -404,8 +404,37 @@ bool is_hal_offloading() {
          SessionType::A2DP_HARDWARE_OFFLOAD_ENCODING_DATAPATH;
 }
 
+// Opens the HAL client interface of the specified session type and check
+// that is is valid. Returns nullptr if the client interface did not open
+// properly.
+static BluetoothAudioSinkClientInterface* new_hal_interface(
+    SessionType session_type) {
+  auto a2dp_transport = new A2dpTransport(session_type);
+  auto hal_interface = new BluetoothAudioSinkClientInterface(a2dp_transport);
+  if (hal_interface->IsValid()) {
+    return hal_interface;
+  } else {
+    LOG(ERROR) << __func__ << "BluetoothAudio HAL for a2dp is invalid";
+    delete a2dp_transport;
+    delete hal_interface;
+    return nullptr;
+  }
+}
+
+/// Delete the selected HAL client interface.
+static void delete_hal_interface(
+    BluetoothAudioSinkClientInterface* hal_interface) {
+  if (hal_interface == nullptr) {
+    return;
+  }
+  auto a2dp_transport =
+      static_cast<A2dpTransport*>(hal_interface->GetTransportInstance());
+  delete a2dp_transport;
+  delete hal_interface;
+}
+
 // Initialize BluetoothAudio HAL: openProvider
-bool init(bluetooth::common::MessageLoopThread* message_loop) {
+bool init(bluetooth::common::MessageLoopThread* /*message_loop*/) {
   LOG(INFO) << __func__;
 
   if (software_hal_interface != nullptr) {
@@ -423,34 +452,19 @@ bool init(bluetooth::common::MessageLoopThread* message_loop) {
     return false;
   }
 
-  auto a2dp_sink =
-      new A2dpTransport(SessionType::A2DP_SOFTWARE_ENCODING_DATAPATH);
   software_hal_interface =
-      new BluetoothAudioSinkClientInterface(a2dp_sink, message_loop);
-  if (!software_hal_interface->IsValid()) {
-    LOG(WARNING) << __func__ << ": BluetoothAudio HAL for A2DP is invalid?!";
-    delete software_hal_interface;
-    software_hal_interface = nullptr;
-    delete a2dp_sink;
+      new_hal_interface(SessionType::A2DP_SOFTWARE_ENCODING_DATAPATH);
+  if (software_hal_interface == nullptr) {
     return false;
   }
 
-  if (btif_av_is_a2dp_offload_enabled()) {
-    a2dp_sink =
-        new A2dpTransport(SessionType::A2DP_HARDWARE_OFFLOAD_ENCODING_DATAPATH);
+  if (btif_av_is_a2dp_offload_enabled() &&
+      offloading_hal_interface == nullptr) {
     offloading_hal_interface =
-        new BluetoothAudioSinkClientInterface(a2dp_sink, message_loop);
-    if (!offloading_hal_interface->IsValid()) {
-      LOG(FATAL) << __func__
-                 << ": BluetoothAudio HAL for A2DP offloading is invalid?!";
-      delete offloading_hal_interface;
-      offloading_hal_interface = nullptr;
-      delete a2dp_sink;
-      a2dp_sink = static_cast<A2dpTransport*>(
-          software_hal_interface->GetTransportInstance());
-      delete software_hal_interface;
+        new_hal_interface(SessionType::A2DP_HARDWARE_OFFLOAD_ENCODING_DATAPATH);
+    if (offloading_hal_interface == nullptr) {
+      delete_hal_interface(software_hal_interface);
       software_hal_interface = nullptr;
-      delete a2dp_sink;
       return false;
     }
   }
@@ -920,8 +934,10 @@ provider::get_a2dp_configuration(
   }
   LOG(INFO) << "hint: " << hint.toString();
 
-  if (offloading_hal_interface == nullptr) {
-    LOG(ERROR) << __func__ << "the offloading HAL interface was never opened!";
+  if (offloading_hal_interface == nullptr &&
+      (offloading_hal_interface = new_hal_interface(
+           SessionType::A2DP_HARDWARE_OFFLOAD_ENCODING_DATAPATH)) == nullptr) {
+    LOG(ERROR) << __func__ << "the offloading HAL interface cannot be opened";
     return std::nullopt;
   }
 

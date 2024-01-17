@@ -23,6 +23,7 @@ cc_defaults {
     ],
     static_libs: [
         "libFraunhoferAAC",
+        "libaudio-a2dp-hw-utils",
         "libbluetooth-dumpsys",
         "libbluetooth-types",
         "libbluetooth_core_rs",
@@ -58,6 +59,7 @@ cc_defaults {
         "android.hardware.bluetooth.audio@2.1",
         "android.hardware.bluetooth@1.0",
         "android.hardware.bluetooth@1.1",
+        "android.system.suspend-V1-ndk",
         "android.system.suspend.control-V1-ndk",
         "libPlatformProperties",
         "libaaudio",
@@ -66,6 +68,7 @@ cc_defaults {
         "libbinder_ndk",
         "libcrypto",
         "libcutils",
+        "libevent",
         "libfmq",
         "libhidlbase",
         "liblog",

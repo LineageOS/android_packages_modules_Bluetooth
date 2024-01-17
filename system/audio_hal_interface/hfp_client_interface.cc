@@ -187,7 +187,7 @@ size_t HfpClientInterface::Decode::Read(uint8_t* p_buf, uint32_t len) {
 }
 
 HfpClientInterface::Decode* HfpClientInterface::GetDecode(
-    bluetooth::common::MessageLoopThread* message_loop) {
+    bluetooth::common::MessageLoopThread* /*message_loop*/) {
   if (!is_aidl_support_hfp()) {
     LOG(WARNING) << __func__ << ": Unsupported HIDL or AIDL version";
     return nullptr;
@@ -206,7 +206,7 @@ HfpClientInterface::Decode* HfpClientInterface::GetDecode(
       aidl::SessionType::HFP_SOFTWARE_DECODING_DATAPATH);
   HfpDecodingTransport::software_hal_interface =
       new aidl::BluetoothAudioSinkClientInterface(
-          HfpDecodingTransport::instance_, message_loop);
+          HfpDecodingTransport::instance_);
   if (!HfpDecodingTransport::software_hal_interface->IsValid()) {
     LOG(WARNING) << __func__ << ": BluetoothAudio HAL for HFP is invalid";
     delete HfpDecodingTransport::software_hal_interface;
@@ -301,7 +301,7 @@ size_t HfpClientInterface::Encode::Write(const uint8_t* p_buf, uint32_t len) {
 }
 
 HfpClientInterface::Encode* HfpClientInterface::GetEncode(
-    bluetooth::common::MessageLoopThread* message_loop) {
+    bluetooth::common::MessageLoopThread* /*message_loop*/) {
   if (!is_aidl_support_hfp()) {
     LOG(WARNING) << __func__ << ": Unsupported HIDL or AIDL version";
     return nullptr;
@@ -320,7 +320,7 @@ HfpClientInterface::Encode* HfpClientInterface::GetEncode(
       aidl::SessionType::HFP_SOFTWARE_ENCODING_DATAPATH);
   HfpEncodingTransport::software_hal_interface =
       new aidl::BluetoothAudioSourceClientInterface(
-          HfpEncodingTransport::instance_, message_loop);
+          HfpEncodingTransport::instance_);
   if (!HfpEncodingTransport::software_hal_interface->IsValid()) {
     LOG(WARNING) << __func__ << ": BluetoothAudio HAL for HFP is invalid";
     delete HfpEncodingTransport::software_hal_interface;
@@ -405,7 +405,7 @@ void HfpClientInterface::Offload::UpdateAudioConfigToHal(
 }
 
 HfpClientInterface::Offload* HfpClientInterface::GetOffload(
-    bluetooth::common::MessageLoopThread* message_loop) {
+    bluetooth::common::MessageLoopThread* /*message_loop*/) {
   if (!is_aidl_support_hfp()) {
     LOG(WARNING) << __func__ << ": Unsupported HIDL or AIDL version";
     return nullptr;
@@ -426,7 +426,7 @@ HfpClientInterface::Offload* HfpClientInterface::GetOffload(
         aidl::SessionType::HFP_HARDWARE_OFFLOAD_DATAPATH);
     HfpEncodingTransport::offloading_hal_interface =
         new aidl::BluetoothAudioSourceClientInterface(
-            HfpEncodingTransport::instance_, message_loop);
+            HfpEncodingTransport::instance_);
     if (!HfpEncodingTransport::offloading_hal_interface->IsValid()) {
       LOG(FATAL) << __func__
                  << ": BluetoothAudio HAL for HFP offloading is invalid";
