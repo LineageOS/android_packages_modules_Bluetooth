@@ -952,9 +952,8 @@ tSMP_CB smp_cb;
  ******************************************************************************/
 void smp_set_state(tSMP_STATE state) {
   if (state < SMP_STATE_MAX) {
-    LOG_VERBOSE("State change: %s(%d)==>%s(%d)",
-                smp_get_state_name(smp_cb.state), smp_cb.state,
-                smp_get_state_name(state), state);
+    LOG_DEBUG("State change: %s(%d)==>%s(%d)", smp_get_state_name(smp_cb.state),
+              smp_cb.state, smp_get_state_name(state), state);
     if (smp_cb.state != state) {
       BTM_LogHistory(
           kBtmLogTag, smp_cb.pairing_ble_bd_addr, "Security state changed",
@@ -963,7 +962,7 @@ void smp_set_state(tSMP_STATE state) {
     }
     smp_cb.state = state;
   } else {
-    LOG_VERBOSE("invalid state=%d", state);
+    LOG_ERROR("invalid state=%d", state);
   }
 }
 
@@ -995,22 +994,22 @@ bool smp_sm_event(tSMP_CB* p_cb, tSMP_EVENT event, tSMP_INT_DATA* p_data) {
   tSMP_SM_TBL state_table;
   uint8_t action, entry, i;
 
+  LOG_DEBUG("addr:%s", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
   if (p_cb->role >= 2) {
-    LOG_VERBOSE("Invalid role:%d", p_cb->role);
+    LOG_ERROR("Invalid role:%d", p_cb->role);
     return false;
   }
 
   tSMP_ENTRY_TBL entry_table = smp_entry_table[p_cb->role];
 
   if (curr_state >= SMP_STATE_MAX) {
-    LOG_VERBOSE("Invalid state:%d", curr_state);
+    LOG_ERROR("Invalid state:%d", curr_state);
     return false;
   }
 
-  LOG_VERBOSE("SMP Role:%s State:[%s(%d)], Event:[%s(%d)]",
-              (p_cb->role == 0x01) ? "Peripheral" : "Central",
-              smp_get_state_name(p_cb->state), p_cb->state,
-              smp_get_event_name(event), event);
+  LOG_DEBUG("Role:%s, State:[%s(%d)], Event:[%s(%d)]",
+            hci_role_text(p_cb->role).c_str(), smp_get_state_name(p_cb->state),
+            p_cb->state, smp_get_event_name(event), event);
 
   /* look up the state table for the current state */
   /* lookup entry /w event & curr_state */
@@ -1021,12 +1020,12 @@ bool smp_sm_event(tSMP_CB* p_cb, tSMP_EVENT event, tSMP_INT_DATA* p_data) {
     if (entry & SMP_ALL_TBL_MASK) {
       entry &= ~SMP_ALL_TBL_MASK;
       state_table = smp_all_table;
-    } else
+    } else {
       state_table = smp_state_table[curr_state][p_cb->role];
+    }
   } else {
-    LOG_VERBOSE("Ignore event[%s(%d)] in state[%s(%d)]",
-                smp_get_event_name(event), event,
-                smp_get_state_name(curr_state), curr_state);
+    LOG_WARN("Ignore event[%s(%d)] in state[%s(%d)]", smp_get_event_name(event),
+             event, smp_get_state_name(curr_state), curr_state);
     return false;
   }
 
@@ -1046,7 +1045,7 @@ bool smp_sm_event(tSMP_CB* p_cb, tSMP_EVENT event, tSMP_INT_DATA* p_data) {
       break;
     }
   }
-  LOG_VERBOSE("result state=%s", smp_get_state_name(p_cb->state));
+  LOG_DEBUG("result state=%s", smp_get_state_name(p_cb->state));
   return true;
 }
 
