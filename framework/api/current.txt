@@ -1098,6 +1098,7 @@ package android.bluetooth {
     field public static final int SOCKET_CLOSED = 17; // 0x11
     field public static final int SOCKET_CONNECTION_FAILURE = 18; // 0x12
     field public static final int SOCKET_MANAGER_FAILURE = 16; // 0x10
+    field @FlaggedApi("com.android.bluetooth.flags.unix_file_socket_creation_failure") public static final int UNIX_FILE_SOCKET_CREATION_FAILURE = 21; // 0x15
     field public static final int UNSPECIFIED = 0; // 0x0
   }
 
