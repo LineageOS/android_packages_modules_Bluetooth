@@ -270,11 +270,6 @@ typedef union {
 /* check if authentication requirement need MITM protection */
 #define SMP_NO_MITM_REQUIRED(x) (((x)&SMP_AUTH_YN_BIT) == 0)
 
-typedef struct {
-  RawAddress bd_addr;
-  BT_HDR* p_copy;
-} tSMP_REQ_Q_ENTRY;
-
 /* SMP control block */
 class tSMP_CB {
  public:
