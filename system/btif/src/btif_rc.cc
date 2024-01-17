@@ -3008,7 +3008,7 @@ bool iterate_supported_event_list_for_interim_rsp(void* data, void* cb_data) {
 static void rc_notification_interim_timeout(btif_rc_device_cb_t* p_dev,
                                             uint8_t event_id) {
   /* Device disconnections clear the event list but can't free the timer */
-  if (p_dev == NULL || p_dev->rc_supported_event_list) {
+  if (p_dev == NULL || p_dev->rc_supported_event_list == NULL) {
     LOG_WARN("%s: timeout for null device or event list", __func__);
     return;
   }
