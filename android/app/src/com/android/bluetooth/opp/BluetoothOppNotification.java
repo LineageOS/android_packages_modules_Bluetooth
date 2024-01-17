@@ -582,31 +582,15 @@ class BluetoothOppNotification {
                     PendingIntent.getBroadcast(mContext, 0,
                             new Intent(baseIntent).setAction(Constants.ACTION_ACCEPT),
                             PendingIntent.FLAG_IMMUTABLE)).build();
-
-            PendingIntent contentIntent;
-            if (Flags.oppStartActivityDirectlyFromNotification()) {
-                Intent intent = new Intent(mContext, BluetoothOppIncomingFileConfirmActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                intent.setDataAndNormalize(contentUri);
-                contentIntent =
-                        PendingIntent.getActivity(
-                                mContext, 0, intent, PendingIntent.FLAG_IMMUTABLE);
-            } else {
-                contentIntent =
-                        PendingIntent.getBroadcast(
-                                mContext,
-                                0,
-                                new Intent(baseIntent)
-                                        .setAction(Constants.ACTION_INCOMING_FILE_CONFIRM),
-                                PendingIntent.FLAG_IMMUTABLE);
-            }
-
             Notification public_n =
                     new Notification.Builder(mContext, OPP_NOTIFICATION_CHANNEL).setOnlyAlertOnce(
                             true)
                             .setOngoing(true)
                             .setWhen(info.mTimeStamp)
-                            .setContentIntent(contentIntent)
+                            .setContentIntent(PendingIntent.getBroadcast(mContext, 0,
+                                    new Intent(baseIntent).setAction(
+                                            Constants.ACTION_INCOMING_FILE_CONFIRM),
+                                    PendingIntent.FLAG_IMMUTABLE))
                             .setDeleteIntent(PendingIntent.getBroadcast(mContext, 0,
                                     new Intent(baseIntent).setAction(Constants.ACTION_HIDE),
                                     PendingIntent.FLAG_IMMUTABLE))
@@ -630,7 +614,10 @@ class BluetoothOppNotification {
                             true)
                             .setOngoing(true)
                             .setWhen(info.mTimeStamp)
-                            .setContentIntent(contentIntent)
+                            .setContentIntent(PendingIntent.getBroadcast(mContext, 0,
+                                    new Intent(baseIntent).setAction(
+                                            Constants.ACTION_INCOMING_FILE_CONFIRM),
+                                    PendingIntent.FLAG_IMMUTABLE))
                             .setDeleteIntent(PendingIntent.getBroadcast(mContext, 0,
                                     new Intent(baseIntent).setAction(Constants.ACTION_HIDE),
                                     PendingIntent.FLAG_IMMUTABLE))

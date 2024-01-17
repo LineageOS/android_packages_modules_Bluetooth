@@ -121,12 +121,7 @@ public class BluetoothOppReceiverTest {
     }
 
     @Test
-    @RequiresFlagsDisabled(Flags.FLAG_OPP_START_ACTIVITY_DIRECTLY_FROM_NOTIFICATION)
     public void onReceive_withActionIncomingFileConfirm_startsIncomingFileConfirmActivity() {
-        if (Flags.oppStartActivityDirectlyFromNotification()) {
-            return;
-        }
-
         Intent intent = new Intent();
         intent.setAction(Constants.ACTION_INCOMING_FILE_CONFIRM);
         intent.setData(Uri.parse("content:///not/important"));
