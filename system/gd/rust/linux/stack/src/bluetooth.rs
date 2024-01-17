@@ -1006,6 +1006,9 @@ impl Bluetooth {
                             ));
                         }
                         props.push(BluetoothProperty::RemoteRssi(result.rssi));
+                        props.push(BluetoothProperty::RemoteAddrType(
+                            (result.addr_type as u32).into(),
+                        ));
 
                         props
                     }
