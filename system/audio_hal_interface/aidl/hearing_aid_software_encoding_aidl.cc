@@ -179,7 +179,7 @@ namespace hearing_aid {
 bool is_hal_enabled() { return hearing_aid_hal_clientinterface != nullptr; }
 
 bool init(StreamCallbacks stream_cb,
-          bluetooth::common::MessageLoopThread* message_loop) {
+          bluetooth::common::MessageLoopThread* /*message_loop*/) {
   LOG(INFO) << __func__;
 
   if (is_hal_force_disabled()) {
@@ -196,7 +196,7 @@ bool init(StreamCallbacks stream_cb,
   hearing_aid_sink = new HearingAidTransport(std::move(stream_cb));
   hearing_aid_hal_clientinterface =
       new bluetooth::audio::aidl::BluetoothAudioSinkClientInterface(
-          hearing_aid_sink, message_loop);
+          hearing_aid_sink);
   if (!hearing_aid_hal_clientinterface->IsValid()) {
     LOG(WARNING) << __func__
                  << ": BluetoothAudio HAL for Hearing Aid is invalid?!";

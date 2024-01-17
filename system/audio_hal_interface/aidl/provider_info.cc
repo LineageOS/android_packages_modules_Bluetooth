@@ -293,7 +293,6 @@ std::optional<const char*> ProviderInfo::CodecIndexStr(
   return it != assigned_codec_indexes.end()
              ? std::make_optional(it->second->name.c_str())
              : std::nullopt;
-  return std::nullopt;
 }
 
 bool ProviderInfo::SupportsCodec(btav_a2dp_codec_index_t codec_index) const {

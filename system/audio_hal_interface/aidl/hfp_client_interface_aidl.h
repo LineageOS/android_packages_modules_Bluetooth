@@ -19,7 +19,6 @@
 #include <cstdint>
 
 #include "client_interface_aidl.h"
-#include "common/message_loop_thread.h"
 
 namespace bluetooth {
 namespace audio {
