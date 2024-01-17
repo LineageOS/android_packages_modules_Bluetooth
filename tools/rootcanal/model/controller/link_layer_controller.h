@@ -185,6 +185,7 @@ class LinkLayerController {
   void Reset();
 
   void Paging();
+  void Inquiring();
   void LeAdvertising();
   void LeScanning();
   void LeSynchronization();
@@ -267,13 +268,7 @@ class LinkLayerController {
   uint8_t LeReadNumberOfSupportedAdvertisingSets();
 
   // Classic
-  void StartInquiry(std::chrono::milliseconds timeout);
-  void InquiryCancel();
-  void InquiryTimeout();
   void SetInquiryMode(uint8_t mode);
-  void SetInquiryLAP(uint64_t lap);
-  void SetInquiryMaxResponses(uint8_t max);
-  void Inquiry();
 
   bool GetInquiryScanEnable() const { return inquiry_scan_enable_; }
   void SetInquiryScanEnable(bool enable);
@@ -333,6 +328,12 @@ class LinkLayerController {
   void HandleIso(bluetooth::hci::IsoView iso);
 
   // BR/EDR Commands
+
+  // HCI Inquiry command (Vol 4, Part E § 7.1.1).
+  ErrorCode Inquiry(uint8_t lap, uint8_t inquiry_length, uint8_t num_responses);
+
+  // HCI Inquiry Cancel command (Vol 4, Part E § 7.1.2).
+  ErrorCode InquiryCancel();
 
   // HCI Read Rssi command (Vol 4, Part E § 7.5.4).
   ErrorCode ReadRssi(uint16_t connection_handle, int8_t* rssi);
@@ -939,6 +940,9 @@ class LinkLayerController {
   // Class of Device (Vol 4, Part E § 6.26).
   uint32_t class_of_device_{0};
 
+  // Extended Inquiry Length (Vol 4, Part E § 6.42).
+  slots extended_inquiry_length_{0};
+
   // Other configuration parameters.
 
   // Current IAC LAP (Vol 4, Part E § 7.3.44).
@@ -1161,23 +1165,27 @@ class LinkLayerController {
   struct ControllerOps controller_ops_;
 
   // Classic state.
-  struct Page {
+  struct PageState {
     Address bd_addr;
     uint8_t allow_role_switch;
     std::chrono::steady_clock::time_point next_page_event{};
     std::chrono::steady_clock::time_point page_timeout{};
   };
 
-  // Page substate.
-  // RootCanal will allow only one page request running at the same time.
-  std::optional<Page> page_;
+  struct InquiryState {
+    uint64_t lap;
+    uint8_t num_responses;
+    std::chrono::steady_clock::time_point next_inquiry_event{};
+    std::chrono::steady_clock::time_point inquiry_timeout{};
+  };
 
-  std::chrono::steady_clock::time_point last_inquiry_;
+  // Page and inquiry substates.
+  // RootCanal will allow only one page request running at the same time.
+  std::optional<PageState> page_;
+  std::optional<InquiryState> inquiry_;
+
   model::packets::InquiryType inquiry_mode_{
       model::packets::InquiryType::STANDARD};
-  TaskId inquiry_timer_task_id_ = kInvalidTaskId;
-  uint64_t inquiry_lap_{};
-  uint8_t inquiry_max_responses_{};
 
  public:
   // Type of scheduled tasks.
