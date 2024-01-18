@@ -58,6 +58,7 @@ using TaskId = rootcanal::LinkLayerController::TaskId;
 
 namespace rootcanal {
 
+constexpr milliseconds kScanRequestTimeout(200);
 constexpr milliseconds kNoDelayMs(0);
 constexpr milliseconds kPageInterval(1000);
 constexpr milliseconds kInquiryInterval(500);
@@ -1293,6 +1294,7 @@ ErrorCode LinkLayerController::LeSetScanEnable(bool enable,
   if (!enable) {
     scanner_.scan_enable = false;
     scanner_.pending_scan_request = {};
+    scanner_.pending_scan_request_timeout = {};
     scanner_.history.clear();
     return ErrorCode::SUCCESS;
   }
@@ -1322,6 +1324,7 @@ ErrorCode LinkLayerController::LeSetScanEnable(bool enable,
   scanner_.timeout = {};
   scanner_.periodical_timeout = {};
   scanner_.pending_scan_request = {};
+  scanner_.pending_scan_request_timeout = {};
   scanner_.filter_duplicates = filter_duplicates
                                    ? bluetooth::hci::FilterDuplicates::ENABLED
                                    : bluetooth::hci::FilterDuplicates::DISABLED;
@@ -1453,6 +1456,7 @@ ErrorCode LinkLayerController::LeSetExtendedScanEnable(
   if (!enable) {
     scanner_.scan_enable = false;
     scanner_.pending_scan_request = {};
+    scanner_.pending_scan_request_timeout = {};
     scanner_.history.clear();
     return ErrorCode::SUCCESS;
   }
@@ -1510,6 +1514,7 @@ ErrorCode LinkLayerController::LeSetExtendedScanEnable(
   scanner_.timeout = {};
   scanner_.periodical_timeout = {};
   scanner_.pending_scan_request = {};
+  scanner_.pending_scan_request_timeout = {};
   scanner_.filter_duplicates = filter_duplicates;
   scanner_.duration = duration_ms;
   scanner_.period = period_ms;
@@ -3184,6 +3189,8 @@ void LinkLayerController::ScanIncomingLeLegacyAdvertisingPdu(
     // is connectable in the scan response report.
     scanner_.connectable_scan_response = connectable_advertising;
     scanner_.pending_scan_request = advertising_address;
+    scanner_.pending_scan_request_timeout =
+        std::chrono::steady_clock::now() + kScanRequestTimeout;
 
     INFO(id_,
          "Sending LE Scan request to advertising address {} with scanning "
@@ -5056,6 +5063,15 @@ void LinkLayerController::LeScanning() {
     }
     scanner_.timeout = now + scanner_.duration;
     scanner_.periodical_timeout = now + scanner_.period;
+  }
+
+  // Pending scan timeout.
+  // Cancel the pending scan request. This may condition may be triggered
+  // when the advertiser is stopped before sending the scan request.
+  if (scanner_.pending_scan_request_timeout.has_value() &&
+      now >= scanner_.pending_scan_request_timeout.value()) {
+    scanner_.pending_scan_request = {};
+    scanner_.pending_scan_request_timeout = {};
   }
 }
 
