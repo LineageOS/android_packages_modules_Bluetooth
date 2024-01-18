@@ -21,7 +21,6 @@
 #include "android_bluetooth_flags.h"
 #include "hci/acl_manager.h"
 #include "hci/controller.h"
-#include "hci/enum_helper.h"
 #include "hci/event_checkers.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_packets.h"
@@ -51,6 +50,12 @@ constexpr uint16_t kLeScanIntervalMin = 0x0004;
 constexpr uint16_t kLeScanIntervalMax = 0x4000;
 constexpr uint16_t kDefaultLeExtendedScanInterval = 4800;
 constexpr uint16_t kLeExtendedScanIntervalMax = 0xFFFF;
+
+constexpr uint8_t kScannableBit = 1;
+constexpr uint8_t kDirectedBit = 2;
+constexpr uint8_t kScanResponseBit = 3;
+constexpr uint8_t kLegacyBit = 4;
+constexpr uint8_t kDataStatusBits = 5;
 
 // system properties
 const std::string kLeRxPathLossCompProperty = "bluetooth.hardware.radio.le_rx_path_loss_comp_db";
@@ -290,6 +295,16 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
     }
   }
 
+  struct ExtendedEventTypeOptions {
+    bool connectable{false};
+    bool scannable{false};
+    bool directed{false};
+    bool scan_response{false};
+    bool legacy{false};
+    bool continuing{false};
+    bool truncated{false};
+  };
+
   int8_t get_rx_path_loss_compensation() {
     int8_t compensation = 0;
     auto compensation_prop = os::GetSystemProperty(kLeRxPathLossCompProperty);
@@ -322,6 +337,13 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
     return calibrated_rssi;
   }
 
+  uint16_t transform_to_extended_event_type(ExtendedEventTypeOptions o) {
+    return (o.connectable ? 0x0001 << 0 : 0) | (o.scannable ? 0x0001 << 1 : 0) |
+           (o.directed ? 0x0001 << 2 : 0) | (o.scan_response ? 0x0001 << 3 : 0) |
+           (o.legacy ? 0x0001 << 4 : 0) | (o.continuing ? 0x0001 << 5 : 0) |
+           (o.truncated ? 0x0001 << 6 : 0);
+  }
+
   void handle_advertising_report(LeAdvertisingReportRawView event_view) {
     if (!event_view.IsValid()) {
       LOG_INFO("Dropping invalid advertising event");
@@ -334,38 +356,32 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
     }
 
     for (LeAdvertisingResponseRaw report : reports) {
-      ExtendedAdvertisingEventType extended_event_type =
-          static_cast<ExtendedAdvertisingEventType>(0);
+      uint16_t extended_event_type = 0;
       switch (report.event_type_) {
         case AdvertisingEventType::ADV_IND:
-          extended_event_type = ExtendedAdvertisingEventType::LEGACY |
-                                ExtendedAdvertisingEventType::CONNECTABLE |
-                                ExtendedAdvertisingEventType::SCANNABLE;
+          extended_event_type = transform_to_extended_event_type(
+              {.connectable = true, .scannable = true, .legacy = true});
           break;
         case AdvertisingEventType::ADV_DIRECT_IND:
-          extended_event_type = ExtendedAdvertisingEventType::LEGACY |
-                                ExtendedAdvertisingEventType::CONNECTABLE |
-                                ExtendedAdvertisingEventType::DIRECTED;
+          extended_event_type = transform_to_extended_event_type(
+              {.connectable = true, .directed = true, .legacy = true});
           break;
         case AdvertisingEventType::ADV_SCAN_IND:
           extended_event_type =
-              ExtendedAdvertisingEventType::LEGACY | ExtendedAdvertisingEventType::SCANNABLE;
+              transform_to_extended_event_type({.scannable = true, .legacy = true});
           break;
         case AdvertisingEventType::ADV_NONCONN_IND:
-          extended_event_type = ExtendedAdvertisingEventType::LEGACY;
+          extended_event_type = transform_to_extended_event_type({.legacy = true});
           break;
         case AdvertisingEventType::SCAN_RESPONSE:
           if (IS_FLAG_ENABLED(fix_nonconnectable_scannable_advertisement)) {
             // We don't know if the initial advertising report was connectable or not.
             // LeScanningReassembler fixes the connectable field.
-            extended_event_type = ExtendedAdvertisingEventType::LEGACY |
-                                  ExtendedAdvertisingEventType::SCAN_RESPONSE |
-                                  ExtendedAdvertisingEventType::SCANNABLE;
+            extended_event_type = transform_to_extended_event_type(
+                {.scannable = true, .scan_response = true, .legacy = true});
           } else {
-            extended_event_type = ExtendedAdvertisingEventType::CONNECTABLE |
-                                  ExtendedAdvertisingEventType::LEGACY |
-                                  ExtendedAdvertisingEventType::SCAN_RESPONSE |
-                                  ExtendedAdvertisingEventType::SCANNABLE;
+            extended_event_type = transform_to_extended_event_type(
+                {.connectable = true, .scannable = true, .scan_response = true, .legacy = true});
           }
           break;
         default:
@@ -404,8 +420,11 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
     }
 
     for (LeExtendedAdvertisingResponseRaw& report : reports) {
+      uint16_t event_type = report.connectable_ | (report.scannable_ << kScannableBit) |
+                            (report.directed_ << kDirectedBit) | (report.scan_response_ << kScanResponseBit) |
+                            (report.legacy_ << kLegacyBit) | ((uint16_t)report.data_status_ << kDataStatusBits);
       process_advertising_package_content(
-          report.event_type_,
+          event_type,
           (uint8_t)report.address_type_,
           report.address_,
           (uint8_t)report.primary_phy_,
@@ -419,7 +438,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
   }
 
   void process_advertising_package_content(
-      ExtendedAdvertisingEventType event_type,
+      uint16_t event_type,
       uint8_t address_type,
       Address address,
       uint8_t primary_phy,
@@ -455,13 +474,12 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
           break;
       }
 
-      const ExtendedAdvertisingEventType result_event_type =
-          IS_FLAG_ENABLED(fix_nonconnectable_scannable_advertisement)
-              ? processed_report->extended_event_type
-              : event_type;
+      const uint16_t result_event_type = IS_FLAG_ENABLED(fix_nonconnectable_scannable_advertisement)
+                                             ? processed_report->extended_event_type
+                                             : event_type;
 
       scanning_callbacks_->OnScanResult(
-          static_cast<uint16_t>(result_event_type),
+          result_event_type,
           address_type,
           address,
           primary_phy,
