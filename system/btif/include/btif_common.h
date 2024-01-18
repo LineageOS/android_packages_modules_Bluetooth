@@ -236,5 +236,5 @@ void invoke_link_quality_report_cb(
 
 void invoke_switch_buffer_size_cb(bool is_low_latency_buffer_size);
 void invoke_switch_codec_cb(bool is_low_latency_buffer_size);
-
+void invoke_key_missing_cb(RawAddress bd_addr);
 #endif /* BTIF_COMMON_H */
