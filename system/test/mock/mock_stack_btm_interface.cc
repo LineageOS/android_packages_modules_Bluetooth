@@ -53,13 +53,6 @@ struct btm_client_interface_t default_btm_client_interface = {
         .BTM_reset_complete = []() {},
     },
     .peer = {
-        .features =
-            {
-                .SupportTransparentSynchronousData =
-                    [](const RawAddress& /* bd_addr */) -> bool {
-                  return false;
-                },
-            },
         .BTM_IsAclConnectionUp = [](const RawAddress& /* remote_bda */,
                                     tBT_TRANSPORT /* transport */) -> bool {
           return false;

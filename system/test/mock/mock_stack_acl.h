@@ -39,17 +39,6 @@ namespace test {
 namespace mock {
 namespace stack_acl {
 
-// Shared state between mocked functions and tests
-// Name: ACL_SupportTransparentSynchronousData
-// Params: const RawAddress& bd_addr
-// Returns: bool
-struct ACL_SupportTransparentSynchronousData {
-  std::function<bool(const RawAddress& bd_addr)> body{
-      [](const RawAddress& /* bd_addr */) { return false; }};
-  bool operator()(const RawAddress& bd_addr) { return body(bd_addr); };
-};
-extern struct ACL_SupportTransparentSynchronousData
-    ACL_SupportTransparentSynchronousData;
 // Name: BTM_BLE_IS_RESOLVE_BDA
 // Params: const RawAddress& x
 // Returns: bool
