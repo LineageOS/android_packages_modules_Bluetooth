@@ -138,8 +138,6 @@ class Btm {
   // Remote device name API
   BtmStatus ReadClassicRemoteDeviceName(const RawAddress& raw_address,
                                         tBTM_NAME_CMPL_CB* callback);
-  BtmStatus ReadLeRemoteDeviceName(const RawAddress& raw_address,
-                                   tBTM_NAME_CMPL_CB* callback);
   BtmStatus CancelAllReadRemoteDeviceName();
 
   // Le neighbor interaction API
@@ -238,11 +236,7 @@ class Btm {
     void OnBigInfoReport(uint16_t sync_handle, bool encrypted) override;
   };
   ScanningCallbacks scanning_callbacks_;
-
-  // TODO(cmanton) abort if there is no classic acl link up
-  bool CheckClassicAclLink(const RawAddress& raw_address) { return true; }
-  bool CheckLeAclLink(const RawAddress& raw_address) { return true; }
-  void StartScanning(bool use_active_scanning);
+  void StartScanning(bool /* use_active_scanning */);
 };
 
 }  // namespace shim
