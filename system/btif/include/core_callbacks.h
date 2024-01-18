@@ -66,6 +66,7 @@ struct EventCallbacks {
                                         int retransmission_count,
                                         int packets_not_receive_count,
                                         int negative_acknowledgement_count);
+  void (*invoke_key_missing_cb)(RawAddress bd_addr);
 
   EventCallbacks& operator=(const EventCallbacks&) = delete;
 };

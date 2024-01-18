@@ -17,6 +17,7 @@
 package com.android.bluetooth.btservice;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
+import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.Manifest.permission.BLUETOOTH_SCAN;
 
 import android.annotation.RequiresPermission;
@@ -46,6 +47,7 @@ import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.bas.BatteryService;
+import com.android.bluetooth.flags.FeatureFlagsImpl;
 import com.android.bluetooth.hfp.HeadsetHalConstants;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -68,6 +70,7 @@ public class RemoteDevices {
 
     private BluetoothAdapter mAdapter;
     private AdapterService mAdapterService;
+    private FeatureFlagsImpl mFeatureFlags;
     private ArrayList<BluetoothDevice> mSdpTracker;
     private final Object mObject = new Object();
 
@@ -152,6 +155,7 @@ public class RemoteDevices {
     RemoteDevices(AdapterService service, Looper looper) {
         mAdapter = ((Context) service).getSystemService(BluetoothManager.class).getAdapter();
         mAdapterService = service;
+        mFeatureFlags = new FeatureFlagsImpl();
         mSdpTracker = new ArrayList<BluetoothDevice>();
         mDevices = new HashMap<String, DeviceProperties>();
         mDualDevicesMap = new HashMap<String, String>();
@@ -1238,6 +1242,33 @@ public class RemoteDevices {
         }
     }
 
+    void keyMissingCallback(byte[] address) {
+        BluetoothDevice bluetoothDevice = getDevice(address);
+        if (bluetoothDevice == null) {
+            errorLog(
+                    "keyMissingCallback: device is NULL, address="
+                            + Utils.getRedactedAddressStringFromByte(address));
+            return;
+        }
+        Log.d(TAG, "keyMissingCallback device: " + bluetoothDevice);
+
+        if (bluetoothDevice.getBondState() == BluetoothDevice.BOND_BONDED) {
+            if (!mFeatureFlags.keyMissingBroadcast()) {
+                Log.d(TAG, "flag not set - don't send key missing broadcast");
+                return;
+            }
+            Intent intent =
+                    new Intent(BluetoothDevice.ACTION_KEY_MISSING)
+                            .putExtra(BluetoothDevice.EXTRA_DEVICE, bluetoothDevice)
+                            .addFlags(
+                                    Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
+                                            | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
+            mAdapterService.sendBroadcastMultiplePermissions(
+                    intent,
+                    new String[] {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},
+                    Utils.getTempBroadcastOptions());
+        }
+    }
 
     void fetchUuids(BluetoothDevice device, int transport) {
         if (mSdpTracker.contains(device)) {
