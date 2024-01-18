@@ -40,8 +40,6 @@ namespace mock {
 namespace stack_acl {
 
 // Function state capture and return values, if needed
-struct ACL_SupportTransparentSynchronousData
-    ACL_SupportTransparentSynchronousData;
 struct BTM_BLE_IS_RESOLVE_BDA BTM_BLE_IS_RESOLVE_BDA;
 struct BTM_IsAclConnectionUp BTM_IsAclConnectionUp;
 struct BTM_IsAclConnectionUpAndHandleValid BTM_IsAclConnectionUpAndHandleValid;
@@ -165,10 +163,6 @@ struct BTM_unblock_role_switch_and_sniff_mode_for
 }  // namespace test
 
 // Mocked functions, if any
-bool ACL_SupportTransparentSynchronousData(const RawAddress& bd_addr) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_acl::ACL_SupportTransparentSynchronousData(bd_addr);
-}
 bool BTM_BLE_IS_RESOLVE_BDA(const RawAddress& x) {
   inc_func_call_count(__func__);
   return test::mock::stack_acl::BTM_BLE_IS_RESOLVE_BDA(x);
