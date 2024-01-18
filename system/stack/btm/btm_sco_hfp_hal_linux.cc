@@ -22,6 +22,8 @@
 
 #include "btm_sco_hfp_hal.h"
 #include "common/init_flags.h"
+#include "hci/controller_interface.h"
+#include "main/shim/entry.h"
 #include "osi/include/log.h"
 #include "osi/include/properties.h"
 #include "stack/include/hcimsgs.h"
@@ -77,38 +79,58 @@ struct mgmt_ev_cmd_complete {
 
 struct mgmt_cp_get_codec_capabilities {
   uint16_t hci_dev;
-  uint32_t num_codecs;
-  uint8_t codecs[];
 } __attribute__((packed));
 
 struct mgmt_rp_get_codec_capabilities {
   uint16_t hci_dev;
-  uint8_t offload_capable;
-  uint32_t num_codecs;
-  struct mgmt_bt_codec codecs[];
+  uint8_t transparent_wbs_supported;
+  uint8_t hci_data_path_id;
+  uint32_t wbs_pkt_len;
 } __attribute__((packed));
 
 #define MGMT_POLL_TIMEOUT_MS 2000
 
 void cache_codec_capabilities(struct mgmt_rp_get_codec_capabilities* rp) {
-  uint8_t* ptr = reinterpret_cast<uint8_t*>(rp->codecs);
-  // Copy into cached codec information
-  offload_supported = rp->offload_capable;
-  for (int i = 0; i < rp->num_codecs; i++) {
-    struct mgmt_bt_codec* mc = reinterpret_cast<struct mgmt_bt_codec*>(ptr);
-    cached_codec_info c = {
-        .inner =
-            {
-                .codec = static_cast<codec>(1 << (mc->codec - 1)),
-                .data_path = mc->data_path,
-                .data = mc->data_length == 0
-                            ? std::vector<uint8_t>{}
-                            : std::vector<uint8_t>(mc->data,
-                                                   mc->data + mc->data_length),
-            },
-        .pkt_size = mc->packet_size,
-    };
-    ptr += sizeof(*mc);
+  const uint8_t kCodecCvsd = 0x2;
+  const uint8_t kCodecTransparent = 0x3;
+  const uint8_t kCodecMsbc = 0x5;
+
+  auto codecs =
+      bluetooth::shim::GetController()->GetLocalSupportedBrEdrCodecIds();
+
+  for (uint8_t codec_id : codecs) {
+    // TODO(b/323087725): Query the codec capabilities and fill in c.inner.data.
+    // The capabilities are not used currently so it's safe to keep this for a
+    // while.
+    cached_codec_info c{};
+    switch (codec_id) {
+      case kCodecCvsd:
+        c.inner.codec = codec::CVSD;
+        break;
+      case kCodecTransparent:
+        if (!rp->transparent_wbs_supported) {
+          // Transparent wideband speech not supported, skip it.
+          continue;
+        }
+        c.inner.codec = codec::MSBC_TRANSPARENT;
+        c.pkt_size = rp->wbs_pkt_len;
+        break;
+      case kCodecMsbc:
+        if (!rp->transparent_wbs_supported) {
+          // TODO(b/321180937): Remove this after the audio server could query
+          // the offload capability from Floss and enable it properly.
+          // This is a workaround for HFP to work on some CrOS Flex devices.
+          continue;
+        }
+        offload_supported = true;
+        c.inner.codec = codec::MSBC;
+        c.inner.data_path = rp->hci_data_path_id;
+        c.pkt_size = rp->wbs_pkt_len;
+        break;
+      default:
+        LOG_DEBUG("Unsupported codec ID: %u", codec_id);
+        continue;
+    }
 
     LOG_INFO("Caching HFP codec %u, data path %u, data len %d, pkt_size %u",
              (uint64_t)c.inner.codec, c.inner.data_path, c.inner.data.size(),
@@ -152,19 +174,14 @@ int btsocket_open_mgmt(uint16_t hci) {
 }
 
 int mgmt_get_codec_capabilities(int fd, uint16_t hci) {
-  // Write read codec capabilities
   struct mgmt_pkt ev;
   ev.opcode = MGMT_OP_GET_SCO_CODEC_CAPABILITIES;
   ev.index = HCI_DEV_NONE;
-  ev.len = sizeof(struct mgmt_cp_get_codec_capabilities) + 3;
+  ev.len = sizeof(struct mgmt_cp_get_codec_capabilities);
 
   struct mgmt_cp_get_codec_capabilities* cp =
       reinterpret_cast<struct mgmt_cp_get_codec_capabilities*>(ev.data);
   cp->hci_dev = hci;
-  cp->num_codecs = 3;
-  cp->codecs[0] = MGMT_SCO_CODEC_CVSD;
-  cp->codecs[1] = MGMT_SCO_CODEC_MSBC_TRANSPARENT;
-  cp->codecs[2] = MGMT_SCO_CODEC_MSBC;
 
   int ret;
 
