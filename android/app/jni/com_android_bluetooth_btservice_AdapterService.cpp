@@ -753,7 +753,7 @@ static void le_rand_callback(uint64_t /* random */) {
   // Android doesn't support the LeRand API.
 }
 
-static void key_missing_callback(RawAddress bd_addr) {
+static void key_missing_callback(const RawAddress bd_addr) {
   std::shared_lock<std::shared_timed_mutex> lock(jniObjMutex);
   if (!sJniCallbacksObj) {
     ALOGE("%s, JNI obj is null. Failed to call JNI callback", __func__);
