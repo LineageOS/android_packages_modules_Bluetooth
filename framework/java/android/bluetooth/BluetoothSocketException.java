@@ -18,6 +18,7 @@ package android.bluetooth;
 
 import static java.lang.annotation.RetentionPolicy.SOURCE;
 
+import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 
@@ -54,7 +55,8 @@ public class BluetoothSocketException extends IOException {
         SOCKET_CLOSED,
         SOCKET_CONNECTION_FAILURE,
         NULL_DEVICE,
-        RPC_FAILURE
+        RPC_FAILURE,
+        UNIX_FILE_SOCKET_CREATION_FAILURE,
     })
     private @interface ErrorCode {}
 
@@ -154,6 +156,10 @@ public class BluetoothSocketException extends IOException {
     /** Error code during connect when a Runtime RPC exception occurs. */
     public static final int RPC_FAILURE = 20;
 
+    /** Error code during connect when the UNIX socket connection creation fails. */
+    @FlaggedApi("com.android.bluetooth.flags.unix_file_socket_creation_failure")
+    public static final int UNIX_FILE_SOCKET_CREATION_FAILURE = 21;
+
     /* Corresponding messages for respective error codes. */
     private static final String UNSPECIFIED_MSG = "A Bluetooth Socket failure occurred";
     private static final String L2CAP_UNKNOWN_MSG = "Connection failed for unknown reason";
@@ -179,6 +185,8 @@ public class BluetoothSocketException extends IOException {
     private static final String SOCKET_CLOSED_MSG = "socket closed";
     private static final String SOCKET_CONNECTION_FAILURE_MSG = "bt socket connect failed";
     private static final String NULL_DEVICE_MSG = "Connect is called on null device";
+    private static final String UNIX_FILE_SOCKET_CREATION_FAILURE_MSG =
+            "Null file descriptor returned";
 
     @ErrorCode private final int mErrorCode;
 
@@ -220,6 +228,8 @@ public class BluetoothSocketException extends IOException {
                 return SOCKET_CONNECTION_FAILURE_MSG;
             case NULL_DEVICE:
                 return NULL_DEVICE_MSG;
+            case UNIX_FILE_SOCKET_CREATION_FAILURE:
+                return UNIX_FILE_SOCKET_CREATION_FAILURE_MSG;
             case L2CAP_ACL_FAILURE:
                 return L2CAP_ACL_FAILURE_MSG;
             case L2CAP_CLIENT_SECURITY_FAILURE:
