@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package android.bluetooth;
+package android.bluetooth.pairing;
 
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
@@ -26,6 +26,11 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
+import android.bluetooth.PandoraDevice;
+import android.bluetooth.StreamObserverSpliterator;
 import android.bluetooth.test_utils.EnableBluetoothRule;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -51,12 +56,12 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.hamcrest.MockitoHamcrest;
 
-import pandora.SecurityProto.PairingEvent;
-import pandora.SecurityProto.PairingEventAnswer;
-
 import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
+import pandora.SecurityProto.PairingEvent;
+import pandora.SecurityProto.PairingEventAnswer;
 
 @RunWith(AndroidJUnit4.class)
 public class PairingTest {
