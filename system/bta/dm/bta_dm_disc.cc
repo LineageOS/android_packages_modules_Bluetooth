@@ -26,7 +26,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "bta/dm/bta_dm_disc.h"
+#include "android_bluetooth_flags.h"
 #include "bta/dm/bta_dm_disc_int.h"
 #include "bta/include/bta_gatt_api.h"
 #include "bta/include/bta_sdp_api.h"
@@ -310,7 +310,13 @@ static void bta_dm_search_cancel() {
      active */
   else if (!bta_dm_search_cb.name_discover_done) {
     get_btm_client_interface().peer.BTM_CancelRemoteDeviceName();
-    bta_dm_search_cmpl();
+#ifndef TARGET_FLOSS
+    /* bta_dm_search_cmpl is called when receiving the remote name cancel evt */
+    if (!IS_FLAG_ENABLED(
+            bta_dm_defer_device_discovery_state_change_until_rnr_complete)) {
+      bta_dm_search_cmpl();
+    }
+#endif
   } else {
     bta_dm_inq_cmpl(0);
   }
