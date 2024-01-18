@@ -41,12 +41,6 @@ struct btm_client_interface_t btm_client_interface = {
     // Acl peer and lifecycle
     .peer =
         {
-            .features =
-                {
-                    .SupportTransparentSynchronousData =
-                        ACL_SupportTransparentSynchronousData,
-                },
-
             .BTM_IsAclConnectionUp = BTM_IsAclConnectionUp,
             .BTM_ReadConnectedTransportAddress =
                 BTM_ReadConnectedTransportAddress,
