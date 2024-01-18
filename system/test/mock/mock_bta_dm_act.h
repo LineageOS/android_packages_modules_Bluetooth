@@ -515,6 +515,15 @@ struct bta_dm_remove_device {
 };
 extern struct bta_dm_remove_device bta_dm_remove_device;
 
+// Name: bta_dm_remote_key_missing
+// Params: RawAddress bd_addr
+// Return: void
+struct bta_dm_remote_key_missing {
+  std::function<void(RawAddress bd_addr)> body{[](RawAddress bd_addr) {}};
+  void operator()(RawAddress bd_addr) { body(bd_addr); };
+};
+extern struct bta_dm_remote_key_missing bta_dm_remote_key_missing;
+
 // Name: bta_dm_rm_cback
 // Params: tBTA_SYS_CONN_STATUS status, uint8_t id, uint8_t app_id, const
 // RawAddress& peer_addr Return: void

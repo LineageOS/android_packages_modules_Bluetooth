@@ -38,7 +38,8 @@ static bluetooth::core::EventCallbacks eventCallbacks = {
     .invoke_thread_evt_cb = invoke_thread_evt_cb,
     .invoke_le_test_mode_cb = invoke_le_test_mode_cb,
     .invoke_energy_info_cb = invoke_energy_info_cb,
-    .invoke_link_quality_report_cb = invoke_link_quality_report_cb};
+    .invoke_link_quality_report_cb = invoke_link_quality_report_cb,
+    .invoke_key_missing_cb = invoke_key_missing_cb};
 
 // This interface lets us query for configuration properties of the stack that
 // could change at runtime
