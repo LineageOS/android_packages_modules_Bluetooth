@@ -1,0 +1,8 @@
+package: "com.android.bluetooth.flags"
+
+flag {
+    name: "rnr_cancel_before_event_race"
+    namespace: "bluetooth"
+    description: "Address race condition when rnr cancel and event arrive close together"
+    bug: "316037290"
+}

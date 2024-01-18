@@ -61,18 +61,18 @@ tBNEP_RESULT BNEP_SetProtocolFilters(uint16_t /* handle */,
   return 0;
 }
 tBNEP_RESULT BNEP_Write(uint16_t /* handle */,
-                        const RawAddress& /* p_dest_addr */,
+                        const RawAddress& /* dest_addr */,
                         uint8_t* /* p_data */, uint16_t /* len */,
                         uint16_t /* protocol */,
-                        const RawAddress* /* p_src_addr */,
+                        const RawAddress& /* src_addr */,
                         bool /* fw_ext_present */) {
   inc_func_call_count(__func__);
   return 0;
 }
 tBNEP_RESULT BNEP_WriteBuf(uint16_t /* handle */,
-                           const RawAddress& /* p_dest_addr */,
+                           const RawAddress& /* dest_addr */,
                            BT_HDR* /* p_buf */, uint16_t /* protocol */,
-                           const RawAddress* /* p_src_addr */,
+                           const RawAddress& /* src_addr */,
                            bool /* fw_ext_present */) {
   inc_func_call_count(__func__);
   return 0;

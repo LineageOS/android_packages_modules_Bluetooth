@@ -33,6 +33,14 @@ Iterator<little_endian>::Iterator(const std::forward_list<View>& data, size_t of
 }
 
 template <bool little_endian>
+Iterator<little_endian>::Iterator(std::shared_ptr<std::vector<uint8_t>> data) {
+  data_.emplace_front(data, 0, data->size());
+  index_ = 0;
+  begin_ = 0;
+  end_ = data_.front().size();
+}
+
+template <bool little_endian>
 Iterator<little_endian> Iterator<little_endian>::operator+(int offset) const {
   auto itr(*this);
 

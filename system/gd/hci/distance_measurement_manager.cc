@@ -29,6 +29,7 @@
 #include "module.h"
 #include "os/handler.h"
 #include "os/log.h"
+#include "packet/packet_view.h"
 
 namespace bluetooth {
 namespace hci {
@@ -695,25 +696,24 @@ struct DistanceMeasurementManager::impl {
           step_channel,
           (uint16_t)result_data_structure.step_data_.size());
 
-      // Parse data as packetView
-      std::vector<uint8_t> packet_bytes = {};
+      // Parse data into structs from an iterator
+      auto bytes = std::make_shared<std::vector<uint8_t>>();
       if (mode == 0x02 || mode == 0x03) {
         // Add one byte for the length of Tone_PCT[k], Tone_Quality_Indicator[k]
-        packet_bytes.emplace_back(num_antenna_paths + 1);
+        bytes->emplace_back(num_antenna_paths + 1);
       }
-      packet_bytes.reserve(packet_bytes.size() + result_data_structure.step_data_.size());
-      packet_bytes.insert(
-          packet_bytes.end(),
+      bytes->reserve(bytes->size() + result_data_structure.step_data_.size());
+      bytes->insert(
+          bytes->end(),
           result_data_structure.step_data_.begin(),
           result_data_structure.step_data_.end());
-      PacketView<kLittleEndian> packet_bytes_view(
-          std::make_shared<std::vector<uint8_t>>(packet_bytes));
+      Iterator<packet::kLittleEndian> iterator(bytes);
       switch (mode) {
         case 0: {
           if (role == CsRole::INITIATOR) {
             LeCsMode0InitatorData tone_data_view;
-            auto after = LeCsMode0InitatorData::Parse(&tone_data_view, packet_bytes_view.begin());
-            if (after == packet_bytes_view.begin()) {
+            auto after = LeCsMode0InitatorData::Parse(&tone_data_view, iterator);
+            if (after == iterator) {
               LOG_WARN("Received invalid mode %d data, role:%s", mode, CsRoleText(role).c_str());
               print_raw_data(result_data_structure.step_data_);
               continue;
@@ -722,8 +722,8 @@ struct DistanceMeasurementManager::impl {
             procedure_data.measured_freq_offset.push_back(tone_data_view.measured_freq_offset_);
           } else {
             LeCsMode0ReflectorData tone_data_view;
-            auto after = LeCsMode0ReflectorData::Parse(&tone_data_view, packet_bytes_view.begin());
-            if (after == packet_bytes_view.begin()) {
+            auto after = LeCsMode0ReflectorData::Parse(&tone_data_view, iterator);
+            if (after == iterator) {
               LOG_WARN("Received invalid mode %d data, role:%s", mode, CsRoleText(role).c_str());
               print_raw_data(result_data_structure.step_data_);
               continue;
@@ -733,8 +733,8 @@ struct DistanceMeasurementManager::impl {
         } break;
         case 2: {
           LeCsMode2Data tone_data_view;
-          auto after = LeCsMode2Data::Parse(&tone_data_view, packet_bytes_view.begin());
-          if (after == packet_bytes_view.begin()) {
+          auto after = LeCsMode2Data::Parse(&tone_data_view, iterator);
+          if (after == iterator) {
             LOG_WARN("Received invalid mode %d data, role:%s", mode, CsRoleText(role).c_str());
             print_raw_data(result_data_structure.step_data_);
             continue;
