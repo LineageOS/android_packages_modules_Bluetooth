@@ -6,3 +6,10 @@ flag {
     description: "Break from UHID polling early if HID host disconnects"
     bug: "319846147"
 }
+
+flag {
+    name: "allow_switching_hid_and_hogp"
+    namespace: "bluetooth"
+    description: "Allow switching between HID and HOGP supported on the same device"
+    bug: "320762367"
+}

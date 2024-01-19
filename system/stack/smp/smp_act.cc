@@ -20,6 +20,7 @@
 
 #include <cstring>
 
+#include "android_bluetooth_flags.h"
 #include "btif/include/btif_common.h"
 #include "btif/include/core_callbacks.h"
 #include "btif/include/stack_manager_t.h"
@@ -528,7 +529,11 @@ void smp_proc_pair_fail(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
              p_cb->rcvd_cmd_len);
     p_cb->status = SMP_INVALID_PARAMETERS;
   } else {
-    p_cb->status = p_data->status;
+    if (IS_FLAG_ENABLED(fix_pairing_failure_reason_from_remote)) {
+      p_cb->status = static_cast<tSMP_STATUS>(p_data->p_data[0]);
+    } else {
+      p_cb->status = p_data->status;
+    }
   }
 
   /* Cancel pending auth complete timer if set */

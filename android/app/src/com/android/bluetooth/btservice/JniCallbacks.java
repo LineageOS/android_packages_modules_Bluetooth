@@ -82,6 +82,10 @@ class JniCallbacks {
                 transportLinkType, hciReason, handle);
     }
 
+    void keyMissingCallback(byte[] address) {
+        mRemoteDevices.keyMissingCallback(address);
+    }
+
     void stateChangeCallback(int status) {
         mAdapterService.stateChangeCallback(status);
     }

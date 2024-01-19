@@ -21,7 +21,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.after;
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doAnswer;
@@ -1012,6 +1011,15 @@ public class BassClientServiceTest {
     public void testInvalidRequestForGroup() {
         // Prepare the initial state
         prepareConnectedDeviceGroup();
+
+        // Verify errors are reported for the entire group
+        mBassClientService.addSource(mCurrentDevice1, null, true);
+        assertThat(mStateMachines.size()).isEqualTo(2);
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            verify(sm, times(0)).sendMessage(any());
+        }
+
+        // Prepare valid source for group
         BluetoothLeBroadcastMetadata meta = createBroadcastMetadata(TEST_BROADCAST_ID);
         verifyAddSourceForGroup(meta);
         for (BassClientStateMachine sm: mStateMachines.values()) {
@@ -1029,19 +1037,6 @@ public class BassClientServiceTest {
                                 BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_DECRYPTING :
                                 BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_NOT_ENCRYPTED,
                         null);
-            }
-        }
-
-        // Verify errors are reported for the entire group
-        mBassClientService.addSource(mCurrentDevice1, null, true);
-        assertThat(mStateMachines.size()).isEqualTo(2);
-        for (BassClientStateMachine sm: mStateMachines.values()) {
-            BluetoothDevice dev = sm.getDevice();
-            try {
-                verify(mCallback, after(TIMEOUT_MS).times(1)).onSourceAddFailed(eq(dev),
-                        eq(null), eq(BluetoothStatusCodes.ERROR_BAD_PARAMETERS));
-            } catch (RemoteException e) {
-                throw e.rethrowFromSystemServer();
             }
         }
 

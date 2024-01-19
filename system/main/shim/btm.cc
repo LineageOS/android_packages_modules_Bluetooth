@@ -419,20 +419,6 @@ BtmStatus Btm::ReadClassicRemoteDeviceName(const RawAddress& raw_address,
   return BTM_UNDEFINED;
 }
 
-BtmStatus Btm::ReadLeRemoteDeviceName(const RawAddress& raw_address,
-                                      tBTM_NAME_CMPL_CB* callback) {
-  if (!CheckLeAclLink(raw_address)) {
-    return BTM_UNKNOWN_ADDR;
-  }
-
-  if (!le_read_remote_name_.Start(raw_address)) {
-    return BTM_BUSY;
-  }
-
-  LOG_INFO("UNIMPLEMENTED %s need access to GATT module", __func__);
-  return BTM_UNKNOWN_ADDR;
-}
-
 BtmStatus Btm::CancelAllReadRemoteDeviceName() {
   LOG_ALWAYS_FATAL("unreachable");
   return BTM_UNDEFINED;

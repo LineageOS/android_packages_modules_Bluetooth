@@ -309,6 +309,7 @@ python_test_host {
         "test/LL/CIS/CEN/*.py",
         "test/LL/CIS/PER/*.py",
         "test/LL/CON_/CEN/*.py",
+        "test/LL/CON_/INI/*.py",
         "test/LL/CON_/PER/*.py",
         "test/LL/DDI/ADV/*.py",
         "test/LL/DDI/SCN/*.py",

@@ -96,6 +96,7 @@ void btm_inq_stop_on_ssp(void);
 bool btm_ble_init_pseudo_addr(tBTM_SEC_DEV_REC* p_dev_rec,
                               const RawAddress& new_pseudo_addr);
 void bta_dm_remove_device(const RawAddress& bd_addr);
+void bta_dm_remote_key_missing(RawAddress bd_addr);
 void bta_dm_process_remove_device(const RawAddress& bd_addr);
 void btm_inq_clear_ssp(void);
 
@@ -3268,6 +3269,13 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status,
     }
     p_dev_rec->sec_rec.sec_status = status;
     btm_ble_link_encrypted(p_dev_rec->ble.pseudo_addr, encr_enable);
+
+    if (status == HCI_ERR_KEY_MISSING) {
+      LOG_INFO("Remote key missing - will report");
+      bta_dm_remote_key_missing(p_dev_rec->ble.pseudo_addr);
+      return;
+    }
+
     return;
   } else {
     /* BR/EDR connection, update the encryption key size to be 16 as always */

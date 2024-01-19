@@ -50,6 +50,7 @@
 #include <mutex>
 #include <optional>
 
+#include <android_bluetooth_flags.h>
 #include "advertise_data_parser.h"
 #include "android_bluetooth_flags.h"
 #include "bta/dm/bta_dm_disc.h"
@@ -2352,6 +2353,11 @@ void btif_dm_sec_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data) {
           p_data->proc_id_addr.pairing_bda, p_data->proc_id_addr.id_addr);
       break;
 
+    case BTA_DM_KEY_MISSING_EVT:
+      GetInterfaceToProfiles()->events->invoke_key_missing_cb(
+          p_data->key_missing.bd_addr);
+      break;
+
     default:
       LOG_WARN("unhandled event(%d)", event);
       break;
@@ -3476,6 +3482,18 @@ static void btif_dm_ble_key_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif) {
       p_ssp_key_notif->passkey);
 }
 
+static bool btif_dm_ble_is_temp_pairing(RawAddress& bd_addr, bool ctkd) {
+  if (btm_get_bond_type_dev(bd_addr) == BOND_TYPE_TEMPORARY) {
+    if (!IS_FLAG_ENABLED(ignore_bond_type_for_le)) {
+      return true;
+    }
+
+    return ctkd;
+  }
+
+  return false;
+}
+
 /*******************************************************************************
  *
  * Function         btif_dm_ble_auth_cmpl_evt
@@ -3508,7 +3526,7 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
       btif_storage_set_remote_addr_type(&bd_addr, p_auth_cmpl->addr_type);
 
     /* Test for temporary bonding */
-    if (btm_get_bond_type_dev(bd_addr) == BOND_TYPE_TEMPORARY) {
+    if (btif_dm_ble_is_temp_pairing(bd_addr, p_auth_cmpl->is_ctkd)) {
       LOG_DEBUG("sending BT_BOND_STATE_NONE for Temp pairing");
       btif_storage_remove_bonded_device(&bd_addr);
       state = BT_BOND_STATE_NONE;
