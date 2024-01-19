@@ -6391,16 +6391,6 @@ packet LePhyUpdateComplete : LeMetaEvent (subevent_code = PHY_UPDATE_COMPLETE) {
     rx_phy : 8,
 }
 
-enum ExtendedAdvertisingEventType : 16 {
-  CONNECTABLE = 0x1,
-  SCANNABLE = 0x2,
-  DIRECTED = 0x4,
-  SCAN_RESPONSE = 0x8,
-  LEGACY = 0x10,
-  CONTINUING = 0x20,
-  TRUNCATED = 0x40,
-}
-
 enum DataStatus : 2 {
   COMPLETE = 0x0,
   CONTINUING = 0x1,
@@ -6409,7 +6399,13 @@ enum DataStatus : 2 {
 }
 
 struct LeExtendedAdvertisingResponse {
-  event_type: ExtendedAdvertisingEventType,
+  connectable : 1,
+  scannable : 1,
+  directed : 1,
+  scan_response : 1,
+  legacy : 1,
+  data_status : DataStatus,
+  _reserved_ : 9,
   address_type : DirectAdvertisingAddressType,
   address : Address,
   primary_phy : PrimaryPhyType,
@@ -6425,7 +6421,13 @@ struct LeExtendedAdvertisingResponse {
 }
 
 struct LeExtendedAdvertisingResponseRaw {
-  event_type: ExtendedAdvertisingEventType,
+  connectable : 1,
+  scannable : 1,
+  directed : 1,
+  scan_response : 1,
+  legacy : 1,
+  data_status : DataStatus,
+  _reserved_ : 9,
   address_type : DirectAdvertisingAddressType,
   address : Address,
   primary_phy : PrimaryPhyType,
