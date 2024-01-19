@@ -39,6 +39,7 @@ import android.os.ParcelUuid;
 import android.os.RemoteException;
 import android.util.Log;
 
+import com.android.bluetooth.flags.Flags;
 import com.android.modules.utils.SynchronousResultReceiver;
 
 import java.lang.annotation.Retention;
@@ -742,7 +743,7 @@ public final class BluetoothA2dp implements BluetoothProfile {
     @NonNull
     @RequiresLegacyBluetoothPermission
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
-    @FlaggedApi("com.android.bluetooth.flags.a2dp_offload_codec_extensibility")
+    @FlaggedApi(Flags.FLAG_A2DP_OFFLOAD_CODEC_EXTENSIBILITY)
     public List<BluetoothCodecType> getSupportedCodecTypes() {
         Log.d(TAG, "getSupportedSourceCodecTypes()");
         final IBluetoothA2dp service = getService();
