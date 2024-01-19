@@ -1247,9 +1247,6 @@ public class BassClientService extends ProfileService {
             return;
         }
 
-        /* Store metadata for sink device */
-        mBroadcastMetadataMap.put(sink, sourceMetadata);
-
         byte[] code = sourceMetadata.getBroadcastCode();
         for (BluetoothDevice device : devices) {
             BassClientStateMachine stateMachine = getOrCreateStateMachine(device);
@@ -1291,6 +1288,10 @@ public class BassClientService extends ProfileService {
                         enqueueSourceGroupOp(
                                 device, BassClientStateMachine.ADD_BCAST_SOURCE, sourceMetadata);
                     }
+
+                    /* Store metadata for sink device */
+                    mBroadcastMetadataMap.put(device, sourceMetadata);
+
                     Message message =
                             stateMachine.obtainMessage(BassClientStateMachine.SWITH_BCAST_SOURCE);
                     message.obj = sourceMetadata;
@@ -1319,6 +1320,9 @@ public class BassClientService extends ProfileService {
                     continue;
                 }
             }
+
+            /* Store metadata for sink device */
+            mBroadcastMetadataMap.put(device, sourceMetadata);
 
             if (isGroupOp) {
                 enqueueSourceGroupOp(device, BassClientStateMachine.ADD_BCAST_SOURCE,
@@ -1598,17 +1602,22 @@ public class BassClientService extends ProfileService {
             mPausedBroadcastSinks.clear();
         }
 
+        Map<BluetoothDevice, Integer> sourcesToRemove = new HashMap<>();
+
         for (BluetoothDevice device : getConnectedDevices()) {
             for (BluetoothLeBroadcastReceiveState receiveState : getAllSources(device)) {
                 /* Check if local/last broadcast is the synced one */
                 if (receiveState.getBroadcastId() != broadcastId) continue;
 
-                removeSource(device, receiveState.getSourceId());
-
                 if (store && !mPausedBroadcastSinks.contains(device)) {
                     mPausedBroadcastSinks.add(device);
                 }
+
+                sourcesToRemove.put(device, receiveState.getSourceId());
             }
+        }
+        for (Map.Entry<BluetoothDevice, Integer> entry : sourcesToRemove.entrySet()) {
+            removeSource(entry.getKey(), entry.getValue());
         }
     }
 
