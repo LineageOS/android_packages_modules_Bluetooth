@@ -22,6 +22,7 @@
  *
  ******************************************************************************/
 
+#include <android_bluetooth_flags.h>
 #include <base/logging.h>
 
 #include "btif/include/btif_dm.h"
@@ -463,7 +464,11 @@ bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr,
 
 namespace connection_manager {
 void on_connection_timed_out(uint8_t app_id, const RawAddress& address) {
-  gatt_le_connect_cback(L2CAP_ATT_CID, address, false, 0xff, BT_TRANSPORT_LE);
+  if (IS_FLAG_ENABLED(enumerate_gatt_errors)) {
+    gatt_le_connect_cback(L2CAP_ATT_CID, address, false, 0x08, BT_TRANSPORT_LE);
+  } else {
+    gatt_le_connect_cback(L2CAP_ATT_CID, address, false, 0xff, BT_TRANSPORT_LE);
+  }
 }
 }  // namespace connection_manager
 

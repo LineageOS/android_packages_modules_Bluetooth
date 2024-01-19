@@ -627,6 +627,7 @@ package android.bluetooth {
     field public static final int CONNECTION_PRIORITY_HIGH = 1; // 0x1
     field public static final int CONNECTION_PRIORITY_LOW_POWER = 2; // 0x2
     field public static final int GATT_CONNECTION_CONGESTED = 143; // 0x8f
+    field @FlaggedApi("com.android.bluetooth.flags.enumerate_gatt_errors") public static final int GATT_CONNECTION_TIMEOUT = 147; // 0x93
     field public static final int GATT_FAILURE = 257; // 0x101
     field public static final int GATT_INSUFFICIENT_AUTHENTICATION = 5; // 0x5
     field public static final int GATT_INSUFFICIENT_AUTHORIZATION = 8; // 0x8
