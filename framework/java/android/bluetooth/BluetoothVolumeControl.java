@@ -38,6 +38,7 @@ import android.os.RemoteException;
 import android.util.CloseGuard;
 import android.util.Log;
 
+import com.android.bluetooth.flags.Flags;
 import com.android.modules.utils.SynchronousResultReceiver;
 
 import java.util.ArrayList;
@@ -100,8 +101,7 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
          * @param volume level
          * @hide
          */
-        @FlaggedApi(
-                "com.android.bluetooth.flags.leaudio_broadcast_volume_control_for_connected_devices")
+        @FlaggedApi(Flags.FLAG_LEAUDIO_BROADCAST_VOLUME_CONTROL_FOR_CONNECTED_DEVICES)
         @SystemApi
         default void onDeviceVolumeChanged(
                 @NonNull BluetoothDevice device, @IntRange(from = 0, to = 255) int volume) {}
@@ -621,8 +621,7 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
      * @throws IllegalArgumentException if volume is not in the range [0, 255].
      * @hide
      */
-    @FlaggedApi(
-            "com.android.bluetooth.flags.leaudio_broadcast_volume_control_for_connected_devices")
+    @FlaggedApi(Flags.FLAG_LEAUDIO_BROADCAST_VOLUME_CONTROL_FOR_CONNECTED_DEVICES)
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(

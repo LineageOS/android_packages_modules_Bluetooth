@@ -235,6 +235,7 @@ android_app {
     jni_uses_platform_apis: true,
     libs: [
         "app-compat-annotations",
+        "bluetooth_flags_java_lib",
         "error_prone_annotations",
         "framework-annotations-lib",
         "framework-bluetooth-pre-jarjar",
@@ -261,7 +262,6 @@ android_app {
         "bluetooth-protos-lite",
         "bluetooth.change-ids",
         "bluetooth.mapsapi",
-        "bluetooth_flags_java_lib",
         "com.android.obex",
         "com.android.vcard",
         "guava",

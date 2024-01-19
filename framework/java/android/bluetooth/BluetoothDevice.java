@@ -52,6 +52,7 @@ import android.os.RemoteException;
 import android.util.Log;
 import android.util.Pair;
 
+import com.android.bluetooth.flags.Flags;
 import com.android.modules.utils.SynchronousResultReceiver;
 
 import java.io.IOException;
@@ -304,7 +305,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      *
      * @hide
      */
-    @FlaggedApi("com.android.bluetooth.flags.key_missing_broadcast")
+    @FlaggedApi(Flags.FLAG_KEY_MISSING_BROADCAST)
     @SuppressLint("ActionValue")
     @RequiresPermission(
             allOf = {
@@ -834,7 +835,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      *
      * @hide
      */
-    @FlaggedApi("com.android.bluetooth.flags.support_metadata_device_types_apis")
+    @FlaggedApi(Flags.FLAG_SUPPORT_METADATA_DEVICE_TYPES_APIS)
     @SystemApi
     public static final String DEVICE_TYPE_SPEAKER = "Speaker";
 
@@ -844,7 +845,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      *
      * @hide
      */
-    @FlaggedApi("com.android.bluetooth.flags.support_metadata_device_types_apis")
+    @FlaggedApi(Flags.FLAG_SUPPORT_METADATA_DEVICE_TYPES_APIS)
     @SystemApi
     public static final String DEVICE_TYPE_HEADSET = "Headset";
 
@@ -854,7 +855,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      *
      * @hide
      */
-    @FlaggedApi("com.android.bluetooth.flags.support_metadata_device_types_apis")
+    @FlaggedApi(Flags.FLAG_SUPPORT_METADATA_DEVICE_TYPES_APIS)
     @SystemApi
     public static final String DEVICE_TYPE_CARKIT = "Carkit";
 
@@ -864,7 +865,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      *
      * @hide
      */
-    @FlaggedApi("com.android.bluetooth.flags.support_metadata_device_types_apis")
+    @FlaggedApi(Flags.FLAG_SUPPORT_METADATA_DEVICE_TYPES_APIS)
     @SystemApi
     public static final String DEVICE_TYPE_HEARING_AID = "HearingAid";
 
