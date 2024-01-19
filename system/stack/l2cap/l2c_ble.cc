@@ -175,6 +175,8 @@ bool l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
   p_lcb->timeout = conn_timeout;
   p_lcb->latency = conn_latency;
   p_lcb->conn_update_mask = L2C_BLE_NOT_DEFAULT_PARAM;
+  p_lcb->conn_update_blocked_by_profile_connection = false;
+  p_lcb->conn_update_blocked_by_service_discovery = false;
 
   p_lcb->subrate_req_mask = 0;
   p_lcb->subrate_min = 1;
