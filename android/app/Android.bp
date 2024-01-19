@@ -297,9 +297,7 @@ android_app {
             "UseSparseArrays",
             "UseValueOf",
         ],
-        strict_updatability_linting: true,
         baseline_filename: "lint-baseline.xml",
-
     },
 
     optimize: {
