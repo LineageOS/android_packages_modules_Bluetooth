@@ -60,10 +60,6 @@ typedef enum : uint8_t {
   SMP_MODEL_OUT_OF_RANGE = 9,
 } tSMP_ASSO_MODEL;
 
-#ifndef SMP_MAX_CONN
-#define SMP_MAX_CONN 2
-#endif
-
 #define SMP_WAIT_FOR_RSP_TIMEOUT_MS (30 * 1000)
 #define SMP_DELAYED_AUTH_TIMEOUT_MS 500
 
