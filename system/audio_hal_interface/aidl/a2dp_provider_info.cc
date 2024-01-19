@@ -16,7 +16,7 @@
 
 #define LOG_TAG "AIDLProviderInfo"
 
-#include "provider_info.h"
+#include "a2dp_provider_info.h"
 
 #include <android/binder_manager.h>
 #include <android_bluetooth_flags.h>
