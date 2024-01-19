@@ -19,12 +19,12 @@
 
 #include <vector>
 
+#include "a2dp_provider_info.h"
 #include "a2dp_transport.h"
 #include "audio_aidl_interfaces.h"
 #include "bta/av/bta_av_int.h"
 #include "btif/include/btif_common.h"
 #include "codec_status_aidl.h"
-#include "provider_info.h"
 #include "transport_instance.h"
 
 namespace bluetooth {
