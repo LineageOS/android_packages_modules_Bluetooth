@@ -65,6 +65,10 @@ void acl_connection_state_changed(
   metrics::LogMetricsAclConnectionStateChanged(&addr, transport, status, acl_state, direction, hci_reason);
 }
 
+void suspend_complete_state(uint32_t state) {
+  metrics::LogMetricsSuspendIdState(state);
+}
+
 }  // namespace rust
 }  // namespace topshim
 }  // namespace bluetooth

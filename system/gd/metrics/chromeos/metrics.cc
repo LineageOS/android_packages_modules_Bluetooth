@@ -318,5 +318,24 @@ void LogMetricsChipsetInfoReport() {
   }
 }
 
+void LogMetricsSuspendIdState(uint32_t state) {
+  int64_t suspend_id_state = 0;
+  int64_t boot_time;
+  std::string boot_id;
+
+  if (!GetBootId(&boot_id)) return;
+
+  boot_time = bluetooth::common::time_get_os_boottime_us();
+
+  suspend_id_state = (int64_t)ToSuspendIdState(state);
+  LOG_DEBUG("SuspendIdState: %s, %d, %d", boot_id.c_str(), boot_time, suspend_id_state);
+
+  ::metrics::structured::events::bluetooth::BluetoothSuspendIdStateChanged()
+      .SetBootId(boot_id)
+      .SetSystemTime(boot_time)
+      .SetSuspendIdState(suspend_id_state)
+      .Record();
+}
+
 }  // namespace metrics
 }  // namespace bluetooth
