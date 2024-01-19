@@ -265,6 +265,7 @@ public final class DistanceMeasurementParams implements Parcelable {
             switch (methodId) {
                 case DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_AUTO:
                 case DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI:
+                case DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING:
                     mMethodId = methodId;
                     break;
                 default:
