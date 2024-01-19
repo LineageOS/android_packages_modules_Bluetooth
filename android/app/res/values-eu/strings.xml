@@ -18,9 +18,9 @@
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="app_name" msgid="2326164424236203271">"Bluetootha"</string>
     <string name="permlab_bluetoothShareManager" msgid="5297865456717871041">"Atzitu deskargen kudeatzailea."</string>
-    <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"Bluetooth bidezko partekatzeen kudeatzailea atzitzea eta fitxategiak transferitzeko erabiltzeko baimena ematen die aplikazioei."</string>
+    <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"Bluetooth bidezko partekatzeen kudeatzailea atzitzea eta fitxategiak transferitzeko erabiltzeko baimena ematen dio aplikazioari."</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"Ezarri Bluetooth bidezko gailuak onartutakoen zerrendan."</string>
-    <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"Bluetooth bidezko gailu bat aldi baterako onartutakoen zerrendan ezartzeko baimena ematen die aplikazioei, gailu honetara fitxategiak bidaltzeko baimena izan dezan, baina gailu honen erabiltzaileari berrespena eskatu beharrik gabe."</string>
+    <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"Bluetooth bidezko gailu bat aldi baterako onartutakoen zerrendan ezartzeko baimena ematen dio aplikazioari, gailu honetara fitxategiak bidaltzeko baimena izan dezan, baina gailu honen erabiltzaileari berrespena eskatu beharrik gabe."</string>
     <string name="bt_share_picker_label" msgid="7464438494743777696">"Bluetootha"</string>
     <string name="unknown_device" msgid="2317679521750821654">"Identifikatu ezin den gailua"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"Ezezaguna"</string>
