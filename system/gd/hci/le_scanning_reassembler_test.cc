@@ -19,8 +19,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "hci/enum_helper.h"
-
 using ::testing::_;
 using ::testing::Eq;
 
@@ -29,7 +27,14 @@ using namespace std::chrono_literals;
 
 namespace bluetooth::hci {
 
-static constexpr ExtendedAdvertisingEventType kCompleteEventType{0};
+// Event type fields.
+static constexpr uint16_t kConnectable = 0x1;
+static constexpr uint16_t kScannable = 0x2;
+static constexpr uint16_t kScanResponse = 0x8;
+static constexpr uint16_t kLegacy = 0x10;
+static constexpr uint8_t kComplete = 0x0;
+static constexpr uint8_t kContinuation = 0x20;
+static constexpr uint8_t kTruncated = 0x40;
 
 // Defaults for other fields.
 static constexpr uint8_t kSidNotPresent = 0xff;
@@ -64,7 +69,7 @@ TEST_F(LeScanningReassemblerTest, non_scannable_legacy_advertising) {
   ASSERT_EQ(
       reassembler_
           .ProcessAdvertisingReport(
-              ExtendedAdvertisingEventType::LEGACY,
+              kLegacy | kComplete,
               (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
               kTestAddress,
               kSidNotPresent,
@@ -77,45 +82,40 @@ TEST_F(LeScanningReassemblerTest, non_scannable_legacy_advertising) {
 TEST_F(LeScanningReassemblerTest, scannable_non_connectable_legacy_advertising) {
   // Test scannable legacy advertising with well formed advertising and
   // scan response payload.
-  ASSERT_FALSE(
-      reassembler_
-          .ProcessAdvertisingReport(
-              ExtendedAdvertisingEventType::LEGACY | ExtendedAdvertisingEventType::SCANNABLE,
-              (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
-              kTestAddress,
-              kSidNotPresent,
-              {0x1, 0x2})
-          .has_value());
+  ASSERT_FALSE(reassembler_
+                   .ProcessAdvertisingReport(
+                       kLegacy | kScannable | kComplete,
+                       (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
+                       kTestAddress,
+                       kSidNotPresent,
+                       {0x1, 0x2})
+                   .has_value());
 
-  ExtendedAdvertisingEventType scan_response_event_type =
-      ExtendedAdvertisingEventType::LEGACY | ExtendedAdvertisingEventType::SCANNABLE |
-      ExtendedAdvertisingEventType::SCAN_RESPONSE;
   auto processed_report = reassembler_.ProcessAdvertisingReport(
-      scan_response_event_type,
+      kLegacy | kScannable | kScanResponse | kComplete,
       (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
       kTestAddress,
       kSidNotPresent,
       {0x3, 0x4, 0x5, 0x6});
   ASSERT_TRUE(processed_report.has_value());
-  ASSERT_EQ(processed_report.value().extended_event_type, scan_response_event_type);
+  ASSERT_EQ(processed_report.value().extended_event_type, kLegacy | kScannable | kScanResponse);
   ASSERT_EQ(processed_report.value().data, std::vector<uint8_t>({0x1, 0x2, 0x3, 0x4, 0x5, 0x6}));
 
   // Test scannable legacy advertising with padding after the
   // advertising and scan response data.
-  ASSERT_FALSE(
-      reassembler_
-          .ProcessAdvertisingReport(
-              ExtendedAdvertisingEventType::LEGACY | ExtendedAdvertisingEventType::SCANNABLE,
-              (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
-              kTestAddress,
-              kSidNotPresent,
-              {0x1, 0x2, 0x0, 0x0})
-          .has_value());
+  ASSERT_FALSE(reassembler_
+                   .ProcessAdvertisingReport(
+                       kLegacy | kScannable | kComplete,
+                       (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
+                       kTestAddress,
+                       kSidNotPresent,
+                       {0x1, 0x2, 0x0, 0x0})
+                   .has_value());
 
   ASSERT_EQ(
       reassembler_
           .ProcessAdvertisingReport(
-              scan_response_event_type,
+              kLegacy | kScannable | kScanResponse | kComplete,
               (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
               kTestAddress,
               kSidNotPresent,
@@ -128,20 +128,15 @@ TEST_F(LeScanningReassemblerTest, scannable_non_connectable_legacy_advertising) 
 TEST_F(LeScanningReassemblerTest, scannable_connectable_legacy_advertising) {
   ASSERT_FALSE(reassembler_
                    .ProcessAdvertisingReport(
-                       ExtendedAdvertisingEventType::LEGACY |
-                           ExtendedAdvertisingEventType::SCANNABLE |
-                           ExtendedAdvertisingEventType::CONNECTABLE,
+                       kLegacy | kScannable | kConnectable,
                        (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
                        kTestAddress,
                        kSidNotPresent,
                        {0x1, 0x2})
                    .has_value());
 
-  ExtendedAdvertisingEventType scan_response_event_type =
-      ExtendedAdvertisingEventType::LEGACY | ExtendedAdvertisingEventType::SCANNABLE |
-      ExtendedAdvertisingEventType::SCAN_RESPONSE;
   auto processed_report = reassembler_.ProcessAdvertisingReport(
-      scan_response_event_type,
+      kLegacy | kScannable | kScanResponse,
       (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
       kTestAddress,
       kSidNotPresent,
@@ -149,7 +144,7 @@ TEST_F(LeScanningReassemblerTest, scannable_connectable_legacy_advertising) {
   ASSERT_TRUE(processed_report.has_value());
   ASSERT_EQ(
       processed_report.value().extended_event_type,
-      scan_response_event_type | ExtendedAdvertisingEventType::CONNECTABLE);
+      kLegacy | kScannable | kScanResponse | kConnectable);
   ASSERT_EQ(processed_report.value().data, std::vector<uint8_t>({0x1, 0x2, 0x3, 0x4, 0x5, 0x6}));
 }
 
@@ -158,7 +153,7 @@ TEST_F(LeScanningReassemblerTest, non_scannable_extended_advertising) {
   // The split may occur in the middle of a GAP entry.
   ASSERT_FALSE(reassembler_
                    .ProcessAdvertisingReport(
-                       ExtendedAdvertisingEventType::CONTINUING,
+                       kContinuation,
                        (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
                        kTestAddress,
                        kSidNotPresent,
@@ -166,20 +161,20 @@ TEST_F(LeScanningReassemblerTest, non_scannable_extended_advertising) {
                    .has_value());
 
   auto processed_report = reassembler_.ProcessAdvertisingReport(
-      kCompleteEventType,
+      kComplete,
       (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
       kTestAddress,
       kSidNotPresent,
       {0x4, 0x5, 0x6});
   ASSERT_TRUE(processed_report.has_value());
-  ASSERT_EQ(processed_report.value().extended_event_type, kCompleteEventType);
+  ASSERT_EQ(processed_report.value().extended_event_type, kComplete);
   ASSERT_EQ(processed_report.value().data, std::vector<uint8_t>({0x1, 0x2, 0x3, 0x4, 0x5, 0x6}));
 
   // Test fragmented and truncated non scannable extended advertising.
   // The split may occur in the middle of a GAP entry.
   ASSERT_FALSE(reassembler_
                    .ProcessAdvertisingReport(
-                       ExtendedAdvertisingEventType::CONTINUING,
+                       kContinuation,
                        (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
                        kTestAddress,
                        kSidNotPresent,
@@ -189,7 +184,7 @@ TEST_F(LeScanningReassemblerTest, non_scannable_extended_advertising) {
   ASSERT_EQ(
       reassembler_
           .ProcessAdvertisingReport(
-              ExtendedAdvertisingEventType::TRUNCATED,
+              kTruncated,
               (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
               kTestAddress,
               kSidNotPresent,
@@ -202,7 +197,7 @@ TEST_F(LeScanningReassemblerTest, non_scannable_extended_advertising) {
   // extended advertising. The split may occur in the middle of a GAP entry.
   ASSERT_FALSE(reassembler_
                    .ProcessAdvertisingReport(
-                       ExtendedAdvertisingEventType::CONTINUING,
+                       kContinuation,
                        (uint8_t)DirectAdvertisingAddressType::NO_ADDRESS_PROVIDED,
                        Address::kEmpty,
                        kSidNotPresent,
@@ -212,7 +207,7 @@ TEST_F(LeScanningReassemblerTest, non_scannable_extended_advertising) {
   ASSERT_EQ(
       reassembler_
           .ProcessAdvertisingReport(
-              ExtendedAdvertisingEventType::TRUNCATED,
+              kTruncated,
               (uint8_t)DirectAdvertisingAddressType::NO_ADDRESS_PROVIDED,
               Address::kEmpty,
               kSidNotPresent,
@@ -226,19 +221,18 @@ TEST_F(LeScanningReassemblerTest, scannable_extended_advertising) {
   // Test fragmented scannable extended advertising.
   // The split may occur in the middle of a GAP entry.
   // Padding may occur at the end of the advertising data.
-  ASSERT_FALSE(
-      reassembler_
-          .ProcessAdvertisingReport(
-              ExtendedAdvertisingEventType::SCANNABLE | ExtendedAdvertisingEventType::CONTINUING,
-              (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
-              kTestAddress,
-              kSidNotPresent,
-              {0x1, 0x2, 0x3})
-          .has_value());
+  ASSERT_FALSE(reassembler_
+                   .ProcessAdvertisingReport(
+                       kScannable | kContinuation,
+                       (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
+                       kTestAddress,
+                       kSidNotPresent,
+                       {0x1, 0x2, 0x3})
+                   .has_value());
 
   ASSERT_FALSE(reassembler_
                    .ProcessAdvertisingReport(
-                       ExtendedAdvertisingEventType::SCANNABLE,
+                       kScannable | kComplete,
                        (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
                        kTestAddress,
                        kSidNotPresent,
@@ -247,7 +241,7 @@ TEST_F(LeScanningReassemblerTest, scannable_extended_advertising) {
 
   ASSERT_FALSE(reassembler_
                    .ProcessAdvertisingReport(
-                       ExtendedAdvertisingEventType::CONTINUING,
+                       kContinuation,
                        (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
                        kTestAddress,
                        kSidNotPresent,
@@ -257,7 +251,7 @@ TEST_F(LeScanningReassemblerTest, scannable_extended_advertising) {
   ASSERT_EQ(
       reassembler_
           .ProcessAdvertisingReport(
-              ExtendedAdvertisingEventType::TRUNCATED,
+              kTruncated,
               (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
               kTestAddress,
               kSidNotPresent,
@@ -269,20 +263,19 @@ TEST_F(LeScanningReassemblerTest, scannable_extended_advertising) {
 
 TEST_F(LeScanningReassemblerTest, ignore_scan_responses) {
   // Scan response without advertising data are ignored.
-  ASSERT_FALSE(
-      reassembler_
-          .ProcessAdvertisingReport(
-              ExtendedAdvertisingEventType::SCANNABLE | ExtendedAdvertisingEventType::SCAN_RESPONSE,
-              (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
-              kTestAddress,
-              kSidNotPresent,
-              {0x1, 0x2})
-          .has_value());
+  ASSERT_FALSE(reassembler_
+                   .ProcessAdvertisingReport(
+                       kScannable | kScanResponse | kComplete,
+                       (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
+                       kTestAddress,
+                       kSidNotPresent,
+                       {0x1, 0x2})
+                   .has_value());
 
   ASSERT_EQ(
       reassembler_
           .ProcessAdvertisingReport(
-              kCompleteEventType,
+              kComplete,
               (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
               kTestAddress,
               kSidNotPresent,
@@ -296,7 +289,7 @@ TEST_F(LeScanningReassemblerTest, ignore_scan_responses) {
   ASSERT_EQ(
       reassembler_
           .ProcessAdvertisingReport(
-              ExtendedAdvertisingEventType::SCANNABLE,
+              kScannable | kComplete,
               (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
               kTestAddress,
               kSidNotPresent,
@@ -311,7 +304,7 @@ TEST_F(LeScanningReassemblerTest, interleaved_advertising) {
   // address type, and SID.
   ASSERT_FALSE(reassembler_
                    .ProcessAdvertisingReport(
-                       ExtendedAdvertisingEventType::CONTINUING,
+                       kContinuation,
                        (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
                        kTestAddress,
                        kSidNotPresent,
@@ -320,7 +313,7 @@ TEST_F(LeScanningReassemblerTest, interleaved_advertising) {
 
   ASSERT_FALSE(reassembler_
                    .ProcessAdvertisingReport(
-                       ExtendedAdvertisingEventType::CONTINUING,
+                       kContinuation,
                        (uint8_t)AddressType::RANDOM_DEVICE_ADDRESS,
                        kTestAddress,
                        kSidNotPresent,
@@ -329,7 +322,7 @@ TEST_F(LeScanningReassemblerTest, interleaved_advertising) {
 
   ASSERT_FALSE(reassembler_
                    .ProcessAdvertisingReport(
-                       ExtendedAdvertisingEventType::CONTINUING,
+                       kContinuation,
                        (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
                        kTestAddress,
                        0x1,
@@ -338,7 +331,7 @@ TEST_F(LeScanningReassemblerTest, interleaved_advertising) {
 
   ASSERT_FALSE(reassembler_
                    .ProcessAdvertisingReport(
-                       ExtendedAdvertisingEventType::CONTINUING,
+                       kContinuation,
                        (uint8_t)DirectAdvertisingAddressType::NO_ADDRESS_PROVIDED,
                        Address::kEmpty,
                        0x1,
@@ -348,7 +341,7 @@ TEST_F(LeScanningReassemblerTest, interleaved_advertising) {
   ASSERT_EQ(
       reassembler_
           .ProcessAdvertisingReport(
-              kCompleteEventType,
+              kComplete,
               (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
               kTestAddress,
               kSidNotPresent,
@@ -360,7 +353,7 @@ TEST_F(LeScanningReassemblerTest, interleaved_advertising) {
   ASSERT_EQ(
       reassembler_
           .ProcessAdvertisingReport(
-              kCompleteEventType,
+              kComplete,
               (uint8_t)AddressType::RANDOM_DEVICE_ADDRESS,
               kTestAddress,
               kSidNotPresent,
@@ -372,11 +365,7 @@ TEST_F(LeScanningReassemblerTest, interleaved_advertising) {
   ASSERT_EQ(
       reassembler_
           .ProcessAdvertisingReport(
-              kCompleteEventType,
-              (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
-              kTestAddress,
-              0x1,
-              {0x2})
+              kComplete, (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS, kTestAddress, 0x1, {0x2})
           .value()
           .data,
       std::vector<uint8_t>({0x2, 0x2, 0x2}));
@@ -384,7 +373,7 @@ TEST_F(LeScanningReassemblerTest, interleaved_advertising) {
   ASSERT_EQ(
       reassembler_
           .ProcessAdvertisingReport(
-              kCompleteEventType,
+              kComplete,
               (uint8_t)DirectAdvertisingAddressType::NO_ADDRESS_PROVIDED,
               Address::kEmpty,
               0x1,

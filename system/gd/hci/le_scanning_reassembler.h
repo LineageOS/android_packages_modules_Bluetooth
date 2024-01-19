@@ -36,7 +36,7 @@ namespace bluetooth::hci {
 class LeScanningReassembler {
  public:
   struct CompleteAdvertisingData {
-    ExtendedAdvertisingEventType extended_event_type;
+    uint16_t extended_event_type;
     std::vector<uint8_t> data;
   };
 
@@ -52,7 +52,7 @@ class LeScanningReassembler {
   /// Returns the completed advertising data if the event was complete, or the
   /// completion of a fragmented advertising event.
   std::optional<CompleteAdvertisingData> ProcessAdvertisingReport(
-      ExtendedAdvertisingEventType event_type,
+      uint16_t event_type,
       uint8_t address_type,
       Address address,
       uint8_t advertising_sid,
@@ -67,6 +67,14 @@ class LeScanningReassembler {
  private:
   /// Determine if scan responses should be processed or ignored.
   bool ignore_scan_responses_{false};
+
+  /// Constants for parsing event_type.
+  static constexpr uint8_t kConnectableBit = 0;
+  static constexpr uint8_t kScannableBit = 1;
+  static constexpr uint8_t kDirectedBit = 2;
+  static constexpr uint8_t kScanResponseBit = 3;
+  static constexpr uint8_t kLegacyBit = 4;
+  static constexpr uint8_t kDataStatusBits = 5;
 
   /// Packs the information necessary to disambiguate advertising events:
   /// - For legacy advertising events, the advertising address and
@@ -89,13 +97,11 @@ class LeScanningReassembler {
   /// Packs incomplete advertising data.
   struct AdvertisingFragment {
     AdvertisingKey key;
-    ExtendedAdvertisingEventType extended_event_type;
+    uint16_t extended_event_type;
     std::vector<uint8_t> data;
 
     AdvertisingFragment(
-        const AdvertisingKey& key,
-        ExtendedAdvertisingEventType extended_event_type,
-        const std::vector<uint8_t>& data)
+        const AdvertisingKey& key, uint16_t extended_event_type, const std::vector<uint8_t>& data)
         : key(key), extended_event_type(extended_event_type), data(data.begin(), data.end()) {}
   };
 
@@ -109,9 +115,7 @@ class LeScanningReassembler {
 
   /// Advertising cache management methods.
   std::list<AdvertisingFragment>::iterator AppendFragment(
-      const AdvertisingKey& key,
-      ExtendedAdvertisingEventType extended_event_type,
-      const std::vector<uint8_t>& data);
+      const AdvertisingKey& key, uint16_t extended_event_type, const std::vector<uint8_t>& data);
 
   void RemoveFragment(const AdvertisingKey& key);
 
