@@ -25,5 +25,8 @@ source_set("BluetoothNeighborSources") {
 
   deps = [ "//bt/system/gd:gd_default_deps" ]
 
-  configs += [ "//bt/system/gd:gd_defaults" ]
+  configs += [
+    "//bt/system/gd:gd_defaults",
+    "//bt/system/log:log_defaults",
+  ]
 }

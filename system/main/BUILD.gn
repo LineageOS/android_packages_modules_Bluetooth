@@ -83,6 +83,7 @@ target(lib_type, "bluetooth") {
     "//bt/system/embdrv/g722",
     "//bt/system/embdrv/sbc",
     "//bt/system/gd:libbluetooth_gd",
+    "//bt/system/log:libbluetooth_log",
     "//bt/system/hci",
     "//bt/system/main/shim:LibBluetoothShimSources",
     "//bt/system/osi",
@@ -105,6 +106,7 @@ target(lib_type, "bluetooth") {
 
   libs = [
     "dl",
+    "fmt",
     "pthread",
     "resolv",
     "rt",

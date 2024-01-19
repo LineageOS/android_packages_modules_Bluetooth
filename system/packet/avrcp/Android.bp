@@ -45,6 +45,7 @@ cc_library_static {
     ],
     static_libs: [
         "lib-bt-packets-base",
+        "libbluetooth_log",
         "libchrome",
     ],
     apex_available: [
