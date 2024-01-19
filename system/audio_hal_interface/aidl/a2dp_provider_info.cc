@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "AIDLProviderInfo"
+#define LOG_TAG "AIDLA2dpProviderInfo"
 
 #include "a2dp_provider_info.h"
 
