@@ -160,7 +160,7 @@ void smp_generate_stk(tSMP_CB* p_cb, UNUSED_ATTR tSMP_INT_DATA* p_data) {
 
   LOG_VERBOSE("addr:%s", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
 
-  if (p_cb->le_secure_connections_mode_is_used) {
+  if (p_cb->sc_mode_required_by_peer) {
     LOG_VERBOSE("FOR LE SC LTK IS USED INSTEAD OF STK");
     output = p_cb->ltk;
   } else {
@@ -546,7 +546,7 @@ void smp_generate_ltk(tSMP_CB* p_cb, UNUSED_ATTR tSMP_INT_DATA* p_data) {
   if (smp_get_br_state() == SMP_BR_STATE_BOND_PENDING) {
     smp_br_process_link_key(p_cb, NULL);
     return;
-  } else if (p_cb->le_secure_connections_mode_is_used) {
+  } else if (p_cb->sc_mode_required_by_peer) {
     smp_process_secure_connection_long_term_key();
     return;
   }

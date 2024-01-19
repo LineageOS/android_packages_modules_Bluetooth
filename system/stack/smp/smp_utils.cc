@@ -1294,7 +1294,7 @@ void smp_reject_unexpected_pairing_command(const RawAddress& bd_addr) {
  * Note             If Secure Connections Only mode is required locally then we
  *                  come to this point only if both sides support Secure
  *                  Connections mode, i.e.
- *                  if p_cb->secure_connections_only_mode_required = true
+ *                  if p_cb->sc_only_mode_locally_required = true
  *                  then we come to this point only if
  *                      (p_cb->peer_auth_req & SMP_SC_SUPPORT_BIT) ==
  *                      (p_cb->loc_auth_req & SMP_SC_SUPPORT_BIT) ==
@@ -1303,7 +1303,7 @@ void smp_reject_unexpected_pairing_command(const RawAddress& bd_addr) {
  ******************************************************************************/
 tSMP_ASSO_MODEL smp_select_association_model(tSMP_CB* p_cb) {
   tSMP_ASSO_MODEL model = SMP_MODEL_OUT_OF_RANGE;
-  p_cb->le_secure_connections_mode_is_used = false;
+  p_cb->sc_mode_required_by_peer = false;
 
   LOG_VERBOSE("p_cb->peer_io_caps = %d p_cb->local_io_capability = %d",
               p_cb->peer_io_caps, p_cb->local_io_capability);
@@ -1311,12 +1311,12 @@ tSMP_ASSO_MODEL smp_select_association_model(tSMP_CB* p_cb) {
               p_cb->peer_oob_flag, p_cb->loc_oob_flag);
   LOG_VERBOSE("p_cb->peer_auth_req = 0x%02x p_cb->loc_auth_req = 0x%02x",
               p_cb->peer_auth_req, p_cb->loc_auth_req);
-  LOG_VERBOSE("p_cb->secure_connections_only_mode_required = %s",
-              p_cb->secure_connections_only_mode_required ? "true" : "false");
+  LOG_VERBOSE("p_cb->sc_only_mode_locally_required = %s",
+              p_cb->sc_only_mode_locally_required ? "true" : "false");
 
   if ((p_cb->peer_auth_req & SMP_SC_SUPPORT_BIT) &&
       (p_cb->loc_auth_req & SMP_SC_SUPPORT_BIT)) {
-    p_cb->le_secure_connections_mode_is_used = true;
+    p_cb->sc_mode_required_by_peer = true;
   }
 
   if ((p_cb->peer_auth_req & SMP_H7_SUPPORT_BIT) &&
@@ -1325,10 +1325,9 @@ tSMP_ASSO_MODEL smp_select_association_model(tSMP_CB* p_cb) {
   }
 
   LOG_VERBOSE("use_sc_process = %d, h7 use = %d",
-              p_cb->le_secure_connections_mode_is_used,
-              p_cb->key_derivation_h7_used);
+              p_cb->sc_mode_required_by_peer, p_cb->key_derivation_h7_used);
 
-  if (p_cb->le_secure_connections_mode_is_used) {
+  if (p_cb->sc_mode_required_by_peer) {
     model = smp_select_association_model_secure_connections(p_cb);
   } else {
     model = smp_select_legacy_association_model(p_cb);
