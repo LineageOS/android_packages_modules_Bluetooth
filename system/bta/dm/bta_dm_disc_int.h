@@ -74,7 +74,7 @@ typedef struct {
 typedef struct {
   BT_HDR_RIGID hdr;
   RawAddress bd_addr;
-  tBTA_DM_SEARCH_CBACK* p_cback;
+  service_discovery_callbacks cbacks;
   tBT_TRANSPORT transport;
 } tBTA_DM_API_DISCOVER;
 
@@ -155,7 +155,7 @@ inline std::string bta_dm_state_text(const tBTA_DM_STATE& state) {
 /* DM search control block */
 typedef struct {
   tBTA_DM_SEARCH_CBACK* p_device_search_cback;
-  tBTA_DM_SEARCH_CBACK* p_service_search_cback;
+  service_discovery_callbacks service_search_cbacks;
   tBTM_INQ_INFO* p_btm_inq_info;
   tBTA_SERVICE_MASK services;
   tBTA_SERVICE_MASK services_to_search;

@@ -319,6 +319,10 @@ typedef union {
 /* Search callback */
 typedef void(tBTA_DM_SEARCH_CBACK)(tBTA_DM_SEARCH_EVT event,
                                    tBTA_DM_SEARCH* p_data);
+struct service_discovery_callbacks {
+  /* legacy callback I'll tear apart and get rid of */
+  tBTA_DM_SEARCH_CBACK* legacy;
+};
 
 /* Execute call back */
 typedef void(tBTA_DM_EXEC_CBACK)(void* p_param);
@@ -580,8 +584,8 @@ void BTA_DmSearchCancel(void);
  * Returns          void
  *
  ******************************************************************************/
-void BTA_DmDiscover(const RawAddress& bd_addr, tBTA_DM_SEARCH_CBACK* p_cback,
-                    tBT_TRANSPORT transport);
+void BTA_DmDiscover(const RawAddress& bd_addr,
+                    service_discovery_callbacks cback, tBT_TRANSPORT transport);
 
 /*******************************************************************************
  *

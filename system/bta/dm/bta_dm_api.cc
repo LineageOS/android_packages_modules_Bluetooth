@@ -111,9 +111,10 @@ void BTA_DmSearchCancel(void) { bta_dm_disc_stop_device_discovery(); }
  * Returns          void
  *
  ******************************************************************************/
-void BTA_DmDiscover(const RawAddress& bd_addr, tBTA_DM_SEARCH_CBACK* p_cback,
+void BTA_DmDiscover(const RawAddress& bd_addr,
+                    service_discovery_callbacks cbacks,
                     tBT_TRANSPORT transport) {
-  bta_dm_disc_start_service_discovery(p_cback, bd_addr, transport);
+  bta_dm_disc_start_service_discovery(cbacks, bd_addr, transport);
 }
 
 /*******************************************************************************
