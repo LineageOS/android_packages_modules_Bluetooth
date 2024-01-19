@@ -17,12 +17,15 @@ java_aconfig_library {
     visibility: [
         "//cts/tests/tests/bluetooth:__subpackages__",
         "//packages/modules/Bluetooth/android/app",
+        "//packages/modules/Bluetooth/framework",
         "//packages/modules/Bluetooth/framework/tests/util",
         "//packages/modules/Bluetooth/service:__subpackages__",
     ],
     apex_available: [
         "com.android.btservices",
     ],
+    libs: ["framework-configinfrastructure"],
+    sdk_version: "module_current",
     min_sdk_version: "Tiramisu",
 }
 
