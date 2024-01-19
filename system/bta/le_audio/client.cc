@@ -293,6 +293,11 @@ class LeAudioClientImpl : public LeAudioClient {
       return;
     }
 
+    /* Reconfiguration to non requiring source scenario */
+    if (sink_monitor_mode_) {
+      notifyAudioLocalSink(UnicastMonitorModeStatus::STREAMING_SUSPENDED);
+    }
+
     /* For sonification events we don't really need to reconfigure to HQ
      * configuration, but if the previous configuration was for HQ Media,
      * we might want to go back to that scenario.
