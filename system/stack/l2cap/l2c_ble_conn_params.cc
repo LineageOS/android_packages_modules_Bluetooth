@@ -23,10 +23,9 @@
  *
  ******************************************************************************/
 
-#define LOG_TAG "l2c_ble_conn_marams"
+#define LOG_TAG "l2c_ble_conn_params"
 
 #include <base/logging.h>
-#include <base/strings/stringprintf.h>
 #include <log/log.h>
 
 #include "internal_include/stack_config.h"
@@ -38,8 +37,6 @@
 #include "stack/include/l2c_api.h"
 #include "stack/l2cap/l2c_int.h"
 #include "types/raw_address.h"
-
-using base::StringPrintf;
 
 void l2cble_start_conn_update(tL2C_LCB* p_lcb);
 static void l2cble_start_subrate_change(tL2C_LCB* p_lcb);
@@ -92,41 +89,90 @@ bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda, uint16_t min_int,
   return (true);
 }
 
-/*******************************************************************************
- *
- *  Function        L2CA_EnableUpdateBleConnParams
- *
- *  Description     Enable or disable update based on the request from the peer
- *
- *  Parameters:     BD Address of remote
- *
- *  Return value:   true if update started
- *
- ******************************************************************************/
-bool L2CA_EnableUpdateBleConnParams(const RawAddress& rem_bda, bool enable) {
-  if (stack_config_get_interface()->get_pts_conn_updates_disabled())
-    return false;
+static bool l2c_enable_update_ble_conn_params(tL2C_LCB* p_lcb, bool enable);
 
-  tL2C_LCB* p_lcb;
+/* When called with lock=true, LE connection parameters will be locked on
+ * fastest value, and we won't accept request to change it from remote. When
+ * called with lock=false, parameters are relaxed.
+ */
+void L2CA_LockBleConnParamsForServiceDiscovery(const RawAddress& rem_bda,
+                                               bool lock) {
+  if (stack_config_get_interface()->get_pts_conn_updates_disabled()) return;
 
-  /* See if we have a link control block for the remote device */
-  p_lcb = l2cu_find_lcb_by_bd_addr(rem_bda, BT_TRANSPORT_LE);
-
+  tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(rem_bda, BT_TRANSPORT_LE);
   if (!p_lcb) {
-    LOG(WARNING) << __func__ << " - unknown BD_ADDR " << rem_bda;
-    return false;
+    LOG_WARN("unknown address %s", ADDRESS_TO_LOGGABLE_CSTR(rem_bda));
+    return;
   }
-
-  VLOG(2) << __func__ << " - BD_ADDR " << ADDRESS_TO_LOGGABLE_STR(rem_bda)
-          << StringPrintf(" enable %d current upd state 0x%02x", enable,
-                          p_lcb->conn_update_mask);
 
   if (p_lcb->transport != BT_TRANSPORT_LE) {
-    LOG(WARNING) << __func__ << " - BD_ADDR "
-                 << ADDRESS_TO_LOGGABLE_STR(rem_bda) << " not LE, link role "
-                 << p_lcb->LinkRole();
-    return false;
+    LOG_WARN("%s not LE, link role %d", ADDRESS_TO_LOGGABLE_CSTR(rem_bda),
+             p_lcb->LinkRole());
+    return;
   }
+
+  if (lock == p_lcb->conn_update_blocked_by_service_discovery) {
+    LOG_WARN("%s service discovery already locked/unlocked conn params: %d",
+             ADDRESS_TO_LOGGABLE_CSTR(rem_bda), +lock);
+    return;
+  }
+
+  p_lcb->conn_update_blocked_by_service_discovery = lock;
+
+  if (p_lcb->conn_update_blocked_by_profile_connection) {
+    LOG_INFO("%s conn params stay locked because of audio setup",
+             ADDRESS_TO_LOGGABLE_CSTR(rem_bda));
+    return;
+  }
+
+  LOG_INFO("%s Locking/unlocking conn params for service discovery: %d",
+           ADDRESS_TO_LOGGABLE_CSTR(rem_bda), +lock);
+  l2c_enable_update_ble_conn_params(p_lcb, !lock);
+}
+
+/* When called with lock=true, LE connection parameters will be locked on
+ * fastest value, and we won't accept request to change it from remote. When
+ * called with lock=false, parameters are relaxed.
+ */
+void L2CA_LockBleConnParamsForProfileConnection(const RawAddress& rem_bda,
+                                                bool lock) {
+  if (stack_config_get_interface()->get_pts_conn_updates_disabled()) return;
+
+  tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(rem_bda, BT_TRANSPORT_LE);
+  if (!p_lcb) {
+    LOG_WARN("unknown address %s", ADDRESS_TO_LOGGABLE_CSTR(rem_bda));
+    return;
+  }
+
+  if (p_lcb->transport != BT_TRANSPORT_LE) {
+    LOG_WARN("%s not LE, link role %d", ADDRESS_TO_LOGGABLE_CSTR(rem_bda),
+             p_lcb->LinkRole());
+    return;
+  }
+
+  if (lock == p_lcb->conn_update_blocked_by_profile_connection) {
+    LOG_INFO("%s audio setup already locked/unlocked conn params: %d",
+             ADDRESS_TO_LOGGABLE_CSTR(rem_bda), +lock);
+    return;
+  }
+
+  p_lcb->conn_update_blocked_by_profile_connection = lock;
+
+  if (p_lcb->conn_update_blocked_by_service_discovery) {
+    LOG_INFO("%s conn params stay locked because of service discovery",
+             ADDRESS_TO_LOGGABLE_CSTR(rem_bda));
+    return;
+  }
+
+  LOG_INFO("%s Locking/unlocking conn params for audio setup: %d",
+           ADDRESS_TO_LOGGABLE_CSTR(rem_bda), +lock);
+  l2c_enable_update_ble_conn_params(p_lcb, !lock);
+}
+
+static bool l2c_enable_update_ble_conn_params(tL2C_LCB* p_lcb, bool enable) {
+  LOG_DEBUG("%s enable %d current upd state 0x%02x",
+            ADDRESS_TO_LOGGABLE_CSTR(p_lcb->remote_bd_addr), enable,
+            p_lcb->conn_update_mask);
 
   if (enable) {
     p_lcb->conn_update_mask &= ~L2C_BLE_CONN_UPDATE_DISABLE;
