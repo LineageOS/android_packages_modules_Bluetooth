@@ -34,3 +34,10 @@ flag {
     description: "Return null for identity address if identity address is not known"
     bug: "317120534"
 }
+
+flag {
+    name: "get_address_type_api"
+    namespace: "bluetooth"
+    description: "Change visibility of BluetoothDevice#getAddressType API to public"
+    bug: "321120941"
+}
