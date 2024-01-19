@@ -7,6 +7,7 @@ use crate::bluetooth_media::BluetoothMedia;
 use crate::callbacks::Callbacks;
 use crate::{BluetoothGatt, Message, RPCProxy};
 use bt_topshim::btif::{BluetoothInterface, BtDiscMode};
+use bt_topshim::metrics;
 use log::warn;
 use num_derive::{FromPrimitive, ToPrimitive};
 use std::sync::{Arc, Mutex};
@@ -292,6 +293,22 @@ impl ISuspend for Suspend {
     }
 
     fn resume(&mut self) -> bool {
+        // Suspend ID state 0: NoRecord, 1: Recorded
+        let suspend_id_state = match self.suspend_state.lock().unwrap().suspend_id {
+            None => {
+                log::error!("No suspend id saved at resume.");
+                0
+            }
+            Some(_) => 1,
+        };
+        metrics::suspend_complete_state(suspend_id_state);
+        // If no suspend id is saved here, it means floss did not receive the SuspendImminent
+        // signal and as a result, the suspend flow was not run.
+        // Skip the resume flow and return after logging the metrics.
+        if suspend_id_state == 0 {
+            return true;
+        }
+
         let hci_index = self.bt.lock().unwrap().get_hci_index();
         notify_suspend_state(hci_index, false);
 
