@@ -16,20 +16,16 @@
 
 package android.bluetooth;
 
-import static android.bluetooth.BluetoothUtils.getSyncTimeout;
 
 import android.annotation.SuppressLint;
 import android.compat.annotation.UnsupportedAppUsage;
 import android.os.Handler;
 import android.os.ParcelUuid;
-import android.os.RemoteException;
 import android.util.Log;
 
-import com.android.modules.utils.SynchronousResultReceiver;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.concurrent.TimeoutException;
 
 /**
  * A listening Bluetooth socket.
@@ -192,51 +188,29 @@ public final class BluetoothServerSocket implements Closeable {
         BluetoothSocket acceptedSocket = null;
         try {
             acceptedSocket = mSocket.accept(timeout);
-            logL2capcocServerConnection(
+            SocketMetrics.logSocketAccept(
                     acceptedSocket,
+                    mSocket,
+                    mType,
+                    mChannel,
                     timeout,
-                    BluetoothSocket.RESULT_L2CAP_CONN_SUCCESS,
+                    SocketMetrics.RESULT_L2CAP_CONN_SUCCESS,
+                    mSocketCreationTimeMillis,
+                    mSocketCreationLatencyMillis,
                     socketConnectionTime);
             return acceptedSocket;
         } catch (IOException e) {
-            logL2capcocServerConnection(
+            SocketMetrics.logSocketAccept(
                     acceptedSocket,
+                    mSocket,
+                    mType,
+                    mChannel,
                     timeout,
-                    BluetoothSocket.RESULT_L2CAP_CONN_SERVER_FAILURE,
+                    SocketMetrics.RESULT_L2CAP_CONN_SERVER_FAILURE,
+                    mSocketCreationTimeMillis,
+                    mSocketCreationLatencyMillis,
                     socketConnectionTime);
             throw e;
-        }
-    }
-
-    private void logL2capcocServerConnection(
-            BluetoothSocket acceptedSocket,
-            int timeout,
-            int result,
-            long socketConnectionTimeMillis) {
-        if (mType != BluetoothSocket.TYPE_L2CAP_LE) {
-            return;
-        }
-        IBluetooth bluetoothProxy = BluetoothAdapter.getDefaultAdapter().getBluetoothService();
-        if (bluetoothProxy == null) {
-            Log.w(TAG, "bluetoothProxy is null while trying to log l2cap soc server connection");
-            return;
-        }
-        try {
-            final SynchronousResultReceiver recv = SynchronousResultReceiver.get();
-            bluetoothProxy.logL2capcocServerConnection(
-                    acceptedSocket == null ? null : acceptedSocket.getRemoteDevice(),
-                    getPsm(),
-                    mSocket.isAuth(),
-                    result,
-                    mSocketCreationTimeMillis, // pass creation time to calculate end to end latency
-                    mSocketCreationLatencyMillis, // socket creation latency
-                    socketConnectionTimeMillis, // send connection start time for connection latency
-                    timeout,
-                    recv);
-            recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
-
-        } catch (RemoteException | TimeoutException e) {
-            Log.w(TAG, "logL2capcocServerConnection failed due to remote exception");
         }
     }
 
