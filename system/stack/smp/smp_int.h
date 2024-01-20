@@ -31,6 +31,7 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/smp_api_types.h"
+#include "types/hci_role.h"
 #include "types/raw_address.h"
 
 typedef enum : uint16_t {
@@ -58,10 +59,6 @@ typedef enum : uint8_t {
   SMP_MODEL_SEC_CONN_OOB = 8, /* Secure Connections mode, OOB model */
   SMP_MODEL_OUT_OF_RANGE = 9,
 } tSMP_ASSO_MODEL;
-
-#ifndef SMP_MAX_CONN
-#define SMP_MAX_CONN 2
-#endif
 
 #define SMP_WAIT_FOR_RSP_TIMEOUT_MS (30 * 1000)
 #define SMP_DELAYED_AUTH_TIMEOUT_MS 500
@@ -290,7 +287,7 @@ class tSMP_CB {
   tSMP_BR_STATE br_state; /* if SMP over BR/ERD has priority over SMP */
   uint8_t failure;
   tSMP_STATUS status;
-  uint8_t role;
+  tHCI_ROLE role;
   uint16_t flags;
   tSMP_EVT cb_evt;
   tSMP_SEC_LEVEL sec_level;

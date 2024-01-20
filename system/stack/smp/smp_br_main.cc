@@ -305,9 +305,9 @@ void smp_br_state_machine_event(tSMP_CB* p_cb, tSMP_BR_EVENT event,
   tSMP_BR_SM_TBL state_table;
   uint8_t action, entry;
 
-  LOG_VERBOSE("addr:%s", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+  LOG_DEBUG("addr:%s", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
   if (curr_state >= SMP_BR_STATE_MAX) {
-    LOG_VERBOSE("Invalid br_state: %d", curr_state);
+    LOG_ERROR("Invalid br_state: %d", curr_state);
     return;
   }
 
@@ -318,10 +318,10 @@ void smp_br_state_machine_event(tSMP_CB* p_cb, tSMP_BR_EVENT event,
 
   tSMP_BR_ENTRY_TBL entry_table = smp_br_entry_table[p_cb->role];
 
-  LOG_VERBOSE("SMP Role:%s State:[%s(%d)], Event:[%s(%d)]",
-              (p_cb->role == HCI_ROLE_PERIPHERAL) ? "Peripheral" : "Central",
-              smp_get_br_state_name(p_cb->br_state), p_cb->br_state,
-              smp_get_br_event_name(event), event);
+  LOG_DEBUG("Role:%s State:[%s(%d)], Event:[%s(%d)]",
+            hci_role_text(p_cb->role).c_str(),
+            smp_get_br_state_name(p_cb->br_state), p_cb->br_state,
+            smp_get_br_event_name(event), event);
 
   /* look up the state table for the current state */
   /* lookup entry / w event & curr_state */

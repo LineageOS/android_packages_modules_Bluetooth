@@ -1240,6 +1240,7 @@ package android.bluetooth.le {
     method public void writeToParcel(android.os.Parcel, int);
     field @NonNull public static final android.os.Parcelable.Creator<android.bluetooth.le.DistanceMeasurementMethod> CREATOR;
     field public static final int DISTANCE_MEASUREMENT_METHOD_AUTO = 0; // 0x0
+    field @FlaggedApi("com.android.bluetooth.flags.channel_sounding") public static final int DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING = 2; // 0x2
     field public static final int DISTANCE_MEASUREMENT_METHOD_RSSI = 1; // 0x1
   }
 
