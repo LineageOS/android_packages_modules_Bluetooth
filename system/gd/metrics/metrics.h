@@ -40,5 +40,7 @@ void LogMetricsAclConnectionStateChanged(
     RawAddress* addr, uint32_t transport, uint32_t status, uint32_t acl_state, uint32_t direction, uint32_t hci_reason);
 void LogMetricsChipsetInfoReport();
 
+void LogMetricsSuspendIdState(uint32_t state);
+
 }  // namespace metrics
 }  // namespace bluetooth
