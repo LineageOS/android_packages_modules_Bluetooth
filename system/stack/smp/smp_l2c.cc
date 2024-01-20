@@ -24,7 +24,8 @@
 
 #define LOG_TAG "smp"
 
-#include "android_bluetooth_flags.h"
+#include <android_bluetooth_flags.h>
+
 #include "internal_include/bt_target.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"

@@ -18,6 +18,7 @@
 
 #include "bta/dm/bta_dm_disc.h"
 
+#include <android_bluetooth_flags.h>
 #include <base/logging.h>
 #include <base/strings/stringprintf.h>
 #include <stddef.h>
@@ -25,7 +26,6 @@
 #include <cstdint>
 #include <vector>
 
-#include "android_bluetooth_flags.h"
 #include "bta/dm/bta_dm_disc.h"
 #include "bta/dm/bta_dm_disc_int.h"
 #include "bta/include/bta_gatt_api.h"
@@ -42,7 +42,7 @@
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/fixed_queue.h"
-#include "osi/include/osi.h"  // UNUSED_ATTR
+#include "osi/include/osi.h"          // UNUSED_ATTR
 #include "stack/btm/btm_int_types.h"  // TimestampedStringCircularBuffer
 #include "stack/btm/neighbor_inquiry.h"
 #include "stack/include/avrc_api.h"

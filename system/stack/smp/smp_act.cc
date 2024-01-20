@@ -18,9 +18,10 @@
 
 #define LOG_TAG "smp_act"
 
+#include <android_bluetooth_flags.h>
+
 #include <cstring>
 
-#include "android_bluetooth_flags.h"
 #include "btif/include/btif_common.h"
 #include "btif/include/core_callbacks.h"
 #include "btif/include/stack_manager_t.h"

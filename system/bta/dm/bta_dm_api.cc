@@ -22,11 +22,11 @@
  *
  ******************************************************************************/
 
+#include <android_bluetooth_flags.h>
 #include <base/functional/bind.h>
 
 #include <vector>
 
-#include "android_bluetooth_flags.h"
 #include "bta/dm/bta_dm_disc.h"
 #include "bta/dm/bta_dm_int.h"
 #include "bta/dm/bta_dm_sec_int.h"

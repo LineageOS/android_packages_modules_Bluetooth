@@ -22,9 +22,9 @@
  *
  ******************************************************************************/
 
+#include <android_bluetooth_flags.h>
 #include <base/functional/bind.h>
 
-#include "android_bluetooth_flags.h"
 #include "bta/dm/bta_dm_sec_int.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/bt_octets.h"

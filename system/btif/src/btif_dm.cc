@@ -30,6 +30,7 @@
 
 #include "btif_dm.h"
 
+#include <android_bluetooth_flags.h>
 #include <base/functional/bind.h>
 #include <base/logging.h>
 #include <base/strings/stringprintf.h>
@@ -50,9 +51,7 @@
 #include <mutex>
 #include <optional>
 
-#include <android_bluetooth_flags.h>
 #include "advertise_data_parser.h"
-#include "android_bluetooth_flags.h"
 #include "bta/dm/bta_dm_disc.h"
 #include "bta/include/bta_api.h"
 #include "btif/include/stack_manager_t.h"
