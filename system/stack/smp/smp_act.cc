@@ -78,7 +78,7 @@ static void smp_update_key_mask(tSMP_CB* p_cb, uint8_t key_type, bool recv) {
       "before update role=%d recv=%d local_i_key=0x%02x, local_r_key=0x%02x",
       p_cb->role, recv, p_cb->local_i_key, p_cb->local_r_key);
 
-  if (((p_cb->le_secure_connections_mode_is_used) || (p_cb->smp_over_br)) &&
+  if (((p_cb->sc_mode_required_by_peer) || (p_cb->smp_over_br)) &&
       ((key_type == SMP_SEC_KEY_TYPE_ENC) ||
        (key_type == SMP_SEC_KEY_TYPE_LK))) {
     /* in LE SC mode LTK, CSRK and BR/EDR LK are derived locally instead of
@@ -176,10 +176,10 @@ void smp_send_app_cback(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
               p_cb->loc_auth_req, p_cb->local_io_capability, p_cb->loc_oob_flag,
               p_cb->loc_enc_size, p_cb->local_i_key, p_cb->local_r_key);
 
-          p_cb->secure_connections_only_mode_required =
+          p_cb->sc_only_mode_locally_required =
               (p_cb->init_security_mode == BTM_SEC_MODE_SC) ? true : false;
           /* just for PTS, force SC bit */
-          if (p_cb->secure_connections_only_mode_required) {
+          if (p_cb->sc_only_mode_locally_required) {
             p_cb->loc_auth_req |= SMP_SC_SUPPORT_BIT;
           }
 
@@ -191,7 +191,7 @@ void smp_send_app_cback(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
                 remote_lmp_version);
           }
 
-          if (!p_cb->secure_connections_only_mode_required &&
+          if (!p_cb->sc_only_mode_locally_required &&
               (!(p_cb->loc_auth_req & SMP_SC_SUPPORT_BIT) ||
                (remote_lmp_version &&
                 remote_lmp_version < HCI_PROTO_VERSION_4_2) ||
@@ -474,11 +474,11 @@ void smp_proc_sec_req(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
       break;
 
     case BTM_BLE_SEC_REQ_ACT_PAIR:
-      p_cb->secure_connections_only_mode_required =
+      p_cb->sc_only_mode_locally_required =
           (p_cb->init_security_mode == BTM_SEC_MODE_SC) ? true : false;
 
       /* respond to non SC pairing request as failure in SC only mode */
-      if (p_cb->secure_connections_only_mode_required &&
+      if (p_cb->sc_only_mode_locally_required &&
           (auth_req & SMP_SC_SUPPORT_BIT) == 0) {
         tSMP_INT_DATA smp_int_data;
         smp_int_data.status = SMP_PAIR_AUTH_FAIL;
@@ -602,8 +602,8 @@ void smp_proc_pair_cmd(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
       p_cb->local_r_key &= p_cb->peer_r_key;
       p_cb->selected_association_model = smp_select_association_model(p_cb);
 
-      if (p_cb->secure_connections_only_mode_required &&
-          (!(p_cb->le_secure_connections_mode_is_used) ||
+      if (p_cb->sc_only_mode_locally_required &&
+          (!(p_cb->sc_mode_required_by_peer) ||
            (p_cb->selected_association_model ==
             SMP_MODEL_SEC_CONN_JUSTWORKS))) {
         LOG_ERROR(
@@ -624,8 +624,8 @@ void smp_proc_pair_cmd(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   {
     p_cb->selected_association_model = smp_select_association_model(p_cb);
 
-    if (p_cb->secure_connections_only_mode_required &&
-        (!(p_cb->le_secure_connections_mode_is_used) ||
+    if (p_cb->sc_only_mode_locally_required &&
+        (!(p_cb->sc_mode_required_by_peer) ||
          (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_JUSTWORKS))) {
       LOG_ERROR(
           "Central requires secure connection only mode "
@@ -1245,7 +1245,7 @@ void smp_check_auth_req(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
       "rcvs enc_enable=%d i_keys=0x%x r_keys=0x%x (i-initiator r-responder)",
       enc_enable, p_cb->local_i_key, p_cb->local_r_key);
   if (enc_enable == 1) {
-    if (p_cb->le_secure_connections_mode_is_used) {
+    if (p_cb->sc_mode_required_by_peer) {
       /* In LE SC mode LTK is used instead of STK and has to be always saved */
       p_cb->local_i_key |= SMP_SEC_KEY_TYPE_ENC;
       p_cb->local_r_key |= SMP_SEC_KEY_TYPE_ENC;
@@ -1480,8 +1480,8 @@ void smp_process_io_response(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     /* pairing started by peer (central) Pairing Request */
     p_cb->selected_association_model = smp_select_association_model(p_cb);
 
-    if (p_cb->secure_connections_only_mode_required &&
-        (!(p_cb->le_secure_connections_mode_is_used) ||
+    if (p_cb->sc_only_mode_locally_required &&
+        (!(p_cb->sc_mode_required_by_peer) ||
          (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_JUSTWORKS))) {
       LOG_ERROR(
           "Peripheral requires secure connection only mode "
