@@ -46,6 +46,7 @@ cc_library_static {
                 "aidl/hearing_aid_software_encoding_aidl.cc",
                 "aidl/hfp_client_interface_aidl.cc",
                 "aidl/le_audio_software_aidl.cc",
+                "aidl/provider_info.cc",
                 "hal_version_manager.cc",
                 "hearing_aid_software_encoding.cc",
                 "hfp_client_interface.cc",
