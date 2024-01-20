@@ -205,6 +205,24 @@ cc_library {
     static_libs: ["libchrome"],
 }
 
+cc_library_static {
+    name: "libbluetooth-gdx",
+    defaults: [
+        "libbluetooth_gd_defaults",
+    ],
+    srcs: [
+        ":BluetoothDiscoverySources",
+    ],
+    include_dirs: [
+        "packages/modules/Bluetooth/system",
+    ],
+    apex_available: [
+        "com.android.btservices",
+    ],
+    min_sdk_version: "31",
+    static_libs: ["libchrome"],
+}
+
 cc_library {
     name: "libbluetooth_gd_fuzzing",
     defaults: [
@@ -459,6 +477,7 @@ cc_test {
     ],
     host_supported: true,
     srcs: [
+        ":BluetoothDiscoveryTestSources",
         ":TestCommonMockFunctions",
         "module_gdx_unittest.cc",
         "module_jniloop_unittest.cc",
@@ -472,6 +491,7 @@ cc_test {
         "BluetoothGeneratedDumpsysTestData_h",
     ],
     static_libs: [
+        "libbluetooth-gdx",
         "libbluetooth_gd",
         "libbt-btu-main-thread",
         "libbt-common",
@@ -482,6 +502,9 @@ cc_test {
         "libevent",
         "libflatbuffers-cpp",
         "libosi",
+    ],
+    shared_libs: [
+        "libcrypto",
     ],
     sanitize: {
         address: true,

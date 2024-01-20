@@ -76,6 +76,7 @@ import android.bluetooth.IBluetoothSocketManager;
 import android.bluetooth.IncomingRfcommSocketInfo;
 import android.bluetooth.OobData;
 import android.bluetooth.UidTraffic;
+import android.bluetooth.rfcomm.BluetoothRfcommProtoEnums;
 import android.companion.CompanionDeviceManager;
 import android.content.AttributionSource;
 import android.content.Context;
@@ -869,22 +870,23 @@ public class AdapterService extends Service {
      * @param port port of socket
      * @param isSecured if secured API is called
      * @param result transaction result of the connection
-     * @param socketCreationLatencyMillis latency of the connection
+     * @param socketCreationLatencyNanos latency of the connection
      */
     public void logL2capcocClientConnection(
             BluetoothDevice device,
             int port,
             boolean isSecured,
             int result,
-            long socketCreationTimeMillis,
-            long socketCreationLatencyMillis,
-            long socketConnectionTimeMillis,
+            long socketCreationTimeNanos,
+            long socketCreationLatencyNanos,
+            long socketConnectionTimeNanos,
             int appUid) {
 
         int metricId = getMetricId(device);
-        long currentTime = System.currentTimeMillis();
-        long endToEndLatencyMillis = currentTime - socketCreationTimeMillis;
-        long socketConnectionLatencyMillis = currentTime - socketConnectionTimeMillis;
+        long currentTime = System.nanoTime();
+        long endToEndLatencyMillis = (currentTime - socketCreationTimeNanos) / 1000000;
+        long socketCreationLatencyMillis = socketCreationLatencyNanos / 1000000;
+        long socketConnectionLatencyMillis = (currentTime - socketConnectionTimeNanos) / 1000000;
         Log.i(
                 TAG,
                 "Statslog L2capcoc client connection."
@@ -906,6 +908,37 @@ public class AdapterService extends Service {
                 appUid,
                 socketCreationLatencyMillis,
                 socketConnectionLatencyMillis);
+    }
+
+    /**
+     * Log RFCOMM Connection Metrics
+     *
+     * @param device Bluetooth device
+     * @param isSecured if secured API is called
+     * @param resultCode transaction result of the connection
+     * @param isSerialPort true if service class UUID is 0x1101
+     */
+    public void logRfcommConnectionAttempt(
+            BluetoothDevice device,
+            boolean isSecured,
+            int resultCode,
+            long socketCreationTimeNanos,
+            boolean isSerialPort,
+            int appUid) {
+
+        int metricId = getMetricId(device);
+        long currentTime = System.nanoTime();
+        long endToEndLatencyNanos = currentTime - socketCreationTimeNanos;
+        BluetoothStatsLog.write(
+                BluetoothStatsLog.BLUETOOTH_RFCOMM_CONNECTION_ATTEMPTED,
+                metricId,
+                endToEndLatencyNanos,
+                isSecured
+                        ? BluetoothRfcommProtoEnums.SOCKET_SECURITY_SECURE
+                        : BluetoothRfcommProtoEnums.SOCKET_SECURITY_INSECURE,
+                resultCode,
+                isSerialPort,
+                appUid);
     }
 
     @RequiresPermission(
@@ -3933,9 +3966,9 @@ public class AdapterService extends Service {
                 int port,
                 boolean isSecured,
                 int result,
-                long socketCreationTimeMillis,
-                long socketCreationLatencyMillis,
-                long socketConnectionTimeMillis,
+                long socketCreationTimeNanos,
+                long socketCreationLatencyNanos,
+                long socketConnectionTimeNanos,
                 SynchronousResultReceiver receiver) {
             AdapterService service = getService();
             if (service == null) {
@@ -3947,9 +3980,35 @@ public class AdapterService extends Service {
                         port,
                         isSecured,
                         result,
-                        socketCreationTimeMillis,
-                        socketCreationLatencyMillis,
-                        socketConnectionTimeMillis,
+                        socketCreationTimeNanos,
+                        socketCreationLatencyNanos,
+                        socketConnectionTimeNanos,
+                        Binder.getCallingUid());
+                receiver.send(null);
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+
+        @Override
+        public void logRfcommConnectionAttempt(
+                BluetoothDevice device,
+                boolean isSecured,
+                int resultCode,
+                long socketCreationTimeNanos,
+                boolean isSerialPort,
+                SynchronousResultReceiver receiver) {
+            AdapterService service = getService();
+            if (service == null) {
+                return;
+            }
+            try {
+                service.logRfcommConnectionAttempt(
+                        device,
+                        isSecured,
+                        resultCode,
+                        socketCreationTimeNanos,
+                        isSerialPort,
                         Binder.getCallingUid());
                 receiver.send(null);
             } catch (RuntimeException e) {
