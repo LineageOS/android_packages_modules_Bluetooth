@@ -15,10 +15,11 @@
  */
 #include "hci/le_scanning_manager.h"
 
+#include <android_bluetooth_flags.h>
+
 #include <memory>
 #include <unordered_map>
 
-#include "android_bluetooth_flags.h"
 #include "hci/acl_manager.h"
 #include "hci/controller.h"
 #include "hci/event_checkers.h"
