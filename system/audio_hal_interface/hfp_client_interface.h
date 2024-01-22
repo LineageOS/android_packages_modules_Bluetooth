@@ -37,6 +37,8 @@ class HfpClientInterface {
     virtual void StopSession() = 0;
     virtual void UpdateAudioConfigToHal(
         const ::hfp::offload_config& config) = 0;
+    virtual void ConfirmStreamingRequest() = 0;
+    virtual void CancelStreamingRequest() = 0;
   };
 
  public:
@@ -49,6 +51,8 @@ class HfpClientInterface {
     void StartSession() override;
     void StopSession() override;
     void UpdateAudioConfigToHal(const ::hfp::offload_config& config) override;
+    void ConfirmStreamingRequest() override;
+    void CancelStreamingRequest() override;
     size_t Read(uint8_t* p_buf, uint32_t len);
   };
 
@@ -60,6 +64,8 @@ class HfpClientInterface {
     void StartSession() override;
     void StopSession() override;
     void UpdateAudioConfigToHal(const ::hfp::offload_config& config) override;
+    void ConfirmStreamingRequest() override;
+    void CancelStreamingRequest() override;
     size_t Write(const uint8_t* p_buf, uint32_t len);
   };
 
@@ -71,6 +77,8 @@ class HfpClientInterface {
     void StartSession() override;
     void StopSession() override;
     void UpdateAudioConfigToHal(const ::hfp::offload_config& config) override;
+    void ConfirmStreamingRequest() override;
+    void CancelStreamingRequest() override;
   };
 
   // Get HFP software decoding client interface if it's not previously acquired
