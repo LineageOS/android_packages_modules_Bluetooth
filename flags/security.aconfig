@@ -14,3 +14,10 @@ flag {
     description: "Correct the pairing failure reason reported from remote"
     bug: "320745565"
 }
+
+flag {
+    name: "fix_le_oob_pairing_bypass"
+    namespace: "bluetooth"
+    description: "Fix oob bypassing bug in SMP"
+    bug: "321271585"
+}
