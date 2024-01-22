@@ -22,6 +22,8 @@ import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 
+import com.android.bluetooth.flags.Flags;
+
 import java.io.IOException;
 import java.lang.annotation.Retention;
 
@@ -157,7 +159,7 @@ public class BluetoothSocketException extends IOException {
     public static final int RPC_FAILURE = 20;
 
     /** Error code during connect when the UNIX socket connection creation fails. */
-    @FlaggedApi("com.android.bluetooth.flags.unix_file_socket_creation_failure")
+    @FlaggedApi(Flags.FLAG_UNIX_FILE_SOCKET_CREATION_FAILURE)
     public static final int UNIX_FILE_SOCKET_CREATION_FAILURE = 21;
 
     /* Corresponding messages for respective error codes. */

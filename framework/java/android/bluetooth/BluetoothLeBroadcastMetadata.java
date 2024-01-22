@@ -25,6 +25,8 @@ import android.annotation.SystemApi;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.android.bluetooth.flags.Flags;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
@@ -337,7 +339,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      *
      * @hide
      */
-    @FlaggedApi("com.android.bluetooth.flags.leaudio_broadcast_monitor_source_sync_status")
+    @FlaggedApi(Flags.FLAG_LEAUDIO_BROADCAST_MONITOR_SOURCE_SYNC_STATUS)
     @SystemApi
     public static final int RSSI_UNKNOWN = 0x7F;
 
@@ -351,7 +353,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      * @return the RSSI {@link #RSSI_UNKNOWN} if unknown
      * @hide
      */
-    @FlaggedApi("com.android.bluetooth.flags.leaudio_broadcast_monitor_source_sync_status")
+    @FlaggedApi(Flags.FLAG_LEAUDIO_BROADCAST_MONITOR_SOURCE_SYNC_STATUS)
     @SystemApi
     public @IntRange(from = -127, to = 127) int getRssi() {
         return mRssi;
@@ -729,7 +731,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          * @throws IllegalArgumentException if rssi is not in the range [-127, 127].
          * @hide
          */
-        @FlaggedApi("com.android.bluetooth.flags.leaudio_broadcast_monitor_source_sync_status")
+        @FlaggedApi(Flags.FLAG_LEAUDIO_BROADCAST_MONITOR_SOURCE_SYNC_STATUS)
         @SystemApi
         @NonNull
         public Builder setRssi(@IntRange(from = -127, to = 127) int rssi) {

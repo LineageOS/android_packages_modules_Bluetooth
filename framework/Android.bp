@@ -25,6 +25,7 @@ java_defaults {
     defaults: ["bluetooth-module-sdk-version-defaults"],
     static_libs: [
         "PlatformProperties",
+        "bluetooth_flags_java_lib",
         "modules-utils-expresslog",
         "modules-utils-synchronous-result-receiver",
     ],
@@ -85,6 +86,7 @@ java_sdk_library {
 
     permitted_packages: [
         "android.bluetooth",
+        "com.android.bluetooth.flags",
         // Created by jarjar rules.
         "com.android.bluetooth.x",
     ],

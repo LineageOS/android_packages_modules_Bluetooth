@@ -23,6 +23,8 @@ import android.annotation.SystemApi;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.android.bluetooth.flags.Flags;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Objects;
@@ -71,7 +73,7 @@ public final class DistanceMeasurementMethod implements Parcelable {
      *
      * @hide
      */
-    @FlaggedApi("com.android.bluetooth.flags.channel_sounding")
+    @FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING)
     @SystemApi
     public static final int DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING = 2;
 
