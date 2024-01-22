@@ -16,6 +16,7 @@
 
 #include "hci/le_scanning_manager.h"
 
+#include <android_bluetooth_flags.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -29,7 +30,6 @@
 #include <queue>
 #include <vector>
 
-#include "android_bluetooth_flags.h"
 #include "common/bind.h"
 #include "hci/acl_manager.h"
 #include "hci/address.h"

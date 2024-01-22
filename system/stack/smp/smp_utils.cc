@@ -23,10 +23,11 @@
  ******************************************************************************/
 #define LOG_TAG "smp"
 
+#include <android_bluetooth_flags.h>
+
 #include <cstdint>
 #include <cstring>
 
-#include "android_bluetooth_flags.h"
 #include "crypto_toolbox/crypto_toolbox.h"
 #include "device/include/controller.h"
 #include "internal_include/bt_target.h"
