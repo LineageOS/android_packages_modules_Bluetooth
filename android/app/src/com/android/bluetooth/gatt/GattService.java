@@ -43,6 +43,7 @@ import android.bluetooth.IBluetoothGattServerCallback;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertisingSetParameters;
 import android.bluetooth.le.BluetoothLeScanner;
+import android.bluetooth.le.ChannelSoundingParams;
 import android.bluetooth.le.DistanceMeasurementMethod;
 import android.bluetooth.le.DistanceMeasurementParams;
 import android.bluetooth.le.IAdvertisingSetCallback;
@@ -1857,6 +1858,64 @@ public class GattService extends ProfileService {
             enforceBluetoothPrivilegedPermission(service);
             return service.stopDistanceMeasurement(uuid.getUuid(), device, method);
         }
+
+        @Override
+        public void getChannelSoundingMaxSupportedSecurityLevel(
+                BluetoothDevice remoteDevice,
+                AttributionSource attributionSource,
+                SynchronousResultReceiver receiver) {
+            try {
+                receiver.send(
+                        getChannelSoundingMaxSupportedSecurityLevel(
+                                remoteDevice, attributionSource));
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+
+        private int getChannelSoundingMaxSupportedSecurityLevel(
+                BluetoothDevice remoteDevice, AttributionSource attributionSource) {
+            GattService service = getService();
+            if (service == null
+                    || !callerIsSystemOrActiveOrManagedUser(
+                            service, TAG, "GattService getChannelSoundingMaxSupportedSecurityLevel")
+                    || !Utils.checkConnectPermissionForDataDelivery(
+                            service,
+                            attributionSource,
+                            "GattService getChannelSoundingMaxSupportedSecurityLevel")) {
+                return ChannelSoundingParams.CS_SECURITY_LEVEL_UNKNOWN;
+            }
+            enforceBluetoothPrivilegedPermission(service);
+            return service.getChannelSoundingMaxSupportedSecurityLevel(remoteDevice);
+        }
+
+        @Override
+        public void getLocalChannelSoundingMaxSupportedSecurityLevel(
+                AttributionSource attributionSource, SynchronousResultReceiver receiver) {
+            try {
+                receiver.send(getLocalChannelSoundingMaxSupportedSecurityLevel(attributionSource));
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+
+        private int getLocalChannelSoundingMaxSupportedSecurityLevel(
+                AttributionSource attributionSource) {
+            GattService service = getService();
+            if (service == null
+                    || !callerIsSystemOrActiveOrManagedUser(
+                            service,
+                            TAG,
+                            "GattService getLocalChannelSoundingMaxSupportedSecurityLevel")
+                    || !Utils.checkConnectPermissionForDataDelivery(
+                            service,
+                            attributionSource,
+                            "GattService getLocalChannelSoundingMaxSupportedSecurityLevel")) {
+                return ChannelSoundingParams.CS_SECURITY_LEVEL_UNKNOWN;
+            }
+            enforceBluetoothPrivilegedPermission(service);
+            return service.getLocalChannelSoundingMaxSupportedSecurityLevel();
+        }
     };
 
     /**************************************************************************
@@ -3597,6 +3656,15 @@ public class GattService extends ProfileService {
 
     int stopDistanceMeasurement(UUID uuid, BluetoothDevice device, int method) {
         return mDistanceMeasurementManager.stopDistanceMeasurement(uuid, device, method, false);
+    }
+
+    int getChannelSoundingMaxSupportedSecurityLevel(BluetoothDevice remoteDevice) {
+        return mDistanceMeasurementManager.getChannelSoundingMaxSupportedSecurityLevel(
+                remoteDevice);
+    }
+
+    int getLocalChannelSoundingMaxSupportedSecurityLevel() {
+        return mDistanceMeasurementManager.getLocalChannelSoundingMaxSupportedSecurityLevel();
     }
 
     /**************************************************************************

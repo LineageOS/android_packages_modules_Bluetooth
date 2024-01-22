@@ -18,6 +18,7 @@ package android.bluetooth.le;
 
 import static android.bluetooth.le.BluetoothLeUtils.getSyncTimeout;
 
+import android.annotation.FlaggedApi;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresPermission;
@@ -26,6 +27,7 @@ import android.annotation.SystemApi;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.IBluetoothGatt;
+import android.bluetooth.le.ChannelSoundingParams.CsSecurityLevel;
 import android.content.AttributionSource;
 import android.os.CancellationSignal;
 import android.os.ParcelUuid;
@@ -169,6 +171,78 @@ public final class DistanceMeasurementManager {
         } catch (RemoteException e) {
             throw e.rethrowAsRuntimeException();
         }
+    }
+
+    /**
+     * Get the maximum supported security level of channel sounding between the local device and a
+     * specific remote device.
+     *
+     * <p>See: https://bluetooth.com/specifications/specs/channel-sounding-cr-pr/
+     *
+     * @param remoteDevice remote device of channel sounding
+     * @return max supported security level, {@link ChannelSoundingParams#CS_SECURITY_LEVEL_UNKNOWN}
+     *     when Channel Sounding is not supported or encounters an internal error.
+     * @hide
+     */
+    @FlaggedApi("com.android.bluetooth.flags.channel_sounding")
+    @SystemApi
+    @CsSecurityLevel
+    @RequiresPermission(
+            allOf = {
+                android.Manifest.permission.BLUETOOTH_CONNECT,
+                android.Manifest.permission.BLUETOOTH_PRIVILEGED,
+            })
+    public int getChannelSoundingMaxSupportedSecurityLevel(@NonNull BluetoothDevice remoteDevice) {
+        Objects.requireNonNull(remoteDevice, "remote device is null");
+        final int defaultValue = ChannelSoundingParams.CS_SECURITY_LEVEL_UNKNOWN;
+        try {
+            IBluetoothGatt gatt = mBluetoothAdapter.getBluetoothGatt();
+            if (gatt == null) {
+                Log.e(TAG, "Bluetooth GATT is null");
+                return defaultValue;
+            }
+            final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
+            gatt.getChannelSoundingMaxSupportedSecurityLevel(
+                    remoteDevice, mAttributionSource, recv);
+            return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
+        } catch (TimeoutException | RemoteException e) {
+            Log.e(TAG, "Failed to get supported security Level - ", e);
+        }
+        return defaultValue;
+    }
+
+    /**
+     * Get the maximum supported security level of channel sounding of the local device.
+     *
+     * <p>See: https://bluetooth.com/specifications/specs/channel-sounding-cr-pr/
+     *
+     * @return max supported security level, {@link ChannelSoundingParams#CS_SECURITY_LEVEL_UNKNOWN}
+     *     when Channel Sounding is not supported or encounters an internal error.
+     * @hide
+     */
+    @FlaggedApi("com.android.bluetooth.flags.channel_sounding")
+    @SystemApi
+    @CsSecurityLevel
+    @RequiresPermission(
+            allOf = {
+                android.Manifest.permission.BLUETOOTH_CONNECT,
+                android.Manifest.permission.BLUETOOTH_PRIVILEGED,
+            })
+    public int getLocalChannelSoundingMaxSupportedSecurityLevel() {
+        final int defaultValue = ChannelSoundingParams.CS_SECURITY_LEVEL_UNKNOWN;
+        try {
+            IBluetoothGatt gatt = mBluetoothAdapter.getBluetoothGatt();
+            if (gatt == null) {
+                Log.e(TAG, "Bluetooth GATT is null");
+                return defaultValue;
+            }
+            final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
+            gatt.getLocalChannelSoundingMaxSupportedSecurityLevel(mAttributionSource, recv);
+            return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
+        } catch (TimeoutException | RemoteException e) {
+            Log.e(TAG, "Failed to get supported security Level - ", e);
+        }
+        return defaultValue;
     }
 
     @SuppressLint("AndroidFrameworkBluetoothPermission")
