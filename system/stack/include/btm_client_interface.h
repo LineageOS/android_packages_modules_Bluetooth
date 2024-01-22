@@ -99,7 +99,6 @@ struct btm_client_interface_t {
                                   bool low_latency_scan);
     tBTM_STATUS (*BTM_SetBleDataLength)(const RawAddress& bd_addr,
                                         uint16_t tx_pdu_length);
-    void (*BTM_BleConfirmReply)(const RawAddress& bd_addr, uint8_t res);
     void (*BTM_BleLoadLocalKeys)(uint8_t key_type, tBTM_BLE_LOCAL_KEYS* p_key);
     void (*BTM_BlePasskeyReply)(const RawAddress& bd_addr, uint8_t res,
                                 uint32_t passkey);

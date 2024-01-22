@@ -30,6 +30,8 @@ static void BTM_SecConfirmReqReply(tBTM_STATUS res, tBT_TRANSPORT transport,
                                    const RawAddress bd_addr) {
   if (transport == BT_TRANSPORT_BR_EDR) {
     BTM_ConfirmReqReply(res, bd_addr);
+  } else if (transport == BT_TRANSPORT_LE) {
+    BTM_BleConfirmReply(bd_addr, res);
   } else {
     LOG_ERROR("Unexpected transport:%d", transport);
   }

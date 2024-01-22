@@ -1069,8 +1069,8 @@ void bta_dm_ble_passkey_reply(const RawAddress& bd_addr, bool accept,
 /** This is response to SM numeric comparison request submitted to application.
  */
 void bta_dm_ble_confirm_reply(const RawAddress& bd_addr, bool accept) {
-  get_btm_client_interface().ble.BTM_BleConfirmReply(
-      bd_addr, accept ? BTM_SUCCESS : BTM_NOT_AUTHORIZED);
+  get_btm_client_interface().security.BTM_SecConfirmReqReply(
+      accept ? BTM_SUCCESS : BTM_NOT_AUTHORIZED, BT_TRANSPORT_LE, bd_addr);
 }
 
 /** This function set the local device LE privacy settings. */
