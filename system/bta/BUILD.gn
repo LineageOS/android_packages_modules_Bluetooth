@@ -89,9 +89,7 @@ static_library("bta") {
     "jv/bta_jv_act.cc",
     "jv/bta_jv_api.cc",
     "jv/bta_jv_cfg.cc",
-    "le_audio/audio_hal_client/asrc_tables.cc",
     "le_audio/audio_hal_client/audio_sink_hal_client.cc",
-    "le_audio/audio_hal_client/audio_source_hal_asrc.cc",
     "le_audio/audio_hal_client/audio_source_hal_client.cc",
     "le_audio/broadcaster/broadcaster.cc",
     "le_audio/broadcaster/broadcaster_types.cc",
@@ -157,6 +155,7 @@ static_library("bta") {
   ]
 
   deps = [
+    "//bt/system/audio:libbt-audio-asrc",
     "//bt/system/bta:LeAudioSetScenariosSchema_bfbs",
     "//bt/system/bta:LeAudioSetConfigsSchema_bfbs",
     "//bt/system/bta:install_audio_set_scenarios_json",

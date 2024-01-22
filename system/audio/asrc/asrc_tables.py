@@ -66,7 +66,7 @@ print("""\
 
 #include "asrc_tables.h"
 
-namespace le_audio::asrc {{
+namespace bluetooth::audio::asrc {{
 """.format(sys.argv[0]))
 
 #
@@ -110,4 +110,4 @@ print("""
 #
 
 print("""
-} // namespace le_audio::asrc""")
+} // namespace bluetooth::audio::asrc""")
