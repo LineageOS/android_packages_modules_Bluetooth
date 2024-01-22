@@ -74,6 +74,7 @@ import android.util.proto.ProtoOutputStream;
 
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.flags.FeatureFlags;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.server.BluetoothManagerServiceDumpProto;
@@ -86,6 +87,8 @@ import kotlin.time.TimeSource;
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -2429,6 +2432,12 @@ class BluetoothManagerService {
             args[0] = "--print";
         }
 
+        try {
+            dumpBluetoothFlags(writer);
+        } catch (Exception e) {
+            writer.println("Exception while dumping Bluetooth Flags");
+        }
+
         if (mAdapter == null) {
             errorMsg = "Bluetooth Service not connected";
         } else {
@@ -2441,6 +2450,16 @@ class BluetoothManagerService {
         if (errorMsg != null) {
             writer.println(errorMsg);
         }
+    }
+
+    void dumpBluetoothFlags(PrintWriter writer)
+            throws IllegalAccessException, InvocationTargetException {
+        writer.println("🚩Flag dump:");
+        for (Method m : Flags.class.getDeclaredMethods()) {
+            String flagStatus = ((Boolean) m.invoke(null)) ? "[■]" : "[ ]";
+            writer.println("\t" + flagStatus + ": " + m.getName());
+        }
+        writer.println("");
     }
 
     private void dumpProto(FileDescriptor fd) {
