@@ -28,7 +28,7 @@ namespace hfp {
 using ::aidl::android::hardware::bluetooth::audio::LatencyMode;
 
 typedef enum {
-  HFP_CTRL_CMD_NONE,
+  HFP_CTRL_CMD_NONE = 0,
   HFP_CTRL_CMD_CHECK_READY,
   HFP_CTRL_CMD_START,
   HFP_CTRL_CMD_STOP,
