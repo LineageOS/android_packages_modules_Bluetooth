@@ -26,9 +26,10 @@
 
 #include "stack/btm/btm_dev.h"
 
+#include <android_bluetooth_flags.h>
+
 #include <string>
 
-#include "android_bluetooth_flags.h"
 #include "btm_api.h"
 #include "btm_int_types.h"
 #include "btm_sec_api.h"

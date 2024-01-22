@@ -25,6 +25,7 @@
 #include "bt_dev_class.h"
 #define LOG_TAG "bt_btm_ble"
 
+#include <android_bluetooth_flags.h>
 #include <android_bluetooth_sysprop.h>
 #include <base/functional/bind.h>
 #include <base/logging.h>
@@ -36,7 +37,6 @@
 #include <type_traits>
 #include <vector>
 
-#include "android_bluetooth_flags.h"
 #include "bta/include/bta_api.h"
 #include "common/time_util.h"
 #include "device/include/controller.h"

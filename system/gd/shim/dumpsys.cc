@@ -17,13 +17,13 @@
 
 #include "dumpsys/dumpsys.h"
 
+#include <android_bluetooth_flags.h>
 #include <unistd.h>
 
 #include <future>
 #include <sstream>
 #include <string>
 
-#include "android_bluetooth_flags.h"
 #include "dumpsys/filter.h"
 #include "dumpsys_data_generated.h"
 #include "module.h"
