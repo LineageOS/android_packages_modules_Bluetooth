@@ -66,6 +66,8 @@ class ProviderInfo {
    * Find the sink codec index by codec capabilities.
    ***/
   std::optional<btav_a2dp_codec_index_t> SinkCodecIndex(
+      CodecId const& codec_id) const;
+  std::optional<btav_a2dp_codec_index_t> SinkCodecIndex(
       uint32_t vendor_id, uint16_t codec_id) const;
   std::optional<btav_a2dp_codec_index_t> SinkCodecIndex(
       uint8_t const* codec_info) const;
