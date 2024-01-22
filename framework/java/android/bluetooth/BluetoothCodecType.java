@@ -44,7 +44,7 @@ public final class BluetoothCodecType implements Parcelable {
     public static final long CODEC_ID_SBC = 0x0000000000;
 
     /** AAC codec identifier. See {@link BluetoothCodecType#getCodecId}. */
-    public static final long CODEC_ID_AAC = 0x0000000001;
+    public static final long CODEC_ID_AAC = 0x0000000002;
 
     /** AptX codec identifier. See {@link BluetoothCodecType#getCodecId}. */
     public static final long CODEC_ID_APTX = 0x0001004fff;
