@@ -28,6 +28,7 @@
 
 #include <cstdint>
 
+#include "audio_hal_interface/hfp_client_interface.h"
 #include "bta/ag/bta_ag_int.h"
 #include "bta_ag_swb_aptx.h"
 #include "common/init_flags.h"
@@ -45,6 +46,8 @@
 
 extern tBTM_CB btm_cb;
 
+using HfpInterface = bluetooth::audio::hfp::HfpClientInterface;
+
 /* Codec negotiation timeout */
 #ifndef BTA_AG_CODEC_NEGOTIATION_TIMEOUT_MS
 #define BTA_AG_CODEC_NEGOTIATION_TIMEOUT_MS (3 * 1000) /* 3 seconds */
@@ -60,6 +63,8 @@ extern tBTM_CB btm_cb;
 
 static bool sco_allowed = true;
 static RawAddress active_device_addr = {};
+static std::unique_ptr<HfpInterface> hfp_client_interface;
+static std::unique_ptr<HfpInterface::Offload> hfp_offload_interface;
 
 /* sco events */
 enum {
@@ -1554,6 +1559,11 @@ const RawAddress& bta_ag_get_active_device() { return active_device_addr; }
 
 void bta_clear_active_device() {
   LOG_DEBUG("Set bta active device to null");
+  if (IS_FLAG_ENABLED(is_sco_managed_by_audio)) {
+    if (hfp_offload_interface && !active_device_addr.IsEmpty()) {
+      hfp_offload_interface->StopSession();
+    }
+  }
   active_device_addr = RawAddress::kEmpty;
 }
 
@@ -1561,6 +1571,30 @@ void bta_ag_api_set_active_device(const RawAddress& new_active_device) {
   if (new_active_device.IsEmpty()) {
     LOG_ERROR("%s: empty device", __func__);
     return;
+  }
+
+  if (IS_FLAG_ENABLED(is_sco_managed_by_audio)) {
+    if (!hfp_client_interface) {
+      hfp_client_interface = std::unique_ptr<HfpInterface>(HfpInterface::Get());
+      if (!hfp_client_interface) {
+        LOG_ERROR("could not acquire audio source interface");
+        return;
+      }
+    }
+
+    if (!hfp_offload_interface) {
+      hfp_offload_interface = std::unique_ptr<HfpInterface::Offload>(
+          hfp_client_interface->GetOffload(get_main_thread()));
+      if (!hfp_offload_interface) {
+        LOG_WARN("could not get offload interface");
+      } else {
+        // start audio session if there was no previous active device
+        // if there was an active device, java layer would call disconnectAudio
+        if (active_device_addr.IsEmpty()) {
+          hfp_offload_interface->StartSession();
+        }
+      }
+    }
   }
   active_device_addr = new_active_device;
 }
