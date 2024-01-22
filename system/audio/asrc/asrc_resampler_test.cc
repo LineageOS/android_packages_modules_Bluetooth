@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
+#include "asrc_resampler.cc"
+
 #include <cstdio>
 #include <iostream>
-
-#include "audio_source_hal_asrc.cc"
 
 namespace bluetooth::hal {
 void NocpIsoClocker::Register(NocpIsoHandler*) {}
 void NocpIsoClocker::Unregister() {}
 }  // namespace bluetooth::hal
 
-namespace le_audio {
+namespace bluetooth::audio::asrc {
 
 class SourceAudioHalAsrcTest : public SourceAudioHalAsrc {
  public:
@@ -77,4 +77,4 @@ extern "C" void resample_i32(int channels, int bitdepth, double ratio,
   return;
 }
 
-}  // namespace le_audio
+}  // namespace bluetooth::audio::asrc
