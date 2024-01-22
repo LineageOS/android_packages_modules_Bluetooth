@@ -193,6 +193,7 @@ void HfpClientInterface::Decode::ConfirmStreamingRequest() {
     case aidl::hfp::HFP_CTRL_CMD_START:
       aidl::hfp::HfpDecodingTransport::software_hal_interface->StreamStarted(
           aidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED);
+      instance->ResetPendingCmd();
       return;
     case aidl::hfp::HFP_CTRL_CMD_NONE:
       LOG_WARN("no pending start stream request");
@@ -209,6 +210,7 @@ void HfpClientInterface::Decode::CancelStreamingRequest() {
     case aidl::hfp::HFP_CTRL_CMD_START:
       aidl::hfp::HfpDecodingTransport::software_hal_interface->StreamStarted(
           aidl::BluetoothAudioCtrlAck::FAILURE);
+      instance->ResetPendingCmd();
       return;
     case aidl::hfp::HFP_CTRL_CMD_NONE:
       LOG_WARN("no pending start stream request");
@@ -339,6 +341,7 @@ void HfpClientInterface::Encode::ConfirmStreamingRequest() {
     case aidl::hfp::HFP_CTRL_CMD_START:
       aidl::hfp::HfpEncodingTransport::software_hal_interface->StreamStarted(
           aidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED);
+      instance->ResetPendingCmd();
       return;
     case aidl::hfp::HFP_CTRL_CMD_NONE:
       LOG_WARN("no pending start stream request");
@@ -355,6 +358,7 @@ void HfpClientInterface::Encode::CancelStreamingRequest() {
     case aidl::hfp::HFP_CTRL_CMD_START:
       aidl::hfp::HfpEncodingTransport::software_hal_interface->StreamStarted(
           aidl::BluetoothAudioCtrlAck::FAILURE);
+      instance->ResetPendingCmd();
       return;
     case aidl::hfp::HFP_CTRL_CMD_NONE:
       LOG_WARN("no pending start stream request");
@@ -475,6 +479,7 @@ void HfpClientInterface::Offload::ConfirmStreamingRequest() {
     case aidl::hfp::HFP_CTRL_CMD_START:
       aidl::hfp::HfpEncodingTransport::offloading_hal_interface->StreamStarted(
           aidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED);
+      instance->ResetPendingCmd();
       return;
     case aidl::hfp::HFP_CTRL_CMD_NONE:
       LOG_WARN("no pending start stream request");
@@ -491,6 +496,7 @@ void HfpClientInterface::Offload::CancelStreamingRequest() {
     case aidl::hfp::HFP_CTRL_CMD_START:
       aidl::hfp::HfpEncodingTransport::offloading_hal_interface->StreamStarted(
           aidl::BluetoothAudioCtrlAck::FAILURE);
+      instance->ResetPendingCmd();
       return;
     case aidl::hfp::HFP_CTRL_CMD_NONE:
       LOG_WARN("no pending start stream request");
