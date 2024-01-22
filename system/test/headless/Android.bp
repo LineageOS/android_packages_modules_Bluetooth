@@ -80,6 +80,7 @@ cc_binary {
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbluetooth_rust_interop",
+        "libbt-audio-asrc",
         "libbt-audio-hal-interface",
         "libbt-bta",
         "libbt-bta-core",

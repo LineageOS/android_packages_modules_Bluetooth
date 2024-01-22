@@ -18,7 +18,7 @@
 
 #include "asrc_tables.h"
 
-namespace le_audio::asrc {
+namespace bluetooth::audio::asrc {
 
 // clang-format off
 const ResamplerTables resampler_tables = {
@@ -3619,4 +3619,4 @@ const ResamplerTables resampler_tables = {
 };
 // clang-format off
 
-} // namespace le_audio::asrc
+} // namespace bluetooth::audio::asrc
