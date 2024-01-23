@@ -202,7 +202,8 @@ void set_remote_delay(uint16_t delay_report) {
 
 // Inform audio server about offloading codec; not used for now
 bool update_codec_offloading_capabilities(
-    const std::vector<btav_a2dp_codec_config_t>& framework_preference) {
+    const std::vector<btav_a2dp_codec_config_t>& framework_preference,
+    bool supports_a2dp_hw_offload_v2) {
   return false;
 }
 
