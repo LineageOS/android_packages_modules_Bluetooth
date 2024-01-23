@@ -49,8 +49,10 @@
 #include "common/message_loop_thread.h"
 #include "device/include/controller.h"
 #include "device/include/device_iot_config.h"
+#include "hci/controller.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/bt_trace.h"
+#include "main/shim/entry.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/future.h"
@@ -729,48 +731,6 @@ void btif_disable_service(tBTA_SERVICE_ID service_id) {
   }
 }
 
-void DynamicAudiobufferSizeCompleteCallback(tBTM_VSC_CMPL* p_vsc_cmpl_params) {
-  LOG(INFO) << __func__;
-
-  if (p_vsc_cmpl_params->param_len < 1) {
-    LOG(ERROR) << __func__
-               << ": The length of returned parameters is less than 1";
-    return;
-  }
-  uint8_t* p_event_param_buf = p_vsc_cmpl_params->p_param_buf;
-  uint8_t status = 0xff;
-  uint8_t opcode = 0xff;
-  uint16_t respond_buffer_time = 0xffff;
-
-  // [Return Parameter]         | [Size]   | [Purpose]
-  // Status                     | 1 octet  | Command complete status
-  // Dynamic_Audio_Buffer_opcode| 1 octet  | 0x02 - Set buffer time
-  // Audio_Codec_Buffer_Time    | 2 octet  | Current buffer time
-  STREAM_TO_UINT8(status, p_event_param_buf);
-  if (status != HCI_SUCCESS) {
-    LOG(ERROR) << __func__
-               << ": Fail to configure DFTB. status: " << loghex(status);
-    return;
-  }
-
-  if (p_vsc_cmpl_params->param_len != 4) {
-    LOG(FATAL) << __func__
-               << ": The length of returned parameters is not equal to 4: "
-               << std::to_string(p_vsc_cmpl_params->param_len);
-    return;
-  }
-
-  STREAM_TO_UINT8(opcode, p_event_param_buf);
-  LOG(INFO) << __func__ << ": opcode = " << loghex(opcode);
-
-  if (opcode == 0x02) {
-    STREAM_TO_UINT16(respond_buffer_time, p_event_param_buf);
-    LOG(INFO) << __func__
-              << ": Succeed to configure Media Tx Buffer, used_buffer_time = "
-              << loghex(respond_buffer_time);
-  }
-}
-
 bt_status_t btif_set_dynamic_audio_buffer_size(int codec, int size) {
   LOG_VERBOSE("%s", __func__);
 
@@ -787,17 +747,11 @@ bt_status_t btif_set_dynamic_audio_buffer_size(int codec, int size) {
     if (cmn_vsc_cb.dynamic_audio_buffer_support != 0) {
       LOG_VERBOSE("%s Set buffer size (%d) for A2DP offload", __func__, size);
       uint16_t firmware_tx_buffer_length_byte;
-      uint8_t param[3] = {0};
-      uint8_t* p_param = param;
-
       firmware_tx_buffer_length_byte = static_cast<uint16_t>(size);
       LOG(INFO) << __func__ << "firmware_tx_buffer_length_byte: "
                 << firmware_tx_buffer_length_byte;
-
-      UINT8_TO_STREAM(p_param, HCI_CONTROLLER_DAB_SET_BUFFER_TIME);
-      UINT16_TO_STREAM(p_param, firmware_tx_buffer_length_byte);
-      BTM_VendorSpecificCommand(HCI_CONTROLLER_DAB, p_param - param, param,
-                                DynamicAudiobufferSizeCompleteCallback);
+      bluetooth::shim::GetController()->SetDabAudioBufferTime(
+          firmware_tx_buffer_length_byte);
     }
   }
 

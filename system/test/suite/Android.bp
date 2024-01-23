@@ -118,6 +118,7 @@ cc_test {
     static_libs: [
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
+        "libbluetooth_hci_pdl",
         "libbt-btu-main-thread",
         "libbt-jni-thread",
         "libbt-platform-protos-lite",
@@ -128,6 +129,9 @@ cc_test {
     ],
     shared_libs: [
         "server_configurable_flags",
+    ],
+    generated_headers: [
+        "BluetoothGeneratedDumpsysDataSchema_h",
     ],
     target: {
         android: {
