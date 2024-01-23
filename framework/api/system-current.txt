@@ -1227,7 +1227,37 @@ package android.bluetooth.le {
     method @Deprecated @RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN) public void startTruncatedScan(java.util.List<android.bluetooth.le.TruncatedFilter>, android.bluetooth.le.ScanSettings, android.bluetooth.le.ScanCallback);
   }
 
+  @FlaggedApi("com.android.bluetooth.flags.channel_sounding") public final class ChannelSoundingParams implements android.os.Parcelable {
+    method public int describeContents();
+    method public int getCsSecurityLevel();
+    method public int getLocationType();
+    method public int getSightType();
+    method public void writeToParcel(@NonNull android.os.Parcel, int);
+    field @NonNull public static final android.os.Parcelable.Creator<android.bluetooth.le.ChannelSoundingParams> CREATOR;
+    field public static final int CS_SECURITY_LEVEL_FOUR = 4; // 0x4
+    field public static final int CS_SECURITY_LEVEL_ONE = 1; // 0x1
+    field public static final int CS_SECURITY_LEVEL_THREE = 3; // 0x3
+    field public static final int CS_SECURITY_LEVEL_TWO = 2; // 0x2
+    field public static final int CS_SECURITY_LEVEL_UNKNOWN = 0; // 0x0
+    field public static final int LOCATION_TYPE_INDOOR = 1; // 0x1
+    field public static final int LOCATION_TYPE_OUTDOOR = 2; // 0x2
+    field public static final int LOCATION_TYPE_UNKNOWN = 0; // 0x0
+    field public static final int SIGHT_TYPE_LINE_OF_SIGHT = 1; // 0x1
+    field public static final int SIGHT_TYPE_NON_LINE_OF_SIGHT = 2; // 0x2
+    field public static final int SIGHT_TYPE_UNKNOWN = 0; // 0x0
+  }
+
+  public static final class ChannelSoundingParams.Builder {
+    ctor public ChannelSoundingParams.Builder();
+    method @NonNull public android.bluetooth.le.ChannelSoundingParams build();
+    method @NonNull public android.bluetooth.le.ChannelSoundingParams.Builder setCsSecurityLevel(int);
+    method @NonNull public android.bluetooth.le.ChannelSoundingParams.Builder setLocationType(int);
+    method @NonNull public android.bluetooth.le.ChannelSoundingParams.Builder setSightType(int);
+  }
+
   public final class DistanceMeasurementManager {
+    method @FlaggedApi("com.android.bluetooth.flags.channel_sounding") @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public int getChannelSoundingMaxSupportedSecurityLevel(@NonNull android.bluetooth.BluetoothDevice);
+    method @FlaggedApi("com.android.bluetooth.flags.channel_sounding") @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public int getLocalChannelSoundingMaxSupportedSecurityLevel();
     method @NonNull @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public java.util.List<android.bluetooth.le.DistanceMeasurementMethod> getSupportedMethods();
     method @Nullable @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public android.os.CancellationSignal startMeasurementSession(@NonNull android.bluetooth.le.DistanceMeasurementParams, @NonNull java.util.concurrent.Executor, @NonNull android.bluetooth.le.DistanceMeasurementSession.Callback);
   }
@@ -1253,6 +1283,7 @@ package android.bluetooth.le {
 
   public final class DistanceMeasurementParams implements android.os.Parcelable {
     method public int describeContents();
+    method @FlaggedApi("com.android.bluetooth.flags.channel_sounding") @Nullable public android.bluetooth.le.ChannelSoundingParams getChannelSoundingParams();
     method public static int getDefaultDurationSeconds();
     method @NonNull public android.bluetooth.BluetoothDevice getDevice();
     method @IntRange(from=0) public int getDurationSeconds();
@@ -1269,6 +1300,7 @@ package android.bluetooth.le {
   public static final class DistanceMeasurementParams.Builder {
     ctor public DistanceMeasurementParams.Builder(@NonNull android.bluetooth.BluetoothDevice);
     method @NonNull public android.bluetooth.le.DistanceMeasurementParams build();
+    method @FlaggedApi("com.android.bluetooth.flags.channel_sounding") @NonNull public android.bluetooth.le.DistanceMeasurementParams.Builder setChannelSoundingParams(@NonNull android.bluetooth.le.ChannelSoundingParams);
     method @NonNull public android.bluetooth.le.DistanceMeasurementParams.Builder setDurationSeconds(@IntRange(from=0) int);
     method @NonNull public android.bluetooth.le.DistanceMeasurementParams.Builder setFrequency(int);
     method @NonNull public android.bluetooth.le.DistanceMeasurementParams.Builder setMethodId(int);
@@ -1278,12 +1310,24 @@ package android.bluetooth.le {
     method public int describeContents();
     method @FloatRange(from=-90.0, to=90.0) public double getAltitudeAngle();
     method @FloatRange(from=0.0, to=360.0) public double getAzimuthAngle();
+    method @FlaggedApi("com.android.bluetooth.flags.channel_sounding") @FloatRange(from=0.0, to=1.0) public double getConfidenceLevel();
+    method @FlaggedApi("com.android.bluetooth.flags.channel_sounding") public double getDelaySpreadMeters();
+    method @FlaggedApi("com.android.bluetooth.flags.channel_sounding") public int getDetectedAttackLevel();
     method public double getErrorAltitudeAngle();
     method public double getErrorAzimuthAngle();
     method @FloatRange(from=0.0) public double getErrorMeters();
     method public double getResultMeters();
+    method @FlaggedApi("com.android.bluetooth.flags.channel_sounding") public double getVelocityMetersPerSecond();
     method public void writeToParcel(android.os.Parcel, int);
     field @NonNull public static final android.os.Parcelable.Creator<android.bluetooth.le.DistanceMeasurementResult> CREATOR;
+    field @FlaggedApi("com.android.bluetooth.flags.channel_sounding") public static final int NADM_ATTACK_IS_EXTREMELY_LIKELY = 6; // 0x6
+    field @FlaggedApi("com.android.bluetooth.flags.channel_sounding") public static final int NADM_ATTACK_IS_EXTREMELY_UNLIKELY = 0; // 0x0
+    field @FlaggedApi("com.android.bluetooth.flags.channel_sounding") public static final int NADM_ATTACK_IS_LIKELY = 4; // 0x4
+    field @FlaggedApi("com.android.bluetooth.flags.channel_sounding") public static final int NADM_ATTACK_IS_POSSIBLE = 3; // 0x3
+    field @FlaggedApi("com.android.bluetooth.flags.channel_sounding") public static final int NADM_ATTACK_IS_UNLIKELY = 2; // 0x2
+    field @FlaggedApi("com.android.bluetooth.flags.channel_sounding") public static final int NADM_ATTACK_IS_VERY_LIKELY = 5; // 0x5
+    field @FlaggedApi("com.android.bluetooth.flags.channel_sounding") public static final int NADM_ATTACK_IS_VERY_UNLIKELY = 1; // 0x1
+    field @FlaggedApi("com.android.bluetooth.flags.channel_sounding") public static final int NADM_UNKNOWN = 255; // 0xff
   }
 
   public static final class DistanceMeasurementResult.Builder {
@@ -1291,8 +1335,12 @@ package android.bluetooth.le {
     method @NonNull public android.bluetooth.le.DistanceMeasurementResult build();
     method @NonNull public android.bluetooth.le.DistanceMeasurementResult.Builder setAltitudeAngle(@FloatRange(from=-90.0, to=90.0) double);
     method @NonNull public android.bluetooth.le.DistanceMeasurementResult.Builder setAzimuthAngle(@FloatRange(from=0.0, to=360.0) double);
+    method @FlaggedApi("com.android.bluetooth.flags.channel_sounding") @NonNull public android.bluetooth.le.DistanceMeasurementResult.Builder setConfidenceLevel(@FloatRange(from=0.0, to=100.0) double);
+    method @FlaggedApi("com.android.bluetooth.flags.channel_sounding") @NonNull public android.bluetooth.le.DistanceMeasurementResult.Builder setDelaySpreadMeters(double);
+    method @FlaggedApi("com.android.bluetooth.flags.channel_sounding") @NonNull public android.bluetooth.le.DistanceMeasurementResult.Builder setDetectedAttackLevel(int);
     method @NonNull public android.bluetooth.le.DistanceMeasurementResult.Builder setErrorAltitudeAngle(@FloatRange(from=0.0, to=180.0) double);
     method @NonNull public android.bluetooth.le.DistanceMeasurementResult.Builder setErrorAzimuthAngle(@FloatRange(from=0.0, to=360.0) double);
+    method @FlaggedApi("com.android.bluetooth.flags.channel_sounding") @NonNull public android.bluetooth.le.DistanceMeasurementResult.Builder setVelocityMetersPerSecond(double);
   }
 
   public final class DistanceMeasurementSession {

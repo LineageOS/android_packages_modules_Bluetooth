@@ -19,6 +19,7 @@ package com.android.bluetooth.gatt;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothUtils;
+import android.bluetooth.le.ChannelSoundingParams;
 import android.bluetooth.le.DistanceMeasurementMethod;
 import android.bluetooth.le.DistanceMeasurementParams;
 import android.bluetooth.le.DistanceMeasurementResult;
@@ -138,6 +139,14 @@ public class DistanceMeasurementManager {
                 Log.w(TAG, "stopDistanceMeasurement with invalid method:" + method);
                 return BluetoothStatusCodes.ERROR_DISTANCE_MEASUREMENT_INTERNAL;
         }
+    }
+
+    int getChannelSoundingMaxSupportedSecurityLevel(BluetoothDevice remoteDevice) {
+        return ChannelSoundingParams.CS_SECURITY_LEVEL_ONE;
+    }
+
+    int getLocalChannelSoundingMaxSupportedSecurityLevel() {
+        return ChannelSoundingParams.CS_SECURITY_LEVEL_ONE;
     }
 
     private synchronized int stopRssiTracker(UUID uuid, String identityAddress,
