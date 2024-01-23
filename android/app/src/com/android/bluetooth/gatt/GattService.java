@@ -95,6 +95,7 @@ import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.flags.FeatureFlags;
 import com.android.bluetooth.flags.FeatureFlagsImpl;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.util.NumberUtils;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.modules.utils.SynchronousResultReceiver;
@@ -534,8 +535,12 @@ public class GattService extends ProfileService {
 
             ScanClient client = getScanClient(mScannerId);
             if (client != null) {
-                client.appDied = true;
-                stopScan(client.scannerId, getAttributionSource());
+                if (Flags.leScanFixRemoteException()) {
+                    handleDeadScanClient(client);
+                } else {
+                    client.appDied = true;
+                    stopScan(client.scannerId, getAttributionSource());
+                }
             }
         }
 
@@ -2097,8 +2102,12 @@ public class GattService extends ProfileService {
                 }
             } catch (RemoteException | PendingIntent.CanceledException e) {
                 Log.e(TAG, "Exception: " + e);
-                mScannerMap.remove(client.scannerId);
-                mScanManager.stopScan(client.scannerId);
+                if (Flags.leScanFixRemoteException()) {
+                    handleDeadScanClient(client);
+                } else {
+                    mScannerMap.remove(client.scannerId);
+                    mScanManager.stopScan(client.scannerId);
+                }
             }
         }
     }
@@ -2201,6 +2210,15 @@ public class GattService extends ProfileService {
             }
         }
         return new MatchResult(false, MatchOrigin.PSEUDO_ADDRESS);
+    }
+
+    private void handleDeadScanClient(ScanClient client) {
+        if (client.appDied) {
+            Log.w(TAG, "Already dead client " + client.scannerId);
+            return;
+        }
+        client.appDied = true;
+        stopScan(client.scannerId, getAttributionSource());
     }
 
     void onClientRegistered(int status, int clientIf, long uuidLsb, long uuidMsb)
@@ -2848,8 +2866,12 @@ public class GattService extends ProfileService {
             }
         } catch (RemoteException | PendingIntent.CanceledException e) {
             Log.e(TAG, "Exception: " + e);
-            mScannerMap.remove(client.scannerId);
-            mScanManager.stopScan(client.scannerId);
+            if (Flags.leScanFixRemoteException()) {
+                handleDeadScanClient(client);
+            } else {
+                mScannerMap.remove(client.scannerId);
+                mScanManager.stopScan(client.scannerId);
+            }
         }
     }
 
