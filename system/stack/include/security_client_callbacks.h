@@ -24,6 +24,7 @@
 #include "stack/include/bt_octets.h"
 #include "stack/include/btm_ble_sec_api_types.h"
 #include "stack/include/hci_error_code.h"
+#include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 /****************************************
@@ -119,7 +120,8 @@ typedef struct {
                                  const Octet16& c, const Octet16& r);
   void (*BTM_PINCodeReply)(const RawAddress& bd_addr, tBTM_STATUS res,
                            uint8_t pin_len, uint8_t* p_pin);
-  void (*BTM_ConfirmReqReply)(tBTM_STATUS res, const RawAddress& bd_addr);
+  void (*BTM_SecConfirmReqReply)(tBTM_STATUS res, tBT_TRANSPORT transport,
+                                 const RawAddress bd_addr);
   bool (*BTM_SecDeleteRmtNameNotifyCallback)(
       tBTM_RMT_NAME_CALLBACK* p_callback);
   tBTM_STATUS (*BTM_SetEncryption)(const RawAddress& bd_addr,
