@@ -193,8 +193,6 @@ struct btm_client_interface_t default_btm_client_interface = {
         .BTM_SetBleDataLength = [](const RawAddress& /* bd_addr */,
                                    uint16_t /* tx_pdu_length */)
             -> tBTM_STATUS { return BTM_SUCCESS; },
-        .BTM_BleConfirmReply = [](const RawAddress& /* bd_addr */,
-                                  uint8_t /* res */) {},
         .BTM_BleLoadLocalKeys = [](uint8_t /* key_type */,
                                    tBTM_BLE_LOCAL_KEYS* /* p_key */) {},
         .BTM_BlePasskeyReply = [](const RawAddress& /* bd_addr */,
