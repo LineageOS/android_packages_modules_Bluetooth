@@ -58,7 +58,7 @@ typedef uint8_t tA2DP_CODEC_TYPE; /* A2DP Codec type: A2DP_MEDIA_CT_* */
 //          set to 0, if octet 0 is not 0xFF.
 enum : uint64_t {
   A2DP_CODEC_ID_SBC = 0x0000000000,
-  A2DP_CODEC_ID_AAC = 0x0000000001,
+  A2DP_CODEC_ID_AAC = 0x0000000002,
   A2DP_CODEC_ID_APTX = 0x0001004fff,
   A2DP_CODEC_ID_APTX_HD = 0x002400d7ff,
   A2DP_CODEC_ID_LDAC = 0x00aa012dff,

@@ -695,6 +695,26 @@ class FlossGattClient(GattClientCallbacks):
         self.proxy().UnregisterClient(self.client_id)
         return True
 
+    def register_callback_observer(self, name, observer):
+        """Add an observer for all callbacks.
+
+        Args:
+            name: Name of the observer.
+            observer: Observer that implements all callback classes.
+        """
+        if isinstance(observer, GattClientCallbacks):
+            self.callbacks.add_observer(name, observer)
+
+    def unregister_callback_observer(self, name, observer):
+        """Remove an observer for all callbacks.
+
+        Args:
+            name: Name of the observer.
+            observer: Observer that implements all callback classes.
+        """
+        if isinstance(observer, GattClientCallbacks):
+            self.callbacks.remove_observer(name, observer)
+
     @utils.glib_call(False)
     def connect_client(self,
                        address,
@@ -816,13 +836,43 @@ class FlossGattClient(GattClientCallbacks):
         self.proxy().ReadUsingCharacteristicUuid(self.client_id, address, uuid, start_handle, end_handle, auth_req)
         return True
 
+    @utils.glib_call(False)
+    def read_descriptor(self, address, handle, auth_req):
+        """Reads remote device GATT descriptor.
+
+        Args:
+            address: Remote device MAC address.
+            handle: Descriptor handle id.
+            auth_req: Authentication requirements value.
+
+        Returns:
+            True on success, False otherwise.
+        """
+        self.proxy().ReadDescriptor(self.client_id, address, handle, auth_req)
+        return True
+
+    @utils.glib_call(False)
+    def write_descriptor(self, address, handle, auth_req, value):
+        """Writes remote device GATT descriptor.
+
+        Args:
+            address: Remote device MAC address.
+            handle: Descriptor handle id.
+            auth_req: Authentication requirements value.
+            value: Descriptor value to write.
+
+        Returns:
+            True on success, False otherwise.
+        """
+        self.proxy().WriteDescriptor(self.client_id, address, handle, auth_req, value)
+        return True
+
     @utils.glib_call(None)
-    def write_characteristic(self, address, uuid, handle, write_type, auth_req, value):
+    def write_characteristic(self, address, handle, write_type, auth_req, value):
         """Writes remote device GATT characteristic.
 
         Args:
             address: Remote device MAC address.
-            uuid: The characteristic UUID as a string.
             handle: Characteristic handle id.
             write_type: Characteristic write type.
             auth_req: Authentication requirements value.
@@ -831,7 +881,7 @@ class FlossGattClient(GattClientCallbacks):
         Returns:
             GattWriteRequestStatus on success, None otherwise.
         """
-        return self.proxy().write_characteristic(self.client_id, address, uuid, handle, write_type, auth_req, value)
+        return self.proxy().WriteCharacteristic(self.client_id, address, handle, write_type, auth_req, value)
 
     @utils.glib_call(False)
     def register_for_notification(self, address, handle, enable):

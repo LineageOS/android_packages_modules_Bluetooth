@@ -24,12 +24,12 @@
 
 #define LOG_TAG "bluetooth"
 
+#include <android_bluetooth_flags.h>
 #include <base/logging.h>
 
 #include <cstdint>
 #include <unordered_set>
 
-#include "android_bluetooth_flags.h"
 #include "bta/include/bta_jv_co.h"
 #include "bta/include/bta_rfcomm_scn.h"
 #include "bta/jv/bta_jv_int.h"

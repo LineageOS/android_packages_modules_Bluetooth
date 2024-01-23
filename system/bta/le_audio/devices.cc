@@ -17,10 +17,10 @@
 
 #include "devices.h"
 
+#include <android_bluetooth_flags.h>
 #include <base/strings/string_number_conversions.h>
 
 #include "acl_api.h"
-#include "android_bluetooth_flags.h"
 #include "bta_gatt_queue.h"
 #include "btif/include/btif_storage.h"
 #include "internal_include/bt_trace.h"

@@ -503,7 +503,7 @@ package android.bluetooth {
     method @FlaggedApi("com.android.bluetooth.flags.a2dp_offload_codec_extensibility") @NonNull public String getCodecName();
     method @FlaggedApi("com.android.bluetooth.flags.a2dp_offload_codec_extensibility") public boolean isMandatoryCodec();
     method @FlaggedApi("com.android.bluetooth.flags.a2dp_offload_codec_extensibility") public void writeToParcel(@NonNull android.os.Parcel, int);
-    field public static final long CODEC_ID_AAC = 1L; // 0x1L
+    field public static final long CODEC_ID_AAC = 2L; // 0x2L
     field public static final long CODEC_ID_APTX = 16797695L; // 0x1004fffL
     field public static final long CODEC_ID_APTX_HD = 604035071L; // 0x2400d7ffL
     field public static final long CODEC_ID_LDAC = -1442763265L; // 0xffffffffaa012dffL

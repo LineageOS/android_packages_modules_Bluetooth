@@ -18,9 +18,10 @@
 
 #define LOG_TAG "smp_act"
 
+#include <android_bluetooth_flags.h>
+
 #include <cstring>
 
-#include "android_bluetooth_flags.h"
 #include "btif/include/btif_common.h"
 #include "btif/include/core_callbacks.h"
 #include "btif/include/stack_manager_t.h"
@@ -1956,6 +1957,14 @@ void smp_process_secure_connection_oob_data(tSMP_CB* p_cb,
 
   if (!p_sc_oob_data->peer_oob_data.present) {
     LOG_VERBOSE("peer OOB data is absent");
+
+    if (IS_FLAG_ENABLED(fix_le_oob_pairing_bypass)) {
+      tSMP_INT_DATA smp_int_data{};
+      smp_int_data.status = SMP_OOB_FAIL;
+      smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &smp_int_data);
+      return;
+    }
+
     p_cb->peer_random = {0};
   } else {
     p_cb->peer_random = p_sc_oob_data->peer_oob_data.randomizer;
