@@ -37,9 +37,7 @@
 #include "common/init_flags.h"
 #include "common/metrics.h"
 #include "device/include/controller.h"
-#include "include/check.h"
 #include "internal_include/bt_target.h"
-#include "internal_include/bt_trace.h"
 #include "main/shim/hci_layer.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
@@ -894,12 +892,12 @@ static void read_encryption_key_size_complete_after_encryption_change(uint8_t st
     /* If remote device stop the encryption before we call "Read Encryption Key
      * Size", we might receive Insufficient Security, which means that link is
      * no longer encrypted. */
-    LOG(INFO) << __func__ << ": encryption stopped on link: " << loghex(handle);
+    LOG_INFO("encryption stopped on link:0x%x", handle);
     return;
   }
 
   if (status != HCI_SUCCESS) {
-    LOG(INFO) << __func__ << ": disconnecting, status: " << loghex(status);
+    LOG_ERROR("disconnecting, status:0x%x", status);
     acl_disconnect_from_handle(handle, HCI_ERR_PEER_USER,
                                "stack::btu::btu_hcif::read_encryption_key_size_"
                                "complete_after_encryption_change Bad key size");
@@ -907,8 +905,9 @@ static void read_encryption_key_size_complete_after_encryption_change(uint8_t st
   }
 
   if (key_size < MIN_KEY_SIZE) {
-    LOG(ERROR) << __func__ << " encryption key too short, disconnecting. handle: " << loghex(handle)
-               << " key_size: " << +key_size;
+    LOG_ERROR(
+        "encryption key too short, disconnecting. handle:0x%x,key_size:%d",
+        handle, key_size);
 
     acl_disconnect_from_handle(
         handle, HCI_ERR_HOST_REJECT_SECURITY,
@@ -1221,7 +1220,7 @@ static void btu_hcif_command_complete_evt(BT_HDR* response,
  ******************************************************************************/
 static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
                                         const uint8_t* p_cmd) {
-  CHECK_NE(p_cmd, nullptr) << "Null command for opcode 0x" << loghex(opcode);
+  ASSERT_LOG(p_cmd != nullptr, "Null command for opcode 0x%x", opcode);
   p_cmd++;  // Skip parameter total length
 
   const tHCI_STATUS hci_status = to_hci_status_code(status);

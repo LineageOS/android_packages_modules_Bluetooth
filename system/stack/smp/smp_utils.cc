@@ -1643,14 +1643,12 @@ bool smp_request_oob_data(tSMP_CB* p_cb) {
 }
 
 void print128(const Octet16& x, const uint8_t* key_name) {
-  if (VLOG_IS_ON(2) && DLOG_IS_ON(INFO)) {
-    uint8_t* p = (uint8_t*)x.data();
+  uint8_t* p = (uint8_t*)x.data();
 
-    LOG_INFO("%s(MSB~LSB):", key_name);
-    for (int i = 0; i < 4; i++) {
-      LOG_INFO("%02x:%02x:%02x:%02x", p[OCTET16_LEN - i * 4 - 1],
-               p[OCTET16_LEN - i * 4 - 2], p[OCTET16_LEN - i * 4 - 3],
-               p[OCTET16_LEN - i * 4 - 4]);
-    }
+  LOG_INFO("%s(MSB~LSB):", key_name);
+  for (int i = 0; i < 4; i++) {
+    LOG_INFO("%02x:%02x:%02x:%02x", p[OCTET16_LEN - i * 4 - 1],
+             p[OCTET16_LEN - i * 4 - 2], p[OCTET16_LEN - i * 4 - 3],
+             p[OCTET16_LEN - i * 4 - 4]);
   }
 }

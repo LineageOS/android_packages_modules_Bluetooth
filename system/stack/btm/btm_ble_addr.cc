@@ -205,9 +205,8 @@ static tBTM_SEC_DEV_REC* btm_find_dev_by_identity_addr(
     if (p_dev_rec->ble.identity_address_with_type.bda == bd_addr) {
       if ((p_dev_rec->ble.identity_address_with_type.type &
            (~BLE_ADDR_TYPE_ID_BIT)) != (addr_type & (~BLE_ADDR_TYPE_ID_BIT)))
-        LOG_WARN("%s find pseudo->random match with diff addr type: %d vs %d",
-                 __func__, p_dev_rec->ble.identity_address_with_type.type,
-                 addr_type);
+        LOG_WARN("pseudo->random match with diff addr type: %d vs %d",
+                 p_dev_rec->ble.identity_address_with_type.type, addr_type);
 
       /* found the match */
       return p_dev_rec;
@@ -294,7 +293,7 @@ void btm_ble_refresh_peer_resolvable_private_addr(
     tBLE_RAND_ADDR_TYPE rra_type) {
   tBTM_SEC_DEV_REC* p_sec_rec = btm_find_dev(pseudo_bda);
   if (p_sec_rec == nullptr) {
-    LOG_WARN("%s No matching known device in record", __func__);
+    LOG_WARN("No matching known device in record");
     return;
   }
 
@@ -317,7 +316,7 @@ void btm_ble_refresh_peer_resolvable_private_addr(
     if (!acl_refresh_remote_address(identity_address, identity_address_type,
                                     p_sec_rec->ble.pseudo_addr, rra_type,
                                     rpa)) {
-      LOG_ERROR("%s Unknown device to refresh remote device", __func__);
+      LOG_ERROR("Unknown device to refresh remote device");
     }
   }
 }
@@ -342,7 +341,8 @@ bool maybe_resolve_address(RawAddress* bda, tBLE_ADDR_TYPE* bda_type) {
   if (!is_in_security_db && addr_is_rpa) {
     tBTM_SEC_DEV_REC* match_rec = btm_ble_resolve_random_addr(*bda);
     if (match_rec) {
-      LOG(INFO) << __func__ << ": matched and resolved random address";
+      LOG_INFO("matched/resolved random address:%s",
+               ADDRESS_TO_LOGGABLE_CSTR(*bda));
       is_in_security_db = true;
       match_rec->ble.active_addr_type = BTM_BLE_ADDR_RRA;
       match_rec->ble.cur_rand_addr = *bda;
@@ -354,7 +354,8 @@ bool maybe_resolve_address(RawAddress* bda, tBLE_ADDR_TYPE* bda_type) {
         *bda = match_rec->bd_addr;
       }
     } else {
-      LOG(INFO) << __func__ << ": unable to match and resolve random address";
+      LOG_INFO("unable to match/resolve random address:%s",
+               ADDRESS_TO_LOGGABLE_CSTR(*bda));
     }
   }
   return is_in_security_db;
