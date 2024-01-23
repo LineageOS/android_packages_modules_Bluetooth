@@ -83,6 +83,7 @@ void SyspropsModule::parse_config(std::string file_path) {
       "bluetooth.core.classic.inq_scan_type",
       "bluetooth.core.classic.inq_scan_interval",
       "bluetooth.core.classic.inq_scan_window",
+      "bluetooth.core.classic.inq_length",
       "bluetooth.core.acl.link_supervision_timeout",
       "bluetooth.core.classic.page_timeout",
       "bluetooth.core.classic.sniff_max_intervals",
