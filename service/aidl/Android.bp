@@ -10,9 +10,7 @@ package {
 // AIDL interface used in service-bluetooth
 filegroup {
     name: "service-bluetooth-binder-aidl",
-    visibility: [
-        "//packages/modules/Bluetooth:__subpackages__",
-    ],
+    visibility: ["//packages/modules/Bluetooth:__subpackages__"],
     srcs: [
         "android/bluetooth/IBluetoothManager.aidl",
         "android/bluetooth/IBluetoothManagerCallback.aidl",

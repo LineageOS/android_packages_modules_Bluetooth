@@ -34,9 +34,7 @@ filegroup {
 // pre-jarjar version of service-bluetooth that builds against pre-jarjar version of framework-bluetooth
 java_defaults {
     name: "service-bluetooth-pre-jarjar",
-    srcs: [
-        ":services.bluetooth-sources",
-    ],
+    srcs: [":services.bluetooth-sources"],
 
     errorprone: {
         javacflags: [

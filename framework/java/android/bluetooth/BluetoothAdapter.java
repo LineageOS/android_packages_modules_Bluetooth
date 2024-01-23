@@ -1741,7 +1741,6 @@ public final class BluetoothAdapter {
                 final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
                 mService.factoryReset(mAttributionSource, recv);
                 if (recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(false)
-                        && mManagerService != null
                         && mManagerService.onFactoryReset(mAttributionSource)) {
                     return true;
                 }
