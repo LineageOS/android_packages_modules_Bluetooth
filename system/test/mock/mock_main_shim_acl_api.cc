@@ -30,74 +30,78 @@
 #include "types/raw_address.h"
 
 void bluetooth::shim::ACL_CreateClassicConnection(
-    const RawAddress& raw_address) {
+    const RawAddress& /* raw_address */) {
   inc_func_call_count(__func__);
 }
 void bluetooth::shim::ACL_CancelClassicConnection(
-    const RawAddress& raw_address) {
+    const RawAddress& /* raw_address */) {
   inc_func_call_count(__func__);
 }
 bool bluetooth::shim::ACL_AcceptLeConnectionFrom(
-    const tBLE_BD_ADDR& legacy_address_with_type, bool is_direct) {
+    const tBLE_BD_ADDR& /* legacy_address_with_type */, bool /* is_direct */) {
   inc_func_call_count(__func__);
   return true;
 }
 void bluetooth::shim::ACL_IgnoreLeConnectionFrom(
-    const tBLE_BD_ADDR& legacy_address_with_type) {
+    const tBLE_BD_ADDR& /* legacy_address_with_type */) {
   inc_func_call_count(__func__);
 }
-void bluetooth::shim::ACL_ConfigureLePrivacy(bool is_le_privacy_enabled) {
+void bluetooth::shim::ACL_ConfigureLePrivacy(bool /* is_le_privacy_enabled */) {
   inc_func_call_count(__func__);
 }
-void bluetooth::shim::ACL_WriteData(uint16_t handle, BT_HDR* p_buf) {
+void bluetooth::shim::ACL_WriteData(uint16_t /* handle */,
+                                    BT_HDR* /* p_buf */) {
   inc_func_call_count(__func__);
 }
-void bluetooth::shim::ACL_Disconnect(uint16_t handle, bool is_classic,
-                                     tHCI_STATUS reason, std::string comment) {
+void bluetooth::shim::ACL_Disconnect(uint16_t /* handle */,
+                                     bool /* is_classic */,
+                                     tHCI_STATUS /* reason */,
+                                     std::string /* comment */) {
   inc_func_call_count(__func__);
 }
 void bluetooth::shim::ACL_IgnoreAllLeConnections() {
   inc_func_call_count(__func__);
 }
-void bluetooth::shim::ACL_ReadConnectionAddress(uint16_t handle,
-                                                RawAddress& conn_addr,
-                                                tBLE_ADDR_TYPE* p_addr_type,
-                                                bool ota_address) {
+void bluetooth::shim::ACL_ReadConnectionAddress(
+    uint16_t /* handle */, RawAddress& /* conn_addr */,
+    tBLE_ADDR_TYPE* /* p_addr_type */, bool /* ota_address */) {
   inc_func_call_count(__func__);
 }
-void bluetooth::shim::ACL_ReadPeerConnectionAddress(uint16_t handle,
-                                                    RawAddress& conn_addr,
-                                                    tBLE_ADDR_TYPE* p_addr_type,
-                                                    bool ota_address) {
+void bluetooth::shim::ACL_ReadPeerConnectionAddress(
+    uint16_t /* handle */, RawAddress& /* conn_addr */,
+    tBLE_ADDR_TYPE* /* p_addr_type */, bool /* ota_address */) {
   inc_func_call_count(__func__);
 }
 std::optional<uint8_t> bluetooth::shim::ACL_GetAdvertisingSetConnectedTo(
-    const RawAddress& addr) {
+    const RawAddress& /* addr */) {
   inc_func_call_count(__func__);
   return std::nullopt;
 }
 void bluetooth::shim::ACL_AddToAddressResolution(
-    const tBLE_BD_ADDR& legacy_address_with_type, const Octet16& peer_irk,
-    const Octet16& local_irk) {
+    const tBLE_BD_ADDR& /* legacy_address_with_type */,
+    const Octet16& /* peer_irk */, const Octet16& /* local_irk */) {
   inc_func_call_count(__func__);
 }
 
 void bluetooth::shim::ACL_RemoveFromAddressResolution(
-    const tBLE_BD_ADDR& legacy_address_with_type) {
+    const tBLE_BD_ADDR& /* legacy_address_with_type */) {
   inc_func_call_count(__func__);
 }
 void bluetooth::shim::ACL_ClearAddressResolution() {
   inc_func_call_count(__func__);
 }
-void bluetooth::shim::ACL_LeSetDefaultSubrate(uint16_t subrate_min,
-                                              uint16_t subrate_max,
-                                              uint16_t max_latency,
-                                              uint16_t cont_num,
-                                              uint16_t sup_tout) {
+void bluetooth::shim::ACL_LeSetDefaultSubrate(uint16_t /* subrate_min */,
+                                              uint16_t /* subrate_max */,
+                                              uint16_t /* max_latency */,
+                                              uint16_t /* cont_num */,
+                                              uint16_t /* sup_tout */) {
   inc_func_call_count(__func__);
 }
-void bluetooth::shim::ACL_LeSubrateRequest(
-    uint16_t hci_handle, uint16_t subrate_min, uint16_t subrate_max,
-    uint16_t max_latency, uint16_t cont_num, uint16_t sup_tout) {
+void bluetooth::shim::ACL_LeSubrateRequest(uint16_t /* hci_handle */,
+                                           uint16_t /* subrate_min */,
+                                           uint16_t /* subrate_max */,
+                                           uint16_t /* max_latency */,
+                                           uint16_t /* cont_num */,
+                                           uint16_t /* sup_tout */) {
   inc_func_call_count(__func__);
 }

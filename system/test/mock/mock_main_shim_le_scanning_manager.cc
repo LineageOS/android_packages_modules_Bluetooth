@@ -34,14 +34,14 @@ bool bluetooth::shim::is_ad_type_filter_supported() {
   return false;
 }
 
-void bluetooth::shim::set_ad_type_rsi_filter(bool enable) {
+void bluetooth::shim::set_ad_type_rsi_filter(bool /* enable */) {
   inc_func_call_count(__func__);
 }
 
-void bluetooth::shim::set_empty_filter(bool enable) {
+void bluetooth::shim::set_empty_filter(bool /* enable */) {
   inc_func_call_count(__func__);
 }
 
-void bluetooth::shim::set_target_announcements_filter(bool enable) {
+void bluetooth::shim::set_target_announcements_filter(bool /* enable */) {
   inc_func_call_count(__func__);
 }

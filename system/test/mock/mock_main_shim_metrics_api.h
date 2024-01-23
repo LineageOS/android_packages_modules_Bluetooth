@@ -26,7 +26,7 @@
 #include <string>
 
 // Original included files, if any
-#include <frameworks/proto_logging/stats/enums/bluetooth/le/enums.pb.h>
+// #include <frameworks/proto_logging/stats/enums/bluetooth/le/enums.pb.h>
 
 #include "os/metrics.h"
 #include "types/raw_address.h"
@@ -48,10 +48,12 @@ struct LogMetricLinkLayerConnectionEvent {
                      uint16_t link_type, uint32_t hci_cmd, uint16_t hci_event,
                      uint16_t hci_ble_event, uint16_t cmd_status,
                      uint16_t reason_code)>
-      body{[](const RawAddress* raw_address, uint32_t connection_handle,
-              android::bluetooth::DirectionEnum direction, uint16_t link_type,
-              uint32_t hci_cmd, uint16_t hci_event, uint16_t hci_ble_event,
-              uint16_t cmd_status, uint16_t reason_code) {}};
+      body{[](const RawAddress* /* raw_address */,
+              uint32_t /* connection_handle */,
+              android::bluetooth::DirectionEnum /* direction */,
+              uint16_t /* link_type */, uint32_t /* hci_cmd */,
+              uint16_t /* hci_event */, uint16_t /* hci_ble_event */,
+              uint16_t /* cmd_status */, uint16_t /* reason_code */) {}};
   void operator()(const RawAddress* raw_address, uint32_t connection_handle,
                   android::bluetooth::DirectionEnum direction,
                   uint16_t link_type, uint32_t hci_cmd, uint16_t hci_event,
@@ -70,8 +72,9 @@ struct LogMetricA2dpAudioUnderrunEvent {
   std::function<void(const RawAddress& raw_address,
                      uint64_t encoding_interval_millis,
                      int num_missing_pcm_bytes)>
-      body{[](const RawAddress& raw_address, uint64_t encoding_interval_millis,
-              int num_missing_pcm_bytes) {}};
+      body{[](const RawAddress& /* raw_address */,
+              uint64_t /* encoding_interval_millis */,
+              int /* num_missing_pcm_bytes */) {}};
   void operator()(const RawAddress& raw_address,
                   uint64_t encoding_interval_millis,
                   int num_missing_pcm_bytes) {
@@ -88,9 +91,11 @@ struct LogMetricA2dpAudioOverrunEvent {
                      uint64_t encoding_interval_millis, int num_dropped_buffers,
                      int num_dropped_encoded_frames,
                      int num_dropped_encoded_bytes)>
-      body{[](const RawAddress& raw_address, uint64_t encoding_interval_millis,
-              int num_dropped_buffers, int num_dropped_encoded_frames,
-              int num_dropped_encoded_bytes) {}};
+      body{[](const RawAddress& /* raw_address */,
+              uint64_t /* encoding_interval_millis */,
+              int /* num_dropped_buffers */,
+              int /* num_dropped_encoded_frames */,
+              int /* num_dropped_encoded_bytes */) {}};
   void operator()(const RawAddress& raw_address,
                   uint64_t encoding_interval_millis, int num_dropped_buffers,
                   int num_dropped_encoded_frames,
@@ -106,8 +111,8 @@ extern struct LogMetricA2dpAudioOverrunEvent LogMetricA2dpAudioOverrunEvent;
 struct LogMetricA2dpPlaybackEvent {
   std::function<void(const RawAddress& raw_address, int playback_state,
                      int audio_coding_mode)>
-      body{[](const RawAddress& raw_address, int playback_state,
-              int audio_coding_mode) {}};
+      body{[](const RawAddress& /* raw_address */, int /* playback_state */,
+              int /* audio_coding_mode */) {}};
   void operator()(const RawAddress& raw_address, int playback_state,
                   int audio_coding_mode) {
     body(raw_address, playback_state, audio_coding_mode);
@@ -124,15 +129,18 @@ struct LogMetricA2dpSessionMetricsEvent {
                      int buffer_overruns_max_count, int buffer_overruns_total,
                      float buffer_underruns_average, int buffer_underruns_count,
                      int64_t codec_index, bool is_a2dp_offload)>
-      body{[](const RawAddress& raw_address, int64_t audio_duration_ms,
-              int media_timer_min_ms, int media_timer_max_ms,
-              int media_timer_avg_ms, int total_scheduling_count,
-              int buffer_overruns_max_count, int buffer_overruns_total,
-              float buffer_underruns_average, int buffer_underruns_count,
-              int64_t codec_index, bool is_a2dp_offload) {}};
+      body{[](const RawAddress& /* raw_address */,
+              int64_t /* audio_duration_ms */, int /* media_timer_min_ms */,
+              int /* media_timer_max_ms */, int /* media_timer_avg_ms */,
+              int /* total_scheduling_count */,
+              int /* buffer_overruns_max_count */,
+              int /* buffer_overruns_total */,
+              float /* buffer_underruns_average */,
+              int /* buffer_underruns_count */, int64_t /* codec_index */,
+              bool /* is_a2dp_offload */) {}};
   void operator()(const RawAddress& raw_address, int64_t audio_duration_ms,
                   int media_timer_min_ms, int media_timer_max_ms,
-                  int media_timer_avg_ms, int total_scheduling_count,
+                  int /* media_timer_avg_ms */, int total_scheduling_count,
                   int buffer_overruns_max_count, int buffer_overruns_total,
                   float buffer_underruns_average, int buffer_underruns_count,
                   int64_t codec_index, bool is_a2dp_offload) {
@@ -149,8 +157,8 @@ extern struct LogMetricA2dpPlaybackEvent LogMetricA2dpPlaybackEvent;
 struct LogMetricHfpPacketLossStats {
   std::function<void(const RawAddress& raw_address, int num_decoded_frames,
                      double packet_loss_ratio, uint16_t codec_type)>
-      body{[](const RawAddress& raw_address, int num_decoded_frames,
-              double packet_loss_ratio, uint16_t codec_type) {}};
+      body{[](const RawAddress& /* raw_address */, int /* num_decoded_frames */,
+              double /* packet_loss_ratio */, uint16_t /* codec_type */) {}};
   void operator()(const RawAddress& raw_address, int num_decoded_frames,
                   double packet_loss_ratio, uint16_t codec_type) {
     body(raw_address, num_decoded_frames, packet_loss_ratio, codec_type);
@@ -163,8 +171,8 @@ extern struct LogMetricHfpPacketLossStats LogMetricHfpPacketLossStats;
 struct LogMetricMmcTranscodeRttStats {
   std::function<void(int maximum_rtt, double mean_rtt, int num_requests,
                      int codec_type)>
-      body{[](int maximum_rtt, double mean_rtt, int num_requests,
-              int codec_type) {}};
+      body{[](int /* maximum_rtt */, double /* mean_rtt */,
+              int /* num_requests */, int /* codec_type */) {}};
   void operator()(int maximum_rtt, double mean_rtt, int num_requests,
                   int codec_type) {
     body(maximum_rtt, mean_rtt, num_requests, codec_type);
@@ -177,8 +185,8 @@ extern struct LogMetricMmcTranscodeRttStats LogMetricMmcTranscodeRttStats;
 struct LogMetricReadRssiResult {
   std::function<void(const RawAddress& raw_address, uint16_t handle,
                      uint32_t cmd_status, int8_t rssi)>
-      body{[](const RawAddress& raw_address, uint16_t handle,
-              uint32_t cmd_status, int8_t rssi) {}};
+      body{[](const RawAddress& /* raw_address */, uint16_t /* handle */,
+              uint32_t /* cmd_status */, int8_t /* rssi */) {}};
   void operator()(const RawAddress& raw_address, uint16_t handle,
                   uint32_t cmd_status, int8_t rssi) {
     body(raw_address, handle, cmd_status, rssi);
@@ -191,8 +199,9 @@ extern struct LogMetricReadRssiResult LogMetricReadRssiResult;
 struct LogMetricReadFailedContactCounterResult {
   std::function<void(const RawAddress& raw_address, uint16_t handle,
                      uint32_t cmd_status, int32_t failed_contact_counter)>
-      body{[](const RawAddress& raw_address, uint16_t handle,
-              uint32_t cmd_status, int32_t failed_contact_counter) {}};
+      body{[](const RawAddress& /* raw_address */, uint16_t /* handle */,
+              uint32_t /* cmd_status */,
+              int32_t /* failed_contact_counter */) {}};
   void operator()(const RawAddress& raw_address, uint16_t handle,
                   uint32_t cmd_status, int32_t failed_contact_counter) {
     body(raw_address, handle, cmd_status, failed_contact_counter);
@@ -206,8 +215,9 @@ extern struct LogMetricReadFailedContactCounterResult
 struct LogMetricReadTxPowerLevelResult {
   std::function<void(const RawAddress& raw_address, uint16_t handle,
                      uint32_t cmd_status, int32_t transmit_power_level)>
-      body{[](const RawAddress& raw_address, uint16_t handle,
-              uint32_t cmd_status, int32_t transmit_power_level) {}};
+      body{[](const RawAddress& /* raw_address */, uint16_t /* handle */,
+              uint32_t /* cmd_status */,
+              int32_t /* transmit_power_level */) {}};
   void operator()(const RawAddress& raw_address, uint16_t handle,
                   uint32_t cmd_status, int32_t transmit_power_level) {
     body(raw_address, handle, cmd_status, transmit_power_level);
@@ -222,9 +232,9 @@ struct LogMetricSmpPairingEvent {
   std::function<void(const RawAddress& raw_address, uint16_t smp_cmd,
                      android::bluetooth::DirectionEnum direction,
                      uint16_t smp_fail_reason)>
-      body{[](const RawAddress& raw_address, uint16_t smp_cmd,
-              android::bluetooth::DirectionEnum direction,
-              uint16_t smp_fail_reason) {}};
+      body{[](const RawAddress& /* raw_address */, uint16_t /* smp_cmd */,
+              android::bluetooth::DirectionEnum /* direction */,
+              uint16_t /* smp_fail_reason */) {}};
   void operator()(const RawAddress& raw_address, uint16_t smp_cmd,
                   android::bluetooth::DirectionEnum direction,
                   uint16_t smp_fail_reason) {
@@ -240,9 +250,10 @@ struct LogMetricClassicPairingEvent {
   std::function<void(const RawAddress& raw_address, uint16_t handle,
                      uint32_t hci_cmd, uint16_t hci_event, uint16_t cmd_status,
                      uint16_t reason_code, int64_t event_value)>
-      body{[](const RawAddress& raw_address, uint16_t handle, uint32_t hci_cmd,
-              uint16_t hci_event, uint16_t cmd_status, uint16_t reason_code,
-              int64_t event_value) {}};
+      body{[](const RawAddress& /* raw_address */, uint16_t /* handle */,
+              uint32_t /* hci_cmd */, uint16_t /* hci_event */,
+              uint16_t /* cmd_status */, uint16_t /* reason_code */,
+              int64_t /* event_value */) {}};
   void operator()(const RawAddress& raw_address, uint16_t handle,
                   uint32_t hci_cmd, uint16_t hci_event, uint16_t cmd_status,
                   uint16_t reason_code, int64_t event_value) {
@@ -259,9 +270,9 @@ struct LogMetricSdpAttribute {
   std::function<void(const RawAddress& raw_address, uint16_t protocol_uuid,
                      uint16_t attribute_id, size_t attribute_size,
                      const char* attribute_value)>
-      body{[](const RawAddress& raw_address, uint16_t protocol_uuid,
-              uint16_t attribute_id, size_t attribute_size,
-              const char* attribute_value) {}};
+      body{[](const RawAddress& /* raw_address */, uint16_t /* protocol_uuid */,
+              uint16_t /* attribute_id */, size_t /* attribute_size */,
+              const char* /* attribute_value */) {}};
   void operator()(const RawAddress& raw_address, uint16_t protocol_uuid,
                   uint16_t attribute_id, size_t attribute_size,
                   const char* attribute_value) {
@@ -281,10 +292,13 @@ struct LogMetricSocketConnectionState {
       android::bluetooth::SocketConnectionstateEnum connection_state,
       int64_t tx_bytes, int64_t rx_bytes, int uid, int server_port,
       android::bluetooth::SocketRoleEnum socket_role)>
-      body{[](const RawAddress& raw_address, int port, int type,
-              android::bluetooth::SocketConnectionstateEnum connection_state,
-              int64_t tx_bytes, int64_t rx_bytes, int uid, int server_port,
-              android::bluetooth::SocketRoleEnum socket_role) {}};
+      body{[](const RawAddress& /* raw_address */, int /* port */,
+              int /* type */,
+              android::bluetooth::
+                  SocketConnectionstateEnum /* connection_state */,
+              int64_t /* tx_bytes */, int64_t /* rx_bytes */, int /* uid */,
+              int /* server_port */,
+              android::bluetooth::SocketRoleEnum /* socket_role */) {}};
   void operator()(
       const RawAddress& raw_address, int port, int type,
       android::bluetooth::SocketConnectionstateEnum connection_state,
@@ -308,12 +322,14 @@ struct LogMetricManufacturerInfo {
                      const std::string& manufacturer, const std::string& model,
                      const std::string& hardware_version,
                      const std::string& software_version)>
-      body{[](const RawAddress& raw_address,
-              android::bluetooth::AddressTypeEnum address_type,
-              android::bluetooth::DeviceInfoSrcEnum source_type,
-              const std::string& source_name, const std::string& manufacturer,
-              const std::string& model, const std::string& hardware_version,
-              const std::string& software_version) {}};
+      body{[](const RawAddress& /* raw_address */,
+              android::bluetooth::AddressTypeEnum /* address_type */,
+              android::bluetooth::DeviceInfoSrcEnum /* source_type */,
+              const std::string& /* source_name */,
+              const std::string& /* manufacturer */,
+              const std::string& /* model */,
+              const std::string& /* hardware_version */,
+              const std::string& /* software_version */) {}};
   void operator()(const RawAddress& raw_address,
                   android::bluetooth::AddressTypeEnum address_type,
                   android::bluetooth::DeviceInfoSrcEnum source_type,
@@ -340,15 +356,14 @@ struct LogMetricBluetoothLEConnectionMetricEvent {
       android::bluetooth::le::LeConnectionOriginType origin_type,
       android::bluetooth::le::LeConnectionType connection_type,
       android::bluetooth::le::LeConnectionState transaction_state,
-      std::vector<std::pair<bluetooth::os::ArgumentType, int>>
-          argument_list)>
-      body{[](const RawAddress& raw_address,
-              android::bluetooth::le::LeConnectionOriginType origin_type,
-              android::bluetooth::le::LeConnectionType connection_type,
+      std::vector<std::pair<bluetooth::os::ArgumentType, int>> argument_list)>
+      body{[](const RawAddress& /* raw_address */,
+              android::bluetooth::le::LeConnectionOriginType /* origin_type */,
+              android::bluetooth::le::LeConnectionType /* connection_type */,
               android::bluetooth::le::LeConnectionState
-                  transaction_state,
+              /* transaction_state */,
               std::vector<std::pair<bluetooth::os::ArgumentType, int>>
-                  argument_list) {}};
+              /* argument_list */) {}};
   void operator()(
       const RawAddress& raw_address,
       android::bluetooth::le::LeConnectionOriginType origin_type,
