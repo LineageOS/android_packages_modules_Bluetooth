@@ -27,11 +27,12 @@ class NocpIsoHandler {
   virtual void OnEvent(uint32_t timestamp_us, int link_id, int num_of_completed_packets) = 0;
 };
 
-class NocpIsoClocker : public ::bluetooth::Module {
+class LinkClocker : public ::bluetooth::Module {
  public:
   static const ModuleFactory Factory;
 
   void OnHciEvent(const HciPacket& packet);
+  void OnAclData(const HciPacket& packet);
 
   static void Register(NocpIsoHandler* handler);
   static void Unregister();
@@ -42,10 +43,10 @@ class NocpIsoClocker : public ::bluetooth::Module {
   void Stop() override{};
 
   std::string ToString() const override {
-    return std::string("NocpIsoClocker");
+    return std::string("LinkClocker");
   }
 
-  NocpIsoClocker();
+  LinkClocker();
 
  private:
   int cig_id_;

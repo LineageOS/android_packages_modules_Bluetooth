@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "hal/nocp_iso_clocker.h"
+#include "hal/link_clocker.h"
 
 namespace bluetooth::hal {
 
@@ -24,9 +24,9 @@ static class : public NocpIsoHandler {
 
 static std::atomic<NocpIsoHandler*> g_handler = &g_empty_handler;
 
-NocpIsoClocker::NocpIsoClocker() : cig_id_(-1), cis_handle_(-1) {}
+LinkClocker::LinkClocker() : cig_id_(-1), cis_handle_(-1) {}
 
-void NocpIsoClocker::OnHciEvent(const HciPacket& packet) {
+void LinkClocker::OnHciEvent(const HciPacket& packet) {
   const int HCI_CMD_SET_CIG_PARAMETERS = 0x2062;
   const int HCI_EVT_COMMAND_COMPLETE = 0x0e;
   const int HCI_EVT_NUMBER_OF_COMPLETED_PACKETS = 0x13;
@@ -115,13 +115,18 @@ void NocpIsoClocker::OnHciEvent(const HciPacket& packet) {
   }
 }
 
-void NocpIsoClocker::Register(NocpIsoHandler* handler) {
+/// Filter L2CAP PDUs for Credit acknowledgments for the registered
+/// L2CAP channels.
+void LinkClocker::OnAclData(const HciPacket& /*packet*/) {
+}
+
+void LinkClocker::Register(NocpIsoHandler* handler) {
   g_handler = handler;
 }
-void NocpIsoClocker::Unregister() {
+void LinkClocker::Unregister() {
   g_handler = &g_empty_handler;
 }
 
-const ModuleFactory NocpIsoClocker::Factory = ModuleFactory([]() { return new NocpIsoClocker(); });
+const ModuleFactory LinkClocker::Factory = ModuleFactory([]() { return new LinkClocker(); });
 
 }  // namespace bluetooth::hal
