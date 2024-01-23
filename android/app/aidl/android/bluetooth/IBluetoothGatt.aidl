@@ -190,4 +190,10 @@ oneway interface IBluetoothGatt {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
     void stopDistanceMeasurement(in ParcelUuid uuid, in BluetoothDevice device, in int method, in AttributionSource attributionSource,
                             in SynchronousResultReceiver receiver);
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
+    void getChannelSoundingMaxSupportedSecurityLevel(in BluetoothDevice remoteDevice, in AttributionSource attributionSource,
+                            in SynchronousResultReceiver receiver);
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
+    void getLocalChannelSoundingMaxSupportedSecurityLevel(in AttributionSource attributionSource,
+                            in SynchronousResultReceiver receiver);
 }
