@@ -40,28 +40,34 @@ static void BTM_SecConfirmReqReply(tBTM_STATUS res, tBT_TRANSPORT transport,
 static SecurityClientInterface security = {
     .BTM_Sec_Init = BTM_Sec_Init,
     .BTM_Sec_Free = BTM_Sec_Free,
-    .BTM_SecAddDevice = BTM_SecAddDevice,
-    .BTM_SecAddRmtNameNotifyCallback = BTM_SecAddRmtNameNotifyCallback,
-    .BTM_SecDeleteDevice = BTM_SecDeleteDevice,
     .BTM_SecRegister = BTM_SecRegister,
-    .BTM_SecReadDevName = BTM_SecReadDevName,
-    .BTM_SecBond = BTM_SecBond,
-    .BTM_SecBondCancel = BTM_SecBondCancel,
-    .BTM_SecAddBleKey = BTM_SecAddBleKey,
+
+    .BTM_SecAddDevice = BTM_SecAddDevice,
     .BTM_SecAddBleDevice = BTM_SecAddBleDevice,
+    .BTM_SecDeleteDevice = BTM_SecDeleteDevice,
+    .BTM_SecAddBleKey = BTM_SecAddBleKey,
     .BTM_SecClearSecurityFlags = BTM_SecClearSecurityFlags,
-    .BTM_SecClrService = BTM_SecClrService,
-    .BTM_SecClrServiceByPsm = BTM_SecClrServiceByPsm,
-    .BTM_RemoteOobDataReply = BTM_RemoteOobDataReply,
-    .BTM_PINCodeReply = BTM_PINCodeReply,
-    .BTM_SecConfirmReqReply = BTM_SecConfirmReqReply,
-    .BTM_SecDeleteRmtNameNotifyCallback = BTM_SecDeleteRmtNameNotifyCallback,
     .BTM_SetEncryption = BTM_SetEncryption,
     .BTM_IsEncrypted = BTM_IsEncrypted,
     .BTM_SecIsSecurityPending = BTM_SecIsSecurityPending,
     .BTM_IsLinkKeyKnown = BTM_IsLinkKeyKnown,
+
+    .BTM_SecClrService = BTM_SecClrService,
+    .BTM_SecClrServiceByPsm = BTM_SecClrServiceByPsm,
+
+    .BTM_SecBond = BTM_SecBond,
+    .BTM_SecBondCancel = BTM_SecBondCancel,
+
+    .BTM_RemoteOobDataReply = BTM_RemoteOobDataReply,
+    .BTM_PINCodeReply = BTM_PINCodeReply,
+    .BTM_SecConfirmReqReply = BTM_SecConfirmReqReply,
     .BTM_BleSirkConfirmDeviceReply = BTM_BleSirkConfirmDeviceReply,
+
     .BTM_GetSecurityMode = BTM_GetSecurityMode,
+
+    .BTM_SecReadDevName = BTM_SecReadDevName,
+    .BTM_SecAddRmtNameNotifyCallback = BTM_SecAddRmtNameNotifyCallback,
+    .BTM_SecDeleteRmtNameNotifyCallback = BTM_SecDeleteRmtNameNotifyCallback,
 };
 
 const SecurityClientInterface& get_security_client_interface() {
