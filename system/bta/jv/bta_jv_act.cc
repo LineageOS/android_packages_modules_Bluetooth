@@ -46,6 +46,7 @@
 #include "stack/include/bt_psm_types.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
+#include "stack/include/btm_client_interface.h"
 #include "stack/include/gap_api.h"
 #include "stack/include/l2cdefs.h"
 #include "stack/include/port_api.h"
@@ -1384,8 +1385,9 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn,
     // Update security service record for RFCOMM client so that
     // secure RFCOMM connection will be authenticated with MTIM protection
     // while creating the L2CAP connection.
-    BTM_SetSecurityLevel(true, "RFC_MUX", BTM_SEC_SERVICE_RFC_MUX, sec_mask,
-                         BT_PSM_RFCOMM, BTM_SEC_PROTO_RFCOMM, 0);
+    get_btm_client_interface().security.BTM_SetSecurityLevel(
+        true, "RFC_MUX", BTM_SEC_SERVICE_RFC_MUX, sec_mask, BT_PSM_RFCOMM,
+        BTM_SEC_PROTO_RFCOMM, 0);
   }
 
   if (evt_data.status == BTA_JV_SUCCESS &&

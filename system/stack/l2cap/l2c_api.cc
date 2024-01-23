@@ -47,6 +47,7 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_psm_types.h"
 #include "stack/include/btm_api.h"
+#include "stack/include/btm_client_interface.h"
 #include "stack/include/l2c_api.h"
 #include "stack/include/main_thread.h"
 #include "stack/l2cap/l2c_int.h"
@@ -72,7 +73,8 @@ uint16_t L2CA_Register2(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
                         uint16_t sec_level) {
   auto ret = L2CA_Register(psm, p_cb_info, enable_snoop, p_ertm_info, my_mtu,
                            required_remote_mtu, sec_level);
-  BTM_SetSecurityLevel(false, "", 0, sec_level, psm, 0, 0);
+  get_btm_client_interface().security.BTM_SetSecurityLevel(
+      false, "", 0, sec_level, psm, 0, 0);
   return ret;
 }
 
@@ -296,7 +298,8 @@ void L2CA_FreeLePSM(uint16_t psm) {
 
 uint16_t L2CA_ConnectReq2(uint16_t psm, const RawAddress& p_bd_addr,
                           uint16_t sec_level) {
-  BTM_SetSecurityLevel(true, "", 0, sec_level, psm, 0, 0);
+  get_btm_client_interface().security.BTM_SetSecurityLevel(
+      true, "", 0, sec_level, psm, 0, 0);
   return L2CA_ConnectReq(psm, p_bd_addr);
 }
 
@@ -399,7 +402,8 @@ uint16_t L2CA_RegisterLECoc(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
   if (p_cb_info.pL2CA_ConnectInd_Cb != nullptr || psm < LE_DYNAMIC_PSM_START) {
     //  If we register LE COC for outgoing connection only, don't register with
     //  BTM_Sec, because it's handled by L2CA_ConnectLECocReq.
-    BTM_SetSecurityLevel(false, "", 0, sec_level, psm, 0, 0);
+    get_btm_client_interface().security.BTM_SetSecurityLevel(
+        false, "", 0, sec_level, psm, 0, 0);
   }
 
   /* Verify that the required callback info has been filled in
@@ -509,7 +513,8 @@ void L2CA_DeregisterLECoc(uint16_t psm) {
  ******************************************************************************/
 uint16_t L2CA_ConnectLECocReq(uint16_t psm, const RawAddress& p_bd_addr,
                               tL2CAP_LE_CFG_INFO* p_cfg, uint16_t sec_level) {
-  BTM_SetSecurityLevel(true, "", 0, sec_level, psm, 0, 0);
+  get_btm_client_interface().security.BTM_SetSecurityLevel(
+      true, "", 0, sec_level, psm, 0, 0);
 
   VLOG(1) << __func__ << " BDA: " << ADDRESS_TO_LOGGABLE_STR(p_bd_addr)
           << StringPrintf(" PSM: 0x%04x", psm);
