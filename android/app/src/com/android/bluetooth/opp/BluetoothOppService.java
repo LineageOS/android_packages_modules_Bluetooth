@@ -35,6 +35,8 @@ package com.android.bluetooth.opp;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothDevicePicker;
+import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
@@ -57,10 +59,12 @@ import android.util.Log;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothObexTransport;
+import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.IObexConnectionHandler;
 import com.android.bluetooth.ObexServerSockets;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.bluetooth.sdp.SdpManagerNativeInterface;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.ObexTransport;
@@ -72,10 +76,10 @@ import java.util.Date;
 import java.util.Locale;
 
 /**
- * Performs the background Bluetooth OPP transfer. It also starts thread to
- * accept incoming OPP connection.
+ * Performs the background Bluetooth OPP transfer. It also starts thread to accept incoming OPP
+ * connection.
  */
-
+// Next tag value for ContentProfileErrorReportUtils.report(): 22
 public class BluetoothOppService extends ProfileService implements IObexConnectionHandler {
     private static final boolean D = Constants.DEBUG;
     private static final boolean V = Constants.VERBOSE;
@@ -218,6 +222,11 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                 preference.dump();
             } else {
                 Log.w(TAG, "BluetoothOppPreference.getInstance returned null.");
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.OPP,
+                        BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                        0);
             }
         }
     }
@@ -273,7 +282,11 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
     public void stop() {
         if (sBluetoothOppService == null) {
             Log.w(TAG, "stop() called before start()");
-            return;
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                    1);
         }
         setBluetoothOppService(null);
         mHandler.sendMessage(mHandler.obtainMessage(STOP_LISTENER));
@@ -322,10 +335,20 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
     public static synchronized BluetoothOppService getBluetoothOppService() {
         if (sBluetoothOppService == null) {
             Log.w(TAG, "getBluetoothOppService(): service is null");
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                    2);
             return null;
         }
         if (!sBluetoothOppService.isAvailable()) {
             Log.w(TAG, "getBluetoothOppService(): service is not available");
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                    3);
             return null;
         }
         return sBluetoothOppService;
@@ -350,147 +373,192 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
 
     private static final int STOP_LISTENER = 200;
 
-    private Handler mHandler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case STOP_LISTENER:
-                    stopListeners();
-                    mListenStarted = false;
-                    //Stop Active INBOUND Transfer
-                    if (mServerTransfer != null) {
-                        mServerTransfer.onBatchCanceled();
-                        mServerTransfer = null;
-                    }
-                    //Stop Active OUTBOUND Transfer
-                    if (mTransfer != null) {
-                        mTransfer.onBatchCanceled();
-                        mTransfer = null;
-                    }
-                    unregisterReceivers();
-                    synchronized (BluetoothOppService.this) {
-                        if (mUpdateThread != null) {
-                            mUpdateThread.interrupt();
-                        }
-                    }
-                    while (mUpdateThread != null && mUpdateThreadRunning) {
-                        try {
-                            Thread.sleep(50);
-                        } catch (Exception e) {
-                            Log.e(TAG, "Thread sleep", e);
-                        }
-                    }
-                    synchronized (BluetoothOppService.this) {
-                        if (mUpdateThread != null) {
-                            try {
-                                mUpdateThread.join();
-                            } catch (InterruptedException e) {
-                                Log.e(TAG, "Interrupted", e);
+    private Handler mHandler =
+            new Handler() {
+                @Override
+                public void handleMessage(Message msg) {
+                    switch (msg.what) {
+                        case STOP_LISTENER:
+                            stopListeners();
+                            mListenStarted = false;
+                            // Stop Active INBOUND Transfer
+                            if (mServerTransfer != null) {
+                                mServerTransfer.onBatchCanceled();
+                                mServerTransfer = null;
                             }
-                            mUpdateThread = null;
-                        }
-                    }
+                            // Stop Active OUTBOUND Transfer
+                            if (mTransfer != null) {
+                                mTransfer.onBatchCanceled();
+                                mTransfer = null;
+                            }
+                            unregisterReceivers();
+                            synchronized (BluetoothOppService.this) {
+                                if (mUpdateThread != null) {
+                                    mUpdateThread.interrupt();
+                                }
+                            }
+                            while (mUpdateThread != null && mUpdateThreadRunning) {
+                                try {
+                                    Thread.sleep(50);
+                                } catch (Exception e) {
+                                    ContentProfileErrorReportUtils.report(
+                                            BluetoothProfile.OPP,
+                                            BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
+                                            BluetoothStatsLog
+                                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                                            4);
+                                    Log.e(TAG, "Thread sleep", e);
+                                }
+                            }
+                            synchronized (BluetoothOppService.this) {
+                                if (mUpdateThread != null) {
+                                    try {
+                                        mUpdateThread.join();
+                                    } catch (InterruptedException e) {
+                                        ContentProfileErrorReportUtils.report(
+                                                BluetoothProfile.OPP,
+                                                BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
+                                                BluetoothStatsLog
+                                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                                                5);
+                                        Log.e(TAG, "Interrupted", e);
+                                    }
+                                    mUpdateThread = null;
+                                }
+                            }
 
-                    if (mNotifier != null) {
-                        mNotifier.cancelNotifications();
-                    }
-                    break;
-                case START_LISTENER:
-                    if (mAdapterService.isEnabled()) {
-                        startSocketListener();
-                    }
-                    break;
-                case MEDIA_SCANNED:
-                    if (V) {
-                        Log.v(TAG, "Update mInfo.id " + msg.arg1 + " for data uri= "
-                                + msg.obj.toString());
-                    }
-                    ContentValues updateValues = new ContentValues();
-                    Uri contentUri = Uri.parse(BluetoothShare.CONTENT_URI + "/" + msg.arg1);
-                    updateValues.put(Constants.MEDIA_SCANNED, Constants.MEDIA_SCANNED_SCANNED_OK);
-                    updateValues.put(BluetoothShare.URI, msg.obj.toString()); // update
-                    updateValues.put(BluetoothShare.MIMETYPE,
-                            getContentResolver().getType(Uri.parse(msg.obj.toString())));
-                    getContentResolver().update(contentUri, updateValues, null, null);
-                    synchronized (BluetoothOppService.this) {
-                        mMediaScanInProgress = false;
-                    }
-                    break;
-                case MEDIA_SCANNED_FAILED:
-                    Log.v(TAG, "Update mInfo.id " + msg.arg1 + " for MEDIA_SCANNED_FAILED");
-                    ContentValues updateValues1 = new ContentValues();
-                    Uri contentUri1 = Uri.parse(BluetoothShare.CONTENT_URI + "/" + msg.arg1);
-                    updateValues1.put(Constants.MEDIA_SCANNED,
-                            Constants.MEDIA_SCANNED_SCANNED_FAILED);
-                    getContentResolver().update(contentUri1, updateValues1, null, null);
-                    synchronized (BluetoothOppService.this) {
-                        mMediaScanInProgress = false;
-                    }
-                    break;
-                case MSG_INCOMING_BTOPP_CONNECTION:
-                    if (D) {
-                        Log.d(TAG, "Get incoming connection");
-                    }
-                    ObexTransport transport = (ObexTransport) msg.obj;
+                            if (mNotifier != null) {
+                                mNotifier.cancelNotifications();
+                            }
+                            break;
+                        case START_LISTENER:
+                            if (mAdapterService.isEnabled()) {
+                                startSocketListener();
+                            }
+                            break;
+                        case MEDIA_SCANNED:
+                            if (V) {
+                                Log.v(
+                                        TAG,
+                                        "Update mInfo.id "
+                                                + msg.arg1
+                                                + " for data uri= "
+                                                + msg.obj.toString());
+                            }
+                            ContentValues updateValues = new ContentValues();
+                            Uri contentUri = Uri.parse(BluetoothShare.CONTENT_URI + "/" + msg.arg1);
+                            updateValues.put(
+                                    Constants.MEDIA_SCANNED, Constants.MEDIA_SCANNED_SCANNED_OK);
+                            updateValues.put(BluetoothShare.URI, msg.obj.toString()); // update
+                            updateValues.put(
+                                    BluetoothShare.MIMETYPE,
+                                    getContentResolver().getType(Uri.parse(msg.obj.toString())));
+                            getContentResolver().update(contentUri, updateValues, null, null);
+                            synchronized (BluetoothOppService.this) {
+                                mMediaScanInProgress = false;
+                            }
+                            break;
+                        case MEDIA_SCANNED_FAILED:
+                            Log.v(TAG, "Update mInfo.id " + msg.arg1 + " for MEDIA_SCANNED_FAILED");
+                            ContentValues updateValues1 = new ContentValues();
+                            Uri contentUri1 =
+                                    Uri.parse(BluetoothShare.CONTENT_URI + "/" + msg.arg1);
+                            updateValues1.put(
+                                    Constants.MEDIA_SCANNED,
+                                    Constants.MEDIA_SCANNED_SCANNED_FAILED);
+                            getContentResolver().update(contentUri1, updateValues1, null, null);
+                            synchronized (BluetoothOppService.this) {
+                                mMediaScanInProgress = false;
+                            }
+                            break;
+                        case MSG_INCOMING_BTOPP_CONNECTION:
+                            if (D) {
+                                Log.d(TAG, "Get incoming connection");
+                            }
+                            ObexTransport transport = (ObexTransport) msg.obj;
 
-                    /*
-                     * Strategy for incoming connections:
-                     * 1. If there is no ongoing transfer, no on-hold connection, start it
-                     * 2. If there is ongoing transfer, hold it for 20 seconds(1 seconds * 20 times)
-                     * 3. If there is on-hold connection, reject directly
-                     */
-                    if (mBatches.size() == 0 && mPendingConnection == null) {
-                        Log.i(TAG, "Start Obex Server");
-                        createServerSession(transport);
-                    } else {
-                        if (mPendingConnection != null) {
-                            Log.w(TAG, "OPP busy! Reject connection");
-                            try {
-                                transport.close();
-                            } catch (IOException e) {
-                                Log.e(TAG, "close tranport error");
+                            /*
+                             * Strategy for incoming connections:
+                             * 1. If there is no ongoing transfer, no on-hold connection, start it
+                             * 2. If there is ongoing transfer, hold it for 20 seconds(1 seconds * 20 times)
+                             * 3. If there is on-hold connection, reject directly
+                             */
+                            if (mBatches.size() == 0 && mPendingConnection == null) {
+                                Log.i(TAG, "Start Obex Server");
+                                createServerSession(transport);
+                            } else {
+                                if (mPendingConnection != null) {
+                                    Log.w(TAG, "OPP busy! Reject connection");
+                                    ContentProfileErrorReportUtils.report(
+                                            BluetoothProfile.OPP,
+                                            BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
+                                            BluetoothStatsLog
+                                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                            6);
+                                    try {
+                                        transport.close();
+                                    } catch (IOException e) {
+                                        ContentProfileErrorReportUtils.report(
+                                                BluetoothProfile.OPP,
+                                                BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
+                                                BluetoothStatsLog
+                                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                                                7);
+                                        Log.e(TAG, "close tranport error");
+                                    }
+                                } else {
+                                    Log.i(TAG, "OPP busy! Retry after 1 second");
+                                    mIncomingRetries = mIncomingRetries + 1;
+                                    mPendingConnection = transport;
+                                    Message msg1 = Message.obtain(mHandler);
+                                    msg1.what = MSG_INCOMING_CONNECTION_RETRY;
+                                    mHandler.sendMessageDelayed(msg1, 1000);
+                                }
                             }
-                        } else {
-                            Log.i(TAG, "OPP busy! Retry after 1 second");
-                            mIncomingRetries = mIncomingRetries + 1;
-                            mPendingConnection = transport;
-                            Message msg1 = Message.obtain(mHandler);
-                            msg1.what = MSG_INCOMING_CONNECTION_RETRY;
-                            mHandler.sendMessageDelayed(msg1, 1000);
-                        }
+                            break;
+                        case MSG_INCOMING_CONNECTION_RETRY:
+                            if (mBatches.size() == 0) {
+                                Log.i(TAG, "Start Obex Server");
+                                createServerSession(mPendingConnection);
+                                mIncomingRetries = 0;
+                                mPendingConnection = null;
+                            } else {
+                                if (mIncomingRetries == 20) {
+                                    Log.w(TAG, "Retried 20 seconds, reject connection");
+                                    ContentProfileErrorReportUtils.report(
+                                            BluetoothProfile.OPP,
+                                            BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
+                                            BluetoothStatsLog
+                                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                            8);
+                                    try {
+                                        mPendingConnection.close();
+                                    } catch (IOException e) {
+                                        ContentProfileErrorReportUtils.report(
+                                                BluetoothProfile.OPP,
+                                                BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
+                                                BluetoothStatsLog
+                                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                                                9);
+                                        Log.e(TAG, "close tranport error");
+                                    }
+                                    if (mServerSocket != null) {
+                                        acceptNewConnections();
+                                    }
+                                    mIncomingRetries = 0;
+                                    mPendingConnection = null;
+                                } else {
+                                    Log.i(TAG, "OPP busy! Retry after 1 second");
+                                    mIncomingRetries = mIncomingRetries + 1;
+                                    Message msg2 = Message.obtain(mHandler);
+                                    msg2.what = MSG_INCOMING_CONNECTION_RETRY;
+                                    mHandler.sendMessageDelayed(msg2, 1000);
+                                }
+                            }
+                            break;
                     }
-                    break;
-                case MSG_INCOMING_CONNECTION_RETRY:
-                    if (mBatches.size() == 0) {
-                        Log.i(TAG, "Start Obex Server");
-                        createServerSession(mPendingConnection);
-                        mIncomingRetries = 0;
-                        mPendingConnection = null;
-                    } else {
-                        if (mIncomingRetries == 20) {
-                            Log.w(TAG, "Retried 20 seconds, reject connection");
-                            try {
-                                mPendingConnection.close();
-                            } catch (IOException e) {
-                                Log.e(TAG, "close tranport error");
-                            }
-                            if (mServerSocket != null) {
-                                acceptNewConnections();
-                            }
-                            mIncomingRetries = 0;
-                            mPendingConnection = null;
-                        } else {
-                            Log.i(TAG, "OPP busy! Retry after 1 second");
-                            mIncomingRetries = mIncomingRetries + 1;
-                            Message msg2 = Message.obtain(mHandler);
-                            msg2.what = MSG_INCOMING_CONNECTION_RETRY;
-                            mHandler.sendMessageDelayed(msg2, 1000);
-                        }
-                    }
-                    break;
-            }
-        }
-    };
+                }
+            };
 
     private ObexServerSockets mServerSocket;
 
@@ -504,10 +572,20 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
         SdpManagerNativeInterface nativeInterface = SdpManagerNativeInterface.getInstance();
         if (!nativeInterface.isAvailable()) {
             Log.e(TAG, "ERROR:serversocket: SdpManagerNativeInterface is not available");
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
+                    10);
             return;
         }
         if (mServerSocket == null) {
             Log.e(TAG, "ERROR:serversocket: mServerSocket is null");
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
+                    11);
             return;
         }
         mOppSdpHandle =
@@ -547,6 +625,11 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
             }
             unregisterReceiver(mBluetoothReceiver);
         } catch (IllegalArgumentException e) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    12);
             Log.w(TAG, "unregisterReceivers " + e.toString());
         }
     }
@@ -764,6 +847,11 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
         } else {
             uri = null;
             Log.e(TAG, "insertShare found null URI at cursor!");
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
+                    13);
         }
         BluetoothOppShareInfo info = new BluetoothOppShareInfo(
                 cursor.getInt(cursor.getColumnIndexOrThrow(BluetoothShare._ID)), uri,
@@ -823,6 +911,12 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                         BluetoothOppUtility.getSendFileInfo(info.mUri);
                 if (sendFileInfo == null || sendFileInfo.mInputStream == null) {
                     Log.e(TAG, "Can't open file for OUTBOUND info " + info.mId);
+                    ContentProfileErrorReportUtils.report(
+                            BluetoothProfile.OPP,
+                            BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
+                            BluetoothStatsLog
+                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
+                            14);
                     Constants.updateShareStatus(this, info.mId, BluetoothShare.STATUS_BAD_REQUEST);
                     BluetoothOppUtility.closeSendFileInfo(info.mUri);
                     return;
@@ -898,6 +992,11 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
             }
         } else {
             Log.w(TAG, "updateShare() called for ID " + info.mId + " with null URI");
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                    15);
         }
         info.mHint = stringFromCursor(info.mHint, cursor, BluetoothShare.FILENAME_HINT);
         info.mFilename = stringFromCursor(info.mFilename, cursor, BluetoothShare._DATA);
@@ -963,22 +1062,46 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                 if (batch.mDirection == BluetoothShare.DIRECTION_OUTBOUND) {
                     if (mTransfer == null) {
                         Log.e(TAG, "Unexpected error! mTransfer is null");
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.OPP,
+                                BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
+                                16);
                     } else if (batch.mId == mTransfer.getBatchId()) {
                         mTransfer.stop();
                     } else {
                         Log.e(TAG, "Unexpected error! batch id " + batch.mId
                                 + " doesn't match mTransfer id " + mTransfer.getBatchId());
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.OPP,
+                                BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
+                                17);
                     }
                     mTransfer = null;
                 } else {
                     if (mServerTransfer == null) {
                         Log.e(TAG, "Unexpected error! mServerTransfer is null");
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.OPP,
+                                BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
+                                18);
                     } else if (batch.mId == mServerTransfer.getBatchId()) {
                         mServerTransfer.stop();
                     } else {
                         Log.e(TAG, "Unexpected error! batch id " + batch.mId
                                 + " doesn't match mServerTransfer id "
                                 + mServerTransfer.getBatchId());
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.OPP,
+                                BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
+                                19);
                     }
                     mServerTransfer = null;
                 }
@@ -1165,6 +1288,11 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
             }
             cursor.close();
         } catch (Exception e) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    20);
             Log.e(TAG, "Exception when trimming database: ", e);
         }
     }
@@ -1221,6 +1349,11 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                     msg.sendToTarget();
                 }
             } catch (NullPointerException ex) {
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.OPP,
+                        BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                        21);
                 Log.v(TAG, "!!!MediaScannerConnection exception: " + ex);
             } finally {
                 if (V) {
