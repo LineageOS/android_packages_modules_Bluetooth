@@ -19,6 +19,8 @@ package com.android.bluetooth.opp;
 import android.app.NotificationManager;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothDevicePicker;
+import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothProtoEnums;
 import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -29,13 +31,16 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.android.bluetooth.BluetoothMethodProxy;
+import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 
 /**
- * Receives and handles: system broadcasts; Intents from other applications;
- * Intents from OppService; Intents from modules in Opp application layer.
+ * Receives and handles: system broadcasts; Intents from other applications; Intents from
+ * OppService; Intents from modules in Opp application layer.
  */
+// Next tag value for ContentProfileErrorReportUtils.report(): 2
 public class BluetoothOppReceiver extends BroadcastReceiver {
     private static final String TAG = "BluetoothOppReceiver";
     private static final boolean D = Constants.DEBUG;
@@ -57,7 +62,10 @@ public class BluetoothOppReceiver extends BroadcastReceiver {
             }
 
             if (D) {
-                Log.d(TAG, "Received BT device selected intent, bt device: " + remoteDevice.getIdentityAddress());
+                Log.d(
+                        TAG,
+                        "Received BT device selected intent, bt device: "
+                                + remoteDevice.getIdentityAddress());
             }
 
             // Insert transfer session record to database
@@ -122,6 +130,11 @@ public class BluetoothOppReceiver extends BroadcastReceiver {
             transInfo = BluetoothOppUtility.queryRecord(context, uri);
             if (transInfo == null) {
                 Log.e(TAG, "Error: Can not get data from db");
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.OPP,
+                        BluetoothProtoEnums.BLUETOOTH_OPP_RECEIVER,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
+                        0);
                 return;
             }
 
@@ -204,6 +217,11 @@ public class BluetoothOppReceiver extends BroadcastReceiver {
             transInfo = BluetoothOppUtility.queryRecord(context, intent.getData());
             if (transInfo == null) {
                 Log.e(TAG, "Error: Can not get data from db");
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.OPP,
+                        BluetoothProtoEnums.BLUETOOTH_OPP_RECEIVER,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
+                        1);
                 return;
             }
 

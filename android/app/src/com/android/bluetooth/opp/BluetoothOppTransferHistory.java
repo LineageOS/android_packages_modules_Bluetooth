@@ -19,6 +19,8 @@ package com.android.bluetooth.opp;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothProtoEnums;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
@@ -37,13 +39,15 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 
 import com.android.bluetooth.BluetoothMethodProxy;
+import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
+import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 
 /**
- * View showing the user's finished bluetooth opp transfers that the user does
- * not confirm. Including outbound and inbound transfers, both successful and
- * failed. *
+ * View showing the user's finished bluetooth opp transfers that the user does not confirm.
+ * Including outbound and inbound transfers, both successful and failed.
  */
+// Next tag value for ContentProfileErrorReportUtils.report(): 2
 public class BluetoothOppTransferHistory extends Activity
         implements View.OnCreateContextMenuListener, OnItemClickListener {
     private static final String TAG = "BluetoothOppTransferHistory";
@@ -230,6 +234,11 @@ public class BluetoothOppTransferHistory extends Activity
                 }
             }
         } catch (StaleDataException e) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_TRANSFER_HISTORY,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    0);
         }
         return false;
     }
@@ -280,6 +289,11 @@ public class BluetoothOppTransferHistory extends Activity
         BluetoothOppTransferInfo transInfo = BluetoothOppUtility.queryRecord(this, contentUri);
         if (transInfo == null) {
             Log.e(TAG, "Error: Can not get data from db");
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_TRANSFER_HISTORY,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
+                    1);
             return;
         }
         if (transInfo.mDirection == BluetoothShare.DIRECTION_INBOUND
