@@ -39,6 +39,7 @@ import android.bluetooth.IBluetoothManagerCallback;
 import android.content.AttributionSource;
 import android.content.Context;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.ParcelFileDescriptor;
 import android.os.UserManager;
 import android.permission.PermissionManager;
@@ -55,9 +56,12 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
     private final AppOpsManager mAppOpsManager;
     private final PermissionManager mPermissionManager;
     private final BtPermissionUtils mPermissionUtils;
+    private final Looper mLooper;
 
-    BluetoothServiceBinder(BluetoothManagerService bms, Context ctx, UserManager userManager) {
+    BluetoothServiceBinder(
+            BluetoothManagerService bms, Looper looper, Context ctx, UserManager userManager) {
         mBluetoothManagerService = bms;
+        mLooper = looper;
         mContext = ctx;
         mUserManager = userManager;
         mAppOpsManager =
