@@ -1062,7 +1062,7 @@ void bta_dm_add_ble_device(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
  ******************************************************************************/
 void bta_dm_ble_passkey_reply(const RawAddress& bd_addr, bool accept,
                               uint32_t passkey) {
-  get_btm_client_interface().ble.BTM_BlePasskeyReply(
+  get_btm_client_interface().security.BTM_BlePasskeyReply(
       bd_addr, accept ? BTM_SUCCESS : BTM_NOT_AUTHORIZED, passkey);
 }
 

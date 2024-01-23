@@ -98,6 +98,8 @@ typedef struct {
 
   bool (*BTM_SecRegister)(const tBTM_APPL_INFO* p_cb_info);
 
+  void (*BTM_BleLoadLocalKeys)(uint8_t key_type, tBTM_BLE_LOCAL_KEYS* p_key);
+
   // Update/Query in-memory device records
   bool (*BTM_SecAddDevice)(const RawAddress& bd_addr, const DEV_CLASS dev_class,
                            const BD_NAME& bd_name, uint8_t* features,
@@ -141,6 +143,9 @@ typedef struct {
   void (*BTM_SecConfirmReqReply)(tBTM_STATUS res, tBT_TRANSPORT transport,
                                  const RawAddress bd_addr);
   void (*BTM_BleSirkConfirmDeviceReply)(const RawAddress& bd_addr, uint8_t res);
+
+  void (*BTM_BlePasskeyReply)(const RawAddress& bd_addr, uint8_t res,
+                              uint32_t passkey);
 
   // other misc APIs
   uint8_t (*BTM_GetSecurityMode)();
