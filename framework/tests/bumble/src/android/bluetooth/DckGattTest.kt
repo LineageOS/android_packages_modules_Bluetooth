@@ -50,8 +50,9 @@ import pandora.HostProto
 import pandora.HostProto.AdvertiseRequest
 import pandora.HostProto.OwnAddressType
 
+/** DCK GATT Tests */
 @RunWith(Parameterized::class)
-public class DckTest(private val connected: Boolean) {
+public class DckGattTest(private val connected: Boolean) {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val bluetoothManager = context.getSystemService(BluetoothManager::class.java)!!
