@@ -36,6 +36,8 @@ import static android.view.WindowManager.LayoutParams.SYSTEM_FLAG_HIDE_NON_SYSTE
 
 import android.app.Activity;
 import android.bluetooth.BluetoothDevicePicker;
+import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothProtoEnums;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
@@ -47,8 +49,10 @@ import android.util.Patterns;
 import android.widget.Toast;
 
 import com.android.bluetooth.BluetoothMethodProxy;
+import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.io.File;
@@ -61,10 +65,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * This class is designed to act as the entry point of handling the share intent
- * via BT from other APPs. and also make "Bluetooth" available in sharing method
- * selection dialog.
+ * This class is designed to act as the entry point of handling the share intent via BT from other
+ * APPs. and also make "Bluetooth" available in sharing method selection dialog.
  */
+// Next tag value for ContentProfileErrorReportUtils.report(): 11
 public class BluetoothOppLauncherActivity extends Activity {
     private static final String TAG = "BluetoothOppLauncherActivity";
     private static final boolean D = Constants.DEBUG;
@@ -83,6 +87,11 @@ public class BluetoothOppLauncherActivity extends Activity {
         String action = intent.getAction();
         if (action == null) {
             Log.w(TAG, " Received " + intent + " with null action");
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_LAUNCHER_ACTIVITY,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                    0);
             finish();
             return;
         }
@@ -150,11 +159,23 @@ public class BluetoothOppLauncherActivity extends Activity {
                         return;
                     } else {
                         Log.w(TAG, "Error trying to do set text...File not created!");
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.OPP,
+                                BluetoothProtoEnums.BLUETOOTH_OPP_LAUNCHER_ACTIVITY,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                1);
                         finish();
                         return;
                     }
                 } else {
                     Log.e(TAG, "type is null; or sending file URI is null");
+                    ContentProfileErrorReportUtils.report(
+                            BluetoothProfile.OPP,
+                            BluetoothProtoEnums.BLUETOOTH_OPP_LAUNCHER_ACTIVITY,
+                            BluetoothStatsLog
+                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
+                            2);
                     finish();
                     return;
                 }
@@ -166,27 +187,46 @@ public class BluetoothOppLauncherActivity extends Activity {
                         Log.v(TAG, "Get ACTION_SHARE_MULTIPLE intent: uris " + uris + "\n Type= "
                                 + mimeType);
                     }
-                    Thread t = new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                BluetoothOppManager.getInstance(BluetoothOppLauncherActivity.this)
-                                        .saveSendingFileInfo(mimeType, uris, false /* isHandover */,
-                                                true /* fromExternal */);
-                                //Done getting file info..Launch device picker
-                                //and finish this activity
-                                launchDevicePicker();
-                                finish();
-                            } catch (IllegalArgumentException exception) {
-                                showToast(exception.getMessage());
-                                finish();
-                            }
-                        }
-                    });
+                    Thread t =
+                            new Thread(
+                                    new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            try {
+                                                BluetoothOppManager.getInstance(
+                                                                BluetoothOppLauncherActivity.this)
+                                                        .saveSendingFileInfo(
+                                                                mimeType,
+                                                                uris,
+                                                                false /* isHandover */,
+                                                                true /* fromExternal */);
+                                                // Done getting file info..Launch device picker
+                                                // and finish this activity
+                                                launchDevicePicker();
+                                                finish();
+                                            } catch (IllegalArgumentException exception) {
+                                                ContentProfileErrorReportUtils.report(
+                                                        BluetoothProfile.OPP,
+                                                        BluetoothProtoEnums
+                                                                .BLUETOOTH_OPP_LAUNCHER_ACTIVITY,
+                                                        BluetoothStatsLog
+                                                                .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                                                        3);
+                                                showToast(exception.getMessage());
+                                                finish();
+                                            }
+                                        }
+                                    });
                     t.start();
                     return;
                 } else {
                     Log.e(TAG, "type is null; or sending files URIs are null");
+                    ContentProfileErrorReportUtils.report(
+                            BluetoothProfile.OPP,
+                            BluetoothProtoEnums.BLUETOOTH_OPP_LAUNCHER_ACTIVITY,
+                            BluetoothStatsLog
+                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
+                            4);
                     finish();
                     return;
                 }
@@ -203,6 +243,11 @@ public class BluetoothOppLauncherActivity extends Activity {
             finish();
         } else {
             Log.w(TAG, "Unsupported action: " + action);
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_LAUNCHER_ACTIVITY,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                    5);
             // To prevent activity to finish immediately in testing mode
             if (!Utils.isInstrumentationTestMode()) {
                 finish();
@@ -355,11 +400,26 @@ public class BluetoothOppLauncherActivity extends Activity {
                 }
             }
         } catch (FileNotFoundException e) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_LAUNCHER_ACTIVITY,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    6);
             Log.e(TAG, "FileNotFoundException: " + e.toString());
             e.printStackTrace();
         } catch (IOException e) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_LAUNCHER_ACTIVITY,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    7);
             Log.e(TAG, "IOException: " + e.toString());
         } catch (Exception e) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_LAUNCHER_ACTIVITY,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    8);
             Log.e(TAG, "Exception: " + e.toString());
         } finally {
             try {
@@ -367,6 +427,11 @@ public class BluetoothOppLauncherActivity extends Activity {
                     outStream.close();
                 }
             } catch (IOException e) {
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.OPP,
+                        BluetoothProtoEnums.BLUETOOTH_OPP_LAUNCHER_ACTIVITY,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                        9);
                 e.printStackTrace();
             }
         }
@@ -422,6 +487,11 @@ public class BluetoothOppLauncherActivity extends Activity {
             launchDevicePicker();
             finish();
         } catch (IllegalArgumentException exception) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_LAUNCHER_ACTIVITY,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    10);
             showToast(exception.getMessage());
             finish();
         }
