@@ -181,7 +181,7 @@ static uint8_t btm_ble_find_irk_index(void) {
     i++;
   }
 
-  LOG_ERROR("%s failed, list full", __func__);
+  LOG_ERROR("no index found");
   return i;
 }
 
@@ -239,7 +239,7 @@ void btm_ble_clear_resolving_list_complete(uint8_t* p, uint16_t evt_len) {
 
   STREAM_TO_UINT8(status, p);
 
-  LOG_VERBOSE("%s status=%d", __func__, status);
+  LOG_VERBOSE("status=%d", status);
 
   if (status == HCI_SUCCESS) {
     if (evt_len >= 3) {
@@ -262,7 +262,7 @@ void btm_ble_clear_resolving_list_complete(uint8_t* p, uint16_t evt_len) {
     btm_cb.ble_ctr_cb.resolving_list_avail_size =
         controller_get_interface()->get_ble_resolving_list_max_size();
 
-    LOG_VERBOSE("%s resolving_list_avail_size=%d", __func__,
+    LOG_VERBOSE("resolving_list_avail_size=%d",
                 btm_cb.ble_ctr_cb.resolving_list_avail_size);
 
     list_foreach(btm_sec_cb.sec_dev_rec, clear_resolving_list_bit, NULL);
@@ -289,7 +289,7 @@ void btm_ble_add_resolving_list_entry_complete(uint8_t* p, uint16_t evt_len) {
 
   STREAM_TO_UINT8(status, p);
 
-  LOG_VERBOSE("%s status = %d", __func__, status);
+  LOG_VERBOSE("status=%d", status);
 
   RawAddress pseudo_bda;
   if (!btm_ble_deq_resolving_pending(pseudo_bda)) {
@@ -310,7 +310,7 @@ void btm_ble_add_resolving_list_entry_complete(uint8_t* p, uint16_t evt_len) {
              HCI_ERR_MEMORY_FULL) /* BT_ERROR_CODE_MEMORY_CAPACITY_EXCEEDED  */
   {
     btm_cb.ble_ctr_cb.resolving_list_avail_size = 0;
-    LOG_VERBOSE("%s Resolving list Full ", __func__);
+    LOG_VERBOSE("Resolving list Full");
   }
 }
 
@@ -331,10 +331,10 @@ void btm_ble_remove_resolving_list_entry_complete(uint8_t* p,
 
   STREAM_TO_UINT8(status, p);
 
-  LOG_VERBOSE("%s status = %d", __func__, status);
+  LOG_VERBOSE("status=%d", status);
 
   if (!btm_ble_deq_resolving_pending(pseudo_bda)) {
-    LOG_ERROR("%s no pending resolving list operation", __func__);
+    LOG_ERROR("no pending resolving list operation");
     return;
   }
 
@@ -365,7 +365,7 @@ void btm_ble_read_resolving_list_entry_complete(const uint8_t* p,
 
   STREAM_TO_UINT8(status, p);
 
-  LOG_VERBOSE("%s status = %d", __func__, status);
+  LOG_VERBOSE("status=%d", status);
 
   if (!btm_ble_deq_resolving_pending(pseudo_bda)) {
     LOG_ERROR("no pending resolving list operation");
@@ -379,7 +379,7 @@ void btm_ble_read_resolving_list_entry_complete(const uint8_t* p,
       p += (2 + 16 + 1 + 6);
       STREAM_TO_BDADDR(rra, p);
 
-      VLOG(2) << __func__ << " peer_addr: " << rra;
+      LOG_INFO("peer_addr:%s", ADDRESS_TO_LOGGABLE_CSTR(rra));
     } else {
       STREAM_TO_BDADDR(rra, p);
     }
@@ -407,7 +407,7 @@ static void btm_ble_resolving_list_vsc_op_cmpl(tBTM_VSC_CMPL* p_params) {
 
   op_subcode = *(p + 1);
 
-  LOG_VERBOSE("%s op_subcode = %d", __func__, op_subcode);
+  LOG_VERBOSE("op_subcode=%d", op_subcode);
 
   if (op_subcode == BTM_BLE_META_CLEAR_IRK_LIST) {
     btm_ble_clear_resolving_list_complete(p, evt_len);
@@ -500,8 +500,7 @@ bool btm_ble_read_resolving_list_entry(tBTM_SEC_DEV_REC* p_dev_rec) {
     return false;
   }
   if (!(p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT)) {
-    LOG_INFO("%s Unable to read resolving list entry as resolving bit not set",
-             __func__);
+    LOG_INFO("Unable to read resolving list entry as resolving bit not set");
     return false;
   }
 
@@ -618,7 +617,6 @@ void btm_ble_resolving_list_remove_dev(tBTM_SEC_DEV_REC* p_dev_rec) {
     LOG_DEBUG("Privacy 1.2 is not enabled");
     return;
   }
-  LOG_VERBOSE("%s", __func__);
 
   if ((p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) &&
       !btm_ble_brcm_find_resolving_pending_entry(
@@ -658,7 +656,7 @@ void btm_ble_resolving_list_init(uint8_t max_irk_list_sz) {
       // NOTE: This memory is never freed
       btm_cb.ble_ctr_cb.irk_list_mask = (uint8_t*)osi_malloc(irk_mask_size);
 
-    LOG_VERBOSE("%s max_irk_list_sz = %d", __func__, max_irk_list_sz);
+    LOG_VERBOSE("max_irk_list_sz=%d", max_irk_list_sz);
   }
 
   controller_get_interface()->set_ble_resolving_list_max_size(max_irk_list_sz);

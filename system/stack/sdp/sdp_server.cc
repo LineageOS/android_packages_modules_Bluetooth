@@ -24,6 +24,7 @@
  ******************************************************************************/
 #define LOG_TAG "sdp_server"
 
+#include <base/logging.h>
 #include <string.h>  // memcpy
 
 #include <cstdint>
