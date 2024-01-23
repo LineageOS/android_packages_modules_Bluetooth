@@ -163,6 +163,10 @@ using bluetooth::Uuid;
 
 #define BTIF_DM_DEFAULT_INQ_MAX_DURATION 10
 
+#ifndef PROPERTY_INQ_LENGTH
+#define PROPERTY_INQ_LENGTH "bluetooth.core.classic.inq_length"
+#endif
+
 /******************************************************************************/
 /*               L O C A L    D A T A    D E F I N I T I O N S                */
 /******************************************************************************/
@@ -632,12 +636,15 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
                                ? ""
                                : "ERROR Already in progress"));
 
+  const uint8_t inq_length = osi_property_get_int32(
+      PROPERTY_INQ_LENGTH, BTIF_DM_DEFAULT_INQ_MAX_DURATION);
+
   /* Save the inquiry parameters to be used upon the completion of
    * setting/clearing the inquiry filter */
   btm_cb.btm_inq_vars.inqparms = {
       // tBTM_INQ_PARMS
       .mode = BTM_GENERAL_INQUIRY | BTM_BLE_GENERAL_INQUIRY,
-      .duration = BTIF_DM_DEFAULT_INQ_MAX_DURATION,
+      .duration = inq_length,
   };
 
   /* Initialize the inquiry variables */
