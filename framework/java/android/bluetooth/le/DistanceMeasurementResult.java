@@ -24,6 +24,8 @@ import android.annotation.SystemApi;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.android.bluetooth.flags.Flags;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -61,7 +63,7 @@ public final class DistanceMeasurementResult implements Parcelable {
      *
      * @hide
      */
-    @FlaggedApi("com.android.bluetooth.flags.channel_sounding")
+    @FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING)
     @SystemApi
     public static final int NADM_ATTACK_IS_EXTREMELY_UNLIKELY = 0;
 
@@ -70,7 +72,7 @@ public final class DistanceMeasurementResult implements Parcelable {
      *
      * @hide
      */
-    @FlaggedApi("com.android.bluetooth.flags.channel_sounding")
+    @FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING)
     @SystemApi
     public static final int NADM_ATTACK_IS_VERY_UNLIKELY = 1;
 
@@ -79,7 +81,7 @@ public final class DistanceMeasurementResult implements Parcelable {
      *
      * @hide
      */
-    @FlaggedApi("com.android.bluetooth.flags.channel_sounding")
+    @FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING)
     @SystemApi
     public static final int NADM_ATTACK_IS_UNLIKELY = 2;
 
@@ -88,7 +90,7 @@ public final class DistanceMeasurementResult implements Parcelable {
      *
      * @hide
      */
-    @FlaggedApi("com.android.bluetooth.flags.channel_sounding")
+    @FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING)
     @SystemApi
     public static final int NADM_ATTACK_IS_POSSIBLE = 3;
 
@@ -97,7 +99,7 @@ public final class DistanceMeasurementResult implements Parcelable {
      *
      * @hide
      */
-    @FlaggedApi("com.android.bluetooth.flags.channel_sounding")
+    @FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING)
     @SystemApi
     public static final int NADM_ATTACK_IS_LIKELY = 4;
 
@@ -106,7 +108,7 @@ public final class DistanceMeasurementResult implements Parcelable {
      *
      * @hide
      */
-    @FlaggedApi("com.android.bluetooth.flags.channel_sounding")
+    @FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING)
     @SystemApi
     public static final int NADM_ATTACK_IS_VERY_LIKELY = 5;
 
@@ -115,7 +117,7 @@ public final class DistanceMeasurementResult implements Parcelable {
      *
      * @hide
      */
-    @FlaggedApi("com.android.bluetooth.flags.channel_sounding")
+    @FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING)
     @SystemApi
     public static final int NADM_ATTACK_IS_EXTREMELY_LIKELY = 6;
 
@@ -124,7 +126,7 @@ public final class DistanceMeasurementResult implements Parcelable {
      *
      * @hide
      */
-    @FlaggedApi("com.android.bluetooth.flags.channel_sounding")
+    @FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING)
     @SystemApi
     public static final int NADM_UNKNOWN = 0xFF;
 
@@ -263,7 +265,7 @@ public final class DistanceMeasurementResult implements Parcelable {
      * @return delay spread in meters in degrees or Double.NaN if not available
      * @hide
      */
-    @FlaggedApi("com.android.bluetooth.flags.channel_sounding")
+    @FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING)
     @SystemApi
     public double getDelaySpreadMeters() {
         return mDelaySpreadMeters;
@@ -276,7 +278,7 @@ public final class DistanceMeasurementResult implements Parcelable {
      * @return confidence of estimated distance or Double.NaN if not available
      * @hide
      */
-    @FlaggedApi("com.android.bluetooth.flags.channel_sounding")
+    @FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING)
     @SystemApi
     @FloatRange(from = 0.0, to = 1.0)
     public double getConfidenceLevel() {
@@ -289,7 +291,7 @@ public final class DistanceMeasurementResult implements Parcelable {
      * @return Nadm that represents the chance of being attacked for the measurement.
      * @hide
      */
-    @FlaggedApi("com.android.bluetooth.flags.channel_sounding")
+    @FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING)
     @SystemApi
     @Nadm
     public int getDetectedAttackLevel() {
@@ -304,7 +306,7 @@ public final class DistanceMeasurementResult implements Parcelable {
      *     object in meters/sec.
      * @hide
      */
-    @FlaggedApi("com.android.bluetooth.flags.channel_sounding")
+    @FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING)
     @SystemApi
     public double getVelocityMetersPerSecond() {
         return mVelocityMetersPerSecond;
@@ -504,7 +506,7 @@ public final class DistanceMeasurementResult implements Parcelable {
          * @throws IllegalArgumentException if value is invalid
          * @hide
          */
-        @FlaggedApi("com.android.bluetooth.flags.channel_sounding")
+        @FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING)
         @SystemApi
         @NonNull
         public Builder setDelaySpreadMeters(double delaySpreadMeters) {
@@ -523,7 +525,7 @@ public final class DistanceMeasurementResult implements Parcelable {
          * @throws IllegalArgumentException if value is invalid
          * @hide
          */
-        @FlaggedApi("com.android.bluetooth.flags.channel_sounding")
+        @FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING)
         @SystemApi
         @NonNull
         public Builder setConfidenceLevel(
@@ -545,7 +547,7 @@ public final class DistanceMeasurementResult implements Parcelable {
          * @throws IllegalArgumentException if value is invalid
          * @hide
          */
-        @FlaggedApi("com.android.bluetooth.flags.channel_sounding")
+        @FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING)
         @SystemApi
         @NonNull
         public Builder setDetectedAttackLevel(@Nadm int detectedAttackLevel) {
@@ -573,7 +575,7 @@ public final class DistanceMeasurementResult implements Parcelable {
          * @param velocityMetersPerSecond estimated velocity in meters/sec.
          * @hide
          */
-        @FlaggedApi("com.android.bluetooth.flags.channel_sounding")
+        @FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING)
         @SystemApi
         @NonNull
         public Builder setVelocityMetersPerSecond(double velocityMetersPerSecond) {

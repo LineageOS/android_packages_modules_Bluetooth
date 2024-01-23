@@ -34,6 +34,7 @@ import android.os.ParcelUuid;
 import android.os.RemoteException;
 import android.util.Log;
 
+import com.android.bluetooth.flags.Flags;
 import com.android.modules.utils.SynchronousResultReceiver;
 
 import java.util.ArrayList;
@@ -184,7 +185,7 @@ public final class DistanceMeasurementManager {
      *     when Channel Sounding is not supported or encounters an internal error.
      * @hide
      */
-    @FlaggedApi("com.android.bluetooth.flags.channel_sounding")
+    @FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING)
     @SystemApi
     @CsSecurityLevel
     @RequiresPermission(
@@ -220,7 +221,7 @@ public final class DistanceMeasurementManager {
      *     when Channel Sounding is not supported or encounters an internal error.
      * @hide
      */
-    @FlaggedApi("com.android.bluetooth.flags.channel_sounding")
+    @FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING)
     @SystemApi
     @CsSecurityLevel
     @RequiresPermission(
