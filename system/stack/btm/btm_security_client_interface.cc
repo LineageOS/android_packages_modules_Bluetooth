@@ -15,12 +15,25 @@
  *
  */
 
+#define LOG_TAG "sec_interf"
+
+#include "os/log.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/btm/btm_sec_cb.h"
 #include "stack/include/btm_ble_sec_api.h"
 #include "stack/include/btm_sec_api.h"
 #include "stack/include/security_client_callbacks.h"
+#include "types/bt_transport.h"
+
+static void BTM_SecConfirmReqReply(tBTM_STATUS res, tBT_TRANSPORT transport,
+                                   const RawAddress bd_addr) {
+  if (transport == BT_TRANSPORT_BR_EDR) {
+    BTM_ConfirmReqReply(res, bd_addr);
+  } else {
+    LOG_ERROR("Unexpected transport:%d", transport);
+  }
+}
 
 static SecurityClientInterface security = {
     .BTM_Sec_Init = BTM_Sec_Init,
@@ -39,7 +52,7 @@ static SecurityClientInterface security = {
     .BTM_SecClrServiceByPsm = BTM_SecClrServiceByPsm,
     .BTM_RemoteOobDataReply = BTM_RemoteOobDataReply,
     .BTM_PINCodeReply = BTM_PINCodeReply,
-    .BTM_ConfirmReqReply = BTM_ConfirmReqReply,
+    .BTM_SecConfirmReqReply = BTM_SecConfirmReqReply,
     .BTM_SecDeleteRmtNameNotifyCallback = BTM_SecDeleteRmtNameNotifyCallback,
     .BTM_SetEncryption = BTM_SetEncryption,
     .BTM_IsEncrypted = BTM_IsEncrypted,

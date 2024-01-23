@@ -24,6 +24,7 @@
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_sec_api.h"
 #include "stack/include/btm_sec_api_types.h"
+#include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 // Test accessible feature page
@@ -151,8 +152,9 @@ struct btm_client_interface_t default_btm_client_interface = {
         .BTM_PINCodeReply = [](const RawAddress& /* bd_addr */,
                                tBTM_STATUS /* res */, uint8_t /* pin_len */,
                                uint8_t* /* p_pin */) {},
-        .BTM_ConfirmReqReply = [](tBTM_STATUS /* res */,
-                                  const RawAddress& /* bd_addr */) {},
+        .BTM_SecConfirmReqReply = [](tBTM_STATUS /* res */,
+                                     tBT_TRANSPORT /* transport */,
+                                     const RawAddress /* bd_addr */) {},
         .BTM_SecDeleteRmtNameNotifyCallback =
             [](tBTM_RMT_NAME_CALLBACK* /* p_callback */) -> bool {
           return false;
