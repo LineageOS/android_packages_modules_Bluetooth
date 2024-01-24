@@ -371,6 +371,27 @@ class UnicastTestNoInit : public Test {
     });
   }
 
+  void RegisterSinkHalClientMock() {
+    owned_mock_le_audio_sink_hal_client_.reset(
+        new NiceMock<MockLeAudioSinkHalClient>());
+    mock_le_audio_sink_hal_client_ =
+        (MockLeAudioSinkHalClient*)owned_mock_le_audio_sink_hal_client_.get();
+
+    is_audio_unicast_sink_acquired = false;
+    ON_CALL(*mock_le_audio_sink_hal_client_, Start(_, _, _))
+        .WillByDefault(
+            [this](const LeAudioCodecConfiguration& codec_configuration,
+                   LeAudioSinkAudioHalClient::Callbacks* audioReceiver,
+                   DsaModes dsa_modes) {
+              unicast_sink_hal_cb_ = audioReceiver;
+              return true;
+            });
+    ON_CALL(*mock_le_audio_sink_hal_client_, OnDestroyed).WillByDefault([]() {
+      mock_le_audio_sink_hal_client_ = nullptr;
+      is_audio_unicast_sink_acquired = false;
+    });
+  }
+
   void SetUpMockAudioHal() {
     if (use_health_status) {
       bluetooth::common::InitFlags::Load(test_flags_with_health_status);
@@ -9084,7 +9105,253 @@ TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
                   SetAndClearSinkMonitorModeWhileUnicastIsInactive,
                   REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(
                       TEST_BT, leaudio_broadcast_audio_handover_policies))) {
-  /* TODO */
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(0);
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, Stop()).Times(0);
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, OnDestroyed()).Times(1);
+  EXPECT_CALL(*mock_le_audio_sink_hal_client_, Start(_, _, _)).Times(0);
+  EXPECT_CALL(*mock_le_audio_sink_hal_client_, Stop()).Times(0);
+  EXPECT_CALL(*mock_le_audio_sink_hal_client_, OnDestroyed()).Times(1);
+
+  // Imitate activation of monitor mode
+  do_in_main_thread(FROM_HERE,
+                    base::BindOnce(&LeAudioClient::SetUnicastMonitorMode,
+                                   base::Unretained(LeAudioClient::Get()),
+                                   le_audio::types::kLeAudioDirectionSink,
+                                   true /* enable */));
+  do_in_main_thread(FROM_HERE,
+                    base::BindOnce(&LeAudioClient::SetUnicastMonitorMode,
+                                   base::Unretained(LeAudioClient::Get()),
+                                   le_audio::types::kLeAudioDirectionSink,
+                                   true /* enable */));
+
+  Mock::VerifyAndClearExpectations(&mock_le_audio_source_hal_client_);
+  Mock::VerifyAndClearExpectations(&mock_le_audio_sink_hal_client_);
+
+  SyncOnMainLoop();
 }
 
+TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
+                  SetSourceMonitorModeWhileUnicastIsInactive,
+                  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(
+                      TEST_BT, leaudio_broadcast_audio_handover_policies))) {
+  /* Enabling monitor mode for source while group is not active should result in
+   * sending STREAMING_SUSPENDED notification.
+   */
+  EXPECT_CALL(
+      mock_audio_hal_client_callbacks_,
+      OnUnicastMonitorModeStatus(le_audio::types::kLeAudioDirectionSource,
+                                 UnicastMonitorModeStatus::STREAMING_SUSPENDED))
+      .Times(1);
+
+  // Imitate activation of monitor mode
+  do_in_main_thread(FROM_HERE,
+                    base::BindOnce(&LeAudioClient::SetUnicastMonitorMode,
+                                   base::Unretained(LeAudioClient::Get()),
+                                   le_audio::types::kLeAudioDirectionSource,
+                                   true /* enable */));
+  SyncOnMainLoop();
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+}
+
+TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
+                  SetSourceMonitorModeWhileUnicastIsNotStreaming,
+                  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(
+                      TEST_BT, leaudio_broadcast_audio_handover_policies))) {
+  int group_id = 2;
+
+  LeAudioClient::Get()->GroupSetActive(group_id);
+
+  /* Enabling monitor mode for source while group is not active should result in
+   * sending STREAMING_SUSPENDED notification.
+   */
+  EXPECT_CALL(
+      mock_audio_hal_client_callbacks_,
+      OnUnicastMonitorModeStatus(le_audio::types::kLeAudioDirectionSource,
+                                 UnicastMonitorModeStatus::STREAMING_SUSPENDED))
+      .Times(1);
+
+  // Imitate activation of monitor mode
+  do_in_main_thread(FROM_HERE,
+                    base::BindOnce(&LeAudioClient::SetUnicastMonitorMode,
+                                   base::Unretained(LeAudioClient::Get()),
+                                   le_audio::types::kLeAudioDirectionSource,
+                                   true /* enable */));
+  SyncOnMainLoop();
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+}
+
+TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
+                  SetSourceMonitorModeWhileUnicastIsActive,
+                  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(
+                      TEST_BT, leaudio_broadcast_audio_handover_policies))) {
+  uint8_t group_size = 2;
+  int group_id = 2;
+
+  // Report working CSIS
+  ON_CALL(mock_csis_client_module_, IsCsisClientRunning())
+      .WillByDefault(Return(true));
+
+  // First earbud
+  const RawAddress test_address0 = GetTestAddress(0);
+  EXPECT_CALL(mock_btif_storage_, AddLeaudioAutoconnect(test_address0, true))
+      .Times(1);
+  ConnectCsisDevice(test_address0, 1 /*conn_id*/,
+                    codec_spec_conf::kLeAudioLocationFrontLeft,
+                    codec_spec_conf::kLeAudioLocationFrontLeft, group_size,
+                    group_id, 1 /* rank*/);
+
+  // Second earbud
+  const RawAddress test_address1 = GetTestAddress(1);
+  EXPECT_CALL(mock_btif_storage_, AddLeaudioAutoconnect(test_address1, true))
+      .Times(1);
+  ConnectCsisDevice(test_address1, 2 /*conn_id*/,
+                    codec_spec_conf::kLeAudioLocationFrontRight,
+                    codec_spec_conf::kLeAudioLocationFrontRight, group_size,
+                    group_id, 2 /* rank*/, true /*connect_through_csis*/);
+
+  ON_CALL(mock_csis_client_module_, GetDesiredSize(group_id))
+      .WillByDefault(Invoke([&](int group_id) { return 2; }));
+
+  // Start streaming
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
+  EXPECT_CALL(*mock_le_audio_sink_hal_client_, Start(_, _, _)).Times(1);
+  LeAudioClient::Get()->GroupSetActive(group_id);
+  SyncOnMainLoop();
+
+  StartStreaming(AUDIO_USAGE_VOICE_COMMUNICATION, AUDIO_CONTENT_TYPE_SPEECH,
+                 group_id);
+
+  Mock::VerifyAndClearExpectations(&mock_le_audio_source_hal_client_);
+  Mock::VerifyAndClearExpectations(&mock_le_audio_sink_hal_client_);
+  SyncOnMainLoop();
+
+  // Verify Data transfer on two peer sinks and one source
+  uint8_t cis_count_out = 2;
+  uint8_t cis_count_in = 2;
+  TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 1920, 40);
+
+  /* Enabling monitor mode for source while stream is active should result in
+   * sending STREAMING notification.
+   */
+  EXPECT_CALL(
+      mock_audio_hal_client_callbacks_,
+      OnUnicastMonitorModeStatus(le_audio::types::kLeAudioDirectionSource,
+                                 UnicastMonitorModeStatus::STREAMING))
+      .Times(1);
+
+  // Imitate activation of monitor mode
+  do_in_main_thread(FROM_HERE,
+                    base::BindOnce(&LeAudioClient::SetUnicastMonitorMode,
+                                   base::Unretained(LeAudioClient::Get()),
+                                   le_audio::types::kLeAudioDirectionSource,
+                                   true /* enable */));
+  SyncOnMainLoop();
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+
+  auto group = streaming_groups.at(group_id);
+
+  // Stop streaming and expect Service to be informed about straming suspension
+  EXPECT_CALL(
+      mock_audio_hal_client_callbacks_,
+      OnUnicastMonitorModeStatus(le_audio::types::kLeAudioDirectionSource,
+                                 UnicastMonitorModeStatus::STREAMING_SUSPENDED))
+      .Times(1);
+
+  // Stop
+  StopStreaming(group_id, true);
+
+  // Check if cache configuration is still present
+  ASSERT_TRUE(group
+                  ->GetCachedCodecConfigurationByDirection(
+                      types::LeAudioContextType::CONVERSATIONAL,
+                      le_audio::types::kLeAudioDirectionSink)
+                  .has_value());
+  ASSERT_TRUE(group
+                  ->GetCachedCodecConfigurationByDirection(
+                      types::LeAudioContextType::CONVERSATIONAL,
+                      le_audio::types::kLeAudioDirectionSource)
+                  .has_value());
+
+  // Both Sink and Source HAL clients should be stopped
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, Stop()).Times(1);
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, OnDestroyed()).Times(1);
+  EXPECT_CALL(*mock_le_audio_sink_hal_client_, Stop()).Times(1);
+  EXPECT_CALL(*mock_le_audio_sink_hal_client_, OnDestroyed()).Times(1);
+  LeAudioClient::Get()->GroupSetActive(bluetooth::groups::kGroupUnknown);
+  SyncOnMainLoop();
+
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+  Mock::VerifyAndClearExpectations(&mock_le_audio_source_hal_client_);
+  Mock::VerifyAndClearExpectations(&mock_le_audio_sink_hal_client_);
+
+  // Re-initialize mock for destroyed hal client
+  RegisterSourceHalClientMock();
+  RegisterSinkHalClientMock();
+
+  // Setting group inactive, shall not change cached configuration
+  ASSERT_TRUE(group
+                  ->GetCachedCodecConfigurationByDirection(
+                      types::LeAudioContextType::CONVERSATIONAL,
+                      le_audio::types::kLeAudioDirectionSink)
+                  .has_value());
+  ASSERT_TRUE(group
+                  ->GetCachedCodecConfigurationByDirection(
+                      types::LeAudioContextType::CONVERSATIONAL,
+                      le_audio::types::kLeAudioDirectionSource)
+                  .has_value());
+
+  EXPECT_CALL(
+      mock_audio_hal_client_callbacks_,
+      OnUnicastMonitorModeStatus(le_audio::types::kLeAudioDirectionSource,
+                                 UnicastMonitorModeStatus::STREAMING_REQUESTED))
+      .Times(1);
+
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
+  EXPECT_CALL(*mock_le_audio_sink_hal_client_, Start(_, _, _)).Times(1);
+  LeAudioClient::Get()->GroupSetActive(group_id);
+
+  // Start streaming to trigger next group going to IDLE state
+  StartStreaming(AUDIO_USAGE_VOICE_COMMUNICATION, AUDIO_CONTENT_TYPE_SPEECH,
+                 group_id);
+  SyncOnMainLoop();
+
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+  Mock::VerifyAndClearExpectations(&mock_le_audio_source_hal_client_);
+  Mock::VerifyAndClearExpectations(&mock_le_audio_sink_hal_client_);
+
+  // Stop streaming and expect Service to be informed about straming suspension
+  EXPECT_CALL(
+      mock_audio_hal_client_callbacks_,
+      OnUnicastMonitorModeStatus(le_audio::types::kLeAudioDirectionSource,
+                                 UnicastMonitorModeStatus::STREAMING_SUSPENDED))
+      .Times(1);
+
+  // Stop
+  StopStreaming(group_id, true);
+
+  // Both Sink and Source HAL clients should be stopped
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, Stop()).Times(1);
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, OnDestroyed()).Times(1);
+  EXPECT_CALL(*mock_le_audio_sink_hal_client_, Stop()).Times(1);
+  EXPECT_CALL(*mock_le_audio_sink_hal_client_, OnDestroyed()).Times(1);
+  LeAudioClient::Get()->GroupSetActive(bluetooth::groups::kGroupUnknown);
+  SyncOnMainLoop();
+
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+  Mock::VerifyAndClearExpectations(&mock_le_audio_source_hal_client_);
+  Mock::VerifyAndClearExpectations(&mock_le_audio_sink_hal_client_);
+
+  // De-activate monitoring mode
+  EXPECT_CALL(
+      mock_audio_hal_client_callbacks_,
+      OnUnicastMonitorModeStatus(le_audio::types::kLeAudioDirectionSource,
+                                 UnicastMonitorModeStatus::STREAMING_SUSPENDED))
+      .Times(0);
+
+  do_in_main_thread(FROM_HERE,
+                    base::BindOnce(&LeAudioClient::SetUnicastMonitorMode,
+                                   base::Unretained(LeAudioClient::Get()),
+                                   le_audio::types::kLeAudioDirectionSink,
+                                   false /* enable */));
+}
 }  // namespace le_audio
