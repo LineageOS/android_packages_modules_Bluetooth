@@ -126,7 +126,11 @@ typedef struct {
   bool (*BTM_IsLinkKeyKnown)(const RawAddress& bd_addr,
                              tBT_TRANSPORT transport);
 
-  // Securre service management
+  // Secure service management
+  bool (*BTM_SetSecurityLevel)(bool is_originator, const char* p_name,
+                               uint8_t service_id, uint16_t sec_level,
+                               uint16_t psm, uint32_t mx_proto_id,
+                               uint32_t mx_chan_id);
   uint8_t (*BTM_SecClrService)(uint8_t service_id);
   uint8_t (*BTM_SecClrServiceByPsm)(uint16_t psm);
 
