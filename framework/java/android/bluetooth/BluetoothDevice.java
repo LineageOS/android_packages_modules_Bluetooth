@@ -1360,7 +1360,8 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     public static final int ADDRESS_TYPE_UNKNOWN = 0xFFFF;
 
     /** Address type used to indicate an anonymous advertisement. */
-    private static final int ADDRESS_TYPE_ANONYMOUS = 0xFF;
+    @FlaggedApi(Flags.FLAG_GET_ADDRESS_TYPE_API)
+    public static final int ADDRESS_TYPE_ANONYMOUS = 0xFF;
 
     private static final String NULL_MAC_ADDRESS = "00:00:00:00:00:00";
 
@@ -1569,12 +1570,13 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     }
 
     /**
-     * Returns the address type of this BluetoothDevice.
+     * Returns the address type of this BluetoothDevice, one of {@link ADDRESS_TYPE_PUBLIC}, {@link
+     * ADDRESS_TYPE_RANDOM}, {@link ADDRESS_TYPE_ANONYMOUS}, or {@link ADDRESS_TYPE_UNKNOWN}.
      *
      * @return Bluetooth address type
-     * @hide
      */
-    public int getAddressType() {
+    @FlaggedApi(Flags.FLAG_GET_ADDRESS_TYPE_API)
+    public @AddressType int getAddressType() {
         if (DBG) Log.d(TAG, "mAddressType: " + mAddressType);
         return mAddressType;
     }
