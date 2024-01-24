@@ -25,7 +25,6 @@
 
 #include "common/bidi_queue.h"
 #include "common/init_flags.h"
-#include "hci/controller_interface.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_packets.h"
 #include "hci/include/packet_fragmenter.h"
@@ -68,7 +67,6 @@ bool is_valid_event_code(bluetooth::hci::EventCode event_code) {
     case bluetooth::hci::EventCode::CHANGE_CONNECTION_LINK_KEY_COMPLETE:
     case bluetooth::hci::EventCode::CENTRAL_LINK_KEY_COMPLETE:
     case bluetooth::hci::EventCode::HARDWARE_ERROR:
-    case bluetooth::hci::EventCode::NUMBER_OF_COMPLETED_PACKETS:
     case bluetooth::hci::EventCode::RETURN_LINK_KEYS:
     case bluetooth::hci::EventCode::PIN_CODE_REQUEST:
     case bluetooth::hci::EventCode::LINK_KEY_REQUEST:
@@ -133,16 +131,6 @@ bool is_valid_subevent_code(bluetooth::hci::SubeventCode subevent_code) {
     case bluetooth::hci::SubeventCode::BIG_INFO_ADVERTISING_REPORT:
     case bluetooth::hci::SubeventCode::ADVERTISING_REPORT:
     case bluetooth::hci::SubeventCode::LONG_TERM_KEY_REQUEST:
-      return true;
-    default:
-      return false;
-  }
-}
-
-static bool event_already_registered_in_controller_layer(
-    bluetooth::hci::EventCode event_code) {
-  switch (event_code) {
-    case bluetooth::hci::EventCode::NUMBER_OF_COMPLETED_PACKETS:
       return true;
     default:
       return false;
@@ -464,10 +452,6 @@ void bluetooth::shim::hci_on_reset_complete() {
     if (!is_valid_event_code(event_code)) {
       continue;
     }
-    if (event_already_registered_in_controller_layer(event_code)) {
-      continue;
-    }
-
     cpp::register_event(event_code);
   }
 
