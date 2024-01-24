@@ -48,6 +48,7 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_api.h"
 #include "stack/include/btm_ble_privacy.h"
+#include "stack/include/hcidefs.h"
 #include "stack/include/l2cap_controller_interface.h"
 #include "types/raw_address.h"
 
@@ -514,32 +515,18 @@ tBTM_STATUS BTM_RegisterForVSEvents(tBTM_VS_EVT_CB* p_cb, bool is_register) {
  *
  * Function         btm_vendor_specific_evt
  *
- * Description      Process event HCI_VENDOR_SPECIFIC_EVT
+ * Description      Process event HCI_VENDOR_SPECIFIC_EVT (BQR)
  *
  * Returns          void
  *
  ******************************************************************************/
 void btm_vendor_specific_evt(const uint8_t* p, uint8_t evt_len) {
-  uint8_t i;
+  uint8_t sub_event_code = HCI_VSE_SUBCODE_BQR_SUB_EVT;
+  uint8_t bqr_parameter_length = evt_len;
+  const uint8_t* p_bqr_event = p;
 
   log::verbose("BTM Event: Vendor Specific event from controller");
 
-  // Handle BQR events
-  const uint8_t* bqr_ptr = p;
-  uint8_t event_code;
-  uint8_t len;
-
-  if (evt_len >= 2) {
-    STREAM_TO_UINT8(event_code, bqr_ptr);
-    STREAM_TO_UINT8(len, bqr_ptr);
-    // Check if there's at least a subevent code
-    if (len > 1 && evt_len >= 2 + 1 && event_code == HCI_VENDOR_SPECIFIC_EVT) {
-      uint8_t sub_event_code;
-      STREAM_TO_UINT8(sub_event_code, bqr_ptr);
-      if (sub_event_code == HCI_VSE_SUBCODE_BQR_SUB_EVT) {
-        // Excluding the HCI Event packet header and 1 octet sub-event code
-        int16_t bqr_parameter_length = evt_len - HCIE_PREAMBLE_SIZE - 1;
-        const uint8_t* p_bqr_event = bqr_ptr;
         // The stream currently points to the BQR sub-event parameters
         switch (sub_event_code) {
         case bluetooth::bqr::QUALITY_REPORT_ID_LMP_LL_MESSAGE_TRACE:
@@ -563,13 +550,20 @@ void btm_vendor_specific_evt(const uint8_t* p, uint8_t evt_len) {
         default:
           log::info("Unhandled BQR subevent 0x{:02x}x", sub_event_code);
         }
-      }
-    }
-  }
+
+        uint8_t i;
+        std::vector<uint8_t> reconstructed_event;
+        reconstructed_event[0] = HCI_VENDOR_SPECIFIC_EVT;
+        reconstructed_event[1] = 3 + bqr_parameter_length;  // event size
+        reconstructed_event[2] = HCI_VSE_SUBCODE_BQR_SUB_EVT;
+        for (i = 0; i < bqr_parameter_length; i++) {
+          reconstructed_event.emplace_back(p[i]);
+        }
 
   for (i = 0; i < BTM_MAX_VSE_CALLBACKS; i++) {
     if (btm_cb.devcb.p_vend_spec_cb[i])
-      (*btm_cb.devcb.p_vend_spec_cb[i])(evt_len, p);
+      (*btm_cb.devcb.p_vend_spec_cb[i])(reconstructed_event.size(),
+                                        reconstructed_event.data());
   }
 }
 

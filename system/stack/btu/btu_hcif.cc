@@ -108,6 +108,7 @@ static void btu_hcif_create_conn_cancel_complete(const uint8_t* p,
 static void btu_hcif_read_local_oob_complete(const uint8_t* p,
                                              uint16_t evt_len);
 
+static void btu_hcif_vendor_specific_evt(const uint8_t* p, uint16_t evt_len);
 /* Simple Pairing Events */
 static void btu_hcif_io_cap_request_evt(const uint8_t* p);
 static void btu_hcif_io_cap_response_evt(const uint8_t* p);
@@ -391,7 +392,7 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id,
     } break;
 
     case HCI_VENDOR_SPECIFIC_EVT:
-      btm_vendor_specific_evt(const_cast<const uint8_t*>(p), hci_evt_len);
+      btu_hcif_vendor_specific_evt(p, hci_evt_len);
       break;
 
       // Events now captured by gd::hci_layer module
@@ -1410,6 +1411,30 @@ void btu_hcif_read_local_oob_complete(const uint8_t* p, uint16_t evt_len) {
 
 err_out:
   log::error("bogus event packet, too short");
+}
+void btu_hcif_vendor_specific_evt(const uint8_t* p, uint16_t evt_len) {
+  LOG_VERBOSE("BTM Event: Vendor Specific event from controller");
+
+  // Handle BQR events
+  const uint8_t* bqr_ptr = p;
+  uint8_t event_code;
+  uint8_t len;
+
+  if (evt_len >= 2) {
+    STREAM_TO_UINT8(event_code, bqr_ptr);
+    STREAM_TO_UINT8(len, bqr_ptr);
+    // Check if there's at least a subevent code
+    if (len > 1 && evt_len >= 2 + 1 && event_code == HCI_VENDOR_SPECIFIC_EVT) {
+      uint8_t sub_event_code;
+      STREAM_TO_UINT8(sub_event_code, bqr_ptr);
+      if (sub_event_code == HCI_VSE_SUBCODE_BQR_SUB_EVT) {
+        // Excluding the HCI Event packet header and 1 octet sub-event code
+        int16_t bqr_parameter_length = evt_len - HCIE_PREAMBLE_SIZE - 1;
+        // The stream currently points to the BQR sub-event parameters
+        btm_vendor_specific_evt(bqr_ptr, bqr_parameter_length);
+      }
+    }
+  }
 }
 
 /*******************************************************************************
