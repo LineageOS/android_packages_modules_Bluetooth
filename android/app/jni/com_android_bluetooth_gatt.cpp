@@ -2669,7 +2669,7 @@ static int register_com_android_bluetooth_gatt_periodic_scan(JNIEnv* env) {
        (void*)transferSetInfoNative},
   };
   const int result = REGISTER_NATIVE_METHODS(
-      env, "com/android/bluetooth/gatt/PeriodicScanNativeInterface", methods);
+      env, "com/android/bluetooth/le_scan/PeriodicScanNativeInterface", methods);
   if (result != 0) {
     return result;
   }
@@ -2683,7 +2683,7 @@ static int register_com_android_bluetooth_gatt_periodic_scan(JNIEnv* env) {
       {"onBigInfoReport", "(IZ)V", &method_onBigInfoReport},
   };
   GET_JAVA_METHODS(env,
-                   "com/android/bluetooth/gatt/PeriodicScanNativeInterface",
+                   "com/android/bluetooth/le_scan/PeriodicScanNativeInterface",
                    javaMethods);
 
   return 0;
