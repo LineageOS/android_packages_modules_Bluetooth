@@ -75,20 +75,16 @@ class SmpTest(base_test.BaseTestClass):  # type: ignore[misc]
                     )
                     ref_pairing_stream.send_nowait(ref_ev_answer)
                 else:
-                    dut_pairing_stream.send_nowait(
-                        PairingEventAnswer(
-                            event=dut_pairing_event,
-                            confirm=True,
-                        )
-                    )
+                    dut_pairing_stream.send_nowait(PairingEventAnswer(
+                        event=dut_pairing_event,
+                        confirm=True,
+                    ))
                     ref_pairing_event = await anext(ref_pairing_stream)
 
-                    ref_pairing_stream.send_nowait(
-                        PairingEventAnswer(
-                            event=ref_pairing_event,
-                            confirm=True,
-                        )
-                    )
+                    ref_pairing_stream.send_nowait(PairingEventAnswer(
+                        event=ref_pairing_event,
+                        confirm=True,
+                    ))
 
         finally:
             dut_pairing_stream.cancel()
@@ -251,6 +247,7 @@ class SmpTest(base_test.BaseTestClass):  # type: ignore[misc]
         fut = asyncio.get_running_loop().create_future()
 
         class Session(smp.Session):
+
             def on_smp_pairing_request_command(self, command: smp.SMP_Pairing_Request_Command) -> None:
                 nonlocal fut
                 fut.set_result(False)
