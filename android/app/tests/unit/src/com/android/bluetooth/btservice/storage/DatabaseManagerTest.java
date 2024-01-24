@@ -408,6 +408,7 @@ public final class DatabaseManagerTest {
         testSetGetCustomMetaCase(false, BluetoothDevice.METADATA_GTBS_CCCD,
                 value, true);
         testSetGetCustomMetaCase(false, badKey, value, false);
+        testSetGetCustomMetaCase(false, BluetoothDevice.METADATA_EXCLUSIVE_MANAGER, value, true);
 
         // Device is in database
         testSetGetCustomMetaCase(true, BluetoothDevice.METADATA_MANUFACTURER_NAME,
@@ -471,6 +472,7 @@ public final class DatabaseManagerTest {
                 value, true);
         testSetGetCustomMetaCase(true, BluetoothDevice.METADATA_GTBS_CCCD,
                 value, true);
+        testSetGetCustomMetaCase(true, BluetoothDevice.METADATA_EXCLUSIVE_MANAGER, value, true);
     }
     @Test
     public void testSetGetAudioPolicyMetaData() {
@@ -1424,6 +1426,31 @@ public final class DatabaseManagerTest {
         while (cursor.moveToNext()) {
             // Check the new columns was added with default value
             assertColumnIntData(cursor, "isActiveHfpDevice", 0);
+        }
+    }
+
+    @Test
+    public void testDatabaseMigration_118_119() throws IOException {
+        // Create a database with version 118
+        SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 118);
+        // insert a device to the database
+        ContentValues device = new ContentValues();
+        device.put("address", TEST_BT_ADDR);
+        device.put("migrated", false);
+        assertThat(
+                db.insert("metadata", SQLiteDatabase.CONFLICT_IGNORE, device),
+                CoreMatchers.not(-1));
+
+        // Migrate database from 118 to 119
+        db.close();
+        db =
+                testHelper.runMigrationsAndValidate(
+                        DB_NAME, 119, true, MetadataDatabase.MIGRATION_118_119);
+        Cursor cursor = db.query("SELECT * FROM metadata");
+        assertHasColumn(cursor, "exclusive_manager", true);
+        while (cursor.moveToNext()) {
+            // Check the new column was added with default value
+            assertColumnBlobData(cursor, "exclusive_manager", null);
         }
     }
 

@@ -550,7 +550,8 @@ public final class BluetoothDevice implements Parcelable, Attributable {
                 METADATA_FAST_PAIR_CUSTOMIZED_FIELDS,
                 METADATA_LE_AUDIO,
                 METADATA_GMCS_CCCD,
-                METADATA_GTBS_CCCD
+                METADATA_GTBS_CCCD,
+                METADATA_EXCLUSIVE_MANAGER
             })
     @Retention(RetentionPolicy.SOURCE)
     public @interface MetadataKey {}
@@ -796,7 +797,24 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      */
     public static final int METADATA_GTBS_CCCD = 28;
 
-    private static final int METADATA_MAX_KEY = METADATA_GTBS_CCCD;
+    /**
+     * Specify the exclusive manager app for this BluetoothDevice.
+     *
+     * <p>If there's a manager app specified for this BluetoothDevice, and the app is currently
+     * installed on the device, that manager app shall be responsible for providing the
+     * BluetoothDevice management functionality (e.g. connect, disconnect, forget, etc.). Android
+     * Settings app shall not provide any management functionality for such BluetoothDevice.
+     *
+     * <p>Data type should be a {@link String} representing the package name of the app (e.g.
+     * "com.android.settings"), provided as a {@link Byte} array.
+     *
+     * @hide
+     */
+    @FlaggedApi(Flags.FLAG_SUPPORT_EXCLUSIVE_MANAGER)
+    @SystemApi
+    public static final int METADATA_EXCLUSIVE_MANAGER = 29;
+
+    private static final int METADATA_MAX_KEY = METADATA_EXCLUSIVE_MANAGER;
 
     /**
      * Device type which is used in METADATA_DEVICE_TYPE Indicates this Bluetooth device is a
