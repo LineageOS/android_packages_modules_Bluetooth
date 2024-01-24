@@ -127,7 +127,7 @@ import com.android.bluetooth.btservice.storage.MetadataDatabase;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.flags.FeatureFlagsImpl;
 import com.android.bluetooth.gatt.GattService;
-import com.android.bluetooth.gatt.ScanManager;
+import com.android.bluetooth.le_scan.ScanManager;
 import com.android.bluetooth.hap.HapClientService;
 import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.hfp.HeadsetService;
