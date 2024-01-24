@@ -253,7 +253,7 @@ typedef union {
 /* internal status mask */
 #define SMP_PAIR_FLAGS_WE_STARTED_DD (1)
 #define SMP_PAIR_FLAGS_PEER_STARTED_DD (1 << 1)
-#define SMP_PAIR_FLAGS_CMD_CONFIRM (1 << SMP_OPCODE_CONFIRM) /* 1 << 3 */
+#define SMP_PAIR_FLAGS_CMD_CONFIRM_RCVD (1 << SMP_OPCODE_CONFIRM) /* 1 << 3 */
 #define SMP_PAIR_FLAG_ENC_AFTER_PAIR (1 << 4)
 #define SMP_PAIR_FLAG_HAVE_PEER_DHK_CHK \
   (1 << 5) /* used on peripheral to resolve race condition */

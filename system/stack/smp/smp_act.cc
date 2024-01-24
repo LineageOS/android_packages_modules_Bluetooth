@@ -659,7 +659,7 @@ void smp_proc_confirm(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     }
   }
 
-  p_cb->flags |= SMP_PAIR_FLAGS_CMD_CONFIRM;
+  p_cb->flags |= SMP_PAIR_FLAGS_CMD_CONFIRM_RCVD;
 }
 
 /*******************************************************************************
@@ -1136,7 +1136,7 @@ void smp_proc_sl_key(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   } else if (key_type == SMP_KEY_TYPE_CFM) {
     smp_set_state(SMP_STATE_WAIT_CONFIRM);
 
-    if (p_cb->flags & SMP_PAIR_FLAGS_CMD_CONFIRM)
+    if (p_cb->flags & SMP_PAIR_FLAGS_CMD_CONFIRM_RCVD)
       smp_sm_event(p_cb, SMP_CONFIRM_EVT, NULL);
   }
 }
