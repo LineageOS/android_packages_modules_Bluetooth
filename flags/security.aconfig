@@ -7,6 +7,12 @@ flag {
     bug: "319530790"
 }
 
+flag {
+    name: "bluffs_mitigation"
+    namespace: "bluetooth"
+    description: "Cache security values to mitigate BLUFFS"
+    bug: "314331379"
+}
 
 flag {
     name: "fix_pairing_failure_reason_from_remote"

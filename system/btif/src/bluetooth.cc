@@ -671,7 +671,7 @@ static int pin_reply(const RawAddress* bd_addr, uint8_t accept, uint8_t pin_len,
 }
 
 static int ssp_reply(const RawAddress* bd_addr, bt_ssp_variant_t variant,
-                     uint8_t accept, uint32_t passkey) {
+                     uint8_t accept, uint32_t /* passkey */) {
   if (!interface_ready()) return BT_STATUS_NOT_READY;
   if (variant == BT_SSP_VARIANT_PASSKEY_ENTRY) return BT_STATUS_FAIL;
 
@@ -1029,7 +1029,8 @@ static int set_dynamic_audio_buffer_size(int codec, int size) {
   return btif_set_dynamic_audio_buffer_size(codec, size);
 }
 
-static bool allow_low_latency_audio(bool allowed, const RawAddress& address) {
+static bool allow_low_latency_audio(bool allowed,
+                                    const RawAddress& /* address */) {
   LOG_INFO("%s %s", __func__, allowed ? "true" : "false");
   bluetooth::audio::a2dp::set_audio_low_latency_mode_allowed(allowed);
   return true;

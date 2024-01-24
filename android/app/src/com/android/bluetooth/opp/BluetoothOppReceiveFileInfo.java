@@ -32,6 +32,8 @@
 
 package com.android.bluetooth.opp;
 
+import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothProtoEnums;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -42,6 +44,8 @@ import android.provider.MediaStore;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothMethodProxy;
+import com.android.bluetooth.BluetoothStatsLog;
+import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.text.DateFormat;
@@ -49,10 +53,10 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
 /**
- * This class stores information about a single receiving file. It will only be
- * used for inbounds share, e.g. receive a file to determine a correct save file
- * name
+ * This class stores information about a single receiving file. It will only be used for inbounds
+ * share, e.g. receive a file to determine a correct save file name
  */
+// Next tag value for ContentProfileErrorReportUtils.report(): 2
 public class BluetoothOppReceiveFileInfo {
     private static final boolean D = Constants.DEBUG;
     private static final boolean V = Constants.VERBOSE;
@@ -160,6 +164,11 @@ public class BluetoothOppReceiveFileInfo {
                 System.arraycopy(oldfilename, 0, newfilename, 0, OPP_LENGTH_OF_FILE_NAME);
                 filename = new String(newfilename, "UTF-8");
             } catch (UnsupportedEncodingException e) {
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.OPP,
+                        BluetoothProtoEnums.BLUETOOTH_OPP_RECEIVE_FILE_INFO,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                        0);
                 Log.e(Constants.TAG, "Exception: " + e);
             }
             if (D) {
@@ -188,6 +197,11 @@ public class BluetoothOppReceiveFileInfo {
             if (D) {
                 Log.e(Constants.TAG, "Error when creating file " + fullfilename);
             }
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_RECEIVE_FILE_INFO,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
+                    1);
             return new BluetoothOppReceiveFileInfo(BluetoothShare.STATUS_FILE_ERROR);
         }
 
