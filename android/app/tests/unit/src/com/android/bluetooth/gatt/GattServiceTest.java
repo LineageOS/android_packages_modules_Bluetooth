@@ -55,6 +55,7 @@ import androidx.test.runner.AndroidJUnit4;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.CompanionManager;
+import com.android.bluetooth.le_scan.ScanManager;
 
 import com.android.bluetooth.flags.Flags;
 import org.junit.After;
@@ -747,7 +748,7 @@ public class GattServiceTest {
         String address = REMOTE_DEVICE_ADDRESS;
         int handle = 2;
         boolean confirm = true;
-        byte[] value = new byte[] {5, 6};;
+        byte[] value = new byte[] {5, 6};
 
         Integer connId = 1;
         doReturn(connId).when(mServerMap).connIdByAddress(serverIf, address);

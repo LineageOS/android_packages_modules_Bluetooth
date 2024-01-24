@@ -448,7 +448,7 @@ public class ContextMap<C, T> {
     /**
      * Get Logging info by application UID
      */
-    AppScanStats getAppScanStatsByUid(int uid) {
+    public AppScanStats getAppScanStatsByUid(int uid) {
         return mAppScanStats.get(uid);
     }
 

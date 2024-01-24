@@ -45,18 +45,18 @@ import java.util.Objects;
  * on a per application basis.
  * @hide
  */
-/*package*/ class AppScanStats {
+public class AppScanStats {
     private static final String TAG = AppScanStats.class.getSimpleName();
 
     static final DateFormat DATE_FORMAT = new SimpleDateFormat("MM-dd HH:mm:ss");
 
     // Weight is the duty cycle of the scan mode
     static final int OPPORTUNISTIC_WEIGHT = 0;
-    static final int SCREEN_OFF_LOW_POWER_WEIGHT = 5;
-    static final int LOW_POWER_WEIGHT = 10;
-    static final int AMBIENT_DISCOVERY_WEIGHT = 25;
-    static final int BALANCED_WEIGHT = 25;
-    static final int LOW_LATENCY_WEIGHT = 100;
+    public static final int SCREEN_OFF_LOW_POWER_WEIGHT = 5;
+    public static final int LOW_POWER_WEIGHT = 10;
+    public static final int AMBIENT_DISCOVERY_WEIGHT = 25;
+    public static final int BALANCED_WEIGHT = 25;
+    public static final int LOW_LATENCY_WEIGHT = 100;
 
     static final int LARGE_SCAN_TIME_GAP_MS = 24000;
 
@@ -146,7 +146,7 @@ import java.util.Objects;
     public long stopTime = 0;
     public int results = 0;
 
-    AppScanStats(String name, WorkSource source, ContextMap map, GattService service) {
+    public AppScanStats(String name, WorkSource source, ContextMap map, GattService service) {
         appName = name;
         mContextMap = map;
         mGattService = service;
@@ -186,7 +186,7 @@ import java.util.Objects;
         return mOngoingScans.get(scannerId);
     }
 
-    synchronized boolean isScanTimeout(int scannerId) {
+    public synchronized boolean isScanTimeout(int scannerId) {
         LastScan scan = getScanFromScannerId(scannerId);
         if (scan == null) {
             return false;
@@ -194,7 +194,7 @@ import java.util.Objects;
         return scan.isTimeout;
     }
 
-    synchronized boolean isScanDowngraded(int scannerId) {
+    public synchronized boolean isScanDowngraded(int scannerId) {
         LastScan scan = getScanFromScannerId(scannerId);
         if (scan == null) {
             return false;
@@ -202,7 +202,7 @@ import java.util.Objects;
         return scan.isDowngraded;
     }
 
-    synchronized boolean isAutoBatchScan(int scannerId) {
+    public synchronized boolean isAutoBatchScan(int scannerId) {
         LastScan scan = getScanFromScannerId(scannerId);
         if (scan == null) {
             return false;
@@ -210,7 +210,7 @@ import java.util.Objects;
         return scan.isAutoBatchScan;
     }
 
-    synchronized void recordScanStart(ScanSettings settings, List<ScanFilter> filters,
+    public synchronized void recordScanStart(ScanSettings settings, List<ScanFilter> filters,
             boolean isFilterScan, boolean isCallbackScan, int scannerId) {
         LastScan existingScan = getScanFromScannerId(scannerId);
         if (existingScan != null) {
@@ -374,29 +374,30 @@ import java.util.Objects;
         }
     }
 
-    synchronized void recordScanTimeoutCountMetrics() {
+    public synchronized void recordScanTimeoutCountMetrics() {
         MetricsLogger.getInstance()
                 .cacheCount(BluetoothProtoEnums.LE_SCAN_ABUSE_COUNT_SCAN_TIMEOUT, 1);
     }
 
-    synchronized void recordHwFilterNotAvailableCountMetrics() {
+    public synchronized void recordHwFilterNotAvailableCountMetrics() {
         MetricsLogger.getInstance()
                 .cacheCount(BluetoothProtoEnums.LE_SCAN_ABUSE_COUNT_HW_FILTER_NOT_AVAILABLE, 1);
     }
 
-    synchronized void recordTrackingHwFilterNotAvailableCountMetrics() {
+    public synchronized void recordTrackingHwFilterNotAvailableCountMetrics() {
         MetricsLogger.getInstance()
                 .cacheCount(
                         BluetoothProtoEnums.LE_SCAN_ABUSE_COUNT_TRACKING_HW_FILTER_NOT_AVAILABLE,
                         1);
     }
 
-    static void initScanRadioState() {
+    public static void initScanRadioState() {
         synchronized (sLock) {
             sIsRadioStarted = false;
         }
     }
-    static boolean recordScanRadioStart(int scanMode) {
+
+    public static boolean recordScanRadioStart(int scanMode) {
         synchronized (sLock) {
             if (sIsRadioStarted) {
                 return false;
@@ -408,7 +409,7 @@ import java.util.Objects;
         return true;
     }
 
-    static boolean recordScanRadioStop() {
+    public static boolean recordScanRadioStop() {
         synchronized (sLock) {
             if (!sIsRadioStarted) {
                 return false;
@@ -507,7 +508,7 @@ import java.util.Objects;
         }
     }
 
-    static void setScreenState(boolean isScreenOn) {
+    public static void setScreenState(boolean isScreenOn) {
         synchronized (sLock) {
             if (sIsScreenOn == isScreenOn) {
                 return;
@@ -521,7 +522,7 @@ import java.util.Objects;
         }
     }
 
-    synchronized void recordScanSuspend(int scannerId) {
+    public synchronized void recordScanSuspend(int scannerId) {
         LastScan scan = getScanFromScannerId(scannerId);
         if (scan == null || scan.isSuspended) {
             return;
@@ -530,7 +531,7 @@ import java.util.Objects;
         scan.isSuspended = true;
     }
 
-    synchronized void recordScanResume(int scannerId) {
+    public synchronized void recordScanResume(int scannerId) {
         LastScan scan = getScanFromScannerId(scannerId);
         long suspendDuration = 0;
         if (scan == null || !scan.isSuspended) {
@@ -543,7 +544,7 @@ import java.util.Objects;
         mTotalSuspendTime += suspendDuration;
     }
 
-    synchronized void setScanTimeout(int scannerId) {
+    public synchronized void setScanTimeout(int scannerId) {
         if (!isScanning()) {
             return;
         }
@@ -554,7 +555,7 @@ import java.util.Objects;
         }
     }
 
-    synchronized void setScanDowngrade(int scannerId, boolean isDowngrade) {
+    public synchronized void setScanDowngrade(int scannerId, boolean isDowngrade) {
         if (!isScanning()) {
             return;
         }
@@ -565,7 +566,7 @@ import java.util.Objects;
         }
     }
 
-    synchronized void setAutoBatchScan(int scannerId, boolean isBatchScan) {
+    public synchronized void setAutoBatchScan(int scannerId, boolean isBatchScan) {
         LastScan scan = getScanFromScannerId(scannerId);
         if (scan != null) {
             scan.isAutoBatchScan = isBatchScan;
@@ -581,7 +582,7 @@ import java.util.Objects;
                 < mAdapterService.getScanQuotaWindowMillis();
     }
 
-    synchronized boolean isScanningTooLong() {
+    public synchronized boolean isScanningTooLong() {
         if (!isScanning()) {
             return false;
         }
@@ -589,7 +590,7 @@ import java.util.Objects;
                 >= mAdapterService.getScanTimeoutMillis();
     }
 
-    synchronized boolean hasRecentScan() {
+    public synchronized boolean hasRecentScan() {
         if (!isScanning() || mLastScans.isEmpty()) {
             return false;
         }
