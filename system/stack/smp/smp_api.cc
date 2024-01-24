@@ -266,8 +266,8 @@ void SMP_SecurityGrant(const RawAddress& bd_addr, tSMP_STATUS res) {
  *
  * Function         SMP_PasskeyReply
  *
- * Description      This function is called after Security Manager submitted
- *                  passkey request to the application.
+ * Description      This function is called when the user replies
+ *                  passkey after being requested.
  *
  * Parameters:      bd_addr - Address of the device for which passkey was
  *                            requested
@@ -295,12 +295,11 @@ void SMP_PasskeyReply(const RawAddress& bd_addr, uint8_t res,
   }
 
   if (passkey > BTM_MAX_PASSKEY_VAL || res != SMP_SUCCESS) {
-    LOG_WARN("Wrong key len:%d or passkey entry fail", passkey);
+    LOG_WARN("Invalid passkey value:%d or passkey entry fail", passkey);
     /* send pairing failure */
     tSMP_INT_DATA smp_int_data;
     smp_int_data.status = SMP_PASSKEY_ENTRY_FAIL;
     smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &smp_int_data);
-
   } else if (p_cb->selected_association_model ==
              SMP_MODEL_SEC_CONN_PASSKEY_ENT) {
     tSMP_INT_DATA smp_int_data;
@@ -309,8 +308,6 @@ void SMP_PasskeyReply(const RawAddress& bd_addr, uint8_t res,
   } else {
     smp_convert_string_to_tk(&p_cb->tk, passkey);
   }
-
-  return;
 }
 
 /*******************************************************************************
