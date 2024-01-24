@@ -44,6 +44,36 @@ class SecurityService(security_grpc_aio.SecurityServicer):
         self.manually_confirm = False
         self.on_pairing_count = 0
 
+        class PairingObserver(adapter_client.BluetoothCallbacks):
+            """Observer to observe pairing events."""
+
+            def __init__(self, client: adapter_client, security: security_grpc_aio.SecurityServicer):
+                self.client = client
+                self.security = security
+
+            @utils.glib_callback()
+            def on_ssp_request(self, remote_device, class_of_device, variant, passkey):
+                if self.security.manually_confirm:
+                    return
+
+                logging.info("Security: on_ssp_request variant: %s passkey: %s", variant, passkey)
+                address, _ = remote_device
+
+                if variant in (floss_enums.PairingVariant.CONSENT, floss_enums.PairingVariant.PASSKEY_CONFIRMATION):
+                    self.client.set_pairing_confirmation(address,
+                                                         True,
+                                                         method_callback=self.on_set_pairing_confirmation)
+
+            @utils.glib_callback()
+            def on_set_pairing_confirmation(self, err, result):
+                if err or not result:
+                    logging.info('Security: on_set_pairing_confirmation failed. err: %s result: %s', err, result)
+
+        observer = PairingObserver(self.bluetooth.adapter_client, self)
+        name = utils.create_observer_name(observer)
+        self.bluetooth.adapter_client.register_callback_observer(name, observer)
+        self.pairing_observer = observer
+
     async def wait_le_security_level(self, level, address):
 
         class BondingObserver(adapter_client.BluetoothCallbacks):
