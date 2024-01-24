@@ -54,6 +54,7 @@ static SecurityClientInterface security = {
     .BTM_SecIsSecurityPending = BTM_SecIsSecurityPending,
     .BTM_IsLinkKeyKnown = BTM_IsLinkKeyKnown,
 
+    .BTM_SetSecurityLevel = BTM_SetSecurityLevel,
     .BTM_SecClrService = BTM_SecClrService,
     .BTM_SecClrServiceByPsm = BTM_SecClrServiceByPsm,
 
