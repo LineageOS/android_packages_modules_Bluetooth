@@ -61,24 +61,29 @@ static const packet_fragmenter_t* packet_fragmenter;
 namespace {
 bool register_event_code(bluetooth::hci::EventCode event_code) {
   switch (event_code) {
+    // Inquiry
     case bluetooth::hci::EventCode::INQUIRY_COMPLETE:
     case bluetooth::hci::EventCode::INQUIRY_RESULT:
+    case bluetooth::hci::EventCode::INQUIRY_RESULT_WITH_RSSI:
+    case bluetooth::hci::EventCode::EXTENDED_INQUIRY_RESULT:
+
+    // SCO
+    case bluetooth::hci::EventCode::SYNCHRONOUS_CONNECTION_COMPLETE:
+    case bluetooth::hci::EventCode::SYNCHRONOUS_CONNECTION_CHANGED:
+
+    // SecurityEvents
     case bluetooth::hci::EventCode::ENCRYPTION_CHANGE:
     case bluetooth::hci::EventCode::PIN_CODE_REQUEST:
     case bluetooth::hci::EventCode::LINK_KEY_REQUEST:
     case bluetooth::hci::EventCode::LINK_KEY_NOTIFICATION:
-    case bluetooth::hci::EventCode::INQUIRY_RESULT_WITH_RSSI:
-    case bluetooth::hci::EventCode::SYNCHRONOUS_CONNECTION_COMPLETE:
-    case bluetooth::hci::EventCode::SYNCHRONOUS_CONNECTION_CHANGED:
-    case bluetooth::hci::EventCode::EXTENDED_INQUIRY_RESULT:
     case bluetooth::hci::EventCode::ENCRYPTION_KEY_REFRESH_COMPLETE:
     case bluetooth::hci::EventCode::IO_CAPABILITY_REQUEST:
     case bluetooth::hci::EventCode::IO_CAPABILITY_RESPONSE:
-    case bluetooth::hci::EventCode::USER_CONFIRMATION_REQUEST:
-    case bluetooth::hci::EventCode::USER_PASSKEY_REQUEST:
     case bluetooth::hci::EventCode::REMOTE_OOB_DATA_REQUEST:
     case bluetooth::hci::EventCode::SIMPLE_PAIRING_COMPLETE:
     case bluetooth::hci::EventCode::USER_PASSKEY_NOTIFICATION:
+    case bluetooth::hci::EventCode::USER_CONFIRMATION_REQUEST:
+    case bluetooth::hci::EventCode::USER_PASSKEY_REQUEST:
       return true;
     default:
       return false;
