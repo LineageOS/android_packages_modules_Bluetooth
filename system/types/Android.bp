@@ -67,6 +67,7 @@ cc_test {
     ],
     include_dirs: [
         "packages/modules/Bluetooth/system",
+        "packages/modules/Bluetooth/system/include",
     ],
     host_supported: true,
     srcs: [
