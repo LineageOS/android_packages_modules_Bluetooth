@@ -63,8 +63,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class VolumeControlService extends ProfileService {
-    private static final boolean DBG = false;
     private static final String TAG = "VolumeControlService";
+    private static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
 
     // Timeout for state machine thread join, to prevent potential ANR.
     private static final int SM_THREAD_JOIN_TIMEOUT_MS = 1000;
@@ -1262,15 +1262,15 @@ public class VolumeControlService extends ProfileService {
                     cachedVolume = getGroupVolume(groupId);
                 }
             }
+            int broadcastVolume = cachedVolume;
+            if (volume.isPresent()) {
+                broadcastVolume = volume.get();
+                mDeviceVolumeCache.put(dev, broadcastVolume);
+            }
             int n = callbacks.beginBroadcast();
             for (int i = 0; i < n; i++) {
                 try {
-                    if (!volume.isPresent()) {
-                        callbacks.getBroadcastItem(i).onDeviceVolumeChanged(dev, cachedVolume);
-                    } else {
-                        mDeviceVolumeCache.put(dev, volume.get());
-                        callbacks.getBroadcastItem(i).onDeviceVolumeChanged(dev, volume.get());
-                    }
+                    callbacks.getBroadcastItem(i).onDeviceVolumeChanged(dev, broadcastVolume);
                 } catch (RemoteException e) {
                     continue;
                 }
