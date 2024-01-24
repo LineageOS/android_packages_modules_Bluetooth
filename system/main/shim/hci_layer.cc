@@ -59,14 +59,13 @@ static base::Callback<void(const base::Location&, BT_HDR*)> send_data_upwards;
 static const packet_fragmenter_t* packet_fragmenter;
 
 namespace {
-bool is_valid_event_code(bluetooth::hci::EventCode event_code) {
+bool register_event_code(bluetooth::hci::EventCode event_code) {
   switch (event_code) {
     case bluetooth::hci::EventCode::INQUIRY_COMPLETE:
     case bluetooth::hci::EventCode::INQUIRY_RESULT:
     case bluetooth::hci::EventCode::ENCRYPTION_CHANGE:
     case bluetooth::hci::EventCode::CHANGE_CONNECTION_LINK_KEY_COMPLETE:
     case bluetooth::hci::EventCode::CENTRAL_LINK_KEY_COMPLETE:
-    case bluetooth::hci::EventCode::HARDWARE_ERROR:
     case bluetooth::hci::EventCode::RETURN_LINK_KEYS:
     case bluetooth::hci::EventCode::PIN_CODE_REQUEST:
     case bluetooth::hci::EventCode::LINK_KEY_REQUEST:
@@ -449,7 +448,7 @@ void bluetooth::shim::hci_on_reset_complete() {
 
   for (uint16_t event_code_raw = 0; event_code_raw < 0x100; event_code_raw++) {
     auto event_code = static_cast<bluetooth::hci::EventCode>(event_code_raw);
-    if (!is_valid_event_code(event_code)) {
+    if (!register_event_code(event_code)) {
       continue;
     }
     cpp::register_event(event_code);
