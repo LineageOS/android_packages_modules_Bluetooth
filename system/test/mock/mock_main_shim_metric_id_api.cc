@@ -27,8 +27,9 @@ namespace bluetooth {
 namespace shim {
 
 bool InitMetricIdAllocator(
-    const std::unordered_map<RawAddress, int>& paired_device_map,
-    CallbackLegacy save_id_callback, CallbackLegacy forget_device_callback) {
+    const std::unordered_map<RawAddress, int>& /* paired_device_map */,
+    CallbackLegacy /* save_id_callback */,
+    CallbackLegacy /* forget_device_callback */) {
   inc_func_call_count(__func__);
   return false;
 }
@@ -40,19 +41,19 @@ bool IsEmptyMetricIdAllocator() {
   inc_func_call_count(__func__);
   return false;
 }
-bool IsValidIdFromMetricIdAllocator(const int id) {
+bool IsValidIdFromMetricIdAllocator(const int /* id */) {
   inc_func_call_count(__func__);
   return false;
 }
-bool SaveDeviceOnMetricIdAllocator(const RawAddress& raw_address) {
+bool SaveDeviceOnMetricIdAllocator(const RawAddress& /* raw_address */) {
   inc_func_call_count(__func__);
   return false;
 }
-int AllocateIdFromMetricIdAllocator(const RawAddress& raw_address) {
+int AllocateIdFromMetricIdAllocator(const RawAddress& /* raw_address */) {
   inc_func_call_count(__func__);
   return 0;
 }
-void ForgetDeviceFromMetricIdAllocator(const RawAddress& raw_address) {
+void ForgetDeviceFromMetricIdAllocator(const RawAddress& /* raw_address */) {
   inc_func_call_count(__func__);
 }
 
