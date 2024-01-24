@@ -19,69 +19,67 @@
 #include "main/shim/config.h"
 
 bool bluetooth::shim::BtifConfigInterface::HasSection(
-    const std::string& section) {
+    const std::string& /* section */) {
   return false;
 }
 bool bluetooth::shim::BtifConfigInterface::HasProperty(
-    const std::string& section, const std::string& property) {
+    const std::string& /* section */, const std::string& /* property */) {
   return false;
 }
-bool bluetooth::shim::BtifConfigInterface::GetInt(const std::string& section,
-                                                  const std::string& key,
-                                                  int* value) {
+bool bluetooth::shim::BtifConfigInterface::GetInt(
+    const std::string& /* section */, const std::string& /* key */,
+    int* /* value */) {
   return false;
 }
-bool bluetooth::shim::BtifConfigInterface::SetInt(const std::string& section,
-                                                  const std::string& key,
-                                                  int value) {
+bool bluetooth::shim::BtifConfigInterface::SetInt(
+    const std::string& /* section */, const std::string& /* key */,
+    int /* value */) {
   return false;
 }
-bool bluetooth::shim::BtifConfigInterface::GetUint64(const std::string& section,
-                                                     const std::string& key,
-                                                     uint64_t* value) {
+bool bluetooth::shim::BtifConfigInterface::GetUint64(
+    const std::string& /* section */, const std::string& /* key */,
+    uint64_t* /* value */) {
   return false;
 }
-bool bluetooth::shim::BtifConfigInterface::SetUint64(const std::string& section,
-                                                     const std::string& key,
-                                                     uint64_t value) {
+bool bluetooth::shim::BtifConfigInterface::SetUint64(
+    const std::string& /* section */, const std::string& /* key */,
+    uint64_t /* value */) {
   return false;
 }
-bool bluetooth::shim::BtifConfigInterface::GetStr(const std::string& section,
-                                                  const std::string& key,
-                                                  char* value,
-                                                  int* size_bytes) {
+bool bluetooth::shim::BtifConfigInterface::GetStr(
+    const std::string& /* section */, const std::string& /* key */,
+    char* /* value */, int* /* size_bytes */) {
   return false;
 }
 std::optional<std::string> bluetooth::shim::BtifConfigInterface::GetStr(
-    const std::string& section, const std::string& key) {
+    const std::string& /* section */, const std::string& /* key */) {
   return std::string();
 }
-bool bluetooth::shim::BtifConfigInterface::SetStr(const std::string& section,
-                                                  const std::string& key,
-                                                  const std::string& value) {
+bool bluetooth::shim::BtifConfigInterface::SetStr(
+    const std::string& /* section */, const std::string& /* key */,
+    const std::string& /* value */) {
   return false;
 }
-bool bluetooth::shim::BtifConfigInterface::GetBin(const std::string& section,
-                                                  const std::string& key,
-                                                  uint8_t* value,
-                                                  size_t* length) {
+bool bluetooth::shim::BtifConfigInterface::GetBin(
+    const std::string& /* section */, const std::string& /* key */,
+    uint8_t* /* value */, size_t* /* length */) {
   return false;
 }
 size_t bluetooth::shim::BtifConfigInterface::GetBinLength(
-    const std::string& section, const std::string& key) {
+    const std::string& /* section */, const std::string& /* key */) {
   return 0;
 }
-bool bluetooth::shim::BtifConfigInterface::SetBin(const std::string& section,
-                                                  const std::string& key,
-                                                  const uint8_t* value,
-                                                  size_t length) {
+bool bluetooth::shim::BtifConfigInterface::SetBin(
+    const std::string& /* section */, const std::string& /* key */,
+    const uint8_t* /* value */, size_t /* length */) {
   return false;
 }
 bool bluetooth::shim::BtifConfigInterface::RemoveProperty(
-    const std::string& section, const std::string& key) {
+    const std::string& /* section */, const std::string& /* key */) {
   return false;
 }
-void bluetooth::shim::BtifConfigInterface::RemoveSection(const std::string& section){};
+void bluetooth::shim::BtifConfigInterface::RemoveSection(
+    const std::string& /* section */){};
 std::vector<std::string>
 bluetooth::shim::BtifConfigInterface::GetPersistentDevices() {
   return std::vector<std::string>();

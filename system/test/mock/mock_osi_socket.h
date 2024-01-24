@@ -40,7 +40,7 @@ namespace osi_socket {
 struct socket_accept {
   socket_t* return_value{0};
   std::function<socket_t*(const socket_t* socket)> body{
-      [this](const socket_t* socket) { return return_value; }};
+      [this](const socket_t* /* socket */) { return return_value; }};
   socket_t* operator()(const socket_t* socket) { return body(socket); };
 };
 extern struct socket_accept socket_accept;
@@ -51,7 +51,7 @@ extern struct socket_accept socket_accept;
 struct socket_bytes_available {
   ssize_t return_value{0};
   std::function<ssize_t(const socket_t* socket)> body{
-      [this](const socket_t* socket) { return return_value; }};
+      [this](const socket_t* /* socket */) { return return_value; }};
   ssize_t operator()(const socket_t* socket) { return body(socket); };
 };
 extern struct socket_bytes_available socket_bytes_available;
@@ -60,7 +60,7 @@ extern struct socket_bytes_available socket_bytes_available;
 // Params: socket_t* socket
 // Return: void
 struct socket_free {
-  std::function<void(socket_t* socket)> body{[](socket_t* socket) {}};
+  std::function<void(socket_t* socket)> body{[](socket_t* /* socket */) {}};
   void operator()(socket_t* socket) { body(socket); };
 };
 extern struct socket_free socket_free;
@@ -71,7 +71,9 @@ extern struct socket_free socket_free;
 struct socket_listen {
   bool return_value{false};
   std::function<bool(const socket_t* socket, port_t port)> body{
-      [this](const socket_t* socket, port_t port) { return return_value; }};
+      [this](const socket_t* /* socket */, port_t /* port */) {
+        return return_value;
+      }};
   bool operator()(const socket_t* socket, port_t port) {
     return body(socket, port);
   };
@@ -94,7 +96,7 @@ extern struct socket_new socket_new;
 struct socket_new_from_fd {
   socket_t* return_value{0};
   std::function<socket_t*(int fd)> body{
-      [this](int fd) { return return_value; }};
+      [this](int /* fd */) { return return_value; }};
   socket_t* operator()(int fd) { return body(fd); };
 };
 extern struct socket_new_from_fd socket_new_from_fd;
@@ -105,9 +107,8 @@ extern struct socket_new_from_fd socket_new_from_fd;
 struct socket_read {
   ssize_t return_value{0};
   std::function<ssize_t(const socket_t* socket, void* buf, size_t count)> body{
-      [this](const socket_t* socket, void* buf, size_t count) {
-        return return_value;
-      }};
+      [this](const socket_t* /* socket */, void* /* buf */,
+             size_t /* count */) { return return_value; }};
   ssize_t operator()(const socket_t* socket, void* buf, size_t count) {
     return body(socket, buf, count);
   };
@@ -120,8 +121,9 @@ extern struct socket_read socket_read;
 struct socket_register {
   std::function<void(socket_t* socket, reactor_t* reactor, void* context,
                      socket_cb read_cb, socket_cb write_cb)>
-      body{[](socket_t* socket, reactor_t* reactor, void* context,
-              socket_cb read_cb, socket_cb write_cb) {}};
+      body{[](socket_t* /* socket */, reactor_t* /* reactor */,
+              void* /* context */, socket_cb /* read_cb */,
+              socket_cb /* write_cb */) {}};
   void operator()(socket_t* socket, reactor_t* reactor, void* context,
                   socket_cb read_cb, socket_cb write_cb) {
     body(socket, reactor, context, read_cb, write_cb);
@@ -133,7 +135,7 @@ extern struct socket_register socket_register;
 // Params: socket_t* socket
 // Return: void
 struct socket_unregister {
-  std::function<void(socket_t* socket)> body{[](socket_t* socket) {}};
+  std::function<void(socket_t* socket)> body{[](socket_t* /* socket */) {}};
   void operator()(socket_t* socket) { body(socket); };
 };
 extern struct socket_unregister socket_unregister;
@@ -144,9 +146,8 @@ extern struct socket_unregister socket_unregister;
 struct socket_write {
   ssize_t return_value{0};
   std::function<ssize_t(const socket_t* socket, const void* buf, size_t count)>
-      body{[this](const socket_t* socket, const void* buf, size_t count) {
-        return return_value;
-      }};
+      body{[this](const socket_t* /* socket */, const void* /* buf */,
+                  size_t /* count */) { return return_value; }};
   ssize_t operator()(const socket_t* socket, const void* buf, size_t count) {
     return body(socket, buf, count);
   };
@@ -160,8 +161,8 @@ struct socket_write_and_transfer_fd {
   ssize_t return_value{0};
   std::function<ssize_t(const socket_t* socket, const void* buf, size_t count,
                         int fd)>
-      body{[this](const socket_t* socket, const void* buf, size_t count,
-                  int fd) { return return_value; }};
+      body{[this](const socket_t* /* socket */, const void* /* buf */,
+                  size_t /* count */, int /* fd */) { return return_value; }};
   ssize_t operator()(const socket_t* socket, const void* buf, size_t count,
                      int fd) {
     return body(socket, buf, count, fd);

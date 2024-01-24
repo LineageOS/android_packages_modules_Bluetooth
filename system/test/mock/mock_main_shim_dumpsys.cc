@@ -22,13 +22,13 @@
 #include "main/shim/dumpsys.h"
 #include "test/common/mock_functions.h"
 
-void bluetooth::shim::RegisterDumpsysFunction(const void* token,
-                                              DumpsysFunction func) {
+void bluetooth::shim::RegisterDumpsysFunction(const void* /* token */,
+                                              DumpsysFunction /* func */) {
   inc_func_call_count(__func__);
 }
-void bluetooth::shim::Dump(int fd, const char** args) {
+void bluetooth::shim::Dump(int /* fd */, const char** /* args */) {
   inc_func_call_count(__func__);
 }
-void bluetooth::shim::UnregisterDumpsysFunction(const void* token) {
+void bluetooth::shim::UnregisterDumpsysFunction(const void* /* token */) {
   inc_func_call_count(__func__);
 }
