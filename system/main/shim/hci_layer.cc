@@ -249,26 +249,6 @@ static bool subevent_already_registered_in_le_hci_layer(
   }
 }
 
-static bool event_already_registered_in_le_advertising_manager(
-    bluetooth::hci::EventCode event_code) {
-  for (auto event : bluetooth::hci::AclConnectionEvents) {
-    if (event == event_code) {
-      return true;
-    }
-  }
-  return false;
-}
-
-static bool event_already_registered_in_le_scanning_manager(
-    bluetooth::hci::EventCode event_code) {
-  for (auto event : bluetooth::hci::AclConnectionEvents) {
-    if (event == event_code) {
-      return true;
-    }
-  }
-  return false;
-}
-
 }  // namespace
 
 namespace cpp {
@@ -545,10 +525,6 @@ void bluetooth::shim::hci_on_reset_complete() {
     } else if (event_already_registered_in_controller_layer(event_code)) {
       continue;
     } else if (event_already_registered_in_hci_layer(event_code)) {
-      continue;
-    } else if (event_already_registered_in_le_advertising_manager(event_code)) {
-      continue;
-    } else if (event_already_registered_in_le_scanning_manager(event_code)) {
       continue;
     }
 
