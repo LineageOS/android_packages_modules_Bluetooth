@@ -176,16 +176,16 @@ public class ScanNativeInterface {
         gattClientReadScanReportsNative(clientIf, scanType);
     }
 
-    void callbackDone() {
+    public void callbackDone() {
         mLatch.countDown();
     }
 
-    void resetCountDownLatch() {
+    public void resetCountDownLatch() {
         mLatch = new CountDownLatch(1);
     }
 
     // Returns true if mLatch reaches 0, false if timeout or interrupted.
-    boolean waitForCallback(int timeoutMs) {
+    public boolean waitForCallback(int timeoutMs) {
         try {
             return mLatch.await(timeoutMs, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
