@@ -80,7 +80,7 @@ class BluetoothOppNotification {
             WHERE_COMPLETED + " AND " + "(" + BluetoothShare.DIRECTION + " == "
                     + BluetoothShare.DIRECTION_INBOUND + ")";
 
-    static final String WHERE_CONFIRM_PENDING =
+    private static final String WHERE_CONFIRM_PENDING =
             BluetoothShare.USER_CONFIRMATION + " == '" + BluetoothShare.USER_CONFIRMATION_PENDING
                     + "'" + " AND " + VISIBLE;
 
@@ -433,9 +433,9 @@ class BluetoothOppNotification {
 
             PendingIntent pi;
             if (Flags.oppStartActivityDirectlyFromNotification()) {
-                Intent in = new Intent(mContext, BluetoothOppTransferHistory.class);
+                Intent in = new Intent(Constants.ACTION_OPEN_OUTBOUND_TRANSFER);
+                in.setClass(mContext, BluetoothOppTransferHistory.class);
                 in.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                in.putExtra(Constants.EXTRA_DIRECTION, BluetoothShare.DIRECTION_OUTBOUND);
                 pi = PendingIntent.getActivity(mContext, 0, in, PendingIntent.FLAG_IMMUTABLE);
             } else {
                 Intent in =
@@ -505,8 +505,20 @@ class BluetoothOppNotification {
         if (inboundNum > 0) {
             String caption = BluetoothOppUtility.formatResultText(inboundSuccNumber,
                     inboundFailNumber, mContext);
-            Intent contentIntent = new Intent(Constants.ACTION_OPEN_INBOUND_TRANSFER).setClassName(
-                    mContext, BluetoothOppReceiver.class.getName());
+
+            PendingIntent pi;
+            if (Flags.oppStartActivityDirectlyFromNotification()) {
+                Intent in = new Intent(Constants.ACTION_OPEN_INBOUND_TRANSFER);
+                in.setClass(mContext, BluetoothOppTransferHistory.class);
+                in.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                pi = PendingIntent.getActivity(mContext, 0, in, PendingIntent.FLAG_IMMUTABLE);
+            } else {
+                Intent in =
+                        new Intent(Constants.ACTION_OPEN_INBOUND_TRANSFER)
+                                .setClassName(mContext, BluetoothOppReceiver.class.getName());
+                pi = PendingIntent.getBroadcast(mContext, 0, in, PendingIntent.FLAG_IMMUTABLE);
+            }
+
             Intent deleteIntent = new Intent(Constants.ACTION_COMPLETE_HIDE).setClassName(
                     mContext, BluetoothOppReceiver.class.getName());
             Notification inNoti =
@@ -521,9 +533,7 @@ class BluetoothOppNotification {
                                                     .system_notification_accent_color,
                                             mContext.getTheme()))
 
-                            .setContentIntent(
-                                    PendingIntent.getBroadcast(mContext, 0, contentIntent,
-                                        PendingIntent.FLAG_IMMUTABLE))
+                            .setContentIntent(pi)
                             .setDeleteIntent(
                                     PendingIntent.getBroadcast(mContext, 0, deleteIntent,
                                         PendingIntent.FLAG_IMMUTABLE))
@@ -572,15 +582,31 @@ class BluetoothOppNotification {
                     PendingIntent.getBroadcast(mContext, 0,
                             new Intent(baseIntent).setAction(Constants.ACTION_ACCEPT),
                             PendingIntent.FLAG_IMMUTABLE)).build();
+
+            PendingIntent contentIntent;
+            if (Flags.oppStartActivityDirectlyFromNotification()) {
+                Intent intent = new Intent(mContext, BluetoothOppIncomingFileConfirmActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                intent.setDataAndNormalize(contentUri);
+                contentIntent =
+                        PendingIntent.getActivity(
+                                mContext, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+            } else {
+                contentIntent =
+                        PendingIntent.getBroadcast(
+                                mContext,
+                                0,
+                                new Intent(baseIntent)
+                                        .setAction(Constants.ACTION_INCOMING_FILE_CONFIRM),
+                                PendingIntent.FLAG_IMMUTABLE);
+            }
+
             Notification public_n =
                     new Notification.Builder(mContext, OPP_NOTIFICATION_CHANNEL).setOnlyAlertOnce(
                             true)
                             .setOngoing(true)
                             .setWhen(info.mTimeStamp)
-                            .setContentIntent(PendingIntent.getBroadcast(mContext, 0,
-                                    new Intent(baseIntent).setAction(
-                                            Constants.ACTION_INCOMING_FILE_CONFIRM),
-                                    PendingIntent.FLAG_IMMUTABLE))
+                            .setContentIntent(contentIntent)
                             .setDeleteIntent(PendingIntent.getBroadcast(mContext, 0,
                                     new Intent(baseIntent).setAction(Constants.ACTION_HIDE),
                                     PendingIntent.FLAG_IMMUTABLE))
@@ -604,10 +630,7 @@ class BluetoothOppNotification {
                             true)
                             .setOngoing(true)
                             .setWhen(info.mTimeStamp)
-                            .setContentIntent(PendingIntent.getBroadcast(mContext, 0,
-                                    new Intent(baseIntent).setAction(
-                                            Constants.ACTION_INCOMING_FILE_CONFIRM),
-                                    PendingIntent.FLAG_IMMUTABLE))
+                            .setContentIntent(contentIntent)
                             .setDeleteIntent(PendingIntent.getBroadcast(mContext, 0,
                                     new Intent(baseIntent).setAction(Constants.ACTION_HIDE),
                                     PendingIntent.FLAG_IMMUTABLE))
