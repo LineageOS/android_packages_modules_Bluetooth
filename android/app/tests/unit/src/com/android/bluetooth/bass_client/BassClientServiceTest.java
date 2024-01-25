@@ -856,7 +856,8 @@ public class BassClientServiceTest {
         // Add another new broadcast source
         mBassClientService.addSource(mCurrentDevice, newMeta, true);
 
-        // Verify all group members getting SWITH_BCAST_SOURCE message and first source got selected
+        // Verify all group members getting SWITCH_BCAST_SOURCE message and first source got
+        // selected
         // to remove
         assertThat(mStateMachines.size()).isEqualTo(2);
         for (BassClientStateMachine sm : mStateMachines.values()) {
@@ -867,7 +868,7 @@ public class BassClientServiceTest {
                     messageCaptor.getAllValues().stream()
                             .filter(
                                     m ->
-                                            (m.what == BassClientStateMachine.SWITH_BCAST_SOURCE)
+                                            (m.what == BassClientStateMachine.SWITCH_BCAST_SOURCE)
                                                     && (m.obj == newMeta)
                                                     && (m.arg1 == TEST_SOURCE_ID))
                             .findFirst();

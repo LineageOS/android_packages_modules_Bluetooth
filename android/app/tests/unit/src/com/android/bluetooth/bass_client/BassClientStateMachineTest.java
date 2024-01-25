@@ -36,7 +36,7 @@ import static com.android.bluetooth.bass_client.BassClientStateMachine.SELECT_BC
 import static com.android.bluetooth.bass_client.BassClientStateMachine.SET_BCAST_CODE;
 import static com.android.bluetooth.bass_client.BassClientStateMachine.START_SCAN_OFFLOAD;
 import static com.android.bluetooth.bass_client.BassClientStateMachine.STOP_SCAN_OFFLOAD;
-import static com.android.bluetooth.bass_client.BassClientStateMachine.SWITH_BCAST_SOURCE;
+import static com.android.bluetooth.bass_client.BassClientStateMachine.SWITCH_BCAST_SOURCE;
 import static com.android.bluetooth.bass_client.BassClientStateMachine.UPDATE_BCAST_SOURCE;
 import static com.android.bluetooth.bass_client.BassConstants.CLIENT_CHARACTERISTIC_CONFIG;
 
@@ -1225,7 +1225,7 @@ public class BassClientStateMachineTest {
                 Mockito.mock(BluetoothGattCharacteristic.class);
         mBassClientStateMachine.mBroadcastScanControlPoint = scanControlPoint;
 
-        mBassClientStateMachine.sendMessage(SWITH_BCAST_SOURCE, sourceId, 0, metadata);
+        mBassClientStateMachine.sendMessage(SWITCH_BCAST_SOURCE, sourceId, 0, metadata);
         TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
         assertThat(mBassClientStateMachine.mPendingSourceToSwitch).isEqualTo(metadata);
     }
@@ -1635,9 +1635,9 @@ public class BassClientStateMachineTest {
         assertThat(mBassClientStateMachine.hasDeferredMessagesSuper(REACHED_MAX_SOURCE_LIMIT))
                 .isTrue();
 
-        mBassClientStateMachine.sendMessage(SWITH_BCAST_SOURCE);
+        mBassClientStateMachine.sendMessage(SWITCH_BCAST_SOURCE);
         TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
-        assertThat(mBassClientStateMachine.hasDeferredMessagesSuper(SWITH_BCAST_SOURCE)).isTrue();
+        assertThat(mBassClientStateMachine.hasDeferredMessagesSuper(SWITCH_BCAST_SOURCE)).isTrue();
     }
 
     @Test
