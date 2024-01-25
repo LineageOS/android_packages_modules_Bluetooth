@@ -1396,7 +1396,7 @@ public class BassClientService extends ProfileService {
                     mBroadcastMetadataMap.put(device, sourceMetadata);
 
                     Message message =
-                            stateMachine.obtainMessage(BassClientStateMachine.SWITH_BCAST_SOURCE);
+                            stateMachine.obtainMessage(BassClientStateMachine.SWITCH_BCAST_SOURCE);
                     message.obj = sourceMetadata;
                     message.arg1 = sourceId;
                     stateMachine.sendMessage(message);
