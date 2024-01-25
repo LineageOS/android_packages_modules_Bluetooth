@@ -123,15 +123,6 @@ filegroup {
     srcs: ["jarjar-rules.txt"],
 }
 
-java_api_contribution {
-    name: "framework-bluetooth-public-stubs",
-    api_surface: "public",
-    api_file: "api/current.txt",
-    visibility: [
-        "//build/orchestrator/apis",
-    ],
-}
-
 platform_compat_config {
     name: "framework-bluetooth-compat-config",
     src: ":framework-bluetooth",
