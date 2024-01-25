@@ -1438,7 +1438,7 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event,
       uint8_t num_uuids = 0, max_num_uuid = 32;
       uint8_t uuid_list[32 * Uuid::kNumBytes16];
 
-      if (p_search_data->inq_res.inq_result_type != BTM_INQ_RESULT_BLE) {
+      if (p_search_data->inq_res.inq_result_type != BT_DEVICE_TYPE_BLE) {
         p_search_data->inq_res.remt_name_not_required =
             check_eir_remote_name(p_search_data, NULL, NULL);
       }
