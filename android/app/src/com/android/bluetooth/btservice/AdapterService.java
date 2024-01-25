@@ -128,7 +128,6 @@ import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.flags.FeatureFlagsImpl;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.gatt.GattService;
-import com.android.bluetooth.le_scan.ScanManager;
 import com.android.bluetooth.hap.HapClientService;
 import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.hfp.HeadsetService;
@@ -136,6 +135,7 @@ import com.android.bluetooth.hfpclient.HeadsetClientService;
 import com.android.bluetooth.hid.HidDeviceService;
 import com.android.bluetooth.hid.HidHostService;
 import com.android.bluetooth.le_audio.LeAudioService;
+import com.android.bluetooth.le_scan.ScanManager;
 import com.android.bluetooth.map.BluetoothMapService;
 import com.android.bluetooth.mapclient.MapClientService;
 import com.android.bluetooth.mcp.McpService;
@@ -5388,6 +5388,82 @@ public class AdapterService extends Service {
             }
 
             return service.getProfile(profileId);
+        }
+
+        @Override
+        public void setActiveAudioDevicePolicy(
+                BluetoothDevice device,
+                int activeAudioDevicePolicy,
+                AttributionSource source,
+                SynchronousResultReceiver receiver) {
+            try {
+                receiver.send(setActiveAudioDevicePolicy(device, activeAudioDevicePolicy, source));
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+
+        @RequiresPermission(
+                allOf = {
+                    android.Manifest.permission.BLUETOOTH_CONNECT,
+                    android.Manifest.permission.BLUETOOTH_PRIVILEGED,
+                })
+        private int setActiveAudioDevicePolicy(
+                BluetoothDevice device, int activeAudioDevicePolicy, AttributionSource source) {
+            AdapterService service = getService();
+            if (service == null) {
+                return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+            }
+            if (!callerIsSystemOrActiveOrManagedUser(service, TAG, "setActiveAudioDevicePolicy")) {
+                return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
+            }
+            if (!BluetoothAdapter.checkBluetoothAddress(device.getAddress())) {
+                throw new IllegalArgumentException("device cannot have an invalid address");
+            }
+            if (!Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
+                return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION;
+            }
+
+            enforceBluetoothPrivilegedPermission(service);
+            return service.mDatabaseManager.setActiveAudioDevicePolicy(
+                    device, activeAudioDevicePolicy);
+        }
+
+        @Override
+        public void getActiveAudioDevicePolicy(
+                BluetoothDevice device,
+                AttributionSource source,
+                SynchronousResultReceiver receiver) {
+            try {
+                receiver.send(getActiveAudioDevicePolicy(device, source));
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+
+        @RequiresPermission(
+                allOf = {
+                    android.Manifest.permission.BLUETOOTH_CONNECT,
+                    android.Manifest.permission.BLUETOOTH_PRIVILEGED,
+                })
+        private int getActiveAudioDevicePolicy(BluetoothDevice device, AttributionSource source) {
+            AdapterService service = getService();
+            if (service == null) {
+                return BluetoothDevice.ACTIVE_AUDIO_DEVICE_POLICY_DEFAULT;
+            }
+            if (!callerIsSystemOrActiveOrManagedUser(service, TAG, "getActiveAudioDevicePolicy")) {
+                throw new IllegalStateException(
+                        "Caller is not the system or part of the active/managed user");
+            }
+            if (!BluetoothAdapter.checkBluetoothAddress(device.getAddress())) {
+                throw new IllegalArgumentException("device cannot have an invalid address");
+            }
+            if (!Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
+                return BluetoothDevice.ACTIVE_AUDIO_DEVICE_POLICY_DEFAULT;
+            }
+
+            enforceBluetoothPrivilegedPermission(service);
+            return service.mDatabaseManager.getActiveAudioDevicePolicy(device);
         }
     }
 
