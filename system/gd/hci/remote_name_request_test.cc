@@ -16,19 +16,18 @@
 
 #include "hci/remote_name_request.h"
 
+#include <android_bluetooth_flags.h>
+#include <flag_macros.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <algorithm>
 #include <chrono>
 #include <future>
-#include <map>
 #include <tuple>
+#include <utility>
 
-#include "common/bind.h"
-#include "common/init_flags.h"
 #include "hci/address.h"
-#include "hci/controller_mock.h"
 #include "hci/hci_layer_fake.h"
 #include "os/thread.h"
 
@@ -628,6 +627,49 @@ TEST_F(RemoteNameRequestModuleTest, FailToSendCommandThenDequeueNext) {
   auto rnr_command = RemoteNameRequestView::Create(DiscoveryCommandView::Create(discovery_command));
   ASSERT_TRUE(rnr_command.IsValid());
   EXPECT_EQ(rnr_command.GetBdAddr(), address2);
+}
+
+#define MY_PACKAGE com::android::bluetooth::flags
+
+TEST_F_WITH_FLAGS(
+    RemoteNameRequestModuleTest,
+    CancelJustWhenRNREventReturns,
+    REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(MY_PACKAGE, rnr_cancel_before_event_race))) {
+  auto promise = std::promise<std::tuple<ErrorCode, std::array<uint8_t, 248>>>{};
+  auto future = promise.get_future();
+
+  // start a remote name request
+  remote_name_request_module_->StartRemoteNameRequest(
+      address1,
+      RemoteNameRequestBuilder::Create(
+          address1, PageScanRepetitionMode::R0, 3, ClockOffsetValid::INVALID),
+      emptyCallback<ErrorCode>(),
+      impossibleCallback<uint64_t>(),
+      capturingPromiseCallback<ErrorCode, std::array<uint8_t, 248>>(std::move(promise)));
+
+  // we successfully start
+  test_hci_layer_->GetCommand();
+
+  auto promise2 = std::promise<void>();
+  auto future2 = promise2.get_future();
+  client_handler_->Post(base::BindOnce(
+      [](RemoteNameRequestModule* remote_name_request_module,
+         HciLayerFake* test_hci_layer,
+         std::promise<void> promise2) {
+        // but then the request is cancelled successfully (the status doesn't matter)
+        remote_name_request_module->CancelRemoteNameRequest(address1);
+
+        // Send an rnr event completed with page timeout status
+        test_hci_layer->IncomingEvent(
+            RemoteNameRequestStatusBuilder::Create(ErrorCode::PAGE_TIMEOUT, 1));
+
+        promise2.set_value();
+      },
+      remote_name_request_module_,
+      test_hci_layer_,
+      std::move(promise2)));
+
+  future2.wait();
 }
 
 }  // namespace
