@@ -91,71 +91,8 @@ bool register_event_code(bluetooth::hci::EventCode event_code) {
   }
 };
 
-bool is_valid_subevent_code(bluetooth::hci::SubeventCode subevent_code) {
+static bool register_subevent_code(bluetooth::hci::SubeventCode subevent_code) {
   switch (subevent_code) {
-    case bluetooth::hci::SubeventCode::CONNECTION_UPDATE_COMPLETE:
-    case bluetooth::hci::SubeventCode::DATA_LENGTH_CHANGE:
-    case bluetooth::hci::SubeventCode::ENHANCED_CONNECTION_COMPLETE:
-    case bluetooth::hci::SubeventCode::PHY_UPDATE_COMPLETE:
-    case bluetooth::hci::SubeventCode::READ_REMOTE_FEATURES_COMPLETE:
-    case bluetooth::hci::SubeventCode::REMOTE_CONNECTION_PARAMETER_REQUEST:
-    case bluetooth::hci::SubeventCode::READ_LOCAL_P256_PUBLIC_KEY_COMPLETE:
-    case bluetooth::hci::SubeventCode::GENERATE_DHKEY_COMPLETE:
-    case bluetooth::hci::SubeventCode::DIRECTED_ADVERTISING_REPORT:
-    case bluetooth::hci::SubeventCode::EXTENDED_ADVERTISING_REPORT:
-    case bluetooth::hci::SubeventCode::PERIODIC_ADVERTISING_SYNC_ESTABLISHED:
-    case bluetooth::hci::SubeventCode::PERIODIC_ADVERTISING_REPORT:
-    case bluetooth::hci::SubeventCode::PERIODIC_ADVERTISING_SYNC_LOST:
-    case bluetooth::hci::SubeventCode::SCAN_TIMEOUT:
-    case bluetooth::hci::SubeventCode::ADVERTISING_SET_TERMINATED:
-    case bluetooth::hci::SubeventCode::SCAN_REQUEST_RECEIVED:
-    case bluetooth::hci::SubeventCode::CHANNEL_SELECTION_ALGORITHM:
-    case bluetooth::hci::SubeventCode::CONNECTIONLESS_IQ_REPORT:
-    case bluetooth::hci::SubeventCode::CONNECTION_IQ_REPORT:
-    case bluetooth::hci::SubeventCode::CTE_REQUEST_FAILED:
-    case bluetooth::hci::SubeventCode::
-        PERIODIC_ADVERTISING_SYNC_TRANSFER_RECEIVED:
-    case bluetooth::hci::SubeventCode::CIS_ESTABLISHED:
-    case bluetooth::hci::SubeventCode::CIS_REQUEST:
-    case bluetooth::hci::SubeventCode::CREATE_BIG_COMPLETE:
-    case bluetooth::hci::SubeventCode::TERMINATE_BIG_COMPLETE:
-    case bluetooth::hci::SubeventCode::BIG_SYNC_ESTABLISHED:
-    case bluetooth::hci::SubeventCode::BIG_SYNC_LOST:
-    case bluetooth::hci::SubeventCode::REQUEST_PEER_SCA_COMPLETE:
-    case bluetooth::hci::SubeventCode::PATH_LOSS_THRESHOLD:
-    case bluetooth::hci::SubeventCode::TRANSMIT_POWER_REPORTING:
-    case bluetooth::hci::SubeventCode::BIG_INFO_ADVERTISING_REPORT:
-    case bluetooth::hci::SubeventCode::ADVERTISING_REPORT:
-    case bluetooth::hci::SubeventCode::LONG_TERM_KEY_REQUEST:
-      return true;
-    default:
-      return false;
-  }
-}
-
-static bool subevent_already_registered_in_le_hci_layer(
-    bluetooth::hci::SubeventCode subevent_code) {
-  switch (subevent_code) {
-    case bluetooth::hci::SubeventCode::CONNECTION_COMPLETE:
-    case bluetooth::hci::SubeventCode::CONNECTION_UPDATE_COMPLETE:
-    case bluetooth::hci::SubeventCode::DATA_LENGTH_CHANGE:
-    case bluetooth::hci::SubeventCode::ENHANCED_CONNECTION_COMPLETE:
-    case bluetooth::hci::SubeventCode::PHY_UPDATE_COMPLETE:
-    case bluetooth::hci::SubeventCode::REMOTE_CONNECTION_PARAMETER_REQUEST:
-    case bluetooth::hci::SubeventCode::ADVERTISING_SET_TERMINATED:
-    case bluetooth::hci::SubeventCode::SCAN_REQUEST_RECEIVED:
-    case bluetooth::hci::SubeventCode::SCAN_TIMEOUT:
-    case bluetooth::hci::SubeventCode::ADVERTISING_REPORT:
-    case bluetooth::hci::SubeventCode::DIRECTED_ADVERTISING_REPORT:
-    case bluetooth::hci::SubeventCode::EXTENDED_ADVERTISING_REPORT:
-    case bluetooth::hci::SubeventCode::PERIODIC_ADVERTISING_REPORT:
-    case bluetooth::hci::SubeventCode::PERIODIC_ADVERTISING_SYNC_ESTABLISHED:
-    case bluetooth::hci::SubeventCode::PERIODIC_ADVERTISING_SYNC_LOST:
-    case bluetooth::hci::SubeventCode::
-        PERIODIC_ADVERTISING_SYNC_TRANSFER_RECEIVED:
-    case bluetooth::hci::SubeventCode::TRANSMIT_POWER_REPORTING:
-    case bluetooth::hci::SubeventCode::BIG_INFO_ADVERTISING_REPORT:
-      return true;
     case bluetooth::hci::SubeventCode::READ_REMOTE_FEATURES_COMPLETE:
     case bluetooth::hci::SubeventCode::READ_LOCAL_P256_PUBLIC_KEY_COMPLETE:
     case bluetooth::hci::SubeventCode::GENERATE_DHKEY_COMPLETE:
@@ -172,6 +109,7 @@ static bool subevent_already_registered_in_le_hci_layer(
     case bluetooth::hci::SubeventCode::REQUEST_PEER_SCA_COMPLETE:
     case bluetooth::hci::SubeventCode::PATH_LOSS_THRESHOLD:
     case bluetooth::hci::SubeventCode::LONG_TERM_KEY_REQUEST:
+      return true;
     default:
       return false;
   }
@@ -458,13 +396,9 @@ void bluetooth::shim::hci_on_reset_complete() {
        subevent_code_raw++) {
     auto subevent_code =
         static_cast<bluetooth::hci::SubeventCode>(subevent_code_raw);
-    if (!is_valid_subevent_code(subevent_code)) {
+    if (!register_subevent_code(subevent_code)) {
       continue;
     }
-    if (subevent_already_registered_in_le_hci_layer(subevent_code)) {
-      continue;
-    }
-
     cpp::register_le_event(subevent_code);
   }
 
