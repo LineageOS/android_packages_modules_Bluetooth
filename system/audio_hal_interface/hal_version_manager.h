@@ -18,6 +18,7 @@
 
 #include <android/hardware/bluetooth/audio/2.1/IBluetoothAudioProvidersFactory.h>
 #include <android/hardware/bluetooth/audio/2.1/types.h>
+#include <com_android_bluetooth_flags.h>
 
 namespace bluetooth {
 namespace audio {
@@ -33,6 +34,88 @@ constexpr char kFullyQualifiedInterfaceName_2_0[] =
     "android.hardware.bluetooth.audio@2.0::IBluetoothAudioProvidersFactory";
 constexpr char kFullyQualifiedInterfaceName_2_1[] =
     "android.hardware.bluetooth.audio@2.1::IBluetoothAudioProvidersFactory";
+
+#if COM_ANDROID_BLUETOOTH_FLAGS_AUDIO_HAL_VERSION_CLASS
+/**
+ * The type of HAL transport, it's important to have
+ * BluetoothAudioHalTransport::HIDL value defined smaller than
+ * BluetoothAudioHalTransport::AIDL.
+ */
+enum class BluetoothAudioHalTransport : uint8_t {
+  // Uninit, default value
+  UNKNOWN,
+  HIDL,
+  AIDL,
+};
+
+std::string toString(BluetoothAudioHalTransport transport);
+
+/**
+ * A hal version class with built-in comparison operators.
+ */
+class BluetoothAudioHalVersion {
+ public:
+  BluetoothAudioHalVersion(BluetoothAudioHalTransport transport =
+                               BluetoothAudioHalTransport::UNKNOWN,
+                           uint16_t major = 0, uint16_t minor = 0)
+      : mTransport(transport), mMajor(major), mMinor(minor) {}
+
+  bool isHIDL() const { return mTransport == BluetoothAudioHalTransport::HIDL; }
+  bool isAIDL() const { return mTransport == BluetoothAudioHalTransport::AIDL; }
+
+  BluetoothAudioHalTransport getTransport() const { return mTransport; }
+
+  inline bool operator!=(const BluetoothAudioHalVersion& rhs) const {
+    return std::tie(mTransport, mMajor, mMinor) !=
+           std::tie(rhs.mTransport, rhs.mMajor, rhs.mMinor);
+  }
+  inline bool operator<(const BluetoothAudioHalVersion& rhs) const {
+    return std::tie(mTransport, mMajor, mMinor) <
+           std::tie(rhs.mTransport, rhs.mMajor, rhs.mMinor);
+  }
+  inline bool operator<=(const BluetoothAudioHalVersion& rhs) const {
+    return std::tie(mTransport, mMajor, mMinor) <=
+           std::tie(rhs.mTransport, rhs.mMajor, rhs.mMinor);
+  }
+  inline bool operator==(const BluetoothAudioHalVersion& rhs) const {
+    return std::tie(mTransport, mMajor, mMinor) ==
+           std::tie(rhs.mTransport, rhs.mMajor, rhs.mMinor);
+  }
+  inline bool operator>(const BluetoothAudioHalVersion& rhs) const {
+    return std::tie(mTransport, mMajor, mMinor) >
+           std::tie(rhs.mTransport, rhs.mMajor, rhs.mMinor);
+  }
+  inline bool operator>=(const BluetoothAudioHalVersion& rhs) const {
+    return std::tie(mTransport, mMajor, mMinor) >=
+           std::tie(rhs.mTransport, rhs.mMajor, rhs.mMinor);
+  }
+
+  inline std::string toString() const {
+    std::ostringstream os;
+    os << "BluetoothAudioHalVersion: {";
+    os << "transport: " << bluetooth::audio::toString(mTransport);
+    os << ", major: " << std::to_string(mMajor);
+    os << ", minor: " << std::to_string(mMinor);
+    os << "}";
+    return os.str();
+  }
+
+  /* Known HalVersion definitions */
+  static const BluetoothAudioHalVersion VERSION_UNAVAILABLE;
+  static const BluetoothAudioHalVersion VERSION_2_0;
+  static const BluetoothAudioHalVersion VERSION_2_1;
+  static const BluetoothAudioHalVersion VERSION_AIDL_V1;
+  static const BluetoothAudioHalVersion VERSION_AIDL_V2;
+  static const BluetoothAudioHalVersion VERSION_AIDL_V3;
+  static const BluetoothAudioHalVersion VERSION_AIDL_V4;
+
+ private:
+  BluetoothAudioHalTransport mTransport = BluetoothAudioHalTransport::UNKNOWN;
+  uint16_t mMajor = 0;
+  uint16_t mMinor = 0;
+};
+
+#else  // COM_ANDROID_BLUETOOTH_FLAGS_AUDIO_HAL_VERSION_CLASS
 
 enum class BluetoothAudioHalVersion : uint8_t {
   VERSION_UNAVAILABLE = 0,
@@ -50,6 +133,8 @@ enum class BluetoothAudioHalTransport : uint8_t {
   AIDL,
   HIDL,
 };
+
+#endif  // COM_ANDROID_BLUETOOTH_FLAGS_AUDIO_HAL_VERSION_CLASS
 
 class HalVersionManager {
  public:
