@@ -94,6 +94,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -2452,12 +2453,26 @@ class BluetoothManagerService {
         }
     }
 
-    void dumpBluetoothFlags(PrintWriter writer)
+    private void dumpBluetoothFlags(PrintWriter writer)
             throws IllegalAccessException, InvocationTargetException {
         writer.println("🚩Flag dump:");
+
+        // maxLen is used to align the flag output
+        int maxLen =
+                Arrays.stream(Flags.class.getDeclaredMethods())
+                        .map(Method::getName)
+                        .map(String::length)
+                        .max(Integer::compare)
+                        .get();
+
+        String fmt = "\t%s: %-" + maxLen + "s %s";
+
         for (Method m : Flags.class.getDeclaredMethods()) {
             String flagStatus = ((Boolean) m.invoke(null)) ? "[■]" : "[ ]";
-            writer.println("\t" + flagStatus + ": " + m.getName());
+            String name = m.getName();
+            String snakeCaseName =
+                    name.replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase(Locale.US);
+            writer.println(String.format(fmt, flagStatus, name, snakeCaseName));
         }
         writer.println("");
     }
