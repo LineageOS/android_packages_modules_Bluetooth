@@ -2599,7 +2599,7 @@ static int register_com_android_bluetooth_gatt_scan(JNIEnv* env) {
        (void*)gattSetScanParametersNative},
   };
   return REGISTER_NATIVE_METHODS(
-      env, "com/android/bluetooth/gatt/ScanNativeInterface", methods);
+      env, "com/android/bluetooth/le_scan/ScanNativeInterface", methods);
 }
 
 static int register_com_android_bluetooth_gatt_advertise_manager(JNIEnv* env) {
