@@ -58,7 +58,7 @@ extern struct wakelock_cleanup wakelock_cleanup;
 // Params: int fd
 // Return: void
 struct wakelock_debug_dump {
-  std::function<void(int fd)> body{[](int fd) {}};
+  std::function<void(int fd)> body{[](int /* fd */) {}};
   void operator()(int fd) { body(fd); };
 };
 extern struct wakelock_debug_dump wakelock_debug_dump;
@@ -78,7 +78,7 @@ extern struct wakelock_release wakelock_release;
 // Return: void
 struct wakelock_set_os_callouts {
   std::function<void(bt_os_callouts_t* callouts)> body{
-      [](bt_os_callouts_t* callouts) {}};
+      [](bt_os_callouts_t* /* callouts */) {}};
   void operator()(bt_os_callouts_t* callouts) { body(callouts); };
 };
 extern struct wakelock_set_os_callouts wakelock_set_os_callouts;
@@ -88,7 +88,7 @@ extern struct wakelock_set_os_callouts wakelock_set_os_callouts;
 // Return: void
 struct wakelock_set_paths {
   std::function<void(const char* lock_path, const char* unlock_path)> body{
-      [](const char* lock_path, const char* unlock_path) {}};
+      [](const char* /* lock_path */, const char* /* unlock_path */) {}};
   void operator()(const char* lock_path, const char* unlock_path) {
     body(lock_path, unlock_path);
   };

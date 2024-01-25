@@ -327,6 +327,9 @@
       "name": "bluetooth_test_gdx_unit"
     },
     {
+      "name": "CtsStrictJavaPackagesTestCases"
+    },
+    {
       "name": "asrc_resampler_test"
     }
   ]

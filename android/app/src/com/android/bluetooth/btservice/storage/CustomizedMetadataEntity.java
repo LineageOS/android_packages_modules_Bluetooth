@@ -49,6 +49,7 @@ class CustomizedMetadataEntity {
     public byte[] le_audio;
     public byte[] gmcs_cccd;
     public byte[] gtbs_cccd;
+    public byte[] exclusive_manager;
 
     public String toString() {
         StringBuilder builder = new StringBuilder();
@@ -109,8 +110,9 @@ class CustomizedMetadataEntity {
                 .append("|gmcs_cccd=")
                 .append(metadataToString(gmcs_cccd))
                 .append("|gtbs_cccd=")
-                .append(metadataToString(gtbs_cccd));
-
+                .append(metadataToString(gtbs_cccd))
+                .append("|exclusive_manager=")
+                .append(metadataToString(exclusive_manager));
 
         return builder.toString();
     }

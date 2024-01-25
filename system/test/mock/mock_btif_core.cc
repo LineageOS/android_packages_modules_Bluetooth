@@ -79,9 +79,6 @@ tBTA_SERVICE_MASK btif_get_enabled_services_mask(void) {
   inc_func_call_count(__func__);
   return 0;
 }
-void DynamicAudiobufferSizeCompleteCallback(tBTM_VSC_CMPL* p_vsc_cmpl_params) {
-  inc_func_call_count(__func__);
-}
 void btif_adapter_properties_evt(bt_status_t status, uint32_t num_props,
                                  bt_property_t* p_props) {
   inc_func_call_count(__func__);

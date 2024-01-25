@@ -250,11 +250,11 @@ void BTA_dm_on_hw_on() {
   btif_dm_get_ble_local_keys(&key_mask, &er, &id_key);
 
   if (key_mask & BTA_BLE_LOCAL_KEY_TYPE_ER) {
-    get_btm_client_interface().ble.BTM_BleLoadLocalKeys(
+    get_btm_client_interface().security.BTM_BleLoadLocalKeys(
         BTA_BLE_LOCAL_KEY_TYPE_ER, (tBTM_BLE_LOCAL_KEYS*)&er);
   }
   if (key_mask & BTA_BLE_LOCAL_KEY_TYPE_ID) {
-    get_btm_client_interface().ble.BTM_BleLoadLocalKeys(
+    get_btm_client_interface().security.BTM_BleLoadLocalKeys(
         BTA_BLE_LOCAL_KEY_TYPE_ID, (tBTM_BLE_LOCAL_KEYS*)&id_key);
   }
 

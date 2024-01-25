@@ -15,38 +15,62 @@
  *
  */
 
+#define LOG_TAG "sec_interf"
+
+#include "os/log.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/btm/btm_sec_cb.h"
 #include "stack/include/btm_ble_sec_api.h"
 #include "stack/include/btm_sec_api.h"
 #include "stack/include/security_client_callbacks.h"
+#include "types/bt_transport.h"
+
+static void BTM_SecConfirmReqReply(tBTM_STATUS res, tBT_TRANSPORT transport,
+                                   const RawAddress bd_addr) {
+  if (transport == BT_TRANSPORT_BR_EDR) {
+    BTM_ConfirmReqReply(res, bd_addr);
+  } else if (transport == BT_TRANSPORT_LE) {
+    BTM_BleConfirmReply(bd_addr, res);
+  } else {
+    LOG_ERROR("Unexpected transport:%d", transport);
+  }
+}
 
 static SecurityClientInterface security = {
     .BTM_Sec_Init = BTM_Sec_Init,
     .BTM_Sec_Free = BTM_Sec_Free,
-    .BTM_SecAddDevice = BTM_SecAddDevice,
-    .BTM_SecAddRmtNameNotifyCallback = BTM_SecAddRmtNameNotifyCallback,
-    .BTM_SecDeleteDevice = BTM_SecDeleteDevice,
     .BTM_SecRegister = BTM_SecRegister,
-    .BTM_SecReadDevName = BTM_SecReadDevName,
-    .BTM_SecBond = BTM_SecBond,
-    .BTM_SecBondCancel = BTM_SecBondCancel,
-    .BTM_SecAddBleKey = BTM_SecAddBleKey,
+
+    .BTM_BleLoadLocalKeys = BTM_BleLoadLocalKeys,
+
+    .BTM_SecAddDevice = BTM_SecAddDevice,
     .BTM_SecAddBleDevice = BTM_SecAddBleDevice,
+    .BTM_SecDeleteDevice = BTM_SecDeleteDevice,
+    .BTM_SecAddBleKey = BTM_SecAddBleKey,
     .BTM_SecClearSecurityFlags = BTM_SecClearSecurityFlags,
-    .BTM_SecClrService = BTM_SecClrService,
-    .BTM_SecClrServiceByPsm = BTM_SecClrServiceByPsm,
-    .BTM_RemoteOobDataReply = BTM_RemoteOobDataReply,
-    .BTM_PINCodeReply = BTM_PINCodeReply,
-    .BTM_ConfirmReqReply = BTM_ConfirmReqReply,
-    .BTM_SecDeleteRmtNameNotifyCallback = BTM_SecDeleteRmtNameNotifyCallback,
     .BTM_SetEncryption = BTM_SetEncryption,
     .BTM_IsEncrypted = BTM_IsEncrypted,
     .BTM_SecIsSecurityPending = BTM_SecIsSecurityPending,
     .BTM_IsLinkKeyKnown = BTM_IsLinkKeyKnown,
+
+    .BTM_SetSecurityLevel = BTM_SetSecurityLevel,
+    .BTM_SecClrService = BTM_SecClrService,
+    .BTM_SecClrServiceByPsm = BTM_SecClrServiceByPsm,
+
+    .BTM_SecBond = BTM_SecBond,
+    .BTM_SecBondCancel = BTM_SecBondCancel,
+    .BTM_RemoteOobDataReply = BTM_RemoteOobDataReply,
+    .BTM_PINCodeReply = BTM_PINCodeReply,
+    .BTM_SecConfirmReqReply = BTM_SecConfirmReqReply,
     .BTM_BleSirkConfirmDeviceReply = BTM_BleSirkConfirmDeviceReply,
+    .BTM_BlePasskeyReply = BTM_BlePasskeyReply,
+
     .BTM_GetSecurityMode = BTM_GetSecurityMode,
+
+    .BTM_SecReadDevName = BTM_SecReadDevName,
+    .BTM_SecAddRmtNameNotifyCallback = BTM_SecAddRmtNameNotifyCallback,
+    .BTM_SecDeleteRmtNameNotifyCallback = BTM_SecDeleteRmtNameNotifyCallback,
 };
 
 const SecurityClientInterface& get_security_client_interface() {

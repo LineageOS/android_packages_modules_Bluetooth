@@ -134,7 +134,7 @@ void read_phy_cb(
   uint8_t status, tx_phy, rx_phy;
   uint16_t handle;
 
-  LOG_ASSERT(len == 5) << "Received bad response length: " << len;
+  ASSERT_LOG(len == 5, "Received bad response length:%d", len);
   uint8_t* pp = data;
   STREAM_TO_UINT8(status, pp);
   STREAM_TO_UINT16(handle, pp);
@@ -161,10 +161,8 @@ void read_phy_cb(
 void BTM_BleReadPhy(
     const RawAddress& bd_addr,
     base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb) {
-  LOG_VERBOSE("%s", __func__);
-
   if (!BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
-    LOG_ERROR("%s: Wrong mode: no LE link exist or LE not supported", __func__);
+    LOG_ERROR("Wrong mode: no LE link exist or LE not supported");
     cb.Run(0, 0, HCI_ERR_NO_CONNECTION);
     return;
   }
@@ -172,8 +170,7 @@ void BTM_BleReadPhy(
   // checking if local controller supports it!
   if (!controller_get_interface()->SupportsBle2mPhy() &&
       !controller_get_interface()->SupportsBleCodedPhy()) {
-    LOG_ERROR("%s failed, request not supported in local controller!",
-              __func__);
+    LOG_ERROR("request not supported in local controller!");
     cb.Run(0, 0, GATT_REQ_NOT_SUPPORTED);
     return;
   }
@@ -186,7 +183,6 @@ void BTM_BleReadPhy(
   UINT16_TO_STREAM(pp, handle);
   btu_hcif_send_cmd_with_cb(FROM_HERE, HCI_BLE_READ_PHY, data, len,
                             base::Bind(&read_phy_cb, std::move(cb)));
-  return;
 }
 
 void doNothing(uint8_t* data, uint16_t len) {}

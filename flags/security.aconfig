@@ -27,3 +27,10 @@ flag {
     description: "Fix oob bypassing bug in SMP"
     bug: "321271585"
 }
+
+flag {
+    name: "fix_le_pairing_passkey_entry_bypass"
+    namespace: "bluetooth"
+    description: "Fix the passkey entry bypassing bug in SMP"
+    bug: "321300737"
+}

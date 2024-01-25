@@ -33,7 +33,7 @@ import java.util.UUID;
  *
  * @hide
  */
-/* package */class ScanFilterQueue {
+public class ScanFilterQueue {
     public static final int TYPE_DEVICE_ADDRESS = 0;
     public static final int TYPE_SERVICE_DATA_CHANGED = 1;
     public static final int TYPE_SERVICE_UUID = 2;
@@ -195,7 +195,7 @@ import java.util.UUID;
     /**
      * Compute feature selection based on the filters presented.
      */
-    int getFeatureSelection() {
+    public int getFeatureSelection() {
         int selc = 0;
         for (Entry entry : mEntries) {
             selc |= (1 << entry.type);
@@ -203,14 +203,14 @@ import java.util.UUID;
         return selc;
     }
 
-    ScanFilterQueue.Entry[] toArray() {
+    public ScanFilterQueue.Entry[] toArray() {
         return mEntries.toArray(new ScanFilterQueue.Entry[mEntries.size()]);
     }
 
     /**
      * Add ScanFilter to scan filter queue.
      */
-    void addScanFilter(ScanFilter filter) {
+    public void addScanFilter(ScanFilter filter) {
         if (filter == null) {
             return;
         }

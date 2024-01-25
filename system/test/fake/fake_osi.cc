@@ -26,7 +26,7 @@ struct alarm_t {
   alarm_callback_t cb;
   void* data;
 
-  alarm_t(const char* name) {
+  alarm_t(const char* /* name */) {
     cb = nullptr;
     data = nullptr;
   };
@@ -92,7 +92,7 @@ FakeOsi::FakeOsi() {
   };
 
   test::mock::osi_alarm::alarm_set_on_mloop.body =
-      [](alarm_t* alarm, uint64_t interval_ms, alarm_callback_t cb,
+      [](alarm_t* alarm, uint64_t /* interval_ms */, alarm_callback_t cb,
          void* data) {
         alarm->cb = cb;
         alarm->data = data;
@@ -333,34 +333,34 @@ FakeOsi::FakeOsi() {
       [](fixed_queue_t* q) { return q ? q->list_ : nullptr; };
 
   test::mock::osi_fixed_queue::fixed_queue_try_remove_from_queue.body =
-      [](fixed_queue_t* q, void* data) {
+      [](fixed_queue_t* /* q */, void* /* data */) {
         // not implemented
         abort();
         return nullptr;
       };
 
   test::mock::osi_fixed_queue::fixed_queue_get_enqueue_fd.body =
-      [](const fixed_queue_t* q) {
+      [](const fixed_queue_t* /* q */) {
         // not implemented
         abort();
         return 0;
       };
 
   test::mock::osi_fixed_queue::fixed_queue_get_dequeue_fd.body =
-      [](const fixed_queue_t* q) {
+      [](const fixed_queue_t* /* q */) {
         // not implemented
         abort();
         return 0;
       };
 
   test::mock::osi_fixed_queue::fixed_queue_register_dequeue.body =
-      [](fixed_queue_t* q, reactor_t* reactor, fixed_queue_cb ready_cb,
-         void* context) {
+      [](fixed_queue_t* /* q */, reactor_t* /* reactor */,
+         fixed_queue_cb /* ready_cb */, void* /* context */) {
         // not implemented
         abort();
       };
   test::mock::osi_fixed_queue::fixed_queue_unregister_dequeue.body =
-      [](fixed_queue_t* q) {
+      [](fixed_queue_t* /* q */) {
         // not implemented
         abort();
       };
