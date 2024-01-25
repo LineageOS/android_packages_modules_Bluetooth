@@ -1678,6 +1678,28 @@ static bool btif_should_ignore_uuid(const Uuid& uuid) {
   return uuid.IsEmpty() || uuid.IsBase();
 }
 
+static bool btif_is_gatt_service_discovery_post_pairing(const RawAddress bd_addr) {
+  if (!IS_FLAG_ENABLED(reset_pairing_only_for_related_service_discovery)) {
+    if (bd_addr == pairing_cb.bd_addr || bd_addr == pairing_cb.static_bdaddr) {
+      if (pairing_cb.gatt_over_le !=
+          btif_dm_pairing_cb_t::ServiceDiscoveryState::SCHEDULED) {
+        LOG_ERROR("gatt_over_le should be SCHEDULED, did someone clear the "
+                  "control block for %s ?",
+                  ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+      }
+
+      return true;
+    }
+
+    return false;
+  }
+
+ return ((bd_addr == pairing_cb.bd_addr ||
+          bd_addr == pairing_cb.static_bdaddr) &&
+         (pairing_cb.gatt_over_le ==
+          btif_dm_pairing_cb_t::ServiceDiscoveryState::SCHEDULED));
+}
+
 /*******************************************************************************
  *
  * Function         btif_dm_search_services_evt
@@ -1874,15 +1896,7 @@ static void btif_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
                  ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
         BTM_LogHistory(kBtmLogTag, bd_addr,
                        "Discovered GATT services using LE transport");
-        if ((bd_addr == pairing_cb.bd_addr ||
-             bd_addr == pairing_cb.static_bdaddr)) {
-          if (pairing_cb.gatt_over_le !=
-              btif_dm_pairing_cb_t::ServiceDiscoveryState::SCHEDULED) {
-            LOG_ERROR(
-                "gatt_over_le should be SCHEDULED, did someone clear the "
-                "control block for %s ?",
-                ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
-          }
+        if (btif_is_gatt_service_discovery_post_pairing(bd_addr)) {
           pairing_cb.gatt_over_le =
               btif_dm_pairing_cb_t::ServiceDiscoveryState::FINISHED;
 
