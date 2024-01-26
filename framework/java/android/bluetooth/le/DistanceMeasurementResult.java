@@ -380,6 +380,10 @@ public final class DistanceMeasurementResult implements Parcelable {
                             .setErrorAzimuthAngle(in.readDouble())
                             .setAltitudeAngle(in.readDouble())
                             .setErrorAltitudeAngle(in.readDouble())
+                            .setDelaySpreadMeters(in.readDouble())
+                            .setConfidenceLevel(in.readDouble())
+                            .setDetectedAttackLevel(in.readInt())
+                            .setVelocityMetersPerSecond(in.readDouble())
                             .build();
                 }
 
