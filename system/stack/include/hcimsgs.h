@@ -43,8 +43,6 @@ enum hci_data_direction_t {
 namespace bluetooth::legacy::hci {
 class Interface {
  public:
-  virtual void StartInquiry(const LAP inq_lap, uint8_t duration,
-                            uint8_t response_cnt) const = 0;
   virtual void InquiryCancel() const = 0;
   virtual void Disconnect(uint16_t handle, uint8_t reason) const = 0;
   virtual void ChangeConnectionPacketType(uint16_t handle,
