@@ -102,6 +102,20 @@ void Stack::StartEverything() {
   bluetooth::shim::init_distance_measurement_manager();
 }
 
+void Stack::StartModuleStack(const ModuleList* modules,
+                             const os::Thread* thread) {
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  ASSERT_LOG(!is_running_, "%s Gd stack already running", __func__);
+  stack_thread_ = const_cast<os::Thread*>(thread);
+  LOG_INFO("Starting Gd stack");
+
+  stack_manager_.StartUp(const_cast<ModuleList*>(modules), stack_thread_);
+  stack_handler_ = new os::Handler(stack_thread_);
+
+  Start(const_cast<ModuleList*>(modules));
+  is_running_ = true;
+}
+
 void Stack::Start(ModuleList* modules) {
   ASSERT_LOG(!is_running_, "%s Gd stack already running", __func__);
   LOG_INFO("%s Starting Gd stack", __func__);

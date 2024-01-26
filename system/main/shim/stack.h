@@ -60,6 +60,9 @@ class Stack {
 
   void LockForDumpsys(std::function<void()> dumpsys_callback);
 
+  // Start the list of modules with the given stack manager thread
+  void StartModuleStack(const ModuleList* modules, const os::Thread* thread);
+
  private:
   mutable std::recursive_mutex mutex_;
   StackManager stack_manager_;

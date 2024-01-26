@@ -59,6 +59,11 @@ public:
    list_.push_back(&T::Factory);
  }
 
+ // Return the number of modules in this list
+ size_t NumModules() const {
+   return list_.size();
+ }
+
  private:
   std::vector<const ModuleFactory*> list_;
 };
