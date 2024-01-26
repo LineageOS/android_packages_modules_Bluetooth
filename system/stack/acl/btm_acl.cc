@@ -529,7 +529,6 @@ void btm_acl_device_down(void) {
 }
 
 void btm_acl_update_inquiry_status(uint8_t status) {
-  btm_cb.is_inquiry = status == BTM_INQUIRY_STARTED;
   BTIF_dm_report_inquiry_status_change(status);
 }
 
