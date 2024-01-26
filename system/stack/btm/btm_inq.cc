@@ -650,6 +650,11 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
         get_main_thread()->Bind([](bluetooth::hci::EventView event) {
           on_incoming_hci_event(event);
         }));
+    bluetooth::shim::GetHciLayer()->RegisterEventHandler(
+        bluetooth::hci::EventCode::INQUIRY_RESULT_WITH_RSSI,
+        get_main_thread()->Bind([](bluetooth::hci::EventView event) {
+          on_incoming_hci_event(event);
+        }));
 
     btm_cb.btm_inq_vars.registered_for_hci_events = true;
   }
@@ -1405,9 +1410,7 @@ static void btm_process_inq_results_standard(bluetooth::hci::EventView event) {
  * Returns          void
  *
  ******************************************************************************/
-static void btm_process_inq_results_rssi(const uint8_t* p,
-                                         uint8_t hci_evt_len) {
-  uint8_t num_resp, xx;
+static void btm_process_inq_results_rssi(bluetooth::hci::EventView event) {
   RawAddress bda;
   tINQ_DB_ENT* p_i;
   tBTM_INQ_RESULTS* p_cur = NULL;
@@ -1432,27 +1435,26 @@ static void btm_process_inq_results_rssi(const uint8_t* p,
     return;
   }
 
-  STREAM_TO_UINT8(num_resp, p);
+  auto rssi_view = bluetooth::hci::InquiryResultWithRssiView::Create(event);
+  ASSERT(rssi_view.IsValid());
+  auto responses = rssi_view.GetResponses();
 
-  {
-    constexpr uint16_t inquiry_result_size = 14;
-    if (hci_evt_len < num_resp * inquiry_result_size) {
-      log::error("can't fit {} results in {} bytes", num_resp, hci_evt_len);
-      return;
-    }
-  }
-
-  btm_cb.neighbor.classic_inquiry.results += num_resp;
-  for (xx = 0; xx < num_resp; xx++) {
+  btm_cb.neighbor.classic_inquiry.results += responses.size();
+  for (const auto& response : responses) {
     update = false;
     /* Extract inquiry results */
-    STREAM_TO_BDADDR(bda, p);
-    STREAM_TO_UINT8(page_scan_rep_mode, p);
-    STREAM_TO_UINT8(page_scan_per_mode, p);
+    bda = bluetooth::ToRawAddress(response.address_);
+    page_scan_rep_mode =
+        static_cast<uint8_t>(response.page_scan_repetition_mode_);
+    page_scan_per_mode = 0;  // reserved
+    page_scan_mode = 0;      // reserved
 
-    STREAM_TO_DEVCLASS(dc, p);
-    STREAM_TO_UINT16(clock_offset, p);
-    STREAM_TO_UINT8(rssi, p);
+    dc[0] = response.class_of_device_.cod[2];
+    dc[1] = response.class_of_device_.cod[1];
+    dc[2] = response.class_of_device_.cod[0];
+
+    clock_offset = response.clock_offset_;
+    rssi = response.rssi_;
 
     p_i = btm_inq_db_find(bda);
 
@@ -1732,7 +1734,7 @@ void btm_process_inq_results(const uint8_t* p, uint8_t hci_evt_len,
       LOG_ALWAYS_FATAL("Please use PDL for STANDARD results");
       break;
     case BTM_INQ_RESULT_WITH_RSSI:
-      btm_process_inq_results_rssi(p, hci_evt_len);
+      LOG_ALWAYS_FATAL("Please use PDL for RSSI results");
       break;
     case BTM_INQ_RESULT_EXTENDED:
       btm_process_inq_results_extended(p, hci_evt_len);
@@ -2490,6 +2492,9 @@ static void on_incoming_hci_event(bluetooth::hci::EventView event) {
       break;
     case bluetooth::hci::EventCode::INQUIRY_RESULT:
       btm_process_inq_results_standard(event);
+      break;
+    case bluetooth::hci::EventCode::INQUIRY_RESULT_WITH_RSSI:
+      btm_process_inq_results_rssi(event);
       break;
     default:
       log::warn("Dropping unhandled event: {}",
