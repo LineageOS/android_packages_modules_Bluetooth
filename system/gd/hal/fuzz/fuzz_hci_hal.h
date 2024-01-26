@@ -54,8 +54,9 @@ class FuzzHciHal : public HciHal {
   void injectIsoData(std::vector<uint8_t> data);
 
   HciHalCallbacks* callbacks_;
-  hci::OpCode waiting_opcode_;
-  bool waiting_for_status_;
+  hci::OpCode waiting_opcode_{};
+  bool waiting_for_complete_{};
+  bool waiting_for_status_{};
 };
 
 }  // namespace fuzz
