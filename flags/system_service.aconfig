@@ -8,6 +8,13 @@ flag {
 }
 
 flag {
+    name: "system_server_messenger"
+    namespace: "bluetooth"
+    description: "Replace binder call to the system server with a Messenger to enforce thread safety"
+    bug: "321804999"
+}
+
+flag {
     name: "use_new_airplane_mode"
     namespace: "bluetooth"
     description: "Use the new implemention of airplane mode"
