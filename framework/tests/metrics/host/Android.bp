@@ -20,6 +20,10 @@ java_test_host {
         ":BluetoothMetricsTestApp",
     ],
 
+    data_native_bins: [
+        "bumble_pandora_server",
+    ],
+
     required: ["bumble_pandora_server"],
 
     test_suites: [
