@@ -42,6 +42,7 @@ import android.content.ContextWrapper;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.platform.test.annotations.RequiresFlagsDisabled;
 
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.espresso.intent.Intents;
@@ -50,10 +51,12 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.flags.Flags;
 
 import com.google.common.base.Objects;
 
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -119,7 +122,10 @@ public class BluetoothOppReceiverTest {
     }
 
     @Test
+    @RequiresFlagsDisabled(Flags.FLAG_OPP_START_ACTIVITY_DIRECTLY_FROM_NOTIFICATION)
     public void onReceive_withActionIncomingFileConfirm_startsIncomingFileConfirmActivity() {
+        Assume.assumeFalse(Flags.oppStartActivityDirectlyFromNotification());
+
         Intent intent = new Intent();
         intent.setAction(Constants.ACTION_INCOMING_FILE_CONFIRM);
         intent.setData(Uri.parse("content:///not/important"));
@@ -152,7 +158,10 @@ public class BluetoothOppReceiverTest {
     }
 
     @Test
+    @RequiresFlagsDisabled(Flags.FLAG_OPP_START_ACTIVITY_DIRECTLY_FROM_NOTIFICATION)
     public void onReceive_withActionOutboundTransfer_startsTransferHistoryActivity() {
+        Assume.assumeFalse(Flags.oppStartActivityDirectlyFromNotification());
+
         Intent intent = new Intent();
         intent.setAction(Constants.ACTION_OPEN_OUTBOUND_TRANSFER);
         intent.setData(Uri.parse("content:///not/important"));
@@ -165,7 +174,10 @@ public class BluetoothOppReceiverTest {
     }
 
     @Test
+    @RequiresFlagsDisabled(Flags.FLAG_OPP_START_ACTIVITY_DIRECTLY_FROM_NOTIFICATION)
     public void onReceive_withActionInboundTransfer_startsTransferHistoryActivity() {
+        Assume.assumeFalse(Flags.oppStartActivityDirectlyFromNotification());
+
         Intent intent = new Intent();
         intent.setAction(Constants.ACTION_OPEN_INBOUND_TRANSFER);
         intent.setData(Uri.parse("content:///not/important"));
