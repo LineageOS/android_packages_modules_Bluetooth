@@ -40,8 +40,10 @@
 #include "btif/include/btif_config.h"
 #include "common/time_util.h"
 #include "device/include/controller.h"
+#include "hci/hci_layer.h"
 #include "include/check.h"
 #include "internal_include/bt_target.h"
+#include "main/shim/entry.h"
 #include "main/shim/shim.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
@@ -60,6 +62,7 @@
 #include "stack/include/btm_log_history.h"
 #include "stack/include/hcimsgs.h"
 #include "stack/include/inq_hci_link_interface.h"
+#include "stack/include/main_thread.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
@@ -673,10 +676,11 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
     }
   }
 
-  BTIF_dm_report_inquiry_status_change(BTM_INQUIRY_STARTED);
-
   if (btm_cb.btm_inq_vars.inq_active & BTM_SSP_INQUIRY_ACTIVE) {
     LOG_INFO("Not starting inquiry as SSP is in progress");
+    // Report the status here because inq_complete will cancel it below
+    BTIF_dm_report_inquiry_status_change(BTM_INQUIRY_STARTED);
+
     btm_process_inq_complete(HCI_ERR_MAX_NUM_OF_CONNECTIONS,
                              BTM_GENERAL_INQUIRY);
     return BTM_CMD_STARTED;
@@ -686,8 +690,24 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
 
   btm_init_inq_result_flt();
 
-  bluetooth::legacy::hci::GetInterface().StartInquiry(
-      general_inq_lap, btm_cb.btm_inq_vars.inqparms.duration, 0);
+  bluetooth::hci::Lap lap;
+  lap.lap_ = general_inq_lap[2];
+
+  // TODO: Register for the inquiry interface and use that
+  bluetooth::shim::GetHciLayer()->EnqueueCommand(
+      bluetooth::hci::InquiryBuilder::Create(
+          lap, btm_cb.btm_inq_vars.inqparms.duration, 0),
+      get_main_thread()->BindOnce(
+          [](bluetooth::hci::CommandStatusView status_view) {
+            ASSERT(status_view.IsValid());
+            auto status = status_view.GetStatus();
+            if (status == bluetooth::hci::ErrorCode::SUCCESS) {
+              BTIF_dm_report_inquiry_status_change(BTM_INQUIRY_STARTED);
+            } else {
+              LOG_INFO("Inquiry failed to start status: %s",
+                       bluetooth::hci::ErrorCodeText(status).c_str());
+            }
+          }));
 
   // If we are only doing classic discovery, we should also set a timeout for
   // the inquiry if a duration is set.
