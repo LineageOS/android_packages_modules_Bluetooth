@@ -252,6 +252,7 @@ void SendRemoteNameRequest(const RawAddress& raw_address) {
   btsnd_hcic_rmt_name_req(raw_address, HCI_PAGE_SCAN_REP_MODE_R1,
                           HCI_MANDATARY_PAGE_SCAN_MODE, 0);
 }
+static void btm_process_cancel_complete(tHCI_STATUS status, uint8_t mode);
 /*******************************************************************************
  *
  * Function         BTM_SetDiscoverability
@@ -1608,7 +1609,7 @@ void btm_process_inq_complete(tHCI_STATUS status, uint8_t mode) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_process_cancel_complete(tHCI_STATUS status, uint8_t mode) {
+static void btm_process_cancel_complete(tHCI_STATUS status, uint8_t mode) {
   BTIF_dm_report_inquiry_status_change(
       tBTM_INQUIRY_STATE::BTM_INQUIRY_CANCELLED);
   btm_process_inq_complete(status, mode);
