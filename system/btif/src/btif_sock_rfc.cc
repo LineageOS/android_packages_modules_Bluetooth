@@ -171,7 +171,10 @@ static rfc_slot_t* find_rfc_slot_by_pending_sdp(void) {
 
 static bool is_requesting_sdp(void) {
   for (size_t i = 0; i < ARRAY_SIZE(rfc_slots); ++i)
-    if (rfc_slots[i].id && rfc_slots[i].f.doing_sdp_request) return true;
+    if (rfc_slots[i].id && rfc_slots[i].f.doing_sdp_request) {
+      LOG_INFO("slot id %u is doing sdp request", rfc_slots[i].id);
+      return true;
+    }
   return false;
 }
 
