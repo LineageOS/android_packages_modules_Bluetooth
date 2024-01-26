@@ -42,6 +42,7 @@
 #include "common/time_util.h"
 #include "device/include/controller.h"
 #include "hci/controller_interface.h"
+#include "hci/event_checkers.h"
 #include "hci/hci_layer.h"
 #include "include/check.h"
 #include "internal_include/bt_target.h"
@@ -554,7 +555,14 @@ void BTM_CancelInquiry(void) {
     btm_cb.btm_inq_vars.p_inq_cmpl_cb = NULL; /* Do not notify caller anymore */
 
     if ((btm_cb.btm_inq_vars.inqparms.mode & BTM_BR_INQUIRY_MASK) != 0) {
-      bluetooth::legacy::hci::GetInterface().InquiryCancel();
+      bluetooth::shim::GetHciLayer()->EnqueueCommand(
+          bluetooth::hci::InquiryCancelBuilder::Create(),
+          get_main_thread()->BindOnce(
+              [](bluetooth::hci::CommandCompleteView complete_view) {
+                bluetooth::hci::check_complete<
+                    bluetooth::hci::InquiryCancelCompleteView>(complete_view);
+                btm_process_cancel_complete(HCI_SUCCESS, BTM_BR_INQUIRY_MASK);
+              }));
     }
 
     if (!bluetooth::shim::is_classic_discovery_only_enabled()) {
@@ -1040,7 +1048,14 @@ void btm_inq_stop_on_ssp(void) {
       if (btm_cb.btm_inq_vars.inq_active & normal_active) {
         /* can not call BTM_CancelInquiry() here. We need to report inquiry
          * complete evt */
-        bluetooth::legacy::hci::GetInterface().InquiryCancel();
+        bluetooth::shim::GetHciLayer()->EnqueueCommand(
+            bluetooth::hci::InquiryCancelBuilder::Create(),
+            get_main_thread()->BindOnce(
+                [](bluetooth::hci::CommandCompleteView complete_view) {
+                  bluetooth::hci::check_complete<
+                      bluetooth::hci::InquiryCancelCompleteView>(complete_view);
+                  btm_process_cancel_complete(HCI_SUCCESS, BTM_BR_INQUIRY_MASK);
+                }));
       }
     }
     /* do not allow inquiry to start */
