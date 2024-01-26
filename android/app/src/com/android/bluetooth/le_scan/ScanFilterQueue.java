@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.gatt;
+package com.android.bluetooth.le_scan;
 
 import android.bluetooth.BluetoothAssignedNumbers.OrganizationId;
 import android.bluetooth.BluetoothUuid;
@@ -33,7 +33,7 @@ import java.util.UUID;
  *
  * @hide
  */
-public class ScanFilterQueue {
+/* package */ class ScanFilterQueue {
     public static final int TYPE_DEVICE_ADDRESS = 0;
     public static final int TYPE_SERVICE_DATA_CHANGED = 1;
     public static final int TYPE_SERVICE_UUID = 2;
@@ -54,7 +54,7 @@ public class ScanFilterQueue {
     public static final int TYPE_INVALID = 0x00;
     public static final int TYPE_WIFI_NAN_HASH = 0x01; // WIFI NAN HASH type
 
-    public static class Entry {
+    static class Entry {
         public byte type;
         public String address;
         public byte addr_type;
@@ -195,7 +195,7 @@ public class ScanFilterQueue {
     /**
      * Compute feature selection based on the filters presented.
      */
-    public int getFeatureSelection() {
+    int getFeatureSelection() {
         int selc = 0;
         for (Entry entry : mEntries) {
             selc |= (1 << entry.type);
@@ -203,14 +203,14 @@ public class ScanFilterQueue {
         return selc;
     }
 
-    public ScanFilterQueue.Entry[] toArray() {
+    ScanFilterQueue.Entry[] toArray() {
         return mEntries.toArray(new ScanFilterQueue.Entry[mEntries.size()]);
     }
 
     /**
      * Add ScanFilter to scan filter queue.
      */
-    public void addScanFilter(ScanFilter filter) {
+    void addScanFilter(ScanFilter filter) {
         if (filter == null) {
             return;
         }

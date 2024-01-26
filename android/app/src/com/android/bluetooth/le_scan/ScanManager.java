@@ -52,7 +52,6 @@ import com.android.bluetooth.gatt.GattObjectsFactory;
 import com.android.bluetooth.gatt.GattService;
 import com.android.bluetooth.gatt.GattServiceConfig;
 import com.android.bluetooth.gatt.ScanClient;
-import com.android.bluetooth.gatt.ScanFilterQueue;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
