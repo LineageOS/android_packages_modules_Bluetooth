@@ -2149,7 +2149,7 @@ static void btif_dm_update_allowlisted_media_players() {
   list_free(wl_players);
 }
 
-void BTIF_dm_report_inquiry_status_change(tBTM_STATUS status) {
+void BTIF_dm_report_inquiry_status_change(tBTM_INQUIRY_STATE status) {
   if (status == BTM_INQUIRY_STARTED) {
     GetInterfaceToProfiles()->events->invoke_discovery_state_changed_cb(
         BT_DISCOVERY_STARTED);
