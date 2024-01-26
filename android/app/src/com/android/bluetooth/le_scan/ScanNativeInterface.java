@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.gatt;
+package com.android.bluetooth.le_scan;
+
+import com.android.bluetooth.gatt.FilterParams;
+import com.android.bluetooth.gatt.ScanFilterQueue;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -176,16 +179,16 @@ public class ScanNativeInterface {
         gattClientReadScanReportsNative(clientIf, scanType);
     }
 
-    public void callbackDone() {
+    void callbackDone() {
         mLatch.countDown();
     }
 
-    public void resetCountDownLatch() {
+    void resetCountDownLatch() {
         mLatch = new CountDownLatch(1);
     }
 
     // Returns true if mLatch reaches 0, false if timeout or interrupted.
-    public boolean waitForCallback(int timeoutMs) {
+    boolean waitForCallback(int timeoutMs) {
         try {
             return mLatch.await(timeoutMs, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
