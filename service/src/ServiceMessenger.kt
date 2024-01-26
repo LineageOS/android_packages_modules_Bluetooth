@@ -15,6 +15,7 @@
  */
 package com.android.server.bluetooth
 
+import android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_APPLICATION_REQUEST
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -27,6 +28,7 @@ private const val TAG = "Messenger"
 
 internal class ServiceMessenger(
     looper: Looper,
+    private val checker: PermissionChecker,
     private val managerService: BluetoothManagerService,
 ) : Handler(looper) {
     val messenger = Messenger(this)
@@ -57,6 +59,32 @@ internal class ServiceMessenger(
             is SystemServiceMessage.UnregisterAdapter -> {
                 managerService.unregisterAdapter(obj.binder)
                 SystemServiceMessage.UnregisterAdapter.Reply()
+            }
+            is SystemServiceMessage.Enable -> {
+                val source = obj.attributionSource
+                val isQuiet = obj.isQuiet
+                val bleToken = obj.bleToken
+
+                val foregroundRequired = isQuiet == false || bleToken == null
+                SystemServiceMessage.Enable.Reply().apply {
+                    value =
+                        try {
+                            checker.enableAllowed(sendingUid, source, foregroundRequired)
+                            if (bleToken != null) {
+                                managerService.enableBle(source.getPackageName(), bleToken)
+                            } else if (isQuiet) {
+                                managerService.enableNoAutoConnect(source.getPackageName())
+                            } else {
+                                managerService.enable(
+                                    ENABLE_DISABLE_REASON_APPLICATION_REQUEST,
+                                    source.getPackageName(),
+                                )
+                            }
+                        } catch (e: PermissionChecker.BluetoothPermissionException) {
+                            Log.e(TAG, "${obj}: FAILED", e)
+                            false
+                        }
+                }
             }
             else -> throw IllegalArgumentException("Invalid command: [${obj}] from ${sendingUid}")
         }

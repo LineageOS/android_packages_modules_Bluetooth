@@ -60,6 +60,10 @@ class SystemServiceMessenger {
         return send(data, SystemServiceMessage.UnregisterAdapter.Reply.class);
     }
 
+    SystemServiceMessage.Enable.Reply send(SystemServiceMessage.Enable data) {
+        return send(data, SystemServiceMessage.Enable.Reply.class);
+    }
+
     private <T extends Parcelable, U> U send(T data, Class<U> replyClass) {
         CompletableFuture<U> future = new CompletableFuture();
 

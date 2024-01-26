@@ -51,6 +51,7 @@ java_library {
         "src/BluetoothRestriction.kt",
         "src/BluetoothService.kt",
         "src/Log.kt",
+        "src/PermissionChecker.kt",
         "src/RadioModeListener.kt",
         "src/RolePermissionListener.kt",
         "src/ServiceMessenger.kt",

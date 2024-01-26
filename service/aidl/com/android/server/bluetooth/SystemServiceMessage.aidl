@@ -16,6 +16,7 @@
 package com.android.server.bluetooth;
 
 import android.bluetooth.IBluetoothManagerCallback;
+import android.content.AttributionSource;
 
 /** {@hide} */
 interface SystemServiceMessage {
@@ -29,5 +30,14 @@ interface SystemServiceMessage {
     parcelable UnregisterAdapter {
         IBluetoothManagerCallback binder;
         parcelable Reply {}
+    }
+
+    parcelable Enable {
+        AttributionSource attributionSource;
+        @nullable IBinder bleToken;
+        boolean isQuiet;
+        parcelable Reply {
+            boolean value;
+        }
     }
 }

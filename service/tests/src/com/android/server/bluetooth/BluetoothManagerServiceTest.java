@@ -218,6 +218,7 @@ public class BluetoothManagerServiceTest {
         doReturn(mContext).when(mContext).createContextAsUser(any(), anyInt());
         doReturn(mTargetContext.getContentResolver()).when(mContext).getContentResolver();
         doReturn(mTargetContext.getPackageManager()).when(mContext).getPackageManager();
+        doReturn(mTargetContext.getAttributionSource()).when(mContext).getAttributionSource();
         doReturn(mRoleManager).when(mContext).getSystemService(RoleManager.class);
         doReturn(mUserManager).when(mContext).getSystemService(UserManager.class);
         doReturn(mAppOpsManager).when(mContext).getSystemService(AppOpsManager.class);
