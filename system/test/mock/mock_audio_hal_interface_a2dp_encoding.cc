@@ -197,10 +197,12 @@ bool bluetooth::audio::a2dp::provider::supports_codec(
       codec_index);
 }
 bool update_codec_offloading_capabilities(
-    const std::vector<btav_a2dp_codec_config_t>& framework_preference) {
+    const std::vector<btav_a2dp_codec_config_t>& framework_preference,
+    bool supports_a2dp_hw_offload_v2) {
   inc_func_call_count(__func__);
   return test::mock::audio_hal_interface_a2dp_encoding::
-      update_codec_offloading_capabilities(framework_preference);
+      update_codec_offloading_capabilities(framework_preference,
+                                           supports_a2dp_hw_offload_v2);
 }
 // Mocked functions complete
 // END mockcify generation

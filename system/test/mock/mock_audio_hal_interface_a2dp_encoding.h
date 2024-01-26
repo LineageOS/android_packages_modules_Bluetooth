@@ -311,14 +311,15 @@ extern struct supports_codec supports_codec;
 struct update_codec_offloading_capabilities {
   static bool return_value;
   std::function<bool(
-      const std::vector<btav_a2dp_codec_config_t>& framework_preference)>
+      const std::vector<btav_a2dp_codec_config_t>& framework_preference,
+      bool supports_a2dp_hw_offload_v2)>
       body{[](const std::vector<
-               btav_a2dp_codec_config_t>& /* framework_preference */) {
-        return return_value;
-      }};
+                  btav_a2dp_codec_config_t>& /* framework_preference */,
+              bool /*supports_a2dp_hw_offload_v2*/) { return return_value; }};
   bool operator()(
-      const std::vector<btav_a2dp_codec_config_t>& framework_preference) {
-    return body(framework_preference);
+      const std::vector<btav_a2dp_codec_config_t>& framework_preference,
+      bool supports_a2dp_hw_offload_v2) {
+    return body(framework_preference, supports_a2dp_hw_offload_v2);
   };
 };
 extern struct update_codec_offloading_capabilities
