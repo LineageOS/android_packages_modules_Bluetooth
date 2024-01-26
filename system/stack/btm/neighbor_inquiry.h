@@ -304,8 +304,5 @@ struct tBTM_INQUIRY_VAR_ST {
   }
 };
 
-#define BTM_INQ_RESULT_BR 0x01
-#define BTM_INQ_RESULT_BLE 0x02
-
 bool btm_inq_find_bdaddr(const RawAddress& p_bda);
 tINQ_DB_ENT* btm_inq_db_find(const RawAddress& p_bda);

@@ -1406,7 +1406,7 @@ void btm_process_inq_results(const uint8_t* p, uint8_t hci_evt_len,
         }
       }
 
-      p_cur->inq_result_type |= BTM_INQ_RESULT_BR;
+      p_cur->inq_result_type |= BT_DEVICE_TYPE_BREDR;
       if (p_i->inq_count != btm_cb.btm_inq_vars.inq_counter) {
         p_cur->device_type = BT_DEVICE_TYPE_BREDR;
         p_i->scan_rsp = false;
@@ -1632,7 +1632,8 @@ tBTM_STATUS btm_initiate_rem_name(const RawAddress& remote_bda, uint8_t origin,
 
       /* If the database entry exists for the device, use its clock offset */
       tINQ_DB_ENT* p_i = btm_inq_db_find(remote_bda);
-      if (p_i && (p_i->inq_info.results.inq_result_type & BTM_INQ_RESULT_BR)) {
+      if (p_i &&
+          (p_i->inq_info.results.inq_result_type & BT_DEVICE_TYPE_BREDR)) {
         tBTM_INQ_INFO* p_cur = &p_i->inq_info;
         uint16_t clock_offset = p_cur->results.clock_offset | BTM_CLOCK_OFFSET_VALID;
         int clock_offset_in_cfg = 0;
