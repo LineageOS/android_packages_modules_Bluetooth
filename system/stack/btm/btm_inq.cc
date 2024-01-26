@@ -36,6 +36,7 @@
 #include <mutex>
 
 #include "advertise_data_parser.h"
+#include "btif/include/btif_acl.h"
 #include "btif/include/btif_config.h"
 #include "common/time_util.h"
 #include "device/include/controller.h"
@@ -49,7 +50,6 @@
 #include "osi/include/stack_power_telemetry.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sec.h"
-#include "stack/include/acl_api.h"
 #include "stack/include/acl_api_types.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_lap.h"
@@ -673,7 +673,7 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
     }
   }
 
-  btm_acl_update_inquiry_status(BTM_INQUIRY_STARTED);
+  BTIF_dm_report_inquiry_status_change(BTM_INQUIRY_STARTED);
 
   if (btm_cb.btm_inq_vars.inq_active & BTM_SSP_INQUIRY_ACTIVE) {
     LOG_INFO("Not starting inquiry as SSP is in progress");
@@ -1475,7 +1475,7 @@ void btm_process_inq_complete(tHCI_STATUS status, uint8_t mode) {
   btm_cb.btm_inq_vars.inqparms.mode &= ~(mode);
   const auto inq_active = btm_cb.btm_inq_vars.inq_active;
 
-  btm_acl_update_inquiry_status(BTM_INQUIRY_COMPLETE);
+  BTIF_dm_report_inquiry_status_change(BTM_INQUIRY_COMPLETE);
 
   if (status != HCI_SUCCESS) {
     LOG_WARN("Received unexpected hci status:%s",
@@ -1569,7 +1569,7 @@ void btm_process_inq_complete(tHCI_STATUS status, uint8_t mode) {
  *
  ******************************************************************************/
 void btm_process_cancel_complete(tHCI_STATUS status, uint8_t mode) {
-  btm_acl_update_inquiry_status(BTM_INQUIRY_CANCELLED);
+  BTIF_dm_report_inquiry_status_change(BTM_INQUIRY_CANCELLED);
   btm_process_inq_complete(status, mode);
 }
 /*******************************************************************************
