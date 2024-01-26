@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.bluetooth.gatt;
+
+package com.android.bluetooth.le_scan;
 
 import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.le.ScanFilter;
@@ -27,6 +28,8 @@ import com.android.bluetooth.BluetoothMetricsProto;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.MetricsLogger;
+import com.android.bluetooth.gatt.ContextMap;
+import com.android.bluetooth.gatt.GattService;
 import com.android.bluetooth.util.WorkSourceUtil;
 import com.android.internal.annotations.GuardedBy;
 
@@ -52,11 +55,11 @@ public class AppScanStats {
 
     // Weight is the duty cycle of the scan mode
     static final int OPPORTUNISTIC_WEIGHT = 0;
-    public static final int SCREEN_OFF_LOW_POWER_WEIGHT = 5;
-    public static final int LOW_POWER_WEIGHT = 10;
-    public static final int AMBIENT_DISCOVERY_WEIGHT = 25;
-    public static final int BALANCED_WEIGHT = 25;
-    public static final int LOW_LATENCY_WEIGHT = 100;
+    static final int SCREEN_OFF_LOW_POWER_WEIGHT = 5;
+    static final int LOW_POWER_WEIGHT = 10;
+    static final int AMBIENT_DISCOVERY_WEIGHT = 25;
+    static final int BALANCED_WEIGHT = 25;
+    static final int LOW_LATENCY_WEIGHT = 100;
 
     static final int LARGE_SCAN_TIME_GAP_MS = 24000;
 
@@ -121,8 +124,8 @@ public class AppScanStats {
         }
     }
     public String appName;
-    public WorkSource mWorkSource; // Used for BatteryStatsManager
-    public final WorkSourceUtil mWorkSourceUtil; // Used for BluetoothStatsLog
+    private WorkSource mWorkSource; // Used for BatteryStatsManager
+    private final WorkSourceUtil mWorkSourceUtil; // Used for BluetoothStatsLog
     private int mScansStarted = 0;
     private int mScansStopped = 0;
     public boolean isRegistered = false;
@@ -142,9 +145,9 @@ public class AppScanStats {
     private int mAmbientDiscoveryScan = 0;
     private List<LastScan> mLastScans = new ArrayList<LastScan>();
     private HashMap<Integer, LastScan> mOngoingScans = new HashMap<Integer, LastScan>();
-    public long startTime = 0;
-    public long stopTime = 0;
-    public int results = 0;
+    private long startTime = 0;
+    private long stopTime = 0;
+    private int results = 0;
 
     public AppScanStats(String name, WorkSource source, ContextMap map, GattService service) {
         appName = name;
@@ -161,7 +164,7 @@ public class AppScanStats {
         mAdapterService = Objects.requireNonNull(AdapterService.getAdapterService());
     }
 
-    synchronized void addResult(int scannerId) {
+    public synchronized void addResult(int scannerId) {
         LastScan scan = getScanFromScannerId(scannerId);
         if (scan != null) {
             scan.results++;
@@ -186,7 +189,7 @@ public class AppScanStats {
         return mOngoingScans.get(scannerId);
     }
 
-    public synchronized boolean isScanTimeout(int scannerId) {
+    synchronized boolean isScanTimeout(int scannerId) {
         LastScan scan = getScanFromScannerId(scannerId);
         if (scan == null) {
             return false;
@@ -194,7 +197,7 @@ public class AppScanStats {
         return scan.isTimeout;
     }
 
-    public synchronized boolean isScanDowngraded(int scannerId) {
+    synchronized boolean isScanDowngraded(int scannerId) {
         LastScan scan = getScanFromScannerId(scannerId);
         if (scan == null) {
             return false;
@@ -202,7 +205,7 @@ public class AppScanStats {
         return scan.isDowngraded;
     }
 
-    public synchronized boolean isAutoBatchScan(int scannerId) {
+    synchronized boolean isAutoBatchScan(int scannerId) {
         LastScan scan = getScanFromScannerId(scannerId);
         if (scan == null) {
             return false;
@@ -277,7 +280,7 @@ public class AppScanStats {
         mOngoingScans.put(scannerId, scan);
     }
 
-    synchronized void recordScanStop(int scannerId) {
+    public synchronized void recordScanStop(int scannerId) {
         LastScan scan = getScanFromScannerId(scannerId);
         if (scan == null) {
             return;
@@ -374,30 +377,30 @@ public class AppScanStats {
         }
     }
 
-    public synchronized void recordScanTimeoutCountMetrics() {
+    synchronized void recordScanTimeoutCountMetrics() {
         MetricsLogger.getInstance()
                 .cacheCount(BluetoothProtoEnums.LE_SCAN_ABUSE_COUNT_SCAN_TIMEOUT, 1);
     }
 
-    public synchronized void recordHwFilterNotAvailableCountMetrics() {
+    synchronized void recordHwFilterNotAvailableCountMetrics() {
         MetricsLogger.getInstance()
                 .cacheCount(BluetoothProtoEnums.LE_SCAN_ABUSE_COUNT_HW_FILTER_NOT_AVAILABLE, 1);
     }
 
-    public synchronized void recordTrackingHwFilterNotAvailableCountMetrics() {
+    synchronized void recordTrackingHwFilterNotAvailableCountMetrics() {
         MetricsLogger.getInstance()
                 .cacheCount(
                         BluetoothProtoEnums.LE_SCAN_ABUSE_COUNT_TRACKING_HW_FILTER_NOT_AVAILABLE,
                         1);
     }
 
-    public static void initScanRadioState() {
+    static void initScanRadioState() {
         synchronized (sLock) {
             sIsRadioStarted = false;
         }
     }
 
-    public static boolean recordScanRadioStart(int scanMode) {
+    static boolean recordScanRadioStart(int scanMode) {
         synchronized (sLock) {
             if (sIsRadioStarted) {
                 return false;
@@ -409,7 +412,7 @@ public class AppScanStats {
         return true;
     }
 
-    public static boolean recordScanRadioStop() {
+    static boolean recordScanRadioStop() {
         synchronized (sLock) {
             if (!sIsRadioStarted) {
                 return false;
@@ -474,7 +477,7 @@ public class AppScanStats {
         }
     }
 
-    static void recordScanRadioResultCount() {
+    public static void recordScanRadioResultCount() {
         synchronized (sLock) {
             if (!sIsRadioStarted) {
                 return;
@@ -489,7 +492,7 @@ public class AppScanStats {
         }
     }
 
-    static void recordBatchScanRadioResultCount(int numRecords) {
+    public static void recordBatchScanRadioResultCount(int numRecords) {
         boolean isScreenOn;
         synchronized (sLock) {
             isScreenOn = sIsScreenOn;
@@ -508,7 +511,7 @@ public class AppScanStats {
         }
     }
 
-    public static void setScreenState(boolean isScreenOn) {
+    static void setScreenState(boolean isScreenOn) {
         synchronized (sLock) {
             if (sIsScreenOn == isScreenOn) {
                 return;
@@ -522,7 +525,7 @@ public class AppScanStats {
         }
     }
 
-    public synchronized void recordScanSuspend(int scannerId) {
+    synchronized void recordScanSuspend(int scannerId) {
         LastScan scan = getScanFromScannerId(scannerId);
         if (scan == null || scan.isSuspended) {
             return;
@@ -531,7 +534,7 @@ public class AppScanStats {
         scan.isSuspended = true;
     }
 
-    public synchronized void recordScanResume(int scannerId) {
+    synchronized void recordScanResume(int scannerId) {
         LastScan scan = getScanFromScannerId(scannerId);
         long suspendDuration = 0;
         if (scan == null || !scan.isSuspended) {
@@ -544,7 +547,7 @@ public class AppScanStats {
         mTotalSuspendTime += suspendDuration;
     }
 
-    public synchronized void setScanTimeout(int scannerId) {
+    synchronized void setScanTimeout(int scannerId) {
         if (!isScanning()) {
             return;
         }
@@ -555,7 +558,7 @@ public class AppScanStats {
         }
     }
 
-    public synchronized void setScanDowngrade(int scannerId, boolean isDowngrade) {
+    synchronized void setScanDowngrade(int scannerId, boolean isDowngrade) {
         if (!isScanning()) {
             return;
         }
@@ -566,14 +569,14 @@ public class AppScanStats {
         }
     }
 
-    public synchronized void setAutoBatchScan(int scannerId, boolean isBatchScan) {
+    synchronized void setAutoBatchScan(int scannerId, boolean isBatchScan) {
         LastScan scan = getScanFromScannerId(scannerId);
         if (scan != null) {
             scan.isAutoBatchScan = isBatchScan;
         }
     }
 
-    synchronized boolean isScanningTooFrequently() {
+    public synchronized boolean isScanningTooFrequently() {
         if (mLastScans.size() < mAdapterService.getScanQuotaCount()) {
             return false;
         }
@@ -582,7 +585,7 @@ public class AppScanStats {
                 < mAdapterService.getScanQuotaWindowMillis();
     }
 
-    public synchronized boolean isScanningTooLong() {
+    synchronized boolean isScanningTooLong() {
         if (!isScanning()) {
             return false;
         }
@@ -590,7 +593,7 @@ public class AppScanStats {
                 >= mAdapterService.getScanTimeoutMillis();
     }
 
-    public synchronized boolean hasRecentScan() {
+    synchronized boolean hasRecentScan() {
         if (!isScanning() || mLastScans.isEmpty()) {
             return false;
         }
@@ -696,7 +699,7 @@ public class AppScanStats {
         }
     }
 
-    synchronized void dumpToString(StringBuilder sb) {
+    public synchronized void dumpToString(StringBuilder sb) {
         long currentTime = System.currentTimeMillis();
         long currTime = SystemClock.elapsedRealtime();
         long Score = 0;
