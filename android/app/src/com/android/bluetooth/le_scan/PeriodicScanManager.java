@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.gatt;
+package com.android.bluetooth.le_scan;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -28,6 +28,7 @@ import android.os.RemoteException;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.gatt.GattServiceConfig;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.Collections;
@@ -52,8 +53,9 @@ public class PeriodicScanManager {
     static int sTempRegistrationId = -1;
     private static final int PA_SOURCE_LOCAL = 1;
     private static final int PA_SOURCE_REMOTE = 2;
+
     /** Constructor of {@link PeriodicScanManager}. */
-    PeriodicScanManager(AdapterService adapterService) {
+    public PeriodicScanManager(AdapterService adapterService) {
         if (DBG) {
             Log.d(TAG, "periodic scan manager created");
         }
@@ -62,7 +64,7 @@ public class PeriodicScanManager {
         mNativeInterface.init(this);
     }
 
-    void cleanup() {
+    public void cleanup() {
         if (DBG) {
             Log.d(TAG, "cleanup()");
         }
@@ -263,7 +265,7 @@ public class PeriodicScanManager {
         }
     }
 
-    void startSync(ScanResult scanResult, int skip, int timeout,
+    public void startSync(ScanResult scanResult, int skip, int timeout,
             IPeriodicAdvertisingCallback callback) {
         SyncDeathRecipient deathRecipient = new SyncDeathRecipient(callback);
         IBinder binder = toBinder(callback);
@@ -325,7 +327,7 @@ public class PeriodicScanManager {
         mNativeInterface.startSync(sid, address, skip, timeout, cbId);
     }
 
-    void stopSync(IPeriodicAdvertisingCallback callback) {
+    public void stopSync(IPeriodicAdvertisingCallback callback) {
         IBinder binder = toBinder(callback);
         if (DBG) {
             Log.d(TAG, "stopSync() " + binder);
@@ -372,7 +374,7 @@ public class PeriodicScanManager {
         }
     }
 
-    void transferSync(BluetoothDevice bda, int serviceData, int syncHandle) {
+    public void transferSync(BluetoothDevice bda, int serviceData, int syncHandle) {
         Log.d(TAG, "transferSync()");
         Map.Entry<IBinder, SyncInfo> entry = findSync(syncHandle);
         if (entry == null) {
@@ -385,7 +387,7 @@ public class PeriodicScanManager {
         mNativeInterface.syncTransfer(bda, serviceData, syncHandle);
     }
 
-    void transferSetInfo(BluetoothDevice bda, int serviceData,
+    public void transferSetInfo(BluetoothDevice bda, int serviceData,
                   int advHandle, IPeriodicAdvertisingCallback callback) {
         SyncDeathRecipient deathRecipient = new SyncDeathRecipient(callback);
         IBinder binder = toBinder(callback);

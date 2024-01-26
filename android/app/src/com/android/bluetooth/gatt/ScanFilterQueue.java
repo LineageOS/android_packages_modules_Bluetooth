@@ -54,7 +54,7 @@ public class ScanFilterQueue {
     public static final int TYPE_INVALID = 0x00;
     public static final int TYPE_WIFI_NAN_HASH = 0x01; // WIFI NAN HASH type
 
-    class Entry {
+    public static class Entry {
         public byte type;
         public String address;
         public byte addr_type;
