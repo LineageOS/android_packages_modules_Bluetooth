@@ -39,7 +39,6 @@
 
 #include "bta/include/bta_dm_acl.h"
 #include "bta/sys/bta_sys.h"
-#include "btif/include/btif_acl.h"
 #include "common/init_flags.h"
 #include "common/metrics.h"
 #include "device/include/controller.h"
@@ -526,11 +525,6 @@ void btm_acl_device_down(void) {
     }
   }
   BTM_db_reset();
-}
-
-void btm_acl_update_inquiry_status(uint8_t status) {
-  btm_cb.is_inquiry = status == BTM_INQUIRY_STARTED;
-  BTIF_dm_report_inquiry_status_change(status);
 }
 
 tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, tHCI_ROLE* p_role) {
