@@ -889,14 +889,6 @@ struct btm_acl_update_conn_addr {
   };
 };
 extern struct btm_acl_update_conn_addr btm_acl_update_conn_addr;
-// Name: btm_acl_update_inquiry_status
-// Params: uint8_t status
-// Returns: void
-struct btm_acl_update_inquiry_status {
-  std::function<void(uint8_t status)> body{[](uint8_t /* status */) { ; }};
-  void operator()(uint8_t status) { body(status); };
-};
-extern struct btm_acl_update_inquiry_status btm_acl_update_inquiry_status;
 // Name: btm_ble_refresh_local_resolvable_private_addr
 // Params:  const RawAddress& pseudo_addr, const RawAddress& local_rpa
 // Returns: void

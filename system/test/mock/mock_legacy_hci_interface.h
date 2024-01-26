@@ -23,9 +23,6 @@
 namespace bluetooth::legacy::hci::testing {
 class MockInterface : public Interface {
  public:
-  MOCK_METHOD(void, StartInquiry,
-              (const LAP inq_lap, uint8_t duration, uint8_t response_cnt),
-              (const));
   MOCK_METHOD(void, InquiryCancel, (), (const));
   MOCK_METHOD(void, Disconnect, (uint16_t handle, uint8_t reason), (const));
   MOCK_METHOD(void, ChangeConnectionPacketType,
