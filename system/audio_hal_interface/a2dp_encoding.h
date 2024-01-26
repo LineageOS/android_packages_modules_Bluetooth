@@ -30,7 +30,8 @@ namespace audio {
 namespace a2dp {
 
 bool update_codec_offloading_capabilities(
-    const std::vector<btav_a2dp_codec_config_t>& framework_preference);
+    const std::vector<btav_a2dp_codec_config_t>& framework_preference,
+    bool supports_a2dp_hw_offload_v2);
 
 // Check if new bluetooth_audio is enabled
 bool is_hal_enabled();
