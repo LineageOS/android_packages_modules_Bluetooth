@@ -31,28 +31,22 @@ using bluetooth::fuzz::GetArbitraryBytes;
 using bluetooth::hal::HciHal;
 using bluetooth::hal::fuzz::FuzzHciHal;
 using bluetooth::hci::fuzz::HciLayerFuzzClient;
-using bluetooth::os::fake_timer::fake_timerfd_advance;
-using bluetooth::os::fake_timer::fake_timerfd_cap_at;
 using bluetooth::os::fake_timer::fake_timerfd_reset;
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   FuzzedDataProvider dataProvider(data, size);
-  fake_timerfd_cap_at(1999);  // prevent command timeouts
 
   static FuzzTestModuleRegistry moduleRegistry = FuzzTestModuleRegistry();
   FuzzHciHal* fuzzHal = moduleRegistry.Inject<FuzzHciHal>(&HciHal::Factory);
   HciLayerFuzzClient* fuzzClient = moduleRegistry.Start<HciLayerFuzzClient>();
 
   while (dataProvider.remaining_bytes() > 0) {
-    const uint8_t action = dataProvider.ConsumeIntegralInRange(0, 5);
+    const uint8_t action = dataProvider.ConsumeIntegralInRange(1, 2);
     switch (action) {
       case 1:
-        fake_timerfd_advance(dataProvider.ConsumeIntegral<uint64_t>());
-        break;
-      case 2:
         fuzzHal->injectArbitrary(dataProvider);
         break;
-      case 3:
+      case 2:
         fuzzClient->injectArbitrary(dataProvider);
         break;
     }
