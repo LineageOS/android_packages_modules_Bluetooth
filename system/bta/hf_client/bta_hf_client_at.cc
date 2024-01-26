@@ -1087,6 +1087,8 @@ static char* bta_hf_client_parse_bind(tBTA_HF_CLIENT_CB* client_cb,
     buffer++;
   }
 
+  AT_CHECK_RN(buffer);
+
   return buffer;
 }
 
@@ -1623,10 +1625,10 @@ static void bta_hf_client_dump_at(tBTA_HF_CLIENT_CB* client_cb) {
 
   while (*p1 != '\0') {
     if (*p1 == '\r') {
-      strlcpy(p2, "<cr>", 4);
+      strncpy(p2, "<cr>", 4);
       p2 += 4;
     } else if (*p1 == '\n') {
-      strlcpy(p2, "<lf>", 4);
+      strncpy(p2, "<lf>", 4);
       p2 += 4;
     } else {
       *p2 = *p1;
