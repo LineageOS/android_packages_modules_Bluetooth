@@ -75,7 +75,7 @@ import com.android.bluetooth.btservice.bluetoothkeystore.BluetoothKeystoreNative
 import com.android.bluetooth.gatt.AdvertiseManagerNativeInterface;
 import com.android.bluetooth.gatt.DistanceMeasurementNativeInterface;
 import com.android.bluetooth.gatt.GattNativeInterface;
-import com.android.bluetooth.gatt.PeriodicScanNativeInterface;
+import com.android.bluetooth.le_scan.PeriodicScanNativeInterface;
 import com.android.bluetooth.sdp.SdpManagerNativeInterface;
 import com.android.internal.app.IBatteryStats;
 
