@@ -595,7 +595,7 @@ typedef void (*energy_info_callback)(bt_activity_energy_info* energy_info,
 typedef void (*generate_local_oob_data_callback)(tBT_TRANSPORT transport,
                                                  bt_oob_data_t oob_data);
 
-typedef void (*key_missing_callback)(RawAddress bd_addr);
+typedef void (*key_missing_callback)(const RawAddress bd_addr);
 
 /** TODO: Add callbacks for Link Up/Down and other generic
  *  notifications/callbacks */
