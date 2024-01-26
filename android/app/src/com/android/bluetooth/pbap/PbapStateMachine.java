@@ -271,7 +271,7 @@ public class PbapStateMachine extends StateMachine {
             } catch (IOException ex) {
                 ContentProfileErrorReportUtils.report(
                         BluetoothProfile.PBAP,
-                        BluetoothProtoEnums.PBAP_STATE_MACHINE,
+                        BluetoothProtoEnums.BLUETOOTH_PBAP_STATE_MACHINE,
                         BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                         0);
                 Log.e(TAG, "Caught exception starting OBEX reject server session" + ex.toString());
@@ -301,7 +301,7 @@ public class PbapStateMachine extends StateMachine {
             } catch (IOException e) {
                 ContentProfileErrorReportUtils.report(
                         BluetoothProfile.PBAP,
-                        BluetoothProtoEnums.PBAP_STATE_MACHINE,
+                        BluetoothProtoEnums.BLUETOOTH_PBAP_STATE_MACHINE,
                         BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                         1);
                 Log.e(TAG, "Close Connection Socket error: " + e.toString());
@@ -326,7 +326,7 @@ public class PbapStateMachine extends StateMachine {
             } catch (IOException ex) {
                 ContentProfileErrorReportUtils.report(
                         BluetoothProfile.PBAP,
-                        BluetoothProtoEnums.PBAP_STATE_MACHINE,
+                        BluetoothProtoEnums.BLUETOOTH_PBAP_STATE_MACHINE,
                         BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                         2);
                 Log.e(TAG, "Caught exception starting OBEX server session" + ex.toString());
