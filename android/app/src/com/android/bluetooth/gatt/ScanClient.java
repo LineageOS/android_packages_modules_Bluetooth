@@ -21,6 +21,8 @@ import android.bluetooth.le.ScanSettings;
 import android.os.Binder;
 import android.os.UserHandle;
 
+import com.android.bluetooth.le_scan.AppScanStats;
+
 import java.util.List;
 import java.util.Objects;
 
