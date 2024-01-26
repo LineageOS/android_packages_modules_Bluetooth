@@ -25,6 +25,8 @@
  *
  ******************************************************************************/
 
+#include "hci_error_code.h"
+#include "neighbor_inquiry.h"
 #define LOG_TAG "bluetooth"
 
 #include <base/logging.h>
@@ -253,6 +255,7 @@ void SendRemoteNameRequest(const RawAddress& raw_address) {
                           HCI_MANDATARY_PAGE_SCAN_MODE, 0);
 }
 static void btm_process_cancel_complete(tHCI_STATUS status, uint8_t mode);
+static void on_incoming_hci_event(bluetooth::hci::EventView event);
 /*******************************************************************************
  *
  * Function         BTM_SetDiscoverability
@@ -633,6 +636,16 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
         .status = tBTM_INQUIRY_CMPL::NOT_STARTED,
     });
     return BTM_BUSY;
+  }
+
+  if (btm_cb.btm_inq_vars.registered_for_hci_events == false) {
+    bluetooth::shim::GetHciLayer()->RegisterEventHandler(
+        bluetooth::hci::EventCode::INQUIRY_COMPLETE,
+        get_main_thread()->Bind([](bluetooth::hci::EventView event) {
+          on_incoming_hci_event(event);
+        }));
+
+    btm_cb.btm_inq_vars.registered_for_hci_events = true;
   }
 
   /*** Make sure the device is ready ***/
@@ -2180,6 +2193,37 @@ void btm_set_eir_uuid(const uint8_t* p_eir, tBTM_INQ_RESULTS* p_results) {
       p_uuid_data += Uuid::kNumBytes128;
       if (uuid16) BTM_AddEirService(p_results->eir_uuid, uuid16);
     }
+  }
+}
+
+static void on_inquiry_complete(bluetooth::hci::EventView event) {
+  auto complete = bluetooth::hci::InquiryCompleteView::Create(event);
+  ASSERT(complete.IsValid());
+  auto status = to_hci_status_code(static_cast<uint8_t>(complete.GetStatus()));
+
+  btm_process_inq_complete(status, BTM_BR_INQUIRY_MASK);
+}
+/*******************************************************************************
+ *
+ * Function         on_incoming_hci_event
+ *
+ * Description      This function is called to process events from the HCI layer
+ *
+ * Parameters       event - an EventView with the specific event
+ *
+ * Returns          None
+ *
+ ******************************************************************************/
+static void on_incoming_hci_event(bluetooth::hci::EventView event) {
+  ASSERT(event.IsValid());
+  auto event_code = event.GetEventCode();
+  switch (event_code) {
+    case bluetooth::hci::EventCode::INQUIRY_COMPLETE:
+      on_inquiry_complete(event);
+      break;
+    default:
+      LOG_WARN("Dropping unhandled event: %s",
+               bluetooth::hci::EventCodeText(event_code).c_str());
   }
 }
 
