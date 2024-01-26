@@ -16,16 +16,25 @@
 
 #include "btif/include/btif_dm.h"
 
+#include <android_bluetooth_flags.h>
+#include <flag_macros.h>
 #include <gtest/gtest.h>
 
 #include <memory>
 
 #include "bta/include/bta_api_data_types.h"
 #include "btif/include/mock_core_callbacks.h"
-#include "stack/include/btm_api_types.h"
+#include "gd/module.h"
+#include "main/shim/stack.h"
 #include "stack/include/btm_ble_api_types.h"
+#include "storage/storage_module.h"
 
 using bluetooth::core::testing::MockCoreInterface;
+
+namespace {
+const RawAddress kRawAddress = {{0x11, 0x22, 0x33, 0x44, 0x55, 0x66}};
+constexpr char kBdName[] = {'k', 'B', 'd', 'N', 'a', 'm', 'e', '\0'};
+}  // namespace
 
 namespace bluetooth {
 namespace legacy {
@@ -39,6 +48,9 @@ void bta_energy_info_cb(tBTM_BLE_TX_TIME_MS tx_time,
                         tBTM_BLE_IDLE_TIME_MS idle_time,
                         tBTM_BLE_ENERGY_USED energy_used,
                         tBTM_CONTRL_STATE ctrl_state, tBTA_STATUS status);
+
+void btif_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
+                                 tBTA_DM_SEARCH* p_data);
 
 }  // namespace testing
 }  // namespace legacy
@@ -104,4 +116,84 @@ TEST_F(BtifDmWithUidTest, bta_energy_info_cb__with_uid) {
       BTA_SUCCESS);
 
   ASSERT_TRUE(invoke_energy_info_cb_entered);
+}
+
+class BtifDmWithStackTest : public BtifDmTest {
+ protected:
+  void SetUp() override {
+    BtifDmTest::SetUp();
+    modules_.add<bluetooth::storage::StorageModule>();
+    bluetooth::shim::Stack::GetInstance()->StartModuleStack(
+        &modules_,
+        new bluetooth::os::Thread("gd_stack_thread",
+                                  bluetooth::os::Thread::Priority::NORMAL));
+  }
+
+  void TearDown() override {
+    bluetooth::shim::Stack::GetInstance()->Stop();
+    BtifDmTest::TearDown();
+  }
+  bluetooth::ModuleList modules_;
+};
+
+#define MY_PACKAGE com::android::bluetooth::flags
+
+TEST_F_WITH_FLAGS(BtifDmWithStackTest,
+                  btif_dm_search_services_evt__BTA_DM_NAME_READ_EVT,
+                  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(
+                      MY_PACKAGE, rnr_present_during_service_discovery))) {
+  static struct {
+    bt_status_t status;
+    RawAddress bd_addr;
+    int num_properties;
+    std::vector<bt_property_t> properties;
+  } invoke_remote_device_properties_cb{
+      .status = BT_STATUS_NOT_READY,
+      .bd_addr = RawAddress::kEmpty,
+      .num_properties = -1,
+      .properties = {},
+  };
+
+  bluetooth::core::testing::mock_event_callbacks
+      .invoke_remote_device_properties_cb =
+      [](bt_status_t status, RawAddress bd_addr, int num_properties,
+         bt_property_t* properties) {
+        invoke_remote_device_properties_cb = {
+            .status = status,
+            .bd_addr = bd_addr,
+            .num_properties = num_properties,
+            .properties = std::vector<bt_property_t>(
+                properties, properties + (size_t)num_properties),
+        };
+      };
+
+  tBTA_DM_SEARCH data = {
+      .disc_res =
+          {
+              // tBTA_DM_DISC_RES
+              .bd_addr = kRawAddress,
+              .bd_name = {},
+              .services = 0,
+              .device_type = BT_DEVICE_TYPE_UNKNOWN,
+              .num_uuids = 0,
+              .p_uuid_list = nullptr,
+              .result = BTA_SUCCESS,
+              .hci_status = HCI_SUCCESS,
+          },
+  };
+  bd_name_copy(data.disc_res.bd_name, kBdName);
+
+  bluetooth::legacy::testing::btif_dm_search_services_evt(BTA_DM_NAME_READ_EVT,
+                                                          &data);
+
+  ASSERT_EQ(BT_STATUS_SUCCESS, invoke_remote_device_properties_cb.status);
+  ASSERT_EQ(kRawAddress, invoke_remote_device_properties_cb.bd_addr);
+  ASSERT_EQ(1, invoke_remote_device_properties_cb.num_properties);
+  ASSERT_EQ(BT_PROPERTY_BDNAME,
+            invoke_remote_device_properties_cb.properties[0].type);
+  ASSERT_EQ((int)strlen(kBdName),
+            invoke_remote_device_properties_cb.properties[0].len);
+  ASSERT_STREQ(
+      kBdName,
+      (const char*)invoke_remote_device_properties_cb.properties[0].val);
 }
