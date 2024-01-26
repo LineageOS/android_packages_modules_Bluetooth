@@ -16,6 +16,6 @@
 
 #pragma once
 
-#include <cstdint>
+#include "stack/include/acl_api_types.h"
 
-void BTIF_dm_report_inquiry_status_change(uint8_t busy_level_flags);
+void BTIF_dm_report_inquiry_status_change(tBTM_INQUIRY_STATE inquiry_state);

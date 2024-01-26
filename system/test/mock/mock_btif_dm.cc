@@ -25,6 +25,7 @@
 #include "bta/include/bta_sec_api.h"
 #include "include/hardware/bluetooth.h"
 #include "internal_include/bte_appl.h"
+#include "stack/include/acl_api_types.h"
 #include "test/common/mock_functions.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
@@ -58,7 +59,7 @@ uint16_t btif_dm_get_connection_state(const RawAddress& bd_addr) {
 void BTIF_dm_disable() { inc_func_call_count(__func__); }
 void BTIF_dm_enable() { inc_func_call_count(__func__); }
 void BTIF_dm_on_hw_error() { inc_func_call_count(__func__); }
-void BTIF_dm_report_inquiry_status_change(uint8_t status) {
+void BTIF_dm_report_inquiry_status_change(tBTM_INQUIRY_STATE state) {
   inc_func_call_count(__func__);
 }
 void btif_dm_sec_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data) {
