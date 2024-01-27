@@ -1436,11 +1436,11 @@ class BluetoothManagerService {
 
     private BluetoothServiceConnection mConnection = new BluetoothServiceConnection();
     private int mWaitForEnableRetry;
+    private int mWaitForDisableRetry;
 
     @VisibleForTesting
     class BluetoothHandler extends Handler {
         boolean mGetNameAddressOnly = false;
-        private int mWaitForDisableRetry;
 
         BluetoothHandler(Looper looper) {
             super(looper);
@@ -1498,24 +1498,8 @@ class BluetoothManagerService {
 
                 case MESSAGE_DISABLE:
                     Log.d(TAG, "MESSAGE_DISABLE: mAdapter=" + mAdapter);
-                    if (mHandler.hasMessages(MESSAGE_HANDLE_DISABLE_DELAYED)
-                            || isBinding()
-                            || mHandler.hasMessages(MESSAGE_HANDLE_ENABLE_DELAYED)) {
-                        // We are handling enable or disable right now, wait for it.
-                        mHandler.sendEmptyMessageDelayed(MESSAGE_DISABLE, ENABLE_DISABLE_DELAY_MS);
-                        break;
-                    }
 
-                    mHandler.removeMessages(MESSAGE_RESTART_BLUETOOTH_SERVICE);
-
-                    if (mEnable && mAdapter != null) {
-                        mWaitForDisableRetry = 0;
-                        mHandler.sendEmptyMessageDelayed(
-                                MESSAGE_HANDLE_DISABLE_DELAYED, ENABLE_DISABLE_DELAY_MS);
-                    } else {
-                        mEnable = false;
-                        handleDisable();
-                    }
+                    handleDisableMessage();
                     break;
 
                 case MESSAGE_HANDLE_ENABLE_DELAYED:
@@ -1956,6 +1940,27 @@ class BluetoothManagerService {
             mWaitForEnableRetry = 0;
             mHandler.sendEmptyMessageDelayed(
                     MESSAGE_HANDLE_ENABLE_DELAYED, ENABLE_DISABLE_DELAY_MS);
+        }
+    }
+
+    private void handleDisableMessage() {
+        if (mHandler.hasMessages(MESSAGE_HANDLE_DISABLE_DELAYED)
+                || isBinding()
+                || mHandler.hasMessages(MESSAGE_HANDLE_ENABLE_DELAYED)) {
+            // We are handling enable or disable right now, wait for it.
+            mHandler.sendEmptyMessageDelayed(MESSAGE_DISABLE, ENABLE_DISABLE_DELAY_MS);
+            return;
+        }
+
+        mHandler.removeMessages(MESSAGE_RESTART_BLUETOOTH_SERVICE);
+
+        if (mEnable && mAdapter != null) {
+            mWaitForDisableRetry = 0;
+            mHandler.sendEmptyMessageDelayed(
+                    MESSAGE_HANDLE_DISABLE_DELAYED, ENABLE_DISABLE_DELAY_MS);
+        } else {
+            mEnable = false;
+            handleDisable();
         }
     }
 
