@@ -107,7 +107,7 @@ void A2dpEncodingFuzzer::process(const uint8_t* data, size_t size) {
   bluetooth::audio::a2dp::ack_stream_started(status);
 
   for (auto offloadingPreference : CodecOffloadingPreferenceGenerator()) {
-    update_codec_offloading_capabilities(offloadingPreference);
+    update_codec_offloading_capabilities(offloadingPreference, false);
   }
   status = fdp.PickValueInArray(kCtrlAckStatus);
   bluetooth::audio::a2dp::ack_stream_suspended(status);

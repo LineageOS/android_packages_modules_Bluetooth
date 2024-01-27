@@ -30,6 +30,7 @@ import android.util.Log;
 import androidx.annotation.VisibleForTesting;
 
 import com.android.bluetooth.BluetoothMethodProxy;
+import com.android.bluetooth.le_scan.AppScanStats;
 import com.android.internal.annotations.GuardedBy;
 
 import com.google.common.collect.EvictingQueue;
@@ -56,7 +57,7 @@ public class ContextMap<C, T> {
     /**
      * Connection class helps map connection IDs to device addresses.
      */
-    static class Connection {
+    public static class Connection {
         public int connId;
         public String address;
         public int appId;
@@ -73,7 +74,7 @@ public class ContextMap<C, T> {
     /**
      * Application entry mapping UUIDs to appIDs and callbacks.
      */
-    class App {
+    public class App {
         /** The UUID of the application */
         public UUID uuid;
 
@@ -403,7 +404,7 @@ public class ContextMap<C, T> {
     /**
      * Get an application context by the calling Apps name.
      */
-    App getByName(String name) {
+    public App getByName(String name) {
         synchronized (mAppsLock) {
             Iterator<App> i = mApps.iterator();
             while (i.hasNext()) {
@@ -656,7 +657,7 @@ public class ContextMap<C, T> {
         return null;
     }
 
-    List<Connection> getConnectionByApp(int appId) {
+    public List<Connection> getConnectionByApp(int appId) {
         List<Connection> currentConnections = new ArrayList<Connection>();
         synchronized (mConnectionsLock) {
             Iterator<Connection> i = mConnections.iterator();

@@ -55,6 +55,8 @@ import androidx.test.runner.AndroidJUnit4;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.CompanionManager;
+import com.android.bluetooth.le_scan.AppScanStats;
+import com.android.bluetooth.le_scan.PeriodicScanManager;
 import com.android.bluetooth.le_scan.ScanManager;
 
 import com.android.bluetooth.flags.Flags;

@@ -384,10 +384,11 @@ bool is_hal_force_disabled() {
 }  // namespace
 
 bool update_codec_offloading_capabilities(
-    const std::vector<btav_a2dp_codec_config_t>& framework_preference) {
+    const std::vector<btav_a2dp_codec_config_t>& framework_preference,
+    bool supports_a2dp_hw_offload_v2) {
   /* Load the provider information if supported by the HAL. */
-  provider_info =
-      ::bluetooth::audio::aidl::a2dp::ProviderInfo::GetProviderInfo();
+  provider_info = ::bluetooth::audio::aidl::a2dp::ProviderInfo::GetProviderInfo(
+      supports_a2dp_hw_offload_v2);
   return ::bluetooth::audio::aidl::codec::UpdateOffloadingCapabilities(
       framework_preference);
 }

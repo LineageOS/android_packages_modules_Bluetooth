@@ -1438,7 +1438,7 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event,
       uint8_t num_uuids = 0, max_num_uuid = 32;
       uint8_t uuid_list[32 * Uuid::kNumBytes16];
 
-      if (p_search_data->inq_res.inq_result_type != BTM_INQ_RESULT_BLE) {
+      if (p_search_data->inq_res.inq_result_type != BT_DEVICE_TYPE_BLE) {
         p_search_data->inq_res.remt_name_not_required =
             check_eir_remote_name(p_search_data, NULL, NULL);
       }
@@ -1678,6 +1678,28 @@ static bool btif_should_ignore_uuid(const Uuid& uuid) {
   return uuid.IsEmpty() || uuid.IsBase();
 }
 
+static bool btif_is_gatt_service_discovery_post_pairing(const RawAddress bd_addr) {
+  if (!IS_FLAG_ENABLED(reset_pairing_only_for_related_service_discovery)) {
+    if (bd_addr == pairing_cb.bd_addr || bd_addr == pairing_cb.static_bdaddr) {
+      if (pairing_cb.gatt_over_le !=
+          btif_dm_pairing_cb_t::ServiceDiscoveryState::SCHEDULED) {
+        LOG_ERROR("gatt_over_le should be SCHEDULED, did someone clear the "
+                  "control block for %s ?",
+                  ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+      }
+
+      return true;
+    }
+
+    return false;
+  }
+
+ return ((bd_addr == pairing_cb.bd_addr ||
+          bd_addr == pairing_cb.static_bdaddr) &&
+         (pairing_cb.gatt_over_le ==
+          btif_dm_pairing_cb_t::ServiceDiscoveryState::SCHEDULED));
+}
+
 /*******************************************************************************
  *
  * Function         btif_dm_search_services_evt
@@ -1874,15 +1896,7 @@ static void btif_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
                  ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
         BTM_LogHistory(kBtmLogTag, bd_addr,
                        "Discovered GATT services using LE transport");
-        if ((bd_addr == pairing_cb.bd_addr ||
-             bd_addr == pairing_cb.static_bdaddr)) {
-          if (pairing_cb.gatt_over_le !=
-              btif_dm_pairing_cb_t::ServiceDiscoveryState::SCHEDULED) {
-            LOG_ERROR(
-                "gatt_over_le should be SCHEDULED, did someone clear the "
-                "control block for %s ?",
-                ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
-          }
+        if (btif_is_gatt_service_discovery_post_pairing(bd_addr)) {
           pairing_cb.gatt_over_le =
               btif_dm_pairing_cb_t::ServiceDiscoveryState::FINISHED;
 
@@ -2056,7 +2070,38 @@ static void btif_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
     } break;
 
     case BTA_DM_NAME_READ_EVT: {
-      LOG_INFO("Skipping name read event - called on bad callback.");
+      if (IS_FLAG_ENABLED(rnr_present_during_service_discovery)) {
+        const tBTA_DM_DISC_RES& disc_res = p_data->disc_res;
+        if (disc_res.hci_status != HCI_SUCCESS) {
+          LOG_WARN("Received RNR event with bad status addr:%s hci_status:%s",
+                   ADDRESS_TO_LOGGABLE_CSTR(disc_res.bd_addr),
+                   hci_error_code_text(disc_res.hci_status).c_str());
+          break;
+        }
+        if (disc_res.bd_name[0] == '\0') {
+          LOG_WARN("Received RNR event without valid name addr:%s",
+                   ADDRESS_TO_LOGGABLE_CSTR(disc_res.bd_addr));
+          break;
+        }
+        bt_property_t properties[] = {{
+            .type = BT_PROPERTY_BDNAME,
+            .len = (int)strlen((char*)disc_res.bd_name),
+            .val = (void*)disc_res.bd_name,
+        }};
+        const bt_status_t status = btif_storage_set_remote_device_property(
+            &disc_res.bd_addr, properties);
+        ASSERT_LOG(status == BT_STATUS_SUCCESS,
+                   "Failed to save remote device property status:%s",
+                   bt_status_text(status).c_str());
+        const size_t num_props = sizeof(properties) / sizeof(bt_property_t);
+        GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
+            status, disc_res.bd_addr, (int)num_props, properties);
+        LOG_INFO("Callback for read name event addr:%s name:%s",
+                 ADDRESS_TO_LOGGABLE_CSTR(disc_res.bd_addr),
+                 PRIVATE_NAME(disc_res.bd_name));
+      } else {
+        LOG_INFO("Skipping name read event - called on bad callback.");
+      }
     } break;
 
     default: {
@@ -4189,6 +4234,11 @@ void bta_energy_info_cb(tBTM_BLE_TX_TIME_MS tx_time,
                         tBTM_CONTRL_STATE ctrl_state, tBTA_STATUS status) {
   ::bta_energy_info_cb(tx_time, rx_time, idle_time, energy_used, ctrl_state,
                        status);
+}
+
+void btif_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
+                                 tBTA_DM_SEARCH* p_data) {
+  ::btif_dm_search_services_evt(event, p_data);
 }
 
 }  // namespace testing

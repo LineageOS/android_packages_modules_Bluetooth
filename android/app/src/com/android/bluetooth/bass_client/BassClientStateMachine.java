@@ -107,7 +107,7 @@ public class BassClientStateMachine extends StateMachine {
     static final int PSYNC_ACTIVE_TIMEOUT = 14;
     static final int CONNECT_TIMEOUT = 15;
     static final int REACHED_MAX_SOURCE_LIMIT = 16;
-    static final int SWITH_BCAST_SOURCE = 17;
+    static final int SWITCH_BCAST_SOURCE = 17;
 
     // NOTE: the value is not "final" - it is modified in the unit tests
     @VisibleForTesting
@@ -1753,7 +1753,7 @@ public class BassClientStateMachine extends StateMachine {
                     int handle = message.arg1;
                     cancelActiveSync(handle);
                     break;
-                case SWITH_BCAST_SOURCE:
+                case SWITCH_BCAST_SOURCE:
                     metaData = (BluetoothLeBroadcastMetadata) message.obj;
                     int sourceIdToRemove = message.arg1;
                     // Save pending source to be added once existing source got removed
@@ -1768,7 +1768,7 @@ public class BassClientStateMachine extends StateMachine {
                             && recvStateToUpdate.getPaSyncState()
                                     == BluetoothLeBroadcastReceiveState
                                             .PA_SYNC_STATE_SYNCHRONIZED) {
-                        log("SWITH_BCAST_SOURCE force source to lost PA sync");
+                        log("SWITCH_BCAST_SOURCE force source to lost PA sync");
                         Message msg = obtainMessage(UPDATE_BCAST_SOURCE);
                         msg.arg1 = sourceIdToRemove;
                         msg.arg2 = BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE;
@@ -2099,7 +2099,7 @@ public class BassClientStateMachine extends StateMachine {
                 case SET_BCAST_CODE:
                 case REMOVE_BCAST_SOURCE:
                 case REACHED_MAX_SOURCE_LIMIT:
-                case SWITH_BCAST_SOURCE:
+                case SWITCH_BCAST_SOURCE:
                 case PSYNC_ACTIVE_TIMEOUT:
                     log("defer the message: "
                             + messageWhatToString(message.what)
@@ -2192,8 +2192,8 @@ public class BassClientStateMachine extends StateMachine {
                 return "REMOVE_BCAST_SOURCE";
             case REACHED_MAX_SOURCE_LIMIT:
                 return "REACHED_MAX_SOURCE_LIMIT";
-            case SWITH_BCAST_SOURCE:
-                return "SWITH_BCAST_SOURCE";
+            case SWITCH_BCAST_SOURCE:
+                return "SWITCH_BCAST_SOURCE";
             case PSYNC_ACTIVE_TIMEOUT:
                 return "PSYNC_ACTIVE_TIMEOUT";
             case CONNECT_TIMEOUT:

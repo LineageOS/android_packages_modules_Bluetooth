@@ -1229,13 +1229,6 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
   uint16_t handle;
 
   switch (opcode) {
-    // Link Control Commands
-    case HCI_INQUIRY:
-      if (status != HCI_SUCCESS) {
-        // Tell inquiry processing that we are done
-        btm_process_inq_complete(hci_status, BTM_BR_INQUIRY_MASK);
-      }
-      break;
     case HCI_SWITCH_ROLE:
       if (status != HCI_SUCCESS) {
         // Tell BTM that the command failed

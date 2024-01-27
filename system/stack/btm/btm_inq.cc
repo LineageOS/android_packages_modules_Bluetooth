@@ -36,11 +36,14 @@
 #include <mutex>
 
 #include "advertise_data_parser.h"
+#include "btif/include/btif_acl.h"
 #include "btif/include/btif_config.h"
 #include "common/time_util.h"
 #include "device/include/controller.h"
+#include "hci/hci_layer.h"
 #include "include/check.h"
 #include "internal_include/bt_target.h"
+#include "main/shim/entry.h"
 #include "main/shim/shim.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
@@ -49,7 +52,6 @@
 #include "osi/include/stack_power_telemetry.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sec.h"
-#include "stack/include/acl_api.h"
 #include "stack/include/acl_api_types.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_lap.h"
@@ -60,6 +62,7 @@
 #include "stack/include/btm_log_history.h"
 #include "stack/include/hcimsgs.h"
 #include "stack/include/inq_hci_link_interface.h"
+#include "stack/include/main_thread.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
@@ -673,10 +676,11 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
     }
   }
 
-  btm_acl_update_inquiry_status(BTM_INQUIRY_STARTED);
-
   if (btm_cb.btm_inq_vars.inq_active & BTM_SSP_INQUIRY_ACTIVE) {
     LOG_INFO("Not starting inquiry as SSP is in progress");
+    // Report the status here because inq_complete will cancel it below
+    BTIF_dm_report_inquiry_status_change(BTM_INQUIRY_STARTED);
+
     btm_process_inq_complete(HCI_ERR_MAX_NUM_OF_CONNECTIONS,
                              BTM_GENERAL_INQUIRY);
     return BTM_CMD_STARTED;
@@ -686,8 +690,24 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
 
   btm_init_inq_result_flt();
 
-  bluetooth::legacy::hci::GetInterface().StartInquiry(
-      general_inq_lap, btm_cb.btm_inq_vars.inqparms.duration, 0);
+  bluetooth::hci::Lap lap;
+  lap.lap_ = general_inq_lap[2];
+
+  // TODO: Register for the inquiry interface and use that
+  bluetooth::shim::GetHciLayer()->EnqueueCommand(
+      bluetooth::hci::InquiryBuilder::Create(
+          lap, btm_cb.btm_inq_vars.inqparms.duration, 0),
+      get_main_thread()->BindOnce(
+          [](bluetooth::hci::CommandStatusView status_view) {
+            ASSERT(status_view.IsValid());
+            auto status = status_view.GetStatus();
+            if (status == bluetooth::hci::ErrorCode::SUCCESS) {
+              BTIF_dm_report_inquiry_status_change(BTM_INQUIRY_STARTED);
+            } else {
+              LOG_INFO("Inquiry failed to start status: %s",
+                       bluetooth::hci::ErrorCodeText(status).c_str());
+            }
+          }));
 
   // If we are only doing classic discovery, we should also set a timeout for
   // the inquiry if a duration is set.
@@ -1386,7 +1406,7 @@ void btm_process_inq_results(const uint8_t* p, uint8_t hci_evt_len,
         }
       }
 
-      p_cur->inq_result_type |= BTM_INQ_RESULT_BR;
+      p_cur->inq_result_type |= BT_DEVICE_TYPE_BREDR;
       if (p_i->inq_count != btm_cb.btm_inq_vars.inq_counter) {
         p_cur->device_type = BT_DEVICE_TYPE_BREDR;
         p_i->scan_rsp = false;
@@ -1475,7 +1495,7 @@ void btm_process_inq_complete(tHCI_STATUS status, uint8_t mode) {
   btm_cb.btm_inq_vars.inqparms.mode &= ~(mode);
   const auto inq_active = btm_cb.btm_inq_vars.inq_active;
 
-  btm_acl_update_inquiry_status(BTM_INQUIRY_COMPLETE);
+  BTIF_dm_report_inquiry_status_change(BTM_INQUIRY_COMPLETE);
 
   if (status != HCI_SUCCESS) {
     LOG_WARN("Received unexpected hci status:%s",
@@ -1569,7 +1589,7 @@ void btm_process_inq_complete(tHCI_STATUS status, uint8_t mode) {
  *
  ******************************************************************************/
 void btm_process_cancel_complete(tHCI_STATUS status, uint8_t mode) {
-  btm_acl_update_inquiry_status(BTM_INQUIRY_CANCELLED);
+  BTIF_dm_report_inquiry_status_change(BTM_INQUIRY_CANCELLED);
   btm_process_inq_complete(status, mode);
 }
 /*******************************************************************************
@@ -1612,7 +1632,8 @@ tBTM_STATUS btm_initiate_rem_name(const RawAddress& remote_bda, uint8_t origin,
 
       /* If the database entry exists for the device, use its clock offset */
       tINQ_DB_ENT* p_i = btm_inq_db_find(remote_bda);
-      if (p_i && (p_i->inq_info.results.inq_result_type & BTM_INQ_RESULT_BR)) {
+      if (p_i &&
+          (p_i->inq_info.results.inq_result_type & BT_DEVICE_TYPE_BREDR)) {
         tBTM_INQ_INFO* p_cur = &p_i->inq_info;
         uint16_t clock_offset = p_cur->results.clock_offset | BTM_CLOCK_OFFSET_VALID;
         int clock_offset_in_cfg = 0;

@@ -47,14 +47,12 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.BluetoothAdapterProxy;
 import com.android.bluetooth.flags.FeatureFlags;
-import com.android.bluetooth.gatt.AppScanStats;
 import com.android.bluetooth.gatt.FilterParams;
 import com.android.bluetooth.gatt.GattObjectsFactory;
 import com.android.bluetooth.gatt.GattService;
 import com.android.bluetooth.gatt.GattServiceConfig;
 import com.android.bluetooth.gatt.ScanClient;
 import com.android.bluetooth.gatt.ScanFilterQueue;
-import com.android.bluetooth.gatt.ScanNativeInterface;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 

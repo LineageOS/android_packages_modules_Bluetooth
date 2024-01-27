@@ -122,7 +122,6 @@ struct btm_acl_process_sca_cmpl_pkt btm_acl_process_sca_cmpl_pkt;
 struct btm_acl_removed btm_acl_removed;
 struct btm_acl_role_changed btm_acl_role_changed;
 struct btm_acl_update_conn_addr btm_acl_update_conn_addr;
-struct btm_acl_update_inquiry_status btm_acl_update_inquiry_status;
 struct btm_ble_refresh_local_resolvable_private_addr
     btm_ble_refresh_local_resolvable_private_addr;
 struct btm_cont_rswitch_from_handle btm_cont_rswitch_from_handle;
@@ -517,10 +516,6 @@ void btm_acl_role_changed(tHCI_STATUS hci_status, const RawAddress& bd_addr,
 void btm_acl_update_conn_addr(uint16_t handle, const RawAddress& address) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_acl_update_conn_addr(handle, address);
-}
-void btm_acl_update_inquiry_status(uint8_t status) {
-  inc_func_call_count(__func__);
-  test::mock::stack_acl::btm_acl_update_inquiry_status(status);
 }
 void btm_ble_refresh_local_resolvable_private_addr(
     const RawAddress& pseudo_addr, const RawAddress& local_rpa) {
