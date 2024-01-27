@@ -40,4 +40,13 @@ interface SystemServiceMessage {
             boolean value;
         }
     }
+
+    parcelable Disable {
+        AttributionSource attributionSource;
+        @nullable IBinder bleToken;
+        boolean persist;
+        parcelable Reply {
+            boolean value;
+        }
+    }
 }

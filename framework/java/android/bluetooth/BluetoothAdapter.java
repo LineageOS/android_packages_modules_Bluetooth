@@ -1334,6 +1334,13 @@ public final class BluetoothAdapter {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean disableBLE() {
+        if (Flags.systemServerMessenger()) {
+            var data = new SystemServiceMessage.Disable();
+            data.attributionSource = mAttributionSource;
+            data.bleToken = mToken;
+
+            return mSystemServiceMessenger.send(data).value;
+        }
         if (!isBleScanAlwaysAvailable()) {
             return false;
         }
@@ -1625,6 +1632,13 @@ public final class BluetoothAdapter {
             allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},
             conditional = true)
     public boolean disable(boolean persist) {
+        if (Flags.systemServerMessenger()) {
+            var data = new SystemServiceMessage.Disable();
+            data.attributionSource = mAttributionSource;
+            data.persist = persist;
+
+            return mSystemServiceMessenger.send(data).value;
+        }
         try {
             return mManagerService.disable(mAttributionSource, persist);
         } catch (RemoteException e) {

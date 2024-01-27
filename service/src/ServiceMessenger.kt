@@ -86,6 +86,26 @@ internal class ServiceMessenger(
                         }
                 }
             }
+            is SystemServiceMessage.Disable -> {
+                val source = obj.attributionSource
+                val persist = obj.persist
+                val bleToken = obj.bleToken
+                val foregroundRequired = bleToken == null
+                SystemServiceMessage.Disable.Reply().apply {
+                    value =
+                        try {
+                            checker.disableAllowed(sendingUid, source, foregroundRequired)
+                            if (bleToken != null) {
+                                managerService.disableBle(source.getPackageName(), bleToken)
+                            } else {
+                                managerService.disable(source.getPackageName(), persist)
+                            }
+                        } catch (e: PermissionChecker.BluetoothPermissionException) {
+                            Log.e(TAG, "${obj}: FAILED", e)
+                            false
+                        }
+                }
+            }
             else -> throw IllegalArgumentException("Invalid command: [${obj}] from ${sendingUid}")
         }
     }
