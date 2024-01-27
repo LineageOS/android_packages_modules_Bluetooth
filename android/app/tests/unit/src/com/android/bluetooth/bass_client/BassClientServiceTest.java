@@ -752,6 +752,89 @@ public class BassClientServiceTest {
     }
 
     /**
+     * Test whether service.removeSource() does send modify source to all the state machines if
+     * either PA or BIS is synced
+     */
+    @Test
+    public void testRemoveSourceForGroupAndTriggerModifySource() {
+        prepareConnectedDeviceGroup();
+        BluetoothLeBroadcastMetadata meta = createBroadcastMetadata(TEST_BROADCAST_ID);
+        verifyAddSourceForGroup(meta);
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            injectRemoteSourceStateSourceAdded(
+                    sm,
+                    meta,
+                    TEST_SOURCE_ID,
+                    BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCHRONIZED,
+                    meta.isEncrypted()
+                            ? BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_DECRYPTING
+                            : BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_NOT_ENCRYPTED,
+                    null);
+            doReturn(meta).when(sm).getCurrentBroadcastMetadata(eq(TEST_SOURCE_ID));
+            doReturn(true).when(sm).isSyncedToTheSource(eq(TEST_SOURCE_ID));
+        }
+
+        // Remove broadcast source
+        mBassClientService.removeSource(mCurrentDevice, TEST_SOURCE_ID);
+
+        // Verify all group members getting UPDATE_BCAST_SOURCE message
+        // because PA state is synced
+        assertThat(mStateMachines.size()).isEqualTo(2);
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+            verify(sm, atLeast(1)).sendMessage(messageCaptor.capture());
+
+            Optional<Message> msg =
+                    messageCaptor.getAllValues().stream()
+                            .filter(m -> m.what == BassClientStateMachine.UPDATE_BCAST_SOURCE)
+                            .findFirst();
+            assertThat(msg.isPresent()).isEqualTo(true);
+
+            // Verify using the right sourceId on each device
+            assertThat(msg.get().arg1).isEqualTo(TEST_SOURCE_ID);
+        }
+
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            // Update receiver state
+            injectRemoteSourceStateChanged(
+                    sm,
+                    meta,
+                    TEST_SOURCE_ID,
+                    BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
+                    meta.isEncrypted()
+                            ? BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_DECRYPTING
+                            : BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_NOT_ENCRYPTED,
+                    null,
+                    (long) 0x00000001);
+            verify(mLeAudioService).activeBroadcastAssistantNotification(eq(true));
+        }
+
+        // Remove broadcast source
+        mBassClientService.removeSource(mCurrentDevice, TEST_SOURCE_ID);
+
+        // Verify all group members getting UPDATE_BCAST_SOURCE message if
+        // bis sync state is non-zero and pa sync state is not synced
+        assertThat(mStateMachines.size()).isEqualTo(2);
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+            verify(sm, atLeast(1)).sendMessage(messageCaptor.capture());
+
+            Optional<Message> msg =
+                    messageCaptor.getAllValues().stream()
+                            .filter(m -> m.what == BassClientStateMachine.UPDATE_BCAST_SOURCE)
+                            .findFirst();
+            assertThat(msg.isPresent()).isEqualTo(true);
+
+            // Verify using the right sourceId on each device
+            assertThat(msg.get().arg1).isEqualTo(TEST_SOURCE_ID);
+        }
+
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            injectRemoteSourceStateRemoval(sm, TEST_SOURCE_ID);
+        }
+    }
+
+    /**
      * Test whether the group operation flag is set on addSource() and removed on removeSource
      */
     @Test
