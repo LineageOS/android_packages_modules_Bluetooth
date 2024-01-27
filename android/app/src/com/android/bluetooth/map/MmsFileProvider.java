@@ -96,7 +96,7 @@ public class MmsFileProvider extends ContentProvider {
         } catch (NumberFormatException e) {
             ContentProfileErrorReportUtils.report(
                     BluetoothProfile.MAP,
-                    BluetoothProtoEnums.MMS_FILE_PROVIDER,
+                    BluetoothProtoEnums.BLUETOOTH_MMS_FILE_PROVIDER,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                     0);
             Log.w(TAG, e);
@@ -135,7 +135,7 @@ public class MmsFileProvider extends ContentProvider {
             } catch (IOException e) {
                 ContentProfileErrorReportUtils.report(
                         BluetoothProfile.MAP,
-                        BluetoothProtoEnums.MMS_FILE_PROVIDER,
+                        BluetoothProtoEnums.BLUETOOTH_MMS_FILE_PROVIDER,
                         BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                         1);
                 Log.w(TAG, e);
@@ -145,7 +145,7 @@ public class MmsFileProvider extends ContentProvider {
             } catch (MmsException e) {
                 ContentProfileErrorReportUtils.report(
                         BluetoothProfile.MAP,
-                        BluetoothProtoEnums.MMS_FILE_PROVIDER,
+                        BluetoothProtoEnums.BLUETOOTH_MMS_FILE_PROVIDER,
                         BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                         2);
                 Log.w(TAG, e);
@@ -161,7 +161,7 @@ public class MmsFileProvider extends ContentProvider {
                 } catch (IOException e) {
                     ContentProfileErrorReportUtils.report(
                             BluetoothProfile.MAP,
-                            BluetoothProtoEnums.MMS_FILE_PROVIDER,
+                            BluetoothProtoEnums.BLUETOOTH_MMS_FILE_PROVIDER,
                             BluetoothStatsLog
                                     .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                             3);
@@ -172,7 +172,7 @@ public class MmsFileProvider extends ContentProvider {
                 } catch (IOException e) {
                     ContentProfileErrorReportUtils.report(
                             BluetoothProfile.MAP,
-                            BluetoothProtoEnums.MMS_FILE_PROVIDER,
+                            BluetoothProtoEnums.BLUETOOTH_MMS_FILE_PROVIDER,
                             BluetoothStatsLog
                                     .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                             4);

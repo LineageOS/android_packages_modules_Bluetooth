@@ -85,6 +85,8 @@ typedef struct {
   uint8_t link_quality;
 } tBTM_LINK_QUALITY_RESULT;
 
-#define BTM_INQUIRY_STARTED 1
-#define BTM_INQUIRY_CANCELLED 2
-#define BTM_INQUIRY_COMPLETE 3
+typedef enum : uint8_t {
+  BTM_INQUIRY_STARTED = 1,
+  BTM_INQUIRY_CANCELLED = 2,
+  BTM_INQUIRY_COMPLETE = 3,
+} tBTM_INQUIRY_STATE;

@@ -492,6 +492,7 @@ cc_test {
     ],
     static_libs: [
         "libbluetooth-gdx",
+        "libbluetooth-types",
         "libbluetooth_gd",
         "libbt-btu-main-thread",
         "libbt-common",
