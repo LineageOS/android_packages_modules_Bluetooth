@@ -194,8 +194,6 @@ struct DistanceMeasurementManager::impl {
 
     if (!cs_trackers_[connection_handle].setup_complete) {
       send_le_cs_read_remote_supported_capabilities(connection_handle);
-      send_le_cs_set_default_settings(connection_handle);
-      send_le_cs_security_enable(connection_handle);
       return;
     }
     if (!cs_trackers_[connection_handle].config_set) {
@@ -406,11 +404,13 @@ struct DistanceMeasurementManager::impl {
       return;
     }
     uint16_t connection_handle = event_view.GetConnectionHandle();
+    send_le_cs_set_default_settings(event_view.GetConnectionHandle());
     if (cs_trackers_.find(connection_handle) == cs_trackers_.end()) {
       // Create a cs tracker with role reflector
       // TODO: Check ROLE via CS config. (b/304295768)
       cs_trackers_[connection_handle].role = CsRole::REFLECTOR;
-      send_le_cs_set_default_settings(event_view.GetConnectionHandle());
+    } else {
+      send_le_cs_security_enable(connection_handle);
     }
 
     if (event_view.GetOptionalSubfeaturesSupported().phase_based_ranging_ == 0x01) {
