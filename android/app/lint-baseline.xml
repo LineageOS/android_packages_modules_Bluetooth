@@ -381,7 +381,7 @@
         id="SimpleDateFormat"
         message="To get local formatting use `getDateInstance()`, `getDateTimeInstance()`, or `getTimeInstance()`, or use `new SimpleDateFormat(String template, Locale locale)` with for example `Locale.US` for ASCII dates.">
         <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/gatt/AppScanStats.java"
+            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/le_scan/AppScanStats.java"
             line="51"/>
     </issue>
 
