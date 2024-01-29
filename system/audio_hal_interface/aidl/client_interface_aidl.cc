@@ -351,11 +351,16 @@ bool BluetoothAudioClientInterface::SetAllowedLatencyModes(
     return false;
   }
 
-  /* Ensure that FREE is always included and remove duplicates if any */
-  std::set<LatencyMode> temp_set(latency_modes.begin(), latency_modes.end());
-  temp_set.insert(LatencyMode::FREE);
-  latency_modes_.clear();
-  latency_modes_.assign(temp_set.begin(), temp_set.end());
+  if (latency_modes.empty()) {
+    latency_modes_.clear();
+    latency_modes_.push_back(LatencyMode::FREE);
+  } else {
+    /* Ensure that FREE is always included and remove duplicates if any */
+    std::set<LatencyMode> temp_set(latency_modes.begin(), latency_modes.end());
+    temp_set.insert(LatencyMode::FREE);
+    latency_modes_.clear();
+    latency_modes_.assign(temp_set.begin(), temp_set.end());
+  }
 
   for (auto latency_mode : latency_modes) {
     LOG(INFO) << "Latency mode allowed: "
@@ -364,7 +369,7 @@ bool BluetoothAudioClientInterface::SetAllowedLatencyModes(
   }
 
   /* Low latency mode is used if modes other than FREE are present */
-  bool allowed = (latency_modes_.size() > 1);
+  bool allowed = !(latency_modes_.empty());
   auto aidl_retval = provider_->setLowLatencyModeAllowed(allowed);
   if (!aidl_retval.isOk()) {
     LOG(WARNING) << __func__ << ": BluetoothAudioHal is not ready: "

@@ -870,11 +870,11 @@ bool LeAudioClientInterface::ReleaseSource(
 void LeAudioClientInterface::SetAllowedDsaModes(DsaModes dsa_modes) {
   if (HalVersionManager::GetHalTransport() ==
       BluetoothAudioHalTransport::AIDL) {
-    std::vector<LatencyMode> latency_modes;
+    std::vector<LatencyMode> latency_modes = {LatencyMode::FREE};
     for (auto dsa_mode : dsa_modes) {
       switch (dsa_mode) {
         case DsaMode::DISABLED:
-          latency_modes.push_back(LatencyMode::FREE);
+        // Already added
           break;
         case DsaMode::ACL:
           latency_modes.push_back(LatencyMode::LOW_LATENCY);
