@@ -25,8 +25,10 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
+import android.bluetooth.BluetoothLeBroadcastMetadata;
 import android.content.Context;
 import android.os.Looper;
+import android.platform.test.annotations.RequiresFlagsEnabled;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.MediumTest;
@@ -34,6 +36,7 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
 
 import org.junit.After;
@@ -939,13 +942,20 @@ public class MediaControlGattServiceTest {
     }
 
     @Test
+    @RequiresFlagsEnabled(Flags.FLAG_LEAUDIO_BROADCAST_FEATURE_SUPPORT)
     public void testMediaControlPointeRequest_OpcodePlayCallLeAudioServiceSetActiveDevice() {
         BluetoothGattService service = initAllFeaturesGattService();
         prepareConnectedDevice();
         mMcpService.updateSupportedOpcodesChar(Request.SupportedOpcodes.PLAY, true);
         verifyMediaControlPointRequest(service, Request.Opcodes.PLAY, null,
                 BluetoothGatt.GATT_SUCCESS, 1);
-        verify(mMockLeAudioService).setActiveDevice(any(BluetoothDevice.class));
+        if (!Flags.leaudioBroadcastFeatureSupport()) {
+            verify(mMockLeAudioService).setActiveDevice(any(BluetoothDevice.class));
+        } else {
+            final List<BluetoothLeBroadcastMetadata> metadataList = mock(List.class);
+            when(mMockLeAudioService.getAllBroadcastMetadata()).thenReturn(metadataList);
+            verify(mMockMcsCallbacks, times(1)).onMediaControlRequest(any(Request.class));
+        }
     }
 
     @Test
