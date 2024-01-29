@@ -25,38 +25,6 @@
 #include "stack/include/bt_name.h"
 #include "types/bluetooth/uuid.h"
 
-std::shared_ptr<BtProperty> BtPropertyFactory::Build(bt_property_type_t type, BD_NAME name) {
-  return BtPropertyVector<uint8_t>::Factory(type, name, kBdNameLength);
-}
-
-void BtProperty::Serialize(
-    const std::vector<std::shared_ptr<BtProperty>>& bt_properties,
-    std::vector<bt_property_t>& properties) {
-  properties.resize(bt_properties.size());
-  std::vector<bt_property_t>::iterator it = properties.begin();
-  for (const auto& p : bt_properties) {
-    *it++ = {
-        .type = p->Type(),
-        .len = (int)p->Size(),
-        .val = (void*)p->Val(),
-    };
-  }
-}
-
-void BtProperty::Serialize(
-    const std::vector<std::shared_ptr<BtProperty>>& bt_properties, bt_property_t* p, size_t size) {
-  bt_property_t* properties = p;
-  ASSERT(properties != nullptr);
-  ASSERT(size >= bt_properties.size());
-
-  for (const auto& prop : bt_properties) {
-    properties->type = prop->Type();
-    properties->len = (int)prop->Size();
-    properties->val = (void*)prop->Val();
-    properties++;
-  }
-}
-
 std::string bt_property_type_text(const bt_property_type_t& type) {
   switch (type) {
     CASE_RETURN_TEXT(BT_PROPERTY_BDNAME);
@@ -277,3 +245,116 @@ std::string bt_property_text(const bt_property_t& property) {
   }
   return std::string("Unknown");
 }
+
+namespace bluetooth::property {
+
+BtPropertyLegacy::BtPropertyLegacy(const std::vector<std::shared_ptr<BtProperty>>& bt_properties)
+    : bt_properties_(bt_properties) {
+  properties_.resize(bt_properties.size());
+  std::vector<bt_property_t>::iterator it = properties_.begin();
+  for (const auto& p : bt_properties) {
+    *it++ = {
+        .type = p->Type(),
+        .len = (int)p->Size(),
+        .val = (void*)p->Val(),
+    };
+  }
+}
+
+void BtPropertyLegacy::Export(bt_property_t* bt_properties, size_t size) {
+  ASSERT(bt_properties != nullptr);
+  ASSERT(size >= properties_.size());
+
+  for (const auto& p : bt_properties_) {
+    *bt_properties++ = {
+        .type = p->Type(),
+        .len = (int)p->Size(),
+        .val = (void*)p->Val(),
+    };
+  }
+}
+
+size_t BtPropertyLegacy::NumProperties() const {
+  return properties_.size();
+}
+
+const std::vector<bt_property_t>& BtPropertyLegacy::Properties() const {
+  return properties_;
+}
+
+std::shared_ptr<BdName> BdName::Create(const BD_NAME bd_name) {
+  return std::make_shared<BdName>(BdName(bd_name));
+}
+std::shared_ptr<BdAddr> BdAddr::Create(const RawAddress& bd_addr) {
+  return std::make_shared<BdAddr>(BdAddr(bd_addr));
+}
+std::shared_ptr<Uuids> Uuids::Create(const std::vector<bluetooth::Uuid>& uuids) {
+  return std::make_shared<Uuids>(Uuids(uuids));
+}
+std::shared_ptr<ClassOfDevice> ClassOfDevice::Create(const uint32_t& cod) {
+  return std::make_shared<ClassOfDevice>(ClassOfDevice(cod));
+}
+std::shared_ptr<TypeOfDevice> TypeOfDevice::Create(const bt_device_type_t& type) {
+  return std::make_shared<TypeOfDevice>(TypeOfDevice(type));
+}
+std::shared_ptr<ServiceRecord> ServiceRecord::Create(const bt_service_record_t& record) {
+  return std::make_shared<ServiceRecord>(ServiceRecord(record));
+}
+std::shared_ptr<AdapterScanMode> AdapterScanMode::Create(const bt_scan_mode_t& mode) {
+  return std::make_shared<AdapterScanMode>(AdapterScanMode(mode));
+}
+std::shared_ptr<AdapterBondedDevices> AdapterBondedDevices::Create(
+    const RawAddress* bd_addr, size_t len) {
+  ASSERT(bd_addr != nullptr);
+  return std::make_shared<AdapterBondedDevices>(AdapterBondedDevices(bd_addr, len));
+}
+std::shared_ptr<AdapterDiscoverableTimeout> AdapterDiscoverableTimeout::Create(
+    const uint32_t& timeout) {
+  return std::make_shared<AdapterDiscoverableTimeout>(AdapterDiscoverableTimeout(timeout));
+}
+std::shared_ptr<RemoteFriendlyName> RemoteFriendlyName::Create(
+    const uint8_t bd_name[], size_t len) {
+  return std::make_shared<RemoteFriendlyName>(RemoteFriendlyName(bd_name, len));
+}
+std::shared_ptr<RemoteRSSI> RemoteRSSI::Create(const int8_t& rssi) {
+  return std::make_shared<RemoteRSSI>(RemoteRSSI(rssi));
+}
+std::shared_ptr<RemoteVersionInfo> RemoteVersionInfo::Create(const bt_remote_version_t& info) {
+  return std::make_shared<RemoteVersionInfo>(RemoteVersionInfo(info));
+}
+std::shared_ptr<LocalLeFeatures> LocalLeFeatures::Create(const bt_local_le_features_t& features) {
+  return std::make_shared<LocalLeFeatures>(LocalLeFeatures(features));
+}
+std::shared_ptr<LocalIOCaps> LocalIOCaps::Create(const bt_io_cap_t& caps) {
+  return std::make_shared<LocalIOCaps>(LocalIOCaps(caps));
+}
+std::shared_ptr<RemoteIsCoordinatedSetMember> RemoteIsCoordinatedSetMember::Create(
+    const bool& is_set_member) {
+  return std::make_shared<RemoteIsCoordinatedSetMember>(
+      RemoteIsCoordinatedSetMember(is_set_member));
+}
+std::shared_ptr<Appearance> Appearance::Create(const uint16_t& appearance) {
+  return std::make_shared<Appearance>(Appearance(appearance));
+}
+std::shared_ptr<VendorProductInfo> VendorProductInfo::Create(const bt_vendor_product_info_t& info) {
+  return std::make_shared<VendorProductInfo>(VendorProductInfo(info));
+}
+std::shared_ptr<RemoteASHACapability> RemoteASHACapability::Create(const int16_t& capability) {
+  return std::make_shared<RemoteASHACapability>(RemoteASHACapability(capability));
+}
+std::shared_ptr<RemoteASHATruncatedHiSyncId> RemoteASHATruncatedHiSyncId::Create(
+    const uint32_t& id) {
+  return std::make_shared<RemoteASHATruncatedHiSyncId>(RemoteASHATruncatedHiSyncId(id));
+}
+std::shared_ptr<RemoteModelNum> RemoteModelNum::Create(const uint8_t* model, size_t len) {
+  ASSERT(model != nullptr);
+  return std::make_shared<RemoteModelNum>(RemoteModelNum(model, len));
+}
+std::shared_ptr<RemoteAddrType> RemoteAddrType::Create(const uint8_t& addr) {
+  return std::make_shared<RemoteAddrType>(RemoteAddrType(addr));
+}
+std::shared_ptr<RemoteDeviceTimestamp> RemoteDeviceTimestamp::Create(const int& timestamp) {
+  return std::make_shared<RemoteDeviceTimestamp>(RemoteDeviceTimestamp(timestamp));
+}
+
+}  // namespace bluetooth::property
