@@ -2905,12 +2905,8 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     }
 
     switch (ase->state) {
+      case AseState::BTA_LE_AUDIO_ASE_STATE_DISABLING:
       case AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED:
-      case AseState::BTA_LE_AUDIO_ASE_STATE_DISABLING: {
-        SetAseState(leAudioDevice, ase,
-                    AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING);
-        break;
-      }
       case AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED:
         SetAseState(leAudioDevice, ase,
                     AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING);
@@ -2918,8 +2914,10 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
         if (group->HaveAllActiveDevicesAsesTheSameState(
                 AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING)) {
           group->SetState(AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING);
+        }
 
-          /* At this point all of the active ASEs within group are released. */
+        if (group->cig.GetState() == CigState::CREATED &&
+            group->HaveAllCisesDisconnected()) {
           RemoveCigForGroup(group);
         }
 
