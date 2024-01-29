@@ -15,23 +15,21 @@
  */
 #pragma once
 
+#include <gmock/gmock.h>
+
 #include <cstdint>
 
-#include "common/contextual_callback.h"
 #include "hci/address.h"
-#include "hci/controller.h"
+#include "hci/controller_interface.h"
 #include "hci/hci_packets.h"
-#include "module.h"
-#include "os/handler.h"
-
-#include <gmock/gmock.h>
+#include "hci/le_rand_callback.h"
 
 // Unit test interfaces
 namespace bluetooth {
 namespace hci {
 namespace testing {
 
-class MockController : public Controller {
+class MockControllerInterface : public ControllerInterface {
  public:
   MOCK_METHOD(void, RegisterCompletedAclPacketsCallback, (CompletedAclPacketsCallback cb));
   MOCK_METHOD(void, UnregisterCompletedAclPacketsCallback, ());
@@ -129,8 +127,13 @@ class MockController : public Controller {
   MOCK_METHOD(
       void,
       SetEventFilterConnectionSetupClassOfDevice,
-      (ClassOfDevice class_of_device, ClassOfDevice class_of_device_mask, AutoAcceptFlag auto_accept_flag));
-  MOCK_METHOD(void, SetEventFilterConnectionSetupAddress, (Address address, AutoAcceptFlag auto_accept_flag));
+      (ClassOfDevice class_of_device,
+       ClassOfDevice class_of_device_mask,
+       AutoAcceptFlag auto_accept_flag));
+  MOCK_METHOD(
+      void,
+      SetEventFilterConnectionSetupAddress,
+      (Address address, AutoAcceptFlag auto_accept_flag));
   MOCK_METHOD(void, WriteLocalName, (std::string local_name));
   MOCK_METHOD(
       void,

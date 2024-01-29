@@ -22,7 +22,7 @@
 
 #include "base/logging.h"
 #include "check.h"
-#include "hci/controller.h"
+#include "hci/controller_interface.h"
 #include "main/shim/entry.h"
 
 static const enh_esco_params_t default_esco_parameters[ESCO_NUM_CODECS] = {

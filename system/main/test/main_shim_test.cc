@@ -40,7 +40,7 @@
 #include "hci/acl_manager_mock.h"
 #include "hci/address.h"
 #include "hci/address_with_type.h"
-#include "hci/controller_mock.h"
+#include "hci/controller_interface_mock.h"
 #include "hci/distance_measurement_manager_mock.h"
 #include "hci/le_advertising_manager_mock.h"
 #include "hci/le_scanning_manager_mock.h"
@@ -367,7 +367,7 @@ class MainShimTest : public testing::Test {
     handler_ = new os::Handler(thread_);
 
     /* extern */ test::mock_controller_ =
-        new bluetooth::hci::testing::MockController();
+        new bluetooth::hci::testing::MockControllerInterface();
     /* extern */ test::mock_acl_manager_ =
         new bluetooth::hci::testing::MockAclManager();
     /* extern */ test::mock_le_scanning_manager_ =
