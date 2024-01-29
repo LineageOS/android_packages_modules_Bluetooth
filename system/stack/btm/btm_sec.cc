@@ -40,8 +40,10 @@
 #include "device/include/controller.h"
 #include "device/include/device_iot_config.h"
 #include "device/include/interop.h"
+#include "hci/controller_interface.h"
 #include "internal_include/bt_target.h"
 #include "l2c_api.h"
+#include "main/shim/entry.h"
 #include "osi/include/allocator.h"
 #include "osi/include/properties.h"
 #include "stack/btm/btm_ble_int.h"
@@ -668,7 +670,7 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
         BTM_SEC_ROLE_SWITCHED | BTM_SEC_LINK_KEY_AUTHED);
 
   LOG_VERBOSE("after update sec_flags=0x%x", p_dev_rec->sec_rec.sec_flags);
-  if (!controller_get_interface()->SupportsSimplePairing()) {
+  if (!bluetooth::shim::GetController()->SupportsSimplePairing()) {
     /* The special case when we authenticate keyboard.  Set pin type to fixed */
     /* It would be probably better to do it from the application, but it is */
     /* complicated */
@@ -700,7 +702,7 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
   }
 
   LOG_VERBOSE("sec mode: %d sm4:x%x", btm_sec_cb.security_mode, p_dev_rec->sm4);
-  if (!controller_get_interface()->SupportsSimplePairing() ||
+  if (!bluetooth::shim::GetController()->SupportsSimplePairing() ||
       (p_dev_rec->sm4 == BTM_SM4_KNOWN)) {
     if (btm_sec_check_prefetch_pin(p_dev_rec)) return (BTM_CMD_STARTED);
   }
@@ -1302,7 +1304,7 @@ void BTM_RemoteOobDataReply(tBTM_STATUS res, const RawAddress& bd_addr,
  *
  ******************************************************************************/
 bool BTM_BothEndsSupportSecureConnections(const RawAddress& bd_addr) {
-  return ((controller_get_interface()->SupportsSecureConnections()) &&
+  return ((bluetooth::shim::GetController()->SupportsSecureConnections()) &&
           (BTM_PeerSupportsSecureConnections(bd_addr)));
 }
 
@@ -1475,7 +1477,7 @@ tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(
 
   if ((!is_originator) && (security_required & BTM_SEC_MODE4_LEVEL4)) {
     bool local_supports_sc =
-        controller_get_interface()->SupportsSecureConnections();
+        bluetooth::shim::GetController()->SupportsSecureConnections();
     /* acceptor receives L2CAP Channel Connect Request for Secure Connections
      * Only service */
     if (!local_supports_sc || !p_dev_rec->SupportsSecureConnections()) {
@@ -1821,7 +1823,7 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
   if ((!is_originator) && ((security_required & BTM_SEC_MODE4_LEVEL4) ||
                            (btm_sec_cb.security_mode == BTM_SEC_MODE_SC))) {
     bool local_supports_sc =
-        controller_get_interface()->SupportsSecureConnections();
+        bluetooth::shim::GetController()->SupportsSecureConnections();
     /* acceptor receives service connection establishment Request for */
     /* Secure Connections Only service */
     if (!(local_supports_sc) || !(p_dev_rec->SupportsSecureConnections())) {
@@ -2054,7 +2056,7 @@ void btm_sec_check_pending_reqs(void) {
  *
  ******************************************************************************/
 void btm_sec_dev_reset(void) {
-  ASSERT_LOG(controller_get_interface()->SupportsSimplePairing(),
+  ASSERT_LOG(bluetooth::shim::GetController()->SupportsSimplePairing(),
              "only controllers with SSP is supported");
 
   /* set the default IO capabilities */
@@ -2511,7 +2513,7 @@ void btm_io_capabilities_req(RawAddress p) {
     err_code = HCI_ERR_PAIRING_NOT_ALLOWED;
   } else if (btm_sec_cb.security_mode == BTM_SEC_MODE_SC) {
     bool local_supports_sc =
-        controller_get_interface()->SupportsSecureConnections();
+        bluetooth::shim::GetController()->SupportsSecureConnections();
     /* device in Secure Connections Only mode */
     if (!(local_supports_sc) || !(p_dev_rec->SupportsSecureConnections())) {
       LOG_DEBUG(
