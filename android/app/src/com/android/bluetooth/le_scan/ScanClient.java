@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.gatt;
+package com.android.bluetooth.le_scan;
 
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanSettings;
 import android.os.Binder;
 import android.os.UserHandle;
-
-import com.android.bluetooth.le_scan.AppScanStats;
 
 import java.util.List;
 import java.util.Objects;
@@ -55,7 +53,7 @@ public class ScanClient {
     private static final ScanSettings DEFAULT_SCAN_SETTINGS =
             new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build();
 
-    ScanClient(int scannerId) {
+    public ScanClient(int scannerId) {
         this(scannerId, DEFAULT_SCAN_SETTINGS, null);
     }
 
@@ -63,7 +61,7 @@ public class ScanClient {
         this(scannerId, settings, filters, Binder.getCallingUid());
     }
 
-    ScanClient(int scannerId, ScanSettings settings, List<ScanFilter> filters, int appUid) {
+    public ScanClient(int scannerId, ScanSettings settings, List<ScanFilter> filters, int appUid) {
         this.scannerId = scannerId;
         this.settings = settings;
         this.scanModeApp = settings.getScanMode();
@@ -106,7 +104,7 @@ public class ScanClient {
      * @param newScanMode
      * @return true if scan settings are updated, false otherwise.
      */
-    public boolean updateScanMode(int newScanMode) {
+    boolean updateScanMode(int newScanMode) {
         if (settings.getScanMode() == newScanMode) {
             return false;
         }
