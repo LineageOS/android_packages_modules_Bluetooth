@@ -26,7 +26,7 @@
 #include "common/bidi_queue.h"
 #include "common/init_flags.h"
 #include "hci/acl_connection_interface.h"
-#include "hci/controller.h"
+#include "hci/controller_interface.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_packets.h"
 #include "hci/include/packet_fragmenter.h"

@@ -18,10 +18,12 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <cstddef>
 #include <iostream>
 #include <sstream>
 
 #include "common/init_flags.h"
+#include "hci/controller_interface_mock.h"
 #include "hci/hci_layer_mock.h"
 #include "internal_include/bt_target.h"
 #include "stack/btm/btm_dev.h"
@@ -59,8 +61,12 @@ class StackBtmTest : public Test {
  protected:
   void SetUp() override {
     reset_mock_function_count_map();
+    bluetooth::hci::testing::mock_controller_ = &controller_;
   }
-  void TearDown() override {}
+  void TearDown() override {
+    bluetooth::hci::testing::mock_controller_ = nullptr;
+  }
+  bluetooth::hci::testing::MockControllerInterface controller_;
 };
 
 class StackBtmWithQueuesTest : public StackBtmTest {
