@@ -380,6 +380,8 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
 
     if (queued_create_broadcast_request_) {
       LOG_ERROR("Not processed yet queued broadcast");
+      callbacks_->OnBroadcastCreated(bluetooth::le_audio::kBroadcastIdInvalid,
+                                     false);
       return;
     }
 
@@ -390,6 +392,8 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
           public_metadata.data(), public_metadata.size(), is_metadata_valid);
       if (!is_metadata_valid) {
         LOG_ERROR("Invalid metadata provided.");
+        callbacks_->OnBroadcastCreated(bluetooth::le_audio::kBroadcastIdInvalid,
+                                       false);
         return;
       }
       // Prepare public features byte
@@ -431,6 +435,8 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
       auto ltv = LeAudioLtvMap::Parse(metadata.data(), metadata.size(), is_metadata_valid);
       if (!is_metadata_valid) {
         LOG_ERROR("Invalid metadata provided.");
+        callbacks_->OnBroadcastCreated(bluetooth::le_audio::kBroadcastIdInvalid,
+                                       false);
         return;
       }
 
@@ -441,6 +447,8 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
         if (stream_context_vec) {
           if (stream_context_vec.value().size() < 2) {
             LOG_ERROR("kLeAudioMetadataTypeStreamingAudioContext size < 2");
+            callbacks_->OnBroadcastCreated(
+                bluetooth::le_audio::kBroadcastIdInvalid, false);
             return;
           }
           auto pp = stream_context_vec.value().data();
@@ -453,6 +461,8 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
       if (stream_context_vec) {
         if (stream_context_vec.value().size() < 2) {
           LOG_ERROR("kLeAudioMetadataTypeStreamingAudioContext size < 2");
+          callbacks_->OnBroadcastCreated(
+              bluetooth::le_audio::kBroadcastIdInvalid, false);
           return;
         }
 
