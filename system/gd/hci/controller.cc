@@ -23,6 +23,7 @@
 
 #include "common/init_flags.h"
 #include "dumpsys_data_generated.h"
+#include "hci/controller_interface.h"
 #include "hci/event_checkers.h"
 #include "hci/hci_layer.h"
 #include "hci_controller_generated.h"

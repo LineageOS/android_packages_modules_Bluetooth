@@ -44,7 +44,7 @@
 #include "hci/address.h"
 #include "hci/address_with_type.h"
 #include "hci/class_of_device.h"
-#include "hci/controller.h"
+#include "hci/controller_interface.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
 #include "main/shim/entry.h"

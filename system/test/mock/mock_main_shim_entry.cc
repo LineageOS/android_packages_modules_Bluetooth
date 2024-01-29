@@ -15,7 +15,7 @@
  */
 
 #include "hci/acl_manager_mock.h"
-#include "hci/controller_mock.h"
+#include "hci/controller_interface_mock.h"
 #include "hci/distance_measurement_manager_mock.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_layer_mock.h"
@@ -34,7 +34,7 @@ namespace hci {
 namespace testing {
 
 MockAclManager* mock_acl_manager_{nullptr};
-MockController* mock_controller_{nullptr};
+MockControllerInterface* mock_controller_{nullptr};
 MockHciLayer* mock_hci_layer_{nullptr};
 os::Handler* mock_gd_shim_handler_{nullptr};
 MockLeAdvertisingManager* mock_le_advertising_manager_{nullptr};
@@ -50,7 +50,9 @@ namespace shim {
 
 Dumpsys* GetDumpsys() { return nullptr; }
 hci::AclManager* GetAclManager() { return hci::testing::mock_acl_manager_; }
-hci::Controller* GetController() { return hci::testing::mock_controller_; }
+hci::ControllerInterface* GetController() {
+  return hci::testing::mock_controller_;
+}
 hci::HciLayer* GetHciLayer() { return hci::testing::mock_hci_layer_; }
 hci::LeAdvertisingManager* GetAdvertising() {
   return hci::testing::mock_le_advertising_manager_;
