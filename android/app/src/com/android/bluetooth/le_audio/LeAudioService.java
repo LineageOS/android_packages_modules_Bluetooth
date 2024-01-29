@@ -1078,6 +1078,15 @@ public class LeAudioService extends ProfileService {
     }
 
     /**
+     * Check if broadcast is active
+     *
+     * @return true if there is active broadcast, false otherwise
+     */
+    public boolean isBroadcastActive() {
+        return !mBroadcastDescriptors.isEmpty();
+    }
+
+    /**
      * Get the maximum number of supported simultaneous broadcasts.
      * @return number of supported simultaneous broadcasts
      */
@@ -4463,6 +4472,22 @@ public class LeAudioService extends ProfileService {
 
             enforceBluetoothPrivilegedPermission(service);
             service.setCodecConfigPreference(groupId, inputCodecConfig, outputCodecConfig);
+        }
+
+        @Override
+        public void isBroadcastActive(
+                AttributionSource source, SynchronousResultReceiver receiver) {
+            try {
+                boolean result = false;
+                LeAudioService service = getService(source);
+                if (service != null) {
+                    enforceBluetoothPrivilegedPermission(service);
+                    result = service.isBroadcastActive();
+                }
+                receiver.send(result);
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
         }
     }
 

@@ -510,6 +510,52 @@ public class LeAudioBroadcastServiceTest {
         Assert.assertEquals(meta_list.get(0), state_event.broadcastMetadata);
     }
 
+    @Test
+    public void testIsBroadcastActive() {
+        int broadcastId = 243;
+        byte[] code = {0x00, 0x01, 0x00, 0x02};
+
+        BluetoothLeAudioContentMetadata.Builder meta_builder =
+                new BluetoothLeAudioContentMetadata.Builder();
+        meta_builder.setLanguage("ENG");
+        meta_builder.setProgramInfo("Public broadcast info");
+        BluetoothLeAudioContentMetadata meta = meta_builder.build();
+        mService.createBroadcast(buildBroadcastSettingsFromMetadata(meta, code, 1));
+
+        LeAudioStackEvent create_event =
+                new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_CREATED);
+        create_event.valueInt1 = broadcastId;
+        create_event.valueBool1 = true;
+        mService.messageFromNative(create_event);
+
+        // Inject metadata stack event and verify if getter API works as expected
+        LeAudioStackEvent state_event =
+                new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_METADATA_CHANGED);
+        state_event.valueInt1 = broadcastId;
+        state_event.broadcastMetadata = createBroadcastMetadata();
+        mService.messageFromNative(state_event);
+
+        // Verify if broadcast is active
+        Assert.assertTrue(mService.isBroadcastActive());
+
+        mService.stopBroadcast(broadcastId);
+        verify(mLeAudioBroadcasterNativeInterface, times(1)).stopBroadcast(eq(broadcastId));
+
+        state_event = new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_STATE);
+        state_event.valueInt1 = broadcastId;
+        state_event.valueInt2 = LeAudioStackEvent.BROADCAST_STATE_STOPPED;
+        mService.messageFromNative(state_event);
+
+        verify(mLeAudioBroadcasterNativeInterface, times(1)).destroyBroadcast(eq(broadcastId));
+
+        state_event = new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_DESTROYED);
+        state_event.valueInt1 = broadcastId;
+        mService.messageFromNative(state_event);
+
+        // Verify if broadcast is not active
+        Assert.assertFalse(mService.isBroadcastActive());
+    }
+
     private void verifyConnectionStateIntent(
             int timeoutMs, BluetoothDevice device, int newState, int prevState) {
         Intent intent = TestUtils.waitForIntent(timeoutMs, mIntentQueue);
