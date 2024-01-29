@@ -114,6 +114,8 @@ class LeAdvertisingManager : public bluetooth::Module {
 
   size_t GetNumberOfAdvertisingInstances() const;
 
+  size_t GetNumberOfAdvertisingInstancesInUse() const;
+
   int GetAdvertiserRegId(AdvertiserId advertiser_id);
 
   void ExtendedCreateAdvertiser(

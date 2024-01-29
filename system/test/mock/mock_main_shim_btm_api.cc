@@ -240,3 +240,7 @@ tBTM_STATUS bluetooth::shim::BTM_BleResetId() {
   inc_func_call_count(__func__);
   return BTM_SUCCESS;
 }
+size_t bluetooth::shim::BTM_BleGetNumberOfAdvertisingInstancesInUse() {
+  inc_func_call_count(__func__);
+  return 0;
+}
