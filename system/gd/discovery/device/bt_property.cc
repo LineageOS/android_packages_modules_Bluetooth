@@ -346,9 +346,8 @@ std::shared_ptr<RemoteASHATruncatedHiSyncId> RemoteASHATruncatedHiSyncId::Create
     const uint32_t& id) {
   return std::make_shared<RemoteASHATruncatedHiSyncId>(RemoteASHATruncatedHiSyncId(id));
 }
-std::shared_ptr<RemoteModelNum> RemoteModelNum::Create(const uint8_t* model, size_t len) {
-  ASSERT(model != nullptr);
-  return std::make_shared<RemoteModelNum>(RemoteModelNum(model, len));
+std::shared_ptr<RemoteModelNum> RemoteModelNum::Create(const bt_bdname_t& name) {
+  return std::make_shared<RemoteModelNum>(RemoteModelNum(name));
 }
 std::shared_ptr<RemoteAddrType> RemoteAddrType::Create(const uint8_t& addr) {
   return std::make_shared<RemoteAddrType>(RemoteAddrType(addr));
