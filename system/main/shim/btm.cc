@@ -170,7 +170,7 @@ void Btm::SetInterlacedInquiryScan() { GetInquiry()->SetInterlacedScan(); }
 void Btm::SetStandardInquiryScan() { GetInquiry()->SetStandardScan(); }
 
 bool Btm::IsInterlacedScanSupported() const {
-  return controller_get_interface()->SupportsInterlacedInquiryScan();
+  return bluetooth::shim::GetController()->SupportsInterlacedInquiryScan();
 }
 
 /**
