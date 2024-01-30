@@ -36,30 +36,8 @@ typedef struct controller_t {
 
   const uint8_t* (*get_ble_supported_states)(void);
 
-  bool (*SupportsSimplePairing)(void);
-  bool (*SupportsSecureConnections)(void);
-  bool (*SupportsSimultaneousLeBrEdr)(void);
-  bool (*supports_reading_remote_extended_features)(void);
-  bool (*SupportsInterlacedInquiryScan)(void);
-  bool (*SupportsRssiWithInquiryResults)(void);
-  bool (*SupportsExtendedInquiryResponse)(void);
   bool (*supports_enhanced_setup_synchronous_connection)(void);
   bool (*supports_enhanced_accept_synchronous_connection)(void);
-  bool (*Supports3SlotPackets)(void);
-  bool (*Supports5SlotPackets)(void);
-  bool (*SupportsClassic2mPhy)(void);
-  bool (*SupportsClassic3mPhy)(void);
-  bool (*Supports3SlotEdrPackets)(void);
-  bool (*Supports5SlotEdrPackets)(void);
-  bool (*SupportsSco)(void);
-  bool (*SupportsHv2Packets)(void);
-  bool (*SupportsHv3Packets)(void);
-  bool (*SupportsEv3Packets)(void);
-  bool (*SupportsEv4Packets)(void);
-  bool (*SupportsEv5Packets)(void);
-  bool (*SupportsEsco2mPhy)(void);
-  bool (*SupportsEsco3mPhy)(void);
-  bool (*Supports3SlotEscoEdrPackets)(void);
   bool (*SupportsRoleSwitch)(void);
   bool (*SupportsHoldMode)(void);
   bool (*SupportsSniffMode)(void);
