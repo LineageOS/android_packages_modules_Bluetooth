@@ -506,6 +506,12 @@ void HfpClientInterface::Offload::CancelStreamingRequest() {
   }
 }
 
+std::unordered_map<int, ::hfp::sco_config>
+HfpClientInterface::Offload::GetHfpScoConfig() {
+  return aidl::hfp::HfpTransport::GetHfpScoConfig(
+      aidl::SessionType::HFP_HARDWARE_OFFLOAD_DATAPATH);
+}
+
 HfpClientInterface::Offload* HfpClientInterface::GetOffload(
     bluetooth::common::MessageLoopThread* /*message_loop*/) {
   if (!is_aidl_support_hfp()) {

@@ -49,6 +49,11 @@ bool HfpClientInterface::ReleaseOffload(HfpClientInterface::Offload* offload) {
 
 HfpClientInterface* HfpClientInterface::Get() { return nullptr; }
 
+std::unordered_map<int, ::hfp::sco_config>
+HfpClientInterface::Offload::GetHfpScoConfig() {
+  return std::unordered_map<int, ::hfp::sco_config>();
+}
+
 }  // namespace hfp
 }  // namespace audio
 }  // namespace bluetooth

@@ -65,6 +65,13 @@ static bool sco_allowed = true;
 static RawAddress active_device_addr = {};
 static std::unique_ptr<HfpInterface> hfp_client_interface;
 static std::unique_ptr<HfpInterface::Offload> hfp_offload_interface;
+static std::unordered_map<int, ::hfp::sco_config> sco_config_map;
+static std::unordered_map<tBTA_AG_PEER_CODEC, esco_coding_format_t>
+    codec_coding_format_map{
+        {UUID_CODEC_LC3, ESCO_CODING_FORMAT_LC3},
+        {UUID_CODEC_MSBC, ESCO_CODING_FORMAT_MSBC},
+        {UUID_CODEC_CVSD, ESCO_CODING_FORMAT_CVSD},
+    };
 
 /* sco events */
 enum {
@@ -127,6 +134,9 @@ static const char* bta_ag_sco_state_str(uint8_t state) {
 bool bta_ag_sco_is_active_device(const RawAddress& bd_addr) {
   return !active_device_addr.IsEmpty() && active_device_addr == bd_addr;
 }
+
+void updateCodecParametersFromProviderInfo(tBTA_AG_PEER_CODEC esco_codec,
+                                           enh_esco_params_t& params);
 
 /*******************************************************************************
  *
@@ -500,6 +510,8 @@ void bta_ag_create_sco(tBTA_AG_SCB* p_scb, bool is_orig) {
     }
   }
 
+  updateCodecParametersFromProviderInfo(esco_codec, params);
+
   if (IS_FLAG_ENABLED(retry_esco_with_zero_retransmission_effort) &&
       p_scb->retransmission_effort_retries == 1) {
     LOG_INFO("change retransmission_effort to 0, retry");
@@ -540,6 +552,29 @@ void bta_ag_create_sco(tBTA_AG_SCB* p_scb, bool is_orig) {
               params.packet_types);
   }
   LOG_DEBUG("AFTER %s", p_scb->ToString().c_str());
+}
+
+void updateCodecParametersFromProviderInfo(tBTA_AG_PEER_CODEC esco_codec,
+                                           enh_esco_params_t& params) {
+  if (IS_FLAG_ENABLED(is_sco_managed_by_audio) && !sco_config_map.empty()) {
+    auto sco_config_it = sco_config_map.find(esco_codec);
+    if (sco_config_it == sco_config_map.end()) {
+      LOG_ERROR("cannot find sco config for esco_codec index=%d", esco_codec);
+      return;
+    }
+    LOG_DEBUG("use ProviderInfo to update (e)sco parameters");
+    params.input_data_path = sco_config_it->second.inputDataPath;
+    params.output_data_path = sco_config_it->second.outputDataPath;
+    if (!sco_config_it->second.useControllerCodec) {
+      LOG_DEBUG("use DSP Codec instead of controller codec");
+
+      esco_coding_format_t codingFormat = codec_coding_format_map[esco_codec];
+      params.input_coding_format.coding_format = codingFormat;
+      params.output_coding_format.coding_format = codingFormat;
+      params.input_bandwidth = TXRX_64KBITS_RATE;
+      params.output_bandwidth = TXRX_64KBITS_RATE;
+    }
+  }
 }
 
 /*******************************************************************************
@@ -1446,6 +1481,23 @@ void bta_ag_sco_conn_open(tBTA_AG_SCB* p_scb,
   if (IS_FLAG_ENABLED(is_sco_managed_by_audio)) {
     // ConfirmStreamingRequest before sends callback to java layer
     hfp_offload_interface->ConfirmStreamingRequest();
+
+    bool is_controller_codec = false;
+    if (sco_config_map.find(p_scb->inuse_codec) == sco_config_map.end()) {
+      LOG_ERROR("sco_config_map does not have inuse_codec=%d",
+                p_scb->inuse_codec);
+    } else {
+      is_controller_codec =
+          sco_config_map[p_scb->inuse_codec].useControllerCodec;
+    }
+
+    hfp::offload_config config{
+        .sco_codec = p_scb->inuse_codec,
+        .connection_handle = p_scb->conn_handle,
+        .is_controller_codec = is_controller_codec,
+        .is_nrec = p_scb->nrec_enabled,
+    };
+    hfp_offload_interface->UpdateAudioConfigToHal(config);
   }
 
   /* call app callback */
@@ -1594,6 +1646,7 @@ void bta_ag_api_set_active_device(const RawAddress& new_active_device) {
     if (!hfp_offload_interface) {
       hfp_offload_interface = std::unique_ptr<HfpInterface::Offload>(
           hfp_client_interface->GetOffload(get_main_thread()));
+      sco_config_map = hfp_offload_interface->GetHfpScoConfig();
       if (!hfp_offload_interface) {
         LOG_WARN("could not get offload interface");
       } else {
