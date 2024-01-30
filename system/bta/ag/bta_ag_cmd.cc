@@ -1452,6 +1452,10 @@ static void bta_ag_hsp_result(tBTA_AG_SCB* p_scb,
                                         bta_ag_result_text(result.result))) {
           break;
         }
+        if (IS_FLAG_ENABLED(is_sco_managed_by_audio)) {
+          // let Audio HAL open the SCO
+          break;
+        }
         bta_ag_sco_open(p_scb, tBTA_AG_DATA::kEmpty);
       }
       break;
@@ -1469,6 +1473,10 @@ static void bta_ag_hsp_result(tBTA_AG_SCB* p_scb,
             !bta_ag_sco_is_open(p_scb)) {
           if (!bta_ag_is_sco_open_allowed(p_scb,
                                           bta_ag_result_text(result.result))) {
+            break;
+          }
+          if (IS_FLAG_ENABLED(is_sco_managed_by_audio)) {
+            // let Audio HAL open the SCO
             break;
           }
           bta_ag_sco_open(p_scb, tBTA_AG_DATA::kEmpty);
@@ -1565,6 +1573,10 @@ static void bta_ag_hfp_result(tBTA_AG_SCB* p_scb,
                                           bta_ag_result_text(result.result))) {
             break;
           }
+          if (IS_FLAG_ENABLED(is_sco_managed_by_audio)) {
+            // let Audio HAL open the SCO
+            break;
+          }
           bta_ag_sco_open(p_scb, tBTA_AG_DATA::kEmpty);
         }
       }
@@ -1583,6 +1595,10 @@ static void bta_ag_hfp_result(tBTA_AG_SCB* p_scb,
             !bta_ag_sco_is_open(p_scb)) {
           if (!bta_ag_is_sco_open_allowed(p_scb,
                                           bta_ag_result_text(result.result))) {
+            break;
+          }
+          if (IS_FLAG_ENABLED(is_sco_managed_by_audio)) {
+            // let Audio HAL open the SCO
             break;
           }
           bta_ag_sco_open(p_scb, tBTA_AG_DATA::kEmpty);
@@ -1608,6 +1624,10 @@ static void bta_ag_hfp_result(tBTA_AG_SCB* p_scb,
                                         bta_ag_result_text(result.result))) {
           break;
         }
+        if (IS_FLAG_ENABLED(is_sco_managed_by_audio)) {
+          // let Audio HAL open the SCO
+          break;
+        }
         bta_ag_sco_open(p_scb, tBTA_AG_DATA::kEmpty);
       }
       break;
@@ -1621,6 +1641,10 @@ static void bta_ag_hfp_result(tBTA_AG_SCB* p_scb,
                                         bta_ag_result_text(result.result))) {
           break;
         }
+        if (IS_FLAG_ENABLED(is_sco_managed_by_audio)) {
+          // let Audio HAL open the SCO
+          break;
+        }
         bta_ag_sco_open(p_scb, tBTA_AG_DATA::kEmpty);
       }
       break;
@@ -1632,6 +1656,10 @@ static void bta_ag_hfp_result(tBTA_AG_SCB* p_scb,
         if (result.data.audio_handle == bta_ag_scb_to_idx(p_scb)) {
           if (!bta_ag_is_sco_open_allowed(p_scb,
                                           bta_ag_result_text(result.result))) {
+            break;
+          }
+          if (IS_FLAG_ENABLED(is_sco_managed_by_audio)) {
+            // let Audio HAL open the SCO
             break;
           }
           bta_ag_sco_open(p_scb, tBTA_AG_DATA::kEmpty);
@@ -1650,6 +1678,10 @@ static void bta_ag_hfp_result(tBTA_AG_SCB* p_scb,
         if (result.data.audio_handle == bta_ag_scb_to_idx(p_scb)) {
           if (!bta_ag_is_sco_open_allowed(p_scb,
                                           bta_ag_result_text(result.result))) {
+            break;
+          }
+          if (IS_FLAG_ENABLED(is_sco_managed_by_audio)) {
+            // let Audio HAL open the SCO
             break;
           }
           bta_ag_sco_open(p_scb, tBTA_AG_DATA::kEmpty);
