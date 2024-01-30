@@ -126,6 +126,7 @@ public class VolumeControlServiceTest {
         mFakeFlagsImpl = new FakeFeatureFlagsImpl();
         mFakeFlagsImpl.setFlag(
                 Flags.FLAG_LEAUDIO_BROADCAST_VOLUME_CONTROL_FOR_CONNECTED_DEVICES, false);
+        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_MULTIPLE_VOCS_INSTANCES_API, false);
 
         VolumeControlNativeInterface.setInstance(mNativeInterface);
         mService = new VolumeControlService(mTargetContext, mFakeFlagsImpl);
@@ -1012,17 +1013,28 @@ public class VolumeControlServiceTest {
     public void testServiceBinderVolumeOffsetMethods() throws Exception {
         // Send a message to trigger connection completed
         generateDeviceAvailableMessageFromNative(mDevice, 2);
-        final SynchronousResultReceiver<Boolean> boolRecv = SynchronousResultReceiver.get();
-        boolean defaultRecvValue = false;
-        mServiceBinder.isVolumeOffsetAvailable(mDevice, mAttributionSource, boolRecv);
-        Assert.assertTrue(boolRecv.awaitResultNoInterrupt(Duration.ofMillis(TIMEOUT_MS))
-                .getValue(defaultRecvValue));
 
+        final SynchronousResultReceiver<Boolean> boolRecv = SynchronousResultReceiver.get();
+        boolean defaultAvailability = false;
+        mServiceBinder.isVolumeOffsetAvailable(mDevice, mAttributionSource, boolRecv);
+        Assert.assertTrue(
+                boolRecv.awaitResultNoInterrupt(Duration.ofMillis(TIMEOUT_MS))
+                        .getValue(defaultAvailability));
+
+        final SynchronousResultReceiver<Integer> intRecv = SynchronousResultReceiver.get();
+        int defaultNumberOfInstances = 0;
+        mServiceBinder.getNumberOfVolumeOffsetInstances(mDevice, mAttributionSource, intRecv);
+        int numberOfInstances =
+                intRecv.awaitResultNoInterrupt(Duration.ofMillis(TIMEOUT_MS))
+                        .getValue(defaultNumberOfInstances);
+        Assert.assertEquals(2, numberOfInstances);
+
+        int id = 1;
         int volumeOffset = 100;
         final SynchronousResultReceiver<Void> voidRecv = SynchronousResultReceiver.get();
-        mServiceBinder.setVolumeOffset(mDevice, volumeOffset, mAttributionSource, voidRecv);
+        mServiceBinder.setVolumeOffset(mDevice, id, volumeOffset, mAttributionSource, voidRecv);
         voidRecv.awaitResultNoInterrupt(Duration.ofMillis(TIMEOUT_MS));
-        verify(mNativeInterface).setExtAudioOutVolumeOffset(mDevice, 1, volumeOffset);
+        verify(mNativeInterface).setExtAudioOutVolumeOffset(mDevice, id, volumeOffset);
     }
 
     @Test
@@ -1097,6 +1109,8 @@ public class VolumeControlServiceTest {
 
     @Test
     public void testServiceBinderRegisterCallbackWhenDeviceAlreadyConnected() throws Exception {
+        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_MULTIPLE_VOCS_INSTANCES_API, true);
+
         int groupId = 1;
         int groupVolume = 56;
 
@@ -1112,7 +1126,7 @@ public class VolumeControlServiceTest {
         doReturn(true).when(mNativeInterface).connectVolumeControl(any(BluetoothDevice.class));
         doReturn(true).when(mNativeInterface).disconnectVolumeControl(any(BluetoothDevice.class));
 
-        generateDeviceAvailableMessageFromNative(mDevice, 1);
+        generateDeviceAvailableMessageFromNative(mDevice, 2);
         generateConnectionMessageFromNative(
                 mDevice, BluetoothProfile.STATE_CONNECTED, BluetoothProfile.STATE_DISCONNECTED);
         Assert.assertEquals(BluetoothProfile.STATE_CONNECTED, mService.getConnectionState(mDevice));
@@ -1131,9 +1145,21 @@ public class VolumeControlServiceTest {
         Assert.assertTrue(mService.getDevices().contains(mDeviceTwo));
         verify(mNativeInterface, times(1)).setVolume(eq(mDeviceTwo), eq(groupVolume));
 
-        // Set different offset to both devices
+        // Generate events for both devices
         generateDeviceOffsetChangedMessageFromNative(mDevice, 1, 100);
-        generateDeviceOffsetChangedMessageFromNative(mDeviceTwo, 1, 200);
+        generateDeviceLocationChangedMessageFromNative(mDevice, 1, 1);
+        final String testDevice1Desc1 = "testDevice1Desc1";
+        generateDeviceDescriptionChangedMessageFromNative(mDevice, 1, testDevice1Desc1);
+
+        generateDeviceOffsetChangedMessageFromNative(mDevice, 2, 200);
+        generateDeviceLocationChangedMessageFromNative(mDevice, 2, 2);
+        final String testDevice1Desc2 = "testDevice1Desc2";
+        generateDeviceDescriptionChangedMessageFromNative(mDevice, 2, testDevice1Desc2);
+
+        generateDeviceOffsetChangedMessageFromNative(mDeviceTwo, 1, 250);
+        generateDeviceLocationChangedMessageFromNative(mDeviceTwo, 1, 3);
+        final String testDevice2Desc = "testDevice2Desc";
+        generateDeviceDescriptionChangedMessageFromNative(mDeviceTwo, 1, testDevice2Desc);
 
         // Register callback and verify it is called with known devices
         IBluetoothVolumeControlCallback callback =
@@ -1147,12 +1173,30 @@ public class VolumeControlServiceTest {
         recv.awaitResultNoInterrupt(Duration.ofMillis(TIMEOUT_MS)).getValue(null);
         Assert.assertEquals(size + 1, mService.mCallbacks.getRegisteredCallbackCount());
 
-        verify(callback).onVolumeOffsetChanged(eq(mDeviceTwo), eq(200));
-        verify(callback).onVolumeOffsetChanged(eq(mDevice), eq(100));
+        verify(callback).onVolumeOffsetChanged(eq(mDevice), eq(1), eq(100));
+        verify(callback).onVolumeOffsetAudioLocationChanged(eq(mDevice), eq(1), eq(1));
+        verify(callback)
+                .onVolumeOffsetAudioDescriptionChanged(eq(mDevice), eq(1), eq(testDevice1Desc1));
+
+        verify(callback).onVolumeOffsetChanged(eq(mDevice), eq(2), eq(200));
+        verify(callback).onVolumeOffsetAudioLocationChanged(eq(mDevice), eq(2), eq(2));
+        verify(callback)
+                .onVolumeOffsetAudioDescriptionChanged(eq(mDevice), eq(2), eq(testDevice1Desc2));
+
+        verify(callback).onVolumeOffsetChanged(eq(mDeviceTwo), eq(1), eq(250));
+        verify(callback).onVolumeOffsetAudioLocationChanged(eq(mDeviceTwo), eq(1), eq(3));
+        verify(callback)
+                .onVolumeOffsetAudioDescriptionChanged(eq(mDeviceTwo), eq(1), eq(testDevice2Desc));
 
         generateDeviceOffsetChangedMessageFromNative(mDevice, 1, 50);
+        generateDeviceLocationChangedMessageFromNative(mDevice, 1, 0);
+        final String testDevice1Desc3 = "testDevice1Desc3";
+        generateDeviceDescriptionChangedMessageFromNative(mDevice, 1, testDevice1Desc3);
 
-        verify(callback).onVolumeOffsetChanged(eq(mDevice), eq(50));
+        verify(callback).onVolumeOffsetChanged(eq(mDevice), eq(1), eq(50));
+        verify(callback).onVolumeOffsetAudioLocationChanged(eq(mDevice), eq(1), eq(0));
+        verify(callback)
+                .onVolumeOffsetAudioDescriptionChanged(eq(mDevice), eq(1), eq(testDevice1Desc3));
     }
 
     @Test
@@ -1509,6 +1553,30 @@ public class VolumeControlServiceTest {
         event.device = device;
         event.valueInt1 = extOffsetIndex; // external output index
         event.valueInt2 = offset; // offset value
+        mService.messageFromNative(event);
+    }
+
+    private void generateDeviceLocationChangedMessageFromNative(
+            BluetoothDevice device, int extOffsetIndex, int location) {
+        // Send a message to trigger connection completed
+        VolumeControlStackEvent event =
+                new VolumeControlStackEvent(
+                        VolumeControlStackEvent.EVENT_TYPE_EXT_AUDIO_OUT_LOCATION_CHANGED);
+        event.device = device;
+        event.valueInt1 = extOffsetIndex; // external output index
+        event.valueInt2 = location; // location
+        mService.messageFromNative(event);
+    }
+
+    private void generateDeviceDescriptionChangedMessageFromNative(
+            BluetoothDevice device, int extOffsetIndex, String description) {
+        // Send a message to trigger connection completed
+        VolumeControlStackEvent event =
+                new VolumeControlStackEvent(
+                        VolumeControlStackEvent.EVENT_TYPE_EXT_AUDIO_OUT_DESCRIPTION_CHANGED);
+        event.device = device;
+        event.valueInt1 = extOffsetIndex; // external output index
+        event.valueString1 = description; // description
         mService.messageFromNative(event);
     }
 
