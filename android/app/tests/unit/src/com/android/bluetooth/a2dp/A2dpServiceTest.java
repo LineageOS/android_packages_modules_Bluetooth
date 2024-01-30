@@ -71,7 +71,7 @@ import java.util.List;
 public class A2dpServiceTest {
     private static final int MAX_CONNECTED_AUDIO_DEVICES = 5;
 
-    private BluetoothAdapter mAdapter;
+    private static final BluetoothAdapter sAdapter = BluetoothAdapter.getDefaultAdapter();
     private A2dpService mA2dpService;
     private BluetoothDevice mTestDevice;
     private static final Duration TIMEOUT = Duration.ofSeconds(1);
@@ -114,7 +114,6 @@ public class A2dpServiceTest {
 
         mFakeFlagsImpl = new FakeFeatureFlagsImpl();
         mFakeFlagsImpl.setFlag(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION, false);
-        mAdapter = BluetoothAdapter.getDefaultAdapter();
         mA2dpService = new A2dpService(mContext, mMockNativeInterface, mFakeFlagsImpl);
         mA2dpService.doStart();
 
@@ -122,7 +121,7 @@ public class A2dpServiceTest {
         A2dpStateMachine.sConnectTimeoutMs = (int) TIMEOUT.toMillis();
 
         // Get a device for testing
-        mTestDevice = mAdapter.getRemoteDevice("00:01:02:03:04:05");
+        mTestDevice = sAdapter.getRemoteDevice("00:01:02:03:04:05");
         doReturn(BluetoothDevice.BOND_BONDED)
                 .when(mAdapterService)
                 .getBondState(any(BluetoothDevice.class));
@@ -397,7 +396,7 @@ public class A2dpServiceTest {
 
         // Prepare and connect all test devices
         for (int i = 0; i < MAX_CONNECTED_AUDIO_DEVICES; i++) {
-            BluetoothDevice testDevice = TestUtils.getTestDevice(mAdapter, i);
+            BluetoothDevice testDevice = TestUtils.getTestDevice(sAdapter, i);
             testDevices[i] = testDevice;
             when(mDatabaseManager.getProfileConnectionPolicy(testDevice, BluetoothProfile.A2DP))
                     .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
@@ -429,7 +428,7 @@ public class A2dpServiceTest {
         }
 
         // Prepare and connect the extra test device. The connect request should fail
-        extraTestDevice = TestUtils.getTestDevice(mAdapter, MAX_CONNECTED_AUDIO_DEVICES);
+        extraTestDevice = TestUtils.getTestDevice(sAdapter, MAX_CONNECTED_AUDIO_DEVICES);
         when(mDatabaseManager.getProfileConnectionPolicy(extraTestDevice, BluetoothProfile.A2DP))
                 .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
         // Send a connect request
@@ -718,7 +717,7 @@ public class A2dpServiceTest {
     /** Test that whether active device been removed after enable silence mode */
     @Test
     public void testSetSilenceMode() {
-        BluetoothDevice otherDevice = mAdapter.getRemoteDevice("05:04:03:02:01:00");
+        BluetoothDevice otherDevice = sAdapter.getRemoteDevice("05:04:03:02:01:00");
         connectDevice(mTestDevice);
         connectDevice(otherDevice);
         doReturn(true).when(mMockNativeInterface).setActiveDevice(any(BluetoothDevice.class));
