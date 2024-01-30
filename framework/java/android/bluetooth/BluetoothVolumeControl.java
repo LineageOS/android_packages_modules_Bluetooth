@@ -390,7 +390,31 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
                         service.registerCallback(mCallback, mAttributionSource, recv);
                     } else {
                         service.notifyNewRegisteredCallback(
-                                (IBluetoothVolumeControlCallback) (callback),
+                                new IBluetoothVolumeControlCallback.Stub() {
+                                    @Override
+                                    public void onVolumeOffsetChanged(
+                                            BluetoothDevice device, int volumeOffset)
+                                            throws RemoteException {
+                                        Attributable.setAttributionSource(
+                                                device, mAttributionSource);
+                                        executor.execute(
+                                                () ->
+                                                        callback.onVolumeOffsetChanged(
+                                                                device, volumeOffset));
+                                    }
+
+                                    @Override
+                                    public void onDeviceVolumeChanged(
+                                            BluetoothDevice device, int volume)
+                                            throws RemoteException {
+                                        Attributable.setAttributionSource(
+                                                device, mAttributionSource);
+                                        executor.execute(
+                                                () ->
+                                                        callback.onDeviceVolumeChanged(
+                                                                device, volume));
+                                    }
+                                },
                                 mAttributionSource,
                                 recv);
                     }
