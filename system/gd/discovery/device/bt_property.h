@@ -24,14 +24,11 @@
 #include "include/hardware/bluetooth.h"
 #include "stack/include/bt_name.h"
 
-using namespace bluetooth;
-
-using BtPropertyName = std::vector<uint8_t>;
-
-class BtProperty;
-
 std::string bt_property_text(const bt_property_t& property);
 std::string bt_property_type_text(const bt_property_type_t& type);
+
+namespace bluetooth {
+namespace property {
 
 class BtProperty {
  public:
@@ -48,23 +45,35 @@ class BtProperty {
     return bt_property_type_text(type_);
   }
 
-  // Serialize the property object into the provided vector
-  static void Serialize(
-      const std::vector<std::shared_ptr<BtProperty>>& bt_properties,
-      std::vector<bt_property_t>& properties);
-
-  // Serialize the property object into the provided memory
-  static void Serialize(
-      const std::vector<std::shared_ptr<BtProperty>>& bt_properties,
-      bt_property_t* property,
-      size_t max_len);
-
  protected:
   BtProperty(bt_property_type_t type) : type_(type) {}
   virtual ~BtProperty() = default;
 
  private:
   bt_property_type_t type_;
+};
+
+// Provide pointer/size access to properties for legacy jni API
+class BtPropertyLegacy {
+ public:
+  BtPropertyLegacy(const std::vector<std::shared_ptr<BtProperty>>& bt_properties);
+
+  void Export(bt_property_t* bt_properties, size_t size);
+
+  size_t NumProperties() const;
+
+  const std::vector<bt_property_t>& Properties() const;
+
+  bt_property_t* Ptr() const {
+    return const_cast<bt_property_t*>(&properties_[0]);
+  }
+  int Len() const {
+    return static_cast<int>(properties_.size() * sizeof(bt_property_t));
+  }
+
+ private:
+  const std::vector<std::shared_ptr<BtProperty>> bt_properties_;
+  std::vector<bt_property_t> properties_;
 };
 
 template <typename T>
@@ -78,21 +87,12 @@ class BtPropertySimple : public BtProperty {
     return (const void*)val_.get();
   }
 
-  friend class BtPropertyFactory;
-
-  static std::shared_ptr<BtPropertySimple<T>> Factory(bt_property_type_t type, const T& val);
-
+ protected:
   BtPropertySimple<T>(bt_property_type_t type, T val)
       : BtProperty(type), val_(std::make_shared<T>(val)) {}
 
  private:
   std::shared_ptr<T> val_;
-};
-
-class BtPropertyBdAddr : public BtPropertySimple<RawAddress> {
- public:
-  BtPropertyBdAddr(const RawAddress& bd_addr)
-      : BtPropertySimple<RawAddress>(BT_PROPERTY_BDADDR, bd_addr) {}
 };
 
 template <typename T>
@@ -105,19 +105,7 @@ class BtPropertyVector : public BtProperty {
     return (const void*)&(*val_)[0];
   }
 
-  //  friend class BtPropertyFactory;
-
-  // General vector usage
-  static std::shared_ptr<BtPropertyVector<T>> Factory(
-      bt_property_type_t type, const std::vector<T>& vector);
-
-  // Use for bluetooth name arrays
-  static std::shared_ptr<BtPropertyVector<T>> Factory(bt_property_type_t type, BD_NAME name);
-
-  // Use for C raw addresses
-  static std::shared_ptr<BtPropertyVector<T>> Factory(
-      bt_property_type_t type, const T* name, size_t size);
-
+ protected:
   // Create a vector property from another vector
   BtPropertyVector<T>(bt_property_type_t type, const std::vector<T>& val)
       : BtProperty(type), val_(std::make_shared<std::vector<T>>(val)) {}
@@ -130,70 +118,175 @@ class BtPropertyVector : public BtProperty {
   std::shared_ptr<std::vector<T>> val_;
 };
 
-template <typename T>
-std::shared_ptr<BtPropertyVector<T>> BtPropertyVector<T>::Factory(
-    bt_property_type_t type, const std::vector<T>& vector) {
-  return std::make_shared<BtPropertyVector<T>>(BtPropertyVector<T>(type, vector));
-}
-
-template <typename T>
-std::shared_ptr<BtPropertyVector<T>> BtPropertyVector<T>::Factory(
-    bt_property_type_t type, BD_NAME name) {
-  return std::make_shared<BtPropertyVector<T>>(BtPropertyVector<T>(type, name, kBdNameLength));
-}
-
-template <typename T>
-std::shared_ptr<BtPropertyVector<T>> BtPropertyVector<T>::Factory(
-    bt_property_type_t type, const T* val, size_t size) {
-  return std::make_shared<BtPropertyVector<T>>(BtPropertyVector<T>(type, val, size));
-}
-
-template <typename T>
-std::shared_ptr<BtPropertySimple<T>> BtPropertySimple<T>::Factory(
-    bt_property_type_t type, const T& val) {
-  return std::make_shared<BtPropertySimple<T>>(BtPropertySimple<T>(type, val));
-}
-
-class BtPropertyFactory {
+class BdName : public BtPropertyVector<uint8_t> {
  public:
-  // General vector usage
-  template <typename T>
-  static std::shared_ptr<BtProperty> Build(bt_property_type_t type, const std::vector<T>& vector);
+  BdName(const BD_NAME bd_name)
+      : BtPropertyVector<uint8_t>(BT_PROPERTY_BDNAME, bd_name, kBdNameLength) {}
 
-  // Use for C raw addresses
-  template <typename T>
-  static std::shared_ptr<BtProperty> Build(bt_property_type_t type, const T* ptr, size_t size);
-
-  // Use for bluetooth name arrays
-  static std::shared_ptr<BtProperty> Build(bt_property_type_t type, BD_NAME name);
-
-  // Use for simple type properties
-  template <typename T>
-  static std::shared_ptr<BtProperty> Build(bt_property_type_t type, const T& val);
-
-  // Bt property generator wrapping in shared pointer
-  template <typename T, typename U>
-  static std::shared_ptr<T> Build(const U& val);
+  static std::shared_ptr<BdName> Create(const BD_NAME bd_name);
 };
 
-template <typename T, typename U>
-std::shared_ptr<T> BtPropertyFactory::Build(const U& val) {
-  return std::make_shared<T>(T(val));
-}
+class BdAddr : public BtPropertySimple<RawAddress> {
+ public:
+  BdAddr(const RawAddress& bd_addr) : BtPropertySimple<RawAddress>(BT_PROPERTY_BDADDR, bd_addr) {}
 
-template <typename T>
-std::shared_ptr<BtProperty> BtPropertyFactory::Build(
-    bt_property_type_t type, const std::vector<T>& vector) {
-  return BtPropertyVector<T>::Factory(type, vector);
-}
+  static std::shared_ptr<BdAddr> Create(const RawAddress& bd_addr);
+};
 
-template <typename T>
-std::shared_ptr<BtProperty> BtPropertyFactory::Build(
-    bt_property_type_t type, const T* ptr, size_t size) {
-  return BtPropertyVector<T>::Factory(type, ptr, size);
-}
+class Uuids : public BtPropertyVector<bluetooth::Uuid> {
+ public:
+  Uuids(const std::vector<bluetooth::Uuid>& uuids)
+      : BtPropertyVector<bluetooth::Uuid>(BT_PROPERTY_UUIDS, uuids) {}
 
-template <typename T>
-std::shared_ptr<BtProperty> BtPropertyFactory::Build(bt_property_type_t type, const T& val) {
-  return BtPropertySimple<T>::Factory(type, val);
-}
+  static std::shared_ptr<Uuids> Create(const std::vector<bluetooth::Uuid>& uuids);
+};
+
+class ClassOfDevice : public BtPropertySimple<uint32_t> {
+ public:
+  ClassOfDevice(const uint32_t& cod)
+      : BtPropertySimple<uint32_t>(BT_PROPERTY_CLASS_OF_DEVICE, cod) {}
+  static std::shared_ptr<ClassOfDevice> Create(const uint32_t& bd_addr);
+};
+
+class TypeOfDevice : public BtPropertySimple<bt_device_type_t> {
+ public:
+  TypeOfDevice(const bt_device_type_t& device_type)
+      : BtPropertySimple<bt_device_type_t>(BT_PROPERTY_TYPE_OF_DEVICE, device_type) {}
+  static std::shared_ptr<TypeOfDevice> Create(const bt_device_type_t& device_type);
+};
+
+class ServiceRecord : public BtPropertySimple<bt_service_record_t> {
+ public:
+  ServiceRecord(const bt_service_record_t& record)
+      : BtPropertySimple<bt_service_record_t>(BT_PROPERTY_SERVICE_RECORD, record) {}
+  static std::shared_ptr<ServiceRecord> Create(const bt_service_record_t& record);
+};
+
+class AdapterScanMode : public BtPropertySimple<bt_scan_mode_t> {
+ public:
+  AdapterScanMode(const bt_scan_mode_t& mode)
+      : BtPropertySimple<bt_scan_mode_t>(BT_PROPERTY_ADAPTER_SCAN_MODE, mode) {}
+  static std::shared_ptr<AdapterScanMode> Create(const bt_scan_mode_t& mode);
+};
+
+class AdapterBondedDevices : public BtPropertyVector<RawAddress> {
+ public:
+  AdapterBondedDevices(const RawAddress* bd_addr, size_t len)
+      : BtPropertyVector<RawAddress>(BT_PROPERTY_ADAPTER_BONDED_DEVICES, bd_addr, len) {}
+
+  static std::shared_ptr<AdapterBondedDevices> Create(const RawAddress* bd_addr, size_t len);
+};
+
+class AdapterDiscoverableTimeout : public BtPropertySimple<uint32_t> {
+ public:
+  AdapterDiscoverableTimeout(const uint32_t& timeout)
+      : BtPropertySimple<uint32_t>(BT_PROPERTY_ADAPTER_DISCOVERABLE_TIMEOUT, timeout) {}
+
+  static std::shared_ptr<AdapterDiscoverableTimeout> Create(const uint32_t& timeout);
+};
+
+class RemoteFriendlyName : public BtPropertyVector<uint8_t> {
+ public:
+  RemoteFriendlyName(const uint8_t bd_name[], size_t len)
+      : BtPropertyVector<uint8_t>(BT_PROPERTY_REMOTE_FRIENDLY_NAME, bd_name, len) {}
+
+  static std::shared_ptr<RemoteFriendlyName> Create(const uint8_t bd_name[], size_t len);
+};
+
+class RemoteRSSI : public BtPropertySimple<int8_t> {
+ public:
+  RemoteRSSI(const int8_t& rssi) : BtPropertySimple<int8_t>(BT_PROPERTY_REMOTE_RSSI, rssi) {}
+
+  static std::shared_ptr<RemoteRSSI> Create(const int8_t& rssi);
+};
+
+class RemoteVersionInfo : public BtPropertySimple<bt_remote_version_t> {
+ public:
+  RemoteVersionInfo(const bt_remote_version_t& info)
+      : BtPropertySimple<bt_remote_version_t>(BT_PROPERTY_REMOTE_VERSION_INFO, info) {}
+
+  static std::shared_ptr<RemoteVersionInfo> Create(const bt_remote_version_t& info);
+};
+
+class LocalLeFeatures : public BtPropertySimple<bt_local_le_features_t> {
+ public:
+  LocalLeFeatures(const bt_local_le_features_t& features)
+      : BtPropertySimple<bt_local_le_features_t>(BT_PROPERTY_LOCAL_LE_FEATURES, features) {}
+
+  static std::shared_ptr<LocalLeFeatures> Create(const bt_local_le_features_t& features);
+};
+
+class LocalIOCaps : public BtPropertySimple<bt_io_cap_t> {
+ public:
+  LocalIOCaps(const bt_io_cap_t& cap)
+      : BtPropertySimple<bt_io_cap_t>(BT_PROPERTY_LOCAL_IO_CAPS, cap) {}
+
+  static std::shared_ptr<LocalIOCaps> Create(const bt_io_cap_t& cap);
+};
+
+class RemoteIsCoordinatedSetMember : public BtPropertySimple<bool> {
+ public:
+  RemoteIsCoordinatedSetMember(const bool& is_set_member)
+      : BtPropertySimple<bool>(BT_PROPERTY_REMOTE_IS_COORDINATED_SET_MEMBER, is_set_member) {}
+
+  static std::shared_ptr<RemoteIsCoordinatedSetMember> Create(const bool& is_set_member);
+};
+
+class Appearance : public BtPropertySimple<uint16_t> {
+ public:
+  Appearance(const uint16_t& appearance)
+      : BtPropertySimple<uint16_t>(BT_PROPERTY_APPEARANCE, appearance) {}
+
+  static std::shared_ptr<Appearance> Create(const uint16_t& appearance);
+};
+
+class VendorProductInfo : public BtPropertySimple<bt_vendor_product_info_t> {
+ public:
+  VendorProductInfo(const bt_vendor_product_info_t& info)
+      : BtPropertySimple<bt_vendor_product_info_t>(BT_PROPERTY_VENDOR_PRODUCT_INFO, info) {}
+
+  static std::shared_ptr<VendorProductInfo> Create(const bt_vendor_product_info_t& info);
+};
+
+class RemoteASHACapability : public BtPropertySimple<int16_t> {
+ public:
+  RemoteASHACapability(const int16_t capability)
+      : BtPropertySimple<int16_t>(BT_PROPERTY_REMOTE_ASHA_CAPABILITY, capability) {}
+
+  static std::shared_ptr<RemoteASHACapability> Create(const int16_t& capability);
+};
+
+class RemoteASHATruncatedHiSyncId : public BtPropertySimple<uint32_t> {
+ public:
+  RemoteASHATruncatedHiSyncId(const uint32_t id)
+      : BtPropertySimple<uint32_t>(BT_PROPERTY_REMOTE_ASHA_TRUNCATED_HISYNCID, id) {}
+
+  static std::shared_ptr<RemoteASHATruncatedHiSyncId> Create(const uint32_t& id);
+};
+
+class RemoteModelNum : public BtPropertyVector<uint8_t> {
+ public:
+  RemoteModelNum(const uint8_t* model, size_t len)
+      : BtPropertyVector<uint8_t>(BT_PROPERTY_REMOTE_MODEL_NUM, model, len) {}
+
+  static std::shared_ptr<RemoteModelNum> Create(const uint8_t* model, size_t len);
+};
+
+class RemoteAddrType : public BtPropertySimple<uint8_t> {
+ public:
+  RemoteAddrType(const uint8_t& type)
+      : BtPropertySimple<uint8_t>(BT_PROPERTY_REMOTE_ADDR_TYPE, type) {}
+
+  static std::shared_ptr<RemoteAddrType> Create(const uint8_t& type);
+};
+
+class RemoteDeviceTimestamp : public BtPropertySimple<int> {
+ public:
+  RemoteDeviceTimestamp(const int& timestamp)
+      : BtPropertySimple<int>(BT_PROPERTY_REMOTE_DEVICE_TIMESTAMP, timestamp) {}
+
+  static std::shared_ptr<RemoteDeviceTimestamp> Create(const int& timestamp);
+};
+
+}  // namespace property
+}  // namespace bluetooth
