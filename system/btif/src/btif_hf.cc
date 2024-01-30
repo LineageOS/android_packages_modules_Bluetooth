@@ -152,9 +152,8 @@ static tBTA_SERVICE_MASK get_BTIF_HF_SERVICES() {
 /* HF features supported at runtime */
 static uint32_t get_hf_features() {
 #if TARGET_FLOSS
-#define DEFAULT_BTIF_HF_FEATURES                                               \
-  (BTA_AG_FEAT_3WAY | BTA_AG_FEAT_ECS | BTA_AG_FEAT_CODEC | BTA_AG_FEAT_UNAT | \
-   BTA_AG_FEAT_HF_IND)
+#define DEFAULT_BTIF_HF_FEATURES \
+  (BTA_AG_FEAT_ECS | BTA_AG_FEAT_CODEC | BTA_AG_FEAT_UNAT | BTA_AG_FEAT_HF_IND)
 #else
 #define DEFAULT_BTIF_HF_FEATURES                                  \
   (BTA_AG_FEAT_3WAY | BTA_AG_FEAT_ECNR | BTA_AG_FEAT_REJECT |     \
