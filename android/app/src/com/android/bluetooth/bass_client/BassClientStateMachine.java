@@ -325,6 +325,19 @@ public class BassClientStateMachine extends StateMachine {
         return null;
     }
 
+    boolean isSyncedToTheSource(int sourceId) {
+        BluetoothLeBroadcastReceiveState recvState = getBroadcastReceiveStateForSourceId(sourceId);
+
+        return recvState != null
+                && (recvState.getPaSyncState()
+                                == BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCHRONIZED
+                        || recvState.getBisSyncState().stream()
+                                .anyMatch(
+                                        bitmap -> {
+                                            return bitmap != 0;
+                                        }));
+    }
+
     void parseBaseData(BluetoothDevice device, int syncHandle, byte[] serviceData) {
         log("parseBaseData" + Arrays.toString(serviceData));
         BaseData base = BaseData.parseBaseData(serviceData);
@@ -1759,15 +1772,9 @@ public class BassClientStateMachine extends StateMachine {
                     // Save pending source to be added once existing source got removed
                     mPendingSourceToSwitch = metaData;
                     // Remove the source first
-                    BluetoothLeBroadcastReceiveState recvStateToUpdate =
-                            getBroadcastReceiveStateForSourceId(sourceIdToRemove);
                     BluetoothLeBroadcastMetadata metaDataToUpdate =
                             getCurrentBroadcastMetadata(sourceIdToRemove);
-                    if (metaDataToUpdate != null
-                            && recvStateToUpdate != null
-                            && recvStateToUpdate.getPaSyncState()
-                                    == BluetoothLeBroadcastReceiveState
-                                            .PA_SYNC_STATE_SYNCHRONIZED) {
+                    if (metaDataToUpdate != null && isSyncedToTheSource(sourceIdToRemove)) {
                         log("SWITCH_BCAST_SOURCE force source to lost PA sync");
                         Message msg = obtainMessage(UPDATE_BCAST_SOURCE);
                         msg.arg1 = sourceIdToRemove;
