@@ -98,7 +98,7 @@ public class SmsMmsContacts {
             Log.e(TAG, "query failed");
             ContentProfileErrorReportUtils.report(
                     BluetoothProfile.MAP,
-                    BluetoothProtoEnums.SMS_MMS_CONTACTS,
+                    BluetoothProtoEnums.BLUETOOTH_SMS_MMS_CONTACTS,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
                     0);
         } finally {
@@ -153,7 +153,7 @@ public class SmsMmsContacts {
                 Log.e(TAG, "query failed");
                 ContentProfileErrorReportUtils.report(
                         BluetoothProfile.MAP,
-                        BluetoothProtoEnums.SMS_MMS_CONTACTS,
+                        BluetoothProtoEnums.BLUETOOTH_SMS_MMS_CONTACTS,
                         BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
                         1);
             }
