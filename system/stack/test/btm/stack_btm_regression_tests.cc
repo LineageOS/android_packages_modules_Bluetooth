@@ -18,11 +18,11 @@
 
 #include <gtest/gtest.h>
 
+#include "ble_hci_link_interface.h"
 #include "bt_hdr.h"
 #include "btm_ble_api_types.h"
 #include "hci_error_code.h"
 #include "osi/include/allocator.h"
-#include "ble_hci_link_interface.h"
 
 namespace {
 

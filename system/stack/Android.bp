@@ -589,7 +589,6 @@ cc_fuzz {
         "libbt_shim_ffi",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libgmock",
-        "libosi",
     ],
 }
 
@@ -631,6 +630,7 @@ cc_fuzz {
         "libbt_shim_bridge",
         "libbt_shim_ffi",
         "libgmock",
+        "libosi",
     ],
     target: {
         android: {
