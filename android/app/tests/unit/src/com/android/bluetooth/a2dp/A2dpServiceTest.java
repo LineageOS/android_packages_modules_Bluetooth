@@ -37,7 +37,6 @@ import android.os.ParcelUuid;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.MediumTest;
-import androidx.test.rule.ServiceTestRule;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
@@ -53,7 +52,6 @@ import org.hamcrest.core.AllOf;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -70,14 +68,12 @@ import java.util.List;
 @RunWith(AndroidJUnit4.class)
 public class A2dpServiceTest {
     private static final int MAX_CONNECTED_AUDIO_DEVICES = 5;
-
-    private static final BluetoothAdapter sAdapter = BluetoothAdapter.getDefaultAdapter();
-    private A2dpService mA2dpService;
-    private static final BluetoothDevice sTestDevice =
-            sAdapter.getRemoteDevice("00:01:02:03:04:05");
     private static final Duration TIMEOUT = Duration.ofSeconds(1);
 
-    private FakeFeatureFlagsImpl mFakeFlagsImpl;
+    private static final BluetoothAdapter sAdapter = BluetoothAdapter.getDefaultAdapter();
+    private static final BluetoothDevice sTestDevice =
+            sAdapter.getRemoteDevice("00:01:02:03:04:05");
+
     @Mock private A2dpNativeInterface mMockNativeInterface;
     @Mock private ActiveDeviceManager mActiveDeviceManager;
     @Mock private AdapterService mAdapterService;
@@ -87,7 +83,8 @@ public class A2dpServiceTest {
     @Mock private SilenceDeviceManager mSilenceDeviceManager;
     private InOrder mInOrder = null;
 
-    @Rule public final ServiceTestRule mServiceRule = new ServiceTestRule();
+    private A2dpService mA2dpService;
+    private FakeFeatureFlagsImpl mFakeFlagsImpl;
 
     @Before
     public void setUp() throws Exception {
