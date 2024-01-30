@@ -28,10 +28,8 @@ import android.bluetooth.BluetoothCodecStatus;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothUuid;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.media.BluetoothProfileConnectionInfo;
 import android.os.Looper;
@@ -74,28 +72,33 @@ public class A2dpServiceTest {
     private static final int MAX_CONNECTED_AUDIO_DEVICES = 5;
 
     private BluetoothAdapter mAdapter;
-    private Context mTargetContext;
     private A2dpService mA2dpService;
     private BluetoothDevice mTestDevice;
-    private static final Duration TIMEOUT_MS = Duration.ofSeconds(1);
+    private static final Duration TIMEOUT = Duration.ofSeconds(1);
 
     private FakeFeatureFlagsImpl mFakeFlagsImpl;
-    @Mock private AdapterService mAdapterService;
-    @Mock private ActiveDeviceManager mActiveDeviceManager;
     @Mock private A2dpNativeInterface mMockNativeInterface;
+    @Mock private ActiveDeviceManager mActiveDeviceManager;
+    @Mock private AdapterService mAdapterService;
+    @Mock private AudioManager mAudioManager;
+    @Mock private Context mContext;
     @Mock private DatabaseManager mDatabaseManager;
     @Mock private SilenceDeviceManager mSilenceDeviceManager;
-    @Mock private BroadcastReceiver mReceiver;
     private InOrder mInOrder = null;
 
     @Rule public final ServiceTestRule mServiceRule = new ServiceTestRule();
 
     @Before
     public void setUp() throws Exception {
-        mTargetContext = InstrumentationRegistry.getTargetContext();
         // Set up mocks and test assets
         MockitoAnnotations.initMocks(this);
-        mInOrder = inOrder(mReceiver);
+        mInOrder = inOrder(mContext);
+
+        TestUtils.mockGetSystemService(
+                mContext, Context.AUDIO_SERVICE, AudioManager.class, mAudioManager);
+        doReturn(InstrumentationRegistry.getTargetContext().getResources())
+                .when(mContext)
+                .getResources();
 
         if (Looper.myLooper() == null) {
             Looper.prepare();
@@ -112,20 +115,11 @@ public class A2dpServiceTest {
         mFakeFlagsImpl = new FakeFeatureFlagsImpl();
         mFakeFlagsImpl.setFlag(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION, false);
         mAdapter = BluetoothAdapter.getDefaultAdapter();
-        mA2dpService = new A2dpService(mTargetContext, mMockNativeInterface, mFakeFlagsImpl);
+        mA2dpService = new A2dpService(mContext, mMockNativeInterface, mFakeFlagsImpl);
         mA2dpService.doStart();
 
         // Override the timeout value to speed up the test
-        A2dpStateMachine.sConnectTimeoutMs = (int) TIMEOUT_MS.toMillis();
-
-        // Set up the Connection State Changed receiver
-        IntentFilter filter = new IntentFilter();
-        filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
-        filter.addAction(BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED);
-        filter.addAction(BluetoothA2dp.ACTION_PLAYING_STATE_CHANGED);
-        filter.addAction(BluetoothA2dp.ACTION_CODEC_CONFIG_CHANGED);
-        filter.addAction(BluetoothA2dp.ACTION_ACTIVE_DEVICE_CHANGED);
-        mTargetContext.registerReceiver(mReceiver, filter);
+        A2dpStateMachine.sConnectTimeoutMs = (int) TIMEOUT.toMillis();
 
         // Get a device for testing
         mTestDevice = mAdapter.getRemoteDevice("00:01:02:03:04:05");
@@ -140,18 +134,17 @@ public class A2dpServiceTest {
     @After
     public void tearDown() throws Exception {
         mA2dpService.doStop();
-        mTargetContext.unregisterReceiver(mReceiver);
         TestUtils.clearAdapterService(mAdapterService);
     }
 
     @SafeVarargs
-    private void verifyIntentReceived(Matcher<Intent>... matchers) {
-        mInOrder.verify(mReceiver, timeout(TIMEOUT_MS.toMillis() * 2))
-                .onReceive(any(Context.class), MockitoHamcrest.argThat(AllOf.allOf(matchers)));
+    private void verifyIntentSent(Matcher<Intent>... matchers) {
+        mInOrder.verify(mContext, timeout(TIMEOUT.toMillis() * 2))
+                .sendBroadcast(MockitoHamcrest.argThat(AllOf.allOf(matchers)), any(), any());
     }
 
     private void verifyConnectionStateIntent(BluetoothDevice device, int newState, int prevState) {
-        verifyIntentReceived(
+        verifyIntentSent(
                 hasAction(BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED),
                 hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
                 hasExtra(BluetoothProfile.EXTRA_STATE, newState),
@@ -486,7 +479,7 @@ public class A2dpServiceTest {
         // NOTE: The first message (STATE_PLAYING -> STATE_NOT_PLAYING) is generated internally
         // by the state machine when Connected, and needs to be extracted first before generating
         // the actual message from native.
-        verifyIntentReceived(
+        verifyIntentSent(
                 hasAction(BluetoothA2dp.ACTION_PLAYING_STATE_CHANGED),
                 hasExtra(BluetoothDevice.EXTRA_DEVICE, mTestDevice),
                 hasExtra(BluetoothProfile.EXTRA_STATE, BluetoothA2dp.STATE_NOT_PLAYING),
@@ -575,7 +568,7 @@ public class A2dpServiceTest {
         // NOTE: The first message (STATE_PLAYING -> STATE_NOT_PLAYING) is generated internally
         // by the state machine when Connected, and needs to be extracted first before generating
         // the actual message from native.
-        verifyIntentReceived(
+        verifyIntentSent(
                 hasAction(BluetoothA2dp.ACTION_PLAYING_STATE_CHANGED),
                 hasExtra(BluetoothDevice.EXTRA_DEVICE, mTestDevice),
                 hasExtra(BluetoothProfile.EXTRA_STATE, BluetoothA2dp.STATE_NOT_PLAYING),
@@ -774,8 +767,6 @@ public class A2dpServiceTest {
         doReturn(true).when(mMockNativeInterface).setActiveDevice(any(BluetoothDevice.class));
         Assert.assertTrue(mA2dpService.setActiveDevice(mTestDevice));
         Assert.assertEquals(mTestDevice, mA2dpService.getActiveDevice());
-        AudioManager audioManager = mock(AudioManager.class);
-        mA2dpService.mAudioManager = audioManager;
 
         Assert.assertTrue(mA2dpService.disconnect(mTestDevice));
         verifyConnectionStateIntent(
@@ -786,7 +777,7 @@ public class A2dpServiceTest {
 
         ArgumentCaptor<BluetoothProfileConnectionInfo> connectionInfoArgumentCaptor =
                 ArgumentCaptor.forClass(BluetoothProfileConnectionInfo.class);
-        verify(audioManager)
+        verify(mAudioManager)
                 .handleBluetoothActiveDeviceChanged(
                         isNull(), eq(mTestDevice), connectionInfoArgumentCaptor.capture());
         BluetoothProfileConnectionInfo connectionInfo = connectionInfoArgumentCaptor.getValue();
@@ -804,8 +795,6 @@ public class A2dpServiceTest {
         doReturn(true).when(mMockNativeInterface).setActiveDevice(any(BluetoothDevice.class));
         Assert.assertTrue(mA2dpService.setActiveDevice(mTestDevice));
         Assert.assertEquals(mTestDevice, mA2dpService.getActiveDevice());
-        AudioManager audioManager = mock(AudioManager.class);
-        mA2dpService.mAudioManager = audioManager;
 
         Assert.assertTrue(mA2dpService.disconnect(mTestDevice));
         verifyConnectionStateIntent(
@@ -816,7 +805,7 @@ public class A2dpServiceTest {
 
         ArgumentCaptor<BluetoothProfileConnectionInfo> connectionInfoArgumentCaptor =
                 ArgumentCaptor.forClass(BluetoothProfileConnectionInfo.class);
-        verify(audioManager)
+        verify(mAudioManager)
                 .handleBluetoothActiveDeviceChanged(
                         isNull(), eq(mTestDevice), connectionInfoArgumentCaptor.capture());
         BluetoothProfileConnectionInfo connectionInfo = connectionInfoArgumentCaptor.getValue();
@@ -1009,7 +998,7 @@ public class A2dpServiceTest {
          */
         mA2dpService.updateAndBroadcastActiveDevice(mTestDevice);
 
-        verifyIntentReceived(
+        verifyIntentSent(
                 hasAction(BluetoothA2dp.ACTION_ACTIVE_DEVICE_CHANGED),
                 hasExtra(BluetoothDevice.EXTRA_DEVICE, mTestDevice));
     }
@@ -1082,7 +1071,8 @@ public class A2dpServiceTest {
         stackEvent.valueInt = newConnectionState;
         mA2dpService.messageFromNative(stackEvent);
         // Verify the connection state broadcast
-        verifyNoMoreInteractions(mReceiver);
+        mInOrder.verify(mContext, timeout(TIMEOUT.toMillis()).times(0))
+                .sendBroadcast(any(), any(), any());
     }
 
     private void generateAudioMessageFromNative(
@@ -1093,7 +1083,7 @@ public class A2dpServiceTest {
         stackEvent.valueInt = audioStackEvent;
         mA2dpService.messageFromNative(stackEvent);
         // Verify the audio state broadcast
-        verifyIntentReceived(
+        verifyIntentSent(
                 hasAction(BluetoothA2dp.ACTION_PLAYING_STATE_CHANGED),
                 hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
                 hasExtra(BluetoothProfile.EXTRA_STATE, newAudioState),
@@ -1108,7 +1098,8 @@ public class A2dpServiceTest {
         stackEvent.valueInt = audioStackEvent;
         mA2dpService.messageFromNative(stackEvent);
         // Verify the audio state broadcast
-        verifyNoMoreInteractions(mReceiver);
+        mInOrder.verify(mContext, timeout(TIMEOUT.toMillis()).times(0))
+                .sendBroadcast(any(), any(), any());
     }
 
     private void generateCodecMessageFromNative(
@@ -1118,7 +1109,7 @@ public class A2dpServiceTest {
         stackEvent.device = device;
         stackEvent.codecStatus = codecStatus;
         mA2dpService.messageFromNative(stackEvent);
-        verifyIntentReceived(
+        verifyIntentSent(
                 hasAction(BluetoothA2dp.ACTION_CODEC_CONFIG_CHANGED),
                 hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
                 hasExtra(BluetoothCodecStatus.EXTRA_CODEC_STATUS, codecStatus));
@@ -1132,7 +1123,8 @@ public class A2dpServiceTest {
         stackEvent.codecStatus = codecStatus;
         mA2dpService.messageFromNative(stackEvent);
         // Verify the codec status broadcast
-        verifyNoMoreInteractions(mReceiver);
+        mInOrder.verify(mContext, timeout(TIMEOUT.toMillis()).times(0))
+                .sendBroadcast(any(), any(), any());
     }
 
     /**
