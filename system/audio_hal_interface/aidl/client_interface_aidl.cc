@@ -369,7 +369,8 @@ bool BluetoothAudioClientInterface::SetAllowedLatencyModes(
   }
 
   /* Low latency mode is used if modes other than FREE are present */
-  bool allowed = !(latency_modes_.empty());
+  bool allowed = (latency_modes_.size() > 1);
+  LOG(INFO) << __func__ << ": Latency mode allowed: " << allowed;
   auto aidl_retval = provider_->setLowLatencyModeAllowed(allowed);
   if (!aidl_retval.isOk()) {
     LOG(WARNING) << __func__ << ": BluetoothAudioHal is not ready: "
