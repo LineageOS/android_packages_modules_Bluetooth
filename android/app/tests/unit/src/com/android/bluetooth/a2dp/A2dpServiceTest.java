@@ -44,8 +44,6 @@ import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.SilenceDeviceManager;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
-import com.android.bluetooth.flags.FakeFeatureFlagsImpl;
-import com.android.bluetooth.flags.Flags;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.core.AllOf;
@@ -84,7 +82,6 @@ public class A2dpServiceTest {
     private InOrder mInOrder = null;
 
     private A2dpService mA2dpService;
-    private FakeFeatureFlagsImpl mFakeFlagsImpl;
 
     @Before
     public void setUp() throws Exception {
@@ -110,9 +107,7 @@ public class A2dpServiceTest {
         doReturn(mActiveDeviceManager).when(mAdapterService).getActiveDeviceManager();
         doReturn(mSilenceDeviceManager).when(mAdapterService).getSilenceDeviceManager();
 
-        mFakeFlagsImpl = new FakeFeatureFlagsImpl();
-        mFakeFlagsImpl.setFlag(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION, false);
-        mA2dpService = new A2dpService(mContext, mMockNativeInterface, mFakeFlagsImpl);
+        mA2dpService = new A2dpService(mContext, mMockNativeInterface);
         mA2dpService.doStart();
 
         // Override the timeout value to speed up the test
