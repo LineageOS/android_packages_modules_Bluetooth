@@ -112,22 +112,11 @@ tBTM_STATUS bluetooth::shim::BTM_SetInquiryMode(uint8_t /* inquiry_mode */) {
   inc_func_call_count(__func__);
   return BTM_SUCCESS;
 }
-tBTM_STATUS bluetooth::shim::BTM_StartInquiry(
-    tBTM_INQ_RESULTS_CB* /* p_results_cb */, tBTM_CMPL_CB* /* p_cmpl_cb */) {
-  inc_func_call_count(__func__);
-  return BTM_SUCCESS;
-}
-
 uint16_t bluetooth::shim::BTM_GetHCIConnHandle(
     const RawAddress& /* remote_bda */, tBT_TRANSPORT /* transport */) {
   inc_func_call_count(__func__);
   return 0;
 }
-uint16_t bluetooth::shim::BTM_IsInquiryActive(void) {
-  inc_func_call_count(__func__);
-  return 0;
-}
-
 uint8_t bluetooth::shim::BTM_BleMaxMultiAdvInstanceCount() {
   inc_func_call_count(__func__);
   return 0;
@@ -154,8 +143,6 @@ void bluetooth::shim::BTM_BleSetPrefConnParams(
     uint16_t /* supervision_tout */) {
   inc_func_call_count(__func__);
 }
-
-void bluetooth::shim::BTM_CancelInquiry(void) { inc_func_call_count(__func__); }
 
 void bluetooth::shim::BTM_EnableInterlacedInquiryScan() {
   inc_func_call_count(__func__);
