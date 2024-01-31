@@ -134,15 +134,13 @@ tRFC_MCB* rfc_alloc_multiplexer_channel(const RawAddress& bd_addr,
                                         bool is_initiator) {
   int i, j;
   tRFC_MCB* p_mcb = NULL;
-  VLOG(1) << __func__ << ": bd_addr:" << ADDRESS_TO_LOGGABLE_STR(bd_addr);
-  LOG_VERBOSE("rfc_alloc_multiplexer_channel:is_initiator:%d", is_initiator);
+  LOG_VERBOSE("bd_addr:%s, is_initiator:%d", ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
+              is_initiator);
 
   for (i = 0; i < MAX_BD_CONNECTIONS; i++) {
-    LOG_VERBOSE(
-        "rfc_alloc_multiplexer_channel rfc_cb.port.rfc_mcb[%d].state:%d", i,
-        rfc_cb.port.rfc_mcb[i].state);
-    VLOG(1) << "(rfc_cb.port.rfc_mcb[i].bd_addr:"
-            << ADDRESS_TO_LOGGABLE_STR(rfc_cb.port.rfc_mcb[i].bd_addr);
+    LOG_VERBOSE("rfc_cb.port.rfc_mcb[%d] - state:%d, bd_addr:%s", i,
+                rfc_cb.port.rfc_mcb[i].state,
+                ADDRESS_TO_LOGGABLE_CSTR(rfc_cb.port.rfc_mcb[i].bd_addr));
 
     if ((rfc_cb.port.rfc_mcb[i].state != RFC_MX_STATE_IDLE) &&
         rfc_cb.port.rfc_mcb[i].bd_addr == bd_addr) {
