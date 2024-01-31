@@ -148,5 +148,6 @@ void LogMetricBluetoothLEConnectionMetricEvent(
     android::bluetooth::le::LeConnectionState transaction_state,
     std::vector<std::pair<os::ArgumentType, int>>& argument_list) {}
 
+void LogMetricBluetoothLEConnection(os::LEConnectionSessionOptions /* session_options */) {}
 }  // namespace os
 }  // namespace bluetooth
