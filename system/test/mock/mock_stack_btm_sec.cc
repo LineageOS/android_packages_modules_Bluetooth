@@ -89,6 +89,7 @@ struct btm_sec_dev_reset btm_sec_dev_reset;
 struct btm_sec_disconnect btm_sec_disconnect;
 struct btm_sec_disconnected btm_sec_disconnected;
 struct btm_sec_encrypt_change btm_sec_encrypt_change;
+struct btm_sec_encryption_change_evt btm_sec_encryption_change_evt;
 struct btm_sec_is_a_bonded_dev btm_sec_is_a_bonded_dev;
 struct btm_sec_l2cap_access_req btm_sec_l2cap_access_req;
 struct btm_sec_l2cap_access_req_by_requirement
@@ -376,6 +377,12 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status,
   inc_func_call_count(__func__);
   test::mock::stack_btm_sec::btm_sec_encrypt_change(handle, status,
                                                     encr_enable);
+}
+void btm_sec_encryption_change_evt(uint16_t handle, tHCI_STATUS status,
+                                   uint8_t encr_enable) {
+  inc_func_call_count(__func__);
+  test::mock::stack_btm_sec::btm_sec_encryption_change_evt(handle, status,
+                                                           encr_enable);
 }
 bool btm_sec_is_a_bonded_dev(const RawAddress& bda) {
   inc_func_call_count(__func__);

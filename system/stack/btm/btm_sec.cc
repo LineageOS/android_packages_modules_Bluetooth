@@ -3346,6 +3346,80 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status,
     btm_sec_dev_rec_cback_event(p_dev_rec, btm_status, false);
 }
 
+constexpr uint8_t MIN_KEY_SIZE = 7;
+
+static void read_encryption_key_size_complete_after_encryption_change(
+    uint8_t status, uint16_t handle, uint8_t key_size) {
+  if (status == HCI_ERR_INSUFFCIENT_SECURITY) {
+    /* If remote device stop the encryption before we call "Read Encryption Key
+     * Size", we might receive Insufficient Security, which means that link is
+     * no longer encrypted. */
+    LOG_INFO("encryption stopped on link:0x%x", handle);
+    return;
+  }
+
+  if (status != HCI_SUCCESS) {
+    LOG_ERROR("disconnecting, status:0x%x", status);
+    acl_disconnect_from_handle(handle, HCI_ERR_PEER_USER,
+                               "stack::btu::btu_hcif::read_encryption_key_size_"
+                               "complete_after_encryption_change Bad key size");
+    return;
+  }
+
+  if (key_size < MIN_KEY_SIZE) {
+    LOG_ERROR(
+        "encryption key too short, disconnecting. handle:0x%x,key_size:%d",
+        handle, key_size);
+
+    acl_disconnect_from_handle(
+        handle, HCI_ERR_HOST_REJECT_SECURITY,
+        "stack::btu::btu_hcif::read_encryption_key_size_complete_after_"
+        "encryption_change Key Too Short");
+    return;
+  }
+
+  // good key size - succeed
+  btm_acl_encrypt_change(handle, static_cast<tHCI_STATUS>(status),
+                         1 /* enable */);
+  btm_sec_encrypt_change(handle, static_cast<tHCI_STATUS>(status),
+                         1 /* enable */);
+}
+
+// TODO: Remove
+void smp_cancel_start_encryption_attempt();
+
+/*******************************************************************************
+ *
+ * Function         btm_encryption_change_evt
+ *
+ * Description      Process event HCI_ENCRYPTION_CHANGE_EVT
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void btm_sec_encryption_change_evt(uint16_t handle, tHCI_STATUS status,
+                                   uint8_t encr_enable) {
+  if (status != HCI_SUCCESS || encr_enable == 0 ||
+      BTM_IsBleConnection(handle) ||
+      !controller_get_interface()->supports_read_encryption_key_size() ||
+      // Skip encryption key size check when using set_min_encryption_key_size
+      (bluetooth::common::init_flags::set_min_encryption_is_enabled() &&
+       controller_get_interface()->supports_set_min_encryption_key_size())) {
+    if (status == HCI_ERR_CONNECTION_TOUT) {
+      smp_cancel_start_encryption_attempt();
+      return;
+    }
+
+    btm_acl_encrypt_change(handle, static_cast<tHCI_STATUS>(status),
+                           encr_enable);
+    btm_sec_encrypt_change(handle, static_cast<tHCI_STATUS>(status),
+                           encr_enable);
+  } else {
+    btsnd_hcic_read_encryption_key_size(
+        handle,
+        base::Bind(&read_encryption_key_size_complete_after_encryption_change));
+  }
+}
 /*******************************************************************************
  *
  * Function         btm_sec_connect_after_reject_timeout
@@ -3828,8 +3902,6 @@ void btm_sec_role_changed(tHCI_STATUS hci_status, const RawAddress& bd_addr,
                       BTM_BLE_SEC_NONE);
   }
 }
-
-constexpr uint8_t MIN_KEY_SIZE = 7;
 
 static void read_encryption_key_size_complete_after_key_refresh(
     uint8_t status, uint16_t handle, uint8_t key_size) {
