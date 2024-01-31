@@ -90,3 +90,10 @@ flag {
     description: "Better LE Audio devices detection"
     bug: "319511584"
 }
+
+flag {
+    name: "metadata_api_inactive_audio_device_upon_connection"
+    namespace: "bluetooth"
+    description: "API to set device as inactive audio device upon connection"
+    bug: "322387487"
+}
