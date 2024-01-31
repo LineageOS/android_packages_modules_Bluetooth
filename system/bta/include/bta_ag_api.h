@@ -301,6 +301,12 @@ struct offload_config {
   bool is_nrec;
 };
 
+struct sco_config {
+  int inputDataPath;
+  int outputDataPath;
+  bool useControllerCodec;
+};
+
 }  // namespace hfp
 /* data associated with BTA_AG_IND_RES */
 typedef struct {
