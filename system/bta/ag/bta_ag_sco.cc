@@ -261,8 +261,12 @@ static void bta_ag_sco_disc_cback(uint16_t sco_idx) {
         bta_ag_cb.sco.p_curr_scb->retransmission_effort_retries++;
         bta_ag_cb.sco.p_curr_scb->state = BTA_AG_SCO_CODEC_ST;
         LOG_WARN("eSCO/SCO failed to open, retry with retransmission_effort");
-      } else
+      } else {
         LOG_ERROR("eSCO/SCO failed to open, no more fall back");
+        if (IS_FLAG_ENABLED(is_sco_managed_by_audio)) {
+          hfp_offload_interface->CancelStreamingRequest();
+        }
+      }
     }
 
     bta_ag_cb.sco.p_curr_scb->inuse_codec = BTM_SCO_CODEC_NONE;
@@ -1438,6 +1442,11 @@ void bta_ag_sco_conn_open(tBTA_AG_SCB* p_scb,
                           UNUSED_ATTR const tBTA_AG_DATA& data) {
   bta_ag_sco_event(p_scb, BTA_AG_SCO_CONN_OPEN_E);
   bta_sys_sco_open(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
+
+  if (IS_FLAG_ENABLED(is_sco_managed_by_audio)) {
+    // ConfirmStreamingRequest before sends callback to java layer
+    hfp_offload_interface->ConfirmStreamingRequest();
+  }
 
   /* call app callback */
   bta_ag_cback_sco(p_scb, BTA_AG_AUDIO_OPEN_EVT);
