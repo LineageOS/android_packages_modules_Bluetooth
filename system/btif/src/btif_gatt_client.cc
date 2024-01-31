@@ -44,6 +44,7 @@
 #include "btif_gatt.h"
 #include "btif_gatt_util.h"
 #include "device/include/controller.h"
+#include "gd/storage/config_keys.h"
 #include "include/check.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
@@ -651,7 +652,8 @@ static bt_status_t btif_gattc_read_phy(
 static int btif_gattc_get_device_type(const RawAddress& bd_addr) {
   int device_type = 0;
 
-  if (btif_config_get_int(bd_addr.ToString().c_str(), "DevType", &device_type))
+  if (btif_config_get_int(bd_addr.ToString().c_str(), BTIF_STORAGE_KEY_DEV_TYPE,
+                          &device_type))
     return device_type;
   return 0;
 }
