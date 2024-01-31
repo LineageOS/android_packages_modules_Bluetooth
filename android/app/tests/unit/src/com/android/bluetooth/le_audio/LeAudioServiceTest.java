@@ -1370,6 +1370,49 @@ public class LeAudioServiceTest {
         verify(mTbsService, times(0)).clearInbandRingtoneSupport(mSingleDevice);
     }
 
+    /** Test update unicast fallback active group when broadcast is ongoing */
+    @Test
+    public void testUpdateUnicastFallbackActiveDeviceGroupDuringBroadcast() {
+        int groupId = 1;
+        int preGroupId = 2;
+        /* AUDIO_DIRECTION_OUTPUT_BIT = 0x01 */
+        int direction = 1;
+        int snkAudioLocation = 3;
+        int srcAudioLocation = 4;
+        int availableContexts = 5 + BluetoothLeAudio.CONTEXT_TYPE_RINGTONE;
+
+        // Not connected device
+        assertThat(mService.setActiveDevice(mSingleDevice)).isFalse();
+
+        // Connected device
+        doReturn(true).when(mNativeInterface).connectLeAudio(any(BluetoothDevice.class));
+        connectTestDevice(mSingleDevice, testGroupId);
+
+        mService.mUnicastGroupIdDeactivatedForBroadcastTransition = preGroupId;
+        // mock create broadcast and currentlyActiveGroupId remains LE_AUDIO_GROUP_ID_INVALID
+        LeAudioStackEvent broadcastCreatedEvent =
+                new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_CREATED);
+        broadcastCreatedEvent.device = mSingleDevice;
+        broadcastCreatedEvent.valueInt1 = 1;
+        broadcastCreatedEvent.valueBool1 = true;
+        mService.messageFromNative(broadcastCreatedEvent);
+
+        LeAudioStackEvent audioConfChangedEvent =
+                new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_AUDIO_CONF_CHANGED);
+        audioConfChangedEvent.device = mSingleDevice;
+        audioConfChangedEvent.valueInt1 = direction;
+        audioConfChangedEvent.valueInt2 = groupId;
+        audioConfChangedEvent.valueInt3 = snkAudioLocation;
+        audioConfChangedEvent.valueInt4 = srcAudioLocation;
+        audioConfChangedEvent.valueInt5 = availableContexts;
+        mService.messageFromNative(audioConfChangedEvent);
+
+        // Verify only update the fallback group and not proceed to change active
+        assertThat(mService.setActiveDevice(mSingleDevice)).isTrue();
+        assertThat(mService.mUnicastGroupIdDeactivatedForBroadcastTransition).isEqualTo(groupId);
+        verify(mNativeInterface, times(0)).groupSetActive(anyInt());
+    }
+
     /**
      * Test getting active device
      */
