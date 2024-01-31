@@ -27,3 +27,10 @@ flag {
     description: "Fix double-sending device discovery state change when canceling RNR"
     bug: "321170442"
 }
+
+flag {
+    name: "bt_system_context_report"
+    namespace: "bluetooth"
+    description: "Report Bluetooth system context through bta_ble_energy_info_cmpl"
+    bug: "323083457"
+}
