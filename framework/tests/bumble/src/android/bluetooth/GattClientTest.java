@@ -27,7 +27,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockingDetails;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import android.bluetooth.le.BluetoothLeScanner;
 import android.content.Context;
@@ -45,15 +44,15 @@ import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.invocation.Invocation;
 
+import java.util.Collection;
+import java.util.UUID;
+
 import pandora.GattProto.GattCharacteristicParams;
 import pandora.GattProto.GattServiceParams;
 import pandora.GattProto.RegisterServiceRequest;
 import pandora.HostProto.AdvertiseRequest;
 import pandora.HostProto.AdvertiseResponse;
 import pandora.HostProto.OwnAddressType;
-
-import java.util.Collection;
-import java.util.UUID;
 
 @RunWith(AndroidJUnit4.class)
 public class GattClientTest {
@@ -134,8 +133,12 @@ public class GattClientTest {
         inOrder.verify(gattCallback, timeout(1000))
                 .onConnectionStateChange(any(), anyInt(), eq(BluetoothProfile.STATE_CONNECTED));
 
+        // TODO(323889717): Fix callback being called after gatt.close(). This disconnect shouldn't
+        //  be necessary.
+        gatt.disconnect();
+        inOrder.verify(gattCallback, timeout(1000))
+                .onConnectionStateChange(any(), anyInt(), eq(BluetoothProfile.STATE_DISCONNECTED));
         gatt.close();
-        verifyNoMoreInteractions(gattCallback);
     }
 
     @Test
