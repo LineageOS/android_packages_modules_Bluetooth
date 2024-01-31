@@ -62,3 +62,12 @@ flag {
     description: "Enumerate GATT error situations"
     bug: "320574336"
 }
+
+flag {
+    name: "gatt_fix_device_busy"
+    namespace: "bluetooth"
+    description: "Fix device busy bug in BluetoothGatt"
+    bug: "322580271"
+}
+
+
