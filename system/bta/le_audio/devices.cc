@@ -373,6 +373,7 @@ void LeAudioDevice::RegisterPACs(
 
     if (IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
       if (pac.codec_id == types::kLeAudioCodecHeadtracking) {
+        LOG(INFO) << __func__ << ": Headtracking supported";
         /* Todo: Set DSA modes according to the codec configuration */
         dsa_modes_ = {
             DsaMode::DISABLED,

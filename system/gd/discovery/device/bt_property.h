@@ -50,7 +50,7 @@ class BtProperty {
   virtual ~BtProperty() = default;
 
  private:
-  bt_property_type_t type_;
+  const bt_property_type_t type_;
 };
 
 // Provide pointer/size access to properties for legacy jni API
@@ -114,14 +114,25 @@ class BtPropertyVector : public BtProperty {
   BtPropertyVector<T>(bt_property_type_t type, const T* val, size_t size)
       : BtProperty(type), val_(std::make_shared<std::vector<T>>(val, val + size)) {}
 
- private:
+ protected:
   std::shared_ptr<std::vector<T>> val_;
 };
 
-class BdName : public BtPropertyVector<uint8_t> {
+template <typename T>
+class BtPropertyVectorWithPad : public BtPropertyVector<T> {
+ protected:
+  // Create a vector property from a raw pointer and size with pad element
+  BtPropertyVectorWithPad<T>(bt_property_type_t type, const T* val, size_t size, T pad)
+      : BtPropertyVector<T>(type, val, size) {
+    BtPropertyVector<T>::val_->push_back(pad);
+  }
+};
+
+class BdName : public BtPropertyVectorWithPad<uint8_t> {
  public:
   BdName(const BD_NAME bd_name)
-      : BtPropertyVector<uint8_t>(BT_PROPERTY_BDNAME, bd_name, kBdNameLength) {}
+      : BtPropertyVectorWithPad<uint8_t>(BT_PROPERTY_BDNAME, bd_name, kBdNameLength, kBdNameDelim) {
+  }
 
   static std::shared_ptr<BdName> Create(const BD_NAME bd_name);
 };
@@ -185,10 +196,11 @@ class AdapterDiscoverableTimeout : public BtPropertySimple<uint32_t> {
   static std::shared_ptr<AdapterDiscoverableTimeout> Create(const uint32_t& timeout);
 };
 
-class RemoteFriendlyName : public BtPropertyVector<uint8_t> {
+class RemoteFriendlyName : public BtPropertyVectorWithPad<uint8_t> {
  public:
   RemoteFriendlyName(const uint8_t bd_name[], size_t len)
-      : BtPropertyVector<uint8_t>(BT_PROPERTY_REMOTE_FRIENDLY_NAME, bd_name, len) {}
+      : BtPropertyVectorWithPad<uint8_t>(
+            BT_PROPERTY_REMOTE_FRIENDLY_NAME, bd_name, len, kBdNameDelim) {}
 
   static std::shared_ptr<RemoteFriendlyName> Create(const uint8_t bd_name[], size_t len);
 };
@@ -264,12 +276,16 @@ class RemoteASHATruncatedHiSyncId : public BtPropertySimple<uint32_t> {
   static std::shared_ptr<RemoteASHATruncatedHiSyncId> Create(const uint32_t& id);
 };
 
-class RemoteModelNum : public BtPropertyVector<uint8_t> {
+class RemoteModelNum : public BtPropertyVectorWithPad<uint8_t> {
  public:
-  RemoteModelNum(const uint8_t* model, size_t len)
-      : BtPropertyVector<uint8_t>(BT_PROPERTY_REMOTE_MODEL_NUM, model, len) {}
+  RemoteModelNum(const bt_bdname_t& name)
+      : BtPropertyVectorWithPad<uint8_t>(
+            BT_PROPERTY_REMOTE_MODEL_NUM,
+            name.name,
+            sizeof(bt_bdname_t) - sizeof(kBdNameDelim),
+            kBdNameDelim) {}
 
-  static std::shared_ptr<RemoteModelNum> Create(const uint8_t* model, size_t len);
+  static std::shared_ptr<RemoteModelNum> Create(const bt_bdname_t& name);
 };
 
 class RemoteAddrType : public BtPropertySimple<uint8_t> {

@@ -1323,7 +1323,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     LOG_INFO("DSA mode selected: %d", (int)group->dsa_mode_);
 
     /* Unidirectional streaming */
-    if (param.sdu_itv_stom != 0) {
+    if (param.sdu_itv_stom == 0) {
       LOG_INFO("Media streaming, apply DSA parameters");
 
       switch (group->dsa_mode_) {

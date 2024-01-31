@@ -20,6 +20,7 @@
 
 #include "btcore/include/module.h"
 #include "hci/controller.h"
+#include "hci/controller_interface.h"
 #include "include/check.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
@@ -116,27 +117,6 @@ static const uint8_t* get_ble_supported_states(void) {
 #define MAP_TO_GD(legacy, gd) \
   static bool legacy(void) { return GetController()->gd(); }
 
-MAP_TO_GD(supports_simple_pairing, SupportsSimplePairing)
-MAP_TO_GD(supports_secure_connections, SupportsSecureConnections)
-MAP_TO_GD(supports_simultaneous_le_bredr, SupportsSimultaneousLeBrEdr)
-MAP_TO_GD(supports_interlaced_inquiry_scan, SupportsInterlacedInquiryScan)
-MAP_TO_GD(supports_rssi_with_inquiry_results, SupportsRssiWithInquiryResults)
-MAP_TO_GD(supports_extended_inquiry_response, SupportsExtendedInquiryResponse)
-MAP_TO_GD(supports_three_slot_packets, Supports3SlotPackets)
-MAP_TO_GD(supports_five_slot_packets, Supports5SlotPackets)
-MAP_TO_GD(supports_classic_2m_phy, SupportsClassic2mPhy)
-MAP_TO_GD(supports_classic_3m_phy, SupportsClassic3mPhy)
-MAP_TO_GD(supports_three_slot_edr_packets, Supports3SlotEdrPackets)
-MAP_TO_GD(supports_five_slot_edr_packets, Supports5SlotEdrPackets)
-MAP_TO_GD(supports_sco, SupportsSco)
-MAP_TO_GD(supports_hv2_packets, SupportsHv2Packets)
-MAP_TO_GD(supports_hv3_packets, SupportsHv3Packets)
-MAP_TO_GD(supports_ev3_packets, SupportsEv3Packets)
-MAP_TO_GD(supports_ev4_packets, SupportsEv4Packets)
-MAP_TO_GD(supports_ev5_packets, SupportsEv5Packets)
-MAP_TO_GD(supports_esco_2m_phy, SupportsEsco2mPhy)
-MAP_TO_GD(supports_esco_3m_phy, SupportsEsco3mPhy)
-MAP_TO_GD(supports_three_slot_esco_edr_packets, Supports3SlotEscoEdrPackets)
 MAP_TO_GD(supports_role_switch, SupportsRoleSwitch)
 MAP_TO_GD(supports_hold_mode, SupportsHoldMode)
 MAP_TO_GD(supports_sniff_mode, SupportsSniffMode)
@@ -185,10 +165,6 @@ FORWARD(supports_set_min_encryption_key_size,
 FORWARD(supports_read_encryption_key_size,
         GetController()->IsSupported(
             bluetooth::hci::OpCode::READ_ENCRYPTION_KEY_SIZE))
-
-FORWARD(supports_reading_remote_extended_features,
-        GetController()->IsSupported(
-            bluetooth::hci::OpCode::READ_REMOTE_EXTENDED_FEATURES))
 
 FORWARD(supports_enhanced_setup_synchronous_connection,
         GetController()->IsSupported(
@@ -326,33 +302,10 @@ static const controller_t interface = {
 
     .get_ble_supported_states = get_ble_supported_states,
 
-    .SupportsSimplePairing = supports_simple_pairing,
-    .SupportsSecureConnections = supports_secure_connections,
-    .SupportsSimultaneousLeBrEdr = supports_simultaneous_le_bredr,
-    .supports_reading_remote_extended_features =
-        supports_reading_remote_extended_features,
-    .SupportsInterlacedInquiryScan = supports_interlaced_inquiry_scan,
-    .SupportsRssiWithInquiryResults = supports_rssi_with_inquiry_results,
-    .SupportsExtendedInquiryResponse = supports_extended_inquiry_response,
     .supports_enhanced_setup_synchronous_connection =
         supports_enhanced_setup_synchronous_connection,
     .supports_enhanced_accept_synchronous_connection =
         supports_enhanced_accept_synchronous_connection,
-    .Supports3SlotPackets = supports_three_slot_packets,
-    .Supports5SlotPackets = supports_five_slot_packets,
-    .SupportsClassic2mPhy = supports_classic_2m_phy,
-    .SupportsClassic3mPhy = supports_classic_3m_phy,
-    .Supports3SlotEdrPackets = supports_three_slot_edr_packets,
-    .Supports5SlotEdrPackets = supports_five_slot_edr_packets,
-    .SupportsSco = supports_sco,
-    .SupportsHv2Packets = supports_hv2_packets,
-    .SupportsHv3Packets = supports_hv3_packets,
-    .SupportsEv3Packets = supports_ev3_packets,
-    .SupportsEv4Packets = supports_ev4_packets,
-    .SupportsEv5Packets = supports_ev5_packets,
-    .SupportsEsco2mPhy = supports_esco_2m_phy,
-    .SupportsEsco3mPhy = supports_esco_3m_phy,
-    .Supports3SlotEscoEdrPackets = supports_three_slot_esco_edr_packets,
     .SupportsRoleSwitch = supports_role_switch,
     .SupportsHoldMode = supports_hold_mode,
     .SupportsSniffMode = supports_sniff_mode,

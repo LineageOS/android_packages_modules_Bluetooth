@@ -16,10 +16,12 @@
 
 #include "discovery/device/bt_property.h"
 
+#include <cstdint>
 #include <future>
 
 #include "gtest/gtest.h"
 #include "hardware/bluetooth.h"
+#include "os/log.h"
 #include "stack/include/bt_name.h"
 
 using namespace bluetooth::property;
@@ -27,6 +29,13 @@ using namespace bluetooth::property;
 namespace {
 
 constexpr size_t kNumberTestedProperties = 22;
+
+constexpr size_t kBdPropNameLength = kBdNameLength + sizeof(kBdNameDelim);
+
+constexpr uint8_t kReallyLongName[kBdPropNameLength] =
+    "aaaaaaaaaAaaaaaaaaaAaaaaaaaaaAaaaaaaaaaAaaaaaaaaaAaaaaaaaaaAaaaaaaaaaAaaaaaaaaaAaaaaaaaaaAaaaa"
+    "aaaaaAaaaaaaaaaAaaaaaaaaaAaaaaaaaaaAaaaaaaaaaAaaaaaaaaaAaaaaaaaaaAaaaaaaaaaAaaaaaaaaaAaaaaaaaa"
+    "aAaaaaaaaaaAaaaaaaaaaAaaaaaaaaaAaaaaaaaaaAaaaaaaaaaAaaaaaaaa";
 
 // BT_PROPERTY_BDNAME
 constexpr BD_NAME kBdName{'k', 'B', 'd', 'N', 'a', 'm', 'e', '\0'};
@@ -158,7 +167,7 @@ void fill_property(
   switch (type) {
     case BT_PROPERTY_BDNAME: {
       properties.push_back(BdName::Create(kBdName));
-      ASSERT_EQ(kBdNameLength, properties.back()->Size());
+      ASSERT_EQ(kBdPropNameLength, properties.back()->Size());
     } break;
 
     case BT_PROPERTY_BDADDR:
@@ -204,7 +213,7 @@ void fill_property(
     case BT_PROPERTY_REMOTE_FRIENDLY_NAME: {
       properties.push_back(
           RemoteFriendlyName::Create(kRemoteFriendlyName, sizeof(kRemoteFriendlyName)));
-      ASSERT_EQ(sizeof(kRemoteFriendlyName), properties.back()->Size());
+      ASSERT_EQ(sizeof(kRemoteFriendlyName) + sizeof(kBdNameDelim), properties.back()->Size());
     } break;
 
     case BT_PROPERTY_REMOTE_RSSI:
@@ -260,7 +269,7 @@ void fill_property(
       break;
 
     case BT_PROPERTY_REMOTE_MODEL_NUM: {
-      properties.push_back(RemoteModelNum::Create(kRemoteModelNum.name, sizeof(kRemoteModelNum)));
+      properties.push_back(RemoteModelNum::Create(kRemoteModelNum));
       ASSERT_EQ(sizeof(kRemoteModelNum), properties.back()->Size());
     } break;
 
@@ -285,7 +294,7 @@ void verify_property(const bt_property_type_t& type, const bt_property_t& proper
   ASSERT_EQ(type, property.type);
   switch (property.type) {
     case BT_PROPERTY_BDNAME:
-      ASSERT_EQ((int)kBdNameLength, property.len);
+      ASSERT_EQ((int)kBdPropNameLength, property.len);
       ASSERT_STREQ((const char*)kBdName, (const char*)property.val);
       break;
 
@@ -338,7 +347,7 @@ void verify_property(const bt_property_type_t& type, const bt_property_t& proper
       break;
 
     case BT_PROPERTY_REMOTE_FRIENDLY_NAME:
-      ASSERT_EQ((int)sizeof(kRemoteFriendlyName), property.len);
+      ASSERT_EQ((int)(sizeof(kRemoteFriendlyName) + sizeof(kBdNameDelim)), property.len);
       ASSERT_STREQ((const char*)kRemoteFriendlyName, (const char*)property.val);
       break;
 
@@ -797,6 +806,23 @@ TEST_F(BtPropertyTest, serialize_and_verify) {
   for (const auto p : legacy.Properties()) {
     verify_property(p.type, p);
   }
+}
+
+TEST_F(BtPropertyTest, name_too_long) {
+  std::vector<std::shared_ptr<BtProperty>> properties;
+  BD_NAME bd_name;
+  for (size_t i = 0; i < kBdPropNameLength; i++) {
+    bd_name[i] = ((i + 1) % 10) ? 'a' : 'A';
+  }
+
+  properties.push_back(BdName::Create(bd_name));
+  BtPropertyLegacy legacy(properties);
+  ASSERT_EQ(1U, legacy.NumProperties());
+
+  bt_property_t bt_properties[1];
+  legacy.Export(bt_properties, 1U);
+
+  ASSERT_STREQ((const char*)kReallyLongName, (const char*)bt_properties[0].val);
 }
 
 class BtPropertyArrayTest : public testing::Test {

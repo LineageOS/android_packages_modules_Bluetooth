@@ -93,10 +93,6 @@ java_library {
     defaults: ["service-bluetooth-pre-jarjar"],
     installable: true,
 
-    libs: [
-        "framework-bluetooth.impl",
-    ],
-
     jarjar_rules: ":bluetooth-jarjar-rules",
 
     optimize: {

@@ -2589,7 +2589,7 @@ static int register_com_android_bluetooth_gatt_scan(JNIEnv* env) {
       {"gattClientScanFilterParamClearAllNative", "(I)V",
        (void*)gattClientScanFilterParamClearAllNative},
       {"gattClientScanFilterAddNative",
-       "(I[Lcom/android/bluetooth/gatt/ScanFilterQueue$Entry;I)V",
+       "(I[Lcom/android/bluetooth/le_scan/ScanFilterQueue$Entry;I)V",
        (void*)gattClientScanFilterAddNative},
       {"gattClientScanFilterClearNative", "(II)V",
        (void*)gattClientScanFilterClearNative},

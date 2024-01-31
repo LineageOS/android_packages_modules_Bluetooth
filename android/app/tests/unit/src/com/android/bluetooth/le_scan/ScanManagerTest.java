@@ -73,7 +73,7 @@ import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.gatt.GattNativeInterface;
 import com.android.bluetooth.gatt.GattObjectsFactory;
 import com.android.bluetooth.gatt.GattService;
-import com.android.bluetooth.gatt.ScanClient;
+import com.android.bluetooth.le_scan.ScanClient;
 import com.android.internal.app.IBatteryStats;
 
 import org.junit.After;

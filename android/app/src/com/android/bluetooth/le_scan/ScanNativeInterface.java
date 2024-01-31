@@ -17,7 +17,6 @@
 package com.android.bluetooth.le_scan;
 
 import com.android.bluetooth.gatt.FilterParams;
-import com.android.bluetooth.gatt.ScanFilterQueue;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

@@ -39,6 +39,7 @@
 #include "device/include/controller.h"
 #include "device/include/device_iot_config.h"
 #include "hci/class_of_device.h"
+#include "hci/controller_interface.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_packets.h"
 #include "hci/include/hci_layer.h"
@@ -554,7 +555,7 @@ static tBTM_STATUS btm_send_connect_request(uint16_t acl_handle,
       ** If so, we cannot use SCO-only packet types (HFP 1.7)
       */
       const bool local_supports_sc =
-          controller_get_interface()->SupportsSecureConnections();
+          bluetooth::shim::GetController()->SupportsSecureConnections();
       const bool remote_supports_sc =
           BTM_PeerSupportsSecureConnections(bd_addr);
 
