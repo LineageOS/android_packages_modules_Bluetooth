@@ -324,6 +324,9 @@
       "name": "bluetooth_le_audio_codec_manager_test"
     },
     {
+      "name": "bluetooth-test-audio-hal-a2dp-provider-info"
+    },
+    {
       "name": "bluetooth_test_gdx_unit"
     },
     {
