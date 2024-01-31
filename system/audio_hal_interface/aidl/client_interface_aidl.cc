@@ -656,22 +656,6 @@ size_t BluetoothAudioSourceClientInterface::WriteAudioData(const uint8_t* p_buf,
   return total_written;
 }
 
-std::optional<IBluetoothAudioProviderFactory::ProviderInfo>
-BluetoothAudioClientInterface::GetProviderInfo(SessionType session_type) {
-  if (provider_factory_ == nullptr) {
-    LOG(WARNING) << __func__ << ": No provider factory";
-    return std::nullopt;
-  }
-  std::optional<IBluetoothAudioProviderFactory::ProviderInfo> provider_info;
-  auto aidl_retval =
-      provider_factory_->getProviderInfo(session_type, &provider_info);
-  if (!aidl_retval.isOk()) {
-    LOG(FATAL) << __func__ << ": BluetoothAudioHal::getProviderInfo failure: "
-               << aidl_retval.getDescription();
-  }
-  return provider_info;
-}
-
 void BluetoothAudioClientInterface::SetCodecPriority(CodecId codec_id,
                                                      int32_t priority) {
   CHECK(provider_ != nullptr);
