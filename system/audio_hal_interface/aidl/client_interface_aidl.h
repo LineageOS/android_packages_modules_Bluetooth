@@ -82,9 +82,9 @@ class BluetoothAudioClientInterface {
   static std::vector<AudioCapabilities> GetAudioCapabilities(
       SessionType session_type);
   static std::optional<IBluetoothAudioProviderFactory::ProviderInfo>
-  GetProviderInfo(
-      SessionType session_type,
-      std::shared_ptr<IBluetoothAudioProviderFactory> provider_factory);
+  GetProviderInfo(SessionType session_type,
+                  std::shared_ptr<IBluetoothAudioProviderFactory>
+                      provider_factory = nullptr);
 
   std::optional<A2dpStatus> ParseA2dpConfiguration(
       const CodecId& codec_id, const std::vector<uint8_t>& configuration,
@@ -112,9 +112,6 @@ class BluetoothAudioClientInterface {
   bool SetAllowedLatencyModes(std::vector<LatencyMode> latency_modes);
 
   void FlushAudioData();
-
-  std::optional<IBluetoothAudioProviderFactory::ProviderInfo> GetProviderInfo(
-      SessionType session_type);
 
   void SetCodecPriority(CodecId codec_id, int32_t priority);
 
