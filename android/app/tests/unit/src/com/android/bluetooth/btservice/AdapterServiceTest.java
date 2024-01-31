@@ -865,7 +865,9 @@ public class AdapterServiceTest {
         RemoteDevices remoteDevices = mAdapterService.getRemoteDevices();
         remoteDevices.addDeviceProperties(Utils.getBytesFromAddress((TEST_BT_ADDR_1)));
         String identityAddress = mAdapterService.getIdentityAddress(TEST_BT_ADDR_1);
-        assertThat(identityAddress).isEqualTo(TEST_BT_ADDR_1);
+        if (!Flags.identityAddressNullIfUnknown()) {
+            assertThat(identityAddress).isEqualTo(TEST_BT_ADDR_1);
+        }
 
         // Trigger address consolidate callback
         remoteDevices.addressConsolidateCallback(Utils.getBytesFromAddress(TEST_BT_ADDR_1),
