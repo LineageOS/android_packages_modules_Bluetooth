@@ -29,6 +29,7 @@ constexpr uint8_t kPartialUuid16Data[] = {
     0x2, static_cast<uint8_t>(hci::GapDataType::COMPLETE_LIST_16_BIT_UUIDS), 0x34};
 constexpr uint8_t kOneUuid16Data[] = {
     0x3, static_cast<uint8_t>(hci::GapDataType::COMPLETE_LIST_16_BIT_UUIDS), 0x34, 0x12};
+constexpr char kAudiMmi9962[] = "Audi_MMI_9962";
 }  // namespace
 
 namespace debug {
@@ -64,110 +65,95 @@ TEST(EirDataTest, one_uuid16) {
 }
 
 TEST(EirDataTest, test_data_packets__data_type) {
-  for (const auto& pkt : data_packets) {
-    const EirData eir_data(std::vector<uint8_t>(&pkt[kEirOffset], &pkt[kEirOffset] + kEirSize));
-    std::vector<hci::GapDataType> gap_data_types = eir_data.GetDataTypes();
-    if (!gap_data_types.empty()) {
-      LOG_INFO("pkt:");
-      for (const auto& type : gap_data_types) {
-        LOG_INFO("  Data type:%s", hci::GapDataTypeText(type).c_str());
-      }
-    }
-  }
+  ASSERT_EQ(1U, selected_packets.count("pkt34639"));
+  const auto& pkt = selected_packets["pkt34639"];
+  const EirData eir_data(std::vector<uint8_t>(&pkt[kEirOffset], &pkt[kEirOffset] + kEirSize));
+  std::vector<hci::GapDataType> gap_data_types = eir_data.GetDataTypes();
+
+  ASSERT_EQ(6U, gap_data_types.size());
 }
 
 TEST(EirDataTest, test_data_packets__complete_name) {
-  for (const auto& pkt : data_packets) {
-    const EirData eir_data(std::vector<uint8_t>(&pkt[kEirOffset], &pkt[kEirOffset] + kEirSize));
-    std::vector<std::array<uint8_t, kEirSize>> names;
-    if (eir_data.GetCompleteNames(names)) {
-      LOG_INFO("Name pkt:");
-      for (const auto& v : names) {
-        std::string name(v.begin(), v.end());
-        LOG_INFO("  Name:%s", name.c_str());
-      }
-    }
-  }
+  ASSERT_EQ(1U, selected_packets.count("pkt34639"));
+  const auto& pkt = selected_packets["pkt34639"];
+  const EirData eir_data(std::vector<uint8_t>(&pkt[kEirOffset], &pkt[kEirOffset] + kEirSize));
+  std::vector<std::array<uint8_t, kEirSize>> names;
+  ASSERT_TRUE(eir_data.GetCompleteNames(names));
+  ASSERT_EQ(1U, names.size());
+  std::string name(names[0].begin(), names[0].end());
+  ASSERT_STREQ(kAudiMmi9962, name.c_str());
 }
 
 TEST(EirDataTest, test_data_packets__uuids16) {
-  for (const auto& pkt : data_packets) {
-    const EirData eir_data(std::vector<uint8_t>(&pkt[kEirOffset], &pkt[kEirOffset] + kEirSize));
-    std::vector<uint16_t> uuids;
-    if (eir_data.GetUuids16(uuids)) {
-      LOG_INFO("Uuid pkt:");
-      for (const auto& u : uuids) {
-        LOG_INFO("  Uuid:0x%x", u);
-      }
-    }
-  }
+  ASSERT_EQ(1U, selected_packets.count("pkt34639"));
+  const auto& pkt = selected_packets["pkt34639"];
+  const EirData eir_data(std::vector<uint8_t>(&pkt[kEirOffset], &pkt[kEirOffset] + kEirSize));
+  std::vector<uint16_t> uuids16;
+
+  ASSERT_TRUE(eir_data.GetUuids16(uuids16));
+  ASSERT_EQ(14U, uuids16.size());
+  ASSERT_EQ(0x112e, uuids16[0]);
+  ASSERT_EQ(0x180a, uuids16[13]);
 }
 
 TEST(EirDataTest, test_data_packets__uuids16_incomplete) {
-  for (const auto& pkt : data_packets) {
-    const EirData eir_data(std::vector<uint8_t>(&pkt[kEirOffset], &pkt[kEirOffset] + kEirSize));
-    std::vector<uint16_t> uuids;
-    if (eir_data.GetUuidsIncomplete16(uuids)) {
-      LOG_INFO("Uuid pkt:");
-      for (const auto& u : uuids) {
-        LOG_INFO("  Uuid:0x%x", u);
-      }
-    }
-  }
+  ASSERT_EQ(1U, selected_packets.count("pkt19200"));
+  const auto& pkt = selected_packets["pkt19200"];
+  const EirData eir_data(std::vector<uint8_t>(&pkt[kEirOffset], &pkt[kEirOffset] + kEirSize));
+
+  std::vector<uint16_t> uuids16;
+  ASSERT_TRUE(eir_data.GetUuidsIncomplete16(uuids16));
+  ASSERT_EQ(7U, uuids16.size());
+  ASSERT_EQ(0x110d, uuids16[0]);
+  ASSERT_EQ(0x1131, uuids16[6]);
 }
 
 TEST(EirDataTest, test_data_packets__device_id) {
   for (const auto& pkt : data_packets) {
     const EirData eir_data(std::vector<uint8_t>(&pkt[kEirOffset], &pkt[kEirOffset] + kEirSize));
     std::vector<uint8_t> device_ids;
-    if (eir_data.GetDeviceId(device_ids)) {
-      LOG_INFO("  device_id count:%llu", (unsigned long long)device_ids.size());
-    }
+    ASSERT_FALSE(eir_data.GetDeviceId(device_ids));
   }
 }
 
 TEST(EirDataTest, test_data_packets__manufacturer_data) {
-  for (const auto& pkt : data_packets) {
-    const EirData eir_data(std::vector<uint8_t>(&pkt[kEirOffset], &pkt[kEirOffset] + kEirSize));
-    std::vector<std::vector<uint8_t>> mfr_data;
-    if (eir_data.GetManufacturerSpecificData(mfr_data)) {
-      LOG_INFO("  mfr data count:%llu", (unsigned long long)mfr_data.size());
-    }
-  }
+  ASSERT_EQ(1U, selected_packets.count("pkt26171"));
+  const auto& pkt = selected_packets["pkt26171"];
+  const EirData eir_data(std::vector<uint8_t>(&pkt[kEirOffset], &pkt[kEirOffset] + kEirSize));
+  std::vector<std::vector<uint8_t>> mfr_data;
+  ASSERT_TRUE(eir_data.GetManufacturerSpecificData(mfr_data));
+  ASSERT_EQ(1U, mfr_data.size());
+  ASSERT_EQ(0, mfr_data[0][0]);
 }
 
 TEST(EirDataTest, test_data_packets__security_manager_oob_flags) {
-  for (const auto& pkt : data_packets) {
-    const EirData eir_data(std::vector<uint8_t>(&pkt[kEirOffset], &pkt[kEirOffset] + kEirSize));
-    std::vector<std::vector<uint8_t>> oob_flags;
-    if (eir_data.GetManufacturerSpecificData(oob_flags)) {
-      LOG_INFO("  oob flags count:%llu", (unsigned long long)oob_flags.size());
-    }
-  }
+  ASSERT_EQ(1U, selected_packets.count("pkt26171"));
+  const auto& pkt = selected_packets["pkt26171"];
+  const EirData eir_data(std::vector<uint8_t>(&pkt[kEirOffset], &pkt[kEirOffset] + kEirSize));
+
+  std::vector<std::vector<uint8_t>> oob_flags;
+  ASSERT_TRUE(eir_data.GetManufacturerSpecificData(oob_flags));
+  ASSERT_EQ(1U, oob_flags.size());
+  ASSERT_EQ(0, oob_flags[0][0]);
 }
 
 TEST(EirDataTest, test_data_packets__service_uuids32) {
   for (const auto& pkt : data_packets) {
     const EirData eir_data(std::vector<uint8_t>(&pkt[kEirOffset], &pkt[kEirOffset] + kEirSize));
     std::vector<uint32_t> uuids;
-    if (eir_data.GetServiceUuuids32(uuids)) {
-      for (const auto& uuid : uuids) {
-        LOG_INFO("  service uuid:%u", uuid);
-      }
-    }
+    ASSERT_FALSE(eir_data.GetServiceUuuids32(uuids));
   }
 }
 
 TEST(EirDataTest, test_data_packets__tx_power_level) {
-  for (const auto& pkt : data_packets) {
-    const EirData eir_data(std::vector<uint8_t>(&pkt[kEirOffset], &pkt[kEirOffset] + kEirSize));
-    std::vector<int8_t> levels;
-    if (eir_data.GetTxPowerLevel(levels)) {
-      for (const auto& level : levels) {
-        LOG_INFO("  tx power level:%hhd", level);
-      }
-    }
-  }
+  ASSERT_EQ(1U, selected_packets.count("pkt34639"));
+  const auto& pkt = selected_packets["pkt34639"];
+  const EirData eir_data(std::vector<uint8_t>(&pkt[kEirOffset], &pkt[kEirOffset] + kEirSize));
+
+  std::vector<int8_t> levels;
+  ASSERT_TRUE(eir_data.GetTxPowerLevel(levels));
+  ASSERT_EQ(1U, levels.size());
+  ASSERT_EQ(4, levels[0]);
 }
 
 TEST(EirDataTest, test_select_packets__pkt34639) {

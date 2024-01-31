@@ -44,6 +44,17 @@ bool EirData::GetCompleteNames(std::vector<std::array<uint8_t, 240>>& names) con
   return !names.empty();
 }
 
+bool EirData::GetShortenedNames(std::vector<std::array<uint8_t, 240>>& names) const {
+  for (const auto& gap_data : gap_data_) {
+    if (gap_data.data_type_ == hci::GapDataType::SHORTENED_LOCAL_NAME) {
+      std::array<uint8_t, 240> array;
+      std::copy(gap_data.data_.begin(), gap_data.data_.end(), array.begin());
+      names.push_back(array);
+    }
+  }
+  return !names.empty();
+}
+
 bool EirData::GetUuids16(std::vector<uint16_t>& uuids) const {
   for (const auto& gap_data : gap_data_) {
     if (gap_data.data_type_ == hci::GapDataType::COMPLETE_LIST_16_BIT_UUIDS) {
