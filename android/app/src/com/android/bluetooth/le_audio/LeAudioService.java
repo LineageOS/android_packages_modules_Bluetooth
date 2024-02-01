@@ -372,7 +372,8 @@ public class LeAudioService extends ProfileService {
 
         mAudioManager.registerAudioDeviceCallback(mAudioManagerAudioDeviceCallback,
                        mHandler);
-
+        // clear mUnicastGroupIdDeactivatedForBroadcastTransition to default
+        updateFallbackUnicastGroupIdForBroadcast(LE_AUDIO_GROUP_ID_INVALID);
         // Mark service as started
         setLeAudioService(this);
 
@@ -499,7 +500,8 @@ public class LeAudioService extends ProfileService {
         }
 
         mAudioManager.unregisterAudioDeviceCallback(mAudioManagerAudioDeviceCallback);
-
+        // clear mUnicastGroupIdDeactivatedForBroadcastTransition to default
+        updateFallbackUnicastGroupIdForBroadcast(LE_AUDIO_GROUP_ID_INVALID);
         mAdapterService = null;
         mAudioManager = null;
         mMcpService = null;
