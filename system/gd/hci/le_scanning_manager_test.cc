@@ -453,6 +453,38 @@ TEST_F(LeScanningManagerTest, scan_filter_add_ad_type_not_supported_test) {
   le_scanning_manager->ScanFilterAdd(0x01, filters);
 }
 
+TEST_F(LeScanningManagerExtendedTest, is_nonstandard_phy_supported_test) {
+  int scan_phy = 2;
+
+  start_le_scanning_manager();
+  le_scanning_manager->SetScanParameters(1, LeScanType::ACTIVE, 0x0004, 4800, scan_phy);
+  le_scanning_manager->Scan(true);
+
+  auto command_view = LeSetExtendedScanParametersView::Create(
+      LeScanningCommandView::Create(test_hci_layer_->GetCommand()));
+  ASSERT_TRUE(command_view.IsValid());
+  if (IS_FLAG_ENABLED(phy_to_native)) {
+    ASSERT_EQ(command_view.GetScanningPhys(), scan_phy);
+    ASSERT_EQ(command_view.GetParameters().size(), static_cast<size_t>(1));
+  }
+}
+
+TEST_F(LeScanningManagerExtendedTest, is_multiple_phy_supported_test) {
+  int scan_phy = 3;
+
+  start_le_scanning_manager();
+  le_scanning_manager->SetScanParameters(1, LeScanType::ACTIVE, 0x0004, 4800, scan_phy);
+  le_scanning_manager->Scan(true);
+
+  auto command_view = LeSetExtendedScanParametersView::Create(
+      LeScanningCommandView::Create(test_hci_layer_->GetCommand()));
+  ASSERT_TRUE(command_view.IsValid());
+  if (IS_FLAG_ENABLED(phy_to_native)) {
+    ASSERT_EQ(command_view.GetScanningPhys(), scan_phy);
+    ASSERT_EQ(command_view.GetParameters().size(), static_cast<size_t>(2));
+  }
+}
+
 TEST_F(LeScanningManagerAndroidHciTest, startup_teardown) {}
 
 TEST_F(LeScanningManagerAndroidHciTest, start_scan_test) {
