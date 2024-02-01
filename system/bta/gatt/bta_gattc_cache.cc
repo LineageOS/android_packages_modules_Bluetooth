@@ -867,7 +867,7 @@ static void bta_gattc_read_ext_prop_desc_cmpl(
     // Just one Characteristic Extended Properties value at a time in Read
     // Response
     LOG(WARNING) << __func__ << " Read Response should be just 2 bytes!";
-    bta_gattc_reset_discover_st(p_clcb->p_srcb, GATT_ERROR);
+    bta_gattc_reset_discover_st(p_clcb->p_srcb, GATT_INVALID_PDU);
     return;
   }
 
