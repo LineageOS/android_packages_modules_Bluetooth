@@ -397,6 +397,12 @@ BT_HDR* attp_build_sr_msg(tGATT_TCB& tcb, uint8_t op_code, tGATT_SR_MSG* p_msg,
                           uint16_t payload_size) {
   uint16_t offset = 0;
 
+  if (payload_size == 0) {
+    LOG_ERROR("Cannot send response (op: 0x%02x) due to payload size = 0, %s",
+              op_code, ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda));
+    return nullptr;
+  }
+
   switch (op_code) {
     case GATT_RSP_READ_BLOB:
     case GATT_RSP_PREPARE_WRITE:
@@ -569,6 +575,11 @@ tGATT_STATUS attp_send_cl_msg(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
   }
 
   uint16_t payload_size = gatt_tcb_get_payload_size(tcb, p_clcb->cid);
+  if (payload_size == 0) {
+    LOG_ERROR("Cannot send request (op: 0x%02x) due to payload size = 0, %s",
+              op_code, ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda));
+    return GATT_NO_RESOURCES;
+  }
 
   switch (op_code) {
     case GATT_REQ_MTU:
