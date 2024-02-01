@@ -17,6 +17,7 @@
 #include "discovery/device/eir_data.h"
 
 #include "discovery/device/eir_test_data_packets.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "hci/hci_packets.h"
 #include "os/log.h"
@@ -30,6 +31,8 @@ constexpr uint8_t kPartialUuid16Data[] = {
 constexpr uint8_t kOneUuid16Data[] = {
     0x3, static_cast<uint8_t>(hci::GapDataType::COMPLETE_LIST_16_BIT_UUIDS), 0x34, 0x12};
 constexpr char kAudiMmi9962[] = "Audi_MMI_9962";
+constexpr char kChromeBoxForMeetings[] = "Chromebox for Meetings";
+
 }  // namespace
 
 namespace debug {
@@ -68,8 +71,8 @@ TEST(EirDataTest, test_data_packets__data_type) {
   ASSERT_EQ(1U, selected_packets.count("pkt34639"));
   const auto& pkt = selected_packets["pkt34639"];
   const EirData eir_data(std::vector<uint8_t>(&pkt[kEirOffset], &pkt[kEirOffset] + kEirSize));
-  std::vector<hci::GapDataType> gap_data_types = eir_data.GetDataTypes();
 
+  std::vector<hci::GapDataType> gap_data_types = eir_data.GetDataTypes();
   ASSERT_EQ(6U, gap_data_types.size());
 }
 
@@ -77,6 +80,7 @@ TEST(EirDataTest, test_data_packets__complete_name) {
   ASSERT_EQ(1U, selected_packets.count("pkt34639"));
   const auto& pkt = selected_packets["pkt34639"];
   const EirData eir_data(std::vector<uint8_t>(&pkt[kEirOffset], &pkt[kEirOffset] + kEirSize));
+
   std::vector<std::array<uint8_t, kEirSize>> names;
   ASSERT_TRUE(eir_data.GetCompleteNames(names));
   ASSERT_EQ(1U, names.size());
@@ -88,8 +92,8 @@ TEST(EirDataTest, test_data_packets__uuids16) {
   ASSERT_EQ(1U, selected_packets.count("pkt34639"));
   const auto& pkt = selected_packets["pkt34639"];
   const EirData eir_data(std::vector<uint8_t>(&pkt[kEirOffset], &pkt[kEirOffset] + kEirSize));
-  std::vector<uint16_t> uuids16;
 
+  std::vector<uint16_t> uuids16;
   ASSERT_TRUE(eir_data.GetUuids16(uuids16));
   ASSERT_EQ(14U, uuids16.size());
   ASSERT_EQ(0x112e, uuids16[0]);
@@ -109,17 +113,21 @@ TEST(EirDataTest, test_data_packets__uuids16_incomplete) {
 }
 
 TEST(EirDataTest, test_data_packets__device_id) {
-  for (const auto& pkt : data_packets) {
-    const EirData eir_data(std::vector<uint8_t>(&pkt[kEirOffset], &pkt[kEirOffset] + kEirSize));
-    std::vector<uint8_t> device_ids;
-    ASSERT_FALSE(eir_data.GetDeviceId(device_ids));
-  }
+  ASSERT_EQ(1U, selected_packets.count("pkt2062"));
+  const auto& pkt = selected_packets["pkt2062"];
+  const EirData eir_data(std::vector<uint8_t>(&pkt[kEirOffset], &pkt[kEirOffset] + kEirSize));
+
+  std::vector<std::vector<uint8_t>> device_ids;
+  ASSERT_TRUE(eir_data.GetDeviceId(device_ids));
+  ASSERT_EQ(1U, device_ids.size());
+  ASSERT_EQ(0x01, device_ids[0][0]);
 }
 
 TEST(EirDataTest, test_data_packets__manufacturer_data) {
   ASSERT_EQ(1U, selected_packets.count("pkt26171"));
   const auto& pkt = selected_packets["pkt26171"];
   const EirData eir_data(std::vector<uint8_t>(&pkt[kEirOffset], &pkt[kEirOffset] + kEirSize));
+
   std::vector<std::vector<uint8_t>> mfr_data;
   ASSERT_TRUE(eir_data.GetManufacturerSpecificData(mfr_data));
   ASSERT_EQ(1U, mfr_data.size());
@@ -137,11 +145,22 @@ TEST(EirDataTest, test_data_packets__security_manager_oob_flags) {
   ASSERT_EQ(0, oob_flags[0][0]);
 }
 
+TEST(EirDataTest, test_data_packets__service_uuids16) {
+  ASSERT_EQ(1U, selected_packets.count("pktAsha"));
+  const auto& pkt = selected_packets["pktAsha"];
+  const EirData eir_data(std::vector<uint8_t>(&pkt[kEirOffset], &pkt[kEirOffset] + kEirSize));
+
+  std::vector<discovery::device::service_uuid16_t> service_uuids16;
+  ASSERT_TRUE(eir_data.GetServiceUuuids16(service_uuids16));
+  ASSERT_EQ(1U, service_uuids16.size());
+  ASSERT_EQ(0xfdf0, service_uuids16[0].uuid);
+}
+
 TEST(EirDataTest, test_data_packets__service_uuids32) {
   for (const auto& pkt : data_packets) {
     const EirData eir_data(std::vector<uint8_t>(&pkt[kEirOffset], &pkt[kEirOffset] + kEirSize));
-    std::vector<uint32_t> uuids;
-    ASSERT_FALSE(eir_data.GetServiceUuuids32(uuids));
+    std::vector<discovery::device::service_uuid32_t> service_uuids32;
+    ASSERT_FALSE(eir_data.GetServiceUuuids32(service_uuids32));
   }
 }
 
@@ -154,6 +173,40 @@ TEST(EirDataTest, test_data_packets__tx_power_level) {
   ASSERT_TRUE(eir_data.GetTxPowerLevel(levels));
   ASSERT_EQ(1U, levels.size());
   ASSERT_EQ(4, levels[0]);
+}
+
+TEST(EirDataTest, test_select_packets__pktAsha) {
+  ASSERT_EQ(1U, selected_packets.count("pktAsha"));
+  const auto& pkt = selected_packets["pktAsha"];
+  const EirData eir_data(std::vector<uint8_t>(&pkt[kEirOffset], &pkt[kEirOffset] + kEirSize));
+
+  std::vector<std::array<uint8_t, kEirSize>> names;
+  ASSERT_TRUE(eir_data.GetCompleteNames(names));
+  std::string name(names[0].begin(), names[0].end());
+  ASSERT_STREQ(kChromeBoxForMeetings, name.c_str());
+
+  std::vector<int8_t> tx_power_level;
+  ASSERT_TRUE(eir_data.GetTxPowerLevel(tx_power_level));
+  ASSERT_EQ(10, tx_power_level[0]);
+
+  const std::vector<uint8_t> v1 =
+      std::vector<uint8_t>({0x01, 0x00, 0xe0, 0x00, 0x05, 0xc4, 0x6c, 0x00});
+  std::vector<std::vector<uint8_t>> device_ids;
+  ASSERT_TRUE(eir_data.GetDeviceId(device_ids));
+  ASSERT_EQ(v1.size(), device_ids[0].size());
+  ASSERT_THAT(v1, testing::ContainerEq(device_ids[0]));
+
+  const std::vector<uint16_t> v2 =
+      std::vector<uint16_t>({0x1800, 0x1801, 0x180a, 0x110e, 0x110c, 0x111f, 0x110a});
+  std::vector<uint16_t> uuids16;
+  ASSERT_TRUE(eir_data.GetUuids16(uuids16));
+  ASSERT_EQ(v2.size(), uuids16.size());
+  ASSERT_THAT(v2, testing::ContainerEq(uuids16));
+
+  std::vector<discovery::device::service_uuid16_t> service_uuids16;
+  ASSERT_TRUE(eir_data.GetServiceUuuids16(service_uuids16));
+  ASSERT_EQ(1U, service_uuids16.size());
+  ASSERT_EQ(0xfdf0, service_uuids16[0].uuid);
 }
 
 TEST(EirDataTest, test_select_packets__pkt34639) {

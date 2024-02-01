@@ -135,10 +135,10 @@ bool EirData::GetUuidsIncomplete128(std::vector<hci::Uuid>& uuids) const {
   return !uuids.empty();
 }
 
-bool EirData::GetDeviceId(std::vector<uint8_t>& device_ids) const {
+bool EirData::GetDeviceId(std::vector<std::vector<uint8_t>>& device_ids) const {
   for (const auto& gap_data : gap_data_) {
     if (gap_data.data_type_ == hci::GapDataType::DEVICE_ID) {
-      if (gap_data.data_.size() == 1U) device_ids.push_back(gap_data.data_[0]);
+      device_ids.push_back(gap_data.data_);
     }
   }
   return !device_ids.empty();
@@ -162,14 +162,29 @@ bool EirData::GetSecurityManagerOobFlags(std::vector<std::vector<uint8_t>>& flag
   return !flags.empty();
 }
 
-bool EirData::GetServiceUuuids32(std::vector<uint32_t>& uuids) const {
+bool EirData::GetServiceUuuids16(std::vector<service_uuid16_t>& uuids) const {
+  for (const auto& gap_data : gap_data_) {
+    if (gap_data.data_type_ == hci::GapDataType::SERVICE_DATA_16_BIT_UUIDS) {
+      if (gap_data.data_.size() < Uuid::kNumBytes16) continue;
+      auto it = gap_data.data_.begin();
+      uuids.push_back({
+          .uuid = (uint16_t)(*it | *(it + 1) << 8),
+          .data = std::vector<uint8_t>(it + Uuid::kNumBytes16, gap_data.data_.end()),
+      });
+    }
+  }
+  return !uuids.empty();
+}
+
+bool EirData::GetServiceUuuids32(std::vector<service_uuid32_t>& uuids) const {
   for (const auto& gap_data : gap_data_) {
     if (gap_data.data_type_ == hci::GapDataType::SERVICE_DATA_32_BIT_UUIDS) {
+      if (gap_data.data_.size() < Uuid::kNumBytes32) continue;
       auto it = gap_data.data_.begin();
-      while (std::distance(it, gap_data.data_.end()) >= (signed)Uuid::kNumBytes32) {
-        uuids.push_back(*it | *(it + 1) << 8 | *(it + 2) << 16 | *(it + 3) << 24);
-        it += Uuid::kNumBytes32;
-      }
+      uuids.push_back({
+          .uuid = (uint32_t)(*it | *(it + 1) << 8 | *(it + 2) << 16 | *(it + 3) << 24),
+          .data = std::vector<uint8_t>(it + Uuid::kNumBytes32, gap_data.data_.end()),
+      });
     }
   }
   return !uuids.empty();

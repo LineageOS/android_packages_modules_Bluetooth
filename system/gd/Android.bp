@@ -506,6 +506,7 @@ cc_test {
         "libchrome",
         "libevent",
         "libflatbuffers-cpp",
+        "libgmock",
         "libosi",
     ],
     shared_libs: [
