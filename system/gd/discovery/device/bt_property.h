@@ -68,7 +68,7 @@ class BtPropertyLegacy {
     return const_cast<bt_property_t*>(&properties_[0]);
   }
   int Len() const {
-    return static_cast<int>(properties_.size() * sizeof(bt_property_t));
+    return static_cast<int>(properties_.size());
   }
 
  private:
