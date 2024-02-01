@@ -679,7 +679,8 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
   if (btm_cb.btm_inq_vars.inq_active & BTM_SSP_INQUIRY_ACTIVE) {
     LOG_INFO("Not starting inquiry as SSP is in progress");
     // Report the status here because inq_complete will cancel it below
-    BTIF_dm_report_inquiry_status_change(BTM_INQUIRY_STARTED);
+    BTIF_dm_report_inquiry_status_change(
+        tBTM_INQUIRY_STATE::BTM_INQUIRY_STARTED);
 
     btm_process_inq_complete(HCI_ERR_MAX_NUM_OF_CONNECTIONS,
                              BTM_GENERAL_INQUIRY);
@@ -702,7 +703,8 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
             ASSERT(status_view.IsValid());
             auto status = status_view.GetStatus();
             if (status == bluetooth::hci::ErrorCode::SUCCESS) {
-              BTIF_dm_report_inquiry_status_change(BTM_INQUIRY_STARTED);
+              BTIF_dm_report_inquiry_status_change(
+                  tBTM_INQUIRY_STATE::BTM_INQUIRY_STARTED);
             } else {
               LOG_INFO("Inquiry failed to start status: %s",
                        bluetooth::hci::ErrorCodeText(status).c_str());
@@ -1495,7 +1497,8 @@ void btm_process_inq_complete(tHCI_STATUS status, uint8_t mode) {
   btm_cb.btm_inq_vars.inqparms.mode &= ~(mode);
   const auto inq_active = btm_cb.btm_inq_vars.inq_active;
 
-  BTIF_dm_report_inquiry_status_change(BTM_INQUIRY_COMPLETE);
+  BTIF_dm_report_inquiry_status_change(
+      tBTM_INQUIRY_STATE::BTM_INQUIRY_COMPLETE);
 
   if (status != HCI_SUCCESS) {
     LOG_WARN("Received unexpected hci status:%s",
@@ -1589,7 +1592,8 @@ void btm_process_inq_complete(tHCI_STATUS status, uint8_t mode) {
  *
  ******************************************************************************/
 void btm_process_cancel_complete(tHCI_STATUS status, uint8_t mode) {
-  BTIF_dm_report_inquiry_status_change(BTM_INQUIRY_CANCELLED);
+  BTIF_dm_report_inquiry_status_change(
+      tBTM_INQUIRY_STATE::BTM_INQUIRY_CANCELLED);
   btm_process_inq_complete(status, mode);
 }
 /*******************************************************************************
