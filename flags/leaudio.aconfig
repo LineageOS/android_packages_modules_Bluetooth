@@ -104,3 +104,10 @@ flag {
     description: "Adds missing frequencies defined by the Bluetooth SIG"
     bug: "323287937"
 }
+
+flag {
+    name: "leaudio_callback_on_group_stream_status"
+    namespace: "bluetooth"
+    description: "Add group stream status callback to notify about playing state"
+    bug: "323288608"
+}
