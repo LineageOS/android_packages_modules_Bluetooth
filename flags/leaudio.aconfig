@@ -97,3 +97,10 @@ flag {
     description: "API to set device as inactive audio device upon connection"
     bug: "322387487"
 }
+
+flag {
+    name: "leaudio_add_sampling_frequencies"
+    namespace: "bluetooth"
+    description: "Adds missing frequencies defined by the Bluetooth SIG"
+    bug: "323287937"
+}
