@@ -27,6 +27,7 @@
 #include <base/functional/callback.h>
 
 #include <algorithm>
+#include <cstdint>
 #include <cstring>
 
 #include "crypto_toolbox/crypto_toolbox.h"
@@ -46,7 +47,8 @@
 #include "stack/include/btm_ble_sec_api.h"
 #include "types/raw_address.h"
 
-using base::Bind;
+using bluetooth::common::BindOnce;
+using bluetooth::common::OnceCallback;
 using crypto_toolbox::aes_128;
 
 #ifndef SMP_MAX_ENC_REPEAT
@@ -57,7 +59,9 @@ static void smp_process_stk(tSMP_CB* p_cb, Octet16* p);
 static Octet16 smp_calculate_legacy_short_term_key(tSMP_CB* p_cb);
 static void smp_process_private_key(tSMP_CB* p_cb);
 
-#define SMP_PASSKEY_MASK 0xfff00000
+static void send_ble_rand(OnceCallback<void(uint64_t)> callback);
+
+#define SMP_PASSKEY_MASK 0x000fffff
 
 // If there is data saved here, then use its info instead
 // This needs to be cleared on a successfult pairing using the oob data
@@ -92,14 +96,11 @@ void smp_debug_print_nbyte_big_endian(uint8_t* p, const char* key_name,
                                       uint8_t len) {}
 
 /** This function is called to process a passkey. */
-void smp_proc_passkey(tSMP_CB* p_cb, BT_OCTET8 rand) {
+void smp_proc_passkey(tSMP_CB* p_cb, uint64_t rand) {
   uint8_t* tt = p_cb->tk.data();
-  uint32_t passkey; /* 19655 test number; */
-  uint8_t* pp = rand;
+  uint32_t passkey = static_cast<uint32_t>(rand & SMP_PASSKEY_MASK);
 
   LOG_VERBOSE("addr:%s", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
-  STREAM_TO_UINT32(passkey, pp);
-  passkey &= ~SMP_PASSKEY_MASK;
 
   /* truncate by maximum value */
   while (passkey > BTM_MAX_PASSKEY_VAL) passkey >>= 1;
@@ -142,7 +143,7 @@ void smp_proc_passkey(tSMP_CB* p_cb, BT_OCTET8 rand) {
 void smp_generate_passkey(tSMP_CB* p_cb, UNUSED_ATTR tSMP_INT_DATA* p_data) {
   LOG_VERBOSE("addr:%s", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
   /* generate MRand or SRand */
-  btsnd_hcic_ble_rand(Bind(&smp_proc_passkey, p_cb));
+  send_ble_rand(BindOnce(&smp_proc_passkey, p_cb));
 }
 
 /*******************************************************************************
@@ -204,10 +205,9 @@ void smp_generate_csrk(tSMP_CB* p_cb, UNUSED_ATTR tSMP_INT_DATA* p_data) {
     smp_compute_csrk(p_cb->div, p_cb);
   } else {
     LOG_VERBOSE("Generate DIV for CSRK");
-    btsnd_hcic_ble_rand(Bind(
-        [](tSMP_CB* p_cb, BT_OCTET8 rand) {
-          uint16_t div;
-          STREAM_TO_UINT16(div, rand);
+    send_ble_rand(BindOnce(
+        [](tSMP_CB* p_cb, uint64_t rand) {
+          uint16_t div = static_cast<uint16_t>(rand);
           smp_compute_csrk(div, p_cb);
         },
         p_cb));
@@ -405,14 +405,14 @@ void smp_generate_srand_mrand_confirm(tSMP_CB* p_cb,
                                       UNUSED_ATTR tSMP_INT_DATA* p_data) {
   LOG_VERBOSE("addr:%s", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
   /* generate MRand or SRand */
-  btsnd_hcic_ble_rand(Bind(
-      [](tSMP_CB* p_cb, BT_OCTET8 rand) {
-        memcpy(p_cb->rand.data(), rand, 8);
-
+  send_ble_rand(BindOnce(
+      [](tSMP_CB* p_cb, uint64_t rand) {
+        memcpy(p_cb->rand.data(), (uint8_t*)&rand, sizeof(uint64_t));
         /* generate 64 MSB of MRand or SRand */
-        btsnd_hcic_ble_rand(Bind(
-            [](tSMP_CB* p_cb, BT_OCTET8 rand) {
-              memcpy((void*)&p_cb->rand[8], rand, BT_OCTET8_LEN);
+        send_ble_rand(BindOnce(
+            [](tSMP_CB* p_cb, uint64_t rand) {
+              memcpy(p_cb->rand.data() + sizeof(uint64_t), (uint8_t*)&rand,
+                     sizeof(uint64_t));
               smp_generate_confirm(p_cb);
             },
             p_cb));
@@ -492,14 +492,14 @@ static void smp_process_ediv(tSMP_CB* p_cb, Octet16& p) {
 /**
  * This function is to proceed generate Y = E(DHK, Rand)
  */
-static void smp_generate_y(tSMP_CB* p_cb, BT_OCTET8 rand) {
+static void smp_generate_y(tSMP_CB* p_cb, uint64_t rand) {
   LOG_VERBOSE("addr:%s", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
 
   const Octet16& dhk = BTM_GetDeviceDHK();
 
-  memcpy(p_cb->enc_rand, rand, BT_OCTET8_LEN);
+  memcpy(p_cb->enc_rand, (uint8_t*)&rand, sizeof(uint64_t));
   Octet16 rand16{};
-  memcpy(rand16.data(), rand, BT_OCTET8_LEN);
+  memcpy(rand16.data(), (uint8_t*)&rand, sizeof(uint64_t));
   Octet16 output = aes_128(dhk, rand16);
   smp_process_ediv(p_cb, output);
 }
@@ -523,7 +523,7 @@ static void smp_generate_ltk_cont(uint16_t div, tSMP_CB* p_cb) {
   p_cb->ltk = ltk;
 
   /* generate EDIV and rand now */
-  btsnd_hcic_ble_rand(Bind(&smp_generate_y, p_cb));
+  send_ble_rand(BindOnce(&smp_generate_y, p_cb));
 }
 
 /*******************************************************************************
@@ -560,10 +560,9 @@ void smp_generate_ltk(tSMP_CB* p_cb, UNUSED_ATTR tSMP_INT_DATA* p_data) {
     LOG_VERBOSE("Generate DIV for LTK");
 
     /* generate MRand or SRand */
-    btsnd_hcic_ble_rand(Bind(
-        [](tSMP_CB* p_cb, BT_OCTET8 rand) {
-          uint16_t div;
-          STREAM_TO_UINT16(div, rand);
+    send_ble_rand(BindOnce(
+        [](tSMP_CB* p_cb, uint64_t rand) {
+          uint16_t div = static_cast<uint16_t>(rand);
           smp_generate_ltk_cont(div, p_cb);
         },
         p_cb));
@@ -624,19 +623,20 @@ void smp_create_private_key(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     LOG_WARN("OOB Association Model with no saved data present");
   }
 
-  btsnd_hcic_ble_rand(Bind(
-      [](tSMP_CB* p_cb, BT_OCTET8 rand) {
-        memcpy((void*)p_cb->private_key, rand, BT_OCTET8_LEN);
-        btsnd_hcic_ble_rand(Bind(
-            [](tSMP_CB* p_cb, BT_OCTET8 rand) {
-              memcpy((void*)&p_cb->private_key[8], rand, BT_OCTET8_LEN);
-              btsnd_hcic_ble_rand(Bind(
-                  [](tSMP_CB* p_cb, BT_OCTET8 rand) {
-                    memcpy((void*)&p_cb->private_key[16], rand, BT_OCTET8_LEN);
-                    btsnd_hcic_ble_rand(Bind(
-                        [](tSMP_CB* p_cb, BT_OCTET8 rand) {
-                          memcpy((void*)&p_cb->private_key[24], rand,
-                                 BT_OCTET8_LEN);
+  send_ble_rand(BindOnce(
+      [](tSMP_CB* p_cb, uint64_t rand) {
+        memcpy(p_cb->private_key, (uint8_t*)&rand, sizeof(uint64_t));
+        send_ble_rand(BindOnce(
+            [](tSMP_CB* p_cb, uint64_t rand) {
+              memcpy(&p_cb->private_key[8], (uint8_t*)&rand, sizeof(uint64_t));
+              send_ble_rand(BindOnce(
+                  [](tSMP_CB* p_cb, uint64_t rand) {
+                    memcpy(&p_cb->private_key[16], (uint8_t*)&rand,
+                           sizeof(uint64_t));
+                    send_ble_rand(BindOnce(
+                        [](tSMP_CB* p_cb, uint64_t rand) {
+                          memcpy(&p_cb->private_key[24], (uint8_t*)&rand,
+                                 sizeof(uint64_t));
                           smp_process_private_key(p_cb);
                         },
                         p_cb));
@@ -1055,12 +1055,13 @@ bool smp_calculate_long_term_key_from_link_key(tSMP_CB* p_cb) {
  */
 void smp_start_nonce_generation(tSMP_CB* p_cb) {
   LOG_VERBOSE("start generating nonce");
-  btsnd_hcic_ble_rand(Bind(
-      [](tSMP_CB* p_cb, BT_OCTET8 rand) {
-        memcpy(p_cb->rand.data(), rand, BT_OCTET8_LEN);
-        btsnd_hcic_ble_rand(Bind(
-            [](tSMP_CB* p_cb, BT_OCTET8 rand) {
-              memcpy(p_cb->rand.data() + 8, rand, BT_OCTET8_LEN);
+  send_ble_rand(BindOnce(
+      [](tSMP_CB* p_cb, uint64_t rand) {
+        memcpy(p_cb->rand.data(), (uint8_t*)&rand, sizeof(uint64_t));
+        send_ble_rand(BindOnce(
+            [](tSMP_CB* p_cb, uint64_t rand) {
+              memcpy(p_cb->rand.data() + sizeof(uint64_t), (uint8_t*)&rand,
+                     sizeof(uint64_t));
               LOG_VERBOSE("round %d, done", p_cb->round);
               /* notifies SM that it has new nonce. */
               smp_sm_event(p_cb, SMP_HAVE_LOC_NONCE_EVT, NULL);
@@ -1068,4 +1069,8 @@ void smp_start_nonce_generation(tSMP_CB* p_cb) {
             p_cb));
       },
       p_cb));
+}
+
+static void send_ble_rand(OnceCallback<void(uint64_t)> callback) {
+  bluetooth::shim::GetController()->LeRand(std::move(callback));
 }
