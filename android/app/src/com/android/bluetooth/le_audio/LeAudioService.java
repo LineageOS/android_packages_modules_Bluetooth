@@ -24,9 +24,9 @@ import static com.android.bluetooth.flags.Flags.leaudioBroadcastFeatureSupport;
 import static com.android.bluetooth.Utils.enforceBluetoothPrivilegedPermission;
 import static com.android.modules.utils.build.SdkLevel.isAtLeastU;
 
-
 import android.annotation.RequiresPermission;
 import android.annotation.SuppressLint;
+import android.app.ActivityManager;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothLeAudio;
@@ -56,6 +56,7 @@ import android.media.AudioDeviceCallback;
 import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.media.BluetoothProfileConnectionInfo;
+import android.os.Binder;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -63,6 +64,8 @@ import android.os.Parcel;
 import android.os.ParcelUuid;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
+import android.os.UserHandle;
+import android.provider.Settings;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
 import android.util.Pair;
@@ -126,6 +129,13 @@ public class LeAudioService extends ProfileService {
      * Indicates group audio support for input direction
      */
     private static final int AUDIO_DIRECTION_INPUT_BIT = 0x02;
+
+    /**
+     * This is used by application read-only for checking the fallback active group id.
+     *
+     */
+    public static final String BLUETOOTH_LE_BROADCAST_FALLBACK_ACTIVE_GROUP_ID =
+            "bluetooth_le_broadcast_fallback_active_group_id";
 
     private AdapterService mAdapterService;
     private DatabaseManager mDatabaseManager;
@@ -1756,6 +1766,16 @@ public class LeAudioService extends ProfileService {
                             + mExposedActiveDevice);
         }
 
+        if (isBroadcastActive()
+                && currentlyActiveGroupId == LE_AUDIO_GROUP_ID_INVALID
+                && mUnicastGroupIdDeactivatedForBroadcastTransition != LE_AUDIO_GROUP_ID_INVALID
+                && groupId != LE_AUDIO_GROUP_ID_INVALID) {
+            // If broadcast is ongoing and need to update unicast fallback active group
+            // we need to update the cached group id and skip changing the active device
+            updateFallbackUnicastGroupIdForBroadcast(groupId);
+            return;
+        }
+
         LeAudioGroupDescriptor groupDescriptor = getGroupDescriptor(currentlyActiveGroupId);
         if (groupDescriptor != null && groupId == currentlyActiveGroupId) {
             /* Make sure active group is already exposed to audio framework.
@@ -2345,7 +2365,7 @@ public class LeAudioService extends ProfileService {
         if (unicastDevice == null) {
             Log.e(TAG, "EVENT_TYPE_BROADCAST_DESTROYED: No valid unicast device for group ID: "
                     + mUnicastGroupIdDeactivatedForBroadcastTransition);
-            mUnicastGroupIdDeactivatedForBroadcastTransition = LE_AUDIO_GROUP_ID_INVALID;
+            updateFallbackUnicastGroupIdForBroadcast(LE_AUDIO_GROUP_ID_INVALID);
             return;
         }
 
@@ -2356,8 +2376,7 @@ public class LeAudioService extends ProfileService {
                     + unicastDevice);
         }
 
-        mUnicastGroupIdDeactivatedForBroadcastTransition = LE_AUDIO_GROUP_ID_INVALID;
-
+        updateFallbackUnicastGroupIdForBroadcast(LE_AUDIO_GROUP_ID_INVALID);
         setActiveDevice(unicastDevice);
     }
 
@@ -2575,14 +2594,14 @@ public class LeAudioService extends ProfileService {
 
                     /* Check if broadcast was deactivated due to unicast */
                     if (mBroadcastIdDeactivatedForUnicastTransition.isPresent()) {
-                        mUnicastGroupIdDeactivatedForBroadcastTransition = groupId;
+                        updateFallbackUnicastGroupIdForBroadcast(groupId);
                         mQueuedInCallValue = Optional.empty();
                         startBroadcast(mBroadcastIdDeactivatedForUnicastTransition.get());
                         mBroadcastIdDeactivatedForUnicastTransition = Optional.empty();
                     }
 
                     if (!mCreateBroadcastQueue.isEmpty()) {
-                        mUnicastGroupIdDeactivatedForBroadcastTransition = groupId;
+                        updateFallbackUnicastGroupIdForBroadcast(groupId);
                         BluetoothLeBroadcastSettings settings = mCreateBroadcastQueue.remove();
                         createBroadcast(settings);
                     }
@@ -3471,7 +3490,7 @@ public class LeAudioService extends ProfileService {
                 mGroupDescriptors.remove(groupId);
 
                 if (mUnicastGroupIdDeactivatedForBroadcastTransition == groupId) {
-                    mUnicastGroupIdDeactivatedForBroadcastTransition = LE_AUDIO_GROUP_ID_INVALID;
+                    updateFallbackUnicastGroupIdForBroadcast(LE_AUDIO_GROUP_ID_INVALID);
                 }
             }
             notifyGroupNodeRemoved(device, groupId);
@@ -3648,6 +3667,37 @@ public class LeAudioService extends ProfileService {
                 }
             }
             mBroadcastCallbacks.finishBroadcast();
+        }
+    }
+
+    /**
+     * Update the fallback unicast group id during the handover to broadcast Also store the fallback
+     * group id in Settings store.
+     *
+     * @param groupId group id to update
+     */
+    private void updateFallbackUnicastGroupIdForBroadcast(int groupId) {
+        Log.i(
+                TAG,
+                "Update unicast fallback active group from: "
+                        + mUnicastGroupIdDeactivatedForBroadcastTransition
+                        + " to : "
+                        + groupId);
+        mUnicastGroupIdDeactivatedForBroadcastTransition = groupId;
+
+        // waive WRITE_SECURE_SETTINGS permission check
+        final long callingIdentity = Binder.clearCallingIdentity();
+        try {
+            Context userContext =
+                    getApplicationContext()
+                            .createContextAsUser(
+                                    UserHandle.of(ActivityManager.getCurrentUser()), 0);
+            Settings.Secure.putInt(
+                    userContext.getContentResolver(),
+                    BLUETOOTH_LE_BROADCAST_FALLBACK_ACTIVE_GROUP_ID,
+                    groupId);
+        } finally {
+            Binder.restoreCallingIdentity(callingIdentity);
         }
     }
 
