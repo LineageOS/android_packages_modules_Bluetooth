@@ -2395,6 +2395,7 @@ bool l2cu_set_acl_priority(const RawAddress& bd_addr, tL2CAP_PRIORITY priority,
    * 2. High priority requested because of central/peripheral role switch */
   if ((!reset_after_rs && (priority != p_lcb->acl_priority)) ||
       (reset_after_rs && p_lcb->acl_priority == L2CAP_PRIORITY_HIGH)) {
+#ifndef TARGET_FLOSS
     /* Use vendor specific commands to set the link priority */
     switch (controller_get_interface()->get_bt_version()->manufacturer) {
       case LMP_COMPID_BROADCOM:
@@ -2417,6 +2418,7 @@ bool l2cu_set_acl_priority(const RawAddress& bd_addr, tL2CAP_PRIORITY priority,
         /* Not supported/required for other vendors */
         break;
     }
+#endif
   }
 
   /* Adjust lmp buffer allocation for this channel if priority changed */
