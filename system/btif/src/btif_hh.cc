@@ -45,7 +45,6 @@
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/hidh_api.h"
-#include "stack/include/l2c_api.h"
 #include "types/raw_address.h"
 
 #define COD_HID_KEYBOARD 0x0540
@@ -1537,7 +1536,7 @@ static bt_status_t set_info(RawAddress* bd_addr, bthh_hid_info_t hid_info) {
  *
  ******************************************************************************/
 static bt_status_t get_protocol(RawAddress* bd_addr,
-                                UNUSED_ATTR bthh_protocol_mode_t protocolMode) {
+                                bthh_protocol_mode_t /* protocolMode */) {
   CHECK_BTHH_INIT();
 
   VLOG(1) << __func__ << " BTHH: addr = " << ADDRESS_TO_LOGGABLE_STR(*bd_addr);
