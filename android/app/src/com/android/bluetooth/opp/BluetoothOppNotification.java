@@ -72,13 +72,23 @@ class BluetoothOppNotification {
             BluetoothShare.STATUS + " >= '200' AND " + VISIBLE + " AND " + NOT_THROUGH_HANDOVER;
     // Don't show handover-initiated transfers
 
-    private static final String WHERE_COMPLETED_OUTBOUND =
-            WHERE_COMPLETED + " AND " + "(" + BluetoothShare.DIRECTION + " == "
-                    + BluetoothShare.DIRECTION_OUTBOUND + ")";
+    static final String WHERE_COMPLETED_OUTBOUND =
+            WHERE_COMPLETED
+                    + " AND "
+                    + "("
+                    + BluetoothShare.DIRECTION
+                    + " == "
+                    + BluetoothShare.DIRECTION_OUTBOUND
+                    + ")";
 
-    private static final String WHERE_COMPLETED_INBOUND =
-            WHERE_COMPLETED + " AND " + "(" + BluetoothShare.DIRECTION + " == "
-                    + BluetoothShare.DIRECTION_INBOUND + ")";
+    static final String WHERE_COMPLETED_INBOUND =
+            WHERE_COMPLETED
+                    + " AND "
+                    + "("
+                    + BluetoothShare.DIRECTION
+                    + " == "
+                    + BluetoothShare.DIRECTION_INBOUND
+                    + ")";
 
     private static final String WHERE_CONFIRM_PENDING =
             BluetoothShare.USER_CONFIRMATION + " == '" + BluetoothShare.USER_CONFIRMATION_PENDING
@@ -454,8 +464,13 @@ class BluetoothOppNotification {
                 pi = PendingIntent.getBroadcast(mContext, 0, in, PendingIntent.FLAG_IMMUTABLE);
             }
 
-            Intent deleteIntent = new Intent(Constants.ACTION_COMPLETE_HIDE).setClassName(
-                    mContext, BluetoothOppReceiver.class.getName());
+            Intent deleteIntent = new Intent(mContext, BluetoothOppReceiver.class);
+            if (Flags.oppFixMultipleNotificationsIssues()) {
+                deleteIntent.setAction(Constants.ACTION_HIDE_COMPLETED_OUTBOUND_TRANSFER);
+            } else {
+                deleteIntent.setAction(Constants.ACTION_COMPLETE_HIDE);
+            }
+
             Notification.Builder b =
                     new Notification.Builder(mContext, OPP_NOTIFICATION_CHANNEL).setOnlyAlertOnce(
                             true)
@@ -531,8 +546,13 @@ class BluetoothOppNotification {
                 pi = PendingIntent.getBroadcast(mContext, 0, in, PendingIntent.FLAG_IMMUTABLE);
             }
 
-            Intent deleteIntent = new Intent(Constants.ACTION_COMPLETE_HIDE).setClassName(
-                    mContext, BluetoothOppReceiver.class.getName());
+            Intent deleteIntent = new Intent(mContext, BluetoothOppReceiver.class);
+            if (Flags.oppFixMultipleNotificationsIssues()) {
+                deleteIntent.setAction(Constants.ACTION_HIDE_COMPLETED_INBOUND_TRANSFER);
+            } else {
+                deleteIntent.setAction(Constants.ACTION_COMPLETE_HIDE);
+            }
+
             Notification.Builder b =
                     new Notification.Builder(mContext, OPP_NOTIFICATION_CHANNEL).setOnlyAlertOnce(
                             true)

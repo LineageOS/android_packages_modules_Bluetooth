@@ -199,7 +199,8 @@ public class BluetoothOppReceiver extends BroadcastReceiver {
                 }
                 cursor.close();
             }
-        } else if (action.equals(Constants.ACTION_COMPLETE_HIDE)) {
+        } else if (action.equals(Constants.ACTION_COMPLETE_HIDE)
+                && !Flags.oppFixMultipleNotificationsIssues()) {
             if (V) {
                 Log.v(TAG, "Receiver ACTION_COMPLETE_HIDE");
             }
@@ -208,6 +209,34 @@ public class BluetoothOppReceiver extends BroadcastReceiver {
             BluetoothMethodProxy.getInstance().contentResolverUpdate(
                     context.getContentResolver(), BluetoothShare.CONTENT_URI, updateValues,
                     BluetoothOppNotification.WHERE_COMPLETED, null);
+        } else if (action.equals(Constants.ACTION_HIDE_COMPLETED_INBOUND_TRANSFER)
+                && Flags.oppFixMultipleNotificationsIssues()) {
+            if (V) {
+                Log.v(TAG, "Received ACTION_HIDE_COMPLETED_INBOUND_TRANSFER");
+            }
+            ContentValues updateValues = new ContentValues();
+            updateValues.put(BluetoothShare.VISIBILITY, BluetoothShare.VISIBILITY_HIDDEN);
+            BluetoothMethodProxy.getInstance()
+                    .contentResolverUpdate(
+                            context.getContentResolver(),
+                            BluetoothShare.CONTENT_URI,
+                            updateValues,
+                            BluetoothOppNotification.WHERE_COMPLETED_INBOUND,
+                            null);
+        } else if (action.equals(Constants.ACTION_HIDE_COMPLETED_OUTBOUND_TRANSFER)
+                && Flags.oppFixMultipleNotificationsIssues()) {
+            if (V) {
+                Log.v(TAG, "Received ACTION_HIDE_COMPLETED_OUTBOUND_TRANSFER");
+            }
+            ContentValues updateValues = new ContentValues();
+            updateValues.put(BluetoothShare.VISIBILITY, BluetoothShare.VISIBILITY_HIDDEN);
+            BluetoothMethodProxy.getInstance()
+                    .contentResolverUpdate(
+                            context.getContentResolver(),
+                            BluetoothShare.CONTENT_URI,
+                            updateValues,
+                            BluetoothOppNotification.WHERE_COMPLETED_OUTBOUND,
+                            null);
         } else if (action.equals(BluetoothShare.TRANSFER_COMPLETED_ACTION)) {
             if (V) {
                 Log.v(TAG, "Receiver Transfer Complete Intent for " + intent.getData());

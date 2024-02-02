@@ -142,10 +142,20 @@ public class Constants {
     static final String ACTION_DECLINE = "android.btopp.intent.action.DECLINE";
 
     /**
-     * the intent that gets sent when deleting the notifications of outbound and
-     * inbound completed transfer
+     * The intent that gets sent when deleting the notifications of outbound and inbound completed
+     * transfer.
      */
+    // TODO(b/323096132): Remove this variable when the flag
+    //                    opp_fix_multiple_notifications_issues is ramped up.
     static final String ACTION_COMPLETE_HIDE = "android.btopp.intent.action.HIDE_COMPLETE";
+
+    /** The intent that gets sent when deleting the notifications of completed inbound transfer. */
+    static final String ACTION_HIDE_COMPLETED_INBOUND_TRANSFER =
+            "android.btopp.intent.action.HIDE_COMPLETED_INBOUND_TRANSFER";
+
+    /** The intent that gets sent when deleting the notifications of completed outbound transfer. */
+    static final String ACTION_HIDE_COMPLETED_OUTBOUND_TRANSFER =
+            "android.btopp.intent.action.HIDE_COMPLETED_OUTBOUND_TRANSFER";
 
     /** the intent that gets sent when clicking a incoming file confirm notification */
     static final String ACTION_INCOMING_FILE_CONFIRM = "android.btopp.intent.action.CONFIRM";
