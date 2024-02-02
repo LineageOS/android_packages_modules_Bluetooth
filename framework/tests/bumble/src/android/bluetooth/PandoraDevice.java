@@ -23,17 +23,19 @@ import androidx.test.core.app.ApplicationProvider;
 import com.google.protobuf.Empty;
 
 import io.grpc.ManagedChannel;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.okhttp.OkHttpChannelBuilder;
 
 import org.junit.rules.ExternalResource;
+
+import java.util.concurrent.TimeUnit;
 
 import pandora.DckGrpc;
 import pandora.GATTGrpc;
 import pandora.HostGrpc;
 import pandora.HostProto;
 import pandora.SecurityGrpc;
-
-import java.util.concurrent.TimeUnit;
 
 public final class PandoraDevice extends ExternalResource {
     private static final String TAG = PandoraDevice.class.getSimpleName();
@@ -59,7 +61,16 @@ public final class PandoraDevice extends ExternalResource {
         ManagedChannel channel =
                 OkHttpChannelBuilder.forAddress(mNetworkAddress, mPort).usePlaintext().build();
         HostGrpc.HostBlockingStub stub = HostGrpc.newBlockingStub(channel);
-        stub.factoryReset(Empty.getDefaultInstance());
+        try {
+            stub.factoryReset(Empty.getDefaultInstance());
+        } catch (StatusRuntimeException e) {
+            if (e.getStatus().getCode() == Status.Code.UNAVAILABLE) {
+                // Server is shutting down, the call might be canceled with an UNAVAILABLE status
+                // because the stream is closed.
+            } else {
+                throw e;
+            }
+        }
         try {
             // terminate the channel
             channel.shutdown().awaitTermination(1, TimeUnit.SECONDS);
