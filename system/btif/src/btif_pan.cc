@@ -50,7 +50,6 @@
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
-#include "osi/include/osi.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/main_thread.h"
 #include "stack/include/pan_api.h"
@@ -392,7 +391,7 @@ int btpan_tap_open() {
 
 int btpan_tap_send(int tap_fd, const RawAddress& src, const RawAddress& dst,
                    uint16_t proto, const char* buf, uint16_t len,
-                   UNUSED_ATTR bool ext, UNUSED_ATTR bool forward) {
+                   bool /* ext */, bool /* forward */) {
   if (tap_fd != INVALID_FD) {
     tETH_HDR eth_hdr;
     eth_hdr.h_dest = dst;

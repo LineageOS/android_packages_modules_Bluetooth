@@ -34,12 +34,10 @@
 #include "btif/include/btif_util.h"  // CASE_RETURN_STR
 #include "common/message_loop_thread.h"
 #include "include/check.h"
-#include "internal_include/bt_target.h"
+#include "os/log.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
 #include "osi/include/fixed_queue.h"
-#include "osi/include/log.h"
-#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/include/bt_hdr.h"
 #include "types/raw_address.h"
 
@@ -158,7 +156,7 @@ static void btif_a2dp_sink_clear_track_event_req();
 static void btif_a2dp_sink_on_start_event();
 static void btif_a2dp_sink_on_suspend_event();
 
-UNUSED_ATTR static const char* dump_media_event(uint16_t event) {
+static const char* dump_media_event(uint16_t event) {
   switch (event) {
     CASE_RETURN_STR(BTIF_MEDIA_SINK_DECODER_UPDATE)
     CASE_RETURN_STR(BTIF_MEDIA_SINK_CLEAR_TRACK)
@@ -425,7 +423,7 @@ void btif_a2dp_sink_on_idle() {
   btif_a2dp_sink_clear_track_event_req();
 }
 
-void btif_a2dp_sink_on_stopped(UNUSED_ATTR tBTA_AV_SUSPEND* p_av_suspend) {
+void btif_a2dp_sink_on_stopped(tBTA_AV_SUSPEND* /* p_av_suspend */) {
   LOG_INFO("%s", __func__);
   BT_HDR_RIGID* p_buf =
       reinterpret_cast<BT_HDR_RIGID*>(osi_malloc(sizeof(BT_HDR_RIGID)));
@@ -437,7 +435,7 @@ void btif_a2dp_sink_on_stopped(UNUSED_ATTR tBTA_AV_SUSPEND* p_av_suspend) {
   btif_a2dp_sink_audio_handle_stop_decoding();
 }
 
-void btif_a2dp_sink_on_suspended(UNUSED_ATTR tBTA_AV_SUSPEND* p_av_suspend) {
+void btif_a2dp_sink_on_suspended(tBTA_AV_SUSPEND* /* p_av_suspend */) {
   LOG_INFO("%s", __func__);
   BT_HDR_RIGID* p_buf =
       reinterpret_cast<BT_HDR_RIGID*>(osi_malloc(sizeof(BT_HDR_RIGID)));
@@ -486,7 +484,7 @@ static void btif_a2dp_sink_audio_handle_stop_decoding() {
   }
 }
 
-static void btif_decode_alarm_cb(UNUSED_ATTR void* context) {
+static void btif_decode_alarm_cb(void* /* context */) {
   LockGuard lock(g_mutex);
   btif_a2dp_sink_cb.worker_thread.DoInThread(
       FROM_HERE, base::BindOnce(btif_a2dp_sink_avk_handle_timer));
@@ -711,7 +709,7 @@ void btif_a2dp_sink_audio_rx_flush_req() {
       FROM_HERE, base::BindOnce(btif_a2dp_sink_command_ready, p_buf));
 }
 
-void btif_a2dp_sink_debug_dump(UNUSED_ATTR int fd) {
+void btif_a2dp_sink_debug_dump(int /* fd */) {
   // Nothing to do
 }
 

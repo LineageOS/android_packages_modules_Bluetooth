@@ -27,6 +27,7 @@
 #include "macros.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/hiddefs.h"
+#include "stack/include/l2c_api.h"
 #include "types/raw_address.h"
 
 /*****************************************************************************
