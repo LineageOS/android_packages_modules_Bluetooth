@@ -121,3 +121,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_multiple_vocs_instances_api"
+    namespace: "bluetooth"
+    description: "Support multiple audio outputs for volume offset"
+    bug: "323156655"
+}
