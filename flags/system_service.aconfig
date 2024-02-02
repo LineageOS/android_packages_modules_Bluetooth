@@ -8,6 +8,13 @@ flag {
 }
 
 flag {
+    name: "auto_on_feature"
+    namespace: "bluetooth"
+    description: "Turn bluetooth on next morning at 5 am"
+    bug: "323060869"
+}
+
+flag {
     name: "system_server_messenger"
     namespace: "bluetooth"
     description: "Replace binder call to the system server with a Messenger to enforce thread safety"

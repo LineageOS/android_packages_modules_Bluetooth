@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.airplane;
+package com.android.bluetooth.notification;
 
 import static java.util.Objects.requireNonNull;
 
@@ -47,8 +47,8 @@ public class NotificationHelperService extends Service {
     private static final String APM_BT_ENABLED_NOTIFICATION = "apm_bt_enabled_notification";
 
     private static final String NOTIFICATION_TAG = "com.android.bluetooth";
-    private static final String APM_NOTIFICATION_CHANNEL = "apm_notification_channel";
-    private static final String APM_NOTIFICATION_GROUP = "apm_notification_group";
+    private static final String NOTIFICATION_CHANNEL = "notification_toggle_channel";
+    private static final String NOTIFICATION_GROUP = "notification_toggle_group";
 
     private static final Map<String, Pair<Integer /* titleId */, Integer /* messageId */>>
             NOTIFICATION_MAP =
@@ -73,24 +73,24 @@ public class NotificationHelperService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        sendAirplaneModeNotification(
-                intent.getStringExtra("android.bluetooth.airplane.extra.NOTIFICATION_STATE"));
+        sendToggleNotification(
+                intent.getStringExtra("android.bluetooth.notification.extra.NOTIFICATION_REASON"));
         return Service.START_NOT_STICKY;
     }
 
-    private void sendAirplaneModeNotification(String notificationState) {
-        String logHeader = "sendAirplaneModeNotification(" + notificationState + "): ";
-        Pair<Integer, Integer> notificationContent = NOTIFICATION_MAP.get(notificationState);
+    private void sendToggleNotification(String notificationReason) {
+        String logHeader = "sendToggleNotification(" + notificationReason + "): ";
+        Pair<Integer, Integer> notificationContent = NOTIFICATION_MAP.get(notificationReason);
         if (notificationContent == null) {
             Log.e(TAG, logHeader + "unknown action");
             return;
         }
 
-        if (!isFirstTimeNotification(notificationState)) {
+        if (!isFirstTimeNotification(notificationReason)) {
             Log.d(TAG, logHeader + "already displayed");
             return;
         }
-        Settings.Secure.putInt(getContentResolver(), notificationState, 1);
+        Settings.Secure.putInt(getContentResolver(), notificationReason, 1);
 
         Log.d(TAG, logHeader + "sending");
 
@@ -104,8 +104,8 @@ public class NotificationHelperService extends Service {
 
         notificationManager.createNotificationChannel(
                 new NotificationChannel(
-                        APM_NOTIFICATION_CHANNEL,
-                        APM_NOTIFICATION_GROUP,
+                        NOTIFICATION_CHANNEL,
+                        NOTIFICATION_GROUP,
                         NotificationManager.IMPORTANCE_HIGH));
 
         String title = getString(notificationContent.first);
@@ -115,7 +115,7 @@ public class NotificationHelperService extends Service {
         notificationManager.notify(
                 NOTIFICATION_TAG,
                 SystemMessage.ID.NOTE_BT_APM_NOTIFICATION_VALUE,
-                new Notification.Builder(this, APM_NOTIFICATION_CHANNEL)
+                new Notification.Builder(this, NOTIFICATION_CHANNEL)
                         .setAutoCancel(true)
                         .setLocalOnly(true)
                         .setContentTitle(title)
