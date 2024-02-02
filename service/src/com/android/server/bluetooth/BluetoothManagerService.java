@@ -1295,11 +1295,11 @@ class BluetoothManagerService {
 
     @VisibleForTesting
     void initialize(UserHandle userHandle) {
+        mCurrentUserContext =
+                requireNonNull(
+                        mContext.createContextAsUser(userHandle, 0),
+                        "Current User Context cannot be null");
         if (mUseNewAirplaneMode) {
-            mCurrentUserContext =
-                    requireNonNull(
-                            mContext.createContextAsUser(userHandle, 0),
-                            "Current User Context cannot be null");
             AirplaneModeListener.initialize(
                     mLooper,
                     mContentResolver,
@@ -1936,9 +1936,7 @@ class BluetoothManagerService {
                         mBluetoothNotificationManager.createNotificationChannels();
                     }
 
-                    if (mUseNewAirplaneMode) {
-                        mCurrentUserContext = mContext.createContextAsUser(userTo, 0);
-                    }
+                    mCurrentUserContext = mContext.createContextAsUser(userTo, 0);
 
                     /* disable and enable BT when detect a user switch */
                     if (mAdapter != null && mState.oneOf(STATE_ON)) {
