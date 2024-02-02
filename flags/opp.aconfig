@@ -12,4 +12,7 @@ flag {
     namespace: "bluetooth"
     description: "Fix UI issues related to multiple OPP notifications"
     bug: "323096132"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
 }
