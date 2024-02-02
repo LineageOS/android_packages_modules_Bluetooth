@@ -427,10 +427,8 @@ void PORT_ParNegCnf(tRFC_MCB* p_mcb, uint8_t dlci, uint16_t mtu, uint8_t cl,
 void PORT_DlcEstablishInd(tRFC_MCB* p_mcb, uint8_t dlci, uint16_t mtu) {
   tPORT* p_port = port_find_mcb_dlci_port(p_mcb, dlci);
 
-  LOG_VERBOSE("PORT_DlcEstablishInd p_mcb:%p, dlci:%d mtu:%di, p_port:%p",
-              p_mcb, dlci, mtu, p_port);
-  VLOG(1) << __func__
-          << " p_mcb addr:" << ADDRESS_TO_LOGGABLE_STR(p_mcb->bd_addr);
+  LOG_VERBOSE("p_mcb:%p, dlci:%d mtu:%di, p_port:%p, bd_addr:%s", p_mcb, dlci,
+              mtu, p_port, ADDRESS_TO_LOGGABLE_CSTR(p_mcb->bd_addr));
 
   if (!p_port) {
     /* This can be a first request for this port */
@@ -710,8 +708,8 @@ void PORT_LineStatusInd(tRFC_MCB* p_mcb, uint8_t dlci, uint8_t line_status) {
  *
  ******************************************************************************/
 void PORT_DlcReleaseInd(tRFC_MCB* p_mcb, uint8_t dlci) {
-  VLOG(1) << __func__ << ": dlci=" << std::to_string(dlci)
-          << ", bd_addr=" << p_mcb->bd_addr;
+  LOG_VERBOSE("dlci:%u, bd_addr:%s", dlci,
+              ADDRESS_TO_LOGGABLE_CSTR(p_mcb->bd_addr));
   tPORT* p_port = port_find_mcb_dlci_port(p_mcb, dlci);
   if (!p_port) return;
   port_rfc_closed(p_port, PORT_CLOSED);

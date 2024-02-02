@@ -234,8 +234,8 @@ void RFCOMM_ConfigCnf(uint16_t lcid, UNUSED_ATTR uint16_t initiator,
  *
  ******************************************************************************/
 void RFCOMM_DisconnectInd(uint16_t lcid, bool is_conf_needed) {
-  VLOG(1) << __func__ << ": lcid=" << loghex(lcid)
-          << ", is_conf_needed=" << is_conf_needed;
+  LOG_VERBOSE("lcid:%s, is_conf_needed:%d", loghex(lcid).c_str(),
+              is_conf_needed);
   tRFC_MCB* p_mcb = rfc_find_lcid_mcb(lcid);
   if (!p_mcb) {
     LOG(WARNING) << __func__ << ": no mcb for lcid " << loghex(lcid);

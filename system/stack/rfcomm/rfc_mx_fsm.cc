@@ -65,7 +65,7 @@ static void rfc_mx_conf_cnf(tRFC_MCB* p_mcb, uint16_t result);
  *
  * Function         rfc_mx_sm_execute
  *
- * Description      This function sends multiplexor events through the state
+ * Description      This function sends multiplexer events through the state
  *                  machine.
  *
  * Returns          void
@@ -75,8 +75,8 @@ void rfc_mx_sm_execute(tRFC_MCB* p_mcb, tRFC_MX_EVENT event, void* p_data) {
   CHECK(p_mcb != nullptr) << __func__ << ": NULL mcb for event " << event;
 
   LOG_INFO(
-      "RFCOMM peer:%s event:%d state:%s", ADDRESS_TO_LOGGABLE_CSTR(p_mcb->bd_addr),
-      event,
+      "RFCOMM peer:%s event:%d state:%s",
+      ADDRESS_TO_LOGGABLE_CSTR(p_mcb->bd_addr), event,
       rfcomm_mx_state_text(static_cast<tRFC_MX_STATE>(p_mcb->state)).c_str());
 
   switch (p_mcb->state) {
