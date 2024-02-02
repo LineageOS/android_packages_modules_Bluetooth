@@ -110,6 +110,26 @@ AdvertiserAddressType GetAdvertiserAddressTypeFromRequestedTypeAndPolicy(
   }
 }
 
+/**
+ * Determines the address type to use for non-connectable advertisement.
+ * (1) if the host only supports public/static address policy, non-connectable advertisement
+ *     can use both Public and NRPA if requested. Use NRPA if RPA is requested.
+ * (2) in other cases, based on the requested type and the address manager policy.
+ */
+AdvertiserAddressType GetAdvertiserAddressTypeNonConnectable(
+    AdvertiserAddressType requested_address_type, LeAddressManager::AddressPolicy address_policy) {
+  switch (address_policy) {
+    case LeAddressManager::AddressPolicy::USE_PUBLIC_ADDRESS:
+    case LeAddressManager::AddressPolicy::USE_STATIC_ADDRESS:
+      return requested_address_type == AdvertiserAddressType::RESOLVABLE_RANDOM
+                 ? AdvertiserAddressType::NONRESOLVABLE_RANDOM
+                 : requested_address_type;
+    default:
+      return GetAdvertiserAddressTypeFromRequestedTypeAndPolicy(
+          requested_address_type, address_policy);
+  }
+}
+
 struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallback {
   impl(Module* module) : module_(module), le_advertising_interface_(nullptr), num_instances_(0) {}
 
@@ -440,9 +460,13 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
       address_manager_registered = true;
     }
 
-    advertising_sets_[id].address_type = GetAdvertiserAddressTypeFromRequestedTypeAndPolicy(
-        config.requested_advertiser_address_type, le_address_manager_->GetAddressPolicy());
-
+    if (IS_FLAG_ENABLED(nrpa_non_connectable_adv) && !config.connectable) {
+      advertising_sets_[id].address_type = GetAdvertiserAddressTypeNonConnectable(
+          config.requested_advertiser_address_type, le_address_manager_->GetAddressPolicy());
+    } else {
+      advertising_sets_[id].address_type = GetAdvertiserAddressTypeFromRequestedTypeAndPolicy(
+          config.requested_advertiser_address_type, le_address_manager_->GetAddressPolicy());
+    }
     advertising_sets_[id].current_address = new_advertiser_address(id);
     set_parameters(id, config);
 
@@ -572,8 +596,13 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     advertising_sets_[id].duration = duration;
     advertising_sets_[id].max_extended_advertising_events = max_ext_adv_events;
     advertising_sets_[id].handler = handler;
-    advertising_sets_[id].address_type = GetAdvertiserAddressTypeFromRequestedTypeAndPolicy(
-        config.requested_advertiser_address_type, le_address_manager_->GetAddressPolicy());
+    if (IS_FLAG_ENABLED(nrpa_non_connectable_adv) && !config.connectable) {
+      advertising_sets_[id].address_type = GetAdvertiserAddressTypeNonConnectable(
+          config.requested_advertiser_address_type, le_address_manager_->GetAddressPolicy());
+    } else {
+      advertising_sets_[id].address_type = GetAdvertiserAddressTypeFromRequestedTypeAndPolicy(
+          config.requested_advertiser_address_type, le_address_manager_->GetAddressPolicy());
+    }
     advertising_sets_[id].current_address = new_advertiser_address(id);
 
     set_parameters(id, config);
