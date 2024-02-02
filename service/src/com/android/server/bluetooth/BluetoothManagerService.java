@@ -77,6 +77,7 @@ import com.android.bluetooth.flags.FeatureFlags;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
+import com.android.modules.expresslog.Counter;
 import com.android.server.BluetoothManagerServiceDumpProto;
 import com.android.server.bluetooth.airplane.AirplaneModeListener;
 import com.android.server.bluetooth.satellite.SatelliteModeListener;
@@ -737,6 +738,18 @@ class BluetoothManagerService {
             mBluetoothSatelliteModeListener =
                     new BluetoothSatelliteModeListener(this, mLooper, mContext);
         }
+
+        { // AutoOn feature initialization of flag guarding
+            final boolean autoOnFlag = Flags.autoOnFeature();
+            final boolean autoOnProperty =
+                    SystemProperties.getBoolean("bluetooth.server.automatic_turn_on", false);
+            Log.d(TAG, "AutoOnFeature status: flag=" + autoOnFlag + ", property=" + autoOnProperty);
+
+            mDeviceConfigAllowAutoOn = autoOnFlag && autoOnProperty;
+            if (mDeviceConfigAllowAutoOn) {
+                Counter.logIncrement("bluetooth.value_auto_on_supported");
+            }
+        }
     }
 
     IBluetoothManager.Stub getBinder() {
@@ -1174,6 +1187,12 @@ class BluetoothManagerService {
         } finally {
             mAdapterLock.readLock().unlock();
         }
+    }
+
+    private Unit enableFromAutoOn() {
+        Counter.logIncrement("bluetooth.value_auto_on_triggered");
+        enable("BluetoothSystemServer/AutoOn");
+        return Unit.INSTANCE;
     }
 
     boolean enableNoAutoConnect(String packageName) {
@@ -2129,8 +2148,15 @@ class BluetoothManagerService {
             return;
         }
 
+        if (prevState == STATE_ON) {
+            autoOnSetupTimer();
+        }
+
         // Notify all proxy objects first of adapter state change
         if (newState == STATE_ON) {
+            if (mDeviceConfigAllowAutoOn) {
+                AutoOnFeature.notifyBluetoothOn();
+            }
             sendBluetoothOnCallback();
         } else if (newState == STATE_OFF) {
             // If Bluetooth is off, send service down event to proxy objects, and unbind
@@ -2638,6 +2664,17 @@ class BluetoothManagerService {
             return BluetoothAdapter.BT_SNOOP_LOG_MODE_FULL;
         }
         return BluetoothAdapter.BT_SNOOP_LOG_MODE_DISABLED;
+    }
+
+    private final boolean mDeviceConfigAllowAutoOn;
+
+    private void autoOnSetupTimer() {
+        if (!mDeviceConfigAllowAutoOn) {
+            Log.d(TAG, "No support for AutoOn feature: Not creating a timer");
+            return;
+        }
+        AutoOnFeature.resetAutoOnTimerForUser(
+                mLooper, mCurrentUserContext, mState, this::enableFromAutoOn);
     }
 
     /**
