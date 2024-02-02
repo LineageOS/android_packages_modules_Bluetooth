@@ -104,12 +104,12 @@
         </service>
 
         <service android:process="@string/process"
-             android:name="com.android.bluetooth.airplane.NotificationHelperService"
-             android:label="Airplane Notification Helper"
+             android:name="com.android.bluetooth.notification.NotificationHelperService"
+             android:label="Notification Helper"
              android:exported="true"
              android:permission="android.permission.BLUETOOTH_PRIVILEGED">
             <intent-filter>
-                <action android:name="android.bluetooth.airplane.action.SEND_NOTIFICATION"/>
+                <action android:name="android.bluetooth.notification.action.SEND_TOGGLE_NOTIFICATION"/>
             </intent-filter>
         </service>
 

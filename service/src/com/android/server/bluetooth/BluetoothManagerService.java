@@ -429,10 +429,12 @@ class BluetoothManagerService {
     }
 
     /** Send Intent to the Notification Service in the Bluetooth app */
-    Unit sendAirplaneModeNotification(String notificationState) {
-        Intent intent = new Intent("android.bluetooth.airplane.action.SEND_NOTIFICATION");
+    Unit sendToggleNotification(String notificationReason) {
+        Intent intent =
+                new Intent("android.bluetooth.notification.action.SEND_TOGGLE_NOTIFICATION");
         intent.setComponent(resolveSystemService(intent));
-        intent.putExtra("android.bluetooth.airplane.extra.NOTIFICATION_STATE", notificationState);
+        intent.putExtra(
+                "android.bluetooth.notification.extra.NOTIFICATION_REASON", notificationReason);
         mContext.startService(intent);
         return Unit.INSTANCE;
     }
@@ -1303,7 +1305,7 @@ class BluetoothManagerService {
                     mContentResolver,
                     mState,
                     this::onAirplaneModeChanged,
-                    this::sendAirplaneModeNotification,
+                    this::sendToggleNotification,
                     this::isMediaProfileConnected,
                     this::getCurrentUserContext,
                     TimeSource.Monotonic.INSTANCE);
