@@ -233,16 +233,14 @@ class CsisClientImpl : public CsisClient {
       csis_group->SetUuid(uuid);
     }
 
+    int rank = bluetooth::csis::CSIS_RANK_INVALID;
     auto csis_instance = device->GetCsisInstanceByGroupId(group_id);
-    if (!csis_instance) {
-      LOG_ERROR(" device: %s, does not have the rank info for group (id: %d )",
-                ADDRESS_TO_LOGGABLE_CSTR(address), group_id);
-      return;
+    if (csis_instance) {
+      rank = csis_instance->GetRank();
     }
 
     callbacks_->OnDeviceAvailable(device->addr, csis_group->GetGroupId(),
-                                  csis_group->GetDesiredSize(),
-                                  csis_instance->GetRank(), uuid);
+                                  csis_group->GetDesiredSize(), rank, uuid);
   }
 
   void Connect(const RawAddress& address) override {
