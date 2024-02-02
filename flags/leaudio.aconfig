@@ -111,3 +111,13 @@ flag {
     description: "Add group stream status callback to notify about playing state"
     bug: "323288608"
 }
+
+flag {
+    name: "leaudio_mcs_tbs_authorization_rebond_fix"
+    namespace: "bluetooth"
+    description: "Removes authorization data for unbonded devices in MCS and TBS service"
+    bug: "323339440"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
