@@ -47,6 +47,7 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.modules.utils.HandlerExecutor;
 import com.android.modules.utils.SynchronousResultReceiver;
@@ -224,7 +225,10 @@ public class PanService extends ProfileService {
                         case MESSAGE_CONNECT:
                             BluetoothDevice connectDevice = (BluetoothDevice) msg.obj;
                             if (!mNativeInterface.connect(
-                                    mAdapterService.getByteIdentityAddress(connectDevice))) {
+                                    Flags.identityAddressNullIfUnknown()
+                                            ? Utils.getByteBrEdrAddress(connectDevice)
+                                            : mAdapterService.getByteIdentityAddress(
+                                                    connectDevice))) {
                                 handlePanDeviceStateChange(
                                         connectDevice,
                                         null,
@@ -242,7 +246,10 @@ public class PanService extends ProfileService {
                         case MESSAGE_DISCONNECT:
                             BluetoothDevice disconnectDevice = (BluetoothDevice) msg.obj;
                             if (!mNativeInterface.disconnect(
-                                    mAdapterService.getByteIdentityAddress(disconnectDevice))) {
+                                    Flags.identityAddressNullIfUnknown()
+                                            ? Utils.getByteBrEdrAddress(disconnectDevice)
+                                            : mAdapterService.getByteIdentityAddress(
+                                                    disconnectDevice))) {
                                 handlePanDeviceStateChange(
                                         disconnectDevice,
                                         mPanIfName,

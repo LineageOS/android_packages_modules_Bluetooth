@@ -189,6 +189,23 @@ public final class Utils {
         return String.format("XX:XX:XX:XX:%02X:%02X", address[4], address[5]);
     }
 
+    /**
+     * Returns the correct device address to be used for connections over BR/EDR transport.
+     *
+     * @param device the device for which to obtain the connection address
+     * @return either identity address or device address as a byte array
+     */
+    public static byte[] getByteBrEdrAddress(BluetoothDevice device) {
+        final AdapterService service = AdapterService.getAdapterService();
+        // If dual mode device bonded over BLE first, BR/EDR address will be identity address
+        // Otherwise, BR/EDR address will be same address as in BluetoothDevice#getAddress
+        byte[] address = service.getByteIdentityAddress(device);
+        if (address == null) {
+            address = getByteAddress(device);
+        }
+        return address;
+    }
+
     public static byte[] getByteAddress(BluetoothDevice device) {
         return getBytesFromAddress(device.getAddress());
     }
