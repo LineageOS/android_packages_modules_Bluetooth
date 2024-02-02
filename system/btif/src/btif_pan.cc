@@ -211,6 +211,7 @@ static bt_status_t btpan_connect(const RawAddress* bd_addr, int local_role,
   return BT_STATUS_SUCCESS;
 }
 
+constexpr uint16_t BTIF_PAN_CB_DISCONNECTING = 0x8401;
 static void btif_in_pan_generic_evt(uint16_t event, char* p_param) {
   LOG_VERBOSE("%s: event=%d", __func__, event);
   switch (event) {
