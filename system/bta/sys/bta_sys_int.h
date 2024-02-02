@@ -48,7 +48,6 @@ typedef struct {
 typedef struct {
   tBTA_SYS_REG* reg[BTA_ID_MAX]; /* registration structures */
   bool is_reg[BTA_ID_MAX];       /* registration structures */
-  bool forward_hw_failures;
   uint16_t sys_features;         /* Bitmask of sys features */
 
   tBTA_SYS_CONN_CBACK* prm_cb; /* role management callback registered by DM */
