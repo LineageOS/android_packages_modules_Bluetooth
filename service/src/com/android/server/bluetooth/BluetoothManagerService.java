@@ -115,11 +115,11 @@ class BluetoothManagerService {
     private static final int DEFAULT_REBIND_COUNT = 3;
     // Maximum msec to wait for a bind
     private static final int TIMEOUT_BIND_MS =
-        3000 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
+            3000 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
 
     // Timeout value for synchronous binder call
     private static final Duration SYNC_CALLS_TIMEOUT =
-        Duration.ofSeconds(3 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1));
+            Duration.ofSeconds(3 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1));
 
     /**
      * @return timeout value for synchronous binder call
@@ -129,20 +129,20 @@ class BluetoothManagerService {
     }
 
     // Maximum msec to wait for service restart
-    private static final int SERVICE_RESTART_TIME_MS
-        = 400 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
+    private static final int SERVICE_RESTART_TIME_MS =
+            400 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
     // Maximum msec to wait for restart due to error
-    private static final int ERROR_RESTART_TIME_MS
-        = 3000 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
+    private static final int ERROR_RESTART_TIME_MS =
+            3000 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
     // Maximum msec to delay MESSAGE_USER_SWITCHED
-    private static final int USER_SWITCHED_TIME_MS
-        = 200 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
+    private static final int USER_SWITCHED_TIME_MS =
+            200 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
     // Delay for the addProxy function in msec
-    private static final int ADD_PROXY_DELAY_MS
-        = 100 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
+    private static final int ADD_PROXY_DELAY_MS =
+            100 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
     // Delay for retrying enable and disable in msec
-    private static final int ENABLE_DISABLE_DELAY_MS
-        = 300 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
+    private static final int ENABLE_DISABLE_DELAY_MS =
+            300 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
 
     @VisibleForTesting static final int MESSAGE_ENABLE = 1;
     @VisibleForTesting static final int MESSAGE_DISABLE = 2;
@@ -429,10 +429,12 @@ class BluetoothManagerService {
     }
 
     /** Send Intent to the Notification Service in the Bluetooth app */
-    Unit sendAirplaneModeNotification(String notificationState) {
-        Intent intent = new Intent("android.bluetooth.airplane.action.SEND_NOTIFICATION");
+    Unit sendToggleNotification(String notificationReason) {
+        Intent intent =
+                new Intent("android.bluetooth.notification.action.SEND_TOGGLE_NOTIFICATION");
         intent.setComponent(resolveSystemService(intent));
-        intent.putExtra("android.bluetooth.airplane.extra.NOTIFICATION_STATE", notificationState);
+        intent.putExtra(
+                "android.bluetooth.notification.extra.NOTIFICATION_REASON", notificationReason);
         mContext.startService(intent);
         return Unit.INSTANCE;
     }
@@ -651,7 +653,6 @@ class BluetoothManagerService {
 
         mBinder = new BluetoothServiceBinder(this, mLooper, mContext, mUserManager);
         mHandler = new BluetoothHandler(mLooper);
-
 
         // Observe BLE scan only mode settings change.
         registerForBleScanModeChange();
@@ -1041,7 +1042,6 @@ class BluetoothManagerService {
             return false;
         }
 
-
         // TODO(b/262605980): enableBle/disableBle should be on handler thread
         updateBleAppCount(token, true, packageName);
 
@@ -1295,17 +1295,17 @@ class BluetoothManagerService {
 
     @VisibleForTesting
     void initialize(UserHandle userHandle) {
+        mCurrentUserContext =
+                requireNonNull(
+                        mContext.createContextAsUser(userHandle, 0),
+                        "Current User Context cannot be null");
         if (mUseNewAirplaneMode) {
-            mCurrentUserContext =
-                    requireNonNull(
-                            mContext.createContextAsUser(userHandle, 0),
-                            "Current User Context cannot be null");
             AirplaneModeListener.initialize(
                     mLooper,
                     mContentResolver,
                     mState,
                     this::onAirplaneModeChanged,
-                    this::sendAirplaneModeNotification,
+                    this::sendToggleNotification,
                     this::isMediaProfileConnected,
                     this::getCurrentUserContext,
                     TimeSource.Monotonic.INSTANCE);
@@ -1936,9 +1936,7 @@ class BluetoothManagerService {
                         mBluetoothNotificationManager.createNotificationChannels();
                     }
 
-                    if (mUseNewAirplaneMode) {
-                        mCurrentUserContext = mContext.createContextAsUser(userTo, 0);
-                    }
+                    mCurrentUserContext = mContext.createContextAsUser(userTo, 0);
 
                     /* disable and enable BT when detect a user switch */
                     if (mAdapter != null && mState.oneOf(STATE_ON)) {
