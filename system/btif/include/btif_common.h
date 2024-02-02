@@ -120,11 +120,9 @@ enum {
 
   BTIF_PAN_CB_START = BTIF_SIG_CB_START(BTIF_PAN),
   BTIF_PAN_CB_DISCONNECTING, /* PAN Disconnect has been sent to BTA successfully
-                                */
+                              */
 
   BTIF_HF_CLIENT_CLIENT_CB_START = BTIF_SIG_CB_START(BTIF_HF_CLIENT),
-  BTIF_HF_CLIENT_CB_AUDIO_CONNECTING, /* AUDIO connect has been sent to BTA
-                                         successfully */
 };
 
 /*******************************************************************************

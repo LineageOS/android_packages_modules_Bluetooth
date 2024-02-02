@@ -154,6 +154,7 @@ static btif_hf_client_cb_arr_t btif_hf_client_cb_arr;
  * Returns          void
  *
  ******************************************************************************/
+constexpr uint16_t BTIF_HF_CLIENT_CB_AUDIO_CONNECTING = 0x8501;
 static void btif_in_hf_client_generic_evt(uint16_t event, char* p_param) {
   LOG_VERBOSE("%s", __func__);
   RawAddress* bd_addr = (RawAddress*)p_param;
