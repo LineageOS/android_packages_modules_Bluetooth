@@ -2152,16 +2152,15 @@ static void btif_dm_update_allowlisted_media_players() {
 }
 
 void BTIF_dm_report_inquiry_status_change(tBTM_INQUIRY_STATE status) {
-  if (status == BTM_INQUIRY_STARTED) {
+  btif_dm_inquiry_in_progress =
+      (status == tBTM_INQUIRY_STATE::BTM_INQUIRY_STARTED);
+
+  if (status == tBTM_INQUIRY_STATE::BTM_INQUIRY_STARTED) {
     GetInterfaceToProfiles()->events->invoke_discovery_state_changed_cb(
         BT_DISCOVERY_STARTED);
-    btif_dm_inquiry_in_progress = true;
-  } else if (status == BTM_INQUIRY_CANCELLED) {
+  } else if (status == tBTM_INQUIRY_STATE::BTM_INQUIRY_CANCELLED) {
     GetInterfaceToProfiles()->events->invoke_discovery_state_changed_cb(
         BT_DISCOVERY_STOPPED);
-    btif_dm_inquiry_in_progress = false;
-  } else if (status == BTM_INQUIRY_COMPLETE) {
-    btif_dm_inquiry_in_progress = false;
   }
 }
 

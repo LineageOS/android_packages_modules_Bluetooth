@@ -26,6 +26,7 @@
 #include "btm_api_types.h"
 #include "hardware/bluetooth.h"
 #include "hardware/bluetooth_headset_interface.h"
+#include "provider_info.h"
 #include "types/raw_address.h"
 
 namespace bluetooth {
@@ -59,6 +60,13 @@ tBTA_AG_SCB* get_hfp_active_device_callback() {
     return nullptr;
   }
   return cb;
+}
+
+std::unordered_map<int, ::hfp::sco_config> HfpTransport::GetHfpScoConfig(
+    SessionType sessionType) {
+  auto providerInfo =
+      ::bluetooth::audio::aidl::ProviderInfo::GetProviderInfo(sessionType);
+  return providerInfo->GetHfpScoConfig();
 }
 
 HfpTransport::HfpTransport() { hfp_pending_cmd_ = HFP_CTRL_CMD_NONE; }
