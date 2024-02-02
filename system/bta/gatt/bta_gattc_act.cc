@@ -358,12 +358,24 @@ void bta_gattc_open_error(tBTA_GATTC_CLCB* p_clcb,
 
 void bta_gattc_open_fail(tBTA_GATTC_CLCB* p_clcb,
                          UNUSED_ATTR const tBTA_GATTC_DATA* p_data) {
-  LOG(WARNING) << __func__ << ": Cannot establish Connection. conn_id="
-               << loghex(p_clcb->bta_conn_id) << ". Return GATT_ERROR("
-               << +GATT_ERROR << ")";
+  if (IS_FLAG_ENABLED(enumerate_gatt_errors) &&
+      p_data->int_conn.reason == GATT_CONN_TIMEOUT) {
+    LOG(WARNING) << __func__
+                 << ": Connection timed out after 30 seconds. conn_id="
+                 << loghex(p_clcb->bta_conn_id)
+                 << ". Return GATT_CONNECTION_TIMEOUT("
+                 << +GATT_CONNECTION_TIMEOUT << ")";
+    bta_gattc_send_open_cback(p_clcb->p_rcb, GATT_CONNECTION_TIMEOUT,
+                              p_clcb->bda, p_clcb->bta_conn_id,
+                              p_clcb->transport, 0);
+  } else {
+    LOG(WARNING) << __func__ << ": Cannot establish Connection. conn_id="
+                 << loghex(p_clcb->bta_conn_id) << ". Return GATT_ERROR("
+                 << +GATT_ERROR << ")";
+    bta_gattc_send_open_cback(p_clcb->p_rcb, GATT_ERROR, p_clcb->bda,
+                              p_clcb->bta_conn_id, p_clcb->transport, 0);
+  }
 
-  bta_gattc_send_open_cback(p_clcb->p_rcb, GATT_ERROR, p_clcb->bda,
-                            p_clcb->bta_conn_id, p_clcb->transport, 0);
   /* open failure, remove clcb */
   bta_gattc_clcb_dealloc(p_clcb);
 }
