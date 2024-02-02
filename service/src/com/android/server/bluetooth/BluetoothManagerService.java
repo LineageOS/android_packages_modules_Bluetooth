@@ -115,11 +115,11 @@ class BluetoothManagerService {
     private static final int DEFAULT_REBIND_COUNT = 3;
     // Maximum msec to wait for a bind
     private static final int TIMEOUT_BIND_MS =
-        3000 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
+            3000 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
 
     // Timeout value for synchronous binder call
     private static final Duration SYNC_CALLS_TIMEOUT =
-        Duration.ofSeconds(3 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1));
+            Duration.ofSeconds(3 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1));
 
     /**
      * @return timeout value for synchronous binder call
@@ -129,20 +129,20 @@ class BluetoothManagerService {
     }
 
     // Maximum msec to wait for service restart
-    private static final int SERVICE_RESTART_TIME_MS
-        = 400 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
+    private static final int SERVICE_RESTART_TIME_MS =
+            400 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
     // Maximum msec to wait for restart due to error
-    private static final int ERROR_RESTART_TIME_MS
-        = 3000 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
+    private static final int ERROR_RESTART_TIME_MS =
+            3000 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
     // Maximum msec to delay MESSAGE_USER_SWITCHED
-    private static final int USER_SWITCHED_TIME_MS
-        = 200 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
+    private static final int USER_SWITCHED_TIME_MS =
+            200 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
     // Delay for the addProxy function in msec
-    private static final int ADD_PROXY_DELAY_MS
-        = 100 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
+    private static final int ADD_PROXY_DELAY_MS =
+            100 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
     // Delay for retrying enable and disable in msec
-    private static final int ENABLE_DISABLE_DELAY_MS
-        = 300 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
+    private static final int ENABLE_DISABLE_DELAY_MS =
+            300 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
 
     @VisibleForTesting static final int MESSAGE_ENABLE = 1;
     @VisibleForTesting static final int MESSAGE_DISABLE = 2;
@@ -652,7 +652,6 @@ class BluetoothManagerService {
         mBinder = new BluetoothServiceBinder(this, mLooper, mContext, mUserManager);
         mHandler = new BluetoothHandler(mLooper);
 
-
         // Observe BLE scan only mode settings change.
         registerForBleScanModeChange();
 
@@ -1040,7 +1039,6 @@ class BluetoothManagerService {
             Log.d(TAG, "enableBle: not enabling - Satellite mode is on.");
             return false;
         }
-
 
         // TODO(b/262605980): enableBle/disableBle should be on handler thread
         updateBleAppCount(token, true, packageName);
