@@ -31,10 +31,14 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import android.bluetooth.le.BluetoothLeScanner;
 import android.content.Context;
+import android.platform.test.annotations.RequiresFlagsEnabled;
+import android.platform.test.flag.junit.CheckFlagsRule;
+import android.platform.test.flag.junit.DeviceFlagsValueProvider;
 
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
+import com.android.bluetooth.flags.Flags;
 import com.android.compatibility.common.util.AdoptShellPermissionsRule;
 
 import org.junit.ClassRule;
@@ -45,15 +49,15 @@ import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.invocation.Invocation;
 
+import java.util.Collection;
+import java.util.UUID;
+
 import pandora.GattProto.GattCharacteristicParams;
 import pandora.GattProto.GattServiceParams;
 import pandora.GattProto.RegisterServiceRequest;
 import pandora.HostProto.AdvertiseRequest;
 import pandora.HostProto.AdvertiseResponse;
 import pandora.HostProto.OwnAddressType;
-
-import java.util.Collection;
-import java.util.UUID;
 
 @RunWith(AndroidJUnit4.class)
 public class GattClientTest {
@@ -67,6 +71,9 @@ public class GattClientTest {
     @ClassRule public static final AdoptShellPermissionsRule PERM = new AdoptShellPermissionsRule();
 
     @Rule public final PandoraDevice mBumble = new PandoraDevice();
+
+    @Rule
+    public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
 
     private final Context mContext = ApplicationProvider.getApplicationContext();
     private final BluetoothManager mManager = mContext.getSystemService(BluetoothManager.class);
@@ -219,6 +226,24 @@ public class GattClientTest {
         } finally {
             disconnectAndWaitDisconnection(gatt, gattCallback);
         }
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENUMERATE_GATT_ERRORS)
+    public void connectTimeout() {
+        BluetoothDevice device =
+                mAdapter.getRemoteLeDevice(
+                        Utils.BUMBLE_RANDOM_ADDRESS, BluetoothDevice.ADDRESS_TYPE_RANDOM);
+        BluetoothGattCallback gattCallback = mock(BluetoothGattCallback.class);
+
+        // Connecting to a device not advertising results in connection timeout after 30 seconds
+        device.connectGatt(mContext, false, gattCallback);
+
+        verify(gattCallback, timeout(35000))
+                .onConnectionStateChange(
+                        any(),
+                        eq(BluetoothGatt.GATT_CONNECTION_TIMEOUT),
+                        eq(BluetoothProfile.STATE_DISCONNECTED));
     }
 
     private void registerWritableGattService() {
