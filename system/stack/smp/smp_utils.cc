@@ -942,7 +942,8 @@ void tSMP_CB::reset() {
   alarm_cancel(this->smp_rsp_timer_ent);
   alarm_cancel(this->delayed_auth_timer_ent);
 
-  init(init_security_mode);
+  *this = {};
+  this->init_security_mode = init_security_mode;
 
   this->p_callback = p_callback;
   this->init_security_mode = init_security_mode;
