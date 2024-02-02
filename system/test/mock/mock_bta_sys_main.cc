@@ -36,7 +36,6 @@ namespace bta_sys_main {
 
 // Function state capture and return values, if needed
 struct BTA_sys_signal_hw_error BTA_sys_signal_hw_error;
-struct bta_set_forward_hw_failures bta_set_forward_hw_failures;
 struct bta_sys_deregister bta_sys_deregister;
 struct bta_sys_disable bta_sys_disable;
 struct bta_sys_init bta_sys_init;
@@ -54,10 +53,6 @@ struct bta_sys_start_timer bta_sys_start_timer;
 void BTA_sys_signal_hw_error() {
   inc_func_call_count(__func__);
   test::mock::bta_sys_main::BTA_sys_signal_hw_error();
-}
-void bta_set_forward_hw_failures(bool value) {
-  inc_func_call_count(__func__);
-  test::mock::bta_sys_main::bta_set_forward_hw_failures(value);
 }
 void bta_sys_deregister(uint8_t id) {
   inc_func_call_count(__func__);

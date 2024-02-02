@@ -58,7 +58,6 @@ uint16_t btif_dm_get_connection_state(const RawAddress& bd_addr) {
 }
 void BTIF_dm_disable() { inc_func_call_count(__func__); }
 void BTIF_dm_enable() { inc_func_call_count(__func__); }
-void BTIF_dm_on_hw_error() { inc_func_call_count(__func__); }
 void BTIF_dm_report_inquiry_status_change(tBTM_INQUIRY_STATE state) {
   inc_func_call_count(__func__);
 }
