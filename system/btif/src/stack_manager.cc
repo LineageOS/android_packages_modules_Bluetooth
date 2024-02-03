@@ -316,7 +316,6 @@ static void event_start_up_stack(bluetooth::core::CoreInterface* interface,
   BTA_dm_init();
   bta_dm_enable(btif_dm_sec_evt, btif_dm_acl_evt);
 
-  bta_set_forward_hw_failures(true);
   btm_acl_device_down();
   CHECK(module_start_up(get_local_module(GD_CONTROLLER_MODULE)));
   BTM_reset_complete();
@@ -365,7 +364,6 @@ static void event_shut_down_stack(ProfileStopCallback stopProfiles) {
   hack_future = local_hack_future;
 
   bta_sys_disable();
-  bta_set_forward_hw_failures(false);
   BTA_dm_on_hw_off();
 
   module_shut_down(get_local_module(BTIF_CONFIG_MODULE));

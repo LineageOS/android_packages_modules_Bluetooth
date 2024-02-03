@@ -25,8 +25,6 @@
 
 #include "common/bidi_queue.h"
 #include "common/init_flags.h"
-#include "hci/acl_connection_interface.h"
-#include "hci/controller_interface.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_packets.h"
 #include "hci/include/packet_fragmenter.h"
@@ -61,49 +59,31 @@ static base::Callback<void(const base::Location&, BT_HDR*)> send_data_upwards;
 static const packet_fragmenter_t* packet_fragmenter;
 
 namespace {
-bool is_valid_event_code(bluetooth::hci::EventCode event_code) {
+bool register_event_code(bluetooth::hci::EventCode event_code) {
   switch (event_code) {
+    // Inquiry
     case bluetooth::hci::EventCode::INQUIRY_COMPLETE:
     case bluetooth::hci::EventCode::INQUIRY_RESULT:
-    case bluetooth::hci::EventCode::AUTHENTICATION_COMPLETE:
+    case bluetooth::hci::EventCode::INQUIRY_RESULT_WITH_RSSI:
+    case bluetooth::hci::EventCode::EXTENDED_INQUIRY_RESULT:
+
+    // SCO
+    case bluetooth::hci::EventCode::SYNCHRONOUS_CONNECTION_COMPLETE:
+    case bluetooth::hci::EventCode::SYNCHRONOUS_CONNECTION_CHANGED:
+
+    // SecurityEvents
     case bluetooth::hci::EventCode::ENCRYPTION_CHANGE:
-    case bluetooth::hci::EventCode::CHANGE_CONNECTION_LINK_KEY_COMPLETE:
-    case bluetooth::hci::EventCode::CENTRAL_LINK_KEY_COMPLETE:
-    case bluetooth::hci::EventCode::READ_REMOTE_SUPPORTED_FEATURES_COMPLETE:
-    case bluetooth::hci::EventCode::QOS_SETUP_COMPLETE:
-    case bluetooth::hci::EventCode::HARDWARE_ERROR:
-    case bluetooth::hci::EventCode::FLUSH_OCCURRED:
-    case bluetooth::hci::EventCode::ROLE_CHANGE:
-    case bluetooth::hci::EventCode::NUMBER_OF_COMPLETED_PACKETS:
-    case bluetooth::hci::EventCode::MODE_CHANGE:
-    case bluetooth::hci::EventCode::RETURN_LINK_KEYS:
     case bluetooth::hci::EventCode::PIN_CODE_REQUEST:
     case bluetooth::hci::EventCode::LINK_KEY_REQUEST:
     case bluetooth::hci::EventCode::LINK_KEY_NOTIFICATION:
-    case bluetooth::hci::EventCode::LOOPBACK_COMMAND:
-    case bluetooth::hci::EventCode::DATA_BUFFER_OVERFLOW:
-    case bluetooth::hci::EventCode::READ_CLOCK_OFFSET_COMPLETE:
-    case bluetooth::hci::EventCode::CONNECTION_PACKET_TYPE_CHANGED:
-    case bluetooth::hci::EventCode::QOS_VIOLATION:
-    case bluetooth::hci::EventCode::FLOW_SPECIFICATION_COMPLETE:
-    case bluetooth::hci::EventCode::INQUIRY_RESULT_WITH_RSSI:
-    case bluetooth::hci::EventCode::READ_REMOTE_EXTENDED_FEATURES_COMPLETE:
-    case bluetooth::hci::EventCode::SYNCHRONOUS_CONNECTION_COMPLETE:
-    case bluetooth::hci::EventCode::SYNCHRONOUS_CONNECTION_CHANGED:
-    case bluetooth::hci::EventCode::SNIFF_SUBRATING:
-    case bluetooth::hci::EventCode::EXTENDED_INQUIRY_RESULT:
     case bluetooth::hci::EventCode::ENCRYPTION_KEY_REFRESH_COMPLETE:
     case bluetooth::hci::EventCode::IO_CAPABILITY_REQUEST:
     case bluetooth::hci::EventCode::IO_CAPABILITY_RESPONSE:
-    case bluetooth::hci::EventCode::USER_CONFIRMATION_REQUEST:
-    case bluetooth::hci::EventCode::USER_PASSKEY_REQUEST:
     case bluetooth::hci::EventCode::REMOTE_OOB_DATA_REQUEST:
     case bluetooth::hci::EventCode::SIMPLE_PAIRING_COMPLETE:
-    case bluetooth::hci::EventCode::LINK_SUPERVISION_TIMEOUT_CHANGED:
-    case bluetooth::hci::EventCode::ENHANCED_FLUSH_COMPLETE:
     case bluetooth::hci::EventCode::USER_PASSKEY_NOTIFICATION:
-    case bluetooth::hci::EventCode::KEYPRESS_NOTIFICATION:
-    case bluetooth::hci::EventCode::NUMBER_OF_COMPLETED_DATA_BLOCKS:
+    case bluetooth::hci::EventCode::USER_CONFIRMATION_REQUEST:
+    case bluetooth::hci::EventCode::USER_PASSKEY_REQUEST:
       return true;
     default:
       return false;
@@ -150,26 +130,6 @@ bool is_valid_subevent_code(bluetooth::hci::SubeventCode subevent_code) {
     default:
       return false;
   }
-}
-
-static bool event_already_registered_in_controller_layer(
-    bluetooth::hci::EventCode event_code) {
-  switch (event_code) {
-    case bluetooth::hci::EventCode::NUMBER_OF_COMPLETED_PACKETS:
-      return true;
-    default:
-      return false;
-  }
-}
-
-static bool event_already_registered_in_acl_layer(
-    bluetooth::hci::EventCode event_code) {
-  for (auto event : bluetooth::hci::AclConnectionEvents) {
-    if (event == event_code) {
-      return true;
-    }
-  }
-  return false;
 }
 
 static bool subevent_already_registered_in_le_hci_layer(
@@ -484,15 +444,9 @@ void bluetooth::shim::hci_on_reset_complete() {
 
   for (uint16_t event_code_raw = 0; event_code_raw < 0x100; event_code_raw++) {
     auto event_code = static_cast<bluetooth::hci::EventCode>(event_code_raw);
-    if (!is_valid_event_code(event_code)) {
+    if (!register_event_code(event_code)) {
       continue;
     }
-    if (event_already_registered_in_acl_layer(event_code)) {
-      continue;
-    } else if (event_already_registered_in_controller_layer(event_code)) {
-      continue;
-    }
-
     cpp::register_event(event_code);
   }
 

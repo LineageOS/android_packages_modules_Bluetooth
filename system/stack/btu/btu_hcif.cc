@@ -86,7 +86,6 @@ static void btu_hcif_read_rmt_ext_features_comp_evt(uint8_t* p,
 static void btu_hcif_command_complete_evt(BT_HDR* response, void* context);
 static void btu_hcif_command_status_evt(uint8_t status, BT_HDR* command,
                                         void* context);
-static void btu_hcif_hardware_error_evt(uint8_t* p);
 static void btu_hcif_mode_change_evt(uint8_t* p);
 static void btu_hcif_link_key_notification_evt(const uint8_t* p);
 static void btu_hcif_read_clock_off_comp_evt(uint8_t* p);
@@ -275,9 +274,6 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id,
           "Someone didn't go through the hci transmit_command function.",
           __func__);
       break;
-    case HCI_HARDWARE_ERROR_EVT:
-      btu_hcif_hardware_error_evt(p);
-      break;
     case HCI_MODE_CHANGE_EVT:
       btu_hcif_mode_change_evt(p);
       break;
@@ -399,6 +395,7 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id,
       break;
 
       // Events now captured by gd::hci_layer module
+    case HCI_HARDWARE_ERROR_EVT:
     case HCI_NUM_COMPL_DATA_PKTS_EVT:  // EventCode::NUMBER_OF_COMPLETED_PACKETS
     case HCI_CONNECTION_COMP_EVT:  // EventCode::CONNECTION_COMPLETE
     case HCI_CONNECTION_REQUEST_EVT:      // EventCode::CONNECTION_REQUEST
@@ -1295,20 +1292,6 @@ static void btu_hcif_command_status_evt(uint8_t status, BT_HDR* command,
   do_in_main_thread(
       FROM_HERE,
       base::BindOnce(btu_hcif_command_status_evt_on_task, status, command));
-}
-
-/*******************************************************************************
- *
- * Function         btu_hcif_hardware_error_evt
- *
- * Description      Process event HCI_HARDWARE_ERROR_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_hardware_error_evt(uint8_t* p) {
-  LOG_ERROR("UNHANDLED Ctlr H/w error event - code:0x%x", *p);
-  BTA_sys_signal_hw_error();
 }
 
 /*******************************************************************************

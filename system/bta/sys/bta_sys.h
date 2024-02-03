@@ -229,9 +229,6 @@ typedef struct {
 /*****************************************************************************
  *  Function declarations
  ****************************************************************************/
-void bta_set_forward_hw_failures(bool value);
-void BTA_sys_signal_hw_error();
-
 void bta_sys_init(void);
 void bta_sys_register(uint8_t id, const tBTA_SYS_REG* p_reg);
 void bta_sys_deregister(uint8_t id);

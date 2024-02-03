@@ -44,15 +44,6 @@ struct BTA_sys_signal_hw_error {
 };
 extern struct BTA_sys_signal_hw_error BTA_sys_signal_hw_error;
 
-// Name: bta_set_forward_hw_failures
-// Params: bool value
-// Return: void
-struct bta_set_forward_hw_failures {
-  std::function<void(bool value)> body{[](bool value) {}};
-  void operator()(bool value) { body(value); };
-};
-extern struct bta_set_forward_hw_failures bta_set_forward_hw_failures;
-
 // Name: bta_sys_deregister
 // Params: uint8_t id
 // Return: void

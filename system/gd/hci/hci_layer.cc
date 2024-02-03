@@ -425,6 +425,9 @@ struct HciLayer::impl {
       case EventCode::LE_META_EVENT:
         on_le_meta_event(event);
         break;
+      case EventCode::HARDWARE_ERROR:
+        on_hardware_error(event);
+        break;
       default:
         if (event_handlers_.find(event_code) == event_handlers_.end()) {
           LOG_WARN(
@@ -435,6 +438,12 @@ struct HciLayer::impl {
           event_handlers_[event_code].Invoke(event);
         }
     }
+  }
+
+  void on_hardware_error(EventView event) {
+    HardwareErrorView event_view = HardwareErrorView::Create(event);
+    ASSERT(event_view.IsValid());
+    LOG_ALWAYS_FATAL("Hardware Error Event with code 0x%02x", event_view.GetHardwareCode());
   }
 
   void on_le_meta_event(EventView event) {
