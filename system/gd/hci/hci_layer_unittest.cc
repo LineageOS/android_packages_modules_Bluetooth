@@ -191,6 +191,18 @@ TEST_F(HciLayerDeathTest, abort_on_root_inflammation_event) {
       "");
 }
 
+TEST_F(HciLayerDeathTest, abort_on_hardware_error) {
+  FailIfResetNotSent();
+
+  ASSERT_DEATH(
+      {
+        sync_handler();
+        hal_->InjectEvent(HardwareErrorBuilder::Create(0xbb));
+        sync_handler();
+      },
+      "");
+}
+
 TEST_F(HciLayerTest, successful_reset) {
   FailIfResetNotSent();
   hal_->InjectEvent(ResetCompleteBuilder::Create(1, ErrorCode::SUCCESS));
