@@ -55,7 +55,6 @@
 #include "btif_common.h"
 #include "btif_profile_queue.h"
 #include "btif_util.h"
-#include "osi/include/osi.h"
 #include "osi/include/properties.h"
 #include "stack/btm/btm_sco_hfp_hal.h"
 #include "stack/include/bt_uuid16.h"
@@ -154,6 +153,7 @@ static btif_hf_client_cb_arr_t btif_hf_client_cb_arr;
  * Returns          void
  *
  ******************************************************************************/
+constexpr uint16_t BTIF_HF_CLIENT_CB_AUDIO_CONNECTING = 0x8501;
 static void btif_in_hf_client_generic_evt(uint16_t event, char* p_param) {
   LOG_VERBOSE("%s", __func__);
   RawAddress* bd_addr = (RawAddress*)p_param;
@@ -469,8 +469,7 @@ static bt_status_t volume_control(const RawAddress* bd_addr,
  * Returns          bt_status_t
  *
  ******************************************************************************/
-static bt_status_t dial(UNUSED_ATTR const RawAddress* bd_addr,
-                        const char* number) {
+static bt_status_t dial(const RawAddress* bd_addr, const char* number) {
   btif_hf_client_cb_t* cb = btif_hf_client_get_cb_by_bda(*bd_addr);
   if (cb == NULL || !is_connected(cb)) return BT_STATUS_FAIL;
 
@@ -602,7 +601,7 @@ static bt_status_t handle_call_action(const RawAddress* bd_addr,
  * Returns          bt_status_t
  *
  ******************************************************************************/
-static bt_status_t query_current_calls(UNUSED_ATTR const RawAddress* bd_addr) {
+static bt_status_t query_current_calls(const RawAddress* bd_addr) {
   btif_hf_client_cb_t* cb = btif_hf_client_get_cb_by_bda(*bd_addr);
   if (cb == NULL || !is_connected(cb)) return BT_STATUS_FAIL;
 

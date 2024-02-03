@@ -669,6 +669,19 @@ struct btm_sec_encrypt_change {
 };
 extern struct btm_sec_encrypt_change btm_sec_encrypt_change;
 
+// Name: btm_sec_encryption_change_evt
+// Params: uint16_t handle, tHCI_STATUS status, uint8_t encr_enable
+// Return: void
+struct btm_sec_encryption_change_evt {
+  std::function<void(uint16_t handle, tHCI_STATUS status, uint8_t encr_enable)>
+      body{[](uint16_t /* handle */, tHCI_STATUS /* status */,
+              uint8_t /* encr_enable */) {}};
+  void operator()(uint16_t handle, tHCI_STATUS status, uint8_t encr_enable) {
+    body(handle, status, encr_enable);
+  };
+};
+extern struct btm_sec_encryption_change_evt btm_sec_encryption_change_evt;
+
 // Name: btm_sec_is_a_bonded_dev
 // Params: const RawAddress& bda
 // Return: bool

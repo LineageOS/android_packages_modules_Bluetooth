@@ -50,7 +50,6 @@
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
-#include "osi/include/osi.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/main_thread.h"
 #include "stack/include/pan_api.h"
@@ -211,6 +210,7 @@ static bt_status_t btpan_connect(const RawAddress* bd_addr, int local_role,
   return BT_STATUS_SUCCESS;
 }
 
+constexpr uint16_t BTIF_PAN_CB_DISCONNECTING = 0x8401;
 static void btif_in_pan_generic_evt(uint16_t event, char* p_param) {
   LOG_VERBOSE("%s: event=%d", __func__, event);
   switch (event) {
@@ -391,7 +391,7 @@ int btpan_tap_open() {
 
 int btpan_tap_send(int tap_fd, const RawAddress& src, const RawAddress& dst,
                    uint16_t proto, const char* buf, uint16_t len,
-                   UNUSED_ATTR bool ext, UNUSED_ATTR bool forward) {
+                   bool /* ext */, bool /* forward */) {
   if (tap_fd != INVALID_FD) {
     tETH_HDR eth_hdr;
     eth_hdr.h_dest = dst;

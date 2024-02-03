@@ -249,20 +249,6 @@ bt_status_t btif_cleanup_bluetooth() {
 
 /*******************************************************************************
  *
- * Function         btif_dut_mode_cback
- *
- * Description     Callback invoked on completion of vendor specific test mode
- *                 command
- *
- * Returns          None
- *
- ******************************************************************************/
-static void btif_dut_mode_cback(UNUSED_ATTR tBTM_VSC_CMPL* p) {
-  /* For now nothing to be done. */
-}
-
-/*******************************************************************************
- *
  * Function         btif_dut_mode_configure
  *
  * Description      Configure Test Mode - 'enable' to 1 puts the device in test
@@ -290,7 +276,8 @@ void btif_dut_mode_configure(uint8_t enable) {
  ******************************************************************************/
 void btif_dut_mode_send(uint16_t opcode, uint8_t* buf, uint8_t len) {
   LOG_VERBOSE("%s", __func__);
-  BTM_VendorSpecificCommand(opcode, len, buf, btif_dut_mode_cback);
+  /* For now nothing to be done. */
+  BTM_VendorSpecificCommand(opcode, len, buf, [](tBTM_VSC_CMPL*) {});
 }
 
 /*****************************************************************************

@@ -50,7 +50,6 @@
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
 #include "osi/include/list.h"
-#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "osi/include/properties.h"
 #include "stack/include/avrc_api.h"
 #include "stack/include/avrc_defs.h"
@@ -5821,7 +5820,7 @@ static void passthru_cmd_timeout_handler(btif_rc_device_cb_t* p_dev,
  * Returns          None
  *
  **************************************************************************/
-static void btif_rc_transaction_timeout_handler(UNUSED_ATTR uint16_t event,
+static void btif_rc_transaction_timeout_handler(uint16_t /* event */,
                                                 char* data) {
   rc_transaction_context_t* p_context = (rc_transaction_context_t*)data;
   if (p_context == nullptr) {

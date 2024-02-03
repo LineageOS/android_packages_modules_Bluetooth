@@ -360,3 +360,6 @@ struct tACL_CB {
 };
 
 tACL_CONN* btm_acl_for_bda(const RawAddress& bd_addr, tBT_TRANSPORT transport);
+
+void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
+                            uint8_t encr_enable);

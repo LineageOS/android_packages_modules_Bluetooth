@@ -36,7 +36,6 @@
 #include "btif/include/btif_sock_util.h"
 #include "include/check.h"
 #include "include/hardware/bt_sock.h"
-#include "internal_include/bt_target.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
@@ -364,7 +363,8 @@ bt_status_t btsock_rfc_connect(const RawAddress* bd_addr,
   rfc_slot_t* slot =
       alloc_rfc_slot(bd_addr, NULL, *service_uuid, channel, flags, false);
   if (!slot) {
-    LOG_ERROR("%s unable to allocate RFCOMM slot.", __func__);
+    LOG_ERROR("unable to allocate RFCOMM slot. bd_addr:%s",
+              ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
     return BT_STATUS_FAIL;
   }
 
@@ -373,17 +373,22 @@ bt_status_t btsock_rfc_connect(const RawAddress* bd_addr,
         BTA_JvRfcommConnect(slot->security, slot->role, slot->scn, slot->addr,
                             rfcomm_cback, slot->id);
     if (ret != BTA_JV_SUCCESS) {
-      LOG_ERROR("%s unable to initiate RFCOMM connection: %d", __func__, ret);
+      LOG_ERROR(
+          "unable to initiate RFCOMM connection. status:%d, scn:%d, bd_addr:%s",
+          ret, slot->scn, ADDRESS_TO_LOGGABLE_CSTR(slot->addr));
       cleanup_rfc_slot(slot);
       return BT_STATUS_FAIL;
     }
 
     if (!send_app_scn(slot)) {
-      LOG_ERROR("%s unable to send channel number.", __func__);
+      LOG_ERROR("send_app_scn() failed, closing slot->id:%u", slot->id);
       cleanup_rfc_slot(slot);
       return BT_STATUS_FAIL;
     }
   } else {
+    LOG_INFO("service_uuid:%s, bd_addr:%s, slot_id:%u",
+             service_uuid->ToString().c_str(),
+             ADDRESS_TO_LOGGABLE_CSTR(*bd_addr), slot->id);
     if (!is_requesting_sdp()) {
       BTA_JvStartDiscovery(*bd_addr, 1, service_uuid, slot->id);
       slot->f.pending_sdp_request = false;
@@ -471,9 +476,11 @@ static void cleanup_rfc_slot(rfc_slot_t* slot) {
 
 static bool send_app_scn(rfc_slot_t* slot) {
   if (slot->scn_notified) {
-    // already send, just return success.
+    // already sent, just return success.
     return true;
   }
+  LOG_DEBUG("Sending scn for slot %u. bd_addr:%s", slot->id,
+            ADDRESS_TO_LOGGABLE_CSTR(slot->addr));
   slot->scn_notified = true;
   return sock_send_all(slot->fd, (const uint8_t*)&slot->scn,
                        sizeof(slot->scn)) == sizeof(slot->scn);
@@ -540,6 +547,7 @@ static void on_srv_rfc_listen_started(tBTA_JV_RFCOMM_START* p_start,
 
 static uint32_t on_srv_rfc_connect(tBTA_JV_RFCOMM_SRV_OPEN* p_open,
                                    uint32_t id) {
+  LOG_VERBOSE("id:%u", id);
   std::unique_lock<std::recursive_mutex> lock(slot_lock);
   rfc_slot_t* accept_rs;
   rfc_slot_t* srv_rs = find_rfc_slot_by_id(id);
@@ -576,6 +584,7 @@ static uint32_t on_srv_rfc_connect(tBTA_JV_RFCOMM_SRV_OPEN* p_open,
 }
 
 static void on_cli_rfc_connect(tBTA_JV_RFCOMM_OPEN* p_open, uint32_t id) {
+  LOG_VERBOSE("id:%u", id);
   std::unique_lock<std::recursive_mutex> lock(slot_lock);
   rfc_slot_t* slot = find_rfc_slot_by_id(id);
   if (!slot) {
@@ -614,6 +623,7 @@ static void on_cli_rfc_connect(tBTA_JV_RFCOMM_OPEN* p_open, uint32_t id) {
 
 static void on_rfc_close(UNUSED_ATTR tBTA_JV_RFCOMM_CLOSE* p_close,
                          uint32_t id) {
+  LOG_VERBOSE("id:%u", id);
   std::unique_lock<std::recursive_mutex> lock(slot_lock);
 
   // rfc_handle already closed when receiving rfcomm close event from stack.
@@ -672,6 +682,7 @@ static void on_rfc_outgoing_congest(tBTA_JV_RFCOMM_CONG* p, uint32_t id) {
 static uint32_t rfcomm_cback(tBTA_JV_EVT event, tBTA_JV* p_data,
                              uint32_t rfcomm_slot_id) {
   uint32_t id = 0;
+  LOG_INFO("handling event:%d id:%u", event, rfcomm_slot_id);
 
   switch (event) {
     case BTA_JV_RFCOMM_START_EVT:
@@ -720,6 +731,7 @@ static uint32_t rfcomm_cback(tBTA_JV_EVT event, tBTA_JV* p_data,
 }
 
 static void jv_dm_cback(tBTA_JV_EVT event, tBTA_JV* p_data, uint32_t id) {
+  LOG_INFO("handling event:%d, id:%u", event, id);
   switch (event) {
     case BTA_JV_GET_SCN_EVT: {
       std::unique_lock<std::recursive_mutex> lock(slot_lock);
@@ -739,7 +751,7 @@ static void jv_dm_cback(tBTA_JV_EVT event, tBTA_JV* p_data, uint32_t id) {
       rs->scn = p_data->scn;
       // Send channel ID to java layer
       if (!send_app_scn(rs)) {
-        LOG_DEBUG("send_app_scn() failed, closing rs->id:%d", rs->id);
+        LOG_WARN("send_app_scn() failed, closing rs->id:%d", rs->id);
         cleanup_rfc_slot(rs);
         break;
       }
@@ -849,6 +861,7 @@ static void handle_discovery_comp(tBTA_JV_STATUS status, int scn, uint32_t id) {
   slot->f.doing_sdp_request = false;
 
   if (!send_app_scn(slot)) {
+    LOG_WARN("send_app_scn() failed, closing slot->id %u", slot->id);
     cleanup_rfc_slot(slot);
     return;
   }

@@ -51,7 +51,6 @@
 #include <mutex>
 #include <optional>
 
-#include <android_bluetooth_flags.h>
 #include "advertise_data_parser.h"
 #include "bta/dm/bta_dm_disc.h"
 #include "bta/include/bta_api.h"
@@ -76,7 +75,6 @@
 #include "os/log.h"
 #include "os/logging/log_adapter.h"
 #include "osi/include/allocator.h"
-#include "osi/include/osi.h"
 #include "osi/include/properties.h"
 #include "osi/include/stack_power_telemetry.h"
 #include "stack/btm/btm_dev.h"
@@ -3168,9 +3166,8 @@ void btif_dm_proc_io_req(tBTM_AUTH_REQ* p_auth_req, bool is_orig) {
   LOG_VERBOSE("updated p_auth_req=%d", *p_auth_req);
 }
 
-void btif_dm_proc_io_rsp(UNUSED_ATTR const RawAddress& bd_addr,
-                         tBTM_IO_CAP io_cap, UNUSED_ATTR tBTM_OOB_DATA oob_data,
-                         tBTM_AUTH_REQ auth_req) {
+void btif_dm_proc_io_rsp(const RawAddress& /* bd_addr */, tBTM_IO_CAP io_cap,
+                         tBTM_OOB_DATA /* oob_data */, tBTM_AUTH_REQ auth_req) {
   if (auth_req & BTA_AUTH_BONDS) {
     LOG_DEBUG("auth_req:%d", auth_req);
     pairing_cb.auth_req = auth_req;

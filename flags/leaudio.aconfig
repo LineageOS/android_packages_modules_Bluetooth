@@ -97,3 +97,34 @@ flag {
     description: "API to set device as inactive audio device upon connection"
     bug: "322387487"
 }
+
+flag {
+    name: "leaudio_add_sampling_frequencies"
+    namespace: "bluetooth"
+    description: "Adds missing frequencies defined by the Bluetooth SIG"
+    bug: "323287937"
+}
+
+flag {
+    name: "leaudio_callback_on_group_stream_status"
+    namespace: "bluetooth"
+    description: "Add group stream status callback to notify about playing state"
+    bug: "323288608"
+}
+
+flag {
+    name: "leaudio_mcs_tbs_authorization_rebond_fix"
+    namespace: "bluetooth"
+    description: "Removes authorization data for unbonded devices in MCS and TBS service"
+    bug: "323339440"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "leaudio_multiple_vocs_instances_api"
+    namespace: "bluetooth"
+    description: "Support multiple audio outputs for volume offset"
+    bug: "323156655"
+}

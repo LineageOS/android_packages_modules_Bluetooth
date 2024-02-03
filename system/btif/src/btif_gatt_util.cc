@@ -35,7 +35,6 @@
 #include "os/log.h"
 #include "os/system_properties.h"
 #include "osi/include/allocator.h"
-#include "osi/include/osi.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api.h"
 #include "types/ble_address_with_type.h"
@@ -65,8 +64,8 @@ static bool btif_gatt_is_link_encrypted(const RawAddress& bd_addr) {
          BTM_IsEncrypted(bd_addr, BT_TRANSPORT_LE);
 }
 
-static void btif_gatt_set_encryption_cb(UNUSED_ATTR const RawAddress& bd_addr,
-                                        UNUSED_ATTR tBT_TRANSPORT transport,
+static void btif_gatt_set_encryption_cb(const RawAddress& /* bd_addr */,
+                                        tBT_TRANSPORT /* transport */,
                                         tBTA_STATUS result) {
   if (result != BTA_SUCCESS && result != BTA_BUSY) {
     LOG_WARN("%s() - Encryption failed (%d)", __func__, result);

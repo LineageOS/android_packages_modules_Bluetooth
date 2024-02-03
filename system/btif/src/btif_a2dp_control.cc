@@ -26,13 +26,11 @@
 #include <stdint.h>
 
 #include "audio_a2dp_hw/include/audio_a2dp_hw.h"
-#include "btif_a2dp.h"
 #include "btif_a2dp_sink.h"
 #include "btif_a2dp_source.h"
 #include "btif_av.h"
 #include "btif_av_co.h"
 #include "btif_hf.h"
-#include "osi/include/osi.h"
 #include "types/raw_address.h"
 #include "udrv/include/uipc.h"
 
@@ -318,8 +316,7 @@ static void btif_a2dp_recv_ctrl_data(void) {
   }
 }
 
-static void btif_a2dp_ctrl_cb(UNUSED_ATTR tUIPC_CH_ID ch_id,
-                              tUIPC_EVENT event) {
+static void btif_a2dp_ctrl_cb(tUIPC_CH_ID /* ch_id */, tUIPC_EVENT event) {
   // Don't log UIPC_RX_DATA_READY_EVT by default, because it
   // could be very chatty when audio is streaming.
   if (event == UIPC_RX_DATA_READY_EVT) {
@@ -352,8 +349,7 @@ static void btif_a2dp_ctrl_cb(UNUSED_ATTR tUIPC_CH_ID ch_id,
   }
 }
 
-static void btif_a2dp_data_cb(UNUSED_ATTR tUIPC_CH_ID ch_id,
-                              tUIPC_EVENT event) {
+static void btif_a2dp_data_cb(tUIPC_CH_ID /* ch_id */, tUIPC_EVENT event) {
   LOG_WARN("%s: BTIF MEDIA (A2DP-DATA) EVENT %s", __func__,
            dump_uipc_event(event));
 
