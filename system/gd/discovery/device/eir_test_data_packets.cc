@@ -13451,6 +13451,8 @@ static const unsigned char pkt7051[258] = {
 
 std::unordered_map<std::string, const unsigned char*> selected_packets = {
     {"pkt34639", pkt34639},
+    {"pkt19200", pkt19200},
+    {"pkt26171", pkt26171},
 };
 
 std::vector<const unsigned char*> data_packets = {
