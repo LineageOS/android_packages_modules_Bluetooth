@@ -912,7 +912,8 @@ TEST_F(BtPropertyMultiAllocationTest, async_data_multi) {
   for (size_t i = 0; i < kNumThreads; i++) {
     std::vector<std::shared_ptr<BtProperty>> props = future_vector[i].get();
     BtPropertyLegacy legacy(props);
-    memcpy(bt_properties[i], (const void*)legacy.Ptr(), (size_t)legacy.Len());
+    memcpy(
+        bt_properties[i], (const void*)legacy.Ptr(), (size_t)legacy.Len() * sizeof(bt_property_t));
 
     ASSERT_EQ(BT_PROPERTY_REMOTE_DEVICE_TIMESTAMP, (int)bt_properties[i]->type);
     ASSERT_EQ((int)sizeof(uint32_t), bt_properties[i]->len);
