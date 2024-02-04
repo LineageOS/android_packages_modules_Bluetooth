@@ -31,6 +31,7 @@ class EirData : public DataParser {
   EirData(const std::vector<uint8_t>& data);
 
   bool GetCompleteNames(std::vector<std::array<uint8_t, 240>>&) const;
+  bool GetShortenedNames(std::vector<std::array<uint8_t, 240>>&) const;
 
   bool GetUuids16(std::vector<uint16_t>&) const;
   bool GetUuidsIncomplete16(std::vector<uint16_t>&) const;
