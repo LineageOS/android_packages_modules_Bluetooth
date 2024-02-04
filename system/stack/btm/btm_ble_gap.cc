@@ -27,6 +27,7 @@
 #include <base/functional/bind.h>
 #include <base/logging.h>
 #include <base/strings/string_number_conversions.h>
+#include <cutils/properties.h>
 
 #include <cstdint>
 #include <list>
@@ -710,8 +711,19 @@ static void btm_ble_vendor_capability_vsc_cmpl_cback(
 
   if (btm_cb.cmn_ble_vsc_cb.version_supported >=
       BTM_VSC_CHIP_CAPABILITY_M_VERSION) {
-    CHECK(p_vcs_cplt_params->param_len >=
+
+    /*
+     * If the device has a BT firmware that advertises compliance with Marshmallow
+     * LE capabilities but fails to pass the minimum expected response length, skip
+     * checking its reported response length against the minimum expected by M_RELEASE
+     * if said device is known to have Bluetooth working again by simply skipping past 
+     * this, and has the respective system property set.
+     */
+    if(!property_get_bool("bluetooth.device.m_rsplen_workaround", false)) {
+      CHECK(p_vcs_cplt_params->param_len >=
           BTM_VSC_CHIP_CAPABILITY_RSP_LEN_M_RELEASE);
+    }
+
     STREAM_TO_UINT16(btm_cb.cmn_ble_vsc_cb.total_trackable_advertisers, p);
     STREAM_TO_UINT8(btm_cb.cmn_ble_vsc_cb.extended_scan_support, p);
     STREAM_TO_UINT8(btm_cb.cmn_ble_vsc_cb.debug_logging_supported, p);
