@@ -661,9 +661,19 @@ struct Controller::impl {
     // v0.95
     auto v95 = LeGetVendorCapabilitiesComplete095View::Create(complete_view);
     if (!v95.IsValid()) {
-      log::info("invalid data for hci requirements v0.95");
-      vendor_promise.set_value();
-      return;
+      /*
+       * Some devices advertise M-version BT firmware compliance but send a
+       * shorter-than-expected v0.95 response. If the workaround property is
+       * set, skip the validity check so the M-version fields below can still
+       * be populated (they will read 0 from the truncated buffer, which is
+       * safe), instead of returning early with version_supported_ == 0.
+       */
+      if (!GetSystemPropertyBool("bluetooth.device.m_rsplen_workaround", false)) {
+        log::info("invalid data for hci requirements v0.95");
+        vendor_promise.set_value();
+        return;
+      }
+      log::info("invalid data for hci requirements v0.95, applying m_rsplen_workaround");
     }
     vendor_capabilities_.version_supported_ = v95.GetVersionSupported();
     vendor_capabilities_.total_num_of_advt_tracked_ = v95.GetTotalNumOfAdvtTracked();
