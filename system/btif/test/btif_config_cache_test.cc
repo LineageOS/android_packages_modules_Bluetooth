@@ -21,6 +21,7 @@
 
 #include <filesystem>
 
+#include "gd/storage/config_keys.h"
 #include "stack/include/bt_octets.h"
 
 namespace {
@@ -35,7 +36,7 @@ const std::string kBtAddr5 = "11:AA:22:BB:33:CD";
 const std::string kBtLocalAddr = "12:34:56:78:90:AB";
 const std::string kBtInfo = "Info";
 const std::string kBtMetrics = "Metrics";
-const std::string kBtAdapter = "Adapter";
+const std::string kBtAdapter = BTIF_STORAGE_SECTION_ADAPTER;
 const std::string kBtAddrInvalid1 = "AB:CD:EF:12:34";
 const std::string kBtAddrInvalid2 = "AB:CD:EF:12:34:56:78";
 const std::string kBtAddrInvalid3 = "ABCDEF123456";
@@ -67,27 +68,32 @@ TEST(BtifConfigCacheTest, test_setup_btif_config_cache) {
   test_btif_config_cache.SetString(kBtMetrics, "Salt256Bit",
                                    "92a331174d20f2bb");
   // Adapter Section
-  test_btif_config_cache.SetString(kBtAdapter, "Address", kBtLocalAddr);
+  test_btif_config_cache.SetString(kBtAdapter, BTIF_STORAGE_KEY_ADDRESS,
+                                   kBtLocalAddr);
   EXPECT_TRUE(test_btif_config_cache.HasSection(kBtAdapter));
 
   // bt_device_1
-  test_btif_config_cache.SetString(kBtAddr1, "Name", "Headset_1");
-  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddr1, "Name"));
+  test_btif_config_cache.SetString(kBtAddr1, BTIF_STORAGE_KEY_NAME,
+                                   "Headset_1");
+  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddr1, BTIF_STORAGE_KEY_NAME));
 
   test_btif_config_cache.SetInt(kBtAddr1, "Property_Int", 1);
   EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddr1, "Property_Int"));
 
   // bt_device_2
-  test_btif_config_cache.SetString(kBtAddr2, "Name", "Headset_2");
-  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddr2, "Name"));
+  test_btif_config_cache.SetString(kBtAddr2, BTIF_STORAGE_KEY_NAME,
+                                   "Headset_2");
+  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddr2, BTIF_STORAGE_KEY_NAME));
 
   // bt_device_3
-  test_btif_config_cache.SetString(kBtAddr3, "Name", "Headset_3");
-  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddr3, "Name"));
+  test_btif_config_cache.SetString(kBtAddr3, BTIF_STORAGE_KEY_NAME,
+                                   "Headset_3");
+  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddr3, BTIF_STORAGE_KEY_NAME));
 
   // bt_device_4
-  test_btif_config_cache.SetString(kBtAddr4, "Name", "Headset_4");
-  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddr4, "Name"));
+  test_btif_config_cache.SetString(kBtAddr4, BTIF_STORAGE_KEY_NAME,
+                                   "Headset_4");
+  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddr4, BTIF_STORAGE_KEY_NAME));
 
   // out out the capacty of unpair devices cache, the bt_device_1 be ruled out
   EXPECT_FALSE(test_btif_config_cache.HasSection(kBtAddr1));
@@ -104,57 +110,72 @@ TEST(BtifConfigCacheTest, test_set_up_config_cache_with_invalid_section) {
   BtifConfigCache test_btif_config_cache(kCapacity);
 
   // kBtAddrInvalid1
-  test_btif_config_cache.SetString(kBtAddrInvalid1, "Name", "Headset_1");
-  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddrInvalid1, "Name"));
+  test_btif_config_cache.SetString(kBtAddrInvalid1, BTIF_STORAGE_KEY_NAME,
+                                   "Headset_1");
+  EXPECT_TRUE(
+      test_btif_config_cache.HasKey(kBtAddrInvalid1, BTIF_STORAGE_KEY_NAME));
   EXPECT_TRUE(test_btif_config_cache.HasUnpairedSection(kBtAddrInvalid1));
   // get the LinkKey
-  test_btif_config_cache.SetString(kBtAddrInvalid1, "LinkKey",
+  test_btif_config_cache.SetString(kBtAddrInvalid1, BTIF_STORAGE_KEY_LINK_KEY,
                                    "1122334455667788");
-  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddrInvalid1, "LinkKey"));
+  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddrInvalid1,
+                                            BTIF_STORAGE_KEY_LINK_KEY));
   EXPECT_TRUE(test_btif_config_cache.HasUnpairedSection(kBtAddrInvalid1));
   EXPECT_FALSE(test_btif_config_cache.HasPersistentSection(kBtAddrInvalid1));
 
   // kBtAddrInvalid2
-  test_btif_config_cache.SetString(kBtAddrInvalid2, "Name", "Headset_1");
-  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddrInvalid2, "Name"));
+  test_btif_config_cache.SetString(kBtAddrInvalid2, BTIF_STORAGE_KEY_NAME,
+                                   "Headset_1");
+  EXPECT_TRUE(
+      test_btif_config_cache.HasKey(kBtAddrInvalid2, BTIF_STORAGE_KEY_NAME));
   EXPECT_TRUE(test_btif_config_cache.HasUnpairedSection(kBtAddrInvalid2));
   // get the LinkKey
-  test_btif_config_cache.SetString(kBtAddrInvalid2, "LinkKey",
+  test_btif_config_cache.SetString(kBtAddrInvalid2, BTIF_STORAGE_KEY_LINK_KEY,
                                    "1122334455667788");
-  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddrInvalid2, "LinkKey"));
+  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddrInvalid2,
+                                            BTIF_STORAGE_KEY_LINK_KEY));
   EXPECT_TRUE(test_btif_config_cache.HasUnpairedSection(kBtAddrInvalid2));
   EXPECT_FALSE(test_btif_config_cache.HasPersistentSection(kBtAddrInvalid2));
 
   // kBtAddrInvalid3
-  test_btif_config_cache.SetString(kBtAddrInvalid3, "Name", "Headset_1");
-  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddrInvalid3, "Name"));
+  test_btif_config_cache.SetString(kBtAddrInvalid3, BTIF_STORAGE_KEY_NAME,
+                                   "Headset_1");
+  EXPECT_TRUE(
+      test_btif_config_cache.HasKey(kBtAddrInvalid3, BTIF_STORAGE_KEY_NAME));
   EXPECT_TRUE(test_btif_config_cache.HasUnpairedSection(kBtAddrInvalid3));
   // get the LinkKey
-  test_btif_config_cache.SetString(kBtAddrInvalid3, "LinkKey",
+  test_btif_config_cache.SetString(kBtAddrInvalid3, BTIF_STORAGE_KEY_LINK_KEY,
                                    "1122334455667788");
-  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddrInvalid3, "LinkKey"));
+  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddrInvalid3,
+                                            BTIF_STORAGE_KEY_LINK_KEY));
   EXPECT_TRUE(test_btif_config_cache.HasUnpairedSection(kBtAddrInvalid3));
   EXPECT_FALSE(test_btif_config_cache.HasPersistentSection(kBtAddrInvalid3));
 
   // kBtAddrInvalid4
-  test_btif_config_cache.SetString(kBtAddrInvalid4, "Name", "Headset_1");
-  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddrInvalid4, "Name"));
+  test_btif_config_cache.SetString(kBtAddrInvalid4, BTIF_STORAGE_KEY_NAME,
+                                   "Headset_1");
+  EXPECT_TRUE(
+      test_btif_config_cache.HasKey(kBtAddrInvalid4, BTIF_STORAGE_KEY_NAME));
   EXPECT_TRUE(test_btif_config_cache.HasUnpairedSection(kBtAddrInvalid4));
   // get the LinkKey
-  test_btif_config_cache.SetString(kBtAddrInvalid4, "LinkKey",
+  test_btif_config_cache.SetString(kBtAddrInvalid4, BTIF_STORAGE_KEY_LINK_KEY,
                                    "1122334455667788");
-  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddrInvalid4, "LinkKey"));
+  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddrInvalid4,
+                                            BTIF_STORAGE_KEY_LINK_KEY));
   EXPECT_TRUE(test_btif_config_cache.HasUnpairedSection(kBtAddrInvalid4));
   EXPECT_FALSE(test_btif_config_cache.HasPersistentSection(kBtAddrInvalid4));
 
   // kBtSectionInvalid1
-  test_btif_config_cache.SetString(kBtSectionInvalid1, "Name", "Headset_1");
-  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtSectionInvalid1, "Name"));
+  test_btif_config_cache.SetString(kBtSectionInvalid1, BTIF_STORAGE_KEY_NAME,
+                                   "Headset_1");
+  EXPECT_TRUE(
+      test_btif_config_cache.HasKey(kBtSectionInvalid1, BTIF_STORAGE_KEY_NAME));
   EXPECT_TRUE(test_btif_config_cache.HasUnpairedSection(kBtSectionInvalid1));
   // get the LinkKey
-  test_btif_config_cache.SetString(kBtSectionInvalid1, "LinkKey",
-                                   "1122334455667788");
-  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtSectionInvalid1, "LinkKey"));
+  test_btif_config_cache.SetString(
+      kBtSectionInvalid1, BTIF_STORAGE_KEY_LINK_KEY, "1122334455667788");
+  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtSectionInvalid1,
+                                            BTIF_STORAGE_KEY_LINK_KEY));
   EXPECT_TRUE(test_btif_config_cache.HasUnpairedSection(kBtSectionInvalid1));
   EXPECT_FALSE(test_btif_config_cache.HasPersistentSection(kBtSectionInvalid1));
 }
@@ -170,9 +191,10 @@ TEST(BtifConfigCacheTest, test_set_up_config_cache_with_invalid_section) {
 TEST(BtifConfigCacheTest, test_get_set_key_value_test) {
   BtifConfigCache test_btif_config_cache(kCapacity);
   // test in unpaired cache
-  test_btif_config_cache.SetString(kBtAddr1, "Name", "Headset_1");
-  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddr1, "Name"));
-  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr1, "Name"),
+  test_btif_config_cache.SetString(kBtAddr1, BTIF_STORAGE_KEY_NAME,
+                                   "Headset_1");
+  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddr1, BTIF_STORAGE_KEY_NAME));
+  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr1, BTIF_STORAGE_KEY_NAME),
               Optional(StrEq("Headset_1")));
 
   test_btif_config_cache.SetInt(kBtAddr1, "Property_Int", 65536);
@@ -191,21 +213,24 @@ TEST(BtifConfigCacheTest, test_get_set_key_value_test) {
               Optional(IsTrue()));
 
   // empty value
-  test_btif_config_cache.SetString(kBtAddr1, "Name", "");
-  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddr1, "Name"));
-  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr1, "Name"),
+  test_btif_config_cache.SetString(kBtAddr1, BTIF_STORAGE_KEY_NAME, "");
+  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddr1, BTIF_STORAGE_KEY_NAME));
+  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr1, BTIF_STORAGE_KEY_NAME),
               Optional(StrEq("")));
 
   // get the LinkKey
-  test_btif_config_cache.SetString(kBtAddr1, "LinkKey", "1122334455667788");
-  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddr1, "LinkKey"));
+  test_btif_config_cache.SetString(kBtAddr1, BTIF_STORAGE_KEY_LINK_KEY,
+                                   "1122334455667788");
+  EXPECT_TRUE(
+      test_btif_config_cache.HasKey(kBtAddr1, BTIF_STORAGE_KEY_LINK_KEY));
   EXPECT_FALSE(test_btif_config_cache.HasUnpairedSection(kBtAddr1));
   EXPECT_TRUE(test_btif_config_cache.HasPersistentSection(kBtAddr1));
 
   // test in unpaired cache
-  test_btif_config_cache.SetString(kBtAddr1, "Name", "Headset_1");
-  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddr1, "Name"));
-  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr1, "Name"),
+  test_btif_config_cache.SetString(kBtAddr1, BTIF_STORAGE_KEY_NAME,
+                                   "Headset_1");
+  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddr1, BTIF_STORAGE_KEY_NAME));
+  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr1, BTIF_STORAGE_KEY_NAME),
               Optional(StrEq("Headset_1")));
 
   test_btif_config_cache.SetInt(kBtAddr1, "Property_Int", 65536);
@@ -224,40 +249,47 @@ TEST(BtifConfigCacheTest, test_get_set_key_value_test) {
               Optional(IsTrue()));
 
   // empty section is disallowed
-  EXPECT_DEATH({ test_btif_config_cache.SetString("", "name", "Headset_1"); },
-               "Empty section not allowed");
+  EXPECT_DEATH(
+      {
+        test_btif_config_cache.SetString("", BTIF_STORAGE_KEY_NAME,
+                                         "Headset_1");
+      },
+      "Empty section not allowed");
   // empty key is disallowed
   EXPECT_DEATH({ test_btif_config_cache.SetString(kBtAddr1, "", "Headset_1"); },
                "Empty key not allowed");
   EXPECT_FALSE(test_btif_config_cache.HasKey(kBtAddr1, ""));
   // empty value is allowed
-  test_btif_config_cache.SetString(kBtAddr1, "Name", "");
-  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddr1, "Name"));
-  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr1, "Name"),
+  test_btif_config_cache.SetString(kBtAddr1, BTIF_STORAGE_KEY_NAME, "");
+  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddr1, BTIF_STORAGE_KEY_NAME));
+  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr1, BTIF_STORAGE_KEY_NAME),
               Optional(StrEq("")));
 }
 
 /* Test to set values in the same key
  * Receiving the same key with different values in a section, the new incoming
  * value will be updated but the key will not be added repeatedly. test this
- * feature in both unpaired devic cache and paired device list cache
+ * feature in both unpaired device cache and paired device list cache
  */
 TEST(BtifConfigCacheTest, test_set_values_in_the_same_key) {
   BtifConfigCache test_btif_config_cache(kCapacity);
-  // add new a key "Name"
-  test_btif_config_cache.SetString(kBtAddr1, "Name", "Headset_1");
-  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr1, "Name"),
+  // add new a key BTIF_STORAGE_KEY_NAME
+  test_btif_config_cache.SetString(kBtAddr1, BTIF_STORAGE_KEY_NAME,
+                                   "Headset_1");
+  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr1, BTIF_STORAGE_KEY_NAME),
               Optional(StrEq("Headset_1")));
   EXPECT_TRUE(test_btif_config_cache.HasUnpairedSection(kBtAddr1));
 
-  // add the same key "Name" with different value
-  test_btif_config_cache.SetString(kBtAddr1, "Name", "Headset_1A");
-  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr1, "Name"),
+  // add the same key BTIF_STORAGE_KEY_NAME with different value
+  test_btif_config_cache.SetString(kBtAddr1, BTIF_STORAGE_KEY_NAME,
+                                   "Headset_1A");
+  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr1, BTIF_STORAGE_KEY_NAME),
               Optional(StrEq("Headset_1A")));
 
-  // add the same key "Name" with different value
-  test_btif_config_cache.SetString(kBtAddr1, "Name", "Headset_2A");
-  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr1, "Name"),
+  // add the same key BTIF_STORAGE_KEY_NAME with different value
+  test_btif_config_cache.SetString(kBtAddr1, BTIF_STORAGE_KEY_NAME,
+                                   "Headset_2A");
+  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr1, BTIF_STORAGE_KEY_NAME),
               Optional(StrEq("Headset_2A")));
   EXPECT_TRUE(test_btif_config_cache.HasUnpairedSection(kBtAddr1));
 
@@ -276,19 +308,23 @@ TEST(BtifConfigCacheTest, test_set_values_in_the_same_key) {
               Optional(Eq(uint64_t(4294967296))));
 
   // get the LinkKey and set values in the same key in paired device list
-  test_btif_config_cache.SetString(kBtAddr1, "LinkKey", "1122334455667788");
-  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddr1, "LinkKey"));
+  test_btif_config_cache.SetString(kBtAddr1, BTIF_STORAGE_KEY_LINK_KEY,
+                                   "1122334455667788");
+  EXPECT_TRUE(
+      test_btif_config_cache.HasKey(kBtAddr1, BTIF_STORAGE_KEY_LINK_KEY));
   EXPECT_FALSE(test_btif_config_cache.HasUnpairedSection(kBtAddr1));
   EXPECT_TRUE(test_btif_config_cache.HasPersistentSection(kBtAddr1));
 
-  // add the same key "Name" with the different value
-  test_btif_config_cache.SetString(kBtAddr1, "Name", "Headset_1A");
-  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr1, "Name"),
+  // add the same key BTIF_STORAGE_KEY_NAME with the different value
+  test_btif_config_cache.SetString(kBtAddr1, BTIF_STORAGE_KEY_NAME,
+                                   "Headset_1A");
+  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr1, BTIF_STORAGE_KEY_NAME),
               Optional(StrEq("Headset_1A")));
 
-  // add the same key "Name" with the value different
-  test_btif_config_cache.SetString(kBtAddr1, "Name", "Headset_2A");
-  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr1, "Name"),
+  // add the same key BTIF_STORAGE_KEY_NAME with the value different
+  test_btif_config_cache.SetString(kBtAddr1, BTIF_STORAGE_KEY_NAME,
+                                   "Headset_2A");
+  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr1, BTIF_STORAGE_KEY_NAME),
               Optional(StrEq("Headset_2A")));
 
   test_btif_config_cache.SetInt(kBtAddr1, "Property_Int", 64);
@@ -305,30 +341,34 @@ TEST(BtifConfigCacheTest, test_set_values_in_the_same_key) {
 /* Stress test to pair with device then unpair device
  * 1. paired with device by adding a "LinKey" to device and check the device be
  * moved into paired devices list
- * 2. unpaired with the device by removing the "LinkKey" and check the device be
- * moved back to unpaired devices cache
+ * 2. unpaired with the device by removing the BTIF_STORAGE_KEY_LINK_KEY  and
+ * check the device be moved back to unpaired devices cache
  * 3. loop for 30 times
  */
 TEST(BtifConfigCacheTest, test_pair_unpair_device_stress_test) {
   BtifConfigCache test_btif_config_cache(kCapacity);
 
   // pair with Headset_1 11:22:33:44:55:66
-  test_btif_config_cache.SetString(kBtAddr1, "Name", "Headset_1");
+  test_btif_config_cache.SetString(kBtAddr1, BTIF_STORAGE_KEY_NAME,
+                                   "Headset_1");
   EXPECT_TRUE(test_btif_config_cache.HasUnpairedSection(kBtAddr1));
   EXPECT_FALSE(test_btif_config_cache.HasPersistentSection(kBtAddr1));
 
   for (int i = 0; i < kTestRepeatCount; ++i) {
     // get the LinkKey, the device will be moved from the unpaired cache to
     // paired cache
-    test_btif_config_cache.SetString(kBtAddr1, "LinkKey", "1122334455667788");
-    EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddr1, "LinkKey"));
+    test_btif_config_cache.SetString(kBtAddr1, BTIF_STORAGE_KEY_LINK_KEY,
+                                     "1122334455667788");
+    EXPECT_TRUE(
+        test_btif_config_cache.HasKey(kBtAddr1, BTIF_STORAGE_KEY_LINK_KEY));
     EXPECT_FALSE(test_btif_config_cache.HasUnpairedSection(kBtAddr1));
     EXPECT_TRUE(test_btif_config_cache.HasPersistentSection(kBtAddr1));
 
     // remove the LinkKey, the device will be moved from the paired cache to
     // unpaired cache
-    test_btif_config_cache.RemoveKey(kBtAddr1, "LinkKey");
-    EXPECT_FALSE(test_btif_config_cache.HasKey(kBtAddr1, "LinkKey"));
+    test_btif_config_cache.RemoveKey(kBtAddr1, BTIF_STORAGE_KEY_LINK_KEY);
+    EXPECT_FALSE(
+        test_btif_config_cache.HasKey(kBtAddr1, BTIF_STORAGE_KEY_LINK_KEY));
     EXPECT_TRUE(test_btif_config_cache.HasUnpairedSection(kBtAddr1));
     EXPECT_FALSE(test_btif_config_cache.HasPersistentSection(kBtAddr1));
   }
@@ -338,92 +378,111 @@ TEST(BtifConfigCacheTest, test_pair_unpair_device_stress_test) {
  * 1. Pired with 4 devices with Link-Key type key in order, to check these 4
  * devices are in the paired devices list cache
  * 2. unpair with these 4 devices by removed Link-Key type key in order, to
- * check the fisrt device was ruled-out from unpaired devices cache due to
+ * check the first device was ruled-out from unpaired devices cache due to
  * capacity limitation, and other 3 devices are be moved to unpaired device
  * cache.
  */
 TEST(BtifConfigCacheTest, test_multi_pair_unpair_with_devices) {
   BtifConfigCache test_btif_config_cache(kCapacity);
   // pair with 4 bt address devices by add different type linkkey.
-  test_btif_config_cache.SetString(kBtAddr1, "name", "kBtAddr1");
-  test_btif_config_cache.SetString(kBtAddr1, "LinkKey", "1122334455667788");
-  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddr1, "LinkKey"));
+  test_btif_config_cache.SetString(kBtAddr1, BTIF_STORAGE_KEY_NAME, "kBtAddr1");
+  test_btif_config_cache.SetString(kBtAddr1, BTIF_STORAGE_KEY_LINK_KEY,
+                                   "1122334455667788");
+  EXPECT_TRUE(
+      test_btif_config_cache.HasKey(kBtAddr1, BTIF_STORAGE_KEY_LINK_KEY));
 
-  test_btif_config_cache.SetString(kBtAddr2, "name", "kBtAddr2");
-  test_btif_config_cache.SetString(kBtAddr2, "LE_KEY_PENC", "aabbccddeeff9900");
-  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddr2, "LE_KEY_PENC"));
+  test_btif_config_cache.SetString(kBtAddr2, BTIF_STORAGE_KEY_NAME, "kBtAddr2");
+  test_btif_config_cache.SetString(kBtAddr2, BTIF_STORAGE_KEY_LE_KEY_PENC,
+                                   "aabbccddeeff9900");
+  EXPECT_TRUE(
+      test_btif_config_cache.HasKey(kBtAddr2, BTIF_STORAGE_KEY_LE_KEY_PENC));
 
-  test_btif_config_cache.SetString(kBtAddr3, "name", "kBtAddr3");
-  test_btif_config_cache.SetString(kBtAddr3, "LE_KEY_PID", "a1b2c3d4e5feeeee");
-  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddr3, "LE_KEY_PID"));
+  test_btif_config_cache.SetString(kBtAddr3, BTIF_STORAGE_KEY_NAME, "kBtAddr3");
+  test_btif_config_cache.SetString(kBtAddr3, BTIF_STORAGE_KEY_LE_KEY_PID,
+                                   "a1b2c3d4e5feeeee");
+  EXPECT_TRUE(
+      test_btif_config_cache.HasKey(kBtAddr3, BTIF_STORAGE_KEY_LE_KEY_PID));
 
-  test_btif_config_cache.SetString(kBtAddr4, "LE_KEY_PCSRK",
+  test_btif_config_cache.SetString(kBtAddr4, BTIF_STORAGE_KEY_LE_KEY_PCSRK,
                                    "aaaabbbbccccdddd");
-  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddr4, "LE_KEY_PCSRK"));
+  EXPECT_TRUE(
+      test_btif_config_cache.HasKey(kBtAddr4, BTIF_STORAGE_KEY_LE_KEY_PCSRK));
 
-  test_btif_config_cache.SetString(kBtAddr5, "name", "kBtAddr5");
-  test_btif_config_cache.SetString(kBtAddr5, "LE_KEY_LENC", "jilkjlkjlkn");
-  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddr5, "LE_KEY_LENC"));
+  test_btif_config_cache.SetString(kBtAddr5, BTIF_STORAGE_KEY_NAME, "kBtAddr5");
+  test_btif_config_cache.SetString(kBtAddr5, BTIF_STORAGE_KEY_LE_KEY_LENC,
+                                   "jilkjlkjlkn");
+  EXPECT_TRUE(
+      test_btif_config_cache.HasKey(kBtAddr5, BTIF_STORAGE_KEY_LE_KEY_LENC));
 
   // checking these 4 devices are in paired list cache and the content are
   // correct.
   EXPECT_TRUE(test_btif_config_cache.HasPersistentSection(kBtAddr1));
-  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr1, "LinkKey"),
-              Optional(StrEq("1122334455667788")));
+  EXPECT_THAT(
+      test_btif_config_cache.GetString(kBtAddr1, BTIF_STORAGE_KEY_LINK_KEY),
+      Optional(StrEq("1122334455667788")));
   EXPECT_TRUE(test_btif_config_cache.HasPersistentSection(kBtAddr2));
-  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr2, "LE_KEY_PENC"),
-              Optional(StrEq("aabbccddeeff9900")));
+  EXPECT_THAT(
+      test_btif_config_cache.GetString(kBtAddr2, BTIF_STORAGE_KEY_LE_KEY_PENC),
+      Optional(StrEq("aabbccddeeff9900")));
   EXPECT_TRUE(test_btif_config_cache.HasPersistentSection(kBtAddr3));
-  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr3, "LE_KEY_PID"),
-              Optional(StrEq("a1b2c3d4e5feeeee")));
+  EXPECT_THAT(
+      test_btif_config_cache.GetString(kBtAddr3, BTIF_STORAGE_KEY_LE_KEY_PID),
+      Optional(StrEq("a1b2c3d4e5feeeee")));
   EXPECT_TRUE(test_btif_config_cache.HasPersistentSection(kBtAddr4));
-  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr4, "LE_KEY_PCSRK"),
-              Optional(StrEq("aaaabbbbccccdddd")));
+  EXPECT_THAT(
+      test_btif_config_cache.GetString(kBtAddr4, BTIF_STORAGE_KEY_LE_KEY_PCSRK),
+      Optional(StrEq("aaaabbbbccccdddd")));
   EXPECT_TRUE(test_btif_config_cache.HasPersistentSection(kBtAddr5));
-  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr5, "LE_KEY_LENC"),
-              Optional(StrEq("jilkjlkjlkn")));
+  EXPECT_THAT(
+      test_btif_config_cache.GetString(kBtAddr5, BTIF_STORAGE_KEY_LE_KEY_LENC),
+      Optional(StrEq("jilkjlkjlkn")));
 
   // unpair with these 4 bt address devices by removed the linkkey.
   // unpair kBtAddr1 11:22:33:44:55:66
-  test_btif_config_cache.RemoveKey(kBtAddr1, "LinkKey");
-  EXPECT_FALSE(test_btif_config_cache.HasKey(kBtAddr1, "LinkKey"));
+  test_btif_config_cache.RemoveKey(kBtAddr1, BTIF_STORAGE_KEY_LINK_KEY);
+  EXPECT_FALSE(
+      test_btif_config_cache.HasKey(kBtAddr1, BTIF_STORAGE_KEY_LINK_KEY));
   // no empty section is moved to unpaired
   EXPECT_FALSE(test_btif_config_cache.HasPersistentSection(kBtAddr1));
   EXPECT_TRUE(test_btif_config_cache.HasUnpairedSection(kBtAddr1));
-  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr1, "name"),
+  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr1, BTIF_STORAGE_KEY_NAME),
               Optional(StrEq("kBtAddr1")));
 
   // unpair with kBtAddr2 aa:bb:cc:dd:ee:ff
-  test_btif_config_cache.RemoveKey(kBtAddr2, "LE_KEY_PENC");
-  EXPECT_FALSE(test_btif_config_cache.HasKey(kBtAddr2, "LE_KEY_PENC"));
+  test_btif_config_cache.RemoveKey(kBtAddr2, BTIF_STORAGE_KEY_LE_KEY_PENC);
+  EXPECT_FALSE(
+      test_btif_config_cache.HasKey(kBtAddr2, BTIF_STORAGE_KEY_LE_KEY_PENC));
   EXPECT_FALSE(test_btif_config_cache.HasPersistentSection(kBtAddr2));
   EXPECT_TRUE(test_btif_config_cache.HasUnpairedSection(kBtAddr2));
-  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr2, "name"),
+  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr2, BTIF_STORAGE_KEY_NAME),
               Optional(StrEq("kBtAddr2")));
 
   // unpair with kBtAddr3 AB:CD:EF:12:34:56
-  test_btif_config_cache.RemoveKey(kBtAddr3, "LE_KEY_PID");
-  EXPECT_FALSE(test_btif_config_cache.HasKey(kBtAddr3, "LE_KEY_PID"));
+  test_btif_config_cache.RemoveKey(kBtAddr3, BTIF_STORAGE_KEY_LE_KEY_PID);
+  EXPECT_FALSE(
+      test_btif_config_cache.HasKey(kBtAddr3, BTIF_STORAGE_KEY_LE_KEY_PID));
   EXPECT_FALSE(test_btif_config_cache.HasPersistentSection(kBtAddr3));
   // no empty section is moved to unpaired
   EXPECT_TRUE(test_btif_config_cache.HasUnpairedSection(kBtAddr3));
-  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr3, "name"),
+  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr3, BTIF_STORAGE_KEY_NAME),
               Optional(StrEq("kBtAddr3")));
 
   // unpair with kBtAddr4 11:AA:22:BB:33:CC
-  test_btif_config_cache.RemoveKey(kBtAddr4, "LE_KEY_PCSRK");
-  EXPECT_FALSE(test_btif_config_cache.HasKey(kBtAddr4, "LE_KEY_PCSRK"));
+  test_btif_config_cache.RemoveKey(kBtAddr4, BTIF_STORAGE_KEY_LE_KEY_PCSRK);
+  EXPECT_FALSE(
+      test_btif_config_cache.HasKey(kBtAddr4, BTIF_STORAGE_KEY_LE_KEY_PCSRK));
   EXPECT_FALSE(test_btif_config_cache.HasPersistentSection(kBtAddr4));
   // empty section is removed
   EXPECT_FALSE(test_btif_config_cache.HasUnpairedSection(kBtAddr4));
 
   // unpair with kBtAddr5 11:AA:22:BB:33:CD
-  test_btif_config_cache.RemoveKey(kBtAddr5, "LE_KEY_LENC");
-  EXPECT_FALSE(test_btif_config_cache.HasKey(kBtAddr5, "LE_KEY_LENC"));
+  test_btif_config_cache.RemoveKey(kBtAddr5, BTIF_STORAGE_KEY_LE_KEY_LENC);
+  EXPECT_FALSE(
+      test_btif_config_cache.HasKey(kBtAddr5, BTIF_STORAGE_KEY_LE_KEY_LENC));
   EXPECT_FALSE(test_btif_config_cache.HasPersistentSection(kBtAddr5));
   // no empty section is moved to unpaired
   EXPECT_TRUE(test_btif_config_cache.HasUnpairedSection(kBtAddr5));
-  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr5, "name"),
+  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr5, BTIF_STORAGE_KEY_NAME),
               Optional(StrEq("kBtAddr5")));
 
   // checking the oldest unpaired device kBtAddr1 was ruled out from cache due
@@ -432,26 +491,33 @@ TEST(BtifConfigCacheTest, test_multi_pair_unpair_with_devices) {
 }
 
 /* Test to remove sections with the specific key
- * paired with sections with the specific "Restricted" key and then removed the
- * "Restricted" key, check if the sections with the specific "Restricted" key
- * are removed.
+ * paired with sections with the specific BTIF_STORAGE_KEY_RESTRICTED key and
+ * then removed the BTIF_STORAGE_KEY_RESTRICTED key, check if the sections with
+ * the specific BTIF_STORAGE_KEY_RESTRICTED  key are removed.
  */
 TEST(BtifConfigCacheTest, test_remove_sections_with_key) {
   BtifConfigCache test_btif_config_cache(kCapacity);
   // pair with Headset_1 (kBtAddr1), Headset_2 (kBtAddr1), Heasdet_3 (kBtAddr3)
-  // , and Headset_1 (kBtAddr1), Headset_3 (kBtAddr3) have sepcific "Restricted"
-  // key
-  test_btif_config_cache.SetString(kBtAddr1, "Name", "Headset_1");
-  test_btif_config_cache.SetString(kBtAddr1, "Restricted", "1");
-  test_btif_config_cache.SetString(kBtAddr1, "LinkKey", "1122334455667788");
-  test_btif_config_cache.SetString(kBtAddr2, "Name", "Headset_2");
-  test_btif_config_cache.SetString(kBtAddr2, "LinkKey", "aabbccddeeff9900");
-  test_btif_config_cache.SetString(kBtAddr3, "Name", "Headset_3");
-  test_btif_config_cache.SetString(kBtAddr3, "LinkKey", "a1b2c3d4e5feeeee");
-  test_btif_config_cache.SetString(kBtAddr3, "Restricted", "1");
+  // , and Headset_1 (kBtAddr1), Headset_3 (kBtAddr3) have specific
+  // BTIF_STORAGE_KEY_RESTRICTED key
+  test_btif_config_cache.SetString(kBtAddr1, BTIF_STORAGE_KEY_NAME,
+                                   "Headset_1");
+  test_btif_config_cache.SetString(kBtAddr1, BTIF_STORAGE_KEY_RESTRICTED, "1");
+  test_btif_config_cache.SetString(kBtAddr1, BTIF_STORAGE_KEY_LINK_KEY,
+                                   "1122334455667788");
+  test_btif_config_cache.SetString(kBtAddr2, BTIF_STORAGE_KEY_NAME,
+                                   "Headset_2");
+  test_btif_config_cache.SetString(kBtAddr2, BTIF_STORAGE_KEY_LINK_KEY,
+                                   "aabbccddeeff9900");
+  test_btif_config_cache.SetString(kBtAddr3, BTIF_STORAGE_KEY_NAME,
+                                   "Headset_3");
+  test_btif_config_cache.SetString(kBtAddr3, BTIF_STORAGE_KEY_LINK_KEY,
+                                   "a1b2c3d4e5feeeee");
+  test_btif_config_cache.SetString(kBtAddr3, BTIF_STORAGE_KEY_RESTRICTED, "1");
 
-  // remove sections with "Restricted" key
-  test_btif_config_cache.RemovePersistentSectionsWithKey("Restricted");
+  // remove sections with BTIF_STORAGE_KEY_RESTRICTED  key
+  test_btif_config_cache.RemovePersistentSectionsWithKey(
+      BTIF_STORAGE_KEY_RESTRICTED);
 
   // checking the kBtAddr1 and kBtAddr3 can not be found in config cache, only
   // keep kBtAddr2 in config cache.
@@ -465,23 +531,32 @@ TEST(BtifConfigCacheTest, test_PersistentSectionCopy_Init) {
   BtifConfigCache test_btif_config_cache(kCapacity);
   config_t config_paired = {};
   // pair with 3 bt devices, kBtAddr1, kBtAddr2, kBtAddr3
-  test_btif_config_cache.SetString(kBtAddr1, "LinkKey", "1122334455667788");
-  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddr1, "LinkKey"));
+  test_btif_config_cache.SetString(kBtAddr1, BTIF_STORAGE_KEY_LINK_KEY,
+                                   "1122334455667788");
+  EXPECT_TRUE(
+      test_btif_config_cache.HasKey(kBtAddr1, BTIF_STORAGE_KEY_LINK_KEY));
   EXPECT_TRUE(test_btif_config_cache.HasPersistentSection(kBtAddr1));
-  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr1, "LinkKey"),
-              Optional(StrEq("1122334455667788")));
+  EXPECT_THAT(
+      test_btif_config_cache.GetString(kBtAddr1, BTIF_STORAGE_KEY_LINK_KEY),
+      Optional(StrEq("1122334455667788")));
 
-  test_btif_config_cache.SetString(kBtAddr2, "LE_KEY_PENC", "aabbccddeeff9900");
-  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddr2, "LE_KEY_PENC"));
+  test_btif_config_cache.SetString(kBtAddr2, BTIF_STORAGE_KEY_LE_KEY_PENC,
+                                   "aabbccddeeff9900");
+  EXPECT_TRUE(
+      test_btif_config_cache.HasKey(kBtAddr2, BTIF_STORAGE_KEY_LE_KEY_PENC));
   EXPECT_TRUE(test_btif_config_cache.HasPersistentSection(kBtAddr2));
-  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr2, "LE_KEY_PENC"),
-              Optional(StrEq("aabbccddeeff9900")));
+  EXPECT_THAT(
+      test_btif_config_cache.GetString(kBtAddr2, BTIF_STORAGE_KEY_LE_KEY_PENC),
+      Optional(StrEq("aabbccddeeff9900")));
 
-  test_btif_config_cache.SetString(kBtAddr3, "LE_KEY_PID", "a1b2c3d4e5feeeee");
-  EXPECT_TRUE(test_btif_config_cache.HasKey(kBtAddr3, "LE_KEY_PID"));
+  test_btif_config_cache.SetString(kBtAddr3, BTIF_STORAGE_KEY_LE_KEY_PID,
+                                   "a1b2c3d4e5feeeee");
+  EXPECT_TRUE(
+      test_btif_config_cache.HasKey(kBtAddr3, BTIF_STORAGE_KEY_LE_KEY_PID));
   EXPECT_TRUE(test_btif_config_cache.HasPersistentSection(kBtAddr3));
-  EXPECT_THAT(test_btif_config_cache.GetString(kBtAddr3, "LE_KEY_PID"),
-              Optional(StrEq("a1b2c3d4e5feeeee")));
+  EXPECT_THAT(
+      test_btif_config_cache.GetString(kBtAddr3, BTIF_STORAGE_KEY_LE_KEY_PID),
+      Optional(StrEq("a1b2c3d4e5feeeee")));
 
   // check GetPersistentSections
   int num_of_paired_devices = 0;

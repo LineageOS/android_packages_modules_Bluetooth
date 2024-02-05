@@ -39,6 +39,7 @@
 #include "btif/include/stack_manager_t.h"
 #include "common/init_flags.h"
 #include "device/include/interop.h"
+#include "gd/storage/config_keys.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/bt_trace.h"
 #include "os/log.h"
@@ -320,13 +321,13 @@ void sdpu_log_attribute_metrics(const RawAddress& bda,
 
       std::string bda_string = bda.ToString();
       // write manufacturer, model, HW version to config
-      btif_config_set_int(bda_string, BT_CONFIG_KEY_SDP_DI_MANUFACTURER,
+      btif_config_set_int(bda_string, BTIF_STORAGE_KEY_SDP_DI_MANUFACTURER,
                           di_record.rec.vendor);
-      btif_config_set_int(bda_string, BT_CONFIG_KEY_SDP_DI_MODEL,
+      btif_config_set_int(bda_string, BTIF_STORAGE_KEY_SDP_DI_MODEL,
                           di_record.rec.product);
-      btif_config_set_int(bda_string, BT_CONFIG_KEY_SDP_DI_HW_VERSION,
+      btif_config_set_int(bda_string, BTIF_STORAGE_KEY_SDP_DI_HW_VERSION,
                           di_record.rec.version);
-      btif_config_set_int(bda_string, BT_CONFIG_KEY_SDP_DI_VENDOR_ID_SRC,
+      btif_config_set_int(bda_string, BTIF_STORAGE_KEY_SDP_DI_VENDOR_ID_SRC,
                           di_record.rec.vendor_id_source);
     }
   }
@@ -1517,7 +1518,7 @@ void sdpu_set_avrc_target_version(const tSDP_ATTRIBUTE* p_attr,
   // Read the remote device's AVRC Controller version from local storage
   uint16_t cached_version = 0;
   size_t version_value_size = btif_config_get_bin_length(
-      bdaddr->ToString(), AVRCP_CONTROLLER_VERSION_CONFIG_KEY);
+      bdaddr->ToString(), BTIF_STORAGE_KEY_AVRCP_CONTROLLER_VERSION);
   if (version_value_size != sizeof(cached_version)) {
     LOG_ERROR(
         "cached value len wrong, bdaddr=%s. Len is %zu but should be %zu.",
@@ -1527,7 +1528,7 @@ void sdpu_set_avrc_target_version(const tSDP_ATTRIBUTE* p_attr,
   }
 
   if (!btif_config_get_bin(bdaddr->ToString(),
-                           AVRCP_CONTROLLER_VERSION_CONFIG_KEY,
+                           BTIF_STORAGE_KEY_AVRCP_CONTROLLER_VERSION,
                            (uint8_t*)&cached_version, &version_value_size)) {
     LOG_INFO(
         "no cached AVRC Controller version for %s. "
@@ -1602,7 +1603,7 @@ void sdpu_set_avrc_target_features(const tSDP_ATTRIBUTE* p_attr,
   // Read the remote device's AVRC Controller version from local storage
   uint16_t avrcp_peer_features = 0;
   size_t version_value_size = btif_config_get_bin_length(
-      bdaddr->ToString(), AV_REM_CTRL_FEATURES_CONFIG_KEY);
+      bdaddr->ToString(), BTIF_STORAGE_KEY_AV_REM_CTRL_FEATURES);
   if (version_value_size != sizeof(avrcp_peer_features)) {
     LOG_ERROR(
         "cached value len wrong, bdaddr=%s. Len is %zu but should be %zu.",
@@ -1611,9 +1612,9 @@ void sdpu_set_avrc_target_features(const tSDP_ATTRIBUTE* p_attr,
     return;
   }
 
-  if (!btif_config_get_bin(bdaddr->ToString(), AV_REM_CTRL_FEATURES_CONFIG_KEY,
-                           (uint8_t*)&avrcp_peer_features,
-                           &version_value_size)) {
+  if (!btif_config_get_bin(
+          bdaddr->ToString(), BTIF_STORAGE_KEY_AV_REM_CTRL_FEATURES,
+          (uint8_t*)&avrcp_peer_features, &version_value_size)) {
     LOG_ERROR("Unable to fetch cached AVRC features");
     return;
   }

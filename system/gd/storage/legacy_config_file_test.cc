@@ -21,6 +21,7 @@
 
 #include <filesystem>
 
+#include "gd/storage/config_keys.h"
 #include "os/files.h"
 #include "storage/device.h"
 
@@ -40,8 +41,8 @@ TEST(LegacyConfigFileTest, write_and_read_loop_back_test) {
   config.SetProperty("A", "B", "C");
   config.SetProperty("AA:BB:CC:DD:EE:FF", "B", "C");
   config.SetProperty("AA:BB:CC:DD:EE:FF", "C", "D");
-  config.SetProperty("CC:DD:EE:FF:00:11", "LinkKey", "AABBAABBCCDDEE");
-  EXPECT_TRUE(config.HasProperty("CC:DD:EE:FF:00:11", "LinkKey"));
+  config.SetProperty("CC:DD:EE:FF:00:11", BTIF_STORAGE_KEY_LINK_KEY, "AABBAABBCCDDEE");
+  EXPECT_TRUE(config.HasProperty("CC:DD:EE:FF:00:11", BTIF_STORAGE_KEY_LINK_KEY));
   EXPECT_THAT(config.GetPersistentSections(), ElementsAre("CC:DD:EE:FF:00:11"));
 
   EXPECT_TRUE(LegacyConfigFile::FromPath(temp_config.string()).Write(config));
@@ -103,7 +104,7 @@ static const std::string kWriteTestConfig =
     "Address = 01:02:03:ab:cd:ef\n"
     "\n"
     "[01:02:03:ab:cd:ea]\n"
-    "name = hello world\n"
+    "Name = hello world\n"
     "LinkKey = fedcba0987654321fedcba0987654328\n"
     "\n";
 
@@ -114,9 +115,10 @@ TEST(LegacyConfigFileTest, write_test) {
   ConfigCache config(100, Device::kLinkKeyProperties);
   config.SetProperty("Info", "FileSource", "Empty");
   config.SetProperty("Info", "TimeCreated", "");
-  config.SetProperty("Adapter", "Address", "01:02:03:ab:cd:ef");
-  config.SetProperty("01:02:03:ab:cd:ea", "name", "hello world");
-  config.SetProperty("01:02:03:ab:cd:ea", "LinkKey", "fedcba0987654321fedcba0987654328");
+  config.SetProperty(BTIF_STORAGE_SECTION_ADAPTER, BTIF_STORAGE_KEY_ADDRESS, "01:02:03:ab:cd:ef");
+  config.SetProperty("01:02:03:ab:cd:ea", BTIF_STORAGE_KEY_NAME, "hello world");
+  config.SetProperty(
+      "01:02:03:ab:cd:ea", BTIF_STORAGE_KEY_LINK_KEY, "fedcba0987654321fedcba0987654328");
   EXPECT_TRUE(LegacyConfigFile::FromPath(temp_config.string()).Write(config));
 
   EXPECT_THAT(ReadSmallFile(temp_config.string()), Optional(StrEq(kWriteTestConfig)));
