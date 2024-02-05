@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9cf9f348_808c0c90",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 29891
+      },
+      "writtenOn": "2024-02-05T23:40:05Z",
+      "side": 1,
+      "message": "Works fine on h910 and fixes Bluetooth once the expected property is set on device\u0027s mk file. Should fix other LGE_8996 devices as well, as they suffer from the same issue.",
+      "revId": "8f37e6725268fbbd3a9371d7105d22ef9b4f6c2d",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
