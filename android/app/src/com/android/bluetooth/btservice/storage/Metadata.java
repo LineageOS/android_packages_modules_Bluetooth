@@ -79,6 +79,9 @@ public class Metadata {
      */
     public int preferred_duplex_profile;
 
+    /** This is used to indicate whether device's active audio policy */
+    public int active_audio_device_policy;
+
     Metadata(String address) {
         this(address, false, false);
     }
@@ -96,6 +99,7 @@ public class Metadata {
         audioPolicyMetadata = new AudioPolicyEntity();
         preferred_output_only_profile = 0;
         preferred_duplex_profile = 0;
+        active_audio_device_policy = BluetoothDevice.ACTIVE_AUDIO_DEVICE_POLICY_DEFAULT;
     }
 
     static final class Builder {

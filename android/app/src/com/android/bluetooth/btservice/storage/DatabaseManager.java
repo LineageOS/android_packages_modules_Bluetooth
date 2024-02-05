@@ -1015,6 +1015,60 @@ public class DatabaseManager {
     }
 
     /**
+     * Set the device active audio policy. See {@link
+     * BluetoothDevice#setActiveAudioDevicePolicy(activeAudioDevicePolicy)} for more details.
+     *
+     * @param device is the remote device for which we are setting the active audio device policy.
+     * @param activeAudioDevicePolicy active audio device policy.
+     * @return whether the policy was set properly
+     */
+    public int setActiveAudioDevicePolicy(BluetoothDevice device, int activeAudioDevicePolicy) {
+        synchronized (mMetadataCache) {
+            String address = device.getAddress();
+
+            if (!mMetadataCache.containsKey(address)) {
+                Log.e(TAG, "device is not bonded");
+                return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
+            }
+
+            Metadata metadata = mMetadataCache.get(address);
+            Log.i(
+                    TAG,
+                    "Updating active_audio_device_policy setting for "
+                            + "device "
+                            + device
+                            + " to: "
+                            + activeAudioDevicePolicy);
+            metadata.active_audio_device_policy = activeAudioDevicePolicy;
+
+            updateDatabase(metadata);
+        }
+        return BluetoothStatusCodes.SUCCESS;
+    }
+
+    /**
+     * Get the active audio device policy for this device. See {@link
+     * BluetoothDevice#getActiveAudioDevicePolicy()} for more details.
+     *
+     * @param device is the device for which we want to get the policy
+     * @return active audio device policy for this device
+     */
+    public int getActiveAudioDevicePolicy(BluetoothDevice device) {
+        synchronized (mMetadataCache) {
+            String address = device.getAddress();
+
+            if (!mMetadataCache.containsKey(address)) {
+                Log.e(TAG, "device is not bonded");
+                return BluetoothDevice.ACTIVE_AUDIO_DEVICE_POLICY_DEFAULT;
+            }
+
+            Metadata metadata = mMetadataCache.get(address);
+
+            return metadata.active_audio_device_policy;
+        }
+    }
+
+    /**
      * Get the {@link Looper} for the handler thread. This is used in testing and helper
      * objects
      *
