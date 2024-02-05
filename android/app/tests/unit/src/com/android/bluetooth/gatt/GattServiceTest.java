@@ -47,6 +47,8 @@ import android.os.RemoteException;
 import android.os.WorkSource;
 
 import android.platform.test.annotations.RequiresFlagsEnabled;
+import android.platform.test.flag.junit.CheckFlagsRule;
+import android.platform.test.flag.junit.DeviceFlagsValueProvider;
 import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.SmallTest;
 import androidx.test.rule.ServiceTestRule;
@@ -106,6 +108,9 @@ public class GattServiceTest {
     @Mock private AdvertiseManagerNativeInterface mAdvertiseManagerNativeInterface;
 
     @Rule public final ServiceTestRule mServiceRule = new ServiceTestRule();
+
+    @Rule
+    public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
 
     private BluetoothDevice mDevice;
     private BluetoothAdapter mAdapter;
@@ -884,5 +889,47 @@ public class GattServiceTest {
                         BluetoothProfile.A2DP,
                         BluetoothProfile.STATE_CONNECTING,
                         BluetoothProfile.STATE_CONNECTED);
+    }
+
+    @RequiresFlagsEnabled(Flags.FLAG_GATT_CLEANUP_RESTRICTED_HANDLES)
+    @Test
+    public void restrictedHandles() throws Exception {
+        int clientIf = 1;
+        int connId = 1;
+        ArrayList<GattDbElement> db = new ArrayList<>();
+
+        GattService.ClientMap.App app = mock(GattService.ClientMap.App.class);
+        IBluetoothGattCallback callback = mock(IBluetoothGattCallback.class);
+
+        doReturn(app).when(mClientMap).getByConnId(connId);
+        app.callback = callback;
+
+        GattDbElement hidService =
+                GattDbElement.createPrimaryService(
+                        UUID.fromString("00001812-0000-1000-8000-00805F9B34FB"));
+        hidService.id = 1;
+
+        GattDbElement hidInfoChar =
+                GattDbElement.createCharacteristic(
+                        UUID.fromString("00002A4A-0000-1000-8000-00805F9B34FB"), 0, 0);
+        hidInfoChar.id = 2;
+
+        GattDbElement randomChar =
+                GattDbElement.createCharacteristic(
+                        UUID.fromString("0000FFFF-0000-1000-8000-00805F9B34FB"), 0, 0);
+        randomChar.id = 3;
+
+        db.add(hidService);
+        db.add(hidInfoChar);
+        db.add(randomChar);
+
+        mService.onGetGattDb(connId, db);
+        // HID characteristics should be restricted
+        assertThat(mService.mRestrictedHandles.get(connId)).contains(hidInfoChar.id);
+        assertThat(mService.mRestrictedHandles.get(connId)).doesNotContain(randomChar.id);
+
+        mService.onDisconnected(
+                clientIf, connId, BluetoothGatt.GATT_SUCCESS, REMOTE_DEVICE_ADDRESS);
+        assertThat(mService.mRestrictedHandles).doesNotContainKey(connId);
     }
 }

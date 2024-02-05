@@ -284,7 +284,7 @@ public class GattService extends ProfileService {
     /**
      * Set of restricted (which require a BLUETOOTH_PRIVILEGED permission) handles per connectionId.
      */
-    private final Map<Integer, Set<Integer>> mRestrictedHandles = new HashMap<>();
+    @VisibleForTesting final Map<Integer, Set<Integer>> mRestrictedHandles = new HashMap<>();
 
     /**
      * HashMap used to synchronize writeCharacteristic calls mapping remote device address to
@@ -397,6 +397,9 @@ public class GattService extends ProfileService {
         mScannerMap.clear();
         mAdvertiserMap.clear();
         mClientMap.clear();
+        if (Flags.gattCleanupRestrictedHandles()) {
+            mRestrictedHandles.clear();
+        }
         mServerMap.clear();
         mHandleMap.clear();
         mReliableQueue.clear();
@@ -2280,6 +2283,10 @@ public class GattService extends ProfileService {
 
         mClientMap.removeConnection(clientIf, connId);
         ClientMap.App app = mClientMap.getById(clientIf);
+
+        if (Flags.gattCleanupRestrictedHandles()) {
+            mRestrictedHandles.remove(connId);
+        }
 
         // Remove AtomicBoolean representing permit if no other connections rely on this remote device.
         if (!mClientMap.getConnectedDevices().contains(address)) {
