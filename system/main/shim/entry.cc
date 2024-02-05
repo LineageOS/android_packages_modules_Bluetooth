@@ -76,7 +76,7 @@ neighbor::InquiryModule* GetInquiry() {
       ->GetInstance<neighbor::InquiryModule>();
 }
 
-hci::HciLayer* GetHciLayer() {
+hci::HciInterface* GetHciLayer() {
   return Stack::GetInstance()->GetStackManager()->GetInstance<hci::HciLayer>();
 }
 

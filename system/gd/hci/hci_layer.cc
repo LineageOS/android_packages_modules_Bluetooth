@@ -19,17 +19,19 @@
 #ifdef TARGET_FLOSS
 #include <signal.h>
 #endif
+#include <map>
+#include <utility>
 
 #include "common/bind.h"
 #include "common/init_flags.h"
 #include "common/stop_watch.h"
+#include "hal/hci_hal.h"
 #include "hci/class_of_device.h"
 #include "hci/hci_metrics_logging.h"
 #include "os/alarm.h"
 #include "os/metrics.h"
 #include "os/queue.h"
 #include "osi/include/stack_power_telemetry.h"
-#include "packet/packet_builder.h"
 #include "storage/storage_module.h"
 
 namespace bluetooth {
