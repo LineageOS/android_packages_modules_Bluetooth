@@ -29,6 +29,7 @@
 #include "hci/enum_helper.h"
 #include "storage/config_cache.h"
 #include "storage/config_cache_helper.h"
+#include "storage/config_keys.h"
 #include "storage/mutation_entry.h"
 #include "storage/serializable.h"
 
@@ -183,11 +184,14 @@ class Device {
 
  public:
   // Macro generate getters, setters and removers
-  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(Name, std::string, "Name");
-  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(ClassOfDevice, hci::ClassOfDevice, "DevClass");
-  GENERATE_PROPERTY_GETTER_SETTER_REMOVER_WITH_CUSTOM_SETTER(DeviceType, hci::DeviceType, "DevType", {
-    return static_cast<hci::DeviceType>(value | GetDeviceType().value_or(hci::DeviceType::UNKNOWN));
-  });
+  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(Name, std::string, BTIF_STORAGE_KEY_NAME);
+  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(
+      ClassOfDevice, hci::ClassOfDevice, BTIF_STORAGE_KEY_DEV_CLASS);
+  GENERATE_PROPERTY_GETTER_SETTER_REMOVER_WITH_CUSTOM_SETTER(
+      DeviceType, hci::DeviceType, BTIF_STORAGE_KEY_DEV_TYPE, {
+        return static_cast<hci::DeviceType>(
+            value | GetDeviceType().value_or(hci::DeviceType::UNKNOWN));
+      });
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(ManufacturerCode, uint16_t, "Manufacturer");
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(LmpVersion, uint8_t, "LmpVer");
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(LmpSubVersion, uint16_t, "LmpSubVer");
@@ -199,7 +203,7 @@ class Device {
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(MetricsId, int, "MetricsId");
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(PinLength, int, "PinLength");
   // unix timestamp in seconds from epoch
-  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(CreationUnixTimestamp, int, "DevClass");
+  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(CreationUnixTimestamp, int, BTIF_STORAGE_KEY_DEV_CLASS);
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(IsAuthenticated, int, "IsAuthenticated");
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(RequiresMitmProtection, int, "RequiresMitmProtection");
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(IsEncryptionRequired, int, "IsEncryptionRequired");

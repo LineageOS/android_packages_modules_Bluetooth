@@ -49,6 +49,7 @@
 #include "common/message_loop_thread.h"
 #include "device/include/controller.h"
 #include "device/include/device_iot_config.h"
+#include "gd/storage/config_keys.h"
 #include "hci/controller_interface.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/bt_trace.h"
@@ -186,13 +187,15 @@ void btif_enable_bluetooth_evt() {
 
   char val[PROPERTY_VALUE_MAX] = "";
   int val_size = PROPERTY_VALUE_MAX;
-  if (!btif_config_get_str("Adapter", "Address", val, &val_size) ||
+  if (!btif_config_get_str(BTIF_STORAGE_SECTION_ADAPTER,
+                           BTIF_STORAGE_KEY_ADDRESS, val, &val_size) ||
       strcmp(bdstr.c_str(), val) != 0) {
     // We failed to get an address or the one in the config file does not match
     // the address given by the controller interface. Update the config cache
-    LOG_INFO("%s: Storing '%s' into the config file", __func__,
-            ADDRESS_TO_LOGGABLE_CSTR(local_bd_addr));
-    btif_config_set_str("Adapter", "Address", bdstr.c_str());
+    LOG_INFO("Storing '%s' into the config file",
+             ADDRESS_TO_LOGGABLE_CSTR(local_bd_addr));
+    btif_config_set_str(BTIF_STORAGE_SECTION_ADAPTER, BTIF_STORAGE_KEY_ADDRESS,
+                        bdstr.c_str());
 
     // fire HAL callback for property change
     bt_property_t prop;

@@ -150,15 +150,6 @@
   "persist.bluetooth.dynamic_avrcp.enable"
 #endif
 
-/* Avrcp controller version key for bt_config.conf */
-#ifndef AVRCP_CONTROLLER_VERSION_CONFIG_KEY
-#define AVRCP_CONTROLLER_VERSION_CONFIG_KEY "AvrcpControllerVersion"
-#endif
-
-#ifndef AV_REM_CTRL_FEATURES_CONFIG_KEY
-#define AV_REM_CTRL_FEATURES_CONFIG_KEY "AvrcpPeerFeatures"
-#endif
-
 /* Supported categories */
 #define AVRC_SUPF_CT_CAT1 0x0001         /* Category 1 */
 #define AVRC_SUPF_CT_CAT2 0x0002         /* Category 2 */

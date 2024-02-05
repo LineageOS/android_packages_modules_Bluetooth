@@ -40,6 +40,7 @@
 
 #include "btif/include/btif_config.h"
 #include "device/include/device_iot_config.h"
+#include "gd/storage/config_keys.h"
 #include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_sec_api_types.h"
@@ -486,7 +487,7 @@ void bta_ag_rfc_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
   if (p_scb->conn_service == BTA_AG_HFP) {
     size_t version_value_size = sizeof(p_scb->peer_version);
     if (!btif_config_get_bin(
-            p_scb->peer_addr.ToString(), HFP_VERSION_CONFIG_KEY,
+            p_scb->peer_addr.ToString(), BTIF_STORAGE_KEY_HFP_VERSION,
             (uint8_t*)&p_scb->peer_version, &version_value_size)) {
       LOG_WARN("%s: Failed read cached peer HFP version for %s", __func__,
                ADDRESS_TO_LOGGABLE_CSTR(p_scb->peer_addr));
@@ -494,7 +495,7 @@ void bta_ag_rfc_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
     }
     size_t sdp_features_size = sizeof(p_scb->peer_sdp_features);
     if (btif_config_get_bin(
-            p_scb->peer_addr.ToString(), HFP_SDP_FEATURES_CONFIG_KEY,
+            p_scb->peer_addr.ToString(), BTIF_STORAGE_KEY_HFP_SDP_FEATURES,
             (uint8_t*)&p_scb->peer_sdp_features, &sdp_features_size)) {
       bool sdp_wbs_support = p_scb->peer_sdp_features & BTA_AG_FEAT_WBS_SUPPORT;
       if (!p_scb->received_at_bac && sdp_wbs_support) {
@@ -621,9 +622,9 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
       p_scb, (p_scb->reg_services & ~bta_ag_svc_mask[p_scb->conn_service]));
 
   size_t version_value_size = sizeof(hfp_version);
-  bool get_version =
-      btif_config_get_bin(p_scb->peer_addr.ToString(), HFP_VERSION_CONFIG_KEY,
-                          (uint8_t*)&hfp_version, &version_value_size);
+  bool get_version = btif_config_get_bin(
+      p_scb->peer_addr.ToString(), BTIF_STORAGE_KEY_HFP_VERSION,
+      (uint8_t*)&hfp_version, &version_value_size);
 
   if (p_scb->conn_service == BTA_AG_HFP && get_version) {
     DEVICE_IOT_CONFIG_ADDR_SET_HEX_IF_GREATER(p_scb->peer_addr,
