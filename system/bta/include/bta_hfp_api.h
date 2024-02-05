@@ -30,9 +30,6 @@
 #define HSP_VERSION_1_0 0x0100
 #define HSP_VERSION_1_2 0x0102
 
-#define HFP_VERSION_CONFIG_KEY "HfpVersion"
-#define HFP_SDP_FEATURES_CONFIG_KEY "HfpSdpFeatures"
-
 int get_default_hfp_version();
 
 #endif /* BTA_HFP_API_H */

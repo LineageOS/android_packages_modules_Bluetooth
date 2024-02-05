@@ -34,6 +34,7 @@
 #include "common/init_flags.h"
 #include "device/include/interop.h"
 #include "device/include/interop_config.h"
+#include "gd/storage/config_keys.h"
 #include "internal_include/bt_target.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
@@ -390,7 +391,7 @@ bool bta_ag_sdp_find_attr(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
       if (peer_version != p_scb->peer_version) {
         p_scb->peer_version = peer_version;
         if (btif_config_set_bin(
-                p_scb->peer_addr.ToString(), HFP_VERSION_CONFIG_KEY,
+                p_scb->peer_addr.ToString(), BTIF_STORAGE_KEY_HFP_VERSION,
                 (const uint8_t*)&peer_version, sizeof(peer_version))) {
         } else {
           LOG_WARN("%s: Failed to store peer HFP version for %s", __func__,
@@ -419,9 +420,10 @@ bool bta_ag_sdp_find_attr(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
         }
         if (sdp_features != p_scb->peer_sdp_features) {
           p_scb->peer_sdp_features = sdp_features;
-          if (btif_config_set_bin(
-                  p_scb->peer_addr.ToString(), HFP_SDP_FEATURES_CONFIG_KEY,
-                  (const uint8_t*)&sdp_features, sizeof(sdp_features))) {
+          if (btif_config_set_bin(p_scb->peer_addr.ToString(),
+                                  BTIF_STORAGE_KEY_HFP_SDP_FEATURES,
+                                  (const uint8_t*)&sdp_features,
+                                  sizeof(sdp_features))) {
           } else {
             LOG_WARN("%s: Failed to store peer HFP SDP Features for %s",
                      __func__, ADDRESS_TO_LOGGABLE_CSTR(p_scb->peer_addr));

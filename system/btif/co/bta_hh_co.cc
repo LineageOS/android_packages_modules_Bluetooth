@@ -33,6 +33,7 @@
 #include "bta_hh_api.h"
 #include "btif_hh.h"
 #include "device/include/controller.h"
+#include "gd/storage/config_keys.h"
 #include "include/check.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
@@ -759,17 +760,20 @@ void bta_hh_le_co_rpt_info(const RawAddress& remote_bda,
   std::string addrstr = remote_bda.ToString();
   const char* bdstr = addrstr.c_str();
 
-  size_t len = btif_config_get_bin_length(bdstr, "HidReport");
+  size_t len = btif_config_get_bin_length(bdstr, BTIF_STORAGE_KEY_HID_REPORT);
   if (len >= sizeof(tBTA_HH_RPT_CACHE_ENTRY) && len <= sizeof(sReportCache)) {
-    btif_config_get_bin(bdstr, "HidReport", (uint8_t*)sReportCache, &len);
+    btif_config_get_bin(bdstr, BTIF_STORAGE_KEY_HID_REPORT,
+                        (uint8_t*)sReportCache, &len);
     idx = len / sizeof(tBTA_HH_RPT_CACHE_ENTRY);
   }
 
   if (idx < BTA_HH_NV_LOAD_MAX) {
     memcpy(&sReportCache[idx++], p_entry, sizeof(tBTA_HH_RPT_CACHE_ENTRY));
-    btif_config_set_bin(bdstr, "HidReport", (const uint8_t*)sReportCache,
+    btif_config_set_bin(bdstr, BTIF_STORAGE_KEY_HID_REPORT,
+                        (const uint8_t*)sReportCache,
                         idx * sizeof(tBTA_HH_RPT_CACHE_ENTRY));
-    btif_config_set_int(bdstr, "HidReportVersion", BTA_HH_CACHE_REPORT_VERSION);
+    btif_config_set_int(bdstr, BTIF_STORAGE_KEY_HID_REPORT_VERSION,
+                        BTA_HH_CACHE_REPORT_VERSION);
     LOG_VERBOSE("%s() - Saving report; dev=%s, idx=%d", __func__,
                 ADDRESS_TO_LOGGABLE_CSTR(remote_bda), idx);
   }
@@ -797,14 +801,16 @@ tBTA_HH_RPT_CACHE_ENTRY* bta_hh_le_co_cache_load(const RawAddress& remote_bda,
   std::string addrstr = remote_bda.ToString();
   const char* bdstr = addrstr.c_str();
 
-  size_t len = btif_config_get_bin_length(bdstr, "HidReport");
+  size_t len = btif_config_get_bin_length(bdstr, BTIF_STORAGE_KEY_HID_REPORT);
   if (!p_num_rpt || len < sizeof(tBTA_HH_RPT_CACHE_ENTRY)) return NULL;
 
   if (len > sizeof(sReportCache)) len = sizeof(sReportCache);
-  btif_config_get_bin(bdstr, "HidReport", (uint8_t*)sReportCache, &len);
+  btif_config_get_bin(bdstr, BTIF_STORAGE_KEY_HID_REPORT,
+                      (uint8_t*)sReportCache, &len);
 
   int cache_version = -1;
-  btif_config_get_int(bdstr, "HidReportVersion", &cache_version);
+  btif_config_get_int(bdstr, BTIF_STORAGE_KEY_HID_REPORT_VERSION,
+                      &cache_version);
 
   if (cache_version != BTA_HH_CACHE_REPORT_VERSION) {
     bta_hh_le_co_reset_rpt_cache(remote_bda, app_id);
@@ -835,8 +841,8 @@ void bta_hh_le_co_reset_rpt_cache(const RawAddress& remote_bda,
   std::string addrstr = remote_bda.ToString();
   const char* bdstr = addrstr.c_str();
 
-  btif_config_remove(bdstr, "HidReport");
-  btif_config_remove(bdstr, "HidReportVersion");
+  btif_config_remove(bdstr, BTIF_STORAGE_KEY_HID_REPORT);
+  btif_config_remove(bdstr, BTIF_STORAGE_KEY_HID_REPORT_VERSION);
   LOG_VERBOSE("%s() - Reset cache for bda %s", __func__,
               ADDRESS_TO_LOGGABLE_CSTR(remote_bda));
 }

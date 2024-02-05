@@ -37,6 +37,7 @@
 #include "btif/include/btif_av.h"
 #include "btif/include/btif_av_co.h"
 #include "btif/include/btif_config.h"
+#include "gd/storage/config_keys.h"
 #include "internal_include/bt_target.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
@@ -361,7 +362,8 @@ void tBTA_AV_SCB::OnConnected(const RawAddress& peer_address) {
   // Read and restore the AVDTP version from local storage
   uint16_t avdtp_version = 0;
   size_t version_value_size = sizeof(avdtp_version);
-  if (!btif_config_get_bin(peer_address_.ToString(), AVDTP_VERSION_CONFIG_KEY,
+  if (!btif_config_get_bin(peer_address_.ToString(),
+                           BTIF_STORAGE_KEY_AVDTP_VERSION,
                            (uint8_t*)&avdtp_version, &version_value_size)) {
     LOG_WARN("%s: Failed to read cached peer AVDTP version for %s", __func__,
              ADDRESS_TO_LOGGABLE_CSTR(peer_address_));

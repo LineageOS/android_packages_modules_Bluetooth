@@ -39,8 +39,6 @@
     (p_prop)->val = (p_v);                            \
   } while (0)
 
-#define BTIF_STORAGE_PATH_REMOTE_SERVICE "Service"
-
 #define STORAGE_BDADDR_STRING_SZ (18) /* 00:11:22:33:44:55 */
 #define STORAGE_UUID_STRING_SIZE \
   (36 + 1) /* 00001200-0000-1000-8000-00805f9b34fb; */
