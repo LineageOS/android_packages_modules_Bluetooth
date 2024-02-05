@@ -20,6 +20,7 @@ use bt_topshim::profiles::sdp::{
 use bt_topshim::profiles::socket::SocketType;
 use bt_topshim::profiles::ProfileConnectionState;
 
+use btstack::battery_manager::{Battery, BatterySet, IBatteryManager, IBatteryManagerCallback};
 use btstack::bluetooth::{
     BluetoothDevice, IBluetooth, IBluetoothCallback, IBluetoothConnectionCallback,
     IBluetoothQALegacy,
@@ -2733,4 +2734,81 @@ impl IBluetoothMediaCallback for IBluetoothMediaCallbackDBus {
         pkt_status_in_binary: String,
     ) {
     }
+}
+
+pub(crate) struct BatteryManagerDBusRPC {
+    client_proxy: ClientDBusProxy,
+}
+
+pub(crate) struct BatteryManagerDBus {
+    client_proxy: ClientDBusProxy,
+    pub rpc: BatteryManagerDBusRPC,
+}
+
+impl BatteryManagerDBus {
+    fn make_client_proxy(conn: Arc<SyncConnection>, index: i32) -> ClientDBusProxy {
+        ClientDBusProxy::new(
+            conn.clone(),
+            String::from("org.chromium.bluetooth"),
+            make_object_path(index, "battery_manager"),
+            String::from("org.chromium.bluetooth.BatteryManager"),
+        )
+    }
+
+    pub(crate) fn new(conn: Arc<SyncConnection>, index: i32) -> BatteryManagerDBus {
+        BatteryManagerDBus {
+            client_proxy: Self::make_client_proxy(conn.clone(), index),
+            rpc: BatteryManagerDBusRPC {
+                client_proxy: Self::make_client_proxy(conn.clone(), index),
+            },
+        }
+    }
+}
+
+#[generate_dbus_interface_client(BatteryManagerDBusRPC)]
+impl IBatteryManager for BatteryManagerDBus {
+    #[dbus_method("RegisterBatteryCallback")]
+    fn register_battery_callback(
+        &mut self,
+        battery_manager_callback: Box<dyn IBatteryManagerCallback + Send>,
+    ) -> u32 {
+        dbus_generated!()
+    }
+
+    #[dbus_method("UnregisterBatteryCallback")]
+    fn unregister_battery_callback(&mut self, callback_id: u32) -> bool {
+        dbus_generated!()
+    }
+
+    #[dbus_method("GetBatteryInformation")]
+    fn get_battery_information(&self, remote_address: String) -> Option<BatterySet> {
+        dbus_generated!()
+    }
+}
+
+#[dbus_propmap(BatterySet)]
+pub struct BatterySetDBus {
+    address: String,
+    source_uuid: String,
+    source_info: String,
+    batteries: Vec<Battery>,
+}
+
+#[dbus_propmap(Battery)]
+pub struct BatteryDBus {
+    percentage: u32,
+    variant: String,
+}
+
+struct IBatteryManagerCallbackDBus {}
+
+impl RPCProxy for IBatteryManagerCallbackDBus {}
+
+#[generate_dbus_exporter(
+    export_battery_manager_callback_dbus_intf,
+    "org.chromium.bluetooth.BatteryManagerCallback"
+)]
+impl IBatteryManagerCallback for IBatteryManagerCallbackDBus {
+    #[dbus_method("OnBatteryInfoUpdated")]
+    fn on_battery_info_updated(&mut self, remote_address: String, battery_set: BatterySet) {}
 }
