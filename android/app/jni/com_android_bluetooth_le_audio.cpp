@@ -36,6 +36,7 @@ using bluetooth::le_audio::btle_audio_sample_rate_index_t;
 using bluetooth::le_audio::ConnectionState;
 using bluetooth::le_audio::GroupNodeStatus;
 using bluetooth::le_audio::GroupStatus;
+using bluetooth::le_audio::GroupStreamStatus;
 using bluetooth::le_audio::LeAudioBroadcasterCallbacks;
 using bluetooth::le_audio::LeAudioBroadcasterInterface;
 using bluetooth::le_audio::LeAudioClientCallbacks;
@@ -55,6 +56,7 @@ static jmethodID method_onAudioGroupSelectableCodecConf;
 static jmethodID method_onHealthBasedRecommendationAction;
 static jmethodID method_onHealthBasedGroupRecommendationAction;
 static jmethodID method_onUnicastMonitorModeStatus;
+static jmethodID method_onGroupStreamStatus;
 
 static struct {
   jclass clazz;
@@ -359,6 +361,18 @@ class LeAudioClientCallbacksImpl : public LeAudioClientCallbacks {
     sCallbackEnv->CallVoidMethod(mCallbacksObj,
                                  method_onUnicastMonitorModeStatus,
                                  (jint)direction, (jint)status);
+  }
+
+  void OnGroupStreamStatus(int group_id,
+                           GroupStreamStatus group_stream_status) override {
+    LOG(INFO) << __func__;
+
+    std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
+    CallbackEnv sCallbackEnv(__func__);
+    if (!sCallbackEnv.valid() || mCallbacksObj == nullptr) return;
+
+    sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onGroupStreamStatus,
+                                 (jint)group_id, (jint)group_stream_status);
   }
 };
 
@@ -1609,6 +1623,7 @@ int register_com_android_bluetooth_le_audio(JNIEnv* env) {
        &method_onHealthBasedGroupRecommendationAction},
       {"onUnicastMonitorModeStatus", "(II)V",
        &method_onUnicastMonitorModeStatus},
+      {"onGroupStreamStatus", "(II)V", &method_onGroupStreamStatus},
   };
   GET_JAVA_METHODS(env, "com/android/bluetooth/le_audio/LeAudioNativeInterface",
                    javaMethods);

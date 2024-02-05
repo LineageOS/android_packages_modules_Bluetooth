@@ -333,6 +333,10 @@ class LeAudioClientCallbacks {
 
   virtual void OnUnicastMonitorModeStatus(uint8_t direction,
                                           UnicastMonitorModeStatus status) = 0;
+
+  /* Callback with group stream status update */
+  virtual void OnGroupStreamStatus(int group_id,
+                                   GroupStreamStatus group_stream_status) = 0;
 };
 
 class LeAudioClientInterface {
