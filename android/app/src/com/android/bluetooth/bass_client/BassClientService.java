@@ -717,6 +717,12 @@ public class BassClientService extends ProfileService {
         if (mGroupManagedSources.containsKey(sink)
                 && mGroupManagedSources.get(sink).contains(sourceId)) {
             BassClientStateMachine stateMachine = getOrCreateStateMachine(sink);
+            if (stateMachine == null) {
+                Log.e(TAG, "Can't get state machine for device: " + sink);
+                return new Pair<BluetoothLeBroadcastMetadata, Map<BluetoothDevice, Integer>>(
+                        null, null);
+            }
+
             BluetoothLeBroadcastMetadata metadata =
                     stateMachine.getCurrentBroadcastMetadata(sourceId);
             if (metadata != null) {
@@ -867,8 +873,15 @@ public class BassClientService extends ProfileService {
             stateMachine =
                     BassObjectsFactory.getInstance()
                             .makeStateMachine(
-                                    device, this, mStateMachinesThread.getLooper(), mFeatureFlags);
-            mStateMachines.put(device, stateMachine);
+                                    device,
+                                    this,
+                                    mAdapterService,
+                                    mStateMachinesThread.getLooper(),
+                                    mFeatureFlags);
+            if (stateMachine != null) {
+                mStateMachines.put(device, stateMachine);
+            }
+
             return stateMachine;
         }
     }
@@ -1051,6 +1064,11 @@ public class BassClientService extends ProfileService {
         }
         synchronized (mStateMachines) {
             BassClientStateMachine stateMachine = getOrCreateStateMachine(device);
+            if (stateMachine == null) {
+                Log.e(TAG, "Can't get state machine for device: " + device);
+                return false;
+            }
+
             stateMachine.sendMessage(BassClientStateMachine.CONNECT);
         }
         return true;
@@ -1072,6 +1090,11 @@ public class BassClientService extends ProfileService {
         }
         synchronized (mStateMachines) {
             BassClientStateMachine stateMachine = getOrCreateStateMachine(device);
+            if (stateMachine == null) {
+                Log.e(TAG, "Can't get state machine for device: " + device);
+                return false;
+            }
+
             stateMachine.sendMessage(BassClientStateMachine.DISCONNECT);
         }
         return true;
@@ -1394,6 +1417,10 @@ public class BassClientService extends ProfileService {
             // removing the 1st synced source before proceeding to add new
             synchronized (mStateMachines) {
                 BassClientStateMachine stateMachine = getOrCreateStateMachine(sink);
+                if (stateMachine == null) {
+                    Log.e(TAG, "Can't get state machine for device: " + sink);
+                    return;
+                }
                 Message message =
                         stateMachine.obtainMessage(BassClientStateMachine.REACHED_MAX_SOURCE_LIMIT);
                 message.arg1 = syncHandle;
@@ -1405,6 +1432,10 @@ public class BassClientService extends ProfileService {
             sEventLogger.logd(DBG, TAG, "Select Broadcast Source");
 
             BassClientStateMachine stateMachine = getOrCreateStateMachine(sink);
+            if (stateMachine == null) {
+                Log.e(TAG, "Can't get state machine for device: " + sink);
+                return;
+            }
             Message message = stateMachine.obtainMessage(
                     BassClientStateMachine.SELECT_BCAST_SOURCE);
             message.obj = result;
