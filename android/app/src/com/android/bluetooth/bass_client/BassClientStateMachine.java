@@ -1499,10 +1499,12 @@ public class BassClientStateMachine extends StateMachine {
         stream.write((metaData.getBroadcastId() & 0x0000000000FF0000) >>> 16);
 
         // PA_Sync
-        if (!mDefNoPAS) {
-            stream.write(0x01);
+        if (mDefNoPAS) {
+            // Synchronize to PA – PAST not available
+            stream.write(0x02);
         } else {
-            stream.write(0x00);
+            // Synchronize to PA – PAST available
+            stream.write(0x01);
         }
 
         // PA_Interval
