@@ -322,6 +322,27 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
     }
 
     @Override
+    @RequiresPermission(BLUETOOTH_PRIVILEGED)
+    public boolean isAutoOnSupported() {
+        BtPermissionUtils.enforcePrivileged(mContext);
+        return mBluetoothManagerService.isAutoOnSupported();
+    }
+
+    @Override
+    @RequiresPermission(BLUETOOTH_PRIVILEGED)
+    public boolean isAutoOnEnabled() {
+        BtPermissionUtils.enforcePrivileged(mContext);
+        return mBluetoothManagerService.isAutoOnEnabled();
+    }
+
+    @Override
+    @RequiresPermission(BLUETOOTH_PRIVILEGED)
+    public void setAutoOnEnabled(boolean status) {
+        BtPermissionUtils.enforcePrivileged(mContext);
+        mBluetoothManagerService.setAutoOnEnabled(status);
+    }
+
+    @Override
     @RequiresPermission(DUMP)
     public void dump(FileDescriptor fd, PrintWriter writer, String[] args) {
         if (mContext.checkCallingOrSelfPermission(DUMP) != PERMISSION_GRANTED) {
