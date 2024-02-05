@@ -45,6 +45,8 @@ public class NotificationHelperService extends Service {
     private static final String APM_BT_NOTIFICATION = "apm_bt_notification";
     // Keeps track of whether user enabling bt notification was shown
     private static final String APM_BT_ENABLED_NOTIFICATION = "apm_bt_enabled_notification";
+    // Keeps track of whether auto on enabling bt notification was shown
+    private static final String AUTO_ON_BT_ENABLED_NOTIFICATION = "auto_on_bt_enabled_notification";
 
     private static final String NOTIFICATION_TAG = "com.android.bluetooth";
     private static final String NOTIFICATION_CHANNEL = "notification_toggle_channel";
@@ -64,7 +66,11 @@ public class NotificationHelperService extends Service {
                             APM_BT_ENABLED_NOTIFICATION,
                             Pair.create(
                                     R.string.bluetooth_enabled_apm_title,
-                                    R.string.bluetooth_enabled_apm_message));
+                                    R.string.bluetooth_enabled_apm_message),
+                            AUTO_ON_BT_ENABLED_NOTIFICATION,
+                            Pair.create(
+                                    R.string.bluetooth_enabled_auto_on_title,
+                                    R.string.bluetooth_enabled_auto_on_message));
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -110,28 +116,32 @@ public class NotificationHelperService extends Service {
 
         String title = getString(notificationContent.first);
         String message = getString(notificationContent.second);
-        String helpLinkUrl = getString(R.string.config_apmLearnMoreLink);
 
-        notificationManager.notify(
-                NOTIFICATION_TAG,
-                SystemMessage.ID.NOTE_BT_APM_NOTIFICATION_VALUE,
+        Notification.Builder builder =
                 new Notification.Builder(this, NOTIFICATION_CHANNEL)
                         .setAutoCancel(true)
                         .setLocalOnly(true)
                         .setContentTitle(title)
                         .setContentText(message)
-                        .setContentIntent(
-                                PendingIntent.getActivity(
-                                        this,
-                                        PendingIntent.FLAG_UPDATE_CURRENT,
-                                        new Intent(Intent.ACTION_VIEW)
-                                                .setData(Uri.parse(helpLinkUrl))
-                                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                                        PendingIntent.FLAG_IMMUTABLE))
                         .setVisibility(Notification.VISIBILITY_PUBLIC)
                         .setStyle(new Notification.BigTextStyle().bigText(message))
-                        .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
-                        .build());
+                        .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth);
+
+        if (notificationReason != AUTO_ON_BT_ENABLED_NOTIFICATION) {
+            // Do not display airplane link when the notification is due to auto_on feature
+            String helpLinkUrl = getString(R.string.config_apmLearnMoreLink);
+            builder.setContentIntent(
+                    PendingIntent.getActivity(
+                            this,
+                            PendingIntent.FLAG_UPDATE_CURRENT,
+                            new Intent(Intent.ACTION_VIEW)
+                                    .setData(Uri.parse(helpLinkUrl))
+                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                            PendingIntent.FLAG_IMMUTABLE));
+        }
+
+        notificationManager.notify(
+                NOTIFICATION_TAG, SystemMessage.ID.NOTE_BT_APM_NOTIFICATION_VALUE, builder.build());
     }
 
     /** Return whether the notification has been shown */

@@ -1191,6 +1191,7 @@ class BluetoothManagerService {
 
     private Unit enableFromAutoOn() {
         Counter.logIncrement("bluetooth.value_auto_on_triggered");
+        sendToggleNotification("auto_on_bt_enabled_notification");
         enable("BluetoothSystemServer/AutoOn");
         return Unit.INSTANCE;
     }
