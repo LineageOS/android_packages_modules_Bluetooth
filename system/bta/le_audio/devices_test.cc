@@ -758,7 +758,7 @@ class LeAudioAseConfigurationTest : public Test {
 
           /* Make sure the strategy is the expected one */
           if (entry.direction == kLeAudioDirectionSink &&
-              group_->GetGroupStrategy(group_->Size()) != entry.strategy) {
+              group_->GetGroupSinkStrategy() != entry.strategy) {
             interesting_configuration = false;
           }
 

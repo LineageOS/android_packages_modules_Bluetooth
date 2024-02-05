@@ -895,7 +895,8 @@ uint8_t LeAudioDeviceGroup::CigConfiguration::GetFirstFreeCisId(
   return kInvalidCisId;
 }
 
-types::LeAudioConfigurationStrategy LeAudioDeviceGroup::GetGroupStrategy(
+types::LeAudioConfigurationStrategy
+LeAudioDeviceGroup::GetGroupSinkStrategyFromPacs(
     int expected_group_size) const {
   /* Simple strategy picker */
   LOG_DEBUG(" Group %d size %d", group_id_, expected_group_size);
@@ -912,6 +913,7 @@ types::LeAudioConfigurationStrategy LeAudioDeviceGroup::GetGroupStrategy(
   }
 
   auto device = GetFirstDevice();
+  /* Note: Currently, the audio channel counts LTV is only mandatory for LC3. */
   auto channel_count_bitmap =
       device->GetSupportedAudioChannelCounts(types::kLeAudioDirectionSink);
   LOG_DEBUG("Supported channel counts for group %d (device %s) is %d",
@@ -922,6 +924,31 @@ types::LeAudioConfigurationStrategy LeAudioDeviceGroup::GetGroupStrategy(
   }
 
   return types::LeAudioConfigurationStrategy::STEREO_ONE_CIS_PER_DEVICE;
+}
+
+types::LeAudioConfigurationStrategy LeAudioDeviceGroup::GetGroupSinkStrategy()
+    const {
+  /* Update the strategy if not set yet or was invalidated */
+  if (!strategy_) {
+    int expected_group_size = Size();
+    /* Choose the group configuration strategy based on PAC records */
+    strategy_ = GetGroupSinkStrategyFromPacs(expected_group_size);
+
+    LOG_INFO("Group strategy set to: %s", [](types::LeAudioConfigurationStrategy
+                                                 strategy) {
+      switch (strategy) {
+        case types::LeAudioConfigurationStrategy::MONO_ONE_CIS_PER_DEVICE:
+          return "MONO_ONE_CIS_PER_DEVICE";
+        case types::LeAudioConfigurationStrategy::STEREO_TWO_CISES_PER_DEVICE:
+          return "STEREO_TWO_CISES_PER_DEVICE";
+        case types::LeAudioConfigurationStrategy::STEREO_ONE_CIS_PER_DEVICE:
+          return "STEREO_ONE_CIS_PER_DEVICE";
+        default:
+          return "RFU";
+      }
+    }(*strategy_));
+  }
+  return *strategy_;
 }
 
 int LeAudioDeviceGroup::GetAseCount(uint8_t direction) const {
@@ -958,7 +985,7 @@ void LeAudioDeviceGroup::CigConfiguration::GenerateCisIds(
   int group_size = csis_group_size > 0 ? csis_group_size : 1;
 
   set_configurations::get_cis_count(
-      context_type, group_size, group_->GetGroupStrategy(group_size),
+      context_type, group_size, group_->GetGroupSinkStrategy(),
       group_->GetAseCount(types::kLeAudioDirectionSink),
       group_->GetAseCount(types::kLeAudioDirectionSource), cis_count_bidir,
       cis_count_unidir_sink, cis_count_unidir_source);
@@ -1845,8 +1872,7 @@ LeAudioDeviceGroup::FindFirstSupportedConfiguration(
   }
 
   /* Filter out device set for each end every scenario */
-
-  auto required_snk_strategy = GetGroupStrategy(Size());
+  auto required_snk_strategy = GetGroupSinkStrategy();
   for (const auto& conf : *confs) {
     if (IsAudioSetConfigurationSupported(conf, context_type,
                                          required_snk_strategy)) {
