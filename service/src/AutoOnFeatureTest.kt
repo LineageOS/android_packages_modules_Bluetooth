@@ -137,7 +137,7 @@ class AutoOnFeatureTest {
 
     @Test
     fun notifyBluetoothOn_whenNoTimer_noCrash() {
-        notifyBluetoothOn()
+        notifyBluetoothOn(resolver)
 
         assertThat(timer).isNull()
     }
@@ -145,10 +145,19 @@ class AutoOnFeatureTest {
     @Test
     fun notifyBluetoothOn_whenTimer_isNotScheduled() {
         setupTimer()
-        notifyBluetoothOn()
+        notifyBluetoothOn(resolver)
 
         shadowOf(looper).runToEndOfTasks()
         expect.that(callback_count).isEqualTo(0)
         expect.that(timer).isNull()
+    }
+
+    @Test
+    fun notifyBluetoothOn_whenItWasNeverUsed_enableSettings() {
+        restoreSettings()
+
+        notifyBluetoothOn(resolver)
+
+        assertThat(Settings.Secure.getInt(resolver, USER_SETTINGS_KEY, 42)).isEqualTo(1)
     }
 }
