@@ -645,6 +645,7 @@ cc_fuzz {
         "l2cap/*.cc",
     ],
     static_libs: [
+        "bluetooth_flags_c_lib",
         "libbluetooth-types",
         "libbluetooth_hci_pdl",
         "libbluetooth_l2cap_pdl",
@@ -654,6 +655,9 @@ cc_fuzz {
         "libbt_shim_bridge",
         "libbt_shim_ffi",
         "libgmock",
+    ],
+    shared_libs: [
+        "server_configurable_flags",
     ],
     target: {
         android: {
