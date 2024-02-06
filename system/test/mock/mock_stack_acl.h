@@ -864,6 +864,14 @@ struct btm_acl_removed {
   void operator()(uint16_t handle) { body(handle); };
 };
 extern struct btm_acl_removed btm_acl_removed;
+// Name: btm_acl_flush
+// Params: uint16_t handle
+// Returns: void
+struct btm_acl_flush {
+  std::function<void(uint16_t handle)> body{[](uint16_t /* handle */) { ; }};
+  void operator()(uint16_t handle) { body(handle); };
+};
+extern struct btm_acl_flush btm_acl_flush;
 // Name: btm_acl_role_changed
 // Params: tHCI_STATUS hci_status, const RawAddress& bd_addr, tHCI_ROLE
 // new_role Returns: void

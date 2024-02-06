@@ -53,6 +53,9 @@ void bluetooth::shim::ACL_WriteData(uint16_t /* handle */,
                                     BT_HDR* /* p_buf */) {
   inc_func_call_count(__func__);
 }
+void bluetooth::shim::ACL_Flush(uint16_t /* handle */) {
+  inc_func_call_count(__func__);
+}
 void bluetooth::shim::ACL_Disconnect(uint16_t /* handle */,
                                      bool /* is_classic */,
                                      tHCI_STATUS /* reason */,

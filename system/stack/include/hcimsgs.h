@@ -201,8 +201,6 @@ void btsnd_hcic_rem_oob_neg_reply(const RawAddress& bd_addr);
 /* Read Default Erroneous Data Reporting */
 void btsnd_hcic_read_default_erroneous_data_rpt(void);
 
-void btsnd_hcic_enhanced_flush(uint16_t handle, uint8_t packet_type);
-
 /**** end of Simple Pairing Commands ****/
 
 extern void btsnd_hcic_set_event_filter(uint8_t filt_type,

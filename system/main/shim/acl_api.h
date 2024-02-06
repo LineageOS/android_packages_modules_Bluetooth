@@ -36,6 +36,7 @@ void ACL_IgnoreLeConnectionFrom(const tBLE_BD_ADDR& legacy_address_with_type);
 void ACL_Disconnect(uint16_t handle, bool is_classic, tHCI_STATUS reason,
                     std::string comment);
 void ACL_WriteData(uint16_t handle, BT_HDR* p_buf);
+void ACL_Flush(uint16_t handle);
 void ACL_ConfigureLePrivacy(bool is_le_privacy_enabled);
 void ACL_Shutdown();
 void ACL_IgnoreAllLeConnections();

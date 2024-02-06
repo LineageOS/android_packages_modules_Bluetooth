@@ -72,6 +72,10 @@ void bluetooth::shim::ACL_WriteData(uint16_t handle, BT_HDR* p_buf) {
   osi_free(p_buf);
 }
 
+void bluetooth::shim::ACL_Flush(uint16_t handle) {
+  Stack::GetInstance()->GetAcl()->Flush(handle);
+}
+
 void bluetooth::shim::ACL_ConfigureLePrivacy(bool is_le_privacy_enabled) {
   hci::LeAddressManager::AddressPolicy address_policy =
       is_le_privacy_enabled
