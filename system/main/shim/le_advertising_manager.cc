@@ -93,7 +93,7 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface,
   }
 
   void SetParameters(uint8_t advertiser_id, AdvertiseParameters params,
-                     ParametersCallback cb) override {
+                     ParametersCallback /* cb */) override {
     LOG(INFO) << __func__ << " in shim layer";
     bluetooth::hci::AdvertisingConfig config{};
     parse_parameter(config, params);
@@ -101,7 +101,7 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface,
   }
 
   void SetData(int advertiser_id, bool set_scan_rsp, vector<uint8_t> data,
-               StatusCallback cb) override {
+               StatusCallback /* cb */) override {
     LOG(INFO) << __func__ << " in shim layer";
     std::vector<GapData> advertising_data = {};
     parse_gap_data(data, advertising_data);
@@ -109,9 +109,9 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface,
                                                advertising_data);
   }
 
-  void Enable(uint8_t advertiser_id, bool enable, StatusCallback cb,
+  void Enable(uint8_t advertiser_id, bool enable, StatusCallback /* cb */,
               uint16_t duration, uint8_t maxExtAdvEvents,
-              StatusCallback timeout_cb) override {
+              StatusCallback /* timeout_cb */) override {
     LOG(INFO) << __func__ << " in shim layer";
     bluetooth::shim::GetAdvertising()->EnableAdvertiser(
         advertiser_id, enable, duration, maxExtAdvEvents);
@@ -137,14 +137,14 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface,
   }
 
   void StartAdvertisingSet(uint8_t client_id, int reg_id,
-                           IdTxPowerStatusCallback register_cb,
+                           IdTxPowerStatusCallback /* register_cb */,
                            AdvertiseParameters params,
                            std::vector<uint8_t> advertise_data,
                            std::vector<uint8_t> scan_response_data,
                            PeriodicAdvertisingParameters periodic_params,
                            std::vector<uint8_t> periodic_data,
                            uint16_t duration, uint8_t maxExtAdvEvents,
-                           IdStatusCallback timeout_cb) {
+                           IdStatusCallback /* timeout_cb */) {
     LOG(INFO) << __func__ << " in shim layer";
 
     bluetooth::hci::AdvertisingConfig config{};
@@ -175,7 +175,7 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface,
 
   void SetPeriodicAdvertisingParameters(
       int advertiser_id, PeriodicAdvertisingParameters periodic_params,
-      StatusCallback cb) override {
+      StatusCallback /* cb */) override {
     LOG(INFO) << __func__ << " in shim layer";
     bluetooth::hci::PeriodicAdvertisingParameters parameters;
     parameters.max_interval = periodic_params.max_interval;
@@ -186,7 +186,7 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface,
   }
 
   void SetPeriodicAdvertisingData(int advertiser_id, std::vector<uint8_t> data,
-                                  StatusCallback cb) override {
+                                  StatusCallback /* cb */) override {
     LOG(INFO) << __func__ << " in shim layer";
     std::vector<GapData> advertising_data = {};
     parse_gap_data(data, advertising_data);
@@ -196,7 +196,7 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface,
 
   void SetPeriodicAdvertisingEnable(int advertiser_id, bool enable,
                                     bool include_adi,
-                                    StatusCallback cb) override {
+                                    StatusCallback /* cb */) override {
     LOG(INFO) << __func__ << " in shim layer";
     bluetooth::shim::GetAdvertising()->EnablePeriodicAdvertising(
         advertiser_id, enable, include_adi);
@@ -211,11 +211,11 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface,
     native_adv_callbacks_map_[client_id] = callbacks;
   }
 
-  void on_scan(Address address, AddressType address_type) {
+  void on_scan(Address /* address */, AddressType /* address_type */) {
     LOG(INFO) << __func__ << " in shim layer";
   }
 
-  void on_set_terminated(ErrorCode error_code, uint8_t, uint8_t) {
+  void on_set_terminated(ErrorCode /* error_code */, uint8_t, uint8_t) {
     LOG(INFO) << __func__ << " in shim layer";
   }
 

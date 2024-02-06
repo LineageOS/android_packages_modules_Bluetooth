@@ -177,7 +177,7 @@ void bluetooth::shim::ACL_LeSubrateRequest(
 
 void bluetooth::shim::ACL_RemoteNameRequest(const RawAddress& addr,
                                             uint8_t page_scan_rep_mode,
-                                            uint8_t page_scan_mode,
+                                            uint8_t /* page_scan_mode */,
                                             uint16_t clock_offset) {
   bluetooth::shim::GetRemoteNameRequest()->StartRemoteNameRequest(
       ToGdAddress(addr),
