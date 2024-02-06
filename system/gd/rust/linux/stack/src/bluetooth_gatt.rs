@@ -1163,7 +1163,7 @@ impl Default for GattWriteType {
     }
 }
 
-#[derive(Debug, FromPrimitive, ToPrimitive, Clone)]
+#[derive(Debug, FromPrimitive, ToPrimitive, Clone, PartialEq)]
 #[repr(u32)]
 /// Scan type configuration.
 pub enum ScanType {
@@ -1189,7 +1189,7 @@ pub struct ScanSettings {
 }
 
 impl ScanSettings {
-    fn extract_scan_parameters(self) -> Option<(u8, u16, u16)> {
+    fn extract_scan_parameters(&self) -> Option<(u8, u16, u16)> {
         let scan_type = match self.scan_type {
             ScanType::Passive => 0x00,
             ScanType::Active => 0x01,
@@ -1350,34 +1350,52 @@ impl GattAsyncIntf {
             .await
     }
 
-    /// Updates the topshim's scan state depending on the states of registered scanners. Scan is
-    /// enabled if there is at least 1 active registered scanner.
+    /// Updates the scan state depending on the states of registered scanners:
+    /// 1. Scan is started if there is at least 1 enabled scanner.
+    /// 2. Always toggle the scan off and on so that we reset the scan parameters based on whether
+    ///    we have enabled scanners using hardware filtering.
+    ///    TODO(b/266752123): We can do more bookkeeping to optimize when we really need to
+    ///    toggle. Also improve toggling API into 1 operation that guarantees correct ordering.
+    /// 3. If there is an enabled ScanType::Active scanner, prefer its scan settings. Otherwise,
+    ///    adopt the settings from any of the enabled scanners. We shouldn't just use the settings
+    ///    from |scanner_id| because it may refer to a disabled scan.
     ///
     /// Note: this does not need to be async, but declared as async for consistency in this struct.
     /// May be converted into real async in the future if btif supports it.
-    async fn update_scan(&mut self, scanner_id: u8, scan_settings: Option<ScanSettings>) {
-        if self.scanners.lock().unwrap().values().find(|scanner| scanner.is_enabled).is_some() {
-            // Toggle the scan off and on so that we reset the scan parameters based on whether
-            // we have active scanners using hardware filtering.
-            // TODO(b/266752123): We can do more bookkeeping to optimize when we really need to
-            // toggle. Also improve toggling API into 1 operation that guarantees correct ordering.
-            self.gatt.as_ref().unwrap().lock().unwrap().scanner.stop_scan();
-            if let Some(settings) = scan_settings {
-                if let Some((scan_type, scan_interval, scan_window)) =
-                    settings.extract_scan_parameters()
-                {
-                    self.gatt.as_ref().unwrap().lock().unwrap().scanner.set_scan_parameters(
-                        scanner_id,
-                        scan_type,
-                        scan_interval,
-                        scan_window,
-                    );
+    async fn update_scan(&mut self, scanner_id: u8) {
+        let mut has_enabled_scan = false;
+        let mut enabled_scan_param = None;
+        let mut enabled_active_scan_param = None;
+        for scanner in self.scanners.lock().unwrap().values() {
+            if !scanner.is_enabled {
+                continue;
+            }
+            has_enabled_scan = true;
+            if let Some(ss) = &scanner.scan_settings {
+                enabled_scan_param = ss.extract_scan_parameters();
+                if ss.scan_type == ScanType::Active {
+                    enabled_active_scan_param = ss.extract_scan_parameters();
+                    break;
                 }
             }
-            self.gatt.as_ref().unwrap().lock().unwrap().scanner.start_scan();
-        } else {
-            self.gatt.as_ref().unwrap().lock().unwrap().scanner.stop_scan();
         }
+
+        self.gatt.as_ref().unwrap().lock().unwrap().scanner.stop_scan();
+        if !has_enabled_scan {
+            return;
+        }
+
+        if let Some((scan_type, scan_interval, scan_window)) =
+            enabled_active_scan_param.or(enabled_scan_param)
+        {
+            self.gatt.as_ref().unwrap().lock().unwrap().scanner.set_scan_parameters(
+                scanner_id,
+                scan_type,
+                scan_interval,
+                scan_window,
+            );
+        }
+        self.gatt.as_ref().unwrap().lock().unwrap().scanner.start_scan();
     }
 }
 
@@ -1751,10 +1769,7 @@ impl BluetoothGatt {
                 }
             }
 
-            let scan_settings = Self::find_scanner_by_id(&mut scanners.lock().unwrap(), scanner_id)
-                .map_or(None, |s| s.scan_settings.clone());
-
-            gatt_async.update_scan(scanner_id, scan_settings).await;
+            gatt_async.update_scan(scanner_id).await;
         });
 
         BtStatus::Success
@@ -2119,10 +2134,7 @@ impl IBluetoothGatt for BluetoothGatt {
                 }
             }
 
-            let scan_settings = Self::find_scanner_by_id(&mut scanners.lock().unwrap(), scanner_id)
-                .map_or(None, |s| s.scan_settings.clone());
-
-            gatt_async.update_scan(scanner_id, scan_settings).await;
+            gatt_async.update_scan(scanner_id).await;
         });
 
         BtStatus::Success
