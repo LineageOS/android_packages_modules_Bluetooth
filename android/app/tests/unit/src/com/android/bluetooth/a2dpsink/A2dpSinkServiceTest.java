@@ -295,6 +295,26 @@ public class A2dpSinkServiceTest {
         assertThat(config).isEqualTo(expected);
     }
 
+    /** Make sure we ignore audio configuration changes for disconnected/unknown devices */
+    @Test
+    public void testOnAudioConfigChanged_withNullDevice_eventDropped() {
+        StackEvent audioConfigChanged =
+                StackEvent.audioConfigChanged(null, TEST_SAMPLE_RATE, TEST_CHANNEL_COUNT);
+        mService.messageFromNative(audioConfigChanged);
+        assertThat(mService.getAudioConfig(null)).isNull();
+    }
+
+    /** Make sure we ignore audio configuration changes for disconnected/unknown devices */
+    @Test
+    public void testOnAudioConfigChanged_withUnknownDevice_eventDropped() {
+        assertThat(mService.getConnectionState(mDevice1))
+                .isEqualTo(BluetoothProfile.STATE_DISCONNECTED);
+        StackEvent audioConfigChanged =
+                StackEvent.audioConfigChanged(mDevice1, TEST_SAMPLE_RATE, TEST_CHANNEL_COUNT);
+        mService.messageFromNative(audioConfigChanged);
+        assertThat(mService.getAudioConfig(mDevice1)).isNull();
+    }
+
     /**
      * Getting an audio config for a device that hasn't received one yet should return null
      */
