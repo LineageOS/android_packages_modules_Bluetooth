@@ -23,8 +23,6 @@
 // Mock include file to share data between tests and mock
 #include "test/mock/mock_btif_hf.h"
 
-#include <cstdint>
-
 #include "test/common/mock_functions.h"
 
 // Original usings

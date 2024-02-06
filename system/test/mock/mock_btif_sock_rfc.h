@@ -50,7 +50,7 @@ namespace btif_sock_rfc {
 struct bta_co_rfc_data_incoming {
   static int return_value;
   std::function<int(uint32_t id, BT_HDR* p_buf)> body{
-      [](uint32_t id, BT_HDR* p_buf) { return return_value; }};
+      [](uint32_t /* id */, BT_HDR* /* p_buf */) { return return_value; }};
   int operator()(uint32_t id, BT_HDR* p_buf) { return body(id, p_buf); };
 };
 extern struct bta_co_rfc_data_incoming bta_co_rfc_data_incoming;
@@ -61,7 +61,9 @@ extern struct bta_co_rfc_data_incoming bta_co_rfc_data_incoming;
 struct bta_co_rfc_data_outgoing {
   static int return_value;
   std::function<int(uint32_t id, uint8_t* buf, uint16_t size)> body{
-      [](uint32_t id, uint8_t* buf, uint16_t size) { return return_value; }};
+      [](uint32_t /* id */, uint8_t* /* buf */, uint16_t /* size */) {
+        return return_value;
+      }};
   int operator()(uint32_t id, uint8_t* buf, uint16_t size) {
     return body(id, buf, size);
   };
@@ -74,7 +76,7 @@ extern struct bta_co_rfc_data_outgoing bta_co_rfc_data_outgoing;
 struct bta_co_rfc_data_outgoing_size {
   static int return_value;
   std::function<int(uint32_t id, int* size)> body{
-      [](uint32_t id, int* size) { return return_value; }};
+      [](uint32_t /* id */, int* /* size */) { return return_value; }};
   int operator()(uint32_t id, int* size) { return body(id, size); };
 };
 extern struct bta_co_rfc_data_outgoing_size bta_co_rfc_data_outgoing_size;
@@ -95,8 +97,9 @@ struct btsock_rfc_connect {
   static bt_status_t return_value;
   std::function<bt_status_t(const RawAddress* bd_addr, const Uuid* service_uuid,
                             int channel, int* sock_fd, int flags, int app_uid)>
-      body{[](const RawAddress* bd_addr, const Uuid* service_uuid, int channel,
-              int* sock_fd, int flags, int app_uid) { return return_value; }};
+      body{[](const RawAddress* /* bd_addr */, const Uuid* /* service_uuid */,
+              int /* channel */, int* /* sock_fd */, int /* flags */,
+              int /* app_uid */) { return return_value; }};
   bt_status_t operator()(const RawAddress* bd_addr, const Uuid* service_uuid,
                          int channel, int* sock_fd, int flags, int app_uid) {
     return body(bd_addr, service_uuid, channel, sock_fd, flags, app_uid);
@@ -114,9 +117,10 @@ struct btsock_rfc_control_req {
                             uint8_t modem_signal, uint8_t break_signal,
                             uint8_t discard_buffers, uint8_t break_signal_seq,
                             bool fc)>
-      body{[](uint8_t dlci, const RawAddress& bd_addr, uint8_t modem_signal,
-              uint8_t break_signal, uint8_t discard_buffers,
-              uint8_t break_signal_seq, bool fc) { return return_value; }};
+      body{[](uint8_t /* dlci */, const RawAddress& /* bd_addr */,
+              uint8_t /* modem_signal */, uint8_t /* break_signal */,
+              uint8_t /* discard_buffers */, uint8_t /* break_signal_seq */,
+              bool /* fc */) { return return_value; }};
   bt_status_t operator()(uint8_t dlci, const RawAddress& bd_addr,
                          uint8_t modem_signal, uint8_t break_signal,
                          uint8_t discard_buffers, uint8_t break_signal_seq,
@@ -133,7 +137,7 @@ extern struct btsock_rfc_control_req btsock_rfc_control_req;
 struct btsock_rfc_disconnect {
   static bt_status_t return_value;
   std::function<bt_status_t(const RawAddress* bd_addr)> body{
-      [](const RawAddress* bd_addr) { return return_value; }};
+      [](const RawAddress* /* bd_addr */) { return return_value; }};
   bt_status_t operator()(const RawAddress* bd_addr) { return body(bd_addr); };
 };
 extern struct btsock_rfc_disconnect btsock_rfc_disconnect;
@@ -144,7 +148,9 @@ extern struct btsock_rfc_disconnect btsock_rfc_disconnect;
 struct btsock_rfc_init {
   static bt_status_t return_value;
   std::function<bt_status_t(int poll_thread_handle, uid_set_t* set)> body{
-      [](int poll_thread_handle, uid_set_t* set) { return return_value; }};
+      [](int /* poll_thread_handle */, uid_set_t* /* set */) {
+        return return_value;
+      }};
   bt_status_t operator()(int poll_thread_handle, uid_set_t* set) {
     return body(poll_thread_handle, set);
   };
@@ -158,8 +164,9 @@ struct btsock_rfc_listen {
   static bt_status_t return_value;
   std::function<bt_status_t(const char* service_name, const Uuid* service_uuid,
                             int channel, int* sock_fd, int flags, int app_uid)>
-      body{[](const char* service_name, const Uuid* service_uuid, int channel,
-              int* sock_fd, int flags, int app_uid) { return return_value; }};
+      body{[](const char* /* service_name */, const Uuid* /* service_uuid */,
+              int /* channel */, int* /* sock_fd */, int /* flags */,
+              int /* app_uid */) { return return_value; }};
   bt_status_t operator()(const char* service_name, const Uuid* service_uuid,
                          int channel, int* sock_fd, int flags, int app_uid) {
     return body(service_name, service_uuid, channel, sock_fd, flags, app_uid);
@@ -172,7 +179,7 @@ extern struct btsock_rfc_listen btsock_rfc_listen;
 // Return: void
 struct btsock_rfc_signaled {
   std::function<void(int fd, int flags, uint32_t id)> body{
-      [](int fd, int flags, uint32_t id) {}};
+      [](int /* fd */, int /* flags */, uint32_t /* id */) {}};
   void operator()(int fd, int flags, uint32_t id) { body(fd, flags, id); };
 };
 extern struct btsock_rfc_signaled btsock_rfc_signaled;
