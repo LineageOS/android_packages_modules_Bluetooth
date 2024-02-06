@@ -26,6 +26,16 @@ namespace bluetooth {
 namespace discovery {
 namespace device {
 
+struct service_uuid16_t {
+  uint16_t uuid;
+  std::vector<uint8_t> data;
+};
+
+struct service_uuid32_t {
+  uint32_t uuid;
+  std::vector<uint8_t> data;
+};
+
 class EirData : public DataParser {
  public:
   EirData(const std::vector<uint8_t>& data);
@@ -40,12 +50,13 @@ class EirData : public DataParser {
   bool GetUuids128(std::vector<hci::Uuid>&) const;
   bool GetUuidsIncomplete128(std::vector<hci::Uuid>&) const;
 
-  bool GetDeviceId(std::vector<uint8_t>&) const;
+  bool GetDeviceId(std::vector<std::vector<uint8_t>>&) const;
 
   bool GetManufacturerSpecificData(std::vector<std::vector<uint8_t>>&) const;
 
   bool GetSecurityManagerOobFlags(std::vector<std::vector<uint8_t>>&) const;
-  bool GetServiceUuuids32(std::vector<uint32_t>&) const;
+  bool GetServiceUuuids16(std::vector<service_uuid16_t>&) const;
+  bool GetServiceUuuids32(std::vector<service_uuid32_t>&) const;
   bool GetTxPowerLevel(std::vector<int8_t>&) const;
 };
 
