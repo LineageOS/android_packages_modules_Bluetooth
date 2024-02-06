@@ -327,14 +327,23 @@ class LeAudioDeviceGroup {
       int direction = types::kLeAudioDirectionBoth) const;
 
   DsaModes GetAllowedDsaModes() {
-    DsaModes dsa_modes = {};
+    if (!IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+      return {DsaMode::DISABLED};
+    }
+
+    DsaModes dsa_modes{};
+    std::set<DsaMode> dsa_mode_set{};
+
     for (auto leAudioDevice : leAudioDevices_) {
       if (leAudioDevice.expired()) continue;
 
-      dsa_modes.insert(dsa_modes.end(),
-                       leAudioDevice.lock()->GetDsaModes().begin(),
-                       leAudioDevice.lock()->GetDsaModes().end());
+      auto device_dsa_modes = leAudioDevice.lock()->GetDsaModes();
+
+      dsa_mode_set.insert(device_dsa_modes.begin(), device_dsa_modes.end());
     }
+
+    dsa_modes.assign(dsa_mode_set.begin(), dsa_mode_set.end());
+
     return dsa_modes;
   }
 
