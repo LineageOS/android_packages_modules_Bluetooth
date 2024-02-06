@@ -38,20 +38,20 @@ struct cmd_with_cb_data {
   base::Location posted_from;
 };
 
-void btu_hcif_process_event(uint8_t controller_id, BT_HDR* p_msg) {
+void btu_hcif_process_event(uint8_t /* controller_id */, BT_HDR* /* p_msg */) {
   inc_func_call_count(__func__);
 }
-void btu_hcif_send_cmd(uint8_t controller_id, const BT_HDR* p_buf) {
+void btu_hcif_send_cmd(uint8_t /* controller_id */, const BT_HDR* /* p_buf */) {
   inc_func_call_count(__func__);
 }
-void btu_hcif_send_cmd_with_cb(const base::Location& posted_from,
-                               uint16_t opcode, uint8_t* params,
-                               uint8_t params_len, hci_cmd_cb cb) {
+void btu_hcif_send_cmd_with_cb(const base::Location& /* posted_from */,
+                               uint16_t /* opcode */, uint8_t* /* params */,
+                               uint8_t /* params_len */, hci_cmd_cb /* cb */) {
   inc_func_call_count(__func__);
 }
-void cmd_with_cb_data_cleanup(cmd_with_cb_data* cb_wrapper) {
+void cmd_with_cb_data_cleanup(cmd_with_cb_data* /* cb_wrapper */) {
   inc_func_call_count(__func__);
 }
-void cmd_with_cb_data_init(cmd_with_cb_data* cb_wrapper) {
+void cmd_with_cb_data_init(cmd_with_cb_data* /* cb_wrapper */) {
   inc_func_call_count(__func__);
 }
