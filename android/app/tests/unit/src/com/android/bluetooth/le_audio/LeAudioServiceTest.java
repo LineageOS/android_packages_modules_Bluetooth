@@ -198,6 +198,7 @@ public class LeAudioServiceTest {
         mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_UNICAST_INACTIVATE_DEVICE_BASED_ON_CONTEXT, false);
         mFakeFlagsImpl.setFlag(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION, false);
         mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_BROADCAST_AUDIO_HANDOVER_POLICIES, false);
+        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_MCS_TBS_AUTHORIZATION_REBOND_FIX, false);
         mService.setFeatureFlags(mFakeFlagsImpl);
 
         mService.mAudioManager = mAudioManager;
@@ -802,6 +803,139 @@ public class LeAudioServiceTest {
         // Device unbond - state machine is removed
         mService.bondStateChanged(mLeftDevice, BluetoothDevice.BOND_NONE);
         assertThat(mService.getDevices().contains(mLeftDevice)).isFalse();
+    }
+
+    /** Test that authorization info is removed from TBS and MCS after the device is unbond. */
+    @Test
+    public void testAuthorizationInfoRemovedFromTbsMcsOnUnbondEvents() {
+        mFakeFlagsImpl.setFlag(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION, true);
+        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_MCS_TBS_AUTHORIZATION_REBOND_FIX, true);
+
+        // Update the device priority so okToConnect() returns true
+        when(mDatabaseManager.getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO))
+                .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+        when(mDatabaseManager.getProfileConnectionPolicy(mRightDevice, BluetoothProfile.LE_AUDIO))
+                .thenReturn(BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+        when(mDatabaseManager.getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO))
+                .thenReturn(BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+        doReturn(true).when(mNativeInterface).connectLeAudio(any(BluetoothDevice.class));
+        doReturn(true).when(mNativeInterface).disconnectLeAudio(any(BluetoothDevice.class));
+
+        // Create device descriptor with connect request
+        assertWithMessage("Connect failed").that(mService.connect(mLeftDevice)).isTrue();
+
+        // Unbond received in CONNECTION_STATE_CONNECTING state
+        generateConnectionMessageFromNative(
+                mLeftDevice,
+                BluetoothProfile.STATE_CONNECTING,
+                BluetoothProfile.STATE_DISCONNECTED);
+        assertThat(mService.getConnectionState(mLeftDevice))
+                .isEqualTo(BluetoothProfile.STATE_CONNECTING);
+        assertThat(mService.getDevices().contains(mLeftDevice)).isTrue();
+
+        // Device unbond
+        doReturn(BluetoothDevice.BOND_NONE)
+                .when(mAdapterService)
+                .getBondState(any(BluetoothDevice.class));
+        mService.bondStateChanged(mLeftDevice, BluetoothDevice.BOND_NONE);
+        assertThat(mService.getDevices().contains(mLeftDevice)).isTrue();
+        verifyConnectionStateIntent(
+                TIMEOUT_MS,
+                mLeftDevice,
+                BluetoothProfile.STATE_DISCONNECTED,
+                BluetoothProfile.STATE_CONNECTING);
+        verify(mTbsService, times(1)).removeDeviceAuthorizationInfo(mLeftDevice);
+        verify(mMcpService, times(1)).removeDeviceAuthorizationInfo(mLeftDevice);
+
+        reset(mTbsService);
+        reset(mMcpService);
+
+        // Unbond received in CONNECTION_STATE_CONNECTED
+        // Create device descriptor with connect request. To connect service,
+        // device needs to be bonded
+        doReturn(BluetoothDevice.BOND_BONDED)
+                .when(mAdapterService)
+                .getBondState(any(BluetoothDevice.class));
+        assertWithMessage("Connect failed").that(mService.connect(mLeftDevice)).isTrue();
+
+        generateConnectionMessageFromNative(
+                mLeftDevice,
+                BluetoothProfile.STATE_CONNECTING,
+                BluetoothProfile.STATE_DISCONNECTED);
+        generateConnectionMessageFromNative(
+                mLeftDevice, BluetoothProfile.STATE_CONNECTED, BluetoothProfile.STATE_CONNECTING);
+        assertThat(mService.getConnectionState(mLeftDevice))
+                .isEqualTo(BluetoothProfile.STATE_CONNECTED);
+
+        assertThat(mService.getDevices().contains(mLeftDevice)).isTrue();
+
+        // Device unbond
+        doReturn(BluetoothDevice.BOND_NONE)
+                .when(mAdapterService)
+                .getBondState(any(BluetoothDevice.class));
+        mService.bondStateChanged(mLeftDevice, BluetoothDevice.BOND_NONE);
+
+        assertThat(mService.getDevices().contains(mLeftDevice)).isTrue();
+        verifyConnectionStateIntent(
+                TIMEOUT_MS,
+                mLeftDevice,
+                BluetoothProfile.STATE_DISCONNECTING,
+                BluetoothProfile.STATE_CONNECTED);
+        assertThat(mService.getConnectionState(mLeftDevice))
+                .isEqualTo(BluetoothProfile.STATE_DISCONNECTING);
+        assertThat(mService.getDevices().contains(mLeftDevice)).isTrue();
+        verify(mTbsService, times(0)).removeDeviceAuthorizationInfo(mLeftDevice);
+        verify(mMcpService, times(0)).removeDeviceAuthorizationInfo(mLeftDevice);
+
+        reset(mTbsService);
+        reset(mMcpService);
+
+        // Inject CONNECTION_STATE_DISCONNECTED
+        generateConnectionMessageFromNative(
+                mLeftDevice,
+                BluetoothProfile.STATE_DISCONNECTED,
+                BluetoothProfile.STATE_DISCONNECTING);
+
+        verify(mTbsService, times(1)).removeDeviceAuthorizationInfo(mLeftDevice);
+        verify(mMcpService, times(1)).removeDeviceAuthorizationInfo(mLeftDevice);
+
+        reset(mTbsService);
+        reset(mMcpService);
+
+        // Unbond received in CONNECTION_STATE_DISCONNECTED
+        // Create device descriptor with connect request. To connect service,
+        // device needs to be bonded
+        doReturn(BluetoothDevice.BOND_BONDED)
+                .when(mAdapterService)
+                .getBondState(any(BluetoothDevice.class));
+        assertWithMessage("Connect failed").that(mService.connect(mLeftDevice)).isTrue();
+
+        generateConnectionMessageFromNative(
+                mLeftDevice,
+                BluetoothProfile.STATE_CONNECTING,
+                BluetoothProfile.STATE_DISCONNECTED);
+        generateConnectionMessageFromNative(
+                mLeftDevice, BluetoothProfile.STATE_CONNECTED, BluetoothProfile.STATE_CONNECTING);
+        assertThat(mService.getConnectionState(mLeftDevice))
+                .isEqualTo(BluetoothProfile.STATE_CONNECTED);
+
+        assertThat(mService.getDevices().contains(mLeftDevice)).isTrue();
+        injectAndVerifyDeviceDisconnected(mLeftDevice);
+
+        verify(mTbsService, times(0)).removeDeviceAuthorizationInfo(mLeftDevice);
+        verify(mMcpService, times(0)).removeDeviceAuthorizationInfo(mLeftDevice);
+
+        reset(mTbsService);
+        reset(mMcpService);
+
+        // Device unbond
+        doReturn(BluetoothDevice.BOND_NONE)
+                .when(mAdapterService)
+                .getBondState(any(BluetoothDevice.class));
+        mService.bondStateChanged(mLeftDevice, BluetoothDevice.BOND_NONE);
+
+        verify(mTbsService, times(1)).removeDeviceAuthorizationInfo(mLeftDevice);
+        verify(mMcpService, times(1)).removeDeviceAuthorizationInfo(mLeftDevice);
     }
 
     /**

@@ -36,6 +36,7 @@
 #include "btif_metrics_logging.h"
 #include "common/address_obfuscator.h"
 #include "common/metric_id_allocator.h"
+#include "gd/storage/config_keys.h"
 #include "include/check.h"
 #include "main/shim/config.h"
 #include "main/shim/shim.h"
@@ -49,10 +50,6 @@
 #define FILE_SOURCE "FileSource"
 #define TIME_STRING_LENGTH sizeof("YYYY-MM-DD HH:MM:SS")
 #define DISABLED "disabled"
-
-#define BT_CONFIG_METRICS_SECTION "Metrics"
-#define BT_CONFIG_METRICS_SALT_256BIT "Salt256Bit"
-#define BT_CONFIG_METRICS_ID_KEY "MetricsId"
 
 using bluetooth::bluetooth_keystore::BluetoothKeystoreInterface;
 using bluetooth::common::AddressObfuscator;
@@ -84,9 +81,9 @@ static char btif_config_time_created[TIME_STRING_LENGTH];
 static void read_or_set_metrics_salt() {
   AddressObfuscator::Octet32 metrics_salt = {};
   size_t metrics_salt_length = metrics_salt.size();
-  if (!btif_config_get_bin(BT_CONFIG_METRICS_SECTION,
-                           BT_CONFIG_METRICS_SALT_256BIT, metrics_salt.data(),
-                           &metrics_salt_length)) {
+  if (!btif_config_get_bin(BTIF_STORAGE_SECTION_METRICS,
+                           BTIF_STORAGE_KEY_METRICS_SALT_256BIT,
+                           metrics_salt.data(), &metrics_salt_length)) {
     LOG(WARNING) << __func__ << ": Failed to read metrics salt from config";
     // Invalidate salt
     metrics_salt.fill(0);
@@ -102,9 +99,9 @@ static void read_or_set_metrics_salt() {
     if (RAND_bytes(metrics_salt.data(), metrics_salt.size()) != 1) {
       LOG(FATAL) << __func__ << "Failed to generate salt for metrics";
     }
-    if (!btif_config_set_bin(BT_CONFIG_METRICS_SECTION,
-                             BT_CONFIG_METRICS_SALT_256BIT, metrics_salt.data(),
-                             metrics_salt.size())) {
+    if (!btif_config_set_bin(BTIF_STORAGE_SECTION_METRICS,
+                             BTIF_STORAGE_KEY_METRICS_SALT_256BIT,
+                             metrics_salt.data(), metrics_salt.size())) {
       LOG(FATAL) << __func__ << "Failed to write metrics salt to config";
     }
   }
@@ -127,10 +124,10 @@ static void init_metric_id_allocator() {
     auto addr_str = mac_address.ToString();
     // if the section name is a mac address
     bool is_valid_id_found = false;
-    if (btif_config_exist(addr_str, BT_CONFIG_METRICS_ID_KEY)) {
+    if (btif_config_exist(addr_str, BTIF_STORAGE_KEY_METRICS_ID_KEY)) {
       // there is one metric id under this mac_address
       int id = 0;
-      btif_config_get_int(addr_str, BT_CONFIG_METRICS_ID_KEY, &id);
+      btif_config_get_int(addr_str, BTIF_STORAGE_KEY_METRICS_ID_KEY, &id);
       if (is_valid_id_from_metric_id_allocator(id)) {
         paired_device_map[mac_address] = id;
         is_valid_id_found = true;
@@ -144,12 +141,13 @@ static void init_metric_id_allocator() {
   // Initialize MetricIdAllocator
   MetricIdAllocator::Callback save_device_callback =
       [](const RawAddress& address, const int id) {
-        return btif_config_set_int(address.ToString(), BT_CONFIG_METRICS_ID_KEY,
-                                   id);
+        return btif_config_set_int(address.ToString(),
+                                   BTIF_STORAGE_KEY_METRICS_ID_KEY, id);
       };
   MetricIdAllocator::Callback forget_device_callback =
       [](const RawAddress& address, const int id) {
-        return btif_config_remove(address.ToString(), BT_CONFIG_METRICS_ID_KEY);
+        return btif_config_remove(address.ToString(),
+                                  BTIF_STORAGE_KEY_METRICS_ID_KEY);
       };
   if (!init_metric_id_allocator(paired_device_map,
                                 std::move(save_device_callback),
@@ -203,7 +201,9 @@ bool btif_get_device_clockoffset(const RawAddress& bda, int* p_clock_offset) {
   std::string addrstr = bda.ToString();
   const char* bd_addr_str = addrstr.c_str();
 
-  if (!btif_config_get_int(bd_addr_str, "ClockOffset", p_clock_offset)) return false;
+  if (!btif_config_get_int(bd_addr_str, BTIF_STORAGE_KEY_CLOCK_OFFSET,
+                           p_clock_offset))
+    return false;
 
   LOG_DEBUG("%s: Device [%s] clock_offset %d", __func__, bd_addr_str,
             *p_clock_offset);
@@ -215,7 +215,9 @@ bool btif_set_device_clockoffset(const RawAddress& bda, int clock_offset) {
   std::string addrstr = bda.ToString();
   const char* bd_addr_str = addrstr.c_str();
 
-  if (!btif_config_set_int(bd_addr_str, "ClockOffset", clock_offset)) return false;
+  if (!btif_config_set_int(bd_addr_str, BTIF_STORAGE_KEY_CLOCK_OFFSET,
+                           clock_offset))
+    return false;
 
   LOG_DEBUG("%s: Device [%s] clock_offset %d", __func__, bd_addr_str,
             clock_offset);

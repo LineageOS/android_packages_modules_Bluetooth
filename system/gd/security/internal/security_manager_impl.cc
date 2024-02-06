@@ -18,6 +18,7 @@
 #include "security_manager_impl.h"
 
 #include "common/bind.h"
+#include "gd/storage/config_keys.h"
 #include "hci/address_with_type.h"
 #include "hci/octets.h"
 #include "os/log.h"
@@ -78,23 +79,29 @@ void SecurityManagerImpl::Init() {
   ASSERT_LOG(storage_module_ != nullptr, "Storage module must not be null!");
   security_database_.LoadRecordsFromStorage();
 
-  auto irk_prop = storage_module_->GetBin("Adapter", "LE_LOCAL_KEY_IRK");
+  auto irk_prop =
+      storage_module_->GetBin(BTIF_STORAGE_SECTION_ADAPTER, BTIF_STORAGE_KEY_LE_LOCAL_KEY_IRK);
   if (!irk_prop.has_value()) {
     auto rand16 = bluetooth::os::GenerateRandom<16>();
     std::vector<uint8_t> new_irk{rand16.begin(), rand16.end()};
-    storage_module_->SetBin("Adapter", "LE_LOCAL_KEY_IRK", new_irk);
-    irk_prop = storage_module_->GetBin("Adapter", "LE_LOCAL_KEY_IRK");
+    storage_module_->SetBin(
+        BTIF_STORAGE_SECTION_ADAPTER, BTIF_STORAGE_KEY_LE_LOCAL_KEY_IRK, new_irk);
+    irk_prop =
+        storage_module_->GetBin(BTIF_STORAGE_SECTION_ADAPTER, BTIF_STORAGE_KEY_LE_LOCAL_KEY_IRK);
   }
 
   Address controllerAddress = controller_->GetMacAddress();
-  auto address_prop = storage_module_->GetProperty("Adapter", "Address");
+  auto address_prop =
+      storage_module_->GetProperty(BTIF_STORAGE_SECTION_ADAPTER, BTIF_STORAGE_KEY_ADDRESS);
   if (!address_prop || address_prop.value() != controllerAddress.ToString()) {
-    storage_module_->SetProperty("Adapter", "Address", controllerAddress.ToString());
+    storage_module_->SetProperty(
+        BTIF_STORAGE_SECTION_ADAPTER, BTIF_STORAGE_KEY_ADDRESS, controllerAddress.ToString());
   }
 
   local_identity_address_ =
       hci::AddressWithType(controllerAddress, hci::AddressType::PUBLIC_DEVICE_ADDRESS);
-  irk_prop = storage_module_->GetBin("Adapter", "LE_LOCAL_KEY_IRK");
+  irk_prop =
+      storage_module_->GetBin(BTIF_STORAGE_SECTION_ADAPTER, BTIF_STORAGE_KEY_LE_LOCAL_KEY_IRK);
   ASSERT_LOG(irk_prop.has_value(), "Irk not found in storage");
   ASSERT_LOG(irk_prop->size() == 16, "Irk corrupted in storage");
   std::copy(irk_prop->begin(), irk_prop->end(), local_identity_resolving_key_.data());

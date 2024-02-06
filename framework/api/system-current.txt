@@ -184,6 +184,7 @@ package android.bluetooth {
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean createBondOutOfBand(int, @Nullable android.bluetooth.OobData, @Nullable android.bluetooth.OobData);
     method @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public int disconnect();
     method @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public boolean fetchUuidsWithSdp(int);
+    method @FlaggedApi("com.android.bluetooth.flags.metadata_api_inactive_audio_device_upon_connection") @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public int getActiveAudioDevicePolicy();
     method @NonNull @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED) public String getAnonymizedAddress();
     method @IntRange(from=0xffffff9c, to=100) @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public int getBatteryLevel();
     method @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public int getConnectionHandle(int);
@@ -202,6 +203,7 @@ package android.bluetooth {
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED) public void prepareToEnterProcess(@NonNull android.content.AttributionSource);
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean removeBond();
     method @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public int requestAudioPolicyAsSink(@NonNull android.bluetooth.BluetoothSinkAudioPolicy);
+    method @FlaggedApi("com.android.bluetooth.flags.metadata_api_inactive_audio_device_upon_connection") @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public int setActiveAudioDevicePolicy(int);
     method @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public boolean setLowLatencyAudioAllowed(boolean);
     method @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public boolean setMessageAccessPermission(int);
     method @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public boolean setMetadata(int, @NonNull byte[]);
@@ -220,6 +222,9 @@ package android.bluetooth {
     field @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public static final String ACTION_PAIRING_CANCEL = "android.bluetooth.device.action.PAIRING_CANCEL";
     field @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public static final String ACTION_SILENCE_MODE_CHANGED = "android.bluetooth.device.action.SILENCE_MODE_CHANGED";
     field @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public static final String ACTION_SWITCH_BUFFER_SIZE = "android.bluetooth.device.action.SWITCH_BUFFER_SIZE";
+    field @FlaggedApi("com.android.bluetooth.flags.metadata_api_inactive_audio_device_upon_connection") public static final int ACTIVE_AUDIO_DEVICE_POLICY_ALL_PROFILES_ACTIVE_UPON_CONNECTION = 1; // 0x1
+    field @FlaggedApi("com.android.bluetooth.flags.metadata_api_inactive_audio_device_upon_connection") public static final int ACTIVE_AUDIO_DEVICE_POLICY_ALL_PROFILES_INACTIVE_UPON_CONNECTION = 2; // 0x2
+    field @FlaggedApi("com.android.bluetooth.flags.metadata_api_inactive_audio_device_upon_connection") public static final int ACTIVE_AUDIO_DEVICE_POLICY_DEFAULT = 0; // 0x0
     field public static final int BATTERY_LEVEL_BLUETOOTH_OFF = -100; // 0xffffff9c
     field public static final int BATTERY_LEVEL_UNKNOWN = -1; // 0xffffffff
     field public static final int CONNECTION_ACCESS_NO = 2; // 0x2
@@ -1336,7 +1341,7 @@ package android.bluetooth.le {
     method @NonNull public android.bluetooth.le.DistanceMeasurementResult build();
     method @NonNull public android.bluetooth.le.DistanceMeasurementResult.Builder setAltitudeAngle(@FloatRange(from=-90.0, to=90.0) double);
     method @NonNull public android.bluetooth.le.DistanceMeasurementResult.Builder setAzimuthAngle(@FloatRange(from=0.0, to=360.0) double);
-    method @FlaggedApi("com.android.bluetooth.flags.channel_sounding") @NonNull public android.bluetooth.le.DistanceMeasurementResult.Builder setConfidenceLevel(@FloatRange(from=0.0, to=100.0) double);
+    method @FlaggedApi("com.android.bluetooth.flags.channel_sounding") @NonNull public android.bluetooth.le.DistanceMeasurementResult.Builder setConfidenceLevel(@FloatRange(from=0.0, to=1.0) double);
     method @FlaggedApi("com.android.bluetooth.flags.channel_sounding") @NonNull public android.bluetooth.le.DistanceMeasurementResult.Builder setDelaySpreadMeters(double);
     method @FlaggedApi("com.android.bluetooth.flags.channel_sounding") @NonNull public android.bluetooth.le.DistanceMeasurementResult.Builder setDetectedAttackLevel(int);
     method @NonNull public android.bluetooth.le.DistanceMeasurementResult.Builder setErrorAltitudeAngle(@FloatRange(from=0.0, to=180.0) double);
