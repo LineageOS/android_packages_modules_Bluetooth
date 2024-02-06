@@ -554,12 +554,8 @@ class CsisClientTest : public ::testing::Test {
     EXPECT_CALL(*callbacks, OnDeviceAvailable(address, _, _, _, _))
         .Times(AtLeast(1));
 
-    /* In testing only whe set info is empty, there is no CAP context. */
-    bool is_opportunistic = (storage_buf.size() != 0);
-
     EXPECT_CALL(gatt_interface,
-                Open(gatt_if, address, BTM_BLE_BKG_CONNECT_ALLOW_LIST,
-                     is_opportunistic))
+                Open(gatt_if, address, BTM_BLE_DIRECT_CONNECTION, true))
         .WillOnce(Invoke([this, conn_id](tGATT_IF client_if,
                                          const RawAddress& remote_bda,
                                          bool is_direct, bool opportunistic) {
@@ -568,7 +564,7 @@ class CsisClientTest : public ::testing::Test {
         }));
 
     DeviceGroups::AddFromStorage(address, storage_group_buf);
-    CsisClient::AddFromStorage(address, storage_buf, true);
+    CsisClient::AddFromStorage(address, storage_buf);
   }
 
   void InjectEncryptionEvent(const RawAddress& test_address, uint16_t conn_id) {
@@ -1387,11 +1383,9 @@ TEST_F(CsisClientTest, test_storage_calls) {
   ASSERT_EQ(1, get_func_call_count("btif_storage_load_bonded_csis_devices"));
 
   ASSERT_EQ(0, get_func_call_count("btif_storage_update_csis_info"));
-  ASSERT_EQ(0, get_func_call_count("btif_storage_set_csis_autoconnect"));
   TestConnect(test_address);
   InjectConnectedEvent(test_address, 1);
   GetSearchCompleteEvent(1);
-  ASSERT_EQ(1, get_func_call_count("btif_storage_set_csis_autoconnect"));
   ASSERT_EQ(1, get_func_call_count("btif_storage_update_csis_info"));
 
   ASSERT_EQ(0, get_func_call_count("btif_storage_remove_csis_device"));
