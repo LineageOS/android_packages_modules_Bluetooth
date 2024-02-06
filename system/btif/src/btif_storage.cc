@@ -212,6 +212,14 @@ static bool prop2cfg(const RawAddress* remote_bd_addr, bt_property_t* prop) {
       value[prop->len] = '\0';
       btif_config_set_str(bdstr, BTIF_STORAGE_KEY_DIS_MODEL_NUM, value);
     } break;
+    case BT_PROPERTY_REMOTE_SECURE_CONNECTIONS_SUPPORTED:
+      btif_config_set_int(bdstr, BTIF_STORAGE_KEY_SECURE_CONNECTIONS_SUPPORTED,
+                          *(uint8_t*)prop->val);
+      break;
+    case BT_PROPERTY_REMOTE_MAX_SESSION_KEY_SIZE:
+      btif_config_set_int(bdstr, BTIF_STORAGE_KEY_MAX_SESSION_KEY_SIZE,
+                          *(uint8_t*)prop->val);
+      break;
     default:
       LOG_ERROR("Unknown prop type:%d", prop->type);
       return false;
@@ -377,6 +385,26 @@ static bool cfg2prop(const RawAddress* remote_bd_addr, bt_property_t* prop) {
 
       if (prop->len >= (int)sizeof(uint8_t)) {
         ret = btif_config_get_int(bdstr, BTIF_STORAGE_KEY_ADDR_TYPE, &val);
+        *(uint8_t*)prop->val = (uint8_t)val;
+      }
+    } break;
+
+    case BT_PROPERTY_REMOTE_SECURE_CONNECTIONS_SUPPORTED: {
+      int val;
+
+      if (prop->len >= (int)sizeof(uint8_t)) {
+        ret = btif_config_get_int(
+            bdstr, BTIF_STORAGE_KEY_SECURE_CONNECTIONS_SUPPORTED, &val);
+        *(uint8_t*)prop->val = (uint8_t)val;
+      }
+    } break;
+
+    case BT_PROPERTY_REMOTE_MAX_SESSION_KEY_SIZE: {
+      int val;
+
+      if (prop->len >= (int)sizeof(uint8_t)) {
+        ret = btif_config_get_int(bdstr, BTIF_STORAGE_KEY_MAX_SESSION_KEY_SIZE,
+                                  &val);
         *(uint8_t*)prop->val = (uint8_t)val;
       }
     } break;
