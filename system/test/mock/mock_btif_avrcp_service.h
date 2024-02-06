@@ -41,7 +41,7 @@ namespace btif_avrcp_service {
 // Return: void
 struct do_in_avrcp_jni {
   std::function<void(const base::Closure& task)> body{
-      [](const base::Closure& task) {}};
+      [](const base::Closure& /* task */) {}};
   void operator()(const base::Closure& task) { body(task); };
 };
 extern struct do_in_avrcp_jni do_in_avrcp_jni;
