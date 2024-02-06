@@ -22,7 +22,6 @@
  *  mockcify.pl ver 0.7.0
  */
 
-#include <cstdint>
 #include <functional>
 
 #include "include/hardware/bluetooth_headset_interface.h"

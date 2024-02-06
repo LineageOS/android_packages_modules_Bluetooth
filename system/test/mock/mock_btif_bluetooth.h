@@ -62,7 +62,8 @@ extern struct is_restricted_mode is_restricted_mode;
 // Params: uint8_t enable
 // Returns: int
 struct dut_mode_configure {
-  std::function<int(uint8_t enable)> body{[](uint8_t enable) { return 0; }};
+  std::function<int(uint8_t enable)> body{
+      [](uint8_t /* enable */) { return 0; }};
   int operator()(uint8_t enable) { return body(enable); };
 };
 extern struct dut_mode_configure dut_mode_configure;
@@ -70,8 +71,11 @@ extern struct dut_mode_configure dut_mode_configure;
 // Params: uint16_t opcode, uint8_t* buf, uint8_t len
 // Returns: int
 struct dut_mode_send {
-  std::function<int(uint16_t opcode, uint8_t* buf, uint8_t len)> body{
-      [](uint16_t opcode, uint8_t* buf, uint8_t len) { return 0; }};
+  std::function<int(uint16_t /* opcode */, uint8_t* /* buf */,
+                    uint8_t /* len */)>
+      body{[](uint16_t /* opcode */, uint8_t* /* buf */, uint8_t /* len */) {
+        return 0;
+      }};
   int operator()(uint16_t opcode, uint8_t* buf, uint8_t len) {
     return body(opcode, buf, len);
   };
@@ -91,7 +95,7 @@ extern struct get_common_criteria_config_compare_result
 // Returns: int
 struct get_remote_device_properties {
   std::function<int(RawAddress* remote_addr)> body{
-      [](RawAddress* remote_addr) { return 0; }};
+      [](RawAddress* /* remote_addr */) { return 0; }};
   int operator()(RawAddress* remote_addr) { return body(remote_addr); };
 };
 extern struct get_remote_device_properties get_remote_device_properties;
@@ -100,7 +104,9 @@ extern struct get_remote_device_properties get_remote_device_properties;
 // Returns: int
 struct get_remote_device_property {
   std::function<int(RawAddress* remote_addr, bt_property_type_t type)> body{
-      [](RawAddress* remote_addr, bt_property_type_t type) { return 0; }};
+      [](RawAddress* /* remote_addr */, bt_property_type_t /* type */) {
+        return 0;
+      }};
   int operator()(RawAddress* remote_addr, bt_property_type_t type) {
     return body(remote_addr, type);
   };
@@ -111,7 +117,7 @@ extern struct get_remote_device_property get_remote_device_property;
 // Returns: int
 struct get_remote_services {
   std::function<int(RawAddress* remote_addr)> body{
-      [](RawAddress* remote_addr) { return 0; }};
+      [](RawAddress* /* remote_addr */) { return 0; }};
   int operator()(RawAddress* remote_addr) { return body(remote_addr); };
 };
 extern struct get_remote_services get_remote_services;
@@ -120,7 +126,9 @@ extern struct get_remote_services get_remote_services;
 // Returns: int
 struct le_test_mode {
   std::function<int(uint16_t opcode, uint8_t* buf, uint8_t len)> body{
-      [](uint16_t opcode, uint8_t* buf, uint8_t len) { return 0; }};
+      [](uint16_t /* opcode */, uint8_t* /* buf */, uint8_t /* len */) {
+        return 0;
+      }};
   int operator()(uint16_t opcode, uint8_t* buf, uint8_t len) {
     return body(opcode, buf, len);
   };
@@ -131,9 +139,8 @@ extern struct le_test_mode le_test_mode;
 // Returns: int
 struct set_remote_device_property {
   std::function<int(RawAddress* remote_addr, const bt_property_t* property)>
-      body{[](RawAddress* remote_addr, const bt_property_t* property) {
-        return 0;
-      }};
+      body{[](RawAddress* /* remote_addr */,
+              const bt_property_t* /* property */) { return 0; }};
   int operator()(RawAddress* remote_addr, const bt_property_t* property) {
     return body(remote_addr, property);
   };
@@ -144,7 +151,7 @@ extern struct set_remote_device_property set_remote_device_property;
 // Returns: void
 struct set_hal_cbacks {
   std::function<void(bt_callbacks_t* callbacks)> body{
-      [](bt_callbacks_t* callbacks) { ; }};
+      [](bt_callbacks_t* /* callbacks */) { ; }};
   void operator()(bt_callbacks_t* callbacks) { body(callbacks); };
 };
 extern struct set_hal_cbacks set_hal_cbacks;
