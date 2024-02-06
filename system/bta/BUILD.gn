@@ -151,7 +151,8 @@ static_library("bta") {
   ]
 
   configs += [
-    "//bt/system:target_defaults"
+    "//bt/system:target_defaults",
+    "//bt/system/log:log_defaults",
   ]
 
   deps = [

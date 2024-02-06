@@ -92,6 +92,7 @@ cc_library_static {
     ],
     header_libs: ["libbluetooth_headers"],
     static_libs: [
+        "libbluetooth_log",
         "libbt-platform-protos-lite",
         "libbt_shim_bridge",
     ],
@@ -139,6 +140,7 @@ cc_test {
         "libbluetooth-types",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
+        "libbluetooth_log",
         "libbt-common",
         "libbt_shim_bridge",
         "libbt_shim_ffi",

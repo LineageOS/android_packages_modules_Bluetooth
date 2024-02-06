@@ -37,6 +37,7 @@ cc_defaults {
         "libbluetooth-protos",
         "libbluetooth-types",
         "libbluetooth_crypto_toolbox",
+        "libbluetooth_log",
         "libbluetooth_rust_interop",
         "libbt-common",
         "libbt_shim_bridge",

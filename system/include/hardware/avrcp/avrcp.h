@@ -16,11 +16,11 @@
 
 #pragma once
 
+#include <base/functional/callback_forward.h>
+
 #include <set>
 #include <string>
 #include <vector>
-
-#include <base/functional/callback_forward.h>
 
 #include "avrcp_common.h"
 #include "raw_address.h"

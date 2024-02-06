@@ -120,6 +120,7 @@ static_library("btif") {
 
   configs += [
     "//bt/system:target_defaults",
+    "//bt/system/log:log_defaults",
     "//bt/system:external_tinyxml2",
   ]
 }

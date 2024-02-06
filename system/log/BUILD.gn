@@ -1,5 +1,5 @@
 #
-#  Copyright 2021 Google, Inc.
+#  Copyright 2024 Google, Inc.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -12,23 +12,25 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+#
 
-source_set("BluetoothStorageSources") {
+config("log_defaults") {
+  include_dirs = [
+    "//bt/system/log/include",
+  ]
+}
+
+static_library("libbluetooth_log") {
+  cflags = [
+     "-fvisibility=default",
+  ]
   sources = [
-    "classic_device.cc",
-    "config_cache.cc",
-    "config_cache_helper.cc",
-    "device.cc",
-    "le_device.cc",
-    "legacy_config_file.cc",
-    "mutation.cc",
-    "mutation_entry.cc",
-    "storage_module.cc",
+    "include/bluetooth/log.h",
+    "src/truncating_buffer.h",
+    "src/vlog_syslog.cc",
   ]
-
   configs += [
-    "//bt/system/gd:gd_defaults",
-    "//bt/system/log:log_defaults",
+    "//bt/system:target_defaults",
+    ":log_defaults",
   ]
-  deps = [ "//bt/system/gd:gd_default_deps" ]
 }

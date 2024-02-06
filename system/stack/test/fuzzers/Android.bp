@@ -29,6 +29,7 @@ cc_defaults {
         "libbluetooth_core_rs",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
+        "libbluetooth_log",
         "libbt-audio-hal-interface",
         "libbt-bta",
         "libbt-bta-core",
