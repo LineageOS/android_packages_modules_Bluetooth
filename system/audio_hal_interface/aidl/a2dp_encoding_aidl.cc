@@ -762,7 +762,7 @@ static btav_a2dp_codec_channel_mode_t convert_channel_mode(
     case ChannelMode::MONO:
       return BTAV_A2DP_CODEC_CHANNEL_MODE_MONO;
     case ChannelMode::STEREO:
-      return BTAV_A2DP_CODEC_CHANNEL_MODE_MONO;
+      return BTAV_A2DP_CODEC_CHANNEL_MODE_STEREO;
     default:
       LOG(ERROR) << "unknown channel mode";
       break;
