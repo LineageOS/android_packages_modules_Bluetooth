@@ -1173,7 +1173,7 @@ pub enum ScanType {
 
 impl Default for ScanType {
     fn default() -> Self {
-        ScanType::Active
+        ScanType::Passive
     }
 }
 
@@ -2057,7 +2057,7 @@ impl IBluetoothGatt for BluetoothGatt {
         let settings = settings.unwrap_or_else(|| ScanSettings {
             interval: sysprop::get_i32(sysprop::PropertyI32::LeInquiryScanInterval),
             window: sysprop::get_i32(sysprop::PropertyI32::LeInquiryScanWindow),
-            scan_type: ScanType::Active,
+            scan_type: ScanType::default(),
         });
 
         // Multiplexing scanners happens at this layer. The implementations of start_scan
