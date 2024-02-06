@@ -22,12 +22,18 @@ source_set("BluetoothMetricsSources_chromeos") {
   ]
 
   deps = [ "//bt/system/gd:gd_default_deps" ]
-  configs += [ "//bt/system/gd:gd_defaults" ]
+  configs += [
+    "//bt/system/gd:gd_defaults",
+    "//bt/system/log:log_defaults",
+  ]
 }
 
 source_set("BluetoothMetricsSources_linux") {
   sources = [ "linux/metrics.cc" ]
-  configs += [ "//bt/system/gd:gd_defaults" ]
+  configs += [
+    "//bt/system/gd:gd_defaults",
+    "//bt/system/log:log_defaults",
+  ]
 }
 
 source_set("BluetoothMetricsSources") {
@@ -37,7 +43,10 @@ source_set("BluetoothMetricsSources") {
     "metrics_state.cc"
   ]
 
-  configs += [ "//bt/system/gd:gd_defaults"]
+  configs += [
+    "//bt/system/gd:gd_defaults",
+    "//bt/system/log:log_defaults",
+  ]
   deps = [ "//bt/system/gd:gd_default_deps" ]
 
   if (target_os == "chromeos") {

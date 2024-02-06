@@ -125,6 +125,7 @@ cc_library_static {
     export_include_dirs: ["."],
     static_libs: [
         "libbluetooth_hci_pdl",
+        "libbluetooth_log",
         "libbt_shim_bridge",
         "libbt_shim_ffi",
         "libchrome",

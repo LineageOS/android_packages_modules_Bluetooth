@@ -221,7 +221,6 @@ source_set("stack") {
     "//bt/system/gd/rust/shim:init_flags_bridge_header",
     "//bt/system/stack/mmc",
     "//bt/system/types",
-    "//bt/system/types",
   ]
 
   configs += [
@@ -281,6 +280,7 @@ if (defined(use.android) && use.android) {
 
     libs = [
       "dl",
+      "fmt",
       "pthread",
       "resolv",
       "rt",
@@ -334,6 +334,7 @@ if (defined(use.android) && use.android) {
 
     libs = [
       "dl",
+      "fmt",
       "pthread",
       "resolv",
       "rt",
