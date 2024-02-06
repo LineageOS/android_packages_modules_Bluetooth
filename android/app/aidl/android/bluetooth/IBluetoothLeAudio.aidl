@@ -81,6 +81,9 @@ oneway interface IBluetoothLeAudio {
     const int GROUP_NODE_ADDED = 1;
     const int GROUP_NODE_REMOVED = 2;
 
+    const int GROUP_STREAM_STATUS_IDLE = 0;
+    const int GROUP_STREAM_STATUS_STREAMING = 1;
+
     /**
      * Get device group id. Devices with same group id belong to same group (i.e left and right
      * earbud)
