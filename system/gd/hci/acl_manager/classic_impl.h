@@ -112,6 +112,9 @@ struct classic_impl : public security::ISecurityManagerListener {
       case EventCode::FLUSH_OCCURRED:
         on_flush_occurred(event_packet);
         break;
+      case EventCode::ENHANCED_FLUSH_COMPLETE:
+        on_enhanced_flush_complete(event_packet);
+        break;
       case EventCode::READ_REMOTE_SUPPORTED_FEATURES_COMPLETE:
         on_read_remote_supported_features_complete(event_packet);
         break;
@@ -603,6 +606,17 @@ struct classic_impl : public security::ISecurityManagerListener {
     }
     uint16_t handle = flush_occurred_view.GetConnectionHandle();
     connections.execute(handle, [=](ConnectionManagementCallbacks* callbacks) { callbacks->OnFlushOccurred(); });
+  }
+
+  void on_enhanced_flush_complete(EventView packet) {
+    auto flush_complete = EnhancedFlushCompleteView::Create(packet);
+    if (!flush_complete.IsValid()) {
+      LOG_ERROR("Received an invalid packet");
+      return;
+    }
+    uint16_t handle = flush_complete.GetConnectionHandle();
+    connections.execute(
+        handle, [=](ConnectionManagementCallbacks* callbacks) { callbacks->OnFlushOccurred(); });
   }
 
   void on_read_remote_version_information(

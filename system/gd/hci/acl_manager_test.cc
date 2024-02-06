@@ -956,12 +956,12 @@ TEST_F(AclManagerWithConnectionTest, send_flow_specification) {
 
 TEST_F(AclManagerWithConnectionTest, send_flush) {
   connection_->Flush();
-  auto packet = GetConnectionManagementCommand(OpCode::FLUSH);
-  auto command_view = FlushView::Create(packet);
+  auto packet = GetConnectionManagementCommand(OpCode::ENHANCED_FLUSH);
+  auto command_view = EnhancedFlushView::Create(packet);
   ASSERT_TRUE(command_view.IsValid());
 
   EXPECT_CALL(mock_connection_management_callbacks_, OnFlushOccurred());
-  test_hci_layer_->IncomingEvent(FlushOccurredBuilder::Create(handle_));
+  test_hci_layer_->IncomingEvent(EnhancedFlushCompleteBuilder::Create(handle_));
   sync_client_handler();
 }
 

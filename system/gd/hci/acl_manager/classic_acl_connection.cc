@@ -490,8 +490,8 @@ bool ClassicAclConnection::SniffSubrating(uint16_t maximum_latency, uint16_t min
 
 bool ClassicAclConnection::Flush() {
   acl_connection_interface_->EnqueueCommand(
-      FlushBuilder::Create(handle_),
-      pimpl_->tracker.client_handler_->BindOnce(check_complete<FlushCompleteView>));
+      EnhancedFlushBuilder::Create(handle_),
+      pimpl_->tracker.client_handler_->BindOnce(check_status<EnhancedFlushStatusView>));
   return true;
 }
 
