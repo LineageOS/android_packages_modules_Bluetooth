@@ -1189,20 +1189,26 @@ pub struct ScanSettings {
 }
 
 impl ScanSettings {
-    fn extract_scan_parameters(self) -> Option<(u16, u16)> {
-        let interval = u16::try_from(self.interval);
-        if interval.is_err() {
-            println!("Invalid scan interval {}", self.interval);
-            return None;
-        }
-
-        let window = u16::try_from(self.window);
-        if window.is_err() {
-            println!("Invalid scan window {}", self.window);
-            return None;
-        }
-
-        return Some((interval.unwrap(), window.unwrap()));
+    fn extract_scan_parameters(self) -> Option<(u8, u16, u16)> {
+        let scan_type = match self.scan_type {
+            ScanType::Passive => 0x00,
+            ScanType::Active => 0x01,
+        };
+        let interval = match u16::try_from(self.interval) {
+            Ok(i) => i,
+            Err(e) => {
+                println!("Invalid scan interval {}: {}", self.interval, e);
+                return None;
+            }
+        };
+        let window = match u16::try_from(self.window) {
+            Ok(w) => w,
+            Err(e) => {
+                println!("Invalid scan window {}: {}", self.window, e);
+                return None;
+            }
+        };
+        return Some((scan_type, interval, window));
     }
 }
 
@@ -1357,9 +1363,12 @@ impl GattAsyncIntf {
             // toggle. Also improve toggling API into 1 operation that guarantees correct ordering.
             self.gatt.as_ref().unwrap().lock().unwrap().scanner.stop_scan();
             if let Some(settings) = scan_settings {
-                if let Some((scan_interval, scan_window)) = settings.extract_scan_parameters() {
+                if let Some((scan_type, scan_interval, scan_window)) =
+                    settings.extract_scan_parameters()
+                {
                     self.gatt.as_ref().unwrap().lock().unwrap().scanner.set_scan_parameters(
                         scanner_id,
+                        scan_type,
                         scan_interval,
                         scan_window,
                     );
