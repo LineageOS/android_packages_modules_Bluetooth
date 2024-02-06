@@ -33,9 +33,9 @@
 #include "mock_codec_manager.h"
 #include "mock_controller.h"
 #include "mock_csis_client.h"
-#include "mock_iso_manager.h"
 #include "stack/include/bt_types.h"
 #include "test/common/mock_functions.h"
+#include "test/mock/mock_stack_btm_iso.h"
 #include "types/bt_transport.h"
 
 using ::le_audio::DeviceConnectState;

@@ -26,11 +26,11 @@
 #include "bta/le_audio/broadcaster/mock_state_machine.h"
 #include "bta/le_audio/content_control_id_keeper.h"
 #include "bta/le_audio/le_audio_types.h"
-#include "bta/le_audio/mock_iso_manager.h"
 #include "bta/test/common/mock_controller.h"
 #include "device/include/controller.h"
 #include "stack/include/btm_iso_api.h"
 #include "test/common/mock_functions.h"
+#include "test/mock/mock_stack_btm_iso.h"
 
 using namespace std::chrono_literals;
 

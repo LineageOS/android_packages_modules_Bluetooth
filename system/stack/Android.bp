@@ -1130,6 +1130,7 @@ cc_test {
         "libbt_shim_ffi",
         "libchrome",
         "libevent",
+        "libgmock",
         "liblog",
         "libosi",
         "libprotobuf-cpp-lite",

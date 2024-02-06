@@ -62,10 +62,7 @@ class IsoManager {
 
   virtual ~IsoManager();
 
-  static IsoManager* GetInstance() {
-    static IsoManager* instance = new IsoManager();
-    return instance;
-  }
+  static IsoManager* GetInstance();
 
   /**
    * Set CIG and CIS related callbacks
