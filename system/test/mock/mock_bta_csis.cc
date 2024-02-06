@@ -25,8 +25,7 @@ using bluetooth::csis::CsisClient;
 using bluetooth::csis::CsisClientCallbacks;
 
 void CsisClient::AddFromStorage(const RawAddress& addr,
-                                const std::vector<uint8_t>& in,
-                                bool autoconnect) {
+                                const std::vector<uint8_t>& in) {
   inc_func_call_count(__func__);
 }
 bool CsisClient::GetForStorage(const RawAddress& addr,
