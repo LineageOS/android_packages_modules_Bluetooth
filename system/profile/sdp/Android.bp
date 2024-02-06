@@ -23,6 +23,7 @@ cc_library_static {
     static_libs: [
         "lib-bt-packets",
         "libbluetooth-types",
+        "libbluetooth_log",
     ],
     header_libs: ["libbluetooth_headers"],
 }
@@ -47,9 +48,13 @@ cc_test {
         "lib-bt-packets-avrcp",
         "lib-bt-packets-base",
         "libbluetooth-types",
+        "libbluetooth_log",
         "libchrome",
         "libgmock",
         "sdp_service",
     ],
-    shared_libs: ["liblog"],
+    shared_libs: [
+        "libbase",
+        "liblog",
+    ],
 }
