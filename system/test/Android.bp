@@ -339,6 +339,13 @@ filegroup {
 }
 
 filegroup {
+    name: "TestMockJni",
+    srcs: [
+        "mock/mock_jni*.cc",
+    ],
+}
+
+filegroup {
     name: "TestMockStackHid",
     srcs: [
         "mock/mock_stack_hid*.cc",
