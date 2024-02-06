@@ -22,5 +22,8 @@ static_library("crypto_toolbox") {
 
   include_dirs = [ "//bt/system/gd" ]
 
-  configs += [ "//bt/system/gd:gd_defaults" ]
+  configs += [
+    "//bt/system/gd:gd_defaults",
+    "//bt/system/log:log_defaults",
+  ]
 }

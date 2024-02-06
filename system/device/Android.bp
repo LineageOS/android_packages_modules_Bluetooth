@@ -38,6 +38,7 @@ cc_library_static {
     static_libs: [
         "bluetooth_flags_c_lib",
         "libbluetooth_hci_pdl",
+        "libbluetooth_log",
         "libbt_shim_bridge",
         "libflatbuffers-cpp",
         "server_configurable_flags",
@@ -63,6 +64,7 @@ cc_test {
     static_libs: [
         "libbluetooth-types",
         "libbluetooth_gd",
+        "libbluetooth_log",
         "libbt_shim_bridge",
         "libbt_shim_ffi",
         "libbtcore",
@@ -98,6 +100,7 @@ cc_test {
     ],
     static_libs: [
         "libbluetooth-types",
+        "libbluetooth_log",
         "libbt-platform-protos-lite",
         "libbt_shim_bridge",
         "libbt_shim_ffi",

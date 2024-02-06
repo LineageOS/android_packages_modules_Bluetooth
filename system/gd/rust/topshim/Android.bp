@@ -70,7 +70,10 @@ cc_library_static {
         "packages/modules/Bluetooth/system/types",
     ],
     host_supported: true,
-    static_libs: ["libchrome"],
+    static_libs: [
+        "libbluetooth_log",
+        "libchrome",
+    ],
 }
 
 gensrcs {
@@ -137,6 +140,9 @@ rust_bindgen {
     ],
     shared_libs: [
         "libc++",
+    ],
+    static_libs: [
+        "libbluetooth_log",
     ],
     // The bindgen rule can only include headers via header_libs and does not
     // support include_dirs. Make sure newly added headers have the correct

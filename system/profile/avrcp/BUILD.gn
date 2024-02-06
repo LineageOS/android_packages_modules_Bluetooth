@@ -24,7 +24,10 @@ config("avrcp_config") {
     "//bt/system/include/hardware/avrcp",
   ]
 
-  configs = ["//bt/system:target_defaults"]
+  configs = [
+    "//bt/system:target_defaults",
+    "//bt/system/log:log_defaults",
+  ]
 }
 
 static_library("profile_avrcp") {
