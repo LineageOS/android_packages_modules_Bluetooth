@@ -88,7 +88,6 @@
 #include "device/include/device_iot_config.h"
 #include "device/include/interop.h"
 #include "device/include/interop_config.h"
-#include "gd/storage/config_keys.h"
 #include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
@@ -110,6 +109,7 @@
 #include "stack/include/hidh_api.h"
 #include "stack/include/main_thread.h"
 #include "stack/include/pan_api.h"
+#include "storage/config_keys.h"
 #include "types/raw_address.h"
 
 using bluetooth::csis::CsisClientInterface;

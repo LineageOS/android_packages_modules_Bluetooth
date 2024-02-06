@@ -18,7 +18,6 @@
 #include "security_manager_impl.h"
 
 #include "common/bind.h"
-#include "gd/storage/config_keys.h"
 #include "hci/address_with_type.h"
 #include "hci/octets.h"
 #include "os/log.h"
@@ -28,6 +27,7 @@
 #include "security/pairing_handler_le.h"
 #include "security/security_manager_listener.h"
 #include "security/ui.h"
+#include "storage/config_keys.h"
 
 namespace bluetooth {
 namespace security {
