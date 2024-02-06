@@ -250,25 +250,26 @@ public class AudioRoutingManagerTest {
     }
 
     /**
-     * Two A2DP devices are connected and the current active is then disconnected. Should then set
-     * active device to fallback device.
+     * A2DP Headset and A2DP only devices are connected and the current activated A2DP only is then
+     * disconnected. Should then set active device to fallback device.
      */
     @Test
-    public void a2dpSecondDeviceDisconnected_fallbackDeviceActive() {
+    public void a2dpDeviceDisconnected_fallbackA2dpHeadset() {
+        a2dpConnected(mA2dpHeadsetDevice, true);
+        headsetConnected(mA2dpHeadsetDevice, true);
+        mTestLooper.dispatchAll();
+        verify(mA2dpService).setActiveDevice(mA2dpHeadsetDevice);
+        verify(mHeadsetService).setActiveDevice(mA2dpHeadsetDevice);
+
         a2dpConnected(mA2dpDevice, false);
         switchA2dpActiveDevice(mA2dpDevice);
         mTestLooper.dispatchAll();
         verify(mA2dpService).setActiveDevice(mA2dpDevice);
 
-        a2dpConnected(mSecondaryAudioDevice, false);
-        switchA2dpActiveDevice(mSecondaryAudioDevice);
+        Mockito.clearInvocations(mA2dpService, mHeadsetService);
+        a2dpDisconnected(mA2dpDevice);
         mTestLooper.dispatchAll();
-        verify(mA2dpService).setActiveDevice(mSecondaryAudioDevice);
-
-        Mockito.clearInvocations(mA2dpService);
-        a2dpDisconnected(mSecondaryAudioDevice);
-        mTestLooper.dispatchAll();
-        verify(mA2dpService).setActiveDevice(mA2dpDevice);
+        verify(mA2dpService).setActiveDevice(mA2dpHeadsetDevice);
     }
 
     /** One Headset is connected. */
@@ -323,11 +324,11 @@ public class AudioRoutingManagerTest {
     }
 
     /**
-     * Two Headsets are connected and the current active is then disconnected. Should then set
-     * active device to fallback device.
+     * Two Headset only devices are connected and the current active is then disconnected. Then it
+     * should be fallback to phone.
      */
     @Test
-    public void headsetSecondDeviceDisconnected_fallbackDeviceActive() {
+    public void headsetSecondDeviceDisconnected_fallbackToPhone() {
         when(mAudioManager.getMode()).thenReturn(AudioManager.MODE_IN_CALL);
 
         headsetConnected(mHeadsetDevice, false);
@@ -343,27 +344,28 @@ public class AudioRoutingManagerTest {
         Mockito.clearInvocations(mHeadsetService);
         headsetDisconnected(mSecondaryAudioDevice);
         mTestLooper.dispatchAll();
-        verify(mHeadsetService).setActiveDevice(mHeadsetDevice);
+        verify(mHeadsetService, never()).setActiveDevice(mHeadsetDevice);
     }
 
     @Test
     public void headsetSecondDeviceDisconnected_fallbackDeviceActiveWhileRinging() {
         when(mAudioManager.getMode()).thenReturn(AudioManager.MODE_RINGTONE);
 
+        headsetConnected(mA2dpHeadsetDevice, true);
+        a2dpConnected(mA2dpHeadsetDevice, true);
+        mTestLooper.dispatchAll();
+        verify(mHeadsetService).setActiveDevice(mA2dpHeadsetDevice);
+        verify(mA2dpService).setActiveDevice(mA2dpHeadsetDevice);
+
         headsetConnected(mHeadsetDevice, false);
         switchHeadsetActiveDevice(mHeadsetDevice);
         mTestLooper.dispatchAll();
         verify(mHeadsetService).setActiveDevice(mHeadsetDevice);
 
-        headsetConnected(mSecondaryAudioDevice, false);
-        switchHeadsetActiveDevice(mSecondaryAudioDevice);
-        mTestLooper.dispatchAll();
-        verify(mHeadsetService).setActiveDevice(mSecondaryAudioDevice);
-
         Mockito.clearInvocations(mHeadsetService);
-        headsetDisconnected(mSecondaryAudioDevice);
+        headsetDisconnected(mHeadsetDevice);
         mTestLooper.dispatchAll();
-        verify(mHeadsetService).setActiveDevice(mHeadsetDevice);
+        verify(mHeadsetService).setActiveDevice(mA2dpHeadsetDevice);
     }
 
     @Test
@@ -842,11 +844,11 @@ public class AudioRoutingManagerTest {
     }
 
     /**
-     * An A2DP connected. An LE Audio connected. The LE Audio disconnected. Then the A2DP should be
-     * the active one.
+     * An A2DP only device connected. An LE Audio connected. The LE Audio disconnected. Then it
+     * should be fallback to phone instead of the A2DP only device.
      */
     @Test
-    public void a2dpAndLeAudioConnectedThenLeAudioDisconnected_fallbackToA2dp() {
+    public void a2dpAndLeAudioConnectedThenLeAudioDisconnected_fallbackToPhone() {
         when(mAudioManager.getMode()).thenReturn(AudioManager.MODE_NORMAL);
 
         a2dpConnected(mA2dpDevice, false);
@@ -861,8 +863,34 @@ public class AudioRoutingManagerTest {
         Mockito.clearInvocations(mA2dpService);
         leAudioDisconnected(mLeAudioDevice);
         mTestLooper.dispatchAll();
+        verify(mLeAudioService).removeActiveDevice(false);
+        verify(mA2dpService, never()).setActiveDevice(mA2dpDevice);
+    }
+
+    /**
+     * An A2DP headset connected. An LE Audio connected. The LE Audio disconnected. Then the A2DP
+     * headset should be the active one.
+     */
+    @Test
+    public void a2dpHeadsetAndLeAudioConnectedThenLeAudioDisconnected_fallbackToA2dpHeadset() {
+        when(mAudioManager.getMode()).thenReturn(AudioManager.MODE_NORMAL);
+
+        a2dpConnected(mHeadsetDevice, true);
+        headsetConnected(mHeadsetDevice, true);
+        mTestLooper.dispatchAll();
+        verify(mA2dpService).setActiveDevice(mHeadsetDevice);
+        verify(mHeadsetService).setActiveDevice(mHeadsetDevice);
+
+        leAudioConnected(mLeAudioDevice);
+        mTestLooper.dispatchAll();
+        verify(mLeAudioService).setActiveDevice(mLeAudioDevice);
+
+        Mockito.clearInvocations(mA2dpService, mHeadsetService);
+        leAudioDisconnected(mLeAudioDevice);
+        mTestLooper.dispatchAll();
         verify(mLeAudioService).removeActiveDevice(true);
-        verify(mA2dpService).setActiveDevice(mA2dpDevice);
+        verify(mA2dpService).setActiveDevice(mHeadsetDevice);
+        verify(mHeadsetService).setActiveDevice(mHeadsetDevice);
     }
 
     /**
@@ -920,7 +948,7 @@ public class AudioRoutingManagerTest {
         Mockito.clearInvocations(mHearingAidService, mA2dpService, mLeAudioService);
         leAudioDisconnected(mLeAudioDevice);
         mTestLooper.dispatchAll();
-        verify(mA2dpService).setActiveDevice(mA2dpDevice);
+        verify(mHearingAidService).setActiveDevice(mHearingAidDevice);
         verify(mLeAudioService).removeActiveDevice(true);
     }
 
