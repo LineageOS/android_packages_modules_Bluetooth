@@ -122,10 +122,6 @@ public class HapClientTest {
         // Set up mocks and test assets
         MockitoAnnotations.initMocks(this);
 
-        if (Looper.myLooper() == null) {
-            Looper.prepare();
-        }
-
         HapClientStateMachine.sConnectTimeoutMs = TIMEOUT_MS;
 
         TestUtils.setAdapterService(mAdapterService);
