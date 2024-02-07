@@ -4626,11 +4626,11 @@ class LeAudioClientImpl : public LeAudioClient {
 
     LOG_INFO(
         "group_id %d state=%s, target_state=%s, audio_receiver_state_: %s, "
-        "audio_sender_state_: %s",
+        "audio_sender_state_: %s, dsa_mode: %d",
         group->group_id_, ToString(group->GetState()).c_str(),
         ToString(group->GetTargetState()).c_str(),
         ToString(audio_receiver_state_).c_str(),
-        ToString(audio_sender_state_).c_str());
+        ToString(audio_sender_state_).c_str(), static_cast<int>(dsa_mode));
 
     group->dsa_mode_ = dsa_mode;
 
