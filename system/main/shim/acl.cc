@@ -542,7 +542,7 @@ class ClassicShimAclConnection
     TRY_POSTING_ON_MAIN(interface_.on_change_connection_link_key_complete);
   }
 
-  void OnReadClockOffsetComplete(uint16_t clock_offset) override {
+  void OnReadClockOffsetComplete(uint16_t /* clock_offset */) override {
     LOG_INFO("UNIMPLEMENTED");
   }
 
@@ -563,66 +563,73 @@ class ClassicShimAclConnection
                         minimum_remote_timeout, minimum_local_timeout);
   }
 
-  void OnQosSetupComplete(hci::ServiceType service_type, uint32_t token_rate,
-                          uint32_t peak_bandwidth, uint32_t latency,
-                          uint32_t delay_variation) override {
+  void OnQosSetupComplete(hci::ServiceType /* service_type */,
+                          uint32_t /* token_rate */,
+                          uint32_t /* peak_bandwidth */, uint32_t /* latency */,
+                          uint32_t /* delay_variation */) override {
     LOG_INFO("UNIMPLEMENTED");
   }
 
-  void OnFlowSpecificationComplete(hci::FlowDirection flow_direction,
-                                   hci::ServiceType service_type,
-                                   uint32_t token_rate,
-                                   uint32_t token_bucket_size,
-                                   uint32_t peak_bandwidth,
-                                   uint32_t access_latency) override {
+  void OnFlowSpecificationComplete(hci::FlowDirection /* flow_direction */,
+                                   hci::ServiceType /* service_type */,
+                                   uint32_t /* token_rate */,
+                                   uint32_t /* token_bucket_size */,
+                                   uint32_t /* peak_bandwidth */,
+                                   uint32_t /* access_latency */) override {
     LOG_INFO("UNIMPLEMENTED");
   }
 
   void OnFlushOccurred() override { LOG_INFO("UNIMPLEMENTED"); }
 
-  void OnRoleDiscoveryComplete(hci::Role current_role) override {
+  void OnRoleDiscoveryComplete(hci::Role /* current_role */) override {
     LOG_INFO("UNIMPLEMENTED");
   }
 
   void OnReadLinkPolicySettingsComplete(
-      uint16_t link_policy_settings) override {
+      uint16_t /* link_policy_settings */) override {
     LOG_INFO("UNIMPLEMENTED");
   }
 
-  void OnReadAutomaticFlushTimeoutComplete(uint16_t flush_timeout) override {
+  void OnReadAutomaticFlushTimeoutComplete(
+      uint16_t /* flush_timeout */) override {
     LOG_INFO("UNIMPLEMENTED");
   }
 
-  void OnReadTransmitPowerLevelComplete(uint8_t transmit_power_level) override {
+  void OnReadTransmitPowerLevelComplete(
+      uint8_t /* transmit_power_level */) override {
     LOG_INFO("UNIMPLEMENTED");
   }
 
   void OnReadLinkSupervisionTimeoutComplete(
-      uint16_t link_supervision_timeout) override {
+      uint16_t /* link_supervision_timeout */) override {
     LOG_INFO("UNIMPLEMENTED");
   }
 
   void OnReadFailedContactCounterComplete(
-      uint16_t failed_contact_counter) override {
+      uint16_t /* failed_contact_counter */) override {
     LOG_INFO("UNIMPLEMENTED");
   }
 
-  void OnReadLinkQualityComplete(uint8_t link_quality) override {
+  void OnReadLinkQualityComplete(uint8_t /* link_quality */) override {
     LOG_INFO("UNIMPLEMENTED");
   }
 
   void OnReadAfhChannelMapComplete(
-      hci::AfhMode afh_mode, std::array<uint8_t, 10> afh_channel_map) override {
+      hci::AfhMode /* afh_mode */,
+      std::array<uint8_t, 10> /* afh_channel_map */) override {
     LOG_INFO("UNIMPLEMENTED");
   }
 
-  void OnReadRssiComplete(uint8_t rssi) override { LOG_INFO("UNIMPLEMENTED"); }
-
-  void OnReadClockComplete(uint32_t clock, uint16_t accuracy) override {
+  void OnReadRssiComplete(uint8_t /* rssi */) override {
     LOG_INFO("UNIMPLEMENTED");
   }
 
-  void OnCentralLinkKeyComplete(hci::KeyFlag key_flag) override {
+  void OnReadClockComplete(uint32_t /* clock */,
+                           uint16_t /* accuracy */) override {
+    LOG_INFO("UNIMPLEMENTED");
+  }
+
+  void OnCentralLinkKeyComplete(hci::KeyFlag /* key_flag */) override {
     LOG_INFO("%s UNIMPLEMENTED", __func__);
   }
 
@@ -807,8 +814,8 @@ class LeShimAclConnection
                         manufacturer_name, sub_version);
   }
 
-  void OnLeReadRemoteFeaturesComplete(hci::ErrorCode hci_status,
-                                      uint64_t features) {
+  void OnLeReadRemoteFeaturesComplete(hci::ErrorCode /* hci_status */,
+                                      uint64_t /* features */) {
     // TODO
   }
 

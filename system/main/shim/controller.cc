@@ -232,7 +232,7 @@ FORWARD_GETTER(
 FORWARD_GETTER(uint8_t, get_le_connect_list_size,
                GetController()->GetLeFilterAcceptListSize())
 
-static void set_ble_resolving_list_max_size(int resolving_list_max_size) {
+static void set_ble_resolving_list_max_size(int /* resolving_list_max_size */) {
   LOG_DEBUG("UNSUPPORTED");
 }
 
