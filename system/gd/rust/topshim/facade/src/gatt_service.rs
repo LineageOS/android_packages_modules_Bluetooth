@@ -364,7 +364,7 @@ impl GattService for GattServiceImpl {
 
     fn set_scan_parameters(&mut self, ctx: RpcContext<'_>, _req: Empty, sink: UnarySink<Empty>) {
         let scanner = &mut self.gatt.lock().unwrap().scanner;
-        scanner.set_scan_parameters(0, 0, 0);
+        scanner.set_scan_parameters(0, 0, 0, 0);
         ctx.spawn(async move {
             sink.success(Empty::default()).await.unwrap();
         })
