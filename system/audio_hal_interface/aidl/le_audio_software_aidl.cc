@@ -66,7 +66,8 @@ LeAudioTransport::LeAudioTransport(void (*flush)(void),
       total_bytes_processed_(0),
       data_position_({}),
       pcm_config_(std::move(pcm_config)),
-      start_request_state_(StartRequestState::IDLE){};
+      start_request_state_(StartRequestState::IDLE),
+      dsa_mode_(DsaMode::DISABLED){};
 
 BluetoothAudioCtrlAck LeAudioTransport::StartRequest(bool is_low_latency) {
   // Check if operation is pending already

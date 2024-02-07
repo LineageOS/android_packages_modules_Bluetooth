@@ -22,7 +22,10 @@ config("packet_config") {
     "//bt/system/profile/avrcp",
   ]
 
-  configs = [ "//bt/system:target_defaults" ]
+  configs = [
+    "//bt/system:target_defaults",
+    "//bt/system/log:log_defaults",
+  ]
 }
 
 static_library("packet") {

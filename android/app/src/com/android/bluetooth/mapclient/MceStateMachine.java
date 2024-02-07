@@ -725,21 +725,30 @@ class MceStateMachine extends StateMachine {
 
                 case MSG_GET_MESSAGE_LISTING:
                     // Get latest 50 Unread messages in the last week
-                    MessagesFilter filter = new MessagesFilter();
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.add(Calendar.DATE, -7);
+                    byte messageType;
                     if (Utils.isPtsTestMode()) {
-                        filter.setMessageType(
+                        messageType =
                                 (byte)
                                         SystemProperties.getInt(
                                                 FETCH_MESSAGE_TYPE,
-                                                MessagesFilter.MESSAGE_TYPE_ALL));
+                                                MessagesFilter.MESSAGE_TYPE_ALL);
                     } else {
-                        filter.setMessageType(MessagesFilter.MESSAGE_TYPE_ALL);
+                        messageType = MessagesFilter.MESSAGE_TYPE_ALL;
                     }
-                    Calendar calendar = Calendar.getInstance();
-                    calendar.add(Calendar.DATE, -7);
-                    filter.setPeriod(calendar.getTime(), null);
-                    mMasClient.makeRequest(new RequestGetMessagesListing(
-                            (String) message.obj, 0, filter, 0, 50, 0));
+
+                    mMasClient.makeRequest(
+                            new RequestGetMessagesListing(
+                                    (String) message.obj,
+                                    0,
+                                    new MessagesFilter.Builder()
+                                            .setPeriod(calendar.getTime(), null)
+                                            .setMessageType(messageType)
+                                            .build(),
+                                    0,
+                                    50,
+                                    0));
                     break;
 
                 case MSG_SET_MESSAGE_STATUS:

@@ -127,6 +127,7 @@ REQUIRED_APT_PACKAGES = [
     'liblz4-tool',
     'libncurses5',
     'libnss3-dev',
+    'libfmt-dev',
     'libprotobuf-dev',
     'libre2-9',
     'libre2-dev',

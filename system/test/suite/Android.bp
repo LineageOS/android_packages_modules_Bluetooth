@@ -69,6 +69,7 @@ cc_defaults {
         "libbluetooth-types",
         "libbluetooth_core_rs",
         "libbluetooth_core_rs_bridge",
+        "libbluetooth_log",
         "libbt-audio-asrc",
         "libbt-audio-hal-interface",
         "libbt-bta",
@@ -119,6 +120,7 @@ cc_test {
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbluetooth_hci_pdl",
+        "libbluetooth_log",
         "libbt-btu-main-thread",
         "libbt-jni-thread",
         "libbt-platform-protos-lite",
@@ -128,6 +130,7 @@ cc_test {
         "libprotobuf-cpp-lite",
     ],
     shared_libs: [
+        "libbase",
         "server_configurable_flags",
     ],
     generated_headers: [

@@ -21,6 +21,8 @@ import static com.google.common.truth.Truth.assertThat;
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
 
+import java.util.Calendar;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -78,4 +80,35 @@ public class MessagesFilterTest {
         assertThat(filter.recipient).isEqualTo(null);
     }
 
+    /** Test Builder creates and sets everything correctly. */
+    @Test
+    public void testBuilder() {
+        String originator = "test_originator";
+        String recipient = "test_recipient";
+        byte messageType = MessagesFilter.MESSAGE_TYPE_EMAIL;
+        byte readStatus = MessagesFilter.READ_STATUS_READ;
+        byte priority = MessagesFilter.PRIORITY_HIGH;
+        Calendar begin = Calendar.getInstance();
+        begin.add(Calendar.DATE, -14);
+        Calendar end = Calendar.getInstance();
+        end.add(Calendar.DATE, -7);
+
+        MessagesFilter filter =
+                new MessagesFilter.Builder()
+                        .setOriginator(originator)
+                        .setRecipient(recipient)
+                        .setMessageType(messageType)
+                        .setReadStatus(readStatus)
+                        .setPriority(priority)
+                        .setPeriod(begin.getTime(), end.getTime())
+                        .build();
+
+        assertThat(filter.originator).isEqualTo(originator);
+        assertThat(filter.recipient).isEqualTo(recipient);
+        assertThat(filter.messageType).isEqualTo(messageType);
+        assertThat(filter.readStatus).isEqualTo(readStatus);
+        assertThat(filter.priority).isEqualTo(priority);
+        assertThat(filter.periodBegin).isEqualTo((new ObexTime(begin.getTime())).toString());
+        assertThat(filter.periodEnd).isEqualTo((new ObexTime(end.getTime())).toString());
+    }
 }

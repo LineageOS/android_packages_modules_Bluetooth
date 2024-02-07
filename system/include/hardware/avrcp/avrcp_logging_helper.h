@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <bluetooth/log.h>
+
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -284,3 +286,36 @@ inline std::ostream& operator<<(std::ostream& os,
 
 }  // namespace avrcp
 }  // namespace bluetooth
+
+namespace fmt {
+template <>
+struct formatter<bluetooth::avrcp::CType> : ostream_formatter {};
+template <>
+struct formatter<bluetooth::avrcp::Opcode> : ostream_formatter {};
+template <>
+struct formatter<bluetooth::avrcp::CommandPdu> : ostream_formatter {};
+template <>
+struct formatter<bluetooth::avrcp::PacketType> : ostream_formatter {};
+template <>
+struct formatter<bluetooth::avrcp::Capability> : ostream_formatter {};
+template <>
+struct formatter<bluetooth::avrcp::Event> : ostream_formatter {};
+template <>
+struct formatter<bluetooth::avrcp::Attribute> : ostream_formatter {};
+template <>
+struct formatter<bluetooth::avrcp::Status> : ostream_formatter {};
+template <>
+struct formatter<bluetooth::avrcp::BrowsePdu> : ostream_formatter {};
+template <>
+struct formatter<bluetooth::avrcp::Scope> : ostream_formatter {};
+template <>
+struct formatter<bluetooth::avrcp::Direction> : ostream_formatter {};
+template <>
+struct formatter<bluetooth::avrcp::KeyState> : ostream_formatter {};
+template <>
+struct formatter<bluetooth::avrcp::PlayerAttribute> : ostream_formatter {};
+template <>
+struct formatter<bluetooth::avrcp::PlayerRepeatValue> : ostream_formatter {};
+template <>
+struct formatter<bluetooth::avrcp::PlayerShuffleValue> : ostream_formatter {};
+}  // namespace fmt
