@@ -23,7 +23,6 @@
 #include <utility>
 
 #include "common/bind.h"
-#include "gd/storage/config_keys.h"
 #include "metrics/counter_metrics.h"
 #include "os/alarm.h"
 #include "os/files.h"
@@ -31,6 +30,7 @@
 #include "os/parameter_provider.h"
 #include "os/system_properties.h"
 #include "storage/config_cache.h"
+#include "storage/config_keys.h"
 #include "storage/legacy_config_file.h"
 #include "storage/mutation.h"
 

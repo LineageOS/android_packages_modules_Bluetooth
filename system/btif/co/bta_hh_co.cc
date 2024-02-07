@@ -33,12 +33,12 @@
 #include "bta_hh_api.h"
 #include "btif_hh.h"
 #include "device/include/controller.h"
-#include "gd/storage/config_keys.h"
 #include "include/check.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
 #include "osi/include/osi.h"
+#include "storage/config_keys.h"
 #include "types/raw_address.h"
 
 const char* dev_path = "/dev/uhid";

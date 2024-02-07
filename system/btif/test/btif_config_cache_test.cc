@@ -21,8 +21,8 @@
 
 #include <filesystem>
 
-#include "gd/storage/config_keys.h"
 #include "stack/include/bt_octets.h"
+#include "storage/config_keys.h"
 
 namespace {
 
