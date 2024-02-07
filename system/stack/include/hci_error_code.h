@@ -17,6 +17,7 @@
 #pragma once
 
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 
 #include <cstdint>
 #include <string>
@@ -147,3 +148,9 @@ inline tHCI_REASON to_hci_reason_code(const uint8_t& reason_code) {
   if (reason_code > _HCI_ERR_MAX_ERR) return HCI_ERR_UNDEFINED;
   return static_cast<tHCI_REASON>(reason_code);
 }
+
+namespace fmt {
+template <>
+struct formatter<tHCI_ERROR_CODE>
+    : string_formatter<tHCI_ERROR_CODE, &hci_error_code_text> {};
+}  // namespace fmt
