@@ -26,7 +26,6 @@
 #include "bta/include/bta_api.h"
 #include "btif/include/btif_common.h"
 #include "include/hardware/bluetooth.h"
-#include "test/common/jni_thread.h"
 #include "test/common/mock_functions.h"
 #include "types/raw_address.h"
 
@@ -34,11 +33,7 @@ bool btif_is_dut_mode() {
   inc_func_call_count(__func__);
   return false;
 }
-bool is_on_jni_thread() {
-  inc_func_call_count(__func__);
-  return false;
-}
-bt_property_t* property_deep_copy(const bt_property_t* prop) {
+bt_property_t* property_deep_copy(const bt_property_t* /* prop */) {
   inc_func_call_count(__func__);
   return nullptr;
 }
@@ -52,23 +47,6 @@ bt_status_t btif_init_bluetooth() {
 }
 bt_status_t btif_set_dynamic_audio_buffer_size(int codec, int size) {
   inc_func_call_count(__func__);
-  return BT_STATUS_SUCCESS;
-}
-bt_status_t btif_transfer_context(tBTIF_CBACK* p_cback, uint16_t event,
-                                  char* p_params, int param_len,
-                                  tBTIF_COPY_CBACK* p_copy_cback) {
-  inc_func_call_count(__func__);
-  return BT_STATUS_SUCCESS;
-}
-bt_status_t do_in_jni_thread(base::OnceClosure task) {
-  inc_func_call_count(__func__);
-  do_in_jni_thread_task_queue.push(std::move(task));
-  return BT_STATUS_SUCCESS;
-}
-bt_status_t do_in_jni_thread(const base::Location& from_here,
-                             base::OnceClosure task) {
-  inc_func_call_count(__func__);
-  do_in_jni_thread_task_queue.push(std::move(task));
   return BT_STATUS_SUCCESS;
 }
 int btif_is_enabled(void) {
