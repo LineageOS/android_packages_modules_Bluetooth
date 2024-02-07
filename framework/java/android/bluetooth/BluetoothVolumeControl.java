@@ -539,9 +539,9 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
 
         final boolean defaultValue = false;
         try {
-            final SynchronousResultReceiver recv = SynchronousResultReceiver.get();
+            final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
             service.isVolumeOffsetAvailable(device, mAttributionSource, recv);
-            recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
+            return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
         } catch (RemoteException | TimeoutException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         }
