@@ -18,6 +18,8 @@
 
 #include <cstdint>
 #include <string>
+
+#include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 #define BLE_ADDR_PUBLIC 0x00
@@ -146,6 +148,44 @@ struct std::hash<tBLE_BD_ADDR> {
     memcpy(reinterpret_cast<uint8_t*>(&int_addr) + RawAddress::kLength,
            (const void*)&val.type, sizeof(tBLE_ADDR_TYPE));
     return std::hash<uint64_t>{}(int_addr);
+  }
+};
+
+struct tTypedAddressTransport {
+  tBLE_BD_ADDR addrt;
+  tBT_TRANSPORT transport;
+
+  bool operator==(const tTypedAddressTransport rhs) const {
+    if (rhs.addrt != addrt) return false;
+
+    if (rhs.transport == BT_TRANSPORT_AUTO || transport == BT_TRANSPORT_AUTO) {
+      return true;
+    }
+
+    return rhs.transport == transport;
+  }
+
+  bool operator!=(const tTypedAddressTransport rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool StrictlyEquals(const tTypedAddressTransport rhs) const {
+    return rhs.addrt == addrt && rhs.transport == transport;
+  }
+
+  std::string ToString() const {
+    return std::string(addrt.ToString() + "[" + bt_transport_text(transport) +
+                       "]");
+  }
+
+  std::string ToStringForLogging() const {
+    return addrt.ToStringForLogging() + "[" + bt_transport_text(transport) +
+           "]";
+  }
+
+  std::string ToRedactedStringForLogging() const {
+    return addrt.ToRedactedStringForLogging() + "[" +
+           bt_transport_text(transport) + "]";
   }
 };
 
