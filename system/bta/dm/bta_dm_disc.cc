@@ -35,7 +35,6 @@
 #include "common/init_flags.h"
 #include "common/strings.h"
 #include "device/include/interop.h"
-#include "gd/storage/config_keys.h"
 #include "include/bind_helpers.h"
 #include "include/check.h"
 #include "internal_include/bt_target.h"
@@ -58,6 +57,7 @@
 #include "stack/include/hidh_api.h"
 #include "stack/include/sdp_status.h"
 #include "stack/sdp/sdpint.h"  // is_sdp_pbap_pce_disabled
+#include "storage/config_keys.h"
 #include "types/raw_address.h"
 
 #ifdef TARGET_FLOSS

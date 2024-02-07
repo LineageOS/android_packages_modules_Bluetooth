@@ -39,7 +39,6 @@
 #include "btif/include/stack_manager_t.h"
 #include "common/init_flags.h"
 #include "device/include/interop.h"
-#include "gd/storage/config_keys.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/bt_trace.h"
 #include "os/log.h"
@@ -55,6 +54,7 @@
 #include "stack/include/sdpdefs.h"
 #include "stack/include/stack_metrics_logging.h"
 #include "stack/sdp/sdpint.h"
+#include "storage/config_keys.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 

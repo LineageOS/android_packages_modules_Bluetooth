@@ -40,9 +40,9 @@
 #include "btif_config.h"
 #include "btif_hh.h"
 #include "btif_storage.h"
-#include "gd/storage/config_keys.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/main_thread.h"
+#include "storage/config_keys.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 

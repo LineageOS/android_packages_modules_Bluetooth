@@ -21,8 +21,8 @@
 
 #include <filesystem>
 
-#include "gd/storage/config_keys.h"
 #include "os/files.h"
+#include "storage/config_keys.h"
 #include "storage/device.h"
 
 namespace testing {

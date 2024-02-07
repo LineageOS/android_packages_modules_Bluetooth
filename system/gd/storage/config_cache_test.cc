@@ -21,8 +21,8 @@
 
 #include <cstdio>
 
-#include "gd/storage/config_keys.h"
 #include "hci/enum_helper.h"
+#include "storage/config_keys.h"
 #include "storage/device.h"
 
 namespace testing {

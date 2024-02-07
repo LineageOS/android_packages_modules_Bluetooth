@@ -24,8 +24,8 @@
 
 #include "bta/include/bta_api_data_types.h"
 #include "btif/include/mock_core_callbacks.h"
-#include "gd/module.h"
 #include "main/shim/stack.h"
+#include "module.h"
 #include "stack/include/btm_ble_api_types.h"
 #include "storage/storage_module.h"
 

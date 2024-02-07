@@ -23,7 +23,6 @@
 #include "common/bidi_queue.h"
 #include "common/byte_array.h"
 #include "dumpsys_data_generated.h"
-#include "gd/storage/config_keys.h"
 #include "hci/acl_manager/acl_scheduler.h"
 #include "hci/acl_manager/classic_impl.h"
 #include "hci/acl_manager/le_acceptlist_callbacks.h"
@@ -35,6 +34,7 @@
 #include "hci/remote_name_request.h"
 #include "hci_acl_manager_generated.h"
 #include "security/security_module.h"
+#include "storage/config_keys.h"
 #include "storage/storage_module.h"
 
 namespace bluetooth {

@@ -42,7 +42,6 @@
 #include "btif/include/btif_storage.h"
 #include "device/include/device_iot_config.h"
 #include "device/include/interop.h"
-#include "gd/storage/config_keys.h"
 #include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
@@ -58,6 +57,7 @@
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_log_history.h"
 #include "stack/include/l2c_api.h"
+#include "storage/config_keys.h"
 #include "types/hci_role.h"
 #include "types/raw_address.h"
 
