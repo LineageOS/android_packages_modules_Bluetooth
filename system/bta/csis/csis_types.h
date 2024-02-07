@@ -90,12 +90,6 @@ class GattServiceDevice {
  public:
   RawAddress addr;
   /*
-   * This is true only during first connection to profile, until we store the
-   * device.
-   */
-  bool first_connection;
-
-  /*
    * We are making active attempt to connect to this device, 'direct connect'.
    */
   bool connecting_actively = false;
@@ -105,7 +99,7 @@ class GattServiceDevice {
   bool is_gatt_service_valid = false;
 
   GattServiceDevice(const RawAddress& addr, bool first_connection)
-      : addr(addr), first_connection(first_connection) {}
+      : addr(addr) {}
 
   GattServiceDevice() : GattServiceDevice(RawAddress::kEmpty, false) {}
 
