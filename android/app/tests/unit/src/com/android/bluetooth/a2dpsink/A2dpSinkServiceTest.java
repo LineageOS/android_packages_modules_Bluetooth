@@ -103,7 +103,7 @@ public class A2dpSinkServiceTest {
         doReturn(true).when(mNativeInterface).setActiveDevice(any());
 
         mService = new A2dpSinkService(mTargetContext, mNativeInterface, mLooper.getLooper());
-        mService.doStart();
+        mService.start();
         assertThat(mLooper.nextMessage()).isNull();
     }
 
@@ -111,7 +111,7 @@ public class A2dpSinkServiceTest {
     public void tearDown() throws Exception {
         assertThat(mLooper.nextMessage()).isNull();
 
-        mService.doStop();
+        mService.stop();
         assertThat(A2dpSinkService.getA2dpSinkService()).isNull();
         TestUtils.clearAdapterService(mAdapterService);
     }

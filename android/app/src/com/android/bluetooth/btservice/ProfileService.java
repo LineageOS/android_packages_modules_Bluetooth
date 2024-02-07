@@ -21,17 +21,14 @@ import static java.util.Objects.requireNonNull;
 
 import android.annotation.RequiresPermission;
 import android.annotation.SuppressLint;
-import android.bluetooth.BluetoothAdapter;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.ContextWrapper;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.IBinder;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothMetricsProto;
-import com.android.internal.annotations.VisibleForTesting;
 
 /** Base class for a background service that runs a Bluetooth profile */
 public abstract class ProfileService extends ContextWrapper {
@@ -43,16 +40,13 @@ public abstract class ProfileService extends ContextWrapper {
             android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 
     public interface IProfileServiceBinder extends IBinder {
-        /**
-         * Called in {@link #onDestroy()}
-         */
         void cleanup();
     }
 
     private final IProfileServiceBinder mBinder;
     private final String mName;
     private AdapterService mAdapterService;
-    private boolean mProfileStarted = false;
+    private boolean mAvailable = false;
     private volatile boolean mTestModeEnabled = false;
 
     public String getName() {
@@ -60,7 +54,11 @@ public abstract class ProfileService extends ContextWrapper {
     }
 
     public boolean isAvailable() {
-        return mProfileStarted;
+        return mAvailable;
+    }
+
+    public void setAvailable(boolean available) {
+        mAvailable = available;
     }
 
     protected boolean isTestModeEnabled() {
@@ -74,20 +72,14 @@ public abstract class ProfileService extends ContextWrapper {
      */
     protected abstract IProfileServiceBinder initBinder();
 
-    /**
-     * Called in {@link #onStartCommand(Intent, int, int)} when the service is started by intent
-     */
-    protected abstract void start();
+    /** Start service */
+    public abstract void start();
 
-    /**
-     * Called in {@link #onStartCommand(Intent, int, int)} when the service is stopped by intent
-     */
-    protected abstract void stop();
+    /** Stop service */
+    public abstract void stop();
 
-    /**
-     * Called in {@link #onDestroy()} when this object is completely discarded
-     */
-    protected void cleanup() {}
+    /** Called when this object is completely discarded */
+    public void cleanup() {}
 
     /**
      * @param testModeEnabled if the profile should enter or exit a testing mode
@@ -106,7 +98,7 @@ public abstract class ProfileService extends ContextWrapper {
     }
 
     /** return the binder of the profile */
-    public IBinder getBinder() {
+    public IProfileServiceBinder getBinder() {
         return mBinder;
     }
 
@@ -194,51 +186,5 @@ public abstract class ProfileService extends ContextWrapper {
         sb.append("  ");
         sb.append(s);
         sb.append("\n");
-    }
-
-    /** start the profile and inform AdapterService */
-    @RequiresPermission(
-            anyOf = {
-                android.Manifest.permission.MANAGE_USERS,
-                android.Manifest.permission.INTERACT_ACROSS_USERS
-            })
-    @VisibleForTesting
-    public void doStart() {
-        Log.v(mName, "doStart");
-        mAdapterService = AdapterService.getAdapterService();
-        if (mAdapterService == null) {
-            Log.w(mName, "Could not add this profile because AdapterService is null.");
-            return;
-        }
-        mAdapterService.addProfile(this);
-
-        start();
-        mProfileStarted = true;
-
-        mAdapterService.onProfileServiceStateChanged(this, BluetoothAdapter.STATE_ON);
-    }
-
-    /** stop the profile and inform AdapterService */
-    @VisibleForTesting
-    public void doStop() {
-        Log.v(mName, "doStop");
-        if (mAdapterService == null) {
-            Log.w(mName, "Unexpectedly do Stop, don't stop.");
-            return;
-        }
-        if (!mProfileStarted) {
-            Log.w(mName, "doStop() called, but the profile is not running.");
-            return;
-        }
-        mProfileStarted = false;
-        if (mAdapterService != null) {
-            mAdapterService.onProfileServiceStateChanged(this, BluetoothAdapter.STATE_OFF);
-        }
-        stop();
-        if (mAdapterService != null) {
-            mAdapterService.removeProfile(this);
-        }
-        cleanup();
-        mBinder.cleanup();
     }
 }

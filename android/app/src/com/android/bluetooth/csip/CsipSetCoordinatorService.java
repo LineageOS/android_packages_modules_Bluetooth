@@ -123,7 +123,7 @@ public class CsipSetCoordinatorService extends ProfileService {
     }
 
     @Override
-    protected void start() {
+    public void start() {
         if (DBG) {
             Log.d(TAG, "start()");
         }
@@ -166,7 +166,7 @@ public class CsipSetCoordinatorService extends ProfileService {
     }
 
     @Override
-    protected void stop() {
+    public void stop() {
         if (DBG) {
             Log.d(TAG, "stop()");
         }
@@ -222,7 +222,7 @@ public class CsipSetCoordinatorService extends ProfileService {
     }
 
     @Override
-    protected void cleanup() {
+    public void cleanup() {
         if (DBG) {
             Log.d(TAG, "cleanup()");
         }

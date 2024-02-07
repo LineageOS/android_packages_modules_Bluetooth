@@ -680,7 +680,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
     }
 
     @Override
-    protected void start() {
+    public void start() {
         Log.v(TAG, "start()");
         IntentFilter filter = new IntentFilter();
         filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
@@ -702,7 +702,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
     }
 
     @Override
-    protected void stop() {
+    public void stop() {
         Log.v(TAG, "stop()");
         if (!mIsRegistered) {
             Log.i(TAG, "Avoid unregister when receiver it is not registered");

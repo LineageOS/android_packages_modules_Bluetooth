@@ -150,7 +150,7 @@ public class AvrcpControllerService extends ProfileService {
     }
 
     @Override
-    protected synchronized void start() {
+    public synchronized void start() {
         mNativeInterface.init(this);
         setComponentAvailable(ON_ERROR_SETTINGS_ACTIVITY, true);
         mAdapterService = AdapterService.getAdapterService();
@@ -169,7 +169,7 @@ public class AvrcpControllerService extends ProfileService {
     }
 
     @Override
-    protected synchronized void stop() {
+    public synchronized void stop() {
         setActiveDevice(null);
         Intent stopIntent = new Intent(this, BluetoothMediaBrowserService.class);
         stopService(stopIntent);

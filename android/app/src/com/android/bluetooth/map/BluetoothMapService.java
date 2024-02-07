@@ -717,7 +717,7 @@ public class BluetoothMapService extends ProfileService {
     }
 
     @Override
-    protected void start() {
+    public void start() {
         if (DEBUG) {
             Log.d(TAG, "start()");
         }
@@ -945,7 +945,7 @@ public class BluetoothMapService extends ProfileService {
     }
 
     @Override
-    protected void stop() {
+    public void stop() {
         if (DEBUG) {
             Log.d(TAG, "stop()");
         }

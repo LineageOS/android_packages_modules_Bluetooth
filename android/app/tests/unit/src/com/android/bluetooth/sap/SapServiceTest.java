@@ -61,7 +61,8 @@ public class SapServiceTest {
         MockitoAnnotations.initMocks(this);
         TestUtils.setAdapterService(mAdapterService);
         mService = new SapService(mTargetContext);
-        mService.doStart();
+        mService.start();
+        mService.setAvailable(true);
         // Try getting the Bluetooth adapter
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         assertThat(mAdapter).isNotNull();
@@ -70,7 +71,7 @@ public class SapServiceTest {
 
     @After
     public void tearDown() throws Exception {
-        mService.doStop();
+        mService.stop();
         mService = SapService.getSapService();
         assertThat(mService).isNull();
         TestUtils.clearAdapterService(mAdapterService);

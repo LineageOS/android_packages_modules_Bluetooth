@@ -219,11 +219,12 @@ public class HapClientTest {
 
     private void startService() throws TimeoutException {
         mService = new HapClientService(mContext);
-        mService.doStart();
+        mService.start();
+        mService.setAvailable(true);
     }
 
     private void stopService() throws TimeoutException {
-        mService.doStop();
+        mService.stop();
         mService = HapClientService.getHapClientService();
         Assert.assertNull(mService);
     }

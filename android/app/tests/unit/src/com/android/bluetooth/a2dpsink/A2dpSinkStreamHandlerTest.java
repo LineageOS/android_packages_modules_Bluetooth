@@ -84,7 +84,7 @@ public class A2dpSinkStreamHandlerTest {
         TestUtils.setAdapterService(mAdapterService);
         AvrcpControllerNativeInterface.setInstance(mMockAvrcpControllerNativeInterface);
         mService = new AvrcpControllerService(mTargetContext, mMockAvrcpControllerNativeInterface);
-        mService.doStart();
+        mService.start();
         final Intent bluetoothBrowserMediaServiceStartIntent =
                 TestUtils.prepareIntentToStartBluetoothBrowserMediaService();
         mBluetoothBrowserMediaServiceTestRule.startService(bluetoothBrowserMediaServiceStartIntent);
@@ -111,7 +111,7 @@ public class A2dpSinkStreamHandlerTest {
 
     @After
     public void tearDown() throws Exception {
-        mService.doStop();
+        mService.stop();
         AvrcpControllerNativeInterface.setInstance(null);
         TestUtils.clearAdapterService(mAdapterService);
     }
