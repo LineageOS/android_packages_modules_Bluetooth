@@ -129,7 +129,8 @@ public class VolumeControlServiceTest {
 
         VolumeControlNativeInterface.setInstance(mNativeInterface);
         mService = new VolumeControlService(mTargetContext, mFakeFlagsImpl);
-        mService.doStart();
+        mService.start();
+        mService.setAvailable(true);
 
         mService.mAudioManager = mAudioManager;
         mService.mFactory = mServiceFactory;
@@ -168,7 +169,7 @@ public class VolumeControlServiceTest {
             return;
         }
 
-        mService.doStop();
+        mService.stop();
         VolumeControlNativeInterface.setInstance(null);
         mTargetContext.unregisterReceiver(mVolumeControlIntentReceiver);
         mDeviceQueueMap.clear();

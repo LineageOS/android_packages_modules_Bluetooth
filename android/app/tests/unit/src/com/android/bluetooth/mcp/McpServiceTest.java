@@ -67,7 +67,8 @@ public class McpServiceTest {
 
         McpService.setMediaControlProfileForTesting(mMediaControlProfile);
         mMcpService = new McpService(mTargetContext);
-        mMcpService.doStart();
+        mMcpService.start();
+        mMcpService.setAvailable(true);
     }
 
     @After
@@ -76,7 +77,7 @@ public class McpServiceTest {
             return;
         }
 
-        mMcpService.doStop();
+        mMcpService.stop();
         mMcpService = McpService.getMcpService();
         Assert.assertNull(mMcpService);
         reset(mMediaControlProfile);

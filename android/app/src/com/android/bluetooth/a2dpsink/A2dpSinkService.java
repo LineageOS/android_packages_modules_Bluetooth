@@ -92,7 +92,7 @@ public class A2dpSinkService extends ProfileService {
     }
 
     @Override
-    protected void start() {
+    public void start() {
         mAdapterService =
                 requireNonNull(
                         AdapterService.getAdapterService(),
@@ -113,7 +113,7 @@ public class A2dpSinkService extends ProfileService {
     }
 
     @Override
-    protected void stop() {
+    public void stop() {
         setA2dpSinkService(null);
         mNativeInterface.cleanup();
         for (A2dpSinkStateMachine stateMachine : mDeviceStateMap.values()) {

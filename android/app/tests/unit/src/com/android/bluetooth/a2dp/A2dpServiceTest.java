@@ -108,7 +108,8 @@ public class A2dpServiceTest {
         doReturn(mSilenceDeviceManager).when(mAdapterService).getSilenceDeviceManager();
 
         mA2dpService = new A2dpService(mContext, mMockNativeInterface);
-        mA2dpService.doStart();
+        mA2dpService.start();
+        mA2dpService.setAvailable(true);
 
         // Override the timeout value to speed up the test
         A2dpStateMachine.sConnectTimeoutMs = (int) TIMEOUT.toMillis();
@@ -124,7 +125,7 @@ public class A2dpServiceTest {
 
     @After
     public void tearDown() throws Exception {
-        mA2dpService.doStop();
+        mA2dpService.stop();
         TestUtils.clearAdapterService(mAdapterService);
     }
 

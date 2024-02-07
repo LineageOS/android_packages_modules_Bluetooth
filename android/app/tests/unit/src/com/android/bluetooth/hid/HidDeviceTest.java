@@ -111,7 +111,8 @@ public class HidDeviceTest {
         mTestDevice = mAdapter.getRemoteDevice("10:11:12:13:14:15");
 
         mHidDeviceService = new HidDeviceService(mTargetContext);
-        mHidDeviceService.doStart();
+        mHidDeviceService.start();
+        mHidDeviceService.setAvailable(true);
 
         // Force unregister app first
         mHidDeviceService.unregisterApp();
@@ -137,7 +138,7 @@ public class HidDeviceTest {
 
     @After
     public void tearDown() throws Exception {
-        mHidDeviceService.doStop();
+        mHidDeviceService.stop();
         mHidDeviceService = HidDeviceService.getHidDeviceService();
         Assert.assertNull(mHidDeviceService);
         mTargetContext.unregisterReceiver(mConnectionStateChangedReceiver);

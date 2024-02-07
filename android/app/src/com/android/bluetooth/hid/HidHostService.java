@@ -103,7 +103,7 @@ public class HidHostService extends ProfileService {
     }
 
     @Override
-    protected void start() {
+    public void start() {
         mDatabaseManager =
                 requireNonNull(
                         AdapterService.getAdapterService().getDatabase(),
@@ -120,14 +120,14 @@ public class HidHostService extends ProfileService {
     }
 
     @Override
-    protected void stop() {
+    public void stop() {
         if (DBG) {
             Log.d(TAG, "Stopping Bluetooth HidHostService");
         }
     }
 
     @Override
-    protected void cleanup() {
+    public void cleanup() {
         if (DBG) Log.d(TAG, "Stopping Bluetooth HidHostService");
         if (mNativeAvailable) {
             mNativeInterface.cleanup();

@@ -101,7 +101,7 @@ public class HeadsetClientService extends ProfileService {
     }
 
     @Override
-    protected void start() {
+    public void start() {
         synchronized (mStartStopLock) {
             if (DBG) {
                 Log.d(TAG, "start()");
@@ -155,7 +155,7 @@ public class HeadsetClientService extends ProfileService {
     }
 
     @Override
-    protected void stop() {
+    public void stop() {
         synchronized (mStartStopLock) {
             synchronized (HeadsetClientService.class) {
                 if (sHeadsetClientService == null) {

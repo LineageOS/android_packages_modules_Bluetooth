@@ -275,13 +275,14 @@ public class LeAudioServiceTest {
         // LeAudioService#init and expect it to be run after start
         // has finished.
         // To ensure that we run start on the main looper as well.
-        FutureTask task = new FutureTask(mService::doStart, null);
+        mService.setAvailable(true);
+        FutureTask task = new FutureTask(mService::start, null);
         new Handler(Looper.getMainLooper()).post(task);
         task.get();
     }
 
     private void stopService() throws TimeoutException {
-        mService.doStop();
+        mService.stop();
         mService = LeAudioService.getLeAudioService();
         assertThat(mService).isNull();
     }
