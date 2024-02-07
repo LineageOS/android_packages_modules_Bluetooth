@@ -56,6 +56,40 @@ import org.robolectric.shadows.ShadowToast
 @RunWith(RobolectricTestRunner::class)
 @kotlin.time.ExperimentalTime
 class ModeListenerTest {
+    companion object {
+        internal fun setupAirplaneModeToOn(
+            resolver: ContentResolver,
+            looper: Looper,
+            user: () -> Context,
+            enableEnhancedMode: Boolean
+        ) {
+            enableSensitive(resolver, looper, Settings.Global.AIRPLANE_MODE_RADIOS)
+            enableMode(resolver, looper, Settings.Global.AIRPLANE_MODE_ON)
+            val mode: (m: Boolean) -> Unit = { _: Boolean -> }
+            val notif: (m: String) -> Unit = { _: String -> }
+            val media: () -> Boolean = { -> false }
+            if (enableEnhancedMode) {
+                Settings.Secure.putInt(resolver, APM_USER_TOGGLED_BLUETOOTH, 1)
+            }
+
+            initialize(
+                looper,
+                resolver,
+                BluetoothAdapterState(),
+                mode,
+                notif,
+                media,
+                user,
+                TimeSource.Monotonic,
+            )
+        }
+
+        internal fun setupAirplaneModeToOff(resolver: ContentResolver, looper: Looper) {
+            disableSensitive(resolver, looper, Settings.Global.AIRPLANE_MODE_RADIOS)
+            disableMode(resolver, looper, Settings.Global.AIRPLANE_MODE_ON)
+        }
+    }
+
     private val looper: Looper = Looper.getMainLooper()
     private val state = BluetoothAdapterState()
     private val mContext = ApplicationProvider.getApplicationContext<Context>()

@@ -507,6 +507,10 @@ class BluetoothManagerService {
                 // Clear registered LE apps to force shut-off
                 clearBleApps();
 
+                if (!AirplaneModeListener.hasUserToggledApm(mCurrentUserContext)) {
+                    AutoOnFeature.pause();
+                }
+
                 // If state is BLE_ON make sure we trigger stopBle
                 if (st == STATE_BLE_ON) {
                     mAdapterLock.readLock().lock();
@@ -535,6 +539,8 @@ class BluetoothManagerService {
                         mQuietEnableExternal,
                         BluetoothProtoEnums.ENABLE_DISABLE_REASON_AIRPLANE_MODE,
                         mContext.getPackageName());
+            } else if (st != STATE_ON) {
+                autoOnSetupTimer();
             }
         }
     }
