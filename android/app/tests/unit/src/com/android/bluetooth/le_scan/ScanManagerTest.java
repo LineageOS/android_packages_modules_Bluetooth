@@ -53,6 +53,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.test.TestLooper;
+import android.platform.test.flag.junit.SetFlagsRule;
 import android.provider.Settings;
 import android.test.mock.MockContentProvider;
 import android.test.mock.MockContentResolver;
@@ -68,12 +69,10 @@ import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.BluetoothAdapterProxy;
 import com.android.bluetooth.btservice.MetricsLogger;
-import com.android.bluetooth.flags.FakeFeatureFlagsImpl;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.gatt.GattNativeInterface;
 import com.android.bluetooth.gatt.GattObjectsFactory;
 import com.android.bluetooth.gatt.GattService;
-import com.android.bluetooth.le_scan.ScanClient;
 import com.android.internal.app.IBatteryStats;
 
 import org.junit.After;
@@ -122,8 +121,9 @@ public class ScanManagerTest {
     final BatteryStatsManager mBatteryStatsManager =
             new BatteryStatsManager(mock(IBatteryStats.class));
 
-    private FakeFeatureFlagsImpl mFakeFlagsImpl;
     @Rule public final ServiceTestRule mServiceRule = new ServiceTestRule();
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+
     @Mock private AdapterService mAdapterService;
     @Mock private GattService mMockGattService;
     @Mock private BluetoothAdapterProxy mBluetoothAdapterProxy;
@@ -190,8 +190,6 @@ public class ScanManagerTest {
         doReturn(mTargetContext.getUser()).when(mMockGattService).getUser();
         doReturn(mTargetContext.getPackageName()).when(mMockGattService).getPackageName();
 
-        mFakeFlagsImpl = new FakeFeatureFlagsImpl();
-        mFakeFlagsImpl.setFlag(Flags.FLAG_SCAN_TIMEOUT_RESET, true);
         mTestLooper = new TestLooper();
         mTestLooper.startAutoDispatch();
         mScanManager =
@@ -199,8 +197,7 @@ public class ScanManagerTest {
                         mMockGattService,
                         mAdapterService,
                         mBluetoothAdapterProxy,
-                        mTestLooper.getLooper(),
-                        mFakeFlagsImpl);
+                        mTestLooper.getLooper());
 
         mHandler = mScanManager.getClientHandler();
         assertThat(mHandler).isNotNull();
@@ -648,6 +645,8 @@ public class ScanManagerTest {
 
     @Test
     public void testScanTimeoutResetForNewScan() {
+        mSetFlagsRule.enableFlags(Flags.FLAG_SCAN_TIMEOUT_RESET);
+
         mTestLooper.stopAutoDispatchAndIgnoreExceptions();
         // Set filtered scan flag
         final boolean isFiltered = false;
