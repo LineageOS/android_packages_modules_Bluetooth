@@ -148,7 +148,7 @@ public class A2dpService extends ProfileService {
     }
 
     @Override
-    protected void start() {
+    public void start() {
         Log.i(TAG, "start()");
         if (sA2dpService != null) {
             throw new IllegalStateException("start() called twice");
@@ -205,7 +205,7 @@ public class A2dpService extends ProfileService {
     }
 
     @Override
-    protected void stop() {
+    public void stop() {
         Log.i(TAG, "stop()");
         if (sA2dpService == null) {
             Log.w(TAG, "stop() called before start()");
@@ -259,7 +259,7 @@ public class A2dpService extends ProfileService {
     }
 
     @Override
-    protected void cleanup() {
+    public void cleanup() {
         Log.i(TAG, "cleanup()");
     }
 

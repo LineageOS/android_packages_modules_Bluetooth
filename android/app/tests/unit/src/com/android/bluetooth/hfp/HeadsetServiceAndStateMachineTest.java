@@ -220,7 +220,8 @@ public class HeadsetServiceAndStateMachineTest {
         mOriginalVrTimeoutMs = HeadsetService.sStartVrTimeoutMs;
         HeadsetService.sStartVrTimeoutMs = START_VR_TIMEOUT_MILLIS;
         mHeadsetService = new HeadsetService(mTargetContext);
-        mHeadsetService.doStart();
+        mHeadsetService.start();
+        mHeadsetService.setAvailable(true);
         mIsHeadsetServiceStarted = true;
         Assert.assertNotNull(mHeadsetService);
         verify(mObjectsFactory).makeSystemInterface(mHeadsetService);
@@ -247,7 +248,7 @@ public class HeadsetServiceAndStateMachineTest {
 
         if (mIsHeadsetServiceStarted) {
             mTargetContext.unregisterReceiver(mHeadsetIntentReceiver);
-            mHeadsetService.doStop();
+            mHeadsetService.stop();
             mHeadsetService = HeadsetService.getHeadsetService();
             Assert.assertNull(mHeadsetService);
             // Clear classes that is spied on and has static life time

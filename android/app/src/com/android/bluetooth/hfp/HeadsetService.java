@@ -170,7 +170,7 @@ public class HeadsetService extends ProfileService {
     }
 
     @Override
-    protected void start() {
+    public void start() {
         Log.i(TAG, "start()");
         if (mStarted) {
             throw new IllegalStateException("start() called twice");
@@ -213,7 +213,7 @@ public class HeadsetService extends ProfileService {
     }
 
     @Override
-    protected void stop() {
+    public void stop() {
         Log.i(TAG, "stop()");
         if (!mStarted) {
             Log.w(TAG, "stop() called before start()");
@@ -283,7 +283,7 @@ public class HeadsetService extends ProfileService {
     }
 
     @Override
-    protected void cleanup() {
+    public void cleanup() {
         Log.i(TAG, "cleanup");
     }
 

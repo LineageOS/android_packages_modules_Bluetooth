@@ -226,11 +226,12 @@ public class LeAudioBroadcastServiceTest {
 
     private void startService() throws TimeoutException {
         mService = new LeAudioService(mTargetContext);
-        mService.doStart();
+        mService.start();
+        mService.setAvailable(true);
     }
 
     private void stopService() throws TimeoutException {
-        mService.doStop();
+        mService.stop();
         mService = LeAudioService.getLeAudioService();
         Assert.assertNull(mService);
     }

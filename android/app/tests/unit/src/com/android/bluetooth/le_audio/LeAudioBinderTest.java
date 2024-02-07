@@ -90,7 +90,7 @@ public class LeAudioBinderTest {
                                 InstrumentationRegistry.getTargetContext(),
                                 mNativeInterface,
                                 mFakeFlagsImpl));
-        mLeAudioService.doStart();
+        mLeAudioService.start();
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         mBinder = new LeAudioService.BluetoothLeAudioBinder(mLeAudioService);
         mLeAudioService.mLeAudioCallbacks = mLeAudioCallbacks;
@@ -100,7 +100,7 @@ public class LeAudioBinderTest {
     @After
     public void cleanUp() {
         mBinder.cleanup();
-        mLeAudioService.doStop();
+        mLeAudioService.stop();
         TestUtils.clearAdapterService(mAdapterService);
     }
 

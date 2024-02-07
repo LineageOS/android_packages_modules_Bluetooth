@@ -20,7 +20,6 @@ import static android.content.pm.PackageManager.FEATURE_WATCH;
 
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.never;
@@ -176,11 +175,11 @@ public class HeadsetClientServiceTest {
         doReturn(packageManager).when(context).getPackageManager();
 
         HeadsetClientService service = new HeadsetClientService(context);
-        service.doStart();
+        service.start();
 
         verify(context).startService(any(Intent.class));
 
-        service.doStop();
+        service.stop();
     }
 
     @Test
@@ -192,17 +191,18 @@ public class HeadsetClientServiceTest {
         doReturn(packageManager).when(context).getPackageManager();
 
         HeadsetClientService service = new HeadsetClientService(context);
-        service.doStart();
+        service.start();
 
         verify(context, never()).startService(any(Intent.class));
 
-        service.doStop();
+        service.stop();
     }
 
     private void startService() throws Exception {
         // At this point the service should have started so check NOT null
         mService = new HeadsetClientService(mTargetContext);
-        mService.doStart();
+        mService.start();
+        mService.setAvailable(true);
         // Try getting the Bluetooth adapter
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         Assert.assertNotNull(mAdapter);
@@ -211,7 +211,7 @@ public class HeadsetClientServiceTest {
 
     private void stopServiceIfStarted() throws Exception {
         if (mIsHeadsetClientServiceStarted) {
-            mService.doStop();
+            mService.stop();
             mService = HeadsetClientService.getHeadsetClientService();
             Assert.assertNull(mService);
         }
