@@ -26,12 +26,12 @@
 
 #include "a2dp_api.h"
 
+#include <bluetooth/log.h>
 #include <string.h>
 
 #include "a2dp_int.h"
 #include "avdt_api.h"
 #include "internal_include/bt_target.h"
-#include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"  // UNUSED_ATTR
 #include "sdpdefs.h"
@@ -41,6 +41,7 @@
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
+using namespace bluetooth;
 using namespace bluetooth::legacy::stack::sdp;
 
 using bluetooth::Uuid;
@@ -79,7 +80,7 @@ static void a2dp_sdp_cback(UNUSED_ATTR const RawAddress& bd_addr,
   tSDP_PROTOCOL_ELEM elem;
   RawAddress peer_address = RawAddress::kEmpty;
 
-  LOG_INFO("%s: status: %d", __func__, status);
+  log::info("status: {}", status);
 
   if (status == SDP_SUCCESS) {
     /* loop through all records we found */
@@ -99,10 +100,10 @@ static void a2dp_sdp_cback(UNUSED_ATTR const RawAddress& bd_addr,
           a2dp_svc.p_service_name = (char*)p_attr->attr_value.v.array;
           a2dp_svc.service_len = SDP_DISC_ATTR_LEN(p_attr->attr_len_type);
         } else {
-          LOG_ERROR("ATTR_ID_SERVICE_NAME attr type not STR!!");
+          log::error("ATTR_ID_SERVICE_NAME attr type not STR!!");
         }
       } else {
-        LOG_ERROR("ATTR_ID_SERVICE_NAME attr not found!!");
+        log::error("ATTR_ID_SERVICE_NAME attr not found!!");
       }
 
       /* get provider name */
@@ -112,10 +113,10 @@ static void a2dp_sdp_cback(UNUSED_ATTR const RawAddress& bd_addr,
           a2dp_svc.p_provider_name = (char*)p_attr->attr_value.v.array;
           a2dp_svc.provider_len = SDP_DISC_ATTR_LEN(p_attr->attr_len_type);
         } else {
-          LOG_ERROR("ATTR_ID_PROVIDER_NAME attr type not STR!!");
+          log::error("ATTR_ID_PROVIDER_NAME attr type not STR!!");
         }
       } else {
-        LOG_ERROR("ATTR_ID_PROVIDER_NAME attr not found!!");
+        log::error("ATTR_ID_PROVIDER_NAME attr not found!!");
       }
 
       /* get supported features */
@@ -125,17 +126,17 @@ static void a2dp_sdp_cback(UNUSED_ATTR const RawAddress& bd_addr,
             SDP_DISC_ATTR_LEN(p_attr->attr_len_type) >= 2) {
           a2dp_svc.features = p_attr->attr_value.v.u16;
         } else {
-          LOG_ERROR("ATTR_ID_SUPPORTED_FEATURES attr type not STR!!");
+          log::error("ATTR_ID_SUPPORTED_FEATURES attr type not STR!!");
         }
       } else {
-        LOG_ERROR("ATTR_ID_SUPPORTED_FEATURES attr not found!!");
+        log::error("ATTR_ID_SUPPORTED_FEATURES attr not found!!");
       }
 
       /* get AVDTP version */
       if (get_legacy_stack_sdp_api()->record.SDP_FindProtocolListElemInRec(
               p_rec, UUID_PROTOCOL_AVDTP, &elem)) {
         a2dp_svc.avdt_version = elem.params[0];
-        LOG_VERBOSE("avdt_version: 0x%x", a2dp_svc.avdt_version);
+        log::verbose("avdt_version: 0x{:x}", a2dp_svc.avdt_version);
       }
 
       /* we've got everything, we're done */
@@ -208,7 +209,7 @@ tA2DP_STATUS A2DP_AddRecord(uint16_t service_uuid, char* p_service_name,
   uint8_t* p;
   tSDP_PROTOCOL_ELEM proto_list[A2DP_NUM_PROTO_ELEMS];
 
-  LOG_VERBOSE("%s: uuid: 0x%x", __func__, service_uuid);
+  log::verbose("uuid: 0x{:x}", service_uuid);
 
   if ((sdp_handle == 0) || (service_uuid != UUID_SERVCLASS_AUDIO_SOURCE &&
                             service_uuid != UUID_SERVCLASS_AUDIO_SINK))
@@ -308,16 +309,17 @@ tA2DP_STATUS A2DP_FindService(uint16_t service_uuid, const RawAddress& bd_addr,
   if ((service_uuid != UUID_SERVCLASS_AUDIO_SOURCE &&
        service_uuid != UUID_SERVCLASS_AUDIO_SINK) ||
       p_db == NULL || p_cback == NULL) {
-    LOG_ERROR("Cannot find service for peer %s UUID 0x%04x: invalid parameters",
-              ADDRESS_TO_LOGGABLE_CSTR(bd_addr), service_uuid);
+    log::error(
+        "Cannot find service for peer {} UUID 0x{:04x}: invalid parameters",
+        ADDRESS_TO_LOGGABLE_CSTR(bd_addr), service_uuid);
     return A2DP_INVALID_PARAMS;
   }
 
   if (a2dp_cb.find.service_uuid == UUID_SERVCLASS_AUDIO_SOURCE ||
       a2dp_cb.find.service_uuid == UUID_SERVCLASS_AUDIO_SINK ||
       a2dp_cb.find.p_db != NULL) {
-    LOG_ERROR("Cannot find service for peer %s UUID 0x%04x: busy",
-              ADDRESS_TO_LOGGABLE_CSTR(bd_addr), service_uuid);
+    log::error("Cannot find service for peer {} UUID 0x{:04x}: busy",
+               ADDRESS_TO_LOGGABLE_CSTR(bd_addr), service_uuid);
     return A2DP_BUSY;
   }
 
@@ -333,8 +335,8 @@ tA2DP_STATUS A2DP_FindService(uint16_t service_uuid, const RawAddress& bd_addr,
           a2dp_cb.find.p_db, p_db->db_len, 1, &uuid_list, p_db->num_attr,
           p_db->p_attrs)) {
     osi_free_and_reset((void**)&a2dp_cb.find.p_db);
-    LOG_ERROR("Unable to initialize SDP discovery for peer %s UUID 0x%04X",
-              ADDRESS_TO_LOGGABLE_CSTR(bd_addr), service_uuid);
+    log::error("Unable to initialize SDP discovery for peer {} UUID 0x{:04X}",
+               ADDRESS_TO_LOGGABLE_CSTR(bd_addr), service_uuid);
     return A2DP_FAIL;
   }
 
@@ -348,12 +350,13 @@ tA2DP_STATUS A2DP_FindService(uint16_t service_uuid, const RawAddress& bd_addr,
     a2dp_cb.find.service_uuid = 0;
     a2dp_cb.find.p_cback = NULL;
     osi_free_and_reset((void**)&a2dp_cb.find.p_db);
-    LOG_ERROR("Cannot find service for peer %s UUID 0x%04x: SDP error",
-              ADDRESS_TO_LOGGABLE_CSTR(bd_addr), service_uuid);
+    log::error("Cannot find service for peer {} UUID 0x{:04x}: SDP error",
+               ADDRESS_TO_LOGGABLE_CSTR(bd_addr), service_uuid);
     return A2DP_FAIL;
   }
-  LOG_INFO("A2DP service discovery for peer %s UUID 0x%04x: SDP search started",
-           ADDRESS_TO_LOGGABLE_CSTR(bd_addr), service_uuid);
+  log::info(
+      "A2DP service discovery for peer {} UUID 0x{:04x}: SDP search started",
+      ADDRESS_TO_LOGGABLE_CSTR(bd_addr), service_uuid);
   return A2DP_SUCCESS;
 }
 

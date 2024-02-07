@@ -19,11 +19,14 @@
 #include "a2dp_vendor_opus_decoder.h"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 #include <opus.h>
 
 #include "a2dp_vendor_opus.h"
 #include "osi/include/allocator.h"
 #include "osi/include/log.h"
+
+using namespace bluetooth;
 
 typedef struct {
   OpusDecoder* opus_handle = nullptr;
@@ -60,7 +63,7 @@ bool a2dp_vendor_opus_decoder_init(decoded_data_callback_t decode_callback) {
   a2dp_opus_decoder_cb.opus_handle =
       static_cast<OpusDecoder*>(osi_malloc(size));
   if (a2dp_opus_decoder_cb.opus_handle == nullptr) {
-    LOG_ERROR("failed to allocate opus decoder handle");
+    log::error("failed to allocate opus decoder handle");
     return false;
   }
   err_val = opus_decoder_init(a2dp_opus_decoder_cb.opus_handle,
@@ -75,10 +78,10 @@ bool a2dp_vendor_opus_decoder_init(decoded_data_callback_t decode_callback) {
     memset(a2dp_opus_decoder_cb.decode_buf, 0, A2DP_OPUS_DECODE_BUFFER_LENGTH);
 
     a2dp_opus_decoder_cb.decode_callback = decode_callback;
-    LOG_INFO("decoder init success");
+    log::info("decoder init success");
     return true;
   } else {
-    LOG_ERROR("failed to initialize Opus Decoder");
+    log::error("failed to initialize Opus Decoder");
     a2dp_opus_decoder_cb.has_opus_handle = false;
     return false;
   }
@@ -96,12 +99,12 @@ bool a2dp_vendor_opus_decoder_decode_packet(BT_HDR* p_buf) {
   uint32_t frameLen = 0;
 
   if (p_buf == nullptr) {
-    LOG_ERROR("Dropping packet with nullptr");
+    log::error("Dropping packet with nullptr");
     return false;
   }
 
   if (p_buf->len == 0) {
-    LOG_ERROR("Empty packet");
+    log::error("Empty packet");
     return false;
   }
 
@@ -117,10 +120,10 @@ bool a2dp_vendor_opus_decoder_decode_packet(BT_HDR* p_buf) {
                                         A2DP_OPUS_CODEC_DEFAULT_SAMPLERATE);
   uint32_t num_frames = pBuffer[0] & 0xf;
 
-  LOG_ERROR("numframes %d framesize %d framelen %d bufferSize %d", num_frames,
-            frameSize, frameLen, bufferSize);
-  LOG_ERROR("numChannels %d numFrames %d offset %d", numChannels, numFrames,
-            p_buf->offset);
+  log::error("numframes {} framesize {} framelen {} bufferSize {}", num_frames,
+             frameSize, frameLen, bufferSize);
+  log::error("numChannels {} numFrames {} offset {}", numChannels, numFrames,
+             p_buf->offset);
 
   for (uint32_t frame = 0; frame < numFrames; ++frame) {
     {
@@ -132,15 +135,15 @@ bool a2dp_vendor_opus_decoder_decode_packet(BT_HDR* p_buf) {
                             A2DP_OPUS_DECODE_BUFFER_LENGTH, 0 /* flags */);
 
       if (ret_val < OPUS_OK) {
-        LOG_ERROR("Opus DecodeFrame failed %d, applying concealment", ret_val);
+        log::error("Opus DecodeFrame failed {}, applying concealment", ret_val);
         ret_val = opus_decode(a2dp_opus_decoder_cb.opus_handle, NULL, 0,
                               a2dp_opus_decoder_cb.decode_buf,
                               A2DP_OPUS_DECODE_BUFFER_LENGTH, 0 /* flags */);
       }
 
       if (ret_val < OPUS_OK) {
-        LOG_ERROR("Opus DecodeFrame retry failed with %d, dropping packet",
-                  ret_val);
+        log::error("Opus DecodeFrame retry failed with {}, dropping packet",
+                   ret_val);
         return false;
       }
 
@@ -163,7 +166,7 @@ void a2dp_vendor_opus_decoder_suspend(void) {
     err_val =
         opus_decoder_ctl(a2dp_opus_decoder_cb.opus_handle, OPUS_RESET_STATE);
     if (err_val != OPUS_OK) {
-      LOG_ERROR("failed to reset decoder");
+      log::error("failed to reset decoder");
     }
   }
   return;
