@@ -636,6 +636,13 @@ public class A2dpSinkService extends ProfileService {
             return;
         }
         A2dpSinkStateMachine stateMachine = getStateMachineForDevice(device);
+        if (stateMachine == null) {
+            Log.w(
+                    TAG,
+                    "Received audio config changed event for an unconnected device, device="
+                            + device);
+            return;
+        }
         stateMachine.onStackEvent(event);
     }
 
