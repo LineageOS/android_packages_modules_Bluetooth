@@ -67,7 +67,6 @@
 #include "common/metrics.h"
 #include "device/include/controller.h"
 #include "device/include/interop.h"
-#include "gd/storage/config_keys.h"
 #include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/stack_config.h"
@@ -94,6 +93,7 @@
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/smp_api.h"
 #include "stack/sdp/sdpint.h"
+#include "storage/config_keys.h"
 #include "types/raw_address.h"
 
 #ifdef __ANDROID__

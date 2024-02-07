@@ -29,7 +29,6 @@
 
 #include "avrc_int.h"
 #include "btif/include/btif_config.h"
-#include "gd/storage/config_keys.h"
 #include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "os/log.h"
@@ -40,6 +39,7 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
+#include "storage/config_keys.h"
 #include "types/raw_address.h"
 
 /*****************************************************************************

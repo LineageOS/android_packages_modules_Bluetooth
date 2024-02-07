@@ -37,7 +37,6 @@
 #include "btif/include/btif_av.h"
 #include "btif/include/btif_av_co.h"
 #include "btif/include/btif_config.h"
-#include "gd/storage/config_keys.h"
 #include "internal_include/bt_target.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
@@ -48,6 +47,7 @@
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/sdp_api.h"
+#include "storage/config_keys.h"
 #include "types/hci_role.h"
 #include "types/raw_address.h"
 
