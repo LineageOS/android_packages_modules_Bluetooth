@@ -4632,7 +4632,7 @@ class LeAudioClientImpl : public LeAudioClient {
         ToString(audio_receiver_state_).c_str(),
         ToString(audio_sender_state_).c_str());
 
-    group->dsa_mode_ = dsa_mode;
+    group->dsa_.mode = dsa_mode;
 
     /* Set the remote sink metadata context from the playback tracks metadata */
     local_metadata_context_types_.source =

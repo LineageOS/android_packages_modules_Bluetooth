@@ -141,6 +141,7 @@ class LeAudioDevice {
         model_name_(""),
         allowlist_flag_(false),
         link_quality_timer(nullptr),
+        dsa_state_(types::DataPathState::IDLE),
         dsa_modes_({DsaMode::DISABLED}) {}
   ~LeAudioDevice(void);
 
@@ -250,6 +251,8 @@ class LeAudioDevice {
   void GetDeviceModelName(void);
   void UpdateDeviceAllowlistFlag(void);
   DsaModes GetDsaModes(void);
+
+  types::DataPathState dsa_state_;
 
  private:
   types::BidirectionalPair<types::AudioContexts> avail_contexts_;
