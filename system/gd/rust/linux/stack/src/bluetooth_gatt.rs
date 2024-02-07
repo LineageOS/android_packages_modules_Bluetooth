@@ -1189,20 +1189,26 @@ pub struct ScanSettings {
 }
 
 impl ScanSettings {
-    fn extract_scan_parameters(self) -> Option<(u16, u16)> {
-        let interval = u16::try_from(self.interval);
-        if interval.is_err() {
-            println!("Invalid scan interval {}", self.interval);
-            return None;
-        }
-
-        let window = u16::try_from(self.window);
-        if window.is_err() {
-            println!("Invalid scan window {}", self.window);
-            return None;
-        }
-
-        return Some((interval.unwrap(), window.unwrap()));
+    fn extract_scan_parameters(self) -> Option<(u8, u16, u16)> {
+        let scan_type = match self.scan_type {
+            ScanType::Passive => 0x00,
+            ScanType::Active => 0x01,
+        };
+        let interval = match u16::try_from(self.interval) {
+            Ok(i) => i,
+            Err(e) => {
+                println!("Invalid scan interval {}: {}", self.interval, e);
+                return None;
+            }
+        };
+        let window = match u16::try_from(self.window) {
+            Ok(w) => w,
+            Err(e) => {
+                println!("Invalid scan window {}: {}", self.window, e);
+                return None;
+            }
+        };
+        return Some((scan_type, interval, window));
     }
 }
 
@@ -1350,16 +1356,19 @@ impl GattAsyncIntf {
     /// Note: this does not need to be async, but declared as async for consistency in this struct.
     /// May be converted into real async in the future if btif supports it.
     async fn update_scan(&mut self, scanner_id: u8, scan_settings: Option<ScanSettings>) {
-        if self.scanners.lock().unwrap().values().find(|scanner| scanner.is_active).is_some() {
+        if self.scanners.lock().unwrap().values().find(|scanner| scanner.is_enabled).is_some() {
             // Toggle the scan off and on so that we reset the scan parameters based on whether
             // we have active scanners using hardware filtering.
             // TODO(b/266752123): We can do more bookkeeping to optimize when we really need to
             // toggle. Also improve toggling API into 1 operation that guarantees correct ordering.
             self.gatt.as_ref().unwrap().lock().unwrap().scanner.stop_scan();
             if let Some(settings) = scan_settings {
-                if let Some((scan_interval, scan_window)) = settings.extract_scan_parameters() {
+                if let Some((scan_type, scan_interval, scan_window)) =
+                    settings.extract_scan_parameters()
+                {
                     self.gatt.as_ref().unwrap().lock().unwrap().scanner.set_scan_parameters(
                         scanner_id,
+                        scan_type,
                         scan_interval,
                         scan_window,
                     );
@@ -1593,7 +1602,7 @@ impl BluetoothGatt {
             .unwrap()
             .iter()
             .filter_map(|(_uuid, scanner)| {
-                if let (true, Some(scanner_id)) = (scanner.is_active, scanner.scanner_id) {
+                if let (true, Some(scanner_id)) = (scanner.is_enabled, scanner.scanner_id) {
                     Some(scanner_id)
                 } else {
                     None
@@ -1663,7 +1672,7 @@ impl BluetoothGatt {
             if let Some(scanner) = Self::find_scanner_by_id(&mut scanners_lock, scanner_id) {
                 if scanner.is_suspended {
                     scanner.is_suspended = false;
-                    scanner.is_active = true;
+                    scanner.is_enabled = true;
                     // When a scanner resumes from a suspended state, the
                     // scanner.filter has already had the filter data.
                     scanner.filter.clone()
@@ -1723,14 +1732,14 @@ impl BluetoothGatt {
                     log::debug!("Added adv monitor handle = {}", monitor_handle);
                 }
 
-                let has_active_unfiltered_scanner = scanners
+                let has_enabled_unfiltered_scanner = scanners
                     .lock()
                     .unwrap()
                     .iter()
-                    .any(|(_uuid, scanner)| scanner.is_active && scanner.filter.is_none());
+                    .any(|(_uuid, scanner)| scanner.is_enabled && scanner.filter.is_none());
 
                 if !gatt_async
-                    .msft_adv_monitor_enable(!has_active_unfiltered_scanner)
+                    .msft_adv_monitor_enable(!has_enabled_unfiltered_scanner)
                     .await
                     .map_or(false, |status| status == 0)
                 {
@@ -1909,8 +1918,8 @@ struct ScannerInfo {
     callback_id: u32,
     // If the scanner is registered successfully, this contains the scanner id, otherwise None.
     scanner_id: Option<u8>,
-    // If one of scanners is active, we scan.
-    is_active: bool,
+    // If one of scanners is enabled, we scan.
+    is_enabled: bool,
     // Scan filter.
     filter: Option<ScanFilter>,
     // Adv monitor handle, if exists.
@@ -1926,7 +1935,7 @@ impl ScannerInfo {
         Self {
             callback_id,
             scanner_id: None,
-            is_active: false,
+            is_enabled: false,
             filter: None,
             monitor_handle: None,
             is_suspended: false,
@@ -2043,7 +2052,7 @@ impl IBluetoothGatt for BluetoothGatt {
             let mut scanners_lock = self.scanners.lock().unwrap();
 
             if let Some(scanner) = Self::find_scanner_by_id(&mut scanners_lock, scanner_id) {
-                scanner.is_active = true;
+                scanner.is_enabled = true;
                 scanner.filter = filter.clone();
                 scanner.scan_settings = Some(settings);
             } else {
@@ -2070,7 +2079,7 @@ impl IBluetoothGatt for BluetoothGatt {
             let mut scanners_lock = self.scanners.lock().unwrap();
 
             if let Some(scanner) = Self::find_scanner_by_id(&mut scanners_lock, scanner_id) {
-                scanner.is_active = false;
+                scanner.is_enabled = false;
                 scanner.monitor_handle
             } else {
                 log::warn!("Scanner {} not found", scanner_id);
@@ -2095,14 +2104,14 @@ impl IBluetoothGatt for BluetoothGatt {
                     let _res = gatt_async.msft_adv_monitor_remove(handle).await;
                 }
 
-                let has_active_unfiltered_scanner = scanners
+                let has_enabled_unfiltered_scanner = scanners
                     .lock()
                     .unwrap()
                     .iter()
-                    .any(|(_uuid, scanner)| scanner.is_active && scanner.filter.is_none());
+                    .any(|(_uuid, scanner)| scanner.is_enabled && scanner.filter.is_none());
 
                 if !gatt_async
-                    .msft_adv_monitor_enable(!has_active_unfiltered_scanner)
+                    .msft_adv_monitor_enable(!has_enabled_unfiltered_scanner)
                     .await
                     .map_or(false, |status| status == 0)
                 {

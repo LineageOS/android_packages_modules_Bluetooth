@@ -349,6 +349,7 @@ void BleScannerInterfaceImpl::OnMsftAdvMonitorEnable(
 
 /** Sets the LE scan interval and window in units of N*0.625 msec */
 void BleScannerInterfaceImpl::SetScanParameters(int scanner_id,
+                                                uint8_t scan_type,
                                                 int scan_interval,
                                                 int scan_window,
                                                 Callback /* cb */) {
@@ -362,10 +363,9 @@ void BleScannerInterfaceImpl::SetScanParameters(int scanner_id,
     btm_cb.ble_ctr_cb.inq_var.scan_window = scan_window;
   }
 
-  // use active scan
-  auto scan_type = static_cast<bluetooth::hci::LeScanType>(0x01);
-  bluetooth::shim::GetScanning()->SetScanParameters(scanner_id, scan_type,
-                                                    scan_interval, scan_window);
+  bluetooth::shim::GetScanning()->SetScanParameters(
+      scanner_id, static_cast<bluetooth::hci::LeScanType>(scan_type),
+      scan_interval, scan_window);
 }
 
 /* Configure the batchscan storage */

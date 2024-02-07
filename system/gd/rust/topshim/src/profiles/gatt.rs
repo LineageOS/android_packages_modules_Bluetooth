@@ -199,6 +199,7 @@ pub mod ffi {
         fn SetScanParameters(
             self: Pin<&mut BleScannerIntf>,
             scanner_id: u8,
+            scan_type: u8,
             scan_interval: u16,
             scan_window: u16,
         );
@@ -1540,8 +1541,14 @@ impl BleScanner {
         mutcxxcall!(self, MsftAdvMonitorEnable, call_id, enable);
     }
 
-    pub fn set_scan_parameters(&mut self, scanner_id: u8, scan_interval: u16, scan_window: u16) {
-        mutcxxcall!(self, SetScanParameters, scanner_id, scan_interval, scan_window);
+    pub fn set_scan_parameters(
+        &mut self,
+        scanner_id: u8,
+        scan_type: u8,
+        scan_interval: u16,
+        scan_window: u16,
+    ) {
+        mutcxxcall!(self, SetScanParameters, scanner_id, scan_type, scan_interval, scan_window);
     }
 
     pub fn batchscan_config_storage(
