@@ -207,8 +207,11 @@ public class HeadsetStateMachine extends StateMachine {
             HeadsetService headsetService, AdapterService adapterService,
             HeadsetNativeInterface nativeInterface, HeadsetSystemInterface systemInterface) {
         super(TAG, Objects.requireNonNull(looper, "looper cannot be null"));
-        // Enable/Disable StateMachine debug logs
-        setDbg(DBG);
+
+        // Let the logging framework enforce the log level. TAG is set above in the parent
+        // constructor.
+        setDbg(true);
+
         mDevice = Objects.requireNonNull(device, "device cannot be null");
         mHeadsetService = Objects.requireNonNull(headsetService, "headsetService cannot be null");
         mNativeInterface =
