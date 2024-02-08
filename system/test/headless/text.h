@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 The Android Open Source Project
+ * Copyright 2023 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,6 @@
 #include <string>
 
 #include "include/hardware/bluetooth.h"
-#include "osi/include/properties.h"
 
-bool is_android_running() {
-#ifdef __ANDROID__
-  char value[PROPERTY_VALUE_MAX];
-  osi_property_get("init.svc.zygote", value, "running");
-  if (!strncmp("running", value, PROPERTY_VALUE_MAX)) {
-    return true;
-  }
-#endif
-  return false;
-}
+std::string bt_conn_direction_text(const bt_conn_direction_t& direction);
+std::string bt_discovery_state_text(const bt_discovery_state_t& state);
