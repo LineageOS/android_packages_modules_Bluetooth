@@ -33,6 +33,24 @@
       "message": "seems overkill, just gate the CHECK call by the if, i see no reason whatsoever to add that check \n\n```\n    if(property_get_bool(\"bluetooth.device.m_rsplen_workaround\", false) \u003d\u003d false) {\n      CHECK(p_vcs_cplt_params-\u003eparam_len \u003e\u003d\n          BTM_VSC_CHIP_CAPABILITY_RSP_LEN_M_RELEASE);\n    }\n```\n\nwould suffice i think",
       "revId": "8f37e6725268fbbd3a9371d7105d22ef9b4f6c2d",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b43391ee_daa945ac",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 29891
+      },
+      "writtenOn": "2024-02-08T23:29:59Z",
+      "side": 1,
+      "message": "Agreed, and using only the property only as a gate in there still works just fine, as it should. I forgot to rework that if-else block after removing the debug data i put in there to test how bluetooth would react, my bad.",
+      "parentUuid": "8411cca9_f2fa0200",
+      "revId": "8f37e6725268fbbd3a9371d7105d22ef9b4f6c2d",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
