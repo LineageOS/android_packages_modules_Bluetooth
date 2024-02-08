@@ -44,6 +44,10 @@ class LinkConnectionInterface {
                                  std::string comment) = 0;
   virtual void DisconnectLe(uint16_t handle, tHCI_REASON reason,
                             std::string comment) = 0;
+  virtual void UpdateConnectionParameters(
+      uint16_t handle, uint16_t conn_int_min, uint16_t conn_int_max,
+      uint16_t conn_latency, uint16_t conn_timeout, uint16_t min_ce_len,
+      uint16_t max_ce_len) = 0;
 };
 
 }  // namespace shim
