@@ -139,3 +139,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_active_device_manager_group_handling_fix"
+    namespace: "bluetooth"
+    description: "Make sure Active Device Manager understands LeAudio groups"
+    bug: "324364321"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
