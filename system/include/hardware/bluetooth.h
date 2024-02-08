@@ -131,11 +131,11 @@ inline std::string bt_status_text(const bt_status_t& status) {
     case BT_STATUS_UNHANDLED:
       return std::string("unhandled");
     case BT_STATUS_AUTH_FAILURE:
-      return std::string("failure");
+      return std::string("auth_failure");
     case BT_STATUS_RMT_DEV_DOWN:
       return std::string("remote_device_down");
     case BT_STATUS_AUTH_REJECTED:
-      return std::string("rejected");
+      return std::string("auth_rejected");
     case BT_STATUS_JNI_ENVIRONMENT_ERROR:
       return std::string("jni_env_error");
     case BT_STATUS_JNI_THREAD_ATTACH_ERROR:

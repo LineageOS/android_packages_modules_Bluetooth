@@ -42,7 +42,7 @@ class HearingAidCallbacksImpl : public HearingAidCallbacks {
   ~HearingAidCallbacksImpl() = default;
   void OnConnectionState(ConnectionState state,
                          const RawAddress& bd_addr) override {
-    LOG(INFO) << __func__;
+    log::info("");
 
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
@@ -51,7 +51,7 @@ class HearingAidCallbacksImpl : public HearingAidCallbacks {
     ScopedLocalRef<jbyteArray> addr(
         sCallbackEnv.get(), sCallbackEnv->NewByteArray(sizeof(RawAddress)));
     if (!addr.get()) {
-      LOG(ERROR) << "Failed to new jbyteArray bd addr for connection state";
+      log::error("Failed to new jbyteArray bd addr for connection state");
       return;
     }
 
@@ -63,8 +63,7 @@ class HearingAidCallbacksImpl : public HearingAidCallbacks {
 
   void OnDeviceAvailable(uint8_t capabilities, uint64_t hi_sync_id,
                          const RawAddress& bd_addr) override {
-    LOG(INFO) << __func__ << ": capabilities=" << +capabilities
-              << " hi_sync_id=" << hi_sync_id;
+    log::info("capabilities={} hi_sync_id={}", +capabilities, hi_sync_id);
 
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
@@ -73,7 +72,7 @@ class HearingAidCallbacksImpl : public HearingAidCallbacks {
     ScopedLocalRef<jbyteArray> addr(
         sCallbackEnv.get(), sCallbackEnv->NewByteArray(sizeof(RawAddress)));
     if (!addr.get()) {
-      LOG(ERROR) << "Failed to new jbyteArray bd addr for connection state";
+      log::error("Failed to new jbyteArray bd addr for connection state");
       return;
     }
 
@@ -93,31 +92,31 @@ static void initNative(JNIEnv* env, jobject object) {
 
   const bt_interface_t* btInf = getBluetoothInterface();
   if (btInf == nullptr) {
-    LOG(ERROR) << "Bluetooth module is not loaded";
+    log::error("Bluetooth module is not loaded");
     return;
   }
 
   if (sHearingAidInterface != nullptr) {
-    LOG(INFO) << "Cleaning up HearingAid Interface before initializing...";
+    log::info("Cleaning up HearingAid Interface before initializing...");
     sHearingAidInterface->Cleanup();
     sHearingAidInterface = nullptr;
   }
 
   if (mCallbacksObj != nullptr) {
-    LOG(INFO) << "Cleaning up HearingAid callback object";
+    log::info("Cleaning up HearingAid callback object");
     env->DeleteGlobalRef(mCallbacksObj);
     mCallbacksObj = nullptr;
   }
 
   if ((mCallbacksObj = env->NewGlobalRef(object)) == nullptr) {
-    LOG(ERROR) << "Failed to allocate Global Ref for Hearing Aid Callbacks";
+    log::error("Failed to allocate Global Ref for Hearing Aid Callbacks");
     return;
   }
 
   sHearingAidInterface = (HearingAidInterface*)btInf->get_profile_interface(
       BT_PROFILE_HEARING_AID_ID);
   if (sHearingAidInterface == nullptr) {
-    LOG(ERROR) << "Failed to get Bluetooth Hearing Aid Interface";
+    log::error("Failed to get Bluetooth Hearing Aid Interface");
     return;
   }
 
@@ -130,7 +129,7 @@ static void cleanupNative(JNIEnv* env, jobject /* object */) {
 
   const bt_interface_t* btInf = getBluetoothInterface();
   if (btInf == nullptr) {
-    LOG(ERROR) << "Bluetooth module is not loaded";
+    log::error("Bluetooth module is not loaded");
     return;
   }
 
@@ -147,7 +146,7 @@ static void cleanupNative(JNIEnv* env, jobject /* object */) {
 
 static jboolean connectHearingAidNative(JNIEnv* env, jobject /* object */,
                                         jbyteArray address) {
-  LOG(INFO) << __func__;
+  log::info("");
   std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
   if (!sHearingAidInterface) return JNI_FALSE;
 
@@ -165,7 +164,7 @@ static jboolean connectHearingAidNative(JNIEnv* env, jobject /* object */,
 
 static jboolean disconnectHearingAidNative(JNIEnv* env, jobject /* object */,
                                            jbyteArray address) {
-  LOG(INFO) << __func__;
+  log::info("");
   std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
   if (!sHearingAidInterface) return JNI_FALSE;
 
@@ -200,8 +199,7 @@ static jboolean addToAcceptlistNative(JNIEnv* env, jobject /* object */,
 static void setVolumeNative(JNIEnv* /* env */, jclass /* clazz */,
                             jint volume) {
   if (!sHearingAidInterface) {
-    LOG(ERROR) << __func__
-               << ": Failed to get the Bluetooth Hearing Aid Interface";
+    log::error("Failed to get the Bluetooth Hearing Aid Interface");
     return;
   }
   sHearingAidInterface->SetVolume(volume);
