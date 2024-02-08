@@ -15,7 +15,6 @@
  */
 
 #include <base/functional/bind.h>
-#include <base/logging.h>
 #include <base/threading/thread.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>

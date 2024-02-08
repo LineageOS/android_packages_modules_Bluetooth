@@ -16,7 +16,7 @@
 
 #include "data_element_reader.h"
 
-#include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include <type_traits>
 
@@ -27,19 +27,19 @@
 // reader to extract without overflowing. end_ - it_ should never be negative
 // so casting it to a size_t is always safe. If it does fail, set it_ to end_
 // so that all additional readings fail.
-#define CHECK_REMAINING_LEN(x)                                              \
-  do {                                                                      \
-    if ((size_t)(end_ - it_) < x) {                                         \
-      LOG(WARNING) << __func__ << ": Extract would read past end of data."; \
-      return ParseFail();                                                   \
-    }                                                                       \
+#define CHECK_REMAINING_LEN(x)                           \
+  do {                                                   \
+    if ((size_t)(end_ - it_) < x) {                      \
+      log::warn("Extract would read past end of data."); \
+      return ParseFail();                                \
+    }                                                    \
   } while (0)
 
 namespace bluetooth {
 namespace sdp {
 
 DataElementReader::DataElement DataElementReader::ReadNext() {
-  if (it_ > end_) LOG(FATAL) << "Beginning of buffer is past end of buffer.";
+  if (it_ > end_) log::fatal("Beginning of buffer is past end of buffer.");
   if (it_ == end_) return std::monostate();
 
   uint8_t descriptor = *it_++;
@@ -48,14 +48,14 @@ DataElementReader::DataElement DataElementReader::ReadNext() {
 
   // All types with a value greater than URL are currently reserved.
   if (type > DataElementType::MAX_VALUE) {
-    LOG(WARNING) << __func__ << ": Trying to use a reserved data element type";
+    log::warn("Trying to use a reserved data element type");
     return ParseFail();
   }
 
   switch (type) {
     case DataElementType::BOOLEAN:
       if (size != DataElementSize::BYTE1) {
-        LOG(WARNING) << __func__ << ": Invalid size for bool: " << size;
+        log::warn("Invalid size for bool: {}", size);
         return ParseFail();
       }
 
@@ -75,7 +75,7 @@ DataElementReader::DataElement DataElementReader::ReadNext() {
       // TODO: The other data element types are never used in the previous SDP
       // implementation. We should properly handle them in the future though
       // for completeness.
-      LOG(ERROR) << __func__ << ": Unhandled Data Element Type: " << type;
+      log::error("Unhandled Data Element Type: {}", type);
   }
 
   return ParseFail();
@@ -120,7 +120,7 @@ DataElementReader::DataElement DataElementReader::ReadSignedInt(
     case DataElementSize::BYTE16:
       return ReadLargeInt();
     default:
-      LOG(WARNING) << __func__ << ": Invalid size for int: " << size;
+      log::warn("Invalid size for int: {}", size);
   }
 
   return ParseFail();
@@ -140,7 +140,7 @@ DataElementReader::DataElement DataElementReader::ReadUnsignedInt(
     case DataElementSize::BYTE16:
       return ReadLargeInt();
     default:
-      LOG(WARNING) << __func__ << ": Invalid size for uint: " << size;
+      log::warn("Invalid size for uint: {}", size);
   }
 
   return ParseFail();
@@ -169,7 +169,7 @@ DataElementReader::DataElement DataElementReader::ReadUuid(
     return Uuid::From128BitBE(uuid_array);
   }
 
-  LOG(WARNING) << __func__ << ": Invalid size for UUID: " << size;
+  log::warn("Invalid size for UUID: {}", size);
   return ParseFail();
 }
 
@@ -191,7 +191,7 @@ DataElementReader::DataElement DataElementReader::ReadString(
       num_bytes = it_.extractBE<uint32_t>();
       break;
     default:
-      LOG(WARNING) << __func__ << ": Invalid size for string: " << size;
+      log::warn("Invalid size for string: {}", size);
       return ParseFail();
   }
 
@@ -223,7 +223,7 @@ DataElementReader::DataElement DataElementReader::ReadSequence(
       num_bytes = it_.extractBE<uint32_t>();
       break;
     default:
-      LOG(WARNING) << __func__ << ": Invalid size for string: " << size;
+      log::warn("Invalid size for string: {}", size);
       return ParseFail();
   }
 
