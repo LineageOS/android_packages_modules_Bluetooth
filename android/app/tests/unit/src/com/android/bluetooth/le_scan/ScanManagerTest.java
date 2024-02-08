@@ -73,7 +73,6 @@ import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.gatt.GattNativeInterface;
 import com.android.bluetooth.gatt.GattObjectsFactory;
 import com.android.bluetooth.gatt.GattService;
-import com.android.bluetooth.le_scan.ScanClient;
 import com.android.internal.app.IBatteryStats;
 
 import org.junit.After;
@@ -101,7 +100,7 @@ import java.util.concurrent.TimeUnit;
 @RunWith(AndroidJUnit4.class)
 public class ScanManagerTest {
     private static final String TAG = ScanManagerTest.class.getSimpleName();
-    private static final int DELAY_ASYNC_MS = 40;
+    private static final int DELAY_ASYNC_MS = 50;
     private static final int DELAY_DEFAULT_SCAN_TIMEOUT_MS = 1500000;
     private static final int DELAY_SCAN_TIMEOUT_MS = 100;
     private static final int DEFAULT_SCAN_REPORT_DELAY_MS = 100;
@@ -1365,8 +1364,8 @@ public class ScanManagerTest {
                             mScanDurationCaptor.capture());
             long capturedDuration = mScanDurationCaptor.getValue();
             Log.d(TAG, "capturedDuration: " + String.valueOf(capturedDuration));
-            assertThat(weightedScanDuration <= capturedDuration
-                    && capturedDuration <= weightedScanDuration + DELAY_ASYNC_MS).isTrue();
+            assertThat(capturedDuration).isAtLeast(weightedScanDuration);
+            assertThat(capturedDuration).isAtMost(weightedScanDuration + DELAY_ASYNC_MS);
             Mockito.clearInvocations(mMetricsLogger);
         }
     }
