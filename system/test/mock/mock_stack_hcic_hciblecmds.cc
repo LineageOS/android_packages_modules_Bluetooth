@@ -55,9 +55,6 @@ struct btsnd_hcic_ble_periodic_advertising_sync_transfer
 struct btsnd_hcic_ble_periodic_advertising_terminate_sync
     btsnd_hcic_ble_periodic_advertising_terminate_sync;
 struct btsnd_hcic_ble_rand btsnd_hcic_ble_rand;
-struct btsnd_hcic_ble_rc_param_req_neg_reply
-    btsnd_hcic_ble_rc_param_req_neg_reply;
-struct btsnd_hcic_ble_rc_param_req_reply btsnd_hcic_ble_rc_param_req_reply;
 struct btsnd_hcic_ble_read_adv_chnl_tx_power
     btsnd_hcic_ble_read_adv_chnl_tx_power;
 struct btsnd_hcic_ble_read_remote_feat btsnd_hcic_ble_read_remote_feat;
@@ -197,22 +194,6 @@ void btsnd_hcic_ble_periodic_advertising_terminate_sync(
 void btsnd_hcic_ble_rand(base::Callback<void(BT_OCTET8)> cb) {
   inc_func_call_count(__func__);
   test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_rand(std::move(cb));
-}
-void btsnd_hcic_ble_rc_param_req_neg_reply(uint16_t handle, uint8_t reason) {
-  inc_func_call_count(__func__);
-  test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_rc_param_req_neg_reply(
-      handle, reason);
-}
-void btsnd_hcic_ble_rc_param_req_reply(uint16_t handle, uint16_t conn_int_min,
-                                       uint16_t conn_int_max,
-                                       uint16_t conn_latency,
-                                       uint16_t conn_timeout,
-                                       uint16_t min_ce_len,
-                                       uint16_t max_ce_len) {
-  inc_func_call_count(__func__);
-  test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_rc_param_req_reply(
-      handle, conn_int_min, conn_int_max, conn_latency, conn_timeout,
-      min_ce_len, max_ce_len);
 }
 void btsnd_hcic_ble_read_adv_chnl_tx_power(void) {
   inc_func_call_count(__func__);

@@ -179,22 +179,6 @@ struct l2c_ble_link_adjust_allocation {
   void operator()(void) { body(); };
 };
 extern struct l2c_ble_link_adjust_allocation l2c_ble_link_adjust_allocation;
-// Name: l2cble_process_rc_param_request_evt
-// Params: uint16_t handle, uint16_t int_min, uint16_t int_max, uint16_t
-// latency, uint16_t timeout Returns: void
-struct l2cble_process_rc_param_request_evt {
-  std::function<void(uint16_t handle, uint16_t int_min, uint16_t int_max,
-                     uint16_t latency, uint16_t timeout)>
-      body{[](uint16_t /* handle */, uint16_t /* int_min */,
-              uint16_t /* int_max */, uint16_t /* latency */,
-              uint16_t /* timeout */) {}};
-  void operator()(uint16_t handle, uint16_t int_min, uint16_t int_max,
-                  uint16_t latency, uint16_t timeout) {
-    body(handle, int_min, int_max, latency, timeout);
-  };
-};
-extern struct l2cble_process_rc_param_request_evt
-    l2cble_process_rc_param_request_evt;
 // Name: l2cble_update_data_length
 // Params: tL2C_LCB* p_lcb
 // Returns: void
