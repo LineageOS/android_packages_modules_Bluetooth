@@ -959,7 +959,6 @@ bool BTM_BleConfigPrivacy(bool privacy_mode) {
     /* always set host random address, used when privacy 1.1 or priavcy 1.2 is
      * disabled */
     btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type = BLE_ADDR_RANDOM;
-    btm_gen_resolvable_private_addr(base::Bind(&btm_gen_resolve_paddr_low));
 
     /* 4.2 controller only allow privacy 1.2 or mixed mode, resolvable private
      * address in controller */
