@@ -27,12 +27,14 @@
 
 #include "base/logging.h"     // LOG() stdout and android log
 #include "osi/include/log.h"  // android log only
+#include "test/headless/adapter/adapter.h"
 #include "test/headless/connect/connect.h"
 #include "test/headless/discovery/discovery.h"
 #include "test/headless/dumpsys/dumpsys.h"
 #include "test/headless/get_options.h"
 #include "test/headless/headless.h"
 #include "test/headless/log.h"
+#include "test/headless/mode/mode.h"
 #include "test/headless/nop/nop.h"
 #include "test/headless/pairing/pairing.h"
 #include "test/headless/read/read.h"
@@ -92,11 +94,16 @@ class Main : public HeadlessTest<int> {
   Main(const bluetooth::test::headless::GetOpt& options)
       : HeadlessTest<int>(options) {
     test_nodes_.emplace(
+        "adapter",
+        std::make_unique<bluetooth::test::headless::Adapter>(options));
+    test_nodes_.emplace(
         "dumpsys",
         std::make_unique<bluetooth::test::headless::Dumpsys>(options));
     test_nodes_.emplace(
         "connect",
         std::make_unique<bluetooth::test::headless::Connect>(options));
+    test_nodes_.emplace(
+        "mode", std::make_unique<bluetooth::test::headless::Mode>(options));
     test_nodes_.emplace(
         "nop", std::make_unique<bluetooth::test::headless::Nop>(options));
     test_nodes_.emplace(

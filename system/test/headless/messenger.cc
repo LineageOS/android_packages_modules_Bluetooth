@@ -18,178 +18,125 @@
 
 #include "test/headless/messenger.h"
 
-#include <future>
+#include <condition_variable>
+#include <deque>
+#include <memory>
+#include <mutex>
 
 #include "base/logging.h"  // LOG() stdout and android log
-#include "btif/include/btif_api.h"
-#include "osi/include/log.h"  // android log only
-#include "stack/include/sdp_api.h"
-#include "test/headless/bt_property.h"
-#include "test/headless/get_options.h"
-#include "test/headless/headless.h"
 #include "test/headless/interface.h"
 #include "test/headless/log.h"
-#include "test/headless/sdp/sdp.h"
-#include "test/headless/stopwatch.h"
-#include "test/headless/timeout.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth::test::headless;
 using namespace std::chrono_literals;
 
 template <typename T>
-struct messenger_t {
-  std::mutex mutex;
-  std::condition_variable cv;
-  std::deque<T> params_queue;
-  void Notify() { cv.notify_all(); }
+struct callback_queue_t {
+  callback_queue_t(const std::string name) : name_(name) {}
+  // Must be held with lock
+  size_t size() const { return callback_queue.size(); }
+
+ private:
+  const std::string name_;
+  std::deque<T> callback_queue;
+
+ public:
+  void Push(T elem) { callback_queue.push_back(elem); }
+  // Must be held with lock
+  T Pop() {
+    T p = callback_queue.front();
+    callback_queue.pop_front();
+    return p;
+  }
+  // Must be held with lock
+  bool empty() const { return callback_queue.empty(); }
 };
 
-namespace {
-
-namespace acl {
-messenger_t<acl_state_changed_params_t> acl_state_changed_;
-
-void acl_state_changed_cb(callback_data_t* data) {
-  auto params = static_cast<acl_state_changed_params_t*>(data);
-
-  acl_state_changed_.params_queue.push_back(*params);
-  acl_state_changed_.Notify();
-}
-
-bool await_event(const bt_acl_state_t& state, const Timeout& timeout) {
-  std::unique_lock<std::mutex> lk(acl_state_changed_.mutex);
-  if (!acl_state_changed_.params_queue.empty()) {
-    auto params = acl_state_changed_.params_queue.back();
-    if (params.state == state) return true;
+struct messenger_t {
+  mutable std::mutex mutex;
+  std::condition_variable cv;
+  callback_queue_t<std::shared_ptr<callback_params_t>> callback_queue =
+      callback_queue_t<std::shared_ptr<callback_params_t>>("callbacks");
+  void Push(std::shared_ptr<callback_params_t> elem) {
+    std::unique_lock<std::mutex> lk(mutex);
+    callback_queue.Push(elem);
+    cv.notify_all();
   }
-  return acl_state_changed_.cv.wait_for(lk, timeout, [=] {
-    return !acl_state_changed_.params_queue.empty() &&
-           acl_state_changed_.params_queue.back().state == state;
-  });
-}
+};
 
-}  // namespace acl
+namespace bluetooth {
+namespace test {
+namespace headless {
+namespace messenger {
 
-namespace sdp {
-messenger_t<remote_device_properties_params_t> remote_device_properties_;
+// Called by client to await any callback for the given callbacks
+messenger_t callback_data_;
 
-void remote_device_properties_cb(callback_data_t* data) {
-  auto params = static_cast<remote_device_properties_params_t*>(data);
-  // TODO Save timestamp into queue
-  remote_device_properties_.params_queue.push_back(*params);
-  remote_device_properties_.Notify();
-}
-
-bool await_event(const Timeout& timeout, const CheckPoint& check_point,
-                 const size_t count) {
-  std::unique_lock<std::mutex> lk(remote_device_properties_.mutex);
-  if (!remote_device_properties_.params_queue.empty()) {
-    if (remote_device_properties_.params_queue.size() - check_point > count)
-      return true;
+bool await_callback(Context& context) {
+  std::unique_lock<std::mutex> lk(callback_data_.mutex);
+  while (!callback_data_.callback_queue.empty()) {
+    std::shared_ptr<callback_params_t> cb = callback_data_.callback_queue.Pop();
+    if (std::find(context.callbacks.begin(), context.callbacks.end(),
+                  cb->CallbackType()) != context.callbacks.end()) {
+      context.callback_ready_q.push_back(cb);
+    }
   }
-  return remote_device_properties_.cv.wait_for(lk, timeout, [=] {
-    return !remote_device_properties_.params_queue.empty() &&
-           remote_device_properties_.params_queue.size() - check_point >= count;
-  });
+  if (context.callback_ready_q.size() == 0) {
+    callback_data_.cv.wait_for(lk, context.timeout);
+  }
+  return true;
 }
 
-}  // namespace sdp
-
-namespace inquiry {}  // namespace inquiry
-
-}  // namespace
+}  // namespace messenger
+}  // namespace headless
+}  // namespace test
+}  // namespace bluetooth
 
 namespace bluetooth::test::headless {
 
-namespace messenger {
-namespace acl {
-
-bool await_connected(const Timeout& timeout) {
-  return ::acl::await_event(BT_ACL_STATE_CONNECTED, timeout);
+void messenger_stats() {
+  //  LOG_CONSOLE("%30s cnt:%zu", "device_found",
+  //  discovered::device_found_.size()); LOG_CONSOLE("%30s cnt:%zu",
+  //  "remote_device_properties",
+  //              properties::remote_device_properties_.size());
 }
 
-bool await_disconnected(const Timeout& timeout) {
-  return ::acl::await_event(BT_ACL_STATE_DISCONNECTED, timeout);
-}
-
-}  // namespace acl
-
-namespace sdp {
-
-bool await_service_discovery(const Timeout& timeout,
-                             const CheckPoint& check_point,
-                             const size_t count) {
-  return ::sdp::await_event(timeout, check_point, count);
-}
-
-CheckPoint get_check_point() {
-  std::unique_lock<std::mutex> lk(::sdp::remote_device_properties_.mutex);
-  return ::sdp::remote_device_properties_.params_queue.size();
-}
-
-std::deque<remote_device_properties_params_t> collect_from(
-    CheckPoint& check_point) {
-  std::unique_lock<std::mutex> lk(::sdp::remote_device_properties_.mutex);
-  ASSERT_LOG(
-      !(check_point > ::sdp::remote_device_properties_.params_queue.size()),
-      "Checkpoint larger than size");
-  std::deque<remote_device_properties_params_t> deque;
-  for (size_t size = check_point;
-       size < ::sdp::remote_device_properties_.params_queue.size(); ++size) {
-    deque.push_back(::sdp::remote_device_properties_.params_queue[size]);
-  }
-  return deque;
-}
-
-}  // namespace sdp
-
-namespace inquiry {
-
-CheckPoint get_check_point() {
-  std::unique_lock<std::mutex> lk(::sdp::remote_device_properties_.mutex);
-  return ::sdp::remote_device_properties_.params_queue.size();
-}
-
-bool await_inquiry_result(const Timeout& timeout, const CheckPoint& check_point,
-                          const size_t count) {
-  return ::sdp::await_event(timeout, check_point, count);
-}
-
-std::deque<remote_device_properties_params_t> collect_from(
-    CheckPoint& check_point) {
-  std::unique_lock<std::mutex> lk(::sdp::remote_device_properties_.mutex);
-  ASSERT_LOG(
-      !(check_point > ::sdp::remote_device_properties_.params_queue.size()),
-      "Checkpoint larger than size");
-  std::deque<remote_device_properties_params_t> deque;
-  for (size_t size = check_point;
-       size < ::sdp::remote_device_properties_.params_queue.size(); ++size) {
-    deque.push_back(::sdp::remote_device_properties_.params_queue[size]);
-  }
-  check_point +=
-      (::sdp::remote_device_properties_.params_queue.size() - check_point);
-  return deque;
-}
-
-}  // namespace inquiry
-}  // namespace messenger
-
+// Callbacks that the messenger will handle from the bluetooth stack
 void start_messenger() {
-  headless_add_callback("acl_state_changed", ::acl::acl_state_changed_cb);
-  headless_add_callback("remote_device_properties",
-                        ::sdp::remote_device_properties_cb);
-
+  headless_add_callback("acl_state_changed", [](callback_data_t* data) {
+    ASSERT_LOG(data != nullptr, "Received nullptr callback data:%s", __func__);
+    messenger::callback_data_.Push(std::make_shared<acl_state_changed_params_t>(
+        *(static_cast<acl_state_changed_params_t*>(data))));
+  });
+  headless_add_callback("adapter_properties", [](callback_data_t* data) {
+    ASSERT_LOG(data != nullptr, "Received nullptr callback data:%s", __func__);
+    messenger::callback_data_.Push(
+        std::make_shared<adapter_properties_params_t>(
+            *(static_cast<adapter_properties_params_t*>(data))));
+  });
+  headless_add_callback("device_found", [](callback_data_t* data) {
+    ASSERT_LOG(data != nullptr, "Received nullptr callback data:%s", __func__);
+    messenger::callback_data_.Push(std::make_shared<device_found_params_t>(
+        *(static_cast<device_found_params_t*>(data))));
+  });
+  headless_add_callback("remote_device_properties", [](callback_data_t* data) {
+    ASSERT_LOG(data != nullptr, "Received nullptr callback data:%s", __func__);
+    messenger::callback_data_.Push(
+        std::make_shared<remote_device_properties_params_t>(
+            *(static_cast<remote_device_properties_params_t*>(data))));
+  });
   LOG_CONSOLE("Started messenger service");
 }
 
 void stop_messenger() {
-  headless_remove_callback("acl_state_changed", ::acl::acl_state_changed_cb);
-  headless_remove_callback("remote_device_properties",
-                           ::sdp::remote_device_properties_cb);
+  headless_remove_callback("remote_device_properties");
+  headless_remove_callback("device_found");
+  headless_remove_callback("adapter_properties");
+  headless_remove_callback("acl_state_changed");
 
   LOG_CONSOLE("Stopped messenger service");
+
+  messenger_stats();
 }
 
 }  // namespace bluetooth::test::headless
