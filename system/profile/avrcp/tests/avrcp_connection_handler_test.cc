@@ -15,14 +15,13 @@
  */
 
 #include <base/functional/bind.h>
-#include <base/logging.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "sdpdefs.h"
 #include "avrcp_internal.h"
 #include "avrcp_test_helper.h"
 #include "connection_handler.h"
+#include "sdpdefs.h"
 #include "types/raw_address.h"
 
 using ::testing::_;
