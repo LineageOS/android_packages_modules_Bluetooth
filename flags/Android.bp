@@ -6,6 +6,7 @@ package {
 aconfig_declarations {
     name: "bluetooth_aconfig_flags",
     package: "com.android.bluetooth.flags",
+    container: "com.android.btservices",
     srcs: [
         "**/*.aconfig",
     ],
