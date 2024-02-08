@@ -1922,7 +1922,8 @@ public class ScanManager {
             new ActivityManager.OnUidImportanceListener() {
                 @Override
                 public void onUidImportance(final int uid, final int importance) {
-                    if (mService.mScannerMap.getAppScanStatsByUid(uid) != null) {
+                    if (mService.mTransitionalScanHelper.getScannerMap().getAppScanStatsByUid(uid)
+                            != null) {
                         Message message = new Message();
                         message.what = MSG_IMPORTANCE_CHANGE;
                         message.obj = new UidImportance(uid, importance);
