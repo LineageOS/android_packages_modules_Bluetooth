@@ -959,21 +959,6 @@ void btif_storage_load_bonded_volume_control_devices(void) {
   }
 }
 
-void btif_storage_set_csis_autoconnect(const RawAddress& addr,
-                                       bool autoconnect) {
-  do_in_jni_thread(FROM_HERE, Bind(
-                                  [](const RawAddress& addr, bool autoconnect) {
-                                    std::string bdstr = addr.ToString();
-                                    VLOG(2) << "Storing CSIS device: "
-                                            << ADDRESS_TO_LOGGABLE_CSTR(addr);
-                                    btif_config_set_int(
-                                        bdstr,
-                                        BTIF_STORAGE_KEY_CSIS_AUTOCONNECT,
-                                        autoconnect);
-                                  },
-                                  addr, autoconnect));
-}
-
 /** Stores information about the bonded CSIS device */
 void btif_storage_update_csis_info(const RawAddress& addr) {
   std::vector<uint8_t> set_info;
@@ -998,11 +983,6 @@ void btif_storage_load_bonded_csis_devices(void) {
 
     LOG_VERBOSE("Loading CSIS device:%s", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
 
-    int value;
-    bool autoconnect = false;
-    if (btif_config_get_int(name, BTIF_STORAGE_KEY_CSIS_AUTOCONNECT, &value))
-      autoconnect = !!value;
-
     size_t buffer_size =
         btif_config_get_bin_length(name, BTIF_STORAGE_KEY_CSIS_SET_INFO_BIN);
     std::vector<uint8_t> in(buffer_size);
@@ -1010,9 +990,9 @@ void btif_storage_load_bonded_csis_devices(void) {
       btif_config_get_bin(name, BTIF_STORAGE_KEY_CSIS_SET_INFO_BIN, in.data(),
                           &buffer_size);
 
-    if (buffer_size != 0 || autoconnect)
-      do_in_main_thread(FROM_HERE, Bind(&CsisClient::AddFromStorage, bd_addr,
-                                        std::move(in), autoconnect));
+    if (buffer_size != 0)
+      do_in_main_thread(
+          FROM_HERE, Bind(&CsisClient::AddFromStorage, bd_addr, std::move(in)));
   }
 }
 

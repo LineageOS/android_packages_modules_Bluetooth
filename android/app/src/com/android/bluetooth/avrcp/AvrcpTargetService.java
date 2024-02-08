@@ -188,7 +188,7 @@ public class AvrcpTargetService extends ProfileService {
     }
 
     @Override
-    protected void start() {
+    public void start() {
         if (sInstance != null) {
             throw new IllegalStateException("start() called twice");
         }
@@ -244,7 +244,7 @@ public class AvrcpTargetService extends ProfileService {
     }
 
     @Override
-    protected void stop() {
+    public void stop() {
         Log.i(TAG, "Stopping the AVRCP Target Service");
 
         if (sInstance == null) {

@@ -103,7 +103,7 @@ public class HidHostService extends ProfileService {
     }
 
     @Override
-    protected void start() {
+    public void start() {
         mDatabaseManager =
                 requireNonNull(
                         AdapterService.getAdapterService().getDatabase(),
@@ -120,14 +120,14 @@ public class HidHostService extends ProfileService {
     }
 
     @Override
-    protected void stop() {
+    public void stop() {
         if (DBG) {
             Log.d(TAG, "Stopping Bluetooth HidHostService");
         }
     }
 
     @Override
-    protected void cleanup() {
+    public void cleanup() {
         if (DBG) Log.d(TAG, "Stopping Bluetooth HidHostService");
         if (mNativeAvailable) {
             mNativeInterface.cleanup();
@@ -478,6 +478,43 @@ public class HidHostService extends ProfileService {
             }
         }
 
+        @Override
+        public void setPreferredTransport(
+                BluetoothDevice device,
+                int transport,
+                AttributionSource source,
+                SynchronousResultReceiver receiver) {
+            try {
+                HidHostService service = getService(source);
+                boolean defaultValue = false;
+                if (service != null) {
+                    enforceBluetoothPrivilegedPermission(service);
+                    defaultValue = service.setPreferredTransport(device, transport);
+                }
+                receiver.send(defaultValue);
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+
+        @Override
+        public void getPreferredTransport(
+                BluetoothDevice device,
+                AttributionSource source,
+                SynchronousResultReceiver receiver) {
+            try {
+                HidHostService service = getService(source);
+                int defaultValue = BluetoothDevice.TRANSPORT_AUTO;
+                if (service != null) {
+                    enforceBluetoothPrivilegedPermission(service);
+                    defaultValue = service.getPreferredTransport(device);
+                }
+                receiver.send(defaultValue);
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+
         /* The following APIs regarding test app for compliance */
         @Override
         public void getProtocolMode(BluetoothDevice device, AttributionSource source,
@@ -708,6 +745,37 @@ public class HidHostService extends ProfileService {
     }
 
     /**
+     * @see BluetoothHidHost#setPreferredTransport
+     */
+    boolean setPreferredTransport(BluetoothDevice device, int transport) {
+        if (DBG) {
+            Log.i(TAG, "setPreferredTransport: " + device + " transport: " + transport);
+        }
+
+        if (device.getBondState() != BluetoothDevice.BOND_BONDED) {
+            Log.w(TAG, "Device not bonded" + device);
+            return false;
+        }
+
+        boolean hidSupported = Utils.arrayContains(device.getUuids(), BluetoothUuid.HID);
+        boolean hogpSupported = Utils.arrayContains(device.getUuids(), BluetoothUuid.HOGP);
+        if (transport == BluetoothDevice.TRANSPORT_BREDR && !hidSupported) {
+            Log.w(TAG, "HID not supported: " + device);
+            return false;
+        } else if (transport == BluetoothDevice.TRANSPORT_LE && !hogpSupported) {
+            Log.w(TAG, "HOGP not supported: " + device);
+            return false;
+        }
+
+        /* TODO: b/324094542 - Implement setPreferredTransport API
+         * Save transport preference in the persistent storage
+         * If connection policy allows connection, ensure that the preferred transport is
+         * connected and not the other one.
+         */
+        return false;
+    }
+
+    /**
      * Get the connection policy of the profile.
      *
      * <p> The connection policy can be any of:
@@ -725,6 +793,18 @@ public class HidHostService extends ProfileService {
         }
         return mDatabaseManager
                 .getProfileConnectionPolicy(device, BluetoothProfile.HID_HOST);
+    }
+
+    /**
+     * @see BluetoothHidHost#getPreferredTransport
+     */
+    int getPreferredTransport(BluetoothDevice device) {
+        if (DBG) {
+            Log.d(TAG, "getPreferredTransport: " + device);
+        }
+
+        // TODO: b/324094542 - Implement getPreferredTransport API
+        return BluetoothDevice.TRANSPORT_AUTO;
     }
 
     /* The following APIs regarding test app for compliance */
@@ -924,6 +1004,9 @@ public class HidHostService extends ProfileService {
         intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState);
         intent.putExtra(BluetoothProfile.EXTRA_STATE, newState);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
+        /* TODO: b/324094542 - Set correct transport as EXTRA_TRANSPORT
+         * intent.putExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_AUTO);
+         */
         intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
         sendBroadcastAsUser(intent, UserHandle.ALL, BLUETOOTH_CONNECT,
                 Utils.getTempAllowlistBroadcastOptions());

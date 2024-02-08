@@ -239,7 +239,7 @@ public class VolumeControlService extends ProfileService {
     }
 
     @Override
-    protected void start() {
+    public void start() {
         if (DBG) {
             Log.d(TAG, "start()");
         }
@@ -280,7 +280,7 @@ public class VolumeControlService extends ProfileService {
     }
 
     @Override
-    protected void stop() {
+    public void stop() {
         if (DBG) {
             Log.d(TAG, "stop()");
         }
@@ -338,7 +338,7 @@ public class VolumeControlService extends ProfileService {
     }
 
     @Override
-    protected void cleanup() {
+    public void cleanup() {
         if (DBG) {
             Log.d(TAG, "cleanup()");
         }
@@ -1031,10 +1031,23 @@ public class VolumeControlService extends ProfileService {
     // Copied from AudioService.getBluetoothContextualVolumeStream() and modified it.
     int getBluetoothContextualVolumeStream() {
         int mode = mAudioManager.getMode();
+
+        if (DBG) {
+            Log.d(TAG, "Volume mode: " + mode + "0: normal, 1: ring, 2,3: call");
+        }
+
         switch (mode) {
             case AudioManager.MODE_IN_COMMUNICATION:
             case AudioManager.MODE_IN_CALL:
                 return AudioManager.STREAM_VOICE_CALL;
+            case AudioManager.MODE_RINGTONE:
+            if (mFeatureFlags.leaudioVolumeChangeOnRingtoneFix()) {
+                if (DBG) {
+                    Log.d(TAG, " Update during ringtone applied to voice call");
+                }
+                return AudioManager.STREAM_VOICE_CALL;
+            }
+            // fall through
             case AudioManager.MODE_NORMAL:
             default:
                 // other conditions will influence the stream type choice, read on...

@@ -442,7 +442,9 @@ package android.bluetooth {
     method @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public int getConnectionPolicy(@NonNull android.bluetooth.BluetoothDevice);
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public int getConnectionState(@NonNull android.bluetooth.BluetoothDevice);
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public java.util.List<android.bluetooth.BluetoothDevice> getDevicesMatchingConnectionStates(int[]);
+    method @FlaggedApi("com.android.bluetooth.flags.allow_switching_hid_and_hogp") @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public int getPreferredTransport(@NonNull android.bluetooth.BluetoothDevice);
     method @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public boolean setConnectionPolicy(@NonNull android.bluetooth.BluetoothDevice, int);
+    method @FlaggedApi("com.android.bluetooth.flags.allow_switching_hid_and_hogp") @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public boolean setPreferredTransport(@NonNull android.bluetooth.BluetoothDevice, int);
     field @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public static final String ACTION_CONNECTION_STATE_CHANGED = "android.bluetooth.input.profile.action.CONNECTION_STATE_CHANGED";
   }
 
@@ -494,6 +496,7 @@ package android.bluetooth {
     method public void onGroupNodeAdded(@NonNull android.bluetooth.BluetoothDevice, int);
     method public void onGroupNodeRemoved(@NonNull android.bluetooth.BluetoothDevice, int);
     method public void onGroupStatusChanged(int, int);
+    method @FlaggedApi("com.android.bluetooth.flags.leaudio_callback_on_group_stream_status") public default void onGroupStreamStatusChanged(int, int);
   }
 
   public final class BluetoothLeAudioCodecConfigMetadata implements android.os.Parcelable {

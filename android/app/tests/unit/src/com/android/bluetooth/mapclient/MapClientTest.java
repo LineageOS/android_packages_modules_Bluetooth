@@ -71,14 +71,16 @@ public class MapClientTest {
         mIsMapClientServiceStarted = true;
         Looper looper = null;
         mService = new MapClientService(mTargetContext, looper, mMockMnsService);
-        mService.doStart();
+        mService.start();
+        mService.setAvailable(true);
         mAdapter = BluetoothAdapter.getDefaultAdapter();
     }
 
     @After
     public void tearDown() throws Exception {
         if (mIsMapClientServiceStarted) {
-            mService.doStop();
+            mService.stop();
+            mService.cleanup();
             mService = MapClientService.getMapClientService();
             Assert.assertNull(mService);
         }

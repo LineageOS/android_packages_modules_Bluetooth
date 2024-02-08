@@ -23,7 +23,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.spy;
@@ -74,7 +73,8 @@ public class BluetoothMapServiceTest {
         TestUtils.setAdapterService(mAdapterService);
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
         mService = new BluetoothMapService(targetContext);
-        mService.doStart();
+        mService.start();
+        mService.setAvailable(true);
         // Try getting the Bluetooth adapter
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         assertThat(mAdapter).isNotNull();
@@ -83,7 +83,7 @@ public class BluetoothMapServiceTest {
 
     @After
     public void tearDown() throws Exception {
-        mService.doStop();
+        mService.stop();
         mService = BluetoothMapService.getBluetoothMapService();
         assertThat(mService).isNull();
         TestUtils.clearAdapterService(mAdapterService);

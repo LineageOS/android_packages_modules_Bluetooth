@@ -247,7 +247,8 @@ public class BassClientServiceTest {
         mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_BROADCAST_AUDIO_HANDOVER_POLICIES, false);
 
         mBassClientService = new BassClientService(mTargetContext, mFakeFlagsImpl);
-        mBassClientService.doStart();
+        mBassClientService.start();
+        mBassClientService.setAvailable(true);
 
         mBassClientService.mServiceFactory = mServiceFactory;
         doReturn(mCsipService).when(mServiceFactory).getCsipSetCoordinatorService();
@@ -276,7 +277,7 @@ public class BassClientServiceTest {
         }
         mBassClientService.unregisterCallback(mCallback);
 
-        mBassClientService.doStop();
+        mBassClientService.stop();
         mBassClientService = BassClientService.getBassClientService();
         assertThat(mBassClientService).isNull();
         mStateMachines.clear();

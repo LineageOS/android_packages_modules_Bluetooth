@@ -313,7 +313,7 @@ public class LeAudioService extends ProfileService {
     }
 
     @Override
-    protected void start() {
+    public void start() {
         Log.i(TAG, "start()");
         if (sLeAudioService != null) {
             throw new IllegalStateException("start() called twice");
@@ -372,8 +372,7 @@ public class LeAudioService extends ProfileService {
 
         mAudioManager.registerAudioDeviceCallback(mAudioManagerAudioDeviceCallback,
                        mHandler);
-        // clear mUnicastGroupIdDeactivatedForBroadcastTransition to default
-        updateFallbackUnicastGroupIdForBroadcast(LE_AUDIO_GROUP_ID_INVALID);
+
         // Mark service as started
         setLeAudioService(this);
 
@@ -404,7 +403,7 @@ public class LeAudioService extends ProfileService {
     }
 
     @Override
-    protected void stop() {
+    public void stop() {
         Log.i(TAG, "stop()");
         if (sLeAudioService == null) {
             Log.w(TAG, "stop() called before start()");
@@ -500,8 +499,7 @@ public class LeAudioService extends ProfileService {
         }
 
         mAudioManager.unregisterAudioDeviceCallback(mAudioManagerAudioDeviceCallback);
-        // clear mUnicastGroupIdDeactivatedForBroadcastTransition to default
-        updateFallbackUnicastGroupIdForBroadcast(LE_AUDIO_GROUP_ID_INVALID);
+
         mAdapterService = null;
         mAudioManager = null;
         mMcpService = null;
@@ -512,7 +510,7 @@ public class LeAudioService extends ProfileService {
     }
 
     @Override
-    protected void cleanup() {
+    public void cleanup() {
         Log.i(TAG, "cleanup()");
     }
 

@@ -20,6 +20,7 @@ package android.bluetooth;
 import static android.bluetooth.BluetoothUtils.getSyncTimeout;
 
 import android.annotation.CallbackExecutor;
+import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.IntRange;
 import android.annotation.NonNull;
@@ -38,6 +39,7 @@ import android.os.RemoteException;
 import android.util.CloseGuard;
 import android.util.Log;
 
+import com.android.bluetooth.flags.Flags;
 import com.android.modules.utils.SynchronousResultReceiver;
 
 import java.lang.annotation.Retention;
@@ -61,7 +63,7 @@ import java.util.concurrent.TimeoutException;
  */
 public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
     private static final String TAG = "BluetoothLeAudio";
-    private static final boolean DBG = false;
+    private static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
     private static final boolean VDBG = false;
 
     private final Map<Callback, Executor> mCallbackExecutorMap = new HashMap<>();
@@ -84,6 +86,15 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
                     GROUP_STATUS_INACTIVE,
                 })
         @interface GroupStatus {}
+
+        /** @hide */
+        @Retention(RetentionPolicy.SOURCE)
+        @IntDef(
+                value = {
+                    GROUP_STREAM_STATUS_IDLE,
+                    GROUP_STREAM_STATUS_STREAMING,
+                })
+        @interface GroupStreamStatus {}
 
         /**
          * Callback invoked when callback is registered and when codec config changes on the remote
@@ -127,6 +138,22 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
          */
         @SystemApi
         void onGroupStatusChanged(int groupId, @GroupStatus int groupStatus);
+
+        /**
+         * Callback invoked when the group's stream status changes.
+         *
+         * @param groupId the group id
+         * @param groupStreamStatus streaming or idle state.
+         * @hide
+         */
+        @FlaggedApi(Flags.FLAG_LEAUDIO_CALLBACK_ON_GROUP_STREAM_STATUS)
+        @SystemApi
+        default void onGroupStreamStatusChanged(
+                int groupId, @GroupStreamStatus int groupStreamStatus) {
+            if (DBG) {
+                Log.d(TAG, " onGroupStreamStatusChanged is not implemented.");
+            }
+        }
     }
 
     @SuppressLint("AndroidFrameworkBluetoothPermission")
@@ -619,6 +646,23 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
      * @hide
      */
     public static final int GROUP_STATUS_INACTIVE = IBluetoothLeAudio.GROUP_STATUS_INACTIVE;
+
+    /**
+     * Indicating that group stream is in IDLE (not streaming)
+     *
+     * @hide
+     */
+    @FlaggedApi(Flags.FLAG_LEAUDIO_CALLBACK_ON_GROUP_STREAM_STATUS)
+    public static final int GROUP_STREAM_STATUS_IDLE = IBluetoothLeAudio.GROUP_STREAM_STATUS_IDLE;
+
+    /**
+     * Indicating that group is STREAMING
+     *
+     * @hide
+     */
+    @FlaggedApi(Flags.FLAG_LEAUDIO_CALLBACK_ON_GROUP_STREAM_STATUS)
+    public static final int GROUP_STREAM_STATUS_STREAMING =
+            IBluetoothLeAudio.GROUP_STREAM_STATUS_STREAMING;
 
     private IBluetoothLeAudio mService;
 

@@ -17,6 +17,8 @@
 #include "types/ble_address_with_type.h"
 
 #include <gtest/gtest.h>
+static constexpr uint8_t RAW_ADDRESS_TEST1[6] = {0x01, 0x02, 0x03,
+                                                 0x04, 0x05, 0x06};
 
 TEST(BleAddressWithTypeTest, to_ble_addr_type) {
   for (unsigned i = 0; i < 0xff + 1; i++) {
@@ -95,6 +97,23 @@ TEST(BleAddressWithTypeTest, STREAM_TO_BLE_ADDR_TYPE) {
         break;
     }
   }
+}
+
+TEST(BleAddressWithTypeTest, TYPED_ADDRESS_TRANSPORT) {
+  tTypedAddressTransport typedAddressTransportA = {
+      {BLE_ADDR_PUBLIC, RAW_ADDRESS_TEST1}, BT_TRANSPORT_AUTO};
+  tTypedAddressTransport typedAddressTransportB = {
+      {BLE_ADDR_PUBLIC, RAW_ADDRESS_TEST1}, BT_TRANSPORT_BR_EDR};
+  tTypedAddressTransport typedAddressTransportC = {
+      {BLE_ADDR_PUBLIC, RAW_ADDRESS_TEST1}, BT_TRANSPORT_LE};
+
+  ASSERT_EQ(typedAddressTransportA, typedAddressTransportB);
+  ASSERT_EQ(typedAddressTransportA, typedAddressTransportC);
+  ASSERT_NE(typedAddressTransportB, typedAddressTransportC);
+
+  ASSERT_FALSE(typedAddressTransportA.StrictlyEquals(typedAddressTransportB));
+  ASSERT_FALSE(typedAddressTransportA.StrictlyEquals(typedAddressTransportC));
+  ASSERT_FALSE(typedAddressTransportB.StrictlyEquals(typedAddressTransportC));
 }
 
 TEST(BleAddressWithTypeTest, BLE_ADDR_TYPE_TO_STREAM) {

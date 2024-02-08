@@ -134,7 +134,7 @@ public class PbapClientService extends ProfileService {
     }
 
     @Override
-    protected void start() {
+    public void start() {
         if (VDBG) {
             Log.v(TAG, "onStart");
         }
@@ -163,7 +163,7 @@ public class PbapClientService extends ProfileService {
     }
 
     @Override
-    protected void stop() {
+    public void stop() {
         setPbapClientService(null);
         cleanUpSdpRecord();
         try {
