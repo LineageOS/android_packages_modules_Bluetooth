@@ -15,6 +15,7 @@
  *  limitations under the License.
  *
  ******************************************************************************/
+#include <bluetooth/log.h>
 #include <string.h>
 
 #include "avrc_api.h"
@@ -22,6 +23,8 @@
 #include "avrc_int.h"
 #include "os/log.h"
 #include "stack/include/bt_types.h"
+
+using namespace bluetooth;
 
 /*****************************************************************************
  *  Global data
@@ -44,15 +47,15 @@ static tAVRC_STS avrc_ctrl_pars_vendor_cmd(tAVRC_MSG_VENDOR* p_msg,
   tAVRC_STS status = AVRC_STS_NO_ERROR;
 
   if (p_msg->vendor_len < 4) {  // 4 == pdu + reserved byte + len as uint16
-    LOG_WARN("%s: message length %d too short: must be at least 4", __func__,
-             p_msg->vendor_len);
+    log::warn("message length {} too short: must be at least 4",
+              p_msg->vendor_len);
     return AVRC_STS_INTERNAL_ERR;
   }
   uint8_t* p = p_msg->p_vendor_data;
   p_result->pdu = *p++;
-  LOG_VERBOSE("%s pdu:0x%x", __func__, p_result->pdu);
+  log::verbose("pdu:0x{:x}", p_result->pdu);
   if (!AVRC_IsValidAvcType(p_result->pdu, p_msg->hdr.ctype)) {
-    LOG_VERBOSE("%s detects wrong AV/C type!", __func__);
+    log::verbose("detects wrong AV/C type!");
     status = AVRC_STS_BAD_CMD;
   }
 
@@ -123,24 +126,23 @@ static tAVRC_STS avrc_pars_vendor_cmd(tAVRC_MSG_VENDOR* p_msg,
   if (p_msg->p_vendor_data == NULL) return AVRC_STS_INTERNAL_ERR;
 
   if (p_msg->vendor_len < 4) {
-    LOG_WARN("%s: message length %d too short: must be at least 4", __func__,
-             p_msg->vendor_len);
+    log::warn("message length {} too short: must be at least 4",
+              p_msg->vendor_len);
     return AVRC_STS_INTERNAL_ERR;
   }
 
   p = p_msg->p_vendor_data;
   p_result->pdu = *p++;
-  LOG_VERBOSE("%s pdu:0x%x", __func__, p_result->pdu);
+  log::verbose("pdu:0x{:x}", p_result->pdu);
   if (!AVRC_IsValidAvcType(p_result->pdu, p_msg->hdr.ctype)) {
-    LOG_VERBOSE("%s detects wrong AV/C type(0x%x)!", __func__,
-                p_msg->hdr.ctype);
+    log::verbose("detects wrong AV/C type(0x{:x})!", p_msg->hdr.ctype);
     status = AVRC_STS_BAD_CMD;
   }
 
   p++; /* skip the reserved byte */
   BE_STREAM_TO_UINT16(len, p);
   if ((len + 4) != (p_msg->vendor_len)) {
-    LOG_ERROR("%s incorrect length :%d, %d", __func__, len, p_msg->vendor_len);
+    log::error("incorrect length :{}, {}", len, p_msg->vendor_len);
     status = AVRC_STS_INTERNAL_ERR;
   }
 
@@ -211,16 +213,15 @@ static tAVRC_STS avrc_pars_vendor_cmd(tAVRC_MSG_VENDOR* p_msg,
             status = AVRC_STS_BAD_PARAM;
         }
         if (xx != p_result->set_app_val.num_val) {
-          LOG_ERROR(
-              "%s AVRC_PDU_SET_PLAYER_APP_VALUE not enough room:%d orig "
-              "num_val:%d",
-              __func__, xx, p_result->set_app_val.num_val);
+          log::error(
+              "AVRC_PDU_SET_PLAYER_APP_VALUE not enough room:{} orig "
+              "num_val:{}",
+              xx, p_result->set_app_val.num_val);
           p_result->set_app_val.num_val = xx;
         }
       } else {
-        LOG_ERROR(
-            "%s AVRC_PDU_SET_PLAYER_APP_VALUE NULL decode buffer or bad len",
-            __func__);
+        log::error(
+            "AVRC_PDU_SET_PLAYER_APP_VALUE NULL decode buffer or bad len");
         status = AVRC_STS_INTERNAL_ERR;
       }
       break;
@@ -320,8 +321,7 @@ static tAVRC_STS avrc_pars_vendor_cmd(tAVRC_MSG_VENDOR* p_msg,
       else {
         BE_STREAM_TO_UINT8(p_result->reg_notif.event_id, p);
         if (!AVRC_IS_VALID_EVENT_ID(p_result->reg_notif.event_id)) {
-          LOG_ERROR("%s: Invalid event id: %d", __func__,
-                    p_result->reg_notif.event_id);
+          log::error("Invalid event id: {}", p_result->reg_notif.event_id);
           return AVRC_STS_BAD_PARAM;
         }
 
@@ -352,7 +352,7 @@ static tAVRC_STS avrc_pars_vendor_cmd(tAVRC_MSG_VENDOR* p_msg,
 
     case AVRC_PDU_SET_ADDRESSED_PLAYER: /* 0x60 */
       if (len != 2) {
-        LOG_ERROR("AVRC_PDU_SET_ADDRESSED_PLAYER length is incorrect:%d", len);
+        log::error("AVRC_PDU_SET_ADDRESSED_PLAYER length is incorrect:{}", len);
         return AVRC_STS_INTERNAL_ERR;
       }
       BE_STREAM_TO_UINT16(p_result->addr_player.player_id, p);
@@ -400,13 +400,13 @@ tAVRC_STS AVRC_Ctrl_ParsCommand(tAVRC_MSG* p_msg, tAVRC_COMMAND* p_result) {
         break;
 
       default:
-        LOG_ERROR("%s unknown opcode:0x%x", __func__, p_msg->hdr.opcode);
+        log::error("unknown opcode:0x{:x}", p_msg->hdr.opcode);
         break;
     }
     p_result->cmd.opcode = p_msg->hdr.opcode;
     p_result->cmd.status = status;
   }
-  LOG_VERBOSE("%s return status:0x%x", __func__, status);
+  log::verbose("return status:0x{:x}", status);
   return status;
 }
 
@@ -440,7 +440,7 @@ static tAVRC_STS avrc_pars_browsing_cmd(tAVRC_MSG_BROWSE* p_msg,
                          "msg too short");
 
   p_result->pdu = *p++;
-  LOG_VERBOSE("avrc_pars_browsing_cmd() pdu:0x%x", p_result->pdu);
+  log::verbose("avrc_pars_browsing_cmd() pdu:0x{:x}", p_result->pdu);
   /* skip over len */
   p += 2;
 
@@ -621,12 +621,12 @@ tAVRC_STS AVRC_ParsCommand(tAVRC_MSG* p_msg, tAVRC_COMMAND* p_result,
         break;
 
       default:
-        LOG_ERROR("%s unknown opcode:0x%x", __func__, p_msg->hdr.opcode);
+        log::error("unknown opcode:0x{:x}", p_msg->hdr.opcode);
         break;
     }
     p_result->cmd.opcode = p_msg->hdr.opcode;
     p_result->cmd.status = status;
   }
-  LOG_VERBOSE("%s return status:0x%x", __func__, status);
+  log::verbose("return status:0x{:x}", status);
   return status;
 }
