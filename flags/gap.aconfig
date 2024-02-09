@@ -77,3 +77,10 @@ flag {
     description: "Cleans up restricted handles when disconnected"
     bug: "323110155"
 }
+
+flag {
+    name: "brcm_better_le_scan_params"
+    namespace: "bluetooth"
+    description: "Optimize LE scan parameters for BRCM controllers"
+    bug: "324238597"
+}
