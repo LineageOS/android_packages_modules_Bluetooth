@@ -19,7 +19,7 @@
 
 #include "le_audio_software_hidl.h"
 
-#include "osi/include/log.h"
+#include "os/log.h"
 
 namespace bluetooth {
 namespace audio {

@@ -26,7 +26,7 @@
 #include "btif/include/btif_av_co.h"
 #include "btif/include/btif_hf.h"
 #include "common/message_loop_thread.h"
-#include "osi/include/log.h"
+#include "os/log.h"
 #include "osi/include/properties.h"
 #include "types/raw_address.h"
 

@@ -32,7 +32,7 @@
 #include "a2dp_vendor_ldac_constants.h"
 #include "a2dp_vendor_opus_constants.h"
 #include "client_interface_aidl.h"
-#include "osi/include/log.h"
+#include "os/log.h"
 
 namespace bluetooth::audio::aidl::a2dp {
 

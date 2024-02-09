@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "osi/include/log.h"
+#include "os/log.h"
 
 #include <chrono>
 #include <ctime>

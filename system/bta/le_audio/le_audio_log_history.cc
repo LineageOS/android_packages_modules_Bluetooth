@@ -26,7 +26,7 @@
 #include "common/circular_buffer.h"
 #include "common/strings.h"
 #include "main/shim/dumpsys.h"
-#include "osi/include/log.h"
+#include "os/log.h"
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
 

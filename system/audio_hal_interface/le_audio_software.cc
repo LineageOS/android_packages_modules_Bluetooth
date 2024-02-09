@@ -28,7 +28,7 @@
 #include "bta/le_audio/codec_manager.h"
 #include "hal_version_manager.h"
 #include "hidl/le_audio_software_hidl.h"
-#include "osi/include/log.h"
+#include "os/log.h"
 #include "osi/include/properties.h"
 
 namespace bluetooth {

@@ -24,7 +24,7 @@
 #include "common/init_flags.h"
 #include "hci/controller_interface.h"
 #include "main/shim/entry.h"
-#include "osi/include/log.h"
+#include "os/log.h"
 #include "osi/include/properties.h"
 #include "stack/include/hcimsgs.h"
 #include "stack/include/sdpdefs.h"

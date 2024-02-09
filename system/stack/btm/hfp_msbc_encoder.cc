@@ -21,7 +21,7 @@
 #include <cstring>
 
 #include "embdrv/sbc/encoder/include/sbc_encoder.h"
-#include "osi/include/log.h"
+#include "os/log.h"
 
 typedef struct {
   SBC_ENC_PARAMS sbc_encoder_params;

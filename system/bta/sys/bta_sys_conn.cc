@@ -28,7 +28,7 @@
 #include "bta/sys/bta_sys_int.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
-#include "osi/include/log.h"
+#include "os/log.h"
 #include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/include/btm_api.h"
 #include "types/hci_role.h"
