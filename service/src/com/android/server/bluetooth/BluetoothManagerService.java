@@ -25,6 +25,7 @@ import static android.bluetooth.BluetoothAdapter.STATE_TURNING_OFF;
 import static android.bluetooth.BluetoothAdapter.STATE_TURNING_ON;
 import static android.os.PowerExemptionManager.TEMPORARY_ALLOW_LIST_TYPE_FOREGROUND_SERVICE_ALLOWED;
 
+import static com.android.modules.utils.build.SdkLevel.isAtLeastV;
 import static com.android.server.bluetooth.BluetoothAirplaneModeListener.APM_ENHANCEMENT;
 
 import static java.util.Objects.requireNonNull;
@@ -77,6 +78,7 @@ import com.android.bluetooth.flags.FeatureFlags;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
+import com.android.modules.expresslog.Counter;
 import com.android.server.BluetoothManagerServiceDumpProto;
 import com.android.server.bluetooth.airplane.AirplaneModeListener;
 import com.android.server.bluetooth.satellite.SatelliteModeListener;
@@ -435,7 +437,7 @@ class BluetoothManagerService {
         intent.setComponent(resolveSystemService(intent));
         intent.putExtra(
                 "android.bluetooth.notification.extra.NOTIFICATION_REASON", notificationReason);
-        mContext.startService(intent);
+        mCurrentUserContext.startService(intent);
         return Unit.INSTANCE;
     }
 
@@ -506,6 +508,10 @@ class BluetoothManagerService {
                 // Clear registered LE apps to force shut-off
                 clearBleApps();
 
+                if (!AirplaneModeListener.hasUserToggledApm(mCurrentUserContext)) {
+                    AutoOnFeature.pause();
+                }
+
                 // If state is BLE_ON make sure we trigger stopBle
                 if (st == STATE_BLE_ON) {
                     mAdapterLock.readLock().lock();
@@ -534,6 +540,8 @@ class BluetoothManagerService {
                         mQuietEnableExternal,
                         BluetoothProtoEnums.ENABLE_DISABLE_REASON_AIRPLANE_MODE,
                         mContext.getPackageName());
+            } else if (st != STATE_ON) {
+                autoOnSetupTimer();
             }
         }
     }
@@ -545,9 +553,14 @@ class BluetoothManagerService {
                     BluetoothProtoEnums.ENABLE_DISABLE_REASON_SATELLITE_MODE,
                     mContext.getPackageName());
         } else if (!shouldBluetoothBeOn(isSatelliteModeOn) && getState() != STATE_OFF) {
+            AutoOnFeature.pause();
             sendDisableMsg(
                     BluetoothProtoEnums.ENABLE_DISABLE_REASON_SATELLITE_MODE,
                     mContext.getPackageName());
+        } else if (!isSatelliteModeOn
+                && !shouldBluetoothBeOn(isSatelliteModeOn)
+                && getState() != STATE_ON) {
+            autoOnSetupTimer();
         }
     }
 
@@ -736,6 +749,18 @@ class BluetoothManagerService {
             // New implementation is instantiated during onBootPhase on correct thread
             mBluetoothSatelliteModeListener =
                     new BluetoothSatelliteModeListener(this, mLooper, mContext);
+        }
+
+        { // AutoOn feature initialization of flag guarding
+            final boolean autoOnFlag = Flags.autoOnFeature();
+            final boolean autoOnProperty =
+                    SystemProperties.getBoolean("bluetooth.server.automatic_turn_on", false);
+            Log.d(TAG, "AutoOnFeature status: flag=" + autoOnFlag + ", property=" + autoOnProperty);
+
+            mDeviceConfigAllowAutoOn = autoOnFlag && autoOnProperty;
+            if (mDeviceConfigAllowAutoOn) {
+                Counter.logIncrement("bluetooth.value_auto_on_supported");
+            }
         }
     }
 
@@ -1176,6 +1201,17 @@ class BluetoothManagerService {
         }
     }
 
+    private Unit enableFromAutoOn() {
+        if (isBluetoothDisallowed()) {
+            Log.d(TAG, "Bluetooth is not allowed, preventing AutoOn");
+            return Unit.INSTANCE;
+        }
+        Counter.logIncrement("bluetooth.value_auto_on_triggered");
+        sendToggleNotification("auto_on_bt_enabled_notification");
+        enable("BluetoothSystemServer/AutoOn");
+        return Unit.INSTANCE;
+    }
+
     boolean enableNoAutoConnect(String packageName) {
         if (isSatelliteModeOn()) {
             Log.d(TAG, "enableNoAutoConnect(" + packageName + "): Blocked by satellite mode");
@@ -1336,7 +1372,11 @@ class BluetoothManagerService {
         } else if (!isNameAndAddressSet()) {
             Log.i(TAG, "internalHandleOnBootPhase: Getting adapter name and address");
             mHandler.sendEmptyMessage(MESSAGE_GET_NAME_AND_ADDRESS);
+        } else {
+            autoOnSetupTimer();
         }
+
+        autoOnHiddenListener();
 
         if (!mUseNewAirplaneMode) {
             mBluetoothAirplaneModeListener.start(new BluetoothModeChangeHelper(mContext));
@@ -1936,6 +1976,8 @@ class BluetoothManagerService {
                         mBluetoothNotificationManager.createNotificationChannels();
                     }
 
+                    AutoOnFeature.pause();
+
                     mCurrentUserContext = mContext.createContextAsUser(userTo, 0);
 
                     /* disable and enable BT when detect a user switch */
@@ -1953,7 +1995,12 @@ class BluetoothManagerService {
                                         + (" number of retry attempt=" + userMsg.arg1)
                                         + (" isBinding=" + isBinding())
                                         + (" mAdapter=" + mAdapter));
+                    } else {
+                        autoOnSetupTimer();
                     }
+
+                    autoOnHiddenListener();
+
                     break;
 
                 case MESSAGE_USER_UNLOCKED:
@@ -2129,8 +2176,15 @@ class BluetoothManagerService {
             return;
         }
 
+        if (prevState == STATE_ON) {
+            autoOnSetupTimer();
+        }
+
         // Notify all proxy objects first of adapter state change
         if (newState == STATE_ON) {
+            if (mDeviceConfigAllowAutoOn) {
+                AutoOnFeature.notifyBluetoothOn(mCurrentUserContext.getContentResolver());
+            }
             sendBluetoothOnCallback();
         } else if (newState == STATE_OFF) {
             // If Bluetooth is off, send service down event to proxy objects, and unbind
@@ -2638,6 +2692,57 @@ class BluetoothManagerService {
             return BluetoothAdapter.BT_SNOOP_LOG_MODE_FULL;
         }
         return BluetoothAdapter.BT_SNOOP_LOG_MODE_DISABLED;
+    }
+
+    private final boolean mDeviceConfigAllowAutoOn;
+
+    private void autoOnSetupTimer() {
+        if (!mDeviceConfigAllowAutoOn) {
+            Log.d(TAG, "No support for AutoOn feature: Not creating a timer");
+            return;
+        }
+        AutoOnFeature.resetAutoOnTimerForUser(
+                mLooper, mCurrentUserContext, mState, this::enableFromAutoOn);
+    }
+
+    private void autoOnHiddenListener() {
+        if (!mDeviceConfigAllowAutoOn) {
+            Log.d(TAG, "No support for AutoOn feature: Not listening on hidden api");
+            return;
+        }
+        if (isAtLeastV()) {
+            Log.d(TAG, "AutoOn feature: prevent listening on hidden api. Use proper API in V+");
+            return;
+        }
+        AutoOnFeature.registerHiddenApiListener(
+                mLooper, mCurrentUserContext, mState, this::enableFromAutoOn);
+    }
+
+    boolean isAutoOnSupported() {
+        return mDeviceConfigAllowAutoOn
+                && AutoOnFeature.isUserSupported(mCurrentUserContext.getContentResolver());
+    }
+
+    boolean isAutoOnEnabled() {
+        if (!mDeviceConfigAllowAutoOn) {
+            throw new IllegalStateException("AutoOnFeature is not supported in current config");
+        }
+        return AutoOnFeature.isUserEnabled(mCurrentUserContext);
+    }
+
+    void setAutoOnEnabled(boolean status) {
+        if (!mDeviceConfigAllowAutoOn) {
+            throw new IllegalStateException("AutoOnFeature is not supported in current config");
+        }
+        // Call coming from binder thread need to be posted before exec
+        mHandler.post(
+                () ->
+                        AutoOnFeature.setUserEnabled(
+                                mLooper,
+                                mCurrentUserContext,
+                                mState,
+                                status,
+                                this::enableFromAutoOn));
     }
 
     /**

@@ -40,6 +40,24 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class ModeListenerTest {
+    companion object {
+        internal fun setupSatelliteModeToOn(
+            resolver: ContentResolver,
+            looper: Looper,
+            callback: (m: Boolean) -> Unit
+        ) {
+            enableSensitive(resolver, looper, SETTINGS_SATELLITE_MODE_RADIOS)
+            enableMode(resolver, looper, SETTINGS_SATELLITE_MODE_ENABLED)
+
+            initialize(looper, resolver, callback)
+        }
+
+        internal fun setupSatelliteModeToOff(resolver: ContentResolver, looper: Looper) {
+            disableSensitive(resolver, looper, SETTINGS_SATELLITE_MODE_RADIOS)
+            disableMode(resolver, looper, SETTINGS_SATELLITE_MODE_ENABLED)
+        }
+    }
+
     private val resolver: ContentResolver =
         ApplicationProvider.getApplicationContext<Context>().getContentResolver()
     @JvmField @Rule val testName = TestName()

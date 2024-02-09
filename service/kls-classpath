@@ -21,5 +21,12 @@ CLASSPATH+=":$ROOT/out/soong/.intermediates/packages/modules/Bluetooth/service/b
 CLASSPATH+=":$ROOT/out/soong/.intermediates/packages/modules/Bluetooth/android/app/bluetooth-proto-enums-java-gen/android_common_apex33/turbine-combined/bluetooth-proto-enums-java-gen.jar"
 CLASSPATH+=":$ROOT/out/soong/.intermediates/packages/modules/Bluetooth/flags/bluetooth_flags_java_lib/android_common_apex33/turbine-combined/bluetooth_flags_java_lib.jar"
 CLASSPATH+=":$ROOT/out/soong/.intermediates/frameworks/libs/modules-utils/java/com/android/modules/utils/modules-utils-shell-command-handler/android_common_apex33/turbine-combined/modules-utils-shell-command-handler.jar"
+CLASSPATH+=":$ROOT/out/soong/.intermediates/frameworks/libs/modules-utils/java/com/android/modules/utils/build/modules-utils-build_system/android_common_apex33/turbine-combined/modules-utils-build_system.jar"
+
+CLASSPATH+=":$ROOT/out/soong/.intermediates/prebuilts/misc/common/androidx-test/androidx.test.core/android_common/combined/androidx.test.core.jar"
+CLASSPATH+=":$ROOT/out/soong/.intermediates/external/truth/truth/android_common/turbine-combined/truth.jar"
+CLASSPATH+=":$ROOT/out/soong/.intermediates/external/junit/junit/android_common/turbine-combined/junit.jar"
+CLASSPATH+=":$ROOT/out/soong/.intermediates/prebuilts/tools/common/m2/mockito-robolectric-prebuilt/android_common/turbine-combined/mockito-robolectric-prebuilt.jar"
+CLASSPATH+=":$ROOT/out/soong/.intermediates/external/robolectric/Robolectric_all_upstream/linux_glibc_common/6da2cb1db6f5106f6cbbfb5faa1ac779/javac-header/Robolectric_all_upstream.jar"
 
 echo "$CLASSPATH"
