@@ -63,4 +63,12 @@ interface IBluetoothManager
     int setBtHciSnoopLogMode(int mode);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
     int getBtHciSnoopLogMode();
+
+    // AutoOnFeature
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
+    boolean isAutoOnSupported();
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
+    boolean isAutoOnEnabled();
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
+    void setAutoOnEnabled(boolean status);
 }

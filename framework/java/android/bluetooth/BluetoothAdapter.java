@@ -22,6 +22,7 @@ import static android.bluetooth.BluetoothUtils.getSyncTimeout;
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.CallbackExecutor;
+import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
@@ -69,6 +70,7 @@ import android.sysprop.BluetoothProperties;
 import android.util.Log;
 import android.util.Pair;
 
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
 import com.android.modules.expresslog.Counter;
 import com.android.modules.utils.SynchronousResultReceiver;
@@ -5794,6 +5796,60 @@ public final class BluetoothAdapter {
             Log.e(TAG, "", e);
         }
         return BT_SNOOP_LOG_MODE_DISABLED;
+    }
+
+    /**
+     * Returns true if the auto on feature is supported on the device
+     *
+     * @hide
+     */
+    @SystemApi
+    @FlaggedApi(Flags.FLAG_AUTO_ON_FEATURE)
+    @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
+    public boolean isAutoOnSupported() {
+        try {
+            return mManagerService.isAutoOnSupported();
+        } catch (RemoteException e) {
+            e.rethrowFromSystemServer();
+        }
+        return false;
+    }
+
+    /**
+     * Get the value of the automatic restart of the Bluetooth stack for the current user
+     *
+     * @return true if the auto on feature is enabled for the current user
+     * @throws IllegalStateException if feature is not supported
+     * @hide
+     */
+    @SystemApi
+    @FlaggedApi(Flags.FLAG_AUTO_ON_FEATURE)
+    @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
+    public boolean isAutoOnEnabled() {
+        try {
+            return mManagerService.isAutoOnEnabled();
+        } catch (RemoteException e) {
+            e.rethrowFromSystemServer();
+        }
+        return false;
+    }
+
+    /**
+     * Set the value of the automatic restart of the Bluetooth stack for the current user
+     *
+     * @param status true if the feature is enabled
+     * @throws IllegalStateException if feature is not supported
+     * @hide
+     */
+    @SystemApi
+    @FlaggedApi(Flags.FLAG_AUTO_ON_FEATURE)
+    @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
+    public void setAutoOnEnabled(boolean status) {
+        try {
+            mManagerService.setAutoOnEnabled(status);
+        } catch (RemoteException e) {
+            e.rethrowFromSystemServer();
+        }
     }
 
     /** @hide */

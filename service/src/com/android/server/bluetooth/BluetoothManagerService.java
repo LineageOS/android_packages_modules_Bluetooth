@@ -2678,6 +2678,33 @@ class BluetoothManagerService {
                 mLooper, mCurrentUserContext, mState, this::enableFromAutoOn);
     }
 
+    boolean isAutoOnSupported() {
+        return mDeviceConfigAllowAutoOn
+                && AutoOnFeature.isUserSupported(mCurrentUserContext.getContentResolver());
+    }
+
+    boolean isAutoOnEnabled() {
+        if (!mDeviceConfigAllowAutoOn) {
+            throw new IllegalStateException("AutoOnFeature is not supported in current config");
+        }
+        return AutoOnFeature.isUserEnabled(mCurrentUserContext);
+    }
+
+    void setAutoOnEnabled(boolean status) {
+        if (!mDeviceConfigAllowAutoOn) {
+            throw new IllegalStateException("AutoOnFeature is not supported in current config");
+        }
+        // Call coming from binder thread need to be posted before exec
+        mHandler.post(
+                () ->
+                        AutoOnFeature.setUserEnabled(
+                                mLooper,
+                                mCurrentUserContext,
+                                mState,
+                                status,
+                                this::enableFromAutoOn));
+    }
+
     /**
      * Check if BLE is supported by this platform
      *
