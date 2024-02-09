@@ -389,7 +389,6 @@ init_flags!(
         bluetooth_quality_report_callback = true,
         set_min_encryption = true,
         subrating = true,
-        trigger_advertising_callbacks_on_first_resume_after_pause = true,
         use_unified_connection_manager,
         sdp_return_classic_services_when_le_discovery_fails = true,
         use_rsi_from_cached_inqiry_results = false,
