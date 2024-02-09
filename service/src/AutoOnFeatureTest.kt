@@ -29,6 +29,8 @@ import com.android.server.bluetooth.isUserSupported
 import com.android.server.bluetooth.notifyBluetoothOn
 import com.android.server.bluetooth.pause
 import com.android.server.bluetooth.resetAutoOnTimerForUser
+import com.android.server.bluetooth.satellite.isOn as isSatelliteModeOn
+import com.android.server.bluetooth.satellite.test.ModeListenerTest as SatelliteListener
 import com.android.server.bluetooth.setUserEnabled
 import com.android.server.bluetooth.timer
 import com.google.common.truth.Expect
@@ -301,6 +303,21 @@ class AutoOnFeatureTest {
 
         expect.that(timer).isNull()
         expect.that(callback_count).isEqualTo(1)
+        expectNoStorageTime()
+    }
+
+    @Test
+    fun setupTimer_whenSatelliteIsOn_isNotScheduled() {
+        val satelliteCallback: (m: Boolean) -> Unit = { _: Boolean -> }
+
+        SatelliteListener.setupSatelliteModeToOn(resolver, looper, satelliteCallback)
+        assertThat(isSatelliteModeOn).isTrue()
+
+        setupTimer()
+
+        SatelliteListener.setupSatelliteModeToOff(resolver, looper)
+        expect.that(timer).isNull()
+        expect.that(callback_count).isEqualTo(0)
         expectNoStorageTime()
     }
 }
