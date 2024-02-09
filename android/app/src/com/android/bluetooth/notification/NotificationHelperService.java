@@ -23,7 +23,9 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.bluetooth.BluetoothManager;
 import android.content.Intent;
+import android.graphics.drawable.Icon;
 import android.net.Uri;
 import android.os.IBinder;
 import android.provider.Settings;
@@ -50,7 +52,17 @@ public class NotificationHelperService extends Service {
 
     private static final String NOTIFICATION_TAG = "com.android.bluetooth";
     private static final String NOTIFICATION_CHANNEL = "notification_toggle_channel";
-    private static final String NOTIFICATION_GROUP = "notification_toggle_group";
+    private static final int NOTIFICATION_GROUP = R.string.bluetooth_notification_group;
+
+    private static final String NOTIFICATION_ACTION =
+            "android.bluetooth.notification.action.SEND_TOGGLE_NOTIFICATION";
+    private static final String NOTIFICATION_EXTRA =
+            "android.bluetooth.notification.extra.NOTIFICATION_REASON";
+
+    private static final String AUTO_ON_USER_ACTION =
+            "android.bluetooth.notification.action.AUTO_ON_USER_ACTION";
+    private static final String AUTO_ON_USER_EXTRA =
+            "android.bluetooth.notification.extra.AUTO_ON_DISABLE";
 
     private static final Map<String, Pair<Integer /* titleId */, Integer /* messageId */>>
             NOTIFICATION_MAP =
@@ -79,8 +91,14 @@ public class NotificationHelperService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        sendToggleNotification(
-                intent.getStringExtra("android.bluetooth.notification.extra.NOTIFICATION_REASON"));
+        switch (intent.getAction()) {
+            case NOTIFICATION_ACTION -> {
+                sendToggleNotification(intent.getStringExtra(NOTIFICATION_EXTRA));
+            }
+            case AUTO_ON_USER_ACTION -> {
+                autoOnUserAction(intent.getBooleanExtra(AUTO_ON_USER_EXTRA, false));
+            }
+        }
         return Service.START_NOT_STICKY;
     }
 
@@ -102,16 +120,17 @@ public class NotificationHelperService extends Service {
 
         NotificationManager notificationManager =
                 requireNonNull(getSystemService(NotificationManager.class));
+        String tag = NOTIFICATION_TAG + "/" + notificationReason;
         for (StatusBarNotification notification : notificationManager.getActiveNotifications()) {
-            if (NOTIFICATION_TAG.equals(notification.getTag())) {
-                notificationManager.cancel(NOTIFICATION_TAG, notification.getId());
+            if (tag.equals(notification.getTag())) {
+                notificationManager.cancel(tag, notification.getId());
             }
         }
 
         notificationManager.createNotificationChannel(
                 new NotificationChannel(
                         NOTIFICATION_CHANNEL,
-                        NOTIFICATION_GROUP,
+                        getString(NOTIFICATION_GROUP),
                         NotificationManager.IMPORTANCE_HIGH));
 
         String title = getString(notificationContent.first);
@@ -127,7 +146,7 @@ public class NotificationHelperService extends Service {
                         .setStyle(new Notification.BigTextStyle().bigText(message))
                         .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth);
 
-        if (notificationReason != AUTO_ON_BT_ENABLED_NOTIFICATION) {
+        if (!notificationReason.equals(AUTO_ON_BT_ENABLED_NOTIFICATION)) {
             // Do not display airplane link when the notification is due to auto_on feature
             String helpLinkUrl = getString(R.string.config_apmLearnMoreLink);
             builder.setContentIntent(
@@ -138,14 +157,37 @@ public class NotificationHelperService extends Service {
                                     .setData(Uri.parse(helpLinkUrl))
                                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
                             PendingIntent.FLAG_IMMUTABLE));
+        } else {
+            Intent baseIntent =
+                    new Intent()
+                            .setAction(AUTO_ON_USER_ACTION)
+                            .setClass(this, NotificationHelperService.class);
+            PendingIntent disablePendingIntent =
+                    PendingIntent.getService(
+                            this,
+                            0,
+                            new Intent(baseIntent).putExtra(AUTO_ON_USER_EXTRA, true),
+                            PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_ONE_SHOT);
+            builder.addAction(
+                    new Notification.Action.Builder(
+                                    Icon.createWithResource(this, R.drawable.ic_bluetooth_settings),
+                                    getString(R.string.bluetooth_disable_auto_on),
+                                    disablePendingIntent)
+                            .build());
         }
 
         notificationManager.notify(
-                NOTIFICATION_TAG, SystemMessage.ID.NOTE_BT_APM_NOTIFICATION_VALUE, builder.build());
+                tag, SystemMessage.ID.NOTE_BT_APM_NOTIFICATION_VALUE, builder.build());
     }
 
     /** Return whether the notification has been shown */
     private boolean isFirstTimeNotification(String name) {
         return Settings.Secure.getInt(getContentResolver(), name, 0) == 0;
+    }
+
+    private void autoOnUserAction(boolean disableAutoOn) {
+        if (disableAutoOn) {
+            getSystemService(BluetoothManager.class).getAdapter().setAutoOnEnabled(false);
+        }
     }
 }
