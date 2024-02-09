@@ -175,6 +175,7 @@ android_robolectric_test {
 
     static_libs: [
         "androidx.test.core",
+        "kotlin-test",
         "kotlinx_coroutines",
         "kotlinx_coroutines_test",
         "mockito-robolectric-prebuilt",
