@@ -54,7 +54,12 @@ public fun resetAutoOnTimerForUser(
         return
     }
 
-    timer = Timer.start(looper, callback_on)
+    timer = Timer.start(looper, context, callback_on)
+}
+
+public fun pause() {
+    timer?.pause()
+    timer = null
 }
 
 public fun notifyBluetoothOn(resolver: ContentResolver) {
@@ -104,6 +109,7 @@ public fun setUserEnabled(
 internal class Timer
 private constructor(
     looper: Looper,
+    private val context: Context,
     callback_on: () -> Unit,
     private val now: LocalDateTime,
     private val target: LocalDateTime,
@@ -112,6 +118,7 @@ private constructor(
     private val handler = Handler(looper)
 
     init {
+        writeDateToStorage(target, context.contentResolver)
         handler.postDelayed(
             {
                 Log.i(TAG, "[${this}]: Bluetooth restarting now")
@@ -126,14 +133,35 @@ private constructor(
     }
 
     companion object {
+        @VisibleForTesting internal val STORAGE_KEY = "bluetooth_internal_automatic_turn_on_timer"
 
-        fun start(looper: Looper, callback_on: () -> Unit): Timer {
+        private fun writeDateToStorage(date: LocalDateTime, resolver: ContentResolver): Boolean {
+            return Settings.Secure.putString(resolver, STORAGE_KEY, date.toString())
+        }
+
+        private fun getDateFromStorage(resolver: ContentResolver): LocalDateTime? {
+            val date = Settings.Secure.getString(resolver, STORAGE_KEY)
+            return date?.let { LocalDateTime.parse(it) }
+        }
+
+        private fun resetStorage(resolver: ContentResolver) {
+            Settings.Secure.putString(resolver, STORAGE_KEY, null)
+        }
+
+        fun start(looper: Looper, context: Context, callback_on: () -> Unit): Timer? {
             val now = LocalDateTime.now()
-            val target = nextTimeout(now)
+            val target = getDateFromStorage(context.contentResolver) ?: nextTimeout(now)
             val timeToSleep =
                 now.until(target, ChronoUnit.NANOS).toDuration(DurationUnit.NANOSECONDS)
 
-            return Timer(looper, callback_on, now, target, timeToSleep)
+            if (timeToSleep.isNegative()) {
+                Log.i(TAG, "Starting now (${now}) as it was scheduled for ${target}")
+                callback_on()
+                resetStorage(context.contentResolver)
+                return null
+            }
+
+            return Timer(looper, context, callback_on, now, target, timeToSleep)
         }
 
         /** Return a LocalDateTime for tomorrow 5 am */
@@ -141,11 +169,18 @@ private constructor(
             LocalDateTime.of(now.toLocalDate(), LocalTime.of(5, 0)).plusDays(1)
     }
 
+    /** Save timer to storage and stop it */
+    internal fun pause() {
+        Log.i(TAG, "[${this}]: Pausing timer")
+        handler.removeCallbacksAndMessages(null)
+    }
+
     /** Stop timer and reset storage */
     @VisibleForTesting
     internal fun cancel() {
         Log.i(TAG, "[${this}]: Cancelling timer")
         handler.removeCallbacksAndMessages(null)
+        resetStorage(context.contentResolver)
     }
 
     override fun toString() = "Timer scheduled ${now} for target=${target} (=${timeToSleep} delay)."
