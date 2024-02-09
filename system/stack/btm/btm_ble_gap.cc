@@ -491,6 +491,16 @@ void BTM_BleTargetAnnouncementObserve(bool enable,
   }
 }
 
+std::pair<uint16_t /* interval */, uint16_t /* window */>
+get_low_latency_scan_params() {
+  uint16_t scan_interval = osi_property_get_int32(kPropertyInquiryScanInterval,
+                                                  BTM_BLE_LOW_LATENCY_SCAN_INT);
+  uint16_t scan_window = osi_property_get_int32(kPropertyInquiryScanWindow,
+                                                BTM_BLE_LOW_LATENCY_SCAN_WIN);
+
+  return std::make_pair(scan_interval, scan_window);
+}
+
 /*******************************************************************************
  *
  * Function         BTM_BleObserve
@@ -513,17 +523,16 @@ tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration,
                            tBTM_CMPL_CB* p_cmpl_cb, bool low_latency_scan) {
   tBTM_STATUS status = BTM_WRONG_MODE;
 
-  uint32_t scan_interval = !btm_cb.ble_ctr_cb.inq_var.scan_interval
+  uint16_t scan_interval = !btm_cb.ble_ctr_cb.inq_var.scan_interval
                                ? BTM_BLE_GAP_DISC_SCAN_INT
                                : btm_cb.ble_ctr_cb.inq_var.scan_interval;
-  uint32_t scan_window = !btm_cb.ble_ctr_cb.inq_var.scan_window
+  uint16_t scan_window = !btm_cb.ble_ctr_cb.inq_var.scan_window
                              ? BTM_BLE_GAP_DISC_SCAN_WIN
                              : btm_cb.ble_ctr_cb.inq_var.scan_window;
 
   // use low latency scanning if the scanning is active
   if (low_latency_scan) {
-    scan_interval = BTM_BLE_LOW_LATENCY_SCAN_INT;
-    scan_window = BTM_BLE_LOW_LATENCY_SCAN_WIN;
+    std::tie(scan_interval, scan_window) = get_low_latency_scan_params();
   }
 
   LOG_VERBOSE("%s : scan_type:%d, %d, %d", __func__,
@@ -1918,10 +1927,8 @@ tBTM_STATUS btm_ble_start_inquiry(uint8_t duration) {
   BTM_BleAdvFilterParamSetup(BTM_BLE_SCAN_COND_ADD, static_cast<tBTM_BLE_PF_FILT_INDEX>(0),
                  std::move(adv_filt_param), base::Bind(btm_ble_scan_filt_param_cfg_evt));
 
-  uint16_t scan_interval = osi_property_get_int32(kPropertyInquiryScanInterval,
-                                                  BTM_BLE_LOW_LATENCY_SCAN_INT);
-  uint16_t scan_window = osi_property_get_int32(kPropertyInquiryScanWindow,
-                                                BTM_BLE_LOW_LATENCY_SCAN_WIN);
+  uint16_t scan_interval, scan_window;
+  std::tie(scan_interval, scan_window) = get_low_latency_scan_params();
 
   if (!btm_cb.ble_ctr_cb.is_ble_scan_active()) {
     cache.ClearAll();
@@ -2950,10 +2957,9 @@ void btm_ble_stop_inquiry(void) {
   /* If no more scan activity, stop LE scan now */
   if (!btm_cb.ble_ctr_cb.is_ble_scan_active()) {
     btm_ble_stop_scan();
-  } else if ((btm_cb.ble_ctr_cb.inq_var.scan_interval !=
-              BTM_BLE_LOW_LATENCY_SCAN_INT) ||
-             (btm_cb.ble_ctr_cb.inq_var.scan_window !=
-              BTM_BLE_LOW_LATENCY_SCAN_WIN)) {
+  } else if (get_low_latency_scan_params() !=
+             std::pair(btm_cb.ble_ctr_cb.inq_var.scan_interval,
+                       btm_cb.ble_ctr_cb.inq_var.scan_window)) {
     LOG_VERBOSE("%s: setting default params for ongoing observe", __func__);
     btm_ble_stop_scan();
     btm_ble_start_scan();
