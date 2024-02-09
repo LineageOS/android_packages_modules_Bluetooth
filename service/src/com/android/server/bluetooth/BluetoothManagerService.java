@@ -2156,7 +2156,7 @@ class BluetoothManagerService {
         // Notify all proxy objects first of adapter state change
         if (newState == STATE_ON) {
             if (mDeviceConfigAllowAutoOn) {
-                AutoOnFeature.notifyBluetoothOn();
+                AutoOnFeature.notifyBluetoothOn(mCurrentUserContext.getContentResolver());
             }
             sendBluetoothOnCallback();
         } else if (newState == STATE_OFF) {
