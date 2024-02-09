@@ -17,6 +17,7 @@
 #ifndef ANDROID_INCLUDE_BT_AV_H
 #define ANDROID_INCLUDE_BT_AV_H
 
+#include <bluetooth/log.h>
 #include <hardware/bluetooth.h>
 #include <raw_address.h>
 
@@ -432,5 +433,23 @@ typedef struct {
 } btav_sink_interface_t;
 
 __END_DECLS
+
+namespace fmt {
+template <>
+struct formatter<btav_a2dp_codec_bits_per_sample_t>
+    : enum_formatter<btav_a2dp_codec_bits_per_sample_t> {};
+template <>
+struct formatter<btav_a2dp_codec_priority_t>
+    : enum_formatter<btav_a2dp_codec_priority_t> {};
+template <>
+struct formatter<btav_a2dp_codec_index_t>
+    : enum_formatter<btav_a2dp_codec_index_t> {};
+template <>
+struct formatter<btav_a2dp_codec_sample_rate_t>
+    : enum_formatter<btav_a2dp_codec_sample_rate_t> {};
+template <>
+struct formatter<btav_a2dp_codec_channel_mode_t>
+    : enum_formatter<btav_a2dp_codec_channel_mode_t> {};
+}  // namespace fmt
 
 #endif /* ANDROID_INCLUDE_BT_AV_H */

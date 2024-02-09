@@ -16,6 +16,7 @@
 
 #define LOG_TAG "a2dp_aac_encoder"
 
+#include <bluetooth/log.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
@@ -29,7 +30,6 @@
 #include "internal_include/bt_target.h"
 #include "mmc/codec_client/codec_client.h"
 #include "mmc/proto/mmc_config.pb.h"
-#include "os/log.h"
 #include "os/rand.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
@@ -63,8 +63,7 @@ class FFmpegInterface {
 
     int rc = client->init(config);
     if (rc < 0) {
-      LOG_ERROR("%s: Init failed with error message, %s", __func__,
-                strerror(-rc));
+      log::error("Init failed with error message, {}", strerror(-rc));
     }
     return rc;
   }
@@ -81,20 +80,19 @@ class FFmpegInterface {
   // Otherwise returns the length of the encoded frame stored in `o_buf`.
   int encode_pcm(uint8_t* i_buf, int i_len, uint8_t* o_buf, int o_len) {
     if (i_buf == nullptr || o_buf == nullptr) {
-      LOG_ERROR("%s: Buffer is null", __func__);
+      log::error("Buffer is null");
       return -EINVAL;
     }
 
     if (!client) {
-      LOG_ERROR("%s: CodecClient does not init", __func__);
+      log::error("CodecClient does not init");
       return -ENOENT;
     }
 
     int rc = client->transcode(i_buf, i_len, o_buf, o_len);
 
     if (rc < 0) {
-      LOG_ERROR("%s: Encode failed with error message, %s", __func__,
-                strerror(-rc));
+      log::error("Encode failed with error message, {}", strerror(-rc));
     }
     return rc;
   }
@@ -158,10 +156,8 @@ void a2dp_aac_encoder_init(const tA2DP_ENCODER_INIT_PEER_PARAMS* p_peer_params,
                            a2dp_source_enqueue_callback_t enqueue_callback) {
   uint8_t codec_info[AVDT_CODEC_SIZE];
   if (!a2dp_codec_config->copyOutOtaCodecConfig(codec_info)) {
-    LOG_ERROR(
-        "%s: Cannot update the codec encoder for %s: "
-        "invalid codec config",
-        __func__, a2dp_codec_config->name().c_str());
+    log::error("Cannot update the codec encoder for {}: invalid codec config",
+               a2dp_codec_config->name().c_str());
     return;
   }
 
@@ -181,8 +177,7 @@ void a2dp_aac_encoder_init(const tA2DP_ENCODER_INIT_PEER_PARAMS* p_peer_params,
       sample_rate, channel_count, bit_rate, bits_per_sample, mtu);
 
   if (pcm_samples_per_frame < 0) {
-    LOG_ERROR("%s: Failed to prepare context: %d", __func__,
-              pcm_samples_per_frame);
+    log::error("Failed to prepare context: {}", pcm_samples_per_frame);
     codec_intf.clear_context();
     return;  // TODO(b/294165759): need to return an error
   }
@@ -225,7 +220,7 @@ void a2dp_aac_feeding_reset() {
   auto frame_length = a2dp_aac_encoder_cb.pcm_samples_per_frame;
   auto sample_rate = a2dp_aac_encoder_cb.feeding_params.sample_rate;
   if (sample_rate == 0) {
-    LOG_WARN("%s: Sample rate is not configured", __func__);
+    log::warn("Sample rate is not configured");
     return;
   }
 
@@ -239,9 +234,9 @@ void a2dp_aac_feeding_reset() {
                         1000,
   };
 
-  LOG_WARN("%s: PCM bytes %d per tick (%dms)", __func__,
-           a2dp_aac_encoder_cb.aac_feeding_state.bytes_per_tick,
-           a2dp_aac_encoder_cb.encoder_interval_ms);
+  log::warn("PCM bytes {} per tick ({}ms)",
+            a2dp_aac_encoder_cb.aac_feeding_state.bytes_per_tick,
+            a2dp_aac_encoder_cb.encoder_interval_ms);
 }
 
 void a2dp_aac_feeding_flush() {
@@ -282,7 +277,7 @@ static void a2dp_aac_get_num_frame_iteration(uint8_t* num_of_iterations,
       a2dp_aac_encoder_cb.pcm_samples_per_frame *
       a2dp_aac_encoder_cb.feeding_params.channel_count *
       a2dp_aac_encoder_cb.feeding_params.bits_per_sample / 8;
-  LOG_VERBOSE("%s: pcm_bytes_per_frame %u", __func__, pcm_bytes_per_frame);
+  log::verbose("pcm_bytes_per_frame {}", pcm_bytes_per_frame);
 
   uint32_t us_this_tick = a2dp_aac_encoder_cb.encoder_interval_ms * 1000;
   uint64_t now_us = timestamp_us;
@@ -299,8 +294,7 @@ static void a2dp_aac_get_num_frame_iteration(uint8_t* num_of_iterations,
   a2dp_aac_encoder_cb.aac_feeding_state.counter -= result * pcm_bytes_per_frame;
   nof = result;
 
-  LOG_VERBOSE("%s: effective num of frames %u, iterations %u", __func__, nof,
-              noi);
+  log::verbose("effective num of frames {}, iterations {}", nof, noi);
 
   *num_of_frames = nof;
   *num_of_iterations = noi;
@@ -319,7 +313,7 @@ static void a2dp_aac_encode_frames(uint8_t nb_frame) {
 
     uint32_t bytes_read = 0;
     if (!a2dp_aac_read_feeding(read_buffer, &bytes_read)) {
-      LOG_WARN("%s: Underflow %u", __func__, nb_frame);
+      log::warn("Underflow {}", nb_frame);
       a2dp_aac_encoder_cb.aac_feeding_state.counter +=
           nb_frame * a2dp_aac_encoder_cb.pcm_samples_per_frame *
           a2dp_aac_encoder_cb.feeding_params.channel_count *
@@ -343,7 +337,7 @@ static void a2dp_aac_encode_frames(uint8_t nb_frame) {
     }
 
     if (written == 0) {
-      LOG_INFO("%s: Dropped a frame, likely due to buffering", __func__);
+      log::info("Dropped a frame, likely due to buffering");
       a2dp_aac_encoder_cb.stats.media_read_total_dropped_packets++;
       osi_free(p_buf);
       continue;
@@ -396,16 +390,15 @@ static uint16_t adjust_effective_mtu(
   if (mtu_size > peer_params.peer_mtu) {
     mtu_size = peer_params.peer_mtu;
   }
-  LOG_VERBOSE("%s: original AVDTP MTU size: %d", __func__, mtu_size);
+  log::verbose("original AVDTP MTU size: {}", mtu_size);
   if (peer_params.is_peer_edr && !peer_params.peer_supports_3mbps) {
     // This condition would be satisfied only if the remote device is
     // EDR and supports only 2 Mbps, but the effective AVDTP MTU size
     // exceeds the 2DH5 packet size.
-    LOG_VERBOSE("%s: The remote device is EDR but does not support 3 Mbps",
-                __func__);
+    log::verbose("The remote device is EDR but does not support 3 Mbps");
     if (mtu_size > MAX_2MBPS_AVDTP_MTU) {
-      LOG_WARN("%s: Restricting AVDTP MTU size from %d to %d", __func__,
-               mtu_size, MAX_2MBPS_AVDTP_MTU);
+      log::warn("Restricting AVDTP MTU size from {} to {}", mtu_size,
+                MAX_2MBPS_AVDTP_MTU);
       mtu_size = MAX_2MBPS_AVDTP_MTU;
     }
   }

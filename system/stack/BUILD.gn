@@ -46,6 +46,7 @@ source_set("nonstandard_codecs") {
 
     configs += [
       "//bt/system:target_defaults",
+      "//bt/system/log:log_defaults",
     ]
   }
 }
@@ -226,6 +227,7 @@ source_set("stack") {
 
   configs += [
     "//bt/system:target_defaults",
+    "//bt/system/log:log_defaults",
   ]
 }
 

@@ -28,7 +28,10 @@ static_library("audio_hal_interface") {
     "//bt/system/gd/rust/shim",
   ]
 
-  configs += [ "//bt/system:target_defaults" ]
+  configs += [
+    "//bt/system:target_defaults",
+    "//bt/system/log:log_defaults",
+  ]
 
   deps = [
     "//bt/system/common",

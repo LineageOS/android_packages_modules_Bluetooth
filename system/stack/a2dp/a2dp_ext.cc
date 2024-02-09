@@ -17,9 +17,12 @@
 #include "a2dp_ext.h"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include "a2dp_codec_api.h"
 #include "audio_hal_interface/a2dp_encoding.h"
+
+using namespace bluetooth;
 
 static uint64_t codec_id(btav_a2dp_codec_index_t codec_index) {
   uint64_t id = 0;
@@ -62,7 +65,7 @@ bool A2dpCodecConfigExt::setCodecConfig(const uint8_t* p_peer_codec_info,
       std::vector<provider::a2dp_remote_capabilities>{capabilities},
       codec_user_config_);
   if (!result.has_value()) {
-    LOG(ERROR) << "Failed to set a configuration for " << name_;
+    log::error("Failed to set a configuration for {}", name_);
     return false;
   }
 
