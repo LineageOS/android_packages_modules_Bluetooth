@@ -437,7 +437,7 @@ class BluetoothManagerService {
         intent.setComponent(resolveSystemService(intent));
         intent.putExtra(
                 "android.bluetooth.notification.extra.NOTIFICATION_REASON", notificationReason);
-        mContext.startService(intent);
+        mCurrentUserContext.startService(intent);
         return Unit.INSTANCE;
     }
 
