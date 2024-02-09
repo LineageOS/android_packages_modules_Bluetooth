@@ -17,6 +17,7 @@ package com.android.server.bluetooth.test
 
 import android.bluetooth.BluetoothAdapter
 import android.content.Context
+import android.content.Intent
 import android.os.Looper
 import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
@@ -318,6 +319,54 @@ class AutoOnFeatureTest {
         SatelliteListener.setupSatelliteModeToOff(resolver, looper)
         expect.that(timer).isNull()
         expect.that(callback_count).isEqualTo(0)
+        expectNoStorageTime()
+    }
+
+    @Test
+    fun updateTimezone_whenTimerSchedule_isReScheduled() {
+        setupTimer()
+
+        // Fake storaged time so when receiving the intent, the test think we jump in the futur
+        val pastTime = timerTarget.minusDays(3)
+        Settings.Secure.putString(resolver, Timer.STORAGE_KEY, pastTime.toString())
+
+        context.sendBroadcast(Intent(Intent.ACTION_TIMEZONE_CHANGED))
+        shadowOf(looper).idle()
+
+        expect.that(timer).isNull()
+        expect.that(callback_count).isEqualTo(1)
+        expectNoStorageTime()
+    }
+
+    @Test
+    fun updateTime_whenTimerSchedule_isReScheduled() {
+        setupTimer()
+
+        // Fake stored time so when receiving the intent, the test think we jumped in the future
+        val pastTime = timerTarget.minusDays(3)
+        Settings.Secure.putString(resolver, Timer.STORAGE_KEY, pastTime.toString())
+
+        context.sendBroadcast(Intent(Intent.ACTION_TIME_CHANGED))
+        shadowOf(looper).idle()
+
+        expect.that(timer).isNull()
+        expect.that(callback_count).isEqualTo(1)
+        expectNoStorageTime()
+    }
+
+    @Test
+    fun updateDate_whenTimerSchedule_isReScheduled() {
+        setupTimer()
+
+        // Fake stored time so when receiving the intent, the test think we jumped in the future
+        val pastTime = timerTarget.minusDays(3)
+        Settings.Secure.putString(resolver, Timer.STORAGE_KEY, pastTime.toString())
+
+        context.sendBroadcast(Intent(Intent.ACTION_DATE_CHANGED))
+        shadowOf(looper).idle()
+
+        expect.that(timer).isNull()
+        expect.that(callback_count).isEqualTo(1)
         expectNoStorageTime()
     }
 }
