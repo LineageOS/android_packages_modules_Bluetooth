@@ -33,7 +33,6 @@ import android.bluetooth.BluetoothUuid;
 import android.bluetooth.IBluetoothHapClient;
 import android.bluetooth.IBluetoothHapClientCallback;
 import android.content.AttributionSource;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -127,8 +126,9 @@ public class HapClientService extends ProfileService {
         return sHapClient;
     }
 
-    public HapClientService(Context ctx) {
-        super(ctx);
+    public HapClientService(AdapterService adapterService) {
+        super(adapterService);
+        mAdapterService = Objects.requireNonNull(adapterService);
         mFeatureFlags = new FeatureFlagsImpl();
     }
 
@@ -154,12 +154,12 @@ public class HapClientService extends ProfileService {
             throw new IllegalStateException("start() called twice");
         }
 
-        // Get AdapterService, HapClientNativeInterface, DatabaseManager, AudioManager.
+        // Get HapClientNativeInterface, DatabaseManager, AudioManager.
         // None of them can be null.
-        mAdapterService = Objects.requireNonNull(AdapterService.getAdapterService(),
-                "AdapterService cannot be null when HapClientService starts");
-        mDatabaseManager = Objects.requireNonNull(mAdapterService.getDatabase(),
-                "DatabaseManager cannot be null when HapClientService starts");
+        mDatabaseManager =
+                Objects.requireNonNull(
+                        mAdapterService.getDatabase(),
+                        "DatabaseManager cannot be null when HapClientService starts");
         mHapClientNativeInterface = Objects.requireNonNull(
                 HapClientNativeInterface.getInstance(),
                 "HapClientNativeInterface cannot be null when HapClientService starts");
@@ -229,9 +229,6 @@ public class HapClientService extends ProfileService {
         if (mCallbacks != null) {
             mCallbacks.kill();
         }
-
-        // Clear AdapterService
-        mAdapterService = null;
     }
 
     /** Process a change in the bonding state for a device */
