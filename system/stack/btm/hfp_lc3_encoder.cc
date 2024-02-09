@@ -18,12 +18,15 @@
 
 #include "hfp_lc3_encoder.h"
 
+#include <bluetooth/log.h>
 #include <lc3.h>
 
 #include <cstring>
 
 #include "os/log.h"
 #include "osi/include/allocator.h"
+
+using namespace bluetooth;
 
 const int HFP_LC3_PCM_BYTES = 480;
 const int HFP_LC3_PKT_FRAME_LEN = 58;
@@ -33,8 +36,7 @@ static lc3_encoder_t hfp_lc3_encoder;
 
 void hfp_lc3_encoder_init() {
   if (hfp_lc3_encoder_mem) {
-    LOG_WARN("%s: The encoder instance should have had been released.",
-             __func__);
+    log::warn("The encoder instance should have had been released.");
     osi_free(hfp_lc3_encoder_mem);
   }
 
@@ -56,7 +58,7 @@ void hfp_lc3_encoder_cleanup() {
 
 uint32_t hfp_lc3_encode_frames(int16_t* input, uint8_t* output) {
   if (input == nullptr || output == nullptr) {
-    LOG_ERROR("%s: Buffer is null.", __func__);
+    log::error("Buffer is null.");
     return 0;
   }
 

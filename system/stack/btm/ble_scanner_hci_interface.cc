@@ -19,12 +19,15 @@
 
 #include <base/functional/bind.h>
 #include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include "btm_api.h"
 #include "device/include/controller.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/hcimsgs.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth;
 
 namespace {
 BleScannerHciInterface* instance = nullptr;
@@ -55,7 +58,7 @@ static void status_handle_callback(base::Callback<void(uint8_t, uint16_t)> cb,
     handle = handle & 0x0EFF;
 
   } else {
-    VLOG(1) << __func__ << " hci response error code: " << int{status};
+    log::verbose("hci response error code: {}", int{status});
   }
   cb.Run(status, handle);
 }
@@ -135,8 +138,7 @@ class BleScannerImplBase : public BleScannerHciInterface {
     uint16_t acl_handle = BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_LE);
 
     if (acl_handle == HCI_INVALID_HANDLE) {
-      LOG(ERROR) << __func__
-                 << ": Wrong mode: no LE link exist or LE not supported";
+      log::error("Wrong mode: no LE link exist or LE not supported");
       return;
     }
 
@@ -151,8 +153,7 @@ class BleScannerImplBase : public BleScannerHciInterface {
     uint16_t acl_handle = BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_LE);
 
     if (acl_handle == HCI_INVALID_HANDLE) {
-      LOG(ERROR) << __func__
-                 << ": Wrong mode: no LE link exist or LE not supported";
+      log::error("Wrong mode: no LE link exist or LE not supported");
       return;
     }
 
@@ -168,8 +169,7 @@ class BleScannerImplBase : public BleScannerHciInterface {
     uint16_t acl_handle = BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_LE);
 
     if (acl_handle == HCI_INVALID_HANDLE) {
-      LOG(ERROR) << __func__
-                 << ": Wrong mode: no LE link exist or LE not supported";
+      log::error("Wrong mode: no LE link exist or LE not supported");
       return;
     }
 
@@ -246,8 +246,7 @@ class BleScannerSyncTransferImpl : public virtual BleScannerImplBase {
     uint16_t acl_handle = BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_LE);
 
     if (acl_handle == HCI_INVALID_HANDLE) {
-      LOG(ERROR) << __func__
-                 << ": Wrong mode: no LE link exist or LE not supported";
+      log::error("Wrong mode: no LE link exist or LE not supported");
       return;
     }
 
@@ -262,8 +261,7 @@ class BleScannerSyncTransferImpl : public virtual BleScannerImplBase {
     uint16_t acl_handle = BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_LE);
 
     if (acl_handle == HCI_INVALID_HANDLE) {
-      LOG(ERROR) << __func__
-                 << ": Wrong mode: no LE link exist or LE not supported";
+      log::error("Wrong mode: no LE link exist or LE not supported");
       return;
     }
 
@@ -279,8 +277,7 @@ class BleScannerSyncTransferImpl : public virtual BleScannerImplBase {
     uint16_t acl_handle = BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_LE);
 
     if (acl_handle == HCI_INVALID_HANDLE) {
-      LOG(ERROR) << __func__
-                 << ": Wrong mode: no LE link exist or LE not supported";
+      log::error("Wrong mode: no LE link exist or LE not supported");
       return;
     }
 
@@ -308,16 +305,16 @@ void BleScannerHciInterface::Initialize() {
   if ((controller_get_interface()->get_ble_periodic_advertiser_list_size()) &&
       (controller_get_interface()
            ->SupportsBlePeriodicAdvertisingSyncTransferSender())) {
-    LOG(INFO) << "Advertiser list in controller can be used";
-    LOG(INFO) << "Periodic Adv Sync Transfer Sender role is supported";
+    log::info("Advertiser list in controller can be used");
+    log::info("Periodic Adv Sync Transfer Sender role is supported");
     instance = new BleScannerCompleteImpl();
   } else if (controller_get_interface()
                  ->SupportsBlePeriodicAdvertisingSyncTransferSender()) {
-    LOG(INFO) << "Periodic Adv Sync Transfer Sender role is supported";
+    log::info("Periodic Adv Sync Transfer Sender role is supported");
     instance = new BleScannerSyncTransferImpl();
   } else if (controller_get_interface()
                  ->get_ble_periodic_advertiser_list_size()) {
-    LOG(INFO) << "Periodic Adv Sync Transfer Recipient role is supported";
+    log::info("Periodic Adv Sync Transfer Recipient role is supported");
     instance = new BleScannerListImpl();
   }
   // TODO: Implement periodic adv. sync. recipient role if ever needed.

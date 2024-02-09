@@ -19,6 +19,8 @@
 
 #include "stack/btm/btm_sec_cb.h"
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 
 #include "internal_include/bt_trace.h"
@@ -31,6 +33,8 @@
 #include "stack/btm/security_device_record.h"
 #include "stack/include/bt_psm_types.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth;
 
 void tBTM_SEC_CB::Init(uint8_t initial_security_mode) {
   memset(&cfg, 0, sizeof(cfg));
@@ -131,11 +135,11 @@ bool tBTM_SEC_CB::IsDeviceEncrypted(const RawAddress bd_addr,
     } else if (transport == BT_TRANSPORT_LE) {
       return sec_rec->is_le_device_encrypted();
     }
-    LOG_ERROR("unknown transport:%s", bt_transport_text(transport).c_str());
+    log::error("unknown transport:{}", bt_transport_text(transport).c_str());
     return false;
   }
 
-  LOG_ERROR("unknown device:%s", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+  log::error("unknown device:{}", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
   return false;
 }
 
@@ -148,11 +152,11 @@ bool tBTM_SEC_CB::IsLinkKeyAuthenticated(const RawAddress bd_addr,
     } else if (transport == BT_TRANSPORT_LE) {
       return sec_rec->is_le_link_key_authenticated();
     }
-    LOG_ERROR("unknown transport:%s", bt_transport_text(transport).c_str());
+    log::error("unknown transport:{}", bt_transport_text(transport).c_str());
     return false;
   }
 
-  LOG_ERROR("unknown device:%s", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+  log::error("unknown device:{}", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
   return false;
 }
 
@@ -165,11 +169,11 @@ bool tBTM_SEC_CB::IsDeviceAuthenticated(const RawAddress bd_addr,
     } else if (transport == BT_TRANSPORT_LE) {
       return sec_rec->is_le_device_authenticated();
     }
-    LOG_ERROR("unknown transport:%s", bt_transport_text(transport).c_str());
+    log::error("unknown transport:{}", bt_transport_text(transport).c_str());
     return false;
   }
 
-  LOG_ERROR("unknown device:%s", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+  log::error("unknown device:{}", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
   return false;
 }
 
@@ -182,11 +186,11 @@ bool tBTM_SEC_CB::IsLinkKeyKnown(const RawAddress bd_addr,
     } else if (transport == BT_TRANSPORT_LE) {
       return sec_rec->is_le_link_key_known();
     }
-    LOG_ERROR("unknown transport:%s", bt_transport_text(transport).c_str());
+    log::error("unknown transport:{}", bt_transport_text(transport).c_str());
     return false;
   }
 
-  LOG_ERROR("unknown device:%s", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+  log::error("unknown device:{}", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
   return false;
 }
 
@@ -199,8 +203,8 @@ bool tBTM_SEC_CB::IsDeviceBonded(const RawAddress bd_addr) {
                     p_dev_rec->sec_rec.is_link_key_known())) {
     is_bonded = true;
   }
-  LOG_DEBUG("Device record bonded check peer:%s is_bonded:%s",
-            ADDRESS_TO_LOGGABLE_CSTR(bd_addr), logbool(is_bonded).c_str());
+  log::debug("Device record bonded check peer:{} is_bonded:{}",
+             ADDRESS_TO_LOGGABLE_CSTR(bd_addr), logbool(is_bonded).c_str());
   return is_bonded;
 }
 
@@ -214,7 +218,7 @@ bool tBTM_SEC_CB::AddService(bool is_originator, const char* p_name,
   uint16_t first_unused_record = BTM_NO_AVAIL_SEC_SERVICES;
   bool record_allocated = false;
 
-  LOG_VERBOSE("sec_level:0x%x", sec_level);
+  log::verbose("sec_level:0x{:x}", sec_level);
 
   /* See if the record can be reused (same service name, psm, mx_proto_id,
      service_id, and mx_chan_id), or obtain the next unused record */
@@ -245,7 +249,7 @@ bool tBTM_SEC_CB::AddService(bool is_originator, const char* p_name,
   }
 
   if (!record_allocated) {
-    LOG_WARN("Out of Service Records (%d)", BTM_SEC_MAX_SERVICE_RECORDS);
+    log::warn("Out of Service Records ({})", BTM_SEC_MAX_SERVICE_RECORDS);
     return (record_allocated);
   }
 
@@ -312,9 +316,9 @@ bool tBTM_SEC_CB::AddService(bool is_originator, const char* p_name,
 
   p_srec->security_flags |= (uint16_t)(sec_level | BTM_SEC_IN_USE);
 
-  LOG_DEBUG(
-      "[%d]: id:%d, is_orig:%s psm:0x%04x proto_id:%d chan_id:%d"
-      "  : sec:0x%x service_name:[%s] (up to %d chars saved)",
+  log::debug(
+      "[{}]: id:{}, is_orig:{} psm:0x{:04x} proto_id:{} chan_id:{}  : "
+      "sec:0x{:x} service_name:[{}] (up to {} chars saved)",
       index, service_id, logbool(is_originator).c_str(), psm, mx_proto_id,
       mx_chan_id, p_srec->security_flags, p_name, BT_MAX_SERVICE_NAME_LEN);
 
@@ -331,7 +335,7 @@ uint8_t tBTM_SEC_CB::RemoveServiceById(uint8_t service_id) {
     if ((p_srec->security_flags & BTM_SEC_IN_USE) &&
         (p_srec->psm != BT_PSM_SDP) &&
         (!service_id || (service_id == p_srec->service_id))) {
-      LOG_VERBOSE("BTM_SEC_CLR[%d]: id:%d", i, service_id);
+      log::verbose("BTM_SEC_CLR[{}]: id:{}", i, service_id);
       p_srec->security_flags = 0;
       num_freed++;
     }
@@ -347,12 +351,12 @@ uint8_t tBTM_SEC_CB::RemoveServiceByPsm(uint16_t psm) {
   for (i = 0; i < BTM_SEC_MAX_SERVICE_RECORDS; i++, p_srec++) {
     /* Delete services with specified name (if in use and not SDP) */
     if ((p_srec->security_flags & BTM_SEC_IN_USE) && (p_srec->psm == psm)) {
-      LOG_VERBOSE("BTM_SEC_CLR[%d]: id %d ", i, p_srec->service_id);
+      log::verbose("BTM_SEC_CLR[{}]: id {} ", i, p_srec->service_id);
       p_srec->security_flags = 0;
       num_freed++;
     }
   }
-  LOG_VERBOSE("psm:0x%x num_freed:%d", psm, num_freed);
+  log::verbose("psm:0x{:x} num_freed:{}", psm, num_freed);
 
   return (num_freed);
 }
