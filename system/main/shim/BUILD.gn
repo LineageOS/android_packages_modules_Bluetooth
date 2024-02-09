@@ -61,5 +61,8 @@ source_set("LibBluetoothShimSources") {
     "//bt/system/types",
   ]
 
-  configs += [ "//bt/system:target_defaults" ]
+  configs += [
+    "//bt/system:target_defaults",
+    "//bt/system/log:log_defaults",
+  ]
 }

@@ -18,12 +18,18 @@
 
 #include "a2dp_sbc_decoder.h"
 
-#include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include "embdrv/sbc/decoder/include/oi_codec_sbc.h"
 #include "embdrv/sbc/decoder/include/oi_status.h"
-#include "os/log.h"
 #include "stack/include/bt_hdr.h"
+
+using namespace bluetooth;
+
+namespace fmt {
+template <>
+struct formatter<OI_STATUS> : enum_formatter<OI_STATUS> {};
+}  // namespace fmt
 
 typedef struct {
   OI_CODEC_SBC_DECODER_CONTEXT decoder_context;
@@ -46,8 +52,7 @@ bool a2dp_sbc_decoder_init(decoded_data_callback_t decode_callback) {
       &a2dp_sbc_decoder_cb.decoder_context, a2dp_sbc_decoder_cb.context_data,
       sizeof(a2dp_sbc_decoder_cb.context_data), 2, 2, false);
   if (!OI_SUCCESS(status)) {
-    LOG_ERROR("%s: OI_CODEC_SBC_DecoderReset failed with error code %d",
-              __func__, status);
+    log::error("OI_CODEC_SBC_DecoderReset failed with error code {}", status);
     return false;
   }
 
@@ -64,7 +69,7 @@ bool a2dp_sbc_decoder_decode_packet(BT_HDR* p_buf) {
   size_t data_size = p_buf->len;
 
   if (data_size == 0) {
-    LOG_ERROR("%s: Empty packet", __func__);
+    log::error("Empty packet");
     return false;
   }
   size_t num_frames = data[0] & 0xf;
@@ -82,7 +87,7 @@ bool a2dp_sbc_decoder_decode_packet(BT_HDR* p_buf) {
         OI_CODEC_SBC_DecodeFrame(&a2dp_sbc_decoder_cb.decoder_context, &oi_data,
                                  &oi_size, out_ptr, &out_size);
     if (!OI_SUCCESS(status)) {
-      LOG_ERROR("%s: Decoding failure: %d", __func__, status);
+      log::error("Decoding failure: {}", status);
       return false;
     }
     out_avail -= out_size;

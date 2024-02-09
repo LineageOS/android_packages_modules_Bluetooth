@@ -35,7 +35,10 @@ config("gd_defaults") {
   ]
 
   include_dirs = [ "//bt/system/gd" ]
-  configs = [ "//bt/system:target_defaults" ]
+  configs = [
+    "//bt/system:target_defaults",
+    "//bt/system/log:log_defaults",
+  ]
 }
 
 config("rust_defaults") {
