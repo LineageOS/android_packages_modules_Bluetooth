@@ -443,7 +443,7 @@ AclManager::~AclManager() = default;
 void AclManager::impl::Dump(
     std::promise<flatbuffers::Offset<AclManagerData>> promise, flatbuffers::FlatBufferBuilder* fb_builder) const {
   const std::lock_guard<std::mutex> lock(dumpsys_mutex_);
-  const auto connect_list = (le_impl_ != nullptr) ? le_impl_->connect_list : std::unordered_set<AddressWithType>();
+  const auto accept_list = (le_impl_ != nullptr) ? le_impl_->accept_list : std::unordered_set<AddressWithType>();
   const auto le_connectability_state_text =
       (le_impl_ != nullptr) ? connectability_state_machine_text(le_impl_->connectability_state_) : "INDETERMINATE";
   const auto le_create_connection_timeout_alarms_count =
@@ -452,17 +452,17 @@ void AclManager::impl::Dump(
   auto title = fb_builder->CreateString("----- Acl Manager Dumpsys -----");
   auto le_connectability_state = fb_builder->CreateString(le_connectability_state_text);
 
-  flatbuffers::Offset<flatbuffers::String> strings[connect_list.size()];
+  flatbuffers::Offset<flatbuffers::String> strings[accept_list.size()];
 
   size_t cnt = 0;
-  for (const auto& it : connect_list) {
+  for (const auto& it : accept_list) {
     strings[cnt++] = fb_builder->CreateString(it.ToString());
   }
-  auto vecofstrings = fb_builder->CreateVector(strings, connect_list.size());
+  auto vecofstrings = fb_builder->CreateVector(strings, accept_list.size());
 
   AclManagerDataBuilder builder(*fb_builder);
   builder.add_title(title);
-  builder.add_le_filter_accept_list_count(connect_list.size());
+  builder.add_le_filter_accept_list_count(accept_list.size());
   builder.add_le_filter_accept_list(vecofstrings);
   builder.add_le_connectability_state(le_connectability_state);
   builder.add_le_create_connection_timeout_alarms_count(le_create_connection_timeout_alarms_count);
