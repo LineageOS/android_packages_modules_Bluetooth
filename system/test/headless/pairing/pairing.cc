@@ -16,14 +16,12 @@
 
 #define LOG_TAG "bt_headless_sdp"
 
-#include <future>
+#include "test/headless/pairing/pairing.h"
 
 #include "base/logging.h"  // LOG() stdout and android log
 #include "btif/include/btif_api.h"
-#include "osi/include/log.h"  // android log only
 #include "test/headless/get_options.h"
 #include "test/headless/headless.h"
-#include "test/headless/pairing/pairing.h"
 #include "types/raw_address.h"
 
 int bluetooth::test::headless::Pairing::Run() {
@@ -38,7 +36,7 @@ int bluetooth::test::headless::Pairing::Run() {
     return -1;
   }
 
-  RawAddress raw_address = options_.device_.front();
+  [[maybe_unused]] RawAddress raw_address = options_.device_.front();
 
   return RunOnHeadlessStack<int>([raw_address]() {
     btif_dm_create_bond(raw_address, BT_TRANSPORT_BR_EDR);

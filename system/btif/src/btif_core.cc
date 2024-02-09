@@ -49,7 +49,6 @@
 #include "common/message_loop_thread.h"
 #include "device/include/controller.h"
 #include "device/include/device_iot_config.h"
-#include "gd/storage/config_keys.h"
 #include "hci/controller_interface.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/bt_trace.h"
@@ -62,6 +61,7 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_api.h"
 #include "stack/include/btm_ble_api.h"
+#include "storage/config_keys.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 

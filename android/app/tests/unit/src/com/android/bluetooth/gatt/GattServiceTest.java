@@ -61,8 +61,10 @@ import com.android.bluetooth.le_scan.AppScanStats;
 import com.android.bluetooth.le_scan.PeriodicScanManager;
 import com.android.bluetooth.le_scan.ScanClient;
 import com.android.bluetooth.le_scan.ScanManager;
+import com.android.bluetooth.le_scan.TransitionalScanHelper;
 
 import com.android.bluetooth.flags.Flags;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -97,8 +99,8 @@ public class GattServiceTest {
     private Context mTargetContext;
     private GattService mService;
     @Mock private GattService.ClientMap mClientMap;
-    @Mock private GattService.ScannerMap mScannerMap;
-    @Mock private GattService.ScannerMap.App mApp;
+    @Mock private TransitionalScanHelper.ScannerMap mScannerMap;
+    @Mock private TransitionalScanHelper.ScannerMap.App mApp;
     @Mock private GattService.PendingIntentInfo mPiInfo;
     @Mock private PeriodicScanManager mPeriodicScanManager;
     @Mock private ScanManager mScanManager;
@@ -158,7 +160,7 @@ public class GattServiceTest {
         mService.start();
 
         mService.mClientMap = mClientMap;
-        mService.mScannerMap = mScannerMap;
+        mService.mTransitionalScanHelper.setScannerMap(mScannerMap);
         mService.mReliableQueue = mReliableQueue;
         mService.mServerMap = mServerMap;
     }
@@ -246,7 +248,7 @@ public class GattServiceTest {
         mService.connectionParameterUpdate(clientIf, address, connectionPriority,
                 mAttributionSource);
 
-        connectionPriority = BluetoothGatt.CONNECTION_PRIORITY_BALANCED;;
+        connectionPriority = BluetoothGatt.CONNECTION_PRIORITY_BALANCED;
         mService.connectionParameterUpdate(clientIf, address, connectionPriority,
                 mAttributionSource);
 

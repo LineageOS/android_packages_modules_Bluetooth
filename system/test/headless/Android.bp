@@ -41,7 +41,8 @@ cc_binary {
         "HeadlessBuildTimestamp",
     ],
     srcs: [
-        "bt_property.cc",
+        "adapter/adapter.cc",
+        "bt_stack_info.cc",
         "connect/connect.cc",
         "discovery/discovery.cc",
         "dumpsys/dumpsys.cc",
@@ -51,6 +52,7 @@ cc_binary {
         "log.cc",
         "main.cc",
         "messenger.cc",
+        "mode/mode.cc",
         "nop/nop.cc",
         "pairing/pairing.cc",
         "property.cc",
@@ -59,11 +61,13 @@ cc_binary {
         "scan/scan.cc",
         "sdp/sdp.cc",
         "sdp/sdp_db.cc",
+        "text.cc",
         "util.cc",
     ],
     include_dirs: [
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/gd",
+        "packages/modules/Bluetooth/system/include",
         "packages/modules/Bluetooth/system/stack/include",
     ],
     static_libs: [

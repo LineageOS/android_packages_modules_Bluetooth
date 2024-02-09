@@ -36,12 +36,12 @@
 #include "btif_metrics_logging.h"
 #include "common/address_obfuscator.h"
 #include "common/metric_id_allocator.h"
-#include "gd/storage/config_keys.h"
 #include "include/check.h"
 #include "main/shim/config.h"
 #include "main/shim/shim.h"
 #include "os/log.h"
 #include "raw_address.h"
+#include "storage/config_keys.h"
 
 #define TEMPORARY_SECTION_CAPACITY 10000
 

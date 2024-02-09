@@ -110,8 +110,8 @@ struct DistanceMeasurementManager::impl {
     hci_layer_->RegisterLeEventHandler(
         hci::SubeventCode::TRANSMIT_POWER_REPORTING,
         handler_->BindOn(this, &impl::on_transmit_power_reporting));
-    if (!IS_FLAG_ENABLED(channel_sounding)) {
-      LOG_INFO("IS_FLAG_ENABLED channel_sounding: false");
+    if (!IS_FLAG_ENABLED(channel_sounding_in_stack)) {
+      LOG_INFO("IS_FLAG_ENABLED channel_sounding_in_stack: false");
       return;
     }
     distance_measurement_interface_ = hci_layer_->GetDistanceMeasurementInterface(
@@ -172,7 +172,7 @@ struct DistanceMeasurementManager::impl {
         "connection_handle: %d, address: %s",
         connection_handle,
         ADDRESS_TO_LOGGABLE_CSTR(cs_remote_address));
-    if (!IS_FLAG_ENABLED(channel_sounding)) {
+    if (!IS_FLAG_ENABLED(channel_sounding_in_stack)) {
       LOG_ERROR("Channel Sounding is not enabled");
       distance_measurement_callbacks_->OnDistanceMeasurementStartFail(
           cs_remote_address, REASON_INTERNAL_ERROR, METHOD_CS);

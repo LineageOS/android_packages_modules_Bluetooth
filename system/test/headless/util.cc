@@ -16,6 +16,7 @@
 
 #include <string>
 
+#include "include/hardware/bluetooth.h"
 #include "osi/include/properties.h"
 
 bool is_android_running() {

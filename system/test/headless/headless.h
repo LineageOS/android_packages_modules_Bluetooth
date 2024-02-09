@@ -22,8 +22,9 @@
 
 #include "base/logging.h"  // LOG() stdout and android log
 #include "include/hardware/bluetooth.h"
+#include "test/headless/bt_stack_info.h"
 #include "test/headless/get_options.h"
-#include "test/headless/messenger.h"
+#include "test/headless/log.h"
 
 extern bt_interface_t bluetoothInterface;
 
@@ -35,17 +36,13 @@ template <typename T>
 using ExecutionUnit = std::function<T()>;
 
 constexpr char kHeadlessInitialSentinel[] =
-    " INITIAL HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS "
-    "HEADLESS";
+    " INITIAL HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS";
 constexpr char kHeadlessStartSentinel[] =
-    " START HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS "
-    "HEADLESS";
+    " START HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS";
 constexpr char kHeadlessStopSentinel[] =
-    " STOP HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS "
-    "HEADLESS";
+    " STOP HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS";
 constexpr char kHeadlessFinalSentinel[] =
-    " FINAL HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS "
-    "HEADLESS";
+    " FINAL HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS";
 
 class HeadlessStack {
  protected:
@@ -60,6 +57,7 @@ class HeadlessStack {
 
  private:
   const char** stack_init_flags_;
+  std::unique_ptr<BtStackInfo> bt_stack_info_;
 };
 
 class HeadlessRun : public HeadlessStack {

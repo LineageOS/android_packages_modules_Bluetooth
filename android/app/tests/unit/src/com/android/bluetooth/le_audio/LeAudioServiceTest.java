@@ -839,7 +839,7 @@ public class LeAudioServiceTest {
                 .when(mAdapterService)
                 .getBondState(any(BluetoothDevice.class));
         mService.bondStateChanged(mLeftDevice, BluetoothDevice.BOND_NONE);
-        assertThat(mService.getDevices().contains(mLeftDevice)).isTrue();
+
         verifyConnectionStateIntent(
                 TIMEOUT_MS,
                 mLeftDevice,
@@ -850,6 +850,8 @@ public class LeAudioServiceTest {
 
         reset(mTbsService);
         reset(mMcpService);
+
+        assertThat(mService.getDevices().contains(mLeftDevice)).isFalse();
 
         // Unbond received in CONNECTION_STATE_CONNECTED
         // Create device descriptor with connect request. To connect service,
@@ -920,8 +922,8 @@ public class LeAudioServiceTest {
         assertThat(mService.getConnectionState(mLeftDevice))
                 .isEqualTo(BluetoothProfile.STATE_CONNECTED);
 
-        assertThat(mService.getDevices().contains(mLeftDevice)).isTrue();
         injectAndVerifyDeviceDisconnected(mLeftDevice);
+        assertThat(mService.getDevices().contains(mLeftDevice)).isTrue();
 
         verify(mTbsService, times(0)).removeDeviceAuthorizationInfo(mLeftDevice);
         verify(mMcpService, times(0)).removeDeviceAuthorizationInfo(mLeftDevice);
@@ -930,9 +932,6 @@ public class LeAudioServiceTest {
         reset(mMcpService);
 
         // Device unbond
-        doReturn(BluetoothDevice.BOND_NONE)
-                .when(mAdapterService)
-                .getBondState(any(BluetoothDevice.class));
         mService.bondStateChanged(mLeftDevice, BluetoothDevice.BOND_NONE);
 
         verify(mTbsService, times(1)).removeDeviceAuthorizationInfo(mLeftDevice);

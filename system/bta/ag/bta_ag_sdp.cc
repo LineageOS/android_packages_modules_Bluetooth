@@ -34,7 +34,6 @@
 #include "common/init_flags.h"
 #include "device/include/interop.h"
 #include "device/include/interop_config.h"
-#include "gd/storage/config_keys.h"
 #include "internal_include/bt_target.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
@@ -44,6 +43,7 @@
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/main_thread.h"
 #include "stack/include/sdp_api.h"
+#include "storage/config_keys.h"
 #include "types/bluetooth/uuid.h"
 
 using namespace bluetooth::legacy::stack::sdp;

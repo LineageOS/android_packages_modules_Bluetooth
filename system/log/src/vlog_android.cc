@@ -48,6 +48,15 @@ void vlog(Level level, char const* tag, char const* file_name, int line,
       .message = buffer.c_str(),
   };
   __android_log_write_log_message(&message);
+
+  if (level == Level::kFatal) {
+    // Log assertion failures to stderr for the benefit of "adb shell" users
+    // and gtests (http://b/23675822).
+    char const* buf = buffer.c_str();
+    TEMP_FAILURE_RETRY(write(2, buf, strlen(buf)));
+    TEMP_FAILURE_RETRY(write(2, "\n", 1));
+    __android_log_call_aborter(buf);
+  }
 }
 
 }  // namespace bluetooth::log_internal

@@ -48,11 +48,11 @@
 #include "btif_util.h"
 #include "core_callbacks.h"
 #include "device/include/controller.h"
-#include "gd/storage/config_keys.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/bt_uuid16.h"
+#include "storage/config_keys.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 

@@ -22,7 +22,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include "gd/storage/config_keys.h"
+#include "storage/config_keys.h"
 #include "types/raw_address.h"
 
 namespace {

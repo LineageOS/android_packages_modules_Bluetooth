@@ -16,7 +16,6 @@
 
 #include "common/data_element_reader.h"
 
-#include <base/logging.h>
 #include <gtest/gtest.h>
 
 #include "types/bluetooth/uuid.h"
