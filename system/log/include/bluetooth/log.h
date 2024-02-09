@@ -143,4 +143,21 @@ struct enum_formatter : fmt::formatter<std::underlying_type_t<EnumT>, CharT> {
   }
 };
 
+/// Default formatter implementation for formatting
+/// values of type T for which a string conversion function
+/// T_to_str is implemented.
+///
+/// Enable this formatter in the code by declaring:
+/// ```
+/// template<>
+/// struct fmt::formatter<T> : string_formatter<T, &T_to_str> {};
+/// ```
+template <typename T, std::string (*F)(const T&), class CharT = char>
+struct string_formatter : fmt::formatter<std::string> {
+  template <class Context>
+  typename Context::iterator format(const T& value, Context& ctx) const {
+    return fmt::formatter<std::string>::format(F(value), ctx);
+  }
+};
+
 }  // namespace fmt

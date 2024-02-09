@@ -37,7 +37,10 @@ static_library("common") {
     "//bt/system/gd/rust/shim:init_flags_bridge_header",
   ]
 
-  configs += [ "//bt/system:target_defaults" ]
+  configs += [
+    "//bt/system:target_defaults",
+    "//bt/system/log:log_defaults",
+  ]
 }
 
 if (use.test) {

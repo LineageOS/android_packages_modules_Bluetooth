@@ -30,6 +30,7 @@ static_library("device") {
 
   configs += [
     "//bt/system:target_defaults",
+    "//bt/system/log:log_defaults",
   ]
 
   deps = [

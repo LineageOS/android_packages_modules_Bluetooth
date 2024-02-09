@@ -16,6 +16,8 @@
 
 #define LOG_TAG "acl"
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 
 #include "common/init_flags.h"
@@ -30,6 +32,8 @@
 #include "stack/include/btm_ble_privacy.h"
 #include "stack/include/l2cap_hci_link_interface.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth;
 
 extern tBTM_CB btm_cb;
 
@@ -63,7 +67,7 @@ static bool acl_ble_common_connection(
                         address_with_type.type, conn_interval, conn_latency,
                         conn_timeout)) {
     btm_sec_disconnect(handle, HCI_ERR_PEER_USER, "stack::acl::ble_acl fail");
-    LOG_WARN("Unable to complete l2cap connection");
+    log::warn("Unable to complete l2cap connection");
     return false;
   }
 
@@ -82,7 +86,7 @@ void acl_ble_enhanced_connection_complete(
   if (!acl_ble_common_connection(address_with_type, handle, role, match,
                                  conn_interval, conn_latency, conn_timeout,
                                  can_read_discoverable_characteristics)) {
-    LOG_WARN("Unable to create enhanced ble acl connection");
+    log::warn("Unable to create enhanced ble acl connection");
     return;
   }
 
@@ -145,10 +149,10 @@ void acl_ble_connection_fail(const tBLE_BD_ADDR& address_with_type,
       connection_manager::on_connection_timed_out_from_shim(
           resolved_address_with_type.bda);
     }
-    LOG_WARN("LE connection fail peer:%s bd_addr:%s hci_status:%s",
-             ADDRESS_TO_LOGGABLE_CSTR(address_with_type),
-             ADDRESS_TO_LOGGABLE_CSTR(resolved_address_with_type.bda),
-             hci_status_code_text(status).c_str());
+    log::warn("LE connection fail peer:{} bd_addr:{} hci_status:{}",
+              ADDRESS_TO_LOGGABLE_CSTR(address_with_type),
+              ADDRESS_TO_LOGGABLE_CSTR(resolved_address_with_type.bda),
+              hci_status_code_text(status).c_str());
   } else {
     btm_cb.ble_ctr_cb.inq_var.adv_mode = BTM_BLE_ADV_DISABLE;
   }
@@ -176,9 +180,9 @@ void acl_ble_data_length_change_event(uint16_t handle, uint16_t max_tx_octets,
                                       uint16_t max_tx_time,
                                       uint16_t max_rx_octets,
                                       uint16_t max_rx_time) {
-  LOG_DEBUG(
-      "Data length change event received handle:0x%04x max_tx_octets:%hu "
-      "max_tx_time:%hu max_rx_octets:%hu max_rx_time:%hu",
+  log::debug(
+      "Data length change event received handle:0x{:04x} max_tx_octets:{} "
+      "max_tx_time:{} max_rx_octets:{} max_rx_time:{}",
       handle, max_tx_octets, max_tx_time, max_rx_octets, max_rx_time);
   l2cble_process_data_length_change_event(handle, max_tx_octets, max_rx_octets);
 }
