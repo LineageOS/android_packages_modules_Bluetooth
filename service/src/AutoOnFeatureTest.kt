@@ -25,6 +25,8 @@ import com.android.server.bluetooth.BluetoothAdapterState
 import com.android.server.bluetooth.Log
 import com.android.server.bluetooth.Timer
 import com.android.server.bluetooth.USER_SETTINGS_KEY
+import com.android.server.bluetooth.airplane.isOn as isAirplaneModeOn
+import com.android.server.bluetooth.airplane.test.ModeListenerTest as AirplaneListener
 import com.android.server.bluetooth.isUserEnabled
 import com.android.server.bluetooth.isUserSupported
 import com.android.server.bluetooth.notifyBluetoothOn
@@ -368,5 +370,35 @@ class AutoOnFeatureTest {
         expect.that(timer).isNull()
         expect.that(callback_count).isEqualTo(1)
         expectNoStorageTime()
+    }
+
+    @Test
+    @kotlin.time.ExperimentalTime
+    fun setupTimer_whenLegacyAirplaneIsOn_isNotSchedule() {
+        val userCallback: () -> Context = { -> context }
+        AirplaneListener.setupAirplaneModeToOn(resolver, looper, userCallback, false)
+        assertThat(isAirplaneModeOn).isTrue()
+
+        setupTimer()
+
+        AirplaneListener.setupAirplaneModeToOff(resolver, looper)
+        expect.that(timer).isNull()
+        expect.that(callback_count).isEqualTo(0)
+        expectNoStorageTime()
+    }
+
+    @Test
+    @kotlin.time.ExperimentalTime
+    fun setupTimer_whenApmAirplaneIsOn_isSchedule() {
+        val userCallback: () -> Context = { -> context }
+        AirplaneListener.setupAirplaneModeToOn(resolver, looper, userCallback, true)
+        assertThat(isAirplaneModeOn).isTrue()
+
+        setupTimer()
+
+        AirplaneListener.setupAirplaneModeToOff(resolver, looper)
+        expect.that(timer).isNotNull()
+        expect.that(callback_count).isEqualTo(0)
+        expectStorageTime()
     }
 }
