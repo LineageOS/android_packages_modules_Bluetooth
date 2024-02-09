@@ -21,6 +21,7 @@ CLASSPATH+=":$ROOT/out/soong/.intermediates/packages/modules/Bluetooth/service/b
 CLASSPATH+=":$ROOT/out/soong/.intermediates/packages/modules/Bluetooth/android/app/bluetooth-proto-enums-java-gen/android_common_apex33/turbine-combined/bluetooth-proto-enums-java-gen.jar"
 CLASSPATH+=":$ROOT/out/soong/.intermediates/packages/modules/Bluetooth/flags/bluetooth_flags_java_lib/android_common_apex33/turbine-combined/bluetooth_flags_java_lib.jar"
 CLASSPATH+=":$ROOT/out/soong/.intermediates/frameworks/libs/modules-utils/java/com/android/modules/utils/modules-utils-shell-command-handler/android_common_apex33/turbine-combined/modules-utils-shell-command-handler.jar"
+CLASSPATH+=":$ROOT/out/soong/.intermediates/frameworks/libs/modules-utils/java/com/android/modules/utils/build/modules-utils-build_system/android_common_apex33/turbine-combined/modules-utils-build_system.jar"
 
 CLASSPATH+=":$ROOT/out/soong/.intermediates/prebuilts/misc/common/androidx-test/androidx.test.core/android_common/combined/androidx.test.core.jar"
 CLASSPATH+=":$ROOT/out/soong/.intermediates/external/truth/truth/android_common/turbine-combined/truth.jar"

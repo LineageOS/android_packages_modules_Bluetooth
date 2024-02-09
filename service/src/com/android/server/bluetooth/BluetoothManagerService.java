@@ -25,6 +25,7 @@ import static android.bluetooth.BluetoothAdapter.STATE_TURNING_OFF;
 import static android.bluetooth.BluetoothAdapter.STATE_TURNING_ON;
 import static android.os.PowerExemptionManager.TEMPORARY_ALLOW_LIST_TYPE_FOREGROUND_SERVICE_ALLOWED;
 
+import static com.android.modules.utils.build.SdkLevel.isAtLeastV;
 import static com.android.server.bluetooth.BluetoothAirplaneModeListener.APM_ENHANCEMENT;
 
 import static java.util.Objects.requireNonNull;
@@ -1375,6 +1376,8 @@ class BluetoothManagerService {
             autoOnSetupTimer();
         }
 
+        autoOnHiddenListener();
+
         if (!mUseNewAirplaneMode) {
             mBluetoothAirplaneModeListener.start(new BluetoothModeChangeHelper(mContext));
             setApmEnhancementState();
@@ -1995,6 +1998,9 @@ class BluetoothManagerService {
                     } else {
                         autoOnSetupTimer();
                     }
+
+                    autoOnHiddenListener();
+
                     break;
 
                 case MESSAGE_USER_UNLOCKED:
@@ -2696,6 +2702,19 @@ class BluetoothManagerService {
             return;
         }
         AutoOnFeature.resetAutoOnTimerForUser(
+                mLooper, mCurrentUserContext, mState, this::enableFromAutoOn);
+    }
+
+    private void autoOnHiddenListener() {
+        if (!mDeviceConfigAllowAutoOn) {
+            Log.d(TAG, "No support for AutoOn feature: Not listening on hidden api");
+            return;
+        }
+        if (isAtLeastV()) {
+            Log.d(TAG, "AutoOn feature: prevent listening on hidden api. Use proper API in V+");
+            return;
+        }
+        AutoOnFeature.registerHiddenApiListener(
                 mLooper, mCurrentUserContext, mState, this::enableFromAutoOn);
     }
 
