@@ -855,7 +855,10 @@ impl BluetoothGattService {
         db_out
     }
 
-    fn into_db(service: BluetoothGattService) -> Vec<BtGattDbElement> {
+    fn into_db(
+        service: BluetoothGattService,
+        services: &Vec<BluetoothGattService>,
+    ) -> Vec<BtGattDbElement> {
         let mut db_out: Vec<BtGattDbElement> = vec![];
         db_out.push(BtGattDbElement {
             id: service.instance_id as u16,
@@ -879,7 +882,7 @@ impl BluetoothGattService {
                 end_handle: 0,
                 properties: char.properties as u8,
                 extended_properties: 0,
-                permissions: char.permissions as u16,
+                permissions: (((char.key_size - 7) << 12) + char.permissions) as u16,
             });
 
             for desc in char.descriptors {
@@ -892,12 +895,22 @@ impl BluetoothGattService {
                     end_handle: 0,
                     properties: 0,
                     extended_properties: 0,
-                    permissions: desc.permissions as u16,
+                    permissions: (((char.key_size - 7) << 12) + desc.permissions) as u16,
                 });
             }
         }
 
         for included_service in service.included_services {
+            if !services.iter().any(|s| {
+                s.instance_id == included_service.instance_id && s.uuid == included_service.uuid
+            }) {
+                log::error!(
+                    "Included service with uuid {} not found",
+                    Uuid::from(included_service.uuid)
+                );
+                continue;
+            }
+
             db_out.push(BtGattDbElement {
                 id: included_service.instance_id as u16,
                 uuid: Uuid::from(included_service.uuid),
@@ -2650,13 +2663,17 @@ impl IBluetoothGatt for BluetoothGatt {
     }
 
     fn add_service(&self, server_id: i32, service: BluetoothGattService) {
-        self.gatt
-            .as_ref()
-            .unwrap()
-            .lock()
-            .unwrap()
-            .server
-            .add_service(server_id, &BluetoothGattService::into_db(service));
+        if let Some(server) = self.server_context_map.get_by_server_id(server_id) {
+            self.gatt
+                .as_ref()
+                .unwrap()
+                .lock()
+                .unwrap()
+                .server
+                .add_service(server_id, &BluetoothGattService::into_db(service, &server.services));
+        } else {
+            log::error!("Server id {} is not valid", server_id);
+        }
     }
 
     fn remove_service(&self, server_id: i32, handle: i32) {
