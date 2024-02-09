@@ -51,6 +51,7 @@ import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.FakeFeatureFlagsImpl;
 import com.android.bluetooth.flags.FeatureFlags;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.le_audio.LeAudioService;
@@ -117,6 +118,7 @@ public class AudioRoutingManagerTest {
         TestUtils.setAdapterService(mAdapterService);
 
         mFakeFlagsImpl = new FakeFeatureFlagsImpl();
+        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_ACTIVE_DEVICE_MANAGER_GROUP_HANDLING_FIX, false);
         mDatabaseManager = new TestDatabaseManager(mAdapterService, mFakeFlagsImpl);
 
         when(mAdapterService.getSystemService(Context.AUDIO_SERVICE)).thenReturn(mAudioManager);
