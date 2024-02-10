@@ -33,9 +33,9 @@
 #include "bta/sys/bta_sys_int.h"
 #include "include/hardware/bluetooth.h"
 #include "internal_include/bt_target.h"
+#include "os/log.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
-#include "osi/include/log.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/main_thread.h"
 

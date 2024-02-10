@@ -26,6 +26,7 @@
 #include <map>
 #include <string>
 
+#include "os/log.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
 #include "osi/include/config.h"
@@ -33,7 +34,6 @@
 #include "osi/include/future.h"
 #include "osi/include/hash_map_utils.h"
 #include "osi/include/list.h"
-#include "osi/include/log.h"
 #include "osi/include/reactor.h"
 #include "osi/include/ringbuffer.h"
 #include "osi/include/socket.h"

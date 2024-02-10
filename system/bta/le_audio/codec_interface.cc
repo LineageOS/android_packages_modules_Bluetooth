@@ -25,7 +25,7 @@
 #include <optional>
 #include <vector>
 
-#include "osi/include/log.h"
+#include "os/log.h"
 
 namespace le_audio {
 

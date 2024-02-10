@@ -42,11 +42,11 @@
 #include "check.h"
 #include "device/include/interop_config.h"
 #include "device/include/interop_database.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
 #include "osi/include/config.h"
 #include "osi/include/list.h"
-#include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "types/raw_address.h"
 
