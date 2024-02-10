@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "36d0ef04_49891215",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 14048
+      },
+      "writtenOn": "2024-02-10T07:15:40Z",
+      "side": 1,
+      "message": "Verified on foster that jarvis and thunderstrike pair without additional popups. Verified no regression pairing the dopinder remote. Needs more verification on other targets and mobile.",
+      "revId": "02590a5d5e76a4fc776342d132f43fd3713915e6",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
