@@ -110,6 +110,7 @@
              android:permission="android.permission.BLUETOOTH_PRIVILEGED">
             <intent-filter>
                 <action android:name="android.bluetooth.notification.action.SEND_TOGGLE_NOTIFICATION"/>
+                <action android:name="android.bluetooth.notification.action.AUTO_ON_USER_ACTION"/>
             </intent-filter>
         </service>
 

@@ -101,6 +101,7 @@ cc_test {
     shared_libs: [
         "android.hardware.bluetooth.audio@2.0",
         "android.hardware.bluetooth.audio@2.1",
+        "libbase",
         "libbinder_ndk",
         "libcutils",
         "libfmq",
@@ -174,6 +175,7 @@ cc_test {
     ],
     shared_libs: [
         "libbase",
+        "libbase",
         "libcutils",
         "libfmq",
         "liblog",
@@ -182,6 +184,7 @@ cc_test {
     ],
     static_libs: [
         "bluetooth_flags_c_lib",
+        "libbluetooth_log",
         "libbt-common",
         "libbt_shim_bridge",
         "libchrome",

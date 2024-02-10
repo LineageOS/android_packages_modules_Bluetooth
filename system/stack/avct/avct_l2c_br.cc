@@ -26,18 +26,19 @@
 
 #define LOG_TAG "avctp"
 
-#include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include "avct_api.h"
 #include "avct_int.h"
 #include "internal_include/bt_target.h"
 #include "l2c_api.h"
 #include "l2cdefs.h"
-#include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"
 #include "stack/include/bt_hdr.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth;
 
 /* callback function declarations */
 void avct_l2c_br_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
@@ -86,8 +87,8 @@ static bool avct_l2c_br_is_passive(tAVCT_BCB* p_bcb) {
 
   for (i = 0; i < AVCT_NUM_CONN; i++, p_ccb++) {
     if (p_ccb->allocated && (p_ccb->p_lcb == p_lcb)) {
-      LOG_VERBOSE("Is bcb associated ccb control passive :0x%x",
-                  p_ccb->cc.control);
+      log::verbose("Is bcb associated ccb control passive :0x{:x}",
+                   p_ccb->cc.control);
       if (p_ccb->cc.control & AVCT_PASSIVE) {
         is_passive = true;
         break;
@@ -135,7 +136,7 @@ void avct_l2c_br_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
         /* add channel ID to conflict ID */
         p_bcb->conflict_lcid = p_bcb->ch_lcid;
         result = L2CAP_CONN_OK;
-        LOG_VERBOSE("Detected conflict_lcid:0x%x", p_bcb->conflict_lcid);
+        log::verbose("Detected conflict_lcid:0x{:x}", p_bcb->conflict_lcid);
       }
     }
   }
@@ -146,7 +147,7 @@ void avct_l2c_br_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
 
   /* If we reject the connection, send DisconnectReq */
   if (result != L2CAP_CONN_OK) {
-    LOG_VERBOSE("Connection rejected to lcid:0x%x", lcid);
+    log::verbose("Connection rejected to lcid:0x{:x}", lcid);
     L2CA_DisconnectReq(lcid);
   }
 
@@ -165,7 +166,7 @@ void avct_br_on_l2cap_error(uint16_t lcid, uint16_t result) {
   if (p_bcb == nullptr) return;
 
   if (p_bcb->ch_state == AVCT_CH_CONN && p_bcb->conflict_lcid == lcid) {
-    LOG_VERBOSE("Reset conflict_lcid:0x%x", p_bcb->conflict_lcid);
+    log::verbose("Reset conflict_lcid:0x{:x}", p_bcb->conflict_lcid);
     p_bcb->conflict_lcid = 0;
     return;
   }
@@ -204,14 +205,14 @@ void avct_l2c_br_connect_cfm_cback(uint16_t lcid, uint16_t result) {
     }
     /* else failure */
     else {
-      LOG_ERROR("Invoked with non OK status");
+      log::error("Invoked with non OK status");
     }
   } else if (p_bcb->conflict_lcid == lcid) {
     /* we must be in AVCT_CH_CFG state for the ch_lcid channel */
     if (result == L2CAP_CONN_OK) {
       /* just in case the peer also accepts our connection - Send L2CAP
        * disconnect req */
-      LOG_VERBOSE("Disconnect conflict_lcid:0x%x", p_bcb->conflict_lcid);
+      log::verbose("Disconnect conflict_lcid:0x{:x}", p_bcb->conflict_lcid);
       L2CA_DisconnectReq(lcid);
     }
     p_bcb->conflict_lcid = 0;
@@ -270,7 +271,7 @@ void avct_l2c_br_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
     p_lcb->peer_mtu = max_mtu;
   }
 
-  LOG_VERBOSE("%s peer_mtu:%d use:%d", __func__, p_lcb->peer_mtu, max_mtu);
+  log::verbose("peer_mtu:{} use:{}", p_lcb->peer_mtu, max_mtu);
 }
 
 /*******************************************************************************

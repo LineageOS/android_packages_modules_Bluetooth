@@ -17,10 +17,10 @@
 #include "stack/arbiter/acl_arbiter.h"
 
 #include <base/functional/bind.h>
+#include <bluetooth/log.h>
 
 #include <iterator>
 
-#include "os/log.h"
 #include "osi/include/allocator.h"
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/l2c_api.h"
@@ -80,18 +80,18 @@ RustArbiterCallbacks callbacks_{};
 class RustGattAclArbiter : public AclArbiter {
  public:
   virtual void OnLeConnect(uint8_t tcb_idx, uint16_t advertiser_id) override {
-    LOG_INFO("Notifying Rust of LE connection");
+    log::info("Notifying Rust of LE connection");
     callbacks_.on_le_connect(tcb_idx, advertiser_id);
   }
 
   virtual void OnLeDisconnect(uint8_t tcb_idx) override {
-    LOG_INFO("Notifying Rust of LE disconnection");
+    log::info("Notifying Rust of LE disconnection");
     callbacks_.on_le_disconnect(tcb_idx);
   }
 
   virtual InterceptAction InterceptAttPacket(uint8_t tcb_idx,
                                              const BT_HDR* packet) override {
-    LOG_DEBUG("Intercepting ATT packet and forwarding to Rust");
+    log::debug("Intercepting ATT packet and forwarding to Rust");
 
     uint8_t* packet_start = (uint8_t*)(packet + 1) + packet->offset;
     uint8_t* packet_end = packet_start + packet->len;
@@ -102,17 +102,17 @@ class RustGattAclArbiter : public AclArbiter {
   }
 
   virtual void OnOutgoingMtuReq(uint8_t tcb_idx) override {
-    LOG_DEBUG("Notifying Rust of outgoing MTU request");
+    log::debug("Notifying Rust of outgoing MTU request");
     callbacks_.on_outgoing_mtu_req(tcb_idx);
   }
 
   virtual void OnIncomingMtuResp(uint8_t tcb_idx, size_t mtu) {
-    LOG_DEBUG("Notifying Rust of incoming MTU response %zu", mtu);
+    log::debug("Notifying Rust of incoming MTU response {}", mtu);
     callbacks_.on_incoming_mtu_resp(tcb_idx, mtu);
   }
 
   virtual void OnIncomingMtuReq(uint8_t tcb_idx, size_t mtu) {
-    LOG_DEBUG("Notifying Rust of incoming MTU request %zu", mtu);
+    log::debug("Notifying Rust of incoming MTU request {}", mtu);
     callbacks_.on_incoming_mtu_req(tcb_idx, mtu);
   }
 
@@ -122,7 +122,7 @@ class RustGattAclArbiter : public AclArbiter {
       BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + buffer.size() +
                                           L2CAP_MIN_OFFSET);
       if (p_buf == nullptr) {
-        LOG_ALWAYS_FATAL("OOM when sending packet");
+        log::fatal("OOM when sending packet");
       }
       auto p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
       std::copy(buffer.begin(), buffer.end(), p);
@@ -130,7 +130,7 @@ class RustGattAclArbiter : public AclArbiter {
       p_buf->len = buffer.size();
       L2CA_SendFixedChnlData(L2CAP_ATT_CID, p_tcb->peer_bda, p_buf);
     } else {
-      LOG_ERROR("Dropping packet since connection no longer exists");
+      log::error("Dropping packet since connection no longer exists");
     }
   }
 
@@ -148,7 +148,7 @@ void StoreCallbacksFromRust(
     ::rust::Fn<void(uint8_t tcb_idx)> on_outgoing_mtu_req,
     ::rust::Fn<void(uint8_t tcb_idx, size_t mtu)> on_incoming_mtu_resp,
     ::rust::Fn<void(uint8_t tcb_idx, size_t mtu)> on_incoming_mtu_req) {
-  LOG_INFO("Received callbacks from Rust, registering in Arbiter");
+  log::info("Received callbacks from Rust, registering in Arbiter");
   callbacks_ = {on_le_connect,       on_le_disconnect,     intercept_packet,
                 on_outgoing_mtu_req, on_incoming_mtu_resp, on_incoming_mtu_req};
 }

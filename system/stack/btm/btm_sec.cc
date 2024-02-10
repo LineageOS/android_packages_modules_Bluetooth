@@ -3523,7 +3523,8 @@ void btm_sec_encryption_change_evt(uint16_t handle, tHCI_STATUS status,
   if (IS_FLAG_ENABLED(bluffs_mitigation)) {
     if (status != HCI_SUCCESS || encr_enable == 0 ||
         BTM_IsBleConnection(handle) ||
-        !controller_get_interface()->supports_read_encryption_key_size()) {
+        !bluetooth::shim::GetController()->IsSupported(
+            bluetooth::hci::OpCode::READ_ENCRYPTION_KEY_SIZE)) {
       if (status == HCI_ERR_CONNECTION_TOUT) {
         smp_cancel_start_encryption_attempt();
         return;
@@ -3544,10 +3545,12 @@ void btm_sec_encryption_change_evt(uint16_t handle, tHCI_STATUS status,
     // flag off.  The entire block should be removed when the flag is.
     if (status != HCI_SUCCESS || encr_enable == 0 ||
         BTM_IsBleConnection(handle) ||
-        !controller_get_interface()->supports_read_encryption_key_size() ||
+        !bluetooth::shim::GetController()->IsSupported(
+            bluetooth::hci::OpCode::READ_ENCRYPTION_KEY_SIZE) ||
         // Skip encryption key size check when using set_min_encryption_key_size
         (bluetooth::common::init_flags::set_min_encryption_is_enabled() &&
-         controller_get_interface()->supports_set_min_encryption_key_size())) {
+         bluetooth::shim::GetController()->IsSupported(
+             bluetooth::hci::OpCode::SET_MIN_ENCRYPTION_KEY_SIZE))) {
       if (status == HCI_ERR_CONNECTION_TOUT) {
         smp_cancel_start_encryption_attempt();
         return;
@@ -4084,7 +4087,8 @@ void btm_sec_encryption_key_refresh_complete(uint16_t handle,
                                              tHCI_STATUS status) {
   if (status != HCI_SUCCESS || BTM_IsBleConnection(handle) ||
       // Skip encryption key size check when using set_min_encryption_key_size
-      controller_get_interface()->supports_set_min_encryption_key_size()) {
+      bluetooth::shim::GetController()->IsSupported(
+          bluetooth::hci::OpCode::SET_MIN_ENCRYPTION_KEY_SIZE)) {
     btm_sec_encrypt_change(handle, static_cast<tHCI_STATUS>(status),
                            (status == HCI_SUCCESS) ? 1 : 0);
   } else {

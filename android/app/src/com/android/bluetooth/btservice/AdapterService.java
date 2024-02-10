@@ -1433,35 +1433,39 @@ public class AdapterService extends Service {
         BluetoothSap.invalidateBluetoothGetConnectionStateCache();
     }
 
-    private static final Map<Integer, Function<Context, ProfileService>> PROFILE_CONSTRUCTORS =
-            Map.ofEntries(
-                    Map.entry(BluetoothProfile.A2DP, A2dpService::new),
-                    Map.entry(BluetoothProfile.A2DP_SINK, A2dpSinkService::new),
-                    Map.entry(BluetoothProfile.AVRCP, AvrcpTargetService::new),
-                    Map.entry(BluetoothProfile.AVRCP_CONTROLLER, AvrcpControllerService::new),
-                    Map.entry(
-                            BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT, BassClientService::new),
-                    Map.entry(BluetoothProfile.BATTERY, BatteryService::new),
-                    Map.entry(
-                            BluetoothProfile.CSIP_SET_COORDINATOR, CsipSetCoordinatorService::new),
-                    Map.entry(BluetoothProfile.HAP_CLIENT, HapClientService::new),
-                    Map.entry(BluetoothProfile.HEADSET, HeadsetService::new),
-                    Map.entry(BluetoothProfile.HEADSET_CLIENT, HeadsetClientService::new),
-                    Map.entry(BluetoothProfile.HEARING_AID, HearingAidService::new),
-                    Map.entry(BluetoothProfile.HID_DEVICE, HidDeviceService::new),
-                    Map.entry(BluetoothProfile.HID_HOST, HidHostService::new),
-                    Map.entry(BluetoothProfile.GATT, GattService::new),
-                    Map.entry(BluetoothProfile.LE_AUDIO, LeAudioService::new),
-                    Map.entry(BluetoothProfile.LE_CALL_CONTROL, TbsService::new),
-                    Map.entry(BluetoothProfile.MAP, BluetoothMapService::new),
-                    Map.entry(BluetoothProfile.MAP_CLIENT, MapClientService::new),
-                    Map.entry(BluetoothProfile.MCP_SERVER, McpService::new),
-                    Map.entry(BluetoothProfile.OPP, BluetoothOppService::new),
-                    Map.entry(BluetoothProfile.PAN, PanService::new),
-                    Map.entry(BluetoothProfile.PBAP, BluetoothPbapService::new),
-                    Map.entry(BluetoothProfile.PBAP_CLIENT, PbapClientService::new),
-                    Map.entry(BluetoothProfile.SAP, SapService::new),
-                    Map.entry(BluetoothProfile.VOLUME_CONTROL, VolumeControlService::new));
+    private static final Map<Integer, Function<AdapterService, ProfileService>>
+            PROFILE_CONSTRUCTORS =
+                    Map.ofEntries(
+                            Map.entry(BluetoothProfile.A2DP, A2dpService::new),
+                            Map.entry(BluetoothProfile.A2DP_SINK, A2dpSinkService::new),
+                            Map.entry(BluetoothProfile.AVRCP, AvrcpTargetService::new),
+                            Map.entry(
+                                    BluetoothProfile.AVRCP_CONTROLLER, AvrcpControllerService::new),
+                            Map.entry(
+                                    BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT,
+                                    BassClientService::new),
+                            Map.entry(BluetoothProfile.BATTERY, BatteryService::new),
+                            Map.entry(
+                                    BluetoothProfile.CSIP_SET_COORDINATOR,
+                                    CsipSetCoordinatorService::new),
+                            Map.entry(BluetoothProfile.HAP_CLIENT, HapClientService::new),
+                            Map.entry(BluetoothProfile.HEADSET, HeadsetService::new),
+                            Map.entry(BluetoothProfile.HEADSET_CLIENT, HeadsetClientService::new),
+                            Map.entry(BluetoothProfile.HEARING_AID, HearingAidService::new),
+                            Map.entry(BluetoothProfile.HID_DEVICE, HidDeviceService::new),
+                            Map.entry(BluetoothProfile.HID_HOST, HidHostService::new),
+                            Map.entry(BluetoothProfile.GATT, GattService::new),
+                            Map.entry(BluetoothProfile.LE_AUDIO, LeAudioService::new),
+                            Map.entry(BluetoothProfile.LE_CALL_CONTROL, TbsService::new),
+                            Map.entry(BluetoothProfile.MAP, BluetoothMapService::new),
+                            Map.entry(BluetoothProfile.MAP_CLIENT, MapClientService::new),
+                            Map.entry(BluetoothProfile.MCP_SERVER, McpService::new),
+                            Map.entry(BluetoothProfile.OPP, BluetoothOppService::new),
+                            Map.entry(BluetoothProfile.PAN, PanService::new),
+                            Map.entry(BluetoothProfile.PBAP, BluetoothPbapService::new),
+                            Map.entry(BluetoothProfile.PBAP_CLIENT, PbapClientService::new),
+                            Map.entry(BluetoothProfile.SAP, SapService::new),
+                            Map.entry(BluetoothProfile.VOLUME_CONTROL, VolumeControlService::new));
 
     @VisibleForTesting
     void setProfileServiceState(int profileId, int state) {
