@@ -461,42 +461,42 @@ class LeImplWithConnectionTest : public LeImplTest {
   std::unique_ptr<LeAclConnection> connection_;
 };
 
-TEST_F(LeImplTest, add_device_to_connect_list) {
-  le_impl_->add_device_to_connect_list({{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}, AddressType::PUBLIC_DEVICE_ADDRESS});
-  ASSERT_EQ(1UL, le_impl_->connect_list.size());
+TEST_F(LeImplTest, add_device_to_accept_list) {
+  le_impl_->add_device_to_accept_list({{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}, AddressType::PUBLIC_DEVICE_ADDRESS});
+  ASSERT_EQ(1UL, le_impl_->accept_list.size());
 
-  le_impl_->add_device_to_connect_list({{0x11, 0x12, 0x13, 0x14, 0x15, 0x16}, AddressType::PUBLIC_DEVICE_ADDRESS});
-  ASSERT_EQ(2UL, le_impl_->connect_list.size());
+  le_impl_->add_device_to_accept_list({{0x11, 0x12, 0x13, 0x14, 0x15, 0x16}, AddressType::PUBLIC_DEVICE_ADDRESS});
+  ASSERT_EQ(2UL, le_impl_->accept_list.size());
 
-  le_impl_->add_device_to_connect_list({{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}, AddressType::PUBLIC_DEVICE_ADDRESS});
-  ASSERT_EQ(2UL, le_impl_->connect_list.size());
+  le_impl_->add_device_to_accept_list({{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}, AddressType::PUBLIC_DEVICE_ADDRESS});
+  ASSERT_EQ(2UL, le_impl_->accept_list.size());
 
-  le_impl_->add_device_to_connect_list({{0x11, 0x12, 0x13, 0x14, 0x15, 0x16}, AddressType::PUBLIC_DEVICE_ADDRESS});
-  ASSERT_EQ(2UL, le_impl_->connect_list.size());
+  le_impl_->add_device_to_accept_list({{0x11, 0x12, 0x13, 0x14, 0x15, 0x16}, AddressType::PUBLIC_DEVICE_ADDRESS});
+  ASSERT_EQ(2UL, le_impl_->accept_list.size());
 }
 
-TEST_F(LeImplTest, remove_device_from_connect_list) {
-  le_impl_->add_device_to_connect_list({{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}, AddressType::PUBLIC_DEVICE_ADDRESS});
-  le_impl_->add_device_to_connect_list({{0x11, 0x12, 0x13, 0x14, 0x15, 0x16}, AddressType::PUBLIC_DEVICE_ADDRESS});
-  le_impl_->add_device_to_connect_list({{0x21, 0x22, 0x23, 0x24, 0x25, 0x26}, AddressType::PUBLIC_DEVICE_ADDRESS});
-  le_impl_->add_device_to_connect_list({{0x31, 0x32, 0x33, 0x34, 0x35, 0x36}, AddressType::PUBLIC_DEVICE_ADDRESS});
-  ASSERT_EQ(4UL, le_impl_->connect_list.size());
+TEST_F(LeImplTest, remove_device_from_accept_list) {
+  le_impl_->add_device_to_accept_list({{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}, AddressType::PUBLIC_DEVICE_ADDRESS});
+  le_impl_->add_device_to_accept_list({{0x11, 0x12, 0x13, 0x14, 0x15, 0x16}, AddressType::PUBLIC_DEVICE_ADDRESS});
+  le_impl_->add_device_to_accept_list({{0x21, 0x22, 0x23, 0x24, 0x25, 0x26}, AddressType::PUBLIC_DEVICE_ADDRESS});
+  le_impl_->add_device_to_accept_list({{0x31, 0x32, 0x33, 0x34, 0x35, 0x36}, AddressType::PUBLIC_DEVICE_ADDRESS});
+  ASSERT_EQ(4UL, le_impl_->accept_list.size());
 
-  le_impl_->remove_device_from_connect_list({{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}, AddressType::PUBLIC_DEVICE_ADDRESS});
-  ASSERT_EQ(3UL, le_impl_->connect_list.size());
+  le_impl_->remove_device_from_accept_list({{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}, AddressType::PUBLIC_DEVICE_ADDRESS});
+  ASSERT_EQ(3UL, le_impl_->accept_list.size());
 
-  le_impl_->remove_device_from_connect_list({{0x11, 0x12, 0x13, 0x14, 0x15, 0x16}, AddressType::PUBLIC_DEVICE_ADDRESS});
-  ASSERT_EQ(2UL, le_impl_->connect_list.size());
+  le_impl_->remove_device_from_accept_list({{0x11, 0x12, 0x13, 0x14, 0x15, 0x16}, AddressType::PUBLIC_DEVICE_ADDRESS});
+  ASSERT_EQ(2UL, le_impl_->accept_list.size());
 
-  le_impl_->remove_device_from_connect_list({{0x11, 0x12, 0x13, 0x14, 0x15, 0x16}, AddressType::PUBLIC_DEVICE_ADDRESS});
-  ASSERT_EQ(2UL, le_impl_->connect_list.size());
+  le_impl_->remove_device_from_accept_list({{0x11, 0x12, 0x13, 0x14, 0x15, 0x16}, AddressType::PUBLIC_DEVICE_ADDRESS});
+  ASSERT_EQ(2UL, le_impl_->accept_list.size());
 
-  le_impl_->remove_device_from_connect_list({Address::kEmpty, AddressType::PUBLIC_DEVICE_ADDRESS});
-  ASSERT_EQ(2UL, le_impl_->connect_list.size());
+  le_impl_->remove_device_from_accept_list({Address::kEmpty, AddressType::PUBLIC_DEVICE_ADDRESS});
+  ASSERT_EQ(2UL, le_impl_->accept_list.size());
 
-  le_impl_->remove_device_from_connect_list({{0x21, 0x22, 0x23, 0x24, 0x25, 0x26}, AddressType::PUBLIC_DEVICE_ADDRESS});
-  le_impl_->remove_device_from_connect_list({{0x31, 0x32, 0x33, 0x34, 0x35, 0x36}, AddressType::PUBLIC_DEVICE_ADDRESS});
-  ASSERT_EQ(0UL, le_impl_->connect_list.size());
+  le_impl_->remove_device_from_accept_list({{0x21, 0x22, 0x23, 0x24, 0x25, 0x26}, AddressType::PUBLIC_DEVICE_ADDRESS});
+  le_impl_->remove_device_from_accept_list({{0x31, 0x32, 0x33, 0x34, 0x35, 0x36}, AddressType::PUBLIC_DEVICE_ADDRESS});
+  ASSERT_EQ(0UL, le_impl_->accept_list.size());
 }
 
 TEST_F(LeImplTest, connection_complete_with_periperal_role) {
