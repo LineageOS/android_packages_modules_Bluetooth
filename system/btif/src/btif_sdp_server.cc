@@ -40,6 +40,7 @@
 #include "bta/sys/bta_sys.h"
 #include "btif_common.h"
 #include "btif_sock_sdp.h"
+#include "common/init_flags.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"

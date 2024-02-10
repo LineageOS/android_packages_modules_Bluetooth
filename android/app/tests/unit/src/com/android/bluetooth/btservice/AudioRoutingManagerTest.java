@@ -49,8 +49,6 @@ import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
-import com.android.bluetooth.flags.FakeFeatureFlagsImpl;
-import com.android.bluetooth.flags.FeatureFlags;
 import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.le_audio.LeAudioService;
@@ -92,7 +90,6 @@ public class AudioRoutingManagerTest {
     private boolean mOriginalDualModeAudioState;
     private TestDatabaseManager mDatabaseManager;
     private TestLooper mTestLooper;
-    private FakeFeatureFlagsImpl mFakeFlagsImpl;
 
     @Mock private AdapterService mAdapterService;
     @Mock private ServiceFactory mServiceFactory;
@@ -116,8 +113,7 @@ public class AudioRoutingManagerTest {
         doNothing().when(mMethodProxy).threadStart(any());
         TestUtils.setAdapterService(mAdapterService);
 
-        mFakeFlagsImpl = new FakeFeatureFlagsImpl();
-        mDatabaseManager = new TestDatabaseManager(mAdapterService, mFakeFlagsImpl);
+        mDatabaseManager = new TestDatabaseManager(mAdapterService);
 
         when(mAdapterService.getSystemService(Context.AUDIO_SERVICE)).thenReturn(mAudioManager);
         when(mAdapterService.getSystemServiceName(AudioManager.class))
@@ -128,8 +124,7 @@ public class AudioRoutingManagerTest {
         when(mServiceFactory.getHearingAidService()).thenReturn(mHearingAidService);
         when(mServiceFactory.getLeAudioService()).thenReturn(mLeAudioService);
 
-        mAudioRoutingManager =
-                new AudioRoutingManager(mAdapterService, mServiceFactory, mFakeFlagsImpl);
+        mAudioRoutingManager = new AudioRoutingManager(mAdapterService, mServiceFactory);
         mAudioRoutingManager.start();
         mAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -1291,8 +1286,8 @@ public class AudioRoutingManagerTest {
     private class TestDatabaseManager extends DatabaseManager {
         ArrayMap<BluetoothDevice, SparseIntArray> mProfileConnectionPolicy;
 
-        TestDatabaseManager(AdapterService service, FeatureFlags featureFlags) {
-            super(service, featureFlags);
+        TestDatabaseManager(AdapterService service) {
+            super(service);
             mProfileConnectionPolicy = new ArrayMap<>();
         }
 

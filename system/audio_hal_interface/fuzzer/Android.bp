@@ -82,6 +82,7 @@ cc_defaults {
         "libcgrouprc",
         "libcgrouprc_format",
         "libchrome",
+        "libcom.android.sysprop.bluetooth.wrapped",
         "libcutils",
         "libevent",
         "libg722codec",

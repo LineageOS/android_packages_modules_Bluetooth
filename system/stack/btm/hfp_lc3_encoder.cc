@@ -22,8 +22,8 @@
 
 #include <cstring>
 
+#include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/log.h"
 
 const int HFP_LC3_PCM_BYTES = 480;
 const int HFP_LC3_PKT_FRAME_LEN = 58;

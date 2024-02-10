@@ -39,7 +39,7 @@ import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
-import com.android.bluetooth.flags.FeatureFlags;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.le_audio.LeAudioService;
@@ -100,7 +100,7 @@ import java.util.Set;
  *      active Bluetooth device.
  */
 public class ActiveDeviceManager implements AdapterService.BluetoothStateCallback {
-    private static final String TAG = "ActiveDeviceManager";
+    private static final String TAG = ActiveDeviceManager.class.getSimpleName();
     private static final boolean DBG = true;
     @VisibleForTesting
     static final int A2DP_HFP_SYNC_CONNECTION_TIMEOUT_MS = 5_000;
@@ -112,7 +112,6 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
     private Handler mHandler = null;
     private final AudioManager mAudioManager;
     private final AudioManagerAudioDeviceCallback mAudioManagerAudioDeviceCallback;
-    private final FeatureFlags mFeatureFlags;
 
     private final Object mLock = new Object();
     @GuardedBy("mLock")
@@ -811,10 +810,9 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
         }
     }
 
-    ActiveDeviceManager(AdapterService service, ServiceFactory factory, FeatureFlags featureFlags) {
+    ActiveDeviceManager(AdapterService service, ServiceFactory factory) {
         mAdapterService = service;
         mDbManager = mAdapterService.getDatabase();
-        mFeatureFlags = Objects.requireNonNull(featureFlags, "Feature Flags cannot be null");
         mFactory = factory;
         mAudioManager = service.getSystemService(AudioManager.class);
         mAudioManagerAudioDeviceCallback = new AudioManagerAudioDeviceCallback();
@@ -987,6 +985,16 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
             if (device == null) {
                 success = leAudioService.removeActiveDevice(hasFallbackDevice);
             } else {
+                if (Flags.leaudioActiveDeviceManagerGroupHandlingFix()) {
+                    if ((mLeAudioActiveDevice != null)
+                            && (Objects.equals(
+                                    mLeAudioActiveDevice, leAudioService.getLeadDevice(device)))) {
+                        if (DBG) {
+                            Log.d(TAG, "New LeAudioDevice is a part of an active group");
+                        }
+                        return true;
+                    }
+                }
                 success = leAudioService.setActiveDevice(device);
             }
 
@@ -994,7 +1002,12 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                 return false;
             }
 
-            mLeAudioActiveDevice = device;
+            if (Flags.leaudioActiveDeviceManagerGroupHandlingFix()) {
+                mLeAudioActiveDevice = leAudioService.getLeadDevice(device);
+            } else {
+                mLeAudioActiveDevice = device;
+            }
+
             if (device == null) {
                 mLeHearingAidActiveDevice = null;
                 mPendingLeHearingAidActiveDevice.remove(device);
@@ -1245,7 +1258,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
      * @return {@code true} if is broadcasting audio, {@code false} otherwise
      */
     private boolean isBroadcastingAudio() {
-        if (!mFeatureFlags.leaudioBroadcastAudioHandoverPolicies()) {
+        if (!Flags.leaudioBroadcastAudioHandoverPolicies()) {
             // disable this if feature flag is false
             return false;
         }

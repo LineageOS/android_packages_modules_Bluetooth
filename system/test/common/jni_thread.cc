@@ -20,7 +20,7 @@
 
 #include <map>
 
-#include "osi/include/log.h"
+#include "os/log.h"
 
 std::queue<base::OnceClosure> do_in_jni_thread_task_queue;
 

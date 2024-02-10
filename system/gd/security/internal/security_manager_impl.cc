@@ -17,6 +17,8 @@
  */
 #include "security_manager_impl.h"
 
+#include <android_bluetooth_sysprop.h>
+
 #include "common/bind.h"
 #include "hci/address_with_type.h"
 #include "hci/octets.h"
@@ -109,9 +111,12 @@ void SecurityManagerImpl::Init() {
   hci::LeAddressManager::AddressPolicy address_policy = hci::LeAddressManager::AddressPolicy::USE_RESOLVABLE_ADDRESS;
   hci::AddressWithType address_with_type(hci::Address{}, hci::AddressType::RANDOM_DEVICE_ADDRESS);
 
-  /* 7 minutes minimum, 15 minutes maximum for random address refreshing */
-  auto minimum_rotation_time = std::chrono::minutes(7);
-  auto maximum_rotation_time = std::chrono::minutes(15);
+  /* Default to 7 minutes minimum, 15 minutes maximum for random address refreshing;
+   * device can override. */
+  auto minimum_rotation_time = std::chrono::minutes(
+      GET_SYSPROP(Ble, random_address_rotation_interval_min, 7));
+  auto maximum_rotation_time = std::chrono::minutes(
+      GET_SYSPROP(Ble, random_address_rotation_interval_max, 15));
 
   acl_manager_->SetPrivacyPolicyForInitiatorAddress(
       address_policy, address_with_type, minimum_rotation_time, maximum_rotation_time);

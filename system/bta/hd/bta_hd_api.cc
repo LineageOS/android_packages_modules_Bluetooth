@@ -30,9 +30,10 @@
 #if defined(BTA_HD_INCLUDED) && (BTA_HD_INCLUDED == TRUE)
 
 #include "bta/hd/bta_hd_int.h"
+#include "common/init_flags.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
-#include "osi/include/log.h"
 #include "stack/include/bt_hdr.h"
 #include "types/raw_address.h"
 

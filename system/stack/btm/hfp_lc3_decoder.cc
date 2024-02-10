@@ -23,8 +23,8 @@
 
 #include <cstring>
 
+#include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/log.h"
 
 const int HFP_LC3_H2_HEADER_LEN = 2;
 const int HFP_LC3_PKT_FRAME_LEN = 58;

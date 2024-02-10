@@ -19,7 +19,7 @@
 #include "bta/le_audio/content_control_id_keeper.h"
 #include "common/strings.h"
 #include "le_audio_types.h"
-#include "osi/include/log.h"
+#include "os/log.h"
 
 using bluetooth::common::ToString;
 using le_audio::types::AudioContexts;

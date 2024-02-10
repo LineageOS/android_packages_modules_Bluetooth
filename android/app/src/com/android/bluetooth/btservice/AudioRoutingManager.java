@@ -43,7 +43,6 @@ import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
-import com.android.bluetooth.flags.FeatureFlags;
 import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.le_audio.LeAudioService;
@@ -146,8 +145,8 @@ public class AudioRoutingManager extends ActiveDeviceManager {
         }
     }
 
-    AudioRoutingManager(AdapterService service, ServiceFactory factory, FeatureFlags featureFlags) {
-        super(service, factory, featureFlags);
+    AudioRoutingManager(AdapterService service, ServiceFactory factory) {
+        super(service, factory);
         mAdapterService = service;
         mDbManager = mAdapterService.getDatabase();
         mFactory = factory;
