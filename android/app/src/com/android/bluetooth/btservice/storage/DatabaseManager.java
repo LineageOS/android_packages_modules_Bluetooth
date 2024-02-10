@@ -42,7 +42,7 @@ import android.util.Log;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.FeatureFlags;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -68,7 +68,6 @@ public class DatabaseManager {
     private static final String TAG = "BluetoothDatabase";
 
     private final AdapterService mAdapterService;
-    private final FeatureFlags mFeatureFlags;
     private HandlerThread mHandlerThread = null;
     private Handler mHandler = null;
     private final Object mDatabaseLock = new Object();
@@ -114,9 +113,8 @@ public class DatabaseManager {
             LEGACY_HEARING_AID_PRIORITY_PREFIX = "bluetooth_hearing_aid_priority_";
 
     /** Constructor of the DatabaseManager */
-    public DatabaseManager(AdapterService service, FeatureFlags featureFlags) {
+    public DatabaseManager(AdapterService service) {
         mAdapterService = Objects.requireNonNull(service, "Adapter service cannot be null");
-        mFeatureFlags = Objects.requireNonNull(featureFlags, "Feature Flags cannot be null");
         mMetadataChangedLog = EvictingQueue.create(METADATA_CHANGED_LOG_MAX_SIZE);
     }
 
@@ -648,7 +646,7 @@ public class DatabaseManager {
             if (isA2dpDevice) {
                 resetActiveA2dpDevice();
             }
-            if (isHfpDevice && !mFeatureFlags.autoConnectOnMultipleHfpWhenNoA2dpDevice()) {
+            if (isHfpDevice && !Flags.autoConnectOnMultipleHfpWhenNoA2dpDevice()) {
                 resetActiveHfpDevice();
             }
 

@@ -37,6 +37,7 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.room.Room;
 import androidx.room.testing.MigrationTestHelper;
@@ -48,7 +49,6 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.FakeFeatureFlagsImpl;
 import com.android.bluetooth.flags.Flags;
 
 import com.google.common.truth.Truth;
@@ -81,7 +81,6 @@ public final class DatabaseManagerTest {
     private BluetoothDevice mTestDevice;
     private BluetoothDevice mTestDevice2;
     private BluetoothDevice mTestDevice3;
-    private FakeFeatureFlagsImpl mFakeFlagsImpl;
 
     private static final String LOCAL_STORAGE = "LocalStorage";
     private static final String TEST_BT_ADDR = "11:22:33:44:55:66";
@@ -94,6 +93,8 @@ public final class DatabaseManagerTest {
     private static final int A2DP_ENALBED_OP_CODEC_TEST = 1;
     private static final int MAX_META_ID = 16;
     private static final byte[] TEST_BYTE_ARRAY = "TEST_VALUE".getBytes();
+
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Rule
     public MigrationTestHelper testHelper = new MigrationTestHelper(
@@ -116,9 +117,7 @@ public final class DatabaseManagerTest {
         when(mAdapterService.getPackageManager()).thenReturn(
                 InstrumentationRegistry.getTargetContext().getPackageManager());
 
-        mFakeFlagsImpl = new FakeFeatureFlagsImpl();
-
-        mDatabaseManager = new DatabaseManager(mAdapterService, mFakeFlagsImpl);
+        mDatabaseManager = new DatabaseManager(mAdapterService);
 
         BluetoothDevice[] bondedDevices = {mTestDevice};
         doReturn(bondedDevices).when(mAdapterService).getBondedDevices();
@@ -491,7 +490,7 @@ public final class DatabaseManagerTest {
 
     @Test
     public void testSetConnectionHeadset() {
-        mFakeFlagsImpl.setFlag(Flags.FLAG_AUTO_CONNECT_ON_MULTIPLE_HFP_WHEN_NO_A2DP_DEVICE, false);
+        mSetFlagsRule.disableFlags(Flags.FLAG_AUTO_CONNECT_ON_MULTIPLE_HFP_WHEN_NO_A2DP_DEVICE);
         // Verify pre-conditions to ensure a fresh test
         Assert.assertEquals(0, mDatabaseManager.mMetadataCache.size());
         Assert.assertNotNull(mTestDevice);
@@ -544,7 +543,7 @@ public final class DatabaseManagerTest {
 
     @Test
     public void testSetConnection() {
-        mFakeFlagsImpl.setFlag(Flags.FLAG_AUTO_CONNECT_ON_MULTIPLE_HFP_WHEN_NO_A2DP_DEVICE, false);
+        mSetFlagsRule.disableFlags(Flags.FLAG_AUTO_CONNECT_ON_MULTIPLE_HFP_WHEN_NO_A2DP_DEVICE);
         // Verify pre-conditions to ensure a fresh test
         Assert.assertEquals(0, mDatabaseManager.mMetadataCache.size());
         Assert.assertNotNull(mTestDevice);
