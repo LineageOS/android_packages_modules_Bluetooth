@@ -141,10 +141,13 @@ public class A2dpService extends ProfileService {
         return BluetoothProperties.isProfileA2dpSourceEnabled().orElse(false);
     }
 
+    ActiveDeviceManager getActiveDeviceManager() {
+        return mAdapterService.getActiveDeviceManager();
+    }
+
     @Override
     protected IProfileServiceBinder initBinder() {
-        return new BluetoothA2dpBinder(
-                this, AdapterService.getAdapterService().getActiveDeviceManager());
+        return new BluetoothA2dpBinder(this);
     }
 
     @Override
@@ -1372,7 +1375,6 @@ public class A2dpService extends ProfileService {
     static class BluetoothA2dpBinder extends IBluetoothA2dp.Stub
             implements IProfileServiceBinder {
         private A2dpService mService;
-        private ActiveDeviceManager mActiveDeviceManager;
 
         @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
         private A2dpService getService(AttributionSource source) {
@@ -1387,9 +1389,8 @@ public class A2dpService extends ProfileService {
             return mService;
         }
 
-        BluetoothA2dpBinder(A2dpService svc, ActiveDeviceManager activeDeviceManager) {
+        BluetoothA2dpBinder(A2dpService svc) {
             mService = svc;
-            mActiveDeviceManager = activeDeviceManager;
         }
 
         @Override
@@ -1479,7 +1480,7 @@ public class A2dpService extends ProfileService {
                 A2dpService service = getService(source);
                 if (service != null) {
                     if (Flags.audioRoutingCentralization()) {
-                        ((AudioRoutingManager) mActiveDeviceManager)
+                        ((AudioRoutingManager) service.getActiveDeviceManager())
                                 .activateDeviceProfile(device, BluetoothProfile.A2DP, receiver);
                     } else {
                         boolean result;
