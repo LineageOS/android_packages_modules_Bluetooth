@@ -30,8 +30,8 @@
 
 #include <cstdint>
 
+#include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/log.h"
 #include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/include/bnep_api.h"
 #include "stack/include/bt_hdr.h"

@@ -251,7 +251,7 @@ class LeAddressManagerWithSingleClientTest : public LeAddressManagerTest {
   }
 };
 
-TEST_F(LeAddressManagerWithSingleClientTest, add_device_to_connect_list) {
+TEST_F(LeAddressManagerWithSingleClientTest, add_device_to_accept_list) {
   Address address;
   Address::FromString("01:02:03:04:05:06", address);
   le_address_manager_->AddDeviceToFilterAcceptList(FilterAcceptListAddressType::RANDOM, address);
@@ -267,7 +267,7 @@ TEST_F(LeAddressManagerWithSingleClientTest, add_device_to_connect_list) {
   clients[0].get()->WaitForResume();
 }
 
-TEST_F(LeAddressManagerWithSingleClientTest, remove_device_from_connect_list) {
+TEST_F(LeAddressManagerWithSingleClientTest, remove_device_from_accept_list) {
   Address address;
   Address::FromString("01:02:03:04:05:06", address);
   le_address_manager_->AddDeviceToFilterAcceptList(FilterAcceptListAddressType::RANDOM, address);

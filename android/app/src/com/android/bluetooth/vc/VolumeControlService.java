@@ -715,7 +715,8 @@ public class VolumeControlService extends ProfileService {
         Boolean groupMute = getGroupMute(groupId);
 
         if (groupVolume != IBluetoothVolumeControl.VOLUME_CONTROL_UNKNOWN_VOLUME) {
-            updateGroupCacheAndAudioSystem(groupId, groupVolume, groupMute);
+            /* Don't need to show volume when activating known device. */
+            updateGroupCacheAndAudioSystem(groupId, groupVolume, groupMute, /* showInUI*/ false);
         }
     }
 
@@ -902,7 +903,7 @@ public class VolumeControlService extends ProfileService {
         }
     }
 
-    void updateGroupCacheAndAudioSystem(int groupId, int volume, boolean mute) {
+    void updateGroupCacheAndAudioSystem(int groupId, int volume, boolean mute, boolean showInUI) {
         Log.d(
                 TAG,
                 " updateGroupCacheAndAudioSystem: groupId: "
@@ -910,7 +911,9 @@ public class VolumeControlService extends ProfileService {
                         + ", vol: "
                         + volume
                         + ", mute: "
-                        + mute);
+                        + mute
+                        + ", showInUI"
+                        + showInUI);
 
         mGroupVolumeCache.put(groupId, volume);
         mGroupMuteCache.put(groupId, mute);
@@ -933,7 +936,11 @@ public class VolumeControlService extends ProfileService {
         }
 
         int streamType = getBluetoothContextualVolumeStream();
-        int flags = AudioManager.FLAG_SHOW_UI | AudioManager.FLAG_BLUETOOTH_ABS_VOLUME;
+        int flags = AudioManager.FLAG_BLUETOOTH_ABS_VOLUME;
+        if (showInUI) {
+            flags |= AudioManager.FLAG_SHOW_UI;
+        }
+
         mAudioManager.setStreamVolume(streamType, getAudioDeviceVolume(streamType, volume), flags);
 
         if (mAudioManager.isStreamMute(streamType) != mute) {
@@ -990,8 +997,9 @@ public class VolumeControlService extends ProfileService {
             /* We are here, because system was just started and LeAudio device just connected.
              * In such case, we take Volume stored on remote device and apply it to our cache and
              * audio system.
+             * Note, to match BR/EDR behavior, don't show volume change in UI here
              */
-            updateGroupCacheAndAudioSystem(groupId, volume, mute);
+            updateGroupCacheAndAudioSystem(groupId, volume, mute, false);
             return;
         }
 
@@ -1036,7 +1044,7 @@ public class VolumeControlService extends ProfileService {
             }
         } else {
             /* Received group notification for autonomous change. Update cache and audio system. */
-            updateGroupCacheAndAudioSystem(groupId, volume, mute);
+            updateGroupCacheAndAudioSystem(groupId, volume, mute, true);
         }
     }
 

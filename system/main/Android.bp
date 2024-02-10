@@ -57,6 +57,7 @@ cc_library_static {
         "libbluetooth_log",
         "libbt-platform-protos-lite",
         "libbt_shim_bridge",
+        "libcom.android.sysprop.bluetooth.wrapped",
     ],
     header_libs: ["libbluetooth_headers"],
     cflags: ["-Wno-unused-parameter"],
@@ -146,6 +147,7 @@ cc_library_static {
     ],
     whole_static_libs: [
         "libbluetooth_gd", // Gabeldorsche
+        "libcom.android.sysprop.bluetooth.wrapped",
     ],
     header_libs: ["libbluetooth_headers"],
     static_libs: [
@@ -219,6 +221,7 @@ cc_test {
         "libbt_shim_ffi",
         "libbtdevice",
         "libchrome",
+        "libcom.android.sysprop.bluetooth.wrapped",
         "libevent",
         "libflatbuffers-cpp",
         "libgmock",
@@ -226,6 +229,7 @@ cc_test {
         "libosi",
     ],
     shared_libs: [
+        "libPlatformProperties",
         "libcrypto",
         "server_configurable_flags",
     ],

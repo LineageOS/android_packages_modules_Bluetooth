@@ -21,7 +21,7 @@
 #include "device/include/controller.h"
 #include "le_audio_set_configuration_provider.h"
 #include "le_audio_utils.h"
-#include "osi/include/log.h"
+#include "os/log.h"
 #include "osi/include/properties.h"
 #include "stack/include/hcimsgs.h"
 

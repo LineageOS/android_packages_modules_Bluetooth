@@ -25,7 +25,7 @@
 
 #include "codec_status_aidl.h"
 #include "hal_version_manager.h"
-#include "osi/include/log.h"
+#include "os/log.h"
 
 namespace bluetooth {
 namespace audio {

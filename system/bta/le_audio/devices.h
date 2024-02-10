@@ -37,8 +37,8 @@
 #include "gatt_api.h"
 #include "le_audio_log_history.h"
 #include "le_audio_types.h"
+#include "os/log.h"
 #include "osi/include/alarm.h"
-#include "osi/include/log.h"
 #include "osi/include/properties.h"
 #include "raw_address.h"
 
