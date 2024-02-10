@@ -30,6 +30,7 @@
 #include "btif_storage.h"
 #include "btm_api.h"
 #include "btm_ble_api.h"
+#include "common/init_flags.h"
 #include "common/leaky_bonded_queue.h"
 #include "common/time_util.h"
 #include "core_callbacks.h"

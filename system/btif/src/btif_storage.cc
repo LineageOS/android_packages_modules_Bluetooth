@@ -46,6 +46,7 @@
 #include "btif_config.h"
 #include "btif_storage.h"
 #include "btif_util.h"
+#include "common/init_flags.h"
 #include "core_callbacks.h"
 #include "device/include/controller.h"
 #include "internal_include/bt_target.h"

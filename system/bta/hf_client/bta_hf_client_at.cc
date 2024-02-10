@@ -21,9 +21,9 @@
 
 #include "bta/hf_client/bta_hf_client_int.h"
 #include "internal_include/bt_trace.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
-#include "osi/include/log.h"
 #include "osi/include/properties.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/port_api.h"

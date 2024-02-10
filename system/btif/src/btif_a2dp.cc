@@ -35,7 +35,7 @@
 #include "btif_hf.h"
 #include "btif_util.h"
 #include "internal_include/bt_trace.h"
-#include "osi/include/log.h"
+#include "os/log.h"
 #include "types/raw_address.h"
 
 void btif_a2dp_on_idle(const RawAddress& peer_addr) {

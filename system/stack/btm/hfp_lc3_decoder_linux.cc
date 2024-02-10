@@ -21,7 +21,7 @@
 #include "hfp_lc3_decoder.h"
 #include "mmc/codec_client/codec_client.h"
 #include "mmc/proto/mmc_config.pb.h"
-#include "osi/include/log.h"
+#include "os/log.h"
 
 const int HFP_LC3_H2_HEADER_LEN = 2;
 const int HFP_LC3_PKT_FRAME_LEN = 58;

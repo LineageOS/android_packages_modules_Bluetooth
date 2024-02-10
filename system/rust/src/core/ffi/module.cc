@@ -19,7 +19,7 @@
 #include <hardware/bt_gatt.h>
 
 #include "btcore/include/module.h"
-#include "osi/include/log.h"
+#include "os/log.h"
 #ifndef TARGET_FLOSS
 #include "src/connection/ffi/connection_shim.h"
 #include "src/core/ffi.rs.h"
