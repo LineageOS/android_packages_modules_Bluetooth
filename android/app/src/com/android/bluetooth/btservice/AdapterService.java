@@ -125,7 +125,6 @@ import com.android.bluetooth.btservice.bluetoothkeystore.BluetoothKeystoreServic
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.btservice.storage.MetadataDatabase;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
-import com.android.bluetooth.flags.FeatureFlagsImpl;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.gatt.GattService;
 import com.android.bluetooth.hap.HapClientService;
@@ -402,7 +401,6 @@ public class AdapterService extends Service {
     private volatile boolean mTestModeEnabled = false;
 
     private MetricsLogger mMetricsLogger;
-    private FeatureFlagsImpl mFeatureFlags;
 
     /**
      * Register a {@link ProfileService} with AdapterService.
@@ -686,9 +684,7 @@ public class AdapterService extends Service {
 
         mSdpManager = SdpManager.init(this);
 
-        mFeatureFlags = new FeatureFlagsImpl();
-
-        mDatabaseManager = new DatabaseManager(this, mFeatureFlags);
+        mDatabaseManager = new DatabaseManager(this);
         mDatabaseManager.start(MetadataDatabase.createDatabase(this));
 
         boolean isAutomotiveDevice =
@@ -704,18 +700,16 @@ public class AdapterService extends Service {
          */
         if (!isAutomotiveDevice && getResources().getBoolean(R.bool.enable_phone_policy)) {
             Log.i(TAG, "Phone policy enabled");
-            mPhonePolicy = new PhonePolicy(this, new ServiceFactory(), mFeatureFlags);
+            mPhonePolicy = new PhonePolicy(this, new ServiceFactory());
             mPhonePolicy.start();
         } else {
             Log.i(TAG, "Phone policy disabled");
         }
 
-        if (mFeatureFlags.audioRoutingCentralization()) {
-            mActiveDeviceManager =
-                    new AudioRoutingManager(this, new ServiceFactory(), mFeatureFlags);
+        if (Flags.audioRoutingCentralization()) {
+            mActiveDeviceManager = new AudioRoutingManager(this, new ServiceFactory());
         } else {
-            mActiveDeviceManager =
-                    new ActiveDeviceManager(this, new ServiceFactory(), mFeatureFlags);
+            mActiveDeviceManager = new ActiveDeviceManager(this, new ServiceFactory());
         }
         mActiveDeviceManager.start();
 
@@ -6192,7 +6186,7 @@ public class AdapterService extends Service {
     }
 
     int getConnectionState(BluetoothDevice device) {
-        if (mFeatureFlags.apiGetConnectionStateUsingIdentityAddress()) {
+        if (Flags.apiGetConnectionStateUsingIdentityAddress()) {
             final String identityAddress = device.getIdentityAddress();
             return (identityAddress == null)
                     ? mNativeInterface.getConnectionState(getBytesFromAddress(device.getAddress()))
