@@ -18,6 +18,7 @@
 
 #define LOG_TAG "ble_bta_hh"
 
+#include <android_bluetooth_flags.h>
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
 
@@ -27,6 +28,7 @@
 #include "bta/hh/bta_hh_int.h"
 #include "bta/include/bta_gatt_queue.h"
 #include "bta/include/bta_hh_co.h"
+#include "bta/include/bta_le_audio_api.h"
 #include "device/include/interop.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
@@ -79,6 +81,9 @@ static void bta_hh_le_add_dev_bg_conn(tBTA_HH_DEV_CB* p_cb);
 static void bta_hh_process_cache_rpt(tBTA_HH_DEV_CB* p_cb,
                                      tBTA_HH_RPT_CACHE_ENTRY* p_rpt_cache,
                                      uint8_t num_rpt);
+static bool bta_hh_le_iso_data_callback(const RawAddress& addr,
+                                        uint16_t cis_conn_hdl, uint8_t* data,
+                                        uint16_t size, uint32_t timestamp);
 
 static const char* bta_hh_le_rpt_name[4] = {"UNKNOWN", "INPUT", "OUTPUT",
                                             "FEATURE"};
@@ -196,6 +201,10 @@ void bta_hh_le_enable(void) {
                             (*bta_hh_cb.p_cback)(BTA_HH_ENABLE_EVT, &bta_hh);
                           }
                         }), false);
+
+  if (IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+    LeAudioClient::RegisterIsoDataConsumer(bta_hh_le_iso_data_callback);
+  }
 }
 
 /*******************************************************************************
@@ -2269,4 +2278,28 @@ static void bta_hh_process_cache_rpt(tBTA_HH_DEV_CB* p_cb,
       }
     }
   }
+}
+
+static bool bta_hh_le_iso_data_callback(const RawAddress& addr,
+                                        uint16_t cis_conn_hdl, uint8_t* data,
+                                        uint16_t size, uint32_t timestamp) {
+  if (!IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+    LOG_WARN("DSA not supported");
+    return false;
+  }
+
+  tAclLinkSpec link_spec{};
+  link_spec.addrt.bda = addr;
+  link_spec.transport = BT_TRANSPORT_LE;
+
+  tBTA_HH_DEV_CB* p_dev_cb = bta_hh_le_find_dev_cb_by_bda(link_spec);
+  if (p_dev_cb == nullptr) {
+    LOG_WARN("Device not connected: %s", ADDRESS_TO_LOGGABLE_CSTR(link_spec));
+    return false;
+  }
+
+  bta_hh_co_data(p_dev_cb->hid_handle, data, size, p_dev_cb->mode, 0,
+                 p_dev_cb->dscp_info.ctry_code, p_dev_cb->link_spec,
+                 BTA_HH_APP_ID_LE);
+  return true;
 }
