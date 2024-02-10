@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9dd9fdc4_bd8cec96",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 14048
+      },
+      "writtenOn": "2024-02-10T22:06:37Z",
+      "side": 1,
+      "message": "Re-verified on tegra after code updates. Need verification from non-tegra atv.",
+      "revId": "65083a5e7bf199c8789874da55d38f92804ee445",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
