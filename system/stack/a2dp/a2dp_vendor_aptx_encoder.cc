@@ -18,6 +18,7 @@
 
 #include "a2dp_vendor_aptx_encoder.h"
 
+#include <bluetooth/log.h>
 #include <dlfcn.h>
 #include <inttypes.h>
 #include <stdio.h>
@@ -31,6 +32,8 @@
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
+
+using namespace bluetooth;
 
 //
 // Encoder for aptX Source Codec
@@ -142,7 +145,7 @@ void a2dp_vendor_aptx_encoder_init(
   if (a2dp_aptx_encoder_cb.aptx_encoder_state != NULL) {
     aptx_api.init_func(a2dp_aptx_encoder_cb.aptx_encoder_state, 0);
   } else {
-    LOG_ERROR("%s: Cannot allocate aptX encoder state", __func__);
+    log::error("Cannot allocate aptX encoder state");
     // TODO: Return an error?
   }
 
@@ -167,10 +170,8 @@ static void a2dp_vendor_aptx_encoder_update(A2dpCodecConfig* a2dp_codec_config,
   *p_restart_output = false;
   *p_config_updated = false;
   if (!a2dp_codec_config->copyOutOtaCodecConfig(codec_info)) {
-    LOG_ERROR(
-        "%s: Cannot update the codec encoder for %s: "
-        "invalid codec config",
-        __func__, a2dp_codec_config->name().c_str());
+    log::error("Cannot update the codec encoder for {}: invalid codec config",
+               a2dp_codec_config->name().c_str());
     return;
   }
   const uint8_t* p_codec_info = codec_info;
@@ -183,9 +184,9 @@ static void a2dp_vendor_aptx_encoder_update(A2dpCodecConfig* a2dp_codec_config,
       a2dp_codec_config->getAudioBitsPerSample();
   p_feeding_params->channel_count =
       A2DP_VendorGetTrackChannelCountAptx(p_codec_info);
-  LOG_INFO("%s: sample_rate=%u bits_per_sample=%u channel_count=%u", __func__,
-           p_feeding_params->sample_rate, p_feeding_params->bits_per_sample,
-           p_feeding_params->channel_count);
+  log::info("sample_rate={} bits_per_sample={} channel_count={}",
+            p_feeding_params->sample_rate, p_feeding_params->bits_per_sample,
+            p_feeding_params->channel_count);
   a2dp_vendor_aptx_feeding_reset();
 }
 
@@ -220,8 +221,7 @@ static void aptx_init_framing_params(tAPTX_FRAMING_PARAMS* framing_params) {
     }
   }
 
-  LOG_INFO("%s: sleep_time_ns = %" PRIu64, __func__,
-           framing_params->sleep_time_ns);
+  log::info("{}: sleep_time_ns = %", PRIu64);
 }
 
 //
@@ -275,12 +275,10 @@ static void aptx_update_framing_params(tAPTX_FRAMING_PARAMS* framing_params) {
     }
   }
 
-  LOG_VERBOSE("%s: sleep_time_ns = %" PRIu64
-              " aptx_bytes = %u "
-              "pcm_bytes_per_read = %u pcm_reads = %u frame_size_counter = %u",
-              __func__, framing_params->sleep_time_ns,
-              framing_params->aptx_bytes, framing_params->pcm_bytes_per_read,
-              framing_params->pcm_reads, framing_params->frame_size_counter);
+  log::verbose(
+      "{}: sleep_time_ns = %", PRIu64
+      " aptx_bytes = %u "
+      "pcm_bytes_per_read = %u pcm_reads = %u frame_size_counter = %u");
 }
 
 void a2dp_vendor_aptx_feeding_reset(void) {
@@ -328,13 +326,13 @@ void a2dp_vendor_aptx_send_frames(uint64_t timestamp_us) {
   a2dp_aptx_encoder_cb.stats.media_read_total_expected_read_bytes +=
       expected_read_bytes;
 
-  LOG_VERBOSE("%s: PCM read of size %u", __func__, expected_read_bytes);
+  log::verbose("PCM read of size {}", expected_read_bytes);
   bytes_read = a2dp_aptx_encoder_cb.read_callback((uint8_t*)read_buffer16,
                                                   expected_read_bytes);
   a2dp_aptx_encoder_cb.stats.media_read_total_actual_read_bytes += bytes_read;
   if (bytes_read < expected_read_bytes) {
-    LOG_WARN("%s: underflow at PCM reading: read %u bytes instead of %u",
-             __func__, bytes_read, expected_read_bytes);
+    log::warn("underflow at PCM reading: read {} bytes instead of {}",
+              bytes_read, expected_read_bytes);
     a2dp_aptx_encoder_cb.stats.media_read_total_dropped_packets++;
     osi_free(p_buf);
     return;
@@ -352,8 +350,7 @@ void a2dp_vendor_aptx_send_frames(uint64_t timestamp_us) {
   const int COMPRESSION_RATIO = 4;
   size_t encoded_bytes = pcm_bytes_encoded / COMPRESSION_RATIO;
   p_buf->len += encoded_bytes;
-  LOG_VERBOSE("%s: encoded %zu PCM bytes to %zu", __func__, pcm_bytes_encoded,
-              encoded_bytes);
+  log::verbose("encoded {} PCM bytes to {}", pcm_bytes_encoded, encoded_bytes);
 
   // Update the RTP timestamp
   *((uint32_t*)(p_buf + 1)) = a2dp_aptx_encoder_cb.timestamp;

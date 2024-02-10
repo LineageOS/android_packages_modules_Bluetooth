@@ -23,6 +23,7 @@
  *
  ******************************************************************************/
 
+#include <bluetooth/log.h>
 #include <string.h>
 
 #include "avdt_api.h"
@@ -33,6 +34,8 @@
 #include "osi/include/osi.h"
 #include "stack/include/bt_hdr.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth;
 
 /*******************************************************************************
  *
@@ -143,7 +146,7 @@ void avdt_ccb_hdl_discover_cmd(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data) {
   tAVDT_SEP_INFO sep_info[AVDT_NUM_SEPS];
   AvdtpScb* p_scb = &(p_ccb->scb[0]);
 
-  LOG_VERBOSE("%s: p_ccb index=%d", __func__, avdt_ccb_to_idx(p_ccb));
+  log::verbose("p_ccb index={}", avdt_ccb_to_idx(p_ccb));
 
   p_data->msg.discover_rsp.p_sep_info = sep_info;
   p_data->msg.discover_rsp.num_seps = 0;
@@ -491,7 +494,7 @@ void avdt_ccb_snd_start_cmd(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data) {
   tAVDT_MSG avdt_msg;
   uint8_t seid_list[AVDT_NUM_SEPS];
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   /* make copy of our seid list */
   memcpy(seid_list, p_data->msg.multi.seid_list, p_data->msg.multi.num_seps);
@@ -501,7 +504,7 @@ void avdt_ccb_snd_start_cmd(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data) {
       avdt_scb_verify(p_ccb, AVDT_VERIFY_OPEN, p_data->msg.multi.seid_list,
                       p_data->msg.multi.num_seps, &avdt_msg.hdr.err_code);
   if (avdt_msg.hdr.err_param == 0) {
-    LOG_VERBOSE("%s: AVDT_SIG_START", __func__);
+    log::verbose("AVDT_SIG_START");
 
     /* set peer seid list in messsage */
     avdt_scb_peer_seid_list(&p_data->msg.multi);
@@ -513,7 +516,7 @@ void avdt_ccb_snd_start_cmd(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data) {
     for (i = 0; i < p_data->msg.multi.num_seps; i++) {
       p_scb = avdt_scb_by_hdl(seid_list[i]);
       if (p_scb != NULL) {
-        LOG_VERBOSE("%s: AVDT_SCB_MSG_START_REJ_EVT: i=%d", __func__, i);
+        log::verbose("AVDT_SCB_MSG_START_REJ_EVT: i={}", i);
         tAVDT_SCB_EVT avdt_scb_evt;
         avdt_scb_evt.msg.hdr = avdt_msg.hdr;
         avdt_scb_event(p_scb, AVDT_SCB_MSG_START_REJ_EVT, &avdt_scb_evt);
@@ -958,8 +961,8 @@ void avdt_ccb_set_conn(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data) {
  ******************************************************************************/
 void avdt_ccb_set_disconn(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data) {
   /*
-  LOG_VERBOSE("avdt_ccb_set_disconn:conn:x%x, api:x%x",
-      p_ccb->p_conn_cback, p_data->disconnect.p_cback);
+  log::verbose("avdt_ccb_set_disconn:conn:x{:x}, api:x{:x}",
+  p_ccb->p_conn_cback, p_data->disconnect.p_cback);
       */
   /* save callback */
   if (p_data->disconnect.p_cback)
@@ -998,8 +1001,7 @@ void avdt_ccb_ll_closed(AvdtpCcb* p_ccb, UNUSED_ATTR tAVDT_CCB_EVT* p_data) {
   tAVDT_CTRL_CBACK* p_cback;
   tAVDT_CTRL avdt_ctrl;
 
-  LOG_VERBOSE("%s peer %s", __func__,
-              ADDRESS_TO_LOGGABLE_CSTR(p_ccb->peer_addr));
+  log::verbose("peer {}", ADDRESS_TO_LOGGABLE_CSTR(p_ccb->peer_addr));
 
   /* clear any pending commands */
   avdt_ccb_clear_cmds(p_ccb, NULL);
@@ -1034,9 +1036,9 @@ void avdt_ccb_ll_closed(AvdtpCcb* p_ccb, UNUSED_ATTR tAVDT_CCB_EVT* p_data) {
 void avdt_ccb_ll_opened(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data) {
   tAVDT_CTRL avdt_ctrl;
 
-  LOG_VERBOSE("%s peer %s BtaAvScbIndex=%d p_ccb=%p", __func__,
-              ADDRESS_TO_LOGGABLE_CSTR(p_ccb->peer_addr),
-              p_ccb->BtaAvScbIndex(), p_ccb);
+  log::verbose("peer {} BtaAvScbIndex={} p_ccb={}",
+               ADDRESS_TO_LOGGABLE_CSTR(p_ccb->peer_addr),
+               p_ccb->BtaAvScbIndex(), fmt::ptr(p_ccb));
   p_ccb->ll_opened = true;
 
   if (!p_ccb->p_conn_cback) p_ccb->p_conn_cback = avdtp_cb.p_conn_cback;

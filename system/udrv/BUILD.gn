@@ -28,6 +28,7 @@ source_set("udrv") {
 
   configs += [
     "//bt/system:target_defaults",
+    "//bt/system/log:log_defaults",
   ]
 
   deps = [

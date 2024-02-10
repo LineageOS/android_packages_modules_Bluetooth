@@ -36,7 +36,10 @@ static_library("core_rs") {
     "//bt/system/types",
   ]
 
-  configs += [ "//bt/system:target_defaults" ]
+  configs += [
+    "//bt/system:target_defaults",
+    "//bt/system/log:log_defaults",
+  ]
 
   deps = [
     ":cxxlibheader",

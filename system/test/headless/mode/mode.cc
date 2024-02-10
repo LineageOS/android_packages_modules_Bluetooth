@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-#include <memory>
-
-#include "btm_status.h"
-#include "hci_error_code.h"
 #define LOG_TAG "bt_headless_mode"
+
+#include "test/headless/mode/mode.h"
 
 #include <deque>
 #include <future>
+#include <memory>
 
 #include "base/logging.h"  // LOG() stdout and android log
+#include "btm_status.h"
+#include "hci_error_code.h"
 #include "include/macros.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/l2cap_acl_interface.h"
 #include "test/headless/get_options.h"
 #include "test/headless/headless.h"
 #include "test/headless/messenger.h"
-#include "test/headless/mode/mode.h"
 #include "test/headless/utils/power_mode_client.h"
 #include "types/raw_address.h"
 

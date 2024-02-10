@@ -52,9 +52,7 @@ import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothUuid;
 import android.bluetooth.IBluetoothHapClientCallback;
 import android.content.AttributionSource;
-import android.content.Context;
 import android.os.Binder;
-import android.os.Looper;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
 
@@ -104,7 +102,6 @@ public class HapClientTest {
     private HapClientService.BluetoothHapClientBinder mServiceBinder;
     private AttributionSource mAttributionSource;
 
-    @Mock private Context mContext;
     @Mock private AdapterService mAdapterService;
     @Mock private DatabaseManager mDatabaseManager;
     @Mock private HapClientNativeInterface mNativeInterface;
@@ -122,13 +119,8 @@ public class HapClientTest {
         // Set up mocks and test assets
         MockitoAnnotations.initMocks(this);
 
-        if (Looper.myLooper() == null) {
-            Looper.prepare();
-        }
-
         HapClientStateMachine.sConnectTimeoutMs = TIMEOUT_MS;
 
-        TestUtils.setAdapterService(mAdapterService);
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
 
         mAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -211,14 +203,10 @@ public class HapClientTest {
         HapClientNativeInterface.setInstance(null);
 
         mAdapter = null;
-
-        if (mAdapterService != null) {
-            TestUtils.clearAdapterService(mAdapterService);
-        }
     }
 
     private void startService() throws TimeoutException {
-        mService = new HapClientService(mContext);
+        mService = new HapClientService(mAdapterService);
         mService.start();
         mService.setAvailable(true);
     }
@@ -371,7 +359,7 @@ public class HapClientTest {
         // Send a connect request
         Assert.assertTrue("Connect expected to succeed", mService.connect(mDevice));
 
-        verify(mContext, timeout(TIMEOUT_MS)).sendBroadcast(any(), any());
+        verify(mAdapterService, timeout(TIMEOUT_MS)).sendBroadcast(any(), any());
     }
 
     /**
@@ -396,7 +384,7 @@ public class HapClientTest {
      */
     @Test
     public void testOutgoingConnectTimeout() throws Exception {
-        InOrder order = inOrder(mContext);
+        InOrder order = inOrder(mAdapterService);
 
         // Update the device policy so okToConnect() returns true
         when(mDatabaseManager
@@ -408,7 +396,7 @@ public class HapClientTest {
         // Send a connect request
         Assert.assertTrue("Connect failed", mService.connect(mDevice));
 
-        order.verify(mContext, timeout(TIMEOUT_MS))
+        order.verify(mAdapterService, timeout(TIMEOUT_MS))
                 .sendBroadcast(
                         argThat(
                                 allOf(
@@ -422,7 +410,7 @@ public class HapClientTest {
                 mService.getConnectionState(mDevice));
 
         // Verify the connection state broadcast, and that we are in Disconnected state via binder
-        order.verify(mContext, timeout(HapClientStateMachine.sConnectTimeoutMs * 2))
+        order.verify(mAdapterService, timeout(HapClientStateMachine.sConnectTimeoutMs * 2))
                 .sendBroadcast(
                         argThat(
                                 allOf(
@@ -445,7 +433,7 @@ public class HapClientTest {
      */
     @Test
     public void testConnectTwo() throws Exception {
-        InOrder order = inOrder(mContext);
+        InOrder order = inOrder(mAdapterService);
         doReturn(new ParcelUuid[]{BluetoothUuid.HAS}).when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
 
@@ -481,7 +469,7 @@ public class HapClientTest {
      */
     @Test
     public void testGetHapGroupCoordinatedOps() throws Exception {
-        InOrder order = inOrder(mContext);
+        InOrder order = inOrder(mAdapterService);
         doReturn(new ParcelUuid[]{BluetoothUuid.HAS}).when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
         testConnectingDevice(order, mDevice);
@@ -519,7 +507,7 @@ public class HapClientTest {
      */
     @Test
     public void testSelectPresetNative() {
-        InOrder order = inOrder(mContext);
+        InOrder order = inOrder(mAdapterService);
         doReturn(new ParcelUuid[]{BluetoothUuid.HAS}).when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
         testConnectingDevice(order, mDevice);
@@ -545,7 +533,7 @@ public class HapClientTest {
      */
     @Test
     public void testGroupSelectActivePresetNative() {
-        InOrder order = inOrder(mContext);
+        InOrder order = inOrder(mAdapterService);
         doReturn(new ParcelUuid[]{BluetoothUuid.HAS}).when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
         testConnectingDevice(order, mDevice3);
@@ -572,7 +560,7 @@ public class HapClientTest {
      */
     @Test
     public void testSwitchToNextPreset() {
-        InOrder order = inOrder(mContext);
+        InOrder order = inOrder(mAdapterService);
         doReturn(new ParcelUuid[]{BluetoothUuid.HAS}).when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
         testConnectingDevice(order, mDevice);
@@ -588,7 +576,7 @@ public class HapClientTest {
      */
     @Test
     public void testSwitchToNextPresetForGroup() {
-        InOrder order = inOrder(mContext);
+        InOrder order = inOrder(mAdapterService);
         doReturn(new ParcelUuid[]{BluetoothUuid.HAS}).when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
         testConnectingDevice(order, mDevice3);
@@ -605,7 +593,7 @@ public class HapClientTest {
      */
     @Test
     public void testSwitchToPreviousPreset() {
-        InOrder order = inOrder(mContext);
+        InOrder order = inOrder(mAdapterService);
         doReturn(new ParcelUuid[]{BluetoothUuid.HAS}).when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
         testConnectingDevice(order, mDevice);
@@ -621,7 +609,7 @@ public class HapClientTest {
      */
     @Test
     public void testSwitchToPreviousPresetForGroup() {
-        InOrder order = inOrder(mContext);
+        InOrder order = inOrder(mAdapterService);
         doReturn(new ParcelUuid[]{BluetoothUuid.HAS}).when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
         testConnectingDevice(order, mDevice);
@@ -640,7 +628,7 @@ public class HapClientTest {
      */
     @Test
     public void testGetActivePresetIndex() throws Exception {
-        InOrder order = inOrder(mContext);
+        InOrder order = inOrder(mAdapterService);
         doReturn(new ParcelUuid[]{BluetoothUuid.HAS}).when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
         testConnectingDevice(order, mDevice);
@@ -660,7 +648,7 @@ public class HapClientTest {
      */
     @Test
     public void testGetPresetInfoAndActivePresetInfo() throws Exception {
-        InOrder order = inOrder(mContext);
+        InOrder order = inOrder(mAdapterService);
         doReturn(new ParcelUuid[]{BluetoothUuid.HAS}).when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
         testConnectingDevice(order, mDevice2);
@@ -703,7 +691,7 @@ public class HapClientTest {
      */
     @Test
     public void testSetPresetNameNative() {
-        InOrder order = inOrder(mContext);
+        InOrder order = inOrder(mAdapterService);
         doReturn(new ParcelUuid[]{BluetoothUuid.HAS}).when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
         testConnectingDevice(order, mDevice);
@@ -729,7 +717,7 @@ public class HapClientTest {
      */
     @Test
     public void testSetPresetNameForGroup() {
-        InOrder order = inOrder(mContext);
+        InOrder order = inOrder(mAdapterService);
         doReturn(new ParcelUuid[]{BluetoothUuid.HAS}).when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
         int test_group = 0x02;
@@ -776,7 +764,7 @@ public class HapClientTest {
                 .onDeviceAvailable(any(byte[].class), anyInt());
         mNativeInterface.onDeviceAvailable(getByteAddress(mDevice), 0x03);
 
-        verify(mContext, timeout(TIMEOUT_MS))
+        verify(mAdapterService, timeout(TIMEOUT_MS))
                 .sendBroadcast(
                         argThat(
                                 allOf(
@@ -838,7 +826,7 @@ public class HapClientTest {
      */
     @Test
     public void testStackEventOnPresetInfo() {
-        InOrder order = inOrder(mContext);
+        InOrder order = inOrder(mAdapterService);
         doReturn(new ParcelUuid[]{BluetoothUuid.HAS}).when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
 
@@ -1069,7 +1057,7 @@ public class HapClientTest {
         // Add state machine for testing dump()
         mService.connect(mDevice);
 
-        verify(mContext, timeout(TIMEOUT_MS)).sendBroadcast(any(), any());
+        verify(mAdapterService, timeout(TIMEOUT_MS)).sendBroadcast(any(), any());
 
         mService.dump(new StringBuilder());
     }
@@ -1098,7 +1086,7 @@ public class HapClientTest {
     /** Helper function to test device connecting */
     private void verifyConnectingDevice(InOrder order, BluetoothDevice device) {
         // Verify the connection state broadcast, and that we are in Connecting state
-        order.verify(mContext, timeout(TIMEOUT_MS))
+        order.verify(mAdapterService, timeout(TIMEOUT_MS))
                 .sendBroadcast(
                         argThat(
                                 allOf(
@@ -1117,7 +1105,7 @@ public class HapClientTest {
         mService.messageFromNative(evt);
 
         // Verify the connection state broadcast, and that we are in Connected state
-        order.verify(mContext, timeout(TIMEOUT_MS))
+        order.verify(mAdapterService, timeout(TIMEOUT_MS))
                 .sendBroadcast(
                         argThat(
                                 allOf(
@@ -1133,7 +1121,7 @@ public class HapClientTest {
         evt.valueInt1 = 0x01;   // features
         mService.messageFromNative(evt);
 
-        order.verify(mContext, timeout(TIMEOUT_MS))
+        order.verify(mAdapterService, timeout(TIMEOUT_MS))
                 .sendBroadcast(
                         argThat(
                                 allOf(

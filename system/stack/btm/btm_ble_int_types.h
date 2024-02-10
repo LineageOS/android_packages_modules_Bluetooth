@@ -81,8 +81,8 @@ typedef struct {
 typedef struct {
   uint16_t discoverable_mode;
   uint16_t connectable_mode;
-  uint32_t scan_window;
-  uint32_t scan_interval;
+  uint16_t scan_window;
+  uint16_t scan_interval;
   uint8_t scan_type;             /* current scan type: active or passive */
 
   tBTM_BLE_AFP afp; /* advertising filter policy */
