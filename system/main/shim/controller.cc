@@ -229,7 +229,7 @@ FORWARD_GETTER(uint8_t, get_le_buffers,
 FORWARD_GETTER(
     uint8_t, get_iso_buffers,
     GetController()->GetControllerIsoBufferSize().total_num_le_packets_)
-FORWARD_GETTER(uint8_t, get_le_connect_list_size,
+FORWARD_GETTER(uint8_t, get_le_accept_list_size,
                GetController()->GetLeFilterAcceptListSize())
 
 static void set_ble_resolving_list_max_size(int /* resolving_list_max_size */) {
@@ -366,7 +366,7 @@ static const controller_t interface = {
     .get_acl_buffer_count_ble = get_le_buffers,
     .get_iso_buffer_count = get_iso_buffers,
 
-    .get_ble_acceptlist_size = get_le_connect_list_size,
+    .get_ble_acceptlist_size = get_le_accept_list_size,
 
     .get_ble_resolving_list_max_size = get_le_resolving_list_size,
     .set_ble_resolving_list_max_size = set_ble_resolving_list_max_size,

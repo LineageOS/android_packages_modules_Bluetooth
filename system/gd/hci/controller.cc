@@ -107,7 +107,7 @@ struct Controller::impl {
 
     hci_->EnqueueCommand(
         LeReadFilterAcceptListSizeBuilder::Create(),
-        handler->BindOnceOn(this, &Controller::impl::le_read_connect_list_size_handler));
+        handler->BindOnceOn(this, &Controller::impl::le_read_accept_list_size_handler));
 
     if (is_supported(OpCode::LE_READ_RESOLVING_LIST_SIZE) && module_.SupportsBlePrivacy()) {
       hci_->EnqueueCommand(
@@ -484,12 +484,12 @@ struct Controller::impl {
     le_supported_states_ = complete_view.GetLeStates();
   }
 
-  void le_read_connect_list_size_handler(CommandCompleteView view) {
+  void le_read_accept_list_size_handler(CommandCompleteView view) {
     auto complete_view = LeReadFilterAcceptListSizeCompleteView::Create(view);
     ASSERT(complete_view.IsValid());
     ErrorCode status = complete_view.GetStatus();
     ASSERT_LOG(status == ErrorCode::SUCCESS, "Status 0x%02hhx, %s", status, ErrorCodeText(status).c_str());
-    le_connect_list_size_ = complete_view.GetFilterAcceptListSize();
+    le_accept_list_size_ = complete_view.GetFilterAcceptListSize();
   }
 
   void le_read_resolving_list_size_handler(CommandCompleteView view) {
@@ -1186,7 +1186,7 @@ struct Controller::impl {
   LeBufferSize iso_buffer_size_{};
   uint64_t le_local_supported_features_{};
   uint64_t le_supported_states_{};
-  uint8_t le_connect_list_size_{};
+  uint8_t le_accept_list_size_{};
   uint8_t le_resolving_list_size_{};
   LeMaximumDataLength le_maximum_data_length_{};
   uint16_t le_maximum_advertising_data_length_{};
@@ -1439,7 +1439,7 @@ uint64_t Controller::GetLeSupportedStates() const {
 }
 
 uint8_t Controller::GetLeFilterAcceptListSize() const {
-  return impl_->le_connect_list_size_;
+  return impl_->le_accept_list_size_;
 }
 
 uint8_t Controller::GetLeResolvingListSize() const {
@@ -1594,7 +1594,7 @@ void Controller::impl::Dump(
   builder.add_iso_buffer_size(&iso_buffer_size_data);
   builder.add_le_buffer_size(&le_buffer_size_data);
 
-  builder.add_le_connect_list_size(le_connect_list_size_);
+  builder.add_le_accept_list_size(le_accept_list_size_);
   builder.add_le_resolving_list_size(le_resolving_list_size_);
 
   builder.add_le_maximum_data_length(&le_maximum_data_length_data);
