@@ -177,7 +177,7 @@ class AclManagerNoCallbacksTest : public ::testing::Test {
   os::Handler* client_handler_ = nullptr;
   Address remote;
   AddressWithType my_initiating_address;
-  const bool use_connect_list_ = true;  // gd currently only supports connect list
+  const bool use_accept_list_ = true;  // gd currently only supports connect list
 
   std::future<void> GetConnectionFuture() {
     ASSERT_LOG(connection_promise_ == nullptr, "Promises promises ... Only one at a time");
@@ -364,7 +364,7 @@ class AclManagerWithLeConnectionTest : public AclManagerTest {
         LeConnectionManagementCommandView::Create(AclCommandView::Create(packet));
     auto command_view = LeCreateConnectionView::Create(le_connection_management_command_view);
     ASSERT_TRUE(command_view.IsValid());
-    if (use_connect_list_) {
+    if (use_accept_list_) {
       ASSERT_EQ(command_view.GetPeerAddress(), empty_address_with_type.GetAddress());
       ASSERT_EQ(command_view.GetPeerAddressType(), empty_address_with_type.GetAddressType());
     } else {
@@ -455,7 +455,7 @@ TEST_F(AclManagerTest, invoke_registered_callback_le_connection_complete_fail) {
       LeConnectionManagementCommandView::Create(AclCommandView::Create(packet));
   auto command_view = LeCreateConnectionView::Create(le_connection_management_command_view);
   ASSERT_TRUE(command_view.IsValid());
-  if (use_connect_list_) {
+  if (use_accept_list_) {
     ASSERT_EQ(command_view.GetPeerAddress(), hci::Address::kEmpty);
   } else {
     ASSERT_EQ(command_view.GetPeerAddress(), remote);
@@ -1289,7 +1289,7 @@ TEST_F(AclManagerLifeCycleTest, unregister_le_before_connection_complete) {
       LeConnectionManagementCommandView::Create(AclCommandView::Create(packet));
   auto command_view = LeCreateConnectionView::Create(le_connection_management_command_view);
   ASSERT_TRUE(command_view.IsValid());
-  if (use_connect_list_) {
+  if (use_accept_list_) {
     ASSERT_EQ(command_view.GetPeerAddress(), hci::Address::kEmpty);
   } else {
     ASSERT_EQ(command_view.GetPeerAddress(), remote);
@@ -1330,7 +1330,7 @@ TEST_F(AclManagerLifeCycleTest, unregister_le_before_enhanced_connection_complet
       LeConnectionManagementCommandView::Create(AclCommandView::Create(packet));
   auto command_view = LeCreateConnectionView::Create(le_connection_management_command_view);
   ASSERT_TRUE(command_view.IsValid());
-  if (use_connect_list_) {
+  if (use_accept_list_) {
     ASSERT_EQ(command_view.GetPeerAddress(), hci::Address::kEmpty);
   } else {
     ASSERT_EQ(command_view.GetPeerAddress(), remote);
