@@ -41,6 +41,7 @@ import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.content.Context;
 import android.media.AudioManager;
 import android.os.test.TestLooper;
+import android.platform.test.flag.junit.SetFlagsRule;
 import android.util.ArrayMap;
 import android.util.SparseIntArray;
 
@@ -52,8 +53,6 @@ import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
-import com.android.bluetooth.flags.FakeFeatureFlagsImpl;
-import com.android.bluetooth.flags.FeatureFlags;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.hfp.HeadsetService;
@@ -63,6 +62,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -98,7 +98,7 @@ public class ActiveDeviceManagerTest {
     private boolean mOriginalDualModeAudioState;
     private TestDatabaseManager mDatabaseManager;
     private TestLooper mTestLooper;
-    private FakeFeatureFlagsImpl mFakeFlagsImpl;
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Mock private AdapterService mAdapterService;
     @Mock private ServiceFactory mServiceFactory;
@@ -120,10 +120,7 @@ public class ActiveDeviceManagerTest {
         mTestLooper.startAutoDispatch();
         TestUtils.setAdapterService(mAdapterService);
 
-        mFakeFlagsImpl = new FakeFeatureFlagsImpl();
-        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_BROADCAST_AUDIO_HANDOVER_POLICIES, false);
-        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_ACTIVE_DEVICE_MANAGER_GROUP_HANDLING_FIX, false);
-        mDatabaseManager = new TestDatabaseManager(mAdapterService, mFakeFlagsImpl);
+        mDatabaseManager = new TestDatabaseManager(mAdapterService);
 
         when(mAdapterService.getSystemService(Context.AUDIO_SERVICE)).thenReturn(mAudioManager);
         when(mAdapterService.getSystemServiceName(AudioManager.class))
@@ -134,8 +131,7 @@ public class ActiveDeviceManagerTest {
         when(mServiceFactory.getHearingAidService()).thenReturn(mHearingAidService);
         when(mServiceFactory.getLeAudioService()).thenReturn(mLeAudioService);
 
-        mActiveDeviceManager =
-                new ActiveDeviceManager(mAdapterService, mServiceFactory, mFakeFlagsImpl);
+        mActiveDeviceManager = new ActiveDeviceManager(mAdapterService, mServiceFactory);
         mActiveDeviceManager.start();
         mAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -913,7 +909,7 @@ public class ActiveDeviceManagerTest {
 
     @Test
     public void leAudioSetConnectedGroupThenDisconnected_noFallback() {
-        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_ACTIVE_DEVICE_MANAGER_GROUP_HANDLING_FIX, true);
+        mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_ACTIVE_DEVICE_MANAGER_GROUP_HANDLING_FIX);
         when(mAudioManager.getMode()).thenReturn(AudioManager.MODE_NORMAL);
 
         leAudioConnected(mLeAudioDevice);
@@ -1231,7 +1227,7 @@ public class ActiveDeviceManagerTest {
      */
     @Test
     public void a2dpConnectedWhenBroadcasting_notSetA2dpActive() {
-        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_BROADCAST_AUDIO_HANDOVER_POLICIES, true);
+        mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_BROADCAST_AUDIO_HANDOVER_POLICIES);
         final List<BluetoothLeBroadcastMetadata> metadataList = mock(List.class);
         when(mLeAudioService.getAllBroadcastMetadata()).thenReturn(metadataList);
         a2dpConnected(mA2dpDevice, false);
@@ -1246,7 +1242,7 @@ public class ActiveDeviceManagerTest {
      */
     @Test
     public void headsetConnectedWhenBroadcasting_notSetHeadsetActive() {
-        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_BROADCAST_AUDIO_HANDOVER_POLICIES, true);
+        mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_BROADCAST_AUDIO_HANDOVER_POLICIES);
         final List<BluetoothLeBroadcastMetadata> metadataList = mock(List.class);
         when(mLeAudioService.getAllBroadcastMetadata()).thenReturn(metadataList);
         headsetConnected(mHeadsetDevice, false);
@@ -1261,7 +1257,7 @@ public class ActiveDeviceManagerTest {
      */
     @Test
     public void hearingAidConnectedWhenBroadcasting_notSetHearingAidActive() {
-        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_BROADCAST_AUDIO_HANDOVER_POLICIES, true);
+        mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_BROADCAST_AUDIO_HANDOVER_POLICIES);
         final List<BluetoothLeBroadcastMetadata> metadataList = mock(List.class);
         when(mLeAudioService.getAllBroadcastMetadata()).thenReturn(metadataList);
         hearingAidConnected(mHearingAidDevice);
@@ -1274,7 +1270,7 @@ public class ActiveDeviceManagerTest {
      */
     @Test
     public void leHearingAidConnectedWhenBroadcasting_notSetLeHearingAidActive() {
-        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_BROADCAST_AUDIO_HANDOVER_POLICIES, true);
+        mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_BROADCAST_AUDIO_HANDOVER_POLICIES);
         final List<BluetoothLeBroadcastMetadata> metadataList = mock(List.class);
         when(mLeAudioService.getAllBroadcastMetadata()).thenReturn(metadataList);
         leHearingAidConnected(mLeHearingAidDevice);
@@ -1478,8 +1474,8 @@ public class ActiveDeviceManagerTest {
     private class TestDatabaseManager extends DatabaseManager {
         ArrayMap<BluetoothDevice, SparseIntArray> mProfileConnectionPolicy;
 
-        TestDatabaseManager(AdapterService service, FeatureFlags featureFlags) {
-            super(service, featureFlags);
+        TestDatabaseManager(AdapterService service) {
+            super(service);
             mProfileConnectionPolicy = new ArrayMap<>();
         }
 
