@@ -57,7 +57,6 @@ public class A2dpServiceBinderTest {
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Mock private A2dpService mA2dpService;
-    @Mock private A2dpNativeInterface mNativeInterface;
     @Mock private AudioRoutingManager mAudioRoutingManager;
     @Mock private PackageManager mPackageManager;
 
@@ -66,12 +65,13 @@ public class A2dpServiceBinderTest {
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
+        doReturn(mAudioRoutingManager).when(mA2dpService).getActiveDeviceManager();
         doReturn(mPackageManager).when(mA2dpService).getPackageManager();
         ApplicationInfo appInfo = new ApplicationInfo();
         appInfo.targetSdkVersion = android.os.Build.VERSION_CODES.CUR_DEVELOPMENT;
         doReturn(appInfo).when(mPackageManager).getApplicationInfo(any(), anyInt());
 
-        mBinder = new A2dpService.BluetoothA2dpBinder(mA2dpService, mAudioRoutingManager);
+        mBinder = new A2dpService.BluetoothA2dpBinder(mA2dpService);
     }
 
     @After
