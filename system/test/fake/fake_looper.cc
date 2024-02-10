@@ -26,8 +26,8 @@
 #include <mutex>
 #include <queue>
 
+#include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/log.h"
 #include "test/fake/fake_thread.h"
 
 pid_t get_thread_id() {

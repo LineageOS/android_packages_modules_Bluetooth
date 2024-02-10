@@ -29,7 +29,7 @@
 #include "bta/le_audio/le_audio_types.h"
 #include "common/strings.h"
 #include "hci/le_advertising_manager.h"
-#include "osi/include/log.h"
+#include "os/log.h"
 #include "osi/include/properties.h"
 #include "stack/include/btm_iso_api.h"
 
