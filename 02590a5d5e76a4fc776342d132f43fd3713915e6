@@ -58,6 +58,30 @@
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e8823720_c64e4fcf",
+        "filename": "android/app/src/com/android/bluetooth/btservice/BondStateMachine.java",
+        "patchSetId": 1
+      },
+      "lineNbr": 398,
+      "author": {
+        "id": 16185
+      },
+      "writtenOn": "2024-02-11T19:17:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "316e2149_967bd761",
+      "range": {
+        "startLine": 398,
+        "startChar": 8,
+        "endLine": 398,
+        "endChar": 102
+      },
+      "revId": "02590a5d5e76a4fc776342d132f43fd3713915e6",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "dc1ac2d4_10318f88",
@@ -71,6 +95,30 @@
       "writtenOn": "2024-02-10T10:58:09Z",
       "side": 1,
       "message": "line length",
+      "range": {
+        "startLine": 401,
+        "startChar": 12,
+        "endLine": 401,
+        "endChar": 125
+      },
+      "revId": "02590a5d5e76a4fc776342d132f43fd3713915e6",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d237e31c_61051868",
+        "filename": "android/app/src/com/android/bluetooth/btservice/BondStateMachine.java",
+        "patchSetId": 1
+      },
+      "lineNbr": 401,
+      "author": {
+        "id": 16185
+      },
+      "writtenOn": "2024-02-11T19:17:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dc1ac2d4_10318f88",
       "range": {
         "startLine": 401,
         "startChar": 12,
