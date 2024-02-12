@@ -476,107 +476,96 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
                 throw new IllegalArgumentException("This callback has already been registered");
             }
 
+            final IBluetoothVolumeControl service = getService();
+            if (service == null) {
+                return;
+            }
             try {
-                final IBluetoothVolumeControl service = getService();
-                if (service != null) {
-                    final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
+                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
 
-                    /* If the callback map is empty, we register the service-to-app callback.
-                     *  Otherwise, callback is registered in mCallbackExecutorMap and we just notify
-                     *  user over callback with current values.
-                     */
-                    boolean isRegisterCallbackRequired = mCallbackExecutorMap.isEmpty();
-                    mCallbackExecutorMap.put(callback, executor);
+                /* If the callback map is empty, we register the service-to-app callback.
+                 *  Otherwise, callback is registered in mCallbackExecutorMap and we just notify
+                 *  user over callback with current values.
+                 */
+                boolean isRegisterCallbackRequired = mCallbackExecutorMap.isEmpty();
+                mCallbackExecutorMap.put(callback, executor);
 
-                    if (isRegisterCallbackRequired) {
-                        service.registerCallback(mCallback, mAttributionSource, recv);
-                    } else {
-                        service.notifyNewRegisteredCallback(
-                                new IBluetoothVolumeControlCallback.Stub() {
-                                    @Override
-                                    public void onVolumeOffsetChanged(
-                                            BluetoothDevice device,
-                                            int instanceId,
-                                            int volumeOffset)
-                                            throws RemoteException {
-                                        Attributable.setAttributionSource(
-                                                device, mAttributionSource);
+                if (isRegisterCallbackRequired) {
+                    service.registerCallback(mCallback, mAttributionSource, recv);
+                } else {
+                    service.notifyNewRegisteredCallback(
+                            new IBluetoothVolumeControlCallback.Stub() {
+                                @Override
+                                public void onVolumeOffsetChanged(
+                                        BluetoothDevice device, int instanceId, int volumeOffset)
+                                        throws RemoteException {
+                                    Attributable.setAttributionSource(device, mAttributionSource);
 
-                                        // The old API operates on the first instance only
-                                        if (instanceId == 1) {
-                                            try {
-                                                executor.execute(
-                                                        () ->
-                                                                callback.onVolumeOffsetChanged(
-                                                                        device, volumeOffset));
-                                            } finally {
-                                                // As this deprecated callback, might not be
-                                                // defined; continue
-                                            }
-                                        }
-                                        if (Flags.leaudioMultipleVocsInstancesApi()) {
+                                    // The old API operates on the first instance only
+                                    if (instanceId == 1) {
+                                        try {
                                             executor.execute(
                                                     () ->
                                                             callback.onVolumeOffsetChanged(
-                                                                    device,
-                                                                    instanceId,
-                                                                    volumeOffset));
+                                                                    device, volumeOffset));
+                                        } finally {
+                                            // As this deprecated callback, might not be
+                                            // defined; continue
                                         }
                                     }
-
-                                    @Override
-                                    public void onVolumeOffsetAudioLocationChanged(
-                                            BluetoothDevice device, int instanceId, int location)
-                                            throws RemoteException {
-                                        if (Flags.leaudioMultipleVocsInstancesApi()) {
-                                            Attributable.setAttributionSource(
-                                                    device, mAttributionSource);
-                                            executor.execute(
-                                                    () ->
-                                                            callback
-                                                                    .onVolumeOffsetAudioLocationChanged(
-                                                                            device,
-                                                                            instanceId,
-                                                                            location));
-                                        }
+                                    if (Flags.leaudioMultipleVocsInstancesApi()) {
+                                        executor.execute(
+                                                () ->
+                                                        callback.onVolumeOffsetChanged(
+                                                                device, instanceId, volumeOffset));
                                     }
+                                }
 
-                                    @Override
-                                    public void onVolumeOffsetAudioDescriptionChanged(
-                                            BluetoothDevice device,
-                                            int instanceId,
-                                            String audioDescription)
-                                            throws RemoteException {
-                                        if (Flags.leaudioMultipleVocsInstancesApi()) {
-                                            Attributable.setAttributionSource(
-                                                    device, mAttributionSource);
-                                            executor.execute(
-                                                    () ->
-                                                            callback
-                                                                    .onVolumeOffsetAudioDescriptionChanged(
-                                                                            device,
-                                                                            instanceId,
-                                                                            audioDescription));
-                                        }
-                                    }
-
-                                    @Override
-                                    public void onDeviceVolumeChanged(
-                                            BluetoothDevice device, int volume)
-                                            throws RemoteException {
+                                @Override
+                                public void onVolumeOffsetAudioLocationChanged(
+                                        BluetoothDevice device, int instanceId, int location)
+                                        throws RemoteException {
+                                    if (Flags.leaudioMultipleVocsInstancesApi()) {
                                         Attributable.setAttributionSource(
                                                 device, mAttributionSource);
                                         executor.execute(
                                                 () ->
-                                                        callback.onDeviceVolumeChanged(
-                                                                device, volume));
+                                                        callback.onVolumeOffsetAudioLocationChanged(
+                                                                device, instanceId, location));
                                     }
-                                },
-                                mAttributionSource,
-                                recv);
-                    }
-                    recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
+                                }
+
+                                @Override
+                                public void onVolumeOffsetAudioDescriptionChanged(
+                                        BluetoothDevice device,
+                                        int instanceId,
+                                        String audioDescription)
+                                        throws RemoteException {
+                                    if (Flags.leaudioMultipleVocsInstancesApi()) {
+                                        Attributable.setAttributionSource(
+                                                device, mAttributionSource);
+                                        executor.execute(
+                                                () ->
+                                                        callback
+                                                                .onVolumeOffsetAudioDescriptionChanged(
+                                                                        device,
+                                                                        instanceId,
+                                                                        audioDescription));
+                                    }
+                                }
+
+                                @Override
+                                public void onDeviceVolumeChanged(
+                                        BluetoothDevice device, int volume) throws RemoteException {
+                                    Attributable.setAttributionSource(device, mAttributionSource);
+                                    executor.execute(
+                                            () -> callback.onDeviceVolumeChanged(device, volume));
+                                }
+                            },
+                            mAttributionSource,
+                            recv);
                 }
+                recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
             } catch (RemoteException e) {
                 mCallbackExecutorMap.remove(callback);
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
