@@ -28,8 +28,8 @@
 #include <android_bluetooth_flags.h>
 #include <android_bluetooth_sysprop.h>
 #include <base/functional/bind.h>
-#include <base/logging.h>
 #include <base/strings/string_number_conversions.h>
+#include <bluetooth/log.h>
 
 #include <cstdint>
 #include <list>
@@ -71,6 +71,8 @@
 #include "stack/include/inq_hci_link_interface.h"
 #include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth;
 
 extern tBTM_CB btm_cb;
 
@@ -535,8 +537,8 @@ tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration,
     std::tie(scan_interval, scan_window) = get_low_latency_scan_params();
   }
 
-  LOG_VERBOSE("%s : scan_type:%d, %d, %d", __func__,
-              btm_cb.ble_ctr_cb.inq_var.scan_type, scan_interval, scan_window);
+  log::verbose("scan_type:{}, {}, {}", btm_cb.ble_ctr_cb.inq_var.scan_type,
+               scan_interval, scan_window);
 
   if (!controller_get_interface()->SupportsBle()) return BTM_ILLEGAL_VALUE;
 
@@ -549,12 +551,12 @@ tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration,
         if (alarm_is_scheduled(btm_cb.ble_ctr_cb.observer_timer)) {
           alarm_cancel(btm_cb.ble_ctr_cb.observer_timer);
         } else {
-          LOG_ERROR("%s Scan with no duration started twice!", __func__);
+          log::error("Scan with no duration started twice!");
         }
       } else {
         if (!low_latency_scan &&
             alarm_is_scheduled(btm_cb.ble_ctr_cb.observer_timer)) {
-          LOG_ERROR("%s Scan with duration started twice!", __func__);
+          log::error("Scan with duration started twice!");
         }
       }
       /*
@@ -567,8 +569,8 @@ tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration,
               BTM_BLE_GAP_DISC_SCAN_INT &&
           btm_cb.ble_ctr_cb.inq_var.scan_window == BTM_BLE_LOW_LATENCY_SCAN_WIN;
       if (!low_latency_scan || is_ongoing_low_latency) {
-        LOG_WARN("%s Observer was already active, is_low_latency: %d", __func__,
-                 is_ongoing_low_latency);
+        log::warn("Observer was already active, is_low_latency: {}",
+                  is_ongoing_low_latency);
         return BTM_CMD_STARTED;
       }
       // stop any scan without low latency config
@@ -624,7 +626,7 @@ tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration,
     status = BTM_CMD_STARTED;
     btm_ble_stop_observe();
   } else {
-    LOG_ERROR("%s Observe not active", __func__);
+    log::error("Observe not active");
   }
 
   return status;
@@ -632,11 +634,10 @@ tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration,
 
 static void btm_get_dynamic_audio_buffer_vsc_cmpl_cback(
     tBTM_VSC_CMPL* p_vsc_cmpl_params) {
-  LOG(INFO) << __func__;
+  log::info("");
 
   if (p_vsc_cmpl_params->param_len < 1) {
-    LOG(ERROR) << __func__
-               << ": The length of returned parameters is less than 1";
+    log::error("The length of returned parameters is less than 1");
     return;
   }
   uint8_t* p_event_param_buf = p_vsc_cmpl_params->p_param_buf;
@@ -651,24 +652,22 @@ static void btm_get_dynamic_audio_buffer_vsc_cmpl_cback(
   // Audio_Codec_Buffer_Time    | 192 octet| Default/Max/Min buffer time
   STREAM_TO_UINT8(status, p_event_param_buf);
   if (status != HCI_SUCCESS) {
-    LOG(ERROR) << __func__
-               << ": Fail to configure DFTB. status: " << loghex(status);
+    log::error("Fail to configure DFTB. status: {}", loghex(status));
     return;
   }
 
   if (p_vsc_cmpl_params->param_len != 198) {
-    LOG(FATAL) << __func__
-               << ": The length of returned parameters is not equal to 198: "
-               << std::to_string(p_vsc_cmpl_params->param_len);
+    log::fatal("The length of returned parameters is not equal to 198: {}",
+               p_vsc_cmpl_params->param_len);
     return;
   }
 
   STREAM_TO_UINT8(opcode, p_event_param_buf);
-  LOG(INFO) << __func__ << ": opcode = " << loghex(opcode);
+  log::info("opcode = {}", loghex(opcode));
 
   if (opcode == 0x01) {
     STREAM_TO_UINT32(codec_mask, p_event_param_buf);
-    LOG(INFO) << __func__ << ": codec_mask = " << loghex(codec_mask);
+    log::info("codec_mask = {}", loghex(codec_mask));
 
     for (int i = 0; i < BTM_CODEC_TYPE_MAX_RECORDS; i++) {
       STREAM_TO_UINT16(btm_cb.dynamic_audio_buffer_cb[i].default_buffer_time,
@@ -679,7 +678,7 @@ static void btm_get_dynamic_audio_buffer_vsc_cmpl_cback(
                        p_event_param_buf);
     }
 
-    LOG(INFO) << __func__ << ": Succeed to receive Media Tx Buffer.";
+    log::info("Succeed to receive Media Tx Buffer.");
   }
 }
 
@@ -694,7 +693,7 @@ static void btm_get_dynamic_audio_buffer_vsc_cmpl_cback(
  ******************************************************************************/
 static void btm_ble_vendor_capability_vsc_cmpl_cback(
     tBTM_VSC_CMPL* p_vcs_cplt_params) {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   /* Check status of command complete event */
   CHECK(p_vcs_cplt_params->opcode == HCI_BLE_VENDOR_CAP);
@@ -706,7 +705,7 @@ static void btm_ble_vendor_capability_vsc_cmpl_cback(
   tHCI_STATUS status = to_hci_status_code(raw_status);
 
   if (status != HCI_SUCCESS) {
-    LOG_VERBOSE("%s: Status = 0x%02x (0 is success)", __func__, status);
+    log::verbose("Status = 0x{:02x} (0 is success)", status);
     return;
   }
   CHECK(p_vcs_cplt_params->param_len >= BTM_VSC_CHIP_CAPABILITY_RSP_LEN);
@@ -768,12 +767,12 @@ static void btm_ble_vendor_capability_vsc_cmpl_cback(
 
   btm_cb.cmn_ble_vsc_cb.values_read = true;
 
-  LOG_VERBOSE("%s: stat=%d, irk=%d, ADV ins:%d, rpa=%d, ener=%d, ext_scan=%d",
-              __func__, status, btm_cb.cmn_ble_vsc_cb.max_irk_list_sz,
-              btm_cb.cmn_ble_vsc_cb.adv_inst_max,
-              btm_cb.cmn_ble_vsc_cb.rpa_offloading,
-              btm_cb.cmn_ble_vsc_cb.energy_support,
-              btm_cb.cmn_ble_vsc_cb.extended_scan_support);
+  log::verbose("stat={}, irk={}, ADV ins:{}, rpa={}, ener={}, ext_scan={}",
+               status, btm_cb.cmn_ble_vsc_cb.max_irk_list_sz,
+               btm_cb.cmn_ble_vsc_cb.adv_inst_max,
+               btm_cb.cmn_ble_vsc_cb.rpa_offloading,
+               btm_cb.cmn_ble_vsc_cb.energy_support,
+               btm_cb.cmn_ble_vsc_cb.extended_scan_support);
 
   if (btm_cb.cmn_ble_vsc_cb.max_filter > 0) btm_ble_adv_filter_init();
 
@@ -807,7 +806,7 @@ void BTM_BleGetVendorCapabilities(tBTM_BLE_VSC_CB* p_cmn_vsc_cb) {
 
 void BTM_BleGetDynamicAudioBuffer(
     tBTM_BT_DYNAMIC_AUDIO_BUFFER_CB p_dynamic_audio_buffer_cb[]) {
-  LOG_VERBOSE("BTM_BleGetDynamicAudioBuffer");
+  log::verbose("BTM_BleGetDynamicAudioBuffer");
 
   if (NULL != p_dynamic_audio_buffer_cb) {
     for (int i = 0; i < 32; i++) {
@@ -833,7 +832,7 @@ void BTM_BleReadControllerFeatures(tBTM_BLE_CTRL_FEATURES_CBACK* p_vsc_cback) {
 
   if (btm_cb.cmn_ble_vsc_cb.values_read) return;
 
-  LOG_VERBOSE("BTM_BleReadControllerFeatures");
+  log::verbose("BTM_BleReadControllerFeatures");
 
   if (IS_FLAG_ENABLED(report_vsc_data_from_the_gd_controller)) {
     btm_cb.cmn_ble_vsc_cb.values_read = true;
@@ -896,12 +895,12 @@ void BTM_BleReadControllerFeatures(tBTM_BLE_CTRL_FEATURES_CBACK* p_vsc_cback) {
       btm_cb.cmn_ble_vsc_cb.adv_filter_extended_features_mask = 0x00;
     }
 
-    LOG_VERBOSE("irk=%d, ADV ins:%d, rpa=%d, ener=%d, ext_scan=%d",
-                btm_cb.cmn_ble_vsc_cb.max_irk_list_sz,
-                btm_cb.cmn_ble_vsc_cb.adv_inst_max,
-                btm_cb.cmn_ble_vsc_cb.rpa_offloading,
-                btm_cb.cmn_ble_vsc_cb.energy_support,
-                btm_cb.cmn_ble_vsc_cb.extended_scan_support);
+    log::verbose("irk={}, ADV ins:{}, rpa={}, ener={}, ext_scan={}",
+                 btm_cb.cmn_ble_vsc_cb.max_irk_list_sz,
+                 btm_cb.cmn_ble_vsc_cb.adv_inst_max,
+                 btm_cb.cmn_ble_vsc_cb.rpa_offloading,
+                 btm_cb.cmn_ble_vsc_cb.energy_support,
+                 btm_cb.cmn_ble_vsc_cb.extended_scan_support);
 
     if (btm_cb.cmn_ble_vsc_cb.max_filter > 0) btm_ble_adv_filter_init();
 
@@ -936,7 +935,7 @@ void BTM_BleReadControllerFeatures(tBTM_BLE_CTRL_FEATURES_CBACK* p_vsc_cback) {
  *
  ******************************************************************************/
 bool BTM_BleConfigPrivacy(bool privacy_mode) {
-  LOG_WARN("%s %d", __func__, (int)privacy_mode);
+  log::warn("{}", (int)privacy_mode);
 
   /* if LE is not supported, return error */
   if (!controller_get_interface()->SupportsBle()) return false;
@@ -962,8 +961,9 @@ bool BTM_BleConfigPrivacy(bool privacy_mode) {
     } else /* 4.1/4.0 controller */
       btm_cb.ble_ctr_cb.privacy_mode = BTM_PRIVACY_1_1;
   }
-  VLOG(2) << __func__ << " privacy_mode: " << btm_cb.ble_ctr_cb.privacy_mode
-          << " own_addr_type: " << btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type;
+  log::verbose("privacy_mode: {} own_addr_type: {}",
+               btm_cb.ble_ctr_cb.privacy_mode,
+               btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type);
 
   GAP_BleAttrDBUpdate(GATT_UUID_GAP_CENTRAL_ADDR_RESOL, &gap_ble_attr_value);
 
@@ -1016,7 +1016,7 @@ static bool is_resolving_list_bit_set(void* data, void* context) {
 static void sync_queue_add(sync_node_t* p_param) {
   std::unique_lock<std::mutex> guard(sync_queue_mutex_);
   if (!sync_queue) {
-    LOG_INFO("%s: allocating sync queue", __func__);
+    log::info("allocating sync queue");
     sync_queue = list_new(osi_free);
     CHECK(sync_queue != NULL);
   }
@@ -1029,12 +1029,12 @@ static void sync_queue_add(sync_node_t* p_param) {
 }
 
 static void sync_queue_advance() {
-  LOG_DEBUG("%s", "");
+  log::debug("");
   std::unique_lock<std::mutex> guard(sync_queue_mutex_);
 
   if (sync_queue && !list_is_empty(sync_queue)) {
     sync_node_t* p_head = (sync_node_t*)list_front(sync_queue);
-    LOG_INFO("queue_advance");
+    log::info("queue_advance");
     list_remove(sync_queue, p_head);
   }
 }
@@ -1052,10 +1052,10 @@ static void sync_queue_cleanup(remove_sync_node_t* p_param) {
     node = list_next(node);
     if (sync_request->sid == p_param->sid &&
         sync_request->address == p_param->address) {
-      LOG_INFO("%s: removing connection request SID=%04X, bd_addr=%s, busy=%d",
-               __func__, sync_request->sid,
-               ADDRESS_TO_LOGGABLE_CSTR(sync_request->address),
-               sync_request->busy);
+      log::info("removing connection request SID={:04X}, bd_addr={}, busy={}",
+                sync_request->sid,
+                ADDRESS_TO_LOGGABLE_CSTR(sync_request->address),
+                sync_request->busy);
       list_remove(sync_queue, sync_request);
     }
   }
@@ -1075,7 +1075,7 @@ void btm_ble_start_sync_request(uint8_t sid, RawAddress addr, uint16_t skip,
   int index = btm_ble_get_psync_index(sid, addr);
 
   if (index == MAX_SYNC_TRANSACTION) {
-    LOG_ERROR("Failed to get sync transfer index");
+    log::error("Failed to get sync transfer index");
     return;
   }
 
@@ -1092,16 +1092,16 @@ void btm_ble_start_sync_request(uint8_t sid, RawAddress addr, uint16_t skip,
 
 static void btm_queue_sync_next() {
   if (!sync_queue || list_is_empty(sync_queue)) {
-    LOG_DEBUG("sync_queue empty");
+    log::debug("sync_queue empty");
     return;
   }
 
   sync_node_t* p_head = (sync_node_t*)list_front(sync_queue);
 
-  LOG_INFO("%s: executing sync request SID=%04X, bd_addr=%s", __func__,
-           p_head->sid, ADDRESS_TO_LOGGABLE_CSTR(p_head->address));
+  log::info("executing sync request SID={:04X}, bd_addr={}", p_head->sid,
+            ADDRESS_TO_LOGGABLE_CSTR(p_head->address));
   if (p_head->busy) {
-    LOG_DEBUG("BUSY");
+    log::debug("BUSY");
     return;
   }
 
@@ -1114,11 +1114,11 @@ static void btm_queue_sync_next() {
 static void btm_ble_sync_queue_handle(uint16_t event, char* param) {
   switch (event) {
     case BTM_QUEUE_SYNC_REQ_EVT:
-      LOG_DEBUG("BTIF_QUEUE_SYNC_REQ_EVT");
+      log::debug("BTIF_QUEUE_SYNC_REQ_EVT");
       sync_queue_add((sync_node_t*)param);
       break;
     case BTM_QUEUE_SYNC_ADVANCE_EVT:
-      LOG_DEBUG("BTIF_QUEUE_ADVANCE_EVT");
+      log::debug("BTIF_QUEUE_ADVANCE_EVT");
       sync_queue_advance();
       break;
     case BTM_QUEUE_SYNC_CLEANUP_EVT:
@@ -1130,7 +1130,7 @@ static void btm_ble_sync_queue_handle(uint16_t event, char* param) {
 
 void btm_queue_start_sync_req(uint8_t sid, RawAddress address, uint16_t skip,
                               uint16_t timeout) {
-  LOG_DEBUG("address = %s, sid = %d", ADDRESS_TO_LOGGABLE_CSTR(address), sid);
+  log::debug("address = {}, sid = {}", ADDRESS_TO_LOGGABLE_CSTR(address), sid);
   sync_node_t node = {};
   node.sid = sid;
   node.address = address;
@@ -1140,12 +1140,12 @@ void btm_queue_start_sync_req(uint8_t sid, RawAddress address, uint16_t skip,
 }
 
 static void btm_sync_queue_advance() {
-  LOG_DEBUG("%s", "");
+  log::debug("");
   btm_ble_sync_queue_handle(BTM_QUEUE_SYNC_ADVANCE_EVT, nullptr);
 }
 
 static void btm_ble_start_sync_timeout(void* data) {
-  LOG_DEBUG("%s", "");
+  log::debug("");
   sync_node_t* p_head = (sync_node_t*)list_front(sync_queue);
   uint8_t adv_sid = p_head->sid;
   RawAddress address = p_head->address;
@@ -1153,7 +1153,7 @@ static void btm_ble_start_sync_timeout(void* data) {
   int index = btm_ble_get_psync_index(adv_sid, address);
 
   if (index == MAX_SYNC_TRANSACTION) {
-    LOG_ERROR("Failed to get sync transfer index");
+    log::error("Failed to get sync transfer index");
     return;
   }
 
@@ -1177,7 +1177,7 @@ static int btm_ble_get_psync_index_from_handle(uint16_t handle) {
   for (i = 0; i < MAX_SYNC_TRANSACTION; i++) {
     if (btm_ble_pa_sync_cb.p_sync[i].sync_handle == handle &&
         btm_ble_pa_sync_cb.p_sync[i].sync_state == PERIODIC_SYNC_ESTABLISHED) {
-      LOG_DEBUG("found index at %d", i);
+      log::debug("found index at {}", i);
       return i;
     }
   }
@@ -1189,7 +1189,7 @@ static int btm_ble_get_psync_index(uint8_t adv_sid, RawAddress addr) {
   for (i = 0; i < MAX_SYNC_TRANSACTION; i++) {
     if (btm_ble_pa_sync_cb.p_sync[i].sid == adv_sid &&
         btm_ble_pa_sync_cb.p_sync[i].remote_bda == addr) {
-      LOG_DEBUG("found index at %d", i);
+      log::debug("found index at {}", i);
       return i;
     }
   }
@@ -1200,7 +1200,7 @@ static int btm_ble_get_sync_transfer_index(uint16_t conn_handle) {
   int i;
   for (i = 0; i < MAX_SYNC_TRANSACTION; i++) {
     if (btm_ble_pa_sync_cb.sync_transfer[i].conn_handle == conn_handle) {
-      LOG_DEBUG("found index at %d", i);
+      log::debug("found index at {}", i);
       return i;
     }
   }
@@ -1222,14 +1222,14 @@ void btm_ble_periodic_adv_sync_established(uint8_t status, uint16_t sync_handle,
                                            const RawAddress& addr, uint8_t phy,
                                            uint16_t interval,
                                            uint8_t adv_clock_accuracy) {
-  LOG_DEBUG(
-      "[PSync]: status=%d, sync_handle=%d, s_id=%d, "
-      "addr_type=%d, adv_phy=%d,adv_interval=%d, clock_acc=%d",
+  log::debug(
+      "[PSync]: status={}, sync_handle={}, s_id={}, addr_type={}, "
+      "adv_phy={},adv_interval={}, clock_acc={}",
       status, sync_handle, adv_sid, address_type, phy, interval,
       adv_clock_accuracy);
 
   /*if (param_len != ADV_SYNC_ESTB_EVT_LEN) {
-    LOG_ERROR("[PSync]%s: Invalid event length",__func__);
+    log::error("[PSync]Invalid event length");
     STREAM_TO_UINT8(status, param);
     if (status == BTM_SUCCESS) {
       STREAM_TO_UINT16(sync_handle, param);
@@ -1250,9 +1250,9 @@ void btm_ble_periodic_adv_sync_established(uint8_t status, uint16_t sync_handle,
   }
   int index = btm_ble_get_psync_index(adv_sid, bda);
   if (index == MAX_SYNC_TRANSACTION) {
-    LOG_WARN("[PSync]%s: Invalid index for sync established", __func__);
+    log::warn("[PSync]: Invalid index for sync established");
     if (status == BTM_SUCCESS) {
-      LOG_WARN("%s: Terminate sync", __func__);
+      log::warn("Terminate sync");
       if (BleScanningManager::IsInitialized()) {
         BleScanningManager::Get()->PeriodicScanTerminate(sync_handle);
       }
@@ -1280,9 +1280,9 @@ void btm_ble_periodic_adv_report(uint16_t sync_handle, uint8_t tx_power,
                                  int8_t rssi, uint8_t cte_type,
                                  uint8_t data_status, uint8_t data_len,
                                  const uint8_t* periodic_data) {
-  LOG_DEBUG(
-      "[PSync]: sync_handle = %u, tx_power = %d, rssi = %d,"
-      "cte_type = %u, data_status = %u, data_len = %u",
+  log::debug(
+      "[PSync]: sync_handle = {}, tx_power = {}, rssi = {},cte_type = {}, "
+      "data_status = {}, data_len = {}",
       sync_handle, tx_power, rssi, cte_type, data_status, data_len);
 
   std::vector<uint8_t> data;
@@ -1291,11 +1291,11 @@ void btm_ble_periodic_adv_report(uint16_t sync_handle, uint8_t tx_power,
   }
   int index = btm_ble_get_psync_index_from_handle(sync_handle);
   if (index == MAX_SYNC_TRANSACTION) {
-    LOG_ERROR("[PSync]: index not found for handle %u", sync_handle);
+    log::error("[PSync]: index not found for handle {}", sync_handle);
     return;
   }
   tBTM_BLE_PERIODIC_SYNC* ps = &btm_ble_pa_sync_cb.p_sync[index];
-  LOG_DEBUG("%s", "[PSync]: invoking callback");
+  log::debug("[PSync]: invoking callback");
   ps->sync_report_cb.Run(sync_handle, tx_power, rssi, data_status, data);
 }
 
@@ -1307,11 +1307,11 @@ void btm_ble_periodic_adv_report(uint16_t sync_handle, uint8_t tx_power,
  *
  ******************************************************************************/
 void btm_ble_periodic_adv_sync_lost(uint16_t sync_handle) {
-  LOG_DEBUG("[PSync]: sync_handle = %d", sync_handle);
+  log::debug("[PSync]: sync_handle = {}", sync_handle);
 
   int index = btm_ble_get_psync_index_from_handle(sync_handle);
   if (index == MAX_SYNC_TRANSACTION) {
-    LOG_ERROR("[PSync]: index not found for handle %u", sync_handle);
+    log::error("[PSync]: index not found for handle {}", sync_handle);
     return;
   }
   tBTM_BLE_PERIODIC_SYNC* ps = &btm_ble_pa_sync_cb.p_sync[index];
@@ -1333,11 +1333,11 @@ void btm_ble_periodic_adv_sync_lost(uint16_t sync_handle) {
  ******************************************************************************/
 void btm_ble_periodic_syc_transfer_cmd_cmpl(uint8_t status,
                                             uint16_t conn_handle) {
-  LOG_DEBUG("[PAST]: status = %d, conn_handle =%d", status, conn_handle);
+  log::debug("[PAST]: status = {}, conn_handle ={}", status, conn_handle);
 
   int index = btm_ble_get_sync_transfer_index(conn_handle);
   if (index == MAX_SYNC_TRANSACTION) {
-    LOG_ERROR("[PAST]:Invalid, conn_handle %u not found in DB", conn_handle);
+    log::error("[PAST]:Invalid, conn_handle {} not found in DB", conn_handle);
     return;
   }
 
@@ -1351,7 +1351,7 @@ void btm_ble_periodic_syc_transfer_cmd_cmpl(uint8_t status,
 }
 
 void btm_ble_periodic_syc_transfer_param_cmpl(uint8_t status) {
-  LOG_DEBUG("[PAST]: status = %d", status);
+  log::debug("[PAST]: status = {}", status);
 }
 
 /*******************************************************************************
@@ -1362,7 +1362,7 @@ void btm_ble_periodic_syc_transfer_param_cmpl(uint8_t status) {
  *
  ******************************************************************************/
 void btm_ble_biginfo_adv_report_rcvd(const uint8_t* p, uint16_t param_len) {
-  LOG_DEBUG("[PAST]: BIGINFO report received, len=%u", param_len);
+  log::debug("[PAST]: BIGINFO report received, len={}", param_len);
   uint16_t sync_handle, iso_interval, max_pdu, max_sdu;
   uint8_t num_bises, nse, bn, pto, irc, phy, framing, encryption;
   uint32_t sdu_interval;
@@ -1372,7 +1372,7 @@ void btm_ble_biginfo_adv_report_rcvd(const uint8_t* p, uint16_t param_len) {
   // for sdu_interval, 2 bytes for max_sdu, 1 byte each for phy, framing,
   // encryption
   if (param_len < 19) {
-    LOG_ERROR("Insufficient data");
+    log::error("Insufficient data");
     return;
   }
 
@@ -1389,21 +1389,20 @@ void btm_ble_biginfo_adv_report_rcvd(const uint8_t* p, uint16_t param_len) {
   STREAM_TO_UINT8(phy, p);
   STREAM_TO_UINT8(framing, p);
   STREAM_TO_UINT8(encryption, p);
-  LOG_DEBUG(
-      "[PAST]:sync_handle %u, num_bises = %u, nse = %u,"
-      "iso_interval = %d, bn = %u, pto = %u, irc = %u, max_pdu = %u "
-      "sdu_interval = %d, max_sdu = %u, phy = %u, framing = %u, encryption  = "
-      "%u",
+  log::debug(
+      "[PAST]:sync_handle {}, num_bises = {}, nse = {},iso_interval = {}, bn = "
+      "{}, pto = {}, irc = {}, max_pdu = {} sdu_interval = {}, max_sdu = {}, "
+      "phy = {}, framing = {}, encryption  = {}",
       sync_handle, num_bises, nse, iso_interval, bn, pto, irc, max_pdu,
       sdu_interval, max_sdu, phy, framing, encryption);
 
   int index = btm_ble_get_psync_index_from_handle(sync_handle);
   if (index == MAX_SYNC_TRANSACTION) {
-    LOG_ERROR("[PSync]: index not found for handle %u", sync_handle);
+    log::error("[PSync]: index not found for handle {}", sync_handle);
     return;
   }
   tBTM_BLE_PERIODIC_SYNC* ps = &btm_ble_pa_sync_cb.p_sync[index];
-  LOG_DEBUG("%s", "[PSync]: invoking callback");
+  log::debug("[PSync]: invoking callback");
   ps->biginfo_report_cb.Run(sync_handle, encryption ? true : false);
 }
 
@@ -1417,9 +1416,9 @@ void btm_ble_biginfo_adv_report_rcvd(const uint8_t* p, uint16_t param_len) {
  *
  ******************************************************************************/
 void btm_ble_periodic_adv_sync_tx_rcvd(const uint8_t* p, uint16_t param_len) {
-  LOG_DEBUG("[PAST]: PAST received, param_len=%u", param_len);
+  log::debug("[PAST]: PAST received, param_len={}", param_len);
   if (param_len < 19) {
-    LOG_ERROR("%s", "Insufficient data");
+    log::error("Insufficient data");
     return;
   }
   uint8_t status, adv_sid, address_type, adv_phy, clk_acc;
@@ -1435,10 +1434,10 @@ void btm_ble_periodic_adv_sync_tx_rcvd(const uint8_t* p, uint16_t param_len) {
   STREAM_TO_UINT8(adv_phy, p);
   STREAM_TO_UINT16(pa_int, p);
   STREAM_TO_UINT8(clk_acc, p);
-  LOG_VERBOSE(
-      "[PAST]: status = %u, conn_handle = %u, service_data = %u,"
-      " sync_handle = %u, adv_sid = %u, address_type = %u, addr = %s,"
-      " adv_phy = %u, pa_int = %u, clk_acc = %u",
+  log::verbose(
+      "[PAST]: status = {}, conn_handle = {}, service_data = {}, sync_handle = "
+      "{}, adv_sid = {}, address_type = {}, addr = {}, adv_phy = {}, pa_int = "
+      "{}, clk_acc = {}",
       status, conn_handle, service_data, sync_handle, adv_sid, address_type,
       ADDRESS_TO_LOGGABLE_CSTR(addr), adv_phy, pa_int, clk_acc);
   if (syncRcvdCbRegistered) {
@@ -1478,7 +1477,8 @@ static uint8_t btm_set_conn_mode_adv_init_addr(
         .type = *p_peer_addr_type,
         .bda = p_peer_addr_ptr,
     };
-    LOG_DEBUG("Received BLE connect event %s", ADDRESS_TO_LOGGABLE_CSTR(ble_bd_addr));
+    log::debug("Received BLE connect event {}",
+               ADDRESS_TO_LOGGABLE_CSTR(ble_bd_addr));
 
     evt_type = btm_cb.ble_ctr_cb.inq_var.directed_conn;
 
@@ -1555,7 +1555,7 @@ static uint8_t btm_set_conn_mode_adv_init_addr(
  *
  ******************************************************************************/
 uint16_t BTM_BleReadDiscoverability() {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   return (btm_cb.ble_ctr_cb.inq_var.discoverable_mode);
 }
@@ -1571,7 +1571,7 @@ uint16_t BTM_BleReadDiscoverability() {
  *
  ******************************************************************************/
 uint16_t BTM_BleReadConnectability() {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   return (btm_cb.ble_ctr_cb.inq_var.connectable_mode);
 }
@@ -1665,7 +1665,7 @@ void btm_ble_set_adv_flag(uint16_t connect_mode, uint16_t disc_mode) {
 
   btm_ble_update_dmt_flag_bits(&flag, connect_mode, disc_mode);
 
-  LOG_INFO("disc_mode %04x", disc_mode);
+  log::info("disc_mode {:04x}", disc_mode);
   /* update discoverable flag */
   if (disc_mode & BTM_BLE_LIMITED_DISCOVERABLE) {
     flag &= ~BTM_BLE_GEN_DISC_FLAG;
@@ -1704,8 +1704,7 @@ tBTM_STATUS btm_ble_set_discoverability(uint16_t combined_mode) {
                  own_addr_type = p_addr_cb->own_addr_type;
   uint16_t adv_int_min, adv_int_max;
 
-  LOG_VERBOSE("%s mode=0x%0x combined_mode=0x%x", __func__, mode,
-              combined_mode);
+  log::verbose("mode=0x{:0x} combined_mode=0x{:x}", mode, combined_mode);
 
   /*** Check mode parameter ***/
   if (mode > BTM_BLE_MAX_DISCOVERABLE) return (BTM_ILLEGAL_VALUE);
@@ -1724,8 +1723,8 @@ tBTM_STATUS btm_ble_set_discoverability(uint16_t combined_mode) {
   alarm_cancel(btm_cb.ble_ctr_cb.inq_var.fast_adv_timer);
 
   /* update adv params if start advertising */
-  LOG_VERBOSE("evt_type=0x%x p-cb->evt_type=0x%x ", evt_type,
-              btm_cb.ble_ctr_cb.inq_var.evt_type);
+  log::verbose("evt_type=0x{:x} p-cb->evt_type=0x{:x} ", evt_type,
+               btm_cb.ble_ctr_cb.inq_var.evt_type);
 
   if (new_mode == BTM_BLE_ADV_ENABLE) {
     btm_ble_set_adv_flag(btm_cb.btm_inq_vars.connectable_mode, combined_mode);
@@ -1762,8 +1761,8 @@ tBTM_STATUS btm_ble_set_discoverability(uint16_t combined_mode) {
 
   /* set up stop advertising timer */
   if (status == BTM_SUCCESS && mode == BTM_BLE_LIMITED_DISCOVERABLE) {
-    LOG_VERBOSE("start timer for limited disc mode duration=%d ms",
-                BTM_BLE_GAP_LIM_TIMEOUT_MS);
+    log::verbose("start timer for limited disc mode duration={} ms",
+                 BTM_BLE_GAP_LIM_TIMEOUT_MS);
     /* start Tgap(lim_timeout) */
     alarm_set_on_mloop(
         btm_cb.ble_ctr_cb.inq_var.inquiry_timer, BTM_BLE_GAP_LIM_TIMEOUT_MS,
@@ -1794,8 +1793,7 @@ tBTM_STATUS btm_ble_set_connectability(uint16_t combined_mode) {
                  own_addr_type = p_addr_cb->own_addr_type;
   uint16_t adv_int_min, adv_int_max;
 
-  LOG_VERBOSE("%s mode=0x%0x combined_mode=0x%x", __func__, mode,
-              combined_mode);
+  log::verbose("mode=0x{:0x} combined_mode=0x{:x}", mode, combined_mode);
 
   /*** Check mode parameter ***/
   if (mode > BTM_BLE_MAX_CONNECTABLE) return (BTM_ILLEGAL_VALUE);
@@ -1880,9 +1878,9 @@ static void btm_ble_scan_filt_param_cfg_evt(uint8_t avbl_space,
                                             tBTM_BLE_SCAN_COND_OP action_type,
                                             tBTM_STATUS btm_status) {
   if (btm_status != btm_status_value(BTM_SUCCESS)) {
-    LOG_ERROR("%s, %d", __func__, btm_status);
+    log::error("{}", btm_status);
   } else {
-    LOG_VERBOSE("%s", __func__);
+    log::verbose("");
   }
 }
 
@@ -1901,13 +1899,13 @@ static void btm_ble_scan_filt_param_cfg_evt(uint8_t avbl_space,
  *
  ******************************************************************************/
 tBTM_STATUS btm_ble_start_inquiry(uint8_t duration) {
-  LOG_VERBOSE("btm_ble_start_inquiry: inq_active = 0x%02x",
-              btm_cb.btm_inq_vars.inq_active);
+  log::verbose("btm_ble_start_inquiry: inq_active = 0x{:02x}",
+               btm_cb.btm_inq_vars.inq_active);
 
   /* if selective connection is active, or inquiry is already active, reject it
    */
   if (btm_cb.ble_ctr_cb.is_ble_inquiry_active()) {
-    LOG_ERROR("LE Inquiry is active, can not start inquiry");
+    log::error("LE Inquiry is active, can not start inquiry");
     return (BTM_BUSY);
   }
 
@@ -1939,7 +1937,7 @@ tBTM_STATUS btm_ble_start_inquiry(uint8_t duration) {
     btm_ble_start_scan();
   } else if ((btm_cb.ble_ctr_cb.inq_var.scan_interval != scan_interval) ||
              (btm_cb.ble_ctr_cb.inq_var.scan_window != scan_window)) {
-    LOG_VERBOSE("%s, restart LE scan with low latency scan params", __func__);
+    log::verbose("restart LE scan with low latency scan params");
     if (IS_FLAG_ENABLED(le_scan_parameters_fix)) {
       btm_cb.ble_ctr_cb.inq_var.scan_interval = scan_interval;
       btm_cb.ble_ctr_cb.inq_var.scan_window = scan_window;
@@ -1954,8 +1952,8 @@ tBTM_STATUS btm_ble_start_inquiry(uint8_t duration) {
   btm_cb.btm_inq_vars.inq_active |= BTM_BLE_GENERAL_INQUIRY;
   btm_cb.ble_ctr_cb.set_ble_inquiry_active();
 
-  LOG_VERBOSE("btm_ble_start_inquiry inq_active = 0x%02x",
-              btm_cb.btm_inq_vars.inq_active);
+  log::verbose("btm_ble_start_inquiry inq_active = 0x{:02x}",
+               btm_cb.btm_inq_vars.inq_active);
 
   if (duration != 0) {
     /* start inquiry timer */
@@ -2019,7 +2017,7 @@ tBTM_STATUS btm_ble_read_remote_name(const RawAddress& remote_bda,
 
   tINQ_DB_ENT* p_i = btm_inq_db_find(remote_bda);
   if (p_i && !ble_evt_type_is_connectable(p_i->inq_info.results.ble_evt_type)) {
-    LOG_VERBOSE("name request to non-connectable device failed.");
+    log::verbose("name request to non-connectable device failed.");
     return BTM_ERR_PROCESSING;
   }
 
@@ -2079,10 +2077,10 @@ static void btm_ble_update_adv_flag(uint8_t flag) {
   tBTM_BLE_LOCAL_ADV_DATA* p_adv_data = &btm_cb.ble_ctr_cb.inq_var.adv_data;
   uint8_t* p;
 
-  LOG_VERBOSE("btm_ble_update_adv_flag new=0x%x", flag);
+  log::verbose("btm_ble_update_adv_flag new=0x{:x}", flag);
 
   if (p_adv_data->p_flags != NULL) {
-    LOG_VERBOSE("btm_ble_update_adv_flag old=0x%x", *p_adv_data->p_flags);
+    log::verbose("btm_ble_update_adv_flag old=0x{:x}", *p_adv_data->p_flags);
     *p_adv_data->p_flags = flag;
   } else /* no FLAGS in ADV data*/
   {
@@ -2395,13 +2393,13 @@ void btm_ble_update_inq_result(tINQ_DB_ENT* p_i, uint8_t addr_type,
   if (should_process_flags && (p_cur->flag & BTM_BLE_BREDR_NOT_SPT) == 0 &&
       !ble_evt_type_is_directed(evt_type)) {
     if (p_cur->ble_addr_type != BLE_ADDR_RANDOM) {
-      LOG_VERBOSE("NOT_BR_EDR support bit not set, treat device as DUMO");
+      log::verbose("NOT_BR_EDR support bit not set, treat device as DUMO");
       p_cur->device_type |= BT_DEVICE_TYPE_DUMO;
     } else {
-      LOG_VERBOSE("Random address, treat device as LE only");
+      log::verbose("Random address, treat device as LE only");
     }
   } else {
-    LOG_VERBOSE("NOT_BR/EDR support bit set, treat device as LE only");
+    log::verbose("NOT_BR/EDR support bit set, treat device as LE only");
   }
 }
 
@@ -2409,7 +2407,7 @@ void btm_ble_process_adv_addr(RawAddress& bda, tBLE_ADDR_TYPE* addr_type) {
   /* map address to security record */
   bool match = btm_identity_addr_to_random_pseudo(&bda, addr_type, false);
 
-  VLOG(1) << __func__ << ": bda=" << bda;
+  log::verbose("bda={}", ADDRESS_TO_LOGGABLE_STR(bda));
   /* always do RRA resolution on host */
   if (!match && BTM_BLE_IS_RESOLVE_BDA(bda)) {
     tBTM_SEC_DEV_REC* match_rec = btm_ble_resolve_random_addr(bda);
@@ -2448,8 +2446,9 @@ void btm_ble_process_ext_adv_pkt(uint8_t data_len, const uint8_t* data) {
   bytes_to_process = 1;
 
   if (data_len < bytes_to_process) {
-    LOG(ERROR) << "Malformed LE extended advertising packet: not enough room "
-                  "for num reports";
+    log::error(
+        "Malformed LE extended advertising packet: not enough room for num "
+        "reports");
     return;
   }
 
@@ -2459,8 +2458,9 @@ void btm_ble_process_ext_adv_pkt(uint8_t data_len, const uint8_t* data) {
   while (num_reports--) {
     bytes_to_process += 24;
     if (data_len < bytes_to_process) {
-      LOG(ERROR) << "Malformed LE extended advertising packet: not enough room "
-                    "for metadata";
+      log::error(
+          "Malformed LE extended advertising packet: not enough room for "
+          "metadata");
       return;
     }
 
@@ -2483,13 +2483,14 @@ void btm_ble_process_ext_adv_pkt(uint8_t data_len, const uint8_t* data) {
 
     bytes_to_process += pkt_data_len;
     if (data_len < bytes_to_process) {
-      LOG(ERROR) << "Malformed LE extended advertising packet: not enough room "
-                    "for packet data";
+      log::error(
+          "Malformed LE extended advertising packet: not enough room for "
+          "packet data");
       return;
     }
 
     if (rssi >= 21 && rssi <= 126) {
-      LOG_ERROR("%s: bad rssi value in advertising report: %d", __func__, rssi);
+      log::error("bad rssi value in advertising report: {}", rssi);
     }
 
     // Store this to pass up the callback chain to GattService#onScanResult for
@@ -2524,8 +2525,8 @@ void btm_ble_process_adv_pkt(uint8_t data_len, const uint8_t* data) {
   bytes_to_process = 1;
 
   if (data_len < bytes_to_process) {
-    LOG(ERROR)
-        << "Malformed LE advertising packet: not enough room for num reports";
+    log::error(
+        "Malformed LE advertising packet: not enough room for num reports");
     return;
   }
 
@@ -2536,8 +2537,8 @@ void btm_ble_process_adv_pkt(uint8_t data_len, const uint8_t* data) {
     bytes_to_process += 9;
 
     if (data_len < bytes_to_process) {
-      LOG(ERROR)
-          << "Malformed LE advertising packet: not enough room for metadata";
+      log::error(
+          "Malformed LE advertising packet: not enough room for metadata");
       return;
     }
 
@@ -2553,15 +2554,16 @@ void btm_ble_process_adv_pkt(uint8_t data_len, const uint8_t* data) {
     // include rssi for this check
     bytes_to_process += pkt_data_len + 1;
     if (data_len < bytes_to_process) {
-      LOG(ERROR) << "Malformed LE advertising packet: not enough room for "
-                    "packet data and/or RSSI";
+      log::error(
+          "Malformed LE advertising packet: not enough room for packet data "
+          "and/or RSSI");
       return;
     }
 
     STREAM_TO_INT8(rssi, p);
 
     if (rssi >= 21 && rssi <= 126) {
-      LOG_ERROR("%s: bad rssi value in advertising report: %d", __func__, rssi);
+      log::error("bad rssi value in advertising report: {}", rssi);
     }
 
     // Pass up the address to GattService#onScanResult to use in
@@ -2589,9 +2591,9 @@ void btm_ble_process_adv_pkt(uint8_t data_len, const uint8_t* data) {
                     (1 << BLE_EVT_SCANNABLE_BIT) |
                     (1 << BLE_EVT_SCAN_RESPONSE_BIT);
     } else {
-      LOG_ERROR(
+      log::error(
           "Malformed LE Advertising Report Event - unsupported "
-          "legacy_event_type 0x%02x",
+          "legacy_event_type 0x{:02x}",
           legacy_evt_type);
       return;
     }
@@ -2645,7 +2647,8 @@ void btm_ble_process_adv_pkt_cont(uint16_t evt_type, tBLE_ADDR_TYPE addr_type,
 
   if (!data_complete) {
     // If we didn't receive whole adv data yet, don't report the device.
-    VLOG(1) << "Data not complete yet, waiting for more " << bda;
+    log::verbose("Data not complete yet, waiting for more {}",
+                 ADDRESS_TO_LOGGABLE_STR(bda));
     return;
   }
 
@@ -2653,13 +2656,13 @@ void btm_ble_process_adv_pkt_cont(uint16_t evt_type, tBLE_ADDR_TYPE addr_type,
       btm_cb.ble_ctr_cb.inq_var.scan_type == BTM_BLE_SCAN_MODE_ACTI;
   if (is_active_scan && is_scannable && !is_scan_resp) {
     // If we didn't receive scan response yet, don't report the device.
-    VLOG(1) << " Waiting for scan response " << bda;
+    log::verbose(" Waiting for scan response {}", ADDRESS_TO_LOGGABLE_STR(bda));
     return;
   }
 
   if (!AdvertiseDataParser::IsValid(adv_data)) {
-    VLOG(1) << __func__ << "Dropping bad advertisement packet: "
-            << base::HexEncode(adv_data.data(), adv_data.size());
+    log::verbose("Dropping bad advertisement packet: {}",
+                 base::HexEncode(adv_data.data(), adv_data.size()));
     cache.Clear(addr_type, bda);
     return;
   }
@@ -2805,7 +2808,7 @@ void btm_ble_process_adv_pkt_cont_for_inquiry(
       btm_cb.neighbor.le_inquiry.results++;
       btm_cb.neighbor.le_legacy_scan.results++;
     } else {
-      LOG_WARN("Unable to allocate entry for inquiry result");
+      log::warn("Unable to allocate entry for inquiry result");
       return;
     }
   } else if (p_i->inq_count !=
@@ -2960,15 +2963,15 @@ void btm_ble_stop_inquiry(void) {
   } else if (get_low_latency_scan_params() !=
              std::pair(btm_cb.ble_ctr_cb.inq_var.scan_interval,
                        btm_cb.ble_ctr_cb.inq_var.scan_window)) {
-    LOG_VERBOSE("%s: setting default params for ongoing observe", __func__);
+    log::verbose("setting default params for ongoing observe");
     btm_ble_stop_scan();
     btm_ble_start_scan();
   }
 
   /* If we have a callback registered for inquiry complete, call it */
-  LOG_VERBOSE("BTM Inq Compl Callback: status 0x%02x, num results %d",
-              btm_cb.btm_inq_vars.inq_cmpl_info.status,
-              btm_cb.btm_inq_vars.inq_cmpl_info.num_resp);
+  log::verbose("BTM Inq Compl Callback: status 0x{:02x}, num results {}",
+               btm_cb.btm_inq_vars.inq_cmpl_info.status,
+               btm_cb.btm_inq_vars.inq_cmpl_info.num_resp);
 
   btm_process_inq_complete(
       HCI_SUCCESS,
@@ -3035,7 +3038,7 @@ static bool btm_ble_adv_states_operation(BTM_TOPOLOGY_FUNC_PTR* p_handler,
       break;
 
     default:
-      LOG_ERROR("unknown adv event : %d", adv_evt);
+      log::error("unknown adv event : {}", adv_evt);
       break;
   }
 
@@ -3165,11 +3168,11 @@ void btm_ble_read_remote_features_complete(uint8_t* p, uint8_t length) {
 
   if (status != HCI_SUCCESS) {
     if (status != HCI_ERR_UNSUPPORTED_REM_FEATURE) {
-      LOG_ERROR("Failed to read remote features status:%s",
-                hci_error_code_text(static_cast<tHCI_STATUS>(status)).c_str());
+      log::error("Failed to read remote features status:{}",
+                 hci_error_code_text(static_cast<tHCI_STATUS>(status)).c_str());
       return;
     }
-    LOG_WARN("Remote does not support reading remote feature");
+    log::warn("Remote does not support reading remote feature");
   }
 
   if (status == HCI_SUCCESS) {
@@ -3180,7 +3183,7 @@ void btm_ble_read_remote_features_complete(uint8_t* p, uint8_t length) {
     }
 
     if (!acl_set_peer_le_features_from_handle(handle, p)) {
-      LOG_ERROR(
+      log::error(
           "Unable to find existing connection after read remote features");
       return;
     }
@@ -3191,7 +3194,7 @@ void btm_ble_read_remote_features_complete(uint8_t* p, uint8_t length) {
   return;
 
 err_out:
-  LOG_ERROR("Bogus event packet, too short");
+  log::error("Bogus event packet, too short");
 }
 
 /*******************************************************************************
@@ -3334,7 +3337,7 @@ void btm_ble_update_mode_operation(uint8_t link_role, const RawAddress* bd_addr,
  *
  ******************************************************************************/
 void btm_ble_init(void) {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   alarm_free(btm_cb.ble_ctr_cb.observer_timer);
   alarm_free(btm_cb.ble_ctr_cb.inq_var.fast_adv_timer);
@@ -3394,7 +3397,7 @@ bool btm_ble_topology_check(tBTM_BLE_STATE_MASK request_state_mask) {
   if (request_state_mask == BTM_BLE_STATE_INVALID ||
       request_state_mask > BTM_BLE_STATE_SCAN_ADV_BIT ||
       (request_state_mask & (request_state_mask - 1)) != 0) {
-    LOG_ERROR("illegal state requested: %d", request_state_mask);
+    log::error("illegal state requested: {}", request_state_mask);
     return rt;
   }
 
@@ -3409,7 +3412,7 @@ bool btm_ble_topology_check(tBTM_BLE_STATE_MASK request_state_mask) {
       controller_get_interface()->get_ble_supported_states();
 
   if (!BTM_LE_STATES_SUPPORTED(ble_supported_states, bit_num)) {
-    LOG_ERROR("state requested not supported: %d", request_state);
+    log::error("state requested not supported: {}", request_state);
     return rt;
   }
 

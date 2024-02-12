@@ -151,6 +151,5 @@ inline tHCI_REASON to_hci_reason_code(const uint8_t& reason_code) {
 
 namespace fmt {
 template <>
-struct formatter<tHCI_ERROR_CODE>
-    : string_formatter<tHCI_ERROR_CODE, &hci_error_code_text> {};
+struct formatter<tHCI_ERROR_CODE> : enum_formatter<tHCI_ERROR_CODE> {};
 }  // namespace fmt

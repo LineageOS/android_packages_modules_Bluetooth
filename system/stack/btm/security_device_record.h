@@ -19,6 +19,7 @@
 #pragma once
 
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 
 #include <cstdint>
 #include <string>
@@ -113,7 +114,7 @@ class tBTM_BLE_ADDR_INFO {
     if (is_ble_addr_type_known(ble_addr_type)) {
       ble_addr_type_ = ble_addr_type;
     } else {
-      LOG_ERROR("Unknown address type:0x%x", ble_addr_type);
+      bluetooth::log::error("Unknown address type:0x{:x}", ble_addr_type);
     }
   }
 
@@ -456,3 +457,11 @@ class tBTM_SEC_DEV_REC {
   // security related properties
   tBTM_SEC_REC sec_rec;
 };
+
+namespace fmt {
+template <>
+struct formatter<tSECURITY_STATE>
+    : string_formatter<tSECURITY_STATE, &security_state_text> {};
+template <>
+struct formatter<tBLE_RAND_ADDR_TYPE> : enum_formatter<tBLE_RAND_ADDR_TYPE> {};
+}  // namespace fmt

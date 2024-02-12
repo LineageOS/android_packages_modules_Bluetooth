@@ -25,6 +25,7 @@
 
 #define LOG_TAG "devctl"
 #include <base/logging.h>
+#include <bluetooth/log.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -49,6 +50,8 @@
 #include "stack/include/btm_ble_privacy.h"
 #include "stack/include/l2cap_controller_interface.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth;
 
 extern tBTM_CB btm_cb;
 
@@ -206,7 +209,7 @@ void BTM_reset_complete() {
     btsnd_hcic_ble_set_rand_priv_addr_timeout(
         btm_get_next_private_addrress_interval_ms() / 1000);
   } else {
-    LOG_INFO(
+    log::info(
         "Le Address Resolving list disabled due to lack of controller support");
   }
 
@@ -290,8 +293,8 @@ static void decode_controller_support() {
     }
   }
 
-  LOG_VERBOSE("Local supported SCO packet types: 0x%04x",
-              btm_cb.btm_sco_pkt_types_supported);
+  log::verbose("Local supported SCO packet types: 0x{:04x}",
+               btm_cb.btm_sco_pkt_types_supported);
 
   BTM_acl_after_controller_started(controller_get_interface());
   btm_sec_dev_reset();
@@ -451,8 +454,7 @@ DEV_CLASS BTM_ReadDeviceClass(void) { return btm_cb.devcb.dev_class; }
  ******************************************************************************/
 void BTM_VendorSpecificCommand(uint16_t opcode, uint8_t param_len,
                                uint8_t* p_param_buf, tBTM_VSC_CMPL_CB* p_cb) {
-  LOG_VERBOSE("BTM: %s: Opcode: 0x%04X, ParamLen: %i.", __func__, opcode,
-              param_len);
+  log::verbose("BTM: Opcode: 0x{:04X}, ParamLen: {}.", opcode, param_len);
 
   /* Send the HCI command (opcode will be OR'd with HCI_GRP_VENDOR_SPECIFIC) */
   btsnd_hcic_vendor_spec_cmd(opcode, param_len, p_param_buf, p_cb);
@@ -486,7 +488,7 @@ tBTM_STATUS BTM_RegisterForVSEvents(tBTM_VS_EVT_CB* p_cb, bool is_register) {
       /* Found callback in lookup table. If deregistering, clear the entry. */
       if (!is_register) {
         btm_cb.devcb.p_vend_spec_cb[i] = NULL;
-        LOG_VERBOSE("BTM Deregister For VSEvents is successfully");
+        log::verbose("BTM Deregister For VSEvents is successfully");
       }
       return (BTM_SUCCESS);
     }
@@ -496,10 +498,10 @@ tBTM_STATUS BTM_RegisterForVSEvents(tBTM_VS_EVT_CB* p_cb, bool is_register) {
   if (is_register) {
     if (free_idx < BTM_MAX_VSE_CALLBACKS) {
       btm_cb.devcb.p_vend_spec_cb[free_idx] = p_cb;
-      LOG_VERBOSE("BTM Register For VSEvents is successfully");
+      log::verbose("BTM Register For VSEvents is successfully");
     } else {
       /* No free entries available */
-      LOG_ERROR("BTM_RegisterForVSEvents: too many callbacks registered");
+      log::error("BTM_RegisterForVSEvents: too many callbacks registered");
 
       retval = BTM_NO_RESOURCES;
     }
@@ -520,7 +522,7 @@ tBTM_STATUS BTM_RegisterForVSEvents(tBTM_VS_EVT_CB* p_cb, bool is_register) {
 void btm_vendor_specific_evt(const uint8_t* p, uint8_t evt_len) {
   uint8_t i;
 
-  LOG_VERBOSE("BTM Event: Vendor Specific event from controller");
+  log::verbose("BTM Event: Vendor Specific event from controller");
 
   // Handle BQR events
   const uint8_t* bqr_ptr = p;
@@ -544,7 +546,7 @@ void btm_vendor_specific_evt(const uint8_t* p, uint8_t evt_len) {
           if (bqr_parameter_length >= bluetooth::bqr::kLogDumpParamTotalLen) {
             bluetooth::bqr::DumpLmpLlMessage(bqr_parameter_length, p_bqr_event);
           } else {
-            LOG_INFO("Malformed LMP event of length %hd", bqr_parameter_length);
+            log::info("Malformed LMP event of length {}", bqr_parameter_length);
           }
 
           break;
@@ -553,13 +555,13 @@ void btm_vendor_specific_evt(const uint8_t* p, uint8_t evt_len) {
           if (bqr_parameter_length >= bluetooth::bqr::kLogDumpParamTotalLen) {
             bluetooth::bqr::DumpBtScheduling(bqr_parameter_length, p_bqr_event);
           } else {
-            LOG_INFO("Malformed TRACE event of length %hd",
-                     bqr_parameter_length);
+            log::info("Malformed TRACE event of length {}",
+                      bqr_parameter_length);
           }
           break;
 
         default:
-          LOG_INFO("Unhandled BQR subevent 0x%02hxx", sub_event_code);
+          log::info("Unhandled BQR subevent 0x{:02x}x", sub_event_code);
         }
       }
     }
@@ -579,7 +581,7 @@ void btm_vendor_specific_evt(const uint8_t* p, uint8_t evt_len) {
  *
  ******************************************************************************/
 void BTM_WritePageTimeout(uint16_t timeout) {
-  LOG_VERBOSE("BTM: BTM_WritePageTimeout: Timeout: %d.", timeout);
+  log::verbose("BTM: BTM_WritePageTimeout: Timeout: {}.", timeout);
 
   /* Send the HCI command */
   btsnd_hcic_write_page_tout(timeout);
@@ -594,7 +596,7 @@ void BTM_WritePageTimeout(uint16_t timeout) {
  *
  ******************************************************************************/
 void BTM_WriteVoiceSettings(uint16_t settings) {
-  LOG_VERBOSE("BTM: BTM_WriteVoiceSettings: Settings: 0x%04x.", settings);
+  log::verbose("BTM: BTM_WriteVoiceSettings: Settings: 0x{:04x}.", settings);
 
   /* Send the HCI command */
   btsnd_hcic_write_voice_settings((uint16_t)(settings & 0x03ff));
@@ -618,7 +620,7 @@ void BTM_WriteVoiceSettings(uint16_t settings) {
 tBTM_STATUS BTM_EnableTestMode(void) {
   uint8_t cond;
 
-  LOG_VERBOSE("BTM: BTM_EnableTestMode");
+  log::verbose("BTM: BTM_EnableTestMode");
 
   /* set auto accept connection as this is needed during test mode */
   /* Allocate a buffer to hold HCI command */
@@ -669,8 +671,8 @@ tBTM_STATUS BTM_DeleteStoredLinkKey(const RawAddress* bd_addr,
 
   bool delete_all_flag = !bd_addr;
 
-  LOG_VERBOSE("BTM: BTM_DeleteStoredLinkKey: delete_all_flag: %s",
-              delete_all_flag ? "true" : "false");
+  log::verbose("BTM: BTM_DeleteStoredLinkKey: delete_all_flag: {}",
+               delete_all_flag ? "true" : "false");
 
   btm_sec_cb.devcb.p_stored_link_key_cmpl_cb = p_cb;
   if (!bd_addr) {
@@ -709,7 +711,7 @@ void btm_delete_stored_link_key_complete(uint8_t* p, uint16_t evt_len) {
     result.event = BTM_CB_EVT_DELETE_STORED_LINK_KEYS;
 
     if (evt_len < 3) {
-      LOG(ERROR) << __func__ << "Malformatted event packet, too short";
+      log::error("Malformatted event packet, too short");
       return;
     }
 
@@ -739,7 +741,7 @@ void btm_delete_stored_link_key_complete(uint8_t* p, uint16_t evt_len) {
 static void BTM_BT_Quality_Report_VSE_CBack(uint8_t length,
                                             const uint8_t* p_stream) {
   if (length == 0) {
-    LOG(WARNING) << __func__ << ": Lengths of all of the parameters are zero.";
+    log::warn("Lengths of all of the parameters are zero.");
     return;
   }
 
@@ -749,7 +751,7 @@ static void BTM_BT_Quality_Report_VSE_CBack(uint8_t length,
 
   if (sub_event == HCI_VSE_SUBCODE_BQR_SUB_EVT) {
     if (btm_cb.p_bqr_report_receiver == nullptr) {
-      LOG(WARNING) << __func__ << ": No registered report receiver.";
+      log::warn("No registered report receiver.");
       return;
     }
 
@@ -775,8 +777,8 @@ tBTM_STATUS BTM_BT_Quality_Report_VSE_Register(
       BTM_RegisterForVSEvents(BTM_BT_Quality_Report_VSE_CBack, is_register);
 
   if (retval != BTM_SUCCESS) {
-    LOG(WARNING) << __func__ << ": Fail to (un)register VSEvents: " << retval
-                 << ", is_register: " << logbool(is_register);
+    log::warn("Fail to (un)register VSEvents: {}, is_register: {}", retval,
+              logbool(is_register));
     return retval;
   }
 
@@ -786,7 +788,7 @@ tBTM_STATUS BTM_BT_Quality_Report_VSE_Register(
     btm_cb.p_bqr_report_receiver = nullptr;
   }
 
-  LOG(INFO) << __func__ << ": Success to (un)register VSEvents."
-            << " is_register: " << logbool(is_register);
+  log::info("Success to (un)register VSEvents. is_register: {}",
+            logbool(is_register));
   return retval;
 }

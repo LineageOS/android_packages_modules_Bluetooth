@@ -19,6 +19,7 @@
 #include "hfp_msbc_decoder.h"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include <cstring>
 
@@ -28,6 +29,13 @@
 
 #define HFP_MSBC_PKT_LEN 60
 #define HFP_MSBC_PCM_BYTES 240
+
+using namespace bluetooth;
+
+namespace fmt {
+template <>
+struct formatter<OI_STATUS> : enum_formatter<OI_STATUS> {};
+}  // namespace fmt
 
 typedef struct {
   OI_CODEC_SBC_DECODER_CONTEXT decoder_context;
@@ -41,15 +49,14 @@ bool hfp_msbc_decoder_init() {
       &hfp_msbc_decoder.decoder_context, hfp_msbc_decoder.context_data,
       sizeof(hfp_msbc_decoder.context_data), 1, 1, false);
   if (!OI_SUCCESS(status)) {
-    LOG_ERROR("%s: OI_CODEC_SBC_DecoderReset failed with error code %d",
-              __func__, status);
+    log::error("OI_CODEC_SBC_DecoderReset failed with error code {}", status);
     return false;
   }
 
   status = OI_CODEC_SBC_DecoderConfigureMSbc(&hfp_msbc_decoder.decoder_context);
   if (!OI_SUCCESS(status)) {
-    LOG_ERROR("%s: OI_CODEC_SBC_DecoderConfigureMSbc failed with error code %d",
-              __func__, status);
+    log::error("OI_CODEC_SBC_DecoderConfigureMSbc failed with error code {}",
+               status);
     return false;
   }
 
@@ -64,8 +71,8 @@ void hfp_msbc_decoder_cleanup(void) {
 bool hfp_msbc_decoder_decode_packet(const uint8_t* i_buf, int16_t* o_buf,
                                     size_t out_len) {
   if (out_len < HFP_MSBC_PCM_BYTES) {
-    LOG_ERROR(
-        "Output buffer's size %lu is less than one complete mSBC frame %d",
+    log::error(
+        "Output buffer's size {} is less than one complete mSBC frame {}",
         (unsigned long)out_len, HFP_MSBC_PCM_BYTES);
     return false;
   }
@@ -80,8 +87,8 @@ bool hfp_msbc_decoder_decode_packet(const uint8_t* i_buf, int16_t* o_buf,
   OI_STATUS status = OI_CODEC_SBC_DecodeFrame(
       &hfp_msbc_decoder.decoder_context, &oi_data, &oi_size, o_buf, &out_avail);
   if (!OI_SUCCESS(status) || out_avail != HFP_MSBC_PCM_BYTES || oi_size != 0) {
-    LOG_ERROR("Decoding failure: %d, %lu, %lu", status,
-              (unsigned long)out_avail, (unsigned long)oi_size);
+    log::error("Decoding failure: {}, {}, {}", status, (unsigned long)out_avail,
+               (unsigned long)oi_size);
     return false;
   }
 

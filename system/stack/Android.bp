@@ -1381,6 +1381,7 @@ cc_test {
         "test/common/mock_hcic_layer.cc",
     ],
     static_libs: [
+        "libbase",
         "libbluetooth-types",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
