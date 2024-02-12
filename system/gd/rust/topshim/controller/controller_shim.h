@@ -32,6 +32,7 @@ class ControllerIntf {
   ~ControllerIntf();
 
   RawAddress read_local_addr() const;
+  uint64_t get_ble_supported_states() const;
 
  private:
   const controller_t* controller_;

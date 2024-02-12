@@ -22,7 +22,7 @@ use bt_topshim::profiles::ProfileConnectionState;
 
 use btstack::battery_manager::{Battery, BatterySet, IBatteryManager, IBatteryManagerCallback};
 use btstack::bluetooth::{
-    BluetoothDevice, IBluetooth, IBluetoothCallback, IBluetoothConnectionCallback,
+    BluetoothDevice, BtAdapterRole, IBluetooth, IBluetoothCallback, IBluetoothConnectionCallback,
     IBluetoothQALegacy,
 };
 use btstack::bluetooth_admin::{IBluetoothAdmin, IBluetoothAdminPolicyCallback, PolicyEffect};
@@ -96,6 +96,7 @@ impl_dbus_arg_enum!(SuspendMode);
 impl_dbus_arg_enum!(SuspendType);
 impl_dbus_arg_from_into!(Uuid, Vec<u8>);
 impl_dbus_arg_enum!(BthhReportType);
+impl_dbus_arg_enum!(BtAdapterRole);
 
 impl RefArgToRust for Uuid {
     type RustType = Vec<u8>;
@@ -993,6 +994,11 @@ impl IBluetooth for BluetoothDBus {
 
     #[dbus_method("IsSwbSupported")]
     fn is_swb_supported(&self) -> bool {
+        dbus_generated!()
+    }
+
+    #[dbus_method("GetSupportedRoles")]
+    fn get_supported_roles(&self) -> Vec<BtAdapterRole> {
         dbus_generated!()
     }
 }
