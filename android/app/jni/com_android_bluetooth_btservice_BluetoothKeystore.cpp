@@ -44,7 +44,7 @@ class BluetoothKeystoreCallbacksImpl
   void set_encrypt_key_or_remove_key(
       const std::string prefixString,
       const std::string decryptedString) override {
-    LOG(INFO) << __func__;
+    log::info("");
 
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
@@ -60,7 +60,7 @@ class BluetoothKeystoreCallbacksImpl
   }
 
   std::string get_key(const std::string prefixString) override {
-    LOG(INFO) << __func__;
+    log::info("");
 
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
@@ -72,7 +72,7 @@ class BluetoothKeystoreCallbacksImpl
         mCallbacksObj, method_getKeyCallback, j_prefixString);
 
     if (j_decrypt_str == nullptr) {
-      ALOGE("%s: Got a null decrypt_str", __func__);
+      log::error("Got a null decrypt_str");
       return "";
     }
 
@@ -92,32 +92,30 @@ static void initNative(JNIEnv* env, jobject object) {
 
   const bt_interface_t* btInf = getBluetoothInterface();
   if (btInf == nullptr) {
-    LOG(ERROR) << "Bluetooth module is not loaded";
+    log::error("Bluetooth module is not loaded");
     return;
   }
 
   if (sBluetoothKeystoreInterface != nullptr) {
-    LOG(INFO)
-        << "Cleaning up BluetoothKeystore Interface before initializing...";
+    log::info("Cleaning up BluetoothKeystore Interface before initializing...");
     sBluetoothKeystoreInterface = nullptr;
   }
 
   if (mCallbacksObj != nullptr) {
-    LOG(INFO) << "Cleaning up BluetoothKeystore callback object";
+    log::info("Cleaning up BluetoothKeystore callback object");
     env->DeleteGlobalRef(mCallbacksObj);
     mCallbacksObj = nullptr;
   }
 
   if ((mCallbacksObj = env->NewGlobalRef(object)) == nullptr) {
-    LOG(ERROR)
-        << "Failed to allocate Global Ref for BluetoothKeystore Callbacks";
+    log::error("Failed to allocate Global Ref for BluetoothKeystore Callbacks");
     return;
   }
 
   sBluetoothKeystoreInterface =
       (BluetoothKeystoreInterface*)btInf->get_profile_interface(BT_KEYSTORE_ID);
   if (sBluetoothKeystoreInterface == nullptr) {
-    LOG(ERROR) << "Failed to get BluetoothKeystore Interface";
+    log::error("Failed to get BluetoothKeystore Interface");
     return;
   }
 
@@ -130,7 +128,7 @@ static void cleanupNative(JNIEnv* env, jobject /* object */) {
 
   const bt_interface_t* btInf = getBluetoothInterface();
   if (btInf == nullptr) {
-    LOG(ERROR) << "Bluetooth module is not loaded";
+    log::error("Bluetooth module is not loaded");
     return;
   }
 
