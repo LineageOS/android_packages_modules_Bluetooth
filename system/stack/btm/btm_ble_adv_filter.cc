@@ -19,6 +19,7 @@
 #define LOG_TAG "bt_btm_ble"
 
 #include <base/functional/bind.h>
+#include <bluetooth/log.h>
 
 #include "btm_ble_api.h"
 #include "os/log.h"
@@ -32,6 +33,7 @@
 
 extern tBTM_CB btm_cb;
 
+using namespace bluetooth;
 using base::Bind;
 using bluetooth::Uuid;
 
@@ -125,7 +127,7 @@ static uint8_t btm_ble_ocf_to_condtype(uint8_t ocf) {
 static void btm_flt_update_cb(uint8_t expected_ocf, tBTM_BLE_PF_CFG_CBACK cb,
                               uint8_t* p, uint16_t evt_len) {
   if (evt_len != 4) {
-    LOG_ERROR("%s: bad length: %d", __func__, evt_len);
+    log::error("bad length: {}", evt_len);
     return;
   }
 
@@ -136,8 +138,8 @@ static void btm_flt_update_cb(uint8_t expected_ocf, tBTM_BLE_PF_CFG_CBACK cb,
   STREAM_TO_UINT8(num_avail, p);
 
   if (expected_ocf != op_subcode) {
-    LOG_ERROR("%s: Incorrect opcode: 0x%02x, expected: 0x%02x", __func__,
-              expected_ocf, op_subcode);
+    log::error("Incorrect opcode: 0x{:02x}, expected: 0x{:02x}", expected_ocf,
+               op_subcode);
     return;
   }
 
@@ -149,8 +151,8 @@ static void btm_flt_update_cb(uint8_t expected_ocf, tBTM_BLE_PF_CFG_CBACK cb,
   }
 
   uint8_t cond_type = btm_ble_ocf_to_condtype(expected_ocf);
-  LOG_VERBOSE("%s: Recd: %d, %d, %d, %d, %d", __func__, op_subcode,
-              expected_ocf, action, status, num_avail);
+  log::verbose("Recd: {}, {}, {}, {}, {}", op_subcode, expected_ocf, action,
+               status, num_avail);
   if (HCI_SUCCESS == status) {
     if (btm_ble_adv_filt_cb.cur_filter_target.bda.IsEmpty())
       btm_ble_cs_update_pf_counter(static_cast<tBTM_BLE_SCAN_COND_OP>(action),
@@ -269,7 +271,7 @@ static uint8_t btm_ble_cs_update_pf_counter(tBTM_BLE_SCAN_COND_OP action,
   uint8_t* p_counter = NULL;
 
   if (cond_type > BTM_BLE_PF_TYPE_ALL) {
-    LOG_ERROR("unknown PF filter condition type %d", cond_type);
+    log::error("unknown PF filter condition type {}", cond_type);
     return BTM_BLE_INVALID_COUNTER;
   }
 
@@ -300,13 +302,13 @@ static uint8_t btm_ble_cs_update_pf_counter(tBTM_BLE_SCAN_COND_OP action,
       p_counter = p_addr_filter->pf_counter;
       if (num_available > 0) p_counter[cond_type] += 1;
 
-      LOG_VERBOSE("counter = %d, maxfilt = %d, num_avbl=%d",
-                  p_counter[cond_type], cmn_ble_vsc_cb.max_filter,
-                  num_available);
+      log::verbose("counter = {}, maxfilt = {}, num_avbl={}",
+                   p_counter[cond_type], cmn_ble_vsc_cb.max_filter,
+                   num_available);
       return p_counter[cond_type];
     }
   } else {
-    LOG_ERROR("no matching filter counter found");
+    log::error("no matching filter counter found");
   }
   /* no matching filter located and updated */
   return BTM_BLE_INVALID_COUNTER;
@@ -341,17 +343,17 @@ void BTM_BleAdvFilterParamSetup(
 
   p = param;
   memset(param, 0, len);
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   if (BTM_BLE_SCAN_COND_ADD == action) {
     p_bda_filter = btm_ble_find_addr_filter_counter(nullptr);
     if (NULL == p_bda_filter) {
-      LOG_ERROR("BD Address not found!");
+      log::error("BD Address not found!");
       cb.Run(0, BTM_BLE_PF_ENABLE, btm_status_value(BTM_UNKNOWN_ADDR));
       return;
     }
 
-    LOG_VERBOSE("%s : Feat mask:%d", __func__, p_filt_params->feat_seln);
+    log::verbose("Feat mask:{}", p_filt_params->feat_seln);
     /* select feature based on control block settings */
     UINT8_TO_STREAM(p, BTM_BLE_META_PF_FEAT_SEL);
     UINT8_TO_STREAM(p, BTM_BLE_SCAN_COND_ADD);
