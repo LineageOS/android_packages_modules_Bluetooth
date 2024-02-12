@@ -491,12 +491,15 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
 
     if (role == hci::Role::CENTRAL) {
       connectability_state_ = ConnectabilityState::DISARMED;
-
       if (status == ErrorCode::UNKNOWN_CONNECTION && pause_connection) {
         on_le_connection_canceled_on_pause();
         return;
       }
-
+      if (status == ErrorCode::UNKNOWN_CONNECTION && arm_on_disarm_) {
+        arm_on_disarm_ = false;
+        arm_connectability();
+        return;
+      }
       on_common_le_connection_complete(remote_address);
       if (status == ErrorCode::UNKNOWN_CONNECTION) {
         if (remote_address.GetAddress() != Address::kEmpty) {
