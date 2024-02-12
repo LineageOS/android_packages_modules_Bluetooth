@@ -1,0 +1,8 @@
+package: "com.android.bluetooth.flags"
+
+flag {
+    name: "handle_delivery_sending_failure_events"
+    namespace: "bluetooth"
+    description: "Handle DeliveryFailure and SendingFailure Event types of MAP-Event-Reports from the MNS."
+    bug: "317400386"
+}
