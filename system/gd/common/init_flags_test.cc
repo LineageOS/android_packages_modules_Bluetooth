@@ -36,51 +36,6 @@ TEST(InitFlagsTest, test_leaudio_targeted_announcement_reconnection_mode) {
   ASSERT_TRUE(InitFlags::IsTargetedAnnouncementReconnectionMode());
 }
 
-TEST(InitFlagsTest, test_enable_debug_logging_for_all) {
-  const char* input[] = {"INIT_default_log_level=5", nullptr};
-  InitFlags::Load(input);
-  ASSERT_EQ(InitFlags::GetLogLevelForTag("foo"), LOG_TAG_DEBUG);
-  ASSERT_EQ(InitFlags::GetLogLevelForTag("bar"), LOG_TAG_DEBUG);
-  ASSERT_EQ(InitFlags::GetDefaultLogLevel(), LOG_TAG_DEBUG);
-}
-
-TEST(InitFlagsTest, test_enable_debug_logging_for_tags) {
-  const char* input[] = {"INIT_logging_debug_enabled_for_tags=foo,bar,hello", nullptr};
-  InitFlags::Load(input);
-  ASSERT_EQ(InitFlags::GetLogLevelForTag("foo"), LOG_TAG_VERBOSE);
-  ASSERT_EQ(InitFlags::GetLogLevelForTag("bar"), LOG_TAG_VERBOSE);
-  ASSERT_EQ(InitFlags::GetLogLevelForTag("hello"), LOG_TAG_VERBOSE);
-  ASSERT_EQ(InitFlags::GetLogLevelForTag("Foo"), LOG_TAG_INFO);
-  ASSERT_EQ(InitFlags::GetDefaultLogLevel(), LOG_TAG_INFO);
-}
-
-TEST(InitFlagsTest, test_disable_debug_logging_for_tags) {
-  const char* input[] = {
-      "INIT_logging_debug_disabled_for_tags=foo,bar,hello",
-      "INIT_default_log_level_str=LOG_DEBUG",
-      nullptr};
-  InitFlags::Load(input);
-  ASSERT_EQ(InitFlags::GetLogLevelForTag("foo"), LOG_TAG_INFO);
-  ASSERT_EQ(InitFlags::GetLogLevelForTag("bar"), LOG_TAG_INFO);
-  ASSERT_EQ(InitFlags::GetLogLevelForTag("hello"), LOG_TAG_INFO);
-  ASSERT_EQ(InitFlags::GetLogLevelForTag("Foo"), LOG_TAG_DEBUG);
-  ASSERT_EQ(InitFlags::GetDefaultLogLevel(), LOG_TAG_DEBUG);
-}
-
-TEST(InitFlagsTest, test_debug_logging_multiple_flags) {
-  const char* input[] = {
-      "INIT_logging_debug_enabled_for_tags=foo,hello",
-      "INIT_logging_debug_disabled_for_tags=foo,bar",
-      "INIT_default_log_level_str=LOG_WARN",
-      nullptr};
-  InitFlags::Load(input);
-  ASSERT_EQ(InitFlags::GetLogLevelForTag("foo"), LOG_TAG_INFO);
-  ASSERT_EQ(InitFlags::GetLogLevelForTag("bar"), LOG_TAG_INFO);
-  ASSERT_EQ(InitFlags::GetLogLevelForTag("hello"), LOG_TAG_VERBOSE);
-  ASSERT_EQ(InitFlags::GetLogLevelForTag("Foo"), LOG_TAG_WARN);
-  ASSERT_EQ(InitFlags::GetDefaultLogLevel(), LOG_TAG_WARN);
-}
-
 TEST(InitFlagsTest, test_device_iot_config_logging_is_enabled) {
   const char* input[] = {"INIT_device_iot_config_logging=true", nullptr};
   InitFlags::Load(input);

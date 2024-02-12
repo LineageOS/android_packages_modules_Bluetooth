@@ -1,4 +1,3 @@
-use bt_common::init_flags;
 use log::LevelFilter;
 use syslog::{BasicLogger, Error, Facility, Formatter3164};
 
@@ -64,11 +63,6 @@ impl IBluetoothLogging for BluetoothLogging {
         // Update log level in Linux stack.
         let level = if self.is_debug { LevelFilter::Debug } else { LevelFilter::Info };
         log::set_max_level(level);
-
-        // Update log level in libbluetooth.
-        let level =
-            if self.is_debug { init_flags::LOG_TAG_DEBUG } else { init_flags::LOG_TAG_INFO };
-        init_flags::update_default_log_level(level);
 
         // Mark the start of debug logging with a debug print.
         if self.is_debug {
