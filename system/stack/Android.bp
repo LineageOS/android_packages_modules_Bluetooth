@@ -339,6 +339,7 @@ cc_defaults {
         "libchrome",
     ],
     shared_libs: [
+        "libbase",
         "liblog",
     ],
     target: {
