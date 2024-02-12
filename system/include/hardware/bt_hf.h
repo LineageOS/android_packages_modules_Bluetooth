@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <bluetooth/log.h>
+
 namespace bluetooth {
 namespace headset {
 
@@ -137,3 +139,13 @@ typedef enum {
 
 }  // namespace headset
 }  // namespace bluetooth
+
+namespace fmt {
+template <>
+struct formatter<bluetooth::headset::bthf_connection_state_t>
+    : enum_formatter<bluetooth::headset::bthf_connection_state_t> {};
+
+template <>
+struct formatter<bluetooth::headset::bthf_audio_state_t>
+    : enum_formatter<bluetooth::headset::bthf_audio_state_t> {};
+}  // namespace fmt
