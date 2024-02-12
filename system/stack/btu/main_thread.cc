@@ -24,12 +24,14 @@
 #include <base/logging.h>
 #include <base/run_loop.h>
 #include <base/threading/thread.h>
+#include <bluetooth/log.h>
 
 #include "common/message_loop_thread.h"
 #include "include/hardware/bluetooth.h"
 #include "os/log.h"
 
 using bluetooth::common::MessageLoopThread;
+using namespace bluetooth;
 
 static MessageLoopThread main_thread("bt_main_thread");
 
@@ -38,7 +40,7 @@ bluetooth::common::MessageLoopThread* get_main_thread() { return &main_thread; }
 bt_status_t do_in_main_thread(const base::Location& from_here,
                               base::OnceClosure task) {
   if (!main_thread.DoInThread(from_here, std::move(task))) {
-    LOG(ERROR) << __func__ << ": failed from " << from_here.ToString();
+    log::error("failed from {}", from_here.ToString());
     return BT_STATUS_FAIL;
   }
   return BT_STATUS_SUCCESS;
@@ -48,7 +50,7 @@ bt_status_t do_in_main_thread_delayed(const base::Location& from_here,
                                       base::OnceClosure task,
                                       std::chrono::microseconds delay) {
   if (!main_thread.DoInThreadDelayed(from_here, std::move(task), delay)) {
-    LOG(ERROR) << __func__ << ": failed from " << from_here.ToString();
+    log::error("failed from {}", from_here.ToString());
     return BT_STATUS_FAIL;
   }
   return BT_STATUS_SUCCESS;
@@ -65,13 +67,13 @@ void post_on_bt_main(BtMainClosure closure) {
 void main_thread_start_up() {
   main_thread.StartUp();
   if (!main_thread.IsRunning()) {
-    LOG(FATAL) << __func__ << ": unable to start btu message loop thread.";
+    log::fatal("unable to start btu message loop thread.");
   }
   if (!main_thread.EnableRealTimeScheduling()) {
 #if defined(__ANDROID__)
-    LOG(FATAL) << __func__ << ": unable to enable real time scheduling";
+    log::fatal("unable to enable real time scheduling");
 #else
-    LOG(ERROR) << __func__ << ": unable to enable real time scheduling";
+    log::error("unable to enable real time scheduling");
 #endif
   }
 }
