@@ -20,6 +20,7 @@
 #define SMP_API_TYPES_H
 
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 
 #include <cstdint>
 #include <string>
@@ -228,5 +229,10 @@ typedef tBTM_STATUS(tSMP_CALLBACK)(tSMP_EVT event, const RawAddress& bd_addr,
 /* Security Manager SIRK verification event - Called by the stack when Security
  * Manager requires verification from CSIP.*/
 typedef tBTM_STATUS(tSMP_SIRK_CALLBACK)(const RawAddress& bd_addr);
+
+namespace fmt {
+template <>
+struct formatter<tSMP_SEC_LEVEL> : enum_formatter<tSMP_SEC_LEVEL> {};
+}  // namespace fmt
 
 #endif  // SMP_API_TYPES_H
