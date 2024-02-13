@@ -604,21 +604,23 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
             }
         }
 
+        if (!mCallbackExecutorMap.isEmpty()) {
+            return;
+        }
+
         // If the callback map is empty, we unregister the service-to-app callback
-        if (mCallbackExecutorMap.isEmpty()) {
-            try {
-                final IBluetoothVolumeControl service = getService();
-                if (service != null) {
-                    final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                    service.unregisterCallback(mCallback, mAttributionSource, recv);
-                    recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
-                }
-            } catch (RemoteException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
-                throw e.rethrowAsRuntimeException();
-            } catch (IllegalStateException | TimeoutException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+        try {
+            final IBluetoothVolumeControl service = getService();
+            if (service != null) {
+                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
+                service.unregisterCallback(mCallback, mAttributionSource, recv);
+                recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
             }
+        } catch (RemoteException e) {
+            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+            throw e.rethrowAsRuntimeException();
+        } catch (IllegalStateException | TimeoutException e) {
+            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         }
     }
 
