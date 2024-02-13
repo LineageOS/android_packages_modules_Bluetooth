@@ -26,6 +26,8 @@
 
 #include "stack/btm/btm_ble_bgconn.h"
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 #include <unordered_map>
 
@@ -36,6 +38,8 @@
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_int_types.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth;
 
 extern tBTM_CB btm_cb;
 
@@ -77,7 +81,7 @@ void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy) {
                              ? BTM_BLE_GAP_DISC_SCAN_WIN
                              : btm_cb.ble_ctr_cb.inq_var.scan_window;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   btm_cb.ble_ctr_cb.inq_var.sfp = scan_policy;
   btm_cb.ble_ctr_cb.inq_var.scan_type =
@@ -102,7 +106,7 @@ bool BTM_AcceptlistAdd(const RawAddress& address) {
  * be added, true otherwise. */
 bool BTM_AcceptlistAdd(const RawAddress& address, bool is_direct) {
   if (!controller_get_interface()->SupportsBle()) {
-    LOG_WARN("Controller does not support Le");
+    log::warn("Controller does not support Le");
     return false;
   }
 
@@ -113,7 +117,7 @@ bool BTM_AcceptlistAdd(const RawAddress& address, bool is_direct) {
 /** Removes the device from acceptlist */
 void BTM_AcceptlistRemove(const RawAddress& address) {
   if (!controller_get_interface()->SupportsBle()) {
-    LOG_WARN("Controller does not support Le");
+    log::warn("Controller does not support Le");
     return;
   }
 
@@ -125,7 +129,7 @@ void BTM_AcceptlistRemove(const RawAddress& address) {
 /** Clear the acceptlist, end any pending acceptlist connections */
 void BTM_AcceptlistClear() {
   if (!controller_get_interface()->SupportsBle()) {
-    LOG_WARN("Controller does not support Le");
+    log::warn("Controller does not support Le");
     return;
   }
   bluetooth::shim::ACL_IgnoreAllLeConnections();

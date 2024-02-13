@@ -84,3 +84,10 @@ flag {
     description: "Optimize LE scan parameters for BRCM controllers"
     bug: "324238597"
 }
+
+flag {
+    name: "le_periodic_scanning_reassembler"
+    namespace: "bluetooth"
+    description: "Enable reassembly of LE periodic advertising events"
+    bug: "324886466"
+}

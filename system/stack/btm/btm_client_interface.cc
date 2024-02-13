@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include "stack/include/btm_client_interface.h"
+
+#include <bluetooth/log.h>
 
 #include "security_client_callbacks.h"
 #include "stack/btm/btm_ble_int.h"
