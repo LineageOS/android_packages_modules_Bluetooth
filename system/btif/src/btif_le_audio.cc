@@ -32,6 +32,7 @@ using bluetooth::le_audio::btle_audio_codec_config_t;
 using bluetooth::le_audio::ConnectionState;
 using bluetooth::le_audio::GroupNodeStatus;
 using bluetooth::le_audio::GroupStatus;
+using bluetooth::le_audio::GroupStreamStatus;
 using bluetooth::le_audio::LeAudioClientCallbacks;
 using bluetooth::le_audio::LeAudioClientInterface;
 using bluetooth::le_audio::UnicastMonitorModeStatus;
@@ -138,6 +139,13 @@ class LeAudioClientInterfaceImpl : public LeAudioClientInterface,
     do_in_jni_thread(FROM_HERE,
                      Bind(&LeAudioClientCallbacks::OnUnicastMonitorModeStatus,
                           Unretained(callbacks), direction, status));
+  }
+
+  void OnGroupStreamStatus(int group_id,
+                           GroupStreamStatus group_stream_status) override {
+    do_in_jni_thread(
+        FROM_HERE, Bind(&LeAudioClientCallbacks::OnGroupStreamStatus,
+                        Unretained(callbacks), group_id, group_stream_status));
   }
 
   void Initialize(LeAudioClientCallbacks* callbacks,
