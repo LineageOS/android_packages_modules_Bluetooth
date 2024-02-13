@@ -272,6 +272,19 @@ public class LeAudioNativeInterface {
         sendMessageToService(event);
     }
 
+    @VisibleForTesting
+    void onGroupStreamStatus(int groupId, int groupStreamStatus) {
+        LeAudioStackEvent event =
+                new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_GROUP_STREAM_STATUS_CHANGED);
+        event.valueInt1 = groupId;
+        event.valueInt2 = groupStreamStatus;
+
+        if (DBG) {
+            Log.d(TAG, "onGroupStreamStatus: " + event);
+        }
+        sendMessageToService(event);
+    }
+
     /**
      * Initializes the native interface.
      *
