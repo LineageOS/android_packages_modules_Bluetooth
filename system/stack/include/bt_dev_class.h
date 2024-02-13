@@ -98,6 +98,9 @@ inline constexpr DEV_CLASS kDevClassEmpty = {};
 #define BTM_COD_SERVICE_CLASS_LO_B 0x00E0
 #define BTM_COD_SERVICE_CLASS_MASK 0xFFE0
 
+inline constexpr DEV_CLASS kDevClassUnclassified = {
+    0x00, BTM_COD_MAJOR_UNCLASSIFIED, BTM_COD_MINOR_UNCLASSIFIED};
+
 /* class of device field macros */
 #define BTM_COD_MINOR_CLASS(u8, pd) \
   { (u8) = (pd)[2] & BTM_COD_MINOR_CLASS_MASK; }
