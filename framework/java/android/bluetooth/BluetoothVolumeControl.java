@@ -49,6 +49,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 /**
  * This class provides the public APIs to control the Bluetooth Volume Control service.
@@ -165,35 +166,28 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
     @SuppressLint("AndroidFrameworkBluetoothPermission")
     private final IBluetoothVolumeControlCallback mCallback =
             new IBluetoothVolumeControlCallback.Stub() {
+
+                private void notify(Consumer<BluetoothVolumeControl.Callback> consumer) {
+                    synchronized (mCallbackExecutorMap) {
+                        for (Map.Entry<BluetoothVolumeControl.Callback, Executor> entry :
+                                mCallbackExecutorMap.entrySet()) {
+                            BluetoothVolumeControl.Callback callback = entry.getKey();
+                            Executor executor = entry.getValue();
+                            executor.execute(() -> consumer.accept(callback));
+                        }
+                    }
+                }
+
                 @Override
                 public void onVolumeOffsetChanged(
                         @NonNull BluetoothDevice device, int instanceId, int volumeOffset) {
                     Attributable.setAttributionSource(device, mAttributionSource);
-                    synchronized (mCallbackExecutorMap) {
-                        for (Map.Entry<BluetoothVolumeControl.Callback, Executor>
-                                callbackExecutorEntry : mCallbackExecutorMap.entrySet()) {
-                            BluetoothVolumeControl.Callback callback =
-                                    callbackExecutorEntry.getKey();
-                            Executor executor = callbackExecutorEntry.getValue();
 
-                            // The old API operates on the first instance only
-                            if (instanceId == 1) {
-                                try {
-                                    executor.execute(
-                                            () ->
-                                                    callback.onVolumeOffsetChanged(
-                                                            device, volumeOffset));
-                                } finally {
-                                    // As this deprecated callback, might not be defined; continue
-                                }
-                            }
-                            if (Flags.leaudioMultipleVocsInstancesApi()) {
-                                executor.execute(
-                                        () ->
-                                                callback.onVolumeOffsetChanged(
-                                                        device, instanceId, volumeOffset));
-                            }
-                        }
+                    if (instanceId == 1) {
+                        notify((cb) -> cb.onVolumeOffsetChanged(device, volumeOffset));
+                    }
+                    if (Flags.leaudioMultipleVocsInstancesApi()) {
+                        notify((cb) -> cb.onVolumeOffsetChanged(device, instanceId, volumeOffset));
                     }
                 }
 
@@ -201,50 +195,26 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
                 public void onVolumeOffsetAudioLocationChanged(
                         @NonNull BluetoothDevice device, int instanceId, int audioLocation) {
                     Attributable.setAttributionSource(device, mAttributionSource);
-                    synchronized (mCallbackExecutorMap) {
-                        for (Map.Entry<BluetoothVolumeControl.Callback, Executor>
-                                callbackExecutorEntry : mCallbackExecutorMap.entrySet()) {
-                            BluetoothVolumeControl.Callback callback =
-                                    callbackExecutorEntry.getKey();
-                            Executor executor = callbackExecutorEntry.getValue();
-                            executor.execute(
-                                    () ->
-                                            callback.onVolumeOffsetAudioLocationChanged(
-                                                    device, instanceId, audioLocation));
-                        }
-                    }
+                    notify(
+                            (cb) ->
+                                    cb.onVolumeOffsetAudioLocationChanged(
+                                            device, instanceId, audioLocation));
                 }
 
                 @Override
                 public void onVolumeOffsetAudioDescriptionChanged(
                         @NonNull BluetoothDevice device, int instanceId, String audioDescription) {
                     Attributable.setAttributionSource(device, mAttributionSource);
-                    synchronized (mCallbackExecutorMap) {
-                        for (Map.Entry<BluetoothVolumeControl.Callback, Executor>
-                                callbackExecutorEntry : mCallbackExecutorMap.entrySet()) {
-                            BluetoothVolumeControl.Callback callback =
-                                    callbackExecutorEntry.getKey();
-                            Executor executor = callbackExecutorEntry.getValue();
-                            executor.execute(
-                                    () ->
-                                            callback.onVolumeOffsetAudioDescriptionChanged(
-                                                    device, instanceId, audioDescription));
-                        }
-                    }
+                    notify(
+                            (cb) ->
+                                    cb.onVolumeOffsetAudioDescriptionChanged(
+                                            device, instanceId, audioDescription));
                 }
 
                 @Override
                 public void onDeviceVolumeChanged(@NonNull BluetoothDevice device, int volume) {
                     Attributable.setAttributionSource(device, mAttributionSource);
-                    synchronized (mCallbackExecutorMap) {
-                        for (Map.Entry<BluetoothVolumeControl.Callback, Executor>
-                                callbackExecutorEntry : mCallbackExecutorMap.entrySet()) {
-                            BluetoothVolumeControl.Callback callback =
-                                    callbackExecutorEntry.getKey();
-                            Executor executor = callbackExecutorEntry.getValue();
-                            executor.execute(() -> callback.onDeviceVolumeChanged(device, volume));
-                        }
-                    }
+                    notify((cb) -> cb.onDeviceVolumeChanged(device, volume));
                 }
             };
 
