@@ -1696,6 +1696,7 @@ cc_test {
         "test/hid/stack_hid_test.cc",
     ],
     static_libs: [
+        "libbase",
         "libbluetooth-types",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_log",
