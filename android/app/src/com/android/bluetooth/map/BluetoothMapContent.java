@@ -3940,11 +3940,13 @@ public class BluetoothMapContent {
     public byte[] getEmailMessage(long id, BluetoothMapAppParams appParams,
             BluetoothMapFolderElement currentFolder) throws UnsupportedEncodingException {
         // Log print out of application parameters set
-        if (D && appParams != null) {
-            Log.d(TAG,
-                    "TYPE_MESSAGE (GET): Attachment = " + appParams.getAttachment() + ", Charset = "
-                            + appParams.getCharset() + ", FractionRequest = "
-                            + appParams.getFractionRequest());
+        if (D) {
+            if (appParams != null) {
+                Log.d(TAG, "TYPE_MESSAGE (GET): Attachment = " + appParams.getAttachment()
+                        + ", Charset = "
+                        + appParams.getCharset() + ", FractionRequest = "
+                        + appParams.getFractionRequest());
+            }
         }
 
         // Throw exception if requester NATIVE charset for Email
