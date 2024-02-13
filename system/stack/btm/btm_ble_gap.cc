@@ -533,8 +533,11 @@ tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration,
                              : btm_cb.ble_ctr_cb.inq_var.scan_window;
 
   // use low latency scanning if the scanning is active
+  uint16_t ll_scan_interval, ll_scan_window;
+  std::tie(ll_scan_interval, ll_scan_window) = get_low_latency_scan_params();
   if (low_latency_scan) {
-    std::tie(scan_interval, scan_window) = get_low_latency_scan_params();
+    std::tie(scan_interval, scan_window) =
+        std::tie(ll_scan_interval, ll_scan_window);
   }
 
   log::verbose("scan_type:{}, {}, {}", btm_cb.ble_ctr_cb.inq_var.scan_type,
@@ -565,9 +568,8 @@ tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration,
        * 2. current ongoing scanning is low latency
        */
       bool is_ongoing_low_latency =
-          btm_cb.ble_ctr_cb.inq_var.scan_interval ==
-              BTM_BLE_GAP_DISC_SCAN_INT &&
-          btm_cb.ble_ctr_cb.inq_var.scan_window == BTM_BLE_LOW_LATENCY_SCAN_WIN;
+          btm_cb.ble_ctr_cb.inq_var.scan_interval == ll_scan_interval &&
+          btm_cb.ble_ctr_cb.inq_var.scan_window == ll_scan_window;
       if (!low_latency_scan || is_ongoing_low_latency) {
         log::warn("Observer was already active, is_low_latency: {}",
                   is_ongoing_low_latency);
