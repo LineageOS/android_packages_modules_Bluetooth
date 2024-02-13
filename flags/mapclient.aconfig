@@ -6,3 +6,10 @@ flag {
     description: "Handle DeliveryFailure and SendingFailure Event types of MAP-Event-Reports from the MNS."
     bug: "317400386"
 }
+
+flag {
+    name: "use_entire_message_handle"
+    namespace: "bluetooth"
+    description: "Use entire message handle of messages pushed from MCE to MSE."
+    bug: "323382399"
+}
