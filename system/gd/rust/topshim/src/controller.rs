@@ -12,6 +12,7 @@ mod ffi {
 
         fn GetControllerInterface() -> UniquePtr<ControllerIntf>;
         fn read_local_addr(self: &ControllerIntf) -> RawAddress;
+        fn get_ble_supported_states(self: &ControllerIntf) -> u64;
     }
 }
 
@@ -29,5 +30,9 @@ impl Controller {
 
     pub fn read_local_addr(&mut self) -> [u8; 6] {
         self.internal.read_local_addr().address
+    }
+
+    pub fn get_ble_supported_states(&mut self) -> u64 {
+        self.internal.get_ble_supported_states()
     }
 }
