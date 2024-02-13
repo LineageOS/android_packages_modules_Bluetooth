@@ -42,6 +42,7 @@ import android.media.AudioManager;
 import android.media.BluetoothProfileConnectionInfo;
 import android.os.Looper;
 import android.os.ParcelUuid;
+import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -52,7 +53,6 @@ import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.AudioRoutingManager;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
-import com.android.bluetooth.flags.FakeFeatureFlagsImpl;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.x.com.android.modules.utils.SynchronousResultReceiver;
 
@@ -60,6 +60,7 @@ import org.hamcrest.Matcher;
 import org.hamcrest.core.AllOf;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -84,11 +85,11 @@ public class HearingAidServiceTest {
     private static final BluetoothDevice mRightDevice = TestUtils.getTestDevice(mAdapter, 1);
     private static final BluetoothDevice mSingleDevice = TestUtils.getTestDevice(mAdapter, 2);
 
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+
     private HearingAidService mService;
     private HearingAidService.BluetoothHearingAidBinder mServiceBinder;
     private HashMap<BluetoothDevice, LinkedBlockingQueue<Intent>> mDeviceQueueMap;
-
-    private FakeFeatureFlagsImpl mFakeFlagsImpl;
 
     @Mock private AdapterService mAdapterService;
     @Mock private ActiveDeviceManager mActiveDeviceManager;
@@ -112,13 +113,11 @@ public class HearingAidServiceTest {
         if (Looper.myLooper() == null) {
             Looper.prepare();
         }
-        mFakeFlagsImpl = new FakeFeatureFlagsImpl();
-        mFakeFlagsImpl.setFlag(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION, false);
 
         TestUtils.setAdapterService(mAdapterService);
         doAnswer(
                         invocation -> {
-                            if (mFakeFlagsImpl.audioRoutingCentralization()) {
+                            if (Flags.audioRoutingCentralization()) {
                                 return mAudioRoutingManager;
                             } else {
                                 return mActiveDeviceManager;
@@ -969,14 +968,13 @@ public class HearingAidServiceTest {
         assertThat(mService.getActiveDevices()).containsNoneOf(mRightDevice, mLeftDevice);
         assertThat(mService.getActiveDevices()).contains(mSingleDevice);
 
-        mService.setFeatureFlags(mFakeFlagsImpl);
         SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
         boolean defaultRecvValue = false;
         mServiceBinder.setActiveDevice(null, null, recv);
         assertThat(recv.awaitResultNoInterrupt(TIMEOUT).getValue(defaultRecvValue)).isTrue();
         assertThat(mService.getActiveDevices()).doesNotContain(mSingleDevice);
 
-        mFakeFlagsImpl.setFlag(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION, true);
+        mSetFlagsRule.enableFlags(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION);
         recv = SynchronousResultReceiver.get();
         mServiceBinder.setActiveDevice(null, null, recv);
         verify(mAudioRoutingManager)
