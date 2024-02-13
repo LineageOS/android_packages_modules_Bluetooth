@@ -39,7 +39,7 @@ import android.os.CancellationSignal;
 import android.os.HandlerThread;
 import android.os.SystemProperties;
 import android.os.UserHandle;
-import android.platform.test.annotations.RequiresFlagsEnabled;
+import android.platform.test.flag.junit.SetFlagsRule;
 import android.provider.CallLog;
 import android.provider.CallLog.Calls;
 import android.telephony.PhoneNumberUtils;
@@ -65,6 +65,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -85,6 +86,9 @@ public class HeadsetStateMachineTest {
     private static final int ASYNC_CALL_TIMEOUT_MILLIS = 250;
     private static final String TEST_PHONE_NUMBER = "1234567890";
     private static final int MAX_RETRY_DISCONNECT_AUDIO = 3;
+
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+
     private Context mTargetContext;
     private BluetoothAdapter mAdapter;
     private HandlerThread mHandlerThread;
@@ -1017,8 +1021,8 @@ public class HeadsetStateMachineTest {
 
     /** A test to verify that we correctly send CIND response when a call is in progress */
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_PRETEND_NETWORK_SERVICE)
     public void testCindEventWhenCallIsInProgress() {
+        mSetFlagsRule.enableFlags(Flags.FLAG_PRETEND_NETWORK_SERVICE);
         when(mPhoneState.getCindService())
                 .thenReturn(HeadsetHalConstants.NETWORK_STATE_NOT_AVAILABLE);
         when(mHeadsetService.isVirtualCallStarted()).thenReturn(false);
@@ -1657,8 +1661,8 @@ public class HeadsetStateMachineTest {
 
     /** Test setting audio parameters according to received SWB event. SWB AptX is enabled. */
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_HFP_CODEC_APTX_VOICE)
     public void testSetAudioParameters_SwbAptxEnabled() {
+        mSetFlagsRule.enableFlags(Flags.FLAG_HFP_CODEC_APTX_VOICE);
         assumeTrue(SystemProperties.getBoolean("bluetooth.hfp.codec_aptx_voice.enabled", false));
         setUpConnectedState();
         mHeadsetStateMachine.sendMessage(
