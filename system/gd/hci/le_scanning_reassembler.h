@@ -58,6 +58,13 @@ class LeScanningReassembler {
       uint8_t advertising_sid,
       const std::vector<uint8_t>& advertising_data);
 
+  /// Process an incoming periodic advertising report, extracted from the
+  /// HCI LE Periodic Advertising Report events.
+  /// Returns the completed advertising data if the event was complete,
+  /// or the completion of a fragmented advertising event.
+  std::optional<std::vector<uint8_t>> ProcessPeriodicAdvertisingReport(
+      uint16_t sync_handle, DataStatus status, const std::vector<uint8_t>& advertising_data);
+
   /// Configure the scan response filter.
   /// If true all scan responses are ignored.
   void SetIgnoreScanResponses(bool ignore_scan_responses) {
@@ -105,6 +112,15 @@ class LeScanningReassembler {
         : key(key), extended_event_type(extended_event_type), data(data.begin(), data.end()) {}
   };
 
+  /// Packs incomplete periodic advertising data.
+  struct PeriodicAdvertisingFragment {
+    std::optional<uint16_t> sync_handle;
+    std::vector<uint8_t> data;
+
+    PeriodicAdvertisingFragment(uint16_t sync_handle, const std::vector<uint8_t>& data)
+        : sync_handle(sync_handle), data(data.begin(), data.end()) {}
+  };
+
   /// Advertising cache for de-fragmenting extended advertising reports,
   /// and joining advertising reports with the matching scan response when
   /// applicable.
@@ -122,6 +138,15 @@ class LeScanningReassembler {
   bool ContainsFragment(const AdvertisingKey& key);
 
   std::list<AdvertisingFragment>::iterator FindFragment(const AdvertisingKey& key);
+
+  /// Advertising cache for de-fragmenting periodic advertising reports.
+  static constexpr size_t kMaximumPeriodicCacheSize = 16;
+  std::list<PeriodicAdvertisingFragment> periodic_cache_;
+
+  std::list<PeriodicAdvertisingFragment>::iterator AppendPeriodicFragment(
+      uint16_t sync_handle, const std::vector<uint8_t>& data);
+
+  std::list<PeriodicAdvertisingFragment>::iterator FindPeriodicFragment(uint16_t sync_handle);
 
   /// Trim the advertising data by removing empty or overflowing
   /// GAP Data entries.
