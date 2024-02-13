@@ -16,6 +16,8 @@
 
 #include "security_event_parser.h"
 
+#include <bluetooth/log.h>
+
 #include <optional>
 #include <string>
 
@@ -29,6 +31,7 @@
 #include "stack/include/stack_metrics_logging.h"
 #include "types/raw_address.h"
 
+using namespace bluetooth;
 using namespace bluetooth::hci;
 using android::bluetooth::hci::CMD_UNKNOWN;
 using android::bluetooth::hci::STATUS_UNKNOWN;
@@ -92,14 +95,14 @@ static void parse_central_link_key_complete(const EventView event) {
   ASSERT(event_opt.has_value());
   auto complete = event_opt.value();
 
-  LOG_INFO("Unhandled event: %s", EventCodeText(event.GetEventCode()).c_str());
+  log::info("Unhandled event: {}", EventCodeText(event.GetEventCode()).c_str());
 }
 static void parse_return_link_keys(const EventView event) {
   auto event_opt = ReturnLinkKeysView::CreateOptional(event);
   ASSERT(event_opt.has_value());
   auto view = event_opt.value();
 
-  LOG_INFO("Unhandled event: %s", EventCodeText(event.GetEventCode()).c_str());
+  log::info("Unhandled event: {}", EventCodeText(event.GetEventCode()).c_str());
 }
 static void parse_pin_code_request(const EventView event) {
   auto event_opt = PinCodeRequestView::CreateOptional(event);
@@ -193,7 +196,7 @@ static void parse_keypress_notification(const EventView event) {
   ASSERT(event_opt.has_value());
   auto notification = event_opt.value();
 
-  LOG_INFO("Unhandled event: %s", EventCodeText(event.GetEventCode()).c_str());
+  log::info("Unhandled event: {}", EventCodeText(event.GetEventCode()).c_str());
   log_address(notification.GetBdAddr(), event.GetEventCode());
 }
 static void parse_user_confirmation_request(const EventView event) {
@@ -270,8 +273,8 @@ void SecurityEventParser::OnSecurityEvent(bluetooth::hci::EventView event) {
       parse_user_passkey_request(event);
       break;
     default:
-      LOG_ERROR("Unhandled event %s",
-                EventCodeText(event.GetEventCode()).c_str());
+      log::error("Unhandled event {}",
+                 EventCodeText(event.GetEventCode()).c_str());
   }
 }
 }  // namespace bluetooth::stack::btm

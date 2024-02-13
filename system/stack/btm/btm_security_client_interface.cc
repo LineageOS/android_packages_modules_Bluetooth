@@ -17,6 +17,8 @@
 
 #define LOG_TAG "sec_interf"
 
+#include <bluetooth/log.h>
+
 #include "os/log.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_sec.h"
@@ -26,6 +28,8 @@
 #include "stack/include/security_client_callbacks.h"
 #include "types/bt_transport.h"
 
+using namespace bluetooth;
+
 static void BTM_SecConfirmReqReply(tBTM_STATUS res, tBT_TRANSPORT transport,
                                    const RawAddress bd_addr) {
   if (transport == BT_TRANSPORT_BR_EDR) {
@@ -33,7 +37,7 @@ static void BTM_SecConfirmReqReply(tBTM_STATUS res, tBT_TRANSPORT transport,
   } else if (transport == BT_TRANSPORT_LE) {
     BTM_BleConfirmReply(bd_addr, res);
   } else {
-    LOG_ERROR("Unexpected transport:%d", transport);
+    log::error("Unexpected transport:{}", transport);
   }
 }
 

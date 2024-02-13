@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 
 #include "internal_include/bt_target.h"
@@ -306,3 +308,9 @@ struct tBTM_INQUIRY_VAR_ST {
 
 bool btm_inq_find_bdaddr(const RawAddress& p_bda);
 tINQ_DB_ENT* btm_inq_db_find(const RawAddress& p_bda);
+
+namespace fmt {
+template <>
+struct formatter<tBTM_INQUIRY_CMPL::STATUS>
+    : enum_formatter<tBTM_INQUIRY_CMPL::STATUS> {};
+}  // namespace fmt
