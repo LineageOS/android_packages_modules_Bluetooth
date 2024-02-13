@@ -290,9 +290,10 @@ static tBTA_HH_DEV_CB* bta_hh_le_find_dev_cb_by_conn_id(uint16_t conn_id) {
 
 /*******************************************************************************
  *
- * Function         bta_hh_le_find_dev_cb_by_bda
+ * Function         bta_hh_le_find_dev_cb_by_addr_transport
  *
- * Description      Utility function find a device control block by BD address.
+ * Description      Utility function find a device control block by ACL link
+ *                  specification.
  *
  ******************************************************************************/
 static tBTA_HH_DEV_CB* bta_hh_le_find_dev_cb_by_bda(
@@ -962,7 +963,7 @@ static void bta_hh_le_pri_service_discovery(tBTA_HH_DEV_CB* p_cb) {
  *
  ******************************************************************************/
 static void bta_hh_le_encrypt_cback(const RawAddress* bd_addr,
-                                    UNUSED_ATTR tBT_TRANSPORT transport,
+                                    tBT_TRANSPORT transport,
                                     UNUSED_ATTR void* p_ref_data,
                                     tBTM_STATUS result) {
   tAclLinkSpec link_spec;

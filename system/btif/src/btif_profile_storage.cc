@@ -93,12 +93,12 @@ using namespace bluetooth;
  ******************************************************************************/
 
 bt_status_t btif_storage_add_hid_device_info(
-    RawAddress* remote_bd_addr, uint16_t attr_mask, uint8_t sub_class,
+    tAclLinkSpec* link_spec, uint16_t attr_mask, uint8_t sub_class,
     uint8_t app_id, uint16_t vendor_id, uint16_t product_id, uint16_t version,
     uint8_t ctry_code, uint16_t ssr_max_latency, uint16_t ssr_min_tout,
     uint16_t dl_len, uint8_t* dsc_list) {
   log::verbose("btif_storage_add_hid_device_info:");
-  std::string bdstr = remote_bd_addr->ToString();
+  std::string bdstr = link_spec->addrt.bda.ToString();
   btif_config_set_int(bdstr, BTIF_STORAGE_KEY_HID_ATTR_MASK, attr_mask);
   btif_config_set_int(bdstr, BTIF_STORAGE_KEY_HID_SUB_CLASS, sub_class);
   btif_config_set_int(bdstr, BTIF_STORAGE_KEY_HID_APP_ID, app_id);
@@ -129,9 +129,13 @@ bt_status_t btif_storage_add_hid_device_info(
 bt_status_t btif_storage_load_bonded_hid_info(void) {
   for (const auto& bd_addr : btif_config_get_paired_devices()) {
     auto name = bd_addr.ToString();
-    tAclLinkSpec link_spec;
+    tAclLinkSpec link_spec = {};
+    link_spec.addrt.bda = bd_addr;
 
     log::verbose("Remote device:{}", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+
+    link_spec.addrt.type = BLE_ADDR_PUBLIC;
+    link_spec.transport = BT_TRANSPORT_AUTO;
 
     int value;
     if (!btif_config_get_int(name, BTIF_STORAGE_KEY_HID_ATTR_MASK, &value))
@@ -139,7 +143,7 @@ bt_status_t btif_storage_load_bonded_hid_info(void) {
     uint16_t attr_mask = (uint16_t)value;
 
     if (btif_in_fetch_bonded_device(name) != BT_STATUS_SUCCESS) {
-      btif_storage_remove_hid_info(bd_addr);
+      btif_storage_remove_hid_info(link_spec);
       continue;
     }
 
@@ -182,9 +186,6 @@ bt_status_t btif_storage_load_bonded_hid_info(void) {
     }
 
     // add extracted information to BTA HH
-    link_spec.addrt.bda = bd_addr;
-    link_spec.addrt.type = BLE_ADDR_PUBLIC;
-    link_spec.transport = BT_TRANSPORT_AUTO;
     if (btif_hh_add_added_dev(link_spec, attr_mask)) {
       BTA_HhAddDev(link_spec, attr_mask, sub_class, app_id, dscp_info);
     }
@@ -204,8 +205,8 @@ bt_status_t btif_storage_load_bonded_hid_info(void) {
  *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-bt_status_t btif_storage_remove_hid_info(const RawAddress& remote_bd_addr) {
-  std::string bdstr = remote_bd_addr.ToString();
+bt_status_t btif_storage_remove_hid_info(const tAclLinkSpec& link_spec) {
+  std::string bdstr = link_spec.addrt.bda.ToString();
 
   btif_config_remove(bdstr, BTIF_STORAGE_KEY_HID_ATTR_MASK);
   btif_config_remove(bdstr, BTIF_STORAGE_KEY_HID_SUB_CLASS);

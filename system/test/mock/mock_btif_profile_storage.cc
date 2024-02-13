@@ -135,14 +135,14 @@ void btif_storage_add_hearing_aid(const HearingDevice& dev_info) {
   test::mock::btif_profile_storage::btif_storage_add_hearing_aid(dev_info);
 }
 bt_status_t btif_storage_add_hid_device_info(
-    RawAddress* remote_bd_addr, uint16_t attr_mask, uint8_t sub_class,
+    tAclLinkSpec* link_spec, uint16_t attr_mask, uint8_t sub_class,
     uint8_t app_id, uint16_t vendor_id, uint16_t product_id, uint16_t version,
     uint8_t ctry_code, uint16_t ssr_max_latency, uint16_t ssr_min_tout,
     uint16_t dl_len, uint8_t* dsc_list) {
   inc_func_call_count(__func__);
   return test::mock::btif_profile_storage::btif_storage_add_hid_device_info(
-      remote_bd_addr, attr_mask, sub_class, app_id, vendor_id, product_id,
-      version, ctry_code, ssr_max_latency, ssr_min_tout, dl_len, dsc_list);
+      link_spec, attr_mask, sub_class, app_id, vendor_id, product_id, version,
+      ctry_code, ssr_max_latency, ssr_min_tout, dl_len, dsc_list);
 }
 void btif_storage_add_leaudio_has_device(const RawAddress& address,
                                          std::vector<uint8_t> presets_bin,
@@ -253,10 +253,10 @@ void btif_storage_remove_hearing_aid(const RawAddress& address) {
   inc_func_call_count(__func__);
   test::mock::btif_profile_storage::btif_storage_remove_hearing_aid(address);
 }
-bt_status_t btif_storage_remove_hid_info(const RawAddress& remote_bd_addr) {
+bt_status_t btif_storage_remove_hid_info(const tAclLinkSpec& link_spec) {
   inc_func_call_count(__func__);
   return test::mock::btif_profile_storage::btif_storage_remove_hid_info(
-      remote_bd_addr);
+      link_spec);
 }
 bt_status_t btif_storage_remove_hidd(RawAddress* remote_bd_addr) {
   inc_func_call_count(__func__);
