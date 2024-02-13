@@ -44,7 +44,7 @@ using ::bluetooth::audio::aidl::BluetoothAudioCtrlAck;
 using ::bluetooth::audio::le_audio::LeAudioClientInterface;
 using ::bluetooth::audio::le_audio::StartRequestState;
 using ::bluetooth::audio::le_audio::StreamCallbacks;
-using ::bluetooth::le_audio::set_configurations::SetConfiguration;
+using ::bluetooth::le_audio::set_configurations::AseConfiguration;
 using ::bluetooth::le_audio::types::LeAudioCoreCodecConfig;
 
 static ChannelMode le_audio_channel_mode2audio_hal(uint8_t channels_count) {
@@ -747,33 +747,37 @@ std::vector<AudioSetConfiguration> get_offload_capabilities() {
     str_capability_log.clear();
 
     if (hal_ucast_capability_to_stack_format(hal_encode_cap, encode_cap)) {
-      audio_set_config.confs.push_back(SetConfiguration(
-          ::bluetooth::le_audio::types::kLeAudioDirectionSink,
-          hal_encode_cap.deviceCount,
-          hal_encode_cap.deviceCount * hal_encode_cap.channelCountPerDevice,
-          encode_cap));
+      auto ase_cnt =
+          hal_encode_cap.deviceCount * hal_encode_cap.channelCountPerDevice;
+      while (ase_cnt--) {
+        audio_set_config.confs.sink.push_back(AseConfiguration(encode_cap));
+      }
       str_capability_log = " Encode Capability: " + hal_encode_cap.toString();
     }
 
     if (hal_ucast_capability_to_stack_format(hal_decode_cap, decode_cap)) {
-      audio_set_config.confs.push_back(SetConfiguration(
-          ::bluetooth::le_audio::types::kLeAudioDirectionSource,
-          hal_decode_cap.deviceCount,
-          hal_decode_cap.deviceCount * hal_decode_cap.channelCountPerDevice,
-          decode_cap));
+      auto ase_cnt =
+          hal_decode_cap.deviceCount * hal_decode_cap.channelCountPerDevice;
+      while (ase_cnt--) {
+        audio_set_config.confs.source.push_back(AseConfiguration(decode_cap));
+      }
       str_capability_log += " Decode Capability: " + hal_decode_cap.toString();
     }
 
+    audio_set_config.topology_info = {
+        {{static_cast<uint8_t>(hal_decode_cap.deviceCount),
+          static_cast<uint8_t>(hal_encode_cap.deviceCount)}}};
+
     if (hal_bcast_capability_to_stack_format(hal_bcast_cap, bcast_cap)) {
       // Set device_cnt, ase_cnt to zero to ignore these fields for broadcast
-      audio_set_config.confs.push_back(
-          SetConfiguration(::bluetooth::le_audio::types::kLeAudioDirectionSink,
-                           0, 0, bcast_cap));
+      audio_set_config.topology_info = {{{0, 0}}};
+      audio_set_config.confs.sink.push_back(AseConfiguration(bcast_cap));
       str_capability_log +=
           " Broadcast Capability: " + hal_bcast_cap.toString();
     }
 
-    if (!audio_set_config.confs.empty()) {
+    if (!audio_set_config.confs.sink.empty() ||
+        !audio_set_config.confs.source.empty()) {
       offload_capabilities.push_back(audio_set_config);
       LOG(INFO) << __func__
                 << ": Supported codec capability =" << str_capability_log;
