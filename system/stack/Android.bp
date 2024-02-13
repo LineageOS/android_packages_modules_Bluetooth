@@ -1455,6 +1455,7 @@ cc_test {
         "libcutils",
     ],
     static_libs: [
+        "libbase",
         "libbluetooth-types",
         "libbluetooth_gd",
         "libbluetooth_log",
@@ -1771,6 +1772,7 @@ cc_test {
         "test/stack_btu_test.cc",
     ],
     static_libs: [
+        "libbase",
         "libbluetooth-types",
         "libbluetooth_gd",
         "libbluetooth_log",
