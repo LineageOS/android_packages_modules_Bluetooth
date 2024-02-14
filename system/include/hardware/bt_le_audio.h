@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include <bluetooth/log.h>
+
 #include <array>
 #include <map>
 #include <optional>
@@ -333,6 +335,10 @@ class LeAudioClientCallbacks {
 
   virtual void OnUnicastMonitorModeStatus(uint8_t direction,
                                           UnicastMonitorModeStatus status) = 0;
+
+  /* Callback with group stream status update */
+  virtual void OnGroupStreamStatus(int group_id,
+                                   GroupStreamStatus group_stream_status) = 0;
 };
 
 class LeAudioClientInterface {
@@ -529,3 +535,22 @@ class LeAudioBroadcasterInterface {
 
 } /* namespace le_audio */
 } /* namespace bluetooth */
+
+namespace fmt {
+template <>
+struct formatter<bluetooth::le_audio::btle_audio_codec_index_t>
+    : enum_formatter<bluetooth::le_audio::btle_audio_codec_index_t> {};
+template <>
+struct formatter<bluetooth::le_audio::btle_audio_sample_rate_index_t>
+    : enum_formatter<bluetooth::le_audio::btle_audio_sample_rate_index_t> {};
+template <>
+struct formatter<bluetooth::le_audio::btle_audio_bits_per_sample_index_t>
+    : enum_formatter<bluetooth::le_audio::btle_audio_bits_per_sample_index_t> {
+};
+template <>
+struct formatter<bluetooth::le_audio::btle_audio_channel_count_index_t>
+    : enum_formatter<bluetooth::le_audio::btle_audio_channel_count_index_t> {};
+template <>
+struct formatter<bluetooth::le_audio::btle_audio_frame_duration_index_t>
+    : enum_formatter<bluetooth::le_audio::btle_audio_frame_duration_index_t> {};
+}  // namespace fmt

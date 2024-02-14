@@ -45,10 +45,8 @@ import android.location.LocationManager;
 import android.os.Binder;
 import android.os.RemoteException;
 import android.os.WorkSource;
+import android.platform.test.flag.junit.SetFlagsRule;
 
-import android.platform.test.annotations.RequiresFlagsEnabled;
-import android.platform.test.flag.junit.CheckFlagsRule;
-import android.platform.test.flag.junit.DeviceFlagsValueProvider;
 import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.SmallTest;
 import androidx.test.rule.ServiceTestRule;
@@ -67,7 +65,6 @@ import com.android.bluetooth.flags.Flags;
 
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -110,9 +107,7 @@ public class GattServiceTest {
     @Mock private AdvertiseManagerNativeInterface mAdvertiseManagerNativeInterface;
 
     @Rule public final ServiceTestRule mServiceRule = new ServiceTestRule();
-
-    @Rule
-    public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     private BluetoothDevice mDevice;
     private BluetoothAdapter mAdapter;
@@ -134,7 +129,7 @@ public class GattServiceTest {
 
         GattObjectsFactory.setInstanceForTesting(mFactory);
         doReturn(mNativeInterface).when(mFactory).getNativeInterface();
-        doReturn(mScanManager).when(mFactory).createScanManager(any(), any(), any(), any(), any());
+        doReturn(mScanManager).when(mFactory).createScanManager(any(), any(), any(), any());
         doReturn(mPeriodicScanManager).when(mFactory).createPeriodicScanManager(any());
         doReturn(mDistanceMeasurementManager).when(mFactory)
                 .createDistanceMeasurementManager(any());
@@ -502,10 +497,9 @@ public class GattServiceTest {
         verify(mScanManager).flushBatchScanResults(new ScanClient(scannerId));
     }
 
-    @RequiresFlagsEnabled(Flags.FLAG_LE_SCAN_FIX_REMOTE_EXCEPTION)
     @Test
     public void onScanResult_remoteException_clientDied() throws Exception {
-        Assume.assumeTrue(Flags.leScanFixRemoteException());
+        mSetFlagsRule.enableFlags(Flags.FLAG_LE_SCAN_FIX_REMOTE_EXCEPTION);
         int scannerId = 1;
 
         int eventType = 0;
@@ -893,9 +887,9 @@ public class GattServiceTest {
                         BluetoothProfile.STATE_CONNECTED);
     }
 
-    @RequiresFlagsEnabled(Flags.FLAG_GATT_CLEANUP_RESTRICTED_HANDLES)
     @Test
     public void restrictedHandles() throws Exception {
+        mSetFlagsRule.enableFlags(Flags.FLAG_GATT_CLEANUP_RESTRICTED_HANDLES);
         int clientIf = 1;
         int connId = 1;
         ArrayList<GattDbElement> db = new ArrayList<>();

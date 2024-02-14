@@ -499,6 +499,7 @@ cc_test {
         "BluetoothGeneratedDumpsysTestData_h",
     ],
     static_libs: [
+        "libbase",
         "libbluetooth-gdx",
         "libbluetooth-types",
         "libbluetooth_gd",
@@ -512,6 +513,7 @@ cc_test {
         "libevent",
         "libflatbuffers-cpp",
         "libgmock",
+        "liblog",
         "libosi",
     ],
     shared_libs: [

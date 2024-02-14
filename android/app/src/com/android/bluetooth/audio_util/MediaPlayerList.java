@@ -37,8 +37,7 @@ import android.util.Log;
 
 import com.android.bluetooth.BluetoothEventLogger;
 import com.android.bluetooth.Utils;
-import com.android.bluetooth.flags.FeatureFlags;
-import com.android.bluetooth.flags.FeatureFlagsImpl;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
@@ -92,7 +91,6 @@ public class MediaPlayerList {
     private MediaSessionManager mMediaSessionManager;
     private MediaData mCurrMediaData = null;
     private final AudioManager mAudioManager;
-    private final FeatureFlags mFeatureFlags = new FeatureFlagsImpl();
 
     private final BluetoothEventLogger mActivePlayerLogger =
             new BluetoothEventLogger(ACTIVE_PLAYER_LOGGER_SIZE, ACTIVE_PLAYER_LOGGER_TITLE);
@@ -211,7 +209,7 @@ public class MediaPlayerList {
 
         // Build the list of browsable players and afterwards, build the list of media players
         Intent intent = new Intent(android.service.media.MediaBrowserService.SERVICE_INTERFACE);
-        if (mFeatureFlags.keepStoppedMediaBrowserService()) {
+        if (Flags.keepStoppedMediaBrowserService()) {
             // Don't query stopped apps, that would end up unstopping them
             intent.addFlags(Intent.FLAG_EXCLUDE_STOPPED_PACKAGES);
         }

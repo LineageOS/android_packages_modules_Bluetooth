@@ -31,6 +31,7 @@
 
 #include <base/functional/bind.h>
 #include <base/location.h>
+#include <bluetooth/log.h>
 
 #include <cstdint>
 
@@ -63,6 +64,7 @@
 #include "types/hci_role.h"
 #include "types/raw_address.h"
 
+using namespace bluetooth;
 using base::Location;
 using bluetooth::hci::IsoManager;
 
@@ -199,8 +201,8 @@ static void btu_hcif_log_event_metrics(uint8_t evt_code,
     case HCI_CONNECTION_REQUEST_EVT:  // EventCode::CONNECTION_REQUEST
     case HCI_DISCONNECTION_COMP_EVT:  // EventCode::DISCONNECTION_COMPLETE
     default:
-      LOG_ERROR(
-          "Unexpectedly received event_code:0x%02x that should not be "
+      log::error(
+          "Unexpectedly received event_code:0x{:02x} that should not be "
           "handled here",
           evt_code);
       break;
@@ -227,8 +229,8 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id,
 
   // validate event size
   if (hci_evt_len < hci_event_parameters_minimum_length[hci_evt_code]) {
-    LOG_WARN("%s: evt:0x%2X, malformed event of size %hhd", __func__,
-             hci_evt_code, hci_evt_len);
+    log::warn("evt:0x{:2X}, malformed event of size {}", hci_evt_code,
+              hci_evt_len);
     return;
   }
 
@@ -263,16 +265,14 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id,
       btu_hcif_read_rmt_ext_features_comp_evt(p, hci_evt_len);
       break;
     case HCI_COMMAND_COMPLETE_EVT:
-      LOG_ERROR(
-          "%s should not have received a command complete event. "
-          "Someone didn't go through the hci transmit_command function.",
-          __func__);
+      log::error(
+          "should not have received a command complete event. Someone didn't "
+          "go through the hci transmit_command function.");
       break;
     case HCI_COMMAND_STATUS_EVT:
-      LOG_ERROR(
-          "%s should not have received a command status event. "
-          "Someone didn't go through the hci transmit_command function.",
-          __func__);
+      log::error(
+          "should not have received a command status event. Someone didn't go "
+          "through the hci transmit_command function.");
       break;
     case HCI_MODE_CHANGE_EVT:
       btu_hcif_mode_change_evt(p);
@@ -382,9 +382,9 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id,
         case HCI_BLE_ENHANCED_CONN_COMPLETE_EVT:  // SubeventCode::ENHANCED_CONNECTION_COMPLETE
         case HCI_LE_SUBRATE_CHANGE_EVT:  // SubeventCode::LE_SUBRATE_CHANGE
         default:
-          LOG_ERROR(
-              "Unexpectedly received LE sub_event_code:0x%02x that should not "
-              "be handled here",
+          log::error(
+              "Unexpectedly received LE sub_event_code:0x{:02x} that should "
+              "not be handled here",
               ble_sub_code);
           break;
       }
@@ -404,8 +404,8 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id,
     case HCI_ROLE_CHANGE_EVT:            // EventCode::ROLE_CHANGE
     case HCI_DISCONNECTION_COMP_EVT:     // EventCode::DISCONNECTION_COMPLETE
     default:
-      LOG_ERROR(
-          "Unexpectedly received event_code:0x%02x that should not be "
+      log::error(
+          "Unexpectedly received event_code:0x{:02x} that should not be "
           "handled here",
           hci_evt_code);
       break;
@@ -731,8 +731,7 @@ static void btu_hcif_command_complete_evt_with_cb_on_task(BT_HDR* event,
   btu_hcif_log_command_complete_metrics(opcode, stream);
 
   cmd_with_cb_data* cb_wrapper = (cmd_with_cb_data*)context;
-  LOG_VERBOSE("command complete for: %s",
-              cb_wrapper->posted_from.ToString().c_str());
+  log::verbose("command complete for: {}", cb_wrapper->posted_from.ToString());
   // 2 for event header: event code (1) + parameter length (1)
   // 3 for command complete header: num_hci_pkt (1) + opcode (2)
   uint16_t param_len = static_cast<uint16_t>(event->len - 5);
@@ -765,8 +764,7 @@ static void btu_hcif_command_status_evt_with_cb_on_task(uint8_t status,
 
   // report command status error
   cmd_with_cb_data* cb_wrapper = (cmd_with_cb_data*)context;
-  LOG_VERBOSE("command status for: %s",
-              cb_wrapper->posted_from.ToString().c_str());
+  log::verbose("command status for: {}", cb_wrapper->posted_from.ToString());
   std::move(cb_wrapper->cb).Run(&status, sizeof(uint16_t));
   cmd_with_cb_data_cleanup(cb_wrapper);
   osi_free(cb_wrapper);
@@ -1067,7 +1065,7 @@ static void btu_hcif_hdl_command_complete(uint16_t opcode, uint8_t* p,
     case HCI_BLE_CREATE_LL_CONN:
     case HCI_LE_EXTENDED_CREATE_CONNECTION:
       // No command complete event for those commands according to spec
-      LOG_ERROR("No command complete expected, but received!");
+      log::error("No command complete expected, but received!");
       break;
 
     case HCI_BLE_TRANSMITTER_TEST:
@@ -1112,8 +1110,9 @@ static void btu_hcif_hdl_command_complete(uint16_t opcode, uint8_t* p,
       break;
 
     default:
-      LOG_ERROR("Command complete for opcode:0x%02x should not be handled here",
-                opcode);
+      log::error(
+          "Command complete for opcode:0x{:02x} should not be handled here",
+          opcode);
       break;
   }
 }
@@ -1247,16 +1246,16 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
     case HCI_READ_RMT_CLOCK_OFFSET:    // 0x041f
     case HCI_CHANGE_CONN_PACKET_TYPE:  // 0x040f
       if (hci_status != HCI_SUCCESS) {
-        LOG_WARN("Received bad command status for opcode:0x%02x status:%s",
-                 opcode, hci_status_code_text(hci_status).c_str());
+        log::warn("Received bad command status for opcode:0x{:02x} status:{}",
+                  opcode, hci_status_code_text(hci_status));
       }
       break;
 
     default:
-      LOG_ERROR(
-          "Command status for opcode:0x%02x should not be handled here "
-          "status:%s",
-          opcode, hci_status_code_text(hci_status).c_str());
+      log::error(
+          "Command status for opcode:0x{:02x} should not be handled here "
+          "status:{}",
+          opcode, hci_status_code_text(hci_status));
   }
 }
 
@@ -1371,7 +1370,7 @@ void btu_hcif_proc_sp_req_evt(tBTM_SP_EVT event, const uint8_t* p) {
       // No value needed.
       break;
     default:
-      LOG_WARN("unexpected event:%s", sp_evt_to_text(event).c_str());
+      log::warn("unexpected event:{}", sp_evt_to_text(event));
       break;
   }
   btm_proc_sp_req_evt(event, bda, value);
@@ -1380,7 +1379,7 @@ void btu_hcif_create_conn_cancel_complete(const uint8_t* p, uint16_t evt_len) {
   uint8_t status;
 
   if (evt_len < 1 + BD_ADDR_LEN) {
-    LOG_ERROR("malformatted event packet, too short");
+    log::error("malformatted event packet, too short");
     return;
   }
 
@@ -1410,7 +1409,7 @@ void btu_hcif_read_local_oob_complete(const uint8_t* p, uint16_t evt_len) {
   return;
 
 err_out:
-  LOG_ERROR("bogus event packet, too short");
+  log::error("bogus event packet, too short");
 }
 
 /*******************************************************************************
@@ -1533,8 +1532,8 @@ static void btu_ble_ll_conn_param_upd_evt(uint8_t* p, uint16_t evt_len) {
   uint16_t timeout;
 
   if (evt_len < 9) {
-     LOG_ERROR("Malformated event packet, too short");
-     return;
+    log::error("Malformated event packet, too short");
+    return;
   }
 
   STREAM_TO_UINT8(status, p);
@@ -1559,7 +1558,7 @@ static void btu_ble_proc_ltk_req(uint8_t* p, uint16_t evt_len) {
   // - 8-byte random number
   // - 2 byte Encrypted_Diversifier
   if (evt_len < 2 + 8 + 2) {
-    LOG_ERROR("Event packet too short");
+    log::error("Event packet too short");
     return;
   }
 
@@ -1576,13 +1575,13 @@ static void btu_ble_data_length_change_evt(uint8_t* p, uint16_t evt_len) {
   uint16_t rx_data_len;
 
   if (!controller_get_interface()->SupportsBleDataPacketLengthExtension()) {
-    LOG_WARN("request not supported");
+    log::warn("request not supported");
     return;
   }
 
   // 2 bytes each for handle, tx_data_len, TxTimer, rx_data_len
   if (evt_len < 8) {
-    LOG_ERROR("Event packet too short");
+    log::error("Event packet too short");
     return;
   }
 
@@ -1602,7 +1601,7 @@ static void btu_ble_rc_param_req_evt(uint8_t* p, uint8_t len) {
   uint16_t int_min, int_max, latency, timeout;
 
   if (len < 10) {
-    LOG_ERROR("bogus event packet, too short");
+    log::error("bogus event packet, too short");
     return;
   }
 

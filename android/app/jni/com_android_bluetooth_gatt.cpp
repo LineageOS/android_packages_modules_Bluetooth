@@ -33,15 +33,6 @@
 #include "rust/src/gatt/ffi/gatt_shim.h"
 #include "src/gatt/ffi.rs.h"
 #include "utils/Log.h"
-#define info(fmt, ...) ALOGI("%s(L%d): " fmt, __func__, __LINE__, ##__VA_ARGS__)
-#define debug(fmt, ...) \
-  ALOGD("%s(L%d): " fmt, __func__, __LINE__, ##__VA_ARGS__)
-#define warn(fmt, ...) \
-  ALOGW("WARNING: %s(L%d): " fmt "##", __func__, __LINE__, ##__VA_ARGS__)
-#define error(fmt, ...) \
-  ALOGE("ERROR: %s(L%d): " fmt "##", __func__, __LINE__, ##__VA_ARGS__)
-#define asrt(s) \
-  if (!(s)) ALOGE("%s(L%d): ASSERT %s failed! ##", __func__, __LINE__, #s)
 
 using bluetooth::Uuid;
 
@@ -1111,7 +1102,7 @@ class JniScanningCallbacks : ScanningCallbacks {
     CallbackEnv sCallbackEnv(__func__);
     if (!sCallbackEnv.valid()) return;
     if (!mPeriodicScanCallbacksObj) {
-      ALOGE("mPeriodicScanCallbacksObj is NULL. Return.");
+      log::error("mPeriodicScanCallbacksObj is NULL. Return.");
       return;
     }
     ScopedLocalRef<jstring> addr(sCallbackEnv.get(),
@@ -1154,7 +1145,7 @@ class JniScanningCallbacks : ScanningCallbacks {
     CallbackEnv sCallbackEnv(__func__);
     if (!sCallbackEnv.valid()) return;
     if (!mPeriodicScanCallbacksObj) {
-      ALOGE("mPeriodicScanCallbacksObj is NULL. Return.");
+      log::error("mPeriodicScanCallbacksObj is NULL. Return.");
       return;
     }
     ScopedLocalRef<jstring> addr(sCallbackEnv.get(),
@@ -1171,7 +1162,7 @@ class JniScanningCallbacks : ScanningCallbacks {
     if (!sCallbackEnv.valid()) return;
 
     if (!mPeriodicScanCallbacksObj) {
-      ALOGE("mPeriodicScanCallbacksObj is NULL. Return.");
+      log::error("mPeriodicScanCallbacksObj is NULL. Return.");
       return;
     }
     sCallbackEnv->CallVoidMethod(mPeriodicScanCallbacksObj,
@@ -1247,18 +1238,18 @@ static void initializeNative(JNIEnv* env, jobject object) {
 
   btIf = getBluetoothInterface();
   if (btIf == NULL) {
-    error("Bluetooth module is not loaded");
+    log::error("Bluetooth module is not loaded");
     return;
   }
 
   if (sGattIf != NULL) {
-    ALOGW("Cleaning up Bluetooth GATT Interface before initializing...");
+    log::warn("Cleaning up Bluetooth GATT Interface before initializing...");
     sGattIf->cleanup();
     sGattIf = NULL;
   }
 
   if (mCallbacksObj != NULL) {
-    ALOGW("Cleaning up Bluetooth GATT callback object");
+    log::warn("Cleaning up Bluetooth GATT callback object");
     env->DeleteGlobalRef(mCallbacksObj);
     mCallbacksObj = NULL;
   }
@@ -1266,13 +1257,14 @@ static void initializeNative(JNIEnv* env, jobject object) {
   sGattIf =
       (btgatt_interface_t*)btIf->get_profile_interface(BT_PROFILE_GATT_ID);
   if (sGattIf == NULL) {
-    error("Failed to get Bluetooth GATT Interface");
+    log::error("Failed to get Bluetooth GATT Interface");
     return;
   }
 
   bt_status_t status = sGattIf->init(&sGattCallbacks);
   if (status != BT_STATUS_SUCCESS) {
-    error("Failed to initialize Bluetooth GATT, status: %d", status);
+    log::error("Failed to initialize Bluetooth GATT, status: {}",
+               bt_status_text(status));
     sGattIf = NULL;
     return;
   }
@@ -1477,7 +1469,7 @@ static void gattClientWriteCharacteristicNative(JNIEnv* env,
   if (!sGattIf) return;
 
   if (value == NULL) {
-    warn("gattClientWriteCharacteristicNative() ignoring NULL array");
+    log::warn("gattClientWriteCharacteristicNative() ignoring NULL array");
     return;
   }
 
@@ -1505,7 +1497,7 @@ static void gattClientWriteDescriptorNative(JNIEnv* env, jobject /* object */,
   if (!sGattIf) return;
 
   if (value == NULL) {
-    warn("gattClientWriteDescriptorNative() ignoring NULL array");
+    log::warn("gattClientWriteDescriptorNative() ignoring NULL array");
     return;
   }
 
@@ -1716,7 +1708,7 @@ static void gattClientScanFilterAddNative(JNIEnv* env, jobject /* object */,
       int len = env->GetArrayLength(irkByteArray.get());
       // IRK is 128 bits or 16 octets, set the bytes or zero it out
       if (len != 16) {
-        ALOGE("%s: Invalid IRK length '%d'; expected 16", __func__, len);
+        log::error("Invalid IRK length '{}'; expected 16", len);
         jniThrowIOException(env, EINVAL);
         return;
       }
@@ -2139,7 +2131,7 @@ static void gattServerSendResponseNative(JNIEnv* env, jobject /* object */,
 static void advertiseInitializeNative(JNIEnv* env, jobject object) {
   std::unique_lock<std::shared_mutex> lock(callbacks_mutex);
   if (mAdvertiseCallbacksObj != NULL) {
-    ALOGW("Cleaning up Advertise callback object");
+    log::warn("Cleaning up Advertise callback object");
     env->DeleteGlobalRef(mAdvertiseCallbacksObj);
     mAdvertiseCallbacksObj = NULL;
   }
@@ -2449,7 +2441,7 @@ static void setPeriodicAdvertisingEnableNative(JNIEnv* /* env */,
 static void periodicScanInitializeNative(JNIEnv* env, jobject object) {
   std::unique_lock<std::shared_mutex> lock(callbacks_mutex);
   if (mPeriodicScanCallbacksObj != NULL) {
-    ALOGW("Cleaning up periodic scan callback object");
+    log::warn("Cleaning up periodic scan callback object");
     env->DeleteGlobalRef(mPeriodicScanCallbacksObj);
     mPeriodicScanCallbacksObj = NULL;
   }
@@ -2524,7 +2516,7 @@ static void gattTestNative(JNIEnv* env, jobject /* object */, jint command,
 static void distanceMeasurementInitializeNative(JNIEnv* env, jobject object) {
   std::unique_lock<std::shared_mutex> lock(callbacks_mutex);
   if (mDistanceMeasurementCallbacksObj != NULL) {
-    ALOGW("Cleaning up Advertise callback object");
+    log::warn("Cleaning up Advertise callback object");
     env->DeleteGlobalRef(mDistanceMeasurementCallbacksObj);
     mDistanceMeasurementCallbacksObj = NULL;
   }
