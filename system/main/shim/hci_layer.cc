@@ -70,20 +70,6 @@ bool register_event_code(bluetooth::hci::EventCode event_code) {
     // SCO
     case bluetooth::hci::EventCode::SYNCHRONOUS_CONNECTION_COMPLETE:
     case bluetooth::hci::EventCode::SYNCHRONOUS_CONNECTION_CHANGED:
-
-    // SecurityEvents
-    case bluetooth::hci::EventCode::ENCRYPTION_CHANGE:
-    case bluetooth::hci::EventCode::PIN_CODE_REQUEST:
-    case bluetooth::hci::EventCode::LINK_KEY_REQUEST:
-    case bluetooth::hci::EventCode::LINK_KEY_NOTIFICATION:
-    case bluetooth::hci::EventCode::ENCRYPTION_KEY_REFRESH_COMPLETE:
-    case bluetooth::hci::EventCode::IO_CAPABILITY_REQUEST:
-    case bluetooth::hci::EventCode::IO_CAPABILITY_RESPONSE:
-    case bluetooth::hci::EventCode::REMOTE_OOB_DATA_REQUEST:
-    case bluetooth::hci::EventCode::SIMPLE_PAIRING_COMPLETE:
-    case bluetooth::hci::EventCode::USER_PASSKEY_NOTIFICATION:
-    case bluetooth::hci::EventCode::USER_CONFIRMATION_REQUEST:
-    case bluetooth::hci::EventCode::USER_PASSKEY_REQUEST:
       return true;
     default:
       return false;
