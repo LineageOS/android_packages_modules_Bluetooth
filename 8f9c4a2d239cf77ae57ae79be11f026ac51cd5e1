@@ -18,6 +18,23 @@
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8edc752f_949f137b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 14048
+      },
+      "writtenOn": "2024-02-14T22:24:37Z",
+      "side": 1,
+      "message": "Valid comments by luca. I was trying to figure out how to just do a static initializer list, but never made it work. Maybe using a pair in an arraylist will allow that to work.",
+      "revId": "8f9c4a2d239cf77ae57ae79be11f026ac51cd5e1",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "872180a8_bff5c1fb",
