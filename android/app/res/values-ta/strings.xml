@@ -135,4 +135,12 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"உங்கள் சாதனம் விமானப் பயன்முறையில் புளூடூத்தை இயக்கத்திலேயே வைத்திருக்கும். புளூடூத்தை இயக்கத்தில் வைத்திருக்க விரும்பவில்லை எனில் நீங்கள் அதை முடக்கலாம்."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"வைஃபையும் புளூடூத்தும் இயக்கத்திலேயே இருத்தல்"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"உங்கள் சாதனம் விமானப் பயன்முறையில் வைஃபையையும் புளூடூத்தையும் இயக்கத்திலேயே வைத்திருக்கும். வைஃபையையும் புளூடூத்தையும் இயக்கத்தில் வைத்திருக்க விரும்பவில்லை எனில் நீங்கள் அவற்றை முடக்கலாம்."</string>
+    <!-- no translation found for bluetooth_enabled_auto_on_title (1799541656310353393) -->
+    <skip />
+    <!-- no translation found for bluetooth_enabled_auto_on_message (1070556457440100730) -->
+    <skip />
+    <!-- no translation found for bluetooth_disable_auto_on (1085026923461565937) -->
+    <skip />
+    <!-- no translation found for bluetooth_notification_group (7251886707585872194) -->
+    <skip />
 </resources>

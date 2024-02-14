@@ -135,4 +135,8 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Bluetooth op je apparaat blijft aan in de vliegtuigmodus. Zet bluetooth uit als je niet wilt dat dit aan blijft."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wifi en bluetooth blijven aan"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Wifi en bluetooth op je apparaat blijven aan in de vliegtuigmodus. Zet wifi en bluetooth uit als je niet wilt dat ze aan blijven."</string>
+    <string name="bluetooth_enabled_auto_on_title" msgid="1799541656310353393">"Bluetooth is automatisch aangezet"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="1070556457440100730">"Je kunt Automatisch opnieuw opstarten aan- of uitzetten in de bluetooth-instellingen."</string>
+    <string name="bluetooth_disable_auto_on" msgid="1085026923461565937">"Uitzetten"</string>
+    <string name="bluetooth_notification_group" msgid="7251886707585872194">"Automatische wijziging in status van bluetooth"</string>
 </resources>

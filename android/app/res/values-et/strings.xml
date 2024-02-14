@@ -135,4 +135,8 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Teie seade hoiab Bluetoothi lennukirežiimis sisselülitatuna. Lülitage Bluetooth välja, kui te ei soovi, et see oleks sisse lülitatud."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"WiFi ja Bluetoothi jäävad sisselülitatuks"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Teie seade hoiab WiFi ja Bluetoothi lennukirežiimis sisselülitatuna. Lülitage WiFi ja Bluetooth välja, kui te ei soovi, et need oleksid sisse lülitatud."</string>
+    <string name="bluetooth_enabled_auto_on_title" msgid="1799541656310353393">"Bluetooth on automaatselt lubatud"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="1070556457440100730">"Automaatse taaskäivitamise saab sisse lülitada Bluetoothi seadetes."</string>
+    <string name="bluetooth_disable_auto_on" msgid="1085026923461565937">"Lülita välja"</string>
+    <string name="bluetooth_notification_group" msgid="7251886707585872194">"Bluetoothi oleku automaatne muutmine"</string>
 </resources>
