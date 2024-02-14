@@ -90,8 +90,6 @@ public class BluetoothOppReceiverTest {
         mReceiver = new BluetoothOppReceiver();
 
         Intents.init();
-
-        BluetoothOppTestUtils.enableOppActivities(true, mContext);
         TestUtils.setUpUiTest();
     }
 
@@ -114,24 +112,41 @@ public class BluetoothOppReceiverTest {
         Intent intent = new Intent();
         intent.setAction(BluetoothDevicePicker.ACTION_DEVICE_SELECTED);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
-        ActivityScenario<BluetoothOppBtEnableActivity> activityScenario
-                = ActivityScenario.launch(BluetoothOppBtEnableActivity.class);
-        activityScenario.onActivity(activity -> {
-            mReceiver.onReceive(mContext, intent);
-        });
-        doNothing().when(bluetoothOppManager).startTransfer(eq(device));
-        verify(bluetoothOppManager).startTransfer(eq(device));
-        BluetoothOppManager.setInstance(null);
+
+        try {
+            BluetoothOppTestUtils.enableActivity(
+                    BluetoothOppBtEnableActivity.class, true, mContext);
+            ActivityScenario<BluetoothOppBtEnableActivity> activityScenario =
+                    ActivityScenario.launch(BluetoothOppBtEnableActivity.class);
+            activityScenario.onActivity(
+                    activity -> {
+                        mReceiver.onReceive(mContext, intent);
+                    });
+            doNothing().when(bluetoothOppManager).startTransfer(eq(device));
+            verify(bluetoothOppManager).startTransfer(eq(device));
+            BluetoothOppManager.setInstance(null);
+        } finally {
+            BluetoothOppTestUtils.enableActivity(
+                    BluetoothOppBtEnableActivity.class, false, mContext);
+        }
     }
 
     @Test
     public void onReceive_withActionIncomingFileConfirm_startsIncomingFileConfirmActivity() {
         mSetFlagsRule.disableFlags(Flags.FLAG_OPP_START_ACTIVITY_DIRECTLY_FROM_NOTIFICATION);
-        Intent intent = new Intent();
-        intent.setAction(Constants.ACTION_INCOMING_FILE_CONFIRM);
-        intent.setData(Uri.parse("content:///not/important"));
-        mReceiver.onReceive(mContext, intent);
-        intended(hasComponent(BluetoothOppIncomingFileConfirmActivity.class.getName()));
+        try {
+            BluetoothOppTestUtils.enableActivity(
+                    BluetoothOppIncomingFileConfirmActivity.class, true, mContext);
+
+            Intent intent = new Intent();
+            intent.setAction(Constants.ACTION_INCOMING_FILE_CONFIRM);
+            intent.setData(Uri.parse("content:///not/important"));
+            mReceiver.onReceive(mContext, intent);
+            intended(hasComponent(BluetoothOppIncomingFileConfirmActivity.class.getName()));
+        } finally {
+            BluetoothOppTestUtils.enableActivity(
+                    BluetoothOppIncomingFileConfirmActivity.class, false, mContext);
+        }
     }
 
     @Test
@@ -161,28 +176,44 @@ public class BluetoothOppReceiverTest {
     @Test
     public void onReceive_withActionOutboundTransfer_startsTransferHistoryActivity() {
         mSetFlagsRule.disableFlags(Flags.FLAG_OPP_START_ACTIVITY_DIRECTLY_FROM_NOTIFICATION);
-        Intent intent = new Intent();
-        intent.setAction(Constants.ACTION_OPEN_OUTBOUND_TRANSFER);
-        intent.setData(Uri.parse("content:///not/important"));
-        intending(anyIntent()).respondWith(
-                new Instrumentation.ActivityResult(Activity.RESULT_OK, new Intent()));
+        try {
+            BluetoothOppTestUtils.enableActivity(BluetoothOppTransferHistory.class, true, mContext);
 
-        mReceiver.onReceive(mContext, intent);
-        intended(hasComponent(BluetoothOppTransferHistory.class.getName()));
-        intended(hasExtra(Constants.EXTRA_DIRECTION, BluetoothShare.DIRECTION_OUTBOUND));
+            Intent intent = new Intent();
+            intent.setAction(Constants.ACTION_OPEN_OUTBOUND_TRANSFER);
+            intent.setData(Uri.parse("content:///not/important"));
+            intending(anyIntent())
+                    .respondWith(
+                            new Instrumentation.ActivityResult(Activity.RESULT_OK, new Intent()));
+
+            mReceiver.onReceive(mContext, intent);
+            intended(hasComponent(BluetoothOppTransferHistory.class.getName()));
+            intended(hasExtra(Constants.EXTRA_DIRECTION, BluetoothShare.DIRECTION_OUTBOUND));
+        } finally {
+            BluetoothOppTestUtils.enableActivity(
+                    BluetoothOppTransferHistory.class, false, mContext);
+        }
     }
 
     @Test
     public void onReceive_withActionInboundTransfer_startsTransferHistoryActivity() {
         mSetFlagsRule.disableFlags(Flags.FLAG_OPP_START_ACTIVITY_DIRECTLY_FROM_NOTIFICATION);
-        Intent intent = new Intent();
-        intent.setAction(Constants.ACTION_OPEN_INBOUND_TRANSFER);
-        intent.setData(Uri.parse("content:///not/important"));
-        intending(anyIntent()).respondWith(
-                new Instrumentation.ActivityResult(Activity.RESULT_OK, new Intent()));
-        mReceiver.onReceive(mContext, intent);
-        intended(hasComponent(BluetoothOppTransferHistory.class.getName()));
-        intended(hasExtra(Constants.EXTRA_DIRECTION, BluetoothShare.DIRECTION_INBOUND));
+        try {
+            BluetoothOppTestUtils.enableActivity(BluetoothOppTransferHistory.class, true, mContext);
+
+            Intent intent = new Intent();
+            intent.setAction(Constants.ACTION_OPEN_INBOUND_TRANSFER);
+            intent.setData(Uri.parse("content:///not/important"));
+            intending(anyIntent())
+                    .respondWith(
+                            new Instrumentation.ActivityResult(Activity.RESULT_OK, new Intent()));
+            mReceiver.onReceive(mContext, intent);
+            intended(hasComponent(BluetoothOppTransferHistory.class.getName()));
+            intended(hasExtra(Constants.EXTRA_DIRECTION, BluetoothShare.DIRECTION_INBOUND));
+        } finally {
+            BluetoothOppTestUtils.enableActivity(
+                    BluetoothOppTransferHistory.class, false, mContext);
+        }
     }
 
     @Test
