@@ -71,6 +71,7 @@ class LeAudioTransport {
                    PcmConfiguration pcm_config);
 
   BluetoothAudioCtrlAck StartRequest(bool is_low_latency);
+  BluetoothAudioCtrlAck StartRequestV2(bool is_low_latency);
 
   BluetoothAudioCtrlAck SuspendRequest();
 
@@ -103,6 +104,9 @@ class LeAudioTransport {
 
   const LeAudioBroadcastConfiguration& LeAudioGetBroadcastConfig();
 
+  bool IsRequestCompletedAfterUpdate(
+      const std::function<
+          std::pair<StartRequestState, bool>(StartRequestState)>& lambda);
   StartRequestState GetStartRequestState(void);
   void ClearStartRequestState(void);
   void SetStartRequestState(StartRequestState state);
@@ -115,6 +119,7 @@ class LeAudioTransport {
   timespec data_position_;
   PcmConfiguration pcm_config_;
   LeAudioBroadcastConfiguration broadcast_config_;
+  mutable std::mutex start_request_state_mutex_;
   std::atomic<StartRequestState> start_request_state_;
   DsaMode dsa_mode_;
 };
@@ -128,6 +133,7 @@ class LeAudioSinkTransport
   ~LeAudioSinkTransport();
 
   BluetoothAudioCtrlAck StartRequest(bool is_low_latency) override;
+  BluetoothAudioCtrlAck StartRequestV2(bool is_low_latency);
 
   BluetoothAudioCtrlAck SuspendRequest() override;
 
@@ -161,6 +167,9 @@ class LeAudioSinkTransport
 
   const LeAudioBroadcastConfiguration& LeAudioGetBroadcastConfig();
 
+  bool IsRequestCompletedAfterUpdate(
+      const std::function<
+          std::pair<StartRequestState, bool>(StartRequestState)>& lambda);
   StartRequestState GetStartRequestState(void);
   void ClearStartRequestState(void);
   void SetStartRequestState(StartRequestState state);
@@ -184,6 +193,7 @@ class LeAudioSourceTransport
   ~LeAudioSourceTransport();
 
   BluetoothAudioCtrlAck StartRequest(bool is_low_latency) override;
+  BluetoothAudioCtrlAck StartRequestV2(bool is_low_latency);
 
   BluetoothAudioCtrlAck SuspendRequest() override;
 
@@ -211,6 +221,10 @@ class LeAudioSourceTransport
   void LeAudioSetSelectedHalPcmConfig(uint32_t sample_rate_hz, uint8_t bit_rate,
                                       uint8_t channels_count,
                                       uint32_t data_interval);
+
+  bool IsRequestCompletedAfterUpdate(
+      const std::function<
+          std::pair<StartRequestState, bool>(StartRequestState)>& lambda);
 
   StartRequestState GetStartRequestState(void);
   void ClearStartRequestState(void);
