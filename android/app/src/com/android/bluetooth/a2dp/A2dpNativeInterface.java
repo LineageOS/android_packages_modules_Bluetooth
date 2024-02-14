@@ -31,6 +31,7 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -173,7 +174,11 @@ public class A2dpNativeInterface {
         if (device == null) {
             return Utils.getBytesFromAddress("00:00:00:00:00:00");
         }
-        return mAdapterService.getByteIdentityAddress(device);
+        if (Flags.identityAddressNullIfUnknown()) {
+            return Utils.getByteBrEdrAddress(device);
+        } else {
+            return mAdapterService.getByteIdentityAddress(device);
+        }
     }
 
     private void sendMessageToService(A2dpStackEvent event) {
