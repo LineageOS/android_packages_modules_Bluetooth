@@ -16,6 +16,23 @@
       "message": "Re-verified on tegra after code updates. Need verification from non-tegra atv.",
       "revId": "65083a5e7bf199c8789874da55d38f92804ee445",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "643534b9_759107cb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 16185
+      },
+      "writtenOn": "2024-02-14T20:54:05Z",
+      "side": 1,
+      "message": "Looks good to me!. Works on Deadpool.",
+      "revId": "65083a5e7bf199c8789874da55d38f92804ee445",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
