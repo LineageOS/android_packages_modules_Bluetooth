@@ -800,6 +800,7 @@ cc_test {
         "libcutils",
     ],
     static_libs: [
+        "libbase",
         "libbluetooth-types",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
