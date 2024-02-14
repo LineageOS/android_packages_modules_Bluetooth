@@ -27,6 +27,7 @@
 
 #define LOG_TAG "bt_btif"
 
+#include <android_bluetooth_flags.h>
 #include <base/logging.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bluetooth_headset_interface.h>
@@ -660,7 +661,11 @@ static int get_connection_state(const RawAddress* bd_addr) {
 
   if (bd_addr == nullptr) return 0;
 
-  return btif_dm_get_connection_state(*bd_addr);
+  if (IS_FLAG_ENABLED(api_get_connection_state_sync_on_main)) {
+    return btif_dm_get_connection_state_sync(*bd_addr);
+  } else {
+    return btif_dm_get_connection_state(*bd_addr);
+  }
 }
 
 static int pin_reply(const RawAddress* bd_addr, uint8_t accept, uint8_t pin_len,

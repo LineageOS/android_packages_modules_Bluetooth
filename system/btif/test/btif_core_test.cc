@@ -753,3 +753,21 @@ TEST_F(BtifCoreWithControllerTest,
   ASSERT_EQ(7, btif_dm_get_connection_state(kRawAddress));
   test::mock::stack_btm_sec::BTM_IsEncrypted = {};
 }
+
+TEST_F(BtifCoreWithControllerTest, btif_dm_get_connection_state_sync) {
+  bta_dm_acl_up(kRawAddress, BT_TRANSPORT_AUTO, 0x123);
+
+  test::mock::stack_btm_sec::BTM_IsEncrypted.body =
+      [](const RawAddress& /* bd_addr */, tBT_TRANSPORT transport) {
+        switch (transport) {
+          case BT_TRANSPORT_BR_EDR:
+            return true;
+          case BT_TRANSPORT_LE:
+            return true;
+        }
+        return false;
+      };
+  ASSERT_EQ(7, btif_dm_get_connection_state_sync(kRawAddress));
+
+  test::mock::stack_btm_sec::BTM_IsEncrypted = {};
+}
