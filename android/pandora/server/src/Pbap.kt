@@ -94,6 +94,7 @@ class Pbap(val context: Context) : PBAPImplBase(), Closeable {
         val displayName = String.format(DEFAULT_DISPLAY_NAME, contactIndex)
         val phoneNumber = generatePhoneNumber(PHONE_NUM_LENGTH)
         val emailID = String.format(DEFAULT_EMAIL_ID, contactIndex)
+        val note = String.format(DEFAULT_NOTE, contactIndex)
 
         val rawContactInsertIndex = operations.size
         operations.add(
@@ -129,6 +130,14 @@ class Pbap(val context: Context) : PBAPImplBase(), Closeable {
                 .build()
         )
 
+        operations.add(
+            ContentProviderOperation.newInsert(Data.CONTENT_URI)
+                .withValueBackReference(Data.RAW_CONTACT_ID, rawContactInsertIndex)
+                .withValue(Data.MIMETYPE, Note.CONTENT_ITEM_TYPE)
+                .withValue(Note.NOTE, note)
+                .build()
+        )
+
         context.getContentResolver().applyBatch(ContactsContract.AUTHORITY, operations)
     }
 
@@ -146,5 +155,12 @@ class Pbap(val context: Context) : PBAPImplBase(), Closeable {
         const val DEFAULT_EMAIL_ID = "user%d@example.com"
         const val CONTACT_LIST_SIZE = 125
         const val PHONE_NUM_LENGTH = 10
+        const val DEFAULT_NOTE =
+            """
+                %d Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                Vivamus condimentum rhoncus est volutpat venenatis.
+                Fusce semper, sapien ut venenatis pellentesque,
+                lorem dui aliquam sapien, non pharetra diam neque id mi.
+            """
     }
 }
