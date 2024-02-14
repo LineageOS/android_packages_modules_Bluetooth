@@ -27,8 +27,8 @@ void vlog(Level level, char const* tag, char const* file_name, int line,
           char const* function_name, fmt::string_view fmt,
           fmt::format_args vargs) {
   // Check if log is enabled.
-  if (!__android_log_is_loggable(level, tag, ANDROID_LOG_DEFAULT) &&
-      !__android_log_is_loggable(level, "bluetooth", ANDROID_LOG_DEFAULT)) {
+  if (!__android_log_is_loggable(level, tag, ANDROID_LOG_INFO) &&
+      !__android_log_is_loggable(level, "bluetooth", ANDROID_LOG_INFO)) {
     return;
   }
 

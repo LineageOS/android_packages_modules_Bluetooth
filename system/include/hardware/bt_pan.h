@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-#ifndef ANDROID_INCLUDE_BT_PAN_H
-#define ANDROID_INCLUDE_BT_PAN_H
-#include <raw_address.h>
+#pragma once
 
-__BEGIN_DECLS
+#include <bluetooth/log.h>
+#include <raw_address.h>
 
 #define BTPAN_ROLE_NONE 0
 #define BTPAN_ROLE_PANNAP 1
@@ -90,6 +89,12 @@ typedef struct {
 
 } btpan_interface_t;
 
-__END_DECLS
+namespace fmt {
+template <>
+struct formatter<btpan_connection_state_t>
+    : enum_formatter<btpan_connection_state_t> {};
 
-#endif /* ANDROID_INCLUDE_BT_PAN_H */
+template <>
+struct formatter<btpan_control_state_t>
+    : enum_formatter<btpan_control_state_t> {};
+}  // namespace fmt

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include "eatt_impl.h"
 #include "stack/include/bt_hdr.h"
@@ -33,7 +33,7 @@ struct EattExtension::impl {
 
   void Start() {
     if (eatt_impl_) {
-      LOG(ERROR) << "Eatt already started";
+      log::error("Eatt already started");
       return;
     };
 
@@ -48,7 +48,7 @@ struct EattExtension::impl {
     reg_info_.pL2CA_CreditBasedCollisionInd_Cb = eatt_collision_ind;
 
     if (L2CA_RegisterLECoc(BT_PSM_EATT, reg_info_, BTM_SEC_NONE, {}) == 0) {
-      LOG(ERROR) << __func__ << " cannot register EATT";
+      log::error("cannot register EATT");
     } else {
       eatt_impl_ = std::make_unique<eatt_impl>();
     }
@@ -56,7 +56,7 @@ struct EattExtension::impl {
 
   void Stop() {
     if (!eatt_impl_) {
-      LOG(ERROR) << "Eatt not started";
+      log::error("Eatt not started");
       return;
     }
     eatt_impl_.reset(nullptr);

@@ -43,6 +43,13 @@ RawAddress ControllerIntf::read_local_addr() const {
   return *controller_->get_address();
 }
 
+uint64_t ControllerIntf::get_ble_supported_states() const {
+  if (!controller_) std::abort();
+  uint64_t states;
+  memcpy(&states, controller_->get_ble_supported_states(), sizeof(uint64_t));
+  return states;
+}
+
 }  // namespace rust
 }  // namespace topshim
 }  // namespace bluetooth

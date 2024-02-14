@@ -97,6 +97,25 @@ LeScanningReassembler::ProcessAdvertisingReport(
   return result;
 }
 
+std::optional<std::vector<uint8_t>> LeScanningReassembler::ProcessPeriodicAdvertisingReport(
+    uint16_t sync_handle, DataStatus data_status, const std::vector<uint8_t>& advertising_data) {
+  // Concatenate the data with existing fragments.
+  std::list<PeriodicAdvertisingFragment>::iterator advertising_fragment =
+      AppendPeriodicFragment(sync_handle, advertising_data);
+
+  // Return and wait for additional fragments if the data is marked as
+  // incomplete.
+  if (data_status == DataStatus::CONTINUING) {
+    return {};
+  }
+
+  // The complete payload has been received; trim the advertising data,
+  // remove the cache entry and return the complete advertising data.
+  std::vector<uint8_t> result = TrimAdvertisingData(advertising_fragment->data);
+  periodic_cache_.erase(advertising_fragment);
+  return result;
+}
+
 /// Trim the advertising data by removing empty or overflowing
 /// GAP Data entries.
 std::vector<uint8_t> LeScanningReassembler::TrimAdvertisingData(
@@ -187,6 +206,36 @@ std::list<LeScanningReassembler::AdvertisingFragment>::iterator LeScanningReasse
     }
   }
   return cache_.end();
+}
+
+/// Append to the current advertising data of the selected periodic advertiser.
+/// If the advertiser is unknown a new entry is added, optionally by
+/// dropping the oldest advertiser.
+std::list<LeScanningReassembler::PeriodicAdvertisingFragment>::iterator
+LeScanningReassembler::AppendPeriodicFragment(
+    uint16_t sync_handle, const std::vector<uint8_t>& data) {
+  auto it = FindPeriodicFragment(sync_handle);
+  if (it != periodic_cache_.end()) {
+    it->data.insert(it->data.end(), data.cbegin(), data.cend());
+    return it;
+  }
+
+  if (periodic_cache_.size() > kMaximumPeriodicCacheSize) {
+    periodic_cache_.pop_back();
+  }
+
+  periodic_cache_.emplace_front(sync_handle, data);
+  return periodic_cache_.begin();
+}
+
+std::list<LeScanningReassembler::PeriodicAdvertisingFragment>::iterator
+LeScanningReassembler::FindPeriodicFragment(uint16_t sync_handle) {
+  for (auto it = periodic_cache_.begin(); it != periodic_cache_.end(); it++) {
+    if (it->sync_handle == sync_handle) {
+      return it;
+    }
+  }
+  return periodic_cache_.end();
 }
 
 }  // namespace bluetooth::hci

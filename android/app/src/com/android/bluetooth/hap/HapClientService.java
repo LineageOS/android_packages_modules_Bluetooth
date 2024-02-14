@@ -50,8 +50,7 @@ import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
-import com.android.bluetooth.flags.FeatureFlags;
-import com.android.bluetooth.flags.FeatureFlagsImpl;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.modules.utils.SynchronousResultReceiver;
 
@@ -89,7 +88,6 @@ public class HapClientService extends ProfileService {
     private final Map<BluetoothDevice, Integer> mDeviceFeaturesMap = new HashMap<>();
     private final Map<BluetoothDevice, List<BluetoothHapPresetInfo>> mPresetsMap =
             new HashMap<>();
-    private final FeatureFlags mFeatureFlags;
 
     @VisibleForTesting
     RemoteCallbackList<IBluetoothHapClientCallback> mCallbacks;
@@ -129,7 +127,6 @@ public class HapClientService extends ProfileService {
     public HapClientService(AdapterService adapterService) {
         super(adapterService);
         mAdapterService = Objects.requireNonNull(adapterService);
-        mFeatureFlags = new FeatureFlagsImpl();
     }
 
     @Override
@@ -440,7 +437,7 @@ public class HapClientService extends ProfileService {
                 removeStateMachine(device);
             }
         }
-        if (!mFeatureFlags.audioRoutingCentralization()) {
+        if (!Flags.audioRoutingCentralization()) {
             ActiveDeviceManager adManager = mAdapterService.getActiveDeviceManager();
             if (adManager != null) {
                 adManager.profileConnectionStateChanged(

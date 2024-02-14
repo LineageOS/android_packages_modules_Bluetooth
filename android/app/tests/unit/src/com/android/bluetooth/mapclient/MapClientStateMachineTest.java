@@ -22,21 +22,27 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+import android.app.Activity;
 import android.app.BroadcastOptions;
+import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothMapClient;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.SdpMasRecord;
+import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.platform.test.flag.junit.SetFlagsRule;
 import android.provider.Telephony.Sms;
+import android.telephony.SmsManager;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.test.mock.MockContentProvider;
@@ -51,6 +57,7 @@ import androidx.test.runner.AndroidJUnit4;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.bluetooth.flags.Flags;
 import com.android.obex.HeaderSet;
 import com.android.vcard.VCardConstants;
 import com.android.vcard.VCardEntry;
@@ -74,16 +81,23 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class MapClientStateMachineTest {
 
     private static final String TAG = "MapStateMachineTest";
+
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+
     private static final String FOLDER_SENT = "sent";
 
     private static final int ASYNC_CALL_TIMEOUT_MILLIS = 100;
     private static final int DISCONNECT_TIMEOUT = 3000;
+
+    private static final long PENDING_INTENT_TIMEOUT_MS = 3_000;
 
     private Bmessage mTestIncomingSmsBmessage;
     private Bmessage mTestIncomingMmsBmessage;
@@ -94,6 +108,12 @@ public class MapClientStateMachineTest {
 
     private static final boolean MESSAGE_SEEN = true;
     private static final boolean MESSAGE_NOT_SEEN = false;
+
+    private static final String TEST_MESSAGE_HANDLE = "0123456789000032";
+    private static final String TEST_MESSAGE = "Hello World!";
+    private static final String SENT_PATH = "telecom/msg/sent";
+    private static final Uri[] TEST_CONTACTS_ONE_PHONENUM = new Uri[] {Uri.parse("tel://5551234")};
+    private static final String TEST_DATETIME = "19991231T235959";
 
     private VCardEntry mOriginator;
 
@@ -142,6 +162,42 @@ public class MapClientStateMachineTest {
             Correspondence.transforming(
             MapClientStateMachineTest::getFolderNameFromRequestGetMessagesListing,
             "has folder name of");
+
+    private static final String ACTION_MESSAGE_SENT =
+            "com.android.bluetooth.mapclient.MapClientStateMachineTest.action.MESSAGE_SENT";
+    private static final String ACTION_MESSAGE_DELIVERED =
+            "com.android.bluetooth.mapclient.MapClientStateMachineTest.action.MESSAGE_DELIVERED";
+
+    private SentDeliveryReceiver mSentDeliveryReceiver;
+
+    private static class SentDeliveryReceiver extends BroadcastReceiver {
+        private CountDownLatch mActionReceivedLatch;
+
+        SentDeliveryReceiver() {
+            mActionReceivedLatch = new CountDownLatch(1);
+        }
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.i(TAG, "onReceive: Action=" + intent.getAction());
+            if (ACTION_MESSAGE_SENT.equals(intent.getAction())
+                    || ACTION_MESSAGE_DELIVERED.equals(intent.getAction())) {
+                mActionReceivedLatch.countDown();
+            } else {
+                Log.i(TAG, "unhandled action.");
+            }
+        }
+
+        public boolean isActionReceived(long timeout) {
+            boolean result = false;
+            try {
+                result = mActionReceivedLatch.await(timeout, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                Log.e(TAG, "Latch await", e);
+            }
+            return result;
+        }
+    }
 
     @Before
     public void setUp() throws Exception {
@@ -195,6 +251,13 @@ public class MapClientStateMachineTest {
                 mMockTelephonyManager);
         when(mMockTelephonyManager.isSmsCapable()).thenReturn(false);
 
+        // Set up receiver for 'Sent' and 'Delivered' PendingIntents
+        IntentFilter filter = new IntentFilter();
+        filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
+        filter.addAction(ACTION_MESSAGE_DELIVERED);
+        filter.addAction(ACTION_MESSAGE_SENT);
+        mSentDeliveryReceiver = new SentDeliveryReceiver();
+        mTargetContext.registerReceiver(mSentDeliveryReceiver, filter, Context.RECEIVER_EXPORTED);
     }
 
     @After
@@ -206,6 +269,7 @@ public class MapClientStateMachineTest {
         if (mIsAdapterServiceSet) {
             TestUtils.clearAdapterService(mAdapterService);
         }
+        mTargetContext.unregisterReceiver(mSentDeliveryReceiver);
     }
 
     /**
@@ -942,6 +1006,194 @@ public class MapClientStateMachineTest {
                 mIntentArgument.capture(), any(String[].class),
                 any(BroadcastOptions.class));
         assertThat(mMceStateMachine.getState()).isEqualTo(BluetoothProfile.STATE_DISCONNECTING);
+    }
+
+    /**
+     * Preconditions:
+     * - In {@code STATE_CONNECTED}.
+     *
+     * Actions:
+     * - {@link #sendMapMessage} with 'Sent' {@link PendingIntents}.
+     * - {@link #receiveEvent} of type {@link SENDING_SUCCESS}.
+     *
+     * Outcome:
+     * - SENT_STATUS Intent was broadcast with 'Success' result code.
+     */
+    @Test
+    public void testSendMapMessageSentPendingIntent_notifyStatusSuccess() {
+        mSetFlagsRule.enableFlags(Flags.FLAG_HANDLE_DELIVERY_SENDING_FAILURE_EVENTS);
+        testSendMapMessagePendingIntents_base(
+                ACTION_MESSAGE_SENT, EventReport.Type.SENDING_SUCCESS);
+
+        assertThat(mSentDeliveryReceiver.isActionReceived(PENDING_INTENT_TIMEOUT_MS)).isTrue();
+        assertThat(mSentDeliveryReceiver.getResultCode()).isEqualTo(Activity.RESULT_OK);
+    }
+
+    /**
+     * Preconditions:
+     * - In {@code STATE_CONNECTED}.
+     *
+     * Actions:
+     * - {@link #sendMapMessage} with 'Delivery' {@link PendingIntents}.
+     * - {@link #receiveEvent} of type {@link DELIVERY_SUCCESS}.
+     *
+     * Outcome:
+     * - DELIVERY_STATUS Intent was broadcast with 'Success' result code.
+     */
+    @Test
+    public void testSendMapMessageDeliveryPendingIntent_notifyStatusSuccess() {
+        mSetFlagsRule.enableFlags(Flags.FLAG_HANDLE_DELIVERY_SENDING_FAILURE_EVENTS);
+        testSendMapMessagePendingIntents_base(
+                ACTION_MESSAGE_DELIVERED, EventReport.Type.DELIVERY_SUCCESS);
+
+        assertThat(mSentDeliveryReceiver.isActionReceived(PENDING_INTENT_TIMEOUT_MS)).isTrue();
+        assertThat(mSentDeliveryReceiver.getResultCode()).isEqualTo(Activity.RESULT_OK);
+    }
+
+    /**
+     * Preconditions:
+     * - In {@code STATE_CONNECTED}.
+     *
+     * Actions:
+     * - {@link #sendMapMessage} with 'null' {@link PendingIntents}.
+     * - {@link #receiveEvent} of type {@link SENDING_SUCCESS}.
+     * - {@link #receiveEvent} of type {@link DELIVERY_SUCCESS}.
+     *
+     * Outcome:
+     * - No Intent was broadcast.
+     */
+    @Test
+    public void testSendMapMessageNullPendingIntent_noNotifyStatus() {
+        mSetFlagsRule.enableFlags(Flags.FLAG_HANDLE_DELIVERY_SENDING_FAILURE_EVENTS);
+        testSendMapMessagePendingIntents_base(null, EventReport.Type.SENDING_SUCCESS);
+
+        assertThat(mSentDeliveryReceiver.isActionReceived(PENDING_INTENT_TIMEOUT_MS)).isFalse();
+    }
+
+    /**
+     * Preconditions:
+     * - In {@code STATE_CONNECTED}.
+     *
+     * Actions:
+     * - {@link #sendMapMessage} with 'Sent' {@link PendingIntents}.
+     * - {@link #receiveEvent} of type {@link SENDING_FAILURE}.
+     *
+     * Outcome:
+     * - SENT_STATUS Intent was broadcast with 'Failure' result code.
+     */
+    @Test
+    public void testSendMapMessageSentPendingIntent_notifyStatusFailure() {
+        mSetFlagsRule.enableFlags(Flags.FLAG_HANDLE_DELIVERY_SENDING_FAILURE_EVENTS);
+        testSendMapMessagePendingIntents_base(
+                ACTION_MESSAGE_SENT, EventReport.Type.SENDING_FAILURE);
+
+        assertThat(mSentDeliveryReceiver.isActionReceived(PENDING_INTENT_TIMEOUT_MS)).isTrue();
+        assertThat(mSentDeliveryReceiver.getResultCode())
+                .isEqualTo(SmsManager.RESULT_ERROR_GENERIC_FAILURE);
+    }
+
+    /**
+     * Preconditions:
+     * - In {@code STATE_CONNECTED}.
+     *
+     * Actions:
+     * - {@link #sendMapMessage} with 'Delivery' {@link PendingIntents}.
+     * - {@link #receiveEvent} of type {@link DELIVERY_FAILURE}.
+     *
+     * Outcome:
+     * - DELIVERY_STATUS Intent was broadcast with 'Failure' result code.
+     */
+    @Test
+    public void testSendMapMessageDeliveryPendingIntent_notifyStatusFailure() {
+        mSetFlagsRule.enableFlags(Flags.FLAG_HANDLE_DELIVERY_SENDING_FAILURE_EVENTS);
+        testSendMapMessagePendingIntents_base(
+                ACTION_MESSAGE_DELIVERED, EventReport.Type.DELIVERY_FAILURE);
+
+        assertThat(mSentDeliveryReceiver.isActionReceived(PENDING_INTENT_TIMEOUT_MS)).isTrue();
+        assertThat(mSentDeliveryReceiver.getResultCode())
+                .isEqualTo(SmsManager.RESULT_ERROR_GENERIC_FAILURE);
+    }
+
+    /**
+     * @param action corresponding to the {@link PendingIntent} you want to create/register for
+     *     when pushing a MAP message, e.g., for 'Sent' or 'Delivery' status.
+     * @param type the EventReport type of the new notification, e.g., 'Sent'/'Delivery'
+     *     'Success'/'Failure'.
+     */
+    private void testSendMapMessagePendingIntents_base(String action, EventReport.Type type) {
+        transitionToConnected();
+
+        PendingIntent pendingIntentSent;
+        PendingIntent pendingIntentDelivered;
+        if (ACTION_MESSAGE_SENT.equals(action)) {
+            pendingIntentSent = createPendingIntent(action);
+            pendingIntentDelivered = null;
+        } else if (ACTION_MESSAGE_DELIVERED.equals(action)) {
+            pendingIntentSent = null;
+            pendingIntentDelivered = createPendingIntent(action);
+        } else {
+            pendingIntentSent = null;
+            pendingIntentDelivered = null;
+        }
+        sendMapMessageWithPendingIntents(
+                pendingIntentSent, pendingIntentDelivered, TEST_MESSAGE_HANDLE);
+
+        receiveSentDeliveryEvent(type, TEST_MESSAGE_HANDLE);
+    }
+
+    private void transitionToConnected() {
+        Message msg = Message.obtain(mHandler, MceStateMachine.MSG_MAS_CONNECTED);
+        mMceStateMachine.sendMessage(msg);
+        TestUtils.waitForLooperToFinishScheduledTask(mMceStateMachine.getHandler().getLooper());
+        assertThat(mMceStateMachine.getState()).isEqualTo(BluetoothProfile.STATE_CONNECTED);
+    }
+
+    private PendingIntent createPendingIntent(String action) {
+        return PendingIntent.getBroadcast(
+                mTargetContext, 1, new Intent(action), PendingIntent.FLAG_IMMUTABLE);
+    }
+
+    private void sendMapMessageWithPendingIntents(
+            PendingIntent pendingIntentSent,
+            PendingIntent pendingIntentDelivered,
+            String messageHandle) {
+        mMceStateMachine.sendMapMessage(
+                TEST_CONTACTS_ONE_PHONENUM, TEST_MESSAGE,
+                pendingIntentSent, pendingIntentDelivered);
+        TestUtils.waitForLooperToFinishScheduledTask(mMceStateMachine.getHandler().getLooper());
+
+        // {@link sendMapMessage} leads to a new {@link RequestPushMessage}, which contains
+        // a {@link Bmessage} object that is used as a key to a map to retrieve the corresponding
+        // {@link PendingIntent} that was provided.
+        // Thus, we need to intercept this Bmessage and inject it back in for
+        // MSG_MAS_REQUEST_COMPLETED. We also need to spy/mock it in order to inject our
+        // TEST_MESSAGE_HANDLE (message handles are normally provided by the remote device).
+        // The message handle injected here needs to match the handle of the SENT/DELIVERY
+        // SUCCESS/FAILURE events.
+
+        ArgumentCaptor<RequestPushMessage> requestCaptor =
+                ArgumentCaptor.forClass(RequestPushMessage.class);
+        verify(mMockMasClient, atLeastOnce()).makeRequest(requestCaptor.capture());
+        RequestPushMessage spyRequestPushMessage = spy(requestCaptor.getValue());
+        when(spyRequestPushMessage.getMsgHandle()).thenReturn(messageHandle);
+
+        Message msgSent =
+                Message.obtain(
+                        mHandler, MceStateMachine.MSG_MAS_REQUEST_COMPLETED, spyRequestPushMessage);
+
+        mMceStateMachine.sendMessage(msgSent);
+        TestUtils.waitForLooperToFinishScheduledTask(mMceStateMachine.getHandler().getLooper());
+    }
+
+    private void receiveSentDeliveryEvent(EventReport.Type type, String messageHandle) {
+        mMceStateMachine.receiveEvent(
+                createNewEventReport(
+                        type.toString(),
+                        TEST_DATETIME,
+                        messageHandle,
+                        SENT_PATH,
+                        null,
+                        Bmessage.Type.SMS_GSM.toString()));
     }
 
     private void setupSdpRecordReceipt() {

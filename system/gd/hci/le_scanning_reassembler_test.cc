@@ -42,6 +42,10 @@ static constexpr uint8_t kSidNotPresent = 0xff;
 // Test addresses.
 static const Address kTestAddress = Address({0, 1, 2, 3, 4, 5});
 
+// Test sync handles.
+static const uint16_t kTestSyncHandle1 = 0x4242;
+static const uint16_t kTestSyncHandle2 = 0x4243;
+
 class LeScanningReassemblerTest : public ::testing::Test {
  public:
   LeScanningReassembler reassembler_;
@@ -381,6 +385,50 @@ TEST_F(LeScanningReassemblerTest, interleaved_advertising) {
           .value()
           .data,
       std::vector<uint8_t>({0x2, 0x3, 0x3}));
+}
+
+TEST_F(LeScanningReassemblerTest, periodic_advertising) {
+  // Test periodic advertising.
+  ASSERT_FALSE(
+      reassembler_
+          .ProcessPeriodicAdvertisingReport(kTestSyncHandle1, DataStatus::CONTINUING, {0x1, 0x2})
+          .has_value());
+
+  auto processed_report = reassembler_.ProcessPeriodicAdvertisingReport(
+      kTestSyncHandle1, DataStatus::COMPLETE, {0x3, 0x4, 0x5, 0x6});
+  ASSERT_TRUE(processed_report.has_value());
+  ASSERT_EQ(processed_report.value(), std::vector<uint8_t>({0x1, 0x2, 0x3, 0x4, 0x5, 0x6}));
+
+  // Test periodic advertising with the same handle
+  // to validate that the context was cleared.
+  processed_report = reassembler_.ProcessPeriodicAdvertisingReport(
+      kTestSyncHandle1, DataStatus::COMPLETE, {0x4, 0xa0, 0xb0, 0xc0, 0xd0});
+  ASSERT_TRUE(processed_report.has_value());
+  ASSERT_EQ(processed_report.value(), std::vector<uint8_t>({0x4, 0xa0, 0xb0, 0xc0, 0xd0}));
+}
+
+TEST_F(LeScanningReassemblerTest, interleaved_periodic_advertising) {
+  // The reassembler must disambiguate advertising events by address,
+  // address type, and SID.
+  ASSERT_FALSE(
+      reassembler_
+          .ProcessPeriodicAdvertisingReport(kTestSyncHandle1, DataStatus::CONTINUING, {0x2, 0x0})
+          .has_value());
+
+  ASSERT_FALSE(
+      reassembler_
+          .ProcessPeriodicAdvertisingReport(kTestSyncHandle2, DataStatus::CONTINUING, {0x2, 0x1})
+          .has_value());
+
+  ASSERT_EQ(
+      reassembler_.ProcessPeriodicAdvertisingReport(kTestSyncHandle1, DataStatus::COMPLETE, {0x0})
+          .value(),
+      std::vector<uint8_t>({0x2, 0x0, 0x0}));
+
+  ASSERT_EQ(
+      reassembler_.ProcessPeriodicAdvertisingReport(kTestSyncHandle2, DataStatus::COMPLETE, {0x1})
+          .value(),
+      std::vector<uint8_t>({0x2, 0x1, 0x1}));
 }
 
 }  // namespace bluetooth::hci
