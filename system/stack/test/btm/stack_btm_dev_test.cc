@@ -18,6 +18,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "hci/hci_layer_mock.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_sec_cb.h"
 #include "test/common/mock_functions.h"
@@ -26,8 +27,14 @@
 class StackBtmTest : public testing::Test {
  public:
  protected:
-  void SetUp() override { reset_mock_function_count_map(); }
-  void TearDown() override {}
+  void SetUp() override {
+    reset_mock_function_count_map();
+    bluetooth::hci::testing::mock_hci_layer_ = &hci_;
+  }
+  void TearDown() override {
+    bluetooth::hci::testing::mock_hci_layer_ = nullptr;
+  }
+  bluetooth::hci::testing::MockHciLayer hci_;
 };
 
 class StackBtmDevTest : public StackBtmTest {
