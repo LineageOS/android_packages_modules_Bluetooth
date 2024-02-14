@@ -372,6 +372,8 @@ static bool is_handle_equal(void* data, void* context) {
  *
  ******************************************************************************/
 tBTM_SEC_DEV_REC* btm_find_dev_by_handle(uint16_t handle) {
+  if (btm_sec_cb.sec_dev_rec == nullptr) return nullptr;
+
   list_node_t* n =
       list_foreach(btm_sec_cb.sec_dev_rec, is_handle_equal, &handle);
   if (n) return static_cast<tBTM_SEC_DEV_REC*>(list_node(n));
