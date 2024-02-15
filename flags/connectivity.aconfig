@@ -14,3 +14,10 @@ flag {
     description: "Guard the le shim connection map with a mutex"
     bug: "302054609"
 }
+
+flag {
+    name: "api_get_connection_state_sync_on_main"
+    namespace: "bluetooth"
+    description: "API call is unprotected from thread race conditions"
+    bug: "325333718"
+}
