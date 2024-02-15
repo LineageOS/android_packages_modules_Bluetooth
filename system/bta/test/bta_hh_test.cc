@@ -21,10 +21,12 @@
 #include "bta/dm/bta_dm_int.h"
 #include "bta/hh/bta_hh_int.h"
 #include "bta/include/bta_hh_api.h"
+#include "bta/include/bta_le_audio_api.h"
 #include "osi/include/allocator.h"
 #include "test/common/mock_functions.h"
 #include "test/mock/mock_osi_allocator.h"
 
+bool LeAudioClient::IsLeAudioClientInStreaming() { return false; }
 namespace {
 std::array<uint8_t, 32> data32 = {
     0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b,

@@ -1118,6 +1118,16 @@ tBTM_STATUS BTM_SetEventFilterInquiryResultAllDevices(void);
  *******************************************************************************/
 tBTM_STATUS BTM_BleResetId(void);
 
+/*******************************************************************************
+ *
+ * Function         BTM_BleGetNumberOfAdvertisingInstancesInUse
+ *
+ * Description      Obtains the number of BLE advertising instances in use
+ *
+ * Returns          Return the number of BLE advertising instances in use
+ *******************************************************************************/
+size_t BTM_BleGetNumberOfAdvertisingInstancesInUse(void);
+
 /**
  * Send remote name request to GD shim Name module
  */

@@ -155,6 +155,7 @@ class Btm {
   void StopObserving();
 
   size_t GetNumberOfAdvertisingInstances() const;
+  size_t GetNumberOfAdvertisingInstancesInUse() const;
 
   void SetObservingTimer(uint64_t duration_ms,
                          common::OnceCallback<void()> callback);

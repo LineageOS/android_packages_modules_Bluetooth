@@ -131,3 +131,7 @@ tBTM_STATUS bluetooth::shim::BTM_BleResetId() {
   btm_ble_reset_id();
   return BTM_SUCCESS;
 }
+
+size_t bluetooth::shim::BTM_BleGetNumberOfAdvertisingInstancesInUse(void) {
+  return Stack::GetInstance()->GetBtm()->GetNumberOfAdvertisingInstancesInUse();
+}
