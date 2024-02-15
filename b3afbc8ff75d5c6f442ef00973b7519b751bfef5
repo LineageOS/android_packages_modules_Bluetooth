@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "85b96f67_7c00772f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 14048
+      },
+      "writtenOn": "2024-02-15T01:03:25Z",
+      "side": 1,
+      "message": "Reverified on foster with thunderstrike.",
+      "revId": "b3afbc8ff75d5c6f442ef00973b7519b751bfef5",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
