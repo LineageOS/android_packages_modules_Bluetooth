@@ -893,6 +893,7 @@ cc_test {
         "server_configurable_flags",
     ],
     static_libs: [
+        "libbase",
         "libbluetooth-types",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
