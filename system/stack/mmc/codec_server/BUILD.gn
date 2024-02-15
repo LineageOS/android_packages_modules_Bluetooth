@@ -33,7 +33,6 @@ source_set("libcodec_server_a2dp_aac") {
   libs = [
     # Following are for AAC using FFmpeg
     "avcodec",
-    "avformat",
     "avutil",
   ]
 }
