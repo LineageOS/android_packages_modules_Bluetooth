@@ -151,11 +151,11 @@ struct std::hash<tBLE_BD_ADDR> {
   }
 };
 
-struct tTypedAddressTransport {
+struct tAclLinkSpec {
   tBLE_BD_ADDR addrt;
   tBT_TRANSPORT transport;
 
-  bool operator==(const tTypedAddressTransport rhs) const {
+  bool operator==(const tAclLinkSpec rhs) const {
     if (rhs.addrt != addrt) return false;
 
     if (rhs.transport == BT_TRANSPORT_AUTO || transport == BT_TRANSPORT_AUTO) {
@@ -165,11 +165,9 @@ struct tTypedAddressTransport {
     return rhs.transport == transport;
   }
 
-  bool operator!=(const tTypedAddressTransport rhs) const {
-    return !(*this == rhs);
-  }
+  bool operator!=(const tAclLinkSpec rhs) const { return !(*this == rhs); }
 
-  bool StrictlyEquals(const tTypedAddressTransport rhs) const {
+  bool StrictlyEquals(const tAclLinkSpec rhs) const {
     return rhs.addrt == addrt && rhs.transport == transport;
   }
 
