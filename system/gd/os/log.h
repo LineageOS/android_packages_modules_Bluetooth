@@ -102,8 +102,7 @@ static_assert(LOG_TAG != nullptr, "LOG_TAG should never be NULL");
 #include "os/syslog.h"
 
 // Prefix the log with tag, file, line and function
-#define LOGWRAPPER(tag, fmt, args...) \
-  write_syslog(tag, "%s: " fmt, LOG_TAG, ##args)
+#define LOGWRAPPER(tag, fmt, args...) write_syslog(tag, LOG_TAG, "%s: " fmt, LOG_TAG, ##args)
 
 #define LOG_VERBOSE_INT(...) LOGWRAPPER(LOG_TAG_VERBOSE, __VA_ARGS__)
 #define LOG_DEBUG_INT(...) LOGWRAPPER(LOG_TAG_DEBUG, __VA_ARGS__)

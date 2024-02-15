@@ -20,8 +20,6 @@
 
 #include <gtest/gtest.h>
 
-#include "os/log_tags.h"
-
 using bluetooth::common::InitFlags;
 
 TEST(InitFlagsTest, test_enable_btm_flush_discovery_queue_on_search_cancel) {
