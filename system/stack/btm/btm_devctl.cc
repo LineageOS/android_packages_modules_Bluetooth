@@ -553,6 +553,7 @@ void btm_vendor_specific_evt(const uint8_t* p, uint8_t evt_len) {
 
         uint8_t i;
         std::vector<uint8_t> reconstructed_event;
+        reconstructed_event.reserve(4 + bqr_parameter_length);
         reconstructed_event[0] = HCI_VENDOR_SPECIFIC_EVT;
         reconstructed_event[1] = 3 + bqr_parameter_length;  // event size
         reconstructed_event[2] = HCI_VSE_SUBCODE_BQR_SUB_EVT;
