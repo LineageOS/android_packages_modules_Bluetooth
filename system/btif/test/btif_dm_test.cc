@@ -23,13 +23,18 @@
 #include <memory>
 
 #include "bta/include/bta_api_data_types.h"
+#include "btif/include/btif_dm.h"
 #include "btif/include/mock_core_callbacks.h"
 #include "main/shim/stack.h"
 #include "module.h"
+#include "stack/include/bt_dev_class.h"
 #include "stack/include/btm_ble_api_types.h"
 #include "storage/storage_module.h"
+#include "test/fake/fake_osi.h"
+#include "test/mock/mock_osi_properties.h"
 
 using bluetooth::core::testing::MockCoreInterface;
+using ::testing::ElementsAre;
 
 namespace {
 const RawAddress kRawAddress = {{0x11, 0x22, 0x33, 0x44, 0x55, 0x66}};
@@ -66,6 +71,7 @@ constexpr tBTM_BLE_ENERGY_USED energy_used = 0x13579bdf;
 class BtifDmTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    fake_osi_ = std::make_unique<test::fake::FakeOsi>();
     mock_core_interface_ = std::make_unique<MockCoreInterface>();
     bluetooth::legacy::testing::set_interface_to_profiles(
         mock_core_interface_.get());
@@ -73,6 +79,7 @@ class BtifDmTest : public ::testing::Test {
 
   void TearDown() override {}
 
+  std::unique_ptr<test::fake::FakeOsi> fake_osi_;
   std::unique_ptr<MockCoreInterface> mock_core_interface_;
 };
 
@@ -196,4 +203,28 @@ TEST_F_WITH_FLAGS(BtifDmWithStackTest,
   ASSERT_STREQ(
       kBdName,
       (const char*)invoke_remote_device_properties_cb.properties[0].val);
+}
+
+TEST_F(BtifDmWithStackTest, btif_dm_get_local_class_of_device__default) {
+  DEV_CLASS dev_class = btif_dm_get_local_class_of_device();
+  ASSERT_EQ(dev_class, kDevClassUnclassified);
+}
+
+std::string kClassOfDeviceText = "1,2,3";
+DEV_CLASS kClassOfDevice = {1, 2, 3};
+TEST_F(BtifDmWithStackTest, btif_dm_get_local_class_of_device__with_property) {
+  test::mock::osi_properties::osi_property_get.body =
+      [](const char* /* key */, char* value, const char* /* default_value */) {
+        std::copy(kClassOfDeviceText.begin(), kClassOfDeviceText.end(), value);
+        return kClassOfDeviceText.size();
+      };
+
+  DEV_CLASS dev_class = btif_dm_get_local_class_of_device();
+  if (dev_class != kClassOfDevice) {
+    // If BAP is enabled, an extra bit gets set.
+    DEV_CLASS dev_class_with_bap = kClassOfDevice;
+    dev_class_with_bap[1] |= 0x01 << 6;
+    ASSERT_EQ(dev_class, dev_class_with_bap);
+  }
+  test::mock::osi_properties::osi_property_get = {};
 }
