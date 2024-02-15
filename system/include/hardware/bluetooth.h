@@ -158,7 +158,7 @@ typedef struct { uint8_t pin[16]; } __attribute__((packed)) bt_pin_code_t;
 
 typedef struct {
   uint8_t status;
-  uint8_t ctrl_state;   /* stack reported state */
+  uint32_t ctrl_state;  /* stack reported state */
   uint64_t tx_time;     /* in ms */
   uint64_t rx_time;     /* in ms */
   uint64_t idle_time;   /* in ms */

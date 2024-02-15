@@ -853,24 +853,18 @@ static bool btm_pm_device_in_active_or_sniff_mode(void) {
 
 /*******************************************************************************
  *
- * Function         btm_pm_device_in_scan_state
+ * Function         BTM_PM_DeviceInScanState
  *
- * Description      This function is called to check if in paging, inquiry or
- *                  connecting mode
+ * Description      This function is called to check if in inquiry
  *
- * Returns          true, if in paging, inquiry or connecting mode
+ * Returns          true, if in inquiry
  *
  ******************************************************************************/
-static bool btm_pm_device_in_scan_state(void) {
-  /* Scan state-paging, inquiry, and trying to connect */
-
-  /* Check for paging */
-  // TODO: Get this information from connection manager?
-
+bool BTM_PM_DeviceInScanState(void) {
   /* Check for inquiry */
   if ((btm_cb.btm_inq_vars.inq_active &
        (BTM_BR_INQ_ACTIVE_MASK | BTM_BLE_INQ_ACTIVE_MASK)) != 0) {
-    log::verbose("btm_pm_device_in_scan_state- Inq active");
+    log::verbose("BTM_PM_DeviceInScanState- Inq active");
     return true;
   }
 
@@ -890,10 +884,63 @@ static bool btm_pm_device_in_scan_state(void) {
 tBTM_CONTRL_STATE BTM_PM_ReadControllerState(void) {
   if (btm_pm_device_in_active_or_sniff_mode())
     return BTM_CONTRL_ACTIVE;
-  else if (btm_pm_device_in_scan_state())
+  else if (BTM_PM_DeviceInScanState())
     return BTM_CONTRL_SCAN;
   else
     return BTM_CONTRL_IDLE;
+}
+
+/*******************************************************************************
+ *
+ * Function         BTM_PM_ReadSniffLinkCount
+ *
+ * Description      Return the number of BT connection in sniff mode
+ *
+ * Returns          Number of BT connection in sniff mode
+ *
+ ******************************************************************************/
+uint8_t BTM_PM_ReadSniffLinkCount(void) {
+  uint8_t count = 0;
+  for (auto& entry : pm_mode_db) {
+    if (entry.second.state == HCI_MODE_SNIFF) {
+      ++count;
+    }
+  }
+  return count;
+}
+
+/*******************************************************************************
+ *
+ * Function         BTM_PM_ReadBleLinkCount
+ *
+ * Description      Return the number of BLE connection
+ *
+ * Returns          Number of BLE connection
+ *
+ ******************************************************************************/
+uint8_t BTM_PM_ReadBleLinkCount(void) {
+  return btm_cb.ble_ctr_cb.link_count[HCI_ROLE_CENTRAL] +
+         btm_cb.ble_ctr_cb.link_count[HCI_ROLE_PERIPHERAL];
+}
+
+/*******************************************************************************
+ *
+ * Function         BTM_PM_ReadBleScanDutyCycle
+ *
+ * Description      Returns BLE scan duty cycle which is (window * 100) /
+ *interval
+ *
+ * Returns          BLE scan duty cycle
+ *
+ ******************************************************************************/
+uint32_t BTM_PM_ReadBleScanDutyCycle(void) {
+  if (!btm_cb.ble_ctr_cb.is_ble_scan_active()) {
+    return 0;
+  }
+  uint32_t scan_window = btm_cb.ble_ctr_cb.inq_var.scan_window;
+  uint32_t scan_interval = btm_cb.ble_ctr_cb.inq_var.scan_interval;
+  log::debug("LE scan_window:{} scan interval:{}", scan_window, scan_interval);
+  return (scan_window * 100) / scan_interval;
 }
 
 void btm_pm_on_mode_change(tHCI_STATUS status, uint16_t handle,
