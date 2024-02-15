@@ -194,6 +194,16 @@ TEST_F(BtaDipTest, test_invalid_size_checks) {
   ASSERT_EQ(record.dip.product, 0);
   ASSERT_EQ(record.dip.version, 0);
   ASSERT_EQ(record.dip.primary_record, true);
+
+  // a size zero for boolean won't be accepted
+  g_attr_vendor_product_primary_record.attr_len_type =
+      (BOOLEAN_DESC_TYPE << 12) | 0;
+
+  record = {};
+
+  g_attr_vendor_product_primary_record.attr_value.v.u8 = 1;
+  bluetooth::testing::bta_create_dip_sdp_record(&record, &g_rec);
+  ASSERT_EQ(record.dip.primary_record, false);
 }
 
 
