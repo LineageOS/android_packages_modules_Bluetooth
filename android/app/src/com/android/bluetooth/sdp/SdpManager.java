@@ -34,6 +34,7 @@ import android.util.Log;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AbstractionLayer;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -436,7 +437,9 @@ public class SdpManager {
             inst.startSearch(); // Trigger timeout message
 
             mNativeInterface.sdpSearch(
-                    sAdapterService.getByteIdentityAddress(inst.getDevice()),
+                    Flags.identityAddressNullIfUnknown()
+                            ? Utils.getByteBrEdrAddress(inst.getDevice())
+                            : sAdapterService.getByteIdentityAddress(inst.getDevice()),
                     Utils.uuidToByteArray(inst.getUuid()));
         } else { // Else queue is empty.
             if (D) {

@@ -45,10 +45,15 @@ LeAudioContextType AudioContentToLeAudioContext(
     case AUDIO_USAGE_CALL_ASSISTANT:
       return LeAudioContextType::CONVERSATIONAL;
     case AUDIO_USAGE_VOICE_COMMUNICATION_SIGNALLING:
-      if (content_type == AUDIO_CONTENT_TYPE_SPEECH)
+      if (content_type == AUDIO_CONTENT_TYPE_SPEECH) {
         return LeAudioContextType::CONVERSATIONAL;
-      else
-        return LeAudioContextType::MEDIA;
+      }
+
+      if (content_type == AUDIO_CONTENT_TYPE_SONIFICATION) {
+        return LeAudioContextType::RINGTONE;
+      }
+
+      return LeAudioContextType::MEDIA;
     case AUDIO_USAGE_GAME:
       return LeAudioContextType::GAME;
     case AUDIO_USAGE_NOTIFICATION:
