@@ -264,7 +264,7 @@ sub compilation_screen {
     my $link="test/mock/$hdr";
     unlink "$INCDIR/$link";
     symlink "$OUTDIR/$hdr", "$INCDIR/$link";
-    system("$CC -c -std=c++17 -o /dev/null -D" . join(" -D", @defs) . " -I" . join(" -I", @incs) . " $OUTDIR/$src");
+    system("$CC -c -std=c++20 -o /dev/null -D" . join(" -D", @defs) . " -I" . join(" -I", @incs) . " $OUTDIR/$src");
     my $rc = $?;
          ($? == 0)
          ? printf(STDERR "SUCCESS Compiled unit \'$src\'\n")
