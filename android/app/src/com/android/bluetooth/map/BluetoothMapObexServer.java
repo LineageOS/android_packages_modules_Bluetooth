@@ -608,11 +608,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                     BluetoothProtoEnums.BLUETOOTH_MAP_OBEX_SERVER,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                     9);
-            if (D) {
-                Log.e(TAG, "Exception occured while handling request", e);
-            } else {
-                Log.e(TAG, "Exception occured while handling request");
-            }
+            Log.e(TAG, "Exception occurred while handling request", e);
             if (mIsAborted) {
                 return ResponseCodes.OBEX_HTTP_OK;
             } else {
@@ -878,7 +874,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                     20);
             if (D) {
-                Log.e(TAG, "Exception occured: ", e);
+                Log.e(TAG, "Exception occurred: ", e);
             }
             if (mIsAborted) {
                 if (D) {
@@ -1111,11 +1107,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                     BluetoothProtoEnums.BLUETOOTH_MAP_OBEX_SERVER,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                     32);
-            if (D) {
-                Log.e(TAG, "request headers error", e);
-            } else {
-                Log.e(TAG, "request headers error");
-            }
+            Log.e(TAG, "request headers error", e);
             return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
         }
 
@@ -1204,36 +1196,39 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
             }
 
             if (type.equals(TYPE_GET_FOLDER_LISTING)) {
-                if (V && appParams != null) {
-                    Log.d(TAG,
-                            "TYPE_GET_FOLDER_LISTING: MaxListCount = " + appParams.getMaxListCount()
-                                    + ", ListStartOffset = " + appParams.getStartOffset());
+                if (V) {
+                    if (appParams != null) {
+                        Log.d(TAG, "TYPE_GET_FOLDER_LISTING: MaxListCount = "
+                                + appParams.getMaxListCount() + ", ListStartOffset = "
+                                + appParams.getStartOffset());
+                    }
                 }
                 // Block until all packets have been send.
                 return sendFolderListingRsp(op, appParams);
             } else if (type.equals(TYPE_GET_MESSAGE_LISTING)) {
                 name = (String) request.getHeader(HeaderSet.NAME);
-                if (V && appParams != null) {
-                    Log.d(TAG, "TYPE_GET_MESSAGE_LISTING: folder name is: " + name
-                            + ", MaxListCount = " + appParams.getMaxListCount()
-                            + ", ListStartOffset = " + appParams.getStartOffset());
-                    Log.d(TAG,
-                            "SubjectLength = " + appParams.getSubjectLength() + ", ParameterMask = "
-                                    + appParams.getParameterMask());
-                    Log.d(TAG, "FilterMessageType = " + appParams.getFilterMessageType());
-                    Log.d(TAG, "FilterPeriodBegin = " + appParams.getFilterPeriodBeginString()
-                            + ", FilterPeriodEnd = " + appParams.getFilterPeriodEndString()
-                            + ", FilterReadStatus = " + appParams.getFilterReadStatus());
-                    Log.d(TAG, "FilterRecipient = " + appParams.getFilterRecipient()
-                            + ", FilterOriginator = " + appParams.getFilterOriginator());
-                    Log.d(TAG, "FilterPriority = " + appParams.getFilterPriority());
-                    long tmpLong = appParams.getFilterMsgHandle();
-                    Log.d(TAG, "FilterMsgHandle = " + (
-                            (tmpLong == BluetoothMapAppParams.INVALID_VALUE_PARAMETER) ? ""
-                                    : Long.toHexString(tmpLong)));
-                    SignedLongLong tmpLongLong = appParams.getFilterConvoId();
-                    Log.d(TAG, "FilterConvoId = " + ((tmpLongLong == null) ? ""
-                            : Long.toHexString(tmpLongLong.getLeastSignificantBits())));
+                if (V) {
+                    if (appParams != null) {
+                        Log.d(TAG, "TYPE_GET_MESSAGE_LISTING: folder name is: " + name
+                                + ", MaxListCount = " + appParams.getMaxListCount()
+                                + ", ListStartOffset = " + appParams.getStartOffset());
+                        Log.d(TAG, "SubjectLength = " + appParams.getSubjectLength()
+                                + ", ParameterMask = " + appParams.getParameterMask());
+                        Log.d(TAG, "FilterMessageType = " + appParams.getFilterMessageType());
+                        Log.d(TAG, "FilterPeriodBegin = " + appParams.getFilterPeriodBeginString()
+                                + ", FilterPeriodEnd = " + appParams.getFilterPeriodEndString()
+                                + ", FilterReadStatus = " + appParams.getFilterReadStatus());
+                        Log.d(TAG, "FilterRecipient = " + appParams.getFilterRecipient()
+                                + ", FilterOriginator = " + appParams.getFilterOriginator());
+                        Log.d(TAG, "FilterPriority = " + appParams.getFilterPriority());
+                        long tmpLong = appParams.getFilterMsgHandle();
+                        Log.d(TAG, "FilterMsgHandle = " + (
+                                (tmpLong == BluetoothMapAppParams.INVALID_VALUE_PARAMETER) ? ""
+                                        : Long.toHexString(tmpLong)));
+                        SignedLongLong tmpLongLong = appParams.getFilterConvoId();
+                        Log.d(TAG, "FilterConvoId = " + ((tmpLongLong == null) ? ""
+                                : Long.toHexString(tmpLongLong.getLeastSignificantBits())));
+                    }
                 }
                 if (!isUserUnlocked()) {
                     Log.e(TAG, "Storage locked, " + type + " failed");
@@ -1250,15 +1245,18 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
 
             } else if (type.equals(TYPE_GET_CONVO_LISTING)) {
                 name = (String) request.getHeader(HeaderSet.NAME);
-                if (V && appParams != null) {
-                    Log.d(TAG, "TYPE_GET_CONVO_LISTING: name is" + name + ", MaxListCount = "
-                            + appParams.getMaxListCount() + ", ListStartOffset = "
-                            + appParams.getStartOffset());
-                    Log.d(TAG,
-                            "FilterLastActivityBegin = " + appParams.getFilterLastActivityBegin());
-                    Log.d(TAG, "FilterLastActivityEnd = " + appParams.getFilterLastActivityEnd());
-                    Log.d(TAG, "FilterReadStatus = " + appParams.getFilterReadStatus());
-                    Log.d(TAG, "FilterRecipient = " + appParams.getFilterRecipient());
+                if (V) {
+                    if (appParams != null) {
+                        Log.d(TAG, "TYPE_GET_CONVO_LISTING: name is" + name + ", MaxListCount = "
+                                + appParams.getMaxListCount() + ", ListStartOffset = "
+                                + appParams.getStartOffset());
+                        Log.d(TAG, "FilterLastActivityBegin = "
+                                + appParams.getFilterLastActivityBegin());
+                        Log.d(TAG, "FilterLastActivityEnd = "
+                                + appParams.getFilterLastActivityEnd());
+                        Log.d(TAG, "FilterReadStatus = " + appParams.getFilterReadStatus());
+                        Log.d(TAG, "FilterRecipient = " + appParams.getFilterRecipient());
+                    }
                 }
                 if (!isUserUnlocked()) {
                     Log.e(TAG, "Storage locked, " + type + " failed");
@@ -1273,18 +1271,23 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                 // Block until all packets have been send.
                 return sendConvoListingRsp(op, appParams);
             } else if (type.equals(TYPE_GET_MAS_INSTANCE_INFORMATION)) {
-                if (V && appParams != null) {
-                    Log.d(TAG,
-                            "TYPE_MESSAGE (GET): MASInstandeId = " + appParams.getMasInstanceId());
+                if (V) {
+                    if (appParams != null) {
+                        Log.d(TAG, "TYPE_MESSAGE (GET): MASInstandeId = "
+                                + appParams.getMasInstanceId());
+                    }
                 }
                 // Block until all packets have been send.
                 return sendMASInstanceInformationRsp(op, appParams);
             } else if (type.equals(TYPE_MESSAGE)) {
                 name = (String) request.getHeader(HeaderSet.NAME);
-                if (V && appParams != null) {
-                    Log.d(TAG, "TYPE_MESSAGE (GET): name is" + name + ", Attachment = "
-                            + appParams.getAttachment() + ", Charset = " + appParams.getCharset()
-                            + ", FractionRequest = " + appParams.getFractionRequest());
+                if (V) {
+                    if (appParams != null) {
+                        Log.d(TAG, "TYPE_MESSAGE (GET): name is" + name + ", Attachment = "
+                                + appParams.getAttachment() + ", Charset = "
+                                + appParams.getCharset() + ", FractionRequest = "
+                                + appParams.getFractionRequest());
+                    }
                 }
                 if (!isUserUnlocked()) {
                     Log.e(TAG, "Storage locked, " + type + " failed");
@@ -1330,11 +1333,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                     BluetoothProtoEnums.BLUETOOTH_MAP_OBEX_SERVER,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                     39);
-            if (D) {
-                Log.e(TAG, "Exception occured while handling request", e);
-            } else {
-                Log.e(TAG, "Exception occured while handling request");
-            }
+            Log.e(TAG, "Exception occurred while handling request", e);
             if (mIsAborted) {
                 if (D) {
                     Log.d(TAG, "onGet Operation Aborted");
@@ -2180,8 +2179,10 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                         BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                         69);
                 // We were probably aborted or disconnected
-                if (D && e.getMessage().equals("Abort Received")) {
-                    Log.w(TAG, "getMessage() Aborted...", e);
+                if (e.getMessage().equals("Abort Received")) {
+                    if (D) {
+                        Log.d(TAG, "getMessage() Aborted...", e);
+                    }
                 }
             } finally {
                 if (outStream != null) {
@@ -2274,11 +2275,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                     BluetoothProtoEnums.BLUETOOTH_MAP_OBEX_SERVER,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                     73);
-            if (D) {
-                Log.e(TAG, "Exception occured while handling request", e);
-            } else {
-                Log.e(TAG, "Exception occured while handling request");
-            }
+            Log.e(TAG, "Exception occurred while handling request", e);
             if (mIsAborted) {
                 return ResponseCodes.OBEX_HTTP_OK;
             } else {
