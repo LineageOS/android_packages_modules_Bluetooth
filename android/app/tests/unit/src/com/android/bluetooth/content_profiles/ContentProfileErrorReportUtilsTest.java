@@ -18,12 +18,9 @@ package com.android.bluetooth.content_profiles;
 import static com.google.common.truth.Truth.assertThat;
 
 import android.os.SystemClock;
-import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
-
-import com.android.bluetooth.flags.Flags;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -33,22 +30,8 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class ContentProfileErrorReportUtilsTest {
 
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
-
-    @Test
-    public void noOpWhenFlagIsDisabled() {
-        mSetFlagsRule.disableFlags(Flags.FLAG_CONTENT_PROFILES_ERRORS_METRICS);
-        long previousReportTimeMillis = ContentProfileErrorReportUtils.sLastReportTime;
-
-        assertThat(ContentProfileErrorReportUtils.report(0, 0, 0, 0)).isFalse();
-        // The last report time should not be changed.
-        assertThat(ContentProfileErrorReportUtils.sLastReportTime)
-                .isEqualTo(previousReportTimeMillis);
-    }
-
     @Test
     public void tooFrequentErrorReportIsSkipped() {
-        mSetFlagsRule.enableFlags(Flags.FLAG_CONTENT_PROFILES_ERRORS_METRICS);
         // Set the last report time to the current time.
         long lastReportTimeMillisToSet = SystemClock.uptimeMillis();
         ContentProfileErrorReportUtils.sLastReportTime = lastReportTimeMillisToSet;
@@ -61,7 +44,6 @@ public class ContentProfileErrorReportUtilsTest {
 
     @Test
     public void successfulReport() {
-        mSetFlagsRule.enableFlags(Flags.FLAG_CONTENT_PROFILES_ERRORS_METRICS);
         // Set the last report time to much earlier than the current time.
         long lastReportTimeMillisToSet =
                 SystemClock.uptimeMillis()

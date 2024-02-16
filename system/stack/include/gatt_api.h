@@ -19,6 +19,7 @@
 #define GATT_API_H
 
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 
 #include <cstdint>
 #include <list>
@@ -1298,5 +1299,16 @@ void gatt_reset_bgdev_list(bool after_reset);
 
 // Initialize GATTS list of bonded device service change updates.
 void gatt_load_bonded(void);
+
+namespace fmt {
+template <>
+struct formatter<GattStatus> : enum_formatter<GattStatus> {};
+template <>
+struct formatter<tGATTC_OPTYPE> : enum_formatter<tGATTC_OPTYPE> {};
+template <>
+struct formatter<tGATT_OP_CODE> : enum_formatter<tGATT_OP_CODE> {};
+template <>
+struct formatter<tGATT_DISC_TYPE> : enum_formatter<tGATT_DISC_TYPE> {};
+}  // namespace fmt
 
 #endif /* GATT_API_H */

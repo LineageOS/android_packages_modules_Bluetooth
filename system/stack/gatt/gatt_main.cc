@@ -24,6 +24,7 @@
 
 #include <android_bluetooth_flags.h>
 #include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include "btif/include/btif_dm.h"
 #include "btif/include/btif_storage.h"
@@ -51,8 +52,8 @@
 #include "stack/include/srvc_api.h"  // tDIS_VALUE
 #include "types/raw_address.h"
 
-using base::StringPrintf;
 using bluetooth::eatt::EattExtension;
+using namespace bluetooth;
 
 /******************************************************************************/
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
@@ -112,7 +113,7 @@ tGATT_CB gatt_cb;
 void gatt_init(void) {
   tL2CAP_FIXED_CHNL_REG fixed_reg;
 
-  VLOG(1) << __func__;
+  log::verbose("");
 
   gatt_cb = tGATT_CB();
   connection_manager::reset(true);
@@ -138,7 +139,7 @@ void gatt_init(void) {
   if (gatt_cb.over_br_enabled &&
       !L2CA_Register2(BT_PSM_ATT, dyn_info, false /* enable_snoop */, nullptr,
                       GATT_MAX_MTU_SIZE, 0, BTM_SEC_NONE)) {
-    LOG(ERROR) << "ATT Dynamic Registration failed";
+    log::error("ATT Dynamic Registration failed");
   }
 
   gatt_cb.hdl_cfg.gatt_start_hdl = GATT_GATT_START_HANDLE;
@@ -166,7 +167,7 @@ void gatt_init(void) {
  ******************************************************************************/
 void gatt_free(void) {
   int i;
-  VLOG(1) << __func__;
+  log::verbose("");
 
   fixed_queue_free(gatt_cb.sign_op_queue, NULL);
   gatt_cb.sign_op_queue = NULL;
@@ -253,18 +254,18 @@ bool gatt_connect(const RawAddress& rem_bda, tGATT_TCB* p_tcb,
  *
  ******************************************************************************/
 bool gatt_disconnect(tGATT_TCB* p_tcb) {
-  VLOG(1) << __func__;
+  log::verbose("");
 
   if (!p_tcb) {
-    LOG_WARN("Unable to disconnect an unknown device");
+    log::warn("Unable to disconnect an unknown device");
     return false;
   }
 
   tGATT_CH_STATE ch_state = gatt_get_ch_state(p_tcb);
   if (ch_state == GATT_CH_CLOSING) {
-    LOG_DEBUG("Device already in closing state peer:%s",
-              ADDRESS_TO_LOGGABLE_CSTR(p_tcb->peer_bda));
-    VLOG(1) << __func__ << " already in closing state";
+    log::debug("Device already in closing state peer:{}",
+               ADDRESS_TO_LOGGABLE_CSTR(p_tcb->peer_bda));
+    log::verbose("already in closing state");
     return true;
   }
 
@@ -284,10 +285,9 @@ bool gatt_disconnect(tGATT_TCB* p_tcb) {
         if (!connection_manager::direct_connect_remove(CONN_MGR_ID_L2CAP,
                                                        p_tcb->peer_bda)) {
           BTM_AcceptlistRemove(p_tcb->peer_bda);
-          LOG_INFO(
+          log::info(
               "GATT connection manager has no record but removed filter "
-              "acceptlist "
-              "gatt_if:%hhu peer:%s",
+              "acceptlist gatt_if:{} peer:{}",
               static_cast<uint8_t>(CONN_MGR_ID_L2CAP),
               ADDRESS_TO_LOGGABLE_CSTR(p_tcb->peer_bda));
         }
@@ -300,7 +300,7 @@ bool gatt_disconnect(tGATT_TCB* p_tcb) {
     if ((ch_state == GATT_CH_OPEN) || (ch_state == GATT_CH_CFG)) {
       gatt_l2cif_disconnect(p_tcb->att_lcid);
     } else {
-      VLOG(1) << __func__ << " gatt_disconnect channel not opened";
+      log::verbose("gatt_disconnect channel not opened");
     }
   }
 
@@ -319,27 +319,27 @@ bool gatt_disconnect(tGATT_TCB* p_tcb) {
  ******************************************************************************/
 bool gatt_update_app_hold_link_status(tGATT_IF gatt_if, tGATT_TCB* p_tcb,
                                       bool is_add) {
-  LOG_DEBUG("gatt_if=%d, is_add=%d, peer_bda=%s", +gatt_if, is_add,
-            ADDRESS_TO_LOGGABLE_CSTR(p_tcb->peer_bda));
+  log::debug("gatt_if={}, is_add={}, peer_bda={}", gatt_if, is_add,
+             ADDRESS_TO_LOGGABLE_CSTR(p_tcb->peer_bda));
   auto& holders = p_tcb->app_hold_link;
 
   if (is_add) {
     auto ret = holders.insert(gatt_if);
     if (ret.second) {
-      LOG_DEBUG("added gatt_if=%d", +gatt_if);
+      log::debug("added gatt_if={}", gatt_if);
     } else {
-      LOG_DEBUG("attempt to add already existing gatt_if=%d", +gatt_if);
+      log::debug("attempt to add already existing gatt_if={}", gatt_if);
     }
     return true;
   }
 
   //! is_add
   if (!holders.erase(gatt_if)) {
-    LOG_WARN("attempt to remove non-existing gatt_if=%d", +gatt_if);
+    log::warn("attempt to remove non-existing gatt_if={}", gatt_if);
     return false;
   }
 
-  LOG_INFO("removed gatt_if=%d", +gatt_if);
+  log::info("removed gatt_if={}", gatt_if);
   return true;
 }
 
@@ -356,23 +356,23 @@ bool gatt_update_app_hold_link_status(tGATT_IF gatt_if, tGATT_TCB* p_tcb,
  ******************************************************************************/
 void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb,
                                    bool is_add, bool check_acl_link) {
-  LOG_DEBUG("gatt_if=%d, is_add=%d chk_link=%d", +gatt_if, is_add,
-            check_acl_link);
+  log::debug("gatt_if={}, is_add={} chk_link={}", gatt_if, is_add,
+             check_acl_link);
 
   if (!p_tcb) {
-    LOG_WARN("p_tcb is null");
+    log::warn("p_tcb is null");
     return;
   }
 
   // If we make no modification, i.e. kill app that was never connected to a
   // device, skip updating the device state.
   if (!gatt_update_app_hold_link_status(gatt_if, p_tcb, is_add)) {
-    LOG_INFO("App status is not updated for gatt_if=%d", +gatt_if);
+    log::info("App status is not updated for gatt_if={}", gatt_if);
     return;
   }
 
   if (!check_acl_link) {
-    LOG_INFO("check_acl_link is false, no need to check");
+    log::info("check_acl_link is false, no need to check");
     return;
   }
 
@@ -382,14 +382,14 @@ void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb,
 
   if (is_add) {
     if (p_tcb->att_lcid == L2CAP_ATT_CID && is_valid_handle) {
-      LOG_INFO("disable link idle timer for %s",
-               ADDRESS_TO_LOGGABLE_CSTR(p_tcb->peer_bda));
+      log::info("disable link idle timer for {}",
+                ADDRESS_TO_LOGGABLE_CSTR(p_tcb->peer_bda));
       /* acl link is connected disable the idle timeout */
       GATT_SetIdleTimeout(p_tcb->peer_bda, GATT_LINK_NO_IDLE_TIMEOUT,
                           p_tcb->transport, true /* is_active */);
     } else {
-      LOG_INFO("invalid handle %d or dynamic CID %d", is_valid_handle,
-               p_tcb->att_lcid);
+      log::info("invalid handle {} or dynamic CID {}", is_valid_handle,
+                p_tcb->att_lcid);
     }
   } else {
     if (p_tcb->app_hold_link.empty()) {
@@ -400,19 +400,19 @@ void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb,
 
         /* for fixed channel, set the timeout value to
            GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP seconds */
-        LOG_INFO(
+        log::info(
             "GATT fixed channel is no longer useful, start link idle timer for "
-            "%d seconds",
+            "{} seconds",
             GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP);
         GATT_SetIdleTimeout(p_tcb->peer_bda, GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP,
                             p_tcb->transport, false /* is_active */);
       } else {
         // disconnect the dynamic channel
-        LOG_INFO("disconnect GATT dynamic channel");
+        log::info("disconnect GATT dynamic channel");
         gatt_disconnect(p_tcb);
       }
     } else {
-      LOG_INFO("is_add=false, but some app is still using the ACL link");
+      log::info("is_add=false, but some app is still using the ACL link");
     }
   }
 }
@@ -431,7 +431,7 @@ bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr,
                         p_reg->gatt_if))
         return false;
     } else if (st == GATT_CH_CLOSING) {
-      LOG(INFO) << "Must finish disconnection before new connection";
+      log::info("Must finish disconnection before new connection");
       /* need to complete the closing first */
       return false;
     }
@@ -441,13 +441,13 @@ bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr,
 
   p_tcb = gatt_allocate_tcb_by_bdaddr(bd_addr, transport);
   if (!p_tcb) {
-    LOG(ERROR) << "Max TCB for gatt_if [ " << +p_reg->gatt_if << "] reached.";
+    log::error("Max TCB for gatt_if [ {}] reached.", p_reg->gatt_if);
     return false;
   }
 
   if (!gatt_connect(bd_addr, addr_type, p_tcb, transport, initiating_phys,
                     p_reg->gatt_if)) {
-    LOG(ERROR) << "gatt_connect failed";
+    log::error("gatt_connect failed");
     fixed_queue_free(p_tcb->pending_ind_q, NULL);
     *p_tcb = tGATT_TCB();
     return false;
@@ -483,13 +483,13 @@ static void gatt_le_connect_cback(uint16_t chan, const RawAddress& bd_addr,
   tGATTS_SRV_CHG* p_srv_chg_clt = NULL;
 
   if (transport == BT_TRANSPORT_BR_EDR) {
-    LOG_WARN("Ignoring fixed channel connect/disconnect on br_edr for GATT");
+    log::warn("Ignoring fixed channel connect/disconnect on br_edr for GATT");
     return;
   }
 
-  VLOG(1) << "GATT   ATT protocol channel with BDA: "
-          << ADDRESS_TO_LOGGABLE_STR(bd_addr) << " is "
-          << ((connected) ? "connected" : "disconnected");
+  log::verbose("GATT   ATT protocol channel with BDA: {} is {}",
+               ADDRESS_TO_LOGGABLE_STR(bd_addr),
+               ((connected) ? "connected" : "disconnected"));
 
   p_srv_chg_clt = gatt_is_bda_in_the_srv_chg_clt_list(bd_addr);
   if (p_srv_chg_clt != NULL) {
@@ -525,7 +525,7 @@ static void gatt_le_connect_cback(uint16_t chan, const RawAddress& bd_addr,
   else {
     p_tcb = gatt_allocate_tcb_by_bdaddr(bd_addr, BT_TRANSPORT_LE);
     if (!p_tcb) {
-      LOG(ERROR) << "CCB max out, no rsources";
+      log::error("CCB max out, no rsources");
       return;
     }
 
@@ -550,18 +550,18 @@ static void gatt_le_connect_cback(uint16_t chan, const RawAddress& bd_addr,
   }
 
   if (is_device_le_audio_capable(bd_addr)) {
-    LOG_INFO("Read model name for le audio capable device");
+    log::info("Read model name for le audio capable device");
     if (!check_cached_model_name(bd_addr)) {
       if (!DIS_ReadDISInfo(bd_addr, read_dis_cback, DIS_ATTR_MODEL_NUM_BIT)) {
-        LOG_WARN("Read DIS failed");
+        log::warn("Read DIS failed");
       }
     }
   } else if (check_cached_model_name(bd_addr)) {
-    LOG_INFO("Get cache model name for device");
+    log::info("Get cache model name for device");
   }
 
   if (stack_config_get_interface()->get_pts_connect_eatt_before_encryption()) {
-    LOG_INFO(" Start EATT before encryption ");
+    log::info("Start EATT before encryption ");
     EattExtension::GetInstance()->Connect(bd_addr);
   }
 }
@@ -575,8 +575,8 @@ bool check_cached_model_name(const RawAddress& bd_addr) {
   if (btif_storage_get_remote_device_property(&bd_addr, &prop) !=
           BT_STATUS_SUCCESS ||
       prop.len == 0) {
-    LOG_INFO("Device %s no cached model name",
-             ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+    log::info("Device {} no cached model name",
+              ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
     return false;
   }
 
@@ -587,7 +587,7 @@ bool check_cached_model_name(const RawAddress& bd_addr) {
 
 static void read_dis_cback(const RawAddress& bd_addr, tDIS_VALUE* p_dis_value) {
   if (p_dis_value == NULL) {
-    LOG_ERROR("received unexpected/error DIS callback");
+    log::error("received unexpected/error DIS callback");
     return;
   }
 
@@ -599,8 +599,8 @@ static void read_dis_cback(const RawAddress& bd_addr, tDIS_VALUE* p_dis_value) {
         prop.val = p_dis_value->data_string[i];
         prop.len = strlen((char*)prop.val);
 
-        LOG_INFO("Device %s, model name: %s", ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
-                 ((char*)prop.val));
+        log::info("Device {}, model name: {}",
+                  ADDRESS_TO_LOGGABLE_CSTR(bd_addr), ((char*)prop.val));
 
         btif_storage_set_remote_device_property(&bd_addr, &prop);
         GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
@@ -608,7 +608,7 @@ static void read_dis_cback(const RawAddress& bd_addr, tDIS_VALUE* p_dis_value) {
       }
     }
   } else {
-    LOG_ERROR("unknown bit, mask: %d", (int)p_dis_value->attr_mask);
+    log::error("unknown bit, mask: {}", (int)p_dis_value->attr_mask);
   }
 }
 
@@ -637,7 +637,7 @@ void gatt_notify_phy_updated(tHCI_STATUS status, uint16_t handle,
                              uint8_t tx_phy, uint8_t rx_phy) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
   if (!p_dev_rec) {
-    LOG_WARN("No Device Found!");
+    log::warn("No Device Found!");
     return;
   }
 
@@ -681,7 +681,7 @@ void gatt_notify_subrate_change(uint16_t handle, uint16_t subrate_factor,
                                 uint16_t timeout, uint8_t status) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
   if (!p_dev_rec) {
-    LOG_WARN("No Device Found!");
+    log::warn("No Device Found!");
     return;
   }
 
@@ -738,8 +738,8 @@ static void gatt_le_data_ind(uint16_t chan, const RawAddress& bd_addr,
     if (decision == bluetooth::shim::arbiter::InterceptAction::DROP) {
       // do nothing, just free it at the end
     } else if (gatt_get_ch_state(p_tcb) < GATT_CH_OPEN) {
-      LOG(WARNING) << "ATT - Ignored L2CAP data while in state: "
-                   << +gatt_get_ch_state(p_tcb);
+      log::warn("ATT - Ignored L2CAP data while in state: {}",
+                gatt_get_ch_state(p_tcb));
     } else
       gatt_data_process(*p_tcb, L2CAP_ATT_CID, p_buf);
   }
@@ -762,7 +762,7 @@ static void gatt_l2cif_connect_ind_cback(const RawAddress& bd_addr,
                                          uint16_t lcid,
                                          UNUSED_ATTR uint16_t psm, uint8_t id) {
   uint8_t result = L2CAP_CONN_OK;
-  LOG(INFO) << "Connection indication cid = " << +lcid;
+  log::info("Connection indication cid = {}", lcid);
 
   /* new connection ? */
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_BR_EDR);
@@ -809,9 +809,8 @@ static void gatt_l2cif_connect_cfm_cback(uint16_t lcid, uint16_t result) {
   p_tcb = gatt_find_tcb_by_cid(lcid);
   if (!p_tcb) return;
 
-  VLOG(1) << __func__
-          << StringPrintf(" result: %d ch_state: %d, lcid:0x%x", result,
-                          gatt_get_ch_state(p_tcb), p_tcb->att_lcid);
+  log::verbose("result: {} ch_state: {}, lcid:0x{:x}", result,
+               gatt_get_ch_state(p_tcb), p_tcb->att_lcid);
 
   if (gatt_get_ch_state(p_tcb) == GATT_CH_CONN && result == L2CAP_CONN_OK) {
     gatt_set_ch_state(p_tcb, GATT_CH_CFG);
@@ -968,8 +967,8 @@ void gatt_consolidate(const RawAddress& identity_addr, const RawAddress& rpa) {
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(rpa, BT_TRANSPORT_LE);
   if (p_tcb == NULL) return;
 
-  LOG_INFO("consolidate %s -> %s", ADDRESS_TO_LOGGABLE_CSTR(rpa),
-           ADDRESS_TO_LOGGABLE_CSTR(identity_addr));
+  log::info("consolidate {} -> {}", ADDRESS_TO_LOGGABLE_CSTR(rpa),
+            ADDRESS_TO_LOGGABLE_CSTR(identity_addr));
   p_tcb->peer_bda = identity_addr;
 
   // Address changed, notify GATT clients/servers device is available under new
@@ -997,7 +996,7 @@ void gatt_data_process(tGATT_TCB& tcb, uint16_t cid, BT_HDR* p_buf) {
   uint8_t op_code, pseudo_op_code;
 
   if (p_buf->len <= 0) {
-    LOG(ERROR) << "invalid data length, ignore";
+    log::error("invalid data length, ignore");
     return;
   }
 
@@ -1010,8 +1009,7 @@ void gatt_data_process(tGATT_TCB& tcb, uint16_t cid, BT_HDR* p_buf) {
   if (pseudo_op_code >= GATT_OP_CODE_MAX) {
     /* Note: PTS: GATT/SR/UNS/BI-01-C mandates error on unsupported ATT request.
      */
-    LOG(ERROR) << __func__
-               << ": ATT - Rcvd L2CAP data, unknown cmd: " << loghex(op_code);
+    log::error("ATT - Rcvd L2CAP data, unknown cmd: {}", loghex(op_code));
     gatt_send_error_rsp(tcb, cid, GATT_REQ_NOT_SUPPORTED, op_code, 0, false);
     return;
   }
@@ -1053,14 +1051,14 @@ void gatt_send_srv_chg_ind(const RawAddress& peer_bda) {
   static const uint16_t sGATT_LAST_HANDLE = (uint16_t)osi_property_get_int32(
       "bluetooth.gatt.last_handle_for_srvc_change.value", 0xFFFF);
 
-  VLOG(1) << __func__;
+  log::verbose("");
 
   if (!gatt_cb.handle_of_h_r) return;
 
   uint16_t conn_id = gatt_profile_find_conn_id_by_bd_addr(peer_bda);
   if (conn_id == GATT_INVALID_CONN_ID) {
-    LOG(ERROR) << "Unable to find conn_id for "
-               << ADDRESS_TO_LOGGABLE_STR(peer_bda);
+    log::error("Unable to find conn_id for {}",
+               ADDRESS_TO_LOGGABLE_STR(peer_bda));
     return;
   }
 
@@ -1075,7 +1073,7 @@ void gatt_send_srv_chg_ind(const RawAddress& peer_bda) {
 /** Check sending service chnaged Indication is required or not if required then
  * send the Indication */
 void gatt_chk_srv_chg(tGATTS_SRV_CHG* p_srv_chg_clt) {
-  VLOG(1) << __func__ << " srv_changed=" << +p_srv_chg_clt->srv_changed;
+  log::verbose("srv_changed={}", p_srv_chg_clt->srv_changed);
 
   if (p_srv_chg_clt->srv_changed) {
     gatt_send_srv_chg_ind(p_srv_chg_clt->bda);
@@ -1088,9 +1086,9 @@ void gatt_init_srv_chg(void) {
   tGATTS_SRV_CHG_RSP rsp;
   tGATTS_SRV_CHG srv_chg_clt;
 
-  VLOG(1) << __func__;
+  log::verbose("");
   if (!gatt_cb.cb_info.p_srv_chg_callback) {
-    VLOG(1) << __func__ << " callback not registered yet";
+    log::verbose("callback not registered yet");
     return;
   }
 
@@ -1099,7 +1097,7 @@ void gatt_init_srv_chg(void) {
 
   if (!(status && rsp.num_clients)) return;
 
-  VLOG(1) << "num_srv_chg_clt_clients=" << +rsp.num_clients;
+  log::verbose("num_srv_chg_clt_clients={}", rsp.num_clients);
   uint8_t num_clients = rsp.num_clients;
   uint8_t i = 1; /* use one based index */
   while ((i <= num_clients) && status) {
@@ -1109,7 +1107,7 @@ void gatt_init_srv_chg(void) {
     if (status) {
       memcpy(&srv_chg_clt, &rsp.srv_chg, sizeof(tGATTS_SRV_CHG));
       if (gatt_add_srv_chg_clt(&srv_chg_clt) == NULL) {
-        LOG(ERROR) << "Unable to add a service change client";
+        log::error("Unable to add a service change client");
         status = false;
       }
     }
@@ -1123,7 +1121,7 @@ void gatt_proc_srv_chg(void) {
   tBT_TRANSPORT transport;
   uint8_t found_idx;
 
-  VLOG(1) << __func__;
+  log::verbose("");
 
   if (!gatt_cb.cb_info.p_srv_chg_callback || !gatt_cb.handle_of_h_r) return;
 
@@ -1136,7 +1134,7 @@ void gatt_proc_srv_chg(void) {
 
     if (gatt_is_srv_chg_ind_pending(p_tcb)) {
       send_indication = false;
-      VLOG(1) << "discard srv chg - already has one in the queue";
+      log::verbose("discard srv chg - already has one in the queue");
     }
 
     // Some LE GATT clients don't respond to service changed indications.
@@ -1145,7 +1143,7 @@ void gatt_proc_srv_chg(void) {
         btif_storage_get_stored_remote_name(bda, remote_name)) {
       if (interop_match_name(INTEROP_GATTC_NO_SERVICE_CHANGED_IND,
                              remote_name)) {
-        VLOG(1) << "discard srv chg - interop matched " << remote_name;
+        log::verbose("discard srv chg - interop matched {}", remote_name);
         send_indication = false;
       }
     }
@@ -1160,8 +1158,8 @@ void gatt_proc_srv_chg(void) {
 void gatt_set_ch_state(tGATT_TCB* p_tcb, tGATT_CH_STATE ch_state) {
   if (!p_tcb) return;
 
-  VLOG(1) << __func__ << ": old=" << +p_tcb->ch_state
-          << " new=" << loghex(static_cast<uint8_t>(ch_state));
+  log::verbose("old={} new={}", p_tcb->ch_state,
+               loghex(static_cast<uint8_t>(ch_state)));
   p_tcb->ch_state = ch_state;
 }
 
@@ -1169,6 +1167,6 @@ void gatt_set_ch_state(tGATT_TCB* p_tcb, tGATT_CH_STATE ch_state) {
 tGATT_CH_STATE gatt_get_ch_state(tGATT_TCB* p_tcb) {
   if (!p_tcb) return GATT_CH_CLOSE;
 
-  VLOG(1) << "gatt_get_ch_state: ch_state=" << +p_tcb->ch_state;
+  log::verbose("gatt_get_ch_state: ch_state={}", p_tcb->ch_state);
   return p_tcb->ch_state;
 }
