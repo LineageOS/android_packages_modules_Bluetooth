@@ -25,6 +25,8 @@
 
 #define LOG_TAG "rfcomm"
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 #include <unordered_map>
 
@@ -34,6 +36,8 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/rfcomm/port_int.h"
 #include "stack/rfcomm/rfc_int.h"
+
+using namespace bluetooth;
 
 tRFC_CB rfc_cb;
 std::unordered_map<uint16_t /* sci */, tRFC_MCB*> rfc_lcid_mcb;
@@ -85,7 +89,7 @@ void RFCOMM_DlcEstablishReq(tRFC_MCB* p_mcb, uint8_t dlci,
 
   tPORT* p_port = port_find_mcb_dlci_port(p_mcb, dlci);
   if (p_port == nullptr) {
-    LOG_WARN("%s Unable to find DLCI port dlci:%d", __func__, dlci);
+    log::warn("Unable to find DLCI port dlci:{}", dlci);
     return;
   }
 
@@ -109,7 +113,7 @@ void RFCOMM_DlcEstablishRsp(tRFC_MCB* p_mcb, uint8_t dlci,
 
   tPORT* p_port = port_find_mcb_dlci_port(p_mcb, dlci);
   if (p_port == nullptr) {
-    LOG_WARN("%s Unable to find DLCI port dlci:%d", __func__, dlci);
+    log::warn("Unable to find DLCI port dlci:{}", dlci);
     return;
   }
   rfc_port_sm_execute(p_port, RFC_PORT_EVENT_ESTABLISH_RSP, &result);
@@ -134,7 +138,7 @@ void RFCOMM_ParameterNegotiationRequest(tRFC_MCB* p_mcb, uint8_t dlci,
 
   tPORT* p_port = port_find_mcb_dlci_port(p_mcb, dlci);
   if (p_port == nullptr) {
-    LOG_WARN("%s Unable to find DLCI port dlci:%d", __func__, dlci);
+    log::warn("Unable to find DLCI port dlci:{}", dlci);
     return;
   }
 
@@ -203,7 +207,7 @@ void RFCOMM_PortParameterNegotiationRequest(tRFC_MCB* p_mcb, uint8_t dlci,
 
   tPORT* p_port = port_find_mcb_dlci_port(p_mcb, dlci);
   if (p_port == nullptr) {
-    LOG_WARN("%s Unable to find DLCI port dlci:%d", __func__, dlci);
+    log::warn("Unable to find DLCI port dlci:{}", dlci);
     return;
   }
 
@@ -244,7 +248,7 @@ void RFCOMM_PortParameterNegotiationResponse(tRFC_MCB* p_mcb, uint8_t dlci,
 void RFCOMM_ControlReq(tRFC_MCB* p_mcb, uint8_t dlci, tPORT_CTRL* p_pars) {
   tPORT* p_port = port_find_mcb_dlci_port(p_mcb, dlci);
   if (p_port == nullptr) {
-    LOG_WARN("%s Unable to find DLCI port dlci:%d", __func__, dlci);
+    log::warn("Unable to find DLCI port dlci:{}", dlci);
     return;
   }
 
@@ -272,7 +276,7 @@ void RFCOMM_ControlReq(tRFC_MCB* p_mcb, uint8_t dlci, tPORT_CTRL* p_pars) {
 void RFCOMM_FlowReq(tRFC_MCB* p_mcb, uint8_t dlci, bool enable) {
   tPORT* p_port = port_find_mcb_dlci_port(p_mcb, dlci);
   if (p_port == nullptr) {
-    LOG_WARN("%s Unable to find DLCI port dlci:%d", __func__, dlci);
+    log::warn("Unable to find DLCI port dlci:{}", dlci);
     return;
   }
 
@@ -299,7 +303,7 @@ void RFCOMM_FlowReq(tRFC_MCB* p_mcb, uint8_t dlci, bool enable) {
 void RFCOMM_LineStatusReq(tRFC_MCB* p_mcb, uint8_t dlci, uint8_t status) {
   tPORT* p_port = port_find_mcb_dlci_port(p_mcb, dlci);
   if (p_port == nullptr) {
-    LOG_WARN("%s Unable to find DLCI port dlci:%d", __func__, dlci);
+    log::warn("Unable to find DLCI port dlci:{}", dlci);
     return;
   }
 

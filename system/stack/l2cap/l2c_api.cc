@@ -29,6 +29,7 @@
 #include <base/location.h>
 #include <base/logging.h>
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 
 #include <cstdint>
 #include <string>
@@ -52,6 +53,8 @@
 #include "stack/include/main_thread.h"
 #include "stack/l2cap/l2c_int.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth;
 
 void btsnd_hcic_enhanced_flush(uint16_t handle,
                                uint8_t packet_type);  // TODO Remove
@@ -133,16 +136,16 @@ uint16_t L2CA_Register(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
   **             or only a server.
   */
   if (!config_cfm_cb || !data_ind_cb || !disconnect_ind_cb) {
-    LOG_ERROR(
-        "L2CAP - no cb registering PSM: 0x%04x cfg_cfm:%u cfg_ind:%u"
-        " data_ind:%u discon_int:%u",
+    log::error(
+        "L2CAP - no cb registering PSM: 0x{:04x} cfg_cfm:{} cfg_ind:{} "
+        "data_ind:{} discon_int:{}",
         psm, config_cfm_cb, config_ind_cb, data_ind_cb, disconnect_ind_cb);
     return (0);
   }
 
   /* Verify PSM is valid */
   if (L2C_INVALID_PSM(psm)) {
-    LOG_ERROR("L2CAP - invalid PSM value, PSM: 0x%04x", psm);
+    log::error("L2CAP - invalid PSM value, PSM: 0x{:04x}", psm);
     return (0);
   }
 
@@ -154,7 +157,7 @@ uint16_t L2CA_Register(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
       if (p_rcb == NULL) break;
     }
 
-    LOG_DEBUG("L2CAP - Real PSM: 0x%04x  Virtual PSM: 0x%04x", psm, vpsm);
+    log::debug("L2CAP - Real PSM: 0x{:04x}  Virtual PSM: 0x{:04x}", psm, vpsm);
   }
 
   /* If registration block already there, just overwrite it */
@@ -162,13 +165,13 @@ uint16_t L2CA_Register(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
   if (p_rcb == NULL) {
     p_rcb = l2cu_allocate_rcb(vpsm);
     if (p_rcb == NULL) {
-      LOG_WARN("L2CAP - no RCB available, PSM: 0x%04x  vPSM: 0x%04x", psm,
-               vpsm);
+      log::warn("L2CAP - no RCB available, PSM: 0x{:04x}  vPSM: 0x{:04x}", psm,
+                vpsm);
       return (0);
     }
   }
 
-  LOG_INFO("L2CAP Registered service classic PSM: 0x%04x", psm);
+  log::info("L2CAP Registered service classic PSM: 0x{:04x}", psm);
   p_rcb->log_packets = enable_snoop;
   p_rcb->api = p_cb_info;
   p_rcb->real_psm = psm;
@@ -198,7 +201,7 @@ void L2CA_Deregister(uint16_t psm) {
   tL2C_LCB* p_lcb;
   int ii;
 
-  LOG_VERBOSE("L2CAP - L2CA_Deregister() called for PSM: 0x%04x", psm);
+  log::verbose("L2CAP - L2CA_Deregister() called for PSM: 0x{:04x}", psm);
 
   p_rcb = l2cu_find_rcb_by_psm(psm);
   if (p_rcb != NULL) {
@@ -223,7 +226,7 @@ void L2CA_Deregister(uint16_t psm) {
     }
     l2cu_release_rcb(p_rcb);
   } else {
-    LOG_WARN("L2CAP - PSM: 0x%04x not found for deregistration", psm);
+    log::warn("L2CAP - PSM: 0x{:04x} not found for deregistration", psm);
   }
 }
 
@@ -241,11 +244,11 @@ uint16_t L2CA_AllocateLePSM(void) {
   uint16_t psm = l2cb.le_dyn_psm;
   uint16_t count = 0;
 
-  LOG_VERBOSE("%s: last psm=%d", __func__, psm);
+  log::verbose("last psm={}", psm);
   while (!done) {
     count++;
     if (count > LE_DYNAMIC_PSM_RANGE) {
-      LOG_ERROR("%s: Out of free BLE PSM", __func__);
+      log::error("Out of free BLE PSM");
       return 0;
     }
 
@@ -257,13 +260,12 @@ uint16_t L2CA_AllocateLePSM(void) {
     if (!l2cb.le_dyn_psm_assigned[psm - LE_DYNAMIC_PSM_START]) {
       /* make sure the newly allocated psm is not used right now */
       if (l2cu_find_ble_rcb_by_psm(psm)) {
-        LOG_WARN("%s: supposedly-free PSM=%d have allocated rcb!", __func__,
-                 psm);
+        log::warn("supposedly-free PSM={} have allocated rcb!", psm);
         continue;
       }
 
       l2cb.le_dyn_psm_assigned[psm - LE_DYNAMIC_PSM_START] = true;
-      LOG_VERBOSE("%s: assigned PSM=%d", __func__, psm);
+      log::verbose("assigned PSM={}", psm);
       done = true;
       break;
     }
@@ -283,15 +285,15 @@ uint16_t L2CA_AllocateLePSM(void) {
  *
  ******************************************************************************/
 void L2CA_FreeLePSM(uint16_t psm) {
-  LOG_VERBOSE("%s: to free psm=%d", __func__, psm);
+  log::verbose("to free psm={}", psm);
 
   if ((psm < LE_DYNAMIC_PSM_START) || (psm > LE_DYNAMIC_PSM_END)) {
-    LOG_ERROR("%s: Invalid PSM=%d value!", __func__, psm);
+    log::error("Invalid PSM={} value!", psm);
     return;
   }
 
   if (!l2cb.le_dyn_psm_assigned[psm - LE_DYNAMIC_PSM_START]) {
-    LOG_WARN("%s: PSM=%d was not allocated!", __func__, psm);
+    log::warn("PSM={} was not allocated!", psm);
   }
   l2cb.le_dyn_psm_assigned[psm - LE_DYNAMIC_PSM_START] = false;
 }
@@ -317,18 +319,17 @@ uint16_t L2CA_ConnectReq2(uint16_t psm, const RawAddress& p_bd_addr,
  *
  ******************************************************************************/
 uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr) {
-  VLOG(1) << __func__ << "BDA " << ADDRESS_TO_LOGGABLE_STR(p_bd_addr)
-          << StringPrintf(" PSM: 0x%04x", psm);
+  log::verbose("BDA {} PSM: 0x{:04x}", ADDRESS_TO_LOGGABLE_STR(p_bd_addr), psm);
 
   /* Fail if we have not established communications with the controller */
   if (!BTM_IsDeviceUp()) {
-    LOG(WARNING) << __func__ << ": BTU not ready";
+    log::warn("BTU not ready");
     return 0;
   }
   /* Fail if the PSM is not registered */
   tL2C_RCB* p_rcb = l2cu_find_rcb_by_psm(psm);
   if (p_rcb == nullptr) {
-    LOG(WARNING) << __func__ << ": no RCB, PSM=" << loghex(psm);
+    log::warn("no RCB, PSM={}", loghex(psm));
     return 0;
   }
 
@@ -340,9 +341,8 @@ uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr) {
     p_lcb = l2cu_allocate_lcb(p_bd_addr, false, BT_TRANSPORT_BR_EDR);
     /* currently use BR/EDR for ERTM mode l2cap connection */
     if (p_lcb == nullptr) {
-      LOG(WARNING) << __func__
-                   << ": connection not started for PSM=" << loghex(psm)
-                   << ", p_lcb=" << p_lcb;
+      log::warn("connection not started for PSM={}, p_lcb={}", loghex(psm),
+                fmt::ptr(p_lcb));
       return 0;
     }
     l2cu_create_conn_br_edr(p_lcb);
@@ -351,7 +351,7 @@ uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr) {
   /* Allocate a channel control block */
   tL2C_CCB* p_ccb = l2cu_allocate_ccb(p_lcb, 0);
   if (p_ccb == nullptr) {
-    LOG(WARNING) << __func__ << ": no CCB, PSM=" << loghex(psm);
+    log::warn("no CCB, PSM={}", loghex(psm));
     return 0;
   }
 
@@ -370,14 +370,14 @@ uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr) {
      * ccb will be automatically retried after link disconnect
      * arrives
      */
-    LOG_VERBOSE("L2CAP API - link disconnecting: RETRY LATER");
+    log::verbose("L2CAP API - link disconnecting: RETRY LATER");
 
     /* Save ccb so it can be started after disconnect is finished */
     p_lcb->p_pending_ccb = p_ccb;
   }
 
-  LOG_VERBOSE("L2CAP - L2CA_conn_req(psm: 0x%04x) returned CID: 0x%04x", psm,
-              p_ccb->local_cid);
+  log::verbose("L2CAP - L2CA_conn_req(psm: 0x{:04x}) returned CID: 0x{:04x}",
+               psm, p_ccb->local_cid);
 
   /* Return the local CID as our handle */
   return p_ccb->local_cid;
@@ -412,13 +412,13 @@ uint16_t L2CA_RegisterLECoc(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
   **             or only a server.
   */
   if ((!p_cb_info.pL2CA_DataInd_Cb) || (!p_cb_info.pL2CA_DisconnectInd_Cb)) {
-    LOG_ERROR("No cb registering BLE PSM: 0x%04x", psm);
+    log::error("No cb registering BLE PSM: 0x{:04x}", psm);
     return 0;
   }
 
   /* Verify PSM is valid */
   if (!L2C_IS_VALID_LE_PSM(psm)) {
-    LOG_ERROR("Invalid BLE PSM value, PSM: 0x%04x", psm);
+    log::error("Invalid BLE PSM value, PSM: 0x{:04x}", psm);
     return 0;
   }
 
@@ -431,25 +431,26 @@ uint16_t L2CA_RegisterLECoc(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
       (p_cb_info.pL2CA_ConnectInd_Cb == NULL)) {
     vpsm = L2CA_AllocateLePSM();
     if (vpsm == 0) {
-      LOG_ERROR("Out of free BLE PSM");
+      log::error("Out of free BLE PSM");
       return 0;
     }
 
-    LOG_DEBUG("Real PSM: 0x%04x  Virtual PSM: 0x%04x", psm, vpsm);
+    log::debug("Real PSM: 0x{:04x}  Virtual PSM: 0x{:04x}", psm, vpsm);
   }
 
   /* If registration block already there, just overwrite it */
   p_rcb = l2cu_find_ble_rcb_by_psm(vpsm);
   if (p_rcb == NULL) {
-    LOG_DEBUG("Allocate rcp for Virtual PSM: 0x%04x", vpsm);
+    log::debug("Allocate rcp for Virtual PSM: 0x{:04x}", vpsm);
     p_rcb = l2cu_allocate_ble_rcb(vpsm);
     if (p_rcb == NULL) {
-      LOG_WARN("No BLE RCB available, PSM: 0x%04x  vPSM: 0x%04x", psm, vpsm);
+      log::warn("No BLE RCB available, PSM: 0x{:04x}  vPSM: 0x{:04x}", psm,
+                vpsm);
       return 0;
     }
   }
 
-  LOG_INFO("Registered service LE COC PSM: 0x%04x", psm);
+  log::info("Registered service LE COC PSM: 0x{:04x}", psm);
   p_rcb->api = p_cb_info;
   p_rcb->real_psm = psm;
   p_rcb->coc_cfg = cfg;
@@ -468,11 +469,11 @@ uint16_t L2CA_RegisterLECoc(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
  *
  ******************************************************************************/
 void L2CA_DeregisterLECoc(uint16_t psm) {
-  LOG_VERBOSE("%s called for PSM: 0x%04x", __func__, psm);
+  log::verbose("called for PSM: 0x{:04x}", psm);
 
   tL2C_RCB* p_rcb = l2cu_find_ble_rcb_by_psm(psm);
   if (p_rcb == NULL) {
-    LOG_WARN("%s PSM: 0x%04x not found for deregistration", __func__, psm);
+    log::warn("PSM: 0x{:04x} not found for deregistration", psm);
     return;
   }
 
@@ -516,19 +517,19 @@ uint16_t L2CA_ConnectLECocReq(uint16_t psm, const RawAddress& p_bd_addr,
   get_btm_client_interface().security.BTM_SetSecurityLevel(
       true, "", 0, sec_level, psm, 0, 0);
 
-  VLOG(1) << __func__ << " BDA: " << ADDRESS_TO_LOGGABLE_STR(p_bd_addr)
-          << StringPrintf(" PSM: 0x%04x", psm);
+  log::verbose("BDA: {} PSM: 0x{:04x}", ADDRESS_TO_LOGGABLE_STR(p_bd_addr),
+               psm);
 
   /* Fail if we have not established communications with the controller */
   if (!BTM_IsDeviceUp()) {
-    LOG_WARN("%s BTU not ready", __func__);
+    log::warn("BTU not ready");
     return 0;
   }
 
   /* Fail if the PSM is not registered */
   tL2C_RCB* p_rcb = l2cu_find_ble_rcb_by_psm(psm);
   if (p_rcb == NULL) {
-    LOG_WARN("%s No BLE RCB, PSM: 0x%04x", __func__, psm);
+    log::warn("No BLE RCB, PSM: 0x{:04x}", psm);
     return 0;
   }
 
@@ -540,8 +541,8 @@ uint16_t L2CA_ConnectLECocReq(uint16_t psm, const RawAddress& p_bd_addr,
     if ((p_lcb == NULL)
         /* currently use BR/EDR for ERTM mode l2cap connection */
         || (!l2cu_create_conn_le(p_lcb))) {
-      LOG_WARN("%s conn not started for PSM: 0x%04x  p_lcb: 0x%p", __func__,
-               psm, p_lcb);
+      log::warn("conn not started for PSM: 0x{:04x}  p_lcb: 0x{}", psm,
+                fmt::ptr(p_lcb));
       return 0;
     }
   }
@@ -549,7 +550,7 @@ uint16_t L2CA_ConnectLECocReq(uint16_t psm, const RawAddress& p_bd_addr,
   /* Allocate a channel control block */
   tL2C_CCB* p_ccb = l2cu_allocate_ccb(p_lcb, 0);
   if (p_ccb == NULL) {
-    LOG_WARN("%s no CCB, PSM: 0x%04x", __func__, psm);
+    log::warn("no CCB, PSM: 0x{:04x}", psm);
     return 0;
   }
 
@@ -567,7 +568,7 @@ uint16_t L2CA_ConnectLECocReq(uint16_t psm, const RawAddress& p_bd_addr,
   /* If link is up, start the L2CAP connection */
   if (p_lcb->link_state == LST_CONNECTED) {
     if (p_ccb->p_lcb->transport == BT_TRANSPORT_LE) {
-      LOG_VERBOSE("%s LE Link is up", __func__);
+      log::verbose("LE Link is up");
       // post this asynchronously to avoid out-of-order callback invocation
       // should this operation fail
       do_in_main_thread(
@@ -583,14 +584,13 @@ uint16_t L2CA_ConnectLECocReq(uint16_t psm, const RawAddress& p_bd_addr,
    * arrives
    */
   else if (p_lcb->link_state == LST_DISCONNECTING) {
-    LOG_VERBOSE("%s link disconnecting: RETRY LATER", __func__);
+    log::verbose("link disconnecting: RETRY LATER");
 
     /* Save ccb so it can be started after disconnect is finished */
     p_lcb->p_pending_ccb = p_ccb;
   }
 
-  LOG_VERBOSE("%s(psm: 0x%04x) returned CID: 0x%04x", __func__, psm,
-              p_ccb->local_cid);
+  log::verbose("(psm: 0x{:04x}) returned CID: 0x{:04x}", psm, p_ccb->local_cid);
 
   /* Return the local CID as our handle */
   return p_ccb->local_cid;
@@ -610,11 +610,11 @@ uint16_t L2CA_ConnectLECocReq(uint16_t psm, const RawAddress& p_bd_addr,
  *
  ******************************************************************************/
 bool L2CA_GetPeerLECocConfig(uint16_t lcid, tL2CAP_LE_CFG_INFO* peer_cfg) {
-  LOG_VERBOSE("%s CID: 0x%04x", __func__, lcid);
+  log::verbose("CID: 0x{:04x}", lcid);
 
   tL2C_CCB* p_ccb = l2cu_find_ccb_by_cid(NULL, lcid);
   if (p_ccb == NULL) {
-    LOG_ERROR("%s No CCB for CID:0x%04x", __func__, lcid);
+    log::error("No CCB for CID:0x{:04x}", lcid);
     return false;
   }
 
@@ -639,13 +639,13 @@ uint16_t L2CA_GetPeerLECocCredit(const RawAddress& bd_addr, uint16_t lcid) {
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_LE);
   if (p_lcb == NULL) {
     /* No link. Get an LCB and start link establishment */
-    LOG_WARN("%s no LCB", __func__);
+    log::warn("no LCB");
     return L2CAP_LE_CREDIT_MAX;
   }
 
   tL2C_CCB* p_ccb = l2cu_find_ccb_by_cid(p_lcb, lcid);
   if (p_ccb == NULL) {
-    LOG_ERROR("%s No CCB for CID:0x%04x", __func__, lcid);
+    log::error("No CCB for CID:0x{:04x}", lcid);
     return L2CAP_LE_CREDIT_MAX;
   }
 
@@ -671,15 +671,15 @@ uint16_t L2CA_GetPeerLECocCredit(const RawAddress& bd_addr, uint16_t lcid) {
 bool L2CA_ConnectCreditBasedRsp(const RawAddress& p_bd_addr, uint8_t id,
                                 std::vector<uint16_t>& accepted_lcids,
                                 uint16_t result, tL2CAP_LE_CFG_INFO* p_cfg) {
-  VLOG(1) << __func__ << " BDA: " << ADDRESS_TO_LOGGABLE_STR(p_bd_addr)
-          << StringPrintf(" num of cids: %d Result: %d",
-                          int(accepted_lcids.size()), +result);
+  log::verbose("BDA: {} num of cids: {} Result: {}",
+               ADDRESS_TO_LOGGABLE_STR(p_bd_addr), int(accepted_lcids.size()),
+               result);
 
   /* First, find the link control block */
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(p_bd_addr, BT_TRANSPORT_LE);
   if (p_lcb == NULL) {
     /* No link. Get an LCB and start link establishment */
-    LOG_WARN("%s no LCB", __func__);
+    log::warn("no LCB");
     return false;
   }
 
@@ -688,14 +688,14 @@ bool L2CA_ConnectCreditBasedRsp(const RawAddress& p_bd_addr, uint8_t id,
   tL2C_CCB* p_ccb = l2cu_find_ccb_by_cid(p_lcb, p_lcb->pending_lead_cid);
 
   if (!p_ccb) {
-    LOG_ERROR("%s No CCB for CID:0x%04x", __func__, p_lcb->pending_lead_cid);
+    log::error("No CCB for CID:0x{:04x}", p_lcb->pending_lead_cid);
     return false;
   }
 
   for (uint16_t cid : accepted_lcids) {
     tL2C_CCB* temp_p_ccb = l2cu_find_ccb_by_cid(p_lcb, cid);
     if (temp_p_ccb == NULL) {
-      LOG_WARN("%s no CCB", __func__);
+      log::warn("no CCB");
       return false;
     }
 
@@ -707,8 +707,7 @@ bool L2CA_ConnectCreditBasedRsp(const RawAddress& p_bd_addr, uint8_t id,
 
   /* The IDs must match */
   if (p_ccb->remote_id != id) {
-    LOG_WARN("%s bad id. Expected: %d  Got: %d", __func__, p_ccb->remote_id,
-             id);
+    log::warn("bad id. Expected: {}  Got: {}", p_ccb->remote_id, id);
     return false;
   }
 
@@ -743,46 +742,46 @@ bool L2CA_ConnectCreditBasedRsp(const RawAddress& p_bd_addr, uint8_t id,
 std::vector<uint16_t> L2CA_ConnectCreditBasedReq(uint16_t psm,
                                                  const RawAddress& p_bd_addr,
                                                  tL2CAP_LE_CFG_INFO* p_cfg) {
-  VLOG(1) << __func__ << " BDA: " << ADDRESS_TO_LOGGABLE_STR(p_bd_addr)
-          << StringPrintf(" PSM: 0x%04x", psm);
+  log::verbose("BDA: {} PSM: 0x{:04x}", ADDRESS_TO_LOGGABLE_STR(p_bd_addr),
+               psm);
 
   std::vector<uint16_t> allocated_cids;
 
   /* Fail if we have not established communications with the controller */
   if (!BTM_IsDeviceUp()) {
-    LOG_WARN("%s BTU not ready", __func__);
+    log::warn("BTU not ready");
     return allocated_cids;
   }
 
   if (!p_cfg) {
-    LOG_WARN("%s p_cfg is NULL", __func__);
+    log::warn("p_cfg is NULL");
     return allocated_cids;
   }
 
   /* Fail if the PSM is not registered */
   tL2C_RCB* p_rcb = l2cu_find_ble_rcb_by_psm(psm);
   if (p_rcb == NULL) {
-    LOG_WARN("%s No BLE RCB, PSM: 0x%04x", __func__, psm);
+    log::warn("No BLE RCB, PSM: 0x{:04x}", psm);
     return allocated_cids;
   }
 
   /* First, see if we already have a le link to the remote */
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(p_bd_addr, BT_TRANSPORT_LE);
   if (p_lcb == NULL) {
-    LOG_WARN("%s No link available", __func__);
+    log::warn("No link available");
     return allocated_cids;
   }
 
   if (p_lcb->link_state != LST_CONNECTED) {
-    LOG_WARN("%s incorrect link state: %d", __func__, p_lcb->link_state);
+    log::warn("incorrect link state: {}", p_lcb->link_state);
     return allocated_cids;
   }
 
-  LOG_VERBOSE("%s LE Link is up", __func__);
+  log::verbose("LE Link is up");
 
   /* Check if there is no ongoing connection request */
   if (p_lcb->pending_ecoc_conn_cnt > 0) {
-    LOG_WARN("There is ongoing connection request, PSM: 0x%04x", psm);
+    log::warn("There is ongoing connection request, PSM: 0x{:04x}", psm);
     return allocated_cids;
   }
 
@@ -800,7 +799,7 @@ std::vector<uint16_t> L2CA_ConnectCreditBasedReq(uint16_t psm,
         l2cu_allocate_ccb(p_lcb, 0, psm == BT_PSM_EATT /* is_eatt */);
     if (p_ccb == NULL) {
       if (i == 0) {
-        LOG_WARN("%s no CCB, PSM: 0x%04x", __func__, psm);
+        log::warn("no CCB, PSM: 0x{:04x}", psm);
         return allocated_cids;
       } else {
         break;
@@ -832,8 +831,8 @@ std::vector<uint16_t> L2CA_ConnectCreditBasedReq(uint16_t psm,
   p_lcb->pending_ecoc_conn_cnt = (uint16_t)(allocated_cids.size());
   l2c_csm_execute(p_ccb_primary, L2CEVT_L2CA_CREDIT_BASED_CONNECT_REQ, NULL);
 
-  LOG_VERBOSE("%s(psm: 0x%04x) returned CID: 0x%04x", __func__, psm,
-              p_ccb_primary->local_cid);
+  log::verbose("(psm: 0x{:04x}) returned CID: 0x{:04x}", psm,
+               p_ccb_primary->local_cid);
 
   return allocated_cids;
 }
@@ -856,10 +855,10 @@ bool L2CA_ReconfigCreditBasedConnsReq(const RawAddress& bda,
                                       tL2CAP_LE_CFG_INFO* p_cfg) {
   tL2C_CCB* p_ccb;
 
-  LOG_VERBOSE("L2CA_ReconfigCreditBasedConnsReq() ");
+  log::verbose("L2CA_ReconfigCreditBasedConnsReq() ");
 
   if (lcids.empty()) {
-    LOG_WARN("L2CAP - no lcids given to %s", __func__);
+    log::warn("L2CAP - empty lcids");
     return (false);
   }
 
@@ -867,28 +866,28 @@ bool L2CA_ReconfigCreditBasedConnsReq(const RawAddress& bda,
     p_ccb = l2cu_find_ccb_by_cid(NULL, cid);
 
     if (!p_ccb) {
-      LOG_WARN("L2CAP - no CCB for L2CA_cfg_req, CID: %d", cid);
+      log::warn("L2CAP - no CCB for L2CA_cfg_req, CID: {}", cid);
       return (false);
     }
 
     if ((p_ccb->local_conn_cfg.mtu > p_cfg->mtu) ||
         (p_ccb->local_conn_cfg.mps > p_cfg->mps)) {
-      LOG_WARN("L2CAP - MPS or MTU reduction, CID: %d", cid);
+      log::warn("L2CAP - MPS or MTU reduction, CID: {}", cid);
       return (false);
     }
   }
 
   if (p_cfg->mtu > L2CAP_MTU_SIZE) {
-    LOG_WARN("L2CAP - adjust MTU: %u too large", p_cfg->mtu);
+    log::warn("L2CAP - adjust MTU: {} too large", p_cfg->mtu);
     p_cfg->mtu = L2CAP_MTU_SIZE;
   }
 
   /* Mark all the p_ccbs which going to be reconfigured */
   for (uint16_t cid : lcids) {
-    LOG_VERBOSE(" cid: %d", cid);
+    log::verbose("cid: {}", cid);
     p_ccb = l2cu_find_ccb_by_cid(NULL, cid);
     if (!p_ccb) {
-      LOG(ERROR) << __func__ << "Missing cid? " << int(cid);
+      log::error("Missing cid? {}", int(cid));
       return (false);
     }
     p_ccb->reconfig_started = true;
@@ -927,11 +926,11 @@ bool L2CA_DisconnectReq(uint16_t cid) {
   /* Find the channel control block. We don't know the link it is on. */
   p_ccb = l2cu_find_ccb_by_cid(NULL, cid);
   if (p_ccb == NULL) {
-    LOG_WARN("L2CAP - no CCB for L2CA_disc_req, CID: %d", cid);
+    log::warn("L2CAP - no CCB for L2CA_disc_req, CID: {}", cid);
     return (false);
   }
 
-  LOG_DEBUG("L2CAP Local disconnect request CID: 0x%04x", cid);
+  log::debug("L2CAP Local disconnect request CID: 0x{:04x}", cid);
 
   l2c_csm_execute(p_ccb, L2CEVT_L2CA_DISCONNECT_REQ, NULL);
 
@@ -1009,12 +1008,12 @@ bool L2CA_UseLatencyMode(const RawAddress& bd_addr, bool use_latency_mode) {
   /* Find the link control block for the acl channel */
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_BR_EDR);
   if (p_lcb == nullptr) {
-    LOG_WARN("L2CAP - no LCB for L2CA_SetUseLatencyMode, BDA: %s",
-             ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+    log::warn("L2CAP - no LCB for L2CA_SetUseLatencyMode, BDA: {}",
+              ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
     return false;
   }
-  LOG_INFO("BDA: %s, use_latency_mode: %s", ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
-           use_latency_mode ? "true" : "false");
+  log::info("BDA: {}, use_latency_mode: {}", ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
+            use_latency_mode ? "true" : "false");
   p_lcb->use_latency_mode = use_latency_mode;
   return true;
 }
@@ -1031,8 +1030,8 @@ bool L2CA_UseLatencyMode(const RawAddress& bd_addr, bool use_latency_mode) {
  *
  ******************************************************************************/
 bool L2CA_SetAclPriority(const RawAddress& bd_addr, tL2CAP_PRIORITY priority) {
-  VLOG(1) << __func__ << " BDA: " << ADDRESS_TO_LOGGABLE_STR(bd_addr)
-          << ", priority: " << std::to_string(priority);
+  log::verbose("BDA: {}, priority: {}", ADDRESS_TO_LOGGABLE_STR(bd_addr),
+               priority);
   return (l2cu_set_acl_priority(bd_addr, priority, false));
 }
 
@@ -1046,8 +1045,8 @@ bool L2CA_SetAclPriority(const RawAddress& bd_addr, tL2CAP_PRIORITY priority) {
  *
  ******************************************************************************/
 bool L2CA_SetAclLatency(const RawAddress& bd_addr, tL2CAP_LATENCY latency) {
-  LOG_INFO("BDA: %s, latency: %s", ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
-           std::to_string(latency).c_str());
+  log::info("BDA: {}, latency: {}", ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
+            std::to_string(latency));
   return l2cu_set_acl_latency(bd_addr, latency);
 }
 
@@ -1063,12 +1062,13 @@ bool L2CA_SetAclLatency(const RawAddress& bd_addr, tL2CAP_LATENCY latency) {
 bool L2CA_SetTxPriority(uint16_t cid, tL2CAP_CHNL_PRIORITY priority) {
   tL2C_CCB* p_ccb;
 
-  LOG_VERBOSE("L2CA_SetTxPriority()  CID: 0x%04x, priority:%d", cid, priority);
+  log::verbose("L2CA_SetTxPriority()  CID: 0x{:04x}, priority:{}", cid,
+               priority);
 
   /* Find the channel control block. We don't know the link it is on. */
   p_ccb = l2cu_find_ccb_by_cid(NULL, cid);
   if (p_ccb == NULL) {
-    LOG_WARN("L2CAP - no CCB for L2CA_SetTxPriority, CID: %d", cid);
+    log::warn("L2CAP - no CCB for L2CA_SetTxPriority, CID: {}", cid);
     return (false);
   }
 
@@ -1098,13 +1098,13 @@ bool L2CA_GetPeerFeatures(const RawAddress& bd_addr, uint32_t* p_ext_feat,
   /* We must already have a link to the remote */
   p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_BR_EDR);
   if (p_lcb == NULL) {
-    LOG(WARNING) << __func__ << " No BDA: " << ADDRESS_TO_LOGGABLE_STR(bd_addr);
+    log::warn("No BDA: {}", ADDRESS_TO_LOGGABLE_STR(bd_addr));
     return false;
   }
 
-  VLOG(1) << __func__ << " BDA: " << ADDRESS_TO_LOGGABLE_STR(bd_addr)
-          << StringPrintf(" ExtFea: 0x%08x Chnl_Mask[0]: 0x%02x",
-                          p_lcb->peer_ext_fea, p_lcb->peer_chnl_mask[0]);
+  log::verbose("BDA: {} ExtFea: 0x{:08x} Chnl_Mask[0]: 0x{:02x}",
+               ADDRESS_TO_LOGGABLE_STR(bd_addr), p_lcb->peer_ext_fea,
+               p_lcb->peer_chnl_mask[0]);
 
   *p_ext_feat = p_lcb->peer_ext_fea;
 
@@ -1150,13 +1150,12 @@ bool L2CA_RegisterFixedChannel(uint16_t fixed_cid,
                                tL2CAP_FIXED_CHNL_REG* p_freg) {
   if ((fixed_cid < L2CAP_FIRST_FIXED_CHNL) ||
       (fixed_cid > L2CAP_LAST_FIXED_CHNL)) {
-    LOG_ERROR("Invalid fixed CID: 0x%04x", fixed_cid);
+    log::error("Invalid fixed CID: 0x{:04x}", fixed_cid);
     return false;
   }
 
   l2cb.fixed_reg[fixed_cid - L2CAP_FIRST_FIXED_CHNL] = *p_freg;
-  LOG_DEBUG("Registered fixed channel:%s",
-            fixed_channel_text(fixed_cid).c_str());
+  log::debug("Registered fixed channel:{}", fixed_channel_text(fixed_cid));
   return true;
 }
 
@@ -1176,20 +1175,20 @@ bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
   tL2C_LCB* p_lcb;
   tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
 
-  LOG_DEBUG(" fixed_cid:0x%04x", fixed_cid);
+  log::debug("fixed_cid:0x{:04x}", fixed_cid);
 
   // Check CID is valid and registered
   if ((fixed_cid < L2CAP_FIRST_FIXED_CHNL) ||
       (fixed_cid > L2CAP_LAST_FIXED_CHNL) ||
       (l2cb.fixed_reg[fixed_cid - L2CAP_FIRST_FIXED_CHNL].pL2CA_FixedData_Cb ==
        NULL)) {
-    LOG_ERROR("Invalid fixed_cid:0x%04x", fixed_cid);
+    log::error("Invalid fixed_cid:0x{:04x}", fixed_cid);
     return (false);
   }
 
   // Fail if BT is not yet up
   if (!BTM_IsDeviceUp()) {
-    LOG_WARN("Bt controller is not ready fixed_cid:0x%04x", fixed_cid);
+    log::warn("Bt controller is not ready fixed_cid:0x{:04x}", fixed_cid);
     return (false);
   }
 
@@ -1211,21 +1210,21 @@ bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
 
     // Check for supported channel
     if (!(peer_channel_mask & (1 << fixed_cid))) {
-      LOG_INFO("Peer device does not support fixed_cid:0x%04x", fixed_cid);
+      log::info("Peer device does not support fixed_cid:0x{:04x}", fixed_cid);
       return false;
     }
 
     // Get a CCB and link the lcb to it
     if (!l2cu_initialize_fixed_ccb(p_lcb, fixed_cid)) {
-      LOG_WARN("Unable to allocate fixed channel resource fixed_cid:0x%04x",
-               fixed_cid);
+      log::warn("Unable to allocate fixed channel resource fixed_cid:0x{:04x}",
+                fixed_cid);
       return false;
     }
 
     // racing with disconnecting, queue the connection request
     if (p_lcb->link_state == LST_DISCONNECTING) {
-      LOG_DEBUG(
-          "Link is disconnecting so deferring connection fixed_cid:0x%04x",
+      log::debug(
+          "Link is disconnecting so deferring connection fixed_cid:0x{:04x}",
           fixed_cid);
       /* Save ccb so it can be started after disconnect is finished */
       p_lcb->p_pending_ccb =
@@ -1241,15 +1240,16 @@ bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
   // No link. Get an LCB and start link establishment
   p_lcb = l2cu_allocate_lcb(rem_bda, false, transport);
   if (p_lcb == NULL) {
-    LOG_WARN("Unable to allocate link resource for connection fixed_cid:0x%04x",
-             fixed_cid);
+    log::warn(
+        "Unable to allocate link resource for connection fixed_cid:0x{:04x}",
+        fixed_cid);
     return false;
   }
 
   // Get a CCB and link the lcb to it
   if (!l2cu_initialize_fixed_ccb(p_lcb, fixed_cid)) {
-    LOG_WARN("Unable to allocate fixed channel resource fixed_cid:0x%04x",
-             fixed_cid);
+    log::warn("Unable to allocate fixed channel resource fixed_cid:0x{:04x}",
+              fixed_cid);
     l2cu_release_lcb(p_lcb);
     return false;
   }
@@ -1257,8 +1257,9 @@ bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
   if (transport == BT_TRANSPORT_LE) {
     bool ret = l2cu_create_conn_le(p_lcb);
     if (!ret) {
-      LOG_WARN("Unable to create fixed channel le connection fixed_cid:0x%04x",
-               fixed_cid);
+      log::warn(
+          "Unable to create fixed channel le connection fixed_cid:0x{:04x}",
+          fixed_cid);
       l2cu_release_lcb(p_lcb);
       return false;
     }
@@ -1294,13 +1295,13 @@ uint16_t L2CA_SendFixedChnlData(uint16_t fixed_cid, const RawAddress& rem_bda,
       (fixed_cid > L2CAP_LAST_FIXED_CHNL) ||
       (l2cb.fixed_reg[fixed_cid - L2CAP_FIRST_FIXED_CHNL].pL2CA_FixedData_Cb ==
        NULL)) {
-    LOG_WARN("No service registered or invalid CID: 0x%04x", fixed_cid);
+    log::warn("No service registered or invalid CID: 0x{:04x}", fixed_cid);
     osi_free(p_buf);
     return (L2CAP_DW_FAILED);
   }
 
   if (!BTM_IsDeviceUp()) {
-    LOG_WARN("Controller is not ready CID: 0x%04x", fixed_cid);
+    log::warn("Controller is not ready CID: 0x{:04x}", fixed_cid);
     osi_free(p_buf);
     return (L2CAP_DW_FAILED);
   }
@@ -1308,7 +1309,8 @@ uint16_t L2CA_SendFixedChnlData(uint16_t fixed_cid, const RawAddress& rem_bda,
   p_lcb = l2cu_find_lcb_by_bd_addr(rem_bda, transport);
   if (p_lcb == NULL || p_lcb->link_state == LST_DISCONNECTING) {
     /* if link is disconnecting, also report data sending failure */
-    LOG_WARN("Link is disconnecting or does not exist CID: 0x%04x", fixed_cid);
+    log::warn("Link is disconnecting or does not exist CID: 0x{:04x}",
+              fixed_cid);
     osi_free(p_buf);
     return (L2CAP_DW_FAILED);
   }
@@ -1322,7 +1324,7 @@ uint16_t L2CA_SendFixedChnlData(uint16_t fixed_cid, const RawAddress& rem_bda,
     peer_channel_mask = p_lcb->peer_chnl_mask[0];
 
   if ((peer_channel_mask & (1 << fixed_cid)) == 0) {
-    LOG_WARN("Peer does not support fixed channel CID: 0x%04x", fixed_cid);
+    log::warn("Peer does not support fixed channel CID: 0x{:04x}", fixed_cid);
     osi_free(p_buf);
     return (L2CAP_DW_FAILED);
   }
@@ -1332,16 +1334,16 @@ uint16_t L2CA_SendFixedChnlData(uint16_t fixed_cid, const RawAddress& rem_bda,
 
   if (!p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL]) {
     if (!l2cu_initialize_fixed_ccb(p_lcb, fixed_cid)) {
-      LOG_WARN("No channel control block found for CID: 0x%4x", fixed_cid);
+      log::warn("No channel control block found for CID: 0x{:4x}", fixed_cid);
       osi_free(p_buf);
       return (L2CAP_DW_FAILED);
     }
   }
 
   if (p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL]->cong_sent) {
-    LOG_WARN(
-        "Unable to send data due to congestion CID: 0x%04x xmit_hold_q.count: "
-        "%zu buff_quota: %u",
+    log::warn(
+        "Unable to send data due to congestion CID: 0x{:04x} "
+        "xmit_hold_q.count: {} buff_quota: {}",
         fixed_cid,
         fixed_queue_length(
             p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL]
@@ -1351,7 +1353,7 @@ uint16_t L2CA_SendFixedChnlData(uint16_t fixed_cid, const RawAddress& rem_bda,
     return (L2CAP_DW_FAILED);
   }
 
-  LOG_DEBUG("Enqueued data for CID: 0x%04x len:%hu", fixed_cid, p_buf->len);
+  log::debug("Enqueued data for CID: 0x{:04x} len:{}", fixed_cid, p_buf->len);
   l2c_enqueue_peer_data(p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL],
                         p_buf);
 
@@ -1365,7 +1367,7 @@ uint16_t L2CA_SendFixedChnlData(uint16_t fixed_cid, const RawAddress& rem_bda,
   }
 
   if (p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL]->cong_sent) {
-    LOG_DEBUG("Link congested for CID: 0x%04x", fixed_cid);
+    log::debug("Link congested for CID: 0x{:04x}", fixed_cid);
     return (L2CAP_DW_CONGESTED);
   }
 
@@ -1395,7 +1397,7 @@ bool L2CA_RemoveFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
       (fixed_cid > L2CAP_LAST_FIXED_CHNL) ||
       (l2cb.fixed_reg[fixed_cid - L2CAP_FIRST_FIXED_CHNL].pL2CA_FixedData_Cb ==
        NULL)) {
-    LOG_ERROR("L2CA_RemoveFixedChnl()  Invalid CID: 0x%04x", fixed_cid);
+    log::error("L2CA_RemoveFixedChnl()  Invalid CID: 0x{:04x}", fixed_cid);
     return (false);
   }
 
@@ -1407,13 +1409,13 @@ bool L2CA_RemoveFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
 
   if (((p_lcb) == NULL) ||
       (!p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL])) {
-    LOG(WARNING) << __func__ << " BDA: " << ADDRESS_TO_LOGGABLE_STR(rem_bda)
-                 << StringPrintf(" CID: 0x%04x not connected", fixed_cid);
+    log::warn("BDA: {} CID: 0x{:04x} not connected",
+              ADDRESS_TO_LOGGABLE_STR(rem_bda), fixed_cid);
     return (false);
   }
 
-  VLOG(2) << __func__ << " BDA: " << ADDRESS_TO_LOGGABLE_STR(rem_bda)
-          << StringPrintf(" CID: 0x%04x", fixed_cid);
+  log::verbose("BDA: {} CID: 0x{:04x}", ADDRESS_TO_LOGGABLE_STR(rem_bda),
+               fixed_cid);
 
   /* Release the CCB, starting an inactivity timeout on the LCB if no other CCBs
    * exist */
@@ -1458,8 +1460,8 @@ bool L2CA_SetLeGattTimeout(const RawAddress& rem_bda, uint16_t idle_tout) {
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(rem_bda, BT_TRANSPORT_LE);
   if (((p_lcb) == NULL) ||
       (!p_lcb->p_fixed_ccbs[kAttCid - L2CAP_FIRST_FIXED_CHNL])) {
-    LOG(WARNING) << __func__ << " BDA: " << ADDRESS_TO_LOGGABLE_STR(rem_bda)
-                 << StringPrintf(" CID: 0x%04x not connected", kAttCid);
+    log::warn("BDA: {} CID: 0x{:04x} not connected",
+              ADDRESS_TO_LOGGABLE_STR(rem_bda), kAttCid);
     return (false);
   }
 
@@ -1481,8 +1483,7 @@ bool L2CA_MarkLeLinkAsActive(const RawAddress& rem_bda) {
   if (p_lcb == NULL) {
     return false;
   }
-  LOG(INFO) << __func__ << "setting link to "
-            << ADDRESS_TO_LOGGABLE_STR(rem_bda) << " as active";
+  log::info("setting link to {} as active", ADDRESS_TO_LOGGABLE_STR(rem_bda));
   p_lcb->with_active_local_clients = true;
   return true;
 }
@@ -1500,7 +1501,7 @@ bool L2CA_MarkLeLinkAsActive(const RawAddress& rem_bda) {
  *
  ******************************************************************************/
 uint8_t L2CA_DataWrite(uint16_t cid, BT_HDR* p_data) {
-  LOG_VERBOSE("L2CA_DataWrite()  CID: 0x%04x  Len: %d", cid, p_data->len);
+  log::verbose("L2CA_DataWrite()  CID: 0x{:04x}  Len: {}", cid, p_data->len);
   return l2c_data_write(cid, p_data, L2CAP_FLUSHABLE_CH_BASED);
 }
 
@@ -1524,14 +1525,14 @@ bool L2CA_SetChnlFlushability(uint16_t cid, bool is_flushable) {
   /* Find the channel control block. We don't know the link it is on. */
   p_ccb = l2cu_find_ccb_by_cid(NULL, cid);
   if (p_ccb == NULL) {
-    LOG_WARN("L2CAP - no CCB for L2CA_SetChnlFlushability, CID: %d", cid);
+    log::warn("L2CAP - no CCB for L2CA_SetChnlFlushability, CID: {}", cid);
     return (false);
   }
 
   p_ccb->is_flushable = is_flushable;
 
-  LOG_VERBOSE("L2CA_SetChnlFlushability()  CID: 0x%04x  is_flushable: %d", cid,
-              is_flushable);
+  log::verbose("L2CA_SetChnlFlushability()  CID: 0x{:04x}  is_flushable: {}",
+               cid, is_flushable);
 
   return (true);
 }
@@ -1558,19 +1559,20 @@ uint16_t L2CA_FlushChannel(uint16_t lcid, uint16_t num_to_flush) {
   p_ccb = l2cu_find_ccb_by_cid(NULL, lcid);
 
   if (!p_ccb || (p_ccb->p_lcb == NULL)) {
-    LOG_WARN("L2CA_FlushChannel()  abnormally returning 0  CID: 0x%04x", lcid);
+    log::warn("L2CA_FlushChannel()  abnormally returning 0  CID: 0x{:04x}",
+              lcid);
     return (0);
   }
   p_lcb = p_ccb->p_lcb;
 
   if (num_to_flush != L2CAP_FLUSH_CHANS_GET) {
-    LOG_VERBOSE(
-        "L2CA_FlushChannel (FLUSH)  CID: 0x%04x  NumToFlush: %d  QC: %zu  "
-        "pFirst: 0x%p",
+    log::verbose(
+        "L2CA_FlushChannel (FLUSH)  CID: 0x{:04x}  NumToFlush: {}  QC: {}  "
+        "pFirst: 0x{}",
         lcid, num_to_flush, fixed_queue_length(p_ccb->xmit_hold_q),
-        fixed_queue_try_peek_first(p_ccb->xmit_hold_q));
+        fmt::ptr(fixed_queue_try_peek_first(p_ccb->xmit_hold_q)));
   } else {
-    LOG_VERBOSE("L2CA_FlushChannel (QUERY)  CID: 0x%04x", lcid);
+    log::verbose("L2CA_FlushChannel (QUERY)  CID: 0x{:04x}", lcid);
   }
 
   /* Cannot flush eRTM buffers once they have a sequence number */
@@ -1627,8 +1629,8 @@ uint16_t L2CA_FlushChannel(uint16_t lcid, uint16_t num_to_flush) {
   num_left += fixed_queue_length(p_ccb->xmit_hold_q);
 
   /* Return the local number of buffers left for the CID */
-  LOG_VERBOSE("L2CA_FlushChannel()  flushed: %u + %u,  num_left: %u",
-              num_flushed1, num_flushed2, num_left);
+  log::verbose("L2CA_FlushChannel()  flushed: {} + {},  num_left: {}",
+               num_flushed1, num_flushed2, num_left);
 
   /* If we were congested, and now we are not, tell the app */
   l2cu_check_channel_congestion(p_ccb);
@@ -1661,7 +1663,7 @@ void L2CA_SetMediaStreamChannel(uint16_t local_media_cid, bool status) {
   bluetooth::hal::SnoopLogger* snoop_logger = bluetooth::shim::GetSnoopLogger();
 
   if (snoop_logger == nullptr) {
-    LOG_ERROR("bluetooth::shim::GetSnoopLogger() is nullptr");
+    log::error("bluetooth::shim::GetSnoopLogger() is nullptr");
     return;
   }
 
@@ -1669,8 +1671,8 @@ void L2CA_SetMediaStreamChannel(uint16_t local_media_cid, bool status) {
     return;
   }
 
-  LOG_DEBUG("local_media_cid=%d, status=%s", local_media_cid,
-            (status ? "add" : "remove"));
+  log::debug("local_media_cid={}, status={}", local_media_cid,
+             (status ? "add" : "remove"));
 
   if (status) {
     for (i = 0; i < MAX_ACTIVE_AVDT_CONN; i++) {
@@ -1681,7 +1683,7 @@ void L2CA_SetMediaStreamChannel(uint16_t local_media_cid, bool status) {
     }
 
     if (set_channel < 0) {
-      LOG_ERROR("%s: No empty slot found to set media channel", __func__);
+      log::error("No empty slot found to set media channel");
       return;
     }
 
@@ -1699,10 +1701,9 @@ void L2CA_SetMediaStreamChannel(uint16_t local_media_cid, bool status) {
         av_media_channels[set_channel].local_cid,
         av_media_channels[set_channel].p_ccb->remote_cid);
 
-    LOG_VERBOSE(
-        "%s: Set A2DP media snoop filtering for local_cid: %d, remote_cid: %d",
-        __func__, local_media_cid,
-        av_media_channels[set_channel].p_ccb->remote_cid);
+    log::verbose(
+        "Set A2DP media snoop filtering for local_cid: {}, remote_cid: {}",
+        local_media_cid, av_media_channels[set_channel].p_ccb->remote_cid);
   } else {
     for (i = 0; i < MAX_ACTIVE_AVDT_CONN; i++) {
       if (av_media_channels[i].is_active &&
@@ -1713,8 +1714,8 @@ void L2CA_SetMediaStreamChannel(uint16_t local_media_cid, bool status) {
     }
 
     if (set_channel < 0) {
-      LOG_ERROR("%s: The channel %d not found in active media channels",
-                __func__, local_media_cid);
+      log::error("The channel {} not found in active media channels",
+                 local_media_cid);
       return;
     }
 
@@ -1727,8 +1728,8 @@ void L2CA_SetMediaStreamChannel(uint16_t local_media_cid, bool status) {
         av_media_channels[set_channel].p_ccb->p_lcb->Handle(),
         av_media_channels[set_channel].local_cid);
 
-    LOG_VERBOSE("%s: Reset A2DP media snoop filtering for local_cid: %d",
-                __func__, local_media_cid);
+    log::verbose("Reset A2DP media snoop filtering for local_cid: {}",
+                 local_media_cid);
   }
 
   av_media_channels[set_channel].is_active = status;

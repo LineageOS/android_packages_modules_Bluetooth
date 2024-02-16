@@ -481,4 +481,9 @@ constexpr uint16_t L2CAP_SDU_LENGTH_LE_MAX = 0xffff;
 /* Mask for sequence numbers (range 0 - 63) */
 #define L2CAP_FCR_SEQ_MODULO 0x3F
 
+namespace fmt {
+template <>
+struct formatter<tL2CAP_CONN> : enum_formatter<tL2CAP_CONN> {};
+}  // namespace fmt
+
 #endif
