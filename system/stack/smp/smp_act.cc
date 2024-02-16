@@ -19,6 +19,7 @@
 #define LOG_TAG "smp_act"
 
 #include <android_bluetooth_flags.h>
+#include <bluetooth/log.h>
 
 #include <cstring>
 
@@ -40,6 +41,8 @@
 #include "stack/include/btm_log_history.h"
 #include "stack/include/smp_api_types.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth;
 
 namespace {
 constexpr char kBtmLogTag[] = "SMP";
@@ -1972,7 +1975,7 @@ void smp_process_secure_connection_oob_data(tSMP_CB* p_cb,
   }
 
   if (!p_sc_oob_data->peer_oob_data.present) {
-    LOG_VERBOSE("peer OOB data is absent");
+    log::verbose("peer OOB data is absent");
 
     if (IS_FLAG_ENABLED(fix_le_oob_pairing_bypass)) {
       tSMP_INT_DATA smp_int_data{};
