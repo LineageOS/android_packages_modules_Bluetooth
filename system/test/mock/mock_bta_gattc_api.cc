@@ -188,3 +188,4 @@ void bta_gattc_continue_discovery_if_needed(const RawAddress& /* bd_addr */,
                                             uint16_t /* acl_handle */) {
   inc_func_call_count(__func__);
 }
+void bta_gatt_client_dump(int /* fd */) { inc_func_call_count(__func__); }
