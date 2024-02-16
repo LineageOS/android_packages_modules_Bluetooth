@@ -125,6 +125,11 @@ impl ISuspendCallback for SuspendCallback {
         {
             let context = self.context.lock().unwrap();
 
+            if context.powerd_session.is_none() {
+                log::warn!("No powerd session!");
+                return;
+            }
+
             if let (Some(pending_suspend_imminent), Some(powerd_session)) =
                 (&context.pending_suspend_imminent, &context.powerd_session)
             {
@@ -133,8 +138,21 @@ impl ISuspendCallback for SuspendCallback {
                     powerd_session.delay_id,
                     pending_suspend_imminent.get_suspend_id(),
                 );
+            } else if let (Some(adapter_suspend_dbus), None) =
+                (&context.adapter_suspend_dbus, &context.pending_suspend_imminent)
+            {
+                log::info!("Suspend was aborted (imminent signal missing), so calling resume");
+                let mut suspend_dbus_rpc = adapter_suspend_dbus.rpc.clone();
+                tokio::spawn(async move {
+                    let result = suspend_dbus_rpc.resume().await;
+                    log::debug!("Adapter resume call, success = {}", result.unwrap_or(false));
+                });
             } else {
-                log::warn!("Suspend ready but no SuspendImminent signal or powerd session");
+                log::warn!(
+                    "Suspend ready but powerd session valid={}, adapter available={}.",
+                    context.powerd_session.is_some(),
+                    context.adapter_suspend_dbus.is_some()
+                );
             }
         }
     }
@@ -498,11 +516,13 @@ impl PowerdSuspendManager {
     fn on_suspend_done(&mut self, suspend_done: SuspendDone) {
         // powerd is telling us that suspend is done (system has resumed), so we tell btadapterd
         // to resume too.
+        // powerd also sends the suspend done signal when the suspend is aborted. The suspend
+        // imminent signal is cancelled here, so the cleanup is done after the suspend is ready.
 
         log::debug!("SuspendDone received: {:?}", suspend_done);
 
         if self.context.lock().unwrap().pending_suspend_imminent.is_none() {
-            log::warn!("Receveid SuspendDone signal when there is no pending SuspendImminent");
+            log::warn!("Received SuspendDone signal when there is no pending SuspendImminent");
         }
 
         self.context.lock().unwrap().pending_suspend_imminent = None;
