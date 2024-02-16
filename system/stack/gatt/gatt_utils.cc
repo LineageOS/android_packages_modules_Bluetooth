@@ -438,6 +438,36 @@ tGATT_TCB* gatt_find_tcb_by_addr(const RawAddress& bda,
 
 /*******************************************************************************
  *
+ * Function     gatt_tcb_dump
+ *
+ * Description  Print gatt_cb.tcb[] into dumpsys
+ *
+ * Returns      void
+ *
+ ******************************************************************************/
+void gatt_tcb_dump(int fd) {
+  std::stringstream stream;
+  int in_use_cnt = 0;
+
+  for (int i = 0; i < GATT_MAX_PHY_CHANNEL; i++) {
+    tGATT_TCB* p_tcb = &gatt_cb.tcb[i];
+
+    if (p_tcb->in_use) {
+      in_use_cnt++;
+      stream << "  id: " << +p_tcb->tcb_idx
+             << "  address: " << ADDRESS_TO_LOGGABLE_STR(p_tcb->peer_bda)
+             << "  transport: " << bt_transport_text(p_tcb->transport)
+             << "  ch_state: " << gatt_channel_state_text(p_tcb->ch_state);
+      stream << "\n";
+    }
+  }
+
+  dprintf(fd, "TCB (GATT_MAX_PHY_CHANNEL: %d) in_use: %d\n%s\n",
+          GATT_MAX_PHY_CHANNEL, in_use_cnt, stream.str().c_str());
+}
+
+/*******************************************************************************
+ *
  * Function         gatt_allocate_tcb_by_bdaddr
  *
  * Description      Locate or allocate a new tcb entry for matching bda.
