@@ -5325,6 +5325,11 @@ test LeGetVendorCapabilitiesComplete103 {
   "\x0e\x1c\x01\x53\xfd\x00\x10\x01\x00\x28\x00\x01\x3e\x01\x03\x01\x14\x00\x01\x01\x00\x23\x00\x00\x00\x01\x23\x00\x00\x00",
 }
 
+packet LeGetVendorCapabilitiesComplete104 : LeGetVendorCapabilitiesComplete103 {
+  a2dp_offload_v2_support : 8,
+  _payload_,
+}
+
 enum SubOcf : 8 {
   SET_PARAM = 0x01,
   SET_DATA = 0x02,
