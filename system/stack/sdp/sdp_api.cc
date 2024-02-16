@@ -26,13 +26,13 @@
 
 #include "stack/include/sdp_api.h"
 
+#include <bluetooth/log.h>
 #include <string.h>
 
 #include <cstdint>
 
 #include "internal_include/bt_target.h"
 #include "os/log.h"
-#include "osi/include/osi.h"  // PTR_TO_UINT
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/sdp_api.h"
@@ -43,6 +43,7 @@
 #include "types/raw_address.h"
 
 using bluetooth::Uuid;
+using namespace bluetooth;
 
 /**********************************************************************
  *   C L I E N T    F U N C T I O N    P R O T O T Y P E S            *
@@ -78,10 +79,10 @@ bool SDP_InitDiscoveryDb(tSDP_DISCOVERY_DB* p_db, uint32_t len,
   /* verify the parameters */
   if (p_db == NULL || (sizeof(tSDP_DISCOVERY_DB) > len) ||
       num_attr > SDP_MAX_ATTR_FILTERS || num_uuid > SDP_MAX_UUID_FILTERS) {
-    LOG_ERROR(
-        "SDP_InitDiscoveryDb Illegal param: p_db 0x%x, len %d, num_uuid %d, "
-        "num_attr %d",
-        PTR_TO_UINT(p_db), len, num_uuid, num_attr);
+    log::error(
+        "SDP_InitDiscoveryDb Illegal param: p_db {}, len {}, num_uuid {}, "
+        "num_attr {}",
+        fmt::ptr(p_db), len, num_uuid, num_attr);
 
     return (false);
   }
@@ -396,13 +397,14 @@ tSDP_DISC_REC* SDP_FindServiceInDb(const tSDP_DISCOVERY_DB* p_db,
              p_sattr = p_sattr->p_next_attr) {
           if ((SDP_DISC_ATTR_TYPE(p_sattr->attr_len_type) == UUID_DESC_TYPE) &&
               (SDP_DISC_ATTR_LEN(p_sattr->attr_len_type) == 2)) {
-            LOG_VERBOSE(
-                "SDP_FindServiceInDb - p_sattr value = 0x%x serviceuuid = 0x%x",
+            log::verbose(
+                "SDP_FindServiceInDb - p_sattr value = 0x{:x} serviceuuid = "
+                "0x{:x}",
                 p_sattr->attr_value.v.u16, service_uuid);
             if (service_uuid == UUID_SERVCLASS_HDP_PROFILE) {
               if ((p_sattr->attr_value.v.u16 == UUID_SERVCLASS_HDP_SOURCE) ||
                   (p_sattr->attr_value.v.u16 == UUID_SERVCLASS_HDP_SINK)) {
-                LOG_VERBOSE("SDP_FindServiceInDb found HDP source or sink\n");
+                log::verbose("SDP_FindServiceInDb found HDP source or sink\n");
                 return (p_rec);
               }
             }
@@ -807,11 +809,10 @@ static void SDP_AttrStringCopy(char* dst, const tSDP_DISC_ATTR* p_attr,
       memcpy(dst, (const void*)p_attr->attr_value.v.array, len);
       dst[len] = '\0';
     } else {
-      LOG_ERROR("unexpected attr type=%d, expected=%d",
-                type, expected_type);
+      log::error("unexpected attr type={}, expected={}", type, expected_type);
     }
   } else {
-    LOG_ERROR("p_attr is NULL");
+    log::error("p_attr is NULL");
   }
 }
 

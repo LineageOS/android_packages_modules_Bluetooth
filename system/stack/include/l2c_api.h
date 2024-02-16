@@ -24,6 +24,7 @@
 #ifndef L2C_API_H
 #define L2C_API_H
 
+#include <bluetooth/log.h>
 #include <stdbool.h>
 
 #include <cstdint>
@@ -924,5 +925,12 @@ void L2CA_SetMediaStreamChannel(uint16_t local_media_cid, bool status);
 *******************************************************************************/
 bool L2CA_isMediaChannel(uint16_t handle, uint16_t channel_id,
                          bool is_local_cid);
+
+namespace fmt {
+template <>
+struct formatter<tL2CAP_LATENCY> : enum_formatter<tL2CAP_LATENCY> {};
+template <>
+struct formatter<tL2CAP_PRIORITY> : enum_formatter<tL2CAP_PRIORITY> {};
+}  // namespace fmt
 
 #endif /* L2C_API_H */

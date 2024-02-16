@@ -24,6 +24,7 @@
  ******************************************************************************/
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,6 +42,8 @@
 /* Flag passed to retransmit_i_frames() when all packets should be retransmitted
  */
 #define L2C_FCR_RETX_ALL_PKTS 0xFF
+
+using namespace bluetooth;
 
 /* this is the minimal offset required by OBX to process incoming packets */
 static const uint16_t OBX_BUF_MIN_OFFSET = 4;
@@ -349,18 +352,18 @@ static void prepare_I_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf,
   p_buf->len += L2CAP_FCS_LEN;
 
   if (is_retransmission) {
-    LOG_VERBOSE(
-        "L2CAP eRTM ReTx I-frame  CID: 0x%04x  Len: %u  SAR: %s  TxSeq: %u  "
-        "ReqSeq: %u  F: %u",
+    log::verbose(
+        "L2CAP eRTM ReTx I-frame  CID: 0x{:04x}  Len: {}  SAR: {}  TxSeq: {}  "
+        "ReqSeq: {}  F: {}",
         p_ccb->local_cid, p_buf->len,
         SAR_types[(ctrl_word & L2CAP_FCR_SAR_BITS) >> L2CAP_FCR_SAR_BITS_SHIFT],
         (ctrl_word & L2CAP_FCR_TX_SEQ_BITS) >> L2CAP_FCR_TX_SEQ_BITS_SHIFT,
         (ctrl_word & L2CAP_FCR_REQ_SEQ_BITS) >> L2CAP_FCR_REQ_SEQ_BITS_SHIFT,
         (ctrl_word & L2CAP_FCR_F_BIT) >> L2CAP_FCR_F_BIT_SHIFT);
   } else {
-    LOG_VERBOSE(
-        "L2CAP eRTM Tx I-frame CID: 0x%04x  Len: %u  SAR: %-12s  TxSeq: %u  "
-        "ReqSeq: %u  F: %u",
+    log::verbose(
+        "L2CAP eRTM Tx I-frame CID: 0x{:04x}  Len: {}  SAR: {:<12s}  TxSeq: {} "
+        " ReqSeq: {}  F: {}",
         p_ccb->local_cid, p_buf->len,
         SAR_types[(ctrl_word & L2CAP_FCR_SAR_BITS) >> L2CAP_FCR_SAR_BITS_SHIFT],
         (ctrl_word & L2CAP_FCR_TX_SEQ_BITS) >> L2CAP_FCR_TX_SEQ_BITS_SHIFT,
@@ -427,25 +430,25 @@ void l2c_fcr_send_S_frame(tL2C_CCB* p_ccb, uint16_t function_code,
 
   if ((((ctrl_word & L2CAP_FCR_SUP_BITS) >> L2CAP_FCR_SUP_SHIFT) == 1) ||
       (((ctrl_word & L2CAP_FCR_SUP_BITS) >> L2CAP_FCR_SUP_SHIFT) == 3)) {
-    LOG_WARN(
-        "L2CAP eRTM Tx S-frame  CID: 0x%04x  ctrlword: 0x%04x  Type: %s  "
-        "ReqSeq: %u  P: %u  F: %u",
+    log::warn(
+        "L2CAP eRTM Tx S-frame  CID: 0x{:04x}  ctrlword: 0x{:04x}  Type: {}  "
+        "ReqSeq: {}  P: {}  F: {}",
         p_ccb->local_cid, ctrl_word,
         SUP_types[(ctrl_word & L2CAP_FCR_SUP_BITS) >> L2CAP_FCR_SUP_SHIFT],
         (ctrl_word & L2CAP_FCR_REQ_SEQ_BITS) >> L2CAP_FCR_REQ_SEQ_BITS_SHIFT,
         (ctrl_word & L2CAP_FCR_P_BIT) >> L2CAP_FCR_P_BIT_SHIFT,
         (ctrl_word & L2CAP_FCR_F_BIT) >> L2CAP_FCR_F_BIT_SHIFT);
-    LOG_WARN("                  Buf Len: %u", p_buf->len);
+    log::warn("Buf Len: {}", p_buf->len);
   } else {
-    LOG_VERBOSE(
-        "L2CAP eRTM Tx S-frame  CID: 0x%04x  ctrlword: 0x%04x  Type: %s  "
-        "ReqSeq: %u  P: %u  F: %u",
+    log::verbose(
+        "L2CAP eRTM Tx S-frame  CID: 0x{:04x}  ctrlword: 0x{:04x}  Type: {}  "
+        "ReqSeq: {}  P: {}  F: {}",
         p_ccb->local_cid, ctrl_word,
         SUP_types[(ctrl_word & L2CAP_FCR_SUP_BITS) >> L2CAP_FCR_SUP_SHIFT],
         (ctrl_word & L2CAP_FCR_REQ_SEQ_BITS) >> L2CAP_FCR_REQ_SEQ_BITS_SHIFT,
         (ctrl_word & L2CAP_FCR_P_BIT) >> L2CAP_FCR_P_BIT_SHIFT,
         (ctrl_word & L2CAP_FCR_F_BIT) >> L2CAP_FCR_F_BIT_SHIFT);
-    LOG_VERBOSE("                  Buf Len: %u", p_buf->len);
+    log::verbose("Buf Len: {}", p_buf->len);
   }
 
   l2c_link_check_send_pkts(p_ccb->p_lcb, 0, p_buf);
@@ -478,8 +481,8 @@ void l2c_fcr_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
   min_pdu_len = (uint16_t)(L2CAP_FCS_LEN + L2CAP_FCR_OVERHEAD);
 
   if (p_buf->len < min_pdu_len) {
-    LOG_WARN("Rx L2CAP PDU: CID: 0x%04x  Len too short: %u", p_ccb->local_cid,
-             p_buf->len);
+    log::warn("Rx L2CAP PDU: CID: 0x{:04x}  Len too short: {}",
+              p_ccb->local_cid, p_buf->len);
     osi_free(p_buf);
     return;
   }
@@ -492,18 +495,18 @@ void l2c_fcr_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
     if ((((ctrl_word & L2CAP_FCR_SUP_BITS) >> L2CAP_FCR_SUP_SHIFT) == 1) ||
         (((ctrl_word & L2CAP_FCR_SUP_BITS) >> L2CAP_FCR_SUP_SHIFT) == 3)) {
       /* REJ or SREJ */
-      LOG_WARN(
-          "L2CAP eRTM Rx S-frame: cid: 0x%04x  Len: %u  Type: %s  ReqSeq: %u  "
-          "P: %u  F: %u",
+      log::warn(
+          "L2CAP eRTM Rx S-frame: cid: 0x{:04x}  Len: {}  Type: {}  ReqSeq: {} "
+          " P: {}  F: {}",
           p_ccb->local_cid, p_buf->len,
           SUP_types[(ctrl_word & L2CAP_FCR_SUP_BITS) >> L2CAP_FCR_SUP_SHIFT],
           (ctrl_word & L2CAP_FCR_REQ_SEQ_BITS) >> L2CAP_FCR_REQ_SEQ_BITS_SHIFT,
           (ctrl_word & L2CAP_FCR_P_BIT) >> L2CAP_FCR_P_BIT_SHIFT,
           (ctrl_word & L2CAP_FCR_F_BIT) >> L2CAP_FCR_F_BIT_SHIFT);
     } else {
-      LOG_VERBOSE(
-          "L2CAP eRTM Rx S-frame: cid: 0x%04x  Len: %u  Type: %s  ReqSeq: %u  "
-          "P: %u  F: %u",
+      log::verbose(
+          "L2CAP eRTM Rx S-frame: cid: 0x{:04x}  Len: {}  Type: {}  ReqSeq: {} "
+          " P: {}  F: {}",
           p_ccb->local_cid, p_buf->len,
           SUP_types[(ctrl_word & L2CAP_FCR_SUP_BITS) >> L2CAP_FCR_SUP_SHIFT],
           (ctrl_word & L2CAP_FCR_REQ_SEQ_BITS) >> L2CAP_FCR_REQ_SEQ_BITS_SHIFT,
@@ -511,9 +514,9 @@ void l2c_fcr_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
           (ctrl_word & L2CAP_FCR_F_BIT) >> L2CAP_FCR_F_BIT_SHIFT);
     }
   } else {
-    LOG_VERBOSE(
-        "L2CAP eRTM Rx I-frame: cid: 0x%04x  Len: %u  SAR: %-12s  TxSeq: %u  "
-        "ReqSeq: %u  F: %u",
+    log::verbose(
+        "L2CAP eRTM Rx I-frame: cid: 0x{:04x}  Len: {}  SAR: {:<12s}  TxSeq: "
+        "{}  ReqSeq: {}  F: {}",
         p_ccb->local_cid, p_buf->len,
         SAR_types[(ctrl_word & L2CAP_FCR_SAR_BITS) >> L2CAP_FCR_SAR_BITS_SHIFT],
         (ctrl_word & L2CAP_FCR_TX_SEQ_BITS) >> L2CAP_FCR_TX_SEQ_BITS_SHIFT,
@@ -521,9 +524,9 @@ void l2c_fcr_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
         (ctrl_word & L2CAP_FCR_F_BIT) >> L2CAP_FCR_F_BIT_SHIFT);
   }
 
-  LOG_VERBOSE(
-      "      eRTM Rx Nxt_tx_seq %u, Lst_rx_ack %u, Nxt_seq_exp %u, Lst_ack_snt "
-      "%u, wt_q.cnt %zu, tries %u",
+  log::verbose(
+      "eRTM Rx Nxt_tx_seq {}, Lst_rx_ack {}, Nxt_seq_exp {}, Lst_ack_snt {}, "
+      "wt_q.cnt {}, tries {}",
       p_ccb->fcrb.next_tx_seq, p_ccb->fcrb.last_rx_ack,
       p_ccb->fcrb.next_seq_expected, p_ccb->fcrb.last_ack_sent,
       fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q), p_ccb->fcrb.num_tries);
@@ -536,7 +539,7 @@ void l2c_fcr_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
   p_buf->len -= L2CAP_FCS_LEN;
 
   if (l2c_fcr_rx_get_fcs(p_buf) != fcs) {
-    LOG_WARN("Rx L2CAP PDU: CID: 0x%04x  BAD FCS", p_ccb->local_cid);
+    log::warn("Rx L2CAP PDU: CID: 0x{:04x}  BAD FCS", p_ccb->local_cid);
     osi_free(p_buf);
     return;
   }
@@ -619,9 +622,9 @@ void l2c_fcr_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
 
         STREAM_TO_UINT16(ctrl_word, p);
 
-        LOG_VERBOSE(
-            "l2c_fcr_proc_pdu() CID: 0x%04x  Process Buffer from SREJ_Hold_Q   "
-            "TxSeq: %u  Expected_Seq: %u",
+        log::verbose(
+            "l2c_fcr_proc_pdu() CID: 0x{:04x}  Process Buffer from SREJ_Hold_Q "
+            "  TxSeq: {}  Expected_Seq: {}",
             p_ccb->local_cid,
             (ctrl_word & L2CAP_FCR_TX_SEQ_BITS) >> L2CAP_FCR_TX_SEQ_BITS_SHIFT,
             p_ccb->fcrb.next_seq_expected);
@@ -647,9 +650,9 @@ void l2c_fcr_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
         (p_ccb->fcrb.next_seq_expected != p_ccb->fcrb.last_ack_sent))
       l2c_fcr_send_S_frame(p_ccb, L2CAP_FCR_SUP_RR, 0);
     else {
-      LOG_VERBOSE(
-          "l2c_fcr_proc_pdu() not sending RR CID: 0x%04x  local_busy:%d "
-          "rej_sent:%d srej_sent:%d Expected_Seq:%u Last_Ack:%u",
+      log::verbose(
+          "l2c_fcr_proc_pdu() not sending RR CID: 0x{:04x}  local_busy:{} "
+          "rej_sent:{} srej_sent:{} Expected_Seq:{} Last_Ack:{}",
           p_ccb->local_cid, 0, p_ccb->fcrb.rej_sent, p_ccb->fcrb.srej_sent,
           p_ccb->fcrb.next_seq_expected, p_ccb->fcrb.last_ack_sent);
     }
@@ -682,8 +685,8 @@ void l2c_lcc_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
 
   /* Buffer length should not exceed local mps */
   if (p_buf->len > p_ccb->local_conn_cfg.mps) {
-    LOG_ERROR("buffer length=%d exceeds local mps=%d. Drop and disconnect.",
-              p_buf->len, p_ccb->local_conn_cfg.mps);
+    log::error("buffer length={} exceeds local mps={}. Drop and disconnect.",
+               p_buf->len, p_ccb->local_conn_cfg.mps);
 
     /* Discard the buffer and disconnect*/
     osi_free(p_buf);
@@ -693,8 +696,7 @@ void l2c_lcc_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
 
   if (p_ccb->is_first_seg) {
     if (p_buf->len < sizeof(sdu_length)) {
-      LOG_ERROR("%s: buffer length=%d too small. Need at least 2.", __func__,
-                p_buf->len);
+      log::error("buffer length={} too small. Need at least 2.", p_buf->len);
       /* Discard the buffer */
       osi_free(p_buf);
       return;
@@ -703,8 +705,8 @@ void l2c_lcc_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
 
     /* Check the SDU Length with local MTU size */
     if (sdu_length > p_ccb->local_conn_cfg.mtu) {
-      LOG_ERROR("sdu length=%d exceeds local mtu=%d. Drop and disconnect.",
-                sdu_length, p_ccb->local_conn_cfg.mtu);
+      log::error("sdu length={} exceeds local mtu={}. Drop and disconnect.",
+                 sdu_length, p_ccb->local_conn_cfg.mtu);
       /* Discard the buffer and disconnect*/
       osi_free(p_buf);
       l2cu_disconnect_chnl(p_ccb);
@@ -715,7 +717,7 @@ void l2c_lcc_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
     p_buf->offset += sizeof(sdu_length);
 
     if (sdu_length < p_buf->len) {
-      LOG_ERROR("%s: Invalid sdu_length: %d", __func__, sdu_length);
+      log::error("Invalid sdu_length: {}", sdu_length);
       /* Discard the buffer */
       osi_free(p_buf);
       return;
@@ -730,7 +732,7 @@ void l2c_lcc_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
     p_ccb->ble_sdu = p_data;
     p_data->len = 0;
     p_ccb->ble_sdu_length = sdu_length;
-    LOG_VERBOSE("%s SDU Length = %d", __func__, sdu_length);
+    log::verbose("SDU Length = {}", sdu_length);
     p_data->offset = 0;
 
   } else {
@@ -740,8 +742,8 @@ void l2c_lcc_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
       return;
     }
     if (p_buf->len > (p_ccb->ble_sdu_length - p_data->len)) {
-      LOG_ERROR("%s: buffer length=%d too big. max=%d. Dropped", __func__,
-                p_data->len, (p_ccb->ble_sdu_length - p_data->len));
+      log::error("buffer length={} too big. max={}. Dropped", p_data->len,
+                 (p_ccb->ble_sdu_length - p_data->len));
       osi_free(p_buf);
 
       /* Throw away all pending fragments and disconnects */
@@ -782,9 +784,9 @@ void l2c_lcc_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
  ******************************************************************************/
 void l2c_fcr_proc_tout(tL2C_CCB* p_ccb) {
   CHECK(p_ccb != NULL);
-  LOG_VERBOSE(
-      "l2c_fcr_proc_tout:  CID: 0x%04x  num_tries: %u (max: %u)  wait_ack: %u  "
-      "ack_q_count: %zu",
+  log::verbose(
+      "l2c_fcr_proc_tout:  CID: 0x{:04x}  num_tries: {} (max: {})  wait_ack: "
+      "{}  ack_q_count: {}",
       p_ccb->local_cid, p_ccb->fcrb.num_tries, p_ccb->peer_cfg.fcr.max_transmit,
       p_ccb->fcrb.wait_ack, fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q));
 
@@ -809,8 +811,9 @@ void l2c_fcr_proc_tout(tL2C_CCB* p_ccb) {
  ******************************************************************************/
 void l2c_fcr_proc_ack_tout(tL2C_CCB* p_ccb) {
   CHECK(p_ccb != NULL);
-  LOG_VERBOSE(
-      "l2c_fcr_proc_ack_tout:  CID: 0x%04x State: %u  Wack:%u  Rq:%d  Acked:%d",
+  log::verbose(
+      "l2c_fcr_proc_ack_tout:  CID: 0x{:04x} State: {}  Wack:{}  Rq:{}  "
+      "Acked:{}",
       p_ccb->local_cid, p_ccb->chnl_state, p_ccb->fcrb.wait_ack,
       p_ccb->fcrb.next_seq_expected, p_ccb->fcrb.last_ack_sent);
 
@@ -858,9 +861,9 @@ static bool process_reqseq(tL2C_CCB* p_ccb, uint16_t ctrl_word) {
   /* Verify the request sequence is in range before proceeding */
   if (num_bufs_acked > fixed_queue_length(p_fcrb->waiting_for_ack_q)) {
     /* The channel is closed if ReqSeq is not in range */
-    LOG_WARN(
-        "L2CAP eRTM Frame BAD Req_Seq - ctrl_word: 0x%04x  req_seq 0x%02x  "
-        "last_rx_ack: 0x%02x  QCount: %zu",
+    log::warn(
+        "L2CAP eRTM Frame BAD Req_Seq - ctrl_word: 0x{:04x}  req_seq 0x{:02x}  "
+        "last_rx_ack: 0x{:02x}  QCount: {}",
         ctrl_word, req_seq, p_fcrb->last_rx_ack,
         fixed_queue_length(p_fcrb->waiting_for_ack_q));
 
@@ -931,11 +934,11 @@ static void process_s_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf,
   bool all_ok = true;
 
   if (p_buf->len != 0) {
-    LOG_WARN("Incorrect S-frame Length (%d)", p_buf->len);
+    log::warn("Incorrect S-frame Length ({})", p_buf->len);
   }
 
-  LOG_VERBOSE("process_s_frame ctrl_word 0x%04x fcrb_remote_busy:%d", ctrl_word,
-              p_fcrb->remote_busy);
+  log::verbose("process_s_frame ctrl_word 0x{:04x} fcrb_remote_busy:{}",
+               ctrl_word, p_fcrb->remote_busy);
 
   if (ctrl_word & L2CAP_FCR_P_BIT) {
     p_fcrb->rej_sent = false;  /* After checkpoint, we can send anoher REJ */
@@ -981,7 +984,7 @@ static void process_s_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf,
       p_fcrb->send_f_rsp = false;
     }
   } else {
-    LOG_VERBOSE("process_s_frame hit_max_retries");
+    log::verbose("process_s_frame hit_max_retries");
   }
 
   osi_free(p_buf);
@@ -1023,15 +1026,15 @@ static void process_i_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf, uint16_t ctrl_word,
     /* Is the frame a duplicate ? If so, just drop it */
     if (num_lost >= p_ccb->our_cfg.fcr.tx_win_sz) {
       /* Duplicate - simply drop it */
-      LOG_WARN(
-          "process_i_frame() Dropping Duplicate Frame tx_seq:%u  ExpectedTxSeq "
-          "%u",
+      log::warn(
+          "process_i_frame() Dropping Duplicate Frame tx_seq:{}  ExpectedTxSeq "
+          "{}",
           tx_seq, p_fcrb->next_seq_expected);
       osi_free(p_buf);
     } else {
-      LOG_WARN(
-          "process_i_frame() CID: 0x%04x  Lost: %u  tx_seq:%u  ExpTxSeq %u  "
-          "Rej: %u  SRej: %u",
+      log::warn(
+          "process_i_frame() CID: 0x{:04x}  Lost: {}  tx_seq:{}  ExpTxSeq {}  "
+          "Rej: {}  SRej: {}",
           p_ccb->local_cid, num_lost, tx_seq, p_fcrb->next_seq_expected,
           p_fcrb->rej_sent, p_fcrb->srej_sent);
 
@@ -1047,17 +1050,17 @@ static void process_i_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf, uint16_t ctrl_word,
         if ((tx_seq == next_srej) &&
             (fixed_queue_length(p_fcrb->srej_rcv_hold_q) <
              p_ccb->our_cfg.fcr.tx_win_sz)) {
-          LOG_VERBOSE(
-              "process_i_frame() Lost: %u  tx_seq:%u  ExpTxSeq %u  Rej: %u  "
+          log::verbose(
+              "process_i_frame() Lost: {}  tx_seq:{}  ExpTxSeq {}  Rej: {}  "
               "SRej1",
               num_lost, tx_seq, p_fcrb->next_seq_expected, p_fcrb->rej_sent);
 
           p_buf->layer_specific = tx_seq;
           fixed_queue_enqueue(p_fcrb->srej_rcv_hold_q, p_buf);
         } else {
-          LOG_WARN(
-              "process_i_frame() CID: 0x%04x  frame dropped in Srej Sent "
-              "next_srej:%u  hold_q.count:%zu  win_sz:%u",
+          log::warn(
+              "process_i_frame() CID: 0x{:04x}  frame dropped in Srej Sent "
+              "next_srej:{}  hold_q.count:{}  win_sz:{}",
               p_ccb->local_cid, next_srej,
               fixed_queue_length(p_fcrb->srej_rcv_hold_q),
               p_ccb->our_cfg.fcr.tx_win_sz);
@@ -1066,17 +1069,17 @@ static void process_i_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf, uint16_t ctrl_word,
           osi_free(p_buf);
         }
       } else if (p_fcrb->rej_sent) {
-        LOG_WARN(
-            "process_i_frame() CID: 0x%04x  Lost: %u  tx_seq:%u  ExpTxSeq %u  "
-            "Rej: 1  SRej: %u",
+        log::warn(
+            "process_i_frame() CID: 0x{:04x}  Lost: {}  tx_seq:{}  ExpTxSeq {} "
+            " Rej: 1  SRej: {}",
             p_ccb->local_cid, num_lost, tx_seq, p_fcrb->next_seq_expected,
             p_fcrb->srej_sent);
 
         /* If REJ sent, just drop the frame */
         osi_free(p_buf);
       } else {
-        LOG_VERBOSE(
-            "process_i_frame() CID: 0x%04x  tx_seq:%u  ExpTxSeq %u  Rej: %u",
+        log::verbose(
+            "process_i_frame() CID: 0x{:04x}  tx_seq:{}  ExpTxSeq {}  Rej: {}",
             p_ccb->local_cid, tx_seq, p_fcrb->next_seq_expected,
             p_fcrb->rej_sent);
 
@@ -1087,9 +1090,9 @@ static void process_i_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf, uint16_t ctrl_word,
           l2c_fcr_send_S_frame(p_ccb, L2CAP_FCR_SUP_REJ, 0);
         } else {
           if (!fixed_queue_is_empty(p_fcrb->srej_rcv_hold_q)) {
-            LOG_ERROR(
-                "process_i_frame() CID: 0x%04x  sending SREJ tx_seq:%d "
-                "hold_q.count:%zu",
+            log::error(
+                "process_i_frame() CID: 0x{:04x}  sending SREJ tx_seq:{} "
+                "hold_q.count:{}",
                 p_ccb->local_cid, tx_seq,
                 fixed_queue_length(p_fcrb->srej_rcv_hold_q));
           }
@@ -1115,8 +1118,8 @@ static void process_i_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf, uint16_t ctrl_word,
 
   /* If any SAR problem in eRTM mode, spec says disconnect. */
   if (!do_sar_reassembly(p_ccb, p_buf, ctrl_word)) {
-    LOG_WARN("process_i_frame() CID: 0x%04x  reassembly failed",
-             p_ccb->local_cid);
+    log::warn("process_i_frame() CID: 0x{:04x}  reassembly failed",
+              p_ccb->local_cid);
     l2cu_disconnect_chnl(p_ccb);
     return;
   }
@@ -1168,9 +1171,9 @@ static bool do_sar_reassembly(tL2C_CCB* p_ccb, BT_HDR* p_buf,
   /* Check if the SAR state is correct */
   if ((sar_type == L2CAP_FCR_UNSEG_SDU) || (sar_type == L2CAP_FCR_START_SDU)) {
     if (p_fcrb->p_rx_sdu != NULL) {
-      LOG_WARN(
-          "SAR - got unexpected unsegmented or start SDU  Expected len: %u  "
-          "Got so far: %u",
+      log::warn(
+          "SAR - got unexpected unsegmented or start SDU  Expected len: {}  "
+          "Got so far: {}",
           p_fcrb->rx_sdu_len, p_fcrb->p_rx_sdu->len);
 
       packet_ok = false;
@@ -1178,12 +1181,12 @@ static bool do_sar_reassembly(tL2C_CCB* p_ccb, BT_HDR* p_buf,
     /* Check the length of the packet */
     if ((sar_type == L2CAP_FCR_START_SDU) &&
         (p_buf->len < L2CAP_SDU_LEN_OVERHEAD)) {
-      LOG_WARN("SAR start packet too short: %u", p_buf->len);
+      log::warn("SAR start packet too short: {}", p_buf->len);
       packet_ok = false;
     }
   } else {
     if (p_fcrb->p_rx_sdu == NULL) {
-      LOG_WARN("SAR - got unexpected cont or end SDU");
+      log::warn("SAR - got unexpected cont or end SDU");
       packet_ok = false;
     }
   }
@@ -1199,8 +1202,8 @@ static bool do_sar_reassembly(tL2C_CCB* p_ccb, BT_HDR* p_buf,
       p_buf->len -= 2;
 
       if (p_fcrb->rx_sdu_len > p_ccb->max_rx_mtu) {
-        LOG_WARN("SAR - SDU len: %u  larger than MTU: %u", p_fcrb->rx_sdu_len,
-                 p_ccb->max_rx_mtu);
+        log::warn("SAR - SDU len: {}  larger than MTU: {}", p_fcrb->rx_sdu_len,
+                  p_ccb->max_rx_mtu);
         packet_ok = false;
       } else {
         p_fcrb->p_rx_sdu = (BT_HDR*)osi_malloc(
@@ -1212,14 +1215,14 @@ static bool do_sar_reassembly(tL2C_CCB* p_ccb, BT_HDR* p_buf,
 
     if (packet_ok) {
       if ((p_fcrb->p_rx_sdu->len + p_buf->len) > p_fcrb->rx_sdu_len) {
-        LOG_ERROR("SAR - SDU len exceeded  Type: %u   Lengths: %u %u %u",
-                  sar_type, p_fcrb->p_rx_sdu->len, p_buf->len,
-                  p_fcrb->rx_sdu_len);
+        log::error("SAR - SDU len exceeded  Type: {}   Lengths: {} {} {}",
+                   sar_type, p_fcrb->p_rx_sdu->len, p_buf->len,
+                   p_fcrb->rx_sdu_len);
         packet_ok = false;
       } else if ((sar_type == L2CAP_FCR_END_SDU) &&
                  ((p_fcrb->p_rx_sdu->len + p_buf->len) != p_fcrb->rx_sdu_len)) {
-        LOG_WARN("SAR - SDU end rcvd but SDU incomplete: %u %u %u",
-                 p_fcrb->p_rx_sdu->len, p_buf->len, p_fcrb->rx_sdu_len);
+        log::warn("SAR - SDU end rcvd but SDU incomplete: {} {} {}",
+                  p_fcrb->p_rx_sdu->len, p_buf->len, p_fcrb->rx_sdu_len);
         packet_ok = false;
       } else {
         memcpy(((uint8_t*)(p_fcrb->p_rx_sdu + 1)) + p_fcrb->p_rx_sdu->offset +
@@ -1277,9 +1280,9 @@ static bool retransmit_i_frames(tL2C_CCB* p_ccb, uint8_t tx_seq) {
   if ((!fixed_queue_is_empty(p_ccb->fcrb.waiting_for_ack_q)) &&
       (p_ccb->peer_cfg.fcr.max_transmit != 0) &&
       (p_ccb->fcrb.num_tries >= p_ccb->peer_cfg.fcr.max_transmit)) {
-    LOG_VERBOSE(
-        "Max Tries Exceeded:  (last_acq: %d  CID: 0x%04x  num_tries: %u (max: "
-        "%u) ack_q_count: %zu",
+    log::verbose(
+        "Max Tries Exceeded:  (last_acq: {}  CID: 0x{:04x}  num_tries: {} "
+        "(max: {}) ack_q_count: {}",
         p_ccb->fcrb.last_rx_ack, p_ccb->local_cid, p_ccb->fcrb.num_tries,
         p_ccb->peer_cfg.fcr.max_transmit,
         fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q));
@@ -1310,16 +1313,16 @@ static bool retransmit_i_frames(tL2C_CCB* p_ccb, uint8_t tx_seq) {
         buf_seq =
             (ctrl_word & L2CAP_FCR_TX_SEQ_BITS) >> L2CAP_FCR_TX_SEQ_BITS_SHIFT;
 
-        LOG_VERBOSE("retransmit_i_frames()   cur seq: %u  looking for: %u",
-                    buf_seq, tx_seq);
+        log::verbose("retransmit_i_frames()   cur seq: {}  looking for: {}",
+                     buf_seq, tx_seq);
 
         if (tx_seq == buf_seq) break;
       }
     }
 
     if (!p_buf) {
-      LOG_ERROR("retransmit_i_frames() UNKNOWN seq: %u  q_count: %zu", tx_seq,
-                fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q));
+      log::error("retransmit_i_frames() UNKNOWN seq: {}  q_count: {}", tx_seq,
+                 fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q));
       return (true);
     }
   } else {
@@ -1439,8 +1442,8 @@ BT_HDR* l2c_fcr_get_next_xmit_sdu_seg(tL2C_CCB* p_ccb,
     } else /* Should never happen if the application has configured buffers
               correctly */
     {
-      LOG_ERROR("L2CAP - cannot get buffer for segmentation, max_pdu: %u",
-                max_pdu);
+      log::error("L2CAP - cannot get buffer for segmentation, max_pdu: {}",
+                 max_pdu);
       return (NULL);
     }
   } else /* Use the original buffer if no segmentation, or the last segment */
@@ -1495,8 +1498,9 @@ BT_HDR* l2c_fcr_get_next_xmit_sdu_seg(tL2C_CCB* p_ccb,
         l2c_fcr_clone_buf(p_xmit, HCI_DATA_PREAMBLE_SIZE, p_xmit->len);
 
     if (!p_wack) {
-      LOG_ERROR("L2CAP - no buffer for xmit cloning, CID: 0x%04x  Length: %u",
-                p_ccb->local_cid, p_xmit->len);
+      log::error(
+          "L2CAP - no buffer for xmit cloning, CID: 0x{:04x}  Length: {}",
+          p_ccb->local_cid, p_xmit->len);
 
       /* We will not save the FCS in case we reconfigure and change options */
       p_xmit->len -= L2CAP_FCS_LEN;
@@ -1600,7 +1604,7 @@ uint8_t l2c_fcr_chk_chan_modes(tL2C_CCB* p_ccb) {
   /* Remove nonbasic options that the peer does not support */
   if (!(p_ccb->p_lcb->peer_ext_fea & L2CAP_EXTFEA_ENH_RETRANS) &&
       p_ccb->p_rcb->ertm_info.preferred_mode == L2CAP_FCR_ERTM_MODE) {
-    LOG_WARN("L2CAP - Peer does not support our desired channel types");
+    log::warn("L2CAP - Peer does not support our desired channel types");
     p_ccb->p_rcb->ertm_info.preferred_mode = 0;
     return false;
   }
@@ -1636,8 +1640,8 @@ void l2c_fcr_adj_monitor_retran_timeout(tL2C_CCB* p_ccb) {
       p_ccb->our_cfg.fcr.rtrans_tout = 0;
     }
 
-    LOG_VERBOSE(
-        "l2c_fcr_adj_monitor_retran_timeout: mon_tout:%d, rtrans_tout:%d",
+    log::verbose(
+        "l2c_fcr_adj_monitor_retran_timeout: mon_tout:{}, rtrans_tout:{}",
         p_ccb->our_cfg.fcr.mon_tout, p_ccb->our_cfg.fcr.rtrans_tout);
   }
 }
@@ -1667,8 +1671,8 @@ void l2c_fcr_adj_our_rsp_options(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
      * adjust it. For now, respond with our own tx_wnd_sz. */
     /* Note: peer is not guaranteed to obey our adjustment */
     if (p_ccb->peer_cfg.fcr.tx_win_sz > p_ccb->our_cfg.fcr.tx_win_sz) {
-      LOG_VERBOSE("%s: adjusting requested tx_win_sz from %i to %i", __func__,
-                  p_ccb->peer_cfg.fcr.tx_win_sz, p_ccb->our_cfg.fcr.tx_win_sz);
+      log::verbose("adjusting requested tx_win_sz from {} to {}",
+                   p_ccb->peer_cfg.fcr.tx_win_sz, p_ccb->our_cfg.fcr.tx_win_sz);
       p_ccb->peer_cfg.fcr.tx_win_sz = p_ccb->our_cfg.fcr.tx_win_sz;
     }
 
@@ -1712,7 +1716,7 @@ bool l2c_fcr_renegotiate_chan(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
     if (p_ccb->our_cfg.fcr.mode != peer_mode) {
       if ((--p_ccb->fcr_cfg_tries) == 0) {
         p_cfg->result = L2CAP_CFG_FAILED_NO_REASON;
-        LOG_WARN("l2c_fcr_renegotiate_chan (Max retries exceeded)");
+        log::warn("l2c_fcr_renegotiate_chan (Max retries exceeded)");
       }
 
       can_renegotiate = false;
@@ -1723,7 +1727,7 @@ bool l2c_fcr_renegotiate_chan(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
         case L2CAP_FCR_ERTM_MODE:
           /* We can try basic for any other peer mode because it's always
            * supported */
-          LOG_VERBOSE("%s(Trying Basic)", __func__);
+          log::verbose("(Trying Basic)");
           can_renegotiate = true;
           p_ccb->our_cfg.fcr.mode = L2CAP_FCR_BASIC_MODE;
           break;
@@ -1742,7 +1746,7 @@ bool l2c_fcr_renegotiate_chan(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
 
           /* Basic Mode uses ACL Data Pool, make sure the MTU fits */
           if ((p_cfg->mtu_present) && (p_cfg->mtu > L2CAP_MTU_SIZE)) {
-            LOG_WARN("L2CAP - adjust MTU: %u too large", p_cfg->mtu);
+            log::warn("L2CAP - adjust MTU: {} too large", p_cfg->mtu);
             p_cfg->mtu = L2CAP_MTU_SIZE;
           }
         }
@@ -1758,8 +1762,8 @@ bool l2c_fcr_renegotiate_chan(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
 
   /* Disconnect if the channels do not match */
   if (p_ccb->our_cfg.fcr.mode != peer_mode) {
-    LOG_WARN("L2C CFG:  Channels incompatible (local %d, peer %d)",
-             p_ccb->our_cfg.fcr.mode, peer_mode);
+    log::warn("L2C CFG:  Channels incompatible (local {}, peer {})",
+              p_ccb->our_cfg.fcr.mode, peer_mode);
     l2cu_disconnect_chnl(p_ccb);
   }
 
@@ -1787,9 +1791,9 @@ uint8_t l2c_fcr_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
   p_ccb->p_lcb->w4_info_rsp =
       false; /* Handles T61x SonyEricsson Bug in Info Request */
 
-  LOG_VERBOSE(
-      "l2c_fcr_process_peer_cfg_req() CFG fcr_present:%d fcr.mode:%d CCB FCR "
-      "mode:%d preferred: %u",
+  log::verbose(
+      "l2c_fcr_process_peer_cfg_req() CFG fcr_present:{} fcr.mode:{} CCB FCR "
+      "mode:{} preferred: {}",
       p_cfg->fcr_present, p_cfg->fcr.mode, p_ccb->our_cfg.fcr.mode,
       p_ccb->p_rcb->ertm_info.preferred_mode);
 
@@ -1846,8 +1850,8 @@ uint8_t l2c_fcr_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
 
       /* Ensure the MPS is not bigger than our retransmission buffer */
       if (p_cfg->fcr.mps > max_retrans_size) {
-        LOG_VERBOSE("CFG: Overriding MPS to %d (orig %d)", max_retrans_size,
-                    p_cfg->fcr.mps);
+        log::verbose("CFG: Overriding MPS to {} (orig {})", max_retrans_size,
+                     p_cfg->fcr.mps);
 
         p_cfg->fcr.mps = max_retrans_size;
         p_ccb->out_cfg_fcr_present = true;
