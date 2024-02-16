@@ -21,12 +21,10 @@ import android.os.SystemClock;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothStatsLog;
-import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
 /**
- * Utility method to report exceptions and error/warn logs in content profiles. Will be no-op if
- * {@link Flags#contentProfilesErrorsMetrics()} is not enabled.
+ * Utility method to report exceptions and error/warn logs in content profiles.
  */
 public class ContentProfileErrorReportUtils {
     private static final String TAG = ContentProfileErrorReportUtils.class.getSimpleName();
@@ -52,10 +50,6 @@ public class ContentProfileErrorReportUtils {
      * @return true if successfully wrote the error, false otherwise
      */
     public static synchronized boolean report(int profile, int fileNameEnum, int type, int tag) {
-        if (!Flags.contentProfilesErrorsMetrics()) {
-            return false;
-        }
-
         if (isTooFrequentReport()) {
             Log.w(
                     TAG,

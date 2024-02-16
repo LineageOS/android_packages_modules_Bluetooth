@@ -37,6 +37,7 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_iso_api.h"
+#include "stack/include/dev_hci_link_interface.h"
 #include "stack/include/hcimsgs.h"
 #include "stack/include/main_thread.h"
 
@@ -90,72 +91,10 @@ bool register_event_code(bluetooth::hci::EventCode event_code) {
   }
 };
 
-bool is_valid_subevent_code(bluetooth::hci::SubeventCode subevent_code) {
+static bool register_subevent_code(bluetooth::hci::SubeventCode subevent_code) {
   switch (subevent_code) {
-    case bluetooth::hci::SubeventCode::CONNECTION_UPDATE_COMPLETE:
-    case bluetooth::hci::SubeventCode::DATA_LENGTH_CHANGE:
-    case bluetooth::hci::SubeventCode::ENHANCED_CONNECTION_COMPLETE:
-    case bluetooth::hci::SubeventCode::PHY_UPDATE_COMPLETE:
     case bluetooth::hci::SubeventCode::READ_REMOTE_FEATURES_COMPLETE:
-    case bluetooth::hci::SubeventCode::REMOTE_CONNECTION_PARAMETER_REQUEST:
-    case bluetooth::hci::SubeventCode::READ_LOCAL_P256_PUBLIC_KEY_COMPLETE:
-    case bluetooth::hci::SubeventCode::GENERATE_DHKEY_COMPLETE:
-    case bluetooth::hci::SubeventCode::DIRECTED_ADVERTISING_REPORT:
-    case bluetooth::hci::SubeventCode::EXTENDED_ADVERTISING_REPORT:
-    case bluetooth::hci::SubeventCode::PERIODIC_ADVERTISING_SYNC_ESTABLISHED:
-    case bluetooth::hci::SubeventCode::PERIODIC_ADVERTISING_REPORT:
-    case bluetooth::hci::SubeventCode::PERIODIC_ADVERTISING_SYNC_LOST:
-    case bluetooth::hci::SubeventCode::SCAN_TIMEOUT:
-    case bluetooth::hci::SubeventCode::ADVERTISING_SET_TERMINATED:
-    case bluetooth::hci::SubeventCode::SCAN_REQUEST_RECEIVED:
-    case bluetooth::hci::SubeventCode::CHANNEL_SELECTION_ALGORITHM:
-    case bluetooth::hci::SubeventCode::CONNECTIONLESS_IQ_REPORT:
-    case bluetooth::hci::SubeventCode::CONNECTION_IQ_REPORT:
-    case bluetooth::hci::SubeventCode::CTE_REQUEST_FAILED:
-    case bluetooth::hci::SubeventCode::
-        PERIODIC_ADVERTISING_SYNC_TRANSFER_RECEIVED:
-    case bluetooth::hci::SubeventCode::CIS_ESTABLISHED:
-    case bluetooth::hci::SubeventCode::CIS_REQUEST:
-    case bluetooth::hci::SubeventCode::CREATE_BIG_COMPLETE:
-    case bluetooth::hci::SubeventCode::TERMINATE_BIG_COMPLETE:
-    case bluetooth::hci::SubeventCode::BIG_SYNC_ESTABLISHED:
-    case bluetooth::hci::SubeventCode::BIG_SYNC_LOST:
-    case bluetooth::hci::SubeventCode::REQUEST_PEER_SCA_COMPLETE:
-    case bluetooth::hci::SubeventCode::PATH_LOSS_THRESHOLD:
-    case bluetooth::hci::SubeventCode::TRANSMIT_POWER_REPORTING:
-    case bluetooth::hci::SubeventCode::BIG_INFO_ADVERTISING_REPORT:
-    case bluetooth::hci::SubeventCode::ADVERTISING_REPORT:
     case bluetooth::hci::SubeventCode::LONG_TERM_KEY_REQUEST:
-      return true;
-    default:
-      return false;
-  }
-}
-
-static bool subevent_already_registered_in_le_hci_layer(
-    bluetooth::hci::SubeventCode subevent_code) {
-  switch (subevent_code) {
-    case bluetooth::hci::SubeventCode::CONNECTION_COMPLETE:
-    case bluetooth::hci::SubeventCode::CONNECTION_UPDATE_COMPLETE:
-    case bluetooth::hci::SubeventCode::DATA_LENGTH_CHANGE:
-    case bluetooth::hci::SubeventCode::ENHANCED_CONNECTION_COMPLETE:
-    case bluetooth::hci::SubeventCode::PHY_UPDATE_COMPLETE:
-    case bluetooth::hci::SubeventCode::REMOTE_CONNECTION_PARAMETER_REQUEST:
-    case bluetooth::hci::SubeventCode::ADVERTISING_SET_TERMINATED:
-    case bluetooth::hci::SubeventCode::SCAN_REQUEST_RECEIVED:
-    case bluetooth::hci::SubeventCode::SCAN_TIMEOUT:
-    case bluetooth::hci::SubeventCode::ADVERTISING_REPORT:
-    case bluetooth::hci::SubeventCode::DIRECTED_ADVERTISING_REPORT:
-    case bluetooth::hci::SubeventCode::EXTENDED_ADVERTISING_REPORT:
-    case bluetooth::hci::SubeventCode::PERIODIC_ADVERTISING_REPORT:
-    case bluetooth::hci::SubeventCode::PERIODIC_ADVERTISING_SYNC_ESTABLISHED:
-    case bluetooth::hci::SubeventCode::PERIODIC_ADVERTISING_SYNC_LOST:
-    case bluetooth::hci::SubeventCode::
-        PERIODIC_ADVERTISING_SYNC_TRANSFER_RECEIVED:
-    case bluetooth::hci::SubeventCode::TRANSMIT_POWER_REPORTING:
-    case bluetooth::hci::SubeventCode::BIG_INFO_ADVERTISING_REPORT:
-      return true;
-    case bluetooth::hci::SubeventCode::READ_REMOTE_FEATURES_COMPLETE:
     case bluetooth::hci::SubeventCode::READ_LOCAL_P256_PUBLIC_KEY_COMPLETE:
     case bluetooth::hci::SubeventCode::GENERATE_DHKEY_COMPLETE:
     case bluetooth::hci::SubeventCode::CHANNEL_SELECTION_ALGORITHM:
@@ -170,7 +109,7 @@ static bool subevent_already_registered_in_le_hci_layer(
     case bluetooth::hci::SubeventCode::BIG_SYNC_LOST:
     case bluetooth::hci::SubeventCode::REQUEST_PEER_SCA_COMPLETE:
     case bluetooth::hci::SubeventCode::PATH_LOSS_THRESHOLD:
-    case bluetooth::hci::SubeventCode::LONG_TERM_KEY_REQUEST:
+      return true;
     default:
       return false;
   }
@@ -228,12 +167,15 @@ static void subevent_callback(
 
 static void vendor_specific_event_callback(
     bluetooth::hci::VendorSpecificEventView vendor_specific_event_view) {
-  if (!send_data_upwards) {
+  auto bqr =
+      bluetooth::hci::BqrEventView::CreateOptional(vendor_specific_event_view);
+  if (!bqr) {
     return;
   }
-  send_data_upwards.Run(
-      FROM_HERE,
-      WrapPacketAndCopy(MSG_HC_TO_STACK_HCI_EVT, &vendor_specific_event_view));
+
+  auto payload = vendor_specific_event_view.GetPayload();
+  std::vector<uint8_t> bytes{payload.begin(), payload.end()};
+  btm_vendor_specific_evt(bytes.data(), bytes.size());
 }
 
 void OnTransmitPacketCommandComplete(command_complete_cb complete_callback,
@@ -454,21 +396,16 @@ void bluetooth::shim::hci_on_reset_complete() {
        subevent_code_raw++) {
     auto subevent_code =
         static_cast<bluetooth::hci::SubeventCode>(subevent_code_raw);
-    if (!is_valid_subevent_code(subevent_code)) {
+    if (!register_subevent_code(subevent_code)) {
       continue;
     }
-    if (subevent_already_registered_in_le_hci_layer(subevent_code)) {
-      continue;
-    }
-
     cpp::register_le_event(subevent_code);
   }
 
   // TODO handle BQR event in GD
-  auto handler = bluetooth::shim::GetGdShimHandler();
   bluetooth::shim::GetVendorSpecificEventManager()->RegisterEventHandler(
       bluetooth::hci::VseSubeventCode::BQR_EVENT,
-      handler->Bind(cpp::vendor_specific_event_callback));
+      get_main_thread()->Bind(cpp::vendor_specific_event_callback));
 
   cpp::register_for_iso();
 }

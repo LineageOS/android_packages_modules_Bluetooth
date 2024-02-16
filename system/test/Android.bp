@@ -190,7 +190,21 @@ filegroup {
 filegroup {
     name: "TestMockMainShim",
     srcs: [
-        "mock/mock_main_shim*.cc",
+        "mock/mock_main_shim.cc",
+        "mock/mock_main_shim_BtifConfigInterface.cc",
+        "mock/mock_main_shim_acl.cc",
+        "mock/mock_main_shim_acl_api.cc",
+        "mock/mock_main_shim_acl_legacy_interface.cc",
+        "mock/mock_main_shim_btm_api.cc",
+        "mock/mock_main_shim_controller.cc",
+        "mock/mock_main_shim_distance_measurement_manager.cc",
+        "mock/mock_main_shim_dumpsys.cc",
+        "mock/mock_main_shim_hci_layer.cc",
+        "mock/mock_main_shim_l2cap_api.cc",
+        "mock/mock_main_shim_le_advertising_manager.cc",
+        "mock/mock_main_shim_le_scanning_manager.cc",
+        "mock/mock_main_shim_metric_id_api.cc",
+        "mock/mock_main_shim_metrics_api.cc",
     ],
 }
 
