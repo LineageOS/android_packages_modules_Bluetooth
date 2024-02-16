@@ -782,11 +782,7 @@ pub struct BluetoothGattService {
 }
 
 impl BluetoothGattService {
-    pub(crate) fn new(
-        uuid: Uuid128Bit,
-        instance_id: i32,
-        service_type: i32,
-    ) -> BluetoothGattService {
+    pub fn new(uuid: Uuid128Bit, instance_id: i32, service_type: i32) -> BluetoothGattService {
         BluetoothGattService {
             uuid,
             instance_id,
@@ -1133,7 +1129,7 @@ pub trait IScannerCallback: RPCProxy {
 #[derive(Debug, FromPrimitive, ToPrimitive)]
 #[repr(u8)]
 /// GATT write type.
-pub(crate) enum GattDbElementType {
+pub enum GattDbElementType {
     PrimaryService = 0,
     SecondaryService = 1,
     IncludedService = 2,
