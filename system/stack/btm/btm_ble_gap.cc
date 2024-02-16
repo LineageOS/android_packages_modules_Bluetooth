@@ -533,8 +533,11 @@ tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration,
                              : btm_cb.ble_ctr_cb.inq_var.scan_window;
 
   // use low latency scanning if the scanning is active
+  uint16_t ll_scan_interval, ll_scan_window;
+  std::tie(ll_scan_interval, ll_scan_window) = get_low_latency_scan_params();
   if (low_latency_scan) {
-    std::tie(scan_interval, scan_window) = get_low_latency_scan_params();
+    std::tie(scan_interval, scan_window) =
+        std::tie(ll_scan_interval, ll_scan_window);
   }
 
   log::verbose("scan_type:{}, {}, {}", btm_cb.ble_ctr_cb.inq_var.scan_type,
@@ -565,9 +568,8 @@ tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration,
        * 2. current ongoing scanning is low latency
        */
       bool is_ongoing_low_latency =
-          btm_cb.ble_ctr_cb.inq_var.scan_interval ==
-              BTM_BLE_GAP_DISC_SCAN_INT &&
-          btm_cb.ble_ctr_cb.inq_var.scan_window == BTM_BLE_LOW_LATENCY_SCAN_WIN;
+          btm_cb.ble_ctr_cb.inq_var.scan_interval == ll_scan_interval &&
+          btm_cb.ble_ctr_cb.inq_var.scan_window == ll_scan_window;
       if (!low_latency_scan || is_ongoing_low_latency) {
         log::warn("Observer was already active, is_low_latency: {}",
                   is_ongoing_low_latency);
@@ -2427,185 +2429,6 @@ void btm_ble_process_adv_addr(RawAddress& bda, tBLE_ADDR_TYPE* addr_type) {
 }
 
 /**
- * This function is called when extended advertising report event is received .
- * It updates the inquiry database. If the inquiry database is full, the oldest
- * entry is discarded.
- */
-void btm_ble_process_ext_adv_pkt(uint8_t data_len, const uint8_t* data) {
-  RawAddress bda, direct_address;
-  const uint8_t* p = data;
-  uint8_t addr_type, num_reports, pkt_data_len, primary_phy, secondary_phy,
-      advertising_sid;
-  int8_t rssi, tx_power;
-  uint16_t event_type, periodic_adv_int, direct_address_type;
-  size_t bytes_to_process;
-
-  /* Only process the results if the inquiry is still active */
-  if (!btm_cb.ble_ctr_cb.is_ble_scan_active()) return;
-
-  bytes_to_process = 1;
-
-  if (data_len < bytes_to_process) {
-    log::error(
-        "Malformed LE extended advertising packet: not enough room for num "
-        "reports");
-    return;
-  }
-
-  /* Extract the number of reports in this event. */
-  STREAM_TO_UINT8(num_reports, p);
-
-  while (num_reports--) {
-    bytes_to_process += 24;
-    if (data_len < bytes_to_process) {
-      log::error(
-          "Malformed LE extended advertising packet: not enough room for "
-          "metadata");
-      return;
-    }
-
-    /* Extract inquiry results */
-    STREAM_TO_UINT16(event_type, p);
-    STREAM_TO_UINT8(addr_type, p);
-    STREAM_TO_BDADDR(bda, p);
-    STREAM_TO_UINT8(primary_phy, p);
-    STREAM_TO_UINT8(secondary_phy, p);
-    STREAM_TO_UINT8(advertising_sid, p);
-    STREAM_TO_INT8(tx_power, p);
-    STREAM_TO_INT8(rssi, p);
-    STREAM_TO_UINT16(periodic_adv_int, p);
-    STREAM_TO_UINT8(direct_address_type, p);
-    STREAM_TO_BDADDR(direct_address, p);
-    STREAM_TO_UINT8(pkt_data_len, p);
-
-    const uint8_t* pkt_data = p;
-    p += pkt_data_len; /* Advance to the the next packet*/
-
-    bytes_to_process += pkt_data_len;
-    if (data_len < bytes_to_process) {
-      log::error(
-          "Malformed LE extended advertising packet: not enough room for "
-          "packet data");
-      return;
-    }
-
-    if (rssi >= 21 && rssi <= 126) {
-      log::error("bad rssi value in advertising report: {}", rssi);
-    }
-
-    // Store this to pass up the callback chain to GattService#onScanResult for
-    // the check in ScanFilter#matches
-    RawAddress original_bda = bda;
-
-    if (addr_type != BLE_ADDR_ANONYMOUS) {
-      btm_ble_process_adv_addr(bda, &addr_type);
-    }
-
-    btm_ble_process_adv_pkt_cont(
-        event_type, addr_type, bda, primary_phy, secondary_phy, advertising_sid,
-        tx_power, rssi, periodic_adv_int, pkt_data_len, pkt_data, original_bda);
-  }
-}
-
-/**
- * This function is called when advertising report event is received. It updates
- * the inquiry database. If the inquiry database is full, the oldest entry is
- * discarded.
- */
-void btm_ble_process_adv_pkt(uint8_t data_len, const uint8_t* data) {
-  RawAddress bda;
-  const uint8_t* p = data;
-  uint8_t legacy_evt_type, addr_type, num_reports, pkt_data_len;
-  int8_t rssi;
-  size_t bytes_to_process;
-
-  /* Only process the results if the inquiry is still active */
-  if (!btm_cb.ble_ctr_cb.is_ble_scan_active()) return;
-
-  bytes_to_process = 1;
-
-  if (data_len < bytes_to_process) {
-    log::error(
-        "Malformed LE advertising packet: not enough room for num reports");
-    return;
-  }
-
-  /* Extract the number of reports in this event. */
-  STREAM_TO_UINT8(num_reports, p);
-
-  while (num_reports--) {
-    bytes_to_process += 9;
-
-    if (data_len < bytes_to_process) {
-      log::error(
-          "Malformed LE advertising packet: not enough room for metadata");
-      return;
-    }
-
-    /* Extract inquiry results */
-    STREAM_TO_UINT8(legacy_evt_type, p);
-    STREAM_TO_UINT8(addr_type, p);
-    STREAM_TO_BDADDR(bda, p);
-    STREAM_TO_UINT8(pkt_data_len, p);
-
-    const uint8_t* pkt_data = p;
-    p += pkt_data_len; /* Advance to the the rssi byte */
-
-    // include rssi for this check
-    bytes_to_process += pkt_data_len + 1;
-    if (data_len < bytes_to_process) {
-      log::error(
-          "Malformed LE advertising packet: not enough room for packet data "
-          "and/or RSSI");
-      return;
-    }
-
-    STREAM_TO_INT8(rssi, p);
-
-    if (rssi >= 21 && rssi <= 126) {
-      log::error("bad rssi value in advertising report: {}", rssi);
-    }
-
-    // Pass up the address to GattService#onScanResult to use in
-    // ScanFilter#matches
-    RawAddress original_bda = bda;
-
-    btm_ble_process_adv_addr(bda, &addr_type);
-
-    uint16_t event_type;
-    event_type = 1 << BLE_EVT_LEGACY_BIT;
-    if (legacy_evt_type == BTM_BLE_ADV_IND_EVT) {
-      event_type |=
-          (1 << BLE_EVT_CONNECTABLE_BIT) | (1 << BLE_EVT_SCANNABLE_BIT);
-    } else if (legacy_evt_type == BTM_BLE_ADV_DIRECT_IND_EVT) {
-      event_type |=
-          (1 << BLE_EVT_CONNECTABLE_BIT) | (1 << BLE_EVT_DIRECTED_BIT);
-    } else if (legacy_evt_type == BTM_BLE_ADV_SCAN_IND_EVT) {
-      event_type |= (1 << BLE_EVT_SCANNABLE_BIT);
-    } else if (legacy_evt_type == BTM_BLE_ADV_NONCONN_IND_EVT) {
-      event_type = (1 << BLE_EVT_LEGACY_BIT);              // 0x0010;
-    } else if (legacy_evt_type == BTM_BLE_SCAN_RSP_EVT) {  // SCAN_RSP;
-      // We can't distinguish between "SCAN_RSP to an ADV_IND", and "SCAN_RSP to
-      // an ADV_SCAN_IND", so always return "SCAN_RSP to an ADV_IND"
-      event_type |= (1 << BLE_EVT_CONNECTABLE_BIT) |
-                    (1 << BLE_EVT_SCANNABLE_BIT) |
-                    (1 << BLE_EVT_SCAN_RESPONSE_BIT);
-    } else {
-      log::error(
-          "Malformed LE Advertising Report Event - unsupported "
-          "legacy_event_type 0x{:02x}",
-          legacy_evt_type);
-      return;
-    }
-
-    btm_ble_process_adv_pkt_cont(
-        event_type, addr_type, bda, PHY_LE_1M, PHY_LE_NO_PACKET, NO_ADI_PRESENT,
-        TX_POWER_NOT_PRESENT, rssi, 0x00 /* no periodic adv */, pkt_data_len,
-        pkt_data, original_bda);
-  }
-}
-
-/**
  * This function is called after random address resolution is done, and proceed
  * to process adv packet.
  */
@@ -2857,22 +2680,6 @@ void btm_ble_process_adv_pkt_cont_for_inquiry(
                        const_cast<uint8_t*>(advertising_data.data()),
                        advertising_data.size());
   }
-}
-
-void btm_ble_process_phy_update_pkt(uint8_t len, uint8_t* data) {
-  uint8_t status, tx_phy, rx_phy;
-  uint16_t handle;
-
-  LOG_ASSERT(len == 5);
-  uint8_t* p = data;
-  STREAM_TO_UINT8(status, p);
-  STREAM_TO_UINT16(handle, p);
-  handle = handle & 0x0FFF;
-  STREAM_TO_UINT8(tx_phy, p);
-  STREAM_TO_UINT8(rx_phy, p);
-
-  gatt_notify_phy_updated(static_cast<tHCI_STATUS>(status), handle, tx_phy,
-                          rx_phy);
 }
 
 /*******************************************************************************
