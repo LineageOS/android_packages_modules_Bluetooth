@@ -872,6 +872,8 @@ void BTM_BleReadControllerFeatures(tBTM_BLE_CTRL_FEATURES_CBACK* p_vsc_cback) {
         vendor_capabilities.bluetooth_quality_report_support_;
     btm_cb.cmn_ble_vsc_cb.dynamic_audio_buffer_support =
         vendor_capabilities.dynamic_audio_buffer_support_;
+    btm_cb.cmn_ble_vsc_cb.a2dp_offload_v2_support =
+        vendor_capabilities.a2dp_offload_v2_support_;
 
     if (vendor_capabilities.dynamic_audio_buffer_support_) {
       std::array<bluetooth::hci::DynamicAudioBufferCodecCapability,
