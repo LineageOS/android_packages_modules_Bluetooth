@@ -38,7 +38,7 @@ cc_defaults {
         misc_undefined: ["bounds"],
     },
     c_std: "c99",
-    cpp_std: "c++17",
+    cpp_std: "c++20",
     cflags: [
         "-DGOOGLE_PROTOBUF_NO_RTTI",
         "-Wall",
