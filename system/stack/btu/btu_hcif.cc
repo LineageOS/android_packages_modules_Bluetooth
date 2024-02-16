@@ -112,11 +112,8 @@ static void btu_hcif_read_local_oob_complete(const uint8_t* p,
 static void btu_hcif_io_cap_request_evt(const uint8_t* p);
 static void btu_hcif_io_cap_response_evt(const uint8_t* p);
 
-static void btu_ble_ll_conn_param_upd_evt(uint8_t* p, uint16_t evt_len);
 static void btu_ble_proc_ltk_req(uint8_t* p, uint16_t evt_len);
 static void btu_hcif_encryption_key_refresh_cmpl_evt(uint8_t* p);
-static void btu_ble_data_length_change_evt(uint8_t* p, uint16_t evt_len);
-static void btu_ble_rc_param_req_evt(uint8_t* p, uint8_t len);
 
 /**
  * Log HCI event metrics that are not handled in special functions
@@ -328,31 +325,11 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id,
 
       uint8_t ble_evt_len = hci_evt_len - 1;
       switch (ble_sub_code) {
-        case HCI_BLE_ADV_PKT_RPT_EVT: /* result of inquiry */
-          btm_ble_process_adv_pkt(ble_evt_len, p);
-          break;
-        case HCI_BLE_LL_CONN_PARAM_UPD_EVT:
-          btu_ble_ll_conn_param_upd_evt(p, ble_evt_len);
-          break;
         case HCI_BLE_READ_REMOTE_FEAT_CMPL_EVT:
           btm_ble_read_remote_features_complete(p, ble_evt_len);
           break;
         case HCI_BLE_LTK_REQ_EVT: /* received only at peripheral device */
           btu_ble_proc_ltk_req(p, ble_evt_len);
-          break;
-        case HCI_BLE_RC_PARAM_REQ_EVT:
-          btu_ble_rc_param_req_evt(p, ble_evt_len);
-          break;
-        case HCI_BLE_DATA_LENGTH_CHANGE_EVT:
-          btu_ble_data_length_change_evt(p, hci_evt_len);
-          break;
-
-        case HCI_BLE_PHY_UPDATE_COMPLETE_EVT:
-          btm_ble_process_phy_update_pkt(ble_evt_len, p);
-          break;
-
-        case HCI_LE_EXTENDED_ADVERTISING_REPORT_EVT:
-          btm_ble_process_ext_adv_pkt(hci_evt_len, p);
           break;
 
         case HCI_BLE_REQ_PEER_SCA_CPL_EVT:
@@ -369,18 +346,6 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id,
                                                     ble_evt_len);
           break;
 
-        case HCI_LE_PERIODIC_ADV_SYNC_TRANSFERE_RECEIVED_EVT:
-          btm_ble_periodic_adv_sync_tx_rcvd(p, hci_evt_len);
-          break;
-
-        case HCI_LE_BIGINFO_ADVERTISING_REPORT_EVT:
-          btm_ble_biginfo_adv_report_rcvd(p, hci_evt_len);
-          break;
-
-          // Events are now captured by gd/hci/le_acl_connection_interface.h
-        case HCI_BLE_CONN_COMPLETE_EVT:  // SubeventCode::CONNECTION_COMPLETE
-        case HCI_BLE_ENHANCED_CONN_COMPLETE_EVT:  // SubeventCode::ENHANCED_CONNECTION_COMPLETE
-        case HCI_LE_SUBRATE_CHANGE_EVT:  // SubeventCode::LE_SUBRATE_CHANGE
         default:
           log::error(
               "Unexpectedly received LE sub_event_code:0x{:02x} that should "
@@ -390,11 +355,8 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id,
       }
     } break;
 
-    case HCI_VENDOR_SPECIFIC_EVT:
-      btm_vendor_specific_evt(const_cast<const uint8_t*>(p), hci_evt_len);
-      break;
-
       // Events now captured by gd::hci_layer module
+    case HCI_VENDOR_SPECIFIC_EVT:
     case HCI_HARDWARE_ERROR_EVT:
     case HCI_NUM_COMPL_DATA_PKTS_EVT:  // EventCode::NUMBER_OF_COMPLETED_PACKETS
     case HCI_CONNECTION_COMP_EVT:  // EventCode::CONNECTION_COMPLETE
@@ -1521,31 +1483,6 @@ static void btu_hcif_encryption_key_refresh_cmpl_evt(uint8_t* p) {
  * BLE Events
  **********************************************/
 
-static void btu_ble_ll_conn_param_upd_evt(uint8_t* p, uint16_t evt_len) {
-  /* LE connection update has completed successfully as a central. */
-  /* We can enable the update request if the result is a success. */
-  /* extract the HCI handle first */
-  uint8_t status;
-  uint16_t handle;
-  uint16_t interval;
-  uint16_t latency;
-  uint16_t timeout;
-
-  if (evt_len < 9) {
-    log::error("Malformated event packet, too short");
-    return;
-  }
-
-  STREAM_TO_UINT8(status, p);
-  STREAM_TO_UINT16(handle, p);
-  STREAM_TO_UINT16(interval, p);
-  STREAM_TO_UINT16(latency, p);
-  STREAM_TO_UINT16(timeout, p);
-
-  acl_ble_update_event_received(static_cast<tHCI_STATUS>(status), handle,
-                                interval, latency, timeout);
-}
-
 static void btu_ble_proc_ltk_req(uint8_t* p, uint16_t evt_len) {
   uint16_t ediv, handle;
   uint8_t* pp;
@@ -1569,48 +1506,6 @@ static void btu_ble_proc_ltk_req(uint8_t* p, uint16_t evt_len) {
   /* This is empty until an upper layer cares about returning event */
 }
 
-static void btu_ble_data_length_change_evt(uint8_t* p, uint16_t evt_len) {
-  uint16_t handle;
-  uint16_t tx_data_len;
-  uint16_t rx_data_len;
-
-  if (!controller_get_interface()->SupportsBleDataPacketLengthExtension()) {
-    log::warn("request not supported");
-    return;
-  }
-
-  // 2 bytes each for handle, tx_data_len, TxTimer, rx_data_len
-  if (evt_len < 8) {
-    log::error("Event packet too short");
-    return;
-  }
-
-  STREAM_TO_UINT16(handle, p);
-  STREAM_TO_UINT16(tx_data_len, p);
-  p += 2; /* Skip the TxTimer */
-  STREAM_TO_UINT16(rx_data_len, p);
-
-  l2cble_process_data_length_change_event(handle, tx_data_len, rx_data_len);
-}
-
 /**********************************************
  * End of BLE Events Handler
  **********************************************/
-static void btu_ble_rc_param_req_evt(uint8_t* p, uint8_t len) {
-  uint16_t handle;
-  uint16_t int_min, int_max, latency, timeout;
-
-  if (len < 10) {
-    log::error("bogus event packet, too short");
-    return;
-  }
-
-  STREAM_TO_UINT16(handle, p);
-  STREAM_TO_UINT16(int_min, p);
-  STREAM_TO_UINT16(int_max, p);
-  STREAM_TO_UINT16(latency, p);
-  STREAM_TO_UINT16(timeout, p);
-
-  l2cble_process_rc_param_request_evt(handle, int_min, int_max, latency,
-                                      timeout);
-}

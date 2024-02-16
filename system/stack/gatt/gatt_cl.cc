@@ -25,6 +25,7 @@
 #define LOG_TAG "bluetooth"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 #include <string.h>
 
 #include "gatt_int.h"
@@ -53,7 +54,7 @@
 
 #define L2CAP_PKT_OVERHEAD 4
 
-using base::StringPrintf;
+using namespace bluetooth;
 using bluetooth::Uuid;
 using bluetooth::eatt::EattExtension;
 using bluetooth::eatt::EattChannel;
@@ -94,7 +95,7 @@ void gatt_act_discovery(tGATT_CLCB* p_clcb) {
   uint8_t op_code = disc_type_to_att_opcode[p_clcb->op_subtype];
 
   if (p_clcb->s_handle > p_clcb->e_handle || p_clcb->s_handle == 0) {
-    LOG_DEBUG("Completed GATT discovery of all handle ranges");
+    log::debug("Completed GATT discovery of all handle ranges");
     gatt_end_operation(p_clcb, GATT_SUCCESS, NULL);
     return;
   }
@@ -135,7 +136,7 @@ void gatt_act_discovery(tGATT_CLCB* p_clcb) {
 
   tGATT_STATUS st = attp_send_cl_msg(*p_clcb->p_tcb, p_clcb, op_code, &cl_req);
   if (st != GATT_SUCCESS && st != GATT_CMD_STARTED) {
-    LOG_WARN("Unable to send ATT message");
+    log::warn("Unable to send ATT message");
     gatt_end_operation(p_clcb, GATT_ERROR, NULL);
   }
 }
@@ -181,8 +182,8 @@ void gatt_act_read(tGATT_CLCB* p_clcb, uint16_t offset) {
         else
           p_clcb->first_read_blob_after_read = false;
 
-        VLOG(1) << __func__ << ": first_read_blob_after_read="
-                << p_clcb->first_read_blob_after_read;
+        log::verbose("first_read_blob_after_read={}",
+                     p_clcb->first_read_blob_after_read);
         op_code = GATT_REQ_READ_BLOB;
         msg.read_blob.offset = offset;
         msg.read_blob.handle = p_clcb->s_handle;
@@ -213,7 +214,7 @@ void gatt_act_read(tGATT_CLCB* p_clcb, uint16_t offset) {
       break;
 
     default:
-      LOG(ERROR) << "Unknown read type:" << +p_clcb->op_subtype;
+      log::error("Unknown read type:{}", p_clcb->op_subtype);
       break;
   }
 
@@ -242,8 +243,8 @@ void gatt_act_write(tGATT_CLCB* p_clcb, uint8_t sec_act) {
                                             attr.len, 0, attr.value);
       if (rt != GATT_CMD_STARTED) {
         if (rt != GATT_SUCCESS) {
-          LOG(ERROR) << StringPrintf(
-              "gatt_act_write() failed op_code=0x%x rt=%d", op_code, rt);
+          log::error("gatt_act_write() failed op_code=0x{:x} rt={}", op_code,
+                     rt);
         }
         gatt_end_operation(p_clcb, rt, NULL);
       }
@@ -259,9 +260,8 @@ void gatt_act_write(tGATT_CLCB* p_clcb, uint8_t sec_act) {
         if (rt != GATT_SUCCESS && rt != GATT_CMD_STARTED &&
             rt != GATT_CONGESTED) {
           if (rt != GATT_SUCCESS) {
-            LOG(ERROR) << StringPrintf(
-                "gatt_act_write() failed op_code=0x%x rt=%d", GATT_REQ_WRITE,
-                rt);
+            log::error("gatt_act_write() failed op_code=0x{:x} rt={}",
+                       GATT_REQ_WRITE, rt);
           }
           gatt_end_operation(p_clcb, rt, NULL);
         }
@@ -295,7 +295,7 @@ void gatt_send_queue_write_cancel(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
                                   tGATT_EXEC_FLAG flag) {
   tGATT_STATUS rt;
 
-  VLOG(1) << __func__;
+  log::verbose("");
 
   tGATT_CL_MSG gatt_cl_msg;
   gatt_cl_msg.exec_write = flag;
@@ -320,7 +320,7 @@ bool gatt_check_write_long_terminate(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
   bool terminate = false;
   tGATT_EXEC_FLAG flag = GATT_PREP_WRITE_EXEC;
 
-  VLOG(1) << __func__;
+  log::verbose("");
   /* check the first write response status */
   if (p_rsp_value != NULL) {
     if (p_rsp_value->handle != p_attr->handle ||
@@ -349,7 +349,7 @@ void gatt_send_prepare_write(tGATT_TCB& tcb, tGATT_CLCB* p_clcb) {
   tGATT_VALUE* p_attr = (tGATT_VALUE*)p_clcb->p_attr_buf;
   uint8_t type = p_clcb->op_subtype;
 
-  VLOG(1) << __func__ << StringPrintf(" type=0x%x", type);
+  log::verbose("type=0x{:x}", type);
   uint16_t to_send = p_attr->len - p_attr->offset;
 
   uint16_t payload_size = gatt_tcb_get_payload_size(tcb, p_clcb->cid);
@@ -364,7 +364,7 @@ void gatt_send_prepare_write(tGATT_TCB& tcb, tGATT_CLCB* p_clcb) {
     offset += p_clcb->start_offset;
   }
 
-  VLOG(1) << StringPrintf("offset =0x%x len=%d", offset, to_send);
+  log::verbose("offset =0x{:x} len={}", offset, to_send);
 
   tGATT_STATUS rt = gatt_send_write_msg(
       tcb, p_clcb, GATT_REQ_PREPARE_WRITE, p_attr->handle, to_send, /* length */
@@ -395,7 +395,7 @@ void gatt_process_find_type_value_rsp(UNUSED_ATTR tGATT_TCB& tcb,
   tGATT_DISC_RES result;
   uint8_t* p = p_data;
 
-  VLOG(1) << __func__;
+  log::verbose("");
   /* unexpected response */
   if (p_clcb->operation != GATTC_OPTYPE_DISCOVERY ||
       p_clcb->op_subtype != GATT_DISC_SRVC_BY_UUID)
@@ -443,7 +443,7 @@ void gatt_process_read_info_rsp(UNUSED_ATTR tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
   uint8_t *p = p_data, uuid_len = 0, type;
 
   if (len < GATT_INFO_RSP_MIN_LEN) {
-    LOG(ERROR) << "invalid Info Response PDU received, discard.";
+    log::error("invalid Info Response PDU received, discard.");
     gatt_end_operation(p_clcb, GATT_INVALID_PDU, NULL);
     return;
   }
@@ -495,8 +495,7 @@ void gatt_proc_disc_error_rsp(UNUSED_ATTR tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
                               uint8_t reason) {
   tGATT_STATUS status = (tGATT_STATUS)reason;
 
-  VLOG(1) << __func__
-          << StringPrintf("reason: %02x cmd_code %04x", reason, opcode);
+  log::verbose("reason: {:02x} cmd_code {:04x}", reason, opcode);
 
   switch (opcode) {
     case GATT_REQ_READ_BY_GRP_TYPE:
@@ -505,11 +504,11 @@ void gatt_proc_disc_error_rsp(UNUSED_ATTR tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
     case GATT_REQ_FIND_INFO:
       if (reason == GATT_NOT_FOUND) {
         status = GATT_SUCCESS;
-        VLOG(1) << "Discovery completed";
+        log::verbose("Discovery completed");
       }
       break;
     default:
-      LOG(ERROR) << StringPrintf("Incorrect discovery opcode %04x", opcode);
+      log::error("Incorrect discovery opcode {:04x}", opcode);
       break;
   }
 
@@ -534,10 +533,10 @@ void gatt_process_error_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
   uint16_t handle;
   tGATT_VALUE* p_attr = (tGATT_VALUE*)p_clcb->p_attr_buf;
 
-  VLOG(1) << __func__;
+  log::verbose("");
 
   if (len < 4) {
-    LOG(ERROR) << "Error response too short";
+    log::error("Error response too short");
     // Specification does not clearly define what should happen if error
     // response is too short. General rule in BT Spec 5.0 Vol 3, Part F 3.4.1.1
     // is: "If an error code is received in the Error Response that is not
@@ -593,12 +592,12 @@ void gatt_process_prep_write_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
       .conn_id = p_clcb->conn_id, .auth_req = GATT_AUTH_REQ_NONE,
   };
 
-  VLOG(1) << StringPrintf("value resp op_code = %s len = %d",
-                          gatt_dbg_op_name(op_code), len);
+  log::verbose("value resp op_code = {} len = {}", gatt_dbg_op_name(op_code),
+               len);
 
   if (len < GATT_PREP_WRITE_RSP_MIN_LEN ||
       len > GATT_PREP_WRITE_RSP_MIN_LEN + sizeof(value.value)) {
-    LOG(ERROR) << "illegal prepare write response length, discard";
+    log::error("illegal prepare write response length, discard");
     gatt_end_operation(p_clcb, GATT_INVALID_PDU, &value);
     return;
   }
@@ -648,11 +647,11 @@ void gatt_process_notification(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code,
                             ? GATTC_OPTYPE_INDICATION
                             : GATTC_OPTYPE_NOTIFICATION;
 
-  VLOG(1) << __func__;
+  log::verbose("");
 
   // Ensure our packet has enough data (2 bytes)
   if (len < GATT_NOTIFICATION_MIN_LEN) {
-    LOG(ERROR) << "illegal notification PDU length, discard";
+    log::error("illegal notification PDU length, discard");
     return;
   }
 
@@ -671,7 +670,7 @@ void gatt_process_notification(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code,
   if (op_code == GATT_HANDLE_MULTI_VALUE_NOTIF) {
     // Ensure our packet has enough data; MIN + 2 more bytes for len value
     if (len < GATT_NOTIFICATION_MIN_LEN + 2) {
-      LOG(ERROR) << "illegal notification PDU length, discard";
+      log::error("illegal notification PDU length, discard");
       return;
     }
 
@@ -679,8 +678,8 @@ void gatt_process_notification(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code,
     STREAM_TO_UINT16(value.len, p);
 
     if (value.len > len - 4) {
-      LOG(ERROR) << "value.len (" << value.len << ") greater than length ("
-                 << (len - 4);
+      log::error("value.len ({}) greater than length ({})", value.len,
+                 (len - 4));
       return;
     }
 
@@ -691,7 +690,7 @@ void gatt_process_notification(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code,
 
   // Verify the new calculated length
   if (value.len > GATT_MAX_ATTR_LEN) {
-    LOG(ERROR) << "value.len larger than GATT_MAX_ATTR_LEN, discard";
+    log::error("value.len larger than GATT_MAX_ATTR_LEN, discard");
     return;
   }
 
@@ -703,8 +702,8 @@ void gatt_process_notification(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code,
          For now, just log the error reset the counter.
          Later we need to disconnect the link unconditionally.
       */
-      LOG(ERROR) << __func__ << " rcv Ind. but ind_count=" << tcb.ind_count
-                 << " (will reset ind_count)";
+      log::error("rcv Ind. but ind_count={} (will reset ind_count)",
+                 tcb.ind_count);
     }
 
     // Zero out the ind_count
@@ -764,7 +763,7 @@ void gatt_process_notification(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code,
     // we can Also need to watch comparing the int16_t with the uint16_t
     value.len = std::min((uint16_t)rem_len, value.len);
     if (value.len > sizeof(value.value)) {
-      LOG(ERROR) << "Unexpected value.len (>GATT_MAX_ATTR_LEN), stop";
+      log::error("Unexpected value.len (>GATT_MAX_ATTR_LEN), stop");
       return ;
     }
     STREAM_TO_ARRAY(value.value, p, value.len);
@@ -809,7 +808,7 @@ void gatt_process_read_by_type_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
     return;
 
   if (len < GATT_READ_BY_TYPE_RSP_MIN_LEN) {
-    LOG(ERROR) << "Illegal ReadByType/ReadByGroupType Response length, discard";
+    log::error("Illegal ReadByType/ReadByGroupType Response length, discard");
     gatt_end_operation(p_clcb, GATT_INVALID_PDU, NULL);
     return;
   }
@@ -820,11 +819,9 @@ void gatt_process_read_by_type_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
     /* this is an error case that server's response containing a value length
        which is larger than MTU-2
        or value_len > message total length -1 */
-    LOG(ERROR) << __func__
-               << StringPrintf(
-                      ": Discard response op_code=%d "
-                      "vale_len=%d > (MTU-2=%d or msg_len-1=%d)",
-                      op_code, value_len, (payload_size - 2), (len - 1));
+    log::error(
+        "Discard response op_code={} vale_len={} > (MTU-2={} or msg_len-1={})",
+        op_code, value_len, (payload_size - 2), (len - 1));
     gatt_end_operation(p_clcb, GATT_ERROR, NULL);
     return;
   }
@@ -862,7 +859,7 @@ void gatt_process_read_by_type_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
         record_value.group_value.e_handle = handle;
         if (!gatt_parse_uuid_from_cmd(&record_value.group_value.service_type,
                                       value_len, &p)) {
-          LOG(ERROR) << "discover all service response parsing failure";
+          log::error("discover all service response parsing failure");
           break;
         }
       }
@@ -871,7 +868,7 @@ void gatt_process_read_by_type_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
     else if (p_clcb->operation == GATTC_OPTYPE_DISCOVERY &&
              p_clcb->op_subtype == GATT_DISC_INC_SRVC) {
       if (value_len < 4) {
-        LOG(ERROR) << __func__ << " Illegal Response length, must be at least 4.";
+        log::error("Illegal Response length, must be at least 4.");
         gatt_end_operation(p_clcb, GATT_INVALID_PDU, NULL);
         return;
       }
@@ -900,9 +897,8 @@ void gatt_process_read_by_type_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
         gatt_act_read(p_clcb, 0);
         return;
       } else {
-        LOG(ERROR) << __func__
-                   << ": INCL_SRVC failed with invalid data value_len="
-                   << +value_len;
+        log::error("INCL_SRVC failed with invalid data value_len={}",
+                   value_len);
         gatt_end_operation(p_clcb, GATT_INVALID_PDU, (void*)p);
         return;
       }
@@ -929,7 +925,7 @@ void gatt_process_read_by_type_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
     } else /* discover characteristic */
     {
       if (value_len < 3) {
-        LOG(ERROR) << __func__ << " Illegal Response length, must be at least 3.";
+        log::error("Illegal Response length, must be at least 3.");
         gatt_end_operation(p_clcb, GATT_INVALID_PDU, NULL);
         return;
       }
@@ -1037,9 +1033,9 @@ void gatt_process_read_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
 
         /* send next request if needed  */
         if (packet_is_full && (len + offset < GATT_MAX_ATTR_LEN)) {
-          VLOG(1) << StringPrintf(
-              "full pkt issue read blob for remaining bytes old offset=%d "
-              "len=%d new offset=%d",
+          log::verbose(
+              "full pkt issue read blob for remaining bytes old offset={} "
+              "len={} new offset={}",
               offset, len, p_clcb->counter);
           gatt_act_read(p_clcb, p_clcb->counter);
         } else /* end of request, send callback */
@@ -1048,8 +1044,8 @@ void gatt_process_read_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
         }
       } else /* exception, should not happen */
       {
-        LOG(ERROR) << "attr offset = " << +offset
-                   << " p_attr_buf = " << p_clcb->p_attr_buf;
+        log::error("attr offset = {} p_attr_buf = {}", offset,
+                   fmt::ptr(p_clcb->p_attr_buf));
         gatt_end_operation(p_clcb, GATT_NO_RESOURCES,
                            (void*)p_clcb->p_attr_buf);
       }
@@ -1104,14 +1100,14 @@ void gatt_process_mtu_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb, uint16_t len,
   tGATT_STATUS status = GATT_SUCCESS;
 
   if (len < GATT_MTU_RSP_MIN_LEN) {
-    LOG(ERROR) << "invalid MTU response PDU received, discard.";
+    log::error("invalid MTU response PDU received, discard.");
     status = GATT_INVALID_PDU;
   } else {
     STREAM_TO_UINT16(mtu, p_data);
 
-    LOG_INFO("Local pending MTU %d, Remote (%s) MTU %d",
-             tcb.pending_user_mtu_exchange_value,
-             tcb.peer_bda.ToString().c_str(), mtu);
+    log::info("Local pending MTU {}, Remote ({}) MTU {}",
+              tcb.pending_user_mtu_exchange_value,
+              ADDRESS_TO_LOGGABLE_STR(tcb.peer_bda), mtu);
 
     /* Aim for default as we did in the request */
     if (mtu < GATT_DEF_BLE_MTU_SIZE) {
@@ -1133,7 +1129,7 @@ void gatt_process_mtu_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb, uint16_t len,
     }
     tcb.pending_user_mtu_exchange_value = 0;
 
-    LOG_INFO("MTU Exchange resulted in: %d", tcb.payload_size);
+    log::info("MTU Exchange resulted in: {}", tcb.payload_size);
 
     BTM_SetBleDataLength(tcb.peer_bda, tcb.max_user_mtu + L2CAP_PKT_OVERHEAD);
   }
@@ -1184,7 +1180,7 @@ bool gatt_cl_send_next_cmd_inq(tGATT_TCB& tcb) {
     att_ret = attp_send_msg_to_l2cap(tcb, cmd.cid, cmd.p_cmd);
 
     if (att_ret != GATT_SUCCESS && att_ret != GATT_CONGESTED) {
-      LOG(ERROR) << __func__ << ": L2CAP sent error";
+      log::error("L2CAP sent error");
       cl_cmd_q->pop_front();
       continue;
     }
@@ -1217,16 +1213,15 @@ bool gatt_cl_send_next_cmd_inq(tGATT_TCB& tcb) {
 void gatt_client_handle_server_rsp(tGATT_TCB& tcb, uint16_t cid,
                                    uint8_t op_code, uint16_t len,
                                    uint8_t* p_data) {
-  VLOG(1) << __func__ << " opcode: " << loghex(op_code) << " cid" << +cid;
+  log::verbose("opcode: {} cid{}", loghex(op_code), cid);
 
   uint16_t payload_size = gatt_tcb_get_payload_size(tcb, cid);
 
   if (op_code == GATT_HANDLE_VALUE_IND || op_code == GATT_HANDLE_VALUE_NOTIF ||
       op_code == GATT_HANDLE_MULTI_VALUE_NOTIF) {
     if (len >= payload_size) {
-      LOG(ERROR) << StringPrintf(
-          "%s: invalid indicate pkt size: %d, PDU size: %d", __func__, len + 1,
-          payload_size);
+      log::error("invalid indicate pkt size: {}, PDU size: {}", len + 1,
+                 payload_size);
       return;
     }
 
@@ -1237,21 +1232,22 @@ void gatt_client_handle_server_rsp(tGATT_TCB& tcb, uint16_t cid,
   uint8_t cmd_code = 0;
   tGATT_CLCB* p_clcb = gatt_cmd_dequeue(tcb, cid, &cmd_code);
   if (!p_clcb) {
-    LOG_WARN("ATT - clcb already not in use, ignoring response");
+    log::warn("ATT - clcb already not in use, ignoring response");
     gatt_cl_send_next_cmd_inq(tcb);
     return;
   }
 
   uint8_t rsp_code = gatt_cmd_to_rsp_code(cmd_code);
   if (!p_clcb) {
-    LOG_WARN("ATT - clcb already not in use, ignoring response");
+    log::warn("ATT - clcb already not in use, ignoring response");
     gatt_cl_send_next_cmd_inq(tcb);
     return;
   }
 
   if (rsp_code != op_code && op_code != GATT_RSP_ERROR) {
-    LOG(WARNING) << StringPrintf(
-        "ATT - Ignore wrong response. Receives (%02x) Request(%02x) Ignored",
+    log::warn(
+        "ATT - Ignore wrong response. Receives ({:02x}) Request({:02x}) "
+        "Ignored",
         op_code, rsp_code);
     return;
   }
@@ -1263,9 +1259,8 @@ void gatt_client_handle_server_rsp(tGATT_TCB& tcb, uint16_t cid,
   /* The message has to be smaller than the agreed MTU, len does not count
    * op_code */
   if (len >= payload_size) {
-    LOG(ERROR) << StringPrintf(
-        "%s: invalid response pkt size: %d, PDU size: %d", __func__, len + 1,
-        payload_size);
+    log::error("invalid response pkt size: {}, PDU size: {}", len + 1,
+               payload_size);
     gatt_end_operation(p_clcb, GATT_ERROR, NULL);
   } else {
     switch (op_code) {
@@ -1310,7 +1305,7 @@ void gatt_client_handle_server_rsp(tGATT_TCB& tcb, uint16_t cid,
         break;
 
       default:
-        LOG(ERROR) << __func__ << ": Unknown opcode = " << std::hex << op_code;
+        log::error("Unknown opcode = {:x}", op_code);
         break;
     }
   }
