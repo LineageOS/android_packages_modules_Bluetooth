@@ -22,6 +22,7 @@ cc_library_static {
     name: "libbte",
     defaults: ["fluoride_defaults"],
     srcs: [
+        ":BluetoothStackManagerSources",
         ":LibBluetoothShimSources",
         ":LibBluetoothSources",
     ],
@@ -125,6 +126,7 @@ cc_library_static {
     defaults: ["fluoride_defaults"],
 
     srcs: [
+        ":BluetoothStackManagerSources",
         ":LibBluetoothShimSources",
         ":LibBluetoothSources",
     ],
