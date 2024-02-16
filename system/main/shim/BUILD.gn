@@ -13,7 +13,42 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
+#
+source_set("BluetoothStackManagerSources") {
+  sources = [
+    "entry.cc",
+    "stack.cc",
+  ]
 
+  include_dirs = [
+    "//bt/system",
+    "//bt/system/btif/include",
+    "//bt/system/gd",
+    "//bt/system/gd/rust/shim",
+    "//bt/system/stack/include",
+    "//bt/system/types",
+  ]
+
+  deps = [
+    "//bt/system/gd:BluetoothGeneratedDumpsysDataSchema_h",
+    "//bt/system/gd/common:BluetoothCommonSources",
+    "//bt/system/gd/dumpsys/bundler:BluetoothGeneratedBundlerSchema_h_bfbs",
+    "//bt/system/gd/hci:BluetoothHciSources",
+    "//bt/system/gd/os:BluetoothOsSources_linux_generic",
+    "//bt/system/gd/packet:BluetoothPacketSources",
+    "//bt/system/gd/rust/shim:libbluetooth_rust_interop",
+    "//bt/system/gd/rust/topshim:libbluetooth_topshim",
+    "//bt/system/osi",
+    "//bt/system/pdl:BluetoothGeneratedPackets_h",
+    "//bt/system/stack",
+    "//bt/system/types",
+  ]
+
+  configs += [
+    "//bt/system:target_defaults",
+    "//bt/system/log:log_defaults",
+  ]
+}
 source_set("LibBluetoothShimSources") {
   sources = [
     "acl.cc",
@@ -25,7 +60,6 @@ source_set("LibBluetoothShimSources") {
     "controller.cc",
     "distance_measurement_manager.cc",
     "dumpsys.cc",
-    "entry.cc",
     "hci_layer.cc",
     "l2c_api.cc",
     "le_advertising_manager.cc",
@@ -33,7 +67,6 @@ source_set("LibBluetoothShimSources") {
     "metric_id_api.cc",
     "metrics_api.cc",
     "shim.cc",
-    "stack.cc",
     "utils.cc",
   ]
 
