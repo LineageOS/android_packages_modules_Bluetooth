@@ -1563,4 +1563,248 @@ public class BassClientServiceTest {
             }
         }
     }
+
+    private void prepareTwoSynchronizedDevices() {
+        BluetoothLeBroadcastMetadata meta = createBroadcastMetadata(TEST_BROADCAST_ID);
+
+        doReturn(new ArrayList<BluetoothLeBroadcastMetadata>(Arrays.asList(meta)))
+                .when(mLeAudioService)
+                .getAllBroadcastMetadata();
+        prepareConnectedDeviceGroup();
+
+        verifyAddSourceForGroup(meta);
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            if (sm.getDevice().equals(mCurrentDevice)) {
+                injectRemoteSourceStateSourceAdded(
+                        sm,
+                        meta,
+                        TEST_SOURCE_ID,
+                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
+                        meta.isEncrypted()
+                                ? BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_DECRYPTING
+                                : BluetoothLeBroadcastReceiveState
+                                        .BIG_ENCRYPTION_STATE_NOT_ENCRYPTED,
+                        null);
+                // verify source id
+                try {
+                    verify(mCallback, timeout(TIMEOUT_MS).atLeastOnce())
+                            .onSourceAdded(
+                                    eq(mCurrentDevice),
+                                    eq(TEST_SOURCE_ID),
+                                    eq(BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST));
+                } catch (RemoteException e) {
+                    throw e.rethrowFromSystemServer();
+                }
+            } else if (sm.getDevice().equals(mCurrentDevice1)) {
+                injectRemoteSourceStateSourceAdded(
+                        sm,
+                        meta,
+                        TEST_SOURCE_ID + 1,
+                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
+                        meta.isEncrypted()
+                                ? BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_DECRYPTING
+                                : BluetoothLeBroadcastReceiveState
+                                        .BIG_ENCRYPTION_STATE_NOT_ENCRYPTED,
+                        null);
+                // verify source id
+                try {
+                    verify(mCallback, timeout(TIMEOUT_MS).atLeastOnce())
+                            .onSourceAdded(
+                                    eq(mCurrentDevice1),
+                                    eq(TEST_SOURCE_ID + 1),
+                                    eq(BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST));
+                } catch (RemoteException e) {
+                    throw e.rethrowFromSystemServer();
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testPrivateBroadcastIntentionalDisconnection() {
+        prepareTwoSynchronizedDevices();
+
+        /* Imitate broadcast being active */
+        doReturn(true).when(mLeAudioService).isPlaying(TEST_BROADCAST_ID);
+        /* Imitate devices being primary */
+        doReturn(true).when(mLeAudioService).isPrimaryDevice(mCurrentDevice);
+        doReturn(true).when(mLeAudioService).isPrimaryDevice(mCurrentDevice1);
+
+        /* Imitate device 1/2 disconnection from StateMachine context */
+        mBassClientService.handleDeviceDisconnection(mCurrentDevice, true);
+
+        /* After first device disconnection and de-synchronization expect not stopping broadcast */
+        verify(mLeAudioService, times(0)).stopBroadcast(eq(TEST_BROADCAST_ID));
+
+        /* Imitate first device being in disconnected state */
+        doReturn(BluetoothProfile.STATE_DISCONNECTED)
+                .when(mStateMachines.get(mCurrentDevice))
+                .getConnectionState();
+
+        /* Imitate device 2/2 disconnection from StateMachine context */
+        mBassClientService.handleDeviceDisconnection(mCurrentDevice1, true);
+
+        /* After second device disconnection and de-synchronization expect stopping broadcast */
+        verify(mLeAudioService, times(1)).stopBroadcast(eq(TEST_BROADCAST_ID));
+    }
+
+    @Test
+    public void testPrivateBroadcastUnintentionalDisconnection() {
+        prepareTwoSynchronizedDevices();
+
+        /* Imitate broadcast being active */
+        doReturn(true).when(mLeAudioService).isPlaying(TEST_BROADCAST_ID);
+        /* Imitate devices being primary */
+        doReturn(true).when(mLeAudioService).isPrimaryDevice(mCurrentDevice);
+        doReturn(true).when(mLeAudioService).isPrimaryDevice(mCurrentDevice1);
+
+        /* Imitate device 1/2 disconnection from StateMachine context */
+        mBassClientService.handleDeviceDisconnection(mCurrentDevice, false);
+
+        /* After first device disconnection and de-synchronization expect not stopping broadcast */
+        verify(mLeAudioService, times(0)).stopBroadcast(eq(TEST_BROADCAST_ID));
+
+        /* Imitate first device being in disconnected state */
+        doReturn(BluetoothProfile.STATE_DISCONNECTED)
+                .when(mStateMachines.get(mCurrentDevice))
+                .getConnectionState();
+
+        /* Imitate device 2/2 disconnection from StateMachine context */
+        mBassClientService.handleDeviceDisconnection(mCurrentDevice1, false);
+
+        /* After second device disconnection and de-synchronization expect stopping broadcast */
+        verify(mLeAudioService, times(1)).stopBroadcast(eq(TEST_BROADCAST_ID));
+    }
+
+    @Test
+    public void testAudioSharingIntentionalDisconnection() {
+        prepareTwoSynchronizedDevices();
+
+        /* Imitate broadcast being active */
+        doReturn(true).when(mLeAudioService).isPlaying(TEST_BROADCAST_ID);
+        /* Imitate devices being primary */
+        doReturn(true).when(mLeAudioService).isPrimaryDevice(mCurrentDevice);
+        doReturn(false).when(mLeAudioService).isPrimaryDevice(mCurrentDevice1);
+
+        /* Imitate device 1/2 disconnection from StateMachine context */
+        mBassClientService.handleDeviceDisconnection(mCurrentDevice, true);
+
+        /* After first device disconnection and de-synchronization expect stopping broadcast */
+        verify(mLeAudioService, times(1)).stopBroadcast(eq(TEST_BROADCAST_ID));
+
+        /* Imitate first device being in disconnected state */
+        doReturn(BluetoothProfile.STATE_DISCONNECTED)
+                .when(mStateMachines.get(mCurrentDevice))
+                .getConnectionState();
+
+        /* Imitate device 2/2 disconnection from StateMachine context */
+        mBassClientService.handleDeviceDisconnection(mCurrentDevice1, true);
+
+        /* After second device disconnection and de-synchronization expect not stopping broadcast */
+        verify(mLeAudioService, times(1)).stopBroadcast(eq(TEST_BROADCAST_ID));
+    }
+
+    @Test
+    public void testAudioSharingUnintentionalDisconnection() {
+        prepareTwoSynchronizedDevices();
+
+        /* Imitate broadcast being active */
+        doReturn(true).when(mLeAudioService).isPlaying(TEST_BROADCAST_ID);
+        /* Imitate devices being primary */
+        doReturn(true).when(mLeAudioService).isPrimaryDevice(mCurrentDevice);
+        doReturn(false).when(mLeAudioService).isPrimaryDevice(mCurrentDevice1);
+
+        /* Imitate device 1/2 disconnection from StateMachine context */
+        mBassClientService.handleDeviceDisconnection(mCurrentDevice, false);
+
+        /* After first device disconnection and de-synchronization expect not stopping broadcast */
+        verify(mLeAudioService, times(0)).stopBroadcast(eq(TEST_BROADCAST_ID));
+
+        /* Imitate first device being in disconnected state */
+        doReturn(BluetoothProfile.STATE_DISCONNECTED)
+                .when(mStateMachines.get(mCurrentDevice))
+                .getConnectionState();
+
+        /* Imitate device 2/2 disconnection from StateMachine context */
+        mBassClientService.handleDeviceDisconnection(mCurrentDevice1, false);
+
+        /* After second device disconnection and de-synchronization timeout to be fired */
+        verify(mLeAudioService, times(0)).stopBroadcast(eq(TEST_BROADCAST_ID));
+    }
+
+    @Test
+    public void testNotifyBroadcastStateChangedStopped() {
+        BluetoothLeBroadcastMetadata meta = createBroadcastMetadata(TEST_BROADCAST_ID);
+
+        doReturn(new ArrayList<BluetoothLeBroadcastMetadata>(Arrays.asList(meta)))
+                .when(mLeAudioService)
+                .getAllBroadcastMetadata();
+        prepareConnectedDeviceGroup();
+
+        verifyAddSourceForGroup(meta);
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            if (sm.getDevice().equals(mCurrentDevice)) {
+                injectRemoteSourceStateSourceAdded(
+                        sm,
+                        meta,
+                        TEST_SOURCE_ID,
+                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
+                        meta.isEncrypted()
+                                ? BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_DECRYPTING
+                                : BluetoothLeBroadcastReceiveState
+                                        .BIG_ENCRYPTION_STATE_NOT_ENCRYPTED,
+                        null);
+                // verify source id
+                try {
+                    verify(mCallback, timeout(TIMEOUT_MS).atLeastOnce())
+                            .onSourceAdded(
+                                    eq(mCurrentDevice),
+                                    eq(TEST_SOURCE_ID),
+                                    eq(BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST));
+                } catch (RemoteException e) {
+                    throw e.rethrowFromSystemServer();
+                }
+            } else if (sm.getDevice().equals(mCurrentDevice1)) {
+                injectRemoteSourceStateSourceAdded(
+                        sm,
+                        meta,
+                        TEST_SOURCE_ID + 1,
+                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
+                        meta.isEncrypted()
+                                ? BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_DECRYPTING
+                                : BluetoothLeBroadcastReceiveState
+                                        .BIG_ENCRYPTION_STATE_NOT_ENCRYPTED,
+                        null);
+                // verify source id
+                try {
+                    verify(mCallback, timeout(TIMEOUT_MS).atLeastOnce())
+                            .onSourceAdded(
+                                    eq(mCurrentDevice1),
+                                    eq(TEST_SOURCE_ID + 1),
+                                    eq(BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST));
+                } catch (RemoteException e) {
+                    throw e.rethrowFromSystemServer();
+                }
+            }
+        }
+
+        /* Imitate broadcast being not active */
+        doReturn(false).when(mLeAudioService).isPlaying(TEST_BROADCAST_ID);
+
+        mBassClientService.notifyBroadcastStateChanged(
+                0 /* BROADCAST_STATE_STOPPED */, TEST_BROADCAST_ID);
+
+        /* Imitiate scenario when if there would be broadcast - stop would be called */
+        mBassClientService.handleDeviceDisconnection(mCurrentDevice, true);
+        mBassClientService.handleDeviceDisconnection(mCurrentDevice1, true);
+
+        /* Imitate first device being in disconnected state */
+        doReturn(BluetoothProfile.STATE_DISCONNECTED)
+                .when(mStateMachines.get(mCurrentDevice))
+                .getConnectionState();
+
+        /* After second device disconnection and de-synchronization expect not calling broadcast to
+         * stop due to previous broadcast stream stopped */
+        verify(mLeAudioService, times(0)).stopBroadcast(eq(TEST_BROADCAST_ID));
+    }
 }
