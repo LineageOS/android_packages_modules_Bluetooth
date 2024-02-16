@@ -47,3 +47,14 @@ inline tHCI_ROLE to_hci_role(const uint8_t& role) {
 
 typedef tHCI_ROLE hci_role_t;         // LEGACY
 const auto RoleText = hci_role_text;  // LEGACY
+
+#if __has_include(<bluetooth/log.h>)
+
+#include <bluetooth/log.h>
+
+namespace fmt {
+template <>
+struct formatter<tHCI_ROLE> : enum_formatter<tHCI_ROLE> {};
+}  // namespace fmt
+
+#endif  // __has_include(<bluetooth/log.h>)
