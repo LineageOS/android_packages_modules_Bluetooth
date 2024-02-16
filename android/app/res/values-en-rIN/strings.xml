@@ -135,4 +135,12 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Your device remembers to keep Bluetooth on in aeroplane mode. Turn off Bluetooth if you don\'t want it to stay on."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi and Bluetooth stay on"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Your device remembers to keep Wi-Fi and Bluetooth on in aeroplane mode. Turn off Wi-Fi and Bluetooth if you don\'t want them to stay on."</string>
+    <!-- no translation found for bluetooth_enabled_auto_on_title (1799541656310353393) -->
+    <skip />
+    <!-- no translation found for bluetooth_enabled_auto_on_message (1070556457440100730) -->
+    <skip />
+    <!-- no translation found for bluetooth_disable_auto_on (1085026923461565937) -->
+    <skip />
+    <!-- no translation found for bluetooth_notification_group (7251886707585872194) -->
+    <skip />
 </resources>

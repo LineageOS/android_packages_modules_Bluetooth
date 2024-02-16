@@ -135,4 +135,8 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"तपाईंको डिभाइस अर्को पटक हवाइजहाज मोडमा लैजाँदा तपाईंको फोनले ब्लुटुथ अन राख्नु पर्ने कुरा याद गर्छ। तपाईं ब्लुटुथ अन भइनरहोस् भन्ने चाहनुहुन्छ भने ब्लुटुथ अफ गर्नुहोस्।"</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi र ब्लुटुथ अन रहिरहने छन्"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"हवाइजहाज मोडमा पनि तपाईंको डिभाइसको Wi-Fi र ब्लुटुथ अन नै रहिरहने छन्। तपाईं Wi-Fi र ब्लुटुथ अन भइनरहोस् भन्ने चाहनुहुन्छ भने तिनलाई अफ गर्नुहोस्।"</string>
+    <string name="bluetooth_enabled_auto_on_title" msgid="1799541656310353393">"ब्लुटुथ स्वतः अन गरिएको छ"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="1070556457440100730">"स्वतः रिस्टार्ट गर्ने सुविधा ब्लुटुथसम्बन्धी सेटिङमा गई अन/अफ गर्न सकिन्छ।"</string>
+    <string name="bluetooth_disable_auto_on" msgid="1085026923461565937">"अफ गर्नुहोस्"</string>
+    <string name="bluetooth_notification_group" msgid="7251886707585872194">"ब्लुटुथको स्थिति स्वतः परिवर्तन गरियो"</string>
 </resources>

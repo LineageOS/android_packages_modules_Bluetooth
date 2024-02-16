@@ -135,4 +135,8 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"ອຸປະກອນຂອງທ່ານຈື່ວ່າຈະຕ້ອງເປີດ Bluetooth ປະໄວ້ໃນໂໝດຢູ່ໃນຍົນ. ປິດ Bluetooth ຫາກທ່ານບໍ່ຕ້ອງການໃຫ້ເປີດປະໄວ້."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi ແລະ Bluetooth ຈະເປີດປະໄວ້"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"ອຸປະກອນຂອງທ່ານຈື່ວ່າຈະຕ້ອງເປີດ Wi-Fi ແລະ Bluetooth ປະໄວ້ໃນໂໝດຢູ່ໃນຍົນ. ປິດ Wi-Fi ແລະ Bluetooth ຫາກທ່ານບໍ່ຕ້ອງການໃຫ້ເປີດປະໄວ້."</string>
+    <string name="bluetooth_enabled_auto_on_title" msgid="1799541656310353393">"Bluetooth ຖືກເປີດການນຳໃຊ້ໂດຍອັດຕະໂນມັດ"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="1070556457440100730">"ສາມາດເປີດ/ປິດການຣີສະຕາດອັດຕະໂນມັດໄດ້ໃນການຕັ້ງຄ່າ Bluetooth."</string>
+    <string name="bluetooth_disable_auto_on" msgid="1085026923461565937">"ປິດ"</string>
+    <string name="bluetooth_notification_group" msgid="7251886707585872194">"ການປ່ຽນສະຖານະ Bluetooth ອັດຕະໂນມັດ"</string>
 </resources>
