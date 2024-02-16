@@ -70,5 +70,5 @@ cc_defaults {
         "-Werror=reorder-init-list",
     ],
     c_std: "c99",
-    cpp_std: "c++17",
+    cpp_std: "c++20",
 }
