@@ -154,10 +154,8 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     SubeventCode code = event_packet.GetSubeventCode();
     switch (code) {
       case SubeventCode::CONNECTION_COMPLETE:
-        on_le_connection_complete(event_packet);
-        break;
       case SubeventCode::ENHANCED_CONNECTION_COMPLETE:
-        on_le_enhanced_connection_complete(event_packet);
+        on_le_connection_complete(event_packet);
         break;
       case SubeventCode::CONNECTION_UPDATE_COMPLETE:
         on_le_connection_update_complete(event_packet);
@@ -337,14 +335,53 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
   }
 
   void on_le_connection_complete(LeMetaEventView packet) {
-    LeConnectionCompleteView connection_complete = LeConnectionCompleteView::Create(packet);
-    ASSERT(connection_complete.IsValid());
-    auto status = connection_complete.GetStatus();
-    auto address = connection_complete.GetPeerAddress();
-    auto peer_address_type = connection_complete.GetPeerAddressType();
-    auto role = connection_complete.GetRole();
-    AddressWithType remote_address(address, peer_address_type);
-    AddressWithType local_address = le_address_manager_->GetInitiatorAddress();
+    ErrorCode status;
+    Address address;
+    AddressType peer_address_type;
+    Role role;
+    AddressWithType remote_address;
+    uint16_t handle, conn_interval, conn_latency, supervision_timeout;
+
+    if (packet.GetSubeventCode() == SubeventCode::CONNECTION_COMPLETE) {
+      LeConnectionCompleteView connection_complete = LeConnectionCompleteView::Create(packet);
+      ASSERT(connection_complete.IsValid());
+      status = connection_complete.GetStatus();
+      address = connection_complete.GetPeerAddress();
+      peer_address_type = connection_complete.GetPeerAddressType();
+      role = connection_complete.GetRole();
+      handle = connection_complete.GetConnectionHandle();
+      conn_interval = connection_complete.GetConnInterval();
+      conn_latency = connection_complete.GetConnLatency();
+      supervision_timeout = connection_complete.GetSupervisionTimeout();
+      remote_address = AddressWithType(address, peer_address_type);
+    } else if (packet.GetSubeventCode() == SubeventCode::ENHANCED_CONNECTION_COMPLETE) {
+      LeEnhancedConnectionCompleteView connection_complete =
+          LeEnhancedConnectionCompleteView::Create(packet);
+      ASSERT(connection_complete.IsValid());
+      status = connection_complete.GetStatus();
+      address = connection_complete.GetPeerAddress();
+      peer_address_type = connection_complete.GetPeerAddressType();
+      role = connection_complete.GetRole();
+      handle = connection_complete.GetConnectionHandle();
+      conn_interval = connection_complete.GetConnInterval();
+      conn_latency = connection_complete.GetConnLatency();
+      supervision_timeout = connection_complete.GetSupervisionTimeout();
+      AddressType remote_address_type;
+      switch (peer_address_type) {
+        case AddressType::PUBLIC_DEVICE_ADDRESS:
+        case AddressType::PUBLIC_IDENTITY_ADDRESS:
+          remote_address_type = AddressType::PUBLIC_DEVICE_ADDRESS;
+          break;
+        case AddressType::RANDOM_DEVICE_ADDRESS:
+        case AddressType::RANDOM_IDENTITY_ADDRESS:
+          remote_address_type = AddressType::RANDOM_DEVICE_ADDRESS;
+          break;
+      }
+      remote_address = AddressWithType(address, remote_address_type);
+    } else {
+      LOG_ALWAYS_FATAL("Bad subevent code:%02x", packet.GetSubeventCode());
+    }
+
     const bool in_filter_accept_list = is_device_in_accept_list(remote_address);
 
     if (role == hci::Role::CENTRAL) {
@@ -413,15 +450,10 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
       }
     }
 
-    uint16_t conn_interval = connection_complete.GetConnInterval();
-    uint16_t conn_latency = connection_complete.GetConnLatency();
-    uint16_t supervision_timeout = connection_complete.GetSupervisionTimeout();
     if (!check_connection_parameters(conn_interval, conn_interval, conn_latency, supervision_timeout)) {
       LOG_ERROR("Receive connection complete with invalid connection parameters");
       return;
     }
-
-    uint16_t handle = connection_complete.GetConnectionHandle();
     auto role_specific_data = initialize_role_specific_data(role);
     auto queue = std::make_shared<AclConnection::Queue>(10);
     auto queue_down_end = queue->GetDownEnd();
@@ -438,154 +470,20 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     connection->supervision_timeout_ = supervision_timeout;
     connection->in_filter_accept_list_ = in_filter_accept_list;
     connection->locally_initiated_ = (role == hci::Role::CENTRAL);
-    auto connection_callbacks = connection->GetEventCallbacks(
-        [this](uint16_t handle) { this->connections.invalidate(handle); });
-    if (std::holds_alternative<DataAsUninitializedPeripheral>(role_specific_data)) {
-      // the OnLeConnectSuccess event will be sent after receiving the On Advertising Set Terminated
-      // event, since we need it to know what local_address / advertising set the peer connected to.
-      // In the meantime, we store it as a pending_connection.
-      connections.add(
-          handle,
-          remote_address,
-          std::move(connection),
-          queue_down_end,
-          handler_,
-          connection_callbacks);
-    } else {
-      connections.add(
-          handle, remote_address, nullptr, queue_down_end, handler_, connection_callbacks);
-      le_client_handler_->Post(common::BindOnce(
-          &LeConnectionCallbacks::OnLeConnectSuccess,
-          common::Unretained(le_client_callbacks_),
-          remote_address,
-          std::move(connection)));
-      if (le_acceptlist_callbacks_ != nullptr) {
-        le_acceptlist_callbacks_->OnLeConnectSuccess(remote_address);
-      }
+
+    if (packet.GetSubeventCode() == SubeventCode::ENHANCED_CONNECTION_COMPLETE) {
+      LeEnhancedConnectionCompleteView connection_complete =
+          LeEnhancedConnectionCompleteView::Create(packet);
+      ASSERT(connection_complete.IsValid());
+
+      connection->local_resolvable_private_address_ =
+          connection_complete.GetLocalResolvablePrivateAddress();
+      connection->peer_resolvable_private_address_ =
+          connection_complete.GetPeerResolvablePrivateAddress();
     }
-  }
-
-  void on_le_enhanced_connection_complete(LeMetaEventView packet) {
-    LeEnhancedConnectionCompleteView connection_complete = LeEnhancedConnectionCompleteView::Create(packet);
-    ASSERT(connection_complete.IsValid());
-    auto status = connection_complete.GetStatus();
-    auto address = connection_complete.GetPeerAddress();
-    auto peer_address_type = connection_complete.GetPeerAddressType();
-    auto peer_resolvable_address = connection_complete.GetPeerResolvablePrivateAddress();
-    auto role = connection_complete.GetRole();
-
-    AddressType remote_address_type;
-    switch (peer_address_type) {
-      case AddressType::PUBLIC_DEVICE_ADDRESS:
-      case AddressType::PUBLIC_IDENTITY_ADDRESS:
-        remote_address_type = AddressType::PUBLIC_DEVICE_ADDRESS;
-        break;
-      case AddressType::RANDOM_DEVICE_ADDRESS:
-      case AddressType::RANDOM_IDENTITY_ADDRESS:
-        remote_address_type = AddressType::RANDOM_DEVICE_ADDRESS;
-        break;
-    }
-    AddressWithType remote_address(address, remote_address_type);
-    const bool in_filter_accept_list = is_device_in_accept_list(remote_address);
-
-
-    if (role == hci::Role::CENTRAL) {
-      connectability_state_ = ConnectabilityState::DISARMED;
-      if (status == ErrorCode::UNKNOWN_CONNECTION && pause_connection) {
-        on_le_connection_canceled_on_pause();
-        return;
-      }
-      if (status == ErrorCode::UNKNOWN_CONNECTION && arm_on_disarm_) {
-        arm_on_disarm_ = false;
-        arm_connectability();
-        return;
-      }
-      on_common_le_connection_complete(remote_address);
-      if (status == ErrorCode::UNKNOWN_CONNECTION) {
-        if (remote_address.GetAddress() != Address::kEmpty) {
-          LOG_INFO("Controller send non-empty address field:%s",
-              ADDRESS_TO_LOGGABLE_CSTR(remote_address.GetAddress()));
-        }
-        // direct connect canceled due to connection timeout, start background connect
-        create_le_connection(remote_address, false, false);
-        return;
-      }
-
-      arm_on_resume_ = false;
-      ready_to_unregister = true;
-      remove_device_from_accept_list(remote_address);
-
-      if (!accept_list.empty()) {
-        AddressWithType empty(Address::kEmpty, AddressType::RANDOM_DEVICE_ADDRESS);
-        handler_->Post(common::BindOnce(&le_impl::create_le_connection, common::Unretained(this), empty, false, false));
-      }
-
-      if (le_client_handler_ == nullptr) {
-        LOG_ERROR("No callbacks to call");
-        return;
-      }
-
-      if (status != ErrorCode::SUCCESS) {
-        report_le_connection_failure(remote_address, status);
-        return;
-      }
-
-    } else {
-      LOG_INFO("Received connection complete with Peripheral role");
-      if (le_client_handler_ == nullptr) {
-        LOG_ERROR("No callbacks to call");
-        return;
-      }
-
-      if (status != ErrorCode::SUCCESS) {
-        std::string error_code = ErrorCodeText(status);
-        LOG_WARN("Received on_le_enhanced_connection_complete with error code %s", error_code.c_str());
-        report_le_connection_failure(remote_address, status);
-        return;
-      }
-
-      if (in_filter_accept_list) {
-        LOG_INFO(
-            "Received incoming connection of device in filter accept_list, %s",
-            ADDRESS_TO_LOGGABLE_CSTR(remote_address));
-        remove_device_from_accept_list(remote_address);
-        if (create_connection_timeout_alarms_.find(remote_address) != create_connection_timeout_alarms_.end()) {
-          create_connection_timeout_alarms_.at(remote_address).Cancel();
-          create_connection_timeout_alarms_.erase(remote_address);
-        }
-      }
-    }
-
-    auto role_specific_data = initialize_role_specific_data(role);
-    uint16_t conn_interval = connection_complete.GetConnInterval();
-    uint16_t conn_latency = connection_complete.GetConnLatency();
-    uint16_t supervision_timeout = connection_complete.GetSupervisionTimeout();
-    if (!check_connection_parameters(conn_interval, conn_interval, conn_latency, supervision_timeout)) {
-      LOG_ERROR("Receive enhenced connection complete with invalid connection parameters");
-      return;
-    }
-    uint16_t handle = connection_complete.GetConnectionHandle();
-    auto queue = std::make_shared<AclConnection::Queue>(10);
-    auto queue_down_end = queue->GetDownEnd();
-    round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::LE, handle, queue);
-    std::unique_ptr<LeAclConnection> connection(new LeAclConnection(
-        std::move(queue),
-        le_acl_connection_interface_,
-        handle,
-        role_specific_data,
-        remote_address));
-    connection->peer_address_with_type_ = AddressWithType(address, peer_address_type);
-    connection->interval_ = conn_interval;
-    connection->latency_ = conn_latency;
-    connection->supervision_timeout_ = supervision_timeout;
-    connection->local_resolvable_private_address_ = connection_complete.GetLocalResolvablePrivateAddress();
-    connection->peer_resolvable_private_address_ = connection_complete.GetPeerResolvablePrivateAddress();
-    connection->in_filter_accept_list_ = in_filter_accept_list;
-    connection->locally_initiated_ = (role == hci::Role::CENTRAL);
 
     auto connection_callbacks = connection->GetEventCallbacks(
         [this](uint16_t handle) { this->connections.invalidate(handle); });
-
     if (std::holds_alternative<DataAsUninitializedPeripheral>(role_specific_data)) {
       // the OnLeConnectSuccess event will be sent after receiving the On Advertising Set Terminated
       // event, since we need it to know what local_address / advertising set the peer connected to.
