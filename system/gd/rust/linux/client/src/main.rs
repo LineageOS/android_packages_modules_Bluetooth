@@ -12,7 +12,7 @@ use tokio::sync::mpsc;
 use tokio::time::{sleep, timeout};
 
 use crate::bt_adv::AdvSet;
-use crate::bt_gatt::GattClientContext;
+use crate::bt_gatt::{GattClientContext, GattServerContext};
 use crate::callbacks::{
     AdminCallback, AdvertisingSetCallback, BatteryManagerCallback, BtCallback,
     BtConnectionCallback, BtManagerCallback, BtSocketManagerCallback, MediaCallback, QACallback,
@@ -141,6 +141,9 @@ pub(crate) struct ClientContext {
     /// Data of GATT client preference.
     gatt_client_context: GattClientContext,
 
+    /// Data of GATT server preference.
+    gatt_server_context: GattServerContext,
+
     /// The schedule when a socket is connected.
     socket_test_schedule: Option<SocketSchedule>,
 
@@ -199,6 +202,7 @@ impl ClientContext {
             qa_callback_id: None,
             is_restricted,
             gatt_client_context: GattClientContext::new(),
+            gatt_server_context: GattServerContext::new(),
             socket_test_schedule: None,
             mps_sdp_handle: None,
             client_commands_with_callbacks,
