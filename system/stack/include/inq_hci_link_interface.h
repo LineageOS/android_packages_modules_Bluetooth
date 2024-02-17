@@ -30,7 +30,6 @@ void btm_process_inq_results(const uint8_t* p, uint8_t hci_evt_len,
                              uint8_t inq_res_mode);
 
 void btm_process_inq_complete(tHCI_STATUS status, uint8_t mode);
-void btm_process_cancel_complete(tHCI_STATUS status, uint8_t mode);
 
 void btm_acl_process_sca_cmpl_pkt(uint8_t len, uint8_t* data);
 tINQ_DB_ENT* btm_inq_db_new(const RawAddress& p_bda, bool is_ble);
