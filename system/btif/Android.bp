@@ -619,6 +619,7 @@ cc_test {
         "test/btif_hh_test.cc",
     ],
     generated_headers: [
+        "BluetoothGeneratedBundlerSchema_h_bfbs",
         "BluetoothGeneratedDumpsysDataSchema_h",
     ],
     header_libs: ["libbluetooth_headers"],
@@ -743,6 +744,7 @@ cc_test {
         "test/btif_core_test.cc",
     ],
     generated_headers: [
+        "BluetoothGeneratedBundlerSchema_h_bfbs",
         "BluetoothGeneratedDumpsysDataSchema_h",
     ],
     header_libs: ["libbluetooth_headers"],

@@ -135,4 +135,12 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Уредот помни да го задржи Bluetooth вклучен во авионски режим. Исклучете го Bluetooth ако не сакате да остане вклучен."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi и Bluetooth остануваат вклучени"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Уредот помни да ги задржи Wi‑Fi и Bluetooth вклучени во авионски режим. Исклучете ги Wi-Fi и Bluetooth ако не сакате да бидат вклучени."</string>
+    <!-- no translation found for bluetooth_enabled_auto_on_title (1799541656310353393) -->
+    <skip />
+    <!-- no translation found for bluetooth_enabled_auto_on_message (1070556457440100730) -->
+    <skip />
+    <!-- no translation found for bluetooth_disable_auto_on (1085026923461565937) -->
+    <skip />
+    <!-- no translation found for bluetooth_notification_group (7251886707585872194) -->
+    <skip />
 </resources>

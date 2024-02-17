@@ -135,4 +135,12 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"ଆପଣଙ୍କ ଡିଭାଇସ ଏୟାରପ୍ଲେନ ମୋଡରେ ବ୍ଲୁଟୁଥକୁ ଚାଲୁ ରଖିବା ପାଇଁ ମନେ ରଖେ। ଯଦି ଆପଣ ବ୍ଲୁଟୁଥ ଚାଲୁ ରହୁ ବୋଲି ଚାହୁଁନାହାଁନ୍ତି ତେବେ ଏହାକୁ ବନ୍ଦ କରନ୍ତୁ।"</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"ୱାଇ-ଫାଇ ଏବଂ ବ୍ଲୁଟୁଥ ଚାଲୁ ରହେ"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"ଆପଣଙ୍କ ଡିଭାଇସ ଏୟାରପ୍ଲେନ ମୋଡରେ ୱାଇ-ଫାଇ ଏବଂ ବ୍ଲୁଟୁଥକୁ ଚାଲୁ ରଖିବା ପାଇଁ ମନେ ରଖେ। ଯଦି ଆପଣ ୱାଇ-ଫାଇ ଏବଂ ବ୍ଲୁଟୁଥ ଚାଲୁ ରହୁ ବୋଲି ଚାହୁଁନାହାଁନ୍ତି ତେବେ ସେଗୁଡ଼ିକୁ ବନ୍ଦ କରନ୍ତୁ।"</string>
+    <!-- no translation found for bluetooth_enabled_auto_on_title (1799541656310353393) -->
+    <skip />
+    <!-- no translation found for bluetooth_enabled_auto_on_message (1070556457440100730) -->
+    <skip />
+    <!-- no translation found for bluetooth_disable_auto_on (1085026923461565937) -->
+    <skip />
+    <!-- no translation found for bluetooth_notification_group (7251886707585872194) -->
+    <skip />
 </resources>

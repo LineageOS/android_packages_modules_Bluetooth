@@ -135,4 +135,8 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Cihaz təyyarə rejimində Bluetooth-u aktiv saxlayır. İstəmirsinizsə, Bluetooth-u deaktiv edin."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi və Bluetooth aktiv qalır"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Cihaz təyyarə rejimində Wi‑Fi və Bluetooth-u aktiv saxlayır. İstəmirsinizsə, Wi-Fi və Bluetooth-u deaktiv edin."</string>
+    <string name="bluetooth_enabled_auto_on_title" msgid="1799541656310353393">"Bluetooth avtomatik aktivləşdirildi"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="1070556457440100730">"Avtomatik yenidən başlatma Bluetooth Ayarlarında dəyişdirilə bilər."</string>
+    <string name="bluetooth_disable_auto_on" msgid="1085026923461565937">"Deaktiv edin"</string>
+    <string name="bluetooth_notification_group" msgid="7251886707585872194">"Bluetooth-un avtomatik vəziyyət dəyişikliyi"</string>
 </resources>

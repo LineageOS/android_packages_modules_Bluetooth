@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 
 #include "macros.h"
@@ -136,3 +138,12 @@ inline std::string rfcomm_port_event_text(const tRFC_PORT_EVENT& event) {
       return std::string("UNKNOWN[") + std::to_string(event) + std::string("]");
   }
 }
+
+namespace fmt {
+template <>
+struct formatter<tRFC_EVENT> : enum_formatter<tRFC_EVENT> {};
+template <>
+struct formatter<tRFC_MX_EVENT> : enum_formatter<tRFC_MX_EVENT> {};
+template <>
+struct formatter<tRFC_PORT_EVENT> : enum_formatter<tRFC_PORT_EVENT> {};
+}  // namespace fmt

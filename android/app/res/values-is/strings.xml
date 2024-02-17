@@ -135,4 +135,12 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Tækið man að hafa kveikt á Bluetooth í flugstillingu. Slökktu á Bluetooth ef þú vilt ekki hafa kveikt á því."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Áfram verður kveikt á Wi-Fi og Bluetooth"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Tæki man að hafa kveikt á Wi-Fi og Bluetooth í flugstillingu. Slökktu á Wi-Fi og Bluetooth ef þú vilt ekki hafa kveikt á þessu."</string>
+    <!-- no translation found for bluetooth_enabled_auto_on_title (1799541656310353393) -->
+    <skip />
+    <!-- no translation found for bluetooth_enabled_auto_on_message (1070556457440100730) -->
+    <skip />
+    <!-- no translation found for bluetooth_disable_auto_on (1085026923461565937) -->
+    <skip />
+    <!-- no translation found for bluetooth_notification_group (7251886707585872194) -->
+    <skip />
 </resources>
