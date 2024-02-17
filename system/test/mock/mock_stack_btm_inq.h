@@ -429,16 +429,6 @@ struct btm_inq_stop_on_ssp {
 };
 extern struct btm_inq_stop_on_ssp btm_inq_stop_on_ssp;
 
-// Name: btm_process_cancel_complete
-// Params: tHCI_STATUS status, uint8_t mode
-// Return: void
-struct btm_process_cancel_complete {
-  std::function<void(tHCI_STATUS status, uint8_t mode)> body{
-      [](tHCI_STATUS /* status */, uint8_t /* mode */) {}};
-  void operator()(tHCI_STATUS status, uint8_t mode) { body(status, mode); };
-};
-extern struct btm_process_cancel_complete btm_process_cancel_complete;
-
 // Name: btm_process_inq_complete
 // Params: tHCI_STATUS status, uint8_t mode
 // Return: void

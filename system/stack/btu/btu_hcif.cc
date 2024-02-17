@@ -970,10 +970,6 @@ static void btu_hcif_esco_connection_chg_evt(uint8_t* p) {
 static void btu_hcif_hdl_command_complete(uint16_t opcode, uint8_t* p,
                                           uint16_t evt_len) {
   switch (opcode) {
-    case HCI_INQUIRY_CANCEL:
-      /* Tell inquiry processing that we are done */
-      btm_process_cancel_complete(HCI_SUCCESS, BTM_BR_INQUIRY_MASK);
-      break;
     case HCI_SET_EVENT_FILTER:
       break;
 

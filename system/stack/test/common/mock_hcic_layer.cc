@@ -108,7 +108,6 @@ namespace bluetooth::legacy::hci {
 
 class MockInterface : public Interface {
  public:
-  virtual void InquiryCancel() const override { FAIL(); }
   virtual void Disconnect(uint16_t handle, uint8_t reason) const override {
     btsnd_hcic_disconnect(handle, reason);
   }
