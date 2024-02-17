@@ -107,7 +107,7 @@ void BTA_HhClose(uint8_t dev_handle) {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_HhOpen(const RawAddress& dev_bda) {
+void BTA_HhOpen(const tAclLinkSpec& link_spec) {
   tBTA_HH_API_CONN* p_buf =
       (tBTA_HH_API_CONN*)osi_calloc(sizeof(tBTA_HH_API_CONN));
   tBTA_HH_PROTO_MODE mode = BTA_HH_PROTO_RPT_MODE;
@@ -115,7 +115,7 @@ void BTA_HhOpen(const RawAddress& dev_bda) {
   p_buf->hdr.event = BTA_HH_API_OPEN_EVT;
   p_buf->hdr.layer_specific = BTA_HH_INVALID_HANDLE;
   p_buf->mode = mode;
-  p_buf->bd_addr = dev_bda;
+  p_buf->link_spec = link_spec;
 
   bta_sys_sendmsg((void*)p_buf);
 }
@@ -244,7 +244,7 @@ void BTA_HhSendCtrl(uint8_t dev_handle, tBTA_HH_TRANS_CTRL_TYPE c_type) {
  * Description      This function send DATA transaction to HID device.
  *
  * Parameter        dev_handle: device handle
- *                  dev_bda: remote device address
+ *                  link_spec : remote device acl link specification
  *                  p_data: data to be sent in the DATA transaction; or
  *                          the data to be write into the Output Report of a LE
  *                          HID device. The report is identified the report ID
@@ -256,8 +256,8 @@ void BTA_HhSendCtrl(uint8_t dev_handle, tBTA_HH_TRANS_CTRL_TYPE c_type) {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_HhSendData(uint8_t dev_handle, UNUSED_ATTR const RawAddress& dev_bda,
-                    BT_HDR* p_data) {
+void BTA_HhSendData(uint8_t dev_handle,
+                    UNUSED_ATTR const tAclLinkSpec& link_spec, BT_HDR* p_data) {
   if (p_data->layer_specific != BTA_HH_RPTT_OUTPUT) {
     LOG_ERROR(
         "ERROR! Wrong report type! Write Command only valid for output "
@@ -298,7 +298,7 @@ void BTA_HhGetDscpInfo(uint8_t dev_handle) {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_HhAddDev(const RawAddress& bda, tBTA_HH_ATTR_MASK attr_mask,
+void BTA_HhAddDev(const tAclLinkSpec& link_spec, tBTA_HH_ATTR_MASK attr_mask,
                   uint8_t sub_class, uint8_t app_id,
                   tBTA_HH_DEV_DSCP_INFO dscp_info) {
   size_t len = sizeof(tBTA_HH_MAINT_DEV) + dscp_info.descriptor.dl_len;
@@ -311,7 +311,7 @@ void BTA_HhAddDev(const RawAddress& bda, tBTA_HH_ATTR_MASK attr_mask,
   p_buf->attr_mask = (uint16_t)attr_mask;
   p_buf->sub_class = sub_class;
   p_buf->app_id = app_id;
-  p_buf->bda = bda;
+  p_buf->link_spec = link_spec;
 
   memcpy(&p_buf->dscp_info, &dscp_info, sizeof(tBTA_HH_DEV_DSCP_INFO));
   if (dscp_info.descriptor.dl_len != 0 && dscp_info.descriptor.dsc_list) {
