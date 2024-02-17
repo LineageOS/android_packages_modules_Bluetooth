@@ -9,13 +9,15 @@ use crate::bt_gatt::AuthReq;
 use crate::callbacks::{BtGattCallback, BtGattServerCallback};
 use crate::ClientContext;
 use crate::{console_red, console_yellow, print_error, print_info};
-use bt_topshim::btif::{BtConnectionState, BtDiscMode, BtStatus, BtTransport, INVALID_RSSI};
+use bt_topshim::btif::{BtConnectionState, BtDiscMode, BtStatus, BtTransport, Uuid, INVALID_RSSI};
 use bt_topshim::profiles::hid_host::BthhReportType;
 use bt_topshim::profiles::sdp::{BtSdpMpsRecord, BtSdpRecord};
 use bt_topshim::profiles::{gatt::LePhy, ProfileConnectionState};
 use btstack::battery_manager::IBatteryManager;
 use btstack::bluetooth::{BluetoothDevice, IBluetooth};
-use btstack::bluetooth_gatt::{GattWriteType, IBluetoothGatt};
+use btstack::bluetooth_gatt::{
+    BluetoothGattService, GattDbElementType, GattWriteType, IBluetoothGatt,
+};
 use btstack::bluetooth_media::{IBluetoothMedia, IBluetoothTelephony};
 use btstack::bluetooth_qa::IBluetoothQA;
 use btstack::socket_manager::{IBluetoothSocketManager, SocketResult};
@@ -28,6 +30,7 @@ const BAR2_CHAR: &str = "-";
 const MAX_MENU_CHAR_WIDTH: usize = 72;
 const GATT_CLIENT_APP_UUID: &str = "12345678123456781234567812345678";
 const GATT_SERVER_APP_UUID: &str = "12345678123456781234567812345679";
+const HEART_RATE_SERVICE_UUID: &str = "0000180D-0000-1000-8000-00805F9B34FB";
 
 enum CommandError {
     // Command not handled due to invalid arguments.
@@ -221,6 +224,13 @@ fn build_commands() -> HashMap<String, CommandOption> {
                 ),
                 String::from("gatt register-notification <address> <handle> <enable|disable>"),
                 String::from("gatt register-server"),
+                String::from("gatt server-connect <server_id> <client_address>"),
+                String::from("gatt server-disconnect <server_id> <client_address>"),
+                String::from("gatt server-add-heartrate-service <server_id>"),
+                String::from("gatt server-remove-service <server_id> <service_handle>"),
+                String::from("gatt server-clear-all-services <server_id>"),
+                String::from("gatt server-set-direct-connect <true|false>"),
+                String::from("gatt server-set-connect-transport <Bredr|LE|Auto>"),
             ],
             description: String::from("GATT tools"),
             function_pointer: CommandHandler::cmd_gatt,
@@ -1314,6 +1324,91 @@ impl CommandHandler {
                     )),
                     false,
                 );
+            }
+            "server-connect" => {
+                let server_id = String::from(get_arg(args, 1)?)
+                    .parse::<i32>()
+                    .or(Err("Failed to parse server_id"))?;
+                let client_addr = String::from(get_arg(args, 2)?);
+                let is_direct = self.lock_context().gatt_server_context.is_connect_direct;
+                let transport = self.lock_context().gatt_server_context.connect_transport;
+
+                if !self.lock_context().gatt_dbus.as_mut().unwrap().server_connect(
+                    server_id,
+                    client_addr.clone(),
+                    is_direct,
+                    transport,
+                ) {
+                    return Err("Connection was unsuccessful".into());
+                }
+            }
+            "server-disconnect" => {
+                let server_id = String::from(get_arg(args, 1)?)
+                    .parse::<i32>()
+                    .or(Err("Failed to parse server_id"))?;
+                let client_addr = String::from(get_arg(args, 2)?);
+
+                if !self
+                    .lock_context()
+                    .gatt_dbus
+                    .as_mut()
+                    .unwrap()
+                    .server_disconnect(server_id, client_addr.clone())
+                {
+                    return Err("Disconnection was unsuccessful".into());
+                }
+            }
+            "server-add-heartrate-service" => {
+                let uuid = Uuid::from(UuidHelper::from_string(HEART_RATE_SERVICE_UUID).unwrap());
+
+                let server_id = String::from(get_arg(args, 1)?)
+                    .parse::<i32>()
+                    .or(Err("Failed to parse server_id"))?;
+                let service = BluetoothGattService::new(
+                    uuid.into(),
+                    0, // libbluetooth assigns this handle once the service is added
+                    GattDbElementType::PrimaryService.into(),
+                );
+
+                self.lock_context().gatt_dbus.as_mut().unwrap().add_service(server_id, service);
+            }
+            "server-remove-service" => {
+                let server_id = String::from(get_arg(args, 1)?)
+                    .parse::<i32>()
+                    .or(Err("Failed to parse server_id"))?;
+                let service_handle = String::from(get_arg(args, 1)?)
+                    .parse::<i32>()
+                    .or(Err("Failed to parse service handle"))?;
+
+                self.lock_context()
+                    .gatt_dbus
+                    .as_mut()
+                    .unwrap()
+                    .remove_service(server_id, service_handle);
+            }
+            "server-clear-all-services" => {
+                let server_id = String::from(get_arg(args, 1)?)
+                    .parse::<i32>()
+                    .or(Err("Failed to parse server_id"))?;
+                self.lock_context().gatt_dbus.as_mut().unwrap().clear_services(server_id);
+            }
+            "server-set-direct-connect" => {
+                let is_direct = String::from(get_arg(args, 1)?)
+                    .parse::<bool>()
+                    .or(Err("Failed to parse is_direct"))?;
+
+                self.lock_context().gatt_server_context.is_connect_direct = is_direct;
+            }
+            "server-set-connect-transport" => {
+                let transport = match &get_arg(args, 1)?[..] {
+                    "Bredr" => BtTransport::Bredr,
+                    "LE" => BtTransport::Le,
+                    "Auto" => BtTransport::Auto,
+                    _ => {
+                        return Err("Failed to parse transport".into());
+                    }
+                };
+                self.lock_context().gatt_server_context.connect_transport = transport;
             }
             _ => return Err(CommandError::InvalidArgs),
         }

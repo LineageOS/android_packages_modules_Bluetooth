@@ -48,10 +48,6 @@
 #define HCIC_INQ_INQ_LAP_OFF 0
 #define HCIC_INQ_DUR_OFF 3
 #define HCIC_INQ_RSP_CNT_OFF 4
-/* Inquiry */
-
-/* Inquiry Cancel */
-#define HCIC_PARAM_SIZE_INQ_CANCEL 0
 
 /* Periodic Inquiry Mode */
 #define HCIC_PARAM_SIZE_PER_INQ_MODE 9
@@ -481,18 +477,6 @@
 
 #define HCIC_PARAM_SIZE_BLE_RC_PARAM_REQ_REPLY 14
 #define HCIC_PARAM_SIZE_BLE_RC_PARAM_REQ_NEG_REPLY 3
-
-static void btsnd_hcic_inq_cancel(void) {
-  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
-  uint8_t* pp = (uint8_t*)(p + 1);
-
-  p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_INQ_CANCEL;
-  p->offset = 0;
-  UINT16_TO_STREAM(pp, HCI_INQUIRY_CANCEL);
-  UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_INQ_CANCEL);
-
-  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
-}
 
 static void btsnd_hcic_disconnect(uint16_t handle, uint8_t reason) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
@@ -1672,7 +1656,6 @@ void btsnd_hcic_configure_data_path(hci_data_direction_t data_path_direction,
 
 namespace bluetooth::legacy::hci {
 class InterfaceImpl : public Interface {
-  void InquiryCancel() const override { btsnd_hcic_inq_cancel(); }
   void Disconnect(uint16_t handle, uint8_t reason) const override {
     btsnd_hcic_disconnect(handle, reason);
   }

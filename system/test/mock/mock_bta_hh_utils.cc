@@ -74,20 +74,20 @@ uint8_t bta_hh_dev_handle_to_cb_idx(uint8_t dev_handle) {
   inc_func_call_count(__func__);
   return test::mock::bta_hh_utils::bta_hh_dev_handle_to_cb_idx(dev_handle);
 }
-uint8_t bta_hh_find_cb(const RawAddress& bda) {
+uint8_t bta_hh_find_cb(const tAclLinkSpec& link_spec) {
   inc_func_call_count(__func__);
-  return test::mock::bta_hh_utils::bta_hh_find_cb(bda);
+  return test::mock::bta_hh_utils::bta_hh_find_cb(link_spec);
 }
-tBTA_HH_DEV_CB* bta_hh_get_cb(const RawAddress& bda) {
+tBTA_HH_DEV_CB* bta_hh_get_cb(const tAclLinkSpec& link_spec) {
   inc_func_call_count(__func__);
-  return test::mock::bta_hh_utils::bta_hh_get_cb(bda);
+  return test::mock::bta_hh_utils::bta_hh_get_cb(link_spec);
 }
-tBTA_HH_STATUS bta_hh_read_ssr_param(const RawAddress& bd_addr,
+tBTA_HH_STATUS bta_hh_read_ssr_param(const tAclLinkSpec& link_spec,
                                      uint16_t* p_max_ssr_lat,
                                      uint16_t* p_min_ssr_tout) {
   inc_func_call_count(__func__);
-  return test::mock::bta_hh_utils::bta_hh_read_ssr_param(bd_addr, p_max_ssr_lat,
-                                                         p_min_ssr_tout);
+  return test::mock::bta_hh_utils::bta_hh_read_ssr_param(
+      link_spec, p_max_ssr_lat, p_min_ssr_tout);
 }
 bool bta_hh_tod_spt(tBTA_HH_DEV_CB* p_cb, uint8_t sub_class) {
   inc_func_call_count(__func__);

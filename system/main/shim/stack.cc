@@ -112,7 +112,7 @@ void Stack::StartModuleStack(const ModuleList* modules,
   stack_manager_.StartUp(const_cast<ModuleList*>(modules), stack_thread_);
   stack_handler_ = new os::Handler(stack_thread_);
 
-  Start(const_cast<ModuleList*>(modules));
+  num_modules_ = modules->NumModules();
   is_running_ = true;
 }
 

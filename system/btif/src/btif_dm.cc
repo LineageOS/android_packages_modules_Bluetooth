@@ -85,6 +85,7 @@
 #include "stack/include/bt_octets.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
+#include "stack/include/btm_ble_addr.h"
 #include "stack/include/btm_ble_api.h"
 #include "stack/include/btm_ble_sec_api.h"
 #include "stack/include/btm_ble_sec_api_types.h"
@@ -850,9 +851,13 @@ static void btif_dm_cb_create_bond(const RawAddress bd_addr,
 
   if (!IS_FLAG_ENABLED(connect_hid_after_service_discovery) &&
       is_hid && (device_type & BT_DEVICE_TYPE_BLE) == 0) {
+    tAclLinkSpec link_spec;
+    link_spec.addrt.bda = bd_addr;
+    link_spec.addrt.type = addr_type;
+    link_spec.transport = transport;
     const bt_status_t status =
         GetInterfaceToProfiles()->profileSpecific_HACK->btif_hh_connect(
-            &bd_addr);
+            &link_spec);
     if (status != BT_STATUS_SUCCESS)
       bond_state_changed(status, bd_addr, BT_BOND_STATE_NONE);
   } else {
@@ -915,6 +920,50 @@ uint16_t btif_dm_get_connection_state(const RawAddress& bd_addr) {
                          (rc & ENCRYPTED_BREDR) ? 'T' : 'F',
                          (rc & ENCRYPTED_LE) ? 'T' : 'F'));
   return rc;
+}
+
+static uint16_t btif_dm_get_resolved_connection_state(
+    tBLE_BD_ADDR ble_bd_addr) {
+  uint16_t rc = 0;
+  if (maybe_resolve_address(&ble_bd_addr.bda, &ble_bd_addr.type)) {
+    if (BTA_DmGetConnectionState(ble_bd_addr.bda)) {
+      rc = 0x0001;
+      if (BTM_IsEncrypted(ble_bd_addr.bda, BT_TRANSPORT_BR_EDR)) {
+        rc |= ENCRYPTED_BREDR;
+      }
+      if (BTM_IsEncrypted(ble_bd_addr.bda, BT_TRANSPORT_LE)) {
+        rc |= ENCRYPTED_LE;
+      }
+
+      BTM_LogHistory(
+          kBtmLogTag, ble_bd_addr.bda, "RESOLVED connection state",
+          base::StringPrintf(
+              "connected:%c classic_encrypted:%c le_encrypted:%c",
+              (rc & 0x0001) ? 'T' : 'F', (rc & ENCRYPTED_BREDR) ? 'T' : 'F',
+              (rc & ENCRYPTED_LE) ? 'T' : 'F'));
+    }
+  }
+  return rc;
+}
+
+uint16_t btif_dm_get_connection_state_sync(const RawAddress& bd_addr) {
+  std::promise<uint16_t> promise;
+  std::future future = promise.get_future();
+
+  ASSERT(BT_STATUS_SUCCESS ==
+         do_in_main_thread(
+             FROM_HERE,
+             base::BindOnce(
+                 [](const RawAddress bd_addr, std::promise<uint16_t> promise) {
+                   // Experiment to try with maybe resolved address
+                   btif_dm_get_resolved_connection_state({
+                       .type = BLE_ADDR_RANDOM,
+                       .bda = bd_addr,
+                   });
+                   promise.set_value(btif_dm_get_connection_state(bd_addr));
+                 },
+                 bd_addr, std::move(promise))));
+  return future.get();
 }
 
 /******************************************************************************
@@ -2835,8 +2884,13 @@ void btif_dm_remove_bond(const RawAddress bd_addr) {
   // there is a valid hid connection with this bd_addr. If yes VUP will be
   // issued.
 #if (BTA_HH_INCLUDED == TRUE)
+  tAclLinkSpec link_spec;
+  link_spec.addrt.bda = bd_addr;
+  link_spec.transport = BT_TRANSPORT_AUTO;
+  link_spec.addrt.type = BLE_ADDR_PUBLIC;
+
   if (GetInterfaceToProfiles()->profileSpecific_HACK->btif_hh_virtual_unplug(
-          &bd_addr) != BT_STATUS_SUCCESS)
+          &link_spec) != BT_STATUS_SUCCESS)
 #endif
   {
     LOG_DEBUG("Removing HH device");
