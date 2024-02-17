@@ -149,3 +149,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_start_stream_race_fix"
+    namespace: "bluetooth"
+    description: "Fix possible race on start stream request"
+    bug: "325181889"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
