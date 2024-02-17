@@ -1044,6 +1044,11 @@ class LeAudioClientImpl : public LeAudioClient {
 
   bool IsInVoipCall() override { return in_voip_call_; }
 
+  bool IsInStreaming() override {
+    return audio_sender_state_ == AudioState::STARTED ||
+           audio_receiver_state_ == AudioState::STARTED;
+  }
+
   void SetUnicastMonitorMode(uint8_t direction, bool enable) override {
     if (!IS_FLAG_ENABLED(leaudio_broadcast_audio_handover_policies)) {
       LOG_WARN("Monitor mode is disabled, Set Unicast Monitor mode is ignored");
@@ -6021,6 +6026,13 @@ bool LeAudioClient::GetAsesForStorage(const RawAddress& addr,
 }
 
 bool LeAudioClient::IsLeAudioClientRunning(void) { return instance != nullptr; }
+
+bool LeAudioClient::IsLeAudioClientInStreaming(void) {
+  if (!instance) {
+    return false;
+  }
+  return instance->IsInStreaming();
+}
 
 LeAudioClient* LeAudioClient::Get() {
   CHECK(instance);

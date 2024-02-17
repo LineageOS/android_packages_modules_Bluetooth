@@ -1701,6 +1701,7 @@ public class BassClientStateMachine extends StateMachine {
                     log("Disconnecting from " + mDevice);
                     mAllowReconnect = false;
                     if (mBluetoothGatt != null) {
+                        mService.handleDeviceDisconnection(mDevice, true);
                         mBluetoothGatt.disconnect();
                         mBluetoothGatt.close();
                         mBluetoothGatt = null;
@@ -1717,6 +1718,7 @@ public class BassClientStateMachine extends StateMachine {
                         Log.w(TAG, "device is already connected to Bass" + mDevice);
                     } else {
                         Log.w(TAG, "unexpected disconnected from " + mDevice);
+                        mService.handleDeviceDisconnection(mDevice, false);
                         resetBluetoothGatt();
                         cancelActiveSync(null);
                         transitionTo(mDisconnected);
@@ -2052,6 +2054,7 @@ public class BassClientStateMachine extends StateMachine {
                     Log.w(TAG, "DISCONNECT requested!: " + mDevice);
                     mAllowReconnect = false;
                     if (mBluetoothGatt != null) {
+                        mService.handleDeviceDisconnection(mDevice, true);
                         mBluetoothGatt.disconnect();
                         mBluetoothGatt.close();
                         mBluetoothGatt = null;
@@ -2072,6 +2075,7 @@ public class BassClientStateMachine extends StateMachine {
                         Log.w(TAG, "should never happen from this state");
                     } else {
                         Log.w(TAG, "Unexpected disconnection " + mDevice);
+                        mService.handleDeviceDisconnection(mDevice, false);
                         resetBluetoothGatt();
                         cancelActiveSync(null);
                         transitionTo(mDisconnected);

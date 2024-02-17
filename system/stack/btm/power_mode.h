@@ -130,7 +130,87 @@ typedef void(tBTM_PM_STATUS_CBACK)(const RawAddress& p_bda,
 /* Idle state - page scan, LE advt, inquiry scan */
 #define BTM_CONTRL_IDLE 3
 
-typedef uint8_t tBTM_CONTRL_STATE;
+#define BTM_CONTRL_NUM_ACL_CLASSIC_ACTIVE_MASK 0xF
+#define BTM_CONTRL_NUM_ACL_CLASSIC_ACTIVE_SHIFT 0
+#define BTM_CONTRL_NUM_ACL_CLASSIC_SNIFF_MASK 0xF
+#define BTM_CONTRL_NUM_ACL_CLASSIC_SNIFF_SHIFT 4
+#define BTM_CONTRL_NUM_ACL_LE_MASK 0xF
+#define BTM_CONTRL_NUM_ACL_LE_SHIFT 8
+#define BTM_CONTRL_NUM_LE_ADV_MASK 0xF
+#define BTM_CONTRL_NUM_LE_ADV_SHIFT 12
+
+#define BTM_CONTRL_LE_SCAN_MODE_IDLE 0
+#define BTM_CONTRL_LE_SCAN_MODE_ULTRA_LOW_POWER 1
+#define BTM_CONTRL_LE_SCAN_MODE_LOW_POWER 2
+#define BTM_CONTRL_LE_SCAN_MODE_BALANCED 3
+#define BTM_CONTRL_LE_SCAN_MODE_LOW_LATENCY 4
+#define BTM_CONTRL_LE_SCAN_MODE_MASK 0xF
+#define BTM_CONTRL_LE_SCAN_MODE_SHIFT 16
+
+#define BTM_CONTRL_INQUIRY_SHIFT 20
+#define BTM_CONTRL_INQUIRY (1u << BTM_CONTRL_INQUIRY_SHIFT)
+#define BTM_CONTRL_SCO_SHIFT 21
+#define BTM_CONTRL_SCO (1u << BTM_CONTRL_SCO_SHIFT)
+#define BTM_CONTRL_A2DP_SHIFT 22
+#define BTM_CONTRL_A2DP (1u << BTM_CONTRL_A2DP_SHIFT)
+#define BTM_CONTRL_LE_AUDIO_SHIFT 23
+#define BTM_CONTRL_LE_AUDIO (1u << BTM_CONTRL_LE_AUDIO_SHIFT)
+
+typedef uint32_t tBTM_CONTRL_STATE;
+
+inline void set_num_acl_active_to_ctrl_state(uint32_t num,
+                                             tBTM_CONTRL_STATE& ctrl_state) {
+  if (num > BTM_CONTRL_NUM_ACL_CLASSIC_ACTIVE_MASK) {
+    num = BTM_CONTRL_NUM_ACL_CLASSIC_ACTIVE_MASK;
+  }
+  ctrl_state |= ((num & BTM_CONTRL_NUM_ACL_CLASSIC_ACTIVE_MASK)
+                 << BTM_CONTRL_NUM_ACL_CLASSIC_ACTIVE_SHIFT);
+}
+
+inline void set_num_acl_sniff_to_ctrl_state(uint32_t num,
+                                            tBTM_CONTRL_STATE& ctrl_state) {
+  if (num > BTM_CONTRL_NUM_ACL_CLASSIC_SNIFF_MASK) {
+    num = BTM_CONTRL_NUM_ACL_CLASSIC_SNIFF_MASK;
+  }
+  ctrl_state |= ((num & BTM_CONTRL_NUM_ACL_CLASSIC_SNIFF_MASK)
+                 << BTM_CONTRL_NUM_ACL_CLASSIC_SNIFF_SHIFT);
+}
+
+inline void set_num_acl_le_to_ctrl_state(uint32_t num,
+                                         tBTM_CONTRL_STATE& ctrl_state) {
+  if (num > BTM_CONTRL_NUM_ACL_LE_MASK) {
+    num = BTM_CONTRL_NUM_ACL_LE_MASK;
+  }
+  ctrl_state |=
+      ((num & BTM_CONTRL_NUM_ACL_LE_MASK) << BTM_CONTRL_NUM_ACL_LE_SHIFT);
+}
+
+inline void set_num_le_adv_to_ctrl_state(uint32_t num,
+                                         tBTM_CONTRL_STATE& ctrl_state) {
+  if (num > BTM_CONTRL_NUM_LE_ADV_MASK) {
+    num = BTM_CONTRL_NUM_LE_ADV_MASK;
+  }
+  ctrl_state |=
+      ((num & BTM_CONTRL_NUM_LE_ADV_MASK) << BTM_CONTRL_NUM_LE_ADV_SHIFT);
+}
+
+inline void set_le_scan_mode_to_ctrl_state(uint32_t duty_cycle,
+                                           tBTM_CONTRL_STATE& ctrl_state) {
+  uint32_t scan_mode;
+  if (duty_cycle == 0) {
+    scan_mode = BTM_CONTRL_LE_SCAN_MODE_IDLE;
+  } else if (duty_cycle <= 5) {
+    scan_mode = BTM_CONTRL_LE_SCAN_MODE_ULTRA_LOW_POWER;
+  } else if (duty_cycle <= 10) {
+    scan_mode = BTM_CONTRL_LE_SCAN_MODE_LOW_POWER;
+  } else if (duty_cycle <= 25) {
+    scan_mode = BTM_CONTRL_LE_SCAN_MODE_BALANCED;
+  } else {
+    scan_mode = BTM_CONTRL_LE_SCAN_MODE_LOW_LATENCY;
+  }
+  ctrl_state |= ((scan_mode & BTM_CONTRL_LE_SCAN_MODE_MASK)
+                 << BTM_CONTRL_LE_SCAN_MODE_SHIFT);
+}
 
 /*******************************************************************************
  *
@@ -199,3 +279,48 @@ tBTM_STATUS BTM_SetSsrParams(const RawAddress& remote_bda, uint16_t max_lat,
  *
  ******************************************************************************/
 tBTM_CONTRL_STATE BTM_PM_ReadControllerState(void);
+
+/*******************************************************************************
+ *
+ * Function         BTM_PM_ReadSniffLinkCount
+ *
+ * Description      Return the number of BT connection in sniff mode
+ *
+ * Returns          Number of BT connection in sniff mode
+ *
+ ******************************************************************************/
+uint8_t BTM_PM_ReadSniffLinkCount(void);
+
+/*******************************************************************************
+ *
+ * Function         BTM_PM_ReadBleLinkCount
+ *
+ * Description      Return the number of BLE connection
+ *
+ * Returns          Number of BLE connection
+ *
+ ******************************************************************************/
+uint8_t BTM_PM_ReadBleLinkCount(void);
+
+/*******************************************************************************
+ *
+ * Function         BTM_PM_DeviceInScanState
+ *
+ * Description      This function is called to check if in inquiry
+ *
+ * Returns          true, if in inquiry
+ *
+ ******************************************************************************/
+bool BTM_PM_DeviceInScanState(void);
+
+/*******************************************************************************
+ *
+ * Function         BTM_PM_ReadBleScanDutyCycle
+ *
+ * Description      Returns BLE scan duty cycle which is (window * 100) /
+ *interval
+ *
+ * Returns          BLE scan duty cycle
+ *
+ ******************************************************************************/
+uint32_t BTM_PM_ReadBleScanDutyCycle(void);

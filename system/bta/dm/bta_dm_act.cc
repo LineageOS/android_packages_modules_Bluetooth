@@ -38,6 +38,7 @@
 #include "bta/dm/bta_dm_int.h"
 #include "bta/dm/bta_dm_sec_int.h"
 #include "bta/include/bta_api.h"
+#include "bta/include/bta_le_audio_api.h"
 #include "bta/include/bta_sdp_api.h"
 #include "bta/include/bta_sec_api.h"
 #include "bta/sys/bta_sys.h"
@@ -1478,6 +1479,67 @@ void bta_dm_ble_set_data_length(const RawAddress& bd_addr) {
   }
 }
 
+/** This function returns system context info */
+static tBTM_CONTRL_STATE bta_dm_obtain_system_context() {
+  uint32_t total_acl_num = bta_dm_cb.device_list.count;
+  uint32_t sniff_acl_num = BTM_PM_ReadSniffLinkCount();
+  uint32_t le_acl_num = BTM_PM_ReadBleLinkCount();
+  uint32_t active_acl_num = total_acl_num - sniff_acl_num - le_acl_num;
+  uint32_t le_adv_num =
+      bluetooth::shim::BTM_BleGetNumberOfAdvertisingInstancesInUse();
+  uint32_t le_scan_duty_cycle = BTM_PM_ReadBleScanDutyCycle();
+  bool is_inquiry_active = BTM_PM_DeviceInScanState();
+  bool is_le_audio_active = LeAudioClient::IsLeAudioClientInStreaming();
+  bool is_av_active = false;
+  bool is_sco_active = false;
+
+  for (int i = 0; i < bta_dm_cb.device_list.count; i++) {
+    tBTA_DM_PEER_DEVICE* p_dev = &bta_dm_cb.device_list.peer_device[i];
+    if (p_dev->conn_state == BTA_DM_CONNECTED && p_dev->is_av_active()) {
+      is_av_active = true;
+      break;
+    }
+  }
+  for (int j = 0; j < bta_dm_conn_srvcs.count; j++) {
+    /* check for SCO connected index */
+    if (bta_dm_conn_srvcs.conn_srvc[j].id == BTA_ID_AG ||
+        bta_dm_conn_srvcs.conn_srvc[j].id == BTA_ID_HS) {
+      if (bta_dm_conn_srvcs.conn_srvc[j].state == BTA_SYS_SCO_OPEN) {
+        is_sco_active = true;
+        break;
+      }
+    }
+  }
+
+  tBTM_CONTRL_STATE ctrl_state = 0;
+  set_num_acl_active_to_ctrl_state(active_acl_num, ctrl_state);
+  set_num_acl_sniff_to_ctrl_state(sniff_acl_num, ctrl_state);
+  set_num_acl_le_to_ctrl_state(le_acl_num, ctrl_state);
+  set_num_le_adv_to_ctrl_state(le_adv_num, ctrl_state);
+  set_le_scan_mode_to_ctrl_state(le_scan_duty_cycle, ctrl_state);
+
+  if (is_inquiry_active) {
+    ctrl_state |= BTM_CONTRL_INQUIRY;
+  }
+  if (is_sco_active) {
+    ctrl_state |= BTM_CONTRL_SCO;
+  }
+  if (is_av_active) {
+    ctrl_state |= BTM_CONTRL_A2DP;
+  }
+  if (is_le_audio_active) {
+    ctrl_state |= BTM_CONTRL_LE_AUDIO;
+  }
+  LOG_DEBUG(
+      "active_acl_num %d sniff_acl_num %d le_acl_num %d le_adv_num %d "
+      "le_scan_duty %d inquiry %d sco %d a2dp %d le_audio %d ctrl_state "
+      "0x%" PRIx32,
+      active_acl_num, sniff_acl_num, le_acl_num, le_adv_num, le_scan_duty_cycle,
+      is_inquiry_active, is_sco_active, is_av_active, is_le_audio_active,
+      ctrl_state);
+  return ctrl_state;
+}
+
 /*******************************************************************************
  *
  * Function         bta_ble_enable_scan_cmpl
@@ -1496,7 +1558,11 @@ static void bta_ble_energy_info_cmpl(tBTM_BLE_TX_TIME_MS tx_time,
   tBTA_STATUS st = (status == HCI_SUCCESS) ? BTA_SUCCESS : BTA_FAILURE;
   tBTM_CONTRL_STATE ctrl_state = BTM_CONTRL_UNKNOWN;
 
-  if (BTA_SUCCESS == st) ctrl_state = bta_dm_pm_obtain_controller_state();
+  if (BTA_SUCCESS == st) {
+    ctrl_state = IS_FLAG_ENABLED(bt_system_context_report)
+                     ? bta_dm_obtain_system_context()
+                     : bta_dm_pm_obtain_controller_state();
+  }
 
   if (bta_dm_cb.p_energy_info_cback)
     bta_dm_cb.p_energy_info_cback(tx_time, rx_time, idle_time, energy_used,

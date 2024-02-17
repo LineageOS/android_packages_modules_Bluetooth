@@ -223,6 +223,12 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     return num_instances_;
   }
 
+  size_t GetNumberOfAdvertisingInstancesInUse() const {
+    return std::count_if(advertising_sets_.begin(), advertising_sets_.end(), [](const auto& set) {
+      return set.second.in_use;
+    });
+  }
+
   int get_advertiser_reg_id(AdvertiserId advertiser_id) {
     return id_map_[advertiser_id];
   }
@@ -1839,6 +1845,10 @@ std::string LeAdvertisingManager::ToString() const {
 
 size_t LeAdvertisingManager::GetNumberOfAdvertisingInstances() const {
   return pimpl_->GetNumberOfAdvertisingInstances();
+}
+
+size_t LeAdvertisingManager::GetNumberOfAdvertisingInstancesInUse() const {
+  return pimpl_->GetNumberOfAdvertisingInstancesInUse();
 }
 
 int LeAdvertisingManager::GetAdvertiserRegId(AdvertiserId advertiser_id) {

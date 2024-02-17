@@ -135,4 +135,8 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"El dispositiu recorda mantenir el Bluetooth activat en mode d\'avió. Desactiva el Bluetooth si no vols que es quedi activat."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"La Wi‑Fi i el Bluetooth es mantenen activats"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"El dispositiu recorda mantenir la Wi‑Fi i el Bluetooth activats en mode d\'avió. Desactiva la Wi‑Fi i el Bluetooth si no vols que es quedin activats."</string>
+    <string name="bluetooth_enabled_auto_on_title" msgid="1799541656310353393">"El Bluetooth s\'ha activat automàticament"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="1070556457440100730">"El reinici automàtic es pot commutar a la configuració del Bluetooth."</string>
+    <string name="bluetooth_disable_auto_on" msgid="1085026923461565937">"Desactiva"</string>
+    <string name="bluetooth_notification_group" msgid="7251886707585872194">"Canvi d\'estat automàtic del Bluetooth"</string>
 </resources>

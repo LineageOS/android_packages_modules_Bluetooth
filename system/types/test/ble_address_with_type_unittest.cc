@@ -100,20 +100,20 @@ TEST(BleAddressWithTypeTest, STREAM_TO_BLE_ADDR_TYPE) {
 }
 
 TEST(BleAddressWithTypeTest, TYPED_ADDRESS_TRANSPORT) {
-  tTypedAddressTransport typedAddressTransportA = {
-      {BLE_ADDR_PUBLIC, RAW_ADDRESS_TEST1}, BT_TRANSPORT_AUTO};
-  tTypedAddressTransport typedAddressTransportB = {
-      {BLE_ADDR_PUBLIC, RAW_ADDRESS_TEST1}, BT_TRANSPORT_BR_EDR};
-  tTypedAddressTransport typedAddressTransportC = {
-      {BLE_ADDR_PUBLIC, RAW_ADDRESS_TEST1}, BT_TRANSPORT_LE};
+  tAclLinkSpec linkSpecA = {{BLE_ADDR_PUBLIC, RAW_ADDRESS_TEST1},
+                            BT_TRANSPORT_AUTO};
+  tAclLinkSpec linkSpecB = {{BLE_ADDR_PUBLIC, RAW_ADDRESS_TEST1},
+                            BT_TRANSPORT_BR_EDR};
+  tAclLinkSpec linkSpecC = {{BLE_ADDR_PUBLIC, RAW_ADDRESS_TEST1},
+                            BT_TRANSPORT_LE};
 
-  ASSERT_EQ(typedAddressTransportA, typedAddressTransportB);
-  ASSERT_EQ(typedAddressTransportA, typedAddressTransportC);
-  ASSERT_NE(typedAddressTransportB, typedAddressTransportC);
+  ASSERT_EQ(linkSpecA, linkSpecB);
+  ASSERT_EQ(linkSpecA, linkSpecC);
+  ASSERT_NE(linkSpecB, linkSpecC);
 
-  ASSERT_FALSE(typedAddressTransportA.StrictlyEquals(typedAddressTransportB));
-  ASSERT_FALSE(typedAddressTransportA.StrictlyEquals(typedAddressTransportC));
-  ASSERT_FALSE(typedAddressTransportB.StrictlyEquals(typedAddressTransportC));
+  ASSERT_FALSE(linkSpecA.StrictlyEquals(linkSpecB));
+  ASSERT_FALSE(linkSpecA.StrictlyEquals(linkSpecC));
+  ASSERT_FALSE(linkSpecB.StrictlyEquals(linkSpecC));
 }
 
 TEST(BleAddressWithTypeTest, BLE_ADDR_TYPE_TO_STREAM) {

@@ -135,4 +135,8 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Tinatandaan ng iyong device na panatilihing naka-on ang Bluetooth habang nasa airplane mode. I-off ang Bluetooth kung ayaw mo itong manatiling naka-on."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Mananatiling naka-on ang Wi-Fi at Bluetooth"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Tinatandaan ng iyong device na panatilihing naka-on ang Wi-Fi at Bluetooth habang nasa airplane mode. I-off ang Wi-Fi at Bluetooth kung ayaw mong manatiling naka-on ang mga ito."</string>
+    <string name="bluetooth_enabled_auto_on_title" msgid="1799541656310353393">"Awtomatikong na-enable ang Bluetooth"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="1070556457440100730">"Puwedeng i-toggle ang awtomatikong pag-restart sa Mga Setting ng Bluetooth."</string>
+    <string name="bluetooth_disable_auto_on" msgid="1085026923461565937">"I-off"</string>
+    <string name="bluetooth_notification_group" msgid="7251886707585872194">"Awtomatikong pagbago sa status ng Bluetooth"</string>
 </resources>

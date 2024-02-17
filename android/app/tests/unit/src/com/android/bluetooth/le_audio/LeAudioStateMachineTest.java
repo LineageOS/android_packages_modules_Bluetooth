@@ -77,6 +77,7 @@ public class LeAudioStateMachineTest {
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         mFakeFlagsImpl = new FakeFeatureFlagsImpl();
         mFakeFlagsImpl.setFlag(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION, false);
+        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_BROADCAST_AUDIO_HANDOVER_POLICIES, false);
 
         // Get a device for testing
         mTestDevice = mAdapter.getRemoteDevice("00:01:02:03:04:05");

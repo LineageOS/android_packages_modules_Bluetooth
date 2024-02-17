@@ -135,4 +135,8 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"آپ کا آلہ ہوائی جہاز وضع میں بلوٹوتھ کو آن رکھنا یاد رکھتا ہے۔ اگر آپ نہیں چاہتے ہیں کہ بلوٹوتھ آن رہے تو اسے آف کریں۔"</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"‏Wi-Fi اور بلوٹوتھ آن رہنے دیں"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"‏آپ کا آلہ ہوائی جہاز وضع میں Wi-Fi اور بلوٹوتھ کو آن رکھنا یاد رکھتا ہے۔ اگر آپ نہیں چاہتے ہیں کہ Wi-Fi اور بلوٹوتھ آن رہیں تو انہیں آف کریں۔"</string>
+    <string name="bluetooth_enabled_auto_on_title" msgid="1799541656310353393">"بلوٹوتھ خودکار طور پر فعال ہو گیا ہے"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="1070556457440100730">"خودکار ری اسٹارٹ کو بلوٹوتھ ترتیبات میں ٹوگل کیا جا سکتا ہے۔"</string>
+    <string name="bluetooth_disable_auto_on" msgid="1085026923461565937">"آف کریں"</string>
+    <string name="bluetooth_notification_group" msgid="7251886707585872194">"بلوٹوتھ خودکار حالت میں تبدیلی"</string>
 </resources>

@@ -200,6 +200,7 @@ class ControllerInterface {
     uint32_t a2dp_source_offload_capability_mask_;
     uint8_t bluetooth_quality_report_support_;
     uint32_t dynamic_audio_buffer_support_;
+    uint8_t a2dp_offload_v2_support_;
   };
 
   virtual uint32_t GetDabSupportedCodecs() const = 0;
