@@ -266,13 +266,28 @@ void btif_dm_remove_bond(const RawAddress bd_addr);
 /*******************************************************************************
  *
  * Function         btif_dm_get_connection_state
+ *                  btif_dm_get_connection_state_sync
  *
- * Description      Returns whether the remote device is currently connected
+ * Description      Returns bitmask on remote device connection state indicating
+ *                  connection and encryption.  The `_sync` version properly
+ *                  synchronizes the state and is the preferred mechanism.
+ *                  NOTE: Currently no address resolution is attempted upon
+ *                  LE random addresses.
  *
- * Returns          0 if not connected
+ * Returns          '000 (0x0000) if not connected
+ *                  '001 (0x0001) Connected with no encryption to remote
+ *                                device on BR/EDR or LE ACL
+ *                  '011 (0x0003) Connected with encryption to remote
+ *                                device on BR/EDR ACL
+ *                  '101 (0x0005) Connected with encruption to remote
+ *                                device on LE ACL
+ *                  '111 (0x0007) Connected with encruption to remote
+ *                                device on both BR/EDR and LE ACLs
+ *                  All other values are reserved
  *
  ******************************************************************************/
 uint16_t btif_dm_get_connection_state(const RawAddress& bd_addr);
+uint16_t btif_dm_get_connection_state_sync(const RawAddress& bd_addr);
 
 /*******************************************************************************
  *
