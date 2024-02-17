@@ -32,7 +32,7 @@ int bta_hh_co_write(int /* fd */, uint8_t* /* rpt */, uint16_t /* len */) {
   return 0;
 }
 tBTA_HH_RPT_CACHE_ENTRY* bta_hh_le_co_cache_load(
-    const RawAddress& /* remote_bda */, uint8_t* /* p_num_rpt */,
+    const tAclLinkSpec& /* link_spec */, uint8_t* /* p_num_rpt */,
     uint8_t /* app_id */) {
   inc_func_call_count(__func__);
   return nullptr;
@@ -43,7 +43,7 @@ void bta_hh_co_close(btif_hh_device_t* /* p_dev */) {
 void bta_hh_co_data(uint8_t /* dev_handle */, uint8_t* /* p_rpt */,
                     uint16_t /* len */, tBTA_HH_PROTO_MODE /* mode */,
                     uint8_t /* sub_class */, uint8_t /* ctry_code */,
-                    const RawAddress& /* peer_addr */, uint8_t /* app_id */) {
+                    const tAclLinkSpec& /* link_spec */, uint8_t /* app_id */) {
   inc_func_call_count(__func__);
 }
 void bta_hh_co_get_rpt_rsp(uint8_t /* dev_handle */, uint8_t /* status */,
@@ -66,11 +66,11 @@ void bta_hh_co_send_hid_info(btif_hh_device_t* /* p_dev */,
 void bta_hh_co_set_rpt_rsp(uint8_t /* dev_handle */, uint8_t /* status */) {
   inc_func_call_count(__func__);
 }
-void bta_hh_le_co_reset_rpt_cache(const RawAddress& /* remote_bda */,
+void bta_hh_le_co_reset_rpt_cache(const tAclLinkSpec& /* link_spec */,
                                   uint8_t /* app_id */) {
   inc_func_call_count(__func__);
 }
-void bta_hh_le_co_rpt_info(const RawAddress& /* remote_bda */,
+void bta_hh_le_co_rpt_info(const tAclLinkSpec& /* link_spec */,
                            tBTA_HH_RPT_CACHE_ENTRY* /* p_entry */,
                            uint8_t /* app_id */) {
   inc_func_call_count(__func__);

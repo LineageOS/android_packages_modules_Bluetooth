@@ -107,9 +107,9 @@ struct CodecInterface {
 // that profiles can register themselves to.
 struct HACK_ProfileInterface {
   // HID hacks
-  bt_status_t (*btif_hh_connect)(const RawAddress* bd_addr);
-  bt_status_t (*btif_hh_virtual_unplug)(const RawAddress* bd_addr);
-  tBTA_HH_STATUS (*bta_hh_read_ssr_param)(const RawAddress& bd_addr,
+  bt_status_t (*btif_hh_connect)(const tAclLinkSpec* link_spec);
+  bt_status_t (*btif_hh_virtual_unplug)(const tAclLinkSpec* link_spec);
+  tBTA_HH_STATUS (*bta_hh_read_ssr_param)(const tAclLinkSpec& link_spec,
                                           uint16_t* p_max_ssr_lat,
                                           uint16_t* p_min_ssr_tout);
 

@@ -174,7 +174,7 @@ bt_status_t btif_av_sink_execute_service(bool b_enable);
 bt_status_t btif_hh_execute_service(bool b_enable);
 bt_status_t btif_hf_client_execute_service(bool b_enable);
 bt_status_t btif_sdp_execute_service(bool b_enable);
-bt_status_t btif_hh_connect(const RawAddress* bd_addr);
+bt_status_t btif_hh_connect(const tAclLinkSpec* link_spec);
 bt_status_t btif_hd_execute_service(bool b_enable);
 
 /*******************************************************************************
@@ -303,7 +303,12 @@ struct CoreInterfaceImpl : bluetooth::core::CoreInterface {
   void removeDeviceFromProfiles(const RawAddress& bd_addr) override {
 /*special handling for HID devices */
 #if (defined(BTA_HH_INCLUDED) && (BTA_HH_INCLUDED == TRUE))
-    btif_hh_remove_device(bd_addr);
+    tAclLinkSpec link_spec;
+    link_spec.addrt.bda = bd_addr;
+    link_spec.addrt.type = BLE_ADDR_PUBLIC;
+    link_spec.transport = BT_TRANSPORT_AUTO;
+
+    btif_hh_remove_device(link_spec);
 #endif
 #if (defined(BTA_HD_INCLUDED) && (BTA_HD_INCLUDED == TRUE))
     btif_hd_remove_device(bd_addr);

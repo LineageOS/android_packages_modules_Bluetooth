@@ -208,7 +208,7 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB* p_cb, uint16_t event,
         case BTA_HH_API_OPEN_EVT:
           cback_event = BTA_HH_OPEN_EVT;
           /* build cback data */
-          cback_data.conn.bda = ((tBTA_HH_API_CONN*)p_data)->bd_addr;
+          cback_data.conn.link_spec = ((tBTA_HH_API_CONN*)p_data)->link_spec;
           cback_data.conn.status = BTA_HH_ERR_DB_FULL;
           cback_data.conn.handle = BTA_HH_INVALID_HANDLE;
           break;
@@ -217,7 +217,7 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB* p_cb, uint16_t event,
           cback_event = p_data->api_maintdev.sub_event;
 
           if (p_data->api_maintdev.sub_event == BTA_HH_ADD_DEV_EVT) {
-            cback_data.dev_info.bda = p_data->api_maintdev.bda;
+            cback_data.dev_info.link_spec = p_data->api_maintdev.link_spec;
             cback_data.dev_info.status = BTA_HH_ERR_DB_FULL;
             cback_data.dev_info.handle = BTA_HH_INVALID_HANDLE;
           } else {
@@ -308,11 +308,11 @@ bool bta_hh_hdl_event(const BT_HDR_RIGID* p_msg) {
   /* all events processed in state machine need to find corresponding
      CB before proceed */
   if (p_msg->event == BTA_HH_API_OPEN_EVT) {
-    index = bta_hh_find_cb(((tBTA_HH_API_CONN*)p_msg)->bd_addr);
+    index = bta_hh_find_cb(((tBTA_HH_API_CONN*)p_msg)->link_spec);
   } else if (p_msg->event == BTA_HH_API_MAINT_DEV_EVT) {
     /* if add device */
     if (((tBTA_HH_MAINT_DEV*)p_msg)->sub_event == BTA_HH_ADD_DEV_EVT) {
-      index = bta_hh_find_cb(((tBTA_HH_MAINT_DEV*)p_msg)->bda);
+      index = bta_hh_find_cb(((tBTA_HH_MAINT_DEV*)p_msg)->link_spec);
     } else /* else remove device by handle */ {
       index = bta_hh_dev_handle_to_cb_idx((uint8_t)p_msg->layer_specific);
       /* If BT disable is done while the HID device is connected and
@@ -330,7 +330,7 @@ bool bta_hh_hdl_event(const BT_HDR_RIGID* p_msg) {
       }
     }
   } else if (p_msg->event == BTA_HH_INT_OPEN_EVT) {
-    index = bta_hh_find_cb(((tBTA_HH_CBACK_DATA*)p_msg)->addr);
+    index = bta_hh_find_cb(((tBTA_HH_CBACK_DATA*)p_msg)->link_spec);
   } else {
     index = bta_hh_dev_handle_to_cb_idx((uint8_t)p_msg->layer_specific);
   }
