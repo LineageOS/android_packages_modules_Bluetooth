@@ -241,7 +241,7 @@ static uint8_t bta_hh_le_get_le_dev_hdl(uint8_t cb_index) {
  * Parameters:
  *
  ******************************************************************************/
-void bta_hh_le_open_conn(tBTA_HH_DEV_CB* p_cb, const RawAddress& remote_bda) {
+void bta_hh_le_open_conn(tBTA_HH_DEV_CB* p_cb, const tAclLinkSpec& link_spec) {
   tBTA_HH_STATUS status = BTA_HH_ERR_NO_RES;
 
   /* update cb_index[] map */
@@ -251,12 +251,12 @@ void bta_hh_le_open_conn(tBTA_HH_DEV_CB* p_cb, const RawAddress& remote_bda) {
     return;
   }
 
-  p_cb->addr = remote_bda;
+  p_cb->link_spec = link_spec;
   bta_hh_cb.le_cb_index[BTA_HH_GET_LE_CB_IDX(p_cb->hid_handle)] = p_cb->index;
   p_cb->in_use = true;
 
-  BTA_GATTC_Open(bta_hh_cb.gatt_if, remote_bda, BTM_BLE_DIRECT_CONNECTION,
-                 false);
+  BTA_GATTC_Open(bta_hh_cb.gatt_if, link_spec.addrt.bda,
+                 BTM_BLE_DIRECT_CONNECTION, false);
 }
 
 /*******************************************************************************
@@ -284,12 +284,15 @@ static tBTA_HH_DEV_CB* bta_hh_le_find_dev_cb_by_conn_id(uint16_t conn_id) {
  * Description      Utility function find a device control block by BD address.
  *
  ******************************************************************************/
-static tBTA_HH_DEV_CB* bta_hh_le_find_dev_cb_by_bda(const RawAddress& bda) {
+static tBTA_HH_DEV_CB* bta_hh_le_find_dev_cb_by_bda(
+    const tAclLinkSpec& link_spec) {
   uint8_t i;
   tBTA_HH_DEV_CB* p_dev_cb = &bta_hh_cb.kdev[0];
 
   for (i = 0; i < BTA_HH_MAX_DEVICE; i++, p_dev_cb++) {
-    if (p_dev_cb->in_use && p_dev_cb->addr == bda) return p_dev_cb;
+    if (p_dev_cb->in_use &&
+        p_dev_cb->link_spec.addrt.bda == link_spec.addrt.bda)
+      return p_dev_cb;
   }
   return NULL;
 }
@@ -510,7 +513,7 @@ static void bta_hh_le_save_report_ref(tBTA_HH_DEV_CB* p_dev_cb,
     rpt_entry.srvc_inst_id = p_rpt->srvc_inst_id;
     rpt_entry.char_inst_id = p_rpt->char_inst_id;
 
-    bta_hh_le_co_rpt_info(p_dev_cb->addr, &rpt_entry, p_dev_cb->app_id);
+    bta_hh_le_co_rpt_info(p_dev_cb->link_spec, &rpt_entry, p_dev_cb->app_id);
   }
 
   if (p_rpt->index < BTA_HH_LE_RPT_MAX - 1)
@@ -539,7 +542,8 @@ static void bta_hh_le_register_input_notif(tBTA_HH_DEV_CB* p_dev_cb,
   for (int i = 0; i < BTA_HH_LE_RPT_MAX; i++, p_rpt++) {
     if (p_rpt->rpt_type == BTA_HH_RPTT_INPUT) {
       if (register_ba && p_rpt->uuid == GATT_UUID_BATTERY_LEVEL) {
-        BTA_GATTC_RegisterForNotifications(bta_hh_cb.gatt_if, p_dev_cb->addr,
+        BTA_GATTC_RegisterForNotifications(bta_hh_cb.gatt_if,
+                                           p_dev_cb->link_spec.addrt.bda,
                                            p_rpt->char_inst_id);
       }
       /* boot mode, deregister report input notification */
@@ -547,14 +551,16 @@ static void bta_hh_le_register_input_notif(tBTA_HH_DEV_CB* p_dev_cb,
         if (p_rpt->uuid == GATT_UUID_HID_REPORT &&
             p_rpt->client_cfg_value == GATT_CLT_CONFIG_NOTIFICATION) {
           LOG_VERBOSE("---> Deregister Report ID:%d", p_rpt->rpt_id);
-          BTA_GATTC_DeregisterForNotifications(
-              bta_hh_cb.gatt_if, p_dev_cb->addr, p_rpt->char_inst_id);
+          BTA_GATTC_DeregisterForNotifications(bta_hh_cb.gatt_if,
+                                               p_dev_cb->link_spec.addrt.bda,
+                                               p_rpt->char_inst_id);
         }
         /* register boot reports notification */
         else if (p_rpt->uuid == GATT_UUID_HID_BT_KB_INPUT ||
                  p_rpt->uuid == GATT_UUID_HID_BT_MOUSE_INPUT) {
           LOG_VERBOSE("<--- Register Boot Report ID:%d", p_rpt->rpt_id);
-          BTA_GATTC_RegisterForNotifications(bta_hh_cb.gatt_if, p_dev_cb->addr,
+          BTA_GATTC_RegisterForNotifications(bta_hh_cb.gatt_if,
+                                             p_dev_cb->link_spec.addrt.bda,
                                              p_rpt->char_inst_id);
         }
       } else if (proto_mode == BTA_HH_PROTO_RPT_MODE) {
@@ -562,12 +568,14 @@ static void bta_hh_le_register_input_notif(tBTA_HH_DEV_CB* p_dev_cb,
              p_rpt->uuid == GATT_UUID_HID_BT_MOUSE_INPUT) &&
             p_rpt->client_cfg_value == GATT_CLT_CONFIG_NOTIFICATION) {
           LOG_VERBOSE("--> Deregister Boot Report ID:%d", p_rpt->rpt_id);
-          BTA_GATTC_DeregisterForNotifications(
-              bta_hh_cb.gatt_if, p_dev_cb->addr, p_rpt->char_inst_id);
+          BTA_GATTC_DeregisterForNotifications(bta_hh_cb.gatt_if,
+                                               p_dev_cb->link_spec.addrt.bda,
+                                               p_rpt->char_inst_id);
         } else if (p_rpt->uuid == GATT_UUID_HID_REPORT &&
                    p_rpt->client_cfg_value == GATT_CLT_CONFIG_NOTIFICATION) {
           LOG_VERBOSE("<--- Register Report ID:%d", p_rpt->rpt_id);
-          BTA_GATTC_RegisterForNotifications(bta_hh_cb.gatt_if, p_dev_cb->addr,
+          BTA_GATTC_RegisterForNotifications(bta_hh_cb.gatt_if,
+                                             p_dev_cb->link_spec.addrt.bda,
                                              p_rpt->char_inst_id);
         }
       }
@@ -592,13 +600,15 @@ static void bta_hh_le_deregister_input_notif(tBTA_HH_DEV_CB* p_dev_cb) {
       if (p_rpt->uuid == GATT_UUID_HID_REPORT &&
           p_rpt->client_cfg_value == GATT_CLT_CONFIG_NOTIFICATION) {
         LOG_VERBOSE("---> Deregister Report ID:%d", p_rpt->rpt_id);
-        BTA_GATTC_DeregisterForNotifications(bta_hh_cb.gatt_if, p_dev_cb->addr,
+        BTA_GATTC_DeregisterForNotifications(bta_hh_cb.gatt_if,
+                                             p_dev_cb->link_spec.addrt.bda,
                                              p_rpt->char_inst_id);
       } else if ((p_rpt->uuid == GATT_UUID_HID_BT_KB_INPUT ||
                   p_rpt->uuid == GATT_UUID_HID_BT_MOUSE_INPUT) &&
                  p_rpt->client_cfg_value == GATT_CLT_CONFIG_NOTIFICATION) {
         LOG_VERBOSE("---> Deregister Boot Report ID:%d", p_rpt->rpt_id);
-        BTA_GATTC_DeregisterForNotifications(bta_hh_cb.gatt_if, p_dev_cb->addr,
+        BTA_GATTC_DeregisterForNotifications(bta_hh_cb.gatt_if,
+                                             p_dev_cb->link_spec.addrt.bda,
                                              p_rpt->char_inst_id);
       }
     }
@@ -867,7 +877,11 @@ static void bta_hh_le_get_protocol_mode(tBTA_HH_DEV_CB* p_cb) {
  ******************************************************************************/
 static void bta_hh_le_dis_cback(const RawAddress& addr,
                                 tDIS_VALUE* p_dis_value) {
-  tBTA_HH_DEV_CB* p_cb = bta_hh_le_find_dev_cb_by_bda(addr);
+  tAclLinkSpec link_spec;
+  link_spec.addrt.bda = addr;
+  link_spec.addrt.type = BLE_ADDR_PUBLIC;
+  link_spec.transport = BT_TRANSPORT_LE;
+  tBTA_HH_DEV_CB* p_cb = bta_hh_le_find_dev_cb_by_bda(link_spec);
 
   if (p_cb == nullptr) {
     LOG_WARN("Unknown address");
@@ -909,12 +923,13 @@ static void bta_hh_le_dis_cback(const RawAddress& addr,
  *
  ******************************************************************************/
 static void bta_hh_le_pri_service_discovery(tBTA_HH_DEV_CB* p_cb) {
-  bta_hh_le_co_reset_rpt_cache(p_cb->addr, p_cb->app_id);
+  bta_hh_le_co_reset_rpt_cache(p_cb->link_spec, p_cb->app_id);
 
   p_cb->disc_active |= (BTA_HH_LE_DISC_HIDS | BTA_HH_LE_DISC_DIS);
 
   /* read DIS info */
-  if (!DIS_ReadDISInfo(p_cb->addr, bta_hh_le_dis_cback, DIS_ATTR_PNP_ID_BIT)) {
+  if (!DIS_ReadDISInfo(p_cb->link_spec.addrt.bda, bta_hh_le_dis_cback,
+                       DIS_ATTR_PNP_ID_BIT)) {
     LOG_ERROR("read DIS failed");
     p_cb->disc_active &= ~BTA_HH_LE_DISC_DIS;
   }
@@ -939,7 +954,12 @@ static void bta_hh_le_encrypt_cback(const RawAddress* bd_addr,
                                     UNUSED_ATTR tBT_TRANSPORT transport,
                                     UNUSED_ATTR void* p_ref_data,
                                     tBTM_STATUS result) {
-  tBTA_HH_DEV_CB* p_dev_cb = bta_hh_get_cb(*bd_addr);
+  tAclLinkSpec link_spec;
+  link_spec.addrt.bda = *bd_addr;
+  link_spec.addrt.type = BLE_ADDR_PUBLIC;
+  link_spec.transport = transport;
+
+  tBTA_HH_DEV_CB* p_dev_cb = bta_hh_get_cb(link_spec);
   if (p_dev_cb == nullptr) {
     LOG_ERROR("unexpected encryption callback, ignore");
     return;
@@ -965,7 +985,7 @@ static void bta_hh_le_encrypt_cback(const RawAddress* bd_addr,
  ******************************************************************************/
 void bta_hh_security_cmpl(tBTA_HH_DEV_CB* p_cb,
                           UNUSED_ATTR const tBTA_HH_DATA* p_buf) {
-  LOG_VERBOSE("addr:%s, status:%d", ADDRESS_TO_LOGGABLE_CSTR(p_cb->addr),
+  LOG_VERBOSE("addr:%s, status:%d", ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec),
               p_cb->status);
   if (p_cb->status == BTA_HH_OK) {
     if (p_cb->hid_srvc.state < BTA_HH_SERVICE_DISCOVERED) {
@@ -974,7 +994,7 @@ void bta_hh_security_cmpl(tBTA_HH_DEV_CB* p_cb,
       /* start loading the cache if not in stack */
       tBTA_HH_RPT_CACHE_ENTRY* p_rpt_cache;
       uint8_t num_rpt = 0;
-      if ((p_rpt_cache = bta_hh_le_co_cache_load(p_cb->addr, &num_rpt,
+      if ((p_rpt_cache = bta_hh_le_co_cache_load(p_cb->link_spec, &num_rpt,
                                                  p_cb->app_id)) != NULL) {
         LOG_DEBUG("Cache found, no need to perform service discovery");
         bta_hh_process_cache_rpt(p_cb, p_rpt_cache, num_rpt);
@@ -1063,35 +1083,37 @@ static void bta_hh_clear_service_cache(tBTA_HH_DEV_CB* p_cb) {
  ******************************************************************************/
 void bta_hh_start_security(tBTA_HH_DEV_CB* p_cb,
                            UNUSED_ATTR const tBTA_HH_DATA* p_buf) {
-  LOG_VERBOSE("addr:%s", ADDRESS_TO_LOGGABLE_CSTR(p_cb->addr));
-  if (BTM_SecIsSecurityPending(p_cb->addr)) {
+  LOG_VERBOSE("addr:%s", ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec.addrt.bda));
+  if (BTM_SecIsSecurityPending(p_cb->link_spec.addrt.bda)) {
     /* if security collision happened, wait for encryption done */
     p_cb->security_pending = true;
     return;
   }
 
   /* if link has been encrypted */
-  if (BTM_IsEncrypted(p_cb->addr, BT_TRANSPORT_LE)) {
+  if (BTM_IsEncrypted(p_cb->link_spec.addrt.bda, BT_TRANSPORT_LE)) {
     LOG_DEBUG("addr:%s already encrypted",
-              ADDRESS_TO_LOGGABLE_CSTR(p_cb->addr));
+              ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec.addrt.bda));
     p_cb->status = BTA_HH_OK;
     bta_hh_sm_execute(p_cb, BTA_HH_ENC_CMPL_EVT, NULL);
   }
   /* if bonded and link not encrypted */
-  else if (BTM_IsLinkKeyKnown(p_cb->addr, BT_TRANSPORT_LE)) {
+  else if (BTM_IsLinkKeyKnown(p_cb->link_spec.addrt.bda, BT_TRANSPORT_LE)) {
     LOG_DEBUG("addr:%s bonded, not encrypted",
-              ADDRESS_TO_LOGGABLE_CSTR(p_cb->addr));
+              ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec.addrt.bda));
     p_cb->status = BTA_HH_ERR_AUTH_FAILED;
-    BTM_SetEncryption(p_cb->addr, BT_TRANSPORT_LE, bta_hh_le_encrypt_cback,
-                      NULL, BTM_BLE_SEC_ENCRYPT);
+    BTM_SetEncryption(p_cb->link_spec.addrt.bda, BT_TRANSPORT_LE,
+                      bta_hh_le_encrypt_cback, NULL, BTM_BLE_SEC_ENCRYPT);
   }
   /* unbonded device, report security error here */
   else {
-    LOG_DEBUG("addr:%s not bonded", ADDRESS_TO_LOGGABLE_CSTR(p_cb->addr));
+    LOG_DEBUG("addr:%s not bonded",
+              ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec.addrt.bda));
     p_cb->status = BTA_HH_ERR_AUTH_FAILED;
     bta_hh_clear_service_cache(p_cb);
-    BTM_SetEncryption(p_cb->addr, BT_TRANSPORT_LE, bta_hh_le_encrypt_cback,
-                      NULL, BTM_BLE_SEC_ENCRYPT_NO_MITM);
+    BTM_SetEncryption(p_cb->link_spec.addrt.bda, BT_TRANSPORT_LE,
+                      bta_hh_le_encrypt_cback, NULL,
+                      BTM_BLE_SEC_ENCRYPT_NO_MITM);
   }
 }
 
@@ -1150,7 +1172,12 @@ void bta_hh_gatt_open(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_buf) {
  *
  ******************************************************************************/
 static void bta_hh_le_close(const tBTA_GATTC_CLOSE& gattc_data) {
-  tBTA_HH_DEV_CB* p_cb = bta_hh_le_find_dev_cb_by_bda(gattc_data.remote_bda);
+  tAclLinkSpec link_spec;
+  link_spec.addrt.bda = gattc_data.remote_bda;
+  link_spec.addrt.type = BLE_ADDR_PUBLIC;
+  link_spec.transport = BT_TRANSPORT_LE;
+
+  tBTA_HH_DEV_CB* p_cb = bta_hh_le_find_dev_cb_by_bda(link_spec);
   if (p_cb == nullptr) {
     LOG_WARN("unknown device:%s",
              ADDRESS_TO_LOGGABLE_CSTR(gattc_data.remote_bda));
@@ -1356,14 +1383,14 @@ static void read_pref_conn_params_cb(uint16_t conn_id, tGATT_STATUS status,
   tBTA_HH_DEV_CB* p_dev_cb = (tBTA_HH_DEV_CB*)data;
 
   if (interop_match_addr(INTEROP_HID_PREF_CONN_SUP_TIMEOUT_3S,
-                         (RawAddress*)&p_dev_cb->addr)) {
+                         (RawAddress*)&p_dev_cb->link_spec.addrt.bda)) {
     if (timeout < 300) timeout = 300;
   }
 
-  BTM_BleSetPrefConnParams(p_dev_cb->addr, min_interval, max_interval, latency,
-                           timeout);
-  L2CA_UpdateBleConnParams(p_dev_cb->addr, min_interval, max_interval, latency,
-                           timeout, 0, 0);
+  BTM_BleSetPrefConnParams(p_dev_cb->link_spec.addrt.bda, min_interval,
+                           max_interval, latency, timeout);
+  L2CA_UpdateBleConnParams(p_dev_cb->link_spec.addrt.bda, min_interval,
+                           max_interval, latency, timeout, 0, 0);
 }
 
 /*******************************************************************************
@@ -1593,7 +1620,7 @@ static void bta_hh_le_input_rpt_notify(tBTA_GATTC_NOTIFY* p_data) {
 
   bta_hh_co_data((uint8_t)p_dev_cb->hid_handle, p_buf, p_data->len,
                  p_dev_cb->mode, 0, /* no sub class*/
-                 p_dev_cb->dscp_info.ctry_code, p_dev_cb->addr, app_id);
+                 p_dev_cb->dscp_info.ctry_code, p_dev_cb->link_spec, app_id);
 
   if (p_buf != p_data->value) osi_free(p_buf);
 }
@@ -1610,11 +1637,12 @@ static void bta_hh_le_input_rpt_notify(tBTA_GATTC_NOTIFY* p_data) {
 void bta_hh_le_open_fail(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
   const tBTA_HH_LE_CLOSE* le_close = &p_data->le_close;
 
-  BTM_LogHistory(kBtmLogTag, p_cb->addr, "Open failed",
+  BTM_LogHistory(kBtmLogTag, p_cb->link_spec.addrt.bda, "Open failed",
                  base::StringPrintf(
                      "%s reason %s", (p_cb->is_le_device) ? "le" : "classic",
                      gatt_disconnection_reason_text(le_close->reason).c_str()));
-  LOG_WARN("Open failed for device:%s", ADDRESS_TO_LOGGABLE_CSTR(p_cb->addr));
+  LOG_WARN("Open failed for device:%s",
+           ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec.addrt.bda));
 
   /* open failure in the middle of service discovery, clear all services */
   if (p_cb->disc_active & BTA_HH_LE_DISC_HIDS) {
@@ -1633,7 +1661,7 @@ void bta_hh_le_open_fail(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
   tBTA_HH data = {
       .conn =
           {
-              .bda = p_cb->addr,
+              .link_spec = p_cb->link_spec,
               .status = (le_close->reason != GATT_CONN_OK) ? BTA_HH_ERR
                                                            : p_cb->status,
               .handle = p_cb->hid_handle,
@@ -1659,7 +1687,7 @@ void bta_hh_le_open_fail(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
 void bta_hh_gatt_close(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
   const tBTA_HH_LE_CLOSE* le_close = &p_data->le_close;
 
-  BTM_LogHistory(kBtmLogTag, p_cb->addr, "Closed",
+  BTM_LogHistory(kBtmLogTag, p_cb->link_spec.addrt.bda, "Closed",
                  base::StringPrintf(
                      "%s reason %s", (p_cb->is_le_device) ? "le" : "classic",
                      gatt_disconnection_reason_text(le_close->reason).c_str()));
@@ -1686,7 +1714,7 @@ void bta_hh_gatt_close(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
       case GATT_CONN_TIMEOUT:
         LOG_DEBUG(
             "gd_acl: add into acceptlist for reconnection device:%s reason:%s",
-            ADDRESS_TO_LOGGABLE_CSTR(p_cb->addr),
+            ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec),
             gatt_disconnection_reason_text(le_close->reason).c_str());
         // gd removes from bg list after successful connection
         // Correct the cached state to allow re-add to acceptlist.
@@ -1702,7 +1730,7 @@ void bta_hh_gatt_close(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
         LOG_DEBUG(
             "gd_acl: SKIP add into acceptlist for reconnection device:%s "
             "reason:%s",
-            ADDRESS_TO_LOGGABLE_CSTR(p_cb->addr),
+            ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec),
             gatt_disconnection_reason_text(le_close->reason).c_str());
         break;
     }
@@ -2007,7 +2035,7 @@ void bta_hh_le_get_dscp_act(tBTA_HH_DEV_CB* p_cb) {
  ******************************************************************************/
 static void bta_hh_le_add_dev_bg_conn(tBTA_HH_DEV_CB* p_cb) {
   /* Add device into BG connection to accept remote initiated connection */
-  BTA_GATTC_Open(bta_hh_cb.gatt_if, p_cb->addr,
+  BTA_GATTC_Open(bta_hh_cb.gatt_if, p_cb->link_spec.addrt.bda,
                  BTM_BLE_BKG_CONNECT_ALLOW_LIST, false);
   p_cb->in_bg_conn = true;
 }
@@ -2060,26 +2088,27 @@ uint8_t bta_hh_le_add_device(tBTA_HH_DEV_CB* p_cb,
 void bta_hh_le_remove_dev_bg_conn(tBTA_HH_DEV_CB* p_dev_cb) {
   if (p_dev_cb->in_bg_conn) {
     LOG_DEBUG("Removing from background connection device:%s",
-              ADDRESS_TO_LOGGABLE_CSTR(p_dev_cb->addr));
+              ADDRESS_TO_LOGGABLE_CSTR(p_dev_cb->link_spec));
     p_dev_cb->in_bg_conn = false;
 
-    BTA_GATTC_CancelOpen(bta_hh_cb.gatt_if, p_dev_cb->addr, false);
+    BTA_GATTC_CancelOpen(bta_hh_cb.gatt_if, p_dev_cb->link_spec.addrt.bda,
+                         false);
   }
 
   /* deregister all notifications */
   bta_hh_le_deregister_input_notif(p_dev_cb);
 }
 
-static void bta_hh_le_service_changed(RawAddress remote_bda) {
-  tBTA_HH_DEV_CB* p_cb = bta_hh_le_find_dev_cb_by_bda(remote_bda);
+static void bta_hh_le_service_changed(tAclLinkSpec link_spec) {
+  tBTA_HH_DEV_CB* p_cb = bta_hh_le_find_dev_cb_by_bda(link_spec);
   if (p_cb == nullptr) {
     LOG_WARN("Received close event with unknown device:%s",
-             ADDRESS_TO_LOGGABLE_CSTR(remote_bda));
+             ADDRESS_TO_LOGGABLE_CSTR(link_spec));
     return;
   }
 
   /* Forget the cached reports */
-  bta_hh_le_co_reset_rpt_cache(p_cb->addr, p_cb->app_id);
+  bta_hh_le_co_reset_rpt_cache(p_cb->link_spec, p_cb->app_id);
   p_cb->dscp_info.descriptor.dsc_list = NULL;
   osi_free_and_reset((void**)&p_cb->hid_srvc.rpt_map);
   p_cb->hid_srvc = {};
@@ -2103,10 +2132,10 @@ static void bta_hh_le_service_changed(RawAddress remote_bda) {
   bta_hh_sm_execute(p_cb, BTA_HH_GATT_CLOSE_EVT, &data);
 }
 
-static void bta_hh_le_service_discovery_done(RawAddress remote_bda) {
-  tBTA_HH_DEV_CB* p_cb = bta_hh_le_find_dev_cb_by_bda(remote_bda);
+static void bta_hh_le_service_discovery_done(tAclLinkSpec link_spec) {
+  tBTA_HH_DEV_CB* p_cb = bta_hh_le_find_dev_cb_by_bda(link_spec);
   if (p_cb == nullptr) {
-    LOG_WARN("unknown device:%s", ADDRESS_TO_LOGGABLE_CSTR(remote_bda));
+    LOG_WARN("unknown device:%s", ADDRESS_TO_LOGGABLE_CSTR(link_spec));
     return;
   }
 
@@ -2118,7 +2147,7 @@ static void bta_hh_le_service_discovery_done(RawAddress remote_bda) {
         .status = GATT_SUCCESS,
         .conn_id = p_cb->conn_id,
         .client_if = bta_hh_cb.gatt_if,
-        .remote_bda = remote_bda,
+        .remote_bda = link_spec.addrt.bda,
         .transport = BT_TRANSPORT_LE,
         .mtu = 0,
     };
@@ -2139,6 +2168,10 @@ static void bta_hh_le_service_discovery_done(RawAddress remote_bda) {
  ******************************************************************************/
 static void bta_hh_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
   tBTA_HH_DEV_CB* p_dev_cb;
+  tAclLinkSpec link_spec;
+  link_spec.addrt.type = BLE_ADDR_PUBLIC;
+  link_spec.transport = BT_TRANSPORT_LE;
+
   LOG_VERBOSE("event:%s", gatt_client_event_text(event).c_str());
   if (p_data == NULL) return;
 
@@ -2149,7 +2182,9 @@ static void bta_hh_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
       break;
 
     case BTA_GATTC_OPEN_EVT: /* 2 */
-      p_dev_cb = bta_hh_le_find_dev_cb_by_bda(p_data->open.remote_bda);
+      link_spec.addrt.bda = p_data->open.remote_bda;
+      link_spec.transport = p_data->open.transport;
+      p_dev_cb = bta_hh_le_find_dev_cb_by_bda(link_spec);
       if (p_dev_cb) {
         bta_hh_sm_execute(p_dev_cb, BTA_HH_GATT_OPEN_EVT,
                           (tBTA_HH_DATA*)&p_data->open);
@@ -2169,15 +2204,18 @@ static void bta_hh_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
       break;
 
     case BTA_GATTC_SRVC_CHG_EVT:
-      bta_hh_le_service_changed(p_data->remote_bda);
+      link_spec.addrt.bda = p_data->remote_bda;
+      bta_hh_le_service_changed(link_spec);
       break;
 
     case BTA_GATTC_SRVC_DISC_DONE_EVT:
-      bta_hh_le_service_discovery_done(p_data->remote_bda);
+      link_spec.addrt.bda = p_data->remote_bda;
+      bta_hh_le_service_discovery_done(link_spec);
       break;
 
     case BTA_GATTC_ENC_CMPL_CB_EVT: /* 17 */
-      p_dev_cb = bta_hh_le_find_dev_cb_by_bda(p_data->enc_cmpl.remote_bda);
+      link_spec.addrt.bda = p_data->enc_cmpl.remote_bda;
+      p_dev_cb = bta_hh_le_find_dev_cb_by_bda(link_spec);
       if (p_dev_cb) {
         bta_hh_sm_execute(p_dev_cb, BTA_HH_GATT_ENC_CMPL_EVT,
                           (tBTA_HH_DATA*)&p_data->enc_cmpl);
