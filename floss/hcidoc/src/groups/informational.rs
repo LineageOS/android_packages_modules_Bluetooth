@@ -930,7 +930,10 @@ impl Rule for InformationalRule {
                     // PacketChild::AclRx(rx).specialize()
                     _ => {}
                 }
-            } // packet.inner
+            }
+
+            // End packet.inner match
+            _ => (),
         }
     }
 
