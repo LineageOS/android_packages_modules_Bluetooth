@@ -845,6 +845,7 @@ cc_test {
 cc_test {
     name: "net_test_stack_smp",
     defaults: [
+        "bluetooth_flatbuffer_bundler_defaults",
         "fluoride_defaults",
         "mts_defaults",
     ],
@@ -1502,6 +1503,7 @@ cc_test {
         unit_test: true,
     },
     defaults: [
+        "bluetooth_flatbuffer_bundler_defaults",
         "fluoride_defaults",
         "mts_defaults",
     ],
@@ -2018,6 +2020,7 @@ cc_test {
     test_suites: ["general-tests"],
     host_supported: true,
     defaults: [
+        "bluetooth_flatbuffer_bundler_defaults",
         "fluoride_defaults",
         "mts_defaults",
     ],

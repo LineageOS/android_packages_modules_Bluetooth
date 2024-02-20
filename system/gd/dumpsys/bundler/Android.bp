@@ -33,6 +33,7 @@ genrule {
         "//packages/modules/Bluetooth/system/gd",
         "//packages/modules/Bluetooth/system/main",
         "//packages/modules/Bluetooth/system/rust",
+        "//packages/modules/Bluetooth/system/stack",
     ],
     tools: [
         "flatc",
