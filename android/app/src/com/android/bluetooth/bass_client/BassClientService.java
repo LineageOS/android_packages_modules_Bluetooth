@@ -965,6 +965,20 @@ public class BassClientService extends ProfileService {
         }
     }
 
+    private void informConnectedDeviceAboutScanOffloadStop() {
+        for (BluetoothDevice device : getConnectedDevices()) {
+            synchronized (mStateMachines) {
+                BassClientStateMachine stateMachine = getOrCreateStateMachine(device);
+                if (stateMachine == null) {
+                    Log.w(TAG, "informConnectedDeviceAboutScanOffloadStop: Can't get state "
+                            + "machine for device: " + device);
+                    continue;
+                }
+                stateMachine.sendMessage(BassClientStateMachine.STOP_SCAN_OFFLOAD);
+            }
+        }
+    }
+
     void handleConnectionStateChanged(BluetoothDevice device, int fromState, int toState) {
         mHandler.post(() -> connectionStateChanged(device, fromState, toState));
     }
@@ -1317,6 +1331,7 @@ public class BassClientService extends ProfileService {
 
                 public void onScanFailed(int errorCode) {
                     Log.e(TAG, "Scan Failure:" + errorCode);
+                    informConnectedDeviceAboutScanOffloadStop();
                 }
             };
             // when starting scan, clear the previously cached broadcast scan results
@@ -1342,6 +1357,19 @@ public class BassClientService extends ProfileService {
                         .setServiceData(BassConstants.BAAS_UUID,
                                 serviceData, serviceDataMask).build());
             }
+
+            for (BluetoothDevice device : getConnectedDevices()) {
+                synchronized (mStateMachines) {
+                    BassClientStateMachine stateMachine = getOrCreateStateMachine(device);
+                    if (stateMachine == null) {
+                        Log.w(TAG, "startSearchingForSources: Can't get state machine for "
+                                + "device: " + device);
+                        continue;
+                    }
+                    stateMachine.sendMessage(BassClientStateMachine.START_SCAN_OFFLOAD);
+                }
+            }
+
             scanner.startScan(filters, settings, mSearchScanCallback);
             sEventLogger.logd(DBG, TAG, "startSearchingForSources");
             mCallbacks.notifySearchStarted(BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST);
@@ -1369,6 +1397,7 @@ public class BassClientService extends ProfileService {
                 mCallbacks.notifySearchStopFailed(BluetoothStatusCodes.ERROR_UNKNOWN);
                 return;
             }
+            informConnectedDeviceAboutScanOffloadStop();
             scanner.stopScan(mSearchScanCallback);
             mSearchScanCallback = null;
             sEventLogger.logd(DBG, TAG, "stopSearchingForSources");
