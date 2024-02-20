@@ -6,11 +6,11 @@ use bt_topshim::bindings::root::bluetooth::Uuid;
 use bt_topshim::btif::{BluetoothInterface, BtStatus, BtTransport, RawAddress, Uuid128Bit};
 use bt_topshim::profiles::gatt::{
     ffi::RustAdvertisingTrackInfo, AdvertisingStatus, BtGattDbElement, BtGattNotifyParams,
-    BtGattReadParams, BtGattResponse, BtGattValue, Gatt, GattAdvCallbacks,
-    GattAdvCallbacksDispatcher, GattAdvInbandCallbacksDispatcher, GattClientCallbacks,
-    GattClientCallbacksDispatcher, GattScannerCallbacks, GattScannerCallbacksDispatcher,
-    GattScannerInbandCallbacks, GattScannerInbandCallbacksDispatcher, GattServerCallbacks,
-    GattServerCallbacksDispatcher, GattStatus, LePhy, MsftAdvMonitor, MsftAdvMonitorPattern,
+    BtGattReadParams, BtGattResponse, BtGattValue, Gatt, GattAdvCallbacksDispatcher,
+    GattAdvInbandCallbacksDispatcher, GattClientCallbacks, GattClientCallbacksDispatcher,
+    GattScannerCallbacks, GattScannerCallbacksDispatcher, GattScannerInbandCallbacks,
+    GattScannerInbandCallbacksDispatcher, GattServerCallbacks, GattServerCallbacksDispatcher,
+    GattStatus, LePhy, MsftAdvMonitor, MsftAdvMonitorPattern,
 };
 use bt_topshim::sysprop;
 use bt_topshim::topstack;
@@ -18,18 +18,17 @@ use bt_utils::adv_parser;
 use bt_utils::array_utils;
 
 use crate::async_helper::{AsyncHelper, CallbackSender};
-use crate::bluetooth::{Bluetooth, BluetoothDevice, IBluetooth};
+use crate::bluetooth::{Bluetooth, BluetoothDevice};
 use crate::bluetooth_adv::{
-    AdvertiseData, AdvertiserId, Advertisers, AdvertisingSetInfo, AdvertisingSetParameters,
-    IAdvertisingSetCallback, PeriodicAdvertisingParameters, INVALID_REG_ID,
+    AdvertiseData, AdvertiseManager, AdvertisingSetParameters, BtifGattAdvCallbacks,
+    IAdvertisingSetCallback, IBluetoothAdvertiseManager, PeriodicAdvertisingParameters,
 };
 use crate::callbacks::Callbacks;
 use crate::uuid::UuidHelper;
 use crate::{APIMessage, BluetoothAPI, Message, RPCProxy, SuspendMode};
-use log::{debug, warn};
+use log::warn;
 use num_derive::{FromPrimitive, ToPrimitive};
 use num_traits::cast::{FromPrimitive, ToPrimitive};
-use num_traits::clamp;
 use rand::rngs::SmallRng;
 use rand::{RngCore, SeedableRng};
 use std::collections::{HashMap, HashSet};
@@ -1408,7 +1407,6 @@ pub struct BluetoothGatt {
     // to not wrap this in `Option` since we know that we can't function without `gatt` being
     // initialized anyway.
     gatt: Option<Arc<Mutex<Gatt>>>,
-    adapter: Option<Arc<Mutex<Box<Bluetooth>>>>,
 
     context_map: ContextMap,
     server_context_map: ServerContextMap,
@@ -1417,7 +1415,7 @@ pub struct BluetoothGatt {
     scanners: Arc<Mutex<ScannersMap>>,
     scan_suspend_mode: SuspendMode,
     paused_scanner_ids: Vec<u8>,
-    advertisers: Advertisers,
+    adv_manager: AdvertiseManager,
 
     adv_mon_add_cb_sender: CallbackSender<(u8, u8)>,
     adv_mon_remove_cb_sender: CallbackSender<u8>,
@@ -1442,7 +1440,6 @@ impl BluetoothGatt {
         BluetoothGatt {
             intf,
             gatt: None,
-            adapter: None,
             context_map: ContextMap::new(tx.clone()),
             server_context_map: ServerContextMap::new(tx.clone()),
             reliable_queue: HashSet::new(),
@@ -1451,7 +1448,7 @@ impl BluetoothGatt {
             scan_suspend_mode: SuspendMode::Normal,
             paused_scanner_ids: Vec::new(),
             small_rng: SmallRng::from_entropy(),
-            advertisers: Advertisers::new(tx.clone()),
+            adv_manager: AdvertiseManager::new(tx.clone()),
             adv_mon_add_cb_sender: async_helper_msft_adv_monitor_add.get_callback_sender(),
             adv_mon_remove_cb_sender: async_helper_msft_adv_monitor_remove.get_callback_sender(),
             adv_mon_enable_cb_sender: async_helper_msft_adv_monitor_enable.get_callback_sender(),
@@ -1473,7 +1470,7 @@ impl BluetoothGatt {
         adapter: Arc<Mutex<Box<Bluetooth>>>,
     ) {
         self.gatt = Gatt::new(&self.intf.lock().unwrap()).map(|gatt| Arc::new(Mutex::new(gatt)));
-        self.adapter = Some(adapter);
+        self.adv_manager.initialize(self.gatt.clone(), Some(adapter));
 
         let tx_clone = tx.clone();
         let gatt_client_callbacks_dispatcher = GattClientCallbacksDispatcher {
@@ -1771,18 +1768,9 @@ impl BluetoothGatt {
         BtStatus::Success
     }
 
-    /// Remove an advertiser callback and unregisters all advertising sets associated with that callback.
+    /// Remove an adv_manager callback and unregisters all advertising sets associated with that callback.
     pub fn remove_adv_callback(&mut self, callback_id: u32) -> bool {
-        self.advertisers
-            .remove_callback(callback_id, &mut self.gatt.as_ref().unwrap().lock().unwrap())
-    }
-
-    fn get_adapter_name(&self) -> String {
-        if let Some(adapter) = &self.adapter {
-            adapter.lock().unwrap().get_name()
-        } else {
-            String::new()
-        }
+        self.adv_manager.unregister_callback(callback_id)
     }
 
     pub fn remove_client_callback(&mut self, callback_id: u32) {
@@ -1811,42 +1799,12 @@ impl BluetoothGatt {
 
     /// Enters suspend mode for LE advertising.
     pub fn advertising_enter_suspend(&mut self) {
-        self.advertisers.set_suspend_mode(SuspendMode::Suspending);
-
-        let mut pausing_cnt = 0;
-        for s in self.advertisers.enabled_sets_mut() {
-            s.set_paused(true);
-            self.gatt.as_ref().unwrap().lock().unwrap().advertiser.enable(
-                s.adv_id(),
-                false,
-                s.adv_timeout(),
-                s.adv_events(),
-            );
-            pausing_cnt += 1;
-        }
-
-        if pausing_cnt == 0 {
-            self.advertisers.set_suspend_mode(SuspendMode::Suspended);
-        }
+        self.adv_manager.enter_suspend()
     }
 
     /// Exits suspend mode for LE advertising.
     pub fn advertising_exit_suspend(&mut self) {
-        for id in self.advertisers.stopped_sets().map(|s| s.adv_id()).collect::<Vec<_>>() {
-            self.gatt.as_ref().unwrap().lock().unwrap().advertiser.unregister(id);
-            self.advertisers.remove_by_advertiser_id(id as AdvertiserId);
-        }
-        for s in self.advertisers.paused_sets_mut() {
-            s.set_paused(false);
-            self.gatt.as_ref().unwrap().lock().unwrap().advertiser.enable(
-                s.adv_id(),
-                true,
-                s.adv_timeout(),
-                s.adv_events(),
-            );
-        }
-
-        self.advertisers.set_suspend_mode(SuspendMode::Normal);
+        self.adv_manager.exit_suspend()
     }
 
     /// Start an active scan on given scanner id. This will look up and assign
@@ -2146,17 +2104,16 @@ impl IBluetoothGatt for BluetoothGatt {
         &mut self,
         callback: Box<dyn IAdvertisingSetCallback + Send>,
     ) -> u32 {
-        self.advertisers.add_callback(callback)
+        self.adv_manager.register_callback(callback)
     }
 
     fn unregister_advertiser_callback(&mut self, callback_id: u32) -> bool {
-        self.advertisers
-            .remove_callback(callback_id, &mut self.gatt.as_ref().unwrap().lock().unwrap())
+        self.adv_manager.unregister_callback(callback_id)
     }
 
     fn start_advertising_set(
         &mut self,
-        mut parameters: AdvertisingSetParameters,
+        parameters: AdvertisingSetParameters,
         advertise_data: AdvertiseData,
         scan_response: Option<AdvertiseData>,
         periodic_parameters: Option<PeriodicAdvertisingParameters>,
@@ -2165,98 +2122,24 @@ impl IBluetoothGatt for BluetoothGatt {
         max_ext_adv_events: i32,
         callback_id: u32,
     ) -> i32 {
-        if self.advertisers.suspend_mode() != SuspendMode::Normal {
-            return INVALID_REG_ID;
-        }
-
-        let device_name = self.get_adapter_name();
-        let adv_bytes = advertise_data.make_with(&device_name);
-        let is_le_extended_advertising_supported = match &self.adapter {
-            Some(adapter) => adapter.lock().unwrap().is_le_extended_advertising_supported(),
-            _ => false,
-        };
-        // TODO(b/311417973): Remove this once we have more robust /device/bluetooth APIs to control extended advertising
-        let is_legacy = parameters.is_legacy
-            && !AdvertiseData::can_upgrade(
-                &mut parameters,
-                &adv_bytes,
-                is_le_extended_advertising_supported,
-            );
-        let params = parameters.into();
-        if !AdvertiseData::validate_raw_data(is_legacy, &adv_bytes) {
-            log::warn!("Failed to start advertising set with invalid advertise data");
-            return INVALID_REG_ID;
-        }
-        let scan_bytes =
-            if let Some(d) = scan_response { d.make_with(&device_name) } else { Vec::<u8>::new() };
-        if !AdvertiseData::validate_raw_data(is_legacy, &scan_bytes) {
-            log::warn!("Failed to start advertising set with invalid scan response");
-            return INVALID_REG_ID;
-        }
-        let periodic_params = if let Some(p) = periodic_parameters {
-            p.into()
-        } else {
-            bt_topshim::profiles::gatt::PeriodicAdvertisingParameters::default()
-        };
-        let periodic_bytes =
-            if let Some(d) = periodic_data { d.make_with(&device_name) } else { Vec::<u8>::new() };
-        if !AdvertiseData::validate_raw_data(false, &periodic_bytes) {
-            log::warn!("Failed to start advertising set with invalid periodic data");
-            return INVALID_REG_ID;
-        }
-        let adv_timeout = clamp(duration, 0, 0xffff) as u16;
-        let adv_events = clamp(max_ext_adv_events, 0, 0xff) as u8;
-
-        let reg_id = self.advertisers.new_reg_id();
-        let s = AdvertisingSetInfo::new(callback_id, adv_timeout, adv_events, is_legacy, reg_id);
-        self.advertisers.add(s);
-
-        self.gatt.as_ref().unwrap().lock().unwrap().advertiser.start_advertising_set(
-            reg_id,
-            params,
-            adv_bytes,
-            scan_bytes,
-            periodic_params,
-            periodic_bytes,
-            adv_timeout,
-            adv_events,
-        );
-        reg_id
+        self.adv_manager.start_advertising_set(
+            parameters,
+            advertise_data,
+            scan_response,
+            periodic_parameters,
+            periodic_data,
+            duration,
+            max_ext_adv_events,
+            callback_id,
+        )
     }
 
     fn stop_advertising_set(&mut self, advertiser_id: i32) {
-        let s = if let Some(s) = self.advertisers.get_by_advertiser_id(advertiser_id) {
-            s.clone()
-        } else {
-            return;
-        };
-
-        if self.advertisers.suspend_mode() != SuspendMode::Normal {
-            if !s.is_stopped() {
-                warn!("Deferred advertisement unregistering due to suspending");
-                self.advertisers.get_mut_by_advertiser_id(advertiser_id).unwrap().set_stopped();
-                if let Some(cb) = self.advertisers.get_callback(&s) {
-                    cb.on_advertising_set_stopped(advertiser_id);
-                }
-            }
-            return;
-        }
-
-        self.gatt.as_ref().unwrap().lock().unwrap().advertiser.unregister(s.adv_id());
-        if let Some(cb) = self.advertisers.get_callback(&s) {
-            cb.on_advertising_set_stopped(advertiser_id);
-        }
-        self.advertisers.remove_by_advertiser_id(advertiser_id);
+        self.adv_manager.stop_advertising_set(advertiser_id)
     }
 
     fn get_own_address(&mut self, advertiser_id: i32) {
-        if self.advertisers.suspend_mode() != SuspendMode::Normal {
-            return;
-        }
-
-        if let Some(s) = self.advertisers.get_by_advertiser_id(advertiser_id) {
-            self.gatt.as_ref().unwrap().lock().unwrap().advertiser.get_own_address(s.adv_id());
-        }
+        self.adv_manager.get_own_address(advertiser_id);
     }
 
     fn enable_advertising_set(
@@ -2266,81 +2149,24 @@ impl IBluetoothGatt for BluetoothGatt {
         duration: i32,
         max_ext_adv_events: i32,
     ) {
-        if self.advertisers.suspend_mode() != SuspendMode::Normal {
-            return;
-        }
-
-        let adv_timeout = clamp(duration, 0, 0xffff) as u16;
-        let adv_events = clamp(max_ext_adv_events, 0, 0xff) as u8;
-
-        if let Some(s) = self.advertisers.get_by_advertiser_id(advertiser_id) {
-            self.gatt.as_ref().unwrap().lock().unwrap().advertiser.enable(
-                s.adv_id(),
-                enable,
-                adv_timeout,
-                adv_events,
-            );
-        }
+        self.adv_manager.enable_advertising_set(
+            advertiser_id,
+            enable,
+            duration,
+            max_ext_adv_events,
+        );
     }
 
     fn set_advertising_data(&mut self, advertiser_id: i32, data: AdvertiseData) {
-        if self.advertisers.suspend_mode() != SuspendMode::Normal {
-            return;
-        }
-
-        let device_name = self.get_adapter_name();
-        let bytes = data.make_with(&device_name);
-
-        if let Some(s) = self.advertisers.get_by_advertiser_id(advertiser_id) {
-            if !AdvertiseData::validate_raw_data(s.is_legacy(), &bytes) {
-                log::warn!("Advertiser {}: invalid advertise data to update", advertiser_id);
-                return;
-            }
-            self.gatt.as_ref().unwrap().lock().unwrap().advertiser.set_data(
-                s.adv_id(),
-                false,
-                bytes,
-            );
-        }
+        self.adv_manager.set_advertising_data(advertiser_id, data);
     }
 
     fn set_raw_adv_data(&mut self, advertiser_id: i32, data: Vec<u8>) {
-        if self.advertisers.suspend_mode() != SuspendMode::Normal {
-            return;
-        }
-
-        if let Some(s) = self.advertisers.get_by_advertiser_id(advertiser_id) {
-            if !AdvertiseData::validate_raw_data(s.is_legacy(), &data) {
-                log::warn!("Advertiser {}: invalid raw advertise data to update", advertiser_id);
-                return;
-            }
-            self.gatt.as_ref().unwrap().lock().unwrap().advertiser.set_data(
-                s.adv_id(),
-                false,
-                data,
-            );
-        }
+        self.adv_manager.set_raw_adv_data(advertiser_id, data);
     }
 
     fn set_scan_response_data(&mut self, advertiser_id: i32, data: AdvertiseData) {
-        if self.advertisers.suspend_mode() != SuspendMode::Normal {
-            return;
-        }
-
-        let device_name = self.get_adapter_name();
-        let bytes = data.make_with(&device_name);
-
-        if let Some(s) = self.advertisers.get_by_advertiser_id(advertiser_id) {
-            if !AdvertiseData::validate_raw_data(s.is_legacy(), &bytes) {
-                log::warn!("Advertiser {}: invalid scan response to update", advertiser_id);
-                return;
-            }
-            self.gatt.as_ref().unwrap().lock().unwrap().advertiser.set_data(
-                s.adv_id(),
-                true,
-                bytes,
-            );
-        }
+        self.adv_manager.set_scan_response_data(advertiser_id, data);
     }
 
     fn set_advertising_parameters(
@@ -2348,38 +2174,7 @@ impl IBluetoothGatt for BluetoothGatt {
         advertiser_id: i32,
         parameters: AdvertisingSetParameters,
     ) {
-        if self.advertisers.suspend_mode() != SuspendMode::Normal {
-            return;
-        }
-
-        let params = parameters.into();
-
-        if let Some(s) = self.advertisers.get_by_advertiser_id(advertiser_id) {
-            let was_enabled = s.is_enabled();
-            if was_enabled {
-                self.gatt.as_ref().unwrap().lock().unwrap().advertiser.enable(
-                    s.adv_id(),
-                    false,
-                    s.adv_timeout(),
-                    s.adv_events(),
-                );
-            }
-            self.gatt
-                .as_ref()
-                .unwrap()
-                .lock()
-                .unwrap()
-                .advertiser
-                .set_parameters(s.adv_id(), params);
-            if was_enabled {
-                self.gatt.as_ref().unwrap().lock().unwrap().advertiser.enable(
-                    s.adv_id(),
-                    true,
-                    s.adv_timeout(),
-                    s.adv_events(),
-                );
-            }
-        }
+        self.adv_manager.set_advertising_parameters(advertiser_id, parameters);
     }
 
     fn set_periodic_advertising_parameters(
@@ -2387,44 +2182,11 @@ impl IBluetoothGatt for BluetoothGatt {
         advertiser_id: i32,
         parameters: PeriodicAdvertisingParameters,
     ) {
-        if self.advertisers.suspend_mode() != SuspendMode::Normal {
-            return;
-        }
-
-        let params = parameters.into();
-
-        if let Some(s) = self.advertisers.get_by_advertiser_id(advertiser_id) {
-            self.gatt
-                .as_ref()
-                .unwrap()
-                .lock()
-                .unwrap()
-                .advertiser
-                .set_periodic_advertising_parameters(s.adv_id(), params);
-        }
+        self.adv_manager.set_periodic_advertising_parameters(advertiser_id, parameters);
     }
 
     fn set_periodic_advertising_data(&mut self, advertiser_id: i32, data: AdvertiseData) {
-        if self.advertisers.suspend_mode() != SuspendMode::Normal {
-            return;
-        }
-
-        let device_name = self.get_adapter_name();
-        let bytes = data.make_with(&device_name);
-
-        if let Some(s) = self.advertisers.get_by_advertiser_id(advertiser_id) {
-            if !AdvertiseData::validate_raw_data(false, &bytes) {
-                log::warn!("Advertiser {}: invalid periodic data to update", advertiser_id);
-                return;
-            }
-            self.gatt
-                .as_ref()
-                .unwrap()
-                .lock()
-                .unwrap()
-                .advertiser
-                .set_periodic_advertising_data(s.adv_id(), bytes);
-        }
+        self.adv_manager.set_periodic_advertising_data(advertiser_id, data);
     }
 
     fn set_periodic_advertising_enable(
@@ -2433,16 +2195,7 @@ impl IBluetoothGatt for BluetoothGatt {
         enable: bool,
         include_adi: bool,
     ) {
-        if self.advertisers.suspend_mode() != SuspendMode::Normal {
-            return;
-        }
-        if let Some(s) = self.advertisers.get_by_advertiser_id(advertiser_id) {
-            self.gatt.as_ref().unwrap().lock().unwrap().advertiser.set_periodic_advertising_enable(
-                s.adv_id(),
-                enable,
-                include_adi,
-            );
-        }
+        self.adv_manager.set_periodic_advertising_enable(advertiser_id, enable, include_adi);
     }
 
     // GATT Client
@@ -4363,52 +4116,6 @@ impl BtifGattScannerCallbacks for BluetoothGatt {
     }
 }
 
-#[btif_callbacks_dispatcher(dispatch_le_adv_callbacks, GattAdvCallbacks)]
-pub(crate) trait BtifGattAdvCallbacks {
-    #[btif_callback(OnAdvertisingSetStarted)]
-    fn on_advertising_set_started(
-        &mut self,
-        reg_id: i32,
-        advertiser_id: u8,
-        tx_power: i8,
-        status: AdvertisingStatus,
-    );
-
-    #[btif_callback(OnAdvertisingEnabled)]
-    fn on_advertising_enabled(&mut self, adv_id: u8, enabled: bool, status: AdvertisingStatus);
-
-    #[btif_callback(OnAdvertisingDataSet)]
-    fn on_advertising_data_set(&mut self, adv_id: u8, status: AdvertisingStatus);
-
-    #[btif_callback(OnScanResponseDataSet)]
-    fn on_scan_response_data_set(&mut self, adv_id: u8, status: AdvertisingStatus);
-
-    #[btif_callback(OnAdvertisingParametersUpdated)]
-    fn on_advertising_parameters_updated(
-        &mut self,
-        adv_id: u8,
-        tx_power: i8,
-        status: AdvertisingStatus,
-    );
-
-    #[btif_callback(OnPeriodicAdvertisingParametersUpdated)]
-    fn on_periodic_advertising_parameters_updated(&mut self, adv_id: u8, status: AdvertisingStatus);
-
-    #[btif_callback(OnPeriodicAdvertisingDataSet)]
-    fn on_periodic_advertising_data_set(&mut self, adv_id: u8, status: AdvertisingStatus);
-
-    #[btif_callback(OnPeriodicAdvertisingEnabled)]
-    fn on_periodic_advertising_enabled(
-        &mut self,
-        adv_id: u8,
-        enabled: bool,
-        status: AdvertisingStatus,
-    );
-
-    #[btif_callback(OnOwnAddressRead)]
-    fn on_own_address_read(&mut self, adv_id: u8, addr_type: u8, address: RawAddress);
-}
-
 impl BtifGattAdvCallbacks for BluetoothGatt {
     fn on_advertising_set_started(
         &mut self,
@@ -4417,84 +4124,19 @@ impl BtifGattAdvCallbacks for BluetoothGatt {
         tx_power: i8,
         status: AdvertisingStatus,
     ) {
-        debug!(
-            "on_advertising_set_started(): reg_id = {}, advertiser_id = {}, tx_power = {}, status = {:?}",
-            reg_id, advertiser_id, tx_power, status
-        );
-
-        if let Some(s) = self.advertisers.get_mut_by_reg_id(reg_id) {
-            s.set_adv_id(Some(advertiser_id.into()));
-            s.set_enabled(status == AdvertisingStatus::Success);
-        } else {
-            return;
-        }
-        let s = self.advertisers.get_mut_by_reg_id(reg_id).unwrap().clone();
-
-        if let Some(cb) = self.advertisers.get_callback(&s) {
-            cb.on_advertising_set_started(reg_id, advertiser_id.into(), tx_power.into(), status);
-        }
-
-        if status != AdvertisingStatus::Success {
-            warn!(
-                "on_advertising_set_started(): failed! reg_id = {}, status = {:?}",
-                reg_id, status
-            );
-            self.advertisers.remove_by_reg_id(reg_id);
-        }
+        self.adv_manager.on_advertising_set_started(reg_id, advertiser_id, tx_power, status);
     }
 
     fn on_advertising_enabled(&mut self, adv_id: u8, enabled: bool, status: AdvertisingStatus) {
-        debug!(
-            "on_advertising_enabled(): adv_id = {}, enabled = {}, status = {:?}",
-            adv_id, enabled, status
-        );
-
-        let advertiser_id: i32 = adv_id.into();
-
-        if let Some(s) = self.advertisers.get_mut_by_advertiser_id(advertiser_id) {
-            s.set_enabled(enabled);
-        } else {
-            return;
-        }
-
-        let s = self.advertisers.get_by_advertiser_id(advertiser_id).unwrap().clone();
-        if let Some(cb) = self.advertisers.get_callback(&s) {
-            cb.on_advertising_enabled(advertiser_id, enabled, status);
-        }
-
-        if self.advertisers.suspend_mode() == SuspendMode::Suspending {
-            if self.advertisers.enabled_sets().count() == 0 {
-                self.advertisers.set_suspend_mode(SuspendMode::Suspended);
-            }
-        }
+        self.adv_manager.on_advertising_enabled(adv_id, enabled, status);
     }
 
     fn on_advertising_data_set(&mut self, adv_id: u8, status: AdvertisingStatus) {
-        debug!("on_advertising_data_set(): adv_id = {}, status = {:?}", adv_id, status);
-
-        let advertiser_id: i32 = adv_id.into();
-        if None == self.advertisers.get_by_advertiser_id(advertiser_id) {
-            return;
-        }
-        let s = self.advertisers.get_by_advertiser_id(advertiser_id).unwrap().clone();
-
-        if let Some(cb) = self.advertisers.get_callback(&s) {
-            cb.on_advertising_data_set(advertiser_id, status);
-        }
+        self.adv_manager.on_advertising_data_set(adv_id, status);
     }
 
     fn on_scan_response_data_set(&mut self, adv_id: u8, status: AdvertisingStatus) {
-        debug!("on_scan_response_data_set(): adv_id = {}, status = {:?}", adv_id, status);
-
-        let advertiser_id: i32 = adv_id.into();
-        if None == self.advertisers.get_by_advertiser_id(advertiser_id) {
-            return;
-        }
-        let s = self.advertisers.get_by_advertiser_id(advertiser_id).unwrap().clone();
-
-        if let Some(cb) = self.advertisers.get_callback(&s) {
-            cb.on_scan_response_data_set(advertiser_id, status);
-        }
+        self.adv_manager.on_scan_response_data_set(adv_id, status);
     }
 
     fn on_advertising_parameters_updated(
@@ -4503,20 +4145,7 @@ impl BtifGattAdvCallbacks for BluetoothGatt {
         tx_power: i8,
         status: AdvertisingStatus,
     ) {
-        debug!(
-            "on_advertising_parameters_updated(): adv_id = {}, tx_power = {}, status = {:?}",
-            adv_id, tx_power, status
-        );
-
-        let advertiser_id: i32 = adv_id.into();
-        if None == self.advertisers.get_by_advertiser_id(advertiser_id) {
-            return;
-        }
-        let s = self.advertisers.get_by_advertiser_id(advertiser_id).unwrap().clone();
-
-        if let Some(cb) = self.advertisers.get_callback(&s) {
-            cb.on_advertising_parameters_updated(advertiser_id, tx_power.into(), status);
-        }
+        self.adv_manager.on_advertising_parameters_updated(adv_id, tx_power, status);
     }
 
     fn on_periodic_advertising_parameters_updated(
@@ -4524,34 +4153,11 @@ impl BtifGattAdvCallbacks for BluetoothGatt {
         adv_id: u8,
         status: AdvertisingStatus,
     ) {
-        debug!(
-            "on_periodic_advertising_parameters_updated(): adv_id = {}, status = {:?}",
-            adv_id, status
-        );
-
-        let advertiser_id: i32 = adv_id.into();
-        if None == self.advertisers.get_by_advertiser_id(advertiser_id) {
-            return;
-        }
-        let s = self.advertisers.get_by_advertiser_id(advertiser_id).unwrap().clone();
-
-        if let Some(cb) = self.advertisers.get_callback(&s) {
-            cb.on_periodic_advertising_parameters_updated(advertiser_id, status);
-        }
+        self.adv_manager.on_periodic_advertising_parameters_updated(adv_id, status);
     }
 
     fn on_periodic_advertising_data_set(&mut self, adv_id: u8, status: AdvertisingStatus) {
-        debug!("on_periodic_advertising_data_set(): adv_id = {}, status = {:?}", adv_id, status);
-
-        let advertiser_id: i32 = adv_id.into();
-        if None == self.advertisers.get_by_advertiser_id(advertiser_id) {
-            return;
-        }
-        let s = self.advertisers.get_by_advertiser_id(advertiser_id).unwrap().clone();
-
-        if let Some(cb) = self.advertisers.get_callback(&s) {
-            cb.on_periodic_advertising_data_set(advertiser_id, status);
-        }
+        self.adv_manager.on_periodic_advertising_data_set(adv_id, status);
     }
 
     fn on_periodic_advertising_enabled(
@@ -4560,37 +4166,11 @@ impl BtifGattAdvCallbacks for BluetoothGatt {
         enabled: bool,
         status: AdvertisingStatus,
     ) {
-        debug!(
-            "on_periodic_advertising_enabled(): adv_id = {}, enabled = {}, status = {:?}",
-            adv_id, enabled, status
-        );
-
-        let advertiser_id: i32 = adv_id.into();
-        if None == self.advertisers.get_by_advertiser_id(advertiser_id) {
-            return;
-        }
-        let s = self.advertisers.get_by_advertiser_id(advertiser_id).unwrap().clone();
-
-        if let Some(cb) = self.advertisers.get_callback(&s) {
-            cb.on_periodic_advertising_enabled(advertiser_id, enabled, status);
-        }
+        self.adv_manager.on_periodic_advertising_enabled(adv_id, enabled, status);
     }
 
     fn on_own_address_read(&mut self, adv_id: u8, addr_type: u8, address: RawAddress) {
-        debug!(
-            "on_own_address_read(): adv_id = {}, addr_type = {}, address = {:?}",
-            adv_id, addr_type, address
-        );
-
-        let advertiser_id: i32 = adv_id.into();
-        if None == self.advertisers.get_by_advertiser_id(advertiser_id) {
-            return;
-        }
-        let s = self.advertisers.get_by_advertiser_id(advertiser_id).unwrap().clone();
-
-        if let Some(cb) = self.advertisers.get_callback(&s) {
-            cb.on_own_address_read(advertiser_id, addr_type.into(), address.to_string());
-        }
+        self.adv_manager.on_own_address_read(adv_id, addr_type, address);
     }
 }
 
