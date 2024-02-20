@@ -98,3 +98,10 @@ flag {
     description: "Fix reconnect issue on Bluetooth startup"
     bug: "325595120"
 }
+
+flag {
+    name: "gatt_drop_acl_on_out_of_resources_fix"
+    namespace: "bluetooth"
+    description: "Remove ACL when there is not resource to handle more gatt connections."
+    bug: "325929235"
+}
