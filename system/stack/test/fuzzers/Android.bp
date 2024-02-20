@@ -25,6 +25,7 @@ cc_defaults {
         "libFraunhoferAAC",
         "libaudio-a2dp-hw-utils",
         "libbluetooth-dumpsys",
+        "libbluetooth-gdx",
         "libbluetooth-types",
         "libbluetooth_core_rs",
         "libbluetooth_crypto_toolbox",
