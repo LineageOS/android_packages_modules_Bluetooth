@@ -52,14 +52,14 @@ struct Dumpsys::impl {
   ~impl() = default;
 
  protected:
-  void FilterAsUser(std::string* dumpsys_data);
-  void FilterAsDeveloper(std::string* dumpsys_data);
+  void FilterAsUser(std::string* dumpsys_data) const;
+  void FilterAsDeveloper(std::string* dumpsys_data) const;
   std::string PrintAsJson(std::string* dumpsys_data) const;
 
   bool IsDebuggable() const;
 
  private:
-  void DumpWithArgsAsync(int fd, const char** args);
+  void DumpWithArgsAsync(int fd, const char** args) const;
 
   const Dumpsys& dumpsys_module_;
   const dumpsys::ReflectionSchema reflection_schema_;
@@ -79,12 +79,12 @@ bool Dumpsys::impl::IsDebuggable() const {
   return (os::GetSystemProperty(kReadOnlyDebuggableProperty) == "1");
 }
 
-void Dumpsys::impl::FilterAsDeveloper(std::string* dumpsys_data) {
+void Dumpsys::impl::FilterAsDeveloper(std::string* dumpsys_data) const {
   ASSERT(dumpsys_data != nullptr);
   dumpsys::FilterInPlace(dumpsys::FilterType::AS_DEVELOPER, reflection_schema_, dumpsys_data);
 }
 
-void Dumpsys::impl::FilterAsUser(std::string* dumpsys_data) {
+void Dumpsys::impl::FilterAsUser(std::string* dumpsys_data) const {
   ASSERT(dumpsys_data != nullptr);
   dumpsys::FilterInPlace(dumpsys::FilterType::AS_USER, reflection_schema_, dumpsys_data);
 }
@@ -135,7 +135,7 @@ std::string Dumpsys::impl::PrintAsJson(std::string* dumpsys_data) const {
   return jsongen;
 }
 
-void Dumpsys::impl::DumpWithArgsAsync(int fd, const char** args) {
+void Dumpsys::impl::DumpWithArgsAsync(int fd, const char** args) const {
   ParsedDumpsysArgs parsed_dumpsys_args(args);
   const auto registry = dumpsys_module_.GetModuleRegistry();
 
