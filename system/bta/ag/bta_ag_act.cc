@@ -24,6 +24,7 @@
 
 #include <android_bluetooth_flags.h>
 #include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include <cstdint>
 #include <cstring>
@@ -49,6 +50,7 @@
 #include "storage/config_keys.h"
 #include "types/raw_address.h"
 
+using namespace bluetooth;
 using namespace bluetooth::legacy::stack::sdp;
 
 /*****************************************************************************
@@ -226,7 +228,7 @@ void bta_ag_start_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
 void bta_ag_disc_int_res(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
   uint16_t event = BTA_AG_DISC_FAIL_EVT;
 
-  LOG_VERBOSE("bta_ag_disc_int_res: Status: %d", data.disc_result.status);
+  log::verbose("bta_ag_disc_int_res: Status: {}", data.disc_result.status);
 
   /* if found service */
   if (data.disc_result.status == SDP_SUCCESS ||
@@ -335,7 +337,7 @@ void bta_ag_disc_fail(tBTA_AG_SCB* p_scb,
  ******************************************************************************/
 void bta_ag_open_fail(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
   /* call open cback w. failure */
-  LOG_DEBUG("state [0x%02x]", p_scb->state);
+  log::debug("state [0x{:02x}]", p_scb->state);
   bta_ag_cback_open(p_scb, data.api_open.bd_addr, BTA_AG_FAIL_RESOURCES);
 }
 
@@ -489,8 +491,8 @@ void bta_ag_rfc_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
     if (!btif_config_get_bin(
             p_scb->peer_addr.ToString(), BTIF_STORAGE_KEY_HFP_VERSION,
             (uint8_t*)&p_scb->peer_version, &version_value_size)) {
-      LOG_WARN("%s: Failed read cached peer HFP version for %s", __func__,
-               ADDRESS_TO_LOGGABLE_CSTR(p_scb->peer_addr));
+      log::warn("Failed read cached peer HFP version for {}",
+                ADDRESS_TO_LOGGABLE_CSTR(p_scb->peer_addr));
       p_scb->peer_version = HFP_HSP_VERSION_UNKNOWN;
     }
     size_t sdp_features_size = sizeof(p_scb->peer_sdp_features);
@@ -510,8 +512,8 @@ void bta_ag_rfc_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
         p_scb->sco_codec = BTM_SCO_CODEC_LC3;
       }
     } else {
-      LOG_WARN("%s: Failed read cached peer HFP SDP features for %s", __func__,
-               ADDRESS_TO_LOGGABLE_CSTR(p_scb->peer_addr));
+      log::warn("Failed read cached peer HFP SDP features for {}",
+                ADDRESS_TO_LOGGABLE_CSTR(p_scb->peer_addr));
     }
   }
 
@@ -548,8 +550,8 @@ void bta_ag_rfc_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
  *
  ******************************************************************************/
 void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
-  LOG_VERBOSE("%s: serv_handle0 = %d serv_handle = %d", __func__,
-              p_scb->serv_handle[0], p_scb->serv_handle[1]);
+  log::verbose("serv_handle0 = {} serv_handle = {}", p_scb->serv_handle[0],
+               p_scb->serv_handle[1]);
   /* set role */
   p_scb->role = BTA_AG_ACP;
 
@@ -559,7 +561,7 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
   RawAddress dev_addr = RawAddress::kEmpty;
   int status = PORT_CheckConnection(data.rfc.port_handle, &dev_addr, &lcid);
   if (status != PORT_SUCCESS) {
-    LOG(ERROR) << __func__ << ", PORT_CheckConnection returned " << status;
+    log::error("PORT_CheckConnection returned {}", status);
     return;
   }
 
@@ -567,8 +569,8 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
   for (tBTA_AG_SCB& ag_scb : bta_ag_cb.scb) {
     // Cancel any pending collision timers
     if (ag_scb.in_use && alarm_is_scheduled(ag_scb.collision_timer)) {
-      VLOG(1) << __func__ << ": cancel collision alarm for "
-              << ag_scb.peer_addr;
+      log::verbose("cancel collision alarm for {}",
+                   ADDRESS_TO_LOGGABLE_STR(ag_scb.peer_addr));
       alarm_cancel(ag_scb.collision_timer);
       if (dev_addr != ag_scb.peer_addr && p_scb != &ag_scb) {
         // Resume outgoing connection if incoming is not on the same device
@@ -576,9 +578,9 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
       }
     }
     if (dev_addr == ag_scb.peer_addr && p_scb != &ag_scb) {
-      LOG(INFO) << __func__ << ": close outgoing connection before accepting "
-                << ag_scb.peer_addr << " with conn_handle="
-                << ag_scb.conn_handle;
+      log::info(
+          "close outgoing connection before accepting {} with conn_handle={}",
+          ADDRESS_TO_LOGGABLE_STR(ag_scb.peer_addr), ag_scb.conn_handle);
       if (!IS_FLAG_ENABLED(close_rfcomm_instead_of_reset)) {
         // Fail the outgoing connection to clean up any upper layer states
         bta_ag_rfc_fail(&ag_scb, tBTA_AG_DATA::kEmpty);
@@ -587,25 +589,25 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
       if (ag_scb.conn_handle > 0) {
         status = RFCOMM_RemoveConnection(ag_scb.conn_handle);
         if (status != PORT_SUCCESS) {
-          LOG(WARNING) << __func__ << ": RFCOMM_RemoveConnection failed for "
-                       << dev_addr << ", handle "
-                       << std::to_string(ag_scb.conn_handle) << ", error "
-                       << status;
+          log::warn(
+              "RFCOMM_RemoveConnection failed for {}, handle {}, error {}",
+              ADDRESS_TO_LOGGABLE_STR(dev_addr), ag_scb.conn_handle, status);
         }
       }
     }
-    LOG(INFO) << __func__ << ": dev_addr=" << dev_addr
-              << ", peer_addr=" << ag_scb.peer_addr
-              << ", in_use=" << ag_scb.in_use
-              << ", index=" << bta_ag_scb_to_idx(p_scb);
+    log::info("dev_addr={}, peer_addr={}, in_use={}, index={}",
+              ADDRESS_TO_LOGGABLE_STR(dev_addr),
+              ADDRESS_TO_LOGGABLE_STR(ag_scb.peer_addr), ag_scb.in_use,
+              bta_ag_scb_to_idx(p_scb));
   }
 
   p_scb->peer_addr = dev_addr;
 
   /* determine connected service from port handle */
   for (uint8_t i = 0; i < BTA_AG_NUM_IDX; i++) {
-    LOG_VERBOSE("bta_ag_rfc_acp_open: i = %d serv_handle = %d port_handle = %d",
-                i, p_scb->serv_handle[i], data.rfc.port_handle);
+    log::verbose(
+        "bta_ag_rfc_acp_open: i = {} serv_handle = {} port_handle = {}", i,
+        p_scb->serv_handle[i], data.rfc.port_handle);
 
     if (p_scb->serv_handle[i] == data.rfc.port_handle) {
       p_scb->conn_service = i;
@@ -614,8 +616,8 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
     }
   }
 
-  LOG_VERBOSE("bta_ag_rfc_acp_open: conn_service = %d conn_handle = %d",
-              p_scb->conn_service, p_scb->conn_handle);
+  log::verbose("bta_ag_rfc_acp_open: conn_service = {} conn_handle = {}",
+               p_scb->conn_service, p_scb->conn_handle);
 
   /* close any unopened server */
   bta_ag_close_servers(
@@ -652,20 +654,21 @@ void bta_ag_rfc_data(tBTA_AG_SCB* p_scb, UNUSED_ATTR const tBTA_AG_DATA& data) {
   uint16_t len;
   char buf[BTA_AG_RFC_READ_MAX] = "";
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   /* do the following */
   for (;;) {
     /* read data from rfcomm; if bad status, we're done */
     if (PORT_ReadData(p_scb->conn_handle, buf, BTA_AG_RFC_READ_MAX, &len) !=
         PORT_SUCCESS) {
-      LOG(ERROR) << __func__ << ": failed to read data " << p_scb->peer_addr;
+      log::error("failed to read data {}",
+                 ADDRESS_TO_LOGGABLE_STR(p_scb->peer_addr));
       break;
     }
 
     /* if no data, we're done */
     if (len == 0) {
-      LOG(WARNING) << __func__ << ": no data for " << p_scb->peer_addr;
+      log::warn("no data for {}", ADDRESS_TO_LOGGABLE_STR(p_scb->peer_addr));
       break;
     }
 
@@ -674,7 +677,7 @@ void bta_ag_rfc_data(tBTA_AG_SCB* p_scb, UNUSED_ATTR const tBTA_AG_DATA& data) {
     bta_ag_at_parse(&p_scb->at_cb, buf, len);
     if ((p_scb->sco_idx != BTM_INVALID_SCO_INDEX) &&
         bta_ag_sco_is_open(p_scb)) {
-      LOG_VERBOSE("%s change link policy for SCO", __func__);
+      log::verbose("change link policy for SCO");
       bta_sys_sco_open(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
     } else {
       bta_sys_idle(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
@@ -854,8 +857,8 @@ void bta_ag_setcodec(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
   tBTA_AG_VAL val = {};
   const bool aptx_voice = is_hfp_aptx_voice_enabled() &&
                           (codec_type == BTA_AG_SCO_APTX_SWB_SETTINGS_Q0);
-  LOG_VERBOSE("aptx_voice=%s, codec_type=%#x", logbool(aptx_voice).c_str(),
-              codec_type);
+  log::verbose("aptx_voice={}, codec_type={:#x}", logbool(aptx_voice),
+               codec_type);
 
   val.hdr.handle = bta_ag_scb_to_idx(p_scb);
 
@@ -866,7 +869,7 @@ void bta_ag_setcodec(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
       !aptx_voice) {
     val.num = codec_type;
     val.hdr.status = BTA_AG_FAIL_RESOURCES;
-    LOG_ERROR("bta_ag_setcodec error: unsupported codec type %d", codec_type);
+    log::error("bta_ag_setcodec error: unsupported codec type {}", codec_type);
     (*bta_ag_cb.p_cback)(BTA_AG_CODEC_EVT, (tBTA_AG*)&val);
     return;
   }
@@ -877,11 +880,11 @@ void bta_ag_setcodec(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
     p_scb->codec_updated = true;
     val.num = codec_type;
     val.hdr.status = BTA_AG_SUCCESS;
-    LOG_VERBOSE("bta_ag_setcodec: Updated codec type %d", codec_type);
+    log::verbose("bta_ag_setcodec: Updated codec type {}", codec_type);
   } else {
     val.num = codec_type;
     val.hdr.status = BTA_AG_FAIL_RESOURCES;
-    LOG_ERROR("bta_ag_setcodec error: unsupported codec type %d", codec_type);
+    log::error("bta_ag_setcodec error: unsupported codec type {}", codec_type);
   }
 
   (*bta_ag_cb.p_cback)(BTA_AG_CODEC_EVT, (tBTA_AG*)&val);
@@ -889,7 +892,7 @@ void bta_ag_setcodec(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
 
 static void bta_ag_collision_timer_cback(void* data) {
   if (data == nullptr) {
-    LOG(ERROR) << __func__ << ": data should never be null in a timer callback";
+    log::error("data should never be null in a timer callback");
     return;
   }
   /* If the peer haven't opened AG connection     */

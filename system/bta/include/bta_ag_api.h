@@ -25,6 +25,8 @@
 #ifndef BTA_AG_API_H
 #define BTA_AG_API_H
 
+#include <bluetooth/log.h>
+
 #include <string>
 #include <vector>
 
@@ -638,5 +640,10 @@ void BTA_AgSetScoOffloadEnabled(bool value);
 void BTA_AgSetScoAllowed(bool value);
 
 void BTA_AgSetActiveDevice(const RawAddress& active_device_addr);
+
+namespace fmt {
+template <>
+struct formatter<tBTA_AG_RES> : enum_formatter<tBTA_AG_RES> {};
+}  // namespace fmt
 
 #endif /* BTA_AG_API_H */
