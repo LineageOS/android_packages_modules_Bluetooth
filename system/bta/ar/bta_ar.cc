@@ -22,6 +22,8 @@
  *
  ******************************************************************************/
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 
 #include "bta/ar/bta_ar_int.h"
@@ -34,6 +36,7 @@
 #include "types/raw_address.h"
 
 using namespace bluetooth::legacy::stack::sdp;
+using namespace bluetooth;
 
 /* AV control block */
 tBTA_AR_CB bta_ar_cb;
@@ -113,8 +116,8 @@ void bta_ar_reg_avdt(AvdtpRcb* p_reg, tAVDT_CTRL_CBACK* p_cback) {
   if (bta_ar_cb.avdt_registered == 0) {
     AVDT_Register(p_reg, bta_ar_avdt_cback);
   } else {
-    LOG_WARN("%s: doesn't register again (registered:%d)", __func__,
-             bta_ar_cb.avdt_registered);
+    log::warn("doesn't register again (registered:{})",
+              bta_ar_cb.avdt_registered);
   }
   bta_ar_cb.avdt_registered |= BTA_AR_AV_MASK;
 }
@@ -330,7 +333,7 @@ void bta_ar_reg_avrc_for_src_sink_coexist(
     } else {
       /* If first reg 1,3 version, reg 1.6 must update class id */
       if (bta_ar_cb.ct_ver < profile_version) {
-        LOG_VERBOSE("%s ver=0x%x", __FUNCTION__, profile_version);
+        log::verbose("ver=0x{:x}", profile_version);
         if (bta_ar_cb.ct_ver <= AVRC_REV_1_3 &&
             profile_version > AVRC_REV_1_3) {
           bta_ar_cb.ct_ver = profile_version;
