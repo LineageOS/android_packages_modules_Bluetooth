@@ -63,7 +63,6 @@ namespace {
 bool register_event_code(bluetooth::hci::EventCode event_code) {
   switch (event_code) {
     // Inquiry
-    case bluetooth::hci::EventCode::INQUIRY_COMPLETE:
     case bluetooth::hci::EventCode::INQUIRY_RESULT:
     case bluetooth::hci::EventCode::INQUIRY_RESULT_WITH_RSSI:
     case bluetooth::hci::EventCode::EXTENDED_INQUIRY_RESULT:
