@@ -277,15 +277,16 @@ tBTM_STATUS clear_event_filter() { return BTM_SUCCESS; }
 
 tBTM_STATUS clear_event_mask() { return BTM_SUCCESS; }
 
-tBTM_STATUS le_rand(LeRandCallback cb) { return BTM_SUCCESS; }
+tBTM_STATUS le_rand(LeRandCallback /* cb */) { return BTM_SUCCESS; }
 tBTM_STATUS set_event_filter_connection_setup_all_devices() {
   return BTM_SUCCESS;
 }
 tBTM_STATUS set_event_filter_allow_device_connection(
-    std::vector<RawAddress> devices) {
+    std::vector<RawAddress> /* devices */) {
   return BTM_SUCCESS;
 }
-tBTM_STATUS set_default_event_mask_except(uint64_t mask, uint64_t le_mask) {
+tBTM_STATUS set_default_event_mask_except(uint64_t /* mask */,
+                                          uint64_t /* le_mask */) {
   return BTM_SUCCESS;
 }
 tBTM_STATUS set_event_filter_inquiry_result_all_devices() {
