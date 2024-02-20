@@ -24,6 +24,8 @@
 #ifndef BTA_AV_INT_H
 #define BTA_AV_INT_H
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 #include <string>
 
@@ -844,5 +846,10 @@ void bta_av_offload_rsp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data);
 void bta_av_vendor_offload_stop(void);
 void bta_av_st_rc_timer(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data);
 void bta_av_api_set_peer_sep(tBTA_AV_DATA* p_data);
+
+namespace fmt {
+template <>
+struct formatter<tBTA_AV_RS_RES> : enum_formatter<tBTA_AV_RS_RES> {};
+}  // namespace fmt
 
 #endif /* BTA_AV_INT_H */
