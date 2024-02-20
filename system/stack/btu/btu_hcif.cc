@@ -77,8 +77,6 @@ void acl_disconnect_from_handle(uint16_t handle, tHCI_STATUS reason,
 /******************************************************************************/
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /******************************************************************************/
-static void btu_hcif_inquiry_comp_evt(uint8_t* p);
-
 static void btu_hcif_authentication_comp_evt(uint8_t* p);
 static void btu_hcif_rmt_name_request_comp_evt(const uint8_t* p,
                                                uint16_t evt_len);
@@ -234,9 +232,6 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id,
   btu_hcif_log_event_metrics(hci_evt_code, p);
 
   switch (hci_evt_code) {
-    case HCI_INQUIRY_COMP_EVT:
-      btu_hcif_inquiry_comp_evt(p);
-      break;
     case HCI_INQUIRY_RESULT_EVT:
       btm_process_inq_results(p, hci_evt_len, BTM_INQ_RESULT_STANDARD);
       break;
@@ -778,24 +773,6 @@ void btu_hcif_send_cmd_with_cb(const base::Location& posted_from,
   bluetooth::shim::hci_layer_get_interface()->transmit_command(
       p, btu_hcif_command_complete_evt_with_cb,
       btu_hcif_command_status_evt_with_cb, (void*)cb_wrapper);
-}
-
-/*******************************************************************************
- *
- * Function         btu_hcif_inquiry_comp_evt
- *
- * Description      Process event HCI_INQUIRY_COMP_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_inquiry_comp_evt(uint8_t* p) {
-  uint8_t status;
-
-  STREAM_TO_UINT8(status, p);
-
-  /* Tell inquiry processing that we are done */
-  btm_process_inq_complete(to_hci_status_code(status), BTM_BR_INQUIRY_MASK);
 }
 
 /*******************************************************************************
