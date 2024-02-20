@@ -21,6 +21,7 @@ from floss.pandora.server import gatt
 from floss.pandora.server import hid
 from floss.pandora.server import host
 from floss.pandora.server import l2cap
+from floss.pandora.server import rfcomm
 from floss.pandora.server import security
 import grpc
 from pandora import host_grpc_aio
@@ -28,6 +29,7 @@ from pandora import security_grpc_aio
 from pandora_experimental import gatt_grpc_aio
 from pandora_experimental import hid_grpc_aio
 from pandora_experimental import l2cap_grpc_aio
+from pandora_experimental import rfcomm_grpc_aio
 
 
 async def serve(port):
@@ -59,6 +61,9 @@ async def serve(port):
 
             l2cap_service = l2cap.L2CAPService(bluetooth)
             l2cap_grpc_aio.add_L2CAPServicer_to_server(l2cap_service, server)
+
+            rfcomm_service = rfcomm.RFCOMMService(bluetooth)
+            rfcomm_grpc_aio.add_RFCOMMServicer_to_server(rfcomm_service, server)
 
             server.add_insecure_port(f'[::]:{port}')
 
