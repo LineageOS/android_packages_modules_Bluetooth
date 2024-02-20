@@ -20,15 +20,18 @@
 #include <base/logging.h>
 #include <base/strings/string_piece.h>
 #include <base/strings/string_util.h>
+#include <bluetooth/log.h>
 #include <gtest/gtest.h>
 
 #include <string>
+
+using namespace bluetooth;
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
 
   if (base::CommandLine::InitializedForCurrentProcess()) {
-    LOG(FATAL) << "base::CommandLine::Init should not be called twice";
+    log::fatal("base::CommandLine::Init should not be called twice");
     return 1;
   }
 
@@ -45,14 +48,14 @@ int main(int argc, char** argv) {
   const char* logging_argv[] = {"bt_stack", log_level_arg};
   // Init command line object with logging switches
   if (!base::CommandLine::Init(2, logging_argv)) {
-    LOG(FATAL) << "base::CommandLine::Init failed, arg0=" << logging_argv[0]
-               << ", arg1=" << logging_argv[1];
+    log::fatal("base::CommandLine::Init failed, arg0={}, arg1={}",
+               logging_argv[0], logging_argv[1]);
     return 1;
   }
 
   logging::LoggingSettings log_settings;
   if (!logging::InitLogging(log_settings)) {
-    LOG(ERROR) << "Failed to set up logging";
+    log::error("Failed to set up logging");
   }
 
   // Android already logs thread_id, proc_id, timestamp, so disable those.
