@@ -22,6 +22,8 @@
 #include <hardware/audio.h>
 #endif
 
+#include <android_bluetooth_flags.h>
+
 #include <functional>
 
 #include "bta/le_audio/codec_manager.h"
@@ -87,6 +89,8 @@ class LeAudioClientInterface {
     virtual void StopSession() = 0;
     virtual void ConfirmStreamingRequest() = 0;
     virtual void CancelStreamingRequest() = 0;
+    virtual void ConfirmStreamingRequestV2() = 0;
+    virtual void CancelStreamingRequestV2() = 0;
     virtual void UpdateAudioConfigToHal(
         const ::le_audio::offload_config& config) = 0;
     virtual void SuspendedForReconfiguration() = 0;
@@ -106,6 +110,8 @@ class LeAudioClientInterface {
     void StopSession() override;
     void ConfirmStreamingRequest() override;
     void CancelStreamingRequest() override;
+    void ConfirmStreamingRequestV2() override;
+    void CancelStreamingRequestV2() override;
     void UpdateAudioConfigToHal(
         const ::le_audio::offload_config& config) override;
     void UpdateBroadcastAudioConfigToHal(
@@ -130,6 +136,8 @@ class LeAudioClientInterface {
     void StopSession() override;
     void ConfirmStreamingRequest() override;
     void CancelStreamingRequest() override;
+    void ConfirmStreamingRequestV2() override;
+    void CancelStreamingRequestV2() override;
     void UpdateAudioConfigToHal(
         const ::le_audio::offload_config& config) override;
     void SuspendedForReconfiguration() override;
