@@ -2531,11 +2531,11 @@ static void distanceMeasurementCleanupNative(JNIEnv* env,
 }
 
 static void startDistanceMeasurementNative(JNIEnv* env, jobject /* object */,
-                                           jstring address, jint frequency,
+                                           jstring address, jint interval,
                                            jint method) {
   if (!sGattIf) return;
   sGattIf->distance_measurement_manager->StartDistanceMeasurement(
-      str2addr(env, address), frequency, method);
+      str2addr(env, address), interval, method);
 }
 
 static void stopDistanceMeasurementNative(JNIEnv* env, jobject /* object */,
