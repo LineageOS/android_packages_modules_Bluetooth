@@ -17,6 +17,7 @@
 #include "stack/include/a2dp_aac.h"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 #include <gtest/gtest.h>
 #include <stdio.h>
 
@@ -177,7 +178,7 @@ TEST_F(A2dpAacTest, a2dp_enqueue_cb_is_invoked) {
     return len;
   };
   auto enqueue_cb = +[](BT_HDR* p_buf, size_t frames_n, uint32_t len) -> bool {
-    LOG_INFO("%s", kEnqueueCallbackIsInvoked);
+    log::info("{}", kEnqueueCallbackIsInvoked);
     osi_free(p_buf);
     return false;
   };
@@ -202,7 +203,7 @@ TEST_F(A2dpAacTest, decoded_data_cb_not_invoked_when_empty_packet) {
 TEST_F(A2dpAacTest, decoded_data_cb_invoked) {
   log_capture_ = std::make_unique<LogCapture>();
   auto data_cb = +[](uint8_t* p_buf, uint32_t len) {
-    LOG_INFO("%s", kDecodedDataCallbackIsInvoked);
+    log::info("{}", kDecodedDataCallbackIsInvoked);
   };
   InitializeDecoder(data_cb);
 
@@ -214,7 +215,7 @@ TEST_F(A2dpAacTest, decoded_data_cb_invoked) {
   };
   auto enqueue_cb = +[](BT_HDR* p_buf, size_t frames_n, uint32_t len) -> bool {
     packet = p_buf;
-    LOG_INFO("%s", kEnqueueCallbackIsInvoked);
+    log::info("{}", kEnqueueCallbackIsInvoked);
     return false;
   };
   InitializeEncoder(true, read_cb, enqueue_cb);

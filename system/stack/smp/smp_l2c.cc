@@ -25,6 +25,7 @@
 #define LOG_TAG "smp"
 
 #include <android_bluetooth_flags.h>
+#include <bluetooth/log.h>
 
 #include "internal_include/bt_target.h"
 #include "os/log.h"
@@ -36,6 +37,8 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/l2c_api.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth;
 
 static void smp_tx_complete_callback(uint16_t cid, uint16_t num_pkt);
 
@@ -61,7 +64,7 @@ static void smp_br_data_received(uint16_t channel, const RawAddress& bd_addr,
  ******************************************************************************/
 void smp_l2cap_if_init(void) {
   tL2CAP_FIXED_CHNL_REG fixed_reg;
-  LOG_VERBOSE("SMDBG l2c");
+  log::verbose("SMDBG l2c");
 
   fixed_reg.pL2CA_FixedConn_Cb = smp_connect_callback;
   fixed_reg.pL2CA_FixedData_Cb = smp_data_received;
@@ -96,22 +99,22 @@ static void smp_connect_callback(UNUSED_ATTR uint16_t channel,
   tSMP_CB* p_cb = &smp_cb;
   tSMP_INT_DATA int_data;
 
-  LOG_DEBUG("bd_addr:%s transport:%s, connected:%d",
-            ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
-            bt_transport_text(transport).c_str(), connected);
+  log::debug("bd_addr:{} transport:{}, connected:{}",
+             ADDRESS_TO_LOGGABLE_CSTR(bd_addr), bt_transport_text(transport),
+             connected);
 
   if (bd_addr.IsEmpty()) {
-    LOG_WARN("empty address");
+    log::warn("empty address");
     return;
   }
 
   if (transport == BT_TRANSPORT_BR_EDR) {
-    LOG_WARN("unexpected transport");
+    log::warn("unexpected transport");
     return;
   }
 
   if (bd_addr == p_cb->pairing_bda) {
-    LOG_DEBUG("in pairing process");
+    log::debug("in pairing process");
 
     if (connected) {
       if (!p_cb->connect_initialized) {
@@ -150,19 +153,19 @@ static void smp_data_received(uint16_t channel, const RawAddress& bd_addr,
   uint8_t cmd;
 
   if (p_buf->len < 1) {
-    LOG_WARN("packet too short");
+    log::warn("packet too short");
     osi_free(p_buf);
     return;
   }
 
   STREAM_TO_UINT8(cmd, p);
 
-  LOG_VERBOSE("cmd=%s[0x%02x]",
-              smp_opcode_text(static_cast<tSMP_OPCODE>(cmd)).c_str(), cmd);
+  log::verbose("cmd={}[0x{:02x}]",
+               smp_opcode_text(static_cast<tSMP_OPCODE>(cmd)), cmd);
 
   /* sanity check */
   if ((SMP_OPCODE_MAX < cmd) || (SMP_OPCODE_MIN > cmd)) {
-    LOG_WARN("invalid command");
+    log::warn("invalid command");
     osi_free(p_buf);
     return;
   }
@@ -192,8 +195,8 @@ static void smp_data_received(uint16_t channel, const RawAddress& bd_addr,
                     false /* is_over_br */);
 
     if (cmd == SMP_OPCODE_CONFIRM) {
-      LOG_VERBOSE("peer_auth_req=0x%02x, loc_auth_req=0x%02x",
-                  p_cb->peer_auth_req, p_cb->loc_auth_req);
+      log::verbose("peer_auth_req=0x{:02x}, loc_auth_req=0x{:02x}",
+                   p_cb->peer_auth_req, p_cb->loc_auth_req);
 
       if ((p_cb->peer_auth_req & SMP_SC_SUPPORT_BIT) &&
           (p_cb->loc_auth_req & SMP_SC_SUPPORT_BIT)) {
@@ -225,16 +228,16 @@ static void smp_tx_complete_callback(uint16_t cid, uint16_t num_pkt) {
 
 #ifndef TARGET_FLOSS
   if (!IS_FLAG_ENABLED(l2cap_tx_complete_cb_info)) {
-    LOG_VERBOSE("Exit since l2cap_tx_complete_cb_info is disabled");
+    log::verbose("Exit since l2cap_tx_complete_cb_info is disabled");
     return;
   }
 #endif
 
-  LOG_VERBOSE("l2cap_tx_complete_cb_info is enabled, continue");
+  log::verbose("l2cap_tx_complete_cb_info is enabled, continue");
   if (p_cb->total_tx_unacked >= num_pkt) {
     p_cb->total_tx_unacked -= num_pkt;
   } else {
-    LOG_ERROR("Unexpected %s: num_pkt = %d", __func__, num_pkt);
+    log::error("Unexpected complete callback: num_pkt = {}", num_pkt);
   }
 
   if (p_cb->total_tx_unacked == 0 && p_cb->wait_for_authorization_complete) {
@@ -264,13 +267,13 @@ static void smp_br_connect_callback(uint16_t channel, const RawAddress& bd_addr,
   tSMP_INT_DATA int_data;
 
   if (transport != BT_TRANSPORT_BR_EDR) {
-    LOG_WARN("unexpected transport %s", bt_transport_text(transport).c_str());
+    log::warn("unexpected transport {}", bt_transport_text(transport));
     return;
   }
 
-  LOG_INFO("BDA:%s pairing_bda:%s, connected:%d",
-           ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
-           ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda), connected);
+  log::info("BDA:{} pairing_bda:{}, connected:{}",
+            ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
+            ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda), connected);
 
   if (bd_addr != p_cb->pairing_bda) return;
 
@@ -289,7 +292,7 @@ static void smp_br_connect_callback(uint16_t channel, const RawAddress& bd_addr,
      * stack restart, when we re-read record from storage. Service discovery
      * would stay broken.
      */
-    LOG_INFO("Classic event after CTKD on LE transport");
+    log::info("Classic event after CTKD on LE transport");
     return;
   }
 
@@ -305,10 +308,11 @@ static void smp_br_connect_callback(uint16_t channel, const RawAddress& bd_addr,
   } else {
     /* Disconnected while doing security */
     if (p_cb->smp_over_br) {
-      LOG_DEBUG("SMP over BR/EDR not supported, terminate the ongoing pairing");
+      log::debug(
+          "SMP over BR/EDR not supported, terminate the ongoing pairing");
       smp_br_state_machine_event(p_cb, SMP_BR_L2CAP_DISCONN_EVT, &int_data);
     } else {
-      LOG_DEBUG("SMP over BR/EDR not supported, continue the LE pairing");
+      log::debug("SMP over BR/EDR not supported, continue the LE pairing");
     }
   }
 }
@@ -328,21 +332,21 @@ static void smp_br_data_received(uint16_t channel, const RawAddress& bd_addr,
   tSMP_CB* p_cb = &smp_cb;
   uint8_t* p = (uint8_t*)(p_buf + 1) + p_buf->offset;
   uint8_t cmd;
-  LOG_VERBOSE("SMDBG l2c");
+  log::verbose("SMDBG l2c");
 
   if (p_buf->len < 1) {
-    LOG_WARN("packet too short");
+    log::warn("packet too short");
     osi_free(p_buf);
     return;
   }
 
   STREAM_TO_UINT8(cmd, p);
-  LOG_VERBOSE("cmd=%s[0x%02x]",
-              smp_opcode_text(static_cast<tSMP_OPCODE>(cmd)).c_str(), cmd);
+  log::verbose("cmd={}[0x{:02x}]",
+               smp_opcode_text(static_cast<tSMP_OPCODE>(cmd)), cmd);
 
   /* sanity check */
   if ((SMP_OPCODE_MAX < cmd) || (SMP_OPCODE_MIN > cmd)) {
-    LOG_WARN("invalid command 0x%02x", cmd);
+    log::warn("invalid command 0x{:02x}", cmd);
     osi_free(p_buf);
     return;
   }

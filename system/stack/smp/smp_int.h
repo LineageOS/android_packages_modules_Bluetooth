@@ -24,6 +24,8 @@
 #ifndef SMP_INT_H
 #define SMP_INT_H
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 
 #include "macros.h"
@@ -497,7 +499,7 @@ void smp_start_nonce_generation(tSMP_CB* p_cb);
 bool smp_calculate_link_key_from_long_term_key(tSMP_CB* p_cb);
 bool smp_calculate_long_term_key_from_link_key(tSMP_CB* p_cb);
 
-void print128(const Octet16& x, const uint8_t* key_name);
+void print128(const Octet16& x, const char* key_name);
 void smp_xor_128(Octet16* a, const Octet16& b);
 
 /* Save the p_cb->sc_oob_data.loc_oob_data for later, since the p_cb gets
@@ -505,4 +507,14 @@ void smp_xor_128(Octet16* a, const Octet16& b);
 void smp_save_local_oob_data(tSMP_CB* p_cb);
 void smp_clear_local_oob_data();
 bool smp_has_local_oob_data();
+
+namespace fmt {
+template <>
+struct formatter<tSMP_EVENT> : enum_formatter<tSMP_EVENT> {};
+template <>
+struct formatter<tSMP_OPCODE> : enum_formatter<tSMP_OPCODE> {};
+template <>
+struct formatter<tSMP_ASSO_MODEL> : enum_formatter<tSMP_ASSO_MODEL> {};
+}  // namespace fmt
+
 #endif /* SMP_INT_H */
