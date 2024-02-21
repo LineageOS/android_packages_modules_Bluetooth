@@ -2310,12 +2310,13 @@ DEV_CLASS btm_ble_get_appearance_as_cod(std::vector<uint8_t> const& data) {
 /**
  * Update adv packet information into inquiry result.
  */
-void btm_ble_update_inq_result(tINQ_DB_ENT* p_i, uint8_t addr_type,
-                               const RawAddress& bda, uint16_t evt_type,
-                               uint8_t primary_phy, uint8_t secondary_phy,
-                               uint8_t advertising_sid, int8_t tx_power,
-                               int8_t rssi, uint16_t periodic_adv_int,
-                               std::vector<uint8_t> const& data) {
+static void btm_ble_update_inq_result(tINQ_DB_ENT* p_i, uint8_t addr_type,
+                                      const RawAddress& bda, uint16_t evt_type,
+                                      uint8_t primary_phy,
+                                      uint8_t secondary_phy,
+                                      uint8_t advertising_sid, int8_t tx_power,
+                                      int8_t rssi, uint16_t periodic_adv_int,
+                                      std::vector<uint8_t> const& data) {
   tBTM_INQ_RESULTS* p_cur = &p_i->inq_info.results;
   uint8_t len;
 
