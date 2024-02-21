@@ -35,10 +35,10 @@ use crate::bluetooth::{
     BluetoothDevice, DelayedActions, IBluetooth,
 };
 use crate::bluetooth_admin::{BluetoothAdmin, IBluetoothAdmin};
+use crate::bluetooth_adv::dispatch_le_adv_callbacks;
 use crate::bluetooth_gatt::{
-    dispatch_gatt_client_callbacks, dispatch_gatt_server_callbacks, dispatch_le_adv_callbacks,
-    dispatch_le_scanner_callbacks, dispatch_le_scanner_inband_callbacks, BluetoothGatt,
-    GattActions,
+    dispatch_gatt_client_callbacks, dispatch_gatt_server_callbacks, dispatch_le_scanner_callbacks,
+    dispatch_le_scanner_inband_callbacks, BluetoothGatt, GattActions,
 };
 use crate::bluetooth_media::{BluetoothMedia, MediaActions};
 use crate::dis::{DeviceInformation, ServiceCallbacks};

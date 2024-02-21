@@ -232,7 +232,11 @@ typedef tBTM_STATUS(tSMP_SIRK_CALLBACK)(const RawAddress& bd_addr);
 
 namespace fmt {
 template <>
+struct formatter<tSMP_OOB_DATA_TYPE> : enum_formatter<tSMP_OOB_DATA_TYPE> {};
+template <>
 struct formatter<tSMP_SEC_LEVEL> : enum_formatter<tSMP_SEC_LEVEL> {};
+template <>
+struct formatter<tSMP_EVT> : enum_formatter<tSMP_EVT> {};
 }  // namespace fmt
 
 #endif  // SMP_API_TYPES_H
