@@ -25,6 +25,7 @@
 #define LOG_TAG "bt_bta_gattc"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include <cstdint>
 
@@ -37,6 +38,8 @@
 #include "types/bt_transport.h"
 #include "types/hci_role.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth;
 
 static uint8_t ble_acceptlist_size() {
   const controller_t* controller = controller_get_interface();
@@ -140,7 +143,7 @@ tBTA_GATTC_CLCB* bta_gattc_clcb_alloc(tGATT_IF client_if,
   for (i_clcb = 0; i_clcb < BTA_GATTC_CLCB_MAX; i_clcb++) {
     if (!bta_gattc_cb.clcb[i_clcb].in_use) {
 #if (BTA_GATT_DEBUG == TRUE)
-      VLOG(1) << __func__ << ": found clcb:" << +i_clcb << " available";
+      log::verbose("found clcb:{} available", i_clcb);
 #endif
       p_clcb = &bta_gattc_cb.clcb[i_clcb];
       p_clcb->in_use = true;
@@ -220,7 +223,7 @@ void bta_gattc_server_disconnected(tBTA_GATTC_SERV* p_srcb) {
  ******************************************************************************/
 void bta_gattc_clcb_dealloc(tBTA_GATTC_CLCB* p_clcb) {
   if (!p_clcb) {
-    LOG(ERROR) << __func__ << " p_clcb=NULL";
+    log::error("p_clcb=NULL");
     return;
   }
 
@@ -382,8 +385,8 @@ void bta_gattc_send_mtu_response(tBTA_GATTC_CLCB* p_clcb,
 
 void bta_gattc_continue(tBTA_GATTC_CLCB* p_clcb) {
   if (p_clcb->p_q_cmd != NULL) {
-    LOG_INFO("Already scheduled another request for conn_id = 0x%04x",
-             p_clcb->bta_conn_id);
+    log::info("Already scheduled another request for conn_id = 0x{:04x}",
+              p_clcb->bta_conn_id);
     return;
   }
 
@@ -415,7 +418,7 @@ void bta_gattc_continue(tBTA_GATTC_CLCB* p_clcb) {
         /* Handled, free command below and continue with a p_q_cmd_queue */
         break;
       case MTU_EXCHANGE_IN_PROGRESS:
-        LOG_WARN("Waiting p_clcb %p", p_clcb);
+        log::warn("Waiting p_clcb {}", fmt::ptr(p_clcb));
         return;
       case MTU_EXCHANGE_NOT_DONE_YET:
         p_clcb->p_q_cmd_queue.pop_front();
@@ -458,9 +461,9 @@ BtaEnqueuedResult_t bta_gattc_enqueue(tBTA_GATTC_CLCB* p_clcb,
     return ENQUEUED_READY_TO_SEND;
   }
 
-  LOG_INFO(
-      "Already has a pending command to executer. Queuing for later %s conn "
-      "id=0x%04x",
+  log::info(
+      "Already has a pending command to executer. Queuing for later {} conn "
+      "id=0x{:04x}",
       ADDRESS_TO_LOGGABLE_CSTR(p_clcb->bda), p_clcb->bta_conn_id);
   p_clcb->p_q_cmd_queue.push_back(p_data);
 
@@ -486,7 +489,7 @@ bool bta_gattc_check_notif_registry(tBTA_GATTC_RCB* p_clreg,
         p_clreg->notif_reg[i].remote_bda == p_srcb->server_bda &&
         p_clreg->notif_reg[i].handle == p_notify->handle &&
         !p_clreg->notif_reg[i].app_disconnected) {
-      VLOG(1) << "Notification registered!";
+      log::verbose("Notification registered!");
       return true;
     }
   }
@@ -531,7 +534,7 @@ void bta_gattc_clear_notif_registration(tBTA_GATTC_SERV* p_srcb,
       }
     }
   } else {
-    LOG(ERROR) << "can not clear indication/notif registration for unknown app";
+    log::error("can not clear indication/notif registration for unknown app");
   }
   return;
 }
@@ -573,9 +576,8 @@ bool bta_gattc_mark_bg_conn(tGATT_IF client_if,
     }
   }
   if (!add) {
-    LOG(ERROR) << __func__
-               << " unable to find the bg connection mask for bd_addr="
-               << ADDRESS_TO_LOGGABLE_STR(remote_bda_ptr);
+    log::error("unable to find the bg connection mask for bd_addr={}",
+               ADDRESS_TO_LOGGABLE_STR(remote_bda_ptr));
     return false;
   } else /* adding a new device mask */
   {
@@ -591,7 +593,7 @@ bool bta_gattc_mark_bg_conn(tGATT_IF client_if,
         return true;
       }
     }
-    LOG(ERROR) << "no available space to mark the bg connection status";
+    log::error("no available space to mark the bg connection status");
     return false;
   }
 }
@@ -664,7 +666,7 @@ tBTA_GATTC_CONN* bta_gattc_conn_alloc(const RawAddress& remote_bda) {
   for (i_conn = 0; i_conn < GATT_MAX_PHY_CHANNEL; i_conn++, p_conn++) {
     if (!p_conn->in_use) {
 #if (BTA_GATT_DEBUG == TRUE)
-      VLOG(1) << __func__ << ": found conn_track:" << +i_conn << " available";
+      log::verbose("found conn_track:{} available", i_conn);
 #endif
       p_conn->in_use = true;
       p_conn->remote_bda = remote_bda;
@@ -690,7 +692,7 @@ tBTA_GATTC_CONN* bta_gattc_conn_find(const RawAddress& remote_bda) {
   for (i_conn = 0; i_conn < GATT_MAX_PHY_CHANNEL; i_conn++, p_conn++) {
     if (p_conn->in_use && remote_bda == p_conn->remote_bda) {
 #if (BTA_GATT_DEBUG == TRUE)
-      VLOG(1) << __func__ << ": found conn_track:" << +i_conn << " matched";
+      log::verbose("found conn_track:{} matched", i_conn);
 #endif
       return p_conn;
     }
@@ -793,8 +795,8 @@ tBTA_GATTC_CLCB* bta_gattc_find_int_disconn_clcb(tBTA_GATTC_DATA* p_msg) {
                                         p_msg->int_conn.transport);
   }
   if (p_clcb == NULL) {
-    VLOG(1) << " disconnection ID:" << +p_msg->int_conn.hdr.layer_specific
-            << " not used by BTA";
+    log::verbose("disconnection ID:{} not used by BTA",
+                 p_msg->int_conn.hdr.layer_specific);
   }
   return p_clcb;
 }
