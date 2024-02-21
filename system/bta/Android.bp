@@ -566,6 +566,7 @@ cc_test {
         "groups/groups_test.cc",
     ],
     shared_libs: [
+        "libbase",
         "libcrypto",
         "liblog",
     ],
