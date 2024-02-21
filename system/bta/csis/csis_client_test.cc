@@ -16,6 +16,7 @@
  */
 
 #include <base/functional/bind.h>
+#include <bluetooth/log.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -413,7 +414,7 @@ class CsisClientTest : public ::testing::Test {
               value.assign(1, rank_2);
               break;
             default:
-              LOG(ERROR) << " Unknown handle? " << +handle;
+              log::error("Unknown handle? {}", handle);
               ASSERT_TRUE(false);
               return;
           }
