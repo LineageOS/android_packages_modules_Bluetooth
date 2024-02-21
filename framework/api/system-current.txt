@@ -1011,6 +1011,11 @@ package android.bluetooth {
     method @NonNull public android.bluetooth.BluetoothSinkAudioPolicy.Builder setInBandRingtonePolicy(int);
   }
 
+  public final class BluetoothSocket implements java.io.Closeable {
+    method @FlaggedApi("com.android.bluetooth.flags.bt_socket_api_l2cap_cid") @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public int getL2capLocalChannelId() throws java.io.IOException;
+    method @FlaggedApi("com.android.bluetooth.flags.bt_socket_api_l2cap_cid") @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public int getL2capRemoteChannelId() throws java.io.IOException;
+  }
+
   public final class BluetoothStatusCodes {
     field public static final int ALLOWED = 400; // 0x190
     field public static final int ERROR_ALREADY_IN_TARGET_STATE = 26; // 0x1a
