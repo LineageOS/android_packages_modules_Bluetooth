@@ -881,6 +881,7 @@ public class ScanManagerTest {
 
     @Test
     public void testDowngradeDuringScanForConcurrencyScreenOff() {
+        mTestLooper.stopAutoDispatchAndIgnoreExceptions();
         // Set filtered scan flag
         final boolean isFiltered = true;
         // Set scan mode map {original scan mode (ScanMode) : expected scan mode (expectedScanMode)}
@@ -900,23 +901,30 @@ public class ScanManagerTest {
                     + " expectedScanMode: " + String.valueOf(expectedScanMode));
 
             // Turn on screen
-            sendMessageWaitForProcessed(createScreenOnOffMessage(true));
+            mHandler.sendMessage(createScreenOnOffMessage(true));
             // Set as foreground app
-            sendMessageWaitForProcessed(createImportanceMessage(true));
+            mHandler.sendMessage(createImportanceMessage(true));
+            mTestLooper.dispatchAll();
             // Create scan client
             ScanClient client = createScanClient(i, isFiltered, ScanMode);
             // Start scan
-            sendMessageWaitForProcessed(createStartStopScanMessage(true, client));
+            mHandler.sendMessage(createStartStopScanMessage(true, client));
+            mTestLooper.dispatchAll();
             assertThat(mScanManager.getRegularScanQueue().contains(client)).isTrue();
             assertThat(mScanManager.getSuspendedScanQueue().contains(client)).isFalse();
             assertThat(client.settings.getScanMode()).isEqualTo(ScanMode);
             // Set connecting state
-            sendMessageWaitForProcessed(createConnectingMessage(true));
+            mHandler.sendMessage(createConnectingMessage(true));
             // Turn off screen
-            sendMessageWaitForProcessed(createScreenOnOffMessage(false));
-            // Wait for downgrade duration
-            testSleep(DELAY_SCAN_DOWNGRADE_DURATION_MS + DELAY_ASYNC_MS);
-            TestUtils.waitForLooperToFinishScheduledTask(mHandler.getLooper());
+            mHandler.sendMessage(createScreenOnOffMessage(false));
+            // Dispatching all messages doesn't run MSG_STOP_CONNECTING which is sent with delay
+            // during handling MSG_START_CONNECTING
+            assertThat(mTestLooper.dispatchAll()).isEqualTo(2);
+            // Move time forward so that MSG_STOP_CONNECTING can be dispatched
+            mTestLooper.moveTimeForward(DELAY_SCAN_DOWNGRADE_DURATION_MS + 1);
+            // We can check that MSG_STOP_CONNECTING is in the message queue
+            assertThat(mHandler.hasMessages(ScanManager.MSG_STOP_CONNECTING)).isTrue();
+            mTestLooper.dispatchAll();
             assertThat(mScanManager.getRegularScanQueue().contains(client)).isTrue();
             assertThat(mScanManager.getSuspendedScanQueue().contains(client)).isFalse();
             assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode);
