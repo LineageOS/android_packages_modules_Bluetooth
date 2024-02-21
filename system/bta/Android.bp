@@ -388,6 +388,7 @@ cc_test {
         "test/bta_hf_client_security_test.cc",
     ],
     shared_libs: [
+        "libbase",
         "libcrypto",
         "libcutils",
         "liblog",
