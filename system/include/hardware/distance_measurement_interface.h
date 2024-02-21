@@ -45,7 +45,7 @@ class DistanceMeasurementInterface {
   virtual void RegisterDistanceMeasurementCallbacks(
       DistanceMeasurementCallbacks* callbacks) = 0;
   virtual void StartDistanceMeasurement(RawAddress raw_address,
-                                        uint16_t frequency, uint8_t method) = 0;
+                                        uint16_t interval, uint8_t method) = 0;
   virtual void StopDistanceMeasurement(RawAddress raw_address,
                                        uint8_t method) = 0;
 };
