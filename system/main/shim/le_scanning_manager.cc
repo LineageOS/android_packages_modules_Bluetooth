@@ -37,6 +37,7 @@
 #include "main/shim/shim.h"
 #include "os/log.h"
 #include "stack/btm/btm_int_types.h"
+#include "stack/include/bt_dev_class.h"
 #include "stack/include/btm_log_history.h"
 #include "storage/device.h"
 #include "storage/le_device.h"
@@ -143,8 +144,8 @@ extern void btif_dm_update_ble_remote_properties(const RawAddress& bd_addr,
 void btm_ble_process_adv_addr(RawAddress& raw_address,
                               tBLE_ADDR_TYPE* address_type);
 
-extern bool btm_ble_get_appearance_as_cod(std::vector<uint8_t> const& data,
-                                          DEV_CLASS dev_class);
+extern DEV_CLASS btm_ble_get_appearance_as_cod(
+    std::vector<uint8_t> const& data);
 
 using bluetooth::shim::BleScannerInterfaceImpl;
 
@@ -809,8 +810,8 @@ void BleScannerInterfaceImpl::handle_remote_properties(
     }
   }
 
-  DEV_CLASS dev_class;
-  if (btm_ble_get_appearance_as_cod(advertising_data, dev_class)) {
+  DEV_CLASS dev_class = btm_ble_get_appearance_as_cod(advertising_data);
+  if (dev_class != kDevClassUnclassified) {
     btif_dm_update_ble_remote_properties(bd_addr, bdname.name, dev_class,
                                          device_type);
   }
