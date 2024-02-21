@@ -47,6 +47,7 @@ struct init init;
 struct notify_sco_connection_change notify_sco_connection_change;
 struct set_codec_datapath set_codec_datapath;
 struct update_esco_parameters update_esco_parameters;
+struct is_coding_format_supported is_coding_format_supported;
 
 }  // namespace stack_btm_sco_hfp_hal
 }  // namespace mock
@@ -64,6 +65,7 @@ bool get_offload_supported::return_value = false;
 int get_packet_size::return_value = 0;
 bool get_wbs_supported::return_value = false;
 bool get_swb_supported::return_value = false;
+bool is_coding_format_supported::return_value = false;
 
 }  // namespace stack_btm_sco_hfp_hal
 }  // namespace mock
@@ -99,6 +101,11 @@ bool get_wbs_supported() {
 bool get_swb_supported() {
   inc_func_call_count(__func__);
   return test::mock::stack_btm_sco_hfp_hal::get_swb_supported();
+}
+bool is_coding_format_supported(esco_coding_format_t coding_format) {
+  inc_func_call_count(__func__);
+  return test::mock::stack_btm_sco_hfp_hal::is_coding_format_supported(
+      coding_format);
 }
 void init() {
   inc_func_call_count(__func__);
