@@ -27,6 +27,7 @@
 
 #include "stack/btm/btm_ble_int.h"
 #include "stack/btm/btm_ble_int_types.h"
+#include "stack/include/bt_dev_class.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/hci_error_code.h"
 #include "test/common/mock_functions.h"
@@ -137,10 +138,10 @@ void btm_ble_increment_link_topology_mask(uint8_t /* link_role */) {
   inc_func_call_count(__func__);
 }
 void btm_ble_init(void) { inc_func_call_count(__func__); }
-bool btm_ble_get_appearance_as_cod(std::vector<uint8_t> const& /* data */,
-                                   DEV_CLASS /* dev_class */) {
+DEV_CLASS btm_ble_get_appearance_as_cod(
+    std::vector<uint8_t> const& /* data */) {
   inc_func_call_count(__func__);
-  return false;
+  return kDevClassUnclassified;
 }
 void btm_ble_process_adv_addr(RawAddress& /* bda */,
                               tBLE_ADDR_TYPE* /* addr_type */) {

@@ -81,7 +81,7 @@ void btif_dm_proc_io_rsp(const RawAddress& bd_addr, tBTM_IO_CAP io_cap,
 /**
  * Device Configuration Queries
  */
-void btif_dm_get_local_class_of_device(DEV_CLASS device_class);
+DEV_CLASS btif_dm_get_local_class_of_device();
 
 /**
  * Out-of-band functions
