@@ -510,6 +510,25 @@ uint16_t BTM_IsInquiryActive(void) {
 
 /*******************************************************************************
  *
+ * Function         BTM_CancelLeScan
+ *
+ * Description      This function cancels an le scan if active
+ *
+ ******************************************************************************/
+static void BTM_CancelLeScan() {
+  if (!bluetooth::shim::is_classic_discovery_only_enabled()) {
+    CHECK(BTM_IsDeviceUp());
+    if ((btm_cb.btm_inq_vars.inqparms.mode & BTM_BLE_INQUIRY_MASK) != 0)
+      btm_ble_stop_inquiry();
+  } else {
+    log::info(
+        "Unable to cancel le scan as `is_classic_discovery_only_enabled` is "
+        "true");
+  }
+}
+
+/*******************************************************************************
+ *
  * Function         BTM_CancelInquiry
  *
  * Description      This function cancels an inquiry if active
@@ -535,14 +554,13 @@ void BTM_CancelInquiry(void) {
       .start_time_ms = btm_cb.neighbor.classic_inquiry.start_time_ms,
   });
 
-  const auto end_time_ms = timestamper_in_milliseconds.GetTimestamp();
+  const auto duration_ms = timestamper_in_milliseconds.GetTimestamp() -
+                           btm_cb.neighbor.classic_inquiry.start_time_ms;
   BTM_LogHistory(
       kBtmLogTag, RawAddress::kEmpty, "Classic inquiry canceled",
       base::StringPrintf(
           "duration_s:%6.3f results:%lu std:%u rssi:%u ext:%u",
-          (end_time_ms - btm_cb.neighbor.classic_inquiry.start_time_ms) /
-              1000.0,
-          btm_cb.neighbor.classic_inquiry.results,
+          duration_ms / 1000.0, btm_cb.neighbor.classic_inquiry.results,
           btm_cb.btm_inq_vars.inq_cmpl_info.resp_type[BTM_INQ_RESULT_STANDARD],
           btm_cb.btm_inq_vars.inq_cmpl_info.resp_type[BTM_INQ_RESULT_WITH_RSSI],
           btm_cb.btm_inq_vars.inq_cmpl_info
@@ -568,11 +586,7 @@ void BTM_CancelInquiry(void) {
                 btm_process_cancel_complete(HCI_SUCCESS, BTM_BR_INQUIRY_MASK);
               }));
     }
-
-    if (!bluetooth::shim::is_classic_discovery_only_enabled()) {
-      if ((btm_cb.btm_inq_vars.inqparms.mode & BTM_BLE_INQUIRY_MASK) != 0)
-        btm_ble_stop_inquiry();
-    }
+    BTM_CancelLeScan();
 
     btm_cb.btm_inq_vars.inq_counter++;
     btm_clr_inq_result_flt();
@@ -589,9 +603,40 @@ static void btm_classic_inquiry_timeout(UNUSED_ATTR void* data) {
 
 /*******************************************************************************
  *
+ * Function         BTM_StartLeScan
+ *
+ * Description      This function is called to start an LE scan.  Currently
+ *                  this is only callable from BTM_StartInquiry.
+ *
+ * Returns          tBTM_STATUS
+ *                  BTM_CMD_STARTED if le scan successfully initiated
+ *                  BTM_WRONG_MODE if controller does not support ble or the
+ *                                 is_classic_discovery_only_enabled flag is set
+ *
+ ******************************************************************************/
+static tBTM_STATUS BTM_StartLeScan() {
+  if (!bluetooth::shim::is_classic_discovery_only_enabled()) {
+    if (controller_get_interface()->SupportsBle()) {
+      btm_ble_start_inquiry(btm_cb.btm_inq_vars.inqparms.duration);
+      return BTM_CMD_STARTED;
+    } else {
+      log::warn("Trying to do LE scan on a non-LE adapter");
+      btm_cb.btm_inq_vars.inqparms.mode &= ~BTM_BLE_INQUIRY_MASK;
+    }
+  } else {
+    log::info(
+        "init_flag: Skip le scan as classic inquiry only flag is set enabled");
+  }
+  return BTM_WRONG_MODE;
+}
+
+/*******************************************************************************
+ *
  * Function         BTM_StartInquiry
  *
- * Description      This function is called to start an inquiry.
+ * Description      This function is called to start an inquiry on the
+ *                  classic BR/EDR link and start an le scan.  This is an
+ *                  Android only API.
  *
  * Parameters:      p_inqparms - pointer to the inquiry information
  *                      mode - GENERAL or LIMITED inquiry, BR/LE bit mask
@@ -691,14 +736,7 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
   // Also do BLE scanning here if we aren't limiting discovery to classic only.
   // This path does not play nicely with GD BLE scanning and may cause issues
   // with other scanners.
-  if (!bluetooth::shim::is_classic_discovery_only_enabled()) {
-    if (controller_get_interface()->SupportsBle()) {
-      btm_ble_start_inquiry(btm_cb.btm_inq_vars.inqparms.duration);
-    } else {
-      log::warn("Trying to do LE scan on a non-LE adapter");
-      btm_cb.btm_inq_vars.inqparms.mode &= ~BTM_BLE_INQUIRY_MASK;
-    }
-  }
+  BTM_StartLeScan();
 
   if (btm_cb.btm_inq_vars.inq_active & BTM_SSP_INQUIRY_ACTIVE) {
     log::info("Not starting inquiry as SSP is in progress");
