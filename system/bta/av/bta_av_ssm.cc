@@ -24,9 +24,13 @@
 
 #define LOG_TAG "bt_bta_av"
 
+#include <bluetooth/log.h>
+
 #include "bta/av/bta_av_int.h"
 #include "internal_include/bt_target.h"
 #include "os/log.h"
+
+using namespace bluetooth;
 
 /*****************************************************************************
  * Constants and types
@@ -418,17 +422,18 @@ static void bta_av_better_stream_state_machine(tBTA_AV_SCB* p_scb,
   }
 
   if (previous_state != p_scb->state) {
-    LOG_INFO("peer %s p_scb=%#x(%p) AV event=0x%x(%s) state=%d(%s) -> %d(%s)",
-             ADDRESS_TO_LOGGABLE_CSTR(p_scb->PeerAddress()), p_scb->hndl, p_scb,
-             event, bta_av_evt_code(event), previous_state,
-             bta_av_sst_code(previous_state), p_scb->state,
-             bta_av_sst_code(p_scb->state));
+    log::info(
+        "peer {} p_scb={:#x}({}) AV event=0x{:x}({}) state={}({}) -> {}({})",
+        ADDRESS_TO_LOGGABLE_CSTR(p_scb->PeerAddress()), p_scb->hndl,
+        fmt::ptr(p_scb), event, bta_av_evt_code(event), previous_state,
+        bta_av_sst_code(previous_state), p_scb->state,
+        bta_av_sst_code(p_scb->state));
 
   } else {
-    LOG_VERBOSE("peer %s p_scb=%#x(%p) AV event=0x%x(%s) state=%d(%s)",
-                ADDRESS_TO_LOGGABLE_CSTR(p_scb->PeerAddress()), p_scb->hndl,
-                p_scb, event, bta_av_evt_code(event), p_scb->state,
-                bta_av_sst_code(p_scb->state));
+    log::verbose("peer {} p_scb={:#x}({}) AV event=0x{:x}({}) state={}({})",
+                 ADDRESS_TO_LOGGABLE_CSTR(p_scb->PeerAddress()), p_scb->hndl,
+                 fmt::ptr(p_scb), event, bta_av_evt_code(event), p_scb->state,
+                 bta_av_sst_code(p_scb->state));
   }
 
   if (event_handler1 != nullptr) {
@@ -453,7 +458,7 @@ void bta_av_ssm_execute(tBTA_AV_SCB* p_scb, uint16_t event,
                         tBTA_AV_DATA* p_data) {
   if (p_scb == NULL) {
     /* this stream is not registered */
-    LOG_VERBOSE("%s: AV channel not registered", __func__);
+    log::verbose("AV channel not registered");
     return;
   }
 
@@ -517,11 +522,11 @@ void bta_av_set_scb_sst_init(tBTA_AV_SCB* p_scb) {
 
   uint8_t next_state = BTA_AV_INIT_SST;
 
-  LOG_VERBOSE(
-      "%s: peer %s AV (hndl=0x%x) state=%d(%s) next state=%d(%s) p_scb=%p",
-      __func__, ADDRESS_TO_LOGGABLE_CSTR(p_scb->PeerAddress()), p_scb->hndl,
-      p_scb->state, bta_av_sst_code(p_scb->state), next_state,
-      bta_av_sst_code(next_state), p_scb);
+  log::verbose(
+      "peer {} AV (hndl=0x{:x}) state={}({}) next state={}({}) p_scb={}",
+      ADDRESS_TO_LOGGABLE_CSTR(p_scb->PeerAddress()), p_scb->hndl, p_scb->state,
+      bta_av_sst_code(p_scb->state), next_state, bta_av_sst_code(next_state),
+      fmt::ptr(p_scb));
 
   p_scb->state = next_state;
 }

@@ -27,6 +27,7 @@
 
 #include <base/functional/callback.h>
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 
 #include <cstdint>
 #include <vector>
@@ -969,5 +970,10 @@ void BTA_DmBleSubrateRequest(const RawAddress& bd_addr, uint16_t subrate_min,
 bool BTA_DmCheckLeAudioCapable(const RawAddress& address);
 
 void DumpsysBtaDm(int fd);
+
+namespace fmt {
+template <>
+struct formatter<tBTA_DM_SEARCH_EVT> : enum_formatter<tBTA_DM_SEARCH_EVT> {};
+}  // namespace fmt
 
 #endif /* BTA_API_H */
