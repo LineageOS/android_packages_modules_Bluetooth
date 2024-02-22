@@ -26,6 +26,7 @@
 
 #include <base/functional/bind.h>
 #include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include <cstring>
 
@@ -38,6 +39,8 @@
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/main_thread.h"
+
+using namespace bluetooth;
 
 /* system manager control block definition */
 tBTA_SYS_CB bta_sys_cb;
@@ -69,7 +72,7 @@ void bta_sys_init(void) {
 static void bta_sys_event(BT_HDR_RIGID* p_msg) {
   bool freebuf = true;
 
-  LOG_VERBOSE("%s: Event 0x%x", __func__, p_msg->event);
+  log::verbose("Event 0x{:x}", p_msg->event);
 
   /* get subsystem id from event */
   uint8_t id = (uint8_t)(p_msg->event >> 8);
@@ -78,8 +81,8 @@ static void bta_sys_event(BT_HDR_RIGID* p_msg) {
   if ((id < BTA_ID_MAX) && (bta_sys_cb.reg[id] != NULL)) {
     freebuf = (*bta_sys_cb.reg[id]->evt_hdlr)(p_msg);
   } else {
-    LOG_INFO("Ignoring receipt of unregistered event id:%s[%hhu]",
-             BtaIdSysText(static_cast<tBTA_SYS_ID>(id)).c_str(), id);
+    log::info("Ignoring receipt of unregistered event id:{}[{}]",
+              BtaIdSysText(static_cast<tBTA_SYS_ID>(id)), id);
   }
 
   if (freebuf) {
@@ -149,7 +152,7 @@ void bta_sys_sendmsg(void* p_msg) {
           FROM_HERE,
           base::BindOnce(&bta_sys_event, static_cast<BT_HDR_RIGID*>(p_msg))) !=
       BT_STATUS_SUCCESS) {
-    LOG(ERROR) << __func__ << ": do_in_main_thread failed";
+    log::error("do_in_main_thread failed");
   }
 }
 
@@ -158,7 +161,7 @@ void bta_sys_sendmsg_delayed(void* p_msg, std::chrono::microseconds delay) {
           FROM_HERE,
           base::Bind(&bta_sys_event, static_cast<BT_HDR_RIGID*>(p_msg)),
           delay) != BT_STATUS_SUCCESS) {
-    LOG(ERROR) << __func__ << ": do_in_main_thread_delayed failed";
+    log::error("do_in_main_thread_delayed failed");
   }
 }
 
