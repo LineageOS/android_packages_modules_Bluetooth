@@ -135,12 +135,8 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"လေယာဉ်ပျံမုဒ်သုံးစဉ် ဘလူးတုသ် ဆက်ဖွင့်ထားရန် သင့်စက်က မှတ်မိသည်။ ဘလူးတုသ် ဆက်ဖွင့်မထားလိုပါက ပိတ်နိုင်သည်။"</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi နှင့် ဘလူးတုသ် ဆက်ဖွင့်ထားသည်"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"လေယာဉ်ပျံမုဒ်သုံးစဉ် Wi-Fi နှင့် ဘလူးတုသ် ဆက်ဖွင့်ထားရန် သင့်စက်က မှတ်မိသည်။ Wi-Fi နှင့် ဘလူးတုသ် ဆက်ဖွင့်မထားလိုပါက ပိတ်နိုင်သည်။"</string>
-    <!-- no translation found for bluetooth_enabled_auto_on_title (1799541656310353393) -->
-    <skip />
-    <!-- no translation found for bluetooth_enabled_auto_on_message (1070556457440100730) -->
-    <skip />
-    <!-- no translation found for bluetooth_disable_auto_on (1085026923461565937) -->
-    <skip />
-    <!-- no translation found for bluetooth_notification_group (7251886707585872194) -->
-    <skip />
+    <string name="bluetooth_enabled_auto_on_title" msgid="1799541656310353393">"ဘလူးတုသ်ကို အလိုအလျောက်ဖွင့်ထားသည်"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="1070556457440100730">"အလိုအလျောက်ပြန်စခြင်းကို ဘလူးတုသ်ဆက်တင်များတွင် ပြောင်းနိုင်သည်။"</string>
+    <string name="bluetooth_disable_auto_on" msgid="1085026923461565937">"ပိတ်ရန်"</string>
+    <string name="bluetooth_notification_group" msgid="7251886707585872194">"အလိုအလျောက် ဘလူးတုသ်အခြေအနေ ပြောင်းလဲမှု"</string>
 </resources>
