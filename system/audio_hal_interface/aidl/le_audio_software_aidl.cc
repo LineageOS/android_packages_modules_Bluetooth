@@ -163,6 +163,9 @@ void LeAudioTransport::StopRequest() {
 }
 
 void LeAudioTransport::SetLatencyMode(LatencyMode latency_mode) {
+  LOG_DEBUG("Latency mode: %s",
+            ::aidl::android::hardware::bluetooth::audio::toString(latency_mode)
+                .c_str());
   switch (latency_mode) {
     case LatencyMode::FREE:
       dsa_mode_ = DsaMode::DISABLED;
