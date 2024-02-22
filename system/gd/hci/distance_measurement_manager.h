@@ -73,7 +73,7 @@ class DistanceMeasurementManager : public bluetooth::Module {
 
   void RegisterDistanceMeasurementCallbacks(DistanceMeasurementCallbacks* callbacks);
   void StartDistanceMeasurement(
-      const Address&, uint16_t frequency, DistanceMeasurementMethod method);
+      const Address&, uint16_t interval, DistanceMeasurementMethod method);
   void StopDistanceMeasurement(const Address& address, DistanceMeasurementMethod method);
 
   static const ModuleFactory Factory;

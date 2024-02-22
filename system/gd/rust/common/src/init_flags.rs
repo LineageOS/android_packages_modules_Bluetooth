@@ -378,7 +378,6 @@ init_flags!(
         irk_rotation,
         leaudio_targeted_announcement_reconnection_mode = true,
         pbap_pse_dynamic_version_upgrade = false,
-        periodic_advertising_adi = true,
         private_gatt = true,
         redact_log = true,
         rust_event_loop = true,
