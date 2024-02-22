@@ -6,7 +6,7 @@ use bt_topshim::btif::{RawAddress, Uuid};
 use bt_topshim::profiles::gatt::{AdvertisingStatus, Gatt, GattAdvCallbacks, LePhy};
 
 use itertools::Itertools;
-use log::{debug, warn};
+use log::{debug, error, warn};
 use num_traits::clamp;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -415,8 +415,11 @@ struct AdvertisingSetInfo {
     paused: bool,
 
     /// Whether the stop of advertising set is held.
-    /// This happens when an advertising set is stopped when the system is suspending.
-    /// The advertising set will be stopped on system resumed.
+    /// This flag is set when an advertising set is stopped while we're not able to do it, such as:
+    /// - The system is suspending / suspended
+    /// - The advertising set is not yet valid (started)
+    ///
+    /// The advertising set will be stopped on system resumed / advertising set becomes ready.
     stopped: bool,
 
     /// Advertising duration, in 10 ms unit.
@@ -812,12 +815,14 @@ impl IBluetoothAdvertiseManager for AdvertiseManager {
     }
 
     fn unregister_callback(&mut self, callback_id: u32) -> bool {
-        for (_, s) in
-            self.sets.iter().filter(|(_, s)| s.callback_id() == callback_id && s.adv_id.is_some())
-        {
-            self.gatt.as_ref().unwrap().lock().unwrap().advertiser.unregister(s.adv_id());
+        for s in self.sets.values_mut().filter(|s| s.callback_id() == callback_id) {
+            if s.is_valid() {
+                self.gatt.as_ref().unwrap().lock().unwrap().advertiser.unregister(s.adv_id());
+            } else {
+                s.set_stopped();
+            }
         }
-        self.sets.retain(|_, s| s.callback_id() != callback_id);
+        self.sets.retain(|_, s| s.callback_id() != callback_id || !s.is_valid());
 
         self.callbacks.remove_callback(callback_id)
     }
@@ -1173,15 +1178,27 @@ impl BtifGattAdvCallbacks for AdvertiseManager {
             reg_id, advertiser_id, tx_power, status
         );
 
-        if let Some(s) = self.get_mut_by_reg_id(reg_id) {
-            s.set_adv_id(Some(advertiser_id.into()));
-            s.set_enabled(status == AdvertisingStatus::Success);
+        let s = if let Some(s) = self.sets.get_mut(&reg_id) {
+            s
         } else {
+            error!("AdvertisingSetInfo not found");
+            // An unknown advertising set has started. Unregister it anyway.
+            self.gatt.as_ref().unwrap().lock().unwrap().advertiser.unregister(advertiser_id);
+            return;
+        };
+
+        if s.is_stopped() {
+            // The advertising set needs to be stopped. This could happen when |unregister_callback|
+            // is called before an advertising becomes ready.
+            self.gatt.as_ref().unwrap().lock().unwrap().advertiser.unregister(advertiser_id);
+            self.sets.remove(&reg_id);
             return;
         }
-        let s = self.get_mut_by_reg_id(reg_id).unwrap().clone();
 
-        if let Some(cb) = self.get_callback(&s) {
+        s.set_adv_id(Some(advertiser_id.into()));
+        s.set_enabled(status == AdvertisingStatus::Success);
+
+        if let Some(cb) = self.callbacks.get_by_id_mut(s.callback_id()) {
             cb.on_advertising_set_started(reg_id, advertiser_id.into(), tx_power.into(), status);
         }
 
@@ -1190,7 +1207,7 @@ impl BtifGattAdvCallbacks for AdvertiseManager {
                 "on_advertising_set_started(): failed! reg_id = {}, status = {:?}",
                 reg_id, status
             );
-            self.remove_by_reg_id(reg_id);
+            self.sets.remove(&reg_id);
         }
     }
 
