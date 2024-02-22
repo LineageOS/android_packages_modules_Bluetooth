@@ -24,6 +24,7 @@
 
 #include <android_bluetooth_flags.h>
 #include <base/functional/bind.h>
+#include <bluetooth/log.h>
 
 #include "bta/dm/bta_dm_sec_int.h"
 #include "stack/btm/btm_sec.h"
@@ -31,6 +32,8 @@
 #include "stack/include/btm_ble_sec_api.h"
 #include "stack/include/main_thread.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth;
 
 /** This function initiates a bonding procedure with a peer device */
 void BTA_DmBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
@@ -319,7 +322,7 @@ void BTA_DmBleSecurityGrant(const RawAddress& bd_addr,
 void BTA_DmSetEncryption(const RawAddress& bd_addr, tBT_TRANSPORT transport,
                          tBTA_DM_ENCRYPT_CBACK* p_callback,
                          tBTM_BLE_SEC_ACT sec_act) {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
   if (IS_FLAG_ENABLED(synchronous_bta_sec)) {
     bta_dm_set_encryption(bd_addr, transport, p_callback, sec_act);
   } else {
@@ -342,7 +345,7 @@ void BTA_DmSetEncryption(const RawAddress& bd_addr, tBT_TRANSPORT transport,
  *
  ******************************************************************************/
 void BTA_DmSirkSecCbRegister(tBTA_DM_SEC_CBACK* p_cback) {
-  LOG_DEBUG("");
+  log::debug("");
   if (IS_FLAG_ENABLED(synchronous_bta_sec)) {
     bta_dm_ble_sirk_sec_cb_register(p_cback);
   } else {
@@ -365,7 +368,7 @@ void BTA_DmSirkSecCbRegister(tBTA_DM_SEC_CBACK* p_cback) {
  *
  ******************************************************************************/
 void BTA_DmSirkConfirmDeviceReply(const RawAddress& bd_addr, bool accept) {
-  LOG_DEBUG("");
+  log::debug("");
   if (IS_FLAG_ENABLED(synchronous_bta_sec)) {
     bta_dm_ble_sirk_confirm_device_reply(bd_addr, accept);
   } else {

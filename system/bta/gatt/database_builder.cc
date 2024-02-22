@@ -19,6 +19,7 @@
 #include "bta/gatt/database_builder.h"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include <algorithm>
 #include <cstdint>
@@ -34,6 +35,7 @@
 #include "types/bluetooth/uuid.h"
 
 using bluetooth::Uuid;
+using namespace bluetooth;
 
 namespace gatt {
 
@@ -73,7 +75,7 @@ void DatabaseBuilder::AddIncludedService(uint16_t handle, const Uuid& uuid,
                                          uint16_t end_handle) {
   Service* service = FindService(database.services, handle);
   if (!service) {
-    LOG(ERROR) << "Illegal action to add to non-existing service!";
+    log::error("Illegal action to add to non-existing service!");
     return;
   }
 
@@ -95,14 +97,15 @@ void DatabaseBuilder::AddCharacteristic(uint16_t handle, uint16_t value_handle,
                                         const Uuid& uuid, uint8_t properties) {
   Service* service = FindService(database.services, handle);
   if (!service) {
-    LOG(ERROR) << "Illegal action to add to non-existing service!";
+    log::error("Illegal action to add to non-existing service!");
     return;
   }
 
   if (service->end_handle < value_handle)
-    LOG(WARNING) << "Remote device violates spec: value_handle="
-                 << loghex(value_handle) << " is after service end_handle="
-                 << loghex(service->end_handle);
+    log::warn(
+        "Remote device violates spec: value_handle={} is after service "
+        "end_handle={}",
+        loghex(value_handle), loghex(service->end_handle));
 
   service->characteristics.emplace_back(Characteristic{
       .declaration_handle = handle,
@@ -116,13 +119,12 @@ void DatabaseBuilder::AddCharacteristic(uint16_t handle, uint16_t value_handle,
 void DatabaseBuilder::AddDescriptor(uint16_t handle, const Uuid& uuid) {
   Service* service = FindService(database.services, handle);
   if (!service) {
-    LOG(ERROR) << "Illegal action to add to non-existing service!";
+    log::error("Illegal action to add to non-existing service!");
     return;
   }
 
   if (service->characteristics.empty()) {
-    LOG(ERROR) << __func__
-               << ": Illegal action to add to non-existing characteristic!";
+    log::error("Illegal action to add to non-existing characteristic!");
     return;
   }
 
@@ -217,7 +219,7 @@ Descriptor* FindDescriptorByHandle(std::list<Service>& services,
 bool DatabaseBuilder::SetValueOfDescriptors(
     const std::vector<uint16_t>& values) {
   if (values.size() > descriptor_handles_to_read.size()) {
-    LOG(ERROR) << "values.size() <= descriptors.size() expected";
+    log::error("values.size() <= descriptors.size() expected");
     descriptor_handles_to_read.clear();
     return false;
   }
@@ -226,7 +228,7 @@ bool DatabaseBuilder::SetValueOfDescriptors(
     Descriptor* d = FindDescriptorByHandle(database.services,
                                            descriptor_handles_to_read[i]);
     if (!d) {
-      LOG(ERROR) << __func__ << "non-existing descriptor!";
+      log::error("non-existing descriptor!");
       descriptor_handles_to_read.clear();
       return false;
     }

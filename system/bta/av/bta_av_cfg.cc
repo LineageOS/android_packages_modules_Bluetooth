@@ -23,6 +23,8 @@
  *
  ******************************************************************************/
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 
 #include "bta/include/bta_av_api.h"
@@ -36,6 +38,8 @@
 #ifndef BTA_AV_RC_PASS_RSP_CODE
 #define BTA_AV_RC_PASS_RSP_CODE AVRC_RSP_NOT_IMPL
 #endif
+
+using namespace bluetooth;
 
 const uint32_t bta_av_meta_caps_co_ids[] = {AVRC_CO_METADATA, AVRC_CO_BROADCOM};
 

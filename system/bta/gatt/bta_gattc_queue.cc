@@ -17,6 +17,7 @@
 #define LOG_TAG "gatt"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include <list>
 #include <unordered_map>
@@ -28,6 +29,7 @@
 #include "osi/include/allocator.h"
 
 using gatt_operation = BtaGattQueue::gatt_operation;
+using namespace bluetooth;
 
 constexpr uint8_t GATT_READ_CHAR = 1;
 constexpr uint8_t GATT_READ_DESC = 2;
@@ -139,21 +141,20 @@ void BtaGattQueue::gatt_read_multi_op_finished(uint16_t conn_id,
 }
 
 void BtaGattQueue::gatt_execute_next_op(uint16_t conn_id) {
-  LOG_VERBOSE("%s: conn_id=0x%x", __func__, conn_id);
+  log::verbose("conn_id=0x{:x}", conn_id);
   if (gatt_op_queue.empty()) {
-    LOG_VERBOSE("%s: op queue is empty", __func__);
+    log::verbose("op queue is empty");
     return;
   }
 
   auto map_ptr = gatt_op_queue.find(conn_id);
   if (map_ptr == gatt_op_queue.end() || map_ptr->second.empty()) {
-    LOG_VERBOSE("%s: no more operations queued for conn_id %d", __func__,
-                conn_id);
+    log::verbose("no more operations queued for conn_id {}", conn_id);
     return;
   }
 
   if (gatt_op_queue_executing.count(conn_id)) {
-    LOG_VERBOSE("%s: can't enqueue next op, already executing", __func__);
+    log::verbose("can't enqueue next op, already executing");
     return;
   }
 
@@ -266,7 +267,7 @@ void BtaGattQueue::WriteDescriptor(uint16_t conn_id, uint16_t handle,
 }
 
 void BtaGattQueue::ConfigureMtu(uint16_t conn_id, uint16_t mtu) {
-  LOG(INFO) << __func__ << ", mtu: " << static_cast<int>(mtu);
+  log::info("mtu: {}", static_cast<int>(mtu));
   std::vector<uint8_t> value = {static_cast<uint8_t>(mtu & 0xff),
                                 static_cast<uint8_t>(mtu >> 8)};
   gatt_op_queue[conn_id].push_back({.type = GATT_CONFIG_MTU,

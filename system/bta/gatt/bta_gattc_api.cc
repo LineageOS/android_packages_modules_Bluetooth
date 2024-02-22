@@ -26,6 +26,7 @@
 
 #include <base/functional/bind.h>
 #include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include <ios>
 #include <list>
@@ -43,6 +44,7 @@
 #include "types/raw_address.h"
 
 using bluetooth::Uuid;
+using namespace bluetooth;
 
 /*****************************************************************************
  *  Constants
@@ -64,7 +66,7 @@ static const tBTA_SYS_REG bta_gattc_reg = {bta_gattc_hdl_event,
  ******************************************************************************/
 void BTA_GATTC_Disable(void) {
   if (!bta_sys_is_register(BTA_ID_GATTC)) {
-    LOG(WARNING) << "GATTC Module not enabled/already disabled";
+    log::warn("GATTC Module not enabled/already disabled");
     return;
   }
 
@@ -79,9 +81,9 @@ void BTA_GATTC_Disable(void) {
  */
 void BTA_GATTC_AppRegister(tBTA_GATTC_CBACK* p_client_cb,
                            BtaAppRegisterCallback cb, bool eatt_support) {
-  LOG_DEBUG("eatt_support=%d", eatt_support);
+  log::debug("eatt_support={}", eatt_support);
   if (!bta_sys_is_register(BTA_ID_GATTC)) {
-    LOG_DEBUG("BTA_ID_GATTC not registered in BTA, registering it");
+    log::debug("BTA_ID_GATTC not registered in BTA, registering it");
     bta_sys_register(BTA_ID_GATTC, &bta_gattc_reg);
   }
 
@@ -96,7 +98,7 @@ static void app_deregister_impl(tGATT_IF client_if) {
   if (p_clreg != nullptr) {
     bta_gattc_deregister(p_clreg);
   } else {
-    LOG_ERROR("Unknown GATT ID: %d, state: %d", client_if, bta_gattc_cb.state);
+    log::error("Unknown GATT ID: {}, state: {}", client_if, bta_gattc_cb.state);
   }
 }
 /*******************************************************************************
@@ -649,8 +651,7 @@ void BTA_GATTC_SendIndConfirm(uint16_t conn_id, uint16_t cid) {
   tBTA_GATTC_API_CONFIRM* p_buf =
       (tBTA_GATTC_API_CONFIRM*)osi_calloc(sizeof(tBTA_GATTC_API_CONFIRM));
 
-  VLOG(1) << __func__ << ": conn_id=" << +conn_id << " cid=0x" << std::hex
-          << +cid;
+  log::verbose("conn_id={} cid=0x{:x}", conn_id, cid);
 
   p_buf->hdr.event = BTA_GATTC_API_CONFIRM_EVT;
   p_buf->hdr.layer_specific = conn_id;
@@ -681,7 +682,7 @@ tGATT_STATUS BTA_GATTC_RegisterForNotifications(tGATT_IF client_if,
   uint8_t i;
 
   if (!handle) {
-    LOG(ERROR) << __func__ << ": registration failed, handle is 0";
+    log::error("registration failed, handle is 0");
     return status;
   }
 
@@ -691,7 +692,7 @@ tGATT_STATUS BTA_GATTC_RegisterForNotifications(tGATT_IF client_if,
       if (p_clreg->notif_reg[i].in_use &&
           p_clreg->notif_reg[i].remote_bda == bda &&
           p_clreg->notif_reg[i].handle == handle) {
-        LOG(WARNING) << "notification already registered";
+        log::warn("notification already registered");
         status = GATT_SUCCESS;
         break;
       }
@@ -712,11 +713,11 @@ tGATT_STATUS BTA_GATTC_RegisterForNotifications(tGATT_IF client_if,
       }
       if (i == BTA_GATTC_NOTIF_REG_MAX) {
         status = GATT_NO_RESOURCES;
-        LOG(ERROR) << "Max Notification Reached, registration failed.";
+        log::error("Max Notification Reached, registration failed.");
       }
     }
   } else {
-    LOG(ERROR) << "client_if=" << +client_if << " Not Registered";
+    log::error("client_if={} Not Registered", client_if);
   }
 
   return status;
@@ -740,14 +741,14 @@ tGATT_STATUS BTA_GATTC_DeregisterForNotifications(tGATT_IF client_if,
                                                   const RawAddress& bda,
                                                   uint16_t handle) {
   if (!handle) {
-    LOG(ERROR) << __func__ << ": deregistration failed, handle is 0";
+    log::error("deregistration failed, handle is 0");
     return GATT_ILLEGAL_PARAMETER;
   }
 
   tBTA_GATTC_RCB* p_clreg = bta_gattc_cl_get_regcb(client_if);
   if (p_clreg == NULL) {
-    LOG(ERROR) << __func__ << " client_if=" << +client_if
-               << " not registered bd_addr=" << ADDRESS_TO_LOGGABLE_STR(bda);
+    log::error("client_if={} not registered bd_addr={}", client_if,
+               ADDRESS_TO_LOGGABLE_STR(bda));
     return GATT_ILLEGAL_PARAMETER;
   }
 
@@ -755,15 +756,13 @@ tGATT_STATUS BTA_GATTC_DeregisterForNotifications(tGATT_IF client_if,
     if (p_clreg->notif_reg[i].in_use &&
         p_clreg->notif_reg[i].remote_bda == bda &&
         p_clreg->notif_reg[i].handle == handle) {
-      VLOG(1) << __func__ << " deregistered bd_addr="
-              << ADDRESS_TO_LOGGABLE_STR(bda);
+      log::verbose("deregistered bd_addr={}", ADDRESS_TO_LOGGABLE_STR(bda));
       memset(&p_clreg->notif_reg[i], 0, sizeof(tBTA_GATTC_NOTIF_REG));
       return GATT_SUCCESS;
     }
   }
 
-  LOG(ERROR) << __func__ << " registration not found bd_addr="
-             << ADDRESS_TO_LOGGABLE_STR(bda);
+  log::error("registration not found bd_addr={}", ADDRESS_TO_LOGGABLE_STR(bda));
   return GATT_ERROR;
 }
 
