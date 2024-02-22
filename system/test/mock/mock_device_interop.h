@@ -46,8 +46,8 @@ namespace device_interop {
 struct interop_database_add {
   std::function<void(const uint16_t feature, const RawAddress* addr,
                      size_t length)>
-      body{
-          [](const uint16_t feature, const RawAddress* addr, size_t length) {}};
+      body{[](const uint16_t /* feature */, const RawAddress* /* addr */,
+              size_t /* length */) {}};
   void operator()(const uint16_t feature, const RawAddress* addr,
                   size_t length) {
     body(feature, addr, length);
@@ -61,8 +61,8 @@ extern struct interop_database_add interop_database_add;
 struct interop_database_add_addr {
   std::function<void(const uint16_t feature, const RawAddress* addr,
                      size_t length)>
-      body{
-          [](const uint16_t feature, const RawAddress* addr, size_t length) {}};
+      body{[](const uint16_t /* feature */, const RawAddress* /* addr */,
+              size_t /* length */) {}};
   void operator()(const uint16_t feature, const RawAddress* addr,
                   size_t length) {
     body(feature, addr, length);
@@ -76,8 +76,9 @@ extern struct interop_database_add_addr interop_database_add_addr;
 struct interop_database_add_addr_lmp_version {
   std::function<void(const interop_feature_t feature, const RawAddress* addr,
                      uint8_t lmp_ver, uint16_t lmp_sub_ver)>
-      body{[](const interop_feature_t feature, const RawAddress* addr,
-              uint8_t lmp_ver, uint16_t lmp_sub_ver) {}};
+      body{[](const interop_feature_t /* feature */,
+              const RawAddress* /* addr */, uint8_t /* lmp_ver */,
+              uint16_t /* lmp_sub_ver */) {}};
   void operator()(const interop_feature_t feature, const RawAddress* addr,
                   uint8_t lmp_ver, uint16_t lmp_sub_ver) {
     body(feature, addr, lmp_ver, lmp_sub_ver);
@@ -92,8 +93,8 @@ extern struct interop_database_add_addr_lmp_version
 struct interop_database_add_addr_max_lat {
   std::function<void(const interop_feature_t feature, const RawAddress* addr,
                      uint16_t max_lat)>
-      body{[](const interop_feature_t feature, const RawAddress* addr,
-              uint16_t max_lat) {}};
+      body{[](const interop_feature_t /* feature */,
+              const RawAddress* /* addr */, uint16_t /* max_lat */) {}};
   void operator()(const interop_feature_t feature, const RawAddress* addr,
                   uint16_t max_lat) {
     body(feature, addr, max_lat);
@@ -107,7 +108,8 @@ extern struct interop_database_add_addr_max_lat
 // Return: void
 struct interop_database_add_manufacturer {
   std::function<void(const interop_feature_t feature, uint16_t manufacturer)>
-      body{[](const interop_feature_t feature, uint16_t manufacturer) {}};
+      body{[](const interop_feature_t /* feature */,
+              uint16_t /* manufacturer */) {}};
   void operator()(const interop_feature_t feature, uint16_t manufacturer) {
     body(feature, manufacturer);
   };
@@ -120,7 +122,7 @@ extern struct interop_database_add_manufacturer
 // Return: void
 struct interop_database_add_name {
   std::function<void(const uint16_t feature, const char* name)> body{
-      [](const uint16_t feature, const char* name) {}};
+      [](const uint16_t /* feature */, const char* /* name */) {}};
   void operator()(const uint16_t feature, const char* name) {
     body(feature, name);
   };
@@ -132,7 +134,7 @@ extern struct interop_database_add_name interop_database_add_name;
 // Return: void
 struct interop_database_add_version {
   std::function<void(const interop_feature_t feature, uint16_t version)> body{
-      [](const interop_feature_t feature, uint16_t version) {}};
+      [](const interop_feature_t /* feature */, uint16_t /* version */) {}};
   void operator()(const interop_feature_t feature, uint16_t version) {
     body(feature, version);
   };
@@ -145,8 +147,8 @@ extern struct interop_database_add_version interop_database_add_version;
 struct interop_database_add_vndr_prdt {
   std::function<void(const interop_feature_t feature, uint16_t vendor_id,
                      uint16_t product_id)>
-      body{[](const interop_feature_t feature, uint16_t vendor_id,
-              uint16_t product_id) {}};
+      body{[](const interop_feature_t /* feature */, uint16_t /* vendor_id */,
+              uint16_t /* product_id */) {}};
   void operator()(const interop_feature_t feature, uint16_t vendor_id,
                   uint16_t product_id) {
     body(feature, vendor_id, product_id);
@@ -169,9 +171,8 @@ extern struct interop_database_clear interop_database_clear;
 struct interop_database_match_addr {
   static bool return_value;
   std::function<bool(const interop_feature_t feature, const RawAddress* addr)>
-      body{[](const interop_feature_t feature, const RawAddress* addr) {
-        return return_value;
-      }};
+      body{[](const interop_feature_t /* feature */,
+              const RawAddress* /* addr */) { return return_value; }};
   bool operator()(const interop_feature_t feature, const RawAddress* addr) {
     return body(feature, addr);
   };
@@ -185,9 +186,9 @@ struct interop_database_match_addr_get_lmp_ver {
   static bool return_value;
   std::function<bool(const interop_feature_t feature, const RawAddress* addr,
                      uint8_t* lmp_ver, uint16_t* lmp_sub_ver)>
-      body{[](const interop_feature_t feature, const RawAddress* addr,
-              uint8_t* lmp_ver,
-              uint16_t* lmp_sub_ver) { return return_value; }};
+      body{[](const interop_feature_t /* feature */,
+              const RawAddress* /* addr */, uint8_t* /* lmp_ver */,
+              uint16_t* /* lmp_sub_ver */) { return return_value; }};
   bool operator()(const interop_feature_t feature, const RawAddress* addr,
                   uint8_t* lmp_ver, uint16_t* lmp_sub_ver) {
     return body(feature, addr, lmp_ver, lmp_sub_ver);
@@ -203,8 +204,9 @@ struct interop_database_match_addr_get_max_lat {
   static bool return_value;
   std::function<bool(const interop_feature_t feature, const RawAddress* addr,
                      uint16_t* max_lat)>
-      body{[](const interop_feature_t feature, const RawAddress* addr,
-              uint16_t* max_lat) { return return_value; }};
+      body{[](const interop_feature_t /* feature */,
+              const RawAddress* /* addr */,
+              uint16_t* /* max_lat */) { return return_value; }};
   bool operator()(const interop_feature_t feature, const RawAddress* addr,
                   uint16_t* max_lat) {
     return body(feature, addr, max_lat);
@@ -219,9 +221,8 @@ extern struct interop_database_match_addr_get_max_lat
 struct interop_database_match_manufacturer {
   static bool return_value;
   std::function<bool(const interop_feature_t feature, uint16_t manufacturer)>
-      body{[](const interop_feature_t feature, uint16_t manufacturer) {
-        return return_value;
-      }};
+      body{[](const interop_feature_t /* feature */,
+              uint16_t /* manufacturer */) { return return_value; }};
   bool operator()(const interop_feature_t feature, uint16_t manufacturer) {
     return body(feature, manufacturer);
   };
@@ -235,7 +236,7 @@ extern struct interop_database_match_manufacturer
 struct interop_database_match_name {
   static bool return_value;
   std::function<bool(const interop_feature_t feature, const char* name)> body{
-      [](const interop_feature_t feature, const char* name) {
+      [](const interop_feature_t /* feature */, const char* /* name */) {
         return return_value;
       }};
   bool operator()(const interop_feature_t feature, const char* name) {
@@ -250,7 +251,7 @@ extern struct interop_database_match_name interop_database_match_name;
 struct interop_database_match_version {
   static bool return_value;
   std::function<bool(const interop_feature_t feature, uint16_t version)> body{
-      [](const interop_feature_t feature, uint16_t version) {
+      [](const interop_feature_t /* feature */, uint16_t /* version */) {
         return return_value;
       }};
   bool operator()(const interop_feature_t feature, uint16_t version) {
@@ -266,8 +267,8 @@ struct interop_database_match_vndr_prdt {
   static bool return_value;
   std::function<bool(const interop_feature_t feature, uint16_t vendor_id,
                      uint16_t product_id)>
-      body{[](const interop_feature_t feature, uint16_t vendor_id,
-              uint16_t product_id) { return return_value; }};
+      body{[](const interop_feature_t /* feature */, uint16_t /* vendor_id */,
+              uint16_t /* product_id */) { return return_value; }};
   bool operator()(const interop_feature_t feature, uint16_t vendor_id,
                   uint16_t product_id) {
     return body(feature, vendor_id, product_id);
@@ -281,9 +282,8 @@ extern struct interop_database_match_vndr_prdt interop_database_match_vndr_prdt;
 struct interop_database_remove_addr {
   static bool return_value;
   std::function<bool(const interop_feature_t feature, const RawAddress* addr)>
-      body{[](const interop_feature_t feature, const RawAddress* addr) {
-        return return_value;
-      }};
+      body{[](const interop_feature_t /* feature */,
+              const RawAddress* /* addr */) { return return_value; }};
   bool operator()(const interop_feature_t feature, const RawAddress* addr) {
     return body(feature, addr);
   };
@@ -297,8 +297,9 @@ struct interop_database_remove_addr_lmp_version {
   static bool return_value;
   std::function<bool(const interop_feature_t feature, const RawAddress* addr,
                      uint8_t lmp_ver, uint16_t lmp_sub_ver)>
-      body{[](const interop_feature_t feature, const RawAddress* addr,
-              uint8_t lmp_ver, uint16_t lmp_sub_ver) { return return_value; }};
+      body{[](const interop_feature_t /* feature */,
+              const RawAddress* /* addr */, uint8_t /* lmp_ver */,
+              uint16_t /* lmp_sub_ver */) { return return_value; }};
   bool operator()(const interop_feature_t feature, const RawAddress* addr,
                   uint8_t lmp_ver, uint16_t lmp_sub_ver) {
     return body(feature, addr, lmp_ver, lmp_sub_ver);
@@ -314,8 +315,9 @@ struct interop_database_remove_addr_max_lat {
   static bool return_value;
   std::function<bool(const interop_feature_t feature, const RawAddress* addr,
                      uint16_t max_lat)>
-      body{[](const interop_feature_t feature, const RawAddress* addr,
-              uint16_t max_lat) { return return_value; }};
+      body{[](const interop_feature_t /* feature */,
+              const RawAddress* /* addr */,
+              uint16_t /* max_lat */) { return return_value; }};
   bool operator()(const interop_feature_t feature, const RawAddress* addr,
                   uint16_t max_lat) {
     return body(feature, addr, max_lat);
@@ -330,7 +332,7 @@ extern struct interop_database_remove_addr_max_lat
 struct interop_database_remove_feature {
   static bool return_value;
   std::function<bool(const interop_feature_t feature)> body{
-      [](const interop_feature_t feature) { return return_value; }};
+      [](const interop_feature_t /* feature */) { return return_value; }};
   bool operator()(const interop_feature_t feature) { return body(feature); };
 };
 extern struct interop_database_remove_feature interop_database_remove_feature;
@@ -341,9 +343,8 @@ extern struct interop_database_remove_feature interop_database_remove_feature;
 struct interop_database_remove_manufacturer {
   static bool return_value;
   std::function<bool(const interop_feature_t feature, uint16_t manufacturer)>
-      body{[](const interop_feature_t feature, uint16_t manufacturer) {
-        return return_value;
-      }};
+      body{[](const interop_feature_t /* feature */,
+              uint16_t /* manufacturer */) { return return_value; }};
   bool operator()(const interop_feature_t feature, uint16_t manufacturer) {
     return body(feature, manufacturer);
   };
@@ -357,7 +358,7 @@ extern struct interop_database_remove_manufacturer
 struct interop_database_remove_name {
   static bool return_value;
   std::function<bool(const interop_feature_t feature, const char* name)> body{
-      [](const interop_feature_t feature, const char* name) {
+      [](const interop_feature_t /* feature */, const char* /* name */) {
         return return_value;
       }};
   bool operator()(const interop_feature_t feature, const char* name) {
@@ -372,7 +373,7 @@ extern struct interop_database_remove_name interop_database_remove_name;
 struct interop_database_remove_version {
   static bool return_value;
   std::function<bool(const interop_feature_t feature, uint16_t version)> body{
-      [](const interop_feature_t feature, uint16_t version) {
+      [](const interop_feature_t /* feature */, uint16_t /* version */) {
         return return_value;
       }};
   bool operator()(const interop_feature_t feature, uint16_t version) {
@@ -388,8 +389,8 @@ struct interop_database_remove_vndr_prdt {
   static bool return_value;
   std::function<bool(const interop_feature_t feature, uint16_t vendor_id,
                      uint16_t product_id)>
-      body{[](const interop_feature_t feature, uint16_t vendor_id,
-              uint16_t product_id) { return return_value; }};
+      body{[](const interop_feature_t /* feature */, uint16_t /* vendor_id */,
+              uint16_t /* product_id */) { return return_value; }};
   bool operator()(const interop_feature_t feature, uint16_t vendor_id,
                   uint16_t product_id) {
     return body(feature, vendor_id, product_id);
@@ -404,7 +405,7 @@ extern struct interop_database_remove_vndr_prdt
 struct interop_feature_name_to_feature_id {
   static int return_value;
   std::function<int(const char* feature_name)> body{
-      [](const char* feature_name) { return return_value; }};
+      [](const char* /* feature_name */) { return return_value; }};
   int operator()(const char* feature_name) { return body(feature_name); };
 };
 extern struct interop_feature_name_to_feature_id
@@ -416,7 +417,7 @@ extern struct interop_feature_name_to_feature_id
 struct interop_get_allowlisted_media_players_list {
   static bool return_value;
   std::function<bool(list_t* p_bl_devices)> body{
-      [](list_t* p_bl_devices) { return return_value; }};
+      [](list_t* /* p_bl_devices */) { return return_value; }};
   bool operator()(list_t* p_bl_devices) { return body(p_bl_devices); };
 };
 extern struct interop_get_allowlisted_media_players_list
@@ -428,9 +429,8 @@ extern struct interop_get_allowlisted_media_players_list
 struct interop_match_addr {
   static bool return_value;
   std::function<bool(const interop_feature_t feature, const RawAddress* addr)>
-      body{[](const interop_feature_t feature, const RawAddress* addr) {
-        return return_value;
-      }};
+      body{[](const interop_feature_t /* feature */,
+              const RawAddress* /* addr */) { return return_value; }};
   bool operator()(const interop_feature_t feature, const RawAddress* addr) {
     return body(feature, addr);
   };
@@ -444,8 +444,9 @@ struct interop_match_addr_get_max_lat {
   static bool return_value;
   std::function<bool(const interop_feature_t feature, const RawAddress* addr,
                      uint16_t* max_lat)>
-      body{[](const interop_feature_t feature, const RawAddress* addr,
-              uint16_t* max_lat) { return return_value; }};
+      body{[](const interop_feature_t /* feature */,
+              const RawAddress* /* addr */,
+              uint16_t* /* max_lat */) { return return_value; }};
   bool operator()(const interop_feature_t feature, const RawAddress* addr,
                   uint16_t* max_lat) {
     return body(feature, addr, max_lat);
@@ -461,8 +462,9 @@ struct interop_match_addr_or_name {
   std::function<bool(const interop_feature_t feature, const RawAddress* addr,
                      bt_status_t (*get_remote_device_property)(
                          const RawAddress*, bt_property_t*))>
-      body{[](const interop_feature_t feature, const RawAddress* addr,
-              bt_status_t (*get_remote_device_property)(
+      body{[](const interop_feature_t /* feature */,
+              const RawAddress* /* addr */,
+              bt_status_t (* /* get_remote_device_property */)(
                   const RawAddress*, bt_property_t*)) { return return_value; }};
   bool operator()(const interop_feature_t feature, const RawAddress* addr,
                   bt_status_t (*get_remote_device_property)(const RawAddress*,
@@ -478,9 +480,8 @@ extern struct interop_match_addr_or_name interop_match_addr_or_name;
 struct interop_match_manufacturer {
   static bool return_value;
   std::function<bool(const interop_feature_t feature, uint16_t manufacturer)>
-      body{[](const interop_feature_t feature, uint16_t manufacturer) {
-        return return_value;
-      }};
+      body{[](const interop_feature_t /* feature */,
+              uint16_t /* manufacturer */) { return return_value; }};
   bool operator()(const interop_feature_t feature, uint16_t manufacturer) {
     return body(feature, manufacturer);
   };
@@ -493,7 +494,7 @@ extern struct interop_match_manufacturer interop_match_manufacturer;
 struct interop_match_name {
   static bool return_value;
   std::function<bool(const interop_feature_t feature, const char* name)> body{
-      [](const interop_feature_t feature, const char* name) {
+      [](const interop_feature_t /* feature */, const char* /* name */) {
         return return_value;
       }};
   bool operator()(const interop_feature_t feature, const char* name) {
@@ -509,8 +510,8 @@ struct interop_match_vendor_product_ids {
   static bool return_value;
   std::function<bool(const interop_feature_t feature, uint16_t vendor_id,
                      uint16_t product_id)>
-      body{[](const interop_feature_t feature, uint16_t vendor_id,
-              uint16_t product_id) { return return_value; }};
+      body{[](const interop_feature_t /* feature */, uint16_t /* vendor_id */,
+              uint16_t /* product_id */) { return return_value; }};
   bool operator()(const interop_feature_t feature, uint16_t vendor_id,
                   uint16_t product_id) {
     return body(feature, vendor_id, product_id);
@@ -524,7 +525,7 @@ extern struct interop_match_vendor_product_ids interop_match_vendor_product_ids;
 struct token_to_ul {
   static bool return_value;
   std::function<bool(char* token, uint16_t* ul)> body{
-      [](char* token, uint16_t* ul) { return return_value; }};
+      [](char* /* token */, uint16_t* /* ul */) { return return_value; }};
   bool operator()(char* token, uint16_t* ul) { return body(token, ul); };
 };
 extern struct token_to_ul token_to_ul;
