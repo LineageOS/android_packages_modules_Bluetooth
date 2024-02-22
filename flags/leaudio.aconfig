@@ -159,3 +159,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_api_synchronized_block_fix"
+    namespace: "bluetooth"
+    description: "Fix possible deadlocks when synchronizing LeAudioService states"
+    bug: "326295400"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
