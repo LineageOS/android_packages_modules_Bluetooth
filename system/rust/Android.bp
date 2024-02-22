@@ -145,6 +145,11 @@ cc_library_static {
     generated_sources: ["libbluetooth_core_rs_bridge_codegen"],
     apex_available: ["com.android.btservices"],
     min_sdk_version: "Tiramisu",
+    // Bug: 286537287 this library gets linked with Rust objects but cross-language LTO
+    // isn't supported yet.
+    lto: {
+        never: true,
+    },
 }
 
 /// FFI codegen
