@@ -180,6 +180,7 @@ LeAudioSinkAudioHalClient::Callbacks* audioSourceReceiver;
 CigCallbacks* stateMachineHciCallbacks;
 LeAudioGroupStateMachine::Callbacks* stateMachineCallbacks;
 DeviceGroupsCallbacks* device_group_callbacks;
+LeAudioIsoDataCallback* iso_data_callback;
 
 /*
  * Coordinatet Set Identification Profile (CSIP) based on CSIP 1.0
@@ -3436,6 +3437,10 @@ class LeAudioClientImpl : public LeAudioClient {
       return;
     }
 
+    if (DsaDataConsume(group, cis_conn_hdl, data, size, timestamp)) {
+      return;
+    }
+
     uint16_t left_cis_handle = 0;
     uint16_t right_cis_handle = 0;
     for (auto [cis_handle, audio_location] :
@@ -5798,6 +5803,41 @@ class LeAudioClientImpl : public LeAudioClient {
 
     le_audio::MetricsCollector::Get()->OnStreamEnded(active_group_id_);
   }
+
+  bool DsaDataConsume(LeAudioDeviceGroup* group, uint16_t cis_conn_hdl,
+                      uint8_t* data, uint16_t size, uint32_t timestamp) {
+    if (!IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+      return false;
+    }
+
+    if (iso_data_callback == nullptr || !group->dsa_.active ||
+        group->dsa_.mode != DsaMode::ISO_SW) {
+      return false;
+    }
+
+    // Find LE Audio device
+    LeAudioDevice* leAudioDevice = group->GetFirstDevice();
+    while (leAudioDevice != nullptr) {
+      if (leAudioDevice->GetDsaCisHandle() == cis_conn_hdl &&
+          leAudioDevice->GetDsaDataPathState() == DataPathState::CONFIGURED) {
+        break;
+      }
+      leAudioDevice = group->GetNextDevice(leAudioDevice);
+    }
+    if (leAudioDevice == nullptr) {
+      LOG_WARN("No LE Audio device found for CIS handle: %d", cis_conn_hdl);
+      return false;
+    }
+
+    bool consumed = iso_data_callback(leAudioDevice->address_, cis_conn_hdl,
+                                      data, size, timestamp);
+    if (consumed) {
+      return true;
+    } else {
+      LOG_VERBOSE("ISO data consumer not ready to accept data");
+      return false;
+    }
+  }
 };
 
 static void le_audio_health_status_callback(const RawAddress& addr,
@@ -6150,4 +6190,13 @@ void LeAudioClient::Cleanup(void) {
   LeAudioGroupStateMachine::Cleanup();
   IsoManager::GetInstance()->Stop();
   le_audio::MetricsCollector::Get()->Flush();
+}
+
+bool LeAudioClient::RegisterIsoDataConsumer(LeAudioIsoDataCallback callback) {
+  if (!IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+    return false;
+  }
+
+  iso_data_callback = callback;
+  return true;
 }
