@@ -613,9 +613,9 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
       if (group->dsa_.active &&
           (group->dsa_.mode == DsaMode::ISO_SW ||
            group->dsa_.mode == DsaMode::ISO_HW) &&
-          leAudioDevice->dsa_state_ == DataPathState::CONFIGURING) {
+          leAudioDevice->GetDsaDataPathState() == DataPathState::CONFIGURING) {
         LOG_INFO("Datapath configured for headtracking");
-        leAudioDevice->dsa_state_ = DataPathState::CONFIGURED;
+        leAudioDevice->SetDsaDataPathState(DataPathState::CONFIGURED);
         return;
       }
     }
@@ -699,9 +699,10 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
       }
     } else if (IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
       if (group->dsa_.active &&
-          leAudioDevice->dsa_state_ == DataPathState::REMOVING) {
+          leAudioDevice->GetDsaDataPathState() == DataPathState::REMOVING) {
         LOG_INFO("DSA data path removed");
-        leAudioDevice->dsa_state_ = DataPathState::IDLE;
+        leAudioDevice->SetDsaDataPathState(DataPathState::IDLE);
+        leAudioDevice->SetDsaCisHandle(GATT_INVALID_CONN_ID);
       }
     }
 
@@ -908,7 +909,8 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
         return;
     }
 
-    leAudioDevice->dsa_state_ = DataPathState::CONFIGURING;
+    leAudioDevice->SetDsaDataPathState(DataPathState::CONFIGURING);
+    leAudioDevice->SetDsaCisHandle(conn_hdl);
 
     LOG_VERBOSE(
         "DSA mode supported on this LE Audio device: %s, apply data path: %d",
@@ -1088,10 +1090,10 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
       ases_pair.source->data_path_state = DataPathState::REMOVING;
     } else {
       if (IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
-        if (leAudioDevice->dsa_state_ == DataPathState::CONFIGURED) {
+        if (leAudioDevice->GetDsaDataPathState() == DataPathState::CONFIGURED) {
           value |=
               bluetooth::hci::iso_manager::kRemoveIsoDataPathDirectionOutput;
-          leAudioDevice->dsa_state_ = DataPathState::REMOVING;
+          leAudioDevice->SetDsaDataPathState(DataPathState::REMOVING);
         }
       }
     }
