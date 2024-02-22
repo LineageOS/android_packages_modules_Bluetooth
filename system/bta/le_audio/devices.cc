@@ -356,7 +356,7 @@ void LeAudioDevice::RegisterPACs(
     pac_db->clear();
   }
 
-  dsa_modes_ = {DsaMode::DISABLED};
+  dsa_.modes = {DsaMode::DISABLED};
 
   /* TODO wrap this logging part with debug flag */
   for (const struct types::acs_ac_record& pac : *pac_recs) {
@@ -375,7 +375,7 @@ void LeAudioDevice::RegisterPACs(
       if (pac.codec_id == types::kLeAudioCodecHeadtracking) {
         LOG(INFO) << __func__ << ": Headtracking supported";
         /* Todo: Set DSA modes according to the codec configuration */
-        dsa_modes_ = {
+        dsa_.modes = {
             DsaMode::DISABLED,
             DsaMode::ISO_SW,
             DsaMode::ISO_HW,
@@ -1024,7 +1024,22 @@ void LeAudioDevice::UpdateDeviceAllowlistFlag(void) {
     }
   }
 }
-DsaModes LeAudioDevice::GetDsaModes(void) { return dsa_modes_; }
+
+DsaModes LeAudioDevice::GetDsaModes(void) { return dsa_.modes; }
+
+types::DataPathState LeAudioDevice::GetDsaDataPathState(void) {
+  return dsa_.state;
+}
+
+void LeAudioDevice::SetDsaDataPathState(types::DataPathState state) {
+  dsa_.state = state;
+}
+
+uint16_t LeAudioDevice::GetDsaCisHandle(void) { return dsa_.cis_handle; }
+
+void LeAudioDevice::SetDsaCisHandle(uint16_t cis_handle) {
+  dsa_.cis_handle = cis_handle;
+}
 
 /* LeAudioDevices Class methods implementation */
 void LeAudioDevices::Add(const RawAddress& address, DeviceConnectState state,
