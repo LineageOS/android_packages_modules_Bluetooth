@@ -135,12 +135,8 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Votre appareil se souvient de garder le Bluetooth activé en mode Avion. Désactivez le Bluetooth si vous ne souhaitez pas qu\'il reste activé."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Le Wi-Fi et le Bluetooth restent activés"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Votre appareil se souvient de garder le Wi-Fi et le Bluetooth activés en mode Avion. Désactivez le Wi-Fi et le Bluetooth si vous ne souhaitez pas qu\'ils restent activés."</string>
-    <!-- no translation found for bluetooth_enabled_auto_on_title (1799541656310353393) -->
-    <skip />
-    <!-- no translation found for bluetooth_enabled_auto_on_message (1070556457440100730) -->
-    <skip />
-    <!-- no translation found for bluetooth_disable_auto_on (1085026923461565937) -->
-    <skip />
-    <!-- no translation found for bluetooth_notification_group (7251886707585872194) -->
-    <skip />
+    <string name="bluetooth_enabled_auto_on_title" msgid="1799541656310353393">"Le Bluetooth a été automatiquement activé"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="1070556457440100730">"Le redémarrage automatique peut être activé/désactivé dans les paramètres Bluetooth."</string>
+    <string name="bluetooth_disable_auto_on" msgid="1085026923461565937">"Désactiver"</string>
+    <string name="bluetooth_notification_group" msgid="7251886707585872194">"Changement d\'état automatique du Bluetooth"</string>
 </resources>
