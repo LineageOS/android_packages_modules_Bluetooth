@@ -1339,7 +1339,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
                 LOG_INFO("Device found with support for selected DsaMode");
 
                 param.sdu_itv_stom = 20000;
-                param.max_trans_lat_stom = 10;
+                param.max_trans_lat_stom = 20;
                 it->max_sdu_size_stom = 15;
                 it->rtn_stom = 2;
 
