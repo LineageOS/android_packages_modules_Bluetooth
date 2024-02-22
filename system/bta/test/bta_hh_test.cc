@@ -26,7 +26,6 @@
 #include "test/common/mock_functions.h"
 #include "test/mock/mock_osi_allocator.h"
 
-bool LeAudioClient::IsLeAudioClientInStreaming() { return false; }
 namespace {
 std::array<uint8_t, 32> data32 = {
     0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b,
