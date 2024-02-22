@@ -350,6 +350,7 @@ impl OddDisconnectionsRule {
         if let Some(_) = self.connection_attempt.remove(&address) {
             if status == ErrorCode::Success {
                 self.active_handles.insert(handle, (packet.ts, address));
+                self.pending_disconnect_due_to_host_power_off.remove(&handle);
             } else {
                 self.reportable.push((
                     packet.ts,
@@ -449,6 +450,7 @@ impl OddDisconnectionsRule {
         if let Some(_) = self.sco_connection_attempt.remove(&address) {
             if status == ErrorCode::Success {
                 self.active_handles.insert(handle, (packet.ts, address));
+                self.pending_disconnect_due_to_host_power_off.remove(&handle);
             } else {
                 self.reportable.push((
                     packet.ts,
@@ -486,6 +488,7 @@ impl OddDisconnectionsRule {
         if let Some(_) = self.le_connection_attempt.remove(&addr_to_remove) {
             if status == ErrorCode::Success {
                 self.active_handles.insert(handle, (packet.ts, address));
+                self.pending_disconnect_due_to_host_power_off.remove(&handle);
             } else {
                 let message = if use_accept_list {
                     format!("LeConnectionComplete error {:?} for accept list", status)

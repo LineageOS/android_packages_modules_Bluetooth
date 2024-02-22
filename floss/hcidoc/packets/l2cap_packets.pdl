@@ -251,6 +251,7 @@ enum ConnectionResponseStatus : 16 {
   NO_FURTHER_INFORMATION_AVAILABLE = 0x0000,
   AUTHENTICATION_PENDING = 0x0001,
   AUTHORIZATION_PENDING = 0x0002,
+  RESERVED = ..,
 }
 
 packet ConnectionResponse : Control (code = CONNECTION_RESPONSE) {
