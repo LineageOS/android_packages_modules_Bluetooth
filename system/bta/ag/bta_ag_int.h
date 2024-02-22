@@ -24,6 +24,8 @@
 #ifndef BTA_AG_INT_H
 #define BTA_AG_INT_H
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 
 #include "bta/ag/bta_ag_at.h"
@@ -440,5 +442,13 @@ const RawAddress& bta_ag_get_active_device();
 void bta_clear_active_device();
 void bta_ag_send_qac(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
 void bta_ag_send_qcs(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
+
+namespace fmt {
+template <>
+struct formatter<tBTA_AG_SCO_APTX_SWB_SETTINGS>
+    : enum_formatter<tBTA_AG_SCO_APTX_SWB_SETTINGS> {};
+template <>
+struct formatter<tBTA_AG_SCO> : enum_formatter<tBTA_AG_SCO> {};
+}  // namespace fmt
 
 #endif /* BTA_AG_INT_H */

@@ -18,6 +18,7 @@
 #include <base/bind_helpers.h>
 #include <base/functional/bind.h>
 #include <base/strings/string_number_conversions.h>
+#include <bluetooth/log.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <osi/include/alarm.h>
@@ -2945,7 +2946,7 @@ bool SimpleJsonValidator(int fd, int* dumpsys_byte_cnt) {
     }
     ss << buf;
   }
-  LOG(ERROR) << __func__ << ": " << ss.str();
+  log::error("{}", ss.str());
   return (left_bracket == right_bracket) &&
          (left_sq_bracket == right_sq_bracket);
 }
@@ -3214,7 +3215,7 @@ TEST_F(HasTypesTest, test_group_op_coordinator_copy) {
 TEST_F(HasTypesTest, test_group_op_coordinator_completion) {
   HasCtpGroupOpCoordinator::Initialize([](void*) {
     /* Do nothing */
-    LOG(INFO) << __func__ << " callback call";
+    log::info("callback call");
   });
   ASSERT_EQ(0u, HasCtpGroupOpCoordinator::ref_cnt);
   auto address1 = GetTestAddress(1);

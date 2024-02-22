@@ -26,6 +26,7 @@
 #define HIDDEFS_H
 
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 
 #include "internal_include/bt_target.h"
 #include "macros.h"
@@ -182,5 +183,10 @@ typedef struct sdp_info {
                                   HID_DEV_USE_GLB_SDP_REC is set to false.*/
   tSDP_DISC_REC* p_sdp_layer_rec;
 } tHID_DEV_SDP_INFO;
+
+namespace fmt {
+template <>
+struct formatter<tHID_STATUS> : enum_formatter<tHID_STATUS> {};
+}  // namespace fmt
 
 #endif

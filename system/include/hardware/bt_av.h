@@ -450,6 +450,9 @@ struct formatter<btav_a2dp_codec_sample_rate_t>
 template <>
 struct formatter<btav_a2dp_codec_channel_mode_t>
     : enum_formatter<btav_a2dp_codec_channel_mode_t> {};
+template <>
+struct formatter<btav_a2dp_scmst_enable_status_t>
+    : enum_formatter<btav_a2dp_scmst_enable_status_t> {};
 }  // namespace fmt
 
 #endif /* ANDROID_INCLUDE_BT_AV_H */

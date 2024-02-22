@@ -24,6 +24,7 @@
 
 #include <android_bluetooth_flags.h>
 #include <base/functional/bind.h>
+#include <bluetooth/log.h>
 
 #include <vector>
 
@@ -40,6 +41,7 @@
 #include "types/raw_address.h"
 
 using namespace bluetooth::legacy::stack::sdp;
+using namespace bluetooth;
 
 using bluetooth::Uuid;
 
@@ -340,7 +342,7 @@ void BTA_DmCloseACL(const RawAddress& bd_addr, bool remove_dev,
  ******************************************************************************/
 void BTA_DmBleObserve(bool start, uint8_t duration,
                       tBTA_DM_SEARCH_CBACK* p_results_cb) {
-  LOG_VERBOSE("%s:start = %d ", __func__, start);
+  log::verbose("start = {}", start);
   do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_ble_observe, start,
                                               duration, p_results_cb));
 }
@@ -362,7 +364,7 @@ void BTA_DmBleObserve(bool start, uint8_t duration,
  *
  ******************************************************************************/
 void BTA_DmBleScan(bool start, uint8_t duration_sec, bool low_latency_scan) {
-  LOG_VERBOSE("%s:start = %d ", __func__, start);
+  log::verbose("start = {}", start);
   do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_ble_scan, start,
                                               duration_sec, low_latency_scan));
 }
@@ -381,7 +383,7 @@ void BTA_DmBleScan(bool start, uint8_t duration_sec, bool low_latency_scan) {
  *
  ******************************************************************************/
 void BTA_DmBleCsisObserve(bool observe, tBTA_DM_SEARCH_CBACK* p_results_cb) {
-  LOG_VERBOSE("%s:enable = %d ", __func__, observe);
+  log::verbose("enable = {}", observe);
   do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_ble_csis_observe, observe,
                                               p_results_cb));
 }
@@ -395,7 +397,7 @@ void BTA_DmBleCsisObserve(bool observe, tBTA_DM_SEARCH_CBACK* p_results_cb) {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_VendorInit(void) { LOG_VERBOSE("BTA_VendorInit"); }
+void BTA_VendorInit(void) { log::verbose("BTA_VendorInit"); }
 
 /*******************************************************************************
  *
@@ -407,7 +409,7 @@ void BTA_VendorInit(void) { LOG_VERBOSE("BTA_VendorInit"); }
  *
  ******************************************************************************/
 void BTA_DmClearEventFilter(void) {
-  LOG_VERBOSE("BTA_DmClearEventFilter");
+  log::verbose("BTA_DmClearEventFilter");
   do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_clear_event_filter));
 }
 
@@ -421,7 +423,7 @@ void BTA_DmClearEventFilter(void) {
  *
  ******************************************************************************/
 void BTA_DmClearEventMask(void) {
-  LOG_VERBOSE("BTA_DmClearEventMask");
+  log::verbose("BTA_DmClearEventMask");
   do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_clear_event_mask));
 }
 
@@ -435,7 +437,7 @@ void BTA_DmClearEventMask(void) {
  *
  ******************************************************************************/
 void BTA_DmClearFilterAcceptList(void) {
-  LOG_VERBOSE("BTA_DmClearFilterAcceptList");
+  log::verbose("BTA_DmClearFilterAcceptList");
   do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_clear_filter_accept_list));
 }
 
@@ -449,7 +451,7 @@ void BTA_DmClearFilterAcceptList(void) {
  *
  ******************************************************************************/
 void BTA_DmLeRand(LeRandCallback cb) {
-  LOG_VERBOSE("BTA_DmLeRand");
+  log::verbose("BTA_DmLeRand");
   do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_le_rand, std::move(cb)));
 }
 
@@ -463,12 +465,12 @@ void BTA_DmLeRand(LeRandCallback cb) {
  *
  ******************************************************************************/
 void BTA_DmDisconnectAllAcls() {
-  LOG_VERBOSE("BTA_DmLeRand");
+  log::verbose("BTA_DmLeRand");
   do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_disconnect_all_acls));
 }
 
 void BTA_DmSetEventFilterConnectionSetupAllDevices() {
-  LOG_VERBOSE("BTA_DmSetEventFilterConnectionSetupAllDevices");
+  log::verbose("BTA_DmSetEventFilterConnectionSetupAllDevices");
   do_in_main_thread(
       FROM_HERE,
       base::BindOnce(bta_dm_set_event_filter_connection_setup_all_devices));
@@ -477,7 +479,7 @@ void BTA_DmSetEventFilterConnectionSetupAllDevices() {
 void BTA_DmAllowWakeByHid(
     std::vector<RawAddress> classic_hid_devices,
     std::vector<std::pair<RawAddress, uint8_t>> le_hid_devices) {
-  LOG_VERBOSE("BTA_DmAllowWakeByHid");
+  log::verbose("BTA_DmAllowWakeByHid");
   do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_allow_wake_by_hid,
                                               std::move(classic_hid_devices),
                                               std::move(le_hid_devices)));
@@ -485,20 +487,20 @@ void BTA_DmAllowWakeByHid(
 
 void BTA_DmRestoreFilterAcceptList(
     std::vector<std::pair<RawAddress, uint8_t>> le_devices) {
-  LOG_VERBOSE("BTA_DmRestoreFilterAcceptList");
+  log::verbose("BTA_DmRestoreFilterAcceptList");
   do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_restore_filter_accept_list,
                                               std::move(le_devices)));
 }
 
 void BTA_DmSetDefaultEventMaskExcept(uint64_t mask, uint64_t le_mask) {
-  LOG_VERBOSE("BTA_DmSetDefaultEventMaskExcept");
+  log::verbose("BTA_DmSetDefaultEventMaskExcept");
   do_in_main_thread(
       FROM_HERE,
       base::BindOnce(bta_dm_set_default_event_mask_except, mask, le_mask));
 }
 
 void BTA_DmSetEventFilterInquiryResultAllDevices() {
-  LOG_VERBOSE("BTA_DmSetEventFilterInquiryResultAllDevices");
+  log::verbose("BTA_DmSetEventFilterInquiryResultAllDevices");
   do_in_main_thread(
       FROM_HERE,
       base::BindOnce(bta_dm_set_event_filter_inquiry_result_all_devices));
@@ -514,7 +516,7 @@ void BTA_DmSetEventFilterInquiryResultAllDevices() {
  *
  ******************************************************************************/
 void BTA_DmBleResetId(void) {
-  LOG_VERBOSE("BTA_DmBleResetId");
+  log::verbose("BTA_DmBleResetId");
   do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_ble_reset_id));
 }
 
@@ -537,7 +539,7 @@ void BTA_DmBleResetId(void) {
 void BTA_DmBleSubrateRequest(const RawAddress& bd_addr, uint16_t subrate_min,
                              uint16_t subrate_max, uint16_t max_latency,
                              uint16_t cont_num, uint16_t timeout) {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
   do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_ble_subrate_request,
                                               bd_addr, subrate_min, subrate_max,
                                               max_latency, cont_num, timeout));
@@ -550,7 +552,7 @@ bool BTA_DmCheckLeAudioCapable(const RawAddress& address) {
     if (inq_ent->results.remote_bd_addr != address) continue;
 
     if (inq_ent->results.ble_ad_is_le_audio_capable) {
-      LOG_INFO("Device is LE Audio capable based on AD content");
+      log::info("Device is LE Audio capable based on AD content");
       return true;
     }
 

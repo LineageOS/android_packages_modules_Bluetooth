@@ -25,6 +25,7 @@
 #define BTA_DM_INT_H
 
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 
 #include <string>
 #include <vector>
@@ -357,5 +358,10 @@ void bta_dm_eir_update_cust_uuid(const tBTA_CUSTOM_UUID &curr, bool adding);
 void bta_dm_ble_subrate_request(const RawAddress& bd_addr, uint16_t subrate_min,
                                 uint16_t subrate_max, uint16_t max_latency,
                                 uint16_t cont_num, uint16_t timeout);
+
+namespace fmt {
+template <>
+struct formatter<tBTA_DM_CONN_STATE> : enum_formatter<tBTA_DM_CONN_STATE> {};
+}  // namespace fmt
 
 #endif /* BTA_DM_INT_H */
