@@ -26,6 +26,7 @@
 
 #include <android_bluetooth_flags.h>
 #include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include <cstdint>
 #include <unordered_set>
@@ -55,6 +56,7 @@
 #include "types/raw_address.h"
 
 using namespace bluetooth::legacy::stack::sdp;
+using namespace bluetooth;
 
 tBTA_JV_CB bta_jv_cb;
 std::unordered_set<uint16_t> used_l2cap_classic_dynamic_psm;
@@ -1515,11 +1517,10 @@ static void bta_jv_port_mgmt_sr_cback(uint32_t code, uint16_t port_handle) {
       p_pcb_new_listen->rfcomm_slot_id =
           p_cb->p_cback(BTA_JV_RFCOMM_SRV_OPEN_EVT, &evt_data, rfcomm_slot_id);
       if (p_pcb_new_listen->rfcomm_slot_id == 0) {
-        LOG(ERROR) << __func__ << ": rfcomm_slot_id == "
-                   << p_pcb_new_listen->rfcomm_slot_id;
+        log::error("rfcomm_slot_id == {}", p_pcb_new_listen->rfcomm_slot_id);
       } else {
-        VLOG(2) << __func__ << ": curr_sess=" << p_cb->curr_sess
-                << ", max_sess=" << p_cb->max_sess;
+        log::verbose("curr_sess={}, max_sess={}", p_cb->curr_sess,
+                     p_cb->max_sess);
         failed = false;
       }
     } else
