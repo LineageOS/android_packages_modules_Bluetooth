@@ -60,6 +60,7 @@ class LeAudioTransport {
                    PcmParameters pcm_config);
 
   BluetoothAudioCtrlAck StartRequest();
+  BluetoothAudioCtrlAck StartRequestV2();
 
   BluetoothAudioCtrlAck SuspendRequest();
 
@@ -83,6 +84,10 @@ class LeAudioTransport {
                                       uint8_t channels_count,
                                       uint32_t data_interval);
 
+  bool IsRequestCompletedAfterUpdate(
+      const std::function<
+          std::pair<StartRequestState, bool>(StartRequestState)>& lambda);
+
   StartRequestState GetStartRequestState(void);
   void ClearStartRequestState(void);
   void SetStartRequestState(StartRequestState state);
@@ -94,6 +99,7 @@ class LeAudioTransport {
   uint64_t total_bytes_processed_;
   timespec data_position_;
   PcmParameters pcm_config_;
+  mutable std::mutex start_request_state_mutex_;
   std::atomic<StartRequestState> start_request_state_;
 };
 
@@ -106,6 +112,7 @@ class LeAudioSinkTransport
   ~LeAudioSinkTransport();
 
   BluetoothAudioCtrlAck StartRequest() override;
+  BluetoothAudioCtrlAck StartRequestV2();
 
   BluetoothAudioCtrlAck SuspendRequest() override;
 
@@ -128,6 +135,10 @@ class LeAudioSinkTransport
   void LeAudioSetSelectedHalPcmConfig(uint32_t sample_rate_hz, uint8_t bit_rate,
                                       uint8_t channels_count,
                                       uint32_t data_interval);
+
+  bool IsRequestCompletedAfterUpdate(
+      const std::function<
+          std::pair<StartRequestState, bool>(StartRequestState)>& lambda);
 
   StartRequestState GetStartRequestState(void);
   void ClearStartRequestState(void);
@@ -172,6 +183,9 @@ class LeAudioSourceTransport
                                       uint8_t channels_count,
                                       uint32_t data_interval);
 
+  bool IsRequestCompletedAfterUpdate(
+      const std::function<
+          std::pair<StartRequestState, bool>(StartRequestState)>& lambda);
   StartRequestState GetStartRequestState(void);
   void ClearStartRequestState(void);
   void SetStartRequestState(StartRequestState state);
