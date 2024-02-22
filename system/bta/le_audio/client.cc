@@ -3907,6 +3907,10 @@ class LeAudioClientImpl : public LeAudioClient {
       sink_cfg_available = false;
     }
 
+    if (DsaReconfigureNeeded(group, context_type)) {
+      reconfiguration_needed = true;
+    }
+
     LOG_DEBUG(
         " Context: %s Reconfiguration_needed = %d, sink_cfg_available = %d, "
         "source_cfg_available = %d",
@@ -5063,11 +5067,36 @@ class LeAudioClientImpl : public LeAudioClient {
                                        remote_metadata);
   }
 
+  bool DsaReconfigureNeeded(LeAudioDeviceGroup* group,
+                            LeAudioContextType context) {
+    if (!IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+      return false;
+    }
+
+    // Reconfigure if DSA mode changed for media streaming
+    if (context != le_audio::types::LeAudioContextType::MEDIA) {
+      return false;
+    }
+
+    if (group->dsa_.mode != DsaMode::ISO_SW &&
+        group->dsa_.mode != DsaMode::ISO_HW) {
+      return false;
+    }
+
+    if (group->dsa_.active) {
+      return false;
+    }
+
+    LOG_INFO("DSA mode %d requested but not active", group->dsa_.mode);
+    return true;
+  }
+
   /* Return true if stream is started */
   bool ReconfigureOrUpdateMetadata(
       LeAudioDeviceGroup* group, LeAudioContextType new_configuration_context,
       BidirectionalPair<AudioContexts> remote_contexts) {
-    if (new_configuration_context != configuration_context_type_) {
+    if (new_configuration_context != configuration_context_type_ ||
+        DsaReconfigureNeeded(group, new_configuration_context)) {
       LOG_INFO("Checking whether to change configuration context from %s to %s",
                ToString(configuration_context_type_).c_str(),
                ToString(new_configuration_context).c_str());
