@@ -20,8 +20,8 @@ use bt_utils::array_utils;
 use crate::async_helper::{AsyncHelper, CallbackSender};
 use crate::bluetooth::{Bluetooth, BluetoothDevice};
 use crate::bluetooth_adv::{
-    AdvertiseData, AdvertiseManager, AdvertisingSetParameters, BtifGattAdvCallbacks,
-    IAdvertisingSetCallback, PeriodicAdvertisingParameters,
+    AdvertiseData, AdvertiseManager, AdvertiserActions, AdvertisingSetParameters,
+    BtifGattAdvCallbacks, IAdvertisingSetCallback, PeriodicAdvertisingParameters,
 };
 use crate::callbacks::Callbacks;
 use crate::uuid::UuidHelper;
@@ -1880,6 +1880,10 @@ impl BluetoothGatt {
                 }
             }
         }
+    }
+
+    pub fn handle_adv_action(&mut self, action: AdvertiserActions) {
+        self.adv_manager.get_impl().handle_action(action);
     }
 }
 
