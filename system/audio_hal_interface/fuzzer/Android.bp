@@ -55,6 +55,7 @@ cc_defaults {
         "libaudio-a2dp-hw-utils",
         "libbase",
         "libbluetooth-dumpsys",
+        "libbluetooth-gdx",
         "libbluetooth-protos",
         "libbluetooth-types",
         "libbluetooth_core_rs",

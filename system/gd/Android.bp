@@ -143,7 +143,6 @@ cc_defaults {
         ":BluetoothOsSources",
         ":BluetoothPacketSources",
         ":BluetoothSecuritySources",
-        ":BluetoothShimSources",
         ":BluetoothStorageSources",
         ":BluetoothSyspropsSources",
         "module.cc",
@@ -214,6 +213,7 @@ cc_library_static {
     ],
     srcs: [
         ":BluetoothDiscoverySources",
+        ":BluetoothShimSources",
     ],
     include_dirs: [
         "packages/modules/Bluetooth/system",
@@ -307,6 +307,7 @@ cc_binary {
     static_libs: [
         "breakpad_client",
         "libbluetooth-dumpsys",
+        "libbluetooth-gdx",
         "libbluetooth-protos",
         "libbluetooth-types",
         "libbluetooth_crypto_toolbox",
@@ -415,7 +416,6 @@ cc_test {
     srcs: [
         ":BluetoothCommonTestSources",
         ":BluetoothCryptoToolboxTestSources",
-        ":BluetoothDumpsysTestSources",
         ":BluetoothHalTestSources",
         ":BluetoothHciUnitTestSources",
         ":BluetoothL2capUnitTestSources",
@@ -423,7 +423,6 @@ cc_test {
         ":BluetoothOsTestSources",
         ":BluetoothPacketTestSources",
         ":BluetoothSecurityUnitTestSources",
-        ":BluetoothShimTestSources",
         ":BluetoothStorageUnitTestSources",
         "module_unittest.cc",
         "stack_manager_unittest.cc",
@@ -435,9 +434,6 @@ cc_test {
         "BluetoothGeneratedDumpsysTestData_h",
     ],
     static_libs: [
-        "libbluetooth-dumpsys",
-        "libbluetooth-dumpsys-test",
-        "libbluetooth-dumpsys-unittest",
         "libbluetooth-protos",
         "libbluetooth-types",
         "libbluetooth_crypto_toolbox",
@@ -486,6 +482,8 @@ cc_test {
     host_supported: true,
     srcs: [
         ":BluetoothDiscoveryTestSources",
+        ":BluetoothDumpsysTestSources",
+        ":BluetoothShimTestSources",
         ":TestCommonMockFunctions",
         "module_gdx_unittest.cc",
         "module_jniloop_unittest.cc",
@@ -500,6 +498,9 @@ cc_test {
     ],
     static_libs: [
         "libbase",
+        "libbluetooth-dumpsys",
+        "libbluetooth-dumpsys-test",
+        "libbluetooth-dumpsys-unittest",
         "libbluetooth-gdx",
         "libbluetooth-types",
         "libbluetooth_gd",
@@ -515,6 +516,7 @@ cc_test {
         "libgmock",
         "liblog",
         "libosi",
+        "server_configurable_flags",
     ],
     shared_libs: [
         "libcrypto",
