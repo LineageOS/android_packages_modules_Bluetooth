@@ -34,12 +34,16 @@ import android.content.Context;
 import android.platform.test.annotations.RequiresFlagsEnabled;
 import android.platform.test.flag.junit.CheckFlagsRule;
 import android.platform.test.flag.junit.DeviceFlagsValueProvider;
+import android.util.Log;
 
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.android.bluetooth.flags.Flags;
 import com.android.compatibility.common.util.AdoptShellPermissionsRule;
+
+import com.google.protobuf.ByteString;
+import com.google.testing.junit.testparameterinjector.TestParameter;
+import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 import org.junit.Assume;
 import org.junit.ClassRule;
@@ -50,28 +54,36 @@ import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.invocation.Invocation;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.UUID;
 
+import pandora.GattProto.AttStatusCode;
 import pandora.GattProto.GattCharacteristicParams;
 import pandora.GattProto.GattServiceParams;
+import pandora.GattProto.IndicateOnCharacteristicRequest;
+import pandora.GattProto.IndicateOnCharacteristicResponse;
+import pandora.GattProto.NotifyOnCharacteristicRequest;
+import pandora.GattProto.NotifyOnCharacteristicResponse;
 import pandora.GattProto.RegisterServiceRequest;
 import pandora.HostProto.AdvertiseRequest;
 import pandora.HostProto.AdvertiseResponse;
 import pandora.HostProto.OwnAddressType;
 
-@RunWith(AndroidJUnit4.class)
+@RunWith(TestParameterInjector.class)
 public class GattClientTest {
     private static final String TAG = "GattClientTest";
     private static final int ANDROID_MTU = 517;
     private static final int MTU_REQUESTED = 23;
     private static final int ANOTHER_MTU_REQUESTED = 42;
+    private static final String NOTIFICATION_VALUE = "hello world";
 
     private static final UUID GAP_UUID = UUID.fromString("00001800-0000-1000-8000-00805f9b34fb");
+    private static final UUID CCCD_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
 
-    private static final UUID WRITABLE_SERVICE_UUID =
+    private static final UUID TEST_SERVICE_UUID =
             UUID.fromString("00000000-0000-0000-0000-00000000000");
-    private static final UUID WRITABLE_CHARACTERISTIC_UUID =
+    private static final UUID TEST_CHARACTERISTIC_UUID =
             UUID.fromString("00010001-0000-0000-0000-000000000000");
     @ClassRule public static final AdoptShellPermissionsRule PERM = new AdoptShellPermissionsRule();
 
@@ -206,8 +218,7 @@ public class GattClientTest {
                     .onServicesDiscovered(any(), eq(BluetoothGatt.GATT_SUCCESS));
 
             BluetoothGattCharacteristic characteristic =
-                    gatt.getService(WRITABLE_SERVICE_UUID)
-                            .getCharacteristic(WRITABLE_CHARACTERISTIC_UUID);
+                    gatt.getService(TEST_SERVICE_UUID).getCharacteristic(TEST_CHARACTERISTIC_UUID);
 
             byte[] newValue = new byte[] {13};
 
@@ -217,6 +228,51 @@ public class GattClientTest {
             verify(gattCallback, timeout(5000))
                     .onCharacteristicWrite(
                             any(), eq(characteristic), eq(BluetoothGatt.GATT_SUCCESS));
+
+        } finally {
+            disconnectAndWaitDisconnection(gatt, gattCallback);
+        }
+    }
+
+    @Test
+    public void clientGattNotifyOrIndicateCharacteristic(@TestParameter boolean isIndicate)
+            throws Exception {
+        registerNotificationIndicationGattService(isIndicate);
+
+        BluetoothGattCallback gattCallback = mock(BluetoothGattCallback.class);
+        BluetoothGatt gatt = connectGattAndWaitConnection(gattCallback);
+
+        try {
+            gatt.discoverServices();
+            verify(gattCallback, timeout(10000))
+                    .onServicesDiscovered(any(), eq(BluetoothGatt.GATT_SUCCESS));
+
+            BluetoothGattCharacteristic characteristic =
+                    gatt.getService(TEST_SERVICE_UUID).getCharacteristic(TEST_CHARACTERISTIC_UUID);
+
+            BluetoothGattDescriptor descriptor = characteristic.getDescriptor(CCCD_UUID);
+            descriptor.setValue(
+                    isIndicate
+                            ? BluetoothGattDescriptor.ENABLE_INDICATION_VALUE
+                            : BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+            assertThat(gatt.writeDescriptor(descriptor)).isTrue();
+
+            verify(gattCallback, timeout(5000))
+                    .onDescriptorWrite(any(), eq(descriptor), eq(BluetoothGatt.GATT_SUCCESS));
+
+            gatt.setCharacteristicNotification(characteristic, true);
+
+            if (isIndicate) {
+                Log.i(TAG, "Triggering characteristic indication");
+                triggerCharacteristicIndication(characteristic.getInstanceId());
+            } else {
+                Log.i(TAG, "Triggering characteristic notification");
+                triggerCharacteristicNotification(characteristic.getInstanceId());
+            }
+
+            verify(gattCallback, timeout(5000))
+                    .onCharacteristicChanged(
+                            any(), any(), eq(NOTIFICATION_VALUE.getBytes(StandardCharsets.UTF_8)));
 
         } finally {
             disconnectAndWaitDisconnection(gatt, gattCallback);
@@ -263,12 +319,10 @@ public class GattClientTest {
                     .onServicesDiscovered(any(), eq(BluetoothGatt.GATT_SUCCESS));
 
             BluetoothGattCharacteristic characteristic =
-                    gatt.getService(WRITABLE_SERVICE_UUID)
-                            .getCharacteristic(WRITABLE_CHARACTERISTIC_UUID);
+                    gatt.getService(TEST_SERVICE_UUID).getCharacteristic(TEST_CHARACTERISTIC_UUID);
 
             BluetoothGattCharacteristic characteristic2 =
-                    gatt2.getService(WRITABLE_SERVICE_UUID)
-                            .getCharacteristic(WRITABLE_CHARACTERISTIC_UUID);
+                    gatt2.getService(TEST_SERVICE_UUID).getCharacteristic(TEST_CHARACTERISTIC_UUID);
 
             byte[] newValue = new byte[] {13};
 
@@ -310,19 +364,62 @@ public class GattClientTest {
         GattCharacteristicParams characteristicParams =
                 GattCharacteristicParams.newBuilder()
                         .setProperties(BluetoothGattCharacteristic.PROPERTY_WRITE)
-                        .setUuid(WRITABLE_CHARACTERISTIC_UUID.toString())
+                        .setUuid(TEST_CHARACTERISTIC_UUID.toString())
                         .build();
 
         GattServiceParams serviceParams =
                 GattServiceParams.newBuilder()
                         .addCharacteristics(characteristicParams)
-                        .setUuid(WRITABLE_SERVICE_UUID.toString())
+                        .setUuid(TEST_SERVICE_UUID.toString())
                         .build();
 
         RegisterServiceRequest request =
                 RegisterServiceRequest.newBuilder().setService(serviceParams).build();
 
         mBumble.gattBlocking().registerService(request);
+    }
+
+    private void registerNotificationIndicationGattService(boolean isIndicate) {
+        GattCharacteristicParams characteristicParams =
+                GattCharacteristicParams.newBuilder()
+                        .setProperties(
+                                isIndicate
+                                        ? BluetoothGattCharacteristic.PROPERTY_INDICATE
+                                        : BluetoothGattCharacteristic.PROPERTY_NOTIFY)
+                        .setUuid(TEST_CHARACTERISTIC_UUID.toString())
+                        .build();
+
+        GattServiceParams serviceParams =
+                GattServiceParams.newBuilder()
+                        .addCharacteristics(characteristicParams)
+                        .setUuid(TEST_SERVICE_UUID.toString())
+                        .build();
+
+        RegisterServiceRequest request =
+                RegisterServiceRequest.newBuilder().setService(serviceParams).build();
+
+        mBumble.gattBlocking().registerService(request);
+    }
+
+    private void triggerCharacteristicNotification(int instanceId) {
+        NotifyOnCharacteristicRequest req =
+                NotifyOnCharacteristicRequest.newBuilder()
+                        .setHandle(instanceId)
+                        .setValue(ByteString.copyFromUtf8(NOTIFICATION_VALUE))
+                        .build();
+        NotifyOnCharacteristicResponse resp = mBumble.gattBlocking().notifyOnCharacteristic(req);
+        assertThat(resp.getStatus()).isEqualTo(AttStatusCode.SUCCESS);
+    }
+
+    private void triggerCharacteristicIndication(int instanceId) {
+        IndicateOnCharacteristicRequest req =
+                IndicateOnCharacteristicRequest.newBuilder()
+                        .setHandle(instanceId)
+                        .setValue(ByteString.copyFromUtf8(NOTIFICATION_VALUE))
+                        .build();
+        IndicateOnCharacteristicResponse resp =
+                mBumble.gattBlocking().indicateOnCharacteristic(req);
+        assertThat(resp.getStatus()).isEqualTo(AttStatusCode.SUCCESS);
     }
 
     private void advertiseWithBumble() {
