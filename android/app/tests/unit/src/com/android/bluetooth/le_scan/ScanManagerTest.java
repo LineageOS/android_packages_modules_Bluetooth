@@ -34,6 +34,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -132,6 +133,7 @@ public class ScanManagerTest {
     @Mock private GattNativeInterface mNativeInterface;
     @Mock private ScanNativeInterface mScanNativeInterface;
     @Mock private MetricsLogger  mMetricsLogger;
+    private AppScanStats mMockAppScanStats;
 
     private MockContentResolver mMockContentResolver;
     @Captor ArgumentCaptor<Long> mScanDurationCaptor;
@@ -206,6 +208,7 @@ public class ScanManagerTest {
         assertThat(mLatch).isNotNull();
 
         mScanReportDelay = DEFAULT_SCAN_REPORT_DELAY_MS;
+        mMockAppScanStats = spy(new AppScanStats("Test", null, null, mMockGattService));
     }
 
     @After
@@ -247,7 +250,7 @@ public class ScanManagerTest {
         ScanSettings scanSettings = createScanSettings(scanMode, isBatch, isAutoBatch);
 
         ScanClient client = new ScanClient(id, scanSettings, scanFilterList);
-        client.stats = new AppScanStats("Test", null, null, mMockGattService);
+        client.stats = mMockAppScanStats;
         client.stats.recordScanStart(scanSettings, scanFilterList, isFiltered, false, id);
         return client;
     }
@@ -599,6 +602,7 @@ public class ScanManagerTest {
 
     @Test
     public void testFilteredScanTimeout() {
+        mTestLooper.stopAutoDispatchAndIgnoreExceptions();
         // Set filtered scan flag
         final boolean isFiltered = true;
         // Set scan mode map {original scan mode (ScanMode) : expected scan mode (expectedScanMode)}
@@ -617,28 +621,39 @@ public class ScanManagerTest {
                     + " expectedScanMode: " + String.valueOf(expectedScanMode));
 
             // Turn on screen
-            sendMessageWaitForProcessed(createScreenOnOffMessage(true));
+            mHandler.sendMessage(createScreenOnOffMessage(true));
+            mTestLooper.dispatchAll();
             // Create scan client
             ScanClient client = createScanClient(i, isFiltered, ScanMode);
-            // Start scan
-            sendMessageWaitForProcessed(createStartStopScanMessage(true, client));
+            // Start scan, this sends scan timeout message with delay of DELAY_SCAN_TIMEOUT_MS
+            mHandler.sendMessage(createStartStopScanMessage(true, client));
+            mTestLooper.dispatchAll();
             assertThat(client.settings.getScanMode()).isEqualTo(ScanMode);
-            // Wait for scan timeout
-            testSleep(DELAY_SCAN_TIMEOUT_MS + DELAY_ASYNC_MS);
-            TestUtils.waitForLooperToFinishScheduledTask(mHandler.getLooper());
+            // Move time forward so scan timeout message can be dispatched
+            mTestLooper.moveTimeForward(DELAY_SCAN_TIMEOUT_MS + 1);
+            // We can check that MSG_SCAN_TIMEOUT is in the message queue
+            assertThat(mHandler.hasMessages(ScanManager.MSG_SCAN_TIMEOUT)).isTrue();
+            // Since we are using a TestLooper, need to mock AppScanStats.isScanningTooLong to
+            // return true because no real time is elapsed
+            doReturn(true).when(mMockAppScanStats).isScanningTooLong();
+            mTestLooper.dispatchAll();
             assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode);
             assertThat(client.stats.isScanTimeout(client.scannerId)).isTrue();
             // Turn off screen
-            sendMessageWaitForProcessed(createScreenOnOffMessage(false));
+            mHandler.sendMessage(createScreenOnOffMessage(false));
+            mTestLooper.dispatchAll();
             assertThat(client.settings.getScanMode()).isEqualTo(SCAN_MODE_SCREEN_OFF);
             // Set as background app
-            sendMessageWaitForProcessed(createImportanceMessage(false));
+            mHandler.sendMessage(createImportanceMessage(false));
+            mTestLooper.dispatchAll();
             assertThat(client.settings.getScanMode()).isEqualTo(SCAN_MODE_SCREEN_OFF);
             // Turn on screen
-            sendMessageWaitForProcessed(createScreenOnOffMessage(true));
+            mHandler.sendMessage(createScreenOnOffMessage(true));
+            mTestLooper.dispatchAll();
             assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode);
             // Set as foreground app
-            sendMessageWaitForProcessed(createImportanceMessage(true));
+            mHandler.sendMessage(createImportanceMessage(true));
+            mTestLooper.dispatchAll();
             assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode);
         }
     }
