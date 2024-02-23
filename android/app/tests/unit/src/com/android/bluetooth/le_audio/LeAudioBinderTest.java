@@ -84,6 +84,8 @@ public class LeAudioBinderTest {
         doReturn(mAudioRoutingManager).when(mAdapterService).getActiveDeviceManager();
 
         mFakeFlagsImpl = new FakeFeatureFlagsImpl();
+        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_API_SYNCHRONIZED_BLOCK_FIX, false);
+
         mLeAudioService =
                 spy(
                         new LeAudioService(
