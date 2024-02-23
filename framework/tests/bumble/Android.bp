@@ -19,6 +19,7 @@ android_test_helper_app {
     ],
 
     static_libs: [
+        "TestParameterInjector",
         "androidx.core_core",
         "androidx.test.espresso.intents",
         "androidx.test.ext.junit",
