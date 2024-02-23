@@ -22,24 +22,19 @@ import android.bluetooth.le.ScanSettings
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
-import com.google.common.collect.Sets
 import com.google.common.truth.Truth.assertThat
+import com.google.testing.junit.testparameterinjector.TestParameter
+import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
-import org.junit.runners.Parameterized.Parameters
 
 /** DCK LE Scan Tests */
-@RunWith(Parameterized::class)
-class DckScanTest(
-    isRemoteAdvertisingWithUuid: Boolean,
-    isBluetoothToggled: Boolean,
-    isGattConnected: Boolean,
-) {
+@RunWith(TestParameterInjector::class)
+class DckScanTest() {
     private val context: Context = ApplicationProvider.getApplicationContext()
 
     // Gives shell permissions during the test.
@@ -50,9 +45,8 @@ class DckScanTest(
     @Rule(order = 1) @JvmField val bumble = PandoraDevice()
 
     // Test rule for common DCK test setup and teardown procedures, along with utility APIs.
-    @Rule(order = 2)
-    @JvmField
-    val dck =
+    @get:Rule(order = 2)
+    public val dck =
         DckTestRule(
             context,
             bumble,
@@ -97,23 +91,8 @@ class DckScanTest(
         // TODO(315852141): Include variations for LE only vs. Dual mode Bumble when supported
         // TODO(315852141): Include variations for two advertisements at the same time
         // TODO(303502437): Include variations for other callback types when supported in rootcanal
-        @Parameters(
-            name =
-                "{index}: isRemoteAdvertisingWithUuid = {0}, " +
-                    "isBluetoothToggled = {1}, isGattConnected = {2}"
-        )
-        @JvmStatic
-        fun parameters(): Iterable<Array<Any>> {
-            val booleanVariations = setOf(true, false)
-
-            return Sets.cartesianProduct(
-                    listOf(
-                        /* isRemoteAdvertisingWithUuid */ booleanVariations,
-                        /* isBluetoothToggled */ booleanVariations,
-                        /* isGattConnected */ booleanVariations
-                    )
-                )
-                .map { it.toTypedArray() }
-        }
+        @TestParameter val isRemoteAdvertisingWithUuid: Boolean = false
+        @TestParameter val isBluetoothToggled: Boolean = false
+        @TestParameter val isGattConnected: Boolean = false
     }
 }
