@@ -267,11 +267,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             bluetooth.init(init_flags);
             bluetooth.enable();
 
-            bluetooth_gatt.lock().unwrap().init_profiles(
-                tx.clone(),
-                api_tx.clone(),
-                adapter.clone(),
-            );
+            bluetooth_gatt.lock().unwrap().init_profiles(tx.clone(), api_tx.clone());
             bt_sock_mgr.lock().unwrap().initialize(intf.clone());
 
             // Install SIGTERM handler so that we can properly shutdown
