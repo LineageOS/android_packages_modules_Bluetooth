@@ -97,7 +97,11 @@ public class GattServiceTest {
     private GattService mService;
     @Mock private GattService.ClientMap mClientMap;
     @Mock private TransitionalScanHelper.ScannerMap mScannerMap;
-    @Mock private TransitionalScanHelper.ScannerMap.App mApp;
+
+    @SuppressWarnings("NonCanonicalType")
+    @Mock
+    private TransitionalScanHelper.ScannerMap.App mApp;
+
     @Mock private GattService.PendingIntentInfo mPiInfo;
     @Mock private PeriodicScanManager mPeriodicScanManager;
     @Mock private ScanManager mScanManager;
@@ -894,6 +898,7 @@ public class GattServiceTest {
         int connId = 1;
         ArrayList<GattDbElement> db = new ArrayList<>();
 
+        @SuppressWarnings("NonCanonicalType")
         GattService.ClientMap.App app = mock(GattService.ClientMap.App.class);
         IBluetoothGattCallback callback = mock(IBluetoothGattCallback.class);
 
