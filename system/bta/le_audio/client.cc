@@ -1323,8 +1323,13 @@ class LeAudioClientImpl : public LeAudioClient {
 
     /* Reset sink listener notified status */
     sink_monitor_notified_status_ = std::nullopt;
-    SendAudioGroupSelectableCodecConfigChanged(group);
-    callbacks_->OnGroupStatus(active_group_id_, GroupStatus::ACTIVE);
+    if (IS_FLAG_ENABLED(leaudio_codec_config_callback_order_fix)) {
+      SendAudioGroupSelectableCodecConfigChanged(group);
+      callbacks_->OnGroupStatus(active_group_id_, GroupStatus::ACTIVE);
+    } else {
+      callbacks_->OnGroupStatus(active_group_id_, GroupStatus::ACTIVE);
+      SendAudioGroupSelectableCodecConfigChanged(group);
+    }
   }
 
   void SetEnableState(const RawAddress& address, bool enabled) override {
