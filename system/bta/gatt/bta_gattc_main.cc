@@ -25,6 +25,7 @@
 
 #include <base/logging.h>
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 
 #include "bta/gatt/bta_gattc_int.h"
 #include "internal_include/bt_target.h"
@@ -32,6 +33,7 @@
 #include "stack/include/bt_hdr.h"
 
 using base::StringPrintf;
+using namespace bluetooth;
 
 /*****************************************************************************
  * Constants and types
@@ -307,12 +309,10 @@ bool bta_gattc_sm_execute(tBTA_GATTC_CLCB* p_clcb, uint16_t event,
   tBTA_GATTC_STATE in_state = p_clcb->state;
   uint16_t in_event = event;
 #if (BTA_GATT_DEBUG == TRUE)
-  VLOG(1) << StringPrintf("%s: State 0x%02x [%s], Event 0x%x[%s]", __func__,
-                          in_state, gattc_state_code(in_state), in_event,
-                          gattc_evt_code(in_event));
+  log::verbose("State 0x{:02x} [{}], Event 0x{:x}[{}]", in_state,
+               gattc_state_code(in_state), in_event, gattc_evt_code(in_event));
 #else
-  VLOG(1) << StringPrintf("%s: State 0x%02x, Event 0x%x", __func__, in_state,
-                          in_event);
+  log::verbose("State 0x{:02x}, Event 0x{:x}", in_state, in_event);
 #endif
 
   /* look up the state table for the current state */
@@ -341,15 +341,13 @@ bool bta_gattc_sm_execute(tBTA_GATTC_CLCB* p_clcb, uint16_t event,
 
 #if (BTA_GATT_DEBUG == TRUE)
   if (in_state != p_clcb->state) {
-    VLOG(1) << StringPrintf("GATTC State Change: [%s] -> [%s] after Event [%s]",
-                            gattc_state_code(in_state),
-                            gattc_state_code(p_clcb->state),
-                            gattc_evt_code(in_event));
+    log::verbose("GATTC State Change: [{}] -> [{}] after Event [{}]",
+                 gattc_state_code(in_state), gattc_state_code(p_clcb->state),
+                 gattc_evt_code(in_event));
   }
 #else
-  VLOG(1) << StringPrintf(
-      "%s: GATTC State Change: 0x%02x -> 0x%02x after Event 0x%x", __func__,
-      in_state, p_clcb->state, in_event);
+  log::verbose("GATTC State Change: 0x{:02x} -> 0x{:02x} after Event 0x{:x}",
+               in_state, p_clcb->state, in_event);
 #endif
   return rt;
 }
@@ -368,7 +366,7 @@ bool bta_gattc_hdl_event(const BT_HDR_RIGID* p_msg) {
   tBTA_GATTC_CLCB* p_clcb = NULL;
   bool rt = true;
 #if (BTA_GATT_DEBUG == TRUE)
-  VLOG(1) << __func__ << ": Event:" << gattc_evt_code(p_msg->event);
+  log::verbose("Event:{}", gattc_evt_code(p_msg->event));
 #endif
   switch (p_msg->event) {
 
@@ -392,7 +390,7 @@ bool bta_gattc_hdl_event(const BT_HDR_RIGID* p_msg) {
         rt = bta_gattc_sm_execute(p_clcb, p_msg->event,
                                   (const tBTA_GATTC_DATA*)p_msg);
       } else {
-        LOG_ERROR("Ignore unknown conn ID: %d", +p_msg->layer_specific);
+        log::error("Ignore unknown conn ID: {}", p_msg->layer_specific);
       }
 
       break;

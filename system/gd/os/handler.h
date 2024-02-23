@@ -64,29 +64,26 @@ class Handler : public common::IPostableContext {
   }
 
   template <typename Functor, typename... Args>
-  common::ContextualOnceCallback<common::MakeUnboundRunType<Functor, Args...>> BindOnce(
-      Functor&& functor, Args&&... args) {
-    return common::ContextualOnceCallback<common::MakeUnboundRunType<Functor, Args...>>(
+  auto BindOnce(Functor&& functor, Args&&... args) {
+    return common::ContextualOnceCallback(
         common::BindOnce(std::forward<Functor>(functor), std::forward<Args>(args)...), this);
   }
 
   template <typename Functor, typename T, typename... Args>
-  common::ContextualOnceCallback<common::MakeUnboundRunType<Functor, T, Args...>> BindOnceOn(
-      T* obj, Functor&& functor, Args&&... args) {
-    return common::ContextualOnceCallback<common::MakeUnboundRunType<Functor, T, Args...>>(
+  auto BindOnceOn(T* obj, Functor&& functor, Args&&... args) {
+    return common::ContextualOnceCallback(
         common::BindOnce(std::forward<Functor>(functor), common::Unretained(obj), std::forward<Args>(args)...), this);
   }
 
   template <typename Functor, typename... Args>
-  common::ContextualCallback<common::MakeUnboundRunType<Functor, Args...>> Bind(Functor&& functor, Args&&... args) {
-    return common::ContextualCallback<common::MakeUnboundRunType<Functor, Args...>>(
+  auto Bind(Functor&& functor, Args&&... args) {
+    return common::ContextualCallback(
         common::Bind(std::forward<Functor>(functor), std::forward<Args>(args)...), this);
   }
 
   template <typename Functor, typename T, typename... Args>
-  common::ContextualCallback<common::MakeUnboundRunType<Functor, T, Args...>> BindOn(
-      T* obj, Functor&& functor, Args&&... args) {
-    return common::ContextualCallback<common::MakeUnboundRunType<Functor, T, Args...>>(
+  auto BindOn(T* obj, Functor&& functor, Args&&... args) {
+    return common::ContextualCallback(
         common::Bind(std::forward<Functor>(functor), common::Unretained(obj), std::forward<Args>(args)...), this);
   }
 

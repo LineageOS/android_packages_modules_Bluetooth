@@ -24,7 +24,7 @@ namespace bluetooth::hal {
 class NocpIsoHandler {
  public:
   virtual ~NocpIsoHandler() = default;
-  virtual void OnEvent(uint32_t timestamp_us, int num_of_completed_packets) = 0;
+  virtual void OnEvent(uint32_t timestamp_us, int link_id, int num_of_completed_packets) = 0;
 };
 
 class NocpIsoClocker : public ::bluetooth::Module {

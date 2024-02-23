@@ -6,7 +6,7 @@ use bt_topshim::btif::{RawAddress, Uuid};
 use bt_topshim::profiles::gatt::{AdvertisingStatus, Gatt, GattAdvCallbacks, LePhy};
 
 use itertools::Itertools;
-use log::{debug, warn};
+use log::{debug, error, warn};
 use num_traits::clamp;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -398,7 +398,7 @@ impl Into<bt_topshim::profiles::gatt::PeriodicAdvertisingParameters>
 
 // Keeps information of an advertising set.
 #[derive(Debug, PartialEq, Copy, Clone)]
-pub(crate) struct AdvertisingSetInfo {
+struct AdvertisingSetInfo {
     /// Identifies the advertising set when it's started successfully.
     adv_id: Option<AdvertiserId>,
 
@@ -415,8 +415,11 @@ pub(crate) struct AdvertisingSetInfo {
     paused: bool,
 
     /// Whether the stop of advertising set is held.
-    /// This happens when an advertising set is stopped when the system is suspending.
-    /// The advertising set will be stopped on system resumed.
+    /// This flag is set when an advertising set is stopped while we're not able to do it, such as:
+    /// - The system is suspending / suspended
+    /// - The advertising set is not yet valid (started)
+    ///
+    /// The advertising set will be stopped on system resumed / advertising set becomes ready.
     stopped: bool,
 
     /// Advertising duration, in 10 ms unit.
@@ -431,7 +434,7 @@ pub(crate) struct AdvertisingSetInfo {
 }
 
 impl AdvertisingSetInfo {
-    pub(crate) fn new(
+    fn new(
         callback_id: CallbackId,
         adv_timeout: u16,
         adv_events: u8,
@@ -452,73 +455,73 @@ impl AdvertisingSetInfo {
     }
 
     /// Gets advertising set registration ID.
-    pub(crate) fn reg_id(&self) -> RegId {
+    fn reg_id(&self) -> RegId {
         self.reg_id
     }
 
     /// Gets associated callback ID.
-    pub(crate) fn callback_id(&self) -> CallbackId {
+    fn callback_id(&self) -> CallbackId {
         self.callback_id
     }
 
     /// Updates advertiser ID.
-    pub(crate) fn set_adv_id(&mut self, id: Option<AdvertiserId>) {
+    fn set_adv_id(&mut self, id: Option<AdvertiserId>) {
         self.adv_id = id;
     }
 
     /// Gets advertiser ID, which is required for advertising |BleAdvertiserInterface|.
-    pub(crate) fn adv_id(&self) -> u8 {
+    fn adv_id(&self) -> u8 {
         // As advertiser ID was from topshim originally, type casting is safe.
         self.adv_id.unwrap_or(INVALID_ADV_ID) as u8
     }
 
     /// Updates advertising set status.
-    pub(crate) fn set_enabled(&mut self, enabled: bool) {
+    fn set_enabled(&mut self, enabled: bool) {
         self.enabled = enabled;
     }
 
     /// Returns true if the advertising set has been enabled, false otherwise.
-    pub(crate) fn is_enabled(&self) -> bool {
+    fn is_enabled(&self) -> bool {
         self.enabled
     }
 
     /// Marks the advertising set as paused or not.
-    pub(crate) fn set_paused(&mut self, paused: bool) {
+    fn set_paused(&mut self, paused: bool) {
         self.paused = paused;
     }
 
     /// Returns true if the advertising set has been paused, false otherwise.
-    pub(crate) fn is_paused(&self) -> bool {
+    fn is_paused(&self) -> bool {
         self.paused
     }
 
     /// Marks the advertising set as stopped.
-    pub(crate) fn set_stopped(&mut self) {
+    fn set_stopped(&mut self) {
         self.stopped = true;
     }
 
     /// Returns true if the advertising set has been stopped, false otherwise.
-    pub(crate) fn is_stopped(&self) -> bool {
+    fn is_stopped(&self) -> bool {
         self.stopped
     }
 
     /// Gets adv_timeout.
-    pub(crate) fn adv_timeout(&self) -> u16 {
+    fn adv_timeout(&self) -> u16 {
         self.adv_timeout
     }
 
     /// Gets adv_events.
-    pub(crate) fn adv_events(&self) -> u8 {
+    fn adv_events(&self) -> u8 {
         self.adv_events
     }
 
     /// Returns whether the legacy advertisement will be used.
-    pub(crate) fn is_legacy(&self) -> bool {
+    fn is_legacy(&self) -> bool {
         self.legacy
     }
 
     /// Returns whether the advertising set is valid.
-    pub(crate) fn is_valid(&self) -> bool {
+    fn is_valid(&self) -> bool {
         self.adv_id.is_some()
     }
 }
@@ -556,31 +559,31 @@ impl AdvertiseManager {
     }
 
     // Returns the minimum unoccupied register ID from 0.
-    pub(crate) fn new_reg_id(&mut self) -> RegId {
+    fn new_reg_id(&mut self) -> RegId {
         (0..)
             .find(|id| !self.sets.contains_key(id))
             .expect("There must be an unoccupied register ID")
     }
 
     /// Adds an advertising set.
-    pub(crate) fn add(&mut self, s: AdvertisingSetInfo) {
+    fn add(&mut self, s: AdvertisingSetInfo) {
         if let Some(old) = self.sets.insert(s.reg_id(), s) {
             warn!("An advertising set with the same reg_id ({}) exists. Drop it!", old.reg_id);
         }
     }
 
     /// Returns an iterator of valid advertising sets.
-    pub(crate) fn valid_sets(&self) -> impl Iterator<Item = &AdvertisingSetInfo> {
+    fn valid_sets(&self) -> impl Iterator<Item = &AdvertisingSetInfo> {
         self.sets.iter().filter_map(|(_, s)| s.adv_id.map(|_| s))
     }
 
     /// Returns an iterator of enabled advertising sets.
-    pub(crate) fn enabled_sets(&self) -> impl Iterator<Item = &AdvertisingSetInfo> {
+    fn enabled_sets(&self) -> impl Iterator<Item = &AdvertisingSetInfo> {
         self.valid_sets().filter(|s| s.is_enabled())
     }
 
     /// Returns an iterator of stopped advertising sets.
-    pub(crate) fn stopped_sets(&self) -> impl Iterator<Item = &AdvertisingSetInfo> {
+    fn stopped_sets(&self) -> impl Iterator<Item = &AdvertisingSetInfo> {
         self.valid_sets().filter(|s| s.is_stopped())
     }
 
@@ -594,17 +597,17 @@ impl AdvertiseManager {
     }
 
     /// Returns a mutable reference to the advertising set with the reg_id specified.
-    pub(crate) fn get_mut_by_reg_id(&mut self, reg_id: RegId) -> Option<&mut AdvertisingSetInfo> {
+    fn get_mut_by_reg_id(&mut self, reg_id: RegId) -> Option<&mut AdvertisingSetInfo> {
         self.sets.get_mut(&reg_id)
     }
 
     /// Returns a shared reference to the advertising set with the reg_id specified.
-    pub(crate) fn get_by_reg_id(&self, reg_id: RegId) -> Option<&AdvertisingSetInfo> {
+    fn get_by_reg_id(&self, reg_id: RegId) -> Option<&AdvertisingSetInfo> {
         self.sets.get(&reg_id)
     }
 
     /// Returns a mutable reference to the advertising set with the advertiser ID specified.
-    pub(crate) fn get_mut_by_advertiser_id(
+    fn get_mut_by_advertiser_id(
         &mut self,
         adv_id: AdvertiserId,
     ) -> Option<&mut AdvertisingSetInfo> {
@@ -615,7 +618,7 @@ impl AdvertiseManager {
     }
 
     /// Returns a shared reference to the advertising set with the advertiser ID specified.
-    pub(crate) fn get_by_advertiser_id(&self, adv_id: AdvertiserId) -> Option<&AdvertisingSetInfo> {
+    fn get_by_advertiser_id(&self, adv_id: AdvertiserId) -> Option<&AdvertisingSetInfo> {
         if let Some(reg_id) = self.find_reg_id(adv_id) {
             return self.get_by_reg_id(reg_id);
         }
@@ -625,17 +628,14 @@ impl AdvertiseManager {
     /// Removes the advertising set with the reg_id specified.
     ///
     /// Returns the advertising set if found, None otherwise.
-    pub(crate) fn remove_by_reg_id(&mut self, reg_id: RegId) -> Option<AdvertisingSetInfo> {
+    fn remove_by_reg_id(&mut self, reg_id: RegId) -> Option<AdvertisingSetInfo> {
         self.sets.remove(&reg_id)
     }
 
     /// Removes the advertising set with the specified advertiser ID.
     ///
     /// Returns the advertising set if found, None otherwise.
-    pub(crate) fn remove_by_advertiser_id(
-        &mut self,
-        adv_id: AdvertiserId,
-    ) -> Option<AdvertisingSetInfo> {
+    fn remove_by_advertiser_id(&mut self, adv_id: AdvertiserId) -> Option<AdvertisingSetInfo> {
         if let Some(reg_id) = self.find_reg_id(adv_id) {
             return self.remove_by_reg_id(reg_id);
         }
@@ -643,7 +643,7 @@ impl AdvertiseManager {
     }
 
     /// Returns callback of the advertising set.
-    pub(crate) fn get_callback(
+    fn get_callback(
         &mut self,
         s: &AdvertisingSetInfo,
     ) -> Option<&mut Box<dyn IAdvertisingSetCallback + Send>> {
@@ -651,7 +651,7 @@ impl AdvertiseManager {
     }
 
     /// Update suspend mode.
-    pub(crate) fn set_suspend_mode(&mut self, suspend_mode: SuspendMode) {
+    fn set_suspend_mode(&mut self, suspend_mode: SuspendMode) {
         if suspend_mode != self.suspend_mode {
             self.suspend_mode = suspend_mode;
             self.notify_suspend_mode();
@@ -659,7 +659,7 @@ impl AdvertiseManager {
     }
 
     /// Gets current suspend mode.
-    pub(crate) fn suspend_mode(&mut self) -> SuspendMode {
+    fn suspend_mode(&mut self) -> SuspendMode {
         self.suspend_mode.clone()
     }
 
@@ -718,7 +718,7 @@ impl AdvertiseManager {
     }
 }
 
-pub(crate) trait IBluetoothAdvertiseManager {
+pub trait IBluetoothAdvertiseManager {
     /// Registers callback for BLE advertising.
     fn register_callback(&mut self, callback: Box<dyn IAdvertisingSetCallback + Send>) -> u32;
 
@@ -815,12 +815,14 @@ impl IBluetoothAdvertiseManager for AdvertiseManager {
     }
 
     fn unregister_callback(&mut self, callback_id: u32) -> bool {
-        for (_, s) in
-            self.sets.iter().filter(|(_, s)| s.callback_id() == callback_id && s.adv_id.is_some())
-        {
-            self.gatt.as_ref().unwrap().lock().unwrap().advertiser.unregister(s.adv_id());
+        for s in self.sets.values_mut().filter(|s| s.callback_id() == callback_id) {
+            if s.is_valid() {
+                self.gatt.as_ref().unwrap().lock().unwrap().advertiser.unregister(s.adv_id());
+            } else {
+                s.set_stopped();
+            }
         }
-        self.sets.retain(|_, s| s.callback_id() != callback_id);
+        self.sets.retain(|_, s| s.callback_id() != callback_id || !s.is_valid());
 
         self.callbacks.remove_callback(callback_id)
     }
@@ -1176,15 +1178,27 @@ impl BtifGattAdvCallbacks for AdvertiseManager {
             reg_id, advertiser_id, tx_power, status
         );
 
-        if let Some(s) = self.get_mut_by_reg_id(reg_id) {
-            s.set_adv_id(Some(advertiser_id.into()));
-            s.set_enabled(status == AdvertisingStatus::Success);
+        let s = if let Some(s) = self.sets.get_mut(&reg_id) {
+            s
         } else {
+            error!("AdvertisingSetInfo not found");
+            // An unknown advertising set has started. Unregister it anyway.
+            self.gatt.as_ref().unwrap().lock().unwrap().advertiser.unregister(advertiser_id);
+            return;
+        };
+
+        if s.is_stopped() {
+            // The advertising set needs to be stopped. This could happen when |unregister_callback|
+            // is called before an advertising becomes ready.
+            self.gatt.as_ref().unwrap().lock().unwrap().advertiser.unregister(advertiser_id);
+            self.sets.remove(&reg_id);
             return;
         }
-        let s = self.get_mut_by_reg_id(reg_id).unwrap().clone();
 
-        if let Some(cb) = self.get_callback(&s) {
+        s.set_adv_id(Some(advertiser_id.into()));
+        s.set_enabled(status == AdvertisingStatus::Success);
+
+        if let Some(cb) = self.callbacks.get_by_id_mut(s.callback_id()) {
             cb.on_advertising_set_started(reg_id, advertiser_id.into(), tx_power.into(), status);
         }
 
@@ -1193,7 +1207,7 @@ impl BtifGattAdvCallbacks for AdvertiseManager {
                 "on_advertising_set_started(): failed! reg_id = {}, status = {:?}",
                 reg_id, status
             );
-            self.remove_by_reg_id(reg_id);
+            self.sets.remove(&reg_id);
         }
     }
 

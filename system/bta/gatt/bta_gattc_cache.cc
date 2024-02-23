@@ -28,6 +28,7 @@
 #include <base/logging.h>
 #include <base/strings/string_number_conversions.h>
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 
 #include <cstdint>
 #include <cstdio>
@@ -51,6 +52,7 @@
 #include "types/raw_address.h"
 
 using namespace bluetooth::legacy::stack::sdp;
+using namespace bluetooth;
 
 using base::StringPrintf;
 using bluetooth::Uuid;
@@ -96,22 +98,22 @@ typedef struct {
 
 /* debug function to display the server cache */
 static void bta_gattc_display_cache_server(const Database& database) {
-  LOG(INFO) << "<=--------------=Start Server Cache =-----------=>";
+  log::info("<=--------------=Start Server Cache =-----------=>");
   std::istringstream iss(database.ToString());
   for (std::string line; std::getline(iss, line);) {
-    LOG(INFO) << line;
+    log::info("{}", line);
   }
-  LOG(INFO) << "<=--------------=End Server Cache =-----------=>";
+  log::info("<=--------------=End Server Cache =-----------=>");
 }
 
 /** debug function to display the exploration list */
 static void bta_gattc_display_explore_record(const DatabaseBuilder& database) {
-  LOG(INFO) << "<=--------------=Start Explore Queue =-----------=>";
+  log::info("<=--------------=Start Explore Queue =-----------=>");
   std::istringstream iss(database.ToString());
   for (std::string line; std::getline(iss, line);) {
-    LOG(INFO) << line;
+    log::info("{}", line);
   }
-  LOG(INFO) << "<=--------------= End Explore Queue =-----------=>";
+  log::info("<=--------------= End Explore Queue =-----------=>");
 }
 #endif /* BTA_GATT_DEBUG == TRUE */
 
@@ -134,12 +136,12 @@ const Service* bta_gattc_find_matching_service(
 /// Whether the peer device uses robust caching
 RobustCachingSupport GetRobustCachingSupport(const tBTA_GATTC_CLCB* p_clcb,
                                              const gatt::Database& db) {
-  LOG_DEBUG("GetRobustCachingSupport %s",
-            p_clcb->bda.ToRedactedStringForLogging().c_str());
+  log::debug("GetRobustCachingSupport {}",
+             p_clcb->bda.ToRedactedStringForLogging());
 
   // If the feature is disabled, then we never support it
   if (!bta_gattc_is_robust_caching_enabled()) {
-    LOG_DEBUG("robust caching is disabled, so UNSUPPORTED");
+    log::debug("robust caching is disabled, so UNSUPPORTED");
     return RobustCachingSupport::UNSUPPORTED;
   }
 
@@ -154,7 +156,7 @@ RobustCachingSupport GetRobustCachingSupport(const tBTA_GATTC_CLCB* p_clcb,
       for (const auto& characteristic : service.characteristics) {
         if (characteristic.uuid.As16Bit() == GATT_UUID_DATABASE_HASH) {
           // the hash was found, so we should read it
-          LOG_DEBUG("database hash characteristic found, so SUPPORTED");
+          log::debug("database hash characteristic found, so SUPPORTED");
           return RobustCachingSupport::SUPPORTED;
         }
       }
@@ -164,13 +166,13 @@ RobustCachingSupport GetRobustCachingSupport(const tBTA_GATTC_CLCB* p_clcb,
     // searching for it. Even if the hash was previously not present but is now,
     // we will still get the service changed indication, so there's no need to
     // speculatively check for the hash every time.
-    LOG_DEBUG("database hash characteristic not found, so UNSUPPORTED");
+    log::debug("database hash characteristic not found, so UNSUPPORTED");
     return RobustCachingSupport::UNSUPPORTED;
   }
 
   if (p_clcb->transport == BT_TRANSPORT_LE &&
       !BTM_IsRemoteVersionReceived(p_clcb->bda)) {
-    LOG_INFO("version info is not ready yet");
+    log::info("version info is not ready yet");
     return RobustCachingSupport::W4_REMOTE_VERSION;
   }
 
@@ -181,13 +183,13 @@ RobustCachingSupport GetRobustCachingSupport(const tBTA_GATTC_CLCB* p_clcb,
   // support GATT Caching.
   uint8_t lmp_version = 0;
   if (!BTM_ReadRemoteVersion(p_clcb->bda, &lmp_version, nullptr, nullptr)) {
-    LOG_WARN("Could not read remote version for %s",
-             ADDRESS_TO_LOGGABLE_CSTR(p_clcb->bda));
+    log::warn("Could not read remote version for {}",
+              ADDRESS_TO_LOGGABLE_CSTR(p_clcb->bda));
   }
 
   if (lmp_version < 0x0a) {
-    LOG_WARN(
-        " Device LMP version 0x%02x < Bluetooth 5.1. Ignore database cache "
+    log::warn(
+        "Device LMP version 0x{:02x} < Bluetooth 5.1. Ignore database cache "
         "read.",
         lmp_version);
     return RobustCachingSupport::UNSUPPORTED;
@@ -198,16 +200,16 @@ RobustCachingSupport GetRobustCachingSupport(const tBTA_GATTC_CLCB* p_clcb,
   // version and OUI prefix.
   if (lmp_version < 0x0c &&
       interop_match_addr(INTEROP_DISABLE_ROBUST_CACHING, &p_clcb->bda)) {
-    LOG_WARN(
-        "Device LMP version 0x%02x <= Bluetooth 5.2 and MAC addr on "
-        "interop list, skipping robust caching",
+    log::warn(
+        "Device LMP version 0x{:02x} <= Bluetooth 5.2 and MAC addr on interop "
+        "list, skipping robust caching",
         lmp_version);
     return RobustCachingSupport::UNSUPPORTED;
   }
 
   // If we have no cached database and no interop considerations,
   // it is unknown whether or not robust caching is supported
-  LOG_DEBUG("database hash support is UNKNOWN");
+  log::debug("database hash support is UNKNOWN");
   return RobustCachingSupport::UNKNOWN;
 }
 
@@ -232,14 +234,14 @@ static void bta_gattc_explore_next_service(uint16_t conn_id,
                                            tBTA_GATTC_SERV* p_srvc_cb) {
   tBTA_GATTC_CLCB* p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
   if (!p_clcb) {
-    LOG(ERROR) << "unknown conn_id=" << loghex(conn_id);
+    log::error("unknown conn_id={}", loghex(conn_id));
     return;
   }
 
   if (p_srvc_cb->pending_discovery.StartNextServiceExploration()) {
     const auto& service =
         p_srvc_cb->pending_discovery.CurrentlyExploredService();
-    VLOG(1) << "Start service discovery";
+    log::verbose("Start service discovery");
 
     /* start discovering included services */
     GATTC_Discover(conn_id, GATT_DISC_INC_SRVC, service.first, service.second);
@@ -291,12 +293,12 @@ static void bta_gattc_explore_srvc_finished(uint16_t conn_id,
                                             tBTA_GATTC_SERV* p_srvc_cb) {
   tBTA_GATTC_CLCB* p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
   if (!p_clcb) {
-    LOG(ERROR) << "unknown conn_id=" << loghex(conn_id);
+    log::error("unknown conn_id={}", loghex(conn_id));
     return;
   }
 
   /* no service found at all, the end of server discovery*/
-  LOG(INFO) << __func__ << ": service discovery finished";
+  log::info("service discovery finished");
 
   p_srvc_cb->gatt_database = p_srvc_cb->pending_discovery.Build();
 
@@ -319,15 +321,15 @@ static void bta_gattc_explore_srvc_finished(uint16_t conn_id,
 
     // If the device is trusted, link the addr file to hash file
     if (success && btm_sec_is_a_bonded_dev(p_srvc_cb->server_bda)) {
-      LOG_DEBUG(
-          "Linking db hash to address %s",
-          p_clcb->p_srcb->server_bda.ToRedactedStringForLogging().c_str());
+      log::debug("Linking db hash to address {}",
+                 p_clcb->p_srcb->server_bda.ToRedactedStringForLogging());
       bta_gattc_cache_link(p_clcb->p_srcb->server_bda, hash);
     }
 
     // After success, reset the count.
-    LOG_DEBUG("service discovery succeed, reset count to zero, conn_id=0x%04x",
-              conn_id);
+    log::debug(
+        "service discovery succeed, reset count to zero, conn_id=0x{:04x}",
+        conn_id);
     p_srvc_cb->srvc_disc_count = 0;
   }
 
@@ -337,7 +339,7 @@ static void bta_gattc_explore_srvc_finished(uint16_t conn_id,
 /** Start discovery for characteristic descriptor */
 void bta_gattc_start_disc_char_dscp(uint16_t conn_id,
                                     tBTA_GATTC_SERV* p_srvc_cb) {
-  VLOG(1) << "starting discover characteristics descriptor";
+  log::verbose("starting discover characteristics descriptor");
 
   std::pair<uint16_t, uint16_t> range =
       p_srvc_cb->pending_discovery.NextDescriptorRangeToExplore();
@@ -364,7 +366,7 @@ void bta_gattc_sdp_callback(UNUSED_ATTR const RawAddress& bd_addr,
   tBTA_GATTC_SERV* p_srvc_cb = bta_gattc_find_scb_by_cid(cb_data->sdp_conn_id);
 
   if (p_srvc_cb == nullptr) {
-    LOG(ERROR) << "GATT service discovery is done on unknown connection";
+    log::error("GATT service discovery is done on unknown connection");
     /* allocated in bta_gattc_sdp_service_disc */
     osi_free(cb_data);
     return;
@@ -398,15 +400,14 @@ void bta_gattc_sdp_callback(UNUSED_ATTR const RawAddress& bd_addr,
     uint16_t end_handle = (uint16_t)pe.params[1];
 
 #if (BTA_GATT_DEBUG == TRUE)
-    VLOG(1) << "Found ATT service uuid=" << service_uuid
-            << ", s_handle=" << loghex(start_handle)
-            << ", e_handle=" << loghex(end_handle);
+    log::verbose("Found ATT service uuid={}, s_handle={}, e_handle={}",
+                 service_uuid, loghex(start_handle), loghex(end_handle));
 #endif
 
     if (!GATT_HANDLE_IS_VALID(start_handle) ||
         !GATT_HANDLE_IS_VALID(end_handle)) {
-      LOG(ERROR) << "invalid start_handle=" << loghex(start_handle)
-                 << ", end_handle=" << loghex(end_handle);
+      log::error("invalid start_handle={}, end_handle={}", loghex(start_handle),
+                 loghex(end_handle));
       p_sdp_rec = get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb(
           cb_data->p_sdp_db, 0, p_sdp_rec);
       continue;
@@ -526,7 +527,7 @@ void bta_gattc_disc_res_cback(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
 
     case GATT_DISC_MAX:
     default:
-      LOG_ERROR("Received illegal discovery item");
+      log::error("Received illegal discovery item");
       break;
   }
 }
@@ -547,9 +548,8 @@ void bta_gattc_disc_cmpl_cback(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
         p_srvc_cb->srvc_disc_count++;
         p_clcb->auto_update = BTA_GATTC_DISC_WAITING;
       } else {
-        LOG(ERROR) << __func__
-                   << ": retry limit exceeds for db out of sync, conn_id="
-                   << conn_id;
+        log::error("retry limit exceeds for db out of sync, conn_id={}",
+                   conn_id);
       }
     }
 
@@ -592,7 +592,7 @@ void bta_gattc_disc_cmpl_cback(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
 
     case GATT_DISC_MAX:
     default:
-      LOG_ERROR("Received illegal discovery item");
+      log::error("Received illegal discovery item");
       break;
   }
 }
@@ -603,8 +603,7 @@ void bta_gattc_search_service(tBTA_GATTC_CLCB* p_clcb, Uuid* p_uuid) {
     if (p_uuid && *p_uuid != service.uuid) continue;
 
 #if (BTA_GATT_DEBUG == TRUE)
-    VLOG(1) << __func__ << "found service " << service.uuid
-            << " handle:" << +service.handle;
+    log::verbose("found service {} handle:{}", service.uuid, service.handle);
 #endif
     if (!p_clcb->p_rcb->p_cback) continue;
 
@@ -754,7 +753,7 @@ static void bta_gattc_read_db_hash_cmpl(tBTA_GATTC_CLCB* p_clcb,
                                         bool is_svc_chg) {
   uint8_t op = (uint8_t)p_data->op_code;
   if (op != GATTC_OPTYPE_READ) {
-    VLOG(1) << __func__ << ": op = " << +p_data->hdr.layer_specific;
+    log::verbose("op = {}", p_data->hdr.layer_specific);
     return;
   }
   p_clcb->request_during_discovery = BTA_GATTC_DISCOVER_REQ_NONE;
@@ -774,11 +773,10 @@ static void bta_gattc_read_db_hash_cmpl(tBTA_GATTC_CLCB* p_clcb,
       Octet16 local_hash = p_clcb->p_srcb->gatt_database.Hash();
       matched = (local_hash == remote_hash);
 
-      LOG_DEBUG("lhash=%s",
-                base::HexEncode(local_hash.data(), local_hash.size()).c_str());
-      LOG_DEBUG(
-          "rhash=%s",
-          base::HexEncode(remote_hash.data(), remote_hash.size()).c_str());
+      log::debug("lhash={}",
+                 base::HexEncode(local_hash.data(), local_hash.size()));
+      log::debug("rhash={}",
+                 base::HexEncode(remote_hash.data(), remote_hash.size()));
 
       if (!matched) {
         gatt::Database db = bta_gattc_hash_load(remote_hash);
@@ -802,20 +800,20 @@ static void bta_gattc_read_db_hash_cmpl(tBTA_GATTC_CLCB* p_clcb,
         p_clcb->p_srcb->gatt_database = db;
         found = true;
       }
-      LOG_DEBUG("load cache directly, result=%d", found);
+      log::debug("load cache directly, result={}", found);
     } else {
-      LOG_DEBUG("skip read cache, is_svc_chg=%d, is_a_bonded_dev=%d",
-                is_svc_chg, is_a_bonded_dev);
+      log::debug("skip read cache, is_svc_chg={}, is_a_bonded_dev={}",
+                 is_svc_chg, is_a_bonded_dev);
     }
   }
 
   if (matched) {
-    LOG_DEBUG("hash is the same, skip service discovery");
+    log::debug("hash is the same, skip service discovery");
     p_clcb->p_srcb->state = BTA_GATTC_SERV_IDLE;
     bta_gattc_reset_discover_st(p_clcb->p_srcb, GATT_SUCCESS);
   } else {
     if (found) {
-      LOG_DEBUG("hash found in cache, skip service discovery");
+      log::debug("hash found in cache, skip service discovery");
 
 #if (BTA_GATT_DEBUG == TRUE)
       bta_gattc_display_cache_server(p_clcb->p_srcb->gatt_database);
@@ -824,7 +822,7 @@ static void bta_gattc_read_db_hash_cmpl(tBTA_GATTC_CLCB* p_clcb,
       p_clcb->p_srcb->state = BTA_GATTC_SERV_IDLE;
       bta_gattc_reset_discover_st(p_clcb->p_srcb, GATT_SUCCESS);
     } else {
-      LOG_DEBUG("hash is not the same, start service discovery");
+      log::debug("hash is not the same, start service discovery");
       bta_gattc_start_discover_internal(p_clcb);
     }
   }
@@ -835,12 +833,12 @@ static void bta_gattc_read_ext_prop_desc_cmpl(
     tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_OP_CMPL* p_data) {
   uint8_t op = (uint8_t)p_data->op_code;
   if (op != GATTC_OPTYPE_READ) {
-    VLOG(1) << __func__ << ": op = " << +p_data->hdr.layer_specific;
+    log::verbose("op = {}", p_data->hdr.layer_specific);
     return;
   }
 
   if (!p_clcb->disc_active) {
-    VLOG(1) << __func__ << ": not active in discover state";
+    log::verbose("not active in discover state");
     return;
   }
   p_clcb->request_during_discovery = BTA_GATTC_DISCOVER_REQ_NONE;
@@ -857,7 +855,7 @@ static void bta_gattc_read_ext_prop_desc_cmpl(
   }
 
   if (status != GATT_SUCCESS) {
-    LOG(WARNING) << "Discovery on server failed: " << loghex(status);
+    log::warn("Discovery on server failed: {}", loghex(status));
     bta_gattc_reset_discover_st(p_clcb->p_srcb, GATT_ERROR);
     return;
   }
@@ -866,7 +864,7 @@ static void bta_gattc_read_ext_prop_desc_cmpl(
   if (p_srvc_cb->read_multiple_not_supported && att_value.len != 2) {
     // Just one Characteristic Extended Properties value at a time in Read
     // Response
-    LOG(WARNING) << __func__ << " Read Response should be just 2 bytes!";
+    log::warn("Read Response should be just 2 bytes!");
     bta_gattc_reset_discover_st(p_clcb->p_srcb, GATT_INVALID_PDU);
     return;
   }
@@ -883,8 +881,7 @@ static void bta_gattc_read_ext_prop_desc_cmpl(
   bool ret =
       p_srvc_cb->pending_discovery.SetValueOfDescriptors(value_of_descriptors);
   if (!ret) {
-    LOG(WARNING) << __func__
-                 << " Problem setting Extended Properties descriptors values";
+    log::warn("Problem setting Extended Properties descriptors values");
     bta_gattc_reset_discover_st(p_clcb->p_srcb, GATT_ERROR);
     return;
   }
@@ -968,9 +965,8 @@ static void bta_gattc_get_gatt_db_impl(tBTA_GATTC_SERV* p_srvc_cb,
                                        uint16_t start_handle,
                                        uint16_t end_handle,
                                        btgatt_db_element_t** db, int* count) {
-  VLOG(1) << __func__
-          << StringPrintf(": start_handle 0x%04x, end_handle 0x%04x",
-                          start_handle, end_handle);
+  log::verbose("start_handle 0x{:04x}, end_handle 0x{:04x}", start_handle,
+               end_handle);
 
   if (p_srvc_cb->gatt_database.IsEmpty()) {
     *count = 0;
@@ -1050,20 +1046,20 @@ void bta_gattc_get_gatt_db(uint16_t conn_id, uint16_t start_handle,
                            int* count) {
   tBTA_GATTC_CLCB* p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
 
-  LOG_INFO("%s", __func__);
+  log::info("");
   if (p_clcb == NULL) {
-    LOG(ERROR) << "Unknown conn_id=" << loghex(conn_id);
+    log::error("Unknown conn_id={}", loghex(conn_id));
     return;
   }
 
   if (p_clcb->state != BTA_GATTC_CONN_ST) {
-    LOG(ERROR) << "server cache not available, CLCB state=" << +p_clcb->state;
+    log::error("server cache not available, CLCB state={}", p_clcb->state);
     return;
   }
 
   if (!p_clcb->p_srcb || p_clcb->p_srcb->pending_discovery.InProgress() ||
       p_clcb->p_srcb->gatt_database.IsEmpty()) {
-    LOG(ERROR) << "No server cache available";
+    log::error("No server cache available");
     return;
   }
 

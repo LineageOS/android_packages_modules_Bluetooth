@@ -33,21 +33,27 @@ class SourceAudioHalAsrc::ClockRecovery : ::bluetooth::hal::NocpIsoHandler {
   std::mutex mutex_;
 
   unsigned num_produced_;
-  unsigned num_completed_;
-  int min_buffer_level_;
-  int max_buffer_level_;
 
-  enum class StateId { RESET, WARMUP, RUNNING };
+  enum class LinkState { RESET, WARMUP, RUNNING };
 
   struct {
-    StateId id;
+    struct {
+      LinkState state;
+
+      uint32_t local_time;
+      uint32_t decim_t0;
+      int decim_dt[2];
+
+      unsigned num_completed;
+      int min_buffer_level;
+
+    } link[2];
+
+    int active_link_id;
 
     uint32_t t0;
     uint32_t local_time;
     uint32_t stream_time;
-
-    uint32_t decim_t0;
-    int decim_dt[2];
 
     double butter_drift;
     double butter_s[2];
@@ -65,18 +71,26 @@ class SourceAudioHalAsrc::ClockRecovery : ::bluetooth::hal::NocpIsoHandler {
   } output_stats_;
 
   __attribute__((no_sanitize("integer"))) void OnEvent(
-      uint32_t timestamp_us, int num_completed) override {
+      uint32_t timestamp_us, int link_id, int num_completed) override {
     auto& state = state_;
+    auto& link = state.link[link_id];
 
     // Setup the start point of the streaming
 
-    if (state.id == StateId::RESET) {
-      state.t0 = timestamp_us;
-      state.local_time = state.stream_time = state.t0;
+    if (link.state == LinkState::RESET) {
+      if (state.link[link_id ^ 1].state == LinkState::RESET) {
+        state.t0 = timestamp_us;
+        state.local_time = timestamp_us;
+      }
 
-      state.decim_t0 = state.t0;
-      state.decim_dt[1] = INT_MAX;
-      state.id = StateId::WARMUP;
+      link.local_time = timestamp_us;
+      link.decim_t0 = timestamp_us;
+      link.decim_dt[1] = INT_MAX;
+
+      link.num_completed = 0;
+      link.min_buffer_level = INT_MAX;
+
+      link.state = LinkState::WARMUP;
     }
 
     // Update buffering level measure
@@ -84,45 +98,83 @@ class SourceAudioHalAsrc::ClockRecovery : ::bluetooth::hal::NocpIsoHandler {
     {
       const std::lock_guard<std::mutex> lock(mutex_);
 
-      num_completed_ += num_completed;
-      min_buffer_level_ =
-          std::min(min_buffer_level_, int(num_produced_ - num_completed_));
+      link.num_completed += num_completed;
+      link.min_buffer_level = std::min(link.min_buffer_level,
+                                       int(num_produced_ - link.num_completed));
     }
 
     // Update timing informations, and compute the minimum deviation
     // in the interval of the decimation (1 second).
 
-    state.local_time += num_completed * interval_;
-    state.stream_time += num_completed * interval_;
+    link.local_time += num_completed * interval_;
+    if (link_id == state.active_link_id) {
+      state.local_time += num_completed * interval_;
+      state.stream_time += num_completed * interval_;
+    }
 
-    int dt_current = int(timestamp_us - state.local_time);
-    state.decim_dt[1] = std::min(state.decim_dt[1], dt_current);
+    int dt_current = int(timestamp_us - link.local_time);
+    if (std::abs(dt_current) < std::abs(link.decim_dt[1]))
+      link.decim_dt[1] = dt_current;
 
-    if (state.local_time - state.decim_t0 < 1000 * 1000) return;
+    if (link.local_time - link.decim_t0 < 1000 * 1000) return;
 
-    state.decim_t0 += 1000 * 1000;
+    link.decim_t0 += 1000 * 1000;
 
     // The first decimation interval is used to adjust the start point.
     // The deviation between local time and stream time in this interval can be
     // ignored.
 
-    if (state.id == StateId::WARMUP) {
-      state.decim_t0 += state.decim_dt[1];
-      state.local_time += state.decim_dt[1];
-      state.stream_time += state.decim_dt[1];
+    if (link.state == LinkState::WARMUP) {
+      link.decim_t0 += link.decim_dt[1];
+      link.local_time += link.decim_dt[1];
+      if (state.active_link_id < 0) {
+        state.active_link_id = link_id;
+        state.local_time = link.local_time;
+        state.stream_time = link.local_time;
+      }
 
-      state.decim_dt[0] = 0;
-      state.decim_dt[1] = INT_MAX;
-      state.id = StateId::RUNNING;
+      link.decim_dt[0] = 0;
+      link.decim_dt[1] = INT_MAX;
+      link.state = LinkState::RUNNING;
       return;
     }
 
     // Deduct the derive of the deviation, from the difference between
     // the two consecutives decimated deviations.
 
-    int drift = state.decim_dt[1] - state.decim_dt[0];
-    state.decim_dt[0] = state.decim_dt[1];
-    state.decim_dt[1] = INT_MAX;
+    int drift = link.decim_dt[1] - link.decim_dt[0];
+    link.decim_dt[0] = link.decim_dt[1];
+    link.decim_dt[1] = INT_MAX;
+
+    // Sanity check, limit the instant derive to +/- 50 ms / second,
+    // and the gap between the 2 links to +/- 250ms. Reset the link state
+    // with out of range drift, and eventually active the other link.
+
+    int dt_link = state.link[link_id ^ 1].state == LinkState::RUNNING
+                      ? link.local_time - state.link[link_id ^ 1].local_time
+                      : 0;
+    bool stalled = std::abs(dt_link) > 250 * 1000;
+
+    if (std::abs(drift) > 50 * 1000 || stalled) {
+      int bad_link_id = link_id ^ stalled;
+      auto& bad_link = state.link[bad_link_id];
+
+      bool resetting = (bad_link.state != LinkState::RUNNING);
+      bool switching =
+          state.active_link_id == bad_link_id &&
+          (state.link[bad_link_id ^ 1].state == LinkState::RUNNING);
+
+      bad_link.state = LinkState::RESET;
+      if (bad_link_id == state.active_link_id) state.active_link_id = -1;
+
+      if (switching) state.active_link_id = bad_link_id ^ 1;
+
+      if (resetting || switching)
+        LOG(WARNING) << "Link unstable or stalled, "
+                     << (switching ? "switching" : "resetting") << std::endl;
+    }
+
+    if (link_id != state.active_link_id) return;
 
     // Let's filter the derive, with a low-pass Butterworth filter.
     // The cut-off frequency is set to 1/60th seconds.
@@ -140,7 +192,7 @@ class SourceAudioHalAsrc::ClockRecovery : ::bluetooth::hal::NocpIsoHandler {
     // the difference between the instant stream time, and the local time
     // corrected by the decimated deviation.
 
-    int err = state.stream_time - (state.local_time + state.decim_dt[0]);
+    int err = state.stream_time - (state.local_time + link.decim_dt[0]);
     state.stream_time +=
         (int(ldexpf(state.butter_drift, 8)) - err + (1 << 7)) >> 8;
 
@@ -158,9 +210,6 @@ class SourceAudioHalAsrc::ClockRecovery : ::bluetooth::hal::NocpIsoHandler {
       ref.drift = state.butter_drift * 1e-6;
 
       output_stats = output_stats_;
-      min_buffer_level = min_buffer_level_;
-      min_buffer_level_ = INT_MAX;
-      max_buffer_level_ = INT_MIN;
     }
 
     LOG(INFO) << base::StringPrintf("Deviation: %6d us (%3.0f ppm)",
@@ -171,18 +220,23 @@ class SourceAudioHalAsrc::ClockRecovery : ::bluetooth::hal::NocpIsoHandler {
                                     output_stats.sample_rate,
                                     output_stats.drift_us)
               << " | "
-              << base::StringPrintf("Buffer level: %d", min_buffer_level)
+              << base::StringPrintf(
+                     "Buffer level: %d:%d",
+                     std::min(state.link[0].min_buffer_level, 99),
+                     std::min(state.link[1].min_buffer_level, 99))
               << std::endl;
+
+    state.link[0].min_buffer_level = INT_MAX;
+    state.link[1].min_buffer_level = INT_MAX;
   }
 
  public:
   ClockRecovery(unsigned interval_us)
       : interval_(interval_us),
         num_produced_(0),
-        num_completed_(0),
-        min_buffer_level_(INT_MAX),
-        max_buffer_level_(INT_MIN),
-        state_{.id = StateId::RESET},
+        state_{
+            .link = {{.state = LinkState::RESET}, {.state = LinkState::RESET}},
+            .active_link_id = -1},
         reference_timing_{0, 0, 0} {
     ::bluetooth::hal::NocpIsoClocker::Register(this);
   }
@@ -210,9 +264,6 @@ class SourceAudioHalAsrc::ClockRecovery : ::bluetooth::hal::NocpIsoHandler {
     const std::lock_guard<std::mutex> lock(mutex_);
 
     num_produced_ += out_count;
-    max_buffer_level_ =
-        std::max(max_buffer_level_, int(num_produced_ - num_completed_));
-
     output_stats_ = {sample_rate, drift_us};
   }
 };
