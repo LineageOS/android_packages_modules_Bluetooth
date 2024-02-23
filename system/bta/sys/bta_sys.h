@@ -25,6 +25,7 @@
 #define BTA_SYS_H
 
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 
 #include <chrono>
 #include <cstdint>
@@ -292,5 +293,13 @@ void bta_sys_remove_cust_uuid(const tBTA_CUSTOM_UUID& curr);
 #define bta_sys_add_cust_uuid(ut)
 #define bta_sys_remove_cust_uuid(ut)
 #endif
+
+namespace fmt {
+template <>
+struct formatter<tBTA_SYS_ID> : enum_formatter<tBTA_SYS_ID> {};
+template <>
+struct formatter<tBTA_SYS_CONN_STATUS> : enum_formatter<tBTA_SYS_CONN_STATUS> {
+};
+}  // namespace fmt
 
 #endif /* BTA_SYS_H */

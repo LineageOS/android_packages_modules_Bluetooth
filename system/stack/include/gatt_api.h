@@ -1304,6 +1304,9 @@ namespace fmt {
 template <>
 struct formatter<GattStatus> : enum_formatter<GattStatus> {};
 template <>
+struct formatter<tGATT_DISCONN_REASON> : enum_formatter<tGATT_DISCONN_REASON> {
+};
+template <>
 struct formatter<tGATTC_OPTYPE> : enum_formatter<tGATTC_OPTYPE> {};
 template <>
 struct formatter<tGATT_OP_CODE> : enum_formatter<tGATT_OP_CODE> {};

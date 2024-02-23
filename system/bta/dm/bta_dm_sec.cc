@@ -16,6 +16,8 @@
 
 #define LOG_TAG "bt_bta_dm_sec"
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 
 #include "bta/dm/bta_dm_act.h"
@@ -36,6 +38,8 @@
 #include "stack/include/security_client_callbacks.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth;
 
 static tBTM_STATUS bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data);
 static uint8_t bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda,
@@ -86,7 +90,7 @@ void bta_dm_ble_sirk_sec_cb_register(tBTA_DM_SEC_CBACK* p_cback) {
 
 void bta_dm_ble_sirk_confirm_device_reply(const RawAddress& bd_addr,
                                           bool accept) {
-  LOG_DEBUG("addr:%s", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+  log::debug("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
   get_btm_client_interface().security.BTM_BleSirkConfirmDeviceReply(
       bd_addr, accept ? BTM_SUCCESS : BTM_NOT_AUTHORIZED);
 }
@@ -96,9 +100,9 @@ void bta_dm_consolidate(const RawAddress& identity_addr,
   for (auto i = 0; i < bta_dm_cb.device_list.count; i++) {
     if (bta_dm_cb.device_list.peer_device[i].peer_bdaddr != rpa) continue;
 
-    LOG_INFO("consolidating bda_dm_cb record %s -> %s",
-             ADDRESS_TO_LOGGABLE_CSTR(rpa),
-             ADDRESS_TO_LOGGABLE_CSTR(identity_addr));
+    log::info("consolidating bda_dm_cb record {} -> {}",
+              ADDRESS_TO_LOGGABLE_CSTR(rpa),
+              ADDRESS_TO_LOGGABLE_CSTR(identity_addr));
     bta_dm_cb.device_list.peer_device[i].peer_bdaddr = identity_addr;
   }
 }
@@ -146,18 +150,17 @@ void bta_dm_add_device(std::unique_ptr<tBTA_DM_API_ADD_DEVICE> msg) {
       msg->bd_addr, dc, msg->bd_name, nullptr, p_lc, msg->key_type,
       msg->pin_length);
   if (!add_result) {
-    LOG_ERROR("Error adding device:%s", ADDRESS_TO_LOGGABLE_CSTR(msg->bd_addr));
+    log::error("Error adding device:{}",
+               ADDRESS_TO_LOGGABLE_CSTR(msg->bd_addr));
   }
 }
 
 /** Bonds with peer device */
 void bta_dm_bond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                  tBT_TRANSPORT transport, tBT_DEVICE_TYPE device_type) {
-  LOG_DEBUG("Bonding with peer device:%s type:%s transport:%s type:%s",
-            ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
-            AddressTypeText(addr_type).c_str(),
-            bt_transport_text(transport).c_str(),
-            DeviceTypeText(device_type).c_str());
+  log::debug("Bonding with peer device:{} type:{} transport:{} type:{}",
+             ADDRESS_TO_LOGGABLE_CSTR(bd_addr), AddressTypeText(addr_type),
+             bt_transport_text(transport), DeviceTypeText(device_type));
 
   tBTA_DM_SEC sec_event;
   const char* p_name;
@@ -194,7 +197,7 @@ void bta_dm_bond_cancel(const RawAddress& bd_addr) {
   tBTM_STATUS status;
   tBTA_DM_SEC sec_event;
 
-  LOG_DEBUG("addr:%s", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+  log::debug("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
 
   status = get_btm_client_interface().security.BTM_SecBondCancel(bd_addr);
 
@@ -316,8 +319,8 @@ static uint8_t bta_dm_pin_cback(const RawAddress& bd_addr, DEV_CLASS dev_class,
         BTM_CMD_STARTED)
       return BTM_CMD_STARTED;
 
-    LOG_WARN("Failed to start Remote Name Request, addr:%s",
-             ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+    log::warn("Failed to start Remote Name Request, addr:{}",
+              ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
   }
 
   tBTA_DM_SEC sec_event = {.pin_req = {
@@ -419,9 +422,9 @@ static void bta_dm_authentication_complete_cback(
       case HCI_ERR_KEY_MISSING:
       case HCI_ERR_HOST_REJECT_SECURITY:
       case HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE:
-        LOG_WARN("authentication failed entry:%s, reason:%s",
-                 ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
-                 hci_reason_code_text(reason).c_str());
+        log::warn("authentication failed entry:{}, reason:{}",
+                  ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
+                  hci_reason_code_text(reason));
         break;
 
       default:
@@ -445,7 +448,7 @@ static tBTM_STATUS bta_dm_sp_cback(tBTM_SP_EVT event,
   tBTA_DM_SEC sec_event = {};
   tBTA_DM_SEC_EVT pin_evt = BTA_DM_SP_KEY_NOTIF_EVT;
 
-  LOG_VERBOSE("event:%s", sp_evt_to_text(event).c_str());
+  log::verbose("event:{}", sp_evt_to_text(event));
   if (!bta_dm_sec_cb.p_sec_cback) return BTM_NOT_AUTHORIZED;
 
   bool sp_rmt_result = false;
@@ -457,8 +460,8 @@ static tBTM_STATUS bta_dm_sp_cback(tBTM_SP_EVT event,
         btif_dm_set_oob_for_io_req(&p_data->io_req.oob_data);
         btif_dm_proc_io_req(&p_data->io_req.auth_req, p_data->io_req.is_orig);
       }
-      LOG_VERBOSE("io mitm: %d oob_data:%d", p_data->io_req.auth_req,
-                  p_data->io_req.oob_data);
+      log::verbose("io mitm: {} oob_data:{}", p_data->io_req.auth_req,
+                   p_data->io_req.oob_data);
       break;
     case BTM_SP_IO_RSP_EVT:
       if (btm_local_io_caps != BTM_IO_CAP_NONE) {
@@ -520,8 +523,8 @@ static tBTM_STATUS bta_dm_sp_cback(tBTM_SP_EVT event,
                 return btm_status;
               default:
                 // NOTE: This will issue callback on this failure path
-                LOG_WARN("Failed to start Remote Name Request btm_status:%s",
-                         btm_status_text(btm_status).c_str());
+                log::warn("Failed to start Remote Name Request btm_status:{}",
+                          btm_status_text(btm_status));
             };
           }
         }
@@ -538,8 +541,8 @@ static tBTM_STATUS bta_dm_sp_cback(tBTM_SP_EVT event,
                   p_data->key_notif.bd_addr, bta_dm_pinname_cback,
                   BT_TRANSPORT_BR_EDR)) == BTM_CMD_STARTED)
             return BTM_CMD_STARTED;
-          LOG_WARN("Failed to start Remote Name Request, addr:%s",
-                   ADDRESS_TO_LOGGABLE_CSTR(p_data->key_notif.bd_addr));
+          log::warn("Failed to start Remote Name Request, addr:{}",
+                    ADDRESS_TO_LOGGABLE_CSTR(p_data->key_notif.bd_addr));
         } else {
           sec_event.key_notif.bd_addr = p_data->key_notif.bd_addr;
           sec_event.key_notif.dev_class = p_data->key_notif.dev_class;
@@ -568,7 +571,7 @@ static tBTM_STATUS bta_dm_sp_cback(tBTM_SP_EVT event,
 #ifdef BTIF_DM_OOB_TEST
       sp_rmt_result = btif_dm_proc_rmt_oob(p_data->rmt_oob.bd_addr, &c, &r);
 #endif
-      LOG_VERBOSE("result=%d", sp_rmt_result);
+      log::verbose("result={}", sp_rmt_result);
       bta_dm_ci_rmt_oob(sp_rmt_result, p_data->rmt_oob.bd_addr, c, r);
       break;
     }
@@ -577,7 +580,7 @@ static tBTM_STATUS bta_dm_sp_cback(tBTM_SP_EVT event,
       status = BTM_NOT_AUTHORIZED;
       break;
   }
-  LOG_VERBOSE("dm status:%d", status);
+  log::verbose("dm status:{}", status);
   return status;
 }
 
@@ -597,8 +600,8 @@ static void bta_dm_reset_sec_dev_pending(const RawAddress& remote_bd_addr) {
     auto& dev = bta_dm_cb.device_list.peer_device[i];
     if (dev.peer_bdaddr == remote_bd_addr) {
       if (dev.remove_dev_pending) {
-        LOG_INFO("Clearing remove_dev_pending for %s",
-                 ADDRESS_TO_LOGGABLE_CSTR(dev.peer_bdaddr));
+        log::info("Clearing remove_dev_pending for {}",
+                  ADDRESS_TO_LOGGABLE_CSTR(dev.peer_bdaddr));
         dev.remove_dev_pending = false;
       }
       return;
@@ -624,15 +627,15 @@ static void bta_dm_remove_sec_dev_entry(const RawAddress& remote_bd_addr) {
                                                             BT_TRANSPORT_LE) ||
       get_btm_client_interface().peer.BTM_IsAclConnectionUp(
           remote_bd_addr, BT_TRANSPORT_BR_EDR)) {
-    LOG_DEBUG("ACL is not down. Schedule for Dev Removal when ACL closes:%s",
-              ADDRESS_TO_LOGGABLE_CSTR(remote_bd_addr));
+    log::debug("ACL is not down. Schedule for Dev Removal when ACL closes:{}",
+               ADDRESS_TO_LOGGABLE_CSTR(remote_bd_addr));
     get_btm_client_interface().security.BTM_SecClearSecurityFlags(
         remote_bd_addr);
     for (int i = 0; i < bta_dm_cb.device_list.count; i++) {
       auto& dev = bta_dm_cb.device_list.peer_device[i];
       if (dev.peer_bdaddr == remote_bd_addr) {
-        LOG_INFO("Setting remove_dev_pending for %s",
-                 ADDRESS_TO_LOGGABLE_CSTR(dev.peer_bdaddr));
+        log::info("Setting remove_dev_pending for {}",
+                  ADDRESS_TO_LOGGABLE_CSTR(dev.peer_bdaddr));
         dev.remove_dev_pending = TRUE;
         break;
       }
@@ -722,8 +725,8 @@ static uint8_t bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda,
   tBTA_DM_SEC sec_event;
   const char* p_name = NULL;
 
-  LOG_DEBUG("addr:%s,event:%s", ADDRESS_TO_LOGGABLE_CSTR(bda),
-            ble_evt_to_text(event).c_str());
+  log::debug("addr:{},event:{}", ADDRESS_TO_LOGGABLE_CSTR(bda),
+             ble_evt_to_text(event));
 
   if (!bta_dm_sec_cb.p_sec_cback) return BTM_NOT_AUTHORIZED;
 
@@ -733,8 +736,8 @@ static uint8_t bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda,
       ble_io_req(bda, &p_data->io_req.io_cap, &p_data->io_req.oob_data,
                  &p_data->io_req.auth_req, &p_data->io_req.max_key_size,
                  &p_data->io_req.init_keys, &p_data->io_req.resp_keys);
-      LOG_INFO("io mitm:%d oob_data:%d", p_data->io_req.auth_req,
-               p_data->io_req.oob_data);
+      log::info("io mitm:{} oob_data:{}", p_data->io_req.auth_req,
+                p_data->io_req.oob_data);
       break;
 
     case BTM_LE_CONSENT_REQ_EVT:
@@ -829,7 +832,7 @@ static uint8_t bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda,
           // Bonded device failed to encrypt - to test this remove battery from
           // HID device right after connection, but before encryption is
           // established
-          LOG_WARN(
+          log::warn(
               "bonded device disconnected when encrypting - no reason to "
               "unbond");
         } else {
@@ -880,11 +883,10 @@ void bta_dm_encrypt_cback(const RawAddress* bd_addr, tBT_TRANSPORT transport,
     device->p_encrypt_cback = nullptr;
   }
 
-  LOG_DEBUG("Encrypted:%c, peer:%s transport:%s status:%s callback:%c",
-            result == BTM_SUCCESS ? 'T' : 'F',
-            ADDRESS_TO_LOGGABLE_CSTR((*bd_addr)),
-            bt_transport_text(transport).c_str(),
-            btm_status_text(result).c_str(), (p_callback) ? 'T' : 'F');
+  log::debug("Encrypted:{:c}, peer:{} transport:{} status:{} callback:{:c}",
+             result == BTM_SUCCESS ? 'T' : 'F',
+             ADDRESS_TO_LOGGABLE_CSTR((*bd_addr)), bt_transport_text(transport),
+             btm_status_text(result), (p_callback) ? 'T' : 'F');
 
   tBTA_STATUS bta_status = BTA_SUCCESS;
   switch (result) {
@@ -914,25 +916,23 @@ void bta_dm_set_encryption(const RawAddress& bd_addr, tBT_TRANSPORT transport,
                            tBTA_DM_ENCRYPT_CBACK* p_callback,
                            tBTM_BLE_SEC_ACT sec_act) {
   if (p_callback == nullptr) {
-    LOG_ERROR("callback is not provided,addr:%s",
-              ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+    log::error("callback is not provided,addr:{}",
+               ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
     return;
   }
 
   tBTA_DM_PEER_DEVICE* device = find_connected_device(bd_addr, transport);
   if (device == nullptr) {
-    LOG_ERROR("Unable to find active ACL connection device:%s transport:%s",
-              ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
-              bt_transport_text(transport).c_str());
+    log::error("Unable to find active ACL connection device:{} transport:{}",
+               ADDRESS_TO_LOGGABLE_CSTR(bd_addr), bt_transport_text(transport));
     return;
   }
 
   if (device->p_encrypt_cback) {
-    LOG_ERROR(
-        "Unable to start encryption as already in progress peer:%s "
-        "transport:%s",
-        ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
-        bt_transport_text(transport).c_str());
+    log::error(
+        "Unable to start encryption as already in progress peer:{} "
+        "transport:{}",
+        ADDRESS_TO_LOGGABLE_CSTR(bd_addr), bt_transport_text(transport));
     (*p_callback)(bd_addr, transport, BTA_BUSY);
     return;
   }
@@ -941,13 +941,11 @@ void bta_dm_set_encryption(const RawAddress& bd_addr, tBT_TRANSPORT transport,
           bd_addr, transport, bta_dm_encrypt_cback, NULL, sec_act) ==
       BTM_CMD_STARTED) {
     device->p_encrypt_cback = p_callback;
-    LOG_DEBUG("Started encryption peer:%s transport:%s",
-              ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
-              bt_transport_text(transport).c_str());
+    log::debug("Started encryption peer:{} transport:{}",
+               ADDRESS_TO_LOGGABLE_CSTR(bd_addr), bt_transport_text(transport));
   } else {
-    LOG_ERROR("Unable to start encryption process peer:%s transport:%s",
-              ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
-              bt_transport_text(transport).c_str());
+    log::error("Unable to start encryption process peer:{} transport:{}",
+               ADDRESS_TO_LOGGABLE_CSTR(bd_addr), bt_transport_text(transport));
   }
 }
 
@@ -980,7 +978,7 @@ static void bta_dm_ble_id_key_cback(uint8_t key_type,
       break;
 
     default:
-      LOG_VERBOSE("Unknown key type %d", key_type);
+      log::verbose("Unknown key type {}", key_type);
       break;
   }
   return;
@@ -1001,12 +999,12 @@ static uint8_t bta_dm_sirk_verifiction_cback(const RawAddress& bd_addr) {
                            }};
 
   if (bta_dm_sec_cb.p_sec_sirk_cback) {
-    LOG_DEBUG("callback called");
+    log::debug("callback called");
     bta_dm_sec_cb.p_sec_sirk_cback(BTA_DM_SIRK_VERIFICATION_REQ_EVT, &sec_event);
     return BTM_CMD_STARTED;
   }
 
-  LOG_DEBUG("no callback registered");
+  log::debug("no callback registered");
 
   return BTM_SUCCESS_NO_SECURITY;
 }

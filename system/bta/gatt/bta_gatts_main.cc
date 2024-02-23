@@ -23,10 +23,13 @@
  ******************************************************************************/
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include "bta/gatt/bta_gatts_int.h"
 #include "internal_include/bt_target.h"
 #include "stack/include/bt_hdr.h"
+
+using namespace bluetooth;
 
 /* GATTS control block */
 tBTA_GATTS_CB bta_gatts_cb;
@@ -88,7 +91,7 @@ bool bta_gatts_hdl_event(const BT_HDR_RIGID* p_msg) {
       if (p_srvc_cb != NULL)
         bta_gatts_delete_service(p_srvc_cb, (tBTA_GATTS_DATA*)p_msg);
       else
-        LOG(ERROR) << __func__ << ": can't delete service - no srvc_cb found";
+        log::error("can't delete service - no srvc_cb found");
 
       break;
     }
@@ -100,7 +103,7 @@ bool bta_gatts_hdl_event(const BT_HDR_RIGID* p_msg) {
       if (p_srvc_cb != NULL)
         bta_gatts_stop_service(p_srvc_cb, (tBTA_GATTS_DATA*)p_msg);
       else
-        LOG(ERROR) << __func__ << ": can't stop service - no srvc_cb found";
+        log::error("can't stop service - no srvc_cb found");
 
       break;
     }

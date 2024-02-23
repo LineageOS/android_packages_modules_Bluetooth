@@ -19,7 +19,7 @@
 namespace bluetooth::hal {
 
 static class : public NocpIsoHandler {
-  void OnEvent(uint32_t, int) override {}
+  void OnEvent(uint32_t, int, int) override {}
 } g_empty_handler;
 
 static std::atomic<NocpIsoHandler*> g_handler = &g_empty_handler;
@@ -108,7 +108,7 @@ void NocpIsoClocker::OnHciEvent(const HciPacket& packet) {
       unsigned timestamp_us =
           std::chrono::duration_cast<std::chrono::microseconds>(timestamp).count();
       int num_of_completed_packets = item[2] | (item[3] << 8);
-      (*g_handler).OnEvent(timestamp_us, num_of_completed_packets);
+      (*g_handler).OnEvent(timestamp_us, 0, num_of_completed_packets);
 
       break;
     }

@@ -188,6 +188,13 @@ filegroup {
 }
 
 filegroup {
+    name: "TestMockMainShimDumpsys",
+    srcs: [
+        "mock/mock_main_shim_dumpsys.cc",
+    ],
+}
+
+filegroup {
     name: "TestMockMainShim",
     srcs: [
         "mock/mock_main_shim.cc",
@@ -198,7 +205,6 @@ filegroup {
         "mock/mock_main_shim_btm_api.cc",
         "mock/mock_main_shim_controller.cc",
         "mock/mock_main_shim_distance_measurement_manager.cc",
-        "mock/mock_main_shim_dumpsys.cc",
         "mock/mock_main_shim_hci_layer.cc",
         "mock/mock_main_shim_l2cap_api.cc",
         "mock/mock_main_shim_le_advertising_manager.cc",
