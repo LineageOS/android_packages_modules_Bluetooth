@@ -280,6 +280,9 @@ cc_test {
     host_supported: true,
     include_dirs: btifCommonIncludes,
     srcs: [
+        ":OsiCompatSources",
+        ":TestCommonMockFunctions",
+        ":TestFakeOsi",
         "test/btif_dm_test.cc",
         "test/btif_storage_test.cc",
     ],
@@ -332,7 +335,6 @@ cc_test {
         "libgmock",
         "liblc3",
         "libopus",
-        "libosi",
         "libprotobuf-cpp-lite",
         "libstatslog_bt",
         "libudrv-uipc",
