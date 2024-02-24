@@ -34,6 +34,7 @@ cc_fuzz {
         "libbluetooth_headers",
     ],
     shared_libs: [
+        "libbase",
         "libdl",
         "liblog",
         "server_configurable_flags",
