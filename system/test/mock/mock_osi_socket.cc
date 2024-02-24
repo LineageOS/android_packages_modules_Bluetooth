@@ -99,3 +99,8 @@ ssize_t socket_write_and_transfer_fd(const socket_t* socket, const void* buf,
 }
 // Mocked functions complete
 // END mockcify generation
+int osi_socket_local_server_bind(int /* s */, const char* /* name */,
+                                 int /* namespaceId */) {
+  inc_func_call_count(__func__);
+  return 0;
+}
