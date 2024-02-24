@@ -1155,15 +1155,7 @@ public class RemoteDevices {
                 Utils.sendBroadcast(mAdapterService, intent, BLUETOOTH_CONNECT,
                         Utils.getTempAllowlistBroadcastOptions());
             } else if (device.getBondState() == BluetoothDevice.BOND_NONE) {
-                String key = Utils.getAddressStringFromByte(address);
-                synchronized (mDevices) {
-                    mDevices.remove(key);
-                    mDeviceQueue.remove(key); // Remove from LRU cache
-
-                    // Remove from dual mode device mappings
-                    mDualDevicesMap.values().remove(key);
-                    mDualDevicesMap.remove(key);
-                }
+                removeAddressMapping(address);
             }
             if (state == BluetoothAdapter.STATE_ON || state == BluetoothAdapter.STATE_TURNING_OFF) {
                 mAdapterService.notifyAclDisconnected(device, transportLinkType);
@@ -1243,6 +1235,24 @@ public class RemoteDevices {
         } else {
             Log.e(TAG, "aclStateChangeCallback intent is null. deviceBondState: "
                     + device.getBondState());
+        }
+    }
+
+    private void removeAddressMapping(byte[] address) {
+        String key = Utils.getAddressStringFromByte(address);
+        synchronized (mDevices) {
+            mDevices.remove(key);
+            mDeviceQueue.remove(key); // Remove from LRU cache
+
+            // Remove from dual mode device mappings
+            mDualDevicesMap.values().remove(key);
+            mDualDevicesMap.remove(key);
+        }
+    }
+
+    void onBondStateChange(byte[] address, int newState) {
+        if (newState == BluetoothDevice.BOND_NONE) {
+            removeAddressMapping(address);
         }
     }
 
