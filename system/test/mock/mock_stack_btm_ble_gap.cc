@@ -183,14 +183,6 @@ void btm_ble_update_dmt_flag_bits(uint8_t* /* adv_flag_value */,
                                   const uint16_t /* disc_mode */) {
   inc_func_call_count(__func__);
 }
-void btm_ble_update_inq_result(
-    tINQ_DB_ENT* /* p_i */, uint8_t /* addr_type */,
-    const RawAddress& /* bda */, uint16_t /* evt_type */,
-    uint8_t /* primary_phy */, uint8_t /* secondary_phy */,
-    uint8_t /* advertising_sid */, int8_t /* tx_power */, int8_t /* rssi */,
-    uint16_t /* periodic_adv_int */, std::vector<uint8_t> const& /* data */) {
-  inc_func_call_count(__func__);
-}
 void btm_ble_update_mode_operation(uint8_t /* link_role */,
                                    const RawAddress* /* bd_addr */,
                                    tHCI_STATUS /* status */) {
