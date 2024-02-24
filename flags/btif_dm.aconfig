@@ -14,3 +14,10 @@ flag {
     description: "Don't reset the pairing state if service discovery concludes for a different device"
     bug: "321996502"
 }
+
+flag {
+    name: "force_bredr_for_sdp_retry"
+    namespace: "bluetooth"
+    description: "Force BR/EDR transport for retrying SDP service discovery"
+    bug: "326656580"
+}
