@@ -117,6 +117,7 @@ cc_test {
         "gatt/gatt_unittest.cc",
     ],
     static_libs: [
+        "libbluetooth-gdx",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbluetooth_hci_pdl",

@@ -489,7 +489,7 @@ fn convert_from_bluez_device(
                                 return false;
                             }
                         };
-                        floss_conf.set(addr_lower.as_str(), key.key.clone(), Some(new_val));
+                        floss_conf.set(addr_lower.as_str(), key.key, Some(new_val));
                     }
                 }
                 None => {
@@ -810,7 +810,7 @@ fn convert_floss_conf(filename: &str) {
                             continue;
                         }
                     };
-                    bluez_info.set(key.section, key.key.clone(), Some(new_val));
+                    bluez_info.set(key.section, key.key, Some(new_val));
                     continue;
                 }
                 None => {
@@ -828,7 +828,7 @@ fn convert_floss_conf(filename: &str) {
                             continue;
                         }
                     };
-                    bluez_hid.set(key.section, key.key.clone(), Some(new_val));
+                    bluez_hid.set(key.section, key.key, Some(new_val));
                 }
                 None => {
                     debug!("No key match: {}", k)

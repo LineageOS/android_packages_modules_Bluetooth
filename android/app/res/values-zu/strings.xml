@@ -135,12 +135,8 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Idivayisi yakho ikhumbula ukugcina i-Bluetooth ivuliwe kumodi yendiza. Vala i-Bluetooth uma ungafuni ukuthi ihlale ivuliwe."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"I-Wi-Fi ne-Bluetooth kuhlala kuvuliwe"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Ifoni yakho ikhumbula ukugcina i-Wi-Fi ne-Bluetooth kuvuliwe kumodi yendiza. Vala i-Wi-Fi ne-Bluetooth uma ungafuni ukuthi ihlale ivuliwe."</string>
-    <!-- no translation found for bluetooth_enabled_auto_on_title (1799541656310353393) -->
-    <skip />
-    <!-- no translation found for bluetooth_enabled_auto_on_message (1070556457440100730) -->
-    <skip />
-    <!-- no translation found for bluetooth_disable_auto_on (1085026923461565937) -->
-    <skip />
-    <!-- no translation found for bluetooth_notification_group (7251886707585872194) -->
-    <skip />
+    <string name="bluetooth_enabled_auto_on_title" msgid="1799541656310353393">"I-Bluetooth inikwe amandla ngokuzenzekelayo"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="1070556457440100730">"Ukuqalisa kabusha okuzenzekelayo kungashintshwa Kumasethingi e-Bluetooth."</string>
+    <string name="bluetooth_disable_auto_on" msgid="1085026923461565937">"Vala"</string>
+    <string name="bluetooth_notification_group" msgid="7251886707585872194">"Ukushintsha kwesimo se-Bluetooth okuzenzekelayo"</string>
 </resources>

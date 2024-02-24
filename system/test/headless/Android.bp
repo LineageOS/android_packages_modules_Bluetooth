@@ -29,7 +29,9 @@ cc_binary {
     host_supported: true,
     defaults: [
         "fluoride_defaults",
-        "latest_android_hardware_bluetooth_audio_ndk_shared",
+        "latest_android_hardware_audio_common_ndk_static",
+        "latest_android_hardware_bluetooth_audio_ndk_static",
+        "latest_android_media_audio_common_types_ndk_static",
     ],
     cflags: [
         "-Wall",
@@ -71,14 +73,19 @@ cc_binary {
         "packages/modules/Bluetooth/system/stack/include",
     ],
     static_libs: [
+        "android.hardware.audio.common@5.0",
         "android.hardware.bluetooth.a2dp@1.0",
+        "android.hardware.common-V2-ndk",
+        "android.hardware.common.fmq-V1-ndk",
         "avrcp-target-service",
         "lib-bt-packets",
         "lib-bt-packets-avrcp",
         "lib-bt-packets-base",
         "libFraunhoferAAC",
         "libaudio-a2dp-hw-utils",
+        "libbase",
         "libbluetooth-dumpsys",
+        "libbluetooth-gdx",
         "libbluetooth-types",
         "libbluetooth_core_rs",
         "libbluetooth_crypto_toolbox",
@@ -109,6 +116,7 @@ cc_binary {
         "libcom.android.sysprop.bluetooth.wrapped",
         "libevent",
         "libflatbuffers-cpp",
+        "libfmq",
         "libg722codec",
         "liblc3",
         "libmodpb64",
@@ -120,16 +128,9 @@ cc_binary {
         "libz",
     ],
     shared_libs: [
-        "android.hardware.bluetooth.audio@2.0",
-        "android.hardware.bluetooth.audio@2.1",
-        "android.hardware.bluetooth@1.0",
-        "android.hardware.bluetooth@1.1",
         "libPlatformProperties",
-        "libbase",
-        "libbinder_ndk",
         "libcrypto",
         "libcutils", // property_get_bool
-        "libfmq",
         "libhidlbase",
         "libjsoncpp",
         "liblog", // __android_log_print
@@ -140,13 +141,25 @@ cc_binary {
     target: {
         android: {
             static_libs: [
+                "android.hardware.bluetooth.audio-V4-ndk",
+                "android.hardware.bluetooth.audio@2.0",
+                "android.hardware.bluetooth.audio@2.1",
+                "android.hardware.bluetooth@1.0",
+                "android.hardware.bluetooth@1.1",
                 "android.system.suspend.control-V1-ndk",
             ],
             shared_libs: [
-                "android.hardware.bluetooth.audio-V4-ndk",
                 "android.system.suspend-V1-ndk",
                 "libaaudio",
+                "libbinder_ndk",
                 "libstatssocket",
+            ],
+        },
+        host: {
+            static_libs: [
+                "android.hardware.bluetooth.audio@2.0",
+                "android.hardware.bluetooth.audio@2.1",
+                "libbinder_ndk",
             ],
         },
     },

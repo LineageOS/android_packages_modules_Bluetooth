@@ -609,6 +609,17 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
       return;
     }
 
+    if (IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+      if (group->dsa_.active &&
+          (group->dsa_.mode == DsaMode::ISO_SW ||
+           group->dsa_.mode == DsaMode::ISO_HW) &&
+          leAudioDevice->GetDsaDataPathState() == DataPathState::CONFIGURING) {
+        LOG_INFO("Datapath configured for headtracking");
+        leAudioDevice->SetDsaDataPathState(DataPathState::CONFIGURED);
+        return;
+      }
+    }
+
     /* Update state for the given cis.*/
     auto ase = leAudioDevice->GetFirstActiveAseByCisAndDataPathState(
         CisState::CONNECTED, DataPathState::CONFIGURING);
@@ -685,6 +696,13 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
       if (ases_pair.source->cis_state == CisState::CONNECTED) {
         ases_pair.source->cis_state = CisState::DISCONNECTING;
         do_disconnect = true;
+      }
+    } else if (IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+      if (group->dsa_.active &&
+          leAudioDevice->GetDsaDataPathState() == DataPathState::REMOVING) {
+        LOG_INFO("DSA data path removed");
+        leAudioDevice->SetDsaDataPathState(DataPathState::IDLE);
+        leAudioDevice->SetDsaCisHandle(GATT_INVALID_CONN_ID);
       }
     }
 
@@ -847,6 +865,78 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     }
   }
 
+  void applyDsaDataPath(LeAudioDeviceGroup* group, LeAudioDevice* leAudioDevice,
+                        uint16_t conn_hdl) {
+    if (!IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+      return;
+    }
+
+    if (!group->dsa_.active) {
+      LOG_INFO("DSA mode not used");
+      return;
+    }
+
+    DsaModes dsa_modes = leAudioDevice->GetDsaModes();
+    if (dsa_modes.empty()) {
+      LOG_WARN("DSA mode not supported by this LE Audio device: %s",
+               ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+      group->dsa_.active = false;
+      return;
+    }
+
+    if (std::find(dsa_modes.begin(), dsa_modes.end(), DsaMode::ISO_SW) ==
+            dsa_modes.end() &&
+        std::find(dsa_modes.begin(), dsa_modes.end(), DsaMode::ISO_HW) ==
+            dsa_modes.end()) {
+      LOG_WARN("DSA mode not supported by this LE Audio device: %s",
+               ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+      group->dsa_.active = false;
+      return;
+    }
+
+    uint8_t data_path_id = bluetooth::hci::iso_manager::kIsoDataPathHci;
+    LOG_INFO("DSA mode used: %d", static_cast<int>(group->dsa_.mode));
+    switch (group->dsa_.mode) {
+      case DsaMode::ISO_HW:
+        data_path_id = bluetooth::hci::iso_manager::kIsoDataPathPlatformDefault;
+        break;
+      case DsaMode::ISO_SW:
+        data_path_id = bluetooth::hci::iso_manager::kIsoDataPathHci;
+        break;
+      default:
+        LOG_WARN("Unexpected DsaMode: %d", static_cast<int>(group->dsa_.mode));
+        group->dsa_.active = false;
+        return;
+    }
+
+    leAudioDevice->SetDsaDataPathState(DataPathState::CONFIGURING);
+    leAudioDevice->SetDsaCisHandle(conn_hdl);
+
+    LOG_VERBOSE(
+        "DSA mode supported on this LE Audio device: %s, apply data path: %d",
+        ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_), data_path_id);
+
+    LeAudioLogHistory::Get()->AddLogHistory(
+        kLogStateMachineTag, group->group_id_, RawAddress::kEmpty,
+        kLogSetDataPathOp + "cis_h:" + loghex(conn_hdl),
+        "direction: " +
+            loghex(bluetooth::hci::iso_manager::kIsoDataPathDirectionOut));
+
+    bluetooth::hci::iso_manager::iso_data_path_params param = {
+        .data_path_dir = bluetooth::hci::iso_manager::kIsoDataPathDirectionOut,
+        .data_path_id = data_path_id,
+        .codec_id_format =
+            le_audio::types::kLeAudioCodecHeadtracking.coding_format,
+        .codec_id_company =
+            le_audio::types::kLeAudioCodecHeadtracking.vendor_company_id,
+        .codec_id_vendor =
+            le_audio::types::kLeAudioCodecHeadtracking.vendor_codec_id,
+        .controller_delay = 0x00000000,
+        .codec_conf = std::vector<uint8_t>(),
+    };
+    IsoManager::GetInstance()->SetupIsoDataPath(conn_hdl, std::move(param));
+  }
+
   void ProcessHciNotifCisEstablished(
       LeAudioDeviceGroup* group, LeAudioDevice* leAudioDevice,
       const bluetooth::hci::iso_manager::cis_establish_cmpl_evt* event)
@@ -923,6 +1013,8 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     if (ases_pair.source &&
         (ases_pair.source->data_path_state == DataPathState::IDLE)) {
       PrepareDataPath(group->group_id_, ases_pair.source);
+    } else {
+      applyDsaDataPath(group, leAudioDevice, event->cis_conn_hdl);
     }
 
     if (osi_property_get_bool("persist.bluetooth.iso_link_quality_report",
@@ -996,6 +1088,14 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
         ases_pair.source->data_path_state == DataPathState::CONFIGURED) {
       value |= bluetooth::hci::iso_manager::kRemoveIsoDataPathDirectionOutput;
       ases_pair.source->data_path_state = DataPathState::REMOVING;
+    } else {
+      if (IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+        if (leAudioDevice->GetDsaDataPathState() == DataPathState::CONFIGURED) {
+          value |=
+              bluetooth::hci::iso_manager::kRemoveIsoDataPathDirectionOutput;
+          leAudioDevice->SetDsaDataPathState(DataPathState::REMOVING);
+        }
+      }
     }
 
     if (value == 0) {
@@ -1320,13 +1420,14 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
       return;
     }
 
-    LOG_INFO("DSA mode selected: %d", (int)group->dsa_mode_);
+    LOG_INFO("DSA mode selected: %d", (int)group->dsa_.mode);
+    group->dsa_.active = false;
 
     /* Unidirectional streaming */
     if (param.sdu_itv_stom == 0) {
       LOG_INFO("Media streaming, apply DSA parameters");
 
-      switch (group->dsa_mode_) {
+      switch (group->dsa_.mode) {
         case DsaMode::ISO_HW:
         case DsaMode::ISO_SW: {
           auto& cis_cfgs = param.cis_cfgs;
@@ -1335,11 +1436,14 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
           for (auto dsa_modes : group->GetAllowedDsaModesList()) {
             if (!dsa_modes.empty() && it != cis_cfgs.end()) {
               if (std::find(dsa_modes.begin(), dsa_modes.end(),
-                            group->dsa_mode_) != dsa_modes.end()) {
+                            group->dsa_.mode) != dsa_modes.end()) {
                 LOG_INFO("Device found with support for selected DsaMode");
 
+                group->dsa_.active = true;
+
+                /* Todo: Replace literal values */
                 param.sdu_itv_stom = 20000;
-                param.max_trans_lat_stom = 10;
+                param.max_trans_lat_stom = 20;
                 it->max_sdu_size_stom = 15;
                 it->rtn_stom = 2;
 
