@@ -200,6 +200,7 @@ public class LeAudioServiceTest {
         mFakeFlagsImpl.setFlag(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION, false);
         mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_BROADCAST_AUDIO_HANDOVER_POLICIES, false);
         mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_MCS_TBS_AUTHORIZATION_REBOND_FIX, false);
+        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_API_SYNCHRONIZED_BLOCK_FIX, false);
         mService.setFeatureFlags(mFakeFlagsImpl);
 
         mService.mAudioManager = mAudioManager;
@@ -939,6 +940,12 @@ public class LeAudioServiceTest {
         verify(mMcpService, times(1)).removeDeviceAuthorizationInfo(mLeftDevice);
     }
 
+    @Test
+    public void testAuthorizationInfoRemovedFromTbsMcsOnUnbondEventsWithSynchBlockFixFlag() {
+        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_API_SYNCHRONIZED_BLOCK_FIX, true);
+
+        testAuthorizationInfoRemovedFromTbsMcsOnUnbondEvents();
+    }
     /**
      * Test that a CONNECTION_STATE_DISCONNECTED Le Audio stack event will remove the state
      * machine only if the device is unbond.

@@ -379,57 +379,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                 public void handleMessage(Message msg) {
                     switch (msg.what) {
                         case STOP_LISTENER:
-                            stopListeners();
-                            mListenStarted = false;
-                            // Stop Active INBOUND Transfer
-                            if (mServerTransfer != null) {
-                                mServerTransfer.onBatchCanceled();
-                                mServerTransfer = null;
-                            }
-                            // Stop Active OUTBOUND Transfer
-                            if (mTransfer != null) {
-                                mTransfer.onBatchCanceled();
-                                mTransfer = null;
-                            }
-                            unregisterReceivers();
-                            synchronized (BluetoothOppService.this) {
-                                if (mUpdateThread != null) {
-                                    mUpdateThread.interrupt();
-                                }
-                            }
-                            while (mUpdateThread != null && mUpdateThreadRunning) {
-                                try {
-                                    Thread.sleep(50);
-                                } catch (Exception e) {
-                                    ContentProfileErrorReportUtils.report(
-                                            BluetoothProfile.OPP,
-                                            BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
-                                            BluetoothStatsLog
-                                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                                            4);
-                                    Log.e(TAG, "Thread sleep", e);
-                                }
-                            }
-                            synchronized (BluetoothOppService.this) {
-                                if (mUpdateThread != null) {
-                                    try {
-                                        mUpdateThread.join();
-                                    } catch (InterruptedException e) {
-                                        ContentProfileErrorReportUtils.report(
-                                                BluetoothProfile.OPP,
-                                                BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
-                                                BluetoothStatsLog
-                                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                                                5);
-                                        Log.e(TAG, "Interrupted", e);
-                                    }
-                                    mUpdateThread = null;
-                                }
-                            }
-
-                            if (mNotifier != null) {
-                                mNotifier.cancelNotifications();
-                            }
+                            stopInternal();
                             break;
                         case START_LISTENER:
                             if (mAdapterService.isEnabled()) {
@@ -631,6 +581,59 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                     12);
             Log.w(TAG, "unregisterReceivers " + e.toString());
+        }
+    }
+
+    private void stopInternal() {
+        stopListeners();
+        mListenStarted = false;
+        // Stop Active INBOUND Transfer
+        if (mServerTransfer != null) {
+            mServerTransfer.onBatchCanceled();
+            mServerTransfer = null;
+        }
+        // Stop Active OUTBOUND Transfer
+        if (mTransfer != null) {
+            mTransfer.onBatchCanceled();
+            mTransfer = null;
+        }
+        unregisterReceivers();
+        synchronized (BluetoothOppService.this) {
+            if (mUpdateThread != null) {
+                mUpdateThread.interrupt();
+            }
+        }
+        while (mUpdateThread != null && mUpdateThreadRunning) {
+            try {
+                Thread.sleep(50);
+            } catch (Exception e) {
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.OPP,
+                        BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                        4);
+                Log.e(TAG, "Thread sleep", e);
+            }
+        }
+        synchronized (BluetoothOppService.this) {
+            if (mUpdateThread != null) {
+                try {
+                    mUpdateThread.join();
+                } catch (InterruptedException e) {
+                    ContentProfileErrorReportUtils.report(
+                            BluetoothProfile.OPP,
+                            BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
+                            BluetoothStatsLog
+                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                            5);
+                    Log.e(TAG, "Interrupted", e);
+                }
+                mUpdateThread = null;
+            }
+        }
+
+        if (mNotifier != null) {
+            mNotifier.cancelNotifications();
         }
     }
 

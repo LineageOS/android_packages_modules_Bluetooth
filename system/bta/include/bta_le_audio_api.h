@@ -32,6 +32,9 @@ class LeAudioHalVerifier {
   static bool SupportsStreamActiveApi();
 };
 
+typedef bool(LeAudioIsoDataCallback)(const RawAddress& address,
+                                     uint16_t cis_conn_hdl, uint8_t* data,
+                                     uint16_t size, uint32_t timestamp);
 /* Interface class */
 class LeAudioClient {
  public:
@@ -75,6 +78,9 @@ class LeAudioClient {
   virtual bool isOutputPreferenceLeAudio(const RawAddress& address) = 0;
   virtual bool isDuplexPreferenceLeAudio(const RawAddress& address) = 0;
   virtual std::vector<RawAddress> GetGroupDevices(const int group_id) = 0;
+
+  static bool RegisterIsoDataConsumer(LeAudioIsoDataCallback callback);
+
   static void AddFromStorage(const RawAddress& addr, bool autoconnect,
                              int sink_audio_location, int source_audio_location,
                              int sink_supported_context_types,

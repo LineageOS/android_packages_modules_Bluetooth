@@ -1227,6 +1227,7 @@ cc_test {
         ":TestCommonMainHandler",
         ":TestCommonMockFunctions",
         ":TestMockBtaGatt",
+        ":TestMockBtaLeAudio",
         ":TestMockBtaSdp",
         ":TestMockBtaSys",
         ":TestMockBtif",

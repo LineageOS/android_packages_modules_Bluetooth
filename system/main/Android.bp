@@ -214,6 +214,7 @@ cc_test {
     static_libs: [
         "libbase",
         "libbluetooth-dumpsys",
+        "libbluetooth-gdx",
         "libbluetooth-types",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",

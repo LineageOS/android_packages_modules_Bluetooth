@@ -179,3 +179,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_codec_config_callback_order_fix"
+    namespace: "bluetooth"
+    description: "Fix for the order on the callback"
+    bug: "326442537"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

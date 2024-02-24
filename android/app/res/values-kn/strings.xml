@@ -135,12 +135,8 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"ಏರ್‌ಪ್ಲೇನ್ ಮೋಡ್‌ನಲ್ಲಿ ಬ್ಲೂಟೂತ್ ಆನ್ ಆಗಿರಿಸಿಕೊಳ್ಳುವುದನ್ನು ನಿಮ್ಮ ಸಾಧನ ನೆನಪಿನಲ್ಲಿರಿಸಿಕೊಳ್ಳುತ್ತದೆ. ಬ್ಲೂಟೂತ್ ಆನ್ ಆಗಿರಿಸಲು ನೀವು ಬಯಸದಿದ್ದರೆ ಅದನ್ನು ಆಫ್ ಮಾಡಿ."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"ವೈ-ಫೈ ಮತ್ತು ಬ್ಲೂಟೂತ್ ಆನ್ ಆಗಿರುತ್ತದೆ"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"ವೈ-ಫೈ ಮತ್ತು ಬ್ಲೂಟೂತ್ ಅನ್ನು ಏರ್‌ಪ್ಲೇನ್ ಮೋಡ್‌ನಲ್ಲಿ ಇರಿಸಿಕೊಳ್ಳಲು ನಿಮ್ಮ ಸಾಧನ ನೆನಪಿನಲ್ಲಿರಿಸಿಕೊಳ್ಳುತ್ತದೆ. ವೈಫೈ ಮತ್ತು ಬ್ಲೂಟೂತ್ ಆನ್ ಆಗಿರಿಸಲು ನೀವು ಬಯಸದಿದ್ದರೆ ಅವುಗಳನ್ನು ಆಫ್ ಮಾಡಿ."</string>
-    <!-- no translation found for bluetooth_enabled_auto_on_title (1799541656310353393) -->
-    <skip />
-    <!-- no translation found for bluetooth_enabled_auto_on_message (1070556457440100730) -->
-    <skip />
-    <!-- no translation found for bluetooth_disable_auto_on (1085026923461565937) -->
-    <skip />
-    <!-- no translation found for bluetooth_notification_group (7251886707585872194) -->
-    <skip />
+    <string name="bluetooth_enabled_auto_on_title" msgid="1799541656310353393">"ಬ್ಲೂಟೂತ್ ಅನ್ನು ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಸಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="1070556457440100730">"ಸ್ವಯಂಚಾಲಿತ ಮರುಪ್ರಾರಂಭವನ್ನು ಬ್ಲೂಟೂತ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ ಟಾಗಲ್ ಮಾಡಬಹುದು."</string>
+    <string name="bluetooth_disable_auto_on" msgid="1085026923461565937">"ಆಫ್ ಮಾಡಿ"</string>
+    <string name="bluetooth_notification_group" msgid="7251886707585872194">"ಬ್ಲೂಟೂತ್ ಸ್ವಯಂಚಾಲಿತ ಸ್ಥಿತಿಯ ಬದಲಾವಣೆ"</string>
 </resources>

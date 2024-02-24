@@ -192,6 +192,7 @@ public class LeAudioBroadcastServiceTest {
         mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_UNICAST_INACTIVATE_DEVICE_BASED_ON_CONTEXT, false);
         mFakeFlagsImpl.setFlag(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION, false);
         mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_BROADCAST_AUDIO_HANDOVER_POLICIES, false);
+        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_API_SYNCHRONIZED_BLOCK_FIX, false);
         mService.setFeatureFlags(mFakeFlagsImpl);
 
         mService.mAudioManager = mAudioManager;

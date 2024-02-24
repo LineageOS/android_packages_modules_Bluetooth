@@ -135,12 +135,8 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Enheten kommer ihåg att hålla Bluetooth aktiverat i flygplansläge. Inaktivera Bluetooth om du inte vill att det ska hållas aktiverat."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wifi och Bluetooth ska vara aktiverade"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Enheten kommer ihåg att hålla wifi och Bluetooth aktiverade i flygplansläge. Du kan inaktivera wifi och Bluetooth om du inte vill hålla dem aktiverade."</string>
-    <!-- no translation found for bluetooth_enabled_auto_on_title (1799541656310353393) -->
-    <skip />
-    <!-- no translation found for bluetooth_enabled_auto_on_message (1070556457440100730) -->
-    <skip />
-    <!-- no translation found for bluetooth_disable_auto_on (1085026923461565937) -->
-    <skip />
-    <!-- no translation found for bluetooth_notification_group (7251886707585872194) -->
-    <skip />
+    <string name="bluetooth_enabled_auto_on_title" msgid="1799541656310353393">"Bluetooth har aktiverats automatiskt"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="1070556457440100730">"Automatisk omstart kan aktiveras och inaktiveras i Bluetooth-inställningarna."</string>
+    <string name="bluetooth_disable_auto_on" msgid="1085026923461565937">"Inaktivera"</string>
+    <string name="bluetooth_notification_group" msgid="7251886707585872194">"Ändring av automatiskt Bluetooth-läge"</string>
 </resources>

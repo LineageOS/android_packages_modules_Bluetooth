@@ -96,3 +96,8 @@ void LeAudioClient::Initialize(
   inc_func_call_count(__func__);
 }
 void LeAudioClient::DebugDump(int fd) { inc_func_call_count(__func__); }
+
+bool LeAudioClient::RegisterIsoDataConsumer(LeAudioIsoDataCallback callback) {
+  inc_func_call_count(__func__);
+  return true;
+}
