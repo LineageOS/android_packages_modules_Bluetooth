@@ -1782,7 +1782,11 @@ static void btif_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
           LOG_WARN("SDP failed after bonding re-attempting for %s",
                    ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
           pairing_cb.sdp_attempts++;
-          btif_dm_get_remote_services(bd_addr, BT_TRANSPORT_AUTO);
+          if (IS_FLAG_ENABLED(force_bredr_for_sdp_retry)) {
+            btif_dm_get_remote_services(bd_addr, BT_TRANSPORT_BR_EDR);
+          } else {
+            btif_dm_get_remote_services(bd_addr, BT_TRANSPORT_AUTO);
+          }
         } else {
           LOG_WARN("SDP triggered by someone failed when bonding");
         }
