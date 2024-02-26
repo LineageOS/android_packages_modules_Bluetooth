@@ -22,6 +22,8 @@
  *
  ******************************************************************************/
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 
 #include "bta/sys/bta_sys.h"
@@ -34,6 +36,7 @@
 #include "types/hci_role.h"
 #include "types/raw_address.h"
 
+using namespace bluetooth;
 /*******************************************************************************
  *
  * Function         bta_sys_rm_register
@@ -87,9 +90,9 @@ void bta_sys_ssr_cfg_register(tBTA_SYS_SSR_CFG_CBACK* p_cback) {
  ******************************************************************************/
 void bta_sys_notify_role_chg(const RawAddress& peer_addr, tHCI_ROLE new_role,
                              tHCI_STATUS hci_status) {
-  LOG_DEBUG("Role changed peer:%s new_role:%s hci_status:%s",
-            ADDRESS_TO_LOGGABLE_CSTR(peer_addr), RoleText(new_role).c_str(),
-            hci_error_code_text(hci_status).c_str());
+  log::debug("Role changed peer:{} new_role:{} hci_status:{}",
+             ADDRESS_TO_LOGGABLE_CSTR(peer_addr), RoleText(new_role),
+             hci_error_code_text(hci_status));
   if (bta_sys_cb.p_role_cb) {
     bta_sys_cb.p_role_cb(BTA_SYS_ROLE_CHANGE, new_role, hci_status, peer_addr);
   }
@@ -432,14 +435,14 @@ void bta_sys_busy(tBTA_SYS_ID id, uint8_t app_id, const RawAddress& peer_addr) {
  ******************************************************************************/
 void bta_sys_eir_register(tBTA_SYS_EIR_CBACK* p_cback) {
   if (bta_sys_cb.eir_cb != nullptr) {
-    LOG_WARN("Already registered extended inquiry result callback");
+    log::warn("Already registered extended inquiry result callback");
   }
   bta_sys_cb.eir_cb = p_cback;
 }
 
 void bta_sys_eir_unregister() {
   if (bta_sys_cb.eir_cb == nullptr) {
-    LOG_WARN("Already unregistered extended inquiry result callback");
+    log::warn("Already unregistered extended inquiry result callback");
   }
   bta_sys_cb.eir_cb = nullptr;
 }

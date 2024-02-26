@@ -24,6 +24,8 @@
 
 #define LOG_TAG "bt_bta_hh"
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 
 #include "bta/hh/bta_hh_int.h"
@@ -34,6 +36,8 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/main_thread.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth;
 
 /*****************************************************************************
  *  Constants
@@ -259,7 +263,7 @@ void BTA_HhSendCtrl(uint8_t dev_handle, tBTA_HH_TRANS_CTRL_TYPE c_type) {
 void BTA_HhSendData(uint8_t dev_handle,
                     UNUSED_ATTR const tAclLinkSpec& link_spec, BT_HDR* p_data) {
   if (p_data->layer_specific != BTA_HH_RPTT_OUTPUT) {
-    LOG_ERROR(
+    log::error(
         "ERROR! Wrong report type! Write Command only valid for output "
         "report!");
     return;
