@@ -65,6 +65,7 @@ import com.android.bluetooth.ObexServerSockets;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.sdp.SdpManagerNativeInterface;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.ObexTransport;
@@ -289,7 +290,11 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                     1);
         }
         setBluetoothOppService(null);
-        mHandler.sendMessage(mHandler.obtainMessage(STOP_LISTENER));
+        if (Flags.oppServiceFixIndexOutOfBoundsExceptionInUpdateThread()) {
+            stopInternal();
+        } else {
+            mHandler.sendMessage(mHandler.obtainMessage(STOP_LISTENER));
+        }
 
         setComponentAvailable(OPP_PROVIDER, false);
         setComponentAvailable(INCOMING_FILE_CONFIRM_ACTIVITY, false);
@@ -555,7 +560,9 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
         if (V) {
             Log.v(TAG, "onDestroy");
         }
-        stopListeners();
+        if (!Flags.oppServiceFixIndexOutOfBoundsExceptionInUpdateThread()) {
+            stopListeners();
+        }
         if (mBatches != null) {
             mBatches.clear();
         }
@@ -685,7 +692,9 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                         if (V) {
                             Log.v(TAG, "Bluetooth state changed: STATE_TURNING_OFF");
                         }
-                        mHandler.sendMessage(mHandler.obtainMessage(STOP_LISTENER));
+                        if (!Flags.oppServiceFixIndexOutOfBoundsExceptionInUpdateThread()) {
+                            mHandler.sendMessage(mHandler.obtainMessage(STOP_LISTENER));
+                        }
                         break;
                 }
             }
