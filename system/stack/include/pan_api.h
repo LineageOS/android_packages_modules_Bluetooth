@@ -25,6 +25,7 @@
 #define PAN_API_H
 
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 
 #include <cstdint>
 
@@ -440,5 +441,10 @@ tPAN_RESULT PAN_SetMulticastFilters(uint16_t handle, uint16_t num_mcast_filters,
 void PAN_Init(void);
 
 void PAN_Dumpsys(int fd);
+
+namespace fmt {
+template <>
+struct formatter<tPAN_RESULT> : enum_formatter<tPAN_RESULT> {};
+}  // namespace fmt
 
 #endif /* PAN_API_H */

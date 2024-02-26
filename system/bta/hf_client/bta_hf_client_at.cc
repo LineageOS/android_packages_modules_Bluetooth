@@ -19,6 +19,8 @@
 
 #define LOG_TAG "bt_hf_client"
 
+#include <bluetooth/log.h>
+
 #include "bta/hf_client/bta_hf_client_int.h"
 #include "internal_include/bt_trace.h"
 #include "os/log.h"
@@ -39,6 +41,8 @@
 
 /* timeout (in milliseconds) for AT hold timer */
 #define BTA_HF_CLIENT_AT_HOLD_TIMEOUT 41
+
+using namespace bluetooth;
 
 static constexpr char kPropertyEnhancedDrivingIndicatorEnabled[] =
     "bluetooth.headset_client.indicator.enhanced_driver_safety.enabled";
@@ -128,7 +132,7 @@ static void bta_hf_client_queue_at(tBTA_HF_CLIENT_CB* client_cb,
   tBTA_HF_CLIENT_AT_QCMD* new_cmd =
       (tBTA_HF_CLIENT_AT_QCMD*)osi_malloc(sizeof(tBTA_HF_CLIENT_AT_QCMD));
 
-  LOG_VERBOSE("%s: cmd:%d", __func__, (int)cmd);
+  log::verbose("cmd:{}", (int)cmd);
 
   new_cmd->cmd = cmd;
   new_cmd->buf_len = buf_len;
@@ -149,11 +153,10 @@ static void bta_hf_client_queue_at(tBTA_HF_CLIENT_CB* client_cb,
 static void bta_hf_client_at_resp_timer_cback(void* data) {
   tBTA_HF_CLIENT_CB* client_cb = (tBTA_HF_CLIENT_CB*)data;
   if (client_cb->at_cb.current_cmd == BTA_HF_CLIENT_AT_CNUM) {
-    LOG_INFO("%s: timed out waiting for AT+CNUM response; spoofing OK.",
-             __func__);
+    log::info("timed out waiting for AT+CNUM response; spoofing OK.");
     bta_hf_client_handle_ok(client_cb);
   } else {
-    LOG_ERROR("HFPClient: AT response timeout, disconnecting");
+    log::error("HFPClient: AT response timeout, disconnecting");
 
     tBTA_HF_CLIENT_DATA msg = {};
     msg.hdr.layer_specific = client_cb->handle;
@@ -173,27 +176,26 @@ static void bta_hf_client_stop_at_resp_timer(tBTA_HF_CLIENT_CB* client_cb) {
 static void bta_hf_client_send_at(tBTA_HF_CLIENT_CB* client_cb,
                                   tBTA_HF_CLIENT_AT_CMD cmd, const char* buf,
                                   uint16_t buf_len) {
-  LOG_VERBOSE("%s %d", __func__, cmd);
+  log::verbose("{}", cmd);
   if ((client_cb->at_cb.current_cmd == BTA_HF_CLIENT_AT_NONE ||
        !client_cb->svc_conn) &&
       !alarm_is_scheduled(client_cb->at_cb.hold_timer)) {
     uint16_t len;
 
 #ifdef BTA_HF_CLIENT_AT_DUMP
-    LOG_VERBOSE("%s: %.*s", __func__, buf_len - 1, buf);
+    log::verbose("{:.{}}", buf, buf_len - 1);
 #endif
 
     client_cb->at_cb.current_cmd = cmd;
     /* Generate fake responses for these because they won't reliably work */
     if (!service_availability &&
         (cmd == BTA_HF_CLIENT_AT_CNUM || cmd == BTA_HF_CLIENT_AT_COPS)) {
-      LOG_WARN("%s: No service, skipping %d command", __func__, cmd);
+      log::warn("No service, skipping {} command", cmd);
       bta_hf_client_handle_ok(client_cb);
       return;
     }
 
-    LOG_VERBOSE("%s: writing port data to %d", __func__,
-                client_cb->conn_handle);
+    log::verbose("writing port data to {}", client_cb->conn_handle);
     PORT_WriteData(client_cb->conn_handle, buf, buf_len, &len);
 
     bta_hf_client_start_at_resp_timer(client_cb);
@@ -201,14 +203,14 @@ static void bta_hf_client_send_at(tBTA_HF_CLIENT_CB* client_cb,
     return;
   }
 
-  LOG_VERBOSE("%s: busy! queued: %d", __func__, cmd);
+  log::verbose("busy! queued: {}", cmd);
   bta_hf_client_queue_at(client_cb, cmd, buf, buf_len);
 }
 
 static void bta_hf_client_send_queued_at(tBTA_HF_CLIENT_CB* client_cb) {
   tBTA_HF_CLIENT_AT_QCMD* cur = client_cb->at_cb.queued_cmd;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   if (cur != NULL) {
     client_cb->at_cb.queued_cmd = cur->next;
@@ -221,17 +223,17 @@ static void bta_hf_client_send_queued_at(tBTA_HF_CLIENT_CB* client_cb) {
 
 static void bta_hf_client_at_hold_timer_cback(void* data) {
   tBTA_HF_CLIENT_CB* client_cb = (tBTA_HF_CLIENT_CB*)data;
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
   bta_hf_client_send_queued_at(client_cb);
 }
 
 static void bta_hf_client_stop_at_hold_timer(tBTA_HF_CLIENT_CB* client_cb) {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
   alarm_cancel(client_cb->at_cb.hold_timer);
 }
 
 static void bta_hf_client_start_at_hold_timer(tBTA_HF_CLIENT_CB* client_cb) {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
   alarm_set_on_mloop(client_cb->at_cb.hold_timer, BTA_HF_CLIENT_AT_HOLD_TIMEOUT,
                      bta_hf_client_at_hold_timer_cback, (void*)client_cb);
 }
@@ -245,7 +247,7 @@ static void bta_hf_client_start_at_hold_timer(tBTA_HF_CLIENT_CB* client_cb) {
  ******************************************************************************/
 
 static void bta_hf_client_handle_ok(tBTA_HF_CLIENT_CB* client_cb) {
-  LOG_VERBOSE("%s: current_cmd:%d", __func__, client_cb->at_cb.current_cmd);
+  log::verbose("current_cmd:{}", client_cb->at_cb.current_cmd);
 
   bta_hf_client_stop_at_resp_timer(client_cb);
 
@@ -289,8 +291,8 @@ static void bta_hf_client_handle_ok(tBTA_HF_CLIENT_CB* client_cb) {
 static void bta_hf_client_handle_error(tBTA_HF_CLIENT_CB* client_cb,
                                        tBTA_HF_CLIENT_AT_RESULT_TYPE type,
                                        uint16_t cme) {
-  LOG_VERBOSE("%s: type:%u cme:%u current_cmd:%d", __func__, type, cme,
-              client_cb->at_cb.current_cmd);
+  log::verbose("type:{} cme:{} current_cmd:{}", type, cme,
+               client_cb->at_cb.current_cmd);
 
   bta_hf_client_stop_at_resp_timer(client_cb);
 
@@ -327,7 +329,7 @@ static void bta_hf_client_handle_error(tBTA_HF_CLIENT_CB* client_cb,
 }
 
 static void bta_hf_client_handle_ring(tBTA_HF_CLIENT_CB* client_cb) {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   const bool exit_sniff_while_ring = osi_property_get_bool(
       "bluetooth.headset_client.exit_sniff_while_ring", false);
@@ -346,7 +348,7 @@ static void bta_hf_client_handle_ring(tBTA_HF_CLIENT_CB* client_cb) {
 
 static void bta_hf_client_handle_brsf(tBTA_HF_CLIENT_CB* client_cb,
                                       uint32_t value) {
-  LOG_VERBOSE("%s: 0x%x", __func__, value);
+  log::verbose("0x{:x}", value);
   client_cb->peer_features = value;
 }
 
@@ -357,8 +359,7 @@ static void bta_hf_client_handle_cind_list_item(tBTA_HF_CLIENT_CB* client_cb,
                                                 uint32_t max, uint32_t index) {
   uint8_t i = 0;
 
-  LOG_VERBOSE("%s: %" PRIu32 ".%s <%" PRIu32 ":%" PRIu32 ">", __func__, index,
-              name, min, max);
+  log::verbose("{} .{} <{}:{}>", index, name, min, max);
 
   if (index >= BTA_HF_CLIENT_AT_INDICATOR_COUNT) {
     return;
@@ -389,7 +390,7 @@ static void bta_hf_client_handle_cind_list_item(tBTA_HF_CLIENT_CB* client_cb,
 
 static void bta_hf_client_handle_cind_value(tBTA_HF_CLIENT_CB* client_cb,
                                             uint32_t index, uint32_t value) {
-  LOG_VERBOSE("%s: index: %u value: %u", __func__, index, value);
+  log::verbose("index: {} value: {}", index, value);
 
   if (index >= BTA_HF_CLIENT_AT_INDICATOR_COUNT) {
     return;
@@ -421,21 +422,21 @@ static void bta_hf_client_handle_cind_value(tBTA_HF_CLIENT_CB* client_cb,
 
 static void bta_hf_client_handle_chld(tBTA_HF_CLIENT_CB* client_cb,
                                       uint32_t mask) {
-  LOG_VERBOSE("%s: 0x%x", __func__, mask);
+  log::verbose("0x{:x}", mask);
 
   client_cb->chld_features |= mask;
 }
 
 static void bta_hf_client_handle_bind_read_supported_ind(
     tBTA_HF_CLIENT_CB* client_cb, int indicator_id) {
-  LOG_VERBOSE("%s: %d", __func__, indicator_id);
+  log::verbose("{}", indicator_id);
 
   client_cb->peer_hf_indicators.insert(indicator_id);
 }
 
 static void bta_hf_client_handle_bind_read_enabled_ind(
     tBTA_HF_CLIENT_CB* client_cb, int indicator_id, bool enable) {
-  LOG_VERBOSE("%s: %d", __func__, indicator_id);
+  log::verbose("{}", indicator_id);
 
   if (enable) {
     client_cb->enabled_hf_indicators.insert(indicator_id);
@@ -448,7 +449,7 @@ static void bta_hf_client_handle_ciev(tBTA_HF_CLIENT_CB* client_cb,
                                       uint32_t index, uint32_t value) {
   int8_t realind = -1;
 
-  LOG_VERBOSE("%s: index: %u value: %u", __func__, index, value);
+  log::verbose("index: {} value: {}", index, value);
 
   if (index == 0 || index > BTA_HF_CLIENT_AT_INDICATOR_COUNT) {
     return;
@@ -484,8 +485,7 @@ static void bta_hf_client_handle_ciev(tBTA_HF_CLIENT_CB* client_cb,
 
 static void bta_hf_client_handle_bcs(tBTA_HF_CLIENT_CB* client_cb,
                                      uint32_t codec) {
-  LOG_VERBOSE("%s: codec: %u sco listen state: %d", __func__, codec,
-              client_cb->sco_state);
+  log::verbose("codec: {} sco listen state: {}", codec, client_cb->sco_state);
   if (codec == UUID_CODEC_CVSD || codec == UUID_CODEC_MSBC ||
       (bta_hf_client_cb_arr.is_support_lc3 && codec == UUID_CODEC_LC3)) {
     switch (codec) {
@@ -511,7 +511,7 @@ static void bta_hf_client_handle_bcs(tBTA_HF_CLIENT_CB* client_cb,
 
 static void bta_hf_client_handle_bsir(tBTA_HF_CLIENT_CB* client_cb,
                                       uint32_t provided) {
-  LOG_VERBOSE("%s: %" PRIu32, __func__, provided);
+  log::verbose("{}", provided);
 
   bta_hf_client_evt_val(client_cb, BTA_HF_CLIENT_BSIR_EVT, provided);
 }
@@ -523,7 +523,7 @@ static void bta_hf_client_handle_cmeerror(tBTA_HF_CLIENT_CB* client_cb,
 
 static void bta_hf_client_handle_vgm(tBTA_HF_CLIENT_CB* client_cb,
                                      uint32_t value) {
-  LOG_VERBOSE("%s: %" PRIu32, __func__, value);
+  log::verbose("{}", value);
 
   if (value <= BTA_HF_CLIENT_VGM_MAX) {
     bta_hf_client_evt_val(client_cb, BTA_HF_CLIENT_MIC_EVT, value);
@@ -532,7 +532,7 @@ static void bta_hf_client_handle_vgm(tBTA_HF_CLIENT_CB* client_cb,
 
 static void bta_hf_client_handle_vgs(tBTA_HF_CLIENT_CB* client_cb,
                                      uint32_t value) {
-  LOG_VERBOSE("%s: %" PRIu32, __func__, value);
+  log::verbose("{}", value);
 
   if (value <= BTA_HF_CLIENT_VGS_MAX) {
     bta_hf_client_evt_val(client_cb, BTA_HF_CLIENT_SPK_EVT, value);
@@ -541,7 +541,7 @@ static void bta_hf_client_handle_vgs(tBTA_HF_CLIENT_CB* client_cb,
 
 static void bta_hf_client_handle_bvra(tBTA_HF_CLIENT_CB* client_cb,
                                       uint32_t value) {
-  LOG_VERBOSE("%s: %" PRIu32, __func__, value);
+  log::verbose("{}", value);
 
   if (value > 1) {
     return;
@@ -553,7 +553,7 @@ static void bta_hf_client_handle_bvra(tBTA_HF_CLIENT_CB* client_cb,
 static void bta_hf_client_handle_clip(tBTA_HF_CLIENT_CB* client_cb,
                                       char* numstr, uint32_t type) {
   std::string cell_number(numstr);
-  LOG_VERBOSE("%s: %u %s", __func__, type, PRIVATE_CELL(cell_number));
+  log::verbose("{} {}", type, PRIVATE_CELL(cell_number));
 
   bta_hf_client_clip(client_cb, numstr);
 }
@@ -561,14 +561,14 @@ static void bta_hf_client_handle_clip(tBTA_HF_CLIENT_CB* client_cb,
 static void bta_hf_client_handle_ccwa(tBTA_HF_CLIENT_CB* client_cb,
                                       char* numstr, uint32_t type) {
   std::string cell_number(numstr);
-  LOG_VERBOSE("%s: %u %s", __func__, type, PRIVATE_CELL(cell_number));
+  log::verbose("{} {}", type, PRIVATE_CELL(cell_number));
 
   bta_hf_client_ccwa(client_cb, numstr);
 }
 
 static void bta_hf_client_handle_cops(tBTA_HF_CLIENT_CB* client_cb, char* opstr,
                                       uint32_t mode) {
-  LOG_VERBOSE("%s: %u %s", __func__, mode, opstr);
+  log::verbose("{} {}", mode, opstr);
 
   bta_hf_client_operator_name(client_cb, opstr);
 }
@@ -576,7 +576,7 @@ static void bta_hf_client_handle_cops(tBTA_HF_CLIENT_CB* client_cb, char* opstr,
 static void bta_hf_client_handle_binp(tBTA_HF_CLIENT_CB* client_cb,
                                       char* numstr) {
   std::string cell_number(numstr);
-  LOG_VERBOSE("%s: %s", __func__, PRIVATE_CELL(cell_number));
+  log::verbose("{}", PRIVATE_CELL(cell_number));
 
   bta_hf_client_binp(client_cb, numstr);
 }
@@ -586,12 +586,12 @@ static void bta_hf_client_handle_clcc(tBTA_HF_CLIENT_CB* client_cb,
                                       uint16_t status, uint16_t mode,
                                       uint16_t mpty, char* numstr,
                                       uint16_t type) {
-  LOG_VERBOSE("%s: idx: %u dir: %u status: %u mode: %u mpty: %u", __func__, idx,
-              dir, status, mode, mpty);
+  log::verbose("idx: {} dir: {} status: {} mode: {} mpty: {}", idx, dir, status,
+               mode, mpty);
 
   if (numstr) {
     std::string cell_number(numstr);
-    LOG_VERBOSE("%s: number: %s  type: %u", __func__, PRIVATE_CELL(cell_number), type);
+    log::verbose("number: {}  type: {}", PRIVATE_CELL(cell_number), type);
   }
 
   bta_hf_client_clcc(client_cb, idx, dir, status, mpty, numstr);
@@ -601,8 +601,8 @@ static void bta_hf_client_handle_cnum(tBTA_HF_CLIENT_CB* client_cb,
                                       char* numstr, uint16_t type,
                                       uint16_t service) {
   std::string cell_number(numstr);
-  LOG_VERBOSE("%s: number: %s type: %u service: %u", __func__, PRIVATE_CELL(cell_number), type,
-              service);
+  log::verbose("number: {} type: {} service: {}", PRIVATE_CELL(cell_number),
+               type, service);
 
   /* TODO: should number be modified according to type? */
   bta_hf_client_cnum(client_cb, numstr, service);
@@ -610,7 +610,7 @@ static void bta_hf_client_handle_cnum(tBTA_HF_CLIENT_CB* client_cb,
 
 static void bta_hf_client_handle_btrh(tBTA_HF_CLIENT_CB* client_cb,
                                       uint16_t code) {
-  LOG_VERBOSE("%s: %" PRIu32, __func__, code);
+  log::verbose("{}", code);
 
   bta_hf_client_evt_val(client_cb, BTA_HF_CLIENT_BTRH_EVT, code);
 }
@@ -855,7 +855,7 @@ void bta_hf_client_binp(tBTA_HF_CLIENT_CB* client_cb, char* number) {
 #define AT_CHECK_RN(buf)                                 \
   do {                                                   \
     if (strncmp("\r\n", buf, sizeof("\r\n") - 1) != 0) { \
-      LOG_VERBOSE("%s: missing end <cr><lf>", __func__); \
+      log::verbose("missing end <cr><lf>");              \
       return NULL;                                       \
     }                                                    \
     (buf) += sizeof("\r\n") - 1;                         \
@@ -970,7 +970,7 @@ static char* bta_hf_client_parse_cind_list(tBTA_HF_CLIENT_CB* client_cb,
                        &max, &offset)) > 2) {
     bta_hf_client_handle_cind_list_item(client_cb, name, min, max, index);
     if (offset == 0) {
-      LOG_ERROR("%s: Format Error %s", __func__, buffer);
+      log::error("Format Error {}", buffer);
       return NULL;
     }
 
@@ -1111,7 +1111,7 @@ static char* bta_hf_client_parse_ciev(tBTA_HF_CLIENT_CB* client_cb,
   }
 
   if (offset == 0) {
-    LOG_ERROR("%s: Format Error %s", __func__, buffer);
+    log::error("Format Error {}", buffer);
     return NULL;
   }
 
@@ -1204,7 +1204,7 @@ static char* bta_hf_client_parse_clip(tBTA_HF_CLIENT_CB* client_cb,
   }
 
   if (offset == 0) {
-    LOG_ERROR("%s: Format Error %s", __func__, buffer);
+    log::error("Format Error {}", buffer);
     return NULL;
   }
 
@@ -1236,7 +1236,7 @@ static char* bta_hf_client_parse_ccwa(tBTA_HF_CLIENT_CB* client_cb,
   }
 
   if (offset == 0) {
-    LOG_ERROR("%s: Format Error %s", __func__, buffer);
+    log::error("Format Error {}", buffer);
     return NULL;
   }
 
@@ -1268,7 +1268,7 @@ static char* bta_hf_client_parse_cops(tBTA_HF_CLIENT_CB* client_cb,
   }
   /* Abort in case offset not set because of format error */
   if (offset == 0) {
-    LOG_ERROR("%s: Format Error %s", __func__, buffer);
+    log::error("Format Error {}", buffer);
     return NULL;
   }
 
@@ -1305,7 +1305,7 @@ static char* bta_hf_client_parse_binp(tBTA_HF_CLIENT_CB* client_cb,
 
   /* Abort in case offset not set because of format error */
   if (offset == 0) {
-    LOG_ERROR("%s: Format Error %s", __func__, buffer);
+    log::error("Format Error {}", buffer);
     return NULL;
   }
 
@@ -1345,7 +1345,7 @@ static char* bta_hf_client_parse_clcc(tBTA_HF_CLIENT_CB* client_cb,
 
   /* Abort in case offset not set because of format error */
   if (offset == 0) {
-    LOG_ERROR("%s: Format Error %s", __func__, buffer);
+    log::error("Format Error {}", buffer);
     return NULL;
   }
 
@@ -1370,7 +1370,7 @@ static char* bta_hf_client_parse_clcc(tBTA_HF_CLIENT_CB* client_cb,
       res += res2;
       /* Abort in case offset not set because of format error */
       if (offset == 0) {
-        LOG_ERROR("%s: Format Error %s", __func__, buffer);
+        log::error("Format Error {}", buffer);
         return NULL;
       }
 
@@ -1433,7 +1433,7 @@ static char* bta_hf_client_parse_cnum(tBTA_HF_CLIENT_CB* client_cb,
 
   /* Abort in case offset not set because of format error */
   if (offset == 0) {
-    LOG_ERROR("%s: Format Error %s", __func__, buffer);
+    log::error("Format Error {}", buffer);
     return NULL;
   }
 
@@ -1553,7 +1553,7 @@ static char* bta_hf_client_skip_unknown(tBTA_HF_CLIENT_CB* client_cb,
 
   buffer = tmp + 2;
 
-  LOG_VERBOSE("%s: %.*s", __func__, (int)(buffer - start - 2), start);
+  log::verbose("{:.{}}", start, (int)(buffer - start - 2));
 
   return buffer;
 }
@@ -1579,11 +1579,11 @@ static char* bta_hf_client_process_unknown(tBTA_HF_CLIENT_CB* client_cb,
     bta_hf_client_unknown_response(client_cb, tmp_buf);
     AT_CHECK_RN(end);
   } else {
-    LOG_ERROR("%s: exceed event buffer size. (%d, %d)", __func__, evt_size,
-              BTA_HF_CLIENT_UNKNOWN_EVENT_LEN);
+    log::error("exceed event buffer size. ({}, {})", evt_size,
+               BTA_HF_CLIENT_UNKNOWN_EVENT_LEN);
   }
 
-  LOG_VERBOSE("%s: %s", __func__, buffer);
+  log::verbose("{}", buffer);
 
   return end;
 }
@@ -1644,14 +1644,14 @@ static void bta_hf_client_dump_at(tBTA_HF_CLIENT_CB* client_cb) {
 
   *p2 = '\0';
 
-  LOG_VERBOSE("%s: %s", __func__, dump);
+  log::verbose("{}", dump);
 }
 #endif
 
 static void bta_hf_client_at_parse_start(tBTA_HF_CLIENT_CB* client_cb) {
   char* buf = client_cb->at_cb.buf;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
 #ifdef BTA_HF_CLIENT_AT_DUMP
   bta_hf_client_dump_at(client_cb);
@@ -1664,7 +1664,7 @@ static void bta_hf_client_at_parse_start(tBTA_HF_CLIENT_CB* client_cb) {
     for (i = 0; i < bta_hf_client_parser_cb_count; i++) {
       tmp = bta_hf_client_parser_cb[i](client_cb, buf);
       if (tmp == NULL) {
-        LOG_ERROR("HFPCient: AT event/reply parsing failed, skipping");
+        log::error("HFPCient: AT event/reply parsing failed, skipping");
         tmp = bta_hf_client_skip_unknown(client_cb, buf);
         break;
       }
@@ -1679,7 +1679,7 @@ static void bta_hf_client_at_parse_start(tBTA_HF_CLIENT_CB* client_cb) {
 
     /* could not skip unknown (received garbage?)... disconnect */
     if (tmp == NULL) {
-      LOG_ERROR("HFPCient: could not skip unknown AT event, disconnecting");
+      log::error("HFPCient: could not skip unknown AT event, disconnecting");
       bta_hf_client_at_reset(client_cb);
 
       tBTA_HF_CLIENT_DATA msg = {};
@@ -1703,7 +1703,7 @@ static bool bta_hf_client_check_at_complete(tBTA_HF_CLIENT_CB* client_cb) {
     }
   }
 
-  LOG_VERBOSE("%s: %d", __func__, ret);
+  log::verbose("{}", ret);
 
   return ret;
 }
@@ -1721,7 +1721,7 @@ static void bta_hf_client_at_clear_buf(tBTA_HF_CLIENT_CB* client_cb) {
  ******************************************************************************/
 void bta_hf_client_at_parse(tBTA_HF_CLIENT_CB* client_cb, char* buf,
                             unsigned int len) {
-  LOG_VERBOSE("%s: offset: %u len: %u", __func__, client_cb->at_cb.offset, len);
+  log::verbose("offset: {} len: {}", client_cb->at_cb.offset, len);
 
   if (len + client_cb->at_cb.offset > BTA_HF_CLIENT_AT_PARSER_MAX_LEN) {
     char tmp_buff[BTA_HF_CLIENT_AT_PARSER_MAX_LEN];
@@ -1729,7 +1729,7 @@ void bta_hf_client_at_parse(tBTA_HF_CLIENT_CB* client_cb, char* buf,
     unsigned int space_left =
         BTA_HF_CLIENT_AT_PARSER_MAX_LEN - client_cb->at_cb.offset;
 
-    LOG_VERBOSE("%s: overrun, trying to recover", __func__);
+    log::verbose("overrun, trying to recover");
 
     /* fill up parser buffer */
     memcpy(client_cb->at_cb.buf + client_cb->at_cb.offset, buf, space_left);
@@ -1740,7 +1740,7 @@ void bta_hf_client_at_parse(tBTA_HF_CLIENT_CB* client_cb, char* buf,
     /* find end of last complete command before proceeding */
     while (!bta_hf_client_check_at_complete(client_cb)) {
       if (client_cb->at_cb.offset == 0) {
-        LOG_ERROR("HFPClient: AT parser buffer overrun, disconnecting");
+        log::error("HFPClient: AT parser buffer overrun, disconnecting");
 
         bta_hf_client_at_reset(client_cb);
 
@@ -1788,11 +1788,11 @@ void bta_hf_client_send_at_brsf(tBTA_HF_CLIENT_CB* client_cb,
   char buf[BTA_HF_CLIENT_AT_MAX_LEN];
   int at_len;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   at_len = snprintf(buf, sizeof(buf), "AT+BRSF=%u\r", features);
   if (at_len < 0) {
-    LOG_ERROR("%s: AT command Framing error", __func__);
+    log::error("AT command Framing error");
     return;
   }
 
@@ -1802,7 +1802,7 @@ void bta_hf_client_send_at_brsf(tBTA_HF_CLIENT_CB* client_cb,
 void bta_hf_client_send_at_bac(tBTA_HF_CLIENT_CB* client_cb) {
   const char* buf;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   if (bta_hf_client_cb_arr.is_support_lc3) {
     buf = "AT+BAC=1,2,3\r";
@@ -1817,11 +1817,11 @@ void bta_hf_client_send_at_bcs(tBTA_HF_CLIENT_CB* client_cb, uint32_t codec) {
   char buf[BTA_HF_CLIENT_AT_MAX_LEN];
   int at_len;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   at_len = snprintf(buf, sizeof(buf), "AT+BCS=%u\r", codec);
   if (at_len < 0) {
-    LOG_ERROR("%s: AT command Framing error", __func__);
+    log::error("AT command Framing error");
     return;
   }
 
@@ -1832,7 +1832,7 @@ void bta_hf_client_send_at_cind(tBTA_HF_CLIENT_CB* client_cb, bool status) {
   const char* buf;
   tBTA_HF_CLIENT_AT_CMD cmd;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   if (status) {
     buf = "AT+CIND?\r";
@@ -1848,7 +1848,7 @@ void bta_hf_client_send_at_cind(tBTA_HF_CLIENT_CB* client_cb, bool status) {
 void bta_hf_client_send_at_cmer(tBTA_HF_CLIENT_CB* client_cb, bool activate) {
   const char* buf;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   if (activate)
     buf = "AT+CMER=3,0,0,1\r";
@@ -1863,7 +1863,7 @@ void bta_hf_client_send_at_chld(tBTA_HF_CLIENT_CB* client_cb, char cmd,
   char buf[BTA_HF_CLIENT_AT_MAX_LEN];
   int at_len;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   if (idx > 0)
     at_len = snprintf(buf, sizeof(buf), "AT+CHLD=%c%u\r", cmd, idx);
@@ -1871,7 +1871,7 @@ void bta_hf_client_send_at_chld(tBTA_HF_CLIENT_CB* client_cb, char cmd,
     at_len = snprintf(buf, sizeof(buf), "AT+CHLD=%c\r", cmd);
 
   if (at_len < 0) {
-    LOG_ERROR("%s: AT command Framing error", __func__);
+    log::error("AT command Framing error");
     return;
   }
 
@@ -1882,7 +1882,7 @@ void bta_hf_client_send_at_bind(tBTA_HF_CLIENT_CB* client_cb, int step) {
   std::string buf;
   tBTA_HF_CLIENT_AT_CMD cmd = BTA_HF_CLIENT_AT_BIND_SET_IND;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   switch (step) {
     case 0:  // List HF supported indicators
@@ -1914,16 +1914,16 @@ void bta_hf_client_send_at_biev(tBTA_HF_CLIENT_CB* client_cb, int indicator_id,
   tBTA_HF_CLIENT_AT_CMD cmd = BTA_HF_CLIENT_AT_BIEV;
 
   if ((client_cb->peer_features & BTA_HF_CLIENT_FEAT_HF_IND) == 0) {
-    LOG_ERROR("%s peer does not support HF Indicators", __func__);
+    log::error("peer does not support HF Indicators");
     return;
   }
 
   if (client_cb->enabled_hf_indicators.count(indicator_id) <= 0) {
-    LOG_ERROR("%s HF indicators %d is disabled", __func__, indicator_id);
+    log::error("HF indicators {} is disabled", indicator_id);
     return;
   }
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   int len = sprintf(buf, "AT+BIEV=%d,%d\r", indicator_id, indicator_value);
 
@@ -1933,7 +1933,7 @@ void bta_hf_client_send_at_biev(tBTA_HF_CLIENT_CB* client_cb, int indicator_id,
 void bta_hf_client_send_at_clip(tBTA_HF_CLIENT_CB* client_cb, bool activate) {
   const char* buf;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   if (activate)
     buf = "AT+CLIP=1\r";
@@ -1946,7 +1946,7 @@ void bta_hf_client_send_at_clip(tBTA_HF_CLIENT_CB* client_cb, bool activate) {
 void bta_hf_client_send_at_ccwa(tBTA_HF_CLIENT_CB* client_cb, bool activate) {
   const char* buf;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   if (activate)
     buf = "AT+CCWA=1\r";
@@ -1959,7 +1959,7 @@ void bta_hf_client_send_at_ccwa(tBTA_HF_CLIENT_CB* client_cb, bool activate) {
 void bta_hf_client_send_at_cmee(tBTA_HF_CLIENT_CB* client_cb, bool activate) {
   const char* buf;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   if (activate)
     buf = "AT+CMEE=1\r";
@@ -1972,7 +1972,7 @@ void bta_hf_client_send_at_cmee(tBTA_HF_CLIENT_CB* client_cb, bool activate) {
 void bta_hf_client_send_at_cops(tBTA_HF_CLIENT_CB* client_cb, bool query) {
   const char* buf;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   if (query)
     buf = "AT+COPS?\r";
@@ -1985,7 +1985,7 @@ void bta_hf_client_send_at_cops(tBTA_HF_CLIENT_CB* client_cb, bool query) {
 void bta_hf_client_send_at_clcc(tBTA_HF_CLIENT_CB* client_cb) {
   const char* buf;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   buf = "AT+CLCC\r";
 
@@ -1995,7 +1995,7 @@ void bta_hf_client_send_at_clcc(tBTA_HF_CLIENT_CB* client_cb) {
 void bta_hf_client_send_at_bvra(tBTA_HF_CLIENT_CB* client_cb, bool enable) {
   const char* buf;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   if (enable)
     buf = "AT+BVRA=1\r";
@@ -2009,11 +2009,11 @@ void bta_hf_client_send_at_vgs(tBTA_HF_CLIENT_CB* client_cb, uint32_t volume) {
   char buf[BTA_HF_CLIENT_AT_MAX_LEN];
   int at_len;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   at_len = snprintf(buf, sizeof(buf), "AT+VGS=%u\r", volume);
   if (at_len < 0) {
-    LOG_ERROR("%s: AT command Framing error", __func__);
+    log::error("AT command Framing error");
     return;
   }
 
@@ -2024,11 +2024,11 @@ void bta_hf_client_send_at_vgm(tBTA_HF_CLIENT_CB* client_cb, uint32_t volume) {
   char buf[BTA_HF_CLIENT_AT_MAX_LEN];
   int at_len;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   at_len = snprintf(buf, sizeof(buf), "AT+VGM=%u\r", volume);
   if (at_len < 0) {
-    LOG_ERROR("%s: AT command Framing error", __func__);
+    log::error("AT command Framing error");
     return;
   }
 
@@ -2040,7 +2040,7 @@ void bta_hf_client_send_at_atd(tBTA_HF_CLIENT_CB* client_cb, char* number,
   char buf[BTA_HF_CLIENT_AT_MAX_LEN];
   int at_len;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   if (number[0] != '\0') {
     at_len = snprintf(buf, sizeof(buf), "ATD%s;\r", number);
@@ -2049,14 +2049,14 @@ void bta_hf_client_send_at_atd(tBTA_HF_CLIENT_CB* client_cb, char* number,
   }
 
   if (at_len < 0) {
-    LOG_ERROR("%s: error preparing ATD command", __func__);
+    log::error("error preparing ATD command");
     return;
   }
 
   at_len = MIN((size_t)at_len, sizeof(buf));
 
   if (at_len < 0) {
-    LOG_ERROR("%s: AT command Framing error", __func__);
+    log::error("AT command Framing error");
     return;
   }
   bta_hf_client_send_at(client_cb, BTA_HF_CLIENT_AT_ATD, buf, at_len);
@@ -2065,7 +2065,7 @@ void bta_hf_client_send_at_atd(tBTA_HF_CLIENT_CB* client_cb, char* number,
 void bta_hf_client_send_at_bldn(tBTA_HF_CLIENT_CB* client_cb) {
   const char* buf;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   buf = "AT+BLDN\r";
 
@@ -2075,7 +2075,7 @@ void bta_hf_client_send_at_bldn(tBTA_HF_CLIENT_CB* client_cb) {
 void bta_hf_client_send_at_ata(tBTA_HF_CLIENT_CB* client_cb) {
   const char* buf;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   buf = "ATA\r";
 
@@ -2085,7 +2085,7 @@ void bta_hf_client_send_at_ata(tBTA_HF_CLIENT_CB* client_cb) {
 void bta_hf_client_send_at_chup(tBTA_HF_CLIENT_CB* client_cb) {
   const char* buf;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   buf = "AT+CHUP\r";
 
@@ -2097,7 +2097,7 @@ void bta_hf_client_send_at_btrh(tBTA_HF_CLIENT_CB* client_cb, bool query,
   char buf[BTA_HF_CLIENT_AT_MAX_LEN];
   int at_len;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   if (query) {
     at_len = snprintf(buf, sizeof(buf), "AT+BTRH?\r");
@@ -2106,7 +2106,7 @@ void bta_hf_client_send_at_btrh(tBTA_HF_CLIENT_CB* client_cb, bool query,
   }
 
   if (at_len < 0) {
-    LOG_ERROR("%s: AT command Framing error", __func__);
+    log::error("AT command Framing error");
     return;
   }
 
@@ -2117,12 +2117,12 @@ void bta_hf_client_send_at_vts(tBTA_HF_CLIENT_CB* client_cb, char code) {
   char buf[BTA_HF_CLIENT_AT_MAX_LEN];
   int at_len;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   at_len = snprintf(buf, sizeof(buf), "AT+VTS=%c\r", code);
 
   if (at_len < 0) {
-    LOG_ERROR("%s: AT command Framing error", __func__);
+    log::error("AT command Framing error");
     return;
   }
 
@@ -2132,7 +2132,7 @@ void bta_hf_client_send_at_vts(tBTA_HF_CLIENT_CB* client_cb, char code) {
 void bta_hf_client_send_at_bcc(tBTA_HF_CLIENT_CB* client_cb) {
   const char* buf;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   buf = "AT+BCC\r";
 
@@ -2142,7 +2142,7 @@ void bta_hf_client_send_at_bcc(tBTA_HF_CLIENT_CB* client_cb) {
 void bta_hf_client_send_at_cnum(tBTA_HF_CLIENT_CB* client_cb) {
   const char* buf;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   buf = "AT+CNUM\r";
 
@@ -2152,10 +2152,10 @@ void bta_hf_client_send_at_cnum(tBTA_HF_CLIENT_CB* client_cb) {
 void bta_hf_client_send_at_nrec(tBTA_HF_CLIENT_CB* client_cb) {
   const char* buf;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   if (!(client_cb->peer_features & BTA_HF_CLIENT_PEER_FEAT_ECNR)) {
-    LOG_ERROR("%s: Remote does not support NREC.", __func__);
+    log::error("Remote does not support NREC.");
     return;
   }
 
@@ -2168,12 +2168,12 @@ void bta_hf_client_send_at_binp(tBTA_HF_CLIENT_CB* client_cb, uint32_t action) {
   char buf[BTA_HF_CLIENT_AT_MAX_LEN];
   int at_len;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   at_len = snprintf(buf, sizeof(buf), "AT+BINP=%u\r", action);
 
   if (at_len < 0) {
-    LOG_ERROR("%s: AT command Framing error", __func__);
+    log::error("AT command Framing error");
     return;
   }
 
@@ -2185,9 +2185,9 @@ void bta_hf_client_send_at_bia(tBTA_HF_CLIENT_CB* client_cb) {
   int at_len;
   int i;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
   if (client_cb->peer_version < HFP_VERSION_1_6) {
-    LOG_VERBOSE("Remote does not Support AT+BIA");
+    log::verbose("Remote does not Support AT+BIA");
     return;
   }
 
@@ -2213,7 +2213,7 @@ void bta_hf_client_send_at_bia(tBTA_HF_CLIENT_CB* client_cb) {
   buf[at_len - 1] = '\r';
 
   if (at_len < 0) {
-    LOG_ERROR("%s: AT command Framing error", __func__);
+    log::error("AT command Framing error");
     return;
   }
 
@@ -2224,12 +2224,12 @@ void bta_hf_client_send_at_vendor_specific_cmd(tBTA_HF_CLIENT_CB* client_cb,
                                                const char* str) {
   char buf[BTA_HF_CLIENT_AT_MAX_LEN];
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   int at_len = snprintf(buf, sizeof(buf), "AT%s", str);
 
   if (at_len < 1) {
-    LOG_ERROR("%s: AT command Framing error", __func__);
+    log::error("AT command Framing error");
     return;
   }
 
@@ -2244,11 +2244,11 @@ void bta_hf_client_send_at_android(tBTA_HF_CLIENT_CB* client_cb,
   char buf[BTA_HF_CLIENT_AT_MAX_LEN];
   int at_len;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   at_len = snprintf(buf, sizeof(buf), "AT%s\r", str);
   if (at_len < 0) {
-    LOG_ERROR("%s: AT command Framing error", __func__);
+    log::error("AT command Framing error");
     return;
   }
 
@@ -2285,15 +2285,14 @@ void bta_hf_client_send_at_cmd(tBTA_HF_CLIENT_DATA* p_data) {
   tBTA_HF_CLIENT_CB* client_cb =
       bta_hf_client_find_cb_by_handle(p_data->hdr.layer_specific);
   if (!client_cb) {
-    LOG_ERROR("%s: cb not found for handle %d", __func__,
-              p_data->hdr.layer_specific);
+    log::error("cb not found for handle {}", p_data->hdr.layer_specific);
     return;
   }
 
   tBTA_HF_CLIENT_DATA_VAL* p_val = (tBTA_HF_CLIENT_DATA_VAL*)p_data;
   char buf[BTA_HF_CLIENT_AT_MAX_LEN];
 
-  LOG_VERBOSE("%s: at cmd: %d", __func__, p_val->uint8_val);
+  log::verbose("at cmd: {}", p_val->uint8_val);
   switch (p_val->uint8_val) {
     case BTA_HF_CLIENT_AT_CMD_VTS:
       bta_hf_client_send_at_vts(client_cb, (char)p_val->uint32_val1);
@@ -2358,11 +2357,11 @@ void bta_hf_client_send_at_cmd(tBTA_HF_CLIENT_DATA* p_data) {
       bta_hf_client_send_at_android(client_cb, p_val->str);
       break;
     default:
-      LOG_ERROR("Default case");
+      log::error("Default case");
       snprintf(buf, BTA_HF_CLIENT_AT_MAX_LEN,
                "Cmd %d 1st arg %u 2nd arg %u string arg %s", p_val->uint8_val,
                p_val->uint32_val1, p_val->uint32_val2, p_val->str);
-      LOG_ERROR("%s: AT buffer: %s ", __func__, buf);
+      log::error("AT buffer: {}", buf);
       break;
   }
 }

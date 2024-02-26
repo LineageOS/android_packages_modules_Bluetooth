@@ -25,6 +25,8 @@
 #ifndef BTA_HH_INT_H
 #define BTA_HH_INT_H
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 
 #include "bta/include/bta_api.h"
@@ -316,5 +318,11 @@ void bta_hh_le_notify_enc_cmpl(tBTA_HH_DEV_CB* p_cb,
 #if (BTA_HH_DEBUG == TRUE)
 void bta_hh_trace_dev_db(void);
 #endif
+
+namespace fmt {
+template <>
+struct formatter<tBTA_HH_SERVICE_STATE>
+    : enum_formatter<tBTA_HH_SERVICE_STATE> {};
+}  // namespace fmt
 
 #endif

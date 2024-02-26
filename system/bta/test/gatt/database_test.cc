@@ -20,6 +20,7 @@
 
 #include <base/logging.h>
 #include <base/strings/string_number_conversions.h>
+#include <bluetooth/log.h>
 #include <gtest/gtest.h>
 
 #include "gatt/database_builder.h"
@@ -27,6 +28,7 @@
 #include "types/bluetooth/uuid.h"
 
 using bluetooth::Uuid;
+using namespace bluetooth;
 
 namespace gatt {
 
@@ -123,7 +125,7 @@ TEST(GattCacheTest, stored_attribute_to_binary_service_test) {
   // clang-format on
 
   // useful for debugging:
-  // LOG(ERROR) << " " << base::HexEncode(&attr, len);
+  // log::error("{}", base::HexEncode(&attr, len));
 
   // Do not compare last 2 bytes which are padding as
   // x86 can use non-zero padding causing the test to fail
@@ -160,7 +162,7 @@ TEST(GattCacheTest, stored_attribute_to_binary_included_service_test) {
   // clang-format on
 
   // useful for debugging:
-  // LOG(ERROR) << " " << base::HexEncode(&attr, len);
+  // log::error("{}", base::HexEncode(&attr, len));
   EXPECT_EQ(memcmp(binary_form, &attr, len), 0);
 }
 
@@ -193,7 +195,7 @@ TEST(GattCacheTest, stored_attribute_to_binary_characteristic_test) {
   // clang-format on
 
   // useful for debugging:
-  // LOG(ERROR) << " " << base::HexEncode(&attr, len);
+  // log::error("{}", base::HexEncode(&attr, len));
   EXPECT_EQ(memcmp(binary_form, &attr, len), 0);
 }
 
@@ -219,7 +221,7 @@ TEST(GattCacheTest, stored_attribute_to_binary_descriptor_test) {
   // clang-format on
 
   // useful for debugging:
-  // LOG(ERROR) << " " << base::HexEncode(&attr, len);
+  // log::error("{}", base::HexEncode(&attr, len));
   EXPECT_EQ(memcmp(binary_form, &attr, len), 0);
 }
 
@@ -287,7 +289,7 @@ TEST(GattCacheTest,
   // clang-format on
 
   // useful for debugging:
-  // LOG(ERROR) << " " << base::HexEncode(&attr, len);
+  // log::error("{}", base::HexEncode(&attr, len));
   EXPECT_EQ(memcmp(binary_form.data(), &attr, len), 0);
 
   // Don't use memcmp, for better error messages.
@@ -339,7 +341,7 @@ TEST(GattCacheTest, stored_attributes_serialized_to_binary_test) {
   attr = {.handle = 0x0003,
           .type = Uuid::FromString("2900"),
           .value.characteristic_extended_properties = 0x1234};
-  LOG(ERROR) << " " << base::HexEncode(&attr, StoredAttribute::kSizeOnDisk);
+  log::error("{}", base::HexEncode(&attr, StoredAttribute::kSizeOnDisk));
   */
 
   memcpy(
@@ -371,7 +373,7 @@ TEST(GattCacheTest, stored_attributes_serialized_to_binary_test) {
               .end_handle = 0x1203,
           },
   };
-  LOG(ERROR) << " " << base::HexEncode(&attr, StoredAttribute::kSizeOnDisk);
+  log::error("{}", base::HexEncode(&attr, StoredAttribute::kSizeOnDisk));
   */
   memcpy(
       attr_bytes,
@@ -401,7 +403,7 @@ TEST(GattCacheTest, stored_attributes_serialized_to_binary_test) {
           },
   };
 
-  LOG(ERROR) << " " << base::HexEncode(&attr, StoredAttribute::kSizeOnDisk);
+  log::error("{}", base::HexEncode(&attr, StoredAttribute::kSizeOnDisk));
   */
   memcpy(
       attr_bytes,
@@ -431,7 +433,7 @@ TEST(GattCacheTest, stored_attributes_serialized_to_binary_test) {
               .uuid = Uuid::FromString("3456"),
           },
   };
-  LOG(ERROR) << " " << base::HexEncode(&attr, StoredAttribute::kSizeOnDisk);
+  log::error("{}", base::HexEncode(&attr, StoredAttribute::kSizeOnDisk));
   */
 
   memcpy(
@@ -459,7 +461,7 @@ TEST(GattCacheTest, stored_attributes_serialized_to_binary_test) {
                                .value_handle = 0x302,
                                .uuid = Uuid::FromString("3456")},
   };
-  LOG(ERROR) << " " << base::HexEncode(&attr, StoredAttribute::kSizeOnDisk);
+  log::error("{}", base::HexEncode(&attr, StoredAttribute::kSizeOnDisk));
   */
   memcpy(
       attr_bytes,
@@ -485,7 +487,7 @@ TEST(GattCacheTest, stored_attributes_serialized_to_binary_test) {
       .type = Uuid::FromString("4444"),
       .value.characteristic = {},
   };
-  LOG(ERROR) << " " << base::HexEncode(&attr, StoredAttribute::kSizeOnDisk);
+  log::error("{}", base::HexEncode(&attr, StoredAttribute::kSizeOnDisk));
   */
   memcpy(
       attr_bytes,

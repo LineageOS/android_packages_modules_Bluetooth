@@ -24,6 +24,8 @@
  *
  ******************************************************************************/
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 
 #include "bta/hf_client/bta_hf_client_int.h"
@@ -43,6 +45,7 @@
 
 using bluetooth::Uuid;
 using namespace bluetooth::legacy::stack::sdp;
+using namespace bluetooth;
 
 /* Number of protocol elements in protocol element list. */
 #define BTA_HF_CLIENT_NUM_PROTO_ELEMS 2
@@ -66,7 +69,7 @@ static void bta_hf_client_sdp_cback(UNUSED_ATTR const RawAddress& bd_addr,
   tBTA_HF_CLIENT_DISC_RESULT* p_buf = (tBTA_HF_CLIENT_DISC_RESULT*)osi_malloc(
       sizeof(tBTA_HF_CLIENT_DISC_RESULT));
 
-  LOG_VERBOSE("bta_hf_client_sdp_cback status:0x%x", status);
+  log::verbose("bta_hf_client_sdp_cback status:0x{:x}", status);
   tBTA_HF_CLIENT_CB* client_cb = (tBTA_HF_CLIENT_CB*)data;
 
   /* set event according to int/acp */
@@ -108,8 +111,8 @@ bool bta_hf_client_add_record(const char* p_service_name, uint8_t scn,
   uint8_t buf[2];
   uint16_t sdp_features = 0;
 
-  LOG_VERBOSE("bta_hf_client_add_record");
-  LOG_INFO("features: %d", features);
+  log::verbose("bta_hf_client_add_record");
+  log::info("features: {}", features);
 
   memset(proto_elem_list, 0,
          BTA_HF_CLIENT_NUM_PROTO_ELEMS * sizeof(tSDP_PROTOCOL_ELEM));
@@ -212,7 +215,7 @@ void bta_hf_client_create_record(tBTA_HF_CLIENT_CB_ARR* client_cb_arr,
  *
  ******************************************************************************/
 void bta_hf_client_del_record(tBTA_HF_CLIENT_CB_ARR* client_cb) {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   if (client_cb->sdp_handle != 0) {
     get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(client_cb->sdp_handle);
@@ -299,8 +302,8 @@ bool bta_hf_client_sdp_find_attr(tBTA_HF_CLIENT_CB* client_cb) {
     break;
   }
 
-  LOG_VERBOSE("%s: peer_version=0x%x peer_features=0x%x", __func__,
-              client_cb->peer_version, client_cb->peer_features);
+  log::verbose("peer_version=0x{:x} peer_features=0x{:x}",
+               client_cb->peer_version, client_cb->peer_features);
 
   return result;
 }
@@ -381,8 +384,7 @@ void bta_hf_client_free_db(tBTA_HF_CLIENT_DATA* p_data) {
   tBTA_HF_CLIENT_CB* client_cb =
       bta_hf_client_find_cb_by_handle(p_data->hdr.layer_specific);
   if (client_cb == NULL) {
-    LOG_ERROR("%s: cb not found for handle %d", __func__,
-              p_data->hdr.layer_specific);
+    log::error("cb not found for handle {}", p_data->hdr.layer_specific);
     return;
   }
 
