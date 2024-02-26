@@ -54,8 +54,9 @@ class HIDService(hid_grpc_aio.HIDServicer):
                 future = self.task['set_hid_report']
                 future.get_loop().call_soon_threadsafe(future.set_result, None)
 
-        if request.address is None:
-            raise ValueError('Request address field must be set.')
+        if not request.address:
+            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, 'Request address field must be set.')
+
         address = utils.address_from(request.address)
 
         try:
@@ -64,9 +65,10 @@ class HIDService(hid_grpc_aio.HIDServicer):
             name = utils.create_observer_name(observer)
             self.bluetooth.qa_client.register_callback_observer(name, observer)
             if request.report_type not in iter(floss_enums.BthhReportType):
-                raise ValueError('Invalid report type.')
+                await context.abort(grpc.StatusCode.INVALID_ARGUMENT, 'Invalid report type.')
+
             if not self.bluetooth.set_hid_report(address, request.report_type, request.report):
-                raise RuntimeError('Failed to call set_hid_report.')
+                await context.abort(grpc.StatusCode.UNKNOWN, 'Failed to call set_hid_report.')
 
             await asyncio.wait_for(set_hid_report, timeout=5)
 
