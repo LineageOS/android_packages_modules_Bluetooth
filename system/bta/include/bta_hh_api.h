@@ -19,6 +19,7 @@
 #define BTA_HH_API_H
 
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 
 #include <cstdint>
 #include <string>
@@ -519,4 +520,8 @@ void BTA_HhAddDev(const tAclLinkSpec& link_spec, tBTA_HH_ATTR_MASK attr_mask,
  ******************************************************************************/
 void BTA_HhRemoveDev(uint8_t dev_handle);
 
+namespace fmt {
+template <>
+struct formatter<tBTA_HH_STATUS> : enum_formatter<tBTA_HH_STATUS> {};
+}  // namespace fmt
 #endif /* BTA_HH_API_H */

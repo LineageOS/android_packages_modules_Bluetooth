@@ -21,6 +21,8 @@
  *  This file contains the PAN main functions and state machine.
  *
  ******************************************************************************/
+#include <bluetooth/log.h>
+
 #include <cstdint>
 
 #include "bta/pan/bta_pan_int.h"
@@ -28,6 +30,8 @@
 #include "internal_include/bt_target.h"
 #include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/include/bt_hdr.h"
+
+using namespace bluetooth;
 
 /*****************************************************************************
  * Constants and types
@@ -134,7 +138,7 @@ tBTA_PAN_SCB* bta_pan_scb_alloc(void) {
   for (i = 0; i < BTA_PAN_NUM_CONN; i++, p_scb++) {
     if (!p_scb->in_use) {
       p_scb->in_use = true;
-      LOG_VERBOSE("bta_pan_scb_alloc %d", i);
+      log::verbose("bta_pan_scb_alloc {}", i);
       break;
     }
   }
@@ -142,7 +146,7 @@ tBTA_PAN_SCB* bta_pan_scb_alloc(void) {
   if (i == BTA_PAN_NUM_CONN) {
     /* out of scbs */
     p_scb = NULL;
-    LOG_WARN("Out of scbs");
+    log::warn("Out of scbs");
   }
   return p_scb;
 }
@@ -163,8 +167,8 @@ void bta_pan_sm_execute(tBTA_PAN_SCB* p_scb, uint16_t event,
   uint8_t action;
   int i;
 
-  LOG_VERBOSE("PAN scb=%d event=0x%x state=%d", bta_pan_scb_to_idx(p_scb),
-              event, p_scb->state);
+  log::verbose("PAN scb={} event=0x{:x} state={}", bta_pan_scb_to_idx(p_scb),
+               event, p_scb->state);
 
   /* look up the state table for the current state */
   state_table = bta_pan_st_tbl[p_scb->state];
@@ -251,7 +255,7 @@ void bta_pan_api_open(tBTA_PAN_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_pan_scb_dealloc(tBTA_PAN_SCB* p_scb) {
-  LOG_VERBOSE("bta_pan_scb_dealloc %d", bta_pan_scb_to_idx(p_scb));
+  log::verbose("bta_pan_scb_dealloc {}", bta_pan_scb_to_idx(p_scb));
   fixed_queue_free(p_scb->data_queue, NULL);
   memset(p_scb, 0, sizeof(tBTA_PAN_SCB));
 }
@@ -291,7 +295,7 @@ tBTA_PAN_SCB* bta_pan_scb_by_handle(uint16_t handle) {
     }
   }
 
-  LOG_WARN("No scb for handle %d", handle);
+  log::warn("No scb for handle {}", handle);
 
   return NULL;
 }

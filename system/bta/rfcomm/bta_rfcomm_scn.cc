@@ -18,10 +18,14 @@
 
 #define LOG_TAG "bta"
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 
 #include "bta/jv/bta_jv_int.h"      // tBTA_JV_CB
 #include "stack/include/rfcdefs.h"  // RFCOMM_MAX_SCN
+
+using namespace bluetooth;
 
 extern tBTA_JV_CB bta_jv_cb;
 
@@ -41,7 +45,7 @@ uint8_t BTA_AllocateSCN(void) {
     if (!bta_jv_cb.scn_in_use[i]) {
       bta_jv_cb.scn_in_use[i] = true;
       bta_jv_cb.scn_search_index = (i + 1);
-      LOG_DEBUG("Allocating scn: %u", i + 1);
+      log::debug("Allocating scn: {}", i + 1);
       return (i + 1);  // allocated scn is index + 1
     }
   }
@@ -57,11 +61,11 @@ uint8_t BTA_AllocateSCN(void) {
     if (!bta_jv_cb.scn_in_use[i]) {
       bta_jv_cb.scn_in_use[i] = true;
       bta_jv_cb.scn_search_index = (i + 1);
-      LOG_DEBUG("Allocating scn: %u", i + 1);
+      log::debug("Allocating scn: {}", i + 1);
       return (i + 1);  // allocated scn is index + 1
     }
   }
-  LOG_DEBUG("Unable to allocate an scn");
+  log::debug("Unable to allocate an scn");
   return (0); /* No free ports */
 }
 
@@ -84,10 +88,10 @@ bool BTA_TryAllocateSCN(uint8_t scn) {
   /* check if this scn is available */
   if (!bta_jv_cb.scn_in_use[scn - 1]) {
     bta_jv_cb.scn_in_use[scn - 1] = true;
-    LOG_DEBUG("Allocating scn: %u", scn);
+    log::debug("Allocating scn: {}", scn);
     return true;
   }
-  LOG_DEBUG("Unable to allocate scn %u", scn);
+  log::debug("Unable to allocate scn {}", scn);
   return (false); /* scn was busy */
 }
 
@@ -106,10 +110,10 @@ bool BTA_FreeSCN(uint8_t scn) {
    */
   if (scn < RFCOMM_MAX_SCN && scn > 1) {
     bta_jv_cb.scn_in_use[scn - 1] = false;
-    LOG_DEBUG("Freed SCN: %u", scn);
+    log::debug("Freed SCN: {}", scn);
     return (true);
   } else {
-    LOG_WARN("Invalid SCN: %u", scn);
+    log::warn("Invalid SCN: {}", scn);
     return (false); /* Illegal SCN passed in */
   }
 }
