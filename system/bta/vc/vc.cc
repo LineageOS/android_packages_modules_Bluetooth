@@ -19,6 +19,7 @@
 #include <base/logging.h>
 #include <base/strings/string_number_conversions.h>
 #include <base/strings/string_util.h>
+#include <bluetooth/log.h>
 #include <hardware/bt_gatt_types.h>
 #include <hardware/bt_vc.h>
 
@@ -46,6 +47,7 @@ using bluetooth::Uuid;
 using bluetooth::csis::CsisClient;
 using bluetooth::vc::ConnectionState;
 using namespace bluetooth::vc::internal;
+using namespace bluetooth;
 
 namespace {
 class VolumeControlImpl;
@@ -90,8 +92,9 @@ class VolumeControlImpl : public VolumeControl {
         base::Bind(
             [](const base::Closure& initCb, uint8_t client_id, uint8_t status) {
               if (status != GATT_SUCCESS) {
-                LOG(ERROR) << "Can't start Volume Control profile - no gatt "
-                              "clients left!";
+                log::error(
+                    "Can't start Volume Control profile - no gatt clients "
+                    "left!");
                 return;
               }
               instance->gatt_if_ = client_id;
@@ -105,12 +108,12 @@ class VolumeControlImpl : public VolumeControl {
     /* Oportunistic works only for direct connect,
      * but in fact this is background connect
      */
-    LOG_INFO(": %s ", ADDRESS_TO_LOGGABLE_CSTR(address));
+    log::info(": {}", ADDRESS_TO_LOGGABLE_CSTR(address));
     BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION, true);
   }
 
   void Connect(const RawAddress& address) override {
-    LOG_INFO(": %s ", ADDRESS_TO_LOGGABLE_CSTR(address));
+    log::info(": {}", ADDRESS_TO_LOGGABLE_CSTR(address));
 
     auto device = volume_control_devices_.FindByAddress(address);
     if (!device) {
@@ -119,9 +122,8 @@ class VolumeControlImpl : public VolumeControl {
       device->connecting_actively = true;
 
       if (device->IsConnected()) {
-        LOG(WARNING) << __func__ << ": address=" << address
-                     << ", connection_id=" << device->connection_id
-                     << " already connected.";
+        log::warn("address={}, connection_id={} already connected.",
+                  ADDRESS_TO_LOGGABLE_STR(address), device->connection_id);
 
         if (device->IsReady()) {
           callbacks_->OnConnectionState(ConnectionState::CONNECTED,
@@ -138,7 +140,7 @@ class VolumeControlImpl : public VolumeControl {
   }
 
   void AddFromStorage(const RawAddress& address) {
-    LOG_INFO("%s ", ADDRESS_TO_LOGGABLE_CSTR(address));
+    log::info("{}", ADDRESS_TO_LOGGABLE_CSTR(address));
     volume_control_devices_.Add(address, false);
     StartOpportunisticConnect(address);
   }
@@ -146,14 +148,13 @@ class VolumeControlImpl : public VolumeControl {
   void OnGattConnected(tGATT_STATUS status, uint16_t connection_id,
                        tGATT_IF /*client_if*/, RawAddress address,
                        tBT_TRANSPORT transport, uint16_t /*mtu*/) {
-    LOG_INFO("%s, conn_id=0x%04x, transport=%s, status=%s(0x%02x)",
-             ADDRESS_TO_LOGGABLE_CSTR(address), connection_id,
-             bt_transport_text(transport).c_str(),
-             gatt_status_text(status).c_str(), status);
+    log::info("{}, conn_id=0x{:04x}, transport={}, status={}(0x{:02x})",
+              ADDRESS_TO_LOGGABLE_CSTR(address), connection_id,
+              bt_transport_text(transport), gatt_status_text(status), status);
 
     if (transport != BT_TRANSPORT_LE) {
-      LOG_WARN("Only LE connection is allowed (transport %s)",
-               bt_transport_text(transport).c_str());
+      log::warn("Only LE connection is allowed (transport {})",
+                bt_transport_text(transport));
       BTA_GATTC_Close(connection_id);
       return;
     }
@@ -161,13 +162,13 @@ class VolumeControlImpl : public VolumeControl {
     VolumeControlDevice* device =
         volume_control_devices_.FindByAddress(address);
     if (!device) {
-      LOG(ERROR) << __func__ << "Skipping unknown device, address="
-                 << ADDRESS_TO_LOGGABLE_STR(address);
+      log::error("Skipping unknown device, address={}",
+                 ADDRESS_TO_LOGGABLE_STR(address));
       return;
     }
 
     if (status != GATT_SUCCESS) {
-      LOG(INFO) << "Failed to connect to Volume Control device";
+      log::info("Failed to connect to Volume Control device");
       device_cleanup_helper(device, device->connecting_actively);
       return;
     }
@@ -185,8 +186,8 @@ class VolumeControlImpl : public VolumeControl {
     }
 
     if (!device->EnableEncryption()) {
-      LOG_ERROR("Link key is not known for %s, disconnect profile",
-                ADDRESS_TO_LOGGABLE_CSTR(address));
+      log::error("Link key is not known for {}, disconnect profile",
+                 ADDRESS_TO_LOGGABLE_CSTR(address));
       device->Disconnect(gatt_if_);
     }
   }
@@ -195,14 +196,13 @@ class VolumeControlImpl : public VolumeControl {
     VolumeControlDevice* device =
         volume_control_devices_.FindByAddress(address);
     if (!device) {
-      LOG(ERROR) << __func__ << "Skipping unknown device "
-                 << ADDRESS_TO_LOGGABLE_STR(address);
+      log::error("Skipping unknown device {}",
+                 ADDRESS_TO_LOGGABLE_STR(address));
       return;
     }
 
     if (success != BTM_SUCCESS) {
-      LOG(ERROR) << "encryption failed "
-                 << "status: " << int{success};
+      log::error("encryption failed status: {}", int{success});
       // If the encryption failed, do not remove the device.
       // Disconnect only, since the Android will try to re-enable encryption
       // after disconnection
@@ -210,8 +210,7 @@ class VolumeControlImpl : public VolumeControl {
       return;
     }
 
-    LOG(INFO) << __func__ << " " << ADDRESS_TO_LOGGABLE_STR(address)
-              << " status: " << +success;
+    log::info("{} status: {}", ADDRESS_TO_LOGGABLE_STR(address), success);
 
     if (device->HasHandles()) {
       device->EnqueueInitialRequests(gatt_if_, chrc_read_callback_static,
@@ -225,13 +224,13 @@ class VolumeControlImpl : public VolumeControl {
 
   void ClearDeviceInformationAndStartSearch(VolumeControlDevice* device) {
     if (!device) {
-      LOG_ERROR("Device is null");
+      log::error("Device is null");
       return;
     }
 
-    LOG_INFO(": address=%s", ADDRESS_TO_LOGGABLE_CSTR(device->address));
+    log::info("address={}", ADDRESS_TO_LOGGABLE_CSTR(device->address));
     if (device->known_service_handles_ == false) {
-      LOG_INFO("Device already is waiting for new services");
+      log::info("Device already is waiting for new services");
       return;
     }
 
@@ -248,8 +247,8 @@ class VolumeControlImpl : public VolumeControl {
     VolumeControlDevice* device =
         volume_control_devices_.FindByAddress(address);
     if (!device) {
-      LOG(ERROR) << __func__ << "Skipping unknown device "
-                 << ADDRESS_TO_LOGGABLE_STR(address);
+      log::error("Skipping unknown device {}",
+                 ADDRESS_TO_LOGGABLE_STR(address));
       return;
     }
 
@@ -260,8 +259,8 @@ class VolumeControlImpl : public VolumeControl {
     VolumeControlDevice* device =
         volume_control_devices_.FindByAddress(address);
     if (!device) {
-      LOG(ERROR) << __func__ << "Skipping unknown device "
-                 << ADDRESS_TO_LOGGABLE_STR(address);
+      log::error("Skipping unknown device {}",
+                 ADDRESS_TO_LOGGABLE_STR(address));
       return;
     }
 
@@ -275,8 +274,8 @@ class VolumeControlImpl : public VolumeControl {
     VolumeControlDevice* device =
         volume_control_devices_.FindByConnId(connection_id);
     if (!device) {
-      LOG(ERROR) << __func__ << "Skipping unknown device, connection_id="
-                 << loghex(connection_id);
+      log::error("Skipping unknown device, connection_id={}",
+                 loghex(connection_id));
       return;
     }
 
@@ -285,19 +284,19 @@ class VolumeControlImpl : public VolumeControl {
 
     if (status != GATT_SUCCESS) {
       /* close connection and report service discovery complete with error */
-      LOG(ERROR) << "Service discovery failed";
+      log::error("Service discovery failed");
       device_cleanup_helper(device, device->connecting_actively);
       return;
     }
 
     if (!device->IsEncryptionEnabled()) {
-      LOG_WARN("Device not yet bonded - waiting for encryption");
+      log::warn("Device not yet bonded - waiting for encryption");
       return;
     }
 
     bool success = device->UpdateHandles();
     if (!success) {
-      LOG(ERROR) << "Incomplete service database";
+      log::error("Incomplete service database");
       device_cleanup_helper(device, device->connecting_actively);
       return;
     }
@@ -312,15 +311,15 @@ class VolumeControlImpl : public VolumeControl {
                                     bool is_notification) {
     VolumeControlDevice* device = volume_control_devices_.FindByConnId(conn_id);
     if (!device) {
-      LOG(INFO) << __func__ << ": unknown conn_id=" << loghex(conn_id);
+      log::info("unknown conn_id={}", loghex(conn_id));
       return;
     }
 
     if (status != GATT_SUCCESS) {
-      LOG_INFO(": status=0x%02x", static_cast<int>(status));
+      log::info("status=0x{:02x}", static_cast<int>(status));
       if (status == GATT_DATABASE_OUT_OF_SYNC) {
-        LOG_INFO("Database out of sync for %s",
-                 ADDRESS_TO_LOGGABLE_CSTR(device->address));
+        log::info("Database out of sync for {}",
+                  ADDRESS_TO_LOGGABLE_CSTR(device->address));
         ClearDeviceInformationAndStartSearch(device);
       }
       return;
@@ -350,7 +349,7 @@ class VolumeControlImpl : public VolumeControl {
       } else if (handle == offset->audio_descr_handle) {
         OnOffsetOutputDescChanged(device, offset, len, value);
       } else {
-        LOG(ERROR) << __func__ << ": unknown offset handle=" << loghex(handle);
+        log::error("unknown offset handle={}", loghex(handle));
         return;
       }
 
@@ -358,12 +357,12 @@ class VolumeControlImpl : public VolumeControl {
       return;
     }
 
-    LOG(ERROR) << __func__ << ": unknown handle=" << loghex(handle);
+    log::error("unknown handle={}", loghex(handle));
   }
 
   void OnNotificationEvent(uint16_t conn_id, uint16_t handle, uint16_t len,
                            uint8_t* value) {
-    LOG(INFO) << __func__ << ": handle=" << loghex(handle);
+    log::info("handle={}", loghex(handle));
     OnCharacteristicValueChanged(conn_id, GATT_SUCCESS, handle, len, value,
                                  nullptr, true);
   }
@@ -380,8 +379,7 @@ class VolumeControlImpl : public VolumeControl {
                << " is mute change: " << is_mute_change;
 
     if (!is_volume_change && !is_mute_change) {
-      LOG(ERROR) << __func__
-                 << "Autonomous change but volume and mute did not changed.";
+      log::error("Autonomous change but volume and mute did not changed.");
       return;
     }
 
@@ -414,7 +412,7 @@ class VolumeControlImpl : public VolumeControl {
     }
 
     if (devices.empty() && (is_volume_change || is_mute_change)) {
-      LOG_INFO("No more devices in the group right now");
+      log::info("No more devices in the group right now");
       callbacks_->OnGroupVolumeStateChanged(group_id, device->volume,
                                             device->mute, true);
       return;
@@ -440,7 +438,7 @@ class VolumeControlImpl : public VolumeControl {
                                           uint16_t len, uint8_t* value,
                                           bool is_notification) {
     if (len != 3) {
-      LOG(INFO) << __func__ << ": malformed len=" << loghex(len);
+      log::info("malformed len={}", loghex(len));
       return;
     }
 
@@ -457,13 +455,12 @@ class VolumeControlImpl : public VolumeControl {
     bool is_mute_change = (device->mute != mute);
     device->mute = mute;
 
-    LOG(INFO) << __func__ << " volume " << loghex(device->volume) << " mute "
-              << loghex(device->mute) << " change_counter "
-              << loghex(device->change_counter);
+    log::info("volume {} mute {} change_counter {}", loghex(device->volume),
+              loghex(device->mute), loghex(device->change_counter));
 
     if (!device->IsReady()) {
-      LOG_INFO("Device: %s is not ready yet.",
-               ADDRESS_TO_LOGGABLE_CSTR(device->address));
+      log::info("Device: {} is not ready yet.",
+                ADDRESS_TO_LOGGABLE_CSTR(device->address));
       return;
     }
 
@@ -519,14 +516,14 @@ class VolumeControlImpl : public VolumeControl {
                                    uint8_t* value) {
     device->flags = *value;
 
-    LOG(INFO) << __func__ << " flags " << loghex(device->flags);
+    log::info("flags {}", loghex(device->flags));
   }
 
   void OnExtAudioOutStateChanged(VolumeControlDevice* device,
                                  VolumeOffset* offset, uint16_t len,
                                  uint8_t* value) {
     if (len != 3) {
-      LOG(INFO) << __func__ << ": malformed len=" << loghex(len);
+      log::info("malformed len={}", loghex(len));
       return;
     }
 
@@ -534,14 +531,13 @@ class VolumeControlImpl : public VolumeControl {
     STREAM_TO_UINT16(offset->offset, pp);
     STREAM_TO_UINT8(offset->change_counter, pp);
 
-    LOG(INFO) << __func__ << " " << base::HexEncode(value, len);
-    LOG(INFO) << __func__ << " id: " << loghex(offset->id)
-              << " offset: " << loghex(offset->offset)
-              << " counter: " << loghex(offset->change_counter);
+    log::info("{}", base::HexEncode(value, len));
+    log::info("id: {} offset: {} counter: {}", loghex(offset->id),
+              loghex(offset->offset), loghex(offset->change_counter));
 
     if (!device->IsReady()) {
-      LOG_INFO("Device: %s is not ready yet.",
-               ADDRESS_TO_LOGGABLE_CSTR(device->address));
+      log::info("Device: {} is not ready yet.",
+                ADDRESS_TO_LOGGABLE_CSTR(device->address));
       return;
     }
 
@@ -553,20 +549,19 @@ class VolumeControlImpl : public VolumeControl {
                                     VolumeOffset* offset, uint16_t len,
                                     uint8_t* value) {
     if (len != 4) {
-      LOG(INFO) << __func__ << ": malformed len=" << loghex(len);
+      log::info("malformed len={}", loghex(len));
       return;
     }
 
     uint8_t* pp = value;
     STREAM_TO_UINT32(offset->location, pp);
 
-    LOG(INFO) << __func__ << " " << base::HexEncode(value, len);
-    LOG(INFO) << __func__ << "id " << loghex(offset->id) << "location "
-              << loghex(offset->location);
+    log::info("{}", base::HexEncode(value, len));
+    log::info("id {}location {}", loghex(offset->id), loghex(offset->location));
 
     if (!device->IsReady()) {
-      LOG_INFO("Device: %s is not ready yet.",
-               ADDRESS_TO_LOGGABLE_CSTR(device->address));
+      log::info("Device: {} is not ready yet.",
+                ADDRESS_TO_LOGGABLE_CSTR(device->address));
       return;
     }
 
@@ -579,14 +574,13 @@ class VolumeControlImpl : public VolumeControl {
     VolumeControlDevice* device =
         volume_control_devices_.FindByConnId(connection_id);
     if (!device) {
-      LOG(ERROR) << __func__
-                 << "Skipping unknown device disconnect, connection_id="
-                 << loghex(connection_id);
+      log::error("Skipping unknown device disconnect, connection_id={}",
+                 loghex(connection_id));
       return;
     }
 
-    LOG(INFO) << "Offset Control Point write response handle" << loghex(handle)
-              << " status: " << loghex((int)(status));
+    log::info("Offset Control Point write response handle{} status: {}",
+              loghex(handle), loghex((int)(status)));
 
     /* TODO Design callback API to notify about changes */
   }
@@ -597,11 +591,11 @@ class VolumeControlImpl : public VolumeControl {
     std::string description = std::string(value, value + len);
     if (!base::IsStringUTF8(description)) description = "<invalid utf8 string>";
 
-    LOG(INFO) << __func__ << " " << description;
+    log::info("{}", description);
 
     if (!device->IsReady()) {
-      LOG_INFO("Device: %s is not ready yet.",
-               ADDRESS_TO_LOGGABLE_CSTR(device->address));
+      log::info("Device: {} is not ready yet.",
+                ADDRESS_TO_LOGGABLE_CSTR(device->address));
       return;
     }
 
@@ -615,27 +609,27 @@ class VolumeControlImpl : public VolumeControl {
     VolumeControlDevice* device =
         volume_control_devices_.FindByConnId(connection_id);
     if (!device) {
-      LOG(INFO) << __func__
-                << "unknown connection_id=" << loghex(connection_id);
+      log::info("unknown connection_id={}", loghex(connection_id));
       BtaGattQueue::Clean(connection_id);
       return;
     }
 
     if (status != GATT_SUCCESS) {
       if (status == GATT_DATABASE_OUT_OF_SYNC) {
-        LOG_INFO("Database out of sync for %s, conn_id: 0x%04x",
-                 ADDRESS_TO_LOGGABLE_CSTR(device->address), connection_id);
+        log::info("Database out of sync for {}, conn_id: 0x{:04x}",
+                  ADDRESS_TO_LOGGABLE_CSTR(device->address), connection_id);
         ClearDeviceInformationAndStartSearch(device);
       } else {
-        LOG_ERROR("Failed to register for notification: 0x%04x, status 0x%02x",
-                  handle, status);
+        log::error(
+            "Failed to register for notification: 0x{:04x}, status 0x{:02x}",
+            handle, status);
         device_cleanup_helper(device, true);
       }
       return;
     }
 
-    LOG_INFO("Successfully registered on ccc: 0x%04x, device: %s", handle,
-             ADDRESS_TO_LOGGABLE_CSTR(device->address));
+    log::info("Successfully registered on ccc: 0x{:04x}, device: {}", handle,
+              ADDRESS_TO_LOGGABLE_CSTR(device->address));
 
     verify_device_ready(device, handle);
   }
@@ -644,7 +638,7 @@ class VolumeControlImpl : public VolumeControl {
                                    uint16_t handle, uint16_t len,
                                    const uint8_t* value, void* data) {
     if (!instance) {
-      LOG(ERROR) << __func__ << "No instance=" << handle;
+      log::error("No instance={}", handle);
       return;
     }
 
@@ -657,25 +651,25 @@ class VolumeControlImpl : public VolumeControl {
   }
 
   void Disconnect(const RawAddress& address) override {
-    LOG_INFO(": %s ", ADDRESS_TO_LOGGABLE_CSTR(address));
+    log::info("{}", ADDRESS_TO_LOGGABLE_CSTR(address));
 
     VolumeControlDevice* device =
         volume_control_devices_.FindByAddress(address);
     if (!device) {
-      LOG_WARN("Device not connected to profile %s",
-               ADDRESS_TO_LOGGABLE_CSTR(address));
+      log::warn("Device not connected to profile {}",
+                ADDRESS_TO_LOGGABLE_CSTR(address));
       callbacks_->OnConnectionState(ConnectionState::DISCONNECTED, address);
       return;
     }
 
-    LOG(INFO) << __func__ << " GAP_EVT_CONN_CLOSED: "
-              << ADDRESS_TO_LOGGABLE_STR(device->address);
+    log::info("GAP_EVT_CONN_CLOSED: {}",
+              ADDRESS_TO_LOGGABLE_STR(device->address));
     device->connecting_actively = false;
     device_cleanup_helper(device, true);
   }
 
   void Remove(const RawAddress& address) override {
-    LOG_INFO(": %s", ADDRESS_TO_LOGGABLE_CSTR(address));
+    log::info("{}", ADDRESS_TO_LOGGABLE_CSTR(address));
 
     /* Removes all registrations for connection. */
     BTA_GATTC_CancelOpen(gatt_if_, address, false);
@@ -688,17 +682,16 @@ class VolumeControlImpl : public VolumeControl {
     VolumeControlDevice* device =
         volume_control_devices_.FindByConnId(connection_id);
     if (!device) {
-      LOG(ERROR) << __func__
-                 << " Skipping unknown device disconnect, connection_id="
-                 << loghex(connection_id);
+      log::error("Skipping unknown device disconnect, connection_id={}",
+                 loghex(connection_id));
       return;
     }
 
     if (!device->IsConnected()) {
-      LOG(ERROR) << __func__
-                 << " Skipping disconnect of the already disconnected device, "
-                    "connection_id="
-                 << loghex(connection_id);
+      log::error(
+          "Skipping disconnect of the already disconnected device, "
+          "connection_id={}",
+          loghex(connection_id));
       return;
     }
 
@@ -718,8 +711,7 @@ class VolumeControlImpl : public VolumeControl {
                       });
 
     if (op == ongoing_operations_.end()) {
-      LOG(ERROR) << __func__
-                 << " Could not find operation id: " << operation_id;
+      log::error("Could not find operation id: {}", operation_id);
       return;
     }
 
@@ -770,14 +762,13 @@ class VolumeControlImpl : public VolumeControl {
     VolumeControlDevice* device =
         volume_control_devices_.FindByConnId(connection_id);
     if (!device) {
-      LOG(ERROR) << __func__
-                 << "Skipping unknown device disconnect, connection_id="
-                 << loghex(connection_id);
+      log::error("Skipping unknown device disconnect, connection_id={}",
+                 loghex(connection_id));
       return;
     }
 
-    LOG(INFO) << "Write response handle: " << loghex(handle)
-              << " status: " << loghex((int)(status));
+    log::info("Write response handle: {} status: {}", loghex(handle),
+              loghex((int)(status)));
 
     if (status == GATT_SUCCESS) return;
 
@@ -785,8 +776,8 @@ class VolumeControlImpl : public VolumeControl {
     RemoveDeviceFromOperationList(device->address, PTR_TO_INT(data));
 
     if (status == GATT_DATABASE_OUT_OF_SYNC) {
-      LOG_INFO("Database out of sync for %s",
-               ADDRESS_TO_LOGGABLE_CSTR(device->address));
+      log::info("Database out of sync for {}",
+                ADDRESS_TO_LOGGABLE_CSTR(device->address));
       ClearDeviceInformationAndStartSearch(device);
     }
   }
@@ -796,18 +787,17 @@ class VolumeControlImpl : public VolumeControl {
   }
 
   void StartQueueOperation(void) {
-    LOG(INFO) << __func__;
+    log::info("");
     if (ongoing_operations_.empty()) {
       return;
     };
 
     auto op = &ongoing_operations_.front();
 
-    LOG(INFO) << __func__ << " operation_id: " << op->operation_id_;
+    log::info("operation_id: {}", op->operation_id_);
 
     if (op->IsStarted()) {
-      LOG(INFO) << __func__ << " wait until operation " << op->operation_id_
-                << " is complete";
+      log::info("wait until operation {} is complete", op->operation_id_);
       return;
     }
 
@@ -821,15 +811,14 @@ class VolumeControlImpl : public VolumeControl {
   }
 
   void CancelVolumeOperation(int operation_id) {
-    LOG(INFO) << __func__ << " canceling operation_id: " << operation_id;
+    log::info("canceling operation_id: {}", operation_id);
 
     auto op = find_if(
         ongoing_operations_.begin(), ongoing_operations_.end(),
         [operation_id](auto& it) { return it.operation_id_ == operation_id; });
 
     if (op == ongoing_operations_.end()) {
-      LOG(ERROR) << __func__
-                 << " Could not find operation_id: " << operation_id;
+      log::error("Could not find operation_id: {}", operation_id);
       return;
     }
 
@@ -842,10 +831,10 @@ class VolumeControlImpl : public VolumeControl {
                                      int group_id, bool is_autonomous,
                                      uint8_t opcode,
                                      std::vector<uint8_t>& arguments) {
-    LOG_DEBUG(
-        "num of devices: %zu, group_id: %d, is_autonomous: %s  opcode: %d, arg "
-        "size: %zu",
-        devices.size(), group_id, is_autonomous ? "true" : "false", +opcode,
+    log::debug(
+        "num of devices: {}, group_id: {}, is_autonomous: {}  opcode: {}, arg "
+        "size: {}",
+        devices.size(), group_id, is_autonomous ? "true" : "false", opcode,
         arguments.size());
 
     if (std::find_if(ongoing_operations_.begin(), ongoing_operations_.end(),
@@ -881,9 +870,9 @@ class VolumeControlImpl : public VolumeControl {
       VolumeControlDevice* dev = volume_control_devices_.FindByAddress(
           std::get<RawAddress>(addr_or_group_id));
       if (dev != nullptr) {
-        LOG_DEBUG("Address: %s: isReady: %s",
-                  ADDRESS_TO_LOGGABLE_CSTR(dev->address),
-                  dev->IsReady() ? "true" : "false");
+        log::debug("Address: {}: isReady: {}",
+                   ADDRESS_TO_LOGGABLE_CSTR(dev->address),
+                   dev->IsReady() ? "true" : "false");
         if (dev->IsReady() && (dev->mute != mute)) {
           std::vector<RawAddress> devices = {dev->address};
           PrepareVolumeControlOperation(
@@ -893,16 +882,16 @@ class VolumeControlImpl : public VolumeControl {
     } else {
       /* Handle group change */
       auto group_id = std::get<int>(addr_or_group_id);
-      LOG_DEBUG("group: %d", group_id);
+      log::debug("group: {}", group_id);
       auto csis_api = CsisClient::Get();
       if (!csis_api) {
-        LOG(ERROR) << __func__ << " Csis is not there";
+        log::error("Csis is not there");
         return;
       }
 
       auto devices = csis_api->GetDeviceList(group_id);
       if (devices.empty()) {
-        LOG_ERROR("group id: %d has no devices", group_id);
+        log::error("group id: {} has no devices", group_id);
         return;
       }
 
@@ -927,9 +916,9 @@ class VolumeControlImpl : public VolumeControl {
       }
 
       if (devices.empty()) {
-        LOG_DEBUG(
-            "No need to update mute for group id: %d . muteNotChanged: %d, "
-            "deviceNotReady: %d",
+        log::debug(
+            "No need to update mute for group id: {} . muteNotChanged: {}, "
+            "deviceNotReady: {}",
             group_id, muteNotChanged, deviceNotReady);
         return;
       }
@@ -958,14 +947,14 @@ class VolumeControlImpl : public VolumeControl {
     uint8_t opcode = kControlPointOpcodeSetAbsoluteVolume;
 
     if (std::holds_alternative<RawAddress>(addr_or_group_id)) {
-      LOG_DEBUG("Address: %s: ", ADDRESS_TO_LOGGABLE_CSTR(
+      log::debug("Address: {}:", ADDRESS_TO_LOGGABLE_CSTR(
                                      std::get<RawAddress>(addr_or_group_id)));
       VolumeControlDevice* dev = volume_control_devices_.FindByAddress(
           std::get<RawAddress>(addr_or_group_id));
       if (dev != nullptr) {
-        LOG_DEBUG("Address: %s: isReady: %s",
-                  ADDRESS_TO_LOGGABLE_CSTR(dev->address),
-                  dev->IsReady() ? "true" : "false");
+        log::debug("Address: {}: isReady: {}",
+                   ADDRESS_TO_LOGGABLE_CSTR(dev->address),
+                   dev->IsReady() ? "true" : "false");
         if (dev->IsReady() && (dev->volume != volume)) {
           std::vector<RawAddress> devices = {dev->address};
           RemovePendingVolumeControlOperations(
@@ -980,13 +969,13 @@ class VolumeControlImpl : public VolumeControl {
       DLOG(INFO) << __func__ << " group: " << group_id;
       auto csis_api = CsisClient::Get();
       if (!csis_api) {
-        LOG(ERROR) << __func__ << " Csis is not there";
+        log::error("Csis is not there");
         return;
       }
 
       auto devices = csis_api->GetDeviceList(group_id);
       if (devices.empty()) {
-        LOG_ERROR("group id: %d has no devices", group_id);
+        log::error("group id: {} has no devices", group_id);
         return;
       }
 
@@ -1012,9 +1001,9 @@ class VolumeControlImpl : public VolumeControl {
       }
 
       if (devices.empty()) {
-        LOG_DEBUG(
-            "No need to update volume for group id: %d . volumeNotChanged: %d, "
-            "deviceNotReady: %d",
+        log::debug(
+            "No need to update volume for group id: {} . volumeNotChanged: {}, "
+            "deviceNotReady: {}",
             group_id, volumeNotChanged, deviceNotReady);
         return;
       }
@@ -1032,7 +1021,7 @@ class VolumeControlImpl : public VolumeControl {
     VolumeControlDevice* device =
         volume_control_devices_.FindByAddress(address);
     if (!device) {
-      LOG(ERROR) << __func__ << ", no such device!";
+      log::error("no such device!");
       return;
     }
 
@@ -1055,7 +1044,7 @@ class VolumeControlImpl : public VolumeControl {
     VolumeControlDevice* device =
         volume_control_devices_.FindByAddress(address);
     if (!device) {
-      LOG(ERROR) << __func__ << ", no such device!";
+      log::error("no such device!");
       return;
     }
 
@@ -1068,7 +1057,7 @@ class VolumeControlImpl : public VolumeControl {
     VolumeControlDevice* device =
         volume_control_devices_.FindByAddress(address);
     if (!device) {
-      LOG(ERROR) << __func__ << ", no such device!";
+      log::error("no such device!");
       return;
     }
 
@@ -1080,7 +1069,7 @@ class VolumeControlImpl : public VolumeControl {
     VolumeControlDevice* device =
         volume_control_devices_.FindByAddress(address);
     if (!device) {
-      LOG(ERROR) << __func__ << ", no such device!";
+      log::error("no such device!");
       return;
     }
 
@@ -1094,7 +1083,7 @@ class VolumeControlImpl : public VolumeControl {
     VolumeControlDevice* device =
         volume_control_devices_.FindByAddress(address);
     if (!device) {
-      LOG(ERROR) << __func__ << ", no such device!";
+      log::error("no such device!");
       return;
     }
 
@@ -1102,7 +1091,7 @@ class VolumeControlImpl : public VolumeControl {
   }
 
   void CleanUp() {
-    LOG(INFO) << __func__;
+    log::info("");
     volume_control_devices_.Disconnect(gatt_if_);
     volume_control_devices_.Clear();
     ongoing_operations_.clear();
@@ -1124,7 +1113,7 @@ class VolumeControlImpl : public VolumeControl {
     // VerifyReady sets the device_ready flag if all remaining GATT operations
     // are completed
     if (device->VerifyReady(handle)) {
-      LOG(INFO) << __func__ << " Outstanding reads completed.";
+      log::info("Outstanding reads completed.");
 
       callbacks_->OnDeviceAvailable(device->address,
                                     device->audio_offsets.Size());
@@ -1170,12 +1159,12 @@ class VolumeControlImpl : public VolumeControl {
   void ext_audio_out_control_point_helper(const RawAddress& address,
                                           uint8_t ext_output_id, uint8_t opcode,
                                           const std::vector<uint8_t>* arg) {
-    LOG(INFO) << __func__ << ": " << ADDRESS_TO_LOGGABLE_STR(address)
-              << " id=" << loghex(ext_output_id) << " op=" << loghex(opcode);
+    log::info("{} id={} op={}", ADDRESS_TO_LOGGABLE_STR(address),
+              loghex(ext_output_id), loghex(opcode));
     VolumeControlDevice* device =
         volume_control_devices_.FindByAddress(address);
     if (!device) {
-      LOG(ERROR) << __func__ << ", no such device!";
+      log::error("no such device!");
       return;
     }
     device->ExtAudioOutControlPointOperation(
@@ -1189,7 +1178,7 @@ class VolumeControlImpl : public VolumeControl {
   }
 
   void gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
-    LOG(INFO) << __func__ << " event = " << static_cast<int>(event);
+    log::info("event = {}", static_cast<int>(event));
 
     if (p_data == nullptr) return;
 
@@ -1214,8 +1203,8 @@ class VolumeControlImpl : public VolumeControl {
       case BTA_GATTC_NOTIF_EVT: {
         tBTA_GATTC_NOTIFY& n = p_data->notify;
         if (!n.is_notify || n.len > GATT_MAX_ATTR_LEN) {
-          LOG(ERROR) << __func__ << ": rejected BTA_GATTC_NOTIF_EVT. is_notify="
-                     << n.is_notify << ", len=" << static_cast<int>(n.len);
+          log::error("rejected BTA_GATTC_NOTIF_EVT. is_notify={}, len={}",
+                     n.is_notify, static_cast<int>(n.len));
           break;
         }
         OnNotificationEvent(n.conn_id, n.handle, n.len, n.value);
@@ -1262,7 +1251,7 @@ void VolumeControl::Initialize(bluetooth::vc::VolumeControlCallbacks* callbacks,
                                const base::Closure& initCb) {
   std::scoped_lock<std::mutex> lock(instance_mutex);
   if (instance) {
-    LOG(ERROR) << "Already initialized!";
+    log::error("Already initialized!");
     return;
   }
 
@@ -1278,7 +1267,7 @@ VolumeControl* VolumeControl::Get(void) {
 
 void VolumeControl::AddFromStorage(const RawAddress& address) {
   if (!instance) {
-    LOG(ERROR) << "Not initialized yet";
+    log::error("Not initialized yet");
     return;
   }
 
@@ -1288,7 +1277,7 @@ void VolumeControl::AddFromStorage(const RawAddress& address) {
 void VolumeControl::CleanUp() {
   std::scoped_lock<std::mutex> lock(instance_mutex);
   if (!instance) {
-    LOG(ERROR) << "Not initialized!";
+    log::error("Not initialized!");
     return;
   }
 

@@ -18,6 +18,7 @@
 #include <android_bluetooth_flags.h>
 #include <base/functional/bind.h>
 #include <base/location.h>
+#include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
 #include <flag_macros.h>
 #include <gmock/gmock.h>
@@ -51,6 +52,8 @@
 
 #define TEST_BT com::android::bluetooth::flags
 
+using namespace bluetooth;
+
 namespace {
 
 bool bta_ag_hdl_event(const BT_HDR_RIGID* p_msg) { return true; };
@@ -75,7 +78,7 @@ class BtaAgTest : public testing::Test {
     fake_osi_ = std::make_unique<test::fake::FakeOsi>();
 
     main_thread_start_up();
-    post_on_bt_main([]() { LOG_INFO("Main thread started up"); });
+    post_on_bt_main([]() { log::info("Main thread started up"); });
 
     bta_sys_register(BTA_ID_AG, &bta_ag_reg);
 
@@ -90,7 +93,7 @@ class BtaAgTest : public testing::Test {
   void TearDown() override {
     test::mock::device_esco_parameters::esco_parameters_for_codec = {};
     bta_sys_deregister(BTA_ID_AG);
-    post_on_bt_main([]() { LOG_INFO("Main thread shutting down"); });
+    post_on_bt_main([]() { log::info("Main thread shutting down"); });
     main_thread_shut_down();
   }
 

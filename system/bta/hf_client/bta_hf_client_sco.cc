@@ -17,6 +17,8 @@
  *
  ******************************************************************************/
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 
 #include "bta/hf_client/bta_hf_client_int.h"
@@ -28,6 +30,8 @@
 #define BTA_HF_CLIENT_NO_EDR_ESCO                                \
   (ESCO_PKT_TYPES_MASK_NO_2_EV3 | ESCO_PKT_TYPES_MASK_NO_3_EV3 | \
    ESCO_PKT_TYPES_MASK_NO_2_EV5 | ESCO_PKT_TYPES_MASK_NO_3_EV5)
+
+using namespace bluetooth;
 
 enum {
   BTA_HF_CLIENT_SCO_LISTEN_E,
@@ -51,13 +55,12 @@ static bool bta_hf_client_sco_remove(tBTA_HF_CLIENT_CB* client_cb) {
   bool removed_started = false;
   tBTM_STATUS status;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   if (client_cb->sco_idx != BTM_INVALID_SCO_INDEX) {
     status = BTM_RemoveSco(client_cb->sco_idx);
 
-    LOG_VERBOSE("%s: idx 0x%04x, status:0x%x", __func__, client_cb->sco_idx,
-                status);
+    log::verbose("idx 0x{:04x}, status:0x{:x}", client_cb->sco_idx, status);
 
     if (status == BTM_CMD_STARTED) {
       removed_started = true;
@@ -105,7 +108,7 @@ static void bta_hf_client_sco_conn_rsp(tBTA_HF_CLIENT_CB* client_cb,
   enh_esco_params_t resp;
   uint8_t hci_status = HCI_SUCCESS;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   if (client_cb->sco_state == BTA_HF_CLIENT_SCO_LISTEN_ST) {
     if (p_data->link_type == BTM_LINK_TYPE_SCO) {
@@ -146,13 +149,13 @@ static void bta_hf_client_sco_conn_rsp(tBTA_HF_CLIENT_CB* client_cb,
  ******************************************************************************/
 static void bta_hf_client_esco_connreq_cback(tBTM_ESCO_EVT event,
                                              tBTM_ESCO_EVT_DATA* p_data) {
-  LOG_VERBOSE("%s: %d", __func__, event);
+  log::verbose("{}", event);
 
   tBTA_HF_CLIENT_CB* client_cb =
       bta_hf_client_find_cb_by_sco_handle(p_data->conn_evt.sco_inx);
   if (client_cb == NULL) {
-    LOG_ERROR("%s: wrong SCO handle to control block %d", __func__,
-              p_data->conn_evt.sco_inx);
+    log::error("wrong SCO handle to control block {}",
+               p_data->conn_evt.sco_inx);
     return;
   }
 
@@ -176,11 +179,11 @@ static void bta_hf_client_esco_connreq_cback(tBTM_ESCO_EVT event,
  *
  ******************************************************************************/
 static void bta_hf_client_sco_conn_cback(uint16_t sco_idx) {
-  LOG_VERBOSE("%s: %d", __func__, sco_idx);
+  log::verbose("{}", sco_idx);
 
   tBTA_HF_CLIENT_CB* client_cb = bta_hf_client_find_cb_by_sco_handle(sco_idx);
   if (client_cb == NULL) {
-    LOG_ERROR("%s: wrong SCO handle to control block %d", __func__, sco_idx);
+    log::error("wrong SCO handle to control block {}", sco_idx);
     return;
   }
 
@@ -201,11 +204,11 @@ static void bta_hf_client_sco_conn_cback(uint16_t sco_idx) {
  *
  ******************************************************************************/
 static void bta_hf_client_sco_disc_cback(uint16_t sco_idx) {
-  LOG_VERBOSE("%s: sco_idx %d", __func__, sco_idx);
+  log::verbose("sco_idx {}", sco_idx);
 
   tBTA_HF_CLIENT_CB* client_cb = bta_hf_client_find_cb_by_sco_handle(sco_idx);
   if (client_cb == NULL) {
-    LOG_ERROR("%s: wrong handle to control block %d", __func__, sco_idx);
+    log::error("wrong handle to control block {}", sco_idx);
     return;
   }
 
@@ -229,11 +232,11 @@ static void bta_hf_client_sco_create(tBTA_HF_CLIENT_CB* client_cb,
                                      bool is_orig) {
   tBTM_STATUS status;
 
-  LOG_VERBOSE("%s: %d", __func__, is_orig);
+  log::verbose("{}", is_orig);
 
   /* Make sure this SCO handle is not already in use */
   if (client_cb->sco_idx != BTM_INVALID_SCO_INDEX) {
-    LOG_WARN("%s: Index 0x%04x already in use", __func__, client_cb->sco_idx);
+    log::warn("Index 0x{:04x} already in use", client_cb->sco_idx);
     return;
   }
 
@@ -264,12 +267,11 @@ static void bta_hf_client_sco_create(tBTA_HF_CLIENT_CB* client_cb,
   if (status == BTM_CMD_STARTED && !is_orig) {
     if (!BTM_RegForEScoEvts(client_cb->sco_idx,
                             bta_hf_client_esco_connreq_cback))
-      LOG_VERBOSE("%s: SCO registration success", __func__);
+      log::verbose("SCO registration success");
   }
 
-  LOG_VERBOSE("%s: orig %d, inx 0x%04x, status 0x%x, pkt types 0x%04x",
-              __func__, is_orig, client_cb->sco_idx, status,
-              params.packet_types);
+  log::verbose("orig {}, inx 0x{:04x}, status 0x{:x}, pkt types 0x{:04x}",
+               is_orig, client_cb->sco_idx, status, params.packet_types);
 }
 
 /*******************************************************************************
@@ -284,8 +286,7 @@ static void bta_hf_client_sco_create(tBTA_HF_CLIENT_CB* client_cb,
  ******************************************************************************/
 static void bta_hf_client_sco_event(tBTA_HF_CLIENT_CB* client_cb,
                                     uint8_t event) {
-  LOG_VERBOSE("%s: before state: %d event: %d", __func__, client_cb->sco_state,
-              event);
+  log::verbose("before state: {} event: {}", client_cb->sco_state, event);
 
   switch (client_cb->sco_state) {
     case BTA_HF_CLIENT_SCO_SHUTDOWN_ST:
@@ -310,7 +311,7 @@ static void bta_hf_client_sco_event(tBTA_HF_CLIENT_CB* client_cb,
           break;
 
         default:
-          LOG_WARN("BTA_HF_CLIENT_SCO_SHUTDOWN_ST: Ignoring event %d", event);
+          log::warn("BTA_HF_CLIENT_SCO_SHUTDOWN_ST: Ignoring event {}", event);
           break;
       }
       break;
@@ -345,8 +346,7 @@ static void bta_hf_client_sco_event(tBTA_HF_CLIENT_CB* client_cb,
           break;
 
         default:
-          LOG_WARN("%s: BTA_HF_CLIENT_SCO_LISTEN_ST: Ignoring event %d",
-                   __func__, event);
+          log::warn("BTA_HF_CLIENT_SCO_LISTEN_ST: Ignoring event {}", event);
           break;
       }
       break;
@@ -372,7 +372,7 @@ static void bta_hf_client_sco_event(tBTA_HF_CLIENT_CB* client_cb,
           break;
 
         default:
-          LOG_WARN("BTA_HF_CLIENT_SCO_OPENING_ST: Ignoring event %d", event);
+          log::warn("BTA_HF_CLIENT_SCO_OPENING_ST: Ignoring event {}", event);
           break;
       }
       break;
@@ -401,7 +401,7 @@ static void bta_hf_client_sco_event(tBTA_HF_CLIENT_CB* client_cb,
           break;
 
         default:
-          LOG_WARN("BTA_HF_CLIENT_SCO_OPEN_CL_ST: Ignoring event %d", event);
+          log::warn("BTA_HF_CLIENT_SCO_OPEN_CL_ST: Ignoring event {}", event);
           break;
       }
       break;
@@ -428,7 +428,7 @@ static void bta_hf_client_sco_event(tBTA_HF_CLIENT_CB* client_cb,
           break;
 
         default:
-          LOG_WARN("BTA_HF_CLIENT_SCO_OPEN_ST: Ignoring event %d", event);
+          log::warn("BTA_HF_CLIENT_SCO_OPEN_ST: Ignoring event {}", event);
           break;
       }
       break;
@@ -450,7 +450,7 @@ static void bta_hf_client_sco_event(tBTA_HF_CLIENT_CB* client_cb,
           break;
 
         default:
-          LOG_WARN("BTA_HF_CLIENT_SCO_CLOSING_ST: Ignoring event %d", event);
+          log::warn("BTA_HF_CLIENT_SCO_CLOSING_ST: Ignoring event {}", event);
           break;
       }
       break;
@@ -472,7 +472,7 @@ static void bta_hf_client_sco_event(tBTA_HF_CLIENT_CB* client_cb,
           break;
 
         default:
-          LOG_WARN("BTA_HF_CLIENT_SCO_CLOSE_OP_ST: Ignoring event %d", event);
+          log::warn("BTA_HF_CLIENT_SCO_CLOSE_OP_ST: Ignoring event {}", event);
           break;
       }
       break;
@@ -493,7 +493,7 @@ static void bta_hf_client_sco_event(tBTA_HF_CLIENT_CB* client_cb,
           break;
 
         default:
-          LOG_WARN("BTA_HF_CLIENT_SCO_SHUTTING_ST: Ignoring event %d", event);
+          log::warn("BTA_HF_CLIENT_SCO_SHUTTING_ST: Ignoring event {}", event);
           break;
       }
       break;
@@ -502,7 +502,7 @@ static void bta_hf_client_sco_event(tBTA_HF_CLIENT_CB* client_cb,
       break;
   }
 
-  LOG_VERBOSE("%s: after state: %d", __func__, client_cb->sco_state);
+  log::verbose("after state: {}", client_cb->sco_state);
 }
 
 /*******************************************************************************
@@ -516,13 +516,12 @@ static void bta_hf_client_sco_event(tBTA_HF_CLIENT_CB* client_cb,
  *
  ******************************************************************************/
 void bta_hf_client_sco_listen(tBTA_HF_CLIENT_DATA* p_data) {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   tBTA_HF_CLIENT_CB* client_cb =
       bta_hf_client_find_cb_by_handle(p_data->hdr.layer_specific);
   if (client_cb == NULL) {
-    LOG_ERROR("%s: wrong handle to control block %d", __func__,
-              p_data->hdr.layer_specific);
+    log::error("wrong handle to control block {}", p_data->hdr.layer_specific);
     return;
   }
 
@@ -540,7 +539,7 @@ void bta_hf_client_sco_listen(tBTA_HF_CLIENT_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_hf_client_sco_shutdown(tBTA_HF_CLIENT_CB* client_cb) {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   bta_hf_client_sco_event(client_cb, BTA_HF_CLIENT_SCO_SHUTDOWN_E);
 }
@@ -556,13 +555,12 @@ void bta_hf_client_sco_shutdown(tBTA_HF_CLIENT_CB* client_cb) {
  *
  ******************************************************************************/
 void bta_hf_client_sco_conn_open(tBTA_HF_CLIENT_DATA* p_data) {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   tBTA_HF_CLIENT_CB* client_cb =
       bta_hf_client_find_cb_by_handle(p_data->hdr.layer_specific);
   if (client_cb == NULL) {
-    LOG_ERROR("%s: wrong handle to control block %d", __func__,
-              p_data->hdr.layer_specific);
+    log::error("wrong handle to control block {}", p_data->hdr.layer_specific);
     return;
   }
 
@@ -590,13 +588,12 @@ void bta_hf_client_sco_conn_open(tBTA_HF_CLIENT_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_hf_client_sco_conn_close(tBTA_HF_CLIENT_DATA* p_data) {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   tBTA_HF_CLIENT_CB* client_cb =
       bta_hf_client_find_cb_by_handle(p_data->hdr.layer_specific);
   if (client_cb == NULL) {
-    LOG_ERROR("%s: wrong handle to control block %d", __func__,
-              p_data->hdr.layer_specific);
+    log::error("wrong handle to control block {}", p_data->hdr.layer_specific);
     return;
   }
 
@@ -629,13 +626,12 @@ void bta_hf_client_sco_conn_close(tBTA_HF_CLIENT_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_hf_client_sco_open(tBTA_HF_CLIENT_DATA* p_data) {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   tBTA_HF_CLIENT_CB* client_cb =
       bta_hf_client_find_cb_by_handle(p_data->hdr.layer_specific);
   if (client_cb == NULL) {
-    LOG_ERROR("%s: wrong handle to control block %d", __func__,
-              p_data->hdr.layer_specific);
+    log::error("wrong handle to control block {}", p_data->hdr.layer_specific);
     return;
   }
 
@@ -656,12 +652,11 @@ void bta_hf_client_sco_close(tBTA_HF_CLIENT_DATA* p_data) {
   tBTA_HF_CLIENT_CB* client_cb =
       bta_hf_client_find_cb_by_handle(p_data->hdr.layer_specific);
   if (client_cb == NULL) {
-    LOG_ERROR("%s: wrong handle to control block %d", __func__,
-              p_data->hdr.layer_specific);
+    log::error("wrong handle to control block {}", p_data->hdr.layer_specific);
     return;
   }
 
-  LOG_VERBOSE("%s: sco_idx 0x%x", __func__, client_cb->sco_idx);
+  log::verbose("sco_idx 0x{:x}", client_cb->sco_idx);
 
   if (client_cb->sco_idx != BTM_INVALID_SCO_INDEX) {
     bta_hf_client_sco_event(client_cb, BTA_HF_CLIENT_SCO_CLOSE_E);

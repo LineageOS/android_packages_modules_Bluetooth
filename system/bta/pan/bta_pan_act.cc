@@ -24,6 +24,8 @@
 
 #define LOG_TAG "bluetooth"
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 
 #include "bta/include/bta_pan_co.h"
@@ -36,6 +38,8 @@
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/pan_api.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth;
 
 #if (PAN_INCLUDED == TRUE)
 void bta_pan_sm_execute(tBTA_PAN_SCB* p_scb, uint16_t event,
@@ -177,7 +181,7 @@ static void bta_pan_data_buf_ind_cback(uint16_t handle, const RawAddress& src,
 
   if (sizeof(BT_HDR) + sizeof(tBTA_PAN_DATA_PARAMS) + p_buf->len >
       PAN_BUF_SIZE) {
-    LOG_ERROR("%s: received buffer length too large: %d", __func__, p_buf->len);
+    log::error("received buffer length too large: {}", p_buf->len);
     return;
   }
 
@@ -410,7 +414,7 @@ void bta_pan_open(tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* p_data) {
 
   status = PAN_Connect(p_data->api_open.bd_addr, p_data->api_open.local_role,
                        p_data->api_open.peer_role, &p_scb->handle);
-  LOG_VERBOSE("%s pan connect status: %d", __func__, status);
+  log::verbose("pan connect status: {}", status);
 
   if (status == PAN_SUCCESS) {
     p_scb->bd_addr = p_data->api_open.bd_addr;
@@ -468,7 +472,7 @@ void bta_pan_api_close(tBTA_PAN_SCB* p_scb, UNUSED_ATTR tBTA_PAN_DATA* p_data) {
 void bta_pan_conn_open(tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* p_data) {
   tBTA_PAN bta_pan;
 
-  LOG_VERBOSE("%s pan connection result: %d", __func__, p_data->conn.result);
+  log::verbose("pan connection result: {}", p_data->conn.result);
 
   bta_pan.open.bd_addr = p_scb->bd_addr;
   bta_pan.open.handle = p_scb->handle;

@@ -21,6 +21,7 @@
 #include <android_bluetooth_flags.h>
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
+#include <bluetooth/log.h>
 
 #include <cstdint>
 #include <vector>
@@ -46,6 +47,7 @@
 
 using bluetooth::Uuid;
 using std::vector;
+using namespace bluetooth;
 
 namespace {
 
@@ -99,7 +101,7 @@ static const char* bta_hh_le_rpt_name[4] = {"UNKNOWN", "INPUT", "OUTPUT",
  *
  ******************************************************************************/
 static void bta_hh_le_hid_report_dbg(tBTA_HH_DEV_CB* p_cb) {
-  LOG_VERBOSE("HID Report DB");
+  log::verbose("HID Report DB");
 
   if (p_cb->hid_srvc.state < BTA_HH_SERVICE_DISCOVERED) return;
 
@@ -115,9 +117,9 @@ static void bta_hh_le_hid_report_dbg(tBTA_HH_DEV_CB* p_cb) {
     if (p_rpt->uuid == GATT_UUID_HID_BT_KB_OUTPUT) rpt_name = "Boot KB Output";
     if (p_rpt->uuid == GATT_UUID_HID_BT_MOUSE_INPUT) rpt_name = "Boot MI Input";
 
-    LOG_VERBOSE(
-        "\t\t[%s-0x%04x] [Type:%s], [ReportID:%d] [srvc_inst_id:%d] "
-        "[char_inst_id:%d] [Clt_cfg:%d]",
+    log::verbose(
+        "\t\t[{}-0x{:04x}] [Type:{}], [ReportID:{}] [srvc_inst_id:{}] "
+        "[char_inst_id:{}] [Clt_cfg:{}]",
         rpt_name, p_rpt->uuid,
         ((p_rpt->rpt_type < 4) ? bta_hh_le_rpt_name[p_rpt->rpt_type]
                                : "UNKNOWN"),
@@ -371,7 +373,7 @@ static tBTA_HH_LE_RPT* bta_hh_le_find_rpt_by_idtype(tBTA_HH_LE_RPT* p_head,
   tBTA_HH_LE_RPT* p_rpt = p_head;
   uint8_t i;
 
-  LOG_VERBOSE("r_type:%d rpt_id:%d", r_type, rpt_id);
+  log::verbose("r_type:{} rpt_id:{}", r_type, rpt_id);
 
   for (i = 0; i < BTA_HH_LE_RPT_MAX; i++, p_rpt++) {
     if (p_rpt->in_use && p_rpt->rpt_id == rpt_id && r_type == p_rpt->rpt_type) {
@@ -452,7 +454,7 @@ static const gatt::Descriptor* find_descriptor_by_short_uuid(
       BTA_GATTC_GetCharacteristic(conn_id, char_handle);
 
   if (!p_char) {
-    LOG_WARN("No such characteristic:%d", char_handle);
+    log::warn("No such characteristic:{}", char_handle);
     return NULL;
   }
 
@@ -514,7 +516,7 @@ static void bta_hh_le_save_report_ref(tBTA_HH_DEV_CB* p_dev_cb,
     if (p_rpt->rpt_type > BTA_HH_RPTT_FEATURE) /* invalid report type */
       p_rpt->rpt_type = BTA_HH_RPTT_RESRV;
 
-    LOG_VERBOSE("report ID:%d", p_rpt->rpt_id);
+    log::verbose("report ID:{}", p_rpt->rpt_id);
     tBTA_HH_RPT_CACHE_ENTRY rpt_entry;
     rpt_entry.rpt_id = p_rpt->rpt_id;
     rpt_entry.rpt_type = p_rpt->rpt_type;
@@ -546,7 +548,7 @@ static void bta_hh_le_register_input_notif(tBTA_HH_DEV_CB* p_dev_cb,
                                            bool register_ba) {
   tBTA_HH_LE_RPT* p_rpt = &p_dev_cb->hid_srvc.report[0];
 
-  LOG_VERBOSE("mode:%d", proto_mode);
+  log::verbose("mode:{}", proto_mode);
 
   for (int i = 0; i < BTA_HH_LE_RPT_MAX; i++, p_rpt++) {
     if (p_rpt->rpt_type == BTA_HH_RPTT_INPUT) {
@@ -559,7 +561,7 @@ static void bta_hh_le_register_input_notif(tBTA_HH_DEV_CB* p_dev_cb,
       else if (proto_mode == BTA_HH_PROTO_BOOT_MODE) {
         if (p_rpt->uuid == GATT_UUID_HID_REPORT &&
             p_rpt->client_cfg_value == GATT_CLT_CONFIG_NOTIFICATION) {
-          LOG_VERBOSE("---> Deregister Report ID:%d", p_rpt->rpt_id);
+          log::verbose("---> Deregister Report ID:{}", p_rpt->rpt_id);
           BTA_GATTC_DeregisterForNotifications(bta_hh_cb.gatt_if,
                                                p_dev_cb->link_spec.addrt.bda,
                                                p_rpt->char_inst_id);
@@ -567,7 +569,7 @@ static void bta_hh_le_register_input_notif(tBTA_HH_DEV_CB* p_dev_cb,
         /* register boot reports notification */
         else if (p_rpt->uuid == GATT_UUID_HID_BT_KB_INPUT ||
                  p_rpt->uuid == GATT_UUID_HID_BT_MOUSE_INPUT) {
-          LOG_VERBOSE("<--- Register Boot Report ID:%d", p_rpt->rpt_id);
+          log::verbose("<--- Register Boot Report ID:{}", p_rpt->rpt_id);
           BTA_GATTC_RegisterForNotifications(bta_hh_cb.gatt_if,
                                              p_dev_cb->link_spec.addrt.bda,
                                              p_rpt->char_inst_id);
@@ -576,13 +578,13 @@ static void bta_hh_le_register_input_notif(tBTA_HH_DEV_CB* p_dev_cb,
         if ((p_rpt->uuid == GATT_UUID_HID_BT_KB_INPUT ||
              p_rpt->uuid == GATT_UUID_HID_BT_MOUSE_INPUT) &&
             p_rpt->client_cfg_value == GATT_CLT_CONFIG_NOTIFICATION) {
-          LOG_VERBOSE("--> Deregister Boot Report ID:%d", p_rpt->rpt_id);
+          log::verbose("--> Deregister Boot Report ID:{}", p_rpt->rpt_id);
           BTA_GATTC_DeregisterForNotifications(bta_hh_cb.gatt_if,
                                                p_dev_cb->link_spec.addrt.bda,
                                                p_rpt->char_inst_id);
         } else if (p_rpt->uuid == GATT_UUID_HID_REPORT &&
                    p_rpt->client_cfg_value == GATT_CLT_CONFIG_NOTIFICATION) {
-          LOG_VERBOSE("<--- Register Report ID:%d", p_rpt->rpt_id);
+          log::verbose("<--- Register Report ID:{}", p_rpt->rpt_id);
           BTA_GATTC_RegisterForNotifications(bta_hh_cb.gatt_if,
                                              p_dev_cb->link_spec.addrt.bda,
                                              p_rpt->char_inst_id);
@@ -608,14 +610,14 @@ static void bta_hh_le_deregister_input_notif(tBTA_HH_DEV_CB* p_dev_cb) {
     if (p_rpt->rpt_type == BTA_HH_RPTT_INPUT) {
       if (p_rpt->uuid == GATT_UUID_HID_REPORT &&
           p_rpt->client_cfg_value == GATT_CLT_CONFIG_NOTIFICATION) {
-        LOG_VERBOSE("---> Deregister Report ID:%d", p_rpt->rpt_id);
+        log::verbose("---> Deregister Report ID:{}", p_rpt->rpt_id);
         BTA_GATTC_DeregisterForNotifications(bta_hh_cb.gatt_if,
                                              p_dev_cb->link_spec.addrt.bda,
                                              p_rpt->char_inst_id);
       } else if ((p_rpt->uuid == GATT_UUID_HID_BT_KB_INPUT ||
                   p_rpt->uuid == GATT_UUID_HID_BT_MOUSE_INPUT) &&
                  p_rpt->client_cfg_value == GATT_CLT_CONFIG_NOTIFICATION) {
-        LOG_VERBOSE("---> Deregister Boot Report ID:%d", p_rpt->rpt_id);
+        log::verbose("---> Deregister Boot Report ID:{}", p_rpt->rpt_id);
         BTA_GATTC_DeregisterForNotifications(bta_hh_cb.gatt_if,
                                              p_dev_cb->link_spec.addrt.bda,
                                              p_rpt->char_inst_id);
@@ -695,7 +697,7 @@ static void write_rpt_ctl_cfg_cb(uint16_t conn_id, tGATT_STATUS status,
       break;
 
     default:
-      LOG_ERROR("Unknown char ID clt cfg:0x%04x", char_uuid);
+      log::error("Unknown char ID clt cfg:0x{:04x}", char_uuid);
   }
 }
 /*******************************************************************************
@@ -773,8 +775,8 @@ static bool bta_hh_le_set_protocol_mode(tBTA_HH_DEV_CB* p_cb,
                                         tBTA_HH_PROTO_MODE mode) {
   tBTA_HH_CBDATA cback_data;
 
-  LOG_VERBOSE("attempt mode:%s",
-              (mode == BTA_HH_PROTO_RPT_MODE) ? "Report" : "Boot");
+  log::verbose("attempt mode:{}",
+               (mode == BTA_HH_PROTO_RPT_MODE) ? "Report" : "Boot");
 
   cback_data.handle = p_cb->hid_handle;
   /* boot mode is not supported in the remote device */
@@ -782,7 +784,7 @@ static bool bta_hh_le_set_protocol_mode(tBTA_HH_DEV_CB* p_cb,
     p_cb->mode = BTA_HH_PROTO_RPT_MODE;
 
     if (mode == BTA_HH_PROTO_BOOT_MODE) {
-      LOG_ERROR("Set Boot Mode failed!! No PROTO_MODE Char!");
+      log::error("Set Boot Mode failed!! No PROTO_MODE Char!");
       cback_data.status = BTA_HH_ERR;
     } else {
       /* if set to report mode, need to de-register all input report
@@ -840,9 +842,9 @@ static void get_protocol_mode_cb(uint16_t conn_id, tGATT_STATUS status,
     p_dev_cb->mode = hs_data.rsp_data.proto_mode;
   }
 
-  LOG_VERBOSE("LE GET_PROTOCOL Mode=[%s]",
-              (hs_data.rsp_data.proto_mode == BTA_HH_PROTO_RPT_MODE) ? "Report"
-                                                                     : "Boot");
+  log::verbose("LE GET_PROTOCOL Mode=[{}]",
+               (hs_data.rsp_data.proto_mode == BTA_HH_PROTO_RPT_MODE) ? "Report"
+                                                                      : "Boot");
 
   p_dev_cb->w4_evt = 0;
   (*bta_hh_cb.p_cback)(BTA_HH_GET_PROTO_EVT, (tBTA_HH*)&hs_data);
@@ -893,25 +895,25 @@ static void bta_hh_le_dis_cback(const RawAddress& addr,
   tBTA_HH_DEV_CB* p_cb = bta_hh_le_find_dev_cb_by_bda(link_spec);
 
   if (p_cb == nullptr) {
-    LOG_WARN("Unknown address");
+    log::warn("Unknown address");
     return;
   }
 
   if (p_cb->status == BTA_HH_ERR_SDP) {
-    LOG_WARN("HID service was not found");
+    log::warn("HID service was not found");
     return;
   }
 
   if (p_dis_value == nullptr) {
-    LOG_WARN("Invalid value");
+    log::warn("Invalid value");
     return;
   }
 
   p_cb->disc_active &= ~BTA_HH_LE_DISC_DIS;
   /* plug in the PnP info for this device */
   if (p_dis_value->attr_mask & DIS_ATTR_PNP_ID_BIT) {
-    LOG_VERBOSE(
-        "Plug in PnP info: product_id=%02x, vendor_id=%04x, version=%04x",
+    log::verbose(
+        "Plug in PnP info: product_id={:02x}, vendor_id={:04x}, version={:04x}",
         p_dis_value->pnp_id.product_id, p_dis_value->pnp_id.vendor_id,
         p_dis_value->pnp_id.product_version);
     p_cb->dscp_info.product_id = p_dis_value->pnp_id.product_id;
@@ -939,7 +941,7 @@ static void bta_hh_le_pri_service_discovery(tBTA_HH_DEV_CB* p_cb) {
   /* read DIS info */
   if (!DIS_ReadDISInfo(p_cb->link_spec.addrt.bda, bta_hh_le_dis_cback,
                        DIS_ATTR_PNP_ID_BIT)) {
-    LOG_ERROR("read DIS failed");
+    log::error("read DIS failed");
     p_cb->disc_active &= ~BTA_HH_LE_DISC_DIS;
   }
 
@@ -970,7 +972,7 @@ static void bta_hh_le_encrypt_cback(const RawAddress* bd_addr,
 
   tBTA_HH_DEV_CB* p_dev_cb = bta_hh_get_cb(link_spec);
   if (p_dev_cb == nullptr) {
-    LOG_ERROR("unexpected encryption callback, ignore");
+    log::error("unexpected encryption callback, ignore");
     return;
   }
 
@@ -994,18 +996,18 @@ static void bta_hh_le_encrypt_cback(const RawAddress* bd_addr,
  ******************************************************************************/
 void bta_hh_security_cmpl(tBTA_HH_DEV_CB* p_cb,
                           UNUSED_ATTR const tBTA_HH_DATA* p_buf) {
-  LOG_VERBOSE("addr:%s, status:%d", ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec),
-              p_cb->status);
+  log::verbose("addr:{}, status:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec),
+               p_cb->status);
   if (p_cb->status == BTA_HH_OK) {
     if (p_cb->hid_srvc.state < BTA_HH_SERVICE_DISCOVERED) {
-      LOG_DEBUG("No reports loaded, try to load");
+      log::debug("No reports loaded, try to load");
 
       /* start loading the cache if not in stack */
       tBTA_HH_RPT_CACHE_ENTRY* p_rpt_cache;
       uint8_t num_rpt = 0;
       if ((p_rpt_cache = bta_hh_le_co_cache_load(p_cb->link_spec, &num_rpt,
                                                  p_cb->app_id)) != NULL) {
-        LOG_DEBUG("Cache found, no need to perform service discovery");
+        log::debug("Cache found, no need to perform service discovery");
         bta_hh_process_cache_rpt(p_cb, p_rpt_cache, num_rpt);
       }
     }
@@ -1013,7 +1015,7 @@ void bta_hh_security_cmpl(tBTA_HH_DEV_CB* p_cb,
     /*  discovery has been done for HID service */
     if (p_cb->app_id != 0 &&
         p_cb->hid_srvc.state >= BTA_HH_SERVICE_DISCOVERED) {
-      LOG_VERBOSE("discovery has been done for HID service");
+      log::verbose("discovery has been done for HID service");
       /* configure protocol mode */
       if (!bta_hh_le_set_protocol_mode(p_cb, p_cb->mode)) {
         bta_hh_le_open_cmpl(p_cb);
@@ -1021,19 +1023,19 @@ void bta_hh_security_cmpl(tBTA_HH_DEV_CB* p_cb,
     }
     /* start primary service discovery for HID service */
     else {
-      LOG_VERBOSE("Starting service discovery");
+      log::verbose("Starting service discovery");
       bta_hh_le_pri_service_discovery(p_cb);
     }
   }
   else if(p_cb->btm_status == BTM_ERR_KEY_MISSING) {
-    LOG_ERROR("Received encryption failed status:%s btm_status:%s",
-              bta_hh_status_text(p_cb->status).c_str(),
-              btm_status_text(p_cb->btm_status).c_str());
+    log::error("Received encryption failed status:{} btm_status:{}",
+               bta_hh_status_text(p_cb->status),
+               btm_status_text(p_cb->btm_status));
     bta_hh_le_api_disc_act(p_cb);
   } else {
-    LOG_ERROR("Encryption failed status:%s btm_status:%s",
-              bta_hh_status_text(p_cb->status).c_str(),
-              btm_status_text(p_cb->btm_status).c_str());
+    log::error("Encryption failed status:{} btm_status:{}",
+               bta_hh_status_text(p_cb->status),
+               btm_status_text(p_cb->btm_status));
     if (!(p_cb->status == BTA_HH_ERR_SEC &&
           (p_cb->btm_status == BTM_ERR_PROCESSING ||
           p_cb->btm_status == BTM_FAILED_ON_SECURITY ||
@@ -1092,7 +1094,7 @@ static void bta_hh_clear_service_cache(tBTA_HH_DEV_CB* p_cb) {
  ******************************************************************************/
 void bta_hh_start_security(tBTA_HH_DEV_CB* p_cb,
                            UNUSED_ATTR const tBTA_HH_DATA* p_buf) {
-  LOG_VERBOSE("addr:%s", ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec.addrt.bda));
+  log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec.addrt.bda));
   if (BTM_SecIsSecurityPending(p_cb->link_spec.addrt.bda)) {
     /* if security collision happened, wait for encryption done */
     p_cb->security_pending = true;
@@ -1101,23 +1103,23 @@ void bta_hh_start_security(tBTA_HH_DEV_CB* p_cb,
 
   /* if link has been encrypted */
   if (BTM_IsEncrypted(p_cb->link_spec.addrt.bda, BT_TRANSPORT_LE)) {
-    LOG_DEBUG("addr:%s already encrypted",
-              ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec.addrt.bda));
+    log::debug("addr:{} already encrypted",
+               ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec.addrt.bda));
     p_cb->status = BTA_HH_OK;
     bta_hh_sm_execute(p_cb, BTA_HH_ENC_CMPL_EVT, NULL);
   }
   /* if bonded and link not encrypted */
   else if (BTM_IsLinkKeyKnown(p_cb->link_spec.addrt.bda, BT_TRANSPORT_LE)) {
-    LOG_DEBUG("addr:%s bonded, not encrypted",
-              ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec.addrt.bda));
+    log::debug("addr:{} bonded, not encrypted",
+               ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec.addrt.bda));
     p_cb->status = BTA_HH_ERR_AUTH_FAILED;
     BTM_SetEncryption(p_cb->link_spec.addrt.bda, BT_TRANSPORT_LE,
                       bta_hh_le_encrypt_cback, NULL, BTM_BLE_SEC_ENCRYPT);
   }
   /* unbonded device, report security error here */
   else {
-    LOG_DEBUG("addr:%s not bonded",
-              ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec.addrt.bda));
+    log::debug("addr:{} not bonded",
+               ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec.addrt.bda));
     p_cb->status = BTA_HH_ERR_AUTH_FAILED;
     bta_hh_clear_service_cache(p_cb);
     BTM_SetEncryption(p_cb->link_spec.addrt.bda, BT_TRANSPORT_LE,
@@ -1141,8 +1143,8 @@ void bta_hh_gatt_open(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_buf) {
   /* if received invalid callback data , ignore it */
   if (p_cb == NULL || p_data == NULL) return;
 
-  LOG_VERBOSE("BTA_GATTC_OPEN_EVT bda=%s status=%d",
-              ADDRESS_TO_LOGGABLE_CSTR(p_data->remote_bda), p_data->status);
+  log::verbose("BTA_GATTC_OPEN_EVT bda={} status={}",
+               ADDRESS_TO_LOGGABLE_CSTR(p_data->remote_bda), p_data->status);
 
   if (p_data->status == GATT_SUCCESS) {
     p_cb->hid_handle = bta_hh_le_get_le_dev_hdl(p_cb->index);
@@ -1159,8 +1161,8 @@ void bta_hh_gatt_open(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_buf) {
 
     BtaGattQueue::Clean(p_cb->conn_id);
 
-    LOG_VERBOSE("hid_handle=0x%2x conn_id=0x%04x cb_index=%d", p_cb->hid_handle,
-                p_cb->conn_id, p_cb->index);
+    log::verbose("hid_handle=0x{:2x} conn_id=0x{:04x} cb_index={}",
+                 p_cb->hid_handle, p_cb->conn_id, p_cb->index);
 
     bta_hh_sm_execute(p_cb, BTA_HH_START_ENC_EVT, NULL);
 
@@ -1188,15 +1190,15 @@ static void bta_hh_le_close(const tBTA_GATTC_CLOSE& gattc_data) {
 
   tBTA_HH_DEV_CB* p_cb = bta_hh_le_find_dev_cb_by_bda(link_spec);
   if (p_cb == nullptr) {
-    LOG_WARN("unknown device:%s",
-             ADDRESS_TO_LOGGABLE_CSTR(gattc_data.remote_bda));
+    log::warn("unknown device:{}",
+              ADDRESS_TO_LOGGABLE_CSTR(gattc_data.remote_bda));
     return;
   }
 
   if (p_cb->hid_srvc.state == BTA_HH_SERVICE_CHANGED) {
     /* Service change would have already prompted a local disconnection */
-    LOG_WARN("Disconnected after service changed indication:%s",
-             ADDRESS_TO_LOGGABLE_CSTR(gattc_data.remote_bda));
+    log::warn("Disconnected after service changed indication:{}",
+              ADDRESS_TO_LOGGABLE_CSTR(gattc_data.remote_bda));
     return;
   }
 
@@ -1232,7 +1234,7 @@ static void bta_hh_le_close(const tBTA_GATTC_CLOSE& gattc_data) {
  ******************************************************************************/
 static void bta_hh_le_gatt_disc_cmpl(tBTA_HH_DEV_CB* p_cb,
                                      tBTA_HH_STATUS status) {
-  LOG_VERBOSE("status:%d", status);
+  log::verbose("status:{}", status);
 
   /* if open sucessful or protocol mode not desired, keep the connection open
    * but inform app */
@@ -1254,12 +1256,12 @@ static void read_hid_info_cb(uint16_t conn_id, tGATT_STATUS status,
                              uint16_t handle, uint16_t len, uint8_t* value,
                              void* data) {
   if (status != GATT_SUCCESS) {
-    LOG_ERROR("error:%d", status);
+    log::error("error:{}", status);
     return;
   }
 
   if (len != 4) {
-    LOG_ERROR("wrong length:%d", len);
+    log::error("wrong length:{}", len);
     return;
   }
 
@@ -1275,7 +1277,7 @@ static void read_hid_report_map_cb(uint16_t conn_id, tGATT_STATUS status,
                                    uint16_t handle, uint16_t len,
                                    uint8_t* value, void* data) {
   if (status != GATT_SUCCESS) {
-    LOG_ERROR("error reading characteristic:%d", status);
+    log::error("error reading characteristic:{}", status);
     return;
   }
 
@@ -1298,14 +1300,14 @@ static void read_ext_rpt_ref_desc_cb(uint16_t conn_id, tGATT_STATUS status,
                                      uint16_t handle, uint16_t len,
                                      uint8_t* value, void* data) {
   if (status != GATT_SUCCESS) {
-    LOG_ERROR("error:%d", status);
+    log::error("error:{}", status);
     return;
   }
 
   /* if the length of the descriptor value is right, parse it assume it's a 16
    * bits UUID */
   if (len != Uuid::kNumBytes16) {
-    LOG_ERROR("we support only 16bit UUID %d", len);
+    log::error("we support only 16bit UUID {}", len);
     return;
   }
 
@@ -1314,15 +1316,15 @@ static void read_ext_rpt_ref_desc_cb(uint16_t conn_id, tGATT_STATUS status,
 
   STREAM_TO_UINT16(p_dev_cb->hid_srvc.ext_rpt_ref, pp);
 
-  LOG_VERBOSE("External Report Reference UUID 0x%04x",
-              p_dev_cb->hid_srvc.ext_rpt_ref);
+  log::verbose("External Report Reference UUID 0x{:04x}",
+               p_dev_cb->hid_srvc.ext_rpt_ref);
 }
 
 static void read_report_ref_desc_cb(uint16_t conn_id, tGATT_STATUS status,
                                     uint16_t handle, uint16_t len,
                                     uint8_t* value, void* data) {
   if (status != GATT_SUCCESS) {
-    LOG_ERROR("error:%d", status);
+    log::error("error:{}", status);
     return;
   }
 
@@ -1330,7 +1332,7 @@ static void read_report_ref_desc_cb(uint16_t conn_id, tGATT_STATUS status,
   const gatt::Descriptor* p_desc = BTA_GATTC_GetDescriptor(conn_id, handle);
 
   if (!p_desc) {
-    LOG_ERROR("error: descriptor is null!");
+    log::error("error: descriptor is null!");
     return;
   }
 
@@ -1350,12 +1352,12 @@ static void read_pref_conn_params_cb(uint16_t conn_id, tGATT_STATUS status,
                                      uint16_t handle, uint16_t len,
                                      uint8_t* value, void* data) {
   if (status != GATT_SUCCESS) {
-    LOG_ERROR("error:%d", status);
+    log::error("error:{}", status);
     return;
   }
 
   if (len != 8) {
-    LOG_ERROR("we support only 16bit UUID:%d", len);
+    log::error("we support only 16bit UUID:{}", len);
     return;
   }
 
@@ -1383,8 +1385,8 @@ static void read_pref_conn_params_cb(uint16_t conn_id, tGATT_STATUS status,
       latency > BTM_BLE_CONN_LATENCY_MAX ||
       timeout < BTM_BLE_CONN_SUP_TOUT_MIN ||
       timeout > BTM_BLE_CONN_SUP_TOUT_MAX || max_interval < min_interval) {
-    LOG_ERROR(
-        "Invalid connection parameters. min=%d, max=%d, latency=%d, timeout=%d",
+    log::error(
+        "Invalid connection parameters. min={}, max={}, latency={}, timeout={}",
         min_interval, max_interval, latency, timeout);
     return;
   }
@@ -1420,8 +1422,7 @@ static void bta_hh_le_search_hid_chars(tBTA_HH_DEV_CB* p_dev_cb,
     if (!charac.uuid.Is16Bit()) continue;
 
     uint16_t uuid16 = charac.uuid.As16Bit();
-    LOG_INFO("%s %s", bta_hh_uuid_to_str(uuid16),
-             charac.uuid.ToString().c_str());
+    log::info("{} {}", bta_hh_uuid_to_str(uuid16), charac.uuid.ToString());
 
     switch (uuid16) {
       case GATT_UUID_HID_CONTROL_POINT:
@@ -1447,7 +1448,7 @@ static void bta_hh_le_search_hid_chars(tBTA_HH_DEV_CB* p_dev_cb,
             p_dev_cb, p_dev_cb->hid_srvc.srvc_inst_id, GATT_UUID_HID_REPORT,
             charac.value_handle);
         if (p_rpt == NULL) {
-          LOG_ERROR("Add report entry failed !!!");
+          log::error("Add report entry failed !!!");
           break;
         }
 
@@ -1464,13 +1465,13 @@ static void bta_hh_le_search_hid_chars(tBTA_HH_DEV_CB* p_dev_cb,
       case GATT_UUID_HID_BT_KB_INPUT:
         if (bta_hh_le_find_alloc_report_entry(p_dev_cb, service->handle, uuid16,
                                               charac.value_handle) == NULL)
-          LOG_ERROR("Add report entry failed !!!");
+          log::error("Add report entry failed !!!");
 
         break;
 
       default:
-        LOG_VERBOSE("not processing %s 0x%04d", bta_hh_uuid_to_str(uuid16),
-                    uuid16);
+        log::verbose("not processing {} 0x{:04d}", bta_hh_uuid_to_str(uuid16),
+                     uuid16);
     }
   }
 
@@ -1500,7 +1501,7 @@ static void bta_hh_le_srvc_search_cmpl(tBTA_GATTC_SEARCH_CMPL* p_data) {
   if (p_dev_cb == NULL) return;
 
   if (p_data->status != GATT_SUCCESS) {
-    LOG_ERROR("Service discovery failed %d", p_data->status);
+    log::error("Service discovery failed {}", p_data->status);
     p_dev_cb->status = BTA_HH_ERR_SDP;
     bta_hh_le_api_disc_act(p_dev_cb);
     return;
@@ -1524,8 +1525,8 @@ static void bta_hh_le_srvc_search_cmpl(tBTA_GATTC_SEARCH_CMPL* p_data) {
 
       bta_hh_le_search_hid_chars(p_dev_cb, &service);
 
-      LOG_VERBOSE("have HID service inst_id=%d",
-                  p_dev_cb->hid_srvc.srvc_inst_id);
+      log::verbose("have HID service inst_id={}",
+                   p_dev_cb->hid_srvc.srvc_inst_id);
     } else if (service.uuid == Uuid::From16Bit(UUID_SERVCLASS_SCAN_PARAM)) {
       scp_service = &service;
     } else if (service.uuid == Uuid::From16Bit(UUID_SERVCLASS_GAP_SERVER)) {
@@ -1534,7 +1535,7 @@ static void bta_hh_le_srvc_search_cmpl(tBTA_GATTC_SEARCH_CMPL* p_data) {
   }
 
   if (!have_hid) {
-    LOG_ERROR("HID service not found");
+    log::error("HID service not found");
     p_dev_cb->status = BTA_HH_ERR_SDP;
     bta_hh_le_api_disc_act(p_dev_cb);
     return;
@@ -1584,15 +1585,15 @@ static void bta_hh_le_input_rpt_notify(tBTA_GATTC_NOTIFY* p_data) {
   tBTA_HH_LE_RPT* p_rpt;
 
   if (p_dev_cb == NULL) {
-    LOG_ERROR("Unknown device, conn_id: 0x%04x", p_data->conn_id);
+    log::error("Unknown device, conn_id: 0x{:04x}", p_data->conn_id);
     return;
   }
 
   const gatt::Characteristic* p_char =
       BTA_GATTC_GetCharacteristic(p_dev_cb->conn_id, p_data->handle);
   if (p_char == NULL) {
-    LOG_ERROR("Unknown Characteristic, conn_id:0x%04x, handle:0x%04x",
-              p_dev_cb->conn_id, p_data->handle);
+    log::error("Unknown Characteristic, conn_id:0x{:04x}, handle:0x{:04x}",
+               p_dev_cb->conn_id, p_data->handle);
     return;
   }
 
@@ -1604,8 +1605,8 @@ static void bta_hh_le_input_rpt_notify(tBTA_GATTC_NOTIFY* p_data) {
   p_rpt = bta_hh_le_find_report_entry(
       p_dev_cb, p_svc->handle, p_char->uuid.As16Bit(), p_char->value_handle);
   if (p_rpt == NULL) {
-    LOG_ERROR("Unknown Report, uuid:%s, handle:0x%04x",
-              p_char->uuid.ToString().c_str(), p_char->value_handle);
+    log::error("Unknown Report, uuid:{}, handle:0x{:04x}",
+               p_char->uuid.ToString(), p_char->value_handle);
     return;
   }
 
@@ -1614,7 +1615,7 @@ static void bta_hh_le_input_rpt_notify(tBTA_GATTC_NOTIFY* p_data) {
   else if (p_char->uuid == Uuid::From16Bit(GATT_UUID_HID_BT_KB_INPUT))
     app_id = BTA_HH_APP_ID_KB;
 
-  LOG_VERBOSE("report ID: %d", p_rpt->rpt_id);
+  log::verbose("report ID: {}", p_rpt->rpt_id);
 
   /* need to append report ID to the head of data */
   if (p_rpt->rpt_id != 0) {
@@ -1650,8 +1651,8 @@ void bta_hh_le_open_fail(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
                  base::StringPrintf(
                      "%s reason %s", (p_cb->is_le_device) ? "le" : "classic",
                      gatt_disconnection_reason_text(le_close->reason).c_str()));
-  LOG_WARN("Open failed for device:%s",
-           ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec.addrt.bda));
+  log::warn("Open failed for device:{}",
+            ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec.addrt.bda));
 
   /* open failure in the middle of service discovery, clear all services */
   if (p_cb->disc_active & BTA_HH_LE_DISC_HIDS) {
@@ -1659,7 +1660,7 @@ void bta_hh_le_open_fail(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
   }
 
   if (p_cb->is_le_device && p_cb->status != BTA_HH_ERR_SDP) {
-    LOG_DEBUG("gd_acl: Re-adding HID device to acceptlist");
+    log::debug("gd_acl: Re-adding HID device to acceptlist");
     // gd removes from bg list after failed connection
     // Correct the cached state to allow re-add to acceptlist.
     bta_hh_le_add_dev_bg_conn(p_cb);
@@ -1721,10 +1722,10 @@ void bta_hh_gatt_close(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
       case GATT_CONN_FAILED_ESTABLISHMENT:
       case GATT_CONN_TERMINATE_PEER_USER:
       case GATT_CONN_TIMEOUT:
-        LOG_DEBUG(
-            "gd_acl: add into acceptlist for reconnection device:%s reason:%s",
+        log::debug(
+            "gd_acl: add into acceptlist for reconnection device:{} reason:{}",
             ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec),
-            gatt_disconnection_reason_text(le_close->reason).c_str());
+            gatt_disconnection_reason_text(le_close->reason));
         // gd removes from bg list after successful connection
         // Correct the cached state to allow re-add to acceptlist.
         bta_hh_le_add_dev_bg_conn(p_cb);
@@ -1736,11 +1737,11 @@ void bta_hh_gatt_close(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
       case GATT_CONN_OK:
       case GATT_CONN_TERMINATE_LOCAL_HOST:
       default:
-        LOG_DEBUG(
-            "gd_acl: SKIP add into acceptlist for reconnection device:%s "
-            "reason:%s",
+        log::debug(
+            "gd_acl: SKIP add into acceptlist for reconnection device:{} "
+            "reason:{}",
             ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec),
-            gatt_disconnection_reason_text(le_close->reason).c_str());
+            gatt_disconnection_reason_text(le_close->reason));
         break;
     }
   }
@@ -1757,7 +1758,7 @@ void bta_hh_gatt_close(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
  ******************************************************************************/
 void bta_hh_le_api_disc_act(tBTA_HH_DEV_CB* p_cb) {
   if (p_cb->conn_id == GATT_INVALID_CONN_ID) {
-    LOG_ERROR("Tried to disconnect HID device with invalid id");
+    log::error("Tried to disconnect HID device with invalid id");
     return;
   }
 
@@ -1783,14 +1784,14 @@ static void read_report_cb(uint16_t conn_id, tGATT_STATUS status,
                            void* data) {
   tBTA_HH_DEV_CB* p_dev_cb = (tBTA_HH_DEV_CB*)data;
   if (p_dev_cb->w4_evt != BTA_HH_GET_RPT_EVT) {
-    LOG_WARN("Unexpected Read response, w4_evt=%d", p_dev_cb->w4_evt);
+    log::warn("Unexpected Read response, w4_evt={}", p_dev_cb->w4_evt);
     return;
   }
 
   const gatt::Characteristic* p_char =
       BTA_GATTC_GetCharacteristic(conn_id, handle);
   if (p_char == nullptr) {
-    LOG_ERROR("Unknown handle");
+    log::error("Unknown handle");
     return;
   }
 
@@ -1803,7 +1804,7 @@ static void read_report_cb(uint16_t conn_id, tGATT_STATUS status,
     case GATT_UUID_BATTERY_LEVEL:
       break;
     default:
-      LOG_ERROR("Unexpected Read UUID: 0x%04x", char_uuid);
+      log::error("Unexpected Read UUID: 0x{:04x}", char_uuid);
       return;
   }
 
@@ -1855,7 +1856,7 @@ static void bta_hh_le_get_rpt(tBTA_HH_DEV_CB* p_cb, tBTA_HH_RPT_TYPE r_type,
       p_cb->hid_srvc.report, p_cb->mode, r_type, rpt_id);
 
   if (p_rpt == NULL) {
-    LOG_ERROR("no matching report");
+    log::error("no matching report");
     return;
   }
 
@@ -1873,7 +1874,7 @@ static void write_report_cb(uint16_t conn_id, tGATT_STATUS status,
 
   if (cb_evt == 0) return;
 
-  LOG_VERBOSE("w4_evt:%d", p_dev_cb->w4_evt);
+  log::verbose("w4_evt:{}", p_dev_cb->w4_evt);
 
   const gatt::Characteristic* p_char =
       BTA_GATTC_GetCharacteristic(conn_id, handle);
@@ -1908,7 +1909,7 @@ static void bta_hh_le_write_rpt(tBTA_HH_DEV_CB* p_cb, tBTA_HH_RPT_TYPE r_type,
   uint8_t rpt_id;
 
   if (p_buf == NULL || p_buf->len == 0) {
-    LOG_ERROR("Illegal data");
+    log::error("Illegal data");
     return;
   }
 
@@ -1920,7 +1921,7 @@ static void bta_hh_le_write_rpt(tBTA_HH_DEV_CB* p_cb, tBTA_HH_RPT_TYPE r_type,
   p_rpt = bta_hh_le_find_rpt_by_idtype(p_cb->hid_srvc.report, p_cb->mode,
                                        r_type, rpt_id);
   if (p_rpt == NULL) {
-    LOG_ERROR("no matching report");
+    log::error("no matching report");
     osi_free(p_buf);
     return;
   }
@@ -2004,8 +2005,8 @@ void bta_hh_le_write_dev_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
       break;
 
     default:
-      LOG_ERROR("unsupported transaction for BLE HID device:%d",
-                p_data->api_sndcmd.t_type);
+      log::error("unsupported transaction for BLE HID device:{}",
+                 p_data->api_sndcmd.t_type);
       break;
   }
 }
@@ -2025,7 +2026,7 @@ void bta_hh_le_get_dscp_act(tBTA_HH_DEV_CB* p_cb) {
       p_cb->dscp_info.descriptor.dl_len = p_cb->hid_srvc.descriptor.dl_len;
       p_cb->dscp_info.descriptor.dsc_list = p_cb->hid_srvc.descriptor.dsc_list;
     } else {
-      LOG_WARN("hid_srvc.descriptor.dl_len is 0");
+      log::warn("hid_srvc.descriptor.dl_len is 0");
     }
 
     (*bta_hh_cb.p_cback)(BTA_HH_GET_DSCP_EVT, (tBTA_HH*)&p_cb->dscp_info);
@@ -2096,8 +2097,8 @@ uint8_t bta_hh_le_add_device(tBTA_HH_DEV_CB* p_cb,
  ******************************************************************************/
 void bta_hh_le_remove_dev_bg_conn(tBTA_HH_DEV_CB* p_dev_cb) {
   if (p_dev_cb->in_bg_conn) {
-    LOG_DEBUG("Removing from background connection device:%s",
-              ADDRESS_TO_LOGGABLE_CSTR(p_dev_cb->link_spec));
+    log::debug("Removing from background connection device:{}",
+               ADDRESS_TO_LOGGABLE_CSTR(p_dev_cb->link_spec));
     p_dev_cb->in_bg_conn = false;
 
     BTA_GATTC_CancelOpen(bta_hh_cb.gatt_if, p_dev_cb->link_spec.addrt.bda,
@@ -2111,8 +2112,8 @@ void bta_hh_le_remove_dev_bg_conn(tBTA_HH_DEV_CB* p_dev_cb) {
 static void bta_hh_le_service_changed(tAclLinkSpec link_spec) {
   tBTA_HH_DEV_CB* p_cb = bta_hh_le_find_dev_cb_by_bda(link_spec);
   if (p_cb == nullptr) {
-    LOG_WARN("Received close event with unknown device:%s",
-             ADDRESS_TO_LOGGABLE_CSTR(link_spec));
+    log::warn("Received close event with unknown device:{}",
+              ADDRESS_TO_LOGGABLE_CSTR(link_spec));
     return;
   }
 
@@ -2144,7 +2145,7 @@ static void bta_hh_le_service_changed(tAclLinkSpec link_spec) {
 static void bta_hh_le_service_discovery_done(tAclLinkSpec link_spec) {
   tBTA_HH_DEV_CB* p_cb = bta_hh_le_find_dev_cb_by_bda(link_spec);
   if (p_cb == nullptr) {
-    LOG_WARN("unknown device:%s", ADDRESS_TO_LOGGABLE_CSTR(link_spec));
+    log::warn("unknown device:{}", ADDRESS_TO_LOGGABLE_CSTR(link_spec));
     return;
   }
 
@@ -2162,7 +2163,7 @@ static void bta_hh_le_service_discovery_done(tAclLinkSpec link_spec) {
     };
     bta_hh_sm_execute(p_cb, BTA_HH_GATT_OPEN_EVT, (tBTA_HH_DATA*)&open);
   } else {
-    LOG_INFO("Discovery done, service state:%d", p_cb->hid_srvc.state);
+    log::info("Discovery done, service state:{}", p_cb->hid_srvc.state);
   }
 }
 
@@ -2181,7 +2182,7 @@ static void bta_hh_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
   link_spec.addrt.type = BLE_ADDR_PUBLIC;
   link_spec.transport = BT_TRANSPORT_LE;
 
-  LOG_VERBOSE("event:%s", gatt_client_event_text(event).c_str());
+  log::verbose("event:{}", gatt_client_event_text(event));
   if (p_data == NULL) return;
 
   switch (event) {
@@ -2263,7 +2264,7 @@ static void bta_hh_process_cache_rpt(tBTA_HH_DEV_CB* p_cb,
       if ((p_rpt = bta_hh_le_find_alloc_report_entry(
                p_cb, p_rpt_cache->srvc_inst_id, p_rpt_cache->rpt_uuid,
                p_rpt_cache->char_inst_id)) == NULL) {
-        LOG_ERROR("allocation report entry failure");
+        log::error("allocation report entry failure");
         break;
       } else {
         p_rpt->rpt_type = p_rpt_cache->rpt_type;
