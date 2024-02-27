@@ -30,6 +30,7 @@ import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.os.Looper;
 import android.os.ParcelUuid;
+import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.MediumTest;
@@ -39,12 +40,12 @@ import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
-import com.android.bluetooth.flags.FakeFeatureFlagsImpl;
 import com.android.bluetooth.flags.Flags;
 
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -59,6 +60,9 @@ import java.util.concurrent.TimeoutException;
 @RunWith(AndroidJUnit4.class)
 public class LeAudioBroadcastServiceTest {
     private static final int TIMEOUT_MS = 1000;
+
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+
     private BluetoothAdapter mAdapter;
     private BluetoothDevice mDevice;
     private Context mTargetContext;
@@ -106,7 +110,6 @@ public class LeAudioBroadcastServiceTest {
     private boolean mOnBroadcastUpdateFailedCalled = false;
     private boolean mOnBroadcastMetadataChangedCalled = false;
     private int mOnBroadcastStartFailedReason = BluetoothStatusCodes.SUCCESS;
-    private FakeFeatureFlagsImpl mFakeFlagsImpl;
 
     private final IBluetoothLeBroadcastCallback mCallbacks =
             new IBluetoothLeBroadcastCallback.Stub() {
@@ -187,13 +190,6 @@ public class LeAudioBroadcastServiceTest {
         LeAudioBroadcasterNativeInterface.setInstance(mLeAudioBroadcasterNativeInterface);
         LeAudioNativeInterface.setInstance(mLeAudioNativeInterface);
         startService();
-
-        mFakeFlagsImpl = new FakeFeatureFlagsImpl();
-        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_UNICAST_INACTIVATE_DEVICE_BASED_ON_CONTEXT, false);
-        mFakeFlagsImpl.setFlag(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION, false);
-        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_BROADCAST_AUDIO_HANDOVER_POLICIES, false);
-        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_API_SYNCHRONIZED_BLOCK_FIX, false);
-        mService.setFeatureFlags(mFakeFlagsImpl);
 
         mService.mAudioManager = mAudioManager;
 
@@ -647,7 +643,7 @@ public class LeAudioBroadcastServiceTest {
         int groupId = 1;
         byte[] code = {0x00, 0x01, 0x00, 0x02};
 
-        mFakeFlagsImpl.setFlag(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION, true);
+        mSetFlagsRule.enableFlags(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION);
 
         prepareConnectedUnicastDevice(groupId);
 
@@ -733,8 +729,8 @@ public class LeAudioBroadcastServiceTest {
         int broadcastId = 243;
         byte[] code = {0x00, 0x01, 0x00, 0x02};
 
-        mFakeFlagsImpl.setFlag(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION, true);
-        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_BROADCAST_AUDIO_HANDOVER_POLICIES, true);
+        mSetFlagsRule.enableFlags(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION);
+        mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_BROADCAST_AUDIO_HANDOVER_POLICIES);
 
         mService.mBroadcastCallbacks.register(mCallbacks);
 
@@ -846,8 +842,8 @@ public class LeAudioBroadcastServiceTest {
         int broadcastId = 243;
         byte[] code = {0x00, 0x01, 0x00, 0x02};
 
-        mFakeFlagsImpl.setFlag(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION, true);
-        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_BROADCAST_AUDIO_HANDOVER_POLICIES, true);
+        mSetFlagsRule.enableFlags(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION);
+        mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_BROADCAST_AUDIO_HANDOVER_POLICIES);
 
         mService.mBroadcastCallbacks.register(mCallbacks);
 
