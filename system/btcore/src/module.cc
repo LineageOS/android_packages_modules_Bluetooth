@@ -21,6 +21,7 @@
 #include "btcore/include/module.h"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 #include <dlfcn.h>
 #include <string.h>
 
@@ -32,6 +33,7 @@
 #include "os/log.h"
 
 using bluetooth::common::MessageLoopThread;
+using namespace bluetooth;
 
 typedef enum {
   MODULE_STATE_NONE = 0,
@@ -63,7 +65,7 @@ bool module_init(const module_t* module) {
   CHECK(get_module_state(module) == MODULE_STATE_NONE);
 
   if (!call_lifecycle_function(module->init)) {
-    LOG_ERROR("%s Failed to initialize module \"%s\"", __func__, module->name);
+    log::error("Failed to initialize module \"{}\"", module->name);
     return false;
   }
 
@@ -81,12 +83,12 @@ bool module_start_up(const module_t* module) {
   CHECK(get_module_state(module) == MODULE_STATE_INITIALIZED ||
         module->init == NULL);
 
-  LOG_INFO("%s Starting module \"%s\"", __func__, module->name);
+  log::info("Starting module \"{}\"", module->name);
   if (!call_lifecycle_function(module->start_up)) {
-    LOG_ERROR("%s Failed to start up module \"%s\"", __func__, module->name);
+    log::error("Failed to start up module \"{}\"", module->name);
     return false;
   }
-  LOG_INFO("%s Started module \"%s\"", __func__, module->name);
+  log::info("Started module \"{}\"", module->name);
 
   set_module_state(module, MODULE_STATE_STARTED);
   return true;
@@ -100,12 +102,12 @@ void module_shut_down(const module_t* module) {
   // Only something to do if the module was actually started
   if (state < MODULE_STATE_STARTED) return;
 
-  LOG_INFO("%s Shutting down module \"%s\"", __func__, module->name);
+  log::info("Shutting down module \"{}\"", module->name);
   if (!call_lifecycle_function(module->shut_down)) {
-    LOG_ERROR("%s Failed to shutdown module \"%s\". Continuing anyway.",
-              __func__, module->name);
+    log::error("Failed to shutdown module \"{}\". Continuing anyway.",
+               module->name);
   }
-  LOG_INFO("%s Shutdown of module \"%s\" completed", __func__, module->name);
+  log::info("Shutdown of module \"{}\" completed", module->name);
 
   set_module_state(module, MODULE_STATE_INITIALIZED);
 }
@@ -118,12 +120,12 @@ void module_clean_up(const module_t* module) {
   // Only something to do if the module was actually initialized
   if (state < MODULE_STATE_INITIALIZED) return;
 
-  LOG_INFO("%s Cleaning up module \"%s\"", __func__, module->name);
+  log::info("Cleaning up module \"{}\"", module->name);
   if (!call_lifecycle_function(module->clean_up)) {
-    LOG_ERROR("%s Failed to cleanup module \"%s\". Continuing anyway.",
-              __func__, module->name);
+    log::error("Failed to cleanup module \"{}\". Continuing anyway.",
+               module->name);
   }
-  LOG_INFO("%s Cleanup of module \"%s\" completed", __func__, module->name);
+  log::info("Cleanup of module \"{}\" completed", module->name);
 
   set_module_state(module, MODULE_STATE_NONE);
 }

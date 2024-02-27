@@ -59,6 +59,7 @@ cc_test {
         "test/interop_test.cc",
     ],
     shared_libs: [
+        "libbase",
         "liblog",
     ],
     static_libs: [
@@ -95,6 +96,7 @@ cc_test {
         "test/device_iot_config_test.cc",
     ],
     shared_libs: [
+        "libbase",
         "libdl",
         "liblog",
     ],
