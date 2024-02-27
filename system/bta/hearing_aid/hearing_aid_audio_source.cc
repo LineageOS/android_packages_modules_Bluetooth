@@ -40,8 +40,6 @@ using namespace bluetooth;
 
 namespace fmt {
 template <>
-struct formatter<bt_status_t> : enum_formatter<bt_status_t> {};
-template <>
 struct formatter<tUIPC_EVENT> : enum_formatter<tUIPC_EVENT> {};
 template <>
 struct formatter<tHEARING_AID_CTRL_ACK>

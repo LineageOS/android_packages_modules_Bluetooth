@@ -20,6 +20,7 @@
 
 #include "btif_gatt_util.h"
 
+#include <bluetooth/log.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_gatt.h>
 #include <stdio.h>
@@ -41,6 +42,7 @@
 #include "types/raw_address.h"
 
 using bluetooth::Uuid;
+using namespace bluetooth;
 
 /*******************************************************************************
  * BTIF -> BTA conversion functions
@@ -66,7 +68,7 @@ static void btif_gatt_set_encryption_cb(const RawAddress& /* bd_addr */,
                                         tBT_TRANSPORT /* transport */,
                                         tBTA_STATUS result) {
   if (result != BTA_SUCCESS && result != BTA_BUSY) {
-    LOG_WARN("%s() - Encryption failed (%d)", __func__, result);
+    log::warn("Encryption failed ({})", result);
   }
 }
 
@@ -77,14 +79,14 @@ void btif_gatt_check_encrypted_link(RawAddress bd_addr,
   BTM_ReadConnectionAddr(bd_addr, raw_local_addr, &local_addr_type);
   tBLE_BD_ADDR local_addr{local_addr_type, raw_local_addr};
   if (!local_addr.IsPublic() && !local_addr.IsAddressResolvable()) {
-    LOG_DEBUG("Not establishing encryption since address type is NRPA");
+    log::debug("Not establishing encryption since address type is NRPA");
     return;
   }
 
   static const bool check_encrypted = bluetooth::os::GetSystemPropertyBool(
       "bluetooth.gatt.check_encrypted_link.enabled", true);
   if (!check_encrypted) {
-    LOG_DEBUG("Check skipped due to system config");
+    log::debug("Check skipped due to system config");
     return;
   }
   tBTM_LE_PENC_KEYS key;
@@ -92,9 +94,9 @@ void btif_gatt_check_encrypted_link(RawAddress bd_addr,
            bd_addr, BTM_LE_KEY_PENC, (uint8_t*)&key,
            sizeof(tBTM_LE_PENC_KEYS)) == BT_STATUS_SUCCESS) &&
       !btif_gatt_is_link_encrypted(bd_addr)) {
-    LOG_DEBUG("Checking gatt link peer:%s transport:%s",
-              ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
-              bt_transport_text(transport_link).c_str());
+    log::debug("Checking gatt link peer:{} transport:{}",
+               ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
+               bt_transport_text(transport_link));
     BTA_DmSetEncryption(bd_addr, transport_link, &btif_gatt_set_encryption_cb,
                         BTM_BLE_SEC_ENCRYPT);
   }

@@ -529,4 +529,6 @@ inline std::string bond_type_text(const tBTM_BOND_TYPE& bond_type) {
 namespace fmt {
 template <>
 struct formatter<tBTM_BLE_SEC_ACT> : enum_formatter<tBTM_BLE_SEC_ACT> {};
+template <>
+struct formatter<tBTM_BOND_TYPE> : enum_formatter<tBTM_BOND_TYPE> {};
 }  // namespace fmt
