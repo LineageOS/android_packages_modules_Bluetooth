@@ -457,7 +457,6 @@ public class AvrcpTargetService extends ProfileService {
         BluetoothDevice activeDevice = getA2dpActiveDevice();
         MediaPlayerWrapper player = mMediaPlayerList.getActivePlayer();
         mMediaKeyEventLogger.logd(
-                DEBUG,
                 TAG,
                 "sendMediaKeyEvent:"
                         + " device="
