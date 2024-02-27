@@ -51,6 +51,7 @@ import android.media.BluetoothProfileConnectionInfo;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.ParcelUuid;
+import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.MediumTest;
@@ -62,7 +63,6 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
-import com.android.bluetooth.flags.FakeFeatureFlagsImpl;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hap.HapClientService;
 import com.android.bluetooth.hfp.HeadsetService;
@@ -72,6 +72,7 @@ import com.android.bluetooth.vc.VolumeControlService;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -97,6 +98,8 @@ public class LeAudioServiceTest {
     private static final int MAX_LE_AUDIO_CONNECTIONS = 5;
     private static final int LE_AUDIO_GROUP_ID_INVALID = -1;
 
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+
     private BluetoothAdapter mAdapter;
     private Context mTargetContext;
     private LeAudioService mService;
@@ -112,7 +115,6 @@ public class LeAudioServiceTest {
     private boolean onGroupStreamStatusCallbackCalled = false;
     private boolean onGroupCodecConfChangedCallbackCalled = false;
     private BluetoothLeAudioCodecStatus testCodecStatus = null;
-    private FakeFeatureFlagsImpl mFakeFlagsImpl;
 
     private BroadcastReceiver mLeAudioIntentReceiver;
 
@@ -194,14 +196,6 @@ public class LeAudioServiceTest {
 
         LeAudioNativeInterface.setInstance(mNativeInterface);
         startService();
-
-        mFakeFlagsImpl = new FakeFeatureFlagsImpl();
-        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_UNICAST_INACTIVATE_DEVICE_BASED_ON_CONTEXT, false);
-        mFakeFlagsImpl.setFlag(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION, false);
-        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_BROADCAST_AUDIO_HANDOVER_POLICIES, false);
-        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_MCS_TBS_AUTHORIZATION_REBOND_FIX, false);
-        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_API_SYNCHRONIZED_BLOCK_FIX, false);
-        mService.setFeatureFlags(mFakeFlagsImpl);
 
         mService.mAudioManager = mAudioManager;
         mService.mMcpService = mMcpService;
@@ -811,8 +805,8 @@ public class LeAudioServiceTest {
     /** Test that authorization info is removed from TBS and MCS after the device is unbond. */
     @Test
     public void testAuthorizationInfoRemovedFromTbsMcsOnUnbondEvents() {
-        mFakeFlagsImpl.setFlag(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION, true);
-        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_MCS_TBS_AUTHORIZATION_REBOND_FIX, true);
+        mSetFlagsRule.enableFlags(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION);
+        mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_MCS_TBS_AUTHORIZATION_REBOND_FIX);
 
         // Update the device priority so okToConnect() returns true
         when(mDatabaseManager.getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO))
@@ -942,7 +936,7 @@ public class LeAudioServiceTest {
 
     @Test
     public void testAuthorizationInfoRemovedFromTbsMcsOnUnbondEventsWithSynchBlockFixFlag() {
-        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_API_SYNCHRONIZED_BLOCK_FIX, true);
+        mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_API_SYNCHRONIZED_BLOCK_FIX);
 
         testAuthorizationInfoRemovedFromTbsMcsOnUnbondEvents();
     }
@@ -1737,8 +1731,8 @@ public class LeAudioServiceTest {
 
     @Test
     public void testMediaContextUnavailableForAWhile() {
-        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_UNICAST_INACTIVATE_DEVICE_BASED_ON_CONTEXT, true);
-        mFakeFlagsImpl.setFlag(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION, true);
+        mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_UNICAST_INACTIVATE_DEVICE_BASED_ON_CONTEXT);
+        mSetFlagsRule.enableFlags(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION);
 
         doReturn(true).when(mNativeInterface).connectLeAudio(any(BluetoothDevice.class));
         connectTestDevice(mSingleDevice, testGroupId);
