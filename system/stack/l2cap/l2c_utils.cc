@@ -2342,34 +2342,6 @@ static void l2cu_set_acl_priority_unisoc(tL2C_LCB* p_lcb,
 
 /*******************************************************************************
  *
- * Function         l2cu_set_acl_priority_latency_mtk
- *
- * Description      Sends a VSC to set the ACL priority and recorded latency on
- *                  Mediatek chip.
- *
- * Returns          void
- *
- ******************************************************************************/
-
-static void l2cu_set_acl_priority_latency_mtk(tL2C_LCB* p_lcb,
-                                               tL2CAP_PRIORITY priority) {
-  uint8_t vs_param;
-  if (priority == L2CAP_PRIORITY_HIGH) {
-    // priority to high, if using latency mode check preset latency
-    log::info("Set ACL priority: High Priority Mode");
-    vs_param = HCI_MTK_ACL_HIGH_PRIORITY;
-  } else {
-    // priority to normal
-    log::info("Set ACL priority: Normal Mode");
-    vs_param = HCI_MTK_ACL_NORMAL_PRIORITY;
-  }
-
-  BTM_VendorSpecificCommand(HCI_MTK_SET_ACL_PRIORITY,
-                            HCI_MTK_ACL_PRIORITY_PARAM_SIZE, &vs_param, NULL);
-}
-
-/*******************************************************************************
- *
  * Function         l2cu_set_acl_priority
  *
  * Description      Sets the transmission priority for a channel.
@@ -2411,10 +2383,6 @@ bool l2cu_set_acl_priority(const RawAddress& bd_addr, tL2CAP_PRIORITY priority,
 
       case LMP_COMPID_UNISOC:
         l2cu_set_acl_priority_unisoc(p_lcb, priority);
-        break;
-
-      case LMP_COMPID_MEDIATEK:
-        l2cu_set_acl_priority_latency_mtk(p_lcb, priority);
         break;
 
       default:
@@ -2486,6 +2454,34 @@ static void l2cu_set_acl_latency_syna(tL2C_LCB* p_lcb, tL2CAP_LATENCY latency) {
 
 /*******************************************************************************
  *
+ * Function         l2cu_set_acl_latency_mtk
+ *
+ * Description      Sends a VSC to set the ACL latency on Mediatek chip.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+
+static void l2cu_set_acl_latency_mtk(tL2CAP_LATENCY latency) {
+  log::info("Set ACL latency: {}",
+            latency == L2CAP_LATENCY_LOW ? "Low Latancy" : "Normal Latency");
+
+  uint8_t command[HCI_MTK_ACL_PRIORITY_PARAM_SIZE];
+  uint8_t* pp = command;
+  uint8_t vs_param = latency == L2CAP_LATENCY_LOW
+                         ? HCI_MTK_ACL_HIGH_PRIORITY
+                         : HCI_MTK_ACL_NORMAL_PRIORITY;
+  UINT8_TO_STREAM(pp, vs_param);
+  UINT8_TO_STREAM(pp, 0);
+  UINT16_TO_STREAM(pp, 0);  //reserved bytes
+
+  BTM_VendorSpecificCommand(HCI_MTK_SET_ACL_PRIORITY,
+                            HCI_MTK_ACL_PRIORITY_PARAM_SIZE, command, NULL);
+}
+
+
+/*******************************************************************************
+ *
  * Function         l2cu_set_acl_latency
  *
  * Description      Sets the transmission latency for a channel.
@@ -2514,6 +2510,10 @@ bool l2cu_set_acl_latency(const RawAddress& bd_addr, tL2CAP_LATENCY latency) {
 
       case LMP_COMPID_SYNAPTICS:
         l2cu_set_acl_latency_syna(p_lcb, latency);
+        break;
+
+      case LMP_COMPID_MEDIATEK:
+        l2cu_set_acl_latency_mtk(latency);
         break;
 
       default:
