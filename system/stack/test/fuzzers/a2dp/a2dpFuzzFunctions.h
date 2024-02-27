@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "a2dp_api.h"
+#include "base/functional/bind.h"
 #include "fuzzers/a2dp/a2dpFuzzHelpers.h"
 #include "fuzzers/common/commonFuzzHelpers.h"
 #include "fuzzers/sdp/sdpFuzzFunctions.h"
@@ -71,7 +72,8 @@ std::vector<std::function<void(FuzzedDataProvider*)>> a2dp_operations = {
       const RawAddress bd_addr = generateRawAddress(fdp);
       uint16_t service_uuid = fdp->ConsumeBool() ? UUID_SERVCLASS_AUDIO_SOURCE
                                                  : UUID_SERVCLASS_AUDIO_SINK;
-      A2DP_FindService(service_uuid, bd_addr, &p_db, a2dp_find_callback);
+      A2DP_FindService(service_uuid, bd_addr, &p_db,
+                       base::Bind(a2dp_find_callback));
     },
 
     // A2DP_GetAvdtpVersion
