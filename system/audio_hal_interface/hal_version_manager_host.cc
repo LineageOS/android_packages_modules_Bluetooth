@@ -19,8 +19,6 @@
 namespace bluetooth {
 namespace audio {
 
-#if COM_ANDROID_BLUETOOTH_FLAGS_AUDIO_HAL_VERSION_CLASS
-
 const BluetoothAudioHalVersion BluetoothAudioHalVersion::VERSION_UNAVAILABLE =
     BluetoothAudioHalVersion();
 const BluetoothAudioHalVersion BluetoothAudioHalVersion::VERSION_2_0 =
@@ -35,8 +33,6 @@ const BluetoothAudioHalVersion BluetoothAudioHalVersion::VERSION_AIDL_V3 =
     BluetoothAudioHalVersion(BluetoothAudioHalTransport::AIDL, 3, 0);
 const BluetoothAudioHalVersion BluetoothAudioHalVersion::VERSION_AIDL_V4 =
     BluetoothAudioHalVersion(BluetoothAudioHalTransport::AIDL, 4, 0);
-
-#endif  // COM_ANDROID_BLUETOOTH_FLAGS_AUDIO_HAL_VERSION_CLASS
 
 std::unique_ptr<HalVersionManager> HalVersionManager::instance_ptr = nullptr;
 
