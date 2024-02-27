@@ -19,6 +19,7 @@
 #pragma once
 
 #include <base/functional/callback_forward.h>
+#include <bluetooth/log.h>
 #include <hardware/bt_hearing_aid.h>
 
 #include <cstdint>
@@ -286,3 +287,9 @@ class HearingAidAudioSource {
   static void CleanUp();
   static void DebugDump(int fd);
 };
+
+namespace fmt {
+template <>
+struct formatter<connection_update_status_t>
+    : enum_formatter<connection_update_status_t> {};
+}  // namespace fmt
