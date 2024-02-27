@@ -237,6 +237,13 @@ void DualModeController::HandleCommand(
   }
 }
 
+void DualModeController::RegisterInvalidPacketHandler(
+    std::function<void(uint32_t, InvalidPacketReason, std::string,
+                       std::vector<uint8_t> const&)>& handler) {
+  INFO(id_, "updating the invalid packet handler");
+  invalid_packet_handler_ = handler;
+}
+
 void DualModeController::RegisterEventChannel(
     const std::function<void(std::shared_ptr<std::vector<uint8_t>>)>&
         send_event) {
