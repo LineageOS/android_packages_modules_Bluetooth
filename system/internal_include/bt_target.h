@@ -87,10 +87,6 @@
 #define AG_VOICE_SETTINGS HCI_DEFAULT_VOICE_SETTINGS
 #endif
 
-#ifndef BTIF_DM_OOB_TEST
-#define BTIF_DM_OOB_TEST TRUE
-#endif
-
 // How long to wait before activating sniff mode after entering the
 // idle state for server FT/RFCOMM, OPS connections
 #ifndef BTA_FTS_OPS_IDLE_TO_SNIFF_DELAY_MS
