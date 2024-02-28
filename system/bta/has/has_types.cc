@@ -17,7 +17,7 @@
 
 #include "has_types.h"
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 namespace has {
 
 std::ostream& operator<<(std::ostream& os, const HasDevice& b) {
@@ -27,4 +27,4 @@ std::ostream& operator<<(std::ostream& os, const HasDevice& b) {
 }
 
 }  // namespace has
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

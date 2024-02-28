@@ -852,8 +852,8 @@ void btif_storage_load_bonded_leaudio_has_devices() {
       features = value;
 
     do_in_main_thread(FROM_HERE,
-                      Bind(&::le_audio::has::HasClient::AddFromStorage, bd_addr,
-                           features, is_acceptlisted));
+                      Bind(&bluetooth::le_audio::has::HasClient::AddFromStorage,
+                           bd_addr, features, is_acceptlisted));
 #else
     ASSERT_LOG(false, "TODO - Fix LE audio build.");
 #endif

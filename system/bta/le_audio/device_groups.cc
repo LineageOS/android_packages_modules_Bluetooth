@@ -27,9 +27,9 @@
 #include "le_audio_set_configuration_provider.h"
 #include "metrics_collector.h"
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 
-using le_audio::types::ase;
+using bluetooth::le_audio::types::ase;
 using types::AseState;
 using types::AudioContexts;
 using types::AudioLocations;
@@ -752,8 +752,8 @@ bool LeAudioDeviceGroup::UpdateAudioContextAvailability(void) {
 
 bool LeAudioDeviceGroup::UpdateAudioSetConfigurationCache(
     LeAudioContextType ctx_type) {
-  const le_audio::set_configurations::AudioSetConfiguration* new_conf =
-      FindFirstSupportedConfiguration(ctx_type);
+  const bluetooth::le_audio::set_configurations::AudioSetConfiguration*
+      new_conf = FindFirstSupportedConfiguration(ctx_type);
   auto update_config = true;
 
   if (context_to_configuration_cache_map.count(ctx_type) != 0) {
@@ -961,7 +961,7 @@ void LeAudioDeviceGroup::CigConfiguration::GenerateCisIds(
 
   uint8_t idx = 0;
   while (cis_count_bidir > 0) {
-    struct le_audio::types::cis cis_entry = {
+    struct bluetooth::le_audio::types::cis cis_entry = {
         .id = idx,
         .type = CisType::CIS_TYPE_BIDIRECTIONAL,
         .conn_handle = 0,
@@ -973,7 +973,7 @@ void LeAudioDeviceGroup::CigConfiguration::GenerateCisIds(
   }
 
   while (cis_count_unidir_sink > 0) {
-    struct le_audio::types::cis cis_entry = {
+    struct bluetooth::le_audio::types::cis cis_entry = {
         .id = idx,
         .type = CisType::CIS_TYPE_UNIDIRECTIONAL_SINK,
         .conn_handle = 0,
@@ -985,7 +985,7 @@ void LeAudioDeviceGroup::CigConfiguration::GenerateCisIds(
   }
 
   while (cis_count_unidir_source > 0) {
-    struct le_audio::types::cis cis_entry = {
+    struct bluetooth::le_audio::types::cis cis_entry = {
         .id = idx,
         .type = CisType::CIS_TYPE_UNIDIRECTIONAL_SOURCE,
         .conn_handle = 0,
@@ -1135,7 +1135,7 @@ void LeAudioDeviceGroup::AssignCisConnHandlesToAses(
            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
 
   /* Assign all CIS connection handles to ases */
-  struct le_audio::types::ase* ase =
+  struct bluetooth::le_audio::types::ase* ase =
       leAudioDevice->GetFirstActiveAseByCisAndDataPathState(
           CisState::IDLE, DataPathState::IDLE);
   if (!ase) {
@@ -1179,7 +1179,7 @@ void LeAudioDeviceGroup::CigConfiguration::UnassignCis(
   LOG_INFO("Group %p, group_id %d, device: %s", group_, group_->group_id_,
            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
 
-  for (struct le_audio::types::cis& cis_entry : cises) {
+  for (struct bluetooth::le_audio::types::cis& cis_entry : cises) {
     if (cis_entry.addr == leAudioDevice->address_) {
       cis_entry.addr = RawAddress::kEmpty;
     }
@@ -1413,7 +1413,8 @@ bool LeAudioDeviceGroup::ConfigureAses(
     uint8_t max_required_ase_per_dev =
         ent.ase_cnt / ent.device_cnt + (ent.ase_cnt % ent.device_cnt);
     uint8_t active_ase_num = 0;
-    le_audio::types::LeAudioConfigurationStrategy strategy = ent.strategy;
+    bluetooth::le_audio::types::LeAudioConfigurationStrategy strategy =
+        ent.strategy;
 
     LOG_DEBUG(
         "Number of devices: %d number of ASEs: %d, Max ASE per device: %d "
@@ -1669,14 +1670,16 @@ void LeAudioDeviceGroup::RemoveCisFromStreamIfNeeded(
   if (old_sink_channels > stream_conf.stream_params.sink.num_of_channels) {
     CodecManager::GetInstance()->UpdateCisConfiguration(
         cig.cises,
-        stream_conf.stream_params.get(le_audio::types::kLeAudioDirectionSink),
-        le_audio::types::kLeAudioDirectionSink);
+        stream_conf.stream_params.get(
+            bluetooth::le_audio::types::kLeAudioDirectionSink),
+        bluetooth::le_audio::types::kLeAudioDirectionSink);
   }
   if (old_source_channels > stream_conf.stream_params.source.num_of_channels) {
     CodecManager::GetInstance()->UpdateCisConfiguration(
         cig.cises,
-        stream_conf.stream_params.get(le_audio::types::kLeAudioDirectionSource),
-        le_audio::types::kLeAudioDirectionSource);
+        stream_conf.stream_params.get(
+            bluetooth::le_audio::types::kLeAudioDirectionSource),
+        bluetooth::le_audio::types::kLeAudioDirectionSource);
   }
 
   cig.UnassignCis(leAudioDevice);
@@ -1924,15 +1927,20 @@ void LeAudioDeviceGroup::PrintDebugState(void) const {
   if (GetFirstActiveDevice() != nullptr) {
     uint32_t sink_delay = 0;
     uint32_t source_delay = 0;
-    GetPresentationDelay(&sink_delay, le_audio::types::kLeAudioDirectionSink);
+    GetPresentationDelay(&sink_delay,
+                         bluetooth::le_audio::types::kLeAudioDirectionSink);
     GetPresentationDelay(&source_delay,
-                         le_audio::types::kLeAudioDirectionSource);
-    auto phy_mtos = GetPhyBitmask(le_audio::types::kLeAudioDirectionSink);
-    auto phy_stom = GetPhyBitmask(le_audio::types::kLeAudioDirectionSource);
+                         bluetooth::le_audio::types::kLeAudioDirectionSource);
+    auto phy_mtos =
+        GetPhyBitmask(bluetooth::le_audio::types::kLeAudioDirectionSink);
+    auto phy_stom =
+        GetPhyBitmask(bluetooth::le_audio::types::kLeAudioDirectionSource);
     auto max_transport_latency_mtos = GetMaxTransportLatencyMtos();
     auto max_transport_latency_stom = GetMaxTransportLatencyStom();
-    auto sdu_mts = GetSduInterval(le_audio::types::kLeAudioDirectionSink);
-    auto sdu_stom = GetSduInterval(le_audio::types::kLeAudioDirectionSource);
+    auto sdu_mts =
+        GetSduInterval(bluetooth::le_audio::types::kLeAudioDirectionSink);
+    auto sdu_stom =
+        GetSduInterval(bluetooth::le_audio::types::kLeAudioDirectionSource);
 
     debug_str << "\n presentation_delay for sink (speaker): " << +sink_delay
               << " us, presentation_delay for source (microphone): "
@@ -1998,15 +2006,16 @@ void LeAudioDeviceGroup::Dump(int fd, int active_group_id) const {
 
   if (GetFirstActiveDevice() != nullptr) {
     uint32_t sink_delay;
-    if (GetPresentationDelay(&sink_delay,
-                             le_audio::types::kLeAudioDirectionSink)) {
+    if (GetPresentationDelay(
+            &sink_delay, bluetooth::le_audio::types::kLeAudioDirectionSink)) {
       stream << "\n      presentation_delay for sink (speaker): " << sink_delay
              << " us";
     }
 
     uint32_t source_delay;
-    if (GetPresentationDelay(&source_delay,
-                             le_audio::types::kLeAudioDirectionSource)) {
+    if (GetPresentationDelay(
+            &source_delay,
+            bluetooth::le_audio::types::kLeAudioDirectionSource)) {
       stream << "\n      presentation_delay for source (microphone): "
              << source_delay << " us";
     }
@@ -2109,4 +2118,4 @@ std::vector<int> LeAudioDeviceGroups::GetGroupsIds(void) const {
   return result;
 }
 
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

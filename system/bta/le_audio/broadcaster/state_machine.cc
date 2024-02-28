@@ -38,10 +38,10 @@ using bluetooth::hci::IsoManager;
 using bluetooth::hci::iso_manager::big_create_cmpl_evt;
 using bluetooth::hci::iso_manager::big_terminate_cmpl_evt;
 
-using le_audio::CodecManager;
-using le_audio::types::CodecLocation;
+using bluetooth::le_audio::CodecManager;
+using bluetooth::le_audio::types::CodecLocation;
 
-using namespace le_audio::broadcaster;
+using namespace bluetooth::le_audio::broadcaster;
 
 namespace {
 
@@ -493,7 +493,8 @@ class BroadcastStateMachineImpl : public BroadcastStateMachine {
      */
     auto codec_id = sm_config_.codec_wrapper.GetLeAudioCodecId();
     uint8_t hci_coding_format =
-        (codec_id.coding_format == le_audio::types::kLeAudioCodingFormatLC3)
+        (codec_id.coding_format ==
+         bluetooth::le_audio::types::kLeAudioCodingFormatLC3)
             ? bluetooth::hci::kIsoCodingFormatTransparent
             : bluetooth::hci::kIsoCodingFormatVendorSpecific;
     bluetooth::hci::iso_manager::iso_data_path_params param = {
@@ -505,7 +506,8 @@ class BroadcastStateMachineImpl : public BroadcastStateMachine {
         /* TODO: Implement HCI command to get the controller delay */
         .controller_delay = 0x00000000,
     };
-    if (codec_id.coding_format != le_audio::types::kLeAudioCodingFormatLC3) {
+    if (codec_id.coding_format !=
+        bluetooth::le_audio::types::kLeAudioCodingFormatLC3) {
       // TODO: Until the proper offloader support is added, pass all the params
       auto const& conn_handles = active_config_->connection_handles;
 
@@ -633,7 +635,7 @@ void BroadcastStateMachine::Initialize(
   }
 }
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 namespace broadcaster {
 
 std::ostream& operator<<(std::ostream& os,
@@ -652,8 +654,9 @@ std::ostream& operator<<(std::ostream& os,
   return os;
 }
 
-std::ostream& operator<<(std::ostream& os,
-                         const le_audio::broadcaster::BigConfig& config) {
+std::ostream& operator<<(
+    std::ostream& os,
+    const bluetooth::le_audio::broadcaster::BigConfig& config) {
   os << "\n";
   os << "        Status: 0x" << std::hex << +config.status << std::dec << "\n";
   os << "        BIG ID: " << +config.big_id << "\n";
@@ -676,7 +679,8 @@ std::ostream& operator<<(std::ostream& os,
 
 std::ostream& operator<<(
     std::ostream& os,
-    const le_audio::broadcaster::BroadcastStateMachineConfig& config) {
+    const bluetooth::le_audio::broadcaster::BroadcastStateMachineConfig&
+        config) {
   const char* const PHYS[] = {"NONE", "1M", "2M", "CODED"};
 
   os << "\n";
@@ -710,7 +714,7 @@ std::ostream& operator<<(
 
 std::ostream& operator<<(
     std::ostream& os,
-    const le_audio::broadcaster::BroadcastStateMachine& machine) {
+    const bluetooth::le_audio::broadcaster::BroadcastStateMachine& machine) {
   os << "    Broadcast state machine: {"
      << "      Advertising SID: " << +machine.GetAdvertisingSid() << "\n"
      << "      State: " << machine.GetState() << "\n";
@@ -727,4 +731,4 @@ std::ostream& operator<<(
 }
 
 }  // namespace broadcaster
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

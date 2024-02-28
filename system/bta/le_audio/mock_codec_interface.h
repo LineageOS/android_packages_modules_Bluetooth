@@ -30,16 +30,18 @@ class MockCodecInterface {
 
   virtual ~MockCodecInterface() = default;
 
-  MOCK_METHOD((le_audio::CodecInterface::Status), InitEncoder,
-              (const le_audio::LeAudioCodecConfiguration& pcm_config,
-               const le_audio::LeAudioCodecConfiguration& codec_config));
-  MOCK_METHOD(le_audio::CodecInterface::Status, InitDecoder,
-              (const le_audio::LeAudioCodecConfiguration& codec_config,
-               const le_audio::LeAudioCodecConfiguration& pcm_config));
-  MOCK_METHOD(le_audio::CodecInterface::Status, Encode,
+  MOCK_METHOD(
+      (bluetooth::le_audio::CodecInterface::Status), InitEncoder,
+      (const bluetooth::le_audio::LeAudioCodecConfiguration& pcm_config,
+       const bluetooth::le_audio::LeAudioCodecConfiguration& codec_config));
+  MOCK_METHOD(
+      bluetooth::le_audio::CodecInterface::Status, InitDecoder,
+      (const bluetooth::le_audio::LeAudioCodecConfiguration& codec_config,
+       const bluetooth::le_audio::LeAudioCodecConfiguration& pcm_config));
+  MOCK_METHOD(bluetooth::le_audio::CodecInterface::Status, Encode,
               (const uint8_t* data, int stride, uint16_t out_size,
                std::vector<int16_t>* out_buffer, uint16_t out_offset));
-  MOCK_METHOD(le_audio::CodecInterface::Status, Decode,
+  MOCK_METHOD(bluetooth::le_audio::CodecInterface::Status, Decode,
               (uint8_t * data, uint16_t size));
   MOCK_METHOD((void), Cleanup, ());
   MOCK_METHOD((bool), IsReady, ());

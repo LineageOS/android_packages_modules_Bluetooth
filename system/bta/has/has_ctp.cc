@@ -24,7 +24,7 @@
 
 using namespace bluetooth;
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 namespace has {
 
 static bool ParsePresetGenericUpdate(uint16_t& len, const uint8_t* value,
@@ -123,11 +123,11 @@ std::optional<HasCtpNtf> HasCtpNtf::FromCharacteristicValue(
 
   HasCtpNtf ntf;
   ntf.opcode = PresetCtpOpcode(op);
-  if (ntf.opcode == le_audio::has::PresetCtpOpcode::PRESET_CHANGED) {
+  if (ntf.opcode == bluetooth::le_audio::has::PresetCtpOpcode::PRESET_CHANGED) {
     if (!ParsePresetChanged(len, value, ntf)) return std::nullopt;
 
   } else if (ntf.opcode ==
-             le_audio::has::PresetCtpOpcode::READ_PRESET_RESPONSE) {
+             bluetooth::le_audio::has::PresetCtpOpcode::READ_PRESET_RESPONSE) {
     if (!ParsePresetReadResponse(len, value, ntf)) return std::nullopt;
   }
 
@@ -283,4 +283,4 @@ std::ostream& operator<<(std::ostream& out, const HasCtpNtf& ntf) {
 }
 
 }  // namespace has
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

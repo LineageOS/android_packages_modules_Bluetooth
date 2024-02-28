@@ -19,7 +19,7 @@
 
 #include "internal_include/bt_trace.h"
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 namespace has {
 
 std::ostream& operator<<(std::ostream& os, const HasJournalRecord& r) {
@@ -53,4 +53,4 @@ std::ostream& operator<<(std::ostream& os, const HasJournalRecord& r) {
   return os;
 }
 }  // namespace has
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

@@ -21,7 +21,7 @@
 #include "hardware/bt_le_audio.h"
 #include "le_audio_types.h"
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 
 struct stream_map_info {
   stream_map_info(uint16_t stream_handle, uint32_t audio_channel_allocation,
@@ -76,13 +76,16 @@ class CodecManager {
       types::BidirectionalPair<uint16_t> delays_ms,
       std::function<void(const offload_config& config, uint8_t direction)>
           update_receiver);
-  virtual const ::le_audio::set_configurations::AudioSetConfigurations*
-  GetOffloadCodecConfig(::le_audio::types::LeAudioContextType ctx_type);
-  virtual const ::le_audio::broadcast_offload_config* GetBroadcastOffloadConfig(
-      uint8_t preferred_quality);
+  virtual const ::bluetooth::le_audio::set_configurations::
+      AudioSetConfigurations*
+      GetOffloadCodecConfig(
+          ::bluetooth::le_audio::types::LeAudioContextType ctx_type);
+  virtual const ::bluetooth::le_audio::broadcast_offload_config*
+  GetBroadcastOffloadConfig(uint8_t preferred_quality);
   virtual void UpdateBroadcastConnHandle(
       const std::vector<uint16_t>& conn_handle,
-      std::function<void(const ::le_audio::broadcast_offload_config& config)>
+      std::function<
+          void(const ::bluetooth::le_audio::broadcast_offload_config& config)>
           update_receiver);
   virtual std::vector<bluetooth::le_audio::btle_audio_codec_config_t>
   GetLocalAudioOutputCodecCapa();
@@ -94,4 +97,4 @@ class CodecManager {
   struct impl;
   std::unique_ptr<impl> pimpl_;
 };
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

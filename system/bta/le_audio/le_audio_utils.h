@@ -29,7 +29,7 @@
 
 #include "le_audio_types.h"
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 namespace utils {
 types::LeAudioContextType AudioContentToLeAudioContext(
     audio_content_type_t content_type, audio_usage_t usage);
@@ -59,4 +59,4 @@ GetRemoteBtLeAudioCodecConfigFromPac(
     const types::PublishedAudioCapabilities& group_pacs);
 bool IsCodecUsingLtvFormat(const types::LeAudioCodecId& codec_id);
 }  // namespace utils
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

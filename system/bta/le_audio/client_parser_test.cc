@@ -22,7 +22,7 @@
 
 #include "le_audio_types.h"
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 namespace client_parser {
 namespace pacs {
 
@@ -1793,4 +1793,4 @@ TEST(LeAudioClientParserTest, testParseTmapRoleInvalidLen) {
 }  // namespace tmap
 
 }  // namespace client_parser
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

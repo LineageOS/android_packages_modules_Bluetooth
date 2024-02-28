@@ -92,7 +92,7 @@ void LogLeAudioBroadcastSessionReported(int64_t duration_nanos) {
 }  // namespace common
 }  // namespace bluetooth
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 
 const int32_t group_id1 = 1;
 const RawAddress device1 = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
@@ -347,11 +347,12 @@ TEST_F(MetricsCollectorTest, StreamingSessions) {
   collector->OnConnectionStateChanged(
       group_id1, device1, bluetooth::le_audio::ConnectionState::CONNECTED,
       ConnectionStatus::SUCCESS);
-  collector->OnStreamStarted(group_id1,
-                             le_audio::types::LeAudioContextType::MEDIA);
+  collector->OnStreamStarted(
+      group_id1, bluetooth::le_audio::types::LeAudioContextType::MEDIA);
   collector->OnStreamEnded(group_id1);
   collector->OnStreamStarted(
-      group_id1, le_audio::types::LeAudioContextType::CONVERSATIONAL);
+      group_id1,
+      bluetooth::le_audio::types::LeAudioContextType::CONVERSATIONAL);
   collector->OnStreamEnded(group_id1);
   collector->OnConnectionStateChanged(
       group_id1, device1, bluetooth::le_audio::ConnectionState::DISCONNECTED,
@@ -384,4 +385,4 @@ TEST_F(MetricsCollectorTest, BroadastSessions) {
   ASSERT_GT(last_broadcast_duration_nanos, 0);
 }
 
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

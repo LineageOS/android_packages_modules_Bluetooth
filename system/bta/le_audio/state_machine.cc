@@ -93,26 +93,26 @@
 
 using bluetooth::common::ToString;
 using bluetooth::hci::IsoManager;
+using bluetooth::le_audio::CodecManager;
 using bluetooth::le_audio::GroupStreamStatus;
-using le_audio::CodecManager;
-using le_audio::LeAudioDevice;
-using le_audio::LeAudioDeviceGroup;
-using le_audio::LeAudioGroupStateMachine;
+using bluetooth::le_audio::LeAudioDevice;
+using bluetooth::le_audio::LeAudioDeviceGroup;
+using bluetooth::le_audio::LeAudioGroupStateMachine;
 
 using bluetooth::hci::ErrorCode;
 using bluetooth::hci::ErrorCodeText;
-using le_audio::DsaMode;
-using le_audio::DsaModes;
-using le_audio::types::ase;
-using le_audio::types::AseState;
-using le_audio::types::AudioContexts;
-using le_audio::types::BidirectionalPair;
-using le_audio::types::CigState;
-using le_audio::types::CisState;
-using le_audio::types::CodecLocation;
-using le_audio::types::DataPathState;
-using le_audio::types::LeAudioContextType;
-using le_audio::types::LeAudioCoreCodecConfig;
+using bluetooth::le_audio::DsaMode;
+using bluetooth::le_audio::DsaModes;
+using bluetooth::le_audio::types::ase;
+using bluetooth::le_audio::types::AseState;
+using bluetooth::le_audio::types::AudioContexts;
+using bluetooth::le_audio::types::BidirectionalPair;
+using bluetooth::le_audio::types::CigState;
+using bluetooth::le_audio::types::CisState;
+using bluetooth::le_audio::types::CodecLocation;
+using bluetooth::le_audio::types::DataPathState;
+using bluetooth::le_audio::types::LeAudioContextType;
+using bluetooth::le_audio::types::LeAudioCoreCodecConfig;
 
 namespace {
 
@@ -327,13 +327,14 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     state_machine_callbacks_->StatusReportCb(group->group_id_, status);
   }
 
-  void notifyLeAudioHealth(LeAudioDeviceGroup* group,
-                           le_audio::LeAudioHealthGroupStatType stat) {
+  void notifyLeAudioHealth(
+      LeAudioDeviceGroup* group,
+      bluetooth::le_audio::LeAudioHealthGroupStatType stat) {
     if (!IS_FLAG_ENABLED(leaudio_enable_health_based_actions)) {
       return;
     }
 
-    auto leAudioHealthStatus = le_audio::LeAudioHealthStatus::Get();
+    auto leAudioHealthStatus = bluetooth::le_audio::LeAudioHealthStatus::Get();
     if (leAudioHealthStatus) {
       leAudioHealthStatus->AddStatisticForGroup(group, stat);
     }
@@ -341,8 +342,8 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
 
   void ProcessGattCtpNotification(LeAudioDeviceGroup* group, uint8_t* value,
                                   uint16_t len) {
-    auto ntf =
-        std::make_unique<struct le_audio::client_parser::ascs::ctp_ntf>();
+    auto ntf = std::make_unique<
+        struct bluetooth::le_audio::client_parser::ascs::ctp_ntf>();
 
     bool valid_notification = ParseAseCtpNotification(*ntf, len, value);
     if (group == nullptr) {
@@ -380,15 +381,16 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
 
     for (auto& entry : ntf->entries) {
       if (entry.response_code !=
-          le_audio::client_parser::ascs::kCtpResponseCodeSuccess) {
+          bluetooth::le_audio::client_parser::ascs::kCtpResponseCodeSuccess) {
         /* Gracefully stop the stream */
         LOG_ERROR(
             "Stoping stream due to control point error for ase: %d, error: "
             "0x%02x, reason: 0x%02x",
             entry.ase_id, entry.response_code, entry.reason);
 
-        notifyLeAudioHealth(group, le_audio::LeAudioHealthGroupStatType::
-                                       STREAM_CREATE_SIGNALING_FAILED);
+        notifyLeAudioHealth(group,
+                            bluetooth::le_audio::LeAudioHealthGroupStatType::
+                                STREAM_CREATE_SIGNALING_FAILED);
         StopStream(group);
         return;
       }
@@ -403,7 +405,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
   void ProcessGattNotifEvent(uint8_t* value, uint16_t len, struct ase* ase,
                              LeAudioDevice* leAudioDevice,
                              LeAudioDeviceGroup* group) override {
-    struct le_audio::client_parser::ascs::ase_rsp_hdr arh;
+    struct bluetooth::le_audio::client_parser::ascs::ase_rsp_hdr arh;
 
     ParseAseStatusHeader(arh, len, value);
 
@@ -430,9 +432,10 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
         break;
       case AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED:
         AseStateMachineProcessCodecConfigured(
-            arh, ase, value + le_audio::client_parser::ascs::kAseRspHdrMinLen,
-            len - le_audio::client_parser::ascs::kAseRspHdrMinLen, group,
-            leAudioDevice);
+            arh, ase,
+            value + bluetooth::le_audio::client_parser::ascs::kAseRspHdrMinLen,
+            len - bluetooth::le_audio::client_parser::ascs::kAseRspHdrMinLen,
+            group, leAudioDevice);
         break;
       case AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED:
         AseStateMachineProcessQosConfigured(arh, ase, group, leAudioDevice);
@@ -442,9 +445,10 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
         break;
       case AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING:
         AseStateMachineProcessStreaming(
-            arh, ase, value + le_audio::client_parser::ascs::kAseRspHdrMinLen,
-            len - le_audio::client_parser::ascs::kAseRspHdrMinLen, group,
-            leAudioDevice);
+            arh, ase,
+            value + bluetooth::le_audio::client_parser::ascs::kAseRspHdrMinLen,
+            len - bluetooth::le_audio::client_parser::ascs::kAseRspHdrMinLen,
+            group, leAudioDevice);
         break;
       case AseState::BTA_LE_AUDIO_ASE_STATE_DISABLING:
         AseStateMachineProcessDisabling(arh, ase, group, leAudioDevice);
@@ -742,7 +746,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     LeAudioDevice* leAudioDevice = group->GetFirstDevice();
     while (leAudioDevice != nullptr) {
       for (auto& ase : leAudioDevice->ases_) {
-        ase.cis_id = le_audio::kInvalidCisId;
+        ase.cis_id = bluetooth::le_audio::kInvalidCisId;
         ase.cis_conn_hdl = 0;
       }
       leAudioDevice = group->GetNextDevice(leAudioDevice);
@@ -926,11 +930,12 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
         .data_path_dir = bluetooth::hci::iso_manager::kIsoDataPathDirectionOut,
         .data_path_id = data_path_id,
         .codec_id_format =
-            le_audio::types::kLeAudioCodecHeadtracking.coding_format,
+            bluetooth::le_audio::types::kLeAudioCodecHeadtracking.coding_format,
         .codec_id_company =
-            le_audio::types::kLeAudioCodecHeadtracking.vendor_company_id,
-        .codec_id_vendor =
-            le_audio::types::kLeAudioCodecHeadtracking.vendor_codec_id,
+            bluetooth::le_audio::types::kLeAudioCodecHeadtracking
+                .vendor_company_id,
+        .codec_id_vendor = bluetooth::le_audio::types::kLeAudioCodecHeadtracking
+                               .vendor_codec_id,
         .controller_delay = 0x00000000,
         .codec_conf = std::vector<uint8_t>(),
     };
@@ -969,8 +974,8 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
 
       if (event->status == HCI_ERR_UNSUPPORTED_REM_FEATURE &&
           group->asymmetric_phy_for_unidirectional_cis_supported == true &&
-          group->GetSduInterval(le_audio::types::kLeAudioDirectionSource) ==
-              0) {
+          group->GetSduInterval(
+              bluetooth::le_audio::types::kLeAudioDirectionSource) == 0) {
         group->asymmetric_phy_for_unidirectional_cis_supported = false;
       }
 
@@ -1251,8 +1256,8 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
       std::vector<uint8_t> ids = {ases_pair.source->id};
       std::vector<uint8_t> value;
 
-      le_audio::client_parser::ascs::PrepareAseCtpAudioReceiverStopReady(ids,
-                                                                         value);
+      bluetooth::le_audio::client_parser::ascs::
+          PrepareAseCtpAudioReceiverStopReady(ids, value);
       WriteToControlPoint(leAudioDevice, value);
 
       log_history_->AddLogHistory(kLogControlPointCmd, leAudioDevice->group_id_,
@@ -1327,7 +1332,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     auto cis_conn_hdl = ase->cis_conn_hdl;
     auto& params = group->stream_conf.stream_params.get(ase->direction);
     LOG_INFO("Adding cis handle 0x%04x (%s) to stream list", cis_conn_hdl,
-             ase->direction == le_audio::types::kLeAudioDirectionSink
+             ase->direction == bluetooth::le_audio::types::kLeAudioDirectionSink
                  ? "sink"
                  : "source");
 
@@ -1393,8 +1398,9 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
         ", Audio Channel Allocation: %d"
         ", Number Of Devices: %d"
         ", Number Of Channels: %d",
-        (ase->direction == le_audio::types::kLeAudioDirectionSink ? "Sink"
-                                                                  : "Source"),
+        (ase->direction == bluetooth::le_audio::types::kLeAudioDirectionSink
+             ? "Sink"
+             : "Source"),
         cis_conn_hdl, ase_audio_channel_allocation, params.num_of_devices,
         params.num_of_channels);
 
@@ -1409,7 +1415,8 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
                 max_latency_ms);
 
     if (sdu_interval_us == 0) {
-      return max_latency_ms == le_audio::types::kMaxTransportLatencyMin;
+      return max_latency_ms ==
+             bluetooth::le_audio::types::kMaxTransportLatencyMin;
     }
     return ((1000 * max_latency_ms) >= sdu_interval_us);
   }
@@ -1482,10 +1489,10 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
       return false;
     }
 
-    sdu_interval_mtos =
-        group->GetSduInterval(le_audio::types::kLeAudioDirectionSink);
-    sdu_interval_stom =
-        group->GetSduInterval(le_audio::types::kLeAudioDirectionSource);
+    sdu_interval_mtos = group->GetSduInterval(
+        bluetooth::le_audio::types::kLeAudioDirectionSink);
+    sdu_interval_stom = group->GetSduInterval(
+        bluetooth::le_audio::types::kLeAudioDirectionSource);
     sca = group->GetSCA();
     packing = group->GetPacking();
     framing = group->GetFraming();
@@ -1495,9 +1502,9 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     uint16_t max_sdu_size_mtos = 0;
     uint16_t max_sdu_size_stom = 0;
     uint8_t phy_mtos =
-        group->GetPhyBitmask(le_audio::types::kLeAudioDirectionSink);
-    uint8_t phy_stom =
-        group->GetPhyBitmask(le_audio::types::kLeAudioDirectionSource);
+        group->GetPhyBitmask(bluetooth::le_audio::types::kLeAudioDirectionSink);
+    uint8_t phy_stom = group->GetPhyBitmask(
+        bluetooth::le_audio::types::kLeAudioDirectionSource);
 
     if (!isIntervalAndLatencyProperlySet(sdu_interval_mtos,
                                          max_trans_lat_mtos) ||
@@ -1529,15 +1536,15 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
      * later, with active device/ASE(s), check if current configuration is
      * supported or not, if not, reconfigure CIG.
      */
-    for (struct le_audio::types::cis& cis : group->cig.cises) {
-      uint16_t max_sdu_size_mtos_temp =
-          group->GetMaxSduSize(le_audio::types::kLeAudioDirectionSink, cis.id);
+    for (struct bluetooth::le_audio::types::cis& cis : group->cig.cises) {
+      uint16_t max_sdu_size_mtos_temp = group->GetMaxSduSize(
+          bluetooth::le_audio::types::kLeAudioDirectionSink, cis.id);
       uint16_t max_sdu_size_stom_temp = group->GetMaxSduSize(
-          le_audio::types::kLeAudioDirectionSource, cis.id);
-      uint8_t rtn_mtos_temp =
-          group->GetRtn(le_audio::types::kLeAudioDirectionSink, cis.id);
-      uint8_t rtn_stom_temp =
-          group->GetRtn(le_audio::types::kLeAudioDirectionSource, cis.id);
+          bluetooth::le_audio::types::kLeAudioDirectionSource, cis.id);
+      uint8_t rtn_mtos_temp = group->GetRtn(
+          bluetooth::le_audio::types::kLeAudioDirectionSink, cis.id);
+      uint8_t rtn_stom_temp = group->GetRtn(
+          bluetooth::le_audio::types::kLeAudioDirectionSource, cis.id);
 
       max_sdu_size_mtos =
           max_sdu_size_mtos_temp ? max_sdu_size_mtos_temp : max_sdu_size_mtos;
@@ -1547,20 +1554,21 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
       rtn_stom = rtn_stom_temp ? rtn_stom_temp : rtn_stom;
     }
 
-    for (struct le_audio::types::cis& cis : group->cig.cises) {
+    for (struct bluetooth::le_audio::types::cis& cis : group->cig.cises) {
       EXT_CIS_CFG cis_cfg = {};
 
       cis_cfg.cis_id = cis.id;
       cis_cfg.phy_mtos = phy_mtos;
       cis_cfg.phy_stom = phy_stom;
-      if (cis.type == le_audio::types::CisType::CIS_TYPE_BIDIRECTIONAL) {
+      if (cis.type ==
+          bluetooth::le_audio::types::CisType::CIS_TYPE_BIDIRECTIONAL) {
         cis_cfg.max_sdu_size_mtos = max_sdu_size_mtos;
         cis_cfg.rtn_mtos = rtn_mtos;
         cis_cfg.max_sdu_size_stom = max_sdu_size_stom;
         cis_cfg.rtn_stom = rtn_stom;
         cis_cfgs.push_back(cis_cfg);
-      } else if (cis.type ==
-                 le_audio::types::CisType::CIS_TYPE_UNIDIRECTIONAL_SINK) {
+      } else if (cis.type == bluetooth::le_audio::types::CisType::
+                                 CIS_TYPE_UNIDIRECTIONAL_SINK) {
         cis_cfg.max_sdu_size_mtos = max_sdu_size_mtos;
         cis_cfg.rtn_mtos = rtn_mtos;
         cis_cfg.max_sdu_size_stom = 0;
@@ -1576,8 +1584,10 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     }
 
     if ((sdu_interval_mtos == 0 && sdu_interval_stom == 0) ||
-        (max_trans_lat_mtos == le_audio::types::kMaxTransportLatencyMin &&
-         max_trans_lat_stom == le_audio::types::kMaxTransportLatencyMin) ||
+        (max_trans_lat_mtos ==
+             bluetooth::le_audio::types::kMaxTransportLatencyMin &&
+         max_trans_lat_stom ==
+             bluetooth::le_audio::types::kMaxTransportLatencyMin) ||
         (max_sdu_size_mtos == 0 && max_sdu_size_stom == 0)) {
       LOG_ERROR(" Trying to create invalid group");
       group->PrintDebugState();
@@ -1704,7 +1714,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
   static void PrepareDataPath(int group_id, struct ase* ase) {
     bluetooth::hci::iso_manager::iso_data_path_params param = {
         .data_path_dir =
-            ase->direction == le_audio::types::kLeAudioDirectionSink
+            ase->direction == bluetooth::le_audio::types::kLeAudioDirectionSink
                 ? bluetooth::hci::iso_manager::kIsoDataPathDirectionIn
                 : bluetooth::hci::iso_manager::kIsoDataPathDirectionOut,
         .data_path_id = ase->data_path_id,
@@ -1754,8 +1764,9 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
   }
 
   void AseStateMachineProcessIdle(
-      struct le_audio::client_parser::ascs::ase_rsp_hdr& arh, struct ase* ase,
-      LeAudioDeviceGroup* group, LeAudioDevice* leAudioDevice) {
+      struct bluetooth::le_audio::client_parser::ascs::ase_rsp_hdr& arh,
+      struct ase* ase, LeAudioDeviceGroup* group,
+      LeAudioDevice* leAudioDevice) {
     switch (ase->state) {
       case AseState::BTA_LE_AUDIO_ASE_STATE_IDLE:
       case AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED:
@@ -1764,7 +1775,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
         SetAseState(leAudioDevice, ase, AseState::BTA_LE_AUDIO_ASE_STATE_IDLE);
         ase->active = false;
         ase->configured_for_context_type =
-            le_audio::types::LeAudioContextType::UNINITIALIZED;
+            bluetooth::le_audio::types::LeAudioContextType::UNINITIALIZED;
 
         if (!leAudioDevice->HaveAllActiveAsesSameState(
                 AseState::BTA_LE_AUDIO_ASE_STATE_IDLE)) {
@@ -1868,8 +1879,9 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
 
   void PrepareAndSendCodecConfigure(LeAudioDeviceGroup* group,
                                     LeAudioDevice* leAudioDevice) {
-    struct le_audio::client_parser::ascs::ctp_codec_conf conf;
-    std::vector<struct le_audio::client_parser::ascs::ctp_codec_conf> confs;
+    struct bluetooth::le_audio::client_parser::ascs::ctp_codec_conf conf;
+    std::vector<struct bluetooth::le_audio::client_parser::ascs::ctp_codec_conf>
+        confs;
     struct ase* ase;
     std::stringstream msg_stream;
     std::stringstream extra_stream;
@@ -1899,7 +1911,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
       confs.push_back(conf);
 
       msg_stream << "ASE_ID " << +conf.ase_id << ",";
-      if (ase->direction == le_audio::types::kLeAudioDirectionSink) {
+      if (ase->direction == bluetooth::le_audio::types::kLeAudioDirectionSink) {
         extra_stream << "snk,";
       } else {
         extra_stream << "src,";
@@ -1909,7 +1921,8 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     }
 
     std::vector<uint8_t> value;
-    le_audio::client_parser::ascs::PrepareAseCtpCodecConfig(confs, value);
+    bluetooth::le_audio::client_parser::ascs::PrepareAseCtpCodecConfig(confs,
+                                                                       value);
     WriteToControlPoint(leAudioDevice, value);
 
     log_history_->AddLogHistory(kLogControlPointCmd, group->group_id_,
@@ -1918,8 +1931,8 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
   }
 
   void AseStateMachineProcessCodecConfigured(
-      struct le_audio::client_parser::ascs::ase_rsp_hdr& arh, struct ase* ase,
-      uint8_t* data, uint16_t len, LeAudioDeviceGroup* group,
+      struct bluetooth::le_audio::client_parser::ascs::ase_rsp_hdr& arh,
+      struct ase* ase, uint8_t* data, uint16_t len, LeAudioDeviceGroup* group,
       LeAudioDevice* leAudioDevice) {
     if (!group) {
       LOG(ERROR) << __func__ << ", leAudioDevice doesn't belong to any group";
@@ -1935,11 +1948,13 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
      *       proper state.
      */
     auto qos_config_update = [leAudioDevice](
-                                 const struct le_audio::client_parser::ascs::
-                                     ase_codec_configured_state_params& rsp,
-                                 le_audio::types::AseQosPreferences& out_qos,
-                                 le_audio::types::AseQosConfiguration&
-                                     out_cfg) {
+                                 const struct bluetooth::le_audio::
+                                     client_parser::ascs::
+                                         ase_codec_configured_state_params& rsp,
+                                 bluetooth::le_audio::types::AseQosPreferences&
+                                     out_qos,
+                                 bluetooth::le_audio::types::
+                                     AseQosConfiguration& out_cfg) {
       out_qos.supported_framing = rsp.framing;
       out_qos.preferred_phy = rsp.preferred_phy;
       out_qos.preferred_retrans_nb = rsp.preferred_retrans_nb;
@@ -1965,8 +1980,8 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     /* ase contain current ASE state. New state is in "arh" */
     switch (ase->state) {
       case AseState::BTA_LE_AUDIO_ASE_STATE_IDLE: {
-        struct le_audio::client_parser::ascs::ase_codec_configured_state_params
-            rsp;
+        struct bluetooth::le_audio::client_parser::ascs::
+            ase_codec_configured_state_params rsp;
 
         /* Cache codec configured status values for further
          * configuration/reconfiguration
@@ -1987,9 +2002,11 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
            * a direction, cannot be supported by the newly connected member
            * device's ASE for the direction.
            */
-          if ((ase->direction == le_audio::types::kLeAudioDirectionSink &&
+          if ((ase->direction ==
+                   bluetooth::le_audio::types::kLeAudioDirectionSink &&
                cig_curr_max_trans_lat_mtos > rsp.max_transport_latency) ||
-              (ase->direction == le_audio::types::kLeAudioDirectionSource &&
+              (ase->direction ==
+                   bluetooth::le_audio::types::kLeAudioDirectionSource &&
                cig_curr_max_trans_lat_stom > rsp.max_transport_latency)) {
             group->SetPendingConfiguration();
             StopStream(group);
@@ -2027,7 +2044,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
            * yet, we should wait for the stack to trigger adding device to the
            * stream */
           if (leAudioDevice->GetConnectionState() ==
-              le_audio::DeviceConnectState::CONNECTED) {
+              bluetooth::le_audio::DeviceConnectState::CONNECTED) {
             PrepareAndSendConfigQos(group, leAudioDevice);
           } else {
             LOG_DEBUG(
@@ -2095,8 +2112,8 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
          * autonomously because of the reconfiguration done by us
          */
 
-        struct le_audio::client_parser::ascs::ase_codec_configured_state_params
-            rsp;
+        struct bluetooth::le_audio::client_parser::ascs::
+            ase_codec_configured_state_params rsp;
 
         /* Cache codec configured status values for further
          * configuration/reconfiguration
@@ -2122,7 +2139,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
            * yet, we should wait for the stack to trigger adding device to the
            * stream */
           if (leAudioDevice->GetConnectionState() ==
-              le_audio::DeviceConnectState::CONNECTED) {
+              bluetooth::le_audio::DeviceConnectState::CONNECTED) {
             PrepareAndSendConfigQos(group, leAudioDevice);
           } else {
             LOG_DEBUG(
@@ -2257,8 +2274,9 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
   }
 
   void AseStateMachineProcessQosConfigured(
-      struct le_audio::client_parser::ascs::ase_rsp_hdr& arh, struct ase* ase,
-      LeAudioDeviceGroup* group, LeAudioDevice* leAudioDevice) {
+      struct bluetooth::le_audio::client_parser::ascs::ase_rsp_hdr& arh,
+      struct ase* ase, LeAudioDeviceGroup* group,
+      LeAudioDevice* leAudioDevice) {
     if (!group) {
       LOG(ERROR) << __func__ << ", leAudioDevice doesn't belong to any group";
 
@@ -2294,7 +2312,8 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
         break;
       }
       case AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING:
-        if (ase->direction == le_audio::types::kLeAudioDirectionSource) {
+        if (ase->direction ==
+            bluetooth::le_audio::types::kLeAudioDirectionSource) {
           /* Source ASE cannot go from Streaming to QoS Configured state */
           LOG(ERROR) << __func__ << ", invalid state transition, from: "
                      << static_cast<int>(ase->state) << ", to: "
@@ -2417,8 +2436,9 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
   }
 
   void PrepareAndSendEnable(LeAudioDevice* leAudioDevice) {
-    struct le_audio::client_parser::ascs::ctp_enable conf;
-    std::vector<struct le_audio::client_parser::ascs::ctp_enable> confs;
+    struct bluetooth::le_audio::client_parser::ascs::ctp_enable conf;
+    std::vector<struct bluetooth::le_audio::client_parser::ascs::ctp_enable>
+        confs;
     std::vector<uint8_t> value;
     struct ase* ase;
     std::stringstream msg_stream;
@@ -2445,7 +2465,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
 
     } while ((ase = leAudioDevice->GetNextActiveAse(ase)));
 
-    le_audio::client_parser::ascs::PrepareAseCtpEnable(confs, value);
+    bluetooth::le_audio::client_parser::ascs::PrepareAseCtpEnable(confs, value);
     WriteToControlPoint(leAudioDevice, value);
 
     LOG_INFO("group_id: %d, %s", leAudioDevice->group_id_,
@@ -2493,7 +2513,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     LOG_INFO("group_id: %d, %s", leAudioDevice->group_id_,
              ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
     std::vector<uint8_t> value;
-    le_audio::client_parser::ascs::PrepareAseCtpDisable(ids, value);
+    bluetooth::le_audio::client_parser::ascs::PrepareAseCtpDisable(ids, value);
 
     WriteToControlPoint(leAudioDevice, value);
 
@@ -2536,7 +2556,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     } while ((ase = leAudioDevice->GetNextActiveAse(ase)));
 
     std::vector<uint8_t> value;
-    le_audio::client_parser::ascs::PrepareAseCtpRelease(ids, value);
+    bluetooth::le_audio::client_parser::ascs::PrepareAseCtpRelease(ids, value);
     WriteToControlPoint(leAudioDevice, value);
 
     LOG_INFO("group_id: %d, %s", leAudioDevice->group_id_,
@@ -2547,7 +2567,8 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
 
   void PrepareAndSendConfigQos(LeAudioDeviceGroup* group,
                                LeAudioDevice* leAudioDevice) {
-    std::vector<struct le_audio::client_parser::ascs::ctp_qos_conf> confs;
+    std::vector<struct bluetooth::le_audio::client_parser::ascs::ctp_qos_conf>
+        confs;
 
     bool validate_transport_latency = false;
     bool validate_max_sdu_size = false;
@@ -2573,7 +2594,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
       }
       ase->qos_config.framing = group->GetFraming();
 
-      struct le_audio::client_parser::ascs::ctp_qos_conf conf;
+      struct bluetooth::le_audio::client_parser::ascs::ctp_qos_conf conf;
       conf.ase_id = ase->id;
       conf.cig = group->group_id_;
       conf.cis = ase->cis_id;
@@ -2592,7 +2613,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
       }
 
       msg_stream << "ASE " << +conf.ase_id << ",";
-      if (ase->direction == le_audio::types::kLeAudioDirectionSink) {
+      if (ase->direction == bluetooth::le_audio::types::kLeAudioDirectionSink) {
         conf.max_transport_latency = group->GetMaxTransportLatencyMtos();
         extra_stream << "snk,";
       } else {
@@ -2601,7 +2622,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
       }
 
       if (conf.max_transport_latency >
-          le_audio::types::kMaxTransportLatencyMin) {
+          bluetooth::le_audio::types::kMaxTransportLatencyMin) {
         validate_transport_latency = true;
       }
 
@@ -2625,7 +2646,8 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     }
 
     std::vector<uint8_t> value;
-    le_audio::client_parser::ascs::PrepareAseCtpConfigQos(confs, value);
+    bluetooth::le_audio::client_parser::ascs::PrepareAseCtpConfigQos(confs,
+                                                                     value);
     WriteToControlPoint(leAudioDevice, value);
 
     LOG_INFO("group_id: %d, %s", leAudioDevice->group_id_,
@@ -2639,7 +2661,8 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
       LeAudioDevice* leAudioDevice,
       const BidirectionalPair<AudioContexts>& context_types,
       const BidirectionalPair<std::vector<uint8_t>>& ccid_lists) {
-    std::vector<struct le_audio::client_parser::ascs::ctp_update_metadata>
+    std::vector<
+        struct bluetooth::le_audio::client_parser::ascs::ctp_update_metadata>
         confs;
 
     std::stringstream msg_stream;
@@ -2667,7 +2690,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
       }
 
       msg_stream << "ASE_ID " << +ase->id << ",";
-      if (ase->direction == le_audio::types::kLeAudioDirectionSink) {
+      if (ase->direction == bluetooth::le_audio::types::kLeAudioDirectionSink) {
         extra_stream << "snk,";
       } else {
         extra_stream << "src,";
@@ -2695,7 +2718,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
 
       ase->metadata = new_metadata;
 
-      struct le_audio::client_parser::ascs::ctp_update_metadata conf;
+      struct bluetooth::le_audio::client_parser::ascs::ctp_update_metadata conf;
 
       conf.ase_id = ase->id;
       conf.metadata = ase->metadata;
@@ -2709,7 +2732,8 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
 
     if (confs.size() != 0) {
       std::vector<uint8_t> value;
-      le_audio::client_parser::ascs::PrepareAseCtpUpdateMetadata(confs, value);
+      bluetooth::le_audio::client_parser::ascs::PrepareAseCtpUpdateMetadata(
+          confs, value);
       WriteToControlPoint(leAudioDevice, value);
 
       LOG_INFO("group_id: %d, %s", leAudioDevice->group_id_,
@@ -2730,15 +2754,16 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     stream << kLogAseStartReadyOp;
 
     do {
-      if (ase->direction == le_audio::types::kLeAudioDirectionSource) {
+      if (ase->direction ==
+          bluetooth::le_audio::types::kLeAudioDirectionSource) {
         stream << "ASE_ID " << +ase->id << ",";
         ids.push_back(ase->id);
       }
     } while ((ase = leAudioDevice->GetNextActiveAse(ase)));
 
     if (ids.size() > 0) {
-      le_audio::client_parser::ascs::PrepareAseCtpAudioReceiverStartReady(
-          ids, value);
+      bluetooth::le_audio::client_parser::ascs::
+          PrepareAseCtpAudioReceiverStartReady(ids, value);
       WriteToControlPoint(leAudioDevice, value);
 
       LOG_INFO("group_id: %d, %s", leAudioDevice->group_id_,
@@ -2749,8 +2774,9 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
   }
 
   void AseStateMachineProcessEnabling(
-      struct le_audio::client_parser::ascs::ase_rsp_hdr& arh, struct ase* ase,
-      LeAudioDeviceGroup* group, LeAudioDevice* leAudioDevice) {
+      struct bluetooth::le_audio::client_parser::ascs::ase_rsp_hdr& arh,
+      struct ase* ase, LeAudioDeviceGroup* group,
+      LeAudioDevice* leAudioDevice) {
     if (!group) {
       LOG(ERROR) << __func__ << ", leAudioDevice doesn't belong to any group";
       return;
@@ -2813,8 +2839,8 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
   }
 
   void AseStateMachineProcessStreaming(
-      struct le_audio::client_parser::ascs::ase_rsp_hdr& arh, struct ase* ase,
-      uint8_t* data, uint16_t len, LeAudioDeviceGroup* group,
+      struct bluetooth::le_audio::client_parser::ascs::ase_rsp_hdr& arh,
+      struct ase* ase, uint8_t* data, uint16_t len, LeAudioDeviceGroup* group,
       LeAudioDevice* leAudioDevice) {
     if (!group) {
       LOG(ERROR) << __func__ << ", leAudioDevice doesn't belong to any group";
@@ -2884,7 +2910,8 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
         break;
       }
       case AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING: {
-        struct le_audio::client_parser::ascs::ase_transient_state_params rsp;
+        struct bluetooth::le_audio::client_parser::ascs::
+            ase_transient_state_params rsp;
 
         if (!ParseAseStatusTransientStateParams(rsp, len, data)) {
           StopStream(group);
@@ -2927,15 +2954,16 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
   }
 
   void AseStateMachineProcessDisabling(
-      struct le_audio::client_parser::ascs::ase_rsp_hdr& arh, struct ase* ase,
-      LeAudioDeviceGroup* group, LeAudioDevice* leAudioDevice) {
+      struct bluetooth::le_audio::client_parser::ascs::ase_rsp_hdr& arh,
+      struct ase* ase, LeAudioDeviceGroup* group,
+      LeAudioDevice* leAudioDevice) {
     if (!group) {
       LOG(ERROR) << __func__ << ", leAudioDevice doesn't belong to any group";
 
       return;
     }
 
-    if (ase->direction == le_audio::types::kLeAudioDirectionSink) {
+    if (ase->direction == bluetooth::le_audio::types::kLeAudioDirectionSink) {
       /* Sink ASE state machine does not have Disabling state */
       LOG_ERROR(", invalid state transition, from: %s , to: %s ",
                 ToString(group->GetState()).c_str(),
@@ -2981,8 +3009,9 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
         "data_path_state: %s, cis_state: %s",
         group->group_id_, ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_),
         ase->id, ase->cis_conn_hdl,
-        ase->direction == le_audio::types::kLeAudioDirectionSink ? "sink"
-                                                                 : "source",
+        ase->direction == bluetooth::le_audio::types::kLeAudioDirectionSink
+            ? "sink"
+            : "source",
         bluetooth::common::ToString(ase->data_path_state).c_str(),
         bluetooth::common::ToString(ase->cis_state).c_str());
 
@@ -3006,8 +3035,9 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
   }
 
   void AseStateMachineProcessReleasing(
-      struct le_audio::client_parser::ascs::ase_rsp_hdr& arh, struct ase* ase,
-      LeAudioDeviceGroup* group, LeAudioDevice* leAudioDevice) {
+      struct bluetooth::le_audio::client_parser::ascs::ase_rsp_hdr& arh,
+      struct ase* ase, LeAudioDeviceGroup* group,
+      LeAudioDevice* leAudioDevice) {
     if (!group) {
       LOG(ERROR) << __func__ << ", leAudioDevice doesn't belong to any group";
 
@@ -3180,7 +3210,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
 };
 }  // namespace
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 void LeAudioGroupStateMachine::Initialize(Callbacks* state_machine_callbacks_) {
   if (instance) {
     LOG(ERROR) << "Already initialized";
@@ -3203,4 +3233,4 @@ LeAudioGroupStateMachine* LeAudioGroupStateMachine::Get() {
   CHECK(instance);
   return instance;
 }
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

@@ -16,7 +16,7 @@
 
 #include "metrics_collector.h"
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 
 /* Metrics Colloctor */
 MetricsCollector* MetricsCollector::instance = nullptr;
@@ -36,7 +36,8 @@ void MetricsCollector::OnConnectionStateChanged(
     bluetooth::le_audio::ConnectionState state, ConnectionStatus status) {}
 
 void MetricsCollector::OnStreamStarted(
-    int32_t group_id, le_audio::types::LeAudioContextType context_type) {}
+    int32_t group_id,
+    bluetooth::le_audio::types::LeAudioContextType context_type) {}
 
 void MetricsCollector::OnStreamEnded(int32_t group_id) {}
 
@@ -44,4 +45,4 @@ void MetricsCollector::OnBroadcastStateChanged(bool started) {}
 
 void MetricsCollector::Flush() {}
 
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

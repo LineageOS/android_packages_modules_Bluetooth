@@ -23,10 +23,10 @@
 
 #include "common/metrics.h"
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 
 using bluetooth::le_audio::ConnectionState;
-using le_audio::types::LeAudioContextType;
+using bluetooth::le_audio::types::LeAudioContextType;
 
 const static metrics::ClockTimePoint kInvalidTimePoint{};
 
@@ -128,7 +128,7 @@ class GroupMetricsImpl : public GroupMetrics {
   }
 
   void AddStateChangedEvent(const RawAddress& address,
-                            le_audio::ConnectionState state,
+                            bluetooth::le_audio::ConnectionState state,
                             ConnectionStatus status) override {
     auto it = opened_devices_.find(address);
     if (it == opened_devices_.end()) {
@@ -137,15 +137,15 @@ class GroupMetricsImpl : public GroupMetrics {
                                   {address, device_metrics_.back().get()});
     }
     it->second->AddStateChangedEvent(state, status);
-    if (state == le_audio::ConnectionState::DISCONNECTED ||
-        (state == le_audio::ConnectionState::CONNECTED &&
+    if (state == bluetooth::le_audio::ConnectionState::DISCONNECTED ||
+        (state == bluetooth::le_audio::ConnectionState::CONNECTED &&
          status != ConnectionStatus::SUCCESS)) {
       opened_devices_.erase(it);
     }
   }
 
   void AddStreamStartedEvent(
-      le_audio::types::LeAudioContextType context_type) override {
+      bluetooth::le_audio::types::LeAudioContextType context_type) override {
     int32_t atom_context_type = to_atom_context_type(context_type);
     // Make sure events aligned
     if (streaming_offset_nanos_.size() - streaming_duration_nanos_.size() !=
@@ -266,7 +266,8 @@ void MetricsCollector::OnConnectionStateChanged(
 }
 
 void MetricsCollector::OnStreamStarted(
-    int32_t group_id, le_audio::types::LeAudioContextType context_type) {
+    int32_t group_id,
+    bluetooth::le_audio::types::LeAudioContextType context_type) {
   if (group_id <= 0) return;
   auto it = opened_groups_.find(group_id);
   if (it != opened_groups_.end()) {
@@ -302,4 +303,4 @@ void MetricsCollector::Flush() {
   opened_groups_.clear();
 }
 
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

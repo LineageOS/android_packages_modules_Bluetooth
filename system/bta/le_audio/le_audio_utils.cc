@@ -22,10 +22,10 @@
 #include "os/log.h"
 
 using bluetooth::common::ToString;
-using le_audio::types::AudioContexts;
-using le_audio::types::LeAudioContextType;
+using bluetooth::le_audio::types::AudioContexts;
+using bluetooth::le_audio::types::LeAudioContextType;
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 namespace utils {
 
 /* The returned LeAudioContextType should have its entry in the
@@ -405,4 +405,4 @@ bool IsCodecUsingLtvFormat(const types::LeAudioCodecId& codec_id) {
   return false;
 }
 }  // namespace utils
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

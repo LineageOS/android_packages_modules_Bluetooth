@@ -35,7 +35,7 @@ using ::bluetooth::audio::hidl::SessionType_2_1;
 
 using ::bluetooth::audio::le_audio::LeAudioClientInterface;
 using ::bluetooth::audio::le_audio::StartRequestState;
-using ::le_audio::DsaMode;
+using ::bluetooth::le_audio::DsaMode;
 
 /**
  * Helper utils

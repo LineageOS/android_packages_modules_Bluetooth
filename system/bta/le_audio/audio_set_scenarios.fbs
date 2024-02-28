@@ -14,7 +14,7 @@
  *  limitations under the License.
  *
  */
-namespace bluetooth.le_audio;
+namespace bluetooth.fbs.le_audio;
 /// Scenario represents the use case such as "Media", "Conversation", etc.
 /// Each scenario can list any number of codec configurations by their names in
 /// the order of preference. That means if the first entry does not meet all

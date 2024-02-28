@@ -26,7 +26,7 @@
 #include "le_audio_types.h"
 #include "types/raw_address.h"
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 
 namespace metrics {
 using ClockTimePoint =
@@ -68,7 +68,7 @@ class GroupMetrics {
                                     ConnectionStatus status) = 0;
 
   virtual void AddStreamStartedEvent(
-      le_audio::types::LeAudioContextType context_type) = 0;
+      bluetooth::le_audio::types::LeAudioContextType context_type) = 0;
 
   virtual void AddStreamEndedEvent() = 0;
 
@@ -112,8 +112,9 @@ class MetricsCollector {
    *
    * @param group_id Group ID of the associated stream.
    */
-  void OnStreamStarted(int32_t group_id,
-                       le_audio::types::LeAudioContextType context_type);
+  void OnStreamStarted(
+      int32_t group_id,
+      bluetooth::le_audio::types::LeAudioContextType context_type);
 
   /**
    * When there is a change in LE Audio stream started
@@ -148,4 +149,4 @@ class MetricsCollector {
   metrics::ClockTimePoint broadcast_beginning_timepoint_;
 };
 
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

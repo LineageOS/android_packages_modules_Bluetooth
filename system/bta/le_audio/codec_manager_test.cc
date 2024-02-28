@@ -32,16 +32,18 @@ using ::testing::Test;
 
 using bluetooth::hci::iso_manager::kIsoDataPathHci;
 using bluetooth::hci::iso_manager::kIsoDataPathPlatformDefault;
-using le_audio::set_configurations::AudioSetConfiguration;
-using le_audio::types::CodecLocation;
-using le_audio::types::kLeAudioDirectionSink;
-using le_audio::types::kLeAudioDirectionSource;
+using bluetooth::le_audio::set_configurations::AudioSetConfiguration;
+using bluetooth::le_audio::types::CodecLocation;
+using bluetooth::le_audio::types::kLeAudioDirectionSink;
+using bluetooth::le_audio::types::kLeAudioDirectionSource;
 
 void osi_property_set_bool(const char* key, bool value);
 
 template <typename T>
-T& le_audio::types::BidirectionalPair<T>::get(uint8_t direction) {
-  return (direction == le_audio::types::kLeAudioDirectionSink) ? sink : source;
+T& bluetooth::le_audio::types::BidirectionalPair<T>::get(uint8_t direction) {
+  return (direction == bluetooth::le_audio::types::kLeAudioDirectionSink)
+             ? sink
+             : source;
 }
 
 static const std::vector<AudioSetConfiguration> offload_capabilities_none(0);
@@ -64,7 +66,7 @@ std::vector<AudioSetConfiguration> get_offload_capabilities() {
 }  // namespace audio
 }  // namespace bluetooth
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 namespace {
 
 void set_mock_offload_capabilities(
@@ -220,8 +222,8 @@ TEST_F(CodecManagerTestAdsp, testStreamConfigurationAdspDownMix) {
   // Expect the same configuration for sink and source
   ASSERT_TRUE(out_offload_configs.sink.has_value());
   ASSERT_TRUE(out_offload_configs.source.has_value());
-  for (auto direction : {le_audio::types::kLeAudioDirectionSink,
-                         le_audio::types::kLeAudioDirectionSource}) {
+  for (auto direction : {bluetooth::le_audio::types::kLeAudioDirectionSink,
+                         bluetooth::le_audio::types::kLeAudioDirectionSource}) {
     uint32_t allocation = 0;
     auto& config = out_offload_configs.get(direction).value();
     ASSERT_EQ(2lu, config.stream_map.size());
@@ -267,8 +269,8 @@ TEST_F(CodecManagerTestAdsp, testStreamConfigurationAdspDownMix) {
   // Expect sink & source configurations with empty CIS channel allocation map.
   ASSERT_TRUE(out_offload_configs.sink.has_value());
   ASSERT_TRUE(out_offload_configs.source.has_value());
-  for (auto direction : {le_audio::types::kLeAudioDirectionSink,
-                         le_audio::types::kLeAudioDirectionSource}) {
+  for (auto direction : {bluetooth::le_audio::types::kLeAudioDirectionSink,
+                         bluetooth::le_audio::types::kLeAudioDirectionSource}) {
     auto& config = out_offload_configs.get(direction).value();
     ASSERT_EQ(0lu, config.stream_map.size());
     ASSERT_EQ(16, config.bits_per_sample);
@@ -286,19 +288,20 @@ TEST_F(CodecManagerTestAdsp, test_capabilities_none) {
   codec_manager->Start(offloading_preference);
 
   // Verify every context
-  for (::le_audio::types::LeAudioContextType ctx_type :
-       ::le_audio::types::kLeAudioContextAllTypesArray) {
+  for (::bluetooth::le_audio::types::LeAudioContextType ctx_type :
+       ::bluetooth::le_audio::types::kLeAudioContextAllTypesArray) {
     ASSERT_EQ(nullptr, codec_manager->GetOffloadCodecConfig(ctx_type));
   }
 }
 
 TEST_F(CodecManagerTestAdsp, test_capabilities) {
-  for (auto test_context : ::le_audio::types::kLeAudioContextAllTypesArray) {
+  for (auto test_context :
+       ::bluetooth::le_audio::types::kLeAudioContextAllTypesArray) {
     // Build the offloader capabilities vector using the configuration provider
     // in HOST mode to get all the .json filce configuration entries.
     std::vector<AudioSetConfiguration> offload_capabilities;
     AudioSetConfigurationProvider::Initialize(
-        le_audio::types::CodecLocation::HOST);
+        bluetooth::le_audio::types::CodecLocation::HOST);
     for (auto& cap : *AudioSetConfigurationProvider::Get()->GetConfigurations(
              test_context)) {
       offload_capabilities.push_back(*cap);
@@ -371,4 +374,4 @@ TEST_F(CodecManagerTestHost, test_start) {
 }
 
 }  // namespace
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

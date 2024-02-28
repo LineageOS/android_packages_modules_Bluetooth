@@ -45,9 +45,9 @@ using AudioConfigurationAIDL =
 using ::aidl::android::hardware::bluetooth::audio::LatencyMode;
 using ::aidl::android::hardware::bluetooth::audio::LeAudioCodecConfiguration;
 
-using ::le_audio::CodecManager;
-using ::le_audio::set_configurations::AudioSetConfiguration;
-using ::le_audio::types::CodecLocation;
+using ::bluetooth::le_audio::CodecManager;
+using ::bluetooth::le_audio::set_configurations::AudioSetConfiguration;
+using ::bluetooth::le_audio::types::CodecLocation;
 }  // namespace
 
 std::vector<AudioSetConfiguration> get_offload_capabilities() {
@@ -411,7 +411,7 @@ void LeAudioClientInterface::Sink::StopSession() {
 }
 
 void LeAudioClientInterface::Sink::UpdateAudioConfigToHal(
-    const ::le_audio::offload_config& offload_config) {
+    const ::bluetooth::le_audio::offload_config& offload_config) {
   if (HalVersionManager::GetHalTransport() ==
       BluetoothAudioHalTransport::HIDL) {
     return;
@@ -427,7 +427,7 @@ void LeAudioClientInterface::Sink::UpdateAudioConfigToHal(
 }
 
 void LeAudioClientInterface::Sink::UpdateBroadcastAudioConfigToHal(
-    const ::le_audio::broadcast_offload_config& offload_config) {
+    const ::bluetooth::le_audio::broadcast_offload_config& offload_config) {
   if (HalVersionManager::GetHalTransport() ==
       BluetoothAudioHalTransport::HIDL) {
     return;
@@ -773,7 +773,7 @@ void LeAudioClientInterface::Source::StopSession() {
 }
 
 void LeAudioClientInterface::Source::UpdateAudioConfigToHal(
-    const ::le_audio::offload_config& offload_config) {
+    const ::bluetooth::le_audio::offload_config& offload_config) {
   if (HalVersionManager::GetHalTransport() ==
       BluetoothAudioHalTransport::HIDL) {
     return;
