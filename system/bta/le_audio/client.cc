@@ -3442,10 +3442,6 @@ class LeAudioClientImpl : public LeAudioClient {
       return;
     }
 
-    if (DsaDataConsume(group, cis_conn_hdl, data, size, timestamp)) {
-      return;
-    }
-
     uint16_t left_cis_handle = 0;
     uint16_t right_cis_handle = 0;
     for (auto [cis_handle, audio_location] :
@@ -5262,6 +5258,10 @@ class LeAudioClientImpl : public LeAudioClient {
         auto* event =
             static_cast<bluetooth::hci::iso_manager::cis_data_evt*>(data);
 
+        if (DsaDataConsume(event)) {
+          return;
+        }
+
         if (audio_receiver_state_ != AudioState::STARTED) {
           LOG_ERROR("receiver state not ready, current state=%s",
                     ToString(audio_receiver_state_).c_str());
@@ -5809,16 +5809,34 @@ class LeAudioClientImpl : public LeAudioClient {
     le_audio::MetricsCollector::Get()->OnStreamEnded(active_group_id_);
   }
 
-  bool DsaDataConsume(LeAudioDeviceGroup* group, uint16_t cis_conn_hdl,
-                      uint8_t* data, uint16_t size, uint32_t timestamp) {
+  bool DsaDataConsume(bluetooth::hci::iso_manager::cis_data_evt* event) {
     if (!IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
       return false;
     }
 
-    if (iso_data_callback == nullptr || !group->dsa_.active ||
-        group->dsa_.mode != DsaMode::ISO_SW) {
+    if (active_group_id_ == bluetooth::groups::kGroupUnknown) {
       return false;
     }
+    LeAudioDeviceGroup* group = aseGroups_.FindById(active_group_id_);
+    if (!group || !group->dsa_.active) {
+      return false;
+    }
+
+    if (group->dsa_.mode != DsaMode::ISO_SW) {
+      LOG_WARN("ISO packets received over HCI in DSA mode: %d",
+               group->dsa_.mode);
+      return false;
+    }
+
+    if (iso_data_callback == nullptr) {
+      LOG_WARN("Dsa data consumer not registered");
+      return false;
+    }
+
+    uint16_t cis_conn_hdl = event->cis_conn_hdl;
+    uint8_t* data = event->p_msg->data + event->p_msg->offset;
+    uint16_t size = event->p_msg->len - event->p_msg->offset;
+    uint32_t timestamp = event->ts;
 
     // Find LE Audio device
     LeAudioDevice* leAudioDevice = group->GetFirstDevice();
@@ -6202,6 +6220,7 @@ bool LeAudioClient::RegisterIsoDataConsumer(LeAudioIsoDataCallback callback) {
     return false;
   }
 
+  LOG_INFO("ISO data consumer changed");
   iso_data_callback = callback;
   return true;
 }
