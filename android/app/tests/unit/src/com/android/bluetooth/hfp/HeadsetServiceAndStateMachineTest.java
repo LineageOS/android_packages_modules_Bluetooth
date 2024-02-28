@@ -1260,6 +1260,46 @@ public class HeadsetServiceAndStateMachineTest {
         verify(mNativeInterface, times(0)).connectAudio(device);
     }
 
+    /**
+     * Test to verify the following behavior regarding phoneStateChanged when the SCO is managed by
+     * the Audio: When phoneStateChange returns, HeadsetStateMachine completes processing
+     * mActiveDevice's CALL_STATE_CHANGED message
+     */
+    @Test
+    public void testPhoneStateChange_SynchronousCallStateChanged() {
+        mSetFlagsRule.enableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO);
+
+        BluetoothDevice device = TestUtils.getTestDevice(mAdapter, 0);
+        Assert.assertNotNull(device);
+        connectTestDevice(device);
+
+        BluetoothDevice device2 = TestUtils.getTestDevice(mAdapter, 1);
+        Assert.assertNotNull(device2);
+        connectTestDevice(device2);
+
+        BluetoothDevice device3 = TestUtils.getTestDevice(mAdapter, 2);
+        Assert.assertNotNull(device3);
+        connectTestDevice(device3);
+
+        mHeadsetService.setActiveDevice(device);
+        Assert.assertTrue(mHeadsetService.setActiveDevice(device));
+
+        HeadsetCallState headsetCallState =
+                new HeadsetCallState(
+                        0, 0, HeadsetHalConstants.CALL_STATE_INCOMING, TEST_PHONE_NUMBER, 128, "");
+        mHeadsetService.phoneStateChanged(
+                headsetCallState.mNumActive,
+                headsetCallState.mNumHeld,
+                headsetCallState.mCallState,
+                headsetCallState.mNumber,
+                headsetCallState.mType,
+                headsetCallState.mName,
+                false);
+        // verify phoneStateChanged runs synchronously, which means when phoneStateChange returns,
+        // HeadsetStateMachine completes processing CALL_STATE_CHANGED message
+        verify(mNativeInterface, times(1)).phoneStateChange(device, headsetCallState);
+    }
+
     private void connectTestDevice(BluetoothDevice device) {
         when(mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.HEADSET))
                 .thenReturn(BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
