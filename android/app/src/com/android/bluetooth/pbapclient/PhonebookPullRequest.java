@@ -30,7 +30,6 @@ import java.util.ArrayList;
 
 public class PhonebookPullRequest extends PullRequest {
     private static final String TAG = "PhonebookPullRequest";
-    private static final boolean VDBG = Log.isLoggable(TAG, Log.VERBOSE);
 
     @VisibleForTesting
     static final int MAX_OPS = 250;
@@ -50,9 +49,7 @@ public class PhonebookPullRequest extends PullRequest {
             Log.e(TAG, "onPullComplete entries is null.");
             return;
         }
-        if (VDBG) {
-            Log.d(TAG, "onPullComplete with " + mEntries.size() + " count.");
-        }
+        Log.v(TAG, "onPullComplete with " + mEntries.size() + " count.");
 
         try {
             ContentResolver contactsProvider = mContext.getContentResolver();
@@ -84,11 +81,9 @@ public class PhonebookPullRequest extends PullRequest {
                 contactsProvider.applyBatch(ContactsContract.AUTHORITY, insertOperations);
                 insertOperations.clear();
             }
-            if (VDBG) {
-                Log.d(TAG, "Sync complete: add=" + mEntries.size());
-            }
+            Log.v(TAG, "Sync complete: add=" + mEntries.size());
         } catch (OperationApplicationException | RemoteException | NumberFormatException e) {
-            Log.e(TAG, "Got exception: ", e);
+            Log.e(TAG, "Exception occurred while processing phonebook pull: ", e);
         } finally {
             complete = true;
         }

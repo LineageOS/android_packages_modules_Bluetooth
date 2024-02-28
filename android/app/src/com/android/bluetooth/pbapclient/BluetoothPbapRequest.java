@@ -27,9 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 abstract class BluetoothPbapRequest {
-
     static final String TAG = "PbapClient.BaseRequest";
-    private static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
 
     protected static final byte OAP_TAGID_ORDER = 0x01;
     protected static final byte OAP_TAGID_SEARCH_VALUE = 0x02;
@@ -59,7 +57,7 @@ abstract class BluetoothPbapRequest {
     }
 
     public void execute(ClientSession session) throws IOException {
-        if (DBG) Log.v(TAG, "execute");
+        Log.v(TAG, "execute");
 
         /* in case request is aborted before can be executed */
         if (mAborted) {
@@ -89,7 +87,7 @@ abstract class BluetoothPbapRequest {
 
             mResponseCode = mOp.getResponseCode();
 
-            if (DBG) Log.d(TAG, "mResponseCode=" + mResponseCode);
+            Log.d(TAG, "mResponseCode=" + mResponseCode);
 
             checkResponseCode(mResponseCode);
         } catch (IOException e) {
@@ -113,19 +111,19 @@ abstract class BluetoothPbapRequest {
     }
 
     protected void readResponse(InputStream stream) throws IOException {
-        if (DBG) Log.v(TAG, "readResponse");
+        Log.v(TAG, "readResponse");
 
         /* nothing here by default */
     }
 
     protected void readResponseHeaders(HeaderSet headerset) {
-        if (DBG) Log.v(TAG, "readResponseHeaders");
+        Log.v(TAG, "readResponseHeaders");
 
         /* nothing here by dafault */
     }
 
     protected void checkResponseCode(int responseCode) throws IOException {
-        if (DBG) Log.v(TAG, "checkResponseCode");
+        Log.v(TAG, "checkResponseCode");
 
         /* nothing here by dafault */
     }

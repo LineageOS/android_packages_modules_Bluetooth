@@ -56,9 +56,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /** Provides Bluetooth Phone Book Access Profile Client profile. */
 public class PbapClientService extends ProfileService {
-    private static final String TAG = "PbapClientService";
-    private static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
-    private static final boolean VDBG = Log.isLoggable(TAG, Log.VERBOSE);
+    private static final String TAG = PbapClientService.class.getSimpleName();
 
     private static final String SERVICE_NAME = "Phonebook Access PCE";
 
@@ -131,9 +129,7 @@ public class PbapClientService extends ProfileService {
 
     @Override
     public void start() {
-        if (VDBG) {
-            Log.v(TAG, "onStart");
-        }
+        Log.v(TAG, "onStart");
 
         mDatabaseManager =
                 Objects.requireNonNull(
@@ -183,7 +179,7 @@ public class PbapClientService extends ProfileService {
     }
 
     void cleanupDevice(BluetoothDevice device) {
-        if (DBG) Log.d(TAG, "Cleanup device: " + device);
+        Log.d(TAG, "Cleanup device: " + device);
         synchronized (mPbapClientStateMachineMap) {
             PbapClientStateMachine pbapClientStateMachine = mPbapClientStateMachineMap.get(device);
             if (pbapClientStateMachine != null) {
@@ -212,16 +208,14 @@ public class PbapClientService extends ProfileService {
      * our account type is ready to use.
      *
      * Make a placeholder device account and determine our visibility relative to it. Note that this
-     * function uses the same restrictions are the other add and remove functions, but is *also*
+     * function uses the same restrictions as the other add and remove functions, but is *also*
      * available to all system apps instead of throwing a runtime SecurityException.
      */
     protected boolean isAuthenticationServiceReady() {
         Account account = new Account("00:00:00:00:00:00", getString(R.string.pbap_account_type));
         AccountManager accountManager = AccountManager.get(this);
         int visibility = accountManager.getAccountVisibility(account, getPackageName());
-        if (DBG) {
-            Log.d(TAG, "Checking visibility, visibility=" + visibility);
-        }
+        Log.d(TAG, "Checking visibility, visibility=" + visibility);
         return visibility == AccountManager.VISIBILITY_VISIBLE
                 || visibility == AccountManager.VISIBILITY_USER_MANAGED_VISIBLE;
     }
@@ -236,7 +230,7 @@ public class PbapClientService extends ProfileService {
         AccountManager accountManager = AccountManager.get(this);
         Account[] accounts =
                 accountManager.getAccountsByType(getString(R.string.pbap_account_type));
-        if (VDBG) Log.v(TAG, "Found " + accounts.length + " unclean accounts");
+        Log.v(TAG, "Found " + accounts.length + " unclean accounts");
         for (Account acc : accounts) {
             Log.w(TAG, "Deleting " + acc);
             try {
@@ -251,7 +245,7 @@ public class PbapClientService extends ProfileService {
     }
 
     private void removeHfpCallLog(String accountName, Context context) {
-        if (DBG) Log.d(TAG, "Removing call logs from " + accountName);
+        Log.d(TAG, "Removing call logs from " + accountName);
         // Delete call logs belonging to accountName==BD_ADDR that also match
         // component name "hfpclient".
         ComponentName componentName = new ComponentName(context, HfpClientConnectionService.class);
@@ -304,7 +298,7 @@ public class PbapClientService extends ProfileService {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            if (DBG) Log.v(TAG, "onReceive" + action);
+            Log.v(TAG, "onReceive" + action);
             if (action.equals(Intent.ACTION_USER_UNLOCKED)) {
                 for (PbapClientStateMachine stateMachine : mPbapClientStateMachineMap.values()) {
                     stateMachine.tryDownloadIfConnected();
@@ -342,9 +336,7 @@ public class PbapClientService extends ProfileService {
     public void handleHeadsetClientConnectionStateChanged(
             BluetoothDevice device, int oldState, int newState) {
         if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-            if (DBG) {
-                Log.d(TAG, "Received intent to disconnect HFP with " + device);
-            }
+            Log.d(TAG, "Received intent to disconnect HFP with " + device);
             // HFP client stores entries in calllog.db by BD_ADDR and component name
             // Using the current Service as the context.
             removeHfpCallLog(device.getAddress(), this);
@@ -384,7 +376,7 @@ public class PbapClientService extends ProfileService {
         @Override
         public void connect(BluetoothDevice device, AttributionSource source,
                 SynchronousResultReceiver receiver) {
-            if (DBG) Log.d(TAG, "PbapClient Binder connect ");
+            Log.d(TAG, "PbapClient Binder connect");
             try {
                 PbapClientService service = getService(source);
                 boolean defaultValue = false;
@@ -507,9 +499,7 @@ public class PbapClientService extends ProfileService {
 
     @VisibleForTesting
     static synchronized void setPbapClientService(PbapClientService instance) {
-        if (VDBG) {
-            Log.v(TAG, "setPbapClientService(): set to: " + instance);
-        }
+        Log.v(TAG, "setPbapClientService(): set to: " + instance);
         sPbapClientService = instance;
     }
 
@@ -520,7 +510,7 @@ public class PbapClientService extends ProfileService {
         }
         enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED,
                 "Need BLUETOOTH_PRIVILEGED permission");
-        if (DBG) Log.d(TAG, "Received request to ConnectPBAPPhonebook " + device.getAddress());
+        Log.d(TAG, "Received request to ConnectPBAPPhonebook " + device.getAddress());
         if (getConnectionPolicy(device) <= BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
             return false;
         }
@@ -591,10 +581,8 @@ public class PbapClientService extends ProfileService {
             Log.e(TAG, "No Statemachine found for the device=" + device.toString());
             return;
         }
-        if (DBG) {
-            Log.v(TAG, "Received UUID: " + uuid.toString());
-            Log.v(TAG, "expected UUID: " + BluetoothUuid.PBAP_PSE.toString());
-        }
+        Log.v(TAG, "Received SDP record for UUID=" + uuid.toString() + " (expected UUID="
+                + BluetoothUuid.PBAP_PSE.toString() + ")");
         if (uuid.equals(BluetoothUuid.PBAP_PSE)) {
             stateMachine
                     .obtainMessage(PbapClientStateMachine.MSG_SDP_COMPLETE, record)
@@ -645,9 +633,7 @@ public class PbapClientService extends ProfileService {
         }
         enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED,
                 "Need BLUETOOTH_PRIVILEGED permission");
-        if (DBG) {
-            Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
-        }
+        Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
         if (!mDatabaseManager.setProfileConnectionPolicy(device, BluetoothProfile.PBAP_CLIENT,
                   connectionPolicy)) {

@@ -42,8 +42,6 @@ import java.util.List;
 
 public class CallLogPullRequest extends PullRequest {
     private static final String TAG = "CallLogPullRequest";
-    private static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
-    private static final boolean VDBG = Log.isLoggable(TAG, Log.VERBOSE);
 
     @VisibleForTesting
     static final String TIMESTAMP_PROPERTY = "X-IRMC-CALL-DATETIME";
@@ -68,12 +66,7 @@ public class CallLogPullRequest extends PullRequest {
             return;
         }
 
-        if (DBG) {
-            Log.d(TAG, "onPullComplete");
-            if (VDBG) {
-                Log.d(TAG, " with " + mEntries.size() + " count.");
-            }
-        }
+        Log.d(TAG, "onPullComplete with " + mEntries.size() + " entries");
         int type;
         try {
             if (path.equals(PbapClientConnectionHandler.ICH_PATH)) {
@@ -115,10 +108,7 @@ public class CallLogPullRequest extends PullRequest {
                             try {
                                 values.put(CallLog.Calls.DATE, parser.parse(pair.second).getTime());
                             } catch (ParseException e) {
-                                Log.d(TAG, "Failed to parse date ");
-                                if (VDBG) {
-                                    Log.d(TAG, pair.second);
-                                }
+                                Log.d(TAG, "Failed to parse date, value=" + pair.second);
                             }
                         }
                     }
@@ -156,18 +146,14 @@ public class CallLogPullRequest extends PullRequest {
                     c.moveToNext();
                     String contactId = c.getString(c.getColumnIndex(
                             ContactsContract.PhoneLookup.CONTACT_ID));
-                    if (VDBG) {
-                        Log.d(TAG, "onPullComplete: ID " + contactId + " key : " + key);
-                    }
+                    Log.d(TAG, "onPullComplete: ID " + contactId + " key : " + key);
                     String where = ContactsContract.RawContacts.CONTACT_ID + "=" + contactId;
                     mContext.getContentResolver().update(
                             ContactsContract.RawContacts.CONTENT_URI, values, where, null);
                 }
             }
         }
-        if (DBG) {
-            Log.d(TAG, "Updated TIMES_CONTACTED");
-        }
+        Log.d(TAG, "Updated TIMES_CONTACTED");
     }
 
 }
