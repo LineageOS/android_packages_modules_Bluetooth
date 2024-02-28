@@ -577,11 +577,6 @@
 #define PORT_TX_BUF_CRITICAL_WM 15
 #endif
 
-/* The RFCOMM multiplexer preferred flow control mechanism. */
-#ifndef PORT_FC_DEFAULT
-#define PORT_FC_DEFAULT PORT_FC_CREDIT
-#endif
-
 /******************************************************************************
  *
  * BNEP

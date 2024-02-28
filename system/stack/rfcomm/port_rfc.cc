@@ -320,8 +320,7 @@ void PORT_ParNegInd(tRFC_MCB* p_mcb, uint8_t dlci, uint16_t mtu, uint8_t cl,
    */
   /* already defined for this mux, we respond with that value. */
   if (p_mcb->flow == PORT_FC_UNDEFINED) {
-    if ((PORT_FC_DEFAULT == PORT_FC_TS710) ||
-        (cl == RFCOMM_PN_CONV_LAYER_TYPE_1)) {
+    if (cl == RFCOMM_PN_CONV_LAYER_TYPE_1) {
       p_mcb->flow = PORT_FC_TS710;
     } else {
       p_mcb->flow = PORT_FC_CREDIT;
@@ -380,16 +379,7 @@ void PORT_ParNegCnf(tRFC_MCB* p_mcb, uint8_t dlci, uint16_t mtu, uint8_t cl,
 
   /* Flow control mechanism not set yet.  Negotiate flow control mechanism. */
   if (p_mcb->flow == PORT_FC_UNDEFINED) {
-    /* Our stack is configured for TS07.10 and they responded with credit-based.
-     */
-    /* This is illegal-- negotiation fails. */
-    if ((PORT_FC_DEFAULT == PORT_FC_TS710) &&
-        (cl == RFCOMM_PN_CONV_LAYER_CBFC_R)) {
-      log::warn("negotiation fails, index={}", p_port->handle);
-      rfc_send_disc(p_mcb, p_port->dlci);
-      rfc_port_closed(p_port);
-      return;
-    } else if (cl == RFCOMM_PN_CONV_LAYER_CBFC_R) {
+    if (cl == RFCOMM_PN_CONV_LAYER_CBFC_R) {
       // Our stack is configured for credit-based and they responded with
       // credit-based.
       p_mcb->flow = PORT_FC_CREDIT;
