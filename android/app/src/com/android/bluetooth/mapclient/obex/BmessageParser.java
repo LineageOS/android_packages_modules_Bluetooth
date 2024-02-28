@@ -35,8 +35,7 @@ import java.text.ParseException;
 
 /* BMessage as defined by MAP_SPEC_V101 Section 3.1.3 Message format (x-bt/message) */
 class BmessageParser {
-    private static final String TAG = "BmessageParser";
-    private static final boolean DBG = MapClientService.DBG;
+    private static final String TAG = BmessageParser.class.getSimpleName();
 
     private static final String CRLF = "\r\n";
 
@@ -72,9 +71,7 @@ class BmessageParser {
     public static Bmessage createBmessage(String str) {
         BmessageParser p = new BmessageParser();
 
-        if (DBG) {
-            Log.d(TAG, "actual wired contents: " + str);
-        }
+        Log.d(TAG, "actual wired contents: " + str);
 
         try {
             p.parse(str);
@@ -291,12 +288,10 @@ class BmessageParser {
          * UTF-8 as the MCE is not obliged to support native charset.
          *
          * 2020-06-01: we could now expect MMS to be more than text, e.g., image-only, so charset
-         * not always UTF-8, downgrading log message from ERROR to DEBUG.
+         * not always UTF-8, downgrading log message from ERROR to INFO.
          */
         if (!"UTF-8".equals(mBmsg.mBbodyCharset)) {
-            if (DBG) {
-                Log.d(TAG, "The charset was not set to charset UTF-8: " + mBmsg.mBbodyCharset);
-            }
+            Log.i(TAG, "The charset was not set to charset UTF-8: " + mBmsg.mBbodyCharset);
         }
 
         /*

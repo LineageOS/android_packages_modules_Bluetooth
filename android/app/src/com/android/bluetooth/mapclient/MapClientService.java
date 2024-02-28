@@ -51,10 +51,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class MapClientService extends ProfileService {
-    private static final String TAG = "MapClientService";
-
-    static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
-    static final boolean VDBG = Log.isLoggable(TAG, Log.VERBOSE);
+    private static final String TAG = MapClientService.class.getSimpleName();
 
     static final int MAXIMUM_CONNECTED_DEVICES = 4;
 
@@ -99,9 +96,7 @@ public class MapClientService extends ProfileService {
 
     @VisibleForTesting
     static synchronized void setMapClientService(MapClientService instance) {
-        if (DBG) {
-            Log.d(TAG, "setMapClientService(): set to: " + instance);
-        }
+        Log.d(TAG, "setMapClientService(): set to: " + instance);
         sMapClientService = instance;
     }
 
@@ -123,9 +118,7 @@ public class MapClientService extends ProfileService {
         if (device == null) {
             throw new IllegalArgumentException("Null device");
         }
-        if (DBG) {
-            Log.d(TAG, "connect(device= " + device + "): devices=" + mMapInstanceMap.keySet());
-        }
+        Log.d(TAG, "connect(device= " + device + "): devices=" + mMapInstanceMap.keySet());
         if (getConnectionPolicy(device) == BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
             Log.w(TAG, "Connection not allowed: <" + device.getAddress()
                     + "> is CONNECTION_POLICY_FORBIDDEN");
@@ -162,16 +155,12 @@ public class MapClientService extends ProfileService {
 
         // Statemachine exists but not in connecting or connected state! it should
         // have been removed form the map. lets get rid of it and add a new one.
-        if (DBG) {
-            Log.d(TAG, "Statemachine exists for a device in unexpected state: " + state);
-        }
+        Log.d(TAG, "Statemachine exists for a device in unexpected state: " + state);
         mMapInstanceMap.remove(device);
         mapStateMachine.doQuit();
 
         addDeviceToMapAndConnect(device);
-        if (DBG) {
-            Log.d(TAG, "connect(device= " + device + "): end devices=" + mMapInstanceMap.keySet());
-        }
+        Log.d(TAG, "connect(device= " + device + "): end devices=" + mMapInstanceMap.keySet());
         return true;
     }
 
@@ -188,9 +177,7 @@ public class MapClientService extends ProfileService {
     public synchronized boolean disconnect(BluetoothDevice device) {
         enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED,
                 "Need BLUETOOTH_PRIVILEGED permission");
-        if (DBG) {
-            Log.d(TAG, "disconnect(device= " + device + "): devices=" + mMapInstanceMap.keySet());
-        }
+        Log.d(TAG, "disconnect(device= " + device + "): devices=" + mMapInstanceMap.keySet());
         MceStateMachine mapStateMachine = mMapInstanceMap.get(device);
         // a map state machine instance doesn't exist. maybe it is already gone?
         if (mapStateMachine == null) {
@@ -202,10 +189,8 @@ public class MapClientService extends ProfileService {
             return false;
         }
         mapStateMachine.disconnect();
-        if (DBG) {
-            Log.d(TAG, "disconnect(device= " + device + "): end devices="
-                    + mMapInstanceMap.keySet());
-        }
+        Log.d(TAG, "disconnect(device= " + device + "): end devices="
+                + mMapInstanceMap.keySet());
         return true;
     }
 
@@ -218,20 +203,20 @@ public class MapClientService extends ProfileService {
     }
 
     public synchronized List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
-        if (DBG) Log.d(TAG, "getDevicesMatchingConnectionStates" + Arrays.toString(states));
+        Log.d(TAG, "getDevicesMatchingConnectionStates" + Arrays.toString(states));
         List<BluetoothDevice> deviceList = new ArrayList<>();
         BluetoothDevice[] bondedDevices = mAdapterService.getBondedDevices();
         int connectionState;
         for (BluetoothDevice device : bondedDevices) {
             connectionState = getConnectionState(device);
-            if (DBG) Log.d(TAG, "Device: " + device + "State: " + connectionState);
+            Log.d(TAG, "Device: " + device + "State: " + connectionState);
             for (int i = 0; i < states.length; i++) {
                 if (connectionState == states[i]) {
                     deviceList.add(device);
                 }
             }
         }
-        if (DBG) Log.d(TAG, deviceList.toString());
+        Log.d(TAG, deviceList.toString());
         return deviceList;
     }
 
@@ -259,9 +244,7 @@ public class MapClientService extends ProfileService {
      */
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
-        if (VDBG) {
-            Log.v(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
-        }
+        Log.v(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
         enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED,
                 "Need BLUETOOTH_PRIVILEGED permission");
 
@@ -310,7 +293,7 @@ public class MapClientService extends ProfileService {
 
     @Override
     public synchronized void start() {
-        Log.e(TAG, "start()");
+        Log.d(TAG, "start()");
 
         mAdapterService = AdapterService.getAdapterService();
         mDatabaseManager = Objects.requireNonNull(AdapterService.getAdapterService().getDatabase(),
@@ -329,9 +312,7 @@ public class MapClientService extends ProfileService {
 
     @Override
     public synchronized void stop() {
-        if (DBG) {
-            Log.d(TAG, "stop()");
-        }
+        Log.d(TAG, "stop()");
 
         if (mMnsServer != null) {
             mMnsServer.stop();
@@ -353,9 +334,7 @@ public class MapClientService extends ProfileService {
 
     @Override
     public void cleanup() {
-        if (DBG) {
-            Log.d(TAG, "in Cleanup");
-        }
+        Log.d(TAG, "cleanup");
         removeUncleanAccounts();
         // TODO(b/72948646): should be moved to stop()
         setMapClientService(null);
@@ -369,9 +348,7 @@ public class MapClientService extends ProfileService {
      */
     @VisibleForTesting
     public void cleanupDevice(BluetoothDevice device, MceStateMachine sm) {
-        if (DBG) {
-            Log.d(TAG, "cleanup(device= " + device + "): devices=" + mMapInstanceMap.keySet());
-        }
+        Log.d(TAG, "cleanup(device= " + device + "): devices=" + mMapInstanceMap.keySet());
         synchronized (mMapInstanceMap) {
             MceStateMachine stateMachine = mMapInstanceMap.get(device);
             if (stateMachine != null) {
@@ -383,16 +360,12 @@ public class MapClientService extends ProfileService {
                 }
             }
         }
-        if (DBG) {
-            Log.d(TAG, "cleanup(device= " + device + "): end devices=" + mMapInstanceMap.keySet());
-        }
+        Log.d(TAG, "cleanup(device= " + device + "): end devices=" + mMapInstanceMap.keySet());
     }
 
     @VisibleForTesting
     void removeUncleanAccounts() {
-        if (DBG) {
-            Log.d(TAG, "removeUncleanAccounts(): devices=" + mMapInstanceMap.keySet());
-        }
+        Log.d(TAG, "removeUncleanAccounts(): devices=" + mMapInstanceMap.keySet());
         Iterator iterator = mMapInstanceMap.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<BluetoothDevice, MceStateMachine> profileConnection =
@@ -401,9 +374,7 @@ public class MapClientService extends ProfileService {
                 iterator.remove();
             }
         }
-        if (DBG) {
-            Log.d(TAG, "removeUncleanAccounts(): end devices=" + mMapInstanceMap.keySet());
-        }
+        Log.d(TAG, "removeUncleanAccounts(): end devices=" + mMapInstanceMap.keySet());
     }
 
     public synchronized boolean getUnreadMessages(BluetoothDevice device) {
@@ -422,7 +393,7 @@ public class MapClientService extends ProfileService {
     public synchronized int getSupportedFeatures(BluetoothDevice device) {
         MceStateMachine mapStateMachine = mMapInstanceMap.get(device);
         if (mapStateMachine == null) {
-            if (DBG) Log.d(TAG, "in getSupportedFeatures, returning 0");
+            Log.d(TAG, "in getSupportedFeatures, returning 0");
             return 0;
         }
         return mapStateMachine.getSupportedFeatures();
@@ -455,9 +426,7 @@ public class MapClientService extends ProfileService {
         private MapClientService mService;
 
         Binder(MapClientService service) {
-            if (VDBG) {
-                Log.v(TAG, "Binder()");
-            }
+            Log.v(TAG, "Binder()");
             mService = service;
         }
 
@@ -483,9 +452,7 @@ public class MapClientService extends ProfileService {
         @Override
         public void isConnected(BluetoothDevice device, AttributionSource source,
                 SynchronousResultReceiver receiver) {
-            if (VDBG) {
-                Log.v(TAG, "isConnected()");
-            }
+            Log.v(TAG, "isConnected()");
             try {
                 MapClientService service = getService(source);
                 boolean result = false;
@@ -501,9 +468,7 @@ public class MapClientService extends ProfileService {
         @Override
         public void connect(BluetoothDevice device, AttributionSource source,
                 SynchronousResultReceiver receiver) {
-            if (VDBG) {
-                Log.v(TAG, "connect()");
-            }
+            Log.v(TAG, "connect()");
             try {
                 MapClientService service = getService(source);
                 boolean result = false;
@@ -519,9 +484,7 @@ public class MapClientService extends ProfileService {
         @Override
         public void disconnect(BluetoothDevice device, AttributionSource source,
                 SynchronousResultReceiver receiver) {
-            if (VDBG) {
-                Log.v(TAG, "disconnect()");
-            }
+            Log.v(TAG, "disconnect()");
             try {
                 MapClientService service = getService(source);
                 boolean result = false;
@@ -537,9 +500,7 @@ public class MapClientService extends ProfileService {
         @Override
         public void getConnectedDevices(AttributionSource source,
                 SynchronousResultReceiver receiver) {
-            if (VDBG) {
-                Log.v(TAG, "getConnectedDevices()");
-            }
+            Log.v(TAG, "getConnectedDevices()");
             try {
                 MapClientService service = getService(source);
                 List<BluetoothDevice> connectedDevices = new ArrayList<BluetoothDevice>(0);
@@ -555,9 +516,7 @@ public class MapClientService extends ProfileService {
         @Override
         public void getDevicesMatchingConnectionStates(int[] states,
                 AttributionSource source, SynchronousResultReceiver receiver) {
-            if (VDBG) {
-                Log.v(TAG, "getDevicesMatchingConnectionStates()");
-            }
+            Log.v(TAG, "getDevicesMatchingConnectionStates()");
             try {
                 MapClientService service = getService(source);
                 List<BluetoothDevice> devices = new ArrayList<BluetoothDevice>(0);
@@ -573,9 +532,7 @@ public class MapClientService extends ProfileService {
         @Override
         public void getConnectionState(BluetoothDevice device, AttributionSource source,
                 SynchronousResultReceiver receiver) {
-            if (VDBG) {
-                Log.v(TAG, "getConnectionState()");
-            }
+            Log.v(TAG, "getConnectionState()");
             try {
                 MapClientService service = getService(source);
                 int state = BluetoothProfile.STATE_DISCONNECTED;
@@ -591,9 +548,7 @@ public class MapClientService extends ProfileService {
         @Override
         public void setConnectionPolicy(BluetoothDevice device, int connectionPolicy,
                 AttributionSource source, SynchronousResultReceiver receiver) {
-            if (VDBG) {
-                Log.v(TAG, "setConnectionPolicy()");
-            }
+            Log.v(TAG, "setConnectionPolicy()");
             try {
                 MapClientService service = getService(source);
                 boolean result = false;
@@ -609,9 +564,7 @@ public class MapClientService extends ProfileService {
         @Override
         public void getConnectionPolicy(BluetoothDevice device, AttributionSource source,
                 SynchronousResultReceiver receiver) {
-            if (VDBG) {
-                Log.v(TAG, "getConnectionPolicy()");
-            }
+            Log.v(TAG, "getConnectionPolicy()");
             try {
                 MapClientService service = getService(source);
                 int policy = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
@@ -628,14 +581,12 @@ public class MapClientService extends ProfileService {
         public void sendMessage(BluetoothDevice device, Uri[] contacts, String message,
                 PendingIntent sentIntent, PendingIntent deliveredIntent, AttributionSource source,
                 SynchronousResultReceiver receiver) {
-            if (VDBG) {
-                Log.v(TAG, "sendMessage()");
-            }
+            Log.v(TAG, "sendMessage()");
             try {
                 MapClientService service = getService(source);
                 boolean result = false;
                 if (service != null) {
-                    if (DBG) Log.d(TAG, "Checking Permission of sendMessage");
+                    Log.d(TAG, "Checking Permission of sendMessage");
                     service.enforceCallingOrSelfPermission(Manifest.permission.SEND_SMS,
                             "Need SEND_SMS permission");
                     result = service.sendMessage(device, contacts, message, sentIntent,
@@ -650,9 +601,7 @@ public class MapClientService extends ProfileService {
         @Override
         public void getUnreadMessages(BluetoothDevice device, AttributionSource source,
                 SynchronousResultReceiver receiver) {
-            if (VDBG) {
-                Log.v(TAG, "getUnreadMessages()");
-            }
+            Log.v(TAG, "getUnreadMessages()");
             try {
                 MapClientService service = getService(source);
                 boolean result = false;
@@ -670,15 +619,13 @@ public class MapClientService extends ProfileService {
         @Override
         public void getSupportedFeatures(BluetoothDevice device, AttributionSource source,
                 SynchronousResultReceiver receiver) {
-            if (VDBG) {
-                Log.v(TAG, "getSupportedFeatures()");
-            }
+            Log.v(TAG, "getSupportedFeatures()");
             try {
                 MapClientService service = getService(source);
                 int feature = 0;
                 if (service != null) {
                     feature = service.getSupportedFeatures(device);
-                } else if (DBG) {
+                } else {
                     Log.d(TAG, "in MapClientService getSupportedFeatures stub, returning 0");
                 }
                 receiver.send(feature);
@@ -690,9 +637,7 @@ public class MapClientService extends ProfileService {
         @Override
         public void setMessageStatus(BluetoothDevice device, String handle, int status,
                 AttributionSource source, SynchronousResultReceiver receiver) {
-            if (VDBG) {
-                Log.v(TAG, "setMessageStatus()");
-            }
+            Log.v(TAG, "setMessageStatus()");
             try {
                 MapClientService service = getService(source);
                 boolean result = false;
@@ -739,9 +684,7 @@ public class MapClientService extends ProfileService {
     private void handleSdpSearchRecordReceived(
             BluetoothDevice device, int status, Parcelable record, ParcelUuid uuid) {
         MceStateMachine stateMachine = mMapInstanceMap.get(device);
-        if (DBG) {
-            Log.d(TAG, "Received SDP Record, device=" + device.toString() + ", uuid=" + uuid);
-        }
+        Log.d(TAG, "Received SDP Record, device=" + device.toString() + ", uuid=" + uuid);
         if (stateMachine == null) {
             Log.e(TAG, "No Statemachine found for the device=" + device.toString());
             return;
@@ -749,9 +692,7 @@ public class MapClientService extends ProfileService {
         if (uuid.equals(BluetoothUuid.MAS)) {
             // Check if we have a valid SDP record.
             SdpMasRecord masRecord = (SdpMasRecord) record;
-            if (DBG) {
-                Log.d(TAG, "SDP complete, status: " + status + ", record:" + masRecord);
-            }
+            Log.d(TAG, "SDP complete, status: " + status + ", record:" + masRecord);
             stateMachine.sendSdpResult(status, masRecord);
         }
     }
