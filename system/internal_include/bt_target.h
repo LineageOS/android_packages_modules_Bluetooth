@@ -448,11 +448,7 @@
    Prefer greater than 0 second, and no less than default inactivity link idle
    timer(L2CAP_LINK_INACTIVITY_TOUT) in l2cap) */
 #ifndef SMP_LINK_TOUT_MIN
-#if (L2CAP_LINK_INACTIVITY_TOUT > 0)
 #define SMP_LINK_TOUT_MIN L2CAP_LINK_INACTIVITY_TOUT
-#else
-#define SMP_LINK_TOUT_MIN 2
-#endif
 #endif
 /******************************************************************************
  *
