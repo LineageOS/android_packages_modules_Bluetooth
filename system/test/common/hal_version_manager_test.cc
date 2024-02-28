@@ -147,8 +147,6 @@ TEST_F(BluetoothAudioHalVersionTest, versionOperatorGreaterOrEqual) {
                BluetoothAudioHalVersion::VERSION_AIDL_V4);
 }
 
-#if COM_ANDROID_BLUETOOTH_FLAGS_AUDIO_HAL_VERSION_CLASS
-
 TEST_F_WITH_FLAGS(
     BluetoothAudioHalVersionTest, HIDL_VERSION_2_0,
     REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(com::android::bluetooth::flags,
@@ -281,4 +279,3 @@ TEST_F_WITH_FLAGS(
   EXPECT_TRUE(BluetoothAudioHalVersion(BluetoothAudioHalTransport::AIDL, 5, 0)
                   .isAIDL());
 }
-#endif  // #if COM_ANDROID_BLUETOOTH_FLAGS_AUDIO_HAL_VERSION_CLASS

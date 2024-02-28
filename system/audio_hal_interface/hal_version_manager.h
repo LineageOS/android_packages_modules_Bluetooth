@@ -35,7 +35,6 @@ constexpr char kFullyQualifiedInterfaceName_2_0[] =
 constexpr char kFullyQualifiedInterfaceName_2_1[] =
     "android.hardware.bluetooth.audio@2.1::IBluetoothAudioProvidersFactory";
 
-#if COM_ANDROID_BLUETOOTH_FLAGS_AUDIO_HAL_VERSION_CLASS
 /**
  * The type of HAL transport, it's important to have
  * BluetoothAudioHalTransport::HIDL value defined smaller than
@@ -114,27 +113,6 @@ class BluetoothAudioHalVersion {
   uint16_t mMajor = 0;
   uint16_t mMinor = 0;
 };
-
-#else  // COM_ANDROID_BLUETOOTH_FLAGS_AUDIO_HAL_VERSION_CLASS
-
-enum class BluetoothAudioHalVersion : uint8_t {
-  VERSION_UNAVAILABLE = 0,
-  VERSION_2_0,
-  VERSION_2_1,
-  VERSION_AIDL_V1,
-  VERSION_AIDL_V2,
-  VERSION_AIDL_V3,
-  VERSION_AIDL_V4,
-};
-
-enum class BluetoothAudioHalTransport : uint8_t {
-  // Uninit, default value
-  UNKNOWN,
-  AIDL,
-  HIDL,
-};
-
-#endif  // COM_ANDROID_BLUETOOTH_FLAGS_AUDIO_HAL_VERSION_CLASS
 
 class HalVersionManager {
  public:
