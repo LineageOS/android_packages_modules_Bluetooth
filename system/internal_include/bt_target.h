@@ -254,11 +254,6 @@
 #define BTM_MAX_LOC_BD_NAME_LEN 248
 #endif
 
-/* Maximum service name stored with security authorization (0 if not needed) */
-#ifndef BTM_SEC_SERVICE_NAME_LEN
-#define BTM_SEC_SERVICE_NAME_LEN BT_MAX_SERVICE_NAME_LEN
-#endif
-
 /* Maximum length of the service name. */
 #ifndef BT_MAX_SERVICE_NAME_LEN
 #define BT_MAX_SERVICE_NAME_LEN 21

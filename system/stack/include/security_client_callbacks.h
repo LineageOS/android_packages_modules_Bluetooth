@@ -31,8 +31,7 @@
  *  Security Manager Callback Functions
  ****************************************/
 /* Authorize device for service.  Parameters are
- *              Service Id (NULL - unknown service or unused
- *                                 [BTM_SEC_SERVICE_NAME_LEN set to 0])
+ *              Service Id (NULL - unknown service or unused)
  */
 typedef uint8_t(tBTM_AUTHORIZE_CALLBACK)(uint8_t service_id);
 
