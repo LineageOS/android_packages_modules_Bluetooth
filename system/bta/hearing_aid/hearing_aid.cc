@@ -32,12 +32,14 @@
 #include <mutex>
 #include <vector>
 
+#include "audio/asrc/asrc_resampler.h"
 #include "bta/include/bta_gatt_api.h"
 #include "bta/include/bta_gatt_queue.h"
 #include "bta/include/bta_hearing_aid_api.h"
 #include "btm_iso_api.h"
 #include "device/include/controller.h"
 #include "embdrv/g722/g722_enc_dec.h"
+#include "hal/link_clocker.h"
 #include "hardware/bt_gatt_types.h"
 #include "include/check.h"
 #include "internal_include/bt_trace.h"
@@ -275,6 +277,13 @@ class HearingAidImpl : public HearingAid {
   const int DROP_FREQUENCY_THRESHOLD =
       bluetooth::common::init_flags::get_asha_packet_drop_frequency_threshold();
 
+  // Resampler context for audio stream.
+  // Clock recovery uses L2CAP Flow Control Credit Ind acknowledgments
+  // from either the left or right connection, whichever is first
+  // connected.
+  std::shared_ptr<bluetooth::hal::L2capCreditIndEvents> asrc_clock_source;
+  std::unique_ptr<bluetooth::audio::asrc::SourceAudioHalAsrc> asrc;
+
  public:
   ~HearingAidImpl() override = default;
 
@@ -352,6 +361,51 @@ class HearingAidImpl : public HearingAid {
         }
       }
     }
+  }
+
+  // Reset and configure the ASHA resampling context using the input device
+  // devices as reference for the BT clock estimation.
+  void ConfigureAsrc() {
+    if (!IS_FLAG_ENABLED(asha_asrc)) {
+      log::info("Asha resampling disabled: feature flag off");
+      return;
+    }
+
+    // Create a new ASRC context if required.
+    if (asrc == nullptr) {
+      asrc_clock_source =
+          std::make_shared<bluetooth::hal::L2capCreditIndEvents>();
+      asrc = std::make_unique<bluetooth::audio::asrc::SourceAudioHalAsrc>(
+          asrc_clock_source, /*channels*/ 2,
+          /*sample_rate*/ codec_in_use == CODEC_G722_24KHZ ? 24000 : 16000,
+          /*bit_depth*/ 16,
+          /*interval_us*/ default_data_interval_ms * 1000,
+          /*num_burst_buffers*/ 0,
+          /*burst_delay*/ 0);
+    }
+
+    for (auto& device : hearingDevices.devices) {
+      if (!device.accepting_audio) {
+        continue;
+      }
+
+      uint16_t lcid = GAP_ConnGetL2CAPCid(device.gap_handle);
+      uint16_t rcid = 0;
+      L2CA_GetRemoteCid(lcid, &rcid);
+
+      auto conn = btm_acl_for_bda(device.address, BT_TRANSPORT_LE);
+      log::info("Updating ASRC context for handle=0x{:x}, cid=0x{:x}",
+                conn->Handle(), rcid);
+
+      asrc_clock_source->Update(device.isLeft(), conn->Handle(), rcid);
+    }
+  }
+
+  // Reset the ASHA resampling context.
+  void ResetAsrc() {
+    log::info("Resetting the Asha resampling context");
+    asrc_clock_source = nullptr;
+    asrc = nullptr;
   }
 
   uint16_t UpdateBleConnParams(const RawAddress& address) {
@@ -1171,6 +1225,10 @@ class HearingAidImpl : public HearingAid {
     } else {
       log::info("audio_running={}", audio_running);
     }
+
+    // Close the ASRC context.
+    ResetAsrc();
+
     audio_running = false;
     stop_audio_ticks();
 
@@ -1212,6 +1270,9 @@ class HearingAidImpl : public HearingAid {
       log::info("No device (0/{}) ready to start", GetDeviceCount());
       return;
     }
+
+    // Open the ASRC context.
+    ConfigureAsrc();
 
     // TODO: shall we also reset the encoder ?
     encoder_state_release();
@@ -1352,6 +1413,16 @@ class HearingAidImpl : public HearingAid {
     return diff_credit < (init_credit / 2 - 1);
   }
 
+  void OnAudioDataReadyResample(const std::vector<uint8_t>& data) {
+    if (asrc == nullptr) {
+      return OnAudioDataReady(data);
+    }
+
+    for (auto const resampled_data : asrc->Run(data)) {
+      OnAudioDataReady(*resampled_data);
+    }
+  }
+
   void OnAudioDataReady(const std::vector<uint8_t>& data) {
     /* For now we assume data comes in as 16bit per sample 16kHz PCM stereo */
     bool need_drop = false;
@@ -1412,6 +1483,18 @@ class HearingAidImpl : public HearingAid {
     uint16_t l2cap_flush_threshold = 0;
     if (IS_FLAG_ENABLED(higher_l2cap_flush_threshold)) {
       l2cap_flush_threshold = 1;
+    }
+
+    // Skipping packets completely messes up the resampler context.
+    // The condition for skipping packets seems to be easily triggered,
+    // causing dropouts that could have been avoided.
+    //
+    // When the resampler is enabled, the flush threshold is set
+    // to the number of credits specified for the ASHA l2cap streaming
+    // channel. This will ensure it is only triggered in case of
+    // critical failure.
+    if (IS_FLAG_ENABLED(asha_asrc)) {
+      l2cap_flush_threshold = 8;
     }
 
     // TODO: monural, binarual check
@@ -2069,7 +2152,7 @@ void encryption_callback(const RawAddress* address, tBT_TRANSPORT, void*,
 class HearingAidAudioReceiverImpl : public HearingAidAudioReceiver {
  public:
   void OnAudioDataReady(const std::vector<uint8_t>& data) override {
-    if (instance) instance->OnAudioDataReady(data);
+    if (instance) instance->OnAudioDataReadyResample(data);
   }
   void OnAudioSuspend(const std::function<void()>& stop_audio_ticks) override {
     if (instance) instance->OnAudioSuspend(stop_audio_ticks);

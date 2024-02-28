@@ -19,17 +19,17 @@
 #include <cstdio>
 #include <iostream>
 
-namespace bluetooth::hal {
-void NocpIsoClocker::Register(NocpIsoHandler*) {}
-void NocpIsoClocker::Unregister() {}
-}  // namespace bluetooth::hal
-
 namespace bluetooth::audio::asrc {
+
+class MockClockSource : public ClockSource {
+  void Bind(ClockHandler*) override {}
+};
 
 class SourceAudioHalAsrcTest : public SourceAudioHalAsrc {
  public:
   SourceAudioHalAsrcTest(int channels, int bitdepth)
-      : SourceAudioHalAsrc(channels, 48000, bitdepth, 10000) {}
+      : SourceAudioHalAsrc(std::make_unique<MockClockSource>(), channels, 48000,
+                           bitdepth, 10000) {}
 
   template <typename T>
   void Resample(double ratio, const T* in, size_t in_length, size_t* in_count,
