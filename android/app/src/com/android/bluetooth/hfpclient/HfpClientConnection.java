@@ -28,8 +28,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 public class HfpClientConnection extends Connection {
-    private static final String TAG = "HfpClientConnection";
-    private static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
+    private static final String TAG = HfpClientConnection.class.getSimpleName();
 
     private static final String EVENT_SCO_CONNECT = "com.android.bluetooth.hfpclient.SCO_CONNECT";
     private static final String EVENT_SCO_DISCONNECT =
@@ -69,7 +68,7 @@ public class HfpClientConnection extends Connection {
         mCurrentCall = mServiceInterface.dial(mDevice, number.getSchemeSpecificPart());
         if (mCurrentCall == null) {
             close(DisconnectCause.ERROR);
-            Log.e(TAG, "Failed to create the call, dial failed.");
+            error("Failed to create the call, dial failed.");
             return;
         }
 
@@ -117,7 +116,7 @@ public class HfpClientConnection extends Connection {
 
     public void updateCall(HfpClientCall call) {
         if (call == null) {
-            Log.e(TAG, "Updating call to a null value.");
+            error("Updating call to a null value.");
             return;
         }
         mCurrentCall = call;
@@ -127,9 +126,7 @@ public class HfpClientConnection extends Connection {
         HfpClientConference conference = (HfpClientConference) getConference();
         int state = mCurrentCall.getState();
 
-        if (DBG) {
-            Log.d(TAG, "Got call state change to " + state);
-        }
+        debug("Got call state change to " + state);
         switch (state) {
             case HfpClientCall.CALL_STATE_ACTIVE:
                 setActive();
@@ -163,19 +160,17 @@ public class HfpClientConnection extends Connection {
                 }
                 break;
             default:
-                Log.wtf(TAG, "Unexpected phone state " + state);
+                Log.wtf(TAG, "[" + mDevice + "]Unexpected phone state " + state);
         }
         mPreviousCallState = state;
     }
 
     public synchronized void close(int cause) {
-        if (DBG) {
-            Log.d(TAG, "Closing call " + mCurrentCall + "state: " + mClosed);
-        }
+        debug("Closing call " + mCurrentCall + "state: " + mClosed);
         if (mClosed) {
             return;
         }
-        Log.d(TAG, "Setting " + mCurrentCall + " to disconnected " + getTelecomCallId());
+        debug("Setting " + mCurrentCall + " to disconnected " + getTelecomCallId());
         setDisconnected(new DisconnectCause(cause));
 
         mClosed = true;
@@ -194,9 +189,7 @@ public class HfpClientConnection extends Connection {
 
     @Override
     public synchronized void onPlayDtmfTone(char c) {
-        if (DBG) {
-            Log.d(TAG, "onPlayDtmfTone " + c + " " + mCurrentCall);
-        }
+        debug("onPlayDtmfTone " + c + " " + mCurrentCall);
         if (!mClosed) {
             mServiceInterface.sendDTMF(mDevice, (byte) c);
         }
@@ -204,9 +197,7 @@ public class HfpClientConnection extends Connection {
 
     @Override
     public synchronized void onDisconnect() {
-        if (DBG) {
-            Log.d(TAG, "onDisconnect call: " + mCurrentCall + " state: " + mClosed);
-        }
+        debug("onDisconnect call: " + mCurrentCall + " state: " + mClosed);
         // The call is not closed so we should send a terminate here.
         if (!mClosed) {
             mServiceInterface.terminateCall(mDevice, mCurrentCall);
@@ -217,17 +208,13 @@ public class HfpClientConnection extends Connection {
 
     @Override
     public void onAbort() {
-        if (DBG) {
-            Log.d(TAG, "onAbort " + mCurrentCall);
-        }
+        debug("onAbort " + mCurrentCall);
         onDisconnect();
     }
 
     @Override
     public synchronized void onHold() {
-        if (DBG) {
-            Log.d(TAG, "onHold " + mCurrentCall);
-        }
+        debug("onHold " + mCurrentCall);
         if (!mClosed) {
             mServiceInterface.holdCall(mDevice);
         }
@@ -239,9 +226,7 @@ public class HfpClientConnection extends Connection {
             Log.w(TAG, "Ignoring unhold; call hold on the foreground call");
             return;
         }
-        if (DBG) {
-            Log.d(TAG, "onUnhold " + mCurrentCall);
-        }
+        debug("onUnhold " + mCurrentCall);
         if (!mClosed) {
             mServiceInterface.acceptCall(mDevice, HeadsetClientServiceInterface.CALL_ACCEPT_HOLD);
         }
@@ -249,9 +234,7 @@ public class HfpClientConnection extends Connection {
 
     @Override
     public synchronized void onAnswer() {
-        if (DBG) {
-            Log.d(TAG, "onAnswer " + mCurrentCall);
-        }
+        debug("onAnswer " + mCurrentCall);
         if (!mClosed) {
             mServiceInterface.acceptCall(mDevice, HeadsetClientServiceInterface.CALL_ACCEPT_NONE);
         }
@@ -259,9 +242,7 @@ public class HfpClientConnection extends Connection {
 
     @Override
     public synchronized void onReject() {
-        if (DBG) {
-            Log.d(TAG, "onReject " + mCurrentCall);
-        }
+        debug("onReject " + mCurrentCall);
         if (!mClosed) {
             mServiceInterface.rejectCall(mDevice);
         }
@@ -269,9 +250,7 @@ public class HfpClientConnection extends Connection {
 
     @Override
     public void onCallEvent(String event, Bundle extras) {
-        if (DBG) {
-            Log.d(TAG, "onCallEvent(" + event + ", " + extras + ")");
-        }
+        debug("onCallEvent(" + event + ", " + extras + ")");
         if (mClosed) {
             return;
         }
@@ -298,5 +277,14 @@ public class HfpClientConnection extends Connection {
     public String toString() {
         return "HfpClientConnection{" + getAddress() + "," + stateToString(getState()) + ","
                 + mCurrentCall + "}";
+    }
+
+    private void debug(String message) {
+        Log.d(TAG, "[" + mDevice + "]: " + message);
+    }
+
+    private void error(String message) {
+
+        Log.e(TAG, "[" + mDevice + "]: " + message);
     }
 }

@@ -38,8 +38,7 @@ import java.util.UUID;
 // Lifecycle of a Device Block is managed entirely by the Service which creates it. In essence it
 // has only the active state otherwise the block should be GCed.
 public class HfpClientDeviceBlock {
-    private static final String TAG = "HfpClientDeviceBlock";
-    private static final boolean DBG = false;
+    private static final String TAG = HfpClientDeviceBlock.class.getSimpleName();
 
     private static final String KEY_SCO_STATE = "com.android.bluetooth.hfpclient.SCO_STATE";
 
@@ -383,16 +382,14 @@ public class HfpClientDeviceBlock {
     // Per-Device logging
 
     public void debug(String message) {
-        if (DBG) {
-            Log.d(TAG, "[device=" + mDevice + "] " + message);
-        }
+        Log.d(TAG, "[" + mDevice + "] " + message);
     }
 
     public void warn(String message) {
-        Log.w(TAG, "[device=" + mDevice + "] " + message);
+        Log.w(TAG, "[" + mDevice + "] " + message);
     }
 
     public void error(String message) {
-        Log.e(TAG, "[device=" + mDevice + "] " + message);
+        Log.e(TAG, "[" + mDevice + "] " + message);
     }
 }
