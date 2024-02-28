@@ -192,11 +192,6 @@
  *
  *****************************************************************************/
 
-/* Cancel Inquiry on incoming SSP */
-#ifndef BTM_NO_SSP_ON_INQUIRY
-#define BTM_NO_SSP_ON_INQUIRY FALSE
-#endif
-
 #ifndef DISABLE_WBS
 #define DISABLE_WBS FALSE
 #endif

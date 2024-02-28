@@ -264,7 +264,6 @@ struct tBTM_INQUIRY_VAR_ST {
 
   uint8_t state;      /* Current state that the inquiry process is in */
   uint8_t inq_active; /* Bit Mask indicating type of inquiry is active */
-  bool no_inc_ssp;    /* true, to stop inquiry on incoming SSP */
 
   bool registered_for_hci_events;
 
@@ -300,7 +299,6 @@ struct tBTM_INQUIRY_VAR_ST {
     per_max_delay = 0;
     state = BTM_INQ_INACTIVE_STATE;
     inq_active = 0;
-    no_inc_ssp = BTM_NO_SSP_ON_INQUIRY;
     registered_for_hci_events = false;
   }
   void Free() {
