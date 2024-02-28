@@ -20,10 +20,6 @@
 #ifndef BT_TARGET_H
 #define BT_TARGET_H
 
-#ifndef BUILDCFG
-#define BUILDCFG
-#endif
-
 #ifndef FALSE
 #define FALSE false
 #endif
