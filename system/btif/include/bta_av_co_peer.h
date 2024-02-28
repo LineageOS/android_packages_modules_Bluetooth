@@ -50,6 +50,9 @@ class BtaAvCoSep {
 
 class BtaAvCoPeer {
  public:
+  /**
+   * Default constructor to initialize the state of the member variables.
+   */
   BtaAvCoPeer();
 
   /**
@@ -78,7 +81,7 @@ class BtaAvCoPeer {
    *
    * @return the A2DP codecs
    */
-  A2dpCodecs* GetCodecs() { return codecs_; }
+  A2dpCodecs* GetCodecs() const { return codecs_; }
 
   bool ContentProtectActive() const { return content_protect_active_; }
   void SetContentProtectActive(bool cp_active) {
@@ -109,3 +112,115 @@ class BtaAvCoPeer {
   A2dpCodecs* codecs_;           // Locally supported codecs
   bool content_protect_active_;  // True if Content Protect is active
 };
+
+/**
+ * Cache to store all the peer and codec information.
+ * It provides different APIs to retrieve the peer and update the peer data.
+ */
+class BtaAvCoPeerCache {
+ public:
+  BtaAvCoPeerCache() = default;
+  std::recursive_mutex codec_lock_;  // Protect access to the codec state
+  std::vector<btav_a2dp_codec_config_t> codec_priorities_;  // Configured
+  BtaAvCoPeer peers_[BTA_AV_NUM_STRS];  // Connected peer information
+
+  /**
+   * Inits the cache with the appropriate data.
+   * @param codec_priorities codec priorities.
+   * @param supported_codecs supported codecs by the stack.
+   */
+  void Init(const std::vector<btav_a2dp_codec_config_t>& codec_priorities,
+            std::vector<btav_a2dp_codec_info_t>* supported_codecs);
+
+  /**
+   * Resets the cache and the peer data.
+   */
+  void Reset();
+
+  /**
+   * Find the peer entry for a given peer address.
+   *
+   * @param peer_address the peer address to use
+   * @return the peer entry if found, otherwise nullptr
+   */
+  BtaAvCoPeer* FindPeer(const RawAddress& peer_address);
+
+  /**
+   * Find the peer Source SEP entry for a given codec index.
+   *
+   * @param p_peer the peer to use
+   * @param codec_config the codec index to use
+   * @return the peer Source SEP for the codec index if found, otherwise nullptr
+   */
+  BtaAvCoSep* FindPeerSource(BtaAvCoPeer* p_peer,
+                             btav_a2dp_codec_index_t codec_index,
+                             const uint8_t content_protect_flag);
+
+  /**
+   * Find the peer Sink SEP entry for a given codec index.
+   *
+   * @param p_peer the peer to use
+   * @param codec_index the codec index to use
+   * @return the peer Sink SEP for the codec index if found, otherwise nullptr
+   */
+  BtaAvCoSep* FindPeerSink(BtaAvCoPeer* p_peer,
+                           btav_a2dp_codec_index_t codec_index,
+                           const uint8_t content_protect_flag);
+
+  /**
+   * Find the peer entry for a given BTA AV handle.
+   *
+   * @param bta_av_handle the BTA AV handle to use
+   * @return the peer entry if found, otherwise nullptr
+   */
+  BtaAvCoPeer* FindPeer(tBTA_AV_HNDL bta_av_handle);
+
+  /**
+   * Find the peer entry for a given BTA AV handle and update it with the
+   * peer address.
+   *
+   * @param bta_av_handle the BTA AV handle to use
+   * @param peer_address the peer address
+   * @return the peer entry if found, otherwise nullptr
+   */
+  BtaAvCoPeer* FindPeerAndUpdate(tBTA_AV_HNDL bta_av_handle,
+                                 const RawAddress& peer_address);
+
+  /**
+   * Find the peer UUID for a given BTA AV handle.
+   *
+   * @param bta_av_handle the BTA AV handle to use
+   * @return the peer UUID if found, otherwise 0
+   */
+  uint16_t FindPeerUuid(tBTA_AV_HNDL bta_av_handle);
+};
+
+/**
+ * Check if a content protection service is SCMS-T.
+ *
+ * @param p_orotect_info the content protection info to check
+ * @return true if the Contention Protection in @param p_protect_info
+ * is SCMS-T, otherwise false
+ */
+bool ContentProtectIsScmst(const uint8_t* p_protect_info);
+
+/**
+ * Check if audio protect info contains SCMS-T Content Protection.
+ *
+ * @param num_protect number of protect schemes
+ * @param p_protect_info the protect info to check
+ * @return true if @param p_protect_info contains SCMS-T, otherwise false
+ */
+bool AudioProtectHasScmst(uint8_t num_protect, const uint8_t* p_protect_info);
+
+/**
+ * Check if a peer SEP has content protection enabled.
+ *
+ * @param p_sep the peer SEP to check
+ * @param content_protect_flag flag to check if content protect is enabled or
+ * not.
+ * @return true if the peer SEP has content protection enabled,
+ * otherwise false
+ */
+bool AudioSepHasContentProtection(const BtaAvCoSep* p_sep,
+                                  const uint8_t content_protect_flag);
