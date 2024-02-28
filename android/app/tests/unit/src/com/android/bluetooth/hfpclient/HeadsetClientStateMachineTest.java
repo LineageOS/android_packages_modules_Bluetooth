@@ -1356,9 +1356,9 @@ public class HeadsetClientStateMachineTest {
     @Test
     public void testProcessConnectMessage_onConnectingState() {
         initToConnectingState();
-        mHeadsetClientStateMachine.sendMessage(HeadsetClientStateMachine.CONNECT);
         assertThat(mHeadsetClientStateMachine.doesSuperHaveDeferredMessages(
                 HeadsetClientStateMachine.CONNECT)).isFalse();
+        mHeadsetClientStateMachine.sendMessage(HeadsetClientStateMachine.CONNECT);
         TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
         Assert.assertTrue(mHeadsetClientStateMachine.doesSuperHaveDeferredMessages(
                 HeadsetClientStateMachine.CONNECT));
