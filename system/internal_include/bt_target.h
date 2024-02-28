@@ -280,10 +280,6 @@
 /******************************************
  *    Lisbon Features
  ******************************************/
-/* This is set to TRUE if the FEC is required for EIR packet. */
-#ifndef BTM_EIR_DEFAULT_FEC_REQUIRED
-#define BTM_EIR_DEFAULT_FEC_REQUIRED TRUE
-#endif
 
 /* The IO capability of the local device (for Simple Pairing) */
 #ifndef BTM_LOCAL_IO_CAPS

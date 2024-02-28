@@ -2085,7 +2085,7 @@ void btm_inq_rmt_name_failed_cancelled(void) {
 tBTM_STATUS BTM_WriteEIR(BT_HDR* p_buff) {
   if (bluetooth::shim::GetController()->SupportsExtendedInquiryResponse()) {
     log::verbose("Write Extended Inquiry Response to controller");
-    btsnd_hcic_write_ext_inquiry_response(p_buff, BTM_EIR_DEFAULT_FEC_REQUIRED);
+    btsnd_hcic_write_ext_inquiry_response(p_buff, TRUE);
     return BTM_SUCCESS;
   } else {
     osi_free(p_buff);
