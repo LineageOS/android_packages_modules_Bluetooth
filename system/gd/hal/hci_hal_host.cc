@@ -30,8 +30,8 @@
 
 #include "common/init_flags.h"
 #include "hal/hci_hal.h"
+#include "hal/link_clocker.h"
 #include "hal/mgmt.h"
-#include "hal/nocp_iso_clocker.h"
 #include "hal/snoop_logger.h"
 #include "metrics/counter_metrics.h"
 #include "os/log.h"
@@ -285,7 +285,7 @@ class HciHalHost : public HciHal {
 
  protected:
   void ListDependencies(ModuleList* list) const {
-    list->add<NocpIsoClocker>();
+    list->add<LinkClocker>();
     list->add<metrics::CounterMetrics>();
     list->add<SnoopLogger>();
   }
@@ -307,7 +307,7 @@ class HciHalHost : public HciHal {
         common::Bind(&HciHalHost::incoming_packet_received, common::Unretained(this)),
         common::Bind(&HciHalHost::send_packet_ready, common::Unretained(this)));
     hci_incoming_thread_.GetReactor()->ModifyRegistration(reactable_, os::Reactor::REACT_ON_READ_ONLY);
-    nocp_iso_clocker_ = GetDependency<NocpIsoClocker>();
+    link_clocker_ = GetDependency<LinkClocker>();
     btsnoop_logger_ = GetDependency<SnoopLogger>();
     LOG_INFO("HAL opened successfully");
   }
@@ -348,7 +348,7 @@ class HciHalHost : public HciHal {
   bluetooth::os::Reactor::Reactable* reactable_ = nullptr;
   std::queue<std::vector<uint8_t>> hci_outgoing_queue_;
   SnoopLogger* btsnoop_logger_ = nullptr;
-  NocpIsoClocker* nocp_iso_clocker_ = nullptr;
+  LinkClocker* link_clocker_ = nullptr;
 
   void write_to_fd(HciPacket packet) {
     // TODO: replace this with new queue when it's ready
@@ -414,7 +414,7 @@ class HciHalHost : public HciHal {
 
       HciPacket receivedHciPacket;
       receivedHciPacket.assign(buf + kH4HeaderSize, buf + kH4HeaderSize + kHciEvtHeaderSize + payload_size);
-      nocp_iso_clocker_->OnHciEvent(receivedHciPacket);
+      link_clocker_->OnHciEvent(receivedHciPacket);
       btsnoop_logger_->Capture(receivedHciPacket, SnoopLogger::Direction::INCOMING, SnoopLogger::PacketType::EVT);
       {
         std::lock_guard<std::mutex> incoming_packet_callback_lock(incoming_packet_callback_mutex_);
@@ -440,6 +440,7 @@ class HciHalHost : public HciHal {
 
       HciPacket receivedHciPacket;
       receivedHciPacket.assign(buf + kH4HeaderSize, buf + kH4HeaderSize + kHciAclHeaderSize + payload_size);
+      link_clocker_->OnAclDataReceived(receivedHciPacket);
       btsnoop_logger_->Capture(receivedHciPacket, SnoopLogger::Direction::INCOMING, SnoopLogger::PacketType::ACL);
       {
         std::lock_guard<std::mutex> incoming_packet_callback_lock(incoming_packet_callback_mutex_);
