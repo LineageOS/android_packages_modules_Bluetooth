@@ -232,9 +232,6 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id,
   btu_hcif_log_event_metrics(hci_evt_code, p);
 
   switch (hci_evt_code) {
-    case HCI_INQUIRY_RESULT_EVT:
-      btm_process_inq_results(p, hci_evt_len, BTM_INQ_RESULT_STANDARD);
-      break;
     case HCI_INQUIRY_RSSI_RESULT_EVT:
       btm_process_inq_results(p, hci_evt_len, BTM_INQ_RESULT_WITH_RSSI);
       break;
