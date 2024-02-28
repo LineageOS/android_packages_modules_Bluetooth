@@ -345,6 +345,7 @@ cc_test_host {
     srcs: [
         "test/async_manager_unittest.cc",
         "test/h4_parser_unittest.cc",
+        "test/invalid_packet_handler_unittest.cc",
         "test/pcap_filter_unittest.cc",
         "test/posix_socket_unittest.cc",
     ],
@@ -356,6 +357,8 @@ cc_test_host {
     ],
     shared_libs: [
         "libbase",
+        "libcrypto",
+        "libprotobuf-cpp-full",
     ],
     static_libs: [
         "libbt-rootcanal",
