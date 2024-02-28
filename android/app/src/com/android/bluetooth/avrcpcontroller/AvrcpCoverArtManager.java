@@ -38,8 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * properties, download the image, and place it into a Content Provider for others to retrieve from
  */
 public class AvrcpCoverArtManager {
-    private static final String TAG = "AvrcpCoverArtManager";
-    private static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
+    private static final String TAG = AvrcpCoverArtManager.class.getSimpleName();
 
     // Image Download Schemes for cover art
     public static final String AVRCP_CONTROLLER_COVER_ART_SCHEME =
@@ -484,9 +483,7 @@ public class AvrcpCoverArtManager {
      * Print to debug if debug is enabled for this class
      */
     private void debug(String msg) {
-        if (DBG) {
-            Log.d(TAG, msg);
-        }
+        Log.d(TAG, msg);
     }
 
     /**

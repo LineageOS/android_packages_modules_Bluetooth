@@ -45,8 +45,7 @@ import java.lang.ref.WeakReference;
  * disconnection has occurred, please create a new client.
  */
 public class AvrcpBipClient {
-    private static final String TAG = "AvrcpBipClient";
-    private static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
+    private static final String TAG = AvrcpBipClient.class.getSimpleName();
 
     // AVRCP Controller BIP Image Initiator/Cover Art UUID - AVRCP 1.6 Section 5.14.2.1
     private static final byte[] BLUETOOTH_UUID_AVRCP_COVER_ART = new byte[] {
@@ -466,16 +465,14 @@ public class AvrcpBipClient {
      * Print to debug if debug is enabled for this class
      */
     private void debug(String msg) {
-        if (DBG) {
-            Log.d(TAG, "[" + mDevice + "] " + msg);
-        }
+        Log.d(TAG, "[" + mDevice + "] " + msg);
     }
 
     /**
      * Print to warn
      */
     private void warn(String msg) {
-        Log.w(TAG, "[" + mDevice+ "] " + msg);
+        Log.w(TAG, "[" + mDevice + "] " + msg);
     }
 
     /**

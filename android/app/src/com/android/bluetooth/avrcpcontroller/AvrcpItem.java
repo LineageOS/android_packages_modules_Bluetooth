@@ -33,7 +33,7 @@ import java.util.Objects;
  * metadata can easily be shared with the system.
  */
 public class AvrcpItem {
-    private static final String TAG = "AvrcpItem";
+    private static final String TAG = AvrcpItem.class.getSimpleName();
 
     // AVRCP Specification defined item types
     public static final int TYPE_PLAYER = 0x1;
@@ -280,7 +280,6 @@ public class AvrcpItem {
      */
     public static class Builder {
         private static final String TAG = "AvrcpItem.Builder";
-        private static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
 
         // Attribute ID Values from AVRCP Specification
         private static final int MEDIA_ATTRIBUTE_TITLE = 0x01;
@@ -306,7 +305,7 @@ public class AvrcpItem {
         public Builder fromAvrcpAttributeArray(int[] attrIds, String[] attrMap) {
             int attributeCount = Math.max(attrIds.length, attrMap.length);
             for (int i = 0; i < attributeCount; i++) {
-                if (DBG) Log.d(TAG, attrIds[i] + " = " + attrMap[i]);
+                Log.d(TAG, attrIds[i] + " = " + attrMap[i]);
                 switch (attrIds[i]) {
                     case MEDIA_ATTRIBUTE_TITLE:
                         mAvrcpItem.mTitle = attrMap[i];

@@ -31,8 +31,7 @@ import java.io.InputStream;
  * This is a base class for implementing AVRCP Controller Basic Image Profile (BIP) requests
  */
 abstract class BipRequest {
-    private static final String TAG = "avrcpcontroller.BipRequest";
-    private static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
+    private static final String TAG = BipRequest.class.getSimpleName();
 
     // User defined OBEX header identifiers
     protected static final byte HEADER_ID_IMG_HANDLE = 0x30;
@@ -162,9 +161,7 @@ abstract class BipRequest {
      * Print to debug if debug is enabled for this class
      */
     protected void debug(String msg) {
-        if (DBG) {
-            Log.d(TAG, msg);
-        }
+        Log.d(TAG, msg);
     }
 
     /**

@@ -50,9 +50,7 @@ import java.util.UUID;
  *          ....
  */
 public class BrowseTree {
-    private static final String TAG = "BrowseTree";
-    private static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
-    private static final boolean VDBG = Log.isLoggable(TAG, Log.VERBOSE);
+    private static final String TAG = BrowseTree.class.getSimpleName();
 
     public static final String ROOT = "__ROOT__";
     public static final String UP = "__UP__";
@@ -282,7 +280,7 @@ public class BrowseTree {
         }
 
         synchronized void setCached(boolean cached) {
-            if (DBG) Log.d(TAG, "Set Cache" + cached + "Node" + toString());
+            Log.d(TAG, "Set Cache" + cached + "Node" + toString());
             mCached = cached;
             if (!cached) {
                 for (BrowseNode child : mChildren) {
@@ -368,9 +366,7 @@ public class BrowseTree {
             Log.e(TAG, "folder " + parentID + " not found!");
             return null;
         }
-        if (VDBG) {
-            Log.d(TAG, "Size" + mBrowseMap.size());
-        }
+        Log.d(TAG, "Size" + mBrowseMap.size());
         return bn;
     }
 
@@ -419,7 +415,7 @@ public class BrowseTree {
     synchronized boolean setCurrentAddressedPlayer(String uid) {
         BrowseNode bn = mBrowseMap.get(uid);
         if (bn == null) {
-            if (DBG) Log.d(TAG, "Setting an unknown addressed player, ignoring bn " + uid);
+            Log.w(TAG, "Setting an unknown addressed player, ignoring bn " + uid);
             mRootNode.setCached(false);
             mRootNode.mChildren.add(mNowPlayingNode);
             mBrowseMap.put(NOW_PLAYING_PREFIX, mNowPlayingNode);
@@ -481,7 +477,7 @@ public class BrowseTree {
      * be notified of the change.
      */
     synchronized Set<BrowseNode> notifyImageDownload(String uuid, Uri uri) {
-        if (DBG) Log.d(TAG, "Received downloaded image handle to cascade to BrowseNodes using it");
+        Log.d(TAG, "Received downloaded image handle to cascade to BrowseNodes using it");
         ArrayList<String> nodes = getNodesUsingCoverArt(uuid);
         HashSet<BrowseNode> parents = new HashSet<BrowseNode>();
         for (String nodeId : nodes) {
@@ -550,17 +546,15 @@ public class BrowseTree {
     static BrowseNode getEldestChild(BrowseNode ancestor, BrowseNode target) {
         // ancestor is an ancestor of target
         BrowseNode descendant = target;
-        if (DBG) {
-            Log.d(TAG, "NAVIGATING ancestor" + ancestor.toString() + "Target"
-                    + target.toString());
-        }
+        Log.d(TAG, "NAVIGATING ancestor" + ancestor.toString() + "Target"
+                + target.toString());
         while (!ancestor.equals(descendant.mParent)) {
             descendant = descendant.mParent;
             if (descendant == null) {
                 return null;
             }
         }
-        if (DBG) Log.d(TAG, "NAVIGATING Descendant" + descendant.toString());
+        Log.d(TAG, "NAVIGATING Descendant" + descendant.toString());
         return descendant;
     }
 }
