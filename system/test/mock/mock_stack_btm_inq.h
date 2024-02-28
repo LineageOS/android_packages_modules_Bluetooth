@@ -439,20 +439,6 @@ struct btm_process_inq_complete {
 };
 extern struct btm_process_inq_complete btm_process_inq_complete;
 
-// Name: btm_process_inq_results
-// Params: const uint8_t* p, uint8_t hci_evt_len, uint8_t inq_res_mode
-// Return: void
-struct btm_process_inq_results {
-  std::function<void(const uint8_t* p, uint8_t hci_evt_len,
-                     uint8_t inq_res_mode)>
-      body{[](const uint8_t* /* p */, uint8_t /* hci_evt_len */,
-              uint8_t /* inq_res_mode */) {}};
-  void operator()(const uint8_t* p, uint8_t hci_evt_len, uint8_t inq_res_mode) {
-    body(p, hci_evt_len, inq_res_mode);
-  };
-};
-extern struct btm_process_inq_results btm_process_inq_results;
-
 // Name: btm_process_remote_name
 // Params: const RawAddress* bda, const BD_NAME bdn, uint16_t evt_len,
 // tHCI_STATUS hci_status Return: void
