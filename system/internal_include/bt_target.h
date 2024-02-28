@@ -244,12 +244,6 @@
 #define BTM_SEC_MAX_SERVICE_RECORDS 32
 #endif
 
-/* If True, force a retrieval of remote device name for each bond in case it's
- * changed */
-#ifndef BTM_SEC_FORCE_RNR_FOR_DBOND
-#define BTM_SEC_FORCE_RNR_FOR_DBOND FALSE
-#endif
-
 /* Maximum device name length used in btm database. */
 #ifndef BTM_MAX_REM_BD_NAME_LEN
 #define BTM_MAX_REM_BD_NAME_LEN 248
