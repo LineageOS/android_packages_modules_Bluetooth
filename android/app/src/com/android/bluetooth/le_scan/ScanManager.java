@@ -1676,9 +1676,8 @@ public class ScanManager {
             int rssiThreshold = Byte.MIN_VALUE;
             ScanSettings settings = client.settings;
             int onFoundTimeout = getOnFoundOnLostTimeoutMillis(settings, true);
-            int onLostTimeout = getOnFoundOnLostTimeoutMillis(settings, false);
             int onFoundCount = getOnFoundOnLostSightings(settings);
-            onLostTimeout = 10000;
+            int onLostTimeout = 10000;
             if (DBG) {
                 Log.d(TAG, "configureFilterParamter " + onFoundTimeout + " " + onLostTimeout + " "
                         + onFoundCount + " " + numOfTrackingEntries);

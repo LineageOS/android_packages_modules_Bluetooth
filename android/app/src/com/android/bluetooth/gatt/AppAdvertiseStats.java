@@ -83,7 +83,6 @@ public class AppAdvertiseStats {
         }
     }
 
-    private int mAppUid;
     private String mAppName;
     private int mId;
     private boolean mAdvertisingEnabled = false;
@@ -105,8 +104,7 @@ public class AppAdvertiseStats {
             new ArrayList<AppAdvertiserRecord>();
 
     @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
-    public AppAdvertiseStats(int appUid, int id, String name, ContextMap map, GattService service) {
-        this.mAppUid = appUid;
+    public AppAdvertiseStats(int id, String name, ContextMap map, GattService service) {
         this.mId = id;
         this.mAppName = name;
         this.mContextMap = map;
@@ -379,14 +377,6 @@ public class AppAdvertiseStats {
                         BluetoothProtoEnums.LE_ADV_COUNT_PERIODIC_DISABLE, 1);
             }
         }
-    }
-
-    private static String printByteArrayInHex(byte[] data) {
-        final StringBuilder hex = new StringBuilder();
-        for (byte b : data) {
-            hex.append(String.format("%02x", b));
-        }
-        return hex.toString();
     }
 
     private static void dumpAppAdvertiserData(StringBuilder sb, AppAdvertiserData advData) {

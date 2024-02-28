@@ -92,7 +92,7 @@ public class MmsFileProvider extends ContentProvider {
             throw new FileNotFoundException("Unable to extract message handle from: " + uri);
         }
         try {
-            long id = Long.parseLong(idStr);
+            Long.parseLong(idStr);
         } catch (NumberFormatException e) {
             ContentProfileErrorReportUtils.report(
                     BluetoothProfile.MAP,

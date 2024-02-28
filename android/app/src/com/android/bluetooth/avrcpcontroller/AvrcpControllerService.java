@@ -438,7 +438,7 @@ public class AvrcpControllerService extends ProfileService {
         public void sendGroupNavigationCmd(BluetoothDevice device, int keyCode, int keyState,
                 AttributionSource source, SynchronousResultReceiver receiver) {
             try {
-                AvrcpControllerService service = getService(source);
+                getService(source);
                 Log.w(TAG, "sendGroupNavigationCmd not implemented");
                 receiver.send(null);
             } catch (RuntimeException e) {
@@ -450,7 +450,7 @@ public class AvrcpControllerService extends ProfileService {
         public void setPlayerApplicationSetting(BluetoothAvrcpPlayerSettings settings,
                 AttributionSource source, SynchronousResultReceiver receiver) {
             try {
-                AvrcpControllerService service = getService(source);
+                getService(source);
                 Log.w(TAG, "setPlayerApplicationSetting not implemented");
                 receiver.send(null);
             } catch (RuntimeException e) {
@@ -462,7 +462,7 @@ public class AvrcpControllerService extends ProfileService {
         public void getPlayerSettings(BluetoothDevice device,
                 AttributionSource source, SynchronousResultReceiver receiver) {
             try {
-                AvrcpControllerService service = getService(source);
+                getService(source);
                 Log.w(TAG, "getPlayerSettings not implemented");
                 receiver.send(null);
             } catch (RuntimeException e) {

@@ -54,7 +54,7 @@ public class MnsObexServerTest {
 
     @Before
     public void setUp() throws Exception {
-        mServer = new MnsObexServer(mStateMachine, null);
+        mServer = new MnsObexServer(mStateMachine);
     }
 
     @Test

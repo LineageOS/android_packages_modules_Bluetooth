@@ -751,7 +751,6 @@ class AdapterProperties {
     @RequiresPermission(android.Manifest.permission.INTERACT_ACROSS_USERS)
     private void logConnectionStateChanges(int profile, Intent connIntent) {
         BluetoothDevice device = connIntent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-        int prevState = connIntent.getIntExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, -1);
         int state = connIntent.getIntExtra(BluetoothProfile.EXTRA_STATE, -1);
         int metricId = mService.getMetricId(device);
         if (state == BluetoothProfile.STATE_CONNECTING) {

@@ -983,7 +983,7 @@ public class LeAudioService extends ProfileService {
                     TAG,
                     "createBroadcast reached maximum allowed broadcasts number: "
                             + getMaximumNumberOfBroadcasts());
-            notifyBroadcastStartFailed(null, BluetoothStatusCodes.ERROR_LOCAL_NOT_ENOUGH_RESOURCES);
+            notifyBroadcastStartFailed(BluetoothStatusCodes.ERROR_LOCAL_NOT_ENOUGH_RESOURCES);
             return;
         }
 
@@ -2767,8 +2767,6 @@ public class LeAudioService extends ProfileService {
         } else if (stackEvent.type == LeAudioStackEvent.EVENT_TYPE_AUDIO_CONF_CHANGED) {
             int direction = stackEvent.valueInt1;
             int groupId = stackEvent.valueInt2;
-            int snk_audio_location = stackEvent.valueInt3;
-            int src_audio_location = stackEvent.valueInt4;
             int available_contexts = stackEvent.valueInt5;
 
             groupMutexLock(/* isReadOnly */ true);
@@ -2891,7 +2889,7 @@ public class LeAudioService extends ProfileService {
                     updateBroadcastActiveDevice(null, mActiveBroadcastAudioDevice, false);
                 }
 
-                notifyBroadcastStartFailed(broadcastId, BluetoothStatusCodes.ERROR_UNKNOWN);
+                notifyBroadcastStartFailed(BluetoothStatusCodes.ERROR_UNKNOWN);
             }
 
             mAwaitingBroadcastCreateResponse = false;
@@ -3846,7 +3844,7 @@ public class LeAudioService extends ProfileService {
                     return;
                 }
 
-                LeAudioStateMachine sm = getOrCreateStateMachine(device);
+                LeAudioStateMachine unused = getOrCreateStateMachine(device);
                 if (getOrCreateStateMachine(device) == null) {
                     Log.e(TAG, "Can't get state machine for device: " + device);
                     return;
@@ -4008,7 +4006,7 @@ public class LeAudioService extends ProfileService {
         }
     }
 
-    private void notifyBroadcastStartFailed(Integer broadcastId, int reason) {
+    private void notifyBroadcastStartFailed(int reason) {
         if (mBroadcastCallbacks != null) {
             int n = mBroadcastCallbacks.beginBroadcast();
             for (int i = 0; i < n; i++) {
@@ -4070,20 +4068,6 @@ public class LeAudioService extends ProfileService {
             for (int i = 0; i < n; i++) {
                 try {
                     mBroadcastCallbacks.getBroadcastItem(i).onPlaybackStopped(reason, broadcastId);
-                } catch (RemoteException e) {
-                    continue;
-                }
-            }
-            mBroadcastCallbacks.finishBroadcast();
-        }
-    }
-
-    private void notifyBroadcastUpdated(int broadcastId, int reason) {
-        if (mBroadcastCallbacks != null) {
-            int n = mBroadcastCallbacks.beginBroadcast();
-            for (int i = 0; i < n; i++) {
-                try {
-                    mBroadcastCallbacks.getBroadcastItem(i).onBroadcastUpdated(reason, broadcastId);
                 } catch (RemoteException e) {
                     continue;
                 }
@@ -4344,7 +4328,7 @@ public class LeAudioService extends ProfileService {
                 updateBroadcastActiveDevice(null, mActiveBroadcastAudioDevice, false);
             }
 
-            notifyBroadcastStartFailed(mBroadcastId, BluetoothStatusCodes.ERROR_TIMEOUT);
+            notifyBroadcastStartFailed(BluetoothStatusCodes.ERROR_TIMEOUT);
         }
     }
 
@@ -4602,12 +4586,11 @@ public class LeAudioService extends ProfileService {
                 Objects.requireNonNull(receiver, "receiver cannot be null");
 
                 LeAudioService service = getService(source);
-                int result = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
                 if (service == null) {
                     throw new IllegalStateException("service is null");
                 }
                 enforceBluetoothPrivilegedPermission(service);
-                result = service.getConnectionPolicy(device);
+                int result = service.getConnectionPolicy(device);
                 receiver.send(result);
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
@@ -4644,11 +4627,10 @@ public class LeAudioService extends ProfileService {
                 Objects.requireNonNull(receiver, "receiver cannot be null");
 
                 LeAudioService service = getService(source);
-                int result = LE_AUDIO_GROUP_ID_INVALID;
                 if (service == null) {
                     throw new IllegalStateException("service is null");
                 }
-                result = service.getGroupId(device);
+                int result = service.getGroupId(device);
                 receiver.send(result);
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
@@ -4664,12 +4646,11 @@ public class LeAudioService extends ProfileService {
                 Objects.requireNonNull(receiver, "receiver cannot be null");
 
                 LeAudioService service = getService(source);
-                boolean result = false;
                 if (service == null) {
                     throw new IllegalStateException("service is null");
                 }
                 enforceBluetoothPrivilegedPermission(service);
-                result = service.groupAddNode(group_id, device);
+                boolean result = service.groupAddNode(group_id, device);
                 receiver.send(result);
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
@@ -4724,12 +4705,11 @@ public class LeAudioService extends ProfileService {
                 Objects.requireNonNull(receiver, "receiver cannot be null");
 
                 LeAudioService service = getService(source);
-                boolean result = false;
                 if (service == null) {
                     throw new IllegalStateException("service is null");
                 }
                 enforceBluetoothPrivilegedPermission(service);
-                result = service.groupRemoveNode(groupId, device);
+                boolean result = service.groupRemoveNode(groupId, device);
                 receiver.send(result);
             } catch (RuntimeException e) {
                 receiver.propagateException(e);

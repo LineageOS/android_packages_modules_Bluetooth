@@ -156,14 +156,10 @@ public class BluetoothMapSmsPdu {
 
 
         /* PDU parsing/modification functionality */
-        private static final byte TELESERVICE_IDENTIFIER = 0x00;
-        private static final byte SERVICE_CATEGORY = 0x01;
         private static final byte ORIGINATING_ADDRESS = 0x02;
         private static final byte ORIGINATING_SUB_ADDRESS = 0x03;
         private static final byte DESTINATION_ADDRESS = 0x04;
         private static final byte DESTINATION_SUB_ADDRESS = 0x05;
-        private static final byte BEARER_REPLY_OPTION = 0x06;
-        private static final byte CAUSE_CODES = 0x07;
         private static final byte BEARER_DATA = 0x08;
 
         /**
@@ -214,10 +210,10 @@ public class BluetoothMapSmsPdu {
 
         private int cdmaGetSubParameterOffset(byte subParameterId) {
             ByteArrayInputStream pdu = new ByteArrayInputStream(mData);
-            int offset = 0;
             boolean found = false;
-            offset = cdmaGetParameterOffset(BEARER_DATA)
-                    + 2; // Add to offset the BEARER_DATA parameter id and length bytes
+            int offset =
+                    cdmaGetParameterOffset(BEARER_DATA)
+                            + 2; // Add to offset the BEARER_DATA parameter id and length bytes
             pdu.skip(offset);
             try {
 
@@ -841,30 +837,10 @@ public class BluetoothMapSmsPdu {
         public static final int ENCODING_8BIT = 2;
         public static final int ENCODING_16BIT = 3;
 
-        /** The maximum number of payload septets per message */
-        public static final int MAX_USER_DATA_SEPTETS = 160;
-
-        /**
-         * The maximum number of payload septets per message if a user data header
-         * is present.  This assumes the header only contains the
-         * CONCATENATED_8_BIT_REFERENCE element.
-         */
-        public static final int MAX_USER_DATA_SEPTETS_WITH_HEADER = 153;
-
         /**
          * This value is not defined in global standard. Only in Korea, this is used.
          */
         public static final int ENCODING_KSC5601 = 4;
-
-        /** The maximum number of payload bytes per message */
-        public static final int MAX_USER_DATA_BYTES = 140;
-
-        /**
-         * The maximum number of payload bytes per message if a user data header
-         * is present.  This assumes the header only contains the
-         * CONCATENATED_8_BIT_REFERENCE element.
-         */
-        public static final int MAX_USER_DATA_BYTES_WITH_HEADER = 134;
 
         /**
          * SMS Class enumeration.
@@ -877,21 +853,6 @@ public class BluetoothMapSmsPdu {
             CLASS_2,
             CLASS_3;
         }
-
-        /**
-         * Indicates unknown format SMS message.
-         */
-        public static final String FORMAT_UNKNOWN = "unknown";
-
-        /**
-         * Indicates a 3GPP format SMS message.
-         */
-        public static final String FORMAT_3GPP = "3gpp";
-
-        /**
-         * Indicates a 3GPP2 format SMS message.
-         */
-        public static final String FORMAT_3GPP2 = "3gpp2";
     }
 
 }

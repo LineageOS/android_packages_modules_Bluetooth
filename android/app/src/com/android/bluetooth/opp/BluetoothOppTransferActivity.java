@@ -36,7 +36,6 @@ import static android.view.WindowManager.LayoutParams.SYSTEM_FLAG_HIDE_NON_SYSTE
 
 import android.app.NotificationManager;
 import android.bluetooth.AlertActivity;
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.content.DialogInterface;
@@ -90,8 +89,6 @@ public class BluetoothOppTransferActivity extends AlertActivity
 
     @VisibleForTesting
     int mWhichDialog;
-
-    private BluetoothAdapter mAdapter;
 
     // Dialogs definition:
     // Receive progress dialog
@@ -172,8 +169,6 @@ public class BluetoothOppTransferActivity extends AlertActivity
             // set this record to INVISIBLE
             BluetoothOppUtility.updateVisibilityToHidden(this, mUri);
         }
-
-        mAdapter = BluetoothAdapter.getDefaultAdapter();
 
         // Set up the "dialog"
         setUpDialog();

@@ -181,7 +181,6 @@ public class BluetoothMapbMessageMime extends BluetoothMapbMessage {
     private String mBoundary = null;
     private boolean mTextonly = false;
     private boolean mIncludeAttachments;
-    private boolean mHasHeaders = false;
     private String mMyEncoding = null;
 
     private String getBoundary() {
@@ -577,7 +576,6 @@ public class BluetoothMapbMessageMime extends BluetoothMapbMessage {
             Log.d(TAG, "Header count=" + headers.length);
         }
         String header;
-        mHasHeaders = false;
 
         for (int i = 0, c = headers.length; i < c; i++) {
             header = headers[i];

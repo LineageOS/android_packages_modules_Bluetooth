@@ -77,7 +77,6 @@ import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AbstractionLayer;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.BluetoothAdapterProxy;
 import com.android.bluetooth.btservice.CompanionManager;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
@@ -106,10 +105,6 @@ public class GattService extends ProfileService {
     private static final boolean DBG = GattServiceConfig.DBG;
     private static final boolean VDBG = GattServiceConfig.VDBG;
     private static final String TAG = GattServiceConfig.TAG_PREFIX + "GattService";
-    private static final String UUID_SUFFIX = "-0000-1000-8000-00805f9b34fb";
-    private static final String UUID_ZERO_PAD = "00000000";
-
-    private static final int MAC_ADDRESS_LENGTH = 6;
 
     private static final UUID HID_SERVICE_UUID =
             UUID.fromString("00001812-0000-1000-8000-00805F9B34FB");
@@ -190,7 +185,6 @@ public class GattService extends ProfileService {
     private final HashMap<String, Integer> mPermits = new HashMap<>();
 
     private AdapterService mAdapterService;
-    private BluetoothAdapterProxy mBluetoothAdapterProxy;
     AdvertiseManager mAdvertiseManager;
     DistanceMeasurementManager mDistanceMeasurementManager;
     private Handler mTestModeHandler;
@@ -230,12 +224,10 @@ public class GattService extends ProfileService {
         mNativeInterface = GattObjectsFactory.getInstance().getNativeInterface();
         mNativeInterface.init(this);
         mAdapterService = AdapterService.getAdapterService();
-        mBluetoothAdapterProxy = BluetoothAdapterProxy.getInstance();
         mAdvertiseManager =
                 new AdvertiseManager(
                         this,
                         AdvertiseManagerNativeInterface.getInstance(),
-                        mAdapterService,
                         mAdvertiserMap);
 
         HandlerThread thread = new HandlerThread("BluetoothScanManager");
@@ -347,16 +339,6 @@ public class GattService extends ProfileService {
             return;
         }
         enforceBluetoothPrivilegedPermission(this);
-    }
-
-    // Suppressed because we are conditionally enforcing
-    @SuppressLint("AndroidFrameworkRequiresPermission")
-    private void permissionCheck(ClientMap.App app, int connId, int handle) {
-        if (!isHandleRestricted(connId, handle) || app.hasBluetoothPrivilegedPermission) {
-            return;
-        }
-        enforceBluetoothPrivilegedPermission(this);
-        app.hasBluetoothPrivilegedPermission = true;
     }
 
     private boolean isHandleRestricted(int connId, int handle) {

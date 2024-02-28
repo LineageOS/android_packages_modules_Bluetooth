@@ -38,7 +38,6 @@ import android.util.Log;
 import com.android.bluetooth.BluetoothMetricsProto;
 import com.android.bluetooth.BluetoothObexTransport;
 import com.android.bluetooth.BluetoothStatsLog;
-import com.android.bluetooth.IObexConnectionHandler;
 import com.android.bluetooth.ObexRejectServer;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
@@ -91,7 +90,6 @@ public class PbapStateMachine extends StateMachine {
     private static final int PBAP_OBEX_MAXIMUM_PACKET_SIZE = 8192;
 
     private BluetoothPbapService mService;
-    private IObexConnectionHandler mIObexConnectionHandler;
 
     private final WaitingForAuth mWaitingForAuth = new WaitingForAuth();
     private final Finished mFinished = new Finished();
@@ -105,12 +103,15 @@ public class PbapStateMachine extends StateMachine {
     private ServerSession mServerSession;
     private int mNotificationId;
 
-    private PbapStateMachine(@NonNull BluetoothPbapService service, Looper looper,
-            @NonNull BluetoothDevice device, @NonNull BluetoothSocket connSocket,
-            IObexConnectionHandler obexConnectionHandler, Handler pbapHandler, int notificationId) {
+    private PbapStateMachine(
+            @NonNull BluetoothPbapService service,
+            Looper looper,
+            @NonNull BluetoothDevice device,
+            @NonNull BluetoothSocket connSocket,
+            Handler pbapHandler,
+            int notificationId) {
         super(TAG, looper);
         mService = service;
-        mIObexConnectionHandler = obexConnectionHandler;
         mRemoteDevice = device;
         mServiceHandler = pbapHandler;
         mConnSocket = connSocket;
@@ -122,12 +123,16 @@ public class PbapStateMachine extends StateMachine {
         setInitialState(mWaitingForAuth);
     }
 
-    static PbapStateMachine make(BluetoothPbapService service, Looper looper,
-            BluetoothDevice device, BluetoothSocket connSocket,
-            IObexConnectionHandler obexConnectionHandler, Handler pbapHandler, int notificationId) {
+    static PbapStateMachine make(
+            BluetoothPbapService service,
+            Looper looper,
+            BluetoothDevice device,
+            BluetoothSocket connSocket,
+            Handler pbapHandler,
+            int notificationId) {
         PbapStateMachine stateMachine =
-                new PbapStateMachine(service, looper, device, connSocket, obexConnectionHandler,
-                        pbapHandler, notificationId);
+                new PbapStateMachine(
+                        service, looper, device, connSocket, pbapHandler, notificationId);
         stateMachine.start();
         return stateMachine;
     }

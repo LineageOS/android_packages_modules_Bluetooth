@@ -350,7 +350,6 @@ public class AdapterService extends Service {
     // Only BluetoothManagerService should be registered
     private RemoteCallbackList<IBluetoothCallback> mRemoteCallbacks;
     private final Map<BluetoothStateCallback, Executor> mLocalCallbacks = new ConcurrentHashMap<>();
-    private int mCurrentRequestId;
     private boolean mQuietmode = false;
     private HashMap<String, CallerInfo> mBondAttemptCallerInfo = new HashMap<>();
 
@@ -360,7 +359,6 @@ public class AdapterService extends Service {
     private BatteryStatsManager mBatteryStatsManager;
     private PowerManager mPowerManager;
     private PowerManager.WakeLock mWakeLock;
-    private String mWakeLockName;
     private UserManager mUserManager;
     private CompanionDeviceManager mCompanionDeviceManager;
 
@@ -7113,18 +7111,8 @@ public class AdapterService extends Service {
                             mIdleTimeTotalMs,
                             mEnergyUsedTotalVoltAmpSecMicro);
 
-            // Count the number of entries that have byte counts > 0
-            int arrayLen = 0;
-            for (int i = 0; i < mUidTraffic.size(); i++) {
-                final UidTraffic traffic = mUidTraffic.valueAt(i);
-                if (traffic.getTxBytes() != 0 || traffic.getRxBytes() != 0) {
-                    arrayLen++;
-                }
-            }
-
             // Copy the traffic objects whose byte counts are > 0
             final List<UidTraffic> result = new ArrayList<>();
-            int putIdx = 0;
             for (int i = 0; i < mUidTraffic.size(); i++) {
                 final UidTraffic traffic = mUidTraffic.valueAt(i);
                 if (traffic.getTxBytes() != 0 || traffic.getRxBytes() != 0) {
@@ -7351,7 +7339,6 @@ public class AdapterService extends Service {
     boolean acquireWakeLock(String lockName) {
         synchronized (this) {
             if (mWakeLock == null) {
-                mWakeLockName = lockName;
                 mWakeLock = mPowerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, lockName);
             }
 

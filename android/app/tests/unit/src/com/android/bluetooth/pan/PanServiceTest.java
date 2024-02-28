@@ -107,8 +107,10 @@ public class PanServiceTest {
     @Test
     public void connect_inConnectedState_returnsFalse() {
         when(mMockUserManager.isGuestUser()).thenReturn(false);
-        mService.mPanDevices.put(mRemoteDevice, new BluetoothPanDevice(
-                BluetoothProfile.STATE_CONNECTED, "iface", PAN_ROLE_NONE, PAN_ROLE_NONE));
+        mService.mPanDevices.put(
+                mRemoteDevice,
+                new BluetoothPanDevice(
+                        BluetoothProfile.STATE_CONNECTED, PAN_ROLE_NONE, PAN_ROLE_NONE));
 
         assertThat(mService.connect(mRemoteDevice)).isFalse();
     }
@@ -116,8 +118,10 @@ public class PanServiceTest {
     @Test
     public void connect() {
         when(mMockUserManager.isGuestUser()).thenReturn(false);
-        mService.mPanDevices.put(mRemoteDevice, new BluetoothPanDevice(
-                BluetoothProfile.STATE_DISCONNECTED, "iface", PAN_ROLE_NONE, PAN_ROLE_NONE));
+        mService.mPanDevices.put(
+                mRemoteDevice,
+                new BluetoothPanDevice(
+                        BluetoothProfile.STATE_DISCONNECTED, PAN_ROLE_NONE, PAN_ROLE_NONE));
 
         assertThat(mService.connect(mRemoteDevice)).isTrue();
     }
@@ -143,8 +147,10 @@ public class PanServiceTest {
 
     @Test
     public void dump() {
-        mService.mPanDevices.put(mRemoteDevice, new BluetoothPanDevice(
-                BluetoothProfile.STATE_DISCONNECTED, "iface", PAN_ROLE_NONE, PAN_ROLE_NONE));
+        mService.mPanDevices.put(
+                mRemoteDevice,
+                new BluetoothPanDevice(
+                        BluetoothProfile.STATE_DISCONNECTED, PAN_ROLE_NONE, PAN_ROLE_NONE));
 
         mService.dump(new StringBuilder());
     }
@@ -209,8 +215,10 @@ public class PanServiceTest {
     @Test
     public void tetheringCallback_onError_clearsPanDevices() {
         mService.mIsTethering = true;
-        mService.mPanDevices.put(mRemoteDevice, new BluetoothPanDevice(
-                BluetoothProfile.STATE_DISCONNECTED, "iface", PAN_ROLE_NONE, PAN_ROLE_NONE));
+        mService.mPanDevices.put(
+                mRemoteDevice,
+                new BluetoothPanDevice(
+                        BluetoothProfile.STATE_DISCONNECTED, PAN_ROLE_NONE, PAN_ROLE_NONE));
         TetheringInterface iface = new TetheringInterface(TETHERING_BLUETOOTH, "iface");
 
         mService.mTetheringCallback.onError(iface, TETHER_ERROR_SERVICE_UNAVAIL);

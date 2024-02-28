@@ -36,7 +36,6 @@ import java.util.Objects;
  * A2DP Codec Configuration setup.
  */
 class A2dpCodecConfig {
-    private static final boolean DBG = true;
     private static final String TAG = "A2dpCodecConfig";
 
     private Context mContext;
@@ -52,8 +51,6 @@ class A2dpCodecConfig {
     private @CodecPriority int mA2dpSourceCodecPriorityAptxHd =
             BluetoothCodecConfig.CODEC_PRIORITY_DEFAULT;
     private @CodecPriority int mA2dpSourceCodecPriorityLdac =
-            BluetoothCodecConfig.CODEC_PRIORITY_DEFAULT;
-    private @CodecPriority int mA2dpSourceCodecPriorityLc3 =
             BluetoothCodecConfig.CODEC_PRIORITY_DEFAULT;
     private @CodecPriority int mA2dpSourceCodecPriorityOpus =
             BluetoothCodecConfig.CODEC_PRIORITY_DEFAULT;
@@ -245,18 +242,6 @@ class A2dpCodecConfig {
         if ((value >= BluetoothCodecConfig.CODEC_PRIORITY_DISABLED) && (value
                 < BluetoothCodecConfig.CODEC_PRIORITY_HIGHEST)) {
             mA2dpSourceCodecPriorityLdac = value;
-        }
-
-        try {
-            value = SystemProperties.getInt(
-                "bluetooth.a2dp.source.lc3_priority.config",
-                resources.getInteger(R.integer.a2dp_source_codec_priority_lc3));
-        } catch (NotFoundException e) {
-            value = BluetoothCodecConfig.CODEC_PRIORITY_DEFAULT;
-        }
-        if ((value >= BluetoothCodecConfig.CODEC_PRIORITY_DISABLED) && (value
-                < BluetoothCodecConfig.CODEC_PRIORITY_HIGHEST)) {
-            mA2dpSourceCodecPriorityLc3 = value;
         }
 
         try {
