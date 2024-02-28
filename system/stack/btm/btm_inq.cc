@@ -1079,22 +1079,6 @@ void btm_inq_db_set_inq_by_rssi(void) {
 
 /*******************************************************************************
  *
- * Function         btm_inq_stop_on_ssp
- *
- * Description      This function is called on incoming SSP
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_inq_stop_on_ssp(void) {
-#if (BTM_INQ_DEBUG == TRUE)
-  log::verbose("btm_inq_stop_on_ssp: inq_active:0x{:x} state:{} ",
-               btm_cb.btm_inq_vars.inq_active, btm_cb.btm_inq_vars.state);
-#endif
-}
-
-/*******************************************************************************
- *
  * Function         btm_inq_clear_ssp
  *
  * Description      This function is called when pairing_state becomes idle
