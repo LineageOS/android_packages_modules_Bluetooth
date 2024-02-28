@@ -26,8 +26,10 @@
  ******************************************************************************/
 
 #include "hci_error_code.h"
+#include "hcidefs.h"
 #include "main/shim/helpers.h"
 #include "neighbor_inquiry.h"
+#include "packet/bit_inserter.h"
 #define LOG_TAG "bluetooth"
 
 #include <base/logging.h>
@@ -697,6 +699,11 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
         }));
     bluetooth::shim::GetHciLayer()->RegisterEventHandler(
         bluetooth::hci::EventCode::INQUIRY_RESULT_WITH_RSSI,
+        get_main_thread()->Bind([](bluetooth::hci::EventView event) {
+          on_incoming_hci_event(event);
+        }));
+    bluetooth::shim::GetHciLayer()->RegisterEventHandler(
+        bluetooth::hci::EventCode::EXTENDED_INQUIRY_RESULT,
         get_main_thread()->Bind([](bluetooth::hci::EventView event) {
           on_incoming_hci_event(event);
         }));
@@ -1593,9 +1600,7 @@ static void btm_process_inq_results_rssi(bluetooth::hci::EventView event) {
  * Returns          void
  *
  ******************************************************************************/
-static void btm_process_inq_results_extended(const uint8_t* p,
-                                             uint8_t hci_evt_len) {
-  uint8_t num_resp, xx;
+static void btm_process_inq_results_extended(bluetooth::hci::EventView event) {
   RawAddress bda;
   tINQ_DB_ENT* p_i;
   tBTM_INQ_RESULTS* p_cur = NULL;
@@ -1609,7 +1614,6 @@ static void btm_process_inq_results_extended(const uint8_t* p,
   uint8_t rssi = 0;
   DEV_CLASS dc;
   uint16_t clock_offset;
-  const uint8_t* p_eir_data = NULL;
 
   log::debug("Received inquiry result inq_active:0x{:x} state:{}",
              btm_cb.btm_inq_vars.inq_active, btm_cb.btm_inq_vars.state);
@@ -1620,32 +1624,23 @@ static void btm_process_inq_results_extended(const uint8_t* p,
     return;
   }
 
-  STREAM_TO_UINT8(num_resp, p);
+  auto extended_view = bluetooth::hci::ExtendedInquiryResultView::Create(event);
+  ASSERT(extended_view.IsValid());
 
+  btm_cb.neighbor.classic_inquiry.results++;
   {
-    if (num_resp > 1) {
-      log::error("extended results ({}) > 1", num_resp);
-      return;
-    }
-
-    constexpr uint16_t extended_inquiry_result_size = 254;
-    if (hci_evt_len - 1 != extended_inquiry_result_size) {
-      log::error("can't fit {} results in {} bytes", num_resp, hci_evt_len);
-      return;
-    }
-  }
-
-  btm_cb.neighbor.classic_inquiry.results += num_resp;
-  for (xx = 0; xx < num_resp; xx++) {
     update = false;
     /* Extract inquiry results */
-    STREAM_TO_BDADDR(bda, p);
-    STREAM_TO_UINT8(page_scan_rep_mode, p);
-    STREAM_TO_UINT8(page_scan_per_mode, p);
+    bda = bluetooth::ToRawAddress(extended_view.GetAddress());
+    page_scan_rep_mode =
+        static_cast<uint8_t>(extended_view.GetPageScanRepetitionMode());
+    page_scan_per_mode = 0;  // reserved
 
-    STREAM_TO_DEVCLASS(dc, p);
-    STREAM_TO_UINT16(clock_offset, p);
-    STREAM_TO_UINT8(rssi, p);
+    dc[0] = extended_view.GetClassOfDevice().cod[2];
+    dc[1] = extended_view.GetClassOfDevice().cod[1];
+    dc[2] = extended_view.GetClassOfDevice().cod[0];
+    clock_offset = extended_view.GetClockOffset();
+    rssi = extended_view.GetRssi();
 
     p_i = btm_inq_db_find(bda);
 
@@ -1675,7 +1670,7 @@ static void btm_process_inq_results_extended(const uint8_t* p,
       }
       /* If no update needed continue with next response (if any) */
       else
-        continue;
+        return;
     }
 
     /* If existing entry, use that, else get a new one (possibly reusing the
@@ -1731,12 +1726,26 @@ static void btm_process_inq_results_extended(const uint8_t* p,
     }
 
     if (is_new || update) {
+      // Create a vector of EIR data and pad it with 0
+      auto data = std::vector<uint8_t>();
+      data.reserve(HCI_EXT_INQ_RESPONSE_LEN);
+      bluetooth::packet::BitInserter bi(data);
+      for (const auto& eir : extended_view.GetExtendedInquiryResponse()) {
+        if (eir.data_type_ != static_cast<bluetooth::hci::GapDataType>(0)) {
+          eir.Serialize(bi);
+        }
+      }
+      while (data.size() < HCI_EXT_INQ_RESPONSE_LEN) {
+        data.push_back(0);
+      }
+
+      const uint8_t* p_eir_data = data.data();
+
       {
         memset(p_cur->eir_uuid, 0,
                BTM_EIR_SERVICE_ARRAY_SIZE * (BTM_EIR_ARRAY_BITS / 8));
         /* set bit map of UUID list from received EIR */
-        btm_set_eir_uuid(p, p_cur);
-        p_eir_data = p;
+        btm_set_eir_uuid(p_eir_data, p_cur);
       }
 
       /* If a callback is registered, call it with the results */
@@ -1775,7 +1784,7 @@ void btm_process_inq_results(const uint8_t* p, uint8_t hci_evt_len,
       LOG_ALWAYS_FATAL("Please use PDL for RSSI results");
       break;
     case BTM_INQ_RESULT_EXTENDED:
-      btm_process_inq_results_extended(p, hci_evt_len);
+      LOG_ALWAYS_FATAL("Please use PDL for EXTENDED results");
       break;
   }
 }
@@ -2533,6 +2542,9 @@ static void on_incoming_hci_event(bluetooth::hci::EventView event) {
       break;
     case bluetooth::hci::EventCode::INQUIRY_RESULT_WITH_RSSI:
       btm_process_inq_results_rssi(event);
+      break;
+    case bluetooth::hci::EventCode::EXTENDED_INQUIRY_RESULT:
+      btm_process_inq_results_extended(event);
       break;
     default:
       log::warn("Dropping unhandled event: {}",
