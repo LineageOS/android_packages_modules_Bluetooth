@@ -492,7 +492,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
         private BluetoothDevice mSourceDevice = null;
         private int mSourceAdvertisingSid = UNKNOWN_VALUE_PLACEHOLDER;
         private int mBroadcastId = UNKNOWN_VALUE_PLACEHOLDER;
-        private int mPaSyncInterval = UNKNOWN_VALUE_PLACEHOLDER;
+        private int mPaSyncInterval = PA_SYNC_INTERVAL_UNKNOWN;
         private boolean mIsEncrypted = false;
         private boolean mIsPublicBroadcast = false;
         private String mBroadcastName = null;
