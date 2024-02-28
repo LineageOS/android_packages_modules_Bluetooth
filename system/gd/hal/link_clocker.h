@@ -16,25 +16,35 @@
 
 #pragma once
 
+#include "audio/asrc/asrc_resampler.h"
 #include "hci_hal.h"
 #include "module.h"
 
 namespace bluetooth::hal {
 
-class NocpIsoHandler {
+class NocpIsoEvents : public bluetooth::audio::asrc::ClockSource {
  public:
-  virtual ~NocpIsoHandler() = default;
-  virtual void OnEvent(uint32_t timestamp_us, int link_id, int num_of_completed_packets) = 0;
+  NocpIsoEvents() = default;
+  ~NocpIsoEvents() override;
+
+  void Bind(bluetooth::audio::asrc::ClockHandler*) override;
 };
 
-class NocpIsoClocker : public ::bluetooth::Module {
+class L2capCreditIndEvents : public bluetooth::audio::asrc::ClockSource {
+ public:
+  L2capCreditIndEvents() {}
+  ~L2capCreditIndEvents() override;
+
+  void Bind(bluetooth::audio::asrc::ClockHandler*) override;
+  void Update(int link_id, uint16_t connection_handle, uint16_t stream_cid);
+};
+
+class LinkClocker : public ::bluetooth::Module {
  public:
   static const ModuleFactory Factory;
 
   void OnHciEvent(const HciPacket& packet);
-
-  static void Register(NocpIsoHandler* handler);
-  static void Unregister();
+  void OnAclDataReceived(const HciPacket& packet);
 
  protected:
   void ListDependencies(ModuleList*) const override{};
@@ -42,10 +52,10 @@ class NocpIsoClocker : public ::bluetooth::Module {
   void Stop() override{};
 
   std::string ToString() const override {
-    return std::string("NocpIsoClocker");
+    return std::string("LinkClocker");
   }
 
-  NocpIsoClocker();
+  LinkClocker();
 
  private:
   int cig_id_;

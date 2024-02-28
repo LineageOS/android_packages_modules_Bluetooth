@@ -19,15 +19,15 @@
 #include <base/logging.h>
 #include <base/strings/stringprintf.h>
 
+#include <algorithm>
 #include <cmath>
 #include <utility>
 
 #include "asrc_tables.h"
-#include "hal/nocp_iso_clocker.h"
 
 namespace bluetooth::audio::asrc {
 
-class SourceAudioHalAsrc::ClockRecovery : ::bluetooth::hal::NocpIsoHandler {
+class SourceAudioHalAsrc::ClockRecovery : public ClockHandler {
   const int interval_;
 
   std::mutex mutex_;
@@ -113,8 +113,7 @@ class SourceAudioHalAsrc::ClockRecovery : ::bluetooth::hal::NocpIsoHandler {
     }
 
     int dt_current = int(timestamp_us - link.local_time);
-    if (std::abs(dt_current) < std::abs(link.decim_dt[1]))
-      link.decim_dt[1] = dt_current;
+    link.decim_dt[1] = std::min(link.decim_dt[1], dt_current);
 
     if (link.local_time - link.decim_t0 < 1000 * 1000) return;
 
@@ -237,11 +236,9 @@ class SourceAudioHalAsrc::ClockRecovery : ::bluetooth::hal::NocpIsoHandler {
         state_{
             .link = {{.state = LinkState::RESET}, {.state = LinkState::RESET}},
             .active_link_id = -1},
-        reference_timing_{0, 0, 0} {
-    ::bluetooth::hal::NocpIsoClocker::Register(this);
-  }
+        reference_timing_{0, 0, 0} {}
 
-  ~ClockRecovery() override { ::bluetooth::hal::NocpIsoClocker::Unregister(); }
+  ~ClockRecovery() override {}
 
   __attribute__((no_sanitize("integer"))) uint32_t Convert(
       uint32_t stream_time) {
@@ -466,16 +463,16 @@ inline int32_t SourceAudioHalAsrc::Resampler::Filter(const int32_t* in,
 
 #endif
 
-SourceAudioHalAsrc::SourceAudioHalAsrc(int channels, int sample_rate,
-                                       int bit_depth, int interval_us,
-                                       int num_burst_buffers,
-                                       int burst_delay_ms)
+SourceAudioHalAsrc::SourceAudioHalAsrc(
+    std::shared_ptr<ClockSource> clock_source, int channels, int sample_rate,
+    int bit_depth, int interval_us, int num_burst_buffers, int burst_delay_ms)
     : sample_rate_(sample_rate),
       bit_depth_(bit_depth),
       interval_us_(interval_us),
       stream_us_(0),
       drift_us_(0),
       out_counter_(0),
+      clock_source_(std::move(clock_source)),
       resampler_pos_{0, 0} {
   buffers_size_ = 0;
 
@@ -509,6 +506,7 @@ SourceAudioHalAsrc::SourceAudioHalAsrc(int channels, int sample_rate,
   // when the PCM bit_depth is higher than 16 bits.
 
   clock_recovery_ = std::make_unique<ClockRecovery>(interval_us_);
+  clock_source_->Bind(clock_recovery_.get());
   resamplers_ = std::make_unique<std::vector<Resampler>>(channels, bit_depth_);
 
   // Deduct from the PCM stream characteristics, the size of the pool buffers
