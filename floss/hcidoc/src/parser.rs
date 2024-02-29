@@ -287,6 +287,7 @@ pub enum PacketChild {
     HciEvent(Event),
     AclTx(Acl),
     AclRx(Acl),
+    NewIndex(NewIndex),
 }
 
 impl<'a> TryFrom<&'a LinuxSnoopPacket> for PacketChild {
@@ -312,6 +313,11 @@ impl<'a> TryFrom<&'a LinuxSnoopPacket> for PacketChild {
             LinuxSnoopOpcodes::AclRxPacket => match Acl::parse(item.data.as_slice()) {
                 Ok(data) => Ok(PacketChild::AclRx(data)),
                 Err(e) => Err(format!("Couldn't parse acl rx: {:?}", e)),
+            },
+
+            LinuxSnoopOpcodes::NewIndex => match NewIndex::parse(item.data.as_slice()) {
+                Ok(data) => Ok(PacketChild::NewIndex(data)),
+                Err(e) => Err(format!("Couldn't parse new index: {:?}", e)),
             },
 
             // TODO(b/262928525) - Add packet handlers for more packet types.
@@ -398,5 +404,46 @@ pub fn get_acl_content(acl: &Acl) -> AclContent {
             Err(_) => AclContent::None,
         },
         _ => AclContent::None,
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct NewIndex {
+    _hci_type: u8,
+    _bus: u8,
+    bdaddr: [u8; 6],
+    _name: [u8; 8],
+}
+
+impl NewIndex {
+    fn parse(data: &[u8]) -> Result<NewIndex, std::string::String> {
+        if data.len() != std::mem::size_of::<NewIndex>() {
+            return Err(format!("Invalid size for New Index packet: {}", data.len()));
+        }
+
+        let rest = data;
+        let (hci_type, rest) = rest.split_at(std::mem::size_of::<u8>());
+        let (bus, rest) = rest.split_at(std::mem::size_of::<u8>());
+        let (bdaddr, rest) = rest.split_at(6 * std::mem::size_of::<u8>());
+        let (name, _rest) = rest.split_at(8 * std::mem::size_of::<u8>());
+
+        Ok(NewIndex {
+            _hci_type: hci_type[0],
+            _bus: bus[0],
+            bdaddr: bdaddr.try_into().unwrap(),
+            _name: name.try_into().unwrap(),
+        })
+    }
+
+    pub fn get_addr_str(&self) -> String {
+        String::from(format!(
+            "[{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}]",
+            self.bdaddr[0],
+            self.bdaddr[1],
+            self.bdaddr[2],
+            self.bdaddr[3],
+            self.bdaddr[4],
+            self.bdaddr[5]
+        ))
     }
 }
