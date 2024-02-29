@@ -18,7 +18,6 @@
 
 #include <android/hardware/bluetooth/audio/2.1/IBluetoothAudioProvidersFactory.h>
 #include <android/hardware/bluetooth/audio/2.1/types.h>
-#include <com_android_bluetooth_flags.h>
 
 namespace bluetooth {
 namespace audio {
