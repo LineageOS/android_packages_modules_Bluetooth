@@ -67,7 +67,6 @@ import java.io.StringWriter;
 import java.util.Scanner;
 
 final class HearingAidStateMachine extends StateMachine {
-    private static final boolean DBG = false;
     private static final String TAG = "HearingAidStateMachine";
 
     static final int CONNECT = 1;
@@ -179,9 +178,7 @@ final class HearingAidStateMachine extends StateMachine {
                     break;
                 case STACK_EVENT:
                     HearingAidStackEvent event = (HearingAidStackEvent) message.obj;
-                    if (DBG) {
-                        Log.d(TAG, "Disconnected: stack event: " + event);
-                    }
+                    Log.d(TAG, "Disconnected: stack event: " + event);
                     if (!mDevice.equals(event.device)) {
                         Log.wtf(TAG, "Device(" + mDevice + "): event mismatch: " + event);
                     }
@@ -584,8 +581,6 @@ final class HearingAidStateMachine extends StateMachine {
 
     @Override
     protected void log(String msg) {
-        if (DBG) {
-            super.log(msg);
-        }
+        super.log(msg);
     }
 }
