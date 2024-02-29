@@ -3106,7 +3106,7 @@ class LeAudioClientImpl : public LeAudioClient {
     }
 
     log::error(
-        "Failed to register for indications: 0x{:04x}, device: {}, status: "
+        "Failed to register for notifications: 0x{:04x}, device: {}, status: "
         "0x{:02x}",
         hdl, leAudioDevice->address_, status);
 
