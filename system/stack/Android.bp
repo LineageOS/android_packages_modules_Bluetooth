@@ -320,7 +320,6 @@ cc_defaults {
     name: "btstack_fuzzer_default",
     host_supported: true,
     cflags: [
-        "-DHAS_NO_BDROID_BUILDCFG",
         "-Wall",
         "-Werror",
         "-Wextra",
