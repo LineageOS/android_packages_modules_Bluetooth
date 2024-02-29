@@ -628,9 +628,7 @@ cc_test {
         "android.hardware.bluetooth.audio@2.1",
         "android.hardware.common-V2-ndk",
         "android.hardware.common.fmq-V1-ndk",
-        "bluetooth_flags_c_lib",
         "libbt-audio-hal-interface",
-        "libflagtest",
     ],
     test_suites: ["general-tests"],
     cflags: [

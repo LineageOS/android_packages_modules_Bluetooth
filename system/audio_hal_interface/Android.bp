@@ -25,7 +25,6 @@ cc_library_static {
         "libutils",
     ],
     static_libs: [
-        "bluetooth_flags_c_lib",
         "libbluetooth_log",
         "libbt-common",
         "libbt_shim_bridge",
