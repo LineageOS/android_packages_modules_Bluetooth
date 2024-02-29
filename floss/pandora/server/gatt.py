@@ -530,7 +530,7 @@ class GATTService(gatt_grpc_aio.GATTServicer):
         def convert_req_to_dictionary(request):
             service_dict = {
                 'service_type': self.SERVICE_TYPE_PRIMARY,
-                'uuid': list(UUID(request.uuid).bytes),
+                'uuid': request.uuid,
                 'instance_id': self.DEFAULT_INSTANCE_ID,
                 'included_services': [],
                 'characteristics': [],
@@ -539,7 +539,7 @@ class GATTService(gatt_grpc_aio.GATTServicer):
             # Iterate through the characteristics in the request.
             for char in request.characteristics:
                 char_dict = {
-                    'uuid': list(UUID(char.uuid).bytes),
+                    'uuid': char.uuid,
                     'instance_id': self.DEFAULT_INSTANCE_ID,
                     'properties': char.properties,
                     'permissions': char.permissions,
@@ -551,7 +551,7 @@ class GATTService(gatt_grpc_aio.GATTServicer):
                 # Iterate through the descriptors in the characteristic.
                 for desc in char.descriptors:
                     desc_dict = {
-                        'uuid': list(UUID(desc.uuid).bytes),
+                        'uuid': desc.uuid,
                         'instance_id': self.DEFAULT_INSTANCE_ID,
                         'permissions': desc.permissions,
                     }

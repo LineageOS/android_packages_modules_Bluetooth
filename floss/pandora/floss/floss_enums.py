@@ -47,6 +47,31 @@ class LePhy(enum.IntEnum):
     PHY_CODED = 3
 
 
+class GattPermission(enum.IntEnum):
+    """Bluetooth GATT permissions."""
+    PERM_READ = (1 << 0)
+    PERM_READ_ENCRYPTED = (1 << 1)
+    PERM_READ_ENC_MITM = (1 << 2)
+    PERM_WRITE = (1 << 4)
+    PERM_WRITE_ENCRYPTED = (1 << 5)
+    PERM_WRITE_ENC_MITM = (1 << 6)
+    PERM_WRITE_SIGNED = (1 << 7)
+    PERM_WRITE_SIGNED_MITM = (1 << 8)
+    PERM_READ_IF_ENCRYPTED_OR_DISCOVERABLE = (1 << 9)
+
+
+class GattCharacteristicProprieties(enum.IntEnum):
+    """Bluetooth GATT characteristic proprieties."""
+    CHAR_PROP_BIT_BROADCAST = (1 << 0)
+    CHAR_PROP_BIT_READ = (1 << 1)
+    CHAR_PROP_BIT_WRITE_NR = (1 << 2)
+    CHAR_PROP_BIT_WRITE = (1 << 3)
+    CHAR_PROP_BIT_NOTIFY = (1 << 4)
+    CHAR_PROP_BIT_INDICATE = (1 << 5)
+    CHAR_PROP_BIT_AUTH = (1 << 6)
+    CHAR_PROP_BIT_EXT_PROP = (1 << 7)
+
+
 class GattStatus(enum.IntEnum):
     """Bluetooth GATT return status."""
     SUCCESS = 0x00

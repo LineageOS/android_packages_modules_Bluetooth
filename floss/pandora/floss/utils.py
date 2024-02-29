@@ -17,6 +17,7 @@ import functools
 import logging
 import threading
 import time
+import uuid
 from typing import List, Optional
 import traceback
 
@@ -446,6 +447,18 @@ def uuid16_to_uuid128(uuid16: str):
 
 def uuid32_to_uuid128(uuid32: str):
     return f'{uuid32}-0000-1000-8000-00805f9b34fb'
+
+
+def get_uuid_as_list(str_uuid):
+    """Converts string uuid to a list of bytes.
+
+    Args:
+        str_uuid: String UUID.
+
+    Returns:
+        UUID string as list of bytes.
+    """
+    return list(uuid.UUID(str_uuid).bytes)
 
 
 def advertise_data_from(request_data: host_pb2.DataTypes):
