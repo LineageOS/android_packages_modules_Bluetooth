@@ -10,6 +10,7 @@ use bt_topshim::btif::{
 use bt_topshim::{
     controller, metrics,
     profiles::gatt::GattStatus,
+    profiles::hfp::EscoCodingFormat,
     profiles::hid_host::{
         BthhConnectionState, BthhHidInfo, BthhProtocolMode, BthhReportType, BthhStatus,
         HHCallbacks, HHCallbacksDispatcher, HidHost,
@@ -251,6 +252,9 @@ pub trait IBluetooth {
 
     /// Returns a list of all the roles that are supported.
     fn get_supported_roles(&self) -> Vec<BtAdapterRole>;
+
+    /// Returns whether the coding format is supported.
+    fn is_coding_format_supported(&self, coding_format: EscoCodingFormat) -> bool;
 }
 
 /// Adapter API for Bluetooth qualification and verification.
@@ -2796,6 +2800,10 @@ impl IBluetooth for Bluetooth {
         }
 
         roles
+    }
+
+    fn is_coding_format_supported(&self, coding_format: EscoCodingFormat) -> bool {
+        self.intf.lock().unwrap().is_coding_format_supported(coding_format as u8)
     }
 }
 
