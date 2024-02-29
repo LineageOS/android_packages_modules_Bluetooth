@@ -308,6 +308,9 @@ interface IBluetooth
     @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     oneway void getBluetoothGatt(in SynchronousResultReceiver receiver);
 
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
+    IBinder getBluetoothScan();
+
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     oneway void unregAllGattClient(in AttributionSource attributionSource, in SynchronousResultReceiver receiver);
 

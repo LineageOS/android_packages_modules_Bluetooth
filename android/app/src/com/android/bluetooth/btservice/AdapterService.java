@@ -135,6 +135,7 @@ import com.android.bluetooth.hid.HidDeviceService;
 import com.android.bluetooth.hid.HidHostService;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.bluetooth.le_scan.ScanManager;
+import com.android.bluetooth.le_scan.ScanController;
 import com.android.bluetooth.map.BluetoothMapService;
 import com.android.bluetooth.mapclient.MapClientService;
 import com.android.bluetooth.mcp.McpService;
@@ -312,6 +313,7 @@ public class AdapterService extends Service {
     private BatteryService mBatteryService;
     private BluetoothQualityReportNativeInterface mBluetoothQualityReportNativeInterface;
     private GattService mGattService;
+    private ScanController mScanController;
 
     private volatile boolean mTestModeEnabled = false;
 
@@ -5375,6 +5377,12 @@ public class AdapterService extends Service {
             return service.getBluetoothGatt();
         }
 
+        @Override
+        public IBinder getBluetoothScan() {
+            AdapterService service = getService();
+            return service == null ? null : service.getBluetoothScan();
+        }
+
         @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
         @Override
         public void unregAllGattClient(
@@ -7145,6 +7153,10 @@ public class AdapterService extends Service {
             return null;
         }
         return ((ProfileService) mGattService).getBinder();
+    }
+
+    IBinder getBluetoothScan() {
+        return mScanController == null ? null : mScanController.getBinder();
     }
 
     void unregAllGattClient(AttributionSource source) {
