@@ -17,6 +17,7 @@
 
 #include "devices.h"
 
+#include <bluetooth/log.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -551,9 +552,9 @@ class LeAudioAseConfigurationTest : public Test {
     auto device = (std::make_shared<LeAudioDevice>(
         GetTestAddress(index), DeviceConnectState::DISCONNECTED));
     devices_.push_back(device);
-    LOG_INFO(" addresses %d", (int)(addresses_.size()));
+    log::info("addresses {}", (int)(addresses_.size()));
     addresses_.push_back(device->address_);
-    LOG_INFO(" Addresses %d", (int)(addresses_.size()));
+    log::info("Addresses {}", (int)(addresses_.size()));
 
     if (out_of_range_device == false) {
       group_->AddNode(device);

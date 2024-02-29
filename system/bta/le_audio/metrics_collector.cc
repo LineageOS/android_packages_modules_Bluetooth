@@ -17,6 +17,7 @@
 #include "metrics_collector.h"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include <memory>
 #include <vector>
@@ -296,7 +297,7 @@ void MetricsCollector::OnBroadcastStateChanged(bool started) {
 }
 
 void MetricsCollector::Flush() {
-  LOG(INFO) << __func__;
+  log::info("");
   for (auto& p : opened_groups_) {
     p.second->Flush();
   }

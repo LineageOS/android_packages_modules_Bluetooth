@@ -17,6 +17,7 @@
 #include "le_audio_log_history.h"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 #include <check.h>
 
 #include <cstdint>
@@ -29,6 +30,8 @@
 #include "os/log.h"
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
+
+using namespace bluetooth;
 
 constexpr size_t kMaxLogSize = 255;
 constexpr size_t kLeAudioLogHistoryBufferSize = 200;
@@ -109,7 +112,7 @@ class LeAudioLogHistoryImpl : public LeAudioLogHistory {
                                const RawAddress& addr, const std::string& msg,
                                const std::string& extra) {
     if (history_ == nullptr) {
-      LOG_ERROR(
+      log::error(
           "LeAudioLogHistory has not been constructed or already destroyed !");
       return;
     }

@@ -20,6 +20,7 @@
 #define BTM_BLE_API_TYPES_H
 
 #include <base/functional/callback_forward.h>
+#include <bluetooth/log.h>
 #include <hardware/bt_common_types.h>
 
 #include <cstdint>
@@ -513,5 +514,10 @@ typedef struct {
 } tBTM_BLE_ENERGY_INFO_CB;
 
 typedef void(tBTM_BLE_CTRL_FEATURES_CBACK)(tHCI_STATUS status);
+
+namespace fmt {
+template <>
+struct formatter<tBTM_BLE_CONN_TYPE> : enum_formatter<tBTM_BLE_CONN_TYPE> {};
+}  // namespace fmt
 
 #endif  // BTM_BLE_API_TYPES_H

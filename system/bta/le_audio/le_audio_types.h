@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <bluetooth/log.h>
 #include <stdint.h>
 
 #include <bitset>
@@ -1278,3 +1279,16 @@ void AppendMetadataLtvEntryForStreamingContext(
     std::vector<uint8_t>& metadata, types::AudioContexts context_type);
 uint8_t GetMaxCodecFramesPerSduFromPac(const types::acs_ac_record* pac_record);
 }  // namespace bluetooth::le_audio
+
+namespace fmt {
+template <>
+struct formatter<bluetooth::le_audio::DsaMode>
+    : enum_formatter<bluetooth::le_audio::DsaMode> {};
+template <>
+struct formatter<bluetooth::le_audio::types::CisType>
+    : enum_formatter<bluetooth::le_audio::types::CisType> {};
+template <>
+struct formatter<bluetooth::le_audio::types::LeAudioConfigurationStrategy>
+    : enum_formatter<bluetooth::le_audio::types::LeAudioConfigurationStrategy> {
+};
+}  // namespace fmt
