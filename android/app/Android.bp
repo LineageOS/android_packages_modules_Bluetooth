@@ -149,7 +149,6 @@ cc_library_shared {
         "server_configurable_flags",
     ],
     shared_libs: [
-        "libPlatformProperties",
         "libaaudio",
         "libbinder_ndk",
         "libcrypto",

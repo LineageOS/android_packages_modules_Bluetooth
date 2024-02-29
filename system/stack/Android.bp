@@ -1675,7 +1675,6 @@ cc_test {
         "libosi",
     ],
     shared_libs: [
-        "libPlatformProperties",
         "libcrypto",
     ],
     sanitize: {
@@ -1739,7 +1738,6 @@ cc_test {
         "libprotobuf-cpp-lite",
     ],
     shared_libs: [
-        "libPlatformProperties",
         "libcrypto",
     ],
     target: {
