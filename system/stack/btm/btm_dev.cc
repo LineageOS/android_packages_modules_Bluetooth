@@ -36,9 +36,10 @@
 #include "btm_sec_api.h"
 #include "btm_sec_cb.h"
 #include "common/init_flags.h"
-#include "device/include/controller.h"
+#include "hci/controller_interface.h"
 #include "internal_include/bt_target.h"
 #include "l2c_api.h"
+#include "main/shim/entry.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
@@ -331,7 +332,7 @@ bool btm_dev_support_role_switch(const RawAddress& bd_addr) {
     return false;
   }
 
-  if (!controller_get_interface()->SupportsRoleSwitch()) {
+  if (!bluetooth::shim::GetController()->SupportsRoleSwitch()) {
     log::verbose("Local controller does not support role switch");
     return false;
   }
