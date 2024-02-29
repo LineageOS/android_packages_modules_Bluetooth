@@ -45,6 +45,7 @@
 #include "stack/btm/btm_sec.h"
 #include "stack/eatt/eatt.h"
 #include "stack/gatt/gatt_int.h"
+#include "stack/include/acl_api.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_psm_types.h"
 #include "stack/include/bt_types.h"
@@ -526,6 +527,13 @@ static void gatt_le_connect_cback(uint16_t chan, const RawAddress& bd_addr,
     p_tcb = gatt_allocate_tcb_by_bdaddr(bd_addr, BT_TRANSPORT_LE);
     if (!p_tcb) {
       log::error("CCB max out, no rsources");
+      if (IS_FLAG_ENABLED(gatt_drop_acl_on_out_of_resources_fix)) {
+        log::error("Disconnecting address:{} due to out of resources.",
+                   ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+        // When single FIXED channel cannot be created, there is no reason to
+        // keep the link
+        btm_remove_acl(bd_addr, transport);
+      }
       return;
     }
 
