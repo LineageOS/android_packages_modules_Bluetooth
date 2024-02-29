@@ -637,8 +637,6 @@ void LeAudioClientInterface::Source::ConfirmStreamingRequest() {
 }
 
 void LeAudioClientInterface::Source::ConfirmStreamingRequestV2() {
-  LOG_INFO("Rymek source");
-
   auto lambda = [&](StartRequestState currect_start_request_state)
       -> std::pair<StartRequestState, bool> {
     switch (currect_start_request_state) {

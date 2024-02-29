@@ -89,8 +89,8 @@ class DualModeController : public Device {
   /// to an external tracker. Packets are rejected if they failed to
   /// be parsed, or run into an unimplemented part of the controller.
   void RegisterInvalidPacketHandler(
-      std::function<void(uint32_t, InvalidPacketReason, std::string,
-                         std::vector<uint8_t> const&)>& handler);
+      const std::function<void(uint32_t, InvalidPacketReason, std::string,
+                               std::vector<uint8_t> const&)>& handler);
 
   // Set the callbacks for sending packets to the HCI.
   void RegisterEventChannel(
@@ -552,6 +552,24 @@ class DualModeController : public Device {
   // the error code UNKNOWN_OPCODE.
   void SendCommandCompleteUnknownOpCodeEvent(
       bluetooth::hci::OpCode op_code) const;
+
+  // Validate that a received packet is correctly formatted.
+  // If the packet failed to be parsed, the function sends a
+  // HCI Hardware Error event to the host and logs the packet to
+  // the configured handler.
+  template <typename T>
+  bool CheckPacketView(T const& view, std::string reason) {
+    if (view.IsValid()) {
+      return true;
+    }
+
+    // Send a hardware error to reset the host, and report the packet
+    // for tracing.
+    send_event_(bluetooth::hci::HardwareErrorBuilder::Create(0x43));
+    invalid_packet_handler_(id_, InvalidPacketReason::kParseError, reason,
+                            view.bytes().bytes());
+    return false;
+  }
 
   // Callbacks to send packets back to the HCI.
   std::function<void(std::shared_ptr<bluetooth::hci::AclBuilder>)> send_acl_;

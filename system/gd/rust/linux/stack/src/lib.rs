@@ -35,7 +35,7 @@ use crate::bluetooth::{
     BluetoothDevice, DelayedActions, IBluetooth,
 };
 use crate::bluetooth_admin::{BluetoothAdmin, IBluetoothAdmin};
-use crate::bluetooth_adv::dispatch_le_adv_callbacks;
+use crate::bluetooth_adv::{dispatch_le_adv_callbacks, AdvertiserActions};
 use crate::bluetooth_gatt::{
     dispatch_gatt_client_callbacks, dispatch_gatt_server_callbacks, dispatch_le_scanner_callbacks,
     dispatch_le_scanner_inband_callbacks, BluetoothGatt, GattActions,
@@ -116,6 +116,7 @@ pub enum Message {
 
     // Advertising related
     AdvertiserCallbackDisconnected(u32),
+    AdvertiserActions(AdvertiserActions),
 
     SocketManagerActions(SocketActions),
     SocketManagerCallbackDisconnected(u32),
@@ -365,6 +366,10 @@ impl Stack {
 
                 Message::AdvertiserCallbackDisconnected(id) => {
                     bluetooth_gatt.lock().unwrap().remove_adv_callback(id);
+                }
+
+                Message::AdvertiserActions(action) => {
+                    bluetooth_gatt.lock().unwrap().handle_adv_action(action);
                 }
 
                 Message::SocketManagerActions(action) => {
