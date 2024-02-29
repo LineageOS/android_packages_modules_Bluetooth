@@ -55,8 +55,7 @@ import java.util.Map;
  * 6) If a device is not connected with A2DP or HFP, it cannot enter silence mode.
  */
 public class SilenceDeviceManager {
-    private static final boolean VERBOSE = false;
-    private static final String TAG = "SilenceDeviceManager";
+    private static final String TAG = SilenceDeviceManager.class.getSimpleName();
 
     private final AdapterService mAdapterService;
     private final ServiceFactory mFactory;
@@ -125,9 +124,7 @@ public class SilenceDeviceManager {
 
         @Override
         public void handleMessage(Message msg) {
-            if (VERBOSE) {
-                Log.d(TAG, "handleMessage: " + msg.what);
-            }
+            Log.d(TAG, "handleMessage: " + msg.what);
             switch (msg.what) {
                 case MSG_SILENCE_DEVICE_STATE_CHANGED: {
                     BluetoothDevice device = (BluetoothDevice) msg.obj;
@@ -208,16 +205,12 @@ public class SilenceDeviceManager {
     }
 
     void start() {
-        if (VERBOSE) {
-            Log.v(TAG, "start()");
-        }
+        Log.v(TAG, "start()");
         mHandler = new SilenceDeviceManagerHandler(mLooper);
     }
 
     void cleanup() {
-        if (VERBOSE) {
-            Log.v(TAG, "cleanup()");
-        }
+        Log.v(TAG, "cleanup()");
         mSilenceDevices.clear();
     }
 
@@ -282,10 +275,8 @@ public class SilenceDeviceManager {
     }
 
     void addConnectedDevice(BluetoothDevice device, int profile) {
-        if (VERBOSE) {
-            Log.d(TAG, "addConnectedDevice: " + device + ", profile:"
-                    + BluetoothProfile.getProfileName(profile));
-        }
+        Log.d(TAG, "addConnectedDevice: " + device + ", profile:"
+                + BluetoothProfile.getProfileName(profile));
         switch (profile) {
             case BluetoothProfile.A2DP:
                 if (!mA2dpConnectedDevices.contains(device)) {
@@ -301,10 +292,8 @@ public class SilenceDeviceManager {
     }
 
     void removeConnectedDevice(BluetoothDevice device, int profile) {
-        if (VERBOSE) {
-            Log.d(TAG, "removeConnectedDevice: " + device + ", profile:"
-                    + BluetoothProfile.getProfileName(profile));
-        }
+        Log.d(TAG, "removeConnectedDevice: " + device + ", profile:"
+                + BluetoothProfile.getProfileName(profile));
         switch (profile) {
             case BluetoothProfile.A2DP:
                 if (mA2dpConnectedDevices.contains(device)) {
