@@ -48,7 +48,7 @@ struct mgmt_bt_codec {
 
 typedef struct cached_codec_info {
   struct bt_codec inner;
-  uint8_t pkt_size;
+  size_t pkt_size;
 } cached_codec_info;
 
 std::vector<cached_codec_info> cached_codecs;
@@ -451,7 +451,7 @@ void set_codec_datapath(int codec_uuid) {
   }
 }
 
-int get_packet_size(int codec) {
+size_t get_packet_size(int codec) {
   for (const cached_codec_info& c : cached_codecs) {
     if (c.inner.codec == codec) {
       return c.pkt_size;

@@ -85,12 +85,12 @@ extern struct get_offload_supported get_offload_supported;
 
 // Name: get_packet_size
 // Params: int codec
-// Return: int
+// Return: size_t
 struct get_packet_size {
-  static int return_value;
-  std::function<int(int /* codec */)> body{
+  static size_t return_value;
+  std::function<size_t(int /* codec */)> body{
       [](int /* codec */) { return return_value; }};
-  int operator()(int codec) { return body(codec); };
+  size_t operator()(int codec) { return body(codec); };
 };
 extern struct get_packet_size get_packet_size;
 
