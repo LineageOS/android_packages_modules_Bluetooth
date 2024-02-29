@@ -50,15 +50,6 @@ const STACK_TURN_OFF_TIMEOUT_MS: Duration = Duration::from_millis(4000);
 // Time bt_stack_manager waits for cleanup
 const STACK_CLEANUP_TIMEOUT_MS: Duration = Duration::from_millis(1000);
 
-const VERBOSE_ONLY_LOG_TAGS: &[&str] = &[
-    "bt_bta_av", // AV apis
-    "btm_sco",   // SCO data path logs
-    "l2c_csm",   // L2CAP state machine
-    "l2c_link",  // L2CAP link layer logs
-    "sco_hci",   // SCO over HCI
-    "uipc",      // Userspace IPC implementation
-];
-
 const INIT_LOGGING_MAX_RETRY: u8 = 3;
 
 /// Runs the Bluetooth daemon serving D-Bus IPC.
@@ -111,24 +102,14 @@ fn main() -> Result<(), Box<dyn Error>> {
         None => vec![],
     };
 
-    // Set GD debug flag if debug is enabled.
-    if is_debug {
-        // Limit tags if verbose debug logging isn't enabled.
-        if !is_verbose_debug {
-            init_flags.push(format!(
-                "INIT_logging_debug_disabled_for_tags={}",
-                VERBOSE_ONLY_LOG_TAGS.join(",")
-            ));
-            init_flags.push(String::from("INIT_default_log_level_str=LOG_DEBUG"));
-        } else {
-            init_flags.push(String::from("INIT_default_log_level_str=LOG_VERBOSE"));
-        }
-    }
-
     // Forward --hci to Fluoride.
     init_flags.push(format!("--hci={}", hci_index));
 
-    let logging = Arc::new(Mutex::new(Box::new(BluetoothLogging::new(is_debug, log_output))));
+    let logging = Arc::new(Mutex::new(Box::new(BluetoothLogging::new(
+        is_debug,
+        is_verbose_debug,
+        log_output,
+    ))));
     // TODO(b/307171804): Investigate why connecting to unix syslog might fail.
     // Retry it a few times. Ignore the failure if fails too many times.
     for _ in 0..INIT_LOGGING_MAX_RETRY {
