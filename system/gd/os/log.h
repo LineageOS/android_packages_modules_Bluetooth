@@ -57,24 +57,21 @@ static_assert(LOG_TAG != nullptr, "LOG_TAG should never be NULL");
 #include <log/log.h>
 #include <log/log_event_list.h>
 
-#if __has_include("src/init_flags.rs.h")
-
-#include "common/init_flags.h"
-
-#define LOG_VERBOSE_INT(fmt, args...)                                                  \
-  do {                                                                                 \
-    if (bluetooth::common::InitFlags::GetLogLevelForTag(LOG_TAG) >= LOG_TAG_VERBOSE) { \
-      ALOGV(fmt, ##args);                                                              \
-    }                                                                                  \
+#define LOG_VERBOSE_INT(fmt, args...)                                                     \
+  do {                                                                                    \
+    if (!__android_log_is_loggable(ANDROID_LOG_VERBOSE, LOG_TAG, ANDROID_LOG_INFO) &&     \
+        !__android_log_is_loggable(ANDROID_LOG_VERBOSE, "bluetooth", ANDROID_LOG_INFO)) { \
+      ALOGV(fmt, ##args);                                                                 \
+    }                                                                                     \
   } while (false)
 
-#define LOG_DEBUG_INT(fmt, args...)                                                  \
-  do {                                                                               \
-    if (bluetooth::common::InitFlags::GetLogLevelForTag(LOG_TAG) >= LOG_TAG_DEBUG) { \
-      ALOGD(fmt, ##args);                                                            \
-    }                                                                                \
+#define LOG_DEBUG_INT(fmt, args...)                                                     \
+  do {                                                                                  \
+    if (!__android_log_is_loggable(ANDROID_LOG_DEBUG, LOG_TAG, ANDROID_LOG_INFO) &&     \
+        !__android_log_is_loggable(ANDROID_LOG_DEBUG, "bluetooth", ANDROID_LOG_INFO)) { \
+      ALOGD(fmt, ##args);                                                               \
+    }                                                                                   \
   } while (false)
-#endif /* __has_include("src/init_flags.rs.h") */
 
 #define LOG_INFO_INT(fmt, args...) ALOGI(fmt, ##args)
 #define LOG_WARN_INT(fmt, args...) ALOGW(fmt, ##args)
@@ -102,25 +99,13 @@ static_assert(LOG_TAG != nullptr, "LOG_TAG should never be NULL");
     abort();                                                                        \
   } while (false)
 #elif defined(TARGET_FLOSS) /* end of defined (ANDROID_EMULATOR) */
-#include "common/init_flags.h"
 #include "os/syslog.h"
 
 // Prefix the log with tag, file, line and function
-#define LOGWRAPPER(tag, fmt, args...) \
-  write_syslog(tag, "%s: " fmt, LOG_TAG, ##args)
+#define LOGWRAPPER(tag, fmt, args...) write_syslog(tag, LOG_TAG, "%s: " fmt, LOG_TAG, ##args)
 
-#define LOG_VERBOSE_INT(...)                                                           \
-  do {                                                                                 \
-    if (bluetooth::common::InitFlags::GetLogLevelForTag(LOG_TAG) >= LOG_TAG_VERBOSE) { \
-      LOGWRAPPER(LOG_TAG_VERBOSE, __VA_ARGS__);                                        \
-    }                                                                                  \
-  } while (false)
-#define LOG_DEBUG_INT(...)                                                           \
-  do {                                                                               \
-    if (bluetooth::common::InitFlags::GetLogLevelForTag(LOG_TAG) >= LOG_TAG_DEBUG) { \
-      LOGWRAPPER(LOG_TAG_DEBUG, __VA_ARGS__);                                        \
-    }                                                                                \
-  } while (false)
+#define LOG_VERBOSE_INT(...) LOGWRAPPER(LOG_TAG_VERBOSE, __VA_ARGS__)
+#define LOG_DEBUG_INT(...) LOGWRAPPER(LOG_TAG_DEBUG, __VA_ARGS__)
 #define LOG_INFO_INT(...) LOGWRAPPER(LOG_TAG_INFO, __VA_ARGS__)
 #define LOG_WARN_INT(...) LOGWRAPPER(LOG_TAG_WARN, __VA_ARGS__)
 #define LOG_ERROR_INT(...) LOGWRAPPER(LOG_TAG_ERROR, __VA_ARGS__)
