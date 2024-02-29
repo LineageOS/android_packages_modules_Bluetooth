@@ -53,7 +53,6 @@ import java.util.UUID;
 public class TbsGatt {
 
     private static final String TAG = "TbsGatt";
-    private static final boolean DBG = true;
 
     private static final String UUID_PREFIX = "0000";
     private static final String UUID_SUFFIX = "-0000-1000-8000-00805f9b34fb";
@@ -714,9 +713,7 @@ public class TbsGatt {
     }
 
     public boolean setCallState(Map<Integer, TbsCall> callsList) {
-        if (DBG) {
-            Log.d(TAG, "setCallState: callsList=" + callsList);
-        }
+        Log.d(TAG, "setCallState: callsList=" + callsList);
         int i = 0;
         byte[] value = new byte[callsList.size() * 3];
         for (Map.Entry<Integer, TbsCall> entry : callsList.entrySet()) {
@@ -730,9 +727,7 @@ public class TbsGatt {
     }
 
     public boolean setBearerListCurrentCalls(Map<Integer, TbsCall> callsList) {
-        if (DBG) {
-            Log.d(TAG, "setBearerListCurrentCalls: callsList=" + callsList);
-        }
+        Log.d(TAG, "setBearerListCurrentCalls: callsList=" + callsList);
         final int listItemLengthMax = Byte.MAX_VALUE;
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -860,10 +855,8 @@ public class TbsGatt {
     }
 
     public boolean setTerminationReason(int callIndex, int terminationReason) {
-        if (DBG) {
-            Log.d(TAG, "setTerminationReason: callIndex=" + callIndex + " terminationReason="
-                    + terminationReason);
-        }
+        Log.d(TAG, "setTerminationReason: callIndex=" + callIndex + " terminationReason="
+                + terminationReason);
         byte[] value = new byte[2];
         value[0] = (byte) (callIndex & 0xff);
         value[1] = (byte) (terminationReason & 0xff);
@@ -881,9 +874,7 @@ public class TbsGatt {
     }
 
     public boolean setIncomingCall(int callIndex, String uri) {
-        if (DBG) {
-            Log.d(TAG, "setIncomingCall: callIndex=" + callIndex + " uri=" + uri);
-        }
+        Log.d(TAG, "setIncomingCall: callIndex=" + callIndex + " uri=" + uri);
         int uri_len = 0;
         if (uri != null) {
             uri_len = uri.length();
@@ -900,17 +891,13 @@ public class TbsGatt {
     }
 
     public boolean clearIncomingCall() {
-        if (DBG) {
-            Log.d(TAG, "clearIncomingCall");
-        }
+        Log.d(TAG, "clearIncomingCall");
         return mIncomingCallCharacteristic.clearValue(false);
     }
 
     public boolean setCallFriendlyName(int callIndex, String callFriendlyName) {
-        if (DBG) {
-            Log.d(TAG, "setCallFriendlyName: callIndex=" + callIndex + "callFriendlyName="
-                    + callFriendlyName);
-        }
+        Log.d(TAG, "setCallFriendlyName: callIndex=" + callIndex + "callFriendlyName="
+                + callFriendlyName);
         byte[] value = new byte[callFriendlyName.length() + 1];
         value[0] = (byte) (callIndex & 0xff);
         System.arraycopy(callFriendlyName.getBytes(), 0, value, 1, callFriendlyName.length());
@@ -928,20 +915,16 @@ public class TbsGatt {
     }
 
     public boolean clearFriendlyName() {
-        if (DBG) {
-            Log.d(TAG, "clearFriendlyName");
-        }
+        Log.d(TAG, "clearFriendlyName");
         return mCallFriendlyNameCharacteristic.clearValue(false);
     }
 
     public void setCallControlPointResult(BluetoothDevice device, int requestedOpcode,
             int callIndex, int requestResult) {
-        if (DBG) {
-            Log.d(TAG,
-                    "setCallControlPointResult: device=" + device + " requestedOpcode="
-                            + requestedOpcode + " callIndex=" + callIndex + " requesuResult="
-                            + requestResult);
-        }
+        Log.d(TAG,
+                "setCallControlPointResult: device=" + device + " requestedOpcode="
+                        + requestedOpcode + " callIndex=" + callIndex + " requesuResult="
+                        + requestResult);
         mCallControlPointCharacteristic.setResult(device, requestedOpcode, callIndex,
                 requestResult);
     }
@@ -986,12 +969,10 @@ public class TbsGatt {
     private final AdapterService.BluetoothStateCallback mBluetoothStateChangeCallback =
             new AdapterService.BluetoothStateCallback() {
                 public void onBluetoothStateChange(int prevState, int newState) {
-                    if (DBG) {
-                        Log.d(
-                                TAG,
-                                "onBluetoothStateChange: state="
-                                        + BluetoothAdapter.nameForState(newState));
-                    }
+                    Log.d(
+                            TAG,
+                            "onBluetoothStateChange: state="
+                                    + BluetoothAdapter.nameForState(newState));
                     if (newState == BluetoothAdapter.STATE_ON) {
                         restoreCccValuesForStoredDevices();
                     }
@@ -1204,9 +1185,7 @@ public class TbsGatt {
 
         switch (op.mOperation) {
             case READ_CHARACTERISTIC:
-                if (DBG) {
-                    Log.d(TAG, "onCharacteristicReadRequest: device=" + device);
-                }
+                Log.d(TAG, "onCharacteristicReadRequest: device=" + device);
 
                 if (getDeviceAuthorization(device) != BluetoothDevice.ACCESS_ALLOWED) {
                     onRejectedAuthorizationGattOperation(device, op);
@@ -1242,9 +1221,7 @@ public class TbsGatt {
                 break;
 
             case WRITE_CHARACTERISTIC:
-                if (DBG) {
-                    Log.d(TAG, "onCharacteristicWriteRequest: device=" + device);
-                }
+                Log.d(TAG, "onCharacteristicWriteRequest: device=" + device);
 
                 if (getDeviceAuthorization(device) != BluetoothDevice.ACCESS_ALLOWED) {
                     onRejectedAuthorizationGattOperation(device, op);
@@ -1269,9 +1246,7 @@ public class TbsGatt {
                 break;
 
             case READ_DESCRIPTOR:
-                if (DBG) {
-                    Log.d(TAG, "onDescriptorReadRequest: device=" + device);
-                }
+                Log.d(TAG, "onDescriptorReadRequest: device=" + device);
 
                 if (getDeviceAuthorization(device) != BluetoothDevice.ACCESS_ALLOWED) {
                     onRejectedAuthorizationGattOperation(device, op);
@@ -1291,9 +1266,7 @@ public class TbsGatt {
                 break;
 
             case WRITE_DESCRIPTOR:
-                if (DBG) {
-                    Log.d(TAG, "onDescriptorWriteRequest: device=" + device);
-                }
+                Log.d(TAG, "onDescriptorWriteRequest: device=" + device);
 
                 if (getDeviceAuthorization(device) != BluetoothDevice.ACCESS_ALLOWED) {
                     onRejectedAuthorizationGattOperation(device, op);
@@ -1394,9 +1367,7 @@ public class TbsGatt {
     }
 
     private void clearUnauthorizedGattOperationss(BluetoothDevice device) {
-        if (DBG) {
-            Log.d(TAG, "clearUnauthorizedGattOperationss device: " + device);
-        }
+        Log.d(TAG, "clearUnauthorizedGattOperationss device: " + device);
 
         synchronized (mPendingGattOperationsLock) {
             mPendingGattOperations.remove(device);
@@ -1404,9 +1375,7 @@ public class TbsGatt {
     }
 
     private void processPendingGattOperations(BluetoothDevice device) {
-        if (DBG) {
-            Log.d(TAG, "processPendingGattOperations device: " + device);
-        }
+        Log.d(TAG, "processPendingGattOperations device: " + device);
 
         synchronized (mPendingGattOperationsLock) {
             if (mPendingGattOperations.containsKey(device)) {
@@ -1433,9 +1402,7 @@ public class TbsGatt {
         @Override
         public void onConnectionStateChange(BluetoothDevice device, int status, int newState) {
             super.onConnectionStateChange(device, status, newState);
-            if (DBG) {
-                Log.d(TAG, "BluetoothGattServerCallback: onConnectionStateChange");
-            }
+            Log.d(TAG, "BluetoothGattServerCallback: onConnectionStateChange");
             if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 clearUnauthorizedGattOperationss(device);
             }
@@ -1443,9 +1410,7 @@ public class TbsGatt {
 
         @Override
         public void onServiceAdded(int status, BluetoothGattService service) {
-            if (DBG) {
-                Log.d(TAG, "onServiceAdded: status=" + status);
-            }
+            Log.d(TAG, "onServiceAdded: status=" + status);
             if (mCallback != null) {
                 mCallback.onServiceAdded(status == BluetoothGatt.GATT_SUCCESS);
             }
@@ -1457,10 +1422,8 @@ public class TbsGatt {
         public void onCharacteristicReadRequest(BluetoothDevice device, int requestId, int offset,
                 BluetoothGattCharacteristic characteristic) {
             super.onCharacteristicReadRequest(device, requestId, offset, characteristic);
-            if (DBG) {
-                Log.d(TAG, "BluetoothGattServerCallback: onCharacteristicReadRequest offset= "
-                        + offset + " entire value= " + Arrays.toString(characteristic.getValue()));
-            }
+            Log.d(TAG, "BluetoothGattServerCallback: onCharacteristicReadRequest offset= "
+                    + offset + " entire value= " + Arrays.toString(characteristic.getValue()));
 
             if ((characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_READ) == 0) {
                 mBluetoothGattServer.sendResponse(device, requestId,
@@ -1489,11 +1452,9 @@ public class TbsGatt {
                 boolean responseNeeded, int offset, byte[] value) {
             super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite,
                     responseNeeded, offset, value);
-            if (DBG) {
-                Log.d(TAG,
-                        "BluetoothGattServerCallback: "
-                                + "onCharacteristicWriteRequest");
-            }
+            Log.d(TAG,
+                    "BluetoothGattServerCallback: "
+                            + "onCharacteristicWriteRequest");
 
             if ((characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_WRITE)
                     == 0) {
@@ -1521,11 +1482,9 @@ public class TbsGatt {
         public void onDescriptorReadRequest(BluetoothDevice device, int requestId, int offset,
                 BluetoothGattDescriptor descriptor) {
             super.onDescriptorReadRequest(device, requestId, offset, descriptor);
-            if (DBG) {
-                Log.d(TAG,
-                        "BluetoothGattServerCallback: "
-                                + "onDescriptorReadRequest");
-            }
+            Log.d(TAG,
+                    "BluetoothGattServerCallback: "
+                            + "onDescriptorReadRequest");
 
             if ((descriptor.getPermissions() & BluetoothGattDescriptor.PERMISSION_READ_ENCRYPTED)
                     == 0) {
@@ -1555,11 +1514,9 @@ public class TbsGatt {
                 int offset, byte[] value) {
             super.onDescriptorWriteRequest(
                     device, requestId, descriptor, preparedWrite, responseNeeded, offset, value);
-            if (DBG) {
-                Log.d(TAG,
-                        "BluetoothGattServerCallback: "
-                                + "onDescriptorWriteRequest");
-            }
+            Log.d(TAG,
+                    "BluetoothGattServerCallback: "
+                            + "onDescriptorWriteRequest");
 
             if ((descriptor.getPermissions() & BluetoothGattDescriptor.PERMISSION_WRITE_ENCRYPTED)
                     == 0) {

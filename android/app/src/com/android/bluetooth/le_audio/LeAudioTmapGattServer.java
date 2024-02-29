@@ -39,7 +39,6 @@ import java.util.UUID;
  */
 @VisibleForTesting
 public class LeAudioTmapGattServer {
-    private static final boolean DBG = true;
     private static final String TAG = "LeAudioTmapGattServer";
 
     /* Telephony and Media Audio Profile Role Characteristic UUID */
@@ -72,9 +71,7 @@ public class LeAudioTmapGattServer {
      */
     @VisibleForTesting
     public void start(int roleMask) {
-        if (DBG) {
-            Log.d(TAG, "start(roleMask:" + roleMask + ")");
-        }
+        Log.d(TAG, "start(roleMask:" + roleMask + ")");
 
         if (!mBluetoothGattServer.open(mBluetoothGattServerCallback)) {
             throw new IllegalStateException("Could not open Gatt server");
@@ -103,9 +100,7 @@ public class LeAudioTmapGattServer {
      */
     @VisibleForTesting
     public void stop() {
-        if (DBG) {
-            Log.d(TAG, "stop()");
-        }
+        Log.d(TAG, "stop()");
         if (mBluetoothGattServer == null) {
             Log.w(TAG, "mBluetoothGattServer should not be null when stop() is called");
             return;
@@ -121,11 +116,9 @@ public class LeAudioTmapGattServer {
             new BluetoothGattServerCallback() {
         @Override
         public void onCharacteristicReadRequest(BluetoothDevice device, int requestId, int offset,
-                                                BluetoothGattCharacteristic characteristic) {
+                BluetoothGattCharacteristic characteristic) {
             byte[] value = characteristic.getValue();
-            if (DBG) {
-                Log.d(TAG, "value " + Arrays.toString(value));
-            }
+            Log.d(TAG, "value " + Arrays.toString(value));
             if (value != null) {
                 Log.e(TAG, "value null");
                 value = Arrays.copyOfRange(value, offset, value.length);

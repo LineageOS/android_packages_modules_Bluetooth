@@ -44,7 +44,6 @@ import java.util.UUID;
 public class TbsService extends ProfileService {
 
     private static final String TAG = "TbsService";
-    private static final boolean DBG = true;
 
     private static TbsService sTbsService;
     private Map<BluetoothDevice, Integer> mDeviceAuthorizations = new HashMap<>();
@@ -67,9 +66,7 @@ public class TbsService extends ProfileService {
     @Override
     public void start() {
 
-        if (DBG) {
-            Log.d(TAG, "start()");
-        }
+        Log.d(TAG, "start()");
         if (sTbsService != null) {
             throw new IllegalStateException("start() called twice");
         }
@@ -82,9 +79,7 @@ public class TbsService extends ProfileService {
 
     @Override
     public void stop() {
-        if (DBG) {
-            Log.d(TAG, "stop()");
-        }
+        Log.d(TAG, "stop()");
         if (sTbsService == null) {
             Log.w(TAG, "stop() called before start()");
             return;
@@ -100,9 +95,7 @@ public class TbsService extends ProfileService {
 
     @Override
     public void cleanup() {
-        if (DBG) {
-            Log.d(TAG, "cleanup()");
-        }
+        Log.d(TAG, "cleanup()");
         mDeviceAuthorizations.clear();
     }
 
@@ -126,9 +119,7 @@ public class TbsService extends ProfileService {
     }
 
     private static synchronized void setTbsService(TbsService instance) {
-        if (DBG) {
-            Log.d(TAG, "setTbsService: set to=" + instance);
-        }
+        Log.d(TAG, "setTbsService: set to=" + instance);
 
         sTbsService = instance;
     }
@@ -200,9 +191,7 @@ public class TbsService extends ProfileService {
 
         if (leAudioService.getConnectionPolicy(device)
                 > BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
-            if (DBG) {
-                Log.d(TAG, "TBS authorization allowed based on supported LeAudio service");
-            }
+            Log.d(TAG, "TBS authorization allowed based on supported LeAudio service");
             setDeviceAuthorized(device, true);
             return BluetoothDevice.ACCESS_ALLOWED;
         }
@@ -254,9 +243,7 @@ public class TbsService extends ProfileService {
             }
 
             if (mService != null) {
-                if (DBG) {
-                    Log.d(TAG, "Service available");
-                }
+                Log.d(TAG, "Service available");
 
                 enforceBluetoothPrivilegedPermission(mService);
                 return mService;
@@ -368,9 +355,7 @@ public class TbsService extends ProfileService {
     @VisibleForTesting
     void registerBearer(String token, IBluetoothLeCallControlCallback callback, String uci,
             List<String> uriSchemes, int capabilities, String providerName, int technology) {
-        if (DBG) {
-            Log.d(TAG, "registerBearer: token=" + token);
-        }
+        Log.d(TAG, "registerBearer: token=" + token);
 
         boolean success = mTbsGeneric.addBearer(token, callback, uci, uriSchemes, capabilities,
                 providerName, technology);
@@ -385,72 +370,56 @@ public class TbsService extends ProfileService {
             }
         }
 
-        if (DBG) {
-            Log.d(TAG, "registerBearer: token=" + token + " success=" + success);
-        }
+        Log.d(TAG, "registerBearer: token=" + token + " success=" + success);
     }
 
     @VisibleForTesting
     void unregisterBearer(String token) {
-        if (DBG) {
-            Log.d(TAG, "unregisterBearer: token=" + token);
-        }
+        Log.d(TAG, "unregisterBearer: token=" + token);
 
         mTbsGeneric.removeBearer(token);
     }
 
     @VisibleForTesting
     public void requestResult(int ccid, int requestId, int result) {
-        if (DBG) {
-            Log.d(TAG, "requestResult: ccid=" + ccid + " requestId=" + requestId + " result="
-                    + result);
-        }
+        Log.d(TAG, "requestResult: ccid=" + ccid + " requestId=" + requestId + " result="
+                + result);
 
         mTbsGeneric.requestResult(ccid, requestId, result);
     }
 
     @VisibleForTesting
     void callAdded(int ccid, BluetoothLeCall call) {
-        if (DBG) {
-            Log.d(TAG, "callAdded: ccid=" + ccid + " call=" + call);
-        }
+        Log.d(TAG, "callAdded: ccid=" + ccid + " call=" + call);
 
         mTbsGeneric.callAdded(ccid, call);
     }
 
     @VisibleForTesting
     void callRemoved(int ccid, UUID callId, int reason) {
-        if (DBG) {
-            Log.d(TAG, "callRemoved: ccid=" + ccid + " callId=" + callId + " reason=" + reason);
-        }
+        Log.d(TAG, "callRemoved: ccid=" + ccid + " callId=" + callId + " reason=" + reason);
 
         mTbsGeneric.callRemoved(ccid, callId, reason);
     }
 
     @VisibleForTesting
     void callStateChanged(int ccid, UUID callId, int state) {
-        if (DBG) {
-            Log.d(TAG, "callStateChanged: ccid=" + ccid + " callId=" + callId + " state=" + state);
-        }
+        Log.d(TAG, "callStateChanged: ccid=" + ccid + " callId=" + callId + " state=" + state);
 
         mTbsGeneric.callStateChanged(ccid, callId, state);
     }
 
     @VisibleForTesting
     void currentCallsList(int ccid, List<BluetoothLeCall> calls) {
-        if (DBG) {
-            Log.d(TAG, "currentCallsList: ccid=" + ccid + " calls=" + calls);
-        }
+        Log.d(TAG, "currentCallsList: ccid=" + ccid + " calls=" + calls);
 
         mTbsGeneric.currentCallsList(ccid, calls);
     }
 
     @VisibleForTesting
     void networkStateChanged(int ccid, String providerName, int technology) {
-        if (DBG) {
-            Log.d(TAG, "networkStateChanged: ccid=" + ccid + " providerName=" + providerName
-                    + " technology=" + technology);
-        }
+        Log.d(TAG, "networkStateChanged: ccid=" + ccid + " providerName=" + providerName
+                + " technology=" + technology);
 
         mTbsGeneric.networkStateChanged(ccid, providerName, technology);
     }
