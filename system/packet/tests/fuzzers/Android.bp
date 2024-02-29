@@ -37,7 +37,6 @@ cc_fuzz {
         "libgmock",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     shared_libs: ["liblog"],
@@ -74,7 +73,6 @@ cc_fuzz {
         "libgmock",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     shared_libs: ["liblog"],
@@ -111,7 +109,6 @@ cc_fuzz {
         "libgmock",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     shared_libs: ["liblog"],
@@ -148,7 +145,6 @@ cc_fuzz {
         "libgmock",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     shared_libs: ["liblog"],
@@ -185,7 +181,6 @@ cc_fuzz {
         "libgmock",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     shared_libs: ["liblog"],
@@ -222,7 +217,6 @@ cc_fuzz {
         "libgmock",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     shared_libs: ["liblog"],
@@ -259,7 +253,6 @@ cc_fuzz {
         "libgmock",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     shared_libs: ["liblog"],
@@ -296,7 +289,6 @@ cc_fuzz {
         "libgmock",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     shared_libs: ["liblog"],
@@ -333,7 +325,6 @@ cc_fuzz {
         "libgmock",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     shared_libs: ["liblog"],
@@ -370,7 +361,6 @@ cc_fuzz {
         "libgmock",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     shared_libs: ["liblog"],
@@ -407,7 +397,6 @@ cc_fuzz {
         "libgmock",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     shared_libs: ["liblog"],
@@ -444,7 +433,6 @@ cc_fuzz {
         "libgmock",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     shared_libs: ["liblog"],
@@ -481,7 +469,6 @@ cc_fuzz {
         "libgmock",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     shared_libs: ["liblog"],
@@ -518,7 +505,6 @@ cc_fuzz {
         "libgmock",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     shared_libs: ["liblog"],
@@ -555,7 +541,6 @@ cc_fuzz {
         "libgmock",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     shared_libs: ["liblog"],
@@ -592,7 +577,6 @@ cc_fuzz {
         "libgmock",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     shared_libs: ["liblog"],
@@ -629,7 +613,6 @@ cc_fuzz {
         "libgmock",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     shared_libs: ["liblog"],
@@ -666,7 +649,6 @@ cc_fuzz {
         "libgmock",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     shared_libs: ["liblog"],
@@ -703,7 +685,6 @@ cc_fuzz {
         "libgmock",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     shared_libs: ["liblog"],
@@ -740,7 +721,6 @@ cc_fuzz {
         "libgmock",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     shared_libs: ["liblog"],
@@ -777,7 +757,6 @@ cc_fuzz {
         "libgmock",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     shared_libs: ["liblog"],
@@ -814,7 +793,6 @@ cc_fuzz {
         "libgmock",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     shared_libs: ["liblog"],
@@ -851,7 +829,6 @@ cc_fuzz {
         "libgmock",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     shared_libs: ["liblog"],
@@ -888,7 +865,6 @@ cc_fuzz {
         "libgmock",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     shared_libs: ["liblog"],
@@ -925,7 +901,6 @@ cc_fuzz {
         "libgmock",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     shared_libs: ["liblog"],

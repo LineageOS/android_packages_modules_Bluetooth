@@ -61,9 +61,6 @@ cc_fuzz {
         "packages/modules/Bluetooth/system/device/include",
         "packages/modules/Bluetooth/system/gd",
     ],
-    cflags: [
-        "-DBUILDCFG",
-    ],
     fuzz_config: {
         cc: ["android-bluetooth-security@google.com"],
         componentid: 27441,
