@@ -557,20 +557,16 @@ static tBTM_STATUS bta_dm_sp_cback(tBTM_SP_EVT event,
       break;
 
     case BTM_SP_LOC_OOB_EVT:
-#ifdef BTIF_DM_OOB_TEST
       btif_dm_proc_loc_oob(BT_TRANSPORT_BR_EDR,
                            (bool)(p_data->loc_oob.status == BTM_SUCCESS),
                            p_data->loc_oob.c, p_data->loc_oob.r);
-#endif
       break;
 
     case BTM_SP_RMT_OOB_EVT: {
       Octet16 c;
       Octet16 r;
       sp_rmt_result = false;
-#ifdef BTIF_DM_OOB_TEST
       sp_rmt_result = btif_dm_proc_rmt_oob(p_data->rmt_oob.bd_addr, &c, &r);
-#endif
       log::verbose("result={}", sp_rmt_result);
       bta_dm_ci_rmt_oob(sp_rmt_result, p_data->rmt_oob.bd_addr, c, r);
       break;

@@ -72,7 +72,6 @@ cc_library_static {
     },
     host_supported: true,
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
         "-Wthread-safety",
     ],
@@ -121,9 +120,6 @@ cc_test {
         "libbt_shim_bridge",
         "libchrome",
     ],
-    cflags: [
-        "-DBUILDCFG",
-    ],
     header_libs: ["libbluetooth_headers"],
 }
 
@@ -139,7 +135,6 @@ cc_test {
         "mts_defaults",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-DUNIT_TESTS",
         "-Wno-unused-parameter",
     ],

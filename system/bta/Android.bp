@@ -30,7 +30,6 @@ cc_defaults {
     generated_headers: [
         "BluetoothGeneratedDumpsysDataSchema_h",
     ],
-    cflags: ["-DBUILDCFG"],
 }
 
 filegroup {
