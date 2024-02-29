@@ -1327,6 +1327,10 @@ impl BluetoothInterface {
         ccall!(self, get_swb_supported)
     }
 
+    pub fn is_coding_format_supported(&self, coding_format: u8) -> bool {
+        ccall!(self, is_coding_format_supported, coding_format)
+    }
+
     pub fn le_rand(&self) -> i32 {
         ccall!(self, le_rand)
     }

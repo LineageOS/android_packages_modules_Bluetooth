@@ -3,7 +3,7 @@ use bt_topshim::profiles::a2dp::{
     A2dpCodecSampleRate, PresentationPosition,
 };
 use bt_topshim::profiles::avrcp::PlayerMetadata;
-use bt_topshim::profiles::hfp::HfpCodecCapability;
+use bt_topshim::profiles::hfp::{HfpCodecBitId, HfpCodecFormat};
 use btstack::bluetooth_media::{BluetoothAudioDevice, IBluetoothMedia, IBluetoothMediaCallback};
 use btstack::RPCProxy;
 
@@ -43,11 +43,12 @@ pub struct BluetoothAudioDeviceDBus {
     address: String,
     name: String,
     a2dp_caps: Vec<A2dpCodecConfig>,
-    hfp_cap: HfpCodecCapability,
+    hfp_cap: HfpCodecFormat,
     absolute_volume: bool,
 }
 
-impl_dbus_arg_from_into!(HfpCodecCapability, i32);
+impl_dbus_arg_from_into!(HfpCodecBitId, i32);
+impl_dbus_arg_from_into!(HfpCodecFormat, i32);
 impl_dbus_arg_enum!(A2dpCodecIndex);
 impl_dbus_arg_from_into!(A2dpCodecSampleRate, i32);
 impl_dbus_arg_from_into!(A2dpCodecBitsPerSample, i32);
@@ -254,7 +255,7 @@ impl IBluetoothMedia for IBluetoothMediaDBus {
         &mut self,
         address: String,
         sco_offload: bool,
-        disabled_codecs: HfpCodecCapability,
+        disabled_codecs: HfpCodecBitId,
     ) -> bool {
         dbus_generated!()
     }

@@ -5,6 +5,8 @@ use bt_topshim::btif::{
 use bt_topshim::profiles::socket::SocketType;
 use bt_topshim::profiles::ProfileConnectionState;
 
+use bt_topshim::profiles::hfp::EscoCodingFormat;
+
 use bt_topshim::profiles::hid_host::BthhReportType;
 
 use bt_topshim::profiles::sdp::{
@@ -424,6 +426,7 @@ impl DBusArg for BtSdpRecord {
 }
 
 impl_dbus_arg_enum!(BtDiscMode);
+impl_dbus_arg_from_into!(EscoCodingFormat, u8);
 
 #[allow(dead_code)]
 struct IBluetoothDBus {}
@@ -710,6 +713,11 @@ impl IBluetooth for IBluetoothDBus {
 
     #[dbus_method("GetSupportedRoles", DBusLog::Disable)]
     fn get_supported_roles(&self) -> Vec<BtAdapterRole> {
+        dbus_generated!()
+    }
+
+    #[dbus_method("IsCodingFormatSupported", DBusLog::Disable)]
+    fn is_coding_format_supported(&self, coding_format: EscoCodingFormat) -> bool {
         dbus_generated!()
     }
 }
