@@ -359,9 +359,9 @@ class TestTcpListener {
 
     private static final String TAG = "BtOppRfcommListener";
 
-    private static final boolean D = Constants.DEBUG;
+    private static final boolean D = Log.isLoggable(TAG, Log.DEBUG);
 
-    private static final boolean V = Constants.VERBOSE;
+    private static final boolean V = Log.isLoggable(TAG, Log.VERBOSE);
 
     private volatile boolean mInterrupted;
 
@@ -477,7 +477,7 @@ class TestTcpListener {
 class TestTcpServer extends ServerRequestHandler implements Runnable {
     private static final String TAG = "ServerRequestHandler";
 
-    private static final boolean V = Constants.VERBOSE;
+    private static final boolean V = Log.isLoggable(TAG, Log.VERBOSE);
 
     static final int PORT = 6500;
 

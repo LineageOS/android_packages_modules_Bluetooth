@@ -50,7 +50,6 @@ import java.util.UUID;
  * This class manages application callbacks and keeps track of GATT connections.
  * @hide
  */
-@VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
 public class ContextMap<C, T> {
     private static final String TAG = GattServiceConfig.TAG_PREFIX + "ContextMap";
 

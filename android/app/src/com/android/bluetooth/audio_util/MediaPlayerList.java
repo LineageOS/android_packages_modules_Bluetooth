@@ -842,11 +842,11 @@ public class MediaPlayerList {
                 }
             }
             if (isActive != mAudioPlaybackIsActive) {
-                mAudioPlaybackStateLogger.logd(DEBUG, TAG, "onPlaybackConfigChanged: "
+                mAudioPlaybackStateLogger.logd(TAG, "onPlaybackConfigChanged: "
                         + (mAudioPlaybackIsActive ? "Active" : "Non-active") + " -> "
                         + (isActive ? "Active" : "Non-active"));
                 if (isActive) {
-                    mAudioPlaybackStateLogger.logd(DEBUG, TAG, "onPlaybackConfigChanged: "
+                    mAudioPlaybackStateLogger.logd(TAG, "onPlaybackConfigChanged: "
                             + "active config: " + activeConfig);
                 }
                 mAudioPlaybackIsActive = isActive;

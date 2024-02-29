@@ -30,21 +30,24 @@ import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.os.Looper;
 import android.os.ParcelUuid;
+import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.bass_client.BassClientService;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
-import com.android.bluetooth.flags.FakeFeatureFlagsImpl;
 import com.android.bluetooth.flags.Flags;
 
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -59,6 +62,9 @@ import java.util.concurrent.TimeoutException;
 @RunWith(AndroidJUnit4.class)
 public class LeAudioBroadcastServiceTest {
     private static final int TIMEOUT_MS = 1000;
+
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+
     private BluetoothAdapter mAdapter;
     private BluetoothDevice mDevice;
     private Context mTargetContext;
@@ -75,7 +81,9 @@ public class LeAudioBroadcastServiceTest {
     @Mock private LeAudioBroadcasterNativeInterface mLeAudioBroadcasterNativeInterface;
     @Mock private LeAudioNativeInterface mLeAudioNativeInterface;
     @Mock private LeAudioTmapGattServer mTmapGattServer;
+    @Mock private BassClientService mBassClientService;
     @Spy private LeAudioObjectsFactory mObjectsFactory = LeAudioObjectsFactory.getInstance();
+    @Spy private ServiceFactory mServiceFactory = new ServiceFactory();
 
     private static final String TEST_MAC_ADDRESS = "00:11:22:33:44:55";
     private static final int TEST_BROADCAST_ID = 42;
@@ -96,6 +104,27 @@ public class LeAudioBroadcastServiceTest {
     private static final String TEST_LANGUAGE = "deu";
     private static final String TEST_BROADCAST_NAME = "Name Test";
 
+    private static final BluetoothLeAudioCodecConfig LC3_16KHZ_CONFIG =
+            new BluetoothLeAudioCodecConfig.Builder()
+                    .setCodecType(BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_LC3)
+                    .setSampleRate(BluetoothLeAudioCodecConfig.SAMPLE_RATE_16000)
+                    .build();
+    private static final BluetoothLeAudioCodecConfig LC3_48KHZ_CONFIG =
+            new BluetoothLeAudioCodecConfig.Builder()
+                    .setCodecType(BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_LC3)
+                    .setSampleRate(BluetoothLeAudioCodecConfig.SAMPLE_RATE_48000)
+                    .build();
+
+    private static final List<BluetoothLeAudioCodecConfig> INPUT_SELECTABLE_CONFIG_STANDARD =
+            List.of(LC3_16KHZ_CONFIG);
+    private static final List<BluetoothLeAudioCodecConfig> OUTPUT_SELECTABLE_CONFIG_STANDARD =
+            List.of(LC3_16KHZ_CONFIG);
+
+    private static final List<BluetoothLeAudioCodecConfig> INPUT_SELECTABLE_CONFIG_HIGH =
+            List.of(LC3_48KHZ_CONFIG);
+    private static final List<BluetoothLeAudioCodecConfig> OUTPUT_SELECTABLE_CONFIG_HIGH =
+            List.of(LC3_48KHZ_CONFIG);
+
     private boolean mOnBroadcastStartedCalled = false;
     private boolean mOnBroadcastStartFailedCalled = false;
     private boolean mOnBroadcastStoppedCalled = false;
@@ -106,7 +135,6 @@ public class LeAudioBroadcastServiceTest {
     private boolean mOnBroadcastUpdateFailedCalled = false;
     private boolean mOnBroadcastMetadataChangedCalled = false;
     private int mOnBroadcastStartFailedReason = BluetoothStatusCodes.SUCCESS;
-    private FakeFeatureFlagsImpl mFakeFlagsImpl;
 
     private final IBluetoothLeBroadcastCallback mCallbacks =
             new IBluetoothLeBroadcastCallback.Stub() {
@@ -188,15 +216,9 @@ public class LeAudioBroadcastServiceTest {
         LeAudioNativeInterface.setInstance(mLeAudioNativeInterface);
         startService();
 
-        mFakeFlagsImpl = new FakeFeatureFlagsImpl();
-        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_UNICAST_INACTIVATE_DEVICE_BASED_ON_CONTEXT, false);
-        mFakeFlagsImpl.setFlag(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION, false);
-        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_BROADCAST_AUDIO_HANDOVER_POLICIES, false);
-        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_API_SYNCHRONIZED_BLOCK_FIX, false);
-        mService.setFeatureFlags(mFakeFlagsImpl);
-
         mService.mAudioManager = mAudioManager;
-
+        mService.mServiceFactory = mServiceFactory;
+        when(mServiceFactory.getBassClientService()).thenReturn(mBassClientService);
         // Set up the State Changed receiver
         IntentFilter filter = new IntentFilter();
         filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
@@ -213,14 +235,16 @@ public class LeAudioBroadcastServiceTest {
 
     @After
     public void tearDown() throws Exception {
-        if (mService == null) {
+        if (mService == null || mAdapter == null) {
             return;
+        }
+        if (mLeAudioIntentReceiver != null) {
+            mTargetContext.unregisterReceiver(mLeAudioIntentReceiver);
         }
 
         stopService();
         LeAudioBroadcasterNativeInterface.setInstance(null);
         LeAudioNativeInterface.setInstance(null);
-        mTargetContext.unregisterReceiver(mLeAudioIntentReceiver);
         TestUtils.clearAdapterService(mAdapterService);
         reset(mAudioManager);
     }
@@ -396,6 +420,44 @@ public class LeAudioBroadcastServiceTest {
 
         Assert.assertFalse(mOnBroadcastStartedCalled);
         Assert.assertTrue(mOnBroadcastStartFailedCalled);
+    }
+
+    @Test
+    public void testCreateBroadcast_updateQualityToStandard() {
+        byte[] code = {0x00, 0x01, 0x00, 0x02};
+        int groupId = 1;
+        prepareConnectedUnicastDevice(groupId);
+
+        mService.mBroadcastCallbacks.register(mCallbacks);
+
+        BluetoothLeAudioContentMetadata.Builder meta_builder =
+                new BluetoothLeAudioContentMetadata.Builder();
+        BluetoothLeAudioContentMetadata meta = meta_builder.build();
+        BluetoothLeBroadcastSettings settings = buildBroadcastSettingsFromMetadata(meta, code, 1);
+
+        when(mBassClientService.getConnectedDevices()).thenReturn(List.of(mDevice));
+        // update selectable configs to be STANDARD quality
+        injectGroupSelectableCodecConfigChanged(
+                groupId, INPUT_SELECTABLE_CONFIG_STANDARD, OUTPUT_SELECTABLE_CONFIG_STANDARD);
+        injectGroupCurrentCodecConfigChanged(groupId, LC3_16KHZ_CONFIG, LC3_48KHZ_CONFIG);
+
+        mService.createBroadcast(settings);
+
+        // Test data with only one subgroup
+        // Verify quality is updated to standard per sinks capabilities
+        int[] expectedQualityArray = {BluetoothLeBroadcastSubgroupSettings.QUALITY_STANDARD};
+        byte[][] expectedDataArray = {
+            settings.getSubgroupSettings().get(0).getContentMetadata().getRawMetadata()
+        };
+
+        verify(mLeAudioBroadcasterNativeInterface, times(1))
+                .createBroadcast(
+                        eq(true),
+                        eq(TEST_BROADCAST_NAME),
+                        eq(code),
+                        eq(settings.getPublicBroadcastMetadata().getRawMetadata()),
+                        eq(expectedQualityArray),
+                        eq(expectedDataArray));
     }
 
     @Test
@@ -640,6 +702,11 @@ public class LeAudioBroadcastServiceTest {
         create_event.valueInt4 = srcAudioLocation;
         create_event.valueInt5 = availableContexts;
         mService.messageFromNative(create_event);
+
+        // Set default codec config to HIGH quality
+        injectGroupSelectableCodecConfigChanged(
+                groupId, INPUT_SELECTABLE_CONFIG_HIGH, OUTPUT_SELECTABLE_CONFIG_HIGH);
+        injectGroupCurrentCodecConfigChanged(groupId, LC3_16KHZ_CONFIG, LC3_48KHZ_CONFIG);
     }
 
     @Test
@@ -647,7 +714,7 @@ public class LeAudioBroadcastServiceTest {
         int groupId = 1;
         byte[] code = {0x00, 0x01, 0x00, 0x02};
 
-        mFakeFlagsImpl.setFlag(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION, true);
+        mSetFlagsRule.enableFlags(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION);
 
         prepareConnectedUnicastDevice(groupId);
 
@@ -733,8 +800,8 @@ public class LeAudioBroadcastServiceTest {
         int broadcastId = 243;
         byte[] code = {0x00, 0x01, 0x00, 0x02};
 
-        mFakeFlagsImpl.setFlag(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION, true);
-        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_BROADCAST_AUDIO_HANDOVER_POLICIES, true);
+        mSetFlagsRule.enableFlags(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION);
+        mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_BROADCAST_AUDIO_HANDOVER_POLICIES);
 
         mService.mBroadcastCallbacks.register(mCallbacks);
 
@@ -846,8 +913,8 @@ public class LeAudioBroadcastServiceTest {
         int broadcastId = 243;
         byte[] code = {0x00, 0x01, 0x00, 0x02};
 
-        mFakeFlagsImpl.setFlag(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION, true);
-        mFakeFlagsImpl.setFlag(Flags.FLAG_LEAUDIO_BROADCAST_AUDIO_HANDOVER_POLICIES, true);
+        mSetFlagsRule.enableFlags(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION);
+        mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_BROADCAST_AUDIO_HANDOVER_POLICIES);
 
         mService.mBroadcastCallbacks.register(mCallbacks);
 
@@ -983,7 +1050,8 @@ public class LeAudioBroadcastServiceTest {
 
         BluetoothLeBroadcastSubgroupSettings.Builder subgroupBuilder =
                 new BluetoothLeBroadcastSubgroupSettings.Builder()
-                .setContentMetadata(contentMetadata);
+                        .setContentMetadata(contentMetadata)
+                        .setPreferredQuality(BluetoothLeBroadcastSubgroupSettings.QUALITY_HIGH);
 
         BluetoothLeBroadcastSettings.Builder builder = new BluetoothLeBroadcastSettings.Builder()
                         .setPublicBroadcast(true)
@@ -996,5 +1064,31 @@ public class LeAudioBroadcastServiceTest {
             builder.addSubgroupSettings(subgroupBuilder.build());
         }
         return builder.build();
+    }
+
+    private void injectGroupCurrentCodecConfigChanged(
+            int groupId,
+            BluetoothLeAudioCodecConfig inputCodecConfig,
+            BluetoothLeAudioCodecConfig outputCodecConfig) {
+        int eventType = LeAudioStackEvent.EVENT_TYPE_AUDIO_GROUP_CURRENT_CODEC_CONFIG_CHANGED;
+
+        LeAudioStackEvent groupCodecConfigChangedEvent = new LeAudioStackEvent(eventType);
+        groupCodecConfigChangedEvent.valueInt1 = groupId;
+        groupCodecConfigChangedEvent.valueCodec1 = inputCodecConfig;
+        groupCodecConfigChangedEvent.valueCodec2 = outputCodecConfig;
+        mService.messageFromNative(groupCodecConfigChangedEvent);
+    }
+
+    private void injectGroupSelectableCodecConfigChanged(
+            int groupId,
+            List<BluetoothLeAudioCodecConfig> inputSelectableCodecConfig,
+            List<BluetoothLeAudioCodecConfig> outputSelectableCodecConfig) {
+        int eventType = LeAudioStackEvent.EVENT_TYPE_AUDIO_GROUP_SELECTABLE_CODEC_CONFIG_CHANGED;
+
+        LeAudioStackEvent groupCodecConfigChangedEvent = new LeAudioStackEvent(eventType);
+        groupCodecConfigChangedEvent.valueInt1 = groupId;
+        groupCodecConfigChangedEvent.valueCodecList1 = inputSelectableCodecConfig;
+        groupCodecConfigChangedEvent.valueCodecList2 = outputSelectableCodecConfig;
+        mService.messageFromNative(groupCodecConfigChangedEvent);
     }
 }

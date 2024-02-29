@@ -2269,6 +2269,34 @@ int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) {
  * JNI Initialization
  */
 jint JNI_OnLoad(JavaVM* jvm, void* /* reserved */) {
+  /* Set the default logging level for the process using the tag
+   *  "log.tag.bluetooth" and/or "persist.log.tag.bluetooth" via the android
+   * logging framework.
+   */
+  const char* stack_default_log_tag = "bluetooth";
+  int default_prio = ANDROID_LOG_INFO;
+  if (__android_log_is_loggable(ANDROID_LOG_VERBOSE, stack_default_log_tag,
+                                default_prio)) {
+    __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
+    log::info("Set stack default log level to 'VERBOSE'");
+  } else if (__android_log_is_loggable(ANDROID_LOG_DEBUG, stack_default_log_tag,
+                                       default_prio)) {
+    __android_log_set_minimum_priority(ANDROID_LOG_DEBUG);
+    log::info("Set stack default log level to 'DEBUG'");
+  } else if (__android_log_is_loggable(ANDROID_LOG_INFO, stack_default_log_tag,
+                                       default_prio)) {
+    __android_log_set_minimum_priority(ANDROID_LOG_INFO);
+    log::info("Set stack default log level to 'INFO'");
+  } else if (__android_log_is_loggable(ANDROID_LOG_WARN, stack_default_log_tag,
+                                       default_prio)) {
+    __android_log_set_minimum_priority(ANDROID_LOG_WARN);
+    log::info("Set stack default log level to 'WARN'");
+  } else if (__android_log_is_loggable(ANDROID_LOG_ERROR, stack_default_log_tag,
+                                       default_prio)) {
+    __android_log_set_minimum_priority(ANDROID_LOG_ERROR);
+    log::info("Set stack default log level to 'ERROR'");
+  }
+
   JNIEnv* e;
   int status;
 

@@ -42,7 +42,6 @@
 #include "main/shim/hci_layer.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
-#include "stack/btm/neighbor_inquiry.h"
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/ble_acl_interface.h"
 #include "stack/include/ble_hci_link_interface.h"
@@ -232,15 +231,6 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id,
   btu_hcif_log_event_metrics(hci_evt_code, p);
 
   switch (hci_evt_code) {
-    case HCI_INQUIRY_RESULT_EVT:
-      btm_process_inq_results(p, hci_evt_len, BTM_INQ_RESULT_STANDARD);
-      break;
-    case HCI_INQUIRY_RSSI_RESULT_EVT:
-      btm_process_inq_results(p, hci_evt_len, BTM_INQ_RESULT_WITH_RSSI);
-      break;
-    case HCI_EXTENDED_INQUIRY_RESULT_EVT:
-      btm_process_inq_results(p, hci_evt_len, BTM_INQ_RESULT_EXTENDED);
-      break;
     case HCI_AUTHENTICATION_COMP_EVT:
       btu_hcif_authentication_comp_evt(p);
       break;

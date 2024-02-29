@@ -6,11 +6,14 @@ use bt_topshim::btif::{RawAddress, Uuid};
 use bt_topshim::profiles::gatt::{AdvertisingStatus, Gatt, GattAdvCallbacks, LePhy};
 
 use itertools::Itertools;
-use log::{debug, error, warn};
+use log::{debug, error, info, warn};
 use num_traits::clamp;
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 use tokio::sync::mpsc::Sender;
+use tokio::task::JoinHandle;
+use tokio::time;
 
 use crate::bluetooth::{Bluetooth, IBluetooth};
 use crate::callbacks::Callbacks;
@@ -354,16 +357,9 @@ impl AdvertiseData {
     }
 
     /// Checks if the advertisement can be upgraded to extended.
-    pub fn can_upgrade(
-        parameters: &mut AdvertisingSetParameters,
-        adv_bytes: &Vec<u8>,
-        is_le_extended_advertising_supported: bool,
-    ) -> bool {
-        if parameters.is_legacy
-            && is_le_extended_advertising_supported
-            && !AdvertiseData::validate_raw_data(true, adv_bytes)
-        {
-            log::info!("Auto upgrading advertisement to extended");
+    pub fn can_upgrade(parameters: &mut AdvertisingSetParameters, adv_bytes: &Vec<u8>) -> bool {
+        if parameters.is_legacy && !AdvertiseData::validate_raw_data(true, adv_bytes) {
+            info!("Auto upgrading advertisement to extended");
             parameters.is_legacy = false;
             return true;
         }
@@ -546,10 +542,15 @@ impl AdvertiseManager {
         is_le_ext_adv_supported: bool,
     ) {
         self.adv_manager_impl = if is_le_ext_adv_supported {
+            info!("AdvertiseManager: Selected extended advertising stack");
             Some(Box::new(AdvertiseManagerImpl::new(self.tx.clone(), gatt, adapter)))
         } else {
-            // TODO: Implement software rotation for legacy controller
-            Some(Box::new(AdvertiseManagerImpl::new(self.tx.clone(), gatt, adapter)))
+            info!("AdvertiseManager: Selected software rotation stack");
+            Some(Box::new(SoftwareRotationAdvertiseManagerImpl::new(
+                self.tx.clone(),
+                gatt,
+                adapter,
+            )))
         }
     }
 
@@ -699,6 +700,12 @@ impl AdvertiseManagerImpl {
     }
 }
 
+pub enum AdvertiserActions {
+    /// Triggers the rotation of the advertising set.
+    /// Should only be used in the software rotation stack.
+    RunRotate,
+}
+
 /// Defines all required ops for an AdvertiseManager to communicate with the upper/lower layers.
 pub(crate) trait AdvertiseManagerOps:
     IBluetoothAdvertiseManager + BtifGattAdvCallbacks
@@ -708,6 +715,9 @@ pub(crate) trait AdvertiseManagerOps:
 
     /// Undoes previous suspend preparation
     fn exit_suspend(&mut self);
+
+    /// Handles advertise manager actions
+    fn handle_action(&mut self, action: AdvertiserActions);
 }
 
 impl AdvertiseManagerOps for AdvertiseManagerImpl {
@@ -747,6 +757,14 @@ impl AdvertiseManagerOps for AdvertiseManagerImpl {
         }
 
         self.set_suspend_mode(SuspendMode::Normal);
+    }
+
+    fn handle_action(&mut self, action: AdvertiserActions) {
+        match action {
+            AdvertiserActions::RunRotate => {
+                error!("Unexpected RunRotate call in hardware offloaded stack");
+            }
+        }
     }
 }
 
@@ -876,15 +894,9 @@ impl IBluetoothAdvertiseManager for AdvertiseManagerImpl {
 
         let device_name = self.get_adapter_name();
         let adv_bytes = advertise_data.make_with(&device_name);
-        let is_le_extended_advertising_supported =
-            self.adapter.lock().unwrap().is_le_extended_advertising_supported();
         // TODO(b/311417973): Remove this once we have more robust /device/bluetooth APIs to control extended advertising
-        let is_legacy = parameters.is_legacy
-            && !AdvertiseData::can_upgrade(
-                &mut parameters,
-                &adv_bytes,
-                is_le_extended_advertising_supported,
-            );
+        let is_legacy =
+            parameters.is_legacy && !AdvertiseData::can_upgrade(&mut parameters, &adv_bytes);
         let params = parameters.into();
         if !AdvertiseData::validate_raw_data(is_legacy, &adv_bytes) {
             warn!("Failed to start advertising set with invalid advertise data");
@@ -1366,6 +1378,691 @@ impl BtifGattAdvCallbacks for AdvertiseManagerImpl {
         if let Some(cb) = self.get_callback(&s) {
             cb.on_own_address_read(advertiser_id, addr_type.into(), address.to_string());
         }
+    }
+}
+
+/// The underlying legacy advertising rotates every SOFTWARE_ROTATION_INTERVAL seconds.
+const SOFTWARE_ROTATION_INTERVAL: Duration = Duration::from_secs(2);
+
+/// The ID of a software rotation advertising.
+///
+/// From DBus API's perspective this is used as both Advertiser ID and Register ID.
+/// Unlike the extended advertising stack we can't propagate the LibBluetooth Advertiser ID to
+/// DBus clients because there can be at most 1 advertiser in LibBluetooth layer at the same time.
+pub type SoftwareRotationAdvertierId = i32;
+
+struct SoftwareRotationAdvertiseInfo {
+    id: SoftwareRotationAdvertierId,
+    callback_id: u32,
+
+    advertising_params: AdvertisingSetParameters,
+    advertising_data: Vec<u8>,
+    scan_response_data: Vec<u8>,
+
+    /// Filled in on the first time the advertiser started.
+    tx_power: Option<i32>,
+
+    /// True if it's advertising (from DBus client's perspective), false otherwise.
+    enabled: bool,
+    duration: i32,
+    /// None means no timeout
+    expire_time: Option<Instant>,
+}
+
+enum SoftwareRotationAdvertiseState {
+    /// No advertiser is running in LibBluetooth.
+    Stopped,
+    /// A StartAdvertisingSet call to LibBluetooth is pending.
+    Pending(SoftwareRotationAdvertierId),
+    /// An advertiser is running in LibBluetooth, i.e., an OnAdvertisingSetStarted is received.
+    /// Parameters: ID, LibBluetooth BLE Advertiser ID, rotation timer handle
+    Advertising(SoftwareRotationAdvertierId, u8, JoinHandle<()>),
+}
+
+struct SoftwareRotationAdvertiseManagerImpl {
+    callbacks: Callbacks<dyn IAdvertisingSetCallback + Send>,
+    suspend_mode: SuspendMode,
+    gatt: Arc<Mutex<Gatt>>,
+    adapter: Arc<Mutex<Box<Bluetooth>>>,
+    tx: Sender<Message>,
+
+    state: SoftwareRotationAdvertiseState,
+    adv_info: HashMap<SoftwareRotationAdvertierId, SoftwareRotationAdvertiseInfo>,
+    /// The enabled advertising sets to be rotate.
+    /// When they are removed from the queue, OnAdvertisingEnabled needs to be sent.
+    /// Note that the current advertiser running in LibBluetooth must *NOT* be in the queue.
+    adv_queue: VecDeque<SoftwareRotationAdvertierId>,
+}
+
+impl SoftwareRotationAdvertiseManagerImpl {
+    fn new(
+        tx: Sender<Message>,
+        gatt: Arc<Mutex<Gatt>>,
+        adapter: Arc<Mutex<Box<Bluetooth>>>,
+    ) -> Self {
+        Self {
+            callbacks: Callbacks::new(tx.clone(), Message::AdvertiserCallbackDisconnected),
+            suspend_mode: SuspendMode::Normal,
+            gatt,
+            adapter,
+            tx,
+            state: SoftwareRotationAdvertiseState::Stopped,
+            adv_info: HashMap::new(),
+            adv_queue: VecDeque::new(),
+        }
+    }
+}
+
+impl SoftwareRotationAdvertiseManagerImpl {
+    /// Updates suspend mode.
+    fn set_suspend_mode(&mut self, suspend_mode: SuspendMode) {
+        if suspend_mode != self.suspend_mode {
+            self.suspend_mode = suspend_mode.clone();
+            self.callbacks.for_all_callbacks(|cb| {
+                cb.on_suspend_mode_change(suspend_mode.clone());
+            });
+        }
+    }
+
+    fn get_adapter_name(&self) -> String {
+        self.adapter.lock().unwrap().get_name()
+    }
+
+    /// Returns the ID of the advertiser running in LibBluetooth.
+    fn current_id(&self) -> Option<SoftwareRotationAdvertierId> {
+        match &self.state {
+            SoftwareRotationAdvertiseState::Pending(id) => Some(*id),
+            SoftwareRotationAdvertiseState::Advertising(id, _, _) => Some(*id),
+            SoftwareRotationAdvertiseState::Stopped => None,
+        }
+    }
+
+    /// Returns the minimum unoccupied ID from 0.
+    fn new_id(&mut self) -> SoftwareRotationAdvertierId {
+        // The advertiser running in LibBluetooth may have been removed in this layer.
+        // Avoid conflicting with it.
+        let current_id = self.current_id();
+        (0..)
+            .find(|id| !self.adv_info.contains_key(id) && Some(*id) != current_id)
+            .expect("There must be an unoccupied register ID")
+    }
+
+    fn is_pending(&self) -> bool {
+        matches!(&self.state, SoftwareRotationAdvertiseState::Pending(_))
+    }
+
+    fn is_stopped(&self) -> bool {
+        matches!(&self.state, SoftwareRotationAdvertiseState::Stopped)
+    }
+
+    /// Clears the removed or disabled advertisers from the queue and invokes callback.
+    fn refresh_queue(&mut self) {
+        let now = Instant::now();
+        let adv_info = &mut self.adv_info;
+        let callbacks = &mut self.callbacks;
+        self.adv_queue.retain(|id| {
+            let Some(info) = adv_info.get_mut(id) else {
+                // This advertiser has been removed.
+                return false;
+            };
+            if info.expire_time.map_or(false, |t| t < now) {
+                // This advertiser has expired.
+                info.enabled = false;
+                callbacks.get_by_id_mut(info.callback_id).map(|cb| {
+                    cb.on_advertising_enabled(info.id, false, AdvertisingStatus::Success);
+                });
+            }
+            info.enabled
+        });
+    }
+
+    fn stop_current_advertising(&mut self) {
+        match &self.state {
+            SoftwareRotationAdvertiseState::Advertising(id, adv_id, handle) => {
+                handle.abort();
+                self.gatt.lock().unwrap().advertiser.unregister(*adv_id);
+                self.adv_queue.push_back(*id);
+                self.state = SoftwareRotationAdvertiseState::Stopped;
+            }
+            SoftwareRotationAdvertiseState::Pending(_) => {
+                error!("stop_current_advertising: Unexpected Pending state");
+            }
+            SoftwareRotationAdvertiseState::Stopped => {}
+        };
+    }
+
+    fn start_next_advertising(&mut self) {
+        match &self.state {
+            SoftwareRotationAdvertiseState::Stopped => {
+                self.state = loop {
+                    let Some(id) = self.adv_queue.pop_front() else {
+                        break SoftwareRotationAdvertiseState::Stopped;
+                    };
+                    let Some(info) = self.adv_info.get(&id) else {
+                        error!("start_next_advertising: Unknown ID, which means queue is not refreshed!");
+                        continue;
+                    };
+                    self.gatt.lock().unwrap().advertiser.start_advertising_set(
+                        id,
+                        info.advertising_params.clone().into(),
+                        info.advertising_data.clone(),
+                        info.scan_response_data.clone(),
+                        Default::default(), // Unsupported periodic_parameters
+                        vec![],             // Unsupported periodic_data
+                        0,                  // Set no timeout. Timeout is controlled in this layer.
+                        0,                  // Unsupported max_ext_adv_events
+                    );
+                    break SoftwareRotationAdvertiseState::Pending(id);
+                }
+            }
+            SoftwareRotationAdvertiseState::Pending(_) => {
+                error!("start_next_advertising: Unexpected Pending state");
+            }
+            SoftwareRotationAdvertiseState::Advertising(_, _, _) => {
+                error!("start_next_advertising: Unexpected Advertising state");
+            }
+        };
+    }
+
+    fn run_rotate(&mut self) {
+        if self.is_pending() {
+            return;
+        }
+        let Some(current_id) = self.current_id() else {
+            // State is Stopped. Try to start next one.
+            self.refresh_queue();
+            self.start_next_advertising();
+            return;
+        };
+        // We are Advertising. Checks if the current advertiser is still allowed
+        // to advertise, or if we should schedule the next one in the queue.
+        let current_is_enabled = {
+            let now = Instant::now();
+            if let Some(info) = self.adv_info.get(&current_id) {
+                if info.enabled {
+                    info.expire_time.map_or(true, |t| t >= now)
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
+        };
+        if !current_is_enabled {
+            // If current advertiser is not allowed to advertise,
+            // stop it and then let |refresh_queue| handle the callback.
+            self.stop_current_advertising();
+            self.refresh_queue();
+            self.start_next_advertising();
+        } else {
+            // Current advertiser is still enabled, refresh the other advertisers in the queue.
+            self.refresh_queue();
+            if self.adv_queue.is_empty() {
+                // No need to rotate.
+            } else {
+                self.stop_current_advertising();
+                self.start_next_advertising();
+            }
+        }
+    }
+}
+
+impl AdvertiseManagerOps for SoftwareRotationAdvertiseManagerImpl {
+    fn enter_suspend(&mut self) {
+        if self.suspend_mode != SuspendMode::Normal {
+            return;
+        }
+
+        self.set_suspend_mode(SuspendMode::Suspending);
+        if self.is_pending() {
+            // We will unregister it on_advertising_set_started and then set mode to suspended.
+            return;
+        }
+        self.stop_current_advertising();
+        self.set_suspend_mode(SuspendMode::Suspended);
+    }
+
+    fn exit_suspend(&mut self) {
+        if self.suspend_mode != SuspendMode::Suspended {
+            return;
+        }
+        self.refresh_queue();
+        self.start_next_advertising();
+        self.set_suspend_mode(SuspendMode::Normal);
+    }
+
+    fn handle_action(&mut self, action: AdvertiserActions) {
+        match action {
+            AdvertiserActions::RunRotate => {
+                if self.suspend_mode == SuspendMode::Normal {
+                    self.run_rotate();
+                }
+            }
+        }
+    }
+}
+
+/// Generates expire time from now per the definition in IBluetoothAdvertiseManager
+///
+/// None means never timeout.
+fn gen_expire_time_from_now(duration: i32) -> Option<Instant> {
+    let duration = clamp(duration, 0, 0xffff) as u64;
+    if duration != 0 {
+        Some(Instant::now() + Duration::from_millis(duration * 10))
+    } else {
+        None
+    }
+}
+
+impl IBluetoothAdvertiseManager for SoftwareRotationAdvertiseManagerImpl {
+    fn register_callback(&mut self, callback: Box<dyn IAdvertisingSetCallback + Send>) -> u32 {
+        self.callbacks.add_callback(callback)
+    }
+
+    fn unregister_callback(&mut self, callback_id: u32) -> bool {
+        self.adv_info.retain(|_, info| info.callback_id != callback_id);
+        let ret = self.callbacks.remove_callback(callback_id);
+        if let Some(current_id) = self.current_id() {
+            if !self.adv_info.contains_key(&current_id) {
+                self.run_rotate();
+            }
+        }
+        ret
+    }
+
+    fn start_advertising_set(
+        &mut self,
+        advertising_params: AdvertisingSetParameters,
+        advertising_data: AdvertiseData,
+        scan_response_data: Option<AdvertiseData>,
+        periodic_parameters: Option<PeriodicAdvertisingParameters>,
+        periodic_data: Option<AdvertiseData>,
+        duration: i32,
+        max_ext_adv_events: i32,
+        callback_id: u32,
+    ) -> i32 {
+        if self.suspend_mode != SuspendMode::Normal {
+            return INVALID_REG_ID;
+        }
+
+        let is_legacy = advertising_params.is_legacy;
+        let device_name = self.get_adapter_name();
+
+        let advertising_data = advertising_data.make_with(&device_name);
+        if !AdvertiseData::validate_raw_data(is_legacy, &advertising_data) {
+            warn!("Failed to start advertising set with invalid advertising data");
+            return INVALID_REG_ID;
+        }
+
+        let scan_response_data =
+            scan_response_data.map_or(vec![], |data| data.make_with(&device_name));
+        if !AdvertiseData::validate_raw_data(is_legacy, &scan_response_data) {
+            warn!("Failed to start advertising set with invalid scan response data");
+            return INVALID_REG_ID;
+        }
+
+        if periodic_parameters.is_some() {
+            warn!("Periodic parameters is not supported in software rotation stack, ignored");
+        }
+        if periodic_data.is_some() {
+            warn!("Periodic data is not supported in software rotation stack, ignored");
+        }
+        if max_ext_adv_events != 0 {
+            warn!("max_ext_adv_events is not supported in software rotation stack, ignored");
+        }
+
+        let id = self.new_id();
+
+        // expire_time will be determined on this advertiser is started at the first time.
+        self.adv_info.insert(
+            id,
+            SoftwareRotationAdvertiseInfo {
+                id,
+                callback_id,
+                advertising_params,
+                advertising_data,
+                scan_response_data,
+                tx_power: None,
+                enabled: true,
+                duration,
+                expire_time: None,
+            },
+        );
+        // Schedule it as the next one and rotate.
+        self.adv_queue.push_front(id);
+        self.run_rotate();
+
+        id
+    }
+
+    fn stop_advertising_set(&mut self, adv_id: i32) {
+        let current_id = self.current_id();
+        let Some(info) = self.adv_info.remove(&adv_id) else {
+            warn!("stop_advertising_set: Unknown adv_id {}", adv_id);
+            return;
+        };
+        self.callbacks.get_by_id_mut(info.callback_id).map(|cb| {
+            cb.on_advertising_set_stopped(info.id);
+        });
+        if current_id == Some(info.id) {
+            self.run_rotate();
+        }
+    }
+
+    fn get_own_address(&mut self, _adv_id: i32) {
+        error!("get_own_address is not supported in software rotation stack");
+    }
+
+    fn enable_advertising_set(
+        &mut self,
+        adv_id: i32,
+        enable: bool,
+        duration: i32,
+        max_ext_adv_events: i32,
+    ) {
+        if self.suspend_mode != SuspendMode::Normal {
+            return;
+        }
+
+        let current_id = self.current_id();
+        let Some(info) = self.adv_info.get_mut(&adv_id) else {
+            warn!("enable_advertising_set: Unknown adv_id {}", adv_id);
+            return;
+        };
+
+        if max_ext_adv_events != 0 {
+            warn!("max_ext_adv_events is not supported in software rotation stack, ignored");
+        }
+
+        info.enabled = enable;
+        // We won't really call enable() to LibBluetooth so calculate the expire time right now.
+        info.expire_time = gen_expire_time_from_now(duration);
+        // This actually won't be used as the expire_time is already determined.
+        // Still fill it in to keep the data updated.
+        info.duration = duration;
+
+        if enable && !self.adv_queue.contains(&info.id) && current_id != Some(info.id) {
+            // The adv was not enabled and not in the queue. Invoke callback and queue it.
+            self.callbacks.get_by_id_mut(info.callback_id).map(|cb| {
+                cb.on_advertising_enabled(info.id, false, AdvertisingStatus::Success);
+            });
+            self.adv_queue.push_back(info.id);
+            if self.is_stopped() {
+                self.start_next_advertising();
+            }
+        } else if !enable && current_id == Some(info.id) {
+            self.run_rotate();
+        }
+    }
+
+    fn set_advertising_data(&mut self, adv_id: i32, data: AdvertiseData) {
+        if self.suspend_mode != SuspendMode::Normal {
+            return;
+        }
+
+        let current_id = self.current_id();
+        let device_name = self.get_adapter_name();
+        let Some(info) = self.adv_info.get_mut(&adv_id) else {
+            warn!("set_advertising_data: Unknown adv_id {}", adv_id);
+            return;
+        };
+        let data = data.make_with(&device_name);
+        if !AdvertiseData::validate_raw_data(info.advertising_params.is_legacy, &data) {
+            warn!("set_advertising_data {}: invalid advertise data to update", adv_id);
+            return;
+        }
+        info.advertising_data = data;
+        self.callbacks.get_by_id_mut(info.callback_id).map(|cb| {
+            cb.on_advertising_data_set(info.id, AdvertisingStatus::Success);
+        });
+
+        if current_id == Some(info.id) {
+            self.run_rotate();
+        }
+    }
+
+    fn set_raw_adv_data(&mut self, adv_id: i32, data: Vec<u8>) {
+        if self.suspend_mode != SuspendMode::Normal {
+            return;
+        }
+
+        let current_id = self.current_id();
+        let Some(info) = self.adv_info.get_mut(&adv_id) else {
+            warn!("set_raw_adv_data: Unknown adv_id {}", adv_id);
+            return;
+        };
+        if !AdvertiseData::validate_raw_data(info.advertising_params.is_legacy, &data) {
+            warn!("set_raw_adv_data {}: invalid raw advertise data to update", adv_id);
+            return;
+        }
+        info.advertising_data = data;
+        self.callbacks.get_by_id_mut(info.callback_id).map(|cb| {
+            cb.on_advertising_data_set(info.id, AdvertisingStatus::Success);
+        });
+
+        if current_id == Some(info.id) {
+            self.run_rotate();
+        }
+    }
+
+    fn set_scan_response_data(&mut self, adv_id: i32, data: AdvertiseData) {
+        if self.suspend_mode != SuspendMode::Normal {
+            return;
+        }
+
+        let current_id = self.current_id();
+        let device_name = self.get_adapter_name();
+        let Some(info) = self.adv_info.get_mut(&adv_id) else {
+            warn!("set_scan_response_data: Unknown adv_id {}", adv_id);
+            return;
+        };
+        let data = data.make_with(&device_name);
+        if !AdvertiseData::validate_raw_data(info.advertising_params.is_legacy, &data) {
+            warn!("set_scan_response_data {}: invalid scan response to update", adv_id);
+            return;
+        }
+        info.scan_response_data = data;
+        self.callbacks.get_by_id_mut(info.callback_id).map(|cb| {
+            cb.on_scan_response_data_set(info.id, AdvertisingStatus::Success);
+        });
+
+        if current_id == Some(info.id) {
+            self.run_rotate();
+        }
+    }
+
+    fn set_advertising_parameters(&mut self, adv_id: i32, params: AdvertisingSetParameters) {
+        if self.suspend_mode != SuspendMode::Normal {
+            return;
+        }
+
+        let current_id = self.current_id();
+        let Some(info) = self.adv_info.get_mut(&adv_id) else {
+            warn!("set_advertising_parameters: Unknown adv_id {}", adv_id);
+            return;
+        };
+        info.advertising_params = params;
+        let Some(tx_power) = info.tx_power else {
+            error!("set_advertising_parameters: tx_power is None! Is this called before adv has started?");
+            return;
+        };
+        self.callbacks.get_by_id_mut(info.callback_id).map(|cb| {
+            cb.on_advertising_parameters_updated(info.id, tx_power, AdvertisingStatus::Success);
+        });
+
+        if current_id == Some(info.id) {
+            self.run_rotate();
+        }
+    }
+
+    fn set_periodic_advertising_parameters(
+        &mut self,
+        _adv_id: i32,
+        _parameters: PeriodicAdvertisingParameters,
+    ) {
+        error!("set_periodic_advertising_parameters is not supported in software rotation stack");
+    }
+
+    fn set_periodic_advertising_data(&mut self, _adv_id: i32, _data: AdvertiseData) {
+        error!("set_periodic_advertising_data is not supported in software rotation stack");
+    }
+
+    fn set_periodic_advertising_enable(&mut self, _adv_id: i32, _enable: bool, _include_adi: bool) {
+        error!("set_periodic_advertising_enable is not supported in software rotation stack");
+    }
+}
+
+impl BtifGattAdvCallbacks for SoftwareRotationAdvertiseManagerImpl {
+    fn on_advertising_set_started(
+        &mut self,
+        reg_id: i32,
+        adv_id: u8,
+        tx_power: i8,
+        status: AdvertisingStatus,
+    ) {
+        debug!(
+            "on_advertising_set_started(): reg_id = {}, advertiser_id = {}, tx_power = {}, status = {:?}",
+            reg_id, adv_id, tx_power, status
+        );
+
+        // Unregister if it's unexpected.
+        match &self.state {
+            SoftwareRotationAdvertiseState::Pending(pending_id) if pending_id == &reg_id => {}
+            _ => {
+                error!(
+                    "Unexpected on_advertising_set_started reg_id = {}, adv_id = {}, status = {:?}",
+                    reg_id, adv_id, status
+                );
+                if status == AdvertisingStatus::Success {
+                    self.gatt.lock().unwrap().advertiser.unregister(adv_id);
+                }
+                return;
+            }
+        }
+        // Switch out from the pending state.
+        self.state = if status != AdvertisingStatus::Success {
+            warn!("on_advertising_set_started failed: reg_id = {}, status = {:?}", reg_id, status);
+            SoftwareRotationAdvertiseState::Stopped
+        } else {
+            let txl = self.tx.clone();
+            SoftwareRotationAdvertiseState::Advertising(
+                reg_id,
+                adv_id,
+                tokio::spawn(async move {
+                    loop {
+                        time::sleep(SOFTWARE_ROTATION_INTERVAL).await;
+                        let _ = txl
+                            .send(Message::AdvertiserActions(AdvertiserActions::RunRotate))
+                            .await;
+                    }
+                }),
+            )
+        };
+
+        // 1. Handle on_advertising_set_started callback if it's the first time it started
+        // 2. Stop advertising if it's removed or disabled
+        // 3. Disable or remove the advertiser if it failed
+        if let Some(info) = self.adv_info.get_mut(&reg_id) {
+            if info.tx_power.is_none() {
+                // tx_power is none means it's the first time this advertiser started.
+                if status != AdvertisingStatus::Success {
+                    self.callbacks.get_by_id_mut(info.callback_id).map(|cb| {
+                        cb.on_advertising_set_started(info.id, INVALID_ADV_ID, 0, status);
+                    });
+                    self.adv_info.remove(&reg_id);
+                } else {
+                    info.tx_power = Some(tx_power.into());
+                    info.expire_time = gen_expire_time_from_now(info.duration);
+                    self.callbacks.get_by_id_mut(info.callback_id).map(|cb| {
+                        cb.on_advertising_set_started(info.id, info.id, tx_power.into(), status);
+                    });
+                }
+            } else {
+                // Not the first time. This means we are not able to report the failure through
+                // on_advertising_set_started if it failed. Disable it instead in that case.
+                if status != AdvertisingStatus::Success {
+                    info.enabled = false;
+                    // Push to the queue and let refresh_queue handle the disabled callback.
+                    self.adv_queue.push_back(reg_id);
+                } else {
+                    if !info.enabled {
+                        self.stop_current_advertising();
+                    }
+                }
+            }
+        } else {
+            self.stop_current_advertising();
+        }
+
+        // Rotate again if the next advertiser is new. We need to consume all
+        // "first time" advertiser before suspended to make sure callbacks are sent.
+        if let Some(id) = self.adv_queue.front() {
+            if let Some(info) = self.adv_info.get(id) {
+                if info.tx_power.is_none() {
+                    self.run_rotate();
+                    return;
+                }
+            }
+        }
+
+        // We're fine to suspend since there is no advertiser pending callback.
+        if self.suspend_mode != SuspendMode::Normal {
+            self.stop_current_advertising();
+            self.set_suspend_mode(SuspendMode::Suspended);
+            return;
+        }
+
+        // If the current advertiser is stopped for some reason, schedule the next one.
+        if self.is_stopped() {
+            self.refresh_queue();
+            self.start_next_advertising();
+        }
+    }
+
+    fn on_advertising_enabled(&mut self, _adv_id: u8, _enabled: bool, _status: AdvertisingStatus) {
+        error!("Unexpected on_advertising_enabled in software rotation stack");
+    }
+
+    fn on_advertising_data_set(&mut self, _adv_id: u8, _status: AdvertisingStatus) {
+        error!("Unexpected on_advertising_data_set in software rotation stack");
+    }
+
+    fn on_scan_response_data_set(&mut self, _adv_id: u8, _status: AdvertisingStatus) {
+        error!("Unexpected on_scan_response_data_set in software rotation stack");
+    }
+
+    fn on_advertising_parameters_updated(
+        &mut self,
+        _adv_id: u8,
+        _tx_power: i8,
+        _status: AdvertisingStatus,
+    ) {
+        error!("Unexpected on_advertising_parameters_updated in software rotation stack");
+    }
+
+    fn on_periodic_advertising_parameters_updated(
+        &mut self,
+        _adv_id: u8,
+        _status: AdvertisingStatus,
+    ) {
+        error!("Unexpected on_periodic_advertising_parameters_updated in software rotation stack");
+    }
+
+    fn on_periodic_advertising_data_set(&mut self, _adv_id: u8, _status: AdvertisingStatus) {
+        error!("Unexpected on_periodic_advertising_data_set in software rotation stack");
+    }
+
+    fn on_periodic_advertising_enabled(
+        &mut self,
+        _adv_id: u8,
+        _enabled: bool,
+        _status: AdvertisingStatus,
+    ) {
+        error!("Unexpected on_periodic_advertising_enabled in software rotation stack");
+    }
+
+    fn on_own_address_read(&mut self, _adv_id: u8, _addr_type: u8, _address: RawAddress) {
+        error!("Unexpected on_own_address_read in software rotation stack");
     }
 }
 

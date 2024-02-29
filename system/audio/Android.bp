@@ -14,9 +14,6 @@ cc_library_static {
         "asrc/asrc_resampler.cc",
         "asrc/asrc_tables.cc",
     ],
-    include_dirs: [
-        "packages/modules/Bluetooth/system/gd",
-    ],
     shared_libs: [
         "libchrome",
     ],
@@ -44,7 +41,6 @@ cc_library_host_shared {
     stl: "libc++_static",
     include_dirs: [
         "packages/modules/Bluetooth/system",
-        "packages/modules/Bluetooth/system/gd",
     ],
     generated_headers: [
         "BluetoothGeneratedDumpsysDataSchema_h",
