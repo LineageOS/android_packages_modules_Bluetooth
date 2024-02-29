@@ -964,9 +964,9 @@ static void bta_jv_l2cap_client_cback(uint16_t gap_handle, uint16_t event,
 }
 
 /* makes an l2cap client connection */
-void bta_jv_l2cap_connect(int32_t type, tBTA_SEC sec_mask, tBTA_JV_ROLE role,
-                          uint16_t remote_psm, uint16_t rx_mtu,
-                          const RawAddress& peer_bd_addr,
+void bta_jv_l2cap_connect(int32_t type, tBTA_SEC sec_mask,
+                          tBTA_JV_ROLE /* role */, uint16_t remote_psm,
+                          uint16_t rx_mtu, const RawAddress& peer_bd_addr,
                           std::unique_ptr<tL2CAP_CFG_INFO> cfg_param,
                           std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info,
                           tBTA_JV_L2CAP_CBACK* p_cback,
@@ -1052,7 +1052,7 @@ void bta_jv_l2cap_close(uint32_t handle, tBTA_JV_L2C_CB* p_cb) {
  *
  ******************************************************************************/
 static void bta_jv_l2cap_server_cback(uint16_t gap_handle, uint16_t event,
-                                      tGAP_CB_DATA* data) {
+                                      tGAP_CB_DATA* /* data */) {
   tBTA_JV_L2C_CB* p_cb = &bta_jv_cb.l2c_cb[gap_handle];
   tBTA_JV evt_data;
   tBTA_JV_L2CAP_CBACK* p_cback;
@@ -1108,7 +1108,7 @@ static void bta_jv_l2cap_server_cback(uint16_t gap_handle, uint16_t event,
 
 /** starts an L2CAP server */
 void bta_jv_l2cap_start_server(int32_t type, tBTA_SEC sec_mask,
-                               tBTA_JV_ROLE role, uint16_t local_psm,
+                               tBTA_JV_ROLE /* role */, uint16_t local_psm,
                                uint16_t rx_mtu,
                                std::unique_ptr<tL2CAP_CFG_INFO> cfg_param,
                                std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info,
@@ -1164,7 +1164,8 @@ void bta_jv_l2cap_start_server(int32_t type, tBTA_SEC sec_mask,
 }
 
 /* stops an L2CAP server */
-void bta_jv_l2cap_stop_server(uint16_t local_psm, uint32_t l2cap_socket_id) {
+void bta_jv_l2cap_stop_server(uint16_t /* local_psm */,
+                              uint32_t l2cap_socket_id) {
   for (int i = 0; i < BTA_JV_MAX_L2C_CONN; i++) {
     if (bta_jv_cb.l2c_cb[i].l2cap_socket_id == l2cap_socket_id) {
       tBTA_JV_L2C_CB* p_cb = &bta_jv_cb.l2c_cb[i];
