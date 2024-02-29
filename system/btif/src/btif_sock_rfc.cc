@@ -682,7 +682,13 @@ static void on_rfc_outgoing_congest(tBTA_JV_RFCOMM_CONG* p, uint32_t id) {
 static uint32_t rfcomm_cback(tBTA_JV_EVT event, tBTA_JV* p_data,
                              uint32_t rfcomm_slot_id) {
   uint32_t id = 0;
-  LOG_INFO("handling event:%d id:%u", event, rfcomm_slot_id);
+
+  // Write events are too frequent to log at info level
+  if (event != BTA_JV_RFCOMM_WRITE_EVT) {
+    LOG_INFO("handling event:%d id:%u", event, rfcomm_slot_id);
+  } else {
+    LOG_VERBOSE("handling event:%d id:%u", event, rfcomm_slot_id);
+  }
 
   switch (event) {
     case BTA_JV_RFCOMM_START_EVT:
