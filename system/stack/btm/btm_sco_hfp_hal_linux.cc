@@ -118,12 +118,6 @@ void cache_codec_capabilities(struct mgmt_rp_get_codec_capabilities* rp) {
         c.pkt_size = rp->wbs_pkt_len;
         break;
       case kCodecMsbc:
-        if (!rp->transparent_wbs_supported) {
-          // TODO(b/321180937): Remove this after the audio server could query
-          // the offload capability from Floss and enable it properly.
-          // This is a workaround for HFP to work on some CrOS Flex devices.
-          continue;
-        }
         offload_supported = true;
         c.inner.codec = codec::MSBC;
         c.inner.data_path = rp->hci_data_path_id;
