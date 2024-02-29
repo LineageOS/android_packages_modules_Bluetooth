@@ -109,22 +109,6 @@ bool supports_enhanced_accept_synchronous_connection(void) {
   return HCI_ENH_ACCEPT_SYNCH_CONN_SUPPORTED(supported_commands);
 }
 
-bool supports_role_switch(void) {
-  return HCI_SWITCH_SUPPORTED(features_classic[0].as_array);
-}
-
-bool supports_non_flushable_pb(void) {
-  return HCI_NON_FLUSHABLE_PB_SUPPORTED(features_classic[0].as_array);
-}
-
-bool supports_sniff_subrating(void) {
-  return HCI_SNIFF_SUB_RATE_SUPPORTED(features_classic[0].as_array);
-}
-
-bool supports_encryption_pause(void) {
-  return HCI_ATOMIC_ENCRYPT_SUPPORTED(features_classic[0].as_array);
-}
-
 bool supports_configure_data_path(void) {
   return HCI_CONFIGURE_DATA_PATH_SUPPORTED(supported_commands);
 }
@@ -303,13 +287,6 @@ const controller_t interface = {
 
     supports_enhanced_setup_synchronous_connection,
     supports_enhanced_accept_synchronous_connection,
-    supports_role_switch,
-    []() { return supports_hold_mode; },
-    []() { return supports_sniff_mode; },
-    []() { return supports_park_mode; },
-    supports_non_flushable_pb,
-    supports_sniff_subrating,
-    supports_encryption_pause,
     supports_configure_data_path,
     supports_set_min_encryption_key_size,
     supports_read_encryption_key_size,

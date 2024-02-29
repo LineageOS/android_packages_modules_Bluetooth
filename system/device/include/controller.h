@@ -38,13 +38,6 @@ typedef struct controller_t {
 
   bool (*supports_enhanced_setup_synchronous_connection)(void);
   bool (*supports_enhanced_accept_synchronous_connection)(void);
-  bool (*SupportsRoleSwitch)(void);
-  bool (*SupportsHoldMode)(void);
-  bool (*SupportsSniffMode)(void);
-  bool (*SupportsParkMode)(void);
-  bool (*SupportsNonFlushablePb)(void);
-  bool (*SupportsSniffSubrating)(void);
-  bool (*SupportsEncryptionPause)(void);
   bool (*supports_configure_data_path)(void);
   bool (*supports_set_min_encryption_key_size)(void);
   bool (*supports_read_encryption_key_size)(void);
