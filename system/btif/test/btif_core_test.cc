@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <future>
@@ -28,10 +29,11 @@
 #include "btif/include/btif_api.h"
 #include "btif/include/btif_common.h"
 #include "btif/include/btif_util.h"
+#include "hci/controller_interface_mock.h"
 #include "include/hardware/bluetooth.h"
 #include "include/hardware/bt_av.h"
 #include "test/common/core_interface.h"
-#include "test/mock/mock_main_shim_controller.h"
+#include "test/mock/mock_main_shim_entry.h"
 #include "test/mock/mock_stack_btm_sec.h"
 #include "types/raw_address.h"
 
@@ -39,6 +41,7 @@ void set_hal_cbacks(bt_callbacks_t* callbacks);
 
 const tBTA_AG_RES_DATA tBTA_AG_RES_DATA::kEmpty = {};
 
+using testing::Return;
 module_t bt_utils_module;
 module_t gd_controller_module;
 module_t gd_shim_module;
@@ -136,6 +139,7 @@ class BtifCoreTest : public ::testing::Test {
  protected:
   void SetUp() override {
     callback_map_.clear();
+    bluetooth::hci::testing::mock_controller_ = &controller_;
     set_hal_cbacks(&callbacks);
     auto promise = std::promise<void>();
     auto future = promise.get_future();
@@ -155,27 +159,19 @@ class BtifCoreTest : public ::testing::Test {
     };
     CleanCoreInterface();
     ASSERT_EQ(std::future_status::ready, future.wait_for(timeout_time));
+    bluetooth::hci::testing::mock_controller_ = nullptr;
     callback_map_.erase("callback_thread_event");
   }
+  bluetooth::hci::testing::MockControllerInterface controller_;
 };
-
-namespace {
-controller_t controller = {};
-}
 
 class BtifCoreWithControllerTest : public BtifCoreTest {
   void SetUp() override {
     BtifCoreTest::SetUp();
-    controller.SupportsSniffSubrating = []() { return true; };
-    bluetooth::testing::controller = &controller;
-    ASSERT_TRUE(controller_get_interface() != nullptr);
+    ON_CALL(controller_, SupportsSniffSubrating).WillByDefault(Return(true));
   }
 
-  void TearDown() override {
-    bluetooth::testing::controller = nullptr;
-    controller = {};
-    BtifCoreTest::TearDown();
-  }
+  void TearDown() override { BtifCoreTest::TearDown(); }
 };
 
 std::promise<int> promise0;

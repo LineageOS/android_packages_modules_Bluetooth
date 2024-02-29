@@ -35,8 +35,8 @@
 #include <string>
 
 #include "common/init_flags.h"
-#include "device/include/controller.h"  // TODO Remove
 #include "hal/snoop_logger.h"
+#include "hci/controller_interface.h"
 #include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/bt_trace.h"
@@ -1577,13 +1577,13 @@ uint16_t L2CA_FlushChannel(uint16_t lcid, uint16_t num_to_flush) {
 
   /* Cannot flush eRTM buffers once they have a sequence number */
   if (p_ccb->peer_cfg.fcr.mode != L2CAP_FCR_ERTM_MODE) {
-    const controller_t* controller = controller_get_interface();
     // Don't need send enhanced_flush to controller if it is LE transport.
     if (p_lcb->transport != BT_TRANSPORT_LE &&
         num_to_flush != L2CAP_FLUSH_CHANS_GET) {
       /* If the controller supports enhanced flush, flush the data queued at the
        * controller */
-      if (controller->SupportsNonFlushablePb() && (BTM_GetNumScoLinks() == 0)) {
+      if (bluetooth::shim::GetController()->SupportsNonFlushablePb() &&
+          (BTM_GetNumScoLinks() == 0)) {
         /* The only packet type defined - 0 - Automatically-Flushable Only */
         btsnd_hcic_enhanced_flush(p_lcb->Handle(), 0);
       }
