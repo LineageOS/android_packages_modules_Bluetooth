@@ -1273,9 +1273,6 @@ impl BluetoothMedia {
             } else if call_state == UHID_OUTPUT_RING {
                 self.incoming_call("".into());
             } else if call_state == UHID_OUTPUT_OFF_HOOK {
-                if self.call_list.iter().any(|c| c.source == CallSource::HID) {
-                    return;
-                }
                 self.dialing_call("".into());
                 self.answer_call();
                 self.uhid_send_input_report(&addr);
