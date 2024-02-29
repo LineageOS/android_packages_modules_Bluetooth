@@ -69,6 +69,9 @@ constexpr inline int esco_coding_to_codec(esco_coding_format_t esco_coding) {
 // Initialize the SCO HFP HAL module
 void init();
 
+// Check if specified coding format is supported by the adapter.
+bool is_coding_format_supported(esco_coding_format_t coding_format);
+
 // Check if wideband speech is supported on local device.
 bool get_wbs_supported();
 

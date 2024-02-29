@@ -114,6 +114,19 @@ struct get_swb_supported {
 };
 extern struct get_swb_supported get_swb_supported;
 
+// Name: is_coding_format_supported
+// Params: esco_coding_format_t coding_format
+// Return: bool
+struct is_coding_format_supported {
+  static bool return_value;
+  std::function<bool(esco_coding_format_t coding_format)> body{
+      [](esco_coding_format_t /* coding_format */) { return return_value; }};
+  bool operator()(esco_coding_format_t coding_format) {
+    return body(coding_format);
+  };
+};
+extern struct is_coding_format_supported is_coding_format_supported;
+
 // Name: init
 // Params:
 // Return: void

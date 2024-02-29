@@ -87,6 +87,7 @@
 #include "common/metrics.h"
 #include "common/os_utils.h"
 #include "device/include/device_iot_config.h"
+#include "device/include/esco_parameters.h"
 #include "device/include/interop.h"
 #include "device/include/interop_config.h"
 #include "include/check.h"
@@ -487,6 +488,10 @@ static bool get_wbs_supported() {
 
 static bool get_swb_supported() {
   return hfp_hal_interface::get_swb_supported();
+}
+
+static bool is_coding_format_supported(esco_coding_format_t coding_format) {
+  return hfp_hal_interface::is_coding_format_supported(coding_format);
 }
 
 bool is_common_criteria_mode() {
@@ -1205,6 +1210,7 @@ EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
         set_event_filter_connection_setup_all_devices,
     .get_wbs_supported = get_wbs_supported,
     .get_swb_supported = get_swb_supported,
+    .is_coding_format_supported = is_coding_format_supported,
     .metadata_changed = metadata_changed,
     .interop_match_addr = interop_match_addr,
     .interop_match_name = interop_match_name,
