@@ -43,7 +43,6 @@ import java.util.Set;
  */
 public class BrowsablePlayerConnector extends Handler {
     private static final String TAG = "AvrcpBrowsablePlayerConnector";
-    private static final boolean DEBUG = true;
     private static final long CONNECT_TIMEOUT_MS = 10000; // Time in ms to wait for a connection
 
     private static final int MSG_GET_FOLDER_ITEMS_CB = 0;
@@ -91,11 +90,9 @@ public class BrowsablePlayerConnector extends Handler {
             newConnector.mPendingPlayers.add(player);
             player.connect((int status, BrowsedPlayerWrapper wrapper) -> {
                 // Use the handler to avoid concurrency issues
-                if (DEBUG) {
-                    Log.d(TAG, "Browse player callback called: package="
-                            + info.serviceInfo.packageName
-                            + " : status=" + status);
-                }
+                Log.d(TAG, "Browse player callback called: package="
+                        + info.serviceInfo.packageName
+                        + " : status=" + status);
                 newConnector.obtainMessage(MSG_CONNECT_CB, status, 0, wrapper).sendToTarget();
             });
         }
@@ -111,7 +108,7 @@ public class BrowsablePlayerConnector extends Handler {
 
     private void removePendingPlayers() {
         for (BrowsedPlayerWrapper wrapper : mPendingPlayers) {
-            if (DEBUG) Log.d(TAG, "Disconnecting " + wrapper.getPackageName());
+            Log.d(TAG, "Disconnecting " + wrapper.getPackageName());
             wrapper.disconnect();
         }
         mPendingPlayers.clear();
@@ -127,7 +124,7 @@ public class BrowsablePlayerConnector extends Handler {
 
     @Override
     public void handleMessage(Message msg) {
-        if (DEBUG) Log.d(TAG, "Received a message: msg.what=" + msg.what);
+        Log.d(TAG, "Received a message: msg.what=" + msg.what);
         switch(msg.what) {
             case MSG_GET_FOLDER_ITEMS_CB: {
                 int status = msg.arg1;
@@ -163,9 +160,7 @@ public class BrowsablePlayerConnector extends Handler {
                 }
 
                 // Check to see if the root folder has any items
-                if (DEBUG) {
-                    Log.i(TAG, "Checking root contents for " + wrapper.getPackageName());
-                }
+                Log.i(TAG, "Checking root contents for " + wrapper.getPackageName());
                 wrapper.getFolderItems(wrapper.getRootId(),
                         (int status, String mediaId, List<ListItem> results) -> {
                             // Send the response as a message so that it is properly

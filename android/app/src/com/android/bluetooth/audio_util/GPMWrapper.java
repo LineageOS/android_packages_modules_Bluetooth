@@ -28,7 +28,6 @@ import android.util.Log;
  */
 class GPMWrapper extends MediaPlayerWrapper {
     private static final String TAG = "AvrcpGPMWrapper";
-    private static final boolean DEBUG = true;
 
     GPMWrapper(Context context, MediaController controller, Looper looper) {
         super(context, controller, looper);
@@ -54,11 +53,9 @@ class GPMWrapper extends MediaPlayerWrapper {
         Metadata qitem = Util.toMetadata(mContext, currItem);
         Metadata mdata = Util.toMetadata(mContext, getMetadata());
         if (currItem == null || !qitem.equals(mdata)) {
-            if (DEBUG) {
-                Log.d(TAG, "Metadata currently out of sync for Google Play Music");
-                Log.d(TAG, "  └ Current queueItem: " + qitem);
-                Log.d(TAG, "  └ Current metadata : " + mdata);
-            }
+            Log.d(TAG, "Metadata currently out of sync for Google Play Music");
+            Log.d(TAG, "  └ Current queueItem: " + qitem);
+            Log.d(TAG, "  └ Current metadata : " + mdata);
             return false;
         }
 
