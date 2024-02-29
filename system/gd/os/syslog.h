@@ -26,4 +26,4 @@
 /**
  * Write log to syslog.
  */
-void write_syslog(int tag, const char* format, ...);
+void write_syslog(int level, const char* tag, const char* format, ...);
