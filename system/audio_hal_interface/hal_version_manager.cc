@@ -36,10 +36,6 @@ using ::aidl::android::hardware::bluetooth::audio::
 static const std::string kDefaultAudioProviderFactoryInterface =
     std::string() + IBluetoothAudioProviderFactory::descriptor + "/default";
 
-// Ideally HalVersionManager can be a singleton class
-std::unique_ptr<HalVersionManager> HalVersionManager::instance_ptr =
-    std::make_unique<HalVersionManager>();
-
 std::string toString(BluetoothAudioHalTransport transport) {
   switch (transport) {
     case BluetoothAudioHalTransport::UNKNOWN:
@@ -67,6 +63,10 @@ const BluetoothAudioHalVersion BluetoothAudioHalVersion::VERSION_AIDL_V3 =
     BluetoothAudioHalVersion(BluetoothAudioHalTransport::AIDL, 3, 0);
 const BluetoothAudioHalVersion BluetoothAudioHalVersion::VERSION_AIDL_V4 =
     BluetoothAudioHalVersion(BluetoothAudioHalTransport::AIDL, 4, 0);
+
+// Ideally HalVersionManager can be a singleton class
+std::unique_ptr<HalVersionManager> HalVersionManager::instance_ptr =
+    std::make_unique<HalVersionManager>();
 
 /**
  * A singleton implementation to get the AIDL interface version.
