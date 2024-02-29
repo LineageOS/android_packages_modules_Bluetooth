@@ -47,7 +47,6 @@ import java.util.HashMap;
  */
 public class AtPhonebook {
     private static final String TAG = "BluetoothAtPhonebook";
-    private static final boolean DBG = false;
 
     /** The projection to use when querying the call log database in response
      *  to AT+CPBR for the MC, RC, and DC phone books (missed, received, and
@@ -257,9 +256,7 @@ public class AtPhonebook {
                     pb = pb.substring(1, pb.length());
                 }
                 if (getPhonebookResult(pb, false) == null && !"SM".equals(pb)) {
-                    if (DBG) {
-                        Log.d(TAG, "Dont know phonebook: '" + pb + "'");
-                    }
+                    Log.d(TAG, "Dont know phonebook: '" + pb + "'");
                     atCommandErrorCode = BluetoothCmeError.OPERATION_NOT_ALLOWED;
                     break;
                 }
@@ -565,9 +562,7 @@ public class AtPhonebook {
                     c.close();
                 }
                 if (name == null) {
-                    if (DBG) {
-                        Log.d(TAG, "Caller ID lookup failed for " + number);
-                    }
+                    Log.d(TAG, "Caller ID lookup failed for " + number);
                 }
 
             } else if (pbr.nameColumn != -1) {
