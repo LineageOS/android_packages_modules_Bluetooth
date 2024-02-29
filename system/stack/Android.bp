@@ -654,7 +654,6 @@ cc_fuzz {
         "libbt_shim_bridge",
         "libbt_shim_ffi",
         "libgmock",
-        "libosi",
     ],
     target: {
         android: {
