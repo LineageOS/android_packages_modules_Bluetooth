@@ -804,6 +804,9 @@ impl Rule for OddDisconnectionsRule {
 
             // We don't do anything with RX packets yet.
             PacketChild::AclRx(_) => (),
+
+            // End packet.inner match
+            _ => (),
         }
     }
 
