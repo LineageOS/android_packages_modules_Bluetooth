@@ -470,8 +470,6 @@ public class BassClientStateMachine extends StateMachine {
                                 null);
             } catch (IllegalArgumentException ex) {
                 Log.w(TAG, "registerSync:IllegalArgumentException");
-                Message message = obtainMessage(STOP_SCAN_OFFLOAD);
-                sendMessage(message);
                 mPeriodicAdvCallbacksMap.remove(tempHandle);
                 return false;
             }
@@ -521,9 +519,6 @@ public class BassClientStateMachine extends StateMachine {
                 // all sources are removed, clean up
                 removeMessages(PSYNC_ACTIVE_TIMEOUT);
                 mService.clearNotifiedFlags();
-                // trigger scan stop here
-                Message message = obtainMessage(STOP_SCAN_OFFLOAD);
-                sendMessage(message);
             }
         }
     }
@@ -731,10 +726,6 @@ public class BassClientStateMachine extends StateMachine {
                     Log.e(TAG, "There is no valid sync handle for this Source");
                 }
             }
-        } else if (state == BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCHRONIZED
-                || state == BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_NO_PAST) {
-            Message message = obtainMessage(STOP_SCAN_OFFLOAD);
-            sendMessage(message);
         }
     }
 
@@ -1165,10 +1156,6 @@ public class BassClientStateMachine extends StateMachine {
                 }
             } else {
                 log("failed to sync to PA: " + mPASyncRetryCounter);
-                if (!mAutoTriggered) {
-                    Message message = obtainMessage(STOP_SCAN_OFFLOAD);
-                    sendMessage(message);
-                }
                 mAutoTriggered = false;
                 // remove failed sync handle
                 mPeriodicAdvCallbacksMap.remove(BassConstants.INVALID_SYNC_HANDLE);
@@ -2003,8 +1990,6 @@ public class BassClientStateMachine extends StateMachine {
             case ADD_BCAST_SOURCE:
                 if (!isSuccess(status)) {
                     cancelActiveSync(null);
-                    Message message = obtainMessage(STOP_SCAN_OFFLOAD);
-                    sendMessage(message);
                     if (mPendingMetadata != null) {
                         mService.getCallbacks()
                                 .notifySourceAddFailed(mDevice, mPendingMetadata, status);
