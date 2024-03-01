@@ -26,10 +26,12 @@
 
 #include <cstdint>
 #include <memory>
+#include <string>
 
 #include "bta/include/bta_api.h"
 #include "bta_sec_api.h"
 #include "internal_include/bt_target.h"
+#include "macros.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/l2c_api.h"
 #include "types/bluetooth/uuid.h"
@@ -38,14 +40,20 @@
 /*****************************************************************************
  *  Constants and data types
  ****************************************************************************/
-/* status values */
-#define BTA_JV_SUCCESS 0     /* Successful operation. */
-#define BTA_JV_FAILURE 1     /* Generic failure. */
-#define BTA_JV_BUSY 2        /* Temporarily can not handle this request. */
-#define BTA_JV_NO_DATA 3     /* no data. */
-#define BTA_JV_NO_RESOURCE 4 /* No more set pm control block */
+enum class tBTA_JV_STATUS {
+  SUCCESS = 0, /* Successful operation. */
+  FAILURE = 1, /* Generic failure. */
+  BUSY = 2,    /* Temporarily can not handle this request. */
+};
 
-typedef uint8_t tBTA_JV_STATUS;
+inline std::string bta_jv_status_text(const tBTA_JV_STATUS& status) {
+  switch (status) {
+    CASE_RETURN_TEXT(tBTA_JV_STATUS::SUCCESS);
+    CASE_RETURN_TEXT(tBTA_JV_STATUS::FAILURE);
+    CASE_RETURN_TEXT(tBTA_JV_STATUS::BUSY);
+  }
+}
+
 #define BTA_JV_INTERNAL_ERR (-1) /* internal error. */
 
 /* L2CAP errors from underlying layers propagated via callbacks. */

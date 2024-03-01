@@ -406,7 +406,7 @@ static void on_srv_l2cap_listen_started(tBTA_JV_L2CAP_START* p_start,
     return;
   }
 
-  if (p_start->status != BTA_JV_SUCCESS) {
+  if (p_start->status != tBTA_JV_STATUS::SUCCESS) {
     log::error("Unable to start l2cap server socket_id:{}", sock->id);
     btsock_l2cap_free_l(sock);
     return;
@@ -448,7 +448,7 @@ static void on_cl_l2cap_init(tBTA_JV_L2CAP_CL_INIT* p_init, uint32_t id) {
     return;
   }
 
-  if (p_init->status != BTA_JV_SUCCESS) {
+  if (p_init->status != tBTA_JV_STATUS::SUCCESS) {
     log::error("Initialization status failed socket_id:{}", id);
     btsock_l2cap_free_l(sock);
     return;
@@ -559,7 +559,7 @@ static void on_l2cap_connect(tBTA_JV* p_data, uint32_t id) {
   }
 
   sock->tx_mtu = le_open->tx_mtu;
-  if (psm_open->status == BTA_JV_SUCCESS) {
+  if (psm_open->status == tBTA_JV_STATUS::SUCCESS) {
     if (!sock->server) {
       on_cl_l2cap_psm_connect_l(psm_open, sock);
     } else {
@@ -665,10 +665,10 @@ static void on_l2cap_data_ind(tBTA_JV* evt, uint32_t id) {
 
   uint32_t count;
 
-  if (BTA_JvL2capReady(sock->handle, &count) == BTA_JV_SUCCESS) {
+  if (BTA_JvL2capReady(sock->handle, &count) == tBTA_JV_STATUS::SUCCESS) {
     std::vector<uint8_t> buffer(count);
     if (BTA_JvL2capRead(sock->handle, sock->id, buffer.data(), count) ==
-        BTA_JV_SUCCESS) {
+        tBTA_JV_STATUS::SUCCESS) {
       if (packet_put_tail_l(sock, buffer.data(), count)) {
         bytes_read = count;
         btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_WR,
