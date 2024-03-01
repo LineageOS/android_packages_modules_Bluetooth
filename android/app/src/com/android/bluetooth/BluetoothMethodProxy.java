@@ -239,6 +239,11 @@ public class BluetoothMethodProxy {
         manager.registerSync(scanResult, skip, timeout, callback, handler);
     }
 
+    /** Proxies {@link PeriodicAdvertisingManager#unregisterSync(PeriodicAdvertisingCallback)}. */
+    public void periodicAdvertisingManagerUnregisterSync(
+            PeriodicAdvertisingManager manager, PeriodicAdvertisingCallback callback) {
+        manager.unregisterSync(callback);
+    }
     /**
      * Proxies {@link PeriodicAdvertisingManager#transferSync}.
      */

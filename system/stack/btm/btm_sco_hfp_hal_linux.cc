@@ -118,12 +118,6 @@ void cache_codec_capabilities(struct mgmt_rp_get_codec_capabilities* rp) {
         c.pkt_size = rp->wbs_pkt_len;
         break;
       case kCodecMsbc:
-        if (!rp->transparent_wbs_supported) {
-          // TODO(b/321180937): Remove this after the audio server could query
-          // the offload capability from Floss and enable it properly.
-          // This is a workaround for HFP to work on some CrOS Flex devices.
-          continue;
-        }
         offload_supported = true;
         c.inner.codec = codec::MSBC;
         c.inner.data_path = rp->hci_data_path_id;
@@ -319,25 +313,37 @@ void init() {
   close(fd);
 }
 
-// Check if wideband speech is supported on local device
-bool get_wbs_supported() {
+// Check if the specified coding format is supported by the adapter.
+bool is_coding_format_supported(esco_coding_format_t coding_format) {
+  if (coding_format != ESCO_CODING_FORMAT_TRANSPNT &&
+      coding_format != ESCO_CODING_FORMAT_MSBC) {
+    log::warn("Unsupported coding format to query: {}", coding_format);
+    return false;
+  }
+
   for (cached_codec_info c : cached_codecs) {
-    if (c.inner.codec == MSBC || c.inner.codec == MSBC_TRANSPARENT) {
+    if (c.inner.codec == MSBC_TRANSPARENT &&
+        coding_format == ESCO_CODING_FORMAT_TRANSPNT) {
+      return true;
+    }
+    if (c.inner.codec == MSBC && coding_format == ESCO_CODING_FORMAT_MSBC) {
       return true;
     }
   }
+
   return false;
+}
+
+// Check if wideband speech is supported on local device
+bool get_wbs_supported() {
+  return is_coding_format_supported(ESCO_CODING_FORMAT_TRANSPNT) ||
+         is_coding_format_supported(ESCO_CODING_FORMAT_MSBC);
 }
 
 // Check if super-wideband speech is supported on local device
 bool get_swb_supported() {
-  for (cached_codec_info c : cached_codecs) {
-    // SWB runs on the same path as MSBC non-offload.
-    if (c.inner.codec == MSBC_TRANSPARENT) {
-      return true;
-    }
-  }
-  return false;
+  // We only support SWB via transparent mode.
+  return is_coding_format_supported(ESCO_CODING_FORMAT_TRANSPNT);
 }
 
 // Checks the supported codecs

@@ -111,9 +111,7 @@ static uid_set_t* uid_set;
  *  Externs
  ******************************************************************************/
 void btif_dm_enable_service(tBTA_SERVICE_ID service_id, bool enable);
-#ifdef BTIF_DM_OOB_TEST
 void btif_dm_load_local_oob(void);
-#endif
 
 /*******************************************************************************
  *
@@ -219,9 +217,7 @@ void btif_enable_bluetooth_evt() {
   /* load did configuration */
   bte_load_did_conf(BTE_DID_CONF_FILE);
 
-#ifdef BTIF_DM_OOB_TEST
   btif_dm_load_local_oob();
-#endif
 
   future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
   LOG_INFO("Bluetooth enable event completed");

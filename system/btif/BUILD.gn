@@ -22,9 +22,10 @@ static_library("btif") {
 
     # AVRCP Target Service
     "avrcp/avrcp_service.cc",
-    "co/bta_av_co.cc",
 
     # Callouts
+    "co/bta_av_co.cc",
+    "co/bta_av_co_peer.cc",
     "co/bta_dm_co.cc",
     "co/bta_gatts_co.cc",
     "co/bta_hh_co.cc",

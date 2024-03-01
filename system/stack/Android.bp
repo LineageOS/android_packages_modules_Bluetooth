@@ -320,7 +320,6 @@ cc_defaults {
     name: "btstack_fuzzer_default",
     host_supported: true,
     cflags: [
-        "-DHAS_NO_BDROID_BUILDCFG",
         "-Wall",
         "-Werror",
         "-Wextra",
@@ -1676,7 +1675,6 @@ cc_test {
         "libosi",
     ],
     shared_libs: [
-        "libPlatformProperties",
         "libcrypto",
     ],
     sanitize: {
@@ -1740,7 +1738,6 @@ cc_test {
         "libprotobuf-cpp-lite",
     ],
     shared_libs: [
-        "libPlatformProperties",
         "libcrypto",
     ],
     target: {

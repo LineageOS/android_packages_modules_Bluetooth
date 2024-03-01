@@ -20,10 +20,6 @@
 #ifndef BT_TARGET_H
 #define BT_TARGET_H
 
-#ifndef BUILDCFG
-#define BUILDCFG
-#endif
-
 #ifndef FALSE
 #define FALSE false
 #endif
@@ -72,13 +68,6 @@
 #define BTA_AG_AT_MAX_LEN 512
 #endif
 
-#ifndef BTA_AG_SCO_PKT_TYPES
-#define BTA_AG_SCO_PKT_TYPES                                     \
-  (BTM_SCO_LINK_ONLY_MASK | ESCO_PKT_TYPES_MASK_EV3 |            \
-   ESCO_PKT_TYPES_MASK_NO_3_EV3 | ESCO_PKT_TYPES_MASK_NO_2_EV5 | \
-   ESCO_PKT_TYPES_MASK_NO_3_EV5)
-#endif
-
 #ifndef BTA_AV_RET_TOUT
 #define BTA_AV_RET_TOUT 15
 #endif
@@ -89,10 +78,6 @@
 
 #ifndef AG_VOICE_SETTINGS
 #define AG_VOICE_SETTINGS HCI_DEFAULT_VOICE_SETTINGS
-#endif
-
-#ifndef BTIF_DM_OOB_TEST
-#define BTIF_DM_OOB_TEST TRUE
 #endif
 
 // How long to wait before activating sniff mode after entering the

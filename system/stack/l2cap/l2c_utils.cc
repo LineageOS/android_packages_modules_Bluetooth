@@ -30,6 +30,7 @@
 
 #include "device/include/controller.h"
 #include "hal/snoop_logger.h"
+#include "hci/controller_interface.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/entry.h"
 #include "os/log.h"
@@ -776,10 +777,8 @@ void l2cu_send_peer_config_rej(tL2C_CCB* p_ccb, uint8_t* p_data,
   p_buf->offset = L2CAP_SEND_CMD_OFFSET;
   p = (uint8_t*)(p_buf + 1) + L2CAP_SEND_CMD_OFFSET;
 
-  const controller_t* controller = controller_get_interface();
-
 /* Put in HCI header - handle + pkt boundary */
-  if (controller->SupportsNonFlushablePb()) {
+  if (bluetooth::shim::GetController()->SupportsNonFlushablePb()) {
     UINT16_TO_STREAM(p, (p_ccb->p_lcb->Handle() | (L2CAP_PKT_START_NON_FLUSHABLE
                                                    << L2CAP_PKT_TYPE_SHIFT)));
   } else {
@@ -2076,7 +2075,7 @@ bool l2cu_create_conn_le(tL2C_LCB* p_lcb) {
 /* This function initiates an acl connection to a Classic device via HCI. */
 void l2cu_create_conn_br_edr(tL2C_LCB* p_lcb) {
   const bool controller_supports_role_switch =
-      controller_get_interface()->SupportsRoleSwitch();
+      bluetooth::shim::GetController()->SupportsRoleSwitch();
 
   /* While creating a new classic connection, check check all the other
    * active connections where we are not SCO nor central.

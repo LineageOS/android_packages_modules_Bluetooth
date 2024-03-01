@@ -22,6 +22,7 @@ import android.os.Looper;
 import android.util.Log;
 
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.FeatureFlags;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -75,9 +76,10 @@ public class BassObjectsFactory {
     public BassClientStateMachine makeStateMachine(
             BluetoothDevice device,
             BassClientService svc,
+            AdapterService adapterService,
             Looper looper,
             FeatureFlags featureFlags) {
-        return BassClientStateMachine.make(device, svc, looper, featureFlags);
+        return BassClientStateMachine.make(device, svc, adapterService, looper, featureFlags);
     }
 
     /**

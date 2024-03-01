@@ -20,6 +20,7 @@
 
 #include "btif/include/btif_av.h"
 
+#include <android_bluetooth_flags.h>
 #include <android_bluetooth_sysprop.h>
 #include <base/functional/bind.h>
 #include <base/logging.h>

@@ -16,11 +16,7 @@
 
 #include "audio_hal_interface/hal_version_manager.h"
 
-#include <flag_macros.h>
 #include <gtest/gtest.h>
-
-#include <cstdint>
-#include <string>
 
 using bluetooth::audio::BluetoothAudioHalTransport;
 using bluetooth::audio::BluetoothAudioHalVersion;
@@ -147,10 +143,7 @@ TEST_F(BluetoothAudioHalVersionTest, versionOperatorGreaterOrEqual) {
                BluetoothAudioHalVersion::VERSION_AIDL_V4);
 }
 
-TEST_F_WITH_FLAGS(
-    BluetoothAudioHalVersionTest, HIDL_VERSION_2_0,
-    REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(com::android::bluetooth::flags,
-                                        audio_hal_version_class))) {
+TEST_F(BluetoothAudioHalVersionTest, HIDL_VERSION_2_0) {
   EXPECT_EQ(BluetoothAudioHalVersion::VERSION_2_0,
             BluetoothAudioHalVersion(BluetoothAudioHalTransport::HIDL, 2, 0));
 
@@ -167,10 +160,7 @@ TEST_F_WITH_FLAGS(
                   "minor: 0") != std::string::npos);
 }
 
-TEST_F_WITH_FLAGS(
-    BluetoothAudioHalVersionTest, HIDL_VERSION_2_1,
-    REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(com::android::bluetooth::flags,
-                                        audio_hal_version_class))) {
+TEST_F(BluetoothAudioHalVersionTest, HIDL_VERSION_2_1) {
   EXPECT_EQ(BluetoothAudioHalVersion::VERSION_2_1,
             BluetoothAudioHalVersion(BluetoothAudioHalTransport::HIDL, 2, 1));
 
@@ -187,10 +177,7 @@ TEST_F_WITH_FLAGS(
                   "minor: 1") != std::string::npos);
 }
 
-TEST_F_WITH_FLAGS(
-    BluetoothAudioHalVersionTest, AIDL_VERSIONS_V1,
-    REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(com::android::bluetooth::flags,
-                                        audio_hal_version_class))) {
+TEST_F(BluetoothAudioHalVersionTest, AIDL_VERSIONS_V1) {
   EXPECT_EQ(BluetoothAudioHalVersion::VERSION_AIDL_V1,
             BluetoothAudioHalVersion(BluetoothAudioHalTransport::AIDL, 1, 0));
 
@@ -207,7 +194,7 @@ TEST_F_WITH_FLAGS(
                   "minor: 0") != std::string::npos);
 }
 
-TEST_F_WITH_FLAGS(BluetoothAudioHalVersionTest, AIDL_VERSIONS_V2) {
+TEST_F(BluetoothAudioHalVersionTest, AIDL_VERSIONS_V2) {
   EXPECT_EQ(BluetoothAudioHalVersion::VERSION_AIDL_V2,
             BluetoothAudioHalVersion(BluetoothAudioHalTransport::AIDL, 2, 0));
 
@@ -224,10 +211,7 @@ TEST_F_WITH_FLAGS(BluetoothAudioHalVersionTest, AIDL_VERSIONS_V2) {
                   "minor: 0") != std::string::npos);
 }
 
-TEST_F_WITH_FLAGS(
-    BluetoothAudioHalVersionTest, AIDL_VERSIONS_V3,
-    REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(com::android::bluetooth::flags,
-                                        audio_hal_version_class))) {
+TEST_F(BluetoothAudioHalVersionTest, AIDL_VERSIONS_V3) {
   EXPECT_EQ(BluetoothAudioHalVersion::VERSION_AIDL_V3,
             BluetoothAudioHalVersion(BluetoothAudioHalTransport::AIDL, 3, 0));
 
@@ -244,10 +228,7 @@ TEST_F_WITH_FLAGS(
                   "minor: 0") != std::string::npos);
 }
 
-TEST_F_WITH_FLAGS(
-    BluetoothAudioHalVersionTest, AIDL_VERSIONS_V4,
-    REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(com::android::bluetooth::flags,
-                                        audio_hal_version_class))) {
+TEST_F(BluetoothAudioHalVersionTest, AIDL_VERSIONS_V4) {
   EXPECT_EQ(BluetoothAudioHalVersion::VERSION_AIDL_V4,
             BluetoothAudioHalVersion(BluetoothAudioHalTransport::AIDL, 4, 0));
 
@@ -268,10 +249,7 @@ TEST_F_WITH_FLAGS(
  * An example of future AIDL version (next one will be V5), we check that next
  * AIDL version will be larger than existing AIDL versions
  */
-TEST_F_WITH_FLAGS(
-    BluetoothAudioHalVersionTest, AIDL_VERSIONS_Vx,
-    REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(com::android::bluetooth::flags,
-                                        audio_hal_version_class))) {
+TEST_F(BluetoothAudioHalVersionTest, AIDL_VERSIONS_Vx) {
   EXPECT_TRUE(BluetoothAudioHalVersion(BluetoothAudioHalTransport::AIDL, 5, 0) >
               BluetoothAudioHalVersion::VERSION_AIDL_V4);
   EXPECT_FALSE(BluetoothAudioHalVersion(BluetoothAudioHalTransport::AIDL, 5, 0)
