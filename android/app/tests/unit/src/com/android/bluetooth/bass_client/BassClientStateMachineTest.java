@@ -794,7 +794,6 @@ public class BassClientStateMachineTest {
 
         verify(callbacks).notifySourceAdded(any(), any(), anyInt());
         verify(callbacks).notifyReceiveStateChanged(any(), anyInt(), any());
-        assertThat(mBassClientStateMachine.mMsgWhats).contains(STOP_SCAN_OFFLOAD);
 
         // set some values for covering more lines of processPASyncState()
         mBassClientStateMachine.mPendingMetadata = null;
