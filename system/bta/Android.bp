@@ -30,7 +30,6 @@ cc_defaults {
     generated_headers: [
         "BluetoothGeneratedDumpsysDataSchema_h",
     ],
-    cflags: ["-DBUILDCFG"],
 }
 
 filegroup {
@@ -205,11 +204,13 @@ cc_library_static {
         "bluetooth_flags_c_lib",
         "lib-bt-packets",
         "libbase",
+        "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbt-audio-hal-interface",
         "libbt-platform-protos-lite",
         "libbt_shim_bridge",
         "libcom.android.sysprop.bluetooth.wrapped",
+        "libflatbuffers-cpp",
         "server_configurable_flags",
     ],
     apex_available: [

@@ -108,9 +108,6 @@ cc_library {
     // that might link statically with some of the code in the library, and
     // also dlopen(3) the shared library.
     ldflags: ["-Wl,-Bsymbolic,-Bsymbolic-functions"],
-    cflags: [
-        "-DBUILDCFG",
-    ],
     sanitize: {
         scs: true,
     },
@@ -142,20 +139,19 @@ cc_library_static {
         "BluetoothGeneratedDumpsysDataSchema_h",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     shared_libs: [
     ],
     whole_static_libs: [
         "libbluetooth_gd", // Gabeldorsche
-        "libcom.android.sysprop.bluetooth.wrapped",
     ],
     header_libs: ["libbluetooth_headers"],
     static_libs: [
         "libbluetooth_log",
         "libbt-platform-protos-lite",
         "libbt_shim_bridge",
+        "libcom.android.sysprop.bluetooth.wrapped",
     ],
 }
 

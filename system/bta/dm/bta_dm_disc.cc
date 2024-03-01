@@ -2453,8 +2453,8 @@ void bta_dm_disc_start_service_discovery(tBTA_DM_SEARCH_CBACK* p_cback,
   bta_sys_sendmsg(p_msg);
 }
 
-void bta_dm_disc_stop_service_discovery(const RawAddress& bd_addr,
-                                        tBT_TRANSPORT transport) {
+void bta_dm_disc_stop_service_discovery(const RawAddress& /* bd_addr */,
+                                        tBT_TRANSPORT /* transport */) {
   log::warn("Stop service discovery not yet implemented for legacy module");
 }
 

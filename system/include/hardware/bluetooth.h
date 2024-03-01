@@ -957,6 +957,13 @@ typedef struct {
   bool (*get_swb_supported)();
 
   /**
+   *
+   * Is the specified coding format supported by the adapter
+   *
+   */
+  bool (*is_coding_format_supported)(uint8_t coding_format);
+
+  /**
    * Data passed from BluetoothDevice.metadata_changed
    *
    * @param remote_bd_addr remote address

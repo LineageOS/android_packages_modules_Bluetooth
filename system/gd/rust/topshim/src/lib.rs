@@ -20,6 +20,7 @@ pub mod btif;
 pub mod controller;
 pub mod metrics;
 pub mod profiles;
+pub mod syslog;
 pub mod sysprop;
 pub mod topstack;
 

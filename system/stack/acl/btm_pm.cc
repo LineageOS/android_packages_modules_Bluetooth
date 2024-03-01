@@ -28,6 +28,7 @@
  *
  *****************************************************************************/
 
+#include "main/shim/entry.h"
 #define LOG_TAG "bt_btm_pm"
 
 #include <base/strings/stringprintf.h>
@@ -36,10 +37,11 @@
 #include <cstdint>
 #include <unordered_map>
 
-#include "device/include/controller.h"
 #include "device/include/interop.h"
+#include "hci/controller_interface.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
+#include "main/shim/entry.h"
 #include "os/log.h"
 #include "osi/include/osi.h"  // UNUSED_ATTR
 #include "osi/include/stack_power_telemetry.h"
@@ -214,7 +216,7 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
   }
 
   if (mode != BTM_PM_MD_ACTIVE) {
-    const controller_t* controller = controller_get_interface();
+    auto controller = bluetooth::shim::GetController();
     if ((mode == BTM_PM_MD_HOLD && !controller->SupportsHoldMode()) ||
         (mode == BTM_PM_MD_SNIFF && !controller->SupportsSniffMode()) ||
         (mode == BTM_PM_MD_PARK && !controller->SupportsParkMode()) ||
@@ -330,8 +332,7 @@ tBTM_STATUS BTM_SetSsrParams(const RawAddress& remote_bda, uint16_t max_lat,
     return BTM_UNKNOWN_ADDR;
   }
 
-  const controller_t* controller = controller_get_interface();
-  if (!controller->SupportsSniffSubrating()) {
+  if (!bluetooth::shim::GetController()->SupportsSniffSubrating()) {
     log::info("No controller support for sniff subrating");
     return BTM_SUCCESS;
   }
@@ -553,8 +554,7 @@ static tBTM_STATUS btm_pm_snd_md_req(uint16_t handle, uint8_t pm_id,
     log::debug("Need to wake first");
     md_res.mode = BTM_PM_MD_ACTIVE;
   } else if (BTM_PM_MD_SNIFF == md_res.mode && p_cb->max_lat) {
-    const controller_t* controller = controller_get_interface();
-    if (controller->SupportsSniffSubrating()) {
+    if (bluetooth::shim::GetController()->SupportsSniffSubrating()) {
       log::debug("Sending sniff subrating to controller");
       send_sniff_subrating(handle, p_cb->bda_, p_cb->max_lat, p_cb->min_rmt_to,
                            p_cb->min_loc_to);

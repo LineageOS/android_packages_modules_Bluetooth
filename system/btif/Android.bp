@@ -99,6 +99,7 @@ cc_library_static {
         "avrcp/avrcp_service.cc",
         // Callouts
         "co/bta_av_co.cc",
+        "co/bta_av_co_peer.cc",
         "co/bta_hh_co.cc",
         "co/bta_pan_co.cc",
         // HAL layer
@@ -165,7 +166,6 @@ cc_library_static {
         "libflatbuffers-cpp",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     apex_available: [
@@ -254,7 +254,6 @@ cc_library_static {
         "libcrypto",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
         /* we export all classes, so change default visibility, instead of having EXPORT_SYMBOL on each class*/
         "-fvisibility=default",
@@ -363,7 +362,6 @@ cc_test {
             ],
         },
     },
-    cflags: ["-DBUILDCFG"],
     sanitize: {
         integer_overflow: true,
     },
@@ -396,7 +394,6 @@ cc_test {
         "libosi",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     shared_libs: ["liblog"],
@@ -436,7 +433,6 @@ cc_test {
         "liblog",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
 }
@@ -486,7 +482,6 @@ cc_test {
         },
     },
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     sanitize: {
@@ -530,7 +525,6 @@ cc_test {
         "libgmock",
         "libosi",
     ],
-    cflags: ["-DBUILDCFG"],
     target: {
         android: {
             static_libs: [
@@ -570,7 +564,6 @@ cc_test {
         "libcom.android.sysprop.bluetooth.wrapped",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
 }
@@ -677,7 +670,6 @@ cc_test {
         "libstatslog_bt",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     target: {
@@ -800,7 +792,6 @@ cc_test {
         "libstatslog_bt",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     target: {

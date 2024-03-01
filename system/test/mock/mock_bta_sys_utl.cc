@@ -24,31 +24,31 @@
 #include "bta/include/utl.h"
 #include "test/common/mock_functions.h"
 
-bool utl_isdialchar(const char d) {
+bool utl_isdialchar(const char /* d */) {
   inc_func_call_count(__func__);
   return false;
 }
-bool utl_isdialstr(const char* p_s) {
+bool utl_isdialstr(const char* /* p_s */) {
   inc_func_call_count(__func__);
   return false;
 }
-bool utl_isintstr(const char* p_s) {
+bool utl_isintstr(const char* /* p_s */) {
   inc_func_call_count(__func__);
   return false;
 }
-bool utl_set_device_class(tBTA_UTL_COD* p_cod, uint8_t cmd) {
+bool utl_set_device_class(tBTA_UTL_COD* /* p_cod */, uint8_t /* cmd */) {
   inc_func_call_count(__func__);
   return false;
 }
-int utl_strucmp(const char* p_s, const char* p_t) {
+int utl_strucmp(const char* /* p_s */, const char* /* p_t */) {
   inc_func_call_count(__func__);
   return 0;
 }
-int16_t utl_str2int(const char* p_s) {
+int16_t utl_str2int(const char* /* p_s */) {
   inc_func_call_count(__func__);
   return 0;
 }
-uint8_t utl_itoa(uint16_t i, char* p_s) {
+uint8_t utl_itoa(uint16_t /* i */, char* /* p_s */) {
   inc_func_call_count(__func__);
   return 0;
 }

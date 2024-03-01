@@ -117,14 +117,6 @@ static const uint8_t* get_ble_supported_states(void) {
 #define MAP_TO_GD(legacy, gd) \
   static bool legacy(void) { return GetController()->gd(); }
 
-MAP_TO_GD(supports_role_switch, SupportsRoleSwitch)
-MAP_TO_GD(supports_hold_mode, SupportsHoldMode)
-MAP_TO_GD(supports_sniff_mode, SupportsSniffMode)
-MAP_TO_GD(supports_park_mode, SupportsParkMode)
-MAP_TO_GD(supports_non_flushable_pb, SupportsNonFlushablePb)
-MAP_TO_GD(supports_sniff_subrating, SupportsSniffSubrating)
-MAP_TO_GD(supports_encryption_pause, SupportsEncryptionPause)
-
 MAP_TO_GD(supports_ble, SupportsBle)
 MAP_TO_GD(supports_privacy, SupportsBlePrivacy)
 MAP_TO_GD(supports_packet_extension, SupportsBleDataPacketLengthExtension)
@@ -306,13 +298,6 @@ static const controller_t interface = {
         supports_enhanced_setup_synchronous_connection,
     .supports_enhanced_accept_synchronous_connection =
         supports_enhanced_accept_synchronous_connection,
-    .SupportsRoleSwitch = supports_role_switch,
-    .SupportsHoldMode = supports_hold_mode,
-    .SupportsSniffMode = supports_sniff_mode,
-    .SupportsParkMode = supports_park_mode,
-    .SupportsNonFlushablePb = supports_non_flushable_pb,
-    .SupportsSniffSubrating = supports_sniff_subrating,
-    .SupportsEncryptionPause = supports_encryption_pause,
     .supports_configure_data_path = supports_configure_data_path,
     .supports_set_min_encryption_key_size =
         supports_set_min_encryption_key_size,

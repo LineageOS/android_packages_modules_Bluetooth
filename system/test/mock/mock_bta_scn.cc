@@ -24,11 +24,11 @@
 #include "bta/include/bta_rfcomm_scn.h"
 #include "test/common/mock_functions.h"
 
-bool BTA_FreeSCN(uint8_t scn) {
+bool BTA_FreeSCN(uint8_t /* scn */) {
   inc_func_call_count(__func__);
   return false;
 }
-bool BTA_TryAllocateSCN(uint8_t scn) {
+bool BTA_TryAllocateSCN(uint8_t /* scn */) {
   inc_func_call_count(__func__);
   return false;
 }

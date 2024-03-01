@@ -23,23 +23,31 @@
 
 #include "os/log_tags.h"
 
+// TODO(b/305066880) - This implementation will replace this syslog
+// implementation. Remove this file once everything is moved over to the new
+// logging macros.
+#include "bluetooth/log.h"
+
+namespace bluetooth::log_internal {
+extern Level GetLogLevelForTag(char const* tag);
+}
+
 namespace {
 #define SYSLOG_IDENT "btadapterd"
 
 const char kSyslogIdent[] = SYSLOG_IDENT;
 
 // Map LOG_TAG_* to syslog mappings
-const int kTagMap[] = {
-    /*LOG_TAG_FATAL=*/LOG_CRIT,
-    /*LOG_TAG_ERROR=*/LOG_ERR,
-    /*LOG_TAG_WARN=*/LOG_WARNING,
-    /*LOG_TAG_NOTICE=*/LOG_NOTICE,
-    /*LOG_TAG_INFO=*/LOG_INFO,
-    /*LOG_TAG_DEBUG=*/LOG_DEBUG,
+const int kLevelMap[] = {
     /*LOG_TAG_VERBOSE=*/LOG_DEBUG,
+    /*LOG_TAG_DEBUG=*/LOG_DEBUG,
+    /*LOG_TAG_INFO=*/LOG_INFO,
+    /*LOG_TAG_WARN=*/LOG_WARNING,
+    /*LOG_TAG_ERROR=*/LOG_ERR,
+    /*LOG_TAG_FATAL=*/LOG_CRIT,
 };
 
-static_assert(sizeof(kTagMap) / sizeof(kTagMap[0]) == LOG_TAG_VERBOSE + 1);
+static_assert(sizeof(kLevelMap) / sizeof(kLevelMap[0]) == (LOG_TAG_FATAL - LOG_TAG_VERBOSE) + 1);
 
 class SyslogWrapper {
  public:
@@ -55,18 +63,28 @@ class SyslogWrapper {
 std::unique_ptr<SyslogWrapper> gSyslog;
 }  // namespace
 
-void write_syslog(int tag, const char* format, ...) {
+void write_syslog(int level, const char* tag, const char* format, ...) {
   if (!gSyslog) {
     gSyslog = std::make_unique<SyslogWrapper>();
   }
 
-  // I don't expect to see incorrect tags but making the check anyway so we
+  // Filter out logs that don't meet level requirement.
+  bluetooth::log_internal::Level current_level = bluetooth::log_internal::GetLogLevelForTag(tag);
+  if (static_cast<bluetooth::log_internal::Level>(level) < current_level) {
+    return;
+  }
+
+  // I don't expect to see incorrect levels but making the check anyway so we
   // don't go out of bounds in the array above.
-  tag = tag <= LOG_TAG_VERBOSE ? tag : LOG_TAG_ERROR;
-  int level = kTagMap[tag];
+  if (level > LOG_TAG_FATAL) {
+    level = LOG_TAG_ERROR;
+  } else if (level < LOG_TAG_VERBOSE) {
+    level = LOG_TAG_VERBOSE;
+  }
+  int syslog_level = kLevelMap[level - LOG_TAG_VERBOSE];
 
   va_list args;
   va_start(args, format);
-  vsyslog(level, format, args);
+  vsyslog(syslog_level, format, args);
   va_end(args);
 }

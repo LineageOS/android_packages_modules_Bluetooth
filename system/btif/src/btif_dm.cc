@@ -3302,7 +3302,6 @@ void btif_dm_set_oob_for_le_io_req(const RawAddress& bd_addr,
   LOG_VERBOSE("*p_has_oob_data=%d", *p_has_oob_data);
 }
 
-#ifdef BTIF_DM_OOB_TEST
 void btif_dm_load_local_oob(void) {
   char prop_oob[PROPERTY_VALUE_MAX];
   osi_property_get("service.brcm.bt.oob", prop_oob, "3");
@@ -3561,7 +3560,6 @@ bool btif_dm_proc_rmt_oob(const RawAddress& bd_addr, Octet16* p_c,
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
   return true;
 }
-#endif /*  BTIF_DM_OOB_TEST */
 
 static void btif_dm_ble_key_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif) {
   RawAddress bd_addr;
