@@ -18,6 +18,8 @@ package com.android.bluetooth.gatt;
 
 import android.os.RemoteException;
 
+import com.android.bluetooth.le_scan.AdvtFilterOnFoundOnLostInfo;
+import com.android.bluetooth.le_scan.TransitionalScanHelper;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -70,13 +72,24 @@ public class GattNativeInterface {
     void onScanResult(int eventType, int addressType, String address, int primaryPhy,
             int secondaryPhy, int advertisingSid, int txPower, int rssi, int periodicAdvInt,
             byte[] advData, String originalAddress) {
-        getGattService().onScanResult(eventType, addressType, address, primaryPhy, secondaryPhy,
-                advertisingSid, txPower, rssi, periodicAdvInt, advData, originalAddress);
+        getTransitionalScanHelper()
+                .onScanResult(
+                        eventType,
+                        addressType,
+                        address,
+                        primaryPhy,
+                        secondaryPhy,
+                        advertisingSid,
+                        txPower,
+                        rssi,
+                        periodicAdvInt,
+                        advData,
+                        originalAddress);
     }
 
     void onScannerRegistered(int status, int scannerId, long uuidLsb, long uuidMsb)
             throws RemoteException {
-        getGattService().onScannerRegistered(status, scannerId, uuidLsb, uuidMsb);
+        getTransitionalScanHelper().onScannerRegistered(status, scannerId, uuidLsb, uuidMsb);
     }
 
     void onClientRegistered(int status, int clientIf, long uuidLsb, long uuidMsb)
@@ -187,50 +200,65 @@ public class GattNativeInterface {
     }
 
     void onScanFilterEnableDisabled(int action, int status, int clientIf) {
-        getGattService().onScanFilterEnableDisabled(action, status, clientIf);
+        getTransitionalScanHelper().onScanFilterEnableDisabled(action, status, clientIf);
     }
 
     void onScanFilterParamsConfigured(int action, int status, int clientIf, int availableSpace) {
-        getGattService().onScanFilterParamsConfigured(action, status, clientIf, availableSpace);
+        getTransitionalScanHelper()
+                .onScanFilterParamsConfigured(action, status, clientIf, availableSpace);
     }
 
     void onScanFilterConfig(int action, int status, int clientIf, int filterType,
             int availableSpace) {
-        getGattService().onScanFilterConfig(action, status, clientIf, filterType, availableSpace);
+        getTransitionalScanHelper()
+                .onScanFilterConfig(action, status, clientIf, filterType, availableSpace);
     }
 
     void onBatchScanStorageConfigured(int status, int clientIf) {
-        getGattService().onBatchScanStorageConfigured(status, clientIf);
+        getTransitionalScanHelper().onBatchScanStorageConfigured(status, clientIf);
     }
 
     void onBatchScanStartStopped(int startStopAction, int status, int clientIf) {
-        getGattService().onBatchScanStartStopped(startStopAction, status, clientIf);
+        getTransitionalScanHelper().onBatchScanStartStopped(startStopAction, status, clientIf);
     }
 
     void onBatchScanReports(int status, int scannerId, int reportType, int numRecords,
             byte[] recordData) throws RemoteException {
-        getGattService().onBatchScanReports(status, scannerId, reportType, numRecords, recordData);
+        getTransitionalScanHelper()
+                .onBatchScanReports(status, scannerId, reportType, numRecords, recordData);
     }
 
     void onBatchScanThresholdCrossed(int clientIf) {
-        getGattService().onBatchScanThresholdCrossed(clientIf);
+        getTransitionalScanHelper().onBatchScanThresholdCrossed(clientIf);
     }
 
     AdvtFilterOnFoundOnLostInfo createOnTrackAdvFoundLostObject(int clientIf, int advPktLen,
             byte[] advPkt, int scanRspLen, byte[] scanRsp, int filtIndex, int advState,
             int advInfoPresent, String address, int addrType, int txPower, int rssiValue,
             int timeStamp) {
-        return getGattService().createOnTrackAdvFoundLostObject(clientIf, advPktLen, advPkt,
-                scanRspLen, scanRsp, filtIndex, advState, advInfoPresent, address, addrType,
-                txPower, rssiValue, timeStamp);
+        return getTransitionalScanHelper()
+                .createOnTrackAdvFoundLostObject(
+                        clientIf,
+                        advPktLen,
+                        advPkt,
+                        scanRspLen,
+                        scanRsp,
+                        filtIndex,
+                        advState,
+                        advInfoPresent,
+                        address,
+                        addrType,
+                        txPower,
+                        rssiValue,
+                        timeStamp);
     }
 
     void onTrackAdvFoundLost(AdvtFilterOnFoundOnLostInfo trackingInfo) throws RemoteException {
-        getGattService().onTrackAdvFoundLost(trackingInfo);
+        getTransitionalScanHelper().onTrackAdvFoundLost(trackingInfo);
     }
 
     void onScanParamSetupCompleted(int status, int scannerId) throws RemoteException {
-        getGattService().onScanParamSetupCompleted(status, scannerId);
+        getTransitionalScanHelper().onScanParamSetupCompleted(status, scannerId);
     }
 
     void onConfigureMTU(int connId, int status, int mtu) throws RemoteException {
@@ -664,6 +692,12 @@ public class GattNativeInterface {
     public void gattTest(int command, long uuid1Lsb, long uuid1Msb, String bda1,
             int p1, int p2, int p3, int p4, int p5) {
         gattTestNative(command, uuid1Lsb, uuid1Msb, bda1, p1, p2, p3, p4, p5);
+    }
+
+    // TODO(b/327849650): Callbacks that reference this helper should be moved into the appropriate
+    //                    native interface (ScanNativeInterface, PeriodicScanNativeInterface, etc.).
+    private TransitionalScanHelper getTransitionalScanHelper() {
+        return mGattService.getTransitionalScanHelper();
     }
 }
 
