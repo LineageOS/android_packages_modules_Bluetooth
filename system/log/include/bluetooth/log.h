@@ -44,13 +44,37 @@ void vlog(Level level, char const* tag, char const* file_name, int line,
           char const* function_name, fmt::string_view fmt,
           fmt::format_args vargs);
 
+/// Capture invalid parameter values that would cause runtime
+/// formatting errors.
+template <class T>
+[[maybe_unused]] static inline T& format_replace(T& arg) {
+  return arg;
+}
+
+/// Specialization of format_replace for nullptr string parameters.
+template <>
+char const*& format_replace(char const*& arg) {
+  static char const* nullptr_str = "(nullptr)";
+  if (arg) return arg;
+  return nullptr_str;
+}
+
+/// Specialization of format_replace for nullptr string parameters.
+template <>
+char*& format_replace(char*& arg) {
+  static char* nullptr_str = (char*)"(nullptr)";
+  if (arg) return arg;
+  return nullptr_str;
+}
+
 template <Level level, typename... T>
 struct log {
   log(fmt::format_string<T...> fmt, T&&... args,
       char const* file_name = __builtin_FILE(), int line = __builtin_LINE(),
       char const* function_name = __builtin_FUNCTION()) {
     vlog(level, LOG_TAG, file_name, line, function_name,
-         static_cast<fmt::string_view>(fmt), fmt::make_format_args(args...));
+         static_cast<fmt::string_view>(fmt),
+         fmt::make_format_args(format_replace(args)...));
   }
 };
 

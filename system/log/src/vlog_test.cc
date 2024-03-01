@@ -112,3 +112,23 @@ TEST(BluetoothLoggerTest, error) {
   EXPECT_EQ(androidLogMessage->line, 105);
   EXPECT_STREQ(androidLogMessage->message, "TestBody: error test");
 }
+
+TEST(BluetoothLoggerTest, null_string_parameter) {
+  androidLogMessage.reset();
+
+  char const* const_null_str = nullptr;
+  log::info("input: {}", const_null_str);
+  EXPECT_STREQ(androidLogMessage->message, "TestBody: input: (nullptr)");
+
+  androidLogMessage.reset();
+
+  char* null_str = nullptr;
+  log::info("input: {}", null_str);
+  EXPECT_STREQ(androidLogMessage->message, "TestBody: input: (nullptr)");
+
+  androidLogMessage.reset();
+
+  char const* nonnull_str = "hello world";
+  log::info("input: {}", nonnull_str);
+  EXPECT_STREQ(androidLogMessage->message, "TestBody: input: hello world");
+}
