@@ -18,8 +18,7 @@ package android.bluetooth.le;
 
 import android.bluetooth.BluetoothDevice;
 import android.os.Parcel;
-import android.test.suitebuilder.annotation.SmallTest;
-
+import androidx.test.filters.SmallTest;
 import junit.framework.TestCase;
 
 public class ScanFilterTest extends TestCase {
