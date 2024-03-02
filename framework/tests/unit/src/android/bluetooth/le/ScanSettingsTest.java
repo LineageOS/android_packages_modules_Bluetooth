@@ -16,8 +16,7 @@
 
 package android.bluetooth.le;
 
-import android.test.suitebuilder.annotation.SmallTest;
-
+import androidx.test.filters.SmallTest;
 import junit.framework.TestCase;
 
 /** Test for Bluetooth LE {@link ScanSettings}. */

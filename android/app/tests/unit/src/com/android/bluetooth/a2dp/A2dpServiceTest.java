@@ -76,7 +76,6 @@ public class A2dpServiceTest {
     @Mock private ActiveDeviceManager mActiveDeviceManager;
     @Mock private AdapterService mAdapterService;
     @Mock private AudioManager mAudioManager;
-    @Mock private Context mContext;
     @Mock private DatabaseManager mDatabaseManager;
     @Mock private SilenceDeviceManager mSilenceDeviceManager;
     private InOrder mInOrder = null;
@@ -87,19 +86,18 @@ public class A2dpServiceTest {
     public void setUp() throws Exception {
         // Set up mocks and test assets
         MockitoAnnotations.initMocks(this);
-        mInOrder = inOrder(mContext);
+        mInOrder = inOrder(mAdapterService);
 
         TestUtils.mockGetSystemService(
-                mContext, Context.AUDIO_SERVICE, AudioManager.class, mAudioManager);
+                mAdapterService, Context.AUDIO_SERVICE, AudioManager.class, mAudioManager);
         doReturn(InstrumentationRegistry.getTargetContext().getResources())
-                .when(mContext)
+                .when(mAdapterService)
                 .getResources();
 
         if (Looper.myLooper() == null) {
             Looper.prepare();
         }
 
-        TestUtils.setAdapterService(mAdapterService);
         doReturn(true).when(mAdapterService).isA2dpOffloadEnabled();
         doReturn(MAX_CONNECTED_AUDIO_DEVICES).when(mAdapterService).getMaxConnectedAudioDevices();
         doReturn(false).when(mAdapterService).isQuietModeEnabled();
@@ -107,7 +105,7 @@ public class A2dpServiceTest {
         doReturn(mActiveDeviceManager).when(mAdapterService).getActiveDeviceManager();
         doReturn(mSilenceDeviceManager).when(mAdapterService).getSilenceDeviceManager();
 
-        mA2dpService = new A2dpService(mContext, mMockNativeInterface);
+        mA2dpService = new A2dpService(mAdapterService, mMockNativeInterface);
         mA2dpService.start();
         mA2dpService.setAvailable(true);
 
@@ -126,12 +124,11 @@ public class A2dpServiceTest {
     @After
     public void tearDown() throws Exception {
         mA2dpService.stop();
-        TestUtils.clearAdapterService(mAdapterService);
     }
 
     @SafeVarargs
     private void verifyIntentSent(Matcher<Intent>... matchers) {
-        mInOrder.verify(mContext, timeout(TIMEOUT.toMillis() * 2))
+        mInOrder.verify(mAdapterService, timeout(TIMEOUT.toMillis() * 2))
                 .sendBroadcast(MockitoHamcrest.argThat(AllOf.allOf(matchers)), any(), any());
     }
 
@@ -1061,7 +1058,7 @@ public class A2dpServiceTest {
         stackEvent.valueInt = newConnectionState;
         mA2dpService.messageFromNative(stackEvent);
         // Verify the connection state broadcast
-        mInOrder.verify(mContext, timeout(TIMEOUT.toMillis()).times(0))
+        mInOrder.verify(mAdapterService, timeout(TIMEOUT.toMillis()).times(0))
                 .sendBroadcast(any(), any(), any());
     }
 
@@ -1088,7 +1085,7 @@ public class A2dpServiceTest {
         stackEvent.valueInt = audioStackEvent;
         mA2dpService.messageFromNative(stackEvent);
         // Verify the audio state broadcast
-        mInOrder.verify(mContext, timeout(TIMEOUT.toMillis()).times(0))
+        mInOrder.verify(mAdapterService, timeout(TIMEOUT.toMillis()).times(0))
                 .sendBroadcast(any(), any(), any());
     }
 
@@ -1113,7 +1110,7 @@ public class A2dpServiceTest {
         stackEvent.codecStatus = codecStatus;
         mA2dpService.messageFromNative(stackEvent);
         // Verify the codec status broadcast
-        mInOrder.verify(mContext, timeout(TIMEOUT.toMillis()).times(0))
+        mInOrder.verify(mAdapterService, timeout(TIMEOUT.toMillis()).times(0))
                 .sendBroadcast(any(), any(), any());
     }
 

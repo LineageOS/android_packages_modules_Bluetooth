@@ -17,17 +17,14 @@
 package android.bluetooth.le;
 
 import android.os.ParcelUuid;
-import android.test.suitebuilder.annotation.SmallTest;
-
+import androidx.test.filters.SmallTest;
 import com.android.internal.util.HexDump;
 import com.android.modules.utils.BytesMatcher;
-
-import junit.framework.TestCase;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
+import junit.framework.TestCase;
 
 /**
  * Unit test cases for {@link ScanRecord}.
