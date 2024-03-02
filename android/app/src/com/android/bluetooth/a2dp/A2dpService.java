@@ -41,7 +41,6 @@ import android.bluetooth.BufferConstraints;
 import android.bluetooth.IBluetoothA2dp;
 import android.companion.CompanionDeviceManager;
 import android.content.AttributionSource;
-import android.content.Context;
 import android.content.Intent;
 import android.media.AudioDeviceCallback;
 import android.media.AudioDeviceInfo;
@@ -90,18 +89,18 @@ public class A2dpService extends ProfileService {
 
     private static A2dpService sA2dpService;
 
-    private AdapterService mAdapterService;
-    private DatabaseManager mDatabaseManager;
+    private final A2dpNativeInterface mNativeInterface;
+    private final AdapterService mAdapterService;
+    private final AudioManager mAudioManager;
+    private final DatabaseManager mDatabaseManager;
+    private final CompanionDeviceManager mCompanionDeviceManager;
+
     private HandlerThread mStateMachinesThread;
     private Handler mHandler = null;
 
-    private final A2dpNativeInterface mNativeInterface;
     @VisibleForTesting
     ServiceFactory mFactory = new ServiceFactory();
-    @VisibleForTesting
-    AudioManager mAudioManager;
     private A2dpCodecConfig mA2dpCodecConfig;
-    private CompanionDeviceManager mCompanionDeviceManager;
 
     @GuardedBy("mStateMachines")
     private BluetoothDevice mActiveDevice;
@@ -126,15 +125,20 @@ public class A2dpService extends ProfileService {
     private final AudioManagerAudioDeviceCallback mAudioManagerAudioDeviceCallback =
             new AudioManagerAudioDeviceCallback();
 
-    public A2dpService(Context ctx) {
-        super(ctx);
-        mNativeInterface = requireNonNull(A2dpNativeInterface.getInstance());
+    public A2dpService(AdapterService adapterService) {
+        this(adapterService, A2dpNativeInterface.getInstance());
     }
 
     @VisibleForTesting
-    A2dpService(Context ctx, A2dpNativeInterface nativeInterface) {
-        super(ctx);
+    A2dpService(AdapterService adapterService, A2dpNativeInterface nativeInterface) {
+        super(requireNonNull(adapterService));
+        mAdapterService = adapterService;
         mNativeInterface = requireNonNull(nativeInterface);
+        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
+        mAudioManager = requireNonNull(getSystemService(AudioManager.class));
+
+        // Some platform may not have the FEATURE_COMPANION_DEVICE_SETUP
+        mCompanionDeviceManager = getSystemService(CompanionDeviceManager.class);
     }
 
     public static boolean isEnabled() {
@@ -156,20 +160,6 @@ public class A2dpService extends ProfileService {
         if (sA2dpService != null) {
             throw new IllegalStateException("start() called twice");
         }
-
-        // Step 1: Get AdapterService, DatabaseManager, AudioManager.
-        // None of them can be null.
-        mAdapterService =
-                requireNonNull(
-                        AdapterService.getAdapterService(),
-                        "AdapterService cannot be null when A2dpService starts");
-        mDatabaseManager =
-                requireNonNull(
-                        mAdapterService.getDatabase(),
-                        "DatabaseManager cannot be null when A2dpService starts");
-        mAudioManager = getSystemService(AudioManager.class);
-        mCompanionDeviceManager = getSystemService(CompanionDeviceManager.class);
-        requireNonNull(mAudioManager, "AudioManager cannot be null when A2dpService starts");
 
         // Step 2: Get maximum number of connected audio devices
         mMaxConnectedAudioDevices = mAdapterService.getMaxConnectedAudioDevices();
@@ -255,10 +245,6 @@ public class A2dpService extends ProfileService {
 
         // Step 2: Reset maximum number of connected audio devices
         mMaxConnectedAudioDevices = 1;
-
-        // Step 1: Clear AdapterService, AudioManager
-        mAudioManager = null;
-        mAdapterService = null;
     }
 
     @Override
@@ -1608,6 +1594,12 @@ public class A2dpService extends ProfileService {
                 return;
             }
             if (!hasBluetoothPrivilegedPermission(service)) {
+                if (service.mCompanionDeviceManager == null) {
+                    throw new SecurityException(
+                            "Caller should have BLUETOOTH_PRIVILEGED in order to call"
+                                    + " setCodecConfigPreference without a CompanionDeviceManager"
+                                    + " service");
+                }
                 enforceCdmAssociation(service.mCompanionDeviceManager, service,
                         source.getPackageName(), Binder.getCallingUid(), device);
             }
