@@ -957,11 +957,12 @@ uint16_t btif_dm_get_connection_state_sync(const RawAddress& bd_addr) {
              base::BindOnce(
                  [](const RawAddress bd_addr, std::promise<uint16_t> promise) {
                    // Experiment to try with maybe resolved address
-                   btif_dm_get_resolved_connection_state({
+                   uint16_t state = btif_dm_get_resolved_connection_state({
                        .type = BLE_ADDR_RANDOM,
                        .bda = bd_addr,
                    });
-                   promise.set_value(btif_dm_get_connection_state(bd_addr));
+                   state |= btif_dm_get_connection_state(bd_addr);
+                   promise.set_value(state);
                  },
                  bd_addr, std::move(promise))));
   return future.get();
