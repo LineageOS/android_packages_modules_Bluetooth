@@ -68,7 +68,6 @@ struct btm_inq_db_reset btm_inq_db_reset;
 struct btm_inq_find_bdaddr btm_inq_find_bdaddr;
 struct btm_inq_remote_name_timer_timeout btm_inq_remote_name_timer_timeout;
 struct btm_inq_rmt_name_failed_cancelled btm_inq_rmt_name_failed_cancelled;
-struct btm_inq_stop_on_ssp btm_inq_stop_on_ssp;
 struct btm_process_inq_complete btm_process_inq_complete;
 struct btm_process_remote_name btm_process_remote_name;
 struct btm_set_eir_uuid btm_set_eir_uuid;
@@ -249,10 +248,6 @@ void btm_inq_remote_name_timer_timeout(void* data) {
 void btm_inq_rmt_name_failed_cancelled(void) {
   inc_func_call_count(__func__);
   test::mock::stack_btm_inq::btm_inq_rmt_name_failed_cancelled();
-}
-void btm_inq_stop_on_ssp(void) {
-  inc_func_call_count(__func__);
-  test::mock::stack_btm_inq::btm_inq_stop_on_ssp();
 }
 void btm_process_inq_complete(tHCI_STATUS status, uint8_t mode) {
   inc_func_call_count(__func__);

@@ -420,15 +420,6 @@ struct btm_inq_rmt_name_failed_cancelled {
 extern struct btm_inq_rmt_name_failed_cancelled
     btm_inq_rmt_name_failed_cancelled;
 
-// Name: btm_inq_stop_on_ssp
-// Params: void
-// Return: void
-struct btm_inq_stop_on_ssp {
-  std::function<void(void)> body{[](void) {}};
-  void operator()(void) { body(); };
-};
-extern struct btm_inq_stop_on_ssp btm_inq_stop_on_ssp;
-
 // Name: btm_process_inq_complete
 // Params: tHCI_STATUS status, uint8_t mode
 // Return: void
