@@ -1279,6 +1279,7 @@ public class AdapterService extends Service {
             errorLog(
                     "Cannot switch buffer size. The number of A2DP active devices is "
                             + activeDevices.size());
+            return;
         }
 
         // Send intent to fastpair
