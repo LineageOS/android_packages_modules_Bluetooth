@@ -162,9 +162,6 @@ void btif_sock_cleanup(void) {
 
 void btif_sock_connection_logger(int state, int role, const RawAddress& addr,
                                  int channel, const char* server_name) {
-  log::info("address={}, state={}, role={}, server_name={}, channel={}",
-            ADDRESS_TO_LOGGABLE_CSTR(addr), state, role, server_name, channel);
-
   uint8_t index = logger_index++ % SOCK_LOGGER_SIZE_MAX;
 
   connection_logger[index] = {
@@ -270,6 +267,11 @@ static bt_status_t btsock_listen(btsock_type_t type, const char* service_name,
   *sock_fd = INVALID_FD;
   bt_status_t status = BT_STATUS_FAIL;
 
+  log::info(
+      "Attempting listen for socket connections for device: {}, type: {}, "
+      "channel: {}, "
+      "app_uid: {}",
+      ADDRESS_TO_LOGGABLE_CSTR(RawAddress::kEmpty), type, channel, app_uid);
   log_socket_connection_state(RawAddress::kEmpty, 0, type,
                               android::bluetooth::SocketConnectionstateEnum::
                                   SOCKET_CONNECTION_STATE_LISTENING,
@@ -298,6 +300,11 @@ static bt_status_t btsock_listen(btsock_type_t type, const char* service_name,
       break;
   }
   if (status != BT_STATUS_SUCCESS) {
+    log::error(
+        "failed to listen for socket connections for device: {}, type: {}, "
+        "channel: {}, "
+        "app_uid: {}",
+        ADDRESS_TO_LOGGABLE_CSTR(RawAddress::kEmpty), type, channel, app_uid);
     btif_sock_connection_logger(SOCKET_CONNECTION_STATE_DISCONNECTED,
                                 SOCKET_ROLE_LISTEN, RawAddress::kEmpty, channel,
                                 service_name);
@@ -316,7 +323,10 @@ static bt_status_t btsock_connect(const RawAddress* bd_addr, btsock_type_t type,
   CHECK(bd_addr != NULL);
   CHECK(sock_fd != NULL);
 
-  log::info("");
+  log::info(
+      "Attempting socket connection for device: {}, type: {}, channel: {}, "
+      "app_uid: {}",
+      ADDRESS_TO_LOGGABLE_CSTR(*bd_addr), type, channel, app_uid);
 
   *sock_fd = INVALID_FD;
   bt_status_t status = BT_STATUS_FAIL;
@@ -368,6 +378,10 @@ static bt_status_t btsock_connect(const RawAddress* bd_addr, btsock_type_t type,
       break;
   }
   if (status != BT_STATUS_SUCCESS) {
+    log::error(
+        "Socket connection failed for device: {}, type: {}, channel: {}, "
+        "app_uid: {}",
+        ADDRESS_TO_LOGGABLE_CSTR(*bd_addr), type, channel, app_uid);
     btif_sock_connection_logger(SOCKET_CONNECTION_STATE_DISCONNECTED,
                                 SOCKET_ROLE_CONNECTION, *bd_addr, channel,
                                 uuid->ToString().c_str());

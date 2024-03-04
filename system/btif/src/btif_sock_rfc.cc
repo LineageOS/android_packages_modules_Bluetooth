@@ -434,6 +434,11 @@ static void cleanup_rfc_slot(rfc_slot_t* slot) {
   if (slot->fd != INVALID_FD) {
     shutdown(slot->fd, SHUT_RDWR);
     close(slot->fd);
+    log::info(
+        "disconnected from RFCOMM socket connections for device: {}, scn: {}, "
+        "app_uid: {}, id: {}",
+        ADDRESS_TO_LOGGABLE_CSTR(slot->addr), slot->scn, slot->app_uid,
+        slot->id);
     btif_sock_connection_logger(
         SOCKET_CONNECTION_STATE_DISCONNECTED,
         slot->role ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, slot->addr,
@@ -533,6 +538,10 @@ static void on_srv_rfc_listen_started(tBTA_JV_RFCOMM_START* p_start,
   }
 
   slot->rfc_handle = p_start->handle;
+  log::info(
+      "listening for RFCOMM socket connections for device: {}, scn: {}, "
+      "app_uid: {}, id: {}",
+      ADDRESS_TO_LOGGABLE_CSTR(slot->addr), slot->scn, slot->app_uid, id);
   btif_sock_connection_logger(
       SOCKET_CONNECTION_STATE_LISTENING,
       slot->role ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, slot->addr,
@@ -561,6 +570,11 @@ static uint32_t on_srv_rfc_connect(tBTA_JV_RFCOMM_SRV_OPEN* p_open,
       srv_rs, &p_open->rem_bda, p_open->handle, p_open->new_listen_handle);
   if (!accept_rs) return 0;
 
+  log::info(
+      "connected to RFCOMM socket connections for device: {}, scn: {}, "
+      "app_uid: {}, id: {}",
+      ADDRESS_TO_LOGGABLE_CSTR(accept_rs->addr), accept_rs->scn,
+      accept_rs->app_uid, id);
   btif_sock_connection_logger(
       SOCKET_CONNECTION_STATE_CONNECTED,
       accept_rs->role ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION,
@@ -603,6 +617,10 @@ static void on_cli_rfc_connect(tBTA_JV_RFCOMM_OPEN* p_open, uint32_t id) {
   slot->rfc_port_handle = BTA_JvRfcommGetPortHdl(p_open->handle);
   slot->addr = p_open->rem_bda;
 
+  log::info(
+      "connected to RFCOMM socket connections for device: {}, scn: {}, "
+      "app_uid: {}, id: {}",
+      ADDRESS_TO_LOGGABLE_CSTR(slot->addr), slot->scn, slot->app_uid, id);
   btif_sock_connection_logger(
       SOCKET_CONNECTION_STATE_CONNECTED,
       slot->role ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, slot->addr,
