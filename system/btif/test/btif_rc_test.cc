@@ -17,6 +17,7 @@
 #undef LOG_TAG  // Undefine the LOG_TAG by this compilation unit
 #include "btif/src/btif_rc.cc"
 
+#include <bluetooth/log.h>
 #include <gtest/gtest.h>
 
 #include <cstdint>
@@ -107,7 +108,7 @@ static bluetooth::common::MessageLoopThread jni_thread("bt_jni_thread");
 bt_status_t do_in_jni_thread(const base::Location& from_here,
                              base::OnceClosure task) {
   if (!jni_thread.DoInThread(from_here, std::move(task))) {
-    LOG(ERROR) << __func__ << ": Post task to task runner failed!";
+    log::error("Post task to task runner failed!");
     return BT_STATUS_FAIL;
   }
   return BT_STATUS_SUCCESS;
@@ -264,7 +265,7 @@ TEST_F(BtifRcWithCallbacksTest, handle_rc_ctrl_features) {
 
   CHECK(std::future_status::ready == future.wait_for(std::chrono::seconds(2)));
   auto res = future.get();
-  LOG_INFO("FEATURES:%d", res.feature);
+  log::info("FEATURES:{}", res.feature);
   CHECK(res.feature == (BTRC_FEAT_ABSOLUTE_VOLUME | BTRC_FEAT_METADATA |
                         BTRC_FEAT_BROWSE | BTRC_FEAT_COVER_ARTWORK));
 }
