@@ -37,6 +37,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.BatteryManager;
@@ -74,6 +75,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Provides Bluetooth Headset and Handsfree profile, as a service in the Bluetooth application.
@@ -1179,6 +1181,30 @@ public class HeadsetService extends ProfileService {
             } else {
                 stateMachine.sendMessage(HeadsetStateMachine.VOICE_RECOGNITION_START, device);
             }
+            if (Flags.isScoManagedByAudio()) {
+                // when isScoManagedByAudio is on, tell AudioManager to connect SCO
+                AudioManager am = mSystemInterface.getAudioManager();
+                BluetoothDevice finalDevice = device;
+                Optional<AudioDeviceInfo> audioDeviceInfo =
+                        am.getAvailableCommunicationDevices().stream()
+                                .filter(
+                                        x ->
+                                                x.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_SCO
+                                                        && x.getAddress()
+                                                                .equals(finalDevice.getAddress()))
+                                .findFirst();
+                if (audioDeviceInfo.isPresent()) {
+                    am.setCommunicationDevice(audioDeviceInfo.get());
+                    Log.i(TAG, "Audio Manager will initiate the SCO connection");
+                    return true;
+                }
+                Log.w(
+                        TAG,
+                        "Cannot find audioDeviceInfo that matches device="
+                                + device
+                                + " to create the SCO");
+                return false;
+            }
             stateMachine.sendMessage(HeadsetStateMachine.CONNECT_AUDIO, device);
         }
         return true;
@@ -1209,6 +1235,10 @@ public class HeadsetService extends ProfileService {
             }
             mVoiceRecognitionStarted = false;
             stateMachine.sendMessage(HeadsetStateMachine.VOICE_RECOGNITION_STOP, device);
+            if (Flags.isScoManagedByAudio()) {
+                mSystemInterface.getAudioManager().clearCommunicationDevice();
+                return true;
+            }
             stateMachine.sendMessage(HeadsetStateMachine.DISCONNECT_AUDIO, device);
         }
         return true;
