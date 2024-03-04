@@ -151,8 +151,6 @@ static rfc_slot_t* find_free_slot(void) {
 }
 
 static rfc_slot_t* find_rfc_slot_by_id(uint32_t id) {
-  CHECK(id != 0);
-
   for (size_t i = 0; i < ARRAY_SIZE(rfc_slots); ++i)
     if (rfc_slots[i].id == id) return &rfc_slots[i];
 
@@ -757,7 +755,7 @@ static void jv_dm_cback(tBTA_JV_EVT event, tBTA_JV* p_data, uint32_t id) {
       rs->scn = p_data->scn;
       // Send channel ID to java layer
       if (!send_app_scn(rs)) {
-        log::warn("send_app_scn() failed, closing rs->id:{}", rs->id);
+        log::warn("send_app_scn() failed, closing rs->id:{}", id);
         cleanup_rfc_slot(rs);
         break;
       }
@@ -765,7 +763,7 @@ static void jv_dm_cback(tBTA_JV_EVT event, tBTA_JV* p_data, uint32_t id) {
       if (rs->is_service_uuid_valid) {
         // BTA_JvCreateRecordByUser will only create a record if a UUID is
         // specified. RFC-only profiles
-        BTA_JvCreateRecordByUser(rs->id);
+        BTA_JvCreateRecordByUser(id);
       } else {
         // If uuid is null, just allocate a RFC channel and start the RFCOMM
         // thread needed for the java layer to get a RFCOMM channel.
@@ -776,7 +774,7 @@ static void jv_dm_cback(tBTA_JV_EVT event, tBTA_JV* p_data, uint32_t id) {
             "the RFCOMM server");
         // now start the rfcomm server after sdp & channel # assigned
         BTA_JvRfcommStartServer(rs->security, rs->role, rs->scn,
-                                MAX_RFC_SESSION, rfcomm_cback, rs->id);
+                                MAX_RFC_SESSION, rfcomm_cback, id);
       }
       break;
     }
@@ -804,7 +802,7 @@ static void jv_dm_cback(tBTA_JV_EVT event, tBTA_JV* p_data, uint32_t id) {
 
       // Start the rfcomm server after sdp & channel # assigned.
       BTA_JvRfcommStartServer(slot->security, slot->role, slot->scn,
-                              MAX_RFC_SESSION, rfcomm_cback, slot->id);
+                              MAX_RFC_SESSION, rfcomm_cback, id);
       break;
     }
 
