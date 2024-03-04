@@ -22,6 +22,7 @@
 
 #include <base/functional/bind.h>
 #include <base/location.h>
+#include <bluetooth/log.h>
 #include <hardware/bluetooth.h>
 #include <stdlib.h>
 
@@ -38,12 +39,11 @@
  *  Constants & Macros
  ******************************************************************************/
 
-#define ASSERTC(cond, msg, val)                                               \
-  do {                                                                        \
-    if (!(cond)) {                                                            \
-      LOG_ERROR("### ASSERT : %s %s line %d %s (%d) ###", __FILE__, __func__, \
-                __LINE__, (msg), (val));                                      \
-    }                                                                         \
+#define ASSERTC(cond, msg, val)                                        \
+  do {                                                                 \
+    if (!(cond)) {                                                     \
+      bluetooth::log::error("### ASSERT : {} ({}) ###", (msg), (val)); \
+    }                                                                  \
   } while (0)
 
 /*
@@ -63,14 +63,14 @@
 #define maybe_non_aligned_memcpy(_a, _b, _c) \
   memcpy((void*)(_a), (void*)(_b), (_c))
 
-#define HAL_CBACK(P_CB, P_CBACK, ...)                              \
-  do {                                                             \
-    if ((P_CB) && (P_CB)->P_CBACK) {                               \
-      LOG_VERBOSE("%s: HAL %s->%s", __func__, #P_CB, #P_CBACK);    \
-      (P_CB)->P_CBACK(__VA_ARGS__);                                \
-    } else {                                                       \
-      ASSERTC(0, "Callback is NULL", 0);                           \
-    }                                                              \
+#define HAL_CBACK(P_CB, P_CBACK, ...)                         \
+  do {                                                        \
+    if ((P_CB) && (P_CB)->P_CBACK) {                          \
+      bluetooth::log::verbose("HAL {}->{}", #P_CB, #P_CBACK); \
+      (P_CB)->P_CBACK(__VA_ARGS__);                           \
+    } else {                                                  \
+      ASSERTC(0, "Callback is NULL", 0);                      \
+    }                                                         \
   } while (0)
 
 /*******************************************************************************
