@@ -22,6 +22,7 @@
 
 #include <base/functional/callback.h>
 #include <base/logging.h>
+#include <bluetooth/log.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_sock.h>
@@ -48,6 +49,7 @@ bool btif_get_address_type(const RawAddress& bda, tBLE_ADDR_TYPE* p_addr_type);
 bool btif_get_device_type(const RawAddress& bda, int* p_device_type);
 
 using bluetooth::Uuid;
+using namespace bluetooth;
 
 static bt_status_t btsock_listen(btsock_type_t type, const char* service_name,
                                  const Uuid* uuid, int channel, int* sock_fd,
@@ -105,32 +107,32 @@ bt_status_t btif_sock_init(uid_set_t* uid_set) {
   btsock_thread_init();
   thread_handle = btsock_thread_create(btsock_signaled, NULL);
   if (thread_handle == -1) {
-    LOG_ERROR("%s unable to create btsock_thread.", __func__);
+    log::error("unable to create btsock_thread.");
     goto error;
   }
 
   status = btsock_rfc_init(thread_handle, uid_set);
   if (status != BT_STATUS_SUCCESS) {
-    LOG_ERROR("%s error initializing RFCOMM sockets: %d", __func__, status);
+    log::error("error initializing RFCOMM sockets: {}", status);
     goto error;
   }
 
   status = btsock_l2cap_init(thread_handle, uid_set);
   if (status != BT_STATUS_SUCCESS) {
-    LOG_ERROR("%s error initializing L2CAP sockets: %d", __func__, status);
+    log::error("error initializing L2CAP sockets: {}", status);
     goto error;
   }
 
   thread = thread_new("btif_sock");
   if (!thread) {
-    LOG_ERROR("%s error creating new thread.", __func__);
+    log::error("error creating new thread.");
     btsock_rfc_cleanup();
     goto error;
   }
 
   status = btsock_sco_init(thread);
   if (status != BT_STATUS_SUCCESS) {
-    LOG_ERROR("%s error initializing SCO sockets: %d", __func__, status);
+    log::error("error initializing SCO sockets: {}", status);
     btsock_rfc_cleanup();
     goto error;
   }
@@ -160,8 +162,8 @@ void btif_sock_cleanup(void) {
 
 void btif_sock_connection_logger(int state, int role, const RawAddress& addr,
                                  int channel, const char* server_name) {
-  LOG_INFO("address=%s, state=%d, role=%d, server_name=%s, channel=%d",
-           ADDRESS_TO_LOGGABLE_CSTR(addr), state, role, server_name, channel);
+  log::info("address={}, state={}, role={}, server_name={}, channel={}",
+            ADDRESS_TO_LOGGABLE_CSTR(addr), state, role, server_name, channel);
 
   uint8_t index = logger_index++ % SOCK_LOGGER_SIZE_MAX;
 
@@ -288,15 +290,13 @@ static bt_status_t btsock_listen(btsock_type_t type, const char* service_name,
         /* Set channel to zero so that it will be assigned */
         channel = 0;
       } else if (channel <= 0) {
-        LOG_ERROR("%s: type BTSOCK_L2CAP_LE: invalid channel=%d", __func__,
-                  channel);
+        log::error("type BTSOCK_L2CAP_LE: invalid channel={}", channel);
         break;
       }
       flags |= BTSOCK_FLAG_LE_COC;
-      LOG_INFO(
-
-          "%s: type=BTSOCK_L2CAP_LE, channel=0x%x, original=0x%x, flags=0x%x",
-          __func__, channel, original_channel, flags);
+      log::info(
+          "type=BTSOCK_L2CAP_LE, channel=0x{:x}, original=0x{:x}, flags=0x{:x}",
+          channel, original_channel, flags);
       status =
           btsock_l2cap_listen(service_name, channel, sock_fd, flags, app_uid);
       break;
@@ -305,7 +305,7 @@ static bt_status_t btsock_listen(btsock_type_t type, const char* service_name,
       break;
 
     default:
-      LOG_ERROR("%s unknown/unsupported socket type: %d", __func__, type);
+      log::error("unknown/unsupported socket type: {}", type);
       status = BT_STATUS_UNSUPPORTED;
       break;
   }
@@ -328,7 +328,7 @@ static bt_status_t btsock_connect(const RawAddress* bd_addr, btsock_type_t type,
   CHECK(bd_addr != NULL);
   CHECK(sock_fd != NULL);
 
-  LOG_INFO("%s", __func__);
+  log::info("");
 
   *sock_fd = INVALID_FD;
   bt_status_t status = BT_STATUS_FAIL;
@@ -364,8 +364,8 @@ static bt_status_t btsock_connect(const RawAddress* bd_addr, btsock_type_t type,
         BTA_DmAddBleDevice(*bd_addr, addr_type, device_type);
       }
 
-      LOG_INFO("%s: type=BTSOCK_L2CAP_LE, channel=0x%x, flags=0x%x", __func__,
-               channel, flags);
+      log::info("type=BTSOCK_L2CAP_LE, channel=0x{:x}, flags=0x{:x}", channel,
+                flags);
       status = btsock_l2cap_connect(bd_addr, channel, sock_fd, flags, app_uid);
       break;
     }
@@ -375,7 +375,7 @@ static bt_status_t btsock_connect(const RawAddress* bd_addr, btsock_type_t type,
       break;
 
     default:
-      LOG_ERROR("%s unknown/unsupported socket type: %d", __func__, type);
+      log::error("unknown/unsupported socket type: {}", type);
       status = BT_STATUS_UNSUPPORTED;
       break;
   }
@@ -408,8 +408,8 @@ static void btsock_signaled(int fd, int type, int flags, uint32_t user_id) {
       btsock_l2cap_signaled(fd, flags, user_id);
       break;
     default:
-      LOG(FATAL) << "Invalid socket type! type=" << type << " fd=" << fd
-                 << " flags=" << flags << " user_id=" << user_id;
+      log::fatal("Invalid socket type! type={} fd={} flags={} user_id={}", type,
+                 fd, flags, user_id);
       break;
   }
 }
@@ -421,8 +421,7 @@ static bt_status_t btsock_disconnect_all(const RawAddress* bd_addr) {
   bt_status_t l2cap_status = btsock_l2cap_disconnect(bd_addr);
   /* SCO is disconnected via btif_hf, so is not handled here. */
 
-  LOG_INFO("%s: rfc status: %d, l2cap status: %d", __func__, rfc_status,
-           l2cap_status);
+  log::info("rfc status: {}, l2cap status: {}", rfc_status, l2cap_status);
 
   /* Return error status, if any. */
   if (rfc_status == BT_STATUS_SUCCESS) {

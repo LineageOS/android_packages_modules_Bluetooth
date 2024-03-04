@@ -28,6 +28,7 @@
 
 #define LOG_TAG "bt_btif_sdp_server"
 
+#include <bluetooth/log.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_sdp.h>
 #include <pthread.h>
@@ -50,6 +51,7 @@
 #include "utl.h"
 
 using namespace bluetooth::legacy::stack::sdp;
+using namespace bluetooth;
 
 // Protects the sdp_slots array from concurrent access.
 static std::recursive_mutex sdp_lock;
@@ -68,6 +70,11 @@ typedef struct {
   int sdp_handle;
   bluetooth_sdp_record* record_data;
 } sdp_slot_t;
+
+namespace fmt {
+template <>
+struct formatter<sdp_state_t> : enum_formatter<sdp_state_t> {};
+}  // namespace fmt
 
 #define MAX_SDP_SLOTS 128
 static sdp_slot_t sdp_slots[MAX_SDP_SLOTS];
@@ -109,13 +116,13 @@ static void init_sdp_slots() {
 }
 
 bt_status_t sdp_server_init() {
-  LOG_VERBOSE("Sdp Server %s", __func__);
+  log::verbose("Sdp Server Init");
   init_sdp_slots();
   return BT_STATUS_SUCCESS;
 }
 
 void sdp_server_cleanup() {
-  LOG_VERBOSE("Sdp Server %s", __func__);
+  log::verbose("Sdp Server Cleanup");
   std::unique_lock<std::recursive_mutex> lock(sdp_lock);
   int i;
   for (i = 0; i < MAX_SDP_SLOTS; i++) {
@@ -213,7 +220,7 @@ static int alloc_sdp_slot(bluetooth_sdp_record* in_record) {
       }
     }
   }
-  LOG_ERROR("%s() failed - no more free slots!", __func__);
+  log::error("failed - no more free slots!");
   /* Rearly the optimist is too optimistic, and cleanup is needed...*/
   osi_free(record);
   return -1;
@@ -223,7 +230,7 @@ static int free_sdp_slot(int id) {
   int handle = -1;
   bluetooth_sdp_record* record = NULL;
   if (id < 0 || id >= MAX_SDP_SLOTS) {
-    LOG_ERROR("%s() failed - id %d is invalid", __func__, id);
+    log::error("failed - id {} is invalid", id);
     return handle;
   }
 
@@ -253,17 +260,16 @@ static int free_sdp_slot(int id) {
  */
 static const sdp_slot_t* start_create_sdp(int id) {
   if (id >= MAX_SDP_SLOTS) {
-    LOG_ERROR("%s() failed - id %d is invalid", __func__, id);
+    log::error("failed - id {} is invalid", id);
     return NULL;
   }
 
   std::unique_lock<std::recursive_mutex> lock(sdp_lock);
   if (sdp_slots[id].state != SDP_RECORD_ALLOCED) {
     /* The record have been removed before this event occurred - e.g. deinit */
-    LOG_ERROR(
-        "%s() failed - state for id %d is "
-        "sdp_slots[id].state = %d expected %d",
-        __func__, id, sdp_slots[id].state, SDP_RECORD_ALLOCED);
+    log::error(
+        "failed - state for id {} is sdp_slots[id].state = {} expected {}", id,
+        sdp_slots[id].state, SDP_RECORD_ALLOCED);
     return NULL;
   }
 
@@ -280,7 +286,7 @@ bt_status_t create_sdp_record(bluetooth_sdp_record* record,
   int handle;
 
   handle = alloc_sdp_slot(record);
-  LOG_VERBOSE("%s() handle = 0x%08x", __func__, handle);
+  log::verbose("handle = 0x{:08x}", handle);
 
   if (handle < 0) return BT_STATUS_FAIL;
 
@@ -332,16 +338,14 @@ bt_status_t remove_sdp_record(int record_id) {
 
   /* Get the Record handle, and free the slot */
   handle = free_sdp_slot(record_id);
-  LOG_VERBOSE("Sdp Server %s id=%d to handle=0x%08x", __func__, record_id,
-              handle);
+  log::verbose("Sdp Server id={} to handle=0x{:08x}", record_id, handle);
 
   /* Pass the actual record handle */
   if (handle > 0) {
     BTA_SdpRemoveRecordByUser(INT_TO_PTR(handle));
     return BT_STATUS_SUCCESS;
   }
-  LOG_VERBOSE("Sdp Server %s - record already removed - or never created",
-              __func__);
+  log::verbose("Sdp Server - record already removed - or never created");
   return BT_STATUS_FAIL;
 }
 
@@ -357,7 +361,7 @@ void on_create_record_event(int id) {
    * 3) Update state on completion
    * 4) What to do at fail?
    * */
-  LOG_VERBOSE("Sdp Server %s", __func__);
+  log::verbose("Sdp Server");
   const sdp_slot_t* sdp_slot = start_create_sdp(id);
   tBTA_SERVICE_ID service_id = -1;
   bluetooth_sdp_record* record;
@@ -397,7 +401,7 @@ void on_create_record_event(int id) {
         }
         break;
       default:
-        LOG_VERBOSE("Record type %d is not supported", record->hdr.type);
+        log::verbose("Record type {} is not supported", record->hdr.type);
         break;
     }
     if (handle != -1) {
@@ -419,14 +423,14 @@ void on_create_record_event(int id) {
 }
 
 void on_remove_record_event(int handle) {
-  LOG_VERBOSE("Sdp Server %s", __func__);
+  log::verbose("Sdp Server");
 
   // User data carries the actual SDP handle, not the ID.
   if (handle != -1 && handle != 0) {
     bool result;
     result = get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(handle);
     if (!result) {
-      LOG_ERROR("  Unable to remove handle 0x%08x", handle);
+      log::error("Unable to remove handle 0x{:08x}", handle);
     }
   }
 }
@@ -449,7 +453,7 @@ static int add_maps_sdp(const bluetooth_sdp_mas_record* rec) {
 
   sdp_handle = get_legacy_stack_sdp_api()->handle.SDP_CreateRecord();
   if (sdp_handle == 0) {
-    LOG_ERROR("Unable to register MAPS Service");
+    log::error("Unable to register MAPS Service");
     return sdp_handle;
   }
 
@@ -510,10 +514,10 @@ static int add_maps_sdp(const bluetooth_sdp_mas_record* rec) {
   if (!status) {
     get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(sdp_handle);
     sdp_handle = 0;
-    LOG_ERROR("%s() FAILED", __func__);
+    log::error("FAILED");
   } else {
     bta_sys_add_uuid(service); /* UUID_SERVCLASS_MESSAGE_ACCESS */
-    LOG_VERBOSE("%s():  SDP Registered (handle 0x%08x)", __func__, sdp_handle);
+    log::verbose("SDP Registered (handle 0x{:08x})", sdp_handle);
   }
   return sdp_handle;
 }
@@ -531,7 +535,7 @@ static int add_mapc_sdp(const bluetooth_sdp_mns_record* rec) {
 
   sdp_handle = get_legacy_stack_sdp_api()->handle.SDP_CreateRecord();
   if (sdp_handle == 0) {
-    LOG_ERROR("Unable to register MAP Notification Service");
+    log::error("Unable to register MAP Notification Service");
     return sdp_handle;
   }
 
@@ -582,10 +586,10 @@ static int add_mapc_sdp(const bluetooth_sdp_mns_record* rec) {
   if (!status) {
     get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(sdp_handle);
     sdp_handle = 0;
-    LOG_ERROR("%s() FAILED", __func__);
+    log::error("FAILED");
   } else {
     bta_sys_add_uuid(service); /* UUID_SERVCLASS_MESSAGE_ACCESS */
-    LOG_VERBOSE("%s():  SDP Registered (handle 0x%08x)", __func__, sdp_handle);
+    log::verbose("SDP Registered (handle 0x{:08x})", sdp_handle);
   }
   return sdp_handle;
 }
@@ -600,7 +604,7 @@ static int add_pbapc_sdp(const bluetooth_sdp_pce_record* rec) {
 
   sdp_handle = get_legacy_stack_sdp_api()->handle.SDP_CreateRecord();
   if (sdp_handle == 0) {
-    LOG_ERROR("Unable to register PBAP Client Service");
+    log::error("Unable to register PBAP Client Service");
     return sdp_handle;
   }
 
@@ -624,11 +628,11 @@ static int add_pbapc_sdp(const bluetooth_sdp_pce_record* rec) {
   if (!status) {
     get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(sdp_handle);
     sdp_handle = 0;
-    LOG_ERROR("%s() FAILED", __func__);
+    log::error("FAILED");
     return sdp_handle;
   }
   bta_sys_add_uuid(service); /* UUID_SERVCLASS_PBAP_PCE */
-  LOG_VERBOSE("%s():  SDP Registered (handle 0x%08x)", __func__, sdp_handle);
+  log::verbose("SDP Registered (handle 0x{:08x})", sdp_handle);
   return sdp_handle;
 }
 
@@ -645,7 +649,7 @@ static int add_pbaps_sdp(const bluetooth_sdp_pse_record* rec) {
 
   sdp_handle = get_legacy_stack_sdp_api()->handle.SDP_CreateRecord();
   if (sdp_handle == 0) {
-    LOG_ERROR("Unable to register PBAP Server Service");
+    log::error("Unable to register PBAP Server Service");
     return sdp_handle;
   }
 
@@ -688,8 +692,8 @@ static int add_pbaps_sdp(const bluetooth_sdp_pse_record* rec) {
     status &= get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
         sdp_handle, ATTR_ID_SUPPORTED_REPOSITORIES, UINT_DESC_TYPE, (uint32_t)1,
         (uint8_t*)&supported_repositories_1_1);
-    LOG_VERBOSE(" supported_repositories_1_1: 0x%x",
-                supported_repositories_1_1);
+    log::verbose("supported_repositories_1_1: 0x{:x}",
+                 supported_repositories_1_1);
     sdp_save_local_pse_record_attributes(
         rec->hdr.rfcomm_channel_number, rec->hdr.l2cap_psm,
         rec->hdr.profile_version, rec->supported_features,
@@ -754,10 +758,10 @@ static int add_pbaps_sdp(const bluetooth_sdp_pse_record* rec) {
   if (!status) {
     get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(sdp_handle);
     sdp_handle = 0;
-    LOG_ERROR("%s() FAILED", __func__);
+    log::error("FAILED");
   } else {
     bta_sys_add_uuid(service); /* UUID_SERVCLASS_MESSAGE_ACCESS */
-    LOG_VERBOSE("%s():  SDP Registered (handle 0x%08x)", __func__, sdp_handle);
+    log::verbose("SDP Registered (handle 0x{:08x})", sdp_handle);
   }
   return sdp_handle;
 }
@@ -780,7 +784,7 @@ static int add_opps_sdp(const bluetooth_sdp_ops_record* rec) {
 
   sdp_handle = get_legacy_stack_sdp_api()->handle.SDP_CreateRecord();
   if (sdp_handle == 0) {
-    LOG_ERROR("Unable to register Object Push Server Service");
+    log::error("Unable to register Object Push Server Service");
     return sdp_handle;
   }
 
@@ -837,14 +841,14 @@ static int add_opps_sdp(const bluetooth_sdp_ops_record* rec) {
   if (!status) {
     get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(sdp_handle);
     sdp_handle = 0;
-    LOG_ERROR("%s() FAILED", __func__);
+    log::error("FAILED");
   } else {
     /* set class of device */
     cod.service = BTM_COD_SERVICE_OBJ_TRANSFER;
     utl_set_device_class(&cod, BTA_UTL_SET_COD_SERVICE_CLASS);
 
     bta_sys_add_uuid(service); /* UUID_SERVCLASS_OBEX_OBJECT_PUSH */
-    LOG_VERBOSE("%s():  SDP Registered (handle 0x%08x)", __func__, sdp_handle);
+    log::verbose("SDP Registered (handle 0x{:08x})", sdp_handle);
   }
   return sdp_handle;
 }
@@ -860,7 +864,7 @@ static int add_saps_sdp(const bluetooth_sdp_sap_record* rec) {
 
   sdp_handle = get_legacy_stack_sdp_api()->handle.SDP_CreateRecord();
   if (sdp_handle == 0) {
-    LOG_ERROR("Unable to register SAPS Service");
+    log::error("Unable to register SAPS Service");
     return sdp_handle;
   }
 
@@ -898,10 +902,10 @@ static int add_saps_sdp(const bluetooth_sdp_sap_record* rec) {
   if (!status) {
     get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(sdp_handle);
     sdp_handle = 0;
-    LOG_ERROR("%s(): FAILED deleting record", __func__);
+    log::error("FAILED deleting record");
   } else {
     bta_sys_add_uuid(UUID_SERVCLASS_SAP);
-    LOG_VERBOSE("%s(): SDP Registered (handle 0x%08x)", __func__, sdp_handle);
+    log::verbose("SDP Registered (handle 0x{:08x})", sdp_handle);
   }
   return sdp_handle;
 }
@@ -916,7 +920,7 @@ static int add_mps_sdp(const bluetooth_sdp_mps_record* rec) {
 
   sdp_handle = get_legacy_stack_sdp_api()->handle.SDP_CreateRecord();
   if (sdp_handle == 0) {
-    LOG_ERROR("Unable to register MPS record");
+    log::error("Unable to register MPS record");
     return sdp_handle;
   }
 
@@ -947,10 +951,10 @@ static int add_mps_sdp(const bluetooth_sdp_mps_record* rec) {
   if (!status) {
     get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(sdp_handle);
     sdp_handle = 0;
-    LOG_ERROR("%s() FAILED", __func__);
+    log::error("FAILED");
     return sdp_handle;
   }
   bta_sys_add_uuid(service); /* UUID_SERVCLASS_MPS_SC */
-  LOG_VERBOSE("%s():  SDP Registered (handle 0x%08x)", __func__, sdp_handle);
+  log::verbose("SDP Registered (handle 0x{:08x})", sdp_handle);
   return sdp_handle;
 }

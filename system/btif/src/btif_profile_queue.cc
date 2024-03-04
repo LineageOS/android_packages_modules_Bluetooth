@@ -32,6 +32,7 @@
 #include <base/functional/callback.h>
 #include <base/logging.h>
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 #include <string.h>
 
 #include <list>
@@ -40,6 +41,8 @@
 #include "btif_common.h"
 #include "include/check.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth;
 
 /*******************************************************************************
  *  Local type definitions
@@ -101,13 +104,13 @@ static void queue_int_add(uint16_t uuid, const RawAddress& bda,
   ConnectNode param(bda, uuid, connect_cb);
   for (const auto& node : connect_queue) {
     if (node.uuid() == param.uuid() && node.address() == param.address()) {
-      LOG_ERROR("Dropping duplicate profile connection request:%s",
-                param.ToString().c_str());
+      log::error("Dropping duplicate profile connection request:{}",
+                 param.ToString());
       return;
     }
   }
 
-  LOG_INFO("Queueing profile connection request:%s", param.ToString().c_str());
+  log::info("Queueing profile connection request:{}", param.ToString());
   connect_queue.push_back(param);
 
   btif_queue_connect_next();
@@ -117,22 +120,20 @@ static void queue_int_advance() {
   if (connect_queue.empty()) return;
 
   const ConnectNode& head = connect_queue.front();
-  LOG_INFO("%s: removing connection request: %s", __func__,
-           head.ToString().c_str());
+  log::info("removing connection request: {}", head.ToString());
   connect_queue.pop_front();
 
   btif_queue_connect_next();
 }
 
 static void queue_int_cleanup(uint16_t uuid) {
-  LOG_INFO("%s: UUID=%04X", __func__, uuid);
+  log::info("UUID={:04X}", uuid);
 
   for (auto it = connect_queue.begin(); it != connect_queue.end();) {
     auto it_prev = it++;
     const ConnectNode& node = *it_prev;
     if (node.uuid() == uuid) {
-      LOG_INFO("%s: removing connection request: %s", __func__,
-               node.ToString().c_str());
+      log::info("removing connection request: {}", node.ToString());
       connect_queue.erase(it_prev);
     }
   }
@@ -194,11 +195,11 @@ bt_status_t btif_queue_connect_next(void) {
 
   ConnectNode& head = connect_queue.front();
 
-  LOG_INFO("Executing profile connection request:%s", head.ToString().c_str());
+  log::info("Executing profile connection request:{}", head.ToString());
   bt_status_t b_status = head.connect();
   if (b_status != BT_STATUS_SUCCESS) {
-    LOG_INFO("%s: connect %s failed, advance to next scheduled connection.",
-             __func__, head.ToString().c_str());
+    log::info("connect {} failed, advance to next scheduled connection.",
+              head.ToString());
     btif_queue_advance();
   }
   return b_status;
@@ -214,9 +215,9 @@ bt_status_t btif_queue_connect_next(void) {
  *
  ******************************************************************************/
 void btif_queue_release() {
-  LOG_INFO("%s", __func__);
+  log::info("");
   if (do_in_jni_thread(FROM_HERE, base::BindOnce(&queue_int_release)) !=
       BT_STATUS_SUCCESS) {
-    LOG(FATAL) << __func__ << ": Failed to schedule on JNI thread";
+    log::fatal("Failed to schedule on JNI thread");
   }
 }
