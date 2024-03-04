@@ -20,6 +20,7 @@
 #define BTIF_HH_H
 
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_hh.h>
 #include <pthread.h>
@@ -143,5 +144,10 @@ void btif_hh_getreport(btif_hh_device_t* p_dev, bthh_report_type_t r_type,
 void btif_hh_service_registration(bool enable);
 
 void DumpsysHid(int fd);
+
+namespace fmt {
+template <>
+struct formatter<BTIF_HH_STATUS> : enum_formatter<BTIF_HH_STATUS> {};
+}  // namespace fmt
 
 #endif

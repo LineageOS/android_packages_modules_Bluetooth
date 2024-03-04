@@ -17,6 +17,7 @@
 #include "btif_config_cache.h"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include <limits>
 #include <unordered_set>
@@ -24,6 +25,8 @@
 
 #include "storage/config_keys.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth;
 
 namespace {
 
@@ -67,7 +70,7 @@ bool trim_new_line(std::string& value) {
 
 BtifConfigCache::BtifConfigCache(size_t capacity)
     : unpaired_devices_cache_(capacity, "bt_config_cache") {
-  LOG(INFO) << __func__ << ", capacity: " << capacity;
+  log::info("capacity: {}", capacity);
 }
 
 BtifConfigCache::~BtifConfigCache() { Clear(); }
@@ -178,11 +181,11 @@ void BtifConfigCache::SetString(std::string section_name, std::string key,
   trim_new_line(key);
   trim_new_line(value);
   if (section_name.empty()) {
-    LOG(FATAL) << "Empty section not allowed";
+    log::fatal("Empty section not allowed");
     return;
   }
   if (key.empty()) {
-    LOG(FATAL) << "Empty key not allowed";
+    log::fatal("Empty key not allowed");
     return;
   }
   if (!paired_devices_list_.Has(section_name)) {
@@ -214,7 +217,7 @@ void BtifConfigCache::SetString(std::string section_name, std::string key,
     // already have section in paired device list, add key-value entry.
     auto section_found = paired_devices_list_.Find(section_name);
     if (section_found == paired_devices_list_.sections.end()) {
-      LOG(WARNING) << __func__ << " , section_found not found!";
+      log::warn("section_found not found!");
       return;
     }
     section_found->Set(key, value);
@@ -258,13 +261,14 @@ std::optional<int> BtifConfigCache::GetInt(const std::string& section_name,
   char* endptr;
   long ret_long = strtol(value->c_str(), &endptr, 0);
   if (*endptr != '\0') {
-    LOG(WARNING) << "Failed to parse value to long for section " << section_name
-                 << ", key " << key;
+    log::warn("Failed to parse value to long for section {}, key {}",
+              section_name, key);
     return std::nullopt;
   }
   if (ret_long >= std::numeric_limits<int>::max()) {
-    LOG(WARNING) << "Integer overflow when parsing value to int for section "
-                 << section_name << ", key " << key;
+    log::warn(
+        "Integer overflow when parsing value to int for section {}, key {}",
+        section_name, key);
     return std::nullopt;
   }
   return static_cast<int>(ret_long);
@@ -284,8 +288,8 @@ std::optional<uint64_t> BtifConfigCache::GetUint64(
   char* endptr;
   uint64_t ret = strtoull(value->c_str(), &endptr, 0);
   if (*endptr != '\0') {
-    LOG(WARNING) << "Failed to parse value to uint64 for section "
-                 << section_name << ", key " << key;
+    log::warn("Failed to parse value to uint64 for section {}, key {}",
+              section_name, key);
     return std::nullopt;
   }
   return ret;
@@ -308,7 +312,7 @@ std::optional<bool> BtifConfigCache::GetBool(const std::string& section_name,
   if (*value == "false") {
     return false;
   }
-  LOG(WARNING) << "Failed to parse value to boolean for section "
-               << section_name << ", key " << key;
+  log::warn("Failed to parse value to boolean for section {}, key {}",
+            section_name, key);
   return std::nullopt;
 }

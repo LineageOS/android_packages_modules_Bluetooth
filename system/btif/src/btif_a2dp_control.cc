@@ -22,6 +22,7 @@
 #include "btif_a2dp_control.h"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -35,6 +36,17 @@
 #include "udrv/include/uipc.h"
 
 #define A2DP_DATA_READ_POLL_MS 10
+
+using namespace bluetooth;
+
+namespace fmt {
+template <>
+struct formatter<tA2DP_CTRL_CMD> : enum_formatter<tA2DP_CTRL_CMD> {};
+template <>
+struct formatter<tA2DP_CTRL_ACK> : enum_formatter<tA2DP_CTRL_ACK> {};
+template <>
+struct formatter<tUIPC_EVENT> : enum_formatter<tUIPC_EVENT> {};
+}  // namespace fmt
 
 struct {
   uint64_t total_bytes_read = 0;
@@ -63,8 +75,7 @@ void btif_a2dp_control_cleanup(void) {
 
 static tA2DP_CTRL_ACK btif_a2dp_control_on_check_ready() {
   if (btif_a2dp_source_media_task_is_shutting_down()) {
-    LOG_WARN("%s: A2DP command check ready while media task shutting down",
-             __func__);
+    log::warn("A2DP command check ready while media task shutting down");
     return A2DP_CTRL_ACK_FAILURE;
   }
 
@@ -72,8 +83,7 @@ static tA2DP_CTRL_ACK btif_a2dp_control_on_check_ready() {
   if (btif_av_stream_ready() || btif_av_stream_started_ready()) {
     return A2DP_CTRL_ACK_SUCCESS;
   } else {
-    LOG_WARN("%s: A2DP command check ready while AV stream is not ready",
-             __func__);
+    log::warn("A2DP command check ready while AV stream is not ready");
     return A2DP_CTRL_ACK_FAILURE;
   }
 }
@@ -85,7 +95,7 @@ static tA2DP_CTRL_ACK btif_a2dp_control_on_start() {
    * while in a call, and respond with BAD_STATE.
    */
   if (!bluetooth::headset::IsCallIdle()) {
-    LOG_WARN("%s: A2DP command start while call state is busy", __func__);
+    log::warn("A2DP command start while call state is busy");
     return A2DP_CTRL_ACK_INCALL_FAILURE;
   }
 
@@ -112,7 +122,7 @@ static tA2DP_CTRL_ACK btif_a2dp_control_on_start() {
               A2DP_DATA_PATH);
     return A2DP_CTRL_ACK_SUCCESS;
   }
-  LOG_WARN("%s: A2DP command start while AV stream is not ready", __func__);
+  log::warn("A2DP command start while AV stream is not ready");
   return A2DP_CTRL_ACK_FAILURE;
 }
 
@@ -198,28 +208,27 @@ static void btif_a2dp_control_on_set_output_audio_config() {
                 reinterpret_cast<uint8_t*>(&codec_config.sample_rate),
                 sizeof(btav_a2dp_codec_sample_rate_t)) !=
       sizeof(btav_a2dp_codec_sample_rate_t)) {
-    LOG_ERROR("%s: Error reading sample rate from audio HAL", __func__);
+    log::error("Error reading sample rate from audio HAL");
     return;
   }
   if (UIPC_Read(*a2dp_uipc, UIPC_CH_ID_AV_CTRL,
                 reinterpret_cast<uint8_t*>(&codec_config.bits_per_sample),
                 sizeof(btav_a2dp_codec_bits_per_sample_t)) !=
       sizeof(btav_a2dp_codec_bits_per_sample_t)) {
-    LOG_ERROR("%s: Error reading bits per sample from audio HAL", __func__);
+    log::error("Error reading bits per sample from audio HAL");
     return;
   }
   if (UIPC_Read(*a2dp_uipc, UIPC_CH_ID_AV_CTRL,
                 reinterpret_cast<uint8_t*>(&codec_config.channel_mode),
                 sizeof(btav_a2dp_codec_channel_mode_t)) !=
       sizeof(btav_a2dp_codec_channel_mode_t)) {
-    LOG_ERROR("%s: Error reading channel mode from audio HAL", __func__);
+    log::error("Error reading channel mode from audio HAL");
     return;
   }
-  LOG_VERBOSE(
-      "%s: A2DP_CTRL_SET_OUTPUT_AUDIO_CONFIG: "
-      "sample_rate=0x%x bits_per_sample=0x%x "
-      "channel_mode=0x%x",
-      __func__, codec_config.sample_rate, codec_config.bits_per_sample,
+  log::verbose(
+      "A2DP_CTRL_SET_OUTPUT_AUDIO_CONFIG: sample_rate=0x{:x} "
+      "bits_per_sample=0x{:x} channel_mode=0x{:x}",
+      codec_config.sample_rate, codec_config.bits_per_sample,
       codec_config.channel_mode);
   btif_a2dp_source_feeding_update_req(codec_config);
 }
@@ -250,7 +259,7 @@ static void btif_a2dp_recv_ctrl_data(void) {
 
   /* detach on ctrl channel means audioflinger process was terminated */
   if (n == 0) {
-    LOG_WARN("%s: CTRL CH DETACHED", __func__);
+    log::warn("CTRL CH DETACHED");
     UIPC_Close(*a2dp_uipc, UIPC_CH_ID_AV_CTRL);
     return;
   }
@@ -258,11 +267,9 @@ static void btif_a2dp_recv_ctrl_data(void) {
   // Don't log A2DP_CTRL_GET_PRESENTATION_POSITION by default, because it
   // could be very chatty when audio is streaming.
   if (cmd == A2DP_CTRL_GET_PRESENTATION_POSITION) {
-    LOG_VERBOSE("%s: a2dp-ctrl-cmd : %s", __func__,
-                audio_a2dp_hw_dump_ctrl_event(cmd));
+    log::verbose("a2dp-ctrl-cmd : {}", audio_a2dp_hw_dump_ctrl_event(cmd));
   } else {
-    LOG_WARN("%s: a2dp-ctrl-cmd : %s", __func__,
-             audio_a2dp_hw_dump_ctrl_event(cmd));
+    log::warn("a2dp-ctrl-cmd : {}", audio_a2dp_hw_dump_ctrl_event(cmd));
   }
 
   a2dp_cmd_pending = cmd;
@@ -300,7 +307,7 @@ static void btif_a2dp_recv_ctrl_data(void) {
       break;
 
     default:
-      LOG_ERROR("%s: UNSUPPORTED CMD (%d)", __func__, cmd);
+      log::error("UNSUPPORTED CMD ({})", cmd);
       btif_a2dp_command_ack(A2DP_CTRL_ACK_FAILURE);
       break;
   }
@@ -308,11 +315,9 @@ static void btif_a2dp_recv_ctrl_data(void) {
   // Don't log A2DP_CTRL_GET_PRESENTATION_POSITION by default, because it
   // could be very chatty when audio is streaming.
   if (cmd == A2DP_CTRL_GET_PRESENTATION_POSITION) {
-    LOG_VERBOSE("%s: a2dp-ctrl-cmd : %s DONE", __func__,
-                audio_a2dp_hw_dump_ctrl_event(cmd));
+    log::verbose("a2dp-ctrl-cmd : {} DONE", audio_a2dp_hw_dump_ctrl_event(cmd));
   } else {
-    LOG_WARN("%s: a2dp-ctrl-cmd : %s DONE", __func__,
-             audio_a2dp_hw_dump_ctrl_event(cmd));
+    log::warn("a2dp-ctrl-cmd : {} DONE", audio_a2dp_hw_dump_ctrl_event(cmd));
   }
 }
 
@@ -320,11 +325,9 @@ static void btif_a2dp_ctrl_cb(tUIPC_CH_ID /* ch_id */, tUIPC_EVENT event) {
   // Don't log UIPC_RX_DATA_READY_EVT by default, because it
   // could be very chatty when audio is streaming.
   if (event == UIPC_RX_DATA_READY_EVT) {
-    LOG_VERBOSE("%s: A2DP-CTRL-CHANNEL EVENT %s", __func__,
-                dump_uipc_event(event));
+    log::verbose("A2DP-CTRL-CHANNEL EVENT {}", dump_uipc_event(event));
   } else {
-    LOG_WARN("%s: A2DP-CTRL-CHANNEL EVENT %s", __func__,
-             dump_uipc_event(event));
+    log::warn("A2DP-CTRL-CHANNEL EVENT {}", dump_uipc_event(event));
   }
 
   switch (event) {
@@ -343,15 +346,13 @@ static void btif_a2dp_ctrl_cb(tUIPC_CH_ID /* ch_id */, tUIPC_EVENT event) {
       break;
 
     default:
-      LOG_ERROR("%s: ### A2DP-CTRL-CHANNEL EVENT %d NOT HANDLED ###", __func__,
-                event);
+      log::error("### A2DP-CTRL-CHANNEL EVENT {} NOT HANDLED ###", event);
       break;
   }
 }
 
 static void btif_a2dp_data_cb(tUIPC_CH_ID /* ch_id */, tUIPC_EVENT event) {
-  LOG_WARN("%s: BTIF MEDIA (A2DP-DATA) EVENT %s", __func__,
-           dump_uipc_event(event));
+  log::warn("BTIF MEDIA (A2DP-DATA) EVENT {}", dump_uipc_event(event));
 
   switch (event) {
     case UIPC_OPEN_EVT:
@@ -373,14 +374,14 @@ static void btif_a2dp_data_cb(tUIPC_CH_ID /* ch_id */, tUIPC_EVENT event) {
       break;
 
     case UIPC_CLOSE_EVT:
-      LOG_VERBOSE("%s: ## AUDIO PATH DETACHED ##", __func__);
+      log::verbose("## AUDIO PATH DETACHED ##");
       btif_a2dp_command_ack(A2DP_CTRL_ACK_SUCCESS);
       /* Post stop event and wait for audio path to stop */
       btif_av_stream_stop(RawAddress::kEmpty);
       break;
 
     default:
-      LOG_ERROR("%s: ### A2DP-DATA EVENT %d NOT HANDLED ###", __func__, event);
+      log::error("### A2DP-DATA EVENT {} NOT HANDLED ###", event);
       break;
   }
 }
@@ -391,16 +392,16 @@ void btif_a2dp_command_ack(tA2DP_CTRL_ACK status) {
   // Don't log A2DP_CTRL_GET_PRESENTATION_POSITION by default, because it
   // could be very chatty when audio is streaming.
   if (a2dp_cmd_pending == A2DP_CTRL_GET_PRESENTATION_POSITION) {
-    LOG_VERBOSE("%s: ## a2dp ack : %s, status %d ##", __func__,
-                audio_a2dp_hw_dump_ctrl_event(a2dp_cmd_pending), status);
+    log::verbose("## a2dp ack : {}, status {} ##",
+                 audio_a2dp_hw_dump_ctrl_event(a2dp_cmd_pending), status);
   } else {
-    LOG_WARN("%s: ## a2dp ack : %s, status %d ##", __func__,
-             audio_a2dp_hw_dump_ctrl_event(a2dp_cmd_pending), status);
+    log::warn("## a2dp ack : {}, status {} ##",
+              audio_a2dp_hw_dump_ctrl_event(a2dp_cmd_pending), status);
   }
 
   /* Sanity check */
   if (a2dp_cmd_pending == A2DP_CTRL_CMD_NONE) {
-    LOG_ERROR("%s: warning : no command pending, ignore ack", __func__);
+    log::error("warning : no command pending, ignore ack");
     return;
   }
 
@@ -419,12 +420,12 @@ void btif_a2dp_control_log_bytes_read(uint32_t bytes_read) {
 }
 
 void btif_a2dp_control_set_audio_delay(uint16_t delay) {
-  LOG_VERBOSE("%s: DELAY: %.1f ms", __func__, (float)delay / 10);
+  log::verbose("DELAY: {:.1f} ms", (float)delay / 10);
   delay_report_stats.audio_delay = delay;
 }
 
 void btif_a2dp_control_reset_audio_delay(void) {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
   delay_report_stats.audio_delay = 0;
   delay_report_stats.total_bytes_read = 0;
   delay_report_stats.timestamp = {};
