@@ -21,6 +21,7 @@
 #include "btif_config.h"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 #include <openssl/rand.h>
 #include <unistd.h>
 
@@ -54,6 +55,7 @@
 using bluetooth::bluetooth_keystore::BluetoothKeystoreInterface;
 using bluetooth::common::AddressObfuscator;
 using bluetooth::common::MetricIdAllocator;
+using namespace bluetooth;
 
 // Key attestation
 static const std::string ENCRYPTED_STR = "encrypted";
@@ -84,25 +86,25 @@ static void read_or_set_metrics_salt() {
   if (!btif_config_get_bin(BTIF_STORAGE_SECTION_METRICS,
                            BTIF_STORAGE_KEY_METRICS_SALT_256BIT,
                            metrics_salt.data(), &metrics_salt_length)) {
-    LOG(WARNING) << __func__ << ": Failed to read metrics salt from config";
+    log::warn("Failed to read metrics salt from config");
     // Invalidate salt
     metrics_salt.fill(0);
   }
   if (metrics_salt_length != metrics_salt.size()) {
-    LOG(ERROR) << __func__ << ": Metrics salt length incorrect, "
-               << metrics_salt_length << " instead of " << metrics_salt.size();
+    log::error("Metrics salt length incorrect, {} instead of {}",
+               metrics_salt_length, metrics_salt.size());
     // Invalidate salt
     metrics_salt.fill(0);
   }
   if (!AddressObfuscator::IsSaltValid(metrics_salt)) {
-    LOG(INFO) << __func__ << ": Metrics salt is invalid, creating new one";
+    log::info("Metrics salt is invalid, creating new one");
     if (RAND_bytes(metrics_salt.data(), metrics_salt.size()) != 1) {
-      LOG(FATAL) << __func__ << "Failed to generate salt for metrics";
+      log::fatal("Failed to generate salt for metrics");
     }
     if (!btif_config_set_bin(BTIF_STORAGE_SECTION_METRICS,
                              BTIF_STORAGE_KEY_METRICS_SALT_256BIT,
                              metrics_salt.data(), metrics_salt.size())) {
-      LOG(FATAL) << __func__ << "Failed to write metrics salt to config";
+      log::fatal("Failed to write metrics salt to config");
     }
   }
   AddressObfuscator::GetInstance()->Initialize(metrics_salt);
@@ -152,7 +154,7 @@ static void init_metric_id_allocator() {
   if (!init_metric_id_allocator(paired_device_map,
                                 std::move(save_device_callback),
                                 std::move(forget_device_callback))) {
-    LOG(FATAL) << __func__ << "Failed to initialize MetricIdAllocator";
+    log::fatal("Failed to initialize MetricIdAllocator");
   }
 
   // Add device_without_id
@@ -205,8 +207,7 @@ bool btif_get_device_clockoffset(const RawAddress& bda, int* p_clock_offset) {
                            p_clock_offset))
     return false;
 
-  LOG_DEBUG("%s: Device [%s] clock_offset %d", __func__, bd_addr_str,
-            *p_clock_offset);
+  log::debug("Device [{}] clock_offset {}", bd_addr_str, *p_clock_offset);
   return true;
 }
 
@@ -219,8 +220,7 @@ bool btif_set_device_clockoffset(const RawAddress& bda, int clock_offset) {
                            clock_offset))
     return false;
 
-  LOG_DEBUG("%s: Device [%s] clock_offset %d", __func__, bd_addr_str,
-            clock_offset);
+  log::debug("Device [{}] clock_offset {}", bd_addr_str, clock_offset);
   return true;
 }
 

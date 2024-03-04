@@ -29,6 +29,8 @@
 
 #include "btif/include/btif_hd.h"
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 
 #include "bta/include/bta_hd_api.h"
@@ -53,6 +55,8 @@
 #define COD_HID_POINTING 0x0580
 #define COD_HID_COMBO 0x05C0
 #define COD_HID_MAJOR 0x0500
+
+using namespace bluetooth;
 
 bool bta_dm_check_if_only_hd_connected(const RawAddress& peer_addr);
 bool check_cod_hid(const RawAddress* remote_bdaddr);
@@ -142,11 +146,11 @@ void btif_hd_remove_device(RawAddress bd_addr) {
 static void btif_hd_upstreams_evt(uint16_t event, char* p_param) {
   tBTA_HD* p_data = (tBTA_HD*)p_param;
 
-  LOG_VERBOSE("%s: event=%s", __func__, dump_hd_event(event));
+  log::verbose("event={}", dump_hd_event(event));
 
   switch (event) {
     case BTA_HD_ENABLE_EVT:
-      LOG_VERBOSE("%s: status=%d", __func__, p_data->status);
+      log::verbose("status={}", p_data->status);
       if (p_data->status == BTA_HD_OK) {
         btif_storage_load_hidd();
         btif_hd_cb.status = BTIF_HD_ENABLED;
@@ -157,16 +161,16 @@ static void btif_hd_upstreams_evt(uint16_t event, char* p_param) {
         }
       } else {
         btif_hd_cb.status = BTIF_HD_DISABLED;
-        LOG_WARN("Failed to enable BT-HD, status=%d", p_data->status);
+        log::warn("Failed to enable BT-HD, status={}", p_data->status);
       }
       break;
 
     case BTA_HD_DISABLE_EVT:
-      LOG_VERBOSE("%s: status=%d", __func__, p_data->status);
+      log::verbose("status={}", p_data->status);
       btif_hd_cb.status = BTIF_HD_DISABLED;
       if (btif_hd_cb.service_dereg_active) {
         bta_sys_deregister(BTA_ID_HD);
-        LOG_WARN("registering hid host now");
+        log::warn("registering hid host now");
         btif_hh_service_registration(TRUE);
         btif_hd_cb.service_dereg_active = FALSE;
       }
@@ -174,7 +178,7 @@ static void btif_hd_upstreams_evt(uint16_t event, char* p_param) {
       if (p_data->status == BTA_HD_OK)
         memset(&btif_hd_cb, 0, sizeof(btif_hd_cb));
       else
-        LOG_WARN("Failed to disable BT-HD, status=%d", p_data->status);
+        log::warn("Failed to disable BT-HD, status={}", p_data->status);
       break;
 
     case BTA_HD_REGISTER_APP_EVT: {
@@ -184,7 +188,7 @@ static void btif_hd_upstreams_evt(uint16_t event, char* p_param) {
         addr = NULL;
       }
 
-      LOG_INFO("Registering HID device app");
+      log::info("Registering HID device app");
       btif_hd_cb.app_registered = TRUE;
       HAL_CBACK(bt_hd_callbacks, application_state_cb, addr,
                 BTHD_APP_STATE_REGISTERED);
@@ -195,7 +199,7 @@ static void btif_hd_upstreams_evt(uint16_t event, char* p_param) {
       HAL_CBACK(bt_hd_callbacks, application_state_cb, NULL,
                 BTHD_APP_STATE_NOT_REGISTERED);
       if (btif_hd_cb.service_dereg_active) {
-        LOG_WARN("disabling hid device service now");
+        log::warn("disabling hid device service now");
         if (!bluetooth::common::init_flags::
                 delay_hidh_cleanup_until_hidh_ready_start_is_enabled()) {
           btif_hd_free_buf();
@@ -206,11 +210,11 @@ static void btif_hd_upstreams_evt(uint16_t event, char* p_param) {
 
     case BTA_HD_OPEN_EVT: {
       RawAddress* addr = (RawAddress*)&p_data->conn.bda;
-      LOG_WARN("BTA_HD_OPEN_EVT, address=%s", ADDRESS_TO_LOGGABLE_CSTR(*addr));
+      log::warn("BTA_HD_OPEN_EVT, address={}", ADDRESS_TO_LOGGABLE_CSTR(*addr));
       /* Check if the connection is from hid host and not hid device */
       if (check_cod_hid(addr)) {
         /* Incoming connection from hid device, reject it */
-        LOG_WARN("remote device is not hid host, disconnecting");
+        log::warn("remote device is not hid host, disconnecting");
         btif_hd_cb.forced_disc = TRUE;
         BTA_HdDisconnect();
         break;
@@ -224,7 +228,7 @@ static void btif_hd_upstreams_evt(uint16_t event, char* p_param) {
     case BTA_HD_CLOSE_EVT:
       if (btif_hd_cb.forced_disc) {
         RawAddress* addr = (RawAddress*)&p_data->conn.bda;
-        LOG_WARN("remote device was forcefully disconnected");
+        log::warn("remote device was forcefully disconnected");
         btif_hd_remove_device(*addr);
         btif_hd_cb.forced_disc = FALSE;
         break;
@@ -257,15 +261,11 @@ static void btif_hd_upstreams_evt(uint16_t event, char* p_param) {
       HAL_CBACK(bt_hd_callbacks, connection_state_cb,
                 (RawAddress*)&p_data->conn.bda, BTHD_CONN_STATE_DISCONNECTED);
       if (bta_dm_check_if_only_hd_connected(p_data->conn.bda)) {
-        LOG_VERBOSE("%s: Removing bonding as only HID profile connected",
-                    __func__);
+        log::verbose("Removing bonding as only HID profile connected");
         BTA_DmRemoveDevice(p_data->conn.bda);
       } else {
         RawAddress* bd_addr = (RawAddress*)&p_data->conn.bda;
-        LOG_VERBOSE(
-            "%s: Only removing HID data as some other profiles "
-            "connected",
-            __func__);
+        log::verbose("Only removing HID data as some other profiles connected");
         btif_hd_remove_device(*bd_addr);
       }
       HAL_CBACK(bt_hd_callbacks, vc_unplug_cb);
@@ -278,7 +278,7 @@ static void btif_hd_upstreams_evt(uint16_t event, char* p_param) {
       break;
 
     default:
-      LOG_WARN("%s: unknown event (%d)", __func__, event);
+      log::warn("unknown event ({})", event);
       break;
   }
 }
@@ -298,7 +298,7 @@ static void bte_hd_evt(tBTA_HD_EVT event, tBTA_HD* p_data) {
   int param_len = 0;
   tBTIF_COPY_CBACK* p_copy_cback = NULL;
 
-  LOG_VERBOSE("%s event=%d", __func__, event);
+  log::verbose("event={}", event);
 
   switch (event) {
     case BTA_HD_ENABLE_EVT:
@@ -353,7 +353,7 @@ static void bte_hd_evt(tBTA_HD_EVT event, tBTA_HD* p_data) {
  *
  ******************************************************************************/
 static bt_status_t init(bthd_callbacks_t* callbacks) {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   bt_hd_callbacks = callbacks;
   memset(&btif_hd_cb, 0, sizeof(btif_hd_cb));
@@ -373,7 +373,7 @@ static bt_status_t init(bthd_callbacks_t* callbacks) {
  *
  ******************************************************************************/
 static void cleanup(void) {
-  LOG_VERBOSE("hd:%s", __func__);
+  log::verbose("");
 
   if (bt_hd_callbacks) {
     /* update flag, not to enable hid host service now as BT is switching off */
@@ -395,10 +395,10 @@ static void cleanup(void) {
 static bt_status_t register_app(bthd_app_param_t* p_app_param,
                                 bthd_qos_param_t* p_in_qos,
                                 bthd_qos_param_t* p_out_qos) {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   if (btif_hd_cb.app_registered) {
-    LOG_WARN("%s: application already registered", __func__);
+    log::warn("application already registered");
     return BT_STATUS_DONE;
   }
 
@@ -447,20 +447,20 @@ static bt_status_t register_app(bthd_app_param_t* p_app_param,
  *
  ******************************************************************************/
 static bt_status_t unregister_app(void) {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   if (!btif_hd_cb.app_registered) {
-    LOG_WARN("%s: application not yet registered", __func__);
+    log::warn("application not yet registered");
     return BT_STATUS_NOT_READY;
   }
 
   if (btif_hd_cb.status != BTIF_HD_ENABLED) {
-    LOG_WARN("%s: BT-HD not enabled, status=%d", __func__, btif_hd_cb.status);
+    log::warn("BT-HD not enabled, status={}", btif_hd_cb.status);
     return BT_STATUS_NOT_READY;
   }
 
   if (btif_hd_cb.service_dereg_active) {
-    LOG_WARN("%s: BT-HD deregistering in progress", __func__);
+    log::warn("BT-HD deregistering in progress");
     return BT_STATUS_BUSY;
   }
 
@@ -480,15 +480,15 @@ static bt_status_t unregister_app(void) {
  *
  ******************************************************************************/
 static bt_status_t connect(RawAddress* bd_addr) {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   if (!btif_hd_cb.app_registered) {
-    LOG_WARN("%s: application not yet registered", __func__);
+    log::warn("application not yet registered");
     return BT_STATUS_NOT_READY;
   }
 
   if (btif_hd_cb.status != BTIF_HD_ENABLED) {
-    LOG_WARN("%s: BT-HD not enabled, status=%d", __func__, btif_hd_cb.status);
+    log::warn("BT-HD not enabled, status={}", btif_hd_cb.status);
     return BT_STATUS_NOT_READY;
   }
 
@@ -507,15 +507,15 @@ static bt_status_t connect(RawAddress* bd_addr) {
  *
  ******************************************************************************/
 static bt_status_t disconnect(void) {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   if (!btif_hd_cb.app_registered) {
-    LOG_WARN("%s: application not yet registered", __func__);
+    log::warn("application not yet registered");
     return BT_STATUS_NOT_READY;
   }
 
   if (btif_hd_cb.status != BTIF_HD_ENABLED) {
-    LOG_WARN("%s: BT-HD not enabled, status=%d", __func__, btif_hd_cb.status);
+    log::warn("BT-HD not enabled, status={}", btif_hd_cb.status);
     return BT_STATUS_NOT_READY;
   }
 
@@ -537,15 +537,15 @@ static bt_status_t send_report(bthd_report_type_t type, uint8_t id,
                                uint16_t len, uint8_t* p_data) {
   tBTA_HD_REPORT report;
 
-  LOG_VERBOSE("%s: type=%d id=%d len=%d", __func__, type, id, len);
+  log::verbose("type={} id={} len={}", type, id, len);
 
   if (!btif_hd_cb.app_registered) {
-    LOG_WARN("%s: application not yet registered", __func__);
+    log::warn("application not yet registered");
     return BT_STATUS_NOT_READY;
   }
 
   if (btif_hd_cb.status != BTIF_HD_ENABLED) {
-    LOG_WARN("%s: BT-HD not enabled, status=%d", __func__, btif_hd_cb.status);
+    log::warn("BT-HD not enabled, status={}", btif_hd_cb.status);
     return BT_STATUS_NOT_READY;
   }
 
@@ -576,15 +576,15 @@ static bt_status_t send_report(bthd_report_type_t type, uint8_t id,
  *
  ******************************************************************************/
 static bt_status_t report_error(uint8_t error) {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   if (!btif_hd_cb.app_registered) {
-    LOG_WARN("%s: application not yet registered", __func__);
+    log::warn("application not yet registered");
     return BT_STATUS_NOT_READY;
   }
 
   if (btif_hd_cb.status != BTIF_HD_ENABLED) {
-    LOG_WARN("%s: BT-HD not enabled, status=%d", __func__, btif_hd_cb.status);
+    log::warn("BT-HD not enabled, status={}", btif_hd_cb.status);
     return BT_STATUS_NOT_READY;
   }
 
@@ -603,15 +603,15 @@ static bt_status_t report_error(uint8_t error) {
  *
  ******************************************************************************/
 static bt_status_t virtual_cable_unplug(void) {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   if (!btif_hd_cb.app_registered) {
-    LOG_WARN("%s: application not yet registered", __func__);
+    log::warn("application not yet registered");
     return BT_STATUS_NOT_READY;
   }
 
   if (btif_hd_cb.status != BTIF_HD_ENABLED) {
-    LOG_WARN("%s: BT-HD not enabled, status=%d", __func__, btif_hd_cb.status);
+    log::warn("BT-HD not enabled, status={}", btif_hd_cb.status);
     return BT_STATUS_NOT_READY;
   }
 
@@ -643,7 +643,7 @@ static const bthd_interface_t bthdInterface = {
  *
  ******************************************************************************/
 bt_status_t btif_hd_execute_service(bool b_enable) {
-  LOG_VERBOSE("%s: b_enable=%d", __func__, b_enable);
+  log::verbose("b_enable={}", b_enable);
 
   if (!b_enable) BTA_HdDisable();
 
@@ -660,7 +660,7 @@ bt_status_t btif_hd_execute_service(bool b_enable) {
  *
  ******************************************************************************/
 const bthd_interface_t* btif_hd_get_interface() {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
   return &bthdInterface;
 }
 
@@ -674,7 +674,7 @@ const bthd_interface_t* btif_hd_get_interface() {
  *
  ******************************************************************************/
 void btif_hd_service_registration() {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
   /* enable HD */
   if (bt_hd_callbacks != NULL) {
     BTA_HdEnable(bte_hd_evt);

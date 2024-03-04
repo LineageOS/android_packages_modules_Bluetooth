@@ -436,6 +436,11 @@ __END_DECLS
 
 namespace fmt {
 template <>
+struct formatter<btav_connection_state_t>
+    : enum_formatter<btav_connection_state_t> {};
+template <>
+struct formatter<btav_audio_state_t> : enum_formatter<btav_audio_state_t> {};
+template <>
 struct formatter<btav_a2dp_codec_bits_per_sample_t>
     : enum_formatter<btav_a2dp_codec_bits_per_sample_t> {};
 template <>

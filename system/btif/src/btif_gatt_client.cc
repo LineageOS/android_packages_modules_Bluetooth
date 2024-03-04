@@ -30,6 +30,7 @@
 #include <base/functional/bind.h>
 #include <base/logging.h>
 #include <base/threading/thread.h>
+#include <bluetooth/log.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_gatt.h>
 #include <hardware/bt_gatt_types.h>
@@ -60,6 +61,7 @@ using base::Bind;
 using base::Owned;
 using bluetooth::Uuid;
 using std::vector;
+using namespace bluetooth;
 
 bool btif_get_address_type(const RawAddress& bda, tBLE_ADDR_TYPE* p_addr_type);
 bool btif_get_device_type(const RawAddress& bda, int* p_device_type);
@@ -74,7 +76,7 @@ extern const btgatt_callbacks_t* bt_gatt_callbacks;
 #define CLI_CBACK_WRAP_IN_JNI(P_CBACK, P_CBACK_WRAP)               \
   do {                                                             \
     if (bt_gatt_callbacks && bt_gatt_callbacks->client->P_CBACK) { \
-      LOG_VERBOSE("HAL bt_gatt_callbacks->client->%s", #P_CBACK);  \
+      log::verbose("HAL bt_gatt_callbacks->client->{}", #P_CBACK); \
       do_in_jni_thread(P_CBACK_WRAP);                              \
     } else {                                                       \
       ASSERTC(0, "Callback is NULL", 0);                           \
@@ -84,21 +86,21 @@ extern const btgatt_callbacks_t* bt_gatt_callbacks;
 #define CLI_CBACK_IN_JNI(P_CBACK, ...)                                         \
   do {                                                                         \
     if (bt_gatt_callbacks && bt_gatt_callbacks->client->P_CBACK) {             \
-      LOG_VERBOSE("HAL bt_gatt_callbacks->client->%s", #P_CBACK);              \
+      log::verbose("HAL bt_gatt_callbacks->client->{}", #P_CBACK);             \
       do_in_jni_thread(Bind(bt_gatt_callbacks->client->P_CBACK, __VA_ARGS__)); \
     } else {                                                                   \
       ASSERTC(0, "Callback is NULL", 0);                                       \
     }                                                                          \
   } while (0)
 
-#define CHECK_BTGATT_INIT()                             \
-  do {                                                  \
-    if (bt_gatt_callbacks == NULL) {                    \
-      LOG_WARN("%s: BTGATT not initialized", __func__); \
-      return BT_STATUS_NOT_READY;                       \
-    } else {                                            \
-      LOG_DEBUG("%s", __func__);                        \
-    }                                                   \
+#define CHECK_BTGATT_INIT()                \
+  do {                                     \
+    if (bt_gatt_callbacks == NULL) {       \
+      log::warn("BTGATT not initialized"); \
+      return BT_STATUS_NOT_READY;          \
+    } else {                               \
+      log::debug("");                      \
+    }                                      \
   } while (0)
 
 namespace {
@@ -106,9 +108,8 @@ namespace {
 uint8_t rssi_request_client_if;
 
 static void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
-  LOG_DEBUG("Event %s [%d]",
-            gatt_client_event_text(static_cast<tBTA_GATTC_EVT>(event)).c_str(),
-            event);
+  log::debug("Event {} [{}]",
+             gatt_client_event_text(static_cast<tBTA_GATTC_EVT>(event)), event);
 
   tBTA_GATTC* p_data = (tBTA_GATTC*)p_param;
   switch (event) {
@@ -144,8 +145,8 @@ static void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
     }
 
     case BTA_GATTC_OPEN_EVT: {
-      LOG_DEBUG("BTA_GATTC_OPEN_EVT %s",
-                ADDRESS_TO_LOGGABLE_CSTR(p_data->open.remote_bda));
+      log::debug("BTA_GATTC_OPEN_EVT {}",
+                 ADDRESS_TO_LOGGABLE_CSTR(p_data->open.remote_bda));
       HAL_CBACK(bt_gatt_callbacks, client->open_cb, p_data->open.conn_id,
                 p_data->open.status, p_data->open.client_if,
                 p_data->open.remote_bda);
@@ -173,7 +174,7 @@ static void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
     case BTA_GATTC_SEARCH_RES_EVT:
     case BTA_GATTC_CANCEL_OPEN_EVT:
     case BTA_GATTC_SRVC_DISC_DONE_EVT:
-      LOG_DEBUG("Ignoring event (%d)", event);
+      log::debug("Ignoring event ({})", event);
       break;
 
     case BTA_GATTC_CFG_MTU_EVT: {
@@ -214,14 +215,14 @@ static void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
       break;
 
     default:
-      LOG_ERROR("Unhandled event (%d)!", event);
+      log::error("Unhandled event ({})!", event);
       break;
   }
 }
 
 static void bta_gattc_cback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
-  LOG_DEBUG(" gatt client callback event:%s [%d]",
-            gatt_client_event_text(event).c_str(), event);
+  log::debug("gatt client callback event:{} [{}]",
+             gatt_client_event_text(event), event);
   bt_status_t status =
       btif_transfer_context(btif_gattc_upstreams_evt, (uint16_t)event,
                             (char*)p_data, sizeof(tBTA_GATTC), NULL);
@@ -330,14 +331,14 @@ void btif_gattc_open_impl(int client_if, RawAddress address,
           transport = BT_TRANSPORT_BR_EDR;
         break;
       default:
-        LOG_ERROR("Unknown device type %d", +device_type);
+        log::error("Unknown device type {}", device_type);
         break;
     }
   }
 
   // Connect!
-  LOG_INFO("Transport=%d, device type=%d, address type =%d, phy=%d", transport,
-           device_type, addr_type, initiating_phys);
+  log::info("Transport={}, device type={}, address type ={}, phy={}", transport,
+            device_type, addr_type, initiating_phys);
   tBTM_BLE_CONN_TYPE type =
       is_direct ? BTM_BLE_DIRECT_CONNECTION : BTM_BLE_BKG_CONNECT_ALLOW_LIST;
   BTA_GATTC_Open(client_if, address, addr_type, type, transport, opportunistic,
@@ -356,8 +357,8 @@ static bt_status_t btif_gattc_open(int client_if, const RawAddress& bd_addr,
 }
 
 void btif_gattc_close_impl(int client_if, RawAddress address, int conn_id) {
-  LOG_INFO("client_if=%d, conn_id=%d, address=%s", client_if, conn_id,
-           ADDRESS_TO_LOGGABLE_CSTR(address));
+  log::info("client_if={}, conn_id={}, address={}", client_if, conn_id,
+            ADDRESS_TO_LOGGABLE_CSTR(address));
   // Disconnect established connections
   if (conn_id != 0) {
     BTA_GATTC_Close(conn_id);
