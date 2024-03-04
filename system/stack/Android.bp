@@ -2138,6 +2138,7 @@ cc_test {
         ":TestMockStackBtm",
         ":TestMockStackL2cap",
         ":TestMockStackMetrics",
+        "test/sdp/stack_sdp_db_test.cc",
         "test/sdp/stack_sdp_test.cc",
         "test/sdp/stack_sdp_utils_test.cc",
     ],
