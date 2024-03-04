@@ -54,7 +54,7 @@ bool is_coding_format_supported(esco_coding_format_t coding_format) {
 }
 
 // Android statically compiles WBS support.
-bool get_wbs_supported() { return !DISABLE_WBS; }
+bool get_wbs_supported() { return true; }
 
 bool get_swb_supported() {
   return osi_property_get_bool("bluetooth.hfp.swb.supported", false) &&
