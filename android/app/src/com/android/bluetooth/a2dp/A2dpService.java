@@ -1367,12 +1367,15 @@ public class A2dpService extends ProfileService {
             if (Utils.isInstrumentationTestMode()) {
                 return mService;
             }
-            if (!Utils.checkServiceAvailable(mService, TAG)
-                    || !Utils.checkCallerIsSystemOrActiveOrManagedUser(mService, TAG)
-                    || !Utils.checkConnectPermissionForDataDelivery(mService, source, TAG)) {
+            A2dpService currService = mService;
+
+            if (currService == null
+                    || !Utils.checkServiceAvailable(currService, TAG)
+                    || !Utils.checkCallerIsSystemOrActiveOrManagedUser(currService, TAG)
+                    || !Utils.checkConnectPermissionForDataDelivery(currService, source, TAG)) {
                 return null;
             }
-            return mService;
+            return currService;
         }
 
         BluetoothA2dpBinder(A2dpService svc) {
