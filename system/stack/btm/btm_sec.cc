@@ -690,10 +690,6 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
   log::verbose("BTM_SecBond: Remote sm4: 0x{:x}  HCI Handle: 0x{:04x}",
                p_dev_rec->sm4, p_dev_rec->hci_handle);
 
-#if (BTM_SEC_FORCE_RNR_FOR_DBOND == TRUE)
-  p_dev_rec->sec_rec.sec_flags &= ~BTM_SEC_NAME_KNOWN;
-#endif
-
   /* If connection already exists... */
   if (BTM_IsAclConnectionUpAndHandleValid(bd_addr, transport)) {
     btm_sec_wait_and_start_authentication(p_dev_rec);

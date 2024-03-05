@@ -244,12 +244,6 @@
 #define BTM_SEC_MAX_SERVICE_RECORDS 32
 #endif
 
-/* If True, force a retrieval of remote device name for each bond in case it's
- * changed */
-#ifndef BTM_SEC_FORCE_RNR_FOR_DBOND
-#define BTM_SEC_FORCE_RNR_FOR_DBOND FALSE
-#endif
-
 /* Maximum device name length used in btm database. */
 #ifndef BTM_MAX_REM_BD_NAME_LEN
 #define BTM_MAX_REM_BD_NAME_LEN 248
@@ -258,11 +252,6 @@
 /* Maximum local device name length stored btm database */
 #ifndef BTM_MAX_LOC_BD_NAME_LEN
 #define BTM_MAX_LOC_BD_NAME_LEN 248
-#endif
-
-/* Maximum service name stored with security authorization (0 if not needed) */
-#ifndef BTM_SEC_SERVICE_NAME_LEN
-#define BTM_SEC_SERVICE_NAME_LEN BT_MAX_SERVICE_NAME_LEN
 #endif
 
 /* Maximum length of the service name. */
@@ -291,10 +280,6 @@
 /******************************************
  *    Lisbon Features
  ******************************************/
-/* This is set to TRUE if the FEC is required for EIR packet. */
-#ifndef BTM_EIR_DEFAULT_FEC_REQUIRED
-#define BTM_EIR_DEFAULT_FEC_REQUIRED TRUE
-#endif
 
 /* The IO capability of the local device (for Simple Pairing) */
 #ifndef BTM_LOCAL_IO_CAPS
@@ -390,10 +375,6 @@
  * BLE
  *
  *****************************************************************************/
-
-#ifndef LOCAL_BLE_CONTROLLER_ID
-#define LOCAL_BLE_CONTROLLER_ID 1
-#endif
 
 /* The maximum number of simultaneous applications that can register with LE
  * L2CAP. */

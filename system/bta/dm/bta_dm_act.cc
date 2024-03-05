@@ -1076,11 +1076,7 @@ static void bta_dm_set_eir(char* local_name) {
   uint8_t custom_uuid_idx;
 #endif  // BTA_EIR_SERVER_NUM_CUSTOM_UUID
 #endif  // BTA_EIR_CANNED_UUID_LIST
-#if (BTM_EIR_DEFAULT_FEC_REQUIRED == FALSE)
-  uint8_t free_eir_length = HCI_EXT_INQ_RESPONSE_LEN;
-#else  // BTM_EIR_DEFAULT_FEC_REQUIRED
   uint8_t free_eir_length = HCI_DM5_PACKET_SIZE;
-#endif  // BTM_EIR_DEFAULT_FEC_REQUIRED
   uint8_t num_uuid;
   uint8_t data_type;
   uint8_t local_name_len;
