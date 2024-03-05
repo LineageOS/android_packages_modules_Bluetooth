@@ -85,11 +85,11 @@ BluetoothAudioCtrlAck A2dpTransport::StartRequest(bool is_low_latency) {
     return a2dp_ack_to_bt_audio_ctrl_ack(A2DP_CTRL_ACK_INCALL_FAILURE);
   }
 
-  if (btif_av_stream_started_ready()) {
+  if (btif_av_stream_started_ready(A2dpType::kSource)) {
     // Already started, ACK back immediately.
     return a2dp_ack_to_bt_audio_ctrl_ack(A2DP_CTRL_ACK_SUCCESS);
   }
-  if (btif_av_stream_ready()) {
+  if (btif_av_stream_ready(A2dpType::kSource)) {
     // check if codec needs to be switched prior to stream start
     invoke_switch_codec_cb(is_low_latency);
     /*
@@ -99,7 +99,7 @@ BluetoothAudioCtrlAck A2dpTransport::StartRequest(bool is_low_latency) {
      */
     a2dp_pending_cmd_ = A2DP_CTRL_CMD_START;
     btif_av_stream_start_with_latency(is_low_latency);
-    if (btif_av_get_peer_sep() != AVDT_TSEP_SRC) {
+    if (btif_av_get_peer_sep(A2dpType::kSource) != AVDT_TSEP_SRC) {
       LOG(INFO) << __func__ << ": accepted";
       return a2dp_ack_to_bt_audio_ctrl_ack(A2DP_CTRL_ACK_PENDING);
     }
@@ -120,7 +120,7 @@ BluetoothAudioCtrlAck A2dpTransport::SuspendRequest() {
     return a2dp_ack_to_bt_audio_ctrl_ack(A2DP_CTRL_ACK_FAILURE);
   }
   // Local suspend
-  if (btif_av_stream_started_ready()) {
+  if (btif_av_stream_started_ready(A2dpType::kSource)) {
     LOG(INFO) << __func__ << ": accepted";
     a2dp_pending_cmd_ = A2DP_CTRL_CMD_SUSPEND;
     btif_av_stream_suspend();
@@ -130,14 +130,14 @@ BluetoothAudioCtrlAck A2dpTransport::SuspendRequest() {
    * audioflinger close the channel. This can happen if we are
    * remotely suspended, clear REMOTE SUSPEND flag.
    */
-  btif_av_clear_remote_suspend_flag();
+  btif_av_clear_remote_suspend_flag(A2dpType::kSource);
   return a2dp_ack_to_bt_audio_ctrl_ack(A2DP_CTRL_ACK_SUCCESS);
 }
 
 void A2dpTransport::StopRequest() {
-  if (btif_av_get_peer_sep() == AVDT_TSEP_SNK &&
-      !btif_av_stream_started_ready()) {
-    btif_av_clear_remote_suspend_flag();
+  if (btif_av_get_peer_sep(A2dpType::kSource) == AVDT_TSEP_SNK &&
+      !btif_av_stream_started_ready(A2dpType::kSource)) {
+    btif_av_clear_remote_suspend_flag(A2dpType::kSource);
     return;
   }
   LOG(INFO) << __func__ << ": handling";

@@ -23,28 +23,37 @@
 #include <stdbool.h>
 
 #include "bta/include/bta_av_api.h"
+#include "btif_av.h"
 #include "types/raw_address.h"
 
 // Process 'idle' request from the BTIF state machine during initialization.
-void btif_a2dp_on_idle(const RawAddress& peer_addr);
+void btif_a2dp_on_idle(const RawAddress& peer_addr,
+                       const A2dpType local_a2dp_type);
 
 // Process 'start' request from the BTIF state machine to prepare for A2DP
 // streaming.
 // |peer_addr| is the peer address.
 // |p_av_start| is the data associated with the request - see |tBTA_AV_START|.
+// |local_a2dp_type| type of local a2dp profile.
 // Returns true if an ACK for the local command was sent, otherwise false.
-bool btif_a2dp_on_started(const RawAddress& peer_addr, tBTA_AV_START* p_av_start);
+bool btif_a2dp_on_started(const RawAddress& peer_addr,
+                          tBTA_AV_START* p_av_start,
+                          const A2dpType local_a2dp_type);
 
 // Process 'stop' request from the BTIF state machine to stop A2DP streaming.
 // |p_av_suspend| is the data associated with the request - see
 // |tBTA_AV_SUSPEND|.
-void btif_a2dp_on_stopped(tBTA_AV_SUSPEND* p_av_suspend);
+// |local_a2dp_type| type of local a2dp profile.
+void btif_a2dp_on_stopped(tBTA_AV_SUSPEND* p_av_suspend,
+                          const A2dpType local_a2dp_type);
 
 // Process 'suspend' request from the BTIF state machine to suspend A2DP
 // streaming.
 // |p_av_suspend| is the data associated with the request - see
 // |tBTA_AV_SUSPEND|.
-void btif_a2dp_on_suspended(tBTA_AV_SUSPEND* p_av_suspend);
+// |local_a2dp_type| type of local a2dp profile.
+void btif_a2dp_on_suspended(tBTA_AV_SUSPEND* p_av_suspend,
+                            const A2dpType local_a2dp_type);
 
 // Process 'offload start' request from the BTIF state machine to start
 // offloading of the A2DP streaming.

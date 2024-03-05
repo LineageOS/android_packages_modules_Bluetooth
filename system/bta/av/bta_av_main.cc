@@ -24,7 +24,6 @@
 
 #define LOG_TAG "bt_bta_av"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include <cstdint>
@@ -646,6 +645,7 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
       btav_a2dp_codec_index_t codec_index =
           static_cast<btav_a2dp_codec_index_t>(i);
       if (!bta_av_co_is_supported_codec(codec_index)) {
+        log::warn("Skipping the codec index for codec index {}", i);
         continue;
       }
       if (!(*bta_av_a2dp_cos.init)(codec_index, &avdtp_stream_config.cfg)) {
