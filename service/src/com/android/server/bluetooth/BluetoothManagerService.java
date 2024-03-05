@@ -204,11 +204,6 @@ class BluetoothManagerService {
 
     private List<Integer> mSupportedProfileList = new ArrayList<>();
 
-    // TODO(b/289584302): remove BluetoothSatelliteModeListener once use_new_satellite_mode ship
-    private BluetoothSatelliteModeListener mBluetoothSatelliteModeListener;
-
-    private final boolean mUseNewSatelliteMode;
-
     // used inside handler thread
     private boolean mQuietEnable = false;
     private boolean mEnable = false;
@@ -711,15 +706,6 @@ class BluetoothManagerService {
             mEnableExternal = true;
         }
 
-        // Caching is necessary to prevent caller requiring the READ_DEVICE_CONFIG permission
-        mUseNewSatelliteMode = mFeatureFlags.useNewSatelliteMode();
-        if (!mUseNewSatelliteMode) {
-            // Only instantiate the legacy listener
-            // New implementation is instantiated during onBootPhase on correct thread
-            mBluetoothSatelliteModeListener =
-                    new BluetoothSatelliteModeListener(this, mLooper, mContext);
-        }
-
         { // AutoOn feature initialization of flag guarding
             final boolean autoOnFlag = Flags.autoOnFeature();
             final boolean autoOnProperty =
@@ -744,10 +730,7 @@ class BluetoothManagerService {
 
     /** Returns true if satellite mode is turned on. */
     private boolean isSatelliteModeOn() {
-        if (mUseNewSatelliteMode) {
-            return SatelliteModeListener.isOn();
-        }
-        return mBluetoothSatelliteModeListener.isSatelliteModeOn();
+        return SatelliteModeListener.isOn();
     }
 
     /** Returns true if the Bluetooth saved state is "on" */
@@ -1294,10 +1277,7 @@ class BluetoothManagerService {
                 this::getCurrentUserContext,
                 TimeSource.Monotonic.INSTANCE);
 
-        if (mUseNewSatelliteMode) {
-            SatelliteModeListener.initialize(
-                    mLooper, mContentResolver, this::onSatelliteModeChanged);
-        }
+        SatelliteModeListener.initialize(mLooper, mContentResolver, this::onSatelliteModeChanged);
     }
 
     private void internalHandleOnBootPhase(UserHandle userHandle) {

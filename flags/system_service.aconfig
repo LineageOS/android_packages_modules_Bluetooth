@@ -22,11 +22,3 @@ flag {
     description: "Remove complexity and non necessary initialization when simply binding"
     bug: "328698375"
 }
-
-flag {
-    name: "use_new_satellite_mode"
-    namespace: "bluetooth"
-    description: "Use the new implemention of satellite mode"
-    bug: "289584302"
-}
-
