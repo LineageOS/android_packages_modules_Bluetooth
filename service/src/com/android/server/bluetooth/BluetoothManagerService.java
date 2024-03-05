@@ -26,7 +26,6 @@ import static android.bluetooth.BluetoothAdapter.STATE_TURNING_ON;
 import static android.os.PowerExemptionManager.TEMPORARY_ALLOW_LIST_TYPE_FOREGROUND_SERVICE_ALLOWED;
 
 import static com.android.modules.utils.build.SdkLevel.isAtLeastV;
-import static com.android.server.bluetooth.BluetoothAirplaneModeListener.APM_ENHANCEMENT;
 
 import static java.util.Objects.requireNonNull;
 
@@ -182,10 +181,6 @@ class BluetoothManagerService {
     // and Airplane mode will have higher priority.
     @VisibleForTesting static final int BLUETOOTH_ON_AIRPLANE = 2;
 
-    // APM enhancement feature is enabled by default
-    // Set this value to 0 to disable the feature
-    private static final int DEFAULT_APM_ENHANCEMENT_STATE = 1;
-
     private final Context mContext;
     private final Looper mLooper;
 
@@ -209,14 +204,10 @@ class BluetoothManagerService {
 
     private List<Integer> mSupportedProfileList = new ArrayList<>();
 
-    // TODO(b/309033118): remove BluetoothAirplaneModeListener once use_new_airplane_mode ship
-    private final BluetoothAirplaneModeListener mBluetoothAirplaneModeListener;
-
     // TODO(b/289584302): remove BluetoothSatelliteModeListener once use_new_satellite_mode ship
     private BluetoothSatelliteModeListener mBluetoothSatelliteModeListener;
 
     private final boolean mUseNewSatelliteMode;
-    private final boolean mUseNewAirplaneMode;
 
     // used inside handler thread
     private boolean mQuietEnable = false;
@@ -721,15 +712,6 @@ class BluetoothManagerService {
         }
 
         // Caching is necessary to prevent caller requiring the READ_DEVICE_CONFIG permission
-        mUseNewAirplaneMode = mFeatureFlags.useNewAirplaneMode();
-        if (mUseNewAirplaneMode) {
-            mBluetoothAirplaneModeListener = null;
-        } else {
-            mBluetoothAirplaneModeListener =
-                    new BluetoothAirplaneModeListener(this, mLooper, mContext, mFeatureFlags);
-        }
-
-        // Caching is necessary to prevent caller requiring the READ_DEVICE_CONFIG permission
         mUseNewSatelliteMode = mFeatureFlags.useNewSatelliteMode();
         if (!mUseNewSatelliteMode) {
             // Only instantiate the legacy listener
@@ -757,10 +739,7 @@ class BluetoothManagerService {
 
     /** Returns true if airplane mode is currently on */
     private boolean isAirplaneModeOn() {
-        if (mUseNewAirplaneMode) {
-            return AirplaneModeListener.isOn();
-        }
-        return mBluetoothAirplaneModeListener.isAirplaneModeOn();
+        return AirplaneModeListener.isOn();
     }
 
     /** Returns true if satellite mode is turned on. */
@@ -1223,17 +1202,13 @@ class BluetoothManagerService {
         synchronized (mReceiver) {
             mQuietEnableExternal = false;
             mEnableExternal = true;
-            if (!mUseNewAirplaneMode) {
-                mBluetoothAirplaneModeListener.notifyUserToggledBluetooth(true);
-            } else {
-                // TODO(b/288450479): Remove clearCallingIdentity when threading is fixed
-                final long callingIdentity = Binder.clearCallingIdentity();
-                try {
-                    AirplaneModeListener.notifyUserToggledBluetooth(
-                            mContentResolver, mCurrentUserContext, true);
-                } finally {
-                    Binder.restoreCallingIdentity(callingIdentity);
-                }
+            // TODO(b/288450479): Remove clearCallingIdentity when threading is fixed
+            final long callingIdentity = Binder.clearCallingIdentity();
+            try {
+                AirplaneModeListener.notifyUserToggledBluetooth(
+                        mContentResolver, mCurrentUserContext, true);
+            } finally {
+                Binder.restoreCallingIdentity(callingIdentity);
             }
             sendEnableMsg(
                     false,
@@ -1252,17 +1227,13 @@ class BluetoothManagerService {
                         + (" mState=" + mState));
 
         synchronized (mReceiver) {
-            if (!mUseNewAirplaneMode) {
-                mBluetoothAirplaneModeListener.notifyUserToggledBluetooth(false);
-            } else {
-                // TODO(b/288450479): Remove clearCallingIdentity when threading is fixed
-                final long callingIdentity = Binder.clearCallingIdentity();
-                try {
-                    AirplaneModeListener.notifyUserToggledBluetooth(
-                            mContentResolver, mCurrentUserContext, false);
-                } finally {
-                    Binder.restoreCallingIdentity(callingIdentity);
-                }
+            // TODO(b/288450479): Remove clearCallingIdentity when threading is fixed
+            final long callingIdentity = Binder.clearCallingIdentity();
+            try {
+                AirplaneModeListener.notifyUserToggledBluetooth(
+                        mContentResolver, mCurrentUserContext, false);
+            } finally {
+                Binder.restoreCallingIdentity(callingIdentity);
             }
 
             if (persist) {
@@ -1313,17 +1284,15 @@ class BluetoothManagerService {
                 requireNonNull(
                         mContext.createContextAsUser(userHandle, 0),
                         "Current User Context cannot be null");
-        if (mUseNewAirplaneMode) {
-            AirplaneModeListener.initialize(
-                    mLooper,
-                    mContentResolver,
-                    mState,
-                    this::onAirplaneModeChanged,
-                    this::sendToggleNotification,
-                    this::isMediaProfileConnected,
-                    this::getCurrentUserContext,
-                    TimeSource.Monotonic.INSTANCE);
-        }
+        AirplaneModeListener.initialize(
+                mLooper,
+                mContentResolver,
+                mState,
+                this::onAirplaneModeChanged,
+                this::sendToggleNotification,
+                this::isMediaProfileConnected,
+                this::getCurrentUserContext,
+                TimeSource.Monotonic.INSTANCE);
 
         if (mUseNewSatelliteMode) {
             SatelliteModeListener.initialize(
@@ -1355,18 +1324,6 @@ class BluetoothManagerService {
         }
 
         autoOnHiddenListener();
-
-        if (!mUseNewAirplaneMode) {
-            mBluetoothAirplaneModeListener.start(new BluetoothModeChangeHelper(mContext));
-            setApmEnhancementState();
-        }
-    }
-
-    /** set APM enhancement feature state */
-    @VisibleForTesting
-    void setApmEnhancementState() {
-        Settings.Global.putInt(
-                mContext.getContentResolver(), APM_ENHANCEMENT, DEFAULT_APM_ENHANCEMENT_STATE);
     }
 
     /** Called when switching to a different foreground user. */

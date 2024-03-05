@@ -138,7 +138,6 @@ public class BluetoothManagerServiceTest {
     @Parameters(name = "{0}")
     public static Iterable<? extends Object> generateParameterizedFlagsValue() {
         final String[] flags = {
-            Flags.FLAG_USE_NEW_AIRPLANE_MODE,
             Flags.FLAG_USE_NEW_SATELLITE_MODE,
         };
         final Boolean[] values = {true, false};
@@ -281,23 +280,6 @@ public class BluetoothManagerServiceTest {
         // called from SYSTEM user, should try to toggle Bluetooth off
         mManagerService.onUserRestrictionsChanged(UserHandle.SYSTEM);
         syncHandler(MESSAGE_DISABLE);
-    }
-
-    @Test
-    public void testApmEnhancementEnabled() {
-        // Change the apm enhancement enabled value to 0
-        Settings.Global.putInt(mContext.getContentResolver(), "apm_enhancement_enabled", 0);
-        assertThat(
-                        Settings.Global.getInt(
-                                mContext.getContentResolver(), "apm_enhancement_enabled", 0))
-                .isEqualTo(0);
-
-        // Confirm that apm enhancement enabled value has been updated to 1
-        mManagerService.setApmEnhancementState();
-        assertThat(
-                        Settings.Global.getInt(
-                                mContext.getContentResolver(), "apm_enhancement_enabled", 0))
-                .isEqualTo(1);
     }
 
     @Test
