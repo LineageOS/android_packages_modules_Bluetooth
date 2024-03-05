@@ -106,8 +106,6 @@ namespace android {
  */
 
 static jmethodID method_onClientRegistered;
-static jmethodID method_onScannerRegistered;
-static jmethodID method_onScanResult;
 static jmethodID method_onConnected;
 static jmethodID method_onDisconnected;
 static jmethodID method_onReadCharacteristic;
@@ -120,18 +118,8 @@ static jmethodID method_onNotify;
 static jmethodID method_onRegisterForNotifications;
 static jmethodID method_onReadRemoteRssi;
 static jmethodID method_onConfigureMTU;
-static jmethodID method_onScanFilterConfig;
-static jmethodID method_onScanFilterParamsConfigured;
-static jmethodID method_onScanFilterEnableDisabled;
 static jmethodID method_onClientCongestion;
-static jmethodID method_onBatchScanStorageConfigured;
-static jmethodID method_onBatchScanStartStopped;
-static jmethodID method_onBatchScanReports;
-static jmethodID method_onBatchScanThresholdCrossed;
 
-static jmethodID method_createOnTrackAdvFoundLostObject;
-static jmethodID method_onTrackAdvFoundLost;
-static jmethodID method_onScanParamSetupCompleted;
 static jmethodID method_getSampleGattDbElement;
 static jmethodID method_onGetGattDb;
 static jmethodID method_onClientPhyUpdate;
@@ -176,6 +164,22 @@ static jmethodID method_onPeriodicAdvertisingDataSet;
 static jmethodID method_onPeriodicAdvertisingEnabled;
 
 /**
+ * Scanner callback methods
+ */
+static jmethodID method_onScannerRegistered;
+static jmethodID method_onScanResult;
+static jmethodID method_onScanFilterConfig;
+static jmethodID method_onScanFilterParamsConfigured;
+static jmethodID method_onScanFilterEnableDisabled;
+static jmethodID method_onBatchScanStorageConfigured;
+static jmethodID method_onBatchScanStartStopped;
+static jmethodID method_onBatchScanReports;
+static jmethodID method_onBatchScanThresholdCrossed;
+static jmethodID method_createOnTrackAdvFoundLostObject;
+static jmethodID method_onTrackAdvFoundLost;
+static jmethodID method_onScanParamSetupCompleted;
+
+/**
  * Periodic scanner callback methods
  */
 static jmethodID method_onSyncLost;
@@ -196,6 +200,7 @@ static jmethodID method_onDistanceMeasurementResult;
  */
 static const btgatt_interface_t* sGattIf = NULL;
 static jobject mCallbacksObj = NULL;
+static jobject mScanCallbacksObj = NULL;
 static jobject mAdvertiseCallbacksObj = NULL;
 static jobject mPeriodicScanCallbacksObj = NULL;
 static jobject mDistanceMeasurementCallbacksObj = NULL;
@@ -222,7 +227,7 @@ void btgattc_scan_result_cb(uint16_t event_type, uint8_t addr_type,
                             RawAddress* original_bda) {
   std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
-  if (!sCallbackEnv.valid() || !mCallbacksObj) return;
+  if (!sCallbackEnv.valid() || !mScanCallbacksObj) return;
 
   ScopedLocalRef<jstring> address(sCallbackEnv.get(),
                                   bdaddr2newjstr(sCallbackEnv.get(), bda));
@@ -235,9 +240,9 @@ void btgattc_scan_result_cb(uint16_t event_type, uint8_t addr_type,
       sCallbackEnv.get(), bdaddr2newjstr(sCallbackEnv.get(), original_bda));
 
   sCallbackEnv->CallVoidMethod(
-      mCallbacksObj, method_onScanResult, event_type, addr_type, address.get(),
-      primary_phy, secondary_phy, advertising_sid, tx_power, rssi,
-      periodic_adv_int, jb.get(), original_address.get());
+      mScanCallbacksObj, method_onScanResult, event_type, addr_type,
+      address.get(), primary_phy, secondary_phy, advertising_sid, tx_power,
+      rssi, periodic_adv_int, jb.get(), original_address.get());
 }
 
 void btgattc_open_cb(int conn_id, int status, int clientIf,
@@ -408,28 +413,29 @@ void btgattc_batchscan_reports_cb(int client_if, int status, int report_format,
                                   int num_records, std::vector<uint8_t> data) {
   std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
-  if (!sCallbackEnv.valid() || !mCallbacksObj) return;
+  if (!sCallbackEnv.valid() || !mScanCallbacksObj) return;
   ScopedLocalRef<jbyteArray> jb(sCallbackEnv.get(),
                                 sCallbackEnv->NewByteArray(data.size()));
   sCallbackEnv->SetByteArrayRegion(jb.get(), 0, data.size(),
                                    (jbyte*)data.data());
 
-  sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onBatchScanReports, status,
-                               client_if, report_format, num_records, jb.get());
+  sCallbackEnv->CallVoidMethod(mScanCallbacksObj, method_onBatchScanReports,
+                               status, client_if, report_format, num_records,
+                               jb.get());
 }
 
 void btgattc_batchscan_threshold_cb(int client_if) {
   std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
-  if (!sCallbackEnv.valid() || !mCallbacksObj) return;
-  sCallbackEnv->CallVoidMethod(mCallbacksObj,
+  if (!sCallbackEnv.valid() || !mScanCallbacksObj) return;
+  sCallbackEnv->CallVoidMethod(mScanCallbacksObj,
                                method_onBatchScanThresholdCrossed, client_if);
 }
 
 void btgattc_track_adv_event_cb(btgatt_track_adv_info_t* p_adv_track_info) {
   std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
-  if (!sCallbackEnv.valid() || !mCallbacksObj) return;
+  if (!sCallbackEnv.valid() || !mScanCallbacksObj) return;
 
   ScopedLocalRef<jstring> address(
       sCallbackEnv.get(),
@@ -462,7 +468,7 @@ void btgattc_track_adv_event_cb(btgatt_track_adv_info_t* p_adv_track_info) {
           p_adv_track_info->rssi_value, p_adv_track_info->time_stamp));
 
   if (NULL != trackadv_obj.get()) {
-    sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onTrackAdvFoundLost,
+    sCallbackEnv->CallVoidMethod(mScanCallbacksObj, method_onTrackAdvFoundLost,
                                  trackadv_obj.get());
   }
 }
@@ -988,17 +994,17 @@ class JniScanningCallbacks : ScanningCallbacks {
                            uint8_t status) {
     std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
-    if (!sCallbackEnv.valid() || !mCallbacksObj) return;
-    sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onScannerRegistered,
+    if (!sCallbackEnv.valid() || !mScanCallbacksObj) return;
+    sCallbackEnv->CallVoidMethod(mScanCallbacksObj, method_onScannerRegistered,
                                  status, scannerId, UUID_PARAMS(app_uuid));
   }
 
   void OnSetScannerParameterComplete(uint8_t scannerId, uint8_t status) {
     std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
-    if (!sCallbackEnv.valid() || !mCallbacksObj) return;
+    if (!sCallbackEnv.valid() || !mScanCallbacksObj) return;
     sCallbackEnv->CallVoidMethod(
-        mCallbacksObj, method_onScanParamSetupCompleted, status, scannerId);
+        mScanCallbacksObj, method_onScanParamSetupCompleted, status, scannerId);
   }
 
   void OnScanResult(uint16_t event_type, uint8_t addr_type, RawAddress bda,
@@ -1007,7 +1013,7 @@ class JniScanningCallbacks : ScanningCallbacks {
                     uint16_t periodic_adv_int, std::vector<uint8_t> adv_data) {
     std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
-    if (!sCallbackEnv.valid() || !mCallbacksObj) return;
+    if (!sCallbackEnv.valid() || !mScanCallbacksObj) return;
 
     ScopedLocalRef<jstring> address(sCallbackEnv.get(),
                                     bdaddr2newjstr(sCallbackEnv.get(), &bda));
@@ -1025,7 +1031,7 @@ class JniScanningCallbacks : ScanningCallbacks {
         sCallbackEnv.get(), sCallbackEnv->NewStringUTF(empty_address));
 
     sCallbackEnv->CallVoidMethod(
-        mCallbacksObj, method_onScanResult, event_type, addr_type,
+        mScanCallbacksObj, method_onScanResult, event_type, addr_type,
         address.get(), primary_phy, secondary_phy, advertising_sid, tx_power,
         rssi, periodic_adv_int, jb.get(), fake_address.get());
   }
@@ -1033,7 +1039,7 @@ class JniScanningCallbacks : ScanningCallbacks {
   void OnTrackAdvFoundLost(AdvertisingTrackInfo track_info) {
     std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
-    if (!sCallbackEnv.valid() || !mCallbacksObj) return;
+    if (!sCallbackEnv.valid() || !mScanCallbacksObj) return;
 
     ScopedLocalRef<jstring> address(
         sCallbackEnv.get(),
@@ -1066,8 +1072,8 @@ class JniScanningCallbacks : ScanningCallbacks {
             track_info.rssi, track_info.time_stamp));
 
     if (NULL != trackadv_obj.get()) {
-      sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onTrackAdvFoundLost,
-                                   trackadv_obj.get());
+      sCallbackEnv->CallVoidMethod(
+          mScanCallbacksObj, method_onTrackAdvFoundLost, trackadv_obj.get());
     }
   }
 
@@ -1075,13 +1081,13 @@ class JniScanningCallbacks : ScanningCallbacks {
                           int num_records, std::vector<uint8_t> data) {
     std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
-    if (!sCallbackEnv.valid() || !mCallbacksObj) return;
+    if (!sCallbackEnv.valid() || !mScanCallbacksObj) return;
     ScopedLocalRef<jbyteArray> jb(sCallbackEnv.get(),
                                   sCallbackEnv->NewByteArray(data.size()));
     sCallbackEnv->SetByteArrayRegion(jb.get(), 0, data.size(),
                                      (jbyte*)data.data());
 
-    sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onBatchScanReports,
+    sCallbackEnv->CallVoidMethod(mScanCallbacksObj, method_onBatchScanReports,
                                  status, client_if, report_format, num_records,
                                  jb.get());
   }
@@ -1089,8 +1095,8 @@ class JniScanningCallbacks : ScanningCallbacks {
   void OnBatchScanThresholdCrossed(int client_if) {
     std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
-    if (!sCallbackEnv.valid() || !mCallbacksObj) return;
-    sCallbackEnv->CallVoidMethod(mCallbacksObj,
+    if (!sCallbackEnv.valid() || !mScanCallbacksObj) return;
+    sCallbackEnv->CallVoidMethod(mScanCallbacksObj,
                                  method_onBatchScanThresholdCrossed, client_if);
   }
 
@@ -1323,8 +1329,8 @@ void btgattc_register_scanner_cb(const Uuid& app_uuid, uint8_t scannerId,
                                  uint8_t status) {
   std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
-  if (!sCallbackEnv.valid() || !mCallbacksObj) return;
-  sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onScannerRegistered,
+  if (!sCallbackEnv.valid() || !mScanCallbacksObj) return;
+  sCallbackEnv->CallVoidMethod(mScanCallbacksObj, method_onScannerRegistered,
                                status, scannerId, UUID_PARAMS(app_uuid));
 }
 
@@ -1533,9 +1539,9 @@ static void gattClientReadRemoteRssiNative(JNIEnv* env, jobject /* object */,
 void set_scan_params_cmpl_cb(int client_if, uint8_t status) {
   std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
-  if (!sCallbackEnv.valid() || !mCallbacksObj) return;
-  sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onScanParamSetupCompleted,
-                               status, client_if);
+  if (!sCallbackEnv.valid() || !mScanCallbacksObj) return;
+  sCallbackEnv->CallVoidMethod(
+      mScanCallbacksObj, method_onScanParamSetupCompleted, status, client_if);
 }
 
 static void gattSetScanParametersNative(JNIEnv* /* env */, jobject /* object */,
@@ -1551,8 +1557,8 @@ void scan_filter_param_cb(uint8_t client_if, uint8_t avbl_space, uint8_t action,
                           uint8_t status) {
   std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
-  if (!sCallbackEnv.valid() || !mCallbacksObj) return;
-  sCallbackEnv->CallVoidMethod(mCallbacksObj,
+  if (!sCallbackEnv.valid() || !mScanCallbacksObj) return;
+  sCallbackEnv->CallVoidMethod(mScanCallbacksObj,
                                method_onScanFilterParamsConfigured, action,
                                status, client_if, avbl_space);
 }
@@ -1634,9 +1640,10 @@ static void scan_filter_cfg_cb(uint8_t client_if, uint8_t filt_type,
                                uint8_t status) {
   std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
-  if (!sCallbackEnv.valid() || !mCallbacksObj) return;
-  sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onScanFilterConfig, action,
-                               status, client_if, filt_type, avbl_space);
+  if (!sCallbackEnv.valid() || !mScanCallbacksObj) return;
+  sCallbackEnv->CallVoidMethod(mScanCallbacksObj, method_onScanFilterConfig,
+                               action, status, client_if, filt_type,
+                               avbl_space);
 }
 
 static void gattClientScanFilterAddNative(JNIEnv* env, jobject /* object */,
@@ -1811,9 +1818,10 @@ static void gattClientScanFilterClearNative(JNIEnv* /* env */,
 void scan_enable_cb(uint8_t client_if, uint8_t action, uint8_t status) {
   std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
-  if (!sCallbackEnv.valid() || !mCallbacksObj) return;
-  sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onScanFilterEnableDisabled,
-                               action, status, client_if);
+  if (!sCallbackEnv.valid() || !mScanCallbacksObj) return;
+  sCallbackEnv->CallVoidMethod(mScanCallbacksObj,
+                               method_onScanFilterEnableDisabled, action,
+                               status, client_if);
 }
 
 static void gattClientScanFilterEnableNative(JNIEnv* /* env */,
@@ -1855,9 +1863,10 @@ static void gattSubrateRequestNative(JNIEnv* env, jobject /* object */,
 void batchscan_cfg_storage_cb(uint8_t client_if, uint8_t status) {
   std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
-  if (!sCallbackEnv.valid() || !mCallbacksObj) return;
-  sCallbackEnv->CallVoidMethod(
-      mCallbacksObj, method_onBatchScanStorageConfigured, status, client_if);
+  if (!sCallbackEnv.valid() || !mScanCallbacksObj) return;
+  sCallbackEnv->CallVoidMethod(mScanCallbacksObj,
+                               method_onBatchScanStorageConfigured, status,
+                               client_if);
 }
 
 static void gattClientConfigBatchScanStorageNative(
@@ -1874,9 +1883,10 @@ static void gattClientConfigBatchScanStorageNative(
 void batchscan_enable_cb(uint8_t client_if, uint8_t status) {
   std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
-  if (!sCallbackEnv.valid() || !mCallbacksObj) return;
-  sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onBatchScanStartStopped,
-                               0 /* unused */, status, client_if);
+  if (!sCallbackEnv.valid() || !mScanCallbacksObj) return;
+  sCallbackEnv->CallVoidMethod(mScanCallbacksObj,
+                               method_onBatchScanStartStopped, 0 /* unused */,
+                               status, client_if);
 }
 
 static void gattClientStartBatchScanNative(JNIEnv* /* env */,
@@ -2454,6 +2464,25 @@ static void periodicScanCleanupNative(JNIEnv* env, jobject /* object */) {
   }
 }
 
+static void scanInitializeNative(JNIEnv* env, jobject object) {
+  std::unique_lock<std::shared_mutex> lock(callbacks_mutex);
+  if (mScanCallbacksObj != NULL) {
+    log::warn("Cleaning up scan callback object");
+    env->DeleteGlobalRef(mScanCallbacksObj);
+    mScanCallbacksObj = NULL;
+  }
+
+  mScanCallbacksObj = env->NewGlobalRef(object);
+}
+
+static void scanCleanupNative(JNIEnv* env, jobject /* object */) {
+  std::unique_lock<std::shared_mutex> lock(callbacks_mutex);
+  if (mScanCallbacksObj != NULL) {
+    env->DeleteGlobalRef(mScanCallbacksObj);
+    mScanCallbacksObj = NULL;
+  }
+}
+
 static void startSyncNative(JNIEnv* env, jobject /* object */, jint sid,
                             jstring address, jint skip, jint timeout,
                             jint reg_id) {
@@ -2557,6 +2586,8 @@ static void stopDistanceMeasurementNative(JNIEnv* env, jobject /* object */,
 // JNI functions defined in GattNativeInterface class.
 static int register_com_android_bluetooth_gatt_scan(JNIEnv* env) {
   const JNINativeMethod methods[] = {
+      {"initializeNative", "()V", (void*)scanInitializeNative},
+      {"cleanupNative", "()V", (void*)scanCleanupNative},
       {"registerScannerNative", "(JJ)V", (void*)registerScannerNative},
       {"unregisterScannerNative", "(I)V", (void*)unregisterScannerNative},
       {"gattClientScanNative", "(Z)V", (void*)gattClientScanNative},
@@ -2587,8 +2618,40 @@ static int register_com_android_bluetooth_gatt_scan(JNIEnv* env) {
       {"gattSetScanParametersNative", "(III)V",
        (void*)gattSetScanParametersNative},
   };
-  return REGISTER_NATIVE_METHODS(
+  const int result = REGISTER_NATIVE_METHODS(
       env, "com/android/bluetooth/le_scan/ScanNativeInterface", methods);
+  if (result != 0) {
+    return result;
+  }
+
+  const JNIJavaMethod javaMethods[] = {
+      // Client callbacks
+      {"onScannerRegistered", "(IIJJ)V", &method_onScannerRegistered},
+      {"onScanResult", "(IILjava/lang/String;IIIIII[BLjava/lang/String;)V",
+       &method_onScanResult},
+      {"onScanFilterConfig", "(IIIII)V", &method_onScanFilterConfig},
+      {"onScanFilterParamsConfigured", "(IIII)V",
+       &method_onScanFilterParamsConfigured},
+      {"onScanFilterEnableDisabled", "(III)V",
+       &method_onScanFilterEnableDisabled},
+      {"onBatchScanStorageConfigured", "(II)V",
+       &method_onBatchScanStorageConfigured},
+      {"onBatchScanStartStopped", "(III)V", &method_onBatchScanStartStopped},
+      {"onBatchScanReports", "(IIII[B)V", &method_onBatchScanReports},
+      {"onBatchScanThresholdCrossed", "(I)V",
+       &method_onBatchScanThresholdCrossed},
+      {"createOnTrackAdvFoundLostObject",
+       "(II[BI[BIIILjava/lang/String;IIII)"
+       "Lcom/android/bluetooth/le_scan/AdvtFilterOnFoundOnLostInfo;",
+       &method_createOnTrackAdvFoundLostObject},
+      {"onTrackAdvFoundLost",
+       "(Lcom/android/bluetooth/le_scan/AdvtFilterOnFoundOnLostInfo;)V",
+       &method_onTrackAdvFoundLost},
+      {"onScanParamSetupCompleted", "(II)V", &method_onScanParamSetupCompleted},
+  };
+  GET_JAVA_METHODS(env, "com/android/bluetooth/le_scan/ScanNativeInterface",
+                   javaMethods);
+  return 0;
 }
 
 static int register_com_android_bluetooth_gatt_advertise_manager(JNIEnv* env) {
@@ -2796,9 +2859,6 @@ static int register_com_android_bluetooth_gatt_(JNIEnv* env) {
   const JNIJavaMethod javaMethods[] = {
       // Client callbacks
       {"onClientRegistered", "(IIJJ)V", &method_onClientRegistered},
-      {"onScannerRegistered", "(IIJJ)V", &method_onScannerRegistered},
-      {"onScanResult", "(IILjava/lang/String;IIIIII[BLjava/lang/String;)V",
-       &method_onScanResult},
       {"onConnected", "(IIILjava/lang/String;)V", &method_onConnected},
       {"onDisconnected", "(IIILjava/lang/String;)V", &method_onDisconnected},
       {"onReadCharacteristic", "(III[B)V", &method_onReadCharacteristic},
@@ -2813,26 +2873,7 @@ static int register_com_android_bluetooth_gatt_(JNIEnv* env) {
       {"onReadRemoteRssi", "(ILjava/lang/String;II)V",
        &method_onReadRemoteRssi},
       {"onConfigureMTU", "(III)V", &method_onConfigureMTU},
-      {"onScanFilterConfig", "(IIIII)V", &method_onScanFilterConfig},
-      {"onScanFilterParamsConfigured", "(IIII)V",
-       &method_onScanFilterParamsConfigured},
-      {"onScanFilterEnableDisabled", "(III)V",
-       &method_onScanFilterEnableDisabled},
       {"onClientCongestion", "(IZ)V", &method_onClientCongestion},
-      {"onBatchScanStorageConfigured", "(II)V",
-       &method_onBatchScanStorageConfigured},
-      {"onBatchScanStartStopped", "(III)V", &method_onBatchScanStartStopped},
-      {"onBatchScanReports", "(IIII[B)V", &method_onBatchScanReports},
-      {"onBatchScanThresholdCrossed", "(I)V",
-       &method_onBatchScanThresholdCrossed},
-      {"createOnTrackAdvFoundLostObject",
-       "(II[BI[BIIILjava/lang/String;IIII)"
-       "Lcom/android/bluetooth/le_scan/AdvtFilterOnFoundOnLostInfo;",
-       &method_createOnTrackAdvFoundLostObject},
-      {"onTrackAdvFoundLost",
-       "(Lcom/android/bluetooth/le_scan/AdvtFilterOnFoundOnLostInfo;)V",
-       &method_onTrackAdvFoundLost},
-      {"onScanParamSetupCompleted", "(II)V", &method_onScanParamSetupCompleted},
       {"getSampleGattDbElement", "()Lcom/android/bluetooth/gatt/GattDbElement;",
        &method_getSampleGattDbElement},
       {"onGetGattDb", "(ILjava/util/ArrayList;)V", &method_onGetGattDb},
@@ -2869,7 +2910,6 @@ static int register_com_android_bluetooth_gatt_(JNIEnv* env) {
   };
   GET_JAVA_METHODS(env, "com/android/bluetooth/gatt/GattNativeInterface",
                    javaMethods);
-
   return 0;
 }
 
