@@ -132,12 +132,12 @@ bool StartRequest() {
     return false;
   }
 
-  if (btif_av_stream_started_ready()) {
+  if (btif_av_stream_started_ready(A2dpType::kSource)) {
     // Already started, ACK back immediately.
     a2dp_data_path_open();
     return true;
   }
-  if (btif_av_stream_ready()) {
+  if (btif_av_stream_ready(A2dpType::kSource)) {
     a2dp_data_path_open();
     /*
      * Post start event and wait for audio path to open.
@@ -145,8 +145,8 @@ bool StartRequest() {
      * procedure is completed.
      */
     a2dp_pending_cmd_ = A2DP_CTRL_CMD_START;
-    btif_av_stream_start();
-    if (btif_av_get_peer_sep() != AVDT_TSEP_SRC) {
+    btif_av_stream_start(A2dpType::kSource);
+    if (btif_av_get_peer_sep(A2dpType::kSource) != AVDT_TSEP_SRC) {
       LOG_INFO("%s: accepted", __func__);
       return true;  // NOTE: The request is placed, but could still fail.
     }
@@ -159,9 +159,9 @@ bool StartRequest() {
 
 // Invoked by audio server when audio streaming is done.
 bool StopRequest() {
-  if (btif_av_get_peer_sep() == AVDT_TSEP_SNK &&
-      !btif_av_stream_started_ready()) {
-    btif_av_clear_remote_suspend_flag();
+  if (btif_av_get_peer_sep(A2dpType::kSource) == AVDT_TSEP_SNK &&
+      !btif_av_stream_started_ready(A2dpType::kSource)) {
+    btif_av_clear_remote_suspend_flag(A2dpType::kSource);
     return true;
   }
   LOG_INFO("%s: handling", __func__);
@@ -175,7 +175,7 @@ bool SuspendRequest() {
     LOG_WARN("%s: busy in pending_cmd=%u", __func__, a2dp_pending_cmd_);
     return false;
   }
-  if (!btif_av_stream_started_ready()) {
+  if (!btif_av_stream_started_ready(A2dpType::kSource)) {
     LOG_WARN("%s: AV stream is not started", __func__);
     return false;
   }
