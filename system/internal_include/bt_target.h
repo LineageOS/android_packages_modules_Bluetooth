@@ -448,11 +448,7 @@
    Prefer greater than 0 second, and no less than default inactivity link idle
    timer(L2CAP_LINK_INACTIVITY_TOUT) in l2cap) */
 #ifndef SMP_LINK_TOUT_MIN
-#if (L2CAP_LINK_INACTIVITY_TOUT > 0)
 #define SMP_LINK_TOUT_MIN L2CAP_LINK_INACTIVITY_TOUT
-#else
-#define SMP_LINK_TOUT_MIN 2
-#endif
 #endif
 /******************************************************************************
  *
@@ -579,11 +575,6 @@
 /* The port transmit queue high watermark level, in number of buffers. */
 #ifndef PORT_TX_BUF_CRITICAL_WM
 #define PORT_TX_BUF_CRITICAL_WM 15
-#endif
-
-/* The RFCOMM multiplexer preferred flow control mechanism. */
-#ifndef PORT_FC_DEFAULT
-#define PORT_FC_DEFAULT PORT_FC_CREDIT
 #endif
 
 /******************************************************************************
@@ -788,16 +779,6 @@
 /* Number of simultaneous AVCTP connections. */
 #ifndef AVCT_NUM_CONN
 #define AVCT_NUM_CONN 14  // 2 * MaxDevices + 2
-#endif
-
-/******************************************************************************
- *
- * AVRCP
- *
- *****************************************************************************/
-
-#ifndef DUMP_PCM_DATA
-#define DUMP_PCM_DATA FALSE
 #endif
 
 /******************************************************************************
