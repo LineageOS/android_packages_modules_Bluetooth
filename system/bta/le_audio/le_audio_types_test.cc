@@ -58,7 +58,9 @@ TEST(LeAudioLtvMapTest, test_serialization) {
   bool success;
   LeAudioLtvMap ltv_map =
       LeAudioLtvMap::Parse(ltv_test_vec.data(), ltv_test_vec.size(), success);
+  auto hash_one = ltv_map.GetHash();
   ASSERT_TRUE(success);
+  ASSERT_NE(hash_one, 0lu);
   ASSERT_FALSE(ltv_map.IsEmpty());
   ASSERT_EQ((size_t)3, ltv_map.Size());
 
@@ -67,11 +69,17 @@ TEST(LeAudioLtvMapTest, test_serialization) {
 
   LeAudioLtvMap ltv_map2 =
       LeAudioLtvMap::Parse(ltv_test_vec2.data(), ltv_test_vec2.size(), success);
+  auto hash_two = ltv_map2.GetHash();
   ASSERT_TRUE(success);
+  ASSERT_NE(hash_two, 0lu);
   ASSERT_FALSE(ltv_map2.IsEmpty());
   ASSERT_EQ((size_t)2, ltv_map2.Size());
+  ASSERT_NE(hash_one, hash_two);
 
   ltv_map.Append(ltv_map2);
+  ASSERT_NE(ltv_map.GetHash(), 0lu);
+  ASSERT_NE(ltv_map.GetHash(), hash_one);
+  ASSERT_NE(ltv_map.GetHash(), hash_two);
   ASSERT_EQ((size_t)4, ltv_map.Size());
 
   ASSERT_TRUE(ltv_map.Find(0x01));
@@ -370,6 +378,241 @@ TEST(LeAudioLtvMapTest, test_capabilities_valid) {
   ASSERT_TRUE(caps.IsCodecFramesPerSduSupported(1));
   ASSERT_TRUE(caps.IsCodecFramesPerSduSupported(2));
   ASSERT_FALSE(caps.IsCodecFramesPerSduSupported(3));
+}
+
+TEST(LeAudioLtvMapTest, test_adding_types) {
+  LeAudioLtvMap ltv_map;
+  ltv_map.Add(1, (uint8_t)127);
+  ltv_map.Add(2, (uint16_t)32767);
+  ltv_map.Add(3, (uint32_t)65535);
+  ltv_map.Add(4, std::vector<uint8_t>{1, 2, 3, 4, 5, 6, 7, 8, 9});
+  ltv_map.Add(5, std::string("sample text"));
+  ltv_map.Add(6, true);
+
+  ASSERT_EQ(6lu, ltv_map.Size());
+
+  uint8_t u8;
+  auto pp = ltv_map.At(1).data();
+  STREAM_TO_UINT8(u8, pp);
+  ASSERT_EQ((uint8_t)127, u8);
+
+  uint16_t u16;
+  pp = ltv_map.At(2).data();
+  STREAM_TO_UINT16(u16, pp);
+  ASSERT_EQ((uint16_t)32767, u16);
+
+  uint32_t u32;
+  pp = ltv_map.At(3).data();
+  STREAM_TO_UINT32(u32, pp);
+  ASSERT_EQ((uint32_t)65535, u32);
+
+  ASSERT_EQ((std::vector<uint8_t>{1, 2, 3, 4, 5, 6, 7, 8, 9}), ltv_map.At(4));
+
+  ASSERT_EQ(std::string("sample text"),
+            std::string(ltv_map.At(5).begin(), ltv_map.At(5).end()));
+
+  ASSERT_EQ(true, (bool)ltv_map.At(6).data()[0]);
+}
+
+TEST(LeAudioLtvMapTest, test_hash_sanity) {
+  LeAudioLtvMap ltv_map;
+  ASSERT_EQ(ltv_map.GetHash(), 0lu);
+
+  auto hash = ltv_map.GetHash();
+  ltv_map.Add(0, (uint8_t)127);
+  ltv_map.Add(1, (uint16_t)32767);
+  ltv_map.Add(2, (uint32_t)65535);
+  ltv_map.Add(3, std::vector<uint8_t>{1, 2, 3, 4, 5, 6, 7, 8, 9});
+
+  ASSERT_NE(ltv_map.GetHash(), 0lu);
+  ASSERT_NE(ltv_map.GetHash(), hash);
+  ASSERT_EQ(ltv_map, ltv_map);
+
+  // Compare hashes of equal LTV maps, filled in a different order
+  LeAudioLtvMap ltv_map_two;
+  ltv_map_two.Add(3, std::vector<uint8_t>{1, 2, 3, 4, 5, 6, 7, 8, 9});
+  ltv_map_two.Add(0, (uint8_t)127);
+  ltv_map_two.Add(2, (uint32_t)65535);
+  ltv_map_two.Add(1, (uint16_t)32767);
+  ASSERT_EQ(ltv_map, ltv_map_two);
+}
+
+TEST(LeAudioLtvMapTest, test_value_hash_sanity) {
+  LeAudioLtvMap ltv_map;
+
+  ltv_map.Add(1, (uint16_t)32767);
+  auto hash = ltv_map.GetHash();
+
+  // Same value but type size is different
+  hash = ltv_map.GetHash();
+  ltv_map.Add(1, (uint32_t)32767);
+  ASSERT_NE(ltv_map.GetHash(), hash);
+}
+
+TEST(LeAudioLtvMapTest, test_type_change_same_value) {
+  LeAudioLtvMap ltv_map_one;
+  ltv_map_one.Add(1, (uint16_t)32767);
+
+  LeAudioLtvMap ltv_map_two;
+  // The same value but different type
+  ltv_map_two.Add(3, (uint16_t)32767);
+
+  ASSERT_NE(ltv_map_one.GetHash(), ltv_map_two.GetHash());
+}
+
+TEST(LeAudioLtvMapTest, test_add_changing_hash) {
+  LeAudioLtvMap ltv_map;
+
+  auto hash = ltv_map.GetHash();
+  ltv_map.Add(0, (uint8_t)127);
+  ASSERT_NE(ltv_map.GetHash(), hash);
+
+  hash = ltv_map.GetHash();
+  ltv_map.Add(1, (uint16_t)32767);
+  ASSERT_NE(ltv_map.GetHash(), hash);
+
+  hash = ltv_map.GetHash();
+  ltv_map.Add(2, (uint32_t)65535);
+  ASSERT_NE(ltv_map.GetHash(), hash);
+
+  hash = ltv_map.GetHash();
+  ltv_map.Add(3, std::vector<uint8_t>{1, 2, 3, 4, 5, 6, 7, 8, 9});
+  ASSERT_NE(ltv_map.GetHash(), hash);
+}
+
+TEST(LeAudioLtvMapTest, test_update_changing_hash) {
+  LeAudioLtvMap ltv_map;
+
+  auto hash = ltv_map.GetHash();
+  ltv_map.Add(0, (uint8_t)127);
+  ASSERT_NE(ltv_map.GetHash(), hash);
+
+  hash = ltv_map.GetHash();
+  ltv_map.Add(0, (uint16_t)32767);
+  ASSERT_NE(ltv_map.GetHash(), hash);
+
+  hash = ltv_map.GetHash();
+  ltv_map.Add(0, (uint32_t)65535);
+  ASSERT_NE(ltv_map.GetHash(), hash);
+
+  hash = ltv_map.GetHash();
+  ltv_map.Add(0, std::vector<uint8_t>{1, 2, 3, 4, 5, 6, 7, 8, 9});
+  ASSERT_NE(ltv_map.GetHash(), hash);
+}
+
+TEST(LeAudioLtvMapTest, test_update_same_not_changing_hash) {
+  LeAudioLtvMap ltv_map;
+
+  auto hash = ltv_map.GetHash();
+  ltv_map.Add(0, (uint8_t)127);
+  ASSERT_NE(ltv_map.GetHash(), hash);
+
+  hash = ltv_map.GetHash();
+  ltv_map.Add(0, (uint8_t)127);
+  ASSERT_EQ(ltv_map.GetHash(), hash);
+}
+
+TEST(LeAudioLtvMapTest, test_remove_changing_hash) {
+  LeAudioLtvMap ltv_map;
+
+  auto hash = ltv_map.GetHash();
+  ltv_map.Add(0, (uint8_t)127);
+  ltv_map.Add(1, (uint16_t)32767);
+  ltv_map.Add(2, (uint32_t)65535);
+  ltv_map.Add(3, std::vector<uint8_t>{1, 2, 3, 4, 5, 6, 7, 8, 9});
+
+  hash = ltv_map.GetHash();
+  ltv_map.Remove(0);
+  ASSERT_NE(ltv_map.GetHash(), hash);
+
+  hash = ltv_map.GetHash();
+  ltv_map.Remove(1);
+  ASSERT_NE(ltv_map.GetHash(), hash);
+
+  hash = ltv_map.GetHash();
+  ltv_map.Remove(2);
+  ASSERT_NE(ltv_map.GetHash(), hash);
+
+  hash = ltv_map.GetHash();
+  ltv_map.Remove(3);
+  ASSERT_NE(ltv_map.GetHash(), hash);
+}
+
+TEST(LeAudioLtvMapTest, test_clear_changing_hash) {
+  LeAudioLtvMap ltv_map;
+
+  auto hash = ltv_map.GetHash();
+  ltv_map.Add(0, (uint8_t)127);
+  ltv_map.Add(1, (uint16_t)32767);
+  ltv_map.Add(2, (uint32_t)65535);
+  ltv_map.Add(3, std::vector<uint8_t>{1, 2, 3, 4, 5, 6, 7, 8, 9});
+
+  hash = ltv_map.GetHash();
+  ltv_map.Clear();
+  ASSERT_NE(ltv_map.GetHash(), hash);
+
+  // 2nd clear should not change it
+  hash = ltv_map.GetHash();
+  ltv_map.Clear();
+  ASSERT_EQ(ltv_map.GetHash(), hash);
+
+  // Check if empty maps have equal hash
+  LeAudioLtvMap empty_ltv_map;
+  ASSERT_EQ(empty_ltv_map, ltv_map);
+}
+
+TEST(LeAudioLtvMapTest, test_remove_all_changing_hash) {
+  LeAudioLtvMap ltv_map;
+
+  auto hash = ltv_map.GetHash();
+  ltv_map.Add(0, (uint8_t)127);
+  ltv_map.Add(1, (uint16_t)32767);
+  ltv_map.Add(2, (uint32_t)65535);
+  ltv_map.Add(3, std::vector<uint8_t>{1, 2, 3, 4, 5, 6, 7, 8, 9});
+
+  LeAudioLtvMap ltv_map_1st_half;
+  ltv_map_1st_half.Add(1, (uint16_t)32767);
+  ltv_map_1st_half.Add(3, std::vector<uint8_t>{1, 2, 3, 4, 5, 6, 7, 8, 9});
+
+  LeAudioLtvMap ltv_map_2nd_half;
+  ltv_map_2nd_half.Add(0, (uint8_t)127);
+  ltv_map_2nd_half.Add(2, (uint32_t)65535);
+
+  ASSERT_NE(ltv_map_1st_half, ltv_map_2nd_half);
+  ASSERT_NE(ltv_map, ltv_map_2nd_half);
+
+  hash = ltv_map.GetHash();
+  ltv_map.RemoveAllTypes(ltv_map_1st_half);
+  ASSERT_NE(hash, ltv_map.GetHash());
+
+  hash = ltv_map.GetHash();
+  ltv_map.RemoveAllTypes(ltv_map_2nd_half);
+  ASSERT_NE(hash, ltv_map.GetHash());
+
+  // Check if empty maps have equal hash
+  LeAudioLtvMap empty_ltv_map;
+  ASSERT_EQ(empty_ltv_map, ltv_map);
+}
+
+TEST(LeAudioLtvMapTest, test_intersection) {
+  LeAudioLtvMap ltv_map_one;
+  ltv_map_one.Add(1, (uint16_t)32767);
+  ltv_map_one.Add(3, std::vector<uint8_t>{1, 2, 3, 4, 5, 6, 7, 8, 9});
+  ltv_map_one.Add(2, (uint32_t)65535);
+
+  LeAudioLtvMap ltv_map_two;
+  ltv_map_two.Add(0, (uint8_t)127);
+  // Not the type is the same but value differs
+  ltv_map_two.Add(1, (uint16_t)32766);
+  ltv_map_two.Add(2, (uint32_t)65535);
+
+  LeAudioLtvMap ltv_map_common;
+  ltv_map_common.Add(2, (uint32_t)65535);
+  ASSERT_NE(ltv_map_common.GetHash(), 0lu);
+
+  ASSERT_EQ(ltv_map_one.GetIntersection(ltv_map_two).GetHash(),
+            ltv_map_common.GetHash());
+  ASSERT_EQ(ltv_map_two.GetIntersection(ltv_map_one), ltv_map_common);
 }
 
 }  // namespace types
