@@ -147,10 +147,10 @@ void RFCOMM_ParameterNegotiationRequest(tRFC_MCB* p_mcb, uint8_t dlci,
     return;
   }
 
-  /* Negotiate the flow control mechanism.  If flow control mechanism for */
-  /* mux has not been set yet, use our default value.  If it has been set, */
-  /* use that value. */
-  flow = (p_mcb->flow == PORT_FC_UNDEFINED) ? PORT_FC_DEFAULT : p_mcb->flow;
+  /* Negotiate the flow control mechanism.  If flow control mechanism for the
+   * mux has not been set yet, use credits.  If it has been set, use that value.
+   */
+  flow = (p_mcb->flow == PORT_FC_UNDEFINED) ? PORT_FC_CREDIT : p_mcb->flow;
 
   /* Set convergence layer and number of credits (k) */
   if (flow == PORT_FC_CREDIT) {
