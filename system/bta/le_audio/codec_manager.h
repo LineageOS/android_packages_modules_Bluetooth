@@ -78,8 +78,8 @@ class CodecManager {
           update_receiver);
   virtual const ::le_audio::set_configurations::AudioSetConfigurations*
   GetOffloadCodecConfig(::le_audio::types::LeAudioContextType ctx_type);
-  virtual const ::le_audio::broadcast_offload_config*
-  GetBroadcastOffloadConfig();
+  virtual const ::le_audio::broadcast_offload_config* GetBroadcastOffloadConfig(
+      uint8_t preferred_quality);
   virtual void UpdateBroadcastConnHandle(
       const std::vector<uint16_t>& conn_handle,
       std::function<void(const ::le_audio::broadcast_offload_config& config)>
