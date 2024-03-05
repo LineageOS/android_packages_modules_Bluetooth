@@ -47,11 +47,6 @@ typedef struct {
   float gain;
 } BtifAvrcpAudioTrack;
 
-#if (DUMP_PCM_DATA == TRUE)
-FILE* outputPcmSampleFile;
-char outputFilename[50] = "/data/misc/bluedroid/output_sample.pcm";
-#endif
-
 // Maximum track gain that can be set.
 constexpr float kMaxTrackGain = 1.0f;
 // Minimum track gain that can be set.
@@ -130,9 +125,6 @@ void* BtifAvrcpAudioTrackCreate(int trackFreq, int bitsPerSample,
   trackHolder->gain = kMaxTrackGain;
   trackHolder->buffer = new float[trackHolder->bufferLength]();
 
-#if (DUMP_PCM_DATA == TRUE)
-  outputPcmSampleFile = fopen(outputFilename, "ab");
-#endif
   s_AudioEngine.trackFreq = trackFreq;
   s_AudioEngine.channelCount = channelCount;
   s_AudioEngine.trackHandle = (void*)trackHolder;
@@ -176,13 +168,6 @@ void BtifAvrcpAudioTrackDelete(void* handle) {
     delete trackHolder->buffer;
     delete trackHolder;
   }
-
-#if (DUMP_PCM_DATA == TRUE)
-  if (outputPcmSampleFile) {
-    fclose(outputPcmSampleFile);
-  }
-  outputPcmSampleFile = NULL;
-#endif
 }
 
 void BtifAvrcpAudioTrackPause(void* handle) {
@@ -279,11 +264,6 @@ int BtifAvrcpAudioTrackWriteData(void* handle, void* audioBuffer,
   CHECK(trackHolder != NULL);
   CHECK(trackHolder->stream != NULL);
   aaudio_result_t retval = -1;
-#if (DUMP_PCM_DATA == TRUE)
-  if (outputPcmSampleFile) {
-    fwrite((audioBuffer), 1, (size_t)bufferLength, outputPcmSampleFile);
-  }
-#endif
 
   size_t sampleSize = sampleSizeFor(trackHolder);
   int transcodedCount = 0;
