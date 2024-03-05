@@ -408,17 +408,6 @@ public class LeAudioNativeInterface {
     }
 
     /**
-     * Confirm streaming request by other profile if there were such request
-     */
-    public void confirmUnicastStreamRequest() {
-        if (DBG) {
-            Log.d(TAG, "confirmUnicastStreamRequest");
-        }
-
-        confirmUnicastStreamRequestNative();
-    }
-
-    /**
      * Sends the audio preferences for the groupId to the native stack.
      *
      * @param groupId is the groupId corresponding to the preferences
