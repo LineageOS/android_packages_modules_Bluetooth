@@ -954,15 +954,17 @@ public class HearingAidService extends ProfileService {
 
         @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
         private HearingAidService getService(AttributionSource source) {
+            // Cache mService because it can change while getService is called b/327929337
+            HearingAidService service = mService;
             if (mIsTesting) {
-                return mService;
+                return service;
             }
-            if (!Utils.checkServiceAvailable(mService, TAG)
-                    || !Utils.checkCallerIsSystemOrActiveOrManagedUser(mService, TAG)
-                    || !Utils.checkConnectPermissionForDataDelivery(mService, source, TAG)) {
+            if (!Utils.checkServiceAvailable(service, TAG)
+                    || !Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
+                    || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
                 return null;
             }
-            return mService;
+            return service;
         }
 
         BluetoothHearingAidBinder(HearingAidService svc) {
