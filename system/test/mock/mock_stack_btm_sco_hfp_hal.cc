@@ -62,7 +62,7 @@ bool enable_offload::return_value = false;
 hfp_hal_interface::bt_codecs get_codec_capabilities::return_value = {};
 bool get_offload_enabled::return_value = false;
 bool get_offload_supported::return_value = false;
-int get_packet_size::return_value = 0;
+size_t get_packet_size::return_value = 0;
 bool get_wbs_supported::return_value = false;
 bool get_swb_supported::return_value = false;
 bool is_coding_format_supported::return_value = false;
@@ -90,7 +90,7 @@ bool get_offload_supported() {
   inc_func_call_count(__func__);
   return test::mock::stack_btm_sco_hfp_hal::get_offload_supported();
 }
-int get_packet_size(int codec) {
+size_t get_packet_size(int codec) {
   inc_func_call_count(__func__);
   return test::mock::stack_btm_sco_hfp_hal::get_packet_size(codec);
 }
