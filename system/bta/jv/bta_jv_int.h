@@ -110,7 +110,7 @@ typedef struct {
 } tBTA_JV_RFC_CB;
 
 /* JV control block */
-typedef struct {
+struct tBTA_JV_CB {
   /* the SDP handle reported to JV user is the (index + 1) to sdp_handle[].
    * if sdp_handle[i]==0, it's not used.
    * otherwise sdp_handle[i] is the stack SDP handle. */
@@ -127,17 +127,16 @@ typedef struct {
   bool scn_in_use[RFCOMM_MAX_SCN];
   uint8_t scn_search_index; /* used to search for free scns */
 
-  uint8_t sdp_active;                          /* see BTA_JV_SDP_ACT_* */
-  bluetooth::Uuid uuid;                   /* current uuid of sdp discovery*/
+  struct sdp_cb {
+    bool sdp_active{false};
+    RawAddress bd_addr{RawAddress::kEmpty};  // current bd_addr of sdp discovery
+    bluetooth::Uuid uuid{
+        bluetooth::Uuid::kEmpty};  // current uuid of sdp discovery
+  } sdp_cb;
+
   tBTA_JV_PM_CB pm_cb[BTA_JV_PM_MAX_NUM]; /* PM on a per JV handle bases */
 
   uint16_t dyn_psm; /* Next dynamic PSM value to try to assign */
-} tBTA_JV_CB;
-
-enum {
-  BTA_JV_SDP_ACT_NONE = 0,
-  BTA_JV_SDP_ACT_YES,   /* waiting for SDP result */
-  BTA_JV_SDP_ACT_CANCEL /* waiting for cancel complete */
 };
 
 /* JV control block */
