@@ -18,6 +18,7 @@ source_set("libcodec_server_a2dp_aac") {
   configs += [
     "//bt/system:target_defaults",
     "//bt/system/stack/mmc:target_defaults",
+    "//bt/system/log:log_defaults",
   ]
   include_dirs = [
     "//bt/system",
