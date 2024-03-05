@@ -38,6 +38,7 @@ struct SockConnectionEvent {
   int state;
   int role;
   int channel;
+  int type;
   char server_name[64];
   struct timespec timestamp;
 
@@ -64,6 +65,7 @@ void btif_sock_connection_logger(const RawAddress& address, int port, int type,
       .state = state,
       .role = role,
       .channel = server_port,
+      .type = type,
       .server_name = {'\0'},
   };
 
@@ -82,7 +84,7 @@ void btif_sock_dump(int fd) {
   dprintf(fd, "\nSocket Events: \n");
   dprintf(fd,
           "  Time        \tAddress          \tState             \tRole"
-          "              \tChannel   \tServerName\n");
+          "              \tChannel   \tType     \tServerName\n");
 
   const uint8_t head = logger_index.load() % SOCK_LOGGER_SIZE_MAX;
 
@@ -143,9 +145,28 @@ void SockConnectionEvent::dump(const int fd) {
       break;
   }
 
-  dprintf(fd, "  %s\t%s\t%s   \t%s      \t%d         \t%s\n", eventtime,
+  const char* str_type;
+  switch (type) {
+    case BTSOCK_RFCOMM:
+      str_type = "RFCOMM";
+      break;
+    case BTSOCK_L2CAP:
+      str_type = "L2CAP";
+      break;
+    case BTSOCK_L2CAP_LE:
+      str_type = "L2CAP_LE";
+      break;
+    case BTSOCK_SCO:
+      str_type = "SCO";
+      break;
+    default:
+      str_type = "UNKNOWN";
+      break;
+  }
+
+  dprintf(fd, "  %s\t%s\t%s   \t%s      \t%d         \t%s\t%s\n", eventtime,
           ADDRESS_TO_LOGGABLE_CSTR(addr), str_state, str_role, channel,
-          server_name);
+          str_type, server_name);
 }
 
 static android::bluetooth::SocketConnectionstateEnum toConnectionStateEnum(
