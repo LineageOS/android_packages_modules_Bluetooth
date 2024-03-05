@@ -58,7 +58,7 @@ static void bta_dm_pm_btm_cback(const RawAddress& bd_addr,
                                 tBTM_PM_STATUS status, uint16_t value,
                                 tHCI_STATUS hci_status);
 static bool bta_dm_pm_park(const RawAddress& peer_addr);
-void bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index);
+static void bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index);
 static void bta_dm_sniff_cback(uint8_t id, uint8_t app_id,
                                const RawAddress& peer_addr);
 static int bta_dm_get_sco_index();
@@ -845,7 +845,7 @@ static tBTM_PM_PWR_MD get_sniff_entry(uint8_t index) {
  * Returns          true if sniff attempted, false otherwise.
  *
  ******************************************************************************/
-void bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index) {
+static void bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index) {
   tBTM_PM_MODE mode = BTM_PM_MD_ACTIVE;
   tBTM_PM_PWR_MD pwr_md;
   tBTM_STATUS status;
