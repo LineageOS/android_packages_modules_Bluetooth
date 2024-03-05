@@ -123,10 +123,22 @@ void StorageModule::SaveImmediately() {
   }
   // 1. rename old config to backup name
   if (os::FileExists(config_file_path_)) {
+#ifndef TARGET_FLOSS
     ASSERT(os::RenameFile(config_file_path_, config_backup_path_));
+#else
+    if (!os::RenameFile(config_file_path_, config_backup_path_)) {
+      LOG_ERROR("Unable to rename old config to back up name");
+    }
+#endif
   }
   // 2. write in-memory config to disk, if failed, backup can still be used
+#ifndef TARGET_FLOSS
   ASSERT(LegacyConfigFile::FromPath(config_file_path_).Write(pimpl_->cache_));
+#else
+  if (!LegacyConfigFile::FromPath(config_file_path_).Write(pimpl_->cache_)) {
+    LOG_ERROR("Unable to write config file to disk");
+  }
+#endif
   // 3. now write back up to disk as well
   if (!LegacyConfigFile::FromPath(config_backup_path_).Write(pimpl_->cache_)) {
     LOG_ERROR("Unable to write backup config file");
