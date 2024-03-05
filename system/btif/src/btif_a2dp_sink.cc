@@ -21,6 +21,7 @@
 
 #include "btif/include/btif_a2dp_sink.h"
 
+#include <android_bluetooth_flags.h>
 #include <base/functional/bind.h>
 #include <base/logging.h>
 #include <bluetooth/log.h>
@@ -258,12 +259,20 @@ bool btif_a2dp_sink_restart_session(const RawAddress& old_peer_address,
   if (!old_peer_address.IsEmpty()) {
     btif_a2dp_sink_end_session(old_peer_address);
   }
-
-  if (!bta_av_co_set_active_peer(new_peer_address)) {
-    log::error("Cannot stream audio: cannot set active peer to {}",
-               ADDRESS_TO_LOGGABLE_STR(new_peer_address));
-    peer_ready_promise.set_value();
-    return false;
+  if (IS_FLAG_ENABLED(a2dp_concurrent_source_sink)) {
+    if (!bta_av_co_set_active_sink_peer(new_peer_address)) {
+      log::error("Cannot stream audio: cannot set active peer to {}",
+                 ADDRESS_TO_LOGGABLE_STR(new_peer_address));
+      peer_ready_promise.set_value();
+      return false;
+    }
+  } else {
+    if (!bta_av_co_set_active_peer(new_peer_address)) {
+      log::error("Cannot stream audio: cannot set active peer to {}",
+                 ADDRESS_TO_LOGGABLE_STR(new_peer_address));
+      peer_ready_promise.set_value();
+      return false;
+    }
   }
 
   if (old_peer_address.IsEmpty()) {
