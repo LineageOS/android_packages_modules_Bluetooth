@@ -21,8 +21,8 @@ import uuid as uuid_module
 from floss.pandora.floss import adapter_client
 from floss.pandora.floss import advertising_client
 from floss.pandora.floss import floss_enums
-from floss.pandora.floss import scanner_client
 from floss.pandora.floss import gatt_client
+from floss.pandora.floss import scanner_client
 from floss.pandora.floss import utils
 from floss.pandora.server import bluetooth as bluetooth_module
 from google.protobuf import empty_pb2
@@ -165,7 +165,8 @@ class HostService(host_grpc_aio.HostServicer):
                     success, reason = await connect_device
 
                     if not success:
-                        raise RuntimeError(f'Failed to connect to the {address}. Reason: {reason}')
+                        await context.abort(grpc.StatusCode.UNKNOWN,
+                                            f'Failed to connect to the {address}. Reason: {reason}.')
                 else:
                     if not self.security.manually_confirm:
                         create_bond = asyncio.get_running_loop().create_future()
@@ -181,13 +182,14 @@ class HostService(host_grpc_aio.HostServicer):
                         self.bluetooth.adapter_client.register_callback_observer(name, observer)
 
                     if not self.bluetooth.create_bond(address, floss_enums.BtTransport.BREDR):
-                        raise RuntimeError('Failed to call create_bond.')
+                        await context.abort(grpc.StatusCode.UNKNOWN, 'Failed to call create_bond.')
 
                     if not self.security.manually_confirm:
                         success, reason = await create_bond
 
                         if not success:
-                            raise RuntimeError(f'Failed to connect to the {address}. Reason: {reason}')
+                            await context.abort(grpc.StatusCode.UNKNOWN,
+                                                f'Failed to connect to the {address}. Reason: {reason}.')
 
                         if self.bluetooth.is_bonded(address) and self.bluetooth.is_connected(address):
                             self.bluetooth.connect_device(address)
@@ -215,8 +217,9 @@ class HostService(host_grpc_aio.HostServicer):
                 future = self.task['wait_connection']
                 future.get_loop().call_soon_threadsafe(future.set_result, address)
 
-        if request.address is None:
-            raise ValueError('Request address field must be set.')
+        if not request.address:
+            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, 'Request address field must be set.')
+
         address = utils.address_from(request.address)
 
         if not self.bluetooth.is_connected(address) or address not in self.waited_connections:
@@ -257,11 +260,11 @@ class HostService(host_grpc_aio.HostServicer):
                 future.get_loop().call_soon_threadsafe(future.set_result, (connected, None))
 
         if not request.address:
-            raise ValueError('Connect LE: Request address field must be set')
+            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, 'Request address field must be set.')
 
         own_address_type = request.own_address_type
         if own_address_type not in (host_pb2.RANDOM, host_pb2.RESOLVABLE_OR_RANDOM):
-            raise RuntimeError(f'ConnectLE: Unsupported OwnAddressType: {own_address_type}.')
+            await context.abort(grpc.StatusCode.UNIMPLEMENTED, f'Unsupported OwnAddressType: {own_address_type}.')
 
         address = utils.address_from(request.address)
         self.initiated_le_connection.add(address)
@@ -273,7 +276,8 @@ class HostService(host_grpc_aio.HostServicer):
             self.bluetooth.gatt_connect(address, True, floss_enums.BtTransport.LE)
             connected, reason = await connect_le_device
             if not connected:
-                raise RuntimeError(f'Failed to connect to the address: {address}. Reason: {reason}')
+                await context.abort(grpc.StatusCode.UNKNOWN,
+                                    f'Failed to connect to the address: {address}. Reason: {reason}.')
         finally:
             self.bluetooth.gatt_client.unregister_callback_observer(name, observer)
 
@@ -305,8 +309,9 @@ class HostService(host_grpc_aio.HostServicer):
                 future = self.task['wait_disconnection']
                 future.get_loop().call_soon_threadsafe(future.set_result, address)
 
-        if request.address is None:
-            raise ValueError('Request address field must be set')
+        if not request.address:
+            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, 'Request address field must be set.')
+
         address = utils.address_from(request.address)
 
         if self.bluetooth.is_connected(address):
@@ -401,22 +406,21 @@ class HostService(host_grpc_aio.HostServicer):
                 self.bluetooth.adapter_client.register_callback_observer(name, observer)
                 observers.append((name, observer))
 
+            reg_id = self.bluetooth.start_advertising_set(parameters, advertise_data, None, None, None, 0, 0)
+
+            advertising_request = {'start_advertising': asyncio.get_running_loop().create_future(), 'reg_id': reg_id}
+            observer = AdvertisingObserver(advertising_request)
+            name = utils.create_observer_name(observer)
+            self.bluetooth.advertising_client.register_callback_observer(name, observer)
+            observers.append((name, observer))
+
+            advertiser_id = await asyncio.wait_for(advertising_request['start_advertising'], timeout=5)
+            if advertiser_id is None:
+                await context.abort(grpc.StatusCode.UNKNOWN, 'Failed to start advertising.')
+
+            started_ids.append(advertiser_id)
+
             while True:
-                if not self.bluetooth.advertising_client.active_advs:
-                    reg_id = self.bluetooth.start_advertising_set(parameters, advertise_data, None, None, None, 0, 0)
-
-                    advertising_request = {
-                        'start_advertising': asyncio.get_running_loop().create_future(),
-                        'reg_id': reg_id
-                    }
-                    observer = AdvertisingObserver(advertising_request)
-                    name = utils.create_observer_name(observer)
-                    self.bluetooth.advertising_client.register_callback_observer(name, observer)
-                    observers.append((name, observer))
-
-                    advertiser_id = await asyncio.wait_for(advertising_request['start_advertising'], timeout=5)
-                    started_ids.append(advertiser_id)
-
                 if not request.connectable:
                     await asyncio.sleep(1)
                     continue
@@ -428,7 +432,6 @@ class HostService(host_grpc_aio.HostServicer):
                 yield host_pb2.AdvertiseResponse(
                     connection=utils.connection_to(utils.Connection(address, floss_enums.BtTransport.LE)))
 
-                # Wait a small delay before restarting the advertisement.
                 await asyncio.sleep(1)
         finally:
             for name, observer in observers:
