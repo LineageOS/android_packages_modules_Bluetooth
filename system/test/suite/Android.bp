@@ -41,9 +41,6 @@ cc_defaults {
         "adapter/bluetooth_test.cc",
     ],
     shared_libs: [
-        "android.hardware.bluetooth.audio@2.0",
-        "android.hardware.bluetooth.audio@2.1",
-        "android.system.suspend-V1-ndk",
         "libPlatformProperties",
         "libaaudio",
         "libbinder",
@@ -57,7 +54,13 @@ cc_defaults {
         "libutils",
     ],
     static_libs: [
+        "android.hardware.audio.common@5.0",
         "android.hardware.bluetooth.a2dp@1.0",
+        "android.hardware.bluetooth.audio@2.0",
+        "android.hardware.bluetooth.audio@2.1",
+        "android.hardware.common-V2-ndk",
+        "android.hardware.common.fmq-V1-ndk",
+        "android.system.suspend-V1-ndk",
         "android.system.suspend.control-V1-ndk",
         "avrcp-target-service",
         "lib-bt-packets",
