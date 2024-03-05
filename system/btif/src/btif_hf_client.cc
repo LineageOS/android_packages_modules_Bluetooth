@@ -47,6 +47,7 @@
 #endif
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_hf_client.h>
 #include <string.h>
@@ -67,6 +68,8 @@
 #ifndef BTIF_HF_CLIENT_SERVICE_NAME
 #define BTIF_HF_CLIENT_SERVICE_NAME ("Handsfree")
 #endif
+
+using namespace bluetooth;
 
 /*******************************************************************************
  *  Local type definitions
@@ -112,28 +115,28 @@ static const char* dump_hf_client_conn_state(uint16_t event) {
   }
 }
 
-#define CHECK_BTHF_CLIENT_INIT()                              \
-  do {                                                        \
-    if (bt_hf_client_callbacks == NULL) {                     \
-      LOG_WARN("BTHF CLIENT: %s: not initialized", __func__); \
-      return BT_STATUS_NOT_READY;                             \
-    } else {                                                  \
-      LOG_VERBOSE("BTHF CLIENT: %s", __func__);               \
-    }                                                         \
+#define CHECK_BTHF_CLIENT_INIT()                 \
+  do {                                           \
+    if (bt_hf_client_callbacks == NULL) {        \
+      log::warn("BTHF CLIENT: not initialized"); \
+      return BT_STATUS_NOT_READY;                \
+    } else {                                     \
+      log::verbose("BTHF CLIENT: ok");           \
+    }                                            \
   } while (0)
 
-#define CHECK_BTHF_CLIENT_SLC_CONNECTED(cb)                                  \
-  do {                                                                       \
-    if (bt_hf_client_callbacks == NULL) {                                    \
-      LOG_WARN("BTHF CLIENT: %s: not initialized", __func__);                \
-      return BT_STATUS_NOT_READY;                                            \
-    } else if ((cb)->state != BTHF_CLIENT_CONNECTION_STATE_SLC_CONNECTED) {  \
-      LOG_WARN("BTHF CLIENT: %s: SLC connection not up. state=%s", __func__, \
-               dump_hf_client_conn_state((cb)->state));                      \
-      return BT_STATUS_NOT_READY;                                            \
-    } else {                                                                 \
-      LOG_VERBOSE("BTHF CLIENT: %s", __func__);                              \
-    }                                                                        \
+#define CHECK_BTHF_CLIENT_SLC_CONNECTED(cb)                                 \
+  do {                                                                      \
+    if (bt_hf_client_callbacks == NULL) {                                   \
+      log::warn("BTHF CLIENT: not initialized");                            \
+      return BT_STATUS_NOT_READY;                                           \
+    } else if ((cb)->state != BTHF_CLIENT_CONNECTION_STATE_SLC_CONNECTED) { \
+      log::warn("BTHF CLIENT: SLC connection not up. state={}",             \
+                dump_hf_client_conn_state((cb)->state));                    \
+      return BT_STATUS_NOT_READY;                                           \
+    } else {                                                                \
+      log::verbose("BTHF CLIENT: ok");                                      \
+    }                                                                       \
   } while (0)
 
 static btif_hf_client_cb_arr_t btif_hf_client_cb_arr;
@@ -155,22 +158,22 @@ static btif_hf_client_cb_arr_t btif_hf_client_cb_arr;
  ******************************************************************************/
 constexpr uint16_t BTIF_HF_CLIENT_CB_AUDIO_CONNECTING = 0x8501;
 static void btif_in_hf_client_generic_evt(uint16_t event, char* p_param) {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
   RawAddress* bd_addr = (RawAddress*)p_param;
   btif_hf_client_cb_t* cb = btif_hf_client_get_cb_by_bda(*bd_addr);
   if (cb == NULL || !is_connected(cb)) {
-    LOG_ERROR("%s: failed to find block for bda", __func__);
+    log::error("failed to find block for bda");
     return;
   }
 
-  LOG_VERBOSE("%s: event=%d", __func__, event);
+  log::verbose("event={}", event);
   switch (event) {
     case BTIF_HF_CLIENT_CB_AUDIO_CONNECTING: {
       HAL_CBACK(bt_hf_client_callbacks, audio_state_cb, &cb->peer_bda,
                 (bthf_client_audio_state_t)BTHF_CLIENT_AUDIO_STATE_CONNECTING);
     } break;
     default: {
-      LOG_WARN("%s: : Unknown event 0x%x", __func__, event);
+      log::warn(": Unknown event 0x{:x}", event);
     } break;
   }
 }
@@ -183,7 +186,7 @@ bool is_connected(const btif_hf_client_cb_t* cb) {
       (cb->state == BTHF_CLIENT_CONNECTION_STATE_SLC_CONNECTED))
     return true;
 
-  LOG_ERROR("%s: not connected!", __func__);
+  log::error("not connected!");
   return false;
 }
 
@@ -197,7 +200,7 @@ bool is_connected(const btif_hf_client_cb_t* cb) {
  *
  ******************************************************************************/
 btif_hf_client_cb_t* btif_hf_client_get_cb_by_handle(uint16_t handle) {
-  LOG_VERBOSE("%s: cb by handle %d", __func__, handle);
+  log::verbose("cb by handle {}", handle);
   for (int i = 0; i < HF_CLIENT_MAX_DEVICES; i++) {
     // Block is valid only if it is allocated i.e. state is not DISCONNECTED
     if (btif_hf_client_cb_arr.cb[i].state !=
@@ -206,7 +209,7 @@ btif_hf_client_cb_t* btif_hf_client_get_cb_by_handle(uint16_t handle) {
       return &btif_hf_client_cb_arr.cb[i];
     }
   }
-  LOG_ERROR("%s: could not find block for handle %d", __func__, handle);
+  log::error("could not find block for handle {}", handle);
   return NULL;
 }
 
@@ -220,7 +223,7 @@ btif_hf_client_cb_t* btif_hf_client_get_cb_by_handle(uint16_t handle) {
  *
  ******************************************************************************/
 btif_hf_client_cb_t* btif_hf_client_get_cb_by_bda(const RawAddress& bd_addr) {
-  VLOG(1) << __func__ << " incoming addr " << ADDRESS_TO_LOGGABLE_CSTR(bd_addr);
+  log::verbose("incoming addr {}", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
 
   for (int i = 0; i < HF_CLIENT_MAX_DEVICES; i++) {
     // Block is valid only if it is allocated i.e. state is not DISCONNECTED
@@ -230,7 +233,7 @@ btif_hf_client_cb_t* btif_hf_client_get_cb_by_bda(const RawAddress& bd_addr) {
       return &btif_hf_client_cb_arr.cb[i];
     }
   }
-  LOG_ERROR("%s: could not find block for bdaddr", __func__);
+  log::error("could not find block for bdaddr");
   return NULL;
 }
 
@@ -250,7 +253,7 @@ btif_hf_client_cb_t* btif_hf_client_allocate_cb() {
       return cb;
     }
   }
-  LOG_ERROR("%s: unable to allocate control block", __func__);
+  log::error("unable to allocate control block");
   return NULL;
 }
 
@@ -270,7 +273,7 @@ btif_hf_client_cb_t* btif_hf_client_allocate_cb() {
  *
  ******************************************************************************/
 static bt_status_t init(bthf_client_callbacks_t* callbacks) {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   bt_hf_client_callbacks = callbacks;
 
@@ -293,7 +296,7 @@ static bt_status_t init(bthf_client_callbacks_t* callbacks) {
 static bt_status_t connect_int(RawAddress* bd_addr, uint16_t uuid) {
   btif_hf_client_cb_t* cb = btif_hf_client_allocate_cb();
   if (cb == NULL) {
-    LOG_ERROR("%s: could not allocate block!", __func__);
+    log::error("could not allocate block!");
     return BT_STATUS_BUSY;
   }
 
@@ -311,7 +314,7 @@ static bt_status_t connect_int(RawAddress* bd_addr, uint16_t uuid) {
 }
 
 static bt_status_t connect(const RawAddress* bd_addr) {
-  LOG_VERBOSE("HFP Client version is  %s", btif_hf_client_version);
+  log::verbose("HFP Client version is  {}", btif_hf_client_version);
   CHECK_BTHF_CLIENT_INIT();
   return btif_queue_connect(UUID_SERVCLASS_HF_HANDSFREE, bd_addr, connect_int);
 }
@@ -704,7 +707,7 @@ static bt_status_t request_last_voice_tag_number(const RawAddress* bd_addr) {
  *
  ******************************************************************************/
 static void cleanup(void) {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   btif_queue_cleanup(UUID_SERVCLASS_HF_HANDSFREE);
   if (bt_hf_client_callbacks) {
@@ -729,8 +732,8 @@ static bt_status_t send_at_cmd(const RawAddress* bd_addr, int cmd, int val1,
 
   CHECK_BTHF_CLIENT_SLC_CONNECTED(cb);
 
-  LOG_VERBOSE("%s: Cmd %d val1 %d val2 %d arg %s", __func__, cmd, val1, val2,
-              (arg != NULL) ? arg : "<null>");
+  log::verbose("Cmd {} val1 {} val2 {} arg {}", cmd, val1, val2,
+               (arg != NULL) ? arg : "<null>");
   BTA_HfClientSendAT(cb->handle, cmd, val1, val2, arg);
 
   return BT_STATUS_SUCCESS;
@@ -751,7 +754,7 @@ static bt_status_t send_android_at(const RawAddress* bd_addr, const char* arg) {
 
   CHECK_BTHF_CLIENT_SLC_CONNECTED(cb);
 
-  LOG_VERBOSE("%s: val1 %s", __func__, arg);
+  log::verbose("val1 {}", arg);
   BTA_HfClientSendAT(cb->handle, BTA_HF_CLIENT_AT_CMD_ANDROID, 0, 0, arg);
 
   return BT_STATUS_SUCCESS;
@@ -781,7 +784,7 @@ static const bthf_client_interface_t bthfClientInterface = {
 };
 
 static void process_ind_evt(tBTA_HF_CLIENT_IND* ind) {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   btif_hf_client_cb_t* cb = btif_hf_client_get_cb_by_bda(ind->bd_addr);
   if (cb == NULL || !is_connected(cb)) return;
@@ -840,23 +843,20 @@ static void btif_hf_client_upstreams_evt(uint16_t event, char* p_param) {
 
   btif_hf_client_cb_t* cb = btif_hf_client_get_cb_by_bda(p_data->bd_addr);
   if (cb == NULL && event == BTA_HF_CLIENT_OPEN_EVT) {
-    LOG_VERBOSE("%s: event BTA_HF_CLIENT_OPEN_EVT allocating block", __func__);
+    log::verbose("event BTA_HF_CLIENT_OPEN_EVT allocating block");
     cb = btif_hf_client_allocate_cb();
     if (cb == NULL) {
-      LOG_ERROR("%s: event BTA_HF_CLIENT_OPEN_EVT failed to allocate cb",
-                __func__);
+      log::error("event BTA_HF_CLIENT_OPEN_EVT failed to allocate cb");
       return;
     }
     cb->handle = p_data->open.handle;
     cb->peer_bda = p_data->open.bd_addr;
   } else if (cb == NULL) {
-    LOG_ERROR("%s: event %d but not allocating block: cb not found", __func__,
-              event);
+    log::error("event {} but not allocating block: cb not found", event);
     return;
   }
 
-  LOG_VERBOSE("%s: event=%s (%u)", __func__, dump_hf_client_event(event),
-              event);
+  log::verbose("event={} ({})", dump_hf_client_event(event), event);
 
   switch (event) {
     case BTA_HF_CLIENT_OPEN_EVT:
@@ -868,10 +868,10 @@ static void btif_hf_client_upstreams_evt(uint16_t event, char* p_param) {
       } else if (cb->state == BTHF_CLIENT_CONNECTION_STATE_CONNECTING) {
         cb->state = BTHF_CLIENT_CONNECTION_STATE_DISCONNECTED;
       } else {
-        LOG_WARN(
-            "%s: HF CLient open failed, but another device connected. "
-            "status=%d state=%d connected device=%s",
-            __func__, p_data->open.status, cb->state,
+        log::warn(
+            "HF CLient open failed, but another device connected. status={} "
+            "state={} connected device={}",
+            p_data->open.status, cb->state,
             ADDRESS_TO_LOGGABLE_CSTR(cb->peer_bda));
         break;
       }
@@ -1040,7 +1040,7 @@ static void btif_hf_client_upstreams_evt(uint16_t event, char* p_param) {
                 p_data->unknown.event_string);
       break;
     default:
-      LOG_WARN("%s: Unhandled event: %d", __func__, event);
+      log::warn("Unhandled event: {}", event);
       break;
   }
 }
@@ -1078,7 +1078,7 @@ static void bta_hf_client_evt(tBTA_HF_CLIENT_EVT event,
  *
  ******************************************************************************/
 bt_status_t btif_hf_client_execute_service(bool b_enable) {
-  LOG_VERBOSE("%s: enable: %d", __func__, b_enable);
+  log::verbose("enable: {}", b_enable);
 
   tBTA_HF_CLIENT_FEAT features = get_default_hf_client_features();
   uint16_t hfp_version = get_default_hfp_version();
@@ -1092,7 +1092,7 @@ bt_status_t btif_hf_client_execute_service(bool b_enable) {
 
   if (b_enable) {
     /* Enable and register with BTA-HFClient */
-    LOG_VERBOSE("%s: support codec negotiation %d ", __func__, features);
+    log::verbose("support codec negotiation {}", features);
     BTA_HfClientEnable(bta_hf_client_evt, features,
                        BTIF_HF_CLIENT_SERVICE_NAME);
   } else {
@@ -1111,6 +1111,6 @@ bt_status_t btif_hf_client_execute_service(bool b_enable) {
  *
  ******************************************************************************/
 const bthf_client_interface_t* btif_hf_client_get_interface(void) {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
   return &bthfClientInterface;
 }

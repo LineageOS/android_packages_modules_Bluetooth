@@ -144,8 +144,19 @@ namespace fmt {
 template <>
 struct formatter<bluetooth::headset::bthf_connection_state_t>
     : enum_formatter<bluetooth::headset::bthf_connection_state_t> {};
-
 template <>
 struct formatter<bluetooth::headset::bthf_audio_state_t>
     : enum_formatter<bluetooth::headset::bthf_audio_state_t> {};
+template <>
+struct formatter<bluetooth::headset::bthf_call_addrtype_t>
+    : enum_formatter<bluetooth::headset::bthf_call_addrtype_t> {};
+template <>
+struct formatter<bluetooth::headset::bthf_call_mode_t>
+    : enum_formatter<bluetooth::headset::bthf_call_mode_t> {};
+template <>
+struct formatter<bluetooth::headset::bthf_call_state_t>
+    : enum_formatter<bluetooth::headset::bthf_call_state_t> {};
+template <>
+struct formatter<bluetooth::headset::bthf_call_direction_t>
+    : enum_formatter<bluetooth::headset::bthf_call_direction_t> {};
 }  // namespace fmt

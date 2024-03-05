@@ -178,3 +178,13 @@ typedef struct {
 } btsdp_interface_t;
 
 __END_DECLS
+
+#if __has_include(<bluetooth/log.h>)
+#include <bluetooth/log.h>
+
+namespace fmt {
+template <>
+struct formatter<bluetooth_sdp_types> : enum_formatter<bluetooth_sdp_types> {};
+}  // namespace fmt
+
+#endif  // __has_include(<bluetooth/log.h>)

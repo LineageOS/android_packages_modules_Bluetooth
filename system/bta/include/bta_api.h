@@ -974,6 +974,8 @@ void DumpsysBtaDm(int fd);
 namespace fmt {
 template <>
 struct formatter<tBTA_DM_SEARCH_EVT> : enum_formatter<tBTA_DM_SEARCH_EVT> {};
+template <>
+struct formatter<tBTA_DM_ACL_EVT> : enum_formatter<tBTA_DM_ACL_EVT> {};
 }  // namespace fmt
 
 #endif /* BTA_API_H */

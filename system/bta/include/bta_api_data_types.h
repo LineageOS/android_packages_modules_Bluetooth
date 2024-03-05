@@ -19,6 +19,7 @@
 #pragma once
 
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 
 #include <cstdint>
 #include <string>
@@ -61,3 +62,8 @@ typedef struct {
 typedef struct {
   RawAddress bd_addr;
 } tBTA_DM_KEY_MISSING;
+
+namespace fmt {
+template <>
+struct formatter<tBTA_STATUS> : enum_formatter<tBTA_STATUS> {};
+}  // namespace fmt

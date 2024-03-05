@@ -22,6 +22,7 @@
 #include "btif_a2dp.h"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 #include <stdbool.h>
 
 #include "audio_a2dp_hw/include/audio_a2dp_hw.h"
@@ -38,13 +39,15 @@
 #include "os/log.h"
 #include "types/raw_address.h"
 
+using namespace bluetooth;
+
 void btif_a2dp_on_idle(const RawAddress& peer_addr) {
-  LOG_VERBOSE("Peer stream endpoint type:%s",
-              peer_stream_endpoint_text(btif_av_get_peer_sep()).c_str());
+  log::verbose("Peer stream endpoint type:{}",
+               peer_stream_endpoint_text(btif_av_get_peer_sep()));
   if (btif_av_src_sink_coexist_enabled()) {
     bool is_sink = btif_av_peer_is_sink(peer_addr);
     bool is_source = btif_av_peer_is_source(peer_addr);
-    LOG_INFO("## ON A2DP IDLE ## is_sink:%d is_source:%d", is_sink, is_source);
+    log::info("## ON A2DP IDLE ## is_sink:{} is_source:{}", is_sink, is_source);
     if (is_sink) {
       btif_a2dp_source_on_idle();
     } else if (is_source) {
@@ -61,15 +64,14 @@ void btif_a2dp_on_idle(const RawAddress& peer_addr) {
 }
 
 bool btif_a2dp_on_started(const RawAddress& peer_addr, tBTA_AV_START* p_av_start) {
-  LOG(INFO) << __func__ << ": ## ON A2DP STARTED ## peer "
-            << ADDRESS_TO_LOGGABLE_STR(peer_addr) << " p_av_start:"
-            << p_av_start;
+  log::info("## ON A2DP STARTED ## peer {} p_av_start:{}",
+            ADDRESS_TO_LOGGABLE_STR(peer_addr), fmt::ptr(p_av_start));
 
   if (p_av_start == NULL) {
     tA2DP_CTRL_ACK status = A2DP_CTRL_ACK_SUCCESS;
     if (!bluetooth::headset::IsCallIdle()) {
-      LOG(ERROR) << __func__ << ": peer " << ADDRESS_TO_LOGGABLE_STR(peer_addr)
-                 << " call in progress, do not start A2DP stream";
+      log::error("peer {} call in progress, do not start A2DP stream",
+                 ADDRESS_TO_LOGGABLE_STR(peer_addr));
       status = A2DP_CTRL_ACK_INCALL_FAILURE;
     }
     /* just ack back a local start request, do not start the media encoder since
@@ -82,15 +84,14 @@ bool btif_a2dp_on_started(const RawAddress& peer_addr, tBTA_AV_START* p_av_start
     return true;
   }
 
-  LOG(INFO) << __func__ << ": peer " << ADDRESS_TO_LOGGABLE_STR(peer_addr)
-            << " status:" << +p_av_start->status
-            << " suspending:" << logbool(p_av_start->suspending) << " initiator:" << logbool(p_av_start->initiator);
+  log::info("peer {} status:{} suspending:{} initiator:{}",
+            ADDRESS_TO_LOGGABLE_STR(peer_addr), p_av_start->status,
+            logbool(p_av_start->suspending), logbool(p_av_start->initiator));
 
   if (p_av_start->status == BTA_AV_SUCCESS) {
     if (p_av_start->suspending) {
-      LOG(WARNING) << __func__ << ": peer "
-                   << ADDRESS_TO_LOGGABLE_STR(peer_addr)
-                   << " A2DP is suspending and ignores the started event";
+      log::warn("peer {} A2DP is suspending and ignores the started event",
+                ADDRESS_TO_LOGGABLE_STR(peer_addr));
       return false;
     }
     if (btif_av_is_a2dp_offload_running()) {
@@ -112,8 +113,8 @@ bool btif_a2dp_on_started(const RawAddress& peer_addr, tBTA_AV_START* p_av_start
       /* media task is auto-started upon UIPC connection of a2dp audiopath */
     }
   } else if (p_av_start->initiator) {
-    LOG(ERROR) << __func__ << ": peer " << ADDRESS_TO_LOGGABLE_STR(peer_addr)
-               << " A2DP start request failed: status = " << +p_av_start->status;
+    log::error("peer {} A2DP start request failed: status = {}",
+               ADDRESS_TO_LOGGABLE_STR(peer_addr), p_av_start->status);
     if (bluetooth::audio::a2dp::is_hal_enabled()) {
       bluetooth::audio::a2dp::ack_stream_started(A2DP_CTRL_ACK_FAILURE);
     } else {
@@ -125,7 +126,7 @@ bool btif_a2dp_on_started(const RawAddress& peer_addr, tBTA_AV_START* p_av_start
 }
 
 void btif_a2dp_on_stopped(tBTA_AV_SUSPEND* p_av_suspend) {
-  LOG_INFO("%s: ## ON A2DP STOPPED ## p_av_suspend=%p", __func__, p_av_suspend);
+  log::info("## ON A2DP STOPPED ## p_av_suspend={}", fmt::ptr(p_av_suspend));
 
   if (btif_av_get_peer_sep() == AVDT_TSEP_SRC) {
     btif_a2dp_sink_on_stopped(p_av_suspend);
@@ -138,8 +139,7 @@ void btif_a2dp_on_stopped(tBTA_AV_SUSPEND* p_av_suspend) {
 }
 
 void btif_a2dp_on_suspended(tBTA_AV_SUSPEND* p_av_suspend) {
-  LOG_INFO("%s: ## ON A2DP SUSPENDED ## p_av_suspend=%p", __func__,
-           p_av_suspend);
+  log::info("## ON A2DP SUSPENDED ## p_av_suspend={}", fmt::ptr(p_av_suspend));
   if (btif_av_get_peer_sep() == AVDT_TSEP_SRC) {
     btif_a2dp_sink_on_suspended(p_av_suspend);
     return;
@@ -153,21 +153,20 @@ void btif_a2dp_on_suspended(tBTA_AV_SUSPEND* p_av_suspend) {
 void btif_a2dp_on_offload_started(const RawAddress& peer_addr,
                                   tBTA_AV_STATUS status) {
   tA2DP_CTRL_ACK ack;
-  LOG_INFO("%s: peer %s status %d", __func__,
-           ADDRESS_TO_LOGGABLE_CSTR(peer_addr), status);
+  log::info("peer {} status {}", ADDRESS_TO_LOGGABLE_CSTR(peer_addr), status);
 
   switch (status) {
     case BTA_AV_SUCCESS:
       ack = A2DP_CTRL_ACK_SUCCESS;
       break;
     case BTA_AV_FAIL_RESOURCES:
-      LOG_ERROR("%s: peer %s FAILED UNSUPPORTED", __func__,
-                ADDRESS_TO_LOGGABLE_CSTR(peer_addr));
+      log::error("peer {} FAILED UNSUPPORTED",
+                 ADDRESS_TO_LOGGABLE_CSTR(peer_addr));
       ack = A2DP_CTRL_ACK_UNSUPPORTED;
       break;
     default:
-      LOG_ERROR("%s: peer %s FAILED: status = %d", __func__,
-                ADDRESS_TO_LOGGABLE_CSTR(peer_addr), status);
+      log::error("peer {} FAILED: status = {}",
+                 ADDRESS_TO_LOGGABLE_CSTR(peer_addr), status);
       ack = A2DP_CTRL_ACK_FAILURE;
       break;
   }
@@ -176,8 +175,8 @@ void btif_a2dp_on_offload_started(const RawAddress& peer_addr,
       // Offload request will return with failure from btif_av sm if
       // suspend is triggered for remote start. Disconnect only if SoC
       // returned failure for offload VSC
-      LOG_ERROR("%s: peer %s offload start failed", __func__,
-                ADDRESS_TO_LOGGABLE_CSTR(peer_addr));
+      log::error("peer {} offload start failed",
+                 ADDRESS_TO_LOGGABLE_CSTR(peer_addr));
       btif_av_src_disconnect_sink(peer_addr);
     }
   }

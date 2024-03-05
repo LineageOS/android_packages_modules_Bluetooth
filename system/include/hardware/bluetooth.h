@@ -1003,4 +1003,20 @@ typedef struct {
 
 #define BLUETOOTH_INTERFACE_STRING "bluetoothInterface"
 
+#if __has_include(<bluetooth/log.h>)
+#include <bluetooth/log.h>
+
+namespace fmt {
+template <>
+struct formatter<bt_status_t> : enum_formatter<bt_status_t> {};
+template <>
+struct formatter<bt_scan_mode_t> : enum_formatter<bt_scan_mode_t> {};
+template <>
+struct formatter<bt_bond_state_t> : enum_formatter<bt_bond_state_t> {};
+template <>
+struct formatter<bt_property_type_t> : enum_formatter<bt_property_type_t> {};
+}  // namespace fmt
+
+#endif  // __has_include(<bluetooth/log.h>)
+
 #endif /* ANDROID_INCLUDE_BLUETOOTH_H */
