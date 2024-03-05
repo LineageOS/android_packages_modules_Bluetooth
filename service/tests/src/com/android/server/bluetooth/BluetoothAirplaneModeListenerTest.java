@@ -20,8 +20,6 @@ import static com.android.server.bluetooth.BluetoothAirplaneModeListener.APM_BT_
 import static com.android.server.bluetooth.BluetoothAirplaneModeListener.APM_ENHANCEMENT;
 import static com.android.server.bluetooth.BluetoothAirplaneModeListener.APM_USER_TOGGLED_BLUETOOTH;
 import static com.android.server.bluetooth.BluetoothAirplaneModeListener.APM_WIFI_BT_NOTIFICATION;
-import static com.android.server.bluetooth.BluetoothAirplaneModeListener.NOTIFICATION_NOT_SHOWN;
-import static com.android.server.bluetooth.BluetoothAirplaneModeListener.NOTIFICATION_SHOWN;
 import static com.android.server.bluetooth.BluetoothAirplaneModeListener.UNUSED;
 import static com.android.server.bluetooth.BluetoothAirplaneModeListener.USED;
 import static com.android.server.bluetooth.BluetoothAirplaneModeListener.WIFI_APM_STATE;
@@ -40,7 +38,6 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.flags.FakeFeatureFlagsImpl;
-import com.android.bluetooth.flags.Flags;
 import com.android.internal.util.test.FakeSettingsProvider;
 
 import org.junit.Assert;
@@ -61,7 +58,6 @@ public class BluetoothAirplaneModeListenerTest {
     @Mock private BluetoothServerProxy mBluetoothServerProxy;
     @Mock private BluetoothManagerService mBluetoothManagerService;
     @Mock private BluetoothModeChangeHelper mHelper;
-    @Mock private BluetoothNotificationManager mBluetoothNotificationManager;
     @Mock private PackageManager mPackageManager;
     @Mock private Resources mResources;
     private MockContentResolver mContentResolver;
@@ -94,7 +90,6 @@ public class BluetoothAirplaneModeListenerTest {
                         mBluetoothManagerService,
                         Looper.getMainLooper(),
                         mContext,
-                        mBluetoothNotificationManager,
                         mFakeFlagsImpl);
         mBluetoothAirplaneModeListener.start(mHelper);
     }
@@ -193,48 +188,12 @@ public class BluetoothAirplaneModeListenerTest {
         when(mHelper.isBluetoothOnAPM()).thenReturn(true);
         when(mHelper.getSettingsInt(APM_ENHANCEMENT)).thenReturn(1);
         when(mHelper.getSettingsSecureInt(APM_USER_TOGGLED_BLUETOOTH, UNUSED)).thenReturn(USED);
-        when(mHelper.getBluetoothPackageName()).thenReturn(PACKAGE_NAME);
         when(mContext.getPackageManager()).thenReturn(mPackageManager);
         when(mPackageManager.getResourcesForApplication(PACKAGE_NAME)).thenReturn(mResources);
     }
 
     @Test
-    public void testHandleAirplaneModeChange_ShowBtAndWifiApmNotification() throws Exception {
-        mFakeFlagsImpl.setFlag(Flags.FLAG_AIRPLANE_RESSOURCES_IN_APP, false);
-        setUpApmNotificationTests();
-        when(mHelper.getSettingsInt(Settings.Global.WIFI_ON)).thenReturn(1);
-        when(mHelper.getSettingsSecureInt(WIFI_APM_STATE, 0)).thenReturn(1);
-        when(mHelper.getSettingsSecureInt(APM_WIFI_BT_NOTIFICATION, NOTIFICATION_NOT_SHOWN))
-                .thenReturn(NOTIFICATION_NOT_SHOWN);
-
-        mBluetoothAirplaneModeListener.handleAirplaneModeChange(true);
-
-        verify(mHelper).setSettingsInt(Settings.Global.BLUETOOTH_ON,
-                BluetoothManagerService.BLUETOOTH_ON_AIRPLANE);
-        verify(mBluetoothNotificationManager).sendApmNotification(any(), any());
-        verify(mHelper).setSettingsSecureInt(APM_WIFI_BT_NOTIFICATION, NOTIFICATION_SHOWN);
-    }
-
-    @Test
-    public void testHandleAirplaneModeChange_NotShowBtAndWifiApmNotification() throws Exception {
-        mFakeFlagsImpl.setFlag(Flags.FLAG_AIRPLANE_RESSOURCES_IN_APP, false);
-        setUpApmNotificationTests();
-        when(mHelper.getSettingsInt(Settings.Global.WIFI_ON)).thenReturn(1);
-        when(mHelper.getSettingsSecureInt(WIFI_APM_STATE, 0)).thenReturn(1);
-        when(mHelper.getSettingsSecureInt(APM_WIFI_BT_NOTIFICATION, NOTIFICATION_NOT_SHOWN))
-                .thenReturn(NOTIFICATION_SHOWN);
-
-        mBluetoothAirplaneModeListener.handleAirplaneModeChange(true);
-
-        verify(mHelper).setSettingsInt(Settings.Global.BLUETOOTH_ON,
-                BluetoothManagerService.BLUETOOTH_ON_AIRPLANE);
-        verify(mBluetoothNotificationManager, never()).sendApmNotification(any(), any());
-        verify(mHelper, never()).setSettingsSecureInt(APM_WIFI_BT_NOTIFICATION, NOTIFICATION_SHOWN);
-    }
-
-    @Test
     public void testHandleAirplaneModeChange_SendBtAndWifiApmNotification() throws Exception {
-        mFakeFlagsImpl.setFlag(Flags.FLAG_AIRPLANE_RESSOURCES_IN_APP, true);
         setUpApmNotificationTests();
         when(mHelper.getSettingsInt(Settings.Global.WIFI_ON)).thenReturn(1);
         when(mHelper.getSettingsSecureInt(WIFI_APM_STATE, 0)).thenReturn(1);
@@ -245,42 +204,7 @@ public class BluetoothAirplaneModeListenerTest {
     }
 
     @Test
-    public void testHandleAirplaneModeChange_ShowBtApmNotification() throws Exception {
-        mFakeFlagsImpl.setFlag(Flags.FLAG_AIRPLANE_RESSOURCES_IN_APP, false);
-        setUpApmNotificationTests();
-        when(mHelper.getSettingsInt(Settings.Global.WIFI_ON)).thenReturn(1);
-        when(mHelper.getSettingsSecureInt(WIFI_APM_STATE, 0)).thenReturn(0);
-        when(mHelper.getSettingsSecureInt(APM_BT_NOTIFICATION, NOTIFICATION_NOT_SHOWN))
-                .thenReturn(NOTIFICATION_NOT_SHOWN);
-
-        mBluetoothAirplaneModeListener.handleAirplaneModeChange(true);
-
-        verify(mHelper).setSettingsInt(Settings.Global.BLUETOOTH_ON,
-                BluetoothManagerService.BLUETOOTH_ON_AIRPLANE);
-        verify(mBluetoothNotificationManager).sendApmNotification(any(), any());
-        verify(mHelper).setSettingsSecureInt(APM_BT_NOTIFICATION, NOTIFICATION_SHOWN);
-    }
-
-    @Test
-    public void testHandleAirplaneModeChange_NotShowBtApmNotification() throws Exception {
-        mFakeFlagsImpl.setFlag(Flags.FLAG_AIRPLANE_RESSOURCES_IN_APP, false);
-        setUpApmNotificationTests();
-        when(mHelper.getSettingsInt(Settings.Global.WIFI_ON)).thenReturn(1);
-        when(mHelper.getSettingsSecureInt(WIFI_APM_STATE, 0)).thenReturn(0);
-        when(mHelper.getSettingsSecureInt(APM_BT_NOTIFICATION, NOTIFICATION_NOT_SHOWN))
-                .thenReturn(NOTIFICATION_SHOWN);
-
-        mBluetoothAirplaneModeListener.handleAirplaneModeChange(true);
-
-        verify(mHelper).setSettingsInt(Settings.Global.BLUETOOTH_ON,
-                BluetoothManagerService.BLUETOOTH_ON_AIRPLANE);
-        verify(mBluetoothNotificationManager, never()).sendApmNotification(any(), any());
-        verify(mHelper, never()).setSettingsSecureInt(APM_BT_NOTIFICATION, NOTIFICATION_SHOWN);
-    }
-
-    @Test
     public void testHandleAirplaneModeChange_SendBtApmNotification() throws Exception {
-        mFakeFlagsImpl.setFlag(Flags.FLAG_AIRPLANE_RESSOURCES_IN_APP, true);
         setUpApmNotificationTests();
         when(mHelper.getSettingsInt(Settings.Global.WIFI_ON)).thenReturn(1);
         when(mHelper.getSettingsSecureInt(WIFI_APM_STATE, 0)).thenReturn(0);

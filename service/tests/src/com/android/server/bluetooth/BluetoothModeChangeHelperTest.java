@@ -16,13 +16,10 @@
 
 package com.android.server.bluetooth;
 
-import static com.google.common.truth.Truth.assertThat;
-
 import static org.mockito.Mockito.spy;
 
 import android.content.Context;
 import android.content.ContextWrapper;
-import android.text.TextUtils;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.annotation.UiThreadTest;
@@ -71,18 +68,5 @@ public class BluetoothModeChangeHelperTest {
     @Test
     public void showToastMessage_doesNotCrash() {
         mHelper.showToastMessage();
-    }
-
-    @Test
-    public void getBluetoothPackageName() {
-        // TODO: Find a good way to specify the exact name of bluetooth package.
-        //       mContext.getPackageName() does not work as this is not a test for BT app.
-        String bluetoothPackageName = mHelper.getBluetoothPackageName();
-
-        boolean packageNameFound =
-                TextUtils.equals(bluetoothPackageName, "com.android.bluetooth")
-                || TextUtils.equals(bluetoothPackageName, "com.google.android.bluetooth");
-
-        assertThat(packageNameFound).isTrue();
     }
 }

@@ -21,9 +21,7 @@ import static com.android.server.bluetooth.BluetoothAirplaneModeListener.BLUETOO
 import android.app.ActivityManager;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.content.res.Resources;
-import android.os.Process;
 import android.os.UserHandle;
 import android.provider.Settings;
 import android.widget.Toast;
@@ -102,35 +100,5 @@ public class BluetoothModeChangeHelper {
                 UserHandle.of(ActivityManager.getCurrentUser()), 0);
         return Settings.Secure.getInt(userContext.getContentResolver(),
                 BLUETOOTH_APM_STATE, 0) == 1;
-    }
-
-    /**
-     * Helper method to retrieve BT package name with APM resources
-     */
-    public String getBluetoothPackageName() {
-        if (mBluetoothPackageName != null) {
-            return mBluetoothPackageName;
-        }
-        var allPackages = mContext.getPackageManager().getPackagesForUid(Process.BLUETOOTH_UID);
-        for (String candidatePackage : allPackages) {
-            Resources resources;
-            try {
-                resources = mContext.getPackageManager()
-                        .getResourcesForApplication(candidatePackage);
-            } catch (PackageManager.NameNotFoundException e) {
-                // ignore, try next package
-                Log.e(TAG, "Could not find package " + candidatePackage);
-                continue;
-            } catch (Exception e) {
-                Log.e(TAG, "Error while loading package" + e);
-                continue;
-            }
-            if (resources.getIdentifier("bluetooth_and_wifi_stays_on_title",
-                    "string", candidatePackage) == 0) {
-                continue;
-            }
-            mBluetoothPackageName = candidatePackage;
-        }
-        return mBluetoothPackageName;
     }
 }

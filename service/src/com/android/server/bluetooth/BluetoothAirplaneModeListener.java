@@ -19,8 +19,6 @@ package com.android.server.bluetooth;
 import android.annotation.RequiresPermission;
 import android.app.ActivityManager;
 import android.content.Context;
-import android.content.pm.PackageManager;
-import android.content.res.Resources;
 import android.database.ContentObserver;
 import android.os.Binder;
 import android.os.Handler;
@@ -93,7 +91,6 @@ class BluetoothAirplaneModeListener extends Handler {
     private final FeatureFlags mFeatureFlags;
     private final Context mContext;
     private BluetoothModeChangeHelper mAirplaneHelper;
-    private final BluetoothNotificationManager mNotificationManager;
 
     private boolean mIsAirplaneModeOn;
 
@@ -103,13 +100,11 @@ class BluetoothAirplaneModeListener extends Handler {
             BluetoothManagerService service,
             Looper looper,
             Context context,
-            BluetoothNotificationManager notificationManager,
             FeatureFlags featureFlags) {
         super(looper);
 
         mBluetoothManager = service;
         mFeatureFlags = featureFlags;
-        mNotificationManager = notificationManager;
         mContext = context;
 
         String airplaneModeRadios =
@@ -224,32 +219,10 @@ class BluetoothAirplaneModeListener extends Handler {
             }
             return;
         } else {
-            if (mFeatureFlags.airplaneRessourcesInApp()) {
-                if (isWifiEnabledOnApm()) {
-                    mBluetoothManager.sendToggleNotification(APM_WIFI_BT_NOTIFICATION);
-                } else {
-                    mBluetoothManager.sendToggleNotification(APM_BT_NOTIFICATION);
-                }
-                return;
-            }
-            if (isWifiEnabledOnApm() && isFirstTimeNotification(APM_WIFI_BT_NOTIFICATION)) {
-                try {
-                    sendApmNotification(
-                            "bluetooth_and_wifi_stays_on_title",
-                            "bluetooth_and_wifi_stays_on_message",
-                            APM_WIFI_BT_NOTIFICATION);
-                } catch (Exception e) {
-                    Log.e(TAG, "APM enhancement BT and Wi-Fi stays on notification not shown");
-                }
-            } else if (!isWifiEnabledOnApm() && isFirstTimeNotification(APM_BT_NOTIFICATION)) {
-                try {
-                    sendApmNotification(
-                            "bluetooth_stays_on_title",
-                            "bluetooth_stays_on_message",
-                            APM_BT_NOTIFICATION);
-                } catch (Exception e) {
-                    Log.e(TAG, "APM enhancement BT stays on notification not shown");
-                }
+            if (isWifiEnabledOnApm()) {
+                mBluetoothManager.sendToggleNotification(APM_WIFI_BT_NOTIFICATION);
+            } else {
+                mBluetoothManager.sendToggleNotification(APM_BT_NOTIFICATION);
             }
         }
     }
@@ -294,25 +267,6 @@ class BluetoothAirplaneModeListener extends Handler {
                 && mAirplaneHelper.getSettingsSecureInt(WIFI_APM_STATE, 0) == 1;
     }
 
-    /** Helper method to send APM notification */
-    public void sendApmNotification(String titleId, String messageId, String notificationState)
-            throws PackageManager.NameNotFoundException {
-        String btPackageName = mAirplaneHelper.getBluetoothPackageName();
-        if (btPackageName == null) {
-            Log.e(
-                    TAG,
-                    "Unable to find Bluetooth package name with " + "APM notification resources");
-            return;
-        }
-        Resources resources =
-                mContext.getPackageManager().getResourcesForApplication(btPackageName);
-        int title = resources.getIdentifier(titleId, "string", btPackageName);
-        int message = resources.getIdentifier(messageId, "string", btPackageName);
-        mNotificationManager.sendApmNotification(
-                resources.getString(title), resources.getString(message));
-        mAirplaneHelper.setSettingsSecureInt(notificationState, NOTIFICATION_SHOWN);
-    }
-
     /** Helper method to update whether user toggled Bluetooth in airplane mode */
     public void notifyUserToggledBluetooth(boolean isOn) {
         if (!mIsAirplaneModeOn) {
@@ -327,38 +281,9 @@ class BluetoothAirplaneModeListener extends Handler {
         if (isApmEnhancementEnabled()) {
             setSettingsSecureInt(BLUETOOTH_APM_STATE, isOn ? BLUETOOTH_ON_APM : BLUETOOTH_OFF_APM);
             setSettingsSecureInt(APM_USER_TOGGLED_BLUETOOTH, USED);
-            if (mFeatureFlags.airplaneRessourcesInApp()) {
-                if (isOn) {
-                    mBluetoothManager.sendToggleNotification(APM_BT_ENABLED_NOTIFICATION);
-                }
-                return;
+            if (isOn) {
+                mBluetoothManager.sendToggleNotification(APM_BT_ENABLED_NOTIFICATION);
             }
-            if (isOn && isFirstTimeNotification(APM_BT_ENABLED_NOTIFICATION)) {
-                // waive WRITE_SECURE_SETTINGS permission check
-                final long callingIdentity = Binder.clearCallingIdentity();
-                try {
-                    sendApmNotification(
-                            "bluetooth_enabled_apm_title",
-                            "bluetooth_enabled_apm_message",
-                            APM_BT_ENABLED_NOTIFICATION);
-                } catch (Exception e) {
-                    Log.e(TAG, "APM enhancement BT enabled notification not shown");
-                } finally {
-                    Binder.restoreCallingIdentity(callingIdentity);
-                }
-            }
-        }
-    }
-
-    /** Return whether APM notification has been shown */
-    private boolean isFirstTimeNotification(String name) {
-        // waive WRITE_SECURE_SETTINGS permission check
-        final long callingIdentity = Binder.clearCallingIdentity();
-        try {
-            return mAirplaneHelper.getSettingsSecureInt(name, NOTIFICATION_NOT_SHOWN)
-                    == NOTIFICATION_NOT_SHOWN;
-        } finally {
-            Binder.restoreCallingIdentity(callingIdentity);
         }
     }
 

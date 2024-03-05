@@ -2,13 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.btservices"
 
 flag {
-    name: "airplane_ressources_in_app"
-    namespace: "bluetooth"
-    description: "User notification is done within app, not server"
-    bug: "303552318"
-}
-
-flag {
     name: "auto_on_feature"
     is_exported: true
     namespace: "bluetooth"

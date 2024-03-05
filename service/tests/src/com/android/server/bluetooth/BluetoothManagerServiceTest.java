@@ -131,9 +131,6 @@ public class BluetoothManagerServiceTest {
     }
 
     private static boolean filterFlags(Map<String, Boolean> map) {
-        if (map.get(Flags.FLAG_USE_NEW_AIRPLANE_MODE)) {
-            return !map.get(Flags.FLAG_AIRPLANE_RESSOURCES_IN_APP);
-        }
         return true;
     }
 
@@ -141,7 +138,6 @@ public class BluetoothManagerServiceTest {
     @Parameters(name = "{0}")
     public static Iterable<? extends Object> generateParameterizedFlagsValue() {
         final String[] flags = {
-            Flags.FLAG_AIRPLANE_RESSOURCES_IN_APP,
             Flags.FLAG_USE_NEW_AIRPLANE_MODE,
             Flags.FLAG_USE_NEW_SATELLITE_MODE,
         };
