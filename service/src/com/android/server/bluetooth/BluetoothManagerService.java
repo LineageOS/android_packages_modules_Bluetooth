@@ -75,7 +75,6 @@ import android.util.proto.ProtoOutputStream;
 import androidx.annotation.RequiresApi;
 
 import com.android.bluetooth.BluetoothStatsLog;
-import com.android.bluetooth.flags.FeatureFlags;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
@@ -196,8 +195,6 @@ class BluetoothManagerService {
     private final BluetoothServiceBinder mBinder;
 
     private final ReentrantReadWriteLock mAdapterLock = new ReentrantReadWriteLock();
-
-    private final FeatureFlags mFeatureFlags;
 
     @GuardedBy("mAdapterLock")
     private AdapterBinder mAdapter = null;
@@ -630,12 +627,10 @@ class BluetoothManagerService {
                 }
             };
 
-    BluetoothManagerService(
-            @NonNull Context context, @NonNull Looper looper, @NonNull FeatureFlags featureFlags) {
+    BluetoothManagerService(@NonNull Context context, @NonNull Looper looper) {
         mContext = requireNonNull(context, "Context cannot be null");
         mContentResolver = requireNonNull(mContext.getContentResolver(), "Resolver cannot be null");
         mLooper = requireNonNull(looper, "Looper cannot be null");
-        mFeatureFlags = requireNonNull(featureFlags, "Feature Flags cannot be null");
 
         mUserManager =
                 requireNonNull(

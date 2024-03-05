@@ -60,8 +60,6 @@ import android.provider.Settings;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.flags.FakeFeatureFlagsImpl;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -94,7 +92,6 @@ public class BluetoothManagerServiceTest {
 
     @Mock IBluetooth mAdapterService;
     @Mock AdapterBinder mAdapterBinder;
-    private FakeFeatureFlagsImpl mFakeFlagsImpl;
 
     TestLooper mLooper;
 
@@ -158,10 +155,7 @@ public class BluetoothManagerServiceTest {
 
         mLooper = new TestLooper();
 
-        mFakeFlagsImpl = new FakeFeatureFlagsImpl();
-
-        mManagerService =
-                new BluetoothManagerService(mContext, mLooper.getLooper(), mFakeFlagsImpl);
+        mManagerService = new BluetoothManagerService(mContext, mLooper.getLooper());
         mManagerService.initialize(mUserHandle);
 
         mManagerService.registerAdapter(mManagerCallback);
