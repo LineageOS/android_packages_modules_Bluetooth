@@ -108,13 +108,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 class BluetoothManagerService {
     private static final String TAG = BluetoothManagerService.class.getSimpleName();
 
-    private static final String BLUETOOTH_PRIVILEGED =
-            android.Manifest.permission.BLUETOOTH_PRIVILEGED;
-
     private static final int ACTIVE_LOG_MAX_SIZE = 20;
     private static final int CRASH_LOG_MAX_SIZE = 100;
 
-    private static final int DEFAULT_REBIND_COUNT = 3;
     // Maximum msec to wait for a bind
     private static final int TIMEOUT_BIND_MS =
             3000 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
@@ -177,9 +173,6 @@ class BluetoothManagerService {
     // and Airplane mode will have higher priority.
     @VisibleForTesting static final int BLUETOOTH_ON_AIRPLANE = 2;
 
-    private static final int FLAGS_SYSTEM_APP =
-            ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP;
-
     // APM enhancement feature is enabled by default
     // Set this value to 0 to disable the feature
     private static final int DEFAULT_APM_ENHANCEMENT_STATE = 1;
@@ -188,11 +181,6 @@ class BluetoothManagerService {
     private final Looper mLooper;
 
     private final UserManager mUserManager;
-
-    // -3     match with Userhandle.USER_CURRENT_OR_SELF
-    private static final UserHandle USER_HANDLE_CURRENT_OR_SELF = UserHandle.of(-3);
-    // -10000 match with Userhandle.USER_NULL
-    private static final UserHandle USER_HANDLE_NULL = UserHandle.of(-10000);
 
     // Locks are not provided for mName and mAddress.
     // They are accessed in handler or broadcast receiver, same thread context.
@@ -298,8 +286,6 @@ class BluetoothManagerService {
     private int mErrorRecoveryRetryCounter = 0;
 
     private final boolean mIsHearingAidProfileSupported;
-
-    private volatile boolean mUnbindingAll = false;
 
     private final IBluetoothCallback mBluetoothCallback =
             new IBluetoothCallback.Stub() {
@@ -2023,7 +2009,7 @@ class BluetoothManagerService {
                     android.Manifest.permission.BLUETOOTH_CONNECT,
                     android.Manifest.permission.BLUETOOTH_PRIVILEGED
                 })
-        private void restartForNewUser(UserHandle newUser) {
+        private void restartForNewUser(UserHandle unusedNewUser) {
             mAdapterLock.readLock().lock();
             try {
                 if (mAdapter != null) {

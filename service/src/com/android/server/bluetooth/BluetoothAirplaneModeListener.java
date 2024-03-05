@@ -66,7 +66,6 @@ class BluetoothAirplaneModeListener extends Handler {
     // keeps track of whether user enabling bt notification was shown
     public static final String APM_BT_ENABLED_NOTIFICATION = "apm_bt_enabled_notification";
 
-    private static final int MSG_AIRPLANE_MODE_CHANGED = 0;
     public static final int NOTIFICATION_NOT_SHOWN = 0;
     public static final int NOTIFICATION_SHOWN = 1;
     public static final int UNUSED = 0;
@@ -356,9 +355,6 @@ class BluetoothAirplaneModeListener extends Handler {
         // waive WRITE_SECURE_SETTINGS permission check
         final long callingIdentity = Binder.clearCallingIdentity();
         try {
-            Context userContext =
-                    mContext.createContextAsUser(
-                            UserHandle.of(ActivityManager.getCurrentUser()), 0);
             return mAirplaneHelper.getSettingsSecureInt(name, NOTIFICATION_NOT_SHOWN)
                     == NOTIFICATION_NOT_SHOWN;
         } finally {
