@@ -297,20 +297,20 @@ tBTA_JV_RFC_CB* bta_jv_rfc_port_to_cb(uint16_t port_handle) {
 
 static tBTA_JV_STATUS bta_jv_free_rfc_cb(tBTA_JV_RFC_CB* p_cb,
                                          tBTA_JV_PCB* p_pcb) {
-  tBTA_JV_STATUS status = BTA_JV_SUCCESS;
+  tBTA_JV_STATUS status = tBTA_JV_STATUS::SUCCESS;
   bool remove_server = false;
   int close_pending = 0;
 
   if (!p_cb || !p_pcb) {
     log::error("p_cb or p_pcb cannot be null");
-    return BTA_JV_FAILURE;
+    return tBTA_JV_STATUS::FAILURE;
   }
   log::verbose(
       "max_sess={}, curr_sess={}, p_pcb={}, user={}, state={}, jv handle={}",
       p_cb->max_sess, p_cb->curr_sess, fmt::ptr(p_pcb), p_pcb->rfcomm_slot_id,
       p_pcb->state, loghex(p_pcb->handle));
 
-  if (p_cb->curr_sess <= 0) return BTA_JV_SUCCESS;
+  if (p_cb->curr_sess <= 0) return tBTA_JV_STATUS::SUCCESS;
 
   switch (p_pcb->state) {
     case BTA_JV_ST_CL_CLOSING:
@@ -318,7 +318,7 @@ static tBTA_JV_STATUS bta_jv_free_rfc_cb(tBTA_JV_RFC_CB* p_cb,
       log::warn(
           "return on closing, port state={}, scn={}, p_pcb={}, user_data={}",
           p_pcb->state, p_cb->scn, fmt::ptr(p_pcb), p_pcb->rfcomm_slot_id);
-      status = BTA_JV_FAILURE;
+      status = tBTA_JV_STATUS::FAILURE;
       return status;
     case BTA_JV_ST_CL_OPEN:
     case BTA_JV_ST_CL_OPENING:
@@ -343,10 +343,10 @@ static tBTA_JV_STATUS bta_jv_free_rfc_cb(tBTA_JV_RFC_CB* p_cb,
           "port_handle={}, user_data={}",
           p_pcb->state, p_cb->scn, fmt::ptr(p_pcb), loghex(p_pcb->handle),
           p_pcb->port_handle, p_pcb->rfcomm_slot_id);
-      status = BTA_JV_FAILURE;
+      status = tBTA_JV_STATUS::FAILURE;
       break;
   }
-  if (BTA_JV_SUCCESS == status) {
+  if (tBTA_JV_STATUS::SUCCESS == status) {
     int port_status;
 
     if (!remove_server)
@@ -354,7 +354,7 @@ static tBTA_JV_STATUS bta_jv_free_rfc_cb(tBTA_JV_RFC_CB* p_cb,
     else
       port_status = RFCOMM_RemoveServer(p_pcb->port_handle);
     if (port_status != PORT_SUCCESS) {
-      status = BTA_JV_FAILURE;
+      status = tBTA_JV_STATUS::FAILURE;
       log::warn(
           "Remove jv handle={}, state={}, port_status={}, port_handle={}, "
           "close_pending={}",
@@ -394,11 +394,12 @@ static tBTA_JV_STATUS bta_jv_free_rfc_cb(tBTA_JV_RFC_CB* p_cb,
  *
  ******************************************************************************/
 tBTA_JV_STATUS bta_jv_free_l2c_cb(tBTA_JV_L2C_CB* p_cb) {
-  tBTA_JV_STATUS status = BTA_JV_SUCCESS;
+  tBTA_JV_STATUS status = tBTA_JV_STATUS::SUCCESS;
 
   if (BTA_JV_ST_NONE != p_cb->state) {
     bta_jv_free_set_pm_profile_cb((uint32_t)p_cb->handle);
-    if (GAP_ConnClose(p_cb->handle) != BT_PASS) status = BTA_JV_FAILURE;
+    if (GAP_ConnClose(p_cb->handle) != BT_PASS)
+      status = tBTA_JV_STATUS::FAILURE;
   }
   p_cb->psm = 0;
   p_cb->state = BTA_JV_ST_NONE;
@@ -441,13 +442,13 @@ static void bta_jv_clear_pm_cb(tBTA_JV_PM_CB* p_pm_cb, bool close_conn) {
  *
  * Description  free pm profile control block
  *
- * Returns     BTA_JV_SUCCESS if cb has been freed correctly,
- *             BTA_JV_FAILURE in case of no profile has been registered or
- *             already freed
+ * Returns     tBTA_JV_STATUS::SUCCESS if cb has been freed correctly,
+ *             tBTA_JV_STATUS::FAILURE in case of no profile has been registered
+ *                                     or already freed
  *
  ******************************************************************************/
 static tBTA_JV_STATUS bta_jv_free_set_pm_profile_cb(uint32_t jv_handle) {
-  tBTA_JV_STATUS status = BTA_JV_FAILURE;
+  tBTA_JV_STATUS status = tBTA_JV_STATUS::FAILURE;
   tBTA_JV_PM_CB** p_cb;
   int i, j, bd_counter = 0, appid_counter = 0;
 
@@ -503,7 +504,7 @@ static tBTA_JV_STATUS bta_jv_free_set_pm_profile_cb(uint32_t jv_handle) {
       }
       if (p_cb) {
         *p_cb = NULL;
-        status = BTA_JV_SUCCESS;
+        status = tBTA_JV_STATUS::SUCCESS;
       }
     }
   }
@@ -637,7 +638,7 @@ void bta_jv_enable(tBTA_JV_DM_CBACK* p_cback) {
   bta_jv_cb.p_dm_cback = p_cback;
   if (bta_jv_cb.p_dm_cback) {
     tBTA_JV bta_jv = {
-        .status = BTA_JV_SUCCESS,
+        .status = tBTA_JV_STATUS::SUCCESS,
     };
     bta_jv_cb.p_dm_cback(BTA_JV_ENABLE_EVT, &bta_jv, 0);
   }
@@ -817,7 +818,7 @@ static void bta_jv_start_discovery_cback(UNUSED_ATTR const RawAddress& bd_addr,
     tBTA_JV bta_jv = {
         .disc_comp =
             {
-                .status = BTA_JV_FAILURE,
+                .status = tBTA_JV_STATUS::FAILURE,
                 .scn = 0,
             },
     };
@@ -837,7 +838,7 @@ static void bta_jv_start_discovery_cback(UNUSED_ATTR const RawAddress& bd_addr,
         bta_jv = {
             .disc_comp =
                 {
-                    .status = BTA_JV_SUCCESS,
+                    .status = tBTA_JV_STATUS::SUCCESS,
                     .scn = (uint8_t)pe.params[0],
                 },
         };
@@ -851,7 +852,7 @@ static void bta_jv_start_discovery_cback(UNUSED_ATTR const RawAddress& bd_addr,
         "Issuing service discovery complete callback bd_addr:{} result:{} "
         "status:{} scn:{}",
         ADDRESS_TO_LOGGABLE_CSTR(bd_addr), sdp_result_text(result),
-        bta_jv.disc_comp.status, bta_jv.disc_comp.scn);
+        bta_jv_status_text(bta_jv.disc_comp.status), bta_jv.disc_comp.scn);
     bta_jv_cb.p_dm_cback(BTA_JV_DISCOVERY_COMP_EVT, &bta_jv, rfcomm_slot_id);
   } else {
     log::warn(
@@ -878,7 +879,7 @@ void bta_jv_start_discovery(const RawAddress& bd_addr, uint16_t num_uuid,
         ADDRESS_TO_LOGGABLE_CSTR(bd_addr), num_uuid, rfcomm_slot_id);
     if (bta_jv_cb.p_dm_cback) {
       tBTA_JV bta_jv = {
-          .status = BTA_JV_BUSY,
+          .status = tBTA_JV_STATUS::BUSY,
       };
       bta_jv_cb.p_dm_cback(BTA_JV_DISCOVERY_COMP_EVT, &bta_jv, rfcomm_slot_id);
     } else {
@@ -930,7 +931,7 @@ void bta_jv_start_discovery(const RawAddress& bd_addr, uint16_t num_uuid,
     /* failed to start SDP. report the failure right away */
     if (bta_jv_cb.p_dm_cback) {
       tBTA_JV bta_jv = {
-          .status = BTA_JV_FAILURE,
+          .status = tBTA_JV_STATUS::FAILURE,
       };
       bta_jv_cb.p_dm_cback(BTA_JV_DISCOVERY_COMP_EVT, &bta_jv, rfcomm_slot_id);
     } else {
@@ -947,7 +948,7 @@ void bta_jv_start_discovery(const RawAddress& bd_addr, uint16_t num_uuid,
 /* Create an SDP record with the given attributes */
 void bta_jv_create_record(uint32_t rfcomm_slot_id) {
   tBTA_JV_CREATE_RECORD evt_data;
-  evt_data.status = BTA_JV_SUCCESS;
+  evt_data.status = tBTA_JV_STATUS::SUCCESS;
   if (bta_jv_cb.p_dm_cback) {
     // callback immediately to create the sdp record in stack thread context
     tBTA_JV bta_jv;
@@ -981,7 +982,7 @@ static void bta_jv_l2cap_client_cback(uint16_t gap_handle, uint16_t event,
   if (gap_handle >= BTA_JV_MAX_L2C_CONN && !p_cb->p_cback) return;
 
   log::verbose("gap_handle={}, evt={}", gap_handle, loghex(event));
-  evt_data.l2c_open.status = BTA_JV_SUCCESS;
+  evt_data.l2c_open.status = tBTA_JV_STATUS::SUCCESS;
   evt_data.l2c_open.handle = gap_handle;
 
   switch (event) {
@@ -1052,7 +1053,7 @@ void bta_jv_l2cap_connect(int32_t type, tBTA_SEC sec_mask,
   uint8_t sec_id = bta_jv_alloc_sec_id();
   tBTA_JV_L2CAP_CL_INIT evt_data;
   evt_data.sec_id = sec_id;
-  evt_data.status = BTA_JV_FAILURE;
+  evt_data.status = tBTA_JV_STATUS::FAILURE;
 
   if (sec_id) {
     /* PSM checking is not required for LE COC */
@@ -1064,12 +1065,12 @@ void bta_jv_l2cap_connect(int32_t type, tBTA_SEC sec_mask,
                             &cfg, ertm_info.get(), sec_mask,
                             bta_jv_l2cap_client_cback, type);
       if (handle != GAP_INVALID_HANDLE) {
-        evt_data.status = BTA_JV_SUCCESS;
+        evt_data.status = tBTA_JV_STATUS::SUCCESS;
       }
     }
   }
 
-  if (evt_data.status == BTA_JV_SUCCESS) {
+  if (evt_data.status == tBTA_JV_STATUS::SUCCESS) {
     tBTA_JV_L2C_CB* p_cb;
     p_cb = &bta_jv_cb.l2c_cb[handle];
     p_cb->handle = handle;
@@ -1126,7 +1127,7 @@ static void bta_jv_l2cap_server_cback(uint16_t gap_handle, uint16_t event,
   if (gap_handle >= BTA_JV_MAX_L2C_CONN && !p_cb->p_cback) return;
 
   log::verbose("gap_handle={}, evt={}", gap_handle, loghex(event));
-  evt_data.l2c_open.status = BTA_JV_SUCCESS;
+  evt_data.l2c_open.status = tBTA_JV_STATUS::SUCCESS;
   evt_data.l2c_open.handle = gap_handle;
 
   switch (event) {
@@ -1207,10 +1208,10 @@ void bta_jv_l2cap_start_server(int32_t type, tBTA_SEC sec_mask,
                              bta_jv_l2cap_server_cback, type)) ==
           GAP_INVALID_HANDLE) {
     bta_jv_free_sec_id(&sec_id);
-    evt_data.status = BTA_JV_FAILURE;
+    evt_data.status = tBTA_JV_STATUS::FAILURE;
   } else {
     tBTA_JV_L2C_CB* p_cb = &bta_jv_cb.l2c_cb[handle];
-    evt_data.status = BTA_JV_SUCCESS;
+    evt_data.status = tBTA_JV_STATUS::SUCCESS;
     evt_data.handle = handle;
     evt_data.sec_id = sec_id;
     p_cb->p_cback = p_cback;
@@ -1277,7 +1278,7 @@ void bta_jv_l2cap_write(uint32_t handle, uint32_t req_id, BT_HDR* msg,
   }
 
   tBTA_JV_L2CAP_WRITE evt_data;
-  evt_data.status = BTA_JV_FAILURE;
+  evt_data.status = tBTA_JV_STATUS::FAILURE;
   evt_data.handle = handle;
   evt_data.req_id = req_id;
   evt_data.cong = p_cb->cong;
@@ -1292,7 +1293,7 @@ void bta_jv_l2cap_write(uint32_t handle, uint32_t req_id, BT_HDR* msg,
     osi_free(msg);
   } else {
     if (GAP_ConnWriteData(handle, msg) == BT_PASS)
-      evt_data.status = BTA_JV_SUCCESS;
+      evt_data.status = tBTA_JV_STATUS::SUCCESS;
   }
 
   tBTA_JV bta_jv;
@@ -1365,13 +1366,13 @@ static void bta_jv_port_mgmt_cl_cback(uint32_t code, uint16_t port_handle) {
 
   if (code == PORT_SUCCESS) {
     evt_data.rfc_open.handle = p_cb->handle;
-    evt_data.rfc_open.status = BTA_JV_SUCCESS;
+    evt_data.rfc_open.status = tBTA_JV_STATUS::SUCCESS;
     evt_data.rfc_open.rem_bda = rem_bda;
     p_pcb->state = BTA_JV_ST_CL_OPEN;
     p_cb->p_cback(BTA_JV_RFCOMM_OPEN_EVT, &evt_data, p_pcb->rfcomm_slot_id);
   } else {
     evt_data.rfc_close.handle = p_cb->handle;
-    evt_data.rfc_close.status = BTA_JV_FAILURE;
+    evt_data.rfc_close.status = tBTA_JV_STATUS::FAILURE;
     evt_data.rfc_close.port_status = code;
     evt_data.rfc_close.async = true;
     if (p_pcb->state == BTA_JV_ST_CL_CLOSING) {
@@ -1413,7 +1414,7 @@ static void bta_jv_port_event_cl_cback(uint32_t code, uint16_t port_handle) {
     p_pcb->cong = (code & PORT_EV_FCS) ? false : true;
     evt_data.rfc_cong.cong = p_pcb->cong;
     evt_data.rfc_cong.handle = p_cb->handle;
-    evt_data.rfc_cong.status = BTA_JV_SUCCESS;
+    evt_data.rfc_cong.status = tBTA_JV_STATUS::SUCCESS;
     p_cb->p_cback(BTA_JV_RFCOMM_CONG_EVT, &evt_data, p_pcb->rfcomm_slot_id);
   }
 
@@ -1433,7 +1434,7 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn,
 
   tBTA_JV_RFCOMM_CL_INIT evt_data;
   memset(&evt_data, 0, sizeof(evt_data));
-  evt_data.status = BTA_JV_SUCCESS;
+  evt_data.status = tBTA_JV_STATUS::SUCCESS;
 
 #ifdef TARGET_FLOSS
   if (true)
@@ -1449,15 +1450,15 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn,
         BTM_SEC_PROTO_RFCOMM, 0);
   }
 
-  if (evt_data.status == BTA_JV_SUCCESS &&
+  if (evt_data.status == tBTA_JV_STATUS::SUCCESS &&
       RFCOMM_CreateConnectionWithSecurity(
           UUID_SERVCLASS_SERIAL_PORT, remote_scn, false, BTA_JV_DEF_RFC_MTU,
           peer_bd_addr, &handle, bta_jv_port_mgmt_cl_cback,
           sec_mask) != PORT_SUCCESS) {
     log::error("RFCOMM_CreateConnection failed");
-    evt_data.status = BTA_JV_FAILURE;
+    evt_data.status = tBTA_JV_STATUS::FAILURE;
   }
-  if (evt_data.status == BTA_JV_SUCCESS) {
+  if (evt_data.status == tBTA_JV_STATUS::SUCCESS) {
     tBTA_JV_PCB* p_pcb;
     tBTA_JV_RFC_CB* p_cb = bta_jv_alloc_rfc_cb(handle, &p_pcb);
     if (p_cb) {
@@ -1479,14 +1480,14 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn,
 
       evt_data.handle = p_cb->handle;
     } else {
-      evt_data.status = BTA_JV_FAILURE;
+      evt_data.status = tBTA_JV_STATUS::FAILURE;
       log::error("run out of rfc control block");
     }
   }
   tBTA_JV bta_jv;
   bta_jv.rfc_cl_init = evt_data;
   p_cback(BTA_JV_RFCOMM_CL_INIT_EVT, &bta_jv, rfcomm_slot_id);
-  if (bta_jv.rfc_cl_init.status == BTA_JV_FAILURE) {
+  if (bta_jv.rfc_cl_init.status == tBTA_JV_STATUS::FAILURE) {
     if (handle) RFCOMM_RemoveConnection(handle);
   }
 }
@@ -1567,7 +1568,7 @@ static void bta_jv_port_mgmt_sr_cback(uint32_t code, uint16_t port_handle) {
           status);
     }
     evt_data.rfc_srv_open.handle = p_pcb->handle;
-    evt_data.rfc_srv_open.status = BTA_JV_SUCCESS;
+    evt_data.rfc_srv_open.status = tBTA_JV_STATUS::SUCCESS;
     evt_data.rfc_srv_open.rem_bda = rem_bda;
     tBTA_JV_PCB* p_pcb_new_listen = bta_jv_add_rfc_port(p_cb, p_pcb);
     if (p_pcb_new_listen) {
@@ -1586,7 +1587,7 @@ static void bta_jv_port_mgmt_sr_cback(uint32_t code, uint16_t port_handle) {
   }
   if (failed) {
     evt_data.rfc_close.handle = p_cb->handle;
-    evt_data.rfc_close.status = BTA_JV_FAILURE;
+    evt_data.rfc_close.status = tBTA_JV_STATUS::FAILURE;
     evt_data.rfc_close.async = true;
     evt_data.rfc_close.port_status = code;
     p_pcb->cong = false;
@@ -1597,7 +1598,7 @@ static void bta_jv_port_mgmt_sr_cback(uint32_t code, uint16_t port_handle) {
         p_cb->curr_sess, p_cb->max_sess);
     if (BTA_JV_ST_SR_CLOSING == p_pcb->state) {
       evt_data.rfc_close.async = false;
-      evt_data.rfc_close.status = BTA_JV_SUCCESS;
+      evt_data.rfc_close.status = tBTA_JV_STATUS::SUCCESS;
     }
     // p_pcb->state = BTA_JV_ST_NONE;
     p_cback(BTA_JV_RFCOMM_CLOSE_EVT, &evt_data, rfcomm_slot_id);
@@ -1642,7 +1643,7 @@ static void bta_jv_port_event_sr_cback(uint32_t code, uint16_t port_handle) {
     p_pcb->cong = (code & PORT_EV_FCS) ? false : true;
     evt_data.rfc_cong.cong = p_pcb->cong;
     evt_data.rfc_cong.handle = p_cb->handle;
-    evt_data.rfc_cong.status = BTA_JV_SUCCESS;
+    evt_data.rfc_cong.status = tBTA_JV_STATUS::SUCCESS;
     p_cb->p_cback(BTA_JV_RFCOMM_CONG_EVT, &evt_data, user_data);
   }
 
@@ -1751,7 +1752,7 @@ void bta_jv_rfcomm_start_server(tBTA_SEC sec_mask, uint8_t local_scn,
   tBTA_JV_RFCOMM_START evt_data;
 
   memset(&evt_data, 0, sizeof(evt_data));
-  evt_data.status = BTA_JV_FAILURE;
+  evt_data.status = tBTA_JV_STATUS::FAILURE;
 
   do {
     if (RFCOMM_CreateConnectionWithSecurity(
@@ -1772,7 +1773,7 @@ void bta_jv_rfcomm_start_server(tBTA_SEC sec_mask, uint8_t local_scn,
     p_cb->scn = local_scn;
     p_pcb->state = BTA_JV_ST_SR_LISTEN;
     p_pcb->rfcomm_slot_id = rfcomm_slot_id;
-    evt_data.status = BTA_JV_SUCCESS;
+    evt_data.status = tBTA_JV_STATUS::SUCCESS;
     evt_data.handle = p_cb->handle;
     evt_data.use_co = true;
 
@@ -1789,7 +1790,7 @@ void bta_jv_rfcomm_start_server(tBTA_SEC sec_mask, uint8_t local_scn,
   tBTA_JV bta_jv;
   bta_jv.rfc_start = evt_data;
   p_cback(BTA_JV_RFCOMM_START_EVT, &bta_jv, rfcomm_slot_id);
-  if (bta_jv.rfc_start.status == BTA_JV_SUCCESS) {
+  if (bta_jv.rfc_start.status == tBTA_JV_STATUS::SUCCESS) {
     PORT_SetDataCOCallback(handle, bta_jv_port_data_co_cback);
   } else {
     if (handle) RFCOMM_RemoveConnection(handle);
@@ -1822,7 +1823,7 @@ void bta_jv_rfcomm_write(uint32_t handle, uint32_t req_id, tBTA_JV_RFC_CB* p_cb,
   }
 
   tBTA_JV_RFCOMM_WRITE evt_data;
-  evt_data.status = BTA_JV_FAILURE;
+  evt_data.status = tBTA_JV_STATUS::FAILURE;
   evt_data.handle = handle;
   evt_data.req_id = req_id;
   evt_data.cong = p_pcb->cong;
@@ -1832,7 +1833,7 @@ void bta_jv_rfcomm_write(uint32_t handle, uint32_t req_id, tBTA_JV_RFC_CB* p_cb,
 
   if (!evt_data.cong &&
       PORT_WriteDataCO(p_pcb->port_handle, &evt_data.len) == PORT_SUCCESS) {
-    evt_data.status = BTA_JV_SUCCESS;
+    evt_data.status = tBTA_JV_STATUS::SUCCESS;
   }
 
   // Update congestion flag
@@ -1861,8 +1862,8 @@ void bta_jv_set_pm_profile(uint32_t handle, tBTA_JV_PM_ID app_id,
   if (app_id == BTA_JV_PM_ID_CLEAR) {
     status = bta_jv_free_set_pm_profile_cb(handle);
 
-    if (status != BTA_JV_SUCCESS) {
-      log::warn("free pm cb failed: reason={}", status);
+    if (status != tBTA_JV_STATUS::SUCCESS) {
+      log::warn("free pm cb failed: reason={}", bta_jv_status_text(status));
     }
   } else /* set PM control block */
   {
