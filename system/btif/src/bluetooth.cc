@@ -29,6 +29,7 @@
 
 #include <android_bluetooth_flags.h>
 #include <base/logging.h>
+#include <bluetooth/log.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bluetooth_headset_interface.h>
 #include <hardware/bt_av.h>
@@ -120,6 +121,7 @@ using bluetooth::hearing_aid::HearingAidInterface;
 using bluetooth::le_audio::LeAudioBroadcasterInterface;
 using bluetooth::le_audio::LeAudioClientInterface;
 using bluetooth::vc::VolumeControlInterface;
+using namespace bluetooth;
 
 /*******************************************************************************
  *  Static variables
@@ -199,7 +201,7 @@ struct ConfigInterfaceImpl : bluetooth::core::ConfigInterface {
                      "false");
     auto a2dp_offload_enabled =
         (strcmp(value_sup, "true") == 0) && (strcmp(value_dis, "false") == 0);
-    LOG_VERBOSE("a2dp_offload.enable = %d", a2dp_offload_enabled);
+    log::verbose("a2dp_offload.enable = {}", a2dp_offload_enabled);
 
     return a2dp_offload_enabled;
   }
@@ -297,8 +299,8 @@ struct CoreInterfaceImpl : bluetooth::core::CoreInterface {
          */
       } break;
       default:
-        LOG_ERROR("%s: Unknown service %d being %s", __func__, service_id,
-                  (enable) ? "enabled" : "disabled");
+        log::error("Unknown service {} being {}", service_id,
+                   (enable) ? "enabled" : "disabled");
         return BT_STATUS_FAIL;
     }
     return BT_STATUS_SUCCESS;
@@ -409,11 +411,10 @@ static int init(bt_callbacks_t* callbacks, bool start_restricted,
                 const char** init_flags, bool is_atv,
                 const char* user_data_directory) {
   (void)user_data_directory;
-  LOG_INFO(
-      "%s: start restricted = %d ; common criteria mode = %d, config compare "
-      "result = %d",
-      __func__, start_restricted, is_common_criteria_mode,
-      config_compare_result);
+  log::info(
+      "start restricted = {} ; common criteria mode = {}, config compare "
+      "result = {}",
+      start_restricted, is_common_criteria_mode, config_compare_result);
 
   bluetooth::common::InitFlags::Load(init_flags);
 
@@ -630,7 +631,7 @@ static int create_bond_out_of_band(const RawAddress* bd_addr, int transport,
 }
 
 static int generate_local_oob_data(tBT_TRANSPORT transport) {
-  LOG_INFO("%s", __func__);
+  log::info("");
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
   return do_in_main_thread(
@@ -646,8 +647,8 @@ static int cancel_bond(const RawAddress* bd_addr) {
 
 static int remove_bond(const RawAddress* bd_addr) {
   if (is_restricted_mode() && !btif_storage_is_restricted_device(bd_addr)) {
-    LOG_INFO("%s cannot be removed in restricted mode",
-             ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
+    log::info("{} cannot be removed in restricted mode",
+              ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
     return BT_STATUS_SUCCESS;
   }
 
@@ -706,7 +707,7 @@ static int read_energy_info() {
 }
 
 static int clear_event_filter() {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
   do_in_main_thread(FROM_HERE, base::BindOnce(btif_dm_clear_event_filter));
@@ -714,7 +715,7 @@ static int clear_event_filter() {
 }
 
 static int clear_event_mask() {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
   do_in_main_thread(FROM_HERE, base::BindOnce(btif_dm_clear_event_mask));
@@ -722,7 +723,7 @@ static int clear_event_mask() {
 }
 
 static int clear_filter_accept_list() {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
   do_in_main_thread(FROM_HERE,
@@ -731,7 +732,7 @@ static int clear_filter_accept_list() {
 }
 
 static int disconnect_all_acls() {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
   do_in_main_thread(FROM_HERE, base::BindOnce(btif_dm_disconnect_all_acls));
@@ -739,7 +740,7 @@ static int disconnect_all_acls() {
 }
 
 static void le_rand_btif_cb(uint64_t random_number) {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
   do_in_jni_thread(
       FROM_HERE,
       base::BindOnce(
@@ -748,7 +749,7 @@ static void le_rand_btif_cb(uint64_t random_number) {
 }
 
 static int le_rand() {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
   do_in_main_thread(
@@ -848,8 +849,8 @@ static int get_remote_pbap_pce_version(const RawAddress* bd_addr) {
   if (!btif_config_get_bin(bd_addr->ToString(),
                            BTIF_STORAGE_KEY_PBAP_PCE_VERSION,
                            (uint8_t*)&pce_version, &version_value_size)) {
-    LOG_WARN("Failed to read cached peer PCE version for %s",
-             ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
+    log::warn("Failed to read cached peer PCE version for {}",
+              ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
   }
   return pce_version;
 }
@@ -859,12 +860,12 @@ static bool pbap_pse_dynamic_version_upgrade_is_enabled() {
           pbap_pse_dynamic_version_upgrade_is_enabled()) {
     return true;
   }
-  LOG_WARN("PBAP PSE dynamic version upgrade is not enabled");
+  log::warn("PBAP PSE dynamic version upgrade is not enabled");
   return false;
 }
 
 static const void* get_profile_interface(const char* profile_id) {
-  LOG_INFO("%s: id = %s", __func__, profile_id);
+  log::info("id = {}", profile_id);
 
   /* sanity check */
   if (!interface_ready()) return NULL;
@@ -1017,15 +1018,15 @@ static int set_os_callouts(bt_os_callouts_t* callouts) {
 }
 
 static int config_clear(void) {
-  LOG_INFO("%s", __func__);
+  log::info("");
   int ret = BT_STATUS_SUCCESS;
   if (!btif_config_clear()) {
-    LOG_ERROR("Failed to clear btif config");
+    log::error("Failed to clear btif config");
     ret = BT_STATUS_FAIL;
   }
 
   if (!device_iot_config_clear()) {
-    LOG_ERROR("Failed to clear device iot config");
+    log::error("Failed to clear device iot config");
     ret = BT_STATUS_FAIL;
   }
 
@@ -1051,7 +1052,7 @@ static int set_dynamic_audio_buffer_size(int codec, int size) {
 
 static bool allow_low_latency_audio(bool allowed,
                                     const RawAddress& /* address */) {
-  LOG_INFO("%s %s", __func__, allowed ? "true" : "false");
+  log::info("{}", allowed);
   bluetooth::audio::a2dp::set_audio_low_latency_mode_allowed(allowed);
   return true;
 }
@@ -1059,7 +1060,7 @@ static bool allow_low_latency_audio(bool allowed,
 static void metadata_changed(const RawAddress& remote_bd_addr, int key,
                              std::vector<uint8_t> value) {
   if (!interface_ready()) {
-    LOG_ERROR("Interface not ready!");
+    log::error("Interface not ready!");
     return;
   }
 
@@ -1076,7 +1077,7 @@ static bool interop_match_addr(const char* feature_name,
 
   int feature = interop_feature_name_to_feature_id(feature_name);
   if (feature == -1) {
-    LOG_ERROR("%s: feature doesn't exist: %s", __func__, feature_name);
+    log::error("feature doesn't exist: {}", feature_name);
     return false;
   }
 
@@ -1090,7 +1091,7 @@ static bool interop_match_name(const char* feature_name, const char* name) {
 
   int feature = interop_feature_name_to_feature_id(feature_name);
   if (feature == -1) {
-    LOG_ERROR("%s: feature doesn't exist: %s", __func__, feature_name);
+    log::error("feature doesn't exist: {}", feature_name);
     return false;
   }
 
@@ -1105,7 +1106,7 @@ static bool interop_match_addr_or_name(const char* feature_name,
 
   int feature = interop_feature_name_to_feature_id(feature_name);
   if (feature == -1) {
-    LOG_ERROR("%s: feature doesn't exist: %s", __func__, feature_name);
+    log::error("feature doesn't exist: {}", feature_name);
     return false;
   }
 
@@ -1123,7 +1124,7 @@ static void interop_database_add_remove_addr(bool do_add,
 
   int feature = interop_feature_name_to_feature_id(feature_name);
   if (feature == -1) {
-    LOG_ERROR("%s: feature doesn't exist: %s", __func__, feature_name);
+    log::error("feature doesn't exist: {}", feature_name);
     return;
   }
 
@@ -1143,7 +1144,7 @@ static void interop_database_add_remove_name(bool do_add,
 
   int feature = interop_feature_name_to_feature_id(feature_name);
   if (feature == -1) {
-    LOG_ERROR("%s: feature doesn't exist: %s", __func__, feature_name);
+    log::error("feature doesn't exist: {}", feature_name);
     return;
   }
 
@@ -1350,7 +1351,7 @@ void invoke_ssp_request_cb(RawAddress bd_addr, bt_bdname_t bd_name,
 void invoke_oob_data_request_cb(tBT_TRANSPORT t, bool valid, Octet16 c,
                                 Octet16 r, RawAddress raw_address,
                                 uint8_t address_type) {
-  LOG_INFO("%s", __func__);
+  log::info("");
   bt_oob_data_t oob_data = {};
   const char* local_name;
   BTM_ReadLocalDeviceName(&local_name);
@@ -1388,7 +1389,7 @@ void invoke_oob_data_request_cb(tBT_TRANSPORT t, bool valid, Octet16 c,
                      },
                      t, oob_data));
   if (status != BT_STATUS_SUCCESS) {
-    LOG_ERROR("%s: Failed to call callback!", __func__);
+    log::error("Failed to call callback!");
   }
 }
 
