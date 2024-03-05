@@ -328,6 +328,15 @@ static bool is_known_codec(const types::LeAudioCodecId& codec_id) {
 static void fillRemotePacsCapabitiliesToBtLeAudioCodecConfig(
     const struct types::acs_ac_record& record,
     std::vector<bluetooth::le_audio::btle_audio_codec_config_t>& vec) {
+  if (!utils::IsCodecUsingLtvFormat(record.codec_id)) {
+    LOG_WARN(
+        "Unknown codec capability format. Unable to report known codec "
+        "parameters.");
+    return;
+  }
+  ASSERT_LOG(!record.codec_spec_caps.IsEmpty(),
+             "Codec specific capabilities are not parsed approprietly.");
+
   const struct types::LeAudioCoreCodecCapabilities capa =
       record.codec_spec_caps.GetAsCoreCodecCapabilities();
   for (uint8_t freq_bit = codec_spec_conf::kLeAudioSamplingFreq8000Hz;
@@ -389,5 +398,11 @@ GetRemoteBtLeAudioCodecConfigFromPac(
   return vec;
 }
 
+bool IsCodecUsingLtvFormat(const types::LeAudioCodecId& codec_id) {
+  if (codec_id == set_configurations::LeAudioCodecIdLc3) {
+    return true;
+  }
+  return false;
+}
 }  // namespace utils
 }  // namespace le_audio
