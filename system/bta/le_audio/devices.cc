@@ -24,6 +24,7 @@
 #include "bta_gatt_queue.h"
 #include "btif/include/btif_storage.h"
 #include "internal_include/bt_trace.h"
+#include "le_audio_utils.h"
 
 using bluetooth::hci::kIsoCigPhy1M;
 using bluetooth::hci::kIsoCigPhy2M;
@@ -360,16 +361,24 @@ void LeAudioDevice::RegisterPACs(
 
   /* TODO wrap this logging part with debug flag */
   for (const struct types::acs_ac_record& pac : *pac_recs) {
-    LOG(INFO) << "Registering PAC"
+    std::stringstream debug_str;
+    debug_str << "Registering PAC"
               << "\n\tCoding format: " << loghex(pac.codec_id.coding_format)
               << "\n\tVendor codec company ID: "
               << loghex(pac.codec_id.vendor_company_id)
               << "\n\tVendor codec ID: " << loghex(pac.codec_id.vendor_codec_id)
-              << "\n\tCodec spec caps:\n"
-              << pac.codec_spec_caps.ToString("",
-                                              types::CodecCapabilitiesLtvFormat)
-              << "\n\tMetadata: "
+              << "\n\tCodec spec caps:\n";
+    if (utils::IsCodecUsingLtvFormat(pac.codec_id) &&
+        !pac.codec_spec_caps.IsEmpty()) {
+      debug_str << pac.codec_spec_caps.ToString(
+          "", types::CodecCapabilitiesLtvFormat);
+    } else {
+      debug_str << base::HexEncode(pac.codec_spec_caps_raw.data(),
+                                   pac.codec_spec_caps_raw.size());
+    }
+    debug_str << "\n\tMetadata: "
               << base::HexEncode(pac.metadata.data(), pac.metadata.size());
+    LOG_DEBUG("%s", debug_str.str().c_str());
 
     if (IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
       if (pac.codec_id == types::kLeAudioCodecHeadtracking) {
@@ -700,8 +709,13 @@ uint8_t LeAudioDevice::GetSupportedAudioChannelCounts(uint8_t direction) const {
     auto& pac_recs = std::get<1>(pac_tuple);
 
     for (const auto pac : pac_recs) {
-      if (pac.codec_id.coding_format != types::kLeAudioCodingFormatLC3)
+      if (!utils::IsCodecUsingLtvFormat(pac.codec_id)) {
+        LOG_WARN("Unknown codec PAC record for codec: %s",
+                 bluetooth::common::ToString(pac.codec_id).c_str());
         continue;
+      }
+      ASSERT_LOG(!pac.codec_spec_caps.IsEmpty(),
+                 "Codec specific capabilities are not parsed approprietly.");
 
       auto supported_channel_count_ltv = pac.codec_spec_caps.Find(
           codec_spec_caps::kLeAudioLtvTypeSupportedAudioChannelCounts);
@@ -803,9 +817,15 @@ void LeAudioDevice::DumpPacsDebugState(std::stringstream& stream,
                << static_cast<int>(record.codec_id.vendor_company_id)
                << ", Vendor codec ID: "
                << static_cast<int>(record.codec_id.vendor_codec_id) << ")";
-        stream << "\n\t\tCodec specific capabilities:\n"
-               << record.codec_spec_caps.ToString(
-                      "\t\t\t", types::CodecCapabilitiesLtvFormat);
+        stream << "\n\t\tCodec specific capabilities:\n";
+        if (utils::IsCodecUsingLtvFormat(record.codec_id)) {
+          stream << record.codec_spec_caps.ToString(
+              "\t\t\t", types::CodecCapabilitiesLtvFormat);
+        } else {
+          stream << "\t\t\t"
+                 << base::HexEncode(record.codec_spec_caps_raw.data(),
+                                    record.codec_spec_caps_raw.size());
+        }
         stream << "\t\tMetadata: "
                << base::HexEncode(record.metadata.data(),
                                   record.metadata.size());

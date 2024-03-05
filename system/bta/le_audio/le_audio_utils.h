@@ -57,5 +57,6 @@ void fillStreamParamsToBtLeAudioCodecConfig(
 std::vector<bluetooth::le_audio::btle_audio_codec_config_t>
 GetRemoteBtLeAudioCodecConfigFromPac(
     const types::PublishedAudioCapabilities& group_pacs);
+bool IsCodecUsingLtvFormat(const types::LeAudioCodecId& codec_id);
 }  // namespace utils
 }  // namespace le_audio
