@@ -22,6 +22,8 @@
 // Mock include file to share data between tests and mock
 #include "test/mock/mock_btif_av.h"
 
+#include <btif/include/btif_av.h>
+
 #include <cstdint>
 
 #include "test/common/mock_functions.h"
@@ -123,25 +125,26 @@ const char* dump_av_sm_event_name::return_value = nullptr;
 }  // namespace test
 
 // Mocked functions, if any
-void btif_av_acl_disconnected(const RawAddress& peer_address) {
+void btif_av_acl_disconnected(const RawAddress& peer_address,
+                              const A2dpType local_a2dp_type) {
   inc_func_call_count(__func__);
-  test::mock::btif_av::btif_av_acl_disconnected(peer_address);
+  test::mock::btif_av::btif_av_acl_disconnected(peer_address, local_a2dp_type);
 }
-void btif_av_clear_remote_suspend_flag(void) {
+void btif_av_clear_remote_suspend_flag(const A2dpType local_a2dp_type) {
   inc_func_call_count(__func__);
-  test::mock::btif_av::btif_av_clear_remote_suspend_flag();
+  test::mock::btif_av::btif_av_clear_remote_suspend_flag(local_a2dp_type);
 }
 const RawAddress& btif_av_find_by_handle(tBTA_AV_HNDL bta_handle) {
   inc_func_call_count(__func__);
   return test::mock::btif_av::btif_av_find_by_handle(bta_handle);
 }
-uint16_t btif_av_get_audio_delay() {
+uint16_t btif_av_get_audio_delay(const A2dpType local_a2dp_type) {
   inc_func_call_count(__func__);
-  return test::mock::btif_av::btif_av_get_audio_delay();
+  return test::mock::btif_av::btif_av_get_audio_delay(local_a2dp_type);
 }
-uint8_t btif_av_get_peer_sep(void) {
+uint8_t btif_av_get_peer_sep(const A2dpType local_a2dp_type) {
   inc_func_call_count(__func__);
-  return test::mock::btif_av::btif_av_get_peer_sep();
+  return test::mock::btif_av::btif_av_get_peer_sep(local_a2dp_type);
 }
 const btav_sink_interface_t* btif_av_get_sink_interface(void) {
   inc_func_call_count(__func__);
@@ -159,17 +162,21 @@ bool btif_av_is_a2dp_offload_running() {
   inc_func_call_count(__func__);
   return test::mock::btif_av::btif_av_is_a2dp_offload_running();
 }
-bool btif_av_is_connected(void) {
+bool btif_av_is_connected(const A2dpType local_a2dp_type) {
   inc_func_call_count(__func__);
-  return test::mock::btif_av::btif_av_is_connected();
+  return test::mock::btif_av::btif_av_is_connected(local_a2dp_type);
 }
-bool btif_av_is_connected_addr(const RawAddress& peer_address) {
+bool btif_av_is_connected_addr(const RawAddress& peer_address,
+                               const A2dpType local_a2dp_type) {
   inc_func_call_count(__func__);
-  return test::mock::btif_av::btif_av_is_connected_addr(peer_address);
+  return test::mock::btif_av::btif_av_is_connected_addr(peer_address,
+                                                        local_a2dp_type);
 }
-bool btif_av_is_peer_edr(const RawAddress& peer_address) {
+bool btif_av_is_peer_edr(const RawAddress& peer_address,
+                         const A2dpType local_a2dp_type) {
   inc_func_call_count(__func__);
-  return test::mock::btif_av::btif_av_is_peer_edr(peer_address);
+  return test::mock::btif_av::btif_av_is_peer_edr(peer_address,
+                                                  local_a2dp_type);
 }
 bool btif_av_is_peer_silenced(const RawAddress& peer_address) {
   inc_func_call_count(__func__);
@@ -199,14 +206,17 @@ bool btif_av_peer_is_source(const RawAddress& peer_address) {
   inc_func_call_count(__func__);
   return test::mock::btif_av::btif_av_peer_is_source(peer_address);
 }
-bool btif_av_peer_prefers_mandatory_codec(const RawAddress& peer_address) {
+bool btif_av_peer_prefers_mandatory_codec(const RawAddress& peer_address,
+                                          const A2dpType local_a2dp_type) {
   inc_func_call_count(__func__);
   return test::mock::btif_av::btif_av_peer_prefers_mandatory_codec(
-      peer_address);
+      peer_address, local_a2dp_type);
 }
-bool btif_av_peer_supports_3mbps(const RawAddress& peer_address) {
+bool btif_av_peer_supports_3mbps(const RawAddress& peer_address,
+                                 const A2dpType local_a2dp_type) {
   inc_func_call_count(__func__);
-  return test::mock::btif_av::btif_av_peer_supports_3mbps(peer_address);
+  return test::mock::btif_av::btif_av_peer_supports_3mbps(peer_address,
+                                                          local_a2dp_type);
 }
 void btif_av_report_source_codec_state(
     const RawAddress& peer_address,
@@ -223,9 +233,11 @@ void btif_av_reset_audio_delay(void) {
   inc_func_call_count(__func__);
   test::mock::btif_av::btif_av_reset_audio_delay();
 }
-void btif_av_set_audio_delay(const RawAddress& peer_address, uint16_t delay) {
+void btif_av_set_audio_delay(const RawAddress& peer_address, uint16_t delay,
+                             const A2dpType local_a2dp_type) {
   inc_func_call_count(__func__);
-  test::mock::btif_av::btif_av_set_audio_delay(peer_address, delay);
+  test::mock::btif_av::btif_av_set_audio_delay(peer_address, delay,
+                                               local_a2dp_type);
 }
 void btif_av_set_dynamic_audio_buffer_size(uint8_t dynamic_audio_buffer_size) {
   inc_func_call_count(__func__);
@@ -260,13 +272,13 @@ bool btif_av_src_sink_coexist_enabled(void) {
   inc_func_call_count(__func__);
   return test::mock::btif_av::btif_av_src_sink_coexist_enabled();
 }
-bool btif_av_stream_ready(void) {
+bool btif_av_stream_ready(const A2dpType local_a2dp_type) {
   inc_func_call_count(__func__);
-  return test::mock::btif_av::btif_av_stream_ready();
+  return test::mock::btif_av::btif_av_stream_ready(local_a2dp_type);
 }
-void btif_av_stream_start(void) {
+void btif_av_stream_start(const A2dpType local_a2dp_type) {
   inc_func_call_count(__func__);
-  test::mock::btif_av::btif_av_stream_start();
+  test::mock::btif_av::btif_av_stream_start(local_a2dp_type);
 }
 void btif_av_stream_start_offload(void) {
   inc_func_call_count(__func__);
@@ -276,9 +288,9 @@ void btif_av_stream_start_with_latency(bool use_latency_mode) {
   inc_func_call_count(__func__);
   test::mock::btif_av::btif_av_stream_start_with_latency(use_latency_mode);
 }
-bool btif_av_stream_started_ready(void) {
+bool btif_av_stream_started_ready(const A2dpType local_a2dp_type) {
   inc_func_call_count(__func__);
-  return test::mock::btif_av::btif_av_stream_started_ready();
+  return test::mock::btif_av::btif_av_stream_started_ready(local_a2dp_type);
 }
 void btif_av_stream_stop(const RawAddress& peer_address) {
   inc_func_call_count(__func__);
