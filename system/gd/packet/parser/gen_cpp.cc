@@ -250,6 +250,28 @@ using ::bluetooth::packet::RawBuilder;
 
   generate_namespace_close(namespace_list, out_file);
 
+  // Generate formatters for all enum declarations.
+  std::string namespace_prefix;
+  for (auto const& fragment : namespace_list) {
+    namespace_prefix += fragment;
+    namespace_prefix += "::";
+  }
+
+  out_file << "#if __has_include(<bluetooth/log.h>)" << std::endl
+           << "#include <bluetooth/log.h>" << std::endl
+           << "namespace fmt {" << std::endl;
+  for (const auto& e : decls.type_defs_queue_) {
+    if (e.second->GetDefinitionType() == TypeDef::Type::ENUM) {
+      const auto* enum_def = static_cast<const EnumDef*>(e.second);
+      out_file << "template <>" << std::endl
+               << "struct formatter<" << namespace_prefix << enum_def->name_ << ">"
+               << " : enum_formatter<" << namespace_prefix << enum_def->name_ << "> {};"
+               << std::endl;
+    }
+  }
+  out_file << "} // namespace fmt" << std::endl
+           << "#endif // __has_include(<bluetooth/log.h>)" << std::endl;
+
   out_file.close();
 
   return true;

@@ -16,6 +16,8 @@
 
 #include "hci/acl_manager.h"
 
+#include <bluetooth/log.h>
+
 #include <atomic>
 #include <future>
 #include <mutex>
@@ -129,8 +131,8 @@ struct AclManager::impl {
         if (!timed_out) {
           unsent_packets.push_back(itr);
         } else {
-          LOG_ERROR(
-              "Dropping packet of size %zu to unknown connection 0x%0hx",
+          log::error(
+              "Dropping packet of size {} to unknown connection 0x{:x}",
               itr.size(),
               itr.GetHandle());
         }
@@ -140,7 +142,7 @@ struct AclManager::impl {
   }
 
   static void on_unknown_acl_timer(struct AclManager::impl* impl) {
-    LOG_INFO("Timer fired!");
+    log::info("Timer fired!");
     impl->retry_unknown_acl(/* timed_out = */ true);
     impl->unknown_acl_alarm_.reset();
   }
@@ -155,7 +157,7 @@ struct AclManager::impl {
     auto packet = hci_queue_end_->TryDequeue();
     ASSERT(packet != nullptr);
     if (!packet->IsValid()) {
-      LOG_INFO("Dropping invalid packet of size %zu", packet->size());
+      log::info("Dropping invalid packet of size {}", packet->size());
       return;
     }
     uint16_t handle = packet->GetHandle();
@@ -170,8 +172,8 @@ struct AclManager::impl {
       unknown_acl_alarm_.reset(new os::Alarm(handler_));
     }
     waiting_packets_.push_back(*packet);
-    LOG_INFO(
-        "Saving packet of size %zu to unknown connection 0x%0hx",
+    log::info(
+        "Saving packet of size {} to unknown connection 0x{:x}",
         packet->size(),
         packet->GetHandle());
     unknown_acl_alarm_->Schedule(

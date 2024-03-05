@@ -15,6 +15,8 @@
  */
 #pragma once
 
+#include <bluetooth/log.h>
+
 #include "address.h"
 #include "module.h"
 
@@ -94,3 +96,9 @@ class DistanceMeasurementManager : public bluetooth::Module {
 
 }  // namespace hci
 }  // namespace bluetooth
+
+namespace fmt {
+template <>
+struct formatter<bluetooth::hci::DistanceMeasurementMethod>
+    : enum_formatter<bluetooth::hci::DistanceMeasurementMethod> {};
+}  // namespace fmt

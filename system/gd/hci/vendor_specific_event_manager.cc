@@ -15,6 +15,8 @@
  */
 #include "hci/vendor_specific_event_manager.h"
 
+#include <bluetooth/log.h>
+
 #include "hci/controller.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_packets.h"
@@ -73,7 +75,7 @@ struct VendorSpecificEventManager::impl {
         return vendor_capabilities_.bluetooth_quality_report_support_;
       } break;
       default:
-        LOG_WARN("Unhandled event %s", VseSubeventCodeText(event).c_str());
+        log::warn("Unhandled event {}", VseSubeventCodeText(event));
     }
     return false;
   }
@@ -83,7 +85,7 @@ struct VendorSpecificEventManager::impl {
     ASSERT(vendor_specific_event_view.IsValid());
     VseSubeventCode vse_subevent_code = vendor_specific_event_view.GetSubeventCode();
     if (subevent_handlers_.find(vse_subevent_code) == subevent_handlers_.end()) {
-      LOG_WARN("Unhandled vendor specific event of type 0x%02hhx", vse_subevent_code);
+      log::warn("Unhandled vendor specific event of type 0x{:02x}", vse_subevent_code);
       return;
     }
     subevent_handlers_[vse_subevent_code].Invoke(vendor_specific_event_view);

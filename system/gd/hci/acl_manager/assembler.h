@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <bluetooth/log.h>
+
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -98,30 +100,34 @@ struct assembler {
     PacketView<packet::kLittleEndian> payload = packet.GetPayload();
     auto broadcast_flag = packet.GetBroadcastFlag();
     if (broadcast_flag == BroadcastFlag::ACTIVE_PERIPHERAL_BROADCAST) {
-      LOG_WARN("Dropping broadcast from remote");
+      log::warn("Dropping broadcast from remote");
       return;
     }
     auto packet_boundary_flag = packet.GetPacketBoundaryFlag();
     if (packet_boundary_flag == PacketBoundaryFlag::FIRST_NON_AUTOMATICALLY_FLUSHABLE) {
-      LOG_ERROR("Controller is not allowed to send FIRST_NON_AUTOMATICALLY_FLUSHABLE to host except loopback mode");
+      log::error(
+          "Controller is not allowed to send FIRST_NON_AUTOMATICALLY_FLUSHABLE to host except "
+          "loopback mode");
       return;
     }
     if (packet_boundary_flag == PacketBoundaryFlag::CONTINUING_FRAGMENT) {
       if (!recombination_stage_.ReceivedFirstPacket()) {
-        LOG_ERROR("Continuing fragment received without previous first, dropping it.");
+        log::error("Continuing fragment received without previous first, dropping it.");
         return;
       }
       recombination_stage_.AppendPacketView(payload);
     } else if (packet_boundary_flag == PacketBoundaryFlag::FIRST_AUTOMATICALLY_FLUSHABLE) {
       if (recombination_stage_.ReceivedFirstPacket()) {
-        LOG_ERROR("Controller sent a starting packet without finishing previous packet. Drop previous one.");
+        log::error(
+            "Controller sent a starting packet without finishing previous packet. Drop previous "
+            "one.");
       }
       recombination_stage_ = payload;
     }
     // Check the size of the packet
     size_t expected_size = GetL2capPduSize(recombination_stage_) + kL2capBasicFrameHeaderSize;
     if (expected_size < recombination_stage_.size()) {
-      LOG_INFO("Packet size doesn't match L2CAP header, dropping it.");
+      log::info("Packet size doesn't match L2CAP header, dropping it.");
       recombination_stage_ = PacketViewForRecombination();
       return;
     } else if (expected_size > recombination_stage_.size()) {
@@ -129,8 +135,9 @@ struct assembler {
       return;
     }
     if (incoming_queue_.size() > kMaxQueuedPacketsPerConnection) {
-      LOG_ERROR("Dropping packet from %s due to congestion",
-                 ADDRESS_TO_LOGGABLE_CSTR(address_with_type_));
+      log::error(
+          "Dropping packet from {} due to congestion",
+          ADDRESS_TO_LOGGABLE_CSTR(address_with_type_));
       recombination_stage_ = PacketViewForRecombination();
       return;
     }
