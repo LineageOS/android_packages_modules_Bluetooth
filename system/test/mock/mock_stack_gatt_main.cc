@@ -43,12 +43,6 @@ bool gatt_disconnect(tGATT_TCB* /* p_tcb */) {
   inc_func_call_count(__func__);
   return false;
 }
-bool gatt_update_app_hold_link_status(tGATT_IF /* gatt_if */,
-                                      tGATT_TCB* /* p_tcb */,
-                                      bool /* is_add */) {
-  inc_func_call_count(__func__);
-  return false;
-}
 tGATT_CH_STATE gatt_get_ch_state(tGATT_TCB* /* p_tcb */) {
   inc_func_call_count(__func__);
   return GATT_CH_CLOSE;
