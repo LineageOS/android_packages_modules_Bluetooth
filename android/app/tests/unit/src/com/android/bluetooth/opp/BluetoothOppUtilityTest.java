@@ -24,6 +24,7 @@ import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
@@ -160,6 +161,9 @@ public class BluetoothOppUtilityTest {
         doReturn(0).when(mCallProxy).contentResolverDelete(any(), any(), nullable(String.class),
                 nullable(String[].class));
 
+        // Do nothing since we don't need the actual activity to be launched.
+        doNothing().when(spiedContext).startActivity(any());
+
         BluetoothOppUtility.openReceivedFile(spiedContext, "randomFileName.txt",
                 "text/plain", 0L, contentResolverUri);
 
@@ -228,6 +232,9 @@ public class BluetoothOppUtilityTest {
         PackageManager mockManager = mock(PackageManager.class);
         doReturn(mockManager).when(spiedContext).getPackageManager();
         doReturn(List.of()).when(mockManager).queryIntentActivities(any(), anyInt());
+
+        // Do nothing since we don't need the actual activity to be launched.
+        doNothing().when(spiedContext).startActivity(any());
 
         BluetoothOppUtility.openReceivedFile(spiedContext, "randomFileName.txt",
                 "text/plain", 0L, contentResolverUri);
