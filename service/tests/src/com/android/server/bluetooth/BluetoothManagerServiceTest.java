@@ -86,7 +86,6 @@ import java.util.stream.Stream;
 public class BluetoothManagerServiceTest {
     private static final String TAG = BluetoothManagerServiceTest.class.getSimpleName();
     private static final int STATE_BLE_TURNING_ON = 14; // can't find the symbol because hidden api
-    private static final int TIMEOUT_MS = 1000; // TO use to wait for handler execution
 
     BluetoothManagerService mManagerService;
 

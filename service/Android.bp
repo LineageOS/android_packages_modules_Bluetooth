@@ -44,6 +44,8 @@ java_defaults {
             "-Xep:ClassCanBeStatic:ERROR",
             "-Xep:EqualsIncompatibleType:ERROR",
             "-Xep:ReferenceEquality:ERROR",
+            "-Xep:UnusedMethod:ERROR",
+            "-Xep:UnusedVariable:ERROR",
         ],
     },
 
