@@ -78,8 +78,9 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -117,6 +118,8 @@ public class LeAudioServiceTest {
     private BluetoothLeAudioCodecStatus testCodecStatus = null;
 
     private BroadcastReceiver mLeAudioIntentReceiver;
+
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock private AdapterService mAdapterService;
     @Mock private ActiveDeviceManager mActiveDeviceManager;
@@ -166,8 +169,6 @@ public class LeAudioServiceTest {
     public void setUp() throws Exception {
         mTargetContext = InstrumentationRegistry.getTargetContext();
 
-        // Set up mocks and test assets
-        MockitoAnnotations.initMocks(this);
 
         // Use spied objects factory
         doNothing().when(mTmapGattServer).start(anyInt());

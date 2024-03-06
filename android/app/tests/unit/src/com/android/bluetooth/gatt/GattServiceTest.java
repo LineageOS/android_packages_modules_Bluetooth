@@ -71,7 +71,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -95,6 +96,8 @@ public class GattServiceTest {
     private static final int TIMEOUT_MS = 5_000;
     private Context mTargetContext;
     private GattService mService;
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock private GattService.ClientMap mClientMap;
     @Mock private TransitionalScanHelper.ScannerMap mScannerMap;
 
@@ -128,7 +131,6 @@ public class GattServiceTest {
     public void setUp() throws Exception {
         mTargetContext = InstrumentationRegistry.getTargetContext();
 
-        MockitoAnnotations.initMocks(this);
         TestUtils.setAdapterService(mAdapterService);
 
         GattObjectsFactory.setInstanceForTesting(mFactory);

@@ -74,13 +74,15 @@ import com.android.bluetooth.le_audio.LeAudioService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -140,6 +142,8 @@ public class BassClientServiceTest {
     private BassIntentReceiver mBassIntentReceiver;
 
     @Spy private BassObjectsFactory mObjectsFactory = BassObjectsFactory.getInstance();
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock private AdapterService mAdapterService;
     @Mock private DatabaseManager mDatabaseManager;
     @Mock private BluetoothLeScannerWrapper mBluetoothLeScannerWrapper;
@@ -200,7 +204,6 @@ public class BassClientServiceTest {
         }
 
         mTargetContext = InstrumentationRegistry.getTargetContext();
-        MockitoAnnotations.initMocks(this);
         TestUtils.setAdapterService(mAdapterService);
         BassObjectsFactory.setInstanceForTesting(mObjectsFactory);
 

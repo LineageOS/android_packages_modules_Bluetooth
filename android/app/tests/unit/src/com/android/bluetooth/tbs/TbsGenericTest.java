@@ -35,12 +35,14 @@ import com.android.bluetooth.le_audio.LeAudioService;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,6 +58,8 @@ public class TbsGenericTest {
 
     private TbsGeneric mTbsGeneric;
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     private @Mock TbsGatt mTbsGatt;
     private @Mock IBluetoothLeCallControlCallback mIBluetoothLeCallControlCallback;
     private @Captor ArgumentCaptor<Integer> mGtbsCcidCaptor;
@@ -70,7 +74,6 @@ public class TbsGenericTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
 
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         mContext = getInstrumentation().getTargetContext();

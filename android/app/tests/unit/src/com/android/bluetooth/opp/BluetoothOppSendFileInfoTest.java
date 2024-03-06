@@ -39,10 +39,12 @@ import com.android.bluetooth.BluetoothMethodProxy;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -52,12 +54,13 @@ public class BluetoothOppSendFileInfoTest {
     Context mContext;
     MatrixCursor mCursor;
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock
     BluetoothMethodProxy mCallProxy;
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
         mContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
         BluetoothMethodProxy.setInstanceForTesting(mCallProxy);
     }

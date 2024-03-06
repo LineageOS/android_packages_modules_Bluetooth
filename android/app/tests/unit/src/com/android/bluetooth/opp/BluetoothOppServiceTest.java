@@ -45,11 +45,13 @@ import com.android.bluetooth.btservice.AdapterService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 @MediumTest
 @RunWith(AndroidJUnit4.class)
@@ -59,6 +61,7 @@ public class BluetoothOppServiceTest {
     private boolean mIsAdapterServiceSet;
     private boolean mIsBluetoothOppServiceStarted;
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock BluetoothMethodProxy mBluetoothMethodProxy;
 
@@ -67,7 +70,6 @@ public class BluetoothOppServiceTest {
     @Before
     public void setUp() throws Exception {
         Context targetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        MockitoAnnotations.initMocks(this);
 
         BluetoothMethodProxy.setInstanceForTesting(mBluetoothMethodProxy);
         // BluetoothOppService can create a UpdateThread, which will call

@@ -37,10 +37,12 @@ import com.android.bluetooth.btservice.storage.DatabaseManager;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,6 +58,8 @@ public class MapClientTest {
     private boolean mIsAdapterServiceSet;
     private boolean mIsMapClientServiceStarted;
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock private AdapterService mAdapterService;
     @Mock private MnsService mMockMnsService;
     @Mock private DatabaseManager mDatabaseManager;
@@ -64,7 +68,6 @@ public class MapClientTest {
     @Before
     public void setUp() throws Exception {
         mTargetContext = InstrumentationRegistry.getTargetContext();
-        MockitoAnnotations.initMocks(this);
         TestUtils.setAdapterService(mAdapterService);
         mIsAdapterServiceSet = true;
         when(mAdapterService.getDatabase()).thenReturn(mDatabaseManager);

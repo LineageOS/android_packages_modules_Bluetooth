@@ -90,7 +90,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -114,6 +115,8 @@ public class AdapterServiceTest {
     private static final int MESSAGE_PROFILE_SERVICE_UNREGISTERED = 3;
 
     private AdapterService mAdapterService;
+
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     private @Mock Context mMockContext;
     private @Mock ApplicationInfo mMockApplicationInfo;
@@ -186,7 +189,6 @@ public class AdapterServiceTest {
     @Before
     public void setUp() throws PackageManager.NameNotFoundException {
         Log.e(TAG, "setUp()");
-        MockitoAnnotations.initMocks(this);
 
         mLooper = new TestLooper();
         Handler handler = new Handler(mLooper.getLooper());

@@ -54,11 +54,13 @@ import com.google.android.mms.pdu.PduHeaders;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileDescriptor;
@@ -111,6 +113,8 @@ public class BluetoothMapContentTest {
     private static final String TEST_RECEPTION_STATUS = "complete";
     private static final String TEST_EMAIL = "test@google.com";
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock
     private BluetoothMapAccountItem mAccountItem;
     @Mock
@@ -134,7 +138,6 @@ public class BluetoothMapContentTest {
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
         BluetoothMethodProxy.setInstanceForTesting(mMapMethodProxy);
 
         mContent = new BluetoothMapContent(mContext, mAccountItem, mMasInstance);

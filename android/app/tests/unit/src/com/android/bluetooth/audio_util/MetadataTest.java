@@ -44,16 +44,20 @@ import com.android.bluetooth.TestUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.io.InputStream;
 
 @RunWith(AndroidJUnit4.class)
 public class MetadataTest {
     private Context mTargetContext;
+
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     private @Mock Context mMockContext;
     private @Mock Resources mMockResources;
@@ -88,7 +92,6 @@ public class MetadataTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
 
         mTargetContext = InstrumentationRegistry.getTargetContext();
         mTestResources = TestUtils.getTestApplicationResources(mTargetContext);

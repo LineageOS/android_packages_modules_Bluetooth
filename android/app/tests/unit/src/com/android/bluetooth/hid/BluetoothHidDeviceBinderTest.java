@@ -34,13 +34,17 @@ import android.content.AttributionSource;
 import com.android.bluetooth.x.com.android.modules.utils.SynchronousResultReceiver;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 public class BluetoothHidDeviceBinderTest {
 
     private static final String TEST_DEVICE_ADDRESS = "00:00:00:00:00:00";
+
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock
     private HidDeviceService mService;
@@ -50,7 +54,6 @@ public class BluetoothHidDeviceBinderTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         when(mService.isAvailable()).thenReturn(true);
         mBinder = new HidDeviceService.BluetoothHidDeviceBinder(mService);
         mAttributionSource = new AttributionSource.Builder(1).build();

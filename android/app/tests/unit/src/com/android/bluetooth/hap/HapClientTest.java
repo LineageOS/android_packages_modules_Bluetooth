@@ -71,13 +71,15 @@ import com.android.bluetooth.x.com.android.modules.utils.SynchronousResultReceiv
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -102,6 +104,8 @@ public class HapClientTest {
     private HapClientService.BluetoothHapClientBinder mServiceBinder;
     private AttributionSource mAttributionSource;
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock private AdapterService mAdapterService;
     @Mock private DatabaseManager mDatabaseManager;
     @Mock private HapClientNativeInterface mNativeInterface;
@@ -116,8 +120,6 @@ public class HapClientTest {
             System.setProperty("dexmaker.share_classloader", "true");
         }
 
-        // Set up mocks and test assets
-        MockitoAnnotations.initMocks(this);
 
         HapClientStateMachine.sConnectTimeoutMs = TIMEOUT_MS;
 

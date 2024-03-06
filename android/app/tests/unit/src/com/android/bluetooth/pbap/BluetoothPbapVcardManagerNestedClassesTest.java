@@ -34,16 +34,20 @@ import com.android.bluetooth.pbap.BluetoothPbapVcardManager.PropertySelector;
 import com.android.bluetooth.pbap.BluetoothPbapVcardManager.VCardFilter;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothPbapVcardManagerNestedClassesTest {
+
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock
     Context mContext;
@@ -53,7 +57,6 @@ public class BluetoothPbapVcardManagerNestedClassesTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         when(mContext.getResources()).thenReturn(mResources);
     }
 

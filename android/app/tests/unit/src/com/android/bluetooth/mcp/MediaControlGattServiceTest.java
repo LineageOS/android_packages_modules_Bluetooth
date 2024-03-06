@@ -48,7 +48,8 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -73,6 +74,8 @@ public class MediaControlGattServiceTest {
 
     private MediaControlGattService mMcpService;
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock private AdapterService mAdapterService;
     @Mock private MediaControlGattService.BluetoothGattServerProxy mMockGattServer;
     @Mock private McpService mMockMcpService;
@@ -88,7 +91,6 @@ public class MediaControlGattServiceTest {
             Looper.prepare();
         }
 
-        MockitoAnnotations.initMocks(this);
 
         TestUtils.setAdapterService(mAdapterService);
         mAdapter = BluetoothAdapter.getDefaultAdapter();

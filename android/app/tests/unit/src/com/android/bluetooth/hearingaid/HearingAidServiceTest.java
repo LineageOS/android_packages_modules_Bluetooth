@@ -66,8 +66,9 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.hamcrest.MockitoHamcrest;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -91,6 +92,8 @@ public class HearingAidServiceTest {
     private HearingAidService.BluetoothHearingAidBinder mServiceBinder;
     private HashMap<BluetoothDevice, LinkedBlockingQueue<Intent>> mDeviceQueueMap;
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock private AdapterService mAdapterService;
     @Mock private ActiveDeviceManager mActiveDeviceManager;
     @Mock private AudioRoutingManager mAudioRoutingManager;
@@ -103,8 +106,6 @@ public class HearingAidServiceTest {
 
     @Before
     public void setUp() throws Exception {
-        // Set up mocks and test assets
-        MockitoAnnotations.initMocks(this);
         mInOrder = inOrder(mContext);
 
         TestUtils.mockGetSystemService(

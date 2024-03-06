@@ -33,12 +33,14 @@ import androidx.test.runner.AndroidJUnit4;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.ArrayList;
 
@@ -50,6 +52,8 @@ public class MediaPlayerListTest {
     private @Captor ArgumentCaptor<AudioManager.AudioPlaybackCallback> mAudioCb;
     private @Captor ArgumentCaptor<MediaPlayerWrapper.Callback> mPlayerWrapperCb;
     private @Captor ArgumentCaptor<MediaData> mMediaUpdateData;
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     private @Mock Context mMockContext;
     private @Mock MediaPlayerList.MediaUpdateCallback mMediaUpdateCallback;
     private @Mock MediaController mMockController;
@@ -70,7 +74,6 @@ public class MediaPlayerListTest {
         }
         Assert.assertNotNull(Looper.myLooper());
 
-        MockitoAnnotations.initMocks(this);
 
         AudioManager mockAudioManager = mock(AudioManager.class);
         when(mMockContext.getSystemService(Context.AUDIO_SERVICE)).thenReturn(mockAudioManager);

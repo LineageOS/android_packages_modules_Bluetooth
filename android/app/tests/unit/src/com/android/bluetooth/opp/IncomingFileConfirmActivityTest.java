@@ -61,8 +61,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -71,6 +72,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 // Long class name cause problem with Junit4. It will raise java.lang.NoClassDefFoundError
 @RunWith(AndroidJUnit4.class)
 public class IncomingFileConfirmActivityTest {
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock
     Cursor mCursor;
     @Spy
@@ -90,7 +93,6 @@ public class IncomingFileConfirmActivityTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         mBluetoothMethodProxy = Mockito.spy(BluetoothMethodProxy.getInstance());
         BluetoothMethodProxy.setInstanceForTesting(mBluetoothMethodProxy);
 

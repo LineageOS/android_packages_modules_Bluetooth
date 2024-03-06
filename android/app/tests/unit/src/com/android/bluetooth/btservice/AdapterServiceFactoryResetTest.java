@@ -71,10 +71,12 @@ import com.android.internal.app.IBatteryStats;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.HashMap;
 import java.util.List;
@@ -85,6 +87,8 @@ public class AdapterServiceFactoryResetTest {
     private static final String TAG = AdapterServiceFactoryResetTest.class.getSimpleName();
 
     private AdapterService mAdapterService;
+
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     private @Mock Context mMockContext;
     private @Mock ApplicationInfo mMockApplicationInfo;
@@ -143,7 +147,6 @@ public class AdapterServiceFactoryResetTest {
     @Before
     public void setUp() throws PackageManager.NameNotFoundException {
         Log.e(TAG, "setUp()");
-        MockitoAnnotations.initMocks(this);
 
         mLooper = new TestLooper();
         Handler handler = new Handler(mLooper.getLooper());

@@ -42,16 +42,20 @@ import com.android.bluetooth.btservice.AdapterService;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 /** Test cases for {@link PeriodicScanManagerTest}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class PeriodicScanManagerTest {
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock private PeriodicScanNativeInterface mPeriodicScanNativeInterface;
     @Mock private AdapterService mAdapterService;
     @Mock private IPeriodicAdvertisingCallback mCallback;
@@ -68,7 +72,6 @@ public class PeriodicScanManagerTest {
     @Before
     public void setUp() throws Exception {
         mTargetContext = InstrumentationRegistry.getTargetContext();
-        MockitoAnnotations.initMocks(this);
         PeriodicScanNativeInterface.setInstance(mPeriodicScanNativeInterface);
         mPeriodicScanManager = new PeriodicScanManager(mAdapterService);
 

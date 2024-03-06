@@ -39,10 +39,12 @@ import com.android.bluetooth.R;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 import org.mockito.stubbing.Answer;
 
 import java.util.Arrays;
@@ -55,6 +57,8 @@ public class BluetoothPbapVcardManagerTest {
 
     private static final String TAG = BluetoothPbapVcardManagerTest.class.getSimpleName();
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Spy
     BluetoothMethodProxy mPbapMethodProxy = BluetoothMethodProxy.getInstance();
 
@@ -63,7 +67,6 @@ public class BluetoothPbapVcardManagerTest {
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
         BluetoothMethodProxy.setInstanceForTesting(mPbapMethodProxy);
         mContext = InstrumentationRegistry.getTargetContext();
         mManager = new BluetoothPbapVcardManager(mContext);

@@ -49,10 +49,12 @@ import androidx.test.runner.AndroidJUnit4;
 import com.android.bluetooth.x.com.android.modules.utils.SynchronousResultReceiver;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,6 +65,8 @@ import java.util.UUID;
 public class GattServiceBinderTest {
 
     private static final String REMOTE_DEVICE_ADDRESS = "00:00:00:00:00:00";
+
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock
     private GattService mService;
@@ -80,7 +84,6 @@ public class GattServiceBinderTest {
         Intent intent = new Intent();
         mPendingIntent = PendingIntent.getBroadcast(mContext, 0, intent,
                 PendingIntent.FLAG_IMMUTABLE);
-        MockitoAnnotations.initMocks(this);
         when(mService.isAvailable()).thenReturn(true);
         mBinder = new GattService.BluetoothGattBinder(mService);
         mAttributionSource = new AttributionSource.Builder(1).build();

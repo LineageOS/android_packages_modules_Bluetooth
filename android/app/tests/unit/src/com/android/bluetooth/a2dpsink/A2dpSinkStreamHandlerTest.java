@@ -45,7 +45,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 @MediumTest
 @RunWith(AndroidJUnit4.class)
@@ -55,6 +56,8 @@ public class A2dpSinkStreamHandlerTest {
     private AvrcpControllerService mService;
     private A2dpSinkStreamHandler mStreamHandler;
     private Context mTargetContext;
+
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock private A2dpSinkService mMockA2dpSink;
 
@@ -76,7 +79,6 @@ public class A2dpSinkStreamHandlerTest {
     @Before
     public void setUp() throws Exception {
         mTargetContext = InstrumentationRegistry.getTargetContext();
-        MockitoAnnotations.initMocks(this);
         // Mock the looper
         if (Looper.myLooper() == null) {
             Looper.prepare();

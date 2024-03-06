@@ -33,11 +33,13 @@ import androidx.test.runner.AndroidJUnit4;
 
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 @MediumTest
 @RunWith(AndroidJUnit4.class)
@@ -46,6 +48,8 @@ public class HfpClientDeviceBlockTest {
     private static final String TEST_NUMBER = "000-111-2222";
     private static final String KEY_SCO_STATE = "com.android.bluetooth.hfpclient.SCO_STATE";
     private static final String TEST_PACKAGE = "test";
+
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock
     private HeadsetClientService mHeadsetClientService;
@@ -65,7 +69,6 @@ public class HfpClientDeviceBlockTest {
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
 
         // HfpClientConnectionService.createAccount is static and can't be mocked, so the
         // application context and resources must be mocked to avoid NPE when creating an

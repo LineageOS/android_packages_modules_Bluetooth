@@ -39,7 +39,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.MockitoAnnotations;
 
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppPreferenceTest {
@@ -49,7 +48,6 @@ public class BluetoothOppPreferenceTest {
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
         mContext = spy(new ContextWrapper(
                 InstrumentationRegistry.getInstrumentation().getTargetContext()));
 
