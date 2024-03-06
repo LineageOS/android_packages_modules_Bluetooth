@@ -216,7 +216,7 @@ class IsoManager {
    * @param handle - the handle for which there are completed packets
    * @param credits - the number of packets completed
    */
-  virtual void HandleGdNumComplDataPkts(uint16_t handle, uint16_t credits);
+  virtual void HandleNumComplDataPkts(uint16_t handle, uint16_t credits);
 
   /**
    * Handle CIS and BIG related HCI events

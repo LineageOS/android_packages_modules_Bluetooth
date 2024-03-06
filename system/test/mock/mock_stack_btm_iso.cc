@@ -56,8 +56,8 @@ void IsoManager::TerminateBig(uint8_t /* big_id */, uint8_t /* reason */) {}
 void IsoManager::HandleIsoData(void* /* p_msg */) {}
 void IsoManager::HandleDisconnect(uint16_t /* handle */, uint8_t /* reason */) {
 }
-void IsoManager::HandleGdNumComplDataPkts(uint16_t /* handle */,
-                                          uint16_t /* credits */) {}
+void IsoManager::HandleNumComplDataPkts(uint16_t /* handle */,
+                                        uint16_t /* credits */) {}
 void IsoManager::HandleHciEvent(uint8_t /* sub_code */, uint8_t* /* params */,
                                 uint16_t /* length */) {}
 void IsoManager::Start() {}

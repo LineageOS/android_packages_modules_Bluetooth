@@ -66,7 +66,7 @@ struct MockIsoManager {
   MOCK_METHOD((void), TerminateBig, (uint8_t big_id, uint8_t reason));
   MOCK_METHOD((void), HandleIsoData, (void* p_msg));
   MOCK_METHOD((void), HandleDisconnect, (uint16_t handle, uint8_t reason));
-  MOCK_METHOD((void), HandleGdNumComplDataPkts,
+  MOCK_METHOD((void), HandleNumComplDataPkts,
               (uint16_t handle, uint16_t credits));
   MOCK_METHOD((void), HandleHciEvent,
               (uint8_t sub_code, uint8_t* params, uint16_t length));

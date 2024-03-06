@@ -126,7 +126,7 @@ void IsoManager::HandleDisconnect(uint16_t handle, uint8_t reason) {
     pimpl_->iso_impl_->disconnection_complete(handle, reason);
 }
 
-void IsoManager::HandleGdNumComplDataPkts(uint16_t handle, uint16_t credits) {
+void IsoManager::HandleNumComplDataPkts(uint16_t handle, uint16_t credits) {
   if (pimpl_->IsRunning())
     pimpl_->iso_impl_->handle_gd_num_completed_pkts(handle, credits);
 }
