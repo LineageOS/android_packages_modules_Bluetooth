@@ -60,7 +60,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -102,6 +103,8 @@ public class BluetoothInCallServiceTest {
     public final ServiceTestRule mServiceRule
             = ServiceTestRule.withTimeout(1, TimeUnit.SECONDS);
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock
     private BluetoothHeadsetProxy mMockBluetoothHeadset;
     @Mock
@@ -136,7 +139,6 @@ public class BluetoothInCallServiceTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         InstrumentationRegistry.getInstrumentation().getUiAutomation().adoptShellPermissionIdentity();
 
         // Create the service Intent.

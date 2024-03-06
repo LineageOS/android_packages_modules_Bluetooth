@@ -57,7 +57,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.io.File;
 
@@ -68,6 +69,8 @@ public class BluetoothOppLauncherActivityTest {
     Intent mIntent;
 
     BluetoothMethodProxy mMethodProxy;
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock
     BluetoothOppManager mBluetoothOppManager;
 
@@ -78,7 +81,6 @@ public class BluetoothOppLauncherActivityTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         mTargetContext = spy(new ContextWrapper(
                 ApplicationProvider.getApplicationContext()));
         mMethodProxy = spy(BluetoothMethodProxy.getInstance());

@@ -47,12 +47,14 @@ import com.android.bluetooth.vc.VolumeControlNativeInterface;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
@@ -68,6 +70,8 @@ public class ProfileServiceTest {
     @Spy
     private AdapterService mAdapterService =
             new AdapterService(InstrumentationRegistry.getTargetContext());
+
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock private DatabaseManager mDatabaseManager;
 
@@ -132,7 +136,6 @@ public class ProfileServiceTest {
         }
         Assert.assertNotNull(Looper.myLooper());
 
-        MockitoAnnotations.initMocks(this);
 
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
         doNothing().when(mAdapterService).addProfile(any());

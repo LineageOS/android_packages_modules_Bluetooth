@@ -39,10 +39,12 @@ import com.android.internal.telephony.ISub;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.HashMap;
 
@@ -52,6 +54,8 @@ import java.util.HashMap;
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class HeadsetPhoneStateTest {
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock private ISub mISub;
     @Mock private IBinder mISubBinder;
     @Mock private HeadsetService mHeadsetService;
@@ -69,7 +73,6 @@ public class HeadsetPhoneStateTest {
             Looper.prepare();
         }
         IpcDataCache.disableForTestMode();
-        MockitoAnnotations.initMocks(this);
         SubscriptionManager.disableCaching();
         TelephonyManager.disableServiceHandleCaching();
         // Mock SubscriptionManager.getDefaultSubscriptionId() to return a valid value

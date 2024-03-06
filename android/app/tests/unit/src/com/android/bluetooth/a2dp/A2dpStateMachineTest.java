@@ -42,11 +42,13 @@ import org.hamcrest.core.IsInstanceOf;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.Arrays;
 
@@ -64,6 +66,8 @@ public class A2dpStateMachineTest {
     private BluetoothCodecConfig mCodecConfigAac;
     private BluetoothCodecConfig mCodecConfigOpus;
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock private AdapterService mAdapterService;
     @Mock private ActiveDeviceManager mActiveDeviceManager;
     @Mock private SilenceDeviceManager mSilenceDeviceManager;
@@ -73,8 +77,6 @@ public class A2dpStateMachineTest {
     @Before
     public void setUp() throws Exception {
         mTargetContext = InstrumentationRegistry.getTargetContext();
-        // Set up mocks and test assets
-        MockitoAnnotations.initMocks(this);
         doReturn(mActiveDeviceManager).when(mAdapterService).getActiveDeviceManager();
         doReturn(mSilenceDeviceManager).when(mAdapterService).getSilenceDeviceManager();
 

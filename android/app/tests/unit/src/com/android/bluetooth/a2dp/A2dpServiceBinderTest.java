@@ -45,7 +45,8 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.List;
 
@@ -56,6 +57,8 @@ public class A2dpServiceBinderTest {
 
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock private A2dpService mA2dpService;
     @Mock private AudioRoutingManager mAudioRoutingManager;
     @Mock private PackageManager mPackageManager;
@@ -64,7 +67,6 @@ public class A2dpServiceBinderTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         doReturn(mAudioRoutingManager).when(mA2dpService).getActiveDeviceManager();
         doReturn(mPackageManager).when(mA2dpService).getPackageManager();
         ApplicationInfo appInfo = new ApplicationInfo();

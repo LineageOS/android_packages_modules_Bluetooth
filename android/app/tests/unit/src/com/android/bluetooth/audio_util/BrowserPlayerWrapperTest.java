@@ -44,12 +44,14 @@ import com.android.bluetooth.TestUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -64,6 +66,8 @@ public class BrowserPlayerWrapperTest {
     @Captor ArgumentCaptor<MediaController.Callback> mControllerCb;
     @Captor ArgumentCaptor<Handler> mTimeoutHandler;
     @Captor ArgumentCaptor<List<ListItem>> mWrapperBrowseCb;
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock MediaBrowser mMockBrowser;
     @Mock BrowsedPlayerWrapper.ConnectionCallback mConnCb;
     @Mock BrowsedPlayerWrapper.BrowseCallback mBrowseCb;
@@ -91,7 +95,6 @@ public class BrowserPlayerWrapperTest {
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
 
         mTargetContext = InstrumentationRegistry.getTargetContext();
         mTestResources = TestUtils.getTestApplicationResources(mTargetContext);

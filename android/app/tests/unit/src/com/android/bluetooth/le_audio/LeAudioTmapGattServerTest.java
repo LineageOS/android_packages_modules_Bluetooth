@@ -37,17 +37,21 @@ import androidx.test.runner.AndroidJUnit4;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class LeAudioTmapGattServerTest {
     private static final int TEST_ROLE_MASK =
             LeAudioTmapGattServer.TMAP_ROLE_FLAG_CG | LeAudioTmapGattServer.TMAP_ROLE_FLAG_UMS;
+
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock
     private LeAudioTmapGattServer.BluetoothGattServerProxy mGattServerProxy;
@@ -56,7 +60,6 @@ public class LeAudioTmapGattServerTest {
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
         doReturn(true).when(mGattServerProxy).open(any());
         doReturn(true).when(mGattServerProxy).addService(any());
         mServer = new LeAudioTmapGattServer(mGattServerProxy);

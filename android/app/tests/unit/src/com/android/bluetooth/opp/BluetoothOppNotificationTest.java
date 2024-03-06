@@ -53,12 +53,15 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppNotificationTest {
     static final int TIMEOUT_MS = 3000;
     static final int WORKAROUND_TIMEOUT = 3000;
+
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock
     BluetoothMethodProxy mMethodProxy;
@@ -77,7 +80,6 @@ public class BluetoothOppNotificationTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         mTargetContext = spy(new ContextWrapper(
                 ApplicationProvider.getApplicationContext()));
         BluetoothMethodProxy.setInstanceForTesting(mMethodProxy);

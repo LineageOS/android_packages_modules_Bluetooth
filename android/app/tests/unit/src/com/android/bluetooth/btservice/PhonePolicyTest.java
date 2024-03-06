@@ -50,7 +50,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -72,6 +73,8 @@ public class PhonePolicyTest {
     private PhonePolicy mPhonePolicy;
     private boolean mOriginalDualModeState;
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock private AdapterService mAdapterService;
     @Mock private ServiceFactory mServiceFactory;
     @Mock private HeadsetService mHeadsetService;
@@ -81,7 +84,6 @@ public class PhonePolicyTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         // Stub A2DP and HFP
         when(mHeadsetService.connect(any(BluetoothDevice.class))).thenReturn(true);
         when(mA2dpService.connect(any(BluetoothDevice.class))).thenReturn(true);

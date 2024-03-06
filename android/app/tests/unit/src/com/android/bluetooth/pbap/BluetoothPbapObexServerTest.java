@@ -67,11 +67,13 @@ import com.android.obex.ResponseCodes;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -81,6 +83,8 @@ import java.io.OutputStream;
 public class BluetoothPbapObexServerTest {
 
     private static final String TAG = BluetoothPbapObexServerTest.class.getSimpleName();
+
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock Handler mMockHandler;
     @Mock PbapStateMachine mMockStateMachine;
@@ -107,7 +111,6 @@ public class BluetoothPbapObexServerTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         BluetoothMethodProxy.setInstanceForTesting(mPbapMethodProxy);
         mServer = new BluetoothPbapObexServer(
                 mMockHandler, InstrumentationRegistry.getTargetContext(), mMockStateMachine);

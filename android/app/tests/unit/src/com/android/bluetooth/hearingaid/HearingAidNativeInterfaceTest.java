@@ -32,13 +32,17 @@ import com.android.bluetooth.Utils;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 public class HearingAidNativeInterfaceTest {
+
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock private HearingAidService mService;
 
@@ -47,7 +51,6 @@ public class HearingAidNativeInterfaceTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         when(mService.isAvailable()).thenReturn(true);
         HearingAidService.setHearingAidService(mService);
         mNativeInterface = HearingAidNativeInterface.getInstance();

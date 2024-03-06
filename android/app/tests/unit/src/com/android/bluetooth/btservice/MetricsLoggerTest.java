@@ -31,10 +31,12 @@ import com.google.common.hash.Funnels;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -50,6 +52,8 @@ public class MetricsLoggerTest {
     private static final String TEST_BLOOMFILTER_NAME = "TestBloomfilter";
 
     private TestableMetricsLogger mTestableMetricsLogger;
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock
     private AdapterService mMockAdapterService;
 
@@ -80,7 +84,6 @@ public class MetricsLoggerTest {
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
         // Dump metrics to clean up internal states
         MetricsLogger.dumpProto(BluetoothLog.newBuilder());
         mTestableMetricsLogger = new TestableMetricsLogger();

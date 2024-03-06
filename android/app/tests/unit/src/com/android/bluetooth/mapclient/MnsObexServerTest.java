@@ -31,10 +31,12 @@ import com.android.obex.Operation;
 import com.android.obex.ResponseCodes;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -43,6 +45,8 @@ import java.io.DataInputStream;
 @RunWith(AndroidJUnit4.class)
 public class MnsObexServerTest {
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock
     MceStateMachine mStateMachine;
 
@@ -50,7 +54,6 @@ public class MnsObexServerTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         mServer = new MnsObexServer(mStateMachine, null);
     }
 

@@ -36,11 +36,12 @@ import com.android.bluetooth.btservice.storage.DatabaseManager;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 @MediumTest
 @RunWith(AndroidJUnit4.class)
@@ -51,6 +52,8 @@ public class SapServiceTest {
     private BluetoothAdapter mAdapter = null;
     private Context mTargetContext;
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock private AdapterService mAdapterService;
     @Mock private DatabaseManager mDatabaseManager;
     private BluetoothDevice mDevice;
@@ -58,7 +61,6 @@ public class SapServiceTest {
     @Before
     public void setUp() throws Exception {
         mTargetContext = InstrumentationRegistry.getTargetContext();
-        MockitoAnnotations.initMocks(this);
         TestUtils.setAdapterService(mAdapterService);
         mService = new SapService(mTargetContext);
         mService.start();

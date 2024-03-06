@@ -30,10 +30,12 @@ import androidx.test.runner.AndroidJUnit4;
 import com.android.obex.Operation;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -41,6 +43,8 @@ import java.io.OutputStream;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class HandlerForStringBufferTest {
+
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock
     private Operation mOperation;
@@ -50,7 +54,6 @@ public class HandlerForStringBufferTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         when(mOperation.openOutputStream()).thenReturn(mOutputStream);
     }
 

@@ -28,14 +28,18 @@ import androidx.test.runner.AndroidJUnit4;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 @RunWith(AndroidJUnit4.class)
 public class LeAudioNativeInterfaceTest {
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock
     private LeAudioService mMockService;
 
@@ -43,7 +47,6 @@ public class LeAudioNativeInterfaceTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         when(mMockService.isAvailable()).thenReturn(true);
         LeAudioService.setLeAudioService(mMockService);
         mNativeInterface = LeAudioNativeInterface.getInstance();

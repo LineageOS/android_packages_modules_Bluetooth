@@ -25,11 +25,12 @@ import android.content.Intent;
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
 
-import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 /**
  * Test cases for {@link GattDebugUtils}.
@@ -38,13 +39,10 @@ import org.mockito.MockitoAnnotations;
 @RunWith(AndroidJUnit4.class)
 public class GattDebugUtilsTest {
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock
     private GattService mService;
-
-    @Before
-    public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-    }
 
     @Test
     public void handleDebugAction() {

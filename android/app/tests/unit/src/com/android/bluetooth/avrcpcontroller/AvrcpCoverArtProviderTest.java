@@ -38,7 +38,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.io.FileNotFoundException;
 
@@ -55,13 +56,14 @@ public class AvrcpCoverArtProviderTest {
 
     @Rule
     public final ServiceTestRule mServiceRule = new ServiceTestRule();
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock private Uri mUri;
     @Mock private AdapterService mAdapterService;
     @Mock private AvrcpControllerNativeInterface mNativeInterface;
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         TestUtils.setAdapterService(mAdapterService);
         AvrcpControllerNativeInterface.setInstance(mNativeInterface);
         mAdapter = BluetoothAdapter.getDefaultAdapter();

@@ -50,10 +50,12 @@ import com.android.bluetooth.opp.BluetoothShare;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -73,11 +75,12 @@ public class DataMigrationTest {
     private Context mTargetContext;
     private SharedPreferences mPrefs;
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock private Context mMockContext;
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
 
         mTargetContext = InstrumentationRegistry.getTargetContext();
         mTargetContext.deleteSharedPreferences(TEST_PREF);

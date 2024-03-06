@@ -48,13 +48,16 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppBtEnablingActivityTest {
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Spy
     BluetoothMethodProxy mBluetoothMethodProxy;
 
@@ -70,7 +73,6 @@ public class BluetoothOppBtEnablingActivityTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         mBluetoothMethodProxy = Mockito.spy(BluetoothMethodProxy.getInstance());
         BluetoothMethodProxy.setInstanceForTesting(mBluetoothMethodProxy);
 

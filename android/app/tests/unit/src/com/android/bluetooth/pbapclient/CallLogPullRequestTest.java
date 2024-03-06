@@ -39,10 +39,12 @@ import com.android.vcard.VCardProperty;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -56,12 +58,13 @@ public class CallLogPullRequestTest {
     private final HashMap<String, Integer> mCallCounter = new HashMap<>();
 
     private Context mTargetContext;
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Spy
     private BluetoothMethodProxy mMapMethodProxy = BluetoothMethodProxy.getInstance();
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
         BluetoothMethodProxy.setInstanceForTesting(mMapMethodProxy);
         mTargetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
     }

@@ -39,10 +39,12 @@ import com.android.bluetooth.BluetoothMethodProxy;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,12 +54,13 @@ import java.util.List;
 public class BluetoothOppHandoverReceiverTest {
     Context mContext;
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Spy
     BluetoothMethodProxy mCallProxy = BluetoothMethodProxy.getInstance();
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
         mContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
         BluetoothMethodProxy.setInstanceForTesting(mCallProxy);
         doReturn(0).when(mCallProxy).contentResolverDelete(any(), any(Uri.class), any(), any());

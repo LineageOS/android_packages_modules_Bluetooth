@@ -42,8 +42,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.UUID;
 
@@ -58,6 +59,8 @@ public class ContextMapTest {
     @Rule
     public final ServiceTestRule mServiceRule = new ServiceTestRule();
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock private AdapterService mAdapterService;
     @Mock private AppAdvertiseStats appAdvertiseStats;
     @Mock private GattService mMockGatt;
@@ -68,7 +71,6 @@ public class ContextMapTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         BluetoothMethodProxy.setInstanceForTesting(mMapMethodProxy);
 
         TestUtils.setAdapterService(mAdapterService);
