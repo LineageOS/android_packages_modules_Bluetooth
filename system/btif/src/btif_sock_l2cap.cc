@@ -26,6 +26,7 @@
 #include <cstring>
 
 #include "bta/include/bta_jv_api.h"
+#include "btif/include/btif_dm.h"
 #include "btif/include/btif_metrics_logging.h"
 #include "btif/include/btif_sock.h"
 #include "btif/include/btif_sock_thread.h"
@@ -790,13 +791,18 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name,
 
   bool is_le_coc = (flags & BTSOCK_FLAG_LE_COC) != 0;
 
-  if (is_le_coc && listen) {
-    if (flags & BTSOCK_FLAG_NO_SDP) {
-      /* For LE COC server; set channel to zero so that it will be assigned */
-      channel = 0;
-    } else if (channel <= 0) {
-      log::error("type BTSOCK_L2CAP_LE: invalid channel={}", channel);
-      return BT_STATUS_FAIL;
+  if (is_le_coc) {
+    if (listen) {
+      if (flags & BTSOCK_FLAG_NO_SDP) {
+        /* For LE COC server; set channel to zero so that it will be assigned */
+        channel = 0;
+      } else if (channel <= 0) {
+        log::error("type BTSOCK_L2CAP_LE: invalid channel={}", channel);
+        return BT_STATUS_FAIL;
+      }
+    } else {
+      // Ensure device is in inquiry database during L2CAP CoC connection
+      btif_check_device_in_inquiry_db(*addr);
     }
   }
 
