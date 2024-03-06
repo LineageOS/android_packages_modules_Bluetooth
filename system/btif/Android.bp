@@ -244,6 +244,7 @@ cc_library_static {
         "libbt-platform-protos-lite",
         "libbt-stack-core",
         "libbt_shim_bridge",
+        "libcom.android.sysprop.bluetooth.wrapped",
         "libflatbuffers-cpp",
         "libstatslog_bt",
     ],
