@@ -33,8 +33,13 @@ void vlog(Level level, char const* tag, char const* file_name, int line,
   }
 
   // Format to stack buffer.
+  // liblog uses a different default depending on the execution context
+  // (host or device); the file and line are not systematically included.
+  // In order to have consistent logs we include it manually in the log
+  // message.
   truncating_buffer<kBufferSize> buffer;
-  fmt::format_to(std::back_insert_iterator(buffer), "{}: ", function_name);
+  fmt::format_to(std::back_insert_iterator(buffer), "{}:{} {}: ", file_name,
+                 line, function_name);
   fmt::vformat_to(std::back_insert_iterator(buffer), fmt, vargs);
 
   // Send message to liblog.
@@ -43,8 +48,8 @@ void vlog(Level level, char const* tag, char const* file_name, int line,
       .buffer_id = LOG_ID_MAIN,
       .priority = static_cast<android_LogPriority>(level),
       .tag = tag,
-      .file = file_name,
-      .line = static_cast<uint32_t>(line),
+      .file = nullptr,
+      .line = 0,
       .message = buffer.c_str(),
   };
   __android_log_write_log_message(&message);
