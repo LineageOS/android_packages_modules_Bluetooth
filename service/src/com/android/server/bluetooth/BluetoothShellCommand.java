@@ -20,7 +20,6 @@ import static java.util.Objects.requireNonNull;
 
 import android.bluetooth.BluetoothAdapter;
 import android.content.AttributionSource;
-import android.content.Context;
 import android.os.Binder;
 import android.os.Process;
 import android.os.RemoteException;
@@ -34,7 +33,6 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
     private static final String TAG = BluetoothShellCommand.class.getSimpleName();
 
     private final BluetoothManagerService mManagerService;
-    private final Context mContext;
 
     @VisibleForTesting
     final BluetoothCommand[] mBluetoothCommands = {
@@ -154,9 +152,8 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
         }
     }
 
-    BluetoothShellCommand(BluetoothManagerService managerService, Context context) {
+    BluetoothShellCommand(BluetoothManagerService managerService) {
         mManagerService = managerService;
-        mContext = context;
     }
 
     @Override
