@@ -136,26 +136,46 @@ void btif_a2dp_on_stopped(tBTA_AV_SUSPEND* p_av_suspend,
                           const A2dpType local_a2dp_type) {
   log::info("## ON A2DP STOPPED ## p_av_suspend={}", fmt::ptr(p_av_suspend));
 
-  if (btif_av_get_peer_sep(local_a2dp_type) == AVDT_TSEP_SRC) {
+  const uint8_t peer_type_sep = btif_av_get_peer_sep(local_a2dp_type);
+  if (peer_type_sep == AVDT_TSEP_SRC) {
     btif_a2dp_sink_on_stopped(p_av_suspend);
     return;
   }
-  if (bluetooth::audio::a2dp::is_hal_enabled() ||
-      !btif_av_is_a2dp_offload_running()) {
-    btif_a2dp_source_on_stopped(p_av_suspend);
+  if (!IS_FLAG_ENABLED(a2dp_concurrent_source_sink)) {
+    if (bluetooth::audio::a2dp::is_hal_enabled() ||
+        !btif_av_is_a2dp_offload_running()) {
+      btif_a2dp_source_on_stopped(p_av_suspend);
+      return;
+    }
+  } else if (peer_type_sep == AVDT_TSEP_SNK) {
+    if (bluetooth::audio::a2dp::is_hal_enabled() ||
+        !btif_av_is_a2dp_offload_running()) {
+      btif_a2dp_source_on_stopped(p_av_suspend);
+      return;
+    }
   }
 }
 
 void btif_a2dp_on_suspended(tBTA_AV_SUSPEND* p_av_suspend,
                             const A2dpType local_a2dp_type) {
   log::info("## ON A2DP SUSPENDED ## p_av_suspend={}", fmt::ptr(p_av_suspend));
-  if (btif_av_get_peer_sep(local_a2dp_type) == AVDT_TSEP_SRC) {
+  const uint8_t peer_type_sep = btif_av_get_peer_sep(local_a2dp_type);
+  if (peer_type_sep == AVDT_TSEP_SRC) {
     btif_a2dp_sink_on_suspended(p_av_suspend);
     return;
   }
-  if (bluetooth::audio::a2dp::is_hal_enabled() ||
-      !btif_av_is_a2dp_offload_running()) {
-    btif_a2dp_source_on_suspended(p_av_suspend);
+  if (!IS_FLAG_ENABLED(a2dp_concurrent_source_sink)) {
+    if (bluetooth::audio::a2dp::is_hal_enabled() ||
+        !btif_av_is_a2dp_offload_running()) {
+      btif_a2dp_source_on_suspended(p_av_suspend);
+      return;
+    }
+  } else if (peer_type_sep == AVDT_TSEP_SNK) {
+    if (bluetooth::audio::a2dp::is_hal_enabled() ||
+        !btif_av_is_a2dp_offload_running()) {
+      btif_a2dp_source_on_suspended(p_av_suspend);
+      return;
+    }
   }
 }
 
