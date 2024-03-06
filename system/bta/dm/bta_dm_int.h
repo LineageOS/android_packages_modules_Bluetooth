@@ -317,8 +317,6 @@ void bta_dm_disable();
 void bta_dm_set_dev_name(const std::vector<uint8_t>&);
 void bta_dm_close_acl(const RawAddress&, bool, tBT_TRANSPORT);
 
-void bta_dm_pm_btm_status(const RawAddress&, tBTM_PM_STATUS, uint16_t,
-                          tHCI_STATUS);
 void bta_dm_pm_timer(const RawAddress&, tBTA_DM_PM_ACTION);
 
 void bta_dm_ble_set_conn_params(const RawAddress&, uint16_t, uint16_t, uint16_t,
