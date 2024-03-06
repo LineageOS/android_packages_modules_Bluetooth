@@ -22,6 +22,7 @@
 #include <avrcp.sysprop.h>
 #include <ble.sysprop.h>
 #include <bta.sysprop.h>
+#include <device_id.sysprop.h>
 #include <hfp.sysprop.h>
 
 #define GET_SYSPROP(namespace, prop, default) \
