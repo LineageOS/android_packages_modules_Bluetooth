@@ -728,7 +728,7 @@ final class A2dpStateMachine extends StateMachine {
         mA2dpService.codecConfigUpdated(mDevice, mCodecStatus, sameAudioFeedingParameters);
     }
 
-    // This method does not check for error conditon (newState == prevState)
+    // This method does not check for error condition (newState == prevState)
     private void broadcastConnectionState(int newState, int prevState) {
         log("Connection state " + mDevice + ": " + profileStateToString(prevState)
                     + "->" + profileStateToString(newState));
