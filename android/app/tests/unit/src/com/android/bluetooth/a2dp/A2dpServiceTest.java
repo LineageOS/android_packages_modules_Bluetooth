@@ -122,8 +122,12 @@ public class A2dpServiceTest {
     }
 
     @After
-    public void tearDown() throws Exception {
-        mA2dpService.stop();
+    public void tearDown() {
+        // A2dpService handler is running on main looper. Calling `stop` remove the messages but
+        // assume it is already on the correct thread.
+        // Calling it from another thread may lead to having messages still being processed and
+        // executed after tearDown is called.
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(mA2dpService::stop);
     }
 
     @SafeVarargs
