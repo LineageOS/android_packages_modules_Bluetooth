@@ -786,14 +786,24 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name,
                                                   int channel, int* sock_fd,
                                                   int flags, char listen,
                                                   int app_uid) {
+  if (!is_inited()) return BT_STATUS_NOT_READY;
+
   bool is_le_coc = (flags & BTSOCK_FLAG_LE_COC) != 0;
+
+  if (is_le_coc && listen) {
+    if (flags & BTSOCK_FLAG_NO_SDP) {
+      /* For LE COC server; set channel to zero so that it will be assigned */
+      channel = 0;
+    } else if (channel <= 0) {
+      log::error("type BTSOCK_L2CAP_LE: invalid channel={}", channel);
+      return BT_STATUS_FAIL;
+    }
+  }
 
   if (!sock_fd) {
     log::info("Invalid socket descriptor");
     return BT_STATUS_PARM_INVALID;
   }
-
-  if (!is_inited()) return BT_STATUS_NOT_READY;
 
   // TODO: This is kind of bad to lock here, but it is needed for the current
   // design.
