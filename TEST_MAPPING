@@ -333,6 +333,9 @@
       "name": "CtsStrictJavaPackagesTestCases"
     },
     {
+      "name": "net_test_bta_jv"
+    },
+    {
       "name": "asrc_resampler_test"
     }
   ]
