@@ -192,15 +192,6 @@
  *
  *****************************************************************************/
 
-/* Cancel Inquiry on incoming SSP */
-#ifndef BTM_NO_SSP_ON_INQUIRY
-#define BTM_NO_SSP_ON_INQUIRY FALSE
-#endif
-
-#ifndef DISABLE_WBS
-#define DISABLE_WBS FALSE
-#endif
-
 /**************************
  * Initial SCO TX credit
  ************************/
@@ -253,12 +244,6 @@
 #define BTM_SEC_MAX_SERVICE_RECORDS 32
 #endif
 
-/* If True, force a retrieval of remote device name for each bond in case it's
- * changed */
-#ifndef BTM_SEC_FORCE_RNR_FOR_DBOND
-#define BTM_SEC_FORCE_RNR_FOR_DBOND FALSE
-#endif
-
 /* Maximum device name length used in btm database. */
 #ifndef BTM_MAX_REM_BD_NAME_LEN
 #define BTM_MAX_REM_BD_NAME_LEN 248
@@ -267,11 +252,6 @@
 /* Maximum local device name length stored btm database */
 #ifndef BTM_MAX_LOC_BD_NAME_LEN
 #define BTM_MAX_LOC_BD_NAME_LEN 248
-#endif
-
-/* Maximum service name stored with security authorization (0 if not needed) */
-#ifndef BTM_SEC_SERVICE_NAME_LEN
-#define BTM_SEC_SERVICE_NAME_LEN BT_MAX_SERVICE_NAME_LEN
 #endif
 
 /* Maximum length of the service name. */
@@ -300,10 +280,6 @@
 /******************************************
  *    Lisbon Features
  ******************************************/
-/* This is set to TRUE if the FEC is required for EIR packet. */
-#ifndef BTM_EIR_DEFAULT_FEC_REQUIRED
-#define BTM_EIR_DEFAULT_FEC_REQUIRED TRUE
-#endif
 
 /* The IO capability of the local device (for Simple Pairing) */
 #ifndef BTM_LOCAL_IO_CAPS
@@ -400,10 +376,6 @@
  *
  *****************************************************************************/
 
-#ifndef LOCAL_BLE_CONTROLLER_ID
-#define LOCAL_BLE_CONTROLLER_ID 1
-#endif
-
 /* The maximum number of simultaneous applications that can register with LE
  * L2CAP. */
 #ifndef BLE_MAX_L2CAP_CLIENTS
@@ -476,11 +448,7 @@
    Prefer greater than 0 second, and no less than default inactivity link idle
    timer(L2CAP_LINK_INACTIVITY_TOUT) in l2cap) */
 #ifndef SMP_LINK_TOUT_MIN
-#if (L2CAP_LINK_INACTIVITY_TOUT > 0)
 #define SMP_LINK_TOUT_MIN L2CAP_LINK_INACTIVITY_TOUT
-#else
-#define SMP_LINK_TOUT_MIN 2
-#endif
 #endif
 /******************************************************************************
  *
@@ -607,11 +575,6 @@
 /* The port transmit queue high watermark level, in number of buffers. */
 #ifndef PORT_TX_BUF_CRITICAL_WM
 #define PORT_TX_BUF_CRITICAL_WM 15
-#endif
-
-/* The RFCOMM multiplexer preferred flow control mechanism. */
-#ifndef PORT_FC_DEFAULT
-#define PORT_FC_DEFAULT PORT_FC_CREDIT
 #endif
 
 /******************************************************************************
@@ -816,16 +779,6 @@
 /* Number of simultaneous AVCTP connections. */
 #ifndef AVCT_NUM_CONN
 #define AVCT_NUM_CONN 14  // 2 * MaxDevices + 2
-#endif
-
-/******************************************************************************
- *
- * AVRCP
- *
- *****************************************************************************/
-
-#ifndef DUMP_PCM_DATA
-#define DUMP_PCM_DATA FALSE
 #endif
 
 /******************************************************************************

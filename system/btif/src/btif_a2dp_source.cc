@@ -419,7 +419,8 @@ static void btif_a2dp_source_start_session_delayed(
   }
   if (bluetooth::audio::a2dp::is_hal_enabled()) {
     bluetooth::audio::a2dp::start_session();
-    bluetooth::audio::a2dp::set_remote_delay(btif_av_get_audio_delay());
+    bluetooth::audio::a2dp::set_remote_delay(
+        btif_av_get_audio_delay(A2dpType::kSource));
     BluetoothMetricsLogger::GetInstance()->LogBluetoothSessionStart(
         bluetooth::common::CONNECTION_TECHNOLOGY_TYPE_BREDR, 0);
   } else {
@@ -578,11 +579,18 @@ static void btif_a2dp_source_setup_codec_delayed(
 
   tA2DP_ENCODER_INIT_PEER_PARAMS peer_params;
   bta_av_co_get_peer_params(peer_address, &peer_params);
-
-  if (!bta_av_co_set_active_peer(peer_address)) {
-    log::error("Cannot stream audio: cannot set active peer to {}",
-               ADDRESS_TO_LOGGABLE_CSTR(peer_address));
-    return;
+  if (IS_FLAG_ENABLED(a2dp_concurrent_source_sink)) {
+    if (!bta_av_co_set_active_source_peer(peer_address)) {
+      log::error("Cannot stream audio: cannot set active peer to {}",
+                 ADDRESS_TO_LOGGABLE_CSTR(peer_address));
+      return;
+    }
+  } else {
+    if (!bta_av_co_set_active_peer(peer_address)) {
+      log::error("Cannot stream audio: cannot set active peer to {}",
+                 ADDRESS_TO_LOGGABLE_CSTR(peer_address));
+      return;
+    }
   }
   btif_a2dp_source_cb.encoder_interface = bta_av_co_get_encoder_interface();
   if (btif_a2dp_source_cb.encoder_interface == nullptr) {

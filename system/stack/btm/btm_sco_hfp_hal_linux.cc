@@ -38,17 +38,9 @@ namespace {
 bool offload_supported = false;
 bool offload_enabled = false;
 
-struct mgmt_bt_codec {
-  uint8_t codec;
-  uint8_t packet_size;
-  uint8_t data_path;
-  uint32_t data_length;
-  uint8_t data[];
-} __attribute__((packed));
-
 typedef struct cached_codec_info {
   struct bt_codec inner;
-  uint8_t pkt_size;
+  size_t pkt_size;
 } cached_codec_info;
 
 std::vector<cached_codec_info> cached_codecs;
@@ -93,46 +85,41 @@ struct mgmt_rp_get_codec_capabilities {
 #define MGMT_POLL_TIMEOUT_MS 2000
 
 void cache_codec_capabilities(struct mgmt_rp_get_codec_capabilities* rp) {
-  const uint8_t kCodecCvsd = 0x2;
-  const uint8_t kCodecTransparent = 0x3;
   const uint8_t kCodecMsbc = 0x5;
+
+  // TODO(b/323087725): Query the codec capabilities and fill in c.inner.data.
+  // The capabilities are not used currently so it's safe to keep this for a
+  // while.
+
+  // CVSD is mandatory in HFP.
+  cached_codecs.push_back({
+      .inner = {.codec = codec::CVSD},
+  });
+
+  // No need to check GetLocalSupportedBrEdrCodecIds. Some legacy devices don't
+  // even support HCI command Read Local Supported Codecs so WBS quirk is more
+  // reliable.
+  if (rp->transparent_wbs_supported) {
+    cached_codecs.push_back({
+        .inner = {.codec = codec::MSBC_TRANSPARENT},
+        .pkt_size = rp->wbs_pkt_len,
+    });
+  }
 
   auto codecs =
       bluetooth::shim::GetController()->GetLocalSupportedBrEdrCodecIds();
+  if (std::find(codecs.begin(), codecs.end(), kCodecMsbc) != codecs.end()) {
+    offload_supported = true;
+    cached_codecs.push_back({
+        .inner = {.codec = codec::MSBC, .data_path = rp->hci_data_path_id},
+        .pkt_size = rp->wbs_pkt_len,
+    });
+  }
 
-  for (uint8_t codec_id : codecs) {
-    // TODO(b/323087725): Query the codec capabilities and fill in c.inner.data.
-    // The capabilities are not used currently so it's safe to keep this for a
-    // while.
-    cached_codec_info c{};
-    switch (codec_id) {
-      case kCodecCvsd:
-        c.inner.codec = codec::CVSD;
-        break;
-      case kCodecTransparent:
-        if (!rp->transparent_wbs_supported) {
-          // Transparent wideband speech not supported, skip it.
-          continue;
-        }
-        c.inner.codec = codec::MSBC_TRANSPARENT;
-        c.pkt_size = rp->wbs_pkt_len;
-        break;
-      case kCodecMsbc:
-        offload_supported = true;
-        c.inner.codec = codec::MSBC;
-        c.inner.data_path = rp->hci_data_path_id;
-        c.pkt_size = rp->wbs_pkt_len;
-        break;
-      default:
-        log::debug("Unsupported codec ID: {}", codec_id);
-        continue;
-    }
-
+  for (const auto& c : cached_codecs) {
     log::info("Caching HFP codec {}, data path {}, data len {}, pkt_size {}",
               (uint64_t)c.inner.codec, c.inner.data_path, c.inner.data.size(),
               c.pkt_size);
-
-    cached_codecs.push_back(c);
   }
 }
 
@@ -451,7 +438,7 @@ void set_codec_datapath(int codec_uuid) {
   }
 }
 
-int get_packet_size(int codec) {
+size_t get_packet_size(int codec) {
   for (const cached_codec_info& c : cached_codecs) {
     if (c.inner.codec == codec) {
       return c.pkt_size;

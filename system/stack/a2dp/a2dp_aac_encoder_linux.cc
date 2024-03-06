@@ -39,6 +39,8 @@ const int A2DP_AAC_MAX_LEN_REPR = 4;
 const int A2DP_AAC_MAX_PREFIX_SIZE =
     AVDT_MEDIA_HDR_SIZE + A2DP_AAC_HEADER_LEN + A2DP_AAC_MAX_LEN_REPR;
 
+using namespace bluetooth;
+
 class FFmpegInterface {
  public:
   // Updates the context and configures codec parameters.

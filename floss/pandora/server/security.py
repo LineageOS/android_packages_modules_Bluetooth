@@ -101,7 +101,8 @@ class SecurityService(security_grpc_aio.SecurityServicer):
         if level == security_pb2.LE_LEVEL1:
             return True
         if level == security_pb2.LE_LEVEL4:
-            raise RuntimeError(f'wait_le_security_level: Low-energy level 4 not supported')
+            logging.error('wait_le_security_level: Low-energy level 4 not supported.')
+            return False
 
         if self.bluetooth.is_bonded(address):
             is_bonded = True
@@ -122,7 +123,9 @@ class SecurityService(security_grpc_aio.SecurityServicer):
             return is_encrypted
         if level == security_pb2.LE_LEVEL3:
             return is_encrypted and is_bonded
-        raise ValueError(f'wait_le_security_level: Invalid security level {level}')
+
+        logging.error('wait_le_security_level: Invalid security level %s.', level)
+        return False
 
     async def wait_classic_security_level(self, level, address):
 
@@ -151,7 +154,8 @@ class SecurityService(security_grpc_aio.SecurityServicer):
         if level == security_pb2.LEVEL0:
             return True
         if level == security_pb2.LEVEL3:
-            raise RuntimeError('wait_classic_security_level: Classic level 3 not supported')
+            logging.error('wait_classic_security_level: Classic level 3 not supported')
+            return False
 
         if self.bluetooth.is_bonded(address):
             is_bonded = True
@@ -311,28 +315,29 @@ class SecurityService(security_grpc_aio.SecurityServicer):
 
         if transport == floss_enums.BtTransport.LE:
             if not request.HasField('le'):
-                raise RuntimeError('Secure: Request le field must be set.')
+                await context.abort(grpc.StatusCode.INVALID_ARGUMENT, 'Request le field must be set.')
             if request.le == security_pb2.LE_LEVEL1:
                 security_level_reached = True
             elif request.le == security_pb2.LE_LEVEL4:
-                raise RuntimeError('Secure: Low-energy security level 4 not supported')
+                await context.abort(grpc.StatusCode.INVALID_ARGUMENT, 'Low-energy security level 4 is not supported.')
             else:
                 if not self.bluetooth.is_bonded(address):
                     self.bluetooth.create_bond(address, transport)
                 security_level_reached = await self.wait_le_security_level(request.le, address)
         elif transport == floss_enums.BtTransport.BREDR:
             if not request.HasField('classic'):
-                raise RuntimeError('Secure: Request classic field must be set.')
+                await context.abort(grpc.StatusCode.INVALID_ARGUMENT, 'Request classic field must be set.')
             if request.classic == security_pb2.LEVEL0:
                 security_level_reached = True
             elif request.classic >= security_pb2.LEVEL3:
-                raise RuntimeError('Secure: Classic security level up to 3 not supported')
+                await context.abort(grpc.StatusCode.INVALID_ARGUMENT,
+                                    'Classic security level up to 3 is not supported.')
             else:
                 if not self.bluetooth.is_bonded(address):
                     self.bluetooth.create_bond(address, transport)
                 security_level_reached = await self.wait_classic_security_level(request.classic, address)
         else:
-            raise RuntimeError(f'Secure: Invalid bluetooth transport type: {transport}')
+            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, f'Invalid bluetooth transport type: {transport}.')
 
         secure_response = security_pb2.SecureResponse()
         if security_level_reached:
@@ -351,7 +356,7 @@ class SecurityService(security_grpc_aio.SecurityServicer):
         elif transport == floss_enums.BtTransport.BREDR:
             security_level_reached = await self.wait_classic_security_level(request.classic, address)
         else:
-            raise RuntimeError(f'WaitSecurity: Invalid bluetooth transport type: {transport}')
+            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, f'Invalid bluetooth transport type: {transport}.')
 
         wait_security_response = security_pb2.WaitSecurityResponse()
         if security_level_reached:
@@ -376,8 +381,6 @@ class SecurityStorageService(security_grpc_aio.SecurityStorageServicer):
 
     async def IsBonded(self, request: security_pb2.IsBondedRequest,
                        context: grpc.ServicerContext) -> wrappers_pb2.BoolValue:
-        if not (request.HasField('public') or request.HasField('random')):
-            raise ValueError('Invalid request address field.')
 
         address = utils.address_from(request.address)
         is_bonded = self.bluetooth.is_bonded(address)
@@ -411,9 +414,6 @@ class SecurityStorageService(security_grpc_aio.SecurityStorageServicer):
                         future.set_result, (False, f'{address} failed on remove_bond, got bond state {state},'
                                             f' want {floss_enums.BondState.NOT_BONDED}'))
 
-        if not (request.HasField('public') or request.HasField('random')):
-            raise ValueError('Invalid request address field.')
-
         address = utils.address_from(request.address)
         if not self.bluetooth.is_bonded(address):
             return empty_pb2.Empty()
@@ -425,7 +425,8 @@ class SecurityStorageService(security_grpc_aio.SecurityStorageServicer):
             self.bluetooth.remove_bond(address)
             success, reason = await remove_bond
             if not success:
-                raise RuntimeError(f'Failed to remove bond of address: {address}. Reason: {reason}')
+                await context.abort(grpc.StatusCode.INVALID_ARGUMENT,
+                                    f'Failed to remove bond of address: {address}. Reason: {reason}.')
         finally:
             self.bluetooth.adapter_client.unregister_callback_observer(name, observer)
         return empty_pb2.Empty()

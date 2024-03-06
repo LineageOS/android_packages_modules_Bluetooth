@@ -94,7 +94,6 @@ extern tBTM_CB btm_cb;
   (BTM_SEC_LE_AUTHENTICATED | BTM_SEC_LE_ENCRYPTED | \
    BTM_SEC_LE_LINK_KEY_KNOWN | BTM_SEC_LE_LINK_KEY_AUTHED)
 
-void btm_inq_stop_on_ssp(void);
 bool btm_ble_init_pseudo_addr(tBTM_SEC_DEV_REC* p_dev_rec,
                               const RawAddress& new_pseudo_addr);
 void bta_dm_remove_device(const RawAddress& bd_addr);
@@ -794,10 +793,6 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
 
   log::verbose("BTM_SecBond: Remote sm4: 0x{:x}  HCI Handle: 0x{:04x}",
                p_dev_rec->sm4, p_dev_rec->hci_handle);
-
-#if (BTM_SEC_FORCE_RNR_FOR_DBOND == TRUE)
-  p_dev_rec->sec_rec.sec_flags &= ~BTM_SEC_NAME_KNOWN;
-#endif
 
   /* If connection already exists... */
   if (BTM_IsAclConnectionUpAndHandleValid(bd_addr, transport)) {
@@ -2751,9 +2746,6 @@ void btm_io_capabilities_rsp(const tBTM_SP_IO_RSP evt_data) {
     btm_sec_cb.pairing_bda = evt_data.bd_addr;
 
     btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_INCOMING_SSP);
-
-    /* work around for FW bug */
-    btm_inq_stop_on_ssp();
   }
 
   /* Notify L2CAP to increase timeout */

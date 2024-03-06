@@ -1724,6 +1724,29 @@ public class HeadsetStateMachineTest {
         verifyAudioSystemSetParametersInvocation(false, false);
     }
 
+    @Test
+    public void testSetAudioParameters_isScoManagedByAudio() {
+        mSetFlagsRule.enableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO);
+
+        setUpConnectedState();
+        mHeadsetStateMachine.sendMessage(
+                HeadsetStateMachine.STACK_EVENT,
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_SWB,
+                        HeadsetHalConstants.BTHF_SWB_CODEC_LC3,
+                        HeadsetHalConstants.BTHF_SWB_YES,
+                        mTestDevice));
+
+        mHeadsetStateMachine.sendMessage(
+                HeadsetStateMachine.STACK_EVENT,
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED,
+                        HeadsetHalConstants.AUDIO_STATE_CONNECTED,
+                        mTestDevice));
+
+        verify(mAudioManager, times(0)).setParameters(any());
+    }
+
     /**
      * verify parameters given to audio system
      *

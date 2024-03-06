@@ -235,9 +235,62 @@ struct codec_manager_impl {
     }
   }
 
-  const broadcast_offload_config* GetBroadcastOffloadConfig() {
+  const broadcast_offload_config* GetBroadcastOffloadConfig(
+      uint8_t preferred_quality) {
     if (supported_broadcast_config.empty()) {
       LOG_ERROR("There is no valid broadcast offload config");
+      return nullptr;
+    }
+    /* Broadcast audio config selection based on source broadcast capability
+     *
+     * If the preferred_quality is HIGH, the configs ranking is
+     * 48_4 > 48_2 > 24_2(sink mandatory) > 16_2(source & sink mandatory)
+     *
+     * If the preferred_quality is STANDARD, the configs ranking is
+     * 24_2(sink mandatory) > 16_2(source & sink mandatory)
+     */
+    broadcast_target_config = -1;
+    for (int i = 0; i < (int)supported_broadcast_config.size(); i++) {
+      if (supported_broadcast_config[i].sampling_rate == 48000u) {
+        if (preferred_quality == bluetooth::le_audio::QUALITY_STANDARD)
+          continue;
+
+        if (supported_broadcast_config[i].octets_per_frame == 120) {  // 48_4
+          broadcast_target_config = i;
+          break;
+        } else if (supported_broadcast_config[i].octets_per_frame ==
+                   100) {  // 48_2
+          broadcast_target_config = i;
+        }
+      } else if (supported_broadcast_config[i].sampling_rate == 24000u &&
+                 supported_broadcast_config[i].octets_per_frame ==
+                     60) {  // 24_2
+        if (preferred_quality == bluetooth::le_audio::QUALITY_STANDARD) {
+          broadcast_target_config = i;
+          break;
+        } else if (broadcast_target_config ==
+                   -1) {  // preferred_quality is QUALITY_HIGH, and
+                          // haven't get the 48_4 or 48_2
+          broadcast_target_config = i;
+        }
+      } else if (supported_broadcast_config[i].sampling_rate == 16000u &&
+                 supported_broadcast_config[i].octets_per_frame ==
+                     40) {  // 16_2
+        if (preferred_quality == bluetooth::le_audio::QUALITY_STANDARD) {
+          broadcast_target_config = i;
+        } else if (broadcast_target_config == -1 ||
+                   supported_broadcast_config[broadcast_target_config]
+                           .sampling_rate !=
+                       24000u) {  // preferred_quality is QUALITY_HIGH, and
+                                  // haven't get the 48_4 or 48_2 or 24_2
+          broadcast_target_config = i;
+        }
+      }
+    }
+
+    if (broadcast_target_config == -1) {
+      LOG_ERROR(
+          "There is no valid broadcast offload config with preferred_quality");
       return nullptr;
     }
 
@@ -245,22 +298,30 @@ struct codec_manager_impl {
         "stream_map.size(): %zu, sampling_rate: %d, frame_duration(us): %d, "
         "octets_per_frame: %d, blocks_per_sdu %d, "
         "retransmission_number: %d, max_transport_latency: %d",
-        supported_broadcast_config[0].stream_map.size(),
-        supported_broadcast_config[0].sampling_rate,
-        supported_broadcast_config[0].frame_duration,
-        supported_broadcast_config[0].octets_per_frame,
-        (int)supported_broadcast_config[0].blocks_per_sdu,
-        (int)supported_broadcast_config[0].retransmission_number,
-        supported_broadcast_config[0].max_transport_latency);
+        supported_broadcast_config[broadcast_target_config].stream_map.size(),
+        supported_broadcast_config[broadcast_target_config].sampling_rate,
+        supported_broadcast_config[broadcast_target_config].frame_duration,
+        supported_broadcast_config[broadcast_target_config].octets_per_frame,
+        (int)supported_broadcast_config[broadcast_target_config].blocks_per_sdu,
+        (int)supported_broadcast_config[broadcast_target_config]
+            .retransmission_number,
+        supported_broadcast_config[broadcast_target_config]
+            .max_transport_latency);
 
-    return &supported_broadcast_config[0];
+    return &supported_broadcast_config[broadcast_target_config];
   }
 
   void UpdateBroadcastConnHandle(
       const std::vector<uint16_t>& conn_handle,
       std::function<void(const ::le_audio::broadcast_offload_config& config)>
           update_receiver) {
-    auto broadcast_config = supported_broadcast_config[0];
+    if (broadcast_target_config == -1 ||
+        broadcast_target_config >= (int)supported_broadcast_config.size()) {
+      LOG_ERROR("There is no valid broadcast offload config");
+      return;
+    }
+
+    auto broadcast_config = supported_broadcast_config[broadcast_target_config];
     LOG_ASSERT(conn_handle.size() == broadcast_config.stream_map.size());
 
     if (broadcast_config.stream_map.size() ==
@@ -639,6 +700,7 @@ struct codec_manager_impl {
 
   std::vector<btle_audio_codec_config_t> codec_input_capa = {};
   std::vector<btle_audio_codec_config_t> codec_output_capa = {};
+  int broadcast_target_config = -1;
 };  // namespace le_audio
 
 struct CodecManager::impl {
@@ -728,9 +790,10 @@ const AudioSetConfigurations* CodecManager::GetOffloadCodecConfig(
 }
 
 const ::le_audio::broadcast_offload_config*
-CodecManager::GetBroadcastOffloadConfig() {
+CodecManager::GetBroadcastOffloadConfig(uint8_t preferred_quality) {
   if (pimpl_->IsRunning()) {
-    return pimpl_->codec_manager_impl_->GetBroadcastOffloadConfig();
+    return pimpl_->codec_manager_impl_->GetBroadcastOffloadConfig(
+        preferred_quality);
   }
 
   return nullptr;
