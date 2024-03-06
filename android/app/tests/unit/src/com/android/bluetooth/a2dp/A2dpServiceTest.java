@@ -50,13 +50,15 @@ import org.hamcrest.core.AllOf;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.hamcrest.MockitoHamcrest;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -72,6 +74,8 @@ public class A2dpServiceTest {
     private static final BluetoothDevice sTestDevice =
             sAdapter.getRemoteDevice("00:01:02:03:04:05");
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock private A2dpNativeInterface mMockNativeInterface;
     @Mock private ActiveDeviceManager mActiveDeviceManager;
     @Mock private AdapterService mAdapterService;
@@ -84,8 +88,6 @@ public class A2dpServiceTest {
 
     @Before
     public void setUp() throws Exception {
-        // Set up mocks and test assets
-        MockitoAnnotations.initMocks(this);
         mInOrder = inOrder(mAdapterService);
 
         TestUtils.mockGetSystemService(

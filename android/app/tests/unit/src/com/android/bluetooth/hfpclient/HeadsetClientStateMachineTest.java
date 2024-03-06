@@ -68,13 +68,15 @@ import org.hamcrest.core.IsInstanceOf;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import org.mockito.hamcrest.MockitoHamcrest;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.List;
 import java.util.Set;
@@ -90,6 +92,8 @@ public class HeadsetClientStateMachineTest {
     private TestHeadsetClientStateMachine mHeadsetClientStateMachine;
     private BluetoothDevice mTestDevice;
     private Context mTargetContext;
+
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock private AdapterService mAdapterService;
     @Mock private Resources mMockHfpResources;
@@ -110,7 +114,6 @@ public class HeadsetClientStateMachineTest {
     public void setUp() throws Exception {
         mTargetContext = InstrumentationRegistry.getTargetContext();
         // Setup mocks and test assets
-        MockitoAnnotations.initMocks(this);
         // Set a valid volume
         when(mAudioManager.getStreamVolume(anyInt())).thenReturn(2);
         when(mAudioManager.getStreamMaxVolume(anyInt())).thenReturn(10);

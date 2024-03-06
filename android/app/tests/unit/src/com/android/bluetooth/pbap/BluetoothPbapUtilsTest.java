@@ -48,11 +48,13 @@ import com.android.vcard.VCardConfig;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -61,6 +63,8 @@ import java.util.List;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothPbapUtilsTest {
+
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock
     Context mContext;
@@ -73,7 +77,6 @@ public class BluetoothPbapUtilsTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         BluetoothMethodProxy.setInstanceForTesting(mProxy);
 
         when(mContext.getResources()).thenReturn(mResources);

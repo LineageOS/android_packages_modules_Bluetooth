@@ -34,18 +34,22 @@ import android.bluetooth.le.ScanFilter;
 import com.android.bluetooth.TestUtils;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.Collections;
 import java.util.List;
 
 @RunWith(JUnit4.class)
 public class BleBroadcastAssistantBinderTest {
+
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock private BassClientService mService;
 
@@ -54,7 +58,6 @@ public class BleBroadcastAssistantBinderTest {
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
         mBinder = new BassClientService.BluetoothLeBroadcastAssistantBinder(mService);
         mAdapter = BluetoothAdapter.getDefaultAdapter();
     }

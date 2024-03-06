@@ -43,12 +43,14 @@ import com.android.bluetooth.btservice.AdapterService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -70,6 +72,8 @@ public class MediaControlProfileTest {
     private String name = "TestPlayer";
     private CharSequence charSequence = "TestPlayer";
     private MediaControlServiceCallbacks mMcpServiceCallbacks;
+
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock private AdapterService mAdapterService;
     @Mock private MediaData mMockMediaData;
@@ -94,7 +98,6 @@ public class MediaControlProfileTest {
 
         mTargetContext = InstrumentationRegistry.getTargetContext();
         MediaControlProfile.ListCallback listCallback;
-        MockitoAnnotations.initMocks(this);
 
         TestUtils.setAdapterService(mAdapterService);
         mAdapter = BluetoothAdapter.getDefaultAdapter();

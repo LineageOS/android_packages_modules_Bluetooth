@@ -44,12 +44,14 @@ import org.hamcrest.core.IsInstanceOf;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 @MediumTest
 @RunWith(AndroidJUnit4.class)
@@ -61,6 +63,8 @@ public class VolumeControlStateMachineTest {
     private BluetoothDevice mTestDevice;
     private static final int TIMEOUT_MS = 1000;
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock private AdapterService mAdapterService;
     @Mock private VolumeControlService mVolumeControlService;
     @Mock private VolumeControlNativeInterface mVolumeControlNativeInterface;
@@ -69,8 +73,6 @@ public class VolumeControlStateMachineTest {
     public void setUp() throws Exception {
         mTargetContext = InstrumentationRegistry.getTargetContext();
         InstrumentationRegistry.getInstrumentation().getUiAutomation().adoptShellPermissionIdentity();
-        // Set up mocks and test assets
-        MockitoAnnotations.initMocks(this);
         TestUtils.setAdapterService(mAdapterService);
 
         mAdapter = BluetoothAdapter.getDefaultAdapter();

@@ -37,17 +37,21 @@ import androidx.test.runner.AndroidJUnit4;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class AvrcpVolumeManagerTest {
     private static final String REMOTE_DEVICE_ADDRESS = "00:01:02:03:04:05";
     private static final int TEST_DEVICE_MAX_VOUME = 25;
+
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock
     AvrcpNativeInterface mNativeInterface;
@@ -61,7 +65,6 @@ public class AvrcpVolumeManagerTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         mContext = InstrumentationRegistry.getTargetContext();
         when(mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC))
                 .thenReturn(TEST_DEVICE_MAX_VOUME);

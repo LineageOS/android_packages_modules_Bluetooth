@@ -26,9 +26,11 @@ import android.net.Uri;
 import android.support.v4.media.session.PlaybackStateCompat;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 public class AvrcpPlayerTest {
     private static final int TEST_PLAYER_ID = 1;
@@ -44,12 +46,13 @@ public class AvrcpPlayerTest {
     private BluetoothAdapter mAdapter;
     private BluetoothDevice mTestDevice = null;
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock
     private PlayerApplicationSettings mPlayerApplicationSettings;
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         mTestDevice = mAdapter.getRemoteDevice(mTestAddress);
     }

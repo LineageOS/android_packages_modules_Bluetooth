@@ -74,7 +74,8 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -125,6 +126,8 @@ public class MapClientStateMachineTest {
     private Context mTargetContext;
     private Handler mHandler;
     private ArgumentCaptor<Intent> mIntentArgument = ArgumentCaptor.forClass(Intent.class);
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock
     private AdapterService mAdapterService;
     @Mock
@@ -202,7 +205,6 @@ public class MapClientStateMachineTest {
     @Before
     public void setUp() throws Exception {
         mTargetContext = InstrumentationRegistry.getTargetContext();
-        MockitoAnnotations.initMocks(this);
         TestUtils.setAdapterService(mAdapterService);
         mIsAdapterServiceSet = true;
         mMockContentProvider = new MockSmsContentProvider();

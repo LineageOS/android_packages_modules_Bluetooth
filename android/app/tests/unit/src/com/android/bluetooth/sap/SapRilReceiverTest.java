@@ -63,12 +63,14 @@ import androidx.test.runner.AndroidJUnit4;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.Arrays;
 
@@ -84,6 +86,8 @@ public class SapRilReceiverTest {
     @Spy
     private TestHandlerCallback mCallback = new TestHandlerCallback();
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock
     private Handler mServiceHandler;
 
@@ -94,7 +98,6 @@ public class SapRilReceiverTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
 
         mHandlerThread = new HandlerThread("SapRilReceiverTest");
         mHandlerThread.start();

@@ -58,7 +58,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -88,6 +89,8 @@ public class VolumeControlServiceTest {
     private BroadcastReceiver mVolumeControlIntentReceiver;
     private FakeFeatureFlagsImpl mFakeFlagsImpl;
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock private AdapterService mAdapterService;
     @Mock private LeAudioService mLeAudioService;
     @Mock private DatabaseManager mDatabaseManager;
@@ -101,8 +104,6 @@ public class VolumeControlServiceTest {
     @Before
     public void setUp() throws Exception {
         mTargetContext = InstrumentationRegistry.getTargetContext();
-        // Set up mocks and test assets
-        MockitoAnnotations.initMocks(this);
 
         if (Looper.myLooper() == null) {
             Looper.prepare();

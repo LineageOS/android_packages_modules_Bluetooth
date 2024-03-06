@@ -29,12 +29,16 @@ import android.os.ParcelUuid;
 import com.android.bluetooth.x.com.android.modules.utils.SynchronousResultReceiver;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 public class BluetoothCsisBinderTest {
     private static final String TEST_DEVICE_ADDRESS = "00:00:00:00:00:00";
+
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock
     private CsipSetCoordinatorService mService;
@@ -46,7 +50,6 @@ public class BluetoothCsisBinderTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         mBinder = new CsipSetCoordinatorService.BluetoothCsisBinder(mService);
         mAttributionSource = new AttributionSource.Builder(1).build();
         mTestDevice = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(TEST_DEVICE_ADDRESS);

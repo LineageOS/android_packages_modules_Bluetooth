@@ -26,11 +26,12 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.net.Uri;
 
-import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 import org.robolectric.RobolectricTestRunner;
 
 import java.io.FileInputStream;
@@ -43,14 +44,11 @@ public class OppSendFileInfoTest {
     private static final int TEST_FILE_SIZE = 10;
     private static final int MAXIMUM_FILE_SIZE = 0xFFFFFFFF;
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock private Context mContext;
     @Mock private ContentResolver mContentResolver;
     @Mock private FileInputStream mFileInputStream;
-
-    @Before
-    public void setUp() {
-        MockitoAnnotations.initMocks(this);
-    }
 
     /**
      * Test a BluetoothOppSendFileInfo generated from a local file (MIME type: text/plain,

@@ -69,8 +69,9 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.lang.reflect.Method;
 import java.util.Collections;
@@ -109,6 +110,8 @@ public class HeadsetServiceAndStateMachineTest {
     private PowerManager.WakeLock mVoiceRecognitionWakeLock;
     boolean mIsAdapterServiceSet;
     boolean mIsHeadsetServiceStarted;
+
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock private HeadsetNativeInterface mNativeInterface;
 
@@ -165,7 +168,6 @@ public class HeadsetServiceAndStateMachineTest {
     @Before
     public void setUp() throws Exception {
         mTargetContext = InstrumentationRegistry.getTargetContext();
-        MockitoAnnotations.initMocks(this);
         PowerManager powerManager = mTargetContext.getSystemService(PowerManager.class);
         mVoiceRecognitionWakeLock =
                 powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "VoiceRecognitionTest");

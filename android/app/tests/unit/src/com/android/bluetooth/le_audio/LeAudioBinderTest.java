@@ -52,7 +52,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.List;
 import java.util.UUID;
@@ -62,6 +63,8 @@ public class LeAudioBinderTest {
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     private LeAudioService mLeAudioService;
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock private AdapterService mAdapterService;
     @Mock private LeAudioNativeInterface mNativeInterface;
     @Mock private DatabaseManager mDatabaseManager;
@@ -79,7 +82,6 @@ public class LeAudioBinderTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         TestUtils.setAdapterService(mAdapterService);
         doReturn(false).when(mAdapterService).isQuietModeEnabled();
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();

@@ -33,10 +33,12 @@ import androidx.test.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,11 +53,12 @@ public final class BrowsablePlayerConnectorTest {
     Context mContext;
     TestLooper mTestLooper;
     List<ResolveInfo> mPlayerList;
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock MediaBrowser mMediaBrowser;
     MediaBrowser.ConnectionCallback mConnectionCallback;
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
         mContext = InstrumentationRegistry.getTargetContext();
         mTestLooper = new TestLooper();
 

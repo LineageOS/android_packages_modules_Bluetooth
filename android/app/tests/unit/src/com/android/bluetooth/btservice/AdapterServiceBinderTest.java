@@ -31,14 +31,18 @@ import com.android.bluetooth.x.com.android.modules.utils.SynchronousResultReceiv
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.io.FileDescriptor;
 
 public class AdapterServiceBinderTest {
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock private AdapterService mService;
     @Mock private AdapterProperties mAdapterProperties;
 
@@ -47,7 +51,6 @@ public class AdapterServiceBinderTest {
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
         mService.mAdapterProperties = mAdapterProperties;
         doReturn(true).when(mService).isAvailable();
         doNothing().when(mService).enforceCallingOrSelfPermission(any(), any());
