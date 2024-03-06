@@ -1625,12 +1625,17 @@ void shim::legacy::Acl::OnConnectSuccess(
 void shim::legacy::Acl::OnConnectRequest(hci::Address address,
                                          hci::ClassOfDevice cod) {
   const RawAddress bd_addr = ToRawAddress(address);
+  const DEV_CLASS dev_class = ToDevClass(cod);
 
   TRY_POSTING_ON_MAIN(acl_interface_.connection.classic.on_connect_request,
                       bd_addr, cod);
-  LOG_DEBUG("Received connect request remote:%s",
-            ADDRESS_TO_LOGGABLE_CSTR(address));
-  BTM_LogHistory(kBtmLogTag, ToRawAddress(address), "Connection request");
+  LOG_DEBUG("Received connect request remote:%s gd_cod:%s legacy_dev_class:%s",
+            ADDRESS_TO_LOGGABLE_CSTR(address), cod.ToString().c_str(),
+            dev_class_text(dev_class).c_str());
+  BTM_LogHistory(kBtmLogTag, ToRawAddress(address), "Connection request",
+                 base::StringPrintf("gd_cod:%s legacy_dev_class:%s",
+                                    cod.ToString().c_str(),
+                                    dev_class_text(dev_class).c_str()));
 }
 
 void shim::legacy::Acl::OnConnectFail(hci::Address address,

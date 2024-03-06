@@ -19,6 +19,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <sstream>
 
 constexpr size_t kDevClassLength = 3;
 typedef std::array<uint8_t, kDevClassLength> DEV_CLASS; /* Device class */
@@ -121,16 +122,14 @@ inline constexpr DEV_CLASS kDevClassUnclassified = {
     (pd)[0] = (sv) >> 8;                                \
   }
 
-#include <sstream>
 inline std::string dev_class_text(const DEV_CLASS& dev_class) {
   std::ostringstream oss;
-  uint8_t mj, mn;
   uint16_t sv;
-  BTM_COD_MINOR_CLASS(mn, dev_class);
-  BTM_COD_MAJOR_CLASS(mj, dev_class);
+  uint8_t mj, mn;
   BTM_COD_SERVICE_CLASS(sv, dev_class);
-  oss << std::to_string(mj) << "-" << std::to_string(mn) << "-"
-      << std::to_string(sv);
+  BTM_COD_MAJOR_CLASS(mj, dev_class);
+  BTM_COD_MINOR_CLASS(mn, dev_class);
+  oss << std::hex << (int)sv << "-" << (int)mj << "-" << (int)mn;
   return oss.str();
 }
 
