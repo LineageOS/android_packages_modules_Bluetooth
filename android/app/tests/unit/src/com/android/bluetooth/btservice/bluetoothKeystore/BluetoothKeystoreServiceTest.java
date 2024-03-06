@@ -24,11 +24,13 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -43,6 +45,8 @@ import java.util.Map;
 public final class BluetoothKeystoreServiceTest {
     private static final String TAG = "BluetoothKeystoreServiceTest";
     private BluetoothKeystoreService mBluetoothKeystoreService;
+
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock private BluetoothKeystoreNativeInterface mMockNativeInterface;
 
@@ -123,7 +127,6 @@ public final class BluetoothKeystoreServiceTest {
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
         Assume.assumeTrue("Ignore test when the user is not primary.", isPrimaryUser());
         mBluetoothKeystoreService = new BluetoothKeystoreService(mMockNativeInterface, true);
         Assert.assertNotNull(mBluetoothKeystoreService);

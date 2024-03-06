@@ -29,20 +29,23 @@ import com.android.bluetooth.x.com.android.modules.utils.SynchronousResultReceiv
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.List;
 
 public class A2dpSinkServiceBinderTest {
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock private A2dpSinkService mService;
     private A2dpSinkService.A2dpSinkServiceBinder mBinder;
     private BluetoothAdapter mAdapter;
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         mBinder = new A2dpSinkService.A2dpSinkServiceBinder(mService);
     }

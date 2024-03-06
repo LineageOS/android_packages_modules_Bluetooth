@@ -34,10 +34,12 @@ import com.android.bluetooth.R;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.Arrays;
 
@@ -48,6 +50,8 @@ public class A2dpCodecConfigTest {
     private Context mTargetContext;
     private BluetoothDevice mTestDevice;
     private A2dpCodecConfig mA2dpCodecConfig;
+
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock private Context mMockContext;
     @Mock private Resources mMockResources;
@@ -159,8 +163,6 @@ public class A2dpCodecConfigTest {
 
     @Before
     public void setUp() throws Exception {
-        // Set up mocks and test assets
-        MockitoAnnotations.initMocks(this);
         mTargetContext = InstrumentationRegistry.getTargetContext();
 
         when(mMockContext.getResources()).thenReturn(mMockResources);

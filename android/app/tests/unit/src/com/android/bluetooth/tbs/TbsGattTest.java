@@ -46,7 +46,8 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -72,6 +73,8 @@ public class TbsGattTest {
 
     private TbsGatt mTbsGatt;
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock
     private AdapterService mAdapterService;
     @Mock
@@ -95,7 +98,6 @@ public class TbsGattTest {
 
         getInstrumentation().getUiAutomation().adoptShellPermissionIdentity();
 
-        MockitoAnnotations.initMocks(this);
 
         TestUtils.setAdapterService(mAdapterService);
         mAdapter = BluetoothAdapter.getDefaultAdapter();

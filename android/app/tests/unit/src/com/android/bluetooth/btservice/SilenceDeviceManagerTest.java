@@ -41,11 +41,13 @@ import com.android.bluetooth.hfp.HeadsetService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 @MediumTest
 @RunWith(AndroidJUnit4.class)
@@ -59,6 +61,8 @@ public class SilenceDeviceManagerTest {
     private static final String TEST_BT_ADDR = "11:22:33:44:55:66";
     private int mVerifyCount = 0;
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock private AdapterService mAdapterService;
     @Mock private ServiceFactory mServiceFactory;
     @Mock private A2dpService mA2dpService;
@@ -69,8 +73,6 @@ public class SilenceDeviceManagerTest {
     public void setUp() throws Exception {
         mContext = InstrumentationRegistry.getTargetContext();
 
-        // Set up mocks and test assets
-        MockitoAnnotations.initMocks(this);
         TestUtils.setAdapterService(mAdapterService);
         when(mServiceFactory.getA2dpService()).thenReturn(mA2dpService);
         when(mServiceFactory.getHeadsetService()).thenReturn(mHeadsetService);

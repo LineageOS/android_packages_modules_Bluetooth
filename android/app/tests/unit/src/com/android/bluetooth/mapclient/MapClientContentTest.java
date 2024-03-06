@@ -55,12 +55,14 @@ import com.android.vcard.VCardProperty;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -92,6 +94,8 @@ public class MapClientContentTest {
 
     private MapClientContent mMapClientContent;
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock
     private AdapterService mAdapterService;
     @Mock
@@ -115,7 +119,6 @@ public class MapClientContentTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
 
         mMockSmsContentProvider = new FakeContentProvider(mMockContext);
         mMockMmsContentProvider = new FakeContentProvider(mMockContext);

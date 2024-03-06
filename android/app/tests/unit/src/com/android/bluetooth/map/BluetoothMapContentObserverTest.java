@@ -53,12 +53,14 @@ import com.google.android.mms.pdu.PduHeaders;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -116,6 +118,8 @@ public class BluetoothMapContentObserverTest {
     static final int TEST_PRIORITY = 1;
     static final int TEST_LAST_ONLINE = 1;
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock
     private BluetoothMnsObexClient mClient;
     @Mock
@@ -171,7 +175,6 @@ public class BluetoothMapContentObserverTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         BluetoothMethodProxy.setInstanceForTesting(mMapMethodProxy);
         if (Looper.myLooper() == null) {
             Looper.prepare();

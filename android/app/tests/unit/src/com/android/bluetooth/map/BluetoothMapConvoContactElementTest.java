@@ -26,11 +26,12 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.SignedLongLong;
 
-import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
 import org.xmlpull.v1.XmlSerializer;
@@ -53,13 +54,10 @@ public class BluetoothMapConvoContactElementTest {
 
     private final SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmss");
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock
     private MapContact mMapContact;
-
-    @Before
-    public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-    }
 
     @Test
     public void constructorWithArguments() {

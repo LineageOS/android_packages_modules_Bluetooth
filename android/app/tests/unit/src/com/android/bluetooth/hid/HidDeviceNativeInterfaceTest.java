@@ -29,13 +29,17 @@ import com.android.bluetooth.btservice.AdapterService;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 public class HidDeviceNativeInterfaceTest {
     private static final byte[] TEST_DEVICE_ADDRESS =
             new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock
     HidDeviceService mService;
     @Mock
@@ -45,7 +49,6 @@ public class HidDeviceNativeInterfaceTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         when(mService.isAvailable()).thenReturn(true);
         HidDeviceService.setHidDeviceService(mService);
         TestUtils.setAdapterService(mAdapterService);

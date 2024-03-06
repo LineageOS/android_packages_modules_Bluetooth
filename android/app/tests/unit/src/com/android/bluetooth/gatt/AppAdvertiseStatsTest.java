@@ -34,11 +34,13 @@ import com.android.bluetooth.btservice.MetricsLogger;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 /**
  * Test cases for {@link AppAdvertiseStats}.
@@ -46,6 +48,8 @@ import org.mockito.MockitoAnnotations;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class AppAdvertiseStatsTest {
+
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock
     private ContextMap map;
@@ -58,7 +62,6 @@ public class AppAdvertiseStatsTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         MetricsLogger.setInstanceForTesting(mMetricsLogger);
     }
 

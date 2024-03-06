@@ -71,13 +71,15 @@ import androidx.test.runner.AndroidJUnit4;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -98,6 +100,8 @@ public class SapServerTest {
     @Spy
     private TestHandlerCallback mCallback = new TestHandlerCallback();
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock
     private InputStream mInputStream;
 
@@ -108,7 +112,6 @@ public class SapServerTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
 
         mHandlerThread = new HandlerThread("SapServerTest");
         mHandlerThread.start();

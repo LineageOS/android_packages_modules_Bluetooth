@@ -49,10 +49,12 @@ import com.android.bluetooth.btservice.AdapterService;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.Arrays;
 import java.util.List;
@@ -67,6 +69,8 @@ public class HfpClientConnectionServiceTest {
             .getAdapter().getRemoteDevice(TEST_DEVICE_ADDRESS);
     private static final String TEST_NUMBER = "000-111-2222";
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock private AdapterService mAdapterService;
     @Mock private HeadsetClientService mMockHeadsetClientService;
     @Mock private TelecomManager mMockTelecomManager;
@@ -77,7 +81,6 @@ public class HfpClientConnectionServiceTest {
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
 
         Context targetContext = InstrumentationRegistry.getTargetContext();
 

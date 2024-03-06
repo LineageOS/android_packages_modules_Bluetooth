@@ -44,10 +44,12 @@ import com.android.obex.ClientSession;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -57,6 +59,8 @@ import java.util.concurrent.TimeUnit;
 
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppObexClientSessionTest {
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock
     BluetoothMethodProxy mMethodProxy;
 
@@ -68,7 +72,6 @@ public class BluetoothOppObexClientSessionTest {
 
     @Before
     public void setUp() throws IOException {
-        MockitoAnnotations.initMocks(this);
         mTargetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
         mClientSession = new BluetoothOppObexClientSession(mTargetContext, mTransport);
 

@@ -50,10 +50,12 @@ import com.android.bluetooth.opp.BluetoothOppTestUtils.CursorMockData;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -68,6 +70,8 @@ public class BluetoothOppUtilityTest {
     private static final Uri INCORRECT_FORMAT_URI = Uri.parse("www.google.com");
 
     Context mContext;
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock
     Cursor mCursor;
 
@@ -77,7 +81,6 @@ public class BluetoothOppUtilityTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         mContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
         BluetoothMethodProxy.setInstanceForTesting(mCallProxy);
         TestUtils.setUpUiTest();

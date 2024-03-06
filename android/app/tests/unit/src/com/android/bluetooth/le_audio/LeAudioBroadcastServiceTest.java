@@ -54,8 +54,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -76,6 +77,8 @@ public class LeAudioBroadcastServiceTest {
     private LeAudioService mService;
     private LeAudioIntentReceiver mLeAudioIntentReceiver;
     private LinkedBlockingQueue<Intent> mIntentQueue;
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock private ActiveDeviceManager mActiveDeviceManager;
     @Mock
     private AdapterService mAdapterService;
@@ -195,8 +198,6 @@ public class LeAudioBroadcastServiceTest {
     public void setUp() throws Exception {
         mTargetContext = InstrumentationRegistry.getTargetContext();
 
-        // Set up mocks and test assets
-        MockitoAnnotations.initMocks(this);
 
         // Use spied objects factory
         doNothing().when(mTmapGattServer).start(anyInt());
