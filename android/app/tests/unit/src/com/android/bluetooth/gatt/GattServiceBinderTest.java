@@ -46,6 +46,7 @@ import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
 
+import com.android.bluetooth.le_scan.TransitionalScanHelper;
 import com.android.bluetooth.x.com.android.modules.utils.SynchronousResultReceiver;
 
 import org.junit.Before;
@@ -70,6 +71,7 @@ public class GattServiceBinderTest {
 
     @Mock
     private GattService mService;
+    @Mock private TransitionalScanHelper mScanHelper;
 
     private Context mContext;
     private BluetoothDevice mDevice;
@@ -85,6 +87,7 @@ public class GattServiceBinderTest {
         mPendingIntent = PendingIntent.getBroadcast(mContext, 0, intent,
                 PendingIntent.FLAG_IMMUTABLE);
         when(mService.isAvailable()).thenReturn(true);
+        when(mService.getTransitionalScanHelper()).thenReturn(mScanHelper);
         mBinder = new GattService.BluetoothGattBinder(mService);
         mAttributionSource = new AttributionSource.Builder(1).build();
         mDevice = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(REMOTE_DEVICE_ADDRESS);
@@ -129,7 +132,7 @@ public class GattServiceBinderTest {
         mBinder.registerScanner(callback, workSource, mAttributionSource,
                 SynchronousResultReceiver.get());
 
-        verify(mService).registerScanner(callback, workSource, mAttributionSource);
+        verify(mScanHelper).registerScanner(callback, workSource, mAttributionSource);
     }
 
     @Test
@@ -138,7 +141,7 @@ public class GattServiceBinderTest {
 
         mBinder.unregisterScanner(scannerId, mAttributionSource, SynchronousResultReceiver.get());
 
-        verify(mService).unregisterScanner(scannerId, mAttributionSource);
+        verify(mScanHelper).unregisterScanner(scannerId, mAttributionSource);
     }
 
     @Test
@@ -150,7 +153,7 @@ public class GattServiceBinderTest {
         mBinder.startScan(scannerId, settings, filters, mAttributionSource,
                 SynchronousResultReceiver.get());
 
-        verify(mService).startScan(scannerId, settings, filters, mAttributionSource);
+        verify(mScanHelper).startScan(scannerId, settings, filters, mAttributionSource);
     }
 
     @Test
@@ -161,8 +164,8 @@ public class GattServiceBinderTest {
         mBinder.startScanForIntent(mPendingIntent, settings, filters, mAttributionSource,
                 SynchronousResultReceiver.get());
 
-        verify(mService).registerPiAndStartScan(mPendingIntent, settings, filters,
-                mAttributionSource);
+        verify(mScanHelper)
+                .registerPiAndStartScan(mPendingIntent, settings, filters, mAttributionSource);
     }
 
     @Test
@@ -170,7 +173,7 @@ public class GattServiceBinderTest {
         mBinder.stopScanForIntent(mPendingIntent, mAttributionSource,
                 SynchronousResultReceiver.get());
 
-        verify(mService).stopScan(mPendingIntent, mAttributionSource);
+        verify(mScanHelper).stopScan(mPendingIntent, mAttributionSource);
     }
 
     @Test
@@ -179,7 +182,7 @@ public class GattServiceBinderTest {
 
         mBinder.stopScan(scannerId, mAttributionSource, SynchronousResultReceiver.get());
 
-        verify(mService).stopScan(scannerId, mAttributionSource);
+        verify(mScanHelper).stopScan(scannerId, mAttributionSource);
     }
 
     @Test
@@ -189,7 +192,7 @@ public class GattServiceBinderTest {
         mBinder.flushPendingBatchResults(scannerId, mAttributionSource,
                 SynchronousResultReceiver.get());
 
-        verify(mService).flushPendingBatchResults(scannerId, mAttributionSource);
+        verify(mScanHelper).flushPendingBatchResults(scannerId, mAttributionSource);
     }
 
     @Test
@@ -713,7 +716,7 @@ public class GattServiceBinderTest {
         mBinder.registerSync(scanResult, skip, timeout, callback,
                 mAttributionSource, SynchronousResultReceiver.get());
 
-        verify(mService).registerSync(scanResult, skip, timeout, callback, mAttributionSource);
+        verify(mScanHelper).registerSync(scanResult, skip, timeout, callback, mAttributionSource);
     }
 
     @Test
@@ -724,7 +727,7 @@ public class GattServiceBinderTest {
         mBinder.transferSync(mDevice, serviceData, syncHandle,
                 mAttributionSource, SynchronousResultReceiver.get());
 
-        verify(mService).transferSync(mDevice, serviceData, syncHandle, mAttributionSource);
+        verify(mScanHelper).transferSync(mDevice, serviceData, syncHandle, mAttributionSource);
     }
 
     @Test
@@ -736,8 +739,8 @@ public class GattServiceBinderTest {
         mBinder.transferSetInfo(mDevice, serviceData, advHandle, callback,
                 mAttributionSource, SynchronousResultReceiver.get());
 
-        verify(mService).transferSetInfo(mDevice, serviceData, advHandle, callback,
-                mAttributionSource);
+        verify(mScanHelper)
+                .transferSetInfo(mDevice, serviceData, advHandle, callback, mAttributionSource);
     }
 
     @Test
@@ -746,7 +749,7 @@ public class GattServiceBinderTest {
 
         mBinder.unregisterSync(callback, mAttributionSource, SynchronousResultReceiver.get());
 
-        verify(mService).unregisterSync(callback, mAttributionSource);
+        verify(mScanHelper).unregisterSync(callback, mAttributionSource);
     }
 
     @Test

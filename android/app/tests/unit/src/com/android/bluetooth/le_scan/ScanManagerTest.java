@@ -130,6 +130,7 @@ public class ScanManagerTest {
 
     @Mock private AdapterService mAdapterService;
     @Mock private GattService mMockGattService;
+    @Mock private TransitionalScanHelper mMockScanHelper;
     @Mock private BluetoothAdapterProxy mBluetoothAdapterProxy;
     @Mock private LocationManager mLocationManager;
     @Spy private GattObjectsFactory mFactory = GattObjectsFactory.getInstance();
@@ -199,6 +200,7 @@ public class ScanManagerTest {
         mScanManager =
                 new ScanManager(
                         mMockGattService,
+                        mMockScanHelper,
                         mAdapterService,
                         mBluetoothAdapterProxy,
                         mTestLooper.getLooper());
@@ -210,7 +212,8 @@ public class ScanManagerTest {
         assertThat(mLatch).isNotNull();
 
         mScanReportDelay = DEFAULT_SCAN_REPORT_DELAY_MS;
-        mMockAppScanStats = spy(new AppScanStats("Test", null, null, mMockGattService));
+        mMockAppScanStats =
+                spy(new AppScanStats("Test", null, null, mMockGattService, mMockScanHelper));
     }
 
     @After
