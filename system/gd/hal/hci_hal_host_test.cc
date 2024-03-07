@@ -16,6 +16,7 @@
 
 #include "hal/hci_hal_host.h"
 
+#include <bluetooth/log.h>
 #include <fcntl.h>
 #include <gtest/gtest.h>
 #include <netdb.h>
@@ -85,7 +86,7 @@ class FakeRootcanalDesktopHciServer {
 
     RUN_NO_INTR(listen_fd_ = socket(AF_INET, SOCK_STREAM, 0));
     if (listen_fd_ < 0) {
-      LOG_WARN("Error creating socket for test channel.");
+      log::warn("Error creating socket for test channel.");
       return;
     }
 
@@ -94,13 +95,13 @@ class FakeRootcanalDesktopHciServer {
     listen_address.sin_addr.s_addr = htonl(INADDR_ANY);
 
     if (bind(listen_fd_, reinterpret_cast<sockaddr*>(&listen_address), sockaddr_in_size) < 0) {
-      LOG_WARN("Error binding test channel listener socket to address.");
+      log::warn("Error binding test channel listener socket to address.");
       close(listen_fd_);
       return;
     }
 
     if (listen(listen_fd_, 1) < 0) {
-      LOG_WARN("Error listening for test channel.");
+      log::warn("Error listening for test channel.");
       close(listen_fd_);
       return;
     }
@@ -118,15 +119,15 @@ class FakeRootcanalDesktopHciServer {
     int flags = fcntl(accept_fd, F_GETFL, NULL);
     int ret = fcntl(accept_fd, F_SETFL, flags | O_NONBLOCK);
     if (ret == -1) {
-      LOG_ERROR("Can't fcntl");
+      log::error("Can't fcntl");
       return -1;
     }
 
     if (accept_fd < 0) {
-      LOG_WARN("Error accepting test channel connection errno=%d (%s).", errno, strerror(errno));
+      log::warn("Error accepting test channel connection errno={} ({}).", errno, strerror(errno));
 
       if (errno != EAGAIN && errno != EWOULDBLOCK) {
-        LOG_ERROR("Closing listen_fd_ (won't try again).");
+        log::error("Closing listen_fd_ (won't try again).");
         close(listen_fd_);
         return -1;
       }
