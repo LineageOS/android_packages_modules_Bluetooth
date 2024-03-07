@@ -309,6 +309,10 @@ public class BluetoothCall {
         return getDetails().hasProperty(Call.Details.PROPERTY_IS_EXTERNAL_CALL);
     }
 
+    public boolean isHighDefAudio() {
+        return getDetails().hasProperty(Call.Details.PROPERTY_HIGH_DEF_AUDIO);
+    }
+
     public Integer getId() {
         return System.identityHashCode(mCall);
     }
