@@ -186,7 +186,8 @@ class LeAudioDevice {
       uint8_t direction,
       const set_configurations::CodecConfigSetting& codec_capability_setting);
   uint8_t GetSupportedAudioChannelCounts(uint8_t direction) const;
-  uint8_t GetPhyBitmask(void);
+  uint8_t GetPhyBitmask(void) const;
+  uint8_t GetPreferredPhyBitmask(uint8_t preferred_phy) const;
   bool ConfigureAses(
       const le_audio::set_configurations::SetConfiguration& ent,
       types::LeAudioContextType context_type,
