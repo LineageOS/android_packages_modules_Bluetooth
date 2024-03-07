@@ -76,6 +76,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.FutureTask;
 
 /**
  * Provides Bluetooth Headset and Handsfree profile, as a service in the Bluetooth application.
@@ -1889,7 +1890,8 @@ public class HeadsetService extends ProfileService {
             mSystemInterface.getHeadsetPhoneState().setCallState(callState);
             // Suspend A2DP when call about is about to become active
             if (mActiveDevice != null && callState != HeadsetHalConstants.CALL_STATE_DISCONNECTED
-                    && !mSystemInterface.isCallIdle() && isCallIdleBefore) {
+                && !mSystemInterface.isCallIdle() && isCallIdleBefore
+                && !Flags.isScoManagedByAudio()) {
                 mSystemInterface.getAudioManager().setA2dpSuspended(true);
                 if (isAtLeastU()) {
                     mSystemInterface.getAudioManager().setLeAudioSuspended(true);
@@ -1899,9 +1901,25 @@ public class HeadsetService extends ProfileService {
         doForEachConnectedStateMachine(
                 stateMachine -> stateMachine.sendMessage(HeadsetStateMachine.CALL_STATE_CHANGED,
                         new HeadsetCallState(numActive, numHeld, callState, number, type, name)));
+        if (Flags.isScoManagedByAudio()) {
+            if (mActiveDevice == null) {
+                Log.i(TAG, "HeadsetService's active device is null");
+            } else {
+                // wait until mActiveDevice's state machine processed CALL_STATE_CHANGED message,
+                // then Audio Framework starts the SCO connection
+                FutureTask task = new FutureTask(() -> {}, null);
+                mStateMachines.get(mActiveDevice).getHandler().post(task);
+                try {
+                    task.get();
+                } catch (Exception e) {
+                    Log.e(TAG,
+                        "Exception when waiting for CALL_STATE_CHANGED message" + e.toString());
+                }
+            }
+        }
         getStateMachinesThreadHandler().post(() -> {
             if (callState == HeadsetHalConstants.CALL_STATE_IDLE
-                    && mSystemInterface.isCallIdle() && !isAudioOn()) {
+                && mSystemInterface.isCallIdle() && !isAudioOn() && !Flags.isScoManagedByAudio()) {
                 // Resume A2DP when call ended and SCO is not connected
                 mSystemInterface.getAudioManager().setA2dpSuspended(false);
                 if (isAtLeastU()) {
