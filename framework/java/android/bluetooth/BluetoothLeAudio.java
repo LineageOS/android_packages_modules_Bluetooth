@@ -668,6 +668,7 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
      * @hide
      */
     @FlaggedApi(Flags.FLAG_LEAUDIO_CALLBACK_ON_GROUP_STREAM_STATUS)
+    @SystemApi
     public static final int GROUP_STREAM_STATUS_IDLE = IBluetoothLeAudio.GROUP_STREAM_STATUS_IDLE;
 
     /**
@@ -676,6 +677,7 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
      * @hide
      */
     @FlaggedApi(Flags.FLAG_LEAUDIO_CALLBACK_ON_GROUP_STREAM_STATUS)
+    @SystemApi
     public static final int GROUP_STREAM_STATUS_STREAMING =
             IBluetoothLeAudio.GROUP_STREAM_STATUS_STREAMING;
 
