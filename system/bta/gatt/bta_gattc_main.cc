@@ -321,7 +321,7 @@ bool bta_gattc_sm_execute(tBTA_GATTC_CLCB* p_clcb, uint16_t event,
   event &= 0x00FF;
 
   /* set next state */
-  p_clcb->state = state_table[event][BTA_GATTC_NEXT_STATE];
+  p_clcb->state = (tBTA_GATTC_STATE)(state_table[event][BTA_GATTC_NEXT_STATE]);
 
   /* execute action functions */
   for (i = 0; i < BTA_GATTC_ACTIONS; i++) {
