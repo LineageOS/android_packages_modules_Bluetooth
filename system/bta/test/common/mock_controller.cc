@@ -62,6 +62,11 @@ bool supports_configure_data_path(void) {
   return controller_interface->SupportsConfigureDataPath();
 }
 
+bool supports_ble_coded_phy(void) {
+  LOG_ASSERT(controller_interface) << "Mock controller not set!";
+  return controller_interface->SupportsBleCodedPhy();
+}
+
 const controller_t* controller_get_interface() {
   static controller_t* controller_instance = new controller_t();
 
@@ -76,6 +81,7 @@ const controller_t* controller_get_interface() {
       &supports_ble_connected_isochronous_stream_peripheral;
   controller_instance->supports_configure_data_path =
       &supports_configure_data_path;
+  controller_instance->SupportsBleCodedPhy = &supports_ble_coded_phy;
 
   return controller_instance;
 }

@@ -449,8 +449,7 @@ uint32_t LeAudioDeviceGroup::GetSduInterval(uint8_t direction) const {
        leAudioDevice = GetNextActiveDevice(leAudioDevice)) {
     struct ase* ase = leAudioDevice->GetFirstActiveAseByDirection(direction);
     if (!ase) continue;
-
-    return ase->codec_config.GetAsCoreCodecConfig().GetFrameDurationUs();
+    return ase->qos_config.sdu_interval;
   }
 
   return 0;
@@ -494,7 +493,8 @@ uint8_t LeAudioDeviceGroup::GetFraming(void) const {
     if (!ase) continue;
 
     do {
-      if (ase->framing == types::kFramingUnframedPduUnsupported)
+      if (ase->qos_preferences.supported_framing ==
+          types::kFramingUnframedPduUnsupported)
         return bluetooth::hci::kIsoCigFramingFramed;
     } while ((ase = leAudioDevice->GetNextActiveAse(ase)));
   } while ((leAudioDevice = GetNextActiveDevice(leAudioDevice)));
@@ -517,10 +517,11 @@ static uint16_t find_max_transport_latency(const LeAudioDeviceGroup* group,
 
       if (max_transport_latency == 0) {
         // first assignment
-        max_transport_latency = ase->max_transport_latency;
-      } else if (ase->max_transport_latency < max_transport_latency) {
-        if (ase->max_transport_latency != 0) {
-          max_transport_latency = ase->max_transport_latency;
+        max_transport_latency = ase->qos_config.max_transport_latency;
+      } else if (ase->qos_config.max_transport_latency <
+                 max_transport_latency) {
+        if (ase->qos_config.max_transport_latency != 0) {
+          max_transport_latency = ase->qos_config.max_transport_latency;
         } else {
           LOG_WARN("Trying to set latency back to 0, ASE ID %d", ase->id);
         }
@@ -595,10 +596,10 @@ uint8_t LeAudioDeviceGroup::GetRtn(uint8_t direction, uint8_t cis_id) const {
     auto ases_pair = leAudioDevice->GetAsesByCisId(cis_id);
 
     if (ases_pair.sink && direction == types::kLeAudioDirectionSink) {
-      return ases_pair.sink->retrans_nb;
+      return ases_pair.sink->qos_config.retrans_nb;
     } else if (ases_pair.source &&
                direction == types::kLeAudioDirectionSource) {
-      return ases_pair.source->retrans_nb;
+      return ases_pair.source->qos_config.retrans_nb;
     }
   } while ((leAudioDevice = GetNextActiveDevice(leAudioDevice)));
 
@@ -615,10 +616,10 @@ uint16_t LeAudioDeviceGroup::GetMaxSduSize(uint8_t direction,
     auto ases_pair = leAudioDevice->GetAsesByCisId(cis_id);
 
     if (ases_pair.sink && direction == types::kLeAudioDirectionSink) {
-      return ases_pair.sink->max_sdu_size;
+      return ases_pair.sink->qos_config.max_sdu_size;
     } else if (ases_pair.source &&
                direction == types::kLeAudioDirectionSource) {
-      return ases_pair.source->max_sdu_size;
+      return ases_pair.source->qos_config.max_sdu_size;
     }
   } while ((leAudioDevice = GetNextActiveDevice(leAudioDevice)));
 
@@ -649,15 +650,16 @@ uint8_t LeAudioDeviceGroup::GetPhyBitmask(uint8_t direction) const {
         phy_bitfield &= leAudioDevice->GetPhyBitmask();
 
         // A value of 0x00 denotes no preference
-        if (ase->preferred_phy && (phy_bitfield & ase->preferred_phy)) {
-          phy_bitfield &= ase->preferred_phy;
+        if (ase->qos_preferences.preferred_phy &&
+            (phy_bitfield & ase->qos_preferences.preferred_phy)) {
+          phy_bitfield &= ase->qos_preferences.preferred_phy;
           LOG_DEBUG("Using ASE preferred phy 0x%02x",
                     static_cast<int>(phy_bitfield));
         } else {
           LOG_WARN(
               "ASE preferred 0x%02x has nothing common with phy_bitfield "
               "0x%02x ",
-              static_cast<int>(ase->preferred_phy),
+              static_cast<int>(ase->qos_preferences.preferred_phy),
               static_cast<int>(phy_bitfield));
         }
       }
@@ -696,16 +698,20 @@ bool LeAudioDeviceGroup::GetPresentationDelay(uint32_t* delay,
 
     do {
       /* No common range check */
-      if (ase->pres_delay_min > delay_max || ase->pres_delay_max < delay_min)
+      if (ase->qos_preferences.pres_delay_min > delay_max ||
+          ase->qos_preferences.pres_delay_max < delay_min)
         return false;
 
-      if (ase->pres_delay_min > delay_min) delay_min = ase->pres_delay_min;
-      if (ase->pres_delay_max < delay_max) delay_max = ase->pres_delay_max;
-      if (ase->preferred_pres_delay_min > preferred_delay_min)
-        preferred_delay_min = ase->preferred_pres_delay_min;
-      if (ase->preferred_pres_delay_max < preferred_delay_max &&
-          ase->preferred_pres_delay_max != types::kPresDelayNoPreference)
-        preferred_delay_max = ase->preferred_pres_delay_max;
+      if (ase->qos_preferences.pres_delay_min > delay_min)
+        delay_min = ase->qos_preferences.pres_delay_min;
+      if (ase->qos_preferences.pres_delay_max < delay_max)
+        delay_max = ase->qos_preferences.pres_delay_max;
+      if (ase->qos_preferences.preferred_pres_delay_min > preferred_delay_min)
+        preferred_delay_min = ase->qos_preferences.preferred_pres_delay_min;
+      if (ase->qos_preferences.preferred_pres_delay_max < preferred_delay_max &&
+          ase->qos_preferences.preferred_pres_delay_max !=
+              types::kPresDelayNoPreference)
+        preferred_delay_max = ase->qos_preferences.preferred_pres_delay_max;
     } while ((ase = leAudioDevice->GetNextActiveAseWithSameDirection(ase)));
   } while ((leAudioDevice = GetNextActiveDevice(leAudioDevice)));
 
