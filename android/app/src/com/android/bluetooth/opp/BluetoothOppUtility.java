@@ -302,10 +302,9 @@ public class BluetoothOppUtility {
         // Open a specific media item using ParcelFileDescriptor.
         ContentResolver resolver = context.getContentResolver();
         String readOnlyMode = "r";
-        ParcelFileDescriptor pfd = null;
-        try {
-            pfd = BluetoothMethodProxy.getInstance()
-                    .contentResolverOpenFileDescriptor(resolver, uri, readOnlyMode);
+        try (ParcelFileDescriptor unusedPfd =
+                BluetoothMethodProxy.getInstance()
+                        .contentResolverOpenFileDescriptor(resolver, uri, readOnlyMode)) {
             return true;
         } catch (IOException e) {
             ContentProfileErrorReportUtils.report(
