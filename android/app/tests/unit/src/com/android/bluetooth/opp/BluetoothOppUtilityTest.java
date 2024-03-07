@@ -40,6 +40,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.ParcelFileDescriptor;
 
 import androidx.test.platform.app.InstrumentationRegistry;
 
@@ -57,7 +58,6 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -177,9 +177,11 @@ public class BluetoothOppUtilityTest {
     }
 
     @Test
-    public void openReceivedFile_fileExist_HandlingApplicationExist() throws FileNotFoundException {
+    public void openReceivedFile_fileExist_HandlingApplicationExist() throws Exception {
         Uri contentResolverUri = Uri.parse("content://com.android.bluetooth.opp/btopp/0123");
         Uri fileUri = Uri.parse("content:///tmp/randomFileName.txt");
+
+        ParcelFileDescriptor pfd = mock(ParcelFileDescriptor.class);
 
         Context spiedContext = spy(new ContextWrapper(mContext));
         // Control BluetoothOppUtility#fileExists flow
@@ -191,8 +193,7 @@ public class BluetoothOppUtilityTest {
         doReturn(fileUri.toString()).when(mCursor).getString(anyInt());
 
         doReturn(0).when(mCallProxy).contentResolverDelete(any(), any(), any(), any());
-        doReturn(null).when(mCallProxy).contentResolverOpenFileDescriptor(any(),
-                eq(fileUri), any());
+        doReturn(pfd).when(mCallProxy).contentResolverOpenFileDescriptor(any(), eq(fileUri), any());
 
         // Control BluetoothOppUtility#isRecognizedFileType flow
         PackageManager mockManager = mock(PackageManager.class);
@@ -208,14 +209,15 @@ public class BluetoothOppUtilityTest {
                         argument.getData(), Uri.parse("content:///tmp/randomFileName.txt")
                 ) && Objects.equals(argument.getAction(), Intent.ACTION_VIEW)
         ));
+
+        verify(pfd).close();
     }
 
     @Test
-    public void openReceivedFile_fileExist_HandlingApplicationNotExist()
-            throws FileNotFoundException {
-
+    public void openReceivedFile_fileExist_HandlingApplicationNotExist() throws Exception {
         Uri contentResolverUri = Uri.parse("content://com.android.bluetooth.opp/btopp/0123");
         Uri fileUri = Uri.parse("content:///tmp/randomFileName.txt");
+        ParcelFileDescriptor pfd = mock(ParcelFileDescriptor.class);
 
         Context spiedContext = spy(new ContextWrapper(mContext));
         // Control BluetoothOppUtility#fileExists flow
@@ -228,8 +230,7 @@ public class BluetoothOppUtilityTest {
 
 
         doReturn(0).when(mCallProxy).contentResolverDelete(any(), any(), any(), any());
-        doReturn(null).when(mCallProxy).contentResolverOpenFileDescriptor(any(),
-                eq(fileUri), any());
+        doReturn(pfd).when(mCallProxy).contentResolverOpenFileDescriptor(any(), eq(fileUri), any());
 
         // Control BluetoothOppUtility#isRecognizedFileType flow
         PackageManager mockManager = mock(PackageManager.class);
@@ -246,8 +247,8 @@ public class BluetoothOppUtilityTest {
                 argThat(argument -> argument.getComponent().getClassName().equals(
                         BluetoothOppBtErrorActivity.class.getName())
                 ));
+        verify(pfd).close();
     }
-
 
     @Test
     public void fillRecord_filledAllProperties() {
