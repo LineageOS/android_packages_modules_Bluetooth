@@ -45,6 +45,7 @@ import com.android.modules.utils.SynchronousResultReceiver;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
@@ -744,7 +745,7 @@ public final class BluetoothA2dp implements BluetoothProfile {
     @RequiresLegacyBluetoothPermission
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
     @FlaggedApi(Flags.FLAG_A2DP_OFFLOAD_CODEC_EXTENSIBILITY)
-    public List<BluetoothCodecType> getSupportedCodecTypes() {
+    public Collection<BluetoothCodecType> getSupportedCodecTypes() {
         Log.d(TAG, "getSupportedSourceCodecTypes()");
         final IBluetoothA2dp service = getService();
         List<BluetoothCodecType> defaultValue = new ArrayList<>();
