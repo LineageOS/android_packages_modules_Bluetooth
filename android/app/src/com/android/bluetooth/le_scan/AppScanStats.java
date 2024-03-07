@@ -19,6 +19,7 @@ package com.android.bluetooth.le_scan;
 import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanSettings;
+import android.content.Context;
 import android.os.BatteryStatsManager;
 import android.os.Binder;
 import android.os.SystemClock;
@@ -29,7 +30,6 @@ import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.gatt.ContextMap;
-import com.android.bluetooth.gatt.GattService;
 import com.android.bluetooth.util.WorkSourceUtil;
 import com.android.internal.annotations.GuardedBy;
 
@@ -66,8 +66,8 @@ public class AppScanStats {
     // ContextMap here is needed to grab Apps and Connections
     ContextMap mContextMap;
 
-    // GattService is needed to add scan event protos to be dumped later
-    final GattService mGattService;
+    // TransitionalScanHelper is needed to add scan event protos to be dumped later
+    final TransitionalScanHelper mScanHelper;
 
     // Battery stats is used to keep track of scans and result stats
     BatteryStatsManager mBatteryStatsManager;
@@ -149,11 +149,16 @@ public class AppScanStats {
     private long stopTime = 0;
     private int results = 0;
 
-    public AppScanStats(String name, WorkSource source, ContextMap map, GattService service) {
+    public AppScanStats(
+            String name,
+            WorkSource source,
+            ContextMap map,
+            Context context,
+            TransitionalScanHelper scanHelper) {
         appName = name;
         mContextMap = map;
-        mGattService = service;
-        mBatteryStatsManager = service.getSystemService(BatteryStatsManager.class);
+        mScanHelper = scanHelper;
+        mBatteryStatsManager = context.getSystemService(BatteryStatsManager.class);
 
         if (source == null) {
             // Bill the caller if the work source isn't passed through
@@ -263,7 +268,7 @@ public class AppScanStats {
                         BluetoothMetricsProto.ScanEvent.ScanTechnologyType.SCAN_TECH_TYPE_LE)
                 .setEventTimeMillis(System.currentTimeMillis())
                 .setInitiator(truncateAppName(appName)).build();
-        mGattService.addScanEvent(scanEvent);
+        mScanHelper.addScanEvent(scanEvent);
 
         if (!isScanning()) {
             mScanStartTime = startTime;
@@ -308,7 +313,7 @@ public class AppScanStats {
                 .setInitiator(truncateAppName(appName))
                 .setNumberResults(scan.results)
                 .build();
-        mGattService.addScanEvent(scanEvent);
+        mScanHelper.addScanEvent(scanEvent);
 
         mTotalScanTime += scanDuration;
         long activeDuration = scanDuration - scan.suspendDuration;
