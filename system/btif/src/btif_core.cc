@@ -28,6 +28,8 @@
 
 #define LOG_TAG "bt_btif_core"
 
+#include <android_bluetooth_flags.h>
+#include <android_bluetooth_sysprop.h>
 #include <base/at_exit.h>
 #include <base/functional/bind.h>
 #include <base/logging.h>
@@ -216,8 +218,25 @@ void btif_enable_bluetooth_evt() {
 
   GetInterfaceToProfiles()->onBluetoothEnabled();
 
-  /* load did configuration */
-  bte_load_did_conf(BTE_DID_CONF_FILE);
+  if (!IS_FLAG_ENABLED(load_did_config_from_sysprops)) {
+    bte_load_did_conf(BTE_DID_CONF_FILE);
+  } else {
+    tSDP_DI_RECORD record = {
+        .vendor = uint16_t(
+            GET_SYSPROP(DeviceIDProperties, vendor_id, LMP_COMPID_GOOGLE)),
+        .vendor_id_source = uint16_t(GET_SYSPROP(
+            DeviceIDProperties, vendor_id_source, DI_VENDOR_ID_SOURCE_BTSIG)),
+        .product = uint16_t(GET_SYSPROP(DeviceIDProperties, product_id, 0)),
+        .primary_record = true,
+    };
+
+    uint32_t record_handle;
+    tBTA_STATUS status = BTA_DmSetLocalDiRecord(&record, &record_handle);
+    if (status != BTA_SUCCESS) {
+      log::error("unable to set device ID record error {}.",
+                 bta_status_text(status));
+    }
+  }
 
   btif_dm_load_local_oob();
 

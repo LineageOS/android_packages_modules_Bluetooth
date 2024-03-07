@@ -10,6 +10,7 @@ sysprop_library {
         "avrcp.sysprop",
         "ble.sysprop",
         "bta.sysprop",
+        "device_id.sysprop",
         "hfp.sysprop",
     ],
     property_owner: "Platform",
