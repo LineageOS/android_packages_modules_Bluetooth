@@ -212,3 +212,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_quick_leaudio_toggle_switch_fix"
+    namespace: "bluetooth"
+    description: "Fix for one device being not connected when toggle LeAudio is switch during bonding"
+    bug: "328595942"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
