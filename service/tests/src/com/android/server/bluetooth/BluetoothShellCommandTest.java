@@ -30,7 +30,6 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothAdapter;
-import android.content.Context;
 import android.os.Binder;
 import android.os.RemoteException;
 
@@ -62,9 +61,6 @@ public class BluetoothShellCommandTest {
 
     @Mock BluetoothServiceBinder mBinder;
 
-    @Mock
-    Context mContext;
-
     BluetoothShellCommand mShellCommand;
 
     @Before
@@ -72,7 +68,7 @@ public class BluetoothShellCommandTest {
         MockitoAnnotations.initMocks(this);
         doReturn(mBinder).when(mManagerService).getBinder();
 
-        mShellCommand = new BluetoothShellCommand(mManagerService, mContext);
+        mShellCommand = new BluetoothShellCommand(mManagerService);
         mShellCommand.init(
                 mock(Binder.class), mock(FileDescriptor.class), mock(FileDescriptor.class),
                 mock(FileDescriptor.class), new String[0], -1);

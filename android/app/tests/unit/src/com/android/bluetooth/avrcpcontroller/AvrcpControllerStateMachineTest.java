@@ -56,7 +56,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -74,6 +75,8 @@ public class AvrcpControllerStateMachineTest {
 
     @Rule public final ServiceTestRule mAvrcpServiceRule = new ServiceTestRule();
     @Rule public final ServiceTestRule mA2dpServiceRule = new ServiceTestRule();
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock private AdapterService mA2dpAdapterService;
     @Mock private AdapterService mAvrcpAdapterService;
     @Mock private A2dpSinkService mA2dpSinkService;
@@ -97,7 +100,6 @@ public class AvrcpControllerStateMachineTest {
         }
         Assert.assertNotNull(Looper.myLooper());
 
-        MockitoAnnotations.initMocks(this);
 
         // Start a real A2dpSinkService so we can replace the static instance with our mock
         doReturn(mDatabaseManager).when(mA2dpAdapterService).getDatabase();

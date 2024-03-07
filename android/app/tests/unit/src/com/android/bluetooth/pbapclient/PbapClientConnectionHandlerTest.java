@@ -42,10 +42,12 @@ import com.android.bluetooth.btservice.storage.DatabaseManager;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 @SmallTest
 @RunWith(AndroidJUnit4.class)
@@ -58,6 +60,8 @@ public class PbapClientConnectionHandlerTest {
     private Looper mLooper;
     private Context mTargetContext;
     private BluetoothDevice mRemoteDevice;
+
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock
     private AdapterService mAdapterService;
@@ -77,7 +81,6 @@ public class PbapClientConnectionHandlerTest {
     public void setUp() throws Exception {
         mTargetContext = spy(new ContextWrapper(
                 InstrumentationRegistry.getInstrumentation().getTargetContext()));
-        MockitoAnnotations.initMocks(this);
         TestUtils.setAdapterService(mAdapterService);
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
         mService = new PbapClientService(mTargetContext);

@@ -43,11 +43,13 @@ import com.android.bluetooth.le_audio.LeAudioService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.HashMap;
 import java.util.List;
@@ -72,6 +74,8 @@ public class CsipSetCoordinatorServiceTest {
     private CsipSetCoordinatorStateMachine mCsipSetCoordinatorStateMachine;
     private static final int TIMEOUT_MS = 1000;
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock private AdapterService mAdapterService;
     @Mock private LeAudioService mLeAudioService;
     @Spy
@@ -92,8 +96,6 @@ public class CsipSetCoordinatorServiceTest {
         }
         Assert.assertNotNull(Looper.myLooper());
 
-        // Set up mocks and test assets
-        MockitoAnnotations.initMocks(this);
 
         TestUtils.setAdapterService(mAdapterService);
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();

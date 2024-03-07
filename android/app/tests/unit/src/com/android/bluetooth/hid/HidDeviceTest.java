@@ -41,10 +41,12 @@ import com.android.bluetooth.btservice.storage.DatabaseManager;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -69,6 +71,8 @@ public class HidDeviceTest {
     private static final int CALLBACK_ON_SET_PROTOCOL = 4;
     private static final int CALLBACK_ON_INTR_DATA = 5;
     private static final int CALLBACK_ON_VIRTUAL_UNPLUG = 6;
+
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock private AdapterService mAdapterService;
     @Mock private DatabaseManager mDatabaseManager;
@@ -100,8 +104,6 @@ public class HidDeviceTest {
         }
         Assert.assertNotNull(Looper.myLooper());
 
-        // Set up mocks and test assets
-        MockitoAnnotations.initMocks(this);
         TestUtils.setAdapterService(mAdapterService);
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
         setHidDeviceNativeInterfaceInstance(mHidDeviceNativeInterface);

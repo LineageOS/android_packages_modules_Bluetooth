@@ -781,6 +781,24 @@ class StateMachineTestBase : public Test {
       uint8_t coding_format = codec_specific::kLc3CodingFormat,
       uint16_t vendor_company_id = 0x0000, uint16_t vendor_codec_id = 0x0000,
       std::vector<uint8_t> metadata = {}) {
+    auto ltv_map = types::LeAudioLtvMap({
+        {codec_specific::kCapTypeSupportedSamplingFrequencies,
+         {(uint8_t)(sampling_frequencies_bitfield),
+          (uint8_t)(sampling_frequencies_bitfield >> 8)}},
+        {codec_specific::kCapTypeSupportedFrameDurations,
+         {supported_frame_durations_bitfield}},
+        {codec_specific::kCapTypeAudioChannelCount,
+         {audio_channel_count_bitfield}},
+        {codec_specific::kCapTypeSupportedOctetsPerCodecFrame,
+         {
+             // Min
+             (uint8_t)(supported_octets_per_codec_frame_min),
+             (uint8_t)(supported_octets_per_codec_frame_min >> 8),
+             // Max
+             (uint8_t)(supported_octets_per_codec_frame_max),
+             (uint8_t)(supported_octets_per_codec_frame_max >> 8),
+         }},
+    });
     recs.push_back({
         .codec_id =
             {
@@ -788,24 +806,8 @@ class StateMachineTestBase : public Test {
                 .vendor_company_id = vendor_company_id,
                 .vendor_codec_id = vendor_codec_id,
             },
-        .codec_spec_caps = types::LeAudioLtvMap({
-            {codec_specific::kCapTypeSupportedSamplingFrequencies,
-             {(uint8_t)(sampling_frequencies_bitfield),
-              (uint8_t)(sampling_frequencies_bitfield >> 8)}},
-            {codec_specific::kCapTypeSupportedFrameDurations,
-             {supported_frame_durations_bitfield}},
-            {codec_specific::kCapTypeAudioChannelCount,
-             {audio_channel_count_bitfield}},
-            {codec_specific::kCapTypeSupportedOctetsPerCodecFrame,
-             {
-                 // Min
-                 (uint8_t)(supported_octets_per_codec_frame_min),
-                 (uint8_t)(supported_octets_per_codec_frame_min >> 8),
-                 // Max
-                 (uint8_t)(supported_octets_per_codec_frame_max),
-                 (uint8_t)(supported_octets_per_codec_frame_max >> 8),
-             }},
-        }),
+        .codec_spec_caps = ltv_map,
+        .codec_spec_caps_raw = ltv_map.RawPacket(),
         .metadata = std::move(metadata),
     });
   }

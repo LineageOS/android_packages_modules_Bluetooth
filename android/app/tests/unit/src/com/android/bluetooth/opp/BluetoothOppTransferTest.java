@@ -53,10 +53,12 @@ import com.android.obex.ObexTransport;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.util.Objects;
 
@@ -77,6 +79,8 @@ public class BluetoothOppTransferTest {
     private final int mTimestamp = 123456789;
     private final boolean mMediaScanned = false;
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock
     BluetoothOppObexSession mSession;
     @Mock
@@ -89,7 +93,6 @@ public class BluetoothOppTransferTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         BluetoothMethodProxy.setInstanceForTesting(mCallProxy);
         doReturn(0).when(mCallProxy).contentResolverDelete(any(), nullable(Uri.class),
                 nullable(String.class), nullable(String[].class));

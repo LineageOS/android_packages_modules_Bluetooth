@@ -31,11 +31,13 @@ import com.android.bluetooth.BluetoothMethodProxy;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 @SmallTest
 @RunWith(AndroidJUnit4.class)
@@ -46,6 +48,8 @@ public class SmsMmsContactsTest {
     private static final String TEST_PHONE = "test_phone";
     private static final String TEST_CONTACT_NAME_FILTER = "test_contact_name_filter";
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock
     private ContentResolver mResolver;
     @Spy
@@ -55,7 +59,6 @@ public class SmsMmsContactsTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         BluetoothMethodProxy.setInstanceForTesting(mMapMethodProxy);
         mContacts = new SmsMmsContacts();
     }

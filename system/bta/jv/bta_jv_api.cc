@@ -60,15 +60,15 @@ bool bta_jv_enabled = false;
  *                  be called before other function in the JV API are
  *                  called.
  *
- * Returns          BTA_JV_SUCCESS if successful.
- *                  BTA_JV_FAIL if internal failure.
+ * Returns          tBTA_JV_STATUS::SUCCESS if successful.
+ *                  tBTA_JV_STATUS::FAILURE if internal failure.
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvEnable(tBTA_JV_DM_CBACK* p_cback) {
   log::verbose("");
   if (!p_cback || bta_jv_enabled) {
     log::error("failure");
-    return BTA_JV_FAILURE;
+    return tBTA_JV_STATUS::FAILURE;
   }
 
   memset(&bta_jv_cb, 0, sizeof(tBTA_JV_CB));
@@ -82,7 +82,7 @@ tBTA_JV_STATUS BTA_JvEnable(tBTA_JV_DM_CBACK* p_cback) {
   bta_jv_enabled = true;
 
   do_in_main_thread(FROM_HERE, Bind(&bta_jv_enable, p_cback));
-  return BTA_JV_SUCCESS;
+  return tBTA_JV_STATUS::SUCCESS;
 }
 
 /** Disable the Java I/F */
@@ -139,15 +139,15 @@ void BTA_JvGetChannelId(int conn_type, uint32_t id, int32_t channel) {
  *   channel        The channel to free
  *   conn_type      one of BTA_JV_CONN_TYPE_
  *
- * Returns          BTA_JV_SUCCESS, if the request is being processed.
- *                  BTA_JV_FAILURE, otherwise.
+ * Returns          tBTA_JV_STATUS::SUCCESS, if the request is being processed.
+ *                  tBTA_JV_STATUS::FAILURE, otherwise.
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvFreeChannel(uint16_t channel, int conn_type) {
   log::verbose("channel:{}, conn_type:{}", channel, conn_type);
 
   do_in_main_thread(FROM_HERE, Bind(&bta_jv_free_scn, conn_type, channel));
-  return BTA_JV_SUCCESS;
+  return tBTA_JV_STATUS::SUCCESS;
 }
 
 /*******************************************************************************
@@ -159,8 +159,8 @@ tBTA_JV_STATUS BTA_JvFreeChannel(uint16_t channel, int conn_type) {
  *                  complete the tBTA_JV_DM_CBACK callback function will be
  *                  called with a BTA_JV_DISCOVERY_COMP_EVT.
  *
- * Returns          BTA_JV_SUCCESS, if the request is being processed.
- *                  BTA_JV_FAILURE, otherwise.
+ * Returns          tBTA_JV_STATUS::SUCCESS, if the request is being processed.
+ *                  tBTA_JV_STATUS::FAILURE, otherwise.
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvStartDiscovery(const RawAddress& bd_addr,
@@ -175,7 +175,7 @@ tBTA_JV_STATUS BTA_JvStartDiscovery(const RawAddress& bd_addr,
   do_in_main_thread(FROM_HERE,
                     Bind(&bta_jv_start_discovery, bd_addr, num_uuid,
                          base::Owned(uuid_list_copy), rfcomm_slot_id));
-  return BTA_JV_SUCCESS;
+  return tBTA_JV_STATUS::SUCCESS;
 }
 
 /*******************************************************************************
@@ -186,15 +186,15 @@ tBTA_JV_STATUS BTA_JvStartDiscovery(const RawAddress& bd_addr,
  *                  When the operation is complete the tBTA_JV_DM_CBACK callback
  *                  function will be called with a BTA_JV_CREATE_RECORD_EVT.
  *
- * Returns          BTA_JV_SUCCESS, if the request is being processed.
- *                  BTA_JV_FAILURE, otherwise.
+ * Returns          tBTA_JV_STATUS::SUCCESS, if the request is being processed.
+ *                  tBTA_JV_STATUS::FAILURE, otherwise.
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvCreateRecordByUser(uint32_t rfcomm_slot_id) {
   log::verbose("rfcomm_slot_id: {}", rfcomm_slot_id);
 
   do_in_main_thread(FROM_HERE, Bind(&bta_jv_create_record, rfcomm_slot_id));
-  return BTA_JV_SUCCESS;
+  return tBTA_JV_STATUS::SUCCESS;
 }
 
 /*******************************************************************************
@@ -203,15 +203,15 @@ tBTA_JV_STATUS BTA_JvCreateRecordByUser(uint32_t rfcomm_slot_id) {
  *
  * Description      Delete a service record in the local SDP database.
  *
- * Returns          BTA_JV_SUCCESS, if the request is being processed.
- *                  BTA_JV_FAILURE, otherwise.
+ * Returns          tBTA_JV_STATUS::SUCCESS, if the request is being processed.
+ *                  tBTA_JV_STATUS::FAILURE, otherwise.
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvDeleteRecord(uint32_t handle) {
   log::verbose("handle:{}", handle);
 
   do_in_main_thread(FROM_HERE, Bind(&bta_jv_delete_record, handle));
-  return BTA_JV_SUCCESS;
+  return tBTA_JV_STATUS::SUCCESS;
 }
 
 /*******************************************************************************
@@ -252,19 +252,19 @@ void BTA_JvL2capConnect(int conn_type, tBTA_SEC sec_mask, tBTA_JV_ROLE role,
  *
  * Description      This function closes an L2CAP client connection
  *
- * Returns          BTA_JV_SUCCESS, if the request is being processed.
- *                  BTA_JV_FAILURE, otherwise.
+ * Returns          tBTA_JV_STATUS::SUCCESS, if the request is being processed.
+ *                  tBTA_JV_STATUS::FAILURE, otherwise.
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvL2capClose(uint32_t handle) {
   log::verbose("handle:{}", handle);
 
   if (handle >= BTA_JV_MAX_L2C_CONN || !bta_jv_cb.l2c_cb[handle].p_cback)
-    return BTA_JV_FAILURE;
+    return tBTA_JV_STATUS::FAILURE;
 
   do_in_main_thread(
       FROM_HERE, Bind(&bta_jv_l2cap_close, handle, &bta_jv_cb.l2c_cb[handle]));
-  return BTA_JV_SUCCESS;
+  return tBTA_JV_STATUS::SUCCESS;
 }
 
 /*******************************************************************************
@@ -304,8 +304,8 @@ void BTA_JvL2capStartServer(int conn_type, tBTA_SEC sec_mask, tBTA_JV_ROLE role,
  * Description      This function stops the L2CAP server. If the server has an
  *                  active connection, it would be closed.
  *
- * Returns          BTA_JV_SUCCESS, if the request is being processed.
- *                  BTA_JV_FAILURE, otherwise.
+ * Returns          tBTA_JV_STATUS::SUCCESS, if the request is being processed.
+ *                  tBTA_JV_STATUS::FAILURE, otherwise.
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvL2capStopServer(uint16_t local_psm,
@@ -314,7 +314,7 @@ tBTA_JV_STATUS BTA_JvL2capStopServer(uint16_t local_psm,
 
   do_in_main_thread(
       FROM_HERE, Bind(&bta_jv_l2cap_stop_server, local_psm, l2cap_socket_id));
-  return BTA_JV_SUCCESS;
+  return tBTA_JV_STATUS::SUCCESS;
 }
 
 /*******************************************************************************
@@ -325,8 +325,8 @@ tBTA_JV_STATUS BTA_JvL2capStopServer(uint16_t local_psm,
  *                  When the operation is complete, tBTA_JV_L2CAP_CBACK is
  *                  called with BTA_JV_L2CAP_READ_EVT.
  *
- * Returns          BTA_JV_SUCCESS, if the request is being processed.
- *                  BTA_JV_FAILURE, otherwise.
+ * Returns          tBTA_JV_STATUS::SUCCESS, if the request is being processed.
+ *                  tBTA_JV_STATUS::FAILURE, otherwise.
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvL2capRead(uint32_t handle, uint32_t req_id,
@@ -334,10 +334,10 @@ tBTA_JV_STATUS BTA_JvL2capRead(uint32_t handle, uint32_t req_id,
   log::verbose("handle:{}, req_id:{}, len:{}", handle, req_id, len);
 
   if (handle >= BTA_JV_MAX_L2C_CONN || !bta_jv_cb.l2c_cb[handle].p_cback)
-    return BTA_JV_FAILURE;
+    return tBTA_JV_STATUS::FAILURE;
 
   tBTA_JV_L2CAP_READ evt_data;
-  evt_data.status = BTA_JV_FAILURE;
+  evt_data.status = tBTA_JV_STATUS::FAILURE;
   evt_data.handle = handle;
   evt_data.req_id = req_id;
   evt_data.p_data = p_data;
@@ -345,11 +345,11 @@ tBTA_JV_STATUS BTA_JvL2capRead(uint32_t handle, uint32_t req_id,
 
   if (BT_PASS ==
       GAP_ConnReadData((uint16_t)handle, p_data, len, &evt_data.len)) {
-    evt_data.status = BTA_JV_SUCCESS;
+    evt_data.status = tBTA_JV_STATUS::SUCCESS;
   }
   bta_jv_cb.l2c_cb[handle].p_cback(BTA_JV_L2CAP_READ_EVT, (tBTA_JV*)&evt_data,
                                    bta_jv_cb.l2c_cb[handle].l2cap_socket_id);
-  return BTA_JV_SUCCESS;
+  return tBTA_JV_STATUS::SUCCESS;
 }
 
 /*******************************************************************************
@@ -359,19 +359,20 @@ tBTA_JV_STATUS BTA_JvL2capRead(uint32_t handle, uint32_t req_id,
  * Description      This function determined if there is data to read from
  *                    an L2CAP connection
  *
- * Returns          BTA_JV_SUCCESS, if data queue size is in *p_data_size.
- *                  BTA_JV_FAILURE, if error.
+ * Returns          tBTA_JV_STATUS::SUCCESS, if data queue size is in
+ *                  *p_data_size.
+ *                  tBTA_JV_STATUS::FAILURE, if error.
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvL2capReady(uint32_t handle, uint32_t* p_data_size) {
-  tBTA_JV_STATUS status = BTA_JV_FAILURE;
+  tBTA_JV_STATUS status = tBTA_JV_STATUS::FAILURE;
 
   log::verbose("handle:{}", handle);
   if (p_data_size && handle < BTA_JV_MAX_L2C_CONN &&
       bta_jv_cb.l2c_cb[handle].p_cback) {
     *p_data_size = 0;
     if (BT_PASS == GAP_GetRxQueueCnt((uint16_t)handle, p_data_size)) {
-      status = BTA_JV_SUCCESS;
+      status = tBTA_JV_STATUS::SUCCESS;
     }
   }
 
@@ -389,8 +390,8 @@ tBTA_JV_STATUS BTA_JvL2capReady(uint32_t handle, uint32_t* p_data_size) {
  *                  p_data, and will osi_free it. Data length must be smaller
  *                  than remote maximum SDU size.
  *
- * Returns          BTA_JV_SUCCESS, if the request is being processed.
- *                  BTA_JV_FAILURE, otherwise.
+ * Returns          tBTA_JV_STATUS::SUCCESS, if the request is being processed.
+ *                  tBTA_JV_STATUS::FAILURE, otherwise.
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvL2capWrite(uint32_t handle, uint32_t req_id, BT_HDR* msg,
@@ -399,12 +400,12 @@ tBTA_JV_STATUS BTA_JvL2capWrite(uint32_t handle, uint32_t req_id, BT_HDR* msg,
 
   if (handle >= BTA_JV_MAX_L2C_CONN || !bta_jv_cb.l2c_cb[handle].p_cback) {
     osi_free(msg);
-    return BTA_JV_FAILURE;
+    return tBTA_JV_STATUS::FAILURE;
   }
 
   do_in_main_thread(FROM_HERE, Bind(&bta_jv_l2cap_write, handle, req_id, msg,
                                     user_id, &bta_jv_cb.l2c_cb[handle]));
-  return BTA_JV_SUCCESS;
+  return tBTA_JV_STATUS::SUCCESS;
 }
 
 /*******************************************************************************
@@ -419,8 +420,8 @@ tBTA_JV_STATUS BTA_JvL2capWrite(uint32_t handle, uint32_t req_id, BT_HDR* msg,
  *                  When the connection is established or failed,
  *                  tBTA_JV_RFCOMM_CBACK is called with BTA_JV_RFCOMM_OPEN_EVT
  *
- * Returns          BTA_JV_SUCCESS, if the request is being processed.
- *                  BTA_JV_FAILURE, otherwise.
+ * Returns          tBTA_JV_STATUS::SUCCESS, if the request is being processed.
+ *                  tBTA_JV_STATUS::FAILURE, otherwise.
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvRfcommConnect(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
@@ -431,12 +432,12 @@ tBTA_JV_STATUS BTA_JvRfcommConnect(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
   log::verbose("remote_scn:{}, peer_bd_addr:{}, rfcomm_slot_id:{}", remote_scn,
                ADDRESS_TO_LOGGABLE_CSTR(peer_bd_addr), rfcomm_slot_id);
 
-  if (!p_cback) return BTA_JV_FAILURE; /* Nothing to do */
+  if (!p_cback) return tBTA_JV_STATUS::FAILURE; /* Nothing to do */
 
   do_in_main_thread(FROM_HERE,
                     Bind(&bta_jv_rfcomm_connect, sec_mask, remote_scn,
                          peer_bd_addr, p_cback, rfcomm_slot_id));
-  return BTA_JV_SUCCESS;
+  return tBTA_JV_STATUS::SUCCESS;
 }
 
 /*******************************************************************************
@@ -445,8 +446,8 @@ tBTA_JV_STATUS BTA_JvRfcommConnect(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
  *
  * Description      This function closes an RFCOMM connection
  *
- * Returns          BTA_JV_SUCCESS, if the request is being processed.
- *                  BTA_JV_FAILURE, otherwise.
+ * Returns          tBTA_JV_STATUS::SUCCESS, if the request is being processed.
+ *                  tBTA_JV_STATUS::FAILURE, otherwise.
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvRfcommClose(uint32_t handle, uint32_t rfcomm_slot_id) {
@@ -457,11 +458,11 @@ tBTA_JV_STATUS BTA_JvRfcommClose(uint32_t handle, uint32_t rfcomm_slot_id) {
 
   if (hi >= BTA_JV_MAX_RFC_CONN || !bta_jv_cb.rfc_cb[hi].p_cback ||
       si >= BTA_JV_MAX_RFC_SR_SESSION || !bta_jv_cb.rfc_cb[hi].rfc_hdl[si])
-    return BTA_JV_FAILURE;
+    return tBTA_JV_STATUS::FAILURE;
 
   do_in_main_thread(FROM_HERE,
                     Bind(&bta_jv_rfcomm_close, handle, rfcomm_slot_id));
-  return BTA_JV_SUCCESS;
+  return tBTA_JV_STATUS::SUCCESS;
 }
 
 /*******************************************************************************
@@ -475,8 +476,8 @@ tBTA_JV_STATUS BTA_JvRfcommClose(uint32_t handle, uint32_t rfcomm_slot_id) {
  *                  When the connection is established, tBTA_JV_RFCOMM_CBACK
  *                  is called with BTA_JV_RFCOMM_OPEN_EVT.
  *
- * Returns          BTA_JV_SUCCESS, if the request is being processed.
- *                  BTA_JV_FAILURE, otherwise.
+ * Returns          tBTA_JV_STATUS::SUCCESS, if the request is being processed.
+ *                  tBTA_JV_STATUS::FAILURE, otherwise.
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvRfcommStartServer(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
@@ -485,7 +486,7 @@ tBTA_JV_STATUS BTA_JvRfcommStartServer(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
                                        uint32_t rfcomm_slot_id) {
   log::verbose("local_scn:{}, rfcomm_slot_id:{}", local_scn, rfcomm_slot_id);
 
-  if (p_cback == NULL) return BTA_JV_FAILURE; /* Nothing to do */
+  if (p_cback == NULL) return tBTA_JV_STATUS::FAILURE; /* Nothing to do */
 
   if (max_session == 0) max_session = 1;
   if (max_session > BTA_JV_MAX_RFC_SR_SESSION) {
@@ -496,7 +497,7 @@ tBTA_JV_STATUS BTA_JvRfcommStartServer(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
   do_in_main_thread(FROM_HERE,
                     Bind(&bta_jv_rfcomm_start_server, sec_mask, local_scn,
                          max_session, p_cback, rfcomm_slot_id));
-  return BTA_JV_SUCCESS;
+  return tBTA_JV_STATUS::SUCCESS;
 }
 
 /*******************************************************************************
@@ -506,8 +507,8 @@ tBTA_JV_STATUS BTA_JvRfcommStartServer(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
  * Description      This function stops the RFCOMM server. If the server has an
  *                  active connection, it would be closed.
  *
- * Returns          BTA_JV_SUCCESS, if the request is being processed.
- *                  BTA_JV_FAILURE, otherwise.
+ * Returns          tBTA_JV_STATUS::SUCCESS, if the request is being processed.
+ *                  tBTA_JV_STATUS::FAILURE, otherwise.
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvRfcommStopServer(uint32_t handle,
@@ -516,7 +517,7 @@ tBTA_JV_STATUS BTA_JvRfcommStopServer(uint32_t handle,
 
   do_in_main_thread(FROM_HERE,
                     Bind(&bta_jv_rfcomm_stop_server, handle, rfcomm_slot_id));
-  return BTA_JV_SUCCESS;
+  return tBTA_JV_STATUS::SUCCESS;
 }
 
 /*******************************************************************************
@@ -545,8 +546,8 @@ uint16_t BTA_JvRfcommGetPortHdl(uint32_t handle) {
  *
  * Description      This function writes data to an RFCOMM connection
  *
- * Returns          BTA_JV_SUCCESS, if the request is being processed.
- *                  BTA_JV_FAILURE, otherwise.
+ * Returns          tBTA_JV_STATUS::SUCCESS, if the request is being processed.
+ *                  tBTA_JV_STATUS::FAILURE, otherwise.
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvRfcommWrite(uint32_t handle, uint32_t req_id) {
@@ -556,7 +557,7 @@ tBTA_JV_STATUS BTA_JvRfcommWrite(uint32_t handle, uint32_t req_id) {
   log::verbose("handle:{}, req_id:{}, hi:{}, si:{}", handle, req_id, hi, si);
   if (hi >= BTA_JV_MAX_RFC_CONN || !bta_jv_cb.rfc_cb[hi].p_cback ||
       si >= BTA_JV_MAX_RFC_SR_SESSION || !bta_jv_cb.rfc_cb[hi].rfc_hdl[si]) {
-    return BTA_JV_FAILURE;
+    return tBTA_JV_STATUS::FAILURE;
   }
 
   log::verbose("write ok");
@@ -564,7 +565,7 @@ tBTA_JV_STATUS BTA_JvRfcommWrite(uint32_t handle, uint32_t req_id) {
   tBTA_JV_RFC_CB* p_cb = &bta_jv_cb.rfc_cb[hi];
   do_in_main_thread(FROM_HERE, Bind(&bta_jv_rfcomm_write, handle, req_id, p_cb,
                                     &bta_jv_cb.port_cb[p_cb->rfc_hdl[si] - 1]));
-  return BTA_JV_SUCCESS;
+  return tBTA_JV_STATUS::SUCCESS;
 }
 
 /*******************************************************************************
@@ -582,8 +583,8 @@ tBTA_JV_STATUS BTA_JvRfcommWrite(uint32_t handle, uint32_t req_id) {
  *              init_st:  state after calling this API. typically it should be
  *                        BTA_JV_CONN_OPEN
  *
- * Returns      BTA_JV_SUCCESS, if the request is being processed.
- *              BTA_JV_FAILURE, otherwise.
+ * Returns      tBTA_JV_STATUS::SUCCESS, if the request is being processed.
+ *              tBTA_JV_STATUS::FAILURE, otherwise.
  *
  * NOTE:        BTA_JV_PM_ID_CLEAR: In general no need to be called as jv pm
  *                                  calls automatically
@@ -596,5 +597,5 @@ tBTA_JV_STATUS BTA_JvSetPmProfile(uint32_t handle, tBTA_JV_PM_ID app_id,
 
   do_in_main_thread(FROM_HERE,
                     Bind(&bta_jv_set_pm_profile, handle, app_id, init_st));
-  return BTA_JV_SUCCESS;
+  return tBTA_JV_STATUS::SUCCESS;
 }

@@ -26,14 +26,18 @@ import android.bluetooth.BluetoothProfile;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 public class HapClientNativeInterfaceTest {
     private static final byte[] TEST_DEVICE_ADDRESS =
             new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock
     HapClientService mService;
 
@@ -41,7 +45,6 @@ public class HapClientNativeInterfaceTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         when(mService.isAvailable()).thenReturn(true);
         HapClientService.setHapClient(mService);
         mNativeInterface = HapClientNativeInterface.getInstance();

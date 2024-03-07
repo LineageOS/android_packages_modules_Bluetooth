@@ -31,20 +31,25 @@ import android.bluetooth.BluetoothProfile;
 import android.content.Intent;
 import android.os.HandlerThread;
 import android.os.Message;
+
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
+
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
+
 import org.hamcrest.core.IsInstanceOf;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 @MediumTest
 @RunWith(AndroidJUnit4.class)
@@ -56,6 +61,8 @@ public class HapClientStateMachineTest {
     private static final int TIMEOUT_MS = 1000;
     boolean mIsAdapterServiceSet;
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock
     private AdapterService mAdapterService;
     @Mock
@@ -65,8 +72,6 @@ public class HapClientStateMachineTest {
 
     @Before
     public void setUp() throws Exception {
-        // Set up mocks and test assets
-        MockitoAnnotations.initMocks(this);
         TestUtils.setAdapterService(mAdapterService);
         mIsAdapterServiceSet = true;
 

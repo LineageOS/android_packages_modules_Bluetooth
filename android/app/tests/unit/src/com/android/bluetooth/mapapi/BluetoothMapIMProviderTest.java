@@ -41,11 +41,13 @@ import androidx.test.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.time.Instant;
 import java.util.AbstractMap;
@@ -66,12 +68,13 @@ public class BluetoothMapIMProviderTest {
 
     private Context mContext;
 
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Spy
     private BluetoothMapIMProvider mProvider = new TestBluetoothMapIMProvider();
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         mContext = InstrumentationRegistry.getTargetContext();
     }
 
