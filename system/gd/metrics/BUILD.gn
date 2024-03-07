@@ -40,6 +40,7 @@ source_set("BluetoothMetricsSources") {
   sources = [
     "counter_metrics.cc",
     "utils.cc",
+    "metrics_state.cc"
   ]
 
   configs += [

@@ -20,10 +20,12 @@
 #include <unistd.h>
 
 #include <cstddef>
+#include <cstdint>
 #include <cstdio>
 #include <future>
 #include <map>
 #include <optional>
+#include <vector>
 
 #include "btif/include/btif_hh.h"
 #include "device/include/controller.h"
@@ -49,6 +51,7 @@
 #include "main/shim/dumpsys.h"
 #include "main/shim/helpers.h"
 #include "main/shim/le_advertising_manager.h"
+#include "main/shim/utils.h"
 #include "main/shim/le_scanning_manager.h"
 #include "os/handler.h"
 #include "os/mock_queue.h"
@@ -788,4 +791,16 @@ TEST_F(MainShimTest, DumpsysNeighbor) {
   });
 
   DumpsysNeighbor(STDOUT_FILENO);
+}
+
+// test for b/277590580
+
+using bluetooth::hci::GapData;
+TEST(MainShimRegressionTest, OOB_In_StartAdvertisingSet) {
+  std::vector<uint8_t> raw_data = {10, 0, 0, 0, 0};
+  std::vector<GapData> res;
+
+  bluetooth::shim::parse_gap_data(raw_data, res);
+
+  ASSERT_EQ(res.size(), (size_t) 0);
 }

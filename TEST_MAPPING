@@ -8,7 +8,8 @@
       "name": "BluetoothInstrumentationTests"
     },
     {
-      "name": "GoogleBluetoothInstrumentationTests"
+      "name": "GoogleBluetoothInstrumentationTests",
+      "keywords": ["internal"]
     },
     {
       "name": "FrameworkBluetoothTests"
