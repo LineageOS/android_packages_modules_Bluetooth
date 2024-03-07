@@ -67,7 +67,15 @@ LeAudioTransport::LeAudioTransport(void (*flush)(void),
       data_position_({}),
       pcm_config_(std::move(pcm_config)),
       start_request_state_(StartRequestState::IDLE),
-      dsa_mode_(DsaMode::DISABLED){};
+      dsa_mode_(DsaMode::DISABLED),
+      cached_source_metadata_({}){};
+
+LeAudioTransport::~LeAudioTransport() {
+  if (cached_source_metadata_.tracks != nullptr) {
+    free(cached_source_metadata_.tracks);
+    cached_source_metadata_.tracks = nullptr;
+  }
+}
 
 BluetoothAudioCtrlAck LeAudioTransport::StartRequest(bool is_low_latency) {
   // Check if operation is pending already
@@ -166,6 +174,9 @@ void LeAudioTransport::SetLatencyMode(LatencyMode latency_mode) {
   LOG_DEBUG("Latency mode: %s",
             ::aidl::android::hardware::bluetooth::audio::toString(latency_mode)
                 .c_str());
+
+  DsaMode prev_dsa_mode = dsa_mode_;
+
   switch (latency_mode) {
     case LatencyMode::FREE:
       dsa_mode_ = DsaMode::DISABLED;
@@ -181,7 +192,16 @@ void LeAudioTransport::SetLatencyMode(LatencyMode latency_mode) {
       break;
     default:
       LOG(WARNING) << ", invalid latency mode: " << (int)latency_mode;
-      break;
+      return;
+  }
+
+  if (IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+    if (dsa_mode_ != prev_dsa_mode &&
+        cached_source_metadata_.tracks != nullptr &&
+        cached_source_metadata_.tracks != 0) {
+      LOG(INFO) << ", latency mode changed, update source metadata";
+      stream_cb_.on_metadata_update_(cached_source_metadata_, dsa_mode_);
+    }
   }
 }
 
@@ -209,6 +229,22 @@ void LeAudioTransport::SourceMetadataChanged(
   if (track_count == 0) {
     LOG(WARNING) << ", invalid number of metadata changed tracks";
     return;
+  }
+
+  if (IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+    if (cached_source_metadata_.tracks != nullptr) {
+      free(cached_source_metadata_.tracks);
+      cached_source_metadata_.tracks = nullptr;
+    }
+
+    LOG(INFO) << ", caching source metadata";
+
+    playback_track_metadata_v7* tracks;
+    tracks = (playback_track_metadata_v7*)malloc(sizeof(*tracks) * track_count);
+    memcpy(tracks, source_metadata.tracks, sizeof(*tracks) * track_count);
+
+    cached_source_metadata_.track_count = track_count;
+    cached_source_metadata_.tracks = tracks;
   }
 
   stream_cb_.on_metadata_update_(source_metadata, dsa_mode_);
