@@ -182,6 +182,7 @@ bt_status_t btif_hh_connect(const tAclLinkSpec* link_spec);
 bt_status_t btif_hd_execute_service(bool b_enable);
 
 extern void gatt_tcb_dump(int fd);
+extern void bta_gatt_client_dump(int fd);
 
 /*******************************************************************************
  *  Callbacks from bluetooth::core (see go/invisalign-bt)
@@ -824,6 +825,7 @@ static void dump(int fd, const char** arguments) {
   bluetooth::avrcp::AvrcpService::DebugDump(fd);
   btif_debug_config_dump(fd);
   gatt_tcb_dump(fd);
+  bta_gatt_client_dump(fd);
   device_debug_iot_config_dump(fd);
   BTA_HfClientDumpStatistics(fd);
   wakelock_debug_dump(fd);

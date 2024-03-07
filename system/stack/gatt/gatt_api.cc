@@ -25,6 +25,7 @@
 
 #include "stack/include/gatt_api.h"
 
+#include <android_bluetooth_flags.h>
 #include <base/logging.h>
 #include <base/strings/string_number_conversions.h>
 #include <bluetooth/log.h>
@@ -47,6 +48,7 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
+#include "stack/include/l2cap_acl_interface.h"
 #include "stack/include/sdp_api.h"
 #include "types/bluetooth/uuid.h"
 #include "types/bt_transport.h"
@@ -1429,8 +1431,18 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr,
   if (is_direct) {
     log::debug("Starting direct connect gatt_if={} address={}", gatt_if,
                ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
-    ret =
-        gatt_act_connect(p_reg, bd_addr, addr_type, transport, initiating_phys);
+    bool tcb_exist = !!gatt_find_tcb_by_addr(bd_addr, transport);
+
+    if (!IS_FLAG_ENABLED(gatt_reconnect_on_bt_on_fix) || tcb_exist) {
+      /* Consider to remove gatt_act_connect at all */
+      ret = gatt_act_connect(p_reg, bd_addr, addr_type, transport,
+                             initiating_phys);
+    } else {
+      log::verbose("Connecting without tcb address: {}",
+                   ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+      ret = acl_create_le_connection_with_id(gatt_if, bd_addr, addr_type);
+    }
+
   } else {
     log::debug("Starting background connect gatt_if={} address={}", gatt_if,
                ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
