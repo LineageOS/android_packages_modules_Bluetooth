@@ -94,8 +94,9 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
          */
         @Deprecated
         @SystemApi
-        void onVolumeOffsetChanged(
-                @NonNull BluetoothDevice device, @IntRange(from = -255, to = 255) int volumeOffset);
+        default void onVolumeOffsetChanged(
+                @NonNull BluetoothDevice device,
+                @IntRange(from = -255, to = 255) int volumeOffset) {}
 
         /**
          * Callback invoked when callback is registered and when volume offset changes on the remote
