@@ -240,6 +240,18 @@ public class HeadsetSystemInterface {
         return false;
     }
 
+    /** Check for HD codec for voice call */
+    @VisibleForTesting
+    public boolean isHighDefCallInProgress() {
+        BluetoothInCallService bluetoothInCallService = getBluetoothInCallServiceInstance();
+        if (bluetoothInCallService != null) {
+            return bluetoothInCallService.isHighDefCallInProgress();
+        } else {
+            Log.e(TAG, "Handsfree phone proxy null");
+        }
+        return false;
+    }
+
     /**
      * Get the the alphabetic name of current registered operator.
      *

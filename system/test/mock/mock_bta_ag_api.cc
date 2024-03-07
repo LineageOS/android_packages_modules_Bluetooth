@@ -65,3 +65,7 @@ bool is_hfp_aptx_voice_enabled() {
   inc_func_call_count(__func__);
   return false;
 };
+bt_status_t enable_aptx_swb_codec(bool enable, RawAddress* bd_addr) {
+  inc_func_call_count(__func__);
+  return BT_STATUS_SUCCESS;
+}

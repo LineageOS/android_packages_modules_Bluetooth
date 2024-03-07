@@ -230,6 +230,17 @@ class Interface {
                                        RawAddress* bd_addr) = 0;
 
   /**
+   * Enable SWB
+   *
+   * @param swbCodec SWB Codec
+   * @param enable true to enable, false to disable
+   * @param bd_addr remote device address
+   * @return BT_STATUS_SUCCESS on success
+   */
+  virtual bt_status_t EnableSwb(bthf_swb_codec_t swbCodec, bool enable,
+                                RawAddress* bd_addr) = 0;
+
+  /**
    * Closes the interface.
    */
   virtual void Cleanup() = 0;

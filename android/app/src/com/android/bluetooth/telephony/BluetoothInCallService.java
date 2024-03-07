@@ -552,6 +552,39 @@ public class BluetoothInCallService extends InCallService {
         }
     }
 
+    /** Check for HD codec for voice call */
+    public boolean isHighDefCallInProgress() {
+        boolean isHighDef = false;
+        /* TODO: Add as an API in TelephonyManager aosp/2679237 */
+        int phoneTypeIms = 5;
+        int phoneTypeCdmaLte = 6;
+        BluetoothCall ringingCall = mCallInfo.getRingingOrSimulatedRingingCall();
+        BluetoothCall dialingCall = mCallInfo.getOutgoingCall();
+        BluetoothCall activeCall = mCallInfo.getActiveCall();
+
+        /* If it's an incoming call we will have codec info in dialing state */
+        if (ringingCall != null) {
+            isHighDef = ringingCall.isHighDefAudio();
+        } else if (dialingCall != null) {
+            /* CS dialing call has codec info in dialing state */
+            Bundle extras = dialingCall.getDetails().getExtras();
+            if (extras != null) {
+                int phoneType = extras.getInt(TelecomManager.EXTRA_CALL_TECHNOLOGY_TYPE);
+                if (phoneType == TelephonyManager.PHONE_TYPE_GSM
+                        || phoneType == TelephonyManager.PHONE_TYPE_CDMA) {
+                    isHighDef = dialingCall.isHighDefAudio();
+                    /* For IMS calls codec info is not present in dialing state */
+                } else if (phoneType == phoneTypeIms || phoneType == phoneTypeCdmaLte) {
+                    isHighDef = true;
+                }
+            }
+        } else if (activeCall != null) {
+            isHighDef = activeCall.isHighDefAudio();
+        }
+        Log.i(TAG, "isHighDefCallInProgress: Call is High Def " + isHighDef);
+        return isHighDef;
+    }
+
     @RequiresPermission(android.Manifest.permission.MODIFY_PHONE_STATE)
     public boolean processChld(int chld) {
         synchronized (LOCK) {
