@@ -37,4 +37,9 @@ void bta_ag_swb_handle_vs_at_events(tBTA_AG_SCB* p_scb, uint16_t cmd,
                                     int16_t int_arg, tBTA_AG_VAL* val);
 tBTA_AG_PEER_CODEC bta_ag_parse_qac(char* p_s);
 
+bool get_swb_codec_status(bluetooth::headset::bthf_swb_codec_t swb_codec,
+                          RawAddress* bd_addr);
+
+bt_status_t enable_aptx_swb_codec(bool enable, RawAddress* bd_addr);
+
 #endif  //_BTA_AG_SWB_H_
