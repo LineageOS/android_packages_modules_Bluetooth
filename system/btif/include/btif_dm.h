@@ -97,6 +97,8 @@ bool btif_dm_proc_rmt_oob(const RawAddress& bd_addr, Octet16* p_c,
                           Octet16* p_r);
 void btif_dm_generate_local_oob_data(tBT_TRANSPORT transport);
 
+void btif_check_device_in_inquiry_db(const RawAddress& address);
+
 void btif_dm_clear_event_filter();
 
 void btif_dm_clear_event_mask();
