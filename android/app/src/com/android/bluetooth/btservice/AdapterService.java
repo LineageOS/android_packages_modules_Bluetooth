@@ -340,15 +340,15 @@ public class AdapterService extends Service {
             mMetadataListeners = new HashMap<>();
     private final HashMap<String, Integer> mProfileServicesState = new HashMap<String, Integer>();
     private Set<IBluetoothConnectionCallback> mBluetoothConnectionCallbacks = new HashSet<>();
-    private RemoteCallbackList<IBluetoothPreferredAudioProfilesCallback>
-            mPreferredAudioProfilesCallbacks;
-    private RemoteCallbackList<IBluetoothQualityReportReadyCallback>
-            mBluetoothQualityReportReadyCallbacks;
+    private final RemoteCallbackList<IBluetoothPreferredAudioProfilesCallback>
+            mPreferredAudioProfilesCallbacks = new RemoteCallbackList<>();
+    private final RemoteCallbackList<IBluetoothQualityReportReadyCallback>
+            mBluetoothQualityReportReadyCallbacks = new RemoteCallbackList<>();
     // Map<groupId, PendingAudioProfilePreferenceRequest>
     private final Map<Integer, PendingAudioProfilePreferenceRequest>
             mCsipGroupsPendingAudioProfileChanges = new HashMap<>();
-    // Only BluetoothManagerService should be registered
-    private RemoteCallbackList<IBluetoothCallback> mRemoteCallbacks;
+    private final RemoteCallbackList<IBluetoothCallback>
+            mRemoteCallbacks = new RemoteCallbackList<>();
     private final Map<BluetoothStateCallback, Executor> mLocalCallbacks = new ConcurrentHashMap<>();
     private int mCurrentRequestId;
     private boolean mQuietmode = false;
@@ -669,11 +669,6 @@ public class AdapterService extends Service {
                 isAtvDevice,
                 getApplicationInfo().dataDir);
         mNativeAvailable = true;
-        mPreferredAudioProfilesCallbacks =
-                new RemoteCallbackList<IBluetoothPreferredAudioProfilesCallback>();
-        mBluetoothQualityReportReadyCallbacks =
-                new RemoteCallbackList<IBluetoothQualityReportReadyCallback>();
-        mRemoteCallbacks = new RemoteCallbackList<IBluetoothCallback>();
         // Load the name and address
         mNativeInterface.getAdapterProperty(AbstractionLayer.BT_PROPERTY_BDADDR);
         mNativeInterface.getAdapterProperty(AbstractionLayer.BT_PROPERTY_BDNAME);
@@ -1107,25 +1102,24 @@ public class AdapterService extends Service {
         mAdapterProperties.setState(newState);
         invalidateBluetoothGetStateCache();
 
-        if (mRemoteCallbacks != null) {
-            int n = mRemoteCallbacks.beginBroadcast();
-            debugLog(
-                    "updateAdapterState() - Broadcasting state "
-                            + BluetoothAdapter.nameForState(newState)
-                            + " to "
-                            + n
-                            + " receivers.");
-            for (int i = 0; i < n; i++) {
-                try {
-                    mRemoteCallbacks
-                            .getBroadcastItem(i)
-                            .onBluetoothStateChange(prevState, newState);
-                } catch (RemoteException e) {
-                    debugLog("updateAdapterState() - Callback #" + i + " failed (" + e + ")");
-                }
+        // Only BluetoothManagerService should be registered
+        int n = mRemoteCallbacks.beginBroadcast();
+        debugLog(
+                "updateAdapterState() - Broadcasting state "
+                        + BluetoothAdapter.nameForState(newState)
+                        + " to "
+                        + n
+                        + " receivers.");
+        for (int i = 0; i < n; i++) {
+            try {
+                mRemoteCallbacks
+                        .getBroadcastItem(i)
+                        .onBluetoothStateChange(prevState, newState);
+            } catch (RemoteException e) {
+                debugLog("updateAdapterState() - Callback #" + i + " failed (" + e + ")");
             }
-            mRemoteCallbacks.finishBroadcast();
         }
+        mRemoteCallbacks.finishBroadcast();
 
         for (Map.Entry<BluetoothStateCallback, Executor> e : mLocalCallbacks.entrySet()) {
             e.getValue().execute(() -> e.getKey().onBluetoothStateChange(prevState, newState));
@@ -1247,32 +1241,30 @@ public class AdapterService extends Service {
     public int bluetoothQualityReportReadyCallback(
             BluetoothDevice device, BluetoothQualityReport bluetoothQualityReport) {
         synchronized (mBluetoothQualityReportReadyCallbacks) {
-            if (mBluetoothQualityReportReadyCallbacks != null) {
-                int n = mBluetoothQualityReportReadyCallbacks.beginBroadcast();
-                debugLog(
-                        "bluetoothQualityReportReadyCallback() - "
-                                + "Broadcasting Bluetooth Quality Report to "
-                                + n
-                                + " receivers.");
-                for (int i = 0; i < n; i++) {
-                    try {
-                        mBluetoothQualityReportReadyCallbacks
-                                .getBroadcastItem(i)
-                                .onBluetoothQualityReportReady(
-                                        device,
-                                        bluetoothQualityReport,
-                                        BluetoothStatusCodes.SUCCESS);
-                    } catch (RemoteException e) {
-                        debugLog(
-                                "bluetoothQualityReportReadyCallback() - Callback #"
-                                        + i
-                                        + " failed ("
-                                        + e
-                                        + ")");
-                    }
+            int n = mBluetoothQualityReportReadyCallbacks.beginBroadcast();
+            debugLog(
+                    "bluetoothQualityReportReadyCallback() - "
+                            + "Broadcasting Bluetooth Quality Report to "
+                            + n
+                            + " receivers.");
+            for (int i = 0; i < n; i++) {
+                try {
+                    mBluetoothQualityReportReadyCallbacks
+                            .getBroadcastItem(i)
+                            .onBluetoothQualityReportReady(
+                                    device,
+                                    bluetoothQualityReport,
+                                    BluetoothStatusCodes.SUCCESS);
+                } catch (RemoteException e) {
+                    debugLog(
+                            "bluetoothQualityReportReadyCallback() - Callback #"
+                                    + i
+                                    + " failed ("
+                                    + e
+                                    + ")");
                 }
-                mBluetoothQualityReportReadyCallbacks.finishBroadcast();
             }
+            mBluetoothQualityReportReadyCallbacks.finishBroadcast();
         }
 
         return BluetoothStatusCodes.SUCCESS;
@@ -1410,17 +1402,11 @@ public class AdapterService extends Service {
             mBinder = null; // Do not remove. Otherwise Binder leak!
         }
 
-        if (mPreferredAudioProfilesCallbacks != null) {
-            mPreferredAudioProfilesCallbacks.kill();
-        }
+        mPreferredAudioProfilesCallbacks.kill();
 
-        if (mBluetoothQualityReportReadyCallbacks != null) {
-            mBluetoothQualityReportReadyCallbacks.kill();
-        }
+        mBluetoothQualityReportReadyCallbacks.kill();
 
-        if (mRemoteCallbacks != null) {
-            mRemoteCallbacks.kill();
-        }
+        mRemoteCallbacks.kill();
     }
 
     private void invalidateBluetoothCaches() {
@@ -4270,7 +4256,6 @@ public class AdapterService extends Service {
         private void unregisterCallback(IBluetoothCallback callback, AttributionSource source) {
             AdapterService service = getService();
             if (service == null
-                    || service.mRemoteCallbacks == null
                     || !callerIsSystemOrActiveOrManagedUser(service, TAG, "unregisterCallback")
                     || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
                 return;
@@ -5853,10 +5838,6 @@ public class AdapterService extends Service {
 
     private void sendPreferredAudioProfilesCallbackToApps(
             BluetoothDevice device, Bundle preferredAudioProfiles, int status) {
-        if (mPreferredAudioProfilesCallbacks == null) {
-            return;
-        }
-
         int n = mPreferredAudioProfilesCallbacks.beginBroadcast();
         debugLog(
                 "sendPreferredAudioProfilesCallbackToApps() - Broadcasting audio profile "
