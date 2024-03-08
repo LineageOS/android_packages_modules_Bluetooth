@@ -59,5 +59,5 @@ TEST_F(StackIncludeTest, dev_class_text) {
   int sv = 0xffff;
   DEV_CLASS dev_class;
   FIELDS_TO_COD(dev_class, mn, mj, sv);
-  ASSERT_STREQ("31-252-65472", dev_class_text(dev_class).c_str());
+  ASSERT_STREQ("ffc0-1f-fc", dev_class_text(dev_class).c_str());
 }
