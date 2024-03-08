@@ -211,14 +211,12 @@ class IsoManager {
   virtual void HandleDisconnect(uint16_t conn_handle, uint8_t reason);
 
   /**
-   * Handles HCI event for the number of completed packets
+   * Handles the number of completed packets
    *
-   * @param p raw packet buffer for the event. The ownership of p is not being
-   * transferred.
-   * @param evt_len event packet buffer length
+   * @param handle - the handle for which there are completed packets
+   * @param credits - the number of packets completed
    */
-  virtual void HandleNumComplDataPkts(uint8_t* p, uint8_t evt_len);
-  virtual void HandleGdNumComplDataPkts(uint16_t handle, uint16_t credits);
+  virtual void HandleNumComplDataPkts(uint16_t handle, uint16_t credits);
 
   /**
    * Handle CIS and BIG related HCI events

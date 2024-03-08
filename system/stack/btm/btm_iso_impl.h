@@ -657,35 +657,6 @@ struct iso_impl {
     }
   }
 
-  void handle_num_completed_pkts(uint8_t* p, uint8_t evt_len) {
-    uint8_t num_handles;
-
-    STREAM_TO_UINT8(num_handles, p);
-
-    LOG_ASSERT(evt_len == num_handles * 4 + 1);
-
-    for (int i = 0; i < num_handles; i++) {
-      uint16_t handle, num_sent;
-
-      STREAM_TO_UINT16(handle, p);
-      STREAM_TO_UINT16(num_sent, p);
-
-      auto iter = conn_hdl_to_cis_map_.find(handle);
-      if (iter != conn_hdl_to_cis_map_.end()) {
-        iter->second->used_credits -= num_sent;
-        iso_credits_ += num_sent;
-        continue;
-      }
-
-      iter = conn_hdl_to_bis_map_.find(handle);
-      if (iter != conn_hdl_to_bis_map_.end()) {
-        iter->second->used_credits -= num_sent;
-        iso_credits_ += num_sent;
-        continue;
-      }
-    }
-  }
-
   void handle_gd_num_completed_pkts(uint16_t handle, uint16_t credits) {
     auto iter = conn_hdl_to_cis_map_.find(handle);
     if (iter != conn_hdl_to_cis_map_.end()) {
