@@ -18,6 +18,7 @@ package com.android.bluetooth.gatt;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertisingSetParameters;
 import android.bluetooth.le.PeriodicAdvertisingParameters;
+import android.content.Context;
 import android.os.Binder;
 import android.os.IBinder;
 import android.os.IInterface;
@@ -27,10 +28,11 @@ import android.os.UserHandle;
 import android.os.WorkSource;
 import android.util.Log;
 
-import androidx.annotation.VisibleForTesting;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.le_scan.AppScanStats;
+import com.android.bluetooth.le_scan.TransitionalScanHelper;
+import com.android.bluetooth.le_scan.TransitionalScanHelper.PendingIntentInfo;
 import com.android.internal.annotations.GuardedBy;
 
 import com.google.common.collect.EvictingQueue;
@@ -98,27 +100,27 @@ public class ContextMap<C, T> {
         public Boolean isCongested = false;
 
         /** Whether the calling app has location permission */
-        boolean hasLocationPermission;
+        public boolean hasLocationPermission;
 
         /** Whether the calling app has bluetooth privileged permission */
-        boolean hasBluetoothPrivilegedPermission;
+        public boolean hasBluetoothPrivilegedPermission;
 
         /** The user handle of the app that started the scan */
-        UserHandle mUserHandle;
+        public UserHandle mUserHandle;
 
         /** Whether the calling app has the network settings permission */
-        boolean mHasNetworkSettingsPermission;
+        public boolean mHasNetworkSettingsPermission;
 
         /** Whether the calling app has the network setup wizard permission */
-        boolean mHasNetworkSetupWizardPermission;
+        public boolean mHasNetworkSetupWizardPermission;
 
         /** Whether the calling app has the network setup wizard permission */
-        boolean mHasScanWithoutLocationPermission;
+        public boolean mHasScanWithoutLocationPermission;
 
         /** Whether the calling app has disavowed the use of bluetooth for location */
-        boolean mHasDisavowedLocation;
+        public boolean mHasDisavowedLocation;
 
-        boolean mEligibleForSanitizedExposureNotification;
+        public boolean mEligibleForSanitizedExposureNotification;
 
         public List<String> mAssociatedDevices;
 
@@ -145,10 +147,8 @@ public class ContextMap<C, T> {
             this.name = name;
         }
 
-        /**
-         * Link death recipient
-         */
-        void linkToDeath(IBinder.DeathRecipient deathRecipient) {
+        /** Link death recipient */
+        public void linkToDeath(IBinder.DeathRecipient deathRecipient) {
             // It might not be a binder object
             if (callback == null) {
                 return;
@@ -162,10 +162,8 @@ public class ContextMap<C, T> {
             }
         }
 
-        /**
-         * Unlink death recipient
-         */
-        void unlinkToDeath() {
+        /** Unlink death recipient */
+        public void unlinkToDeath() {
             if (mDeathRecipient != null) {
                 try {
                     IBinder binder = ((IInterface) callback).asBinder();
@@ -176,11 +174,11 @@ public class ContextMap<C, T> {
             }
         }
 
-        void queueCallback(CallbackInfo callbackInfo) {
+        public void queueCallback(CallbackInfo callbackInfo) {
             mCongestionQueue.add(callbackInfo);
         }
 
-        CallbackInfo popQueuedCallback() {
+        public CallbackInfo popQueuedCallback() {
             if (mCongestionQueue.size() == 0) {
                 return null;
             }
@@ -210,12 +208,13 @@ public class ContextMap<C, T> {
     private final Object mConnectionsLock = new Object();
 
     /** Add an entry to the application context list. */
-    protected App add(
+    public App add(
             UUID uuid,
             WorkSource workSource,
             C callback,
-            GattService.PendingIntentInfo piInfo,
-            GattService service) {
+            PendingIntentInfo piInfo,
+            Context context,
+            TransitionalScanHelper scanHelper) {
         int appUid;
         String appName = null;
         if (piInfo != null) {
@@ -223,16 +222,18 @@ public class ContextMap<C, T> {
             appName = piInfo.callingPackage;
         } else {
             appUid = Binder.getCallingUid();
-            appName = service.getPackageManager().getNameForUid(appUid);
+            appName = context.getPackageManager().getNameForUid(appUid);
         }
         if (appName == null) {
             // Assign an app name if one isn't found
             appName = "Unknown App (UID: " + appUid + ")";
         }
         synchronized (mAppsLock) {
+            // TODO(b/327849650): AppScanStats appears to be only needed for the ScannerMap.
+            //                    Consider refactoring this.
             AppScanStats appScanStats = mAppScanStats.get(appUid);
             if (appScanStats == null) {
-                appScanStats = new AppScanStats(appName, workSource, this, service);
+                appScanStats = new AppScanStats(appName, workSource, this, context, scanHelper);
                 mAppScanStats.put(appUid, appScanStats);
             }
             App app = new App(uuid, callback, (T) piInfo, appName, appScanStats);
@@ -242,10 +243,8 @@ public class ContextMap<C, T> {
         }
     }
 
-    /**
-     * Add an entry to the application context list for advertiser.
-     */
-    App add(int id, C callback, GattService service) {
+    /** Add an entry to the application context list for advertiser. */
+    public App add(int id, C callback, GattService service) {
         int appUid = Binder.getCallingUid();
         String appName = service.getPackageManager().getNameForUid(appUid);
         if (appName == null) {
@@ -270,10 +269,8 @@ public class ContextMap<C, T> {
         }
     }
 
-    /**
-     * Remove the context for a given UUID
-     */
-    void remove(UUID uuid) {
+    /** Remove the context for a given UUID */
+    public void remove(UUID uuid) {
         synchronized (mAppsLock) {
             Iterator<App> i = mApps.iterator();
             while (i.hasNext()) {
@@ -288,10 +285,8 @@ public class ContextMap<C, T> {
         }
     }
 
-    /**
-     * Remove the context for a given application ID.
-     */
-    protected void remove(int id) {
+    /** Remove the context for a given application ID. */
+    public void remove(int id) {
         boolean find = false;
         synchronized (mAppsLock) {
             Iterator<App> i = mApps.iterator();
@@ -311,7 +306,7 @@ public class ContextMap<C, T> {
         }
     }
 
-    protected List<Integer> getAllAppsIds() {
+    public List<Integer> getAllAppsIds() {
         List<Integer> appIds = new ArrayList();
         synchronized (mAppsLock) {
             Iterator<App> i = mApps.iterator();
@@ -366,10 +361,8 @@ public class ContextMap<C, T> {
         }
     }
 
-    /**
-     * Get an application context by ID.
-     */
-    protected App getById(int id) {
+    /** Get an application context by ID. */
+    public App getById(int id) {
         synchronized (mAppsLock) {
             Iterator<App> i = mApps.iterator();
             while (i.hasNext()) {
@@ -383,10 +376,8 @@ public class ContextMap<C, T> {
         return null;
     }
 
-    /**
-     * Get an application context by UUID.
-     */
-    protected App getByUuid(UUID uuid) {
+    /** Get an application context by UUID. */
+    public App getByUuid(UUID uuid) {
         synchronized (mAppsLock) {
             Iterator<App> i = mApps.iterator();
             while (i.hasNext()) {
@@ -417,10 +408,8 @@ public class ContextMap<C, T> {
         return null;
     }
 
-    /**
-     * Get an application context by the context info object.
-     */
-    protected App getByContextInfo(T contextInfo) {
+    /** Get an application context by the context info object. */
+    public App getByContextInfo(T contextInfo) {
         synchronized (mAppsLock) {
             Iterator<App> i = mApps.iterator();
             while (i.hasNext()) {
@@ -434,10 +423,8 @@ public class ContextMap<C, T> {
         return null;
     }
 
-    /**
-     * Get Logging info by ID
-     */
-    protected AppScanStats getAppScanStatsById(int id) {
+    /** Get Logging info by ID */
+    public AppScanStats getAppScanStatsById(int id) {
         App temp = getById(id);
         if (temp != null) {
             return temp.appScanStats;
@@ -670,10 +657,8 @@ public class ContextMap<C, T> {
         return currentConnections;
     }
 
-    /**
-     * Erases all application context entries.
-     */
-    protected void clear() {
+    /** Erases all application context entries. */
+    public void clear() {
         synchronized (mAppsLock) {
             Iterator<App> i = mApps.iterator();
             while (i.hasNext()) {

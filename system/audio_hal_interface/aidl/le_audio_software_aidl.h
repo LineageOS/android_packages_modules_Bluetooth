@@ -69,6 +69,7 @@ class LeAudioTransport {
  public:
   LeAudioTransport(void (*flush)(void), StreamCallbacks stream_cb,
                    PcmConfiguration pcm_config);
+  ~LeAudioTransport();
 
   BluetoothAudioCtrlAck StartRequest(bool is_low_latency);
   BluetoothAudioCtrlAck StartRequestV2(bool is_low_latency);
@@ -122,6 +123,7 @@ class LeAudioTransport {
   mutable std::mutex start_request_state_mutex_;
   std::atomic<StartRequestState> start_request_state_;
   DsaMode dsa_mode_;
+  source_metadata_v7_t cached_source_metadata_;
 };
 
 // Sink transport implementation for Le Audio

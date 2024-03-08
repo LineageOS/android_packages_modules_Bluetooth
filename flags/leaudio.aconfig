@@ -189,3 +189,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_allow_leaudio_only_devices"
+    namespace: "bluetooth"
+    description: "Enable Le Audio for LeAudio only devices"
+    bug: "328471369"
+}

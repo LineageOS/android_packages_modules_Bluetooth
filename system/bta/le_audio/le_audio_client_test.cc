@@ -1054,10 +1054,10 @@ class UnicastTestNoInit : public Test {
               ase.cis_state = types::CisState::CONNECTED;
               ase.data_path_state = types::DataPathState::CONFIGURED;
               ase.state = types::AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING;
-              ase.pres_delay_min = 2500;
-              ase.pres_delay_max = 2500;
-              ase.preferred_pres_delay_min = 2500;
-              ase.preferred_pres_delay_max = 2500;
+              ase.qos_preferences.pres_delay_min = 2500;
+              ase.qos_preferences.pres_delay_max = 2500;
+              ase.qos_preferences.preferred_pres_delay_min = 2500;
+              ase.qos_preferences.preferred_pres_delay_max = 2500;
               auto core_config = ase.codec_config.GetAsCoreCodecConfig();
 
               uint16_t cis_conn_hdl = ase.cis_conn_hdl;

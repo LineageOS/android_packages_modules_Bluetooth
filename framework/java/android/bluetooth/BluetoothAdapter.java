@@ -5810,9 +5810,8 @@ public final class BluetoothAdapter {
         try {
             return mManagerService.isAutoOnSupported();
         } catch (RemoteException e) {
-            e.rethrowFromSystemServer();
+            throw e.rethrowFromSystemServer();
         }
-        return false;
     }
 
     /**
@@ -5829,9 +5828,8 @@ public final class BluetoothAdapter {
         try {
             return mManagerService.isAutoOnEnabled();
         } catch (RemoteException e) {
-            e.rethrowFromSystemServer();
+            throw e.rethrowFromSystemServer();
         }
-        return false;
     }
 
     /**

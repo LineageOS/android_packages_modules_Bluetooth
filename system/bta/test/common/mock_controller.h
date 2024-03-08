@@ -29,6 +29,7 @@ class ControllerInterface {
   virtual bool SupportsBleIsochronousBroadcaster(void) = 0;
   virtual bool SupportsBle2mPhy(void) = 0;
   virtual bool SupportsConfigureDataPath(void) = 0;
+  virtual bool SupportsBleCodedPhy(void) = 0;
 
   virtual ~ControllerInterface() = default;
 };
@@ -44,6 +45,7 @@ class MockControllerInterface : public ControllerInterface {
   MOCK_METHOD((bool), SupportsBleIsochronousBroadcaster, (), (override));
   MOCK_METHOD((bool), SupportsBle2mPhy, (), (override));
   MOCK_METHOD((bool), SupportsConfigureDataPath, (), (override));
+  MOCK_METHOD((bool), SupportsBleCodedPhy, (), (override));
 };
 
 void SetMockControllerInterface(

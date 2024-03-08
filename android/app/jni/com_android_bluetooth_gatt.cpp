@@ -2827,10 +2827,10 @@ static int register_com_android_bluetooth_gatt_(JNIEnv* env) {
        &method_onBatchScanThresholdCrossed},
       {"createOnTrackAdvFoundLostObject",
        "(II[BI[BIIILjava/lang/String;IIII)"
-       "Lcom/android/bluetooth/gatt/AdvtFilterOnFoundOnLostInfo;",
+       "Lcom/android/bluetooth/le_scan/AdvtFilterOnFoundOnLostInfo;",
        &method_createOnTrackAdvFoundLostObject},
       {"onTrackAdvFoundLost",
-       "(Lcom/android/bluetooth/gatt/AdvtFilterOnFoundOnLostInfo;)V",
+       "(Lcom/android/bluetooth/le_scan/AdvtFilterOnFoundOnLostInfo;)V",
        &method_onTrackAdvFoundLost},
       {"onScanParamSetupCompleted", "(II)V", &method_onScanParamSetupCompleted},
       {"getSampleGattDbElement", "()Lcom/android/bluetooth/gatt/GattDbElement;",

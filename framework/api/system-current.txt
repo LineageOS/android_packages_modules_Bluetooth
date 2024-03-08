@@ -492,6 +492,8 @@ package android.bluetooth {
     field public static final int AUDIO_LOCATION_TOP_SIDE_LEFT = 262144; // 0x40000
     field public static final int AUDIO_LOCATION_TOP_SIDE_RIGHT = 524288; // 0x80000
     field public static final String EXTRA_LE_AUDIO_GROUP_ID = "android.bluetooth.extra.LE_AUDIO_GROUP_ID";
+    field @FlaggedApi("com.android.bluetooth.flags.leaudio_callback_on_group_stream_status") public static final int GROUP_STREAM_STATUS_IDLE = 0; // 0x0
+    field @FlaggedApi("com.android.bluetooth.flags.leaudio_callback_on_group_stream_status") public static final int GROUP_STREAM_STATUS_STREAMING = 1; // 0x1
   }
 
   public static interface BluetoothLeAudio.Callback {

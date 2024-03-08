@@ -19,6 +19,7 @@
 #include <mutex>
 #include <shared_mutex>
 
+#include "btif/include/btif_hf.h"
 #include "com_android_bluetooth.h"
 #include "hardware/bluetooth_headset_callbacks.h"
 #include "hardware/bluetooth_headset_interface.h"
@@ -954,6 +955,31 @@ static jboolean setActiveDeviceNative(JNIEnv* env, jobject /* object */,
   return (status == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
 }
 
+static jboolean enableSwbNative(JNIEnv* env, jobject /* object */,
+                                jint swbCodec, jboolean enable,
+                                jbyteArray address) {
+  std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
+  if (!sBluetoothHfpInterface) {
+    ALOGW("%s: sBluetoothHfpInterface is null", __func__);
+    return JNI_FALSE;
+  }
+  jbyte* addr = env->GetByteArrayElements(address, NULL);
+  if (!addr) {
+    ALOGE("%s: failed to get device address", __func__);
+    jniThrowIOException(env, EINVAL);
+    return JNI_FALSE;
+  }
+  bt_status_t ret = sBluetoothHfpInterface->EnableSwb(
+      (bluetooth::headset::bthf_swb_codec_t)swbCodec, (bool)enable,
+      (RawAddress*)addr);
+  if (ret != BT_STATUS_SUCCESS) {
+    ALOGE("%s: Failed to %s", __func__, (enable ? "enable" : "disable"));
+    return JNI_FALSE;
+  }
+  ALOGV("%s: Successfully %s", __func__, (enable ? "enabled" : "disabled"));
+  return JNI_TRUE;
+}
+
 int register_com_android_bluetooth_hfp(JNIEnv* env) {
   const JNINativeMethod methods[] = {
       {"initializeNative", "(IZ)V", (void*)initializeNative},
@@ -987,6 +1013,7 @@ int register_com_android_bluetooth_hfp(JNIEnv* env) {
       {"setScoAllowedNative", "(Z)Z", (void*)setScoAllowedNative},
       {"sendBsirNative", "(Z[B)Z", (void*)sendBsirNative},
       {"setActiveDeviceNative", "([B)Z", (void*)setActiveDeviceNative},
+      {"enableSwbNative", "(IZ[B)Z", (void*)enableSwbNative},
   };
   const int result = REGISTER_NATIVE_METHODS(
       env, "com/android/bluetooth/hfp/HeadsetNativeInterface", methods);
