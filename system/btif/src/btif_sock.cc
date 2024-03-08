@@ -45,9 +45,6 @@
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
-bool btif_get_address_type(const RawAddress& bda, tBLE_ADDR_TYPE* p_addr_type);
-bool btif_get_device_type(const RawAddress& bda, int* p_device_type);
-
 using bluetooth::Uuid;
 using namespace bluetooth;
 
@@ -338,26 +335,10 @@ static bt_status_t btsock_connect(const RawAddress* bd_addr, btsock_type_t type,
     case BTSOCK_L2CAP:
       status = btsock_l2cap_connect(bd_addr, channel, sock_fd, flags, app_uid);
       break;
-
-    case BTSOCK_L2CAP_LE: {
-      flags |= BTSOCK_FLAG_LE_COC;
-
-      // Ensure device is in inquiry database
-      tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
-      int device_type = 0;
-
-      if (btif_get_address_type(*bd_addr, &addr_type) &&
-          btif_get_device_type(*bd_addr, &device_type) &&
-          device_type != BT_DEVICE_TYPE_BREDR) {
-        BTA_DmAddBleDevice(*bd_addr, addr_type, device_type);
-      }
-
-      log::info("type=BTSOCK_L2CAP_LE, channel=0x{:x}, flags=0x{:x}", channel,
-                flags);
-      status = btsock_l2cap_connect(bd_addr, channel, sock_fd, flags, app_uid);
+    case BTSOCK_L2CAP_LE:
+      status = btsock_l2cap_connect(bd_addr, channel, sock_fd,
+                                    (flags | BTSOCK_FLAG_LE_COC), app_uid);
       break;
-    }
-
     case BTSOCK_SCO:
       status = btsock_sco_connect(bd_addr, sock_fd, flags);
       break;
