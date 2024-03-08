@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+#include <fcntl.h>
 #include <gtest/gtest.h>
+#include <sys/socket.h>
 
 #include "common/init_flags.h"
 #include "device/include/controller.h"
@@ -245,4 +247,15 @@ TEST_F(StackL2capTest, l2cap_result_code_text) {
       l2cap_result_code_text(
           static_cast<tL2CAP_CONN>(std::numeric_limits<std::uint16_t>::max()))
           .c_str());
+}
+
+TEST_F(StackL2capTest, L2CA_Dumpsys) {
+  int sv[2];
+  char buf[32];
+  ASSERT_EQ(0, socketpair(AF_UNIX, SOCK_STREAM, 0, sv));
+  ASSERT_EQ(0, fcntl(sv[1], F_SETFL, fcntl(sv[1], F_GETFL, 0) | O_NONBLOCK));
+
+  L2CA_Dumpsys(sv[0]);
+  while (read(sv[1], buf, sizeof(buf)) != -1) {
+  }
 }
