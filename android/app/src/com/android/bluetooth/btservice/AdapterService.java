@@ -353,7 +353,6 @@ public class AdapterService extends Service {
     private HashMap<String, CallerInfo> mBondAttemptCallerInfo = new HashMap<>();
 
     private final Map<UUID, RfcommListenerData> mBluetoothServerSockets = new ConcurrentHashMap<>();
-    private final Executor mSocketServersExecutor = r -> new Thread(r).start();
 
     private BatteryStatsManager mBatteryStatsManager;
     private PowerManager mPowerManager;
@@ -2087,7 +2086,7 @@ public class AdapterService extends Service {
 
         mBluetoothServerSockets.put(uuid, listenerData);
 
-        mSocketServersExecutor.execute(() -> handleIncomingRfcommConnections(uuid));
+        new Thread(() -> handleIncomingRfcommConnections(uuid)).start();
     }
 
     private void stopRfcommServerSockets() {
