@@ -525,7 +525,7 @@ public class AdapterService extends Service {
                     }
                     mRunningProfiles.add(profile);
                     // TODO(b/228875190): GATT is assumed supported. GATT starting triggers hardware
-                    // initializtion. Configuring a device without GATT causes start up failures.
+                    // initialization. Configuring a device without GATT causes start up failures.
                     if (GattService.class.getSimpleName().equals(profile.getName())) {
                         mNativeInterface.enable();
                     } else if (mRegisteredProfiles.size() == Config.getSupportedProfiles().length
@@ -619,32 +619,59 @@ public class AdapterService extends Service {
     public void onCreate() {
         super.onCreate();
         debugLog("onCreate()");
-        init();
-    }
-
-    private void init() {
-        debugLog("init()");
-        Config.init(this);
+        if (!Flags.fastBindToApp()) {
+            init();
+            return;
+        }
+        // OnCreate must perform the minimum of infaillible and mandatory initialization
         if (mLooper == null) {
             mLooper = Looper.getMainLooper();
         }
         mHandler = new AdapterServiceHandler(mLooper);
-        initMetricsLogger();
-        mDeviceConfigListener.start();
-
+        mAdapterProperties = new AdapterProperties(this);
+        mAdapterStateMachine = new AdapterState(this, mLooper);
+        mBinder = new AdapterServiceBinder(this);
         mUserManager = getNonNullSystemService(UserManager.class);
         mAppOps = getNonNullSystemService(AppOpsManager.class);
         mPowerManager = getNonNullSystemService(PowerManager.class);
         mBatteryStatsManager = getNonNullSystemService(BatteryStatsManager.class);
         mCompanionDeviceManager = getNonNullSystemService(CompanionDeviceManager.class);
+    }
+
+    private void init() {
+        debugLog("init()");
+        Config.init(this);
+        if (!Flags.fastBindToApp()) {
+            // Moved to OnCreate
+            if (mLooper == null) {
+                mLooper = Looper.getMainLooper();
+            }
+            mHandler = new AdapterServiceHandler(mLooper);
+        }
+        initMetricsLogger();
+        mDeviceConfigListener.start();
+
+        if (!Flags.fastBindToApp()) {
+            // Moved to OnCreate
+            mUserManager = getNonNullSystemService(UserManager.class);
+            mAppOps = getNonNullSystemService(AppOpsManager.class);
+            mPowerManager = getNonNullSystemService(PowerManager.class);
+            mBatteryStatsManager = getNonNullSystemService(BatteryStatsManager.class);
+            mCompanionDeviceManager = getNonNullSystemService(CompanionDeviceManager.class);
+        }
 
         mRemoteDevices = new RemoteDevices(this, mLooper);
         mRemoteDevices.init();
         clearDiscoveringPackages();
-        mBinder = new AdapterServiceBinder(this);
+        if (!Flags.fastBindToApp()) {
+            mBinder = new AdapterServiceBinder(this);
+        }
         mAdapter = BluetoothAdapter.getDefaultAdapter();
-        mAdapterProperties = new AdapterProperties(this);
-        mAdapterStateMachine = new AdapterState(this, mLooper);
+        if (!Flags.fastBindToApp()) {
+            // Moved to OnCreate
+            mAdapterProperties = new AdapterProperties(this);
+            mAdapterStateMachine = new AdapterState(this, mLooper);
+        }
         mBluetoothKeystoreService =
                 new BluetoothKeystoreService(
                         BluetoothKeystoreNativeInterface.getInstance(), isCommonCriteriaMode());
@@ -5885,6 +5912,10 @@ public class AdapterService extends Service {
                 UserManager.DISALLOW_BLUETOOTH, UserHandle.SYSTEM)) {
             debugLog("enable() called when Bluetooth was disallowed");
             return false;
+        }
+        if (Flags.fastBindToApp()) {
+            // The call to init must be done on the main thread
+            mHandler.post(() -> init());
         }
 
         debugLog("enable() - Enable called with quiet mode status =  " + quietMode);
