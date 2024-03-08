@@ -173,6 +173,11 @@
             "qos_config_name": ["QoS_Config_32_1_1"]
         },
         {
+            "name": "SingleDev_OneChanMonoSnk_32_1_2",
+            "codec_config_name": "SingleDev_OneChanMonoSnk_32_1",
+            "qos_config_name": ["QoS_Config_32_1_2"]
+        },
+        {
             "name": "SingleDev_OneChanMonoSnk_32_2_Balanced_Reliability",
             "codec_config_name": "SingleDev_OneChanMonoSnk_32_2",
             "qos_config_name": ["QoS_Config_Balanced_Reliability"]
@@ -181,6 +186,11 @@
             "name": "SingleDev_OneChanMonoSnk_32_2_1",
             "codec_config_name": "SingleDev_OneChanMonoSnk_32_2",
             "qos_config_name": ["QoS_Config_32_2_1"]
+        },
+        {
+            "name": "SingleDev_OneChanMonoSnk_32_2_2",
+            "codec_config_name": "SingleDev_OneChanMonoSnk_32_2",
+            "qos_config_name": ["QoS_Config_32_2_2"]
         },
         {
             "name": "SingleDev_OneChanMonoSnk_16_1_Balanced_Reliability",
@@ -943,42 +953,42 @@
             "qos_config_name": ["QoS_Config_Balanced_Reliability"]
         },
         {
-            "name": "SingleDev_TwoChanStereoSnk_48_4_1_OneChanMonoSrc_24_2_Balanced_Reliability",
+            "name": "SingleDev_TwoChanStereoSnk_48_4_OneChanMonoSrc_24_2_Balanced_Reliability",
             "codec_config_name": "SingleDev_TwoChanStereoSnk_48_4_OneChanMonoSrc_24_2",
             "qos_config_name": ["QoS_Config_Balanced_Reliability"]
         },
         {
-            "name": "SingleDev_TwoChanStereoSnk_48_4_1_OneChanMonoSrc_16_2_Balanced_Reliability",
+            "name": "SingleDev_TwoChanStereoSnk_48_4_OneChanMonoSrc_16_2_Balanced_Reliability",
             "codec_config_name": "SingleDev_TwoChanStereoSnk_48_4_OneChanMonoSrc_16_2",
             "qos_config_name": ["QoS_Config_Balanced_Reliability"]
         },
         {
-            "name": "SingleDev_OneChanStereoSnk_48_4_1_OneChanMonoSrc_32_2_Balanced_Reliability",
+            "name": "SingleDev_OneChanStereoSnk_48_4_OneChanMonoSrc_32_2_Balanced_Reliability",
             "codec_config_name": "SingleDev_OneChanStereoSnk_48_4_OneChanMonoSrc_32_2",
             "qos_config_name": ["QoS_Config_Balanced_Reliability"]
         },
         {
-            "name": "SingleDev_OneChanStereoSnk_48_4_1_OneChanMonoSrc_24_2_Balanced_Reliability",
+            "name": "SingleDev_OneChanStereoSnk_48_4_OneChanMonoSrc_24_2_Balanced_Reliability",
             "codec_config_name": "SingleDev_OneChanStereoSnk_48_4_OneChanMonoSrc_24_2",
             "qos_config_name": ["QoS_Config_Balanced_Reliability"]
         },
         {
-            "name": "SingleDev_OneChanStereoSnk_48_4_1_OneChanMonoSrc_16_2_Balanced_Reliability",
+            "name": "SingleDev_OneChanStereoSnk_48_4_OneChanMonoSrc_16_2_Balanced_Reliability",
             "codec_config_name": "SingleDev_OneChanStereoSnk_48_4_OneChanMonoSrc_16_2",
             "qos_config_name": ["QoS_Config_Balanced_Reliability"]
         },
         {
-            "name": "SingleDev_OneChanMonoSnk_48_4_1_OneChanMonoSrc_32_2_Balanced_Reliability",
+            "name": "SingleDev_OneChanMonoSnk_48_4_OneChanMonoSrc_32_2_Balanced_Reliability",
             "codec_config_name": "SingleDev_OneChanMonoSnk_48_4_OneChanMonoSrc_32_2",
             "qos_config_name": ["QoS_Config_Balanced_Reliability"]
         },
         {
-            "name": "SingleDev_OneChanMonoSnk_48_4_1_OneChanMonoSrc_24_2_1_Balanced_Reliability",
+            "name": "SingleDev_OneChanMonoSnk_48_4_OneChanMonoSrc_24_2_Balanced_Reliability",
             "codec_config_name": "SingleDev_OneChanMonoSnk_48_4_OneChanMonoSrc_24_2",
             "qos_config_name": ["QoS_Config_Balanced_Reliability"]
         },
         {
-            "name": "SingleDev_OneChanMonoSnk_48_4_1_OneChanMonoSrc_16_2_Balanced_Reliability",
+            "name": "SingleDev_OneChanMonoSnk_48_4_OneChanMonoSrc_16_2_Balanced_Reliability",
             "codec_config_name": "SingleDev_OneChanMonoSnk_48_4_OneChanMonoSrc_16_2",
             "qos_config_name": ["QoS_Config_Balanced_Reliability"]
         },
