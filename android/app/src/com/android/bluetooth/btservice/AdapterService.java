@@ -4617,9 +4617,6 @@ public class AdapterService extends Service {
 
             enforceBluetoothPrivilegedPermission(service);
 
-            if (service.mMetadataListeners == null) {
-                return false;
-            }
             ArrayList<IBluetoothMetadataListener> list = service.mMetadataListeners.get(device);
             if (list == null) {
                 list = new ArrayList<>();
@@ -4661,12 +4658,7 @@ public class AdapterService extends Service {
 
             enforceBluetoothPrivilegedPermission(service);
 
-            if (service.mMetadataListeners == null) {
-                return false;
-            }
-            if (service.mMetadataListeners.containsKey(device)) {
-                service.mMetadataListeners.remove(device);
-            }
+            service.mMetadataListeners.remove(device);
             return true;
         }
 
