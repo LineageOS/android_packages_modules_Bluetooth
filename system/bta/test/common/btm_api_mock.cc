@@ -115,6 +115,12 @@ bool BTM_BleIsLinkKeyKnown(const RawAddress address) {
   return btm_interface->BTM_BleIsLinkKeyKnown(address);
 }
 
+bool BTM_IsAclConnectionUp(const RawAddress& remote_bda,
+                           tBT_TRANSPORT transport) {
+  LOG_ASSERT(btm_interface) << "Mock btm interface not set!";
+  return btm_interface->BTM_IsAclConnectionUp(remote_bda, transport);
+}
+
 std::optional<tBLE_BD_ADDR> BTM_BleGetIdentityAddress(
     const RawAddress address) {
   LOG_ASSERT(btm_interface) << "Mock btm interface not set!";

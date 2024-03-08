@@ -119,6 +119,7 @@ class LeAudioDevice {
   uint16_t tmap_role_hdl_;
   std::string model_name_;
   bool allowlist_flag_;
+  bool acl_asymmetric_;
 
   alarm_t* link_quality_timer;
   uint16_t link_quality_timer_data;
@@ -140,6 +141,7 @@ class LeAudioDevice {
         audio_directions_(0),
         model_name_(""),
         allowlist_flag_(false),
+        acl_asymmetric_(false),
         link_quality_timer(nullptr),
         dsa_({{DsaMode::DISABLED},
               types::DataPathState::IDLE,
