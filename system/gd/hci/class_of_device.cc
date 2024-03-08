@@ -23,11 +23,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sstream>
-#include <vector>
-
-#include "common/numbers.h"
-#include "common/strings.h"
-#include "os/log.h"
 
 namespace bluetooth {
 namespace hci {
