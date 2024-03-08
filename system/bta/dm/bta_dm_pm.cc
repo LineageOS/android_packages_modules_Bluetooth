@@ -66,6 +66,8 @@ static void bta_dm_pm_stop_timer_by_index(tBTA_PM_TIMER* p_timer,
                                           uint8_t timer_idx);
 
 static tBTM_PM_PWR_MD get_sniff_entry(uint8_t index);
+static void bta_dm_pm_timer(const RawAddress& bd_addr,
+                            tBTA_DM_PM_ACTION pm_request);
 
 #include "../hh/bta_hh_int.h"
 /* BTA_DM_PM_SSR1 will be dedicated for HH SSR setting entry, no other profile
@@ -1173,7 +1175,8 @@ static void bta_dm_pm_btm_status(const RawAddress& bd_addr,
 }
 
 /** Process pm timer event from btm */
-void bta_dm_pm_timer(const RawAddress& bd_addr, tBTA_DM_PM_ACTION pm_request) {
+static void bta_dm_pm_timer(const RawAddress& bd_addr,
+                            tBTA_DM_PM_ACTION pm_request) {
   log::verbose("");
   bta_dm_pm_set_mode(bd_addr, pm_request, BTA_DM_PM_EXECUTE);
 }
