@@ -204,8 +204,9 @@ public class ContextMap<C, T> {
     private final EvictingQueue<AppAdvertiseStats> mLastAdvertises =
             EvictingQueue.create(ADVERTISE_STATE_MAX_SIZE);
 
-    /** Internal list of connected devices **/
-    private Set<Connection> mConnections = new HashSet<Connection>();
+    /** Internal list of connected devices */
+    private List<Connection> mConnections = new ArrayList<Connection>();
+
     private final Object mConnectionsLock = new Object();
 
     /** Add an entry to the application context list. */
@@ -384,9 +385,7 @@ public class ContextMap<C, T> {
         return app;
     }
 
-    /**
-     * Get an application context by the calling Apps name.
-     */
+    /** Get an application context by the calling Apps name. */
     public App getByName(String name) {
         App app = getAppByPredicate(entry -> entry.name.equals(name));
         if (app == null) {
