@@ -231,7 +231,6 @@ init_flags!(
         btm_dm_flush_discovery_queue_on_search_cancel,
         bta_dm_stop_discovery_on_search_cancel,
         classic_discovery_only,
-        clear_hidd_interrupt_cid_on_disconnect = true,
         delay_hidh_cleanup_until_hidh_ready_start = true,
         device_iot_config_logging,
         dynamic_avrcp_version_enhancement = true,

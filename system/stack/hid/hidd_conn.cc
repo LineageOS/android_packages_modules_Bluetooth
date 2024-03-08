@@ -31,7 +31,6 @@
 #include <cstdint>
 
 #include "bta/include/bta_sec_api.h"
-#include "common/init_flags.h"
 #include "internal_include/bt_target.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
@@ -369,10 +368,7 @@ static void hidd_l2cif_disconnect(uint16_t cid) {
 
     // now disconnect CTRL
     L2CA_DisconnectReq(p_hcon->ctrl_cid);
-    if (bluetooth::common::init_flags::
-            clear_hidd_interrupt_cid_on_disconnect_is_enabled()) {
-      p_hcon->ctrl_cid = 0;
-    }
+    p_hcon->ctrl_cid = 0;
   }
 
   if ((p_hcon->ctrl_cid == 0) && (p_hcon->intr_cid == 0)) {
