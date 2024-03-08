@@ -23,15 +23,22 @@
  *
  *****************************************************************************/
 
+#define LOG_TAG "pan"
+
 #include <base/logging.h>
 
 #include <cstdint>
 
+#include "internal_include/bt_target.h"
+#include "os/log.h"
 #include "stack/include/bt_types.h"
+#include "stack/include/bt_uuid16.h"
 #include "stack/include/sdp_api.h"
+#include "stack/include/sdpdefs.h"
 #include "stack/pan/pan_int.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth::legacy::stack::sdp;
 
 static const uint8_t pan_proto_elem_data[] = {
     0x35, 0x18,       /* data element sequence of length 0x18 bytes */
@@ -66,43 +73,49 @@ uint32_t pan_register_with_sdp(uint16_t uuid, const char* p_name,
   uint32_t proto_len = (uint32_t)pan_proto_elem_data[1];
 
   /* Create a record */
-  sdp_handle = SDP_CreateRecord();
+  sdp_handle = get_legacy_stack_sdp_api()->handle.SDP_CreateRecord();
 
   if (sdp_handle == 0) {
-    PAN_TRACE_ERROR("PAN_SetRole - could not create SDP record");
+    LOG_ERROR("PAN_SetRole - could not create SDP record");
     return 0;
   }
 
   /* Service Class ID List */
-  SDP_AddServiceClassIdList(sdp_handle, 1, &uuid);
+  get_legacy_stack_sdp_api()->handle.SDP_AddServiceClassIdList(sdp_handle, 1,
+                                                               &uuid);
 
   /* Add protocol element sequence from the constant string */
-  SDP_AddAttribute(sdp_handle, ATTR_ID_PROTOCOL_DESC_LIST,
-                   DATA_ELE_SEQ_DESC_TYPE, proto_len,
-                   (uint8_t*)(pan_proto_elem_data + 2));
+  get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+      sdp_handle, ATTR_ID_PROTOCOL_DESC_LIST, DATA_ELE_SEQ_DESC_TYPE, proto_len,
+      (uint8_t*)(pan_proto_elem_data + 2));
 
   /* Language base */
-  SDP_AddLanguageBaseAttrIDList(sdp_handle, LANG_ID_CODE_ENGLISH,
-                                LANG_ID_CHAR_ENCODE_UTF8, LANGUAGE_BASE_ID);
+  get_legacy_stack_sdp_api()->handle.SDP_AddLanguageBaseAttrIDList(
+      sdp_handle, LANG_ID_CODE_ENGLISH, LANG_ID_CHAR_ENCODE_UTF8,
+      LANGUAGE_BASE_ID);
 
   /* Profile descriptor list */
-  SDP_AddProfileDescriptorList(sdp_handle, uuid, PAN_PROFILE_VERSION);
+  get_legacy_stack_sdp_api()->handle.SDP_AddProfileDescriptorList(
+      sdp_handle, uuid, PAN_PROFILE_VERSION);
 
   /* Service Name */
-  SDP_AddAttribute(sdp_handle, ATTR_ID_SERVICE_NAME, TEXT_STR_DESC_TYPE,
-                   (uint8_t)(strlen(p_name) + 1), (uint8_t*)p_name);
+  get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+      sdp_handle, ATTR_ID_SERVICE_NAME, TEXT_STR_DESC_TYPE,
+      (uint8_t)(strlen(p_name) + 1), (uint8_t*)p_name);
 
   /* Service description */
-  SDP_AddAttribute(sdp_handle, ATTR_ID_SERVICE_DESCRIPTION, TEXT_STR_DESC_TYPE,
-                   (uint8_t)(strlen(p_desc) + 1), (uint8_t*)p_desc);
+  get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+      sdp_handle, ATTR_ID_SERVICE_DESCRIPTION, TEXT_STR_DESC_TYPE,
+      (uint8_t)(strlen(p_desc) + 1), (uint8_t*)p_desc);
 
   /* Security description */
   // Only NAP and PANU has service level security; GN has no security
   if (uuid == UUID_SERVCLASS_NAP || uuid == UUID_SERVCLASS_PANU) {
     UINT16_TO_BE_FIELD(&security, 0x0001);
   }
-  SDP_AddAttribute(sdp_handle, ATTR_ID_SECURITY_DESCRIPTION, UINT_DESC_TYPE, 2,
-                   (uint8_t*)&security);
+  get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+      sdp_handle, ATTR_ID_SECURITY_DESCRIPTION, UINT_DESC_TYPE, 2,
+      (uint8_t*)&security);
 
   if (uuid == UUID_SERVCLASS_NAP) {
     uint16_t NetAccessType = 0x0005;      /* Ethernet */
@@ -112,18 +125,19 @@ uint32_t pan_register_with_sdp(uint16_t uuid, const char* p_name,
     /* Net access type. */
     p = array;
     UINT16_TO_BE_STREAM(p, NetAccessType);
-    SDP_AddAttribute(sdp_handle, ATTR_ID_NET_ACCESS_TYPE, UINT_DESC_TYPE, 2,
-                     array);
+    get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+        sdp_handle, ATTR_ID_NET_ACCESS_TYPE, UINT_DESC_TYPE, 2, array);
 
     /* Net access rate. */
     p = array;
     UINT32_TO_BE_STREAM(p, NetAccessRate);
-    SDP_AddAttribute(sdp_handle, ATTR_ID_MAX_NET_ACCESS_RATE, UINT_DESC_TYPE, 4,
-                     array);
+    get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+        sdp_handle, ATTR_ID_MAX_NET_ACCESS_RATE, UINT_DESC_TYPE, 4, array);
   }
 
   /* Make the service browsable */
-  SDP_AddUuidSequence(sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse_list);
+  get_legacy_stack_sdp_api()->handle.SDP_AddUuidSequence(
+      sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse_list);
 
   return sdp_handle;
 }
@@ -265,8 +279,8 @@ void pan_dump_status(void) {
   uint16_t i;
   tPAN_CONN* p_pcb;
 
-  PAN_TRACE_DEBUG("PAN role %x, active role %d, num_conns %d", pan_cb.role,
-                  pan_cb.active_role, pan_cb.num_conns);
+  LOG_VERBOSE("PAN role %x, active role %d, num_conns %d", pan_cb.role,
+              pan_cb.active_role, pan_cb.num_conns);
 
   for (i = 0, p_pcb = pan_cb.pcb; i < MAX_PAN_CONNS; i++, p_pcb++) {
     VLOG(1) << +i << " state:" << p_pcb->con_state

@@ -27,6 +27,8 @@
 // Returns true on success, otherwise false.
 bool bta_av_co_set_active_peer(const RawAddress& peer_addr);
 
+void bta_av_co_save_codec(const uint8_t* new_codec_config);
+
 // Gets the A2DP peer parameters that are used to initialize the encoder.
 // The peer address is |peer_addr|.
 // The parameters are stored in |p_peer_params|.
@@ -39,12 +41,6 @@ void bta_av_co_get_peer_params(const RawAddress& peer_addr,
 // Returns the A2DP encoder interface if the current codec is setup,
 // otherwise NULL.
 const tA2DP_ENCODER_INTERFACE* bta_av_co_get_encoder_interface(void);
-
-// Gets the current A2DP decoder interface that can be used to decode received
-// A2DP packets - see |tA2DP_DECODER_INTERFACE|.
-// Returns the A2DP decoder interface if the current codec is setup, otherwise
-// NULL.
-const tA2DP_DECODER_INTERFACE* bta_av_co_get_decoder_interface(void);
 
 // Sets the user preferred codec configuration.
 // The peer address is |peer_addr|.

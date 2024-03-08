@@ -26,6 +26,7 @@
 #include "bta_gatt_queue_mock.h"
 #include "btm_api_mock.h"
 #include "gatt/database_builder.h"
+#include "stack/include/bt_uuid16.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
@@ -130,7 +131,6 @@ TEST_F(VolumeControlDevicesTest, test_disconnect) {
   test_device_0->connection_id = 0x0005;
   tGATT_IF gatt_if = 8;
   EXPECT_CALL(gatt_interface, Close(test_device_0->connection_id));
-  EXPECT_CALL(gatt_interface, CancelOpen(gatt_if, test_address_1, _));
   devices_->Disconnect(gatt_if);
 }
 

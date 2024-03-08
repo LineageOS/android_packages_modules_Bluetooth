@@ -26,6 +26,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
+import com.android.bluetooth.BluetoothEventLogger;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -45,13 +46,13 @@ public class MediaPlayerWrapper {
     static boolean sTesting = false;
     private static final int PLAYBACK_STATE_CHANGE_EVENT_LOGGER_SIZE = 5;
     private static final String PLAYBACK_STATE_CHANGE_LOGGER_EVENT_TITLE =
-            "Playback State change Event";
+            "BTAudio Playback State change Event";
 
     final Context mContext;
     private MediaController mMediaController;
     private String mPackageName;
     private Looper mLooper;
-    private final BTAudioEventLogger mPlaybackStateChangeEventLogger;
+    private final BluetoothEventLogger mPlaybackStateChangeEventLogger;
 
     private MediaData mCurrentData;
 
@@ -88,8 +89,10 @@ public class MediaPlayerWrapper {
         mMediaController = controller;
         mPackageName = controller.getPackageName();
         mLooper = looper;
-        mPlaybackStateChangeEventLogger = new BTAudioEventLogger(
-                PLAYBACK_STATE_CHANGE_EVENT_LOGGER_SIZE, PLAYBACK_STATE_CHANGE_LOGGER_EVENT_TITLE);
+        mPlaybackStateChangeEventLogger =
+                new BluetoothEventLogger(
+                        PLAYBACK_STATE_CHANGE_EVENT_LOGGER_SIZE,
+                        PLAYBACK_STATE_CHANGE_LOGGER_EVENT_TITLE);
 
         mCurrentData = new MediaData(null, null, null);
         mCurrentData.queue = Util.toMetadataList(mContext, getQueue());
@@ -458,8 +461,11 @@ public class MediaPlayerWrapper {
         @Override
         public void onMetadataChanged(@Nullable MediaMetadata mediaMetadata) {
             if (!isMetadataReady()) {
-                Log.v(TAG, "onMetadataChanged(): " + mPackageName
-                        + " tried to update with no queue");
+                Log.v(
+                        TAG,
+                        "onMetadataChanged(): "
+                                + mPackageName
+                                + " tried to update with no metadata");
                 return;
             }
 
@@ -492,13 +498,16 @@ public class MediaPlayerWrapper {
         @Override
         public void onPlaybackStateChanged(@Nullable PlaybackState state) {
             if (!isPlaybackStateReady()) {
-                Log.v(TAG, "onPlaybackStateChanged(): " + mPackageName
-                        + " tried to update with no queue");
+                Log.v(
+                        TAG,
+                        "onPlaybackStateChanged(): "
+                                + mPackageName
+                                + " tried to update with no state");
                 return;
             }
 
-            mPlaybackStateChangeEventLogger.logv(TAG, "onPlaybackStateChanged(): "
-                    + mPackageName + " : " + state.toString());
+            mPlaybackStateChangeEventLogger.logv(
+                    TAG, "onPlaybackStateChanged(): " + mPackageName + " : " + state);
 
             if (!playstateEquals(state, getPlaybackState())) {
                 e("The callback playback state doesn't match the current state");
@@ -510,8 +519,8 @@ public class MediaPlayerWrapper {
                 return;
             }
 
-            // If there is no playstate, ignore the update.
-            if (state.getState() == PlaybackState.STATE_NONE) {
+            // If state isn't null and there is no playstate, ignore the update.
+            if (state != null && state.getState() == PlaybackState.STATE_NONE) {
                 Log.v(TAG, "Waiting to send update as controller has no playback state");
                 return;
             }

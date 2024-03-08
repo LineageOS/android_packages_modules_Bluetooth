@@ -12,3 +12,6 @@ compile_commands.json
 .vscode/
 *.profraw
 *.iml
+**/.idea
+**/__pycache__/
+*.py[cod]

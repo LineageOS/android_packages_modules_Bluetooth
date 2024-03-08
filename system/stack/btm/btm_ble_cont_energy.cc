@@ -16,11 +16,16 @@
  *
  ******************************************************************************/
 
-#include <string.h>
-#include "bt_target.h"
+#define LOG_TAG "btm_ble_cont_energy"
 
+#include <inttypes.h>
+#include <string.h>
+
+#include "bt_target.h"
 #include "btm_ble_api.h"
+#include "os/log.h"
 #include "stack/btm/btm_int_types.h"
+#include "stack/include/bt_types.h"
 
 extern tBTM_CB btm_cb;
 
@@ -44,7 +49,7 @@ static void btm_ble_cont_energy_cmpl_cback(tBTM_VSC_CMPL* p_params) {
            total_energy_used = 0;
 
   if (len < 17) {
-    BTM_TRACE_ERROR("wrong length for btm_ble_cont_energy_cmpl_cback");
+    LOG_ERROR("wrong length for btm_ble_cont_energy_cmpl_cback");
     return;
   }
 
@@ -56,9 +61,10 @@ static void btm_ble_cont_energy_cmpl_cback(tBTM_VSC_CMPL* p_params) {
   STREAM_TO_UINT32(total_idle_time, p);
   STREAM_TO_UINT32(total_energy_used, p);
 
-  BTM_TRACE_DEBUG(
-      "energy_info status=%d,tx_t=%ld, rx_t=%ld, ener_used=%ld, idle_t=%ld",
-      status, total_tx_time, total_rx_time, total_energy_used, total_idle_time);
+  LOG_VERBOSE("energy_info status=%d,tx_t=%" PRId32 ", rx_t=%" PRId32
+              ", ener_used=%" PRId32 ", idle_t=%" PRId32,
+              status, total_tx_time, total_rx_time, total_energy_used,
+              total_idle_time);
 
   if (NULL != ble_energy_info_cb.p_ener_cback)
     ble_energy_info_cb.p_ener_cback(total_tx_time, total_rx_time,
@@ -84,10 +90,10 @@ tBTM_STATUS BTM_BleGetEnergyInfo(tBTM_BLE_ENERGY_INFO_CBACK* p_ener_cback) {
 
   BTM_BleGetVendorCapabilities(&cmn_ble_vsc_cb);
 
-  BTM_TRACE_EVENT("BTM_BleGetEnergyInfo");
+  LOG_VERBOSE("BTM_BleGetEnergyInfo");
 
   if (0 == cmn_ble_vsc_cb.energy_support) {
-    BTM_TRACE_ERROR("Controller does not support get energy info");
+    LOG_ERROR("Controller does not support get energy info");
     return BTM_ERR_PROCESSING;
   }
 

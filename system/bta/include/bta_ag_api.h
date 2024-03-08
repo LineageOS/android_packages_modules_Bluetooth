@@ -25,14 +25,14 @@
 #ifndef BTA_AG_API_H
 #define BTA_AG_API_H
 
-#include "bta_api.h"
-#include "bta_hfp_api.h"
-
 #include <string>
 #include <vector>
 
 #include "bta/include/bta_ag_api.h"
 #include "bta/include/bta_api.h"
+#include "bta_api.h"
+#include "bta_hfp_api.h"
+#include "macros.h"
 #include "types/raw_address.h"
 
 /*****************************************************************************
@@ -52,7 +52,7 @@
 #define BTA_AG_FEAT_ECC 0x00000080    /* Enhanced Call Control */
 #define BTA_AG_FEAT_EXTERR 0x00000100 /* Extended error codes */
 #define BTA_AG_FEAT_CODEC 0x00000200  /* Codec Negotiation */
-#define BTA_AG_FEAT_SWB 0x00000400    /* Super Wide Band */
+#define BTA_AG_FEAT_SWB 0x00001000    /* Super Wide Band */
 
 /* AG SDP feature masks */
 #define BTA_AG_FEAT_WBS_SUPPORT 0x0020 /* Supports WBS */
@@ -107,10 +107,6 @@ typedef uint8_t tBTA_AG_STATUS;
 #endif
 
 #define BTA_AG_HANDLE_SCO_NO_CHANGE 0xFFFF
-
-#define CASE_RETURN_TEXT(code) \
-  case code:                   \
-    return #code
 
 typedef enum : uint8_t {
   /* AG result codes used with BTA_AgResult */
@@ -296,6 +292,17 @@ typedef uint16_t tBTA_AG_PEER_CODEC;
 #define BTA_AG_AT_MAX_LEN 256
 #endif
 
+// Define hfp offload config structure
+namespace hfp {
+
+struct offload_config {
+  tBTA_AG_PEER_CODEC sco_codec;
+  int32_t connection_handle;
+  bool is_controller_codec;
+  bool is_nrec;
+};
+
+}  // namespace hfp
 /* data associated with BTA_AG_IND_RES */
 typedef struct {
   uint16_t id;
@@ -570,14 +577,16 @@ void BTA_AgClose(uint16_t handle);
  * Function         BTA_AgAudioOpen
  *
  * Description      Opens an audio connection to the currently connected
- *                  headset or handsfree. Specifying force_cvsd to true to
- *                  force the stack to use CVSD even if mSBC is supported.
+ *                  headset or handsfree. Specify `disabled_codecs` to
+ *                  force the stack to avoid using certain codecs.
+ *
+ *                  Note that CVSD is a mandatory codec and cannot be disabled.
  *
  *
  * Returns          void
  *
  ******************************************************************************/
-void BTA_AgAudioOpen(uint16_t handle, bool force_cvsd);
+void BTA_AgAudioOpen(uint16_t handle, tBTA_AG_PEER_CODEC disabled_codecs);
 
 /*******************************************************************************
  *

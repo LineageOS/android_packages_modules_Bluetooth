@@ -18,48 +18,33 @@
 #include <base/location.h>
 #include <gtest/gtest.h>
 
-#include <chrono>
-
 #include "bta/av/bta_av_int.h"
-#include "bta/dm/bta_dm_int.h"
 #include "bta/hf_client/bta_hf_client_int.h"
-#include "bta/include/bta_api.h"
-#include "bta/include/bta_dm_api.h"
-#include "bta/include/bta_hf_client_api.h"
-#include "btif/include/stack_manager.h"
-#include "common/message_loop_thread.h"
-#include "osi/include/log.h"
-#include "stack/include/btm_status.h"
+#include "common/init_flags.h"
 #include "test/common/mock_functions.h"
 #include "test/mock/mock_osi_alarm.h"
 #include "test/mock/mock_stack_acl.h"
-#include "test/mock/mock_stack_btm_sec.h"
 
 using namespace std::chrono_literals;
+
+bool btif_av_both_enable(void) { return true; }
 
 namespace {
 const RawAddress kRawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
 }  // namespace
-
-// TODO move into mock
-void BTM_block_role_switch_and_sniff_mode_for(const RawAddress& peer_addr) {}
 
 struct alarm_t {
   alarm_t(const char* name){};
   int any_value;
 };
 
-extern uint8_t appl_trace_level;
-
 class BtaAvTest : public testing::Test {
  protected:
   void SetUp() override {
     reset_mock_function_count_map();
     bluetooth::common::InitFlags::SetAllForTesting();
-    appl_trace_level = BT_TRACE_LEVEL_VERBOSE;
   }
   void TearDown() override {
-    LOG_INFO("appl_trace_level:%hhu", appl_trace_level);
   }
 };
 

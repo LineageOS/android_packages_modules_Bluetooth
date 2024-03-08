@@ -20,27 +20,16 @@
  *
  *  mockcify.pl ver 0.2
  */
-
-#include <map>
-#include <string>
-
-// Original included files, if any
-// NOTE: Since this is a mock file with mock definitions some number of
-//       include files may not be required.  The include-what-you-use
-//       still applies, but crafting proper inclusion is out of scope
-//       for this effort.  This compilation unit may compile as-is, or
-//       may need attention to prune the inclusion set.
-
 // Mock include file to share data between tests and mock
 #include "test/mock/mock_stack_btm_ble_addr.h"
+
+// Original included files, if any
+
+#include "test/common/mock_functions.h"
 #include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
 
 // Mocked compile conditionals, if any
-#ifndef UNUSED_ATTR
-#define UNUSED_ATTR
-#endif
-
 // Mocked internal structures, if any
 
 namespace test {
@@ -50,8 +39,6 @@ namespace stack_btm_ble_addr {
 // Function state capture and return values, if needed
 struct btm_gen_resolve_paddr_low btm_gen_resolve_paddr_low;
 struct btm_gen_resolvable_private_addr btm_gen_resolvable_private_addr;
-struct btm_get_next_private_addrress_interval_ms
-    btm_get_next_private_addrress_interval_ms;
 struct btm_ble_init_pseudo_addr btm_ble_init_pseudo_addr;
 struct btm_ble_addr_resolvable btm_ble_addr_resolvable;
 struct btm_ble_resolve_random_addr btm_ble_resolve_random_addr;
@@ -75,11 +62,6 @@ void btm_gen_resolvable_private_addr(
     base::Callback<void(const RawAddress&)> cb) {
   inc_func_call_count(__func__);
   test::mock::stack_btm_ble_addr::btm_gen_resolvable_private_addr(cb);
-}
-uint64_t btm_get_next_private_addrress_interval_ms() {
-  inc_func_call_count(__func__);
-  return test::mock::stack_btm_ble_addr::
-      btm_get_next_private_addrress_interval_ms();
 }
 bool btm_ble_init_pseudo_addr(tBTM_SEC_DEV_REC* p_dev_rec,
                               const RawAddress& new_pseudo_addr) {
@@ -120,7 +102,7 @@ bool btm_random_pseudo_to_identity_addr(RawAddress* random_pseudo,
 }
 void btm_ble_refresh_peer_resolvable_private_addr(
     const RawAddress& pseudo_bda, const RawAddress& rpa,
-    tBTM_SEC_BLE::tADDRESS_TYPE rra_type) {
+    tBLE_RAND_ADDR_TYPE rra_type) {
   inc_func_call_count(__func__);
   test::mock::stack_btm_ble_addr::btm_ble_refresh_peer_resolvable_private_addr(
       pseudo_bda, rpa, rra_type);

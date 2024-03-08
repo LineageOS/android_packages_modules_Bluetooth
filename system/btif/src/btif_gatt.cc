@@ -28,20 +28,15 @@
 
 #include "btif_gatt.h"
 
-#include <errno.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_gatt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "bta_api.h"
 #include "bta_gatt_api.h"
-#include "btif_common.h"
-#include "btif_gatt_util.h"
-#include "btif_storage.h"
-#include "btif_util.h"
 #include "main/shim/distance_measurement_manager.h"
+#include "main/shim/le_advertising_manager.h"
 
 const btgatt_callbacks_t* bt_gatt_callbacks = NULL;
 
@@ -102,7 +97,7 @@ const btgatt_interface_t* btif_gatt_get_interface() {
   // structure cause explosion of dependencies. It must be initialized here
   // until those dependencies are properly abstracted for tests.
   btgattInterface.scanner = get_ble_scanner_instance();
-  btgattInterface.advertiser = get_ble_advertiser_instance();
+  btgattInterface.advertiser = bluetooth::shim::get_ble_advertiser_instance();
   btgattInterface.distance_measurement_manager =
       bluetooth::shim::get_distance_measurement_instance();
   return &btgattInterface;

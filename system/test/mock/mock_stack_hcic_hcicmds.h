@@ -25,29 +25,12 @@
 
 #include <cstdint>
 #include <functional>
-#include <map>
-#include <string>
 
 // Original included files, if any
-// NOTE: Since this is a mock file with mock definitions some number of
-//       include files may not be required.  The include-what-you-use
-//       still applies, but crafting proper inclusion is out of scope
-//       for this effort.  This compilation unit may compile as-is, or
-//       may need attention to prune from (or add to ) the inclusion set.
-#include <base/functional/callback_forward.h>
-#include <stddef.h>
-#include <string.h>
-
-#include "bt_target.h"
-#include "btu.h"
+#include "base/callback.h"
 #include "device/include/esco_parameters.h"
-#include "hcidefs.h"
 #include "hcimsgs.h"
-#include "osi/include/allocator.h"
-#include "stack/include/acl_hci_link_interface.h"
-#include "stack/include/bt_hdr.h"
 #include "stack/include/bt_octets.h"
-#include "test/common/mock_functions.h"
 #include "types/raw_address.h"
 
 // Mocked compile conditionals, if any
@@ -110,18 +93,6 @@ struct btsnd_hcic_auth_request {
 };
 extern struct btsnd_hcic_auth_request btsnd_hcic_auth_request;
 
-// Name: btsnd_hcic_change_conn_type
-// Params: uint16_t handle, uint16_t packet_types
-// Return: void
-struct btsnd_hcic_change_conn_type {
-  std::function<void(uint16_t handle, uint16_t packet_types)> body{
-      [](uint16_t handle, uint16_t packet_types) {}};
-  void operator()(uint16_t handle, uint16_t packet_types) {
-    body(handle, packet_types);
-  };
-};
-extern struct btsnd_hcic_change_conn_type btsnd_hcic_change_conn_type;
-
 // Name: btsnd_hcic_change_name
 // Params: BD_NAME name
 // Return: void
@@ -152,6 +123,15 @@ struct btsnd_hcic_delete_stored_key {
   };
 };
 extern struct btsnd_hcic_delete_stored_key btsnd_hcic_delete_stored_key;
+
+// Name: btsnd_hcic_enable_test_mode
+// Params: void
+// Return: void
+struct btsnd_hcic_enable_test_mode {
+  std::function<void(void)> body{[](void) {}};
+  void operator()(void) { body(); };
+};
+extern struct btsnd_hcic_enable_test_mode btsnd_hcic_enable_test_mode;
 
 // Name: btsnd_hcic_enhanced_accept_synchronous_connection
 // Params: const RawAddress& bd_addr, enh_esco_params_t* p_params
@@ -487,6 +467,21 @@ struct btsnd_hcic_set_conn_encrypt {
 };
 extern struct btsnd_hcic_set_conn_encrypt btsnd_hcic_set_conn_encrypt;
 
+// Name: btsnd_hcic_set_event_filter
+// Params: uint8_t filt_type, uint8_t filt_cond_type, uint8_t* filt_cond,
+// uint8_t filt_cond_len Return: void
+struct btsnd_hcic_set_event_filter {
+  std::function<void(uint8_t filt_type, uint8_t filt_cond_type,
+                     uint8_t* filt_cond, uint8_t filt_cond_len)>
+      body{[](uint8_t filt_type, uint8_t filt_cond_type, uint8_t* filt_cond,
+              uint8_t filt_cond_len) {}};
+  void operator()(uint8_t filt_type, uint8_t filt_cond_type, uint8_t* filt_cond,
+                  uint8_t filt_cond_len) {
+    body(filt_type, filt_cond_type, filt_cond, filt_cond_len);
+  };
+};
+extern struct btsnd_hcic_set_event_filter btsnd_hcic_set_event_filter;
+
 // Name: btsnd_hcic_setup_esco_conn
 // Params: uint16_t handle, uint32_t transmit_bandwidth, uint32_t
 // receive_bandwidth, uint16_t max_latency, uint16_t voice, uint8_t
@@ -579,16 +574,16 @@ struct btsnd_hcic_user_passkey_reply {
 extern struct btsnd_hcic_user_passkey_reply btsnd_hcic_user_passkey_reply;
 
 // Name: btsnd_hcic_vendor_spec_cmd
-// Params: void* buffer, uint16_t opcode, uint8_t len, uint8_t* p_data, void*
+// Params: uint16_t opcode, uint8_t len, uint8_t* p_data, void*
 // p_cmd_cplt_cback Return: void
 struct btsnd_hcic_vendor_spec_cmd {
-  std::function<void(void* buffer, uint16_t opcode, uint8_t len,
-                     uint8_t* p_data, void* p_cmd_cplt_cback)>
-      body{[](void* buffer, uint16_t opcode, uint8_t len, uint8_t* p_data,
-              void* p_cmd_cplt_cback) {}};
-  void operator()(void* buffer, uint16_t opcode, uint8_t len, uint8_t* p_data,
-                  void* p_cmd_cplt_cback) {
-    body(buffer, opcode, len, p_data, p_cmd_cplt_cback);
+  std::function<void(uint16_t opcode, uint8_t len, uint8_t* p_data,
+                     tBTM_VSC_CMPL_CB* p_cmd_cplt_cback)>
+      body{[](uint16_t opcode, uint8_t len, uint8_t* p_data,
+              tBTM_VSC_CMPL_CB* p_cmd_cplt_cback) {}};
+  void operator()(uint16_t opcode, uint8_t len, uint8_t* p_data,
+                  tBTM_VSC_CMPL_CB* p_cmd_cplt_cback) {
+    body(opcode, len, p_data, p_cmd_cplt_cback);
   };
 };
 extern struct btsnd_hcic_vendor_spec_cmd btsnd_hcic_vendor_spec_cmd;
@@ -761,21 +756,6 @@ struct btsnd_hcic_write_voice_settings {
   void operator()(uint16_t flags) { body(flags); };
 };
 extern struct btsnd_hcic_write_voice_settings btsnd_hcic_write_voice_settings;
-
-// Name: btsnd_hcic_configure_data_path
-// Params: uint8_t data_path_direction, uint8_t data_path_id,
-// std::vector<uint8_t> vendor_config Return: void
-struct btsnd_hcic_configure_data_path {
-  std::function<void(uint8_t data_path_direction, uint8_t data_path_id,
-                     std::vector<uint8_t> vendor_config)>
-      body{[](uint8_t data_path_direction, uint8_t data_path_id,
-              std::vector<uint8_t> vendor_config) {}};
-  void operator()(uint8_t data_path_direction, uint8_t data_path_id,
-                  std::vector<uint8_t> vendor_config) {
-    body(data_path_direction, data_path_id, vendor_config);
-  };
-};
-extern struct btsnd_hcic_configure_data_path btsnd_hcic_configure_data_path;
 
 }  // namespace stack_hcic_hcicmds
 }  // namespace mock

@@ -13,6 +13,11 @@ subdirs = [
 ]
 
 filegroup {
+    name: "TestMockAudioA2dp",
+    srcs: ["mock/mock_audio_a2dp*.cc"],
+}
+
+filegroup {
     name: "TestMockBtaAg",
     srcs: [
         "mock/mock_bta_ag_*.cc",
@@ -125,6 +130,13 @@ filegroup {
 }
 
 filegroup {
+    name: "TestMockBtaScn",
+    srcs: [
+        "mock/mock_bta_scn.cc",
+    ],
+}
+
+filegroup {
     name: "TestMockBtaSdp",
     srcs: [
         "mock/mock_bta_sdp_*.cc",
@@ -178,13 +190,6 @@ filegroup {
 }
 
 filegroup {
-    name: "TestMockCommon",
-    srcs: [
-        "mock/mock_common_*.cc",
-    ],
-}
-
-filegroup {
     name: "TestMockStackA2dp",
     srcs: [
         "mock/mock_stack_a2dp_*.cc",
@@ -202,6 +207,34 @@ filegroup {
     name: "TestMockStackArbiter",
     srcs: [
         "mock/mock_stack_arbiter_*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackAvct",
+    srcs: [
+        "mock/mock_stack_avct_*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackAvdt",
+    srcs: [
+        "mock/mock_stack_avdt_*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackAvrc",
+    srcs: [
+        "mock/mock_stack_avrc_*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackBnep",
+    srcs: [
+        "mock/mock_stack_bnep_*.cc",
     ],
 }
 
@@ -248,23 +281,9 @@ filegroup {
 }
 
 filegroup {
-    name: "TestMockSystemLibfmq",
-    srcs: [
-        "mock/mock_system_libfmq_*.cc",
-    ],
-}
-
-filegroup {
     name: "TestMockUdrv",
     srcs: [
         "mock/mock_udrv_*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockAndroidHardware",
-    srcs: [
-        "mock/mock_android_hardware_*.cc",
     ],
 }
 
@@ -315,6 +334,20 @@ filegroup {
 }
 
 filegroup {
+    name: "TestMockStackHid",
+    srcs: [
+        "mock/mock_stack_hid*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackPan",
+    srcs: [
+        "mock/mock_stack_pan*.cc",
+    ],
+}
+
+filegroup {
     name: "TestMockStackSdp",
     srcs: [
         "mock/mock_stack_sdp*.cc",
@@ -325,13 +358,6 @@ filegroup {
     name: "TestMockStackBtm",
     srcs: [
         "mock/mock_stack_btm*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestStubLegacyTrace",
-    srcs: [
-        "stub/legacy_trace.cc",
     ],
 }
 
@@ -413,23 +439,9 @@ filegroup {
 }
 
 filegroup {
-    name: "TestMockStackCryptotoolbox",
-    srcs: [
-        "mock/mock_stack_crypto_toolbox*.cc",
-    ],
-}
-
-filegroup {
     name: "TestMockBtu",
     srcs: [
         "mock/mock_btu_*cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockUtils",
-    srcs: [
-        "mock/mock_utils_*cc",
     ],
 }
 
@@ -450,8 +462,14 @@ filegroup {
 filegroup {
     name: "TestCommonMainHandler",
     srcs: [
+        ":TestCommonSyncMainHandler",
         "common/main_handler.cc",
     ],
+}
+
+filegroup {
+    name: "TestCommonSyncMainHandler",
+    srcs: ["common/sync_main_handler.cc"],
 }
 
 filegroup {
@@ -476,13 +494,6 @@ filegroup {
 }
 
 filegroup {
-    name: "TestCommonLogMsg",
-    srcs: [
-        "common/log_msg.cc",
-    ],
-}
-
-filegroup {
     name: "TestMockBluetoothInterface",
     srcs: [
         "mock/mock_bluetooth_interface.cc",
@@ -499,7 +510,7 @@ filegroup {
 filegroup {
     name: "TestMockLegacyHciInterface",
     srcs: [
-        "mock/mock_legacy_hci_iterface.cc",
+        "mock/mock_legacy_hci_interface.cc",
     ],
 }
 
@@ -525,6 +536,20 @@ filegroup {
     ],
 }
 
+filegroup {
+    name: "TestFakeThread",
+    srcs: [
+        "fake/fake_thread.cc",
+    ],
+}
+
+filegroup {
+    name: "TestFakeLooper",
+    srcs: [
+        "fake/fake_looper.cc",
+    ],
+}
+
 cc_defaults {
     name: "mts_defaults",
     target: {
@@ -541,39 +566,5 @@ cc_defaults {
         lib64: {
             suffix: "64",
         },
-    },
-}
-
-cc_test {
-    name: "net_test_common",
-    host_supported: true,
-    local_include_dirs: [
-        "common",
-    ],
-    include_dirs: [
-        "packages/modules/Bluetooth/system",
-        "packages/modules/Bluetooth/system/gd",
-        "packages/modules/Bluetooth/system/include",
-    ],
-    srcs: [
-        "common/log_msg.cc",
-        "common/log_msg_test.cc",
-    ],
-    shared_libs: [
-        "libchrome",
-    ],
-    cflags: [
-        "-Wall",
-        "-Werror",
-        "-Wextra",
-        // there are too many unused parameters in all the code.
-        "-Wno-unused-parameter",
-        // http://b/264549607
-        "-Wno-deprecated-builtins",
-    ],
-    sanitize: {
-        address: true,
-        cfi: true,
-        misc_undefined: ["bounds"],
     },
 }

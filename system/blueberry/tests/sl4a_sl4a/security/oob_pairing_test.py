@@ -58,6 +58,33 @@ class OobPairingTest(sl4a_sl4a_base_test.Sl4aSl4aBaseTestClass):
 
         return address, irk
 
+    def __get_dut_public_address_and_irk_from_bt_config(self):
+        # Pull IRK from SL4A dut side
+        bt_config_file_path = os.path.join(get_current_context().get_full_output_path(),
+                                           "DUT_%s_bt_config.conf" % self.dut.serial)
+        try:
+            self.dut.adb.pull(["/data/misc/bluedroid/bt_config.conf", bt_config_file_path])
+        except AdbError as error:
+            logging.error("Failed to pull SL4A dut BT config")
+            return False
+        logging.debug("Reading SL4A dut BT config")
+        with io.open(bt_config_file_path) as f:
+            for line in f.readlines():
+                stripped_line = line.strip()
+                if (stripped_line.startswith("Address")):
+                    address_fields = stripped_line.split(' ')
+                    # API currently requires public address to be capitalized
+                    address = address_fields[2].upper()
+                    logging.debug("Found dut address: %s" % address)
+                    continue
+                if (stripped_line.startswith("LE_LOCAL_KEY_IRK")):
+                    irk_fields = stripped_line.split(' ')
+                    irk = irk_fields[2]
+                    logging.debug("Found dut IRK: %s" % irk)
+                    continue
+
+        return address, irk
+
     def setup_class(self):
         super().setup_class()
 
@@ -79,7 +106,7 @@ class OobPairingTest(sl4a_sl4a_base_test.Sl4aSl4aBaseTestClass):
         if wait_for_oob_data:
             assertThat(oob_data[0]).isEqualTo(0)
             assertThat(oob_data[1]).isNotNone()
-        self.dut_security_.create_bond_out_of_band(oob_data[1], wait_for_device_bonded)
+        self.dut_security_.create_bond_out_of_band(oob_data[1], None, -1, wait_for_device_bonded)
 
     def __create_le_bond_oob_double_sided(self, wait_for_oob_data=True, wait_for_device_bonded=True):
         # Genearte OOB data on DUT, but we don't use it
@@ -100,9 +127,11 @@ class OobPairingTest(sl4a_sl4a_base_test.Sl4aSl4aBaseTestClass):
 
     def test_le_generate_local_oob_data(self):
         oob_data = self.dut_security_.generate_oob_data(Security.TRANSPORT_LE)
-        assertThat(oob_data).isNotNone()
+        assertThat(oob_data[0]).isEqualTo(0)
+        assertThat(oob_data[1]).isNotNone()
         oob_data = self.cert_security_.generate_oob_data(Security.TRANSPORT_LE)
-        assertThat(oob_data).isNotNone()
+        assertThat(oob_data[0]).isEqualTo(0)
+        assertThat(oob_data[1]).isNotNone()
 
     def test_le_generate_local_oob_data_stress(self):
         for i in range(1, 20):
@@ -132,12 +161,13 @@ class OobPairingTest(sl4a_sl4a_base_test.Sl4aSl4aBaseTestClass):
     def test_le_oob_advertiser_not_using_public_address(self):
         #TODO(optedoblivion): Use sysprop and make another test to handle non privacy case
         oob_data = self.dut_security_.generate_oob_data(Security.TRANSPORT_LE)
-        assertThat(oob_data).isNotNone()
-        advertiser_address = oob_data.to_sl4a_address()
-        public_address = self.dut_advertiser_.get_local_public_address()
+        assertThat(oob_data[0]).isEqualTo(0)
+        assertThat(oob_data[1]).isNotNone()
+        advertiser_address = oob_data[1].to_sl4a_address()
+        dut_public_address, dut_irk = self.__get_dut_public_address_and_irk_from_bt_config()
         logging.info("DUT Advertiser Address: %s " % advertiser_address)
-        logging.info("DUT Public Address: %s " % public_address)
-        assertThat(advertiser_address).isNotEqualTo(public_address)
+        logging.info("DUT Public Address: %s " % dut_public_address)
+        assertThat(advertiser_address).isNotEqualTo(dut_public_address)
 
 
 if __name__ == '__main__':

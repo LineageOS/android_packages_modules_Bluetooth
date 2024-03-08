@@ -23,26 +23,19 @@
 #include <base/location.h>
 
 #include <cstdint>
-#include <cstring>
-#include <map>
 #include <string>
 #include <vector>
 
-#include "bta/ag/bta_ag_int.h"
 #include "bta/include/bta_ag_api.h"
 #include "test/common/mock_functions.h"
 #include "types/raw_address.h"
-
-#ifndef UNUSED_ATTR
-#define UNUSED_ATTR
-#endif
 
 tBTA_STATUS BTA_AgEnable(tBTA_AG_CBACK* p_cback) {
   inc_func_call_count(__func__);
   return BTA_SUCCESS;
 }
 void BTA_AgAudioClose(uint16_t handle) { inc_func_call_count(__func__); }
-void BTA_AgAudioOpen(uint16_t handle, bool force_cvsd) {
+void BTA_AgAudioOpen(uint16_t handle, tBTA_AG_PEER_CODEC disabled_codecs) {
   inc_func_call_count(__func__);
 }
 void BTA_AgClose(uint16_t handle) { inc_func_call_count(__func__); }
@@ -68,3 +61,7 @@ void BTA_AgSetCodec(uint16_t handle, tBTA_AG_PEER_CODEC codec) {
 }
 void BTA_AgSetScoOffloadEnabled(bool value) { inc_func_call_count(__func__); }
 void BTA_AgSetScoAllowed(bool value) { inc_func_call_count(__func__); }
+bool is_hfp_aptx_voice_enabled() {
+  inc_func_call_count(__func__);
+  return false;
+};

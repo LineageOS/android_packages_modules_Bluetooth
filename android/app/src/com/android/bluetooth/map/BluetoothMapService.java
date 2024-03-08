@@ -40,6 +40,7 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.os.ParcelUuid;
+import android.os.Parcelable;
 import android.os.PowerManager;
 import android.os.RemoteException;
 import android.os.SystemProperties;
@@ -140,7 +141,7 @@ public class BluetoothMapService extends ProfileService {
     private ArrayList<BluetoothMapAccountItem> mEnabledAccounts = null;
     private static String sRemoteDeviceName = null;
 
-    private int mState;
+    private int mState = BluetoothMap.STATE_DISCONNECTED;
     private BluetoothMapAppObserver mAppObserver = null;
     private AlarmManager mAlarmManager = null;
 
@@ -168,7 +169,12 @@ public class BluetoothMapService extends ProfileService {
     }
 
     public BluetoothMapService() {
-        mState = BluetoothMap.STATE_DISCONNECTED;
+        BluetoothMap.invalidateBluetoothGetConnectionStateCache();
+    }
+
+    @VisibleForTesting
+    BluetoothMapService(Context ctx) {
+        super(ctx);
         BluetoothMap.invalidateBluetoothGetConnectionStateCache();
     }
 
@@ -527,6 +533,9 @@ public class BluetoothMapService extends ProfileService {
             }
             int prevState = mState;
             mState = state;
+            mAdapterService.updateProfileConnectionAdapterProperties(
+                    sRemoteDevice, BluetoothProfile.MAP, mState, prevState);
+
             BluetoothMap.invalidateBluetoothGetConnectionStateCache();
             Intent intent = new Intent(BluetoothMap.ACTION_CONNECTION_STATE_CHANGED);
             intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState);
@@ -691,8 +700,6 @@ public class BluetoothMapService extends ProfileService {
         IntentFilter filter = new IntentFilter();
         filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
         filter.addAction(BluetoothDevice.ACTION_CONNECTION_ACCESS_REPLY);
-        filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
-        filter.addAction(BluetoothDevice.ACTION_SDP_RECORD);
         filter.addAction(USER_CONFIRM_TIMEOUT_ACTION);
 
         // We need two filters, since Type only applies to the ACTION_MESSAGE_SENT
@@ -1058,13 +1065,9 @@ public class BluetoothMapService extends ProfileService {
     }
 
     private void sendShutdownMessage() {
-        // Pending messages are no longer valid. To speed up things, simply delete them.
+        // We should close the Setting's permission dialog if one is open.
         if (mRemoveTimeoutMsg) {
-            Intent timeoutIntent = new Intent(USER_CONFIRM_TIMEOUT_ACTION);
-            Utils.sendBroadcast(this, timeoutIntent, null,
-                    Utils.getTempAllowlistBroadcastOptions());
-            mIsWaitingAuthorization = false;
-            cancelUserTimeoutAlarm();
+            sendConnectTimeoutMessage();
         }
         if (mSessionStatusHandler == null) {
             Log.w(TAG, "mSessionStatusHandler is null");
@@ -1149,37 +1152,6 @@ public class BluetoothMapService extends ProfileService {
                     }
                     sendConnectCancelMessage();
                 }
-            } else if (action.equals(BluetoothDevice.ACTION_SDP_RECORD)) {
-                if (DEBUG) {
-                    Log.d(TAG, "Received ACTION_SDP_RECORD.");
-                }
-                ParcelUuid uuid = intent.getParcelableExtra(BluetoothDevice.EXTRA_UUID);
-                if (VERBOSE) {
-                    Log.v(TAG, "Received UUID: " + uuid.toString());
-                    Log.v(TAG, "expected UUID: "
-                            + BluetoothMnsObexClient.BLUETOOTH_UUID_OBEX_MNS.toString());
-                }
-                if (uuid.equals(BluetoothMnsObexClient.BLUETOOTH_UUID_OBEX_MNS)) {
-                    mMnsRecord = intent.getParcelableExtra(BluetoothDevice.EXTRA_SDP_RECORD);
-                    int status = intent.getIntExtra(BluetoothDevice.EXTRA_SDP_SEARCH_STATUS, -1);
-                    if (VERBOSE) {
-                        Log.v(TAG, " -> MNS Record:" + mMnsRecord);
-                        Log.v(TAG, " -> status: " + status);
-                    }
-                    if (mBluetoothMnsObexClient != null && !mSdpSearchInitiated) {
-                        mBluetoothMnsObexClient.setMnsRecord(mMnsRecord);
-                    }
-                    if (status != -1 && mMnsRecord != null) {
-                        for (int i = 0, c = mMasInstances.size(); i < c; i++) {
-                            mMasInstances.valueAt(i)
-                                    .setRemoteFeatureMask(mMnsRecord.getSupportedFeatures());
-                        }
-                    }
-                    if (mSdpSearchInitiated) {
-                        mSdpSearchInitiated = false; // done searching
-                        sendConnectMessage(-1); // -1 indicates all MAS instances
-                    }
-                }
             } else if (action.equals(BluetoothMapContentObserver.ACTION_MESSAGE_SENT)) {
                 int result = getResultCode();
                 boolean handled = false;
@@ -1196,24 +1168,67 @@ public class BluetoothMapService extends ProfileService {
                     BluetoothMapContentObserver.actionMessageSentDisconnected(context, intent,
                             result);
                 }
-            } else if (action.equals(BluetoothDevice.ACTION_ACL_DISCONNECTED)
-                    && mIsWaitingAuthorization) {
-                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+            }
+        }
+    }
 
-                if (sRemoteDevice == null || device == null) {
-                    Log.e(TAG, "Unexpected error!");
-                    return;
-                }
+    public void aclDisconnected(BluetoothDevice device) {
+        mSessionStatusHandler.post(() -> handleAclDisconnected(device));
+    }
 
-                if (VERBOSE) {
-                    Log.v(TAG, "ACL disconnected for " + device);
-                }
+    private void handleAclDisconnected(BluetoothDevice device) {
+        if (!mIsWaitingAuthorization) {
+            return;
+        }
+        if (sRemoteDevice == null || device == null) {
+            Log.e(TAG, "Unexpected error!");
+            return;
+        }
 
-                if (sRemoteDevice.equals(device)) {
-                    // Send any pending timeout now, since ACL got disconnected
-                    mSessionStatusHandler.removeMessages(USER_TIMEOUT);
-                    mSessionStatusHandler.obtainMessage(USER_TIMEOUT).sendToTarget();
+        if (VERBOSE) {
+            Log.v(TAG, "ACL disconnected for " + device);
+        }
+
+        if (sRemoteDevice.equals(device)) {
+            // Send any pending timeout now, since ACL got disconnected
+            mSessionStatusHandler.removeMessages(USER_TIMEOUT);
+            mSessionStatusHandler.obtainMessage(USER_TIMEOUT).sendToTarget();
+        }
+    }
+
+    public void receiveSdpSearchRecord(int status, Parcelable record, ParcelUuid uuid) {
+        mSessionStatusHandler.post(() -> handleSdpSearchRecordReceived(status, record, uuid));
+    }
+
+    private void handleSdpSearchRecordReceived(int status, Parcelable record, ParcelUuid uuid) {
+        if (DEBUG) {
+            Log.d(TAG, "Received ACTION_SDP_RECORD.");
+        }
+        if (VERBOSE) {
+            Log.v(TAG, "Received UUID: " + uuid.toString());
+            Log.v(
+                    TAG,
+                    "expected UUID: " + BluetoothMnsObexClient.BLUETOOTH_UUID_OBEX_MNS.toString());
+        }
+        if (uuid.equals(BluetoothMnsObexClient.BLUETOOTH_UUID_OBEX_MNS)) {
+            mMnsRecord = (SdpMnsRecord) record;
+            if (VERBOSE) {
+                Log.v(TAG, " -> MNS Record:" + mMnsRecord);
+                Log.v(TAG, " -> status: " + status);
+            }
+            if (mBluetoothMnsObexClient != null && !mSdpSearchInitiated) {
+                mBluetoothMnsObexClient.setMnsRecord(mMnsRecord);
+            }
+            if (status != -1 && mMnsRecord != null) {
+                for (int i = 0, c = mMasInstances.size(); i < c; i++) {
+                    mMasInstances
+                            .valueAt(i)
+                            .setRemoteFeatureMask(mMnsRecord.getSupportedFeatures());
                 }
+            }
+            if (mSdpSearchInitiated) {
+                mSdpSearchInitiated = false; // done searching
+                sendConnectMessage(-1); // -1 indicates all MAS instances
             }
         }
     }

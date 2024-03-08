@@ -16,13 +16,14 @@
 
 #include "phy_device.h"
 
+#include <log.h>
+
 #include "phy_layer.h"
 
 namespace rootcanal {
 
-PhyDevice::PhyDevice(Identifier id, std::string type,
-                     std::shared_ptr<Device> device)
-    : id(id), type(std::move(type)), device_(std::move(device)) {
+PhyDevice::PhyDevice(std::string type, std::shared_ptr<Device> device)
+    : id(device->id_), type(std::move(type)), device_(std::move(device)) {
   using namespace std::placeholders;
   ASSERT(device_ != nullptr);
   device_->RegisterLinkLayerChannel(
@@ -35,6 +36,14 @@ void PhyDevice::Unregister(PhyLayer* phy) { phy_layers_.erase(phy); }
 
 void PhyDevice::Tick() { device_->Tick(); }
 
+bluetooth::hci::Address PhyDevice::GetAddress() const {
+  return device_->GetAddress();
+}
+
+std::shared_ptr<Device> PhyDevice::GetDevice() const {
+  return device_;
+}
+
 void PhyDevice::SetAddress(bluetooth::hci::Address address) {
   device_->SetAddress(std::move(address));
 }
@@ -45,12 +54,11 @@ void PhyDevice::Receive(std::vector<uint8_t> const& packet, Phy::Type type,
       std::make_shared<std::vector<uint8_t>>(packet);
   model::packets::LinkLayerPacketView packet_view =
       model::packets::LinkLayerPacketView::Create(
-          bluetooth::packet::PacketView<bluetooth::packet::kLittleEndian>(
-              packet_copy));
+          pdl::packet::slice(packet_copy));
   if (packet_view.IsValid()) {
     device_->ReceiveLinkLayerPacket(std::move(packet_view), type, rssi);
   } else {
-    LOG_WARN("received invalid LL packet");
+    WARNING("received invalid LL packet");
   }
 }
 

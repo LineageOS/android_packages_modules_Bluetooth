@@ -18,15 +18,18 @@
 
 #include <cstdint>
 #include <fstream>
+#include <memory>
+#include <string>
 
-#include "device.h"
+#include "hci/address.h"
+#include "model/devices/device.h"
+#include "packets/link_layer_packets.h"
+#include "phy.h"
 
 namespace rootcanal {
 
 namespace bredr_bb {
-namespace {
 class BaseBandPacketBuilder;
-}
 }  // namespace bredr_bb
 
 using ::bluetooth::hci::Address;

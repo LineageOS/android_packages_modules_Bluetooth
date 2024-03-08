@@ -48,7 +48,6 @@ import android.os.RemoteException;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.MediumTest;
-import androidx.test.rule.ServiceTestRule;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
@@ -62,7 +61,6 @@ import com.android.bluetooth.x.com.android.modules.utils.SynchronousResultReceiv
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -86,8 +84,6 @@ public class HapClientTest {
     private final String mFlagDexmarker = System.getProperty("dexmaker.share_classloader", "false");
 
     private static final int TIMEOUT_MS = 1000;
-    @Rule
-    public final ServiceTestRule mServiceRule = new ServiceTestRule();
     private BluetoothAdapter mAdapter;
     private BluetoothDevice mDevice;
     private BluetoothDevice mDevice2;
@@ -99,20 +95,13 @@ public class HapClientTest {
     private HasIntentReceiver mHasIntentReceiver;
     private HashMap<BluetoothDevice, LinkedBlockingQueue<Intent>> mIntentQueue;
 
-    @Mock
-    private AdapterService mAdapterService;
-    @Mock
-    private DatabaseManager mDatabaseManager;
-    @Mock
-    private HapClientNativeInterface mNativeInterface;
-    @Mock
-    private ServiceFactory mServiceFactory;
-    @Mock
-    private CsipSetCoordinatorService mCsipService;
-    @Mock
-    private IBluetoothHapClientCallback mCallback;
-    @Mock
-    private Binder mBinder;
+    @Mock private AdapterService mAdapterService;
+    @Mock private DatabaseManager mDatabaseManager;
+    @Mock private HapClientNativeInterface mNativeInterface;
+    @Mock private ServiceFactory mServiceFactory;
+    @Mock private CsipSetCoordinatorService mCsipService;
+    @Mock private IBluetoothHapClientCallback mCallback;
+    @Mock private Binder mBinder;
 
     @Before
     public void setUp() throws Exception {
@@ -137,8 +126,8 @@ public class HapClientTest {
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         mAttributionSource = mAdapter.getAttributionSource();
 
+        HapClientNativeInterface.setInstance(mNativeInterface);
         startService();
-        mService.mHapClientNativeInterface = mNativeInterface;
         mService.mFactory = mServiceFactory;
         doReturn(mCsipService).when(mServiceFactory).getCsipSetCoordinatorService();
         mServiceBinder = (HapClientService.BluetoothHapClientBinder) mService.initBinder();
@@ -225,6 +214,7 @@ public class HapClientTest {
         mService.mCallbacks.unregister(mCallback);
 
         stopService();
+        HapClientNativeInterface.setInstance(null);
 
         if (mHasIntentReceiver != null) {
             mTargetContext.unregisterReceiver(mHasIntentReceiver);
@@ -241,13 +231,12 @@ public class HapClientTest {
     }
 
     private void startService() throws TimeoutException {
-        TestUtils.startService(mServiceRule, HapClientService.class);
-        mService = HapClientService.getHapClientService();
-        Assert.assertNotNull(mService);
+        mService = new HapClientService(mTargetContext);
+        mService.doStart();
     }
 
     private void stopService() throws TimeoutException {
-        TestUtils.stopService(mServiceRule, HapClientService.class);
+        mService.doStop();
         mService = HapClientService.getHapClientService();
         Assert.assertNull(mService);
     }

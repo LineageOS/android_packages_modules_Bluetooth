@@ -30,9 +30,12 @@
 #include <cstdint>
 
 #include "bt_target.h"
+#include "macros.h"
 #include "osi/include/alarm.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/l2c_api.h"
+#include "stack/include/sdp_callback.h"
+#include "stack/sdp/sdp_discovery_db.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
@@ -133,12 +136,6 @@ enum : uint8_t {
 };
 typedef uint8_t tSDP_STATE;
 
-#ifndef CASE_RETURN_TEXT
-#define CASE_RETURN_TEXT(code) \
-  case code:                   \
-    return #code
-#endif
-
 inline std::string sdp_state_text(const tSDP_STATE& state) {
   switch (state) {
     CASE_RETURN_TEXT(SDP_STATE_IDLE);
@@ -167,8 +164,6 @@ inline std::string sdp_flags_text(const tSDP_FLAGS& flags) {
       return std::string("UNKNOWN[") + std::to_string(flags) + std::string("]");
   }
 }
-
-#undef CASE_RETURN_TEXT
 
 enum : uint8_t {
   SDP_DISC_WAIT_CONN = 0,
@@ -218,12 +213,6 @@ struct tCONN_CB {
   tCONN_CB(const tCONN_CB&) = delete;
 };
 
-#ifndef CASE_RETURN_TEXT
-#define CASE_RETURN_TEXT(code) \
-  case code:                   \
-    return #code
-#endif
-
 inline std::string sdp_disc_wait_text(const tSDP_DISC_WAIT& state) {
   switch (state) {
     CASE_RETURN_TEXT(SDP_DISC_WAIT_CONN);
@@ -236,8 +225,6 @@ inline std::string sdp_disc_wait_text(const tSDP_DISC_WAIT& state) {
   }
 }
 
-#undef CASE_RETURN_TEXT
-
 /*  The main SDP control block */
 typedef struct {
   tL2CAP_CFG_INFO l2cap_my_cfg; /* My L2CAP config     */
@@ -246,7 +233,6 @@ typedef struct {
   tL2CAP_APPL_INFO reg_info;    /* L2CAP Registration info */
   uint16_t max_attr_list_size;  /* Max attribute list size to use   */
   uint16_t max_recs_per_search; /* Max records we want per seaarch  */
-  uint8_t trace_level;
 } tSDP_CB;
 
 /* Global SDP data */

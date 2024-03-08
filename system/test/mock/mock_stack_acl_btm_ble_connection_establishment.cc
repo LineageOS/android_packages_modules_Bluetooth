@@ -20,27 +20,17 @@
  *
  *  mockcify.pl ver 0.2
  */
-
-#include <cstdint>
-#include <map>
-#include <string>
-
-// Original included files, if any
-// NOTE: Since this is a mock file with mock definitions some number of
-//       include files may not be required.  The include-what-you-use
-//       still applies, but crafting proper inclusion is out of scope
-//       for this effort.  This compilation unit may compile as-is, or
-//       may need attention to prune the inclusion set.
-
 // Mock include file to share data between tests and mock
 #include "test/mock/mock_stack_acl_btm_ble_connection_establishment.h"
+
+#include <cstdint>
+
+// Original included files, if any
+
+#include "test/common/mock_functions.h"
 #include "types/raw_address.h"
 
 // Mocked compile conditionals, if any
-#ifndef UNUSED_ATTR
-#define UNUSED_ATTR
-#endif
-
 // Mocked internal structures, if any
 
 namespace test {
@@ -49,8 +39,6 @@ namespace stack_acl_btm_ble_connection_establishment {
 
 // Function state capture and return values, if needed
 struct btm_ble_create_ll_conn_complete btm_ble_create_ll_conn_complete;
-struct maybe_resolve_address maybe_resolve_address;
-struct btm_ble_conn_complete btm_ble_conn_complete;
 
 }  // namespace stack_acl_btm_ble_connection_establishment
 }  // namespace mock
@@ -60,16 +48,6 @@ void btm_ble_create_ll_conn_complete(tHCI_STATUS status) {
   inc_func_call_count(__func__);
   test::mock::stack_acl_btm_ble_connection_establishment::
       btm_ble_create_ll_conn_complete(status);
-}
-bool maybe_resolve_address(RawAddress* bda, tBLE_ADDR_TYPE* bda_type) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_acl_btm_ble_connection_establishment::
-      maybe_resolve_address(bda, bda_type);
-}
-void btm_ble_conn_complete(uint8_t* p, uint16_t evt_len, bool enhanced) {
-  inc_func_call_count(__func__);
-  test::mock::stack_acl_btm_ble_connection_establishment::btm_ble_conn_complete(
-      p, evt_len, enhanced);
 }
 
 // END mockcify generation

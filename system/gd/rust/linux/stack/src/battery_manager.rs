@@ -3,6 +3,7 @@ use crate::callbacks::Callbacks;
 use crate::uuid;
 use crate::Message;
 use crate::RPCProxy;
+use itertools::Itertools;
 use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc::Sender;
 
@@ -49,7 +50,7 @@ pub trait IBatteryManager {
     ) -> u32;
 
     /// Unregister a callback.
-    fn unregister_battery_callback(&mut self, callback_id: u32);
+    fn unregister_battery_callback(&mut self, callback_id: u32) -> bool;
 
     /// Returns battery information for the remote, sourced from the highest priority origin.
     fn get_battery_information(&self, remote_address: String) -> Option<BatterySet>;
@@ -72,8 +73,8 @@ impl BatteryManager {
     }
 
     /// Remove a callback due to disconnection or unregistration.
-    pub fn remove_callback(&mut self, callback_id: u32) {
-        self.callbacks.remove_callback(callback_id);
+    pub fn remove_callback(&mut self, callback_id: u32) -> bool {
+        self.callbacks.remove_callback(callback_id)
     }
 
     /// Handles a BatterySet update.
@@ -92,8 +93,8 @@ impl IBatteryManager for BatteryManager {
         self.callbacks.add_callback(battery_manager_callback)
     }
 
-    fn unregister_battery_callback(&mut self, callback_id: u32) {
-        self.remove_callback(callback_id);
+    fn unregister_battery_callback(&mut self, callback_id: u32) -> bool {
+        self.remove_callback(callback_id)
     }
 
     fn get_battery_information(&self, remote_address: String) -> Option<BatterySet> {
@@ -137,11 +138,22 @@ impl Batteries {
         }
     }
 
+    pub fn remove_battery_set(&mut self, uuid: &String) {
+        self.0.retain(|battery_set| &battery_set.source_uuid != uuid);
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
     /// Returns the best BatterySet from among reported battery data.
     pub fn pick_best(&self) -> Option<BatterySet> {
         self.0
             .iter()
-            .find(|battery_set| battery_set.source_uuid == uuid::BAS)
+            .filter(|battery_set| !battery_set.batteries.is_empty())
+            // Now we prefer BAS, but we might need to prioritize other sources first
+            // TODO (b/295577710): Make a preference list
+            .find_or_first(|battery_set| battery_set.source_uuid == uuid::BAS)
             .or_else(|| self.0.first())
             .cloned()
     }

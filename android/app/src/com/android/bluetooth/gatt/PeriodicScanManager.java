@@ -46,30 +46,27 @@ public class PeriodicScanManager {
     private static final String TAG = GattServiceConfig.TAG_PREFIX + "SyncManager";
 
     private final BluetoothAdapter mAdapter;
+    private final PeriodicScanNativeInterface mNativeInterface;
     Map<IBinder, SyncInfo> mSyncs = new ConcurrentHashMap<>();
     Map<IBinder, SyncTransferInfo> mSyncTransfers = Collections.synchronizedMap(new HashMap<>());
     static int sTempRegistrationId = -1;
     private static final int PA_SOURCE_LOCAL = 1;
     private static final int PA_SOURCE_REMOTE = 2;
-    /**
-     * Constructor of {@link SyncManager}.
-     */
+    /** Constructor of {@link PeriodicScanManager}. */
     PeriodicScanManager(AdapterService adapterService) {
         if (DBG) {
-            Log.d(TAG, "advertise manager created");
+            Log.d(TAG, "periodic scan manager created");
         }
         mAdapter = BluetoothAdapter.getDefaultAdapter();
-    }
-
-    void start() {
-        initializeNative();
+        mNativeInterface = PeriodicScanNativeInterface.getInstance();
+        mNativeInterface.init(this);
     }
 
     void cleanup() {
         if (DBG) {
             Log.d(TAG, "cleanup()");
         }
-        cleanupNative();
+        mNativeInterface.cleanup();
         mSyncs.clear();
         sTempRegistrationId = -1;
     }
@@ -180,15 +177,10 @@ public class PeriodicScanManager {
 
     void onSyncStarted(int regId, int syncHandle, int sid, int addressType, String address, int phy,
             int interval, int status) throws Exception {
-        if (DBG) {
-            Log.d(TAG,
-                    "onSyncStarted() - regId=" + regId + ", syncHandle=" + syncHandle + ", status="
-                            + status);
-        }
         Map<IBinder, SyncInfo> syncMap = findAllSync(regId);
         if (syncMap.size() == 0) {
             Log.d(TAG, "onSyncStarted() - no callback found for regId " + regId);
-            stopSyncNative(syncHandle);
+            mNativeInterface.stopSync(syncHandle);
             return;
         }
 
@@ -203,13 +195,21 @@ public class PeriodicScanManager {
                     e.setValue(new SyncInfo(syncHandle, sid, address, e.getValue().skip,
                                             e.getValue().timeout, e.getValue().deathRecipient,
                                             callback));
-                    callback.onSyncEstablished(syncHandle, mAdapter.getRemoteDevice(address),
-                                               sid, e.getValue().skip, e.getValue().timeout,
-                                               status);
+                    callback.onSyncEstablished(
+                            syncHandle,
+                            mAdapter.getRemoteLeDevice(address, addressType),
+                            sid,
+                            e.getValue().skip,
+                            e.getValue().timeout,
+                            status);
                 } else {
-                    callback.onSyncEstablished(syncHandle, mAdapter.getRemoteDevice(address),
-                                               sid, e.getValue().skip, e.getValue().timeout,
-                                               status);
+                    callback.onSyncEstablished(
+                            syncHandle,
+                            mAdapter.getRemoteLeDevice(address, addressType),
+                            sid,
+                            e.getValue().skip,
+                            e.getValue().timeout,
+                            status);
                     IBinder binder = e.getKey();
                     binder.unlinkToDeath(e.getValue().deathRecipient, 0);
                     mSyncs.remove(binder);
@@ -220,10 +220,6 @@ public class PeriodicScanManager {
 
     void onSyncReport(int syncHandle, int txPower, int rssi, int dataStatus, byte[] data)
             throws Exception {
-        if (DBG) {
-            Log.d(TAG, "onSyncReport() - syncHandle=" + syncHandle);
-        }
-
         Map<IBinder, SyncInfo> syncMap = findAllSync(syncHandle);
         if (syncMap.isEmpty()) {
             Log.i(TAG, "onSyncReport() - no callback found for syncHandle " + syncHandle);
@@ -239,9 +235,6 @@ public class PeriodicScanManager {
     }
 
     void onSyncLost(int syncHandle) throws Exception {
-        if (DBG) {
-            Log.d(TAG, "onSyncLost() - syncHandle=" + syncHandle);
-        }
         Map<IBinder, SyncInfo> syncMap = findAllSync(syncHandle);
         if (syncMap.isEmpty()) {
             Log.i(TAG, "onSyncLost() - no callback found for syncHandle " + syncHandle);
@@ -258,12 +251,7 @@ public class PeriodicScanManager {
         }
     }
 
-    void onBigInfoReport(int syncHandle, boolean encrypted)
-        throws Exception {
-        if (DBG) {
-            Log.d(TAG, "onBigInfoReport() - syncHandle=" + syncHandle +
-                    " , encrypted=" + encrypted);
-        }
+    void onBigInfoReport(int syncHandle, boolean encrypted) throws Exception {
         Map<IBinder, SyncInfo> syncMap = findAllSync(syncHandle);
         if (syncMap.isEmpty()) {
             Log.i(TAG, "onBigInfoReport() - no callback found for syncHandle " + syncHandle);
@@ -286,9 +274,17 @@ public class PeriodicScanManager {
         }
 
         String address = scanResult.getDevice().getAddress();
+        int addressType = scanResult.getDevice().getAddressType();
         int sid = scanResult.getAdvertisingSid();
         if (DBG) {
-            Log.d(TAG, "startSync for Device: " + address + " sid: " + sid);
+            Log.d(
+                    TAG,
+                    "startSync for Device: "
+                            + address
+                            + " addressType: "
+                            + addressType
+                            + " sid: "
+                            + sid);
         }
         synchronized (mSyncs) {
             Map.Entry<IBinder, SyncInfo> entry = findMatchingSync(sid, address);
@@ -302,10 +298,13 @@ public class PeriodicScanManager {
                         callback));
                 if (entry.getValue().id >= 0) {
                     try {
-                        callback.onSyncEstablished(entry.getValue().id,
-                                                   mAdapter.getRemoteDevice(address),
-                                                   sid, entry.getValue().skip,
-                                                   entry.getValue().timeout, 0 /*success*/);
+                        callback.onSyncEstablished(
+                                entry.getValue().id,
+                                mAdapter.getRemoteLeDevice(address, addressType),
+                                sid,
+                                entry.getValue().skip,
+                                entry.getValue().timeout,
+                                0 /*success*/);
                     } catch (RemoteException e) {
                         throw new IllegalArgumentException("Can't invoke callback");
                     }
@@ -323,7 +322,7 @@ public class PeriodicScanManager {
         if (DBG) {
             Log.d(TAG, "startSync() - reg_id=" + cbId + ", callback: " + binder);
         }
-        startSyncNative(sid, address, skip, timeout, cbId);
+        mNativeInterface.startSync(sid, address, skip, timeout, cbId);
     }
 
     void stopSync(IPeriodicAdvertisingCallback callback) {
@@ -354,14 +353,13 @@ public class PeriodicScanManager {
         Log.d(TAG, "calling stopSyncNative: " + syncHandle.intValue());
         if (syncHandle < 0) {
             Log.i(TAG, "cancelSync() - sync not established yet");
-            cancelSyncNative(sync.advSid, sync.address);
+            mNativeInterface.cancelSync(sync.advSid, sync.address);
         } else {
-            stopSyncNative(syncHandle.intValue());
+            mNativeInterface.stopSync(syncHandle.intValue());
         }
     }
 
     void onSyncTransferredCallback(int paSource, int status, String bda) {
-        Log.d(TAG, "onSyncTransferredCallback()");
         Map.Entry<IBinder, SyncTransferInfo> entry = findSyncTransfer(bda);
         if (entry != null) {
             mSyncTransfers.remove(entry);
@@ -384,7 +382,7 @@ public class PeriodicScanManager {
         //check for duplicate transfers
         mSyncTransfers.put(entry.getKey(), new SyncTransferInfo(bda.getAddress(),
                            entry.getValue().callback));
-        syncTransferNative(PA_SOURCE_REMOTE, bda.getAddress(), serviceData, syncHandle);
+        mNativeInterface.syncTransfer(bda, serviceData, syncHandle);
     }
 
     void transferSetInfo(BluetoothDevice bda, int serviceData,
@@ -400,28 +398,6 @@ public class PeriodicScanManager {
             throw new IllegalArgumentException("Can't link to periodic scanner death");
         }
         mSyncTransfers.put(binder, new SyncTransferInfo(bda.getAddress(), callback));
-        transferSetInfoNative(PA_SOURCE_LOCAL, bda.getAddress(), serviceData, advHandle);
+        mNativeInterface.transferSetInfo(bda, serviceData, advHandle);
     }
-
-    static {
-        classInitNative();
-    }
-
-    private static native void classInitNative();
-
-    private native void initializeNative();
-
-    private native void cleanupNative();
-
-    private native void startSyncNative(int sid, String address, int skip, int timeout, int regId);
-
-    private native void stopSyncNative(int syncHandle);
-
-    private native void cancelSyncNative(int sid, String address);
-
-    private native void syncTransferNative(int paSource, String address, int serviceData,
-                                           int syncHandle);
-
-    private native void transferSetInfoNative(int paSource, String address, int serviceData,
-                                              int advHandle);
 }

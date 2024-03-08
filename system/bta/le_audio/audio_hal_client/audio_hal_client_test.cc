@@ -42,6 +42,8 @@ using ::testing::ReturnPointee;
 using ::testing::SaveArg;
 using std::chrono_literals::operator""ms;
 
+using le_audio::DsaMode;
+using le_audio::DsaModes;
 using le_audio::LeAudioCodecConfiguration;
 using le_audio::LeAudioSinkAudioHalClient;
 using le_audio::LeAudioSourceAudioHalClient;
@@ -128,6 +130,8 @@ class MockLeAudioClientInterface : public LeAudioClientInterface {
   MOCK_METHOD((Source*), GetSource,
               (bluetooth::audio::le_audio::StreamCallbacks stream_cb,
                bluetooth::common::MessageLoopThread* message_loop));
+
+  MOCK_METHOD((void), SetAllowedDsaModes, (DsaModes dsa_modes));
 };
 
 LeAudioClientInterface* mockInterface;
@@ -162,6 +166,8 @@ bool LeAudioClientInterface::ReleaseSource(
     LeAudioClientInterface::Source* source) {
   return true;
 }
+
+void LeAudioClientInterface::SetAllowedDsaModes(DsaModes dsa_modes) { return; }
 
 void LeAudioClientInterface::Sink::Cleanup() {}
 void LeAudioClientInterface::Sink::SetPcmParameters(
@@ -208,22 +214,19 @@ class MockLeAudioClientAudioSinkEventReceiver
  public:
   MOCK_METHOD((void), OnAudioDataReady, (const std::vector<uint8_t>& data),
               (override));
-  MOCK_METHOD((void), OnAudioSuspend, (std::promise<void> do_suspend_promise),
-              (override));
+  MOCK_METHOD((void), OnAudioSuspend, (), (override));
   MOCK_METHOD((void), OnAudioResume, (), (override));
   MOCK_METHOD((void), OnAudioMetadataUpdate,
-              (std::vector<struct playback_track_metadata> source_metadata),
+              (source_metadata_v7 source_metadata, DsaMode dsa_mode),
               (override));
 };
 
 class MockAudioHalClientEventReceiver
     : public LeAudioSinkAudioHalClient::Callbacks {
  public:
-  MOCK_METHOD((void), OnAudioSuspend, (std::promise<void> do_suspend_promise),
-              (override));
+  MOCK_METHOD((void), OnAudioSuspend, (), (override));
   MOCK_METHOD((void), OnAudioResume, (), (override));
-  MOCK_METHOD((void), OnAudioMetadataUpdate,
-              (std::vector<struct record_track_metadata> sink_metadata),
+  MOCK_METHOD((void), OnAudioMetadataUpdate, (sink_metadata_v7 sink_metadata),
               (override));
 };
 
@@ -237,7 +240,7 @@ class LeAudioClientAudioTest : public ::testing::Test {
 
     // Init sink Audio HAL mock
     is_sink_audio_hal_acquired = false;
-    sink_audio_hal_stream_cb = {.on_suspend_ = nullptr, .on_resume_ = nullptr};
+    sink_audio_hal_stream_cb = {.on_resume_ = nullptr, .on_suspend_ = nullptr};
 
     ON_CALL(mock_client_interface_, GetSink(_, _, _))
         .WillByDefault(DoAll(SaveArg<0>(&sink_audio_hal_stream_cb),
@@ -248,8 +251,8 @@ class LeAudioClientAudioTest : public ::testing::Test {
 
     // Init source Audio HAL mock
     is_source_audio_hal_acquired = false;
-    source_audio_hal_stream_cb = {.on_suspend_ = nullptr,
-                                  .on_resume_ = nullptr};
+    source_audio_hal_stream_cb = {.on_resume_ = nullptr,
+                                  .on_suspend_ = nullptr};
 
     ON_CALL(mock_client_interface_, GetSource(_, _))
         .WillByDefault(DoAll(SaveArg<0>(&source_audio_hal_stream_cb),
@@ -413,7 +416,7 @@ TEST_F(LeAudioClientAudioTest, testLeAudioClientAudioSinkSuspend) {
   /* Expect LeAudio registered event listener to get called when HAL calls the
    * audio_hal_client's internal suspend callback.
    */
-  EXPECT_CALL(mock_hal_source_event_receiver_, OnAudioSuspend(_)).Times(1);
+  EXPECT_CALL(mock_hal_source_event_receiver_, OnAudioSuspend()).Times(1);
   ASSERT_TRUE(source_audio_hal_stream_cb.on_suspend_());
 }
 
@@ -427,7 +430,7 @@ TEST_F(LeAudioClientAudioTest, testAudioHalClientSuspend) {
   /* Expect LeAudio registered event listener to get called when HAL calls the
    * audio_hal_client's internal suspend callback.
    */
-  EXPECT_CALL(mock_hal_sink_event_receiver_, OnAudioSuspend(_)).Times(1);
+  EXPECT_CALL(mock_hal_sink_event_receiver_, OnAudioSuspend()).Times(1);
   ASSERT_TRUE(sink_audio_hal_stream_cb.on_suspend_());
 }
 

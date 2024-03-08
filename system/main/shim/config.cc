@@ -21,7 +21,6 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
-#include <memory>
 
 #include "gd/os/log.h"
 #include "gd/storage/storage_module.h"
@@ -141,6 +140,10 @@ bool BtifConfigInterface::SetBin(const std::string& section,
 bool BtifConfigInterface::RemoveProperty(const std::string& section,
                                          const std::string& property) {
   return GetStorage()->RemoveProperty(section, property);
+}
+
+void BtifConfigInterface::RemoveSection(const std::string& section) {
+  GetStorage()->RemoveSection(section);
 }
 
 std::vector<std::string> BtifConfigInterface::GetPersistentDevices() {

@@ -23,9 +23,11 @@
 #include <vector>
 
 #include "crypto_toolbox/aes.h"
+#include "hci/octets.h"
 
-namespace bluetooth {
 namespace crypto_toolbox {
+using bluetooth::hci::kOctet16Length;
+using bluetooth::hci::Octet16;
 
 // BT Spec 5.0 | Vol 3, Part H D.1
 TEST(CryptoToolboxTest, bt_spec_test_d_1_test) {
@@ -41,7 +43,7 @@ TEST(CryptoToolboxTest, bt_spec_test_d_1_test) {
   aes_set_key(k, sizeof(k), &ctx);
   aes_encrypt(m, output, &ctx); /* outputs in byte 48 to byte 63 */
 
-  EXPECT_TRUE(memcmp(output, aes_cmac_k_m, OCTET16_LEN) == 0);
+  EXPECT_TRUE(memcmp(output, aes_cmac_k_m, kOctet16Length) == 0);
 
   // useful for debugging
   // LOG(INFO) << "k " << base::HexEncode(k, OCTET16_LEN);
@@ -271,7 +273,7 @@ TEST(CryptoToolboxTest, bt_spec_example_d_7_test) {
   std::reverse(std::begin(expected_aes_128), std::end(expected_aes_128));
   std::reverse(std::begin(expected_ah), std::end(expected_ah));
 
-  Octet16 result = aes_128(IRK, prand.data(), 3);
+  Octet16 result = aes_128(IRK, prand);
   EXPECT_EQ(expected_aes_128, result);
 
   // little/big endian 24 bits
@@ -353,4 +355,3 @@ TEST(CryptoToolboxTest, bt_spec_example_d_12_test) {
 }
 
 }  // namespace crypto_toolbox
-}  // namespace bluetooth

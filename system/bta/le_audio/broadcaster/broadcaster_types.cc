@@ -17,14 +17,15 @@
 
 #include "broadcaster_types.h"
 
+#include <lc3.h>
+
 #include <vector>
 
-#include "bt_types.h"
 #include "bta_le_audio_broadcaster_api.h"
 #include "btm_ble_api_types.h"
-#include "embdrv/lc3/include/lc3.h"
 #include "internal_include/stack_config.h"
 #include "osi/include/properties.h"
+#include "stack/include/bt_types.h"
 
 using bluetooth::le_audio::BasicAudioAnnouncementBisConfig;
 using bluetooth::le_audio::BasicAudioAnnouncementCodecConfig;
@@ -43,7 +44,7 @@ static void EmitHeader(const BasicAudioAnnouncementData& announcement_data,
   // Set the cursor behind the old data
   uint8_t* p_value = data.data() + old_size;
 
-  UINT24_TO_STREAM(p_value, announcement_data.presentation_delay);
+  UINT24_TO_STREAM(p_value, announcement_data.presentation_delay_us);
 }
 
 static void EmitCodecConfiguration(
@@ -237,8 +238,6 @@ static const BroadcastCodecWrapper lc3_mono_16_2 = BroadcastCodecWrapper(
      .sample_rate = LeAudioCodecConfiguration::kSampleRate16000,
      .bits_per_sample = LeAudioCodecConfiguration::kBitsPerSample16,
      .data_interval_us = LeAudioCodecConfiguration::kInterval10000Us},
-    // Bitrate
-    32000,
     // Frame len.
     40);
 
@@ -249,8 +248,6 @@ static const BroadcastCodecWrapper lc3_stereo_16_2 = BroadcastCodecWrapper(
      .sample_rate = LeAudioCodecConfiguration::kSampleRate16000,
      .bits_per_sample = LeAudioCodecConfiguration::kBitsPerSample16,
      .data_interval_us = LeAudioCodecConfiguration::kInterval10000Us},
-    // Bitrate
-    32000,
     // Frame len.
     40);
 
@@ -261,8 +258,6 @@ static const BroadcastCodecWrapper lc3_stereo_24_2 = BroadcastCodecWrapper(
      .sample_rate = LeAudioCodecConfiguration::kSampleRate24000,
      .bits_per_sample = LeAudioCodecConfiguration::kBitsPerSample16,
      .data_interval_us = LeAudioCodecConfiguration::kInterval10000Us},
-    // Bitrate
-    48000,
     // Frame len.
     60);
 
@@ -273,8 +268,6 @@ static const BroadcastCodecWrapper lc3_stereo_48_1 = BroadcastCodecWrapper(
      .sample_rate = LeAudioCodecConfiguration::kSampleRate48000,
      .bits_per_sample = LeAudioCodecConfiguration::kBitsPerSample16,
      .data_interval_us = LeAudioCodecConfiguration::kInterval7500Us},
-    // Bitrate
-    80000,
     // Frame len.
     75);
 
@@ -285,8 +278,6 @@ static const BroadcastCodecWrapper lc3_stereo_48_2 = BroadcastCodecWrapper(
      .sample_rate = LeAudioCodecConfiguration::kSampleRate48000,
      .bits_per_sample = LeAudioCodecConfiguration::kBitsPerSample16,
      .data_interval_us = LeAudioCodecConfiguration::kInterval10000Us},
-    // Bitrate
-    80000,
     // Frame len.
     100);
 
@@ -297,8 +288,6 @@ static const BroadcastCodecWrapper lc3_stereo_48_3 = BroadcastCodecWrapper(
      .sample_rate = LeAudioCodecConfiguration::kSampleRate48000,
      .bits_per_sample = LeAudioCodecConfiguration::kBitsPerSample16,
      .data_interval_us = LeAudioCodecConfiguration::kInterval7500Us},
-    // Bitrate
-    96000,
     // Frame len.
     90);
 
@@ -309,8 +298,6 @@ static const BroadcastCodecWrapper lc3_stereo_48_4 = BroadcastCodecWrapper(
      .sample_rate = LeAudioCodecConfiguration::kSampleRate48000,
      .bits_per_sample = LeAudioCodecConfiguration::kBitsPerSample16,
      .data_interval_us = LeAudioCodecConfiguration::kInterval10000Us},
-    // Bitrate
-    96000,
     // Frame len.
     120);
 
@@ -331,9 +318,9 @@ const std::map<uint32_t, uint8_t> sample_rate_to_sampling_freq_map = {
 
 const std::map<uint32_t, uint8_t> data_interval_ms_to_frame_duration = {
     {LeAudioCodecConfiguration::kInterval7500Us,
-     codec_spec_conf::kLeAudioCodecLC3FrameDur7500us},
+     codec_spec_conf::kLeAudioCodecFrameDur7500us},
     {LeAudioCodecConfiguration::kInterval10000Us,
-     codec_spec_conf::kLeAudioCodecLC3FrameDur10000us},
+     codec_spec_conf::kLeAudioCodecFrameDur10000us},
 };
 
 types::LeAudioLtvMap BroadcastCodecWrapper::GetBisCodecSpecData(
@@ -344,11 +331,11 @@ types::LeAudioLtvMap BroadcastCodecWrapper::GetBisCodecSpecData(
   switch (bis_idx) {
     case 1:
       return types::LeAudioLtvMap(
-          {{codec_spec_conf::kLeAudioCodecLC3TypeAudioChannelAllocation,
+          {{codec_spec_conf::kLeAudioLtvTypeAudioChannelAllocation,
             UINT32_TO_VEC_UINT8(codec_spec_conf::kLeAudioLocationFrontLeft)}});
     case 2:
       return types::LeAudioLtvMap(
-          {{codec_spec_conf::kLeAudioCodecLC3TypeAudioChannelAllocation,
+          {{codec_spec_conf::kLeAudioLtvTypeAudioChannelAllocation,
             UINT32_TO_VEC_UINT8(codec_spec_conf::kLeAudioLocationFrontRight)}});
       break;
     default:
@@ -365,25 +352,22 @@ types::LeAudioLtvMap BroadcastCodecWrapper::GetSubgroupCodecSpecData() const {
       << "Invalid data_interval";
 
   std::map<uint8_t, std::vector<uint8_t>> codec_spec_ltvs = {
-      {codec_spec_conf::kLeAudioCodecLC3TypeSamplingFreq,
+      {codec_spec_conf::kLeAudioLtvTypeSamplingFreq,
        UINT8_TO_VEC_UINT8(sample_rate_to_sampling_freq_map.at(
            source_codec_config.sample_rate))},
-      {codec_spec_conf::kLeAudioCodecLC3TypeFrameDuration,
+      {codec_spec_conf::kLeAudioLtvTypeFrameDuration,
        UINT8_TO_VEC_UINT8(data_interval_ms_to_frame_duration.at(
            source_codec_config.data_interval_us))},
   };
 
   if (codec_id.coding_format == kLeAudioCodecIdLc3.coding_format) {
-    uint16_t bc =
-        lc3_frame_bytes(source_codec_config.data_interval_us, codec_bitrate);
-    codec_spec_ltvs[codec_spec_conf::kLeAudioCodecLC3TypeOctetPerFrame] =
-        UINT16_TO_VEC_UINT8(bc);
+    codec_spec_ltvs[codec_spec_conf::kLeAudioLtvTypeOctetsPerCodecFrame] =
+        UINT16_TO_VEC_UINT8(octets_per_codec_frame);
   }
 
   if (source_codec_config.num_channels == 1) {
-    codec_spec_ltvs
-        [codec_spec_conf::kLeAudioCodecLC3TypeAudioChannelAllocation] =
-            UINT32_TO_VEC_UINT8(codec_spec_conf::kLeAudioLocationFrontCenter);
+    codec_spec_ltvs[codec_spec_conf::kLeAudioLtvTypeAudioChannelAllocation] =
+        UINT32_TO_VEC_UINT8(codec_spec_conf::kLeAudioLocationFrontCenter);
   }
 
   return types::LeAudioLtvMap(codec_spec_ltvs);
@@ -402,7 +386,6 @@ std::ostream& operator<<(
      << ", SampleRate=" << +config.GetSampleRate()
      << ", BitsPerSample=" << +config.GetBitsPerSample()
      << ", DataIntervalUs=" << +config.GetDataIntervalUs() << "}";
-  os << ", Bitrate=" << +config.GetBitrate();
   os << "]";
   return os;
 }
@@ -504,7 +487,7 @@ static bool isMetadataSame(std::map<uint8_t, std::vector<uint8_t>> m1,
 
 bool operator==(const BasicAudioAnnouncementData& lhs,
                 const BasicAudioAnnouncementData& rhs) {
-  if (lhs.presentation_delay != rhs.presentation_delay) return false;
+  if (lhs.presentation_delay_us != rhs.presentation_delay_us) return false;
 
   if (lhs.subgroup_configs.size() != rhs.subgroup_configs.size()) return false;
 

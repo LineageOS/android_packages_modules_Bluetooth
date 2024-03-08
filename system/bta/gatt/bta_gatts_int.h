@@ -26,11 +26,11 @@
 
 #include <cstdint>
 
-#include "bt_target.h"  // Must be first to define build configuration
 #include "bta/include/bta_gatt_api.h"
 #include "bta/sys/bta_sys.h"
+#include "hardware/bt_gatt_types.h"
+#include "internal_include/bt_target.h"
 #include "stack/include/bt_hdr.h"
-#include "stack/include/bt_types.h"
 #include "stack/include/btm_ble_api_types.h"
 #include "stack/include/gatt_api.h"
 #include "types/bluetooth/uuid.h"
@@ -168,7 +168,7 @@ extern tBTA_GATTS_CB bta_gatts_cb;
 /*****************************************************************************
  *  Function prototypes
  ****************************************************************************/
-bool bta_gatts_hdl_event(BT_HDR_RIGID* p_msg);
+bool bta_gatts_hdl_event(const BT_HDR_RIGID* p_msg);
 
 void bta_gatts_api_disable(tBTA_GATTS_CB* p_cb);
 void bta_gatts_api_enable(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_data);

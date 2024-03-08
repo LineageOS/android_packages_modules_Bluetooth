@@ -17,10 +17,7 @@
 static_library("osi") {
   sources = [
     "src/alarm.cc",
-    "src/allocation_tracker.cc",
     "src/allocator.cc",
-    "src/array.cc",
-    "src/buffer.cc",
     "src/compat.cc",
     "src/config.cc",
     "src/fixed_queue.cc",
@@ -38,6 +35,7 @@ static_library("osi") {
     # dependencies are abstracted.
     "src/socket_utils/socket_local_client.cc",
     "src/socket_utils/socket_local_server.cc",
+    "src/stack_power_telemetry.cc",
     "src/thread.cc",
     "src/wakelock.cc",
 
@@ -70,12 +68,8 @@ static_library("osi") {
 if (use.test) {
   executable("net_test_osi") {
     sources = [
-      "test/AlarmTestHarness.cc",
-      "test/AllocationTestHarness.cc",
       "test/alarm_test.cc",
-      "test/allocation_tracker_test.cc",
       "test/allocator_test.cc",
-      "test/array_test.cc",
       "test/config_test.cc",
       "test/future_test.cc",
       "test/hash_map_utils_test.cc",

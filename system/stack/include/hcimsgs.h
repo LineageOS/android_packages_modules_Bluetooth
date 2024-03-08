@@ -22,38 +22,43 @@
 #include <base/functional/callback_forward.h>
 
 #include <cstdint>
+#include <vector>
 
-#include "bt_target.h"
 #include "device/include/esco_parameters.h"
-#include "stack/include/bt_hdr.h"
+#include "stack/include/bt_lap.h"
+#include "stack/include/bt_name.h"
 #include "stack/include/bt_octets.h"
+#include "stack/include/btm_api_types.h"
 #include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
 
-void bte_main_hci_send(BT_HDR* p_msg, uint16_t event);
-
 /* Message by message.... */
 
+enum hci_data_direction_t {
+  HOST_TO_CONTROLLER = 0,
+  CONTROLLER_TO_HOST = 1,
+};
+
 /* Disconnect */
-namespace bluetooth {
-namespace legacy {
-namespace hci {
-struct Interface {
-  // LINK_CONTROL 0x04xx
-  void (*StartInquiry)(const LAP inq_lap, uint8_t duration,
-                       uint8_t response_cnt);
-  void (*InquiryCancel)();
-  void (*Disconnect)(uint16_t handle, uint8_t reason);
-  void (*ChangeConnectionPacketType)(uint16_t handle, uint16_t packet_types);
-  void (*StartRoleSwitch)(const RawAddress& bd_addr, uint8_t role);
+namespace bluetooth::legacy::hci {
+class Interface {
+ public:
+  virtual void StartInquiry(const LAP inq_lap, uint8_t duration,
+                            uint8_t response_cnt) const = 0;
+  virtual void InquiryCancel() const = 0;
+  virtual void Disconnect(uint16_t handle, uint8_t reason) const = 0;
+  virtual void ChangeConnectionPacketType(uint16_t handle,
+                                          uint16_t packet_types) const = 0;
+  virtual void StartRoleSwitch(const RawAddress& bd_addr,
+                               uint8_t role) const = 0;
+  virtual void ConfigureDataPath(hci_data_direction_t data_path_direction,
+                                 uint8_t data_path_id,
+                                 std::vector<uint8_t> vendor_config) const = 0;
+  virtual ~Interface() = default;
 };
 
 const Interface& GetInterface();
-}  // namespace hci
-}  // namespace legacy
-}  // namespace bluetooth
-
-/* Disconnect */
+}  // namespace bluetooth::legacy::hci
 
 /* Add SCO Connection */
 void btsnd_hcic_add_SCO_conn(uint16_t handle, uint16_t packet_types);
@@ -203,6 +208,12 @@ void btsnd_hcic_enhanced_flush(uint16_t handle, uint8_t packet_type);
 
 /**** end of Simple Pairing Commands ****/
 
+extern void btsnd_hcic_set_event_filter(uint8_t filt_type,
+                                        uint8_t filt_cond_type,
+                                        uint8_t* filt_cond,
+                                        uint8_t filt_cond_len);
+/* Set Event Filter */
+
 /* Delete Stored Key */
 void btsnd_hcic_delete_stored_key(const RawAddress& bd_addr,
                                   bool delete_all_flag);
@@ -253,6 +264,7 @@ void btsnd_hcic_read_rssi(uint16_t handle); /* Read RSSI */
 using ReadEncKeySizeCb = base::OnceCallback<void(uint8_t, uint16_t, uint8_t)>;
 void btsnd_hcic_read_encryption_key_size(uint16_t handle, ReadEncKeySizeCb cb);
 void btsnd_hcic_read_failed_contact_counter(uint16_t handle);
+void btsnd_hcic_enable_test_mode(void); /* Enable Device Under Test Mode */
 void btsnd_hcic_write_pagescan_type(uint8_t type); /* Write Page Scan Type */
 void btsnd_hcic_write_inqscan_type(uint8_t type);  /* Write Inquiry Scan Type */
 void btsnd_hcic_write_inquiry_mode(uint8_t type);  /* Write Inquiry Mode */
@@ -281,8 +293,8 @@ void btsnd_hcic_enhanced_accept_synchronous_connection(
 #define HCID_GET_EVENT(u16) \
   (uint8_t)(((u16) >> HCI_DATA_EVENT_OFFSET) & HCI_DATA_EVENT_MASK)
 
-void btsnd_hcic_vendor_spec_cmd(void* buffer, uint16_t opcode, uint8_t len,
-                                uint8_t* p_data, void* p_cmd_cplt_cback);
+void btsnd_hcic_vendor_spec_cmd(uint16_t opcode, uint8_t len, uint8_t* p_data,
+                                tBTM_VSC_CMPL_CB* p_cmd_cplt_cback);
 
 /*******************************************************************************
  * BLE Commands
@@ -298,8 +310,6 @@ void btsnd_hcic_vendor_spec_cmd(void* buffer, uint16_t opcode, uint8_t len,
 /* ULP HCI command */
 void btsnd_hcic_ble_set_local_used_feat(uint8_t feat_set[8]);
 
-void btsnd_hcic_ble_set_random_addr(const RawAddress& random_addr);
-
 void btsnd_hcic_ble_write_adv_params(uint16_t adv_int_min, uint16_t adv_int_max,
                                      uint8_t adv_type,
                                      tBLE_ADDR_TYPE addr_type_own,
@@ -312,8 +322,6 @@ void btsnd_hcic_ble_read_adv_chnl_tx_power(void);
 
 void btsnd_hcic_ble_set_adv_data(uint8_t data_len, uint8_t* p_data);
 
-void btsnd_hcic_ble_set_scan_rsp_data(uint8_t data_len, uint8_t* p_scan_rsp);
-
 void btsnd_hcic_ble_set_adv_enable(uint8_t adv_enable);
 
 void btsnd_hcic_ble_set_scan_params(uint8_t scan_type, uint16_t scan_int,
@@ -322,17 +330,6 @@ void btsnd_hcic_ble_set_scan_params(uint8_t scan_type, uint16_t scan_int,
 
 void btsnd_hcic_ble_set_scan_enable(uint8_t scan_enable, uint8_t duplicate);
 
-void btsnd_hcic_ble_create_ll_conn(uint16_t scan_int, uint16_t scan_win,
-                                   uint8_t init_filter_policy,
-                                   tBLE_ADDR_TYPE addr_type_peer,
-                                   const RawAddress& bda_peer,
-                                   tBLE_ADDR_TYPE addr_type_own,
-                                   uint16_t conn_int_min, uint16_t conn_int_max,
-                                   uint16_t conn_latency, uint16_t conn_timeout,
-                                   uint16_t min_ce_len, uint16_t max_ce_len);
-
-void btsnd_hcic_ble_create_conn_cancel(void);
-
 void btsnd_hcic_ble_read_acceptlist_size(void);
 
 void btsnd_hcic_ble_upd_ll_conn_params(uint16_t handle, uint16_t conn_int_min,
@@ -340,11 +337,6 @@ void btsnd_hcic_ble_upd_ll_conn_params(uint16_t handle, uint16_t conn_int_min,
                                        uint16_t conn_latency,
                                        uint16_t conn_timeout, uint16_t min_len,
                                        uint16_t max_len);
-
-void btsnd_hcic_ble_set_host_chnl_class(
-    uint8_t chnl_map[HCIC_BLE_CHNL_MAP_SIZE]);
-
-void btsnd_hcic_ble_read_chnl_map(uint16_t handle);
 
 void btsnd_hcic_ble_read_remote_feat(uint16_t handle);
 
@@ -360,10 +352,11 @@ void btsnd_hcic_ble_ltk_req_neg_reply(uint16_t handle);
 
 void btsnd_hcic_ble_read_supported_states(void);
 
-void btsnd_hcic_ble_write_host_supported(uint8_t le_host_spt,
-                                         uint8_t simul_le_host_spt);
+void btsnd_hcic_ble_receiver_test(uint8_t rx_freq);
 
-void btsnd_hcic_ble_read_host_supported(void);
+void btsnd_hcic_ble_transmitter_test(uint8_t tx_freq, uint8_t test_data_len,
+                                     uint8_t payload);
+void btsnd_hcic_ble_test_end(void);
 
 void btsnd_hcic_ble_rc_param_req_reply(uint16_t handle, uint16_t conn_int_min,
                                        uint16_t conn_int_max,
@@ -404,20 +397,8 @@ struct EXT_CONN_PHY_CFG {
   uint16_t max_ce_len;
 };
 
-void btsnd_hcic_ble_ext_create_conn(uint8_t init_filter_policy,
-                                    uint8_t addr_type_own,
-                                    uint8_t addr_type_peer,
-                                    const RawAddress& bda_peer,
-                                    uint8_t initiating_phys,
-                                    EXT_CONN_PHY_CFG* phy_cfg);
-
 void btsnd_hcic_ble_read_resolvable_addr_peer(uint8_t addr_type_peer,
                                               const RawAddress& bda_peer);
-
-void btsnd_hcic_ble_read_resolvable_addr_local(uint8_t addr_type_peer,
-                                               const RawAddress& bda_peer);
-
-void btsnd_hcic_ble_set_addr_resolution_enable(uint8_t addr_resolution_enable);
 
 void btsnd_hcic_ble_set_rand_priv_addr_timeout(uint16_t rpa_timout);
 
@@ -425,9 +406,6 @@ void btsnd_hcic_read_authenticated_payload_tout(uint16_t handle);
 
 void btsnd_hcic_write_authenticated_payload_tout(uint16_t handle,
                                                  uint16_t timeout);
-
-void btsnd_hcic_read_iso_tx_sync(
-    uint16_t iso_handle, base::OnceCallback<void(uint8_t*, uint16_t)> cb);
 
 struct EXT_CIS_CFG {
   uint8_t cis_id;
@@ -488,9 +466,6 @@ void btsnd_hcic_create_big(uint8_t big_handle, uint8_t adv_handle,
 
 void btsnd_hcic_term_big(uint8_t big_handle, uint8_t reason);
 
-void btsnd_hcic_big_term_sync(uint8_t big_handle,
-                              base::OnceCallback<void(uint8_t*, uint16_t)> cb);
-
 void btsnd_hcic_setup_iso_data_path(
     uint16_t iso_handle, uint8_t data_path_dir, uint8_t data_path_id,
     uint8_t codec_id_format, uint16_t codec_id_company,
@@ -527,9 +502,6 @@ void btsnd_hci_ble_remove_device_from_periodic_advertiser_list(
 void btsnd_hci_ble_clear_periodic_advertiser_list(
     base::OnceCallback<void(uint8_t*, uint16_t)> cb);
 
-void btsnd_hci_ble_read_periodic_advertiser_list_size(
-    base::OnceCallback<void(uint8_t*, uint16_t)> cb);
-
 void btsnd_hcic_ble_set_periodic_advertising_receive_enable(
     uint16_t sync_handle, bool enable,
     base::OnceCallback<void(uint8_t*, uint16_t)> cb);
@@ -550,7 +522,7 @@ void btsnd_hcic_ble_set_default_periodic_advertising_sync_transfer_params(
     uint16_t conn_handle, uint8_t mode, uint16_t skip, uint16_t sync_timeout,
     uint8_t cte_type, base::OnceCallback<void(uint8_t*, uint16_t)> cb);
 
-void btsnd_hcic_configure_data_path(uint8_t data_path_direction,
+void btsnd_hcic_configure_data_path(hci_data_direction_t data_path_direction,
                                     uint8_t data_path_id,
                                     std::vector<uint8_t> vendor_config);
 

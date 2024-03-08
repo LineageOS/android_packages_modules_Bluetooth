@@ -29,22 +29,27 @@
 #include <cstdint>
 #include <deque>
 
-#include "bt_target.h"  // Must be first to define build configuration
+#include "hardware/bt_gatt_types.h"
+#include "internal_include/bt_target.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/log.h"
 #include "rust/src/connection/ffi/connection_shim.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/eatt/eatt.h"
 #include "stack/gatt/connection_manager.h"
 #include "stack/gatt/gatt_int.h"
-#include "stack/include/acl_api.h"
 #include "stack/include/bt_hdr.h"
+#include "stack/include/bt_psm_types.h"
+#include "stack/include/bt_types.h"
+#include "stack/include/bt_uuid16.h"
 #include "stack/include/l2cdefs.h"
 #include "stack/include/sdp_api.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 uint8_t btm_ble_read_sec_key_size(const RawAddress& bd_addr);
+
+using namespace bluetooth::legacy::stack::sdp;
 
 using base::StringPrintf;
 using bluetooth::Uuid;
@@ -88,6 +93,16 @@ const char* const op_code_name[] = {"UNKNOWN",
                                     "ATT_HANDLE_VALUE_IND",
                                     "ATT_HANDLE_VALUE_CONF",
                                     "ATT_OP_CODE_MAX"};
+
+uint16_t gatt_get_local_mtu(void) {
+  /* Default ATT MTU must not be greater than GATT_MAX_MTU_SIZE, nor smaller
+   * than GATT_DEF_BLE_MTU_SIZE */
+  const static uint16_t ATT_MTU_DEFAULT =
+      std::max(std::min(bluetooth::common::init_flags::get_att_mtu_default(),
+                        GATT_MAX_MTU_SIZE),
+               GATT_DEF_BLE_MTU_SIZE);
+  return ATT_MTU_DEFAULT;
+}
 
 /*******************************************************************************
  *
@@ -851,7 +866,7 @@ tGATT_STATUS gatt_send_error_rsp(tGATT_TCB& tcb, uint16_t cid, uint8_t err_code,
   msg.error.reason = err_code;
   msg.error.handle = handle;
 
-  uint16_t payload_size = gatt_tcb_get_payload_size_tx(tcb, cid);
+  uint16_t payload_size = gatt_tcb_get_payload_size(tcb, cid);
   p_buf = attp_build_sr_msg(tcb, GATT_RSP_ERROR, &msg, payload_size);
   if (p_buf != NULL) {
     status = attp_send_sr_msg(tcb, cid, p_buf);
@@ -881,13 +896,14 @@ uint32_t gatt_add_sdp_record(const Uuid& uuid, uint16_t start_hdl,
   VLOG(1) << __func__
           << StringPrintf(" s_hdl=0x%x  s_hdl=0x%x", start_hdl, end_hdl);
 
-  uint32_t sdp_handle = SDP_CreateRecord();
+  uint32_t sdp_handle = get_legacy_stack_sdp_api()->handle.SDP_CreateRecord();
   if (sdp_handle == 0) return 0;
 
   switch (uuid.GetShortestRepresentationSize()) {
     case Uuid::kNumBytes16: {
       uint16_t tmp = uuid.As16Bit();
-      SDP_AddServiceClassIdList(sdp_handle, 1, &tmp);
+      get_legacy_stack_sdp_api()->handle.SDP_AddServiceClassIdList(sdp_handle,
+                                                                   1, &tmp);
       break;
     }
 
@@ -895,16 +911,18 @@ uint32_t gatt_add_sdp_record(const Uuid& uuid, uint16_t start_hdl,
       UINT8_TO_BE_STREAM(p, (UUID_DESC_TYPE << 3) | SIZE_FOUR_BYTES);
       uint32_t tmp = uuid.As32Bit();
       UINT32_TO_BE_STREAM(p, tmp);
-      SDP_AddAttribute(sdp_handle, ATTR_ID_SERVICE_CLASS_ID_LIST,
-                       DATA_ELE_SEQ_DESC_TYPE, (uint32_t)(p - buff), buff);
+      get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+          sdp_handle, ATTR_ID_SERVICE_CLASS_ID_LIST, DATA_ELE_SEQ_DESC_TYPE,
+          (uint32_t)(p - buff), buff);
       break;
     }
 
     case Uuid::kNumBytes128:
       UINT8_TO_BE_STREAM(p, (UUID_DESC_TYPE << 3) | SIZE_SIXTEEN_BYTES);
       ARRAY_TO_BE_STREAM(p, uuid.To128BitBE().data(), (int)Uuid::kNumBytes128);
-      SDP_AddAttribute(sdp_handle, ATTR_ID_SERVICE_CLASS_ID_LIST,
-                       DATA_ELE_SEQ_DESC_TYPE, (uint32_t)(p - buff), buff);
+      get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+          sdp_handle, ATTR_ID_SERVICE_CLASS_ID_LIST, DATA_ELE_SEQ_DESC_TYPE,
+          (uint32_t)(p - buff), buff);
       break;
   }
 
@@ -918,11 +936,13 @@ uint32_t gatt_add_sdp_record(const Uuid& uuid, uint16_t start_hdl,
   proto_elem_list[1].params[0] = start_hdl;
   proto_elem_list[1].params[1] = end_hdl;
 
-  SDP_AddProtocolList(sdp_handle, 2, proto_elem_list);
+  get_legacy_stack_sdp_api()->handle.SDP_AddProtocolList(sdp_handle, 2,
+                                                         proto_elem_list);
 
   /* Make the service browseable */
   uint16_t list = UUID_SERVCLASS_PUBLIC_BROWSE_GROUP;
-  SDP_AddUuidSequence(sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &list);
+  get_legacy_stack_sdp_api()->handle.SDP_AddUuidSequence(
+      sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &list);
 
   return (sdp_handle);
 }
@@ -991,7 +1011,11 @@ bool gatt_tcb_is_cid_busy(tGATT_TCB& tcb, uint16_t cid) {
 
   EattChannel* channel =
       EattExtension::GetInstance()->FindEattChannelByCid(tcb.peer_bda, cid);
-  if (!channel) return false;
+  if (channel == nullptr) {
+    LOG_WARN("%s, cid 0x%02x already disconnected",
+             ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda), cid);
+    return false;
+  }
 
   return !channel->cl_cmd_q_.empty();
 }
@@ -1119,39 +1143,26 @@ uint16_t gatt_tcb_get_att_cid(tGATT_TCB& tcb, bool eatt_support) {
 
 /*******************************************************************************
  *
- * Function         gatt_tcb_get_payload_size_tx
+ * Function         gatt_tcb_get_payload_size
  *
  * Description      This function gets payload size for the GATT operation
  *
- * Returns          Payload size for sending data
+ * Returns          Payload size for sending/receiving data
  *
  ******************************************************************************/
-uint16_t gatt_tcb_get_payload_size_tx(tGATT_TCB& tcb, uint16_t cid) {
+uint16_t gatt_tcb_get_payload_size(tGATT_TCB& tcb, uint16_t cid) {
   if (!tcb.eatt || (cid == tcb.att_lcid)) return tcb.payload_size;
 
   EattChannel* channel =
       EattExtension::GetInstance()->FindEattChannelByCid(tcb.peer_bda, cid);
+  if (channel == nullptr) {
+    LOG_WARN("%s, cid 0x%02x already disconnected",
+             ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda), cid);
+    return 0;
+  }
 
-  return channel->tx_mtu_;
-}
-
-/*******************************************************************************
- *
- * Function         gatt_tcb_get_payload_size_rx
- *
- * Description      This function gets payload size for the GATT operation
- *
- * Returns          Payload size for receiving data
- *
- ******************************************************************************/
-
-uint16_t gatt_tcb_get_payload_size_rx(tGATT_TCB& tcb, uint16_t cid) {
-  if (!tcb.eatt || (cid == tcb.att_lcid)) return tcb.payload_size;
-
-  EattChannel* channel =
-      EattExtension::GetInstance()->FindEattChannelByCid(tcb.peer_bda, cid);
-
-  return channel->rx_mtu_;
+  /* ATT MTU for EATT is min from tx and rx mtu*/
+  return std::min<uint16_t>(channel->tx_mtu_, channel->rx_mtu_);
 }
 
 /*******************************************************************************
@@ -1208,6 +1219,8 @@ void gatt_clcb_invalidate(tGATT_TCB* p_tcb, const tGATT_CLCB* p_clcb) {
     EattChannel* channel = EattExtension::GetInstance()->FindEattChannelByCid(
         p_tcb->peer_bda, cid);
     if (channel == nullptr) {
+      LOG_WARN("%s, cid 0x%02x already disconnected",
+               ADDRESS_TO_LOGGABLE_CSTR(p_tcb->peer_bda), cid);
       return;
     }
     cl_cmd_q_p = &channel->cl_cmd_q_;
@@ -1354,6 +1367,11 @@ void gatt_sr_reset_cback_cnt(tGATT_TCB& tcb, uint16_t cid) {
     } else {
       EattChannel* channel =
           EattExtension::GetInstance()->FindEattChannelByCid(tcb.peer_bda, cid);
+      if (channel == nullptr) {
+        LOG_WARN("%s, cid 0x%02x already disconnected",
+                 ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda), cid);
+        return;
+      }
       channel->server_outstanding_cmd_.cback_cnt[i] = 0;
     }
   }
@@ -1384,6 +1402,12 @@ tGATT_SR_CMD* gatt_sr_get_cmd_by_cid(tGATT_TCB& tcb, uint16_t cid) {
   } else {
     EattChannel* channel =
         EattExtension::GetInstance()->FindEattChannelByCid(tcb.peer_bda, cid);
+    if (channel == nullptr) {
+      LOG_WARN("%s, cid 0x%02x already disconnected",
+               ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda), cid);
+      return nullptr;
+    }
+
     sr_cmd_p = &channel->server_outstanding_cmd_;
   }
 
@@ -1400,6 +1424,11 @@ tGATT_READ_MULTI* gatt_sr_get_read_multi(tGATT_TCB& tcb, uint16_t cid) {
   } else {
     EattChannel* channel =
         EattExtension::GetInstance()->FindEattChannelByCid(tcb.peer_bda, cid);
+    if (channel == nullptr) {
+      LOG_WARN("%s, cid 0x%02x already disconnected",
+               ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda), cid);
+      return nullptr;
+    }
     read_multi_p = &channel->server_outstanding_cmd_.multi_req;
   }
 
@@ -1425,6 +1454,11 @@ void gatt_sr_update_cback_cnt(tGATT_TCB& tcb, uint16_t cid, tGATT_IF gatt_if,
   } else {
     EattChannel* channel =
         EattExtension::GetInstance()->FindEattChannelByCid(tcb.peer_bda, cid);
+    if (channel == nullptr) {
+      LOG_WARN("%s, cid 0x%02x already disconnected",
+               ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda), cid);
+      return;
+    }
     sr_cmd_p = &channel->server_outstanding_cmd_;
   }
 
@@ -1519,7 +1553,7 @@ bool gatt_cancel_open(tGATT_IF gatt_if, const RawAddress& bda) {
 }
 
 /** Enqueue this command */
-void gatt_cmd_enq(tGATT_TCB& tcb, tGATT_CLCB* p_clcb, bool to_send,
+bool gatt_cmd_enq(tGATT_TCB& tcb, tGATT_CLCB* p_clcb, bool to_send,
                   uint8_t op_code, BT_HDR* p_buf) {
   tGATT_CMD_Q cmd;
   cmd.to_send = to_send; /* waiting to be sent */
@@ -1533,9 +1567,15 @@ void gatt_cmd_enq(tGATT_TCB& tcb, tGATT_CLCB* p_clcb, bool to_send,
   } else {
     EattChannel* channel =
         EattExtension::GetInstance()->FindEattChannelByCid(tcb.peer_bda, cmd.cid);
-    CHECK(channel);
+    if (channel == nullptr) {
+      LOG_WARN("%s, cid 0x%02x already disconnected",
+               ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda), cmd.cid);
+      return false;
+    }
     channel->cl_cmd_q_.push_back(cmd);
   }
+
+  return true;
 }
 
 /** dequeue the command in the client CCB command queue */
@@ -1547,7 +1587,12 @@ tGATT_CLCB* gatt_cmd_dequeue(tGATT_TCB& tcb, uint16_t cid, uint8_t* p_op_code) {
   } else {
     EattChannel* channel =
         EattExtension::GetInstance()->FindEattChannelByCid(tcb.peer_bda, cid);
-    CHECK(channel);
+    if (channel == nullptr) {
+      LOG_WARN("%s, cid 0x%02x already disconnected",
+               ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda), cid);
+      return nullptr;
+    }
+
     cl_cmd_q_p = &channel->cl_cmd_q_;
   }
 

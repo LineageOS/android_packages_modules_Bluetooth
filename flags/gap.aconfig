@@ -1,0 +1,22 @@
+package: "com.android.bluetooth.flags"
+
+flag {
+    name: "encrypted_advertising_data"
+    namespace: "bluetooth"
+    description: "Enable support for the decryption of Encrypted Advertising Data"
+    bug: "308855997"
+}
+
+flag {
+    name: "divide_long_single_gap_data"
+    namespace: "bluetooth"
+    description: "Divide long single gap data if length is longer than HCI data length limit"
+    bug: "310217895"
+}
+
+flag {
+    name: "scan_manager_refactor"
+    namespace: "bluetooth"
+    description: "Refactor scan manager as described in go/scan-manager-refactor"
+    bug: "313335632"
+}

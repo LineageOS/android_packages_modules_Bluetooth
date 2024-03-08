@@ -15,15 +15,16 @@
  */
 
 #include "module.h"
+
+#include <functional>
+#include <string>
+
+#include "dumpsys_data_generated.h"
+#include "gtest/gtest.h"
+#include "module_dumper.h"
 #include "module_unittest_generated.h"
 #include "os/handler.h"
 #include "os/thread.h"
-
-#include "gtest/gtest.h"
-
-#include <functional>
-#include <future>
-#include <string>
 
 using ::bluetooth::os::Thread;
 
@@ -53,7 +54,7 @@ class TestModuleNoDependency : public Module {
   static const ModuleFactory Factory;
 
  protected:
-  void ListDependencies(ModuleList* list) const {}
+  void ListDependencies(ModuleList* /* list */) const {}
 
   void Start() override {
     // A module is not considered started until Start() finishes
@@ -116,7 +117,7 @@ class TestModuleNoDependencyTwo : public Module {
   static const ModuleFactory Factory;
 
  protected:
-  void ListDependencies(ModuleList* list) const {}
+  void ListDependencies(ModuleList* /* list */) const {}
 
   void Start() override {
     // A module is not considered started until Start() finishes

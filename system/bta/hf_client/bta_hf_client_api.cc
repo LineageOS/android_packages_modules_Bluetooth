@@ -26,19 +26,16 @@
 
 #include "bta/include/bta_hf_client_api.h"
 
+#include <android_bluetooth_sysprop.h>
+
 #include <cstdint>
 
-#ifdef __ANDROID__
-#include <hfp.sysprop.h>
-#endif
-
-#include "bt_trace.h"  // Legacy trace logging
 #include "bta/hf_client/bta_hf_client_int.h"
 #include "bta/sys/bta_sys.h"
+#include "internal_include/bt_trace.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
 #include "stack/include/bt_hdr.h"
-#include "stack/include/bt_types.h"
 #include "types/raw_address.h"
 
 /*****************************************************************************
@@ -88,12 +85,12 @@ void BTA_HfClientDisable(void) { bta_hf_client_api_disable(); }
  *
  ******************************************************************************/
 bt_status_t BTA_HfClientOpen(const RawAddress& bd_addr, uint16_t* p_handle) {
-  APPL_TRACE_DEBUG("%s", __func__);
+  LOG_VERBOSE("%s", __func__);
   tBTA_HF_CLIENT_API_OPEN* p_buf =
       (tBTA_HF_CLIENT_API_OPEN*)osi_malloc(sizeof(tBTA_HF_CLIENT_API_OPEN));
 
   if (!bta_hf_client_allocate_handle(bd_addr, p_handle)) {
-    APPL_TRACE_ERROR("%s: could not allocate handle", __func__);
+    LOG_ERROR("%s: could not allocate handle", __func__);
     return BT_STATUS_FAIL;
   }
 
@@ -225,12 +222,5 @@ int get_default_hf_client_features() {
    BTA_HF_CLIENT_FEAT_CLI | BTA_HF_CLIENT_FEAT_VREC | BTA_HF_CLIENT_FEAT_VOL | \
    BTA_HF_CLIENT_FEAT_ECS | BTA_HF_CLIENT_FEAT_ECC | BTA_HF_CLIENT_FEAT_CODEC)
 
-#ifdef __ANDROID__
-  static const int features =
-      android::sysprop::bluetooth::Hfp::hf_client_features().value_or(
-          DEFAULT_BTIF_HF_CLIENT_FEATURES);
-  return features;
-#else
-  return DEFAULT_BTIF_HF_CLIENT_FEATURES;
-#endif
+  return GET_SYSPROP(Hfp, hf_client_features, DEFAULT_BTIF_HF_CLIENT_FEATURES);
 }

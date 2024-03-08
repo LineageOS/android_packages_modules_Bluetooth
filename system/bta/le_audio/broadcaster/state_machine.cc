@@ -17,7 +17,7 @@
 
 #include "bta/le_audio/broadcaster/state_machine.h"
 
-#include <base/bind_helpers.h>
+#include <bind_helpers.h>
 
 #include <functional>
 #include <iostream>
@@ -27,12 +27,11 @@
 #include "base/logging.h"
 #include "bta/le_audio/broadcaster/broadcaster_types.h"
 #include "bta/le_audio/le_audio_types.h"
-#include "gd/common/strings.h"
+#include "common/strings.h"
+#include "hci/le_advertising_manager.h"
 #include "osi/include/log.h"
 #include "osi/include/properties.h"
-#include "stack/include/ble_advertiser.h"
 #include "stack/include/btm_iso_api.h"
-#include "stack/include/btu.h"
 
 using bluetooth::common::ToString;
 using bluetooth::hci::IsoManager;
@@ -111,15 +110,9 @@ class BroadcastStateMachineImpl : public BroadcastStateMachine {
                    base::Unretained(this->callbacks_), broadcast_id));
   }
 
-  RawAddress GetOwnAddress() override {
-    LOG_INFO();
-    return addr_;
-  }
+  RawAddress GetOwnAddress() override { return addr_; }
 
-  uint8_t GetOwnAddressType() override {
-    LOG_INFO();
-    return addr_type_;
-  }
+  uint8_t GetOwnAddressType() override { return addr_type_; }
 
   bluetooth::le_audio::BroadcastId GetBroadcastId() const override {
     return sm_config_.broadcast_id;
@@ -142,6 +135,64 @@ class BroadcastStateMachineImpl : public BroadcastStateMachine {
   const bluetooth::le_audio::PublicBroadcastAnnouncementData&
   GetPublicBroadcastAnnouncement() const override {
     return sm_config_.public_announcement;
+  }
+
+  void OnCreateAnnouncement(uint8_t advertising_sid, int8_t tx_power,
+                            uint8_t status) {
+    LOG_INFO("advertising_sid=%d tx_power=%d status=%d", advertising_sid,
+             tx_power, status);
+
+    /* If this callback gets called the advertising_sid is valid even though the
+     * status can be other than SUCCESS.
+     */
+    advertising_sid_ = advertising_sid;
+
+    if (status !=
+        bluetooth::hci::AdvertisingCallback::AdvertisingStatus::SUCCESS) {
+      LOG_ERROR("Creating Announcement failed");
+      callbacks_->OnStateMachineCreateStatus(GetBroadcastId(), false);
+      return;
+    }
+
+    /* Ext. advertisings are already on */
+    SetState(State::CONFIGURED);
+
+    callbacks_->OnStateMachineCreateStatus(GetBroadcastId(), true);
+    callbacks_->OnStateMachineEvent(GetBroadcastId(), State::CONFIGURED);
+
+    advertiser_if_->GetOwnAddress(
+        advertising_sid,
+        base::Bind(&BroadcastStateMachineImpl::OnAddressResponse,
+                   base::Unretained(this)));
+  }
+
+  void OnEnableAnnouncement(bool enable, uint8_t status) {
+    LOG_INFO("operation=%s, broadcast_id=%d, status=%d",
+             (enable ? "enable" : "disable"), GetBroadcastId(), status);
+
+    if (status ==
+        bluetooth::hci::AdvertisingCallback::AdvertisingStatus::SUCCESS) {
+      /* Periodic is enabled but without BIGInfo. Stream is suspended. */
+      if (enable) {
+        SetState(State::CONFIGURED);
+        /* Target state is always STREAMING state - start it now. */
+        ProcessMessage(Message::START);
+      } else {
+        /* User wanted to stop the announcement - report target state reached */
+        SetState(State::STOPPED);
+        callbacks_->OnStateMachineEvent(GetBroadcastId(), GetState());
+      }
+    } else {
+      // Handle error case
+      if (enable) {
+        /* Error on enabling */
+        SetState(State::STOPPED);
+      } else {
+        /* Error on disabling */
+        SetState(State::CONFIGURED);
+      }
+      callbacks_->OnStateMachineEvent(GetBroadcastId(), GetState());
+    }
   }
 
   void UpdatePublicBroadcastAnnouncement(
@@ -185,7 +236,7 @@ class BroadcastStateMachineImpl : public BroadcastStateMachine {
   }
 
   static IBroadcastStateMachineCallbacks* callbacks_;
-  static base::WeakPtr<BleAdvertisingManager> advertiser_if_;
+  static BleAdvertiserInterface* advertiser_if_;
 
  private:
   std::optional<BigConfig> active_config_;
@@ -271,40 +322,6 @@ class BroadcastStateMachineImpl : public BroadcastStateMachine {
     addr_type_ = addr_type;
   }
 
-  void CreateAnnouncementCb(uint8_t advertising_sid, int8_t tx_power,
-                            uint8_t status) {
-    LOG_INFO("advertising_sid=%d tx_power=%d status=%d", advertising_sid,
-             tx_power, status);
-
-    /* If this callback gets called the advertising_sid is valid even though the
-     * status can be other than BTM_BLE_MULTI_ADV_SUCCESS.
-     */
-    advertising_sid_ = advertising_sid;
-
-    if (status != BTM_BLE_MULTI_ADV_SUCCESS) {
-      LOG_ERROR("Creating Announcement failed");
-      callbacks_->OnStateMachineCreateStatus(GetBroadcastId(), false);
-      return;
-    }
-
-    /* Ext. advertisings are already on */
-    SetState(State::CONFIGURED);
-
-    callbacks_->OnStateMachineCreateStatus(GetBroadcastId(), true);
-    callbacks_->OnStateMachineEvent(GetBroadcastId(), State::CONFIGURED);
-
-    advertiser_if_->GetOwnAddress(
-        advertising_sid,
-        base::Bind(&BroadcastStateMachineImpl::OnAddressResponse,
-                   base::Unretained(this)));
-  }
-
-  void CreateAnnouncementTimeoutCb(uint8_t advertising_sid, uint8_t status) {
-    LOG_INFO("advertising_sid=%d status=%d", advertising_sid, status);
-    advertising_sid_ = advertising_sid;
-    callbacks_->OnStateMachineCreateStatus(GetBroadcastId(), false);
-  }
-
   void CreateBroadcastAnnouncement(
       bool is_public, const std::string& broadcast_name,
       bluetooth::le_audio::BroadcastId& broadcast_id,
@@ -316,8 +333,8 @@ class BroadcastStateMachineImpl : public BroadcastStateMachine {
              (is_public ? "public" : "non-public"), broadcast_name.c_str(),
              public_announcement.features);
     if (advertiser_if_ != nullptr) {
-      tBTM_BLE_ADV_PARAMS adv_params;
-      tBLE_PERIODIC_ADV_PARAMS periodic_params;
+      AdvertiseParameters adv_params;
+      PeriodicAdvertisingParameters periodic_params;
       std::vector<uint8_t> adv_data;
       std::vector<uint8_t> periodic_data;
 
@@ -325,80 +342,43 @@ class BroadcastStateMachineImpl : public BroadcastStateMachine {
                              public_announcement, adv_data);
       PreparePeriodicData(announcement, periodic_data);
 
-      adv_params.adv_int_min = 0x00A0; /* 160 * 0,625 = 100ms */
-      adv_params.adv_int_max = 0x0140; /* 320 * 0,625 = 200ms */
+      adv_params.min_interval = 0x00A0; /* 160 * 0,625 = 100ms */
+      adv_params.max_interval = 0x0140; /* 320 * 0,625 = 200ms */
       adv_params.advertising_event_properties = 0;
       adv_params.channel_map = kAdvertisingChannelAll;
-      adv_params.adv_filter_policy = 0;
       adv_params.tx_power = 8;
       adv_params.primary_advertising_phy = PHY_LE_1M;
       adv_params.secondary_advertising_phy = streaming_phy;
       adv_params.scan_request_notification_enable = 0;
-      adv_params.own_address_type = BLE_ADDR_RANDOM;
+      adv_params.own_address_type = kBroadcastAdvertisingType;
 
       periodic_params.max_interval = BroadcastStateMachine::kPaIntervalMax;
       periodic_params.min_interval = BroadcastStateMachine::kPaIntervalMin;
       periodic_params.periodic_advertising_properties = 0;
       periodic_params.enable = true;
 
-      /* Callback returns the status and handle which we use later in
-       * CreateBIG command.
+      /* Status and timeout callbacks are handled by OnAdvertisingSetStarted()
+       * which returns the status and handle to be used later in CreateBIG
+       * command.
        */
       advertiser_if_->StartAdvertisingSet(
-          base::Bind(&BroadcastStateMachineImpl::CreateAnnouncementCb,
-                     base::Unretained(this)),
-          &adv_params, adv_data, std::vector<uint8_t>(), &periodic_params,
+          kAdvertiserClientIdLeAudio, kLeAudioBroadcastRegId, base::DoNothing(),
+          adv_params, adv_data, std::vector<uint8_t>(), periodic_params,
           periodic_data, 0 /* duration */, 0 /* maxExtAdvEvents */,
-          base::Bind(&BroadcastStateMachineImpl::CreateAnnouncementTimeoutCb,
-                     base::Unretained(this)));
+          base::DoNothing());
     }
   }
 
   void DestroyBroadcastAnnouncement() {
-    if (BleAdvertisingManager::IsInitialized())
-      advertiser_if_->Unregister(GetAdvertisingSid());
-  }
-
-  void EnableAnnouncementCb(bool enable, uint8_t status) {
-    LOG_INFO("operation=%s, broadcast_id=%d, status=%d",
-             (enable ? "enable" : "disable"), GetBroadcastId(), status);
-
-    if (status == BTM_BLE_MULTI_ADV_SUCCESS) {
-      /* Periodic is enabled but without BIGInfo. Stream is suspended. */
-      if (enable) {
-        SetState(State::CONFIGURED);
-        /* Target state is always STREAMING state - start it now. */
-        ProcessMessage(Message::START);
-      } else {
-        /* User wanted to stop the announcement - report target state reached */
-        SetState(State::STOPPED);
-        callbacks_->OnStateMachineEvent(GetBroadcastId(), GetState());
-      }
-    }
-  }
-
-  void EnableAnnouncementTimeoutCb(bool enable, uint8_t status) {
-    LOG_INFO("operation=%s, broadcast_id=%d, status=%d",
-             (enable ? "enable" : "disable"), GetBroadcastId(), status);
-    if (enable) {
-      /* Timeout on enabling */
-      SetState(State::STOPPED);
-    } else {
-      /* Timeout on disabling */
-      SetState(State::CONFIGURED);
-    }
-    callbacks_->OnStateMachineEvent(GetBroadcastId(), GetState());
+    advertiser_if_->Unregister(GetAdvertisingSid());
   }
 
   void EnableAnnouncement() {
     LOG_INFO("broadcast_id=%d", GetBroadcastId());
-    advertiser_if_->Enable(
-        GetAdvertisingSid(), true,
-        base::Bind(&BroadcastStateMachineImpl::EnableAnnouncementCb,
-                   base::Unretained(this), true),
-        0, 0, /* Enable until stopped */
-        base::Bind(&BroadcastStateMachineImpl::EnableAnnouncementTimeoutCb,
-                   base::Unretained(this), true));
+    // Callback is handled by OnAdvertisingEnabled() which returns the status
+    advertiser_if_->Enable(GetAdvertisingSid(), true, base::DoNothing(), 0,
+                           0, /* Enable until stopped */
+                           base::DoNothing());
   }
 
   void CreateBig(void) {
@@ -425,13 +405,9 @@ class BroadcastStateMachineImpl : public BroadcastStateMachine {
 
   void DisableAnnouncement(void) {
     LOG_INFO("broadcast_id=%d", GetBroadcastId());
-    advertiser_if_->Enable(
-        GetAdvertisingSid(), false,
-        base::Bind(&BroadcastStateMachineImpl::EnableAnnouncementCb,
-                   base::Unretained(this), false),
-        0, 0,
-        base::Bind(&BroadcastStateMachineImpl::EnableAnnouncementTimeoutCb,
-                   base::Unretained(this), false));
+    // Callback is handled by OnAdvertisingEnabled() which returns the status
+    advertiser_if_->Enable(GetAdvertisingSid(), false, base::DoNothing(), 0, 0,
+                           base::DoNothing());
   }
 
   void TerminateBig() {
@@ -632,7 +608,7 @@ class BroadcastStateMachineImpl : public BroadcastStateMachine {
 
 IBroadcastStateMachineCallbacks* BroadcastStateMachineImpl::callbacks_ =
     nullptr;
-base::WeakPtr<BleAdvertisingManager> BroadcastStateMachineImpl::advertiser_if_;
+BleAdvertiserInterface* BroadcastStateMachineImpl::advertiser_if_ = nullptr;
 } /* namespace */
 
 std::unique_ptr<BroadcastStateMachine> BroadcastStateMachine::CreateInstance(
@@ -641,14 +617,18 @@ std::unique_ptr<BroadcastStateMachine> BroadcastStateMachine::CreateInstance(
 }
 
 void BroadcastStateMachine::Initialize(
-    IBroadcastStateMachineCallbacks* callbacks) {
+    IBroadcastStateMachineCallbacks* callbacks,
+    AdvertisingCallbacks* adv_callbacks) {
   BroadcastStateMachineImpl::callbacks_ = callbacks;
-  /* Get BLE advertiser interface */
-  if (BleAdvertisingManager::IsInitialized()) {
-    LOG_INFO("BleAdvertisingManager acquired");
-    BroadcastStateMachineImpl::advertiser_if_ = BleAdvertisingManager::Get();
+  /* Get gd le advertiser interface */
+  BroadcastStateMachineImpl::advertiser_if_ =
+      bluetooth::shim::get_ble_advertiser_instance();
+  if (BroadcastStateMachineImpl::advertiser_if_ != nullptr) {
+    LOG_INFO("Advertiser_instance acquired");
+    BroadcastStateMachineImpl::advertiser_if_->RegisterCallbacksNative(
+        adv_callbacks, kAdvertiserClientIdLeAudio);
   } else {
-    LOG_INFO("Could not acquire BleAdvertisingManager!");
+    LOG_ERROR("Could not acquire advertiser_instance!");
     BroadcastStateMachineImpl::advertiser_if_ = nullptr;
   }
 }

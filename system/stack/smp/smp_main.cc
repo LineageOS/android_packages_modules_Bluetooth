@@ -16,14 +16,11 @@
  *
  ******************************************************************************/
 
-#define LOG_TAG "bluetooth"
+#define LOG_TAG "smp"
 
-#include "bt_target.h"
-
-#include <string.h>
+#include "os/log.h"
 #include "smp_int.h"
-
-#include "osi/include/log.h"
+#include "stack/include/btm_log_history.h"
 
 namespace {
 
@@ -91,6 +88,7 @@ const char* const smp_event_name[] = {"PAIRING_REQ_EVT",
                                       "KEYPRESS_NOTIFICATION_EVT",
                                       "SEC_CONN_OOB_DATA_EVT",
                                       "CREATE_LOCAL_SEC_CONN_OOB_DATA_EVT",
+                                      "SIRK_DEVICE_VALID_EVT",
                                       "OUT_OF_RANGE_EVT"};
 
 const char* smp_get_event_name(tSMP_EVENT event);
@@ -137,6 +135,7 @@ enum {
   SMP_CHECK_AUTH_REQ,
   SMP_PAIR_TERMINATE,
   SMP_ENC_CMPL,
+  SMP_SIRK_VERIFY,
   SMP_PROC_DISCARD,
   SMP_CREATE_PRIVATE_KEY,
   SMP_USE_OOB_PRIVATE_KEY,
@@ -201,6 +200,7 @@ static const tSMP_ACT smp_sm_action[] = {
     smp_check_auth_req,
     smp_pair_terminate,
     smp_enc_cmpl,
+    smp_sirk_verify,
     smp_proc_discard,
     smp_create_private_key,
     smp_use_oob_private_key,
@@ -232,9 +232,10 @@ static const tSMP_ACT smp_sm_action[] = {
 /************ SMP Central FSM State/Event Indirection Table **************/
 static const uint8_t smp_central_entry_map[][SMP_STATE_MAX] = {
     /* state name: */
-    /* Idle, WaitApp Rsp, SecReq Pend, Pair ReqRsp, Wait Cfm, Confirm, Rand,
-       PublKey Exch, SCPhs1 Strt, Wait Cmtm, Wait Nonce, SCPhs2 Strt, Wait
-       DHKChk, DHKChk, Enc Pend, Bond Pend, CrLocSc OobData */
+    /* Idle, WaitApp Rsp, SecReq Pend, Pair ReqRsp, Wait Cfm,
+       Confirm, Rand, PublKey Exch, SCPhs1 Strt, Wait Cmtm, Wait Nonce,
+       SCPhs2 Strt, Wait DHKChk, DHKChk, Enc Pend, Bond Pend, CrLocSc OobData
+     */
     /* PAIR_REQ */
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     /* PAIR_RSP */
@@ -283,7 +284,7 @@ static const uint8_t smp_central_entry_map[][SMP_STATE_MAX] = {
     {0, 0, 0, 2, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0},
     /* AUTH_CMPL */
     {4, 0x82, 0, 0x82, 0x82, 0x82, 0x82, 0x82, 0x82, 0x82, 0x82, 0x82, 0x82,
-     0x82, 0x82, 0x82, 0},
+     0x82, 0x82, 7, 0},
     /* ENC_REQ */
     {0, 4, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0},
     /* BOND_REQ */
@@ -318,6 +319,8 @@ static const uint8_t smp_central_entry_map[][SMP_STATE_MAX] = {
     {0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     /* CR_LOC_SC_OOB_DATA */
     {5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    /* SIRK_VERIFY */
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x82, 0},
 };
 
 static const uint8_t smp_all_table[][SMP_SM_NUM_COLS] = {
@@ -512,6 +515,7 @@ static const uint8_t smp_central_enc_pending_table[][SMP_SM_NUM_COLS] = {
     {SMP_CHECK_AUTH_REQ, SMP_SM_NO_ACTION, SMP_STATE_ENCRYPTION_PENDING},
     /* BOND_REQ */
     {SMP_KEY_DISTRIBUTE, SMP_SM_NO_ACTION, SMP_STATE_BOND_PENDING}};
+
 static const uint8_t smp_central_bond_pending_table[][SMP_SM_NUM_COLS] = {
     /* Event                  Action                 Next State */
     /* ENC_INFO */
@@ -526,7 +530,10 @@ static const uint8_t smp_central_bond_pending_table[][SMP_SM_NUM_COLS] = {
     {SMP_PROC_ID_ADDR, SMP_SM_NO_ACTION, SMP_STATE_BOND_PENDING},
     /* KEY_READY */
     /* LTK ready */
-    {SMP_SEND_ENC_INFO, SMP_SM_NO_ACTION, SMP_STATE_BOND_PENDING}};
+    {SMP_SEND_ENC_INFO, SMP_SM_NO_ACTION, SMP_STATE_BOND_PENDING},
+    /* AUTH_CMPL */
+    {SMP_SIRK_VERIFY, SMP_SM_NO_ACTION, SMP_STATE_BOND_PENDING},
+};
 
 static const uint8_t
     smp_central_create_local_sec_conn_oob_data[][SMP_SM_NUM_COLS] = {
@@ -595,7 +602,7 @@ static const uint8_t smp_peripheral_entry_map[][SMP_STATE_MAX] = {
     /* ENC_REQ */
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0},
     /* BOND_REQ */
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 1},
     /* DISCARD_SEC_REQ */
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     /* PUBL_KEY_EXCH_REQ */
@@ -626,6 +633,8 @@ static const uint8_t smp_peripheral_entry_map[][SMP_STATE_MAX] = {
     {0, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     /* CR_LOC_SC_OOB_DATA */
     {3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    /* SIRK_VERIFY */
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 };
 
 static const uint8_t smp_peripheral_idle_table[][SMP_SM_NUM_COLS] = {
@@ -838,6 +847,7 @@ static const uint8_t smp_peripheral_enc_pending_table[][SMP_SM_NUM_COLS] = {
     {SMP_CHECK_AUTH_REQ, SMP_SM_NO_ACTION, SMP_STATE_ENCRYPTION_PENDING},
     /* BOND_REQ */
     {SMP_KEY_DISTRIBUTE, SMP_SM_NO_ACTION, SMP_STATE_BOND_PENDING}};
+
 static const uint8_t smp_peripheral_bond_pending_table[][SMP_SM_NUM_COLS] = {
     /* Event                  Action                 Next State */
 
@@ -855,8 +865,9 @@ static const uint8_t smp_peripheral_bond_pending_table[][SMP_SM_NUM_COLS] = {
     /* CENTRAL_ID*/
     {SMP_PROC_CENTRAL_ID, SMP_SM_NO_ACTION, SMP_STATE_BOND_PENDING},
     /* ID_ADDR */
-    {SMP_PROC_ID_ADDR, SMP_SM_NO_ACTION, SMP_STATE_BOND_PENDING}
-
+    {SMP_PROC_ID_ADDR, SMP_SM_NO_ACTION, SMP_STATE_BOND_PENDING},
+    /* AUTH_CMPL */
+    {SMP_SIRK_VERIFY, SMP_SM_NO_ACTION, SMP_STATE_BOND_PENDING},
 };
 
 static const uint8_t
@@ -924,7 +935,8 @@ static const tSMP_SM_TBL smp_state_table[][2] = {
 
     /* SMP_STATE_CREATE_LOCAL_SEC_CONN_OOB_DATA */
     {smp_central_create_local_sec_conn_oob_data,
-     smp_peripheral_create_local_sec_conn_oob_data}};
+     smp_peripheral_create_local_sec_conn_oob_data},
+};
 
 typedef const uint8_t (*tSMP_ENTRY_TBL)[SMP_STATE_MAX];
 static const tSMP_ENTRY_TBL smp_entry_table[] = {smp_central_entry_map,
@@ -940,9 +952,9 @@ tSMP_CB smp_cb;
  ******************************************************************************/
 void smp_set_state(tSMP_STATE state) {
   if (state < SMP_STATE_MAX) {
-    SMP_TRACE_DEBUG("State change: %s(%d) ==> %s(%d)",
-                    smp_get_state_name(smp_cb.state), smp_cb.state,
-                    smp_get_state_name(state), state);
+    LOG_VERBOSE("State change: %s(%d)==>%s(%d)",
+                smp_get_state_name(smp_cb.state), smp_cb.state,
+                smp_get_state_name(state), state);
     if (smp_cb.state != state) {
       BTM_LogHistory(
           kBtmLogTag, smp_cb.pairing_ble_bd_addr, "Security state changed",
@@ -951,7 +963,7 @@ void smp_set_state(tSMP_STATE state) {
     }
     smp_cb.state = state;
   } else {
-    SMP_TRACE_DEBUG("smp_set_state invalid state =%d", state);
+    LOG_VERBOSE("invalid state=%d", state);
   }
 }
 
@@ -984,22 +996,21 @@ bool smp_sm_event(tSMP_CB* p_cb, tSMP_EVENT event, tSMP_INT_DATA* p_data) {
   uint8_t action, entry, i;
 
   if (p_cb->role >= 2) {
-    SMP_TRACE_DEBUG("Invalid role: %d", p_cb->role);
+    LOG_VERBOSE("Invalid role:%d", p_cb->role);
     return false;
   }
 
   tSMP_ENTRY_TBL entry_table = smp_entry_table[p_cb->role];
 
-  SMP_TRACE_EVENT("main smp_sm_event");
   if (curr_state >= SMP_STATE_MAX) {
-    SMP_TRACE_DEBUG("Invalid state: %d", curr_state);
+    LOG_VERBOSE("Invalid state:%d", curr_state);
     return false;
   }
 
-  SMP_TRACE_DEBUG("SMP Role: %s State: [%s (%d)], Event: [%s (%d)]",
-                  (p_cb->role == 0x01) ? "Peripheral" : "Central",
-                  smp_get_state_name(p_cb->state), p_cb->state,
-                  smp_get_event_name(event), event);
+  LOG_VERBOSE("SMP Role:%s State:[%s(%d)], Event:[%s(%d)]",
+              (p_cb->role == 0x01) ? "Peripheral" : "Central",
+              smp_get_state_name(p_cb->state), p_cb->state,
+              smp_get_event_name(event), event);
 
   /* look up the state table for the current state */
   /* lookup entry /w event & curr_state */
@@ -1013,14 +1024,13 @@ bool smp_sm_event(tSMP_CB* p_cb, tSMP_EVENT event, tSMP_INT_DATA* p_data) {
     } else
       state_table = smp_state_table[curr_state][p_cb->role];
   } else {
-    SMP_TRACE_DEBUG("Ignore event [%s (%d)] in state [%s (%d)]",
-                    smp_get_event_name(event), event,
-                    smp_get_state_name(curr_state), curr_state);
+    LOG_VERBOSE("Ignore event[%s(%d)] in state[%s(%d)]",
+                smp_get_event_name(event), event,
+                smp_get_state_name(curr_state), curr_state);
     return false;
   }
 
   /* Get possible next state from state table. */
-
   smp_set_state(state_table[entry - 1][SMP_SME_NEXT_STATE]);
 
   /* If action is not ignore, clear param, exec action and get next state.
@@ -1036,7 +1046,7 @@ bool smp_sm_event(tSMP_CB* p_cb, tSMP_EVENT event, tSMP_INT_DATA* p_data) {
       break;
     }
   }
-  SMP_TRACE_DEBUG("result state = %s", smp_get_state_name(p_cb->state));
+  LOG_VERBOSE("result state=%s", smp_get_state_name(p_cb->state));
   return true;
 }
 

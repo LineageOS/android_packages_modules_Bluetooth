@@ -33,8 +33,8 @@ import androidx.test.filters.MediumTest;
 import androidx.test.rule.ServiceTestRule;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.R;
 import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.avrcpcontroller.AvrcpControllerNativeInterface;
 import com.android.bluetooth.avrcpcontroller.AvrcpControllerService;
 import com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService;
 import com.android.bluetooth.btservice.AdapterService;
@@ -52,21 +52,20 @@ import org.mockito.MockitoAnnotations;
 public class A2dpSinkStreamHandlerTest {
     private static final int DUCK_PERCENT = 75;
     private HandlerThread mHandlerThread;
+    private AvrcpControllerService mService;
     private A2dpSinkStreamHandler mStreamHandler;
     private Context mTargetContext;
 
     @Mock private A2dpSinkService mMockA2dpSink;
 
     @Mock private A2dpSinkNativeInterface mMockNativeInterface;
+    @Mock private AvrcpControllerNativeInterface mMockAvrcpControllerNativeInterface;
 
     @Mock private AudioManager mMockAudioManager;
 
     @Mock private Resources mMockResources;
 
     @Mock private PackageManager mMockPackageManager;
-
-    @Rule
-    public final ServiceTestRule mServiceRule = new ServiceTestRule();
 
     @Rule
     public final ServiceTestRule mBluetoothBrowserMediaServiceTestRule = new ServiceTestRule();
@@ -84,7 +83,9 @@ public class A2dpSinkStreamHandlerTest {
         }
         TestUtils.setAdapterService(mAdapterService);
         doReturn(true, false).when(mAdapterService).isStartedProfile(anyString());
-        TestUtils.startService(mServiceRule, AvrcpControllerService.class);
+        AvrcpControllerNativeInterface.setInstance(mMockAvrcpControllerNativeInterface);
+        mService = new AvrcpControllerService(mTargetContext, mMockAvrcpControllerNativeInterface);
+        mService.doStart();
         final Intent bluetoothBrowserMediaServiceStartIntent =
                 TestUtils.prepareIntentToStartBluetoothBrowserMediaService();
         mBluetoothBrowserMediaServiceTestRule.startService(bluetoothBrowserMediaServiceStartIntent);
@@ -111,7 +112,8 @@ public class A2dpSinkStreamHandlerTest {
 
     @After
     public void tearDown() throws Exception {
-        TestUtils.stopService(mServiceRule, AvrcpControllerService.class);
+        mService.doStop();
+        AvrcpControllerNativeInterface.setInstance(null);
         TestUtils.clearAdapterService(mAdapterService);
     }
 

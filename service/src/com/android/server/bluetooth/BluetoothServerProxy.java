@@ -16,17 +16,15 @@
 
 package com.android.server.bluetooth;
 
+import android.annotation.NonNull;
 import android.content.ContentResolver;
-import android.os.HandlerThread;
+import android.os.IBinder;
 import android.provider.Settings;
-import android.util.Log;
 
 import com.android.internal.annotations.VisibleForTesting;
 
-/**
- * Proxy class for method calls to help with unit testing
- */
-public class BluetoothServerProxy {
+/** Proxy class for method calls to help with unit testing */
+class BluetoothServerProxy {
     private static final String TAG = BluetoothServerProxy.class.getSimpleName();
     private static final Object INSTANCE_LOCK = new Object();
     private static BluetoothServerProxy sInstance;
@@ -39,7 +37,7 @@ public class BluetoothServerProxy {
      *
      * @return the singleton instance, guaranteed not null
      */
-    public static BluetoothServerProxy getInstance() {
+    static @NonNull BluetoothServerProxy getInstance() {
         synchronized (INSTANCE_LOCK) {
             if (sInstance == null) {
                 sInstance = new BluetoothServerProxy();
@@ -48,56 +46,28 @@ public class BluetoothServerProxy {
         return sInstance;
     }
 
-    /**
-     * Allow unit tests to substitute BluetoothPbapMethodCallProxy with a test instance
-     *
-     * @param proxy a test instance of the BluetoothPbapMethodCallProxy
-     */
+    /** Allow unit tests to substitute proxy with a test instance */
     @VisibleForTesting
-    public static void setInstanceForTesting(BluetoothServerProxy proxy) {
+    static void setInstanceForTesting(BluetoothServerProxy proxy) {
         synchronized (INSTANCE_LOCK) {
             Log.d(TAG, "setInstanceForTesting(), set to " + proxy);
             sInstance = proxy;
         }
     }
 
-    /**
-     * Proxies {@link com.android.server.bluetooth.BluetoothManagerService.BluetoothHandler}.
-     */
-    public BluetoothManagerService.BluetoothHandler createBluetoothHandler(
-            BluetoothManagerService.BluetoothHandler bluetoothHandler) {
-        return bluetoothHandler;
+    AdapterBinder createAdapterBinder(IBinder binder) {
+        return new AdapterBinder(binder);
     }
 
-    /**
-     * Proxies {@link com.android.server.bluetooth.BluetoothManagerService.BluetoothHandler}.
-     */
-    public BluetoothManagerService.BluetoothHandler newBluetoothHandler(
-            BluetoothManagerService.BluetoothHandler bluetoothHandler) {
-        return bluetoothHandler;
-    }
-
-    /**
-     * Proxies {@link HandlerThread(String)}.
-     */
-    public HandlerThread createHandlerThread(String name) {
-        return new HandlerThread(name);
-    }
-
-    /**
-     * Proxies {@link android.provider.Settings.Secure.getString}.
-     */
-    public String settingsSecureGetString(ContentResolver contentResolver, String name) {
+    String settingsSecureGetString(ContentResolver contentResolver, String name) {
         return Settings.Secure.getString(contentResolver, name);
     }
 
-    /**
-     * Proxies
-     * {@link com.android.server.bluetooth.BluetoothManagerService.BluetoothHandler.sendMessage}.
-     */
-    public boolean handlerSendWhatMessage(
-            com.android.server.bluetooth.BluetoothManagerService.BluetoothHandler handler,
-            int what) {
-        return handler.sendMessage(handler.obtainMessage(what));
+    int settingsGlobalGetInt(ContentResolver contentResolver, String name, int def) {
+        return Settings.Global.getInt(contentResolver, name, def);
+    }
+
+    int getBluetoothPersistedState(ContentResolver resolver, int defaultValue) {
+        return Settings.Global.getInt(resolver, Settings.Global.BLUETOOTH_ON, defaultValue);
     }
 }

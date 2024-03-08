@@ -18,8 +18,10 @@
 #include "bta_le_audio_api.h"
 
 bool LeAudioHalVerifier::SupportsLeAudio() {
-  return bluetooth::audio::HalVersionManager::GetHalVersion() >=
-         bluetooth::audio::BluetoothAudioHalVersion::VERSION_2_1;
+  return bluetooth::audio::HalVersionManager::GetHalTransport() ==
+             bluetooth::audio::BluetoothAudioHalTransport::AIDL ||
+         bluetooth::audio::HalVersionManager::GetHalVersion() >=
+             bluetooth::audio::BluetoothAudioHalVersion::VERSION_2_1;
 }
 
 bool LeAudioHalVerifier::SupportsLeAudioHardwareOffload() {
@@ -30,4 +32,9 @@ bool LeAudioHalVerifier::SupportsLeAudioHardwareOffload() {
 bool LeAudioHalVerifier::SupportsLeAudioBroadcast() {
   return bluetooth::audio::HalVersionManager::GetHalTransport() ==
          bluetooth::audio::BluetoothAudioHalTransport::AIDL;
+}
+
+bool LeAudioHalVerifier::SupportsStreamActiveApi() {
+  return bluetooth::audio::HalVersionManager::GetHalVersion() >=
+         bluetooth::audio::BluetoothAudioHalVersion::VERSION_AIDL_V3;
 }

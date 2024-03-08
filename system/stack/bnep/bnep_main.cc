@@ -24,23 +24,23 @@
 
 #define LOG_TAG "bluetooth"
 
+#include <base/logging.h>
 #include <string.h>
 
 #include "bnep_api.h"
 #include "bnep_int.h"
-#include "bt_target.h"
-#include "bta/include/bta_api.h"
-#include "btm_api.h"
+#include "bta/include/bta_sec_api.h"
 #include "device/include/controller.h"
+#include "internal_include/bt_target.h"
 #include "l2c_api.h"
 #include "l2cdefs.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "stack/include/bt_hdr.h"
+#include "stack/include/bt_psm_types.h"
+#include "stack/include/bt_types.h"
 #include "types/raw_address.h"
-
-#include <base/logging.h>
 
 /******************************************************************************/
 /*                     G L O B A L    B N E P       D A T A                   */
@@ -90,7 +90,7 @@ tBNEP_RESULT bnep_register_with_l2cap(void) {
   if (!L2CA_Register2(BT_PSM_BNEP, bnep_cb.reg_info, false /* enable_snoop */,
                       nullptr, BNEP_MTU_SIZE, BNEP_MTU_SIZE,
                       BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)) {
-    BNEP_TRACE_ERROR("BNEP - Registration failed");
+    LOG_ERROR("BNEP - Registration failed");
     return BNEP_SECURITY_FAIL;
   }
 

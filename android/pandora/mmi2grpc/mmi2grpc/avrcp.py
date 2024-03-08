@@ -21,13 +21,14 @@ from grpc import RpcError
 from mmi2grpc._audio import AudioSignal
 from mmi2grpc._helpers import assert_description
 from mmi2grpc._proxy import ProfileProxy
-from pandora_experimental.a2dp_grpc import A2DP
-from pandora_experimental.a2dp_pb2 import Sink, Source
+from pandora.a2dp_grpc import A2DP
+from pandora.a2dp_pb2 import Sink, Source
 from pandora_experimental.avrcp_grpc import AVRCP
 from pandora.host_grpc import Host
 from pandora.host_pb2 import Connection
 from pandora_experimental.mediaplayer_grpc import MediaPlayer
 from pandora_experimental.mediaplayer_pb2 import NONE, ALL, GROUP
+
 
 class AVRCPProxy(ProfileProxy):
     """AVRCP proxy.
@@ -350,7 +351,7 @@ class AVRCPProxy(ProfileProxy):
         Using the Upper Tester register the function MessageInd_CBTest_System
         for callback on the AVCT_MessageRec_Ind event by sending an
         AVCT_EventRegistration command to the IUT with the following parameter
-        values:     
+        values:
            * Event = AVCT_MessageRec_Ind
            * Callback =
         MessageInd_CBTest_System
@@ -469,10 +470,9 @@ class AVRCPProxy(ProfileProxy):
         passthrough command, if the current streaming state is not relevant to
         this IUT, please press 'OK to continue.
         """
-        if not self.a2dp.IsSuspended(source=self.source).is_suspended:
-            return "Yes"
-        else:
-            return "No"
+
+        suspended = self.a2dp.IsSuspended(source=self.source).value
+        return "Yes" if not suspended else "No"
 
     @assert_description
     def TSC_AVRCP_mmi_iut_reject_invalid_get_capabilities(self, **kwargs):
@@ -540,7 +540,7 @@ class AVRCPProxy(ProfileProxy):
            * Callback =
         ConnectCfm_CBTest_System
            * PID = PIDTest_System
-    
+
         Press 'OK' to
         continue once the IUT has responded.
         """
@@ -569,11 +569,11 @@ class AVRCPProxy(ProfileProxy):
     def TSC_AVRCP_mmi_user_confirm_virtual_file_system(self, **kwargs):
         """
         Are the following items found in the current folder?
-    
+
         Folder:
         com.android.pandora
-    
-    
+
+
         Note: Some media elements and folders may not be
         listed above.
         """
@@ -730,7 +730,7 @@ class AVRCPProxy(ProfileProxy):
         PTS has sent a Get Folder Items command with invalid values for Start
         and End.  The IUT must respond with the error code: Range Out Of Bounds
         (0x0B).
-    
+
         Description: Verify that the IUT can properly reject a Get
         Folder Items command that contains an invalid start and end index.
         """
@@ -775,7 +775,7 @@ class AVRCPProxy(ProfileProxy):
         """
         PTS has sent a Play Item command with an invalid UID.  The IUT must
         respond with the error code: Does Not Exist (0x09).
-    
+
         Description: Verify
         that the IUT can properly reject a Play Item command that contains an
         invalid UID.
@@ -1002,7 +1002,7 @@ class AVRCPProxy(ProfileProxy):
         * PID = PIDTest_System
 
         The IUT should then initiate an
-        L2CAP_DisconnectReq.   
+        L2CAP_DisconnectReq.
         """
         # Currently disconnect is required in TG role
         if "TG" in test:

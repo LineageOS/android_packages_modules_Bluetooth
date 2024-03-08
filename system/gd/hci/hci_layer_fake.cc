@@ -104,6 +104,10 @@ CommandView TestHciLayer::GetCommand() {
   return command_packet_view;
 }
 
+void TestHciLayer::AssertNoQueuedCommand() {
+  EXPECT_TRUE(command_queue_.empty());
+}
+
 void TestHciLayer::RegisterEventHandler(
     EventCode event_code, common::ContextualCallback<void(EventView)> event_handler) {
   registered_events_[event_code] = event_handler;
@@ -168,26 +172,34 @@ void TestHciLayer::InitEmptyCommand() {
   ASSERT_TRUE(empty_command_view_.IsValid());
 }
 
-void TestHciLayer::IncomingAclData(uint16_t handle) {
+void TestHciLayer::IncomingAclData(uint16_t handle, std::unique_ptr<AclBuilder> acl_builder) {
   os::Handler* hci_handler = GetHandler();
   auto* queue_end = acl_queue_.GetDownEnd();
   std::promise<void> promise;
   auto future = promise.get_future();
+  auto packet = GetPacketView(std::move(acl_builder));
+  auto acl_view = AclView::Create(packet);
   queue_end->RegisterEnqueue(
       hci_handler,
       common::Bind(
-          [](decltype(queue_end) queue_end, uint16_t handle, std::promise<void> promise) {
-            auto packet = GetPacketView(NextAclPacket(handle));
-            AclView acl2 = AclView::Create(packet);
+          [](decltype(queue_end) queue_end,
+             uint16_t /* handle */,
+             AclView acl2,
+             std::promise<void> promise) {
             queue_end->UnregisterEnqueue();
             promise.set_value();
             return std::make_unique<AclView>(acl2);
           },
           queue_end,
           handle,
+          acl_view,
           common::Passed(std::move(promise))));
   auto status = future.wait_for(std::chrono::milliseconds(1000));
   ASSERT_EQ(status, std::future_status::ready);
+}
+
+void TestHciLayer::IncomingAclData(uint16_t handle) {
+  IncomingAclData(handle, NextAclPacket(handle));
 }
 
 void TestHciLayer::AssertNoOutgoingAclData() {
@@ -218,7 +230,7 @@ void TestHciLayer::do_disconnect(uint16_t handle, ErrorCode reason) {
   HciLayer::Disconnect(handle, reason);
 }
 
-void TestHciLayer::ListDependencies(ModuleList* list) const {}
+void TestHciLayer::ListDependencies(ModuleList* /* list */) const {}
 void TestHciLayer::Start() {
   std::lock_guard<std::mutex> lock(mutex_);
   InitEmptyCommand();

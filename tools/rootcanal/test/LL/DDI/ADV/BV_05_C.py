@@ -1,3 +1,17 @@
+# Copyright 2023 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import hci_packets as hci
 import link_layer_packets as ll
 import unittest
@@ -41,7 +55,7 @@ class Test(ControllerTest):
 
         # 3. Configure Scan Response Data in the IUT using device name length of 0 as response data.
         scan_response_data = []
-        controller.send_cmd(hci.LeSetScanResponseDataRaw(advertising_data=scan_response_data))
+        controller.send_cmd(hci.LeSetScanResponseData(advertising_data=scan_response_data))
 
         await self.expect_evt(hci.LeSetScanResponseDataComplete(status=ErrorCode.SUCCESS, num_hci_command_packets=1))
 
@@ -80,7 +94,7 @@ class Test(ControllerTest):
         await self.expect_evt(hci.LeSetAdvertisingEnableComplete(status=ErrorCode.SUCCESS, num_hci_command_packets=1))
 
         scan_response_data = [31] + [0] * 30
-        controller.send_cmd(hci.LeSetScanResponseDataRaw(advertising_data=scan_response_data))
+        controller.send_cmd(hci.LeSetScanResponseData(advertising_data=scan_response_data))
 
         await self.expect_evt(hci.LeSetScanResponseDataComplete(status=ErrorCode.SUCCESS, num_hci_command_packets=1))
 
@@ -119,7 +133,7 @@ class Test(ControllerTest):
         await self.expect_evt(hci.LeSetAdvertisingEnableComplete(status=ErrorCode.SUCCESS, num_hci_command_packets=1))
 
         scan_response_data = []
-        controller.send_cmd(hci.LeSetScanResponseDataRaw(advertising_data=scan_response_data))
+        controller.send_cmd(hci.LeSetScanResponseData(advertising_data=scan_response_data))
 
         await self.expect_evt(hci.LeSetScanResponseDataComplete(status=ErrorCode.SUCCESS, num_hci_command_packets=1))
 
@@ -146,7 +160,7 @@ class Test(ControllerTest):
         await self.expect_evt(hci.LeSetAdvertisingEnableComplete(status=ErrorCode.SUCCESS, num_hci_command_packets=1))
 
         scan_response_data = [31] + [0] * 30
-        controller.send_cmd(hci.LeSetScanResponseDataRaw(advertising_data=scan_response_data))
+        controller.send_cmd(hci.LeSetScanResponseData(advertising_data=scan_response_data))
 
         await self.expect_evt(hci.LeSetScanResponseDataComplete(status=ErrorCode.SUCCESS, num_hci_command_packets=1))
 

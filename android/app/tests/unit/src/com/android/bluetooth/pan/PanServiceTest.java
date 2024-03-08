@@ -28,11 +28,12 @@ import static org.mockito.Mockito.when;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
+import android.content.Context;
 import android.net.TetheringInterface;
 import android.os.UserManager;
 
+import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.MediumTest;
-import androidx.test.rule.ServiceTestRule;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
@@ -41,9 +42,7 @@ import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.pan.PanService.BluetoothPanDevice;
 
 import org.junit.After;
-import org.junit.Assume;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -59,21 +58,23 @@ public class PanServiceTest {
     private BluetoothAdapter mAdapter = null;
     private BluetoothDevice mRemoteDevice;
 
-    @Rule public final ServiceTestRule mServiceRule = new ServiceTestRule();
 
     @Mock private AdapterService mAdapterService;
     @Mock private DatabaseManager mDatabaseManager;
+    @Mock private PanNativeInterface mNativeInterface;
     @Mock private UserManager mMockUserManager;
 
     @Before
     public void setUp() throws Exception {
+        Context targetContext = InstrumentationRegistry.getTargetContext();
         MockitoAnnotations.initMocks(this);
         TestUtils.setAdapterService(mAdapterService);
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
         doReturn(true, false).when(mAdapterService).isStartedProfile(anyString());
-        TestUtils.startService(mServiceRule, PanService.class);
-        mService = PanService.getPanService();
-        assertThat(mService).isNotNull();
+        PanNativeInterface.setInstance(mNativeInterface);
+        mService = new PanService(targetContext);
+        mService.doStart();
+
         // Try getting the Bluetooth adapter
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         assertThat(mAdapter).isNotNull();
@@ -83,7 +84,8 @@ public class PanServiceTest {
 
     @After
     public void tearDown() throws Exception {
-        TestUtils.stopService(mServiceRule, PanService.class);
+        mService.doStop();
+        PanNativeInterface.setInstance(null);
         mService = PanService.getPanService();
         assertThat(mService).isNull();
         TestUtils.clearAdapterService(mAdapterService);
@@ -125,15 +127,15 @@ public class PanServiceTest {
 
     @Test
     public void convertHalState() {
-        assertThat(PanService.convertHalState(PanService.CONN_STATE_CONNECTED))
+        assertThat(PanNativeInterface.convertHalState(PanNativeInterface.CONN_STATE_CONNECTED))
                 .isEqualTo(BluetoothProfile.STATE_CONNECTED);
-        assertThat(PanService.convertHalState(PanService.CONN_STATE_CONNECTING))
+        assertThat(PanNativeInterface.convertHalState(PanNativeInterface.CONN_STATE_CONNECTING))
                 .isEqualTo(BluetoothProfile.STATE_CONNECTING);
-        assertThat(PanService.convertHalState(PanService.CONN_STATE_DISCONNECTED))
+        assertThat(PanNativeInterface.convertHalState(PanNativeInterface.CONN_STATE_DISCONNECTED))
                 .isEqualTo(BluetoothProfile.STATE_DISCONNECTED);
-        assertThat(PanService.convertHalState(PanService.CONN_STATE_DISCONNECTING))
+        assertThat(PanNativeInterface.convertHalState(PanNativeInterface.CONN_STATE_DISCONNECTING))
                 .isEqualTo(BluetoothProfile.STATE_DISCONNECTING);
-        assertThat(PanService.convertHalState(-24664)) // illegal value
+        assertThat(PanNativeInterface.convertHalState(-24664)) // illegal value
                 .isEqualTo(BluetoothProfile.STATE_DISCONNECTED);
     }
 

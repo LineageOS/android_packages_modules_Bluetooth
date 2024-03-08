@@ -199,6 +199,17 @@ void thread_event([[maybe_unused]] bt_cb_thread_evt evt) {
   LOG_INFO("%s", __func__);
 }
 
+void dut_mode_recv([[maybe_unused]] uint16_t opcode,
+                   [[maybe_unused]] uint8_t* buf,
+                   [[maybe_unused]] uint8_t len) {
+  LOG_INFO("%s", __func__);
+}
+
+void le_test_mode([[maybe_unused]] bt_status_t status,
+                  [[maybe_unused]] uint16_t num_packets) {
+  LOG_INFO("%s", __func__);
+}
+
 void energy_info([[maybe_unused]] bt_activity_energy_info* energy_info,
                  [[maybe_unused]] bt_uid_traffic_t* uid_data) {
   LOG_INFO("%s", __func__);
@@ -219,6 +230,8 @@ bt_callbacks_t bt_callbacks{
     .le_address_associate_cb = le_address_associate,
     .acl_state_changed_cb = acl_state_changed,
     .thread_evt_cb = thread_event,
+    .dut_mode_recv_cb = dut_mode_recv,
+    .le_test_mode_cb = le_test_mode,
     .energy_info_cb = energy_info,
     .link_quality_report_cb = link_quality_report,
     .switch_buffer_size_cb = switch_buffer_size,
@@ -227,13 +240,6 @@ bt_callbacks_t bt_callbacks{
 // HAL HARDWARE CALLBACKS
 
 // OS CALLOUTS
-bool set_wake_alarm_co([[maybe_unused]] uint64_t delay_millis,
-                       [[maybe_unused]] bool should_wake,
-                       [[maybe_unused]] alarm_cb cb,
-                       [[maybe_unused]] void* data) {
-  LOG_INFO("%s", __func__);
-  return true;
-}
 int acquire_wake_lock_co([[maybe_unused]] const char* lock_name) {
   LOG_INFO("%s", __func__);
   return 1;
@@ -246,7 +252,6 @@ int release_wake_lock_co([[maybe_unused]] const char* lock_name) {
 
 bt_os_callouts_t bt_os_callouts{
     .size = sizeof(bt_os_callouts_t),
-    .set_wake_alarm = set_wake_alarm_co,
     .acquire_wake_lock = acquire_wake_lock_co,
     .release_wake_lock = release_wake_lock_co,
 };
@@ -279,10 +284,6 @@ void HeadlessStack::SetUp() {
   while (bt_state_ != BT_STATE_ON) adapter_state_cv_.wait(lck);
   LOG_INFO("%s HeadlessStack stack is operational", __func__);
 
-  // Logging can only be enabled after the stack has started up to override
-  // the default logging levels built into the stack.
-  enable_logging();
-
   bluetooth::test::headless::start_messenger();
 
   LOG_CONSOLE("%s Headless stack has started up successfully", kHeadlessIcon);
@@ -291,7 +292,6 @@ void HeadlessStack::SetUp() {
 void HeadlessStack::TearDown() {
   bluetooth::test::headless::stop_messenger();
 
-  log_logging();
   LOG_INFO("Stack has disabled");
   int status = bluetoothInterface.disable();
 

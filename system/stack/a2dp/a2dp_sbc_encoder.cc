@@ -29,9 +29,9 @@
 #include "a2dp_sbc_up_sample.h"
 #include "common/time_util.h"
 #include "embdrv/sbc/encoder/include/sbc_encoder.h"
+#include "internal_include/bt_target.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/log.h"
-#include "osi/include/osi.h"
 #include "stack/include/bt_hdr.h"
 
 /* Buffer pool */
@@ -58,14 +58,8 @@
 #define A2DP_SBC_SCALE_FACTOR_BITS 4        // A2DP Spec v1.3, 12.4, Table 12.13
 
 /* offset */
-#if (BTA_AV_CO_CP_SCMS_T == TRUE)
-/* A2DP header will contain a CP header of size 1 */
-#define A2DP_HDR_SIZE 2
-#define A2DP_SBC_OFFSET (AVDT_MEDIA_OFFSET + A2DP_SBC_MPL_HDR_LEN + 1)
-#else
 #define A2DP_HDR_SIZE 1
 #define A2DP_SBC_OFFSET (AVDT_MEDIA_OFFSET + A2DP_SBC_MPL_HDR_LEN)
-#endif
 
 typedef struct {
   uint32_t aa_frame_counter;

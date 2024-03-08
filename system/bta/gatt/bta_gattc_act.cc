@@ -29,22 +29,20 @@
 #include <base/logging.h>
 #include <base/strings/stringprintf.h>
 
-#include "bt_target.h"  // Must be first to define build configuration
 #include "bta/gatt/bta_gattc_int.h"
-#include "bta/hh/bta_hh_int.h"
+#include "bta/include/bta_api.h"
 #include "btif/include/btif_debug_conn.h"
-#include "btif/include/core_callbacks.h"
-#include "btif/include/stack_manager.h"
 #include "device/include/controller.h"
-#include "device/include/interop.h"
-#include "main/shim/dumpsys.h"
+#include "hardware/bt_gatt_types.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/log.h"
 #include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/include/bt_hdr.h"
+#include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_ble_api_types.h"
-#include "stack/include/btu.h"  // do_in_main_thread
+#include "stack/include/btm_sec_api.h"
 #include "stack/include/l2c_api.h"
+#include "stack/include/main_thread.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
@@ -205,7 +203,7 @@ void bta_gattc_register(const Uuid& app_uuid, tBTA_GATTC_CBACK* p_cback,
             +client_if, app_uuid.ToString().c_str());
 
         do_in_main_thread(FROM_HERE,
-                          base::Bind(&bta_gattc_start_if, client_if));
+                          base::BindOnce(&bta_gattc_start_if, client_if));
 
         status = GATT_SUCCESS;
         break;
@@ -418,8 +416,9 @@ static void bta_gattc_init_bk_conn(const tBTA_GATTC_API_OPEN* p_data,
                     p_data->connection_type, p_data->transport, false)) {
     LOG_ERROR("Unable to connect to remote bd_addr=%s",
               ADDRESS_TO_LOGGABLE_CSTR(p_data->remote_bda));
-    bta_gattc_send_open_cback(p_clreg, GATT_ERROR, p_data->remote_bda,
-                              GATT_INVALID_CONN_ID, BT_TRANSPORT_LE, 0);
+    bta_gattc_send_open_cback(p_clreg, GATT_ILLEGAL_PARAMETER,
+                              p_data->remote_bda, GATT_INVALID_CONN_ID,
+                              BT_TRANSPORT_LE, 0);
     return;
   }
 
@@ -551,7 +550,7 @@ void bta_gattc_conn(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
       if (!db.IsEmpty()) p_clcb->p_srcb->gatt_database = db;
 
       if (db.IsEmpty() ||
-          robust_caching_support == RobustCachingSupport::SUPPORTED) {
+          robust_caching_support != RobustCachingSupport::UNSUPPORTED) {
         // If the peer device is expected to support robust caching, or if we
         // don't know its services yet, then we should do discovery (which may
         // short-circuit through a hash match, but might also do the full
@@ -769,7 +768,11 @@ void bta_gattc_cfg_mtu(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
     case MTU_EXCHANGE_IN_PROGRESS:
       LOG_INFO("Enqueue MTU Request  - waiting for response on p_clcb %p",
                p_clcb);
-      bta_gattc_enqueue(p_clcb, p_data);
+      /* MTU request is in progress and this one will not be sent to remote
+       * device. Just push back on the queue and response will be sent up to
+       * the upper layer when MTU Exchange will be completed.
+       */
+      p_clcb->p_q_cmd_queue.push_back(p_data);
       return;
 
     case MTU_EXCHANGE_NOT_DONE_YET:
@@ -807,6 +810,10 @@ void bta_gattc_start_discover_internal(tBTA_GATTC_CLCB* p_clcb) {
     p_clcb->disc_active = true;
 }
 
+static void bta_gattc_continue_with_version_and_cache_known(
+    tBTA_GATTC_CLCB* p_clcb, RobustCachingSupport cache_support,
+    bool is_svc_chg);
+
 /** Start a discovery on server */
 void bta_gattc_start_discover(tBTA_GATTC_CLCB* p_clcb,
                               UNUSED_ATTR const tBTA_GATTC_DATA* p_data) {
@@ -821,41 +828,38 @@ void bta_gattc_start_discover(tBTA_GATTC_CLCB* p_clcb,
   {
     p_clcb->auto_update = BTA_GATTC_NO_SCHEDULE;
 
-    if (p_clcb->p_srcb != NULL) {
-      /* set all srcb related clcb into discovery ST */
-      bta_gattc_set_discover_st(p_clcb->p_srcb);
-
-      // Before clear mask, set is_svc_chg to
-      // 1. true, invoked by service changed indication
-      // 2. false, invoked by connect API
-      bool is_svc_chg = p_clcb->p_srcb->srvc_hdl_chg;
-
-      /* clear the service change mask */
-      p_clcb->p_srcb->srvc_hdl_chg = false;
-      p_clcb->p_srcb->update_count = 0;
-      p_clcb->p_srcb->state = BTA_GATTC_SERV_DISC_ACT;
-
-      if (GetRobustCachingSupport(p_clcb, p_clcb->p_srcb->gatt_database) ==
-          RobustCachingSupport::UNSUPPORTED) {
-        // Skip initial DB hash read if we have strong reason (due to interop,
-        // or a prior discovery) to believe that it is unsupported.
-        p_clcb->p_srcb->srvc_hdl_db_hash = false;
-      }
-
-      /* read db hash if db hash characteristic exists */
-      if (bta_gattc_is_robust_caching_enabled() &&
-          p_clcb->p_srcb->srvc_hdl_db_hash &&
-          bta_gattc_read_db_hash(p_clcb, is_svc_chg)) {
-        LOG(INFO) << __func__
-                  << ": pending service discovery, read db hash first";
-        p_clcb->p_srcb->srvc_hdl_db_hash = false;
-        return;
-      }
-
-      bta_gattc_start_discover_internal(p_clcb);
-    } else {
+    if (p_clcb->p_srcb == NULL) {
       LOG(ERROR) << "unknown device, can not start discovery";
+      return;
     }
+
+    /* set all srcb related clcb into discovery ST */
+    bta_gattc_set_discover_st(p_clcb->p_srcb);
+
+    // Before clear mask, set is_svc_chg to
+    // 1. true, invoked by service changed indication
+    // 2. false, invoked by connect API
+    bool is_svc_chg = p_clcb->p_srcb->srvc_hdl_chg;
+
+    /* clear the service change mask */
+    p_clcb->p_srcb->srvc_hdl_chg = false;
+    p_clcb->p_srcb->update_count = 0;
+    p_clcb->p_srcb->state = BTA_GATTC_SERV_DISC_ACT;
+    p_clcb->p_srcb->disc_blocked_waiting_on_version = false;
+
+    auto cache_support =
+        GetRobustCachingSupport(p_clcb, p_clcb->p_srcb->gatt_database);
+    if (cache_support == RobustCachingSupport::W4_REMOTE_VERSION) {
+      LOG_INFO(
+          "Pausing service discovery till remote version is read conn_id:%d",
+          p_clcb->bta_conn_id);
+      p_clcb->p_srcb->disc_blocked_waiting_on_version = true;
+      p_clcb->p_srcb->blocked_conn_id = p_clcb->bta_conn_id;
+      return;
+    }
+
+    bta_gattc_continue_with_version_and_cache_known(p_clcb, cache_support,
+                                                    is_svc_chg);
   }
   /* pending operation, wait until it finishes */
   else {
@@ -864,6 +868,58 @@ void bta_gattc_start_discover(tBTA_GATTC_CLCB* p_clcb,
     if (p_clcb->p_srcb->state == BTA_GATTC_SERV_IDLE)
       p_clcb->state = BTA_GATTC_CONN_ST; /* set clcb state */
   }
+}
+
+void bta_gattc_continue_discovery_if_needed(const RawAddress& bd_addr,
+                                            uint16_t /* acl_handle */) {
+  tBTA_GATTC_SERV* p_srcb = bta_gattc_find_srvr_cache(bd_addr);
+  if (!p_srcb || !p_srcb->disc_blocked_waiting_on_version) {
+    return;
+  }
+
+  uint16_t conn_id = p_srcb->blocked_conn_id;
+
+  p_srcb->disc_blocked_waiting_on_version = false;
+  p_srcb->blocked_conn_id = 0;
+
+  LOG_INFO("Received remote version, continue service discovery for %s",
+           ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+
+  tBTA_GATTC_CLCB* p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
+
+  if (!p_clcb) {
+    LOG_ERROR("Can't find CLCB to continue service discovery, id:%d", conn_id);
+    return;
+  }
+
+  bool is_svc_chg = p_clcb->p_srcb->srvc_hdl_chg;
+
+  auto cache_support =
+      GetRobustCachingSupport(p_clcb, p_clcb->p_srcb->gatt_database);
+  bta_gattc_continue_with_version_and_cache_known(p_clcb, cache_support,
+                                                  is_svc_chg);
+}
+
+void bta_gattc_continue_with_version_and_cache_known(
+    tBTA_GATTC_CLCB* p_clcb, RobustCachingSupport cache_support,
+    bool is_svc_chg) {
+  if (cache_support == RobustCachingSupport::UNSUPPORTED) {
+    // Skip initial DB hash read if we have strong reason (due to interop,
+    // or a prior discovery) to believe that it is unsupported.
+    p_clcb->p_srcb->srvc_hdl_db_hash = false;
+  }
+
+  /* read db hash if db hash characteristic exists */
+  if (bta_gattc_is_robust_caching_enabled() &&
+      p_clcb->p_srcb->srvc_hdl_db_hash &&
+      bta_gattc_read_db_hash(p_clcb, is_svc_chg)) {
+    LOG(INFO) << __func__
+              << ": pending service discovery, read db hash first conn_id:"
+              << loghex(p_clcb->bta_conn_id);
+    p_clcb->p_srcb->srvc_hdl_db_hash = false;
+    return;
+  }
+  bta_gattc_start_discover_internal(p_clcb);
 }
 
 /** discovery on server is finished */
@@ -958,16 +1014,26 @@ void bta_gattc_read_multi(tBTA_GATTC_CLCB* p_clcb,
                           const tBTA_GATTC_DATA* p_data) {
   if (bta_gattc_enqueue(p_clcb, p_data) == ENQUEUED_FOR_LATER) return;
 
+  if (p_data->api_read_multi.handles.num_attr > GATT_MAX_READ_MULTI_HANDLES) {
+    LOG(ERROR) << "api_read_multi.num_attr > GATT_MAX_READ_MULTI_HANDLES";
+    return;
+  }
+
   tGATT_READ_PARAM read_param;
   memset(&read_param, 0, sizeof(tGATT_READ_PARAM));
 
-  read_param.read_multiple.num_handles = p_data->api_read_multi.num_attr;
+  read_param.read_multiple.num_handles =
+      p_data->api_read_multi.handles.num_attr;
   read_param.read_multiple.auth_req = p_data->api_read_multi.auth_req;
-  memcpy(&read_param.read_multiple.handles, p_data->api_read_multi.handles,
-         sizeof(uint16_t) * p_data->api_read_multi.num_attr);
+  read_param.read_multiple.variable_len = p_data->api_read_multi.variable_len;
+  memcpy(&read_param.read_multiple.handles,
+         p_data->api_read_multi.handles.handles,
+         sizeof(uint16_t) * p_data->api_read_multi.handles.num_attr);
 
-  tGATT_STATUS status =
-      GATTC_Read(p_clcb->bta_conn_id, GATT_READ_MULTIPLE, &read_param);
+  tGATT_READ_TYPE read_type = (read_param.read_multiple.variable_len)
+                                  ? GATT_READ_MULTIPLE_VAR_LEN
+                                  : GATT_READ_MULTIPLE;
+  tGATT_STATUS status = GATTC_Read(p_clcb->bta_conn_id, read_type, &read_param);
   /* read fail */
   if (status != GATT_SUCCESS) {
     /* Dequeue the data, if it was enqueued */
@@ -1049,21 +1115,37 @@ void bta_gattc_confirm(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
 /** read complete */
 static void bta_gattc_read_cmpl(tBTA_GATTC_CLCB* p_clcb,
                                 const tBTA_GATTC_OP_CMPL* p_data) {
-  GATT_READ_OP_CB cb = p_clcb->p_q_cmd->api_read.read_cb;
-  void* my_cb_data = p_clcb->p_q_cmd->api_read.read_cb_data;
+  void* my_cb_data;
 
-  /* if it was read by handle, return the handle requested, if read by UUID, use
-   * handle returned from remote
-   */
-  uint16_t handle = p_clcb->p_q_cmd->api_read.handle;
-  if (handle == 0) handle = p_data->p_cmpl->att_value.handle;
+  if (!p_clcb->p_q_cmd->api_read.is_multi_read) {
+    GATT_READ_OP_CB cb = p_clcb->p_q_cmd->api_read.read_cb;
+    my_cb_data = p_clcb->p_q_cmd->api_read.read_cb_data;
 
-  osi_free_and_reset((void**)&p_clcb->p_q_cmd);
+    /* if it was read by handle, return the handle requested, if read by UUID,
+     * use handle returned from remote
+     */
+    uint16_t handle = p_clcb->p_q_cmd->api_read.handle;
+    if (handle == 0) handle = p_data->p_cmpl->att_value.handle;
 
-  if (cb) {
-    cb(p_clcb->bta_conn_id, p_data->status, handle,
-       p_data->p_cmpl->att_value.len, p_data->p_cmpl->att_value.value,
-       my_cb_data);
+    osi_free_and_reset((void**)&p_clcb->p_q_cmd);
+
+    if (cb) {
+      cb(p_clcb->bta_conn_id, p_data->status, handle,
+         p_data->p_cmpl->att_value.len, p_data->p_cmpl->att_value.value,
+         my_cb_data);
+    }
+  } else {
+    GATT_READ_MULTI_OP_CB cb = p_clcb->p_q_cmd->api_read_multi.read_cb;
+    my_cb_data = p_clcb->p_q_cmd->api_read_multi.read_cb_data;
+    tBTA_GATTC_MULTI handles = p_clcb->p_q_cmd->api_read_multi.handles;
+
+    osi_free_and_reset((void**)&p_clcb->p_q_cmd);
+
+    if (cb) {
+      cb(p_clcb->bta_conn_id, p_data->status, handles,
+         p_data->p_cmpl->att_value.len, p_data->p_cmpl->att_value.value,
+         my_cb_data);
+    }
   }
 }
 
@@ -1162,9 +1244,12 @@ void bta_gattc_op_cmpl(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
   }
 
   if (p_clcb->p_q_cmd->hdr.event !=
-      bta_gattc_opcode_to_int_evt[op - GATTC_OPTYPE_READ]) {
+          bta_gattc_opcode_to_int_evt[op - GATTC_OPTYPE_READ] &&
+      (p_clcb->p_q_cmd->hdr.event != BTA_GATTC_API_READ_MULTI_EVT ||
+       op != GATTC_OPTYPE_READ)) {
     uint8_t mapped_op =
         p_clcb->p_q_cmd->hdr.event - BTA_GATTC_API_READ_EVT + GATTC_OPTYPE_READ;
+
     if (mapped_op > GATTC_OPTYPE_INDICATION) mapped_op = 0;
 
     LOG(ERROR) << StringPrintf(
@@ -1335,7 +1420,7 @@ static void bta_gattc_enc_cmpl_cback(tGATT_IF gattc_if, const RawAddress& bda) {
   VLOG(1) << __func__ << ": cif:" << +gattc_if;
 
   do_in_main_thread(FROM_HERE,
-                    base::Bind(&bta_gattc_process_enc_cmpl, gattc_if, bda));
+                    base::BindOnce(&bta_gattc_process_enc_cmpl, gattc_if, bda));
 }
 
 /** process refresh API to delete cache and start a new discovery if currently

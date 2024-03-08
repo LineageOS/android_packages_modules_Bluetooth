@@ -4,10 +4,11 @@
 
 use crate::hal::internal::{InnerHal, RawHal};
 use crate::hal::{Result, H4_HEADER_SIZE};
-use bt_packets::hci::{AclPacket, CommandPacket, EventPacket, IsoPacket, Packet, ScoPacket};
+use bt_packets::hci::{Acl, Command, Event, Iso, Sco};
 use bytes::{BufMut, Bytes, BytesMut};
 use gddi::{module, provides, Stoppable};
 use num_derive::{FromPrimitive, ToPrimitive};
+use pdl_runtime::Packet;
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
 use std::sync::Arc;
@@ -84,10 +85,10 @@ impl RootcanalConfig {
 
 /// Send HCI events received from the HAL to the HCI layer
 async fn dispatch_incoming<R>(
-    evt_tx: UnboundedSender<EventPacket>,
-    acl_tx: UnboundedSender<AclPacket>,
-    iso_tx: UnboundedSender<IsoPacket>,
-    sco_tx: UnboundedSender<ScoPacket>,
+    evt_tx: UnboundedSender<Event>,
+    acl_tx: UnboundedSender<Acl>,
+    iso_tx: UnboundedSender<Iso>,
+    sco_tx: UnboundedSender<Sco>,
     reader: R,
 ) -> Result<()>
 where
@@ -107,7 +108,7 @@ where
             reader.read_exact(&mut payload).await?;
             buffer.unsplit(payload);
             let frozen = buffer.freeze();
-            match EventPacket::parse(&frozen) {
+            match Event::parse(&frozen) {
                 Ok(p) => evt_tx.send(p).unwrap(),
                 Err(e) => log::error!("dropping invalid event packet: {}: {:02x}", e, frozen),
             }
@@ -120,7 +121,7 @@ where
             reader.read_exact(&mut payload).await?;
             buffer.unsplit(payload);
             let frozen = buffer.freeze();
-            match AclPacket::parse(&frozen) {
+            match Acl::parse(&frozen) {
                 Ok(p) => acl_tx.send(p).unwrap(),
                 Err(e) => log::error!("dropping invalid ACL packet: {}: {:02x}", e, frozen),
             }
@@ -133,7 +134,7 @@ where
             reader.read_exact(&mut payload).await?;
             buffer.unsplit(payload);
             let frozen = buffer.freeze();
-            match IsoPacket::parse(&frozen) {
+            match Iso::parse(&frozen) {
                 Ok(p) => iso_tx.send(p).unwrap(),
                 Err(e) => log::error!("dropping invalid ISO packet: {}: {:02x}", e, frozen),
             }
@@ -146,7 +147,7 @@ where
             reader.read_exact(&mut payload).await?;
             buffer.unsplit(payload);
             let frozen = buffer.freeze();
-            match ScoPacket::parse(&frozen) {
+            match Sco::parse(&frozen) {
                 Ok(p) => sco_tx.send(p).unwrap(),
                 Err(e) => log::error!("dropping invalid SCO packet: {}: {:02x}", e, frozen),
             }
@@ -156,10 +157,10 @@ where
 
 /// Send commands received from the HCI later to rootcanal
 async fn dispatch_outgoing<W>(
-    mut cmd_rx: UnboundedReceiver<CommandPacket>,
-    mut acl_rx: UnboundedReceiver<AclPacket>,
-    mut iso_rx: UnboundedReceiver<IsoPacket>,
-    mut sco_rx: UnboundedReceiver<ScoPacket>,
+    mut cmd_rx: UnboundedReceiver<Command>,
+    mut acl_rx: UnboundedReceiver<Acl>,
+    mut iso_rx: UnboundedReceiver<Iso>,
+    mut sco_rx: UnboundedReceiver<Sco>,
     mut writer: W,
 ) -> Result<()>
 where

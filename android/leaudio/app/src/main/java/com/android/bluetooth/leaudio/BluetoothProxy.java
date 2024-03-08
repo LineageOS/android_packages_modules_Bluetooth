@@ -26,7 +26,6 @@ import android.content.IntentFilter;
 import android.os.ParcelUuid;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.util.Pair;
 import androidx.lifecycle.LiveData;
@@ -1075,7 +1074,11 @@ public class BluetoothProxy {
                 if (scanDelegator != null) {
                     mBroadcastScanDelegatorDevices.add(scanDelegator);
                 }
-                mBluetoothLeBroadcastAssistant.startSearchingForSources(new ArrayList<>());
+                try {
+                    mBluetoothLeBroadcastAssistant.startSearchingForSources(new ArrayList<>());
+                } catch (IllegalArgumentException e) {
+                    Log.e("BluetoothProxy", " Unexpected " + e);
+                }
                 if (mBassEventListener != null) {
                     mBassEventListener.onScanningStateChanged(true);
                 }
@@ -1084,9 +1087,13 @@ public class BluetoothProxy {
                     mBroadcastScanDelegatorDevices.remove(scanDelegator);
                 }
                 if (mBroadcastScanDelegatorDevices.isEmpty()) {
-                    mBluetoothLeBroadcastAssistant.stopSearchingForSources();
-                    if (mBassEventListener != null) {
-                        mBassEventListener.onScanningStateChanged(false);
+                    try {
+                        mBluetoothLeBroadcastAssistant.stopSearchingForSources();
+                        if (mBassEventListener != null) {
+                            mBassEventListener.onScanningStateChanged(false);
+                        }
+                    } catch (IllegalArgumentException e) {
+                        Log.e("BluetoothProxy", " Unexpected " + e);
                     }
                 }
             }
@@ -1098,7 +1105,12 @@ public class BluetoothProxy {
     public boolean stopBroadcastObserving() {
         if (mBluetoothLeBroadcastAssistant != null) {
             mBroadcastScanDelegatorDevices.clear();
-            mBluetoothLeBroadcastAssistant.stopSearchingForSources();
+            try {
+                mBluetoothLeBroadcastAssistant.stopSearchingForSources();
+            } catch (IllegalArgumentException e) {
+                Log.e("BluetoothProxy", " Unexpected " + e);
+            }
+
             if (mBassEventListener != null) {
                 mBassEventListener.onScanningStateChanged(false);
             }

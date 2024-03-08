@@ -126,6 +126,18 @@ tHID_STATUS HID_HostDeregister(void);
 
 /*******************************************************************************
  *
+ * Function         HID_HostSDPDisable
+ *
+ * Description      This is called to check if the device has the HIDSDPDisable
+ *                  attribute.
+ *
+ * Returns          bool
+ *
+ ******************************************************************************/
+bool HID_HostSDPDisable(const RawAddress& addr);
+
+/*******************************************************************************
+ *
  * Function         HID_HostAddDev
  *
  * Description      This is called so HID-host may manage this device.
@@ -191,17 +203,5 @@ tHID_STATUS HID_HostCloseDev(uint8_t dev_handle);
  * Returns          void
  ******************************************************************************/
 void HID_HostInit(void);
-
-/*******************************************************************************
- *
- * Function         HID_HostSetTraceLevel
- *
- * Description      Set the trace level for HID Host. If called with the value
- *                  0xFF, it simply reads the current trace level.
- *
- * Returns          the new (current) trace level
- *
- ******************************************************************************/
-uint8_t HID_HostSetTraceLevel(uint8_t new_level);
 
 #endif /* HIDH_API_H */

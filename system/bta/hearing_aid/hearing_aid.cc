@@ -20,6 +20,7 @@
 
 #define LOG_TAG "bluetooth"
 
+#include <android_bluetooth_flags.h>
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
 #include <base/logging.h>
@@ -34,17 +35,18 @@
 #include "bta/include/bta_gatt_queue.h"
 #include "bta/include/bta_hearing_aid_api.h"
 #include "btm_iso_api.h"
-#include "common/init_flags.h"
 #include "device/include/controller.h"
 #include "embdrv/g722/g722_enc_dec.h"
-#include "osi/include/compat.h"
-#include "osi/include/log.h"
+#include "hardware/bt_gatt_types.h"
+#include "os/log.h"
+#include "osi/include/allocator.h"
 #include "osi/include/properties.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api.h"        // BTM_ReadRSSI
 #include "stack/include/acl_api_types.h"  // tBTM_RSSI_RESULT
 #include "stack/include/bt_hdr.h"
-#include "stack/include/bt_octets.h"
+#include "stack/include/bt_types.h"
+#include "stack/include/bt_uuid16.h"
 #include "stack/include/l2c_api.h"  // L2CAP_MIN_OFFSET
 #include "types/bluetooth/uuid.h"
 #include "types/bt_transport.h"
@@ -160,6 +162,16 @@ class HearingDevices {
     return (iter == devices.end()) ? nullptr : &(*iter);
   }
 
+  HearingDevice* FindOtherConnectedDeviceFromSet(const HearingDevice& device) {
+    auto iter = std::find_if(
+        devices.begin(), devices.end(), [&device](const HearingDevice& other) {
+          return &device != &other && device.hi_sync_id == other.hi_sync_id &&
+                 other.conn_id != 0;
+        });
+
+    return (iter == devices.end()) ? nullptr : &(*iter);
+  }
+
   HearingDevice* FindByConnId(uint16_t conn_id) {
     auto iter = std::find_if(devices.begin(), devices.end(),
                              [&conn_id](const HearingDevice& device) {
@@ -176,14 +188,6 @@ class HearingDevices {
                              });
 
     return (iter == devices.end()) ? nullptr : &(*iter);
-  }
-
-  bool IsAnyConnectionUpdateStarted() {
-    for (const auto& d : devices) {
-      if (d.connection_update_status == STARTED) return true;
-    }
-
-    return false;
   }
 
   void StartRssiLog() {
@@ -424,7 +428,7 @@ class HearingAidImpl : public HearingAid {
     BTA_GATTC_Open(gatt_if, address, BTM_BLE_BKG_CONNECT_ALLOW_LIST, false);
   }
 
-  void AddFromStorage(const HearingDevice& dev_info, uint16_t is_acceptlisted) {
+  void AddFromStorage(const HearingDevice& dev_info, bool is_acceptlisted) {
     LOG_DEBUG("%s, hiSyncId=%s, isAcceptlisted=%u",
               ADDRESS_TO_LOGGABLE_CSTR(dev_info.address),
               loghex(dev_info.hi_sync_id).c_str(), is_acceptlisted);
@@ -468,30 +472,44 @@ class HearingAidImpl : public HearingAid {
         return;
       }
 
-      LOG_INFO("Failed to connect to Hearing Aid device");
-      hearingDevices.Remove(address);
-      callbacks->OnConnectionState(ConnectionState::DISCONNECTED, address);
+      if (hearingDevice->switch_to_background_connection_after_failure) {
+        hearingDevice->connecting_actively = false;
+        hearingDevice->switch_to_background_connection_after_failure = false;
+        BTA_GATTC_Open(gatt_if, address, BTM_BLE_BKG_CONNECT_ALLOW_LIST, false);
+      } else {
+        LOG_INFO("Failed to connect to Hearing Aid device, bda=%s",
+                 ADDRESS_TO_LOGGABLE_CSTR(address));
+
+        hearingDevices.Remove(address);
+        callbacks->OnConnectionState(ConnectionState::DISCONNECTED, address);
+      }
       return;
     }
 
     hearingDevice->conn_id = conn_id;
 
-    /* We must update connection parameters one at a time, otherwise anchor
-     * point (start of connection event) for two devices can be too close to
-     * each other. Here, by setting min_ce_len=max_ce_len=X, we force controller
-     * to move anchor point of both connections away from each other, to make
-     * sure we'll be able to fit all the data we want in one connection event.
-     */
-    bool any_update_pending = hearingDevices.IsAnyConnectionUpdateStarted();
-    // mark the device as pending connection update. If we don't start the
-    // update now, it'll be started once current device finishes.
-    if (!any_update_pending) {
-      hearingDevice->connection_update_status = STARTED;
-      hearingDevice->requested_connection_interval =
-          UpdateBleConnParams(address);
-    } else {
-      hearingDevice->connection_update_status = AWAITING;
+    uint64_t hi_sync_id = hearingDevice->hi_sync_id;
+
+    // If there a background connection to the other device of a pair, promote
+    // it to a direct connection to scan more agressively for it
+    if (hi_sync_id != 0) {
+      for (auto& device : hearingDevices.devices) {
+        if (device.hi_sync_id == hi_sync_id && device.conn_id == 0 &&
+            !device.connecting_actively) {
+          LOG_INFO(
+              "Promoting device from the set from background to direct"
+              "connection, bda=%s",
+              ADDRESS_TO_LOGGABLE_CSTR(device.address));
+          device.connecting_actively = true;
+          device.switch_to_background_connection_after_failure = true;
+          BTA_GATTC_Open(gatt_if, device.address, BTM_BLE_DIRECT_CONNECTION,
+                         false);
+        }
+      }
     }
+
+    hearingDevice->connection_update_status = STARTED;
+    hearingDevice->requested_connection_interval = UpdateBleConnParams(address);
 
     if (controller_get_interface()->supports_ble_2m_phy()) {
       LOG_INFO("%s set preferred 2M PHY", ADDRESS_TO_LOGGABLE_CSTR(address));
@@ -907,8 +925,10 @@ class HearingAidImpl : public HearingAid {
     hearingDevice->capabilities = capabilities;
     bool side = capabilities & CAPABILITY_SIDE;
     bool standalone = capabilities & CAPABILITY_BINAURAL;
-    LOG_DEBUG("capabilities: %s, %s", (side ? "right" : "left"),
-              (standalone ? "binaural" : "monaural"));
+    bool csis_capable = capabilities & CAPABILITY_CSIS;
+    LOG_DEBUG("capabilities: %s, %s, CSIS %s", (side ? "right" : "left"),
+              (standalone ? "binaural" : "monaural"),
+              (csis_capable ? "capable" : "not capable"));
 
     if (capabilities & CAPABILITY_RESERVED) {
       LOG_WARN("reserved capabilities are set");
@@ -1392,6 +1412,11 @@ class HearingAidImpl : public HearingAid {
       }
     }
 
+    uint16_t l2cap_flush_threshold = 0;
+    if (IS_FLAG_ENABLED(higher_l2cap_flush_threshold)) {
+      l2cap_flush_threshold = 1;
+    }
+
     // TODO: monural, binarual check
 
     // divide encoded data into packets, add header, send.
@@ -1412,7 +1437,7 @@ class HearingAidImpl : public HearingAid {
 
       uint16_t cid = GAP_ConnGetL2CAPCid(left->gap_handle);
       uint16_t packets_in_chans = L2CA_FlushChannel(cid, L2CAP_FLUSH_CHANS_GET);
-      if (packets_in_chans) {
+      if (packets_in_chans > l2cap_flush_threshold) {
         // Compare the two sides LE CoC credit value to confirm need to drop or
         // skip audio packet.
         if (NeedToDropPacket(left, right) && IsBelowDropFrequency(time_point)) {
@@ -1446,7 +1471,7 @@ class HearingAidImpl : public HearingAid {
 
       uint16_t cid = GAP_ConnGetL2CAPCid(right->gap_handle);
       uint16_t packets_in_chans = L2CA_FlushChannel(cid, L2CAP_FLUSH_CHANS_GET);
-      if (packets_in_chans) {
+      if (packets_in_chans > l2cap_flush_threshold) {
         // Compare the two sides LE CoC credit value to confirm need to drop or
         // skip audio packet.
         if (NeedToDropPacket(right, left) && IsBelowDropFrequency(time_point)) {
@@ -1763,10 +1788,31 @@ class HearingAidImpl : public HearingAid {
 
     DoDisconnectCleanUp(hearingDevice);
 
+    HearingDevice* other_connected_device_from_set =
+        hearingDevices.FindOtherConnectedDeviceFromSet(*hearingDevice);
+
+    if (other_connected_device_from_set != nullptr) {
+      LOG_INFO(
+          "Another device from the set is still connected, issuing a direct "
+          "connection, other_device_bda=%s",
+          ADDRESS_TO_LOGGABLE_CSTR(other_connected_device_from_set->address));
+    }
+
+    // If another device from the pair is still connected, do a direct
+    // connection to scan more aggressively and connect as fast as possible
+    hearingDevice->connecting_actively =
+        other_connected_device_from_set != nullptr;
+
+    auto connection_type = hearingDevice->connecting_actively
+                               ? BTM_BLE_DIRECT_CONNECTION
+                               : BTM_BLE_BKG_CONNECT_ALLOW_LIST;
+
+    hearingDevice->switch_to_background_connection_after_failure =
+        connection_type == BTM_BLE_DIRECT_CONNECTION;
+
     // This is needed just for the first connection. After stack is restarted,
     // code that loads device will add them to acceptlist.
-    BTA_GATTC_Open(gatt_if, hearingDevice->address,
-                   BTM_BLE_BKG_CONNECT_ALLOW_LIST, false);
+    BTA_GATTC_Open(gatt_if, hearingDevice->address, connection_type, false);
 
     callbacks->OnConnectionState(ConnectionState::DISCONNECTED, remote_bda);
 
@@ -2094,7 +2140,7 @@ void HearingAid::SetVolume(int8_t volume) {
 }
 
 void HearingAid::AddFromStorage(const HearingDevice& dev_info,
-                                uint16_t is_acceptlisted) {
+                                bool is_acceptlisted) {
   if (!instance) {
     LOG_ERROR("Not initialized yet");
   }

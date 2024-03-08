@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+#include <base/logging.h>
+
 #include <map>
 #include <vector>
 
@@ -22,10 +24,11 @@
 #include "bta_gatt_queue.h"
 #include "devices.h"
 #include "gatt_api.h"
+#include "os/log.h"
+#include "os/logging/log_adapter.h"
 #include "stack/btm/btm_sec.h"
+#include "stack/include/bt_types.h"
 #include "types/bluetooth/uuid.h"
-
-#include <base/logging.h>
 
 using namespace bluetooth::vc::internal;
 
@@ -53,8 +56,6 @@ void VolumeControlDevice::Disconnect(tGATT_IF gatt_if) {
     BtaGattQueue::Clean(connection_id);
     BTA_GATTC_Close(connection_id);
     connection_id = GATT_INVALID_CONN_ID;
-  } else {
-    BTA_GATTC_CancelOpen(gatt_if, address, false);
   }
 
   device_ready = false;
@@ -418,8 +419,10 @@ bool VolumeControlDevice::IsEncryptionEnabled() {
   return BTM_IsEncrypted(address, BT_TRANSPORT_LE);
 }
 
-void VolumeControlDevice::EnableEncryption() {
+bool VolumeControlDevice::EnableEncryption() {
   int result = BTM_SetEncryption(address, BT_TRANSPORT_LE, nullptr, nullptr,
                                  BTM_BLE_SEC_ENCRYPT);
-  LOG(INFO) << __func__ << ": result=" << +result;
+  LOG_INFO("%s: result=0x%02x", ADDRESS_TO_LOGGABLE_CSTR(address), result);
+
+  return result != BTM_ERR_KEY_MISSING;
 }

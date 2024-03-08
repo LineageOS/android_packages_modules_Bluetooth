@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
+#include <base/logging.h>
+
 #include "eatt_impl.h"
 #include "stack/include/bt_hdr.h"
-#include "stack/l2cap/l2c_int.h"
+#include "stack/include/bt_psm_types.h"
 #include "types/raw_address.h"
-
-#include <base/logging.h>
 
 using bluetooth::eatt::eatt_impl;
 

@@ -26,15 +26,18 @@
 
 #include <string.h>
 
-#include "bt_target.h"
+#include "common/init_flags.h"
 #include "gd/hal/snoop_logger.h"
 #include "hcimsgs.h"  // HCID_GET_
-#include "main/shim/shim.h"
+#include "internal_include/bt_target.h"
+#include "main/shim/entry.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/log.h"
-#include "osi/include/osi.h"
 #include "stack/include/bt_hdr.h"
+#include "stack/include/bt_psm_types.h"
+#include "stack/include/bt_types.h"
 #include "stack/include/l2c_api.h"
+#include "stack/include/l2cap_hci_link_interface.h"
 #include "stack/include/l2cdefs.h"
 #include "stack/l2cap/l2c_int.h"
 
@@ -70,7 +73,7 @@ void l2c_rcv_acl_data(BT_HDR* p_msg) {
   /* Since the HCI Transport is putting segmented packets back together, we */
   /* should never get a valid packet with the type set to "continuation"    */
   if (pkt_type == L2CAP_PKT_CONTINUE) {
-    L2CAP_TRACE_WARNING("L2CAP - received packet continuation");
+    LOG_WARN("L2CAP - received packet continuation");
     osi_free(p_msg);
     return;
   }
@@ -79,7 +82,7 @@ void l2c_rcv_acl_data(BT_HDR* p_msg) {
   STREAM_TO_UINT16(hci_len, p);
   if (hci_len < L2CAP_PKT_OVERHEAD || hci_len != p_msg->len - 4) {
     /* Remote-declared packet size must match HCI_ACL size - ACL header (4) */
-    L2CAP_TRACE_WARNING("L2CAP - got incorrect hci header");
+    LOG_WARN("L2CAP - got incorrect hci header");
     osi_free(p_msg);
     return;
   }
@@ -114,7 +117,7 @@ void l2c_rcv_acl_data(BT_HDR* p_msg) {
   if (rcv_cid >= L2CAP_BASE_APPL_CID) {
     p_ccb = l2cu_find_ccb_by_cid(p_lcb, rcv_cid);
     if (!p_ccb) {
-      L2CAP_TRACE_WARNING("L2CAP - unknown CID: 0x%04x", rcv_cid);
+      LOG_WARN("L2CAP - unknown CID: 0x%04x", rcv_cid);
       osi_free(p_msg);
       return;
     }
@@ -124,8 +127,8 @@ void l2c_rcv_acl_data(BT_HDR* p_msg) {
   p_msg->offset += L2CAP_PKT_OVERHEAD;
 
   if (l2cap_len != p_msg->len) {
-    L2CAP_TRACE_WARNING("L2CAP - bad length in pkt. Exp: %d  Act: %d",
-                        l2cap_len, p_msg->len);
+    LOG_WARN("L2CAP - bad length in pkt. Exp: %d  Act: %d", l2cap_len,
+             p_msg->len);
     osi_free(p_msg);
     return;
   }
@@ -287,7 +290,8 @@ static void process_l2cap_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
       break;
     }
 
-    LOG_DEBUG("cmd_code: %d, id:%d, cmd_len:%d", cmd_code, id, cmd_len);
+    LOG_DEBUG("cmd: %s, id:%d, cmd_len:%d",
+              l2cap_command_code_text(cmd_code).c_str(), id, cmd_len);
 
     /* Bad L2CAP packet length, look for cmd to reject */
     if (pkt_size_rej) {
@@ -833,11 +837,6 @@ static void process_l2cap_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
  *
  ******************************************************************************/
 void l2c_init(void) {
-  if (bluetooth::shim::is_gd_l2cap_enabled()) {
-    // L2CAP init should be handled by GD stack manager
-    return;
-  }
-
   int16_t xx;
 
   memset(&l2cb, 0, sizeof(tL2C_CB));
@@ -859,12 +858,6 @@ void l2c_init(void) {
   /* Set the default idle timeout */
   l2cb.idle_timeout = L2CAP_LINK_INACTIVITY_TOUT;
 
-#if defined(L2CAP_INITIAL_TRACE_LEVEL)
-  l2cb.l2cap_trace_level = L2CAP_INITIAL_TRACE_LEVEL;
-#else
-  l2cb.l2cap_trace_level = BT_TRACE_LEVEL_NONE; /* No traces */
-#endif
-
 #if (L2CAP_CONFORMANCE_TESTING == TRUE)
   /* Conformance testing needs a dynamic response */
   l2cb.test_info_resp = L2CAP_EXTFEA_SUPPORTED_MASK;
@@ -877,12 +870,7 @@ void l2c_init(void) {
                                   L2CAP_FIXED_CHNL_SMP_BIT;
 }
 
-void l2c_free(void) {
-  if (bluetooth::shim::is_gd_l2cap_enabled()) {
-    // L2CAP cleanup should be handled by GD stack manager
-    return;
-  }
-}
+void l2c_free(void) {}
 
 void l2c_ccb_timer_timeout(void* data) {
   tL2C_CCB* p_ccb = (tL2C_CCB*)data;
@@ -918,7 +906,7 @@ uint8_t l2c_data_write(uint16_t cid, BT_HDR* p_data, uint16_t flags) {
   /* Find the channel control block. We don't know the link it is on. */
   tL2C_CCB* p_ccb = l2cu_find_ccb_by_cid(NULL, cid);
   if (!p_ccb) {
-    L2CAP_TRACE_WARNING("L2CAP - no CCB for L2CA_DataWrite, CID: %d", cid);
+    LOG_WARN("L2CAP - no CCB for L2CA_DataWrite, CID: %d", cid);
     osi_free(p_data);
     return (L2CAP_DW_FAILED);
   }
@@ -932,7 +920,7 @@ uint8_t l2c_data_write(uint16_t cid, BT_HDR* p_data, uint16_t flags) {
     mtu = p_ccb->peer_cfg.mtu;
 
   if (p_data->len > mtu) {
-    L2CAP_TRACE_WARNING(
+    LOG_WARN(
         "L2CAP - CID: 0x%04x  cannot send message bigger than peer's mtu size: "
         "len=%u mtu=%u",
         cid, p_data->len, mtu);
@@ -945,9 +933,9 @@ uint8_t l2c_data_write(uint16_t cid, BT_HDR* p_data, uint16_t flags) {
 
   /* If already congested, do not accept any more packets */
   if (p_ccb->cong_sent) {
-    L2CAP_TRACE_ERROR(
+    LOG_ERROR(
         "L2CAP - CID: 0x%04x cannot send, already congested  "
-        "xmit_hold_q.count: %u  buff_quota: %u",
+        "xmit_hold_q.count: %zu  buff_quota: %u",
         p_ccb->local_cid, fixed_queue_length(p_ccb->xmit_hold_q),
         p_ccb->buff_quota);
 

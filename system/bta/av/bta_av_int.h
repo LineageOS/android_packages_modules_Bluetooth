@@ -27,19 +27,20 @@
 #include <cstdint>
 #include <string>
 
-#include "bta/av/bta_av_int.h"
 #include "bta/include/bta_av_api.h"
-#include "bta/include/bta_av_co.h"
+#include "bta/include/bta_sec_api.h"
 #include "bta/sys/bta_sys.h"
+#include "include/hardware/bt_av.h"
+#include "internal_include/bt_target.h"
+#include "macros.h"
 #include "osi/include/list.h"
+#include "stack/include/a2dp_error_codes.h"
 #include "stack/include/avdt_api.h"
 #include "stack/include/bt_hdr.h"
-#include "stack/include/bt_types.h"
+#include "stack/include/hci_error_code.h"
+#include "stack/sdp/sdp_discovery_db.h"
+#include "types/hci_role.h"
 #include "types/raw_address.h"
-
-#define CASE_RETURN_TEXT(code) \
-  case code:                   \
-    return #code
 
 /*****************************************************************************
  *  Constants
@@ -112,6 +113,7 @@ enum {
   BTA_AV_CONN_CHG_EVT,
   BTA_AV_DEREG_COMP_EVT,
   BTA_AV_AVDT_RPT_CONN_EVT,
+  BTA_AV_API_PEER_SEP_EVT,
   BTA_AV_API_START_EVT, /* the following 2 events must be in the same order as
                            the *AP_*EVT */
   BTA_AV_API_STOP_EVT,
@@ -263,6 +265,7 @@ typedef struct {
   bool use_rc;
   tBTA_AV_RS_RES switch_res;
   uint16_t uuid; /* uuid of initiator */
+  bool incoming; /* peer launch connection */
 } tBTA_AV_API_OPEN;
 
 /* data type for BTA_AV_API_SET_LATENCY_EVT */
@@ -398,8 +401,8 @@ typedef struct {
 /* data type for BTA_AV_ROLE_CHANGE_EVT */
 typedef struct {
   BT_HDR_RIGID hdr;
-  uint8_t new_role;
-  uint8_t hci_status;
+  tHCI_ROLE new_role;
+  tHCI_STATUS hci_status;
 } tBTA_AV_ROLE_RES;
 
 /* data type for BTA_AV_SDP_DISC_OK_EVT */
@@ -436,6 +439,12 @@ enum : uint8_t {
 };
 typedef uint8_t tBTA_AV_ROLE;
 
+typedef struct {
+  BT_HDR_RIGID hdr;
+  RawAddress addr;
+  uint8_t sep;
+} tBTA_AV_API_PEER_SEP;
+
 /* union of all event datatypes */
 union tBTA_AV_DATA {
   BT_HDR_RIGID hdr;
@@ -460,6 +469,7 @@ union tBTA_AV_DATA {
   tBTA_AV_SDP_RES sdp_res;
   tBTA_AV_API_META_RSP api_meta_rsp;
   tBTA_AV_API_STATUS_RSP api_status_rsp;
+  tBTA_AV_API_PEER_SEP peer_sep;
 };
 
 typedef union {
@@ -612,6 +622,8 @@ typedef struct {
   uint8_t lidx;               /* (index+1) to LCB */
   tBTA_AV_FEAT peer_features; /* peer features mask */
   uint16_t cover_art_psm;     /* BIP PSM for cover art feature */
+  tBTA_AV_FEAT peer_ct_features;
+  tBTA_AV_FEAT peer_tg_features;
 } tBTA_AV_RCB;
 #define BTA_AV_NUM_RCB (BTA_AV_NUM_STRS + 2)
 
@@ -654,6 +666,9 @@ typedef struct {
   bool sco_occupied; /* true if SCO is being used or call is in progress */
   uint16_t offload_start_pending_hndl;
   uint16_t offload_started_hndl;
+  tBTA_AV_FEAT sink_features; /* sink features */
+  uint8_t reg_role;           /* bit0-src, bit1-sink */
+  tBTA_AV_RC_FEAT rc_feature; /* save peer rc feature */
 } tBTA_AV_CB;
 
 // total attempts are half seconds
@@ -730,7 +745,7 @@ void bta_av_dup_audio_buf(tBTA_AV_SCB* p_scb, BT_HDR* p_buf);
 void bta_av_sm_execute(tBTA_AV_CB* p_cb, uint16_t event, tBTA_AV_DATA* p_data);
 void bta_av_ssm_execute(tBTA_AV_SCB* p_scb, uint16_t event,
                         tBTA_AV_DATA* p_data);
-bool bta_av_hdl_event(BT_HDR_RIGID* p_msg);
+bool bta_av_hdl_event(const BT_HDR_RIGID* p_msg);
 const char* bta_av_evt_code(uint16_t evt_code);
 bool bta_av_switch_if_needed(tBTA_AV_SCB* p_scb);
 bool bta_av_link_role_ok(tBTA_AV_SCB* p_scb, uint8_t bits);
@@ -822,5 +837,6 @@ void bta_av_offload_req(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data);
 void bta_av_offload_rsp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data);
 void bta_av_vendor_offload_stop(void);
 void bta_av_st_rc_timer(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data);
+void bta_av_api_set_peer_sep(tBTA_AV_DATA* p_data);
 
 #endif /* BTA_AV_INT_H */

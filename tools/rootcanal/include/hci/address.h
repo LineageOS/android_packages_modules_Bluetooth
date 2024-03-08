@@ -1,36 +1,37 @@
-/******************************************************************************
+/*
+ * Copyright 2022 The Android Open Source Project
  *
- *  Copyright 2022 The Android Open Source Project
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at:
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
- ******************************************************************************/
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #pragma once
 
+#include <fmt/core.h>
+#include <packet_runtime.h>
+
 #include <array>
+#include <cstdint>
 #include <cstring>
+#include <functional>
 #include <initializer_list>
 #include <optional>
 #include <ostream>
 #include <string>
+#include <vector>
 
-#include "packet/custom_field_fixed_size_interface.h"
+namespace bluetooth::hci {
 
-namespace bluetooth {
-namespace hci {
-
-class Address final : public packet::CustomFieldFixedSizeInterface<Address> {
+class Address final : public pdl::packet::Builder {
  public:
   static constexpr size_t kLength = 6;
 
@@ -45,10 +46,6 @@ class Address final : public packet::CustomFieldFixedSizeInterface<Address> {
   Address(const uint8_t (&address)[kLength]);
   Address(std::initializer_list<uint8_t> l);
 
-  // CustomFieldFixedSizeInterface methods
-  inline uint8_t* data() override { return address.data(); }
-  inline const uint8_t* data() const override { return address.data(); }
-
   // storage::Serializable methods
   std::string ToString() const;
   static std::optional<Address> FromString(const std::string& from);
@@ -61,6 +58,17 @@ class Address final : public packet::CustomFieldFixedSizeInterface<Address> {
   bool operator!=(const Address& rhs) const { return !(*this == rhs); }
 
   bool IsEmpty() const { return *this == kEmpty; }
+  uint8_t* data() { return address.data(); }
+  uint8_t const* data() const { return address.data(); }
+
+  // Packet parser interface.
+  static bool Parse(pdl::packet::slice& input, Address* output);
+
+  // Packet builder interface.
+  size_t GetSize() const override { return kLength; }
+  void Serialize(std::vector<uint8_t>& output) const override {
+    output.insert(output.end(), address.begin(), address.end());
+  }
 
   // Converts |string| to Address and places it in |to|. If |from| does
   // not represent a Bluetooth address, |to| is not modified and this function
@@ -82,8 +90,7 @@ inline std::ostream& operator<<(std::ostream& os, const Address& a) {
   return os;
 }
 
-}  // namespace hci
-}  // namespace bluetooth
+}  // namespace bluetooth::hci
 
 namespace std {
 template <>
@@ -98,3 +105,43 @@ struct hash<bluetooth::hci::Address> {
   }
 };
 }  // namespace std
+
+template <>
+struct fmt::formatter<bluetooth::hci::Address> {
+  // Presentation format: 'x' - lowercase, 'X' - uppercase.
+  char presentation = 'x';
+
+  // Parses format specifications of the form ['x' | 'X'].
+  constexpr auto parse(format_parse_context& ctx)
+      -> format_parse_context::iterator {
+    // Parse the presentation format and store it in the formatter:
+    auto it = ctx.begin();
+    auto end = ctx.end();
+    if (it != end && (*it == 'x' || *it == 'X')) {
+      presentation = *it++;
+    }
+
+    // Check if reached the end of the range:
+    if (it != end && *it != '}') {
+      ctx.on_error("invalid format");
+    }
+
+    // Return an iterator past the end of the parsed range:
+    return it;
+  }
+
+  // Formats the address a using the parsed format specification (presentation)
+  // stored in this formatter.
+  auto format(const bluetooth::hci::Address& a, format_context& ctx) const
+      -> format_context::iterator {
+    return presentation == 'x'
+               ? fmt::format_to(ctx.out(),
+                                "{:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
+                                a.address[5], a.address[4], a.address[3],
+                                a.address[2], a.address[1], a.address[0])
+               : fmt::format_to(ctx.out(),
+                                "{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}",
+                                a.address[5], a.address[4], a.address[3],
+                                a.address[2], a.address[1], a.address[0]);
+  }
+};

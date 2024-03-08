@@ -17,7 +17,6 @@
 #define LOG_TAG "BTAudioHw"
 
 #include <android-base/logging.h>
-#include <errno.h>
 #include <hardware/hardware.h>
 #include <log/log.h>
 #include <malloc.h>
@@ -145,6 +144,14 @@ static int adev_release_audio_patch(struct audio_hw_device* device,
   return 0;
 }
 
+static int adev_get_audio_port_v7(struct audio_hw_device* device,
+                                  struct audio_port_v7* port) {
+  if (device == nullptr || port == nullptr) {
+    return -EINVAL;
+  }
+  return -ENOSYS;
+}
+
 static int adev_get_audio_port(struct audio_hw_device* device,
                                struct audio_port* port) {
   if (device == nullptr || port == nullptr) {
@@ -171,7 +178,7 @@ static int adev_open(const hw_module_t* module, const char* name,
   if (!adev) return -ENOMEM;
 
   adev->common.tag = HARDWARE_DEVICE_TAG;
-  adev->common.version = AUDIO_DEVICE_API_VERSION_3_0;
+  adev->common.version = AUDIO_DEVICE_API_VERSION_3_2;
   adev->common.module = (struct hw_module_t*)module;
   adev->common.close = adev_close;
 
@@ -194,6 +201,7 @@ static int adev_open(const hw_module_t* module, const char* name,
   adev->get_master_mute = adev_get_master_mute;
   adev->create_audio_patch = adev_create_audio_patch;
   adev->release_audio_patch = adev_release_audio_patch;
+  adev->get_audio_port_v7 = adev_get_audio_port_v7;
   adev->get_audio_port = adev_get_audio_port;
 
   *device = &adev->common;

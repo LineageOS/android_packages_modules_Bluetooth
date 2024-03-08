@@ -14,26 +14,38 @@
 // limitations under the License.
 //
 
-#include "test_environment.h"
+#include "desktop/test_environment.h"
 
 #include <google/protobuf/text_format.h>
 
-#include <filesystem>  // for exists
-#include <type_traits>  // for remove_extent_t
-#include <utility>      // for move
-#include <vector>       // for vector
+#include <chrono>
+#include <filesystem>
+#include <fstream>
+#include <functional>
+#include <future>
+#include <ios>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
-#include "log.h"  // for LOG_INFO, LOG_ERROR, LOG_WARN
+#include "hci/pcap_filter.h"
+#include "log.h"
+#include "model/controller/controller_properties.h"
 #include "model/devices/baseband_sniffer.h"
-#include "model/devices/link_layer_socket_device.h"  // for LinkLayerSocketDevice
-#include "model/hci/hci_sniffer.h"                   // for HciSniffer
-#include "model/hci/hci_socket_transport.h"          // for HciSocketTransport
-#include "net/async_data_channel.h"                  // for AsyncDataChannel
-#include "net/async_data_channel_connector.h"  // for AsyncDataChannelConnector
+#include "model/devices/device.h"
+#include "model/devices/hci_device.h"
+#include "model/devices/link_layer_socket_device.h"
+#include "model/hci/hci_sniffer.h"
+#include "model/hci/hci_socket_transport.h"
+#include "model/setup/async_manager.h"
+#include "model/setup/test_channel_transport.h"
+#include "net/async_data_channel.h"
+#include "net/async_data_channel_connector.h"
+#include "phy.h"
+#include "rootcanal/configuration.pb.h"
 
-namespace android {
-namespace bluetooth {
-namespace root_canal {
+namespace rootcanal {
 
 using rootcanal::AsyncTaskId;
 using rootcanal::BaseBandSniffer;
@@ -59,7 +71,7 @@ TestEnvironment::TestEnvironment(
   link_socket_server_ = open_server(&async_manager_, link_port);
   link_ble_socket_server_ = open_server(&async_manager_, link_ble_port);
   connector_ = open_connector(&async_manager_);
-  test_model_.SetReuseDeviceIds(!disable_address_reuse);
+  test_model_.SetReuseDeviceAddresses(!disable_address_reuse);
 
   // Get a user ID for tasks scheduled within the test environment.
   socket_user_id_ = async_manager_.GetNextUserId();
@@ -90,7 +102,7 @@ void TestEnvironment::SetUpHciServer(
     std::function<std::shared_ptr<AsyncDataChannelServer>(AsyncManager*, int)>
         open_server,
     int tcp_port, rootcanal::ControllerProperties properties) {
-  LOG_INFO("Opening an HCI with port %d", tcp_port);
+  INFO("Opening an HCI with port {}", tcp_port);
 
   std::shared_ptr<AsyncDataChannelServer> server =
       open_server(&async_manager_, tcp_port);
@@ -135,7 +147,7 @@ void TestEnvironment::SetUpHciServer(
 }
 
 void TestEnvironment::initialize(std::promise<void> barrier) {
-  LOG_INFO("Initialized barrier");
+  INFO("Initialized barrier");
 
   barrier_ = std::move(barrier);
 
@@ -169,11 +181,11 @@ void TestEnvironment::initialize(std::promise<void> barrier) {
                                        Phy::Type::BR_EDR);
   }
 
-  LOG_INFO("%s: Finished", __func__);
+  INFO("{}: Finished", __func__);
 }
 
 void TestEnvironment::close() {
-  LOG_INFO("%s", __func__);
+  INFO("{}", __func__);
   test_model_.Reset();
 }
 
@@ -214,10 +226,10 @@ void TestEnvironment::SetUpTestChannel() {
   bool transport_configured = test_channel_transport_.SetUp(
       test_socket_server_, [this](std::shared_ptr<AsyncDataChannel> conn_fd,
                                   AsyncDataChannelServer* server) {
-        LOG_INFO("Test channel connection accepted.");
+        INFO("Test channel connection accepted.");
         server->StartListening();
         if (test_channel_open_) {
-          LOG_WARN("Only one connection at a time is supported");
+          WARNING("Only one connection at a time is supported");
           rootcanal::TestChannelTransport::SendResponse(
               conn_fd, "The connection is broken");
           return false;
@@ -245,13 +257,11 @@ void TestEnvironment::SetUpTestChannel() {
   test_channel_.StartTimer({});
 
   if (!transport_configured) {
-    LOG_ERROR("Test channel SetUp failed.");
+    ERROR("Test channel SetUp failed.");
     return;
   }
 
-  LOG_INFO("Test channel SetUp() successful");
+  INFO("Test channel SetUp() successful");
 }
 
-}  // namespace root_canal
-}  // namespace bluetooth
-}  // namespace android
+}  // namespace rootcanal

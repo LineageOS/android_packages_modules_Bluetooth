@@ -10,7 +10,7 @@ package {
 
 cc_defaults {
     name: "libbtcore_defaults",
-    defaults: ["fluoride_basic_defaults"],
+    defaults: ["fluoride_defaults"],
     local_include_dirs: ["include"],
     include_dirs: [
         "packages/modules/Bluetooth/system",
@@ -36,7 +36,7 @@ cc_defaults {
 
 cc_library_static {
     name: "libbthalutils",
-    defaults: ["fluoride_basic_defaults"],
+    defaults: ["fluoride_defaults"],
     srcs: [
         "src/hal_util.cc",
     ],
@@ -55,6 +55,7 @@ cc_library_static {
             cflags: ["-D_GNU_SOURCE"],
         },
     },
+    static_libs: ["libbt_shim_bridge"],
 }
 
 cc_library_static {
@@ -65,11 +66,11 @@ cc_library_static {
     ],
     defaults: ["libbtcore_defaults"],
     min_sdk_version: "Tiramisu",
+    static_libs: ["libbt_shim_bridge"],
 }
 
 cc_library_headers {
     name: "libbtcore_headers",
-    defaults: ["libchrome_support_defaults"],
     export_include_dirs: ["./"],
     vendor_available: true,
     host_supported: true,
@@ -85,9 +86,8 @@ cc_library_headers {
 // libbtcore unit tests for target and host
 cc_test {
     name: "net_test_btcore",
-    test_suites: ["device-tests"],
+    test_suites: ["general-tests"],
     defaults: [
-        "bluetooth_gtest_x86_asan_workaround",
         "fluoride_defaults",
         "mts_defaults",
     ],
@@ -101,13 +101,17 @@ cc_test {
         "liblog",
     ],
     static_libs: [
+        "libbluetooth-types",
         "libbtcore",
         "libchrome",
         "libosi",
-        "libosi-AllocationTestHarness",
     ],
     host_supported: true,
     test_options: {
         unit_test: true,
     },
+    sanitize: {
+        address: true,
+    },
+    header_libs: ["libbluetooth_headers"],
 }

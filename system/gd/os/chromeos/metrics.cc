@@ -86,7 +86,7 @@ void LogMetricA2dpAudioOverrunEvent(
 }
 
 void LogMetricHfpPacketLossStats(
-    const Address& address, int num_decoded_frames, double packet_loss_ratio) {
+    const Address& address, int num_decoded_frames, double packet_loss_ratio, uint16_t codec_type) {
   std::string boot_id;
   std::string addr_string;
 
@@ -95,17 +95,42 @@ void LogMetricHfpPacketLossStats(
   addr_string = address.ToString();
 
   LOG_DEBUG(
-      "HfpPacketLoss: %s, %s, %d, %f",
+      "HfpPacketLoss: %s, %s, %d, %f, %u",
       boot_id.c_str(),
       addr_string.c_str(),
       num_decoded_frames,
-      packet_loss_ratio);
+      packet_loss_ratio,
+      codec_type);
 
   ::metrics::structured::events::bluetooth::BluetoothHfpPacketLoss()
       .SetBootId(boot_id)
       .SetDeviceId(addr_string)
       .SetDecodedFrames(num_decoded_frames)
       .SetPacketLossRatio(packet_loss_ratio)
+      .SetCodecType(codec_type)
+      .Record();
+}
+
+void LogMetricMmcTranscodeRttStats(
+    int maximum_rtt, double mean_rtt, int num_requests, int codec_type) {
+  std::string boot_id;
+
+  if (!metrics::GetBootId(&boot_id)) return;
+
+  LOG_DEBUG(
+      "MmcTranscodeRttStats: %s, %d, %f, %d, %d",
+      boot_id.c_str(),
+      maximum_rtt,
+      mean_rtt,
+      num_requests,
+      codec_type);
+
+  ::metrics::structured::events::bluetooth::BluetoothMmcTranscodeRtt()
+      .SetBootId(boot_id)
+      .SetMaximumRtt(maximum_rtt)
+      .SetMeanRtt(mean_rtt)
+      .SetNumRequests(num_requests)
+      .SetCodecType(codec_type)
       .Record();
 }
 

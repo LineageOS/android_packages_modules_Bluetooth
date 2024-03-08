@@ -22,26 +22,14 @@
  */
 
 #include <cstdint>
-#include <map>
-#include <string>
 
 // Original included files, if any
-// NOTE: Since this is a mock file with mock definitions some number of
-//       include files may not be required.  The include-what-you-use
-//       still applies, but crafting proper inclusion is out of scope
-//       for this effort.  This compilation unit may compile as-is, or
-//       may need attention to prune the inclusion set.
 
 #include "stack/include/hci_error_code.h"
-#include "test/common/mock_functions.h"
 #include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
 
 // Mocked compile conditionals, if any
-#ifndef UNUSED_ATTR
-#define UNUSED_ATTR
-#endif
-
 namespace test {
 namespace mock {
 namespace stack_acl_btm_ble_connection_establishment {
@@ -51,32 +39,10 @@ namespace stack_acl_btm_ble_connection_establishment {
 // Params: tHCI_STATUS status
 // Returns: void
 struct btm_ble_create_ll_conn_complete {
-  std::function<void(tHCI_STATUS status)> body{[](tHCI_STATUS status) {}};
+  std::function<void(tHCI_STATUS status)> body{[](tHCI_STATUS /* status */) {}};
   void operator()(tHCI_STATUS status) { body(status); };
 };
 extern struct btm_ble_create_ll_conn_complete btm_ble_create_ll_conn_complete;
-// Name: maybe_resolve_address
-// Params: RawAddress* bda, tBLE_ADDR_TYPE* bda_type
-// Returns: bool
-struct maybe_resolve_address {
-  std::function<bool(RawAddress* bda, tBLE_ADDR_TYPE* bda_type)> body{
-      [](RawAddress* bda, tBLE_ADDR_TYPE* bda_type) { return false; }};
-  bool operator()(RawAddress* bda, tBLE_ADDR_TYPE* bda_type) {
-    return body(bda, bda_type);
-  };
-};
-extern struct maybe_resolve_address maybe_resolve_address;
-// Name: btm_ble_conn_complete
-// Params: uint8_t* p, uint16_t evt_len, bool enhanced
-// Returns: void
-struct btm_ble_conn_complete {
-  std::function<void(uint8_t* p, uint16_t evt_len, bool enhanced)> body{
-      [](uint8_t* p, uint16_t evt_len, bool enhanced) {}};
-  void operator()(uint8_t* p, uint16_t evt_len, bool enhanced) {
-    body(p, evt_len, enhanced);
-  };
-};
-extern struct btm_ble_conn_complete btm_ble_conn_complete;
 
 }  // namespace stack_acl_btm_ble_connection_establishment
 }  // namespace mock

@@ -22,11 +22,11 @@
  *
  ******************************************************************************/
 #include <base/functional/bind.h>
+
 #include <memory>
 
-#include "bta/dm/bta_dm_int.h"
-#include "stack/include/bt_types.h"
-#include "stack/include/btu.h"  // do_in_main_thread
+#include "bta/dm/bta_dm_sec_int.h"
+#include "stack/include/main_thread.h"
 #include "types/raw_address.h"
 
 /*******************************************************************************

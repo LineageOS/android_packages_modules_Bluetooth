@@ -1,3 +1,17 @@
+# Copyright 2023 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from dataclasses import dataclass
 import hci_packets as hci
 import link_layer_packets as ll
@@ -32,13 +46,13 @@ class Test(ControllerTest):
                                            peer_address_type=hci.AddressType.PUBLIC_DEVICE_ADDRESS,
                                            peer_address=peer_address,
                                            initiating_phys=0x1,
-                                           phy_scan_parameters=[
-                                               hci.LeCreateConnPhyScanParameters(
+                                           initiating_phy_parameters=[
+                                               hci.InitiatingPhyParameters(
                                                    scan_interval=0x200,
                                                    scan_window=0x100,
-                                                   conn_interval_min=0x200,
-                                                   conn_interval_max=0x200,
-                                                   conn_latency=0x6,
+                                                   connection_interval_min=0x200,
+                                                   connection_interval_max=0x200,
+                                                   max_latency=0x6,
                                                    supervision_timeout=0xc80,
                                                    min_ce_length=0,
                                                    max_ce_length=0,
@@ -77,8 +91,8 @@ class Test(ControllerTest):
                                              role=hci.Role.CENTRAL,
                                              peer_address_type=hci.AddressType.PUBLIC_DEVICE_ADDRESS,
                                              peer_address=peer_address,
-                                             conn_interval=0x200,
-                                             conn_latency=0x6,
+                                             connection_interval=0x200,
+                                             peripheral_latency=0x6,
                                              supervision_timeout=0xc80,
                                              central_clock_accuracy=hci.ClockAccuracy.PPM_500))
 

@@ -17,8 +17,8 @@ import grpc
 import logging
 import struct
 
-from avatar.bumble_server import utils
 from bumble.core import AdvertisingData
+from bumble.decoder import G722Decoder
 from bumble.device import Connection, Connection as BumbleConnection, Device
 from bumble.gatt import (
     GATT_ASHA_AUDIO_CONTROL_POINT_CHARACTERISTIC,
@@ -32,6 +32,7 @@ from bumble.gatt import (
     TemplateService,
 )
 from bumble.l2cap import Channel
+from bumble.pandora import utils
 from bumble.utils import AsyncRunner
 from google.protobuf.empty_pb2 import Empty  # pytype: disable=pyi-error
 from pandora_experimental.asha_grpc_aio import AshaServicer
@@ -197,6 +198,8 @@ class AshaGattService(TemplateService):
 
 
 class AshaService(AshaServicer):
+    DECODE_FRAME_LENGTH = 80
+
     device: Device
     asha_service: Optional[AshaGattService]
 
@@ -208,9 +211,12 @@ class AshaService(AshaServicer):
     @utils.rpc
     async def Register(self, request: RegisterRequest, context: grpc.ServicerContext) -> Empty:
         logging.info("Register")
-        # asha service from bumble profile
-        self.asha_service = AshaGattService(request.capability, request.hisyncid, self.device)
-        self.device.add_service(self.asha_service)  # type: ignore[no-untyped-call]
+        if self.asha_service:
+            self.asha_service.capability = request.capability
+            self.asha_service.hisyncid = request.hisyncid
+        else:
+            self.asha_service = AshaGattService(request.capability, request.hisyncid, self.device)
+            self.device.add_service(self.asha_service)  # type: ignore[no-untyped-call]
         return Empty()
 
     @utils.rpc
@@ -223,6 +229,7 @@ class AshaService(AshaServicer):
         if not (connection := self.device.lookup_connection(connection_handle)):
             raise RuntimeError(f"Unknown connection for connection_handle:{connection_handle}")
 
+        decoder = G722Decoder()  # type: ignore
         queue: asyncio.Queue[bytes] = asyncio.Queue()
 
         def on_data(asha_connection: BumbleConnection, data: bytes) -> None:
@@ -233,6 +240,18 @@ class AshaService(AshaServicer):
 
         try:
             while data := await queue.get():
-                yield CaptureAudioResponse(data=data)
+                output_bytes = bytearray()
+                # First byte is sequence number, last 160 bytes are audio payload.
+                audio_payload = data[1:]
+                data_length = int(len(audio_payload) / AshaService.DECODE_FRAME_LENGTH)
+                for i in range(0, data_length):
+                    input_data = audio_payload[
+                        i * AshaService.DECODE_FRAME_LENGTH : i * AshaService.DECODE_FRAME_LENGTH
+                        + AshaService.DECODE_FRAME_LENGTH
+                    ]
+                    decoded_data = decoder.decode_frame(input_data)  # type: ignore
+                    output_bytes.extend(decoded_data)
+
+                yield CaptureAudioResponse(data=bytes(output_bytes))
         finally:
             self.asha_service.remove_listener("data", on_data)  # type: ignore

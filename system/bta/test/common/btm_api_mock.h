@@ -18,8 +18,12 @@
 
 #include <gmock/gmock.h>
 
+#include <optional>
+
+#include "bt_octets.h"
 #include "btm_api.h"
 #include "stack/btm/security_device_record.h"
+#include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
 
 namespace bluetooth {
@@ -52,10 +56,17 @@ class BtmInterface {
   virtual uint16_t GetHCIConnHandle(RawAddress const& bd_addr,
                                     tBT_TRANSPORT transport) = 0;
   virtual void AclDisconnectFromHandle(uint16_t handle, tHCI_STATUS reason) = 0;
-  virtual void ConfigureDataPath(uint8_t direction, uint8_t path_id,
-                                 std::vector<uint8_t> vendor_config) = 0;
   virtual tBTM_INQ_INFO* BTM_InqDbFirst() = 0;
   virtual tBTM_INQ_INFO* BTM_InqDbNext(tBTM_INQ_INFO* p_cur) = 0;
+  virtual std::optional<Octet16> BTM_BleGetPeerLTK(
+      const RawAddress address) = 0;
+  virtual std::optional<Octet16> BTM_BleGetPeerIRK(
+      const RawAddress address) = 0;
+
+  virtual bool BTM_BleIsLinkKeyKnown(const RawAddress address) = 0;
+  virtual std::optional<tBLE_BD_ADDR> BTM_BleGetIdentityAddress(
+      const RawAddress address) = 0;
+
   virtual ~BtmInterface() = default;
 };
 
@@ -94,13 +105,18 @@ class MockBtmInterface : public BtmInterface {
               (RawAddress const& bd_addr, tBT_TRANSPORT transport), (override));
   MOCK_METHOD((void), AclDisconnectFromHandle,
               (uint16_t handle, tHCI_STATUS reason), (override));
-  MOCK_METHOD((void), ConfigureDataPath,
-              (uint8_t direction, uint8_t path_id,
-               std::vector<uint8_t> vendor_config),
-              (override));
   MOCK_METHOD((tBTM_INQ_INFO*), BTM_InqDbFirst, (), (override));
   MOCK_METHOD((tBTM_INQ_INFO*), BTM_InqDbNext, (tBTM_INQ_INFO * p_cur),
               (override));
+  MOCK_METHOD((std::optional<Octet16>), BTM_BleGetPeerLTK,
+              (const RawAddress address), (override));
+  MOCK_METHOD((std::optional<Octet16>), BTM_BleGetPeerIRK,
+              (const RawAddress address), (override));
+
+  MOCK_METHOD((bool), BTM_BleIsLinkKeyKnown, (const RawAddress address),
+              (override));
+  MOCK_METHOD((std::optional<tBLE_BD_ADDR>), BTM_BleGetIdentityAddress,
+              (const RawAddress address), (override));
 };
 
 /**

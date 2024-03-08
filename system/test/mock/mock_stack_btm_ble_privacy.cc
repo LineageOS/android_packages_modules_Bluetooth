@@ -20,25 +20,14 @@
  *
  *  mockcify.pl ver 0.2
  */
-
-#include <map>
-#include <string>
-
-// Original included files, if any
-// NOTE: Since this is a mock file with mock definitions some number of
-//       include files may not be required.  The include-what-you-use
-//       still applies, but crafting proper inclusion is out of scope
-//       for this effort.  This compilation unit may compile as-is, or
-//       may need attention to prune the inclusion set.
-
 // Mock include file to share data between tests and mock
 #include "test/mock/mock_stack_btm_ble_privacy.h"
 
-// Mocked compile conditionals, if any
-#ifndef UNUSED_ATTR
-#define UNUSED_ATTR
-#endif
+// Original included files, if any
 
+#include "test/common/mock_functions.h"
+
+// Mocked compile conditionals, if any
 // Mocked internal structures, if any
 
 namespace test {
@@ -102,7 +91,7 @@ bool btm_ble_read_resolving_list_entry(tBTM_SEC_DEV_REC* p_dev_rec) {
   return test::mock::stack_btm_ble_privacy::btm_ble_read_resolving_list_entry(
       p_dev_rec);
 }
-void btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC& p_dev_rec) {
+void btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC& /* p_dev_rec */) {
   inc_func_call_count(__func__);
 }
 void btm_ble_resolving_list_remove_dev(tBTM_SEC_DEV_REC* p_dev_rec) {

@@ -26,9 +26,8 @@
 
 #include <cstdint>
 
-#include "bt_target.h"
 #include "smp_api_types.h"
-#include "types/bt_transport.h"
+#include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
 
 /*****************************************************************************
@@ -45,19 +44,7 @@
  * Returns          void
  *
  ******************************************************************************/
-void SMP_Init(void);
-
-/*******************************************************************************
- *
- * Function         SMP_SetTraceLevel
- *
- * Description      This function sets the trace level for SMP.  If called with
- *                  a value of 0xFF, it simply returns the current trace level.
- *
- * Returns          The new or current trace level
- *
- ******************************************************************************/
-uint8_t SMP_SetTraceLevel(uint8_t new_level);
+void SMP_Init(uint8_t init_security_mode);
 
 /*******************************************************************************
  *
@@ -199,6 +186,20 @@ bool SMP_CrLocScOobData();
  *
  ******************************************************************************/
 void SMP_ClearLocScOobData();
+
+/*******************************************************************************
+ *
+ * Function         SMP_SirkConfirmDeviceReply
+ *
+ * Description      This function is called after Security Manager submitted
+ *                  verification of device with CSIP.
+ *
+ * Parameters:      bd_addr      - Address of the device with which verification
+ *                                 was requested
+ *                  res          - comparison result SMP_SUCCESS if success
+ *
+ ******************************************************************************/
+void SMP_SirkConfirmDeviceReply(const RawAddress& bd_addr, uint8_t res);
 
 // Called when LTK request is received from controller.
 bool smp_proc_ltk_request(const RawAddress& bda);

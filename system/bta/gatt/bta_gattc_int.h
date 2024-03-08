@@ -27,11 +27,11 @@
 #include <cstdint>
 #include <deque>
 
-#include "bt_target.h"  // Must be first to define build configuration
 #include "bta/gatt/database.h"
 #include "bta/gatt/database_builder.h"
 #include "bta/include/bta_gatt_api.h"
 #include "bta/sys/bta_sys.h"
+#include "internal_include/bt_target.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/gatt_api.h"
 #include "types/bluetooth/uuid.h"
@@ -108,6 +108,12 @@ typedef struct {
 
 typedef struct {
   BT_HDR_RIGID hdr;
+
+  /* it is important that is_multi_read field stays at same position between
+   * tBTA_GATTC_API_READ and tBTA_GATTC_API_READ_MULTI, as it is read from
+   * parent union */
+  uint8_t is_multi_read;
+
   tGATT_AUTH_REQ auth_req;
 
   // read by handle data
@@ -159,9 +165,17 @@ typedef struct {
 
 typedef struct {
   BT_HDR_RIGID hdr;
+
+  /* it is important that is_multi_read field stays at same position between
+   * tBTA_GATTC_API_READ and tBTA_GATTC_API_READ_MULTI, as it is read from
+   * parent union */
+  uint8_t is_multi_read;
+
   tGATT_AUTH_REQ auth_req;
-  uint8_t num_attr;
-  uint16_t handles[GATT_MAX_READ_MULTI_HANDLES];
+  tBTA_GATTC_MULTI handles;
+  uint8_t variable_len;
+  GATT_READ_MULTI_OP_CB read_cb;
+  void* read_cb_data;
 } tBTA_GATTC_API_READ_MULTI;
 
 typedef struct {
@@ -232,6 +246,9 @@ typedef struct {
   uint16_t attr_index;  /* cahce NV saving/loading attribute index */
 
   uint16_t mtu;
+
+  bool disc_blocked_waiting_on_version;
+  uint16_t blocked_conn_id;
 } tBTA_GATTC_SERV;
 
 #ifndef BTA_GATTC_NOTIF_REG_MAX
@@ -334,7 +351,7 @@ extern tBTA_GATTC_CB bta_gattc_cb;
 /*****************************************************************************
  *  Function prototypes
  ****************************************************************************/
-bool bta_gattc_hdl_event(BT_HDR_RIGID* p_msg);
+bool bta_gattc_hdl_event(const BT_HDR_RIGID* p_msg);
 bool bta_gattc_sm_execute(tBTA_GATTC_CLCB* p_clcb, uint16_t event,
                           const tBTA_GATTC_DATA* p_data);
 
@@ -480,6 +497,7 @@ enum class RobustCachingSupport {
   UNSUPPORTED,
   SUPPORTED,
   UNKNOWN,
+  W4_REMOTE_VERSION
 };
 RobustCachingSupport GetRobustCachingSupport(const tBTA_GATTC_CLCB* p_clcb,
                                              const gatt::Database& db);

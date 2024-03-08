@@ -38,9 +38,15 @@ typedef enum {
   ESCO_CODEC_MSBC_T2,
   ESCO_CODEC_LC3_T1,
   ESCO_CODEC_LC3_T2,
+  ESCO_CODEC_SWB_Q0,
+  ESCO_CODEC_SWB_Q1,
+  ESCO_CODEC_SWB_Q2,
+  ESCO_CODEC_SWB_Q3,
+  ESCO_CODEC_UNKNOWN,  // For testing
 } esco_codec_t;
 
-#define ESCO_NUM_CODECS 7
+#define ESCO_LEGACY_NUM_CODECS 7
+#define ESCO_NUM_CODECS 11
 
 // Coding Formats (BT 4.1 or later Assigned numbers)
 #define ESCO_CODING_FORMAT_ULAW ((uint8_t)0x00)     /* u-Law log    */
@@ -137,6 +143,8 @@ typedef struct {
   esco_packet_types_t packet_types; /* Packet Types */
   esco_retransmission_effort_t
       retransmission_effort; /* 0x00-0x02, 0xFF don't care */
+  esco_coding_format_t
+      coding_format; /* Extra field to store codec when TX/RX is transparent */
 } enh_esco_params_t;
 
 // Get the enhanced eSCO configuration parameters for the provided |codec|

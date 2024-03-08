@@ -1,6 +1,6 @@
 use bt_topshim::btif::{
-    BtBondState, BtConnectionState, BtDeviceType, BtDiscMode, BtPropertyType, BtSspVariant,
-    BtStatus, BtTransport, Uuid, Uuid128Bit,
+    BtAddrType, BtBondState, BtConnectionState, BtDeviceType, BtDiscMode, BtPropertyType,
+    BtSspVariant, BtStatus, BtTransport, BtVendorProductInfo, Uuid, Uuid128Bit,
 };
 use bt_topshim::profiles::socket::SocketType;
 use bt_topshim::profiles::ProfileConnectionState;
@@ -29,8 +29,7 @@ use dbus::nonblock::SyncConnection;
 use dbus::strings::Path;
 use dbus_macros::{dbus_method, dbus_propmap, dbus_proxy_obj, generate_dbus_exporter};
 
-use dbus_projection::DisconnectWatcher;
-use dbus_projection::{dbus_generated, impl_dbus_arg_enum, impl_dbus_arg_from_into};
+use dbus_projection::prelude::*;
 
 use num_traits::cast::{FromPrimitive, ToPrimitive};
 
@@ -57,6 +56,7 @@ impl_dbus_arg_from_into!(BtStatus, u32);
 
 /// A mixin of the several interfaces. The naming of the fields in the mixin must match
 /// what is listed in the `generate_dbus_exporter` invocation.
+#[derive(Clone)]
 pub struct BluetoothMixin {
     pub adapter: Arc<Mutex<Box<Bluetooth>>>,
     pub qa: Arc<Mutex<Box<Bluetooth>>>,
@@ -77,6 +77,14 @@ struct BluetoothCallbackDBus {}
 impl IBluetoothCallback for BluetoothCallbackDBus {
     #[dbus_method("OnAdapterPropertyChanged")]
     fn on_adapter_property_changed(&mut self, prop: BtPropertyType) {
+        dbus_generated!()
+    }
+    #[dbus_method("OnDevicePropertiesChanged")]
+    fn on_device_properties_changed(
+        &mut self,
+        remote_device: BluetoothDevice,
+        props: Vec<BtPropertyType>,
+    ) {
         dbus_generated!()
     }
     #[dbus_method("OnAddressChanged")]
@@ -103,7 +111,10 @@ impl IBluetoothCallback for BluetoothCallbackDBus {
     fn on_discovering_changed(&mut self, discovering: bool) {
         dbus_generated!()
     }
-    #[dbus_method("OnSspRequest")]
+    #[dbus_method(
+        "OnSspRequest",
+        DBusLog::Enable(DBusLogOptions::LogAll, DBusLogVerbosity::Verbose)
+    )]
     fn on_ssp_request(
         &mut self,
         remote_device: BluetoothDevice,
@@ -121,7 +132,10 @@ impl IBluetoothCallback for BluetoothCallbackDBus {
     fn on_pin_display(&mut self, remote_device: BluetoothDevice, pincode: String) {
         dbus_generated!()
     }
-    #[dbus_method("OnBondStateChanged")]
+    #[dbus_method(
+        "OnBondStateChanged",
+        DBusLog::Enable(DBusLogOptions::LogAll, DBusLogVerbosity::Verbose)
+    )]
     fn on_bond_state_changed(&mut self, status: u32, address: String, state: u32) {
         dbus_generated!()
     }
@@ -143,6 +157,7 @@ impl IBluetoothCallback for BluetoothCallbackDBus {
 impl_dbus_arg_enum!(BtBondState);
 impl_dbus_arg_enum!(BtConnectionState);
 impl_dbus_arg_enum!(BtDeviceType);
+impl_dbus_arg_enum!(BtAddrType);
 impl_dbus_arg_enum!(BtPropertyType);
 impl_dbus_arg_enum!(BtSspVariant);
 impl_dbus_arg_enum!(BtTransport);
@@ -153,12 +168,18 @@ struct BluetoothConnectionCallbackDBus {}
 
 #[dbus_proxy_obj(BluetoothConnectionCallback, "org.chromium.bluetooth.BluetoothConnectionCallback")]
 impl IBluetoothConnectionCallback for BluetoothConnectionCallbackDBus {
-    #[dbus_method("OnDeviceConnected")]
+    #[dbus_method(
+        "OnDeviceConnected",
+        DBusLog::Enable(DBusLogOptions::LogAll, DBusLogVerbosity::Verbose)
+    )]
     fn on_device_connected(&mut self, remote_device: BluetoothDevice) {
         dbus_generated!()
     }
 
-    #[dbus_method("OnDeviceDisconnected")]
+    #[dbus_method(
+        "OnDeviceDisconnected",
+        DBusLog::Enable(DBusLogOptions::LogAll, DBusLogVerbosity::Verbose)
+    )]
     fn on_device_disconnected(&mut self, remote_device: BluetoothDevice) {
         dbus_generated!()
     }
@@ -242,6 +263,14 @@ pub struct BtSdpMpsRecordDBus {
     supported_scenarios_mpsd: SupportedScenarios,
     supported_scenarios_mpmd: SupportedScenarios,
     supported_dependencies: SupportedDependencies,
+}
+
+#[dbus_propmap(BtVendorProductInfo)]
+pub struct BtVendorProductInfoDBus {
+    vendor_id_src: u8,
+    vendor_id: u16,
+    product_id: u16,
+    version: u16,
 }
 
 fn read_propmap_value<T: 'static + DirectDBus>(
@@ -387,6 +416,10 @@ impl DBusArg for BtSdpRecord {
         }
         Ok(map)
     }
+
+    fn log(record: &BtSdpRecord) -> String {
+        String::from(format!("{:?}", record))
+    }
 }
 
 impl_dbus_arg_enum!(BtDiscMode);
@@ -402,7 +435,12 @@ struct IBluetoothDBus {}
 )]
 impl IBluetooth for IBluetoothDBus {
     #[dbus_method("RegisterCallback")]
-    fn register_callback(&mut self, callback: Box<dyn IBluetoothCallback + Send>) {
+    fn register_callback(&mut self, callback: Box<dyn IBluetoothCallback + Send>) -> u32 {
+        dbus_generated!()
+    }
+
+    #[dbus_method("UnregisterCallback")]
+    fn unregister_callback(&mut self, id: u32) -> bool {
         dbus_generated!()
     }
 
@@ -419,28 +457,37 @@ impl IBluetooth for IBluetoothDBus {
         dbus_generated!()
     }
 
+    // Not exposed over D-Bus. The stack is automatically initialized when the daemon starts.
+    fn init(&mut self, _init_flags: Vec<String>) -> bool {
+        dbus_generated!()
+    }
+
     // Not exposed over D-Bus. The stack is automatically enabled when the daemon starts.
     fn enable(&mut self) -> bool {
         dbus_generated!()
     }
 
     // Not exposed over D-Bus. The stack is automatically disabled when the daemon exits.
-    // TODO(b/189495858): Handle shutdown properly when SIGTERM is received.
     fn disable(&mut self) -> bool {
         dbus_generated!()
     }
 
-    #[dbus_method("GetAddress")]
+    // Not exposed over D-Bus. The stack is automatically cleaned up when the daemon exits.
+    fn cleanup(&mut self) {
+        dbus_generated!()
+    }
+
+    #[dbus_method("GetAddress", DBusLog::Disable)]
     fn get_address(&self) -> String {
         dbus_generated!()
     }
 
-    #[dbus_method("GetUuids")]
+    #[dbus_method("GetUuids", DBusLog::Disable)]
     fn get_uuids(&self) -> Vec<Uuid128Bit> {
         dbus_generated!()
     }
 
-    #[dbus_method("GetName")]
+    #[dbus_method("GetName", DBusLog::Disable)]
     fn get_name(&self) -> String {
         dbus_generated!()
     }
@@ -450,7 +497,7 @@ impl IBluetooth for IBluetoothDBus {
         dbus_generated!()
     }
 
-    #[dbus_method("GetBluetoothClass")]
+    #[dbus_method("GetBluetoothClass", DBusLog::Disable)]
     fn get_bluetooth_class(&self) -> u32 {
         dbus_generated!()
     }
@@ -460,12 +507,12 @@ impl IBluetooth for IBluetoothDBus {
         dbus_generated!()
     }
 
-    #[dbus_method("GetDiscoverable")]
+    #[dbus_method("GetDiscoverable", DBusLog::Disable)]
     fn get_discoverable(&self) -> bool {
         dbus_generated!()
     }
 
-    #[dbus_method("GetDiscoverableTimeout")]
+    #[dbus_method("GetDiscoverableTimeout", DBusLog::Disable)]
     fn get_discoverable_timeout(&self) -> u32 {
         dbus_generated!()
     }
@@ -475,12 +522,12 @@ impl IBluetooth for IBluetoothDBus {
         dbus_generated!()
     }
 
-    #[dbus_method("IsMultiAdvertisementSupported")]
+    #[dbus_method("IsMultiAdvertisementSupported", DBusLog::Disable)]
     fn is_multi_advertisement_supported(&self) -> bool {
         dbus_generated!()
     }
 
-    #[dbus_method("IsLeExtendedAdvertisingSupported")]
+    #[dbus_method("IsLeExtendedAdvertisingSupported", DBusLog::Disable)]
     fn is_le_extended_advertising_supported(&self) -> bool {
         dbus_generated!()
     }
@@ -495,12 +542,12 @@ impl IBluetooth for IBluetoothDBus {
         dbus_generated!()
     }
 
-    #[dbus_method("IsDiscovering")]
+    #[dbus_method("IsDiscovering", DBusLog::Disable)]
     fn is_discovering(&self) -> bool {
         dbus_generated!()
     }
 
-    #[dbus_method("GetDiscoveryEndMillis")]
+    #[dbus_method("GetDiscoveryEndMillis", DBusLog::Disable)]
     fn get_discovery_end_millis(&self) -> u64 {
         dbus_generated!()
     }
@@ -511,21 +558,21 @@ impl IBluetooth for IBluetoothDBus {
     }
 
     #[dbus_method("CancelBondProcess")]
-    fn cancel_bond_process(&self, device: BluetoothDevice) -> bool {
+    fn cancel_bond_process(&mut self, device: BluetoothDevice) -> bool {
         dbus_generated!()
     }
 
     #[dbus_method("RemoveBond")]
-    fn remove_bond(&self, device: BluetoothDevice) -> bool {
+    fn remove_bond(&mut self, device: BluetoothDevice) -> bool {
         dbus_generated!()
     }
 
-    #[dbus_method("GetBondedDevices")]
+    #[dbus_method("GetBondedDevices", DBusLog::Disable)]
     fn get_bonded_devices(&self) -> Vec<BluetoothDevice> {
         dbus_generated!()
     }
 
-    #[dbus_method("GetBondState")]
+    #[dbus_method("GetBondState", DBusLog::Disable)]
     fn get_bond_state(&self, device: BluetoothDevice) -> BtBondState {
         dbus_generated!()
     }
@@ -545,17 +592,17 @@ impl IBluetooth for IBluetoothDBus {
         dbus_generated!()
     }
 
-    #[dbus_method("GetRemoteName")]
+    #[dbus_method("GetRemoteName", DBusLog::Disable)]
     fn get_remote_name(&self, _device: BluetoothDevice) -> String {
         dbus_generated!()
     }
 
-    #[dbus_method("GetRemoteType")]
+    #[dbus_method("GetRemoteType", DBusLog::Disable)]
     fn get_remote_type(&self, _device: BluetoothDevice) -> BtDeviceType {
         dbus_generated!()
     }
 
-    #[dbus_method("GetRemoteAlias")]
+    #[dbus_method("GetRemoteAlias", DBusLog::Disable)]
     fn get_remote_alias(&self, _device: BluetoothDevice) -> String {
         dbus_generated!()
     }
@@ -565,47 +612,62 @@ impl IBluetooth for IBluetoothDBus {
         dbus_generated!()
     }
 
-    #[dbus_method("GetRemoteClass")]
+    #[dbus_method("GetRemoteClass", DBusLog::Disable)]
     fn get_remote_class(&self, _device: BluetoothDevice) -> u32 {
         dbus_generated!()
     }
 
-    #[dbus_method("GetRemoteAppearance")]
+    #[dbus_method("GetRemoteAppearance", DBusLog::Disable)]
     fn get_remote_appearance(&self, _device: BluetoothDevice) -> u16 {
         dbus_generated!()
     }
 
-    #[dbus_method("GetRemoteConnected")]
+    #[dbus_method("GetRemoteConnected", DBusLog::Disable)]
     fn get_remote_connected(&self, _device: BluetoothDevice) -> bool {
         dbus_generated!()
     }
 
-    #[dbus_method("GetRemoteWakeAllowed")]
+    #[dbus_method("GetRemoteWakeAllowed", DBusLog::Disable)]
     fn get_remote_wake_allowed(&self, _device: BluetoothDevice) -> bool {
         dbus_generated!()
     }
 
-    #[dbus_method("GetConnectedDevices")]
+    #[dbus_method("GetRemoteVendorProductInfo", DBusLog::Disable)]
+    fn get_remote_vendor_product_info(&self, _device: BluetoothDevice) -> BtVendorProductInfo {
+        dbus_generated!()
+    }
+
+    #[dbus_method("GetRemoteAddressType", DBusLog::Disable)]
+    fn get_remote_address_type(&self, device: BluetoothDevice) -> BtAddrType {
+        dbus_generated!()
+    }
+
+    #[dbus_method("GetRemoteRSSI", DBusLog::Disable)]
+    fn get_remote_rssi(&self, device: BluetoothDevice) -> i8 {
+        dbus_generated!()
+    }
+
+    #[dbus_method("GetConnectedDevices", DBusLog::Disable)]
     fn get_connected_devices(&self) -> Vec<BluetoothDevice> {
         dbus_generated!()
     }
 
-    #[dbus_method("GetConnectionState")]
+    #[dbus_method("GetConnectionState", DBusLog::Disable)]
     fn get_connection_state(&self, device: BluetoothDevice) -> BtConnectionState {
         dbus_generated!()
     }
 
-    #[dbus_method("GetProfileConnectionState")]
+    #[dbus_method("GetProfileConnectionState", DBusLog::Disable)]
     fn get_profile_connection_state(&self, profile: Uuid128Bit) -> ProfileConnectionState {
         dbus_generated!()
     }
 
-    #[dbus_method("GetRemoteUuids")]
+    #[dbus_method("GetRemoteUuids", DBusLog::Disable)]
     fn get_remote_uuids(&self, device: BluetoothDevice) -> Vec<Uuid128Bit> {
         dbus_generated!()
     }
 
-    #[dbus_method("FetchRemoteUuids")]
+    #[dbus_method("FetchRemoteUuids", DBusLog::Disable)]
     fn fetch_remote_uuids(&self, device: BluetoothDevice) -> bool {
         dbus_generated!()
     }
@@ -635,12 +697,12 @@ impl IBluetooth for IBluetoothDBus {
         dbus_generated!()
     }
 
-    #[dbus_method("IsWbsSupported")]
+    #[dbus_method("IsWbsSupported", DBusLog::Disable)]
     fn is_wbs_supported(&self) -> bool {
         dbus_generated!()
     }
 
-    #[dbus_method("IsSwbSupported")]
+    #[dbus_method("IsSwbSupported", DBusLog::Disable)]
     fn is_swb_supported(&self) -> bool {
         dbus_generated!()
     }
@@ -726,6 +788,11 @@ impl IBluetoothSocketManager for IBluetoothSocketManagerDBus {
         &mut self,
         callback: Box<dyn IBluetoothSocketManagerCallbacks + Send>,
     ) -> CallbackId {
+        dbus_generated!()
+    }
+
+    #[dbus_method("UnregisterCallback")]
+    fn unregister_callback(&mut self, callback: CallbackId) -> bool {
         dbus_generated!()
     }
 

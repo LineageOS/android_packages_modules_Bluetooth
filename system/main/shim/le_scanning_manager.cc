@@ -24,8 +24,6 @@
 #include <hardware/bluetooth.h>
 #include <stdio.h>
 
-#include <unordered_set>
-
 #include "advertise_data_parser.h"
 #include "btif/include/btif_common.h"
 #include "hci/address.h"
@@ -33,11 +31,11 @@
 #include "hci/msft.h"
 #include "include/hardware/ble_scanner.h"
 #include "main/shim/ble_scanner_interface_impl.h"
-#include "main/shim/dumpsys.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "main/shim/le_scanning_manager.h"
 #include "main/shim/shim.h"
+#include "os/log.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/include/btm_log_history.h"
 #include "storage/device.h"
@@ -192,8 +190,8 @@ void BleScannerInterfaceImpl::Scan(bool start) {
   }
 
   do_in_jni_thread(FROM_HERE,
-                   base::Bind(&BleScannerInterfaceImpl::AddressCache::init,
-                              base::Unretained(&address_cache_)));
+                   base::BindOnce(&BleScannerInterfaceImpl::AddressCache::init,
+                                  base::Unretained(&address_cache_)));
 }
 
   /** Setup scan filter params */
@@ -233,7 +231,7 @@ void BleScannerInterfaceImpl::ScanFilterParamSetup(
       apcf_action, filter_index, advertising_filter_parameter);
   // TODO refactor callback mechanism
   do_in_jni_thread(FROM_HERE,
-                   base::Bind(cb, 0, 0, btm_status_value(BTM_SUCCESS)));
+                   base::BindOnce(cb, 0, 0, btm_status_value(BTM_SUCCESS)));
 }
 
 /** Configure a scan filter condition  */
@@ -253,7 +251,7 @@ void BleScannerInterfaceImpl::ScanFilterAdd(int filter_index,
   }
   bluetooth::shim::GetScanning()->ScanFilterAdd(filter_index, new_filters);
   do_in_jni_thread(FROM_HERE,
-                   base::Bind(cb, 0, 0, 0, btm_status_value(BTM_SUCCESS)));
+                   base::BindOnce(cb, 0, 0, 0, btm_status_value(BTM_SUCCESS)));
 }
 
 /** Clear all scan filter conditions for specific filter index*/
@@ -270,7 +268,7 @@ void BleScannerInterfaceImpl::ScanFilterEnable(bool enable, EnableCallback cb) {
 
   uint8_t action = enable ? 1 : 0;
   do_in_jni_thread(FROM_HERE,
-                   base::Bind(cb, action, btm_status_value(BTM_SUCCESS)));
+                   base::BindOnce(cb, action, btm_status_value(BTM_SUCCESS)));
 }
 
 /** Is MSFT Extension supported? */
@@ -368,7 +366,8 @@ void BleScannerInterfaceImpl::BatchscanConfigStorage(
   bluetooth::shim::GetScanning()->BatchScanConifgStorage(
       batch_scan_full_max, batch_scan_trunc_max, batch_scan_notify_threshold,
       client_if);
-  do_in_jni_thread(FROM_HERE, base::Bind(cb, btm_status_value(BTM_SUCCESS)));
+  do_in_jni_thread(FROM_HERE,
+                   base::BindOnce(cb, btm_status_value(BTM_SUCCESS)));
 }
 
 /* Enable batchscan */
@@ -381,14 +380,16 @@ void BleScannerInterfaceImpl::BatchscanEnable(int scan_mode, int scan_interval,
       static_cast<bluetooth::hci::BatchScanDiscardRule>(discard_rule);
   bluetooth::shim::GetScanning()->BatchScanEnable(
       batch_scan_mode, scan_window, scan_interval, batch_scan_discard_rule);
-  do_in_jni_thread(FROM_HERE, base::Bind(cb, btm_status_value(BTM_SUCCESS)));
+  do_in_jni_thread(FROM_HERE,
+                   base::BindOnce(cb, btm_status_value(BTM_SUCCESS)));
 }
 
 /* Disable batchscan */
 void BleScannerInterfaceImpl::BatchscanDisable(Callback cb) {
   LOG(INFO) << __func__ << " in shim layer";
   bluetooth::shim::GetScanning()->BatchScanDisable();
-  do_in_jni_thread(FROM_HERE, base::Bind(cb, btm_status_value(BTM_SUCCESS)));
+  do_in_jni_thread(FROM_HERE,
+                   base::BindOnce(cb, btm_status_value(BTM_SUCCESS)));
 }
 
 /* Read out batchscan reports */
@@ -450,8 +451,10 @@ void BleScannerInterfaceImpl::TransferSync(RawAddress address,
         pa_source, BTM_MODE_UNSUPPORTED, address);
     return;
   }
-  bluetooth::shim::GetScanning()->TransferSync(
-      ToGdAddress(address), service_data, sync_handle, pa_source);
+
+  bluetooth::shim::GetScanning()->TransferSync(ToGdAddress(address),
+                                               p_acl->Handle(), service_data,
+                                               sync_handle, pa_source);
 }
 
 void BleScannerInterfaceImpl::TransferSetInfo(RawAddress address,
@@ -467,8 +470,10 @@ void BleScannerInterfaceImpl::TransferSetInfo(RawAddress address,
         pa_source, BTM_MODE_UNSUPPORTED, address);
     return;
   }
-  bluetooth::shim::GetScanning()->TransferSetInfo(
-      ToGdAddress(address), service_data, adv_handle, pa_source);
+
+  bluetooth::shim::GetScanning()->TransferSetInfo(ToGdAddress(address),
+                                                  p_acl->Handle(), service_data,
+                                                  adv_handle, pa_source);
 }
 
 void BleScannerInterfaceImpl::SyncTxParameters(RawAddress addr, uint8_t mode,
@@ -489,17 +494,18 @@ void BleScannerInterfaceImpl::OnScannerRegistered(
     ScanningStatus status) {
   auto uuid = bluetooth::Uuid::From128BitBE(app_uuid.To128BitBE());
   do_in_jni_thread(FROM_HERE,
-                   base::Bind(&ScanningCallbacks::OnScannerRegistered,
-                              base::Unretained(scanning_callbacks_), uuid,
-                              scanner_id, status));
+                   base::BindOnce(&ScanningCallbacks::OnScannerRegistered,
+                                  base::Unretained(scanning_callbacks_), uuid,
+                                  scanner_id, status));
 }
 
 void BleScannerInterfaceImpl::OnSetScannerParameterComplete(
     bluetooth::hci::ScannerId scanner_id, ScanningStatus status) {
   do_in_jni_thread(
       FROM_HERE,
-      base::Bind(&ScanningCallbacks::OnSetScannerParameterComplete,
-                 base::Unretained(scanning_callbacks_), scanner_id, status));
+      base::BindOnce(&ScanningCallbacks::OnSetScannerParameterComplete,
+                     base::Unretained(scanning_callbacks_), scanner_id,
+                     status));
 }
 
 void BleScannerInterfaceImpl::OnScanResult(
@@ -775,21 +781,19 @@ void BleScannerInterfaceImpl::handle_remote_properties(
     if (!address_cache_.find(bd_addr)) {
       address_cache_.add(bd_addr);
 
-      if (p_eir_remote_name) {
-        if (remote_name_len > BD_NAME_LEN + 1 ||
-            (remote_name_len == BD_NAME_LEN + 1 &&
-             p_eir_remote_name[BD_NAME_LEN] != '\0')) {
-          LOG_INFO("%s dropping invalid packet - device name too long: %d",
-                   __func__, remote_name_len);
-          return;
-        }
-
-        memcpy(bdname.name, p_eir_remote_name, remote_name_len);
-        if (remote_name_len < BD_NAME_LEN + 1)
-          bdname.name[remote_name_len] = '\0';
-        btif_dm_update_ble_remote_properties(bd_addr, bdname.name, NULL,
-                                             device_type);
+      if (remote_name_len > BD_NAME_LEN + 1 ||
+          (remote_name_len == BD_NAME_LEN + 1 &&
+           p_eir_remote_name[BD_NAME_LEN] != '\0')) {
+        LOG_INFO("%s dropping invalid packet - device name too long: %d",
+                 __func__, remote_name_len);
+        return;
       }
+
+      memcpy(bdname.name, p_eir_remote_name, remote_name_len);
+      if (remote_name_len < BD_NAME_LEN + 1)
+        bdname.name[remote_name_len] = '\0';
+      btif_dm_update_ble_remote_properties(bd_addr, bdname.name, NULL,
+                                           device_type);
     }
   }
 

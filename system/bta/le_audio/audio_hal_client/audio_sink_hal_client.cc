@@ -21,10 +21,10 @@
 #include "audio_hal_client.h"
 #include "audio_hal_interface/le_audio_software.h"
 #include "bta/le_audio/codec_manager.h"
-#include "btu.h"
 #include "common/time_util.h"
 #include "osi/include/log.h"
 #include "osi/include/wakelock.h"
+#include "stack/include/main_thread.h"
 
 using bluetooth::audio::le_audio::LeAudioClientInterface;
 
@@ -41,7 +41,8 @@ class SinkImpl : public LeAudioSinkAudioHalClient {
  public:
   // Interface implementation
   bool Start(const LeAudioCodecConfiguration& codecConfiguration,
-             LeAudioSinkAudioHalClient::Callbacks* audioReceiver) override;
+             LeAudioSinkAudioHalClient::Callbacks* audioReceiver,
+             DsaModes dsa_modes) override;
   void Stop();
   size_t SendData(uint8_t* data, uint16_t size) override;
   void ConfirmStreamingRequest() override;
@@ -60,7 +61,7 @@ class SinkImpl : public LeAudioSinkAudioHalClient {
 
   bool OnResumeReq(bool start_media_task);
   bool OnSuspendReq();
-  bool OnMetadataUpdateReq(const sink_metadata_t& sink_metadata);
+  bool OnMetadataUpdateReq(const sink_metadata_v7_t& sink_metadata);
   bool Acquire();
   void Release();
 
@@ -128,7 +129,7 @@ bool SinkImpl::OnResumeReq(bool start_media_task) {
   bt_status_t status = do_in_main_thread(
       FROM_HERE,
       base::BindOnce(&LeAudioSinkAudioHalClient::Callbacks::OnAudioResume,
-                     base::Unretained(audioSinkCallbacks_)));
+                     audioSinkCallbacks_->weak_factory_.GetWeakPtr()));
   if (status == BT_STATUS_SUCCESS) {
     return true;
   }
@@ -143,16 +144,11 @@ bool SinkImpl::OnSuspendReq() {
     return false;
   }
 
-  std::promise<void> do_suspend_promise;
-  std::future<void> do_suspend_future = do_suspend_promise.get_future();
-
   bt_status_t status = do_in_main_thread(
       FROM_HERE,
       base::BindOnce(&LeAudioSinkAudioHalClient::Callbacks::OnAudioSuspend,
-                     base::Unretained(audioSinkCallbacks_),
-                     std::move(do_suspend_promise)));
+                     audioSinkCallbacks_->weak_factory_.GetWeakPtr()));
   if (status == BT_STATUS_SUCCESS) {
-    do_suspend_future.wait();
     return true;
   }
 
@@ -160,22 +156,17 @@ bool SinkImpl::OnSuspendReq() {
   return false;
 }
 
-bool SinkImpl::OnMetadataUpdateReq(const sink_metadata_t& sink_metadata) {
+bool SinkImpl::OnMetadataUpdateReq(const sink_metadata_v7_t& sink_metadata) {
   if (audioSinkCallbacks_ == nullptr) {
     LOG_ERROR("audioSinkCallbacks_ not set");
     return false;
-  }
-
-  std::vector<struct record_track_metadata> metadata;
-  for (size_t i = 0; i < sink_metadata.track_count; i++) {
-    metadata.push_back(sink_metadata.tracks[i]);
   }
 
   bt_status_t status = do_in_main_thread(
       FROM_HERE,
       base::BindOnce(
           &LeAudioSinkAudioHalClient::Callbacks::OnAudioMetadataUpdate,
-          base::Unretained(audioSinkCallbacks_), metadata));
+          audioSinkCallbacks_->weak_factory_.GetWeakPtr(), sink_metadata));
   if (status == BT_STATUS_SUCCESS) {
     return true;
   }
@@ -185,7 +176,8 @@ bool SinkImpl::OnMetadataUpdateReq(const sink_metadata_t& sink_metadata) {
 }
 
 bool SinkImpl::Start(const LeAudioCodecConfiguration& codec_configuration,
-                     LeAudioSinkAudioHalClient::Callbacks* audioReceiver) {
+                     LeAudioSinkAudioHalClient::Callbacks* audioReceiver,
+                     DsaModes dsa_modes) {
   if (!halSourceInterface_) {
     LOG_ERROR("Audio HAL Audio source interface not acquired");
     return false;
@@ -208,6 +200,7 @@ bool SinkImpl::Start(const LeAudioCodecConfiguration& codec_configuration,
       .channels_count = codec_configuration.num_channels};
 
   halSourceInterface_->SetPcmParameters(pcmParameters);
+  LeAudioClientInterface::Get()->SetAllowedDsaModes(dsa_modes);
   halSourceInterface_->StartSession();
 
   audioSinkCallbacks_ = audioReceiver;

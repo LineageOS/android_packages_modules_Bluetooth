@@ -69,10 +69,17 @@ void LogMetricA2dpPlaybackEvent(const RawAddress& raw_address,
 
 void LogMetricHfpPacketLossStats(const RawAddress& raw_address,
                                  int num_decoded_frames,
-                                 double packet_loss_ratio) {
+                                 double packet_loss_ratio,
+                                 uint16_t codec_type) {
   Address address = bluetooth::ToGdAddress(raw_address);
   bluetooth::os::LogMetricHfpPacketLossStats(address, num_decoded_frames,
-                                             packet_loss_ratio);
+                                             packet_loss_ratio, codec_type);
+}
+
+void LogMetricMmcTranscodeRttStats(int maximum_rtt, double mean_rtt,
+                                   int num_requests, int codec_type) {
+  bluetooth::os::LogMetricMmcTranscodeRttStats(maximum_rtt, mean_rtt,
+                                               num_requests, codec_type);
 }
 
 void LogMetricReadRssiResult(const RawAddress& raw_address, uint16_t handle,

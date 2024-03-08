@@ -31,19 +31,20 @@
 #include <variant>
 #include <vector>
 
-#include "bta_groups.h"
-#include "bta_le_audio_api.h"
+#include "bluetooth/uuid.h"
 #include "bta_le_audio_uuids.h"
 #include "btm_iso_api_types.h"
+#include "osi/include/alarm.h"
+#include "stack/include/bt_types.h"
 
 namespace le_audio {
 
 #define UINT8_TO_VEC_UINT8(u8) \
   std::vector<uint8_t> { u8 }
 #define UINT16_TO_VEC_UINT8(u16) \
-  std::vector<uint8_t>((uint8_t*)&u16, (uint8_t*)&u16 + sizeof(u16))
+  std::vector<uint8_t>((uint8_t*)&u16, (uint8_t*)&u16 + sizeof(uint16_t))
 #define UINT32_TO_VEC_UINT8(u32) \
-  std::vector<uint8_t>((uint8_t*)&u32, (uint8_t*)&u32 + sizeof(u32))
+  std::vector<uint8_t>((uint8_t*)&u32, (uint8_t*)&u32 + sizeof(uint32_t))
 
 #define VEC_UINT8_TO_UINT8(vec) vec.data()[0]
 #define VEC_UINT8_TO_UINT16(vec) ((vec.data()[1] << 8) + vec.data()[0])
@@ -52,6 +53,9 @@ namespace le_audio {
 #define VEC_UINT8_TO_UINT32(vec)                                          \
   ((vec.data()[3] << 24) + (vec.data()[2] << 16) + (vec.data()[1] << 8) + \
    vec.data()[0])
+
+enum class DsaMode { DISABLED = 0, ACL, ISO_SW, ISO_HW };
+typedef std::vector<DsaMode> DsaModes;
 
 namespace uuid {
 /* CAP service
@@ -103,11 +107,11 @@ static const bluetooth::Uuid kTelephonyMediaAudioProfileRoleCharacteristicUuid =
 
 namespace codec_spec_conf {
 /* LTV Types */
-constexpr uint8_t kLeAudioCodecLC3TypeSamplingFreq = 0x01;
-constexpr uint8_t kLeAudioCodecLC3TypeFrameDuration = 0x02;
-constexpr uint8_t kLeAudioCodecLC3TypeAudioChannelAllocation = 0x03;
-constexpr uint8_t kLeAudioCodecLC3TypeOctetPerFrame = 0x04;
-constexpr uint8_t kLeAudioCodecLC3TypeCodecFrameBlocksPerSdu = 0x05;
+constexpr uint8_t kLeAudioLtvTypeSamplingFreq = 0x01;
+constexpr uint8_t kLeAudioLtvTypeFrameDuration = 0x02;
+constexpr uint8_t kLeAudioLtvTypeAudioChannelAllocation = 0x03;
+constexpr uint8_t kLeAudioLtvTypeOctetsPerCodecFrame = 0x04;
+constexpr uint8_t kLeAudioLtvTypeCodecFrameBlocksPerSdu = 0x05;
 
 /* Sampling Frequencies */
 constexpr uint8_t kLeAudioSamplingFreq8000Hz = 0x01;
@@ -125,8 +129,8 @@ constexpr uint8_t kLeAudioSamplingFreq192000Hz = 0x0C;
 constexpr uint8_t kLeAudioSamplingFreq384000Hz = 0x0D;
 
 /* Frame Durations */
-constexpr uint8_t kLeAudioCodecLC3FrameDur7500us = 0x00;
-constexpr uint8_t kLeAudioCodecLC3FrameDur10000us = 0x01;
+constexpr uint8_t kLeAudioCodecFrameDur7500us = 0x00;
+constexpr uint8_t kLeAudioCodecFrameDur10000us = 0x01;
 
 /* Audio Allocations */
 constexpr uint32_t kLeAudioLocationNotAllowed = 0x00000000;
@@ -177,11 +181,12 @@ constexpr uint32_t kLeAudioLocationStereo =
     kLeAudioLocationFrontLeft | kLeAudioLocationFrontRight;
 
 /* Octets Per Frame */
-constexpr uint16_t kLeAudioCodecLC3FrameLen30 = 30;
-constexpr uint16_t kLeAudioCodecLC3FrameLen40 = 40;
-constexpr uint16_t kLeAudioCodecLC3FrameLen60 = 60;
-constexpr uint16_t kLeAudioCodecLC3FrameLen80 = 80;
-constexpr uint16_t kLeAudioCodecLC3FrameLen120 = 120;
+constexpr uint16_t kLeAudioCodecFrameLen30 = 30;
+constexpr uint16_t kLeAudioCodecFrameLen40 = 40;
+constexpr uint16_t kLeAudioCodecFrameLen60 = 60;
+constexpr uint16_t kLeAudioCodecFrameLen80 = 80;
+constexpr uint16_t kLeAudioCodecFrameLen100 = 100;
+constexpr uint16_t kLeAudioCodecFrameLen120 = 120;
 
 }  // namespace codec_spec_conf
 
@@ -196,32 +201,19 @@ uint8_t constexpr FrameDurationConfig2Capability(uint8_t conf) {
   return (0x01 << (conf));
 }
 
-inline uint8_t GetAudioChannelCounts(std::bitset<32> allocation) {
-  /*
-   * BAP d09r07 B4.2.3 Audio_Channel_Allocation
-   * "(...) Audio_Channel_Allocation bitmap value of all zeros or the
-   * absence of the Audio_Channel_Allocation LTV structure within a
-   * Codec_Specific_Configuration field shall be interpreted as defining a
-   * single audio channel of Mono audio (a single channel of no specified
-   * Audio Location).
-   */
-  uint8_t audio_channel_counts = allocation.count() ?: 1;
-  return (0x01 << (audio_channel_counts - 1));
-}
-
 /* LTV Types - same values as in Codec Specific Configurations but 0x03 is
  * named differently.
  */
-constexpr uint8_t kLeAudioCodecLC3TypeSamplingFreq =
-    codec_spec_conf::kLeAudioCodecLC3TypeSamplingFreq;
-constexpr uint8_t kLeAudioCodecLC3TypeFrameDuration =
-    codec_spec_conf::kLeAudioCodecLC3TypeFrameDuration;
-constexpr uint8_t kLeAudioCodecLC3TypeAudioChannelCounts =
-    codec_spec_conf::kLeAudioCodecLC3TypeAudioChannelAllocation;
-constexpr uint8_t kLeAudioCodecLC3TypeOctetPerFrame =
-    codec_spec_conf::kLeAudioCodecLC3TypeOctetPerFrame;
-constexpr uint8_t kLeAudioCodecLC3TypeMaxCodecFramesPerSdu =
-    codec_spec_conf::kLeAudioCodecLC3TypeCodecFrameBlocksPerSdu;
+constexpr uint8_t kLeAudioLtvTypeSupportedSamplingFrequencies =
+    codec_spec_conf::kLeAudioLtvTypeSamplingFreq;
+constexpr uint8_t kLeAudioLtvTypeSupportedFrameDurations =
+    codec_spec_conf::kLeAudioLtvTypeFrameDuration;
+constexpr uint8_t kLeAudioLtvTypeSupportedAudioChannelCounts =
+    codec_spec_conf::kLeAudioLtvTypeAudioChannelAllocation;
+constexpr uint8_t kLeAudioLtvTypeSupportedOctetsPerCodecFrame =
+    codec_spec_conf::kLeAudioLtvTypeOctetsPerCodecFrame;
+constexpr uint8_t kLeAudioLtvTypeSupportedMaxCodecFramesPerSdu =
+    codec_spec_conf::kLeAudioLtvTypeCodecFrameBlocksPerSdu;
 
 /* Sampling Frequencies */
 constexpr uint16_t kLeAudioSamplingFreq8000Hz =
@@ -252,38 +244,38 @@ constexpr uint16_t kLeAudioSamplingFreq384000Hz = SamplingFreqConfig2Capability(
     codec_spec_conf::kLeAudioSamplingFreq384000Hz);
 
 /* Frame Durations */
-constexpr uint8_t kLeAudioCodecLC3FrameDur7500us =
-    FrameDurationConfig2Capability(
-        codec_spec_conf::kLeAudioCodecLC3FrameDur7500us);
-constexpr uint8_t kLeAudioCodecLC3FrameDur10000us =
-    FrameDurationConfig2Capability(
-        codec_spec_conf::kLeAudioCodecLC3FrameDur10000us);
-constexpr uint8_t kLeAudioCodecLC3FrameDurPrefer7500us = 0x10;
-constexpr uint8_t kLeAudioCodecLC3FrameDurPrefer10000us = 0x20;
+constexpr uint8_t kLeAudioCodecFrameDur7500us = FrameDurationConfig2Capability(
+    codec_spec_conf::kLeAudioCodecFrameDur7500us);
+constexpr uint8_t kLeAudioCodecFrameDur10000us = FrameDurationConfig2Capability(
+    codec_spec_conf::kLeAudioCodecFrameDur10000us);
+constexpr uint8_t kLeAudioCodecFrameDurPrefer7500us = 0x10;
+constexpr uint8_t kLeAudioCodecFrameDurPrefer10000us = 0x20;
 
 /* Audio Channel Counts */
 /* Each bit represents support for additional channel: bit 0 - one channel,
  * bit 1 - two, bit 3 - four channels. Multiple bits can be enabled at once.
  */
-constexpr uint8_t kLeAudioCodecLC3ChannelCountNone = 0x00;
-constexpr uint8_t kLeAudioCodecLC3ChannelCountSingleChannel = 0x01;
-constexpr uint8_t kLeAudioCodecLC3ChannelCountTwoChannel = 0x02;
-constexpr uint8_t kLeAudioCodecLC3ChannelCountThreeChannel = 0x04;
-constexpr uint8_t kLeAudioCodecLC3ChannelCountFourChannel = 0x08;
-constexpr uint8_t kLeAudioCodecLC3ChannelCountFiveChannel = 0x10;
-constexpr uint8_t kLeAudioCodecLC3ChannelCountSixChannel = 0x20;
-constexpr uint8_t kLeAudioCodecLC3ChannelCountSevenChannel = 0x40;
-constexpr uint8_t kLeAudioCodecLC3ChannelCountEightChannel = 0x40;
+constexpr uint8_t kLeAudioCodecChannelCountNone = 0x00;
+constexpr uint8_t kLeAudioCodecChannelCountSingleChannel = 0x01;
+constexpr uint8_t kLeAudioCodecChannelCountTwoChannel = 0x02;
+constexpr uint8_t kLeAudioCodecChannelCountThreeChannel = 0x04;
+constexpr uint8_t kLeAudioCodecChannelCountFourChannel = 0x08;
+constexpr uint8_t kLeAudioCodecChannelCountFiveChannel = 0x10;
+constexpr uint8_t kLeAudioCodecChannelCountSixChannel = 0x20;
+constexpr uint8_t kLeAudioCodecChannelCountSevenChannel = 0x40;
+constexpr uint8_t kLeAudioCodecChannelCountEightChannel = 0x40;
 
-/* Octets Per Frame - same as in Codec Specific Configurations but in
- * capabilities we get two values: min and max.
- */
-constexpr uint16_t kLeAudioCodecLC3FrameLen30 =
-    codec_spec_conf::kLeAudioCodecLC3FrameLen30;
-constexpr uint16_t kLeAudioCodecLC3FrameLen40 =
-    codec_spec_conf::kLeAudioCodecLC3FrameLen40;
-constexpr uint16_t kLeAudioCodecLC3FrameLen120 =
-    codec_spec_conf::kLeAudioCodecLC3FrameLen120;
+/* Octets Per Frame */
+constexpr uint16_t kLeAudioCodecFrameLen30 =
+    codec_spec_conf::kLeAudioCodecFrameLen30;
+constexpr uint16_t kLeAudioCodecFrameLen40 =
+    codec_spec_conf::kLeAudioCodecFrameLen40;
+constexpr uint16_t kLeAudioCodecFrameLen60 =
+    codec_spec_conf::kLeAudioCodecFrameLen60;
+constexpr uint16_t kLeAudioCodecFrameLen80 =
+    codec_spec_conf::kLeAudioCodecFrameLen80;
+constexpr uint16_t kLeAudioCodecFrameLen120 =
+    codec_spec_conf::kLeAudioCodecFrameLen120;
 
 };  // namespace codec_spec_caps
 
@@ -293,6 +285,10 @@ constexpr uint8_t kLeAudioCodingFormatVendorSpecific =
     bluetooth::hci::kIsoCodingFormatVendorSpecific;
 constexpr uint16_t kLeAudioVendorCompanyIdUndefined = 0x00;
 constexpr uint16_t kLeAudioVendorCodecIdUndefined = 0x00;
+
+constexpr uint16_t kLeAudioVendorCompanyIdGoogle = 0x00E0;
+/* Todo: Temporary value */
+constexpr uint16_t kLeAudioVendorCodecIdHeadtracking = 0x0001;
 
 /* Metadata types from Assigned Numbers */
 constexpr uint8_t kLeAudioMetadataTypePreferredAudioContext = 0x01;
@@ -312,6 +308,8 @@ constexpr uint8_t kDefaultCsisSetSize = 2;
 
 constexpr uint8_t kLeAudioDirectionSink = 0x01;
 constexpr uint8_t kLeAudioDirectionSource = 0x02;
+constexpr uint8_t kLeAudioDirectionBoth =
+    kLeAudioDirectionSink | kLeAudioDirectionSource;
 
 /* Audio stream config types */
 constexpr uint8_t kFramingUnframedPduSupported = 0x00;
@@ -343,13 +341,19 @@ enum class AseState : uint8_t {
   BTA_LE_AUDIO_ASE_STATE_RELEASING = 0x06,
 };
 
-enum class AudioStreamDataPathState {
+enum class CisState {
   IDLE,
-  CIS_DISCONNECTING,
-  CIS_ASSIGNED,
-  CIS_PENDING,
-  CIS_ESTABLISHED,
-  DATA_PATH_ESTABLISHED,
+  ASSIGNED,
+  CONNECTING,
+  CONNECTED,
+  DISCONNECTING,
+};
+
+enum class DataPathState {
+  IDLE,
+  CONFIGURING,
+  CONFIGURED,
+  REMOVING,
 };
 
 enum class CisType {
@@ -409,8 +413,10 @@ class AudioContexts {
   }
   bool any() const { return !none(); }
 
-  void set(LeAudioContextType const& v) { mValue |= static_cast<T>(v); }
+  void set(const LeAudioContextType& v) { mValue |= static_cast<T>(v); }
+  void set_all(const AudioContexts& v) { mValue |= v.value(); }
   void unset(const LeAudioContextType& v) { mValue &= ~static_cast<T>(v); }
+  void unset_all(const AudioContexts& v) { mValue &= ~v.value(); }
 
   bool test(const LeAudioContextType& v) const {
     return (mValue & static_cast<T>(v)) != 0;
@@ -474,30 +480,20 @@ struct BidirectionalPair {
   T sink;
   T source;
 
-  T get(uint8_t direction) const {
-    if (direction ==
-        (types::kLeAudioDirectionSink | types::kLeAudioDirectionSource)) {
-      return get_bidirectional(*this);
-    } else if (direction == types::kLeAudioDirectionSink) {
-      return sink;
-    }
-    return source;
-  }
-  T& get_ref(uint8_t direction) {
-    return (direction == types::kLeAudioDirectionSink) ? sink : source;
-  }
+  const T& get(uint8_t direction) const;
+  T& get(uint8_t direction);
 
   BidirectionalPair<T>& operator=(const BidirectionalPair<T>&) = default;
-  bool operator==(const BidirectionalPair<T>& other) const {
-    return (sink == other.sink) && (source == other.source);
-  };
-  bool operator!=(const BidirectionalPair<T>& other) const {
-    return (sink != other.sink) || (source != other.source);
-  };
 };
 
 template <typename T>
 T get_bidirectional(BidirectionalPair<T> p);
+
+template <typename T>
+bool operator==(const types::BidirectionalPair<T>& lhs,
+                const types::BidirectionalPair<T>& rhs) {
+  return (lhs.sink == rhs.sink) && (lhs.source == rhs.source);
+}
 
 /* Configuration strategy */
 enum class LeAudioConfigurationStrategy : uint8_t {
@@ -525,42 +521,30 @@ constexpr AudioContexts kLeAudioContextAllTypes =
     LeAudioContextType::NOTIFICATIONS | LeAudioContextType::RINGTONE |
     LeAudioContextType::ALERTS | LeAudioContextType::EMERGENCYALARM;
 
+constexpr AudioContexts kLeAudioContextAllBidir =
+    LeAudioContextType::GAME | LeAudioContextType::LIVE |
+    LeAudioContextType::CONVERSATIONAL | LeAudioContextType::VOICEASSISTANTS;
+
+constexpr AudioContexts kLeAudioContextAllRemoteSource =
+    LeAudioContextType::GAME | LeAudioContextType::LIVE |
+    LeAudioContextType::CONVERSATIONAL | LeAudioContextType::VOICEASSISTANTS;
+
+constexpr AudioContexts kLeAudioContextAllRemoteSinkOnly =
+    LeAudioContextType::MEDIA | LeAudioContextType::INSTRUCTIONAL |
+    LeAudioContextType::SOUNDEFFECTS | LeAudioContextType::NOTIFICATIONS |
+    LeAudioContextType::RINGTONE | LeAudioContextType::ALERTS |
+    LeAudioContextType::EMERGENCYALARM;
+
 /* Print formaters for LTV data */
 std::string CodecCapabilitiesLtvFormat(const uint8_t& type,
                                        const std::vector<uint8_t>& value);
 
 /* Structures */
-class LeAudioLtvMap {
- public:
-  LeAudioLtvMap() {}
-  LeAudioLtvMap(std::map<uint8_t, std::vector<uint8_t>> values)
-      : values(std::move(values)) {}
-
-  std::optional<std::vector<uint8_t>> Find(uint8_t type) const;
-  void Add(uint8_t type, std::vector<uint8_t> value) {
-    values.insert_or_assign(type, std::move(value));
-  }
-  void Remove(uint8_t type) { values.erase(type); }
-  bool IsEmpty() const { return values.empty(); }
-  void Clear() { values.clear(); }
-  size_t Size() const { return values.size(); }
-  const std::map<uint8_t, std::vector<uint8_t>>& Values() const {
-    return values;
-  }
-  std::string ToString(
-      const std::string& indent_string,
-      std::string (*format)(const uint8_t&, const std::vector<uint8_t>&)) const;
-  size_t RawPacketSize() const;
-  uint8_t* RawPacket(uint8_t* p_buf) const;
-  std::vector<uint8_t> RawPacket() const;
-  static LeAudioLtvMap Parse(const uint8_t* value, uint8_t len, bool& success);
-  void Append(const LeAudioLtvMap& other);
-
- private:
-  std::map<uint8_t, std::vector<uint8_t>> values;
-};
-
-struct LeAudioLc3Config {
+/** LE Audio ASE codec configuration parameters, built from LTV types defined
+ * in the BT Assigned Numbers.
+ * NOTE: This base structure does not support the vendor specific parameters.
+ */
+struct LeAudioCoreCodecConfig {
   static const std::map<uint8_t, uint32_t> sampling_freq_map;
   static const std::map<uint8_t, uint32_t> frame_duration_map;
 
@@ -570,7 +554,19 @@ struct LeAudioLc3Config {
   std::optional<uint16_t> octets_per_codec_frame;
   std::optional<uint8_t> codec_frames_blocks_per_sdu;
 
-  uint8_t channel_count;
+  uint8_t allocated_channel_count = 1;
+
+  static uint32_t GetSamplingFrequencyHz(uint8_t sample_freq) {
+    return sampling_freq_map.count(sample_freq)
+               ? sampling_freq_map.at(sample_freq)
+               : 0;
+  }
+
+  static uint32_t GetFrameDurationUs(uint8_t framn_dur) {
+    return frame_duration_map.count(framn_dur)
+               ? frame_duration_map.at(framn_dur)
+               : 0;
+  }
 
   /** Returns the sampling frequency representation in Hz */
   uint32_t GetSamplingFrequencyHz() const {
@@ -591,42 +587,242 @@ struct LeAudioLc3Config {
     return 0;
   }
 
-  uint8_t GetChannelCount(void) const {
-    if (channel_count) return channel_count;
+  /** Channel count per CIS or BIS */
+  uint8_t GetChannelCountPerIsoStream(void) const {
+    return allocated_channel_count;
+  }
+};
 
-    return 0;
+struct LeAudioCoreCodecCapabilities {
+  bool HasSupportedSamplingFrequencies() const {
+    return supported_sampling_frequencies.has_value();
+  }
+  bool HasSupportedFrameDurations() const {
+    return supported_frame_durations.has_value();
+  }
+  bool HasSupportedOctetsPerCodecFrame() const {
+    return supported_min_octets_per_codec_frame.has_value() &&
+           supported_max_octets_per_codec_frame.has_value();
+  }
+  bool HasSupportedAudioChannelCounts() const {
+    return supported_audio_channel_counts.has_value();
+  }
+  bool HasSupportedMaxCodecFramesPerSdu() const {
+    return supported_max_codec_frames_per_sdu.has_value();
   }
 
-  LeAudioLtvMap GetAsLtvMap() const {
-    std::map<uint8_t, std::vector<uint8_t>> values;
-
-    if (sampling_frequency) {
-      values[codec_spec_conf::kLeAudioCodecLC3TypeSamplingFreq] =
-          UINT8_TO_VEC_UINT8(*sampling_frequency);
-    }
-
-    if (frame_duration) {
-      values[codec_spec_conf::kLeAudioCodecLC3TypeFrameDuration] =
-          UINT8_TO_VEC_UINT8(*frame_duration);
-    }
-
-    if (audio_channel_allocation) {
-      values[codec_spec_conf::kLeAudioCodecLC3TypeAudioChannelAllocation] =
-          UINT32_TO_VEC_UINT8(*audio_channel_allocation);
-    }
-
-    if (octets_per_codec_frame) {
-      values[codec_spec_conf::kLeAudioCodecLC3TypeOctetPerFrame] =
-          UINT16_TO_VEC_UINT8(*octets_per_codec_frame);
-    }
-
-    if (codec_frames_blocks_per_sdu) {
-      values[codec_spec_conf::kLeAudioCodecLC3TypeCodecFrameBlocksPerSdu] =
-          UINT8_TO_VEC_UINT8(*codec_frames_blocks_per_sdu);
-    }
-
-    return LeAudioLtvMap(values);
+  bool IsSamplingFrequencyConfigSupported(uint8_t value) const {
+    return supported_sampling_frequencies.value_or(0) &
+           codec_spec_caps::SamplingFreqConfig2Capability(value);
   }
+  bool IsFrameDurationConfigSupported(uint8_t value) const {
+    return supported_frame_durations.value_or(0) &
+           codec_spec_caps::FrameDurationConfig2Capability(value);
+  }
+  bool IsAudioChannelCountsSupported(uint8_t value) const {
+    if (value > 0)
+      return supported_audio_channel_counts.value_or(0) & (0b1 << (value - 1));
+
+    return false;
+  }
+  bool IsOctetsPerCodecFrameConfigSupported(uint16_t value) const {
+    return (value >= supported_min_octets_per_codec_frame.value_or(0)) &&
+           (value <= supported_max_octets_per_codec_frame.value_or(0));
+  }
+  bool IsCodecFramesPerSduSupported(uint8_t value) const {
+    return value <= supported_max_codec_frames_per_sdu.value_or(1);
+  }
+
+  std::optional<uint16_t> supported_sampling_frequencies;
+  std::optional<uint8_t> supported_frame_durations;
+  std::optional<uint8_t> supported_audio_channel_counts;
+  std::optional<uint16_t> supported_min_octets_per_codec_frame;
+  std::optional<uint16_t> supported_max_octets_per_codec_frame;
+  std::optional<uint8_t> supported_max_codec_frames_per_sdu;
+};
+
+class LeAudioLtvMap {
+ public:
+  LeAudioLtvMap() {}
+  LeAudioLtvMap(std::map<uint8_t, std::vector<uint8_t>> values)
+      : values(std::move(values)), core_config(std::nullopt) {}
+
+  std::optional<std::vector<uint8_t>> Find(uint8_t type) const;
+  LeAudioLtvMap& Add(uint8_t type, std::vector<uint8_t> value) {
+    values.insert_or_assign(type, std::move(value));
+    core_config = std::nullopt;
+    return *this;
+  }
+  LeAudioLtvMap& Add(uint8_t type, uint8_t value) {
+    std::vector<uint8_t> v(sizeof(value));
+    auto ptr = v.data();
+
+    UINT8_TO_STREAM(ptr, value);
+    values.insert_or_assign(type, v);
+    core_config = std::nullopt;
+    return *this;
+  }
+  LeAudioLtvMap& Add(uint8_t type, uint16_t value) {
+    std::vector<uint8_t> v(sizeof(value));
+    auto ptr = v.data();
+
+    UINT16_TO_STREAM(ptr, value);
+    values.insert_or_assign(type, std::move(v));
+    core_config = std::nullopt;
+    return *this;
+  }
+  LeAudioLtvMap& Add(uint8_t type, uint32_t value) {
+    std::vector<uint8_t> v(sizeof(value));
+    auto ptr = v.data();
+
+    UINT32_TO_STREAM(ptr, value);
+    values.insert_or_assign(type, std::move(v));
+    core_config = std::nullopt;
+    return *this;
+  }
+  void Remove(uint8_t type) { values.erase(type); }
+  bool IsEmpty() const { return values.empty(); }
+  void Clear() { values.clear(); }
+  size_t Size() const { return values.size(); }
+  const std::map<uint8_t, std::vector<uint8_t>>& Values() const {
+    return values;
+  }
+
+  const struct LeAudioCoreCodecConfig& GetAsCoreCodecConfig() const;
+  const struct LeAudioCoreCodecCapabilities& GetAsCoreCodecCapabilities() const;
+
+  std::string ToString(
+      const std::string& indent_string,
+      std::string (*format)(const uint8_t&, const std::vector<uint8_t>&)) const;
+  size_t RawPacketSize() const;
+  uint8_t* RawPacket(uint8_t* p_buf) const;
+  std::vector<uint8_t> RawPacket() const;
+  static LeAudioLtvMap Parse(const uint8_t* value, uint8_t len, bool& success);
+  void Append(const LeAudioLtvMap& other);
+
+ private:
+  static LeAudioCoreCodecConfig LtvMapToCoreCodecConfig(LeAudioLtvMap ltvs) {
+    LeAudioCoreCodecConfig core;
+
+    auto vec_opt = ltvs.Find(codec_spec_conf::kLeAudioLtvTypeSamplingFreq);
+    if (vec_opt && (vec_opt->size() ==
+                    sizeof(decltype(core.sampling_frequency)::value_type))) {
+      auto ptr = vec_opt->data();
+      STREAM_TO_UINT8(core.sampling_frequency, ptr);
+    }
+
+    vec_opt = ltvs.Find(codec_spec_conf::kLeAudioLtvTypeFrameDuration);
+    if (vec_opt && (vec_opt->size() ==
+                    sizeof(decltype(core.frame_duration)::value_type))) {
+      auto ptr = vec_opt->data();
+      STREAM_TO_UINT8(core.frame_duration, ptr);
+    }
+
+    vec_opt = ltvs.Find(codec_spec_conf::kLeAudioLtvTypeAudioChannelAllocation);
+    if (vec_opt &&
+        (vec_opt->size() ==
+         sizeof(decltype(core.audio_channel_allocation)::value_type))) {
+      auto ptr = vec_opt->data();
+      STREAM_TO_UINT32(core.audio_channel_allocation, ptr);
+      core.allocated_channel_count =
+          std::bitset<32>(core.audio_channel_allocation.value()).count();
+    } else {
+      core.allocated_channel_count = 1;
+    }
+
+    vec_opt = ltvs.Find(codec_spec_conf::kLeAudioLtvTypeOctetsPerCodecFrame);
+    if (vec_opt &&
+        (vec_opt->size() ==
+         sizeof(decltype(core.octets_per_codec_frame)::value_type))) {
+      auto ptr = vec_opt->data();
+      STREAM_TO_UINT16(core.octets_per_codec_frame, ptr);
+    }
+
+    vec_opt = ltvs.Find(codec_spec_conf::kLeAudioLtvTypeCodecFrameBlocksPerSdu);
+    if (vec_opt &&
+        (vec_opt->size() ==
+         sizeof(decltype(core.codec_frames_blocks_per_sdu)::value_type))) {
+      auto ptr = vec_opt->data();
+      STREAM_TO_UINT8(core.codec_frames_blocks_per_sdu, ptr);
+    }
+
+    return core;
+  }
+
+  static LeAudioCoreCodecCapabilities LtvMapToCoreCodecCapabilities(
+      LeAudioLtvMap pacs) {
+    LeAudioCoreCodecCapabilities core;
+
+    auto pac =
+        pacs.Find(codec_spec_caps::kLeAudioLtvTypeSupportedSamplingFrequencies);
+    if (pac &&
+        (pac.value().size() ==
+         sizeof(decltype(core.supported_sampling_frequencies)::value_type))) {
+      core.supported_sampling_frequencies = VEC_UINT8_TO_UINT16(pac.value());
+    }
+
+    pac = pacs.Find(codec_spec_caps::kLeAudioLtvTypeSupportedFrameDurations);
+    if (pac && (pac.value().size() ==
+                sizeof(decltype(core.supported_frame_durations)::value_type))) {
+      core.supported_frame_durations = VEC_UINT8_TO_UINT8(pac.value());
+    }
+
+    pac =
+        pacs.Find(codec_spec_caps::kLeAudioLtvTypeSupportedOctetsPerCodecFrame);
+    if (pac &&
+        (pac.value().size() ==
+         (sizeof(
+              decltype(core.supported_min_octets_per_codec_frame)::value_type) +
+          sizeof(decltype(core.supported_max_octets_per_codec_frame)::
+                     value_type)))) {
+      core.supported_min_octets_per_codec_frame =
+          VEC_UINT8_TO_UINT16(pac.value());
+      core.supported_max_octets_per_codec_frame = OFF_VEC_UINT8_TO_UINT16(
+          pac.value(),
+          sizeof(
+              decltype(core.supported_min_octets_per_codec_frame)::value_type));
+    }
+
+    /*
+     * BAP_1.0.1 4.3.1 Codec_Specific_Capabilities LTV requirements:
+     * The absence of the Supported_Audio_Channel_Counts LTV structure shall be
+     * interpreted as equivalent to a Supported_Audio_Channel_Counts value of
+     * 0x01 (one Audio Channel supported).
+     */
+    pac =
+        pacs.Find(codec_spec_caps::kLeAudioLtvTypeSupportedAudioChannelCounts);
+    if (pac &&
+        (pac.value().size() ==
+         sizeof(decltype(core.supported_audio_channel_counts)::value_type))) {
+      core.supported_audio_channel_counts = VEC_UINT8_TO_UINT8(pac.value());
+    } else {
+      core.supported_audio_channel_counts = 0b1;
+    }
+
+    /*
+     * BAP_1.0.1 4.3.1 Codec_Specific_Capabilities LTV requirements:
+     * The absence of the Supported_Max_Codec_Frames_Per_SDU LTV structure shall
+     * be interpreted as equivalent to a Supported_Max_Codec_Frames_Per_SDU
+     * value of 1 codec frame per Audio Channel per SDU maximum.
+     */
+    pac = pacs.Find(
+        codec_spec_caps::kLeAudioLtvTypeSupportedMaxCodecFramesPerSdu);
+    if (pac &&
+        (pac.value().size() ==
+         sizeof(
+             decltype(core.supported_max_codec_frames_per_sdu)::value_type))) {
+      core.supported_max_codec_frames_per_sdu = VEC_UINT8_TO_UINT8(pac.value());
+    } else {
+      core.supported_max_codec_frames_per_sdu = 1;
+    }
+
+    return core;
+  }
+
+  std::map<uint8_t, std::vector<uint8_t>> values;
+  // Lazy-constructed views of the LTV data
+  mutable std::optional<struct LeAudioCoreCodecConfig> core_config;
+  mutable std::optional<struct LeAudioCoreCodecCapabilities> core_capabilities;
 };
 
 struct LeAudioCodecId {
@@ -650,6 +846,11 @@ struct LeAudioCodecId {
   }
 };
 
+/* Google vendor specific codec for Headtracking */
+constexpr LeAudioCodecId kLeAudioCodecHeadtracking = {
+    kLeAudioCodingFormatVendorSpecific, kLeAudioVendorCompanyIdGoogle,
+    kLeAudioVendorCodecIdHeadtracking};
+
 struct hdl_pair {
   hdl_pair() = default;
   hdl_pair(uint16_t val_hdl, uint16_t ccc_hdl)
@@ -671,9 +872,12 @@ struct ase {
         target_latency(types::kTargetLatencyBalancedLatencyReliability),
         active(false),
         reconfigure(false),
-        data_path_state(AudioStreamDataPathState::IDLE),
+        cis_state(CisState::IDLE),
+        data_path_state(DataPathState::IDLE),
         configured_for_context_type(LeAudioContextType::UNINITIALIZED),
         preferred_phy(0),
+        is_codec_in_controller(false),
+        data_path_id(bluetooth::hci::iso_manager::kIsoDataPathDisabled),
         max_sdu_size(0),
         retrans_nb(0),
         max_transport_latency(0),
@@ -681,6 +885,8 @@ struct ase {
         pres_delay_max(0),
         preferred_pres_delay_min(0),
         preferred_pres_delay_max(0),
+        autonomous_operation_timer_(nullptr),
+        autonomous_target_state_(AseState::BTA_LE_AUDIO_ASE_STATE_IDLE),
         state(AseState::BTA_LE_AUDIO_ASE_STATE_IDLE) {}
 
   struct hdl_pair hdls;
@@ -692,14 +898,23 @@ struct ase {
 
   bool active;
   bool reconfigure;
-  AudioStreamDataPathState data_path_state;
+  CisState cis_state;
+  DataPathState data_path_state;
   LeAudioContextType configured_for_context_type;
 
   /* Codec configuration */
   LeAudioCodecId codec_id;
-  LeAudioLc3Config codec_config;
+  LeAudioLtvMap codec_config;
+
   uint8_t framing;
   uint8_t preferred_phy;
+
+  /* Set to true, if the codec is implemented in BT controller, false if it's
+   * implemented in host, or in separate DSP
+   */
+  bool is_codec_in_controller;
+  /* Datapath ID used to configure an ISO channel for these ASEs */
+  uint8_t data_path_id;
 
   /* Qos configuration */
   uint16_t max_sdu_size;
@@ -712,12 +927,11 @@ struct ase {
 
   std::vector<uint8_t> metadata;
 
-  AseState state;
-};
+  /* Autonomous change data */
+  alarm_t* autonomous_operation_timer_;
+  types::AseState autonomous_target_state_;
 
-struct BidirectAsesPair {
-  struct ase* sink;
-  struct ase* source;
+  AseState state;
 };
 
 struct acs_ac_record {
@@ -732,30 +946,41 @@ using AudioLocations = std::bitset<32>;
 
 std::ostream& operator<<(std::ostream& os, const AseState& state);
 std::ostream& operator<<(std::ostream& os, const CigState& state);
-std::ostream& operator<<(std::ostream& os, const LeAudioLc3Config& config);
+std::ostream& operator<<(std::ostream& os,
+                         const LeAudioCoreCodecConfig& config);
 std::string contextTypeToStr(const LeAudioContextType& context);
 std::ostream& operator<<(std::ostream& os, const LeAudioContextType& context);
-std::ostream& operator<<(std::ostream& os,
-                         const AudioStreamDataPathState& state);
+std::ostream& operator<<(std::ostream& os, const DataPathState& state);
+std::ostream& operator<<(std::ostream& os, const CisState& state);
 std::ostream& operator<<(std::ostream& os, const AudioContexts& contexts);
 }  // namespace types
 
 namespace set_configurations {
 
-struct CodecCapabilitySetting {
+struct CodecConfigSetting {
+  /* Codec identifier */
   types::LeAudioCodecId id;
 
-  /* Codec Specific Configuration variant */
-  std::variant<types::LeAudioLc3Config> config;
+  /* Codec Specific Configuration */
+  types::LeAudioLtvMap params;
+
+  /* Channel count per device */
+  uint8_t channel_count_per_iso_stream;
 
   /* Sampling freqency requested for codec */
-  uint32_t GetConfigSamplingFrequency() const;
+  uint32_t GetSamplingFrequencyHz() const;
   /* Data fetch/feed interval for codec in microseconds */
-  uint32_t GetConfigDataIntervalUs() const;
+  uint32_t GetDataIntervalUs() const;
   /* Audio bit depth required for codec */
-  uint8_t GetConfigBitsPerSample() const;
-  /* Audio channels number for stream */
-  uint8_t GetConfigChannelCount() const;
+  uint8_t GetBitsPerSample() const;
+  /* Audio channels number for a device */
+  uint8_t GetChannelCountPerIsoStream() const {
+    return channel_count_per_iso_stream;
+  }
+
+  /* TODO: Add vendor parameter or Ltv map viewers for
+   * vendor specific LTV types.
+   */
 };
 
 struct QosConfigSetting {
@@ -766,7 +991,7 @@ struct QosConfigSetting {
 
 struct SetConfiguration {
   SetConfiguration(uint8_t direction, uint8_t device_cnt, uint8_t ase_cnt,
-                   CodecCapabilitySetting codec,
+                   CodecConfigSetting codec,
                    QosConfigSetting qos = {.retransmission_number = 0,
                                            .max_transport_latency = 0},
                    le_audio::types::LeAudioConfigurationStrategy strategy =
@@ -782,7 +1007,13 @@ struct SetConfiguration {
   uint8_t direction;  /* Direction of set */
   uint8_t device_cnt; /* How many devices must be in set */
   uint8_t ase_cnt;    /* How many ASE we need in configuration */
-  CodecCapabilitySetting codec;
+
+  /* Whether the codec location is transparent to the controller */
+  bool is_codec_in_controller = false;
+  /* Datapath ID used to configure an ISO channel for these ASEs */
+  uint8_t data_path_id = bluetooth::hci::iso_manager::kIsoDataPathHci;
+
+  CodecConfigSetting codec;
   QosConfigSetting qos;
   types::LeAudioConfigurationStrategy strategy;
 };
@@ -815,70 +1046,51 @@ bool check_if_may_cover_scenario(
     const AudioSetConfigurations* audio_set_configurations, uint8_t group_size);
 bool check_if_may_cover_scenario(
     const AudioSetConfiguration* audio_set_configuration, uint8_t group_size);
-bool IsCodecCapabilitySettingSupported(
+bool IsCodecConfigSettingSupported(
     const types::acs_ac_record& pac_record,
-    const CodecCapabilitySetting& codec_capability_setting);
+    const CodecConfigSetting& codec_capability_setting);
 uint8_t get_num_of_devices_in_configuration(
     const AudioSetConfiguration* audio_set_configuration);
 }  // namespace set_configurations
 
-struct stream_map_info {
-  stream_map_info(uint16_t stream_handle, uint32_t audio_channel_allocation,
-                  bool is_stream_active)
-      : stream_handle(stream_handle),
-        audio_channel_allocation(audio_channel_allocation),
-        is_stream_active(is_stream_active) {}
-  uint16_t stream_handle;
+struct stream_parameters {
+  /* For now we have always same frequency for all the channels */
+  uint32_t sample_frequency_hz;
+  uint32_t frame_duration_us;
+  uint16_t octets_per_codec_frame;
   uint32_t audio_channel_allocation;
-  bool is_stream_active;
+  uint8_t codec_frames_blocks_per_sdu;
+
+  /* Total number of channels we request from the audio framework */
+  uint8_t num_of_channels;
+  int num_of_devices;
+  /* cis_handle, audio location*/
+  std::vector<std::pair<uint16_t, uint32_t>> stream_locations;
+
+  void clear() {
+    sample_frequency_hz = 0;
+    frame_duration_us = 0;
+    octets_per_codec_frame = 0;
+    audio_channel_allocation = 0;
+    codec_frames_blocks_per_sdu = 0;
+    num_of_channels = 0;
+    num_of_devices = 0;
+    stream_locations.clear();
+  }
 };
 
 struct stream_configuration {
+  /* Whether the group should be reconfigured once the streaming stops */
   bool pending_configuration;
 
-  types::LeAudioCodecId id;
-
-  /* Pointer to chosen req */
+  /* Currently selected remote device set configuration */
   const le_audio::set_configurations::AudioSetConfiguration* conf;
 
-  /* Sink configuration */
-  /* For now we have always same frequency for all the channels */
-  uint32_t sink_sample_frequency_hz;
-  uint32_t sink_frame_duration_us;
-  uint16_t sink_octets_per_codec_frame;
-  uint32_t sink_audio_channel_allocation;
-  uint8_t sink_codec_frames_blocks_per_sdu;
-  /* Number of channels is what we will request from audio framework */
-  uint8_t sink_num_of_channels;
-  int sink_num_of_devices;
-  /* cis_handle, audio location*/
-  std::vector<std::pair<uint16_t, uint32_t>> sink_streams;
-  /* cis_handle, target allocation, stream active state */
-  std::vector<stream_map_info> sink_offloader_streams_target_allocation;
-  /* cis_handle, current allocation, stream active state */
-  std::vector<stream_map_info> sink_offloader_streams_current_allocation;
-  bool sink_offloader_changed;
-  bool sink_is_initial;
+  /* Currently selected local audio codec */
+  types::LeAudioCodecId codec_id;
 
-  /* Source configuration */
-  /* For now we have always same frequency for all the channels */
-  uint32_t source_sample_frequency_hz;
-  uint32_t source_frame_duration_us;
-  uint16_t source_octets_per_codec_frame;
-  uint32_t source_audio_channel_allocation;
-  uint8_t source_codec_frames_blocks_per_sdu;
-  /* Number of channels is what we will request from audio framework */
-  uint8_t source_num_of_channels;
-  int source_num_of_devices;
-  /* cis_handle, audio location*/
-  std::vector<std::pair<uint16_t, uint32_t>> source_streams;
-  /* cis_handle, target allocation, stream active state */
-  std::vector<stream_map_info> source_offloader_streams_target_allocation;
-  /* cis_handle, current allocation, stream active state */
-  std::vector<stream_map_info> source_offloader_streams_current_allocation;
-  bool source_offloader_changed;
-  bool source_is_initial;
-  bool is_active;
+  /* Currently selected local Sink & Source configuration */
+  types::BidirectionalPair<stream_parameters> stream_params;
 };
 
 void AppendMetadataLtvEntryForCcidList(std::vector<uint8_t>& metadata,
@@ -886,5 +1098,4 @@ void AppendMetadataLtvEntryForCcidList(std::vector<uint8_t>& metadata,
 void AppendMetadataLtvEntryForStreamingContext(
     std::vector<uint8_t>& metadata, types::AudioContexts context_type);
 uint8_t GetMaxCodecFramesPerSduFromPac(const types::acs_ac_record* pac_record);
-uint32_t AdjustAllocationForOffloader(uint32_t allocation);
 }  // namespace le_audio

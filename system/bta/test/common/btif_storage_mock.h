@@ -18,6 +18,7 @@
 
 #include <gmock/gmock.h>
 
+#include "include/hardware/bluetooth.h"
 #include "types/raw_address.h"
 
 namespace bluetooth {
@@ -35,6 +36,7 @@ class BtifStorageInterface {
                                    uint32_t source_location) = 0;
   virtual void SetLeAudioContexts(RawAddress const& addr, uint16_t sink_context,
                                   uint16_t source_context) = 0;
+  virtual void ClearLeAudioServiceData(RawAddress const& addr) = 0;
   virtual void RemoveLeaudio(RawAddress const& addr) = 0;
   virtual void AddLeaudioHasDevice(const RawAddress& address,
                                    std::vector<uint8_t> presets_bin,
@@ -51,6 +53,8 @@ class BtifStorageInterface {
                                     std::vector<uint8_t>& presets_bin,
                                     uint8_t& active_preset) = 0;
   virtual void RemoveLeaudioHas(const RawAddress& address) = 0;
+  virtual bt_status_t GetRemoteDeviceProperty(const RawAddress* address,
+                                              bt_property_t* property) = 0;
 
   virtual ~BtifStorageInterface() = default;
 };
@@ -70,6 +74,8 @@ class MockBtifStorageInterface : public BtifStorageInterface {
   MOCK_METHOD((void), SetLeAudioContexts,
               (RawAddress const& addr, uint16_t sink_context,
                uint16_t source_context),
+              (override));
+  MOCK_METHOD((void), ClearLeAudioServiceData, (RawAddress const& addr),
               (override));
   MOCK_METHOD((void), RemoveLeaudio, (RawAddress const& addr), (override));
   MOCK_METHOD((void), AddLeaudioHasDevice,
@@ -91,6 +97,8 @@ class MockBtifStorageInterface : public BtifStorageInterface {
               (const RawAddress& address, uint8_t active_preset), (override));
   MOCK_METHOD((void), RemoveLeaudioHas, (const RawAddress& address),
               (override));
+  MOCK_METHOD((bt_status_t), GetRemoteDeviceProperty,
+              (const RawAddress* address, bt_property_t* property), (override));
 };
 
 /**

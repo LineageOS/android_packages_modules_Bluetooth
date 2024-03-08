@@ -15,6 +15,7 @@ cc_library_static {
     host_supported: true,
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
     ],
     srcs: [
         "common/data_element_reader.cc",
@@ -23,13 +24,13 @@ cc_library_static {
         "lib-bt-packets",
         "libbluetooth-types",
     ],
+    header_libs: ["libbluetooth_headers"],
 }
 
 cc_test {
     name: "bluetooth_test_sdp",
     test_suites: ["general-tests"],
     defaults: [
-        "bluetooth_gtest_x86_asan_workaround",
         "fluoride_defaults",
         "mts_defaults",
     ],
@@ -49,4 +50,5 @@ cc_test {
         "libgmock",
         "sdp_service",
     ],
+    shared_libs: ["liblog"],
 }

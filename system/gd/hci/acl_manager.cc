@@ -19,12 +19,11 @@
 #include <atomic>
 #include <future>
 #include <mutex>
-#include <set>
 
 #include "common/bidi_queue.h"
+#include "dumpsys_data_generated.h"
 #include "hci/acl_manager/acl_scheduler.h"
 #include "hci/acl_manager/classic_impl.h"
-#include "hci/acl_manager/connection_management_callbacks.h"
 #include "hci/acl_manager/le_acceptlist_callbacks.h"
 #include "hci/acl_manager/le_acl_connection.h"
 #include "hci/acl_manager/le_impl.h"
@@ -68,9 +67,7 @@ struct AclManager::impl {
     round_robin_scheduler_ = new RoundRobinScheduler(handler_, controller_, hci_layer_->GetAclQueueEnd());
     acl_scheduler_ = acl_manager_.GetDependency<AclScheduler>();
 
-    if (bluetooth::common::init_flags::gd_remote_name_request_is_enabled()) {
-      remote_name_request_module_ = acl_manager_.GetDependency<RemoteNameRequestModule>();
-    }
+    remote_name_request_module_ = acl_manager_.GetDependency<RemoteNameRequestModule>();
 
     bool crash_on_unknown_handle = false;
     {
@@ -282,7 +279,7 @@ void AclManager::SetPrivacyPolicyForInitiatorAddress(
     AddressWithType fixed_address,
     std::chrono::milliseconds minimum_rotation_time,
     std::chrono::milliseconds maximum_rotation_time) {
-  crypto_toolbox::Octet16 rotation_irk{};
+  Octet16 rotation_irk{};
   auto irk_prop =
       GetDependency<storage::StorageModule>()->GetProperty("Adapter", "LE_LOCAL_KEY_IRK");
   if (irk_prop.has_value()) {
@@ -305,7 +302,7 @@ void AclManager::SetPrivacyPolicyForInitiatorAddress(
 void AclManager::SetPrivacyPolicyForInitiatorAddressForTest(
     LeAddressManager::AddressPolicy address_policy,
     AddressWithType fixed_address,
-    crypto_toolbox::Octet16 rotation_irk,
+    Octet16 rotation_irk,
     std::chrono::milliseconds minimum_rotation_time,
     std::chrono::milliseconds maximum_rotation_time) {
   CallOn(
@@ -426,9 +423,7 @@ void AclManager::ListDependencies(ModuleList* list) const {
   list->add<Controller>();
   list->add<storage::StorageModule>();
   list->add<AclScheduler>();
-  if (bluetooth::common::init_flags::gd_remote_name_request_is_enabled()) {
-    list->add<RemoteNameRequestModule>();
-  }
+  list->add<RemoteNameRequestModule>();
 }
 
 void AclManager::Start() {

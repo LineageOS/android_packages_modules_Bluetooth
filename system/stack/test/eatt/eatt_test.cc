@@ -21,7 +21,6 @@
 #include <vector>
 
 #include "bind_helpers.h"
-#include "btm_api.h"
 #include "l2c_api.h"
 #include "mock_btif_storage.h"
 #include "mock_btm_api_layer.h"
@@ -30,6 +29,7 @@
 #include "mock_gatt_layer.h"
 #include "mock_l2cap_layer.h"
 #include "stack/include/bt_hdr.h"
+#include "stack/include/bt_psm_types.h"
 #include "types/raw_address.h"
 
 using testing::_;

@@ -64,6 +64,8 @@ bool btif_config_set_bin(const std::string& section, const std::string& key,
                          const uint8_t* value, size_t length);
 bool btif_config_remove(const std::string& section, const std::string& key);
 
+void btif_config_remove_device(const std::string& section);
+
 size_t btif_config_get_bin_length(const std::string& section,
                                   const std::string& key);
 
@@ -71,3 +73,5 @@ std::vector<RawAddress> btif_config_get_paired_devices();
 
 bool btif_config_clear(void);
 void btif_debug_config_dump(int fd);
+bool btif_get_device_clockoffset(const RawAddress& bda, int* p_clock_offset);
+bool btif_set_device_clockoffset(const RawAddress& bda, int clock_offset);

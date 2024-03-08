@@ -53,6 +53,7 @@ import android.bluetooth.BluetoothUuid;
 import android.bluetooth.SdpMasRecord;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Looper;
 import android.os.Message;
 import android.os.SystemProperties;
 import android.provider.Telephony;
@@ -62,6 +63,7 @@ import android.util.Log;
 
 import com.android.bluetooth.BluetoothMetricsProto;
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.map.BluetoothMapbMessageMime;
@@ -93,7 +95,7 @@ class MceStateMachine extends StateMachine {
     static final int MSG_MAS_REQUEST_COMPLETED = 1003;
     static final int MSG_MAS_REQUEST_FAILED = 1004;
     static final int MSG_MAS_SDP_DONE = 1005;
-    static final int MSG_MAS_SDP_FAILED = 1006;
+    static final int MSG_MAS_SDP_UNSUCCESSFUL = 1006;
     static final int MSG_OUTBOUND_MESSAGE = 2001;
     static final int MSG_INBOUND_MESSAGE = 2002;
     static final int MSG_NOTIFICATION = 2003;
@@ -115,8 +117,14 @@ class MceStateMachine extends StateMachine {
     private static final int MAX_MESSAGES = 20;
     private static final int MSG_CONNECT = 1;
     private static final int MSG_DISCONNECT = 2;
-    private static final int MSG_CONNECTING_TIMEOUT = 3;
+    static final int MSG_CONNECTING_TIMEOUT = 3;
     private static final int MSG_DISCONNECTING_TIMEOUT = 4;
+
+    // Constants for SDP. Note that these values come from the native stack, but no centralized
+    // constants exist for them as part of the various SDP APIs.
+    public static final int SDP_SUCCESS = 0;
+    public static final int SDP_FAILED = 1;
+    public static final int SDP_BUSY = 2;
 
     private static final boolean MESSAGE_SEEN = true;
     private static final boolean MESSAGE_NOT_SEEN = false;
@@ -212,17 +220,39 @@ class MceStateMachine extends StateMachine {
         this(service, device, null, null);
     }
 
+    MceStateMachine(MapClientService service, BluetoothDevice device, Looper looper) {
+        this(service, device, null, null, looper);
+    }
+
     @VisibleForTesting
     MceStateMachine(MapClientService service, BluetoothDevice device, MasClient masClient,
             MapClientContent database) {
         super(TAG);
-        mMasClient = masClient;
         mService = service;
+        mMasClient = masClient;
+        mDevice = device;
         mDatabase = database;
+        initStateMachine();
+    }
 
+    @VisibleForTesting
+    MceStateMachine(
+            MapClientService service,
+            BluetoothDevice device,
+            MasClient masClient,
+            MapClientContent database,
+            Looper looper) {
+        super(TAG, looper);
+        mService = service;
+        mMasClient = masClient;
+        mDevice = device;
+        mDatabase = database;
+        initStateMachine();
+    }
+
+    private void initStateMachine() {
         mPreviousState = BluetoothProfile.STATE_DISCONNECTED;
 
-        mDevice = device;
         mDisconnected = new Disconnected();
         mConnecting = new Connecting();
         mDisconnecting = new Disconnecting();
@@ -243,7 +273,7 @@ class MceStateMachine extends StateMachine {
     @Override
     protected void onQuitting() {
         if (mService != null) {
-            mService.cleanupDevice(mDevice);
+            mService.cleanupDevice(mDevice, this);
         }
     }
 
@@ -267,6 +297,13 @@ class MceStateMachine extends StateMachine {
             MetricsLogger.logProfileConnectionEvent(BluetoothMetricsProto.ProfileId.MAP_CLIENT);
         }
         setState(state);
+
+        AdapterService adapterService = AdapterService.getAdapterService();
+        if (adapterService != null) {
+            adapterService.updateProfileConnectionAdapterProperties(
+                    mDevice, BluetoothProfile.MAP_CLIENT, state, prevState);
+        }
+
         Intent intent = new Intent(BluetoothMapClient.ACTION_CONNECTION_STATE_CHANGED);
         intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState);
         intent.putExtra(BluetoothProfile.EXTRA_STATE, state);
@@ -283,6 +320,21 @@ class MceStateMachine extends StateMachine {
 
     public synchronized int getState() {
         return mMostRecentState;
+    }
+
+    /**
+     * Notify of SDP completion.
+     */
+    public void sendSdpResult(int status, SdpMasRecord record) {
+        if (DBG) {
+            Log.d(TAG, "Received SDP Result, status=" + status + ", record=" + record);
+        }
+        if (status != SDP_SUCCESS || record == null) {
+            Log.w(TAG, "SDP unsuccessful, status: " + status + ", record: " + record);
+            sendMessage(MceStateMachine.MSG_MAS_SDP_UNSUCCESSFUL, status);
+            return;
+        }
+        sendMessage(MceStateMachine.MSG_MAS_SDP_DONE, record);
     }
 
     public boolean disconnect() {
@@ -525,6 +577,28 @@ class MceStateMachine extends StateMachine {
                     }
                     break;
 
+                case MSG_MAS_SDP_UNSUCCESSFUL:
+                    int sdpStatus = message.arg1;
+                    Log.i(TAG, Utils.getLoggableAddress(mDevice)
+                            + " [Connecting]: SDP unsuccessful, status=" + sdpStatus);
+                    if (sdpStatus == SDP_BUSY) {
+                        if (DBG) {
+                            Log.d(TAG, Utils.getLoggableAddress(mDevice)
+                                    + " [Connecting]: SDP was busy, try again");
+                        }
+                        mDevice.sdpSearch(BluetoothUuid.MAS);
+                    } else {
+                        // This means the status is 0 (success, but no record) or 1 (organic
+                        // failure). We historically have never retried SDP in failure cases, so we
+                        // don't need to wait for the timeout anymore.
+                        if (DBG) {
+                            Log.d(TAG, Utils.getLoggableAddress(mDevice)
+                                    + " [Connecting]: SDP failed completely, disconnecting");
+                        }
+                        transitionTo(mDisconnecting);
+                    }
+                    break;
+
                 case MSG_MAS_CONNECTED:
                     transitionTo(mConnected);
                     break;
@@ -755,7 +829,7 @@ class MceStateMachine extends StateMachine {
                         if (timestamp == null) {
                             // Infer the timestamp for this message as 'now' and read status
                             // false instead of getting the message listing data for it
-                            timestamp = new Long(Instant.now().toEpochMilli());
+                            timestamp = Instant.now().toEpochMilli();
                         }
                         MessageMetadata metadata = new MessageMetadata(event.getHandle(),
                                 timestamp, false, MESSAGE_NOT_SEEN);
@@ -1170,8 +1244,8 @@ class MceStateMachine extends StateMachine {
                 return "MSG_MAS_REQUEST_FAILED";
             case MSG_MAS_SDP_DONE:
                 return "MSG_MAS_SDP_DONE";
-            case MSG_MAS_SDP_FAILED:
-                return "MSG_MAS_SDP_FAILED";
+            case MSG_MAS_SDP_UNSUCCESSFUL:
+                return "MSG_MAS_SDP_UNSUCCESSFUL";
             case MSG_OUTBOUND_MESSAGE:
                 return "MSG_OUTBOUND_MESSAGE";
             case MSG_INBOUND_MESSAGE:

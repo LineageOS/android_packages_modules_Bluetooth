@@ -28,13 +28,11 @@ import static org.mockito.Mockito.verify;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
-import android.content.Context;
 import android.content.Intent;
 import android.os.HandlerThread;
 import android.os.Message;
 import android.test.suitebuilder.annotation.MediumTest;
 
-import androidx.test.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
@@ -55,11 +53,11 @@ import org.mockito.MockitoAnnotations;
 @RunWith(AndroidJUnit4.class)
 public class HapClientStateMachineTest {
     private BluetoothAdapter mAdapter;
-    private Context mTargetContext;
     private HandlerThread mHandlerThread;
     private HapClientStateMachine mHapClientStateMachine;
     private BluetoothDevice mTestDevice;
     private static final int TIMEOUT_MS = 1000;
+    boolean mIsAdapterServiceSet;
 
     @Mock
     private AdapterService mAdapterService;
@@ -70,10 +68,10 @@ public class HapClientStateMachineTest {
 
     @Before
     public void setUp() throws Exception {
-        mTargetContext = InstrumentationRegistry.getTargetContext();
         // Set up mocks and test assets
         MockitoAnnotations.initMocks(this);
         TestUtils.setAdapterService(mAdapterService);
+        mIsAdapterServiceSet = true;
 
         mAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -92,8 +90,13 @@ public class HapClientStateMachineTest {
 
     @After
     public void tearDown() throws Exception {
-        mHapClientStateMachine.doQuit();
-        mHandlerThread.quit();
+        if (!mIsAdapterServiceSet) {
+            return;
+        }
+        if (mHapClientStateMachine != null) {
+            mHapClientStateMachine.doQuit();
+            mHandlerThread.quit();
+        }
         TestUtils.clearAdapterService(mAdapterService);
     }
 

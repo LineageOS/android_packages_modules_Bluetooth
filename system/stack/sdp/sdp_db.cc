@@ -23,17 +23,20 @@
  *
  ******************************************************************************/
 
+#define LOG_TAG "sdp"
+
 #include <string.h>
 
 #include <cstdint>
 
 #include "bt_target.h"
 #include "osi/include/allocator.h"
+#include "osi/include/log.h"
 #include "stack/include/bt_types.h"
-#include "stack/include/sdp_api.h"
+#include "stack/include/bt_uuid16.h"
 #include "stack/include/sdpdefs.h"
+#include "stack/sdp/sdp_discovery_db.h"
 #include "stack/sdp/sdpint.h"
-#include "types/bluetooth/uuid.h"
 
 /******************************************************************************/
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
@@ -41,6 +44,9 @@
 static bool find_uuid_in_seq(uint8_t* p, uint32_t seq_len,
                              const uint8_t* p_his_uuid, uint16_t his_len,
                              int nest_level);
+
+bool SDP_AddAttribute(uint32_t handle, uint16_t attr_id, uint8_t attr_type,
+                      uint32_t attr_len, uint8_t* p_val);
 
 /*******************************************************************************
  *
@@ -119,7 +125,7 @@ static bool find_uuid_in_seq(uint8_t* p, uint32_t seq_len,
     type = *p++;
     p = sdpu_get_len_from_type(p, p_end, type, &len);
     if (p == NULL || (p + len) > p_end) {
-      SDP_TRACE_WARNING("%s: bad length", __func__);
+      LOG_WARN("%s: bad length", __func__);
       break;
     }
     type = type >> 3;
@@ -269,7 +275,7 @@ uint32_t SDP_CreateRecord(void) {
     p_db->record[p_db->num_records].record_handle = handle;
 
     p_db->num_records++;
-    SDP_TRACE_DEBUG("SDP_CreateRecord ok, num_records:%d", p_db->num_records);
+    LOG_VERBOSE("SDP_CreateRecord ok, num_records:%d", p_db->num_records);
     /* Add the first attribute (the handle) automatically */
     UINT32_TO_BE_FIELD(buf, handle);
     SDP_AddAttribute(handle, ATTR_ID_SERVICE_RECORD_HDL, UINT_DESC_TYPE, 4,
@@ -277,8 +283,8 @@ uint32_t SDP_CreateRecord(void) {
 
     return (p_db->record[p_db->num_records - 1].record_handle);
   } else
-    SDP_TRACE_ERROR("SDP_CreateRecord fail, exceed maximum records:%d",
-                    SDP_MAX_RECORDS);
+    LOG_ERROR("SDP_CreateRecord fail, exceed maximum records:%d",
+              SDP_MAX_RECORDS);
   return (0);
 }
 
@@ -322,8 +328,8 @@ bool SDP_DeleteRecord(uint32_t handle) {
 
         sdp_cb.server_db.num_records--;
 
-        SDP_TRACE_DEBUG("SDP_DeleteRecord ok, num_records:%d",
-                        sdp_cb.server_db.num_records);
+        LOG_VERBOSE("SDP_DeleteRecord ok, num_records:%d",
+                    sdp_cb.server_db.num_records);
         /* if we're deleting the primary DI record, clear the */
         /* value in the control block */
         if (sdp_cb.server_db.di_primary_handle == handle) {
@@ -357,11 +363,13 @@ bool SDP_AddAttribute(uint32_t handle, uint16_t attr_id, uint8_t attr_type,
   tSDP_RECORD* p_rec = &sdp_cb.server_db.record[0];
 
   if (p_val == nullptr) {
-    SDP_TRACE_WARNING("Trying to add attribute with p_val == nullptr, skipped");
+    LOG_WARN("Trying to add attribute with p_val == nullptr, skipped");
     return (false);
   }
 
-  if (sdp_cb.trace_level >= BT_TRACE_LEVEL_DEBUG) {
+  // TODO(305066880): invoke would_log when implemented to check
+  // if LOG_VERBOSE is displayed.
+  if (true) {
     if ((attr_type == UINT_DESC_TYPE) ||
         (attr_type == TWO_COMP_INT_DESC_TYPE) ||
         (attr_type == UUID_DESC_TYPE) ||
@@ -378,29 +386,29 @@ bool SDP_AddAttribute(uint32_t handle, uint16_t attr_id, uint8_t attr_type,
         snprintf((char*)&num_array[i * 2], sizeof(num_array) - i * 2, "%02X",
                  (uint8_t)(p_val[i]));
       }
-      SDP_TRACE_DEBUG(
+      LOG_VERBOSE(
           "SDP_AddAttribute: handle:%X, id:%04X, type:%d, len:%d, p_val:%p, "
           "*p_val:%s",
           handle, attr_id, attr_type, attr_len, p_val, num_array);
     } else if (attr_type == BOOLEAN_DESC_TYPE) {
-      SDP_TRACE_DEBUG(
+      LOG_VERBOSE(
           "SDP_AddAttribute: handle:%X, id:%04X, type:%d, len:%d, p_val:%p, "
           "*p_val:%d",
           handle, attr_id, attr_type, attr_len, p_val, *p_val);
     } else if ((attr_type == TEXT_STR_DESC_TYPE) ||
                (attr_type == URL_DESC_TYPE)) {
       if (p_val[attr_len - 1] == '\0') {
-        SDP_TRACE_DEBUG(
+        LOG_VERBOSE(
             "SDP_AddAttribute: handle:%X, id:%04X, type:%d, len:%d, p_val:%p, "
             "*p_val:%s",
             handle, attr_id, attr_type, attr_len, p_val, (char*)p_val);
       } else {
-        SDP_TRACE_DEBUG(
+        LOG_VERBOSE(
             "SDP_AddAttribute: handle:%X, id:%04X, type:%d, len:%d, p_val:%p",
             handle, attr_id, attr_type, attr_len, p_val);
       }
     } else {
-      SDP_TRACE_DEBUG(
+      LOG_VERBOSE(
           "SDP_AddAttribute: handle:%X, id:%04X, type:%d, len:%d, p_val:%p",
           handle, attr_id, attr_type, attr_len, p_val);
     }
@@ -412,8 +420,10 @@ bool SDP_AddAttribute(uint32_t handle, uint16_t attr_id, uint8_t attr_type,
 
       // error out early, no need to look up
       if (p_rec->free_pad_ptr >= SDP_MAX_PAD_LEN) {
-        SDP_TRACE_ERROR("the free pad for SDP record with handle %d is "
-                        "full, skip adding the attribute", handle);
+        LOG_ERROR(
+            "the free pad for SDP record with handle %d is "
+            "full, skip adding the attribute",
+            handle);
         return (false);
       }
 
@@ -471,7 +481,7 @@ bool SDP_AddAttributeToRecord(tSDP_RECORD* p_rec, uint16_t attr_id,
 
   if (p_rec->free_pad_ptr + attr_len >= SDP_MAX_PAD_LEN) {
     if (p_rec->free_pad_ptr >= SDP_MAX_PAD_LEN) {
-      SDP_TRACE_ERROR(
+      LOG_ERROR(
           "SDP_AddAttributeToRecord failed: free pad %d equals or exceeds max "
           "padding length %d",
           p_rec->free_pad_ptr, SDP_MAX_PAD_LEN);
@@ -480,7 +490,7 @@ bool SDP_AddAttributeToRecord(tSDP_RECORD* p_rec, uint16_t attr_id,
 
     /* do truncate only for text string type descriptor */
     if (attr_type == TEXT_STR_DESC_TYPE) {
-      SDP_TRACE_WARNING(
+      LOG_WARN(
           "SDP_AddAttributeToRecord: attr_len:%d too long. truncate to (%d)",
           attr_len, SDP_MAX_PAD_LEN - p_rec->free_pad_ptr);
 
@@ -497,7 +507,7 @@ bool SDP_AddAttributeToRecord(tSDP_RECORD* p_rec, uint16_t attr_id,
     p_rec->free_pad_ptr += attr_len;
   } else if (attr_len == 0 && p_attr->len != 0) {
     /* if truncate to 0 length, simply don't add */
-    SDP_TRACE_ERROR(
+    LOG_ERROR(
         "SDP_AddAttributeToRecord fail, length exceed maximum: ID %d: "
         "attr_len:%d ",
         attr_id, attr_len);
@@ -565,12 +575,12 @@ bool SDP_AddSequence(uint32_t handle, uint16_t attr_id, uint16_t num_elem,
       p = p_head;
       if (p_head == p_buff) {
         /* the first element exceed the max length */
-        SDP_TRACE_ERROR("SDP_AddSequence - too long(attribute is not added)!!");
+        LOG_ERROR("SDP_AddSequence - too long(attribute is not added)!!");
         osi_free(p_buff);
         return false;
       } else
-        SDP_TRACE_ERROR("SDP_AddSequence - too long, add %d elements of %d", xx,
-                        num_elem);
+        LOG_ERROR("SDP_AddSequence - too long, add %d elements of %d", xx,
+                  num_elem);
       break;
     }
   }
@@ -609,8 +619,8 @@ bool SDP_AddUuidSequence(uint32_t handle, uint16_t attr_id, uint16_t num_uuids,
     UINT16_TO_BE_STREAM(p, *p_uuids);
 
     if ((p - p_buff) > max_len) {
-      SDP_TRACE_WARNING("SDP_AddUuidSequence - too long, add %d uuids of %d",
-                        xx, num_uuids);
+      LOG_WARN("SDP_AddUuidSequence - too long, add %d uuids of %d", xx,
+               num_uuids);
       break;
     }
   }
@@ -840,31 +850,6 @@ bool SDP_AddServiceClassIdList(uint32_t handle, uint16_t num_services,
                        DATA_ELE_SEQ_DESC_TYPE, (uint32_t)(p - p_buff), p_buff);
   osi_free(p_buff);
   return result;
-}
-
-/*******************************************************************************
- *
- * Function         SDP_DeleteAttribute
- *
- * Description      This function is called to delete an attribute from a
- *                  record. This would be through the SDP database maintenance
- *                  API.
- *
- * Returns          true if deleted OK, else false if not found
- *
- ******************************************************************************/
-bool SDP_DeleteAttribute(uint32_t handle, uint16_t attr_id) {
-  tSDP_RECORD* p_rec = &sdp_cb.server_db.record[0];
-
-  /* Find the record in the database */
-  for (uint16_t record_index = 0; record_index < sdp_cb.server_db.num_records; record_index++, p_rec++) {
-    if (p_rec->record_handle == handle) {
-      SDP_TRACE_API("Deleting attr_id 0x%04x for handle 0x%x", attr_id, handle);
-      return SDP_DeleteAttributeFromRecord(p_rec, attr_id);
-    }
-  }
-  /* If here, not found */
-  return (false);
 }
 
 /*******************************************************************************

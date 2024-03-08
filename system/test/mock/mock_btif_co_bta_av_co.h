@@ -24,34 +24,16 @@
 
 #include <cstdint>
 #include <functional>
-#include <map>
-#include <string>
-
-#include "test/common/mock_functions.h"
 
 // Original included files, if any
-// NOTE: Since this is a mock file with mock definitions some number of
-//       include files may not be required.  The include-what-you-use
-//       still applies, but crafting proper inclusion is out of scope
-//       for this effort.  This compilation unit may compile as-is, or
-//       may need attention to prune from (or add to ) the inclusion set.
-#include <base/logging.h>
-
-#include <mutex>
 #include <vector>
 
-#include "bt_target.h"
 #include "bta/include/bta_av_api.h"
-#include "bta/include/bta_av_ci.h"
-#include "btif/include/btif_a2dp_source.h"
-#include "btif/include/btif_av.h"
 #include "include/hardware/bt_av.h"
-#include "osi/include/osi.h"
 #include "stack/include/a2dp_codec_api.h"
 #include "stack/include/a2dp_error_codes.h"
 #include "stack/include/avdt_api.h"
 #include "stack/include/bt_hdr.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 // Original usings
@@ -259,17 +241,6 @@ struct bta_av_co_audio_update_mtu {
   };
 };
 extern struct bta_av_co_audio_update_mtu bta_av_co_audio_update_mtu;
-
-// Name: bta_av_co_get_decoder_interface
-// Params: void
-// Return: const tA2DP_DECODER_INTERFACE*
-struct bta_av_co_get_decoder_interface {
-  static const tA2DP_DECODER_INTERFACE* return_value;
-  std::function<const tA2DP_DECODER_INTERFACE*(void)> body{
-      [](void) { return return_value; }};
-  const tA2DP_DECODER_INTERFACE* operator()(void) { return body(); };
-};
-extern struct bta_av_co_get_decoder_interface bta_av_co_get_decoder_interface;
 
 // Name: bta_av_co_get_encoder_effective_frame_size
 // Params:

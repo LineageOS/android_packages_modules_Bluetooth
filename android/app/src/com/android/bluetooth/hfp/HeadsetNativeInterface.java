@@ -20,7 +20,9 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.util.Log;
 
+import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.Objects;
@@ -35,12 +37,11 @@ public class HeadsetNativeInterface {
 
     private final BluetoothAdapter mAdapter = BluetoothAdapter.getDefaultAdapter();
 
-    static {
-        classInitNative();
-    }
+    @GuardedBy("INSTANCE_LOCK")
+    private static HeadsetNativeInterface sInstance;
 
-    private static HeadsetNativeInterface sInterface;
     private static final Object INSTANCE_LOCK = new Object();
+
     private AdapterService mAdapterService;
 
     private HeadsetNativeInterface() {
@@ -55,11 +56,19 @@ public class HeadsetNativeInterface {
      */
     public static HeadsetNativeInterface getInstance() {
         synchronized (INSTANCE_LOCK) {
-            if (sInterface == null) {
-                sInterface = new HeadsetNativeInterface();
+            if (sInstance == null) {
+                sInstance = new HeadsetNativeInterface();
             }
+            return sInstance;
         }
-        return sInterface;
+    }
+
+    /** Set singleton instance. */
+    @VisibleForTesting
+    public static void setInstance(HeadsetNativeInterface instance) {
+        synchronized (INSTANCE_LOCK) {
+            sInstance = instance;
+        }
     }
 
     private void sendMessageToService(HeadsetStackEvent event) {
@@ -78,6 +87,10 @@ public class HeadsetNativeInterface {
     }
 
     private byte[] getByteAddress(BluetoothDevice device) {
+        if (device == null) {
+            // Set bt_stack's active device to default if java layer set active device to null
+            return Utils.getBytesFromAddress("00:00:00:00:00:00");
+        }
         return mAdapterService.getByteIdentityAddress(device);
     }
 
@@ -150,9 +163,10 @@ public class HeadsetNativeInterface {
         sendMessageToService(event);
     }
 
-    private void onSWB(int codec, byte[] address) {
+    private void onSWB(int codec, int swb, byte[] address) {
         HeadsetStackEvent event =
-                new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_SWB, codec, getDevice(address));
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_SWB, codec, swb, getDevice(address));
         sendMessageToService(event);
     }
 
@@ -494,8 +508,6 @@ public class HeadsetNativeInterface {
     }
 
     /* Native methods */
-    private static native void classInitNative();
-
     private native boolean atResponseCodeNative(int responseCode, int errorCode, byte[] address);
 
     private native boolean atResponseStringNative(String responseString, byte[] address);

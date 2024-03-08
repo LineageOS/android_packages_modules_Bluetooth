@@ -20,28 +20,16 @@
  *
  *  mockcify.pl ver 0.2
  */
-
-#include <cstdint>
-#include <functional>
-#include <map>
-#include <string>
-
-// Original included files, if any
-// NOTE: Since this is a mock file with mock definitions some number of
-//       include files may not be required.  The include-what-you-use
-//       still applies, but crafting proper inclusion is out of scope
-//       for this effort.  This compilation unit may compile as-is, or
-//       may need attention to prune the inclusion set.
-
 // Mock include file to share data between tests and mock
 #include "test/mock/mock_stack_smp_act.h"
+
+#include <cstdint>
+
+// Original included files, if any
+#include "test/common/mock_functions.h"
 #include "types/raw_address.h"
 
 // Mocked compile conditionals, if any
-#ifndef UNUSED_ATTR
-#define UNUSED_ATTR
-#endif
-
 // Mocked internal structures, if any
 
 namespace test {
@@ -54,7 +42,6 @@ struct smp_send_pair_fail smp_send_pair_fail;
 struct smp_send_pair_req smp_send_pair_req;
 struct smp_send_pair_rsp smp_send_pair_rsp;
 struct smp_send_confirm smp_send_confirm;
-struct smp_send_init smp_send_init;
 struct smp_send_rand smp_send_rand;
 struct smp_send_pair_public_key smp_send_pair_public_key;
 struct smp_send_commitment smp_send_commitment;
@@ -69,7 +56,6 @@ struct smp_proc_sec_grant smp_proc_sec_grant;
 struct smp_proc_pair_fail smp_proc_pair_fail;
 struct smp_proc_pair_cmd smp_proc_pair_cmd;
 struct smp_proc_confirm smp_proc_confirm;
-struct smp_proc_init smp_proc_init;
 struct smp_proc_rand smp_proc_rand;
 struct smp_process_pairing_public_key smp_process_pairing_public_key;
 struct smp_process_pairing_commitment smp_process_pairing_commitment;
@@ -124,7 +110,6 @@ struct smp_set_derive_link_key smp_set_derive_link_key;
 struct smp_derive_link_key_from_long_term_key
     smp_derive_link_key_from_long_term_key;
 struct smp_br_process_link_key smp_br_process_link_key;
-struct smp_key_distribution_by_transport smp_key_distribution_by_transport;
 struct smp_br_pairing_complete smp_br_pairing_complete;
 
 }  // namespace stack_smp_act
@@ -151,10 +136,6 @@ void smp_send_pair_rsp(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 void smp_send_confirm(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   inc_func_call_count(__func__);
   test::mock::stack_smp_act::smp_send_confirm(p_cb, p_data);
-}
-void smp_send_init(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
-  inc_func_call_count(__func__);
-  test::mock::stack_smp_act::smp_send_init(p_cb, p_data);
 }
 void smp_send_rand(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   inc_func_call_count(__func__);
@@ -211,10 +192,6 @@ void smp_proc_pair_cmd(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 void smp_proc_confirm(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   inc_func_call_count(__func__);
   test::mock::stack_smp_act::smp_proc_confirm(p_cb, p_data);
-}
-void smp_proc_init(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
-  inc_func_call_count(__func__);
-  test::mock::stack_smp_act::smp_proc_init(p_cb, p_data);
 }
 void smp_proc_rand(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   inc_func_call_count(__func__);
@@ -416,10 +393,6 @@ void smp_derive_link_key_from_long_term_key(tSMP_CB* p_cb,
 void smp_br_process_link_key(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   inc_func_call_count(__func__);
   test::mock::stack_smp_act::smp_br_process_link_key(p_cb, p_data);
-}
-void smp_key_distribution_by_transport(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
-  inc_func_call_count(__func__);
-  test::mock::stack_smp_act::smp_key_distribution_by_transport(p_cb, p_data);
 }
 void smp_br_pairing_complete(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   inc_func_call_count(__func__);

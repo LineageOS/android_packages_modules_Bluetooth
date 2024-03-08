@@ -24,14 +24,12 @@
 
 #include <base/logging.h>
 
-#include "bt_target.h"
 #include "btif/include/btif_dm.h"
 #include "btif/include/btif_storage.h"
 #include "btif/include/stack_manager.h"
 #include "connection_manager.h"
 #include "device/include/interop.h"
-#include "gd/common/init_flags.h"
-#include "hardware/bt_gatt_types.h"
+#include "internal_include/bt_target.h"
 #include "internal_include/stack_config.h"
 #include "l2c_api.h"
 #include "main/shim/acl_api.h"
@@ -40,12 +38,13 @@
 #include "osi/include/properties.h"
 #include "rust/src/connection/ffi/connection_shim.h"
 #include "stack/arbiter/acl_arbiter.h"
-#include "stack/btm/btm_ble_int.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/eatt/eatt.h"
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_hdr.h"
+#include "stack/include/bt_psm_types.h"
+#include "stack/include/bt_types.h"
 #include "stack/include/l2cap_acl_interface.h"
 #include "stack/include/srvc_api.h"  // tDIS_VALUE
 #include "types/raw_address.h"
@@ -198,26 +197,6 @@ void gatt_free(void) {
   gatt_cb.srv_list_info = nullptr;
 
   EattExtension::GetInstance()->Stop();
-}
-
-void gatt_find_in_device_record(const RawAddress& bd_addr,
-                                tBLE_BD_ADDR* address_with_type) {
-  const tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
-  if (p_dev_rec == nullptr) {
-    return;
-  }
-
-  if (p_dev_rec->device_type & BT_DEVICE_TYPE_BLE) {
-    if (p_dev_rec->ble.identity_address_with_type.bda.IsEmpty()) {
-      *address_with_type = {.type = p_dev_rec->ble.AddressType(),
-                            .bda = bd_addr};
-      return;
-    }
-    *address_with_type = p_dev_rec->ble.identity_address_with_type;
-    return;
-  }
-  *address_with_type = {.type = BLE_ADDR_PUBLIC, .bda = bd_addr};
-  return;
 }
 
 /*******************************************************************************
@@ -648,7 +627,7 @@ static void gatt_channel_congestion(tGATT_TCB* p_tcb, bool congested) {
   }
 }
 
-void gatt_notify_phy_updated(tGATT_STATUS status, uint16_t handle,
+void gatt_notify_phy_updated(tHCI_STATUS status, uint16_t handle,
                              uint8_t tx_phy, uint8_t rx_phy) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
   if (!p_dev_rec) {
@@ -660,12 +639,15 @@ void gatt_notify_phy_updated(tGATT_STATUS status, uint16_t handle,
       gatt_find_tcb_by_addr(p_dev_rec->ble.pseudo_addr, BT_TRANSPORT_LE);
   if (!p_tcb) return;
 
+  // TODO: Clean up this status conversion.
+  tGATT_STATUS gatt_status = static_cast<tGATT_STATUS>(status);
+
   for (int i = 0; i < GATT_MAX_APPS; i++) {
     tGATT_REG* p_reg = &gatt_cb.cl_rcb[i];
     if (p_reg->in_use && p_reg->app_cb.p_phy_update_cb) {
       uint16_t conn_id = GATT_CREATE_CONN_ID(p_tcb->tcb_idx, p_reg->gatt_if);
       (*p_reg->app_cb.p_phy_update_cb)(p_reg->gatt_if, conn_id, tx_phy, rx_phy,
-                                       status);
+                                       gatt_status);
     }
   }
 }
@@ -970,10 +952,8 @@ static void gatt_send_conn_cback(tGATT_TCB* p_tcb) {
       GATT_SetIdleTimeout(p_tcb->peer_bda, GATT_LINK_NO_IDLE_TIMEOUT,
                           p_tcb->transport, true /* is_active */);
     } else {
-      if (bluetooth::common::init_flags::finite_att_timeout_is_enabled()) {
-        GATT_SetIdleTimeout(p_tcb->peer_bda, GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP,
-                            p_tcb->transport, false /* is_active */);
-      }
+      GATT_SetIdleTimeout(p_tcb->peer_bda, GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP,
+                          p_tcb->transport, false /* is_active */);
     }
   }
 }

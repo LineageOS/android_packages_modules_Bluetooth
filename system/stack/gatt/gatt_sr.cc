@@ -21,11 +21,14 @@
  *  this file contains the GATT server functions
  *
  ******************************************************************************/
-#include <algorithm>
+#include <base/logging.h>
 #include <string.h>
 
-#include "bt_target.h"
+#include <algorithm>
+
 #include "gatt_int.h"
+#include "hardware/bt_gatt_types.h"
+#include "internal_include/bt_target.h"
 #include "l2c_api.h"
 #include "osi/include/allocator.h"
 #include "osi/include/log.h"
@@ -36,7 +39,6 @@
 #include "stack/include/bt_types.h"
 #include "stack/l2cap/l2c_int.h"
 #include "types/bluetooth/uuid.h"
-#include <base/logging.h>
 
 #define GATT_MTU_REQ_MIN_LEN 2
 #define L2CAP_PKT_OVERHEAD 4
@@ -65,6 +67,12 @@ uint32_t gatt_sr_enqueue_cmd(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code,
   } else {
     EattChannel* channel =
         EattExtension::GetInstance()->FindEattChannelByCid(tcb.peer_bda, cid);
+    if (channel == nullptr) {
+      LOG_WARN("%s, cid 0x%02x already disconnected",
+               ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda), cid);
+      return 0;
+    }
+
     p_cmd = &channel->server_outstanding_cmd_;
   }
 
@@ -105,6 +113,11 @@ bool gatt_sr_cmd_empty(tGATT_TCB& tcb, uint16_t cid) {
 
   EattChannel* channel =
       EattExtension::GetInstance()->FindEattChannelByCid(tcb.peer_bda, cid);
+  if (channel == nullptr) {
+    LOG_WARN("%s, cid 0x%02x already disconnected",
+             ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda), cid);
+    return false;
+  }
 
   return (channel->server_outstanding_cmd_.op_code == 0);
 }
@@ -126,6 +139,11 @@ void gatt_dequeue_sr_cmd(tGATT_TCB& tcb, uint16_t cid) {
   } else {
     EattChannel* channel =
         EattExtension::GetInstance()->FindEattChannelByCid(tcb.peer_bda, cid);
+    if (channel == nullptr) {
+      LOG_WARN("%s, cid 0x%02x already disconnected",
+               ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda), cid);
+      return;
+    }
 
     p_cmd = &channel->server_outstanding_cmd_;
   }
@@ -296,7 +314,7 @@ tGATT_STATUS gatt_sr_process_app_rsp(tGATT_TCB& tcb, tGATT_IF gatt_if,
                                      tGATTS_RSP* p_msg,
                                      tGATT_SR_CMD* sr_res_p) {
   tGATT_STATUS ret_code = GATT_SUCCESS;
-  uint16_t payload_size = gatt_tcb_get_payload_size_tx(tcb, sr_res_p->cid);
+  uint16_t payload_size = gatt_tcb_get_payload_size(tcb, sr_res_p->cid);
 
   VLOG(1) << __func__ << " gatt_if=" << +gatt_if;
 
@@ -429,6 +447,11 @@ void gatt_process_read_multi_req(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code,
   VLOG(1) << __func__;
 
   tGATT_READ_MULTI* multi_req = gatt_sr_get_read_multi(tcb, cid);
+  if (multi_req == nullptr) {
+    LOG_ERROR("Could not proceed request. %s, 0x%02x",
+              ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda), cid);
+    return;
+  }
   multi_req->num_handles = 0;
   multi_req->variable_len = (op_code == GATT_REQ_READ_MULTI_VAR);
   gatt_sr_get_sec_info(tcb.peer_bda, tcb.transport, &sec_flag, &key_size);
@@ -479,7 +502,12 @@ void gatt_process_read_multi_req(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code,
     trans_id = gatt_sr_enqueue_cmd(tcb, cid, op_code, multi_req->handles[0]);
     if (trans_id != 0) {
       tGATT_SR_CMD* sr_cmd_p = gatt_sr_get_cmd_by_cid(tcb, cid);
-
+      if (sr_cmd_p == nullptr) {
+        LOG_ERROR(
+            "Could not send response on CID were request arrived. %s, 0x%02x",
+            ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda), cid);
+        return;
+      }
       gatt_sr_reset_cback_cnt(tcb,
                               cid); /* read multiple use multi_rsp_q's count*/
 
@@ -530,7 +558,7 @@ static tGATT_STATUS gatt_build_primary_service_rsp(
 
   uint8_t* p = (uint8_t*)(p_msg + 1) + L2CAP_MIN_OFFSET;
 
-  uint16_t payload_size = gatt_tcb_get_payload_size_tx(tcb, cid);
+  uint16_t payload_size = gatt_tcb_get_payload_size(tcb, cid);
 
   for (tGATT_SRV_LIST_ELEM& el : *gatt_cb.srv_list_info) {
     if (el.s_hdl < s_hdl || el.s_hdl > e_hdl ||
@@ -725,7 +753,7 @@ void gatts_process_primary_service_req(tGATT_TCB& tcb, uint16_t cid,
     }
   }
 
-  uint16_t payload_size = gatt_tcb_get_payload_size_tx(tcb, cid);
+  uint16_t payload_size = gatt_tcb_get_payload_size(tcb, cid);
 
   uint16_t msg_len =
       (uint16_t)(sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET);
@@ -761,7 +789,7 @@ static void gatts_process_find_info(tGATT_TCB& tcb, uint16_t cid,
     return;
   }
 
-  uint16_t payload_size = gatt_tcb_get_payload_size_tx(tcb, cid);
+  uint16_t payload_size = gatt_tcb_get_payload_size(tcb, cid);
   uint16_t buf_len =
       (uint16_t)(sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET);
 
@@ -829,11 +857,11 @@ static void gatts_process_mtu_req(tGATT_TCB& tcb, uint16_t cid, uint16_t len,
   if (mtu < GATT_DEF_BLE_MTU_SIZE) {
     tcb.payload_size = GATT_DEF_BLE_MTU_SIZE;
   } else {
-    tcb.payload_size = std::min(mtu, (uint16_t)(GATT_MAX_MTU_SIZE));
+    tcb.payload_size = std::min(mtu, (uint16_t)(gatt_get_local_mtu()));
   }
 
-  /* Always say to remote our real MAX MTU. */
-  gatt_sr_msg.mtu = GATT_MAX_MTU_SIZE;
+  /* Always say to remote our default MTU. */
+  gatt_sr_msg.mtu = gatt_get_local_mtu();
 
   LOG_INFO("MTU %d request from remote (%s), resulted MTU %d", mtu,
            tcb.peer_bda.ToString().c_str(), tcb.payload_size);
@@ -900,7 +928,7 @@ static void gatts_process_read_by_type_req(tGATT_TCB& tcb, uint16_t cid,
     return;
   }
 
-  uint16_t payload_size = gatt_tcb_get_payload_size_tx(tcb, cid);
+  uint16_t payload_size = gatt_tcb_get_payload_size(tcb, cid);
 
   size_t msg_len = sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET;
   BT_HDR* p_msg = (BT_HDR*)osi_calloc(msg_len);
@@ -1047,7 +1075,7 @@ static void gatts_process_read_req(tGATT_TCB& tcb, uint16_t cid,
                                    tGATT_SRV_LIST_ELEM& el, uint8_t op_code,
                                    uint16_t handle, uint16_t len,
                                    uint8_t* p_data) {
-  uint16_t payload_size = gatt_tcb_get_payload_size_tx(tcb, cid);
+  uint16_t payload_size = gatt_tcb_get_payload_size(tcb, cid);
 
   size_t buf_len = sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET;
   uint16_t offset = 0;
@@ -1364,7 +1392,7 @@ void gatt_server_handle_client_req(tGATT_TCB& tcb, uint16_t cid,
   /* The message has to be smaller than the agreed MTU, len does not include op
    * code */
 
-  uint16_t payload_size = gatt_tcb_get_payload_size_rx(tcb, cid);
+  uint16_t payload_size = gatt_tcb_get_payload_size(tcb, cid);
   if (len >= payload_size) {
     LOG(ERROR) << StringPrintf("server receive invalid PDU size:%d pdu size:%d",
                                len + 1, payload_size);

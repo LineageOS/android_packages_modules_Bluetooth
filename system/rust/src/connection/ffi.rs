@@ -11,7 +11,7 @@ use tokio::{
     task::spawn_local,
 };
 
-use crate::{core::address::AddressWithType, do_in_rust_thread};
+use crate::do_in_rust_thread;
 
 use super::{
     attempt_manager::ConnectionMode,
@@ -19,12 +19,14 @@ use super::{
     ConnectionManagerClient, LeConnection,
 };
 
+// SAFETY: `LeAclManagerShim` can be passed between threads.
 unsafe impl Send for LeAclManagerShim {}
 
 #[cxx::bridge]
 #[allow(clippy::needless_lifetimes)]
 #[allow(clippy::too_many_arguments)]
 #[allow(missing_docs)]
+#[allow(unsafe_op_in_unsafe_fn)]
 mod inner {
     impl UniquePtr<LeAclManagerShim> {}
 

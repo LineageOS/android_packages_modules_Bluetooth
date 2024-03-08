@@ -24,19 +24,15 @@ import android.content.Context;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.MediumTest;
-import androidx.test.rule.ServiceTestRule;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.R;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -50,10 +46,9 @@ public class HidHostServiceTest {
     private BluetoothDevice mTestDevice;
     private Context mTargetContext;
 
-    @Rule public final ServiceTestRule mServiceRule = new ServiceTestRule();
-
     @Mock private AdapterService mAdapterService;
     @Mock private DatabaseManager mDatabaseManager;
+    @Mock private HidHostNativeInterface mNativeInterface;
 
     @Before
     public void setUp() throws Exception {
@@ -62,9 +57,9 @@ public class HidHostServiceTest {
         TestUtils.setAdapterService(mAdapterService);
         when(mAdapterService.getDatabase()).thenReturn(mDatabaseManager);
         when(mAdapterService.isStartedProfile(anyString())).thenReturn(true);
-        TestUtils.startService(mServiceRule, HidHostService.class);
-        mService = HidHostService.getHidHostService();
-        Assert.assertNotNull(mService);
+        HidHostNativeInterface.setInstance(mNativeInterface);
+        mService = new HidHostService(mTargetContext);
+        mService.doStart();
         // Try getting the Bluetooth adapter
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         Assert.assertNotNull(mAdapter);
@@ -76,7 +71,8 @@ public class HidHostServiceTest {
     @After
     public void tearDown() throws Exception {
         when(mAdapterService.isStartedProfile(anyString())).thenReturn(false);
-        TestUtils.stopService(mServiceRule, HidHostService.class);
+        mService.doStop();
+        HidHostNativeInterface.setInstance(null);
         mService = HidHostService.getHidHostService();
         Assert.assertNull(mService);
         TestUtils.clearAdapterService(mAdapterService);

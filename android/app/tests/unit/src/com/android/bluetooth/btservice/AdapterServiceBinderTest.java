@@ -110,13 +110,7 @@ public class AdapterServiceBinderTest {
     @Test
     public void getScanMode() {
         mBinder.getScanMode(mAttributionSource, SynchronousResultReceiver.get());
-        verify(mService.mAdapterProperties).getScanMode();
-    }
-
-    @Test
-    public void isA2dpOffloadEnabled() {
-        mBinder.isA2dpOffloadEnabled(mAttributionSource, SynchronousResultReceiver.get());
-        verify(mService).isA2dpOffloadEnabled();
+        verify(mService).getScanMode();
     }
 
     @Test

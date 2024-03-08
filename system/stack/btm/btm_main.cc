@@ -26,11 +26,13 @@
 #include <string>
 
 #include "bt_target.h"
+#include "btm_int_types.h"
+#include "btm_sec_cb.h"
 #include "main/shim/dumpsys.h"
 #include "osi/include/log.h"
-#include "stack/btm/btm_int_types.h"
 #include "stack/include/btm_client_interface.h"
-#include "stack_config.h"
+#include "stack/include/inq_hci_link_interface.h"
+#include "stack/include/security_client_callbacks.h"
 #include "types/raw_address.h"
 
 /* Global BTM control block structure
@@ -50,13 +52,19 @@ tBTM_CB btm_cb;
  *
  ******************************************************************************/
 void btm_init(void) {
-  btm_cb.Init(stack_config_get_interface()->get_pts_secure_only_mode()
-                  ? BTM_SEC_MODE_SC
-                  : BTM_SEC_MODE_SP);
+  btm_cb.Init();
+  get_security_client_interface().BTM_Sec_Init();
+
+#ifdef TARGET_FLOSS
+  // Need to set inquery by rssi flag for Floss since Floss doesn't do
+  // btm_inq_db_init
+  btm_inq_db_set_inq_by_rssi();
+#endif
 }
 
 /** This function is called to free dynamic memory and system resource allocated by btm_init */
 void btm_free(void) {
+  get_security_client_interface().BTM_Sec_Free();
   btm_cb.Free();
 }
 

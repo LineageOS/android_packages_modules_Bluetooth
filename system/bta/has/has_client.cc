@@ -31,17 +31,15 @@
 #include "bta_csis_api.h"
 #include "bta_gatt_api.h"
 #include "bta_gatt_queue.h"
-#include "bta_groups.h"
 #include "bta_has_api.h"
 #include "bta_le_audio_uuids.h"
 #include "btm_sec.h"
-#include "device/include/controller.h"
 #include "gap_api.h"
 #include "gatt_api.h"
 #include "has_types.h"
-#include "osi/include/log.h"
-#include "osi/include/osi.h"
+#include "os/log.h"
 #include "osi/include/properties.h"
+#include "stack/include/bt_types.h"
 
 using base::Closure;
 using bluetooth::Uuid;
@@ -1836,9 +1834,17 @@ class HasClientImpl : public HasClient {
   }
 
   void OnGattConnected(const tBTA_GATTC_OPEN& evt) {
-    DLOG(INFO) << __func__ << ": address="
-               << ADDRESS_TO_LOGGABLE_STR(evt.remote_bda)
-               << ", conn_id=" << evt.conn_id;
+    LOG_INFO("%s, conn_id=0x%04x, transport=%s, status=%s(0x%02x)",
+             ADDRESS_TO_LOGGABLE_CSTR(evt.remote_bda), evt.conn_id,
+             bt_transport_text(evt.transport).c_str(),
+             gatt_status_text(evt.status).c_str(), evt.status);
+
+    if (evt.transport != BT_TRANSPORT_LE) {
+      LOG_WARN("Only LE connection is allowed (transport %s)",
+               bt_transport_text(evt.transport).c_str());
+      BTA_GATTC_Close(evt.conn_id);
+      return;
+    }
 
     auto device = std::find_if(devices_.begin(), devices_.end(),
                                HasDevice::MatchAddress(evt.remote_bda));
@@ -1880,7 +1886,15 @@ class HasClientImpl : public HasClient {
 
     int result = BTM_SetEncryption(device->addr, BT_TRANSPORT_LE, nullptr,
                                    nullptr, BTM_BLE_SEC_ENCRYPT);
-    LOG_INFO("Encryption required. Request result: 0x%02x", result);
+
+    LOG_INFO("Encryption required for %s. Request result: 0x%02x",
+             ADDRESS_TO_LOGGABLE_CSTR(device->addr), result);
+
+    if (result == BTM_ERR_KEY_MISSING) {
+      LOG_ERROR("Link key unknown for %s, disconnect profile",
+                ADDRESS_TO_LOGGABLE_CSTR(device->addr));
+      BTA_GATTC_Close(device->conn_id);
+    }
   }
 
   void OnGattDisconnected(const tBTA_GATTC_CLOSE& evt) {
@@ -1919,6 +1933,12 @@ class HasClientImpl : public HasClient {
     }
 
     DLOG(INFO) << __func__;
+
+    /* verify link is encrypted */
+    if (!BTM_IsEncrypted(device->addr, BT_TRANSPORT_LE)) {
+      LOG_WARN("Device not yet bonded - waiting for encryption");
+      return;
+    }
 
     /* Ignore if our service data is valid (service discovery initiated by
      * someone else?)

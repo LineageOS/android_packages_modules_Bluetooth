@@ -68,11 +68,13 @@ class HciLayerFuzzClient : public Module {
     }
 
     if (uses_command_status(commandPacket.GetOpCode())) {
-      interface->EnqueueCommand(TBUILDER::FromView(commandPacket),
-                                GetHandler()->BindOnce([](CommandStatusView status) {}));
+      interface->EnqueueCommand(
+          TBUILDER::FromView(commandPacket),
+          GetHandler()->BindOnce([](CommandStatusView /* status */) {}));
     } else {
-      interface->EnqueueCommand(TBUILDER::FromView(commandPacket),
-                                GetHandler()->BindOnce([](CommandCompleteView status) {}));
+      interface->EnqueueCommand(
+          TBUILDER::FromView(commandPacket),
+          GetHandler()->BindOnce([](CommandCompleteView /* status */) {}));
     }
   }
 
@@ -86,6 +88,7 @@ class HciLayerFuzzClient : public Module {
   LeAclConnectionInterface* le_acl_connection_interface_;
   LeAdvertisingInterface* le_advertising_interface_;
   LeScanningInterface* le_scanning_interface_;
+  DistanceMeasurementInterface* distance_measurement_interface_;
 };
 
 }  // namespace fuzz

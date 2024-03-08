@@ -20,26 +20,29 @@
 #include <gtest/gtest.h>
 
 #include "btm/btm_dev.h"
+#include "btm/btm_sec_cb.h"
 #include "gatt/gatt_int.h"
+#include "osi/include/allocator.h"
 
-extern tBTM_CB btm_cb;
+extern tBTM_SEC_CB btm_sec_cb;
 
 static const size_t QUEUE_SIZE_MAX = 10;
 
 static tBTM_SEC_DEV_REC* make_bonded_ble_device(const RawAddress& bda,
                                                 const RawAddress& rra) {
   tBTM_SEC_DEV_REC* dev = btm_sec_allocate_dev_rec();
-  dev->sec_flags |= BTM_SEC_LE_LINK_KEY_KNOWN;
+  dev->sec_rec.sec_flags |= BTM_SEC_LE_LINK_KEY_KNOWN;
   dev->bd_addr = bda;
   dev->ble.pseudo_addr = rra;
-  dev->ble.key_type = BTM_LE_KEY_PID | BTM_LE_KEY_PENC | BTM_LE_KEY_LENC;
+  dev->sec_rec.ble_keys.key_type =
+      BTM_LE_KEY_PID | BTM_LE_KEY_PENC | BTM_LE_KEY_LENC;
   return dev;
 }
 
 static tBTM_SEC_DEV_REC* make_bonded_dual_device(const RawAddress& bda,
                                                  const RawAddress& rra) {
   tBTM_SEC_DEV_REC* dev = make_bonded_ble_device(bda, rra);
-  dev->sec_flags |= BTM_SEC_LINK_KEY_KNOWN;
+  dev->sec_rec.sec_flags |= BTM_SEC_LINK_KEY_KNOWN;
   return dev;
 }
 
@@ -52,12 +55,12 @@ class GattApiTest : public ::testing::Test {
   virtual ~GattApiTest() = default;
 
   void SetUp() override {
-    btm_cb.sec_dev_rec = list_new(osi_free);
+    btm_sec_cb.sec_dev_rec = list_new(osi_free);
     gatt_cb.srv_chg_clt_q = fixed_queue_new(QUEUE_SIZE_MAX);
     logging::SetMinLogLevel(-2);
   }
 
-  void TearDown() override { list_free(btm_cb.sec_dev_rec); }
+  void TearDown() override { list_free(btm_sec_cb.sec_dev_rec); }
 };
 
 static const RawAddress SAMPLE_PUBLIC_BDA = {

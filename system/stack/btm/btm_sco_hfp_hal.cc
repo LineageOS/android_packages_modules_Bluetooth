@@ -20,6 +20,7 @@
 
 #include "common/init_flags.h"
 #include "device/include/esco_parameters.h"
+#include "internal_include/bt_target.h"
 #include "osi/include/properties.h"
 
 namespace hfp_hal_interface {
@@ -84,7 +85,7 @@ bool enable_offload(bool enable) {
 }
 
 // On Android, this is a no-op because the settings default to offloaded case.
-void set_codec_datapath(esco_coding_format_t coding_format) {}
+void set_codec_datapath(int codec_uuid) {}
 
 // No packet size limits on Android since it will be offloaded.
 int get_packet_size(int codec) { return kDefaultPacketSize; }

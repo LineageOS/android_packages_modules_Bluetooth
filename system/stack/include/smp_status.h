@@ -22,6 +22,8 @@
 
 #include <cstdint>
 
+#include "macros.h"
+
 /* pairing failure reason code */
 typedef enum : uint8_t {
   SMP_SUCCESS = 0,
@@ -55,14 +57,10 @@ typedef enum : uint8_t {
   /* Unspecified failure reason */
   SMP_FAIL = (SMP_MAX_FAIL_RSN_PER_SPEC + 0x0A), /* 0x18 */
 
-  SMP_CONN_TOUT = (SMP_MAX_FAIL_RSN_PER_SPEC + 0x0B), /* 0x19 */
+  SMP_CONN_TOUT = (SMP_MAX_FAIL_RSN_PER_SPEC + 0x0B),           /* 0x19 */
+  SMP_SIRK_DEVICE_INVALID = (SMP_MAX_FAIL_RSN_PER_SPEC + 0x0C), /* 0x1a */
+  SMP_USER_CANCELLED = (SMP_MAX_FAIL_RSN_PER_SPEC + 0x0D),   /* 0x1b */
 } tSMP_STATUS;
-
-#ifndef CASE_RETURN_TEXT
-#define CASE_RETURN_TEXT(code) \
-  case code:                   \
-    return #code
-#endif
 
 inline std::string smp_status_text(const tSMP_STATUS& status) {
   switch (status) {
@@ -89,8 +87,9 @@ inline std::string smp_status_text(const tSMP_STATUS& status) {
     CASE_RETURN_TEXT(SMP_RSP_TIMEOUT);
     CASE_RETURN_TEXT(SMP_FAIL);
     CASE_RETURN_TEXT(SMP_CONN_TOUT);
+    CASE_RETURN_TEXT(SMP_SIRK_DEVICE_INVALID);
+    CASE_RETURN_TEXT(SMP_USER_CANCELLED);
     default:
       return base::StringPrintf("UNKNOWN[%hhu]", status);
   }
 }
-#undef CASE_RETURN_TEXT

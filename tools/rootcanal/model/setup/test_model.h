@@ -23,12 +23,14 @@
 #include <memory>      // for shared_ptr
 #include <string>      // for string
 #include <vector>      // for vector
+#include <optional>
 
 #include "hci/address.h"                       // for Address
 #include "model/devices/hci_device.h"          // for HciDevice
 #include "model/setup/async_manager.h"         // for AsyncUserId, AsyncTaskId
 #include "phy.h"                               // for Phy, Phy::Type
 #include "phy_layer.h"
+#include "rootcanal/configuration.pb.h"
 
 namespace rootcanal {
 class Device;
@@ -56,8 +58,8 @@ class TestModel {
   TestModel(TestModel& model) = delete;
   TestModel& operator=(const TestModel& model) = delete;
 
-  void SetReuseDeviceIds(bool reuse_device_ids) {
-    reuse_device_ids_ = reuse_device_ids;
+  void SetReuseDeviceAddresses(bool reuse_device_addresses) {
+    reuse_device_addresses_ = reuse_device_addresses;
   }
 
   // Allow derived classes to use custom phy layer.
@@ -66,8 +68,7 @@ class TestModel {
 
   // Allow derived classes to use custom phy devices.
   virtual std::shared_ptr<PhyDevice> CreatePhyDevice(
-      PhyDevice::Identifier id, std::string type,
-      std::shared_ptr<Device> device);
+      std::string type, std::shared_ptr<Device> device);
 
   // Test model commands
 
@@ -85,8 +86,8 @@ class TestModel {
   // Handle incoming remote connections
   void AddLinkLayerConnection(std::shared_ptr<Device> dev, Phy::Type phy_type);
   // Add an HCI device, return its index
-  PhyDevice::Identifier AddHciConnection(std::shared_ptr<HciDevice> dev);
-
+  PhyDevice::Identifier AddHciConnection(std::shared_ptr<HciDevice> dev,
+                                         std::optional<Address> address = {});
   // Handle closed remote connections (both hci & link layer)
   void OnConnectionClosed(PhyDevice::Identifier device_id, AsyncUserId user_id);
 
@@ -96,6 +97,9 @@ class TestModel {
   // Set the device's Bluetooth address
   void SetDeviceAddress(PhyDevice::Identifier device_id,
                         Address device_address);
+
+  void SetDeviceConfiguration(PhyDevice::Identifier device_id,
+                              rootcanal::configuration::Controller const& configuration);
 
   // Let devices know about the passage of time
   void Tick();
@@ -110,13 +114,14 @@ class TestModel {
   void Reset();
 
  private:
+  Address GenerateBluetoothAddress(uint32_t device_id) const;
+
   std::map<PhyLayer::Identifier, std::shared_ptr<PhyLayer>> phy_layers_;
   std::map<PhyDevice::Identifier, std::shared_ptr<PhyDevice>> phy_devices_;
   std::string list_string_;
 
   // Generator for device identifiers.
-  PhyDevice::Identifier next_device_id_{0};
-  bool reuse_device_ids_{true};
+  bool reuse_device_addresses_{true};
 
   // Prefix used to generate public device addresses for hosts
   // connecting over TCP.

@@ -1,3 +1,17 @@
+# Copyright 2023 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import hci_packets as hci
 import link_layer_packets as ll
 import unittest
@@ -77,12 +91,12 @@ class Test(ControllerTest):
         # reporting the advertising packets sent by the Lower Tester. The address in
         # the report is resolved by the IUT using the distributed IRK.
         await self.expect_evt(
-            hci.LeAdvertisingReportRaw(responses=[
-                hci.LeAdvertisingResponseRaw(event_type=hci.AdvertisingEventType.ADV_NONCONN_IND,
-                                             address_type=hci.AddressType.PUBLIC_IDENTITY_ADDRESS,
-                                             address=peer_identity_address,
-                                             advertising_data=[1, 2, 3],
-                                             rssi=0xf0)
+            hci.LeAdvertisingReport(responses=[
+                hci.LeAdvertisingResponse(event_type=hci.AdvertisingEventType.ADV_NONCONN_IND,
+                                          address_type=hci.AddressType.PUBLIC_IDENTITY_ADDRESS,
+                                          address=peer_identity_address,
+                                          advertising_data=[1, 2, 3],
+                                          rssi=0xf0)
             ]))
 
         # 6. The Upper Tester sends an HCI_LE_Set_Scan_Enable to the IUT to stop the
@@ -116,12 +130,12 @@ class Test(ControllerTest):
         # unresolved (as received in the advertising PDU) in the advertising report
         # events to the Upper Tester.
         await self.expect_evt(
-            hci.LeAdvertisingReportRaw(responses=[
-                hci.LeAdvertisingResponseRaw(event_type=hci.AdvertisingEventType.ADV_NONCONN_IND,
-                                             address_type=hci.AddressType.RANDOM_DEVICE_ADDRESS,
-                                             address=peer_resolvable_address,
-                                             advertising_data=[1, 2, 3],
-                                             rssi=0xf0)
+            hci.LeAdvertisingReport(responses=[
+                hci.LeAdvertisingResponse(event_type=hci.AdvertisingEventType.ADV_NONCONN_IND,
+                                          address_type=hci.AddressType.RANDOM_DEVICE_ADDRESS,
+                                          address=peer_resolvable_address,
+                                          advertising_data=[1, 2, 3],
+                                          rssi=0xf0)
             ]))
 
         # 11. The Upper Tester sends an HCI_LE_Set_Scan_Enable to the IUT to stop the

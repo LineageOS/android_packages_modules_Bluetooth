@@ -31,7 +31,7 @@
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
 #include "stack/include/bt_hdr.h"
-#include "stack/include/btu.h"
+#include "stack/include/main_thread.h"
 #include "types/raw_address.h"
 
 static const tBTA_SYS_REG bta_pan_reg = {bta_pan_hdl_event, BTA_PanDisable};
@@ -116,9 +116,9 @@ void BTA_PanSetRole(tBTA_PAN_ROLE role, const tBTA_PAN_ROLE_INFO user_info,
                     {
                         .event = BTA_PAN_API_SET_ROLE_EVT,
                     },
-                .role = role,
                 .user_name = {},
                 .nap_name = {},
+                .role = role,
             },
     };
     if (role & BTA_PAN_ROLE_PANU) {

@@ -1,8 +1,9 @@
 //! Implementation of the HAl that talks to BT controller over Android's HIDL
 use crate::hal::internal::{InnerHal, RawHal};
-use bt_packets::hci::{AclPacket, CommandPacket, EventPacket, IsoPacket, Packet, ScoPacket};
+use bt_packets::hci::{Acl, Command, Event, Iso, Sco};
 use gddi::{module, provides};
 use lazy_static::lazy_static;
+use pdl_runtime::Packet;
 use std::sync::Arc;
 use std::sync::Mutex;
 use tokio::runtime::Runtime;
@@ -43,6 +44,7 @@ async fn provide_hidl_hal(rt: Arc<Runtime>) -> RawHal {
 #[cxx::bridge(namespace = bluetooth::hal)]
 // TODO Either use or remove these functions, this shouldn't be the long term state
 #[allow(dead_code)]
+#[allow(unsafe_op_in_unsafe_fn)]
 mod ffi {
     unsafe extern "C++" {
         include!("src/hal/ffi/hidl.h");
@@ -65,10 +67,10 @@ mod ffi {
 
 struct Callbacks {
     init_tx: UnboundedSender<()>,
-    evt_tx: UnboundedSender<EventPacket>,
-    acl_tx: UnboundedSender<AclPacket>,
-    iso_tx: UnboundedSender<IsoPacket>,
-    sco_tx: UnboundedSender<ScoPacket>,
+    evt_tx: UnboundedSender<Event>,
+    acl_tx: UnboundedSender<Acl>,
+    iso_tx: UnboundedSender<Iso>,
+    sco_tx: UnboundedSender<Sco>,
 }
 
 lazy_static! {
@@ -83,7 +85,7 @@ fn on_init_complete() {
 fn on_event(data: &[u8]) {
     log::error!("got event: {:02x?}", data);
     let callbacks = CALLBACKS.lock().unwrap();
-    match EventPacket::parse(data) {
+    match Event::parse(data) {
         Ok(p) => callbacks.as_ref().unwrap().evt_tx.send(p).unwrap(),
         Err(e) => log::error!("failure to parse event: {:?} data: {:02x?}", e, data),
     }
@@ -91,7 +93,7 @@ fn on_event(data: &[u8]) {
 
 fn on_acl(data: &[u8]) {
     let callbacks = CALLBACKS.lock().unwrap();
-    match AclPacket::parse(data) {
+    match Acl::parse(data) {
         Ok(p) => callbacks.as_ref().unwrap().acl_tx.send(p).unwrap(),
         Err(e) => log::error!("failure to parse incoming ACL: {:?} data: {:02x?}", e, data),
     }
@@ -99,7 +101,7 @@ fn on_acl(data: &[u8]) {
 
 fn on_sco(data: &[u8]) {
     let callbacks = CALLBACKS.lock().unwrap();
-    match ScoPacket::parse(data) {
+    match Sco::parse(data) {
         Ok(p) => callbacks.as_ref().unwrap().sco_tx.send(p).unwrap(),
         Err(e) => log::error!("failure to parse incoming SCO: {:?} data: {:02x?}", e, data),
     }
@@ -107,17 +109,17 @@ fn on_sco(data: &[u8]) {
 
 fn on_iso(data: &[u8]) {
     let callbacks = CALLBACKS.lock().unwrap();
-    match IsoPacket::parse(data) {
+    match Iso::parse(data) {
         Ok(p) => callbacks.as_ref().unwrap().iso_tx.send(p).unwrap(),
         Err(e) => log::error!("failure to parse incoming ISO: {:?} data: {:02x?}", e, data),
     }
 }
 
 async fn dispatch_outgoing(
-    mut cmd_rx: UnboundedReceiver<CommandPacket>,
-    mut acl_rx: UnboundedReceiver<AclPacket>,
-    mut iso_rx: UnboundedReceiver<IsoPacket>,
-    mut sco_rx: UnboundedReceiver<ScoPacket>,
+    mut cmd_rx: UnboundedReceiver<Command>,
+    mut acl_rx: UnboundedReceiver<Acl>,
+    mut iso_rx: UnboundedReceiver<Iso>,
+    mut sco_rx: UnboundedReceiver<Sco>,
 ) {
     loop {
         select! {

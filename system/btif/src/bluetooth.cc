@@ -65,7 +65,6 @@
 #include "btif/include/core_callbacks.h"
 #include "btif/include/stack_manager.h"
 #include "btif_a2dp.h"
-#include "btif_activity_attribution.h"
 #include "btif_api.h"
 #include "btif_av.h"
 #include "btif_bqr.h"
@@ -83,7 +82,6 @@
 #include "btif_sock.h"
 #include "btif_storage.h"
 #include "common/address_obfuscator.h"
-#include "common/metric_id_allocator.h"
 #include "common/metrics.h"
 #include "common/os_utils.h"
 #include "device/include/device_iot_config.h"
@@ -91,35 +89,32 @@
 #include "device/include/interop_config.h"
 #include "gd/common/init_flags.h"
 #include "gd/os/parameter_provider.h"
+#include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
-#include "main/shim/shim.h"
+#include "os/log.h"
 #include "osi/include/alarm.h"
-#include "osi/include/allocation_tracker.h"
 #include "osi/include/allocator.h"
-#include "osi/include/log.h"
-#include "osi/include/osi.h"
+#include "osi/include/stack_power_telemetry.h"
 #include "osi/include/wakelock.h"
-#include "profile_log_levels.h"
 #include "stack/btm/btm_sco_hfp_hal.h"
 #include "stack/gatt/connection_manager.h"
 #include "stack/include/a2dp_api.h"
 #include "stack/include/avdt_api.h"
 #include "stack/include/btm_api.h"
-#include "stack/include/btu.h"
+#include "stack/include/hfp_lc3_decoder.h"
+#include "stack/include/hfp_lc3_encoder.h"
 #include "stack/include/hfp_msbc_decoder.h"
 #include "stack/include/hfp_msbc_encoder.h"
 #include "stack/include/hidh_api.h"
+#include "stack/include/main_thread.h"
 #include "stack/include/pan_api.h"
-#include "stack_config.h"
 #include "types/raw_address.h"
 
 using bluetooth::csis::CsisClientInterface;
 using bluetooth::has::HasClientInterface;
 using bluetooth::hearing_aid::HearingAidInterface;
-#ifndef TARGET_FLOSS
 using bluetooth::le_audio::LeAudioBroadcasterInterface;
 using bluetooth::le_audio::LeAudioClientInterface;
-#endif
 using bluetooth::vc::VolumeControlInterface;
 
 /*******************************************************************************
@@ -162,14 +157,12 @@ extern const btrc_ctrl_interface_t* btif_rc_ctrl_get_interface();
 extern const btsdp_interface_t* btif_sdp_get_interface();
 /*Hearing Aid client*/
 extern HearingAidInterface* btif_hearing_aid_get_interface();
-#ifndef TARGET_FLOSS
 /* Hearing Access client */
 extern HasClientInterface* btif_has_client_get_interface();
 /* LeAudio testi client */
 extern LeAudioClientInterface* btif_le_audio_get_interface();
 /* LeAudio Broadcaster */
 extern LeAudioBroadcasterInterface* btif_le_audio_broadcaster_get_interface();
-#endif
 /* Coordinated Set Service Client */
 extern CsisClientInterface* btif_csis_client_get_interface();
 /* Volume Control client */
@@ -200,7 +193,7 @@ struct ConfigInterfaceImpl : bluetooth::core::ConfigInterface {
                      "false");
     auto a2dp_offload_enabled =
         (strcmp(value_sup, "true") == 0) && (strcmp(value_dis, "false") == 0);
-    BTIF_TRACE_DEBUG("a2dp_offload.enable = %d", a2dp_offload_enabled);
+    LOG_VERBOSE("a2dp_offload.enable = %d", a2dp_offload_enabled);
 
     return a2dp_offload_enabled;
   }
@@ -228,6 +221,28 @@ struct MSBCCodec : bluetooth::core::CodecInterface {
 
   bool decodePacket(const uint8_t* i_buf, int16_t* o_buf, size_t out_len) {
     return hfp_msbc_decoder_decode_packet(i_buf, o_buf, out_len);
+  }
+};
+
+struct LC3Codec : bluetooth::core::CodecInterface {
+  LC3Codec() : bluetooth::core::CodecInterface(){};
+
+  void initialize() override {
+    hfp_lc3_decoder_init();
+    hfp_lc3_encoder_init();
+  }
+
+  void cleanup() override {
+    hfp_lc3_encoder_cleanup();
+    hfp_lc3_decoder_cleanup();
+  }
+
+  uint32_t encodePacket(int16_t* input, uint8_t* output) {
+    return hfp_lc3_encode_frames(input, output);
+  }
+
+  bool decodePacket(const uint8_t* i_buf, int16_t* o_buf, size_t out_len) {
+    return hfp_lc3_decoder_decode_packet(i_buf, o_buf, out_len);
   }
 };
 
@@ -276,8 +291,8 @@ struct CoreInterfaceImpl : bluetooth::core::CoreInterface {
          */
       } break;
       default:
-        BTIF_TRACE_ERROR("%s: Unknown service %d being %s", __func__,
-                         service_id, (enable) ? "enabled" : "disabled");
+        LOG_ERROR("%s: Unknown service %d being %s", __func__, service_id,
+                  (enable) ? "enabled" : "disabled");
         return BT_STATUS_FAIL;
     }
     return BT_STATUS_SUCCESS;
@@ -293,7 +308,6 @@ struct CoreInterfaceImpl : bluetooth::core::CoreInterface {
 #endif
     btif_hearing_aid_get_interface()->RemoveDevice(bd_addr);
 
-#ifndef TARGET_FLOSS
     if (bluetooth::csis::CsisClient::IsCsisClientRunning())
       btif_csis_client_get_interface()->RemoveDevice(bd_addr);
 
@@ -303,7 +317,6 @@ struct CoreInterfaceImpl : bluetooth::core::CoreInterface {
     if (VolumeControl::IsVolumeControlRunning()) {
       btif_volume_control_get_interface()->RemoveDevice(bd_addr);
     }
-#endif
   }
 
   void onLinkDown(const RawAddress& bd_addr) override {
@@ -312,7 +325,7 @@ struct CoreInterfaceImpl : bluetooth::core::CoreInterface {
 };
 
 static bluetooth::core::CoreInterface* CreateInterfaceToProfiles() {
-  static auto eventCallbacks = bluetooth::core::EventCallbacks{
+  static bluetooth::core::EventCallbacks eventCallbacks{
       .invoke_adapter_state_changed_cb = invoke_adapter_state_changed_cb,
       .invoke_adapter_properties_cb = invoke_adapter_properties_cb,
       .invoke_remote_device_properties_cb = invoke_remote_device_properties_cb,
@@ -326,11 +339,11 @@ static bluetooth::core::CoreInterface* CreateInterfaceToProfiles() {
       .invoke_le_address_associate_cb = invoke_le_address_associate_cb,
       .invoke_acl_state_changed_cb = invoke_acl_state_changed_cb,
       .invoke_thread_evt_cb = invoke_thread_evt_cb,
+      .invoke_le_test_mode_cb = invoke_le_test_mode_cb,
       .invoke_energy_info_cb = invoke_energy_info_cb,
-      .invoke_link_quality_report_cb = invoke_link_quality_report_cb};
-  static auto configInterface = ConfigInterfaceImpl();
-  static auto msbcCodecInterface = MSBCCodec();
-  static auto profileInterface = bluetooth::core::HACK_ProfileInterface{
+      .invoke_link_quality_report_cb = invoke_link_quality_report_cb,
+  };
+  static bluetooth::core::HACK_ProfileInterface profileInterface{
       // HID
       .btif_hh_connect = btif_hh_connect,
       .btif_hh_virtual_unplug = btif_hh_virtual_unplug,
@@ -347,11 +360,16 @@ static bluetooth::core::CoreInterface* CreateInterfaceToProfiles() {
       .IsLeAudioClientRunning = LeAudioClient::IsLeAudioClientRunning,
 
       // AVRCP
-      .AVRC_GetProfileVersion = AVRC_GetProfileVersion};
+      .AVRC_GetProfileVersion = AVRC_GetProfileVersion,
+  };
+
+  static auto configInterface = ConfigInterfaceImpl();
+  static auto msbcCodecInterface = MSBCCodec();
+  static auto lc3CodecInterface = LC3Codec();
 
   static auto interfaceForCore =
       CoreInterfaceImpl(&eventCallbacks, &configInterface, &msbcCodecInterface,
-                        &profileInterface);
+                        &lc3CodecInterface, &profileInterface);
   return &interfaceForCore;
 }
 
@@ -389,10 +407,6 @@ static int init(bt_callbacks_t* callbacks, bool start_restricted,
 
   if (interface_ready()) return BT_STATUS_DONE;
 
-#ifdef BLUEDROID_DEBUG
-  allocation_tracker_init();
-#endif
-
   set_hal_cbacks(callbacks);
 
   restricted_mode = start_restricted;
@@ -428,12 +442,6 @@ static void start_profiles() {
   HID_HostInit();
 #endif
   bta_ar_init();
-
-  // initialize profile-specific logging levels
-  const auto stack_config = stack_config_get_interface();
-  if (stack_config->get_trace_config_enabled()) {
-    load_levels_from_config(stack_config->get_all());
-  }
 }
 
 static void stop_profiles() {
@@ -621,8 +629,11 @@ static int cancel_bond(const RawAddress* bd_addr) {
 }
 
 static int remove_bond(const RawAddress* bd_addr) {
-  if (is_restricted_mode() && !btif_storage_is_restricted_device(bd_addr))
+  if (is_restricted_mode() && !btif_storage_is_restricted_device(bd_addr)) {
+    LOG_INFO("%s cannot be removed in restricted mode",
+             ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
     return BT_STATUS_SUCCESS;
+  }
 
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
@@ -633,7 +644,9 @@ static int remove_bond(const RawAddress* bd_addr) {
 static int get_connection_state(const RawAddress* bd_addr) {
   if (!interface_ready()) return 0;
 
-  return btif_dm_get_connection_state(bd_addr);
+  if (bd_addr == nullptr) return 0;
+
+  return btif_dm_get_connection_state(*bd_addr);
 }
 
 static int pin_reply(const RawAddress* bd_addr, uint8_t accept, uint8_t pin_len,
@@ -713,7 +726,8 @@ static int le_rand() {
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
   do_in_main_thread(
-      FROM_HERE, base::BindOnce(btif_dm_le_rand, base::Bind(&le_rand_btif_cb)));
+      FROM_HERE,
+      base::BindOnce(btif_dm_le_rand, base::BindOnce(&le_rand_btif_cb)));
   return BT_STATUS_SUCCESS;
 }
 
@@ -780,24 +794,20 @@ static void dump(int fd, const char** arguments) {
   device_debug_iot_config_dump(fd);
   BTA_HfClientDumpStatistics(fd);
   wakelock_debug_dump(fd);
-  osi_allocator_debug_dump(fd);
   alarm_debug_dump(fd);
   bluetooth::csis::CsisClient::DebugDump(fd);
-#ifndef TARGET_FLOSS
   le_audio::has::HasClient::DebugDump(fd);
-#endif
   HearingAid::DebugDump(fd);
-#ifndef TARGET_FLOSS
   LeAudioClient::DebugDump(fd);
   LeAudioBroadcaster::DebugDump(fd);
   VolumeControl::DebugDump(fd);
-#endif
   connection_manager::dump(fd);
   bluetooth::bqr::DebugDump(fd);
   PAN_Dumpsys(fd);
   DumpsysHid(fd);
   DumpsysBtaDm(fd);
   bluetooth::shim::Dump(fd, arguments);
+  power_telemetry::GetInstance().Dumpsys(fd);
 }
 
 static void dumpMetrics(std::string* output) {
@@ -871,25 +881,17 @@ static const void* get_profile_interface(const char* profile_id) {
   if (is_profile(profile_id, BT_PROFILE_HEARING_AID_ID))
     return btif_hearing_aid_get_interface();
 
-#ifndef TARGET_FLOSS
   if (is_profile(profile_id, BT_PROFILE_HAP_CLIENT_ID))
     return btif_has_client_get_interface();
-#endif
 
   if (is_profile(profile_id, BT_KEYSTORE_ID))
     return bluetooth::bluetooth_keystore::getBluetoothKeystoreInterface();
 
-  if (is_profile(profile_id, BT_ACTIVITY_ATTRIBUTION_ID)) {
-    return bluetooth::activity_attribution::get_activity_attribution_instance();
-  }
-
-#ifndef TARGET_FLOSS
   if (is_profile(profile_id, BT_PROFILE_LE_AUDIO_ID))
     return btif_le_audio_get_interface();
 
   if (is_profile(profile_id, BT_PROFILE_LE_AUDIO_BROADCASTER_ID))
     return btif_le_audio_broadcaster_get_interface();
-#endif
 
   if (is_profile(profile_id, BT_PROFILE_VC_ID))
     return btif_volume_control_get_interface();
@@ -907,25 +909,75 @@ static const void* get_profile_interface(const char* profile_id) {
   return NULL;
 }
 
+int dut_mode_configure(uint8_t enable) {
+  if (!interface_ready()) return BT_STATUS_NOT_READY;
+  if (!stack_manager_get_interface()->get_stack_is_running())
+    return BT_STATUS_NOT_READY;
+
+  do_in_main_thread(FROM_HERE, base::BindOnce(btif_dut_mode_configure, enable));
+  return BT_STATUS_SUCCESS;
+}
+
+int dut_mode_send(uint16_t opcode, uint8_t* buf, uint8_t len) {
+  if (!interface_ready()) return BT_STATUS_NOT_READY;
+  if (!btif_is_dut_mode()) return BT_STATUS_FAIL;
+
+  uint8_t* copy = (uint8_t*)osi_calloc(len);
+  memcpy(copy, buf, len);
+
+  do_in_main_thread(FROM_HERE,
+                    base::BindOnce(
+                        [](uint16_t opcode, uint8_t* buf, uint8_t len) {
+                          btif_dut_mode_send(opcode, buf, len);
+                          osi_free(buf);
+                        },
+                        opcode, copy, len));
+  return BT_STATUS_SUCCESS;
+}
+
+int le_test_mode(uint16_t opcode, uint8_t* buf, uint8_t len) {
+  if (!interface_ready()) return BT_STATUS_NOT_READY;
+
+  switch (opcode) {
+    case HCI_BLE_TRANSMITTER_TEST:
+      if (len != 3) return BT_STATUS_PARM_INVALID;
+      do_in_main_thread(FROM_HERE, base::BindOnce(btif_ble_transmitter_test,
+                                                  buf[0], buf[1], buf[2]));
+      break;
+    case HCI_BLE_RECEIVER_TEST:
+      if (len != 1) return BT_STATUS_PARM_INVALID;
+      do_in_main_thread(FROM_HERE,
+                        base::BindOnce(btif_ble_receiver_test, buf[0]));
+      break;
+    case HCI_BLE_TEST_END:
+      do_in_main_thread(FROM_HERE, base::BindOnce(btif_ble_test_end));
+      break;
+    default:
+      return BT_STATUS_UNSUPPORTED;
+  }
+  return BT_STATUS_SUCCESS;
+}
+
 static bt_os_callouts_t* wakelock_os_callouts_saved = nullptr;
 
 static int acquire_wake_lock_cb(const char* lock_name) {
   return do_in_jni_thread(
-      FROM_HERE, base::Bind(base::IgnoreResult(
-                                wakelock_os_callouts_saved->acquire_wake_lock),
-                            lock_name));
+      FROM_HERE,
+      base::BindOnce(
+          base::IgnoreResult(wakelock_os_callouts_saved->acquire_wake_lock),
+          lock_name));
 }
 
 static int release_wake_lock_cb(const char* lock_name) {
   return do_in_jni_thread(
-      FROM_HERE, base::Bind(base::IgnoreResult(
-                                wakelock_os_callouts_saved->release_wake_lock),
-                            lock_name));
+      FROM_HERE,
+      base::BindOnce(
+          base::IgnoreResult(wakelock_os_callouts_saved->release_wake_lock),
+          lock_name));
 }
 
 static bt_os_callouts_t wakelock_os_callouts_jni = {
     sizeof(wakelock_os_callouts_jni),
-    nullptr /* not used */,
     acquire_wake_lock_cb,
     release_wake_lock_cb,
 };
@@ -995,7 +1047,7 @@ static bool interop_match_addr(const char* feature_name,
 
   int feature = interop_feature_name_to_feature_id(feature_name);
   if (feature == -1) {
-    BTIF_TRACE_ERROR("%s: feature doesn't exist: %s", __func__, feature_name);
+    LOG_ERROR("%s: feature doesn't exist: %s", __func__, feature_name);
     return false;
   }
 
@@ -1009,7 +1061,7 @@ static bool interop_match_name(const char* feature_name, const char* name) {
 
   int feature = interop_feature_name_to_feature_id(feature_name);
   if (feature == -1) {
-    BTIF_TRACE_ERROR("%s: feature doesn't exist: %s", __func__, feature_name);
+    LOG_ERROR("%s: feature doesn't exist: %s", __func__, feature_name);
     return false;
   }
 
@@ -1024,7 +1076,7 @@ static bool interop_match_addr_or_name(const char* feature_name,
 
   int feature = interop_feature_name_to_feature_id(feature_name);
   if (feature == -1) {
-    BTIF_TRACE_ERROR("%s: feature doesn't exist: %s", __func__, feature_name);
+    LOG_ERROR("%s: feature doesn't exist: %s", __func__, feature_name);
     return false;
   }
 
@@ -1042,7 +1094,7 @@ static void interop_database_add_remove_addr(bool do_add,
 
   int feature = interop_feature_name_to_feature_id(feature_name);
   if (feature == -1) {
-    BTIF_TRACE_ERROR("%s: feature doesn't exist: %s", __func__, feature_name);
+    LOG_ERROR("%s: feature doesn't exist: %s", __func__, feature_name);
     return;
   }
 
@@ -1062,7 +1114,7 @@ static void interop_database_add_remove_name(bool do_add,
 
   int feature = interop_feature_name_to_feature_id(feature_name);
   if (feature == -1) {
-    BTIF_TRACE_ERROR("%s: feature doesn't exist: %s", __func__, feature_name);
+    LOG_ERROR("%s: feature doesn't exist: %s", __func__, feature_name);
     return;
   }
 
@@ -1098,6 +1150,9 @@ EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
     .pin_reply = pin_reply,
     .ssp_reply = ssp_reply,
     .get_profile_interface = get_profile_interface,
+    .dut_mode_configure = dut_mode_configure,
+    .dut_mode_send = dut_mode_send,
+    .le_test_mode = le_test_mode,
     .set_os_callouts = set_os_callouts,
     .read_energy_info = read_energy_info,
     .dump = dump,
@@ -1368,6 +1423,15 @@ void invoke_thread_evt_cb(bt_cb_thread_evt event) {
                                     }
                                   },
                                   event));
+}
+
+void invoke_le_test_mode_cb(bt_status_t status, uint16_t count) {
+  do_in_jni_thread(FROM_HERE, base::BindOnce(
+                                  [](bt_status_t status, uint16_t count) {
+                                    HAL_CBACK(bt_hal_cbacks, le_test_mode_cb,
+                                              status, count);
+                                  },
+                                  status, count));
 }
 
 // takes ownership of |uid_data|

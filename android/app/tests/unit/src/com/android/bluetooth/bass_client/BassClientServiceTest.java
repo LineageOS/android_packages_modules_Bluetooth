@@ -19,10 +19,10 @@ package com.android.bluetooth.bass_client;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.atLeast;
-import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.after;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doCallRealMethod;
@@ -30,6 +30,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.notNull;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -38,7 +39,6 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothLeAudioCodecConfigMetadata;
 import android.bluetooth.BluetoothLeAudioContentMetadata;
-import android.bluetooth.BluetoothLeBroadcast;
 import android.bluetooth.BluetoothLeBroadcastAssistant;
 import android.bluetooth.BluetoothLeBroadcastChannel;
 import android.bluetooth.BluetoothLeBroadcastMetadata;
@@ -49,6 +49,8 @@ import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothUuid;
 import android.bluetooth.IBluetoothLeBroadcastAssistantCallback;
 import android.bluetooth.le.ScanFilter;
+import android.bluetooth.le.ScanRecord;
+import android.bluetooth.le.ScanResult;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -60,7 +62,6 @@ import android.os.RemoteException;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.MediumTest;
-import androidx.test.rule.ServiceTestRule;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
@@ -68,11 +69,11 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
+import com.android.bluetooth.flags.FeatureFlagsImpl;
 
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -80,14 +81,14 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.stream.Collectors;
 
 /**
  * Tests for {@link BassClientService}
@@ -136,8 +137,6 @@ public class BassClientServiceTest {
     private BluetoothDevice mCurrentDevice;
     private BluetoothDevice mCurrentDevice1;
     private BassIntentReceiver mBassIntentReceiver;
-
-    @Rule public final ServiceTestRule mServiceRule = new ServiceTestRule();
 
     @Spy private BassObjectsFactory mObjectsFactory = BassObjectsFactory.getInstance();
     @Mock private AdapterService mAdapterService;
@@ -221,21 +220,29 @@ public class BassClientServiceTest {
         }).when(mAdapterService).getBondedDevices();
 
         // Mock methods in BassObjectsFactory
-        doAnswer(invocation -> {
-            assertThat(mCurrentDevice).isNotNull();
-            final BassClientStateMachine stateMachine = mock(BassClientStateMachine.class);
-            doReturn(new ArrayList<>()).when(stateMachine).getAllSources();
-            doReturn(TEST_NUM_SOURCES).when(stateMachine).getMaximumSourceCapacity();
-            doReturn((BluetoothDevice)invocation.getArgument(0)).when(stateMachine).getDevice();
-            mStateMachines.put((BluetoothDevice)invocation.getArgument(0), stateMachine);
-            return stateMachine;
-        }).when(mObjectsFactory).makeStateMachine(any(), any(), any());
+        doAnswer(
+                        invocation -> {
+                            assertThat(mCurrentDevice).isNotNull();
+                            final BassClientStateMachine stateMachine =
+                                    mock(BassClientStateMachine.class);
+                            doReturn(new ArrayList<>()).when(stateMachine).getAllSources();
+                            doReturn(TEST_NUM_SOURCES)
+                                    .when(stateMachine)
+                                    .getMaximumSourceCapacity();
+                            doReturn((BluetoothDevice) invocation.getArgument(0))
+                                    .when(stateMachine)
+                                    .getDevice();
+                            mStateMachines.put(
+                                    (BluetoothDevice) invocation.getArgument(0), stateMachine);
+                            return stateMachine;
+                        })
+                .when(mObjectsFactory)
+                .makeStateMachine(any(), any(), any(), any());
         doReturn(mBluetoothLeScannerWrapper).when(mObjectsFactory)
                 .getBluetoothLeScannerWrapper(any());
 
-        TestUtils.startService(mServiceRule, BassClientService.class);
-        mBassClientService = BassClientService.getBassClientService();
-        assertThat(mBassClientService).isNotNull();
+        mBassClientService = new BassClientService(mTargetContext, new FeatureFlagsImpl());
+        mBassClientService.doStart();
 
         mBassClientService.mServiceFactory = mServiceFactory;
         doReturn(mCsipService).when(mServiceFactory).getCsipSetCoordinatorService();
@@ -263,7 +270,7 @@ public class BassClientServiceTest {
         }
         mBassClientService.unregisterCallback(mCallback);
 
-        TestUtils.stopService(mServiceRule, BassClientService.class);
+        mBassClientService.doStop();
         mBassClientService = BassClientService.getBassClientService();
         assertThat(mBassClientService).isNull();
         mStateMachines.clear();
@@ -335,8 +342,8 @@ public class BassClientServiceTest {
         mCurrentDevice = TestUtils.getTestDevice(mBluetoothAdapter, 0);
 
         assertThat(mBassClientService.connect(mCurrentDevice)).isTrue();
-        verify(mObjectsFactory).makeStateMachine(
-                eq(mCurrentDevice), eq(mBassClientService), any());
+        verify(mObjectsFactory)
+                .makeStateMachine(eq(mCurrentDevice), eq(mBassClientService), any(), any());
         BassClientStateMachine stateMachine = mStateMachines.get(mCurrentDevice);
         assertThat(stateMachine).isNotNull();
         verify(stateMachine).sendMessage(BassClientStateMachine.CONNECT);
@@ -565,6 +572,49 @@ public class BassClientServiceTest {
         verifyAddSourceForGroup(meta);
     }
 
+
+    /**
+     * Test whether service.addSource() source id can be propagated through callback correctly
+     */
+    @Test
+    public void testAddSourceCallbackForGroup() {
+        prepareConnectedDeviceGroup();
+        BluetoothLeBroadcastMetadata meta = createBroadcastMetadata(TEST_BROADCAST_ID);
+        verifyAddSourceForGroup(meta);
+        for (BassClientStateMachine sm: mStateMachines.values()) {
+            if (sm.getDevice().equals(mCurrentDevice)) {
+                injectRemoteSourceState(sm, meta, TEST_SOURCE_ID,
+                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
+                        meta.isEncrypted() ?
+                                BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_DECRYPTING :
+                                BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_NOT_ENCRYPTED,
+                        null);
+                // verify source id
+                try {
+                    verify(mCallback, timeout(TIMEOUT_MS).atLeastOnce()).
+                            onSourceAdded(eq(mCurrentDevice), eq(TEST_SOURCE_ID),
+                            eq(BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST));
+                } catch (RemoteException e) {
+                    throw e.rethrowFromSystemServer();
+                }
+            } else if (sm.getDevice().equals(mCurrentDevice1)) {
+                injectRemoteSourceState(sm, meta, TEST_SOURCE_ID + 1,
+                        BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
+                        meta.isEncrypted() ?
+                                BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_DECRYPTING :
+                                BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_NOT_ENCRYPTED,
+                        null);
+                // verify source id
+                try {
+                    verify(mCallback, timeout(TIMEOUT_MS).atLeastOnce()).
+                            onSourceAdded(eq(mCurrentDevice1), eq(TEST_SOURCE_ID + 1),
+                            eq(BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST));
+                } catch (RemoteException e) {
+                    throw e.rethrowFromSystemServer();
+                }
+            }
+        }
+    }
    /**
      * Test whether service.modifySource() does send proper messages to all the
      * state machines within the Csip coordinated group
@@ -995,5 +1045,197 @@ public class BassClientServiceTest {
         List<BluetoothDevice> devices = mBassClientService.getConnectedDevices();
         assertThat(devices.contains(mCurrentDevice)).isTrue();
         assertThat(devices.contains(mCurrentDevice1)).isTrue();
+    }
+
+    @Test
+    public void testActiveSyncedSource_AddRemoveGet() {
+        final int testSyncHandle = 1;
+        prepareConnectedDeviceGroup();
+        assertThat(mStateMachines.size()).isEqualTo(2);
+
+        assertThat(mBassClientService.getActiveSyncedSources(mCurrentDevice)).isEqualTo(null);
+        assertThat(mBassClientService.getActiveSyncedSources(mCurrentDevice1)).isEqualTo(null);
+
+        // Verify add active synced source
+        mBassClientService.addActiveSyncedSource(mCurrentDevice, testSyncHandle);
+        mBassClientService.addActiveSyncedSource(mCurrentDevice1, testSyncHandle);
+        // Verify duplicated source won't be added
+        mBassClientService.addActiveSyncedSource(mCurrentDevice, testSyncHandle);
+        mBassClientService.addActiveSyncedSource(mCurrentDevice1, testSyncHandle);
+        assertThat(mBassClientService.getActiveSyncedSources(mCurrentDevice)).isNotEqualTo(null);
+        assertThat(mBassClientService.getActiveSyncedSources(mCurrentDevice1)).isNotEqualTo(null);
+        assertThat(mBassClientService.getActiveSyncedSources(mCurrentDevice).size()).isEqualTo(1);
+        assertThat(mBassClientService.getActiveSyncedSources(mCurrentDevice1).size()).isEqualTo(1);
+
+        // Verify remove active synced source
+        mBassClientService.removeActiveSyncedSource(mCurrentDevice, testSyncHandle);
+        mBassClientService.removeActiveSyncedSource(mCurrentDevice1, testSyncHandle);
+        assertThat(mBassClientService.getActiveSyncedSources(mCurrentDevice)).isEqualTo(null);
+        assertThat(mBassClientService.getActiveSyncedSources(mCurrentDevice1)).isEqualTo(null);
+    }
+
+    @Test
+    public void testSelectSource_invalidActiveSource() {
+        final int testSyncHandle = 0;
+        final int testSyncHandle1 = 1;
+        final int testSyncHandle2 = 2;
+        final int testSyncHandle3 = 3;
+        byte[] scanRecord = new byte[]{
+                0x02, 0x01, 0x1a, // advertising flags
+                0x05, 0x02, 0x52, 0x18, 0x0a, 0x11, // 16 bit service uuids
+                0x04, 0x09, 0x50, 0x65, 0x64, // name
+                0x02, 0x0A, (byte) 0xec, // tx power level
+                0x05, 0x30, 0x54, 0x65, 0x73, 0x74, // broadcast name: Test
+                0x06, 0x16, 0x52, 0x18, 0x50, 0x64, 0x65, // service data
+                0x08, 0x16, 0x56, 0x18, 0x07, 0x03, 0x06, 0x07, 0x08,
+                // service data - public broadcast,
+                // feature - 0x7, metadata len - 0x3, metadata - 0x6, 0x7, 0x8
+                0x05, (byte) 0xff, (byte) 0xe0, 0x00, 0x02, 0x15, // manufacturer specific data
+                0x03, 0x50, 0x01, 0x02, // an unknown data type won't cause trouble
+        };
+        ScanRecord record = ScanRecord.parseFromBytes(scanRecord);
+
+        prepareConnectedDeviceGroup();
+        assertThat(mStateMachines.size()).isEqualTo(2);
+
+        // Verify add active synced source
+        mBassClientService.addActiveSyncedSource(mCurrentDevice, testSyncHandle);
+        mBassClientService.addActiveSyncedSource(mCurrentDevice1, testSyncHandle);
+        assertThat(mBassClientService.getActiveSyncedSources(mCurrentDevice)).isNotEqualTo(null);
+        assertThat(mBassClientService.getActiveSyncedSources(mCurrentDevice1)).isNotEqualTo(null);
+        assertThat(mBassClientService.getActiveSyncedSources(mCurrentDevice).size()).isEqualTo(1);
+        assertThat(mBassClientService.getActiveSyncedSources(mCurrentDevice1).size()).isEqualTo(1);
+
+        // Verify selectSource with max synced device should not proceed
+        mBassClientService.addActiveSyncedSource(mCurrentDevice, testSyncHandle1);
+        mBassClientService.addActiveSyncedSource(mCurrentDevice1, testSyncHandle1);
+        mBassClientService.addActiveSyncedSource(mCurrentDevice, testSyncHandle2);
+        mBassClientService.addActiveSyncedSource(mCurrentDevice1, testSyncHandle2);
+        mBassClientService.addActiveSyncedSource(mCurrentDevice, testSyncHandle3);
+        mBassClientService.addActiveSyncedSource(mCurrentDevice1, testSyncHandle3);
+
+        assertThat(mBassClientService.getActiveSyncedSources(mCurrentDevice)).isNotEqualTo(null);
+        assertThat(mBassClientService.getActiveSyncedSources(mCurrentDevice1)).isNotEqualTo(null);
+        assertThat(mBassClientService.getActiveSyncedSources(mCurrentDevice).size()).isEqualTo(4);
+        assertThat(mBassClientService.getActiveSyncedSources(mCurrentDevice1).size()).isEqualTo(4);
+
+        BluetoothDevice testDevice4 = mBluetoothAdapter.getRemoteLeDevice(
+                "00:01:02:03:04:05", BluetoothDevice.ADDRESS_TYPE_RANDOM);
+        ScanResult scanResult1 = new ScanResult(testDevice4, 0, 0, 0, 0, 0, 0, 0, record, 0);
+        mBassClientService.selectSource(mCurrentDevice, scanResult1, false);
+        mBassClientService.selectSource(mCurrentDevice1, scanResult1, false);
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+            verify(sm, atLeast(1)).sendMessage(messageCaptor.capture());
+
+            Optional<Message> msg = messageCaptor.getAllValues().stream()
+                    .filter(m -> m.what == BassClientStateMachine.REACHED_MAX_SOURCE_LIMIT)
+                    .findFirst();
+            assertThat(msg.isPresent()).isEqualTo(true);
+        }
+
+        // Verify remove all active synced source
+        mBassClientService.removeActiveSyncedSource(mCurrentDevice, null);
+        mBassClientService.removeActiveSyncedSource(mCurrentDevice1, null);
+        assertThat(mBassClientService.getActiveSyncedSources(mCurrentDevice)).isEqualTo(null);
+        assertThat(mBassClientService.getActiveSyncedSources(mCurrentDevice1)).isEqualTo(null);
+    }
+
+    @Test
+    public void testPeriodicAdvertisementResultMap_updateGetAndModifyNotifiedFlag() {
+        final String testBroadcastName = "Test";
+        final int testSyncHandle = 1;
+        final int testBroadcastId = 42;
+        final int testBroadcastIdInvalid = 43;
+        final int testAdvertiserSid = 1234;
+        final int testAdvInterval = 100;
+
+        BluetoothDevice testDevice =
+                mBluetoothAdapter.getRemoteLeDevice(
+                        TEST_MAC_ADDRESS, BluetoothDevice.ADDRESS_TYPE_RANDOM);
+
+        // mock the update in selectSource
+        mBassClientService.updatePeriodicAdvertisementResultMap(
+                testDevice,
+                testDevice.getAddressType(),
+                BassConstants.INVALID_SYNC_HANDLE,
+                BassConstants.INVALID_ADV_SID,
+                testAdvInterval,
+                testBroadcastId,
+                null,
+                testBroadcastName);
+
+        // mock the update in onSyncEstablished
+        mBassClientService.updatePeriodicAdvertisementResultMap(
+                testDevice,
+                BassConstants.INVALID_ADV_ADDRESS_TYPE,
+                testSyncHandle,
+                testAdvertiserSid,
+                BassConstants.INVALID_ADV_INTERVAL,
+                BassConstants.INVALID_BROADCAST_ID,
+                null,
+                null);
+
+        assertThat(mBassClientService.getPeriodicAdvertisementResult(testDevice, testBroadcastIdInvalid))
+                .isEqualTo(null);
+        PeriodicAdvertisementResult paResult =
+                mBassClientService.getPeriodicAdvertisementResult(testDevice, testBroadcastId);
+        assertThat(paResult.getAddressType()).isEqualTo(BluetoothDevice.ADDRESS_TYPE_RANDOM);
+        assertThat(paResult.getSyncHandle()).isEqualTo(testSyncHandle);
+        assertThat(paResult.getAdvSid()).isEqualTo(testAdvertiserSid);
+        assertThat(paResult.getAdvInterval()).isEqualTo(testAdvInterval);
+        assertThat(paResult.getBroadcastName()).isEqualTo(testBroadcastName);
+
+        // validate modify notified flag
+        paResult.setNotified(true);
+        assertThat(paResult.isNotified()).isEqualTo(true);
+        mBassClientService.clearNotifiedFlags();
+        assertThat(paResult.isNotified()).isEqualTo(false);
+    }
+
+    @Test
+    public void testSyncHandleToBroadcastIdMap_getSyncHandleAndGetBroadcastId() {
+        final String testBroadcastName = "Test";
+        final int testSyncHandle = 1;
+        final int testSyncHandleInvalid = 2;
+        final int testBroadcastId = 42;
+        final int testBroadcastIdInvalid = 43;
+        final int testAdvertiserSid = 1234;
+        final int testAdvInterval = 100;
+
+        BluetoothDevice testDevice =
+                mBluetoothAdapter.getRemoteLeDevice(
+                        TEST_MAC_ADDRESS, BluetoothDevice.ADDRESS_TYPE_RANDOM);
+
+        // mock the update in selectSource
+        mBassClientService.updatePeriodicAdvertisementResultMap(
+                testDevice,
+                testDevice.getAddressType(),
+                BassConstants.INVALID_SYNC_HANDLE,
+                BassConstants.INVALID_ADV_SID,
+                testAdvInterval,
+                testBroadcastId,
+                null,
+                testBroadcastName);
+
+        // mock the update in onSyncEstablished
+        mBassClientService.updatePeriodicAdvertisementResultMap(
+                testDevice,
+                BassConstants.INVALID_ADV_ADDRESS_TYPE,
+                testSyncHandle,
+                testAdvertiserSid,
+                BassConstants.INVALID_ADV_INTERVAL,
+                BassConstants.INVALID_BROADCAST_ID,
+                null,
+                null);
+
+        assertThat(mBassClientService.getSyncHandleForBroadcastId(testBroadcastIdInvalid))
+                .isEqualTo(BassConstants.INVALID_SYNC_HANDLE);
+        assertThat(mBassClientService.getBroadcastIdForSyncHandle(testSyncHandleInvalid))
+                .isEqualTo(BassConstants.INVALID_BROADCAST_ID);
+        assertThat(mBassClientService.getSyncHandleForBroadcastId(testBroadcastId))
+                .isEqualTo(testSyncHandle);
+        assertThat(mBassClientService.getBroadcastIdForSyncHandle(testSyncHandle))
+                .isEqualTo(testBroadcastId);
     }
 }

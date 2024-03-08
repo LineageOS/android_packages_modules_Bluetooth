@@ -21,8 +21,8 @@ import static com.google.common.truth.Truth.assertThat;
 import android.content.Context;
 import android.telephony.SmsManager;
 
-import androidx.test.filters.SmallTest;
 import androidx.test.InstrumentationRegistry;
+import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.map.BluetoothMapSmsPdu.SmsPdu;
@@ -84,15 +84,8 @@ public class BluetoothMapbMessageSmsTest {
         byte[] encodedMessageSms = messageSmsToEncode.encode();
         InputStream inputStream = new ByteArrayInputStream(encodedMessageSms);
 
-        BluetoothMapbMessage messageParsed;
-        try {
-          messageParsed = BluetoothMapbMessage.parse(inputStream,
+        BluetoothMapbMessage messageParsed = BluetoothMapbMessage.parse(inputStream,
                 BluetoothMapAppParams.CHARSET_NATIVE);
-        } catch (IllegalArgumentException e) {
-          android.util.Log.e("encodeToByteArray_thenAddByParsing", "Failure: " + e);
-          // TODO b/257375445 remove try catch that prevent failure
-          return;
-        }
         assertThat(messageParsed).isInstanceOf(BluetoothMapbMessageSms.class);
         BluetoothMapbMessageSms messageSmsParsed = (BluetoothMapbMessageSms) messageParsed;
         assertThat(messageSmsParsed.getSmsBody()).isEqualTo(TEST_MESSAGE);

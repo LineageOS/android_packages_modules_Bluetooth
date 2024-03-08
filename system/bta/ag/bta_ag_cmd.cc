@@ -18,6 +18,7 @@
 
 #define LOG_TAG "bta_ag_cmd"
 
+#include <android_bluetooth_flags.h>
 #include <base/logging.h>
 
 #include <cstdint>
@@ -27,17 +28,20 @@
 #include "bta/ag/bta_ag_int.h"
 #include "bta/include/bta_ag_api.h"
 #include "bta/include/utl.h"
+#include "bta_ag_swb_aptx.h"
 
 #ifdef __ANDROID__
-#include "bta/le_audio/devices.h"
+#include "bta_le_audio_api.h"
 #endif
 
+#include "bta/include/bta_hfp_api.h"
 #include "device/include/interop.h"
+#include "internal_include/bt_target.h"
+#include "internal_include/bt_trace.h"
+#include "os/log.h"
 #include "os/system_properties.h"
 #include "osi/include/compat.h"
-#include "osi/include/log.h"
 #include "osi/include/osi.h"  // UNUSED_ATTR
-#include "osi/include/properties.h"
 #include "stack/btm/btm_sco_hfp_hal.h"
 #include "stack/include/port_api.h"
 
@@ -113,6 +117,10 @@ static const tBTA_AG_AT_CMD bta_ag_hfp_cmd[] = {
      BTA_AG_AT_SET | BTA_AG_AT_READ | BTA_AG_AT_TEST, BTA_AG_AT_STR, 0, 0},
     {"+BIEV", BTA_AG_AT_BIEV_EVT, BTA_AG_AT_SET, BTA_AG_AT_STR, 0, 0},
     {"+BAC", BTA_AG_AT_BAC_EVT, BTA_AG_AT_SET, BTA_AG_AT_STR, 0, 0},
+    {"+%QAC", BTA_AG_AT_QAC_EVT, BTA_AG_AT_SET, BTA_AG_AT_STR, 0, 0},
+    {"+%QCS", BTA_AG_AT_QCS_EVT, BTA_AG_AT_SET, BTA_AG_AT_INT, 0,
+     BTA_AG_CMD_MAX_VAL},
+
     /* End-of-table marker used to stop lookup iteration */
     {"", 0, 0, 0, 0, 0}};
 
@@ -165,6 +173,9 @@ static const tBTA_AG_RESULT bta_ag_result_tbl[] = {
     {"+CME ERROR: ", BTA_AG_LOCAL_RES_CMEE, BTA_AG_RES_FMT_INT},
     {"+BCS: ", BTA_AG_LOCAL_RES_BCS, BTA_AG_RES_FMT_INT},
     {"+BIND: ", BTA_AG_BIND_RES, BTA_AG_RES_FMT_STR},
+    {"+%QAC: ", BTA_AG_LOCAL_RES_QAC, BTA_AG_RES_FMT_STR},
+    {"+%QCS: ", BTA_AG_LOCAL_RES_QCS, BTA_AG_RES_FMT_INT},
+
     {"", BTA_AG_UNAT_RES, BTA_AG_RES_FMT_STR}};
 
 static const tBTA_AG_RESULT* bta_ag_result_by_code(size_t code) {
@@ -479,7 +490,7 @@ static tBTA_AG_PEER_CODEC bta_ag_parse_bac(tBTA_AG_SCB* p_scb, char* p_s,
         retval |= BTM_SCO_CODEC_LC3;
         break;
       default:
-        APPL_TRACE_ERROR("Unknown Codec UUID(%d) received", uuid_codec);
+        LOG_ERROR("Unknown Codec UUID(%d) received", uuid_codec);
         break;
     }
 
@@ -591,8 +602,8 @@ void bta_ag_send_call_inds(tBTA_AG_SCB* p_scb, tBTA_AG_RES result) {
 void bta_ag_at_hsp_cback(tBTA_AG_SCB* p_scb, uint16_t command_id,
                          uint8_t arg_type, char* p_arg, char* p_end,
                          int16_t int_arg) {
-  APPL_TRACE_DEBUG("AT cmd:%d arg_type:%d arg:%d arg:%s", command_id, arg_type,
-                   int_arg, p_arg);
+  LOG_VERBOSE("AT cmd:%d arg_type:%d arg:%d arg:%s", command_id, arg_type,
+              int_arg, p_arg);
 
   bta_ag_send_ok(p_scb);
 
@@ -602,7 +613,7 @@ void bta_ag_at_hsp_cback(tBTA_AG_SCB* p_scb, uint16_t command_id,
   val.num = (uint16_t)int_arg;
 
   if ((p_end - p_arg + 1) >= (long)sizeof(val.str)) {
-    APPL_TRACE_ERROR("%s: p_arg is too long, send error and return", __func__);
+    LOG_ERROR("%s: p_arg is too long, send error and return", __func__);
     bta_ag_send_error(p_scb, BTA_AG_ERR_TEXT_TOO_LONG);
     return;
   }
@@ -687,12 +698,12 @@ static bool bta_ag_parse_bind_set(tBTA_AG_SCB* p_scb, tBTA_AG_VAL val) {
     uint16_t rcv_ind_id = atoi(p_token);
     int index = bta_ag_find_empty_hf_ind(p_scb);
     if (index == -1) {
-      APPL_TRACE_WARNING("%s Can't save more indicators", __func__);
+      LOG_WARN("%s Can't save more indicators", __func__);
       return false;
     }
 
     p_scb->peer_hf_indicators[index].ind_id = rcv_ind_id;
-    APPL_TRACE_DEBUG("%s peer_hf_ind[%d] = %d", __func__, index, rcv_ind_id);
+    LOG_VERBOSE("%s peer_hf_ind[%d] = %d", __func__, index, rcv_ind_id);
 
     p_token = strtok(nullptr, ",");
   }
@@ -736,7 +747,7 @@ static void bta_ag_bind_response(tBTA_AG_SCB* p_scb, uint8_t arg_type) {
     /* bta_ag_local_hf_ind_cfg[0].ind_id is used as BTA_AG_NUM_LOCAL_HF_IND */
     for (uint32_t i = 0; i < bta_ag_local_hf_ind_cfg[0].ind_id; i++) {
       if (i == BTA_AG_MAX_NUM_LOCAL_HF_IND) {
-        APPL_TRACE_WARNING("%s No space for more HF indicators", __func__);
+        LOG_WARN("%s No space for more HF indicators", __func__);
         break;
       }
 
@@ -797,13 +808,12 @@ static bool bta_ag_parse_biev_response(tBTA_AG_SCB* p_scb, tBTA_AG_VAL* val) {
   if (p_token == nullptr) return false;
   uint16_t rcv_ind_val = atoi(p_token);
 
-  APPL_TRACE_DEBUG("%s BIEV indicator id %d, value %d", __func__, rcv_ind_id,
-                   rcv_ind_val);
+  LOG_VERBOSE("%s BIEV indicator id %d, value %d", __func__, rcv_ind_id,
+              rcv_ind_val);
 
   /* Check whether indicator ID is valid or not */
   if (rcv_ind_id > BTA_AG_NUM_LOCAL_HF_IND) {
-    APPL_TRACE_WARNING("%s received invalid indicator id %d", __func__,
-                       rcv_ind_id);
+    LOG_WARN("%s received invalid indicator id %d", __func__, rcv_ind_id);
     return false;
   }
 
@@ -813,15 +823,15 @@ static bool bta_ag_parse_biev_response(tBTA_AG_SCB* p_scb, tBTA_AG_VAL* val) {
   if (local_index == -1 ||
       !p_scb->local_hf_indicators[local_index].is_supported ||
       !p_scb->local_hf_indicators[local_index].is_enable) {
-    APPL_TRACE_WARNING("%s indicator id %d not supported or disabled", __func__,
-                       rcv_ind_id);
+    LOG_WARN("%s indicator id %d not supported or disabled", __func__,
+             rcv_ind_id);
     return false;
   }
 
   /* For each indicator ID, check whether the indicator value is in range */
   if (rcv_ind_val < bta_ag_local_hf_ind_cfg[rcv_ind_id].ind_min_val ||
       rcv_ind_val > bta_ag_local_hf_ind_cfg[rcv_ind_id].ind_max_val) {
-    APPL_TRACE_WARNING("%s invalid ind_val %d", __func__, rcv_ind_val);
+    LOG_WARN("%s invalid ind_val %d", __func__, rcv_ind_val);
     return false;
   }
 
@@ -868,8 +878,8 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
     return;
   }
 
-  APPL_TRACE_DEBUG("%s: AT command %d, arg_type %d, int_arg %d, arg %s",
-                   __func__, cmd, arg_type, int_arg, p_arg);
+  LOG_VERBOSE("%s: AT command %d, arg_type %d, int_arg %d, arg %s", __func__,
+              cmd, arg_type, int_arg, p_arg);
 
   val.hdr.handle = bta_ag_scb_to_idx(p_scb);
   val.hdr.app_id = p_scb->app_id;
@@ -899,22 +909,11 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
     case BTA_AG_AT_A_EVT:
     case BTA_AG_SPK_EVT:
     case BTA_AG_MIC_EVT:
+    case BTA_AG_AT_CHUP_EVT:
     case BTA_AG_AT_CBC_EVT:
       /* send OK */
       bta_ag_send_ok(p_scb);
       break;
-
-    case BTA_AG_AT_CHUP_EVT:
-      if (!bta_ag_sco_is_active_device(p_scb->peer_addr)) {
-        LOG(WARNING) << __func__ << ": AT+CHUP rejected as " << p_scb->peer_addr
-                << " is not the active device";
-        event = BTA_AG_ENABLE_EVT;
-        bta_ag_send_error(p_scb, BTA_AG_ERR_OP_NOT_ALLOWED);
-      } else {
-        bta_ag_send_ok(p_scb);
-      }
-      break;
-
     case BTA_AG_AT_BLDN_EVT:
       /* Do not send OK, App will send error or OK depending on
       ** last dial number enabled or not */
@@ -1038,8 +1037,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
       break;
 
     case BTA_AG_AT_BIND_EVT:
-      APPL_TRACE_DEBUG("%s BTA_AG_AT_BIND_EVT arg_type: %d", __func__,
-                       arg_type);
+      LOG_VERBOSE("%s BTA_AG_AT_BIND_EVT arg_type: %d", __func__, arg_type);
       alarm_cancel(p_scb->bind_timer);
       if (arg_type == BTA_AG_AT_SET) {
         if (bta_ag_parse_bind_set(p_scb, val)) {
@@ -1139,8 +1137,8 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
         p_scb->masked_features &= HFP_1_6_FEAT_MASK;
       }
 
-      APPL_TRACE_DEBUG("%s BRSF HF: 0x%x, phone: 0x%x", __func__,
-                       p_scb->peer_features, p_scb->masked_features);
+      LOG_VERBOSE("%s BRSF HF: 0x%x, phone: 0x%x", __func__,
+                  p_scb->peer_features, p_scb->masked_features);
 
       /* send BRSF, send OK */
       bta_ag_send_result(p_scb, BTA_AG_LOCAL_RES_BRSF, nullptr,
@@ -1258,17 +1256,27 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
         p_scb->peer_codecs = bta_ag_parse_bac(p_scb, p_arg, p_end);
         p_scb->codec_updated = true;
 
+        bool wbs_supported = hfp_hal_interface::get_wbs_supported();
         bool swb_supported = hfp_hal_interface::get_swb_supported();
+        const bool aptx_voice =
+            is_hfp_aptx_voice_enabled() && p_scb->is_aptx_swb_codec;
+        LOG_VERBOSE("BTA_AG_AT_BAC_EVT aptx_voice=%s",
+                    logbool(aptx_voice).c_str());
 
-        if ((p_scb->peer_codecs & BTM_SCO_CODEC_LC3) && swb_supported) {
+        if (swb_supported && (p_scb->peer_codecs & BTM_SCO_CODEC_LC3) &&
+            !(p_scb->disabled_codecs & BTM_SCO_CODEC_LC3)) {
           p_scb->sco_codec = BTM_SCO_CODEC_LC3;
-          APPL_TRACE_DEBUG("Received AT+BAC, updating sco codec to LC3");
-        } else if (p_scb->peer_codecs & BTM_SCO_CODEC_MSBC) {
+          LOG_VERBOSE("Received AT+BAC, updating sco codec to LC3");
+        } else if (aptx_voice) {
+          p_scb->sco_codec = BTA_AG_SCO_APTX_SWB_SETTINGS_Q0;
+          LOG_VERBOSE("Received AT+BAC, updating sco codec to AptX Voice");
+        } else if (wbs_supported && (p_scb->peer_codecs & BTM_SCO_CODEC_MSBC) &&
+                   !(p_scb->disabled_codecs & BTM_SCO_CODEC_MSBC)) {
           p_scb->sco_codec = BTM_SCO_CODEC_MSBC;
-          APPL_TRACE_DEBUG("Received AT+BAC, updating sco codec to MSBC");
+          LOG_VERBOSE("Received AT+BAC, updating sco codec to MSBC");
         } else {
           p_scb->sco_codec = BTM_SCO_CODEC_CVSD;
-          APPL_TRACE_DEBUG("Received AT+BAC, updating sco codec to CVSD");
+          LOG_VERBOSE("Received AT+BAC, updating sco codec to CVSD");
         }
         /* The above logic sets the stack preferred codec based on local and
         peer codec
@@ -1284,8 +1292,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
         }
       } else {
         p_scb->peer_codecs = BTM_SCO_CODEC_CVSD;
-        APPL_TRACE_ERROR(
-            "Unexpected CMD:AT+BAC, Codec Negotiation is not supported");
+        LOG_ERROR("Unexpected CMD:AT+BAC, Codec Negotiation is not supported");
       }
       break;
 
@@ -1305,7 +1312,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
           codec_type = BTM_SCO_CODEC_LC3;
           break;
         default:
-          APPL_TRACE_ERROR("Unknown codec_uuid %d", int_arg);
+          LOG_ERROR("Unknown codec_uuid %d", int_arg);
           codec_type = 0xFFFF;
           break;
       }
@@ -1339,6 +1346,28 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
       bta_ag_sco_open(p_scb, tBTA_AG_DATA::kEmpty);
       break;
     }
+    case BTA_AG_AT_QAC_EVT:
+      if (!is_hfp_aptx_voice_enabled()) {
+        bta_ag_send_error(p_scb, BTA_AG_ERR_OP_NOT_SUPPORTED);
+        break;
+      }
+      p_scb->peer_codecs |= bta_ag_parse_qac(p_arg);
+      // AT+%QAC needs to be responded with +%QAC
+      bta_ag_swb_handle_vs_at_events(p_scb, cmd, int_arg, &val);
+      // followed by OK
+      bta_ag_send_ok(p_scb);
+      break;
+    case BTA_AG_AT_QCS_EVT:
+      if (!is_hfp_aptx_voice_enabled()) {
+        bta_ag_send_error(p_scb, BTA_AG_ERR_OP_NOT_SUPPORTED);
+        break;
+      }
+      // AT+%QCS is a response to +%QCS sent from AG.
+      // Send OK to BT headset
+      bta_ag_send_ok(p_scb);
+      // Handle AT+%QCS
+      bta_ag_swb_handle_vs_at_events(p_scb, cmd, int_arg, &val);
+      break;
     default:
       bta_ag_send_error(p_scb, BTA_AG_ERR_OP_NOT_SUPPORTED);
       break;
@@ -1362,7 +1391,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
  ******************************************************************************/
 void bta_ag_at_err_cback(tBTA_AG_SCB* p_scb, bool unknown, const char* p_arg) {
   if (unknown && (!strlen(p_arg))) {
-    APPL_TRACE_DEBUG("Empty AT cmd string received");
+    LOG_VERBOSE("Empty AT cmd string received");
     bta_ag_send_ok(p_scb);
     return;
   }
@@ -1393,7 +1422,7 @@ void bta_ag_at_err_cback(tBTA_AG_SCB* p_scb, bool unknown, const char* p_arg) {
  ******************************************************************************/
 static void bta_ag_hsp_result(tBTA_AG_SCB* p_scb,
                               const tBTA_AG_API_RESULT& result) {
-  APPL_TRACE_DEBUG("bta_ag_hsp_result : res = %d", result.result);
+  LOG_VERBOSE("bta_ag_hsp_result : res = %d", result.result);
 
   switch (result.result) {
     case BTA_AG_SPK_RES:
@@ -1465,7 +1494,7 @@ static void bta_ag_hsp_result(tBTA_AG_SCB* p_scb,
 
     case BTA_AG_INBAND_RING_RES:
       p_scb->inband_enabled = result.data.state;
-      APPL_TRACE_DEBUG("inband_enabled set to %d", p_scb->inband_enabled);
+      LOG_VERBOSE("inband_enabled set to %d", p_scb->inband_enabled);
       break;
 
     case BTA_AG_UNAT_RES:
@@ -1597,7 +1626,7 @@ static void bta_ag_hfp_result(tBTA_AG_SCB* p_scb,
 
     case BTA_AG_MULTI_CALL_RES:
       /* open SCO at SLC for this three way call */
-      APPL_TRACE_DEBUG("Headset Connected in three way call");
+      LOG_VERBOSE("Headset Connected in three way call");
       if (!(p_scb->features & BTA_AG_FEAT_NOSCO)) {
         if (result.data.audio_handle == bta_ag_scb_to_idx(p_scb)) {
           if (!bta_ag_is_sco_open_allowed(p_scb,
@@ -1656,7 +1685,7 @@ static void bta_ag_hfp_result(tBTA_AG_SCB* p_scb,
 
     case BTA_AG_INBAND_RING_RES:
       p_scb->inband_enabled = result.data.state;
-      APPL_TRACE_DEBUG("inband_enabled set to %d", p_scb->inband_enabled);
+      LOG_VERBOSE("inband_enabled set to %d", p_scb->inband_enabled);
       bta_ag_send_result(p_scb, result.result, nullptr, result.data.state);
       break;
 
@@ -1669,8 +1698,8 @@ static void bta_ag_hfp_result(tBTA_AG_SCB* p_scb,
       p_scb->roam_ind = result.data.str[8] - '0';
       p_scb->battchg_ind = result.data.str[10] - '0';
       p_scb->callheld_ind = result.data.str[12] - '0';
-      APPL_TRACE_DEBUG("cind call:%d callsetup:%d", p_scb->call_ind,
-                       p_scb->callsetup_ind);
+      LOG_VERBOSE("cind call:%d callsetup:%d", p_scb->call_ind,
+                  p_scb->callsetup_ind);
 
       bta_ag_send_result(p_scb, result.result, result.data.str, 0);
       bta_ag_send_ok(p_scb);
@@ -1696,7 +1725,7 @@ static void bta_ag_hfp_result(tBTA_AG_SCB* p_scb,
         if (result.data.str[0] != 0) {
           tBTA_AG_API_RESULT result_copy(result);
           bta_ag_process_unat_res(result_copy.data.str);
-          APPL_TRACE_DEBUG("BTA_AG_RES :%s", result_copy.data.str);
+          LOG_VERBOSE("BTA_AG_RES :%s", result_copy.data.str);
           bta_ag_send_result(p_scb, result_copy.result, result_copy.data.str,
                              0);
         }
@@ -1750,8 +1779,7 @@ static void bta_ag_hfp_result(tBTA_AG_SCB* p_scb,
                                                  BTA_AG_MAX_NUM_LOCAL_HF_IND,
                                                  result.data.ind.id);
       if (local_index == -1) {
-        APPL_TRACE_WARNING("%s Invalid HF Indicator ID %d", __func__,
-                           result.data.ind.id);
+        LOG_WARN("%s Invalid HF Indicator ID %d", __func__, result.data.ind.id);
         return;
       }
 
@@ -1760,8 +1788,7 @@ static void bta_ag_hfp_result(tBTA_AG_SCB* p_scb,
                                                 BTA_AG_MAX_NUM_PEER_HF_IND,
                                                 result.data.ind.id);
       if (peer_index == -1) {
-        APPL_TRACE_WARNING("%s Invalid HF Indicator ID %d", __func__,
-                           result.data.ind.id);
+        LOG_WARN("%s Invalid HF Indicator ID %d", __func__, result.data.ind.id);
         return;
       } else {
         /* If the current state is different from the one upper layer request
@@ -1779,9 +1806,9 @@ static void bta_ag_hfp_result(tBTA_AG_SCB* p_scb,
 
           bta_ag_send_result(p_scb, result.result, buffer, 0);
         } else {
-          APPL_TRACE_DEBUG(
-              "%s HF Indicator %d already %s", result.data.ind.id,
-              (result.data.ind.on_demand) ? "Enabled" : "Disabled");
+          LOG_VERBOSE("%s HF Indicator %d already %s", __func__,
+                      result.data.ind.id,
+                      (result.data.ind.on_demand) ? "Enabled" : "Disabled");
         }
       }
       break;
@@ -1838,15 +1865,15 @@ void bta_ag_send_bcs(tBTA_AG_SCB* p_scb) {
         codec_uuid = UUID_CODEC_LC3;
         break;
       default:
-        APPL_TRACE_ERROR("bta_ag_send_bcs: unknown codec %d, use CVSD",
-                         p_scb->sco_codec);
+        LOG_ERROR("bta_ag_send_bcs: unknown codec %d, use CVSD",
+                  p_scb->sco_codec);
         codec_uuid = UUID_CODEC_CVSD;
         break;
     }
   }
 
   /* send +BCS */
-  APPL_TRACE_DEBUG("send +BCS codec is %d", codec_uuid);
+  LOG_VERBOSE("send +BCS codec is %d", codec_uuid);
   bta_ag_send_result(p_scb, BTA_AG_LOCAL_RES_BCS, nullptr, codec_uuid);
 }
 
@@ -1908,4 +1935,47 @@ void bta_ag_send_ring(tBTA_AG_SCB* p_scb,
 
   bta_sys_start_timer(p_scb->ring_timer, BTA_AG_RING_TIMEOUT_MS,
                       BTA_AG_RING_TIMEOUT_EVT, bta_ag_scb_to_idx(p_scb));
+}
+
+/*******************************************************************************
+ *
+ * Function         bta_ag_send_qcs
+ *
+ * Description      Send +%QCS AT command to peer.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void bta_ag_send_qcs(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
+  uint16_t codec_uuid;
+  if (p_scb->codec_fallback) {
+    if (p_scb->peer_codecs & BTM_SCO_CODEC_MSBC) {
+      codec_uuid = UUID_CODEC_MSBC;
+    } else {
+      codec_uuid = UUID_CODEC_CVSD;
+    }
+  } else {
+    codec_uuid = BTA_AG_SCO_APTX_SWB_SETTINGS_Q0;
+  }
+
+  LOG_VERBOSE("send +QCS codec is %d", codec_uuid);
+  bta_ag_send_result(p_scb, BTA_AG_LOCAL_RES_QCS, NULL, codec_uuid);
+}
+
+/*******************************************************************************
+ *
+ * Function         bta_ag_send_qac
+ *
+ * Description      Send +%QAC AT command to peer.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void bta_ag_send_qac(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data) {
+  LOG_VERBOSE("send +QAC codecs supported");
+  bta_ag_send_result(p_scb, BTA_AG_LOCAL_RES_QAC, SWB_CODECS_SUPPORTED, 0);
+
+  if (p_scb->sco_codec == BTA_AG_SCO_APTX_SWB_SETTINGS_Q0) {
+    p_scb->is_aptx_swb_codec = true;
+  }
 }

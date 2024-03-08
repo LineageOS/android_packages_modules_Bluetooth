@@ -1,6 +1,18 @@
-// Bluetooth Core, Vol 2, Part C, 4.3.4
+// Copyright 2023 The Android Open Source Project
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-use num_traits::ToPrimitive;
+//! Bluetooth Core, Vol 2, Part C, 4.3.4
 
 use crate::lmp::procedure::Context;
 use crate::packets::lmp;
@@ -54,12 +66,12 @@ pub async fn supported_on_both_page1(
     ctx: &impl Context,
     feature: crate::packets::hci::LMPFeaturesPage1Bits,
 ) -> bool {
-    supported_on_both_page(ctx, 1, feature.to_u64().unwrap()).await
+    supported_on_both_page(ctx, 1, feature.into()).await
 }
 
 pub async fn supported_on_both_page2(
     ctx: &impl Context,
     feature: crate::packets::hci::LMPFeaturesPage2Bits,
 ) -> bool {
-    supported_on_both_page(ctx, 2, feature.to_u64().unwrap()).await
+    supported_on_both_page(ctx, 2, feature.into()).await
 }

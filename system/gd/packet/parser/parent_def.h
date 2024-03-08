@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <set>
 #include <variant>
@@ -92,9 +93,5 @@ class ParentDef : public TypeDef {
 
   bool HasChildEnums() const;
 
-  void GenRustWriteToFields(std::ostream& s) const;
-
   void GenSizeRetVal(std::ostream& s) const;
-
-  void GenRustConformanceCheck(std::ostream& s) const;
 };

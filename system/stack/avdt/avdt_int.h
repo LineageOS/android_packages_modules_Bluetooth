@@ -29,7 +29,7 @@
 #include "avdt_api.h"
 #include "avdt_defs.h"
 #include "avdtc_api.h"
-#include "btm_api.h"
+#include "internal_include/bt_target.h"
 #include "l2c_api.h"
 #include "osi/include/alarm.h"
 #include "osi/include/fixed_queue.h"
@@ -735,8 +735,7 @@ class AvdtpCb {
       : p_conf_cback(nullptr),
         p_ccb_act(nullptr),
         p_scb_act(nullptr),
-        p_conn_cback(nullptr),
-        trace_level_(0) {}
+        p_conn_cback(nullptr) {}
 
   void Reset() {
     rcb.Reset();
@@ -748,7 +747,6 @@ class AvdtpCb {
     p_ccb_act = nullptr;
     p_scb_act = nullptr;
     p_conn_cback = nullptr;
-    trace_level_ = 0;
   }
 
   AvdtpRcb rcb;                       // Registration control block
@@ -780,23 +778,6 @@ class AvdtpCb {
     }
     return 0;  // Not found
   }
-
-  /**
-   * Get the current trace level used for logging.
-   *
-   * @return the current trace level
-   */
-  uint8_t TraceLevel() const { return trace_level_; }
-
-  /**
-   * Set the current trace level used for logging.
-   *
-   * @param trace_level the trace level to set. Should be in the range [1, 6].
-   */
-  void SetTraceLevel(uint8_t trace_level) { trace_level_ = trace_level; }
-
- private:
-  uint8_t trace_level_; /* trace level */
 };
 
 /*****************************************************************************

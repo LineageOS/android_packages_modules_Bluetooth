@@ -17,22 +17,23 @@ cc_library_static {
         "packages/modules/Bluetooth/system/bta/sys",
         "packages/modules/Bluetooth/system/btif/include",
         "packages/modules/Bluetooth/system/gd",
-        "packages/modules/Bluetooth/system/gd/rust/shim",
         "packages/modules/Bluetooth/system/stack/include",
     ],
     shared_libs: [
         "android.hardware.bluetooth.audio@2.0",
         "android.hardware.bluetooth.audio@2.1",
         "libhidlbase",
+        "libutils",
     ],
     static_libs: [
         "libbt-common",
+        "libbt_shim_bridge",
         "libosi",
     ],
     target: {
         android: {
             shared_libs: [
-                "android.hardware.bluetooth.audio-V3-ndk",
+                "android.hardware.bluetooth.audio-V4-ndk",
                 "libbinder_ndk",
                 "libfmq",
             ],
@@ -43,9 +44,11 @@ cc_library_static {
                 "aidl/client_interface_aidl.cc",
                 "aidl/codec_status_aidl.cc",
                 "aidl/hearing_aid_software_encoding_aidl.cc",
+                "aidl/hfp_client_interface_aidl.cc",
                 "aidl/le_audio_software_aidl.cc",
                 "hal_version_manager.cc",
                 "hearing_aid_software_encoding.cc",
+                "hfp_client_interface.cc",
                 "hidl/a2dp_encoding_hidl.cc",
                 "hidl/client_interface_hidl.cc",
                 "hidl/codec_status_hidl.cc",
@@ -66,17 +69,22 @@ cc_library_static {
     host_supported: true,
     cflags: [
         "-DBUILDCFG",
+        "-Wno-unused-parameter",
     ],
     apex_available: [
         "com.android.btservices",
     ],
     min_sdk_version: "Tiramisu",
+    header_libs: ["libbluetooth_headers"],
 }
 
 // Bluetooth Audio client interface library unit tests for target and host
 cc_test {
     name: "bluetooth-test-audio-hal-interface",
-    defaults: ["fluoride_defaults"],
+    defaults: [
+        "fluoride_defaults",
+        "latest_android_hardware_bluetooth_audio_ndk_shared",
+    ],
     include_dirs: [
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/gd",
@@ -86,7 +94,6 @@ cc_test {
         "hidl/client_interface_hidl_unittest.cc",
     ],
     shared_libs: [
-        "android.hardware.bluetooth.audio-V3-ndk",
         "android.hardware.bluetooth.audio@2.0",
         "android.hardware.bluetooth.audio@2.1",
         "libbinder_ndk",
@@ -99,9 +106,11 @@ cc_test {
     static_libs: [
         "libbt-audio-hal-interface",
         "libbt-common",
+        "libbt_shim_bridge",
         "libchrome",
     ],
     cflags: [
         "-DBUILDCFG",
     ],
+    header_libs: ["libbluetooth_headers"],
 }

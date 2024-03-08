@@ -15,27 +15,30 @@ android_test_helper_app {
     target_sdk_version: "current",
     libs: [
         "android.test.base",
-        "android.test.runner",
         "libprotobuf-java-micro",
     ],
 
     static_libs: [
+        "androidx.core_core",
+        "androidx.test.espresso.intents",
+        "androidx.test.ext.junit",
         "androidx.test.ext.truth",
         "androidx.test.rules",
-        "androidx.core_core",
+        "bluetooth-test-util-lib",
+        "compatibility-device-util-axt",
         "grpc-java-lite",
         "grpc-java-okhttp-client-lite",
+        "mockito-kotlin2",
         "opencensus-java-contrib-grpc-metrics",
         "pandora_experimental-grpc-java",
         "pandora_experimental-proto-java",
+        "truth-java8-extension",
     ],
 
-    // Include all test java files.
-    srcs: ["src/**/*.java"],
-
-    platform_apis: true,
-    test_suites: [
-        "general-tests",
+    // Include all test java and kotlin files.
+    srcs: [
+        "src/**/*.java",
+        "src/**/*.kt",
     ],
 }
 
@@ -50,12 +53,29 @@ java_test_host {
 
     data: [
         ":BumbleBluetoothTestsApp",
-        ":bumble_pandora_server"
+        "bumble_config.json",
+    ],
+    data_native_bins: [
+        "bumble_pandora_server",
     ],
 
     required: ["bumble_pandora_server"],
 
     test_suites: [
         "general-tests",
+    ],
+}
+
+python_binary_host {
+    name: "bumble_pandora_server",
+    main: "src/bumble_server.py",
+    srcs: [
+        "src/bumble_server.py",
+    ],
+    libs: [
+        "bumble-pandora",
+        "bumble_services_experimental-python",
+        "pandora-python",
+        "pandora_experimental-python",
     ],
 }

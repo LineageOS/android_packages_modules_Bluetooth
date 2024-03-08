@@ -39,13 +39,14 @@ enum class BluetoothAudioHalVersion : uint8_t {
   VERSION_2_0,
   VERSION_2_1,
   VERSION_AIDL_V1,
+  VERSION_AIDL_V2,
+  VERSION_AIDL_V3,
+  VERSION_AIDL_V4,
 };
 
 enum class BluetoothAudioHalTransport : uint8_t {
   // Uninit, default value
   UNKNOWN,
-  // No HAL available after init or force disabled
-  DISABLED,
   AIDL,
   HIDL,
 };
@@ -69,6 +70,7 @@ class HalVersionManager {
   std::mutex mutex_;
 
   BluetoothAudioHalVersion hal_version_;
+  BluetoothAudioHalTransport hal_transport_;
 };
 
 }  // namespace audio

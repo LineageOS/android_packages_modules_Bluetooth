@@ -24,6 +24,7 @@
 #include <memory>
 
 #include "aidl/audio_aidl_interfaces.h"
+#include "osi/include/log.h"
 
 namespace bluetooth {
 namespace audio {
@@ -43,15 +44,7 @@ BluetoothAudioHalVersion HalVersionManager::GetHalVersion() {
 }
 
 BluetoothAudioHalTransport HalVersionManager::GetHalTransport() {
-  switch (GetHalVersion()) {
-    case BluetoothAudioHalVersion::VERSION_AIDL_V1:
-      return BluetoothAudioHalTransport::AIDL;
-    case BluetoothAudioHalVersion::VERSION_2_0:
-    case BluetoothAudioHalVersion::VERSION_2_1:
-      return BluetoothAudioHalTransport::HIDL;
-    default:
-      return BluetoothAudioHalTransport::UNKNOWN;
-  }
+  return instance_ptr->hal_transport_;
 }
 
 android::sp<IBluetoothAudioProvidersFactory_2_1>
@@ -90,10 +83,48 @@ HalVersionManager::GetProvidersFactory_2_0() {
   return providers_factory;
 }
 
+BluetoothAudioHalVersion GetAidlInterfaceVersion() {
+  int aidl_version = 0;
+
+  auto provider_factory = IBluetoothAudioProviderFactory::fromBinder(
+      ::ndk::SpAIBinder(AServiceManager_waitForService(
+          kDefaultAudioProviderFactoryInterface.c_str())));
+
+  if (provider_factory == nullptr) {
+    LOG_ERROR("Can't get aidl version from unknown factory");
+    return BluetoothAudioHalVersion::VERSION_UNAVAILABLE;
+  }
+
+  auto aidl_retval = provider_factory->getInterfaceVersion(&aidl_version);
+  if (!aidl_retval.isOk()) {
+    LOG_ERROR("BluetoothAudioHal::getInterfaceVersion failure: %s",
+              aidl_retval.getDescription().c_str());
+    return BluetoothAudioHalVersion::VERSION_UNAVAILABLE;
+  }
+
+  switch (aidl_version) {
+    case 1:
+      return BluetoothAudioHalVersion::VERSION_AIDL_V1;
+    case 2:
+      return BluetoothAudioHalVersion::VERSION_AIDL_V2;
+    case 3:
+      return BluetoothAudioHalVersion::VERSION_AIDL_V3;
+    case 4:
+      return BluetoothAudioHalVersion::VERSION_AIDL_V4;
+    default:
+      LOG_ERROR("Unknown AIDL version %d", aidl_version);
+      return BluetoothAudioHalVersion::VERSION_UNAVAILABLE;
+  }
+
+  return BluetoothAudioHalVersion::VERSION_UNAVAILABLE;
+}
+
 HalVersionManager::HalVersionManager() {
+  hal_transport_ = BluetoothAudioHalTransport::UNKNOWN;
   if (AServiceManager_checkService(
           kDefaultAudioProviderFactoryInterface.c_str()) != nullptr) {
-    hal_version_ = BluetoothAudioHalVersion::VERSION_AIDL_V1;
+    hal_version_ = GetAidlInterfaceVersion();
+    hal_transport_ = BluetoothAudioHalTransport::AIDL;
     return;
   }
 
@@ -115,6 +146,7 @@ HalVersionManager::HalVersionManager() {
 
   if (instance_count > 0) {
     hal_version_ = BluetoothAudioHalVersion::VERSION_2_1;
+    hal_transport_ = BluetoothAudioHalTransport::HIDL;
     return;
   }
 
@@ -128,6 +160,7 @@ HalVersionManager::HalVersionManager() {
 
   if (instance_count > 0) {
     hal_version_ = BluetoothAudioHalVersion::VERSION_2_0;
+    hal_transport_ = BluetoothAudioHalTransport::HIDL;
     return;
   }
 

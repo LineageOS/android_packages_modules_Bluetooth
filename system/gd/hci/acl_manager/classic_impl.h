@@ -24,9 +24,9 @@
 #include "common/init_flags.h"
 #include "hci/acl_manager/acl_scheduler.h"
 #include "hci/acl_manager/assembler.h"
-#include "hci/acl_manager/event_checkers.h"
 #include "hci/acl_manager/round_robin_scheduler.h"
 #include "hci/controller.h"
+#include "hci/event_checkers.h"
 #include "hci/remote_name_request.h"
 #include "os/metrics.h"
 #include "security/security_manager_listener.h"
@@ -274,8 +274,10 @@ struct classic_impl : public security::ISecurityManagerListener {
             client_callbacks_, &ConnectionCallbacks::HACK_OnEscoConnectRequest, address, request.GetClassOfDevice());
         return;
 
-      case ConnectionRequestLinkType::UNKNOWN:
-        LOG_ERROR("Request has unknown ConnectionRequestLinkType.");
+      default:
+        LOG_ERROR(
+            "Request has unknown ConnectionRequestLinkType %s",
+            ConnectionRequestLinkTypeText(request.GetLinkType()).c_str());
         return;
     }
 
@@ -406,8 +408,10 @@ struct classic_impl : public security::ISecurityManagerListener {
 
     // HACK: Some failed SCO connections are reporting failures via
     //       ConnectComplete instead of ScoConnectionComplete.
-    //       Drop such packets.
-    if (handle == 0xffff && link_type == LinkType::SCO) {
+    //       The pattern of it is that the handle is always 0xffff.
+    //       We check it with 0x0fff since PDL only extracts 12 bits for handle.
+    //       Drop such packets when the pattern is matched.
+    if (handle == 0x0fff && link_type == LinkType::SCO) {
       LOG_ERROR(
           "ConnectionComplete with invalid handle(%u), link type(%u) and status(%d). Dropping packet.",
           handle,
@@ -446,12 +450,7 @@ struct classic_impl : public security::ISecurityManagerListener {
                   ADDRESS_TO_LOGGABLE_CSTR(address),
                   ErrorCodeText(status).c_str());
               LOG_WARN("Firmware error after RemoteNameRequestCancel?");  // see b/184239841
-              if (bluetooth::common::init_flags::gd_remote_name_request_is_enabled()) {
-                ASSERT_LOG(
-                    remote_name_request_module != nullptr,
-                    "RNR module enabled but module not provided");
-                remote_name_request_module->ReportRemoteNameRequestCancellation(address);
-              }
+              remote_name_request_module->ReportRemoteNameRequestCancellation(address);
             },
             common::Unretained(remote_name_request_module_),
             address,
@@ -473,7 +472,7 @@ struct classic_impl : public security::ISecurityManagerListener {
   void actually_cancel_connect(Address address) {
     std::unique_ptr<CreateConnectionCancelBuilder> packet = CreateConnectionCancelBuilder::Create(address);
     acl_connection_interface_->EnqueueCommand(
-        std::move(packet), handler_->BindOnce(&check_command_complete<CreateConnectionCancelCompleteView>));
+        std::move(packet), handler_->BindOnce(check_complete<CreateConnectionCancelCompleteView>));
   }
 
   static constexpr bool kRemoveConnectionAfterwards = true;
@@ -508,7 +507,7 @@ struct classic_impl : public security::ISecurityManagerListener {
       return;
     }
     uint16_t handle = packet_type_changed.GetConnectionHandle();
-    connections.execute(handle, [=](ConnectionManagementCallbacks* callbacks) {
+    connections.execute(handle, [=](ConnectionManagementCallbacks* /* callbacks */) {
       // We don't handle this event; we didn't do this in legacy stack either.
     });
   }
@@ -757,20 +756,21 @@ struct classic_impl : public security::ISecurityManagerListener {
   void central_link_key(KeyFlag key_flag) {
     std::unique_ptr<CentralLinkKeyBuilder> packet = CentralLinkKeyBuilder::Create(key_flag);
     acl_connection_interface_->EnqueueCommand(
-        std::move(packet), handler_->BindOnce(&check_command_status<CentralLinkKeyStatusView>));
+        std::move(packet), handler_->BindOnce(check_status<CentralLinkKeyStatusView>));
   }
 
   void switch_role(Address address, Role role) {
     std::unique_ptr<SwitchRoleBuilder> packet = SwitchRoleBuilder::Create(address, role);
     acl_connection_interface_->EnqueueCommand(
-        std::move(packet), handler_->BindOnce(&check_command_status<SwitchRoleStatusView>));
+        std::move(packet), handler_->BindOnce(check_status<SwitchRoleStatusView>));
   }
 
   void write_default_link_policy_settings(uint16_t default_link_policy_settings) {
     std::unique_ptr<WriteDefaultLinkPolicySettingsBuilder> packet =
         WriteDefaultLinkPolicySettingsBuilder::Create(default_link_policy_settings);
     acl_connection_interface_->EnqueueCommand(
-        std::move(packet), handler_->BindOnce(&check_command_complete<WriteDefaultLinkPolicySettingsCompleteView>));
+        std::move(packet),
+        handler_->BindOnce(check_complete<WriteDefaultLinkPolicySettingsCompleteView>));
   }
 
   void accept_connection(Address address) {
@@ -782,12 +782,14 @@ struct classic_impl : public security::ISecurityManagerListener {
 
   void reject_connection(std::unique_ptr<RejectConnectionRequestBuilder> builder) {
     acl_connection_interface_->EnqueueCommand(
-        std::move(builder), handler_->BindOnce(&check_command_status<RejectConnectionRequestStatusView>));
+        std::move(builder), handler_->BindOnce(check_status<RejectConnectionRequestStatusView>));
   }
 
-  void OnDeviceBonded(bluetooth::hci::AddressWithType device) override {}
-  void OnDeviceUnbonded(bluetooth::hci::AddressWithType device) override {}
-  void OnDeviceBondFailed(bluetooth::hci::AddressWithType device, security::PairingFailure status) override {}
+  void OnDeviceBonded(bluetooth::hci::AddressWithType /* device */) override {}
+  void OnDeviceUnbonded(bluetooth::hci::AddressWithType /* device */) override {}
+  void OnDeviceBondFailed(
+      bluetooth::hci::AddressWithType /* device */,
+      security::PairingFailure /* status */) override {}
 
   void set_security_module(security::SecurityModule* security_module) {
     security_manager_ = security_module->GetSecurityManager();

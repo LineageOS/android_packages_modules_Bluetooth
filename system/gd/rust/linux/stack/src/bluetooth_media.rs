@@ -6,24 +6,32 @@ use bt_topshim::btif::{
 };
 use bt_topshim::profiles::a2dp::{
     A2dp, A2dpCallbacks, A2dpCallbacksDispatcher, A2dpCodecBitsPerSample, A2dpCodecChannelMode,
-    A2dpCodecConfig, A2dpCodecSampleRate, BtavAudioState, BtavConnectionState,
-    PresentationPosition,
+    A2dpCodecConfig, A2dpCodecIndex, A2dpCodecPriority, A2dpCodecSampleRate, BtavAudioState,
+    BtavConnectionState, PresentationPosition,
 };
 use bt_topshim::profiles::avrcp::{
     Avrcp, AvrcpCallbacks, AvrcpCallbacksDispatcher, PlayerMetadata,
 };
+use bt_topshim::profiles::hfp::interop_insert_call_when_sco_start;
 use bt_topshim::profiles::hfp::{
-    BthfAudioState, BthfConnectionState, CallHoldCommand, CallInfo, CallState, Hfp, HfpCallbacks,
-    HfpCallbacksDispatcher, HfpCodecCapability, PhoneState, TelephonyDeviceStatus,
+    BthfAudioState, BthfConnectionState, CallHoldCommand, CallInfo, CallSource, CallState, Hfp,
+    HfpCallbacks, HfpCallbacksDispatcher, HfpCodecCapability, HfpCodecId, PhoneState,
+    TelephonyDeviceStatus,
 };
 use bt_topshim::profiles::ProfileConnectionState;
 use bt_topshim::{metrics, topstack};
+use bt_utils::at_command_parser::{calculate_battery_percent, parse_at_command_data};
+use bt_utils::uhid_hfp::{
+    OutputEvent, UHidHfp, BLUETOOTH_TELEPHONY_UHID_REPORT_ID, UHID_INPUT_HOOK_SWITCH,
+    UHID_INPUT_PHONE_MUTE, UHID_OUTPUT_MUTE, UHID_OUTPUT_NONE, UHID_OUTPUT_OFF_HOOK,
+    UHID_OUTPUT_RING,
+};
 use bt_utils::uinput::UInput;
 
 use itertools::Itertools;
 use log::{debug, info, warn};
 use std::collections::{HashMap, HashSet};
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 use std::sync::Arc;
 use std::sync::Mutex;
 
@@ -42,8 +50,9 @@ use crate::uuid::Profile;
 use crate::{Message, RPCProxy};
 
 // The timeout we have to wait for all supported profiles to connect after we
-// receive the first profile connected event. The host shall disconnect the
-// device after this many seconds of timeout.
+// receive the first profile connected event. The host shall disconnect or
+// force connect the potentially partially connected device after this many
+// seconds of timeout.
 const PROFILE_DISCOVERY_TIMEOUT_SEC: u64 = 10;
 // The timeout we have to wait for the initiator peer device to complete the
 // initial profile connection. After this many seconds, we will begin to
@@ -73,6 +82,9 @@ pub trait IBluetoothMedia {
 
     /// connect to available but missing media profiles
     fn connect(&mut self, address: String);
+
+    /// disconnect all profiles from the device
+    /// NOTE: do not call this function from outside unless `is_complete_profiles_required`
     fn disconnect(&mut self, address: String);
 
     // Set the device as the active A2DP device
@@ -86,9 +98,11 @@ pub trait IBluetoothMedia {
 
     fn set_audio_config(
         &mut self,
-        sample_rate: i32,
-        bits_per_sample: i32,
-        channel_mode: i32,
+        address: String,
+        codec_type: A2dpCodecIndex,
+        sample_rate: A2dpCodecSampleRate,
+        bits_per_sample: A2dpCodecBitsPerSample,
+        channel_mode: A2dpCodecChannelMode,
     ) -> bool;
 
     // Set the A2DP/AVRCP volume. Valid volume specified by the spec should be
@@ -111,7 +125,12 @@ pub trait IBluetoothMedia {
     fn get_presentation_position(&mut self) -> PresentationPosition;
 
     /// Start the SCO setup to connect audio
-    fn start_sco_call(&mut self, address: String, sco_offload: bool, force_cvsd: bool) -> bool;
+    fn start_sco_call(
+        &mut self,
+        address: String,
+        sco_offload: bool,
+        disabled_codecs: HfpCodecCapability,
+    ) -> bool;
     fn stop_sco_call(&mut self, address: String);
 
     /// Set the current playback status: e.g., playing, paused, stopped, etc. The method is a copy
@@ -124,6 +143,9 @@ pub trait IBluetoothMedia {
     /// copy of the existing CRAS API, hence not following Floss API conventions. PlayerMetadata is
     /// a custom data type that requires special handlng.
     fn set_player_metadata(&mut self, metadata: PlayerMetadata);
+
+    // Trigger a debug log dump.
+    fn trigger_debug_dump(&mut self);
 }
 
 pub trait IBluetoothMediaCallback: RPCProxy {
@@ -154,9 +176,29 @@ pub trait IBluetoothMediaCallback: RPCProxy {
     /// waiting for the audio client to issue a reconnection request. We need
     /// to notify audio client of this event for it to do appropriate handling.
     fn on_hfp_audio_disconnected(&mut self, addr: String);
+
+    /// Triggered when there is a HFP dump is received. This should only be used
+    /// for debugging and testing purpose.
+    fn on_hfp_debug_dump(
+        &mut self,
+        active: bool,
+        codec_id: u16,
+        total_num_decoded_frames: i32,
+        pkt_loss_ratio: f64,
+        begin_ts: u64,
+        end_ts: u64,
+        pkt_status_in_hex: String,
+        pkt_status_in_binary: String,
+    );
 }
 
 pub trait IBluetoothTelephony {
+    ///
+    fn register_telephony_callback(
+        &mut self,
+        callback: Box<dyn IBluetoothTelephonyCallback + Send>,
+    ) -> bool;
+
     /// Sets whether the device is connected to the cellular network.
     fn set_network_available(&mut self, network_available: bool);
     /// Sets whether the device is roaming.
@@ -166,8 +208,10 @@ pub trait IBluetoothTelephony {
     /// Sets the device battery level, 0 to 5.
     fn set_battery_level(&mut self, battery_level: i32) -> bool;
     /// Enables/disables phone operations.
-    /// The call state is fully reset whenever this is called.
     fn set_phone_ops_enabled(&mut self, enable: bool);
+    /// Enables/disables phone operations for mps qualification.
+    /// The call state is fully reset whenever this is called.
+    fn set_mps_qualification_enabled(&mut self, enable: bool);
     /// Acts like the AG received an incoming call.
     fn incoming_call(&mut self, number: String) -> bool;
     /// Acts like dialing a call from the AG.
@@ -191,6 +235,10 @@ pub trait IBluetoothTelephony {
     fn audio_connect(&mut self, address: String) -> bool;
     /// Stops the audio connection to <address>.
     fn audio_disconnect(&mut self, address: String);
+}
+
+pub trait IBluetoothTelephonyCallback: RPCProxy {
+    fn on_telephony_use(&mut self, addr: String, state: bool);
 }
 
 /// Serializable device used in.
@@ -228,6 +276,13 @@ enum DeviceConnectionStates {
     ConnectingAfterRetry,  // Host initiated requests to missing profiles after timeout
     FullyConnected,        // All profiles (excluding AVRCP) are connected
     Disconnecting,         // Working towards disconnection of each connected profile
+    WaitingConnection,     // Waiting for new connections initiated by peer
+}
+
+struct UHid {
+    pub handle: UHidHfp,
+    pub volume: u8,
+    pub muted: bool,
 }
 
 pub struct BluetoothMedia {
@@ -236,6 +291,7 @@ pub struct BluetoothMedia {
     battery_provider_id: u32,
     initialized: bool,
     callbacks: Arc<Mutex<Callbacks<dyn IBluetoothMediaCallback + Send>>>,
+    telephony_callbacks: Arc<Mutex<Callbacks<dyn IBluetoothTelephonyCallback + Send>>>,
     tx: Sender<Message>,
     adapter: Option<Arc<Mutex<Box<Bluetooth>>>>,
     a2dp: Option<A2dp>,
@@ -260,8 +316,10 @@ pub struct BluetoothMedia {
     phone_state: PhoneState,
     call_list: Vec<CallInfo>,
     phone_ops_enabled: bool,
+    mps_qualification_enabled: bool,
     memory_dialing_number: Option<String>,
     last_dialing_number: Option<String>,
+    uhid: HashMap<RawAddress, UHid>,
 }
 
 impl BluetoothMedia {
@@ -282,6 +340,10 @@ impl BluetoothMedia {
             callbacks: Arc::new(Mutex::new(Callbacks::new(
                 tx.clone(),
                 Message::MediaCallbackDisconnected,
+            ))),
+            telephony_callbacks: Arc::new(Mutex::new(Callbacks::new(
+                tx.clone(),
+                Message::TelephonyCallbackDisconnected,
             ))),
             tx,
             adapter: None,
@@ -307,8 +369,10 @@ impl BluetoothMedia {
             phone_state: PhoneState { num_active: 0, num_held: 0, state: CallState::Idle },
             call_list: vec![],
             phone_ops_enabled: false,
+            mps_qualification_enabled: false,
             memory_dialing_number: None,
             last_dialing_number: None,
+            uhid: HashMap::new(),
         }
     }
 
@@ -350,6 +414,7 @@ impl BluetoothMedia {
         self.delay_volume_update.remove(&profile);
 
         if is_profile_critical && self.is_complete_profiles_required() {
+            BluetoothMedia::disconnect_device(self.tx.clone(), addr);
             self.notify_critical_profile_disconnected(addr);
         }
 
@@ -458,9 +523,6 @@ impl BluetoothMedia {
                         self.a2dp_caps.remove(&addr);
                         self.a2dp_audio_state.remove(&addr);
                         self.rm_connected_profile(addr, uuid::Profile::A2dpSink, true);
-                        if self.is_complete_profiles_required() {
-                            self.disconnect(addr.to_string());
-                        }
                     }
                     _ => {
                         self.a2dp_states.insert(addr, state);
@@ -476,6 +538,13 @@ impl BluetoothMedia {
             }
             A2dpCallbacks::MandatoryCodecPreferred(_addr) => {}
         }
+    }
+
+    fn disconnect_device(txl: Sender<Message>, addr: RawAddress) {
+        let device = BluetoothDevice::new(addr.to_string(), "".to_string());
+        topstack::get_runtime().spawn(async move {
+            let _ = txl.send(Message::DisconnectDevice(device)).await;
+        });
     }
 
     pub fn dispatch_avrcp_callbacks(&mut self, cb: AvrcpCallbacks) {
@@ -572,7 +641,8 @@ impl BluetoothMedia {
                     info!("[{}]: state {:?}", DisplayAddress(&addr), state);
                     match state {
                         DeviceConnectionStates::ConnectingBeforeRetry
-                        | DeviceConnectionStates::ConnectingAfterRetry => {
+                        | DeviceConnectionStates::ConnectingAfterRetry
+                        | DeviceConnectionStates::WaitingConnection => {
                             self.delay_volume_update.insert(Profile::AvrcpController, volume);
                         }
                         DeviceConnectionStates::FullyConnected => {
@@ -597,7 +667,10 @@ impl BluetoothMedia {
 
                 // Per MPS v1.0, on receiving a pause key through AVRCP,
                 // central should pause the A2DP stream with an AVDTP suspend command.
-                if self.phone_ops_enabled && key == AVRCP_ID_PAUSE && value == AVRCP_STATE_PRESS {
+                if self.mps_qualification_enabled
+                    && key == AVRCP_ID_PAUSE
+                    && value == AVRCP_STATE_PRESS
+                {
                     self.suspend_audio_request_impl();
                 }
             }
@@ -644,20 +717,24 @@ impl BluetoothMedia {
 
                         // Connect SCO if phone operations are enabled and an active call exists.
                         // This is only used for Bluetooth HFP qualification.
-                        if self.phone_ops_enabled && self.phone_state.num_active > 0 {
+                        if self.mps_qualification_enabled && self.phone_state.num_active > 0 {
                             debug!("[{}]: Connect SCO due to active call.", DisplayAddress(&addr));
-                            self.start_sco_call_impl(addr.to_string(), false, false);
+                            self.start_sco_call_impl(
+                                addr.to_string(),
+                                false,
+                                HfpCodecCapability::NONE,
+                            );
                         }
+
+                        self.uhid_create(addr);
                     }
                     BthfConnectionState::Disconnected => {
                         info!("[{}]: hfp disconnected.", DisplayAddress(&addr));
+                        self.uhid_destroy(&addr);
                         self.hfp_states.remove(&addr);
                         self.hfp_cap.remove(&addr);
                         self.hfp_audio_state.remove(&addr);
                         self.rm_connected_profile(addr, uuid::Profile::Hfp, true);
-                        if self.is_complete_profiles_required() {
-                            self.disconnect(addr.to_string());
-                        }
                     }
                     BthfConnectionState::Connecting => {
                         info!("[{}]: hfp connecting.", DisplayAddress(&addr));
@@ -683,18 +760,19 @@ impl BluetoothMedia {
 
                         self.hfp_audio_state.insert(addr, state);
 
-                        // Change the phone state only when it's currently managed by media stack
-                        // (I.e., phone operations are not enabled).
-                        if !self.phone_ops_enabled && self.phone_state.num_active != 1 {
+                        if self.should_insert_call_when_sco_start(addr)
+                            && self.call_list.iter().all(|c| c.source != CallSource::CRAS)
+                        {
                             // This triggers a +CIEV command to set the call status for HFP devices.
                             // It is required for some devices to provide sound.
-                            self.phone_state.num_active = 1;
-                            self.call_list = vec![CallInfo {
-                                index: 1,
+                            self.phone_state.num_active += 1;
+                            self.call_list.push(CallInfo {
+                                index: self.new_call_index(),
                                 dir_incoming: false,
+                                source: CallSource::CRAS,
                                 state: CallState::Active,
                                 number: "".into(),
-                            }];
+                            });
                             self.phone_state_change("".into());
                         }
                     }
@@ -710,11 +788,19 @@ impl BluetoothMedia {
                             });
                         }
 
-                        // Change the phone state only when it's currently managed by media stack
-                        // (I.e., phone operations are not enabled).
-                        if !self.phone_ops_enabled && self.phone_state.num_active != 0 {
-                            self.phone_state.num_active = 0;
-                            self.call_list = vec![];
+                        if !self.mps_qualification_enabled
+                            && self.call_list.iter().any(|c| c.source == CallSource::CRAS)
+                        {
+                            for c in self.call_list.iter_mut() {
+                                if c.source == CallSource::CRAS {
+                                    self.phone_state.num_active -= 1;
+                                }
+                            }
+
+                            self.call_list.retain(|x| match x.source {
+                                CallSource::CRAS => false,
+                                _ => true,
+                            });
                             self.phone_state_change("".into());
                         }
 
@@ -745,7 +831,8 @@ impl BluetoothMedia {
                 );
                 match states.get(&addr).unwrap() {
                     DeviceConnectionStates::ConnectingBeforeRetry
-                    | DeviceConnectionStates::ConnectingAfterRetry => {
+                    | DeviceConnectionStates::ConnectingAfterRetry
+                    | DeviceConnectionStates::WaitingConnection => {
                         self.delay_volume_update.insert(Profile::Hfp, volume);
                     }
                     DeviceConnectionStates::FullyConnected => {
@@ -755,6 +842,60 @@ impl BluetoothMedia {
                     }
                     _ => {}
                 }
+            }
+            HfpCallbacks::MicVolumeUpdate(volume, addr) => {
+                if !self.phone_ops_enabled {
+                    return;
+                }
+
+                if self.hfp_states.get(&addr).is_none()
+                    || BthfConnectionState::SlcConnected != *self.hfp_states.get(&addr).unwrap()
+                {
+                    warn!("[{}]: Unknown address hfp or slc not ready", addr.to_string());
+                    return;
+                }
+
+                if let Some(uhid) = self.uhid.get_mut(&addr) {
+                    if volume == 0 && !uhid.muted {
+                        uhid.muted = true;
+                        self.uhid_send_input_report(&addr);
+                    } else if volume > 0 {
+                        uhid.volume = volume;
+                        if uhid.muted {
+                            uhid.muted = false;
+                            self.uhid_send_input_report(&addr);
+                        }
+                    }
+                }
+            }
+            HfpCallbacks::VendorSpecificAtCommand(at_string, addr) => {
+                let at_command = match parse_at_command_data(at_string) {
+                    Ok(command) => command,
+                    Err(e) => {
+                        debug!("{}", e);
+                        return;
+                    }
+                };
+                let battery_level = match calculate_battery_percent(at_command.clone()) {
+                    Ok(level) => level,
+                    Err(e) => {
+                        debug!("{}", e);
+                        return;
+                    }
+                };
+                let source_info = match at_command.vendor {
+                    Some(vendor) => format!("HFP - {}", vendor),
+                    _ => "HFP - UnknownAtCommand".to_string(),
+                };
+                self.battery_provider_manager.lock().unwrap().set_battery_info(
+                    self.battery_provider_id,
+                    BatterySet::new(
+                        addr.to_string(),
+                        uuid::HFP.to_string(),
+                        source_info,
+                        vec![Battery { percentage: battery_level, variant: "".to_string() }],
+                    ),
+                );
             }
             HfpCallbacks::BatteryLevelUpdate(battery_level, addr) => {
                 let battery_set = BatterySet::new(
@@ -851,8 +992,11 @@ impl BluetoothMedia {
                 }
                 self.phone_state_change("".into());
 
-                debug!("[{}]: Start SCO call due to ATA", DisplayAddress(&addr));
-                self.start_sco_call_impl(addr.to_string(), false, false);
+                if self.mps_qualification_enabled {
+                    debug!("[{}]: Start SCO call due to ATA", DisplayAddress(&addr));
+                    self.start_sco_call_impl(addr.to_string(), false, HfpCodecCapability::NONE);
+                }
+                self.uhid_send_input_report(&addr);
             }
             HfpCallbacks::HangupCall(addr) => {
                 if !self.hangup_call_impl() {
@@ -860,6 +1004,7 @@ impl BluetoothMedia {
                     return;
                 }
                 self.phone_state_change("".into());
+                self.uhid_send_input_report(&addr);
 
                 // Try resume the A2DP stream (per MPS v1.0) on rejecting an incoming call or an
                 // outgoing call is rejected.
@@ -907,6 +1052,7 @@ impl BluetoothMedia {
                 if success {
                     // Success means the call state has changed. Inform libbluetooth.
                     self.phone_state_change("".into());
+                    self.uhid_send_input_report(&addr);
                 } else {
                     warn!(
                         "[{}]: Unexpected or unsupported CHLD command {:?} from HF",
@@ -915,11 +1061,258 @@ impl BluetoothMedia {
                     );
                 }
             }
+            HfpCallbacks::DebugDump(
+                active,
+                codec_id,
+                total_num_decoded_frames,
+                pkt_loss_ratio,
+                begin_ts,
+                end_ts,
+                pkt_status_in_hex,
+                pkt_status_in_binary,
+            ) => {
+                let is_wbs = codec_id == HfpCodecId::MSBC as u16;
+                let is_swb = codec_id == HfpCodecId::LC3 as u16;
+                debug!("[HFP] DebugDump: active:{}, codec_id:{}", active, codec_id);
+                if is_wbs || is_swb {
+                    debug!(
+                        "total_num_decoded_frames:{} pkt_loss_ratio:{}",
+                        total_num_decoded_frames, pkt_loss_ratio
+                    );
+                    debug!("begin_ts:{} end_ts:{}", begin_ts, end_ts);
+                    debug!(
+                        "pkt_status_in_hex:{} pkt_status_in_binary:{}",
+                        pkt_status_in_hex, pkt_status_in_binary
+                    );
+                }
+                self.callbacks.lock().unwrap().for_all_callbacks(|callback| {
+                    callback.on_hfp_debug_dump(
+                        active,
+                        codec_id,
+                        total_num_decoded_frames,
+                        pkt_loss_ratio,
+                        begin_ts,
+                        end_ts,
+                        pkt_status_in_hex.clone(),
+                        pkt_status_in_binary.clone(),
+                    );
+                });
+            }
         }
     }
 
     pub fn remove_callback(&mut self, id: u32) -> bool {
         self.callbacks.lock().unwrap().remove_callback(id)
+    }
+
+    pub fn remove_telephony_callback(&mut self, id: u32) -> bool {
+        self.telephony_callbacks.lock().unwrap().remove_callback(id)
+    }
+
+    fn uhid_create(&mut self, addr: RawAddress) {
+        debug!(
+            "[{}]: UHID create: PhoneOpsEnabled {}",
+            DisplayAddress(&addr),
+            self.phone_ops_enabled,
+        );
+        // To change the value of phone_ops_enabled, you need to toggle the BluetoothFlossTelephony feature flag on chrome://flags.
+        if !self.phone_ops_enabled {
+            return;
+        }
+        if self.uhid.contains_key(&addr) {
+            warn!("[{}]: UHID create: entry already created", DisplayAddress(&addr));
+            return;
+        }
+        let adapter_addr = match &self.adapter {
+            Some(adapter) => adapter.lock().unwrap().get_address().to_lowercase(),
+            _ => "".to_string(),
+        };
+        let txl = self.tx.clone();
+        let remote_addr = addr.to_string();
+        self.uhid.insert(
+            addr,
+            UHid {
+                handle: UHidHfp::create(
+                    adapter_addr,
+                    addr.to_string(),
+                    self.adapter_get_remote_name(addr),
+                    move |m| {
+                        match m {
+                            OutputEvent::Close => {
+                                txl.blocking_send(Message::UHidTelephonyUseCallback(
+                                    remote_addr.clone(),
+                                    false,
+                                ))
+                                .unwrap();
+                            }
+                            OutputEvent::Open => {
+                                txl.blocking_send(Message::UHidTelephonyUseCallback(
+                                    remote_addr.clone(),
+                                    true,
+                                ))
+                                .unwrap();
+                            }
+                            OutputEvent::Output { data } => {
+                                txl.blocking_send(Message::UHidHfpOutputCallback(
+                                    remote_addr.clone(),
+                                    data[0],
+                                    data[1],
+                                ))
+                                .unwrap();
+                            }
+                            _ => (),
+                        };
+                    },
+                ),
+                volume: 15, // By default use maximum volume in case microphone gain has not been received
+                muted: false,
+            },
+        );
+    }
+
+    fn uhid_destroy(&mut self, addr: &RawAddress) {
+        if let Some(uhid) = self.uhid.get_mut(addr) {
+            debug!("[{}]: UHID destroy", DisplayAddress(&addr));
+            match uhid.handle.destroy() {
+                Err(e) => log::error!(
+                    "[{}]: UHID destroy: Fail to destroy uhid {}",
+                    DisplayAddress(&addr),
+                    e
+                ),
+                Ok(_) => (),
+            };
+            self.uhid.remove(addr);
+        } else {
+            debug!("[{}]: UHID destroy: not a UHID device", DisplayAddress(&addr));
+        }
+    }
+
+    fn uhid_send_input_report(&mut self, addr: &RawAddress) {
+        // To change the value of phone_ops_enabled, you need to toggle the BluetoothFlossTelephony feature flag on chrome://flags.
+        if !self.phone_ops_enabled {
+            return;
+        }
+        if let Some(uhid) = self.uhid.get_mut(addr) {
+            let mut data = 0;
+            if self.call_list.iter().any(|c| c.source == CallSource::HID) {
+                data |= UHID_INPUT_HOOK_SWITCH;
+            }
+            if uhid.muted {
+                data |= UHID_INPUT_PHONE_MUTE;
+            }
+            debug!("[{}]: UHID: Send input report: {}", DisplayAddress(&addr), data);
+            match uhid.handle.send_input(data) {
+                Err(e) => log::error!(
+                    "[{}]: UHID: Fail to send Input Report ({}) to uhid: {}",
+                    DisplayAddress(&addr),
+                    data,
+                    e
+                ),
+                Ok(_) => (),
+            };
+        };
+    }
+
+    pub fn dispatch_uhid_hfp_output_callback(&mut self, address: String, id: u8, data: u8) {
+        let addr = match RawAddress::from_string(address.clone()) {
+            None => {
+                warn!("UHID: Invalid device address for dispatch_uhid_hfp_output_callback");
+                return;
+            }
+            Some(addr) => addr,
+        };
+
+        debug!(
+            "[{}]: UHID: Received output report: id {}, data {}",
+            DisplayAddress(&addr),
+            id,
+            data
+        );
+
+        let uhid = match self.uhid.get_mut(&addr) {
+            Some(uhid) => uhid,
+            None => {
+                warn!("[{}]: UHID: No valid UHID", DisplayAddress(&addr));
+                return;
+            }
+        };
+
+        if id == BLUETOOTH_TELEPHONY_UHID_REPORT_ID {
+            let mute = data & UHID_OUTPUT_MUTE;
+            if mute == UHID_OUTPUT_MUTE && !uhid.muted {
+                uhid.muted = true;
+                self.set_hfp_mic_volume(0, addr);
+            } else if mute != UHID_OUTPUT_MUTE && uhid.muted {
+                uhid.muted = false;
+                let saved_volume = uhid.volume;
+                self.set_hfp_mic_volume(saved_volume, addr);
+            }
+
+            let call_state = data & (UHID_OUTPUT_RING | UHID_OUTPUT_OFF_HOOK);
+            if call_state == UHID_OUTPUT_NONE {
+                self.hangup_call();
+            } else if call_state == UHID_OUTPUT_RING {
+                self.incoming_call("".into());
+            } else if call_state == UHID_OUTPUT_OFF_HOOK {
+                if self.call_list.iter().any(|c| c.source == CallSource::HID) {
+                    return;
+                }
+                self.dialing_call("".into());
+                self.answer_call();
+                self.uhid_send_input_report(&addr);
+            }
+        }
+    }
+
+    pub fn dispatch_uhid_telephony_use_callback(&mut self, address: String, state: bool) {
+        let addr = match RawAddress::from_string(address.clone()) {
+            None => {
+                warn!("UHID: Invalid device address for dispatch_uhid_telephony_use_callback");
+                return;
+            }
+            Some(addr) => addr,
+        };
+
+        debug!("[{}]: UHID: Telephony use: {}", DisplayAddress(&addr), state);
+        if state == false {
+            // As there's a HID call for each WebHID call, even if it has been answered in the app
+            // or pre-exists, and that an app which disconnects from WebHID may not have trigger
+            // the UHID_OUTPUT_NONE, we need to remove all pending HID calls on telephony use
+            // release to keep lower HF layer in sync and not prevent A2DP streaming
+            self.hangup_call_impl();
+            self.phone_state_change("".into());
+        }
+        self.telephony_callbacks.lock().unwrap().for_all_callbacks(|callback| {
+            callback.on_telephony_use(address.to_string(), state);
+        });
+    }
+
+    fn set_hfp_mic_volume(&mut self, volume: u8, addr: RawAddress) {
+        let vol = match i8::try_from(volume) {
+            Ok(val) if val <= 15 => val,
+            _ => {
+                warn!("[{}]: Ignore invalid mic volume {}", DisplayAddress(&addr), volume);
+                return;
+            }
+        };
+
+        if self.hfp_states.get(&addr).is_none() {
+            warn!(
+                "[{}]: Ignore mic volume event for unconnected or disconnected HFP device",
+                DisplayAddress(&addr)
+            );
+            return;
+        }
+
+        match self.hfp.as_mut() {
+            Some(hfp) => {
+                let status = hfp.set_mic_volume(vol, addr);
+                if status != BtStatus::Success {
+                    warn!("[{}]: Failed to set mic volume to {}", DisplayAddress(&addr), vol);
+                }
+            }
+            None => warn!("Uninitialized HFP to set mic volume"),
+        };
     }
 
     fn notify_critical_profile_disconnected(&mut self, addr: RawAddress) {
@@ -995,6 +1388,15 @@ impl BluetoothMedia {
         let sleep_duration = (first_conn_ts + total_duration).saturating_duration_since(now_ts);
         sleep(sleep_duration).await;
 
+        Self::async_disconnect(fallback_tasks, device_states, txl, addr).await;
+    }
+
+    async fn async_disconnect(
+        fallback_tasks: &Arc<Mutex<HashMap<RawAddress, Option<(JoinHandle<()>, Instant)>>>>,
+        device_states: &Arc<Mutex<HashMap<RawAddress, DeviceConnectionStates>>>,
+        txl: &Sender<Message>,
+        addr: &RawAddress,
+    ) {
         device_states.lock().unwrap().insert(*addr, DeviceConnectionStates::Disconnecting);
         fallback_tasks.lock().unwrap().insert(*addr, None);
 
@@ -1013,10 +1415,20 @@ impl BluetoothMedia {
         first_conn_ts: Instant,
     ) {
         let now_ts = Instant::now();
-        let total_duration = Duration::from_secs(CONNECT_MISSING_PROFILES_TIMEOUT_SEC);
+        let total_duration = Duration::from_secs(PROFILE_DISCOVERY_TIMEOUT_SEC);
         let sleep_duration = (first_conn_ts + total_duration).saturating_duration_since(now_ts);
         sleep(sleep_duration).await;
         let _ = txl.send(Message::Media(MediaActions::ForceEnterConnected(addr.to_string()))).await;
+    }
+
+    fn is_bonded(&self, addr: &RawAddress) -> bool {
+        match &self.adapter {
+            Some(adapter) => {
+                BtBondState::Bonded
+                    == adapter.lock().unwrap().get_bond_state_by_addr(&addr.to_string())
+            }
+            _ => false,
+        }
     }
 
     fn notify_media_capability_updated(&mut self, addr: RawAddress) {
@@ -1035,8 +1447,22 @@ impl BluetoothMedia {
                 guard.insert(addr, None);
             } else {
                 // The device is already added or is disconnecting.
-                // Ignore unless all profiles are cleared.
+                // Ignore unless all profiles are cleared, where we need to do some clean up.
                 if !is_profile_cleared {
+                    // Unbonded device is special, we need to reject the connection from them.
+                    if !self.is_bonded(&addr) {
+                        let tasks = self.fallback_tasks.clone();
+                        let states = self.device_states.clone();
+                        let txl = self.tx.clone();
+                        let task = topstack::get_runtime().spawn(async move {
+                            warn!(
+                                "[{}]: Rejecting an unbonded device's attempt to connect media",
+                                DisplayAddress(&addr)
+                            );
+                            BluetoothMedia::async_disconnect(&tasks, &states, &txl, &addr).await;
+                        });
+                        guard.insert(addr, Some((task, first_conn_ts)));
+                    }
                     return;
                 }
             }
@@ -1060,17 +1486,46 @@ impl BluetoothMedia {
         if states.get(&addr).is_none() {
             states.insert(addr, DeviceConnectionStates::ConnectingBeforeRetry);
         }
-        if missing_profiles.is_empty()
-            || missing_profiles == HashSet::from([Profile::AvrcpController])
-        {
-            info!(
-                "[{}]: Fully connected, available profiles: {:?}, connected profiles: {:?}.",
-                DisplayAddress(&addr),
-                available_profiles,
-                connected_profiles
-            );
 
-            states.insert(addr, DeviceConnectionStates::FullyConnected);
+        if states.get(&addr).unwrap() != &DeviceConnectionStates::FullyConnected {
+            if available_profiles.is_empty() {
+                // Some headsets may start initiating connections to audio profiles before they are
+                // exposed to the stack. In this case, wait for either all critical profiles have been
+                // connected or some timeout to enter the |FullyConnected| state.
+                if connected_profiles.contains(&Profile::Hfp)
+                    && connected_profiles.contains(&Profile::A2dpSink)
+                {
+                    info!(
+                        "[{}]: Fully connected, available profiles: {:?}, connected profiles: {:?}.",
+                        DisplayAddress(&addr),
+                        available_profiles,
+                        connected_profiles
+                    );
+
+                    states.insert(addr, DeviceConnectionStates::FullyConnected);
+                } else {
+                    warn!(
+                        "[{}]: Connected profiles: {:?}, waiting for peer to initiate remaining connections.",
+                        DisplayAddress(&addr),
+                        connected_profiles
+                    );
+
+                    states.insert(addr, DeviceConnectionStates::WaitingConnection);
+                }
+            } else {
+                if missing_profiles.is_empty()
+                    || missing_profiles == HashSet::from([Profile::AvrcpController])
+                {
+                    info!(
+                        "[{}]: Fully connected, available profiles: {:?}, connected profiles: {:?}.",
+                        DisplayAddress(&addr),
+                        available_profiles,
+                        connected_profiles
+                    );
+
+                    states.insert(addr, DeviceConnectionStates::FullyConnected);
+                }
+            }
         }
 
         info!(
@@ -1122,39 +1577,18 @@ impl BluetoothMedia {
             }
             DeviceConnectionStates::FullyConnected => {
                 // Rejecting the unbonded connection after we finished our profile
-                // reconnectinglogic to avoid a collision.
-                if let Some(adapter) = &self.adapter {
-                    if BtBondState::Bonded
-                        != adapter.lock().unwrap().get_bond_state_by_addr(&addr.to_string())
-                    {
-                        warn!(
-                            "[{}]: Rejecting a unbonded device's attempt to connect to media profiles",
-                            DisplayAddress(&addr));
-                        let fallback_tasks = self.fallback_tasks.clone();
-                        let device_states = self.device_states.clone();
-                        let txl = self.tx.clone();
-                        let task = topstack::get_runtime().spawn(async move {
-                            {
-                                device_states
-                                    .lock()
-                                    .unwrap()
-                                    .insert(addr, DeviceConnectionStates::Disconnecting);
-                                fallback_tasks.lock().unwrap().insert(addr, None);
-                            }
+                // reconnecting logic to avoid a collision.
+                if !self.is_bonded(&addr) {
+                    warn!(
+                        "[{}]: Rejecting a unbonded device's attempt to connect to media profiles",
+                        DisplayAddress(&addr)
+                    );
 
-                            debug!(
-                                "[{}]: Device connection state: {:?}.",
-                                DisplayAddress(&addr),
-                                DeviceConnectionStates::Disconnecting
-                            );
-
-                            let _ = txl
-                                .send(Message::Media(MediaActions::Disconnect(addr.to_string())))
-                                .await;
-                        });
-                        guard.insert(addr, Some((task, first_conn_ts)));
-                        return;
-                    }
+                    let task = topstack::get_runtime().spawn(async move {
+                        BluetoothMedia::async_disconnect(&tasks, &device_states, &txl, &addr).await;
+                    });
+                    guard.insert(addr, Some((task, ts)));
+                    return;
                 }
 
                 let cur_a2dp_caps = self.a2dp_caps.get(&addr);
@@ -1165,7 +1599,7 @@ impl BluetoothMedia {
                     addr.to_string(),
                     name.clone(),
                     cur_a2dp_caps.unwrap_or(&Vec::new()).to_vec(),
-                    *cur_hfp_cap.unwrap_or(&HfpCodecCapability::UNSUPPORTED),
+                    *cur_hfp_cap.unwrap_or(&HfpCodecCapability::NONE),
                     absolute_volume,
                 );
 
@@ -1188,6 +1622,13 @@ impl BluetoothMedia {
                 guard.insert(addr, None);
             }
             DeviceConnectionStates::Disconnecting => {}
+            DeviceConnectionStates::WaitingConnection => {
+                let task = topstack::get_runtime().spawn(async move {
+                    BluetoothMedia::wait_retry(&tasks, &device_states, &txl, &addr, ts).await;
+                    BluetoothMedia::wait_force_enter_connected(&txl, &addr, ts).await;
+                });
+                guard.insert(addr, Some((task, ts)));
+            }
         }
     }
 
@@ -1331,7 +1772,7 @@ impl BluetoothMedia {
     }
 
     fn try_a2dp_resume(&mut self) {
-        if !self.phone_ops_enabled {
+        if !self.mps_qualification_enabled {
             return;
         }
         // Make sure there is no any SCO connection and then resume the A2DP stream.
@@ -1344,7 +1785,7 @@ impl BluetoothMedia {
     }
 
     fn try_a2dp_suspend(&mut self) {
-        if !self.phone_ops_enabled {
+        if !self.mps_qualification_enabled {
             return;
         }
         // Suspend the A2DP stream if there is any.
@@ -1358,7 +1799,7 @@ impl BluetoothMedia {
         &mut self,
         address: String,
         sco_offload: bool,
-        force_cvsd: bool,
+        disabled_codecs: HfpCodecCapability,
     ) -> bool {
         match (|| -> Result<(), &str> {
             let addr = RawAddress::from_string(address.clone())
@@ -1366,7 +1807,8 @@ impl BluetoothMedia {
             info!("Start sco call for {}", DisplayAddress(&addr));
 
             let hfp = self.hfp.as_mut().ok_or("Uninitialized HFP to start the sco call")?;
-            if hfp.connect_audio(addr, sco_offload, force_cvsd) != 0 {
+            let disabled_codecs = disabled_codecs.try_into().expect("Can't parse disabled_codecs");
+            if hfp.connect_audio(addr, sco_offload, disabled_codecs) != 0 {
                 return Err("SCO connect_audio status failed");
             }
             info!("SCO connect_audio status success");
@@ -1468,69 +1910,136 @@ impl BluetoothMedia {
     }
 
     fn answer_call_impl(&mut self) -> bool {
-        if !self.phone_ops_enabled || self.phone_state.state == CallState::Idle {
-            return false;
-        }
-        // There must be exactly one incoming/dialing call in the list.
-        for c in self.call_list.iter_mut() {
-            match c.state {
-                CallState::Incoming | CallState::Dialing | CallState::Alerting => {
-                    c.state = CallState::Active;
-                    break;
+        if self.mps_qualification_enabled {
+            if self.phone_state.state == CallState::Idle {
+                return false;
+            }
+            // There must be exactly one incoming/dialing call in the list.
+            for c in self.call_list.iter_mut() {
+                match c.state {
+                    CallState::Incoming | CallState::Dialing | CallState::Alerting => {
+                        c.state = CallState::Active;
+                        break;
+                    }
+                    _ => {}
                 }
-                _ => {}
+            }
+            self.phone_state.state = CallState::Idle;
+            self.phone_state.num_active += 1;
+            return true;
+        } else if self.phone_ops_enabled {
+            if self.phone_state.state == CallState::Idle {
+                return false;
+            }
+            // There must be exactly one incoming/dialing call in the list.
+            for c in self.call_list.iter_mut() {
+                if c.source == CallSource::CRAS {
+                    continue;
+                }
+
+                match c.state {
+                    CallState::Incoming | CallState::Dialing | CallState::Alerting => {
+                        c.state = CallState::Active;
+                        self.phone_state.state = CallState::Idle;
+                        self.phone_state.num_active += 1;
+                        return true;
+                    }
+                    _ => {}
+                }
             }
         }
-        self.phone_state.state = CallState::Idle;
-        self.phone_state.num_active += 1;
-        true
+
+        return false;
     }
 
     fn hangup_call_impl(&mut self) -> bool {
-        if !self.phone_ops_enabled {
-            return false;
+        if self.mps_qualification_enabled {
+            match self.phone_state.state {
+                CallState::Idle if self.phone_state.num_active > 0 => {
+                    self.phone_state.num_active -= 1;
+                }
+                CallState::Incoming | CallState::Dialing | CallState::Alerting => {
+                    self.phone_state.state = CallState::Idle;
+                }
+                _ => return false,
+            }
+            // At this point, there must be exactly one incoming/dialing/alerting/active call to be
+            // removed.
+            self.call_list.retain(|x| match x.state {
+                CallState::Active
+                | CallState::Incoming
+                | CallState::Dialing
+                | CallState::Alerting => false,
+                _ => true,
+            });
+            return true;
+        } else if self.phone_ops_enabled {
+            let mut ret = false;
+            for c in self.call_list.iter_mut() {
+                if c.source == CallSource::CRAS {
+                    continue;
+                }
+
+                match c.state {
+                    CallState::Incoming | CallState::Dialing | CallState::Alerting => {
+                        ret = true;
+                    }
+                    CallState::Active => {
+                        self.phone_state.num_active -= 1;
+                        ret = true;
+                    }
+                    _ => {}
+                }
+            }
+
+            self.call_list.retain(|x| match x.source {
+                CallSource::HID => false,
+                _ => true,
+            });
+            self.phone_state.state = CallState::Idle;
+            return ret;
         }
-        match self.phone_state.state {
-            CallState::Idle if self.phone_state.num_active > 0 => {
-                self.phone_state.num_active -= 1;
-            }
-            CallState::Incoming | CallState::Dialing | CallState::Alerting => {
-                self.phone_state.state = CallState::Idle;
-            }
-            _ => {
-                return false;
-            }
-        }
-        // At this point, there must be exactly one incoming/dialing/alerting/active call to be
-        // removed.
-        self.call_list.retain(|x| match x.state {
-            CallState::Active | CallState::Incoming | CallState::Dialing | CallState::Alerting => {
-                false
-            }
-            _ => true,
-        });
-        true
+
+        return false;
     }
 
     fn dialing_call_impl(&mut self, number: String) -> bool {
-        if !self.phone_ops_enabled
+        if !(self.phone_ops_enabled || self.mps_qualification_enabled)
             || self.phone_state.state != CallState::Idle
-            || self.phone_state.num_active > 0
         {
             return false;
         }
-        self.call_list.push(CallInfo {
-            index: self.new_call_index(),
-            dir_incoming: false,
-            state: CallState::Dialing,
-            number: number.clone(),
-        });
+        if self.mps_qualification_enabled {
+            if self.phone_state.num_active > 0 {
+                return false;
+            }
+            self.call_list.push(CallInfo {
+                index: self.new_call_index(),
+                dir_incoming: false,
+                source: CallSource::CRAS,
+                state: CallState::Dialing,
+                number: number.clone(),
+            });
+        } else if self.phone_ops_enabled {
+            if self.call_list.iter().any(|c| c.source == CallSource::HID) {
+                return false;
+            }
+            self.call_list.push(CallInfo {
+                index: self.new_call_index(),
+                dir_incoming: false,
+                source: CallSource::HID,
+                state: CallState::Dialing,
+                number: number.clone(),
+            });
+        }
         self.phone_state.state = CallState::Dialing;
         true
     }
 
     fn dialing_to_alerting(&mut self) -> bool {
-        if !self.phone_ops_enabled || self.phone_state.state != CallState::Dialing {
+        if !(self.phone_ops_enabled || self.mps_qualification_enabled)
+            || self.phone_state.state != CallState::Dialing
+        {
             return false;
         }
         for c in self.call_list.iter_mut() {
@@ -1544,68 +2053,102 @@ impl BluetoothMedia {
     }
 
     fn release_held_impl(&mut self) -> bool {
-        if !self.phone_ops_enabled || self.phone_state.state != CallState::Idle {
+        if !(self.phone_ops_enabled || self.mps_qualification_enabled) {
             return false;
         }
-        self.call_list.retain(|x| x.state != CallState::Held);
-        self.phone_state.num_held = 0;
+
+        if self.mps_qualification_enabled {
+            if self.phone_state.state != CallState::Idle {
+                return false;
+            }
+            self.call_list.retain(|x| x.state != CallState::Held);
+            self.phone_state.num_held = 0;
+        } else if self.phone_ops_enabled {
+            if self.phone_state.state == CallState::Incoming {
+                self.call_list.retain(|x| x.state != CallState::Incoming);
+                self.phone_state.state = CallState::Idle;
+            } else {
+                return false;
+            }
+        }
         true
     }
 
     fn release_active_accept_held_impl(&mut self) -> bool {
-        if !self.phone_ops_enabled || self.phone_state.state != CallState::Idle {
+        if !(self.phone_ops_enabled || self.mps_qualification_enabled) {
             return false;
         }
         self.call_list.retain(|x| x.state != CallState::Active);
         self.phone_state.num_active = 0;
         // Activate the first held call
-        for c in self.call_list.iter_mut() {
-            if c.state == CallState::Held {
-                c.state = CallState::Active;
-                self.phone_state.num_held -= 1;
-                self.phone_state.num_active += 1;
-                break;
+        if self.mps_qualification_enabled {
+            if self.phone_state.state != CallState::Idle {
+                return false;
+            }
+            for c in self.call_list.iter_mut() {
+                if c.state == CallState::Held {
+                    c.state = CallState::Active;
+                    self.phone_state.num_held -= 1;
+                    self.phone_state.num_active += 1;
+                    break;
+                }
+            }
+        } else if self.phone_ops_enabled {
+            for c in self.call_list.iter_mut() {
+                if c.state == CallState::Incoming && self.phone_state.state == CallState::Incoming {
+                    c.state = CallState::Active;
+                    self.phone_state.num_active += 1;
+                    self.phone_state.state = CallState::Idle;
+                    break;
+                }
             }
         }
         true
     }
 
     fn hold_active_accept_held_impl(&mut self) -> bool {
-        if !self.phone_ops_enabled || self.phone_state.state != CallState::Idle {
+        if !(self.phone_ops_enabled || self.mps_qualification_enabled) {
             return false;
         }
 
-        self.phone_state.num_held += self.phone_state.num_active;
-        self.phone_state.num_active = 0;
-
-        for c in self.call_list.iter_mut() {
-            match c.state {
-                // Activate at most one held call
-                CallState::Held if self.phone_state.num_active == 0 => {
-                    c.state = CallState::Active;
-                    self.phone_state.num_held -= 1;
-                    self.phone_state.num_active = 1;
-                }
-                CallState::Active => {
-                    c.state = CallState::Held;
-                }
-                _ => {}
+        if self.mps_qualification_enabled {
+            if self.phone_state.state != CallState::Idle {
+                return false;
             }
+            self.phone_state.num_held += self.phone_state.num_active;
+            self.phone_state.num_active = 0;
+
+            for c in self.call_list.iter_mut() {
+                match c.state {
+                    // Activate at most one held call
+                    CallState::Held if self.phone_state.num_active == 0 => {
+                        c.state = CallState::Active;
+                        self.phone_state.num_held -= 1;
+                        self.phone_state.num_active = 1;
+                    }
+                    CallState::Active => {
+                        c.state = CallState::Held;
+                    }
+                    _ => {}
+                }
+            }
+        } else if self.phone_ops_enabled {
+            return false;
         }
         true
     }
 
     // Per MPS v1.0 (Multi-Profile Specification), disconnecting or failing to connect
     // a profile should not affect the others.
-    // Allow partial profiles connection during qualification (phone operations are enabled).
+    // Allow partial profiles connection during qualification (MPS qualification mode is enabled).
     fn is_complete_profiles_required(&self) -> bool {
-        !self.phone_ops_enabled
+        !self.mps_qualification_enabled
     }
 
     // Force the media enters the FullyConnected state and then triggers a retry.
-    // This function is only used for qualification as a replacement of normal retry.
-    // Usually PTS initiates the connection of the necessary profiles, and Floss should notify
-    // CRAS of the new audio device regardless of the unconnected profiles.
+    // When this function is used for qualification as a replacement of normal retry,
+    // PTS could initiate the connection of the necessary profiles, and Floss should
+    // notify CRAS of the new audio device regardless of the unconnected profiles.
     // Still retry in the end because some test cases require that.
     fn force_enter_connected(&mut self, address: String) {
         let addr = match RawAddress::from_string(address.clone()) {
@@ -1624,6 +2167,16 @@ impl BluetoothMedia {
     }
     pub fn add_player(&mut self, name: String, browsing_supported: bool) {
         self.avrcp.as_mut().unwrap().add_player(&name, browsing_supported);
+    }
+
+    fn should_insert_call_when_sco_start(&self, address: RawAddress) -> bool {
+        if self.mps_qualification_enabled {
+            return false;
+        }
+        if !self.phone_ops_enabled {
+            return true;
+        }
+        return interop_insert_call_when_sco_start(address);
     }
 }
 
@@ -1687,8 +2240,13 @@ impl IBluetoothMedia for BluetoothMedia {
         self.hfp = Some(Hfp::new(&self.intf.lock().unwrap()));
         self.hfp.as_mut().unwrap().initialize(hfp_dispatcher);
 
-        for profile in self.delay_enable_profiles.clone() {
-            self.enable_profile(&profile);
+        // TODO(b/284811956) A2DP needs to be enabled before AVRCP otherwise AVRCP gets memset'd.
+        // Iterate the delay_enable_profiles hashmap directly when this is fixed.
+        let profile_order = vec![Profile::A2dpSource, Profile::AvrcpTarget, Profile::Hfp];
+        for profile in profile_order {
+            if self.delay_enable_profiles.contains(&profile) {
+                self.enable_profile(&profile);
+            }
         }
         true
     }
@@ -1867,9 +2425,9 @@ impl IBluetoothMedia for BluetoothMedia {
         true
     }
 
-    // TODO(b/278963515): Currently this is designed to be called from both the
-    // UI and via disconnection callbacks. Remove this workaround once the
-    // proper fix has landed.
+    // This may not disconnect all media profiles at once, but once the stack
+    // is notified of the disconnection callback, `disconnect_device` will be
+    // invoked as necessary to ensure the device is removed.
     fn disconnect(&mut self, address: String) {
         let addr = match RawAddress::from_string(address.clone()) {
             None => {
@@ -1895,6 +2453,7 @@ impl IBluetoothMedia for BluetoothMedia {
                 uuid::Profile::A2dpSink => {
                     // Some headsets (b/278963515) will try reconnecting to A2DP
                     // when HFP is running but (requested to be) disconnected.
+                    // TODO: Remove this workaround once proper fix lands.
                     if connected_profiles.contains(&Profile::Hfp) {
                         continue;
                     }
@@ -2059,21 +2618,71 @@ impl IBluetoothMedia for BluetoothMedia {
 
     fn set_audio_config(
         &mut self,
-        sample_rate: i32,
-        bits_per_sample: i32,
-        channel_mode: i32,
+        address: String,
+        codec_type: A2dpCodecIndex,
+        sample_rate: A2dpCodecSampleRate,
+        bits_per_sample: A2dpCodecBitsPerSample,
+        channel_mode: A2dpCodecChannelMode,
     ) -> bool {
-        if !A2dpCodecSampleRate::validate_bits(sample_rate)
-            || !A2dpCodecBitsPerSample::validate_bits(bits_per_sample)
-            || !A2dpCodecChannelMode::validate_bits(channel_mode)
-        {
+        let addr = match RawAddress::from_string(address.clone()) {
+            None => {
+                warn!("Invalid device address {}", address);
+                return false;
+            }
+            Some(addr) => addr,
+        };
+
+        if self.a2dp_states.get(&addr).is_none() {
+            warn!(
+                "[{}]: Ignore set config event for unconnected or disconnected A2DP device",
+                DisplayAddress(&addr)
+            );
             return false;
         }
 
         match self.a2dp.as_mut() {
             Some(a2dp) => {
-                a2dp.set_audio_config(sample_rate, bits_per_sample, channel_mode);
-                true
+                let caps = self.a2dp_caps.get(&addr).unwrap_or(&Vec::new()).to_vec();
+
+                for cap in &caps {
+                    if A2dpCodecIndex::from(cap.codec_type) == codec_type {
+                        if (A2dpCodecSampleRate::from_bits(cap.sample_rate).unwrap() & sample_rate)
+                            != sample_rate
+                        {
+                            warn!("Unsupported sample rate {:?}", sample_rate);
+                            return false;
+                        }
+                        if (A2dpCodecBitsPerSample::from_bits(cap.bits_per_sample).unwrap()
+                            & bits_per_sample)
+                            != bits_per_sample
+                        {
+                            warn!("Unsupported bit depth {:?}", bits_per_sample);
+                            return false;
+                        }
+                        if (A2dpCodecChannelMode::from_bits(cap.channel_mode).unwrap()
+                            & channel_mode)
+                            != channel_mode
+                        {
+                            warn!("Unsupported channel mode {:?}", channel_mode);
+                            return false;
+                        }
+
+                        let config = vec![A2dpCodecConfig {
+                            codec_type: codec_type as i32,
+                            codec_priority: A2dpCodecPriority::Highest as i32,
+                            sample_rate: sample_rate.bits() as i32,
+                            bits_per_sample: bits_per_sample.bits() as i32,
+                            channel_mode: channel_mode.bits() as i32,
+                            ..Default::default()
+                        }];
+
+                        a2dp.config_codec(addr, config);
+                        return true;
+                    }
+                }
+
+                warn!("Unsupported codec type {:?}", codec_type);
+                false
             }
             None => {
                 warn!("Uninitialized A2DP to set audio config");
@@ -2106,7 +2715,6 @@ impl IBluetoothMedia for BluetoothMedia {
             }
             Some(addr) => addr,
         };
-
         let vol = match i8::try_from(volume) {
             Ok(val) if val <= 15 => val,
             _ => {
@@ -2136,11 +2744,6 @@ impl IBluetoothMedia for BluetoothMedia {
     }
 
     fn stop_audio_request(&mut self) {
-        if !self.a2dp_audio_state.values().any(|state| *state == BtavAudioState::Started) {
-            info!("No active stream on A2DP device, ignoring request to stop audio.");
-            return;
-        }
-
         debug!("Stop audio request");
 
         match self.a2dp.as_mut() {
@@ -2149,8 +2752,13 @@ impl IBluetoothMedia for BluetoothMedia {
         };
     }
 
-    fn start_sco_call(&mut self, address: String, sco_offload: bool, force_cvsd: bool) -> bool {
-        self.start_sco_call_impl(address, sco_offload, force_cvsd)
+    fn start_sco_call(
+        &mut self,
+        address: String,
+        sco_offload: bool,
+        disabled_codecs: HfpCodecCapability,
+    ) -> bool {
+        self.start_sco_call_impl(address, sco_offload, disabled_codecs)
     }
 
     fn stop_sco_call(&mut self, address: String) {
@@ -2232,9 +2840,24 @@ impl IBluetoothMedia for BluetoothMedia {
             None => warn!("Uninitialized AVRCP to set player playback status"),
         };
     }
+
+    fn trigger_debug_dump(&mut self) {
+        match self.hfp.as_mut() {
+            Some(hfp) => hfp.debug_dump(),
+            None => warn!("Uninitialized HFP to dump debug log"),
+        };
+    }
 }
 
 impl IBluetoothTelephony for BluetoothMedia {
+    fn register_telephony_callback(
+        &mut self,
+        callback: Box<dyn IBluetoothTelephonyCallback + Send>,
+    ) -> bool {
+        let _id = self.telephony_callbacks.lock().unwrap().add_callback(callback);
+        true
+    }
+
     fn set_network_available(&mut self, network_available: bool) {
         if self.telephony_device_status.network_available == network_available {
             return;
@@ -2282,6 +2905,7 @@ impl IBluetoothTelephony for BluetoothMedia {
     }
 
     fn set_phone_ops_enabled(&mut self, enable: bool) {
+        info!("Bluetooth HID telephony mode enabled");
         if self.phone_ops_enabled == enable {
             return;
         }
@@ -2294,35 +2918,83 @@ impl IBluetoothTelephony for BluetoothMedia {
         self.last_dialing_number = None;
         self.a2dp_has_interrupted_stream = false;
 
-        if !enable {
-            if self.hfp_states.values().any(|x| x == &BthfConnectionState::SlcConnected) {
-                self.call_list.push(CallInfo {
-                    index: 1,
-                    dir_incoming: false,
-                    state: CallState::Active,
-                    number: "".into(),
-                });
-                self.phone_state.num_active = 1;
-            }
+        self.phone_ops_enabled = enable;
+        if self.hfp_audio_state.keys().any(|addr| self.should_insert_call_when_sco_start(*addr))
+            && self.hfp_audio_state.values().any(|x| x == &BthfAudioState::Connected)
+        {
+            self.call_list.push(CallInfo {
+                index: 1,
+                dir_incoming: false,
+                source: CallSource::CRAS,
+                state: CallState::Active,
+                number: "".into(),
+            });
+            self.phone_state.num_active = 1;
         }
 
-        self.phone_ops_enabled = enable;
+        self.phone_state_change("".into());
+    }
+
+    fn set_mps_qualification_enabled(&mut self, enable: bool) {
+        info!("MPS qualification mode enabled");
+        if self.mps_qualification_enabled == enable {
+            return;
+        }
+
+        self.call_list = vec![];
+        self.phone_state.num_active = 0;
+        self.phone_state.num_held = 0;
+        self.phone_state.state = CallState::Idle;
+        self.memory_dialing_number = None;
+        self.last_dialing_number = None;
+        self.a2dp_has_interrupted_stream = false;
+        self.mps_qualification_enabled = enable;
+
+        if self.hfp_audio_state.keys().any(|addr| self.should_insert_call_when_sco_start(*addr))
+            && self.hfp_audio_state.values().any(|x| x == &BthfAudioState::Connected)
+        {
+            self.call_list.push(CallInfo {
+                index: 1,
+                dir_incoming: false,
+                source: CallSource::CRAS,
+                state: CallState::Active,
+                number: "".into(),
+            });
+            self.phone_state.num_active = 1;
+        }
+
         self.phone_state_change("".into());
     }
 
     fn incoming_call(&mut self, number: String) -> bool {
-        if !self.phone_ops_enabled
+        if !(self.phone_ops_enabled || self.mps_qualification_enabled)
             || self.phone_state.state != CallState::Idle
-            || self.phone_state.num_active > 0
         {
             return false;
         }
-        self.call_list.push(CallInfo {
-            index: self.new_call_index(),
-            dir_incoming: true,
-            state: CallState::Incoming,
-            number: number.clone(),
-        });
+        if self.mps_qualification_enabled {
+            if self.phone_state.num_active > 0 {
+                return false;
+            }
+            self.call_list.push(CallInfo {
+                index: self.new_call_index(),
+                dir_incoming: true,
+                source: CallSource::CRAS,
+                state: CallState::Incoming,
+                number: number.clone(),
+            });
+        } else if self.phone_ops_enabled {
+            if self.call_list.iter().any(|c| c.source == CallSource::HID) {
+                return false;
+            }
+            self.call_list.push(CallInfo {
+                index: self.new_call_index(),
+                dir_incoming: true,
+                source: CallSource::HID,
+                state: CallState::Incoming,
+                number: number.clone(),
+            });
+        }
         self.phone_state.state = CallState::Incoming;
         self.phone_state_change(number);
         self.try_a2dp_suspend();
@@ -2347,16 +3019,18 @@ impl IBluetoothTelephony for BluetoothMedia {
         }
         self.phone_state_change("".into());
 
-        // Find a connected HFP and try to establish an SCO.
-        if let Some(addr) = self.hfp_states.iter().find_map(|(addr, state)| {
-            if *state == BthfConnectionState::SlcConnected {
-                Some(addr.clone())
-            } else {
-                None
+        if self.mps_qualification_enabled {
+            // Find a connected HFP and try to establish an SCO.
+            if let Some(addr) = self.hfp_states.iter().find_map(|(addr, state)| {
+                if *state == BthfConnectionState::SlcConnected {
+                    Some(addr.clone())
+                } else {
+                    None
+                }
+            }) {
+                info!("Start SCO call due to call answered");
+                self.start_sco_call_impl(addr.to_string(), false, HfpCodecCapability::NONE);
             }
-        }) {
-            info!("Start SCO call due to call answered");
-            self.start_sco_call_impl(addr.to_string(), false, false);
         }
 
         true
@@ -2376,7 +3050,7 @@ impl IBluetoothTelephony for BluetoothMedia {
     }
 
     fn set_memory_call(&mut self, number: Option<String>) -> bool {
-        if !self.phone_ops_enabled {
+        if !(self.phone_ops_enabled || self.mps_qualification_enabled) {
             return false;
         }
         self.memory_dialing_number = number;
@@ -2384,7 +3058,7 @@ impl IBluetoothTelephony for BluetoothMedia {
     }
 
     fn set_last_call(&mut self, number: Option<String>) -> bool {
-        if !self.phone_ops_enabled {
+        if !(self.phone_ops_enabled || self.mps_qualification_enabled) {
             return false;
         }
         self.last_dialing_number = number;
@@ -2416,7 +3090,7 @@ impl IBluetoothTelephony for BluetoothMedia {
     }
 
     fn audio_connect(&mut self, address: String) -> bool {
-        self.start_sco_call_impl(address, false, false)
+        self.start_sco_call_impl(address, false, HfpCodecCapability::NONE)
     }
 
     fn audio_disconnect(&mut self, address: String) {

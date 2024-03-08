@@ -23,8 +23,11 @@
 #include "btm_sco_hfp_hal.h"
 #include "gd/common/init_flags.h"
 #include "osi/include/log.h"
-#include "stack/acl/acl.h"
-#include "stack/include/acl_api.h"
+#include "osi/include/properties.h"
+#include "stack/include/hcimsgs.h"
+#include "stack/include/sdpdefs.h"
+
+using bluetooth::legacy::hci::GetInterface;
 
 namespace hfp_hal_interface {
 namespace {
@@ -307,8 +310,16 @@ bool get_wbs_supported() {
   return false;
 }
 
-// Here SWB default to be false at linux, change if needed
-bool get_swb_supported() { return false; }
+// Check if super-wideband speech is supported on local device
+bool get_swb_supported() {
+  for (cached_codec_info c : cached_codecs) {
+    // SWB runs on the same path as MSBC non-offload.
+    if (c.inner.codec == MSBC_TRANSPARENT) {
+      return true;
+    }
+  }
+  return false;
+}
 
 // Checks the supported codecs
 bt_codecs get_codec_capabilities(uint64_t codecs) {
@@ -354,59 +365,64 @@ static bool get_single_codec(int codec, bt_codec** out) {
 constexpr uint8_t OFFLOAD_DATAPATH = 0x01;
 
 // Notify the codec datapath to lower layer for offload mode
-void set_codec_datapath(esco_coding_format_t coding_format) {
+void set_codec_datapath(int codec_uuid) {
   bool found;
   bt_codec* codec;
   uint8_t codec_id;
 
-  switch (coding_format) {
-    case BTM_SCO_CODEC_CVSD:
+  if (codec_uuid == UUID_CODEC_LC3 && get_offload_enabled()) {
+    LOG_ERROR("Offload path for LC3 is not implemented.");
+    return;
+  }
+
+  switch (codec_uuid) {
+    case UUID_CODEC_CVSD:
       codec_id = codec::CVSD;
       break;
-    case BTM_SCO_CODEC_MSBC:
+    case UUID_CODEC_MSBC:
       codec_id = get_offload_enabled() ? codec::MSBC : codec::MSBC_TRANSPARENT;
       break;
+    case UUID_CODEC_LC3:
+      codec_id = get_offload_enabled() ? codec::LC3 : codec::MSBC_TRANSPARENT;
+      break;
     default:
-      LOG_WARN("Unsupported format (%u). Won't set datapath.", coding_format);
+      LOG_WARN("Unsupported codec (%d). Won't set datapath.", codec_uuid);
       return;
   }
 
   found = get_single_codec(codec_id, &codec);
   if (!found) {
-    LOG_ERROR(
-        "Failed to find codec config for format (%u). Won't set datapath.",
-        coding_format);
+    LOG_ERROR("Failed to find codec config for codec (%d). Won't set datapath.",
+              codec_uuid);
     return;
   }
 
-  LOG_INFO("Configuring datapath for codec (%u)", codec->codec);
+  LOG_INFO("Configuring datapath for codec (%d)", codec_uuid);
   if (codec->codec == codec::MSBC && !get_offload_enabled()) {
     LOG_ERROR(
-        "Tried to configure offload data path for format (%u) with offload "
+        "Tried to configure offload data path for format (%d) with offload "
         "disabled. Won't set datapath.",
-        coding_format);
+        codec_uuid);
     return;
   }
 
   if (get_offload_enabled()) {
-    /* TODO(b/237373343): expect the data content to be represented differently
-     */
     std::vector<uint8_t> data;
-    switch (coding_format) {
-      case BTM_SCO_CODEC_CVSD:
+    switch (codec_uuid) {
+      case UUID_CODEC_CVSD:
         data = {0x00};
         break;
-      case BTM_SCO_CODEC_MSBC:
+      case UUID_CODEC_MSBC:
         data = {0x01};
         break;
       default:
         break;
     }
 
-    btm_configure_data_path(btm_data_direction::CONTROLLER_TO_HOST,
-                            OFFLOAD_DATAPATH, data);
-    btm_configure_data_path(btm_data_direction::HOST_TO_CONTROLLER,
-                            OFFLOAD_DATAPATH, data);
+    GetInterface().ConfigureDataPath(hci_data_direction_t::CONTROLLER_TO_HOST,
+                                     OFFLOAD_DATAPATH, data);
+    GetInterface().ConfigureDataPath(hci_data_direction_t::HOST_TO_CONTROLLER,
+                                     OFFLOAD_DATAPATH, data);
   }
 }
 
@@ -429,13 +445,22 @@ void notify_sco_connection_change(RawAddress device, bool is_connected,
     return;
   }
 
-  // Default to cvsd and try to convert codec.
-  int converted_codec = MGMT_SCO_CODEC_CVSD;
+  if (codec == codec::LC3) {
+    LOG_ERROR("Offload path for LC3 is not implemented.");
+    return;
+  }
 
-  if (codec == codec::MSBC) {
-    converted_codec = MGMT_SCO_CODEC_MSBC;
-  } else if (codec == codec::MSBC_TRANSPARENT) {
-    converted_codec = MGMT_SCO_CODEC_MSBC_TRANSPARENT;
+  int converted_codec;
+
+  switch (codec) {
+    case codec::MSBC:
+      converted_codec = MGMT_SCO_CODEC_MSBC;
+      break;
+    case codec::MSBC_TRANSPARENT:
+      converted_codec = MGMT_SCO_CODEC_MSBC_TRANSPARENT;
+      break;
+    default:
+      converted_codec = MGMT_SCO_CODEC_CVSD;
   }
 
   int ret = mgmt_notify_sco_connection_change(fd, hci, device, is_connected,

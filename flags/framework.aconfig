@@ -1,0 +1,29 @@
+package: "com.android.bluetooth.flags"
+
+flag {
+    name: "mfi_has_uuid"
+    namespace: "bluetooth"
+    description: "Use MFi HAS uuid to judge if a device is hearing aid"
+    bug: "310543599"
+}
+
+flag {
+    name: "support_metadata_device_types_apis"
+    namespace: "bluetooth"
+    description: "Support more device types in bt device metadata"
+    bug: "289584302"
+}
+
+flag {
+    name: "key_missing_broadcast"
+    namespace: "bluetooth"
+    description: "Broadcast when remote device it lost bond"
+    bug: "311447399"
+}
+
+flag {
+    name: "keep_stopped_media_browser_service"
+    namespace: "bluetooth"
+    description: "Do not start stopped media browser services"
+    bug: "314855224"
+}

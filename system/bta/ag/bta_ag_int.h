@@ -30,7 +30,9 @@
 #include "bta/include/bta_ag_api.h"
 #include "bta/include/bta_api.h"
 #include "bta/sys/bta_sys.h"
+#include "internal_include/bt_target.h"
 #include "stack/include/bt_hdr.h"
+#include "stack/sdp/sdp_discovery_db.h"
 #include "types/raw_address.h"
 
 /*****************************************************************************
@@ -136,7 +138,7 @@ typedef struct {
 
 /* data type for BTA_AG_API_AUDIO_OPEN_EVT */
 typedef struct {
-  bool force_cvsd;
+  tBTA_AG_PEER_CODEC disabled_codecs;
 } tBTA_AG_API_AUDIO_OPEN;
 
 /* data type for BTA_AG_API_RESULT_EVT */
@@ -208,6 +210,14 @@ typedef enum {
   BTA_AG_SCO_LC3_SETTINGS_T1,
 } tBTA_AG_SCO_LC3_SETTINGS;
 
+typedef enum {
+  BTA_AG_SCO_APTX_SWB_SETTINGS_Q0 = 0, /* preferred/default when codec is SWB */
+  BTA_AG_SCO_APTX_SWB_SETTINGS_Q1 = 4,
+  BTA_AG_SCO_APTX_SWB_SETTINGS_Q2 = 6,
+  BTA_AG_SCO_APTX_SWB_SETTINGS_Q3 = 7,
+  BTA_AG_SCO_APTX_SWB_SETTINGS_UNKNOWN = 0xFFFF,
+} tBTA_AG_SCO_APTX_SWB_SETTINGS;
+
 /* type for each service control block */
 struct tBTA_AG_SCB {
   char clip[BTA_AG_AT_MAX_LEN + 1];     /* number string used for CLIP */
@@ -252,6 +262,8 @@ struct tBTA_AG_SCB {
   alarm_t* ring_timer;
   alarm_t* codec_negotiation_timer;
   bool received_at_bac; /* indicate AT+BAC is received at least once */
+  tBTA_AG_PEER_CODEC
+      disabled_codecs; /* set by app to block certain codecs from being used */
   tBTA_AG_PEER_CODEC peer_codecs; /* codecs for eSCO supported by the peer */
   tBTA_AG_PEER_CODEC sco_codec;   /* codec to be used for eSCO connection */
   tBTA_AG_PEER_CODEC
@@ -262,6 +274,10 @@ struct tBTA_AG_SCB {
                                                     impending eSCO on WB */
   tBTA_AG_SCO_LC3_SETTINGS codec_lc3_settings;   /* settings to be used for the
                                                     impending eSCO on SWB */
+  tBTA_AG_SCO_APTX_SWB_SETTINGS
+      codec_aptx_settings; /* settings to be used for the
+                              aptX Voice SWB eSCO */
+  bool is_aptx_swb_codec;  /* Flag to determine aptX Voice SWB codec  */
 
   tBTA_AG_HF_IND
       peer_hf_indicators[BTA_AG_MAX_NUM_PEER_HF_IND]; /* Peer supported
@@ -318,7 +334,7 @@ extern const tBTA_AG_HF_IND bta_ag_local_hf_ind_cfg[];
 /*****************************************************************************
  *  Function prototypes
  ****************************************************************************/
-bool bta_ag_hdl_event(BT_HDR_RIGID* p_msg);
+bool bta_ag_hdl_event(const BT_HDR_RIGID* p_msg);
 
 /* API functions */
 void bta_ag_api_enable(tBTA_AG_CBACK* p_cback);
@@ -342,7 +358,7 @@ void bta_ag_sm_execute(tBTA_AG_SCB* p_scb, uint16_t event,
                        const tBTA_AG_DATA& data);
 void bta_ag_sm_execute_by_handle(uint16_t handle, uint16_t event,
                                  const tBTA_AG_DATA& data);
-void bta_ag_collision_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
+void bta_ag_collision_cback(tBTA_SYS_CONN_STATUS status, tBTA_SYS_ID id,
                             uint8_t app_id, const RawAddress& peer_addr);
 void bta_ag_resume_open(tBTA_AG_SCB* p_scb);
 
@@ -367,6 +383,9 @@ bool bta_ag_sco_is_active_device(const RawAddress& bd_addr);
 bool bta_ag_sco_is_open(tBTA_AG_SCB* p_scb);
 bool bta_ag_sco_is_opening(tBTA_AG_SCB* p_scb);
 void bta_ag_sco_conn_rsp(tBTA_AG_SCB* p_scb, tBTM_ESCO_CONN_REQ_EVT_DATA* data);
+// Testonly
+void bta_ag_create_sco(tBTA_AG_SCB* p_scb, bool is_orig);
+void bta_ag_create_pending_sco(tBTA_AG_SCB* p_scb, bool is_local);
 
 /* AT command functions */
 void bta_ag_at_hsp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
@@ -411,9 +430,12 @@ void bta_ag_sco_codec_nego(tBTA_AG_SCB* p_scb, bool result);
 void bta_ag_codec_negotiate(tBTA_AG_SCB* p_scb);
 bool bta_ag_is_sco_open_allowed(tBTA_AG_SCB* p_scb, const std::string event);
 void bta_ag_send_bcs(tBTA_AG_SCB* p_scb);
+bool bta_ag_get_sco_offload_enabled();
 void bta_ag_set_sco_offload_enabled(bool value);
 void bta_ag_set_sco_allowed(bool value);
 const RawAddress& bta_ag_get_active_device();
 void bta_clear_active_device();
+void bta_ag_send_qac(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
+void bta_ag_send_qcs(tBTA_AG_SCB* p_scb, tBTA_AG_DATA* p_data);
 
 #endif /* BTA_AG_INT_H */

@@ -28,6 +28,8 @@
 #include <unordered_set>
 
 #include "bta/include/bta_jv_api.h"
+#include "bta/include/bta_sec_api.h"
+#include "internal_include/bt_target.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/rfcdefs.h"
 #include "types/bluetooth/uuid.h"
@@ -120,9 +122,11 @@ typedef struct {
   tBTA_JV_PCB port_cb[MAX_RFC_PORTS];          /* index of this array is
                                                   the port_handle, */
   uint8_t sec_id[BTA_JV_NUM_SERVICE_ID];       /* service ID */
-  bool scn[BTA_JV_MAX_SCN];                    /* SCN allocated by java */
   uint16_t free_psm_list[BTA_JV_MAX_L2C_CONN]; /* PSMs freed by java
                                                 (can be reused) */
+  bool scn_in_use[RFCOMM_MAX_SCN];
+  uint8_t scn_search_index; /* used to search for free scns */
+
   uint8_t sdp_active;                          /* see BTA_JV_SDP_ACT_* */
   bluetooth::Uuid uuid;                   /* current uuid of sdp discovery*/
   tBTA_JV_PM_CB pm_cb[BTA_JV_PM_MAX_NUM]; /* PM on a per JV handle bases */

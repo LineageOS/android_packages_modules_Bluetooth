@@ -23,30 +23,15 @@
 
 #include <cstdint>
 #include <functional>
-#include <map>
 #include <string>
 
-#include "test/common/mock_functions.h"
-
 // Original included files, if any
-// NOTE: Since this is a mock file with mock definitions some number of
-//       include files may not be required.  The include-what-you-use
-//       still applies, but crafting proper inclusion is out of scope
-//       for this effort.  This compilation unit may compile as-is, or
-//       may need attention to prune the inclusion set.
-#include "gd/hci/address.h"
-#include "gd/os/metrics.h"
-#include "main/shim/helpers.h"
-#include "main/shim/metrics_api.h"
-#include "types/raw_address.h"
 #include <frameworks/proto_logging/stats/enums/bluetooth/le/enums.pb.h>
 
+#include "gd/os/metrics.h"
+#include "types/raw_address.h"
 
 // Mocked compile conditionals, if any
-#ifndef UNUSED_ATTR
-#define UNUSED_ATTR
-#endif
-
 namespace test {
 namespace mock {
 namespace main_shim_metrics_api {
@@ -131,18 +116,32 @@ struct LogMetricA2dpPlaybackEvent {
 extern struct LogMetricA2dpPlaybackEvent LogMetricA2dpPlaybackEvent;
 // Name: LogMetricHfpPacketLossStats
 // Params: const RawAddress& raw_address, int num_decoded_frames, double
-// packet_loss_ratio Returns: void
+// packet_loss_ratio, uint16_t codec_type Returns: void
 struct LogMetricHfpPacketLossStats {
   std::function<void(const RawAddress& raw_address, int num_decoded_frames,
-                     double packet_loss_ratio)>
+                     double packet_loss_ratio, uint16_t codec_type)>
       body{[](const RawAddress& raw_address, int num_decoded_frames,
-              double packet_loss_ratio) {}};
+              double packet_loss_ratio, uint16_t codec_type) {}};
   void operator()(const RawAddress& raw_address, int num_decoded_frames,
-                  double packet_loss_ratio) {
-    body(raw_address, num_decoded_frames, packet_loss_ratio);
+                  double packet_loss_ratio, uint16_t codec_type) {
+    body(raw_address, num_decoded_frames, packet_loss_ratio, codec_type);
   };
 };
 extern struct LogMetricHfpPacketLossStats LogMetricHfpPacketLossStats;
+// Name: LogMetricMmcTranscodeRttStats
+// Params: int maximum_rtt, double mean_rtt, int num_requests, int codec_type
+// Return: void
+struct LogMetricMmcTranscodeRttStats {
+  std::function<void(int maximum_rtt, double mean_rtt, int num_requests,
+                     int codec_type)>
+      body{[](int maximum_rtt, double mean_rtt, int num_requests,
+              int codec_type) {}};
+  void operator()(int maximum_rtt, double mean_rtt, int num_requests,
+                  int codec_type) {
+    body(maximum_rtt, mean_rtt, num_requests, codec_type);
+  };
+};
+extern struct LogMetricMmcTranscodeRttStats LogMetricMmcTranscodeRttStats;
 // Name: LogMetricReadRssiResult
 // Params: const RawAddress& raw_address, uint16_t handle, uint32_t cmd_status,
 // int8_t rssi Returns: void

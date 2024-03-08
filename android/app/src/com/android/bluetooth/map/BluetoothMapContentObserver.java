@@ -14,7 +14,6 @@
  */
 package com.android.bluetooth.map;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -82,7 +81,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-@TargetApi(19)
 public class BluetoothMapContentObserver {
     private static final String TAG = "BluetoothMapContentObserver";
 
@@ -3673,8 +3671,13 @@ public class BluetoothMapContentObserver {
     }
 
     private void removeDeletedMessages() {
-        /* Remove messages from virtual "deleted" folder (thread_id -1) */
-        mResolver.delete(Sms.CONTENT_URI, "thread_id = " + DELETED_THREAD_ID, null);
+        try {
+            /* Remove messages from virtual "deleted" folder (thread_id -1) */
+            mResolver.delete(Sms.CONTENT_URI, "thread_id = " + DELETED_THREAD_ID, null);
+        } catch (SQLiteException e) {
+            // TODO: Include this unexpected exception in Bluetooth metrics
+            Log.w("SQLite exception while removing deleted messages.", e);
+        }
     }
 
     private PhoneStateListener mPhoneListener = new PhoneStateListener() {

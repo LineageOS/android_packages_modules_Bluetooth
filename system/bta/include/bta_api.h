@@ -25,59 +25,26 @@
 #ifndef BTA_API_H
 #define BTA_API_H
 
-#include <base/strings/stringprintf.h>
 #include <base/functional/callback.h>
+#include <base/strings/stringprintf.h>
 
 #include <cstdint>
 #include <vector>
 
-#include "bt_target.h"  // Must be first to define build configuration
-#include "osi/include/log.h"
-#include "stack/include/bt_octets.h"
-#include "stack/include/bt_types.h"
+#include "bta_api_data_types.h"
+#include "internal_include/bt_target.h"
+#include "macros.h"
+#include "os/log.h"
+#include "stack/btm/power_mode.h"
+#include "stack/include/bt_name.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_ble_api_types.h"
 #include "stack/include/hci_error_code.h"
-#include "stack/include/sdp_api.h"
+#include "stack/include/sdp_device_id.h"
 #include "types/ble_address_with_type.h"
 #include "types/bluetooth/uuid.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
-
-/*****************************************************************************
- *  Constants and data types
- ****************************************************************************/
-
-/* Status Return Value */
-typedef enum : uint8_t {
-  BTA_SUCCESS = 0, /* Successful operation. */
-  BTA_FAILURE = 1, /* Generic failure. */
-  BTA_PENDING = 2, /* API cannot be completed right now */
-  BTA_BUSY = 3,
-  BTA_NO_RESOURCES = 4,
-  BTA_WRONG_MODE = 5,
-} tBTA_STATUS;
-
-#ifndef CASE_RETURN_TEXT
-#define CASE_RETURN_TEXT(code) \
-  case code:                   \
-    return #code
-#endif
-
-inline std::string bta_status_text(const tBTA_STATUS& status) {
-  switch (status) {
-    CASE_RETURN_TEXT(BTA_SUCCESS);
-    CASE_RETURN_TEXT(BTA_FAILURE);
-    CASE_RETURN_TEXT(BTA_PENDING);
-    CASE_RETURN_TEXT(BTA_BUSY);
-    CASE_RETURN_TEXT(BTA_NO_RESOURCES);
-    CASE_RETURN_TEXT(BTA_WRONG_MODE);
-    default:
-      return base::StringPrintf("UNKNOWN[%d]", status);
-  }
-}
-
-#undef CASE_RETURN_TEXT
 
 /*
  * Service ID
@@ -121,15 +88,6 @@ typedef uint8_t tBTA_SERVICE_ID;
 
 typedef uint32_t tBTA_SERVICE_MASK;
 
-/* Security Setting Mask */
-#define BTA_SEC_AUTHENTICATE \
-  (BTM_SEC_IN_AUTHENTICATE | \
-   BTM_SEC_OUT_AUTHENTICATE) /* Authentication required. */
-#define BTA_SEC_ENCRYPT \
-  (BTM_SEC_IN_ENCRYPT | BTM_SEC_OUT_ENCRYPT) /* Encryption required. */
-
-typedef uint16_t tBTA_SEC;
-
 #define BTA_APP_ID_PAN_MULTI 0xFE /* app id for pan multiple connection */
 #define BTA_ALL_APP_ID 0xFF
 
@@ -166,10 +124,6 @@ inline tBTA_PREF_ROLES toBTA_PREF_ROLES(uint8_t role) {
   return static_cast<tBTA_PREF_ROLES>(role);
 }
 
-#define CASE_RETURN_TEXT(code) \
-  case code:                   \
-    return #code
-
 inline std::string preferred_role_text(const tBTA_PREF_ROLES& role) {
   switch (role) {
     CASE_RETURN_TEXT(BTA_ANY_ROLE);
@@ -180,7 +134,6 @@ inline std::string preferred_role_text(const tBTA_PREF_ROLES& role) {
       return base::StringPrintf("UNKNOWN[%hhu]", role);
   }
 }
-#undef CASE_RETURN_TEXT
 
 enum {
 
@@ -217,120 +170,12 @@ typedef struct {
 
 typedef uint8_t tBTA_DM_BLE_RSSI_ALERT_TYPE;
 
-typedef enum : uint8_t {
-  /* Security Callback Events */
-  BTA_DM_PIN_REQ_EVT = 2,          /* PIN request. */
-  BTA_DM_AUTH_CMPL_EVT = 3,        /* Authentication complete indication. */
-  BTA_DM_AUTHORIZE_EVT = 4,        /* Authorization request. */
+typedef enum: uint8_t {
   BTA_DM_LINK_UP_EVT = 5,          /* Connection UP event */
   BTA_DM_LINK_DOWN_EVT = 6,        /* Connection DOWN event */
-  BTA_DM_BOND_CANCEL_CMPL_EVT = 9, /* Bond cancel complete indication */
-  BTA_DM_SP_CFM_REQ_EVT = 10,   /* Simple Pairing User Confirmation request. \
-                                 */
-  BTA_DM_SP_KEY_NOTIF_EVT = 11, /* Simple Pairing Passkey Notification */
-  BTA_DM_BLE_KEY_EVT = 15,      /* BLE SMP key event for peer device keys */
-  BTA_DM_BLE_SEC_REQ_EVT = 16,  /* BLE SMP security request */
-  BTA_DM_BLE_PASSKEY_NOTIF_EVT = 17, /* SMP passkey notification event */
-  BTA_DM_BLE_PASSKEY_REQ_EVT = 18,   /* SMP passkey request event */
-  BTA_DM_BLE_OOB_REQ_EVT = 19,       /* SMP OOB request event */
-  BTA_DM_BLE_LOCAL_IR_EVT = 20,      /* BLE local IR event */
-  BTA_DM_BLE_LOCAL_ER_EVT = 21,      /* BLE local ER event */
-  BTA_DM_BLE_NC_REQ_EVT = 22,        /* SMP Numeric Comparison request event */
-  BTA_DM_SP_RMT_OOB_EXT_EVT =
-      23, /* Simple Pairing Remote OOB Extended Data request. */
-  BTA_DM_BLE_AUTH_CMPL_EVT = 24, /* BLE Auth complete */
-  BTA_DM_DEV_UNPAIRED_EVT = 25,
-  BTA_DM_LE_FEATURES_READ = 27,    /* Cotroller specific LE features are read \
-                                    */
-  BTA_DM_ENER_INFO_READ = 28,      /* Energy info read */
-  BTA_DM_BLE_SC_OOB_REQ_EVT = 29,  /* SMP SC OOB request event */
-  BTA_DM_BLE_CONSENT_REQ_EVT = 30, /* SMP consent request event */
-  BTA_DM_BLE_SC_CR_LOC_OOB_EVT = 31, /* SMP SC Create Local OOB request event */
-  BTA_DM_REPORT_BONDING_EVT = 32,    /*handle for pin or key missing*/
-  BTA_DM_LE_ADDR_ASSOC_EVT = 33,     /* identity address association event */
+  BTA_DM_LE_FEATURES_READ = 27,    /* Cotroller specific LE features are read */
   BTA_DM_LINK_UP_FAILED_EVT = 34,    /* Create connection failed event */
-} tBTA_DM_SEC_EVT;
-
-/* Structure associated with BTA_DM_PIN_REQ_EVT */
-typedef struct {
-  /* Note: First 3 data members must be, bd_addr, dev_class, and bd_name in
-   * order */
-  RawAddress bd_addr;  /* BD address peer device. */
-  DEV_CLASS dev_class; /* Class of Device */
-  BD_NAME bd_name;     /* Name of peer device. */
-  bool min_16_digit;   /* true if the pin returned must be at least 16 digits */
-} tBTA_DM_PIN_REQ;
-
-/* BLE related definition */
-
-#define BTA_DM_AUTH_FAIL_BASE (HCI_ERR_MAX_ERR + 10)
-
-/* Converts SMP error codes defined in smp_api.h to SMP auth fail reasons below.
- */
-#define BTA_DM_AUTH_CONVERT_SMP_CODE(x) (BTA_DM_AUTH_FAIL_BASE + (x))
-
-#define BTA_DM_AUTH_SMP_PAIR_AUTH_FAIL \
-  (BTA_DM_AUTH_FAIL_BASE + SMP_PAIR_AUTH_FAIL)
-#define BTA_DM_AUTH_SMP_CONFIRM_VALUE_FAIL \
-  (BTA_DM_AUTH_FAIL_BASE + SMP_CONFIRM_VALUE_ERR)
-#define BTA_DM_AUTH_SMP_PAIR_NOT_SUPPORT \
-  (BTA_DM_AUTH_FAIL_BASE + SMP_PAIR_NOT_SUPPORT)
-#define BTA_DM_AUTH_SMP_UNKNOWN_ERR \
-  (BTA_DM_AUTH_FAIL_BASE + SMP_PAIR_FAIL_UNKNOWN)
-#define BTA_DM_AUTH_SMP_CONN_TOUT (BTA_DM_AUTH_FAIL_BASE + SMP_CONN_TOUT)
-
-typedef uint8_t tBTA_LE_KEY_TYPE; /* can be used as a bit mask */
-
-typedef union {
-  tBTM_LE_PENC_KEYS penc_key;  /* received peer encryption key */
-  tBTM_LE_PCSRK_KEYS psrk_key; /* received peer device SRK */
-  tBTM_LE_PID_KEYS pid_key;    /* peer device ID key */
-  tBTM_LE_LENC_KEYS
-      lenc_key; /* local encryption reproduction keys LTK = = d1(ER,DIV,0)*/
-  tBTM_LE_LCSRK_KEYS lcsrk_key; /* local device CSRK = d1(ER,DIV,1)*/
-  tBTM_LE_PID_KEYS lid_key; /* local device ID key for the particular remote */
-} tBTA_LE_KEY_VALUE;
-
-#define BTA_BLE_LOCAL_KEY_TYPE_ID 1
-#define BTA_BLE_LOCAL_KEY_TYPE_ER 2
-typedef uint8_t tBTA_DM_BLE_LOCAL_KEY_MASK;
-
-typedef struct {
-  Octet16 ir;
-  Octet16 irk;
-  Octet16 dhk;
-} tBTA_BLE_LOCAL_ID_KEYS;
-
-#define BTA_DM_SEC_GRANTED BTA_SUCCESS
-#define BTA_DM_SEC_PAIR_NOT_SPT BTA_DM_AUTH_SMP_PAIR_NOT_SUPPORT
-typedef uint8_t tBTA_DM_BLE_SEC_GRANT;
-
-/* Structure associated with BTA_DM_BLE_SEC_REQ_EVT */
-typedef struct {
-  RawAddress bd_addr; /* peer address */
-  BD_NAME bd_name; /* peer device name */
-} tBTA_DM_BLE_SEC_REQ;
-
-typedef struct {
-  RawAddress bd_addr; /* peer address */
-  tBTM_LE_KEY_TYPE key_type;
-  tBTM_LE_KEY_VALUE* p_key_value;
-} tBTA_DM_BLE_KEY;
-
-/* Structure associated with BTA_DM_AUTH_CMPL_EVT */
-typedef struct {
-  RawAddress bd_addr;  /* BD address peer device. */
-  BD_NAME bd_name;     /* Name of peer device. */
-  bool key_present;    /* Valid link key value in key element */
-  LinkKey key;         /* Link key associated with peer device. */
-  uint8_t key_type;    /* The type of Link Key */
-  bool success;        /* true of authentication succeeded, false if failed. */
-  tHCI_REASON
-      fail_reason; /* The HCI reason/error code for when success=false */
-  tBLE_ADDR_TYPE addr_type; /* Peer device address type */
-  tBT_DEVICE_TYPE dev_type;
-  bool is_ctkd; /* True if key is derived using CTKD procedure */
-} tBTA_DM_AUTH_CMPL;
+} tBTA_DM_ACL_EVT;
 
 /* Structure associated with BTA_DM_LINK_UP_EVT */
 typedef struct {
@@ -353,99 +198,13 @@ typedef struct {
   tHCI_STATUS status;
 } tBTA_DM_LINK_DOWN;
 
-#define BTA_AUTH_SP_YES                                                       \
-  BTM_AUTH_SP_YES /* 1 MITM Protection Required - Single Profile/non-bonding  \
-                    Use IO Capabilities to determine authentication procedure \
-                    */
-
-#define BTA_AUTH_DD_BOND \
-  BTM_AUTH_DD_BOND /* 2 this bit is set for dedicated bonding */
-#define BTA_AUTH_GEN_BOND \
-  BTM_AUTH_SPGB_NO /* 4 this bit is set for general bonding */
-#define BTA_AUTH_BONDS \
-  BTM_AUTH_BONDS /* 6 the general/dedicated bonding bits  */
-
-#define BTA_LE_AUTH_REQ_SC_MITM_BOND BTM_LE_AUTH_REQ_SC_MITM_BOND /* 1101 */
-
-/* Structure associated with BTA_DM_SP_CFM_REQ_EVT */
-typedef struct {
-  /* Note: First 3 data members must be, bd_addr, dev_class, and bd_name in
-   * order */
-  RawAddress bd_addr;  /* peer address */
-  DEV_CLASS dev_class; /* peer CoD */
-  BD_NAME bd_name;     /* peer device name */
-  uint32_t num_val; /* the numeric value for comparison. If just_works, do not
-                       show this number to UI */
-  bool just_works;  /* true, if "Just Works" association model */
-  tBTM_AUTH_REQ loc_auth_req; /* Authentication required for local device */
-  tBTM_AUTH_REQ rmt_auth_req; /* Authentication required for peer device */
-  tBTM_IO_CAP loc_io_caps;    /* IO Capabilities of local device */
-  tBTM_AUTH_REQ rmt_io_caps;  /* IO Capabilities of remote device */
-} tBTA_DM_SP_CFM_REQ;
-
-/* Structure associated with BTA_DM_SP_KEY_NOTIF_EVT */
-typedef struct {
-  /* Note: First 3 data members must be, bd_addr, dev_class, and bd_name in
-   * order */
-  RawAddress bd_addr;  /* peer address */
-  DEV_CLASS dev_class; /* peer CoD */
-  BD_NAME bd_name;     /* peer device name */
-  uint32_t passkey; /* the numeric value for comparison. If just_works, do not
-                       show this number to UI */
-} tBTA_DM_SP_KEY_NOTIF;
-
-/* Structure associated with BTA_DM_SP_RMT_OOB_EVT */
-typedef struct {
-  /* Note: First 3 data members must be, bd_addr, dev_class, and bd_name in
-   * order */
-  RawAddress bd_addr;  /* peer address */
-  DEV_CLASS dev_class; /* peer CoD */
-  BD_NAME bd_name;     /* peer device name */
-} tBTA_DM_SP_RMT_OOB;
-
-/* Structure associated with BTA_DM_BOND_CANCEL_CMPL_EVT */
-typedef struct {
-  tBTA_STATUS result; /* true of bond cancel succeeded, false if failed. */
-} tBTA_DM_BOND_CANCEL_CMPL;
-
-/* Add to remove bond of key missing RC */
-typedef struct {
-  RawAddress bd_addr;
-} tBTA_DM_RC_UNPAIR;
-
-typedef struct {
-  Octet16 local_oob_c; /* Local OOB Data Confirmation/Commitment */
-  Octet16 local_oob_r; /* Local OOB Data Randomizer */
-} tBTA_DM_LOC_OOB_DATA;
-
-typedef struct {
-  RawAddress pairing_bda;
-  RawAddress id_addr;
-} tBTA_DM_PROC_ID_ADDR;
-
-/* Union of all security callback structures */
 typedef union {
-  tBTA_DM_PIN_REQ pin_req;        /* PIN request. */
-  tBTA_DM_AUTH_CMPL auth_cmpl;    /* Authentication complete indication. */
   tBTA_DM_LINK_UP link_up;        /* ACL connection up event */
   tBTA_DM_LINK_UP_FAILED link_up_failed; /* ACL connection up failure event */
   tBTA_DM_LINK_DOWN link_down;    /* ACL connection down event */
-  tBTA_DM_SP_CFM_REQ cfm_req;     /* user confirm request */
-  tBTA_DM_SP_KEY_NOTIF key_notif; /* passkey notification */
-  tBTA_DM_SP_RMT_OOB rmt_oob;     /* remote oob */
-  tBTA_DM_BOND_CANCEL_CMPL
-      bond_cancel_cmpl;               /* Bond Cancel Complete indication */
-  tBTA_DM_BLE_SEC_REQ ble_req;        /* BLE SMP related request */
-  tBTA_DM_BLE_KEY ble_key;            /* BLE SMP keys used when pairing */
-  tBTA_BLE_LOCAL_ID_KEYS ble_id_keys; /* IR event */
-  Octet16 ble_er;                     /* ER event data */
-  tBTA_DM_LOC_OOB_DATA local_oob_data; /* Local OOB data generated by us */
-  tBTA_DM_RC_UNPAIR delete_key_RC_to_unpair;
-  tBTA_DM_PROC_ID_ADDR proc_id_addr; /* Identity address event */
-} tBTA_DM_SEC;
+} tBTA_DM_ACL;
 
-/* Security callback */
-typedef void(tBTA_DM_SEC_CBACK)(tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data);
+typedef void(tBTA_DM_ACL_CBACK)(tBTA_DM_ACL_EVT event, tBTA_DM_ACL* p_data);
 
 #define BTA_DM_BLE_PF_LIST_LOGIC_OR 1
 #define BTA_DM_BLE_PF_FILT_LOGIC_OR 0
@@ -454,20 +213,15 @@ typedef void(tBTA_DM_SEC_CBACK)(tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data);
 typedef enum : uint8_t {
   BTA_DM_INQ_RES_EVT = 0,  /* Inquiry result for a peer device. */
   BTA_DM_INQ_CMPL_EVT = 1, /* Inquiry complete. */
-  BTA_DM_DISC_RES_EVT = 2, /* Discovery result for a peer device. */
+  BTA_DM_DISC_RES_EVT = 2, /* Service Discovery result for a peer device. */
   BTA_DM_GATT_OVER_LE_RES_EVT =
       3,                    /* GATT services over LE transport discovered */
   BTA_DM_DISC_CMPL_EVT = 4, /* Discovery complete. */
   BTA_DM_SEARCH_CANCEL_CMPL_EVT = 5, /* Search cancelled */
   BTA_DM_DID_RES_EVT = 6,            /* Vendor/Product ID search result */
   BTA_DM_GATT_OVER_SDP_RES_EVT = 7,  /* GATT services over SDP discovered */
+  BTA_DM_NAME_READ_EVT = 8,          /* Name read complete. */
 } tBTA_DM_SEARCH_EVT;
-
-#ifndef CASE_RETURN_TEXT
-#define CASE_RETURN_TEXT(code) \
-  case code:                   \
-    return #code
-#endif
 
 inline std::string bta_dm_search_evt_text(const tBTA_DM_SEARCH_EVT& event) {
   switch (event) {
@@ -479,12 +233,11 @@ inline std::string bta_dm_search_evt_text(const tBTA_DM_SEARCH_EVT& event) {
     CASE_RETURN_TEXT(BTA_DM_SEARCH_CANCEL_CMPL_EVT);
     CASE_RETURN_TEXT(BTA_DM_DID_RES_EVT);
     CASE_RETURN_TEXT(BTA_DM_GATT_OVER_SDP_RES_EVT);
+    CASE_RETURN_TEXT(BTA_DM_NAME_READ_EVT);
     default:
       return base::StringPrintf("UNKNOWN[%hhu]", event);
   }
 }
-
-#undef CASE_RETURN_TEXT
 
 /* Structure associated with BTA_DM_INQ_RES_EVT */
 typedef struct {
@@ -511,6 +264,7 @@ typedef struct {
   bool include_rsi; /* true, if ADV contains RSI data */
   RawAddress original_bda; /* original address to pass up to
                               GattService#onScanResult */
+  uint16_t clock_offset;
 } tBTA_DM_INQ_RES;
 
 /* Structure associated with BTA_DM_INQ_CMPL_EVT */
@@ -743,6 +497,18 @@ void BTA_dm_init();
 
 /*******************************************************************************
  *
+ * Function         BTA_EnableTestMode
+ *
+ * Description      Enables bluetooth device under test mode
+ *
+ *
+ * Returns          tBTA_STATUS
+ *
+ ******************************************************************************/
+extern void BTA_EnableTestMode(void);
+
+/*******************************************************************************
+ *
  * Function         BTA_DmSetDeviceName
  *
  * Description      This function sets the Bluetooth name of the local device.
@@ -827,107 +593,6 @@ tBTA_STATUS BTA_DmGetCachedRemoteName(const RawAddress& remote_device,
 
 /*******************************************************************************
  *
- * Function         BTA_DmBond
- *
- * Description      This function initiates a bonding procedure with a peer
- *                  device by designated transport.  The bonding procedure
- *                  enables authentication and optionally encryption on the
- *                  Bluetooth link.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                tBT_TRANSPORT transport, tBT_DEVICE_TYPE device_type);
-
-/*******************************************************************************
- *
- * Function         BTA_DmBondCancel
- *
- * Description      This function cancels a bonding procedure with a peer
- *                  device.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmBondCancel(const RawAddress& bd_addr);
-
-/*******************************************************************************
- *
- * Function         BTA_DmPinReply
- *
- * Description      This function provides a PIN when one is requested by DM
- *                  during a bonding procedure.  The application should call
- *                  this function after the security callback is called with
- *                  a BTA_DM_PIN_REQ_EVT.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmPinReply(const RawAddress& bd_addr, bool accept, uint8_t pin_len,
-                    uint8_t* p_pin);
-
-/*******************************************************************************
- *
- * Function         BTA_DmLocalOob
- *
- * Description      This function retrieves the OOB data from local controller.
- *                  The result is reported by bta_dm_co_loc_oob().
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmLocalOob(void);
-
-/*******************************************************************************
- *
- * Function         BTA_DmConfirm
- *
- * Description      This function accepts or rejects the numerical value of the
- *                  Simple Pairing process on BTA_DM_SP_CFM_REQ_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmConfirm(const RawAddress& bd_addr, bool accept);
-
-/*******************************************************************************
- *
- * Function         BTA_DmAddDevice
- *
- * Description      This function adds a device to the security database list
- *                  of peer devices. This function would typically be called
- *                  at system startup to initialize the security database with
- *                  known peer devices.  This is a direct execution function
- *                  that may lock task scheduling on some platforms.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
-                     const LinkKey& link_key, uint8_t key_type,
-                     uint8_t pin_length);
-
-/*******************************************************************************
- *
- * Function         BTA_DmRemoveDevice
- *
- * Description      This function removes a device from the security database.
- *                  This is a direct execution function that may lock task
- *                  scheduling on some platforms.
- *
- *
- * Returns          BTA_SUCCESS if successful.
- *                  BTA_FAIL if operation failed.
- *
- ******************************************************************************/
-tBTA_STATUS BTA_DmRemoveDevice(const RawAddress& bd_addr);
-
-/*******************************************************************************
- *
  * Function         BTA_GetEirService
  *
  * Description      This function is called to get BTA service mask from EIR.
@@ -985,90 +650,6 @@ tBTA_STATUS BTA_DmSetLocalDiRecord(tSDP_DI_RECORD* p_device_info,
 void BTA_DmCloseACL(const RawAddress& bd_addr, bool remove_dev,
                     tBT_TRANSPORT transport);
 
-/* BLE related API functions */
-/*******************************************************************************
- *
- * Function         BTA_DmBleSecurityGrant
- *
- * Description      Grant security request access.
- *
- * Parameters:      bd_addr          - BD address of the peer
- *                  res              - security grant status.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmBleSecurityGrant(const RawAddress& bd_addr,
-                            tBTA_DM_BLE_SEC_GRANT res);
-
-/*******************************************************************************
- *
- * Function         BTA_DmBlePasskeyReply
- *
- * Description      Send BLE SMP passkey reply.
- *
- * Parameters:      bd_addr          - BD address of the peer
- *                  accept           - passkey entry sucessful or declined.
- *                  passkey          - passkey value, must be a 6 digit number,
- *                                     can be lead by 0.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmBlePasskeyReply(const RawAddress& bd_addr, bool accept,
-                           uint32_t passkey);
-
-/*******************************************************************************
- *
- * Function         BTA_DmBleConfirmReply
- *
- * Description      Send BLE SMP SC user confirmation reply.
- *
- * Parameters:      bd_addr          - BD address of the peer
- *                  accept           - numbers to compare are the same or
- *                                     different.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmBleConfirmReply(const RawAddress& bd_addr, bool accept);
-
-/*******************************************************************************
- *
- * Function         BTA_DmAddBleDevice
- *
- * Description      Add a BLE device.  This function will be normally called
- *                  during host startup to restore all required information
- *                  for a LE device stored in the NVRAM.
- *
- * Parameters:      bd_addr          - BD address of the peer
- *                  dev_type         - Remote device's device type.
- *                  addr_type        - LE device address type.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmAddBleDevice(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                        tBT_DEVICE_TYPE dev_type);
-
-/*******************************************************************************
- *
- * Function         BTA_DmAddBleKey
- *
- * Description      Add/modify LE device information.  This function will be
- *                  normally called during host startup to restore all required
- *                  information stored in the NVRAM.
- *
- * Parameters:      bd_addr          - BD address of the peer
- *                  p_le_key         - LE key values.
- *                  key_type         - LE SMP key type.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmAddBleKey(const RawAddress& bd_addr, tBTA_LE_KEY_VALUE* p_le_key,
-                     tBTM_LE_KEY_TYPE key_type);
-
 /*******************************************************************************
  *
  * Function         BTA_DmSetBlePrefConnParams
@@ -1090,33 +671,6 @@ void BTA_DmSetBlePrefConnParams(const RawAddress& bd_addr,
                                 uint16_t min_conn_int, uint16_t max_conn_int,
                                 uint16_t peripheral_latency,
                                 uint16_t supervision_tout);
-
-/*******************************************************************************
- *
- * Function         BTA_DmSetEncryption
- *
- * Description      This function is called to ensure that connection is
- *                  encrypted.  Should be called only on an open connection.
- *                  Typically only needed for connections that first want to
- *                  bring up unencrypted links, then later encrypt them.
- *
- * Parameters:      bd_addr       - Address of the peer device
- *                  transport     - transport of the link to be encruypted
- *                  p_callback    - Pointer to callback function to indicat the
- *                                  link encryption status
- *                  sec_act       - This is the security action to indicate
- *                                  what kind of BLE security level is required
- *                                  for the BLE link if BLE is supported
- *                                  Note: This parameter is ignored for
- *                                        BR/EDR or if BLE is not supported.
- *
- * Returns          void
- *
- *
- ******************************************************************************/
-void BTA_DmSetEncryption(const RawAddress& bd_addr, tBT_TRANSPORT transport,
-                         tBTA_DM_ENCRYPT_CBACK* p_callback,
-                         tBTM_BLE_SEC_ACT sec_act);
 
 /*******************************************************************************
  *
@@ -1298,7 +852,7 @@ void BTA_DmDisconnectAllAcls(void);
  ******************************************************************************/
 void BTA_DmClearFilterAcceptList(void);
 
-using LeRandCallback = base::Callback<void(uint64_t)>;
+using LeRandCallback = base::OnceCallback<void(uint64_t)>;
 /*******************************************************************************
  *
  * Function         BTA_DmLeRand

@@ -18,9 +18,13 @@
 
 #include <cstdint>
 
+#include "internal_include/bt_target.h"
+#include "macros.h"
 #include "osi/include/alarm.h"
 #include "stack/include/bt_device_type.h"
+#include "stack/include/bt_name.h"
 #include "stack/include/btm_api_types.h"
+#include "stack/include/btm_status.h"
 #include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
 
@@ -156,9 +160,7 @@ typedef struct {
                                duplicate store of inquiry results */
   uint16_t remote_name_len;
   tBTM_BD_NAME remote_name;
-  uint8_t remote_name_state;
   uint8_t remote_name_type;
-
 } tBTM_INQ_INFO;
 
 typedef struct {
@@ -196,12 +198,6 @@ typedef struct {
   long long start_time_ms;
 } tBTM_INQUIRY_CMPL;
 
-#ifndef CASE_RETURN_TEXT
-#define CASE_RETURN_TEXT(code) \
-  case code:                   \
-    return #code
-#endif
-
 inline std::string btm_inquiry_cmpl_status_text(
     const tBTM_INQUIRY_CMPL::STATUS& status) {
   switch (status) {
@@ -214,7 +210,6 @@ inline std::string btm_inquiry_cmpl_status_text(
              std::string("]");
   }
 }
-#undef CASE_RETURN_TEXT
 
 /* Structure returned with remote name  request */
 typedef struct {
@@ -284,12 +279,6 @@ typedef struct {
   }
 
 } tBTM_INQUIRY_VAR_ST;
-
-typedef union /* contains the inquiry filter condition */
-{
-  RawAddress bdaddr_cond;
-  tBTM_COD_COND cod_cond;
-} tBTM_INQ_FILT_COND;
 
 #define BTM_INQ_RESULT_BR 0x01
 #define BTM_INQ_RESULT_BLE 0x02

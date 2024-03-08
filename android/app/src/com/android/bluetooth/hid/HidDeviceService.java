@@ -28,10 +28,12 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.IBluetoothHidDevice;
 import android.bluetooth.IBluetoothHidDeviceCallback;
 import android.content.AttributionSource;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
 import android.os.RemoteException;
@@ -86,11 +88,22 @@ public class HidDeviceService extends ProfileService {
 
     private HidDeviceServiceHandler mHandler;
 
+    HidDeviceService() {}
+
+    @VisibleForTesting
+    HidDeviceService(Context ctx) {
+        super(ctx);
+    }
+
     public static boolean isEnabled() {
         return BluetoothProperties.isProfileHidDeviceEnabled().orElse(false);
     }
 
     private class HidDeviceServiceHandler extends Handler {
+        HidDeviceServiceHandler(Looper looper) {
+            super(looper);
+        }
+
         @Override
         public void handleMessage(Message msg) {
             if (DBG) {
@@ -770,7 +783,7 @@ public class HidDeviceService extends ProfileService {
         mDatabaseManager = Objects.requireNonNull(AdapterService.getAdapterService().getDatabase(),
                 "DatabaseManager cannot be null when HidDeviceService starts");
 
-        mHandler = new HidDeviceServiceHandler();
+        mHandler = new HidDeviceServiceHandler(Looper.getMainLooper());
         mHidDeviceNativeInterface = HidDeviceNativeInterface.getInstance();
         mHidDeviceNativeInterface.init();
         mNativeAvailable = true;
@@ -778,9 +791,6 @@ public class HidDeviceService extends ProfileService {
         mActivityManager.addOnUidImportanceListener(mUidImportanceListener,
                 FOREGROUND_IMPORTANCE_CUTOFF);
         setHidDeviceService(this);
-        AdapterService.getAdapterService().notifyActivityAttributionInfo(
-                getAttributionSource(),
-                AdapterService.ACTIVITY_ATTRIBUTION_NO_ACTIVE_DEVICE_ADDRESS);
         return true;
     }
 
@@ -801,9 +811,6 @@ public class HidDeviceService extends ProfileService {
             mNativeAvailable = false;
         }
         mActivityManager.removeOnUidImportanceListener(mUidImportanceListener);
-        AdapterService.getAdapterService().notifyActivityAttributionInfo(
-                getAttributionSource(),
-                AdapterService.ACTIVITY_ATTRIBUTION_NO_ACTIVE_DEVICE_ADDRESS);
         return true;
     }
 
@@ -897,7 +904,7 @@ public class HidDeviceService extends ProfileService {
         }
 
         Message msg = mHandler.obtainMessage(MESSAGE_GET_REPORT);
-        msg.obj = bufferSize > 0 ? new Integer(bufferSize) : null;
+        msg.obj = bufferSize > 0 ? Integer.valueOf(bufferSize) : null;
         msg.arg1 = type;
         msg.arg2 = id;
         mHandler.sendMessage(msg);
@@ -966,6 +973,12 @@ public class HidDeviceService extends ProfileService {
         if (prevState == newState) {
             Log.w(TAG, "Connection state is unchanged, ignoring");
             return;
+        }
+
+        AdapterService adapterService = AdapterService.getAdapterService();
+        if (adapterService != null) {
+            adapterService.updateProfileConnectionAdapterProperties(
+                    device, BluetoothProfile.HID_DEVICE, newState, prevState);
         }
 
         if (newState == BluetoothProfile.STATE_CONNECTED) {

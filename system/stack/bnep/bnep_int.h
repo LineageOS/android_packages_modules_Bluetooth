@@ -26,7 +26,7 @@
 #define BNEP_INT_H
 
 #include "bnep_api.h"
-#include "bt_target.h"
+#include "internal_include/bt_target.h"
 #include "osi/include/alarm.h"
 #include "osi/include/fixed_queue.h"
 #include "stack/include/bt_hdr.h"
@@ -154,7 +154,6 @@ typedef struct {
   tL2CAP_APPL_INFO reg_info;
 
   bool profile_registered; /* true when we got our BD addr */
-  uint8_t trace_level;
 
 } tBNEP_CB;
 
@@ -194,7 +193,7 @@ void bnepu_process_peer_filter_set(tBNEP_CONN* p_bcb, uint8_t* p_filters,
 void bnepu_process_peer_filter_rsp(tBNEP_CONN* p_bcb, uint8_t* p_data);
 void bnepu_process_multicast_filter_rsp(tBNEP_CONN* p_bcb, uint8_t* p_data);
 void bnep_send_conn_req(tBNEP_CONN* p_bcb);
-void bnep_send_conn_responce(tBNEP_CONN* p_bcb, uint16_t resp_code);
+void bnep_send_conn_response(tBNEP_CONN* p_bcb, uint16_t resp_code);
 void bnep_process_setup_conn_req(tBNEP_CONN* p_bcb, uint8_t* p_setup,
                                  uint8_t len);
 void bnep_process_setup_conn_responce(tBNEP_CONN* p_bcb, uint8_t* p_setup);

@@ -16,9 +16,13 @@
 
 package com.android.bluetooth.gatt;
 
+import android.os.Looper;
 import android.util.Log;
 
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.BluetoothAdapterProxy;
+
 /**
  * Factory class for object initialization to help with unit testing
  */
@@ -63,5 +67,31 @@ public class GattObjectsFactory {
 
     public ScanNativeInterface getScanNativeInterface() {
         return ScanNativeInterface.getInstance();
+    }
+
+    /**
+     * Create an instance of ScanManager
+     *
+     * @param service a GattService instance
+     * @param adapterService an AdapterService instance
+     * @param bluetoothAdapterProxy a bluetoothAdapterProxy instance
+     * @param looper the looper to be used for processing messages
+     * @return the created ScanManager instance
+     */
+    public ScanManager createScanManager(
+            GattService service,
+            AdapterService adapterService,
+            BluetoothAdapterProxy bluetoothAdapterProxy,
+            Looper looper) {
+        return new ScanManager(service, adapterService, bluetoothAdapterProxy, looper);
+    }
+
+    public PeriodicScanManager createPeriodicScanManager(AdapterService adapterService) {
+        return new PeriodicScanManager(adapterService);
+    }
+
+    public DistanceMeasurementManager createDistanceMeasurementManager(
+            AdapterService adapterService) {
+        return new DistanceMeasurementManager(adapterService);
     }
 }

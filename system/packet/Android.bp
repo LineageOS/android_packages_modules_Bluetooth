@@ -9,7 +9,7 @@ package {
 
 cc_library_static {
     name: "lib-bt-packets",
-    defaults: ["libchrome_support_defaults"],
+    defaults: ["bluetooth_cflags"],
     host_supported: true,
     export_include_dirs: [
         "./",
@@ -28,11 +28,10 @@ cc_library_static {
 cc_test {
     name: "net_test_btpackets",
     defaults: [
-        "bluetooth_gtest_x86_asan_workaround",
         "fluoride_defaults",
         "mts_defaults",
     ],
-    test_suites: ["device-tests"],
+    test_suites: ["general-tests"],
     host_supported: true,
     test_options: {
         unit_test: true,
@@ -40,6 +39,7 @@ cc_test {
     local_include_dirs: ["tests"],
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
     ],
     srcs: [
@@ -72,7 +72,7 @@ cc_test {
     shared_libs: [
         "libbase",
         "libbinder_ndk",
-        "libcrypto",
+        "liblog",
     ],
     static_libs: [
         "lib-bt-packets",
@@ -83,6 +83,7 @@ cc_test {
     ],
     cflags: [
         "-DBUILDCFG",
+        "-Wno-unused-parameter",
     ],
     target: {
         android: {

@@ -24,20 +24,19 @@
 
 #define LOG_TAG "bluetooth"
 
+#include <base/logging.h>
 #include <string.h>
 
-#include "bt_target.h"
 #include "gatt_int.h"
-#include "l2c_api.h"
+#include "hardware/bt_gatt_types.h"
+#include "internal_include/bt_target.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "stack/arbiter/acl_arbiter.h"
 #include "stack/eatt/eatt.h"
 #include "stack/include/bt_types.h"
 #include "types/bluetooth/uuid.h"
-
-#include <base/logging.h>
 
 #define GATT_WRITE_LONG_HDR_SIZE 5 /* 1 opcode + 2 handle + 2 offset */
 #define GATT_READ_CHAR_VALUE_HDL (GATT_READ_CHAR_VALUE | 0x80)
@@ -230,7 +229,7 @@ void gatt_act_write(tGATT_CLCB* p_clcb, uint8_t sec_act) {
   CHECK(p_clcb->p_attr_buf);
   tGATT_VALUE& attr = *((tGATT_VALUE*)p_clcb->p_attr_buf);
 
-  uint16_t payload_size = gatt_tcb_get_payload_size_tx(tcb, p_clcb->cid);
+  uint16_t payload_size = gatt_tcb_get_payload_size(tcb, p_clcb->cid);
 
   switch (p_clcb->op_subtype) {
     case GATT_WRITE_NO_RSP: {
@@ -351,7 +350,7 @@ void gatt_send_prepare_write(tGATT_TCB& tcb, tGATT_CLCB* p_clcb) {
   VLOG(1) << __func__ << StringPrintf(" type=0x%x", type);
   uint16_t to_send = p_attr->len - p_attr->offset;
 
-  uint16_t payload_size = gatt_tcb_get_payload_size_tx(tcb, p_clcb->cid);
+  uint16_t payload_size = gatt_tcb_get_payload_size(tcb, p_clcb->cid);
   if (to_send > (payload_size -
                  GATT_WRITE_LONG_HDR_SIZE)) /* 2 = uint16_t offset bytes  */
     to_send = payload_size - GATT_WRITE_LONG_HDR_SIZE;
@@ -814,7 +813,7 @@ void gatt_process_read_by_type_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
   }
 
   STREAM_TO_UINT8(value_len, p);
-  uint16_t payload_size = gatt_tcb_get_payload_size_rx(tcb, p_clcb->cid);
+  uint16_t payload_size = gatt_tcb_get_payload_size(tcb, p_clcb->cid);
   if ((value_len > (payload_size - 2)) || (value_len > (len - 1))) {
     /* this is an error case that server's response containing a value length
        which is larger than MTU-2
@@ -1004,7 +1003,7 @@ void gatt_process_read_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
   uint16_t offset = p_clcb->counter;
   uint8_t* p = p_data;
 
-  uint16_t payload_size = gatt_tcb_get_payload_size_rx(tcb, p_clcb->cid);
+  uint16_t payload_size = gatt_tcb_get_payload_size(tcb, p_clcb->cid);
 
   if (p_clcb->operation == GATTC_OPTYPE_READ) {
     if (p_clcb->op_subtype != GATT_READ_BY_HANDLE) {
@@ -1112,11 +1111,11 @@ void gatt_process_mtu_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb, uint16_t len,
              tcb.pending_user_mtu_exchange_value,
              tcb.peer_bda.ToString().c_str(), mtu);
 
-    /* Aim for MAX as we did in the request */
+    /* Aim for default as we did in the request */
     if (mtu < GATT_DEF_BLE_MTU_SIZE) {
       tcb.payload_size = GATT_DEF_BLE_MTU_SIZE;
     } else {
-      tcb.payload_size = std::min(mtu, (uint16_t)(GATT_MAX_MTU_SIZE));
+      tcb.payload_size = std::min(mtu, (uint16_t)(gatt_get_local_mtu()));
     }
 
     bluetooth::shim::arbiter::GetArbiter().OnIncomingMtuResp(tcb.tcb_idx,
@@ -1127,6 +1126,8 @@ void gatt_process_mtu_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb, uint16_t len,
     if (tcb.pending_user_mtu_exchange_value > tcb.max_user_mtu) {
       tcb.max_user_mtu =
           std::min(tcb.pending_user_mtu_exchange_value, tcb.payload_size);
+    } else if (tcb.pending_user_mtu_exchange_value == 0) {
+      tcb.max_user_mtu = tcb.payload_size;
     }
     tcb.pending_user_mtu_exchange_value = 0;
 
@@ -1216,7 +1217,7 @@ void gatt_client_handle_server_rsp(tGATT_TCB& tcb, uint16_t cid,
                                    uint8_t* p_data) {
   VLOG(1) << __func__ << " opcode: " << loghex(op_code) << " cid" << +cid;
 
-  uint16_t payload_size = gatt_tcb_get_payload_size_rx(tcb, cid);
+  uint16_t payload_size = gatt_tcb_get_payload_size(tcb, cid);
 
   if (op_code == GATT_HANDLE_VALUE_IND || op_code == GATT_HANDLE_VALUE_NOTIF ||
       op_code == GATT_HANDLE_MULTI_VALUE_NOTIF) {

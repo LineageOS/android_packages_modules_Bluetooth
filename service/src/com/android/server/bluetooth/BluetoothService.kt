@@ -17,17 +17,27 @@ package com.android.server.bluetooth
 
 import android.bluetooth.BluetoothAdapter
 import android.content.Context
+import android.os.HandlerThread
 import android.os.UserManager
+import com.android.bluetooth.flags.FeatureFlagsImpl
 import com.android.server.SystemService
 import com.android.server.SystemService.TargetUser
 
 class BluetoothService(context: Context) : SystemService(context) {
-    private val mBluetoothManagerService = BluetoothManagerService(context)
+    private val mHandlerThread: HandlerThread
+    private val mBluetoothManagerService: BluetoothManagerService
     private var mInitialized = false
 
-    private fun initialize() {
+    init {
+        mHandlerThread = HandlerThread("BluetoothManagerService")
+        mHandlerThread.start()
+        mBluetoothManagerService =
+            BluetoothManagerService(context, mHandlerThread.getLooper(), FeatureFlagsImpl())
+    }
+
+    private fun initialize(user: TargetUser) {
         if (!mInitialized) {
-            mBluetoothManagerService.handleOnBootPhase()
+            mBluetoothManagerService.handleOnBootPhase(user.userHandle)
             mInitialized = true
         }
     }
@@ -38,20 +48,20 @@ class BluetoothService(context: Context) : SystemService(context) {
         if (phase == SystemService.PHASE_SYSTEM_SERVICES_READY) {
             publishBinderService(
                 BluetoothAdapter.BLUETOOTH_MANAGER_SERVICE,
-                mBluetoothManagerService
+                mBluetoothManagerService.getBinder()
             )
         }
     }
 
     override fun onUserStarting(user: TargetUser) {
         if (!UserManager.isHeadlessSystemUserMode()) {
-            initialize()
+            initialize(user)
         }
     }
 
-    override fun onUserSwitching(from: TargetUser?, to: TargetUser) {
+    override fun onUserSwitching(_from: TargetUser?, to: TargetUser) {
         if (!mInitialized) {
-            initialize()
+            initialize(to)
         } else {
             mBluetoothManagerService.onSwitchUser(to.userHandle)
         }

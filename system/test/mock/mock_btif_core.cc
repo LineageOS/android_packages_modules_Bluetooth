@@ -22,7 +22,6 @@
 #include <base/functional/bind.h>
 
 #include <cstdint>
-#include <string>
 
 #include "bta/include/bta_api.h"
 #include "btif/include/btif_common.h"
@@ -31,10 +30,10 @@
 #include "test/common/mock_functions.h"
 #include "types/raw_address.h"
 
-#ifndef UNUSED_ATTR
-#define UNUSED_ATTR
-#endif
-
+bool btif_is_dut_mode() {
+  inc_func_call_count(__func__);
+  return false;
+}
 bool is_on_jni_thread() {
   inc_func_call_count(__func__);
   return false;
@@ -72,10 +71,6 @@ bt_status_t do_in_jni_thread(const base::Location& from_here,
   do_in_jni_thread_task_queue.push(std::move(task));
   return BT_STATUS_SUCCESS;
 }
-btbase::AbstractMessageLoop* get_jni_message_loop() {
-  inc_func_call_count(__func__);
-  return nullptr;
-}
 int btif_is_enabled(void) {
   inc_func_call_count(__func__);
   return 0;
@@ -92,6 +87,10 @@ void btif_adapter_properties_evt(bt_status_t status, uint32_t num_props,
   inc_func_call_count(__func__);
 }
 void btif_disable_service(tBTA_SERVICE_ID service_id) {
+  inc_func_call_count(__func__);
+}
+void btif_dut_mode_configure(uint8_t enable) { inc_func_call_count(__func__); }
+void btif_dut_mode_send(uint16_t opcode, uint8_t* buf, uint8_t len) {
   inc_func_call_count(__func__);
 }
 void btif_enable_bluetooth_evt() { inc_func_call_count(__func__); }

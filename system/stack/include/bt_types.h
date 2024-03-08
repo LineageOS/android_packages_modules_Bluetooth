@@ -20,18 +20,13 @@
 #define BT_TYPES_H
 
 #include <stdbool.h>
-#include <stdint.h>
-#ifdef __cplusplus
-#include <string>
-#endif  // __cplusplus
 
 #include "stack/include/bt_dev_class.h"
 #include "stack/include/bt_device_type.h"
 #include "stack/include/bt_hdr.h"
-#include "stack/include/bt_name.h"
-#include "stack/include/bt_octets.h"
 #ifdef __cplusplus
 #include "include/hardware/bluetooth.h"
+#include "stack/include/bt_octets.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 #endif  // __cplusplus
@@ -52,8 +47,6 @@
 /************************************/
 /* HCI Event                        */
 #define BT_EVT_TO_BTU_HCI_EVT 0x1000
-/* ACL Data from HCI                */
-#define BT_EVT_TO_BTU_HCI_ACL 0x1100
 /* SCO Data from HCI                */
 #define BT_EVT_TO_BTU_HCI_SCO 0x1200
 /* HCI Transport Error              */
@@ -62,14 +55,8 @@
 /* Serial Port Data                 */
 #define BT_EVT_TO_BTU_SP_DATA 0x1500
 
-/* HCI command from upper layer     */
-#define BT_EVT_TO_BTU_HCI_CMD 0x1600
-
 /* ISO Data from HCI                */
 #define BT_EVT_TO_BTU_HCI_ISO 0x1700
-
-/* L2CAP segment(s) transmitted     */
-#define BT_EVT_TO_BTU_L2C_SEG_XMIT 0x1900
 
 /* To LM                            */
 /************************************/
@@ -91,30 +78,6 @@
 /* ISO Layer specific */
 #define BT_ISO_HDR_CONTAINS_TS (0x0001)
 #define BT_ISO_HDR_OFFSET_POINTS_DATA (0x0002)
-
-enum {
-  BT_PSM_SDP = 0x0001,
-  BT_PSM_RFCOMM = 0x0003,
-  BT_PSM_TCS = 0x0005,
-  BT_PSM_CTP = 0x0007,
-  BT_PSM_BNEP = 0x000F,
-  BT_PSM_HIDC = 0x0011,
-  HID_PSM_CONTROL = 0x0011,
-  BT_PSM_HIDI = 0x0013,
-  HID_PSM_INTERRUPT = 0x0013,
-  BT_PSM_UPNP = 0x0015,
-  BT_PSM_AVCTP = 0x0017,
-  BT_PSM_AVDTP = 0x0019,
-  BT_PSM_AVCTP_13 = 0x001B, /* Advanced Control - Browsing */
-  BT_PSM_UDI_CP =
-      0x001D,          /* Unrestricted Digital Information Profile C-Plane  */
-  BT_PSM_ATT = 0x001F, /* Attribute Protocol  */
-  BT_PSM_EATT = 0x0027,
-  /* We will not allocate a PSM in the reserved range to 3rd party apps
-   */
-  BRCM_RESERVED_PSM_START = 0x5AE1,
-  BRCM_RESERVED_PSM_END = 0x5AFF,
-};
 
 /*******************************************************************************
  * Macros to get and put bytes to and from a stream (Little Endian format).
@@ -330,9 +293,6 @@ enum {
   }
 
 /* Common Bluetooth field definitions */
-
-#define LAP_LEN 3
-typedef uint8_t LAP[LAP_LEN];     /* IAC as passed to Inquiry (LAP) */
 
 #define BT_1SEC_TIMEOUT_MS (1 * 1000) /* 1 second */
 

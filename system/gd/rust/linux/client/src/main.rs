@@ -2,23 +2,27 @@ use clap::{value_t, App, Arg};
 
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use dbus::channel::MatchingReceiver;
 use dbus::message::MatchRule;
 use dbus::nonblock::SyncConnection;
 use dbus_crossroads::Crossroads;
 use tokio::sync::mpsc;
+use tokio::time::{sleep, timeout};
 
 use crate::bt_adv::AdvSet;
 use crate::bt_gatt::GattClientContext;
 use crate::callbacks::{
     AdminCallback, AdvertisingSetCallback, BtCallback, BtConnectionCallback, BtManagerCallback,
-    BtSocketManagerCallback, ScannerCallback, SuspendCallback,
+    BtSocketManagerCallback, MediaCallback, QACallback, ScannerCallback, SuspendCallback,
+    TelephonyCallback,
 };
 use crate::command_handler::{CommandHandler, SocketSchedule};
 use crate::dbus_iface::{
-    BluetoothAdminDBus, BluetoothDBus, BluetoothGattDBus, BluetoothManagerDBus, BluetoothQADBus,
-    BluetoothQALegacyDBus, BluetoothSocketManagerDBus, BluetoothTelephonyDBus, SuspendDBus,
+    BluetoothAdminDBus, BluetoothDBus, BluetoothGattDBus, BluetoothManagerDBus, BluetoothMediaDBus,
+    BluetoothQADBus, BluetoothQALegacyDBus, BluetoothSocketManagerDBus, BluetoothTelephonyDBus,
+    SuspendDBus,
 };
 use crate::editor::AsyncEditor;
 use bt_topshim::topstack;
@@ -95,6 +99,9 @@ pub(crate) struct ClientContext {
     /// Proxy for Telephony interface.
     pub(crate) telephony_dbus: Option<BluetoothTelephonyDBus>,
 
+    /// Proxy for Media interface.
+    pub(crate) media_dbus: Option<BluetoothMediaDBus>,
+
     /// Channel to send actions to take in the foreground
     fg: mpsc::Sender<ForegroundActions>,
 
@@ -122,6 +129,9 @@ pub(crate) struct ClientContext {
     /// Identifies the callback to receive IBluetoothSocketManagerCallback method calls.
     socket_manager_callback_id: Option<u32>,
 
+    /// Identifies the callback to receive IBluetoothQACallback method calls.
+    qa_callback_id: Option<u32>,
+
     /// Is btclient running in restricted mode?
     is_restricted: bool,
 
@@ -133,6 +143,9 @@ pub(crate) struct ClientContext {
 
     /// The handle of the SDP record for MPS (Multi-Profile Specification).
     mps_sdp_handle: Option<i32>,
+
+    /// The set of client commands that need to wait for callbacks.
+    client_commands_with_callbacks: Vec<String>,
 }
 
 impl ClientContext {
@@ -141,6 +154,7 @@ impl ClientContext {
         dbus_crossroads: Arc<Mutex<Crossroads>>,
         tx: mpsc::Sender<ForegroundActions>,
         is_restricted: bool,
+        client_commands_with_callbacks: Vec<String>,
     ) -> ClientContext {
         // Manager interface is almost always available but adapter interface
         // requires that the specific adapter is enabled.
@@ -165,6 +179,7 @@ impl ClientContext {
             suspend_dbus: None,
             socket_manager_dbus: None,
             telephony_dbus: None,
+            media_dbus: None,
             fg: tx,
             dbus_connection,
             dbus_crossroads,
@@ -174,10 +189,12 @@ impl ClientContext {
             active_scanner_ids: HashSet::new(),
             adv_sets: HashMap::new(),
             socket_manager_callback_id: None,
+            qa_callback_id: None,
             is_restricted,
             gatt_client_context: GattClientContext::new(),
             socket_test_schedule: None,
             mps_sdp_handle: None,
+            client_commands_with_callbacks,
         }
     }
 
@@ -224,10 +241,15 @@ impl ClientContext {
 
         self.telephony_dbus = Some(BluetoothTelephonyDBus::new(conn.clone(), idx));
 
+        self.media_dbus = Some(BluetoothMediaDBus::new(conn.clone(), idx));
+
         // Trigger callback registration in the foreground
         let fg = self.fg.clone();
         tokio::spawn(async move {
             let adapter = String::from(format!("adapter{}", idx));
+            // Floss won't export the interface until it is ready to be used.
+            // Wait 1 second before registering the callbacks.
+            sleep(Duration::from_millis(1000)).await;
             let _ = fg.send(ForegroundActions::RegisterAdapterCallback(adapter)).await;
         });
     }
@@ -279,6 +301,13 @@ impl ClientContext {
 
         result
     }
+
+    fn get_floss_api_version(&mut self) -> (u32, u32) {
+        let ver = self.manager_dbus.get_floss_api_version();
+        let major = (ver & 0xFFFF_0000) >> 16;
+        let minor = ver & 0x0000_FFFF;
+        (major, minor)
+    }
 }
 
 /// Actions to take on the foreground loop. This allows us to queue actions in
@@ -294,10 +323,24 @@ enum ForegroundActions {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = App::new("btclient")
         .arg(Arg::with_name("restricted").long("restricted").takes_value(false))
-        .arg(Arg::with_name("command").short("c").long("command").takes_value(true))
+        .arg(
+            Arg::with_name("command")
+                .short("c")
+                .long("command")
+                .takes_value(true)
+                .help("Executes a non-interactive command"),
+        )
+        .arg(
+            Arg::with_name("timeout")
+                .short("t")
+                .long("timeout")
+                .takes_value(true)
+                .help("Specify a timeout in seconds for a non-interactive command"),
+        )
         .get_matches();
     let command = value_t!(matches, "command", String);
     let is_restricted = matches.is_present("restricted");
+    let timeout_secs = value_t!(matches, "timeout", u64);
 
     topstack::get_runtime().block_on(async move {
         // Connect to D-Bus system bus.
@@ -330,12 +373,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Accept foreground actions with mpsc
         let (tx, rx) = mpsc::channel::<ForegroundActions>(10);
 
+        // Include the commands
+        // (1) that will be run as non-interactive client commands, and
+        // (2) that will need to wait for the callbacks to complete.
+        let client_commands_with_callbacks = vec!["media".to_string()];
+
         // Create the context needed for handling commands
         let context = Arc::new(Mutex::new(ClientContext::new(
             conn.clone(),
             cr.clone(),
             tx.clone(),
             is_restricted,
+            client_commands_with_callbacks,
         )));
 
         // Check if manager interface is valid. We only print some help text before failing on the
@@ -374,55 +423,77 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
-        let mut handler = CommandHandler::new(context.clone());
-
-        // Allow command line arguments to be read
-        match command {
-            Ok(command) => {
-                let mut iter = command.split(' ').map(String::from);
-                handler.process_cmd_line(
-                    &iter.next().unwrap_or(String::from("")),
-                    &iter.collect::<Vec<String>>(),
-                );
+        let handler = CommandHandler::new(context.clone());
+        if let Ok(_) = command {
+            // Timeout applies only to non-interactive commands.
+            if let Ok(timeout_secs) = timeout_secs {
+                let timeout_duration = Duration::from_secs(timeout_secs);
+                match timeout(
+                    timeout_duration,
+                    handle_client_command(handler, tx, rx, context, command),
+                )
+                .await
+                {
+                    Ok(_) => {
+                        return Result::Ok(());
+                    }
+                    Err(_) => {
+                        return Result::Err("btclient timeout".into());
+                    }
+                };
             }
-            _ => {
-                start_interactive_shell(handler, tx, rx, context).await?;
-            }
-        };
+        }
+        // There are two scenarios in which handle_client_command is run without a timeout.
+        // - Interactive commands: none of these commands require a timeout.
+        // - Non-interactive commands that have not specified a timeout.
+        handle_client_command(handler, tx, rx, context, command).await?;
         return Result::Ok(());
     })
 }
 
-async fn start_interactive_shell(
+// If btclient runs without command arguments, the interactive shell
+// actions are performed.
+// If btclient runs with command arguments, the command is executed
+// once. There are two cases to exit.
+//   Case 1: if the command does not need a callback, e.g., "help",
+//           it will exit after running handler.process_cmd_line().
+//   Case 2: if the command needs a callback, e.g., "media log",
+//           it will exit after the callback has been run in the arm
+//           of ForegroundActions::RunCallback(callback).
+async fn handle_client_command(
     mut handler: CommandHandler,
     tx: mpsc::Sender<ForegroundActions>,
     mut rx: mpsc::Receiver<ForegroundActions>,
     context: Arc<Mutex<ClientContext>>,
+    command: Result<String, clap::Error>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let command_rule_list = handler.get_command_rule_list().clone();
-    let context_for_closure = context.clone();
-
     let semaphore_fg = Arc::new(tokio::sync::Semaphore::new(1));
 
-    // Async task to keep reading new lines from user
-    let semaphore = semaphore_fg.clone();
-    let editor = AsyncEditor::new(command_rule_list, context_for_closure)
-        .map_err(|x| format!("creating async editor failed: {x}"))?;
-    tokio::spawn(async move {
-        loop {
-            // Wait until ForegroundAction::Readline finishes its task.
-            let permit = semaphore.acquire().await;
-            if permit.is_err() {
-                break;
-            };
-            // Let ForegroundAction::Readline decide when it's done.
-            permit.unwrap().forget();
+    // If there are no command arguments, start the interactive shell.
+    if let Err(_) = command {
+        let command_rule_list = handler.get_command_rule_list().clone();
+        let context_for_closure = context.clone();
 
-            // It's good to do readline now.
-            let result = editor.readline().await;
-            let _ = tx.send(ForegroundActions::Readline(result)).await;
-        }
-    });
+        // Async task to keep reading new lines from user
+        let semaphore = semaphore_fg.clone();
+        let editor = AsyncEditor::new(command_rule_list, context_for_closure)
+            .map_err(|x| format!("creating async editor failed: {x}"))?;
+        tokio::spawn(async move {
+            loop {
+                // Wait until ForegroundAction::Readline finishes its task.
+                let permit = semaphore.acquire().await;
+                if permit.is_err() {
+                    break;
+                };
+                // Let ForegroundAction::Readline decide when it's done.
+                permit.unwrap().forget();
+
+                // It's good to do readline now.
+                let result = editor.readline().await;
+                let _ = tx.send(ForegroundActions::Readline(result)).await;
+            }
+        });
+    }
 
     'readline: loop {
         let m = rx.recv().await;
@@ -447,6 +518,11 @@ async fn start_interactive_shell(
             }
             ForegroundActions::RunCallback(callback) => {
                 callback(context.clone());
+
+                // Break the loop as a non-interactive command is completed.
+                if let Ok(_) = command {
+                    break;
+                }
             }
             // Once adapter is ready, register callbacks, get the address and mark it as ready
             ForegroundActions::RegisterAdapterCallback(adapter) => {
@@ -464,6 +540,14 @@ async fn start_interactive_shell(
                     format!("/org/chromium/bluetooth/client/{}/admin_callback", adapter);
                 let socket_manager_cb_objpath: String =
                     format!("/org/chromium/bluetooth/client/{}/socket_manager_callback", adapter);
+                let qa_cb_objpath: String =
+                    format!("/org/chromium/bluetooth/client/{}/qa_manager_callback", adapter);
+                let media_cb_objpath: String =
+                    format!("/org/chromium/bluetooth/client/{}/bluetooth_media_callback", adapter);
+                let telephony_cb_objpath: String = format!(
+                    "/org/chromium/bluetooth/client/{}/bluetooth_telephony_callback",
+                    adapter
+                );
 
                 let dbus_connection = context.lock().unwrap().dbus_connection.clone();
                 let dbus_crossroads = context.lock().unwrap().dbus_crossroads.clone();
@@ -568,6 +652,23 @@ async fn start_interactive_shell(
                 context.lock().unwrap().socket_manager_callback_id =
                     Some(socket_manager_callback_id);
 
+                let qa_callback_id = context
+                    .lock()
+                    .unwrap()
+                    .qa_dbus
+                    .as_mut()
+                    .unwrap()
+                    .rpc
+                    .register_qa_callback(Box::new(QACallback::new(
+                        qa_cb_objpath.clone(),
+                        context.clone(),
+                        dbus_connection.clone(),
+                        dbus_crossroads.clone(),
+                    )))
+                    .await
+                    .expect("D-Bus error on IBluetoothQA::RegisterCallback");
+                context.lock().unwrap().qa_callback_id = Some(qa_callback_id);
+
                 // When adapter is ready, Suspend API is also ready. Register as an observer.
                 // TODO(b/224606285): Implement suspend debug utils in btclient.
                 context.lock().unwrap().suspend_dbus.as_mut().unwrap().register_callback(Box::new(
@@ -578,11 +679,60 @@ async fn start_interactive_shell(
                     ),
                 ));
 
+                context
+                    .lock()
+                    .unwrap()
+                    .media_dbus
+                    .as_mut()
+                    .unwrap()
+                    .rpc
+                    .register_callback(Box::new(MediaCallback::new(
+                        media_cb_objpath,
+                        context.clone(),
+                        dbus_connection.clone(),
+                        dbus_crossroads.clone(),
+                    )))
+                    .await
+                    .expect("D-Bus error on IBluetoothMedia::RegisterCallback");
+
+                context
+                    .lock()
+                    .unwrap()
+                    .telephony_dbus
+                    .as_mut()
+                    .unwrap()
+                    .rpc
+                    .register_telephony_callback(Box::new(TelephonyCallback::new(
+                        telephony_cb_objpath,
+                        context.clone(),
+                        dbus_connection.clone(),
+                        dbus_crossroads.clone(),
+                    )))
+                    .await
+                    .expect("D-Bus error on IBluetoothMedia::RegisterTelephonyCallback");
+
                 context.lock().unwrap().adapter_ready = true;
                 let adapter_address = context.lock().unwrap().update_adapter_address();
                 context.lock().unwrap().update_bonded_devices();
 
                 print_info!("Adapter {} is ready", adapter_address);
+
+                // Run the command with the command arguments as the client is
+                // non-interactive.
+                if let Some(command) = command.as_ref().ok() {
+                    let mut iter = command.split(' ').map(String::from);
+                    let first = iter.next().unwrap_or(String::from(""));
+                    if !handler.process_cmd_line(&first, &iter.collect::<Vec<String>>()) {
+                        // Break immediately if the command fails to execute.
+                        break;
+                    }
+
+                    // Break the loop immediately if there is no callback
+                    // to wait for.
+                    if !context.lock().unwrap().client_commands_with_callbacks.contains(&first) {
+                        break;
+                    }
+                }
             }
             ForegroundActions::Readline(result) => match result {
                 Err(rustyline::error::ReadlineError::Interrupted) => {

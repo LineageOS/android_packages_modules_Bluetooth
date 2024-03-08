@@ -18,18 +18,17 @@
 #include "gd/hci/controller_mock.h"
 #include "gd/hci/distance_measurement_manager_mock.h"
 #include "gd/hci/hci_layer.h"
+#include "gd/hci/hci_layer_mock.h"
 #include "gd/hci/le_advertising_manager_mock.h"
 #include "gd/hci/le_scanning_manager_mock.h"
 #include "gd/neighbor/connectability.h"
 #include "gd/neighbor/discoverability.h"
 #include "gd/neighbor/inquiry.h"
-#include "gd/neighbor/inquiry_mock.h"
 #include "gd/neighbor/page.h"
 #include "gd/os/handler.h"
 #include "gd/security/security_module.h"
 #include "gd/storage/storage_module.h"
 #include "main/shim/entry.h"
-#include "main/shim/stack.h"
 
 namespace bluetooth {
 namespace hci {
@@ -37,6 +36,7 @@ namespace testing {
 
 MockAclManager* mock_acl_manager_{nullptr};
 MockController* mock_controller_{nullptr};
+MockHciLayer* mock_hci_layer_{nullptr};
 os::Handler* mock_gd_shim_handler_{nullptr};
 MockLeAdvertisingManager* mock_le_advertising_manager_{nullptr};
 MockLeScanningManager* mock_le_scanning_manager_{nullptr};
@@ -50,12 +50,9 @@ class Dumpsys;
 namespace shim {
 
 Dumpsys* GetDumpsys() { return nullptr; }
-activity_attribution::ActivityAttribution* GetActivityAttribution() {
-  return nullptr;
-}
 hci::AclManager* GetAclManager() { return hci::testing::mock_acl_manager_; }
 hci::Controller* GetController() { return hci::testing::mock_controller_; }
-hci::HciLayer* GetHciLayer() { return nullptr; }
+hci::HciLayer* GetHciLayer() { return hci::testing::mock_hci_layer_; }
 hci::LeAdvertisingManager* GetAdvertising() {
   return hci::testing::mock_le_advertising_manager_;
 }

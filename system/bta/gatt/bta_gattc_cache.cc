@@ -31,18 +31,24 @@
 
 #include <cstdint>
 #include <cstdio>
-#include <sstream>
 
 #include "bt_target.h"  // Must be first to define build configuration
 #include "bta/gatt/bta_gattc_int.h"
 #include "bta/gatt/database.h"
+#include "common/init_flags.h"
 #include "device/include/interop.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/log.h"
+#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/btm/btm_sec.h"
+#include "stack/include/bt_types.h"
+#include "stack/include/bt_uuid16.h"
 #include "stack/include/gatt_api.h"
+#include "stack/include/sdp_api.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth::legacy::stack::sdp;
 
 using base::StringPrintf;
 using bluetooth::Uuid;
@@ -160,6 +166,12 @@ RobustCachingSupport GetRobustCachingSupport(const tBTA_GATTC_CLCB* p_clcb,
     return RobustCachingSupport::UNSUPPORTED;
   }
 
+  if (p_clcb->transport == BT_TRANSPORT_LE &&
+      !BTM_IsRemoteVersionReceived(p_clcb->bda)) {
+    LOG_INFO("version info is not ready yet");
+    return RobustCachingSupport::W4_REMOTE_VERSION;
+  }
+
   // This is workaround for the embedded devices being already on the market
   // and having a serious problem with handle Read By Type with
   // GATT_UUID_DATABASE_HASH. With this workaround, Android will assume that
@@ -243,9 +255,8 @@ static void bta_gattc_explore_next_service(uint16_t conn_id,
         BTA_GATTC_DISCOVER_REQ_READ_EXT_PROP_DESC;
 
     if (p_srvc_cb->read_multiple_not_supported || descriptors.size() == 1) {
-      tGATT_READ_PARAM read_param{
-          .by_handle = {.handle = descriptors.front(),
-                        .auth_req = GATT_AUTH_REQ_NONE}};
+      tGATT_READ_PARAM read_param{.by_handle = {.auth_req = GATT_AUTH_REQ_NONE,
+                                                .handle = descriptors.front()}};
       GATTC_Read(conn_id, GATT_READ_BY_HANDLE, &read_param);
       // asynchronous continuation in bta_gattc_op_cmpl_during_discovery
       return;
@@ -340,14 +351,13 @@ void bta_gattc_start_disc_char_dscp(uint16_t conn_id,
 
 descriptor_discovery_done:
   /* all characteristic has been explored, start with next service if any */
-  DVLOG(3) << "all characteristics explored";
-
   bta_gattc_explore_next_service(conn_id, p_srvc_cb);
   return;
 }
 
 /* Process the discovery result from sdp */
-void bta_gattc_sdp_callback(tSDP_STATUS sdp_status, const void* user_data) {
+void bta_gattc_sdp_callback(UNUSED_ATTR const RawAddress& bd_addr,
+                            tSDP_STATUS sdp_status, const void* user_data) {
   tBTA_GATTC_CB_DATA* cb_data = (tBTA_GATTC_CB_DATA*)user_data;
   tBTA_GATTC_SERV* p_srvc_cb = bta_gattc_find_scb_by_cid(cb_data->sdp_conn_id);
 
@@ -368,14 +378,18 @@ void bta_gattc_sdp_callback(tSDP_STATUS sdp_status, const void* user_data) {
 
   bool no_pending_disc = !p_srvc_cb->pending_discovery.InProgress();
 
-  tSDP_DISC_REC* p_sdp_rec = SDP_FindServiceInDb(cb_data->p_sdp_db, 0, nullptr);
+  tSDP_DISC_REC* p_sdp_rec = get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb(
+      cb_data->p_sdp_db, 0, nullptr);
   while (p_sdp_rec != nullptr) {
     /* find a service record, report it */
     Uuid service_uuid;
-    if (!SDP_FindServiceUUIDInRec(p_sdp_rec, &service_uuid)) continue;
+    if (!get_legacy_stack_sdp_api()->record.SDP_FindServiceUUIDInRec(
+            p_sdp_rec, &service_uuid))
+      continue;
 
     tSDP_PROTOCOL_ELEM pe;
-    if (!SDP_FindProtocolListElemInRec(p_sdp_rec, UUID_PROTOCOL_ATT, &pe))
+    if (!get_legacy_stack_sdp_api()->record.SDP_FindProtocolListElemInRec(
+            p_sdp_rec, UUID_PROTOCOL_ATT, &pe))
       continue;
 
     uint16_t start_handle = (uint16_t)pe.params[0];
@@ -391,7 +405,8 @@ void bta_gattc_sdp_callback(tSDP_STATUS sdp_status, const void* user_data) {
         !GATT_HANDLE_IS_VALID(end_handle)) {
       LOG(ERROR) << "invalid start_handle=" << loghex(start_handle)
                  << ", end_handle=" << loghex(end_handle);
-      p_sdp_rec = SDP_FindServiceInDb(cb_data->p_sdp_db, 0, p_sdp_rec);
+      p_sdp_rec = get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb(
+          cb_data->p_sdp_db, 0, p_sdp_rec);
       continue;
     }
 
@@ -399,7 +414,8 @@ void bta_gattc_sdp_callback(tSDP_STATUS sdp_status, const void* user_data) {
     p_srvc_cb->pending_discovery.AddService(start_handle, end_handle,
                                             service_uuid, true);
 
-    p_sdp_rec = SDP_FindServiceInDb(cb_data->p_sdp_db, 0, p_sdp_rec);
+    p_sdp_rec = get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb(
+        cb_data->p_sdp_db, 0, p_sdp_rec);
   }
 
   // If discovery is already pending, no need to call
@@ -431,10 +447,10 @@ static tGATT_STATUS bta_gattc_sdp_service_disc(uint16_t conn_id,
   attr_list[1] = ATTR_ID_PROTOCOL_DESC_LIST;
 
   Uuid uuid = Uuid::From16Bit(UUID_PROTOCOL_ATT);
-  SDP_InitDiscoveryDb(cb_data->p_sdp_db, BTA_GATT_SDP_DB_SIZE, 1, &uuid,
-                      num_attrs, attr_list);
+  get_legacy_stack_sdp_api()->service.SDP_InitDiscoveryDb(
+      cb_data->p_sdp_db, BTA_GATT_SDP_DB_SIZE, 1, &uuid, num_attrs, attr_list);
 
-  if (!SDP_ServiceSearchAttributeRequest2(
+  if (!get_legacy_stack_sdp_api()->service.SDP_ServiceSearchAttributeRequest2(
           p_server_cb->server_bda, cb_data->p_sdp_db, &bta_gattc_sdp_callback,
           const_cast<const void*>(static_cast<void*>(cb_data)))) {
     osi_free(cb_data);

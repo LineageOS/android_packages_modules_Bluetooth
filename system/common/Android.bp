@@ -10,13 +10,12 @@ package {
 cc_library_static {
     name: "libbt-common",
     defaults: [
-        "fluoride_basic_defaults",
+        "fluoride_defaults",
     ],
     host_supported: true,
     include_dirs: [
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/gd",
-        "packages/modules/Bluetooth/system/gd/rust/shim",
         "packages/modules/Bluetooth/system/stack/include",
     ],
     srcs: [
@@ -28,22 +27,44 @@ cc_library_static {
         "stop_watch_legacy.cc",
         "time_util.cc",
     ],
+    proto: {
+        type: "lite",
+        canonical_path_from_root: false,
+        export_proto_headers: true,
+    },
     target: {
         android: {
-            srcs: ["metrics.cc"],
+            srcs: [
+                ":bluetooth-metrics-proto",
+                "metrics.cc",
+            ],
+            static_libs: ["libstatslog_bt"],
         },
         host: {
             srcs: ["metrics_linux.cc"],
         },
     },
+    shared_libs: [
+        "libcrypto",
+        "libcutils",
+    ],
+    apex_available: [
+        "com.android.btservices",
+    ],
     min_sdk_version: "Tiramisu",
+    header_libs: ["libbluetooth_headers"],
+    static_libs: [
+        "libbluetooth_crypto_toolbox",
+        "libbt-platform-protos-lite",
+        "libbt_shim_bridge",
+    ],
+    cflags: ["-Wno-unused-parameter"],
 }
 
 cc_test {
     name: "bluetooth_test_common",
-    test_suites: ["device-tests"],
+    test_suites: ["general-tests"],
     defaults: [
-        "bluetooth_gtest_x86_asan_workaround",
         "fluoride_defaults",
         "mts_defaults",
     ],
@@ -54,7 +75,6 @@ cc_test {
     include_dirs: [
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/gd",
-        "packages/modules/Bluetooth/system/gd/rust/shim",
         "packages/modules/Bluetooth/system/stack/include",
     ],
     srcs: [
@@ -72,14 +92,19 @@ cc_test {
     target: {
         android: {
             srcs: ["metrics_unittest.cc"],
+            shared_libs: ["libstatssocket"],
         },
     },
     shared_libs: [
         "libcrypto",
+        "liblog",
     ],
     static_libs: [
+        "libbluetooth-types",
+        "libbluetooth_crypto_toolbox",
         "libbt-common",
-        "libbt-protos-lite",
+        "libbt-platform-protos-lite",
+        "libbt_shim_bridge",
         "libchrome",
         "libevent",
         "libgmock",
@@ -88,16 +113,17 @@ cc_test {
     sanitize: {
         cfi: false,
     },
+    header_libs: ["libbluetooth_headers"],
+    cflags: ["-Wno-unused-parameter"],
 }
 
 cc_test {
     name: "net_test_performance",
     defaults: [
-        "bluetooth_gtest_x86_asan_workaround",
         "fluoride_defaults",
         "mts_defaults",
     ],
-    test_suites: ["device-tests"],
+    test_suites: ["general-tests"],
     include_dirs: ["packages/modules/Bluetooth/system"],
     host_supported: true,
     srcs: [
@@ -113,6 +139,8 @@ cc_test {
         "libgmock",
         "libosi",
     ],
+    header_libs: ["libbluetooth_headers"],
+    cflags: ["-Wno-unused-parameter"],
 }
 
 cc_benchmark {
@@ -126,7 +154,6 @@ cc_benchmark {
         "benchmark/thread_performance_benchmark.cc",
     ],
     shared_libs: [
-        "libcrypto",
         "liblog",
     ],
     static_libs: [
@@ -135,4 +162,6 @@ cc_benchmark {
         "libevent",
         "libosi",
     ],
+    header_libs: ["libbluetooth_headers"],
+    cflags: ["-Wno-unused-parameter"],
 }

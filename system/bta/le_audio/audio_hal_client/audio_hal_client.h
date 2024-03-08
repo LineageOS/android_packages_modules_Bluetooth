@@ -88,7 +88,7 @@ struct LeAudioCodecConfiguration {
             (data_interval_us == other.data_interval_us));
   }
 
-  bool IsInvalid() {
+  bool IsInvalid() const {
     return (num_channels == 0) || (sample_rate == 0) ||
            (bits_per_sample == 0) || (data_interval_us == 0);
   }
@@ -101,16 +101,19 @@ class LeAudioSinkAudioHalClient {
  public:
   class Callbacks {
    public:
+    Callbacks() = default;
     virtual ~Callbacks() = default;
-    virtual void OnAudioSuspend(std::promise<void> do_suspend_promise) = 0;
+    virtual void OnAudioSuspend(void) = 0;
     virtual void OnAudioResume(void) = 0;
-    virtual void OnAudioMetadataUpdate(
-        std::vector<struct record_track_metadata> sink_metadata) = 0;
+    virtual void OnAudioMetadataUpdate(sink_metadata_v7 sink_metadata) = 0;
+
+    base::WeakPtrFactory<Callbacks> weak_factory_{this};
   };
 
   virtual ~LeAudioSinkAudioHalClient() = default;
   virtual bool Start(const LeAudioCodecConfiguration& codecConfiguration,
-                     Callbacks* audioReceiver) = 0;
+                     Callbacks* audioReceiver,
+                     DsaModes dsa_modes = {DsaMode::DISABLED}) = 0;
   virtual void Stop() = 0;
   virtual size_t SendData(uint8_t* data, uint16_t size) = 0;
 
@@ -137,17 +140,21 @@ class LeAudioSourceAudioHalClient {
  public:
   class Callbacks {
    public:
+    Callbacks() = default;
     virtual ~Callbacks() = default;
     virtual void OnAudioDataReady(const std::vector<uint8_t>& data) = 0;
-    virtual void OnAudioSuspend(std::promise<void> do_suspend_promise) = 0;
+    virtual void OnAudioSuspend(void) = 0;
     virtual void OnAudioResume(void) = 0;
-    virtual void OnAudioMetadataUpdate(
-        std::vector<struct playback_track_metadata> source_metadata) = 0;
+    virtual void OnAudioMetadataUpdate(source_metadata_v7 source_metadata,
+                                       DsaMode dsa_mode) = 0;
+
+    base::WeakPtrFactory<Callbacks> weak_factory_{this};
   };
 
   virtual ~LeAudioSourceAudioHalClient() = default;
   virtual bool Start(const LeAudioCodecConfiguration& codecConfiguration,
-                     Callbacks* audioReceiver) = 0;
+                     Callbacks* audioReceiver,
+                     DsaModes dsa_modes = {DsaMode::DISABLED}) = 0;
   virtual void Stop() = 0;
   virtual size_t SendData(uint8_t* data, uint16_t size) { return 0; }
   virtual void ConfirmStreamingRequest() = 0;

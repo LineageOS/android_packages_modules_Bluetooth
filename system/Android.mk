@@ -19,13 +19,18 @@ LOCAL_host_executables := \
 	$(HOST_OUT_EXECUTABLES)/root-canal
 
 LOCAL_host_python_hci_packets_library := \
-	$(SOONG_OUT_DIR)/.intermediates/packages/modules/Bluetooth/system/gd/gd_hci_packets_python3_gen/gen/hci_packets.py
+	$(SOONG_OUT_DIR)/.intermediates/packages/modules/Bluetooth/system/pdl/hci/gd_hci_packets_python3_gen/gen/hci_packets.py
+
+LOCAL_host_python_smp_packets_library := \
+	$(SOONG_OUT_DIR)/.intermediates/packages/modules/Bluetooth/system/pdl/security/gd_smp_packets_python3_gen/gen/smp_packets.py
 
 LOCAL_host_python_extension_libraries := \
 	$(HOST_OUT_SHARED_LIBRARIES)/bluetooth_packets_python3.so
 
 LOCAL_host_libraries := \
 	$(HOST_OUT_SHARED_LIBRARIES)/libbase.so \
+	$(HOST_OUT_SHARED_LIBRARIES)/libbinder.so \
+	$(HOST_OUT_SHARED_LIBRARIES)/libbinder_ndk.so \
 	$(HOST_OUT_SHARED_LIBRARIES)/libbluetooth.so \
 	$(HOST_OUT_SHARED_LIBRARIES)/libbluetooth_gd.so \
 	$(HOST_OUT_SHARED_LIBRARIES)/libc++.so \
@@ -34,7 +39,6 @@ LOCAL_host_libraries := \
 	$(HOST_OUT_SHARED_LIBRARIES)/libcutils.so \
 	$(HOST_OUT_SHARED_LIBRARIES)/libevent-host.so \
 	$(HOST_OUT_SHARED_LIBRARIES)/libflatbuffers-cpp.so \
-	$(HOST_OUT_SHARED_LIBRARIES)/libgrpc++_unsecure.so \
 	$(HOST_OUT_SHARED_LIBRARIES)/libgrpc++.so \
 	$(HOST_OUT_SHARED_LIBRARIES)/libgrpc_wrap.so \
 	$(HOST_OUT_SHARED_LIBRARIES)/liblog.so \
@@ -42,7 +46,9 @@ LOCAL_host_libraries := \
 	$(HOST_OUT_SHARED_LIBRARIES)/libz-host.so \
 	$(HOST_OUT_SHARED_LIBRARIES)/libprotobuf-cpp-full.so \
 	$(HOST_OUT_SHARED_LIBRARIES)/libunwindstack.so \
-	$(HOST_OUT_SHARED_LIBRARIES)/liblzma.so
+	$(HOST_OUT_SHARED_LIBRARIES)/libutils.so \
+	$(HOST_OUT_SHARED_LIBRARIES)/liblzma.so \
+	$(HOST_OUT_SHARED_LIBRARIES)/server_configurable_flags.so
 
 LOCAL_target_executables := \
 	$(TARGET_OUT_EXECUTABLES)/bluetooth_stack_with_facade
@@ -58,7 +64,6 @@ LOCAL_target_libraries := \
 	$(TARGET_OUT_SHARED_LIBRARIES)/libcrypto.so \
 	$(TARGET_OUT_SHARED_LIBRARIES)/libcutils.so \
 	$(TARGET_OUT_SHARED_LIBRARIES)/libgrpc_wrap.so \
-	$(TARGET_OUT_SHARED_LIBRARIES)/libgrpc++_unsecure.so \
 	$(TARGET_OUT_SHARED_LIBRARIES)/libgrpc++.so \
 	$(TARGET_OUT_SHARED_LIBRARIES)/libhidlbase.so \
 	$(TARGET_OUT_SHARED_LIBRARIES)/liblog.so \
@@ -68,7 +73,8 @@ LOCAL_target_libraries := \
 	$(TARGET_OUT_SHARED_LIBRARIES)/libstatslog_bt.so \
 	$(TARGET_OUT_SHARED_LIBRARIES)/libunwindstack.so \
 	$(TARGET_OUT_SHARED_LIBRARIES)/libutils.so \
-	$(TARGET_OUT_SHARED_LIBRARIES)/libz.so
+	$(TARGET_OUT_SHARED_LIBRARIES)/libz.so \
+	$(TARGET_OUT_SHARED_LIBRARIES)/server_configurable_flags.so
 	# libclang_rt.asan-aarch64-android.so is only generated for ASAN build and included automatically
 	# on devices
 	# $(TARGET_OUT_SHARED_LIBRARIES)/libclang_rt.asan-aarch64-android.so \
@@ -94,16 +100,19 @@ $(bluetooth_cert_src_and_bin_zip): PRIVATE_host_executables := $(LOCAL_host_exec
 $(bluetooth_cert_src_and_bin_zip): PRIVATE_host_libraries := $(LOCAL_host_libraries)
 $(bluetooth_cert_src_and_bin_zip): PRIVATE_host_python_extension_libraries := $(LOCAL_host_python_extension_libraries)
 $(bluetooth_cert_src_and_bin_zip): PRIVATE_host_python_hci_packets_library := $(LOCAL_host_python_hci_packets_library)
+$(bluetooth_cert_src_and_bin_zip): PRIVATE_host_python_smp_packets_library := $(LOCAL_host_python_smp_packets_library)
 $(bluetooth_cert_src_and_bin_zip): PRIVATE_target_executables := $(LOCAL_target_executables)
 $(bluetooth_cert_src_and_bin_zip): PRIVATE_target_libraries := $(LOCAL_target_libraries)
 $(bluetooth_cert_src_and_bin_zip): $(SOONG_ZIP) $(LOCAL_cert_test_sources) \
 		$(LOCAL_host_executables) $(LOCAL_host_libraries) $(LOCAL_host_python_libraries) \
 		$(LOCAL_host_python_extension_libraries) \
 		$(LOCAL_host_python_hci_packets_library) \
+		$(LOCAL_host_python_smp_packets_library) \
 		$(LOCAL_target_executables) $(LOCAL_target_libraries)
 	$(hide) $(SOONG_ZIP) -d -o $@ \
 		-C $(PRIVATE_bluetooth_project_dir) $(addprefix -f ,$(PRIVATE_cert_test_sources)) \
 		-C $(dir $(PRIVATE_host_python_hci_packets_library)) -f $(PRIVATE_host_python_hci_packets_library) \
+		-C $(dir $(PRIVATE_host_python_smp_packets_library)) -f $(PRIVATE_host_python_smp_packets_library) \
 		-C $(HOST_OUT_EXECUTABLES) $(addprefix -f ,$(PRIVATE_host_executables)) \
 		-C $(HOST_OUT_SHARED_LIBRARIES) $(addprefix -f ,$(PRIVATE_host_python_extension_libraries)) \
 		-P lib64 \
@@ -145,7 +154,7 @@ $(bluetooth_cert_tests_py_package_zip): $(SOONG_ZIP) \
 		-f $(LLVM_PREBUILTS_BASE)/linux-x86/$(LLVM_PREBUILTS_VERSION)/bin/llvm-cov \
 		-f $(LLVM_PREBUILTS_BASE)/linux-x86/$(LLVM_PREBUILTS_VERSION)/bin/llvm-profdata \
 		-f $(LLVM_PREBUILTS_BASE)/linux-x86/$(LLVM_PREBUILTS_VERSION)/bin/llvm-symbolizer \
-		-f $(LLVM_PREBUILTS_BASE)/linux-x86/$(LLVM_PREBUILTS_VERSION)/lib/x86_64-unknown-linux-gnu/libc++.so.1
+		-f $(LLVM_PREBUILTS_BASE)/linux-x86/$(LLVM_PREBUILTS_VERSION)/lib/x86_64-unknown-linux-gnu/libc++.so
 
 $(call declare-container-license-metadata,$(bluetooth_cert_tests_py_package_zip),\
     SPDX-license-identifier-Apache-2.0 SPDX-license-identifier-BSD SPDX-license-identifier-MIT legacy_unencumbered,\

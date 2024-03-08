@@ -16,13 +16,10 @@
 
 #pragma once
 
-#include "common/init_flags.h"
 #include "hci/address.h"
 #include "hci/hci_packets.h"
 #include "hci/le_rand_callback.h"
-#include "hci_controller_generated.h"
 #include "module.h"
-#include "os/handler.h"
 
 // TODO Remove this once all QTI specific hacks are removed.
 #define LMP_COMPID_QTI 0x001D
@@ -185,6 +182,9 @@ class Controller : public Module {
 
   virtual uint8_t GetLePeriodicAdvertiserListSize() const;
 
+  // 7.4.8 Read Local Supported Codecs command v1 only returns codecs on the BR/EDR transport
+  virtual std::vector<uint8_t> GetLocalSupportedBrEdrCodecIds() const;
+
   struct VendorCapabilities {
     uint8_t is_supported_;
     uint8_t max_advt_instances_;
@@ -215,25 +215,11 @@ class Controller : public Module {
   static constexpr uint64_t kLeEventMask53 = 0x00000007ffffffff;
   static constexpr uint64_t kLeEventMask52 = 0x00000003ffffffff;
   static constexpr uint64_t kLeEventMask51 = 0x0000000000ffffff;
+  static constexpr uint64_t kLeEventMask50 = 0x0000000000ffffff;
   static constexpr uint64_t kLeEventMask42 = 0x00000000000003ff;
   static constexpr uint64_t kLeEventMask41 = 0x000000000000003f;
 
-  static uint64_t MaskLeEventMask(HciVersion version, uint64_t mask) {
-    if (!common::init_flags::subrating_is_enabled()) {
-      mask = mask & ~(static_cast<uint64_t>(LLFeaturesBits::CONNECTION_SUBRATING_HOST_SUPPORT));
-    }
-    if (version >= HciVersion::V_5_3) {
-      return mask;
-    } else if (version >= HciVersion::V_5_2) {
-      return mask & kLeEventMask52;
-    } else if (version >= HciVersion::V_5_1) {
-      return mask & kLeEventMask51;
-    } else if (version >= HciVersion::V_4_2) {
-      return mask & kLeEventMask42;
-    } else {
-      return mask & kLeEventMask41;
-    }
-  }
+  static uint64_t MaskLeEventMask(HciVersion version, uint64_t mask);
 
  protected:
   void ListDependencies(ModuleList* list) const override;

@@ -16,17 +16,12 @@
 
 #pragma once
 
-#include "common/bind.h"
-#include "common/callback.h"
+#include "bind.h"
+#include "callback.h"
+#include "i_postable_context.h"
 
 namespace bluetooth {
 namespace common {
-
-class IPostableContext {
- public:
-  virtual ~IPostableContext(){};
-  virtual void Post(OnceClosure closure) = 0;
-};
 
 template <typename R, typename... Args>
 class ContextualOnceCallback;

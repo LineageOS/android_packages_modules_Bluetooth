@@ -23,6 +23,7 @@
 #include "os/alarm.h"
 #include "os/metrics.h"
 #include "os/queue.h"
+#include "osi/include/stack_power_telemetry.h"
 #include "packet/packet_builder.h"
 #include "storage/storage_module.h"
 
@@ -188,6 +189,7 @@ struct HciLayer::impl {
         OpCodeText(op_code).c_str());
     if (waiting_command_ == OpCode::CONTROLLER_DEBUG_INFO && op_code != OpCode::CONTROLLER_DEBUG_INFO) {
       LOG_ERROR("Discarding event that came after timeout 0x%02hx (%s)", op_code, OpCodeText(op_code).c_str());
+      common::StopWatch::DumpStopWatchLog();
       return;
     }
     ASSERT_LOG(
@@ -272,6 +274,7 @@ struct HciLayer::impl {
     auto cmd_view = CommandView::Create(PacketView<kLittleEndian>(bytes));
     ASSERT(cmd_view.IsValid());
     OpCode op_code = cmd_view.GetOpCode();
+    power_telemetry::GetInstance().LogHciCmdDetail();
     command_queue_.front().command_view = std::make_unique<CommandView>(std::move(cmd_view));
     log_link_layer_connection_command(command_queue_.front().command_view);
     log_classic_pairing_command_status(command_queue_.front().command_view, ErrorCode::STATUS_UNKNOWN);
@@ -372,6 +375,7 @@ struct HciLayer::impl {
     } else {
       log_hci_event(command_queue_.front().command_view, event, module_.GetDependency<storage::StorageModule>());
     }
+    power_telemetry::GetInstance().LogHciEvtDetail();
     EventCode event_code = event.GetEventCode();
     // Root Inflamation is a special case, since it aborts here
     if (event_code == EventCode::VENDOR_SPECIFIC) {
@@ -653,6 +657,14 @@ LeIsoInterface* HciLayer::GetLeIsoInterface(ContextualCallback<void(LeMetaEventV
     RegisterLeEventHandler(subevent, event_handler);
   }
   return &le_iso_interface;
+}
+
+DistanceMeasurementInterface* HciLayer::GetDistanceMeasurementInterface(
+    ContextualCallback<void(LeMetaEventView)> event_handler) {
+  for (const auto subevent : DistanceMeasurementEvents) {
+    RegisterLeEventHandler(subevent, event_handler);
+  }
+  return &distance_measurement_interface;
 }
 
 const ModuleFactory HciLayer::Factory = ModuleFactory([]() { return new HciLayer(); });

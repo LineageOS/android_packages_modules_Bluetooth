@@ -44,17 +44,21 @@ COMMON_MK_USES = [
     'coverage',
     'cros_host',
     'cros_debug',
+    'floss_rootcanal',
+    'function_elimination_experiment',
     'fuzzer',
     'fuzzer',
+    'lto_experiment',
     'msan',
     'profiling',
+    'proto_force_optimize_speed',
     'tcmalloc',
     'test',
     'ubsan',
 ]
 
 # Use a specific commit version for common-mk to avoid build surprises.
-COMMON_MK_COMMIT = "136c3e114b65f2c6c5f026376c2e75c73c2478a3"
+COMMON_MK_COMMIT = "d014d561eaf5ece08166edd98b10c145ef81312d"
 
 # Default use flags.
 USE_DEFAULTS = {
@@ -107,6 +111,7 @@ REQUIRED_APT_PACKAGES = [
     'generate-ninja',
     'gnupg',
     'gperf',
+    'libabsl-dev',
     'libc++abi-dev',
     'libc++-dev',
     'libdbus-1-dev',
@@ -118,6 +123,7 @@ REQUIRED_APT_PACKAGES = [
     'libglib2.0-dev',
     'libgtest-dev',
     'libgmock-dev',
+    'liblc3-dev',
     'liblz4-tool',
     'libncurses5',
     'libnss3-dev',
@@ -139,7 +145,7 @@ REQUIRED_APT_PACKAGES = [
 ]
 
 # List of cargo packages required for linux build
-REQUIRED_CARGO_PACKAGES = ['cxxbridge-cmd']
+REQUIRED_CARGO_PACKAGES = ['cxxbridge-cmd', 'pdl-compiler']
 
 APT_PKG_LIST = ['apt', '-qq', 'list']
 CARGO_PKG_LIST = ['cargo', 'install', '--list']

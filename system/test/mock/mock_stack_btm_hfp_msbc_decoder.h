@@ -24,24 +24,11 @@
 
 #include <cstdint>
 #include <functional>
-#include <map>
-#include <string>
 
 // Original included files, if any
-// NOTE: Since this is a mock file with mock definitions some number of
-//       include files may not be required.  The include-what-you-use
-//       still applies, but crafting proper inclusion is out of scope
-//       for this effort.  This compilation unit may compile as-is, or
-//       may need attention to prune from (or add to ) the inclusion set.
 #include <base/logging.h>
 
 #include <cstring>
-
-#include "embdrv/sbc/decoder/include/oi_codec_sbc.h"
-#include "embdrv/sbc/decoder/include/oi_status.h"
-#include "hfp_msbc_decoder.h"
-#include "osi/include/log.h"
-#include "test/common/mock_functions.h"
 
 // Original usings
 
@@ -67,9 +54,8 @@ extern struct hfp_msbc_decoder_cleanup hfp_msbc_decoder_cleanup;
 struct hfp_msbc_decoder_decode_packet {
   static bool return_value;
   std::function<bool(const uint8_t* i_buf, int16_t* o_buf, size_t out_len)>
-      body{[](const uint8_t* i_buf, int16_t* o_buf, size_t out_len) {
-        return return_value;
-      }};
+      body{[](const uint8_t* /* i_buf */, int16_t* /* o_buf */,
+              size_t /* out_len */) { return return_value; }};
   bool operator()(const uint8_t* i_buf, int16_t* o_buf, size_t out_len) {
     return body(i_buf, o_buf, out_len);
   };

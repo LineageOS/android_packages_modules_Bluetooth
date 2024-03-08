@@ -81,26 +81,20 @@ TEST(InitFlagsTest, test_debug_logging_multiple_flags) {
   ASSERT_EQ(InitFlags::GetDefaultLogLevel(), LOG_TAG_WARN);
 }
 
-TEST(InitFlagsTest, test_enable_snoop_logger_socket) {
-  const char* input[] = {"INIT_gd_hal_snoop_logger_socket=true", nullptr};
-  InitFlags::Load(input);
-  ASSERT_TRUE(InitFlags::IsSnoopLoggerSocketEnabled());
-}
-
 TEST(InitFlagsTest, test_device_iot_config_logging_is_enabled) {
   const char* input[] = {"INIT_device_iot_config_logging=true", nullptr};
   InitFlags::Load(input);
   ASSERT_TRUE(InitFlags::IsDeviceIotConfigLoggingEnabled());
 }
 
-TEST(InitFlagsTest, test_enable_snoop_logger_filtering) {
-  const char* input[] = {"INIT_gd_hal_snoop_logger_filtering=true", nullptr};
-  InitFlags::Load(input);
-  ASSERT_TRUE(InitFlags::IsSnoopLoggerFilteringEnabled());
-}
-
 TEST(InitFlagsTest, test_enable_bluetooth_quality_report_callback) {
   const char* input[] = {"INIT_bluetooth_quality_report_callback=true", nullptr};
   InitFlags::Load(input);
   ASSERT_TRUE(InitFlags::IsBluetoothQualityReportCallbackEnabled());
+}
+
+TEST(InitFlagsTest, test_enable_use_rsi_from_cached_inqiry_results) {
+  const char* input[] = {"INIT_use_rsi_from_cached_inqiry_results=true", nullptr};
+  InitFlags::Load(input);
+  ASSERT_TRUE(InitFlags::UseRsiFromCachedInquiryResults());
 }

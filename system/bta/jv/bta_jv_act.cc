@@ -29,15 +29,22 @@
 #include <cstdint>
 #include <unordered_set>
 
-#include "bt_target.h"  // Must be first to define build configuration
 #include "bta/include/bta_jv_co.h"
+#include "bta/include/bta_rfcomm_scn.h"
 #include "bta/jv/bta_jv_int.h"
 #include "bta/sys/bta_sys.h"
+#include "internal_include/bt_target.h"
+#include "internal_include/bt_trace.h"
 #include "osi/include/allocator.h"
+#include "osi/include/osi.h"  // UNUSED_ATTR
+#include "osi/include/properties.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/avct_api.h"  // AVCT_PSM
 #include "stack/include/avdt_api.h"  // AVDT_PSM
 #include "stack/include/bt_hdr.h"
+#include "stack/include/bt_psm_types.h"
+#include "stack/include/bt_types.h"
+#include "stack/include/bt_uuid16.h"
 #include "stack/include/gap_api.h"
 #include "stack/include/l2cdefs.h"
 #include "stack/include/port_api.h"
@@ -45,7 +52,7 @@
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
-using bluetooth::Uuid;
+using namespace bluetooth::legacy::stack::sdp;
 
 tBTA_JV_CB bta_jv_cb;
 std::unordered_set<uint16_t> used_l2cap_classic_dynamic_psm;
@@ -633,6 +640,8 @@ void bta_jv_enable(tBTA_JV_DM_CBACK* p_cback) {
   bta_jv.status = status;
   bta_jv_cb.p_dm_cback(BTA_JV_ENABLE_EVT, &bta_jv, 0);
   memset(bta_jv_cb.free_psm_list, 0, sizeof(bta_jv_cb.free_psm_list));
+  memset(bta_jv_cb.scn_in_use, 0, sizeof(bta_jv_cb.scn_in_use));
+  bta_jv_cb.scn_search_index = 1;
 }
 
 /** Disables the BT device manager free the resources used by java */
@@ -714,21 +723,16 @@ void bta_jv_get_channel_id(
     case BTA_JV_CONN_TYPE_RFCOMM: {
       uint8_t scn = 0;
       if (channel > 0) {
-        if (!BTM_TryAllocateSCN(channel)) {
-          LOG(ERROR) << "rfc channel=" << channel
-                     << " already in use or invalid";
-          channel = 0;
+        if (BTA_TryAllocateSCN(channel)) {
+          scn = static_cast<uint8_t>(channel);
+        } else {
+          LOG_ERROR("rfc channel %u already in use or invalid", channel);
         }
       } else {
-        channel = BTM_AllocateSCN();
-        if (channel == 0) {
-          LOG(ERROR) << "run out of rfc channels";
-          channel = 0;
+        scn = BTA_AllocateSCN();
+        if (scn == 0) {
+          LOG_ERROR("out of rfc channels");
         }
-      }
-      if (channel != 0) {
-        bta_jv_cb.scn[channel - 1] = true;
-        scn = (uint8_t)channel;
       }
       if (bta_jv_cb.p_dm_cback) {
         tBTA_JV bta_jv;
@@ -765,14 +769,9 @@ void bta_jv_get_channel_id(
 void bta_jv_free_scn(int32_t type /* One of BTA_JV_CONN_TYPE_ */,
                      uint16_t scn) {
   switch (type) {
-    case BTA_JV_CONN_TYPE_RFCOMM: {
-      if (scn > 0 && scn <= BTA_JV_MAX_SCN && bta_jv_cb.scn[scn - 1]) {
-        /* this scn is used by JV */
-        bta_jv_cb.scn[scn - 1] = false;
-        BTM_FreeSCN(scn);
-      }
+    case BTA_JV_CONN_TYPE_RFCOMM:
+      BTA_FreeSCN(scn);
       break;
-    }
     case BTA_JV_CONN_TYPE_L2CAP:
       bta_jv_set_free_psm(scn);
       break;
@@ -794,7 +793,8 @@ void bta_jv_free_scn(int32_t type /* One of BTA_JV_CONN_TYPE_ */,
  * Returns      void
  *
  ******************************************************************************/
-static void bta_jv_start_discovery_cback(tSDP_RESULT result,
+static void bta_jv_start_discovery_cback(UNUSED_ATTR const RawAddress& bd_addr,
+                                         tSDP_RESULT result,
                                          const void* user_data) {
   tBTA_JV_STATUS status;
   uint32_t* p_rfcomm_slot_id =
@@ -811,11 +811,12 @@ static void bta_jv_start_discovery_cback(tSDP_RESULT result,
       tSDP_DISC_REC* p_sdp_rec = NULL;
       tSDP_PROTOCOL_ELEM pe;
       VLOG(2) << __func__ << ": bta_jv_cb.uuid=" << bta_jv_cb.uuid;
-      p_sdp_rec = SDP_FindServiceUUIDInDb(p_bta_jv_cfg->p_sdp_db,
-                                          bta_jv_cb.uuid, p_sdp_rec);
+      p_sdp_rec = get_legacy_stack_sdp_api()->db.SDP_FindServiceUUIDInDb(
+          p_bta_jv_cfg->p_sdp_db, bta_jv_cb.uuid, p_sdp_rec);
       VLOG(2) << __func__ << ": p_sdp_rec=" << p_sdp_rec;
       if (p_sdp_rec &&
-          SDP_FindProtocolListElemInRec(p_sdp_rec, UUID_PROTOCOL_RFCOMM, &pe)) {
+          get_legacy_stack_sdp_api()->record.SDP_FindProtocolListElemInRec(
+              p_sdp_rec, UUID_PROTOCOL_RFCOMM, &pe)) {
         dcomp.scn = (uint8_t)pe.params[0];
         status = BTA_JV_SUCCESS;
       }
@@ -848,8 +849,9 @@ void bta_jv_start_discovery(const RawAddress& bd_addr, uint16_t num_uuid,
 
   /* init the database/set up the filter */
   VLOG(2) << __func__ << ": call SDP_InitDiscoveryDb, num_uuid=" << num_uuid;
-  SDP_InitDiscoveryDb(p_bta_jv_cfg->p_sdp_db, p_bta_jv_cfg->sdp_db_size,
-                      num_uuid, uuid_list, 0, NULL);
+  get_legacy_stack_sdp_api()->service.SDP_InitDiscoveryDb(
+      p_bta_jv_cfg->p_sdp_db, p_bta_jv_cfg->sdp_db_size, num_uuid, uuid_list, 0,
+      NULL);
 
   /* tell SDP to keep the raw data */
   p_bta_jv_cfg->p_sdp_db->raw_data = p_bta_jv_cfg->p_sdp_raw_data;
@@ -863,9 +865,9 @@ void bta_jv_start_discovery(const RawAddress& bd_addr, uint16_t num_uuid,
   uint32_t* rfcomm_slot_id_copy = (uint32_t*)osi_malloc(sizeof(uint32_t));
   *rfcomm_slot_id_copy = rfcomm_slot_id;
 
-  if (!SDP_ServiceSearchAttributeRequest2(bd_addr, p_bta_jv_cfg->p_sdp_db,
-                                          bta_jv_start_discovery_cback,
-                                          (void*)rfcomm_slot_id_copy)) {
+  if (!get_legacy_stack_sdp_api()->service.SDP_ServiceSearchAttributeRequest2(
+          bd_addr, p_bta_jv_cfg->p_sdp_db, bta_jv_start_discovery_cback,
+          (void*)rfcomm_slot_id_copy)) {
     bta_jv_cb.sdp_active = BTA_JV_SDP_ACT_NONE;
     /* failed to start SDP. report the failure right away */
     if (bta_jv_cb.p_dm_cback) {
@@ -895,7 +897,7 @@ void bta_jv_create_record(uint32_t rfcomm_slot_id) {
 void bta_jv_delete_record(uint32_t handle) {
   if (handle) {
     /* this is a record created by btif layer*/
-    SDP_DeleteRecord(handle);
+    get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(handle);
   }
 }
 
@@ -1255,6 +1257,11 @@ static int bta_jv_port_data_co_cback(uint16_t port_handle, uint8_t* buf,
   if (p_pcb != NULL) {
     switch (type) {
       case DATA_CO_CALLBACK_TYPE_INCOMING:
+        // Exit sniff mode when receiving data by sysproxy
+        if (osi_property_get_bool("bluetooth.rfcomm.sysproxy.rx.exit_sniff",
+                                  false)) {
+          bta_jv_pm_conn_busy(p_pcb->p_pm_cb);
+        }
         return bta_co_rfc_data_incoming(p_pcb->rfcomm_slot_id, (BT_HDR*)buf);
       case DATA_CO_CALLBACK_TYPE_OUTGOING_SIZE:
         return bta_co_rfc_data_outgoing_size(p_pcb->rfcomm_slot_id, (int*)buf);
@@ -1489,9 +1496,14 @@ static void bta_jv_port_mgmt_sr_cback(uint32_t code, uint16_t port_handle) {
       evt_data.rfc_srv_open.new_listen_handle = p_pcb_new_listen->handle;
       p_pcb_new_listen->rfcomm_slot_id =
           p_cb->p_cback(BTA_JV_RFCOMM_SRV_OPEN_EVT, &evt_data, rfcomm_slot_id);
-      VLOG(2) << __func__ << ": curr_sess=" << p_cb->curr_sess
-              << ", max_sess=" << p_cb->max_sess;
-      failed = false;
+      if (p_pcb_new_listen->rfcomm_slot_id == 0) {
+        LOG(ERROR) << __func__ << ": rfcomm_slot_id == "
+                   << p_pcb_new_listen->rfcomm_slot_id;
+      } else {
+        VLOG(2) << __func__ << ": curr_sess=" << p_cb->curr_sess
+                << ", max_sess=" << p_cb->max_sess;
+        failed = false;
+      }
     } else
       LOG(ERROR) << __func__ << ": failed to create new listen port";
   }
@@ -1806,9 +1818,9 @@ static void bta_jv_pm_conn_busy(tBTA_JV_PM_CB* p_cb) {
 
 /*******************************************************************************
  *
- * Function    bta_jv_pm_conn_busy
+ * Function    bta_jv_pm_conn_idle
  *
- * Description set pm connection busy state (input param safe)
+ * Description set pm connection idle state (input param safe)
  *
  * Params      p_cb: pm control block of jv connection
  *

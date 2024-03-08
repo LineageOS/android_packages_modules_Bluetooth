@@ -1,4 +1,3 @@
-//
 //  Copyright 2022 Google, Inc.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,8 +13,9 @@
 //  limitations under the License.
 
 use std::env;
+use std::fs::File;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 fn main() {
     install_generated_module(
@@ -24,9 +24,14 @@ fn main() {
         &PathBuf::from("lmp_packets.pdl").canonicalize().unwrap(),
     );
     install_generated_module(
+        "llcp_packets.rs",
+        "LLCP_PACKETS_PREBUILT",
+        &PathBuf::from("llcp_packets.pdl").canonicalize().unwrap(),
+    );
+    install_generated_module(
         "hci_packets.rs",
         "HCI_PACKETS_PREBUILT",
-        &PathBuf::from("../packets/hci/hci_packets.pdl").canonicalize().unwrap(),
+        &PathBuf::from("../packets/hci_packets.pdl").canonicalize().unwrap(),
     );
 }
 
@@ -48,35 +53,33 @@ fn install_generated_module(module_name: &str, prebuilt_var: &str, pdl_name: &Pa
     }
 }
 
-fn generate_module(pdl_name: &PathBuf) {
+fn generate_module(in_file: &PathBuf) {
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
+    let out_file =
+        File::create(out_dir.join(in_file.file_name().unwrap()).with_extension("rs")).unwrap();
 
-    // Find the packetgen tool. Expecting it at CARGO_HOME/bin
-    let packetgen = match env::var("CARGO_HOME") {
-        Ok(dir) => PathBuf::from(dir).join("bin").join("bluetooth_packetgen"),
-        Err(_) => PathBuf::from("bluetooth_packetgen"),
+    // Find the pdl tool. Expecting it at CARGO_HOME/bin
+    let pdl = match env::var("CARGO_HOME") {
+        Ok(dir) => PathBuf::from(dir).join("bin").join("pdlc"),
+        Err(_) => PathBuf::from("pdlc"),
     };
 
-    if !Path::new(packetgen.as_os_str()).exists() {
-        panic!(
-            "bluetooth_packetgen not found in the current environment: {:?}",
-            packetgen.as_os_str().to_str().unwrap()
-        );
+    if !Path::new(pdl.as_os_str()).exists() {
+        panic!("pdl not found in the current environment: {:?}", pdl.as_os_str().to_str().unwrap());
     }
 
-    println!("cargo:rerun-if-changed={}", pdl_name.display());
-    let output = Command::new(packetgen.as_os_str().to_str().unwrap())
-        .arg("--out=".to_owned() + out_dir.as_os_str().to_str().unwrap())
-        .arg("--include=".to_owned() + pdl_name.parent().unwrap().as_os_str().to_str().unwrap())
-        .arg("--rust")
-        .arg(pdl_name)
+    println!("cargo:rerun-if-changed={}", in_file.display());
+    let output = Command::new(pdl.as_os_str().to_str().unwrap())
+        .arg("--output-format")
+        .arg("rust")
+        .arg(in_file)
+        .stdout(Stdio::from(out_file))
         .output()
         .unwrap();
 
     println!(
-        "Status: {}, stdout: {}, stderr: {}",
+        "Status: {}, stderr: {}",
         output.status,
-        String::from_utf8_lossy(output.stdout.as_slice()),
         String::from_utf8_lossy(output.stderr.as_slice())
     );
 

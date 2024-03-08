@@ -37,7 +37,7 @@ struct SyspropsModule::impl {
   os::Handler* sysprops_handler_;
 };
 
-void SyspropsModule::ListDependencies(ModuleList* list) const {}
+void SyspropsModule::ListDependencies(ModuleList* /* list */) const {}
 
 void SyspropsModule::Start() {
   std::string file_path = os::ParameterProvider::SyspropsFilePath();
@@ -66,6 +66,7 @@ std::string SyspropsModule::ToString() const {
 void SyspropsModule::parse_config(std::string file_path) {
   const std::list<std::string> supported_sysprops = {
       // General
+      "bluetooth.btm.sec.delay_auth_ms.value",
       "bluetooth.device.default_name",
       "bluetooth.core.gap.le.privacy.enabled",
       "bluetooth.core.gap.le.conn.only_init_1m_phy.enabled",
@@ -74,6 +75,7 @@ void SyspropsModule::parse_config(std::string file_path) {
       "bluetooth.device_id.product_version",
       "bluetooth.device_id.vendor_id",
       "bluetooth.device_id.vendor_id_source",
+      "persist.bluetooth.inq_by_rssi",
       // BR/EDR
       "bluetooth.core.classic.page_scan_type",
       "bluetooth.core.classic.page_scan_interval",
@@ -104,6 +106,7 @@ void SyspropsModule::parse_config(std::string file_path) {
       "bluetooth.core.le.vendor_capabilities.enabled",
       // SCO
       "bluetooth.sco.disable_enhanced_connection",
+      "bluetooth.sco.swb_supported",
       // Profile
       "persist.bluetooth.avrcpcontrolversion",
   };

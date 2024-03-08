@@ -33,15 +33,13 @@
 #include "common/time_util.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/test/AllocationTestHarness.h"
-#include "stack/include/bt_hdr.h"
 #include "stack/include/a2dp_sbc_decoder.h"
 #include "stack/include/a2dp_sbc_encoder.h"
 #include "stack/include/avdt_api.h"
+#include "stack/include/bt_hdr.h"
 #include "test_util.h"
 #include "wav_reader.h"
 
-void allocation_tracker_uninit(void);
 namespace {
 constexpr uint32_t kSbcReadSize = 512;
 constexpr uint32_t kA2dpTickUs = 23 * 1000;
@@ -72,13 +70,10 @@ static BT_HDR* packet = nullptr;
 static WavReader wav_reader = WavReader(GetWavFilePath(kWavFile).c_str());
 static std::promise<void> promise;
 
-class A2dpSbcTest : public AllocationTestHarness {
+class A2dpSbcTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    AllocationTestHarness::SetUp();
     common::InitFlags::SetAllForTesting();
-    // Disable our allocation tracker to allow ASAN full range
-    allocation_tracker_uninit();
     SetCodecConfig();
     encoder_iface_ = const_cast<tA2DP_ENCODER_INTERFACE*>(
         A2DP_GetEncoderInterfaceSbc(kCodecInfoSbcCapability));
@@ -100,7 +95,6 @@ class A2dpSbcTest : public AllocationTestHarness {
       decoder_iface_->decoder_cleanup();
     }
     A2DP_UnloadDecoderSbc();
-    AllocationTestHarness::TearDown();
   }
 
   void SetCodecConfig() {
@@ -293,9 +287,7 @@ TEST_F(A2dpSbcTest, effective_mtu_when_peer_does_not_support_3mbps) {
 TEST_F(A2dpSbcTest, debug_codec_dump) {
   log_capture_ = std::make_unique<LogCapture>();
   a2dp_codecs_->debug_codec_dump(2);
-  std::promise<void> promise;
-  log_capture_->WaitUntilLogContains(&promise,
-                                     "Current Codec: SBC");
+  log_capture_->WaitUntilLogContains("Current Codec: SBC");
 }
 
 TEST_F(A2dpSbcTest, codec_info_string) {

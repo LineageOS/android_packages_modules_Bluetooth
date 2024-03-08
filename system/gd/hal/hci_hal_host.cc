@@ -31,6 +31,7 @@
 #include "gd/common/init_flags.h"
 #include "hal/hci_hal.h"
 #include "hal/mgmt.h"
+#include "hal/nocp_iso_clocker.h"
 #include "hal/snoop_logger.h"
 #include "metrics/counter_metrics.h"
 #include "os/log.h"
@@ -60,7 +61,6 @@ constexpr uint16_t HCI_DEV_NONE = 0xffff;
 
 /* reference from <kernel>/include/net/bluetooth/mgmt.h */
 #define MGMT_OP_INDEX_LIST 0x0003
-#define MGMT_EV_INDEX_ADDED 0x0004
 #define MGMT_EV_COMMAND_COMP 0x0001
 #define MGMT_EV_SIZE_MAX 1024
 #define REPEAT_ON_INTR(fn) \
@@ -145,23 +145,35 @@ int waitHciDev(int hci_interface) {
         break;
       }
 
-      if (ev.opcode == MGMT_EV_INDEX_ADDED && ev.index == hci_interface) {
-        close(fd);
-        return -1;
-      } else if (ev.opcode == MGMT_EV_COMMAND_COMP) {
+      if (ev.opcode == MGMT_EV_COMMAND_COMP) {
         struct mgmt_event_read_index* cc;
         int i;
 
         cc = (struct mgmt_event_read_index*)ev.data;
 
-        if (cc->cc_opcode != MGMT_OP_INDEX_LIST || cc->status != 0) continue;
+        if (cc->cc_opcode != MGMT_OP_INDEX_LIST) continue;
 
-        for (i = 0; i < cc->num_intf; i++) {
-          if (cc->index[i] == hci_interface) {
-            close(fd);
-            return 0;
+        // Find the interface in the list of available indices. If unavailable,
+        // the result is -1.
+        ret = -1;
+        if (cc->status == 0) {
+          for (i = 0; i < cc->num_intf; i++) {
+            if (cc->index[i] == hci_interface) {
+              ret = 0;
+              break;
+            }
           }
+
+          // Chipset might be lost. Wait for index added event.
+          LOG_ERROR("HCI interface(%d) not found in the MGMT lndex list", hci_interface);
+        } else {
+          // Unlikely event (probably developer error or driver shut down).
+          LOG_ERROR("Failed to read index list: status(%d)", cc->status);
         }
+
+        // Close and return result of Index List.
+        close(fd);
+        return ret;
       }
     }
   }
@@ -273,6 +285,7 @@ class HciHalHost : public HciHal {
 
  protected:
   void ListDependencies(ModuleList* list) const {
+    list->add<NocpIsoClocker>();
     list->add<metrics::CounterMetrics>();
     list->add<SnoopLogger>();
   }
@@ -281,12 +294,20 @@ class HciHalHost : public HciHal {
     std::lock_guard<std::mutex> lock(api_mutex_);
     ASSERT(sock_fd_ == INVALID_FD);
     sock_fd_ = ConnectToSocket();
-    ASSERT(sock_fd_ != INVALID_FD);
+
+    // We don't want to crash when the chipset is broken.
+    if (sock_fd_ == INVALID_FD) {
+      LOG_ERROR("Failed to connect to HCI socket. Aborting HAL initialization process.");
+      raise(SIGINT);
+      return;
+    }
+
     reactable_ = hci_incoming_thread_.GetReactor()->Register(
         sock_fd_,
         common::Bind(&HciHalHost::incoming_packet_received, common::Unretained(this)),
         common::Bind(&HciHalHost::send_packet_ready, common::Unretained(this)));
     hci_incoming_thread_.GetReactor()->ModifyRegistration(reactable_, os::Reactor::REACT_ON_READ_ONLY);
+    nocp_iso_clocker_ = GetDependency<NocpIsoClocker>();
     btsnoop_logger_ = GetDependency<SnoopLogger>();
     LOG_INFO("HAL opened successfully");
   }
@@ -327,6 +348,7 @@ class HciHalHost : public HciHal {
   bluetooth::os::Reactor::Reactable* reactable_ = nullptr;
   std::queue<std::vector<uint8_t>> hci_outgoing_queue_;
   SnoopLogger* btsnoop_logger_ = nullptr;
+  NocpIsoClocker* nocp_iso_clocker_ = nullptr;
 
   void write_to_fd(HciPacket packet) {
     // TODO: replace this with new queue when it's ready
@@ -362,7 +384,15 @@ class HciHalHost : public HciHal {
 
     ssize_t received_size;
     RUN_NO_INTR(received_size = read(sock_fd_, buf, kBufSize));
-    ASSERT_LOG(received_size != -1, "Can't receive from socket: %s", strerror(errno));
+
+    // we don't want crash when the chipset is broken.
+    if (received_size == -1) {
+      LOG_ERROR("Can't receive from socket: %s", strerror(errno));
+      close(sock_fd_);
+      raise(SIGINT);
+      return;
+    }
+
     if (received_size == 0) {
       LOG_WARN("Can't read H4 header. EOF received");
       // First close sock fd before raising sigint
@@ -384,6 +414,7 @@ class HciHalHost : public HciHal {
 
       HciPacket receivedHciPacket;
       receivedHciPacket.assign(buf + kH4HeaderSize, buf + kH4HeaderSize + kHciEvtHeaderSize + payload_size);
+      nocp_iso_clocker_->OnHciEvent(receivedHciPacket);
       btsnoop_logger_->Capture(receivedHciPacket, SnoopLogger::Direction::INCOMING, SnoopLogger::PacketType::EVT);
       {
         std::lock_guard<std::mutex> incoming_packet_callback_lock(incoming_packet_callback_mutex_);

@@ -21,20 +21,21 @@
  *  This module contains action functions of the link control state machine.
  *
  ******************************************************************************/
-
+#include <android_bluetooth_sysprop.h>
 #include <string.h>
 
 #include "avct_api.h"
 #include "avct_int.h"
 #include "bt_target.h"
-#include "bta/include/bta_api.h"
-#include "btm_api.h"
+#include "bta/include/bta_sec_api.h"
 #include "device/include/device_iot_config.h"
+#include "internal_include/bt_target.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/log.h"
 #include "osi/include/osi.h"
-#include "stack/btm/btm_sec.h"
+#include "stack/avct/avct_defs.h"
 #include "stack/include/bt_hdr.h"
+#include "stack/include/bt_types.h"
 
 /* packet header length lookup table */
 const uint8_t avct_lcb_pkt_type_len[] = {AVCT_HDR_LEN_SINGLE,
@@ -71,14 +72,13 @@ static BT_HDR* avct_lcb_msg_asmbl(tAVCT_LCB* p_lcb, BT_HDR* p_buf) {
   if (p_buf->len < avct_lcb_pkt_type_len[pkt_type] ||
       (sizeof(BT_HDR) + p_buf->offset + p_buf->len) > BT_DEFAULT_BUFFER_SIZE) {
     osi_free(p_buf);
-    AVCT_TRACE_WARNING("Bad length during reassembly");
+    LOG_WARN("Bad length during reassembly");
     p_ret = NULL;
   }
   /* single packet */
   else if (pkt_type == AVCT_PKT_TYPE_SINGLE) {
     /* if reassembly in progress drop message and process new single */
-    if (p_lcb->p_rx_msg != NULL)
-      AVCT_TRACE_WARNING("Got single during reassembly");
+    if (p_lcb->p_rx_msg != NULL) LOG_WARN("Got single during reassembly");
 
     osi_free_and_reset((void**)&p_lcb->p_rx_msg);
 
@@ -87,8 +87,7 @@ static BT_HDR* avct_lcb_msg_asmbl(tAVCT_LCB* p_lcb, BT_HDR* p_buf) {
   /* start packet */
   else if (pkt_type == AVCT_PKT_TYPE_START) {
     /* if reassembly in progress drop message and process new start */
-    if (p_lcb->p_rx_msg != NULL)
-      AVCT_TRACE_WARNING("Got start during reassembly");
+    if (p_lcb->p_rx_msg != NULL) LOG_WARN("Got start during reassembly");
 
     osi_free_and_reset((void**)&p_lcb->p_rx_msg);
 
@@ -127,7 +126,7 @@ static BT_HDR* avct_lcb_msg_asmbl(tAVCT_LCB* p_lcb, BT_HDR* p_buf) {
     /* if no reassembly in progress drop message */
     if (p_lcb->p_rx_msg == NULL) {
       osi_free(p_buf);
-      AVCT_TRACE_WARNING("Pkt type=%d out of order", pkt_type);
+      LOG_WARN("Pkt type=%d out of order", pkt_type);
       p_ret = NULL;
     } else {
       /* get size of buffer holding assembled message */
@@ -144,7 +143,7 @@ static BT_HDR* avct_lcb_msg_asmbl(tAVCT_LCB* p_lcb, BT_HDR* p_buf) {
       /* verify length */
       if ((p_lcb->p_rx_msg->offset + p_buf->len) > buf_len) {
         /* won't fit; free everything */
-        AVCT_TRACE_WARNING("%s: Fragmented message too big!", __func__);
+        LOG_WARN("%s: Fragmented message too big!", __func__);
         osi_free_and_reset((void**)&p_lcb->p_rx_msg);
         osi_free(p_buf);
         p_ret = NULL;
@@ -226,25 +225,76 @@ void avct_lcb_open_ind(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
   int i;
   bool bind = false;
 
-  for (i = 0; i < AVCT_NUM_CONN; i++, p_ccb++) {
-    /* if ccb allocated and */
-    if (p_ccb->allocated) {
-      /* if bound to this lcb send connect confirm event */
-      if (p_ccb->p_lcb == p_lcb) {
-        bind = true;
-        L2CA_SetTxPriority(p_lcb->ch_lcid, L2CAP_CHNL_PRIORITY_HIGH);
-        p_ccb->cc.p_ctrl_cback(avct_ccb_to_idx(p_ccb), AVCT_CONNECT_CFM_EVT, 0,
-                               &p_lcb->peer_addr);
+  if (GET_SYSPROP(A2dp, src_sink_coexist, false)) {
+    bool is_originater = false;
+
+    for (i = 0; i < AVCT_NUM_CONN; i++, p_ccb++) {
+      if (p_ccb->allocated && (p_ccb->p_lcb == p_lcb) &&
+          p_ccb->cc.role == AVCT_INT) {
+        LOG_VERBOSE("%s, find int handle %d", __func__, i);
+        is_originater = true;
       }
-      /* if unbound acceptor and lcb doesn't already have a ccb for this PID */
-      else if ((p_ccb->p_lcb == NULL) && (p_ccb->cc.role == AVCT_ACP) &&
-               (avct_lcb_has_pid(p_lcb, p_ccb->cc.pid) == NULL)) {
-        /* bind ccb to lcb and send connect ind event */
-        bind = true;
-        p_ccb->p_lcb = p_lcb;
-        L2CA_SetTxPriority(p_lcb->ch_lcid, L2CAP_CHNL_PRIORITY_HIGH);
-        p_ccb->cc.p_ctrl_cback(avct_ccb_to_idx(p_ccb), AVCT_CONNECT_IND_EVT, 0,
-                               &p_lcb->peer_addr);
+    }
+
+    p_ccb = &avct_cb.ccb[0];
+    for (i = 0; i < AVCT_NUM_CONN; i++, p_ccb++) {
+      /* if ccb allocated and */
+      /** M: to avoid avctp collision, make sure the collision can be checked @{
+       */
+      LOG_VERBOSE("%s, %d ccb to lcb, alloc %d, lcb %p, role %d, pid 0x%x",
+                  __func__, i, p_ccb->allocated, p_ccb->p_lcb, p_ccb->cc.role,
+                  p_ccb->cc.pid);
+      if (p_ccb->allocated && (p_ccb->p_lcb == p_lcb)) {
+        /* if bound to this lcb send connect confirm event */
+        if (p_ccb->cc.role == AVCT_INT) {
+          /** @} */
+          bind = true;
+          L2CA_SetTxPriority(p_lcb->ch_lcid, L2CAP_CHNL_PRIORITY_HIGH);
+          p_ccb->cc.p_ctrl_cback(avct_ccb_to_idx(p_ccb), AVCT_CONNECT_CFM_EVT,
+                                 0, &p_lcb->peer_addr);
+        }
+        /* if unbound acceptor and lcb doesn't already have a ccb for this PID
+         */
+        /** M: to avoid avctp collision, make sure the collision can be checked
+           @{ */
+        else if ((p_ccb->cc.role == AVCT_ACP) &&
+                 avct_lcb_has_pid(p_lcb, p_ccb->cc.pid)) {
+          /* bind ccb to lcb and send connect ind event  */
+          if (is_originater) {
+            LOG_ERROR("%s, int exist, unbind acp handle:%d", __func__, i);
+            p_ccb->p_lcb = NULL;
+          } else {
+            bind = true;
+            p_ccb->p_lcb = p_lcb;
+            L2CA_SetTxPriority(p_lcb->ch_lcid, L2CAP_CHNL_PRIORITY_HIGH);
+            p_ccb->cc.p_ctrl_cback(avct_ccb_to_idx(p_ccb), AVCT_CONNECT_IND_EVT,
+                                   0, &p_lcb->peer_addr);
+          }
+        }
+      }
+    }
+  } else {
+    for (i = 0; i < AVCT_NUM_CONN; i++, p_ccb++) {
+      /* if ccb allocated and */
+      if (p_ccb->allocated) {
+        /* if bound to this lcb send connect confirm event */
+        if (p_ccb->p_lcb == p_lcb) {
+          bind = true;
+          L2CA_SetTxPriority(p_lcb->ch_lcid, L2CAP_CHNL_PRIORITY_HIGH);
+          p_ccb->cc.p_ctrl_cback(avct_ccb_to_idx(p_ccb), AVCT_CONNECT_CFM_EVT,
+                                 0, &p_lcb->peer_addr);
+        }
+        /* if unbound acceptor and lcb doesn't already have a ccb for this PID
+         */
+        else if ((p_ccb->p_lcb == NULL) && (p_ccb->cc.role == AVCT_ACP) &&
+                 (avct_lcb_has_pid(p_lcb, p_ccb->cc.pid) == NULL)) {
+          /* bind ccb to lcb and send connect ind event */
+          bind = true;
+          p_ccb->p_lcb = p_lcb;
+          L2CA_SetTxPriority(p_lcb->ch_lcid, L2CAP_CHNL_PRIORITY_HIGH);
+          p_ccb->cc.p_ctrl_cback(avct_ccb_to_idx(p_ccb), AVCT_CONNECT_IND_EVT,
+                                 0, &p_lcb->peer_addr);
+        }
       }
     }
   }
@@ -466,7 +516,7 @@ void avct_lcb_cong_ind(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
  *
  ******************************************************************************/
 void avct_lcb_discard_msg(UNUSED_ATTR tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
-  AVCT_TRACE_WARNING("%s Dropping message", __func__);
+  LOG_WARN("%s Dropping message", __func__);
   osi_free_and_reset((void**)&p_data->ul_msg.p_buf);
 }
 
@@ -564,8 +614,7 @@ void avct_lcb_send_msg(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
       pkt_type = AVCT_PKT_TYPE_END;
     }
   }
-  AVCT_TRACE_DEBUG("%s tx_q_count:%d", __func__,
-                   fixed_queue_length(p_lcb->tx_q));
+  LOG_VERBOSE("%s tx_q_count:%zu", __func__, fixed_queue_length(p_lcb->tx_q));
   return;
 }
 
@@ -618,28 +667,36 @@ void avct_lcb_msg_ind(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
 
   /* parse header byte */
   AVCT_PARSE_HDR(p, label, type, cr_ipid);
+  /* parse PID */
+  BE_STREAM_TO_UINT16(pid, p);
 
   /* check for invalid cr_ipid */
   if (cr_ipid == AVCT_CR_IPID_INVALID) {
-    AVCT_TRACE_WARNING("Invalid cr_ipid", cr_ipid);
+    LOG_WARN("Invalid cr_ipid %d", cr_ipid);
     osi_free_and_reset((void**)&p_data->p_buf);
     return;
   }
 
-  /* parse and lookup PID */
-  BE_STREAM_TO_UINT16(pid, p);
-  p_ccb = avct_lcb_has_pid(p_lcb, pid);
-  if (p_ccb) {
-    /* PID found; send msg up, adjust bt hdr and call msg callback */
-    p_data->p_buf->offset += AVCT_HDR_LEN_SINGLE;
-    p_data->p_buf->len -= AVCT_HDR_LEN_SINGLE;
-    (*p_ccb->cc.p_msg_cback)(avct_ccb_to_idx(p_ccb), label, cr_ipid,
-                             p_data->p_buf);
-    return;
+  bool bind = false;
+  if (GET_SYSPROP(A2dp, src_sink_coexist, false)) {
+    bind = avct_msg_ind_for_src_sink_coexist(p_lcb, p_data, label, cr_ipid);
+    osi_free_and_reset((void**)&p_data->p_buf);
+    if (bind) return;
+  } else {
+    /* lookup PID */
+    p_ccb = avct_lcb_has_pid(p_lcb, pid);
+    if (p_ccb) {
+      /* PID found; send msg up, adjust bt hdr and call msg callback */
+      p_data->p_buf->offset += AVCT_HDR_LEN_SINGLE;
+      p_data->p_buf->len -= AVCT_HDR_LEN_SINGLE;
+      (*p_ccb->cc.p_msg_cback)(avct_ccb_to_idx(p_ccb), label, cr_ipid,
+                               p_data->p_buf);
+      return;
+    }
   }
 
   /* PID not found; drop message */
-  AVCT_TRACE_WARNING("No ccb for PID=%x", pid);
+  LOG_WARN("No ccb for PID=%x", pid);
   osi_free_and_reset((void**)&p_data->p_buf);
 
   /* if command send reject */
@@ -652,4 +709,35 @@ void avct_lcb_msg_ind(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
     UINT16_TO_BE_STREAM(p, pid);
     L2CA_DataWrite(p_lcb->ch_lcid, p_buf);
   }
+}
+
+bool avct_msg_ind_for_src_sink_coexist(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data,
+                                       uint8_t label, uint8_t cr_ipid) {
+  bool bind = false;
+  tAVCT_CCB* p_ccb;
+  int p_buf_len;
+  uint8_t* p;
+  uint16_t pid;
+
+  p = (uint8_t*)(p_data->p_buf + 1) + p_data->p_buf->offset;
+
+  BE_STREAM_TO_UINT16(pid, p);
+
+  p_ccb = &avct_cb.ccb[0];
+  p_data->p_buf->offset += AVCT_HDR_LEN_SINGLE;
+  p_data->p_buf->len -= AVCT_HDR_LEN_SINGLE;
+  p_buf_len = BT_HDR_SIZE + p_data->p_buf->offset + p_data->p_buf->len;
+
+  for (int i = 0; i < AVCT_NUM_CONN; i++, p_ccb++) {
+    if (p_ccb->allocated && (p_ccb->p_lcb == p_lcb) && (p_ccb->cc.pid == pid)) {
+      /* PID found; send msg up, adjust bt hdr and call msg callback */
+      bind = true;
+      BT_HDR* p_tmp_buf = (BT_HDR*)osi_malloc(p_buf_len);
+      memcpy(p_tmp_buf, p_data->p_buf, p_buf_len);
+      (*p_ccb->cc.p_msg_cback)(avct_ccb_to_idx(p_ccb), label, cr_ipid,
+                               p_tmp_buf);
+    }
+  }
+
+  return bind;
 }

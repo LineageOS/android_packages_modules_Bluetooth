@@ -17,14 +17,16 @@
 
 package com.android.bluetooth.le_audio;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import static org.mockito.Mockito.after;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
-
-import static com.google.common.truth.Truth.assertThat;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -40,12 +42,13 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.FakeFeatureFlagsImpl;
+import com.android.bluetooth.flags.Flags;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -57,6 +60,7 @@ public class LeAudioStateMachineTest {
     private HandlerThread mHandlerThread;
     private LeAudioStateMachine mLeAudioStateMachine;
     private BluetoothDevice mTestDevice;
+    private FakeFeatureFlagsImpl mFakeFlagsImpl;
     private static final int TIMEOUT_MS = 1000;
 
     @Mock private AdapterService mAdapterService;
@@ -71,6 +75,8 @@ public class LeAudioStateMachineTest {
         TestUtils.setAdapterService(mAdapterService);
 
         mAdapter = BluetoothAdapter.getDefaultAdapter();
+        mFakeFlagsImpl = new FakeFeatureFlagsImpl();
+        mFakeFlagsImpl.setFlag(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION, false);
 
         // Get a device for testing
         mTestDevice = mAdapter.getRemoteDevice("00:01:02:03:04:05");
@@ -78,11 +84,15 @@ public class LeAudioStateMachineTest {
         // Set up thread and looper
         mHandlerThread = new HandlerThread("LeAudioStateMachineTestHandlerThread");
         mHandlerThread.start();
-        mLeAudioStateMachine = new LeAudioStateMachine(mTestDevice, mLeAudioService,
-                mLeAudioNativeInterface, mHandlerThread.getLooper());
         // Override the timeout value to speed up the test
-        mLeAudioStateMachine.sConnectTimeoutMs = 1000;     // 1s
-        mLeAudioStateMachine.start();
+        LeAudioStateMachine.sConnectTimeoutMs = 1000; // 1s
+        mLeAudioStateMachine =
+                LeAudioStateMachine.make(
+                        mTestDevice,
+                        mLeAudioService,
+                        mLeAudioNativeInterface,
+                        mHandlerThread.getLooper(),
+                        mFakeFlagsImpl);
     }
 
     @After
@@ -146,12 +156,10 @@ public class LeAudioStateMachineTest {
         connStCh.valueInt1 = LeAudioStackEvent.CONNECTION_STATE_CONNECTING;
         mLeAudioStateMachine.sendMessage(LeAudioStateMachine.STACK_EVENT, connStCh);
 
-        // Verify that one connection state broadcast is executed
-        ArgumentCaptor<Intent> intentArgument1 = ArgumentCaptor.forClass(Intent.class);
-        verify(mLeAudioService, timeout(TIMEOUT_MS).times(1)).sendBroadcast(
-                intentArgument1.capture(), anyString(), any(Bundle.class));
-        assertThat(BluetoothProfile.STATE_CONNECTING).isEqualTo(
-                intentArgument1.getValue().getIntExtra(BluetoothProfile.EXTRA_STATE, -1));
+        // Verify that one connection state change is notifyed
+        verify(mLeAudioService, timeout(TIMEOUT_MS))
+                .notifyConnectionStateChanged(
+                        any(), eq(BluetoothProfile.STATE_CONNECTING), anyInt());
 
         // Check that we are in Connecting state
         assertThat(mLeAudioStateMachine.getCurrentState())
@@ -164,11 +172,14 @@ public class LeAudioStateMachineTest {
         connCompletedEvent.valueInt1 = LeAudioStackEvent.CONNECTION_STATE_CONNECTED;
         mLeAudioStateMachine.sendMessage(LeAudioStateMachine.STACK_EVENT, connCompletedEvent);
 
-        // Verify that the expected number of broadcasts are executed:
-        // - two calls to broadcastConnectionState(): Disconnected -> Conecting -> Connected
-        ArgumentCaptor<Intent> intentArgument2 = ArgumentCaptor.forClass(Intent.class);
-        verify(mLeAudioService, timeout(TIMEOUT_MS).times(2)).sendBroadcast(
-                intentArgument2.capture(), anyString(), any(Bundle.class));
+        // Verify that the expected number of notification are called:
+        // - two calls to notifyConnectionStateChanged(): Disconnected -> Connecting -> Connected
+        verify(mLeAudioService, timeout(TIMEOUT_MS))
+                .notifyConnectionStateChanged(
+                        any(), eq(BluetoothProfile.STATE_CONNECTING), anyInt());
+        verify(mLeAudioService, timeout(TIMEOUT_MS))
+                .notifyConnectionStateChanged(
+                        any(), eq(BluetoothProfile.STATE_CONNECTED), anyInt());
         // Check that we are in Connected state
         assertThat(mLeAudioStateMachine.getCurrentState())
                 .isInstanceOf(LeAudioStateMachine.Connected.class);
@@ -188,25 +199,19 @@ public class LeAudioStateMachineTest {
         // Send a connect request
         mLeAudioStateMachine.sendMessage(LeAudioStateMachine.CONNECT, mTestDevice);
 
-        // Verify that one connection state broadcast is executed
-        ArgumentCaptor<Intent> intentArgument1 = ArgumentCaptor.forClass(Intent.class);
-        verify(mLeAudioService, timeout(TIMEOUT_MS).times(1)).sendBroadcast(
-                intentArgument1.capture(),
-                anyString(), any(Bundle.class));
-        assertThat(BluetoothProfile.STATE_CONNECTING).isEqualTo(
-                intentArgument1.getValue().getIntExtra(BluetoothProfile.EXTRA_STATE, -1));
+        // Verify that one connection state change is notified
+        verify(mLeAudioService, timeout(TIMEOUT_MS))
+                .notifyConnectionStateChanged(
+                        any(), eq(BluetoothProfile.STATE_CONNECTING), anyInt());
 
         // Check that we are in Connecting state
         assertThat(mLeAudioStateMachine.getCurrentState())
                 .isInstanceOf(LeAudioStateMachine.Connecting.class);
 
-        // Verify that one connection state broadcast is executed
-        ArgumentCaptor<Intent> intentArgument2 = ArgumentCaptor.forClass(Intent.class);
-        verify(mLeAudioService, timeout(LeAudioStateMachine.sConnectTimeoutMs * 2).times(
-                2)).sendBroadcast(intentArgument2.capture(), anyString(),
-                any(Bundle.class));
-        assertThat(BluetoothProfile.STATE_DISCONNECTED).isEqualTo(
-                intentArgument2.getValue().getIntExtra(BluetoothProfile.EXTRA_STATE, -1));
+        // Verify that one connection state change is notified
+        verify(mLeAudioService, timeout(LeAudioStateMachine.sConnectTimeoutMs * 2))
+                .notifyConnectionStateChanged(
+                        any(), eq(BluetoothProfile.STATE_DISCONNECTED), anyInt());
 
         // Check that we are in Disconnected state
         assertThat(mLeAudioStateMachine.getCurrentState())
@@ -231,25 +236,19 @@ public class LeAudioStateMachineTest {
         connStCh.valueInt1 = LeAudioStackEvent.CONNECTION_STATE_CONNECTING;
         mLeAudioStateMachine.sendMessage(LeAudioStateMachine.STACK_EVENT, connStCh);
 
-        // Verify that one connection state broadcast is executed
-        ArgumentCaptor<Intent> intentArgument1 = ArgumentCaptor.forClass(Intent.class);
-        verify(mLeAudioService, timeout(TIMEOUT_MS).times(1)).sendBroadcast(
-                intentArgument1.capture(),
-                anyString(), any(Bundle.class));
-        assertThat(BluetoothProfile.STATE_CONNECTING).isEqualTo(
-                intentArgument1.getValue().getIntExtra(BluetoothProfile.EXTRA_STATE, -1));
+        // Verify that one connection state change is notified
+        verify(mLeAudioService, timeout(TIMEOUT_MS))
+                .notifyConnectionStateChanged(
+                        any(), eq(BluetoothProfile.STATE_CONNECTING), anyInt());
 
         // Check that we are in Connecting state
         assertThat(mLeAudioStateMachine.getCurrentState())
                 .isInstanceOf(LeAudioStateMachine.Connecting.class);
 
-        // Verify that one connection state broadcast is executed
-        ArgumentCaptor<Intent> intentArgument2 = ArgumentCaptor.forClass(Intent.class);
-        verify(mLeAudioService, timeout(LeAudioStateMachine.sConnectTimeoutMs * 2).times(
-                2)).sendBroadcast(intentArgument2.capture(), anyString(),
-                any(Bundle.class));
-        assertThat(intentArgument2.getValue().getIntExtra(BluetoothProfile.EXTRA_STATE, -1))
-                .isEqualTo(BluetoothProfile.STATE_DISCONNECTED);
+        // Verify that one connection state change is notified
+        verify(mLeAudioService, timeout(LeAudioStateMachine.sConnectTimeoutMs * 2))
+                .notifyConnectionStateChanged(
+                        any(), eq(BluetoothProfile.STATE_DISCONNECTED), anyInt());
 
         // Check that we are in Disconnected state
         assertThat(mLeAudioStateMachine.getCurrentState())

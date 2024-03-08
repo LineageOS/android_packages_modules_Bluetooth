@@ -18,7 +18,6 @@
 
 #include <cstddef>
 
-#include "bt_types.h"
 #include "btif/include/btif_storage.h"
 #include "btif/include/stack_manager.h"
 #include "common/init_flags.h"
@@ -27,7 +26,8 @@
 #include "profile/avrcp/avrcp_config.h"
 #include "stack/include/avrc_api.h"
 #include "stack/include/avrc_defs.h"
-#include "stack/include/sdp_api.h"
+#include "stack/include/bt_types.h"
+#include "stack/include/bt_uuid16.h"
 #include "stack/sdp/sdpint.h"
 #include "test/mock/mock_btif_config.h"
 #include "test/mock/mock_osi_properties.h"
@@ -45,9 +45,6 @@ using testing::_;
 using testing::DoAll;
 using testing::Return;
 using testing::SetArrayArgument;
-
-// Global trace level referred in the code under test
-uint8_t appl_trace_level = BT_TRACE_LEVEL_VERBOSE;
 
 bool sdp_dynamic_change_hfp_version(const tSDP_ATTRIBUTE* p_attr,
                                     const RawAddress& remote_address);
@@ -589,6 +586,10 @@ TEST_F(StackSdpUtilsTest, check_HFP_version_change_fail) {
               InteropMatchAddrOrName(INTEROP_HFP_1_7_ALLOWLIST, &bdaddr,
                                      &btif_storage_get_remote_device_property))
       .WillOnce(Return(false));
+  EXPECT_CALL(*localIopMock,
+              InteropMatchAddrOrName(INTEROP_HFP_1_9_ALLOWLIST, &bdaddr,
+                                     &btif_storage_get_remote_device_property))
+      .WillOnce(Return(false));
   ASSERT_EQ(sdp_dynamic_change_hfp_version(&hfp_attr, bdaddr), false);
 }
 
@@ -601,6 +602,10 @@ TEST_F(StackSdpUtilsTest, check_HFP_version_change_success) {
               InteropMatchAddrOrName(INTEROP_HFP_1_7_ALLOWLIST, &bdaddr,
                                      &btif_storage_get_remote_device_property))
       .WillOnce(Return(true));
+  EXPECT_CALL(*localIopMock,
+              InteropMatchAddrOrName(INTEROP_HFP_1_9_ALLOWLIST, &bdaddr,
+                                     &btif_storage_get_remote_device_property))
+      .WillOnce(Return(true));
   ASSERT_EQ(sdp_dynamic_change_hfp_version(&hfp_attr, bdaddr), true);
 }
 
@@ -611,6 +616,10 @@ TEST_F(StackSdpUtilsTest, check_HFP_version_fallback_success) {
                UUID_HF_LSB);
   EXPECT_CALL(*localIopMock,
               InteropMatchAddrOrName(INTEROP_HFP_1_7_ALLOWLIST, &bdaddr,
+                                     &btif_storage_get_remote_device_property))
+      .WillOnce(Return(true));
+  EXPECT_CALL(*localIopMock,
+              InteropMatchAddrOrName(INTEROP_HFP_1_9_ALLOWLIST, &bdaddr,
                                      &btif_storage_get_remote_device_property))
       .WillOnce(Return(true));
   bool is_hfp_fallback = sdp_dynamic_change_hfp_version(&hfp_attr, bdaddr);

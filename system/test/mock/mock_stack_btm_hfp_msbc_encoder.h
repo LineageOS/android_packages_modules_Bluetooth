@@ -24,21 +24,8 @@
 
 #include <cstdint>
 #include <functional>
-#include <map>
-#include <string>
 
 // Original included files, if any
-// NOTE: Since this is a mock file with mock definitions some number of
-//       include files may not be required.  The include-what-you-use
-//       still applies, but crafting proper inclusion is out of scope
-//       for this effort.  This compilation unit may compile as-is, or
-//       may need attention to prune from (or add to ) the inclusion set.
-#include <cstring>
-
-#include "embdrv/sbc/encoder/include/sbc_encoder.h"
-#include "hfp_msbc_encoder.h"
-#include "osi/include/log.h"
-#include "test/common/mock_functions.h"
 
 // Original usings
 
@@ -55,7 +42,7 @@ namespace stack_btm_hfp_msbc_encoder {
 struct hfp_msbc_encode_frames {
   static uint32_t return_value;
   std::function<uint32_t(int16_t* input, uint8_t* output)> body{
-      [](int16_t* input, uint8_t* output) { return return_value; }};
+      [](int16_t* /* input */, uint8_t* /* output */) { return return_value; }};
   uint32_t operator()(int16_t* input, uint8_t* output) {
     return body(input, output);
   };

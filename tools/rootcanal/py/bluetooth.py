@@ -1,3 +1,17 @@
+# Copyright 2023 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from dataclasses import dataclass, field
 from typing import Tuple
 
@@ -51,16 +65,19 @@ class Address:
 
 @dataclass
 class ClassOfDevice:
+    class_of_device: int = 0
 
     def parse(span: bytes) -> Tuple['Address', bytes]:
-        assert False
+        assert len(span) >= 3
+        return (ClassOfDevice(int.from_bytes(span[:3], byteorder='little')), span[3:])
 
     def parse_all(span: bytes) -> 'Address':
-        assert False
+        assert len(span) == 3
+        return ClassOfDevice(int.from_bytes(span, byteorder='little'))
 
     def serialize(self) -> bytes:
-        assert False
+        return int.to_bytes(self.class_of_device, length=3, byteorder='little')
 
     @property
     def size(self) -> int:
-        assert False
+        return 3

@@ -16,8 +16,6 @@
 
 #pragma once
 
-#include <set>
-#include <unordered_map>
 #include <vector>
 
 #include "stack/include/bt_hdr.h"
@@ -258,18 +256,6 @@ bool L2CA_SetIdleTimeoutByBdAddr(const RawAddress& bd_addr, uint16_t timeout,
 
 /*******************************************************************************
  *
- * Function         L2CA_SetTraceLevel
- *
- * Description      This function sets the trace level for L2CAP. If called with
- *                  a value of 0xFF, it simply reads the current trace level.
- *
- * Returns          the new (current) trace level
- *
- ******************************************************************************/
-uint8_t L2CA_SetTraceLevel(uint8_t trace_level);
-
-/*******************************************************************************
- *
  * Function     L2CA_FlushChannel
  *
  * Description  This function flushes none, some or all buffers queued up
@@ -468,9 +454,6 @@ void L2CA_ConnectForSecurity(const RawAddress& bd_addr);
 
 // Set bonding state to acquire/release link refcount
 void L2CA_SetBondingState(const RawAddress& p_bd_addr, bool is_bonding);
-
-// Indicated by shim stack manager that GD L2cap is enabled but Security is not
-void L2CA_UseLegacySecurityModule();
 
 void L2CA_SwitchRoleToCentral(const RawAddress& addr);
 

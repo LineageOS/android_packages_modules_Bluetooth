@@ -2,7 +2,7 @@ use dbus::arg::RefArg;
 use dbus::strings::Path;
 use dbus_crossroads;
 use dbus_macros::{dbus_method, dbus_propmap, dbus_proxy_obj, generate_dbus_exporter};
-use dbus_projection::{dbus_generated, DisconnectWatcher};
+use dbus_projection::prelude::*;
 
 use btstack::RPCProxy;
 
@@ -69,6 +69,16 @@ impl IBluetoothManager for BluetoothManagerDBus {
 
     #[dbus_method("SetDesiredDefaultAdapter")]
     fn set_desired_default_adapter(&mut self, hci_interface: i32) {
+        dbus_generated!()
+    }
+
+    #[dbus_method("GetFlossApiVersion")]
+    fn get_floss_api_version(&mut self) -> u32 {
+        dbus_generated!()
+    }
+
+    #[dbus_method("SetTabletMode")]
+    fn set_tablet_mode(&mut self, tablet_mode: bool) {
         dbus_generated!()
     }
 }

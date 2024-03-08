@@ -58,6 +58,7 @@ struct EventCallbacks {
                                       bt_conn_direction_t direction,
                                       uint16_t acl_handle);
   void (*invoke_thread_evt_cb)(bt_cb_thread_evt event);
+  void (*invoke_le_test_mode_cb)(bt_status_t status, uint16_t count);
   void (*invoke_energy_info_cb)(bt_activity_energy_info energy_info,
                                 bt_uid_traffic_t* uid_data);
   void (*invoke_link_quality_report_cb)(uint64_t timestamp, int report_id,
@@ -66,7 +67,6 @@ struct EventCallbacks {
                                         int packets_not_receive_count,
                                         int negative_acknowledgement_count);
 
-  EventCallbacks(const EventCallbacks&) = delete;
   EventCallbacks& operator=(const EventCallbacks&) = delete;
 };
 
@@ -125,7 +125,6 @@ struct HACK_ProfileInterface {
   // AVRCP hacks
   uint16_t (*AVRC_GetProfileVersion)();
 
-  HACK_ProfileInterface(const HACK_ProfileInterface&) = delete;
   HACK_ProfileInterface& operator=(const HACK_ProfileInterface&) = delete;
 };
 
@@ -137,6 +136,7 @@ struct CoreInterface {
 
   // codecs
   CodecInterface* msbcCodec;
+  CodecInterface* lc3Codec;
 
   // DO NOT add any more methods here
   HACK_ProfileInterface* profileSpecific_HACK;
@@ -149,10 +149,12 @@ struct CoreInterface {
 
   CoreInterface(EventCallbacks* eventCallbacks,
                 ConfigInterface* configInterface, CodecInterface* msbcCodec,
+                CodecInterface* lc3Codec,
                 HACK_ProfileInterface* profileSpecific_HACK)
       : events{eventCallbacks},
         config{configInterface},
         msbcCodec{msbcCodec},
+        lc3Codec{lc3Codec},
         profileSpecific_HACK{profileSpecific_HACK} {};
 
   CoreInterface(const CoreInterface&) = delete;

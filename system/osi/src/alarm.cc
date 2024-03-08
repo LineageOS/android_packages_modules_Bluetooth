@@ -16,37 +16,32 @@
  *
  ******************************************************************************/
 
-#include "internal_include/bt_target.h"
-
 #define LOG_TAG "bt_osi_alarm"
 
 #include "osi/include/alarm.h"
 
 #include <base/cancelable_callback.h>
 #include <base/logging.h>
-#include <errno.h>
 #include <fcntl.h>
-#include <inttypes.h>
+#include <hardware/bluetooth.h>
 #include <malloc.h>
 #include <pthread.h>
 #include <signal.h>
 #include <string.h>
 #include <time.h>
 
-#include <hardware/bluetooth.h>
-
 #include <mutex>
 
 #include "check.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/fixed_queue.h"
 #include "osi/include/list.h"
-#include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "osi/include/thread.h"
 #include "osi/include/wakelock.h"
 #include "osi/semaphore.h"
-#include "stack/include/btu.h"
+#include "stack/include/main_thread.h"
 
 using base::Bind;
 using base::CancelableClosure;

@@ -18,7 +18,9 @@ package com.android.bluetooth.pbap;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -27,26 +29,28 @@ import static org.mockito.Mockito.when;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Message;
+import android.os.test.TestLooper;
 
+import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.MediumTest;
-import androidx.test.rule.ServiceTestRule;
 import androidx.test.runner.AndroidJUnit4;
 
+import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 
 import org.junit.After;
-import org.junit.Assume;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 
 @MediumTest
 @RunWith(AndroidJUnit4.class)
@@ -56,21 +60,31 @@ public class BluetoothPbapServiceTest {
     private BluetoothPbapService mService;
     private BluetoothAdapter mAdapter = null;
     private BluetoothDevice mRemoteDevice;
+    private boolean mIsAdapterServiceSet;
+    private boolean mIsBluetoothPabpServiceStarted;
+    private TestLooper mTestLooper;
 
-    @Rule public final ServiceTestRule mServiceRule = new ServiceTestRule();
 
     @Mock private AdapterService mAdapterService;
     @Mock private DatabaseManager mDatabaseManager;
+    @Spy private BluetoothMethodProxy mMethodProxy = BluetoothMethodProxy.getInstance();
 
     @Before
     public void setUp() throws Exception {
+        Context targetContext = InstrumentationRegistry.getTargetContext();
         MockitoAnnotations.initMocks(this);
+        mTestLooper = new TestLooper();
+        BluetoothMethodProxy.setInstanceForTesting(mMethodProxy);
+        doReturn(mTestLooper.getLooper()).when(mMethodProxy).handlerThreadGetLooper(any());
+        doNothing().when(mMethodProxy).threadStart(any());
+        mTestLooper.startAutoDispatch();
         TestUtils.setAdapterService(mAdapterService);
+        mIsAdapterServiceSet = true;
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
         doReturn(true, false).when(mAdapterService).isStartedProfile(anyString());
-        TestUtils.startService(mServiceRule, BluetoothPbapService.class);
-        mService = BluetoothPbapService.getBluetoothPbapService();
-        assertThat(mService).isNotNull();
+        mService = new BluetoothPbapService(targetContext);
+        mService.doStart();
+        mIsBluetoothPabpServiceStarted = true;
         // Try getting the Bluetooth adapter
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         assertThat(mAdapter).isNotNull();
@@ -79,9 +93,16 @@ public class BluetoothPbapServiceTest {
 
     @After
     public void tearDown() throws Exception {
-        TestUtils.stopService(mServiceRule, BluetoothPbapService.class);
-        mService = BluetoothPbapService.getBluetoothPbapService();
-        assertThat(mService).isNull();
+        mTestLooper.stopAutoDispatchAndIgnoreExceptions();
+        BluetoothMethodProxy.setInstanceForTesting(null);
+        if (!mIsAdapterServiceSet) {
+            return;
+        }
+        if (mIsBluetoothPabpServiceStarted) {
+            mService.doStop();
+            mService = BluetoothPbapService.getBluetoothPbapService();
+            assertThat(mService).isNull();
+        }
         TestUtils.clearAdapterService(mAdapterService);
     }
 
@@ -137,6 +158,7 @@ public class BluetoothPbapServiceTest {
 
     @Test
     public void onAcceptFailed() {
+        mTestLooper.stopAutoDispatchAndIgnoreExceptions();
         PbapStateMachine sm = mock(PbapStateMachine.class);
         mService.mPbapStateMachineMap.put(mRemoteDevice, sm);
 

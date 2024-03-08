@@ -36,7 +36,8 @@ use bluetooth_core_rs_for_facade::*;
 use bt_shim::*;
 
 fn main() {
-    let sigint = install_sigint();
+    // SAFETY: There is no signal handler installed before this.
+    let sigint = unsafe { install_sigint() };
     bt_common::init_logging();
     let rt = Arc::new(Runtime::new().unwrap());
     rt.block_on(async_main(Arc::clone(&rt), sigint));
@@ -113,9 +114,11 @@ async fn async_main(rt: Arc<Runtime>, mut sigint: mpsc::UnboundedReceiver<()>) {
         .register_service(hf_client_service_impl)
         .register_service(hfp_service_impl)
         .register_service(media_service_impl)
-        .bind("0.0.0.0", grpc_port)
         .build()
         .unwrap();
+    let addr = format!("0.0.0.0:{}", grpc_port);
+    let creds = ServerCredentials::insecure();
+    server.add_listening_port(addr, creds).unwrap();
     server.start();
 
     sigint.next().await;
@@ -123,7 +126,10 @@ async fn async_main(rt: Arc<Runtime>, mut sigint: mpsc::UnboundedReceiver<()>) {
 }
 
 // TODO: remove as this is a temporary nix-based hack to catch SIGINT
-fn install_sigint() -> mpsc::UnboundedReceiver<()> {
+/// # Safety
+///
+/// The old signal handler, if any, must be installed correctly.
+unsafe fn install_sigint() -> mpsc::UnboundedReceiver<()> {
     let (tx, rx) = mpsc::unbounded();
     *SIGINT_TX.lock().unwrap() = Some(tx);
 
@@ -132,6 +138,10 @@ fn install_sigint() -> mpsc::UnboundedReceiver<()> {
         signal::SaFlags::empty(),
         signal::SigSet::empty(),
     );
+    // SAFETY: The caller guarantees that the old signal handler was installed correctly.
+    // TODO(b/292218119): Make sure `handle_sigint` only makes system calls that are safe for signal
+    // handlers, and only accesses global state through atomics. In particular, it must not take any
+    // shared locks.
     unsafe {
         signal::sigaction(signal::SIGINT, &sig_action).unwrap();
     }

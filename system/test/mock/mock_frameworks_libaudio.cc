@@ -19,20 +19,14 @@
  *   Functions generated:60
  */
 
-#include <map>
-#include <string>
-
 #include "test/common/mock_functions.h"
 
-#undef __INTRODUCED_IN
+#ifndef __INTRODUCED_IN
 #define __INTRODUCED_IN(x)
+#endif  // __INTRODUCED_IN
 
 #include <aaudio/AAudio.h>
 #include <aaudio/AAudioTesting.h>
-
-#ifndef UNUSED_ATTR
-#define UNUSED_ATTR
-#endif
 
 aaudio_allowed_capture_policy_t AAudioStream_getAllowedCapturePolicy(
     AAudioStream* stream) {

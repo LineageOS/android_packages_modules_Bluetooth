@@ -24,28 +24,13 @@
 
 #include <cstdint>
 #include <functional>
-#include <map>
+#include <optional>
 #include <string>
 
-#include "test/common/mock_functions.h"
-
 // Original included files, if any
-// NOTE: Since this is a mock file with mock definitions some number of
-//       include files may not be required.  The include-what-you-use
-//       still applies, but crafting proper inclusion is out of scope
-//       for this effort.  This compilation unit may compile as-is, or
-//       may need attention to prune from (or add to ) the inclusion set.
-#include <cstddef>
-#include <cstdint>
-#include <future>
-
-#include "gd/hci/acl_manager.h"
-#include "main/shim/acl_api.h"
-#include "main/shim/dumpsys.h"
-#include "main/shim/helpers.h"
-#include "main/shim/stack.h"
-#include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
+#include "stack/include/bt_octets.h"
+#include "stack/include/hci_error_code.h"
 #include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
 
@@ -208,19 +193,34 @@ struct ACL_IgnoreLeConnectionFrom {
 extern struct ACL_IgnoreLeConnectionFrom ACL_IgnoreLeConnectionFrom;
 
 // Name: ACL_ReadConnectionAddress
-// Params: const RawAddress& pseudo_addr, RawAddress& conn_addr, tBLE_ADDR_TYPE*
+// Params: uint16_t handle, RawAddress& conn_addr, tBLE_ADDR_TYPE*, bool
 // p_addr_type Return: void
 struct ACL_ReadConnectionAddress {
-  std::function<void(const RawAddress& pseudo_addr, RawAddress& conn_addr,
-                     tBLE_ADDR_TYPE* p_addr_type)>
-      body{[](const RawAddress& pseudo_addr, RawAddress& conn_addr,
-              tBLE_ADDR_TYPE* p_addr_type) {}};
-  void operator()(const RawAddress& pseudo_addr, RawAddress& conn_addr,
-                  tBLE_ADDR_TYPE* p_addr_type) {
-    body(pseudo_addr, conn_addr, p_addr_type);
+  std::function<void(uint16_t handle, RawAddress& conn_addr,
+                     tBLE_ADDR_TYPE* p_addr_type, bool ota_address)>
+      body{[](uint16_t handle, RawAddress& conn_addr,
+              tBLE_ADDR_TYPE* p_addr_type, bool ota_address) {}};
+  void operator()(uint16_t handle, RawAddress& conn_addr,
+                  tBLE_ADDR_TYPE* p_addr_type, bool ota_address) {
+    body(handle, conn_addr, p_addr_type, ota_address);
   };
 };
 extern struct ACL_ReadConnectionAddress ACL_ReadConnectionAddress;
+
+// Name: ACL_ReadPeerConnectionAddress
+// Params: uint16_t handle, RawAddress& conn_addr, tBLE_ADDR_TYPE*, bool
+// p_addr_type Return: void
+struct ACL_ReadPeerConnectionAddress {
+  std::function<void(uint16_t handle, RawAddress& conn_addr,
+                     tBLE_ADDR_TYPE* p_addr_type, bool ota_address)>
+      body{[](uint16_t handle, RawAddress& conn_addr,
+              tBLE_ADDR_TYPE* p_addr_type, bool ota_address) {}};
+  void operator()(uint16_t handle, RawAddress& conn_addr,
+                  tBLE_ADDR_TYPE* p_addr_type, bool ota_address) {
+    body(handle, conn_addr, p_addr_type, ota_address);
+  };
+};
+extern struct ACL_ReadPeerConnectionAddress ACL_ReadPeerConnectionAddress;
 
 // Name: ACL_GetAdvertisingSetConnectedTo
 // Params: const RawAddress& addr

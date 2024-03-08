@@ -37,6 +37,7 @@
 #include "has_types.h"
 #include "mock_controller.h"
 #include "mock_csis_client.h"
+#include "stack/include/bt_uuid16.h"
 #include "test/common/mock_functions.h"
 
 bool gatt_profile_get_eatt_support(const RawAddress& addr) { return true; }
@@ -841,8 +842,8 @@ class HasClientTestBase : public ::testing::Test {
     if (!allow_fake_conn) ASSERT_NE(connected_devices.count(conn_id), 0u);
 
     tBTA_GATTC_CLOSE event_data = {
-        .status = GATT_SUCCESS,
         .conn_id = conn_id,
+        .status = GATT_SUCCESS,
         .client_if = gatt_if,
         .remote_bda = connected_devices[conn_id],
         .reason = reason,
@@ -854,8 +855,8 @@ class HasClientTestBase : public ::testing::Test {
 
   void InjectSearchCompleteEvent(uint16_t conn_id) {
     tBTA_GATTC_SEARCH_CMPL event_data = {
-        .status = GATT_SUCCESS,
         .conn_id = conn_id,
+        .status = GATT_SUCCESS,
     };
 
     gatt_callback(BTA_GATTC_SEARCH_CMPL_EVT, (tBTA_GATTC*)&event_data);
@@ -891,6 +892,9 @@ class HasClientTestBase : public ::testing::Test {
 
     ON_CALL(btm_interface, BTM_IsEncrypted(address, _))
         .WillByDefault(DoAll(Return(encryption_result)));
+
+    ON_CALL(btm_interface, IsLinkKeyKnown(address, _))
+        .WillByDefault(DoAll(Return(true)));
   }
 
   void InjectNotifyReadPresetResponse(uint16_t conn_id,
@@ -1289,6 +1293,61 @@ TEST_F(HasClientTest, test_encryption_failed) {
       .Times(0);
   SetEncryptionResult(test_address, false);
   TestConnect(test_address);
+}
+
+TEST_F(HasClientTest, test_service_discovery_complete_before_encryption) {
+  const RawAddress test_address = GetTestAddress(1);
+  SetSampleDatabaseHasPresetsNtf(
+      test_address, bluetooth::has::kFeatureBitHearingAidTypeBinaural);
+
+  EXPECT_CALL(*callbacks,
+              OnConnectionState(ConnectionState::DISCONNECTED, test_address))
+      .Times(0);
+  EXPECT_CALL(*callbacks,
+              OnConnectionState(ConnectionState::CONNECTED, test_address))
+      .Times(0);
+
+  SetEncryptionResult(test_address, false);
+  ON_CALL(btm_interface, SetEncryption(_, _, _, _, _))
+      .WillByDefault(Return(BTM_SUCCESS));
+
+  TestConnect(test_address);
+  auto test_conn_id = GetTestConnId(test_address);
+  InjectSearchCompleteEvent(test_conn_id);
+
+  Mock::VerifyAndClearExpectations(callbacks.get());
+
+  EXPECT_CALL(*callbacks,
+              OnConnectionState(ConnectionState::CONNECTED, test_address))
+      .Times(1);
+
+  SetEncryptionResult(test_address, true);
+  InjectEncryptionEvent(test_address);
+  Mock::VerifyAndClearExpectations(callbacks.get());
+}
+
+TEST_F(HasClientTest, test_disconnect_when_link_key_is_gone) {
+  const RawAddress test_address = GetTestAddress(1);
+  SetSampleDatabaseHasPresetsNtf(
+      test_address, bluetooth::has::kFeatureBitHearingAidTypeBinaural);
+
+  EXPECT_CALL(*callbacks,
+              OnConnectionState(ConnectionState::DISCONNECTED, test_address))
+      .Times(0);
+  EXPECT_CALL(*callbacks,
+              OnConnectionState(ConnectionState::CONNECTED, test_address))
+      .Times(0);
+
+  ON_CALL(btm_interface, BTM_IsEncrypted(test_address, _))
+      .WillByDefault(DoAll(Return(false)));
+  ON_CALL(btm_interface, SetEncryption(test_address, _, _, _, _))
+      .WillByDefault(Return(BTM_ERR_KEY_MISSING));
+
+  auto test_conn_id = GetTestConnId(test_address);
+  EXPECT_CALL(gatt_interface, Close(test_conn_id)).Times(1);
+  InjectConnectedEvent(test_address, GetTestConnId(test_address));
+
+  Mock::VerifyAndClearExpectations(callbacks.get());
 }
 
 TEST_F(HasClientTest, test_reconnect_after_encryption_failed) {

@@ -29,6 +29,7 @@ using ::aidl::android::hardware::bluetooth::audio::ChannelMode;
 using ::aidl::android::hardware::bluetooth::audio::CodecType;
 using ::bluetooth::audio::aidl::AudioConfiguration;
 using ::bluetooth::audio::aidl::BluetoothAudioCtrlAck;
+using ::bluetooth::audio::aidl::LatencyMode;
 using ::bluetooth::audio::aidl::PcmConfiguration;
 using ::bluetooth::audio::aidl::SessionType;
 using ::bluetooth::audio::aidl::hearing_aid::StreamCallbacks;
@@ -74,7 +75,7 @@ class HearingAidTransport
     }
   }
 
-  void SetLowLatency(bool is_low_latency) override {}
+  void SetLatencyMode(LatencyMode latency_mode) override {}
 
   bool GetPresentationPosition(uint64_t* remote_delay_report_ns,
                                uint64_t* total_bytes_read,
@@ -97,20 +98,20 @@ class HearingAidTransport
   }
 
   void SourceMetadataChanged(
-      const source_metadata_t& source_metadata) override {
+      const source_metadata_v7_t& source_metadata) override {
     auto track_count = source_metadata.track_count;
     auto tracks = source_metadata.tracks;
     LOG(INFO) << __func__ << ": " << track_count << " track(s) received";
     while (track_count) {
-      VLOG(1) << __func__ << ": usage=" << tracks->usage
-              << ", content_type=" << tracks->content_type
-              << ", gain=" << tracks->gain;
+      VLOG(1) << __func__ << ": usage=" << tracks->base.usage
+              << ", content_type=" << tracks->base.content_type
+              << ", gain=" << tracks->base.gain;
       --track_count;
       ++tracks;
     }
   }
 
-  void SinkMetadataChanged(const sink_metadata_t&) override {}
+  void SinkMetadataChanged(const sink_metadata_v7_t&) override {}
 
   void ResetPresentationPosition() override {
     VLOG(2) << __func__ << ": called.";

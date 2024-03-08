@@ -19,7 +19,7 @@
 #include <optional>
 
 #include "stack/include/bt_hdr.h"
-#include "stack/include/bt_types.h"
+#include "stack/include/bt_octets.h"
 #include "stack/include/hci_error_code.h"
 #include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
@@ -40,9 +40,12 @@ void ACL_ConfigureLePrivacy(bool is_le_privacy_enabled);
 void ACL_Shutdown();
 void ACL_IgnoreAllLeConnections();
 
-void ACL_ReadConnectionAddress(const RawAddress& pseudo_addr,
-                               RawAddress& conn_addr,
-                               tBLE_ADDR_TYPE* p_addr_type);
+void ACL_ReadConnectionAddress(uint16_t handle, RawAddress& conn_addr,
+                               tBLE_ADDR_TYPE* p_addr_type, bool ota_address);
+
+void ACL_ReadPeerConnectionAddress(uint16_t handle, RawAddress& conn_addr,
+                                   tBLE_ADDR_TYPE* p_addr_type,
+                                   bool ota_address);
 
 std::optional<uint8_t> ACL_GetAdvertisingSetConnectedTo(const RawAddress& addr);
 

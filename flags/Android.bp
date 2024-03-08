@@ -1,0 +1,49 @@
+package {
+    default_applicable_licenses: ["Android-Apache-2.0"],
+    default_visibility: ["//visibility:private"],
+}
+
+aconfig_declarations {
+    name: "bluetooth_aconfig_flags",
+    package: "com.android.bluetooth.flags",
+    srcs: [
+        "a2dp.aconfig",
+        "asha.aconfig",
+        "audio_routing.aconfig",
+        "bta_dm.aconfig",
+        "framework.aconfig",
+        "gap.aconfig",
+        "hap.aconfig",
+        "hfp.aconfig",
+        "leaudio.aconfig",
+        "system_service.aconfig",
+    ],
+}
+
+java_aconfig_library {
+    name: "bluetooth_flags_java_lib",
+    aconfig_declarations: "bluetooth_aconfig_flags",
+    visibility: [
+        "//cts/tests/tests/bluetooth:__subpackages__",
+        "//packages/modules/Bluetooth/android/app",
+        "//packages/modules/Bluetooth/service:__subpackages__",
+    ],
+    apex_available: [
+        "com.android.btservices",
+    ],
+    min_sdk_version: "Tiramisu",
+}
+
+cc_aconfig_library {
+    name: "bluetooth_flags_c_lib",
+    aconfig_declarations: "bluetooth_aconfig_flags",
+    export_include_dirs: ["exported_include"],
+    host_supported: true,
+    visibility: [
+        "//packages/modules/Bluetooth/system:__subpackages__",
+    ],
+    apex_available: [
+        "com.android.btservices",
+    ],
+    min_sdk_version: "Tiramisu",
+}

@@ -34,7 +34,7 @@
 #include "bta/gatt/bta_gatts_int.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
-#include "stack/include/btu.h"  // do_in_main_thread
+#include "stack/include/main_thread.h"
 #include "types/bluetooth/uuid.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
@@ -177,8 +177,8 @@ void BTA_GATTS_AddService(tGATT_IF server_if,
                           std::vector<btgatt_db_element_t> service,
                           BTA_GATTS_AddServiceCb cb) {
   do_in_main_thread(FROM_HERE,
-                    base::Bind(&bta_gatts_add_service_impl, server_if,
-                               std::move(service), std::move(cb)));
+                    base::BindOnce(&bta_gatts_add_service_impl, server_if,
+                                   std::move(service), std::move(cb)));
 }
 
 /*******************************************************************************

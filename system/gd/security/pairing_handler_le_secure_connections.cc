@@ -16,16 +16,18 @@
  *
  ******************************************************************************/
 
-#include "security/pairing_handler_le.h"
-
-#include "os/rand.h"
-
 #include <base/logging.h>
+
+#include "crypto_toolbox/crypto_toolbox.h"
+#include "hci/octets.h"
+#include "os/rand.h"
+#include "security/pairing_handler_le.h"
 
 using bluetooth::os::GenerateRandom;
 
 namespace bluetooth {
 namespace security {
+using hci::Octet16;
 
 std::variant<PairingFailure, KeyExchangeResult> PairingHandlerLe::ExchangePublicKeys(const InitialInformations& i,
                                                                                      OobDataFlag remote_have_oob_data) {
@@ -131,12 +133,14 @@ Stage1ResultOrFailure PairingHandlerLe::DoSecureConnectionsStage1(const InitialI
   return SecureConnectionsPasskeyEntry(i, PKa, PKb, my_iocaps, remote_iocaps);
 }
 
-Stage2ResultOrFailure PairingHandlerLe::DoSecureConnectionsStage2(const InitialInformations& i,
-                                                                  const EcdhPublicKey& PKa, const EcdhPublicKey& PKb,
-                                                                  const PairingRequestView& pairing_request,
-                                                                  const PairingResponseView& pairing_response,
-                                                                  const Stage1Result stage1result,
-                                                                  const std::array<uint8_t, 32>& dhkey) {
+Stage2ResultOrFailure PairingHandlerLe::DoSecureConnectionsStage2(
+    const InitialInformations& i,
+    const EcdhPublicKey& /* PKa */,
+    const EcdhPublicKey& /* PKb */,
+    const PairingRequestView& pairing_request,
+    const PairingResponseView& pairing_response,
+    const Stage1Result stage1result,
+    const std::array<uint8_t, 32>& dhkey) {
   LOG_INFO("Authentication stage 2 started");
 
   auto [Na, Nb, ra, rb] = stage1result;

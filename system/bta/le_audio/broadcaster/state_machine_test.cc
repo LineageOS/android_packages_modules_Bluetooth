@@ -21,11 +21,10 @@
 #include <gtest/gtest.h>
 
 #include "../le_audio_types.h"
-#include "ble_advertiser.h"
 #include "btm_iso_api.h"
 #include "mock_ble_advertising_manager.h"
 #include "mock_iso_manager.h"
-#include "stack/include/ble_advertiser.h"
+#include "stack/include/btm_ble_api_types.h"
 #include "state_machine.h"
 #include "test/common/mock_functions.h"
 
@@ -80,46 +79,86 @@ class MockBroadcastStatMachineCallbacks
               (override));
 };
 
+class MockBroadcastAdvertisingCallbacks : public AdvertisingCallbacks {
+ public:
+  MockBroadcastAdvertisingCallbacks() = default;
+  MockBroadcastAdvertisingCallbacks(const MockBroadcastAdvertisingCallbacks&) =
+      delete;
+  MockBroadcastAdvertisingCallbacks& operator=(
+      const MockBroadcastAdvertisingCallbacks&) = delete;
+
+  ~MockBroadcastAdvertisingCallbacks() override = default;
+
+  MOCK_METHOD((void), OnAdvertisingSetStarted,
+              (int reg_id, uint8_t advertiser_id, int8_t tx_power,
+               uint8_t status),
+              (override));
+  MOCK_METHOD((void), OnAdvertisingEnabled,
+              (uint8_t advertiser_id, bool enable, uint8_t status), (override));
+  MOCK_METHOD((void), OnAdvertisingDataSet,
+              (uint8_t advertiser_id, uint8_t status), (override));
+  MOCK_METHOD((void), OnScanResponseDataSet,
+              (uint8_t advertiser_id, uint8_t status), (override));
+  MOCK_METHOD((void), OnAdvertisingParametersUpdated,
+              (uint8_t advertiser_id, int8_t tx_power, uint8_t status),
+              (override));
+  MOCK_METHOD((void), OnPeriodicAdvertisingParametersUpdated,
+              (uint8_t advertiser_id, uint8_t status), (override));
+  MOCK_METHOD((void), OnPeriodicAdvertisingDataSet,
+              (uint8_t advertiser_id, uint8_t status), (override));
+  MOCK_METHOD((void), OnPeriodicAdvertisingEnabled,
+              (uint8_t advertiser_id, bool enable, uint8_t status), (override));
+  MOCK_METHOD((void), OnOwnAddressRead,
+              (uint8_t advertiser_id, uint8_t address_type, RawAddress address),
+              (override));
+};
+
 class StateMachineTest : public Test {
  protected:
   void SetUp() override {
     reset_mock_function_count_map();
-    BleAdvertisingManager::Initialize(nullptr);
+    MockBleAdvertisingManager::Initialize();
 
-    ble_advertising_manager_ = BleAdvertisingManager::Get();
-    mock_ble_advertising_manager_ =
-        static_cast<MockBleAdvertisingManager*>(ble_advertising_manager_.get());
+    mock_ble_advertising_manager_ = MockBleAdvertisingManager::Get();
 
     sm_callbacks_.reset(new MockBroadcastStatMachineCallbacks());
-    BroadcastStateMachine::Initialize(sm_callbacks_.get());
+    adv_callbacks_.reset(new MockBroadcastAdvertisingCallbacks());
+    BroadcastStateMachine::Initialize(sm_callbacks_.get(),
+                                      adv_callbacks_.get());
 
     ON_CALL(*mock_ble_advertising_manager_, StartAdvertisingSet)
-        .WillByDefault([](base::Callback<void(uint8_t, int8_t, uint8_t)> cb,
-                          tBTM_BLE_ADV_PARAMS* params,
-                          std::vector<uint8_t> advertise_data,
-                          std::vector<uint8_t> scan_response_data,
-                          tBLE_PERIODIC_ADV_PARAMS* periodic_params,
-                          std::vector<uint8_t> periodic_data, uint16_t duration,
-                          uint8_t maxExtAdvEvents,
-                          base::Callback<void(uint8_t, uint8_t)> timeout_cb) {
-          static uint8_t advertiser_id = 1;
-          uint8_t tx_power = 32;
-          uint8_t status = 0;
-          cb.Run(advertiser_id++, tx_power, status);
-        });
+        .WillByDefault(
+            [this](uint8_t client_id, int reg_id,
+                   BleAdvertiserInterface::IdTxPowerStatusCallback register_cb,
+                   AdvertiseParameters params,
+                   std::vector<uint8_t> advertise_data,
+                   std::vector<uint8_t> scan_response_data,
+                   PeriodicAdvertisingParameters periodic_params,
+                   std::vector<uint8_t> periodic_data, uint16_t duration,
+                   uint8_t maxExtAdvEvents,
+                   BleAdvertiserInterface::IdStatusCallback timeout_cb) {
+              static uint8_t advertiser_id = 1;
+              uint8_t tx_power = 32;
+              uint8_t status = 0;
+              this->adv_callbacks_->OnAdvertisingSetStarted(
+                  BroadcastStateMachine::kLeAudioBroadcastRegId,
+                  advertiser_id++, tx_power, status);
+            });
 
     ON_CALL(*mock_ble_advertising_manager_, Enable)
         .WillByDefault(
-            [](uint8_t advertiser_id, bool enable,
-               base::Callback<void(uint8_t /* status */)> cb, uint16_t duration,
-               uint8_t maxExtAdvEvents,
-               base::Callback<void(uint8_t /* status */)> timeout_cb) {
-              cb.Run(0);
+            [this](uint8_t advertiser_id, bool enable,
+                   BleAdvertiserInterface::StatusCallback cb, uint16_t duration,
+                   uint8_t maxExtAdvEvents,
+                   BleAdvertiserInterface::StatusCallback timeout_cb) {
+              uint8_t status = 0;
+              this->adv_callbacks_->OnAdvertisingEnabled(advertiser_id, enable,
+                                                         status);
             });
 
     ON_CALL(*mock_ble_advertising_manager_, GetOwnAddress)
         .WillByDefault(
-            [](uint8_t inst_id, BleAdvertisingManager::GetAddressCallback cb) {
+            [](uint8_t inst_id, BleAdvertiserInterface::GetAddressCallback cb) {
               uint8_t address_type = 0x02;
               RawAddress address;
               const uint8_t addr[] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66};
@@ -150,6 +189,25 @@ class StateMachineTest : public Test {
           }
         });
 
+    ON_CALL(*(adv_callbacks_.get()), OnAdvertisingSetStarted)
+        .WillByDefault([this](int reg_id, uint8_t advertiser_id,
+                              int8_t tx_power, uint8_t status) {
+          pending_broadcasts_.back()->OnCreateAnnouncement(advertiser_id,
+                                                           tx_power, status);
+        });
+
+    ON_CALL(*(adv_callbacks_.get()), OnAdvertisingEnabled)
+        .WillByDefault(
+            [this](uint8_t advertiser_id, bool enable, uint8_t status) {
+              auto const& iter = std::find_if(
+                  broadcasts_.cbegin(), broadcasts_.cend(),
+                  [advertiser_id](auto const& sm) {
+                    return sm.second->GetAdvertisingSid() == advertiser_id;
+                  });
+              if (iter != broadcasts_.cend()) {
+                iter->second->OnEnableAnnouncement(enable, status);
+              }
+            });
     ConfigureIsoManagerMock();
   }
 
@@ -232,9 +290,16 @@ class StateMachineTest : public Test {
   void TearDown() override {
     iso_manager_->Stop();
     mock_iso_manager_ = nullptr;
+    Mock::VerifyAndClearExpectations(sm_callbacks_.get());
+    Mock::VerifyAndClearExpectations(adv_callbacks_.get());
 
+    pending_broadcasts_.clear();
     broadcasts_.clear();
     sm_callbacks_.reset();
+    adv_callbacks_.reset();
+
+    MockBleAdvertisingManager::CleanUp();
+    mock_ble_advertising_manager_ = nullptr;
   }
 
   uint32_t InstantiateStateMachine(
@@ -253,8 +318,8 @@ class StateMachineTest : public Test {
     auto broadcast_id = broadcast_id_lsb++;
     pending_broadcasts_.push_back(BroadcastStateMachine::CreateInstance({
         .is_public = true,
-        .broadcast_name = test_broadcast_name,
         .broadcast_id = broadcast_id,
+        .broadcast_name = test_broadcast_name,
         // .streaming_phy = ,
         .codec_wrapper = codec_qos_pair.first,
         .qos_config = codec_qos_pair.second,
@@ -265,8 +330,6 @@ class StateMachineTest : public Test {
     return instance_future.get();
   }
 
-  base::WeakPtr<BleAdvertisingManager> ble_advertising_manager_;
-
   MockBleAdvertisingManager* mock_ble_advertising_manager_;
   IsoManager* iso_manager_;
   MockIsoManager* mock_iso_manager_;
@@ -274,49 +337,30 @@ class StateMachineTest : public Test {
   std::map<uint32_t, std::unique_ptr<BroadcastStateMachine>> broadcasts_;
   std::vector<std::unique_ptr<BroadcastStateMachine>> pending_broadcasts_;
   std::unique_ptr<MockBroadcastStatMachineCallbacks> sm_callbacks_;
+  std::unique_ptr<MockBroadcastAdvertisingCallbacks> adv_callbacks_;
   std::promise<uint32_t> instance_creation_promise_;
   std::promise<uint8_t> instance_destruction_promise_;
 };
 
 TEST_F(StateMachineTest, CreateInstanceFailed) {
   EXPECT_CALL(*mock_ble_advertising_manager_, StartAdvertisingSet)
-      .WillOnce([](base::Callback<void(uint8_t, int8_t, uint8_t)> cb,
-                   tBTM_BLE_ADV_PARAMS* params,
-                   std::vector<uint8_t> advertise_data,
-                   std::vector<uint8_t> scan_response_data,
-                   tBLE_PERIODIC_ADV_PARAMS* periodic_params,
-                   std::vector<uint8_t> periodic_data, uint16_t duration,
-                   uint8_t maxExtAdvEvents,
-                   base::Callback<void(uint8_t, uint8_t)> timeout_cb) {
-        uint8_t advertiser_id = 1;
-        uint8_t tx_power = 0;
-        uint8_t status = 1;
-        cb.Run(advertiser_id, tx_power, status);
-      });
-
-  EXPECT_CALL(*(sm_callbacks_.get()), OnStateMachineCreateStatus(_, false))
-      .Times(1);
-
-  auto broadcast_id = InstantiateStateMachine();
-  ASSERT_NE(broadcast_id, BroadcastStateMachine::kAdvSidUndefined);
-  ASSERT_TRUE(pending_broadcasts_.empty());
-  ASSERT_TRUE(broadcasts_.empty());
-}
-
-TEST_F(StateMachineTest, CreateInstanceTimeout) {
-  EXPECT_CALL(*mock_ble_advertising_manager_, StartAdvertisingSet)
-      .WillOnce([](base::Callback<void(uint8_t, int8_t, uint8_t)> cb,
-                   tBTM_BLE_ADV_PARAMS* params,
-                   std::vector<uint8_t> advertise_data,
-                   std::vector<uint8_t> scan_response_data,
-                   tBLE_PERIODIC_ADV_PARAMS* periodic_params,
-                   std::vector<uint8_t> periodic_data, uint16_t duration,
-                   uint8_t maxExtAdvEvents,
-                   base::Callback<void(uint8_t, uint8_t)> timeout_cb) {
-        uint8_t advertiser_id = 1;
-        uint8_t status = 1;
-        timeout_cb.Run(advertiser_id, status);
-      });
+      .WillOnce(
+          [this](uint8_t client_id, int reg_id,
+                 BleAdvertiserInterface::IdTxPowerStatusCallback register_cb,
+                 AdvertiseParameters params,
+                 std::vector<uint8_t> advertise_data,
+                 std::vector<uint8_t> scan_response_data,
+                 PeriodicAdvertisingParameters periodic_params,
+                 std::vector<uint8_t> periodic_data, uint16_t duration,
+                 uint8_t maxExtAdvEvents,
+                 BleAdvertiserInterface::IdStatusCallback timeout_cb) {
+            uint8_t advertiser_id = 1;
+            uint8_t tx_power = 0;
+            uint8_t status = 1;
+            this->adv_callbacks_->OnAdvertisingSetStarted(
+                BroadcastStateMachine::kLeAudioBroadcastRegId, advertiser_id,
+                tx_power, status);
+          });
 
   EXPECT_CALL(*(sm_callbacks_.get()), OnStateMachineCreateStatus(_, false))
       .Times(1);
@@ -386,7 +430,7 @@ static BasicAudioAnnouncementData prepareAnnouncement(
     std::map<uint8_t, std::vector<uint8_t>> metadata) {
   BasicAudioAnnouncementData announcement;
 
-  announcement.presentation_delay = 0x004E20;
+  announcement.presentation_delay_us = 40000;
   auto const& codec_id = codec_config.GetLeAudioCodecId();
 
   announcement.subgroup_configs = {{
@@ -898,20 +942,21 @@ TEST_F(StateMachineTest, GetPublicBroadcastAnnouncement) {
 }
 
 TEST_F(StateMachineTest, AnnouncementTest) {
-  tBTM_BLE_ADV_PARAMS adv_params;
+  AdvertiseParameters adv_params;
   std::vector<uint8_t> a_data;
   std::vector<uint8_t> p_data;
 
   EXPECT_CALL(*mock_ble_advertising_manager_, StartAdvertisingSet)
-      .WillOnce([&p_data, &a_data, &adv_params](
-                    base::Callback<void(uint8_t, int8_t, uint8_t)> cb,
-                    tBTM_BLE_ADV_PARAMS* params,
+      .WillOnce([this, &p_data, &a_data, &adv_params](
+                    uint8_t client_id, int reg_id,
+                    BleAdvertiserInterface::IdTxPowerStatusCallback register_cb,
+                    AdvertiseParameters params,
                     std::vector<uint8_t> advertise_data,
                     std::vector<uint8_t> scan_response_data,
-                    tBLE_PERIODIC_ADV_PARAMS* periodic_params,
+                    PeriodicAdvertisingParameters periodic_params,
                     std::vector<uint8_t> periodic_data, uint16_t duration,
                     uint8_t maxExtAdvEvents,
-                    base::Callback<void(uint8_t, uint8_t)> timeout_cb) {
+                    BleAdvertiserInterface::IdStatusCallback timeout_cb) {
         uint8_t advertiser_id = 1;
         uint8_t tx_power = 0;
         uint8_t status = 0;
@@ -921,9 +966,11 @@ TEST_F(StateMachineTest, AnnouncementTest) {
         a_data = std::move(advertise_data);
         p_data = std::move(periodic_data);
 
-        adv_params = *params;
+        adv_params = params;
 
-        cb.Run(advertiser_id, tx_power, status);
+        this->adv_callbacks_->OnAdvertisingSetStarted(
+            BroadcastStateMachine::kLeAudioBroadcastRegId, advertiser_id,
+            tx_power, status);
       });
 
   EXPECT_CALL(*(sm_callbacks_.get()), OnStateMachineCreateStatus(_, true))
@@ -955,7 +1002,8 @@ TEST_F(StateMachineTest, AnnouncementTest) {
   ASSERT_EQ(p_data[3], ((kBasicAudioAnnouncementServiceUuid >> 8) & 0x00FF));
 
   // Check advertising parameters
-  ASSERT_EQ(adv_params.own_address_type, BLE_ADDR_RANDOM);
+  ASSERT_EQ(adv_params.own_address_type,
+            BroadcastStateMachine::kBroadcastAdvertisingType);
 }
 
 }  // namespace

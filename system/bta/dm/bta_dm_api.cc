@@ -26,17 +26,20 @@
 
 #include <vector>
 
-#include "bt_target.h"  // Must be first to define build configuration
+#include "android_bluetooth_flags.h"
+#include "bta/dm/bta_dm_disc.h"
 #include "bta/dm/bta_dm_int.h"
-#include "osi/include/allocator.h"
+#include "bta/dm/bta_dm_sec_int.h"
 #include "osi/include/compat.h"
-#include "stack/btm/btm_sec.h"
-#include "stack/include/bt_octets.h"
+#include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_api.h"
 #include "stack/include/btm_client_interface.h"
-#include "stack/include/btu.h"  // do_in_main_thread
+#include "stack/include/main_thread.h"
+#include "stack/include/sdp_api.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth::legacy::stack::sdp;
 
 using bluetooth::Uuid;
 
@@ -55,12 +58,18 @@ void BTA_dm_init() {
   BTM_SetConsolidationCallback(bta_dm_consolidate);
 }
 
+/** Enables bluetooth device under test mode */
+void BTA_EnableTestMode(void) {
+  do_in_main_thread(FROM_HERE,
+                    base::BindOnce(base::IgnoreResult(BTM_EnableTestMode)));
+}
+
 /** This function sets the Bluetooth name of local device */
 void BTA_DmSetDeviceName(const char* p_name) {
   std::vector<uint8_t> name(BD_NAME_LEN + 1);
   strlcpy((char*)name.data(), p_name, BD_NAME_LEN + 1);
 
-  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_set_dev_name, name));
+  do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_set_dev_name, name));
 }
 
 /*******************************************************************************
@@ -71,18 +80,11 @@ void BTA_DmSetDeviceName(const char* p_name) {
  *                  performs an inquiry and gets the remote name for devices.
  *                  Service discovery is done if services is non zero
  *
- *
  * Returns          void
  *
  ******************************************************************************/
 void BTA_DmSearch(tBTA_DM_SEARCH_CBACK* p_cback) {
-  tBTA_DM_API_SEARCH* p_msg =
-      (tBTA_DM_API_SEARCH*)osi_calloc(sizeof(tBTA_DM_API_SEARCH));
-
-  p_msg->hdr.event = BTA_DM_API_SEARCH_EVT;
-  p_msg->p_cback = p_cback;
-
-  bta_sys_sendmsg(p_msg);
+  bta_dm_disc_start_device_discovery(p_cback);
 }
 
 /*******************************************************************************
@@ -91,18 +93,10 @@ void BTA_DmSearch(tBTA_DM_SEARCH_CBACK* p_cback) {
  *
  * Description      This function  cancels a search initiated by BTA_DmSearch
  *
- *
  * Returns          void
  *
  ******************************************************************************/
-void BTA_DmSearchCancel(void) {
-  tBTA_DM_API_DISCOVERY_CANCEL* p_msg =
-      (tBTA_DM_API_DISCOVERY_CANCEL*)osi_calloc(
-          sizeof(tBTA_DM_API_DISCOVERY_CANCEL));
-
-  p_msg->hdr.event = BTA_DM_API_SEARCH_CANCEL_EVT;
-  bta_sys_sendmsg(p_msg);
-}
+void BTA_DmSearchCancel(void) { bta_dm_disc_stop_device_discovery(); }
 
 /*******************************************************************************
  *
@@ -117,128 +111,7 @@ void BTA_DmSearchCancel(void) {
  ******************************************************************************/
 void BTA_DmDiscover(const RawAddress& bd_addr, tBTA_DM_SEARCH_CBACK* p_cback,
                     tBT_TRANSPORT transport) {
-  tBTA_DM_API_DISCOVER* p_msg =
-      (tBTA_DM_API_DISCOVER*)osi_calloc(sizeof(tBTA_DM_API_DISCOVER));
-
-  p_msg->hdr.event = BTA_DM_API_DISCOVER_EVT;
-  p_msg->bd_addr = bd_addr;
-  p_msg->transport = transport;
-  p_msg->p_cback = p_cback;
-
-  bta_sys_sendmsg(p_msg);
-}
-
-/** This function initiates a bonding procedure with a peer device */
-void BTA_DmBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                tBT_TRANSPORT transport, tBT_DEVICE_TYPE device_type) {
-  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_bond, bd_addr, addr_type,
-                                          transport, device_type));
-}
-
-/** This function cancels the bonding procedure with a peer device
- */
-void BTA_DmBondCancel(const RawAddress& bd_addr) {
-  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_bond_cancel, bd_addr));
-}
-
-/*******************************************************************************
- *
- * Function         BTA_DmPinReply
- *
- * Description      This function provides a pincode for a remote device when
- *                  one is requested by DM through BTA_DM_PIN_REQ_EVT
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmPinReply(const RawAddress& bd_addr, bool accept, uint8_t pin_len,
-                    uint8_t* p_pin) {
-  std::unique_ptr<tBTA_DM_API_PIN_REPLY> msg =
-      std::make_unique<tBTA_DM_API_PIN_REPLY>();
-
-  msg->bd_addr = bd_addr;
-  msg->accept = accept;
-  if (accept) {
-    msg->pin_len = pin_len;
-    memcpy(msg->p_pin, p_pin, pin_len);
-  }
-
-  do_in_main_thread(FROM_HERE,
-                    base::Bind(bta_dm_pin_reply, base::Passed(&msg)));
-}
-
-/*******************************************************************************
- *
- * Function         BTA_DmLocalOob
- *
- * Description      This function retrieves the OOB data from local controller.
- *                  The result is reported by:
- *                  - bta_dm_co_loc_oob_ext() if device supports secure
- *                    connections (SC)
- *                  - bta_dm_co_loc_oob() if device doesn't support SC
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmLocalOob(void) {
-  do_in_main_thread(FROM_HERE, base::Bind(BTM_ReadLocalOobData));
-}
-
-/*******************************************************************************
- *
- * Function         BTA_DmConfirm
- *
- * Description      This function accepts or rejects the numerical value of the
- *                  Simple Pairing process on BTA_DM_SP_CFM_REQ_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmConfirm(const RawAddress& bd_addr, bool accept) {
-  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_confirm, bd_addr, accept));
-}
-
-/*******************************************************************************
- *
- * Function         BTA_DmAddDevice
- *
- * Description      This function adds a device to the security database list of
- *                  peer device
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
-                     const LinkKey& link_key, uint8_t key_type,
-                     uint8_t pin_length) {
-  std::unique_ptr<tBTA_DM_API_ADD_DEVICE> msg =
-      std::make_unique<tBTA_DM_API_ADD_DEVICE>();
-
-  msg->bd_addr = bd_addr;
-  msg->link_key_known = true;
-  msg->key_type = key_type;
-  msg->link_key = link_key;
-
-  /* Load device class if specified */
-  if (dev_class) {
-    msg->dc_known = true;
-    memcpy(msg->dc, dev_class, DEV_CLASS_LEN);
-  }
-
-  memset(msg->bd_name, 0, BD_NAME_LEN + 1);
-  msg->pin_length = pin_length;
-
-  do_in_main_thread(FROM_HERE,
-                    base::Bind(bta_dm_add_device, base::Passed(&msg)));
-}
-
-/** This function removes a device fromthe security database list of peer
- * device. It manages unpairing even while connected */
-tBTA_STATUS BTA_DmRemoveDevice(const RawAddress& bd_addr) {
-  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_remove_device, bd_addr));
-  return BTA_SUCCESS;
+  bta_dm_disc_start_service_discovery(p_cback, bd_addr, transport);
 }
 
 /*******************************************************************************
@@ -317,8 +190,8 @@ tBTA_STATUS BTA_DmSetLocalDiRecord(tSDP_DI_RECORD* p_device_info,
   tBTA_STATUS status = BTA_FAILURE;
 
   if (bta_dm_di_cb.di_num < BTA_DI_NUM_MAX) {
-    if (SDP_SetLocalDiRecord((tSDP_DI_RECORD*)p_device_info, p_handle) ==
-        SDP_SUCCESS) {
+    if (get_legacy_stack_sdp_api()->device_id.SDP_SetLocalDiRecord(
+            (tSDP_DI_RECORD*)p_device_info, p_handle) == SDP_SUCCESS) {
       if (!p_device_info->primary_record) {
         bta_dm_di_cb.di_handle[bta_dm_di_cb.di_num] = *p_handle;
         bta_dm_di_cb.di_num++;
@@ -330,104 +203,6 @@ tBTA_STATUS BTA_DmSetLocalDiRecord(tSDP_DI_RECORD* p_device_info,
   }
 
   return status;
-}
-
-/*******************************************************************************
- *
- * Function         BTA_DmAddBleKey
- *
- * Description      Add/modify LE device information.  This function will be
- *                  normally called during host startup to restore all required
- *                  information stored in the NVRAM.
- *
- * Parameters:      bd_addr          - BD address of the peer
- *                  p_le_key         - LE key values.
- *                  key_type         - LE SMP key type.
- *
- * Returns          BTA_SUCCESS if successful
- *                  BTA_FAIL if operation failed.
- *
- ******************************************************************************/
-void BTA_DmAddBleKey(const RawAddress& bd_addr, tBTA_LE_KEY_VALUE* p_le_key,
-                     tBTM_LE_KEY_TYPE key_type) {
-  do_in_main_thread(
-      FROM_HERE, base::Bind(bta_dm_add_blekey, bd_addr, *p_le_key, key_type));
-}
-
-/*******************************************************************************
- *
- * Function         BTA_DmAddBleDevice
- *
- * Description      Add a BLE device.  This function will be normally called
- *                  during host startup to restore all required information
- *                  for a LE device stored in the NVRAM.
- *
- * Parameters:      bd_addr          - BD address of the peer
- *                  dev_type         - Remote device's device type.
- *                  addr_type        - LE device address type.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmAddBleDevice(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                        tBT_DEVICE_TYPE dev_type) {
-  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_add_ble_device, bd_addr,
-                                          addr_type, dev_type));
-}
-
-/*******************************************************************************
- *
- * Function         BTA_DmBlePasskeyReply
- *
- * Description      Send BLE SMP passkey reply.
- *
- * Parameters:      bd_addr          - BD address of the peer
- *                  accept           - passkey entry sucessful or declined.
- *                  passkey          - passkey value, must be a 6 digit number,
- *                                     can be lead by 0.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmBlePasskeyReply(const RawAddress& bd_addr, bool accept,
-                           uint32_t passkey) {
-  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_ble_passkey_reply, bd_addr,
-                                          accept, accept ? passkey : 0));
-}
-
-/*******************************************************************************
- *
- * Function         BTA_DmBleConfirmReply
- *
- * Description      Send BLE SMP SC user confirmation reply.
- *
- * Parameters:      bd_addr          - BD address of the peer
- *                  accept           - numbers to compare are the same or
- *                                     different.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmBleConfirmReply(const RawAddress& bd_addr, bool accept) {
-  do_in_main_thread(FROM_HERE,
-                    base::Bind(bta_dm_ble_confirm_reply, bd_addr, accept));
-}
-
-/*******************************************************************************
- *
- * Function         BTA_DmBleSecurityGrant
- *
- * Description      Grant security request access.
- *
- * Parameters:      bd_addr          - BD address of the peer
- *                  res              - security grant status.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmBleSecurityGrant(const RawAddress& bd_addr,
-                            tBTA_DM_BLE_SEC_GRANT res) {
-  do_in_main_thread(FROM_HERE, base::Bind(BTM_SecurityGrant, bd_addr, res));
 }
 
 /*******************************************************************************
@@ -455,8 +230,8 @@ void BTA_DmSetBlePrefConnParams(const RawAddress& bd_addr,
                                 uint16_t supervision_tout) {
   do_in_main_thread(
       FROM_HERE,
-      base::Bind(bta_dm_ble_set_conn_params, bd_addr, min_conn_int,
-                 max_conn_int, peripheral_latency, supervision_tout));
+      base::BindOnce(bta_dm_ble_set_conn_params, bd_addr, min_conn_int,
+                     max_conn_int, peripheral_latency, supervision_tout));
 }
 
 /*******************************************************************************
@@ -482,8 +257,9 @@ void BTA_DmBleUpdateConnectionParams(const RawAddress& bd_addr,
                                      uint16_t latency, uint16_t timeout,
                                      uint16_t min_ce_len, uint16_t max_ce_len) {
   do_in_main_thread(
-      FROM_HERE, base::Bind(bta_dm_ble_update_conn_params, bd_addr, min_int,
-                            max_int, latency, timeout, min_ce_len, max_ce_len));
+      FROM_HERE,
+      base::BindOnce(bta_dm_ble_update_conn_params, bd_addr, min_int, max_int,
+                     latency, timeout, min_ce_len, max_ce_len));
 }
 
 /*******************************************************************************
@@ -498,8 +274,12 @@ void BTA_DmBleUpdateConnectionParams(const RawAddress& bd_addr,
  *
  ******************************************************************************/
 void BTA_DmBleConfigLocalPrivacy(bool privacy_enable) {
-  do_in_main_thread(
-      FROM_HERE, base::Bind(bta_dm_ble_config_local_privacy, privacy_enable));
+  if (IS_FLAG_ENABLED(synchronous_bta_sec)) {
+    bta_dm_ble_config_local_privacy(privacy_enable);
+  } else {
+    do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_ble_config_local_privacy,
+                                                privacy_enable));
+  }
 }
 
 /*******************************************************************************
@@ -515,43 +295,13 @@ void BTA_DmBleConfigLocalPrivacy(bool privacy_enable) {
  ******************************************************************************/
 void BTA_DmBleGetEnergyInfo(tBTA_BLE_ENERGY_INFO_CBACK* p_cmpl_cback) {
   do_in_main_thread(FROM_HERE,
-                    base::Bind(bta_dm_ble_get_energy_info, p_cmpl_cback));
+                    base::BindOnce(bta_dm_ble_get_energy_info, p_cmpl_cback));
 }
 
 /** This function is to set maximum LE data packet size */
 void BTA_DmBleRequestMaxTxDataLength(const RawAddress& remote_device) {
   do_in_main_thread(FROM_HERE,
-                    base::Bind(bta_dm_ble_set_data_length, remote_device));
-}
-
-/*******************************************************************************
- *
- * Function         BTA_DmSetEncryption
- *
- * Description      This function is called to ensure that connection is
- *                  encrypted.  Should be called only on an open connection.
- *                  Typically only needed for connections that first want to
- *                  bring up unencrypted links, then later encrypt them.
- *
- * Parameters:      bd_addr       - Address of the peer device
- *                  transport     - transport of the link to be encruypted
- *                  p_callback    - Pointer to callback function to indicat the
- *                                  link encryption status
- *                  sec_act       - This is the security action to indicate
- *                                  what kind of BLE security level is required
- *                                  for the BLE link if BLE is supported.
- *                                  Note: This parameter is ignored for the
- *                                        BR/EDR or if BLE is not supported.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmSetEncryption(const RawAddress& bd_addr, tBT_TRANSPORT transport,
-                         tBTA_DM_ENCRYPT_CBACK* p_callback,
-                         tBTM_BLE_SEC_ACT sec_act) {
-  APPL_TRACE_API("%s", __func__);
-  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_set_encryption, bd_addr,
-                                          transport, p_callback, sec_act));
+                    base::BindOnce(bta_dm_ble_set_data_length, remote_device));
 }
 
 /*******************************************************************************
@@ -569,8 +319,8 @@ void BTA_DmSetEncryption(const RawAddress& bd_addr, tBT_TRANSPORT transport,
  ******************************************************************************/
 void BTA_DmCloseACL(const RawAddress& bd_addr, bool remove_dev,
                     tBT_TRANSPORT transport) {
-  do_in_main_thread(
-      FROM_HERE, base::Bind(bta_dm_close_acl, bd_addr, remove_dev, transport));
+  do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_close_acl, bd_addr,
+                                              remove_dev, transport));
 }
 
 /*******************************************************************************
@@ -590,9 +340,9 @@ void BTA_DmCloseACL(const RawAddress& bd_addr, bool remove_dev,
  ******************************************************************************/
 void BTA_DmBleObserve(bool start, uint8_t duration,
                       tBTA_DM_SEARCH_CBACK* p_results_cb) {
-  APPL_TRACE_API("%s:start = %d ", __func__, start);
-  do_in_main_thread(
-      FROM_HERE, base::Bind(bta_dm_ble_observe, start, duration, p_results_cb));
+  LOG_VERBOSE("%s:start = %d ", __func__, start);
+  do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_ble_observe, start,
+                                              duration, p_results_cb));
 }
 
 /*******************************************************************************
@@ -612,9 +362,9 @@ void BTA_DmBleObserve(bool start, uint8_t duration,
  *
  ******************************************************************************/
 void BTA_DmBleScan(bool start, uint8_t duration_sec, bool low_latency_scan) {
-  APPL_TRACE_API("%s:start = %d ", __func__, start);
-  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_ble_scan, start, duration_sec,
-                                          low_latency_scan));
+  LOG_VERBOSE("%s:start = %d ", __func__, start);
+  do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_ble_scan, start,
+                                              duration_sec, low_latency_scan));
 }
 
 /*******************************************************************************
@@ -631,9 +381,9 @@ void BTA_DmBleScan(bool start, uint8_t duration_sec, bool low_latency_scan) {
  *
  ******************************************************************************/
 void BTA_DmBleCsisObserve(bool observe, tBTA_DM_SEARCH_CBACK* p_results_cb) {
-  APPL_TRACE_API("%s:enable = %d ", __func__, observe);
-  do_in_main_thread(FROM_HERE,
-                    base::Bind(bta_dm_ble_csis_observe, observe, p_results_cb));
+  LOG_VERBOSE("%s:enable = %d ", __func__, observe);
+  do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_ble_csis_observe, observe,
+                                              p_results_cb));
 }
 
 /*******************************************************************************
@@ -645,7 +395,7 @@ void BTA_DmBleCsisObserve(bool observe, tBTA_DM_SEARCH_CBACK* p_results_cb) {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_VendorInit(void) { APPL_TRACE_API("BTA_VendorInit"); }
+void BTA_VendorInit(void) { LOG_VERBOSE("BTA_VendorInit"); }
 
 /*******************************************************************************
  *
@@ -657,8 +407,8 @@ void BTA_VendorInit(void) { APPL_TRACE_API("BTA_VendorInit"); }
  *
  ******************************************************************************/
 void BTA_DmClearEventFilter(void) {
-  APPL_TRACE_API("BTA_DmClearEventFilter");
-  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_clear_event_filter));
+  LOG_VERBOSE("BTA_DmClearEventFilter");
+  do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_clear_event_filter));
 }
 
 /*******************************************************************************
@@ -671,8 +421,8 @@ void BTA_DmClearEventFilter(void) {
  *
  ******************************************************************************/
 void BTA_DmClearEventMask(void) {
-  APPL_TRACE_API("BTA_DmClearEventMask");
-  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_clear_event_mask));
+  LOG_VERBOSE("BTA_DmClearEventMask");
+  do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_clear_event_mask));
 }
 
 /*******************************************************************************
@@ -685,8 +435,8 @@ void BTA_DmClearEventMask(void) {
  *
  ******************************************************************************/
 void BTA_DmClearFilterAcceptList(void) {
-  APPL_TRACE_API("BTA_DmClearFilterAcceptList");
-  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_clear_filter_accept_list));
+  LOG_VERBOSE("BTA_DmClearFilterAcceptList");
+  do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_clear_filter_accept_list));
 }
 
 /*******************************************************************************
@@ -699,8 +449,8 @@ void BTA_DmClearFilterAcceptList(void) {
  *
  ******************************************************************************/
 void BTA_DmLeRand(LeRandCallback cb) {
-  APPL_TRACE_API("BTA_DmLeRand");
-  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_le_rand, cb));
+  LOG_VERBOSE("BTA_DmLeRand");
+  do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_le_rand, std::move(cb)));
 }
 
 /*******************************************************************************
@@ -713,44 +463,45 @@ void BTA_DmLeRand(LeRandCallback cb) {
  *
  ******************************************************************************/
 void BTA_DmDisconnectAllAcls() {
-  APPL_TRACE_API("BTA_DmLeRand");
-  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_disconnect_all_acls));
+  LOG_VERBOSE("BTA_DmLeRand");
+  do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_disconnect_all_acls));
 }
 
 void BTA_DmSetEventFilterConnectionSetupAllDevices() {
-  APPL_TRACE_API("BTA_DmSetEventFilterConnectionSetupAllDevices");
+  LOG_VERBOSE("BTA_DmSetEventFilterConnectionSetupAllDevices");
   do_in_main_thread(
       FROM_HERE,
-      base::Bind(bta_dm_set_event_filter_connection_setup_all_devices));
+      base::BindOnce(bta_dm_set_event_filter_connection_setup_all_devices));
 }
 
 void BTA_DmAllowWakeByHid(
     std::vector<RawAddress> classic_hid_devices,
     std::vector<std::pair<RawAddress, uint8_t>> le_hid_devices) {
-  APPL_TRACE_API("BTA_DmAllowWakeByHid");
-  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_allow_wake_by_hid,
-                                          std::move(classic_hid_devices),
-                                          std::move(le_hid_devices)));
+  LOG_VERBOSE("BTA_DmAllowWakeByHid");
+  do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_allow_wake_by_hid,
+                                              std::move(classic_hid_devices),
+                                              std::move(le_hid_devices)));
 }
 
 void BTA_DmRestoreFilterAcceptList(
     std::vector<std::pair<RawAddress, uint8_t>> le_devices) {
-  APPL_TRACE_API("BTA_DmRestoreFilterAcceptList");
-  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_restore_filter_accept_list,
-                                          std::move(le_devices)));
+  LOG_VERBOSE("BTA_DmRestoreFilterAcceptList");
+  do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_restore_filter_accept_list,
+                                              std::move(le_devices)));
 }
 
 void BTA_DmSetDefaultEventMaskExcept(uint64_t mask, uint64_t le_mask) {
-  APPL_TRACE_API("BTA_DmSetDefaultEventMaskExcept");
-  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_set_default_event_mask_except,
-                                          mask, le_mask));
+  LOG_VERBOSE("BTA_DmSetDefaultEventMaskExcept");
+  do_in_main_thread(
+      FROM_HERE,
+      base::BindOnce(bta_dm_set_default_event_mask_except, mask, le_mask));
 }
 
 void BTA_DmSetEventFilterInquiryResultAllDevices() {
-  APPL_TRACE_API("BTA_DmSetEventFilterInquiryResultAllDevices");
+  LOG_VERBOSE("BTA_DmSetEventFilterInquiryResultAllDevices");
   do_in_main_thread(
       FROM_HERE,
-      base::Bind(bta_dm_set_event_filter_inquiry_result_all_devices));
+      base::BindOnce(bta_dm_set_event_filter_inquiry_result_all_devices));
 }
 
 /*******************************************************************************
@@ -763,8 +514,8 @@ void BTA_DmSetEventFilterInquiryResultAllDevices() {
  *
  ******************************************************************************/
 void BTA_DmBleResetId(void) {
-  APPL_TRACE_API("BTA_DmBleResetId");
-  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_ble_reset_id));
+  LOG_VERBOSE("BTA_DmBleResetId");
+  do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_ble_reset_id));
 }
 
 /*******************************************************************************
@@ -786,19 +537,24 @@ void BTA_DmBleResetId(void) {
 void BTA_DmBleSubrateRequest(const RawAddress& bd_addr, uint16_t subrate_min,
                              uint16_t subrate_max, uint16_t max_latency,
                              uint16_t cont_num, uint16_t timeout) {
-  APPL_TRACE_API("%s", __func__);
-  do_in_main_thread(FROM_HERE,
-                    base::Bind(bta_dm_ble_subrate_request, bd_addr, subrate_min,
-                               subrate_max, max_latency, cont_num, timeout));
+  LOG_VERBOSE("%s", __func__);
+  do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_ble_subrate_request,
+                                              bd_addr, subrate_min, subrate_max,
+                                              max_latency, cont_num, timeout));
 }
 
 bool BTA_DmCheckLeAudioCapable(const RawAddress& address) {
-  for (tBTM_INQ_INFO* inq_ent = BTM_InqDbFirst(); inq_ent != nullptr;
-       inq_ent = BTM_InqDbNext(inq_ent)) {
+  for (tBTM_INQ_INFO* inq_ent = get_btm_client_interface().db.BTM_InqDbFirst();
+       inq_ent != nullptr;
+       inq_ent = get_btm_client_interface().db.BTM_InqDbNext(inq_ent)) {
     if (inq_ent->results.remote_bd_addr != address) continue;
 
-    LOG_INFO("Device is LE Audio capable based on AD content");
-    return inq_ent->results.ble_ad_is_le_audio_capable;
+    if (inq_ent->results.ble_ad_is_le_audio_capable) {
+      LOG_INFO("Device is LE Audio capable based on AD content");
+      return true;
+    }
+
+    return false;
   }
   return false;
 }

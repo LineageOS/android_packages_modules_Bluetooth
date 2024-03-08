@@ -17,6 +17,10 @@
 
 #include "btm_api_mock.h"
 
+#include <optional>
+
+#include "bt_octets.h"
+#include "stack/include/btm_ble_sec_api.h"
 #include "types/raw_address.h"
 
 static bluetooth::manager::MockBtmInterface* btm_interface = nullptr;
@@ -24,14 +28,6 @@ static bluetooth::manager::MockBtmInterface* btm_interface = nullptr;
 void bluetooth::manager::SetMockBtmInterface(
     MockBtmInterface* mock_btm_interface) {
   btm_interface = mock_btm_interface;
-}
-
-bool BTM_GetSecurityFlagsByTransport(const RawAddress& bd_addr,
-                                     uint8_t* p_sec_flags,
-                                     tBT_TRANSPORT transport) {
-  LOG_ASSERT(btm_interface) << "Mock btm interface not set!";
-  return btm_interface->GetSecurityFlagsByTransport(bd_addr, p_sec_flags,
-                                                    transport);
 }
 
 bool BTM_IsLinkKeyKnown(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
@@ -95,12 +91,6 @@ void acl_disconnect_from_handle(uint16_t handle, tHCI_STATUS reason,
   return btm_interface->AclDisconnectFromHandle(handle, reason);
 }
 
-void btm_configure_data_path(uint8_t direction, uint8_t path_id,
-                             std::vector<uint8_t> vendor_config) {
-  LOG_ASSERT(btm_interface) << "Mock btm interface not set!";
-  return btm_interface->ConfigureDataPath(direction, path_id, vendor_config);
-}
-
 tBTM_INQ_INFO* BTM_InqDbFirst(void) {
   LOG_ASSERT(btm_interface) << "Mock btm interface not set!";
   return btm_interface->BTM_InqDbFirst();
@@ -108,4 +98,25 @@ tBTM_INQ_INFO* BTM_InqDbFirst(void) {
 tBTM_INQ_INFO* BTM_InqDbNext(tBTM_INQ_INFO* p_cur) {
   LOG_ASSERT(btm_interface) << "Mock btm interface not set!";
   return btm_interface->BTM_InqDbNext(p_cur);
+}
+
+std::optional<Octet16> BTM_BleGetPeerLTK(const RawAddress address) {
+  LOG_ASSERT(btm_interface) << "Mock btm interface not set!";
+  return btm_interface->BTM_BleGetPeerLTK(address);
+}
+
+std::optional<Octet16> BTM_BleGetPeerIRK(const RawAddress address) {
+  LOG_ASSERT(btm_interface) << "Mock btm interface not set!";
+  return btm_interface->BTM_BleGetPeerIRK(address);
+}
+
+bool BTM_BleIsLinkKeyKnown(const RawAddress address) {
+  LOG_ASSERT(btm_interface) << "Mock btm interface not set!";
+  return btm_interface->BTM_BleIsLinkKeyKnown(address);
+}
+
+std::optional<tBLE_BD_ADDR> BTM_BleGetIdentityAddress(
+    const RawAddress address) {
+  LOG_ASSERT(btm_interface) << "Mock btm interface not set!";
+  return btm_interface->BTM_BleGetIdentityAddress(address);
 }

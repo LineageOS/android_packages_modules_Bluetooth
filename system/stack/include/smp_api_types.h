@@ -22,86 +22,64 @@
 #include <base/strings/stringprintf.h>
 
 #include <cstdint>
+#include <string>
 
-#include "bt_target.h"  // Must be first to define build configuration
+#include "macros.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/smp_status.h"
 #include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
 
-/* SMP command code */
-typedef enum : uint8_t {
-  SMP_OPCODE_PAIRING_REQ = 0x01,
-  SMP_OPCODE_PAIRING_RSP = 0x02,
-  SMP_OPCODE_CONFIRM = 0x03,
-  SMP_OPCODE_RAND = 0x04,
-  SMP_OPCODE_PAIRING_FAILED = 0x05,
-  SMP_OPCODE_ENCRYPT_INFO = 0x06,
-  SMP_OPCODE_CENTRAL_ID = 0x07,
-  SMP_OPCODE_IDENTITY_INFO = 0x08,
-  SMP_OPCODE_ID_ADDR = 0x09,
-  SMP_OPCODE_SIGN_INFO = 0x0A,
-  SMP_OPCODE_SEC_REQ = 0x0B,
-  SMP_OPCODE_PAIR_PUBLIC_KEY = 0x0C,
-  SMP_OPCODE_PAIR_DHKEY_CHECK = 0x0D,
-  SMP_OPCODE_PAIR_KEYPR_NOTIF = 0x0E,
-  SMP_OPCODE_MAX = SMP_OPCODE_PAIR_KEYPR_NOTIF,
-  SMP_OPCODE_MIN = SMP_OPCODE_PAIRING_REQ,
-  // NOTE: For some reason this is outside the MAX/MIN values
-  SMP_OPCODE_PAIR_COMMITM = 0x0F,
-} tSMP_OPCODE;
-
-#define CASE_RETURN_TEXT(code) \
-  case code:                   \
-    return #code
-
-inline std::string smp_opcode_text(const tSMP_OPCODE& opcode) {
-  switch (opcode) {
-    CASE_RETURN_TEXT(SMP_OPCODE_PAIRING_REQ);
-    CASE_RETURN_TEXT(SMP_OPCODE_PAIRING_RSP);
-    CASE_RETURN_TEXT(SMP_OPCODE_CONFIRM);
-    CASE_RETURN_TEXT(SMP_OPCODE_RAND);
-    CASE_RETURN_TEXT(SMP_OPCODE_PAIRING_FAILED);
-    CASE_RETURN_TEXT(SMP_OPCODE_ENCRYPT_INFO);
-    CASE_RETURN_TEXT(SMP_OPCODE_CENTRAL_ID);
-    CASE_RETURN_TEXT(SMP_OPCODE_IDENTITY_INFO);
-    CASE_RETURN_TEXT(SMP_OPCODE_ID_ADDR);
-    CASE_RETURN_TEXT(SMP_OPCODE_SIGN_INFO);
-    CASE_RETURN_TEXT(SMP_OPCODE_SEC_REQ);
-    CASE_RETURN_TEXT(SMP_OPCODE_PAIR_PUBLIC_KEY);
-    CASE_RETURN_TEXT(SMP_OPCODE_PAIR_DHKEY_CHECK);
-    CASE_RETURN_TEXT(SMP_OPCODE_PAIR_KEYPR_NOTIF);
-    CASE_RETURN_TEXT(SMP_OPCODE_PAIR_COMMITM);
-    default:
-      return base::StringPrintf("UNKNOWN[%hhu]", opcode);
-  }
-}
-#undef CASE_RETURN_TEXT
-
 /* SMP event type */
 typedef enum : uint8_t {
-  SMP_EVT_NONE = 0,           /* Default no event */
-  SMP_IO_CAP_REQ_EVT = 1,     /* IO capability request event */
-  SMP_SEC_REQUEST_EVT = 2,    /* SMP pairing request */
-  SMP_PASSKEY_NOTIF_EVT = 3,  /* passkey notification event */
-  SMP_PASSKEY_REQ_EVT = 4,    /* passkey request event */
-  SMP_OOB_REQ_EVT = 5,        /* OOB request event */
-  SMP_NC_REQ_EVT = 6,         /* Numeric Comparison request event */
-  SMP_COMPLT_EVT = 7,         /* SMP complete event */
-  SMP_PEER_KEYPR_NOT_EVT = 8, /* Peer keypress notification */
+  SMP_EVT_NONE,           /* Default no event */
+  SMP_IO_CAP_REQ_EVT,     /* IO capability request event */
+  SMP_SEC_REQUEST_EVT,    /* SMP pairing request */
+  SMP_PASSKEY_NOTIF_EVT,  /* passkey notification event */
+  SMP_PASSKEY_REQ_EVT,    /* passkey request event */
+  SMP_OOB_REQ_EVT,        /* OOB request event */
+  SMP_NC_REQ_EVT,         /* Numeric Comparison request event */
+  SMP_COMPLT_EVT,         /* SMP complete event */
+  SMP_PEER_KEYPR_NOT_EVT, /* Peer keypress notification */
 
   /* SC OOB request event (both local and peer OOB data can be expected in
    * response) */
-  SMP_SC_OOB_REQ_EVT = 9,
-  /* SC OOB local data set is created (as result of SMP_CrLocScOobData(...)) */
-  SMP_SC_LOC_OOB_DATA_UP_EVT = 10,
-  SMP_UNUSED11 = 11,
-  SMP_BR_KEYS_REQ_EVT = 12, /* SMP over BR keys request event */
-  SMP_UNUSED13 = 13,
-  SMP_CONSENT_REQ_EVT = 14,   /* Consent request event */
-  SMP_LE_ADDR_ASSOC_EVT = 15, /* Identity address association event */
+  SMP_SC_OOB_REQ_EVT,
+  /* SC OOB local data set is created (as result of SMP_CrLocScOobData(...))
+   */
+  SMP_SC_LOC_OOB_DATA_UP_EVT,
+  SMP_UNUSED11,
+  SMP_BR_KEYS_REQ_EVT, /* SMP over BR keys request event */
+  SMP_UNUSED13,
+  SMP_CONSENT_REQ_EVT,           /* Consent request event */
+  SMP_LE_ADDR_ASSOC_EVT,         /* Identity address association event */
+  SMP_SIRK_VERIFICATION_REQ_EVT, /* SIRK verification request event */
 } tSMP_EVT;
+
+inline std::string smp_evt_to_text(const tSMP_EVT evt) {
+  switch (evt) {
+    CASE_RETURN_TEXT(SMP_EVT_NONE);
+    CASE_RETURN_TEXT(SMP_IO_CAP_REQ_EVT);
+    CASE_RETURN_TEXT(SMP_SEC_REQUEST_EVT);
+    CASE_RETURN_TEXT(SMP_PASSKEY_NOTIF_EVT);
+    CASE_RETURN_TEXT(SMP_PASSKEY_REQ_EVT);
+    CASE_RETURN_TEXT(SMP_OOB_REQ_EVT);
+    CASE_RETURN_TEXT(SMP_NC_REQ_EVT);
+    CASE_RETURN_TEXT(SMP_COMPLT_EVT);
+    CASE_RETURN_TEXT(SMP_PEER_KEYPR_NOT_EVT);
+    CASE_RETURN_TEXT(SMP_SC_OOB_REQ_EVT);
+    CASE_RETURN_TEXT(SMP_SC_LOC_OOB_DATA_UP_EVT);
+    CASE_RETURN_TEXT(SMP_UNUSED11);
+    CASE_RETURN_TEXT(SMP_BR_KEYS_REQ_EVT);
+    CASE_RETURN_TEXT(SMP_UNUSED13);
+    CASE_RETURN_TEXT(SMP_CONSENT_REQ_EVT);
+    CASE_RETURN_TEXT(SMP_LE_ADDR_ASSOC_EVT);
+    CASE_RETURN_TEXT(SMP_SIRK_VERIFICATION_REQ_EVT);
+    default:
+      return "UNKNOWN SMP EVENT";
+  }
+}
 
 /* Device IO capability */
 #define SMP_IO_CAP_IO BTM_IO_CAP_IO         /* DisplayYesNo */
@@ -243,5 +221,8 @@ typedef struct {
  * events occur.*/
 typedef tBTM_STATUS(tSMP_CALLBACK)(tSMP_EVT event, const RawAddress& bd_addr,
                                    const tSMP_EVT_DATA* p_data);
+/* Security Manager SIRK verification event - Called by the stack when Security
+ * Manager requires verification from CSIP.*/
+typedef tBTM_STATUS(tSMP_SIRK_CALLBACK)(const RawAddress& bd_addr);
 
 #endif  // SMP_API_TYPES_H

@@ -42,6 +42,7 @@ import android.util.Log;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.FeatureFlags;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -57,6 +58,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * The active device manager is responsible to handle a Room database
@@ -65,7 +67,8 @@ import java.util.concurrent.TimeUnit;
 public class DatabaseManager {
     private static final String TAG = "BluetoothDatabase";
 
-    private AdapterService mAdapterService = null;
+    private final AdapterService mAdapterService;
+    private final FeatureFlags mFeatureFlags;
     private HandlerThread mHandlerThread = null;
     private Handler mHandler = null;
     private final Object mDatabaseLock = new Object();
@@ -110,11 +113,10 @@ public class DatabaseManager {
     private static final String
             LEGACY_HEARING_AID_PRIORITY_PREFIX = "bluetooth_hearing_aid_priority_";
 
-    /**
-     * Constructor of the DatabaseManager
-     */
-    public DatabaseManager(AdapterService service) {
-        mAdapterService = service;
+    /** Constructor of the DatabaseManager */
+    public DatabaseManager(AdapterService service, FeatureFlags featureFlags) {
+        mAdapterService = Objects.requireNonNull(service, "Adapter service cannot be null");
+        mFeatureFlags = Objects.requireNonNull(featureFlags, "Feature Flags cannot be null");
         mMetadataChangedLog = EvictingQueue.create(METADATA_CHANGED_LOG_MAX_SIZE);
     }
 
@@ -175,16 +177,6 @@ public class DatabaseManager {
                 return;
             }
             switch (action) {
-                case BluetoothDevice.ACTION_BOND_STATE_CHANGED: {
-                    int state = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE,
-                            BluetoothDevice.ERROR);
-                    BluetoothDevice device =
-                            intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                    Objects.requireNonNull(device,
-                            "ACTION_BOND_STATE_CHANGED with no EXTRA_DEVICE");
-                    bondStateChanged(device, state);
-                    break;
-                }
                 case BluetoothAdapter.ACTION_STATE_CHANGED: {
                     int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
                             BluetoothAdapter.STATE_OFF);
@@ -197,6 +189,15 @@ public class DatabaseManager {
             }
         }
     };
+
+    /** Process a change in the bonding state for a device */
+    public void handleBondStateChanged(BluetoothDevice device, int fromState, int toState) {
+        if (mHandlerThread == null) {
+            Log.w(TAG, "handleBondStateChanged call but DatabaseManager cleaned up");
+            return;
+        }
+        mHandler.post(() -> bondStateChanged(device, toState));
+    }
 
     void bondStateChanged(BluetoothDevice device, int state) {
         synchronized (mMetadataCache) {
@@ -229,17 +230,17 @@ public class DatabaseManager {
      */
     @VisibleForTesting
     public boolean setCustomMeta(BluetoothDevice device, int key, byte[] newValue) {
-        synchronized (mMetadataCache) {
-            if (device == null) {
-                Log.e(TAG, "setCustomMeta: device is null");
-                return false;
-            }
-            if (!isValidMetaKey(key)) {
-                Log.e(TAG, "setCustomMeta: meta key invalid " + key);
-                return false;
-            }
+        if (device == null) {
+            Log.e(TAG, "setCustomMeta: device is null");
+            return false;
+        }
+        if (!isValidMetaKey(key)) {
+            Log.e(TAG, "setCustomMeta: meta key invalid " + key);
+            return false;
+        }
 
-            String address = device.getAddress();
+        String address = device.getAddress();
+        synchronized (mMetadataCache) {
             if (!mMetadataCache.containsKey(address)) {
                 createMetadata(address, false);
             }
@@ -254,28 +255,27 @@ public class DatabaseManager {
             data.setCustomizedMeta(key, newValue);
 
             updateDatabase(data);
-            mAdapterService.metadataChanged(address, key, newValue);
-            return true;
         }
+        mAdapterService.metadataChanged(address, key, newValue);
+        return true;
     }
 
     /**
      * Get customized metadata from database with requested key
      */
-    @VisibleForTesting
     public byte[] getCustomMeta(BluetoothDevice device, int key) {
+        if (device == null) {
+            Log.e(TAG, "getCustomMeta: device is null");
+            return null;
+        }
+        if (!isValidMetaKey(key)) {
+            Log.e(TAG, "getCustomMeta: meta key invalid " + key);
+            return null;
+        }
+
+        String address = device.getAddress();
+
         synchronized (mMetadataCache) {
-            if (device == null) {
-                Log.e(TAG, "getCustomMeta: device is null");
-                return null;
-            }
-            if (!isValidMetaKey(key)) {
-                Log.e(TAG, "getCustomMeta: meta key invalid " + key);
-                return null;
-            }
-
-            String address = device.getAddress();
-
             if (!mMetadataCache.containsKey(address)) {
                 Log.d(TAG, "getCustomMeta: device " + device + " is not in cache");
                 return null;
@@ -292,13 +292,13 @@ public class DatabaseManager {
     @VisibleForTesting
     public boolean setAudioPolicyMetadata(BluetoothDevice device,
             BluetoothSinkAudioPolicy policies) {
-        synchronized (mMetadataCache) {
-            if (device == null) {
-                Log.e(TAG, "setAudioPolicyMetadata: device is null");
-                return false;
-            }
+        if (device == null) {
+            Log.e(TAG, "setAudioPolicyMetadata: device is null");
+            return false;
+        }
 
-            String address = device.getAddress();
+        String address = device.getAddress();
+        synchronized (mMetadataCache) {
             if (!mMetadataCache.containsKey(address)) {
                 createMetadata(address, false);
             }
@@ -318,14 +318,14 @@ public class DatabaseManager {
      */
     @VisibleForTesting
     public BluetoothSinkAudioPolicy getAudioPolicyMetadata(BluetoothDevice device) {
+        if (device == null) {
+            Log.e(TAG, "getAudioPolicyMetadata: device is null");
+            return null;
+        }
+
+        String address = device.getAddress();
+
         synchronized (mMetadataCache) {
-            if (device == null) {
-                Log.e(TAG, "getAudioPolicyMetadata: device is null");
-                return null;
-            }
-
-            String address = device.getAddress();
-
             if (!mMetadataCache.containsKey(address)) {
                 Log.d(TAG, "getAudioPolicyMetadata: device " + device + " is not in cache");
                 return null;
@@ -361,21 +361,23 @@ public class DatabaseManager {
     @VisibleForTesting
     public boolean setProfileConnectionPolicy(BluetoothDevice device, int profile,
             int newConnectionPolicy) {
+        if (device == null) {
+            Log.e(TAG, "setProfileConnectionPolicy: device is null");
+            return false;
+        }
+
+        if (newConnectionPolicy != BluetoothProfile.CONNECTION_POLICY_UNKNOWN
+                && newConnectionPolicy != BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
+                && newConnectionPolicy != BluetoothProfile.CONNECTION_POLICY_ALLOWED) {
+            Log.e(
+                    TAG,
+                    "setProfileConnectionPolicy: invalid connection policy " + newConnectionPolicy);
+            return false;
+        }
+
+        String address = device.getAddress();
+
         synchronized (mMetadataCache) {
-            if (device == null) {
-                Log.e(TAG, "setProfileConnectionPolicy: device is null");
-                return false;
-            }
-
-            if (newConnectionPolicy != BluetoothProfile.CONNECTION_POLICY_UNKNOWN
-                    && newConnectionPolicy != BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
-                    && newConnectionPolicy != BluetoothProfile.CONNECTION_POLICY_ALLOWED) {
-                Log.e(TAG, "setProfileConnectionPolicy: invalid connection policy "
-                        + newConnectionPolicy);
-                return false;
-            }
-
-            String address = device.getAddress();
             if (!mMetadataCache.containsKey(address)) {
                 if (newConnectionPolicy == BluetoothProfile.CONNECTION_POLICY_UNKNOWN) {
                     return true;
@@ -419,16 +421,15 @@ public class DatabaseManager {
      * {@link BluetoothProfile.CONNECTION_POLICY_FORBIDDEN},
      * {@link BluetoothProfile.CONNECTION_POLICY_ALLOWED}
      */
-    @VisibleForTesting
     public int getProfileConnectionPolicy(BluetoothDevice device, int profile) {
+        if (device == null) {
+            Log.e(TAG, "getProfileConnectionPolicy: device is null");
+            return BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
+        }
+
+        String address = device.getAddress();
+
         synchronized (mMetadataCache) {
-            if (device == null) {
-                Log.e(TAG, "getProfileConnectionPolicy: device is null");
-                return BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-            }
-
-            String address = device.getAddress();
-
             if (!mMetadataCache.containsKey(address)) {
                 Log.d(TAG, "getProfileConnectionPolicy: device " + device.getAnonymizedAddress()
                         + " is not in cache");
@@ -456,20 +457,20 @@ public class DatabaseManager {
      */
     @VisibleForTesting
     public void setA2dpSupportsOptionalCodecs(BluetoothDevice device, int newValue) {
+        if (device == null) {
+            Log.e(TAG, "setA2dpOptionalCodec: device is null");
+            return;
+        }
+        if (newValue != BluetoothA2dp.OPTIONAL_CODECS_SUPPORT_UNKNOWN
+                && newValue != BluetoothA2dp.OPTIONAL_CODECS_NOT_SUPPORTED
+                && newValue != BluetoothA2dp.OPTIONAL_CODECS_SUPPORTED) {
+            Log.e(TAG, "setA2dpSupportsOptionalCodecs: invalid value " + newValue);
+            return;
+        }
+
+        String address = device.getAddress();
+
         synchronized (mMetadataCache) {
-            if (device == null) {
-                Log.e(TAG, "setA2dpOptionalCodec: device is null");
-                return;
-            }
-            if (newValue != BluetoothA2dp.OPTIONAL_CODECS_SUPPORT_UNKNOWN
-                    && newValue != BluetoothA2dp.OPTIONAL_CODECS_NOT_SUPPORTED
-                    && newValue != BluetoothA2dp.OPTIONAL_CODECS_SUPPORTED) {
-                Log.e(TAG, "setA2dpSupportsOptionalCodecs: invalid value " + newValue);
-                return;
-            }
-
-            String address = device.getAddress();
-
             if (!mMetadataCache.containsKey(address)) {
                 return;
             }
@@ -498,14 +499,14 @@ public class DatabaseManager {
     @VisibleForTesting
     @OptionalCodecsSupportStatus
     public int getA2dpSupportsOptionalCodecs(BluetoothDevice device) {
+        if (device == null) {
+            Log.e(TAG, "setA2dpOptionalCodec: device is null");
+            return BluetoothA2dp.OPTIONAL_CODECS_SUPPORT_UNKNOWN;
+        }
+
+        String address = device.getAddress();
+
         synchronized (mMetadataCache) {
-            if (device == null) {
-                Log.e(TAG, "setA2dpOptionalCodec: device is null");
-                return BluetoothA2dp.OPTIONAL_CODECS_SUPPORT_UNKNOWN;
-            }
-
-            String address = device.getAddress();
-
             if (!mMetadataCache.containsKey(address)) {
                 Log.d(TAG, "getA2dpOptionalCodec: device " + device + " is not in cache");
                 return BluetoothA2dp.OPTIONAL_CODECS_SUPPORT_UNKNOWN;
@@ -527,20 +528,20 @@ public class DatabaseManager {
      */
     @VisibleForTesting
     public void setA2dpOptionalCodecsEnabled(BluetoothDevice device, int newValue) {
+        if (device == null) {
+            Log.e(TAG, "setA2dpOptionalCodecEnabled: device is null");
+            return;
+        }
+        if (newValue != BluetoothA2dp.OPTIONAL_CODECS_PREF_UNKNOWN
+                && newValue != BluetoothA2dp.OPTIONAL_CODECS_PREF_DISABLED
+                && newValue != BluetoothA2dp.OPTIONAL_CODECS_PREF_ENABLED) {
+            Log.e(TAG, "setA2dpOptionalCodecsEnabled: invalid value " + newValue);
+            return;
+        }
+
+        String address = device.getAddress();
+
         synchronized (mMetadataCache) {
-            if (device == null) {
-                Log.e(TAG, "setA2dpOptionalCodecEnabled: device is null");
-                return;
-            }
-            if (newValue != BluetoothA2dp.OPTIONAL_CODECS_PREF_UNKNOWN
-                    && newValue != BluetoothA2dp.OPTIONAL_CODECS_PREF_DISABLED
-                    && newValue != BluetoothA2dp.OPTIONAL_CODECS_PREF_ENABLED) {
-                Log.e(TAG, "setA2dpOptionalCodecsEnabled: invalid value " + newValue);
-                return;
-            }
-
-            String address = device.getAddress();
-
             if (!mMetadataCache.containsKey(address)) {
                 return;
             }
@@ -569,14 +570,13 @@ public class DatabaseManager {
     @VisibleForTesting
     @OptionalCodecsPreferenceStatus
     public int getA2dpOptionalCodecsEnabled(BluetoothDevice device) {
+        if (device == null) {
+            Log.e(TAG, "getA2dpOptionalCodecEnabled: device is null");
+            return BluetoothA2dp.OPTIONAL_CODECS_PREF_UNKNOWN;
+        }
+        String address = device.getAddress();
+
         synchronized (mMetadataCache) {
-            if (device == null) {
-                Log.e(TAG, "getA2dpOptionalCodecEnabled: device is null");
-                return BluetoothA2dp.OPTIONAL_CODECS_PREF_UNKNOWN;
-            }
-
-            String address = device.getAddress();
-
             if (!mMetadataCache.containsKey(address)) {
                 Log.d(TAG, "getA2dpOptionalCodecEnabled: device " + device + " is not in cache");
                 return BluetoothA2dp.OPTIONAL_CODECS_PREF_UNKNOWN;
@@ -587,89 +587,153 @@ public class DatabaseManager {
         }
     }
 
+    @GuardedBy("mMetadataCache")
+    private void setConnection(BluetoothDevice device, boolean isActiveA2dp, boolean isActiveHfp) {
+        if (device == null) {
+            Log.e(TAG, "setConnection: device is null");
+            return;
+        }
+        String address = device.getAddress();
+
+        if (!mMetadataCache.containsKey(address)) {
+            createMetadata(address, isActiveA2dp, isActiveHfp);
+            return;
+        }
+        // Updates last_active_time to the current counter value and increments the counter
+        Metadata metadata = mMetadataCache.get(address);
+        synchronized (MetadataDatabase.class) {
+            metadata.last_active_time = MetadataDatabase.sCurrentConnectionNumber++;
+        }
+
+        // Only update is_active_a2dp_device if an a2dp device is connected
+        if (isActiveA2dp) {
+            metadata.is_active_a2dp_device = true;
+        }
+
+        if (isActiveHfp) {
+            metadata.isActiveHfpDevice = true;
+        }
+
+        Log.d(
+                TAG,
+                "Updating last connected time for device: "
+                        + device
+                        + " to "
+                        + metadata.last_active_time);
+        updateDatabase(metadata);
+    }
+
     /**
      * Updates the time this device was last connected
      *
      * @param device is the remote bluetooth device for which we are setting the connection time
      */
-    public void setConnection(BluetoothDevice device, boolean isA2dpDevice) {
+    public void setConnection(BluetoothDevice device) {
         synchronized (mMetadataCache) {
-            Log.d(TAG, "setConnection: device " + device.getAnonymizedAddress()
-                    + " and isA2dpDevice=" + isA2dpDevice);
-            if (device == null) {
-                Log.e(TAG, "setConnection: device is null");
-                return;
-            }
-
-            if (isA2dpDevice) {
-                resetActiveA2dpDevice();
-            }
-
-            String address = device.getAddress();
-
-            if (!mMetadataCache.containsKey(address)) {
-                Log.d(TAG, "setConnection: Creating new metadata entry for device: " + device);
-                createMetadata(address, isA2dpDevice);
-                return;
-            }
-            // Updates last_active_time to the current counter value and increments the counter
-            Metadata metadata = mMetadataCache.get(address);
-            synchronized (MetadataDatabase.class) {
-                metadata.last_active_time = MetadataDatabase.sCurrentConnectionNumber++;
-            }
-
-            // Only update is_active_a2dp_device if an a2dp device is connected
-            if (isA2dpDevice) {
-                metadata.is_active_a2dp_device = true;
-            }
-
-            Log.d(TAG, "Updating last connected time for device: " + device.getAnonymizedAddress()
-                    + " to " + metadata.last_active_time);
-            updateDatabase(metadata);
+            setConnection(device, false, false);
         }
     }
 
     /**
-     * Sets is_active_device to false if currently true for device
+     * Updates the time this device was last connected with its profile information
      *
-     * @param device is the remote bluetooth device with which we have disconnected a2dp
+     * @param device is the remote bluetooth device for which we are setting the connection time
+     * @param profileId see {@link BluetoothProfile}
      */
-    public void setDisconnection(BluetoothDevice device) {
+    public void setConnection(BluetoothDevice device, int profileId) {
+        boolean isA2dpDevice = profileId == BluetoothProfile.A2DP;
+        boolean isHfpDevice = profileId == BluetoothProfile.HEADSET;
+
         synchronized (mMetadataCache) {
-            if (device == null) {
-                Log.e(TAG, "setDisconnection: device is null");
-                return;
+            if (isA2dpDevice) {
+                resetActiveA2dpDevice();
+            }
+            if (isHfpDevice && !mFeatureFlags.autoConnectOnMultipleHfpWhenNoA2dpDevice()) {
+                resetActiveHfpDevice();
             }
 
-            String address = device.getAddress();
+            setConnection(device, isA2dpDevice, isHfpDevice);
+        }
+    }
 
+    /**
+     * Sets device profileId's active status to false if currently true
+     *
+     * @param device is the remote bluetooth device with which we have disconnected
+     * @param profileId see {@link BluetoothProfile}
+     */
+    public void setDisconnection(BluetoothDevice device, int profileId) {
+        if (device == null) {
+            Log.e(
+                    TAG,
+                    "setDisconnection: device is null, "
+                            + "profileId: "
+                            + BluetoothProfile.getProfileName(profileId));
+            return;
+        }
+        Log.d(
+                TAG,
+                "setDisconnection: device "
+                        + device
+                        + "profileId: "
+                        + BluetoothProfile.getProfileName(profileId));
+
+        if (profileId != BluetoothProfile.A2DP && profileId != BluetoothProfile.HEADSET) {
+            // there is no change on metadata when profile is neither A2DP nor Headset
+            return;
+        }
+
+        String address = device.getAddress();
+
+        synchronized (mMetadataCache) {
             if (!mMetadataCache.containsKey(address)) {
                 return;
             }
-            // Updates last connected time to either current time if connected or -1 if disconnected
             Metadata metadata = mMetadataCache.get(address);
-            if (metadata.is_active_a2dp_device) {
+
+            if (profileId == BluetoothProfile.A2DP && metadata.is_active_a2dp_device) {
                 metadata.is_active_a2dp_device = false;
-                Log.d(TAG, "setDisconnection: Updating is_active_device to false for device: "
-                        + device);
+                Log.d(
+                        TAG,
+                        "setDisconnection: Updating is_active_device to false for device: "
+                                + device);
+                updateDatabase(metadata);
+            }
+            if (profileId == BluetoothProfile.HEADSET && metadata.isActiveHfpDevice) {
+                metadata.isActiveHfpDevice = false;
+                Log.d(
+                        TAG,
+                        "setDisconnection: Updating isActiveHfpDevice to false for device: "
+                                + device);
                 updateDatabase(metadata);
             }
         }
     }
 
-    /**
-     * Remove a2dpActiveDevice from the current active device in the connection order table
-     */
+    /** Remove a2dpActiveDevice from the current active device in the connection order table */
+    @GuardedBy("mMetadataCache")
     private void resetActiveA2dpDevice() {
-        synchronized (mMetadataCache) {
-            Log.d(TAG, "resetActiveA2dpDevice()");
-            for (Map.Entry<String, Metadata> entry : mMetadataCache.entrySet()) {
-                Metadata metadata = entry.getValue();
-                if (metadata.is_active_a2dp_device) {
-                    Log.d(TAG, "resetActiveA2dpDevice");
-                    metadata.is_active_a2dp_device = false;
-                    updateDatabase(metadata);
-                }
+        Log.d(TAG, "resetActiveA2dpDevice()");
+        for (Map.Entry<String, Metadata> entry : mMetadataCache.entrySet()) {
+            Metadata metadata = entry.getValue();
+            if (metadata.is_active_a2dp_device) {
+                Log.d(TAG, "resetActiveA2dpDevice");
+                metadata.is_active_a2dp_device = false;
+                updateDatabase(metadata);
+            }
+        }
+    }
+
+    /** Remove hfpActiveDevice from the current active device in the connection order table */
+    @GuardedBy("mMetadataCache")
+    private void resetActiveHfpDevice() {
+        Log.d(TAG, "resetActiveHfpDevice()");
+        for (Map.Entry<String, Metadata> entry : mMetadataCache.entrySet()) {
+            Metadata metadata = entry.getValue();
+            if (metadata.isActiveHfpDevice) {
+                Log.d(TAG, "resetActiveHfpDevice");
+                metadata.isActiveHfpDevice = false;
+                updateDatabase(metadata);
             }
         }
     }
@@ -725,7 +789,6 @@ public class DatabaseManager {
                     mostRecentLastActiveTime = metadata.last_active_time;
                     mostRecentDevice = device;
                 }
-
             }
         }
         return mostRecentDevice;
@@ -755,6 +818,49 @@ public class DatabaseManager {
     }
 
     /**
+     * Gets the last active HFP device
+     *
+     * @return the most recently active HFP device or null if the last hfp device was null
+     */
+    public BluetoothDevice getMostRecentlyActiveHfpDevice() {
+        Map.Entry<String, Metadata> entry;
+        synchronized (mMetadataCache) {
+            entry =
+                    mMetadataCache.entrySet().stream()
+                            .filter(x -> x.getValue().isActiveHfpDevice)
+                            .findFirst()
+                            .orElse(null);
+        }
+        if (entry != null) {
+            try {
+                return BluetoothAdapter.getDefaultAdapter()
+                        .getRemoteDevice(entry.getValue().getAddress());
+            } catch (IllegalArgumentException ex) {
+                Log.d(
+                        TAG,
+                        "getMostRecentlyActiveHfpDevice: Invalid address for "
+                                + "device "
+                                + entry.getValue().getAnonymizedAddress());
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return the list of device registered as HFP active
+     */
+    public List<BluetoothDevice> getMostRecentlyActiveHfpDevices() {
+        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+        synchronized (mMetadataCache) {
+            return mMetadataCache.entrySet().stream()
+                    .filter(x -> x.getValue().isActiveHfpDevice)
+                    .map(x -> adapter.getRemoteDevice(x.getValue().getAddress()))
+                    .collect(Collectors.toList());
+        }
+    }
+
+    /**
      *
      * @param metadataList is the list of metadata
      */
@@ -778,20 +884,20 @@ public class DatabaseManager {
     }
 
     /**
-     * Sets the preferred profile for the supplied audio modes. See
-     * {@link BluetoothAdapter#setPreferredAudioProfiles(BluetoothDevice, Bundle)} for more details.
+     * Sets the preferred profile for the supplied audio modes. See {@link
+     * BluetoothAdapter#setPreferredAudioProfiles(BluetoothDevice, Bundle)} for more details.
      *
-     * If a device in the group has been designated to store the preference for the group, this will
-     * update its database preferences. If there is not one designated, the first device from the
-     * group list will be chosen for this purpose. From then on, any preferred audio profile changes
-     * for this group will be stored on that device.
+     * <p>If a device in the group has been designated to store the preference for the group, this
+     * will update its database preferences. If there is not one designated, the first device from
+     * the group list will be chosen for this purpose. From then on, any preferred audio profile
+     * changes for this group will be stored on that device.
      *
      * @param groupDevices is the CSIP group for which we are setting the preferred audio profiles
      * @param modeToProfileBundle contains the preferred profile
      * @return whether the new preferences were saved in the database
      */
-    public int setPreferredAudioProfiles(List<BluetoothDevice> groupDevices,
-            Bundle modeToProfileBundle) {
+    public int setPreferredAudioProfiles(
+            List<BluetoothDevice> groupDevices, Bundle modeToProfileBundle) {
         Objects.requireNonNull(groupDevices, "groupDevices must not be null");
         Objects.requireNonNull(modeToProfileBundle, "modeToProfileBundle must not be null");
         if (groupDevices.isEmpty()) {
@@ -803,7 +909,7 @@ public class DatabaseManager {
         boolean isPreferenceSet = false;
 
         synchronized (mMetadataCache) {
-            for (BluetoothDevice device: groupDevices) {
+            for (BluetoothDevice device : groupDevices) {
                 if (device == null) {
                     Log.e(TAG, "setPreferredAudioProfiles: device is null");
                     throw new IllegalArgumentException("setPreferredAudioProfiles: device is null");
@@ -872,39 +978,40 @@ public class DatabaseManager {
      * @return a Bundle containing the preferred audio profiles
      */
     public Bundle getPreferredAudioProfiles(BluetoothDevice device) {
+        if (device == null) {
+            Log.e(TAG, "getPreferredAudioProfiles: device is null");
+            throw new IllegalArgumentException("getPreferredAudioProfiles: device is null");
+        }
+
+        String address = device.getAddress();
+        final int outputOnlyProfile;
+        final int duplexProfile;
+
         synchronized (mMetadataCache) {
-            if (device == null) {
-                Log.e(TAG, "getPreferredAudioProfiles: device is null");
-                throw new IllegalArgumentException("getPreferredAudioProfiles: device is null");
-            }
-
-            String address = device.getAddress();
-
             if (!mMetadataCache.containsKey(address)) {
                 return Bundle.EMPTY;
             }
 
             // Gets the preferred audio profiles for each audio mode
             Metadata metadata = mMetadataCache.get(address);
-            int outputOnlyProfile = metadata.preferred_output_only_profile;
-            int duplexProfile = metadata.preferred_duplex_profile;
-
-            // Checks if the default values are present (aka no explicit preference)
-            if (outputOnlyProfile == 0 && duplexProfile == 0) {
-                return Bundle.EMPTY;
-            }
-
-            Bundle modeToProfileBundle = new Bundle();
-            if (outputOnlyProfile != 0) {
-                modeToProfileBundle.putInt(BluetoothAdapter.AUDIO_MODE_OUTPUT_ONLY,
-                        outputOnlyProfile);
-            }
-            if (duplexProfile != 0) {
-                modeToProfileBundle.putInt(BluetoothAdapter.AUDIO_MODE_DUPLEX, duplexProfile);
-            }
-
-            return modeToProfileBundle;
+            outputOnlyProfile = metadata.preferred_output_only_profile;
+            duplexProfile = metadata.preferred_duplex_profile;
         }
+
+        // Checks if the default values are present (aka no explicit preference)
+        if (outputOnlyProfile == 0 && duplexProfile == 0) {
+            return Bundle.EMPTY;
+        }
+
+        Bundle modeToProfileBundle = new Bundle();
+        if (outputOnlyProfile != 0) {
+            modeToProfileBundle.putInt(BluetoothAdapter.AUDIO_MODE_OUTPUT_ONLY, outputOnlyProfile);
+        }
+        if (duplexProfile != 0) {
+            modeToProfileBundle.putInt(BluetoothAdapter.AUDIO_MODE_DUPLEX, duplexProfile);
+        }
+
+        return modeToProfileBundle;
     }
 
     /**
@@ -928,10 +1035,6 @@ public class DatabaseManager {
      */
     public void start(MetadataDatabase database) {
         Log.d(TAG, "start()");
-        if (mAdapterService == null) {
-            Log.e(TAG, "stat failed, mAdapterService is null.");
-            return;
-        }
 
         if (database == null) {
             Log.e(TAG, "stat failed, database is null.");
@@ -948,7 +1051,6 @@ public class DatabaseManager {
 
         IntentFilter filter = new IntentFilter();
         filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
-        filter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
         filter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
         mAdapterService.registerReceiver(mReceiver, filter);
 
@@ -970,9 +1072,7 @@ public class DatabaseManager {
         mHandler.sendMessage(message);
     }
 
-    /**
-     * Close and de-init the DatabaseManager
-     */
+    /** Close and de-init the DatabaseManager */
     public void cleanup() {
         removeUnusedMetadata();
         mAdapterService.unregisterReceiver(mReceiver);
@@ -984,8 +1084,26 @@ public class DatabaseManager {
     }
 
     void createMetadata(String address, boolean isActiveA2dpDevice) {
-        Metadata data = new Metadata(address);
-        data.is_active_a2dp_device = isActiveA2dpDevice;
+        createMetadata(address, isActiveA2dpDevice, false);
+    }
+
+    void createMetadata(String address, boolean isActiveA2dpDevice, boolean isActiveHfpDevice) {
+        Metadata.Builder dataBuilder = new Metadata.Builder(address);
+
+        if (isActiveA2dpDevice) {
+            dataBuilder.setActiveA2dp();
+        }
+        if (isActiveHfpDevice) {
+            dataBuilder.setActiveHfp();
+        }
+
+        Metadata data = dataBuilder.build();
+        Log.d(
+                TAG,
+                "createMetadata: "
+                        + (" address=" + data.getAnonymizedAddress())
+                        + (" isActiveHfpDevice=" + isActiveHfpDevice)
+                        + (" isActiveA2dpDevice=" + isActiveA2dpDevice));
         mMetadataCache.put(address, data);
         updateDatabase(data);
         logMetadataChange(data, "Metadata created");

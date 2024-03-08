@@ -4,6 +4,7 @@ import sys
 from mmi2grpc._helpers import assert_description
 from mmi2grpc._helpers import match_description
 from mmi2grpc._proxy import ProfileProxy
+from mmi2grpc._rootcanal import Dongle
 
 from pandora.host_grpc import Host
 from pandora.host_pb2 import PUBLIC, RANDOM, Connection
@@ -20,14 +21,20 @@ class L2CAPProxy(ProfileProxy):
     LE_DATA_PACKET1 = "data: LE_PACKET1"
     connection: Optional[Connection] = None
 
-    def __init__(self, channel):
+    def __init__(self, channel, rootcanal):
         super().__init__(channel)
         self.l2cap = L2CAP(channel)
         self.host = Host(channel)
         self.security = Security(channel)
+        self.rootcanal = rootcanal
 
         self.connection = None
         self.pairing_events = None
+
+    def test_started(self, test: str, **kwargs):
+        self.rootcanal.select_pts_dongle(Dongle.CSR_RCK_PTS_DONGLE)
+
+        return "OK"
 
     @assert_description
     def MMI_IUT_SEND_LE_CREDIT_BASED_CONNECTION_REQUEST(self, test: str, pts_addr: bytes, **kwargs):
@@ -97,6 +104,7 @@ class L2CAPProxy(ProfileProxy):
         Place the IUT into LE connectable mode.
         """
         self.advertise = self.host.Advertise(
+            legacy=True,
             connectable=True,
             own_address_type=PUBLIC,
         )
@@ -253,6 +261,16 @@ class L2CAPProxy(ProfileProxy):
         When receiving Credit Based Connection Request from PTS, please
         respond with Result 0x0005 (Insufficient Authentication)
         """
+        return self.MMI_IUT_SEND_INSUFFICIENT_AUTHENTICATION_ON_LE(test, **kwargs)
+
+    @assert_description
+    def MMI_IUT_SEND_INSUFFICIENT_AUTHENTICATION_ON_LE(self, test: str, **kwargs):
+        """
+        Please make sure an authentication requirement exists for a channel
+        L2CAP.
+        When receiving Credit Based Connection Request from PTS, please
+        respond with Result 0x0005 (Insufficient Authentication)
+        """
         if self.test_status_map[test] != "OK":
             print('error in _mmi_135', file=sys.stderr)
             raise Exception("Unexpected RECEIVE_COMMAND")
@@ -260,6 +278,16 @@ class L2CAPProxy(ProfileProxy):
 
     @assert_description
     def _mmi_136(self, **kwargs):
+        """
+        Please make sure an authorization requirement exists for a channel
+        L2CAP.
+        When receiving Credit Based Connection Request from PTS, please
+        respond with Result 0x0006 (Insufficient Authorization)
+        """
+        return self.MMI_IUT_SEND_INSUFFICIENT_AUTHORIZATION_ON_LE(**kwargs)
+
+    @assert_description
+    def MMI_IUT_SEND_INSUFFICIENT_AUTHORIZATION_ON_LE(self, **kwargs):
         """
         Please make sure an authorization requirement exists for a channel
         L2CAP.
@@ -500,6 +528,24 @@ class L2CAPProxy(ProfileProxy):
         """
         Did the Implementation Under Test(IUT) inform the Upper Tester the
         connection attempt failed?
+        """
+
+        return "OK"
+
+    @assert_description
+    def MMI_IUT_SEND_L2CAP_CONNECTION_REQ(self, **kwargs):
+        """
+        Please send L2CAP Connection REQ to PTS.
+        """
+
+        return "OK"
+
+    @assert_description
+    def MMI_CONFIRM_UPPER_TESTER_DOES_NOT_RECEIVE_DATA(self, **kwargs):
+        """
+        Please confirm the IUT does not send the L2CAP Data to the Upper Tester.
+        Click Yes if the IUT is not sending data to the Upper Tester. Otherwise
+        click No if it is.
         """
 
         return "OK"

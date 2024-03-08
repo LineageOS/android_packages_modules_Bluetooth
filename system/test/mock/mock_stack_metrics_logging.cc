@@ -20,29 +20,19 @@
  *
  *  mockcify.pl ver 0.2
  */
-
-#include <map>
-#include <string>
-
-// Original included files, if any
-// NOTE: Since this is a mock file with mock definitions some number of
-//       include files may not be required.  The include-what-you-use
-//       still applies, but crafting proper inclusion is out of scope
-//       for this effort.  This compilation unit may compile as-is, or
-//       may need attention to prune the inclusion set.
-#include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
-#include <frameworks/proto_logging/stats/enums/bluetooth/hci/enums.pb.h>
-
-#include "types/raw_address.h"
-
 // Mock include file to share data between tests and mock
 #include "test/mock/mock_stack_metrics_logging.h"
 
-// Mocked compile conditionals, if any
-#ifndef UNUSED_ATTR
-#define UNUSED_ATTR
-#endif
+#include <string>
 
+// Original included files, if any
+#include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
+#include <frameworks/proto_logging/stats/enums/bluetooth/hci/enums.pb.h>
+
+#include "test/common/mock_functions.h"
+#include "types/raw_address.h"
+
+// Mocked compile conditionals, if any
 // Mocked internal structures, if any
 
 namespace test {
@@ -57,6 +47,7 @@ struct log_sdp_attribute log_sdp_attribute;
 struct log_manufacturer_info log_manufacturer_info;
 struct log_counter_metrics log_counter_metrics;
 struct log_hfp_audio_packet_loss_stats log_hfp_audio_packet_loss_stats;
+struct log_mmc_transcode_rtt_stats log_mmc_transcode_rtt_stats;
 
 }  // namespace stack_metrics_logging
 }  // namespace mock
@@ -130,9 +121,17 @@ void log_counter_metrics(android::bluetooth::CodePathCounterKeyEnum key,
 
 void log_hfp_audio_packet_loss_stats(const RawAddress& address,
                                      int num_decoded_frames,
-                                     double packet_loss_ratio) {
+                                     double packet_loss_ratio,
+                                     uint16_t codec_type) {
   inc_func_call_count(__func__);
   test::mock::stack_metrics_logging::log_hfp_audio_packet_loss_stats(
-      address, num_decoded_frames, packet_loss_ratio);
+      address, num_decoded_frames, packet_loss_ratio, codec_type);
+}
+
+void log_mmc_transcode_rtt_stats(int maximum_rtt, double mean_rtt,
+                                 int num_requests, int codec_type) {
+  inc_func_call_count(__func__);
+  test::mock::stack_metrics_logging::log_mmc_transcode_rtt_stats(
+      maximum_rtt, mean_rtt, num_requests, codec_type);
 }
 // END mockcify generation

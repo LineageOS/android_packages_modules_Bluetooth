@@ -48,8 +48,7 @@ genrule {
 
 cc_defaults {
     name: "bluetooth_flatbuffer_bundler_defaults",
-    defaults: ["fluoride_common_options"],
-    cpp_std: "c++17",
+    defaults: ["bluetooth_cflags"],
     generated_headers: [
         "BluetoothGeneratedBundlerSchema_h_bfbs",
     ],
@@ -69,6 +68,7 @@ cc_binary_host {
     defaults: [
         "bluetooth_flatbuffer_bundler_defaults",
     ],
+    cflags: ["-Wno-unused-parameter"],
 }
 
 cc_test_host {
@@ -85,4 +85,5 @@ cc_test_host {
     test_options: {
         unit_test: true,
     },
+    cflags: ["-Wno-unused-parameter"],
 }

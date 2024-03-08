@@ -8,13 +8,10 @@ use bt_facade_proto::common::Data;
 use bt_facade_proto::empty::Empty;
 use bt_facade_proto::hci_facade::EventRequest;
 use bt_facade_proto::hci_facade_grpc::{create_hci_facade, HciFacade};
-use bt_packets::hci::{
-    AclPacket, CommandPacket, EventCode, EventPacket, IsoPacket, LeMetaEventPacket, ScoPacket,
-    SubeventCode,
-};
+use bt_packets::hci::{Acl, Command, Event, EventCode, Iso, LeMetaEvent, Sco, SubeventCode};
 use gddi::{module, provides, Stoppable};
 use grpcio::*;
-use num_traits::FromPrimitive;
+use std::convert::TryFrom;
 use tokio::sync::mpsc::{channel, Sender};
 
 module! {
@@ -32,8 +29,8 @@ async fn provide_facade(
     sco: ScoHal,
     iso: IsoHal,
 ) -> HciFacadeService {
-    let (evt_tx, evt_rx) = channel::<EventPacket>(10);
-    let (le_evt_tx, le_evt_rx) = channel::<LeMetaEventPacket>(10);
+    let (evt_tx, evt_rx) = channel::<Event>(10);
+    let (le_evt_tx, le_evt_rx) = channel::<LeMetaEvent>(10);
     HciFacadeService {
         commands,
         events,
@@ -56,28 +53,36 @@ async fn provide_facade(
 pub struct HciFacadeService {
     pub commands: RawCommandSender,
     events: EventRegistry,
-    evt_tx: Sender<EventPacket>,
-    pub evt_rx: RxAdapter<EventPacket>,
-    le_evt_tx: Sender<LeMetaEventPacket>,
-    pub le_evt_rx: RxAdapter<LeMetaEventPacket>,
-    pub acl_tx: Sender<AclPacket>,
-    pub acl_rx: RxAdapter<AclPacket>,
-    pub sco_tx: Sender<ScoPacket>,
-    pub sco_rx: RxAdapter<ScoPacket>,
-    pub iso_tx: Sender<IsoPacket>,
-    pub iso_rx: RxAdapter<IsoPacket>,
+    evt_tx: Sender<Event>,
+    pub evt_rx: RxAdapter<Event>,
+    le_evt_tx: Sender<LeMetaEvent>,
+    pub le_evt_rx: RxAdapter<LeMetaEvent>,
+    pub acl_tx: Sender<Acl>,
+    pub acl_rx: RxAdapter<Acl>,
+    pub sco_tx: Sender<Sco>,
+    pub sco_rx: RxAdapter<Sco>,
+    pub iso_tx: Sender<Iso>,
+    pub iso_rx: RxAdapter<Iso>,
 }
 
 impl HciFacadeService {
     /// Register for the event & plug in the channel to get them back on
     pub async fn register_event(&mut self, code: u32) {
-        self.events.register(EventCode::from_u32(code).unwrap(), self.evt_tx.clone()).await;
+        self.events
+            .register(
+                EventCode::try_from(u8::try_from(code).unwrap()).unwrap(),
+                self.evt_tx.clone(),
+            )
+            .await;
     }
 
     /// Register for the le event & plug in the channel to get them back on
     pub async fn register_le_event(&mut self, code: u32) {
         self.events
-            .register_le(SubeventCode::from_u32(code).unwrap(), self.le_evt_tx.clone())
+            .register_le(
+                SubeventCode::try_from(u8::try_from(code).unwrap()).unwrap(),
+                self.le_evt_tx.clone(),
+            )
             .await;
     }
 }
@@ -89,8 +94,8 @@ impl GrpcFacade for HciFacadeService {
 }
 
 impl HciFacade for HciFacadeService {
-    fn send_command(&mut self, ctx: RpcContext<'_>, mut data: Data, sink: UnarySink<Empty>) {
-        let packet = CommandPacket::parse(&data.take_payload()).unwrap();
+    fn send_command(&mut self, ctx: RpcContext<'_>, data: Data, sink: UnarySink<Empty>) {
+        let packet = Command::parse(&data.payload).unwrap();
         let mut commands = self.commands.clone();
         let evt_tx = self.evt_tx.clone();
         ctx.spawn(async move {
@@ -103,7 +108,7 @@ impl HciFacade for HciFacadeService {
     fn request_event(&mut self, ctx: RpcContext<'_>, req: EventRequest, sink: UnarySink<Empty>) {
         let mut clone = self.clone();
         ctx.spawn(async move {
-            clone.register_event(req.get_code()).await;
+            clone.register_event(req.code).await;
             sink.success(Empty::default()).await.unwrap();
         });
     }
@@ -116,15 +121,15 @@ impl HciFacade for HciFacadeService {
     ) {
         let mut clone = self.clone();
         ctx.spawn(async move {
-            clone.register_le_event(req.get_code()).await;
+            clone.register_le_event(req.code).await;
             sink.success(Empty::default()).await.unwrap();
         });
     }
 
-    fn send_acl(&mut self, ctx: RpcContext<'_>, mut packet: Data, sink: UnarySink<Empty>) {
+    fn send_acl(&mut self, ctx: RpcContext<'_>, packet: Data, sink: UnarySink<Empty>) {
         let acl_tx = self.acl_tx.clone();
         ctx.spawn(async move {
-            acl_tx.send(AclPacket::parse(&packet.take_payload()).unwrap()).await.unwrap();
+            acl_tx.send(Acl::parse(&packet.payload).unwrap()).await.unwrap();
             sink.success(Empty::default()).await.unwrap();
         });
     }

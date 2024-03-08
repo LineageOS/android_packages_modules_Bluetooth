@@ -14,8 +14,10 @@ rust_ffi {
     crate_name: "rootcanal_rs",
     srcs: [
         "src/lib.rs",
-        ":rootcanal_lmp_packets_rust_gen",
+
         ":rootcanal_hci_packets_rust_gen",
+        ":rootcanal_llcp_packets_rust_gen",
+        ":rootcanal_lmp_packets_rust_gen",
     ],
     edition: "2018",
     proc_macros: ["libnum_derive"],
@@ -24,6 +26,7 @@ rust_ffi {
         "libnum_bigint",
         "libnum_integer",
         "libnum_traits",
+        "libpdl_runtime",
         "libpin_utils",
         "librand",
         "libthiserror",
@@ -38,13 +41,22 @@ genrule {
     out: ["lmp_packets.rs"],
 }
 
+genrule {
+    name: "rootcanal_llcp_packets_rust_gen",
+    defaults: ["pdl_rust_generator_defaults"],
+    srcs: ["llcp_packets.pdl"],
+    out: ["llcp_packets.rs"],
+}
+
 rust_test_host {
     name: "rootcanal_rs_test",
     crate_name: "rootcanal_rs",
     srcs: [
         "src/lib.rs",
-        ":rootcanal_lmp_packets_rust_gen",
+
         ":rootcanal_hci_packets_rust_gen",
+        ":rootcanal_llcp_packets_rust_gen",
+        ":rootcanal_lmp_packets_rust_gen",
     ],
     auto_gen_config: true,
     edition: "2018",
@@ -53,11 +65,11 @@ rust_test_host {
         "libpaste",
     ],
     rustlibs: [
-        "libbt_packets",
         "libbytes",
         "libnum_bigint",
         "libnum_integer",
         "libnum_traits",
+        "libpdl_runtime",
         "libpin_utils",
         "librand",
         "libthiserror",

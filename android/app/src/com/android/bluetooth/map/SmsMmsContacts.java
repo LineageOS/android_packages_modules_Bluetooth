@@ -15,7 +15,6 @@
 
 package com.android.bluetooth.map;
 
-import android.annotation.TargetApi;
 import android.content.ContentResolver;
 import android.database.Cursor;
 import android.net.Uri;
@@ -37,7 +36,6 @@ import java.util.regex.Pattern;
  * Use these functions when extracting data for listings. It caches frequently used data to
  * speed up building large listings - e.g. before applying filtering.
  */
-@TargetApi(19)
 public class SmsMmsContacts {
 
     private static final String TAG = "SmsMmsContacts";

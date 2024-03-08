@@ -18,19 +18,19 @@
 
 #define LOG_TAG "bt_srvc"
 
-#include "bt_target.h"
+#include <base/logging.h>
+
 #include "gatt_api.h"
-#include "gatt_int.h"
+#include "hardware/bt_gatt_types.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "srvc_dis_int.h"
 #include "srvc_eng_int.h"
 #include "stack/include/bt_types.h"
+#include "stack/include/bt_uuid16.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
-
-#include <base/logging.h>
 
 using base::StringPrintf;
 #define DIS_MAX_NUM_INC_SVR 0
@@ -260,9 +260,16 @@ bool dis_gatt_c_read_dis_req(uint16_t conn_id) {
  ******************************************************************************/
 void dis_c_cmpl_cback(tSRVC_CLCB* p_clcb, tGATTC_OPTYPE op, tGATT_STATUS status,
                       tGATT_CL_COMPLETE* p_data) {
-  uint16_t read_type = dis_attr_uuid[dis_cb.dis_read_uuid_idx];
+  uint16_t read_type;
   uint8_t *pp = NULL, *p_str;
   uint16_t conn_id = p_clcb->conn_id;
+
+  if (dis_cb.dis_read_uuid_idx >= (sizeof(dis_attr_uuid)/sizeof(dis_attr_uuid[0]))) {
+    LOG(ERROR) << "invalid dis_cb.dis_read_uuid_idx";
+    return;
+  }
+
+  read_type = dis_attr_uuid[dis_cb.dis_read_uuid_idx];
 
   VLOG(1) << __func__
           << StringPrintf("op_code: 0x%02x  status: 0x%02x read_type: 0x%04x",
@@ -428,7 +435,7 @@ tDIS_STATUS DIS_SrUpdate(tDIS_ATTR_BIT dis_attr_bit, tDIS_ATTR* p_info) {
  *
  * Description      Read remote device DIS information.
  *
- * Returns          void
+ * Returns          true on success, false otherwise
  *
  ******************************************************************************/
 bool DIS_ReadDISInfo(const RawAddress& peer_bda, tDIS_READ_CBACK* p_cback,
@@ -453,8 +460,10 @@ bool DIS_ReadDISInfo(const RawAddress& peer_bda, tDIS_READ_CBACK* p_cback,
           << StringPrintf(" cl_read_uuid: 0x%04x",
                           dis_attr_uuid[dis_cb.dis_read_uuid_idx]);
 
-  GATT_GetConnIdIfConnected(srvc_eng_cb.gatt_if, peer_bda, &conn_id,
-                            BT_TRANSPORT_LE);
+  if (!GATT_GetConnIdIfConnected(srvc_eng_cb.gatt_if, peer_bda, &conn_id,
+                                 BT_TRANSPORT_LE)) {
+    conn_id = GATT_INVALID_CONN_ID;
+  }
 
   /* need to enhance it as multiple service is needed */
   srvc_eng_request_channel(peer_bda, SRVC_ID_DIS);

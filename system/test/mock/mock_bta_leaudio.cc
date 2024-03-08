@@ -23,17 +23,11 @@
 #include <base/functional/bind.h>
 #include <hardware/bt_le_audio.h>
 
-#include <map>
 #include <memory>
-#include <string>
 
 #include "bta/include/bta_le_audio_api.h"
 #include "test/common/mock_functions.h"
 #include "types/raw_address.h"
-
-#ifndef UNUSED_ATTR
-#define UNUSED_ATTR
-#endif
 
 /* Empty class to satisfy compiler */
 namespace bluetooth {
@@ -80,10 +74,7 @@ bool LeAudioClient::GetAsesForStorage(const RawAddress& addr,
   return false;
 }
 
-void LeAudioClient::Cleanup(base::Callback<void()> cleanupCb) {
-  std::move(cleanupCb).Run();
-  inc_func_call_count(__func__);
-}
+void LeAudioClient::Cleanup(void) { inc_func_call_count(__func__); }
 
 LeAudioClient* LeAudioClient::Get(void) {
   inc_func_call_count(__func__);
@@ -101,9 +92,3 @@ void LeAudioClient::Initialize(
   inc_func_call_count(__func__);
 }
 void LeAudioClient::DebugDump(int fd) { inc_func_call_count(__func__); }
-void LeAudioClient::InitializeAudioSetConfigurationProvider() {
-  inc_func_call_count(__func__);
-}
-void LeAudioClient::CleanupAudioSetConfigurationProvider() {
-  inc_func_call_count(__func__);
-}

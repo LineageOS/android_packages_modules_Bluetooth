@@ -1,3 +1,17 @@
+// Copyright 2023 The Android Open Source Project
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 use std::cell::{Cell, RefCell};
 use std::collections::VecDeque;
 use std::convert::{TryFrom, TryInto};
@@ -6,22 +20,20 @@ use std::pin::Pin;
 use std::rc::{Rc, Weak};
 use std::task::{Context, Poll};
 
+use pdl_runtime::Packet as _;
 use thiserror::Error;
 
-use crate::ffi::LinkManagerOps;
+use crate::ffi::ControllerOps;
 use crate::future::noop_waker;
 use crate::lmp::procedure;
 use crate::num_hci_command_packets;
 use crate::packets::{hci, lmp};
 
-use hci::Packet as _;
-use lmp::Packet as _;
-
 struct Link {
     peer: Cell<hci::Address>,
     // Only store one HCI packet as our Num_HCI_Command_Packets
     // is always 1
-    hci: Cell<Option<hci::CommandPacket>>,
+    hci: Cell<Option<hci::Command>>,
     lmp: RefCell<VecDeque<lmp::LmpPacket>>,
 }
 
@@ -40,11 +52,11 @@ impl Link {
         self.lmp.borrow_mut().push_back(packet);
     }
 
-    fn ingest_hci(&self, command: hci::CommandPacket) {
+    fn ingest_hci(&self, command: hci::Command) {
         assert!(self.hci.replace(Some(command)).is_none(), "HCI flow control violation");
     }
 
-    fn poll_hci_command<C: TryFrom<hci::CommandPacket>>(&self) -> Poll<C> {
+    fn poll_hci_command<C: TryFrom<hci::Command>>(&self) -> Poll<C> {
         let command = self.hci.take();
 
         if let Some(command) = command.clone().and_then(|c| c.try_into().ok()) {
@@ -88,13 +100,13 @@ pub enum LinkManagerError {
 pub const MAX_PEER_NUMBER: usize = 7;
 
 pub struct LinkManager {
-    ops: LinkManagerOps,
+    ops: ControllerOps,
     links: [Link; MAX_PEER_NUMBER],
     procedures: RefCell<[Option<Pin<Box<dyn Future<Output = ()>>>>; MAX_PEER_NUMBER]>,
 }
 
 impl LinkManager {
-    pub fn new(ops: LinkManagerOps) -> Self {
+    pub fn new(ops: ControllerOps) -> Self {
         Self { ops, links: Default::default(), procedures: Default::default() }
     }
 
@@ -117,14 +129,14 @@ impl LinkManager {
     /// with the specified error code.
     fn send_command_complete_event(
         &self,
-        command: &hci::CommandPacket,
+        command: &hci::Command,
         status: hci::ErrorCode,
     ) -> Result<(), LinkManagerError> {
         use hci::CommandChild::*;
         #[allow(unused_imports)]
         use Option::None; // Overwrite `None` variant of `Child` enum
 
-        let event: hci::EventPacket = match command.specialize() {
+        let event: hci::Event = match command.specialize() {
             LinkKeyRequestReply(packet) => hci::LinkKeyRequestReplyCompleteBuilder {
                 status,
                 bd_addr: packet.get_bd_addr(),
@@ -229,7 +241,7 @@ impl LinkManager {
         Ok(())
     }
 
-    pub fn ingest_hci(&self, command: hci::CommandPacket) -> Result<(), LinkManagerError> {
+    pub fn ingest_hci(&self, command: hci::Command) -> Result<(), LinkManagerError> {
         // Try to find the matching link from the command arguments
         let link = hci::command_connection_handle(&command)
             .and_then(|handle| self.ops.get_address(handle))
@@ -288,7 +300,7 @@ struct LinkContext {
 }
 
 impl procedure::Context for LinkContext {
-    fn poll_hci_command<C: TryFrom<hci::CommandPacket>>(&self) -> Poll<C> {
+    fn poll_hci_command<C: TryFrom<hci::Command>>(&self) -> Poll<C> {
         if let Some(manager) = self.manager.upgrade() {
             manager.link(self.index).poll_hci_command()
         } else {
@@ -304,7 +316,7 @@ impl procedure::Context for LinkContext {
         }
     }
 
-    fn send_hci_event<E: Into<hci::EventPacket>>(&self, event: E) {
+    fn send_hci_event<E: Into<hci::Event>>(&self, event: E) {
         if let Some(manager) = self.manager.upgrade() {
             manager.ops.send_hci_event(&event.into().to_vec())
         }
@@ -334,7 +346,7 @@ impl procedure::Context for LinkContext {
 
     fn extended_features(&self, features_page: u8) -> u64 {
         if let Some(manager) = self.manager.upgrade() {
-            manager.ops.extended_features(features_page)
+            manager.ops.get_extended_features(features_page)
         } else {
             0
         }

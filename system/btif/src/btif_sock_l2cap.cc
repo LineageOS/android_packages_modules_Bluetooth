@@ -32,12 +32,10 @@
 #include "btif/include/btif_uid.h"
 #include "include/hardware/bluetooth.h"
 #include "internal_include/bt_target.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/log.h"
 #include "osi/include/osi.h"
-#include "stack/btm/security_device_record.h"
 #include "stack/include/bt_hdr.h"
-#include "stack/include/bt_types.h"
 #include "types/raw_address.h"
 
 struct packet {
@@ -209,7 +207,8 @@ static void btsock_l2cap_free_l(l2cap_socket* sock) {
 
   btif_sock_connection_logger(
       SOCKET_CONNECTION_STATE_DISCONNECTED,
-      sock->server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, sock->addr);
+      sock->server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, sock->addr,
+      sock->channel, sock->name);
 
   // Whenever a socket is freed, the connection must be dropped
   log_socket_connection_state(
@@ -414,7 +413,8 @@ static void on_srv_l2cap_listen_started(tBTA_JV_L2CAP_START* p_start,
 
   btif_sock_connection_logger(
       SOCKET_CONNECTION_STATE_LISTENING,
-      sock->server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, sock->addr);
+      sock->server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, sock->addr,
+      sock->channel, sock->name);
 
   log_socket_connection_state(
       sock->addr, sock->id, sock->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
@@ -482,7 +482,7 @@ static void on_srv_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
   btif_sock_connection_logger(
       SOCKET_CONNECTION_STATE_CONNECTED,
       accept_rs->server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION,
-      accept_rs->addr);
+      accept_rs->addr, accept_rs->channel, accept_rs->name);
 
   log_socket_connection_state(
       accept_rs->addr, accept_rs->id,
@@ -526,7 +526,8 @@ static void on_cl_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
 
   btif_sock_connection_logger(
       SOCKET_CONNECTION_STATE_CONNECTED,
-      sock->server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, sock->addr);
+      sock->server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, sock->addr,
+      sock->channel, sock->name);
 
   log_socket_connection_state(
       sock->addr, sock->id, sock->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
@@ -582,7 +583,8 @@ static void on_l2cap_close(tBTA_JV_L2CAP_CLOSE* p_close, uint32_t id) {
 
   btif_sock_connection_logger(
       SOCKET_CONNECTION_STATE_DISCONNECTING,
-      sock->server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, sock->addr);
+      sock->server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, sock->addr,
+      sock->channel, sock->name);
 
   log_socket_connection_state(
       sock->addr, sock->id, sock->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
@@ -932,7 +934,6 @@ void btsock_l2cap_signaled(int fd, int flags, uint32_t user_id) {
            reported total size of awaiting packets. Hence, we adjust the buffer
            length. */
         buffer->len = count;
-        DVLOG(2) << __func__ << ": bytes received from socket: " << count;
 
         // will take care of freeing buffer
         BTA_JvL2capWrite(sock->handle, PTR_TO_UINT(buffer), buffer, user_id);
@@ -951,4 +952,22 @@ void btsock_l2cap_signaled(int fd, int flags, uint32_t user_id) {
     if (drop_it || ioctl(sock->our_fd, FIONREAD, &size) != 0 || size == 0)
       btsock_l2cap_free_l(sock);
   }
+}
+
+bt_status_t btsock_l2cap_disconnect(const RawAddress* bd_addr) {
+  if (!bd_addr) return BT_STATUS_PARM_INVALID;
+  if (!is_inited()) return BT_STATUS_NOT_READY;
+
+  std::unique_lock<std::mutex> lock(state_lock);
+  l2cap_socket* sock = socks;
+
+  while (sock) {
+    l2cap_socket* next = sock->next;
+    if (sock->addr == *bd_addr) {
+      btsock_l2cap_free_l(sock);
+    }
+    sock = next;
+  }
+
+  return BT_STATUS_SUCCESS;
 }

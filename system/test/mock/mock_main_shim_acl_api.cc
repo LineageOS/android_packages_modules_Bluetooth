@@ -19,9 +19,7 @@
  *   Functions generated:5
  */
 
-#include <cstddef>
 #include <cstdint>
-#include <map>
 #include <string>
 
 #include "main/shim/acl_api.h"
@@ -30,10 +28,6 @@
 #include "test/common/mock_functions.h"
 #include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
-
-#ifndef UNUSED_ATTR
-#define UNUSED_ATTR
-#endif
 
 void bluetooth::shim::ACL_CreateClassicConnection(
     const RawAddress& raw_address) {
@@ -65,9 +59,16 @@ void bluetooth::shim::ACL_Disconnect(uint16_t handle, bool is_classic,
 void bluetooth::shim::ACL_IgnoreAllLeConnections() {
   inc_func_call_count(__func__);
 }
-void bluetooth::shim::ACL_ReadConnectionAddress(const RawAddress& pseudo_addr,
+void bluetooth::shim::ACL_ReadConnectionAddress(uint16_t handle,
                                                 RawAddress& conn_addr,
-                                                tBLE_ADDR_TYPE* p_addr_type) {
+                                                tBLE_ADDR_TYPE* p_addr_type,
+                                                bool ota_address) {
+  inc_func_call_count(__func__);
+}
+void bluetooth::shim::ACL_ReadPeerConnectionAddress(uint16_t handle,
+                                                    RawAddress& conn_addr,
+                                                    tBLE_ADDR_TYPE* p_addr_type,
+                                                    bool ota_address) {
   inc_func_call_count(__func__);
 }
 std::optional<uint8_t> bluetooth::shim::ACL_GetAdvertisingSetConnectedTo(

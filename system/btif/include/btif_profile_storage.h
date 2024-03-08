@@ -23,6 +23,7 @@
 
 #include "bt_target.h"
 #include "btif_storage.h"
+#include "stack/include/btm_sec_api_types.h"
 #include "stack/include/bt_device_type.h"
 #include "stack/include/bt_octets.h"
 #include "types/ble_address_with_type.h"
@@ -122,6 +123,9 @@ void btif_storage_set_leaudio_supported_context_types(
     const RawAddress& addr, uint16_t sink_supported_context_type,
     uint16_t source_supported_context_type);
 
+/** Remove Le Audio device service data */
+void btif_storage_leaudio_clear_service_data(const RawAddress& address);
+
 /** Remove Le Audio device from the storage */
 void btif_storage_remove_leaudio(const RawAddress& address);
 
@@ -148,6 +152,7 @@ void btif_storage_update_csis_info(const RawAddress& addr);
 void btif_storage_load_bonded_csis_devices();
 void btif_storage_remove_csis_device(const RawAddress& address);
 
+void btif_storage_load_bonded_volume_control_devices(void);
 /*******************************************************************************
  * Function         btif_storage_load_hidd
  *

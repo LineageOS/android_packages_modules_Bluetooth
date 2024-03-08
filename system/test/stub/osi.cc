@@ -28,8 +28,6 @@
 
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
-#include "osi/include/array.h"
-#include "osi/include/buffer.h"
 #include "osi/include/config.h"
 #include "osi/include/fixed_queue.h"
 #include "osi/include/future.h"
@@ -159,50 +157,6 @@ void config_set_uint64(config_t* config, const std::string& section,
 }
 void section_t::Set(std::string key, std::string value) {
   inc_func_call_count(__func__);
-}
-
-bool array_append_ptr(array_t* array, void* data) {
-  inc_func_call_count(__func__);
-  return false;
-}
-bool array_append_value(array_t* array, uint32_t value) {
-  inc_func_call_count(__func__);
-  return false;
-}
-size_t array_length(const array_t* array) {
-  inc_func_call_count(__func__);
-  return 0;
-}
-void array_free(array_t* array) { inc_func_call_count(__func__); }
-void* array_at(const array_t* array, size_t index) {
-  inc_func_call_count(__func__);
-  return nullptr;
-}
-void* array_ptr(const array_t* array) {
-  inc_func_call_count(__func__);
-  return nullptr;
-}
-
-size_t allocation_tracker_expect_no_allocations(void) {
-  inc_func_call_count(__func__);
-  return 0;
-}
-size_t allocation_tracker_resize_for_canary(size_t size) {
-  inc_func_call_count(__func__);
-  return 0;
-}
-void allocation_tracker_reset(void) { inc_func_call_count(__func__); }
-void allocation_tracker_uninit(void) { inc_func_call_count(__func__); }
-void osi_allocator_debug_dump(int fd) { inc_func_call_count(__func__); }
-void* allocation_tracker_notify_alloc(uint8_t allocator_id, void* ptr,
-                                      size_t requested_size) {
-  inc_func_call_count(__func__);
-  return nullptr;
-}
-void* allocation_tracker_notify_free(UNUSED_ATTR uint8_t allocator_id,
-                                     void* ptr) {
-  inc_func_call_count(__func__);
-  return nullptr;
 }
 
 bool reactor_change_registration(reactor_object_t* object,
@@ -423,24 +377,6 @@ void alarm_set_on_mloop(alarm_t* alarm, uint64_t interval_ms,
 int osi_rand(void) {
   inc_func_call_count(__func__);
   return 0;
-}
-
-buffer_t* buffer_new_ref(const buffer_t* buf) {
-  inc_func_call_count(__func__);
-  return nullptr;
-}
-buffer_t* buffer_new_slice(const buffer_t* buf, size_t slice_size) {
-  inc_func_call_count(__func__);
-  return nullptr;
-}
-size_t buffer_length(const buffer_t* buf) {
-  inc_func_call_count(__func__);
-  return 0;
-}
-void buffer_free(buffer_t* buffer) { inc_func_call_count(__func__); }
-void* buffer_ptr(const buffer_t* buf) {
-  inc_func_call_count(__func__);
-  return nullptr;
 }
 
 bool socket_listen(const socket_t* socket, port_t port) {

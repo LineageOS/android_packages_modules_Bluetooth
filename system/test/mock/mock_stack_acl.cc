@@ -20,23 +20,19 @@
  *
  *  mockcify.pl ver 0.2.1
  */
+// Mock include file to share data between tests and mock
+#include "test/mock/mock_stack_acl.h"
 
 #include <cstdint>
-#include <functional>
-#include <map>
 #include <string>
 
-// Mock include file to share data between tests and mock
+#include "stack/include/acl_client_callbacks.h"
 #include "stack/include/bt_hdr.h"
-#include "test/mock/mock_stack_acl.h"
+#include "test/common/mock_functions.h"
 #include "types/class_of_device.h"
 #include "types/raw_address.h"
 
 // Mocked compile conditionals, if any
-#ifndef UNUSED_ATTR
-#define UNUSED_ATTR
-#endif
-
 // Mocked internal structures, if any
 
 namespace test {
@@ -53,6 +49,7 @@ struct BTM_IsAclConnectionUpFromHandle BTM_IsAclConnectionUpFromHandle;
 struct BTM_IsBleConnection BTM_IsBleConnection;
 struct BTM_IsPhy2mSupported BTM_IsPhy2mSupported;
 struct BTM_ReadRemoteConnectionAddr BTM_ReadRemoteConnectionAddr;
+struct BTM_IsRemoteVersionReceived BTM_IsRemoteVersionReceived;
 struct BTM_ReadRemoteVersion BTM_ReadRemoteVersion;
 struct BTM_is_sniff_allowed_for BTM_is_sniff_allowed_for;
 struct acl_create_le_connection acl_create_le_connection;
@@ -74,10 +71,7 @@ struct acl_peer_supports_ble_connection_subrating_host
 struct acl_refresh_remote_address acl_refresh_remote_address;
 struct acl_set_peer_le_features_from_handle
     acl_set_peer_le_features_from_handle;
-struct sco_peer_supports_esco_2m_phy sco_peer_supports_esco_2m_phy;
-struct sco_peer_supports_esco_3m_phy sco_peer_supports_esco_3m_phy;
 struct acl_create_classic_connection acl_create_classic_connection;
-struct IsEprAvailable IsEprAvailable;
 struct acl_get_connection_from_address acl_get_connection_from_address;
 struct btm_acl_for_bda btm_acl_for_bda;
 struct acl_get_connection_from_handle acl_get_connection_from_handle;
@@ -96,7 +90,6 @@ struct BTM_GetMaxPacketSize BTM_GetMaxPacketSize;
 struct BTM_GetNumAclLinks BTM_GetNumAclLinks;
 struct acl_get_supported_packet_types acl_get_supported_packet_types;
 struct BTM_GetPeerSCA BTM_GetPeerSCA;
-struct BTM_SetTraceLevel BTM_SetTraceLevel;
 struct acl_link_role_from_handle acl_link_role_from_handle;
 struct btm_handle_to_acl_index btm_handle_to_acl_index;
 struct BTM_ReadRemoteFeatures BTM_ReadRemoteFeatures;
@@ -112,36 +105,26 @@ struct BTM_default_block_role_switch BTM_default_block_role_switch;
 struct BTM_default_unblock_role_switch BTM_default_unblock_role_switch;
 struct BTM_unblock_role_switch_for BTM_unblock_role_switch_for;
 struct BTM_unblock_sniff_mode_for BTM_unblock_sniff_mode_for;
-struct HACK_acl_check_sm4 HACK_acl_check_sm4;
-struct acl_accept_connection_request acl_accept_connection_request;
 struct acl_disconnect_after_role_switch acl_disconnect_after_role_switch;
 struct acl_disconnect_from_handle acl_disconnect_from_handle;
-struct acl_link_segments_xmitted acl_link_segments_xmitted;
 struct acl_packets_completed acl_packets_completed;
 struct acl_process_extended_features acl_process_extended_features;
 struct acl_process_supported_features acl_process_supported_features;
 struct acl_rcv_acl_data acl_rcv_acl_data;
-struct acl_reject_connection_request acl_reject_connection_request;
 struct acl_send_data_packet_ble acl_send_data_packet_ble;
 struct acl_set_disconnect_reason acl_set_disconnect_reason;
 struct acl_write_automatic_flush_timeout acl_write_automatic_flush_timeout;
 struct btm_acl_connected btm_acl_connected;
-struct btm_acl_connection_request btm_acl_connection_request;
 struct btm_acl_created btm_acl_created;
 struct btm_acl_device_down btm_acl_device_down;
 struct btm_acl_disconnected btm_acl_disconnected;
 struct btm_acl_iso_disconnected btm_acl_iso_disconnected;
 struct btm_acl_encrypt_change btm_acl_encrypt_change;
 struct btm_acl_notif_conn_collision btm_acl_notif_conn_collision;
-struct btm_acl_paging btm_acl_paging;
 struct btm_acl_process_sca_cmpl_pkt btm_acl_process_sca_cmpl_pkt;
 struct btm_acl_removed btm_acl_removed;
-struct btm_acl_reset_paging btm_acl_reset_paging;
-struct btm_acl_resubmit_page btm_acl_resubmit_page;
 struct btm_acl_role_changed btm_acl_role_changed;
-struct btm_acl_set_paging btm_acl_set_paging;
 struct btm_acl_update_conn_addr btm_acl_update_conn_addr;
-struct btm_configure_data_path btm_configure_data_path;
 struct btm_acl_update_inquiry_status btm_acl_update_inquiry_status;
 struct btm_ble_refresh_local_resolvable_private_addr
     btm_ble_refresh_local_resolvable_private_addr;
@@ -163,7 +146,6 @@ struct btm_read_remote_ext_features_complete
 struct btm_read_remote_ext_features_complete_raw
     btm_read_remote_ext_features_complete_raw;
 struct btm_read_remote_ext_features_failed btm_read_remote_ext_features_failed;
-struct btm_read_remote_features_complete btm_read_remote_features_complete;
 struct btm_read_remote_version_complete btm_read_remote_version_complete;
 struct btm_read_rssi_complete btm_read_rssi_complete;
 struct btm_read_rssi_timeout btm_read_rssi_timeout;
@@ -218,10 +200,15 @@ bool BTM_IsPhy2mSupported(const RawAddress& remote_bda,
 }
 bool BTM_ReadRemoteConnectionAddr(const RawAddress& pseudo_addr,
                                   RawAddress& conn_addr,
-                                  tBLE_ADDR_TYPE* p_addr_type) {
+                                  tBLE_ADDR_TYPE* p_addr_type,
+                                  bool ota_address) {
   inc_func_call_count(__func__);
   return test::mock::stack_acl::BTM_ReadRemoteConnectionAddr(
-      pseudo_addr, conn_addr, p_addr_type);
+      pseudo_addr, conn_addr, p_addr_type, ota_address);
+}
+bool BTM_IsRemoteVersionReceived(const RawAddress& addr) {
+  inc_func_call_count(__func__);
+  return test::mock::stack_acl::BTM_IsRemoteVersionReceived(addr);
 }
 bool BTM_ReadRemoteVersion(const RawAddress& addr, uint8_t* lmp_version,
                            uint16_t* manufacturer, uint16_t* lmp_sub_version) {
@@ -289,7 +276,7 @@ bool acl_peer_supports_ble_connection_subrating_host(
 bool acl_refresh_remote_address(const RawAddress& identity_address,
                                 tBLE_ADDR_TYPE identity_address_type,
                                 const RawAddress& bda,
-                                tBTM_SEC_BLE::tADDRESS_TYPE rra_type,
+                                tBLE_RAND_ADDR_TYPE rra_type,
                                 const RawAddress& rpa) {
   inc_func_call_count(__func__);
   return test::mock::stack_acl::acl_refresh_remote_address(
@@ -301,14 +288,6 @@ bool acl_set_peer_le_features_from_handle(uint16_t hci_handle,
   return test::mock::stack_acl::acl_set_peer_le_features_from_handle(hci_handle,
                                                                      p);
 }
-bool sco_peer_supports_esco_2m_phy(const RawAddress& remote_bda) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_acl::sco_peer_supports_esco_2m_phy(remote_bda);
-}
-bool sco_peer_supports_esco_3m_phy(const RawAddress& remote_bda) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_acl::sco_peer_supports_esco_3m_phy(remote_bda);
-}
 void acl_send_data_packet_br_edr(const RawAddress& bd_addr, BT_HDR* p_buf) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::acl_send_data_packet_br_edr(bd_addr, p_buf);
@@ -319,10 +298,6 @@ void acl_create_classic_connection(const RawAddress& bd_addr,
   inc_func_call_count(__func__);
   return test::mock::stack_acl::acl_create_classic_connection(
       bd_addr, there_are_high_priority_channels, is_bonding);
-}
-bool IsEprAvailable(const tACL_CONN& p_acl) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_acl::IsEprAvailable(p_acl);
 }
 tACL_CONN* acl_get_connection_from_address(const RawAddress& bd_addr,
                                            tBT_TRANSPORT transport) {
@@ -403,10 +378,6 @@ uint8_t BTM_GetPeerSCA(const RawAddress& remote_bda, tBT_TRANSPORT transport) {
   inc_func_call_count(__func__);
   return test::mock::stack_acl::BTM_GetPeerSCA(remote_bda, transport);
 }
-uint8_t BTM_SetTraceLevel(uint8_t new_level) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_acl::BTM_SetTraceLevel(new_level);
-}
 uint8_t acl_link_role_from_handle(uint16_t handle) {
   inc_func_call_count(__func__);
   return test::mock::stack_acl::acl_link_role_from_handle(handle);
@@ -429,10 +400,10 @@ void ACL_UnregisterClient(struct acl_client_callback_s* callbacks) {
 }
 void BTM_ReadConnectionAddr(const RawAddress& remote_bda,
                             RawAddress& local_conn_addr,
-                            tBLE_ADDR_TYPE* p_addr_type) {
+                            tBLE_ADDR_TYPE* p_addr_type, bool ota_address) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::BTM_ReadConnectionAddr(remote_bda, local_conn_addr,
-                                                p_addr_type);
+                                                p_addr_type, ota_address);
 }
 void BTM_RequestPeerSCA(const RawAddress& remote_bda, tBT_TRANSPORT transport) {
   inc_func_call_count(__func__);
@@ -466,14 +437,6 @@ void BTM_unblock_sniff_mode_for(const RawAddress& peer_addr) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::BTM_unblock_sniff_mode_for(peer_addr);
 }
-void HACK_acl_check_sm4(tBTM_SEC_DEV_REC& record) {
-  inc_func_call_count(__func__);
-  test::mock::stack_acl::HACK_acl_check_sm4(record);
-}
-void acl_accept_connection_request(const RawAddress& bd_addr, uint8_t role) {
-  inc_func_call_count(__func__);
-  test::mock::stack_acl::acl_accept_connection_request(bd_addr, role);
-}
 void acl_disconnect_after_role_switch(uint16_t conn_handle, tHCI_STATUS reason,
                                       std::string comment) {
   inc_func_call_count(__func__);
@@ -484,10 +447,6 @@ void acl_disconnect_from_handle(uint16_t handle, tHCI_STATUS reason,
                                 std::string comment) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::acl_disconnect_from_handle(handle, reason, comment);
-}
-void acl_link_segments_xmitted(BT_HDR* p_msg) {
-  inc_func_call_count(__func__);
-  test::mock::stack_acl::acl_link_segments_xmitted(p_msg);
 }
 void acl_packets_completed(uint16_t handle, uint16_t credits) {
   inc_func_call_count(__func__);
@@ -507,10 +466,6 @@ void acl_rcv_acl_data(BT_HDR* p_msg) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::acl_rcv_acl_data(p_msg);
 }
-void acl_reject_connection_request(const RawAddress& bd_addr, uint8_t reason) {
-  inc_func_call_count(__func__);
-  test::mock::stack_acl::acl_reject_connection_request(bd_addr, reason);
-}
 void acl_send_data_packet_ble(const RawAddress& bd_addr, BT_HDR* p_buf) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::acl_send_data_packet_ble(bd_addr, p_buf);
@@ -529,10 +484,6 @@ void btm_acl_connected(const RawAddress& bda, uint16_t handle,
                        tHCI_STATUS status, uint8_t enc_mode) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_acl_connected(bda, handle, status, enc_mode);
-}
-void btm_acl_connection_request(const RawAddress& bda, uint8_t* dc) {
-  inc_func_call_count(__func__);
-  test::mock::stack_acl::btm_acl_connection_request(bda, dc);
 }
 void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
                      tHCI_ROLE link_role, tBT_TRANSPORT transport) {
@@ -561,10 +512,6 @@ void btm_acl_notif_conn_collision(const RawAddress& bda) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_acl_notif_conn_collision(bda);
 }
-void btm_acl_paging(BT_HDR* p, const RawAddress& bda) {
-  inc_func_call_count(__func__);
-  test::mock::stack_acl::btm_acl_paging(p, bda);
-}
 void btm_acl_process_sca_cmpl_pkt(uint8_t len, uint8_t* data) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_acl_process_sca_cmpl_pkt(len, data);
@@ -573,32 +520,14 @@ void btm_acl_removed(uint16_t handle) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_acl_removed(handle);
 }
-void btm_acl_reset_paging(void) {
-  inc_func_call_count(__func__);
-  test::mock::stack_acl::btm_acl_reset_paging();
-}
-void btm_acl_resubmit_page(void) {
-  inc_func_call_count(__func__);
-  test::mock::stack_acl::btm_acl_resubmit_page();
-}
 void btm_acl_role_changed(tHCI_STATUS hci_status, const RawAddress& bd_addr,
                           tHCI_ROLE new_role) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_acl_role_changed(hci_status, bd_addr, new_role);
 }
-void btm_acl_set_paging(bool value) {
-  inc_func_call_count(__func__);
-  test::mock::stack_acl::btm_acl_set_paging(value);
-}
 void btm_acl_update_conn_addr(uint16_t handle, const RawAddress& address) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_acl_update_conn_addr(handle, address);
-}
-void btm_configure_data_path(uint8_t direction, uint8_t path_id,
-                             std::vector<uint8_t> vendor_config) {
-  inc_func_call_count(__func__);
-  test::mock::stack_acl::btm_configure_data_path(direction, path_id,
-                                                 vendor_config);
 }
 void btm_acl_update_inquiry_status(uint8_t status) {
   inc_func_call_count(__func__);
@@ -641,7 +570,7 @@ void btm_read_failed_contact_counter_complete(uint8_t* p) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_read_failed_contact_counter_complete(p);
 }
-void btm_read_failed_contact_counter_timeout(UNUSED_ATTR void* data) {
+void btm_read_failed_contact_counter_timeout(void* data) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_read_failed_contact_counter_timeout(data);
 }
@@ -649,7 +578,7 @@ void btm_read_link_quality_complete(uint8_t* p, uint16_t evt_len) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_read_link_quality_complete(p, evt_len);
 }
-void btm_read_link_quality_timeout(UNUSED_ATTR void* data) {
+void btm_read_link_quality_timeout(void* data) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_read_link_quality_timeout(data);
 }
@@ -672,10 +601,6 @@ void btm_read_remote_ext_features_failed(uint8_t status, uint16_t handle) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_read_remote_ext_features_failed(status, handle);
 }
-void btm_read_remote_features_complete(uint16_t handle, uint8_t* features) {
-  inc_func_call_count(__func__);
-  test::mock::stack_acl::btm_read_remote_features_complete(handle, features);
-}
 void btm_read_remote_version_complete(tHCI_STATUS status, uint16_t handle,
                                       uint8_t lmp_version,
                                       uint16_t manufacturer,
@@ -688,7 +613,7 @@ void btm_read_rssi_complete(uint8_t* p, uint16_t evt_len) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_read_rssi_complete(p, evt_len);
 }
-void btm_read_rssi_timeout(UNUSED_ATTR void* data) {
+void btm_read_rssi_timeout(void* data) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_read_rssi_timeout(data);
 }
@@ -696,7 +621,7 @@ void btm_read_tx_power_complete(uint8_t* p, uint16_t evt_len, bool is_ble) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_read_tx_power_complete(p, evt_len, is_ble);
 }
-void btm_read_tx_power_timeout(UNUSED_ATTR void* data) {
+void btm_read_tx_power_timeout(void* data) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_read_tx_power_timeout(data);
 }
@@ -740,3 +665,6 @@ void BTM_unblock_role_switch_and_sniff_mode_for(const RawAddress& peer_addr) {
 }
 
 // END mockcify generation
+
+void BTM_block_role_switch_and_sniff_mode_for(
+    const RawAddress& /* peer_addr */) {}

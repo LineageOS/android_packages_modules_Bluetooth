@@ -1,5 +1,6 @@
 # Bug component: 1099313
 # Project owners
+set noparent
 girardier@google.com
-qiaoccolato@google.com
 licorne@google.com
+charliebout@google.com

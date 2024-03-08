@@ -24,10 +24,8 @@ _VENV_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/avatar/venv"
 _BT_ROOT="${ANDROID_BUILD_TOP}/packages/modules/Bluetooth"
 _TEST_ROOT="${_BT_ROOT}/android/pandora/test"
 _PY_SOURCES=(
-  "${ANDROID_BUILD_TOP}/external/pandora/avatar/"{avatar,examples}
   "${_BT_ROOT}/pandora/server/bumble_experimental"
-  "${_TEST_ROOT}/"*_test.py
-  "${_TEST_ROOT}/main.py"
+  "${_TEST_ROOT}/"*.py
 )
 
 _PANDORA_PYTHON_PATHS=(
@@ -36,6 +34,7 @@ _PANDORA_PYTHON_PATHS=(
   "${ANDROID_BUILD_TOP}/external/python/bumble/"
   "${ANDROID_BUILD_TOP}/external/python/mobly/"
   "${ANDROID_BUILD_TOP}/external/python/pyee/"
+  "${ANDROID_BUILD_TOP}/external/python/portpicker/src/"
   "${ANDROID_BUILD_TOP}/out/soong/.intermediates/external/pandora/bt-test-interfaces/python/pandora-python-gen-src/gen/"
   "${ANDROID_BUILD_TOP}/out/soong/.intermediates/packages/modules/Bluetooth/pandora/interfaces/python/pandora_experimental-python-gen-src/gen/"
 )
@@ -44,15 +43,15 @@ if [[ "$1" =~ ^('format'|'lint'|'run')$ ]]; then
   [ ! -d "${_VENV_DIR}" ] && python3 -m venv "${_VENV_DIR}"
   source "${_VENV_DIR}"/bin/activate
   pip install \
-    'grpcio==1.51.1' \
+    'grpcio==1.57' \
     'cryptography==35' \
-    'protobuf==4.22.1' \
+    'numpy==1.25.2' \
+    'protobuf==4.24.2' \
+    'mypy==1.5.1' \
     'pyright==1.1.298' \
-    'mypy==1.1.1' \
-    'types-protobuf==4.22.0.1' \
-    'black==22.10.0' \
+    'types-protobuf==4.24.0.1' \
+    'black==23.7.0' \
     'isort==5.12.0'
-  export PYTHONPATH="$(IFS=:; echo "${_PANDORA_PYTHON_PATHS[*]}"):${PYTHONPATH}"
 fi
 
 case "$1" in
@@ -61,6 +60,7 @@ case "$1" in
     isort --profile black -l 119 --ds --lbt 1 --ca "$@" "${_PY_SOURCES[@]}"
   ;;
   'lint') shift
+    export PYTHONPATH="$(IFS=:; echo "${_PANDORA_PYTHON_PATHS[*]}"):${PYTHONPATH}"
     mypy \
       --pretty --show-column-numbers --strict --no-warn-unused-ignores --ignore-missing-imports \
       "$@" "${_PY_SOURCES[@]}" || exit 1

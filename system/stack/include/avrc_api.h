@@ -237,11 +237,11 @@ using tAVRC_MSG_CBACK = base::Callback<void(uint8_t handle, uint8_t label,
                                             uint8_t opcode, tAVRC_MSG* p_msg)>;
 
 typedef struct {
-  tAVRC_CTRL_CBACK ctrl_cback;    /* application control callback */
-  tAVRC_MSG_CBACK msg_cback;      /* application message callback */
-  uint32_t company_id;            /* the company ID  */
-  uint8_t conn;                   /* Connection role (Initiator/acceptor) */
-  uint8_t control;                /* Control role (Control/Target) */
+  tAVRC_CTRL_CBACK ctrl_cback; /* application control callback */
+  tAVRC_MSG_CBACK msg_cback;   /* application message callback */
+  uint32_t company_id;         /* the company ID  */
+  uint8_t conn;                /* Connection role (Initiator/acceptor) */
+  uint8_t control;             /* Control role (Control/Target) */
 } tAVRC_CONN_CB;
 
 typedef struct {
@@ -510,7 +510,7 @@ uint16_t AVRC_CloseBrowse(uint8_t handle);
  *
  *****************************************************************************/
 uint16_t AVRC_MsgReq(uint8_t handle, uint8_t label, uint8_t ctype,
-                     BT_HDR* p_pkt);
+                     BT_HDR* p_pkt, bool is_new_avrcp);
 
 /******************************************************************************
  *
@@ -689,29 +689,6 @@ uint16_t AVRC_VendorCmd(uint8_t handle, uint8_t label, tAVRC_MSG_VENDOR* p_msg);
  *****************************************************************************/
 uint16_t AVRC_VendorRsp(uint8_t handle, uint8_t label, tAVRC_MSG_VENDOR* p_msg);
 
-/******************************************************************************
- *
- * Function         AVRC_SetTraceLevel
- *
- * Description      Sets the trace level for AVRC. If 0xff is passed, the
- *                  current trace level is returned.
- *
- *                  Input Parameters:
- *                      new_level:  The level to set the AVRC tracing to:
- *                      0xff-returns the current setting.
- *                      0-turns off tracing.
- *                      >= 1-Errors.
- *                      >= 2-Warnings.
- *                      >= 3-APIs.
- *                      >= 4-Events.
- *                      >= 5-Debug.
- *
- * Returns          The new trace level or current trace level if
- *                  the input parameter is 0xff.
- *
- *****************************************************************************/
-uint8_t AVRC_SetTraceLevel(uint8_t new_level);
-
 /*******************************************************************************
  *
  * Function         AVRC_Init
@@ -832,5 +809,7 @@ bool AVRC_IsValidAvcType(uint8_t pdu_id, uint8_t avc_type);
  *
  ******************************************************************************/
 bool AVRC_IsValidPlayerAttr(uint8_t attr);
+
+void AVRC_UpdateCcb(RawAddress* addr, uint32_t company_id);
 
 #endif /* AVRC_API_H */

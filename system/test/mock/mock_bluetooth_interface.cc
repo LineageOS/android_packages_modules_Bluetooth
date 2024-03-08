@@ -17,7 +17,6 @@
 #include <cstdint>
 
 #include "btif/include/stack_manager.h"
-#include "device/include/interop.h"
 #include "hardware/bluetooth.h"
 #include "stack/include/bt_octets.h"
 #include "types/raw_address.h"
@@ -50,6 +49,9 @@ void invoke_acl_state_changed_cb(bt_status_t status, RawAddress bd_addr,
                                  bt_conn_direction_t direction,
                                  uint16_t acl_handle) {}
 void invoke_thread_evt_cb(bt_cb_thread_evt event) {}
+
+void invoke_le_test_mode_cb(bt_status_t status, uint16_t count) {}
+
 void invoke_energy_info_cb(bt_activity_energy_info energy_info,
                            bt_uid_traffic_t* uid_data) {}
 void invoke_link_quality_report_cb(uint64_t timestamp, int report_id, int rssi,

@@ -24,40 +24,22 @@
 
 #include <cstdint>
 #include <functional>
-#include <map>
-#include <string>
+#include <optional>
 
 // Original included files, if any
-// NOTE: Since this is a mock file with mock definitions some number of
-//       include files may not be required.  The include-what-you-use
-//       still applies, but crafting proper inclusion is out of scope
-//       for this effort.  This compilation unit may compile as-is, or
-//       may need attention to prune from (or add to ) the inclusion set.
-#include <base/logging.h>
-
-#include <cstdint>
-
-#include "device/include/controller.h"
-#include "main/shim/btm_api.h"
-#include "main/shim/l2c_api.h"
-#include "main/shim/shim.h"
-#include "osi/include/allocator.h"
-#include "osi/include/properties.h"
-#include "stack/btm/btm_dev.h"
-#include "stack/btm/btm_int_types.h"
-#include "stack/btm/security_device_record.h"
-#include "stack/crypto_toolbox/crypto_toolbox.h"
-#include "stack/include/acl_api.h"
+#include "stack/btm/btm_ble_sec.h"
+#include "stack/include/bt_device_type.h"
 #include "stack/include/bt_octets.h"
-#include "stack/include/bt_types.h"
-#include "stack/include/btm_api.h"
-#include "stack/include/btu.h"
-#include "stack/include/gatt_api.h"
-#include "stack/include/l2cap_security_interface.h"
+#include "stack/include/btm_api_types.h"
+#include "stack/include/btm_ble_api_types.h"
+#include "stack/include/btm_ble_sec_api_types.h"
+#include "stack/include/btm_sec_api_types.h"
+#include "stack/include/btm_status.h"
 #include "stack/include/l2cdefs.h"
-#include "stack/include/smp_api.h"
-#include "test/common/mock_functions.h"
+#include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
+
+typedef uint8_t tBTM_SEC_ACTION;
 
 // Original usings
 
@@ -72,8 +54,8 @@ namespace stack_btm_ble {
 // Params: const RawAddress& bd_addr, uint8_t res
 // Return: void
 struct BTM_BleConfirmReply {
-  std::function<void(const RawAddress& bd_addr, uint8_t res)> body{
-      [](const RawAddress& bd_addr, uint8_t res) {}};
+  std::function<void(const RawAddress& /* bd_addr */, uint8_t /* res */)> body{
+      [](const RawAddress& /* bd_addr */, uint8_t /* res */) {}};
   void operator()(const RawAddress& bd_addr, uint8_t res) {
     body(bd_addr, res);
   };
@@ -87,8 +69,9 @@ struct BTM_BleDataSignature {
   static bool return_value;
   std::function<bool(const RawAddress& bd_addr, uint8_t* p_text, uint16_t len,
                      BLE_SIGNATURE signature)>
-      body{[](const RawAddress& bd_addr, uint8_t* p_text, uint16_t len,
-              BLE_SIGNATURE signature) { return return_value; }};
+      body{[](const RawAddress& /* bd_addr */, uint8_t* /* p_text */,
+              uint16_t /* len */,
+              BLE_SIGNATURE /* signature */) { return return_value; }};
   bool operator()(const RawAddress& bd_addr, uint8_t* p_text, uint16_t len,
                   BLE_SIGNATURE signature) {
     return body(bd_addr, p_text, len, signature);
@@ -101,7 +84,7 @@ extern struct BTM_BleDataSignature BTM_BleDataSignature;
 // Return: void
 struct BTM_BleLoadLocalKeys {
   std::function<void(uint8_t key_type, tBTM_BLE_LOCAL_KEYS* p_key)> body{
-      [](uint8_t key_type, tBTM_BLE_LOCAL_KEYS* p_key) {}};
+      [](uint8_t /* key_type */, tBTM_BLE_LOCAL_KEYS* /* p_key */) {}};
   void operator()(uint8_t key_type, tBTM_BLE_LOCAL_KEYS* p_key) {
     body(key_type, p_key);
   };
@@ -114,8 +97,8 @@ extern struct BTM_BleLoadLocalKeys BTM_BleLoadLocalKeys;
 struct BTM_BleOobDataReply {
   std::function<void(const RawAddress& bd_addr, uint8_t res, uint8_t len,
                      uint8_t* p_data)>
-      body{[](const RawAddress& bd_addr, uint8_t res, uint8_t len,
-              uint8_t* p_data) {}};
+      body{[](const RawAddress& /* bd_addr */, uint8_t /* res */,
+              uint8_t /* len */, uint8_t* /* p_data */) {}};
   void operator()(const RawAddress& bd_addr, uint8_t res, uint8_t len,
                   uint8_t* p_data) {
     body(bd_addr, res, len, p_data);
@@ -128,7 +111,8 @@ extern struct BTM_BleOobDataReply BTM_BleOobDataReply;
 // Return: void
 struct BTM_BlePasskeyReply {
   std::function<void(const RawAddress& bd_addr, uint8_t res, uint32_t passkey)>
-      body{[](const RawAddress& bd_addr, uint8_t res, uint32_t passkey) {}};
+      body{[](const RawAddress& /* bd_addr */, uint8_t /* res */,
+              uint32_t /* passkey */) {}};
   void operator()(const RawAddress& bd_addr, uint8_t res, uint32_t passkey) {
     body(bd_addr, res, passkey);
   };
@@ -143,10 +127,10 @@ struct BTM_BleReadPhy {
       const RawAddress& bd_addr,
       base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)>
           callback)>
-      body{[](const RawAddress& bd_addr,
+      body{[](const RawAddress& /* bd_addr */,
               base::Callback<void(uint8_t tx_phy, uint8_t rx_phy,
                                   uint8_t status)>
-                  callback) {}};
+              /* callback */) {}};
   void operator()(
       const RawAddress& bd_addr,
       base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)>
@@ -156,12 +140,25 @@ struct BTM_BleReadPhy {
 };
 extern struct BTM_BleReadPhy BTM_BleReadPhy;
 
+// Name: BTM_BleReceiverTest
+// Params: uint8_t rx_freq, tBTM_CMPL_CB* p_cmd_cmpl_cback
+// Return: void
+struct BTM_BleReceiverTest {
+  std::function<void(uint8_t rx_freq, tBTM_CMPL_CB* p_cmd_cmpl_cback)> body{
+      [](uint8_t /* rx_freq */, tBTM_CMPL_CB* /* p_cmd_cmpl_cback */) {}};
+  void operator()(uint8_t rx_freq, tBTM_CMPL_CB* p_cmd_cmpl_cback) {
+    body(rx_freq, p_cmd_cmpl_cback);
+  };
+};
+extern struct BTM_BleReceiverTest BTM_BleReceiverTest;
+
 // Name: BTM_BleSecureConnectionOobDataReply
 // Params: const RawAddress& bd_addr, uint8_t* p_c, uint8_t* p_r
 // Return: void
 struct BTM_BleSecureConnectionOobDataReply {
   std::function<void(const RawAddress& bd_addr, uint8_t* p_c, uint8_t* p_r)>
-      body{[](const RawAddress& bd_addr, uint8_t* p_c, uint8_t* p_r) {}};
+      body{[](const RawAddress& /* bd_addr */, uint8_t* /* p_c */,
+              uint8_t* /* p_r */) {}};
   void operator()(const RawAddress& bd_addr, uint8_t* p_c, uint8_t* p_r) {
     body(bd_addr, p_c, p_r);
   };
@@ -175,8 +172,8 @@ extern struct BTM_BleSecureConnectionOobDataReply
 struct BTM_BleSetPhy {
   std::function<void(const RawAddress& bd_addr, uint8_t tx_phys,
                      uint8_t rx_phys, uint16_t phy_options)>
-      body{[](const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
-              uint16_t phy_options) {}};
+      body{[](const RawAddress& /* bd_addr */, uint8_t /* tx_phys */,
+              uint8_t /* rx_phys */, uint16_t /* phy_options */) {}};
   void operator()(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
                   uint16_t phy_options) {
     body(bd_addr, tx_phys, rx_phys, phy_options);
@@ -192,9 +189,9 @@ struct BTM_BleSetPrefConnParams {
   std::function<void(const RawAddress& bd_addr, uint16_t min_conn_int,
                      uint16_t max_conn_int, uint16_t peripheral_latency,
                      uint16_t supervision_tout)>
-      body{[](const RawAddress& bd_addr, uint16_t min_conn_int,
-              uint16_t max_conn_int, uint16_t peripheral_latency,
-              uint16_t supervision_tout) {}};
+      body{[](const RawAddress& /* bd_addr */, uint16_t /* min_conn_int */,
+              uint16_t /* max_conn_int */, uint16_t /* peripheral_latency */,
+              uint16_t /* supervision_tout */) {}};
   void operator()(const RawAddress& bd_addr, uint16_t min_conn_int,
                   uint16_t max_conn_int, uint16_t peripheral_latency,
                   uint16_t supervision_tout) {
@@ -204,6 +201,32 @@ struct BTM_BleSetPrefConnParams {
 };
 extern struct BTM_BleSetPrefConnParams BTM_BleSetPrefConnParams;
 
+// Name: BTM_BleTestEnd
+// Params: tBTM_CMPL_CB* p_cmd_cmpl_cback
+// Return: void
+struct BTM_BleTestEnd {
+  std::function<void(tBTM_CMPL_CB* p_cmd_cmpl_cback)> body{
+      [](tBTM_CMPL_CB* /* p_cmd_cmpl_cback */) {}};
+  void operator()(tBTM_CMPL_CB* p_cmd_cmpl_cback) { body(p_cmd_cmpl_cback); };
+};
+extern struct BTM_BleTestEnd BTM_BleTestEnd;
+
+// Name: BTM_BleTransmitterTest
+// Params: uint8_t tx_freq, uint8_t test_data_len, uint8_t packet_payload,
+// tBTM_CMPL_CB* p_cmd_cmpl_cback Return: void
+struct BTM_BleTransmitterTest {
+  std::function<void(uint8_t tx_freq, uint8_t test_data_len,
+                     uint8_t packet_payload, tBTM_CMPL_CB* p_cmd_cmpl_cback)>
+      body{[](uint8_t /* tx_freq */, uint8_t /* test_data_len */,
+              uint8_t /* packet_payload */,
+              tBTM_CMPL_CB* /* p_cmd_cmpl_cback */) {}};
+  void operator()(uint8_t tx_freq, uint8_t test_data_len,
+                  uint8_t packet_payload, tBTM_CMPL_CB* p_cmd_cmpl_cback) {
+    body(tx_freq, test_data_len, packet_payload, p_cmd_cmpl_cback);
+  };
+};
+extern struct BTM_BleTransmitterTest BTM_BleTransmitterTest;
+
 // Name: BTM_BleVerifySignature
 // Params: const RawAddress& bd_addr, uint8_t* p_orig, uint16_t len, uint32_t
 // counter, uint8_t* p_comp Return: bool
@@ -211,8 +234,9 @@ struct BTM_BleVerifySignature {
   static bool return_value;
   std::function<bool(const RawAddress& bd_addr, uint8_t* p_orig, uint16_t len,
                      uint32_t counter, uint8_t* p_comp)>
-      body{[](const RawAddress& bd_addr, uint8_t* p_orig, uint16_t len,
-              uint32_t counter, uint8_t* p_comp) { return return_value; }};
+      body{[](const RawAddress& /* bd_addr */, uint8_t* /* p_orig */,
+              uint16_t /* len */, uint32_t /* counter */,
+              uint8_t* /* p_comp */) { return return_value; }};
   bool operator()(const RawAddress& bd_addr, uint8_t* p_orig, uint16_t len,
                   uint32_t counter, uint8_t* p_comp) {
     return body(bd_addr, p_orig, len, counter, p_comp);
@@ -262,7 +286,7 @@ extern struct BTM_GetDeviceIDRoot BTM_GetDeviceIDRoot;
 struct BTM_ReadConnectedTransportAddress {
   static bool return_value;
   std::function<bool(RawAddress* remote_bda, tBT_TRANSPORT transport)> body{
-      [](RawAddress* remote_bda, tBT_TRANSPORT transport) {
+      [](RawAddress* /* remote_bda */, tBT_TRANSPORT /* transport */) {
         return return_value;
       }};
   bool operator()(RawAddress* remote_bda, tBT_TRANSPORT transport) {
@@ -278,8 +302,9 @@ extern struct BTM_ReadConnectedTransportAddress
 struct BTM_ReadDevInfo {
   std::function<void(const RawAddress& remote_bda, tBT_DEVICE_TYPE* p_dev_type,
                      tBLE_ADDR_TYPE* p_addr_type)>
-      body{[](const RawAddress& remote_bda, tBT_DEVICE_TYPE* p_dev_type,
-              tBLE_ADDR_TYPE* p_addr_type) {}};
+      body{[](const RawAddress& /* remote_bda */,
+              tBT_DEVICE_TYPE* /* p_dev_type */,
+              tBLE_ADDR_TYPE* /* p_addr_type */) {}};
   void operator()(const RawAddress& remote_bda, tBT_DEVICE_TYPE* p_dev_type,
                   tBLE_ADDR_TYPE* p_addr_type) {
     body(remote_bda, p_dev_type, p_addr_type);
@@ -293,8 +318,8 @@ extern struct BTM_ReadDevInfo BTM_ReadDevInfo;
 struct BTM_SecAddBleDevice {
   std::function<void(const RawAddress& bd_addr, tBT_DEVICE_TYPE dev_type,
                      tBLE_ADDR_TYPE addr_type)>
-      body{[](const RawAddress& bd_addr, tBT_DEVICE_TYPE dev_type,
-              tBLE_ADDR_TYPE addr_type) {}};
+      body{[](const RawAddress& /* bd_addr */, tBT_DEVICE_TYPE /* dev_type */,
+              tBLE_ADDR_TYPE /* addr_type */) {}};
   void operator()(const RawAddress& bd_addr, tBT_DEVICE_TYPE dev_type,
                   tBLE_ADDR_TYPE addr_type) {
     body(bd_addr, dev_type, addr_type);
@@ -308,7 +333,9 @@ extern struct BTM_SecAddBleDevice BTM_SecAddBleDevice;
 struct BTM_GetRemoteDeviceName {
   static bool return_value;
   std::function<bool(const RawAddress& bd_addr, BD_NAME bd_name)> body{
-      [](const RawAddress& bd_addr, BD_NAME bd_name) { return return_value; }};
+      [](const RawAddress& /* bd_addr */, BD_NAME /* bd_name */) {
+        return return_value;
+      }};
   bool operator()(const RawAddress& bd_addr, BD_NAME bd_name) {
     return body(bd_addr, bd_name);
   };
@@ -321,8 +348,9 @@ extern struct BTM_GetRemoteDeviceName BTM_GetRemoteDeviceName;
 struct BTM_SecAddBleKey {
   std::function<void(const RawAddress& bd_addr, tBTM_LE_KEY_VALUE* p_le_key,
                      tBTM_LE_KEY_TYPE key_type)>
-      body{[](const RawAddress& bd_addr, tBTM_LE_KEY_VALUE* p_le_key,
-              tBTM_LE_KEY_TYPE key_type) {}};
+      body{[](const RawAddress& /* bd_addr */,
+              tBTM_LE_KEY_VALUE* /* p_le_key */,
+              tBTM_LE_KEY_TYPE /* key_type */) {}};
   void operator()(const RawAddress& bd_addr, tBTM_LE_KEY_VALUE* p_le_key,
                   tBTM_LE_KEY_TYPE key_type) {
     body(bd_addr, p_le_key, key_type);
@@ -335,7 +363,7 @@ extern struct BTM_SecAddBleKey BTM_SecAddBleKey;
 // Return: void
 struct BTM_SecurityGrant {
   std::function<void(const RawAddress& bd_addr, uint8_t res)> body{
-      [](const RawAddress& bd_addr, uint8_t res) {}};
+      [](const RawAddress& /* bd_addr */, uint8_t /* res */) {}};
   void operator()(const RawAddress& bd_addr, uint8_t res) {
     body(bd_addr, res);
   };
@@ -348,7 +376,7 @@ extern struct BTM_SecurityGrant BTM_SecurityGrant;
 struct BTM_SetBleDataLength {
   static tBTM_STATUS return_value;
   std::function<tBTM_STATUS(const RawAddress& bd_addr, uint16_t tx_pdu_length)>
-      body{[](const RawAddress& bd_addr, uint16_t tx_pdu_length) {
+      body{[](const RawAddress& /* bd_addr */, uint16_t /* tx_pdu_length */) {
         return return_value;
       }};
   tBTM_STATUS operator()(const RawAddress& bd_addr, uint16_t tx_pdu_length) {
@@ -363,25 +391,10 @@ extern struct BTM_SetBleDataLength BTM_SetBleDataLength;
 struct BTM_UseLeLink {
   static bool return_value;
   std::function<bool(const RawAddress& bd_addr)> body{
-      [](const RawAddress& bd_addr) { return return_value; }};
+      [](const RawAddress& /* bd_addr */) { return return_value; }};
   bool operator()(const RawAddress& bd_addr) { return body(bd_addr); };
 };
 extern struct BTM_UseLeLink BTM_UseLeLink;
-
-// Name: btm_ble_br_keys_req
-// Params: tBTM_SEC_DEV_REC* p_dev_rec, tBTM_LE_IO_REQ* p_data
-// Return: uint8_t
-struct btm_ble_br_keys_req {
-  static uint8_t return_value;
-  std::function<uint8_t(tBTM_SEC_DEV_REC* p_dev_rec, tBTM_LE_IO_REQ* p_data)>
-      body{[](tBTM_SEC_DEV_REC* p_dev_rec, tBTM_LE_IO_REQ* p_data) {
-        return return_value;
-      }};
-  uint8_t operator()(tBTM_SEC_DEV_REC* p_dev_rec, tBTM_LE_IO_REQ* p_data) {
-    return body(p_dev_rec, p_data);
-  };
-};
-extern struct btm_ble_br_keys_req btm_ble_br_keys_req;
 
 // Name: btm_ble_connected
 // Params: const RawAddress& bda, uint16_t handle, uint8_t enc_mode, uint8_t
@@ -390,9 +403,10 @@ struct btm_ble_connected {
   std::function<void(const RawAddress& bda, uint16_t handle, uint8_t enc_mode,
                      uint8_t role, tBLE_ADDR_TYPE addr_type, bool addr_matched,
                      bool can_read_discoverable_characteristics)>
-      body{[](const RawAddress& bda, uint16_t handle, uint8_t enc_mode,
-              uint8_t role, tBLE_ADDR_TYPE addr_type, bool addr_matched,
-              bool can_read_discoverable_characteristics) {}};
+      body{[](const RawAddress& /* bda */, uint16_t /* handle */,
+              uint8_t /* enc_mode */, uint8_t /* role */,
+              tBLE_ADDR_TYPE /* addr_type */, bool /* addr_matched */,
+              bool /* can_read_discoverable_characteristics */) {}};
   void operator()(const RawAddress& bda, uint16_t handle, uint8_t enc_mode,
                   uint8_t role, tBLE_ADDR_TYPE addr_type, bool addr_matched,
                   bool can_read_discoverable_characteristics) {
@@ -402,22 +416,6 @@ struct btm_ble_connected {
 };
 extern struct btm_ble_connected btm_ble_connected;
 
-// Name: btm_ble_determine_security_act
-// Params: bool is_originator, const RawAddress& bdaddr, uint16_t
-// security_required Return: tBTM_SEC_ACTION
-struct btm_ble_determine_security_act {
-  static tBTM_SEC_ACTION return_value;
-  std::function<tBTM_SEC_ACTION(bool is_originator, const RawAddress& bdaddr,
-                                uint16_t security_required)>
-      body{[](bool is_originator, const RawAddress& bdaddr,
-              uint16_t security_required) { return return_value; }};
-  tBTM_SEC_ACTION operator()(bool is_originator, const RawAddress& bdaddr,
-                             uint16_t security_required) {
-    return body(is_originator, bdaddr, security_required);
-  };
-};
-extern struct btm_ble_determine_security_act btm_ble_determine_security_act;
-
 // Name: btm_ble_get_acl_remote_addr
 // Params: uint16_t hci_handle, RawAddress& conn_addr, tBLE_ADDR_TYPE*
 // p_addr_type Return: bool
@@ -425,8 +423,8 @@ struct btm_ble_get_acl_remote_addr {
   static bool return_value;
   std::function<bool(uint16_t hci_handle, RawAddress& conn_addr,
                      tBLE_ADDR_TYPE* p_addr_type)>
-      body{[](uint16_t hci_handle, RawAddress& conn_addr,
-              tBLE_ADDR_TYPE* p_addr_type) { return return_value; }};
+      body{[](uint16_t /* hci_handle */, RawAddress& /* conn_addr */,
+              tBLE_ADDR_TYPE* /* p_addr_type */) { return return_value; }};
   bool operator()(uint16_t hci_handle, RawAddress& conn_addr,
                   tBLE_ADDR_TYPE* p_addr_type) {
     return body(hci_handle, conn_addr, p_addr_type);
@@ -440,7 +438,7 @@ extern struct btm_ble_get_acl_remote_addr btm_ble_get_acl_remote_addr;
 struct btm_ble_get_enc_key_type {
   static bool return_value;
   std::function<bool(const RawAddress& bd_addr, uint8_t* p_key_types)> body{
-      [](const RawAddress& bd_addr, uint8_t* p_key_types) {
+      [](const RawAddress& /* bd_addr */, uint8_t* /* p_key_types */) {
         return return_value;
       }};
   bool operator()(const RawAddress& bd_addr, uint8_t* p_key_types) {
@@ -449,39 +447,12 @@ struct btm_ble_get_enc_key_type {
 };
 extern struct btm_ble_get_enc_key_type btm_ble_get_enc_key_type;
 
-// Name: btm_ble_increment_sign_ctr
-// Params: const RawAddress& bd_addr, bool is_local
-// Return: void
-struct btm_ble_increment_sign_ctr {
-  std::function<void(const RawAddress& bd_addr, bool is_local)> body{
-      [](const RawAddress& bd_addr, bool is_local) {}};
-  void operator()(const RawAddress& bd_addr, bool is_local) {
-    body(bd_addr, is_local);
-  };
-};
-extern struct btm_ble_increment_sign_ctr btm_ble_increment_sign_ctr;
-
-// Name: btm_ble_io_capabilities_req
-// Params: tBTM_SEC_DEV_REC* p_dev_rec, tBTM_LE_IO_REQ* p_data
-// Return: uint8_t
-struct btm_ble_io_capabilities_req {
-  static uint8_t return_value;
-  std::function<uint8_t(tBTM_SEC_DEV_REC* p_dev_rec, tBTM_LE_IO_REQ* p_data)>
-      body{[](tBTM_SEC_DEV_REC* p_dev_rec, tBTM_LE_IO_REQ* p_data) {
-        return return_value;
-      }};
-  uint8_t operator()(tBTM_SEC_DEV_REC* p_dev_rec, tBTM_LE_IO_REQ* p_data) {
-    return body(p_dev_rec, p_data);
-  };
-};
-extern struct btm_ble_io_capabilities_req btm_ble_io_capabilities_req;
-
 // Name: btm_ble_link_encrypted
 // Params: const RawAddress& bd_addr, uint8_t encr_enable
 // Return: void
 struct btm_ble_link_encrypted {
   std::function<void(const RawAddress& bd_addr, uint8_t encr_enable)> body{
-      [](const RawAddress& bd_addr, uint8_t encr_enable) {}};
+      [](const RawAddress& /* bd_addr */, uint8_t /* encr_enable */) {}};
   void operator()(const RawAddress& bd_addr, uint8_t encr_enable) {
     body(bd_addr, encr_enable);
   };
@@ -494,8 +465,8 @@ extern struct btm_ble_link_encrypted btm_ble_link_encrypted;
 struct btm_ble_link_sec_check {
   std::function<void(const RawAddress& bd_addr, tBTM_LE_AUTH_REQ auth_req,
                      tBTM_BLE_SEC_REQ_ACT* p_sec_req_act)>
-      body{[](const RawAddress& bd_addr, tBTM_LE_AUTH_REQ auth_req,
-              tBTM_BLE_SEC_REQ_ACT* p_sec_req_act) {}};
+      body{[](const RawAddress& /* bd_addr */, tBTM_LE_AUTH_REQ /* auth_req */,
+              tBTM_BLE_SEC_REQ_ACT* /* p_sec_req_act */) {}};
   void operator()(const RawAddress& bd_addr, tBTM_LE_AUTH_REQ auth_req,
                   tBTM_BLE_SEC_REQ_ACT* p_sec_req_act) {
     body(bd_addr, auth_req, p_sec_req_act);
@@ -507,9 +478,9 @@ extern struct btm_ble_link_sec_check btm_ble_link_sec_check;
 // Params: uint16_t handle, uint8_t rand[8], uint16_t ediv
 // Return: void
 struct btm_ble_ltk_request {
-  std::function<void(uint16_t handle, uint8_t* rand, uint16_t ediv)> body{
-      [](uint16_t handle, uint8_t* rand, uint16_t ediv) {}};
-  void operator()(uint16_t handle, uint8_t* rand, uint16_t ediv) {
+  std::function<void(uint16_t handle, BT_OCTET8 rand, uint16_t ediv)> body{
+      [](uint16_t /* handle */, BT_OCTET8 /* rand */, uint16_t /* ediv */) {}};
+  void operator()(uint16_t handle, BT_OCTET8 rand, uint16_t ediv) {
     body(handle, rand, ediv);
   };
 };
@@ -520,27 +491,13 @@ extern struct btm_ble_ltk_request btm_ble_ltk_request;
 // Return: void
 struct btm_ble_ltk_request_reply {
   std::function<void(const RawAddress& bda, bool use_stk, const Octet16& stk)>
-      body{[](const RawAddress& bda, bool use_stk, const Octet16& stk) {}};
+      body{[](const RawAddress& /* bda */, bool /* use_stk */,
+              const Octet16& /* stk */) {}};
   void operator()(const RawAddress& bda, bool use_stk, const Octet16& stk) {
     body(bda, use_stk, stk);
   };
 };
 extern struct btm_ble_ltk_request_reply btm_ble_ltk_request_reply;
-
-// Name: btm_ble_rand_enc_complete
-// Params: uint8_t* p, uint16_t op_code, tBTM_RAND_ENC_CB* p_enc_cplt_cback
-// Return: void
-struct btm_ble_rand_enc_complete {
-  std::function<void(uint8_t* p, uint16_t evt_len, uint16_t op_code,
-                     tBTM_RAND_ENC_CB* p_enc_cplt_cback)>
-  body{[](uint8_t* p, uint16_t evt_len, uint16_t op_code,
-              tBTM_RAND_ENC_CB* p_enc_cplt_cback) {}};
-  void operator()(uint8_t* p, uint16_t evt_len, uint16_t op_code,
-                  tBTM_RAND_ENC_CB* p_enc_cplt_cback) {
-    body(p, evt_len, op_code, p_enc_cplt_cback);
-  };
-};
-extern struct btm_ble_rand_enc_complete btm_ble_rand_enc_complete;
 
 // Name: btm_ble_read_sec_key_size
 // Params: const RawAddress& bd_addr
@@ -548,7 +505,7 @@ extern struct btm_ble_rand_enc_complete btm_ble_rand_enc_complete;
 struct btm_ble_read_sec_key_size {
   static uint8_t return_value;
   std::function<uint8_t(const RawAddress& bd_addr)> body{
-      [](const RawAddress& bd_addr) { return return_value; }};
+      [](const RawAddress& /* bd_addr */) { return return_value; }};
   uint8_t operator()(const RawAddress& bd_addr) { return body(bd_addr); };
 };
 extern struct btm_ble_read_sec_key_size btm_ble_read_sec_key_size;
@@ -569,8 +526,8 @@ struct btm_ble_set_encryption {
   static tBTM_STATUS return_value;
   std::function<tBTM_STATUS(const RawAddress& bd_addr, tBTM_BLE_SEC_ACT sec_act,
                             uint8_t link_role)>
-      body{[](const RawAddress& bd_addr, tBTM_BLE_SEC_ACT sec_act,
-              uint8_t link_role) { return return_value; }};
+      body{[](const RawAddress& /* bd_addr */, tBTM_BLE_SEC_ACT /* sec_act */,
+              uint8_t /* link_role */) { return return_value; }};
   tBTM_STATUS operator()(const RawAddress& bd_addr, tBTM_BLE_SEC_ACT sec_act,
                          uint8_t link_role) {
     return body(bd_addr, sec_act, link_role);
@@ -582,7 +539,7 @@ extern struct btm_ble_set_encryption btm_ble_set_encryption;
 // Params: bool keep_rfu
 // Return: void
 struct btm_ble_set_keep_rfu_in_auth_req {
-  std::function<void(bool keep_rfu)> body{[](bool keep_rfu) {}};
+  std::function<void(bool)> body{[](bool /* keep_rfu */) {}};
   void operator()(bool keep_rfu) { body(keep_rfu); };
 };
 extern struct btm_ble_set_keep_rfu_in_auth_req btm_ble_set_keep_rfu_in_auth_req;
@@ -591,7 +548,7 @@ extern struct btm_ble_set_keep_rfu_in_auth_req btm_ble_set_keep_rfu_in_auth_req;
 // Params: bool disable_disc
 // Return: void
 struct btm_ble_set_no_disc_if_pair_fail {
-  std::function<void(bool disable_disc)> body{[](bool disable_disc) {}};
+  std::function<void(bool)> body{[](bool /* disable_disc */) {}};
   void operator()(bool disable_disc) { body(disable_disc); };
 };
 extern struct btm_ble_set_no_disc_if_pair_fail btm_ble_set_no_disc_if_pair_fail;
@@ -601,7 +558,7 @@ extern struct btm_ble_set_no_disc_if_pair_fail btm_ble_set_no_disc_if_pair_fail;
 // Return: void
 struct btm_ble_set_test_local_sign_cntr_value {
   std::function<void(bool enable, uint32_t test_local_sign_cntr)> body{
-      [](bool enable, uint32_t test_local_sign_cntr) {}};
+      [](bool /* enable */, uint32_t /* test_local_sign_cntr */) {}};
   void operator()(bool enable, uint32_t test_local_sign_cntr) {
     body(enable, test_local_sign_cntr);
   };
@@ -614,7 +571,7 @@ extern struct btm_ble_set_test_local_sign_cntr_value
 // Return: void
 struct btm_ble_set_test_mac_value {
   std::function<void(bool enable, uint8_t* p_test_mac_val)> body{
-      [](bool enable, uint8_t* p_test_mac_val) {}};
+      [](bool /* enable */, uint8_t* /* p_test_mac_val */) {}};
   void operator()(bool enable, uint8_t* p_test_mac_val) {
     body(enable, p_test_mac_val);
   };
@@ -628,9 +585,8 @@ struct btm_ble_start_encrypt {
   static tBTM_STATUS return_value;
   std::function<tBTM_STATUS(const RawAddress& bda, bool use_stk,
                             Octet16* p_stk)>
-      body{[](const RawAddress& bda, bool use_stk, Octet16* p_stk) {
-        return return_value;
-      }};
+      body{[](const RawAddress& /* bda */, bool /* use_stk */,
+              Octet16* /* p_stk */) { return return_value; }};
   tBTM_STATUS operator()(const RawAddress& bda, bool use_stk, Octet16* p_stk) {
     return body(bda, use_stk, p_stk);
   };
@@ -641,17 +597,16 @@ extern struct btm_ble_start_encrypt btm_ble_start_encrypt;
 // Params: const RawAddress& bd_addr, uint16_t psm, bool is_originator,
 // tBTM_SEC_CALLBACK* p_callback, void* p_ref_data Return: tL2CAP_LE_RESULT_CODE
 struct btm_ble_start_sec_check {
-  static tL2CAP_LE_RESULT_CODE return_value;
-  std::function<tL2CAP_LE_RESULT_CODE(
-      const RawAddress& bd_addr, uint16_t psm, bool is_originator,
-      tBTM_SEC_CALLBACK* p_callback, void* p_ref_data)>
-      body{[](const RawAddress& bd_addr, uint16_t psm, bool is_originator,
-              tBTM_SEC_CALLBACK* p_callback,
-              void* p_ref_data) { return return_value; }};
-  tL2CAP_LE_RESULT_CODE operator()(const RawAddress& bd_addr, uint16_t psm,
-                                   bool is_originator,
-                                   tBTM_SEC_CALLBACK* p_callback,
-                                   void* p_ref_data) {
+  static tBTM_STATUS return_value;
+  std::function<tBTM_STATUS(const RawAddress& bd_addr, uint16_t psm,
+                            bool is_originator, tBTM_SEC_CALLBACK* p_callback,
+                            void* p_ref_data)>
+      body{[](const RawAddress& /* bd_addr */, uint16_t /* psm */,
+              bool /* is_originator */, tBTM_SEC_CALLBACK* /* p_callback */,
+              void* /* p_ref_data */) { return return_value; }};
+  tBTM_STATUS operator()(const RawAddress& bd_addr, uint16_t psm,
+                         bool is_originator, tBTM_SEC_CALLBACK* p_callback,
+                         void* p_ref_data) {
     return body(bd_addr, psm, is_originator, p_callback, p_ref_data);
   };
 };
@@ -661,7 +616,7 @@ extern struct btm_ble_start_sec_check btm_ble_start_sec_check;
 // Params: uint8_t* p
 // Return: void
 struct btm_ble_test_command_complete {
-  std::function<void(uint8_t* p)> body{[](uint8_t* p) {}};
+  std::function<void(uint8_t* p)> body{[](uint8_t* /* p */) {}};
   void operator()(uint8_t* p) { body(p); };
 };
 extern struct btm_ble_test_command_complete btm_ble_test_command_complete;
@@ -671,7 +626,7 @@ extern struct btm_ble_test_command_complete btm_ble_test_command_complete;
 // Return: void
 struct btm_ble_update_sec_key_size {
   std::function<void(const RawAddress& bd_addr, uint8_t enc_key_size)> body{
-      [](const RawAddress& bd_addr, uint8_t enc_key_size) {}};
+      [](const RawAddress& /* bd_addr */, uint8_t /* enc_key_size */) {}};
   void operator()(const RawAddress& bd_addr, uint8_t enc_key_size) {
     body(bd_addr, enc_key_size);
   };
@@ -684,7 +639,9 @@ extern struct btm_ble_update_sec_key_size btm_ble_update_sec_key_size;
 struct btm_get_local_div {
   static bool return_value;
   std::function<bool(const RawAddress& bd_addr, uint16_t* p_div)> body{
-      [](const RawAddress& bd_addr, uint16_t* p_div) { return return_value; }};
+      [](const RawAddress& /* bd_addr */, uint16_t* /* p_div */) {
+        return return_value;
+      }};
   bool operator()(const RawAddress& bd_addr, uint16_t* p_div) {
     return body(bd_addr, p_div);
   };
@@ -698,8 +655,8 @@ struct btm_proc_smp_cback {
   static tBTM_STATUS return_value;
   std::function<tBTM_STATUS(tSMP_EVT event, const RawAddress& bd_addr,
                             const tSMP_EVT_DATA* p_data)>
-      body{[](tSMP_EVT event, const RawAddress& bd_addr,
-              const tSMP_EVT_DATA* p_data) { return return_value; }};
+      body{[](tSMP_EVT /* event */, const RawAddress& /* bd_addr */,
+              const tSMP_EVT_DATA* /* p_data */) { return return_value; }};
   tBTM_STATUS operator()(tSMP_EVT event, const RawAddress& bd_addr,
                          const tSMP_EVT_DATA* p_data) {
     return body(event, bd_addr, p_data);
@@ -713,8 +670,9 @@ extern struct btm_proc_smp_cback btm_proc_smp_cback;
 struct btm_sec_save_le_key {
   std::function<void(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
                      tBTM_LE_KEY_VALUE* p_keys, bool pass_to_application)>
-      body{[](const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
-              tBTM_LE_KEY_VALUE* p_keys, bool pass_to_application) {}};
+      body{[](const RawAddress& /* bd_addr */, tBTM_LE_KEY_TYPE /* key_type */,
+              tBTM_LE_KEY_VALUE* /* p_keys */,
+              bool /* pass_to_application */) {}};
   void operator()(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
                   tBTM_LE_KEY_VALUE* p_keys, bool pass_to_application) {
     body(bd_addr, key_type, p_keys, pass_to_application);
@@ -727,7 +685,7 @@ extern struct btm_sec_save_le_key btm_sec_save_le_key;
 // Return: void
 struct doNothing {
   std::function<void(uint8_t* data, uint16_t len)> body{
-      [](uint8_t* data, uint16_t len) {}};
+      [](uint8_t* /* data */, uint16_t /* len */) {}};
   void operator()(uint8_t* data, uint16_t len) { body(data, len); };
 };
 extern struct doNothing doNothing;
@@ -742,8 +700,8 @@ struct read_phy_cb {
       uint8_t* data, uint16_t len)>
       body{[](base::Callback<void(uint8_t tx_phy, uint8_t rx_phy,
                                   uint8_t status)>
-                  callback,
-              uint8_t* data, uint16_t len) {}};
+              /* callback */,
+              uint8_t* /* data */, uint16_t /* len */) {}};
   void operator()(
       base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)>
           callback,
@@ -756,5 +714,10 @@ extern struct read_phy_cb read_phy_cb;
 }  // namespace stack_btm_ble
 }  // namespace mock
 }  // namespace test
+
+std::optional<tBLE_BD_ADDR> BTM_BleGetIdentityAddress(
+    const RawAddress /* address */) {
+  return std::nullopt;
+}
 
 // END mockcify generation

@@ -20,6 +20,9 @@
 #define L2CDEFS_H
 
 #include <cstdint>
+
+#include "macros.h"
+
 /* L2CAP command codes
 */
 #define L2CAP_CMD_REJECT 0x01
@@ -156,12 +159,6 @@ typedef enum : uint16_t {
       L2CAP_CONN_LE_MASK + L2CAP_LE_RESULT_INVALID_PARAMETERS,
 } tL2CAP_CONN;
 
-#ifndef CASE_RETURN_TEXT
-#define CASE_RETURN_TEXT(code) \
-  case code:                   \
-    return #code
-#endif
-
 inline std::string l2cap_result_code_text(const tL2CAP_CONN& result) {
   switch (result) {
     CASE_RETURN_TEXT(L2CAP_CONN_OK);
@@ -188,7 +185,36 @@ inline std::string l2cap_result_code_text(const tL2CAP_CONN& result) {
              std::string("]");
   }
 }
-#undef CASE_RETURN_TEXT
+
+static inline std::string l2cap_command_code_text(uint8_t cmd) {
+  switch (cmd) {
+    CASE_RETURN_TEXT(L2CAP_CMD_REJECT);
+    CASE_RETURN_TEXT(L2CAP_CMD_CONN_REQ);
+    CASE_RETURN_TEXT(L2CAP_CMD_CONN_RSP);
+    CASE_RETURN_TEXT(L2CAP_CMD_CONFIG_REQ);
+    CASE_RETURN_TEXT(L2CAP_CMD_CONFIG_RSP);
+    CASE_RETURN_TEXT(L2CAP_CMD_DISC_REQ);
+    CASE_RETURN_TEXT(L2CAP_CMD_DISC_RSP);
+    CASE_RETURN_TEXT(L2CAP_CMD_ECHO_REQ);
+    CASE_RETURN_TEXT(L2CAP_CMD_ECHO_RSP);
+    CASE_RETURN_TEXT(L2CAP_CMD_INFO_REQ);
+    CASE_RETURN_TEXT(L2CAP_CMD_INFO_RSP);
+    CASE_RETURN_TEXT(L2CAP_CMD_AMP_CONN_REQ);
+    CASE_RETURN_TEXT(L2CAP_CMD_AMP_MOVE_REQ);
+    CASE_RETURN_TEXT(L2CAP_CMD_BLE_UPDATE_REQ);
+    CASE_RETURN_TEXT(L2CAP_CMD_BLE_UPDATE_RSP);
+    CASE_RETURN_TEXT(L2CAP_CMD_BLE_CREDIT_BASED_CONN_REQ);
+    CASE_RETURN_TEXT(L2CAP_CMD_BLE_CREDIT_BASED_CONN_RES);
+    CASE_RETURN_TEXT(L2CAP_CMD_BLE_FLOW_CTRL_CREDIT);
+    CASE_RETURN_TEXT(L2CAP_CMD_CREDIT_BASED_CONN_REQ);
+    CASE_RETURN_TEXT(L2CAP_CMD_CREDIT_BASED_CONN_RES);
+    CASE_RETURN_TEXT(L2CAP_CMD_CREDIT_BASED_RECONFIG_REQ);
+    CASE_RETURN_TEXT(L2CAP_CMD_CREDIT_BASED_RECONFIG_RES);
+    default:
+      return std::string("UNKNOWN L2CAP CMD[") + std::to_string(cmd) +
+             std::string("]");
+  }
+}
 
 inline tL2CAP_CONN to_l2cap_result_code(uint16_t result) {
   return static_cast<tL2CAP_CONN>(result);

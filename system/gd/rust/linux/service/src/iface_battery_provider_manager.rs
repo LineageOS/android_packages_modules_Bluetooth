@@ -3,7 +3,7 @@ use btstack::battery_provider_manager::{IBatteryProviderCallback, IBatteryProvid
 use btstack::RPCProxy;
 use dbus::strings::Path;
 use dbus_macros::{dbus_method, dbus_proxy_obj, generate_dbus_exporter};
-use dbus_projection::{dbus_generated, DisconnectWatcher};
+use dbus_projection::prelude::*;
 
 use crate::dbus_arg::DBusArg;
 
@@ -39,6 +39,11 @@ impl IBatteryProviderManager for IBatteryProviderManagerDBus {
 
     #[dbus_method("SetBatteryInfo")]
     fn set_battery_info(&mut self, battery_provider_id: u32, battery_set: BatterySet) {
+        dbus_generated!()
+    }
+
+    #[dbus_method("RemoveBatteryInfo")]
+    fn remove_battery_info(&mut self, battery_provider_id: u32, address: String, uuid: String) {
         dbus_generated!()
     }
 }

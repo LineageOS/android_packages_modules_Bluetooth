@@ -23,6 +23,8 @@
  *
  ******************************************************************************/
 
+#define LOG_TAG "hid"
+
 #include "hidd_api.h"
 
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
@@ -30,15 +32,19 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "btm_api.h"
 #include "hidd_int.h"
 #include "hiddefs.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
-#include "stack/btm/btm_sec.h"
+#include "stack/include/bt_psm_types.h"
 #include "stack/include/bt_types.h"
+#include "stack/include/bt_uuid16.h"
+#include "stack/include/sdp_api.h"
+#include "stack/include/sdpdefs.h"
 #include "stack/include/stack_metrics_logging.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth::legacy::stack::sdp;
 
 tHID_DEV_CTB hd_cb;
 
@@ -52,29 +58,9 @@ tHID_DEV_CTB hd_cb;
  *
  ******************************************************************************/
 void HID_DevInit(void) {
-  uint8_t log_level = hd_cb.trace_level;
-
-  HIDD_TRACE_API("%s", __func__);
+  LOG_VERBOSE("%s", __func__);
 
   memset(&hd_cb, 0, sizeof(tHID_DEV_CTB));
-  hd_cb.trace_level = log_level;
-}
-
-/*******************************************************************************
- *
- * Function         HID_DevSetTraceLevel
- *
- * Description      This function sets the trace level for HID Dev. If called
-*with
- *                  a value of 0xFF, it simply reads the current trace level.
- *
- * Returns          the new (current) trace level
- *
- ******************************************************************************/
-uint8_t HID_DevSetTraceLevel(uint8_t new_level) {
-  if (new_level != 0xFF) hd_cb.trace_level = new_level;
-
-  return (hd_cb.trace_level);
 }
 
 /*******************************************************************************
@@ -89,7 +75,7 @@ uint8_t HID_DevSetTraceLevel(uint8_t new_level) {
 tHID_STATUS HID_DevRegister(tHID_DEV_HOST_CALLBACK* host_cback) {
   tHID_STATUS st;
 
-  HIDD_TRACE_API("%s", __func__);
+  LOG_VERBOSE("%s", __func__);
 
   if (hd_cb.reg_flag) {
     log_counter_metrics(
@@ -130,7 +116,7 @@ tHID_STATUS HID_DevRegister(tHID_DEV_HOST_CALLBACK* host_cback) {
  *
  ******************************************************************************/
 tHID_STATUS HID_DevDeregister(void) {
-  HIDD_TRACE_API("%s", __func__);
+  LOG_VERBOSE("%s", __func__);
 
   if (!hd_cb.reg_flag) {
     log_counter_metrics(android::bluetooth::CodePathCounterKeyEnum::
@@ -160,12 +146,13 @@ tHID_STATUS HID_DevAddRecord(uint32_t handle, char* p_name, char* p_description,
                              uint16_t desc_len, uint8_t* p_desc_data) {
   bool result = TRUE;
 
-  HIDD_TRACE_API("%s", __func__);
+  LOG_VERBOSE("%s", __func__);
 
   // Service Class ID List
   if (result) {
     uint16_t uuid = UUID_SERVCLASS_HUMAN_INTERFACE;
-    result &= SDP_AddServiceClassIdList(handle, 1, &uuid);
+    result &= get_legacy_stack_sdp_api()->handle.SDP_AddServiceClassIdList(
+        handle, 1, &uuid);
   }
 
   // Protocol Descriptor List
@@ -179,14 +166,15 @@ tHID_STATUS HID_DevAddRecord(uint32_t handle, char* p_name, char* p_description,
     proto_list[1].protocol_uuid = UUID_PROTOCOL_HIDP;
     proto_list[1].num_params = 0;
 
-    result &= SDP_AddProtocolList(handle, 2, proto_list);
+    result &= get_legacy_stack_sdp_api()->handle.SDP_AddProtocolList(
+        handle, 2, proto_list);
   }
 
   // Language Base Attribute ID List
   if (result) {
-    result &= SDP_AddLanguageBaseAttrIDList(handle, LANG_ID_CODE_ENGLISH,
-                                            LANG_ID_CHAR_ENCODE_UTF8,
-                                            LANGUAGE_BASE_ID);
+    result &= get_legacy_stack_sdp_api()->handle.SDP_AddLanguageBaseAttrIDList(
+        handle, LANG_ID_CODE_ENGLISH, LANG_ID_CHAR_ENCODE_UTF8,
+        LANGUAGE_BASE_ID);
   }
 
   // Additional Protocol Descriptor List
@@ -200,7 +188,8 @@ tHID_STATUS HID_DevAddRecord(uint32_t handle, char* p_name, char* p_description,
     add_proto_list.list_elem[1].protocol_uuid = UUID_PROTOCOL_HIDP;
     add_proto_list.list_elem[1].num_params = 0;
 
-    result &= SDP_AddAdditionProtoLists(handle, 1, &add_proto_list);
+    result &= get_legacy_stack_sdp_api()->handle.SDP_AddAdditionProtoLists(
+        handle, 1, &add_proto_list);
   }
 
   // Service Name (O)
@@ -211,16 +200,17 @@ tHID_STATUS HID_DevAddRecord(uint32_t handle, char* p_name, char* p_description,
     const char* srv_desc = p_description;
     const char* provider_name = p_provider;
 
-    result &= SDP_AddAttribute(handle, ATTR_ID_SERVICE_NAME, TEXT_STR_DESC_TYPE,
-                               strlen(srv_name) + 1, (uint8_t*)srv_name);
+    result &= get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+        handle, ATTR_ID_SERVICE_NAME, TEXT_STR_DESC_TYPE, strlen(srv_name) + 1,
+        (uint8_t*)srv_name);
 
-    result &= SDP_AddAttribute(handle, ATTR_ID_SERVICE_DESCRIPTION,
-                               TEXT_STR_DESC_TYPE, strlen(srv_desc) + 1,
-                               (uint8_t*)srv_desc);
+    result &= get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+        handle, ATTR_ID_SERVICE_DESCRIPTION, TEXT_STR_DESC_TYPE,
+        strlen(srv_desc) + 1, (uint8_t*)srv_desc);
 
-    result &=
-        SDP_AddAttribute(handle, ATTR_ID_PROVIDER_NAME, TEXT_STR_DESC_TYPE,
-                         strlen(provider_name) + 1, (uint8_t*)provider_name);
+    result &= get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+        handle, ATTR_ID_PROVIDER_NAME, TEXT_STR_DESC_TYPE,
+        strlen(provider_name) + 1, (uint8_t*)provider_name);
   }
 
   // Bluetooth Profile Descriptor List
@@ -228,7 +218,8 @@ tHID_STATUS HID_DevAddRecord(uint32_t handle, char* p_name, char* p_description,
     const uint16_t profile_uuid = UUID_SERVCLASS_HUMAN_INTERFACE;
     const uint16_t version = 0x0100;
 
-    result &= SDP_AddProfileDescriptorList(handle, profile_uuid, version);
+    result &= get_legacy_stack_sdp_api()->handle.SDP_AddProfileDescriptorList(
+        handle, profile_uuid, version);
   }
 
   // HID Parser Version
@@ -245,25 +236,29 @@ tHID_STATUS HID_DevAddRecord(uint32_t handle, char* p_name, char* p_description,
 
     p = (uint8_t*)&temp;
     UINT16_TO_BE_STREAM(p, rel_num);
-    result &= SDP_AddAttribute(handle, ATTR_ID_HID_DEVICE_RELNUM,
-                               UINT_DESC_TYPE, 2, (uint8_t*)&temp);
+    result &= get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+        handle, ATTR_ID_HID_DEVICE_RELNUM, UINT_DESC_TYPE, 2, (uint8_t*)&temp);
 
     p = (uint8_t*)&temp;
     UINT16_TO_BE_STREAM(p, parser_version);
-    result &= SDP_AddAttribute(handle, ATTR_ID_HID_PARSER_VERSION,
-                               UINT_DESC_TYPE, 2, (uint8_t*)&temp);
+    result &= get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+        handle, ATTR_ID_HID_PARSER_VERSION, UINT_DESC_TYPE, 2, (uint8_t*)&temp);
 
-    result &= SDP_AddAttribute(handle, ATTR_ID_HID_DEVICE_SUBCLASS,
-                               UINT_DESC_TYPE, 1, (uint8_t*)&dev_subclass);
+    result &= get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+        handle, ATTR_ID_HID_DEVICE_SUBCLASS, UINT_DESC_TYPE, 1,
+        (uint8_t*)&dev_subclass);
 
-    result &= SDP_AddAttribute(handle, ATTR_ID_HID_COUNTRY_CODE, UINT_DESC_TYPE,
-                               1, (uint8_t*)&country_code);
+    result &= get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+        handle, ATTR_ID_HID_COUNTRY_CODE, UINT_DESC_TYPE, 1,
+        (uint8_t*)&country_code);
 
-    result &= SDP_AddAttribute(handle, ATTR_ID_HID_VIRTUAL_CABLE,
-                               BOOLEAN_DESC_TYPE, 1, (uint8_t*)&bool_true);
+    result &= get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+        handle, ATTR_ID_HID_VIRTUAL_CABLE, BOOLEAN_DESC_TYPE, 1,
+        (uint8_t*)&bool_true);
 
-    result &= SDP_AddAttribute(handle, ATTR_ID_HID_RECONNECT_INITIATE,
-                               BOOLEAN_DESC_TYPE, 1, (uint8_t*)&bool_true);
+    result &= get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+        handle, ATTR_ID_HID_RECONNECT_INITIATE, BOOLEAN_DESC_TYPE, 1,
+        (uint8_t*)&bool_true);
 
     {
       static uint8_t cdt = 0x22;
@@ -271,8 +266,8 @@ tHID_STATUS HID_DevAddRecord(uint32_t handle, char* p_name, char* p_description,
       uint8_t seq_len = 4 + desc_len;
 
       if (desc_len > HIDD_APP_DESCRIPTOR_LEN) {
-        HIDD_TRACE_ERROR("%s: descriptor length = %d, larger than max %d",
-                         __func__, desc_len, HIDD_APP_DESCRIPTOR_LEN);
+        LOG_ERROR("%s: descriptor length = %d, larger than max %d", __func__,
+                  desc_len, HIDD_APP_DESCRIPTOR_LEN);
         log_counter_metrics(
             android::bluetooth::CodePathCounterKeyEnum::
                 HIDD_ERR_NOT_REGISTERED_DUE_TO_DESCRIPTOR_LENGTH,
@@ -283,8 +278,7 @@ tHID_STATUS HID_DevAddRecord(uint32_t handle, char* p_name, char* p_description,
       p_buf = (uint8_t*)osi_malloc(HIDD_APP_DESCRIPTOR_LEN + 6);
 
       if (p_buf == NULL) {
-        HIDD_TRACE_ERROR("%s: Buffer allocation failure for size = 2048 ",
-                         __func__);
+        LOG_ERROR("%s: Buffer allocation failure for size = 2048 ", __func__);
         log_counter_metrics(
             android::bluetooth::CodePathCounterKeyEnum::
                 HIDD_ERR_NOT_REGISTERED_DUE_TO_BUFFER_ALLOCATION,
@@ -305,8 +299,9 @@ tHID_STATUS HID_DevAddRecord(uint32_t handle, char* p_name, char* p_description,
       UINT8_TO_BE_STREAM(p, desc_len);
       ARRAY_TO_BE_STREAM(p, p_desc_data, (int)desc_len);
 
-      result &= SDP_AddAttribute(handle, ATTR_ID_HID_DESCRIPTOR_LIST,
-                                 DATA_ELE_SEQ_DESC_TYPE, p - p_buf, p_buf);
+      result &= get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+          handle, ATTR_ID_HID_DESCRIPTOR_LIST, DATA_ELE_SEQ_DESC_TYPE,
+          p - p_buf, p_buf);
 
       osi_free(p_buf);
     }
@@ -322,37 +317,42 @@ tHID_STATUS HID_DevAddRecord(uint32_t handle, char* p_name, char* p_description,
       UINT16_TO_BE_STREAM(p, lang_english);
       UINT8_TO_BE_STREAM(p, (UINT_DESC_TYPE << 3) | SIZE_TWO_BYTES);
       UINT16_TO_BE_STREAM(p, LANGUAGE_BASE_ID);
-      result &=
-          SDP_AddAttribute(handle, ATTR_ID_HID_LANGUAGE_ID_BASE,
-                           DATA_ELE_SEQ_DESC_TYPE, p - lang_buf, lang_buf);
+      result &= get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+          handle, ATTR_ID_HID_LANGUAGE_ID_BASE, DATA_ELE_SEQ_DESC_TYPE,
+          p - lang_buf, lang_buf);
     }
 
-    result &= SDP_AddAttribute(handle, ATTR_ID_HID_BATTERY_POWER,
-                               BOOLEAN_DESC_TYPE, 1, (uint8_t*)&bool_true);
+    result &= get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+        handle, ATTR_ID_HID_BATTERY_POWER, BOOLEAN_DESC_TYPE, 1,
+        (uint8_t*)&bool_true);
 
-    result &= SDP_AddAttribute(handle, ATTR_ID_HID_REMOTE_WAKE,
-                               BOOLEAN_DESC_TYPE, 1, (uint8_t*)&bool_false);
+    result &= get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+        handle, ATTR_ID_HID_REMOTE_WAKE, BOOLEAN_DESC_TYPE, 1,
+        (uint8_t*)&bool_false);
 
-    result &= SDP_AddAttribute(handle, ATTR_ID_HID_NORMALLY_CONNECTABLE,
-                               BOOLEAN_DESC_TYPE, 1, (uint8_t*)&bool_true);
+    result &= get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+        handle, ATTR_ID_HID_NORMALLY_CONNECTABLE, BOOLEAN_DESC_TYPE, 1,
+        (uint8_t*)&bool_true);
 
-    result &= SDP_AddAttribute(handle, ATTR_ID_HID_BOOT_DEVICE,
-                               BOOLEAN_DESC_TYPE, 1, (uint8_t*)&bool_true);
+    result &= get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+        handle, ATTR_ID_HID_BOOT_DEVICE, BOOLEAN_DESC_TYPE, 1,
+        (uint8_t*)&bool_true);
 
     p = (uint8_t*)&temp;
     UINT16_TO_BE_STREAM(p, prof_ver);
-    result &= SDP_AddAttribute(handle, ATTR_ID_HID_PROFILE_VERSION,
-                               UINT_DESC_TYPE, 2, (uint8_t*)&temp);
+    result &= get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+        handle, ATTR_ID_HID_PROFILE_VERSION, UINT_DESC_TYPE, 2,
+        (uint8_t*)&temp);
   }
 
   if (result) {
     uint16_t browse_group = UUID_SERVCLASS_PUBLIC_BROWSE_GROUP;
-    result &= SDP_AddUuidSequence(handle, ATTR_ID_BROWSE_GROUP_LIST, 1,
-                                  &browse_group);
+    result &= get_legacy_stack_sdp_api()->handle.SDP_AddUuidSequence(
+        handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse_group);
   }
 
   if (!result) {
-    HIDD_TRACE_ERROR("%s: failed to complete SDP record", __func__);
+    LOG_ERROR("%s: failed to complete SDP record", __func__);
     log_counter_metrics(android::bluetooth::CodePathCounterKeyEnum::
                             HIDD_ERR_NOT_REGISTERED_AT_SDP,
                         1);
@@ -373,8 +373,8 @@ tHID_STATUS HID_DevAddRecord(uint32_t handle, char* p_name, char* p_description,
  ******************************************************************************/
 tHID_STATUS HID_DevSendReport(uint8_t channel, uint8_t type, uint8_t id,
                               uint16_t len, uint8_t* p_data) {
-  HIDD_TRACE_VERBOSE("%s: channel=%d type=%d id=%d len=%d", __func__, channel,
-                     type, id, len);
+  LOG_VERBOSE("%s: channel=%d type=%d id=%d len=%d", __func__, channel, type,
+              id, len);
 
   if (channel == HID_CHANNEL_CTRL) {
     return hidd_conn_send_data(HID_CHANNEL_CTRL, HID_TRANS_DATA, type, id, len,
@@ -402,7 +402,7 @@ tHID_STATUS HID_DevSendReport(uint8_t channel, uint8_t type, uint8_t id,
  *
  ******************************************************************************/
 tHID_STATUS HID_DevVirtualCableUnplug(void) {
-  HIDD_TRACE_API("%s", __func__);
+  LOG_VERBOSE("%s", __func__);
 
   return hidd_conn_send_data(HID_CHANNEL_CTRL, HID_TRANS_CONTROL,
                              HID_PAR_CONTROL_VIRTUAL_CABLE_UNPLUG, 0, 0, NULL);
@@ -549,7 +549,7 @@ tHID_STATUS HID_DevSetIncomingPolicy(bool allow) {
 tHID_STATUS HID_DevReportError(uint8_t error) {
   uint8_t handshake_param;
 
-  HIDD_TRACE_API("%s: error = %d", __func__, error);
+  LOG_VERBOSE("%s: error = %d", __func__, error);
 
   switch (error) {
     case HID_PAR_HANDSHAKE_RSP_SUCCESS:
@@ -580,7 +580,7 @@ tHID_STATUS HID_DevReportError(uint8_t error) {
  *
  ******************************************************************************/
 tHID_STATUS HID_DevGetDevice(RawAddress* addr) {
-  HIDD_TRACE_API("%s", __func__);
+  LOG_VERBOSE("%s", __func__);
 
   if (hd_cb.device.in_use) {
     *addr = hd_cb.device.addr;
@@ -607,7 +607,7 @@ tHID_STATUS HID_DevSetIncomingQos(uint8_t service_type, uint32_t token_rate,
                                   uint32_t token_bucket_size,
                                   uint32_t peak_bandwidth, uint32_t latency,
                                   uint32_t delay_variation) {
-  HIDD_TRACE_API("%s", __func__);
+  LOG_VERBOSE("%s", __func__);
 
   hd_cb.use_in_qos = TRUE;
 
@@ -634,7 +634,7 @@ tHID_STATUS HID_DevSetOutgoingQos(uint8_t service_type, uint32_t token_rate,
                                   uint32_t token_bucket_size,
                                   uint32_t peak_bandwidth, uint32_t latency,
                                   uint32_t delay_variation) {
-  HIDD_TRACE_API("%s", __func__);
+  LOG_VERBOSE("%s", __func__);
 
   hd_cb.l2cap_intr_cfg.qos_present = TRUE;
 

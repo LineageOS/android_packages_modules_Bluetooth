@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-#include "audio_hal_interface/hal_version_manager.h"
 #include "audio_hal_interface/le_audio_software.h"
 #include "bta/le_audio/codec_manager.h"
 
@@ -72,7 +71,7 @@ bool LeAudioClientInterface::ReleaseSource(
   return false;
 }
 
-int GetAidlInterfaceVersion() { return 0; }
+void LeAudioClientInterface::SetAllowedDsaModes(DsaModes dsa_modes) { return; }
 
 }  // namespace le_audio
 }  // namespace audio

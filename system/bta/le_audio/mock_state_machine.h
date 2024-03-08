@@ -33,7 +33,8 @@ class MockLeAudioGroupStateMachine : public le_audio::LeAudioGroupStateMachine {
       (override));
   MOCK_METHOD((bool), AttachToStream,
               (le_audio::LeAudioDeviceGroup * group,
-               le_audio::LeAudioDevice* leAudioDevice),
+               le_audio::LeAudioDevice* leAudioDevice,
+               le_audio::types::BidirectionalPair<std::vector<uint8_t>> ccids),
               (override));
   MOCK_METHOD((void), SuspendStream, (le_audio::LeAudioDeviceGroup * group),
               (override));
@@ -53,6 +54,10 @@ class MockLeAudioGroupStateMachine : public le_audio::LeAudioGroupStateMachine {
                le_audio::LeAudioDeviceGroup* group),
               (override));
 
+  MOCK_METHOD((void), ProcessGattCtpNotification,
+              (le_audio::LeAudioDeviceGroup * group, uint8_t* value,
+               uint16_t len),
+              (override));
   MOCK_METHOD((void), ProcessHciNotifOnCigCreate,
               (le_audio::LeAudioDeviceGroup * group, uint8_t status,
                uint8_t cig_id, std::vector<uint16_t> conn_handles),

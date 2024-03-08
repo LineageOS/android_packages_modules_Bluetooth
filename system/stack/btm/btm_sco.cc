@@ -23,6 +23,10 @@
  *
  ******************************************************************************/
 
+#define LOG_TAG "btm_sco"
+
+#include "stack/btm/btm_sco.h"
+
 #include <base/logging.h>
 #include <base/strings/stringprintf.h>
 
@@ -30,24 +34,27 @@
 #include <cstring>
 #include <string>
 
-#define LOG_TAG "btm_sco"
-
+#include "common/bidi_queue.h"
 #include "device/include/controller.h"
 #include "device/include/device_iot_config.h"
-#include "embdrv/sbc/decoder/include/oi_codec_sbc.h"
-#include "embdrv/sbc/decoder/include/oi_status.h"
-#include "osi/include/allocator.h"
-#include "osi/include/log.h"
-#include "osi/include/osi.h"
+#include "gd/hci/hci_layer.h"
+#include "hci/hci_packets.h"
+#include "hci/include/hci_layer.h"
+#include "internal_include/bt_target.h"
+#include "main/shim/entry.h"
 #include "osi/include/properties.h"
+#include "osi/include/stack_power_telemetry.h"
+#include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sco_hfp_hal.h"
 #include "stack/btm/btm_sec.h"
-#include "stack/btm/security_device_record.h"
 #include "stack/include/acl_api.h"
-#include "stack/include/bt_hdr.h"
 #include "stack/include/btm_api.h"
 #include "stack/include/btm_api_types.h"
+#include "stack/include/btm_log_history.h"
 #include "stack/include/hci_error_code.h"
+#include "stack/include/hcimsgs.h"
+#include "stack/include/main_thread.h"
+#include "stack/include/sdpdefs.h"
 #include "stack/include/stack_metrics_logging.h"
 #include "types/class_of_device.h"
 #include "types/raw_address.h"
@@ -62,14 +69,81 @@ static const char kPropertyDisableEnhancedConnection[] =
     "bluetooth.sco.disable_enhanced_connection";
 
 namespace {
-constexpr char kBtmLogTag[] = "SCO";
 
-const bluetooth::legacy::hci::Interface& GetLegacyHciInterface() {
-  return bluetooth::legacy::hci::GetInterface();
-}
+/* Structure passed with SCO change command and events.
+ * Used by both Sync and Enhanced sync messaging
+ */
+typedef struct {
+  uint16_t max_latency_ms;
+  uint16_t packet_types;
+  uint8_t retransmission_effort;
+} tBTM_CHG_ESCO_PARAMS;
+
+constexpr char kBtmLogTag[] = "SCO";
 
 };  // namespace
 
+using bluetooth::legacy::hci::GetInterface;
+
+// forward declaration for dequeueing packets
+static void btm_route_sco_data(bluetooth::hci::ScoView valid_packet);
+
+namespace cpp {
+bluetooth::common::BidiQueueEnd<bluetooth::hci::ScoBuilder,
+                                bluetooth::hci::ScoView>* hci_sco_queue_end =
+    nullptr;
+static bluetooth::os::EnqueueBuffer<bluetooth::hci::ScoBuilder>*
+    pending_sco_data = nullptr;
+
+static void sco_data_callback() {
+  if (hci_sco_queue_end == nullptr) {
+    return;
+  }
+  auto packet = hci_sco_queue_end->TryDequeue();
+  ASSERT(packet != nullptr);
+  if (!packet->IsValid()) {
+    LOG_INFO("Dropping invalid packet of size %zu", packet->size());
+    return;
+  }
+  if (do_in_main_thread(FROM_HERE, base::Bind(&btm_route_sco_data, *packet)) !=
+      BT_STATUS_SUCCESS) {
+    LOG_ERROR("do_in_main_thread failed from sco_data_callback");
+  }
+}
+static void register_for_sco() {
+  hci_sco_queue_end = bluetooth::shim::GetHciLayer()->GetScoQueueEnd();
+  hci_sco_queue_end->RegisterDequeue(
+      bluetooth::shim::GetGdShimHandler(),
+      bluetooth::common::Bind(sco_data_callback));
+  pending_sco_data =
+      new bluetooth::os::EnqueueBuffer<bluetooth::hci::ScoBuilder>(
+          hci_sco_queue_end);
+}
+
+static void shut_down_sco() {
+  if (pending_sco_data != nullptr) {
+    pending_sco_data->Clear();
+    delete pending_sco_data;
+    pending_sco_data = nullptr;
+  }
+  if (hci_sco_queue_end != nullptr) {
+    hci_sco_queue_end->UnregisterDequeue();
+    hci_sco_queue_end = nullptr;
+  }
+}
+};  // namespace cpp
+
+void tSCO_CB::Init() {
+  hfp_hal_interface::init();
+  def_esco_parms = esco_parameters_for_codec(
+      ESCO_CODEC_CVSD_S3, hfp_hal_interface::get_offload_enabled());
+  cpp::register_for_sco();
+}
+
+void tSCO_CB::Free() {
+  cpp::shut_down_sco();
+  bluetooth::audio::sco::cleanup();
+}
 /******************************************************************************/
 /*               L O C A L    D A T A    D E F I N I T I O N S                */
 /******************************************************************************/
@@ -164,7 +238,7 @@ static void btm_esco_conn_rsp(uint16_t sco_inx, uint8_t hci_status,
             ->supports_enhanced_setup_synchronous_connection() &&
         !osi_property_get_bool(kPropertyDisableEnhancedConnection,
                                kDefaultDisableEnhancedConnection)) {
-      BTM_TRACE_DEBUG(
+      LOG_VERBOSE(
           "%s: txbw 0x%x, rxbw 0x%x, lat 0x%x, retrans 0x%02x, "
           "pkt 0x%04x, path %u",
           __func__, p_setup->transmit_bandwidth, p_setup->receive_bandwidth,
@@ -209,95 +283,82 @@ static tSCO_CONN* btm_get_active_sco() {
  * Returns          void
  *
  ******************************************************************************/
-void btm_route_sco_data(BT_HDR* p_msg) {
-  uint8_t* payload = p_msg->data;
-  if (p_msg->len < 3) {
-    LOG_ERROR("Received incomplete SCO header");
-    osi_free(p_msg);
-    return;
-  }
-
-  uint8_t data_len = 0;
-  uint16_t handle_with_flags = 0;
-  STREAM_TO_UINT16(handle_with_flags, payload);
-  STREAM_TO_UINT8(data_len, payload);
-  if (p_msg->len != data_len + 3) {
-    LOG_ERROR("Received invalid SCO data of size: %hhu, dropping", data_len);
-    osi_free(p_msg);
-    return;
-  }
-
-  uint16_t handle = HCID_GET_HANDLE(handle_with_flags);
+static void btm_route_sco_data(bluetooth::hci::ScoView valid_packet) {
+  uint16_t handle = valid_packet.GetHandle();
   if (handle > HCI_HANDLE_MAX) {
-    LOG_ERROR(
-        "Receive invalid SCO data with handle: 0x%X, required to be <= 0x%X, "
-        "dropping",
-        handle, HCI_HANDLE_MAX);
-    osi_free(p_msg);
+    LOG_ERROR("Dropping SCO data with invalid handle: 0x%X > 0x%X, ", handle,
+              HCI_HANDLE_MAX);
     return;
   }
 
   tSCO_CONN* active_sco = btm_get_active_sco();
   if (active_sco == nullptr) {
     LOG_ERROR("Received SCO data when there is no active SCO connection");
-    osi_free(p_msg);
     return;
   }
   if (active_sco->hci_handle != handle) {
-    LOG_ERROR(
-        "Drop packet with handle(0x%X) different from the active handle(0x%X)",
-        handle, active_sco->hci_handle);
-    osi_free(p_msg);
+    LOG_ERROR("Dropping packet with handle(0x%X) != active handle(0x%X)",
+              handle, active_sco->hci_handle);
     return;
   }
 
+  const auto codec_type = active_sco->get_codec_type();
+  const std::string codec = sco_codec_type_text(codec_type);
+
+  auto data = valid_packet.GetData();
+  auto rx_data = data.data();
   const uint8_t* decoded = nullptr;
   size_t written = 0, rc = 0;
-  if (active_sco->is_wbs()) {
-    uint16_t status = HCID_GET_PKT_STATUS(handle_with_flags);
+  if (codec_type == BTM_SCO_CODEC_MSBC || codec_type == BTM_SCO_CODEC_LC3) {
+    auto status = valid_packet.GetPacketStatusFlag();
 
-    if (status > 0) LOG_DEBUG("Packet corrupted with status(0x%X)", status);
-    rc = bluetooth::audio::sco::wbs::enqueue_packet(payload, data_len,
-                                                    status > 0);
-    if (rc != data_len) LOG_DEBUG("Failed to enqueue packet");
+    if (status != bluetooth::hci::PacketStatusFlag::CORRECTLY_RECEIVED) {
+      LOG_DEBUG("%s packet corrupted with status(%s)", codec.c_str(),
+                PacketStatusFlagText(status).c_str());
+    }
+    auto enqueue_packet = codec_type == BTM_SCO_CODEC_LC3
+                              ? &bluetooth::audio::sco::swb::enqueue_packet
+                              : &bluetooth::audio::sco::wbs::enqueue_packet;
+    rc = enqueue_packet(
+        data, status != bluetooth::hci::PacketStatusFlag::CORRECTLY_RECEIVED);
+    if (!rc) LOG_DEBUG("Failed to enqueue %s packet", codec.c_str());
 
     while (rc) {
-      rc = bluetooth::audio::sco::wbs::decode(&decoded);
-      if (rc == 0) {
-        LOG_DEBUG("Failed to decode frames");
-        break;
-      }
+      auto decode = codec_type == BTM_SCO_CODEC_LC3
+                        ? &bluetooth::audio::sco::swb::decode
+                        : &bluetooth::audio::sco::wbs::decode;
+      rc = decode(&decoded);
+      if (rc == 0) break;
 
       written += bluetooth::audio::sco::write(decoded, rc);
     }
   } else {
-    written = bluetooth::audio::sco::write(payload, data_len);
+    written = bluetooth::audio::sco::write(rx_data, data.size());
   }
-  osi_free(p_msg);
 
   /* For Chrome OS, we send the outgoing data after receiving an incoming one.
    * server, so that we can keep the data read/write rate balanced */
   size_t read = 0, avail = 0;
   const uint8_t* encoded = nullptr;
-  if (active_sco->is_wbs()) {
+  if (codec_type == BTM_SCO_CODEC_MSBC || codec_type == BTM_SCO_CODEC_LC3) {
     while (written) {
       avail = BTM_SCO_DATA_SIZE_MAX - btm_pcm_buf_write_offset;
       if (avail) {
-        data_len = written < avail ? written : avail;
+        size_t to_read = written < avail ? written : avail;
         read = bluetooth::audio::sco::read(
-            (uint8_t*)btm_pcm_buf + btm_pcm_buf_write_offset, data_len);
-        if (read != data_len) {
+            (uint8_t*)btm_pcm_buf + btm_pcm_buf_write_offset, to_read);
+        if (read != to_read) {
           ASSERT_LOG(btm_pcm_buf_write_offset + read <= BTM_SCO_DATA_SIZE_MAX,
-                     "Read more data (%lu) than available buffer (%lu) guarded "
-                     "by read",
-                     (unsigned long)read,
+                     "Read more %s data (%lu) than available buffer (%lu) "
+                     "guarded by read",
+                     codec.c_str(), (unsigned long)read,
                      (unsigned long)(BTM_SCO_DATA_SIZE_MAX -
                                      btm_pcm_buf_write_offset));
 
           LOG_INFO(
-              "Requested to read %lu bytes of data but got %lu bytes of PCM "
-              "data from audio server: WriteOffset:%lu ReadOffset:%lu",
-              (unsigned long)data_len, (unsigned long)read,
+              "Requested to read %lu bytes of %s data but got %lu bytes of "
+              "PCM data from audio server: WriteOffset:%lu ReadOffset:%lu",
+              (unsigned long)to_read, codec.c_str(), (unsigned long)read,
               (unsigned long)btm_pcm_buf_write_offset,
               (unsigned long)btm_pcm_buf_read_offset);
           if (read == 0) break;
@@ -307,32 +368,38 @@ void btm_route_sco_data(BT_HDR* p_msg) {
       } else {
         /* We don't break here so that we can still decode the data in the
          * buffer to spare the buffer space when the buffer is full */
-        LOG_WARN("Buffer is full when we try to read from audio server");
+        LOG_WARN(
+            "Buffer is full when we try to read %s packet from audio server",
+            codec.c_str());
         ASSERT_LOG(btm_pcm_buf_write_offset - btm_pcm_buf_read_offset >=
-                       BTM_MSBC_CODE_SIZE,
-                   "PCM buffer is full but fails to encode a mSBC packet. "
+                       (codec_type == BTM_SCO_CODEC_MSBC ? BTM_MSBC_CODE_SIZE
+                                                         : BTM_LC3_CODE_SIZE),
+                   "PCM buffer is full but fails to encode an %s packet. "
                    "This is abnormal and can cause busy loop: "
                    "WriteOffset:%lu, ReadOffset:%lu, BufferSize:%lu",
-                   (unsigned long)btm_pcm_buf_write_offset,
+                   codec.c_str(), (unsigned long)btm_pcm_buf_write_offset,
                    (unsigned long)btm_pcm_buf_read_offset,
                    (unsigned long)sizeof(btm_pcm_buf));
       }
 
       btm_pcm_buf_write_offset += read;
-      rc = bluetooth::audio::sco::wbs::encode(
-          &btm_pcm_buf[btm_pcm_buf_read_offset / sizeof(*btm_pcm_buf)],
-          btm_pcm_buf_write_offset - btm_pcm_buf_read_offset);
+
+      auto encode = codec_type == BTM_SCO_CODEC_LC3
+                        ? &bluetooth::audio::sco::swb::encode
+                        : &bluetooth::audio::sco::wbs::encode;
+      rc = encode(&btm_pcm_buf[btm_pcm_buf_read_offset / sizeof(*btm_pcm_buf)],
+                  btm_pcm_buf_write_offset - btm_pcm_buf_read_offset);
 
       if (!rc)
         LOG_DEBUG(
-            "Failed to encode data starting at ReadOffset:%lu to "
+            "Failed to encode %s data starting at ReadOffset:%lu to "
             "WriteOffset:%lu",
-            (unsigned long)btm_pcm_buf_read_offset,
+            codec.c_str(), (unsigned long)btm_pcm_buf_read_offset,
             (unsigned long)btm_pcm_buf_write_offset);
 
       /* The offsets should reset some time as the buffer length should always
-       * divisible by BTM_MSBC_CODE_SIZE(240) and wbs::encode only returns
-       * BTM_MSBC_CODE_SIZE or 0 */
+       * divisible by 480 and `encode` only returns 480(LC3), 240(MSBC), or 0.
+       */
       btm_pcm_buf_read_offset += rc;
       if (btm_pcm_buf_write_offset == btm_pcm_buf_read_offset) {
         btm_pcm_buf_write_offset = 0;
@@ -341,7 +408,10 @@ void btm_route_sco_data(BT_HDR* p_msg) {
 
       /* Send all of the available SCO packets buffered in the queue */
       while (1) {
-        rc = bluetooth::audio::sco::wbs::dequeue_packet(&encoded);
+        auto dequeue_packet = codec_type == BTM_SCO_CODEC_LC3
+                                  ? &bluetooth::audio::sco::swb::dequeue_packet
+                                  : &bluetooth::audio::sco::wbs::dequeue_packet;
+        rc = dequeue_packet(&encoded);
         if (!rc) break;
 
         auto data = std::vector<uint8_t>(encoded, encoded + rc);
@@ -378,23 +448,20 @@ void btm_send_sco_packet(std::vector<uint8_t> data) {
   if (active_sco == nullptr || data.empty()) {
     return;
   }
-  BT_HDR* packet = btm_sco_make_packet(std::move(data), active_sco->hci_handle);
-  bte_main_hci_send(packet, BT_EVT_TO_LM_HCI_SCO);
-}
-
-// Build a SCO packet from uint8
-BT_HDR* btm_sco_make_packet(std::vector<uint8_t> data, uint16_t sco_handle) {
   ASSERT_LOG(data.size() <= BTM_SCO_DATA_SIZE_MAX, "Invalid SCO data size: %lu",
              (unsigned long)data.size());
-  BT_HDR* p_buf = (BT_HDR*)osi_calloc(BT_SMALL_BUFFER_SIZE);
-  p_buf->event = BT_EVT_TO_LM_HCI_SCO;
-  // SCO header size is 3 per Core 5.2 Vol 4 Part E 5.4.3 figure 5.3
-  p_buf->len = data.size() + 3;
-  uint8_t* payload = p_buf->data;
-  UINT16_TO_STREAM(payload, sco_handle);
-  UINT8_TO_STREAM(payload, data.size());
-  ARRAY_TO_STREAM(payload, data.data(), static_cast<int>(data.size()));
-  return p_buf;
+
+  uint16_t handle_with_flags = active_sco->hci_handle;
+  uint16_t handle = HCID_GET_HANDLE(handle_with_flags);
+  ASSERT_LOG(handle <= HCI_HANDLE_MAX, "Require handle <= 0x%X, but is 0x%X",
+             HCI_HANDLE_MAX, handle);
+
+  auto sco_packet = bluetooth::hci::ScoBuilder::Create(
+      handle, bluetooth::hci::PacketStatusFlag::CORRECTLY_RECEIVED,
+      std::move(data));
+
+  cpp::pending_sco_data->Enqueue(std::move(sco_packet),
+                                 bluetooth::shim::GetGdShimHandler());
 }
 
 /*******************************************************************************
@@ -434,18 +501,18 @@ static tBTM_STATUS btm_send_connect_request(uint16_t acl_handle,
     /* UPF25:  Only SCO was brought up in this case */
     const RawAddress bd_addr = acl_address_from_handle(acl_handle);
     if (bd_addr != RawAddress::kEmpty) {
-      if (!sco_peer_supports_esco_2m_phy(bd_addr)) {
-        BTM_TRACE_DEBUG("BTM Remote does not support 2-EDR eSCO");
+      if (!btm_peer_supports_esco_2m_phy(bd_addr)) {
+        LOG_VERBOSE("BTM Remote does not support 2-EDR eSCO");
         temp_packet_types |=
             (ESCO_PKT_TYPES_MASK_NO_2_EV3 | ESCO_PKT_TYPES_MASK_NO_2_EV5);
       }
-      if (!sco_peer_supports_esco_3m_phy(bd_addr)) {
-        BTM_TRACE_DEBUG("BTM Remote does not support 3-EDR eSCO");
+      if (!btm_peer_supports_esco_3m_phy(bd_addr)) {
+        LOG_VERBOSE("BTM Remote does not support 3-EDR eSCO");
         temp_packet_types |=
             (ESCO_PKT_TYPES_MASK_NO_3_EV3 | ESCO_PKT_TYPES_MASK_NO_3_EV5);
       }
-      if (!sco_peer_supports_esco_ev3(bd_addr)) {
-        BTM_TRACE_DEBUG("BTM Remote does not support EV3 eSCO");
+      if (!btm_peer_supports_esco_ev3(bd_addr)) {
+        LOG_VERBOSE("BTM Remote does not support EV3 eSCO");
         // If EV3 is not supported, EV4 and EV% are not supported, either.
         temp_packet_types &= ~BTM_ESCO_LINK_ONLY_MASK;
         p_setup->retransmission_effort = ESCO_RETRANSMISSION_OFF;
@@ -661,8 +728,8 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
           /* If role change is in progress, do not proceed with SCO setup
            * Wait till role change is complete */
           if (!acl_is_switch_role_idle(*remote_bda, BT_TRANSPORT_BR_EDR)) {
-            BTM_TRACE_API("Role Change is in progress for ACL handle 0x%04x",
-                          acl_handle);
+            LOG_VERBOSE("Role Change is in progress for ACL handle 0x%04x",
+                        acl_handle);
             p->state = SCO_ST_PEND_ROLECHANGE;
           }
         }
@@ -757,7 +824,7 @@ void btm_sco_chk_pend_rolechange(uint16_t hci_handle) {
               p->esco.data.bd_addr, BT_TRANSPORT_BR_EDR)) == hci_handle))
 
     {
-      BTM_TRACE_API(
+      LOG_VERBOSE(
           "btm_sco_chk_pend_rolechange -> (e)SCO Link for ACL handle 0x%04x",
           acl_handle);
 
@@ -867,8 +934,7 @@ void btm_sco_conn_req(const RawAddress& bda, const DEV_CLASS& dev_class,
   }
 
   /* If here, no one wants the SCO connection. Reject it */
-  BTM_TRACE_WARNING("%s: rejecting SCO for %s", __func__,
-                    ADDRESS_TO_LOGGABLE_CSTR(bda));
+  LOG_WARN("%s: rejecting SCO for %s", __func__, ADDRESS_TO_LOGGABLE_CSTR(bda));
   btm_esco_conn_rsp(BTM_MAX_SCO_LINKS, HCI_ERR_HOST_REJECT_RESOURCES, bda,
                     nullptr);
 }
@@ -898,6 +964,8 @@ void btm_sco_connected(const RawAddress& bda, uint16_t hci_handle,
       BTM_LogHistory(
           kBtmLogTag, bda, "Connection created",
           base::StringPrintf("sco_idx:%hu handle:0x%04x ", xx, hci_handle));
+      power_telemetry::GetInstance().LogLinkDetails(hci_handle, bda, true,
+                                                    false);
 
       if (p->state == SCO_ST_LISTENING) spt = true;
 
@@ -907,6 +975,8 @@ void btm_sco_connected(const RawAddress& bda, uint16_t hci_handle,
       BTM_LogHistory(kBtmLogTag, bda, "Connection success",
                      base::StringPrintf("handle:0x%04x %s", hci_handle,
                                         (spt) ? "listener" : "initiator"));
+      LOG_DEBUG("Connected SCO link handle:0x%04x peer:%s", hci_handle,
+                ADDRESS_TO_LOGGABLE_CSTR(bda));
 
       if (!btm_cb.sco_cb.esco_supported) {
         p->esco.data.link_type = BTM_LINK_TYPE_SCO;
@@ -931,11 +1001,15 @@ void btm_sco_connected(const RawAddress& bda, uint16_t hci_handle,
 
       /* In-band (non-offload) data path */
       if (p->is_inband()) {
-        if (p->is_wbs()) {
+        const auto codec_type = p->get_codec_type();
+        if (codec_type == BTM_SCO_CODEC_MSBC ||
+            codec_type == BTM_SCO_CODEC_LC3) {
           btm_pcm_buf_read_offset = 0;
           btm_pcm_buf_write_offset = 0;
-          bluetooth::audio::sco::wbs::init(
-              hfp_hal_interface::get_packet_size(codec));
+          auto init = codec_type == BTM_SCO_CODEC_LC3
+                          ? &bluetooth::audio::sco::swb::init
+                          : &bluetooth::audio::sco::wbs::init;
+          init(hfp_hal_interface::get_packet_size(codec));
         }
 
         std::fill(std::begin(btm_pcm_buf), std::end(btm_pcm_buf), 0);
@@ -1028,7 +1102,7 @@ tBTM_STATUS BTM_RemoveSco(uint16_t sco_inx) {
   tSCO_CONN* p = &btm_cb.sco_cb.sco_db[sco_inx];
   tBTM_PM_STATE state = BTM_PM_ST_INVALID;
 
-  BTM_TRACE_DEBUG("%s", __func__);
+  LOG_VERBOSE("%s", __func__);
 
   if (BTM_MAX_SCO_LINKS == 0) {
     return BTM_NO_RESOURCES;
@@ -1048,8 +1122,8 @@ tBTM_STATUS BTM_RemoveSco(uint16_t sco_inx) {
 
   if (BTM_ReadPowerMode(p->esco.data.bd_addr, &state) &&
       (state == BTM_PM_ST_PENDING)) {
-    BTM_TRACE_DEBUG("%s: BTM_PM_ST_PENDING for ACL mapped with SCO Link 0x%04x",
-                    __func__, p->hci_handle);
+    LOG_VERBOSE("%s: BTM_PM_ST_PENDING for ACL mapped with SCO Link 0x%04x",
+                __func__, p->hci_handle);
     p->state = SCO_ST_PEND_MODECHANGE;
     return (BTM_CMD_STARTED);
   }
@@ -1057,7 +1131,7 @@ tBTM_STATUS BTM_RemoveSco(uint16_t sco_inx) {
   tSCO_STATE old_state = p->state;
   p->state = SCO_ST_DISCONNECTING;
 
-  GetLegacyHciInterface().Disconnect(p->Handle(), HCI_ERR_PEER_USER);
+  GetInterface().Disconnect(p->Handle(), HCI_ERR_PEER_USER);
 
   LOG_DEBUG("Disconnecting link sco_handle:0x%04x peer:%s", p->Handle(),
             ADDRESS_TO_LOGGABLE_CSTR(p->esco.data.bd_addr));
@@ -1097,6 +1171,8 @@ bool btm_sco_removed(uint16_t hci_handle, tHCI_REASON reason) {
   for (xx = 0; xx < BTM_MAX_SCO_LINKS; xx++, p++) {
     if ((p->state != SCO_ST_UNUSED) && (p->state != SCO_ST_LISTENING) &&
         (p->hci_handle == hci_handle)) {
+      power_telemetry::GetInstance().LogLinkDetails(
+          hci_handle, RawAddress::kEmpty, false, false);
       RawAddress bda(p->esco.data.bd_addr);
       p->state = SCO_ST_UNUSED;
       p->hci_handle = HCI_INVALID_HANDLE;
@@ -1169,18 +1245,32 @@ void btm_sco_on_disconnected(uint16_t hci_handle, tHCI_REASON reason) {
           p_sco->esco.setup.transmit_coding_format.coding_format));
 
   if (p_sco->is_inband()) {
-    if (p_sco->is_wbs()) {
+    const auto codec_type = p_sco->get_codec_type();
+    if (codec_type == BTM_SCO_CODEC_MSBC || codec_type == BTM_SCO_CODEC_LC3) {
+      auto fill_plc_stats = codec_type == BTM_SCO_CODEC_LC3
+                                ? bluetooth::audio::sco::swb::fill_plc_stats
+                                : bluetooth::audio::sco::wbs::fill_plc_stats;
+
       int num_decoded_frames;
       double packet_loss_ratio;
-      if (bluetooth::audio::sco::wbs::fill_plc_stats(&num_decoded_frames,
-                                                     &packet_loss_ratio)) {
+      if (fill_plc_stats(&num_decoded_frames, &packet_loss_ratio)) {
+        const int16_t codec_id = sco_codec_type_to_id(codec_type);
+        const std::string codec = sco_codec_type_text(codec_type);
         log_hfp_audio_packet_loss_stats(bd_addr, num_decoded_frames,
-                                        packet_loss_ratio);
+                                        packet_loss_ratio, codec_id);
+        LOG_DEBUG(
+            "Stopped SCO codec:%s, num_decoded_frames:%d, "
+            "packet_loss_ratio:%lf",
+            codec.c_str(), num_decoded_frames, packet_loss_ratio);
       } else {
         LOG_WARN("Failed to get the packet loss stats");
       }
 
-      bluetooth::audio::sco::wbs::cleanup();
+      auto cleanup = codec_type == BTM_SCO_CODEC_LC3
+                         ? bluetooth::audio::sco::swb::cleanup
+                         : bluetooth::audio::sco::wbs::cleanup;
+
+      cleanup();
     }
 
     bluetooth::audio::sco::cleanup();
@@ -1353,14 +1443,14 @@ static tBTM_STATUS BTM_ChangeEScoLinkParms(uint16_t sco_inx,
         p_parms->packet_types &
         (btm_cb.btm_sco_pkt_types_supported & BTM_SCO_LINK_ONLY_MASK);
 
-    BTM_TRACE_API("%s: SCO Link for handle 0x%04x, pkt 0x%04x", __func__,
-                  p_sco->hci_handle, p_setup->packet_types);
+    LOG_VERBOSE("%s: SCO Link for handle 0x%04x, pkt 0x%04x", __func__,
+                p_sco->hci_handle, p_setup->packet_types);
 
-    BTM_TRACE_API("%s: SCO Link for handle 0x%04x, pkt 0x%04x", __func__,
-                  p_sco->hci_handle, p_setup->packet_types);
+    LOG_VERBOSE("%s: SCO Link for handle 0x%04x, pkt 0x%04x", __func__,
+                p_sco->hci_handle, p_setup->packet_types);
 
-    btsnd_hcic_change_conn_type(p_sco->hci_handle,
-                                BTM_ESCO_2_SCO(p_setup->packet_types));
+    GetInterface().ChangeConnectionPacketType(
+        p_sco->hci_handle, BTM_ESCO_2_SCO(p_setup->packet_types));
   } else /* eSCO is supported and the link type is eSCO */
   {
     uint16_t temp_packet_types =
@@ -1373,13 +1463,12 @@ static tBTM_STATUS BTM_ChangeEScoLinkParms(uint16_t sco_inx,
          (btm_cb.btm_sco_pkt_types_supported & BTM_SCO_EXCEPTION_PKTS_MASK));
     p_setup->packet_types = temp_packet_types;
 
-    BTM_TRACE_API("%s -> eSCO Link for handle 0x%04x", __func__,
-                  p_sco->hci_handle);
-    BTM_TRACE_API(
-        "   txbw 0x%x, rxbw 0x%x, lat 0x%x, retrans 0x%02x, pkt 0x%04x",
-        p_setup->transmit_bandwidth, p_setup->receive_bandwidth,
-        p_parms->max_latency_ms, p_parms->retransmission_effort,
-        temp_packet_types);
+    LOG_VERBOSE("%s -> eSCO Link for handle 0x%04x", __func__,
+                p_sco->hci_handle);
+    LOG_VERBOSE("   txbw 0x%x, rxbw 0x%x, lat 0x%x, retrans 0x%02x, pkt 0x%04x",
+                p_setup->transmit_bandwidth, p_setup->receive_bandwidth,
+                p_parms->max_latency_ms, p_parms->retransmission_effort,
+                temp_packet_types);
 
     /* Use Enhanced Synchronous commands if supported */
     if (controller_get_interface()
@@ -1400,7 +1489,7 @@ static tBTM_STATUS BTM_ChangeEScoLinkParms(uint16_t sco_inx,
                                  p_setup->packet_types);
     }
 
-    BTM_TRACE_API(
+    LOG_VERBOSE(
         "%s: txbw 0x%x, rxbw 0x%x, lat 0x%x, retrans 0x%02x, pkt 0x%04x",
         __func__, p_setup->transmit_bandwidth, p_setup->receive_bandwidth,
         p_parms->max_latency_ms, p_parms->retransmission_effort,
@@ -1595,6 +1684,7 @@ static uint16_t btm_sco_voice_settings_to_legacy(enh_esco_params_t* p_params) {
 
     case ESCO_CODING_FORMAT_TRANSPNT:
     case ESCO_CODING_FORMAT_MSBC:
+    case ESCO_CODING_FORMAT_LC3:
       voice_settings |= HCI_AIR_CODING_FORMAT_TRANSPNT;
       break;
 
@@ -1612,8 +1702,85 @@ static uint16_t btm_sco_voice_settings_to_legacy(enh_esco_params_t* p_params) {
   else /* Use 8 bit for all others */
     voice_settings |= HCI_INP_SAMPLE_SIZE_8BIT;
 
-  BTM_TRACE_DEBUG("%s: voice setting for legacy 0x%03x", __func__,
-                  voice_settings);
+  LOG_VERBOSE("%s: voice setting for legacy 0x%03x", __func__, voice_settings);
 
   return (voice_settings);
+}
+/*******************************************************************************
+ *
+ * Function         BTM_GetScoDebugDump
+ *
+ * Description      Get the status of SCO. This function is only used for
+ *                  testing and debugging purposes.
+ *
+ * Returns          Data with SCO related debug dump.
+ *
+ ******************************************************************************/
+tBTM_SCO_DEBUG_DUMP BTM_GetScoDebugDump() {
+  tSCO_CONN* active_sco = btm_get_active_sco();
+  tBTM_SCO_DEBUG_DUMP debug_dump = {};
+
+  debug_dump.is_active = active_sco != nullptr;
+  if (!debug_dump.is_active) return debug_dump;
+
+  tBTM_SCO_CODEC_TYPE codec_type = active_sco->get_codec_type();
+  debug_dump.codec_id = sco_codec_type_to_id(codec_type);
+  if (debug_dump.codec_id != UUID_CODEC_MSBC &&
+      debug_dump.codec_id != UUID_CODEC_LC3)
+    return debug_dump;
+
+  auto fill_plc_stats = debug_dump.codec_id == UUID_CODEC_LC3
+                            ? &bluetooth::audio::sco::swb::fill_plc_stats
+                            : &bluetooth::audio::sco::wbs::fill_plc_stats;
+
+  if (!fill_plc_stats(&debug_dump.total_num_decoded_frames,
+                      &debug_dump.pkt_loss_ratio))
+    return debug_dump;
+
+  auto get_pkt_status = debug_dump.codec_id == UUID_CODEC_LC3
+                            ? &bluetooth::audio::sco::swb::get_pkt_status
+                            : &bluetooth::audio::sco::wbs::get_pkt_status;
+
+  tBTM_SCO_PKT_STATUS* pkt_status = get_pkt_status();
+  if (pkt_status == nullptr) return debug_dump;
+
+  tBTM_SCO_PKT_STATUS_DATA* data = &debug_dump.latest_data;
+  data->begin_ts_raw_us = pkt_status->begin_ts_raw_us();
+  data->end_ts_raw_us = pkt_status->end_ts_raw_us();
+  data->status_in_hex = pkt_status->data_to_hex_string();
+  data->status_in_binary = pkt_status->data_to_binary_string();
+  return debug_dump;
+}
+
+bool btm_peer_supports_esco_2m_phy(RawAddress remote_bda) {
+  uint8_t* features = BTM_ReadRemoteFeatures(remote_bda);
+  if (features == nullptr) {
+    LOG_WARN(
+        "Checking remote features but remote feature read is "
+        "incomplete");
+    return false;
+  }
+  return HCI_EDR_ESCO_2MPS_SUPPORTED(features);
+}
+
+bool btm_peer_supports_esco_3m_phy(RawAddress remote_bda) {
+  uint8_t* features = BTM_ReadRemoteFeatures(remote_bda);
+  if (features == nullptr) {
+    LOG_WARN(
+        "Checking remote features but remote feature read is "
+        "incomplete");
+    return false;
+  }
+  return HCI_EDR_ESCO_3MPS_SUPPORTED(features);
+}
+
+bool btm_peer_supports_esco_ev3(RawAddress remote_bda) {
+  uint8_t* features = BTM_ReadRemoteFeatures(remote_bda);
+  if (features == nullptr) {
+    LOG_WARN(
+        "Checking remote features but remote feature read is "
+        "incomplete");
+    return false;
+  }
+  return HCI_ESCO_EV3_SUPPORTED(features);
 }

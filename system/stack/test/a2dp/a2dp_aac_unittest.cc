@@ -22,7 +22,6 @@
 
 #include <cstdint>
 #include <fstream>
-#include <future>
 #include <iomanip>
 #include <map>
 #include <string>
@@ -32,15 +31,13 @@
 #include "common/time_util.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/test/AllocationTestHarness.h"
-#include "stack/include/bt_hdr.h"
 #include "stack/include/a2dp_aac_decoder.h"
 #include "stack/include/a2dp_aac_encoder.h"
 #include "stack/include/avdt_api.h"
+#include "stack/include/bt_hdr.h"
 #include "test_util.h"
 #include "wav_reader.h"
 
-void allocation_tracker_uninit(void);
 namespace {
 constexpr uint32_t kAacReadSize = 1024 * 2 * 2;
 constexpr uint32_t kA2dpTickUs = 23 * 1000;
@@ -75,13 +72,10 @@ namespace testing {
 static BT_HDR* packet = nullptr;
 static WavReader wav_reader = WavReader(GetWavFilePath(kWavFile).c_str());
 
-class A2dpAacTest : public AllocationTestHarness {
+class A2dpAacTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    AllocationTestHarness::SetUp();
     common::InitFlags::SetAllForTesting();
-    // Disable our allocation tracker to allow ASAN full range
-    allocation_tracker_uninit();
     SetCodecConfig();
     encoder_iface_ = const_cast<tA2DP_ENCODER_INTERFACE*>(
         A2DP_GetEncoderInterfaceAac(kCodecInfoAacCapability));
@@ -103,7 +97,6 @@ class A2dpAacTest : public AllocationTestHarness {
       decoder_iface_->decoder_cleanup();
     }
     A2DP_UnloadDecoderAac();
-    AllocationTestHarness::TearDown();
   }
 
   void SetCodecConfig() {
@@ -177,9 +170,7 @@ TEST_F(A2dpAacTest, a2dp_source_read_underflow) {
   usleep(kA2dpTickUs);
   timestamp_us = bluetooth::common::time_gettimeofday_us();
   encoder_iface_->send_frames(timestamp_us);
-  std::promise<void> promise;
-  log_capture_->WaitUntilLogContains(&promise,
-                                     "a2dp_aac_encode_frames: underflow");
+  log_capture_->WaitUntilLogContains("a2dp_aac_encode_frames: underflow");
 }
 
 TEST_F(A2dpAacTest, a2dp_enqueue_cb_is_invoked) {
@@ -189,7 +180,7 @@ TEST_F(A2dpAacTest, a2dp_enqueue_cb_is_invoked) {
     return len;
   };
   auto enqueue_cb = +[](BT_HDR* p_buf, size_t frames_n, uint32_t len) -> bool {
-    LOG_DEBUG("%s", kEnqueueCallbackIsInvoked);
+    LOG_INFO("%s", kEnqueueCallbackIsInvoked);
     osi_free(p_buf);
     return false;
   };
@@ -199,8 +190,7 @@ TEST_F(A2dpAacTest, a2dp_enqueue_cb_is_invoked) {
   usleep(kA2dpTickUs);
   timestamp_us = bluetooth::common::time_gettimeofday_us();
   encoder_iface_->send_frames(timestamp_us);
-  std::promise<void> promise;
-  log_capture_->WaitUntilLogContains(&promise, kEnqueueCallbackIsInvoked);
+  log_capture_->WaitUntilLogContains(kEnqueueCallbackIsInvoked);
 }
 
 TEST_F(A2dpAacTest, decoded_data_cb_not_invoked_when_empty_packet) {
@@ -215,7 +205,7 @@ TEST_F(A2dpAacTest, decoded_data_cb_not_invoked_when_empty_packet) {
 TEST_F(A2dpAacTest, decoded_data_cb_invoked) {
   log_capture_ = std::make_unique<LogCapture>();
   auto data_cb = +[](uint8_t* p_buf, uint32_t len) {
-    LOG_DEBUG("%s", kDecodedDataCallbackIsInvoked);
+    LOG_INFO("%s", kDecodedDataCallbackIsInvoked);
   };
   InitializeDecoder(data_cb);
 
@@ -227,7 +217,7 @@ TEST_F(A2dpAacTest, decoded_data_cb_invoked) {
   };
   auto enqueue_cb = +[](BT_HDR* p_buf, size_t frames_n, uint32_t len) -> bool {
     packet = p_buf;
-    LOG_DEBUG("%s", kEnqueueCallbackIsInvoked);
+    LOG_INFO("%s", kEnqueueCallbackIsInvoked);
     return false;
   };
   InitializeEncoder(true, read_cb, enqueue_cb);
@@ -238,8 +228,7 @@ TEST_F(A2dpAacTest, decoded_data_cb_invoked) {
   timestamp_us = bluetooth::common::time_gettimeofday_us();
   encoder_iface_->send_frames(timestamp_us);
 
-  std::promise<void> promise;
-  log_capture_->WaitUntilLogContains(&promise, kEnqueueCallbackIsInvoked);
+  log_capture_->WaitUntilLogContains(kEnqueueCallbackIsInvoked);
   decoder_iface_->decode_packet(packet);
   osi_free(packet);
   ASSERT_TRUE(log_capture_->Find(kDecodedDataCallbackIsInvoked));
@@ -288,9 +277,7 @@ TEST_F(A2dpAacTest, effective_mtu_when_peer_does_not_support_3mbps) {
 TEST_F(A2dpAacTest, debug_codec_dump) {
   log_capture_ = std::make_unique<LogCapture>();
   a2dp_codecs_->debug_codec_dump(2);
-  std::promise<void> promise;
-  log_capture_->WaitUntilLogContains(&promise,
-                                     "Current Codec: AAC");
+  log_capture_->WaitUntilLogContains("Current Codec: AAC");
 }
 
 TEST_F(A2dpAacTest, codec_info_string) {

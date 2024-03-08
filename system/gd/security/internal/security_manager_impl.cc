@@ -17,17 +17,14 @@
  */
 #include "security_manager_impl.h"
 
-#include <iostream>
-
 #include "common/bind.h"
-#include "crypto_toolbox/crypto_toolbox.h"
 #include "hci/address_with_type.h"
+#include "hci/octets.h"
 #include "os/log.h"
 #include "os/rand.h"
 #include "security/initial_informations.h"
 #include "security/internal/security_manager_impl.h"
 #include "security/pairing_handler_le.h"
-#include "security/security_manager.h"
 #include "security/ui.h"
 
 namespace bluetooth {
@@ -194,7 +191,7 @@ void SecurityManagerImpl::SetUserInterfaceHandler(UI* user_interface, os::Handle
 void SecurityManagerImpl::SetLeInitiatorAddressPolicyForTest(
     hci::LeAddressManager::AddressPolicy address_policy,
     hci::AddressWithType fixed_address,
-    crypto_toolbox::Octet16 rotation_irk,
+    hci::Octet16 rotation_irk,
     std::chrono::milliseconds minimum_rotation_time,
     std::chrono::milliseconds maximum_rotation_time) {
   acl_manager_->SetPrivacyPolicyForInitiatorAddressForTest(
@@ -452,9 +449,10 @@ void SecurityManagerImpl::OnPairingHandlerComplete(hci::Address address, Pairing
 
 void SecurityManagerImpl::OnL2capRegistrationCompleteLe(
     l2cap::le::FixedChannelManager::RegistrationResult result,
-    std::unique_ptr<l2cap::le::FixedChannelService> le_smp_service) {
-  ASSERT_LOG(result == bluetooth::l2cap::le::FixedChannelManager::RegistrationResult::SUCCESS,
-             "Failed to register to LE SMP Fixed Channel Service");
+    [[maybe_unused]] std::unique_ptr<l2cap::le::FixedChannelService> le_smp_service) {
+  ASSERT_LOG(
+      result == bluetooth::l2cap::le::FixedChannelManager::RegistrationResult::SUCCESS,
+      "Failed to register to LE SMP Fixed Channel Service");
 }
 
 LeFixedChannelEntry* SecurityManagerImpl::FindStoredLeChannel(const hci::AddressWithType& device) {
@@ -636,7 +634,8 @@ void SecurityManagerImpl::ConnectionIsReadyStartPairing(LeFixedChannelEntry* sto
   pending_le_pairing_.handler_ = std::make_unique<PairingHandlerLe>(PairingHandlerLe::PHASE1, initial_informations);
 }
 
-void SecurityManagerImpl::OnConnectionClosedLe(hci::AddressWithType address, hci::ErrorCode error_code) {
+void SecurityManagerImpl::OnConnectionClosedLe(
+    hci::AddressWithType address, hci::ErrorCode /* error_code */) {
   if (pending_le_pairing_.address_ != address) {
     LeFixedChannelEntry* stored_chan = FindStoredLeChannel(address);
     if (!stored_chan) {
@@ -866,7 +865,8 @@ void SecurityManagerImpl::EnforceSecurityPolicy(
 }
 
 void SecurityManagerImpl::EnforceLeSecurityPolicy(
-    hci::AddressWithType remote, l2cap::le::SecurityPolicy policy,
+    hci::AddressWithType /* remote */,
+    l2cap::le::SecurityPolicy policy,
     l2cap::le::SecurityEnforcementInterface::ResultCallback result_callback) {
   bool result = false;
   // TODO(jpawlowski): Implement for LE

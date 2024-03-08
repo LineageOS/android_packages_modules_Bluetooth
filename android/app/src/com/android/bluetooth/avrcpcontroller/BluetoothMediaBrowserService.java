@@ -86,14 +86,20 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
             if (action.equals(Intent.ACTION_LOCALE_CHANGED)) {
+                if (DBG) Log.d(TAG, "Locale has updated");
                 if (sBluetoothMediaBrowserService == null) return;
                 MediaSessionCompat session = sBluetoothMediaBrowserService.getSession();
+
+                // Update playback state error message under new locale, if applicable
                 MediaControllerCompat controller = session.getController();
                 PlaybackStateCompat playbackState =
                         controller == null ? null : controller.getPlaybackState();
                 if (playbackState != null && playbackState.getErrorMessage() != null) {
                     setErrorPlaybackState();
                 }
+
+                // Update queue title under new locale
+                session.setQueueTitle(getString(R.string.bluetooth_a2dp_sink_queue_name));
             }
         }
     }
@@ -106,7 +112,7 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
      */
     @Override
     public void onCreate() {
-        if (DBG) Log.d(TAG, "onCreate");
+        if (DBG) Log.d(TAG, "Service Created");
         super.onCreate();
 
         // Create and configure the MediaSessionCompat
@@ -128,6 +134,7 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
 
     @Override
     public void onDestroy() {
+        if (DBG) Log.d(TAG, "Service Destroyed");
         unregisterReceiver(mReceiver);
         mReceiver = null;
     }
@@ -191,6 +198,7 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
         AvrcpControllerService avrcpControllerService =
                 AvrcpControllerService.getAvrcpControllerService();
         if (avrcpControllerService == null) {
+            Log.w(TAG, "getContents(id=" + parentMediaId + "): AVRCP Controller Service not ready");
             return new BrowseResult(new ArrayList(0), BrowseResult.ERROR_NO_AVRCP_SERVICE);
         } else {
             return avrcpControllerService.getContents(parentMediaId);
@@ -227,23 +235,25 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
     @Override
     public synchronized void onLoadChildren(final String parentMediaId,
             final Result<List<MediaItem>> result) {
-        if (DBG) Log.d(TAG, "onLoadChildren parentMediaId= " + parentMediaId);
+        if (DBG) Log.d(TAG, "Request for contents, id= " + parentMediaId);
         BrowseResult contents = getContents(parentMediaId);
         byte status = contents.getStatus();
-        if (status == BrowseResult.DOWNLOAD_PENDING && contents == null) {
-            Log.i(TAG, "Download pending - no contents, id= " + parentMediaId);
+        List<MediaItem> results = contents.getResults();
+        if (status == BrowseResult.DOWNLOAD_PENDING && results == null) {
+            Log.i(TAG, "Download pending - no results, id= " + parentMediaId);
             result.detach();
         } else {
             if (DBG) {
-                Log.d(TAG, "id= " + parentMediaId + ", status= " + contents.getStatusString());
+                Log.d(TAG, "Received Contents, id= " + parentMediaId + ", status= "
+                        + contents.getStatusString() + ", results=" + results);
             }
-            result.sendResult(contents.getResults());
+            result.sendResult(results);
         }
     }
 
     @Override
     public BrowserRoot onGetRoot(String clientPackageName, int clientUid, Bundle rootHints) {
-        if (DBG) Log.d(TAG, "onGetRoot");
+        Log.i(TAG, "Browser Client Connection Request, client='" + clientPackageName + "')");
         Bundle style = getDefaultStyle();
         return new BrowserRoot(BrowseTree.ROOT, style);
     }
@@ -261,6 +271,7 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
         } else {
             mSession.setQueue(null);
         }
+        if (DBG) Log.d(TAG, "Now Playing List Changed, queue=" + mMediaQueue);
     }
 
     private void clearNowPlayingQueue() {
@@ -273,6 +284,7 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
             if (node.getScope() == AvrcpControllerService.BROWSE_SCOPE_NOW_PLAYING) {
                 sBluetoothMediaBrowserService.updateNowPlayingQueue(node);
             } else {
+                if (DBG) Log.d(TAG, "Browse Node contents changed, node=" + node);
                 sBluetoothMediaBrowserService.notifyChildrenChanged(node.getID());
             }
         }
@@ -291,7 +303,7 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
     }
 
     static synchronized void trackChanged(AvrcpItem track) {
-        if (DBG) Log.d(TAG, "trackChanged setMetadata=" + track);
+        if (DBG) Log.d(TAG, "Track Changed, track=" + track);
         if (sBluetoothMediaBrowserService != null) {
             if (track != null) {
                 sBluetoothMediaBrowserService.mSession.setMetadata(track.toMediaMetadata());
@@ -305,7 +317,7 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
     }
 
     static synchronized void notifyChanged(PlaybackStateCompat playbackState) {
-        Log.d(TAG, "notifyChanged PlaybackState" + playbackState);
+        if (DBG) Log.d(TAG, "Playback State Changed, state=" + playbackState);
         if (sBluetoothMediaBrowserService != null) {
             sBluetoothMediaBrowserService.mSession.setPlaybackState(playbackState);
         } else {
@@ -338,15 +350,16 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
     /**
      * Get playback state
      */
-    public static synchronized int getPlaybackState() {
+    public static synchronized PlaybackStateCompat getPlaybackState() {
         if (sBluetoothMediaBrowserService != null) {
-            PlaybackStateCompat currentPlaybackState =
-                    sBluetoothMediaBrowserService.mSession.getController().getPlaybackState();
-            if (currentPlaybackState != null) {
-                return currentPlaybackState.getState();
-            }
+            MediaSessionCompat session = sBluetoothMediaBrowserService.getSession();
+            if (session == null) return null;
+            MediaControllerCompat controller = session.getController();
+            PlaybackStateCompat playbackState =
+                    controller == null ? null : controller.getPlaybackState();
+            return playbackState;
         }
-        return PlaybackStateCompat.STATE_ERROR;
+        return null;
     }
 
     /**

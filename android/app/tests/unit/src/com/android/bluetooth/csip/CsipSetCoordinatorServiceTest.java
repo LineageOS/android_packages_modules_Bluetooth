@@ -31,10 +31,8 @@ import android.os.RemoteException;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.MediumTest;
-import androidx.test.rule.ServiceTestRule;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.R;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
@@ -42,15 +40,8 @@ import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.le_audio.LeAudioService;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeoutException;
-
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -58,12 +49,17 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeoutException;
+
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class CsipSetCoordinatorServiceTest {
     private final String mFlagDexmarker = System.getProperty("dexmaker.share_classloader", "false");
 
-    public final ServiceTestRule mServiceRule = new ServiceTestRule();
     private Context mTargetContext;
     private BluetoothAdapter mAdapter;
     private BluetoothDevice mTestDevice;
@@ -105,8 +101,8 @@ public class CsipSetCoordinatorServiceTest {
 
         mAdapter = BluetoothAdapter.getDefaultAdapter();
 
+        CsipSetCoordinatorNativeInterface.setInstance(mCsipSetCoordinatorNativeInterface);
         startService();
-        mService.mCsipSetCoordinatorNativeInterface = mCsipSetCoordinatorNativeInterface;
         mService.mServiceFactory = mServiceFactory;
         when(mServiceFactory.getLeAudioService()).thenReturn(mLeAudioService);
 
@@ -160,20 +156,19 @@ public class CsipSetCoordinatorServiceTest {
         }
 
         stopService();
+        CsipSetCoordinatorNativeInterface.setInstance(null);
         mTargetContext.unregisterReceiver(mCsipSetCoordinatorIntentReceiver);
         TestUtils.clearAdapterService(mAdapterService);
         mIntentQueue.clear();
     }
 
     private void startService() throws TimeoutException {
-        TestUtils.startService(mServiceRule, CsipSetCoordinatorService.class);
-        mService = CsipSetCoordinatorService.getCsipSetCoordinatorService();
-        Assert.assertNotNull(mService);
-        verify(mAdapterService).notifyActivityAttributionInfo(any(), any());
+        mService = new CsipSetCoordinatorService(mTargetContext);
+        mService.doStart();
     }
 
     private void stopService() throws TimeoutException {
-        TestUtils.stopService(mServiceRule, CsipSetCoordinatorService.class);
+        mService.doStop();
         mService = CsipSetCoordinatorService.getCsipSetCoordinatorService();
         Assert.assertNull(mService);
     }
@@ -721,6 +716,11 @@ public class CsipSetCoordinatorServiceTest {
         @Override
         public void onReceive(Context context, Intent intent) {
             try {
+                /* Ignore intent when service is inactive */
+                if (mService == null) {
+                    return;
+                }
+
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 // Use first device's queue in case of no device in the intent
                 if (device == null) {

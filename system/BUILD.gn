@@ -75,6 +75,8 @@ if (defined(use.android) && use.android) {
 config("target_defaults") {
   include_dirs = [
     "//bt/system",
+    "//bt/flags/exported_include",
+    "//bt/sysprop/exported_include",
     "//bt/system/linux_include",
     "//bt/system/types",
     "//bt/system/include",
@@ -113,15 +115,12 @@ config("target_defaults") {
                 ]),
   ]
 
-  cflags_cc = [ "-std=c++17" ]
+  cflags_cc = [ "-std=c++20" ]
 
   defines = [
     "TARGET_FLOSS",
     "EXPORT_SYMBOL=__attribute__((visibility(\"default\")))",
     "FALLTHROUGH_INTENDED=[[clang::fallthrough]]",
-    # BTA_AG_FEAT_ECS (Enhanced Call Status 0x040) |
-    # BTA_AG_FEAT_CODEC (Codec Negotiation 0x200)
-    "BTIF_HF_FEATURES=0x00000240",
   ]
 
   if (!(defined(use.bt_nonstandard_codecs) && use.bt_nonstandard_codecs)) {
@@ -202,34 +201,6 @@ pkg_config("pkg_modp_b64") {
 
 pkg_config("pkg_tinyxml2") {
   pkg_deps = [ "tinyxml2" ]
-}
-
-# To use non-standard codecs (i.e. ldac, aac, aptx), set this use flag when
-# building. These codecs may have licensing issues that need to be resolved
-# first.
-if (defined(use.bt_nonstandard_codecs) && use.bt_nonstandard_codecs) {
-  config("external_aac") {
-    configs = [ ":pkg_aac" ]
-  }
-
-  pkg_config("pkg_aac") {
-    pkg_deps = [ "fdk-aac" ]
-  }
-
-  config("external_libldac") {
-    configs = [
-      ":pkg_libldacBT_enc",
-      ":pkg_libldacBT_abr",
-    ]
-  }
-
-  pkg_config("pkg_libldacBT_enc") {
-    pkg_deps = [ "ldacBT-enc" ]
-  }
-
-  pkg_config("pkg_libldacBT_abr") {
-    pkg_deps = [ "ldacBT-abr" ]
-  }
 }
 
 # To include ChroemOS-specific libraries and build dependencies.

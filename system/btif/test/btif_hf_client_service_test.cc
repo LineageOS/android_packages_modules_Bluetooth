@@ -1,26 +1,16 @@
+#include <android_bluetooth_sysprop.h>
 #include <base/logging.h>
 #include <gtest/gtest.h>
-#include "bta_hfp_api.h"
 
-#ifdef __ANDROID__
-#include <hfp.sysprop.h>
-#endif
+#include "bta_hfp_api.h"
 
 #undef LOG_TAG
 #include "btif/src/btif_hf_client.cc"
 
 static tBTA_HF_CLIENT_FEAT gFeatures;
 
-#define DEFAULT_BTA_HFP_VERSION HFP_VERSION_1_7
 int get_default_hfp_version() {
-#ifdef __ANDROID__
-  static const int version =
-      android::sysprop::bluetooth::Hfp::version().value_or(
-          DEFAULT_BTA_HFP_VERSION);
-  return version;
-#else
-  return DEFAULT_BTA_HFP_VERSION;
-#endif
+  return GET_SYSPROP(Hfp, version, HFP_VERSION_1_7);
 }
 
 int get_default_hf_client_features() {
@@ -29,17 +19,9 @@ int get_default_hf_client_features() {
    BTA_HF_CLIENT_FEAT_CLI | BTA_HF_CLIENT_FEAT_VREC | BTA_HF_CLIENT_FEAT_VOL | \
    BTA_HF_CLIENT_FEAT_ECS | BTA_HF_CLIENT_FEAT_ECC | BTA_HF_CLIENT_FEAT_CODEC)
 
-#ifdef __ANDROID__
-  static const int features =
-      android::sysprop::bluetooth::Hfp::hf_client_features().value_or(
-          DEFAULT_BTIF_HF_CLIENT_FEATURES);
-  return features;
-#else
-  return DEFAULT_BTIF_HF_CLIENT_FEATURES;
-#endif
+  return GET_SYSPROP(Hfp, hf_client_features, DEFAULT_BTIF_HF_CLIENT_FEATURES);
 }
 
-uint8_t btif_trace_level = BT_TRACE_LEVEL_WARNING;
 tBTA_STATUS BTA_HfClientEnable(tBTA_HF_CLIENT_CBACK* p_cback,
                                tBTA_HF_CLIENT_FEAT features,
                                const char* p_service_name) {
@@ -70,4 +52,7 @@ TEST_F(BtifHfClientTest, test_btif_hf_cleint_service) {
   btif_hf_client_execute_service(enable);
   ASSERT_EQ((gFeatures & BTA_HF_CLIENT_FEAT_ESCO_S4) > 0,
             get_default_hfp_version() >= HFP_VERSION_1_7);
+
+  ASSERT_EQ((gFeatures & BTA_HF_CLIENT_FEAT_SWB) > 0,
+            get_default_hfp_version() >= HFP_VERSION_1_9);
 }

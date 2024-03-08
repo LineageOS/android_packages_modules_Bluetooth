@@ -21,24 +21,15 @@
  *  mockcify.pl ver 0.2
  */
 
-#include <map>
 #include <string>
 
 // Original included files, if any
-// NOTE: Since this is a mock file with mock definitions some number of
-//       include files may not be required.  The include-what-you-use
-//       still applies, but crafting proper inclusion is out of scope
-//       for this effort.  This compilation unit may compile as-is, or
-//       may need attention to prune the inclusion set.
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/hci/enums.pb.h>
 
-#include "test/common/mock_functions.h"
+#include "types/raw_address.h"
 
 // Mocked compile conditionals, if any
-#ifndef UNUSED_ATTR
-#define UNUSED_ATTR
-#endif
 
 namespace test {
 namespace mock {
@@ -193,15 +184,28 @@ extern struct log_counter_metrics log_counter_metrics;
 // Name: log_hfp_audio_packet_loss_stats
 struct log_hfp_audio_packet_loss_stats {
   std::function<void(const RawAddress& address, int num_decoded_frames,
-                     double packet_loss_ratio)>
+                     double packet_loss_ratio, uint16_t codec_type)>
       body{[](const RawAddress& address, int num_decoded_frames,
-              double packet_loss_ratio) {}};
+              double packet_loss_ratio, uint16_t codec_type) {}};
   void operator()(const RawAddress& address, int num_decoded_frames,
-                  double packet_loss_ratio) {
-    body(address, num_decoded_frames, packet_loss_ratio);
+                  double packet_loss_ratio, uint16_t codec_type) {
+    body(address, num_decoded_frames, packet_loss_ratio, codec_type);
   };
 };
 extern struct log_hfp_audio_packet_loss_stats log_hfp_audio_packet_loss_stats;
+
+// Name: log_mmc_transcode_rtt_stats
+struct log_mmc_transcode_rtt_stats {
+  std::function<void(int maximum_rtt, double mean_rtt, int num_requests,
+                     int codec_type)>
+      body{[](int maximum_rtt, double mean_rtt, int num_requests,
+              int codec_type) {}};
+  void operator()(int maximum_rtt, double mean_rtt, int num_requests,
+                  int codec_type) {
+    body(maximum_rtt, mean_rtt, num_requests, codec_type);
+  };
+};
+extern struct log_mmc_transcode_rtt_stats log_mmc_transcode_rtt_stats;
 }  // namespace stack_metrics_logging
 }  // namespace mock
 }  // namespace test

@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.hfpclient;
 
+import static android.content.pm.PackageManager.FEATURE_WATCH;
+
 import android.annotation.RequiresPermission;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHeadsetClient;
@@ -85,6 +87,13 @@ public class HeadsetClientService extends ProfileService {
 
     public static final String HFP_CLIENT_STOP_TAG = "hfp_client_stop_tag";
 
+    HeadsetClientService() {}
+
+    @VisibleForTesting
+    HeadsetClientService(Context ctx) {
+        super(ctx);
+    }
+
     public static boolean isEnabled() {
         return BluetoothProperties.isProfileHfpHfEnabled().orElse(false);
     }
@@ -134,18 +143,18 @@ public class HeadsetClientService extends ProfileService {
             registerReceiver(mBroadcastReceiver, filter);
 
             // Start the HfpClientConnectionService to create connection with telecom when HFP
-            // connection is available.
-            Intent startIntent = new Intent(this, HfpClientConnectionService.class);
-            startService(startIntent);
+            // connection is available on non-wearable device.
+            if (getPackageManager() != null
+                    && !getPackageManager().hasSystemFeature(FEATURE_WATCH)) {
+                Intent startIntent = new Intent(this, HfpClientConnectionService.class);
+                startService(startIntent);
+            }
 
             // Create the thread on which all State Machines will run
             mSmThread = new HandlerThread("HeadsetClient.SM");
             mSmThread.start();
 
             setHeadsetClientService(this);
-            AdapterService.getAdapterService().notifyActivityAttributionInfo(
-                    getAttributionSource(),
-                    AdapterService.ACTIVITY_ATTRIBUTION_NO_ACTIVE_DEVICE_ADDRESS);
             return true;
         }
     }
@@ -159,12 +168,12 @@ public class HeadsetClientService extends ProfileService {
                     return false;
                 }
 
-                // Stop the HfpClientConnectionService.
-                AdapterService.getAdapterService().notifyActivityAttributionInfo(
-                        getAttributionSource(),
-                        AdapterService.ACTIVITY_ATTRIBUTION_NO_ACTIVE_DEVICE_ADDRESS);
-                Intent stopIntent = new Intent(this, HfpClientConnectionService.class);
-                sHeadsetClientService.stopService(stopIntent);
+                // Stop the HfpClientConnectionService for non-wearables devices.
+                if (getPackageManager() != null
+                        && !getPackageManager().hasSystemFeature(FEATURE_WATCH)) {
+                    Intent stopIntent = new Intent(this, HfpClientConnectionService.class);
+                    sHeadsetClientService.stopService(stopIntent);
+                }
             }
 
             setHeadsetClientService(null);
@@ -253,7 +262,11 @@ public class HeadsetClientService extends ProfileService {
         }
     };
 
-    private static BluetoothHeadsetClientCall toLegacyCall(HfpClientCall call) {
+    /**
+     * Convert {@code HfpClientCall} to legacy {@code BluetoothHeadsetClientCall} still used by some
+     * clients.
+     */
+    static BluetoothHeadsetClientCall toLegacyCall(HfpClientCall call) {
         if (call == null) return null;
         return new BluetoothHeadsetClientCall(call.getDevice(), call.getId(), call.getUUID(),
                 call.getState(), call.getNumber(), call.isMultiParty(), call.isOutgoing(),
@@ -1376,6 +1389,12 @@ public class HeadsetClientService extends ProfileService {
             }
         }
         return false;
+    }
+
+    void handleBatteryLevelChanged(BluetoothDevice device, int batteryLevel) {
+        AdapterService.getAdapterService()
+                .getRemoteDevices()
+                .handleAgBatteryLevelChanged(device, batteryLevel);
     }
 
     @Override

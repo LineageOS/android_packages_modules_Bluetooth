@@ -37,17 +37,15 @@ import java.util.Arrays;
  * LeAudio Native Interface to/from JNI.
  */
 public class LeAudioNativeInterface {
-    private static final String TAG = "LeAudioNativeInterface";
+    private static final String TAG = LeAudioNativeInterface.class.getSimpleName();
     private static final boolean DBG = true;
+
     private BluetoothAdapter mAdapter;
 
     @GuardedBy("INSTANCE_LOCK")
     private static LeAudioNativeInterface sInstance;
-    private static final Object INSTANCE_LOCK = new Object();
 
-    static {
-        classInitNative();
-    }
+    private static final Object INSTANCE_LOCK = new Object();
 
     private LeAudioNativeInterface() {
         mAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -68,11 +66,9 @@ public class LeAudioNativeInterface {
         }
     }
 
-    /**
-     * Set singleton instance.
-     */
+    /** Set singleton instance. */
     @VisibleForTesting
-    static void setInstance(LeAudioNativeInterface instance) {
+    public static void setInstance(LeAudioNativeInterface instance) {
         synchronized (INSTANCE_LOCK) {
             sInstance = instance;
         }
@@ -199,22 +195,79 @@ public class LeAudioNativeInterface {
     }
 
     @VisibleForTesting
-    void onAudioGroupCodecConf(int groupId, BluetoothLeAudioCodecConfig inputCodecConfig,
-                            BluetoothLeAudioCodecConfig outputCodecConfig,
-                            BluetoothLeAudioCodecConfig [] inputSelectableCodecConfig,
-                            BluetoothLeAudioCodecConfig [] outputSelectableCodecConfig) {
+    void onAudioGroupCurrentCodecConf(
+            int groupId,
+            BluetoothLeAudioCodecConfig inputCodecConfig,
+            BluetoothLeAudioCodecConfig outputCodecConfig) {
         LeAudioStackEvent event =
                 new LeAudioStackEvent(
-                        LeAudioStackEvent.EVENT_TYPE_AUDIO_GROUP_CODEC_CONFIG_CHANGED);
+                        LeAudioStackEvent.EVENT_TYPE_AUDIO_GROUP_CURRENT_CODEC_CONFIG_CHANGED);
 
         event.valueInt1 = groupId;
         event.valueCodec1 = inputCodecConfig;
         event.valueCodec2 = outputCodecConfig;
+
+        if (DBG) {
+            Log.d(TAG, "onAudioGroupCurrentCodecConf: " + event);
+        }
+        sendMessageToService(event);
+    }
+
+    @VisibleForTesting
+    void onAudioGroupSelectableCodecConf(
+            int groupId,
+            BluetoothLeAudioCodecConfig[] inputSelectableCodecConfig,
+            BluetoothLeAudioCodecConfig[] outputSelectableCodecConfig) {
+        LeAudioStackEvent event =
+                new LeAudioStackEvent(
+                        LeAudioStackEvent.EVENT_TYPE_AUDIO_GROUP_SELECTABLE_CODEC_CONFIG_CHANGED);
+
+        event.valueInt1 = groupId;
         event.valueCodecList1 = Arrays.asList(inputSelectableCodecConfig);
         event.valueCodecList2 = Arrays.asList(outputSelectableCodecConfig);
 
         if (DBG) {
-            Log.d(TAG, "onAudioGroupCodecConf: " + event);
+            Log.d(TAG, "onAudioGroupSelectableCodecConf: " + event);
+        }
+        sendMessageToService(event);
+    }
+
+    @VisibleForTesting
+    void onHealthBasedRecommendationAction(byte[] address, int action) {
+        LeAudioStackEvent event =
+                new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_HEALTH_BASED_DEV_RECOMMENDATION);
+        event.device = getDevice(address);
+        event.valueInt1 = action;
+
+        if (DBG) {
+            Log.d(TAG, "onHealthBasedRecommendationAction: " + event);
+        }
+        sendMessageToService(event);
+    }
+
+    @VisibleForTesting
+    void onHealthBasedGroupRecommendationAction(int groupId, int action) {
+        LeAudioStackEvent event =
+                new LeAudioStackEvent(
+                        LeAudioStackEvent.EVENT_TYPE_HEALTH_BASED_GROUP_RECOMMENDATION);
+        event.valueInt1 = groupId;
+        event.valueInt2 = action;
+
+        if (DBG) {
+            Log.d(TAG, "onHealthBasedGroupRecommendationAction: " + event);
+        }
+        sendMessageToService(event);
+    }
+
+    @VisibleForTesting
+    void onUnicastMonitorModeStatus(int direction, int status) {
+        LeAudioStackEvent event =
+                new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_UNICAST_MONITOR_MODE_STATUS);
+        event.valueInt1 = direction;
+        event.valueInt2 = status;
+
+        if (DBG) {
+            Log.d(TAG, "onUnicastMonitorModeStatus: " + event);
         }
         sendMessageToService(event);
     }
@@ -328,6 +381,20 @@ public class LeAudioNativeInterface {
     }
 
     /**
+     * Set unicast monitor mode flag.
+     *
+     * @param direction direction for which monitor mode should be used
+     * @param enable true when LE Audio device should be listening for streaming status
+     *     on direction stream. false otherwise
+     */
+    public void setUnicastMonitorMode(int direction, boolean enable) {
+        if (DBG) {
+            Log.d(TAG, "setUnicastMonitorMode enable: " + enable + ", direction : " + direction);
+        }
+        setUnicastMonitorModeNative(direction, enable);
+    }
+
+    /**
      * Sends the audio preferences for the groupId to the native stack.
      *
      * @param groupId is the groupId corresponding to the preferences
@@ -346,7 +413,6 @@ public class LeAudioNativeInterface {
     }
 
     // Native methods that call into the JNI interface
-    private static native void classInitNative();
     private native void initNative(BluetoothLeAudioCodecConfig[] codecConfigOffloading);
     private native void cleanupNative();
     private native boolean connectLeAudioNative(byte[] address);
@@ -360,6 +426,8 @@ public class LeAudioNativeInterface {
             BluetoothLeAudioCodecConfig outputCodecConfig);
     private native void setCcidInformationNative(int ccid, int contextType);
     private native void setInCallNative(boolean inCall);
+
+    private native void setUnicastMonitorModeNative(int direction, boolean enable);
     /*package*/
     private native void sendAudioProfilePreferencesNative(int groupId,
             boolean isOutputPreferenceLeAudio, boolean isDuplexPreferenceLeAudio);

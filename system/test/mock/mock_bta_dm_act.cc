@@ -21,13 +21,12 @@
  *  mockcify.pl ver 0.3.0
  */
 
-#include <cstdint>
-#include <functional>
-#include <map>
-#include <string>
-
 // Mock include file to share data between tests and mock
 #include "test/mock/mock_bta_dm_act.h"
+
+#include <cstdint>
+
+#include "test/common/mock_functions.h"
 #include "types/raw_address.h"
 
 // Mocked internal structures, if any
@@ -65,40 +64,20 @@ struct bta_dm_bond_cancel bta_dm_bond_cancel;
 struct bta_dm_check_if_only_hd_connected bta_dm_check_if_only_hd_connected;
 struct bta_dm_ci_rmt_oob_act bta_dm_ci_rmt_oob_act;
 struct bta_dm_close_acl bta_dm_close_acl;
-struct bta_dm_close_gatt_conn bta_dm_close_gatt_conn;
 struct bta_dm_confirm bta_dm_confirm;
-struct bta_dm_deinit_cb bta_dm_deinit_cb;
 struct bta_dm_disable bta_dm_disable;
-struct bta_dm_disc_result bta_dm_disc_result;
-struct bta_dm_disc_rmt_name bta_dm_disc_rmt_name;
-struct bta_dm_discover bta_dm_discover;
 struct bta_dm_eir_update_cust_uuid bta_dm_eir_update_cust_uuid;
 struct bta_dm_eir_update_uuid bta_dm_eir_update_uuid;
 struct bta_dm_enable bta_dm_enable;
 struct bta_dm_encrypt_cback bta_dm_encrypt_cback;
-struct bta_dm_execute_queued_request bta_dm_execute_queued_request;
-struct bta_dm_free_sdp_db bta_dm_free_sdp_db;
-struct bta_dm_init_cb bta_dm_init_cb;
-struct bta_dm_inq_cmpl bta_dm_inq_cmpl;
 struct bta_dm_is_search_request_queued bta_dm_is_search_request_queued;
 struct bta_dm_pin_reply bta_dm_pin_reply;
-struct bta_dm_proc_open_evt bta_dm_proc_open_evt;
 struct bta_dm_process_remove_device bta_dm_process_remove_device;
-struct bta_dm_queue_disc bta_dm_queue_disc;
-struct bta_dm_queue_search bta_dm_queue_search;
 struct bta_dm_remove_device bta_dm_remove_device;
 struct bta_dm_rm_cback bta_dm_rm_cback;
-struct bta_dm_rmt_name bta_dm_rmt_name;
 struct bta_dm_sdp_result bta_dm_sdp_result;
-struct bta_dm_search_cancel bta_dm_search_cancel;
-struct bta_dm_search_cancel_notify bta_dm_search_cancel_notify;
-struct bta_dm_search_clear_queue bta_dm_search_clear_queue;
-struct bta_dm_search_cmpl bta_dm_search_cmpl;
-struct bta_dm_search_result bta_dm_search_result;
-struct bta_dm_search_start bta_dm_search_start;
 struct bta_dm_set_dev_name bta_dm_set_dev_name;
 struct bta_dm_set_encryption bta_dm_set_encryption;
-struct btm_dm_start_gatt_discovery btm_dm_start_gatt_discovery;
 struct handle_remote_features_complete handle_remote_features_complete;
 
 }  // namespace bta_dm_act
@@ -236,33 +215,13 @@ void bta_dm_close_acl(const RawAddress& bd_addr, bool remove_dev,
   inc_func_call_count(__func__);
   test::mock::bta_dm_act::bta_dm_close_acl(bd_addr, remove_dev, transport);
 }
-void bta_dm_close_gatt_conn(tBTA_DM_MSG* p_data) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_close_gatt_conn(p_data);
-}
 void bta_dm_confirm(const RawAddress& bd_addr, bool accept) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_act::bta_dm_confirm(bd_addr, accept);
 }
-void bta_dm_deinit_cb(void) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_deinit_cb();
-}
 void bta_dm_disable() {
   inc_func_call_count(__func__);
   test::mock::bta_dm_act::bta_dm_disable();
-}
-void bta_dm_disc_result(tBTA_DM_MSG* p_data) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_disc_result(p_data);
-}
-void bta_dm_disc_rmt_name(tBTA_DM_MSG* p_data) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_disc_rmt_name(p_data);
-}
-void bta_dm_discover(tBTA_DM_MSG* p_data) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_discover(p_data);
 }
 void bta_dm_eir_update_cust_uuid(const tBTA_CUSTOM_UUID& curr, bool adding) {
   inc_func_call_count(__func__);
@@ -282,22 +241,6 @@ void bta_dm_encrypt_cback(const RawAddress* bd_addr, tBT_TRANSPORT transport,
   test::mock::bta_dm_act::bta_dm_encrypt_cback(bd_addr, transport, p_ref_data,
                                                result);
 }
-void bta_dm_execute_queued_request() {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_execute_queued_request();
-}
-void bta_dm_free_sdp_db() {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_free_sdp_db();
-}
-void bta_dm_init_cb(void) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_init_cb();
-}
-void bta_dm_inq_cmpl(uint8_t num) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_inq_cmpl(num);
-}
 bool bta_dm_is_search_request_queued() {
   inc_func_call_count(__func__);
   return test::mock::bta_dm_act::bta_dm_is_search_request_queued();
@@ -306,21 +249,9 @@ void bta_dm_pin_reply(std::unique_ptr<tBTA_DM_API_PIN_REPLY> msg) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_act::bta_dm_pin_reply(std::move(msg));
 }
-void bta_dm_proc_open_evt(tBTA_GATTC_OPEN* p_data) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_proc_open_evt(p_data);
-}
 void bta_dm_process_remove_device(const RawAddress& bd_addr) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_act::bta_dm_process_remove_device(bd_addr);
-}
-void bta_dm_queue_disc(tBTA_DM_MSG* p_data) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_queue_disc(p_data);
-}
-void bta_dm_queue_search(tBTA_DM_MSG* p_data) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_queue_search(p_data);
 }
 void bta_dm_remove_device(const RawAddress& bd_addr) {
   inc_func_call_count(__func__);
@@ -331,37 +262,9 @@ void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id, uint8_t app_id,
   inc_func_call_count(__func__);
   test::mock::bta_dm_act::bta_dm_rm_cback(status, id, app_id, peer_addr);
 }
-void bta_dm_rmt_name(tBTA_DM_MSG* p_data) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_rmt_name(p_data);
-}
 void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_act::bta_dm_sdp_result(p_data);
-}
-void bta_dm_search_cancel() {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_search_cancel();
-}
-void bta_dm_search_cancel_notify() {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_search_cancel_notify();
-}
-void bta_dm_search_clear_queue() {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_search_clear_queue();
-}
-void bta_dm_search_cmpl() {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_search_cmpl();
-}
-void bta_dm_search_result(tBTA_DM_MSG* p_data) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_search_result(p_data);
-}
-void bta_dm_search_start(tBTA_DM_MSG* p_data) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_search_start(p_data);
 }
 void bta_dm_set_dev_name(const std::vector<uint8_t>& name) {
   inc_func_call_count(__func__);
@@ -373,10 +276,6 @@ void bta_dm_set_encryption(const RawAddress& bd_addr, tBT_TRANSPORT transport,
   inc_func_call_count(__func__);
   test::mock::bta_dm_act::bta_dm_set_encryption(bd_addr, transport, p_callback,
                                                 sec_act);
-}
-void btm_dm_start_gatt_discovery(const RawAddress& bd_addr) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_act::btm_dm_start_gatt_discovery(bd_addr);
 }
 void handle_remote_features_complete(const RawAddress& bd_addr) {
   inc_func_call_count(__func__);

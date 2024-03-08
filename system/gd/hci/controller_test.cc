@@ -18,25 +18,21 @@
 
 #include <gtest/gtest.h>
 
-#include <algorithm>
 #include <chrono>
 #include <future>
-#include <map>
 #include <memory>
 
 #include "common/bind.h"
-#include "common/callback.h"
 #include "common/init_flags.h"
 #include "hci/address.h"
 #include "hci/hci_layer.h"
+#include "module_dumper.h"
 #include "os/thread.h"
 #include "packet/raw_builder.h"
 
 using namespace bluetooth;
 using namespace std::chrono_literals;
 
-using common::BidiQueue;
-using common::BidiQueueEnd;
 using packet::kLittleEndian;
 using packet::PacketView;
 using packet::RawBuilder;
@@ -76,8 +72,8 @@ class TestHciLayer : public HciLayer {
   }
 
   void EnqueueCommand(
-      std::unique_ptr<CommandBuilder> command,
-      common::ContextualOnceCallback<void(CommandStatusView)> on_status) override {
+      std::unique_ptr<CommandBuilder> /* command */,
+      common::ContextualOnceCallback<void(CommandStatusView)> /* on_status */) override {
     FAIL() << "Controller properties should not generate Command Status";
   }
 
@@ -115,6 +111,12 @@ class TestHciLayer : public HciLayer {
         }
         event_builder =
             ReadLocalSupportedCommandsCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, supported_commands);
+      } break;
+      case (OpCode::READ_LOCAL_SUPPORTED_CODECS_V1): {
+        std::vector<uint8_t> supported_codecs{0, 1, 2, 3, 4, 5, 6};
+        std::vector<uint32_t> supported_vendor_codecs;
+        event_builder = ReadLocalSupportedCodecsV1CompleteBuilder::Create(
+            num_packets, ErrorCode::SUCCESS, supported_codecs, supported_vendor_codecs);
       } break;
       case (OpCode::READ_LOCAL_EXTENDED_FEATURES): {
         ReadLocalExtendedFeaturesView read_command = ReadLocalExtendedFeaturesView::Create(command);
@@ -250,7 +252,7 @@ class TestHciLayer : public HciLayer {
     number_of_completed_packets_callback_.Invoke(event);
   }
 
-  CommandView GetCommand(OpCode op_code) {
+  CommandView GetCommand(OpCode /* op_code */) {
     std::unique_lock<std::mutex> lock(mutex_);
     std::chrono::milliseconds time = std::chrono::milliseconds(3000);
 
@@ -268,7 +270,7 @@ class TestHciLayer : public HciLayer {
     return command;
   }
 
-  void ListDependencies(ModuleList* list) const {}
+  void ListDependencies(ModuleList* /* list */) const {}
   void Start() override {}
   void Stop() override {}
 
@@ -358,6 +360,7 @@ TEST_F(ControllerTest, read_controller_info) {
   ASSERT_EQ(controller_->GetLeMaximumDataLength().supported_max_rx_time_, 0x78);
   ASSERT_EQ(controller_->GetLeMaximumAdvertisingDataLength(), 0x0672);
   ASSERT_EQ(controller_->GetLeNumberOfSupportedAdverisingSets(), 0xF0);
+  ASSERT_TRUE(controller_->GetLocalSupportedBrEdrCodecIds().size() > 0);
 }
 
 TEST_F(ControllerTest, read_write_local_name) {

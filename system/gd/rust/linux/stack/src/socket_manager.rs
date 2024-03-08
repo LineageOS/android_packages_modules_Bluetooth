@@ -35,6 +35,7 @@ pub type CallbackId = u32;
 pub type SocketType = socket::SocketType;
 
 /// Result type for calls in `IBluetoothSocketManager`.
+#[derive(Debug)]
 pub struct SocketResult {
     pub status: BtStatus,
     pub id: u64,
@@ -56,7 +57,7 @@ pub const DYNAMIC_CHANNEL: i32 = -1;
 pub const INVALID_SOCKET_ID: SocketId = 0;
 
 /// Represents a listening socket.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct BluetoothServerSocket {
     pub id: SocketId,
     pub sock_type: SocketType,
@@ -181,6 +182,7 @@ impl fmt::Display for BluetoothServerSocket {
 }
 
 /// Represents a connected socket.
+#[derive(Debug)]
 pub struct BluetoothSocket {
     pub id: SocketId,
     pub remote_device: BluetoothDevice,
@@ -295,6 +297,9 @@ pub trait IBluetoothSocketManager {
         callback: Box<dyn IBluetoothSocketManagerCallbacks + Send>,
     ) -> CallbackId;
 
+    /// Unregister for socket callbacks.
+    fn unregister_callback(&mut self, callback: CallbackId) -> bool;
+
     /// Create an insecure listening L2CAP socket. PSM is dynamically assigned.
     fn listen_using_insecure_l2cap_channel(&mut self, callback: CallbackId) -> SocketResult;
 
@@ -400,6 +405,9 @@ struct InternalListeningSocket {
 
     /// Used by admin
     uuid: Option<Uuid>,
+
+    /// Used for tracing task status
+    joinhandle: JoinHandle<()>,
 }
 
 impl InternalListeningSocket {
@@ -408,22 +416,24 @@ impl InternalListeningSocket {
         socket_id: SocketId,
         tx: Sender<SocketRunnerActions>,
         uuid: Option<Uuid>,
+        joinhandle: JoinHandle<()>,
     ) -> Self {
-        InternalListeningSocket { _callback_id, socket_id, tx, uuid }
+        InternalListeningSocket { _callback_id, socket_id, tx, uuid, joinhandle }
     }
 }
 
 /// Internal connecting socket data.
 struct InternalConnectingSocket {
     _callback_id: CallbackId,
-    socket_info: BluetoothSocket,
-    stream: Option<UnixStream>,
+    socket_id: SocketId,
+
+    /// Used for cleaning up
+    joinhandle: JoinHandle<()>,
 }
 
 impl InternalConnectingSocket {
-    fn new(_callback_id: CallbackId, socket_info: BluetoothSocket, fd: std::fs::File) -> Self {
-        let stream = file_to_unixstream(fd);
-        InternalConnectingSocket { _callback_id, socket_info, stream }
+    fn new(_callback_id: CallbackId, socket_id: SocketId, joinhandle: JoinHandle<()>) -> Self {
+        InternalConnectingSocket { _callback_id, socket_id, joinhandle }
     }
 }
 
@@ -473,8 +483,11 @@ pub enum SocketActions {
     OnIncomingSocketClosed(CallbackId, SocketId, BtStatus),
     OnHandleIncomingConnection(CallbackId, SocketId, BluetoothSocket),
 
-    // Last event is for connecting socket.
+    // This event is for connecting socket.
     OnOutgoingConnectionResult(CallbackId, SocketId, BtStatus, Option<BluetoothSocket>),
+
+    // Request to disconnect all sockets, e.g. when user disconnects the peer device.
+    DisconnectAll(RawAddress),
 }
 
 /// Implementation of the `IBluetoothSocketManager` api.
@@ -485,8 +498,8 @@ pub struct BluetoothSocketManager {
     /// List of listening sockets.
     listening: HashMap<CallbackId, Vec<InternalListeningSocket>>,
 
-    /// Current futures mapped by callback id (so we can drop if callback disconnects).
-    futures: HashMap<CallbackId, Vec<JoinHandle<()>>>,
+    /// List of connecting sockets with futures (so we can drop if callback disconnects).
+    connecting: HashMap<CallbackId, Vec<InternalConnectingSocket>>,
 
     /// Separate runtime for socket listeners (so they're not dependent on the
     /// same runtime as RPC).
@@ -511,7 +524,7 @@ impl BluetoothSocketManager {
     pub fn new(tx: Sender<Message>, admin: Arc<Mutex<Box<BluetoothAdmin>>>) -> Self {
         let callbacks = Callbacks::new(tx.clone(), Message::SocketManagerCallbackDisconnected);
         let socket_counter: u64 = 1000;
-        let futures = HashMap::new();
+        let connecting = HashMap::new();
         let listening = HashMap::new();
         let runtime = Arc::new(
             Builder::new_multi_thread()
@@ -524,7 +537,7 @@ impl BluetoothSocketManager {
 
         BluetoothSocketManager {
             callbacks,
-            futures,
+            connecting,
             listening,
             runtime,
             sock: None,
@@ -567,6 +580,14 @@ impl BluetoothSocketManager {
                 log::debug!("service {} is blocked by admin policy", uuid);
                 return SocketResult::new(BtStatus::AuthRejected, INVALID_SOCKET_ID);
             }
+            if self
+                .listening
+                .iter()
+                .any(|(_, v)| v.iter().any(|s| s.uuid.map_or(false, |u| u == uuid)))
+            {
+                log::warn!("Service {} already exists", uuid);
+                return SocketResult::new(BtStatus::Fail, INVALID_SOCKET_ID);
+            }
         }
 
         // Create listener socket pair
@@ -596,10 +617,7 @@ impl BluetoothSocketManager {
                 let id = self.next_socket_id();
                 socket_info.id = id;
                 let (runner_tx, runner_rx) = channel::<SocketRunnerActions>(10);
-
-                // Keep track of active listener sockets.
-                let listener = InternalListeningSocket::new(cbid, id, runner_tx, socket_info.uuid);
-                self.listening.entry(cbid).or_default().push(listener);
+                let uuid = socket_info.uuid.clone();
 
                 // Push a listening task to local runtime to wait for device to
                 // start accepting or get closed.
@@ -628,7 +646,11 @@ impl BluetoothSocketManager {
                     .await;
                 });
 
-                self.futures.entry(cbid).or_default().push(joinhandle);
+                // Keep track of active listener sockets.
+                self.listening
+                    .entry(cbid)
+                    .or_default()
+                    .push(InternalListeningSocket::new(cbid, id, runner_tx, uuid, joinhandle));
 
                 SocketResult::new(status, id)
             }
@@ -694,7 +716,6 @@ impl BluetoothSocketManager {
                 // callbacks.
                 let id = self.next_socket_id();
                 socket_info.id = id;
-                let connector = InternalConnectingSocket::new(cbid, socket_info, file);
 
                 // Push a connecting task to local runtime to wait for connection
                 // completion.
@@ -704,7 +725,8 @@ impl BluetoothSocketManager {
                         cbid,
                         id,
                         tx,
-                        connector,
+                        socket_info,
+                        file_to_unixstream(file),
                         Duration::from_millis(CONNECT_COMPLETE_TIMEOUT_MS),
                     )
                     .await;
@@ -712,7 +734,10 @@ impl BluetoothSocketManager {
 
                 // Keep track of these futures in case they need to be cancelled due to callback
                 // disconnecting.
-                self.futures.entry(cbid).or_default().push(joinhandle);
+                self.connecting
+                    .entry(cbid)
+                    .or_default()
+                    .push(InternalConnectingSocket::new(cbid, id, joinhandle));
 
                 SocketResult::new(status, id)
             }
@@ -839,7 +864,7 @@ impl BluetoothSocketManager {
                                         SocketActions::OnIncomingSocketReady(
                                             cbid,
                                             cloned_socket_info,
-                                            BtStatus::Fail,
+                                            BtStatus::Timeout,
                                         ),
                                     ))
                                     .await;
@@ -899,7 +924,7 @@ impl BluetoothSocketManager {
                                                         Ok(None)
                                                     }
                                                 }
-                                                Err(e) => Ok(None),
+                                                Err(_) => Ok(None),
                                             };
                                         }
 
@@ -1027,12 +1052,13 @@ impl BluetoothSocketManager {
         cbid: CallbackId,
         socket_id: SocketId,
         tx: Sender<Message>,
-        connector: InternalConnectingSocket,
+        socket_info: BluetoothSocket,
+        stream: Option<UnixStream>,
         connection_timeout: Duration,
     ) {
         // If the unixstream isn't available for this connection, immediately return
         // a failure.
-        let stream = match connector.stream {
+        let stream = match stream {
             Some(s) => s,
             None => {
                 let _ = tx
@@ -1057,7 +1083,7 @@ impl BluetoothSocketManager {
         if status != BtStatus::Success {
             log::info!(
                 "Connecting socket to {} failed while trying to read channel from stream",
-                connector.socket_info
+                socket_info
             );
             let _ = tx
                 .send(Message::SocketManagerActions(SocketActions::OnOutgoingConnectionResult(
@@ -1073,7 +1099,7 @@ impl BluetoothSocketManager {
         if status != BtStatus::Success {
             log::info!(
                 "Connecting socket to {} failed while trying to read connect complete from stream",
-                connector.socket_info
+                socket_info
             );
             let _ = tx
                 .send(Message::SocketManagerActions(SocketActions::OnOutgoingConnectionResult(
@@ -1097,7 +1123,7 @@ impl BluetoothSocketManager {
                         ))
                         .await;
                 } else {
-                    let mut sock = connector.socket_info;
+                    let mut sock = socket_info;
                     sock.fd = Some(unixstream_to_file(stream));
                     sock.port = cc.channel;
                     sock.max_rx_size = cc.max_rx_packet_size.into();
@@ -1157,7 +1183,16 @@ impl BluetoothSocketManager {
             SocketActions::OnOutgoingConnectionResult(cbid, socket_id, status, socket) => {
                 if let Some(callback) = self.callbacks.get_by_id_mut(cbid) {
                     callback.on_outgoing_connection_result(socket_id, status, socket);
+
+                    // Also make sure to remove the socket from connecting list.
+                    self.connecting
+                        .entry(cbid)
+                        .and_modify(|v| v.retain(|s| s.socket_id != socket_id));
                 }
+            }
+
+            SocketActions::DisconnectAll(addr) => {
+                self.sock.as_ref().expect("Socket Manager not initialized").disconnect_all(addr);
             }
         }
     }
@@ -1193,8 +1228,23 @@ impl BluetoothSocketManager {
 
     pub fn remove_callback(&mut self, callback: CallbackId) {
         // Remove any associated futures and sockets waiting to accept.
-        self.futures.remove(&callback);
-        self.listening.remove(&callback);
+        self.connecting.remove(&callback).map(|sockets| {
+            for s in sockets {
+                s.joinhandle.abort();
+            }
+        });
+        self.listening.remove(&callback).map(|sockets| {
+            for s in sockets {
+                if s.joinhandle.is_finished() {
+                    continue;
+                }
+                let tx = s.tx.clone();
+                let id = s.socket_id;
+                self.runtime.spawn(async move {
+                    let _ = tx.send(SocketRunnerActions::Close(id)).await;
+                });
+            }
+        });
         self.callbacks.remove_callback(callback);
     }
 
@@ -1226,6 +1276,10 @@ impl IBluetoothSocketManager for BluetoothSocketManager {
         callback: Box<dyn IBluetoothSocketManagerCallbacks + Send>,
     ) -> CallbackId {
         self.callbacks.add_callback(callback)
+    }
+
+    fn unregister_callback(&mut self, callback: CallbackId) -> bool {
+        self.callbacks.remove_callback(callback)
     }
 
     fn listen_using_insecure_l2cap_channel(&mut self, callback: CallbackId) -> SocketResult {

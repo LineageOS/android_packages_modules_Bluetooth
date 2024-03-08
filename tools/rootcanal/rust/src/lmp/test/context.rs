@@ -1,11 +1,23 @@
+// Copyright 2023 The Android Open Source Project
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::convert::{TryFrom, TryInto};
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{self, Poll};
-
-use num_traits::ToPrimitive;
 
 use crate::lmp::ec::PrivateKey;
 use crate::packets::{hci, lmp};
@@ -16,8 +28,8 @@ use crate::lmp::procedure::Context;
 pub struct TestContext {
     pub in_lmp_packets: RefCell<VecDeque<lmp::LmpPacket>>,
     pub out_lmp_packets: RefCell<VecDeque<lmp::LmpPacket>>,
-    pub hci_events: RefCell<VecDeque<hci::EventPacket>>,
-    pub hci_commands: RefCell<VecDeque<hci::CommandPacket>>,
+    pub hci_events: RefCell<VecDeque<hci::Event>>,
+    pub hci_commands: RefCell<VecDeque<hci::Command>>,
     private_key: RefCell<Option<PrivateKey>>,
     features_pages: [u64; 3],
     peer_features_pages: [u64; 3],
@@ -31,28 +43,28 @@ impl TestContext {
     }
 
     pub fn with_page_1_feature(mut self, feature: hci::LMPFeaturesPage1Bits) -> Self {
-        self.features_pages[1] |= feature.to_u64().unwrap();
+        self.features_pages[1] |= u64::from(feature);
         self
     }
 
     pub fn with_page_2_feature(mut self, feature: hci::LMPFeaturesPage2Bits) -> Self {
-        self.features_pages[2] |= feature.to_u64().unwrap();
+        self.features_pages[2] |= u64::from(feature);
         self
     }
 
     pub fn with_peer_page_1_feature(mut self, feature: hci::LMPFeaturesPage1Bits) -> Self {
-        self.peer_features_pages[1] |= feature.to_u64().unwrap();
+        self.peer_features_pages[1] |= u64::from(feature);
         self
     }
 
     pub fn with_peer_page_2_feature(mut self, feature: hci::LMPFeaturesPage2Bits) -> Self {
-        self.peer_features_pages[2] |= feature.to_u64().unwrap();
+        self.peer_features_pages[2] |= u64::from(feature);
         self
     }
 }
 
 impl Context for TestContext {
-    fn poll_hci_command<C: TryFrom<hci::CommandPacket>>(&self) -> Poll<C> {
+    fn poll_hci_command<C: TryFrom<hci::Command>>(&self) -> Poll<C> {
         let command =
             self.hci_commands.borrow().front().and_then(|command| command.clone().try_into().ok());
 
@@ -76,7 +88,7 @@ impl Context for TestContext {
         }
     }
 
-    fn send_hci_event<E: Into<hci::EventPacket>>(&self, event: E) {
+    fn send_hci_event<E: Into<hci::Event>>(&self, event: E) {
         self.hci_events.borrow_mut().push_back(event.into());
     }
 
@@ -85,7 +97,7 @@ impl Context for TestContext {
     }
 
     fn peer_address(&self) -> hci::Address {
-        hci::Address { bytes: [0; 6] }
+        hci::Address::try_from(0).unwrap()
     }
 
     fn peer_handle(&self) -> u16 {

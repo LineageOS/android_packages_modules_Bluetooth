@@ -22,7 +22,7 @@
 #include <variant>
 
 #include "hci/acl_manager/acl_scheduler.h"
-#include "hci/acl_manager/event_checkers.h"
+#include "hci/event_checkers.h"
 #include "hci/hci_layer.h"
 
 namespace bluetooth {
@@ -132,7 +132,16 @@ struct RemoteNameRequestModule::impl {
 
   void on_start_remote_name_request_status(
       Address address, CompletionCallback on_completion, CommandStatusView status) {
+    // TODO(b/294961421): Remove the ifdef when firmware fix in place. Realtek controllers
+    // unexpectedly sent a Remote Name Req Complete HCI event without the corresponding HCI command.
+#ifndef TARGET_FLOSS
     ASSERT(pending_ == true);
+#else
+    if (pending_ != true) {
+      LOG_WARN("Unexpected remote name response with no request pending");
+      return;
+    }
+#endif
     ASSERT(status.GetCommandOpCode() == OpCode::REMOTE_NAME_REQUEST);
     LOG_INFO(
         "Got status %hhu when starting remote name request to to %s",
@@ -150,22 +159,27 @@ struct RemoteNameRequestModule::impl {
     LOG_INFO("Cancelling remote name request to %s", address.ToRedactedStringForLogging().c_str());
     hci_layer_->EnqueueCommand(
         RemoteNameRequestCancelBuilder::Create(address),
-        handler_->BindOnce(
-            &acl_manager::check_command_complete<RemoteNameRequestCancelCompleteView>));
+        handler_->BindOnce(check_complete<RemoteNameRequestCancelCompleteView>));
   }
 
   void on_remote_host_supported_features_notification(EventView view) {
     auto packet = RemoteHostSupportedFeaturesNotificationView::Create(view);
     ASSERT(packet.IsValid());
-    if (pending_) {
+    if (pending_ && !on_remote_host_supported_features_notification_.IsEmpty()) {
       LOG_INFO(
           "Received REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION from %s",
           packet.GetBdAddr().ToRedactedStringForLogging().c_str());
       on_remote_host_supported_features_notification_.Invoke(packet.GetHostSupportedFeatures());
-    } else {
+      // Remove the callback so that we won't call it again.
+      on_remote_host_supported_features_notification_ = RemoteHostSupportedFeaturesCallback();
+    } else if (!pending_) {
       LOG_ERROR(
           "Received unexpected REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION when no Remote Name "
           "Request is outstanding");
+    } else {  // callback is not set, which indicates we have processed the feature notification.
+      LOG_ERROR(
+          "Received more than one REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION during Remote Name "
+          "Request");
     }
   }
 

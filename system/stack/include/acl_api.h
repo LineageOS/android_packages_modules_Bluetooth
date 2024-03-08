@@ -17,11 +17,15 @@
 
 #include <cstdint>
 
-#include "stack/btm/btm_int_types.h"
-#include "stack/include/acl_api_types.h"
-#include "stack/include/bt_types.h"
+#include "device/include/controller.h"
+#include "stack/acl/acl.h"
+#include "stack/btm/security_device_record.h"
+#include "stack/include/btm_api_types.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/hci_error_code.h"
+#include "types/ble_address_with_type.h"
+#include "types/bt_transport.h"
+#include "types/hci_role.h"
 #include "types/raw_address.h"
 
 // Note: From stack/include/btm_api.h
@@ -193,7 +197,7 @@ bool BTM_BLE_IS_RESOLVE_BDA(const RawAddress& x);
 bool acl_refresh_remote_address(const RawAddress& identity_address,
                                 tBLE_ADDR_TYPE identity_address_type,
                                 const RawAddress& remote_bda,
-                                tBTM_SEC_BLE::tADDRESS_TYPE rra_type,
+                                tBLE_RAND_ADDR_TYPE rra_type,
                                 const RawAddress& rpa);
 
 void btm_establish_continue_from_address(const RawAddress& remote_bda,
@@ -201,10 +205,6 @@ void btm_establish_continue_from_address(const RawAddress& remote_bda,
 
 bool acl_peer_supports_ble_connection_parameters_request(
     const RawAddress& remote_bda);
-
-bool sco_peer_supports_esco_2m_phy(const RawAddress& remote_bda);
-bool sco_peer_supports_esco_3m_phy(const RawAddress& remote_bda);
-bool sco_peer_supports_esco_ev3(const RawAddress& remote_bda);
 
 bool acl_peer_supports_ble_packet_extension(uint16_t hci_handle);
 bool acl_peer_supports_ble_2m_phy(uint16_t hci_handle);
@@ -226,7 +226,8 @@ bool acl_peer_supports_ble_packet_extension(uint16_t hci_handle);
  ******************************************************************************/
 void BTM_ReadConnectionAddr(const RawAddress& remote_bda,
                             RawAddress& local_conn_addr,
-                            tBLE_ADDR_TYPE* p_addr_type);
+                            tBLE_ADDR_TYPE* p_addr_type,
+                            bool ota_address = false);
 
 /*******************************************************************************
  *
@@ -261,9 +262,6 @@ tBTM_STATUS btm_read_power_mode_state(const RawAddress& remote_bda,
                                       tBTM_PM_STATE* pmState);
 
 void btm_acl_notif_conn_collision(const RawAddress& bda);
-
-void btm_configure_data_path(uint8_t direction, uint8_t path_id,
-                             std::vector<uint8_t> vendor_config);
 
 /*******************************************************************************
  *
@@ -303,8 +301,6 @@ bool acl_peer_supports_sniff_subrating(const RawAddress& remote_bda);
 bool acl_peer_supports_ble_connection_subrating(const RawAddress& remote_bda);
 bool acl_peer_supports_ble_connection_subrating_host(
     const RawAddress& remote_bda);
-
-void btm_acl_set_paging(bool value);
 
 void btm_process_cancel_complete(uint8_t status, uint8_t mode);
 

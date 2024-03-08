@@ -18,21 +18,14 @@ package com.android.server.bluetooth;
 
 import static com.android.server.bluetooth.BluetoothAirplaneModeListener.BLUETOOTH_APM_STATE;
 
-import android.annotation.RequiresPermission;
 import android.app.ActivityManager;
-import android.bluetooth.BluetoothA2dp;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothHearingAid;
-import android.bluetooth.BluetoothLeAudio;
-import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothProfile.ServiceListener;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.os.Process;
 import android.os.UserHandle;
 import android.provider.Settings;
-import android.util.Log;
 import android.widget.Toast;
 
 import com.android.internal.annotations.VisibleForTesting;
@@ -42,11 +35,8 @@ import com.android.internal.annotations.VisibleForTesting;
  * complex logic.
  */
 public class BluetoothModeChangeHelper {
-    private static final String TAG = "BluetoothModeChangeHelper";
+    private static final String TAG = BluetoothModeChangeHelper.class.getSimpleName();
 
-    private volatile BluetoothA2dp mA2dp;
-    private volatile BluetoothHearingAid mHearingAid;
-    private volatile BluetoothLeAudio mLeAudio;
     private final BluetoothAdapter mAdapter;
     private final Context mContext;
 
@@ -55,54 +45,6 @@ public class BluetoothModeChangeHelper {
     BluetoothModeChangeHelper(Context context) {
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         mContext = context;
-
-        mAdapter.getProfileProxy(mContext, mProfileServiceListener, BluetoothProfile.A2DP);
-        mAdapter.getProfileProxy(mContext, mProfileServiceListener,
-                BluetoothProfile.HEARING_AID);
-        mAdapter.getProfileProxy(mContext, mProfileServiceListener, BluetoothProfile.LE_AUDIO);
-    }
-
-    private final ServiceListener mProfileServiceListener = new ServiceListener() {
-        @Override
-        public void onServiceConnected(int profile, BluetoothProfile proxy) {
-            // Setup Bluetooth profile proxies
-            switch (profile) {
-                case BluetoothProfile.A2DP:
-                    mA2dp = (BluetoothA2dp) proxy;
-                    break;
-                case BluetoothProfile.HEARING_AID:
-                    mHearingAid = (BluetoothHearingAid) proxy;
-                    break;
-                case BluetoothProfile.LE_AUDIO:
-                    mLeAudio = (BluetoothLeAudio) proxy;
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        @Override
-        public void onServiceDisconnected(int profile) {
-            // Clear Bluetooth profile proxies
-            switch (profile) {
-                case BluetoothProfile.A2DP:
-                    mA2dp = null;
-                    break;
-                case BluetoothProfile.HEARING_AID:
-                    mHearingAid = null;
-                    break;
-                case BluetoothProfile.LE_AUDIO:
-                    mLeAudio = null;
-                    break;
-                default:
-                    break;
-            }
-        }
-    };
-
-    @VisibleForTesting
-    public boolean isMediaProfileConnected() {
-        return isA2dpConnected() || isHearingAidConnected() || isLeAudioConnected();
     }
 
     @VisibleForTesting
@@ -112,18 +54,6 @@ public class BluetoothModeChangeHelper {
             return false;
         }
         return adapter.isLeEnabled();
-    }
-
-    @VisibleForTesting
-    public boolean isAirplaneModeOn() {
-        return Settings.Global.getInt(mContext.getContentResolver(),
-                Settings.Global.AIRPLANE_MODE_ON, 0) == 1;
-    }
-
-    @VisibleForTesting
-    @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
-    public void onAirplaneModeChanged(BluetoothManagerService managerService) {
-        managerService.onAirplaneModeChanged();
     }
 
     @VisibleForTesting
@@ -162,30 +92,6 @@ public class BluetoothModeChangeHelper {
         final CharSequence text = r.getString(Resources.getSystem().getIdentifier(
                 "bluetooth_airplane_mode_toast", "string", "android"));
         Toast.makeText(mContext, text, Toast.LENGTH_LONG).show();
-    }
-
-    private boolean isA2dpConnected() {
-        final BluetoothA2dp a2dp = mA2dp;
-        if (a2dp == null) {
-            return false;
-        }
-        return a2dp.getConnectedDevices().size() > 0;
-    }
-
-    private boolean isHearingAidConnected() {
-        final BluetoothHearingAid hearingAid = mHearingAid;
-        if (hearingAid == null) {
-            return false;
-        }
-        return hearingAid.getConnectedDevices().size() > 0;
-    }
-
-    private boolean isLeAudioConnected() {
-        final BluetoothLeAudio leAudio = mLeAudio;
-        if (leAudio == null) {
-            return false;
-        }
-        return leAudio.getConnectedDevices().size() > 0;
     }
 
     /**

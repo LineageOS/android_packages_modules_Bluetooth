@@ -18,6 +18,14 @@ use File::Basename;
 
 ## mockcify version
 ##
+## 0.7.0 Comment out unused mock variables
+##
+## 0.6.3 Streamline inclusion for headers and source
+##
+## 0.6.2 Add tBTA_STATUS default value, Cpp type failure log
+##
+## 0.6.1 Add tBTA_SDP_STATUS default value
+##
 ## 0.6.0 Replace `extern` with `include` for mock_function_count_map
 ##
 ## 0.5.0 Add compilation check
@@ -36,10 +44,14 @@ use File::Basename;
 ##
 ## 0.2.0 First version
 ##
-my $VERSION = "0.6.0";
+my $VERSION = "0.7.0";
 
+use diagnostics;
 use strict;
 use warnings;
+
+use lib "$ENV{ANDROID_BUILD_TOP}/packages/modules/Bluetooth/system/test/tool";
+require 'mockcify_util.pl';
 
 my $YEAR = "2023";
 my $TOKEN = "MOCKCIFY_TOKEN";
@@ -267,9 +279,9 @@ sub print_source {
   my $FH = shift @_;
   print_copyright($FH);
   print_generated_note($FH);
-  print_mock_decl_src($FH);
 
   print_mock_header_include($FH);
+  print_mock_decl_src($FH);
   print_usings($FH);
   print_internal_structs($FH);
   print_source_namespace_structs($FH);
@@ -303,6 +315,10 @@ sub get_function_param_names {
         my $param_name = $function_param_names{$name}[$_];
         my $param_type = $function_param_types{$name}[$_];
 
+        if (!defined($param_type)) {
+          printf(STDERR "Unable to find param type def for $name\n");
+          next;
+        }
         if ($param_type =~ /unique_ptr/) {
             ## Wrap name in a move operation
             push(@param_names, "std::move($param_name)");
@@ -361,6 +377,7 @@ sub parse_function_into_components {
 
   ## Skip when void keyword used for no parameters
   if ($params ne "void") {
+    ## TODO Replace all comma types within angle brackets before split
     foreach (split ',', $params) {
       s/^\s+//;
       if (/\(/) {
@@ -561,6 +578,10 @@ sub get_default_return_value_from_type {
     return "nullptr";
   } elsif(/btav_a2dp_codec_index_t/) {
     return "BTAV_A2DP_CODEC_INDEX_SOURCE_MIN";
+  } elsif(/tBTA_SDP_STATUS/) {
+    return "BTA_SDP_SUCCESS";
+  } elsif(/tBTA_STATUS/) {
+    return "BTA_SUCCESS";
   } else {
     ## Decay to int type
     return "0";
@@ -680,6 +701,7 @@ namespace $namespace {
 EOF
   foreach my $name (sort @function_names) {
       my $input_params = $function_params{$name};
+      my $vars_commented_out_input_params = comment_out_input_vars($input_params);
       my $return_type = $function_return_types{$name};
       my @param_names = $function_param_names{$name};
       assert($return_type ne '');
@@ -699,7 +721,7 @@ EOF
            print $FH "$return_definition\n";
        }
 print $FH <<EOF;
-    std::function<$return_type($input_params)> body{[]($input_params){$return_statement}};
+    std::function<$return_type($input_params)> body{[]($vars_commented_out_input_params){$return_statement}};
     $return_type operator()($input_params) { ${return_keyword} body($function_param_names);};
 };
 extern struct $name $name;
@@ -777,10 +799,6 @@ sub print_mock_decl_hdr {
 print $FH <<EOF;
 #include <cstdint>
 #include <functional>
-#include <map>
-#include <string>
-
-#include "test/common/mock_functions.h"
 
 EOF
 }
@@ -789,9 +807,8 @@ sub print_mock_decl_src {
   my $FH = shift @_;
 print $FH <<EOF;
 #include <cstdint>
-#include <functional>
-#include <map>
-#include <string>
+
+#include "test/common/mock_functions.h"
 
 EOF
 }

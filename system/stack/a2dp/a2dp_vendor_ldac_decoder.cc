@@ -20,17 +20,14 @@
 
 #include <base/logging.h>
 #include <dlfcn.h>
-#include <inttypes.h>
 #include <ldacBT.h>
 #include <ldacBT_bco_for_fluoride.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "a2dp_vendor.h"
 #include "a2dp_vendor_ldac.h"
-#include "osi/include/log.h"
-#include "osi/include/osi.h"
+#include "os/log.h"
 #include "stack/include/bt_hdr.h"
 
 //
@@ -74,11 +71,7 @@ static tLDAC_BCO_SUSPEND ldac_BCO_suspend_func;
 static tLDAC_BCO_CONFIGURE ldac_BCO_configure_func;
 
 // offset
-#if (BTA_AV_CO_CP_SCMS_T == TRUE)
-#define A2DP_LDAC_OFFSET (AVDT_MEDIA_OFFSET + A2DP_LDAC_MPL_HDR_LEN + 1)
-#else
 #define A2DP_LDAC_OFFSET (AVDT_MEDIA_OFFSET + A2DP_LDAC_MPL_HDR_LEN)
-#endif
 
 typedef struct {
   uint32_t sample_rate;

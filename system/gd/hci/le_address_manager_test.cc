@@ -19,10 +19,12 @@
 #include <gtest/gtest.h>
 
 #include "common/init_flags.h"
+#include "hci/hci_layer.h"
+#include "hci/octets.h"
 #include "os/log.h"
 #include "packet/raw_builder.h"
 
-using ::bluetooth::crypto_toolbox::Octet16;
+using ::bluetooth::hci::Octet16;
 using ::bluetooth::os::Handler;
 using ::bluetooth::os::Thread;
 
@@ -112,7 +114,7 @@ class TestHciLayer : public HciLayer {
     command_complete_callbacks.pop_front();
   }
 
-  void ListDependencies(ModuleList* list) const {}
+  void ListDependencies(ModuleList* /* list */) const {}
   void Start() override {}
   void Stop() override {}
 
@@ -170,7 +172,7 @@ class LeAddressManagerTest : public ::testing::Test {
     AllocateClients(1);
   }
 
-  void sync_handler(os::Handler* handler) {
+  void sync_handler(os::Handler* /* handler */) {
     std::promise<void> promise;
     auto future = promise.get_future();
     handler_->Post(common::BindOnce(&std::promise<void>::set_value, common::Unretained(&promise)));

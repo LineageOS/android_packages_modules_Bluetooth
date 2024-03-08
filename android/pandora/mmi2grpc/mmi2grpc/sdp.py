@@ -40,6 +40,7 @@ UUID_TO_SERVICE_NAME = {
     0x1203: "GenericAudio",
     # GATT Service
     0x1800: "Generic Access",
+    0x1801: "Generic Attribute service",
     0x1855: "TMAS",
     # Custom UUIDs
     0xc26cf572_3369_4cf2_b5cc_d2cd130f5b2c: "Android Auto Compatibility",
@@ -57,10 +58,27 @@ class SDPProxy(ProfileProxy):
         If necessary take action to accept the SDP channel connection.
         """
 
+        return self.TSC_SDP_mmi_iut_accept_connection(**kwargs)
+
+    @assert_description
+    def TSC_SDP_mmi_iut_accept_connection(self, **kwargs):
+        """
+        If necessary take action to accept the SDP channel connection.
+        """
+
         return "OK"
 
     @assert_description
     def _mmi_6001(self, **kwargs):
+        """
+        If necessary take action to respond to the Service Attribute operation
+        appropriately.
+        """
+
+        return self.TSC_SDP_mmi_iut_accept_service_attribute(**kwargs)
+
+    @assert_description
+    def TSC_SDP_mmi_iut_accept_service_attribute(self, **kwargs):
         """
         If necessary take action to respond to the Service Attribute operation
         appropriately.
@@ -74,10 +92,27 @@ class SDPProxy(ProfileProxy):
         If necessary take action to accept the Service Search operation.
         """
 
+        return self.TSC_SDP_mmi_iut_accept_service_search(**kwargs)
+
+    @assert_description
+    def TSC_SDP_mmi_iut_accept_service_search(self, **kwargs):
+        """
+        If necessary take action to accept the Service Search operation.
+        """
+
         return "OK"
 
     @assert_description
     def _mmi_6003(self, **kwargs):
+        """
+        If necessary take action to respond to the Service Search Attribute
+        operation appropriately.
+        """
+
+        return self.TSC_SDP_mmi_iut_accept_service_search_attribute(**kwargs)
+
+    @assert_description
+    def TSC_SDP_mmi_iut_accept_service_search_attribute(self, **kwargs):
         """
         If necessary take action to respond to the Service Search Attribute
         operation appropriately.
@@ -99,6 +134,7 @@ class SDPProxy(ProfileProxy):
 
         # yapf: disable
         expected_services = [
+            "Generic Attribute service",
             "Generic Access",
             "AudioSource",
             "A/V_RemoteControlTarget",
@@ -109,6 +145,7 @@ class SDPProxy(ProfileProxy):
             "HandsfreeAudioGateway",
             "GenericAudio",
             "Message Access Server",
+            "TMAS",
             "NAP",
             "PANU",
             "Phonebook Access - PSE",
@@ -116,8 +153,10 @@ class SDPProxy(ProfileProxy):
             "Android Auto Compatibility",
         ]
         optional_services = [
+            "Generic Attribute service",
             "A/V_RemoteControlController",
             "Android Auto Compatibility",
+            "TMAS",
         ]
         movable_services = [
             "Message Access Server",

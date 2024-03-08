@@ -24,17 +24,18 @@
 
 #include "bnep_api.h"
 
+#include <base/logging.h>
 #include <string.h>
 
 #include "bnep_int.h"
-#include "bta/include/bta_api.h"
+#include "bta/include/bta_sec_api.h"
+#include "internal_include/bt_target.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
-#include "stack/btm/btm_sec.h"
 #include "stack/include/bt_hdr.h"
+#include "stack/include/bt_psm_types.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
-
-#include <base/logging.h>
 
 using bluetooth::Uuid;
 
@@ -51,12 +52,6 @@ using bluetooth::Uuid;
  ******************************************************************************/
 void BNEP_Init(void) {
   memset(&bnep_cb, 0, sizeof(tBNEP_CB));
-
-#if defined(BNEP_INITIAL_TRACE_LEVEL)
-  bnep_cb.trace_level = BNEP_INITIAL_TRACE_LEVEL;
-#else
-  bnep_cb.trace_level = BT_TRACE_LEVEL_NONE; /* No traces */
-#endif
 }
 
 /*******************************************************************************
@@ -167,8 +162,8 @@ tBNEP_RESULT BNEP_Connect(const RawAddress& p_rem_bda, const Uuid& src_uuid,
      */
     p_bcb->con_state = BNEP_STATE_SEC_CHECKING;
 
-    BNEP_TRACE_API("BNEP initiating security procedures for src uuid %s",
-                   p_bcb->src_uuid.ToString().c_str());
+    LOG_VERBOSE("BNEP initiating security procedures for src uuid %s",
+                p_bcb->src_uuid.ToString().c_str());
 
     bnep_sec_check_complete(&p_bcb->rem_bda, BT_TRANSPORT_BR_EDR, p_bcb);
   } else {
@@ -182,7 +177,7 @@ tBNEP_RESULT BNEP_Connect(const RawAddress& p_rem_bda, const Uuid& src_uuid,
       p_bcb->l2cap_cid = cid;
 
     } else {
-      BNEP_TRACE_ERROR("BNEP - Originate failed");
+      LOG_ERROR("BNEP - Originate failed");
       if (bnep_cb.p_conn_state_cb)
         (*bnep_cb.p_conn_state_cb)(p_bcb->handle, p_bcb->rem_bda,
                                    BNEP_CONN_FAILED, false);
@@ -240,7 +235,7 @@ tBNEP_RESULT BNEP_ConnectResp(uint16_t handle, tBNEP_RESULT resp) {
   else
     resp_code = BNEP_SETUP_CONN_NOT_ALLOWED;
 
-  bnep_send_conn_responce(p_bcb, resp_code);
+  bnep_send_conn_response(p_bcb, resp_code);
   p_bcb->con_flags &= (~BNEP_FLAGS_SETUP_RCVD);
 
   if (resp == BNEP_SUCCESS)
@@ -299,7 +294,7 @@ tBNEP_RESULT BNEP_Disconnect(uint16_t handle) {
 
   if (p_bcb->con_state == BNEP_STATE_IDLE) return (BNEP_WRONG_HANDLE);
 
-  BNEP_TRACE_API("BNEP_Disconnect()  for handle %d", handle);
+  LOG_VERBOSE("BNEP_Disconnect()  for handle %d", handle);
 
   L2CA_DisconnectReq(p_bcb->l2cap_cid);
 
@@ -345,8 +340,8 @@ tBNEP_RESULT BNEP_WriteBuf(uint16_t handle, const RawAddress& p_dest_addr,
   p_bcb = &(bnep_cb.bcb[handle - 1]);
   /* Check MTU size */
   if (p_buf->len > BNEP_MTU_SIZE) {
-    BNEP_TRACE_ERROR("%s length %d exceeded MTU %d", __func__, p_buf->len,
-                     BNEP_MTU_SIZE);
+    LOG_ERROR("%s length %d exceeded MTU %d", __func__, p_buf->len,
+              BNEP_MTU_SIZE);
     osi_free(p_buf);
     return (BNEP_MTU_EXCEDED);
   }
@@ -388,7 +383,10 @@ tBNEP_RESULT BNEP_WriteBuf(uint16_t handle, const RawAddress& p_dest_addr,
         protocol = 0;
       else {
         new_len += 4;
-        if (new_len > org_len) return BNEP_IGNORE_CMD;
+        if (new_len > org_len) {
+          osi_free(p_buf);
+          return BNEP_IGNORE_CMD;
+        }
         p_data[2] = 0;
         p_data[3] = 0;
       }
@@ -447,8 +445,7 @@ tBNEP_RESULT BNEP_Write(uint16_t handle, const RawAddress& p_dest_addr,
 
   /* Check MTU size. Consider the possibility of having extension headers */
   if (len > BNEP_MTU_SIZE) {
-    BNEP_TRACE_ERROR("%s length %d exceeded MTU %d", __func__, len,
-                     BNEP_MTU_SIZE);
+    LOG_ERROR("%s length %d exceeded MTU %d", __func__, len, BNEP_MTU_SIZE);
     return (BNEP_MTU_EXCEDED);
   }
 
@@ -634,20 +631,3 @@ tBNEP_RESULT BNEP_SetMulticastFilters(uint16_t handle, uint16_t num_filters,
 
   return (BNEP_SUCCESS);
 }
-
-/*******************************************************************************
- *
- * Function         BNEP_SetTraceLevel
- *
- * Description      This function sets the trace level for BNEP. If called with
- *                  a value of 0xFF, it simply reads the current trace level.
- *
- * Returns          the new (current) trace level
- *
- ******************************************************************************/
-uint8_t BNEP_SetTraceLevel(uint8_t new_level) {
-  if (new_level != 0xFF) bnep_cb.trace_level = new_level;
-
-  return (bnep_cb.trace_level);
-}
-

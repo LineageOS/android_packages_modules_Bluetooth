@@ -33,22 +33,17 @@ static_library("btif") {
     # HAL layer
     "src/bluetooth.cc",
 
-    # Initializing core library
-    "src/profile_log_levels.cc",
-
     # BTIF implementation
     "src/btif_a2dp.cc",
 
     "src/btif_a2dp_control.cc",
     "src/btif_a2dp_sink.cc",
     "src/btif_a2dp_source.cc",
-    "src/btif_activity_attribution.cc",
     "src/btif_av.cc",
 
     # TODO(abps) - Move this abstraction elsewhere
     # "src/btif_avrcp_audio_track.cc",
     "src/btif_avrcp_audio_track_linux.cc",
-    "src/btif_ble_advertiser.cc",
     "src/btif_ble_scanner.cc",
     "src/btif_bqr.cc",
     "src/btif_csis_client.cc",
@@ -64,13 +59,14 @@ static_library("btif") {
     "src/btif_gatt_util.cc",
     "src/btif_hd.cc",
     "src/btif_vc.cc",
-    #"src/btif_le_audio_broadcaster.cc",
-    #"src/btif_has_client.cc",
+    "src/btif_le_audio_broadcaster.cc",
+    "src/btif_has_client.cc",
     "src/btif_hearing_aid.cc",
     "src/btif_hf.cc",
     "src/btif_hf_client.cc",
     "src/btif_hh.cc",
     "src/btif_iot_config.cc",
+    "src/btif_jni_task.cc",
     "src/btif_keystore.cc",
     "src/btif_le_audio.cc",
     "src/btif_metrics_logging.cc",
@@ -90,7 +86,6 @@ static_library("btif") {
     "src/btif_storage.cc",
     "src/btif_uid.cc",
     "src/btif_util.cc",
-    "src/profile_log_levels.cc",
     "src/stack_manager.cc",
   ]
 

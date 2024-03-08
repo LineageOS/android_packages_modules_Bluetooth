@@ -13,76 +13,50 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
+use pdl_compiler;
 use std::env;
+use std::fs::File;
+use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 fn main() {
+    let pdl_root = match env::var("PLATFORM_SUBDIR") {
+        Ok(dir) => PathBuf::from(dir).join("bt/pdl"),
+        // Currently at //platform2/gd/rust/rust/packets
+        Err(_) => {
+            PathBuf::from(env::current_dir().unwrap()).join("../../../pdl").canonicalize().unwrap()
+        }
+    };
+
+    let in_file = pdl_root.join("hci/hci_packets.pdl");
+    let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
+    let out_file = out_dir.join("hci_packets.rs");
+
     let packets_prebuilt = match env::var("HCI_PACKETS_PREBUILT") {
         Ok(dir) => PathBuf::from(dir),
         Err(_) => PathBuf::from("hci_packets.rs"),
     };
+
     if Path::new(packets_prebuilt.as_os_str()).exists() {
-        let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
-        let outputted = out_dir.join("../../hci/hci_packets.rs");
         std::fs::copy(
             packets_prebuilt.as_os_str().to_str().unwrap(),
-            out_dir.join(outputted.file_name().unwrap()).as_os_str().to_str().unwrap(),
+            out_file.as_os_str().to_str().unwrap(),
         )
         .unwrap();
     } else {
-        generate_packets();
-    }
-}
-
-fn generate_packets() {
-    let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
-
-    let gd_root = match env::var("PLATFORM_SUBDIR") {
-        Ok(dir) => PathBuf::from(dir).join("bt/gd"),
-        // Currently at //platform2/gd/rust/rust/packets
-        Err(_) => PathBuf::from(env::current_dir().unwrap()).join("../..").canonicalize().unwrap(),
-    };
-
-    let input_files = [gd_root.join("hci/hci_packets.pdl")];
-    let outputted = [out_dir.join("../../hci/hci_packets.rs")];
-
-    // Find the packetgen tool. Expecting it at CARGO_HOME/bin
-    let packetgen = match env::var("CARGO_HOME") {
-        Ok(dir) => PathBuf::from(dir).join("bin").join("bluetooth_packetgen"),
-        Err(_) => PathBuf::from("bluetooth_packetgen"),
-    };
-
-    if !Path::new(packetgen.as_os_str()).exists() {
-        panic!(
-            "Unable to locate bluetooth packet generator:{:?}",
-            packetgen.as_os_str().to_str().unwrap()
-        );
-    }
-
-    for i in 0..input_files.len() {
-        println!("cargo:rerun-if-changed={}", input_files[i].display());
-        let output = Command::new(packetgen.as_os_str().to_str().unwrap())
-            .arg("--source_root=".to_owned() + gd_root.as_os_str().to_str().unwrap())
-            .arg("--out=".to_owned() + out_dir.as_os_str().to_str().unwrap())
-            .arg("--include=bt/gd")
-            .arg("--rust")
-            .arg(input_files[i].as_os_str().to_str().unwrap())
-            .output()
-            .unwrap();
-
-        println!(
-            "Status: {}, stdout: {}, stderr: {}",
-            output.status,
-            String::from_utf8_lossy(output.stdout.as_slice()),
-            String::from_utf8_lossy(output.stderr.as_slice())
-        );
-
-        // File will be at ${OUT_DIR}/../../${input_files[i].strip('.pdl')}.rs
-        std::fs::rename(
-            outputted[i].as_os_str().to_str().unwrap(),
-            out_dir.join(outputted[i].file_name().unwrap()).as_os_str().to_str().unwrap(),
+        let mut sources = pdl_compiler::ast::SourceDatabase::new();
+        let file = pdl_compiler::parser::parse_file(
+            &mut sources,
+            &in_file.into_os_string().into_string().unwrap(),
         )
-        .unwrap();
+        .expect("failed to parse input pdl file");
+        let file =
+            pdl_compiler::analyzer::analyze(&file).expect("failed to validate input pdl file");
+        let generated = pdl_compiler::backends::rust::generate(&sources, &file);
+
+        let mut f = File::create(out_file).unwrap();
+        f.write_all(generated.as_bytes()).unwrap();
+
+        println!("cargo:rerun-if-changed=build.rs");
     }
 }

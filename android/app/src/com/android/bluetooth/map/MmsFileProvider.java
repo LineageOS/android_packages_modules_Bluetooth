@@ -14,7 +14,6 @@
 */
 package com.android.bluetooth.map;
 
-import android.annotation.TargetApi;
 import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -37,7 +36,6 @@ import java.io.IOException;
  * Provider to let the MMS subsystem read data from it own database from another process.
  * Workaround for missing access to sendStoredMessage().
  */
-@TargetApi(19)
 public class MmsFileProvider extends ContentProvider {
     static final String TAG = "BluetoothMmsFileProvider";
     private PipeWriter mPipeWriter = new PipeWriter();

@@ -16,7 +16,13 @@
 
 #pragma once
 
+#ifdef TARGET_FLOSS
+#include <audio_hal_interface/audio_linux.h>
+#else
 #include <hardware/audio.h>
+#endif
+
+#include <hardware/bt_le_audio.h>
 
 #include <bitset>
 #include <vector>
@@ -27,22 +33,29 @@ namespace le_audio {
 namespace utils {
 types::LeAudioContextType AudioContentToLeAudioContext(
     audio_content_type_t content_type, audio_usage_t usage);
-types::AudioContexts GetAllowedAudioContextsFromSourceMetadata(
-    const std::vector<struct playback_track_metadata>& source_metadata,
-    types::AudioContexts allowed_contexts);
-types::AudioContexts GetAllowedAudioContextsFromSinkMetadata(
-    const std::vector<struct record_track_metadata>& source_metadata,
-    types::AudioContexts allowed_contexts);
+types::AudioContexts GetAudioContextsFromSourceMetadata(
+    const source_metadata_v7& source_metadata);
+types::AudioContexts GetAudioContextsFromSinkMetadata(
+    const sink_metadata_v7& sink_metadata);
 
-static inline bool IsContextForAudioSource(types::LeAudioContextType c) {
-  if (c == types::LeAudioContextType::CONVERSATIONAL ||
-      c == types::LeAudioContextType::VOICEASSISTANTS ||
-      c == types::LeAudioContextType::LIVE ||
-      c == types::LeAudioContextType::GAME) {
-    return true;
-  }
-  return false;
-}
+/* Helpers to get btle_audio_codec_config_t for Java */
+bluetooth::le_audio::btle_audio_codec_index_t
+translateBluetoothCodecFormatToCodecType(uint8_t codec_format);
 
+bluetooth::le_audio::btle_audio_sample_rate_index_t
+translateToBtLeAudioCodecConfigSampleRate(uint32_t sample_rate_capa);
+bluetooth::le_audio::btle_audio_bits_per_sample_index_t
+translateToBtLeAudioCodecConfigBitPerSample(uint8_t bits_per_sample);
+bluetooth::le_audio::btle_audio_channel_count_index_t
+translateToBtLeAudioCodecConfigChannelCount(uint8_t channel_count);
+bluetooth::le_audio::btle_audio_frame_duration_index_t
+translateToBtLeAudioCodecConfigFrameDuration(int frame_duration);
+void fillStreamParamsToBtLeAudioCodecConfig(
+    types::LeAudioCodecId codec_id, const stream_parameters* stream_params,
+    bluetooth::le_audio::btle_audio_codec_config_t& out_config);
+
+std::vector<bluetooth::le_audio::btle_audio_codec_config_t>
+GetRemoteBtLeAudioCodecConfigFromPac(
+    const types::PublishedAudioCapabilities& group_pacs);
 }  // namespace utils
 }  // namespace le_audio

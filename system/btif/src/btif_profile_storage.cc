@@ -21,12 +21,10 @@
 
 #include <alloca.h>
 #include <base/logging.h>
-#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
-#include <unordered_set>
 #include <vector>
 
 #include "bta_csis_api.h"
@@ -36,23 +34,14 @@
 #include "bta_hearing_aid_api.h"
 #include "bta_hh_api.h"
 #include "bta_le_audio_api.h"
-#include "btif_api.h"
+#include "bta_vc_api.h"
+#include "btif/include/btif_dm.h"
+#include "btif/include/btif_jni_task.h"
 #include "btif_config.h"
-#include "btif_hd.h"
 #include "btif_hh.h"
 #include "btif_storage.h"
-#include "btif_util.h"
-#include "core_callbacks.h"
-#include "device/include/controller.h"
-#include "gd/common/init_flags.h"
-#include "osi/include/allocator.h"
-#include "osi/include/compat.h"
-#include "osi/include/config.h"
-#include "osi/include/log.h"
-#include "osi/include/osi.h"
-#include "stack/include/bt_octets.h"
-#include "stack/include/btu.h"
-#include "stack_manager.h"
+#include "stack/include/bt_uuid16.h"
+#include "stack/include/main_thread.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
@@ -121,7 +110,7 @@ bt_status_t btif_storage_add_hid_device_info(
     uint8_t app_id, uint16_t vendor_id, uint16_t product_id, uint16_t version,
     uint8_t ctry_code, uint16_t ssr_max_latency, uint16_t ssr_min_tout,
     uint16_t dl_len, uint8_t* dsc_list) {
-  BTIF_TRACE_DEBUG("btif_storage_add_hid_device_info:");
+  LOG_VERBOSE("btif_storage_add_hid_device_info:");
   std::string bdstr = remote_bd_addr->ToString();
   btif_config_set_int(bdstr, "HidAttrMask", attr_mask);
   btif_config_set_int(bdstr, "HidSubClass", sub_class);
@@ -150,7 +139,7 @@ bt_status_t btif_storage_load_bonded_hid_info(void) {
   for (const auto& bd_addr : btif_config_get_paired_devices()) {
     auto name = bd_addr.ToString();
 
-    BTIF_TRACE_DEBUG("Remote device:%s", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+    LOG_VERBOSE("Remote device:%s", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
 
     int value;
     if (!btif_config_get_int(name, "HidAttrMask", &value)) continue;
@@ -177,7 +166,7 @@ bt_status_t btif_storage_load_bonded_hid_info(void) {
     dscp_info.product_id = (uint16_t)value;
 
     btif_config_get_int(name, "HidVersion", &value);
-    dscp_info.version = (uint8_t)value;
+    dscp_info.version = (uint16_t)value;
 
     btif_config_get_int(name, "HidCountryCode", &value);
     dscp_info.ctry_code = (uint8_t)value;
@@ -231,6 +220,8 @@ bt_status_t btif_storage_remove_hid_info(const RawAddress& remote_bd_addr) {
   btif_config_remove(bdstr, "HidSSRMaxLatency");
   btif_config_remove(bdstr, "HidSSRMinTimeout");
   btif_config_remove(bdstr, "HidDescriptor");
+  btif_config_remove(bdstr, "HidReport");
+  btif_config_remove(bdstr, "HidReportVersion");
   return BT_STATUS_SUCCESS;
 }
 
@@ -396,7 +387,7 @@ void btif_storage_load_bonded_hearing_aids() {
       continue;
     }
 
-    BTIF_TRACE_DEBUG("Remote device:%s", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+    LOG_VERBOSE("Remote device:%s", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
 
     if (btif_in_fetch_bonded_device(name) != BT_STATUS_SUCCESS) {
       btif_storage_remove_hearing_aid(bd_addr);
@@ -449,7 +440,7 @@ void btif_storage_load_bonded_hearing_aids() {
     if (btif_config_get_int(name, HEARING_AID_PREPARATION_DELAY, &value))
       preparation_delay = value;
 
-    uint16_t is_acceptlisted = 0;
+    bool is_acceptlisted = false;
     if (btif_config_get_int(name, HEARING_AID_IS_ACCEPTLISTED, &value))
       is_acceptlisted = value;
 
@@ -677,7 +668,7 @@ void btif_storage_load_bonded_leaudio() {
       continue;
     }
 
-    BTIF_TRACE_DEBUG("Remote device:%s", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+    LOG_VERBOSE("Remote device:%s", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
 
     int value;
     bool autoconnect = false;
@@ -744,6 +735,13 @@ void btif_storage_load_bonded_leaudio() {
              std::move(handles), std::move(sink_pacs), std::move(source_pacs),
              std::move(ases)));
   }
+}
+
+void btif_storage_leaudio_clear_service_data(const RawAddress& address) {
+  auto bdstr = address.ToString();
+  btif_config_remove(bdstr, BTIF_STORAGE_LEAUDIO_HANDLES_BIN);
+  btif_config_remove(bdstr, BTIF_STORAGE_LEAUDIO_SINK_PACS_BIN);
+  btif_config_remove(bdstr, BTIF_STORAGE_LEAUDIO_ASES_BIN);
 }
 
 /** Remove the Le Audio device from storage */
@@ -917,13 +915,25 @@ void btif_storage_load_bonded_groups(void) {
         btif_config_get_bin_length(name, BTIF_STORAGE_DEVICE_GROUP_BIN);
     if (buffer_size == 0) continue;
 
-    BTIF_TRACE_DEBUG("Grouped device:%s", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+    LOG_VERBOSE("Grouped device:%s", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
 
     std::vector<uint8_t> in(buffer_size);
     if (btif_config_get_bin(name, BTIF_STORAGE_DEVICE_GROUP_BIN, in.data(),
                             &buffer_size)) {
       do_in_main_thread(FROM_HERE, Bind(&DeviceGroups::AddFromStorage, bd_addr,
                                         std::move(in)));
+    }
+  }
+}
+
+/** Loads information about bonded group devices */
+void btif_storage_load_bonded_volume_control_devices(void) {
+  for (const auto& bd_addr : btif_config_get_paired_devices()) {
+    auto device = bd_addr.ToString();
+    if (btif_device_supports_profile(
+            device, Uuid::From16Bit(UUID_SERVCLASS_VOLUME_CONTROL_SERVER))) {
+      do_in_main_thread(FROM_HERE,
+                        Bind(&VolumeControl::AddFromStorage, bd_addr));
     }
   }
 }
@@ -964,8 +974,7 @@ void btif_storage_load_bonded_csis_devices(void) {
   for (const auto& bd_addr : btif_config_get_paired_devices()) {
     auto name = bd_addr.ToString();
 
-    BTIF_TRACE_DEBUG("Loading CSIS device:%s",
-                     ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+    LOG_VERBOSE("Loading CSIS device:%s", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
 
     int value;
     bool autoconnect = false;
@@ -1004,7 +1013,7 @@ bt_status_t btif_storage_load_hidd(void) {
   for (const auto& bd_addr : btif_config_get_paired_devices()) {
     auto name = bd_addr.ToString();
 
-    BTIF_TRACE_DEBUG("Remote device:%s", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+    LOG_VERBOSE("Remote device:%s", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
     int value;
     if (btif_in_fetch_bonded_device(name) == BT_STATUS_SUCCESS) {
       if (btif_config_get_int(name, "HidDeviceCabled", &value)) {
@@ -1066,14 +1075,14 @@ bt_status_t btif_storage_remove_hidd(RawAddress* remote_bd_addr) {
  ******************************************************************************/
 void btif_storage_set_pce_profile_version(const RawAddress& remote_bd_addr,
                                           uint16_t peer_pce_version) {
-  BTIF_TRACE_DEBUG("peer_pce_version : 0x%x", peer_pce_version);
+  LOG_VERBOSE("peer_pce_version : 0x%x", peer_pce_version);
 
   if (btif_config_set_bin(
           remote_bd_addr.ToString(), BT_CONFIG_KEY_PBAP_PCE_VERSION,
           (const uint8_t*)&peer_pce_version, sizeof(peer_pce_version))) {
   } else {
-    BTIF_TRACE_WARNING("Failed to store  peer_pce_version for %s",
-                       ADDRESS_TO_LOGGABLE_CSTR(remote_bd_addr));
+    LOG_WARN("Failed to store  peer_pce_version for %s",
+             ADDRESS_TO_LOGGABLE_CSTR(remote_bd_addr));
   }
 }
 
@@ -1095,8 +1104,8 @@ bool btif_storage_is_pce_version_102(const RawAddress& remote_bd_addr) {
   if (!btif_config_get_bin(remote_bd_addr.ToString(),
                            BT_CONFIG_KEY_PBAP_PCE_VERSION,
                            (uint8_t*)&pce_version, &version_value_size)) {
-    BTIF_TRACE_DEBUG("Failed to read cached peer PCE version for %s",
-                     ADDRESS_TO_LOGGABLE_CSTR(remote_bd_addr));
+    LOG_VERBOSE("Failed to read cached peer PCE version for %s",
+                ADDRESS_TO_LOGGABLE_CSTR(remote_bd_addr));
     return entry_found;
   }
 
@@ -1104,8 +1113,8 @@ bool btif_storage_is_pce_version_102(const RawAddress& remote_bd_addr) {
     entry_found = true;
   }
 
-  BTIF_TRACE_DEBUG("read cached peer PCE version 0x%04x for %s", pce_version,
-                   ADDRESS_TO_LOGGABLE_CSTR(remote_bd_addr));
+  LOG_VERBOSE("read cached peer PCE version 0x%04x for %s", pce_version,
+              ADDRESS_TO_LOGGABLE_CSTR(remote_bd_addr));
 
   return entry_found;
 }

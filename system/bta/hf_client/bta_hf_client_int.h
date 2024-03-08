@@ -25,7 +25,7 @@
 #include "bta/sys/bta_sys.h"
 #include "osi/include/alarm.h"
 #include "stack/include/bt_hdr.h"
-#include "stack/include/bt_types.h"
+#include "stack/sdp/sdp_discovery_db.h"
 #include "types/raw_address.h"
 
 /*****************************************************************************
@@ -202,6 +202,7 @@ typedef struct {
   tBTA_HF_CLIENT_FEAT features;  /* features registered by application */
   uint16_t serv_handle;          /* RFCOMM server handle */
   bool deregister;               /* true if service shutting down */
+  bool is_support_lc3;           /* true if enable lc3 codec support (HFP1.9) */
 
   // Maximum number of control blocks supported by the BTA layer.
   tBTA_HF_CLIENT_CB cb[HF_CLIENT_MAX_DEVICES];
@@ -218,13 +219,13 @@ tBTA_HF_CLIENT_CB* bta_hf_client_find_cb_by_handle(uint16_t handle);
 tBTA_HF_CLIENT_CB* bta_hf_client_find_cb_by_bda(const RawAddress& bd_addr);
 tBTA_HF_CLIENT_CB* bta_hf_client_find_cb_by_rfc_handle(uint16_t handle);
 tBTA_HF_CLIENT_CB* bta_hf_client_find_cb_by_sco_handle(uint16_t handle);
-bool bta_hf_client_hdl_event(BT_HDR_RIGID* p_msg);
+bool bta_hf_client_hdl_event(const BT_HDR_RIGID* p_msg);
 void bta_hf_client_sm_execute(uint16_t event, tBTA_HF_CLIENT_DATA* p_data);
 void bta_hf_client_slc_seq(tBTA_HF_CLIENT_CB* client_cb, bool error);
 bool bta_hf_client_allocate_handle(const RawAddress& bd_addr,
                                    uint16_t* p_handle);
 void bta_hf_client_app_callback(uint16_t event, tBTA_HF_CLIENT* data);
-void bta_hf_client_collision_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
+void bta_hf_client_collision_cback(tBTA_SYS_CONN_STATUS status, tBTA_SYS_ID id,
                                    uint8_t app_id, const RawAddress& peer_addr);
 void bta_hf_client_resume_open(tBTA_HF_CLIENT_CB* client_cb);
 tBTA_STATUS bta_hf_client_api_enable(tBTA_HF_CLIENT_CBACK* p_cback,

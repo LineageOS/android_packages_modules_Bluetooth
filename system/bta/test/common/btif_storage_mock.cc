@@ -64,6 +64,11 @@ void btif_storage_set_leaudio_supported_context_types(
                                              source_supported_context_type);
 }
 
+void btif_storage_leaudio_clear_service_data(RawAddress const& addr) {
+  LOG_ASSERT(btif_storage_interface) << "Mock storage module not set!";
+  btif_storage_interface->ClearLeAudioServiceData(addr);
+}
+
 void btif_storage_remove_leaudio(RawAddress const& addr) {
   LOG_ASSERT(btif_storage_interface) << "Mock storage module not set!";
   btif_storage_interface->RemoveLeaudio(addr);
@@ -115,4 +120,10 @@ void btif_storage_set_leaudio_has_active_preset(const RawAddress& address,
 void btif_storage_remove_leaudio_has(const RawAddress& address) {
   LOG_ASSERT(btif_storage_interface) << "Mock storage module not set!";
   btif_storage_interface->RemoveLeaudioHas(address);
+}
+
+bt_status_t btif_storage_get_remote_device_property(const RawAddress* address,
+                                                    bt_property_t* property) {
+  LOG_ASSERT(btif_storage_interface) << "Mock storage module not set!";
+  return btif_storage_interface->GetRemoteDeviceProperty(address, property);
 }

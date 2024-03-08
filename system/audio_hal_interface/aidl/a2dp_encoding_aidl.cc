@@ -140,7 +140,8 @@ void A2dpTransport::StopRequest() {
   btif_av_stream_stop(RawAddress::kEmpty);
 }
 
-void A2dpTransport::SetLowLatency(bool is_low_latency) {
+void A2dpTransport::SetLatencyMode(LatencyMode latency_mode) {
+  bool is_low_latency = latency_mode == LatencyMode::LOW_LATENCY ? true : false;
   btif_av_set_low_latency(is_low_latency);
 }
 
@@ -158,20 +159,20 @@ bool A2dpTransport::GetPresentationPosition(uint64_t* remote_delay_report_ns,
 }
 
 void A2dpTransport::SourceMetadataChanged(
-    const source_metadata_t& source_metadata) {
+    const source_metadata_v7_t& source_metadata) {
   auto track_count = source_metadata.track_count;
   auto tracks = source_metadata.tracks;
   VLOG(1) << __func__ << ": " << track_count << " track(s) received";
   while (track_count) {
-    VLOG(2) << __func__ << ": usage=" << tracks->usage
-            << ", content_type=" << tracks->content_type
-            << ", gain=" << tracks->gain;
+    VLOG(2) << __func__ << ": usage=" << tracks->base.usage
+            << ", content_type=" << tracks->base.content_type
+            << ", gain=" << tracks->base.gain;
     --track_count;
     ++tracks;
   }
 }
 
-void A2dpTransport::SinkMetadataChanged(const sink_metadata_t&) {}
+void A2dpTransport::SinkMetadataChanged(const sink_metadata_v7_t&) {}
 
 tA2DP_CTRL_CMD A2dpTransport::GetPendingCmd() const {
   return a2dp_pending_cmd_;
@@ -485,7 +486,11 @@ void start_session() {
     LOG(ERROR) << __func__ << ": BluetoothAudio HAL is not enabled";
     return;
   }
-  active_hal_interface->SetLowLatencyModeAllowed(is_low_latency_mode_allowed);
+  std::vector<LatencyMode> latency_modes = {LatencyMode::FREE};
+  if (is_low_latency_mode_allowed) {
+    latency_modes.push_back(LatencyMode::LOW_LATENCY);
+  }
+  active_hal_interface->SetAllowedLatencyModes(latency_modes);
   active_hal_interface->StartSession();
 }
 
@@ -575,7 +580,11 @@ void set_low_latency_mode_allowed(bool allowed) {
     LOG(ERROR) << __func__ << ": BluetoothAudio HAL is not enabled";
     return;
   }
-  active_hal_interface->SetLowLatencyModeAllowed(allowed);
+  std::vector<LatencyMode> latency_modes = {LatencyMode::FREE};
+  if (is_low_latency_mode_allowed) {
+    latency_modes.push_back(LatencyMode::LOW_LATENCY);
+  }
+  active_hal_interface->SetAllowedLatencyModes(latency_modes);
 }
 
 }  // namespace a2dp

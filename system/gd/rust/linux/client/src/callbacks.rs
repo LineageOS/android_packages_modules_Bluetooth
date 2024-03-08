@@ -3,13 +3,16 @@ use crate::dbus_iface::{
     export_admin_policy_callback_dbus_intf, export_advertising_set_callback_dbus_intf,
     export_bluetooth_callback_dbus_intf, export_bluetooth_connection_callback_dbus_intf,
     export_bluetooth_gatt_callback_dbus_intf, export_bluetooth_manager_callback_dbus_intf,
-    export_gatt_server_callback_dbus_intf, export_scanner_callback_dbus_intf,
-    export_socket_callback_dbus_intf, export_suspend_callback_dbus_intf,
+    export_bluetooth_media_callback_dbus_intf, export_bluetooth_telephony_callback_dbus_intf,
+    export_gatt_server_callback_dbus_intf, export_qa_callback_dbus_intf,
+    export_scanner_callback_dbus_intf, export_socket_callback_dbus_intf,
+    export_suspend_callback_dbus_intf,
 };
 use crate::ClientContext;
 use crate::{console_red, console_yellow, print_error, print_info};
 use bt_topshim::btif::{BtBondState, BtPropertyType, BtSspVariant, BtStatus, Uuid128Bit};
 use bt_topshim::profiles::gatt::{AdvertisingStatus, GattStatus, LePhy};
+use bt_topshim::profiles::hfp::HfpCodecId;
 use bt_topshim::profiles::sdp::BtSdpRecord;
 use btstack::bluetooth::{
     BluetoothDevice, IBluetooth, IBluetoothCallback, IBluetoothConnectionCallback,
@@ -20,6 +23,10 @@ use btstack::bluetooth_gatt::{
     BluetoothGattService, IBluetoothGattCallback, IBluetoothGattServerCallback, IScannerCallback,
     ScanResult,
 };
+use btstack::bluetooth_media::{
+    BluetoothAudioDevice, IBluetoothMediaCallback, IBluetoothTelephonyCallback,
+};
+use btstack::bluetooth_qa::IBluetoothQACallback;
 use btstack::socket_manager::{
     BluetoothServerSocket, BluetoothSocket, IBluetoothSocketManager,
     IBluetoothSocketManagerCallbacks, SocketId,
@@ -27,16 +34,22 @@ use btstack::socket_manager::{
 use btstack::suspend::ISuspendCallback;
 use btstack::uuid::UuidWrapper;
 use btstack::{RPCProxy, SuspendMode};
+use chrono::{TimeZone, Utc};
 use dbus::nonblock::SyncConnection;
 use dbus_crossroads::Crossroads;
 use dbus_projection::DisconnectWatcher;
 use manager_service::iface_bluetooth_manager::IBluetoothManagerCallback;
+use std::convert::TryFrom;
 use std::io::{Read, Write};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 const SOCKET_TEST_WRITE: &[u8] =
     b"01234567890123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+// Avoid 32, 40, 64 consecutive hex characters so CrOS feedback redact tool
+// doesn't trim our dump.
+const BINARY_PACKET_STATUS_WRAP: usize = 50;
 
 /// Callback context for manager interface callbacks.
 pub(crate) struct BtManagerCallback {
@@ -116,6 +129,14 @@ impl BtCallback {
 
 impl IBluetoothCallback for BtCallback {
     fn on_adapter_property_changed(&mut self, _prop: BtPropertyType) {}
+
+    fn on_device_properties_changed(
+        &mut self,
+        remote_device: BluetoothDevice,
+        props: Vec<BtPropertyType>,
+    ) {
+        print_info!("Bluetooth properties {:?} changed for {:?}", props, remote_device);
+    }
 
     fn on_address_changed(&mut self, addr: String) {
         print_info!("Address changed to {}", &addr);
@@ -275,7 +296,14 @@ impl IBluetoothCallback for BtCallback {
     fn on_sdp_record_created(&mut self, record: BtSdpRecord, handle: i32) {
         print_info!("SDP record handle={} created", handle);
         if let BtSdpRecord::Mps(_) = record {
-            self.context.lock().unwrap().mps_sdp_handle = Some(handle);
+            let context = self.context.clone();
+            // Callbacks first lock the DBus resource and then lock the context,
+            // while the command handlers lock them in the reversed order.
+            // `telephony enable` command happens to deadlock easily,
+            // so use async call to prevent deadlock here.
+            tokio::spawn(async move {
+                context.lock().unwrap().mps_sdp_handle = Some(handle);
+            });
         }
     }
 }
@@ -1207,6 +1235,232 @@ impl RPCProxy for SuspendCallback {
     fn export_for_rpc(self: Box<Self>) {
         let cr = self.dbus_crossroads.clone();
         let iface = export_suspend_callback_dbus_intf(
+            self.dbus_connection.clone(),
+            &mut cr.lock().unwrap(),
+            Arc::new(Mutex::new(DisconnectWatcher::new())),
+        );
+        cr.lock().unwrap().insert(self.get_object_id(), &[iface], Arc::new(Mutex::new(self)));
+    }
+}
+
+/// Callback container for suspend interface callbacks.
+pub(crate) struct QACallback {
+    objpath: String,
+    _context: Arc<Mutex<ClientContext>>,
+    dbus_connection: Arc<SyncConnection>,
+    dbus_crossroads: Arc<Mutex<Crossroads>>,
+}
+
+impl QACallback {
+    pub(crate) fn new(
+        objpath: String,
+        _context: Arc<Mutex<ClientContext>>,
+        dbus_connection: Arc<SyncConnection>,
+        dbus_crossroads: Arc<Mutex<Crossroads>>,
+    ) -> Self {
+        Self { objpath, _context, dbus_connection, dbus_crossroads }
+    }
+}
+
+impl IBluetoothQACallback for QACallback {
+    fn on_fetch_discoverable_mode_completed(&mut self, mode: bt_topshim::btif::BtDiscMode) {
+        print_info!("Discoverable mode: {:?}", mode);
+    }
+
+    fn on_fetch_connectable_completed(&mut self, connectable: bool) {
+        print_info!("Connectable mode: {:?}", connectable);
+    }
+
+    fn on_set_connectable_completed(&mut self, succeed: bool) {
+        print_info!(
+            "Set connectable mode: {}",
+            match succeed {
+                true => "succeeded",
+                false => "failed",
+            }
+        );
+    }
+
+    fn on_fetch_alias_completed(&mut self, alias: String) {
+        print_info!("Alias: {}", alias);
+    }
+
+    fn on_get_hid_report_completed(&mut self, status: BtStatus) {
+        print_info!("Get HID report: {:?}", status);
+    }
+
+    fn on_set_hid_report_completed(&mut self, status: BtStatus) {
+        print_info!("Set HID report: {:?}", status);
+    }
+
+    fn on_send_hid_data_completed(&mut self, status: BtStatus) {
+        print_info!("Send HID data: {:?}", status);
+    }
+}
+
+impl RPCProxy for QACallback {
+    fn get_object_id(&self) -> String {
+        self.objpath.clone()
+    }
+
+    fn export_for_rpc(self: Box<Self>) {
+        let cr = self.dbus_crossroads.clone();
+        let iface = export_qa_callback_dbus_intf(
+            self.dbus_connection.clone(),
+            &mut cr.lock().unwrap(),
+            Arc::new(Mutex::new(DisconnectWatcher::new())),
+        );
+        cr.lock().unwrap().insert(self.get_object_id(), &[iface], Arc::new(Mutex::new(self)));
+    }
+}
+
+pub(crate) struct MediaCallback {
+    objpath: String,
+    context: Arc<Mutex<ClientContext>>,
+
+    dbus_connection: Arc<SyncConnection>,
+    dbus_crossroads: Arc<Mutex<Crossroads>>,
+}
+
+impl MediaCallback {
+    pub(crate) fn new(
+        objpath: String,
+        context: Arc<Mutex<ClientContext>>,
+        dbus_connection: Arc<SyncConnection>,
+        dbus_crossroads: Arc<Mutex<Crossroads>>,
+    ) -> Self {
+        Self { objpath, context, dbus_connection, dbus_crossroads }
+    }
+}
+
+fn timestamp_to_string(ts_in_us: u64) -> String {
+    i64::try_from(ts_in_us)
+        .and_then(|ts| Ok(Utc.timestamp_nanos(ts * 1000).to_rfc3339()))
+        .unwrap_or("UNKNOWN".to_string())
+}
+
+impl IBluetoothMediaCallback for MediaCallback {
+    fn on_bluetooth_audio_device_added(&mut self, _device: BluetoothAudioDevice) {}
+    fn on_bluetooth_audio_device_removed(&mut self, _addr: String) {}
+    fn on_absolute_volume_supported_changed(&mut self, _supported: bool) {}
+    fn on_absolute_volume_changed(&mut self, _volume: u8) {}
+    fn on_hfp_volume_changed(&mut self, _volume: u8, _addr: String) {}
+    fn on_hfp_audio_disconnected(&mut self, _addr: String) {}
+    fn on_hfp_debug_dump(
+        &mut self,
+        active: bool,
+        codec_id: u16,
+        total_num_decoded_frames: i32,
+        pkt_loss_ratio: f64,
+        begin_ts: u64,
+        end_ts: u64,
+        pkt_status_in_hex: String,
+        pkt_status_in_binary: String,
+    ) {
+        // Invoke run_callback so that the callback can be handled through
+        // ForegroundActions::RunCallback in main.rs.
+        self.context.lock().unwrap().run_callback(Box::new(move |_context| {
+            let is_wbs = codec_id == HfpCodecId::MSBC as u16;
+            let is_swb = codec_id == HfpCodecId::LC3 as u16;
+            let dump = if active && (is_wbs || is_swb) {
+                let mut to_split_binary = pkt_status_in_binary.clone();
+                let mut wrapped_binary = String::new();
+                while to_split_binary.len() > BINARY_PACKET_STATUS_WRAP {
+                    let remaining = to_split_binary.split_off(BINARY_PACKET_STATUS_WRAP);
+                    wrapped_binary.push_str(&to_split_binary);
+                    wrapped_binary.push('\n');
+                    to_split_binary = remaining;
+                }
+                wrapped_binary.push_str(&to_split_binary);
+                format!(
+                    "\n--------{} packet loss--------\n\
+                       Decoded Packets: {}, Packet Loss Ratio: {} \n\
+                       {} [begin]\n\
+                       {} [end]\n\
+                       In Hex format:\n\
+                       {}\n\
+                       In binary format:\n\
+                       {}",
+                    if is_wbs { "WBS" } else { "SWB" },
+                    total_num_decoded_frames,
+                    pkt_loss_ratio,
+                    timestamp_to_string(begin_ts),
+                    timestamp_to_string(end_ts),
+                    pkt_status_in_hex,
+                    wrapped_binary
+                )
+            } else {
+                "".to_string()
+            };
+
+            print_info!(
+                "\n--------HFP debug dump---------\n\
+                     HFP SCO: {}, Codec: {}\
+                     {}
+                     ",
+                if active { "active" } else { "inactive" },
+                if is_wbs {
+                    "mSBC"
+                } else if is_swb {
+                    "LC3"
+                } else {
+                    "CVSD"
+                },
+                dump
+            );
+        }));
+    }
+}
+
+impl RPCProxy for MediaCallback {
+    fn get_object_id(&self) -> String {
+        self.objpath.clone()
+    }
+
+    fn export_for_rpc(self: Box<Self>) {
+        let cr = self.dbus_crossroads.clone();
+        let iface = export_bluetooth_media_callback_dbus_intf(
+            self.dbus_connection.clone(),
+            &mut cr.lock().unwrap(),
+            Arc::new(Mutex::new(DisconnectWatcher::new())),
+        );
+        cr.lock().unwrap().insert(self.get_object_id(), &[iface], Arc::new(Mutex::new(self)));
+    }
+}
+
+pub(crate) struct TelephonyCallback {
+    objpath: String,
+    _context: Arc<Mutex<ClientContext>>,
+
+    dbus_connection: Arc<SyncConnection>,
+    dbus_crossroads: Arc<Mutex<Crossroads>>,
+}
+
+impl TelephonyCallback {
+    pub(crate) fn new(
+        objpath: String,
+        context: Arc<Mutex<ClientContext>>,
+        dbus_connection: Arc<SyncConnection>,
+        dbus_crossroads: Arc<Mutex<Crossroads>>,
+    ) -> Self {
+        Self { objpath, _context: context, dbus_connection, dbus_crossroads }
+    }
+}
+
+impl IBluetoothTelephonyCallback for TelephonyCallback {
+    fn on_telephony_use(&mut self, addr: String, state: bool) {
+        print_info!("Telephony use changed: [{}] state: {}", addr, state);
+    }
+}
+
+impl RPCProxy for TelephonyCallback {
+    fn get_object_id(&self) -> String {
+        self.objpath.clone()
+    }
+
+    fn export_for_rpc(self: Box<Self>) {
+        let cr = self.dbus_crossroads.clone();
+        let iface = export_bluetooth_telephony_callback_dbus_intf(
             self.dbus_connection.clone(),
             &mut cr.lock().unwrap(),
             Arc::new(Mutex::new(DisconnectWatcher::new())),

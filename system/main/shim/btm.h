@@ -20,18 +20,16 @@
 #include <cstdint>
 #include <functional>
 #include <mutex>
-#include <unordered_map>
 #include <vector>
 
+#include "bt_transport.h"
 #include "gd/common/callback.h"
 #include "gd/hci/le_advertising_manager.h"
-#include "gd/hci/le_scanning_manager.h"
+#include "gd/hci/le_scanning_callback.h"
 #include "gd/neighbor/inquiry.h"
 #include "gd/os/alarm.h"
 #include "hci/hci_packets.h"
 #include "stack/btm/neighbor_inquiry.h"
-#include "stack/include/btm_api_types.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 //
@@ -88,12 +86,6 @@ class Btm {
   // |handler| is used to run timer tasks and scan callbacks
   Btm(os::Handler* handler, neighbor::InquiryModule* inquiry);
   ~Btm() = default;
-
-  // Inquiry result callbacks
-  void OnInquiryResult(bluetooth::hci::InquiryResultView view);
-  void OnInquiryResultWithRssi(bluetooth::hci::InquiryResultWithRssiView view);
-  void OnExtendedInquiryResult(bluetooth::hci::ExtendedInquiryResultView view);
-  void OnInquiryComplete(bluetooth::hci::ErrorCode status);
 
   void SetStandardInquiryResultMode();
   void SetInquiryWithRssiResultMode();

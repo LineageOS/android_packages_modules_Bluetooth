@@ -24,24 +24,12 @@
 #include <base/strings/string_number_conversions.h>
 #include <hardware/bt_vc.h>
 
-#include <map>
-#include <string>
-#include <vector>
-
-#include "bind_helpers.h"
-#include "bta/include/bta_gatt_api.h"
 #include "bta/include/bta_gatt_queue.h"
 #include "bta/include/bta_vc_api.h"
-#include "btif/include/btif_storage.h"
 #include "test/common/mock_functions.h"
 #include "types/raw_address.h"
 
-#ifndef UNUSED_ATTR
-#define UNUSED_ATTR
-#endif
-
-void VolumeControl::AddFromStorage(const RawAddress& address,
-                                   bool auto_connect) {
+void VolumeControl::AddFromStorage(const RawAddress& address) {
   inc_func_call_count(__func__);
 }
 void VolumeControl::CleanUp() { inc_func_call_count(__func__); }
@@ -54,7 +42,7 @@ bool VolumeControl::IsVolumeControlRunning() {
   inc_func_call_count(__func__);
   return false;
 }
-void VolumeControl::Initialize(
-    bluetooth::vc::VolumeControlCallbacks* callbacks) {
+void VolumeControl::Initialize(bluetooth::vc::VolumeControlCallbacks* callbacks,
+                               const base::Closure& initCb) {
   inc_func_call_count(__func__);
 }

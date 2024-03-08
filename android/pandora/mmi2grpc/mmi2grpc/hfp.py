@@ -61,7 +61,8 @@ class HFPProxy(ProfileProxy):
         th.start()
 
     def test_started(self, test: str, pts_addr: bytes, **kwargs):
-        self.asyncWaitConnection(pts_addr)
+        if test not in ("HFP/AG/SLC/BV-02-C", "HFP/AG/SLC/BV-04-C"):
+            self.asyncWaitConnection(pts_addr)
 
         return "OK"
 
@@ -867,7 +868,7 @@ class HFPProxy(ProfileProxy):
 
         def shield_iut_or_pts():
             time.sleep(2)
-            self.rootcanal.disconnect_phy()
+            self.rootcanal.move_out_of_range()
 
         threading.Thread(target=shield_iut_or_pts).start()
 
@@ -883,7 +884,7 @@ class HFPProxy(ProfileProxy):
 
         def shield_open():
             time.sleep(2)
-            self.rootcanal.reconnect_phy_if_needed()
+            self.rootcanal.move_in_range()
 
         threading.Thread(target=shield_open).start()
 
@@ -1011,6 +1012,14 @@ class HFPProxy(ProfileProxy):
         """
 
         self.hfp.AnswerCall()
+
+        return "OK"
+
+    @assert_description
+    def TSC_verify_iut_ignore_wrong_bind(self, **kwargs):
+        """
+        Verify IUT ignores unkown or unexpected indication code. Then click OK.
+        """
 
         return "OK"
 

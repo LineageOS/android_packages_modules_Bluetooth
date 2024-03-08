@@ -26,16 +26,13 @@ import android.bluetooth.BluetoothAssignedNumbers;
 import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHeadset;
-import android.bluetooth.BluetoothHeadsetClient;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.IBluetoothConnectionCallback;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.net.MacAddress;
 import android.os.Handler;
 import android.os.Looper;
@@ -52,6 +49,7 @@ import com.android.bluetooth.bas.BatteryService;
 import com.android.bluetooth.hfp.HeadsetHalConstants;
 import com.android.internal.annotations.VisibleForTesting;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -60,7 +58,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 
-final class RemoteDevices {
+/** Remote device manager. This class is currently mostly used for HF and AG remote devices. */
+public class RemoteDevices {
     private static final boolean DBG = false;
     private static final String TAG = "BluetoothRemoteDevices";
 
@@ -99,6 +98,8 @@ final class RemoteDevices {
     private static final int HFP_BATTERY_CHARGE_INDICATOR_5 = 100;
 
     private final Handler mHandler;
+    private final Handler mMainHandler;
+
     private class RemoteDevicesHandler extends Handler {
 
         /**
@@ -130,33 +131,6 @@ final class RemoteDevices {
         }
     }
 
-    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            switch (action) {
-                case BluetoothHeadset.ACTION_HF_INDICATORS_VALUE_CHANGED:
-                    onHfIndicatorValueChanged(intent);
-                    break;
-                case BluetoothHeadset.ACTION_VENDOR_SPECIFIC_HEADSET_EVENT:
-                    onVendorSpecificHeadsetEvent(intent);
-                    break;
-                case BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED:
-                    onHeadsetConnectionStateChanged(intent);
-                    break;
-                case BluetoothHeadsetClient.ACTION_CONNECTION_STATE_CHANGED:
-                    onHeadsetClientConnectionStateChanged(intent);
-                    break;
-                case BluetoothHeadsetClient.ACTION_AG_EVENT:
-                    onAgIndicatorValueChanged(intent);
-                    break;
-                default:
-                    Log.w(TAG, "Unhandled intent: " + intent);
-                    break;
-            }
-        }
-    };
-
     /**
      * Predicate that tests if the given {@link BluetoothDevice} is well-known
      * to be used for physical location.
@@ -183,33 +157,17 @@ final class RemoteDevices {
         mDualDevicesMap = new HashMap<String, String>();
         mDeviceQueue = new ArrayDeque<>();
         mHandler = new RemoteDevicesHandler(looper);
+        mMainHandler = new Handler(Looper.getMainLooper());
     }
 
-    /**
-     * Init should be called before using this RemoteDevices object
-     */
-    void init() {
-        IntentFilter filter = new IntentFilter();
-        filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
-        filter.addAction(BluetoothHeadset.ACTION_HF_INDICATORS_VALUE_CHANGED);
-        filter.addAction(BluetoothHeadset.ACTION_VENDOR_SPECIFIC_HEADSET_EVENT);
-        filter.addCategory(BluetoothHeadset.VENDOR_SPECIFIC_HEADSET_EVENT_COMPANY_ID_CATEGORY + "."
-                + BluetoothAssignedNumbers.PLANTRONICS);
-        filter.addCategory(BluetoothHeadset.VENDOR_SPECIFIC_HEADSET_EVENT_COMPANY_ID_CATEGORY + "."
-                + BluetoothAssignedNumbers.APPLE);
-        filter.addAction(BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED);
-        filter.addAction(BluetoothHeadsetClient.ACTION_CONNECTION_STATE_CHANGED);
-        filter.addAction(BluetoothHeadsetClient.ACTION_AG_EVENT);
-        mAdapterService.registerReceiver(mReceiver, filter);
-    }
+    /** Init should be called before using this RemoteDevices object */
+    void init() {}
 
     /**
      * Clean up should be called when this object is no longer needed, must be called after init()
      */
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
     void cleanup() {
-        // Unregister receiver first, mAdapterService is never null
-        mAdapterService.unregisterReceiver(mReceiver);
         reset();
     }
 
@@ -223,17 +181,31 @@ final class RemoteDevices {
             mSdpTracker.clear();
         }
 
+        // Unregister Handler and stop all queued messages.
+        if (mMainHandler != null) {
+            mMainHandler.removeCallbacksAndMessages(null);
+        }
+
         synchronized (mDevices) {
             if (mDevices != null) {
                 debugLog("reset(): Broadcasting ACL_DISCONNECTED");
 
-                mDevices.forEach((address, deviceProperties) -> {
-                    BluetoothDevice bluetoothDevice = deviceProperties.getDevice();
+                mDevices.forEach(
+                        (address, deviceProperties) -> {
+                            BluetoothDevice bluetoothDevice = deviceProperties.getDevice();
 
-                    debugLog("reset(): address=" + address + ", connected="
-                            + bluetoothDevice.isConnected());
+                            debugLog(
+                                    "reset(): address="
+                                            + address
+                                            + ", connected="
+                                            + bluetoothDevice.isConnected());
 
                     if (bluetoothDevice.isConnected()) {
+                        int transport = deviceProperties.getConnectionHandle(
+                                BluetoothDevice.TRANSPORT_BREDR) != BluetoothDevice.ERROR
+                                        ? BluetoothDevice.TRANSPORT_BREDR
+                                        : BluetoothDevice.TRANSPORT_LE;
+                        mAdapterService.notifyAclDisconnected(bluetoothDevice, transport);
                         Intent intent = new Intent(BluetoothDevice.ACTION_ACL_DISCONNECTED);
                         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, bluetoothDevice);
                         intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
@@ -323,7 +295,8 @@ final class RemoteDevices {
         private String mAlias;
         private BluetoothDevice mDevice;
         private boolean mIsBondingInitiatedLocally;
-        private int mBatteryLevel = BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
+        private int mBatteryLevelFromHfp = BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
+        private int mBatteryLevelFromBatteryService = BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
         private boolean mIsCoordinatedSetMember;
         private int mAshaCapability;
         private int mAshaTruncatedHiSyncId;
@@ -546,8 +519,12 @@ final class RemoteDevices {
         void setAlias(BluetoothDevice device, String mAlias) {
             synchronized (mObject) {
                 this.mAlias = mAlias;
-                mAdapterService.setDevicePropertyNative(mAddress,
-                        AbstractionLayer.BT_PROPERTY_REMOTE_FRIENDLY_NAME, mAlias.getBytes());
+                mAdapterService
+                        .getNative()
+                        .setDeviceProperty(
+                                mAddress,
+                                AbstractionLayer.BT_PROPERTY_REMOTE_FRIENDLY_NAME,
+                                mAlias.getBytes());
                 Intent intent = new Intent(BluetoothDevice.ACTION_ALIAS_CHANGED);
                 intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
                 intent.putExtra(BluetoothDevice.EXTRA_NAME, mAlias);
@@ -613,16 +590,28 @@ final class RemoteDevices {
          */
         int getBatteryLevel() {
             synchronized (mObject) {
-                return mBatteryLevel;
+                if (mBatteryLevelFromBatteryService != BluetoothDevice.BATTERY_LEVEL_UNKNOWN) {
+                    return mBatteryLevelFromBatteryService;
+                }
+                return mBatteryLevelFromHfp;
             }
         }
 
-        /**
-         * @param batteryLevel the mBatteryLevel to set
-         */
-        void setBatteryLevel(int batteryLevel) {
+        void setBatteryLevelFromHfp(int batteryLevel) {
             synchronized (mObject) {
-                this.mBatteryLevel = batteryLevel;
+                if (mBatteryLevelFromHfp == batteryLevel) {
+                    return;
+                }
+                mBatteryLevelFromHfp = batteryLevel;
+            }
+        }
+
+        void setBatteryLevelFromBatteryService(int batteryLevel) {
+            synchronized (mObject) {
+                if (mBatteryLevelFromBatteryService == batteryLevel) {
+                    return;
+                }
+                mBatteryLevelFromBatteryService = batteryLevel;
             }
         }
 
@@ -639,6 +628,12 @@ final class RemoteDevices {
          * @param isCoordinatedSetMember the mIsCoordinatedSetMember to set
         */
         void setIsCoordinatedSetMember(boolean isCoordinatedSetMember) {
+            if ((mAdapterService.getSupportedProfilesBitMask()
+                            & (1 << BluetoothProfile.CSIP_SET_COORDINATOR))
+                    == 0) {
+                debugLog("CSIP is not supported");
+                return;
+            }
             synchronized (mObject) {
                 this.mIsCoordinatedSetMember = isCoordinatedSetMember;
             }
@@ -684,6 +679,14 @@ final class RemoteDevices {
 
         public void setModelName(String modelName) {
             mModelName = modelName;
+            try {
+                mAdapterService.setMetadata(
+                    this.mDevice,
+                    BluetoothDevice.METADATA_MODEL_NAME,
+                    mModelName.getBytes("UTF-8"));
+            } catch (UnsupportedEncodingException uee) {
+                Log.e(TAG, "setModelName: UTF-8 not supported?!?"); // this should not happen
+            }
         }
 
         /**
@@ -734,40 +737,53 @@ final class RemoteDevices {
 
     /**
      * Update battery level in device properties
+     *
      * @param device The remote device to be updated
-     * @param batteryLevel Battery level Indicator between 0-100,
-     *                    {@link BluetoothDevice#BATTERY_LEVEL_UNKNOWN} is error
+     * @param batteryLevel Battery level Indicator between 0-100, {@link
+     *     BluetoothDevice#BATTERY_LEVEL_UNKNOWN} is error
+     * @param isBas true if the battery level is from the battery service
      */
     @VisibleForTesting
-    void updateBatteryLevel(BluetoothDevice device, int batteryLevel) {
+    void updateBatteryLevel(BluetoothDevice device, int batteryLevel, boolean isBas) {
         if (device == null || batteryLevel < 0 || batteryLevel > 100) {
-            warnLog("Invalid parameters device=" + String.valueOf(device == null)
-                    + ", batteryLevel=" + String.valueOf(batteryLevel));
+            warnLog(
+                    "Invalid parameters device="
+                            + String.valueOf(device == null)
+                            + ", batteryLevel="
+                            + String.valueOf(batteryLevel));
             return;
         }
         DeviceProperties deviceProperties = getDeviceProperties(device);
         if (deviceProperties == null) {
             deviceProperties = addDeviceProperties(Utils.getByteAddress(device));
         }
-        synchronized (mObject) {
-            int currentBatteryLevel = deviceProperties.getBatteryLevel();
-            if (batteryLevel == currentBatteryLevel) {
-                debugLog("Same battery level for device " + device + " received " + String.valueOf(
-                        batteryLevel) + "%");
-                return;
-            }
-            deviceProperties.setBatteryLevel(batteryLevel);
+        int prevBatteryLevel = deviceProperties.getBatteryLevel();
+        if (isBas) {
+            deviceProperties.setBatteryLevelFromBatteryService(batteryLevel);
+        } else {
+            deviceProperties.setBatteryLevelFromHfp(batteryLevel);
         }
-        sendBatteryLevelChangedBroadcast(device, batteryLevel);
-        Log.d(TAG, "Updated device " + device + " battery level to " + batteryLevel + "%");
+        int newBatteryLevel = deviceProperties.getBatteryLevel();
+        if (prevBatteryLevel == newBatteryLevel) {
+            debugLog(
+                    "Same battery level for device "
+                            + device
+                            + " received "
+                            + String.valueOf(batteryLevel)
+                            + "%");
+            return;
+        }
+        sendBatteryLevelChangedBroadcast(device, newBatteryLevel);
+        Log.d(TAG, "Updated device " + device + " battery level to " + newBatteryLevel + "%");
     }
 
     /**
      * Reset battery level property to {@link BluetoothDevice#BATTERY_LEVEL_UNKNOWN} for a device
+     *
      * @param device device whose battery level property needs to be reset
      */
     @VisibleForTesting
-    void resetBatteryLevel(BluetoothDevice device) {
+    void resetBatteryLevel(BluetoothDevice device, boolean isBas) {
         if (device == null) {
             warnLog("Device is null");
             return;
@@ -776,15 +792,21 @@ final class RemoteDevices {
         if (deviceProperties == null) {
             return;
         }
-        synchronized (mObject) {
-            if (deviceProperties.getBatteryLevel() == BluetoothDevice.BATTERY_LEVEL_UNKNOWN) {
-                debugLog("Battery level was never set or is already reset, device=" + device);
-                return;
-            }
-            deviceProperties.setBatteryLevel(BluetoothDevice.BATTERY_LEVEL_UNKNOWN);
+        int prevBatteryLevel = deviceProperties.getBatteryLevel();
+        if (isBas) {
+            deviceProperties.setBatteryLevelFromBatteryService(
+                    BluetoothDevice.BATTERY_LEVEL_UNKNOWN);
+        } else {
+            deviceProperties.setBatteryLevelFromHfp(BluetoothDevice.BATTERY_LEVEL_UNKNOWN);
         }
-        sendBatteryLevelChangedBroadcast(device, BluetoothDevice.BATTERY_LEVEL_UNKNOWN);
-        Log.d(TAG, "Reset battery level, device=" + device);
+
+        int newBatteryLevel = deviceProperties.getBatteryLevel();
+        if (prevBatteryLevel == newBatteryLevel) {
+            debugLog("Battery level was not changed due to reset, device=" + device);
+            return;
+        }
+        sendBatteryLevelChangedBroadcast(device, newBatteryLevel);
+        Log.d(TAG, "Updated device " + device + " battery level to " + newBatteryLevel + "%");
     }
 
     private void sendBatteryLevelChangedBroadcast(BluetoothDevice device, int batteryLevel) {
@@ -1108,6 +1130,7 @@ final class RemoteDevices {
             if (batteryService != null && transportLinkType == BluetoothDevice.TRANSPORT_LE) {
                 batteryService.connectIfPossible(device);
             }
+            mAdapterService.updatePhonePolicyOnAclConnect(device);
             SecurityLog.writeEvent(SecurityLog.TAG_BLUETOOTH_CONNECTION,
                     Utils.getLoggableAddress(device), /* success */ 1, /* reason */ "");
             debugLog(
@@ -1128,8 +1151,14 @@ final class RemoteDevices {
             } else if (device.getBondState() == BluetoothDevice.BOND_NONE) {
                 String key = Utils.getAddressStringFromByte(address);
                 mDevices.remove(key);
+                mDeviceQueue.remove(key); // Remove from LRU cache
+
+                // Remove from dual mode device mappings
+                mDualDevicesMap.values().remove(key);
+                mDualDevicesMap.remove(key);
             }
             if (state == BluetoothAdapter.STATE_ON || state == BluetoothAdapter.STATE_TURNING_OFF) {
+                mAdapterService.notifyAclDisconnected(device, transportLinkType);
                 intent = new Intent(BluetoothDevice.ACTION_ACL_DISCONNECTED);
                 intent.putExtra(BluetoothDevice.EXTRA_TRANSPORT, transportLinkType);
             } else if (state == BluetoothAdapter.STATE_BLE_ON
@@ -1145,8 +1174,9 @@ final class RemoteDevices {
                         && transportLinkType == BluetoothDevice.TRANSPORT_LE) {
                     batteryService.disconnect(device);
                 }
-                resetBatteryLevel(device);
+                resetBatteryLevel(device, /*isBas=*/ true);
             }
+
             if (mAdapterService.isAllProfilesUnknown(device)) {
                 DeviceProperties deviceProp = getDeviceProperties(device);
                 if (deviceProp != null) {
@@ -1236,8 +1266,9 @@ final class RemoteDevices {
         // Uses cached UUIDs if we are bonding. If not, we fetch the UUIDs with SDP.
         if (deviceProperties == null || !deviceProperties.isBonding()) {
             // SDP Invoked native code to spin up SDP cycle
-            mAdapterService.getRemoteServicesNative(Utils.getBytesFromAddress(device.getAddress()),
-                    transport);
+            mAdapterService
+                    .getNative()
+                    .getRemoteServices(Utils.getBytesFromAddress(device.getAddress()), transport);
             MetricsLogger.getInstance().cacheCount(
                     BluetoothProtoEnums.SDP_INVOKE_SDP_CYCLE, 1);
         }
@@ -1249,65 +1280,71 @@ final class RemoteDevices {
         mHandler.sendMessage(message);
     }
 
-    /**
-     * Handles headset connection state change event
-     * @param intent must be {@link BluetoothHeadset#ACTION_CONNECTION_STATE_CHANGED} intent
-     */
+    /** Handles headset connection state change event */
+    public void handleHeadsetConnectionStateChanged(
+            BluetoothDevice device, int fromState, int toState) {
+        mMainHandler.post(() -> onHeadsetConnectionStateChanged(device, fromState, toState));
+    }
+
     @VisibleForTesting
-    void onHeadsetConnectionStateChanged(Intent intent) {
-        BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+    void onHeadsetConnectionStateChanged(BluetoothDevice device, int fromState, int toState) {
         if (device == null) {
             Log.e(TAG, "onHeadsetConnectionStateChanged() remote device is null");
             return;
         }
-        if (intent.getIntExtra(BluetoothProfile.EXTRA_STATE, BluetoothProfile.STATE_DISCONNECTED)
-                == BluetoothProfile.STATE_DISCONNECTED
-                && !hasBatteryService(device)) {
-            resetBatteryLevel(device);
+        if (toState == BluetoothProfile.STATE_DISCONNECTED && !hasBatteryService(device)) {
+            resetBatteryLevel(device, /*isBas=*/ false);
         }
     }
 
+    /** Handle indication events from Hands-free. */
+    public void handleHfIndicatorValueChanged(
+            BluetoothDevice device, int indicatorId, int indicatorValue) {
+        mMainHandler.post(() -> onHfIndicatorValueChanged(device, indicatorId, indicatorValue));
+    }
+
     @VisibleForTesting
-    void onHfIndicatorValueChanged(Intent intent) {
-        BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+    void onHfIndicatorValueChanged(BluetoothDevice device, int indicatorId, int indicatorValue) {
         if (device == null) {
             Log.e(TAG, "onHfIndicatorValueChanged() remote device is null");
             return;
         }
-        int indicatorId = intent.getIntExtra(BluetoothHeadset.EXTRA_HF_INDICATORS_IND_ID, -1);
-        int indicatorValue = intent.getIntExtra(BluetoothHeadset.EXTRA_HF_INDICATORS_IND_VALUE, -1);
         if (indicatorId == HeadsetHalConstants.HF_INDICATOR_BATTERY_LEVEL_STATUS) {
-            updateBatteryLevel(device, indicatorValue);
+            updateBatteryLevel(device, indicatorValue, /*isBas=*/ false);
         }
     }
 
-    /**
-     * Handle {@link BluetoothHeadset#ACTION_VENDOR_SPECIFIC_HEADSET_EVENT} intent
-     * @param intent must be {@link BluetoothHeadset#ACTION_VENDOR_SPECIFIC_HEADSET_EVENT} intent
-     */
+    /** Handles Headset specific Bluetooth events */
+    public void handleVendorSpecificHeadsetEvent(
+            BluetoothDevice device, String cmd, int companyId, int cmdType, Object[] args) {
+        mMainHandler.post(
+                () -> onVendorSpecificHeadsetEvent(device, cmd, companyId, cmdType, args));
+    }
+
     @VisibleForTesting
-    void onVendorSpecificHeadsetEvent(Intent intent) {
-        BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+    void onVendorSpecificHeadsetEvent(
+            BluetoothDevice device, String cmd, int companyId, int cmdType, Object[] args) {
         if (device == null) {
             Log.e(TAG, "onVendorSpecificHeadsetEvent() remote device is null");
             return;
         }
-        String cmd =
-                intent.getStringExtra(BluetoothHeadset.EXTRA_VENDOR_SPECIFIC_HEADSET_EVENT_CMD);
+        if (companyId != BluetoothAssignedNumbers.PLANTRONICS
+                && companyId != BluetoothAssignedNumbers.APPLE) {
+            Log.i(
+                    TAG,
+                    "onVendorSpecificHeadsetEvent() filtered out non-PLANTRONICS and non-APPLE "
+                            + "vendor commands");
+            return;
+        }
         if (cmd == null) {
             Log.e(TAG, "onVendorSpecificHeadsetEvent() command is null");
             return;
         }
-        int cmdType =
-                intent.getIntExtra(BluetoothHeadset.EXTRA_VENDOR_SPECIFIC_HEADSET_EVENT_CMD_TYPE,
-                        -1);
         // Only process set command
         if (cmdType != BluetoothHeadset.AT_CMD_TYPE_SET) {
             debugLog("onVendorSpecificHeadsetEvent() only SET command is processed");
             return;
         }
-        Object[] args = (Object[]) intent.getExtras()
-                .get(BluetoothHeadset.EXTRA_VENDOR_SPECIFIC_HEADSET_EVENT_ARGS);
         if (args == null) {
             Log.e(TAG, "onVendorSpecificHeadsetEvent() arguments are null");
             return;
@@ -1322,7 +1359,7 @@ final class RemoteDevices {
                 break;
         }
         if (batteryPercent != BluetoothDevice.BATTERY_LEVEL_UNKNOWN) {
-            updateBatteryLevel(device, batteryPercent);
+            updateBatteryLevel(device, batteryPercent, /*isBas=*/ false);
             infoLog("Updated device " + device + " battery level to " + String.valueOf(
                     batteryPercent) + "%");
         }
@@ -1432,36 +1469,36 @@ final class RemoteDevices {
                 && batteryService.getConnectionState(device) == BluetoothProfile.STATE_CONNECTED;
     }
 
-    /**
-     * Handles headset client connection state change event
-     * @param intent must be {@link BluetoothHeadsetClient#ACTION_CONNECTION_STATE_CHANGED} intent
-     */
+    /** Handles headset client connection state change event. */
+    public void handleHeadsetClientConnectionStateChanged(
+            BluetoothDevice device, int fromState, int toState) {
+        mMainHandler.post(() -> onHeadsetClientConnectionStateChanged(device, fromState, toState));
+    }
+
     @VisibleForTesting
-    void onHeadsetClientConnectionStateChanged(Intent intent) {
-        BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+    void onHeadsetClientConnectionStateChanged(BluetoothDevice device, int fromState, int toState) {
         if (device == null) {
             Log.e(TAG, "onHeadsetClientConnectionStateChanged() remote device is null");
             return;
         }
-        if (intent.getIntExtra(BluetoothProfile.EXTRA_STATE, BluetoothProfile.STATE_DISCONNECTED)
-                == BluetoothProfile.STATE_DISCONNECTED
-                && !hasBatteryService(device)) {
-            resetBatteryLevel(device);
+        if (toState == BluetoothProfile.STATE_DISCONNECTED && !hasBatteryService(device)) {
+            resetBatteryLevel(device, /*isBas=*/ false);
         }
     }
 
+    /** Handle battery level changes indication events from Audio Gateway. */
+    public void handleAgBatteryLevelChanged(BluetoothDevice device, int batteryLevel) {
+        mMainHandler.post(() -> onAgBatteryLevelChanged(device, batteryLevel));
+    }
+
     @VisibleForTesting
-    void onAgIndicatorValueChanged(Intent intent) {
-        BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+    void onAgBatteryLevelChanged(BluetoothDevice device, int batteryLevel) {
         if (device == null) {
-            Log.e(TAG, "onAgIndicatorValueChanged() remote device is null");
+            Log.e(TAG, "onAgBatteryLevelChanged() remote device is null");
             return;
         }
-
-        if (intent.hasExtra(BluetoothHeadsetClient.EXTRA_BATTERY_LEVEL)) {
-            int batteryLevel = intent.getIntExtra(BluetoothHeadsetClient.EXTRA_BATTERY_LEVEL, -1);
-            updateBatteryLevel(device, batteryChargeIndicatorToPercentge(batteryLevel));
-        }
+        updateBatteryLevel(
+                device, batteryChargeIndicatorToPercentge(batteryLevel), /*isBas=*/ false);
     }
 
     private static void errorLog(String msg) {

@@ -16,9 +16,8 @@
 
 #pragma once
 
+#include <cstdint>
 #include <functional>
-#include <list>
-#include <string>
 
 #define LOG_DUMPSYS(fd, fmt, args...)                 \
   do {                                                \
@@ -29,14 +28,6 @@
   do {                                       \
     dprintf(fd, " ----- %s -----\n", title); \
   } while (false)
-
-#define PRIVATE_CELL(number)                                      \
-  (number                                                         \
-       .replace(0, (number.size() > 2) ? number.size() - 2 : 0,   \
-                (number.size() > 2) ? number.size() - 2 : 0, '*') \
-       .c_str())
-
-#define PRIVATE_NAME(name) (name)
 
 inline double ticks_to_seconds(uint16_t ticks) {
   return (static_cast<double>(ticks) * 0.625 * 0.001);

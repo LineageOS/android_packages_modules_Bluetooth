@@ -30,8 +30,8 @@
 
 #include "bta/include/bta_hd_api.h"
 #include "bta/sys/bta_sys.h"
+#include "internal_include/bt_target.h"
 #include "stack/include/bt_hdr.h"
-#include "stack/include/bt_types.h"
 #include "stack/include/hiddefs.h"
 #include "types/raw_address.h"
 
@@ -137,7 +137,6 @@ typedef struct {
 typedef struct {
   tBTA_HD_CBACK* p_cback;
   uint32_t sdp_handle;
-  uint8_t trace_level;
   uint8_t state;
   RawAddress bd_addr;
   bool use_report_id;
@@ -151,7 +150,7 @@ extern tBTA_HD_CB bta_hd_cb;
 /*****************************************************************************
  *  Function prototypes
  ****************************************************************************/
-bool bta_hd_hdl_event(BT_HDR_RIGID* p_msg);
+bool bta_hd_hdl_event(const BT_HDR_RIGID* p_msg);
 
 void bta_hd_api_enable(tBTA_HD_DATA* p_data);
 void bta_hd_api_disable(void);

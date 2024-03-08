@@ -14,6 +14,7 @@ cc_fuzz {
 
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
         "packages/modules/Bluetooth/system/packet/base",
         "packages/modules/Bluetooth/system/packet/include",
@@ -36,7 +37,9 @@ cc_fuzz {
     ],
     cflags: [
         "-DBUILDCFG",
+        "-Wno-unused-parameter",
     ],
+    shared_libs: ["liblog"],
 }
 
 cc_fuzz {
@@ -46,6 +49,7 @@ cc_fuzz {
 
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
         "packages/modules/Bluetooth/system/packet/base",
         "packages/modules/Bluetooth/system/packet/include",
@@ -69,7 +73,9 @@ cc_fuzz {
     ],
     cflags: [
         "-DBUILDCFG",
+        "-Wno-unused-parameter",
     ],
+    shared_libs: ["liblog"],
 }
 
 cc_fuzz {
@@ -79,6 +85,7 @@ cc_fuzz {
 
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
         "packages/modules/Bluetooth/system/packet/base",
         "packages/modules/Bluetooth/system/packet/include",
@@ -102,7 +109,9 @@ cc_fuzz {
     ],
     cflags: [
         "-DBUILDCFG",
+        "-Wno-unused-parameter",
     ],
+    shared_libs: ["liblog"],
 }
 
 cc_fuzz {
@@ -112,6 +121,7 @@ cc_fuzz {
 
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
         "packages/modules/Bluetooth/system/packet/base",
         "packages/modules/Bluetooth/system/packet/include",
@@ -135,7 +145,9 @@ cc_fuzz {
     ],
     cflags: [
         "-DBUILDCFG",
+        "-Wno-unused-parameter",
     ],
+    shared_libs: ["liblog"],
 }
 
 cc_fuzz {
@@ -145,6 +157,7 @@ cc_fuzz {
 
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
         "packages/modules/Bluetooth/system/packet/base",
         "packages/modules/Bluetooth/system/packet/include",
@@ -168,7 +181,9 @@ cc_fuzz {
     ],
     cflags: [
         "-DBUILDCFG",
+        "-Wno-unused-parameter",
     ],
+    shared_libs: ["liblog"],
 }
 
 cc_fuzz {
@@ -178,6 +193,7 @@ cc_fuzz {
 
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
         "packages/modules/Bluetooth/system/packet/base",
         "packages/modules/Bluetooth/system/packet/include",
@@ -201,7 +217,9 @@ cc_fuzz {
     ],
     cflags: [
         "-DBUILDCFG",
+        "-Wno-unused-parameter",
     ],
+    shared_libs: ["liblog"],
 }
 
 cc_fuzz {
@@ -211,6 +229,7 @@ cc_fuzz {
 
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
         "packages/modules/Bluetooth/system/packet/base",
         "packages/modules/Bluetooth/system/packet/include",
@@ -234,7 +253,9 @@ cc_fuzz {
     ],
     cflags: [
         "-DBUILDCFG",
+        "-Wno-unused-parameter",
     ],
+    shared_libs: ["liblog"],
 }
 
 cc_fuzz {
@@ -244,6 +265,7 @@ cc_fuzz {
 
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
         "packages/modules/Bluetooth/system/packet/base",
         "packages/modules/Bluetooth/system/packet/include",
@@ -267,7 +289,9 @@ cc_fuzz {
     ],
     cflags: [
         "-DBUILDCFG",
+        "-Wno-unused-parameter",
     ],
+    shared_libs: ["liblog"],
 }
 
 cc_fuzz {
@@ -277,6 +301,7 @@ cc_fuzz {
 
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
         "packages/modules/Bluetooth/system/packet/base",
         "packages/modules/Bluetooth/system/packet/include",
@@ -300,7 +325,9 @@ cc_fuzz {
     ],
     cflags: [
         "-DBUILDCFG",
+        "-Wno-unused-parameter",
     ],
+    shared_libs: ["liblog"],
 }
 
 cc_fuzz {
@@ -310,6 +337,7 @@ cc_fuzz {
 
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
         "packages/modules/Bluetooth/system/packet/base",
         "packages/modules/Bluetooth/system/packet/include",
@@ -333,7 +361,9 @@ cc_fuzz {
     ],
     cflags: [
         "-DBUILDCFG",
+        "-Wno-unused-parameter",
     ],
+    shared_libs: ["liblog"],
 }
 
 cc_fuzz {
@@ -343,6 +373,7 @@ cc_fuzz {
 
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
         "packages/modules/Bluetooth/system/packet/base",
         "packages/modules/Bluetooth/system/packet/include",
@@ -366,7 +397,9 @@ cc_fuzz {
     ],
     cflags: [
         "-DBUILDCFG",
+        "-Wno-unused-parameter",
     ],
+    shared_libs: ["liblog"],
 }
 
 cc_fuzz {
@@ -376,6 +409,7 @@ cc_fuzz {
 
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
         "packages/modules/Bluetooth/system/packet/base",
         "packages/modules/Bluetooth/system/packet/include",
@@ -399,7 +433,9 @@ cc_fuzz {
     ],
     cflags: [
         "-DBUILDCFG",
+        "-Wno-unused-parameter",
     ],
+    shared_libs: ["liblog"],
 }
 
 cc_fuzz {
@@ -409,6 +445,7 @@ cc_fuzz {
 
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
         "packages/modules/Bluetooth/system/packet/base",
         "packages/modules/Bluetooth/system/packet/include",
@@ -432,7 +469,9 @@ cc_fuzz {
     ],
     cflags: [
         "-DBUILDCFG",
+        "-Wno-unused-parameter",
     ],
+    shared_libs: ["liblog"],
 }
 
 cc_fuzz {
@@ -442,6 +481,7 @@ cc_fuzz {
 
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
         "packages/modules/Bluetooth/system/packet/base",
         "packages/modules/Bluetooth/system/packet/include",
@@ -465,7 +505,9 @@ cc_fuzz {
     ],
     cflags: [
         "-DBUILDCFG",
+        "-Wno-unused-parameter",
     ],
+    shared_libs: ["liblog"],
 }
 
 cc_fuzz {
@@ -475,6 +517,7 @@ cc_fuzz {
 
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
         "packages/modules/Bluetooth/system/packet/base",
         "packages/modules/Bluetooth/system/packet/include",
@@ -498,7 +541,9 @@ cc_fuzz {
     ],
     cflags: [
         "-DBUILDCFG",
+        "-Wno-unused-parameter",
     ],
+    shared_libs: ["liblog"],
 }
 
 cc_fuzz {
@@ -508,6 +553,7 @@ cc_fuzz {
 
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
         "packages/modules/Bluetooth/system/packet/base",
         "packages/modules/Bluetooth/system/packet/include",
@@ -531,7 +577,9 @@ cc_fuzz {
     ],
     cflags: [
         "-DBUILDCFG",
+        "-Wno-unused-parameter",
     ],
+    shared_libs: ["liblog"],
 }
 
 cc_fuzz {
@@ -541,6 +589,7 @@ cc_fuzz {
 
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
         "packages/modules/Bluetooth/system/packet/base",
         "packages/modules/Bluetooth/system/packet/include",
@@ -564,7 +613,9 @@ cc_fuzz {
     ],
     cflags: [
         "-DBUILDCFG",
+        "-Wno-unused-parameter",
     ],
+    shared_libs: ["liblog"],
 }
 
 cc_fuzz {
@@ -574,6 +625,7 @@ cc_fuzz {
 
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
         "packages/modules/Bluetooth/system/packet/base",
         "packages/modules/Bluetooth/system/packet/include",
@@ -597,7 +649,9 @@ cc_fuzz {
     ],
     cflags: [
         "-DBUILDCFG",
+        "-Wno-unused-parameter",
     ],
+    shared_libs: ["liblog"],
 }
 
 cc_fuzz {
@@ -607,6 +661,7 @@ cc_fuzz {
 
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
         "packages/modules/Bluetooth/system/packet/base",
         "packages/modules/Bluetooth/system/packet/include",
@@ -630,7 +685,9 @@ cc_fuzz {
     ],
     cflags: [
         "-DBUILDCFG",
+        "-Wno-unused-parameter",
     ],
+    shared_libs: ["liblog"],
 }
 
 cc_fuzz {
@@ -640,6 +697,7 @@ cc_fuzz {
 
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
         "packages/modules/Bluetooth/system/packet/base",
         "packages/modules/Bluetooth/system/packet/include",
@@ -663,7 +721,9 @@ cc_fuzz {
     ],
     cflags: [
         "-DBUILDCFG",
+        "-Wno-unused-parameter",
     ],
+    shared_libs: ["liblog"],
 }
 
 cc_fuzz {
@@ -673,6 +733,7 @@ cc_fuzz {
 
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
         "packages/modules/Bluetooth/system/packet/base",
         "packages/modules/Bluetooth/system/packet/include",
@@ -696,7 +757,9 @@ cc_fuzz {
     ],
     cflags: [
         "-DBUILDCFG",
+        "-Wno-unused-parameter",
     ],
+    shared_libs: ["liblog"],
 }
 
 cc_fuzz {
@@ -706,6 +769,7 @@ cc_fuzz {
 
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
         "packages/modules/Bluetooth/system/packet/base",
         "packages/modules/Bluetooth/system/packet/include",
@@ -729,7 +793,9 @@ cc_fuzz {
     ],
     cflags: [
         "-DBUILDCFG",
+        "-Wno-unused-parameter",
     ],
+    shared_libs: ["liblog"],
 }
 
 cc_fuzz {
@@ -739,6 +805,7 @@ cc_fuzz {
 
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
         "packages/modules/Bluetooth/system/packet/base",
         "packages/modules/Bluetooth/system/packet/include",
@@ -762,7 +829,9 @@ cc_fuzz {
     ],
     cflags: [
         "-DBUILDCFG",
+        "-Wno-unused-parameter",
     ],
+    shared_libs: ["liblog"],
 }
 
 cc_fuzz {
@@ -772,6 +841,7 @@ cc_fuzz {
 
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
         "packages/modules/Bluetooth/system/packet/base",
         "packages/modules/Bluetooth/system/packet/include",
@@ -795,7 +865,9 @@ cc_fuzz {
     ],
     cflags: [
         "-DBUILDCFG",
+        "-Wno-unused-parameter",
     ],
+    shared_libs: ["liblog"],
 }
 
 cc_fuzz {
@@ -805,6 +877,7 @@ cc_fuzz {
 
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
         "packages/modules/Bluetooth/system/packet/base",
         "packages/modules/Bluetooth/system/packet/include",
@@ -828,5 +901,7 @@ cc_fuzz {
     ],
     cflags: [
         "-DBUILDCFG",
+        "-Wno-unused-parameter",
     ],
+    shared_libs: ["liblog"],
 }

@@ -27,7 +27,7 @@
 #include "gatt/database_builder.h"
 #include "hardware/bt_gatt_types.h"
 #include "mock_csis_client.h"
-#include "test/common/mock_functions.h"
+#include "stack/include/bt_uuid16.h"
 #include "types.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
@@ -317,7 +317,7 @@ class VolumeControlTest : public ::testing::Test {
     EXPECT_CALL(gatt_interface, AppRegister(_, _, _))
         .WillOnce(DoAll(SaveArg<0>(&gatt_callback),
                         SaveArg<1>(&app_register_callback)));
-    VolumeControl::Initialize(callbacks.get());
+    VolumeControl::Initialize(callbacks.get(), base::DoNothing());
     ASSERT_TRUE(gatt_callback);
     ASSERT_TRUE(app_register_callback);
     app_register_callback.Run(gatt_if, GATT_SUCCESS);
@@ -337,8 +337,19 @@ class VolumeControlTest : public ::testing::Test {
         .WillByDefault(DoAll(Return(true)));
 
     EXPECT_CALL(gatt_interface,
-                Open(gatt_if, address, BTM_BLE_DIRECT_CONNECTION, _));
+                Open(gatt_if, address, BTM_BLE_DIRECT_CONNECTION, true));
     VolumeControl::Get()->Connect(address);
+    Mock::VerifyAndClearExpectations(&gatt_interface);
+  }
+
+  void TestRemove(const RawAddress& address, uint16_t conn_id) {
+    EXPECT_CALL(gatt_interface, CancelOpen(gatt_if, address, false));
+    if (conn_id) {
+      EXPECT_CALL(gatt_interface, Close(conn_id));
+    } else {
+      EXPECT_CALL(gatt_interface, Close(conn_id)).Times(0);
+    }
+    VolumeControl::Get()->Remove(address);
     Mock::VerifyAndClearExpectations(&gatt_interface);
   }
 
@@ -346,24 +357,20 @@ class VolumeControlTest : public ::testing::Test {
     if (conn_id) {
       EXPECT_CALL(gatt_interface, Close(conn_id));
     } else {
-      EXPECT_CALL(gatt_interface, CancelOpen(gatt_if, address, _));
+      EXPECT_CALL(gatt_interface, Close(conn_id)).Times(0);
     }
     VolumeControl::Get()->Disconnect(address);
     Mock::VerifyAndClearExpectations(&gatt_interface);
   }
 
-  void TestAddFromStorage(const RawAddress& address, bool auto_connect) {
+  void TestAddFromStorage(const RawAddress& address) {
     // by default indicate link as encrypted
     ON_CALL(btm_interface, BTM_IsEncrypted(address, _))
         .WillByDefault(DoAll(Return(true)));
 
-    if (auto_connect) {
-      EXPECT_CALL(gatt_interface,
-                  Open(gatt_if, address, BTM_BLE_BKG_CONNECT_ALLOW_LIST, _));
-    } else {
-      EXPECT_CALL(gatt_interface, Open(gatt_if, address, _, _)).Times(0);
-    }
-    VolumeControl::Get()->AddFromStorage(address, auto_connect);
+    EXPECT_CALL(gatt_interface,
+                Open(gatt_if, address, BTM_BLE_DIRECT_CONNECTION, true));
+    VolumeControl::Get()->AddFromStorage(address);
   }
 
   void TestSubscribeNotifications(const RawAddress& address, uint16_t conn_id,
@@ -425,8 +432,8 @@ class VolumeControlTest : public ::testing::Test {
 
   void GetDisconnectedEvent(const RawAddress& address, uint16_t conn_id) {
     tBTA_GATTC_CLOSE event_data = {
-        .status = GATT_SUCCESS,
         .conn_id = conn_id,
+        .status = GATT_SUCCESS,
         .client_if = gatt_if,
         .remote_bda = address,
         .reason = GATT_CONN_TERMINATE_PEER_USER,
@@ -437,8 +444,8 @@ class VolumeControlTest : public ::testing::Test {
 
   void GetSearchCompleteEvent(uint16_t conn_id) {
     tBTA_GATTC_SEARCH_CMPL event_data = {
-        .status = GATT_SUCCESS,
         .conn_id = conn_id,
+        .status = GATT_SUCCESS,
     };
 
     gatt_callback(BTA_GATTC_SEARCH_CMPL_EVT, (tBTA_GATTC*)&event_data);
@@ -455,6 +462,8 @@ class VolumeControlTest : public ::testing::Test {
   void SetEncryptionResult(const RawAddress& address, bool success) {
     ON_CALL(btm_interface, BTM_IsEncrypted(address, _))
         .WillByDefault(DoAll(Return(false)));
+    ON_CALL(btm_interface, IsLinkKeyKnown(address, _))
+        .WillByDefault(DoAll(Return(true)));
     ON_CALL(btm_interface, SetEncryption(address, _, _, _, BTM_BLE_SEC_ENCRYPT))
         .WillByDefault(Invoke(
             [&success, this](const RawAddress& bd_addr, tBT_TRANSPORT transport,
@@ -511,21 +520,34 @@ TEST_F(VolumeControlTest, test_get_uninitialized) {
 }
 
 TEST_F(VolumeControlTest, test_initialize) {
-  VolumeControl::Initialize(callbacks.get());
+  bool init_cb_called = false;
+  BtaAppRegisterCallback app_register_callback;
+  EXPECT_CALL(gatt_interface, AppRegister(_, _, _))
+      .WillOnce(DoAll(SaveArg<0>(&gatt_callback),
+                      SaveArg<1>(&app_register_callback)));
+  VolumeControl::Initialize(
+      callbacks.get(),
+      base::Bind([](bool* init_cb_called) { *init_cb_called = true; },
+                 &init_cb_called));
+  ASSERT_TRUE(gatt_callback);
+  ASSERT_TRUE(app_register_callback);
+  app_register_callback.Run(gatt_if, GATT_SUCCESS);
+  ASSERT_TRUE(init_cb_called);
+
   ASSERT_TRUE(VolumeControl::IsVolumeControlRunning());
   VolumeControl::CleanUp();
 }
 
 TEST_F(VolumeControlTest, test_initialize_twice) {
-  VolumeControl::Initialize(callbacks.get());
+  VolumeControl::Initialize(callbacks.get(), base::DoNothing());
   VolumeControl* volume_control_p = VolumeControl::Get();
-  VolumeControl::Initialize(callbacks.get());
+  VolumeControl::Initialize(callbacks.get(), base::DoNothing());
   ASSERT_EQ(volume_control_p, VolumeControl::Get());
   VolumeControl::CleanUp();
 }
 
 TEST_F(VolumeControlTest, test_cleanup_initialized) {
-  VolumeControl::Initialize(callbacks.get());
+  VolumeControl::Initialize(callbacks.get(), base::DoNothing());
   VolumeControl::CleanUp();
   ASSERT_FALSE(VolumeControl::IsVolumeControlRunning());
 }
@@ -595,10 +617,74 @@ TEST_F(VolumeControlTest, test_reconnect_after_interrupted_discovery) {
   TestAppUnregister();
 }
 
+TEST_F(VolumeControlTest, test_reconnect_after_timeout) {
+  const RawAddress address = GetTestAddress(0);
+
+  // Initial connection
+  SetSampleDatabaseVOCS(1);
+  TestAppRegister();
+
+  EXPECT_CALL(*callbacks,
+              OnConnectionState(ConnectionState::CONNECTED, address))
+      .Times(0);
+  TestConnect(address);
+
+  // Disconnect not connected device - upper layer times out and needs a
+  // disconnection event to leave the transient Connecting state
+  EXPECT_CALL(*callbacks,
+              OnConnectionState(ConnectionState::DISCONNECTED, address));
+  EXPECT_CALL(gatt_interface, CancelOpen(gatt_if, address, false)).Times(0);
+  TestDisconnect(address, 0);
+
+  // Above the device was not connected and we got Disconnect request from the
+  // upper layer - it means it has timed-out but still wants to connect, thus
+  // native is still doing background or opportunistic connect. Let the remote
+  // device reconnect now.
+  ON_CALL(gatt_interface, ServiceSearchRequest(_, _))
+      .WillByDefault(Invoke(
+          [&](uint16_t conn_id, const bluetooth::Uuid* p_srvc_uuid) -> void {
+            if (*p_srvc_uuid == kVolumeControlUuid)
+              GetSearchCompleteEvent(conn_id);
+          }));
+  EXPECT_CALL(*callbacks,
+              OnConnectionState(ConnectionState::CONNECTED, address));
+  EXPECT_CALL(*callbacks, OnDeviceAvailable(address, 2));
+  GetConnectedEvent(address, 1);
+  Mock::VerifyAndClearExpectations(callbacks.get());
+
+  // Make sure that the upper layer gets the disconnection event even if not
+  // connecting actively anymore due to the mentioned time-out mechanism.
+  EXPECT_CALL(*callbacks,
+              OnConnectionState(ConnectionState::DISCONNECTED, address));
+  GetDisconnectedEvent(address, 1);
+  Mock::VerifyAndClearExpectations(callbacks.get());
+  TestAppUnregister();
+}
+
 TEST_F(VolumeControlTest, test_add_from_storage) {
   TestAppRegister();
-  TestAddFromStorage(GetTestAddress(0), true);
-  TestAddFromStorage(GetTestAddress(1), false);
+  TestAddFromStorage(GetTestAddress(0));
+  TestAppUnregister();
+}
+
+TEST_F(VolumeControlTest, test_remove_non_connected) {
+  const RawAddress test_address = GetTestAddress(0);
+  TestAppRegister();
+  TestConnect(test_address);
+  EXPECT_CALL(*callbacks,
+              OnConnectionState(ConnectionState::DISCONNECTED, test_address));
+  TestRemove(test_address, 0);
+  TestAppUnregister();
+}
+
+TEST_F(VolumeControlTest, test_remove_connected) {
+  const RawAddress test_address = GetTestAddress(0);
+  TestAppRegister();
+  TestConnect(test_address);
+  GetConnectedEvent(test_address, 1);
+  EXPECT_CALL(*callbacks,
+              OnConnectionState(ConnectionState::DISCONNECTED, test_address));
+  TestDisconnect(test_address, 1);
   TestAppUnregister();
 }
 
@@ -637,7 +723,7 @@ TEST_F(VolumeControlTest, test_disconnected) {
 TEST_F(VolumeControlTest, test_disconnected_while_autoconnect) {
   const RawAddress test_address = GetTestAddress(0);
   TestAppRegister();
-  TestAddFromStorage(test_address, true);
+  TestAddFromStorage(test_address);
   GetConnectedEvent(test_address, 1);
   // autoconnect - don't indicate disconnection
   EXPECT_CALL(*callbacks,
@@ -647,10 +733,31 @@ TEST_F(VolumeControlTest, test_disconnected_while_autoconnect) {
   TestAppUnregister();
 }
 
+TEST_F(VolumeControlTest, test_disconnect_when_link_key_gone) {
+  const RawAddress test_address = GetTestAddress(0);
+  TestAppRegister();
+  TestAddFromStorage(test_address);
+
+  ON_CALL(btm_interface, BTM_IsEncrypted(test_address, _))
+      .WillByDefault(DoAll(Return(false)));
+  ON_CALL(btm_interface,
+          SetEncryption(test_address, _, _, _, BTM_BLE_SEC_ENCRYPT))
+      .WillByDefault(Return(BTM_ERR_KEY_MISSING));
+
+  // autoconnect - don't indicate disconnection
+  EXPECT_CALL(*callbacks,
+              OnConnectionState(ConnectionState::DISCONNECTED, test_address))
+      .Times(0);
+  EXPECT_CALL(gatt_interface, Close(1));
+  GetConnectedEvent(test_address, 1);
+  Mock::VerifyAndClearExpectations(&btm_interface);
+  TestAppUnregister();
+}
+
 TEST_F(VolumeControlTest, test_reconnect_after_encryption_failed) {
   const RawAddress test_address = GetTestAddress(0);
   TestAppRegister();
-  TestAddFromStorage(test_address, true);
+  TestAddFromStorage(test_address);
   SetEncryptionResult(test_address, false);
   // autoconnect - don't indicate disconnection
   EXPECT_CALL(*callbacks,
@@ -660,6 +767,45 @@ TEST_F(VolumeControlTest, test_reconnect_after_encryption_failed) {
   Mock::VerifyAndClearExpectations(&btm_interface);
   SetEncryptionResult(test_address, true);
   GetConnectedEvent(test_address, 1);
+  TestAppUnregister();
+}
+
+TEST_F(VolumeControlTest, test_service_discovery_completed_before_encryption) {
+  const RawAddress test_address = GetTestAddress(0);
+  SetSampleDatabaseVCS(1);
+  TestAppRegister();
+  TestConnect(test_address);
+
+  ON_CALL(btm_interface, BTM_IsEncrypted(test_address, _))
+      .WillByDefault(DoAll(Return(false)));
+  ON_CALL(btm_interface, IsLinkKeyKnown(test_address, _))
+      .WillByDefault(DoAll(Return(true)));
+  ON_CALL(btm_interface, SetEncryption(test_address, _, _, _, _))
+      .WillByDefault(Return(BTM_SUCCESS));
+
+  EXPECT_CALL(*callbacks,
+              OnConnectionState(ConnectionState::CONNECTED, test_address))
+      .Times(0);
+  uint16_t conn_id = 1;
+  GetConnectedEvent(test_address, conn_id);
+  GetSearchCompleteEvent(conn_id);
+  Mock::VerifyAndClearExpectations(&btm_interface);
+  Mock::VerifyAndClearExpectations(callbacks.get());
+
+  EXPECT_CALL(*callbacks,
+              OnConnectionState(ConnectionState::CONNECTED, test_address))
+      .Times(1);
+
+  ON_CALL(btm_interface, BTM_IsEncrypted(test_address, _))
+      .WillByDefault(DoAll(Return(true)));
+  EXPECT_CALL(gatt_interface, ServiceSearchRequest(_, _));
+
+  GetEncryptionCompleteEvt(test_address);
+  GetSearchCompleteEvent(conn_id);
+
+  Mock::VerifyAndClearExpectations(callbacks.get());
+  Mock::VerifyAndClearExpectations(&gatt_interface);
+
   TestAppUnregister();
 }
 

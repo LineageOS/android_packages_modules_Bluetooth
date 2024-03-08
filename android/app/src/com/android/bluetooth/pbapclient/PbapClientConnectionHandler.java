@@ -58,8 +58,8 @@ class PbapClientConnectionHandler extends Handler {
     private static final int UPPER_LIMIT = 65535;
 
     static final String TAG = "PbapClientConnHandler";
-    static final boolean DBG = Utils.DBG;
-    static final boolean VDBG = Utils.VDBG;
+    static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
+    static final boolean VDBG = Log.isLoggable(TAG, Log.VERBOSE);
     static final int MSG_CONNECT = 1;
     static final int MSG_DISCONNECT = 2;
     static final int MSG_DOWNLOAD = 3;
@@ -435,7 +435,9 @@ class PbapClientConnectionHandler extends Handler {
                 Log.w(TAG, "Download contacts incomplete, index exceeded upper limit.");
             }
         } catch (IOException e) {
-            Log.w(TAG, "Download contacts failure" + e.toString());
+            Log.e(TAG, "Download contacts failure", e);
+        } catch (IllegalArgumentException e) {
+            Log.e(TAG, "Download contacts failure: " + e.getMessage(), e);
         }
     }
 
@@ -451,7 +453,9 @@ class PbapClientConnectionHandler extends Handler {
             processor.setResults(request.getList());
             processor.onPullComplete();
         } catch (IOException e) {
-            Log.w(TAG, "Download call log failure");
+            Log.e(TAG, "Download call log failure", e);
+        } catch (IllegalArgumentException e) {
+            Log.e(TAG, "Download call log failure: " + e.getMessage(), e);
         }
     }
 

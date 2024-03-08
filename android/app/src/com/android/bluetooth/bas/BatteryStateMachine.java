@@ -16,6 +16,7 @@
 
 package com.android.bluetooth.bas;
 
+import static android.bluetooth.BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
 import static android.bluetooth.BluetoothDevice.PHY_LE_1M_MASK;
 import static android.bluetooth.BluetoothDevice.PHY_LE_2M_MASK;
 import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
@@ -238,6 +239,27 @@ public class BatteryStateMachine extends StateMachine {
         return mBluetoothGatt != null;
     }
 
+    @VisibleForTesting
+    void updateBatteryLevel(byte[] value) {
+        if (value.length == 0) {
+            return;
+        }
+        int batteryLevel = value[0] & 0xFF;
+
+        BatteryService service = mServiceRef.get();
+        if (service != null) {
+            service.handleBatteryChanged(mDevice, batteryLevel);
+        }
+    }
+
+    @VisibleForTesting
+    void resetBatteryLevel() {
+        BatteryService service = mServiceRef.get();
+        if (service != null) {
+            service.handleBatteryChanged(mDevice, BATTERY_LEVEL_UNKNOWN);
+        }
+    }
+
     @Override
     protected void log(String msg) {
         if (DBG) {
@@ -333,7 +355,6 @@ public class BatteryStateMachine extends StateMachine {
         public void enter() {
             log(TAG, "Enter (" + mDevice + "): "
                     + messageWhatToString(getCurrentMessage().what));
-            sendMessageDelayed(CONNECT_TIMEOUT, sConnectTimeoutMs);
             dispatchConnectionStateChanged(mLastConnectionState, BluetoothProfile.STATE_CONNECTING);
         }
 
@@ -342,7 +363,6 @@ public class BatteryStateMachine extends StateMachine {
             log(TAG, "Exit (" + mDevice + "): "
                     + messageWhatToString(getCurrentMessage().what));
             mLastConnectionState = BluetoothProfile.STATE_CONNECTING;
-            removeMessages(CONNECT_TIMEOUT);
         }
 
         @Override
@@ -355,8 +375,8 @@ public class BatteryStateMachine extends StateMachine {
                     Log.w(TAG, "CONNECT ignored: " + mDevice);
                     break;
                 case CONNECT_TIMEOUT:
-                    Log.w(TAG, "Connection timeout: " + mDevice);
-                    // fall through
+                    Log.e(TAG, "Connection timeout unexpected: " + mDevice);
+                    break;
                 case DISCONNECT:
                     log(TAG, "Connection canceled to " + mDevice);
                     if (mBluetoothGatt != null) {
@@ -481,6 +501,8 @@ public class BatteryStateMachine extends StateMachine {
         public void exit() {
             log(TAG, "Exit (" + mDevice + "): "
                     + messageWhatToString(getCurrentMessage().what));
+            // Reset the battery level only after connected
+            resetBatteryLevel();
             mLastConnectionState = BluetoothProfile.STATE_CONNECTED;
         }
 
@@ -594,19 +616,6 @@ public class BatteryStateMachine extends StateMachine {
                 int status) {
             if (status != BluetoothGatt.GATT_SUCCESS) {
                 Log.w(TAG, "Failed to write descriptor " + descriptor.getUuid());
-            }
-        }
-
-        @VisibleForTesting
-        void updateBatteryLevel(byte[] value) {
-            if (value.length <= 0) {
-                return;
-            }
-            int batteryLevel = value[0] & 0xFF;
-
-            BatteryService service = mServiceRef.get();
-            if (service != null) {
-                service.handleBatteryChanged(mDevice, batteryLevel);
             }
         }
     }

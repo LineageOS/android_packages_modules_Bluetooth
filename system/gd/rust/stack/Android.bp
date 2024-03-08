@@ -27,16 +27,14 @@ rust_library {
         "liblazy_static",
         "liblog_rust",
         "libnum_traits",
-        "libprotobuf_deprecated",
+        "libpdl_runtime",
+        "libprotobuf",
         "libthiserror",
         "libtokio",
         "libtokio_stream",
     ],
     proc_macros: [
         "libnum_derive",
-    ],
-    apex_available: [
-        "com.android.btservices",
     ],
     min_sdk_version: "30",
     target: {
@@ -75,7 +73,8 @@ rust_test_host {
         "liblazy_static",
         "liblog_rust",
         "libnum_traits",
-        "libprotobuf_deprecated",
+        "libpdl_runtime",
+        "libprotobuf",
         "libthiserror",
         "libtokio",
         "libtokio_stream",
@@ -104,13 +103,16 @@ genrule {
 cc_library_static {
     name: "libbt_hidl_hal_cxx",
     defaults: [
-        "fluoride_common_options",
+        "bluetooth_cflags",
         "gd_ffi_defaults",
         "rust_static_cc_lib_defaults",
     ],
     srcs: ["src/hal/ffi/hidl.cc"],
     local_include_dirs: ["src/hal/ffi"],
-    include_dirs: ["packages/modules/Bluetooth/system"],
+    include_dirs: [
+        "packages/modules/Bluetooth/system",
+        "packages/modules/Bluetooth/system/gd",
+    ],
     generated_headers: [
         "cxx-bridge-header",
         "libbt_hidl_hal_bridge_header",
@@ -121,9 +123,6 @@ cc_library_static {
         "android.hardware.bluetooth@1.1",
         "libhidlbase",
         "libutils",
-    ],
-    apex_available: [
-        "com.android.btservices",
     ],
     min_sdk_version: "30",
 }

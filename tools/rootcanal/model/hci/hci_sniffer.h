@@ -44,7 +44,7 @@ class HciSniffer : public HciTransport {
   static std::shared_ptr<HciTransport> Create(
       std::shared_ptr<HciTransport> transport,
       std::shared_ptr<std::ostream> outputStream = nullptr,
-      std::shared_ptr<PcapFilter> filter = nullptr) {
+      std::shared_ptr<PcapFilter> /*filter*/ = nullptr) {
     return std::make_shared<HciSniffer>(transport, outputStream);
   }
 
@@ -52,22 +52,13 @@ class HciSniffer : public HciTransport {
   void SetOutputStream(std::shared_ptr<std::ostream> outputStream);
   void SetPcapFilter(std::shared_ptr<PcapFilter> filter);
 
-  void SendEvent(const std::vector<uint8_t>& packet) override;
+  void Send(PacketType packet_type,
+            const std::vector<uint8_t>& packet) override;
 
-  void SendAcl(const std::vector<uint8_t>& packet) override;
-
-  void SendSco(const std::vector<uint8_t>& packet) override;
-
-  void SendIso(const std::vector<uint8_t>& packet) override;
-
-  void RegisterCallbacks(PacketCallback command_callback,
-                         PacketCallback acl_callback,
-                         PacketCallback sco_callback,
-                         PacketCallback iso_callback,
+  void RegisterCallbacks(PacketCallback packet_callback,
                          CloseCallback close_callback) override;
 
   void Tick() override;
-
   void Close() override;
 
  private:

@@ -56,7 +56,7 @@ static void bta_hh_better_state_machine(tBTA_HH_DEV_CB* p_cb, uint16_t event,
           bta_hh_open_act(p_cb, p_data);
           break;
         case BTA_HH_INT_CLOSE_EVT:
-          bta_hh_close_act(p_cb, p_data);
+          bta_hh_open_failure(p_cb, p_data);
           break;
         case BTA_HH_API_MAINT_DEV_EVT:
           bta_hh_maint_dev_act(p_cb, p_data);
@@ -255,8 +255,7 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB* p_cb, uint16_t event,
 
         default:
           /* invalid handle, call bad API event */
-          APPL_TRACE_ERROR("wrong device handle: [%d]",
-                           p_data->hdr.layer_specific);
+          LOG_ERROR("wrong device handle: [%d]", p_data->hdr.layer_specific);
           /* Free the callback buffer now */
           if (p_data != NULL)
             osi_free_and_reset((void**)&p_data->hid_cback.p_data);
@@ -268,14 +267,12 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB* p_cb, uint16_t event,
   /* corresponding CB is found, go to state machine */
   else {
     in_state = p_cb->state;
-    APPL_TRACE_EVENT("bta_hh_sm_execute: State 0x%02x [%s], Event [%s]",
-                     in_state, bta_hh_state_code(in_state),
-                     bta_hh_evt_code(debug_event));
+    LOG_VERBOSE("bta_hh_sm_execute: State 0x%02x [%s], Event [%s]", in_state,
+                bta_hh_state_code(in_state), bta_hh_evt_code(debug_event));
 
     if ((p_cb->state == BTA_HH_NULL_ST) || (p_cb->state >= BTA_HH_INVALID_ST)) {
-      APPL_TRACE_ERROR(
-          "bta_hh_sm_execute: Invalid state State = 0x%x, Event = %d",
-          p_cb->state, event);
+      LOG_ERROR("bta_hh_sm_execute: Invalid state State = 0x%x, Event = %d",
+                p_cb->state, event);
       return;
     }
 
@@ -299,7 +296,7 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB* p_cb, uint16_t event,
  * Returns          void
  *
  ******************************************************************************/
-bool bta_hh_hdl_event(BT_HDR_RIGID* p_msg) {
+bool bta_hh_hdl_event(const BT_HDR_RIGID* p_msg) {
   uint8_t index = BTA_HH_IDX_INVALID;
   tBTA_HH_DEV_CB* p_cb = NULL;
 
@@ -335,7 +332,8 @@ bool bta_hh_hdl_event(BT_HDR_RIGID* p_msg) {
 
   if (index != BTA_HH_IDX_INVALID) p_cb = &bta_hh_cb.kdev[index];
 
-  APPL_TRACE_DEBUG("bta_hh_hdl_event:: handle = %d dev_cb[%d] ", p_msg->layer_specific, index);
+  LOG_VERBOSE("bta_hh_hdl_event:: handle = %d dev_cb[%d] ",
+              p_msg->layer_specific, index);
   bta_hh_sm_execute(p_cb, p_msg->event, (tBTA_HH_DATA*)p_msg);
 
   return (true);

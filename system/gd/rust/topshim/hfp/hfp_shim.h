@@ -37,9 +37,10 @@ class HfpIntf {
 
   int init();
   uint32_t connect(RawAddress addr);
-  int connect_audio(RawAddress addr, bool sco_offload, bool force_cvsd);
+  int connect_audio(RawAddress addr, bool sco_offload, int disabled_codecs);
   int set_active_device(RawAddress addr);
   int set_volume(int8_t volume, RawAddress addr);
+  uint32_t set_mic_volume(int8_t volume, RawAddress addr);
   uint32_t disconnect(RawAddress addr);
   int disconnect_audio(RawAddress addr);
   uint32_t device_status_notification(TelephonyDeviceStatus status, RawAddress addr);
@@ -49,6 +50,7 @@ class HfpIntf {
   uint32_t phone_state_change(
       PhoneState phone_state, const ::rust::String& number, RawAddress addr);
   uint32_t simple_at_response(bool ok, RawAddress addr);
+  void debug_dump();
   void cleanup();
 
  private:
@@ -56,6 +58,7 @@ class HfpIntf {
 };
 
 std::unique_ptr<HfpIntf> GetHfpProfile(const unsigned char* btif);
+bool interop_insert_call_when_sco_start(RawAddress addr);
 
 }  // namespace rust
 }  // namespace topshim

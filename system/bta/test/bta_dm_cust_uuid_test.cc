@@ -19,14 +19,39 @@
 #include <gtest/gtest.h>
 
 #include "bta/dm/bta_dm_int.h"
+#include "bta/test/bta_base_test.h"
+#include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
+#include "stack/include/btm_status.h"
+#include "test/mock/mock_stack_btm_interface.h"
 #include "types/bluetooth/uuid.h"
 
 using bluetooth::Uuid;
 
-class BtaCustUuid : public testing::Test {
+class BtaCustUuid : public BtaBaseTest {
  protected:
-  void SetUp() override { bta_dm_cb = {}; }
+  void SetUp() override {
+    BtaBaseTest::SetUp();
+    bta_dm_cb = {};
+    mock_btm_client_interface.eir.BTM_WriteEIR =
+        [](BT_HDR* p_buf) -> tBTM_STATUS {
+      osi_free(p_buf);
+      return BTM_SUCCESS;
+    };
+    mock_btm_client_interface.eir.BTM_GetEirSupportedServices =
+        [](uint32_t* p_eir_uuid, uint8_t** p, uint8_t max_num_uuid16,
+           uint8_t* p_num_uuid16) -> uint8_t { return 0; };
+    mock_btm_client_interface.eir.BTM_WriteEIR =
+        [](BT_HDR* p_buf) -> tBTM_STATUS {
+      osi_free(p_buf);
+      return BTM_SUCCESS;
+    };
+    mock_btm_client_interface.local.BTM_ReadLocalDeviceNameFromController =
+        [](tBTM_CMPL_CB* cb) -> tBTM_STATUS { return BTM_CMD_STARTED; };
+    mock_btm_client_interface.security.BTM_SecRegister =
+        [](const tBTM_APPL_INFO* p_cb_info) -> bool { return true; };
+  }
+  void TearDown() override { BtaBaseTest::TearDown(); }
 };
 
 namespace {

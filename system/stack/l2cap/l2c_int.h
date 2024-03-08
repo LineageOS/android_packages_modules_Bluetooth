@@ -29,18 +29,15 @@
 
 #include <string>
 
-#include "btm_api.h"
-#include "btm_ble_api.h"
+#include "internal_include/bt_target.h"
 #include "l2c_api.h"
-#include "l2cap_acl_interface.h"
-#include "l2cap_controller_interface.h"
-#include "l2cap_hci_link_interface.h"
-#include "l2cap_security_interface.h"
 #include "l2cdefs.h"
+#include "macros.h"
 #include "osi/include/alarm.h"
 #include "osi/include/fixed_queue.h"
 #include "osi/include/list.h"
 #include "stack/include/bt_hdr.h"
+#include "stack/include/btm_sec_api_types.h"
 #include "stack/include/hci_error_code.h"
 #include "types/hci_role.h"
 #include "types/raw_address.h"
@@ -85,10 +82,6 @@ typedef enum {
   CST_W4_L2CA_DISCONNECT_RSP   /* Waiting for upper layer disc rsp */
 } tL2C_CHNL_STATE;
 
-#define CASE_RETURN_TEXT(code) \
-  case code:                   \
-    return #code
-
 inline std::string channel_state_text(const tL2C_CHNL_STATE& state) {
   switch (state) {
     CASE_RETURN_TEXT(CST_CLOSED);
@@ -104,7 +97,6 @@ inline std::string channel_state_text(const tL2C_CHNL_STATE& state) {
       return base::StringPrintf("UNKNOWN[%d]", state);
   }
 }
-#undef CASE_RETURN_TEXT
 
 /* Define the possible L2CAP link states
 */
@@ -271,15 +263,11 @@ typedef struct {
 #define L2CAP_CBB_DEFAULT_DATA_RATE_BUFF_QUOTA 100
 #endif
 
-typedef void(tL2CAP_SEC_CBACK)(const RawAddress& bd_addr,
-                               tBT_TRANSPORT trasnport, void* p_ref_data,
-                               tBTM_STATUS result);
-
 typedef struct {
   uint16_t psm;
   tBT_TRANSPORT transport;
   bool is_originator;
-  tL2CAP_SEC_CBACK* p_callback;
+  tBTM_SEC_CALLBACK* p_callback;
   void* p_ref_data;
 } tL2CAP_SEC_DATA;
 
@@ -590,7 +578,6 @@ typedef struct t_l2c_linkcb {
 /* Define the L2CAP control structure
 */
 typedef struct {
-  uint8_t l2cap_trace_level;
   uint16_t controller_xmit_window; /* Total ACL window for all links */
 
   uint16_t round_robin_quota;   /* Round-robin link quota */
@@ -719,7 +706,8 @@ void l2cu_enqueue_ccb(tL2C_CCB* p_ccb);
 void l2cu_dequeue_ccb(tL2C_CCB* p_ccb);
 void l2cu_change_pri_ccb(tL2C_CCB* p_ccb, tL2CAP_CHNL_PRIORITY priority);
 
-tL2C_CCB* l2cu_allocate_ccb(tL2C_LCB* p_lcb, uint16_t cid);
+tL2C_CCB* l2cu_allocate_ccb(tL2C_LCB* p_lcb, uint16_t cid,
+                            bool is_eatt = false);
 void l2cu_release_ccb(tL2C_CCB* p_ccb);
 tL2C_CCB* l2cu_find_ccb_by_cid(tL2C_LCB* p_lcb, uint16_t local_cid);
 tL2C_CCB* l2cu_find_ccb_by_remote_cid(tL2C_LCB* p_lcb, uint16_t remote_cid);
@@ -817,8 +805,6 @@ void l2c_link_adjust_allocation(void);
 
 void l2c_link_sec_comp(const RawAddress* p_bda, tBT_TRANSPORT trasnport,
                        void* p_ref_data, tBTM_STATUS status);
-void l2c_link_sec_comp2(const RawAddress& p_bda, tBT_TRANSPORT trasnport,
-                        void* p_ref_data, tBTM_STATUS status);
 void l2c_link_adjust_chnl_allocation(void);
 
 #if (L2CAP_CONFORMANCE_TESTING == TRUE)
@@ -873,7 +859,7 @@ void l2cble_send_peer_disc_req(tL2C_CCB* p_ccb);
 void l2cble_send_flow_control_credit(tL2C_CCB* p_ccb, uint16_t credit_value);
 tL2CAP_LE_RESULT_CODE l2ble_sec_access_req(const RawAddress& bd_addr,
                                            uint16_t psm, bool is_originator,
-                                           tL2CAP_SEC_CBACK* p_callback,
+                                           tBTM_SEC_CALLBACK* p_callback,
                                            void* p_ref_data);
 
 void l2cble_update_data_length(tL2C_LCB* p_lcb);

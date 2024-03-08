@@ -42,6 +42,8 @@ class TestHciLayer : public HciLayer {
 
   CommandView GetCommand();
 
+  void AssertNoQueuedCommand();
+
   void RegisterEventHandler(EventCode event_code, common::ContextualCallback<void(EventView)> event_handler) override;
 
   void UnregisterEventHandler(EventCode event_code) override;
@@ -60,6 +62,8 @@ class TestHciLayer : public HciLayer {
   void CommandStatusCallback(EventView event);
 
   void IncomingAclData(uint16_t handle);
+
+  void IncomingAclData(uint16_t handle, std::unique_ptr<AclBuilder> acl_builder);
 
   void AssertNoOutgoingAclData();
 

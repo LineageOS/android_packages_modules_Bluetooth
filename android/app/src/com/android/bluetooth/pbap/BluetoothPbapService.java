@@ -44,6 +44,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSocket;
+import android.bluetooth.BluetoothUtils;
 import android.bluetooth.IBluetoothPbap;
 import android.content.AttributionSource;
 import android.content.BroadcastReceiver;
@@ -64,6 +65,7 @@ import android.sysprop.BluetoothProperties;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
+import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.IObexConnectionHandler;
 import com.android.bluetooth.ObexServerSockets;
 import com.android.bluetooth.R;
@@ -72,7 +74,7 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.InteropUtil;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
-import com.android.bluetooth.sdp.SdpManager;
+import com.android.bluetooth.sdp.SdpManagerNativeInterface;
 import com.android.bluetooth.util.DevicePolicyUtils;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -159,7 +161,8 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
 
     private static final int SDP_PBAP_SERVER_VERSION_1_2 = 0x0102;
     // PBAP v1.2.3, Sec. 7.1.2: local phonebook and favorites
-    private static final int SDP_PBAP_SUPPORTED_REPOSITORIES = 0x0009;
+    private static final int SDP_PBAP_SUPPORTED_REPOSITORIES_WITHOUT_SIM = 0x0009;
+    private static final int SDP_PBAP_SUPPORTED_REPOSITORIES_WITH_SIM = 0x000B;
     private static final int SDP_PBAP_SUPPORTED_FEATURES = 0x021F;
 
     /* PBAP will use Bluetooth notification ID from 1000000 (included) to 2000000 (excluded).
@@ -169,8 +172,6 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
     static final int VERSION_UPDATE_NOTIFICATION_DELAY = 500; //in ms
 
     private int mSdpHandle = -1;
-
-    protected Context mContext;
 
     private PbapHandler mSessionStatusHandler;
     private HandlerThread mHandlerThread;
@@ -197,8 +198,19 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
 
     private static boolean sIsPseDynamicVersionUpgradeEnabled;
 
+    BluetoothPbapService() {}
+
+    @VisibleForTesting
+    BluetoothPbapService(Context ctx) {
+        super(ctx);
+    }
+
     public static boolean isEnabled() {
         return BluetoothProperties.isProfilePbapServerEnabled().orElse(false);
+    }
+
+    public static boolean isSimEnabled() {
+        return BluetoothProperties.isProfilePbapSimEnabled().orElse(false);
     }
 
     private class BluetoothPbapContentObserver extends ContentObserver {
@@ -287,21 +299,42 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
                 }
                 sm.sendMessage(PbapStateMachine.AUTH_CANCELLED);
             }
-        } else if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
-            int bondState = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE,
-                    BluetoothDevice.ERROR);
-            if (bondState == BluetoothDevice.BOND_BONDED && sIsPseDynamicVersionUpgradeEnabled) {
-                BluetoothDevice remoteDevice = intent.getParcelableExtra(
-                        BluetoothDevice.EXTRA_DEVICE);
-                mSessionStatusHandler.sendMessageDelayed(
-                            mSessionStatusHandler.obtainMessage(
-                            HANDLE_VERSION_UPDATE_NOTIFICATION, remoteDevice),
-                            VERSION_UPDATE_NOTIFICATION_DELAY);
-            }
         } else {
             Log.w(TAG, "Unhandled intent action: " + action);
         }
     }
+
+    /** Process a change in the bonding state for a device */
+    public void handleBondStateChanged(BluetoothDevice device, int fromState, int toState) {
+        if (toState == BluetoothDevice.BOND_BONDED && sIsPseDynamicVersionUpgradeEnabled) {
+            mSessionStatusHandler.sendMessageDelayed(
+                    mSessionStatusHandler.obtainMessage(HANDLE_VERSION_UPDATE_NOTIFICATION, device),
+                    VERSION_UPDATE_NOTIFICATION_DELAY);
+        }
+    }
+
+    private final BroadcastReceiver mUserChangeReceiver =
+            new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    final String action = intent.getAction();
+                    // EXTRA_USER_HANDLE is sent for both ACTION_USER_SWITCHED and
+                    // ACTION_USER_UNLOCKED (even if the documentation doesn't mention it)
+                    final int userId =
+                            intent.getIntExtra(
+                                    Intent.EXTRA_USER_HANDLE,
+                                    BluetoothUtils.USER_HANDLE_NULL.getIdentifier());
+                    if (userId == BluetoothUtils.USER_HANDLE_NULL.getIdentifier()) {
+                        Log.e(TAG, "userChangeReceiver received an invalid EXTRA_USER_HANDLE");
+                        return;
+                    }
+                    Log.d(TAG, "Got " + action + " to userId " + userId);
+                    UserManager userManager = getSystemService(UserManager.class);
+                    if (userManager.isUserUnlocked(UserHandle.of(userId))) {
+                        sendUpdateRequest();
+                    }
+                }
+            };
 
     @VisibleForTesting
     BroadcastReceiver mPbapReceiver = new BroadcastReceiver() {
@@ -352,11 +385,18 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
             return;
         }
 
-        mSdpHandle = SdpManager.getDefaultManager()
-                .createPbapPseRecord("OBEX Phonebook Access Server",
-                       mServerSockets.getRfcommChannel(), mServerSockets.getL2capPsm(),
-                       SDP_PBAP_SERVER_VERSION_1_2, SDP_PBAP_SUPPORTED_REPOSITORIES,
-                       SDP_PBAP_SUPPORTED_FEATURES);
+        int pbapSupportedRepositories = isSimEnabled() ? SDP_PBAP_SUPPORTED_REPOSITORIES_WITH_SIM
+                : SDP_PBAP_SUPPORTED_REPOSITORIES_WITHOUT_SIM;
+
+        mSdpHandle =
+                SdpManagerNativeInterface.getInstance()
+                        .createPbapPseRecord(
+                                "OBEX Phonebook Access Server",
+                                mServerSockets.getRfcommChannel(),
+                                mServerSockets.getL2capPsm(),
+                                SDP_PBAP_SERVER_VERSION_1_2,
+                                pbapSupportedRepositories,
+                                SDP_PBAP_SUPPORTED_FEATURES);
 
         if (DEBUG) {
             Log.d(TAG, "created Sdp record, mSdpHandle=" + mSdpHandle);
@@ -371,13 +411,13 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
         }
         int sdpHandle = mSdpHandle;
         mSdpHandle = -1;
-        SdpManager sdpManager = SdpManager.getDefaultManager();
+        SdpManagerNativeInterface nativeInterface = SdpManagerNativeInterface.getInstance();
         if (DEBUG) {
             Log.d(TAG, "cleanUpSdpRecord, mSdpHandle=" + sdpHandle);
         }
-        if (sdpManager == null) {
-            Log.e(TAG, "sdpManager is null");
-        } else if (!sdpManager.removeSdpRecord(sdpHandle)) {
+        if (!nativeInterface.isAvailable()) {
+            Log.e(TAG, "SdpManagerNativeInterface is not available");
+        } else if (!nativeInterface.removeSdpRecord(sdpHandle)) {
             Log.w(TAG, "cleanUpSdpRecord, removeSdpRecord failed, sdpHandle=" + sdpHandle);
         }
     }
@@ -432,7 +472,6 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
                 sNotificationManager.cancelAll();
             }
         }
-
     }
     private class PbapHandler extends Handler {
         private PbapHandler(Looper looper) {
@@ -454,7 +493,7 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
                     }
                     createSdpRecord();
                     // fetch Pbap Params to check if significant change has happened to Database
-                    BluetoothPbapUtils.fetchPbapParams(mContext);
+                    BluetoothPbapUtils.fetchPbapParams(BluetoothPbapService.this);
                     break;
                 case USER_TIMEOUT:
                     Intent intent = new Intent(BluetoothDevice.ACTION_CONNECTION_ACCESS_CANCEL);
@@ -661,20 +700,26 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
         mDatabaseManager = Objects.requireNonNull(AdapterService.getAdapterService().getDatabase(),
             "DatabaseManager cannot be null when PbapService starts");
 
+        IntentFilter userFilter = new IntentFilter();
+        userFilter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
+        userFilter.addAction(Intent.ACTION_USER_SWITCHED);
+        userFilter.addAction(Intent.ACTION_USER_UNLOCKED);
+
+        getApplicationContext().registerReceiver(mUserChangeReceiver, userFilter);
+
         // Enable owned Activity component
         setComponentAvailable(PBAP_ACTIVITY, true);
 
-        mContext = this;
         mContactsLoaded = false;
         mHandlerThread = new HandlerThread("PbapHandlerThread");
-        mHandlerThread.start();
-        mSessionStatusHandler = new PbapHandler(mHandlerThread.getLooper());
+        BluetoothMethodProxy mp = BluetoothMethodProxy.getInstance();
+        mp.threadStart(mHandlerThread);
+        mSessionStatusHandler = new PbapHandler(mp.handlerThreadGetLooper(mHandlerThread));
         IntentFilter filter = new IntentFilter();
         filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
         filter.addAction(BluetoothDevice.ACTION_CONNECTION_ACCESS_REPLY);
         filter.addAction(AUTH_RESPONSE_ACTION);
         filter.addAction(AUTH_CANCELLED_ACTION);
-        filter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
         BluetoothPbapConfig.init(this);
         registerReceiver(mPbapReceiver, filter);
         try {
@@ -725,7 +770,10 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
         getContentResolver().unregisterContentObserver(mContactChangeObserver);
         mContactChangeObserver = null;
         setComponentAvailable(PBAP_ACTIVITY, false);
-        mPbapStateMachineMap.clear();
+        synchronized (mPbapStateMachineMap) {
+            mPbapStateMachineMap.clear();
+        }
+        getApplicationContext().unregisterReceiver(mUserChangeReceiver);
         return true;
     }
 
@@ -752,21 +800,6 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
             Log.d(TAG, "setBluetoothPbapService(): set to: " + instance);
         }
         sBluetoothPbapService = instance;
-    }
-
-    @Override
-    protected void setCurrentUser(int userId) {
-        Log.i(TAG, "setCurrentUser(" + userId + ")");
-        UserManager userManager = getSystemService(UserManager.class);
-        if (userManager.isUserUnlocked(UserHandle.of(userId))) {
-            setUserUnlocked(userId);
-        }
-    }
-
-    @Override
-    protected void setUserUnlocked(int userId) {
-        Log.i(TAG, "setUserUnlocked(" + userId + ")");
-        sendUpdateRequest();
     }
 
     @VisibleForTesting
@@ -955,14 +988,15 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
 
     private void loadAllContacts() {
         if (mThreadLoadContacts == null) {
-            Runnable r = new Runnable() {
-                @Override
-                public void run() {
-                    BluetoothPbapUtils.loadAllContacts(mContext,
-                            mSessionStatusHandler);
-                    mThreadLoadContacts = null;
-                }
-            };
+            Runnable r =
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            BluetoothPbapUtils.loadAllContacts(
+                                    BluetoothPbapService.this, mSessionStatusHandler);
+                            mThreadLoadContacts = null;
+                        }
+                    };
             mThreadLoadContacts = new Thread(r);
             mThreadLoadContacts.start();
         }
@@ -970,14 +1004,15 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
 
     private void updateSecondaryVersion() {
         if (mThreadUpdateSecVersionCounter == null) {
-            Runnable r = new Runnable() {
-                @Override
-                public void run() {
-                    BluetoothPbapUtils.updateSecondaryVersionCounter(mContext,
-                            mSessionStatusHandler);
-                    mThreadUpdateSecVersionCounter = null;
-                }
-            };
+            Runnable r =
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            BluetoothPbapUtils.updateSecondaryVersionCounter(
+                                    BluetoothPbapService.this, mSessionStatusHandler);
+                            mThreadUpdateSecVersionCounter = null;
+                        }
+                    };
             mThreadUpdateSecVersionCounter = new Thread(r);
             mThreadUpdateSecVersionCounter.start();
         }

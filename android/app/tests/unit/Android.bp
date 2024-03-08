@@ -28,9 +28,10 @@ java_defaults {
         "androidx.test.rules",
         "androidx.test.uiautomator_uiautomator",
         "framework-bluetooth-pre-jarjar",
+        "frameworks-base-testutils",
         "gson",
         "mockito-target",
-        "truth-prebuilt",
+        "truth",
     ],
 
     asset_dirs: ["src/com/android/bluetooth/btservice/storage/schemas"],
@@ -44,9 +45,9 @@ java_defaults {
     platform_apis: true,
 
     test_suites: [
-        "device-tests",
-        "mts-bluetooth",
         "automotive-tests",
+        "general-tests",
+        "mts-bluetooth",
     ],
 
     instrumentation_for: "Bluetooth",

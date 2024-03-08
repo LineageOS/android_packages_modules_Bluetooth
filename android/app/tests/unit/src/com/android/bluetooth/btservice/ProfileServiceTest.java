@@ -16,11 +16,16 @@
 
 package com.android.bluetooth.btservice;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import android.bluetooth.BluetoothAdapter;
+import android.content.Context;
 import android.content.Intent;
+import android.location.LocationManager;
 import android.os.Looper;
 
 import androidx.test.InstrumentationRegistry;
@@ -29,7 +34,15 @@ import androidx.test.rule.ServiceTestRule;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.a2dp.A2dpNativeInterface;
+import com.android.bluetooth.avrcp.AvrcpNativeInterface;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.bluetooth.gatt.GattService;
+import com.android.bluetooth.hearingaid.HearingAidNativeInterface;
+import com.android.bluetooth.hfp.HeadsetNativeInterface;
+import com.android.bluetooth.hid.HidDeviceNativeInterface;
+import com.android.bluetooth.hid.HidHostNativeInterface;
+import com.android.bluetooth.pan.PanNativeInterface;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -57,6 +70,7 @@ public class ProfileServiceTest {
     @Rule public final ServiceTestRule mServiceTestRule = new ServiceTestRule();
     @Mock private AdapterService mMockAdapterService;
     @Mock private DatabaseManager mDatabaseManager;
+    @Mock private LocationManager mLocationManager;
 
     private Class[] mProfiles;
     ConcurrentHashMap<String, Boolean> mStartedProfileMap = new ConcurrentHashMap();
@@ -68,22 +82,45 @@ public class ProfileServiceTest {
             mStartedProfileMap.put(profile.getSimpleName(), false);
         }
         Intent startIntent = new Intent(InstrumentationRegistry.getTargetContext(), profile);
-        startIntent.putExtra(AdapterService.EXTRA_ACTION,
-                AdapterService.ACTION_SERVICE_STATE_CHANGED);
+        startIntent.putExtra(
+                AdapterService.EXTRA_ACTION, AdapterService.ACTION_SERVICE_STATE_CHANGED);
         startIntent.putExtra(BluetoothAdapter.EXTRA_STATE, state);
         mServiceTestRule.startService(startIntent);
     }
 
+    @Mock private A2dpNativeInterface mA2dpNativeInterface;
+    @Mock private AvrcpNativeInterface mAvrcpNativeInterface;
+    @Mock private HeadsetNativeInterface mHeadsetNativeInterface;
+    @Mock private HearingAidNativeInterface mHearingAidNativeInterface;
+    @Mock private HidDeviceNativeInterface mHidDeviceNativeInterface;
+    @Mock private HidHostNativeInterface mHidHostNativeInterface;
+    @Mock private PanNativeInterface mPanNativeInterface;
+
     private void setAllProfilesState(int state, int invocationNumber) throws TimeoutException {
+        int profileCount = mProfiles.length;
         for (Class profile : mProfiles) {
+            if (profile == GattService.class) {
+                // GattService is no longer a service to be start independently
+                profileCount--;
+                continue;
+            }
             setProfileState(profile, state);
         }
+        if (invocationNumber == 0) {
+            verify(mMockAdapterService, after(PROFILE_START_MILLIS).never())
+                    .onProfileServiceStateChanged(any(), anyInt());
+            return;
+        }
         ArgumentCaptor<ProfileService> argument = ArgumentCaptor.forClass(ProfileService.class);
-        verify(mMockAdapterService, timeout(PROFILE_START_MILLIS).times(
-                mProfiles.length * invocationNumber)).onProfileServiceStateChanged(
-                argument.capture(), eq(state));
+        verify(
+                        mMockAdapterService,
+                        timeout(PROFILE_START_MILLIS).times(profileCount * invocationNumber))
+                .onProfileServiceStateChanged(argument.capture(), eq(state));
         List<ProfileService> argumentProfiles = argument.getAllValues();
         for (Class profile : mProfiles) {
+            if (profile == GattService.class) {
+                continue;
+            }
             int matches = 0;
             for (ProfileService arg : argumentProfiles) {
                 if (arg.getClass().getName().equals(profile.getName())) {
@@ -110,31 +147,44 @@ public class ProfileServiceTest {
                 return mStartedProfileMap.get((String) args[0]);
             }
         });
-
-        mProfiles = Config.getSupportedProfiles();
-
-        mMockAdapterService.initNative(false /* is_restricted */,
-                false /* is_common_criteria_mode */, 0 /* config_compare_result */,
-                new String[0], false, "");
-
-        TestUtils.setAdapterService(mMockAdapterService);
         doReturn(mDatabaseManager).when(mMockAdapterService).getDatabase();
 
+        when(mMockAdapterService.getSystemService(Context.LOCATION_SERVICE))
+                .thenReturn(mLocationManager);
+        when(mMockAdapterService.getSystemServiceName(LocationManager.class))
+                .thenReturn(Context.LOCATION_SERVICE);
+
+        mProfiles = Config.getSupportedProfiles();
+        TestUtils.setAdapterService(mMockAdapterService);
+
         Assert.assertNotNull(AdapterService.getAdapterService());
+
+        A2dpNativeInterface.setInstance(mA2dpNativeInterface);
+        AvrcpNativeInterface.setInstance(mAvrcpNativeInterface);
+        HeadsetNativeInterface.setInstance(mHeadsetNativeInterface);
+        HearingAidNativeInterface.setInstance(mHearingAidNativeInterface);
+        HidDeviceNativeInterface.setInstance(mHidDeviceNativeInterface);
+        HidHostNativeInterface.setInstance(mHidHostNativeInterface);
+        PanNativeInterface.setInstance(mPanNativeInterface);
     }
 
     @After
     public void tearDown()
             throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        mMockAdapterService.cleanupNative();
         TestUtils.clearAdapterService(mMockAdapterService);
         mMockAdapterService = null;
         mProfiles = null;
+        A2dpNativeInterface.setInstance(null);
+        AvrcpNativeInterface.setInstance(null);
+        HeadsetNativeInterface.setInstance(null);
+        HearingAidNativeInterface.setInstance(null);
+        HidDeviceNativeInterface.setInstance(null);
+        HidHostNativeInterface.setInstance(null);
+        PanNativeInterface.setInstance(null);
     }
 
     /**
-     * Test: Start the Bluetooth services that are configured.
-     * Verify that the same services start.
+     * Test: Start the Bluetooth services that are configured. Verify that the same services start.
      */
     @Test
     public void testEnableDisable() throws TimeoutException {
@@ -143,8 +193,7 @@ public class ProfileServiceTest {
     }
 
     /**
-     * Test: Start the Bluetooth services that are configured twice.
-     * Verify that the services start.
+     * Test: Start the Bluetooth services that are configured twice. Verify that the services start.
      */
     @Test
     public void testEnableDisableTwice() throws TimeoutException {
@@ -160,13 +209,18 @@ public class ProfileServiceTest {
      */
     @Test
     public void testEnableDisableInterleaved() throws TimeoutException {
+        int invocationNumber = mProfiles.length;
         for (Class profile : mProfiles) {
+            if (profile == GattService.class) {
+                // GattService is no longer a service to be start independently
+                invocationNumber--;
+                continue;
+            }
             setProfileState(profile, BluetoothAdapter.STATE_ON);
             setProfileState(profile, BluetoothAdapter.STATE_OFF);
         }
         ArgumentCaptor<ProfileService> starts = ArgumentCaptor.forClass(ProfileService.class);
         ArgumentCaptor<ProfileService> stops = ArgumentCaptor.forClass(ProfileService.class);
-        int invocationNumber = mProfiles.length;
         verify(mMockAdapterService,
                 timeout(PROFILE_START_MILLIS).times(invocationNumber)).onProfileServiceStateChanged(
                 starts.capture(), eq(BluetoothAdapter.STATE_ON));
@@ -192,6 +246,10 @@ public class ProfileServiceTest {
     public void testRepeatedEnableDisableSingly() throws TimeoutException {
         int profileNumber = 0;
         for (Class profile : mProfiles) {
+            if (profile == GattService.class) {
+                // GattService is no longer a service to be start independently
+                continue;
+            }
             for (int i = 0; i < NUM_REPEATS; i++) {
                 setProfileState(profile, BluetoothAdapter.STATE_ON);
                 ArgumentCaptor<ProfileService> start =
@@ -218,6 +276,10 @@ public class ProfileServiceTest {
     public void testProfileServiceRegisterUnregister() throws TimeoutException {
         int profileNumber = 0;
         for (Class profile : mProfiles) {
+            if (profile == GattService.class) {
+                // GattService is no longer a service to be start independently
+                continue;
+            }
             for (int i = 0; i < NUM_REPEATS; i++) {
                 setProfileState(profile, BluetoothAdapter.STATE_ON);
                 ArgumentCaptor<ProfileService> start =
@@ -234,5 +296,14 @@ public class ProfileServiceTest {
             }
             profileNumber += 1;
         }
+    }
+
+    /**
+     * Test: Stop the Bluetooth profile services that are not started.
+     * Verify that the profile service state is not changed.
+     */
+    @Test
+    public void testDisable() throws TimeoutException {
+        setAllProfilesState(BluetoothAdapter.STATE_OFF, 0);
     }
 }

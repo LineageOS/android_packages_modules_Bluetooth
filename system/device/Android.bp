@@ -10,7 +10,7 @@ package {
 
 cc_library_static {
     name: "libbtdevice",
-    defaults: ["fluoride_basic_defaults"],
+    defaults: ["fluoride_defaults"],
     host_supported: true,
     local_include_dirs: [
         "include",
@@ -28,15 +28,28 @@ cc_library_static {
         "src/esco_parameters.cc",
         "src/interop.cc",
     ],
+    apex_available: [
+        "com.android.btservices",
+    ],
+    generated_headers: [
+        "BluetoothGeneratedDumpsysDataSchema_h",
+    ],
     min_sdk_version: "Tiramisu",
+    header_libs: ["libbluetooth_headers"],
+    static_libs: [
+        "bluetooth_flags_c_lib",
+        "libbluetooth_hci_pdl",
+        "libbt_shim_bridge",
+        "libflatbuffers-cpp",
+        "server_configurable_flags",
+    ],
 }
 
 // Bluetooth device unit tests for target
 cc_test {
     name: "net_test_device",
-    test_suites: ["device-tests"],
+    test_suites: ["general-tests"],
     defaults: [
-        "bluetooth_gtest_x86_asan_workaround",
         "fluoride_defaults",
         "mts_defaults",
     ],
@@ -50,26 +63,29 @@ cc_test {
     ],
     static_libs: [
         "libbluetooth-types",
+        "libbluetooth_gd",
+        "libbt_shim_bridge",
+        "libbt_shim_ffi",
         "libbtcore",
         "libbtdevice",
         "libchrome",
         "libosi",
-        "libosi-AllocationTestHarness",
     ],
+    header_libs: ["libbluetooth_headers"],
 }
 
 // Bluetooth device unit tests for target
 cc_test {
     name: "net_test_device_iot_config",
-    test_suites: ["device-tests"],
+    test_suites: ["general-tests"],
     defaults: [
-        "bluetooth_gtest_x86_asan_workaround",
         "fluoride_defaults",
         "mts_defaults",
     ],
     include_dirs: [
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/device/src",
+        "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/stack/include",
     ],
     srcs: [
@@ -83,10 +99,14 @@ cc_test {
     ],
     static_libs: [
         "libbluetooth-types",
+        "libbt-platform-protos-lite",
+        "libbt_shim_bridge",
+        "libbt_shim_ffi",
         "libbtcore",
         "libbtdevice",
         "libchrome",
         "libgmock",
-        "libosi-AllocationTestHarness",
     ],
+    header_libs: ["libbluetooth_headers"],
+    cflags: ["-Wno-unused-parameter"],
 }

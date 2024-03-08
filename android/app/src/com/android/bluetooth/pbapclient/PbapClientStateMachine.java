@@ -48,19 +48,18 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothPbapClient;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothUuid;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.HandlerThread;
+import android.os.Looper;
 import android.os.Message;
-import android.os.ParcelUuid;
 import android.os.Process;
 import android.os.UserManager;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothMetricsProto;
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.internal.annotations.VisibleForTesting;
@@ -77,7 +76,7 @@ class PbapClientStateMachine extends StateMachine {
 
     // Messages for handling connect/disconnect requests.
     private static final int MSG_DISCONNECT = 2;
-    private static final int MSG_SDP_COMPLETE = 9;
+    static final int MSG_SDP_COMPLETE = 9;
 
     // Messages for handling error conditions.
     private static final int MSG_CONNECT_TIMEOUT = 3;
@@ -147,7 +146,6 @@ class PbapClientStateMachine extends StateMachine {
     }
 
     class Connecting extends State {
-        private SDPBroadcastReceiver mSdpReceiver;
 
         @Override
         public void enter() {
@@ -156,27 +154,27 @@ class PbapClientStateMachine extends StateMachine {
             }
             onConnectionStateChanged(mCurrentDevice, mMostRecentState,
                     BluetoothProfile.STATE_CONNECTING);
-            mSdpReceiver = new SDPBroadcastReceiver();
-            mSdpReceiver.register();
             mCurrentDevice.sdpSearch(BluetoothUuid.PBAP_PSE);
             mMostRecentState = BluetoothProfile.STATE_CONNECTING;
 
             // Create a separate handler instance and thread for performing
             // connect/download/disconnect operations as they may be time consuming and error prone.
-            mHandlerThread =
+            HandlerThread handlerThread =
                     new HandlerThread("PBAP PCE handler", Process.THREAD_PRIORITY_BACKGROUND);
-            mHandlerThread.start();
+            handlerThread.start();
+            Looper looper = handlerThread.getLooper();
 
             // Keeps mock handler from being overwritten in tests
-            if (mConnectionHandler == null) {
+            if (mConnectionHandler == null && looper != null) {
                 mConnectionHandler =
-                    new PbapClientConnectionHandler.Builder().setLooper(mHandlerThread.getLooper())
-                            .setContext(mService)
-                            .setClientSM(PbapClientStateMachine.this)
-                            .setRemoteDevice(mCurrentDevice)
-                            .build();
+                        new PbapClientConnectionHandler.Builder()
+                                .setLooper(looper)
+                                .setContext(mService)
+                                .setClientSM(PbapClientStateMachine.this)
+                                .setRemoteDevice(mCurrentDevice)
+                                .build();
             }
-
+            mHandlerThread = handlerThread;
             sendMessageDelayed(MSG_CONNECT_TIMEOUT, CONNECT_TIMEOUT);
         }
 
@@ -206,8 +204,12 @@ class PbapClientStateMachine extends StateMachine {
                     break;
 
                 case MSG_SDP_COMPLETE:
-                    mConnectionHandler.obtainMessage(PbapClientConnectionHandler.MSG_CONNECT,
-                            message.obj).sendToTarget();
+                    PbapClientConnectionHandler connectionHandler = mConnectionHandler;
+                    if (connectionHandler != null) {
+                        connectionHandler
+                                .obtainMessage(PbapClientConnectionHandler.MSG_CONNECT, message.obj)
+                                .sendToTarget();
+                    }
                     break;
 
                 default:
@@ -215,50 +217,6 @@ class PbapClientStateMachine extends StateMachine {
                     return NOT_HANDLED;
             }
             return HANDLED;
-        }
-
-        @Override
-        public void exit() {
-            mSdpReceiver.unregister();
-            mSdpReceiver = null;
-        }
-
-        private class SDPBroadcastReceiver extends BroadcastReceiver {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                if (DBG) {
-                    Log.v(TAG, "onReceive" + action);
-                }
-                if (action.equals(BluetoothDevice.ACTION_SDP_RECORD)) {
-                    BluetoothDevice device =
-                            intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                    if (!device.equals(getDevice())) {
-                        Log.w(TAG, "SDP Record fetched for different device - Ignore");
-                        return;
-                    }
-                    ParcelUuid uuid = intent.getParcelableExtra(BluetoothDevice.EXTRA_UUID);
-                    if (DBG) {
-                        Log.v(TAG, "Received UUID: " + uuid.toString());
-                        Log.v(TAG, "expected UUID: " + BluetoothUuid.PBAP_PSE.toString());
-                    }
-                    if (uuid.equals(BluetoothUuid.PBAP_PSE)) {
-                        sendMessage(MSG_SDP_COMPLETE,
-                                intent.getParcelableExtra(BluetoothDevice.EXTRA_SDP_RECORD));
-                    }
-                }
-            }
-
-            public void register() {
-                IntentFilter filter = new IntentFilter();
-                filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
-                filter.addAction(BluetoothDevice.ACTION_SDP_RECORD);
-                mService.registerReceiver(this, filter);
-            }
-
-            public void unregister() {
-                mService.unregisterReceiver(this);
-            }
         }
     }
 
@@ -269,8 +227,12 @@ class PbapClientStateMachine extends StateMachine {
             onConnectionStateChanged(mCurrentDevice, mMostRecentState,
                     BluetoothProfile.STATE_DISCONNECTING);
             mMostRecentState = BluetoothProfile.STATE_DISCONNECTING;
-            mConnectionHandler.obtainMessage(PbapClientConnectionHandler.MSG_DISCONNECT)
-                    .sendToTarget();
+            PbapClientConnectionHandler connectionHandler = mConnectionHandler;
+            if (connectionHandler != null) {
+                connectionHandler
+                        .obtainMessage(PbapClientConnectionHandler.MSG_DISCONNECT)
+                        .sendToTarget();
+            }
             sendMessageDelayed(MSG_DISCONNECT_TIMEOUT, DISCONNECT_TIMEOUT);
         }
 
@@ -279,10 +241,15 @@ class PbapClientStateMachine extends StateMachine {
             if (DBG) {
                 Log.d(TAG, "Processing MSG " + message.what + " from " + this.getName());
             }
+            PbapClientConnectionHandler connectionHandler = mConnectionHandler;
+            HandlerThread handlerThread = mHandlerThread;
+
             switch (message.what) {
                 case MSG_CONNECTION_CLOSED:
                     removeMessages(MSG_DISCONNECT_TIMEOUT);
-                    mHandlerThread.quitSafely();
+                    if (handlerThread != null) {
+                        handlerThread.quitSafely();
+                    }
                     transitionTo(mDisconnected);
                     break;
 
@@ -292,8 +259,12 @@ class PbapClientStateMachine extends StateMachine {
 
                 case MSG_DISCONNECT_TIMEOUT:
                     Log.w(TAG, "Disconnect Timeout, Forcing");
-                    mConnectionHandler.abort();
-                    mHandlerThread.quitSafely();
+                    if (connectionHandler != null) {
+                        connectionHandler.abort();
+                    }
+                    if (handlerThread != null) {
+                        handlerThread.quitSafely();
+                    }
                     transitionTo(mDisconnected);
                     break;
 
@@ -355,8 +326,12 @@ class PbapClientStateMachine extends StateMachine {
                     + ", accountServiceReady=" + accountServiceReady);
             return;
         }
-        mConnectionHandler.obtainMessage(PbapClientConnectionHandler.MSG_DOWNLOAD)
-                .sendToTarget();
+        PbapClientConnectionHandler connectionHandler = mConnectionHandler;
+        if (connectionHandler != null) {
+            connectionHandler
+                    .obtainMessage(PbapClientConnectionHandler.MSG_DOWNLOAD)
+                    .sendToTarget();
+        }
     }
 
     private void onConnectionStateChanged(BluetoothDevice device, int prevState, int state) {
@@ -368,6 +343,11 @@ class PbapClientStateMachine extends StateMachine {
             MetricsLogger.logProfileConnectionEvent(BluetoothMetricsProto.ProfileId.PBAP_CLIENT);
         }
         Log.d(TAG, "Connection state " + device + ": " + prevState + "->" + state);
+        AdapterService adapterService = AdapterService.getAdapterService();
+        if (adapterService != null) {
+            adapterService.updateProfileConnectionAdapterProperties(
+                    device, BluetoothProfile.PBAP_CLIENT, state, prevState);
+        }
         Intent intent = new Intent(BluetoothPbapClient.ACTION_CONNECTION_STATE_CHANGED);
         intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState);
         intent.putExtra(BluetoothProfile.EXTRA_STATE, state);
@@ -388,8 +368,16 @@ class PbapClientStateMachine extends StateMachine {
     }
 
     void doQuit() {
-        if (mHandlerThread != null) {
-            mHandlerThread.quitSafely();
+        PbapClientConnectionHandler connectionHandler = mConnectionHandler;
+        if (connectionHandler != null) {
+            connectionHandler.abort();
+            mConnectionHandler = null;
+        }
+
+        HandlerThread handlerThread = mHandlerThread;
+        if (handlerThread != null) {
+            handlerThread.quitSafely();
+            mHandlerThread = null;
         }
         quitNow();
     }

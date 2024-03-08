@@ -28,7 +28,6 @@ cc_fuzz {
         "packages/modules/Bluetooth/system/stack/include",
         "packages/modules/Bluetooth/system/stack/l2cap",
         "packages/modules/Bluetooth/system/udrv/include",
-        "packages/modules/Bluetooth/system/vnd/include",
         "system/security/keystore/include",
     ],
     srcs: [
@@ -42,4 +41,5 @@ cc_fuzz {
         cc: ["android-bluetooth-security@google.com"],
         componentid: 27441,
     },
+    cflags: ["-Wno-unused-parameter"],
 }

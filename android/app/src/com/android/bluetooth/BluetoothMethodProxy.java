@@ -34,6 +34,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Looper;
 import android.os.Message;
 import android.os.ParcelFileDescriptor;
 import android.provider.Telephony;
@@ -257,5 +259,15 @@ public class BluetoothMethodProxy {
     public AppAdvertiseStats createAppAdvertiseStats(int appUid, int id, String name,
             ContextMap map, GattService service) {
         return new AppAdvertiseStats(appUid, id, name, map, service);
+    }
+
+    /** Proxies {@link Thread#start()}. */
+    public void threadStart(Thread thread) {
+        thread.start();
+    }
+
+    /** Proxies {@link HandlerThread#getLooper()}. */
+    public Looper handlerThreadGetLooper(HandlerThread handlerThread) {
+        return handlerThread.getLooper();
     }
 }

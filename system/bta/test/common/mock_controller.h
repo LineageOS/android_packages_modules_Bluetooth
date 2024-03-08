@@ -19,8 +19,6 @@
 #include <base/functional/callback.h>
 #include <gmock/gmock.h>
 
-#include "hcimsgs.h"
-
 namespace controller {
 class ControllerInterface {
  public:
@@ -30,6 +28,7 @@ class ControllerInterface {
   virtual bool SupportsBleConnectedIsochronousStreamPeripheral(void) = 0;
   virtual bool SupportsBleIsochronousBroadcaster(void) = 0;
   virtual bool SupportsBle2mPhy(void) = 0;
+  virtual bool SupportsConfigureDataPath(void) = 0;
 
   virtual ~ControllerInterface() = default;
 };
@@ -44,6 +43,7 @@ class MockControllerInterface : public ControllerInterface {
               (override));
   MOCK_METHOD((bool), SupportsBleIsochronousBroadcaster, (), (override));
   MOCK_METHOD((bool), SupportsBle2mPhy, (), (override));
+  MOCK_METHOD((bool), SupportsConfigureDataPath, (), (override));
 };
 
 void SetMockControllerInterface(

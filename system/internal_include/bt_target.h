@@ -24,7 +24,7 @@
 #define BUILDCFG
 #endif
 
-#include "bt_types.h" /* This must be defined AFTER buildcfg.h */
+#include "stack/include/bt_types.h" /* This must be defined AFTER buildcfg.h */
 
 #ifndef FALSE
 #define FALSE false
@@ -83,11 +83,6 @@
 
 #ifndef BTA_AV_RET_TOUT
 #define BTA_AV_RET_TOUT 15
-#endif
-
-/* TRUE to use SCMS-T content protection */
-#ifndef BTA_AV_CO_CP_SCMS_T
-#define BTA_AV_CO_CP_SCMS_T FALSE
 #endif
 
 #ifndef BTA_DM_SDP_DB_SIZE
@@ -250,14 +245,14 @@
  * Initial SCO TX credit
  ************************/
 /* The size of buffer used for TX SCO data packets. The size should be divisible
- * by BTM_MSBC_CODE_SIZE(240) */
+ * by BTM_MSBC_CODE_SIZE(240) and BTM_LC3_CODE_SIZE(480). */
 #ifndef BTM_SCO_DATA_SIZE_MAX
-#define BTM_SCO_DATA_SIZE_MAX 240
+#define BTM_SCO_DATA_SIZE_MAX 480
 #endif
 
 /* The size in bytes of the BTM inquiry database. */
 #ifndef BTM_INQ_DB_SIZE
-#define BTM_INQ_DB_SIZE 40
+#define BTM_INQ_DB_SIZE 80
 #endif
 
 /* Sets the Page_Scan_Window:  the length of time that the device is performing
@@ -271,7 +266,6 @@
 #ifndef BTM_DEFAULT_CONN_INTERVAL
 #define BTM_DEFAULT_CONN_INTERVAL 0x0400
 #endif
-#define BTM_PAGE_SCAN_INTERVAL_PROPERTY "bluetooth.btm.pagescan_interval"
 
 /* When automatic inquiry scan is enabled, this sets the inquiry scan window. */
 #ifndef BTM_DEFAULT_DISC_WINDOW
@@ -372,11 +366,6 @@
 /* 4.1/4.2 secure connections feature */
 #ifndef SC_MODE_INCLUDED
 #define SC_MODE_INCLUDED TRUE
-#endif
-
-/* Used for conformance testing ONLY */
-#ifndef BTM_BLE_CONFORMANCE_TESTING
-#define BTM_BLE_CONFORMANCE_TESTING FALSE
 #endif
 
 /******************************************************************************
@@ -497,14 +486,6 @@
 
 #ifndef LOCAL_BLE_CONTROLLER_ID
 #define LOCAL_BLE_CONTROLLER_ID 1
-#endif
-
-/*
- * Toggles support for vendor specific extensions such as RPA offloading,
- * feature discovery, multi-adv etc.
- */
-#ifndef BLE_VND_INCLUDED
-#define BLE_VND_INCLUDED TRUE
 #endif
 
 /* The maximum number of simultaneous applications that can register with LE
@@ -807,10 +788,6 @@
 #define PAN_INCLUDED TRUE
 #endif
 
-#ifndef PANU_DISABLED
-#define PANU_DISABLED FALSE
-#endif
-
 /* This will enable the PANU role */
 #ifndef PAN_SUPPORTS_ROLE_PANU
 #define PAN_SUPPORTS_ROLE_PANU TRUE
@@ -857,23 +834,9 @@
  *
  *****************************************************************************/
 
-#ifndef GAP_INCLUDED
-#define GAP_INCLUDED TRUE
-#endif
-
 /* The maximum number of simultaneous GAP L2CAP connections. */
 #ifndef GAP_MAX_CONNECTIONS
 #define GAP_MAX_CONNECTIONS 30
-#endif
-
-/* keep the raw data received from SDP server in database. */
-#ifndef SDP_RAW_DATA_INCLUDED
-#define SDP_RAW_DATA_INCLUDED TRUE
-#endif
-
-/* Inquiry duration in 1.28 second units. */
-#ifndef SDP_DEBUG
-#define SDP_DEBUG TRUE
 #endif
 
 /******************************************************************************
@@ -978,33 +941,12 @@
 #define BTA_EIR_SERVER_NUM_CUSTOM_UUID 8
 #endif
 
-/* CHLD override */
-#ifndef BTA_AG_CHLD_VAL_ECC
-#define BTA_AG_CHLD_VAL_ECC "(0,1,1x,2,2x,3)"
-#endif
-
-#ifndef BTA_AG_CHLD_VAL
-#define BTA_AG_CHLD_VAL "(0,1,2,3)"
-#endif
-
-/* Set the CIND to match HFP 1.5 */
-#ifndef BTA_AG_CIND_INFO
-#define BTA_AG_CIND_INFO                                                       \
-  "(\"call\",(0,1)),(\"callsetup\",(0-3)),(\"service\",(0-1)),(\"signal\",(0-" \
-  "5)),(\"roam\",(0,1)),(\"battchg\",(0-5)),(\"callheld\",(0-2))"
-#endif
-
 /******************************************************************************
  *
  * Tracing:  Include trace header file here.
  *
  *****************************************************************************/
 
-/* Enable/disable BTSnoop memory logging */
-#ifndef BTSNOOP_MEM
-#define BTSNOOP_MEM TRUE
-#endif
-
-#include "bt_trace.h"
+#include "internal_include/bt_trace.h"
 
 #endif /* BT_TARGET_H */

@@ -1,0 +1,71 @@
+package: "com.android.bluetooth.flags"
+
+flag {
+    name: "leaudio_broadcast_monitor_source_sync_status"
+    namespace: "bluetooth"
+    description: "New APIs to improve broadcast source sync"
+    bug: "307406671"
+}
+
+flag {
+    name: "leaudio_broadcast_volume_control_for_connected_devices"
+    namespace: "bluetooth"
+    description: "Allow volume control for connected devices"
+    bug: "307408418"
+}
+
+flag {
+    name: "leaudio_enable_health_based_actions"
+    namespace: "bluetooth"
+    description: "Le audio device and group health actions for fallback mechanism"
+    bug: "290845728"
+}
+
+flag {
+    name: "leaudio_broadcast_audio_handover_policies"
+    namespace: "bluetooth"
+    description: "Support le audio broadcast audio routing policies"
+    bug: "308171251"
+}
+
+flag {
+    name: "leaudio_unicast_inactivate_device_based_on_context"
+    namespace: "bluetooth"
+    description: "Inactivate audio device when stream cannot be created due to unavailable context type"
+    bug: "313054788"
+}
+
+flag {
+    name: "leaudio_multicodec_aidl_support"
+    namespace: "bluetooth"
+    description: "Enables support for the multicodec AIDL"
+    bug: "313054645"
+}
+
+flag {
+    name: "leaudio_dynamic_spatial_audio"
+    namespace: "bluetooth"
+    description: "Support Dynamic Spatial Audio for LE Audio"
+    bug: "309665975"
+}
+
+flag {
+    name: "asymmetric_phy_for_unidirectional_cis"
+    namespace: "bluetooth"
+    description: "Apply asymetric PHY setting for unidirectional CIS"
+    bug: "314176433"
+}
+
+flag {
+    name: "leaudio_hal_client_asrc"
+    namespace: "bluetooth"
+    description: "Sync audio stream with the bluetooth link clock"
+    bug: "312273987"
+}
+
+flag {
+    name: "leaudio_broadcast_feature_support"
+    namespace: "bluetooth"
+    description: "Le audio broadcast feature roll-out control flag"
+    bug: "316005152"
+}

@@ -21,18 +21,16 @@
 
 #include <base/functional/bind.h>
 #include <base/strings/stringprintf.h>
-#include <string.h>
 
 #include <deque>
 #include <list>
-#include <queue>
 #include <unordered_set>
 #include <vector>
 
-#include "bt_target.h"
-#include "btm_ble_api.h"
-#include "btu.h"
+#include "common/init_flags.h"
 #include "gatt_api.h"
+#include "internal_include/bt_target.h"
+#include "macros.h"
 #include "osi/include/fixed_queue.h"
 #include "stack/include/bt_hdr.h"
 #include "types/bluetooth/uuid.h"
@@ -56,10 +54,6 @@ typedef enum : uint8_t {
   GATT_SEC_ENC_PENDING = 6,     /* wait for link encryption pending */
 } tGATT_SEC_ACTION;
 
-#define CASE_RETURN_TEXT(code) \
-  case code:                   \
-    return #code
-
 inline std::string gatt_security_action_text(const tGATT_SEC_ACTION& action) {
   switch (action) {
     CASE_RETURN_TEXT(GATT_SEC_NONE);
@@ -73,8 +67,6 @@ inline std::string gatt_security_action_text(const tGATT_SEC_ACTION& action) {
       return base::StringPrintf("UNKNOWN[%hhu]", action);
   }
 }
-
-#undef CASE_RETURN_TEXT
 
 #define GATT_INDEX_INVALID 0xff
 
@@ -246,10 +238,6 @@ typedef enum : uint8_t {
   GATT_CH_OPEN = 4,
 } tGATT_CH_STATE;
 
-#define CASE_RETURN_TEXT(code) \
-  case code:                   \
-    return #code
-
 inline std::string gatt_channel_state_text(const tGATT_CH_STATE& state) {
   switch (state) {
     CASE_RETURN_TEXT(GATT_CH_CLOSE);
@@ -261,7 +249,6 @@ inline std::string gatt_channel_state_text(const tGATT_CH_STATE& state) {
       return base::StringPrintf("UNKNOWN[%hhu]", state);
   }
 }
-#undef CASE_RETURN_TEXT
 
 // If you change these values make sure to look at b/262219144 before.
 // Some platform rely on this to never changes
@@ -339,6 +326,11 @@ typedef struct {
   uint8_t sr_supp_feat;
   /* Use for server. if false, should handle database out of sync. */
   bool is_robust_cache_change_aware;
+
+  /* SIRK read related data */
+  tGATT_STATUS gatt_status;
+  uint8_t sirk_type;
+  Octet16 sirk;
 
   bool in_use;
   uint8_t tcb_idx;
@@ -503,6 +495,11 @@ void gatt_cl_init_sr_status(tGATT_TCB& tcb);
 bool gatt_cl_read_sr_supp_feat_req(
     const RawAddress& peer_bda,
     base::OnceCallback<void(const RawAddress&, uint8_t)> cb);
+bool gatt_cl_read_sirk_req(
+    const RawAddress& peer_bda,
+    base::OnceCallback<void(tGATT_STATUS status, const RawAddress&,
+                            uint8_t sirk_type, Octet16& sirk)>
+        cb);
 bool gatt_sr_is_cl_multi_variable_len_notif_supported(tGATT_TCB& tcb);
 
 bool gatt_sr_is_cl_change_aware(tGATT_TCB& tcb);
@@ -520,6 +517,7 @@ tGATT_STATUS attp_send_msg_to_l2cap(tGATT_TCB& tcb, uint16_t cid,
                                     BT_HDR* p_toL2CAP);
 
 /* utility functions */
+uint16_t gatt_get_local_mtu(void);
 uint8_t* gatt_dbg_op_name(uint8_t op_code);
 uint32_t gatt_add_sdp_record(const bluetooth::Uuid& uuid, uint16_t start_hdl,
                              uint16_t end_hdl);
@@ -578,7 +576,7 @@ void gatt_sr_send_req_callback(uint16_t conn_id, uint32_t trans_id,
 uint32_t gatt_sr_enqueue_cmd(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code,
                              uint16_t handle);
 bool gatt_cancel_open(tGATT_IF gatt_if, const RawAddress& bda);
-void gatt_notify_phy_updated(tGATT_STATUS status, uint16_t handle,
+void gatt_notify_phy_updated(tHCI_STATUS status, uint16_t handle,
                              uint8_t tx_phy, uint8_t rx_phy);
 void gatt_notify_subrate_change(uint16_t handle, uint16_t subrate_factor,
                                 uint16_t latency, uint16_t cont_num,
@@ -598,8 +596,7 @@ bool gatt_tcb_get_cid_available_for_indication(tGATT_TCB* p_tcb,
 bool gatt_tcb_find_indicate_handle(tGATT_TCB& tcb, uint16_t cid,
                                    uint16_t* indicated_handle_p);
 uint16_t gatt_tcb_get_att_cid(tGATT_TCB& tcb, bool eatt_support);
-uint16_t gatt_tcb_get_payload_size_tx(tGATT_TCB& tcb, uint16_t cid);
-uint16_t gatt_tcb_get_payload_size_rx(tGATT_TCB& tcb, uint16_t cid);
+uint16_t gatt_tcb_get_payload_size(tGATT_TCB& tcb, uint16_t cid);
 void gatt_clcb_invalidate(tGATT_TCB* p_tcb, const tGATT_CLCB* p_clcb);
 uint16_t gatt_get_mtu(const RawAddress& bda, tBT_TRANSPORT transport);
 bool gatt_is_pending_mtu_exchange(tGATT_TCB* p_tcb);
@@ -641,7 +638,7 @@ void gatt_act_discovery(tGATT_CLCB* p_clcb);
 void gatt_act_read(tGATT_CLCB* p_clcb, uint16_t offset);
 void gatt_act_write(tGATT_CLCB* p_clcb, uint8_t sec_act);
 tGATT_CLCB* gatt_cmd_dequeue(tGATT_TCB& tcb, uint16_t cid, uint8_t* p_opcode);
-void gatt_cmd_enq(tGATT_TCB& tcb, tGATT_CLCB* p_clcb, bool to_send,
+bool gatt_cmd_enq(tGATT_TCB& tcb, tGATT_CLCB* p_clcb, bool to_send,
                   uint8_t op_code, BT_HDR* p_buf);
 void gatt_client_handle_server_rsp(tGATT_TCB& tcb, uint16_t cid,
                                    uint8_t op_code, uint16_t len,

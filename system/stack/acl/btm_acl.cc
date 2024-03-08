@@ -40,24 +40,22 @@
 #include "bta/include/bta_dm_acl.h"
 #include "bta/sys/bta_sys.h"
 #include "btif/include/btif_acl.h"
+#include "common/init_flags.h"
 #include "common/metrics.h"
 #include "device/include/controller.h"
 #include "device/include/device_iot_config.h"
 #include "device/include/interop.h"
-#include "gd/metrics/metrics_state.h"
 #include "include/l2cap_hci_link_interface.h"
+#include "internal_include/bt_target.h"
 #include "main/shim/acl_api.h"
-#include "main/shim/btm_api.h"
 #include "main/shim/controller.h"
 #include "main/shim/dumpsys.h"
-#include "main/shim/l2c_api.h"
-#include "main/shim/metrics_api.h"
-#include "main/shim/shim.h"
+#include "os/log.h"
 #include "os/parameter_provider.h"
 #include "osi/include/allocator.h"
-#include "osi/include/log.h"
 #include "osi/include/osi.h"  // UNUSED_ATTR
 #include "osi/include/properties.h"
+#include "osi/include/stack_power_telemetry.h"
 #include "rust/src/connection/ffi/connection_shim.h"
 #include "rust/src/core/ffi/types.h"
 #include "stack/acl/acl.h"
@@ -66,30 +64,35 @@
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/btm/security_device_record.h"
-#include "stack/gatt/connection_manager.h"
 #include "stack/include/acl_api.h"
+#include "stack/include/acl_api_types.h"
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/bt_hdr.h"
+#include "stack/include/bt_types.h"
 #include "stack/include/btm_api.h"
+#include "stack/include/btm_ble_api.h"
 #include "stack/include/btm_iso_api.h"
-#include "stack/include/btu.h"
 #include "stack/include/hci_error_code.h"
+#include "stack/include/hcimsgs.h"
 #include "stack/include/l2cap_acl_interface.h"
+#include "stack/include/l2cdefs.h"
+#include "stack/include/main_thread.h"
 #include "stack/include/sco_hci_link_interface.h"
 #include "types/hci_role.h"
 #include "types/raw_address.h"
-#include "os/metrics.h"
 
 #ifndef PROPERTY_LINK_SUPERVISION_TIMEOUT
 #define PROPERTY_LINK_SUPERVISION_TIMEOUT \
   "bluetooth.core.acl.link_supervision_timeout"
 #endif
 
+using bluetooth::legacy::hci::GetInterface;
+
 void BTM_update_version_info(const RawAddress& bd_addr,
                              const remote_version_info& remote_version_info);
 
-void gatt_find_in_device_record(const RawAddress& bd_addr,
-                                tBLE_BD_ADDR* address_with_type);
+static void find_in_device_record(const RawAddress& bd_addr,
+                                  tBLE_BD_ADDR* address_with_type);
 void l2c_link_hci_conn_comp(tHCI_STATUS status, uint16_t handle,
                             const RawAddress& p_bda);
 
@@ -125,9 +128,6 @@ struct RoleChangeView {
 namespace {
 StackAclBtmAcl internal_;
 std::unique_ptr<RoleChangeView> delayed_role_change_ = nullptr;
-const bluetooth::legacy::hci::Interface& GetLegacyHciInterface() {
-  return bluetooth::legacy::hci::GetInterface();
-}
 }
 
 typedef struct {
@@ -148,7 +148,7 @@ constexpr uint16_t BTM_ACL_EXCEPTION_PKTS_MASK =
      HCI_PKT_TYPES_MASK_NO_2_DH3 | HCI_PKT_TYPES_MASK_NO_3_DH3 |
      HCI_PKT_TYPES_MASK_NO_2_DH5 | HCI_PKT_TYPES_MASK_NO_3_DH5);
 
-inline bool IsEprAvailable(const tACL_CONN& p_acl) {
+static bool IsEprAvailable(const tACL_CONN& p_acl) {
   if (!p_acl.peer_lmp_feature_valid[0]) {
     LOG_WARN("Checking incomplete feature page read");
     return false;
@@ -198,33 +198,20 @@ void NotifyAclFeaturesReadComplete(tACL_CONN& p_acl,
 
 }  // namespace
 
-static void hci_btsnd_hcic_disconnect(tACL_CONN& p_acl, tHCI_STATUS reason,
-                                      std::string comment) {
+static void disconnect_acl(tACL_CONN& p_acl, tHCI_STATUS reason,
+                           std::string comment) {
   LOG_INFO("Disconnecting peer:%s reason:%s comment:%s",
            ADDRESS_TO_LOGGABLE_CSTR(p_acl.remote_addr),
            hci_error_code_text(reason).c_str(), comment.c_str());
   p_acl.disconnect_reason = reason;
-
-  if (bluetooth::common::init_flags::
-          use_unified_connection_manager_is_enabled()) {
-    if (!p_acl.is_transport_br_edr()) {
-      // TODO(aryarahul): this should be moved into GATT, so when a client
-      // disconnects, it removes its request to autoConnect, even if the ACL
-      // link stays up due to the presence of other clients.
-      bluetooth::connection::GetConnectionManager()
-          .stop_all_connections_to_device(bluetooth::core::ToRustAddress(
-              tBLE_BD_ADDR{.bda = p_acl.active_remote_addr,
-                           .type = p_acl.active_remote_addr_type}));
-    }
-  }
 
   return bluetooth::shim::ACL_Disconnect(
       p_acl.hci_handle, p_acl.is_transport_br_edr(), reason, comment);
 }
 
 void StackAclBtmAcl::hci_start_role_switch_to_central(tACL_CONN& p_acl) {
-  GetLegacyHciInterface().StartRoleSwitch(
-      p_acl.remote_addr, static_cast<uint8_t>(HCI_ROLE_CENTRAL));
+  GetInterface().StartRoleSwitch(p_acl.remote_addr,
+                                 static_cast<uint8_t>(HCI_ROLE_CENTRAL));
   p_acl.set_switch_role_in_progress();
   p_acl.rs_disc_pending = BTM_SEC_RS_PENDING;
 }
@@ -494,17 +481,6 @@ void btm_acl_create_failed(const RawAddress& bda, tBT_TRANSPORT transport,
   BTA_dm_acl_up_failed(bda, transport, hci_status);
 }
 
-void btm_configure_data_path(uint8_t direction, uint8_t path_id,
-                             std::vector<uint8_t> vendor_config) {
-  if (direction != btm_data_direction::CONTROLLER_TO_HOST &&
-      direction != btm_data_direction::HOST_TO_CONTROLLER) {
-    LOG_WARN("Unknown data direction");
-    return;
-  }
-
-  btsnd_hcic_configure_data_path(direction, path_id, vendor_config);
-}
-
 /*******************************************************************************
  *
  * Function         btm_acl_removed
@@ -551,8 +527,6 @@ void btm_acl_device_down(void) {
   BTM_db_reset();
 }
 
-void btm_acl_set_paging(bool value) { btm_cb.is_paging = value; }
-
 void btm_acl_update_inquiry_status(uint8_t status) {
   btm_cb.is_inquiry = status == BTM_INQUIRY_STARTED;
   BTIF_dm_report_inquiry_status_change(status);
@@ -592,10 +566,6 @@ tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, tHCI_ROLE* p_role) {
  *
  ******************************************************************************/
 tBTM_STATUS BTM_SwitchRoleToCentral(const RawAddress& remote_bd_addr) {
-  if (bluetooth::shim::is_gd_l2cap_enabled()) {
-    bluetooth::shim::L2CA_SwitchRoleToCentral(remote_bd_addr);
-    return BTM_SUCCESS;
-  }
   if (!controller_get_interface()->supports_central_peripheral_role_switch()) {
     LOG_INFO("Local controller does not support role switching");
     return BTM_MODE_UNSUPPORTED;
@@ -725,9 +695,8 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
     /* If a disconnect is pending, issue it now that role switch has completed
      */
     if (p->rs_disc_pending == BTM_SEC_DISC_PENDING) {
-      hci_btsnd_hcic_disconnect(
-          *p, HCI_ERR_PEER_USER,
-          "stack::acl::btm_acl::encrypt after role switch");
+      disconnect_acl(*p, HCI_ERR_PEER_USER,
+                     "stack::acl::btm_acl::encrypt after role switch");
     }
     p->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
   }
@@ -840,6 +809,9 @@ void BTM_default_block_role_switch() {
                                         ~HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH);
 }
 
+extern void bta_gattc_continue_discovery_if_needed(const RawAddress& bd_addr,
+                                                   uint16_t acl_handle);
+
 /*******************************************************************************
  *
  * Function         btm_read_remote_version_complete
@@ -862,6 +834,8 @@ static void maybe_chain_more_commands_after_read_remote_version_complete(
     case BT_TRANSPORT_LE:
       l2cble_notify_le_connection(p_acl_cb->remote_addr);
       l2cble_use_preferred_conn_params(p_acl_cb->remote_addr);
+      bta_gattc_continue_discovery_if_needed(p_acl_cb->remote_addr,
+                                             p_acl_cb->Handle());
       break;
     case BT_TRANSPORT_BR_EDR:
       /**
@@ -889,6 +863,7 @@ void btm_process_remote_version_complete(uint8_t status, uint16_t handle,
     LOG_WARN("Received remote version complete for unknown acl");
     return;
   }
+  p_acl_cb->remote_version_received = true;
 
   if (status == HCI_SUCCESS) {
     p_acl_cb->remote_version_info.lmp_version = lmp_version;
@@ -960,49 +935,7 @@ void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
  *
  ******************************************************************************/
 void btm_read_remote_ext_features(uint16_t handle, uint8_t page_number) {
-  if (bluetooth::shim::is_gd_l2cap_enabled()) {
-    // GD L2cap reads this automatically
-    return;
-  }
   btsnd_hcic_rmt_ext_features(handle, page_number);
-}
-
-void btm_read_remote_features_complete(uint16_t handle, uint8_t* features) {
-  tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
-  if (p_acl_cb == nullptr) {
-    LOG_WARN("Unable to find active acl");
-    return;
-  }
-
-  /* Copy the received features page */
-  STREAM_TO_ARRAY(p_acl_cb->peer_lmp_feature_pages[0], features,
-                  HCI_FEATURE_BYTES_PER_PAGE);
-  p_acl_cb->peer_lmp_feature_valid[0] = true;
-
-  /* save remote supported features to iot conf file */
-  std::string key = IOT_CONF_KEY_RT_SUPP_FEATURES "_" + std::to_string(0);
-
-  DEVICE_IOT_CONFIG_ADDR_SET_BIN(p_acl_cb->remote_addr, key,
-                                 p_acl_cb->peer_lmp_feature_pages[0],
-                                 BD_FEATURES_LEN);
-
-  if ((HCI_LMP_EXTENDED_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[0])) &&
-      (controller_get_interface()
-           ->supports_reading_remote_extended_features())) {
-    /* if the remote controller has extended features and local controller
-       supports HCI_Read_Remote_Extended_Features command then start reading
-       these feature starting with extended features page 1 */
-    LOG_DEBUG("Start reading remote extended features");
-    btm_read_remote_ext_features(handle, 1);
-    return;
-  }
-
-  /* Remote controller has no extended features. Process remote controller
-     supported features (features page 0). */
-  btm_process_remote_ext_features(p_acl_cb, 0);
-
-  /* Continue with HCI connection establishment */
-  internal_.btm_establish_continue(p_acl_cb);
 }
 
 /*******************************************************************************
@@ -1220,19 +1153,11 @@ tBTM_STATUS BTM_SetLinkSuperTout(const RawAddress& remote_bda,
 
 bool BTM_IsAclConnectionUp(const RawAddress& remote_bda,
                            tBT_TRANSPORT transport) {
-  if (bluetooth::shim::is_gd_l2cap_enabled()) {
-    return bluetooth::shim::L2CA_IsLinkEstablished(remote_bda, transport);
-  }
-
   return internal_.btm_bda_to_acl(remote_bda, transport) != nullptr;
 }
 
 bool BTM_IsAclConnectionUpAndHandleValid(const RawAddress& remote_bda,
                                          tBT_TRANSPORT transport) {
-  if (bluetooth::shim::is_gd_l2cap_enabled()) {
-    return bluetooth::shim::L2CA_IsLinkEstablished(remote_bda, transport);
-  }
-
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(remote_bda, transport);
   if (p_acl == nullptr) {
     LOG_WARN("Unable to find active acl");
@@ -1256,9 +1181,6 @@ bool BTM_IsAclConnectionUpFromHandle(uint16_t hci_handle) {
  *
  ******************************************************************************/
 uint16_t BTM_GetNumAclLinks(void) {
-  if (bluetooth::shim::is_gd_l2cap_enabled()) {
-    return bluetooth::shim::L2CA_GetNumLinks();
-  }
   return static_cast<uint16_t>(btm_cb.acl_cb_.NumberOfActiveLinks());
 }
 
@@ -1302,10 +1224,6 @@ bool btm_is_acl_locally_initiated(void) {
  ******************************************************************************/
 uint16_t BTM_GetHCIConnHandle(const RawAddress& remote_bda,
                               tBT_TRANSPORT transport) {
-  if (bluetooth::shim::is_gd_l2cap_enabled()) {
-    return bluetooth::shim::BTM_GetHCIConnHandle(remote_bda, transport);
-  }
-
   tACL_CONN* p;
   p = internal_.btm_bda_to_acl(remote_bda, transport);
   if (p != (tACL_CONN*)NULL) {
@@ -1327,10 +1245,10 @@ uint16_t BTM_GetHCIConnHandle(const RawAddress& remote_bda,
  ******************************************************************************/
 bool BTM_IsPhy2mSupported(const RawAddress& remote_bda, tBT_TRANSPORT transport) {
   tACL_CONN* p;
-  BTM_TRACE_DEBUG("BTM_IsPhy2mSupported");
+  LOG_VERBOSE("BTM_IsPhy2mSupported");
   p = internal_.btm_bda_to_acl(remote_bda, transport);
   if (p == (tACL_CONN*)NULL) {
-    BTM_TRACE_DEBUG("BTM_IsPhy2mSupported: no connection");
+    LOG_VERBOSE("BTM_IsPhy2mSupported: no connection");
     return false;
   }
 
@@ -1527,8 +1445,8 @@ void StackAclBtmAcl::btm_acl_role_changed(tHCI_STATUS hci_status,
 
   /* If a disconnect is pending, issue it now that role switch has completed */
   if (p_acl->rs_disc_pending == BTM_SEC_DISC_PENDING) {
-    hci_btsnd_hcic_disconnect(*p_acl, HCI_ERR_PEER_USER,
-                              "stack::acl::btm_acl::role after role switch");
+    disconnect_acl(*p_acl, HCI_ERR_PEER_USER,
+                   "stack::acl::btm_acl::role after role switch");
   }
   p_acl->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
 }
@@ -1590,8 +1508,7 @@ bool StackAclBtmAcl::change_connection_packet_types(
   }
 
   link.pkt_types_mask = packet_type_mask;
-  bluetooth::legacy::hci::GetInterface().ChangeConnectionPacketType(
-      link.Handle(), link.pkt_types_mask);
+  GetInterface().ChangeConnectionPacketType(link.Handle(), link.pkt_types_mask);
   LOG_DEBUG("Started change connection packet type:0x%04x address:%s",
             link.pkt_types_mask, ADDRESS_TO_LOGGABLE_CSTR(link.RemoteAddress()));
   return true;
@@ -1664,6 +1581,23 @@ uint16_t BTM_GetMaxPacketSize(const RawAddress& addr) {
 
 /*******************************************************************************
  *
+ * Function         BTM_IsRemoteVersionReceived
+ *
+ * Returns          Returns true if "LE Read remote version info" was already
+ *                  received on LE transport for this device.
+ *
+ ******************************************************************************/
+bool BTM_IsRemoteVersionReceived(const RawAddress& addr) {
+  const tACL_CONN* p_acl = internal_.btm_bda_to_acl(addr, BT_TRANSPORT_LE);
+  if (p_acl == nullptr) {
+    return false;
+  }
+
+  return p_acl->remote_version_received;
+}
+
+/*******************************************************************************
+ *
  * Function         BTM_ReadRemoteVersion
  *
  * Returns          If connected report peer device info
@@ -1671,11 +1605,6 @@ uint16_t BTM_GetMaxPacketSize(const RawAddress& addr) {
  ******************************************************************************/
 bool BTM_ReadRemoteVersion(const RawAddress& addr, uint8_t* lmp_version,
                            uint16_t* manufacturer, uint16_t* lmp_sub_version) {
-  if (bluetooth::shim::is_gd_l2cap_enabled()) {
-    return bluetooth::shim::L2CA_ReadRemoteVersion(
-        addr, lmp_version, manufacturer, lmp_sub_version);
-  }
-
   const tACL_CONN* p_acl = internal_.btm_bda_to_acl(addr, BT_TRANSPORT_BR_EDR);
   if (p_acl == nullptr) {
     p_acl = internal_.btm_bda_to_acl(addr, BT_TRANSPORT_LE);
@@ -1708,9 +1637,6 @@ bool BTM_ReadRemoteVersion(const RawAddress& addr, uint8_t* lmp_version,
  *
  ******************************************************************************/
 uint8_t* BTM_ReadRemoteFeatures(const RawAddress& addr) {
-  if (bluetooth::shim::is_gd_l2cap_enabled()) {
-    return bluetooth::shim::L2CA_ReadRemoteFeatures(addr);
-  }
   tACL_CONN* p = internal_.btm_bda_to_acl(addr, BT_TRANSPORT_BR_EDR);
   if (p == NULL) {
     LOG_WARN("Unable to find active acl");
@@ -1822,7 +1748,7 @@ tBTM_STATUS BTM_ReadTxPower(const RawAddress& remote_bda,
 #define BTM_READ_RSSI_TYPE_CUR 0x00
 #define BTM_READ_RSSI_TYPE_MAX 0X01
 
-  VLOG(2) << __func__ << ": RemBdAddr: " << remote_bda;
+  VLOG(2) << __func__ << ": RemBdAddr: " << ADDRESS_TO_LOGGABLE_STR(remote_bda);
 
   /* If someone already waiting on the version, do not allow another */
   if (btm_cb.devcb.p_tx_power_cmpl_cb) return (BTM_BUSY);
@@ -2194,14 +2120,6 @@ err_out:
  *
  ******************************************************************************/
 tBTM_STATUS btm_remove_acl(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
-  if (bluetooth::shim::is_gd_l2cap_enabled()) {
-    if (transport == BT_TRANSPORT_LE) {
-      LOG(ERROR) << __func__ << ": Unsupported";
-    }
-    bluetooth::shim::L2CA_DisconnectLink(bd_addr);
-    return BTM_SUCCESS;
-  }
-
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, transport);
   if (p_acl == nullptr) {
     LOG_WARN("Unable to find active acl");
@@ -2223,25 +2141,9 @@ tBTM_STATUS btm_remove_acl(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
     return BTM_SUCCESS;
   }
 
-  hci_btsnd_hcic_disconnect(*p_acl, HCI_ERR_PEER_USER,
-                            "stack::acl::btm_acl::btm_remove_acl");
+  disconnect_acl(*p_acl, HCI_ERR_PEER_USER,
+                 "stack::acl::btm_acl::btm_remove_acl");
   return BTM_SUCCESS;
-}
-
-/*******************************************************************************
- *
- * Function         BTM_SetTraceLevel
- *
- * Description      This function sets the trace level for BTM.  If called with
- *                  a value of 0xFF, it simply returns the current trace level.
- *
- * Returns          The new or current trace level
- *
- ******************************************************************************/
-uint8_t BTM_SetTraceLevel(uint8_t new_level) {
-  if (new_level != 0xFF) btm_cb.trace_level = new_level;
-
-  return (btm_cb.trace_level);
 }
 
 void btm_cont_rswitch_from_handle(uint16_t hci_handle) {
@@ -2274,78 +2176,6 @@ void btm_cont_rswitch_from_handle(uint16_t hci_handle) {
 
 /*******************************************************************************
  *
- * Function         btm_acl_resubmit_page
- *
- * Description      send pending page request
- *
- ******************************************************************************/
-void btm_acl_resubmit_page(void) {
-  BT_HDR* p_buf;
-  uint8_t* pp;
-  /* If there were other page request schedule can start the next one */
-  p_buf = (BT_HDR*)fixed_queue_try_dequeue(btm_cb.page_queue);
-  if (p_buf != NULL) {
-    /* skip 3 (2 bytes opcode and 1 byte len) to get to the bd_addr
-     * for both create_conn and rmt_name */
-    pp = (uint8_t*)(p_buf + 1) + p_buf->offset + 3;
-
-    RawAddress bda;
-    STREAM_TO_BDADDR(bda, pp);
-
-    btm_cb.connecting_bda = bda;
-    memcpy(btm_cb.connecting_dc, btm_get_dev_class(bda), DEV_CLASS_LEN);
-
-    btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p_buf);
-  } else {
-    btm_cb.paging = false;
-  }
-}
-
-/*******************************************************************************
- *
- * Function         btm_acl_reset_paging
- *
- * Description      set paging to false and free the page queue - called at
- *                  hci_reset
- *
- ******************************************************************************/
-void btm_acl_reset_paging(void) {
-  BT_HDR* p;
-  /* If we sent reset we are definitely not paging any more */
-  while ((p = (BT_HDR*)fixed_queue_try_dequeue(btm_cb.page_queue)) != NULL)
-    osi_free(p);
-
-  btm_cb.paging = false;
-}
-
-/*******************************************************************************
- *
- * Function         btm_acl_paging
- *
- * Description      send a paging command or queue it in btm_cb
- *
- ******************************************************************************/
-void btm_acl_paging(BT_HDR* p, const RawAddress& bda) {
-  if (!BTM_IsAclConnectionUp(bda, BT_TRANSPORT_BR_EDR)) {
-    VLOG(1) << "connecting_bda: " << btm_cb.connecting_bda;
-    if (btm_cb.paging && bda == btm_cb.connecting_bda) {
-      fixed_queue_enqueue(btm_cb.page_queue, p);
-    } else {
-      btm_cb.connecting_bda = bda;
-      memcpy(btm_cb.connecting_dc, btm_get_dev_class(bda), DEV_CLASS_LEN);
-
-      btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
-    }
-
-    btm_cb.paging = true;
-  } else /* ACL is already up */
-  {
-    btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
-  }
-}
-
-/*******************************************************************************
- *
  * Function         btm_acl_notif_conn_collision
  *
  * Description      Send connection collision event to upper layer if registered
@@ -2353,7 +2183,7 @@ void btm_acl_paging(BT_HDR* p, const RawAddress& bda) {
  *
  ******************************************************************************/
 void btm_acl_notif_conn_collision(const RawAddress& bda) {
-  do_in_main_thread(FROM_HERE, base::Bind(bta_sys_notify_collision, bda));
+  do_in_main_thread(FROM_HERE, base::BindOnce(bta_sys_notify_collision, bda));
 }
 
 bool BTM_BLE_IS_RESOLVE_BDA(const RawAddress& x) {
@@ -2363,7 +2193,7 @@ bool BTM_BLE_IS_RESOLVE_BDA(const RawAddress& x) {
 bool acl_refresh_remote_address(const RawAddress& identity_address,
                                 tBLE_ADDR_TYPE identity_address_type,
                                 const RawAddress& bda,
-                                tBTM_SEC_BLE::tADDRESS_TYPE rra_type,
+                                tBLE_RAND_ADDR_TYPE rra_type,
                                 const RawAddress& rpa) {
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(bda, BT_TRANSPORT_LE);
   if (p_acl == nullptr) {
@@ -2371,7 +2201,7 @@ bool acl_refresh_remote_address(const RawAddress& identity_address,
     return false;
   }
 
-  if (rra_type == tBTM_SEC_BLE::BTM_BLE_ADDR_PSEUDO) {
+  if (rra_type == BTM_BLE_ADDR_PSEUDO) {
     /* use identity address, resolvable_private_addr is empty */
     if (rpa.IsEmpty()) {
       p_acl->active_remote_addr_type = identity_address_type;
@@ -2419,7 +2249,7 @@ bool acl_peer_supports_sniff_subrating(const RawAddress& remote_bda) {
 }
 
 bool acl_peer_supports_ble_connection_subrating(const RawAddress& remote_bda) {
-  tACL_CONN* p_acl = internal_.btm_bda_to_acl(remote_bda, BT_TRANSPORT_BR_EDR);
+  tACL_CONN* p_acl = internal_.btm_bda_to_acl(remote_bda, BT_TRANSPORT_LE);
   if (p_acl == nullptr) {
     LOG_WARN("Unable to find active acl");
     return false;
@@ -2434,7 +2264,7 @@ bool acl_peer_supports_ble_connection_subrating(const RawAddress& remote_bda) {
 
 bool acl_peer_supports_ble_connection_subrating_host(
     const RawAddress& remote_bda) {
-  tACL_CONN* p_acl = internal_.btm_bda_to_acl(remote_bda, BT_TRANSPORT_BR_EDR);
+  tACL_CONN* p_acl = internal_.btm_bda_to_acl(remote_bda, BT_TRANSPORT_LE);
   if (p_acl == nullptr) {
     LOG_WARN("Unable to find active acl");
     return false;
@@ -2451,7 +2281,7 @@ bool acl_peer_supports_ble_connection_subrating_host(
  *
  * Function         BTM_ReadConnectionAddr
  *
- * Description      This function is called to get the local device address
+ * Description      This function is called to get the local LE device address
  *                  information.
  *
  * Returns          void
@@ -2459,21 +2289,16 @@ bool acl_peer_supports_ble_connection_subrating_host(
  ******************************************************************************/
 void BTM_ReadConnectionAddr(const RawAddress& remote_bda,
                             RawAddress& local_conn_addr,
-                            tBLE_ADDR_TYPE* p_addr_type) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::BTM_ReadConnectionAddr(remote_bda, local_conn_addr,
-                                                   p_addr_type);
+                            tBLE_ADDR_TYPE* p_addr_type, bool ota_address) {
+  tBTM_SEC_DEV_REC* p_sec_rec = btm_find_dev(remote_bda);
+  if (p_sec_rec == nullptr) {
+    LOG_WARN("No matching known device %s in record",
+             ADDRESS_TO_LOGGABLE_CSTR(remote_bda));
+    return;
   }
 
-  if (bluetooth::shim::is_gd_l2cap_enabled()) {
-    bluetooth::shim::L2CA_ReadConnectionAddr(remote_bda, local_conn_addr,
-                                             p_addr_type);
-    return;
-  } else {
-    bluetooth::shim::ACL_ReadConnectionAddress(remote_bda, local_conn_addr,
-                                               p_addr_type);
-    return;
-  }
+  bluetooth::shim::ACL_ReadConnectionAddress(
+      p_sec_rec->ble_hci_handle, local_conn_addr, p_addr_type, ota_address);
 }
 
 /*******************************************************************************
@@ -2487,14 +2312,6 @@ void BTM_ReadConnectionAddr(const RawAddress& remote_bda,
  *
  ******************************************************************************/
 bool BTM_IsBleConnection(uint16_t hci_handle) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    ASSERT_LOG(false, "This should not be invoked from code path");
-  }
-
-  if (bluetooth::shim::is_gd_l2cap_enabled()) {
-    return bluetooth::shim::L2CA_IsLeLink(hci_handle);
-  }
-
   const tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(hci_handle);
   if (p_acl == nullptr) return false;
   return p_acl->is_transport_ble();
@@ -2506,39 +2323,6 @@ const RawAddress acl_address_from_handle(uint16_t handle) {
     return RawAddress::kEmpty;
   }
   return p_acl->remote_addr;
-}
-
-bool sco_peer_supports_esco_2m_phy(const RawAddress& remote_bda) {
-  uint8_t* features = BTM_ReadRemoteFeatures(remote_bda);
-  if (features == nullptr) {
-    LOG_WARN(
-        "Checking remote features but remote feature read is "
-        "incomplete");
-    return false;
-  }
-  return HCI_EDR_ESCO_2MPS_SUPPORTED(features);
-}
-
-bool sco_peer_supports_esco_3m_phy(const RawAddress& remote_bda) {
-  uint8_t* features = BTM_ReadRemoteFeatures(remote_bda);
-  if (features == nullptr) {
-    LOG_WARN(
-        "Checking remote features but remote feature read is "
-        "incomplete");
-    return false;
-  }
-  return HCI_EDR_ESCO_3MPS_SUPPORTED(features);
-}
-
-bool sco_peer_supports_esco_ev3(const RawAddress& remote_bda) {
-  uint8_t* features = BTM_ReadRemoteFeatures(remote_bda);
-  if (features == nullptr) {
-    LOG_WARN(
-        "Checking remote features but remote feature read is "
-        "incomplete");
-    return false;
-  }
-  return HCI_ESCO_EV3_SUPPORTED(features);
 }
 
 bool acl_is_switch_role_idle(const RawAddress& bd_addr,
@@ -2555,40 +2339,33 @@ bool acl_is_switch_role_idle(const RawAddress& bd_addr,
  *
  * Function       BTM_ReadRemoteConnectionAddr
  *
- * Description    This function is read the remote device address currently used
+ * Description    This function is read the LE remote device address used in
+ *                connection establishment
  *
  * Parameters     pseudo_addr: pseudo random address available
  *                conn_addr:connection address used
  *                p_addr_type : BD Address type, Public or Random of the address
  *                              used
+ *                ota_address: When use if remote used RPA in OTA it will be
+ *returned.
  *
  * Returns        bool, true if connection to remote device exists, else false
  *
  ******************************************************************************/
 bool BTM_ReadRemoteConnectionAddr(const RawAddress& pseudo_addr,
                                   RawAddress& conn_addr,
-                                  tBLE_ADDR_TYPE* p_addr_type) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::BTM_ReadRemoteConnectionAddr(pseudo_addr, conn_addr,
-                                                         p_addr_type);
-  }
-
-  if (bluetooth::shim::is_gd_l2cap_enabled()) {
-    return bluetooth::shim::L2CA_ReadRemoteConnectionAddr(
-        pseudo_addr, conn_addr, p_addr_type);
-  }
-
-  bool st = true;
-  tACL_CONN* p_acl = internal_.btm_bda_to_acl(pseudo_addr, BT_TRANSPORT_LE);
-
-  if (p_acl == NULL) {
-    LOG_WARN("Unable to find active acl");
+                                  tBLE_ADDR_TYPE* p_addr_type,
+                                  bool ota_address) {
+  tBTM_SEC_DEV_REC* p_sec_rec = btm_find_dev(pseudo_addr);
+  if (p_sec_rec == nullptr) {
+    LOG_WARN("No matching known device %s in record",
+             ADDRESS_TO_LOGGABLE_CSTR(pseudo_addr));
     return false;
   }
 
-  conn_addr = p_acl->active_remote_addr;
-  *p_addr_type = p_acl->active_remote_addr_type;
-  return st;
+  bluetooth::shim::ACL_ReadPeerConnectionAddress(
+      p_sec_rec->ble_hci_handle, conn_addr, p_addr_type, ota_address);
+  return true;
 }
 
 uint8_t acl_link_role_from_handle(uint16_t handle) {
@@ -2676,6 +2453,7 @@ bool acl_set_peer_le_features_from_handle(uint16_t hci_handle,
 
 void on_acl_br_edr_connected(const RawAddress& bda, uint16_t handle,
                              uint8_t enc_mode, bool locally_initiated) {
+  power_telemetry::GetInstance().LogLinkDetails(handle, bda, true, true);
   if (delayed_role_change_ != nullptr && delayed_role_change_->bd_addr == bda) {
     btm_sec_connected(bda, handle, HCI_SUCCESS, enc_mode,
                       delayed_role_change_->new_role);
@@ -2683,7 +2461,6 @@ void on_acl_br_edr_connected(const RawAddress& bda, uint16_t handle,
     btm_sec_connected(bda, handle, HCI_SUCCESS, enc_mode);
   }
   delayed_role_change_ = nullptr;
-  btm_acl_set_paging(false);
   l2c_link_hci_conn_comp(HCI_SUCCESS, handle, bda);
   uint16_t link_supervision_timeout =
       osi_property_get_int32(PROPERTY_LINK_SUPERVISION_TIMEOUT, 8000);
@@ -2717,7 +2494,6 @@ void on_acl_br_edr_failed(const RawAddress& bda, tHCI_STATUS status,
     btm_sec_connected(bda, HCI_INVALID_HANDLE, status, false);
   }
   delayed_role_change_ = nullptr;
-  btm_acl_set_paging(false);
   l2c_link_hci_conn_comp(status, HCI_INVALID_HANDLE, bda);
 
   acl_set_locally_initiated(locally_initiated);
@@ -2728,6 +2504,7 @@ void btm_acl_connected(const RawAddress& bda, uint16_t handle,
                        tHCI_STATUS status, uint8_t enc_mode) {
   switch (status) {
     case HCI_SUCCESS:
+      power_telemetry::GetInstance().LogLinkDetails(handle, bda, true, true);
       return on_acl_br_edr_connected(bda, handle, enc_mode,
                                      true /* locally_initiated */);
     default:
@@ -2747,7 +2524,8 @@ void btm_acl_disconnected(tHCI_STATUS status, uint16_t handle,
     LOG_WARN("Received disconnect with error:%s",
              hci_error_code_text(status).c_str());
   }
-
+  power_telemetry::GetInstance().LogLinkDetails(handle, RawAddress::kEmpty,
+                                                false, true);
   /* There can be a case when we rejected PIN code authentication */
   /* otherwise save a new reason */
   if (btm_get_acl_disc_reason_code() != HCI_ERR_HOST_REJECT_SECURITY) {
@@ -2775,22 +2553,18 @@ void btm_connection_request(const RawAddress& bda,
                             const bluetooth::types::ClassOfDevice& cod) {
   // Copy Cod information
   DEV_CLASS dc;
+
+  /* Some device may request a connection before we are done with the HCI_Reset
+   * sequence */
+  if (!controller_get_interface()->get_is_ready()) {
+    LOG_VERBOSE("Security Manager: connect request when device not ready");
+    btsnd_hcic_reject_conn(bda, HCI_ERR_HOST_REJECT_DEVICE);
+    return;
+  }
+
   dc[0] = cod.cod[2], dc[1] = cod.cod[1], dc[2] = cod.cod[0];
 
   btm_sec_conn_req(bda, dc);
-}
-
-void btm_acl_connection_request(const RawAddress& bda, uint8_t* dc) {
-  btm_sec_conn_req(bda, dc);
-  l2c_link_hci_conn_req(bda);
-}
-
-void acl_accept_connection_request(const RawAddress& bd_addr, uint8_t role) {
-  btsnd_hcic_accept_conn(bd_addr, role);
-}
-
-void acl_reject_connection_request(const RawAddress& bd_addr, uint8_t reason) {
-  btsnd_hcic_reject_conn(bd_addr, reason);
 }
 
 void acl_disconnect_from_handle(uint16_t handle, tHCI_STATUS reason,
@@ -2798,12 +2572,41 @@ void acl_disconnect_from_handle(uint16_t handle, tHCI_STATUS reason,
   acl_disconnect_after_role_switch(handle, reason, comment);
 }
 
+// BLUETOOTH CORE SPECIFICATION Version 5.4 | Vol 4, Part E
+// 7.1.6 Disconnect command
+// Only a subset of reasons are valid and will be accepted
+// by the controller
+bool is_disconnect_reason_valid(const tHCI_REASON& reason) {
+  switch (reason) {
+    case HCI_ERR_AUTH_FAILURE:
+    case HCI_ERR_PEER_USER:
+    case HCI_ERR_REMOTE_LOW_RESOURCE:
+    case HCI_ERR_REMOTE_POWER_OFF:
+    case HCI_ERR_UNSUPPORTED_REM_FEATURE:
+    case HCI_ERR_PAIRING_WITH_UNIT_KEY_NOT_SUPPORTED:
+    case HCI_ERR_UNACCEPT_CONN_INTERVAL:
+      return true;
+    default:
+      break;
+  }
+  return false;
+}
+
 void acl_disconnect_after_role_switch(uint16_t conn_handle, tHCI_STATUS reason,
                                       std::string comment) {
+  if (!is_disconnect_reason_valid(reason)) {
+    LOG_WARN(
+        "Controller will not accept invalid reason parameter:%s"
+        " instead sending:%s",
+        hci_error_code_text(reason).c_str(),
+        hci_error_code_text(HCI_ERR_PEER_USER).c_str());
+    reason = HCI_ERR_PEER_USER;
+  }
+
   tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(conn_handle);
   if (p_acl == nullptr) {
     LOG_ERROR("Sending disconnect for unknown acl:%hu PLEASE FIX", conn_handle);
-    GetLegacyHciInterface().Disconnect(conn_handle, reason);
+    GetInterface().Disconnect(conn_handle, reason);
     return;
   }
 
@@ -2818,7 +2621,7 @@ void acl_disconnect_after_role_switch(uint16_t conn_handle, tHCI_STATUS reason,
   } else {
     LOG_DEBUG("Sending acl disconnect reason:%s [%hu]",
               hci_error_code_text(reason).c_str(), reason);
-    hci_btsnd_hcic_disconnect(*p_acl, reason, comment);
+    disconnect_acl(*p_acl, reason, comment);
   }
 }
 
@@ -2830,6 +2633,7 @@ void acl_send_data_packet_br_edr(const RawAddress& bd_addr, BT_HDR* p_buf) {
       osi_free(p_buf);
       return;
     }
+    power_telemetry::GetInstance().LogTxAclPktData(p_buf->len);
     return bluetooth::shim::ACL_WriteData(p_acl->hci_handle, p_buf);
 }
 
@@ -2841,6 +2645,7 @@ void acl_send_data_packet_ble(const RawAddress& bd_addr, BT_HDR* p_buf) {
       osi_free(p_buf);
       return;
     }
+    power_telemetry::GetInstance().LogTxAclPktData(p_buf->len);
     return bluetooth::shim::ACL_WriteData(p_acl->hci_handle, p_buf);
 }
 
@@ -2865,11 +2670,11 @@ void acl_write_automatic_flush_timeout(const RawAddress& bd_addr,
 bool acl_create_le_connection_with_id(uint8_t id, const RawAddress& bd_addr,
                                       tBLE_ADDR_TYPE addr_type) {
   tBLE_BD_ADDR address_with_type{
-      .bda = bd_addr,
       .type = addr_type,
+      .bda = bd_addr,
   };
 
-  gatt_find_in_device_record(bd_addr, &address_with_type);
+  find_in_device_record(bd_addr, &address_with_type);
 
   LOG_DEBUG("Creating le direct connection to:%s type:%s (initial type: %s)",
             ADDRESS_TO_LOGGABLE_CSTR(address_with_type),
@@ -2883,15 +2688,6 @@ bool acl_create_le_connection_with_id(uint8_t id, const RawAddress& bd_addr,
         ADDRESS_TO_LOGGABLE_CSTR(address_with_type));
     return false;
   }
-
-  // argument list
-  auto argument_list = std::vector<std::pair<bluetooth::os::ArgumentType, int>>();
-
-  bluetooth::shim::LogMetricBluetoothLEConnectionMetricEvent(
-      bd_addr, android::bluetooth::le::LeConnectionOriginType::ORIGIN_NATIVE,
-      android::bluetooth::le::LeConnectionType::CONNECTION_TYPE_LE_ACL,
-      android::bluetooth::le::LeConnectionState::STATE_LE_ACL_START,
-      argument_list);
 
   if (bluetooth::common::init_flags::
           use_unified_connection_manager_is_enabled()) {
@@ -2922,6 +2718,7 @@ void acl_rcv_acl_data(BT_HDR* p_msg) {
   STREAM_TO_UINT16(acl_header.handle, p);
   acl_header.handle = HCID_GET_HANDLE(acl_header.handle);
 
+  power_telemetry::GetInstance().LogRxAclPktData(p_msg->len);
   STREAM_TO_UINT16(acl_header.hci_len, p);
   if (acl_header.hci_len < L2CAP_PKT_OVERHEAD ||
       acl_header.hci_len != p_msg->len - sizeof(acl_header)) {
@@ -2931,10 +2728,6 @@ void acl_rcv_acl_data(BT_HDR* p_msg) {
     return;
   }
   l2c_rcv_acl_data(p_msg);
-}
-
-void acl_link_segments_xmitted(BT_HDR* p_msg) {
-  l2c_link_segments_xmitted(p_msg);
 }
 
 void acl_packets_completed(uint16_t handle, uint16_t credits) {
@@ -3018,39 +2811,6 @@ bool ACL_SupportTransparentSynchronousData(const RawAddress& bd_addr) {
   return HCI_LMP_TRANSPNT_SUPPORTED(p_acl->peer_lmp_feature_pages[0]);
 }
 
-/**
- * Confusingly, immutable device features are stored in the
- * ephemeral connection data structure while connection security
- * is stored in the device record.
- *
- * This HACK allows legacy security protocols to work as intended under
- * those conditions.
- */
-void HACK_acl_check_sm4(tBTM_SEC_DEV_REC& record) {
-  // Return if we already know this info
-  if ((record.sm4 & BTM_SM4_TRUE) != BTM_SM4_UNKNOWN) return;
-
-  tACL_CONN* p_acl =
-      internal_.btm_bda_to_acl(record.RemoteAddress(), BT_TRANSPORT_BR_EDR);
-  if (p_acl == nullptr) {
-    LOG_WARN("Unable to find active acl for authentication device:%s",
-             ADDRESS_TO_LOGGABLE_CSTR(record.RemoteAddress()));
-    return;
-  }
-
-  // If we have not received the SSP feature record
-  // we have to wait
-  if (!p_acl->peer_lmp_feature_valid[1]) {
-    LOG_WARN(
-        "Authentication started without extended feature page 1 request "
-        "response");
-    return;
-  }
-  record.sm4 = (HCI_SSP_HOST_SUPPORTED(p_acl->peer_lmp_feature_pages[1]))
-                   ? BTM_SM4_TRUE
-                   : BTM_SM4_KNOWN;
-}
-
 tACL_CONN* btm_acl_for_bda(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, transport);
   if (p_acl == nullptr) {
@@ -3058,4 +2818,24 @@ tACL_CONN* btm_acl_for_bda(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
     return nullptr;
   }
   return p_acl;
+}
+
+void find_in_device_record(const RawAddress& bd_addr,
+                           tBLE_BD_ADDR* address_with_type) {
+  const tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
+  if (p_dev_rec == nullptr) {
+    return;
+  }
+
+  if (p_dev_rec->device_type & BT_DEVICE_TYPE_BLE) {
+    if (p_dev_rec->ble.identity_address_with_type.bda.IsEmpty()) {
+      *address_with_type = {.type = p_dev_rec->ble.AddressType(),
+                            .bda = bd_addr};
+      return;
+    }
+    *address_with_type = p_dev_rec->ble.identity_address_with_type;
+    return;
+  }
+  *address_with_type = {.type = BLE_ADDR_PUBLIC, .bda = bd_addr};
+  return;
 }

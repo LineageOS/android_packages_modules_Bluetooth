@@ -31,6 +31,7 @@ import android.content.Context;
 import android.content.Intent;
 
 import androidx.test.core.app.ActivityScenario;
+import androidx.test.espresso.action.ViewActions;
 import androidx.test.espresso.intent.Intents;
 import androidx.test.platform.app.InstrumentationRegistry;
 
@@ -39,15 +40,19 @@ import com.android.bluetooth.TestUtils;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
-
-import java.io.IOException;
 
 public class BluetoothOppBtEnableActivityTest {
 
     Intent mIntent;
     Context mTargetContext;
+
+    // Activity tests can sometimes flaky because of external factors like system dialog, etc.
+    // making the expected Espresso's root not focused or the activity doesn't show up.
+    // Add retry rule to resolve this problem.
+    @Rule public TestUtils.RetryTestRule mRetryTestRule = new TestUtils.RetryTestRule();
 
     @Before
     public void setUp() throws Exception {
@@ -57,11 +62,12 @@ public class BluetoothOppBtEnableActivityTest {
         mIntent.setClass(mTargetContext, BluetoothOppBtEnableActivity.class);
         Intents.init();
         BluetoothOppTestUtils.enableOppActivities(true, mTargetContext);
-        TestUtils.wakeUpAndDismissKeyGuard();
+        TestUtils.setUpUiTest();
     }
 
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
+        TestUtils.tearDownUiTest();
         Intents.release();
         BluetoothOppTestUtils.enableOppActivities(false, mTargetContext);
     }
@@ -72,6 +78,9 @@ public class BluetoothOppBtEnableActivityTest {
                 mIntent);
         activityScenario.onActivity(
                 activity -> activity.mOppManager = mock(BluetoothOppManager.class));
+        onView(withText(mTargetContext.getText(R.string.bt_enable_ok).toString()))
+                .inRoot(isDialog())
+                .perform(ViewActions.scrollTo());
         onView(withText(mTargetContext.getText(R.string.bt_enable_ok).toString())).inRoot(
                 isDialog()).check(matches(isDisplayed())).perform(click());
         intended(hasComponent(BluetoothOppBtEnablingActivity.class.getName()));

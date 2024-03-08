@@ -28,17 +28,18 @@
 #include "common/init_flags.h"
 #include "common/strings.h"
 #include "hal/snoop_logger_common.h"
-#include "hal/syscall_wrapper_impl.h"
-#include "os/fake_timer/fake_timerfd.h"
+#include "module_dumper_flatbuffer.h"
 #include "os/files.h"
 #include "os/log.h"
 #include "os/parameter_provider.h"
 #include "os/system_properties.h"
 
-namespace bluetooth {
 #ifdef USE_FAKE_TIMERS
-using os::fake_timer::fake_timerfd_get_clock;
+#include "os/fake_timer/fake_timerfd.h"
+using bluetooth::os::fake_timer::fake_timerfd_get_clock;
 #endif
+
+namespace bluetooth {
 namespace hal {
 
 // Adds L2CAP channel to acceptlist.
@@ -214,11 +215,11 @@ void ProfilesFilter::PrintProfilesConfig() {
   for (int i = 0; i < FILTER_PROFILE_MAX; i++) {
     if (profiles[i].enabled) {
       LOG_DEBUG(
-          "\ntype: %s \
-                \nenabled: %d, l2cap_opened: %d, rfcomm_opened: %d\
-                \nflow_ext_l2cap: %d, flow_ext_rfcomm: %d\
-                \nlcid: %d, rcid: %d, rfcomm_uuid: %d, psm: %d\
-                \nscn: %d \n",
+          "\ntype: %s"
+          "\nenabled: %d, l2cap_opened: %d, rfcomm_opened: %d"
+          "\nflow_ext_l2cap: %d, flow_ext_rfcomm: %d"
+          "\nlcid: %d, rcid: %d, rfcomm_uuid: %d, psm: %d"
+          "\nscn: %d\n",
           ProfilesFilter::ProfileToString(profiles[i].type).c_str(),
           profiles[i].enabled,
           profiles[i].l2cap_opened,
@@ -496,11 +497,6 @@ SnoopLogger::SnoopLogger(
       snoop_log_persists(snoop_log_persists) {
   btsnoop_mode_ = btsnoop_mode;
 
-  if (btsnoop_mode_ == kBtSnoopLogModeFiltered &&
-      !bluetooth::common::InitFlags::IsSnoopLoggerFilteringEnabled()) {
-    btsnoop_mode_ = kBtSnoopLogModeDisabled;
-  }
-
   if (btsnoop_mode_ == kBtSnoopLogModeFiltered) {
     LOG_INFO("Snoop Logs filtered mode enabled");
     EnableFilters();
@@ -648,7 +644,8 @@ bool SnoopLogger::ShouldFilterLog(bool is_received, uint8_t* packet) {
   return false;
 }
 
-void SnoopLogger::CalculateAclPacketLength(uint32_t& length, uint8_t* packet, bool is_received) {
+void SnoopLogger::CalculateAclPacketLength(
+    uint32_t& length, uint8_t* packet, bool /* is_received */) {
   uint32_t def_len =
       ((((uint16_t)packet[ACL_LENGTH_OFFSET + 1]) << 8) + packet[ACL_LENGTH_OFFSET]) +
       ACL_HEADER_LENGTH + PACKET_TYPE_LENGTH;
@@ -1259,7 +1256,7 @@ void SnoopLogger::Capture(HciPacket& packet, Direction direction, PacketType typ
 
     if (socket_ != nullptr) {
       socket_->Write(&header, sizeof(PacketHeaderType));
-      socket_->Write(packet.data(), packet.size());
+      socket_->Write(packet.data(), (size_t)(length - 1));
     }
 
     // std::ofstream::flush() pushes user data into kernel memory. The data will be written even if this process
@@ -1314,7 +1311,7 @@ void SnoopLogger::DumpSnoozLogToFile(const std::vector<std::string>& data) const
   }
 }
 
-void SnoopLogger::ListDependencies(ModuleList* list) const {
+void SnoopLogger::ListDependencies(ModuleList* /* list */) const {
   // We have no dependencies
 }
 
@@ -1327,18 +1324,17 @@ void SnoopLogger::Start() {
       EnableFilters();
     }
 
-    if (bluetooth::common::InitFlags::IsSnoopLoggerSocketEnabled()) {
-      auto snoop_logger_socket = std::make_unique<SnoopLoggerSocket>(&syscall_if);
-      snoop_logger_socket_thread_ = std::make_unique<SnoopLoggerSocketThread>(std::move(snoop_logger_socket));
-      auto thread_started_future = snoop_logger_socket_thread_->Start();
-      thread_started_future.wait();
-      if (thread_started_future.get()) {
-        RegisterSocket(snoop_logger_socket_thread_.get());
-      } else {
-        snoop_logger_socket_thread_->Stop();
-        snoop_logger_socket_thread_.reset();
-        snoop_logger_socket_thread_ = nullptr;
-      }
+    auto snoop_logger_socket = std::make_unique<SnoopLoggerSocket>(&syscall_if);
+    snoop_logger_socket_thread_ =
+        std::make_unique<SnoopLoggerSocketThread>(std::move(snoop_logger_socket));
+    auto thread_started_future = snoop_logger_socket_thread_->Start();
+    thread_started_future.wait();
+    if (thread_started_future.get()) {
+      RegisterSocket(snoop_logger_socket_thread_.get());
+    } else {
+      snoop_logger_socket_thread_->Stop();
+      snoop_logger_socket_thread_.reset();
+      snoop_logger_socket_thread_ = nullptr;
     }
   }
   alarm_ = std::make_unique<os::RepeatingAlarm>(GetHandler());
@@ -1371,10 +1367,11 @@ void SnoopLogger::Stop() {
   }
 }
 
-DumpsysDataFinisher SnoopLogger::GetDumpsysData(flatbuffers::FlatBufferBuilder* builder) const {
+DumpsysDataFinisher SnoopLogger::GetDumpsysData(
+    flatbuffers::FlatBufferBuilder* /* builder */) const {
   LOG_DEBUG("Dumping btsnooz log data to %s", snooz_log_path_.c_str());
   DumpSnoozLogToFile(btsnooz_buffer_.Pull());
-  return Module::GetDumpsysData(builder);
+  return EmptyDumpsysDataFinisher;
 }
 
 size_t SnoopLogger::GetMaxPacketsPerFile() {

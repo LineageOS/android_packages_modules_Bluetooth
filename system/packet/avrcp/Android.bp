@@ -9,13 +9,14 @@ package {
 
 cc_library_static {
     name: "lib-bt-packets-avrcp",
-    defaults: ["libchrome_support_defaults"],
+    defaults: ["bluetooth_cflags"],
     header_libs: ["avrcp_headers"],
     export_header_lib_headers: ["avrcp_headers"],
     export_include_dirs: ["."],
     host_supported: true,
     include_dirs: [
         "packages/modules/Bluetooth/system/",
+        "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
     ],
     srcs: [
@@ -44,6 +45,7 @@ cc_library_static {
     ],
     static_libs: [
         "lib-bt-packets-base",
+        "libchrome",
     ],
     apex_available: [
         "com.android.btservices",

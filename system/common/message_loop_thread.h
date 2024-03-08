@@ -23,11 +23,12 @@
 #include <unistd.h>
 
 #include <future>
-#include <memory>
 #include <string>
 #include <thread>
 
 #include "abstract_message_loop.h"
+#include "gd/common/contextual_callback.h"
+#include "gd/common/i_postable_context.h"
 
 namespace bluetooth {
 
@@ -36,7 +37,7 @@ namespace common {
 /**
  * An interface to various thread related functionality
  */
-class MessageLoopThread final {
+class MessageLoopThread final : public IPostableContext {
  public:
   /**
    * Create a message loop thread with name. Thread won't be running until
@@ -45,7 +46,6 @@ class MessageLoopThread final {
    * @param thread_name name of this worker thread
    */
   explicit MessageLoopThread(const std::string& thread_name);
-  explicit MessageLoopThread(const std::string& thread_name, bool is_main);
 
   MessageLoopThread(const MessageLoopThread&) = delete;
   MessageLoopThread& operator=(const MessageLoopThread&) = delete;
@@ -167,6 +167,51 @@ class MessageLoopThread final {
    */
   bool DoInThreadDelayed(const base::Location& from_here,
                          base::OnceClosure task, const base::TimeDelta& delay);
+  /**
+   * Wrapper around DoInThread without a location.
+   */
+  void Post(base::OnceClosure closure) override;
+
+  template <typename Functor, typename... Args>
+  common::ContextualOnceCallback<common::MakeUnboundRunType<Functor, Args...>>
+  BindOnce(Functor&& functor, Args&&... args) {
+    return common::ContextualOnceCallback<
+        common::MakeUnboundRunType<Functor, Args...>>(
+        common::BindOnce(std::forward<Functor>(functor),
+                         std::forward<Args>(args)...),
+        this);
+  }
+
+  template <typename Functor, typename T, typename... Args>
+  common::ContextualOnceCallback<
+      common::MakeUnboundRunType<Functor, T, Args...>>
+  BindOnceOn(T* obj, Functor&& functor, Args&&... args) {
+    return common::ContextualOnceCallback<
+        common::MakeUnboundRunType<Functor, T, Args...>>(
+        common::BindOnce(std::forward<Functor>(functor),
+                         common::Unretained(obj), std::forward<Args>(args)...),
+        this);
+  }
+
+  template <typename Functor, typename... Args>
+  common::ContextualCallback<common::MakeUnboundRunType<Functor, Args...>> Bind(
+      Functor&& functor, Args&&... args) {
+    return common::ContextualCallback<
+        common::MakeUnboundRunType<Functor, Args...>>(
+        common::Bind(std::forward<Functor>(functor),
+                     std::forward<Args>(args)...),
+        this);
+  }
+
+  template <typename Functor, typename T, typename... Args>
+  common::ContextualCallback<common::MakeUnboundRunType<Functor, T, Args...>>
+  BindOn(T* obj, Functor&& functor, Args&&... args) {
+    return common::ContextualCallback<
+        common::MakeUnboundRunType<Functor, T, Args...>>(
+        common::Bind(std::forward<Functor>(functor), common::Unretained(obj),
+                     std::forward<Args>(args)...),
+        this);
+  }
 
  private:
   /**
@@ -199,7 +244,6 @@ class MessageLoopThread final {
   pid_t linux_tid_;
   base::WeakPtrFactory<MessageLoopThread> weak_ptr_factory_;
   bool shutting_down_;
-  bool is_main_;
 };
 
 inline std::ostream& operator<<(std::ostream& os,

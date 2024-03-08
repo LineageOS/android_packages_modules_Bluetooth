@@ -19,33 +19,23 @@
  *   Functions generated:9
  */
 
-#include <string.h>
-
-#include <map>
-#include <string>
-
 #include "a2dp_api.h"
-#include "avdt_api.h"
-#include "bt_target.h"
-#include "osi/include/log.h"
-#include "sdpdefs.h"
 #include "stack/a2dp/a2dp_int.h"
 #include "test/common/mock_functions.h"
 #include "types/raw_address.h"
 
-#ifndef UNUSED_ATTR
-#define UNUSED_ATTR
-#endif
-
-tA2DP_STATUS A2DP_AddRecord(uint16_t service_uuid, char* p_service_name,
-                            char* p_provider_name, uint16_t features,
-                            uint32_t sdp_handle) {
+tA2DP_STATUS A2DP_AddRecord(uint16_t /* service_uuid */,
+                            char* /* p_service_name */,
+                            char* /* p_provider_name */,
+                            uint16_t /* features */,
+                            uint32_t /* sdp_handle */) {
   inc_func_call_count(__func__);
   return A2DP_SUCCESS;
 }
-tA2DP_STATUS A2DP_FindService(uint16_t service_uuid, const RawAddress& bd_addr,
-                              tA2DP_SDP_DB_PARAMS* p_db,
-                              tA2DP_FIND_CBACK* p_cback) {
+tA2DP_STATUS A2DP_FindService(uint16_t /* service_uuid */,
+                              const RawAddress& /* bd_addr */,
+                              tA2DP_SDP_DB_PARAMS* /* p_db */,
+                              tA2DP_FIND_CBACK* /* p_cback */) {
   inc_func_call_count(__func__);
   return A2DP_SUCCESS;
 }
@@ -53,15 +43,11 @@ uint16_t A2DP_GetAvdtpVersion() {
   inc_func_call_count(__func__);
   return 0;
 }
-uint8_t A2DP_BitsSet(uint64_t num) {
+uint8_t A2DP_BitsSet(uint64_t /* num */) {
   inc_func_call_count(__func__);
   return 1;
 }
-uint8_t A2DP_SetTraceLevel(uint8_t new_level) {
-  inc_func_call_count(__func__);
-  return 0;
-}
 void A2DP_Init(void) { inc_func_call_count(__func__); }
-void a2dp_set_avdt_sdp_ver(uint16_t avdt_sdp_ver) {
+void a2dp_set_avdt_sdp_ver(uint16_t /* avdt_sdp_ver */) {
   inc_func_call_count(__func__);
 }

@@ -22,26 +22,23 @@
 
 #include "btif_gatt_util.h"
 
-#include <errno.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_gatt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "bta_api.h"
-#include "bta_gatt_api.h"
-#include "bta_jv_api.h"
-#include "btif_common.h"
-#include "btif_config.h"
-#include "btif_dm.h"
-#include "btif_gatt.h"
+#include "bta/include/bta_api_data_types.h"
+#include "bta/include/bta_sec_api.h"
 #include "btif_storage.h"
-#include "btif_util.h"
+#include "common/init_flags.h"
 #include "gd/os/system_properties.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_sec.h"
+#include "stack/include/acl_api.h"
+#include "types/ble_address_with_type.h"
 #include "types/bluetooth/uuid.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
@@ -72,12 +69,21 @@ static void btif_gatt_set_encryption_cb(UNUSED_ATTR const RawAddress& bd_addr,
                                         UNUSED_ATTR tBT_TRANSPORT transport,
                                         tBTA_STATUS result) {
   if (result != BTA_SUCCESS && result != BTA_BUSY) {
-    BTIF_TRACE_WARNING("%s() - Encryption failed (%d)", __func__, result);
+    LOG_WARN("%s() - Encryption failed (%d)", __func__, result);
   }
 }
 
 void btif_gatt_check_encrypted_link(RawAddress bd_addr,
                                     tBT_TRANSPORT transport_link) {
+  RawAddress raw_local_addr;
+  tBLE_ADDR_TYPE local_addr_type;
+  BTM_ReadConnectionAddr(bd_addr, raw_local_addr, &local_addr_type);
+  tBLE_BD_ADDR local_addr{local_addr_type, raw_local_addr};
+  if (!local_addr.IsPublic() && !local_addr.IsAddressResolvable()) {
+    LOG_DEBUG("Not establishing encryption since address type is NRPA");
+    return;
+  }
+
   static const bool check_encrypted = bluetooth::os::GetSystemPropertyBool(
       "bluetooth.gatt.check_encrypted_link.enabled", true);
   if (!check_encrypted) {

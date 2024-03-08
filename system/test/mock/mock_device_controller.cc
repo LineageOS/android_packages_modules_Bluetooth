@@ -20,30 +20,18 @@
  *
  *  mockcify.pl ver 0.2
  */
-
-#include <map>
-#include <string>
+// Mock include file to share data between tests and mock
+#include "test/mock/mock_device_controller.h"
 
 // Original included files, if any
-// NOTE: Since this is a mock file with mock definitions some number of
-//       include files may not be required.  The include-what-you-use
-//       still applies, but crafting proper inclusion is out of scope
-//       for this effort.  This compilation unit may compile as-is, or
-//       may need attention to prune the inclusion set.
-#include "main/shim/controller.h"
-#include "types/raw_address.h"
-
-// Mock include file to share data between tests and mock
+#include "btcore/include/version.h"
+#include "device/include/controller.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/hcidefs.h"
-#include "test/mock/mock_device_controller.h"
+#include "types/raw_address.h"
 
 // Mocked compile conditionals, if any
-#ifndef UNUSED_ATTR
-#define UNUSED_ATTR
-#endif
-
 // Mocked internal structures, if any
 namespace test {
 namespace mock {
@@ -93,6 +81,9 @@ bool ble_supported{false};
 bool iso_supported{false};
 bool simple_pairing_supported{false};
 bool secure_connections_supported{false};
+bool supports_hold_mode{false};
+bool supports_sniff_mode{true};
+bool supports_park_mode{false};
 
 bool get_is_ready(void) { return readable; }
 
@@ -208,18 +199,6 @@ bool supports_3_slot_esco_edr_packets(void) {
 
 bool supports_role_switch(void) {
   return HCI_SWITCH_SUPPORTED(features_classic[0].as_array);
-}
-
-bool supports_hold_mode(void) {
-  return HCI_HOLD_MODE_SUPPORTED(features_classic[0].as_array);
-}
-
-bool supports_sniff_mode(void) {
-  return HCI_SNIFF_MODE_SUPPORTED(features_classic[0].as_array);
-}
-
-bool supports_park_mode(void) {
-  return HCI_PARK_MODE_SUPPORTED(features_classic[0].as_array);
 }
 
 bool supports_non_flushable_pb(void) {
@@ -405,7 +384,6 @@ tBTM_STATUS set_event_filter_inquiry_result_all_devices() {
   return BTM_SUCCESS;
 }
 
-// clang-format off
 const controller_t interface = {
     get_is_ready,
 
@@ -440,9 +418,9 @@ const controller_t interface = {
     supports_esco_3m_phy,
     supports_3_slot_esco_edr_packets,
     supports_role_switch,
-    supports_hold_mode,
-    supports_sniff_mode,
-    supports_park_mode,
+    []() { return supports_hold_mode; },
+    []() { return supports_sniff_mode; },
+    []() { return supports_park_mode; },
     supports_non_flushable_pb,
     supports_sniff_subrating,
     supports_encryption_pause,
@@ -503,7 +481,6 @@ const controller_t interface = {
     set_default_event_mask_except,
     set_event_filter_inquiry_result_all_devices,
 };
-// clang-format on
 
 }  // namespace device_controller
 }  // namespace mock

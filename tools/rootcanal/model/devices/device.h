@@ -16,9 +16,9 @@
 
 #pragma once
 
-#include <chrono>
 #include <cstdint>
-#include <map>
+#include <functional>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -34,7 +34,10 @@ using ::bluetooth::hci::Address;
 //  - Provide Get*() and Set*() functions for device attributes.
 class Device {
  public:
-  Device() { ASSERT(Address::FromString("BB:BB:BB:BB:BB:AD", address_)); }
+  // Unique device identifier.
+  const uint32_t id_;
+
+  Device();
   virtual ~Device() = default;
 
   // Return a string representation of the type of device.
@@ -53,8 +56,8 @@ class Device {
   virtual void Close();
 
   virtual void ReceiveLinkLayerPacket(
-      model::packets::LinkLayerPacketView packet, Phy::Type type,
-      int8_t rssi){};
+      model::packets::LinkLayerPacketView /*packet*/, Phy::Type /*type*/,
+      int8_t /*rssi*/) {}
 
   void SendLinkLayerPacket(
       std::shared_ptr<model::packets::LinkLayerPacketBuilder> packet,

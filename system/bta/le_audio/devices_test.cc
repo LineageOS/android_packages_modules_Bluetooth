@@ -20,7 +20,9 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "btif_storage_mock.h"
 #include "btm_api_mock.h"
+#include "device_groups.h"
 #include "le_audio_set_configuration_provider.h"
 #include "le_audio_types.h"
 #include "mock_controller.h"
@@ -65,17 +67,20 @@ class LeAudioDevicesTest : public Test {
     devices_ = new LeAudioDevices();
     bluetooth::manager::SetMockBtmInterface(&btm_interface);
     controller::SetMockControllerInterface(&controller_interface_);
+    bluetooth::storage::SetMockBtifStorageInterface(&mock_btif_storage_);
   }
 
   void TearDown() override {
     controller::SetMockControllerInterface(nullptr);
     bluetooth::manager::SetMockBtmInterface(nullptr);
+    bluetooth::storage::SetMockBtifStorageInterface(nullptr);
     delete devices_;
   }
 
   LeAudioDevices* devices_ = nullptr;
   bluetooth::manager::MockBtmInterface btm_interface;
   controller::MockControllerInterface controller_interface_;
+  bluetooth::storage::MockBtifStorageInterface mock_btif_storage_;
 };
 
 TEST_F(LeAudioDevicesTest, test_add) {
@@ -166,6 +171,32 @@ TEST_F(LeAudioDevicesTest, test_find_by_conn_id_failed) {
   devices_->Add(GetTestAddress(0), DeviceConnectState::CONNECTING_BY_USER);
   devices_->Add(GetTestAddress(4), DeviceConnectState::CONNECTING_BY_USER);
   ASSERT_EQ(nullptr, devices_->FindByConnId(0x0006));
+}
+
+TEST_F(LeAudioDevicesTest, test_get_device_model_name_success) {
+  RawAddress test_address_0 = GetTestAddress(0);
+  devices_->Add(test_address_0, DeviceConnectState::CONNECTING_BY_USER);
+  std::shared_ptr<LeAudioDevice> device =
+      devices_->GetByAddress(test_address_0);
+  ASSERT_NE(nullptr, device);
+  device->model_name_ = "Test";
+  ON_CALL(mock_btif_storage_, GetRemoteDeviceProperty(_, _))
+      .WillByDefault(Return(BT_STATUS_SUCCESS));
+  device->GetDeviceModelName();
+  ASSERT_EQ("", device->model_name_);
+}
+
+TEST_F(LeAudioDevicesTest, test_get_device_model_name_failed) {
+  RawAddress test_address_0 = GetTestAddress(0);
+  devices_->Add(test_address_0, DeviceConnectState::CONNECTING_BY_USER);
+  std::shared_ptr<LeAudioDevice> device =
+      devices_->GetByAddress(test_address_0);
+  ASSERT_NE(nullptr, device);
+  device->model_name_ = "Test";
+  ON_CALL(mock_btif_storage_, GetRemoteDeviceProperty(_, _))
+      .WillByDefault(Return(BT_STATUS_FAIL));
+  device->GetDeviceModelName();
+  ASSERT_EQ("Test", device->model_name_);
 }
 
 /* TODO: Add FindByCisConnHdl test cases (ASE) */
@@ -273,7 +304,7 @@ uint8_t GetSamplingFrequency(Lc3SettingId id) {
   }
 }
 
-static constexpr uint8_t kLeAudioCodecLC3FrameDurRfu = 0x02;
+static constexpr uint8_t kLeAudioCodecFrameDurRfu = 0x02;
 uint8_t GetFrameDuration(Lc3SettingId id) {
   switch (id) {
     case Lc3SettingId::LC3_8_1:
@@ -284,7 +315,7 @@ uint8_t GetFrameDuration(Lc3SettingId id) {
     case Lc3SettingId::LC3_48_1:
     case Lc3SettingId::LC3_48_3:
     case Lc3SettingId::LC3_48_5:
-      return ::le_audio::codec_spec_conf::kLeAudioCodecLC3FrameDur7500us;
+      return ::le_audio::codec_spec_conf::kLeAudioCodecFrameDur7500us;
     case Lc3SettingId::LC3_8_2:
     case Lc3SettingId::LC3_16_2:
     case Lc3SettingId::LC3_24_2:
@@ -294,9 +325,9 @@ uint8_t GetFrameDuration(Lc3SettingId id) {
     case Lc3SettingId::LC3_48_4:
     case Lc3SettingId::LC3_48_6:
     case Lc3SettingId::LC3_VND_1:
-      return ::le_audio::codec_spec_conf::kLeAudioCodecLC3FrameDur10000us;
+      return ::le_audio::codec_spec_conf::kLeAudioCodecFrameDur10000us;
     case Lc3SettingId::UNSUPPORTED:
-      return kLeAudioCodecLC3FrameDurRfu;
+      return kLeAudioCodecFrameDurRfu;
   }
 }
 
@@ -357,15 +388,15 @@ class PublishedAudioCapabilitiesBuilder {
     pac_records_.push_back(
         acs_ac_record({.codec_id = codec_id,
                        .codec_spec_caps = LeAudioLtvMap({
-                           {kLeAudioCodecLC3TypeSamplingFreq,
+                           {kLeAudioLtvTypeSupportedSamplingFrequencies,
                             UINT16_TO_VEC_UINT8(sampling_frequencies)},
-                           {kLeAudioCodecLC3TypeFrameDuration,
+                           {kLeAudioLtvTypeSupportedFrameDurations,
                             UINT8_TO_VEC_UINT8(frame_durations)},
-                           {kLeAudioCodecLC3TypeAudioChannelCounts,
+                           {kLeAudioLtvTypeSupportedAudioChannelCounts,
                             UINT8_TO_VEC_UINT8(audio_channel_counts)},
-                           {kLeAudioCodecLC3TypeOctetPerFrame,
+                           {kLeAudioLtvTypeSupportedOctetsPerCodecFrame,
                             UINT32_TO_VEC_UINT8(octets_per_frame_range)},
-                           {kLeAudioCodecLC3TypeMaxCodecFramesPerSdu,
+                           {kLeAudioLtvTypeSupportedMaxCodecFramesPerSdu,
                             UINT8_TO_VEC_UINT8(max_codec_frames_per_sdu)},
                        }),
                        .metadata = std::vector<uint8_t>(0)}));
@@ -381,28 +412,28 @@ class PublishedAudioCapabilitiesBuilder {
     pac_records_.push_back(
         acs_ac_record({.codec_id = codec_id,
                        .codec_spec_caps = LeAudioLtvMap({
-                           {kLeAudioCodecLC3TypeSamplingFreq,
+                           {kLeAudioLtvTypeSupportedSamplingFrequencies,
                             UINT16_TO_VEC_UINT8(capa_sampling_frequency)},
-                           {kLeAudioCodecLC3TypeFrameDuration,
+                           {kLeAudioLtvTypeSupportedFrameDurations,
                             UINT8_TO_VEC_UINT8(capa_frame_duration)},
-                           {kLeAudioCodecLC3TypeAudioChannelCounts,
+                           {kLeAudioLtvTypeSupportedAudioChannelCounts,
                             UINT8_TO_VEC_UINT8(audio_channel_counts)},
-                           {kLeAudioCodecLC3TypeOctetPerFrame,
+                           {kLeAudioLtvTypeSupportedOctetsPerCodecFrame,
                             UINT32_TO_VEC_UINT8(octets_per_frame_range)},
-                           {kLeAudioCodecLC3TypeMaxCodecFramesPerSdu,
+                           {kLeAudioLtvTypeSupportedMaxCodecFramesPerSdu,
                             UINT8_TO_VEC_UINT8(codec_frames_per_sdu)},
                        }),
                        .metadata = std::vector<uint8_t>(0)}));
   }
 
-  void Add(const CodecCapabilitySetting& setting,
-           uint8_t audio_channel_counts) {
+  void Add(const CodecConfigSetting& setting, uint8_t audio_channel_counts) {
     if (setting.id != LeAudioCodecIdLc3) return;
 
-    const LeAudioLc3Config config = std::get<LeAudioLc3Config>(setting.config);
-
-    Add(setting.id, *config.sampling_frequency, *config.frame_duration,
-        audio_channel_counts, *config.octets_per_codec_frame);
+    const LeAudioCoreCodecConfig core_config =
+        setting.params.GetAsCoreCodecConfig();
+    Add(setting.id, *core_config.sampling_frequency,
+        *core_config.frame_duration, audio_channel_counts,
+        *core_config.octets_per_codec_frame);
   }
 
   void Reset() { pac_records_.clear(); }
@@ -431,7 +462,8 @@ class LeAudioAseConfigurationTest : public Test {
     group_ = new LeAudioDeviceGroup(group_id_);
     bluetooth::manager::SetMockBtmInterface(&btm_interface_);
     controller::SetMockControllerInterface(&controller_interface_);
-    ::le_audio::AudioSetConfigurationProvider::Initialize();
+    ::le_audio::AudioSetConfigurationProvider::Initialize(
+        ::le_audio::types::CodecLocation::ADSP);
     MockCsisClient::SetMockInstanceForTesting(&mock_csis_client_module_);
     ON_CALL(mock_csis_client_module_, Get())
         .WillByDefault(Return(&mock_csis_client_module_));
@@ -511,10 +543,12 @@ class LeAudioAseConfigurationTest : public Test {
       device->ases_.push_back(ase);
     }
 
-    device->SetSupportedContexts(AudioContexts(kLeAudioContextAllTypes),
-                                 AudioContexts(kLeAudioContextAllTypes));
-    device->SetAvailableContexts(AudioContexts(kLeAudioContextAllTypes),
-                                 AudioContexts(kLeAudioContextAllTypes));
+    device->SetSupportedContexts(
+        {.sink = AudioContexts(kLeAudioContextAllTypes),
+         .source = AudioContexts(kLeAudioContextAllTypes)});
+    device->SetAvailableContexts(
+        {.sink = AudioContexts(kLeAudioContextAllTypes),
+         .source = AudioContexts(kLeAudioContextAllTypes)});
     device->snk_audio_locations_ =
         ::le_audio::codec_spec_conf::kLeAudioLocationFrontLeft |
         ::le_audio::codec_spec_conf::kLeAudioLocationFrontRight;
@@ -541,12 +575,12 @@ class LeAudioAseConfigurationTest : public Test {
 
     for (ase* ase = data.device->GetFirstActiveAse(); ase;
          ase = data.device->GetNextActiveAse(ase)) {
+      auto core_config = ase->codec_config.GetAsCoreCodecConfig();
+
       if (ase->direction == kLeAudioDirectionSink)
-        active_channel_num_snk +=
-            GetAudioChannelCounts(*ase->codec_config.audio_channel_allocation);
+        active_channel_num_snk += core_config.GetChannelCountPerIsoStream();
       else
-        active_channel_num_src +=
-            GetAudioChannelCounts(*ase->codec_config.audio_channel_allocation);
+        active_channel_num_src += core_config.GetChannelCountPerIsoStream();
     }
 
     bool result = true;
@@ -610,7 +644,8 @@ class LeAudioAseConfigurationTest : public Test {
         .source = AudioContexts(context_type)};
 
     /* Stimulate update of available context map */
-    group_->UpdateAudioContextTypeAvailability(AudioContexts(context_type));
+    group_->UpdateAudioContextAvailability();
+
     ASSERT_EQ(success_expected,
               group_->Configure(context_type, group_audio_locations));
 
@@ -701,7 +736,9 @@ class LeAudioAseConfigurationTest : public Test {
           .source = AudioContexts(context_type)};
 
       /* Stimulate update of available context map */
-      group_->UpdateAudioContextTypeAvailability(AudioContexts(context_type));
+      group_->UpdateAudioContextAvailability();
+      group_->UpdateAudioSetConfigurationCache(context_type);
+
       auto configuration_result =
           group_->Configure(context_type, group_audio_locations);
 
@@ -721,6 +758,7 @@ class LeAudioAseConfigurationTest : public Test {
         if (matching_conf) num_of_matching_configurations++;
       }
       group_->Deactivate();
+
       TestAsesInactive();
     }
 
@@ -747,9 +785,10 @@ class LeAudioAseConfigurationTest : public Test {
         /* FIXME: Validate other codec parameters than LC3 if any */
         ASSERT_EQ(ase.codec_id, LeAudioCodecIdLc3);
         if (ase.codec_id == LeAudioCodecIdLc3) {
-          ASSERT_EQ(ase.codec_config.sampling_frequency, sampling_frequency);
-          ASSERT_EQ(ase.codec_config.frame_duration, frame_duration);
-          ASSERT_EQ(ase.codec_config.octets_per_codec_frame, octets_per_frame);
+          auto core_config = ase.codec_config.GetAsCoreCodecConfig();
+          ASSERT_EQ(core_config.sampling_frequency, sampling_frequency);
+          ASSERT_EQ(core_config.frame_duration, frame_duration);
+          ASSERT_EQ(core_config.octets_per_codec_frame, octets_per_frame);
         }
       }
     }
@@ -802,8 +841,8 @@ class LeAudioAseConfigurationTest : public Test {
             PublishedAudioCapabilitiesBuilder pac_builder;
             pac_builder.Add(LeAudioCodecIdLc3, sampling_frequency,
                             frame_duration,
-                            kLeAudioCodecLC3ChannelCountSingleChannel |
-                                kLeAudioCodecLC3ChannelCountTwoChannel,
+                            kLeAudioCodecChannelCountSingleChannel |
+                                kLeAudioCodecChannelCountTwoChannel,
                             octets_per_frame);
             for (auto& device : devices_) {
               /* For simplicity configure both PACs with the same
@@ -821,8 +860,8 @@ class LeAudioAseConfigurationTest : public Test {
             }
 
             /* Stimulate update of available context map */
-            group_->UpdateAudioContextTypeAvailability(
-                AudioContexts(context_type));
+            group_->UpdateAudioContextAvailability();
+            group_->UpdateAudioSetConfigurationCache(context_type);
             BidirectionalPair<AudioContexts> group_audio_locations = {
                 .sink = AudioContexts(context_type),
                 .source = AudioContexts(context_type)};
@@ -862,11 +901,226 @@ class LeAudioAseConfigurationTest : public Test {
   MockCsisClient mock_csis_client_module_;
 };
 
+/* Helper */
+const AudioSetConfiguration* getSpecificConfiguration(
+    const char* config_name, LeAudioContextType context) {
+  auto all_configurations =
+      ::le_audio::AudioSetConfigurationProvider::Get()->GetConfigurations(
+          context);
+
+  if (all_configurations == nullptr) return nullptr;
+  if (all_configurations->end() == all_configurations->begin()) return nullptr;
+
+  auto iter =
+      std::find_if(all_configurations->begin(), all_configurations->end(),
+                   [config_name](auto& configuration) {
+                     return configuration->name == config_name;
+                   });
+  if (iter == all_configurations->end()) return nullptr;
+  return *iter;
+}
+
+TEST_F(LeAudioAseConfigurationTest, test_context_update) {
+  LeAudioDevice* left = AddTestDevice(1, 1);
+  LeAudioDevice* right = AddTestDevice(1, 1);
+  ASSERT_EQ(2, group_->Size());
+
+  /* Change locations */
+  left->snk_audio_locations_ =
+      ::le_audio::codec_spec_conf::kLeAudioLocationFrontLeft;
+  left->src_audio_locations_ =
+      ::le_audio::codec_spec_conf::kLeAudioLocationFrontLeft;
+  right->snk_audio_locations_ =
+      ::le_audio::codec_spec_conf::kLeAudioLocationFrontRight;
+  right->src_audio_locations_ =
+      ::le_audio::codec_spec_conf::kLeAudioLocationFrontRight;
+  group_->ReloadAudioLocations();
+
+  /* Put the PACS */
+  auto conversational_configuration = getSpecificConfiguration(
+      "SingleDev_OneChanStereoSnk_OneChanMonoSrc_16_2_Low_Latency",
+      LeAudioContextType::CONVERSATIONAL);
+  auto media_configuration = getSpecificConfiguration(
+      "SingleDev_TwoChanStereoSnk_48_4_High_Reliability",
+      LeAudioContextType::MEDIA);
+  ASSERT_NE(nullptr, conversational_configuration);
+  ASSERT_NE(nullptr, media_configuration);
+
+  /* Create PACs for conversational and media scenarios */
+  PublishedAudioCapabilitiesBuilder snk_pac_builder, src_pac_builder;
+  for (const auto& entry : (*conversational_configuration).confs) {
+    if (entry.direction == kLeAudioDirectionSink) {
+      snk_pac_builder.Add(entry.codec, 1);
+    } else {
+      src_pac_builder.Add(entry.codec, 1);
+    }
+  }
+  for (const auto& entry : (*media_configuration).confs) {
+    if (entry.direction == kLeAudioDirectionSink) {
+      snk_pac_builder.Add(entry.codec, 2);
+    }
+  }
+  left->snk_pacs_ = snk_pac_builder.Get();
+  left->src_pacs_ = src_pac_builder.Get();
+  right->snk_pacs_ = snk_pac_builder.Get();
+  right->src_pacs_ = src_pac_builder.Get();
+
+  /* UNSPECIFIED must be supported, MEDIA is on the remote sink only... */
+  auto remote_snk_supp_contexts = AudioContexts(
+      LeAudioContextType::MEDIA | LeAudioContextType::CONVERSATIONAL |
+      LeAudioContextType::SOUNDEFFECTS | LeAudioContextType::UNSPECIFIED);
+  auto remote_src_supp_contexts = AudioContexts(
+      LeAudioContextType::CONVERSATIONAL | LeAudioContextType::UNSPECIFIED);
+
+  left->SetSupportedContexts(
+      {.sink = remote_snk_supp_contexts, .source = remote_src_supp_contexts});
+
+  auto right_bud_only_context = LeAudioContextType::ALERTS;
+  right->SetSupportedContexts(
+      {.sink = remote_snk_supp_contexts | right_bud_only_context,
+       .source = remote_src_supp_contexts | right_bud_only_context});
+
+  /* ...but UNSPECIFIED and SOUNDEFFECTS are unavailable */
+  auto remote_snk_avail_contexts = AudioContexts(
+      LeAudioContextType::MEDIA | LeAudioContextType::CONVERSATIONAL);
+  auto remote_src_avail_contexts =
+      AudioContexts(LeAudioContextType::CONVERSATIONAL);
+
+  left->SetAvailableContexts(
+      {.sink = remote_snk_avail_contexts, .source = remote_src_avail_contexts});
+  ASSERT_EQ(left->GetAvailableContexts(),
+            remote_snk_avail_contexts | remote_src_avail_contexts);
+
+  // Make an additional context available on the right earbud sink
+  right->SetAvailableContexts(
+      {.sink = remote_snk_avail_contexts | right_bud_only_context,
+       .source = remote_src_avail_contexts});
+  ASSERT_EQ(right->GetAvailableContexts(), remote_snk_avail_contexts |
+                                               remote_src_avail_contexts |
+                                               right_bud_only_context);
+
+  /* Now add the right earbud contexts - mind the extra context on that bud */
+  group_->UpdateAudioContextAvailability();
+  ASSERT_NE(group_->GetAvailableContexts(), left->GetAvailableContexts());
+  ASSERT_EQ(group_->GetAvailableContexts(),
+            left->GetAvailableContexts() | right->GetAvailableContexts());
+
+  /* Since no device is being added or removed from the group this should not
+   * change the configuration set.
+   */
+  group_->UpdateAudioContextAvailability();
+  ASSERT_EQ(group_->GetAvailableContexts(),
+            left->GetAvailableContexts() | right->GetAvailableContexts());
+
+  /* MEDIA Available on remote sink direction only */
+  ASSERT_TRUE(group_
+                  ->GetCodecConfigurationByDirection(
+                      LeAudioContextType::MEDIA,
+                      ::le_audio::types::kLeAudioDirectionSink)
+                  .has_value());
+  ASSERT_FALSE(group_
+                   ->GetCodecConfigurationByDirection(
+                       LeAudioContextType::MEDIA,
+                       ::le_audio::types::kLeAudioDirectionSource)
+                   .has_value());
+
+  /* CONVERSATIONAL Available on both directions */
+  ASSERT_TRUE(group_
+                  ->GetCodecConfigurationByDirection(
+                      LeAudioContextType::CONVERSATIONAL,
+                      ::le_audio::types::kLeAudioDirectionSink)
+                  .has_value());
+  ASSERT_TRUE(group_
+                  ->GetCodecConfigurationByDirection(
+                      LeAudioContextType::CONVERSATIONAL,
+                      ::le_audio::types::kLeAudioDirectionSource)
+                  .has_value());
+
+  /* UNSPECIFIED Unavailable yet supported */
+  ASSERT_TRUE(group_
+                  ->GetCodecConfigurationByDirection(
+                      LeAudioContextType::UNSPECIFIED,
+                      ::le_audio::types::kLeAudioDirectionSink)
+                  .has_value());
+  ASSERT_FALSE(group_
+                   ->GetCodecConfigurationByDirection(
+                       LeAudioContextType::UNSPECIFIED,
+                       ::le_audio::types::kLeAudioDirectionSource)
+                   .has_value());
+
+  /* SOUNDEFFECTS Unavailable yet supported on sink only */
+  ASSERT_TRUE(group_
+                  ->GetCodecConfigurationByDirection(
+                      LeAudioContextType::SOUNDEFFECTS,
+                      ::le_audio::types::kLeAudioDirectionSink)
+                  .has_value());
+  ASSERT_FALSE(group_
+                   ->GetCodecConfigurationByDirection(
+                       LeAudioContextType::SOUNDEFFECTS,
+                       ::le_audio::types::kLeAudioDirectionSource)
+                   .has_value());
+
+  /* INSTRUCTIONAL Unavailable and not supported but scenario is supported */
+  ASSERT_TRUE(group_
+                  ->GetCodecConfigurationByDirection(
+                      LeAudioContextType::INSTRUCTIONAL,
+                      ::le_audio::types::kLeAudioDirectionSink)
+                  .has_value());
+  ASSERT_FALSE(group_
+                   ->GetCodecConfigurationByDirection(
+                       LeAudioContextType::INSTRUCTIONAL,
+                       ::le_audio::types::kLeAudioDirectionSource)
+                   .has_value());
+
+  /* ALERTS on sink only */
+  ASSERT_TRUE(group_
+                  ->GetCodecConfigurationByDirection(
+                      LeAudioContextType::ALERTS,
+                      ::le_audio::types::kLeAudioDirectionSink)
+                  .has_value());
+  ASSERT_FALSE(group_
+                   ->GetCodecConfigurationByDirection(
+                       LeAudioContextType::ALERTS,
+                       ::le_audio::types::kLeAudioDirectionSource)
+                   .has_value());
+
+  /* We should get the config for ALERTS for a single channel as only one earbud
+   * has it. */
+  auto config = group_->GetCodecConfigurationByDirection(
+      LeAudioContextType::ALERTS, ::le_audio::types::kLeAudioDirectionSink);
+  ASSERT_TRUE(config.has_value());
+  ASSERT_EQ(config->num_channels,
+            ::le_audio::LeAudioCodecConfiguration::kChannelNumberMono);
+  ASSERT_TRUE(
+      group_->IsAudioSetConfigurationAvailable(LeAudioContextType::ALERTS));
+
+  /* Turn off the ALERTS context */
+  right->SetAvailableContexts(
+      {.sink = right->GetAvailableContexts(
+                   ::le_audio::types::kLeAudioDirectionSink) &
+               ~AudioContexts(LeAudioContextType::ALERTS),
+       .source = right->GetAvailableContexts(
+           ::le_audio::types::kLeAudioDirectionSource)});
+
+  /* Right one was changed but the config exist, just not available */
+  group_->UpdateAudioContextAvailability();
+  ASSERT_EQ(group_->GetAvailableContexts(),
+            left->GetAvailableContexts() | right->GetAvailableContexts());
+  ASSERT_FALSE(group_->GetAvailableContexts().test(LeAudioContextType::ALERTS));
+  ASSERT_TRUE(group_
+                  ->GetCodecConfigurationByDirection(
+                      LeAudioContextType::ALERTS,
+                      ::le_audio::types::kLeAudioDirectionSink)
+                  .has_value());
+  ASSERT_TRUE(
+      group_->IsAudioSetConfigurationAvailable(LeAudioContextType::ALERTS));
+}
+
 TEST_F(LeAudioAseConfigurationTest, test_mono_speaker_ringtone) {
   LeAudioDevice* mono_speaker = AddTestDevice(1, 0);
   TestGroupAseConfigurationData data(
-      {mono_speaker, kLeAudioCodecLC3ChannelCountSingleChannel,
-       kLeAudioCodecLC3ChannelCountSingleChannel, 1, 0});
+      {mono_speaker, kLeAudioCodecChannelCountSingleChannel,
+       kLeAudioCodecChannelCountSingleChannel, 1, 0});
 
   /* mono, change location as by default it is stereo */
   mono_speaker->snk_audio_locations_ =
@@ -874,6 +1128,7 @@ TEST_F(LeAudioAseConfigurationTest, test_mono_speaker_ringtone) {
   group_->ReloadAudioLocations();
 
   uint8_t direction_to_verify = kLeAudioDirectionSink;
+
   TestGroupAseConfiguration(LeAudioContextType::RINGTONE, &data, 1,
                             direction_to_verify);
 }
@@ -881,8 +1136,8 @@ TEST_F(LeAudioAseConfigurationTest, test_mono_speaker_ringtone) {
 TEST_F(LeAudioAseConfigurationTest, test_mono_speaker_conversational) {
   LeAudioDevice* mono_speaker = AddTestDevice(1, 0);
   TestGroupAseConfigurationData data({mono_speaker,
-                                      kLeAudioCodecLC3ChannelCountSingleChannel,
-                                      kLeAudioCodecLC3ChannelCountNone, 1, 0});
+                                      kLeAudioCodecChannelCountSingleChannel,
+                                      kLeAudioCodecChannelCountNone, 1, 0});
 
   /* mono, change location as by default it is stereo */
   mono_speaker->snk_audio_locations_ =
@@ -898,8 +1153,8 @@ TEST_F(LeAudioAseConfigurationTest, test_mono_speaker_conversational) {
 TEST_F(LeAudioAseConfigurationTest, test_mono_speaker_media) {
   LeAudioDevice* mono_speaker = AddTestDevice(1, 0);
   TestGroupAseConfigurationData data({mono_speaker,
-                                      kLeAudioCodecLC3ChannelCountSingleChannel,
-                                      kLeAudioCodecLC3ChannelCountNone, 1, 0});
+                                      kLeAudioCodecChannelCountSingleChannel,
+                                      kLeAudioCodecChannelCountNone, 1, 0});
 
   /* mono, change location as by default it is stereo */
   mono_speaker->snk_audio_locations_ =
@@ -914,19 +1169,19 @@ TEST_F(LeAudioAseConfigurationTest, test_mono_speaker_media) {
 TEST_F(LeAudioAseConfigurationTest, test_bounded_headphones_ringtone) {
   LeAudioDevice* bounded_headphones = AddTestDevice(2, 0);
   TestGroupAseConfigurationData data(
-      {bounded_headphones, kLeAudioCodecLC3ChannelCountTwoChannel,
-       kLeAudioCodecLC3ChannelCountSingleChannel, 2, 0});
+      {bounded_headphones, kLeAudioCodecChannelCountTwoChannel,
+       kLeAudioCodecChannelCountSingleChannel, 2, 0});
 
   uint8_t direction_to_verify = kLeAudioDirectionSink;
   TestGroupAseConfiguration(LeAudioContextType::RINGTONE, &data, 1,
                             direction_to_verify);
 }
 
-TEST_F(LeAudioAseConfigurationTest, test_bounded_headphones_conversional) {
+TEST_F(LeAudioAseConfigurationTest, test_bounded_headphones_conversational) {
   LeAudioDevice* bounded_headphones = AddTestDevice(2, 0);
   TestGroupAseConfigurationData data({bounded_headphones,
-                                      kLeAudioCodecLC3ChannelCountTwoChannel,
-                                      kLeAudioCodecLC3ChannelCountNone, 2, 0});
+                                      kLeAudioCodecChannelCountTwoChannel,
+                                      kLeAudioCodecChannelCountNone, 2, 0});
 
   uint8_t direction_to_verify = kLeAudioDirectionSink;
   TestGroupAseConfiguration(LeAudioContextType::CONVERSATIONAL, &data, 1,
@@ -936,8 +1191,8 @@ TEST_F(LeAudioAseConfigurationTest, test_bounded_headphones_conversional) {
 TEST_F(LeAudioAseConfigurationTest, test_bounded_headphones_media) {
   LeAudioDevice* bounded_headphones = AddTestDevice(2, 0);
   TestGroupAseConfigurationData data({bounded_headphones,
-                                      kLeAudioCodecLC3ChannelCountTwoChannel,
-                                      kLeAudioCodecLC3ChannelCountNone, 2, 0});
+                                      kLeAudioCodecChannelCountTwoChannel,
+                                      kLeAudioCodecChannelCountNone, 2, 0});
 
   uint8_t direction_to_verify = kLeAudioDirectionSink;
   TestGroupAseConfiguration(LeAudioContextType::MEDIA, &data, 1,
@@ -948,8 +1203,8 @@ TEST_F(LeAudioAseConfigurationTest,
        test_bounded_headset_ringtone_mono_microphone) {
   LeAudioDevice* bounded_headset = AddTestDevice(2, 1);
   TestGroupAseConfigurationData data(
-      {bounded_headset, kLeAudioCodecLC3ChannelCountTwoChannel,
-       kLeAudioCodecLC3ChannelCountSingleChannel, 2, 1});
+      {bounded_headset, kLeAudioCodecChannelCountTwoChannel,
+       kLeAudioCodecChannelCountSingleChannel, 2, 1});
 
   /* mono, change location as by default it is stereo */
   bounded_headset->src_audio_locations_ =
@@ -962,22 +1217,21 @@ TEST_F(LeAudioAseConfigurationTest,
 TEST_F(LeAudioAseConfigurationTest,
        test_bounded_headset_ringtone_stereo_microphone) {
   LeAudioDevice* bounded_headset = AddTestDevice(2, 2);
-  TestGroupAseConfigurationData data(
-      {bounded_headset,
-       kLeAudioCodecLC3ChannelCountSingleChannel |
-           kLeAudioCodecLC3ChannelCountTwoChannel,
-       kLeAudioCodecLC3ChannelCountSingleChannel |
-           kLeAudioCodecLC3ChannelCountTwoChannel,
-       2, 2});
+  TestGroupAseConfigurationData data({bounded_headset,
+                                      kLeAudioCodecChannelCountSingleChannel |
+                                          kLeAudioCodecChannelCountTwoChannel,
+                                      kLeAudioCodecChannelCountSingleChannel |
+                                          kLeAudioCodecChannelCountTwoChannel,
+                                      2, 2});
 
   TestGroupAseConfiguration(LeAudioContextType::RINGTONE, &data, 1);
 }
 
-TEST_F(LeAudioAseConfigurationTest, test_bounded_headset_conversional) {
+TEST_F(LeAudioAseConfigurationTest, test_bounded_headset_conversational) {
   LeAudioDevice* bounded_headset = AddTestDevice(2, 1);
   TestGroupAseConfigurationData data(
-      {bounded_headset, kLeAudioCodecLC3ChannelCountTwoChannel,
-       kLeAudioCodecLC3ChannelCountSingleChannel, 2, 1});
+      {bounded_headset, kLeAudioCodecChannelCountTwoChannel,
+       kLeAudioCodecChannelCountSingleChannel, 2, 1});
 
   TestGroupAseConfiguration(LeAudioContextType::CONVERSATIONAL, &data, 1);
 }
@@ -985,8 +1239,8 @@ TEST_F(LeAudioAseConfigurationTest, test_bounded_headset_conversional) {
 TEST_F(LeAudioAseConfigurationTest, test_bounded_headset_media) {
   LeAudioDevice* bounded_headset = AddTestDevice(2, 1);
   TestGroupAseConfigurationData data(
-      {bounded_headset, kLeAudioCodecLC3ChannelCountTwoChannel,
-       kLeAudioCodecLC3ChannelCountSingleChannel, 2, 0});
+      {bounded_headset, kLeAudioCodecChannelCountTwoChannel,
+       kLeAudioCodecChannelCountSingleChannel, 2, 0});
 
   uint8_t directions_to_verify = kLeAudioDirectionSink;
   TestGroupAseConfiguration(LeAudioContextType::MEDIA, &data, 1,
@@ -997,10 +1251,10 @@ TEST_F(LeAudioAseConfigurationTest, test_earbuds_ringtone) {
   LeAudioDevice* left = AddTestDevice(1, 1);
   LeAudioDevice* right = AddTestDevice(1, 1);
   TestGroupAseConfigurationData data[] = {
-      {left, kLeAudioCodecLC3ChannelCountSingleChannel,
-       kLeAudioCodecLC3ChannelCountSingleChannel, 1, 1},
-      {right, kLeAudioCodecLC3ChannelCountSingleChannel,
-       kLeAudioCodecLC3ChannelCountSingleChannel, 1, 1}};
+      {left, kLeAudioCodecChannelCountSingleChannel,
+       kLeAudioCodecChannelCountSingleChannel, 1, 1},
+      {right, kLeAudioCodecChannelCountSingleChannel,
+       kLeAudioCodecChannelCountSingleChannel, 1, 1}};
 
   /* Change location as by default it is stereo */
   left->snk_audio_locations_ =
@@ -1016,14 +1270,14 @@ TEST_F(LeAudioAseConfigurationTest, test_earbuds_ringtone) {
   TestGroupAseConfiguration(LeAudioContextType::RINGTONE, data, 2);
 }
 
-TEST_F(LeAudioAseConfigurationTest, test_earbuds_conversional) {
+TEST_F(LeAudioAseConfigurationTest, test_earbuds_conversational) {
   LeAudioDevice* left = AddTestDevice(1, 1);
   LeAudioDevice* right = AddTestDevice(1, 1);
   TestGroupAseConfigurationData data[] = {
-      {left, kLeAudioCodecLC3ChannelCountSingleChannel,
-       kLeAudioCodecLC3ChannelCountSingleChannel, 1, 1},
-      {right, kLeAudioCodecLC3ChannelCountSingleChannel,
-       kLeAudioCodecLC3ChannelCountSingleChannel, 1, 1}};
+      {left, kLeAudioCodecChannelCountSingleChannel,
+       kLeAudioCodecChannelCountSingleChannel, 1, 1},
+      {right, kLeAudioCodecChannelCountSingleChannel,
+       kLeAudioCodecChannelCountSingleChannel, 1, 1}};
 
   /* Change location as by default it is stereo */
   left->snk_audio_locations_ =
@@ -1043,10 +1297,10 @@ TEST_F(LeAudioAseConfigurationTest, test_earbuds_media) {
   LeAudioDevice* left = AddTestDevice(1, 1);
   LeAudioDevice* right = AddTestDevice(1, 1);
   TestGroupAseConfigurationData data[] = {
-      {left, kLeAudioCodecLC3ChannelCountSingleChannel,
-       kLeAudioCodecLC3ChannelCountSingleChannel, 1, 0},
-      {right, kLeAudioCodecLC3ChannelCountSingleChannel,
-       kLeAudioCodecLC3ChannelCountSingleChannel, 1, 0}};
+      {left, kLeAudioCodecChannelCountSingleChannel,
+       kLeAudioCodecChannelCountSingleChannel, 1, 0},
+      {right, kLeAudioCodecChannelCountSingleChannel,
+       kLeAudioCodecChannelCountSingleChannel, 1, 0}};
 
   /* Change location as by default it is stereo */
   left->snk_audio_locations_ =
@@ -1067,8 +1321,8 @@ TEST_F(LeAudioAseConfigurationTest, test_earbuds_media) {
 TEST_F(LeAudioAseConfigurationTest, test_handsfree_mono_ringtone) {
   LeAudioDevice* handsfree = AddTestDevice(1, 1);
   TestGroupAseConfigurationData data(
-      {handsfree, kLeAudioCodecLC3ChannelCountSingleChannel,
-       kLeAudioCodecLC3ChannelCountSingleChannel, 1, 1});
+      {handsfree, kLeAudioCodecChannelCountSingleChannel,
+       kLeAudioCodecChannelCountSingleChannel, 1, 1});
 
   handsfree->snk_audio_locations_ =
       ::le_audio::codec_spec_conf::kLeAudioLocationFrontLeft;
@@ -1081,20 +1335,20 @@ TEST_F(LeAudioAseConfigurationTest, test_handsfree_mono_ringtone) {
 
 TEST_F(LeAudioAseConfigurationTest, test_handsfree_stereo_ringtone) {
   LeAudioDevice* handsfree = AddTestDevice(1, 1);
-  TestGroupAseConfigurationData data(
-      {handsfree,
-       kLeAudioCodecLC3ChannelCountSingleChannel |
-           kLeAudioCodecLC3ChannelCountTwoChannel,
-       kLeAudioCodecLC3ChannelCountSingleChannel, 2, 1});
+  TestGroupAseConfigurationData data({handsfree,
+                                      kLeAudioCodecChannelCountSingleChannel |
+                                          kLeAudioCodecChannelCountTwoChannel,
+                                      kLeAudioCodecChannelCountSingleChannel, 2,
+                                      1});
 
   TestGroupAseConfiguration(LeAudioContextType::RINGTONE, &data, 1);
 }
 
-TEST_F(LeAudioAseConfigurationTest, test_handsfree_mono_conversional) {
+TEST_F(LeAudioAseConfigurationTest, test_handsfree_mono_conversational) {
   LeAudioDevice* handsfree = AddTestDevice(1, 1);
   TestGroupAseConfigurationData data(
-      {handsfree, kLeAudioCodecLC3ChannelCountSingleChannel,
-       kLeAudioCodecLC3ChannelCountSingleChannel, 1, 1});
+      {handsfree, kLeAudioCodecChannelCountSingleChannel,
+       kLeAudioCodecChannelCountSingleChannel, 1, 1});
 
   handsfree->snk_audio_locations_ =
       ::le_audio::codec_spec_conf::kLeAudioLocationFrontLeft;
@@ -1105,36 +1359,36 @@ TEST_F(LeAudioAseConfigurationTest, test_handsfree_mono_conversional) {
   TestGroupAseConfiguration(LeAudioContextType::CONVERSATIONAL, &data, 1);
 }
 
-TEST_F(LeAudioAseConfigurationTest, test_handsfree_stereo_conversional) {
+TEST_F(LeAudioAseConfigurationTest, test_handsfree_stereo_conversational) {
   LeAudioDevice* handsfree = AddTestDevice(1, 1);
-  TestGroupAseConfigurationData data(
-      {handsfree,
-       kLeAudioCodecLC3ChannelCountSingleChannel |
-           kLeAudioCodecLC3ChannelCountTwoChannel,
-       kLeAudioCodecLC3ChannelCountSingleChannel, 2, 1});
+  TestGroupAseConfigurationData data({handsfree,
+                                      kLeAudioCodecChannelCountSingleChannel |
+                                          kLeAudioCodecChannelCountTwoChannel,
+                                      kLeAudioCodecChannelCountSingleChannel, 2,
+                                      1});
 
   TestGroupAseConfiguration(LeAudioContextType::CONVERSATIONAL, &data, 1);
 }
 
-TEST_F(LeAudioAseConfigurationTest, test_handsfree_full_cached_conversional) {
+TEST_F(LeAudioAseConfigurationTest, test_handsfree_full_cached_conversational) {
   LeAudioDevice* handsfree = AddTestDevice(0, 0, 1, 1);
-  TestGroupAseConfigurationData data(
-      {handsfree,
-       kLeAudioCodecLC3ChannelCountSingleChannel |
-           kLeAudioCodecLC3ChannelCountTwoChannel,
-       kLeAudioCodecLC3ChannelCountSingleChannel, 2, 1});
+  TestGroupAseConfigurationData data({handsfree,
+                                      kLeAudioCodecChannelCountSingleChannel |
+                                          kLeAudioCodecChannelCountTwoChannel,
+                                      kLeAudioCodecChannelCountSingleChannel, 2,
+                                      1});
 
   TestGroupAseConfiguration(LeAudioContextType::CONVERSATIONAL, &data, 1);
 }
 
 TEST_F(LeAudioAseConfigurationTest,
-       test_handsfree_partial_cached_conversional) {
+       test_handsfree_partial_cached_conversational) {
   LeAudioDevice* handsfree = AddTestDevice(1, 0, 0, 1);
-  TestGroupAseConfigurationData data(
-      {handsfree,
-       kLeAudioCodecLC3ChannelCountSingleChannel |
-           kLeAudioCodecLC3ChannelCountTwoChannel,
-       kLeAudioCodecLC3ChannelCountSingleChannel, 2, 1});
+  TestGroupAseConfigurationData data({handsfree,
+                                      kLeAudioCodecChannelCountSingleChannel |
+                                          kLeAudioCodecChannelCountTwoChannel,
+                                      kLeAudioCodecChannelCountSingleChannel, 2,
+                                      1});
 
   TestGroupAseConfiguration(LeAudioContextType::CONVERSATIONAL, &data, 1);
 }
@@ -1142,11 +1396,11 @@ TEST_F(LeAudioAseConfigurationTest,
 TEST_F(LeAudioAseConfigurationTest,
        test_handsfree_media_two_channels_allocation_stereo) {
   LeAudioDevice* handsfree = AddTestDevice(1, 1);
-  TestGroupAseConfigurationData data(
-      {handsfree,
-       kLeAudioCodecLC3ChannelCountSingleChannel |
-           kLeAudioCodecLC3ChannelCountTwoChannel,
-       kLeAudioCodecLC3ChannelCountSingleChannel, 2, 0});
+  TestGroupAseConfigurationData data({handsfree,
+                                      kLeAudioCodecChannelCountSingleChannel |
+                                          kLeAudioCodecChannelCountTwoChannel,
+                                      kLeAudioCodecChannelCountSingleChannel, 2,
+                                      0});
 
   uint8_t directions_to_verify = kLeAudioDirectionSink;
   TestGroupAseConfiguration(LeAudioContextType::MEDIA, &data, 1,
@@ -1159,7 +1413,7 @@ TEST_F(LeAudioAseConfigurationTest, test_lc3_config_ringtone) {
   TestLc3CodecConfig(LeAudioContextType::RINGTONE);
 }
 
-TEST_F(LeAudioAseConfigurationTest, test_lc3_config_conversional) {
+TEST_F(LeAudioAseConfigurationTest, test_lc3_config_conversational) {
   AddTestDevice(1, 1);
 
   TestLc3CodecConfig(LeAudioContextType::CONVERSATIONAL);
@@ -1184,7 +1438,7 @@ TEST_F(LeAudioAseConfigurationTest, test_unsupported_codec) {
   pac_builder.Add(UnsupportedCodecId,
                   GetSamplingFrequency(Lc3SettingId::LC3_16_2),
                   GetFrameDuration(Lc3SettingId::LC3_16_2),
-                  kLeAudioCodecLC3ChannelCountSingleChannel,
+                  kLeAudioCodecChannelCountSingleChannel,
                   GetOctetsPerCodecFrame(Lc3SettingId::LC3_16_2));
   device->snk_pacs_ = pac_builder.Get();
   device->src_pacs_ = pac_builder.Get();
@@ -1212,10 +1466,10 @@ TEST_F(LeAudioAseConfigurationTest, test_reconnection_media) {
   group_->ReloadAudioLocations();
 
   TestGroupAseConfigurationData data[] = {
-      {left, kLeAudioCodecLC3ChannelCountSingleChannel,
-       kLeAudioCodecLC3ChannelCountSingleChannel, 1, 0},
-      {right, kLeAudioCodecLC3ChannelCountSingleChannel,
-       kLeAudioCodecLC3ChannelCountSingleChannel, 1, 0}};
+      {left, kLeAudioCodecChannelCountSingleChannel,
+       kLeAudioCodecChannelCountSingleChannel, 1, 0},
+      {right, kLeAudioCodecChannelCountSingleChannel,
+       kLeAudioCodecChannelCountSingleChannel, 1, 0}};
 
   auto all_configurations =
       ::le_audio::AudioSetConfigurationProvider::Get()->GetConfigurations(
@@ -1229,27 +1483,29 @@ TEST_F(LeAudioAseConfigurationTest, test_reconnection_media) {
                              direction_to_verify);
 
   /* Generate CISes, symulate CIG creation and assign cis handles to ASEs.*/
-  group_->CigGenerateCisIds(LeAudioContextType::MEDIA);
+  group_->cig.GenerateCisIds(LeAudioContextType::MEDIA);
   std::vector<uint16_t> handles = {0x0012, 0x0013};
-  group_->CigAssignCisConnHandles(handles);
-  group_->CigAssignCisIds(left);
-  group_->CigAssignCisIds(right);
+  group_->cig.AssignCisConnHandles(handles);
+  group_->cig.AssignCisIds(left);
+  group_->cig.AssignCisIds(right);
 
   TestActiveAses();
   /* Left got disconnected */
   left->DeactivateAllAses();
 
   /* Unassign from the group*/
-  group_->CigUnassignCis(left);
+  group_->cig.UnassignCis(left);
 
   TestAsesInactivated(left);
 
   /* Prepare reconfiguration */
   uint8_t number_of_active_ases = 1;  // Right one
   auto* ase = right->GetFirstActiveAseByDirection(kLeAudioDirectionSink);
+
+  auto core_config = ase->codec_config.GetAsCoreCodecConfig();
   BidirectionalPair<AudioLocations> group_audio_locations = {
-      .sink = *ase->codec_config.audio_channel_allocation,
-      .source = *ase->codec_config.audio_channel_allocation};
+      .sink = *core_config.audio_channel_allocation,
+      .source = *core_config.audio_channel_allocation};
 
   /* Get entry for the sink direction and use it to set configuration */
   BidirectionalPair<std::vector<uint8_t>> ccid_lists = {{}, {}};
@@ -1274,8 +1530,8 @@ TEST_F(LeAudioAseConfigurationTest, test_reconnection_media) {
   /* Before device is rejoining, and group already exist, cis handles are
    * assigned before sending codec config
    */
-  group_->CigAssignCisIds(left);
-  group_->CigAssignCisConnHandlesToAses(left);
+  group_->cig.AssignCisIds(left);
+  group_->AssignCisConnHandlesToAses(left);
 
   TestActiveAses();
 }
@@ -1307,23 +1563,10 @@ TEST_F(LeAudioAseConfigurationTest, test_reactivation_conversational) {
       ::le_audio::codec_spec_conf::kLeAudioLocationFrontLeft;
   group_->ReloadAudioLocations();
 
-  auto all_configurations =
-      ::le_audio::AudioSetConfigurationProvider::Get()->GetConfigurations(
-          LeAudioContextType::CONVERSATIONAL);
-  ASSERT_NE(nullptr, all_configurations);
-  ASSERT_NE(all_configurations->end(), all_configurations->begin());
-
-  /* Pick TWS configuration for conversational */
-  auto iter = std::find_if(all_configurations->begin(),
-                           all_configurations->end(), [](auto& configuration) {
-                             return configuration->name ==
-                                    "SingleDev_OneChanStereoSnk_OneChanMonoSrc_"
-                                    "16_2_Low_Latency";
-                           });
-
-  ASSERT_NE(iter, all_configurations->end());
-
-  auto conversational_configuration = *iter;
+  auto conversational_configuration = getSpecificConfiguration(
+      "SingleDev_OneChanStereoSnk_OneChanMonoSrc_16_2_Low_Latency",
+      LeAudioContextType::CONVERSATIONAL);
+  ASSERT_NE(nullptr, conversational_configuration);
 
   // Build PACs for device
   PublishedAudioCapabilitiesBuilder snk_pac_builder, src_pac_builder;
@@ -1366,14 +1609,14 @@ TEST_F(LeAudioAseConfigurationTest, test_reactivation_conversational) {
 
   /* Generate CISes, simulate CIG creation and assign cis handles to ASEs.*/
   std::vector<uint16_t> handles = {0x0012, 0x0013};
-  group_->CigGenerateCisIds(LeAudioContextType::CONVERSATIONAL);
-  group_->CigAssignCisConnHandles(handles);
-  group_->CigAssignCisIds(tws_headset);
+  group_->cig.GenerateCisIds(LeAudioContextType::CONVERSATIONAL);
+  group_->cig.AssignCisConnHandles(handles);
+  group_->cig.AssignCisIds(tws_headset);
 
   TestActiveAses();
 
   /* Simulate stopping stream with caching codec configuration in ASEs */
-  group_->CigUnassignCis(tws_headset);
+  group_->cig.UnassignCis(tws_headset);
   SetAsesToCachedConfiguration(tws_headset, LeAudioContextType::CONVERSATIONAL,
                                kLeAudioDirectionSink | kLeAudioDirectionSource);
 
@@ -1381,14 +1624,15 @@ TEST_F(LeAudioAseConfigurationTest, test_reactivation_conversational) {
    * the same CIS ID can be used. This would lead to only activating group
    * without reconfiguring CIG.
    */
-  group_->Activate(LeAudioContextType::CONVERSATIONAL);
+  group_->Activate(LeAudioContextType::CONVERSATIONAL, audio_contexts,
+                   ccid_lists);
 
   TestActiveAses();
 
   /* Verify ASEs assigned CISes by counting assigned to bi-directional CISes */
   int bi_dir_ases_count = std::count_if(
       tws_headset->ases_.begin(), tws_headset->ases_.end(), [=](auto& ase) {
-        return this->group_->cises_[ase.cis_id].type ==
+        return this->group_->cig.cises[ase.cis_id].type ==
                CisType::CIS_TYPE_BIDIRECTIONAL;
       });
 
@@ -1430,23 +1674,10 @@ TEST_F(LeAudioAseConfigurationTest, test_getting_cis_count) {
   right->snk_audio_locations_ = kChannelAllocationStereo;
   group_->ReloadAudioLocations();
 
-  auto all_configurations =
-      ::le_audio::AudioSetConfigurationProvider::Get()->GetConfigurations(
-          LeAudioContextType::MEDIA);
-  ASSERT_NE(nullptr, all_configurations);
-  ASSERT_NE(all_configurations->end(), all_configurations->begin());
-
-  /* Pick configuration for media */
-  auto iter = std::find_if(all_configurations->begin(),
-                           all_configurations->end(), [](auto& configuration) {
-                             return configuration->name ==
-                                    "SingleDev_TwoChanStereoSnk_48_4_High_"
-                                    "Reliability";
-                           });
-
-  ASSERT_NE(iter, all_configurations->end());
-
-  auto media_configuration = *iter;
+  auto media_configuration = getSpecificConfiguration(
+      "SingleDev_TwoChanStereoSnk_48_4_High_Reliability",
+      LeAudioContextType::MEDIA);
+  ASSERT_NE(nullptr, media_configuration);
 
   // Build PACs for device
   PublishedAudioCapabilitiesBuilder snk_pac_builder;
@@ -1485,13 +1716,14 @@ TEST_F(LeAudioAseConfigurationTest, test_getting_cis_count) {
 
   /* Generate CIS, simulate CIG creation and assign cis handles to ASEs.*/
   std::vector<uint16_t> handles = {0x0012};
-  group_->CigGenerateCisIds(LeAudioContextType::MEDIA);
+  group_->cig.GenerateCisIds(LeAudioContextType::MEDIA);
 
   /* Verify prepared CISes by counting generated entries */
-  int snk_cis_count = std::count_if(
-      this->group_->cises_.begin(), this->group_->cises_.end(), [](auto& cis) {
-        return cis.type == CisType::CIS_TYPE_UNIDIRECTIONAL_SINK;
-      });
+  int snk_cis_count =
+      std::count_if(this->group_->cig.cises.begin(),
+                    this->group_->cig.cises.end(), [](auto& cis) {
+                      return cis.type == CisType::CIS_TYPE_UNIDIRECTIONAL_SINK;
+                    });
 
   /* Two CIS should be prepared for dual dev expected set */
   ASSERT_EQ(snk_cis_count, 2);

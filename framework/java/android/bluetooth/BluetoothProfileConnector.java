@@ -16,232 +16,191 @@
 
 package android.bluetooth;
 
-import android.annotation.NonNull;
-import android.annotation.Nullable;
 import android.annotation.SuppressLint;
 import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
-import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.os.RemoteException;
-import android.os.UserHandle;
 import android.util.CloseGuard;
 import android.util.Log;
 
-import java.util.List;
+import java.util.Objects;
+
 /**
- * Connector for Bluetooth profile proxies to bind manager service and
- * profile services
- * @param <T> The Bluetooth profile interface for this connection.
+ * Connector for Bluetooth profile proxies to bind manager service and profile services
+ *
  * @hide
  */
 @SuppressLint("AndroidFrameworkBluetoothPermission")
-public abstract class BluetoothProfileConnector<T> {
+public final class BluetoothProfileConnector extends Handler {
+    private static final String TAG = BluetoothProfileConnector.class.getSimpleName();
     private final CloseGuard mCloseGuard = new CloseGuard();
     private final int mProfileId;
     private BluetoothProfile.ServiceListener mServiceListener;
     private final BluetoothProfile mProfileProxy;
-    private Context mContext;
-    private final String mProfileName;
-    private final String mServiceName;
-    private volatile T mService;
-
-    // -3 match with UserHandle.USER_CURRENT_OR_SELF
-    private static final UserHandle USER_HANDLE_CURRENT_OR_SELF = UserHandle.of(-3);
+    private String mPackageName;
+    private final IBluetoothManager mBluetoothManager;
+    private boolean mBound = false;
 
     private static final int MESSAGE_SERVICE_CONNECTED = 100;
     private static final int MESSAGE_SERVICE_DISCONNECTED = 101;
 
     private final IBluetoothStateChangeCallback mBluetoothStateChangeCallback =
             new IBluetoothStateChangeCallback.Stub() {
-        public void onBluetoothStateChange(boolean up) {
-            if (up) {
-                doBind();
-            } else {
-                doUnbind();
-            }
-        }
-    };
-
-    private @Nullable ComponentName resolveSystemService(@NonNull Intent intent,
-            @NonNull PackageManager pm) {
-        List<ResolveInfo> results = pm.queryIntentServices(intent,
-                PackageManager.ResolveInfoFlags.of(0));
-        if (results == null) {
-            return null;
-        }
-        ComponentName comp = null;
-        for (int i = 0; i < results.size(); i++) {
-            ResolveInfo ri = results.get(i);
-            if ((ri.serviceInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0) {
-                continue;
-            }
-            ComponentName foundComp = new ComponentName(ri.serviceInfo.applicationInfo.packageName,
-                    ri.serviceInfo.name);
-            if (comp != null) {
-                throw new IllegalStateException("Multiple system services handle " + intent
-                        + ": " + comp + ", " + foundComp);
-            }
-            comp = foundComp;
-        }
-        return comp;
-    }
+                public void onBluetoothStateChange(boolean up) {
+                    if (up) {
+                        doBind();
+                    } else {
+                        doUnbind();
+                    }
+                }
+            };
 
     private final IBluetoothProfileServiceConnection mConnection =
             new IBluetoothProfileServiceConnection.Stub() {
-        @Override
-        public void onServiceConnected(ComponentName className, IBinder service) {
-            logDebug("Proxy object connected");
-            mService = getServiceInterface(service);
-            mHandler.sendMessage(mHandler.obtainMessage(
-                    MESSAGE_SERVICE_CONNECTED));
-        }
+                @Override
+                public void onServiceConnected(ComponentName className, IBinder service) {
+                    Log.d(
+                            TAG,
+                            "Proxy object connected for "
+                                    + BluetoothProfile.getProfileName(mProfileId));
+                    mProfileProxy.onServiceConnected(service);
+                    sendEmptyMessage(MESSAGE_SERVICE_CONNECTED);
+                }
 
-        @Override
-        public void onServiceDisconnected(ComponentName className) {
-            logDebug("Proxy object disconnected");
-            doUnbind();
-            mHandler.sendMessage(mHandler.obtainMessage(
-                    MESSAGE_SERVICE_DISCONNECTED));
-        }
-    };
+                @Override
+                public void onServiceDisconnected(ComponentName className) {
+                    Log.d(
+                            TAG,
+                            "Proxy object disconnected for "
+                                    + BluetoothProfile.getProfileName(mProfileId));
+                    boolean bound = mBound;
+                    doUnbind();
+                    if (bound) {
+                        sendEmptyMessage(MESSAGE_SERVICE_DISCONNECTED);
+                    }
+                }
+            };
 
-    BluetoothProfileConnector(BluetoothProfile profile, int profileId, String profileName,
-            String serviceName) {
+    /** @hide */
+    public BluetoothProfileConnector(
+            Looper looper,
+            BluetoothProfile profile,
+            int profileId,
+            IBluetoothManager bluetoothManager) {
+        super(looper);
         mProfileId = profileId;
         mProfileProxy = profile;
-        mProfileName = profileName;
-        mServiceName = serviceName;
+        mBluetoothManager = Objects.requireNonNull(bluetoothManager);
     }
 
-    /** {@hide} */
+    BluetoothProfileConnector(BluetoothProfile profile, int profileId) {
+        this(
+                Looper.getMainLooper(),
+                profile,
+                profileId,
+                BluetoothAdapter.getDefaultAdapter().getBluetoothManager());
+    }
+
+    /** @hide */
     @Override
+    @SuppressWarnings("Finalize") // TODO(b/314811467)
     public void finalize() {
         mCloseGuard.warnIfOpen();
         doUnbind();
     }
 
-    private boolean doBind() {
+    private void doBind() {
         synchronized (mConnection) {
-            if (mService == null) {
-                logDebug("Binding service...");
+            if (!mBound) {
+                Log.d(
+                        TAG,
+                        "Binding service "
+                                + BluetoothProfile.getProfileName(mProfileId)
+                                + " for "
+                                + mPackageName);
                 mCloseGuard.open("doUnbind");
                 try {
-                    return BluetoothAdapter.getDefaultAdapter().getBluetoothManager()
-                            .bindBluetoothProfileService(mProfileId, mServiceName, mConnection);
+                    mBluetoothManager.bindBluetoothProfileService(mProfileId, mConnection);
+                    mBound = true;
                 } catch (RemoteException re) {
-                    logError("Failed to bind service. " + re);
-                    return false;
+                    Log.e(
+                            TAG,
+                            "Failed to bind service. "
+                                    + BluetoothProfile.getProfileName(mProfileId),
+                            re);
                 }
             }
         }
-        return true;
     }
 
     private void doUnbind() {
         synchronized (mConnection) {
-            if (mService != null) {
-                logDebug("Unbinding service...");
+            if (mBound) {
+                Log.d(
+                        TAG,
+                        "Unbinding service "
+                                + BluetoothProfile.getProfileName(mProfileId)
+                                + " for "
+                                + mPackageName);
                 mCloseGuard.close();
                 try {
-                    BluetoothAdapter.getDefaultAdapter().getBluetoothManager()
-                            .unbindBluetoothProfileService(mProfileId, mConnection);
+                    mBluetoothManager.unbindBluetoothProfileService(mProfileId, mConnection);
+                    mBound = false;
                 } catch (RemoteException re) {
-                    logError("Unable to unbind service: " + re);
+                    Log.e(
+                            TAG,
+                            "Unable to unbind service "
+                                    + BluetoothProfile.getProfileName(mProfileId),
+                            re);
                 } finally {
-                    mService = null;
+                    mProfileProxy.onServiceDisconnected();
                 }
             }
         }
     }
 
-    void connect(Context context, BluetoothProfile.ServiceListener listener) {
-        mContext = context;
+    /** @hide */
+    public void connect(String packageName, BluetoothProfile.ServiceListener listener) {
+        mPackageName = packageName;
         mServiceListener = listener;
-        IBluetoothManager mgr = BluetoothAdapter.getDefaultAdapter().getBluetoothManager();
 
-        // Preserve legacy compatibility where apps were depending on
-        // registerStateChangeCallback() performing a permissions check which
-        // has been relaxed in modern platform versions
-        if (context.getApplicationInfo().targetSdkVersion <= Build.VERSION_CODES.R
-                && context.checkSelfPermission(android.Manifest.permission.BLUETOOTH)
-                        != PackageManager.PERMISSION_GRANTED) {
-            throw new SecurityException("Need BLUETOOTH permission");
+        try {
+            mBluetoothManager.registerStateChangeCallback(mBluetoothStateChangeCallback);
+        } catch (RemoteException re) {
+            Log.e(TAG, "Failed to register state change callback.", re);
         }
-
-        if (mgr != null) {
-            try {
-                mgr.registerStateChangeCallback(mBluetoothStateChangeCallback);
-            } catch (RemoteException re) {
-                logError("Failed to register state change callback. " + re);
-            }
-        }
-        doBind();
     }
 
-    void disconnect() {
+    /** @hide */
+    public void disconnect() {
         if (mServiceListener != null) {
             BluetoothProfile.ServiceListener listener = mServiceListener;
             mServiceListener = null;
             listener.onServiceDisconnected(mProfileId);
         }
-        IBluetoothManager mgr = BluetoothAdapter.getDefaultAdapter().getBluetoothManager();
-        if (mgr != null) {
-            try {
-                mgr.unregisterStateChangeCallback(mBluetoothStateChangeCallback);
-            } catch (RemoteException re) {
-                logError("Failed to unregister state change callback" + re);
-            }
+        try {
+            mBluetoothManager.unregisterStateChangeCallback(mBluetoothStateChangeCallback);
+        } catch (RemoteException re) {
+            Log.e(TAG, "Failed to unregister state change callback", re);
         }
-        doUnbind();
     }
 
-    T getService() {
-        return mService;
-    }
-
-    /**
-     * This abstract function is used to implement method to get the
-     * connected Bluetooth service interface.
-     * @param service the connected binder service.
-     * @return T the binder interface of {@code service}.
-     * @hide
-     */
-    public abstract T getServiceInterface(IBinder service);
-
-    private void logDebug(String log) {
-        Log.d(mProfileName, log);
-    }
-
-    private void logError(String log) {
-        Log.e(mProfileName, log);
-    }
-
-    @SuppressLint("AndroidFrameworkBluetoothPermission")
-    private final Handler mHandler = new Handler(Looper.getMainLooper()) {
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case MESSAGE_SERVICE_CONNECTED: {
-                    if (mServiceListener != null) {
-                        mServiceListener.onServiceConnected(mProfileId, mProfileProxy);
-                    }
-                    break;
+    @Override
+    public void handleMessage(Message msg) {
+        switch (msg.what) {
+            case MESSAGE_SERVICE_CONNECTED:
+                if (mServiceListener != null) {
+                    mServiceListener.onServiceConnected(mProfileId, mProfileProxy);
                 }
-                case MESSAGE_SERVICE_DISCONNECTED: {
-                    if (mServiceListener != null) {
-                        mServiceListener.onServiceDisconnected(mProfileId);
-                    }
-                    break;
+                break;
+            case MESSAGE_SERVICE_DISCONNECTED:
+                if (mServiceListener != null) {
+                    mServiceListener.onServiceDisconnected(mProfileId);
                 }
-            }
+                break;
         }
-    };
+    }
 }

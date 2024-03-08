@@ -22,6 +22,7 @@ import android.bluetooth.BluetoothLeAudioCodecConfig;
 import android.bluetooth.BluetoothLeBroadcastMetadata;
 
 import java.util.List;
+
 /**
  * Stack event sent via a callback from JNI to Java, or generated
  * internally by the LeAudio State Machine.
@@ -35,10 +36,14 @@ public class LeAudioStackEvent {
     public static final int EVENT_TYPE_AUDIO_CONF_CHANGED = 4;
     public static final int EVENT_TYPE_SINK_AUDIO_LOCATION_AVAILABLE = 5;
     public static final int EVENT_TYPE_AUDIO_LOCAL_CODEC_CONFIG_CAPA_CHANGED = 6;
-    public static final int EVENT_TYPE_AUDIO_GROUP_CODEC_CONFIG_CHANGED = 7;
-    public static final int EVENT_TYPE_NATIVE_INITIALIZED = 8;
-        // -------- DO NOT PUT ANY NEW UNICAST EVENTS BELOW THIS LINE-------------
-    public static final int EVENT_TYPE_UNICAST_MAX = 9;
+    public static final int EVENT_TYPE_AUDIO_GROUP_CURRENT_CODEC_CONFIG_CHANGED = 7;
+    public static final int EVENT_TYPE_AUDIO_GROUP_SELECTABLE_CODEC_CONFIG_CHANGED = 8;
+    public static final int EVENT_TYPE_NATIVE_INITIALIZED = 9;
+    public static final int EVENT_TYPE_HEALTH_BASED_DEV_RECOMMENDATION = 10;
+    public static final int EVENT_TYPE_HEALTH_BASED_GROUP_RECOMMENDATION = 11;
+    public static final int EVENT_TYPE_UNICAST_MONITOR_MODE_STATUS = 12;
+    // -------- DO NOT PUT ANY NEW UNICAST EVENTS BELOW THIS LINE-------------
+    public static final int EVENT_TYPE_UNICAST_MAX = 13;
 
     // Broadcast related events
     public static final int EVENT_TYPE_BROADCAST_CREATED = EVENT_TYPE_UNICAST_MAX + 1;
@@ -52,6 +57,12 @@ public class LeAudioStackEvent {
     static final int CONNECTION_STATE_CONNECTING = 1;
     static final int CONNECTION_STATE_CONNECTED = 2;
     static final int CONNECTION_STATE_DISCONNECTING = 3;
+
+    // Health based recommendation
+    static final int HEALTH_RECOMMENDATION_ACTION_NONE = 0;
+    static final int HEALTH_RECOMMENDATION_ACTION_DISABLE = 1;
+    static final int HEALTH_RECOMMENDATION_ACTION_CONSIDER_DISABLING = 2;
+    static final int HEALTH_RECOMMENDATION_ACTION_INACTIVATE_GROUP = 3;
 
     static final int GROUP_STATUS_INACTIVE = 0;
     static final int GROUP_STATUS_ACTIVE = 1;
@@ -67,6 +78,17 @@ public class LeAudioStackEvent {
     static final int BROADCAST_STATE_PAUSED = 2;
     static final int BROADCAST_STATE_STOPPING = 3;
     static final int BROADCAST_STATE_STREAMING = 4;
+
+    // Do not modify without updating the HAL bt_le_audio.h files.
+    // Match up with UnicastMonitorModeStatus enum of bt_le_audio.h
+    static final int STATUS_LOCAL_STREAM_REQUESTED = 0;
+    static final int STATUS_LOCAL_STREAM_STREAMING = 1;
+    static final int STATUS_LOCAL_STREAM_SUSPENDED = 2;
+
+    // Do not modify without updating le_audio_types.h
+    // Match up with defines of le_audio_types.h
+    static final int DIRECTION_SINK = 1;
+    static final int DIRECTION_SOURCE = 2;
 
     public int type = EVENT_TYPE_NONE;
     public BluetoothDevice device;
@@ -92,18 +114,33 @@ public class LeAudioStackEvent {
         StringBuilder result = new StringBuilder();
         result.append("LeAudioStackEvent {type:" + eventTypeToString(type));
         result.append(", device:" + device);
-        result.append(", value1:" + eventTypeValue1ToString(type, valueInt1));
-        result.append(", value2:" + eventTypeValue2ToString(type, valueInt2));
-        result.append(", value3:" + eventTypeValue3ToString(type, valueInt3));
-        result.append(", value4:" + eventTypeValue4ToString(type, valueInt4));
-        result.append(", value5:" + eventTypeValue5ToString(type, valueInt5));
-        result.append(", valueBool1:" + eventTypeValueBool1ToString(type, valueBool1));
-        result.append(", valueCodec1:" + eventTypeValueCodec1ToString(type, valueCodec1));
-        result.append(", valueCodec2:" + eventTypeValueCodec2ToString(type, valueCodec2));
-        result.append(", valueCodecList1:"
-                + eventTypeValueCodecList1ToString(type, valueCodecList1));
-        result.append(", valueCodecList2:"
-                + eventTypeValueCodecList2ToString(type, valueCodecList2));
+
+        if (type != EVENT_TYPE_AUDIO_LOCAL_CODEC_CONFIG_CAPA_CHANGED) {
+            result.append(", value1:" + eventTypeValue1ToString(type, valueInt1));
+            result.append(", value2:" + eventTypeValue2ToString(type, valueInt2));
+            result.append(", value3:" + eventTypeValue3ToString(type, valueInt3));
+            result.append(", value4:" + eventTypeValue4ToString(type, valueInt4));
+            result.append(", value5:" + eventTypeValue5ToString(type, valueInt5));
+            result.append(", valueBool1:" + eventTypeValueBool1ToString(type, valueBool1));
+        } else {
+            result.append(
+                    ", valueCodecList1:" + eventTypeValueCodecList1ToString(type, valueCodecList1));
+            result.append(
+                    ", valueCodecList2:" + eventTypeValueCodecList2ToString(type, valueCodecList2));
+        }
+
+        if (type == EVENT_TYPE_AUDIO_GROUP_CURRENT_CODEC_CONFIG_CHANGED) {
+            result.append(", valueCodec1:" + eventTypeValueCodec1ToString(type, valueCodec1));
+            result.append(", valueCodec2:" + eventTypeValueCodec2ToString(type, valueCodec2));
+        }
+
+        if (type == EVENT_TYPE_AUDIO_GROUP_SELECTABLE_CODEC_CONFIG_CHANGED) {
+            result.append(
+                    ", valueCodecList1:" + eventTypeValueCodecList1ToString(type, valueCodecList1));
+            result.append(
+                    ", valueCodecList2:" + eventTypeValueCodecList2ToString(type, valueCodecList2));
+        }
+
         if (type == EVENT_TYPE_BROADCAST_METADATA_CHANGED) {
             result.append(", broadcastMetadata:"
                     + eventTypeValueBroadcastMetadataToString(broadcastMetadata));
@@ -136,10 +173,18 @@ public class LeAudioStackEvent {
                 return "EVENT_TYPE_BROADCAST_METADATA_CHANGED";
             case EVENT_TYPE_AUDIO_LOCAL_CODEC_CONFIG_CAPA_CHANGED:
                 return "EVENT_TYPE_AUDIO_LOCAL_CODEC_CONFIG_CAPA_CHANGED";
-            case EVENT_TYPE_AUDIO_GROUP_CODEC_CONFIG_CHANGED:
-                return "EVENT_TYPE_AUDIO_GROUP_CODEC_CONFIG_CHANGED";
+            case EVENT_TYPE_AUDIO_GROUP_CURRENT_CODEC_CONFIG_CHANGED:
+                return "EVENT_TYPE_AUDIO_GROUP_CURRENT_CODEC_CONFIG_CHANGED";
+            case EVENT_TYPE_AUDIO_GROUP_SELECTABLE_CODEC_CONFIG_CHANGED:
+                return "EVENT_TYPE_AUDIO_GROUP_SELECTABLE_CODEC_CONFIG_CHANGED";
             case EVENT_TYPE_NATIVE_INITIALIZED:
                 return "EVENT_TYPE_NATIVE_INITIALIZED";
+            case EVENT_TYPE_HEALTH_BASED_DEV_RECOMMENDATION:
+                return "EVENT_TYPE_HEALTH_BASED_DEV_RECOMMENDATION";
+            case EVENT_TYPE_HEALTH_BASED_GROUP_RECOMMENDATION:
+                return "EVENT_TYPE_HEALTH_BASED_GROUP_RECOMMENDATION";
+            case EVENT_TYPE_UNICAST_MONITOR_MODE_STATUS:
+                return "EVENT_TYPE_UNICAST_MONITOR_MODE_STATUS";
             default:
                 return "EVENT_TYPE_UNKNOWN:" + type;
         }
@@ -162,7 +207,8 @@ public class LeAudioStackEvent {
                 }
             case EVENT_TYPE_GROUP_NODE_STATUS_CHANGED:
                 // same as EVENT_TYPE_GROUP_STATUS_CHANGED
-            case EVENT_TYPE_AUDIO_GROUP_CODEC_CONFIG_CHANGED:
+            case EVENT_TYPE_AUDIO_GROUP_CURRENT_CODEC_CONFIG_CHANGED:
+            case EVENT_TYPE_AUDIO_GROUP_SELECTABLE_CODEC_CONFIG_CHANGED:
                 // same as EVENT_TYPE_GROUP_STATUS_CHANGED
             case EVENT_TYPE_GROUP_STATUS_CHANGED:
                 return "{group_id:" + Integer.toString(value) + "}";
@@ -179,6 +225,28 @@ public class LeAudioStackEvent {
                 // same as EVENT_TYPE_BROADCAST_STATE
             case EVENT_TYPE_BROADCAST_STATE:
                 return "{broadcastId:" + value + "}";
+            case EVENT_TYPE_HEALTH_BASED_GROUP_RECOMMENDATION:
+                return "{group_id: " + value + "}";
+            case EVENT_TYPE_HEALTH_BASED_DEV_RECOMMENDATION:
+                switch (value) {
+                    case HEALTH_RECOMMENDATION_ACTION_DISABLE:
+                        return "ACTION_DISABLE";
+                    case HEALTH_RECOMMENDATION_ACTION_CONSIDER_DISABLING:
+                        return "ACTION_CONSIDER_DISABLING";
+                    case HEALTH_RECOMMENDATION_ACTION_INACTIVATE_GROUP:
+                        return "ACTION_INACTIVATE_GROUP";
+                    default:
+                        return "UNKNOWN";
+                }
+            case EVENT_TYPE_UNICAST_MONITOR_MODE_STATUS:
+                switch (value) {
+                    case DIRECTION_SINK:
+                        return "DIRECTION_SINK";
+                    case DIRECTION_SOURCE:
+                        return "DIRECTION_SOURCE";
+                    default:
+                        return "UNKNOWN";
+                }
             default:
                 break;
         }
@@ -212,6 +280,26 @@ public class LeAudioStackEvent {
                 return "{group_id:" + Integer.toString(value) + "}";
             case EVENT_TYPE_BROADCAST_STATE:
                 return "{state:" + broadcastStateToString(value) + "}";
+            case EVENT_TYPE_HEALTH_BASED_GROUP_RECOMMENDATION:
+                switch (value) {
+                    case HEALTH_RECOMMENDATION_ACTION_DISABLE:
+                        return "ACTION_DISABLE";
+                    case HEALTH_RECOMMENDATION_ACTION_CONSIDER_DISABLING:
+                        return "ACTION_CONSIDER_DISABLING";
+                    default:
+                        return "UNKNOWN";
+                }
+            case EVENT_TYPE_UNICAST_MONITOR_MODE_STATUS:
+                switch (value) {
+                    case STATUS_LOCAL_STREAM_REQUESTED:
+                        return "STATUS_LOCAL_STREAM_REQUESTED";
+                    case STATUS_LOCAL_STREAM_STREAMING:
+                        return "STATUS_LOCAL_STREAM_STREAMING";
+                    case STATUS_LOCAL_STREAM_SUSPENDED:
+                        return "STATUS_LOCAL_STREAM_SUSPENDED";
+                    default:
+                        return "UNKNOWN";
+                }
             default:
                 break;
         }
@@ -262,8 +350,8 @@ public class LeAudioStackEvent {
     private static String eventTypeValueCodec1ToString(int type,
                                     BluetoothLeAudioCodecConfig value) {
         switch (type) {
-            case EVENT_TYPE_AUDIO_GROUP_CODEC_CONFIG_CHANGED:
-                return "{input codec = " + value + "}";
+            case EVENT_TYPE_AUDIO_GROUP_CURRENT_CODEC_CONFIG_CHANGED:
+                return "{input codec =" + value + "}";
             default:
                 return "<unused>";
         }
@@ -272,8 +360,8 @@ public class LeAudioStackEvent {
     private static String eventTypeValueCodec2ToString(int type,
                                     BluetoothLeAudioCodecConfig value) {
         switch (type) {
-            case EVENT_TYPE_AUDIO_GROUP_CODEC_CONFIG_CHANGED:
-                return "{output codec = " + value + "}";
+            case EVENT_TYPE_AUDIO_GROUP_CURRENT_CODEC_CONFIG_CHANGED:
+                return "{output codec =" + value + "}";
             default:
                 return "<unused>";
         }
@@ -281,11 +369,18 @@ public class LeAudioStackEvent {
 
     private static String eventTypeValueCodecList1ToString(int type,
                                     List<BluetoothLeAudioCodecConfig> value) {
+        String valueStr = "";
         switch (type) {
             case EVENT_TYPE_AUDIO_LOCAL_CODEC_CONFIG_CAPA_CHANGED:
-                return "{input local capa codec = " + value + "}";
-            case EVENT_TYPE_AUDIO_GROUP_CODEC_CONFIG_CHANGED:
-                return "{input selectable codec = " + value + "}";
+                for (BluetoothLeAudioCodecConfig n : value) {
+                    valueStr = valueStr.concat(n.toString() + "\n");
+                }
+                return "{input local capa codec = \n" + valueStr + "}";
+            case EVENT_TYPE_AUDIO_GROUP_SELECTABLE_CODEC_CONFIG_CHANGED:
+                for (BluetoothLeAudioCodecConfig n : value) {
+                    valueStr = valueStr.concat(n.toString() + "\n");
+                }
+                return "{input selectable codec =" + valueStr + "}";
             default:
                 return "<unused>";
         }
@@ -293,11 +388,18 @@ public class LeAudioStackEvent {
 
     private static String eventTypeValueCodecList2ToString(int type,
                                     List<BluetoothLeAudioCodecConfig> value) {
+        String valueStr = "";
         switch (type) {
             case EVENT_TYPE_AUDIO_LOCAL_CODEC_CONFIG_CAPA_CHANGED:
-                return "{output local capa codec = " + value + "}";
-            case EVENT_TYPE_AUDIO_GROUP_CODEC_CONFIG_CHANGED:
-                return "{output selectable codec = " + value + "}";
+                for (BluetoothLeAudioCodecConfig n : value) {
+                    valueStr = valueStr.concat(n.toString() + "\n");
+                }
+                return "{output local capa codec = \n" + valueStr + "}";
+            case EVENT_TYPE_AUDIO_GROUP_SELECTABLE_CODEC_CONFIG_CHANGED:
+                for (BluetoothLeAudioCodecConfig n : value) {
+                    valueStr = valueStr.concat(n.toString() + "\n");
+                }
+                return "{output selectable codec =" + valueStr + "}";
             default:
                 return "<unused>";
         }

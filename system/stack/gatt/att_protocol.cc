@@ -24,12 +24,11 @@
 
 #include <base/logging.h>
 
-#include "bt_target.h"
 #include "gatt_int.h"
+#include "internal_include/bt_target.h"
 #include "l2c_api.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/log.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
 #include "types/bluetooth/uuid.h"
@@ -287,46 +286,80 @@ static BT_HDR* attp_build_opcode_cmd(uint8_t op_code) {
 static BT_HDR* attp_build_value_cmd(uint16_t payload_size, uint8_t op_code,
                                     uint16_t handle, uint16_t offset,
                                     uint16_t len, uint8_t* p_data) {
-  uint8_t *p, *pp, pair_len, *p_pair_len;
+  uint8_t *p, *pp, *p_pair_len;
+  size_t pair_len;
+  size_t size_now = 1;
+
+#define CHECK_SIZE()                       \
+  do {                                     \
+    if (size_now > payload_size) {         \
+      LOG_ERROR("payload size too small"); \
+      osi_free(p_buf);                     \
+      return nullptr;                      \
+    }                                      \
+  } while (false)
+
   BT_HDR* p_buf =
       (BT_HDR*)osi_malloc(sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET);
 
   p = pp = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
+
+  CHECK_SIZE();
   UINT8_TO_STREAM(p, op_code);
   p_buf->offset = L2CAP_MIN_OFFSET;
-  p_buf->len = 1;
 
   if (op_code == GATT_RSP_READ_BY_TYPE) {
-    p_pair_len = p;
+    p_pair_len = p++;
     pair_len = len + 2;
-    UINT8_TO_STREAM(p, pair_len);
-    p_buf->len += 1;
+    size_now += 1;
+    CHECK_SIZE();
+    // this field will be backfilled in the end of this function
   }
+
   if (op_code != GATT_RSP_READ_BLOB && op_code != GATT_RSP_READ) {
+    size_now += 2;
+    CHECK_SIZE();
     UINT16_TO_STREAM(p, handle);
-    p_buf->len += 2;
   }
 
   if (op_code == GATT_REQ_PREPARE_WRITE || op_code == GATT_RSP_PREPARE_WRITE) {
+    size_now += 2;
+    CHECK_SIZE();
     UINT16_TO_STREAM(p, offset);
-    p_buf->len += 2;
   }
 
   if (len > 0 && p_data != NULL) {
     /* ensure data not exceed MTU size */
-    if (payload_size - p_buf->len < len) {
-      len = payload_size - p_buf->len;
+    if (payload_size - size_now < len) {
+      len = payload_size - size_now;
       /* update handle value pair length */
-      if (op_code == GATT_RSP_READ_BY_TYPE) *p_pair_len = (len + 2);
+      if (op_code == GATT_RSP_READ_BY_TYPE) {
+        pair_len = (len + 2);
+      }
 
       LOG(WARNING) << StringPrintf(
           "attribute value too long, to be truncated to %d", len);
     }
 
+    size_now += len;
+    CHECK_SIZE();
     ARRAY_TO_STREAM(p, p_data, len);
-    p_buf->len += len;
   }
 
+  // backfill pair len field
+  if (op_code == GATT_RSP_READ_BY_TYPE) {
+    if (pair_len > UINT8_MAX) {
+      LOG_ERROR("pair_len greater than %d", UINT8_MAX);
+      osi_free(p_buf);
+      return nullptr;
+    }
+
+    *p_pair_len = (uint8_t)pair_len;
+  }
+
+#undef CHECK_SIZE
+
+  p_buf->len = (uint16_t)size_now;
   return p_buf;
 }
 
@@ -442,10 +475,15 @@ static tGATT_STATUS attp_cl_send_cmd(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
 
   if (gatt_tcb_is_cid_busy(tcb, p_clcb->cid) &&
       cmd_code != GATT_HANDLE_VALUE_CONF) {
-    gatt_cmd_enq(tcb, p_clcb, true, cmd_code, p_cmd);
-    LOG_DEBUG("Enqueued ATT command %p conn_id=0x%04x, cid=%d", p_clcb,
-              p_clcb->conn_id, p_clcb->cid);
-    return GATT_CMD_STARTED;
+    if (gatt_cmd_enq(tcb, p_clcb, true, cmd_code, p_cmd)) {
+      LOG_DEBUG("Enqueued ATT command %p conn_id=0x%04x, cid=%d", p_clcb,
+                p_clcb->conn_id, p_clcb->cid);
+      return GATT_CMD_STARTED;
+    }
+
+    LOG_ERROR("%s, cid 0x%02x already disconnected",
+             ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda), p_clcb->cid);
+    return GATT_INTERNAL_ERROR;
   }
 
   LOG_DEBUG(
@@ -466,7 +504,12 @@ static tGATT_STATUS attp_cl_send_cmd(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
   LOG_DEBUG("Starting ATT response timer %p conn_id=0x%04x, cid=%d", p_clcb,
             p_clcb->conn_id, p_clcb->cid);
   gatt_start_rsp_timer(p_clcb);
-  gatt_cmd_enq(tcb, p_clcb, false, cmd_code, NULL);
+  if (!gatt_cmd_enq(tcb, p_clcb, false, cmd_code, NULL)) {
+    LOG_ERROR("Could not queue sent request. %s, cid 0x%02x already disconnected",
+               ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda), p_clcb->cid);
+    return GATT_INTERNAL_ERROR;
+  }
+
   return att_ret;
 }
 
@@ -525,7 +568,7 @@ tGATT_STATUS attp_send_cl_msg(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
     return GATT_ILLEGAL_PARAMETER;
   }
 
-  uint16_t payload_size = gatt_tcb_get_payload_size_tx(tcb, p_clcb->cid);
+  uint16_t payload_size = gatt_tcb_get_payload_size(tcb, p_clcb->cid);
 
   switch (op_code) {
     case GATT_REQ_MTU:
@@ -535,8 +578,6 @@ tGATT_STATUS attp_send_cl_msg(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
             op_code);
         return GATT_ILLEGAL_PARAMETER;
       }
-
-      tcb.payload_size = p_msg->mtu;
       p_cmd = attp_build_mtu_cmd(GATT_REQ_MTU, p_msg->mtu);
       break;
 

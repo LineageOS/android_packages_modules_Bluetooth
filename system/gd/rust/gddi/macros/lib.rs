@@ -12,6 +12,7 @@ use syn::{
 
 /// Defines a provider function, with generated helper that implicitly fetches argument instances from the registry
 #[proc_macro_attribute]
+#[allow(clippy::redundant_clone)]
 pub fn provides(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let function: ItemFn = parse(item).expect("can only be applied to functions");
 
@@ -116,12 +117,12 @@ impl Parse for ModuleEntry {
             "providers" => {
                 let entries;
                 braced!(entries in input);
-                Ok(ModuleEntry::Providers(entries.parse_terminated(ProviderDef::parse)?))
+                Ok(ModuleEntry::Providers(entries.parse_terminated(ProviderDef::parse, Token![,])?))
             }
             "submodules" => {
                 let entries;
                 braced!(entries in input);
-                Ok(ModuleEntry::Submodules(entries.parse_terminated(Path::parse)?))
+                Ok(ModuleEntry::Submodules(entries.parse_terminated(Path::parse, Token![,])?))
             }
             keyword => {
                 panic!("unexpected keyword: {}", keyword);
@@ -132,6 +133,7 @@ impl Parse for ModuleEntry {
 
 /// Emits a module function that registers submodules & providers with the registry
 #[proc_macro]
+#[allow(clippy::redundant_clone)]
 pub fn module(item: TokenStream) -> TokenStream {
     let module = parse_macro_input!(item as ModuleDef);
     let init_ident = module.name.clone();
@@ -152,7 +154,7 @@ pub fn module(item: TokenStream) -> TokenStream {
         #[allow(missing_docs)]
         pub fn #init_ident(builder: gddi::RegistryBuilder) -> gddi::RegistryBuilder {
             // Register all providers on this module
-            let ret = builder#(.register_provider::<#types>(Box::new(#provider_idents)))*
+            let ret = builder #(.register_provider::<#types>(Box::new(#provider_idents)))*
             // Register all submodules on this module
             #(.register_module(#submodule_idents))*;
 
@@ -177,6 +179,7 @@ pub fn derive_nop_stop(item: TokenStream) -> TokenStream {
 
 /// Generates the code necessary to split up a type into its components
 #[proc_macro_attribute]
+#[allow(clippy::redundant_clone)]
 pub fn part_out(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let struct_: ItemStruct = parse(item).expect("can only be applied to struct definitions");
     let struct_ident = struct_.ident.clone();
@@ -195,7 +198,7 @@ pub fn part_out(_attr: TokenStream, item: TokenStream) -> TokenStream {
         #struct_
 
         fn #fn_ident(builder: gddi::RegistryBuilder) -> gddi::RegistryBuilder {
-            builder#(.register_provider::<#field_types>(Box::new(
+            builder #(.register_provider::<#field_types>(Box::new(
                 |registry: std::sync::Arc<gddi::Registry>| -> std::pin::Pin<gddi::ProviderFutureBox> {
                     Box::pin(async move {
                         Box::new(async move {

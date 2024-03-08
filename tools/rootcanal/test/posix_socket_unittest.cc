@@ -1,4 +1,3 @@
-
 // Copyright (C) 2021 The Android Open Source Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #include <errno.h>
 #include <gtest/gtest.h>
 #include <netdb.h>
@@ -31,7 +31,6 @@
 #include <random>
 #include <vector>
 
-#include "log.h"  // for LOG_INFO
 #include "model/setup/async_manager.h"
 #include "net/posix/posix_async_socket_connector.h"
 #include "net/posix/posix_async_socket_server.h"

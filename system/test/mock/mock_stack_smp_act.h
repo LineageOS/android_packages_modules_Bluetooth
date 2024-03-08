@@ -23,25 +23,12 @@
 
 #include <cstdint>
 #include <functional>
-#include <map>
-#include <string>
 
 // Original included files, if any
-// NOTE: Since this is a mock file with mock definitions some number of
-//       include files may not be required.  The include-what-you-use
-//       still applies, but crafting proper inclusion is out of scope
-//       for this effort.  This compilation unit may compile as-is, or
-//       may need attention to prune the inclusion set.
-#include "btif/include/btif_api.h"
 #include "stack/smp/smp_int.h"
-#include "test/common/mock_functions.h"
 #include "types/raw_address.h"
 
 // Mocked compile conditionals, if any
-#ifndef UNUSED_ATTR
-#define UNUSED_ATTR
-#endif
-
 namespace test {
 namespace mock {
 namespace stack_smp_act {
@@ -52,7 +39,7 @@ namespace stack_smp_act {
 // Returns: void
 struct smp_send_app_cback {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_send_app_cback smp_send_app_cback;
@@ -61,7 +48,7 @@ extern struct smp_send_app_cback smp_send_app_cback;
 // Returns: void
 struct smp_send_pair_fail {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_send_pair_fail smp_send_pair_fail;
@@ -70,7 +57,7 @@ extern struct smp_send_pair_fail smp_send_pair_fail;
 // Returns: void
 struct smp_send_pair_req {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_send_pair_req smp_send_pair_req;
@@ -79,7 +66,7 @@ extern struct smp_send_pair_req smp_send_pair_req;
 // Returns: void
 struct smp_send_pair_rsp {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_send_pair_rsp smp_send_pair_rsp;
@@ -88,25 +75,16 @@ extern struct smp_send_pair_rsp smp_send_pair_rsp;
 // Returns: void
 struct smp_send_confirm {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_send_confirm smp_send_confirm;
-// Name: smp_send_init
-// Params: tSMP_CB* p_cb, tSMP_INT_DATA* p_data
-// Returns: void
-struct smp_send_init {
-  std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
-  void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
-};
-extern struct smp_send_init smp_send_init;
 // Name: smp_send_rand
 // Params: tSMP_CB* p_cb, tSMP_INT_DATA* p_data
 // Returns: void
 struct smp_send_rand {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_send_rand smp_send_rand;
@@ -115,7 +93,7 @@ extern struct smp_send_rand smp_send_rand;
 // Returns: void
 struct smp_send_pair_public_key {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_send_pair_public_key smp_send_pair_public_key;
@@ -124,7 +102,7 @@ extern struct smp_send_pair_public_key smp_send_pair_public_key;
 // Returns: void
 struct smp_send_commitment {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_send_commitment smp_send_commitment;
@@ -133,7 +111,7 @@ extern struct smp_send_commitment smp_send_commitment;
 // Returns: void
 struct smp_send_dhkey_check {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_send_dhkey_check smp_send_dhkey_check;
@@ -142,7 +120,7 @@ extern struct smp_send_dhkey_check smp_send_dhkey_check;
 // Returns: void
 struct smp_send_keypress_notification {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_send_keypress_notification smp_send_keypress_notification;
@@ -151,7 +129,7 @@ extern struct smp_send_keypress_notification smp_send_keypress_notification;
 // Returns: void
 struct smp_send_enc_info {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_send_enc_info smp_send_enc_info;
@@ -160,7 +138,7 @@ extern struct smp_send_enc_info smp_send_enc_info;
 // Returns: void
 struct smp_send_id_info {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_send_id_info smp_send_id_info;
@@ -169,7 +147,7 @@ extern struct smp_send_id_info smp_send_id_info;
 // Returns: void
 struct smp_send_csrk_info {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_send_csrk_info smp_send_csrk_info;
@@ -178,7 +156,7 @@ extern struct smp_send_csrk_info smp_send_csrk_info;
 // Returns: void
 struct smp_send_ltk_reply {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_send_ltk_reply smp_send_ltk_reply;
@@ -187,7 +165,7 @@ extern struct smp_send_ltk_reply smp_send_ltk_reply;
 // Returns: void
 struct smp_proc_sec_req {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_proc_sec_req smp_proc_sec_req;
@@ -196,7 +174,7 @@ extern struct smp_proc_sec_req smp_proc_sec_req;
 // Returns: void
 struct smp_proc_sec_grant {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_proc_sec_grant smp_proc_sec_grant;
@@ -205,7 +183,7 @@ extern struct smp_proc_sec_grant smp_proc_sec_grant;
 // Returns: void
 struct smp_proc_pair_fail {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_proc_pair_fail smp_proc_pair_fail;
@@ -214,7 +192,7 @@ extern struct smp_proc_pair_fail smp_proc_pair_fail;
 // Returns: void
 struct smp_proc_pair_cmd {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_proc_pair_cmd smp_proc_pair_cmd;
@@ -223,25 +201,17 @@ extern struct smp_proc_pair_cmd smp_proc_pair_cmd;
 // Returns: void
 struct smp_proc_confirm {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_proc_confirm smp_proc_confirm;
-// Name: smp_proc_init
-// Params: tSMP_CB* p_cb, tSMP_INT_DATA* p_data
-// Returns: void
-struct smp_proc_init {
-  std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
-  void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
-};
-extern struct smp_proc_init smp_proc_init;
+
 // Name: smp_proc_rand
 // Params: tSMP_CB* p_cb, tSMP_INT_DATA* p_data
 // Returns: void
 struct smp_proc_rand {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_proc_rand smp_proc_rand;
@@ -250,7 +220,7 @@ extern struct smp_proc_rand smp_proc_rand;
 // Returns: void
 struct smp_process_pairing_public_key {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_process_pairing_public_key smp_process_pairing_public_key;
@@ -259,7 +229,7 @@ extern struct smp_process_pairing_public_key smp_process_pairing_public_key;
 // Returns: void
 struct smp_process_pairing_commitment {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_process_pairing_commitment smp_process_pairing_commitment;
@@ -268,7 +238,7 @@ extern struct smp_process_pairing_commitment smp_process_pairing_commitment;
 // Returns: void
 struct smp_process_dhkey_check {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_process_dhkey_check smp_process_dhkey_check;
@@ -277,7 +247,7 @@ extern struct smp_process_dhkey_check smp_process_dhkey_check;
 // Returns: void
 struct smp_process_keypress_notification {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_process_keypress_notification
@@ -287,7 +257,7 @@ extern struct smp_process_keypress_notification
 // Returns: void
 struct smp_br_process_pairing_command {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_br_process_pairing_command smp_br_process_pairing_command;
@@ -296,7 +266,7 @@ extern struct smp_br_process_pairing_command smp_br_process_pairing_command;
 // Returns: void
 struct smp_br_process_security_grant {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_br_process_security_grant smp_br_process_security_grant;
@@ -305,7 +275,7 @@ extern struct smp_br_process_security_grant smp_br_process_security_grant;
 // Returns: void
 struct smp_br_check_authorization_request {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_br_check_authorization_request
@@ -315,7 +285,7 @@ extern struct smp_br_check_authorization_request
 // Returns: void
 struct smp_br_select_next_key {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_br_select_next_key smp_br_select_next_key;
@@ -324,7 +294,7 @@ extern struct smp_br_select_next_key smp_br_select_next_key;
 // Returns: void
 struct smp_proc_enc_info {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_proc_enc_info smp_proc_enc_info;
@@ -333,7 +303,7 @@ extern struct smp_proc_enc_info smp_proc_enc_info;
 // Returns: void
 struct smp_proc_central_id {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_proc_central_id smp_proc_central_id;
@@ -342,7 +312,7 @@ extern struct smp_proc_central_id smp_proc_central_id;
 // Returns: void
 struct smp_proc_id_info {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_proc_id_info smp_proc_id_info;
@@ -351,7 +321,7 @@ extern struct smp_proc_id_info smp_proc_id_info;
 // Returns: void
 struct smp_proc_id_addr {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_proc_id_addr smp_proc_id_addr;
@@ -360,7 +330,7 @@ extern struct smp_proc_id_addr smp_proc_id_addr;
 // Returns: void
 struct smp_proc_srk_info {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_proc_srk_info smp_proc_srk_info;
@@ -369,7 +339,7 @@ extern struct smp_proc_srk_info smp_proc_srk_info;
 // Returns: void
 struct smp_proc_compare {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_proc_compare smp_proc_compare;
@@ -378,7 +348,7 @@ extern struct smp_proc_compare smp_proc_compare;
 // Returns: void
 struct smp_proc_sl_key {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_proc_sl_key smp_proc_sl_key;
@@ -387,7 +357,7 @@ extern struct smp_proc_sl_key smp_proc_sl_key;
 // Returns: void
 struct smp_start_enc {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_start_enc smp_start_enc;
@@ -396,7 +366,7 @@ extern struct smp_start_enc smp_start_enc;
 // Returns: void
 struct smp_proc_discard {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_proc_discard smp_proc_discard;
@@ -405,7 +375,7 @@ extern struct smp_proc_discard smp_proc_discard;
 // Returns: void
 struct smp_enc_cmpl {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_enc_cmpl smp_enc_cmpl;
@@ -414,7 +384,7 @@ extern struct smp_enc_cmpl smp_enc_cmpl;
 // Returns: void
 struct smp_check_auth_req {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_check_auth_req smp_check_auth_req;
@@ -423,7 +393,7 @@ extern struct smp_check_auth_req smp_check_auth_req;
 // Returns: void
 struct smp_key_pick_key {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_key_pick_key smp_key_pick_key;
@@ -432,7 +402,7 @@ extern struct smp_key_pick_key smp_key_pick_key;
 // Returns: void
 struct smp_key_distribution {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_key_distribution smp_key_distribution;
@@ -441,7 +411,7 @@ extern struct smp_key_distribution smp_key_distribution;
 // Returns: void
 struct smp_decide_association_model {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_decide_association_model smp_decide_association_model;
@@ -450,7 +420,7 @@ extern struct smp_decide_association_model smp_decide_association_model;
 // Returns: void
 struct smp_process_io_response {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_process_io_response smp_process_io_response;
@@ -459,7 +429,7 @@ extern struct smp_process_io_response smp_process_io_response;
 // Returns: void
 struct smp_br_process_peripheral_keys_response {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_br_process_peripheral_keys_response
@@ -469,7 +439,7 @@ extern struct smp_br_process_peripheral_keys_response
 // Returns: void
 struct smp_br_send_pair_response {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_br_send_pair_response smp_br_send_pair_response;
@@ -478,7 +448,7 @@ extern struct smp_br_send_pair_response smp_br_send_pair_response;
 // Returns: void
 struct smp_pairing_cmpl {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_pairing_cmpl smp_pairing_cmpl;
@@ -487,7 +457,7 @@ extern struct smp_pairing_cmpl smp_pairing_cmpl;
 // Returns: void
 struct smp_pair_terminate {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_pair_terminate smp_pair_terminate;
@@ -496,7 +466,7 @@ extern struct smp_pair_terminate smp_pair_terminate;
 // Returns: void
 struct smp_idle_terminate {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_idle_terminate smp_idle_terminate;
@@ -505,7 +475,7 @@ extern struct smp_idle_terminate smp_idle_terminate;
 // Returns: void
 struct smp_both_have_public_keys {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_both_have_public_keys smp_both_have_public_keys;
@@ -514,7 +484,7 @@ extern struct smp_both_have_public_keys smp_both_have_public_keys;
 // Returns: void
 struct smp_start_secure_connection_phase1 {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_start_secure_connection_phase1
@@ -524,7 +494,7 @@ extern struct smp_start_secure_connection_phase1
 // Returns: void
 struct smp_process_local_nonce {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_process_local_nonce smp_process_local_nonce;
@@ -533,7 +503,7 @@ extern struct smp_process_local_nonce smp_process_local_nonce;
 // Returns: void
 struct smp_process_peer_nonce {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_process_peer_nonce smp_process_peer_nonce;
@@ -542,7 +512,7 @@ extern struct smp_process_peer_nonce smp_process_peer_nonce;
 // Returns: void
 struct smp_match_dhkey_checks {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_match_dhkey_checks smp_match_dhkey_checks;
@@ -551,7 +521,7 @@ extern struct smp_match_dhkey_checks smp_match_dhkey_checks;
 // Returns: void
 struct smp_move_to_secure_connections_phase2 {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_move_to_secure_connections_phase2
@@ -561,7 +531,7 @@ extern struct smp_move_to_secure_connections_phase2
 // Returns: void
 struct smp_phase_2_dhkey_checks_are_present {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_phase_2_dhkey_checks_are_present
@@ -571,7 +541,7 @@ extern struct smp_phase_2_dhkey_checks_are_present
 // Returns: void
 struct smp_wait_for_both_public_keys {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_wait_for_both_public_keys smp_wait_for_both_public_keys;
@@ -580,7 +550,7 @@ extern struct smp_wait_for_both_public_keys smp_wait_for_both_public_keys;
 // Returns: void
 struct smp_start_passkey_verification {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_start_passkey_verification smp_start_passkey_verification;
@@ -589,7 +559,7 @@ extern struct smp_start_passkey_verification smp_start_passkey_verification;
 // Returns: void
 struct smp_process_secure_connection_oob_data {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_process_secure_connection_oob_data
@@ -599,7 +569,7 @@ extern struct smp_process_secure_connection_oob_data
 // Returns: void
 struct smp_set_local_oob_keys {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_set_local_oob_keys smp_set_local_oob_keys;
@@ -608,7 +578,7 @@ extern struct smp_set_local_oob_keys smp_set_local_oob_keys;
 // Returns: void
 struct smp_set_local_oob_random_commitment {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_set_local_oob_random_commitment
@@ -618,7 +588,7 @@ extern struct smp_set_local_oob_random_commitment
 // Returns: void
 struct smp_link_encrypted {
   std::function<void(const RawAddress& bda, uint8_t encr_enable)> body{
-      [](const RawAddress& bda, uint8_t encr_enable) {}};
+      [](const RawAddress& /* bda */, uint8_t /* encr_enable */) {}};
   void operator()(const RawAddress& bda, uint8_t encr_enable) {
     body(bda, encr_enable);
   };
@@ -638,7 +608,7 @@ extern struct smp_cancel_start_encryption_attempt
 // Returns: bool
 struct smp_proc_ltk_request {
   std::function<bool(const RawAddress& bda)> body{
-      [](const RawAddress& bda) { return false; }};
+      [](const RawAddress& /* bda */) { return false; }};
   bool operator()(const RawAddress& bda) { return body(bda); };
 };
 extern struct smp_proc_ltk_request smp_proc_ltk_request;
@@ -656,7 +626,7 @@ extern struct smp_process_secure_connection_long_term_key
 // Returns: void
 struct smp_set_derive_link_key {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_set_derive_link_key smp_set_derive_link_key;
@@ -665,7 +635,7 @@ extern struct smp_set_derive_link_key smp_set_derive_link_key;
 // Returns: void
 struct smp_derive_link_key_from_long_term_key {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_derive_link_key_from_long_term_key
@@ -675,26 +645,16 @@ extern struct smp_derive_link_key_from_long_term_key
 // Returns: void
 struct smp_br_process_link_key {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_br_process_link_key smp_br_process_link_key;
-// Name: smp_key_distribution_by_transport
-// Params: tSMP_CB* p_cb, tSMP_INT_DATA* p_data
-// Returns: void
-struct smp_key_distribution_by_transport {
-  std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
-  void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
-};
-extern struct smp_key_distribution_by_transport
-    smp_key_distribution_by_transport;
 // Name: smp_br_pairing_complete
 // Params: tSMP_CB* p_cb, tSMP_INT_DATA* p_data
 // Returns: void
 struct smp_br_pairing_complete {
   std::function<void(tSMP_CB* p_cb, tSMP_INT_DATA* p_data)> body{
-      [](tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {}};
+      [](tSMP_CB* /* p_cb */, tSMP_INT_DATA* /* p_data */) {}};
   void operator()(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) { body(p_cb, p_data); };
 };
 extern struct smp_br_pairing_complete smp_br_pairing_complete;

@@ -19,11 +19,9 @@ package com.android.server.bluetooth;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
 
 import android.content.Context;
 import android.content.ContextWrapper;
-import android.provider.Settings;
 import android.text.TextUtils;
 
 import androidx.test.InstrumentationRegistry;
@@ -56,55 +54,12 @@ public class BluetoothModeChangeHelperTest {
     }
 
     @Test
-    public void isMediaProfileConnected() {
-        assertThat(mHelper.isMediaProfileConnected()).isFalse();
-    }
-
-    @Test
     public void isBluetoothOn_doesNotCrash() {
         // assertThat(mHelper.isBluetoothOn()).isFalse();
         // TODO: Strangely, isBluetoothOn() does not call BluetoothAdapter.isEnabled().
         //       Instead, it calls isLeEnabled(). Two results can be different.
         //       Is this a mistake, or in purpose?
         mHelper.isBluetoothOn();
-    }
-
-    @Test
-    public void isAirplaneModeOn() {
-        assertThat(mHelper.isAirplaneModeOn()).isFalse();
-    }
-
-    @Test
-    public void onAirplaneModeChanged() {
-        mHelper.onAirplaneModeChanged(mService);
-
-        verify(mService).onAirplaneModeChanged();
-    }
-
-    @Test
-    public void setSettingsInt() {
-        String testSettingsName = "BluetoothModeChangeHelperTest_test_settings_name";
-        int value = 9876;
-
-        try {
-            mHelper.setSettingsInt(testSettingsName, value);
-            assertThat(mHelper.getSettingsInt(testSettingsName)).isEqualTo(value);
-        } finally {
-            Settings.Global.resetToDefaults(mContext.getContentResolver(), null);
-        }
-    }
-
-    @Test
-    public void setSettingsSecureInt() {
-        String testSettingsName = "BluetoothModeChangeHelperTest_test_settings_name";
-        int value = 1234;
-
-        try {
-            mHelper.setSettingsSecureInt(testSettingsName, value);
-            assertThat(mHelper.getSettingsSecureInt(testSettingsName, 0)).isEqualTo(value);
-        } finally {
-            Settings.Global.resetToDefaults(mContext.getContentResolver(), null);
-        }
     }
 
     @Test

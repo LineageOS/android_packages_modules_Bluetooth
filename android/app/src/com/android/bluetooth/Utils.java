@@ -63,8 +63,6 @@ import android.provider.DeviceConfig;
 import android.provider.Telephony;
 import android.util.Log;
 
-import androidx.annotation.RequiresApi;
-
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
 
@@ -423,7 +421,6 @@ public final class Utils {
      * @return the list of AssociationInfo objects
      */
     @RequiresPermission("android.permission.MANAGE_COMPANION_DEVICES")
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     // TODO(b/193460475): Android Lint handles change from SystemApi to public incorrectly.
     // CompanionDeviceManager#getAllAssociations() is public in U,
     // but existed in T as an identical SystemApi.
@@ -979,6 +976,9 @@ public final class Utils {
         return (int) (TimeUnit.MILLISECONDS.toMicros(milliseconds) / MICROS_PER_UNIT);
     }
 
+    private static boolean sIsInstrumentationTestModeCacheSet = false;
+    private static boolean sInstrumentationTestModeCache = false;
+
     /**
      * Check if we are running in BluetoothInstrumentationTest context by trying to load
      * com.android.bluetooth.FileSystemWriteTest. If we are not in Instrumentation test mode, this
@@ -989,11 +989,16 @@ public final class Utils {
      * @return true if in BluetoothInstrumentationTest, false otherwise
      */
     public static boolean isInstrumentationTestMode() {
-        try {
-            return Class.forName("com.android.bluetooth.FileSystemWriteTest") != null;
-        } catch (ClassNotFoundException exception) {
-            return false;
+        if (!sIsInstrumentationTestModeCacheSet) {
+            try {
+                sInstrumentationTestModeCache =
+                        Class.forName("com.android.bluetooth.FileSystemWriteTest") != null;
+            } catch (ClassNotFoundException exception) {
+                sInstrumentationTestModeCache = false;
+            }
+            sIsInstrumentationTestModeCacheSet = true;
         }
+        return sInstrumentationTestModeCache;
     }
 
     /**
@@ -1227,5 +1232,48 @@ public final class Utils {
         PackageManager pm = context.getPackageManager();
         return pm.hasSystemFeature(PackageManager.FEATURE_TELEVISION)
                 || pm.hasSystemFeature(PackageManager.FEATURE_LEANBACK);
+    }
+
+    /**
+     * Returns the longest prefix of a string for which the UTF-8 encoding fits into the given
+     * number of bytes, with the additional guarantee that the string is not truncated in the middle
+     * of a valid surrogate pair.
+     *
+     * <p>Unpaired surrogates are counted as taking 3 bytes of storage. However, a subsequent
+     * attempt to actually encode a string containing unpaired surrogates is likely to be rejected
+     * by the UTF-8 implementation.
+     *
+     * <p>(copied from framework/base/core/java/android/text/TextUtils.java)
+     *
+     * @param str a string
+     * @param maxbytes the maximum number of UTF-8 encoded bytes
+     * @return the beginning of the string, so that it uses at most maxbytes bytes in UTF-8
+     * @throws IndexOutOfBoundsException if maxbytes is negative
+     */
+    public static String truncateStringForUtf8Storage(String str, int maxbytes) {
+        if (maxbytes < 0) {
+            throw new IndexOutOfBoundsException();
+        }
+
+        int bytes = 0;
+        for (int i = 0, len = str.length(); i < len; i++) {
+            char c = str.charAt(i);
+            if (c < 0x80) {
+                bytes += 1;
+            } else if (c < 0x800) {
+                bytes += 2;
+            } else if (c < Character.MIN_SURROGATE
+                    || c > Character.MAX_SURROGATE
+                    || str.codePointAt(i) < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
+                bytes += 3;
+            } else {
+                bytes += 4;
+                i += (bytes > maxbytes) ? 0 : 1;
+            }
+            if (bytes > maxbytes) {
+                return str.substring(0, i);
+            }
+        }
+        return str;
     }
 }

@@ -19,39 +19,31 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import android.app.BroadcastOptions;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
-import android.util.Log;
-
-import android.app.BroadcastOptions;
 import android.content.Context;
 import android.content.Intent;
 import android.os.UserManager;
-import android.os.Message;
+import android.util.Log;
 
 import androidx.test.filters.MediumTest;
-import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
 
 import org.junit.After;
-import org.junit.Assume;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @MediumTest
 @RunWith(AndroidJUnit4.class)
@@ -73,7 +65,7 @@ public class PbapClientStateMachineTest{
     private ArgumentCaptor<Intent> mIntentArgument = ArgumentCaptor.forClass(Intent.class);
 
 
-    static final int DISCONNECT_TIMEOUT = 3100;
+    static final int DISCONNECT_TIMEOUT = 5000;
 
     @Before
     public void setUp() throws Exception {
@@ -114,10 +106,11 @@ public class PbapClientStateMachineTest{
     }
 
     /**
-     * Test transition from STATE_CONNECTING to STATE_DISCONNECTING with MSG_DISCONNECT
+     * Test transition from STATE_CONNECTING to STATE_DISCONNECTING
+     * and then to STATE_DISCONNECTED after timeout.
      */
     @Test
-    public void testStateTransitionFromConnectingToDisconnecting() {
+    public void testStateTransitionFromConnectingToDisconnected() {
         assertThat(mPbapClientStateMachine.getConnectionState())
                 .isEqualTo(BluetoothProfile.STATE_CONNECTING);
 
@@ -127,20 +120,12 @@ public class PbapClientStateMachineTest{
                 .getLooper());
         assertThat(mPbapClientStateMachine.getConnectionState())
                 .isEqualTo(BluetoothProfile.STATE_DISCONNECTING);
-    }
-
-    /**
-     * Test transition from STATE_DISCONNECTING to STATE_DISCONNECTED with MSG_DISCONNECT_TIMEOUT
-     */
-    @Test
-    public void testStateTransitionFromDisconnectingToDisconnected_Timeout() {
-        testStateTransitionFromConnectingToDisconnecting();
 
         //wait until timeout occurs
-        verify(mMockPbapClientService,
-                timeout(DISCONNECT_TIMEOUT).times(3)).sendBroadcastMultiplePermissions(
-                mIntentArgument.capture(), any(String[].class),
-                any(BroadcastOptions.class));
+        Mockito.clearInvocations(mMockPbapClientService);
+        verify(mMockPbapClientService, timeout(DISCONNECT_TIMEOUT))
+                .sendBroadcastMultiplePermissions(mIntentArgument.capture(), any(String[].class),
+                        any(BroadcastOptions.class));
         assertThat(mPbapClientStateMachine.getConnectionState())
                 .isEqualTo(BluetoothProfile.STATE_DISCONNECTED);
     }

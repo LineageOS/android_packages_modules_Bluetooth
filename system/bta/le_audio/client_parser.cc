@@ -21,21 +21,19 @@
 
 #include "client_parser.h"
 
+#include <base/logging.h>
 #include <base/strings/string_number_conversions.h>
 #include <endian.h>
 #include <hardware/bt_common_types.h>
+#include <hardware/bt_gatt_types.h>
 
 #include <map>
-#include <memory>
 #include <numeric>
 
-#include "bta_le_audio_api.h"
-#include "gap_api.h"
-#include "gatt_api.h"
-#include "gd/common/strings.h"
+#include "internal_include/bt_trace.h"
 #include "le_audio_types.h"
-#include "osi/include/allocator.h"
-#include "osi/include/log.h"
+#include "os/log.h"
+#include "stack/include/bt_types.h"
 
 using le_audio::types::acs_ac_record;
 
@@ -321,15 +319,14 @@ bool PrepareAseCtpCodecConfig(const std::vector<struct ctp_codec_conf>& confs,
       confs.begin(), confs.end(),
       confs.size() * kCtpCodecConfMinLen + kAseNumSize + kCtpOpSize,
       [&conf_ents_str](size_t cur_len, auto const& conf) {
-        auto ltv_map = conf.codec_config.GetAsLtvMap();
-        for (const auto& [type, value] : ltv_map.Values()) {
+        for (const auto& [type, value] : conf.codec_config.Values()) {
           conf_ents_str +=
               "\ttype: " + std::to_string(type) +
               "\tlen: " + std::to_string(value.size()) +
               "\tdata: " + base::HexEncode(value.data(), value.size()) + "\n";
         };
 
-        return cur_len + ltv_map.RawPacketSize();
+        return cur_len + conf.codec_config.RawPacketSize();
       });
   value.resize(msg_len);
 
@@ -345,11 +342,10 @@ bool PrepareAseCtpCodecConfig(const std::vector<struct ctp_codec_conf>& confs,
     UINT16_TO_STREAM(msg, conf.codec_id.vendor_company_id);
     UINT16_TO_STREAM(msg, conf.codec_id.vendor_codec_id);
 
-    auto ltv_map = conf.codec_config.GetAsLtvMap();
-    auto codec_spec_conf_len = ltv_map.RawPacketSize();
+    auto codec_spec_conf_len = conf.codec_config.RawPacketSize();
 
     UINT8_TO_STREAM(msg, codec_spec_conf_len);
-    msg = ltv_map.RawPacket(msg);
+    msg = conf.codec_config.RawPacket(msg);
 
     LOG(INFO) << __func__ << ", Codec configuration"
               << "\n\tAse id: " << loghex(conf.ase_id)
@@ -661,40 +657,38 @@ bool ParseAudioLocations(types::AudioLocations& audio_locations, uint16_t len,
   return true;
 }
 
-bool ParseSupportedAudioContexts(struct acs_supported_audio_contexts& contexts,
-                                 uint16_t len, const uint8_t* value) {
+bool ParseSupportedAudioContexts(
+    types::BidirectionalPair<types::AudioContexts>& contexts, uint16_t len,
+    const uint8_t* value) {
   if (len != kAseAudioSuppContRspMinLen) {
     LOG(ERROR) << "Wrong len of Audio Supported Context characteristic";
     return false;
   }
 
-  STREAM_TO_UINT16(contexts.snk_supp_cont.value_ref(), value);
-  STREAM_TO_UINT16(contexts.src_supp_cont.value_ref(), value);
+  STREAM_TO_UINT16(contexts.sink.value_ref(), value);
+  STREAM_TO_UINT16(contexts.source.value_ref(), value);
 
   LOG(INFO) << "Supported Audio Contexts: "
-            << "\n\tSupported Sink Contexts: "
-            << contexts.snk_supp_cont.to_string()
-            << "\n\tSupported Source Contexts: "
-            << contexts.src_supp_cont.to_string();
+            << "\n\tSupported Sink Contexts: " << contexts.sink.to_string()
+            << "\n\tSupported Source Contexts: " << contexts.source.to_string();
 
   return true;
 }
 
-bool ParseAvailableAudioContexts(struct acs_available_audio_contexts& contexts,
-                                 uint16_t len, const uint8_t* value) {
+bool ParseAvailableAudioContexts(
+    types::BidirectionalPair<types::AudioContexts>& contexts, uint16_t len,
+    const uint8_t* value) {
   if (len != kAseAudioAvailRspMinLen) {
     LOG(ERROR) << "Wrong len of Audio Availability characteristic";
     return false;
   }
 
-  STREAM_TO_UINT16(contexts.snk_avail_cont.value_ref(), value);
-  STREAM_TO_UINT16(contexts.src_avail_cont.value_ref(), value);
+  STREAM_TO_UINT16(contexts.sink.value_ref(), value);
+  STREAM_TO_UINT16(contexts.source.value_ref(), value);
 
   LOG(INFO) << "Available Audio Contexts: "
-            << "\n\tAvailable Sink Contexts: "
-            << contexts.snk_avail_cont.to_string()
-            << "\n\tAvailable Source Contexts: "
-            << contexts.src_avail_cont.to_string();
+            << "\n\tAvailable Sink Contexts: " << contexts.sink.to_string()
+            << "\n\tAvailable Source Contexts: " << contexts.source.to_string();
 
   return true;
 }

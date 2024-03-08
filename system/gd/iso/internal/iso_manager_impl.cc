@@ -131,9 +131,9 @@ void IsoManagerImpl::SetCigParametersComplete(
     std::vector<uint16_t> handles;
     while (cis_it != cis_configs.end()) {
       iso_connections_.push_back({
+          .connection_handle = *handle_it,
           .cig_id = cig_id,
           .cis_id = cis_it->cis_id_,
-          .connection_handle = *handle_it,
       });
 
       handles.push_back(*handle_it);
@@ -156,8 +156,8 @@ void IsoManagerImpl::SetCigParametersTest(
     hci::ClockAccuracy peripherals_clock_accuracy,
     hci::Packing packing,
     hci::Enable framing,
-    uint16_t max_transport_latency_m_to_s,
-    uint16_t max_transport_latency_s_to_m,
+    uint16_t /* max_transport_latency_m_to_s */,
+    uint16_t /* max_transport_latency_s_to_m */,
     const std::vector<hci::LeCisParametersTestConfig>& cis_test_configs,
     SetCigParametersCallback command_complete_callback) {
   hci_le_iso_interface_->EnqueueCommand(
@@ -204,9 +204,9 @@ void IsoManagerImpl::SetCigParametersTestComplete(
     std::vector<uint16_t> handles;
     while (cis_it != cis_configs.end()) {
       iso_connections_.push_back({
+          .connection_handle = *handle_it,
           .cig_id = cig_id,
           .cis_id = cis_it->cis_id_,
-          .connection_handle = *handle_it,
       });
 
       handles.push_back(*handle_it);
@@ -254,7 +254,8 @@ void IsoManagerImpl::SendIsoPacket(uint16_t cis_handle, std::vector<uint8_t> pac
   auto builder = hci::IsoWithoutTimestampBuilder::Create(
       cis_handle,
       hci::IsoPacketBoundaryFlag::COMPLETE_SDU,
-      0 /* sequence_number*/,
+      0 /* sequence_number */,
+      packet.size() /* iso_sdu_length */,
       hci::IsoPacketStatusFlag::VALID,
       std::make_unique<bluetooth::packet::RawBuilder>(packet));
   LOG_INFO("%c%c", packet[0], packet[1]);

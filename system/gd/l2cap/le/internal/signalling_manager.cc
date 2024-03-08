@@ -110,9 +110,11 @@ void LeSignallingManager::SendCredit(Cid local_cid, uint16_t credits) {
   enqueue_buffer_->Enqueue(std::move(builder), handler_);
 }
 
-void LeSignallingManager::SendEnhancedConnectionRequest(Psm psm, std::vector<Cid> local_cid, Mtu mtu) {}
+void LeSignallingManager::SendEnhancedConnectionRequest(
+    Psm /* psm */, std::vector<Cid> /* local_cid */, Mtu /* mtu */) {}
 
-void LeSignallingManager::SendEnhancedReconfigureRequest(std::vector<Cid> local_cid, Mtu mtu) {}
+void LeSignallingManager::SendEnhancedReconfigureRequest(
+    std::vector<Cid> /* local_cid */, Mtu /* mtu */) {}
 
 void LeSignallingManager::CancelAlarm() {
   alarm_.Cancel();
@@ -200,10 +202,10 @@ void LeSignallingManager::OnConnectionRequest(SignalId signal_id, Psm psm, Cid r
 
   PendingConnection pending{
       .remote_cid = remote_cid,
-      .incoming_signal_id = signal_id,
-      .initial_credits = initial_credits,
-      .max_pdu_size = mps,
       .mtu = mtu,
+      .max_pdu_size = mps,
+      .initial_credits = initial_credits,
+      .incoming_signal_id = signal_id,
   };
   dynamic_service_manager_->GetSecurityEnforcementInterface()->Enforce(
       link_->GetDevice(),

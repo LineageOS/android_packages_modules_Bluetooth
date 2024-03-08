@@ -61,7 +61,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -87,11 +86,12 @@ public class BluetoothOppReceiverTest {
         Intents.init();
 
         BluetoothOppTestUtils.enableOppActivities(true, mContext);
-        TestUtils.wakeUpAndDismissKeyGuard();
+        TestUtils.setUpUiTest();
     }
 
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
+        TestUtils.tearDownUiTest();
         BluetoothMethodProxy.setInstanceForTesting(null);
 
         Intents.release();

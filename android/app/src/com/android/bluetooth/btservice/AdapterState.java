@@ -17,6 +17,7 @@
 package com.android.bluetooth.btservice;
 
 import android.bluetooth.BluetoothAdapter;
+import android.os.Looper;
 import android.os.Message;
 import android.os.SystemProperties;
 import android.util.Log;
@@ -76,10 +77,14 @@ final class AdapterState extends StateMachine {
     static final String BLE_STOP_TIMEOUT_DELAY_PROPERTY =
             "ro.bluetooth.ble_stop_timeout_delay";
 
-    static final int BLE_START_TIMEOUT_DELAY = 4000;
-    static final int BLE_STOP_TIMEOUT_DELAY = 4000;
-    static final int BREDR_START_TIMEOUT_DELAY = 4000;
-    static final int BREDR_STOP_TIMEOUT_DELAY = 4000;
+    static final int BLE_START_TIMEOUT_DELAY =
+        4000 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
+    static final int BLE_STOP_TIMEOUT_DELAY =
+        4000 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
+    static final int BREDR_START_TIMEOUT_DELAY =
+        4000 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
+    static final int BREDR_STOP_TIMEOUT_DELAY =
+        4000 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
 
     private AdapterService mAdapterService;
     private TurningOnState mTurningOnState = new TurningOnState();
@@ -92,8 +97,8 @@ final class AdapterState extends StateMachine {
 
     private int mPrevState = BluetoothAdapter.STATE_OFF;
 
-    private AdapterState(AdapterService service) {
-        super(TAG);
+    AdapterState(AdapterService service, Looper looper) {
+        super(TAG, looper);
         addState(mOnState);
         addState(mBleOnState);
         addState(mOffState);
@@ -103,6 +108,7 @@ final class AdapterState extends StateMachine {
         addState(mTurningBleOffState);
         mAdapterService = service;
         setInitialState(mOffState);
+        start();
     }
 
     private String messageString(int message) {
@@ -121,13 +127,6 @@ final class AdapterState extends StateMachine {
             case BREDR_STOP_TIMEOUT: return "BREDR_STOP_TIMEOUT";
             default: return "Unknown message (" + message + ")";
         }
-    }
-
-    public static AdapterState make(AdapterService service) {
-        Log.d(TAG, "make() - Creating AdapterState");
-        AdapterState as = new AdapterState(service);
-        as.start();
-        return as;
     }
 
     public void doQuit() {

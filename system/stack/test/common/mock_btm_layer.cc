@@ -18,6 +18,7 @@
 
 #include "mock_btm_layer.h"
 
+#include "stack/include/bt_psm_types.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/rfcdefs.h"
 #include "types/raw_address.h"
@@ -53,9 +54,15 @@ uint16_t BTM_GetMaxPacketSize(const RawAddress& addr) {
   return RFCOMM_DEFAULT_MTU;
 }
 
+bool BTM_IsAclConnectionUp(const RawAddress& remote_bda,
+                           tBT_TRANSPORT transport) {
+  return true;
+}
+
 struct btm_client_interface_t btm_client_interface = {
     .peer =
         {
+            .BTM_IsAclConnectionUp = BTM_IsAclConnectionUp,
             .BTM_GetMaxPacketSize = BTM_GetMaxPacketSize,
         },
 };

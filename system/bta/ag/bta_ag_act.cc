@@ -22,6 +22,7 @@
  *
  ******************************************************************************/
 
+#include <android_bluetooth_flags.h>
 #include <base/logging.h>
 
 #include <cstdint>
@@ -29,6 +30,8 @@
 
 #include "bta/ag/bta_ag_int.h"
 #include "bta/include/bta_dm_api.h"
+#include "bta/include/bta_hfp_api.h"
+#include "bta_ag_swb_aptx.h"
 
 #ifdef __ANDROID__
 #include "bta/le_audio/devices.h"
@@ -36,11 +39,15 @@
 
 #include "btif/include/btif_config.h"
 #include "device/include/device_iot_config.h"
-#include "os/system_properties.h"
 #include "osi/include/osi.h"  // UNUSED_ATTR
+#include "stack/include/bt_uuid16.h"
+#include "stack/include/btm_sec_api_types.h"
 #include "stack/include/l2c_api.h"
 #include "stack/include/port_api.h"
+#include "stack/include/sdp_api.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth::legacy::stack::sdp;
 
 /*****************************************************************************
  *  Constants
@@ -217,7 +224,7 @@ void bta_ag_start_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
 void bta_ag_disc_int_res(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
   uint16_t event = BTA_AG_DISC_FAIL_EVT;
 
-  APPL_TRACE_DEBUG("bta_ag_disc_int_res: Status: %d", data.disc_result.status);
+  LOG_VERBOSE("bta_ag_disc_int_res: Status: %d", data.disc_result.status);
 
   /* if found service */
   if (data.disc_result.status == SDP_SUCCESS ||
@@ -348,6 +355,7 @@ void bta_ag_rfc_fail(tBTA_AG_SCB* p_scb, UNUSED_ATTR const tBTA_AG_DATA& data) {
   p_scb->peer_features = 0;
   p_scb->peer_codecs = BTM_SCO_CODEC_CVSD;
   p_scb->sco_codec = BTM_SCO_CODEC_CVSD;
+  p_scb->is_aptx_swb_codec = false;
   p_scb->role = 0;
   p_scb->svc_conn = false;
   p_scb->hsp_version = HSP_VERSION_1_2;
@@ -387,6 +395,8 @@ void bta_ag_rfc_close(tBTA_AG_SCB* p_scb,
   p_scb->codec_updated = false;
   p_scb->codec_fallback = false;
   p_scb->codec_msbc_settings = BTA_AG_SCO_MSBC_SETTINGS_T2;
+  p_scb->codec_aptx_settings = BTA_AG_SCO_APTX_SWB_SETTINGS_Q0;
+  p_scb->is_aptx_swb_codec = false;
   p_scb->codec_lc3_settings = BTA_AG_SCO_LC3_SETTINGS_T2;
   p_scb->role = 0;
   p_scb->svc_conn = false;
@@ -476,8 +486,8 @@ void bta_ag_rfc_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
     if (!btif_config_get_bin(
             p_scb->peer_addr.ToString(), HFP_VERSION_CONFIG_KEY,
             (uint8_t*)&p_scb->peer_version, &version_value_size)) {
-      APPL_TRACE_WARNING("%s: Failed read cached peer HFP version for %s",
-                         __func__, ADDRESS_TO_LOGGABLE_CSTR(p_scb->peer_addr));
+      LOG_WARN("%s: Failed read cached peer HFP version for %s", __func__,
+               ADDRESS_TO_LOGGABLE_CSTR(p_scb->peer_addr));
       p_scb->peer_version = HFP_HSP_VERSION_UNKNOWN;
     }
     size_t sdp_features_size = sizeof(p_scb->peer_sdp_features);
@@ -497,8 +507,8 @@ void bta_ag_rfc_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
         p_scb->sco_codec = BTM_SCO_CODEC_LC3;
       }
     } else {
-      APPL_TRACE_WARNING("%s: Failed read cached peer HFP SDP features for %s",
-                         __func__, ADDRESS_TO_LOGGABLE_CSTR(p_scb->peer_addr));
+      LOG_WARN("%s: Failed read cached peer HFP SDP features for %s", __func__,
+               ADDRESS_TO_LOGGABLE_CSTR(p_scb->peer_addr));
     }
   }
 
@@ -535,8 +545,8 @@ void bta_ag_rfc_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
  *
  ******************************************************************************/
 void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
-  APPL_TRACE_DEBUG("%s: serv_handle0 = %d serv_handle = %d", __func__,
-                   p_scb->serv_handle[0], p_scb->serv_handle[1]);
+  LOG_VERBOSE("%s: serv_handle0 = %d serv_handle = %d", __func__,
+              p_scb->serv_handle[0], p_scb->serv_handle[1]);
   /* set role */
   p_scb->role = BTA_AG_ACP;
 
@@ -588,9 +598,8 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
 
   /* determine connected service from port handle */
   for (uint8_t i = 0; i < BTA_AG_NUM_IDX; i++) {
-    APPL_TRACE_DEBUG(
-        "bta_ag_rfc_acp_open: i = %d serv_handle = %d port_handle = %d", i,
-        p_scb->serv_handle[i], data.rfc.port_handle);
+    LOG_VERBOSE("bta_ag_rfc_acp_open: i = %d serv_handle = %d port_handle = %d",
+                i, p_scb->serv_handle[i], data.rfc.port_handle);
 
     if (p_scb->serv_handle[i] == data.rfc.port_handle) {
       p_scb->conn_service = i;
@@ -599,8 +608,8 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
     }
   }
 
-  APPL_TRACE_DEBUG("bta_ag_rfc_acp_open: conn_service = %d conn_handle = %d",
-                   p_scb->conn_service, p_scb->conn_handle);
+  LOG_VERBOSE("bta_ag_rfc_acp_open: conn_service = %d conn_handle = %d",
+              p_scb->conn_service, p_scb->conn_handle);
 
   /* close any unopened server */
   bta_ag_close_servers(
@@ -637,7 +646,7 @@ void bta_ag_rfc_data(tBTA_AG_SCB* p_scb, UNUSED_ATTR const tBTA_AG_DATA& data) {
   uint16_t len;
   char buf[BTA_AG_RFC_READ_MAX] = "";
 
-  APPL_TRACE_DEBUG("%s", __func__);
+  LOG_VERBOSE("%s", __func__);
 
   /* do the following */
   for (;;) {
@@ -659,7 +668,7 @@ void bta_ag_rfc_data(tBTA_AG_SCB* p_scb, UNUSED_ATTR const tBTA_AG_DATA& data) {
     bta_ag_at_parse(&p_scb->at_cb, buf, len);
     if ((p_scb->sco_idx != BTM_INVALID_SCO_INDEX) &&
         bta_ag_sco_is_open(p_scb)) {
-      APPL_TRACE_DEBUG("%s change link policy for SCO", __func__);
+      LOG_VERBOSE("%s change link policy for SCO", __func__);
       bta_sys_sco_open(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
     } else {
       bta_sys_idle(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
@@ -837,12 +846,18 @@ void bta_ag_svc_conn_open(tBTA_AG_SCB* p_scb,
 void bta_ag_setcodec(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
   tBTA_AG_PEER_CODEC codec_type = data.api_setcodec.codec;
   tBTA_AG_VAL val = {};
+  const bool aptx_voice = is_hfp_aptx_voice_enabled() &&
+                          (codec_type == BTA_AG_SCO_APTX_SWB_SETTINGS_Q0);
+  LOG_VERBOSE("aptx_voice=%s, codec_type=%#x", logbool(aptx_voice).c_str(),
+              codec_type);
+
   val.hdr.handle = bta_ag_scb_to_idx(p_scb);
 
   /* Check if the requested codec type is valid */
   if ((codec_type != BTM_SCO_CODEC_NONE) &&
       (codec_type != BTM_SCO_CODEC_CVSD) &&
-      (codec_type != BTM_SCO_CODEC_MSBC) && (codec_type != BTM_SCO_CODEC_LC3)) {
+      (codec_type != BTM_SCO_CODEC_MSBC) && (codec_type != BTM_SCO_CODEC_LC3) &&
+      !aptx_voice) {
     val.num = codec_type;
     val.hdr.status = BTA_AG_FAIL_RESOURCES;
     LOG_ERROR("bta_ag_setcodec error: unsupported codec type %d", codec_type);
@@ -856,7 +871,7 @@ void bta_ag_setcodec(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
     p_scb->codec_updated = true;
     val.num = codec_type;
     val.hdr.status = BTA_AG_SUCCESS;
-    APPL_TRACE_DEBUG("bta_ag_setcodec: Updated codec type %d", codec_type);
+    LOG_VERBOSE("bta_ag_setcodec: Updated codec type %d", codec_type);
   } else {
     val.num = codec_type;
     val.hdr.status = BTA_AG_FAIL_RESOURCES;
@@ -880,7 +895,8 @@ void bta_ag_handle_collision(tBTA_AG_SCB* p_scb,
                              UNUSED_ATTR const tBTA_AG_DATA& data) {
   /* Cancel SDP if it had been started. */
   if (p_scb->p_disc_db) {
-    SDP_CancelServiceSearch(p_scb->p_disc_db);
+    get_legacy_stack_sdp_api()->service.SDP_CancelServiceSearch(
+        p_scb->p_disc_db);
     bta_ag_free_db(p_scb, tBTA_AG_DATA::kEmpty);
   }
 

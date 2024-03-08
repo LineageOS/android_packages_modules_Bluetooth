@@ -16,7 +16,11 @@
 
 #pragma once
 
+#ifdef TARGET_FLOSS
+#include <audio_hal_interface/audio_linux.h>
+#else
 #include <hardware/audio.h>
+#endif
 
 #include <functional>
 
@@ -27,6 +31,9 @@
 namespace bluetooth {
 namespace audio {
 namespace le_audio {
+
+using ::le_audio::DsaMode;
+using ::le_audio::DsaModes;
 
 enum class StartRequestState {
   IDLE = 0x00,
@@ -53,13 +60,12 @@ constexpr uint8_t kBitsPerSample32 = 32;
 struct StreamCallbacks {
   std::function<bool(bool start_media_task)> on_resume_;
   std::function<bool(void)> on_suspend_;
-  std::function<bool(const source_metadata_t&)> on_metadata_update_;
-  std::function<bool(const sink_metadata_t&)> on_sink_metadata_update_;
+  std::function<bool(const source_metadata_v7_t&, DsaMode)> on_metadata_update_;
+  std::function<bool(const sink_metadata_v7_t&)> on_sink_metadata_update_;
 };
 
 std::vector<::le_audio::set_configurations::AudioSetConfiguration>
 get_offload_capabilities();
-int GetAidlInterfaceVersion();
 
 class LeAudioClientInterface {
  public:
@@ -153,7 +159,11 @@ class LeAudioClientInterface {
   // Release source interface if belongs to LE audio client interface
   bool ReleaseSource(Source* source);
 
-  // Get interface, if previously not initialized - it'll initialize singleton.
+  // Sets Dynamic Spatial Audio modes supported by the remote device
+  void SetAllowedDsaModes(DsaModes dsa_modes);
+
+  // Get interface, if previously not initialized - it'll initialize
+  // singleton.
   static LeAudioClientInterface* Get();
 
  private:

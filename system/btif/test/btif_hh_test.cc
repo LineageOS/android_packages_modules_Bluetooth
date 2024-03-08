@@ -23,13 +23,11 @@
 #include <future>
 #include <vector>
 
-#include "bta/hh/bta_hh_int.h"
 #include "bta/include/bta_ag_api.h"
 #include "bta/include/bta_hh_api.h"
 #include "btcore/include/module.h"
-#include "btif/include/btif_api.h"
-#include "btif/include/stack_manager.h"
 #include "include/hardware/bt_hh.h"
+#include "osi/include/allocator.h"
 #include "test/common/core_interface.h"
 #include "test/common/mock_functions.h"
 #include "test/mock/mock_osi_allocator.h"
@@ -38,10 +36,7 @@ using namespace std::chrono_literals;
 
 void set_hal_cbacks(bt_callbacks_t* callbacks);
 
-uint8_t appl_trace_level = BT_TRACE_LEVEL_DEBUG;
-uint8_t btif_trace_level = BT_TRACE_LEVEL_DEBUG;
-uint8_t btu_trace_level = BT_TRACE_LEVEL_DEBUG;
-
+// Used the legacy stack manager
 module_t bt_utils_module;
 module_t gd_controller_module;
 module_t gd_shim_module;
@@ -50,42 +45,25 @@ module_t rust_module;
 
 const tBTA_AG_RES_DATA tBTA_AG_RES_DATA::kEmpty = {};
 
-void bte_hh_evt(tBTA_HH_EVT event, tBTA_HH* p_data);
 const bthh_interface_t* btif_hh_get_interface();
 bt_status_t btif_hh_connect(const RawAddress* bd_addr);
 bt_status_t btif_hh_virtual_unplug(const RawAddress* bd_addr);
+
+namespace bluetooth {
+namespace legacy {
+namespace testing {
+
+void bte_hh_evt(tBTA_HH_EVT event, tBTA_HH* p_data);
+
+}  // namespace testing
+}  // namespace legacy
+}  // namespace bluetooth
 
 namespace test {
 namespace mock {
 extern bool bluetooth_shim_is_gd_stack_started_up;
 }
 }  // namespace test
-
-#if __GLIBC__
-size_t strlcpy(char* dst, const char* src, size_t siz) {
-  char* d = dst;
-  const char* s = src;
-  size_t n = siz;
-
-  /* Copy as many bytes as will fit */
-  if (n != 0) {
-    while (--n != 0) {
-      if ((*d++ = *s++) == '\0') break;
-    }
-  }
-
-  /* Not enough room in dst, add NUL and traverse rest of src */
-  if (n == 0) {
-    if (siz != 0) *d = '\0'; /* NUL-terminate dst */
-    while (*s++)
-      ;
-  }
-
-  return (s - src - 1); /* count does not include NUL */
-}
-
-pid_t gettid(void) throw() { return syscall(SYS_gettid); }
-#endif
 
 namespace {
 std::array<uint8_t, 32> data32 = {
@@ -133,6 +111,8 @@ bt_callbacks_t bt_callbacks = {
     .le_address_associate_cb = nullptr,     // le_address_associate_callback
     .acl_state_changed_cb = nullptr,        // acl_state_changed_callback
     .thread_evt_cb = nullptr,               // callback_thread_event
+    .dut_mode_recv_cb = nullptr,            // dut_mode_recv_callback
+    .le_test_mode_cb = nullptr,             // le_test_mode_callback
     .energy_info_cb = nullptr,              // energy_info_callback
     .link_quality_report_cb = nullptr,      // link_quality_report_callback
     .generate_local_oob_data_cb = nullptr,  // generate_local_oob_data_callback
@@ -154,34 +134,16 @@ bthh_callbacks_t bthh_callbacks = {
 
 class BtifHhWithMockTest : public ::testing::Test {
  protected:
-  void SetUp() override {
-    reset_mock_function_count_map();
-    test::mock::osi_allocator::osi_malloc.body = [](size_t size) {
-      return malloc(size);
-    };
-    test::mock::osi_allocator::osi_calloc.body = [](size_t size) {
-      return calloc(1UL, size);
-    };
-    test::mock::osi_allocator::osi_free.body = [](void* ptr) { free(ptr); };
-    test::mock::osi_allocator::osi_free_and_reset.body = [](void** ptr) {
-      free(*ptr);
-      *ptr = nullptr;
-    };
-  }
+  void SetUp() override { reset_mock_function_count_map(); }
 
-  void TearDown() override {
-    test::mock::osi_allocator::osi_malloc = {};
-    test::mock::osi_allocator::osi_calloc = {};
-    test::mock::osi_allocator::osi_free = {};
-    test::mock::osi_allocator::osi_free_and_reset = {};
-  }
+  void TearDown() override {}
 };
 
 class BtifHhWithHalCallbacksTest : public BtifHhWithMockTest {
  protected:
   void SetUp() override {
-    bluetooth::common::InitFlags::SetAllForTesting();
     BtifHhWithMockTest::SetUp();
+    bluetooth::common::InitFlags::SetAllForTesting();
     g_thread_evt_promise = std::promise<bt_cb_thread_evt>();
     auto future = g_thread_evt_promise.get_future();
     bt_callbacks.thread_evt_cb = [](bt_cb_thread_evt evt) {
@@ -275,7 +237,7 @@ TEST_F(BtifHhWithDevice, BTA_HH_GET_RPT_EVT) {
         g_bthh_callbacks_get_report_promise.set_value(report);
   };
 
-  bte_hh_evt(BTA_HH_GET_RPT_EVT, &data);
+  bluetooth::legacy::testing::bte_hh_evt(BTA_HH_GET_RPT_EVT, &data);
   osi_free(data.hs_data.rsp_data.p_rpt_data);
 
   ASSERT_EQ(std::future_status::ready, future.wait_for(2s));

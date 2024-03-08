@@ -18,11 +18,12 @@ package com.android.bluetooth.gatt;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanSettings;
+import android.content.Context;
+import android.os.BatteryStatsManager;
 import android.os.WorkSource;
 
 import androidx.test.filters.SmallTest;
@@ -31,7 +32,7 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.BluetoothAdapterProxy;
+import com.android.internal.app.IBatteryStats;
 
 import org.junit.After;
 import org.junit.Before;
@@ -51,34 +52,35 @@ import java.util.List;
 @RunWith(AndroidJUnit4.class)
 public class AppScanStatsTest {
 
-    private GattService mService;
-
     @Rule
     public final ServiceTestRule mServiceRule = new ServiceTestRule();
 
     @Mock
     private ContextMap map;
 
-    @Mock
-    private AdapterService mAdapterService;
+    @Mock private GattService mMockGatt;
+    @Mock private AdapterService mAdapterService;
+
+    // BatteryStatsManager is final and cannot be mocked with regular mockito, so just mock the
+    // underlying binder calls.
+    final BatteryStatsManager mBatteryStatsManager =
+            new BatteryStatsManager(mock(IBatteryStats.class));
 
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
 
         TestUtils.setAdapterService(mAdapterService);
-        doReturn(true).when(mAdapterService).isStartedProfile(anyString());
 
-        TestUtils.startService(mServiceRule, GattService.class);
-        mService = GattService.getGattService();
+        TestUtils.mockGetSystemService(
+                mMockGatt,
+                Context.BATTERY_STATS_SERVICE,
+                BatteryStatsManager.class,
+                mBatteryStatsManager);
     }
 
     @After
     public void tearDown() throws Exception {
-        doReturn(false).when(mAdapterService).isStartedProfile(anyString());
-        TestUtils.stopService(mServiceRule, GattService.class);
-        mService = GattService.getGattService();
-
         TestUtils.clearAdapterService(mAdapterService);
     }
 
@@ -87,10 +89,10 @@ public class AppScanStatsTest {
         String name = "appName";
         WorkSource source = null;
 
-        AppScanStats appScanStats = new AppScanStats(name, source, map, mService);
+        AppScanStats appScanStats = new AppScanStats(name, source, map, mMockGatt);
 
         assertThat(appScanStats.mContextMap).isEqualTo(map);
-        assertThat(appScanStats.mGattService).isEqualTo(mService);
+        assertThat(appScanStats.mGattService).isEqualTo(mMockGatt);
 
         assertThat(appScanStats.isScanning()).isEqualTo(false);
     }
@@ -100,7 +102,7 @@ public class AppScanStatsTest {
         String name = "appName";
         WorkSource source = null;
 
-        AppScanStats appScanStats = new AppScanStats(name, source, map, mService);
+        AppScanStats appScanStats = new AppScanStats(name, source, map, mMockGatt);
 
         ScanSettings settings = new ScanSettings.Builder().build();
         List<ScanFilter> filters = new ArrayList<>();

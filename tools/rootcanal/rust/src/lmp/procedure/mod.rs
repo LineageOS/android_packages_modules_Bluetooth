@@ -1,3 +1,17 @@
+// Copyright 2023 The Android Open Source Project
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 use std::convert::TryFrom;
 use std::future::Future;
 use std::pin::Pin;
@@ -7,10 +21,10 @@ use crate::lmp::ec::PrivateKey;
 use crate::packets::{hci, lmp};
 
 pub trait Context {
-    fn poll_hci_command<C: TryFrom<hci::CommandPacket>>(&self) -> Poll<C>;
+    fn poll_hci_command<C: TryFrom<hci::Command>>(&self) -> Poll<C>;
     fn poll_lmp_packet<P: TryFrom<lmp::LmpPacket>>(&self) -> Poll<P>;
 
-    fn send_hci_event<E: Into<hci::EventPacket>>(&self, event: E);
+    fn send_hci_event<E: Into<hci::Event>>(&self, event: E);
     fn send_lmp_packet<P: Into<lmp::LmpPacket>>(&self, packet: P);
 
     fn peer_address(&self) -> hci::Address;
@@ -22,7 +36,7 @@ pub trait Context {
 
     fn extended_features(&self, features_page: u8) -> u64;
 
-    fn receive_hci_command<C: TryFrom<hci::CommandPacket>>(&self) -> ReceiveFuture<'_, Self, C> {
+    fn receive_hci_command<C: TryFrom<hci::Command>>(&self) -> ReceiveFuture<'_, Self, C> {
         ReceiveFuture(Self::poll_hci_command, self)
     }
 

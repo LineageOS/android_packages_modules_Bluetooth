@@ -7,7 +7,6 @@ use itertools::Itertools;
 use log::warn;
 use num_traits::clamp;
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicIsize, Ordering};
 use tokio::sync::mpsc::Sender;
 
 use crate::callbacks::Callbacks;
@@ -194,6 +193,9 @@ const SOLICIT_AD_TYPES: [u8; 3] = [
     LIST_128_BIT_SERVICE_SOLICITATION_UUIDS,
 ];
 
+const LEGACY_ADV_DATA_LEN_MAX: usize = 31;
+const EXT_ADV_DATA_LEN_MAX: usize = 254;
+
 // Invalid advertising set id.
 const INVALID_ADV_ID: i32 = 0xff;
 
@@ -249,7 +251,7 @@ impl AdvertiseData {
         let mut uuid128_bytes = Vec::<u8>::new();
 
         // For better transmission efficiency, we generate a compact
-        // advertisement data byconverting UUIDs into shorter binary forms
+        // advertisement data by converting UUIDs into shorter binary forms
         // and then group them by their length in order.
         // The data generated for UUIDs looks like:
         // [16-bit_UUID_LIST, 32-bit_UUID_LIST, 128-bit_UUID_LIST].
@@ -341,6 +343,29 @@ impl AdvertiseData {
         AdvertiseData::append_transport_discovery_data(&mut bytes, &self.transport_discovery_data);
         bytes
     }
+
+    /// Validates the raw data as advertisement data.
+    pub fn validate_raw_data(is_legacy: bool, bytes: &Vec<u8>) -> bool {
+        bytes.len() <= if is_legacy { LEGACY_ADV_DATA_LEN_MAX } else { EXT_ADV_DATA_LEN_MAX }
+    }
+
+    /// Checks if the advertisement can be upgraded to extended.
+    pub fn can_upgrade(
+        parameters: &mut AdvertisingSetParameters,
+        adv_bytes: &Vec<u8>,
+        is_le_extended_advertising_supported: bool,
+    ) -> bool {
+        if parameters.is_legacy
+            && is_le_extended_advertising_supported
+            && !AdvertiseData::validate_raw_data(true, adv_bytes)
+        {
+            log::info!("Auto upgrading advertisement to extended");
+            parameters.is_legacy = false;
+            return true;
+        }
+
+        false
+    }
 }
 
 impl Into<bt_topshim::profiles::gatt::PeriodicAdvertisingParameters>
@@ -367,9 +392,6 @@ impl Into<bt_topshim::profiles::gatt::PeriodicAdvertisingParameters>
     }
 }
 
-/// Monotonically increasing counter for reg_id.
-static REG_ID_COUNTER: AtomicIsize = AtomicIsize::new(0);
-
 // Keeps information of an advertising set.
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub(crate) struct AdvertisingSetInfo {
@@ -388,28 +410,40 @@ pub(crate) struct AdvertisingSetInfo {
     /// Whether the advertising set has been paused.
     paused: bool,
 
+    /// Whether the stop of advertising set is held.
+    /// This happens when an advertising set is stopped when the system is suspending.
+    /// The advertising set will be stopped on system resumed.
+    stopped: bool,
+
     /// Advertising duration, in 10 ms unit.
     adv_timeout: u16,
 
     /// Maximum number of extended advertising events the controller
     /// shall attempt to send before terminating the extended advertising.
     adv_events: u8,
+
+    /// Whether the legacy advertisement will be used.
+    legacy: bool,
 }
 
 impl AdvertisingSetInfo {
-    pub(crate) fn new(callback_id: CallbackId, adv_timeout: u16, adv_events: u8) -> Self {
-        let mut reg_id = REG_ID_COUNTER.fetch_add(1, Ordering::SeqCst) as RegId;
-        if reg_id == INVALID_REG_ID {
-            reg_id = REG_ID_COUNTER.fetch_add(1, Ordering::SeqCst) as RegId;
-        }
+    pub(crate) fn new(
+        callback_id: CallbackId,
+        adv_timeout: u16,
+        adv_events: u8,
+        legacy: bool,
+        reg_id: RegId,
+    ) -> Self {
         AdvertisingSetInfo {
             adv_id: None,
             callback_id,
             reg_id,
             enabled: false,
             paused: false,
+            stopped: false,
             adv_timeout,
             adv_events,
+            legacy,
         }
     }
 
@@ -454,6 +488,16 @@ impl AdvertisingSetInfo {
         self.paused
     }
 
+    /// Marks the advertising set as stopped.
+    pub(crate) fn set_stopped(&mut self) {
+        self.stopped = true;
+    }
+
+    /// Returns true if the advertising set has been stopped, false otherwise.
+    pub(crate) fn is_stopped(&self) -> bool {
+        self.stopped
+    }
+
     /// Gets adv_timeout.
     pub(crate) fn adv_timeout(&self) -> u16 {
         self.adv_timeout
@@ -462,6 +506,11 @@ impl AdvertisingSetInfo {
     /// Gets adv_events.
     pub(crate) fn adv_events(&self) -> u8 {
         self.adv_events
+    }
+
+    /// Returns whether the legacy advertisement will be used.
+    pub(crate) fn is_legacy(&self) -> bool {
+        self.legacy
     }
 }
 
@@ -479,6 +528,13 @@ impl Advertisers {
             sets: HashMap::new(),
             suspend_mode: SuspendMode::Normal,
         }
+    }
+
+    // Returns the minimum unoccupied register ID from 0.
+    pub(crate) fn new_reg_id(&mut self) -> RegId {
+        (0..)
+            .find(|id| !self.sets.contains_key(id))
+            .expect("There must be an unoccupied register ID")
     }
 
     /// Adds an advertising set.
@@ -511,6 +567,11 @@ impl Advertisers {
     /// Returns a mutable iterator of paused advertising sets.
     pub(crate) fn paused_sets_mut(&mut self) -> impl Iterator<Item = &mut AdvertisingSetInfo> {
         self.valid_sets_mut().filter(|s| s.is_paused())
+    }
+
+    /// Returns an iterator of stopped advertising sets.
+    pub(crate) fn stopped_sets(&self) -> impl Iterator<Item = &AdvertisingSetInfo> {
+        self.valid_sets().filter(|s| s.is_stopped())
     }
 
     fn find_reg_id(&self, adv_id: AdvertiserId) -> Option<RegId> {
@@ -624,7 +685,6 @@ impl Advertisers {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::HashSet;
     use std::iter::FromIterator;
 
     #[test]
@@ -651,12 +711,31 @@ mod tests {
     }
 
     #[test]
-    fn test_new_advising_set_info() {
-        let mut uniq = HashSet::new();
-        for callback_id in 0..256 {
-            let s = AdvertisingSetInfo::new(callback_id, 0, 0);
-            assert_eq!(s.callback_id(), callback_id);
-            assert_eq!(uniq.insert(s.reg_id()), true);
+    fn test_add_remove_advising_set_info() {
+        let (tx, _rx) = crate::Stack::create_channel();
+        let mut advertisers = Advertisers::new(tx.clone());
+        for i in 0..35 {
+            let reg_id = i * 2 as RegId;
+            let s = AdvertisingSetInfo::new(0 as CallbackId, 0, 0, false, reg_id);
+            advertisers.add(s);
+        }
+        for i in 0..35 {
+            let expected_reg_id = i * 2 + 1 as RegId;
+            let reg_id = advertisers.new_reg_id();
+            assert_eq!(reg_id, expected_reg_id);
+            let s = AdvertisingSetInfo::new(0 as CallbackId, 0, 0, false, reg_id);
+            advertisers.add(s);
+        }
+        for i in 0..35 {
+            let reg_id = i * 2 as RegId;
+            assert!(advertisers.remove_by_reg_id(reg_id).is_some());
+        }
+        for i in 0..35 {
+            let expected_reg_id = i * 2 as RegId;
+            let reg_id = advertisers.new_reg_id();
+            assert_eq!(reg_id, expected_reg_id);
+            let s = AdvertisingSetInfo::new(0 as CallbackId, 0, 0, false, reg_id);
+            advertisers.add(s);
         }
     }
 
@@ -669,7 +748,8 @@ mod tests {
         for i in 0..size {
             let callback_id: CallbackId = i as CallbackId;
             let adv_id: AdvertiserId = i as AdvertiserId;
-            let mut s = AdvertisingSetInfo::new(callback_id, 0, 0);
+            let reg_id = advertisers.new_reg_id();
+            let mut s = AdvertisingSetInfo::new(callback_id, 0, 0, false, reg_id);
             s.set_adv_id(Some(adv_id));
             advertisers.add(s);
         }

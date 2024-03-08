@@ -35,16 +35,16 @@
 #include <cstdint>
 #include <unordered_map>
 
-#include "bt_target.h"
 #include "device/include/controller.h"
 #include "device/include/interop.h"
+#include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
-#include "main/shim/shim.h"
-#include "osi/include/log.h"
+#include "os/log.h"
 #include "osi/include/osi.h"  // UNUSED_ATTR
+#include "osi/include/stack_power_telemetry.h"
 #include "stack/btm/btm_int_types.h"
-#include "stack/include/btm_api.h"
-#include "stack/include/btm_api_types.h"
+#include "stack/include/bt_types.h"
+#include "stack/include/btm_log_history.h"
 #include "stack/include/btm_status.h"
 #include "types/raw_address.h"
 
@@ -94,6 +94,12 @@ const uint8_t
 static void send_sniff_subrating(uint16_t handle, const RawAddress& addr,
                                  uint16_t max_lat, uint16_t min_rmt_to,
                                  uint16_t min_loc_to) {
+  uint16_t new_max_lat = 0;
+  if (interop_match_addr_get_max_lat(INTEROP_UPDATE_HID_SSR_MAX_LAT, &addr,
+                                     &new_max_lat)) {
+    max_lat = new_max_lat;
+  }
+
   btsnd_hcic_sniff_sub_rate(handle, max_lat, min_rmt_to, min_loc_to);
   BTM_LogHistory(kBtmLogTag, addr, "Sniff subrating",
                  base::StringPrintf(
@@ -122,12 +128,6 @@ static tBTM_STATUS btm_pm_snd_md_req(uint16_t handle, uint8_t pm_id,
  ******************************************************************************/
 tBTM_STATUS BTM_PmRegister(uint8_t mask, uint8_t* p_pm_id,
                            tBTM_PM_STATUS_CBACK* p_cb) {
-  if (bluetooth::shim::is_gd_link_policy_enabled()) {
-    ASSERT(p_pm_id != nullptr);
-    ASSERT(p_cb != nullptr);
-    return BTM_NO_RESOURCES;
-  }
-
   /* de-register */
   if (mask & BTM_PM_DEREG) {
     if (*p_pm_id >= BTM_MAX_PM_RECORDS) return BTM_ILLEGAL_VALUE;
@@ -727,6 +727,10 @@ void btm_pm_proc_mode_change(tHCI_STATUS hci_status, uint16_t hci_handle,
     l2c_OnHciModeChangeSendPendingPackets(p_cb->bda_);
   }
 
+  (mode != BTM_PM_ST_ACTIVE)
+      ? power_telemetry::GetInstance().LogSniffStarted(hci_handle, p_cb->bda_)
+      : power_telemetry::GetInstance().LogSniffStopped(hci_handle, p_cb->bda_);
+
   /* set req_mode  HOLD mode->ACTIVE */
   if ((mode == BTM_PM_MD_ACTIVE) && (p_cb->req_mode.mode == BTM_PM_MD_HOLD))
     p_cb->req_mode.mode = BTM_PM_MD_ACTIVE;
@@ -838,7 +842,7 @@ static bool btm_pm_device_in_active_or_sniff_mode(void) {
 
   /* Check BLE states */
   if (!btm_cb.ble_ctr_cb.is_connection_state_idle()) {
-    BTM_TRACE_DEBUG("%s - BLE state is not idle", __func__);
+    LOG_VERBOSE("%s - BLE state is not idle", __func__);
     return true;
   }
 
@@ -859,15 +863,12 @@ static bool btm_pm_device_in_scan_state(void) {
   /* Scan state-paging, inquiry, and trying to connect */
 
   /* Check for paging */
-  if (btm_cb.is_paging || !fixed_queue_is_empty(btm_cb.page_queue)) {
-    BTM_TRACE_DEBUG("btm_pm_device_in_scan_state- paging");
-    return true;
-  }
+  // TODO: Get this information from connection manager?
 
   /* Check for inquiry */
   if ((btm_cb.btm_inq_vars.inq_active &
        (BTM_BR_INQ_ACTIVE_MASK | BTM_BLE_INQ_ACTIVE_MASK)) != 0) {
-    BTM_TRACE_DEBUG("btm_pm_device_in_scan_state- Inq active");
+    LOG_VERBOSE("btm_pm_device_in_scan_state- Inq active");
     return true;
   }
 

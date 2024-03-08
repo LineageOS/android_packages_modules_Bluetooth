@@ -20,6 +20,7 @@
 
 #include "hci/acl_manager.h"
 #include "hci/controller.h"
+#include "hci/event_checkers.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_packets.h"
 #include "hci/le_periodic_sync_manager.h"
@@ -74,69 +75,85 @@ struct Scanner {
 };
 
 class NullScanningCallback : public ScanningCallback {
-  void OnScannerRegistered(const Uuid app_uuid, ScannerId scanner_id, ScanningStatus status) override {
+  void OnScannerRegistered(
+      const Uuid /* app_uuid */, ScannerId /* scanner_id */, ScanningStatus /* status */) override {
     LOG_INFO("OnScannerRegistered in NullScanningCallback");
   }
-  void OnSetScannerParameterComplete(ScannerId scanner_id, ScanningStatus status) override {
+  void OnSetScannerParameterComplete(
+      ScannerId /* scanner_id */, ScanningStatus /* status */) override {
     LOG_INFO("OnSetScannerParameterComplete in NullScanningCallback");
   }
   void OnScanResult(
-      uint16_t event_type,
-      uint8_t address_type,
-      Address address,
-      uint8_t primary_phy,
-      uint8_t secondary_phy,
-      uint8_t advertising_sid,
-      int8_t tx_power,
-      int8_t rssi,
-      uint16_t periodic_advertising_interval,
-      std::vector<uint8_t> advertising_data) override {
+      uint16_t /* event_type */,
+      uint8_t /* address_type */,
+      Address /* address */,
+      uint8_t /* primary_phy */,
+      uint8_t /* secondary_phy */,
+      uint8_t /* advertising_sid */,
+      int8_t /* tx_power */,
+      int8_t /* rssi */,
+      uint16_t /* periodic_advertising_interval */,
+      std::vector<uint8_t> /* advertising_data */) override {
     LOG_INFO("OnScanResult in NullScanningCallback");
   }
-  void OnTrackAdvFoundLost(AdvertisingFilterOnFoundOnLostInfo on_found_on_lost_info) override {
+  void OnTrackAdvFoundLost(
+      AdvertisingFilterOnFoundOnLostInfo /* on_found_on_lost_info */) override {
     LOG_INFO("OnTrackAdvFoundLost in NullScanningCallback");
   }
   void OnBatchScanReports(
-      int client_if, int status, int report_format, int num_records, std::vector<uint8_t> data) override {
+      int /* client_if */,
+      int /* status */,
+      int /* report_format */,
+      int /* num_records */,
+      std::vector<uint8_t> /* data */) override {
     LOG_INFO("OnBatchScanReports in NullScanningCallback");
   }
-  void OnBatchScanThresholdCrossed(int client_if) override {
+  void OnBatchScanThresholdCrossed(int /* client_if */) override {
     LOG_INFO("OnBatchScanThresholdCrossed in NullScanningCallback");
   }
   void OnTimeout() override {
     LOG_INFO("OnTimeout in NullScanningCallback");
   }
-  void OnFilterEnable(Enable enable, uint8_t status) override {
+  void OnFilterEnable(Enable /* enable */, uint8_t /* status */) override {
     LOG_INFO("OnFilterEnable in NullScanningCallback");
   }
-  void OnFilterParamSetup(uint8_t available_spaces, ApcfAction action, uint8_t status) override {
+  void OnFilterParamSetup(
+      uint8_t /* available_spaces */, ApcfAction /* action */, uint8_t /* status */) override {
     LOG_INFO("OnFilterParamSetup in NullScanningCallback");
   }
   void OnFilterConfigCallback(
-      ApcfFilterType filter_type, uint8_t available_spaces, ApcfAction action, uint8_t status) override {
+      ApcfFilterType /* filter_type */,
+      uint8_t /* available_spaces */,
+      ApcfAction /* action */,
+      uint8_t /* status */) override {
     LOG_INFO("OnFilterConfigCallback in NullScanningCallback");
   }
   void OnPeriodicSyncStarted(
-      int reg_id,
-      uint8_t status,
-      uint16_t sync_handle,
-      uint8_t advertising_sid,
-      AddressWithType address_with_type,
-      uint8_t phy,
-      uint16_t interval) override {
+      int /* reg_id */,
+      uint8_t /* status */,
+      uint16_t /* sync_handle */,
+      uint8_t /* advertising_sid */,
+      AddressWithType /* address_with_type */,
+      uint8_t /* phy */,
+      uint16_t /* interval */) override {
     LOG_INFO("OnPeriodicSyncStarted in NullScanningCallback");
   };
   void OnPeriodicSyncReport(
-      uint16_t sync_handle, int8_t tx_power, int8_t rssi, uint8_t status, std::vector<uint8_t> data) override {
+      uint16_t /* sync_handle */,
+      int8_t /* tx_power */,
+      int8_t /* rssi */,
+      uint8_t /* status */,
+      std::vector<uint8_t> /* data */) override {
     LOG_INFO("OnPeriodicSyncReport in NullScanningCallback");
   };
-  void OnPeriodicSyncLost(uint16_t sync_handle) override {
+  void OnPeriodicSyncLost(uint16_t /* sync_handle */) override {
     LOG_INFO("OnPeriodicSyncLost in NullScanningCallback");
   };
-  void OnPeriodicSyncTransferred(int pa_source, uint8_t status, Address address) override {
+  void OnPeriodicSyncTransferred(
+      int /* pa_source */, uint8_t /* status */, Address /* address */) override {
     LOG_INFO("OnPeriodicSyncTransferred in NullScanningCallback");
   };
-  void OnBigInfoReport(uint16_t sync_handle, bool encrypted) {
+  void OnBigInfoReport(uint16_t /* sync_handle */, bool /* encrypted */) {
     LOG_INFO("OnBigInfoReport in NullScanningCallback");
   };
 };
@@ -546,6 +563,8 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
   }
 
   void scan(bool start) {
+    // On-resume flag should always be reset if there is an explicit start/stop call.
+    scan_on_resume_ = false;
     if (start) {
       configure_scan();
       start_scan();
@@ -576,13 +595,14 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
         le_scanning_interface_->EnqueueCommand(
             LeSetExtendedScanEnableBuilder::Create(
                 Enable::ENABLED, FilterDuplicates::DISABLED /* filter duplicates */, 0, 0),
-            module_handler_->BindOnce(impl::check_status));
+            module_handler_->BindOnce(check_complete<LeSetExtendedScanEnableCompleteView>));
         break;
       case ScanApiType::ANDROID_HCI:
       case ScanApiType::LEGACY:
         le_scanning_interface_->EnqueueCommand(
-            LeSetScanEnableBuilder::Create(Enable::ENABLED, Enable::DISABLED /* filter duplicates */),
-            module_handler_->BindOnce(impl::check_status));
+            LeSetScanEnableBuilder::Create(
+                Enable::ENABLED, Enable::DISABLED /* filter duplicates */),
+            module_handler_->BindOnce(check_complete<LeSetScanEnableCompleteView>));
         break;
     }
   }
@@ -599,13 +619,14 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
         le_scanning_interface_->EnqueueCommand(
             LeSetExtendedScanEnableBuilder::Create(
                 Enable::DISABLED, FilterDuplicates::DISABLED /* filter duplicates */, 0, 0),
-            module_handler_->BindOnce(impl::check_status));
+            module_handler_->BindOnce(check_complete<LeSetExtendedScanEnableCompleteView>));
         break;
       case ScanApiType::ANDROID_HCI:
       case ScanApiType::LEGACY:
         le_scanning_interface_->EnqueueCommand(
-            LeSetScanEnableBuilder::Create(Enable::DISABLED, Enable::DISABLED /* filter duplicates */),
-            module_handler_->BindOnce(impl::check_status));
+            LeSetScanEnableBuilder::Create(
+                Enable::DISABLED, Enable::DISABLED /* filter duplicates */),
+            module_handler_->BindOnce(check_complete<LeSetScanEnableCompleteView>));
         break;
     }
   }
@@ -874,7 +895,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
         combined_data.push_back((uint8_t)data);
         combined_data.push_back((uint8_t)(data >> 8));
       } else if (uuid_len == Uuid::kNumBytes32) {
-        uint16_t data = uuid.As32Bit();
+        uint32_t data = uuid.As32Bit();
         combined_data.push_back((uint8_t)data);
         combined_data.push_back((uint8_t)(data >> 8));
         combined_data.push_back((uint8_t)(data >> 16));
@@ -893,7 +914,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
           combined_data.push_back((uint8_t)data);
           combined_data.push_back((uint8_t)(data >> 8));
         } else if (uuid_len == Uuid::kNumBytes32) {
-          uint16_t data = uuid_mask.As32Bit();
+          uint32_t data = uuid_mask.As32Bit();
           combined_data.push_back((uint8_t)data);
           combined_data.push_back((uint8_t)(data >> 8));
           combined_data.push_back((uint8_t)(data >> 16));
@@ -1256,14 +1277,18 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
     periodic_sync_manager_.CancelCreateSync(sid, address);
   }
 
-  void transfer_sync(const Address& address, uint16_t service_data, uint16_t sync_handle, int pa_source) {
+  void transfer_sync(
+      const Address& address,
+      uint16_t connection_handle,
+      uint16_t service_data,
+      uint16_t sync_handle,
+      int pa_source) {
     if (!is_periodic_advertising_sync_transfer_sender_supported_) {
       LOG_WARN("PAST sender not supported on this device");
       int status = static_cast<int>(ErrorCode::UNSUPPORTED_FEATURE_OR_PARAMETER_VALUE);
       scanning_callbacks_->OnPeriodicSyncTransferred(pa_source, status, address);
       return;
     }
-    uint16_t connection_handle = acl_manager_->HACK_GetLeHandle(address);
     if (connection_handle == 0xFFFF) {
       LOG_ERROR("[PAST]: Invalid connection handle or no LE ACL link");
       int status = static_cast<int>(ErrorCode::UNKNOWN_CONNECTION);
@@ -1273,14 +1298,18 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
     periodic_sync_manager_.TransferSync(address, service_data, sync_handle, pa_source, connection_handle);
   }
 
-  void transfer_set_info(const Address& address, uint16_t service_data, uint8_t adv_handle, int pa_source) {
+  void transfer_set_info(
+      const Address& address,
+      uint16_t connection_handle,
+      uint16_t service_data,
+      uint8_t adv_handle,
+      int pa_source) {
     if (!is_periodic_advertising_sync_transfer_sender_supported_) {
       LOG_WARN("PAST sender not supported on this device");
       int status = static_cast<int>(ErrorCode::UNSUPPORTED_FEATURE_OR_PARAMETER_VALUE);
       scanning_callbacks_->OnPeriodicSyncTransferred(pa_source, status, address);
       return;
     }
-    uint16_t connection_handle = acl_manager_->HACK_GetLeHandle(address);
     if (connection_handle == 0xFFFF) {
       LOG_ERROR("[PAST]:Invalid connection handle or no LE ACL link");
       int status = static_cast<int>(ErrorCode::UNKNOWN_CONNECTION);
@@ -1551,7 +1580,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
     }
   }
 
-  void on_storage_threshold_breach(VendorSpecificEventView event) {
+  void on_storage_threshold_breach(VendorSpecificEventView /* event */) {
     if (batch_scan_config_.ref_value == kInvalidScannerId) {
       LOG_WARN("storage threshold was not set !!");
       return;
@@ -1614,6 +1643,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
     }
     paused_ = false;
     if (scan_on_resume_ == true) {
+      scan_on_resume_ = false;
       start_scan();
     }
     le_address_manager_->AckResume(this);
@@ -1655,29 +1685,6 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
   std::unordered_map<uint8_t, ScannerId> tracker_id_map_;
   uint16_t total_num_of_advt_tracked_ = 0x00;
   int8_t le_rx_path_loss_comp_ = 0;
-
-  static void check_status(CommandCompleteView view) {
-    switch (view.GetCommandOpCode()) {
-      case (OpCode::LE_SET_SCAN_ENABLE): {
-        auto status_view = LeSetScanEnableCompleteView::Create(view);
-        ASSERT(status_view.IsValid());
-        ASSERT_LOG(
-            status_view.GetStatus() == ErrorCode::SUCCESS,
-            "Receive set scan enable with error code %s",
-            ErrorCodeText(status_view.GetStatus()).c_str());
-      } break;
-      case (OpCode::LE_SET_EXTENDED_SCAN_ENABLE): {
-        auto status_view = LeSetExtendedScanEnableCompleteView::Create(view);
-        ASSERT(status_view.IsValid());
-        ASSERT_LOG(
-            status_view.GetStatus() == ErrorCode::SUCCESS,
-            "Receive set extended scan enable with error code %s",
-            ErrorCodeText(status_view.GetStatus()).c_str());
-      } break;
-      default:
-        LOG_ALWAYS_FATAL("Unhandled event %s", OpCodeText(view.GetCommandOpCode()).c_str());
-    }
-  }
 };
 
 LeScanningManager::LeScanningManager() {
@@ -1796,13 +1803,22 @@ void LeScanningManager::CancelCreateSync(uint8_t sid, const Address& address) {
 }
 
 void LeScanningManager::TransferSync(
-    const Address& address, uint16_t service_data, uint16_t sync_handle, int pa_source) {
-  CallOn(pimpl_.get(), &impl::transfer_sync, address, service_data, sync_handle, pa_source);
+    const Address& address,
+    uint16_t handle,
+    uint16_t service_data,
+    uint16_t sync_handle,
+    int pa_source) {
+  CallOn(pimpl_.get(), &impl::transfer_sync, address, handle, service_data, sync_handle, pa_source);
 }
 
 void LeScanningManager::TransferSetInfo(
-    const Address& address, uint16_t service_data, uint8_t adv_handle, int pa_source) {
-  CallOn(pimpl_.get(), &impl::transfer_set_info, address, service_data, adv_handle, pa_source);
+    const Address& address,
+    uint16_t handle,
+    uint16_t service_data,
+    uint8_t adv_handle,
+    int pa_source) {
+  CallOn(
+      pimpl_.get(), &impl::transfer_set_info, address, handle, service_data, adv_handle, pa_source);
 }
 
 void LeScanningManager::SyncTxParameters(

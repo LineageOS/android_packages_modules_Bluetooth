@@ -14,7 +14,6 @@
 */
 package com.android.bluetooth.map;
 
-import android.annotation.TargetApi;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
@@ -60,7 +59,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-@TargetApi(19)
 public class BluetoothMapContent {
 
     private static final String TAG = "BluetoothMapContent";
