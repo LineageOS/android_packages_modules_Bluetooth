@@ -45,7 +45,7 @@ class SnoopLogger;
 
 namespace hci {
 class ControllerInterface;
-class HciLayer;
+class HciInterface;
 class AclManager;
 class RemoteNameRequestModule;
 class DistanceMeasurementManager;
@@ -75,7 +75,7 @@ neighbor::DiscoverabilityModule* GetDiscoverability();
 neighbor::ConnectabilityModule* GetConnectability();
 Dumpsys* GetDumpsys();
 neighbor::InquiryModule* GetInquiry();
-hci::HciLayer* GetHciLayer();
+hci::HciInterface* GetHciLayer();
 neighbor::PageModule* GetPage();
 hci::RemoteNameRequestModule* GetRemoteNameRequest();
 hci::DistanceMeasurementManager* GetDistanceMeasurementManager();

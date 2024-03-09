@@ -95,8 +95,11 @@ public fun notifyBluetoothOn(resolver: ContentResolver) {
 
     if (!isFeatureSupportedForUser(resolver)) {
         val defaultFeatureValue = true
-        Log.i(TAG, "Feature was set to its default value ${defaultFeatureValue}")
-        setFeatureEnabledForUserUnchecked(resolver, defaultFeatureValue)
+        if (!setFeatureEnabledForUserUnchecked(resolver, defaultFeatureValue)) {
+            Log.e(TAG, "Failed to set feature to its default value ${defaultFeatureValue}")
+        } else {
+            Log.i(TAG, "Feature was set to its default value ${defaultFeatureValue}")
+        }
     }
 }
 
@@ -119,7 +122,9 @@ public fun setUserEnabled(
     if (!isUserSupported(context.contentResolver)) {
         throw IllegalStateException("AutoOnFeature not supported for user: ${context.getUser()}")
     }
-    setFeatureEnabledForUserUnchecked(context.contentResolver, status)
+    if (!setFeatureEnabledForUserUnchecked(context.contentResolver, status)) {
+        throw IllegalStateException("AutoOnFeature database failure for user: ${context.getUser()}")
+    }
     Counter.logIncrement(
         if (status) "bluetooth.value_auto_on_enabled" else "bluetooth.value_auto_on_disabled"
     )
@@ -267,8 +272,8 @@ private fun isFeatureSupportedForUser(resolver: ContentResolver): Boolean {
  *
  * @return whether the auto on feature is enabled for this user
  */
-private fun setFeatureEnabledForUserUnchecked(resolver: ContentResolver, status: Boolean) {
-    Settings.Secure.putInt(resolver, USER_SETTINGS_KEY, if (status) 1 else 0)
+private fun setFeatureEnabledForUserUnchecked(resolver: ContentResolver, status: Boolean): Boolean {
+    return Settings.Secure.putInt(resolver, USER_SETTINGS_KEY, if (status) 1 else 0)
 }
 
 // Listener is needed because code should be actionable prior to V API release

@@ -17,7 +17,7 @@
 #include "hci/acl_manager_mock.h"
 #include "hci/controller_interface_mock.h"
 #include "hci/distance_measurement_manager_mock.h"
-#include "hci/hci_layer.h"
+#include "hci/hci_interface.h"
 #include "hci/hci_layer_mock.h"
 #include "hci/le_advertising_manager_mock.h"
 #include "hci/le_scanning_manager_mock.h"
@@ -54,7 +54,7 @@ hci::AclManager* GetAclManager() { return hci::testing::mock_acl_manager_; }
 hci::ControllerInterface* GetController() {
   return hci::testing::mock_controller_;
 }
-hci::HciLayer* GetHciLayer() { return hci::testing::mock_hci_layer_; }
+hci::HciInterface* GetHciLayer() { return hci::testing::mock_hci_layer_; }
 hci::LeAdvertisingManager* GetAdvertising() {
   return hci::testing::mock_le_advertising_manager_;
 }
