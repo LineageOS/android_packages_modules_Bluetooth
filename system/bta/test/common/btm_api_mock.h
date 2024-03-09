@@ -66,6 +66,8 @@ class BtmInterface {
   virtual bool BTM_BleIsLinkKeyKnown(const RawAddress address) = 0;
   virtual std::optional<tBLE_BD_ADDR> BTM_BleGetIdentityAddress(
       const RawAddress address) = 0;
+  virtual bool BTM_IsAclConnectionUp(const RawAddress& remote_bda,
+                                     tBT_TRANSPORT transport) = 0;
 
   virtual ~BtmInterface() = default;
 };
@@ -117,6 +119,9 @@ class MockBtmInterface : public BtmInterface {
               (override));
   MOCK_METHOD((std::optional<tBLE_BD_ADDR>), BTM_BleGetIdentityAddress,
               (const RawAddress address), (override));
+  MOCK_METHOD((bool), BTM_IsAclConnectionUp,
+              (const RawAddress& remote_bda, tBT_TRANSPORT transport),
+              (override));
 };
 
 /**
