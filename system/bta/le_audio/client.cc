@@ -54,6 +54,7 @@
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
 #include "stack/btm/btm_sec.h"
+#include "stack/include/acl_api.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/main_thread.h"
 #include "state_machine.h"
@@ -2371,6 +2372,7 @@ class LeAudioClientImpl : public LeAudioClient {
       return;
     }
 
+    leAudioDevice->acl_asymmetric_ = false;
     BtaGattQueue::Clean(leAudioDevice->conn_id_);
     LeAudioDeviceGroup* group = aseGroups_.FindById(leAudioDevice->group_id_);
 
@@ -5486,6 +5488,21 @@ class LeAudioClientImpl : public LeAudioClient {
     }
   }
 
+  void handleAsymmetricPhyForUnicast(LeAudioDeviceGroup* group) {
+    if (!group->asymmetric_phy_for_unidirectional_cis_supported) return;
+
+    auto it = lastNotifiedGroupStreamStatusMap_.find(group->group_id_);
+
+    if (it != lastNotifiedGroupStreamStatusMap_.end() &&
+        it->second == GroupStreamStatus::STREAMING &&
+        group->GetSduInterval(le_audio::types::kLeAudioDirectionSource) == 0) {
+      SetAsymmetricBlePhy(group, true);
+      return;
+    }
+
+    SetAsymmetricBlePhy(group, false);
+  }
+
   void OnStateMachineStatusReportCb(int group_id, GroupStreamStatus status) {
     LOG_INFO(
         "status: %d ,  group_id: %d, audio_sender_state %s, "
@@ -5517,6 +5534,8 @@ class LeAudioClientImpl : public LeAudioClient {
                     group_id);
           return;
         }
+
+        handleAsymmetricPhyForUnicast(group);
 
         if ((audio_sender_state_ == AudioState::IDLE) &&
             (audio_receiver_state_ == AudioState::IDLE)) {
@@ -5605,6 +5624,7 @@ class LeAudioClientImpl : public LeAudioClient {
         CleanCachedMicrophoneData();
 
         if (group) {
+          handleAsymmetricPhyForUnicast(group);
           UpdateLocationsAndContextsAvailability(group->group_id_);
           if (group->IsPendingConfiguration()) {
             SuspendedForReconfiguration();
@@ -5786,6 +5806,15 @@ class LeAudioClientImpl : public LeAudioClient {
   std::map<int, GroupStreamStatus> lastNotifiedGroupStreamStatusMap_;
 
   void ClientAudioInterfaceRelease() {
+    auto group = aseGroups_.FindById(active_group_id_);
+    if (!group) {
+      LOG(ERROR) << __func__
+                 << ", Invalid group: " << static_cast<int>(active_group_id_);
+    } else {
+      handleAsymmetricPhyForUnicast(group);
+      LOG_VERBOSE("ClientAudioInterfaceRelease - cleanup");
+    }
+
     if (le_audio_source_hal_client_) {
       le_audio_source_hal_client_->Stop();
       le_audio_source_hal_client_.reset();
@@ -5859,6 +5888,27 @@ class LeAudioClientImpl : public LeAudioClient {
     } else {
       LOG_VERBOSE("ISO data consumer not ready to accept data");
       return false;
+    }
+  }
+
+  void SetAsymmetricBlePhy(LeAudioDeviceGroup* group, bool asymmetric) {
+    LeAudioDevice* leAudioDevice = group->GetFirstDevice();
+    if (leAudioDevice == nullptr) {
+      LOG_ERROR("Shouldn't be called without a device.");
+      return;
+    }
+
+    for (auto tmpDevice = leAudioDevice; tmpDevice != nullptr;
+         tmpDevice = group->GetNextDevice(tmpDevice)) {
+      if (tmpDevice->acl_asymmetric_ == asymmetric ||
+          !BTM_IsAclConnectionUp(tmpDevice->address_, BT_TRANSPORT_LE))
+        continue;
+
+      LOG_VERBOSE("SetAsymmetricBlePhy: %d for %s", asymmetric,
+                  ADDRESS_TO_LOGGABLE_CSTR(tmpDevice->address_));
+      BTM_BleSetPhy(tmpDevice->address_, PHY_LE_2M,
+                    asymmetric ? PHY_LE_1M : PHY_LE_2M, 0);
+      tmpDevice->acl_asymmetric_ = asymmetric;
     }
   }
 };
