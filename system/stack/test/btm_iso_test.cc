@@ -2215,12 +2215,8 @@ TEST_F(IsoManagerTest, SendIsoDataNoCredits) {
   }
 
   // Return all credits for this one handle
-  uint8_t mock_rsp[5];
-  uint8_t* p = mock_rsp;
-  UINT8_TO_STREAM(p, 1);
-  UINT16_TO_STREAM(p, volatile_test_cig_create_cmpl_evt_.conn_handles[0]);
-  UINT16_TO_STREAM(p, num_buffers);
-  IsoManager::GetInstance()->HandleNumComplDataPkts(mock_rsp, sizeof(mock_rsp));
+  IsoManager::GetInstance()->HandleNumComplDataPkts(
+      volatile_test_cig_create_cmpl_evt_.conn_handles[0], num_buffers);
 
   // Check on BIG
   IsoManager::GetInstance()->CreateBig(volatile_test_big_params_evt_.big_id,
@@ -2270,12 +2266,8 @@ TEST_F(IsoManagerTest, SendIsoDataCreditsReturned) {
   }
 
   // Return all credits for this one handle
-  uint8_t mock_rsp[5];
-  uint8_t* p = mock_rsp;
-  UINT8_TO_STREAM(p, 1);
-  UINT16_TO_STREAM(p, volatile_test_cig_create_cmpl_evt_.conn_handles[0]);
-  UINT16_TO_STREAM(p, num_buffers);
-  IsoManager::GetInstance()->HandleNumComplDataPkts(mock_rsp, sizeof(mock_rsp));
+  IsoManager::GetInstance()->HandleNumComplDataPkts(
+      volatile_test_cig_create_cmpl_evt_.conn_handles[0], num_buffers);
 
   // Expect some more events go down the HCI
   EXPECT_CALL(iso_interface_, HciSend).Times(num_buffers).RetiresOnSaturation();
@@ -2286,11 +2278,8 @@ TEST_F(IsoManagerTest, SendIsoDataCreditsReturned) {
   }
 
   // Return all credits for this one handle
-  p = mock_rsp;
-  UINT8_TO_STREAM(p, 1);
-  UINT16_TO_STREAM(p, volatile_test_cig_create_cmpl_evt_.conn_handles[0]);
-  UINT16_TO_STREAM(p, num_buffers);
-  IsoManager::GetInstance()->HandleNumComplDataPkts(mock_rsp, sizeof(mock_rsp));
+  IsoManager::GetInstance()->HandleNumComplDataPkts(
+      volatile_test_cig_create_cmpl_evt_.conn_handles[0], num_buffers);
 
   // Check on BIG
   IsoManager::GetInstance()->CreateBig(volatile_test_big_params_evt_.big_id,
@@ -2310,11 +2299,8 @@ TEST_F(IsoManagerTest, SendIsoDataCreditsReturned) {
   }
 
   // Return all credits for this one handle
-  p = mock_rsp;
-  UINT8_TO_STREAM(p, 1);
-  UINT16_TO_STREAM(p, volatile_test_big_params_evt_.conn_handles[0]);
-  UINT16_TO_STREAM(p, num_buffers);
-  IsoManager::GetInstance()->HandleNumComplDataPkts(mock_rsp, sizeof(mock_rsp));
+  IsoManager::GetInstance()->HandleNumComplDataPkts(
+      volatile_test_big_params_evt_.conn_handles[0], num_buffers);
 
   // Expect some more events go down the HCI
   EXPECT_CALL(iso_interface_, HciSend).Times(num_buffers).RetiresOnSaturation();
@@ -2575,12 +2561,7 @@ TEST_F(IsoManagerDeathTestNoCleanup,
   IsoManager::GetInstance()->Stop();
 
   // Expect no assert on this call - should be gracefully ignored
-  uint8_t mock_rsp[5];
-  uint8_t* p = mock_rsp;
-  UINT8_TO_STREAM(p, 1);
-  UINT16_TO_STREAM(p, handle);
-  UINT16_TO_STREAM(p, num_buffers);
-  IsoManager::GetInstance()->HandleNumComplDataPkts(mock_rsp, sizeof(mock_rsp));
+  IsoManager::GetInstance()->HandleNumComplDataPkts(handle, num_buffers);
 }
 
 /* This test case simulates HCI thread scheduling events on the main thread,

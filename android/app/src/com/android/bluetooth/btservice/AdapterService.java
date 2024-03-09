@@ -934,7 +934,8 @@ public class AdapterService extends Service {
                         : BluetoothRfcommProtoEnums.SOCKET_SECURITY_INSECURE,
                 resultCode,
                 isSerialPort,
-                appUid);
+                appUid,
+                new byte[0]);
     }
 
     @RequiresPermission(

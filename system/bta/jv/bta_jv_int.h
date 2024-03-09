@@ -115,7 +115,6 @@ struct tBTA_JV_CB {
    * if sdp_handle[i]==0, it's not used.
    * otherwise sdp_handle[i] is the stack SDP handle. */
   uint32_t sdp_handle[BTA_JV_MAX_SDP_REC]; /* SDP records created */
-  uint8_t* p_sel_raw_data; /* the raw data of last service select */
   tBTA_JV_DM_CBACK* p_dm_cback;
   tBTA_JV_L2C_CB l2c_cb[BTA_JV_MAX_L2C_CONN]; /* index is GAP handle (index) */
   tBTA_JV_RFC_CB rfc_cb[BTA_JV_MAX_RFC_CONN];

@@ -121,12 +121,10 @@ void IsoManager::HandleDisconnect(uint16_t handle, uint8_t reason) {
   pimpl_->HandleDisconnect(handle, reason);
 }
 
-void IsoManager::HandleNumComplDataPkts(uint8_t* p, uint8_t evt_len) {
+void IsoManager::HandleNumComplDataPkts(uint16_t handle, uint16_t credits) {
   if (!pimpl_) return;
-  pimpl_->HandleNumComplDataPkts(p, evt_len);
+  pimpl_->HandleNumComplDataPkts(handle, credits);
 }
-
-void IsoManager::HandleGdNumComplDataPkts(uint16_t handle, uint16_t credits) {}
 
 void IsoManager::HandleHciEvent(uint8_t sub_code, uint8_t* params,
                                 uint16_t length) {

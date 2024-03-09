@@ -57,8 +57,8 @@
 #include "stack/btm/btm_sec_cb.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/btm_log_history.h"
+#include "stack/include/l2c_api.h"
 #include "stack/include/main_thread.h"
-#include "stack/l2cap/l2c_int.h"
 #include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
 
@@ -1212,28 +1212,6 @@ struct shim::legacy::Acl::impl {
 #undef DUMPSYS_TAG
 };
 
-#define DUMPSYS_TAG "shim::legacy::l2cap"
-extern tL2C_CB l2cb;
-void DumpsysL2cap(int fd) {
-  LOG_DUMPSYS_TITLE(fd, DUMPSYS_TAG);
-  for (int i = 0; i < MAX_L2CAP_LINKS; i++) {
-    const tL2C_LCB& lcb = l2cb.lcb_pool[i];
-    if (!lcb.in_use) continue;
-    LOG_DUMPSYS(fd, "link_state:%s", link_state_text(lcb.link_state).c_str());
-    LOG_DUMPSYS(fd, "handle:0x%04x", lcb.Handle());
-
-    const tL2C_CCB* ccb = lcb.ccb_queue.p_first_ccb;
-    while (ccb != nullptr) {
-      LOG_DUMPSYS(
-          fd, "  active channel lcid:0x%04x rcid:0x%04x is_ecoc:%s in_use:%s",
-          ccb->local_cid, ccb->remote_cid, common::ToString(ccb->ecoc).c_str(),
-          common::ToString(ccb->in_use).c_str());
-      ccb = ccb->p_next_ccb;
-    }
-  }
-}
-
-#undef DUMPSYS_TAG
 #define DUMPSYS_TAG "shim::legacy::acl"
 void DumpsysAcl(int fd) {
   const tACL_CB& acl_cb = btm_cb.acl_cb_;
@@ -1372,7 +1350,7 @@ void shim::legacy::Acl::Dump(int fd) const {
   DumpsysRecord(fd);
   DumpsysNeighbor(fd);
   DumpsysAcl(fd);
-  DumpsysL2cap(fd);
+  L2CA_Dumpsys(fd);
   DumpsysBtm(fd);
 }
 
@@ -1625,12 +1603,17 @@ void shim::legacy::Acl::OnConnectSuccess(
 void shim::legacy::Acl::OnConnectRequest(hci::Address address,
                                          hci::ClassOfDevice cod) {
   const RawAddress bd_addr = ToRawAddress(address);
+  const DEV_CLASS dev_class = ToDevClass(cod);
 
   TRY_POSTING_ON_MAIN(acl_interface_.connection.classic.on_connect_request,
                       bd_addr, cod);
-  LOG_DEBUG("Received connect request remote:%s",
-            ADDRESS_TO_LOGGABLE_CSTR(address));
-  BTM_LogHistory(kBtmLogTag, ToRawAddress(address), "Connection request");
+  LOG_DEBUG("Received connect request remote:%s gd_cod:%s legacy_dev_class:%s",
+            ADDRESS_TO_LOGGABLE_CSTR(address), cod.ToString().c_str(),
+            dev_class_text(dev_class).c_str());
+  BTM_LogHistory(kBtmLogTag, ToRawAddress(address), "Connection request",
+                 base::StringPrintf("gd_cod:%s legacy_dev_class:%s",
+                                    cod.ToString().c_str(),
+                                    dev_class_text(dev_class).c_str()));
 }
 
 void shim::legacy::Acl::OnConnectFail(hci::Address address,

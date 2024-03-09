@@ -278,3 +278,5 @@ uint16_t L2CA_LeCreditThreshold() {
 }
 
 // END mockcify generation
+
+void L2CA_Dumpsys(int /* fd */) { inc_func_call_count(__func__); }

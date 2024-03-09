@@ -104,6 +104,7 @@
 #include <android/sysprop/BluetoothProperties.sysprop.h>
 #endif
 
+bool btif_get_address_type(const RawAddress& bda, tBLE_ADDR_TYPE* p_addr_type);
 bool btif_get_device_type(const RawAddress& bda, int* p_device_type);
 
 using bluetooth::Uuid;
@@ -4233,6 +4234,17 @@ bool btif_get_address_type(const RawAddress& bda, tBLE_ADDR_TYPE* p_addr_type) {
   log::debug("bd_addr:{}[{}]", ADDRESS_TO_LOGGABLE_CSTR(bda),
              AddressTypeText(*p_addr_type));
   return true;
+}
+
+void btif_check_device_in_inquiry_db(const RawAddress& address) {
+  tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
+  int device_type = 0;
+
+  if (btif_get_address_type(address, &addr_type) &&
+      btif_get_device_type(address, &device_type) &&
+      device_type != BT_DEVICE_TYPE_BREDR) {
+    BTA_DmAddBleDevice(address, addr_type, device_type);
+  }
 }
 
 void btif_dm_clear_event_filter() { BTA_DmClearEventFilter(); }

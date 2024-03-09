@@ -19,8 +19,10 @@
 
 #include "common/init_flags.h"
 #include "hci/address_with_type.h"
+#include "hci/class_of_device.h"
 #include "osi/include/allocator.h"
 #include "packet/raw_builder.h"
+#include "stack/include/bt_dev_class.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/hci_mode.h"
@@ -249,6 +251,12 @@ inline hci::DisconnectReason ToDisconnectReasonFromLegacy(
 inline bool IsPacketFlushable(const BT_HDR* p_buf) {
   ASSERT(p_buf != nullptr);
   return ToPacketData<const HciDataPreamble>(p_buf)->IsFlushable();
+}
+
+inline DEV_CLASS ToDevClass(const hci::ClassOfDevice& cod) {
+  DEV_CLASS dc;
+  dc[0] = cod.cod[2], dc[1] = cod.cod[1], dc[2] = cod.cod[0];
+  return dc;
 }
 
 namespace debug {
