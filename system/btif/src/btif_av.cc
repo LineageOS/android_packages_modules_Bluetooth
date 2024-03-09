@@ -1365,6 +1365,13 @@ bool BtifAvSource::AllowedToConnect(const RawAddress& peer_address) const {
       return true;
     }
   }
+  if (IS_FLAG_ENABLED(a2dp_concurrent_source_sink)) {
+    const int sink_connected_peers_size = (int)btif_av_sink.Peers().size();
+    log::info(
+        "connected={}, max_connected_peers_={}, sink_connected_peers_size={}",
+        connected, max_connected_peers_, (int)btif_av_sink.Peers().size());
+    return ((connected + sink_connected_peers_size) < max_connected_peers_);
+  }
   return (connected < max_connected_peers_);
 }
 
@@ -1629,6 +1636,13 @@ bool BtifAvSink::AllowedToConnect(const RawAddress& peer_address) const {
     return (connected < max_connected_peers_) && btif_av_source.Peers().empty();
   }
 
+  if (IS_FLAG_ENABLED(a2dp_concurrent_source_sink)) {
+    const int source_connected_peers_size = (int)btif_av_source.Peers().size();
+    log::info(
+        "connected={}, max_connected_peers_={}, source_connected_peers_size={}",
+        connected, max_connected_peers_, source_connected_peers_size);
+    return ((connected + source_connected_peers_size) < max_connected_peers_);
+  }
   return (connected < max_connected_peers_);
 }
 
