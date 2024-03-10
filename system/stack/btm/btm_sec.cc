@@ -4450,8 +4450,7 @@ void btm_sec_pin_code_request(const RawAddress p_bda) {
 
   /* Use the connecting device's CoD for the connection */
   if ((p_bda == p_cb->connecting_bda) &&
-      (p_cb->connecting_dc[0] || p_cb->connecting_dc[1] ||
-       p_cb->connecting_dc[2]))
+      (p_cb->connecting_dc != kDevClassEmpty))
     p_dev_rec->dev_class = p_cb->connecting_dc;
 
   /* We could have started connection after asking user for the PIN code */

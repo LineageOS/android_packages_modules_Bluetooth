@@ -44,7 +44,7 @@ void tBTM_SEC_CB::Init(uint8_t initial_security_mode) {
   memset(&pin_code, 0, sizeof(pin_code));
   memset(sec_serv_rec, 0, sizeof(sec_serv_rec));
   connecting_bda = RawAddress::kEmpty;
-  memset(&connecting_dc, 0, sizeof(connecting_dc));
+  connecting_dc = kDevClassEmpty;
 
   sec_pending_q = fixed_queue_new(SIZE_MAX);
   sec_collision_timer = alarm_new("btm.sec_collision_timer");
