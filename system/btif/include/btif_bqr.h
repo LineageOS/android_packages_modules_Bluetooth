@@ -88,6 +88,8 @@ static constexpr uint32_t kQualityEventMaskRootInflammation = 0x1 << 4;
 static constexpr uint32_t kQualityEventMaskEnergyMonitoring = 0x1 << 5;
 static constexpr uint32_t kQualityEventMaskLeAudioChoppy = 0x1 << 6;
 static constexpr uint32_t kQualityEventMaskConnectFail = 0x1 << 7;
+static constexpr uint32_t kQualityEventMaskAdvRFStatsEvent = 0x1 << 8;
+static constexpr uint32_t kQualityEventMaskAdvRFStatsMonitor = 0x1 << 9;
 static constexpr uint32_t kQualityEventMaskVendorSpecificQuality = 0x1 << 15;
 static constexpr uint32_t kQualityEventMaskLmpMessageTrace = 0x1 << 16;
 static constexpr uint32_t kQualityEventMaskBtSchedulingTrace = 0x1 << 17;
@@ -98,14 +100,22 @@ static constexpr uint32_t kQualityEventMaskAll =
     kQualityEventMaskA2dpAudioChoppy | kQualityEventMaskScoVoiceChoppy |
     kQualityEventMaskRootInflammation | kQualityEventMaskEnergyMonitoring |
     kQualityEventMaskLeAudioChoppy | kQualityEventMaskConnectFail |
+    kQualityEventMaskAdvRFStatsEvent | kQualityEventMaskAdvRFStatsMonitor |
     kQualityEventMaskVendorSpecificQuality | kQualityEventMaskLmpMessageTrace |
     kQualityEventMaskBtSchedulingTrace | kQualityEventMaskControllerDbgInfo |
     kQualityEventMaskVendorSpecificTrace;
 // Define the minimum time interval (in ms) of quality event reporting for the
 // selected quality event(s). Controller Firmware should not report the next
-// event within the defined time interval.
+// event within the defined Minimum Report Interval * Report Interval
+// Multiple.
 static constexpr uint16_t kMinReportIntervalNoLimit = 0;
 static constexpr uint16_t kMinReportIntervalMaxMs = 0xFFFF;
+// Define the Report Interval Multiple of quality event reporting for the
+// selected quality event(s). Controller Firmware should not report the next
+// event within interval: Minimum Report interval * Report Interval Multiple.
+// When Report Interval Multiple set to 0 is equal set to 1
+static constexpr uint32_t kReportIntervalMultipleNoLimit = 0;
+static constexpr uint32_t kReportIntervalMultipleMax = 0xFFFFFFFF;
 // The maximum count of Log Dump related event can be written in the log file.
 static constexpr uint16_t kLogDumpEventPerFile = 0x00FF;
 // Total length of all parameters of the link Quality related event except
@@ -122,6 +132,8 @@ static constexpr uint8_t kLogDumpParamTotalLen = 3;
 // Remote address and calibration failure count parameters len
 // Added in BQR V5.0
 static constexpr uint8_t kVersion5_0ParamsTotalLen = 7;
+// Added in BQR V6.0
+static constexpr uint8_t kVersion6_0ParamsTotalLen = 6;
 // Warning criteria of the RSSI value.
 static constexpr int8_t kCriWarnRssi = -80;
 // Warning criteria of the unused AFH channel count.
@@ -140,6 +152,9 @@ static constexpr const char* kpPropertyVndTraceMask =
 // The Property of BQR minimum report interval configuration.
 static constexpr const char* kpPropertyMinReportIntervalMs =
     "persist.bluetooth.bqr.min_interval_ms";
+// The Property of BQR minimum report interval multiple.
+static constexpr const char* kpPropertyIntervalMultiple =
+    "persist.bluetooth.bqr.interval_multiple";
 // Path of the LMP/LL message trace log file.
 static constexpr const char* kpLmpLlMessageTraceLogPath =
     "/data/misc/bluetooth/logs/lmp_ll_message_trace.log";
@@ -174,6 +189,8 @@ static constexpr uint16_t kBqrVndLogVersion = 0x102;
 // The version supports remote address info and calibration failure count
 // start from v1.03(259)
 static constexpr uint16_t kBqrVersion5_0 = 0x103;
+// The REPORT_ACTION_QUERY and BQR_Report_interval starting v1.04(260)
+static constexpr uint16_t kBqrVersion6_0 = 0x104;
 
 // Action definition
 //
@@ -183,7 +200,8 @@ static constexpr uint16_t kBqrVersion5_0 = 0x103;
 enum BqrReportAction : uint8_t {
   REPORT_ACTION_ADD = 0x00,
   REPORT_ACTION_DELETE = 0x01,
-  REPORT_ACTION_CLEAR = 0x02
+  REPORT_ACTION_CLEAR = 0x02,
+  REPORT_ACTION_QUERY = 0x03
 };
 
 // Report ID definition
@@ -242,6 +260,7 @@ typedef struct {
   uint16_t minimum_report_interval_ms;
   uint32_t vnd_quality_mask;
   uint32_t vnd_trace_mask;
+  uint32_t report_interval_multiple;
 } BqrConfiguration;
 
 // Link quality related BQR event
@@ -313,6 +332,11 @@ typedef struct {
   // The number of duplicate(retransmission) packages that are received since
   // the last event.
   uint32_t rx_duplicate_packets;
+  // The number of unreceived packets is the same as the parameter of LE Read
+  // ISO Link Quality command.
+  uint32_t rx_unreceived_packets;
+  // Bitmask to indicate various coex related information
+  uint16_t coex_info_mask;
   // For the controller vendor to obtain more vendor specific parameters.
   const uint8_t* vendor_specific_parameter;
 } BqrLinkQualityEvent;
