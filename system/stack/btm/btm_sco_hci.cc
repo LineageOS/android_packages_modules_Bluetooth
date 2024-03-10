@@ -149,10 +149,10 @@ static const uint8_t btm_h2_header_frames_count[] = {0x08, 0x38, 0xc8, 0xf8};
  * code ties to limited packet size values. Specifically list them out
  * to check against when setting packet size. The first entry is the default
  * value as a fallback. */
-constexpr size_t btm_wbs_supported_pkt_size[] = {BTM_MSBC_PKT_LEN, 72, 0};
+constexpr size_t btm_wbs_supported_pkt_size[] = {BTM_MSBC_PKT_LEN, 72, 24, 0};
 /* Buffer size should be set to least common multiple of SCO packet size and
  * BTM_MSBC_PKT_LEN for optimizing buffer copy. */
-constexpr size_t btm_wbs_msbc_buffer_size[] = {BTM_MSBC_PKT_LEN, 360, 0};
+constexpr size_t btm_wbs_msbc_buffer_size[] = {BTM_MSBC_PKT_LEN, 360, 120, 0};
 
 /* The pre-computed SCO packet per HFP 1.7 spec. This mSBC packet will be
  * decoded into all-zero input PCM. */
