@@ -1963,9 +1963,6 @@ void btm_process_remote_name(const RawAddress* bda, const BD_NAME bdn,
                              uint16_t evt_len, tHCI_STATUS hci_status) {
   tBTM_REMOTE_DEV_NAME rem_name;
   tBTM_NAME_CMPL_CB* p_cb = btm_cb.btm_inq_vars.p_remname_cmpl_cb;
-  uint8_t* p_n1;
-
-  uint16_t temp_evt_len;
 
   if (bda) {
     rem_name.bd_addr = *bda;
@@ -1997,17 +1994,11 @@ void btm_process_remote_name(const RawAddress* bda, const BD_NAME bdn,
       /* Copy the name from the data stream into the return structure */
       /* Note that even if it is not being returned, it is used as a  */
       /*      temporary buffer.                                       */
-      p_n1 = (uint8_t*)rem_name.remote_bd_name;
       rem_name.length = (evt_len < BD_NAME_LEN) ? evt_len : BD_NAME_LEN;
-      rem_name.remote_bd_name[rem_name.length] = 0;
       rem_name.status = BTM_SUCCESS;
       rem_name.hci_status = hci_status;
-      temp_evt_len = rem_name.length;
 
-      while (temp_evt_len > 0) {
-        *p_n1++ = *bdn++;
-        temp_evt_len--;
-      }
+      bd_name_copy(rem_name.remote_bd_name, bdn);
       rem_name.remote_bd_name[rem_name.length] = 0;
     } else {
       /* If processing a stand alone remote name then report the error in the
