@@ -244,7 +244,7 @@ void Reactor::Unregister(Reactor::Reactable* reactable) {
     if (result == -1 && errno == ENOENT) {
       LOG_INFO("reactable is invalid or unregistered");
     } else {
-      ASSERT(result != -1);
+      ASSERT_LOG(result != -1, "could not unregister epoll fd: %s", strerror(errno));
     }
 
     // If we are unregistering during the callback event from this reactable, we delete it after the callback is
