@@ -15,6 +15,8 @@
  */
 #include "security/facade.h"
 
+#include <bluetooth/log.h>
+
 #include "blueberry/facade/security/facade.grpc.pb.h"
 #include "grpc/grpc_event_queue.h"
 #include "hci/address_with_type.h"
@@ -218,13 +220,13 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service,
             hci::AddressWithType(peer, remote_type), request->boolean());
         break;
       case UiCallbackType::PIN:
-        LOG_INFO("PIN Callback");
+        log::info("PIN Callback");
         security_module_->GetSecurityManager()->OnPinEntry(
             hci::AddressWithType(peer, remote_type),
             std::vector<uint8_t>(request->pin().cbegin(), request->pin().cend()));
         break;
       default:
-        LOG_ERROR("Unknown UiCallbackType %d", static_cast<int>(request->message_type()));
+        log::error("Unknown UiCallbackType {}", static_cast<int>(request->message_type()));
         return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "Unknown UiCallbackType");
     }
     return ::grpc::Status::OK;
@@ -463,7 +465,7 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service,
   }
 
   void OobDataEventOccurred(bluetooth::hci::CommandCompleteView packet) {
-    LOG_INFO("Got OOB Data event");
+    log::info("Got OOB Data event");
     ASSERT(packet.IsValid());
     auto cc = bluetooth::hci::ReadLocalOobDataCompleteView::Create(packet);
     ASSERT(cc.IsValid());
@@ -496,14 +498,14 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service,
   }
 
   void DisconnectEventOccurred(bluetooth::hci::AddressWithType peer) {
-    LOG_INFO("%s", ADDRESS_TO_LOGGABLE_CSTR(peer));
+    log::info("{}", ADDRESS_TO_LOGGABLE_CSTR(peer));
     DisconnectMsg msg;
     *msg.mutable_address() = ToFacadeAddressWithType(peer);
     disconnect_events_.OnIncomingEvent(msg);
   }
 
   void DisplayPairingPrompt(const bluetooth::hci::AddressWithType& peer, std::string /* name */) {
-    LOG_INFO("%s", ADDRESS_TO_LOGGABLE_CSTR(peer));
+    log::info("{}", ADDRESS_TO_LOGGABLE_CSTR(peer));
     UiMsg display_yes_no;
     *display_yes_no.mutable_peer() = ToFacadeAddressWithType(peer);
     display_yes_no.set_message_type(UiMsgType::DISPLAY_PAIRING_PROMPT);
@@ -515,7 +517,7 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service,
     const bluetooth::hci::AddressWithType& peer = data.GetAddressWithType();
     std::string name = data.GetName();
     uint32_t numeric_value = data.GetNumericValue();
-    LOG_INFO("%s value = 0x%x", ADDRESS_TO_LOGGABLE_CSTR(peer), numeric_value);
+    log::info("{} value = 0x{:x}", ADDRESS_TO_LOGGABLE_CSTR(peer), numeric_value);
     UiMsg display_with_value;
     *display_with_value.mutable_peer() = ToFacadeAddressWithType(peer);
     display_with_value.set_message_type(UiMsgType::DISPLAY_YES_NO_WITH_VALUE);
@@ -527,7 +529,7 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service,
   void DisplayYesNoDialog(ConfirmationData data) override {
     const bluetooth::hci::AddressWithType& peer = data.GetAddressWithType();
     std::string name = data.GetName();
-    LOG_INFO("%s", ADDRESS_TO_LOGGABLE_CSTR(peer));
+    log::info("{}", ADDRESS_TO_LOGGABLE_CSTR(peer));
     UiMsg display_yes_no;
     *display_yes_no.mutable_peer() = ToFacadeAddressWithType(peer);
     display_yes_no.set_message_type(UiMsgType::DISPLAY_YES_NO);
@@ -539,7 +541,7 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service,
     const bluetooth::hci::AddressWithType& peer = data.GetAddressWithType();
     std::string name = data.GetName();
     uint32_t passkey = data.GetNumericValue();
-    LOG_INFO("%s value = 0x%x", ADDRESS_TO_LOGGABLE_CSTR(peer), passkey);
+    log::info("{} value = 0x{:x}", ADDRESS_TO_LOGGABLE_CSTR(peer), passkey);
     UiMsg display_passkey;
     *display_passkey.mutable_peer() = ToFacadeAddressWithType(peer);
     display_passkey.set_message_type(UiMsgType::DISPLAY_PASSKEY);
@@ -551,7 +553,7 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service,
   void DisplayEnterPasskeyDialog(ConfirmationData data) override {
     const bluetooth::hci::AddressWithType& peer = data.GetAddressWithType();
     std::string name = data.GetName();
-    LOG_INFO("%s", ADDRESS_TO_LOGGABLE_CSTR(peer));
+    log::info("{}", ADDRESS_TO_LOGGABLE_CSTR(peer));
     UiMsg display_passkey_input;
     *display_passkey_input.mutable_peer() = ToFacadeAddressWithType(peer);
     display_passkey_input.set_message_type(UiMsgType::DISPLAY_PASSKEY_ENTRY);
@@ -562,7 +564,7 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service,
   void DisplayEnterPinDialog(ConfirmationData data) override {
     const bluetooth::hci::AddressWithType& peer = data.GetAddressWithType();
     std::string name = data.GetName();
-    LOG_INFO("%s", ADDRESS_TO_LOGGABLE_CSTR(peer));
+    log::info("{}", ADDRESS_TO_LOGGABLE_CSTR(peer));
     UiMsg display_pin_input;
     *display_pin_input.mutable_peer() = ToFacadeAddressWithType(peer);
     display_pin_input.set_message_type(UiMsgType::DISPLAY_PIN_ENTRY);
@@ -571,7 +573,7 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service,
   }
 
   void Cancel(const bluetooth::hci::AddressWithType& peer) override {
-    LOG_INFO("%s", ADDRESS_TO_LOGGABLE_CSTR(peer));
+    log::info("{}", ADDRESS_TO_LOGGABLE_CSTR(peer));
     UiMsg display_cancel;
     *display_cancel.mutable_peer() = ToFacadeAddressWithType(peer);
     display_cancel.set_message_type(UiMsgType::DISPLAY_CANCEL);
@@ -580,7 +582,7 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service,
   }
 
   void OnDeviceBonded(hci::AddressWithType peer) override {
-    LOG_INFO("%s", ADDRESS_TO_LOGGABLE_CSTR(peer));
+    log::info("{}", ADDRESS_TO_LOGGABLE_CSTR(peer));
     BondMsg bonded;
     *bonded.mutable_peer() = ToFacadeAddressWithType(peer);
     bonded.set_message_type(BondMsgType::DEVICE_BONDED);
@@ -590,7 +592,7 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service,
   void OnEncryptionStateChanged(hci::EncryptionChangeView /* encryption_change_view */) override {}
 
   void OnDeviceUnbonded(hci::AddressWithType peer) override {
-    LOG_INFO("%s", ADDRESS_TO_LOGGABLE_CSTR(peer));
+    log::info("{}", ADDRESS_TO_LOGGABLE_CSTR(peer));
     BondMsg unbonded;
     *unbonded.mutable_peer() = ToFacadeAddressWithType(peer);
     unbonded.set_message_type(BondMsgType::DEVICE_UNBONDED);
@@ -598,7 +600,7 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service,
   }
 
   void OnDeviceBondFailed(hci::AddressWithType peer, PairingFailure status) override {
-    LOG_INFO("%s", ADDRESS_TO_LOGGABLE_CSTR(peer));
+    log::info("{}", ADDRESS_TO_LOGGABLE_CSTR(peer));
     BondMsg bond_failed;
     *bond_failed.mutable_peer() = ToFacadeAddressWithType(peer);
     bond_failed.set_message_type(BondMsgType::DEVICE_BOND_FAILED);

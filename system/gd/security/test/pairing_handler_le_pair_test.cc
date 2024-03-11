@@ -16,6 +16,7 @@
  *
  ******************************************************************************/
 
+#include <bluetooth/log.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -104,22 +105,22 @@ std::optional<PairingResultOrFailure> pairing_result_peripheral;
 void OnPairingFinishedCentral(PairingResultOrFailure r) {
   pairing_result_central = r;
   if (std::holds_alternative<PairingResult>(r)) {
-    LOG_INFO(
-        "pairing finished successfully with %s",
+    log::info(
+        "pairing finished successfully with {}",
         ADDRESS_TO_LOGGABLE_CSTR(std::get<PairingResult>(r).connection_address));
   } else {
-    LOG_INFO("pairing with ... failed: %s", std::get<PairingFailure>(r).message.c_str());
+    log::info("pairing with ... failed: {}", std::get<PairingFailure>(r).message);
   }
 }
 
 void OnPairingFinishedPeripheral(PairingResultOrFailure r) {
   pairing_result_peripheral = r;
   if (std::holds_alternative<PairingResult>(r)) {
-    LOG_INFO(
-        "pairing finished successfully with %s",
+    log::info(
+        "pairing finished successfully with {}",
         ADDRESS_TO_LOGGABLE_CSTR(std::get<PairingResult>(r).connection_address));
   } else {
-    LOG_INFO("pairing with ... failed: %s", std::get<PairingFailure>(r).message.c_str());
+    log::info("pairing with ... failed: {}", std::get<PairingFailure>(r).message);
   }
 }
 
@@ -131,7 +132,7 @@ std::mutex handlers_initialization_guard;
 class PairingHandlerPairTest : public testing::Test {
   void dequeue_callback_central() {
     auto packet_bytes_view = l2cap_->GetQueueAUpEnd()->TryDequeue();
-    if (!packet_bytes_view) LOG_ERROR("Received dequeue, but no data ready...");
+    if (!packet_bytes_view) log::error("Received dequeue, but no data ready...");
 
     auto temp_cmd_view = CommandView::Create(*packet_bytes_view);
     if (!first_command_sent) {
@@ -140,14 +141,14 @@ class PairingHandlerPairTest : public testing::Test {
       return;
     }
 
-    if (!pairing_handler_a) LOG_ALWAYS_FATAL("Peripheral handler not initlized yet!");
+    if (!pairing_handler_a) log::fatal("Peripheral handler not initlized yet!");
 
     pairing_handler_a->OnCommandView(CommandView::Create(temp_cmd_view));
   }
 
   void dequeue_callback_peripheral() {
     auto packet_bytes_view = l2cap_->GetQueueBUpEnd()->TryDequeue();
-    if (!packet_bytes_view) LOG_ERROR("Received dequeue, but no data ready...");
+    if (!packet_bytes_view) log::error("Received dequeue, but no data ready...");
 
     auto temp_cmd_view = CommandView::Create(*packet_bytes_view);
     if (!first_command_sent) {
@@ -156,7 +157,7 @@ class PairingHandlerPairTest : public testing::Test {
       return;
     }
 
-    if (!pairing_handler_b) LOG_ALWAYS_FATAL("Central handler not initlized yet!");
+    if (!pairing_handler_b) log::fatal("Central handler not initlized yet!");
 
     pairing_handler_b->OnCommandView(CommandView::Create(temp_cmd_view));
   }
@@ -252,18 +253,21 @@ class PairingHandlerPairTest : public testing::Test {
   }
 
   void RecordPairingPromptHandling(UIMock& ui_mock, std::unique_ptr<PairingHandlerLe>* handler) {
-    EXPECT_CALL(ui_mock, DisplayPairingPrompt(_, _)).Times(1).WillOnce(InvokeWithoutArgs([handler]() {
-      LOG_INFO("UI mock received pairing prompt");
+    EXPECT_CALL(ui_mock, DisplayPairingPrompt(_, _))
+        .Times(1)
+        .WillOnce(InvokeWithoutArgs([handler]() {
+          log::info("UI mock received pairing prompt");
 
-      {
-        // By grabbing the lock, we ensure initialization of both pairing handlers is finished.
-        std::lock_guard<std::mutex> lock(handlers_initialization_guard);
-      }
+          {
+            // By grabbing the lock, we ensure initialization of both pairing handlers is finished.
+            std::lock_guard<std::mutex> lock(handlers_initialization_guard);
+          }
 
-      if (!(*handler)) LOG_ALWAYS_FATAL("handler not initalized yet!");
-      // Simulate user accepting the pairing in UI
-      (*handler)->OnUiAction(PairingEvent::PAIRING_ACCEPTED, 0x01 /* Non-zero value means success */);
-    }));
+          if (!(*handler)) log::fatal("handler not initalized yet!");
+          // Simulate user accepting the pairing in UI
+          (*handler)->OnUiAction(
+              PairingEvent::PAIRING_ACCEPTED, 0x01 /* Non-zero value means success */);
+        }));
   }
 
   void RecordSuccessfulEncryptionComplete() {
@@ -292,7 +296,7 @@ class PairingHandlerPairTest : public testing::Test {
   std::unique_ptr<bluetooth::security::CommandView> WaitFirstL2capCommand() {
     while (!first_command_sent) {
       std::this_thread::sleep_for(1ms);
-      LOG_INFO("waiting for first command...");
+      log::info("waiting for first command...");
     }
 
     return std::move(first_command);
@@ -332,19 +336,22 @@ TEST_F(PairingHandlerPairTest, test_secure_connections_just_works) {
     auto first_pkt = WaitFirstL2capCommand();
     peripheral_setup.pairing_request = PairingRequestView::Create(*first_pkt);
 
-    EXPECT_CALL(peripheral_user_interface, DisplayPairingPrompt(_, _)).Times(1).WillOnce(InvokeWithoutArgs([] {
-      LOG_INFO("UI mock received pairing prompt");
+    EXPECT_CALL(peripheral_user_interface, DisplayPairingPrompt(_, _))
+        .Times(1)
+        .WillOnce(InvokeWithoutArgs([] {
+          log::info("UI mock received pairing prompt");
 
-      {
-        // By grabbing the lock, we ensure initialization of both pairing handlers is finished.
-        std::lock_guard<std::mutex> lock(handlers_initialization_guard);
-      }
+          {
+            // By grabbing the lock, we ensure initialization of both pairing handlers is finished.
+            std::lock_guard<std::mutex> lock(handlers_initialization_guard);
+          }
 
-      if (!pairing_handler_b) LOG_ALWAYS_FATAL("handler not initalized yet!");
+          if (!pairing_handler_b) log::fatal("handler not initalized yet!");
 
-      // Simulate user accepting the pairing in UI
-      pairing_handler_b->OnUiAction(PairingEvent::PAIRING_ACCEPTED, 0x01 /* Non-zero value means success */);
-    }));
+          // Simulate user accepting the pairing in UI
+          pairing_handler_b->OnUiAction(
+              PairingEvent::PAIRING_ACCEPTED, 0x01 /* Non-zero value means success */);
+        }));
 
     pairing_handler_b = std::make_unique<PairingHandlerLe>(PairingHandlerLe::PHASE1, peripheral_setup);
   }
@@ -423,13 +430,13 @@ TEST_F(PairingHandlerPairTest, test_secure_connections_just_works_peripheral_ini
     EXPECT_CALL(central_user_interface, DisplayPairingPrompt(_, _))
         .Times(1)
         .WillOnce(InvokeWithoutArgs([&first_pkt, this] {
-          LOG_INFO("UI mock received pairing prompt");
+          log::info("UI mock received pairing prompt");
 
           {
             // By grabbing the lock, we ensure initialization of both pairing handlers is finished.
             std::lock_guard<std::mutex> lock(handlers_initialization_guard);
           }
-          if (!pairing_handler_a) LOG_ALWAYS_FATAL("handler not initalized yet!");
+          if (!pairing_handler_a) log::fatal("handler not initalized yet!");
           // Simulate user accepting the pairing in UI
           pairing_handler_a->OnUiAction(PairingEvent::PAIRING_ACCEPTED, 0x01 /* Non-zero value means success */);
 
@@ -465,7 +472,7 @@ TEST_F(PairingHandlerPairTest, test_secure_connections_numeric_comparison) {
 
     while (!first_command_sent) {
       std::this_thread::sleep_for(1ms);
-      LOG_INFO("waiting for first command...");
+      log::info("waiting for first command...");
     }
     peripheral_setup.pairing_request = PairingRequestView::Create(*first_command);
 
@@ -508,7 +515,7 @@ TEST_F(PairingHandlerPairTest, test_secure_connections_passkey_entry) {
 
     while (!first_command_sent) {
       std::this_thread::sleep_for(1ms);
-      LOG_INFO("waiting for first command...");
+      log::info("waiting for first command...");
     }
     peripheral_setup.pairing_request = PairingRequestView::Create(*first_command);
 
@@ -560,7 +567,7 @@ TEST_F(PairingHandlerPairTest, test_secure_connections_out_of_band) {
     pairing_handler_a = std::make_unique<PairingHandlerLe>(PairingHandlerLe::PHASE1, central_setup);
     while (!first_command_sent) {
       std::this_thread::sleep_for(1ms);
-      LOG_INFO("waiting for first command...");
+      log::info("waiting for first command...");
     }
     peripheral_setup.pairing_request = PairingRequestView::Create(*first_command);
 
@@ -603,7 +610,7 @@ TEST_F(PairingHandlerPairTest, test_secure_connections_out_of_band_two_way) {
     pairing_handler_a = std::make_unique<PairingHandlerLe>(PairingHandlerLe::PHASE1, central_setup);
     while (!first_command_sent) {
       std::this_thread::sleep_for(1ms);
-      LOG_INFO("waiting for first command...");
+      log::info("waiting for first command...");
     }
     peripheral_setup.pairing_request = PairingRequestView::Create(*first_command);
 
@@ -632,7 +639,7 @@ TEST_F(PairingHandlerPairTest, test_legacy_just_works) {
     pairing_handler_a = std::make_unique<PairingHandlerLe>(PairingHandlerLe::PHASE1, central_setup);
     while (!first_command_sent) {
       std::this_thread::sleep_for(1ms);
-      LOG_INFO("waiting for first command...");
+      log::info("waiting for first command...");
     }
     peripheral_setup.pairing_request = PairingRequestView::Create(*first_command);
 
@@ -661,20 +668,21 @@ TEST_F(PairingHandlerPairTest, test_legacy_passkey_entry) {
     pairing_handler_a = std::make_unique<PairingHandlerLe>(PairingHandlerLe::PHASE1, central_setup);
     while (!first_command_sent) {
       std::this_thread::sleep_for(1ms);
-      LOG_INFO("waiting for first command...");
+      log::info("waiting for first command...");
     }
     peripheral_setup.pairing_request = PairingRequestView::Create(*first_command);
 
     RecordPairingPromptHandling(peripheral_user_interface, &pairing_handler_b);
 
     EXPECT_CALL(peripheral_user_interface, DisplayEnterPasskeyDialog(_));
-    EXPECT_CALL(central_user_interface, DisplayConfirmValue(_)).WillOnce(Invoke([&](ConfirmationData data) {
-      LOG_INFO("Passkey prompt displayed entering passkey: %08x", data.GetNumericValue());
-      std::this_thread::sleep_for(1ms);
+    EXPECT_CALL(central_user_interface, DisplayConfirmValue(_))
+        .WillOnce(Invoke([&](ConfirmationData data) {
+          log::info("Passkey prompt displayed entering passkey: {:08x}", data.GetNumericValue());
+          std::this_thread::sleep_for(1ms);
 
-      // TODO: handle case where prompts are displayed in different order in the test!
-      pairing_handler_b->OnUiAction(PairingEvent::PASSKEY, data.GetNumericValue());
-    }));
+          // TODO: handle case where prompts are displayed in different order in the test!
+          pairing_handler_b->OnUiAction(PairingEvent::PASSKEY, data.GetNumericValue());
+        }));
 
     pairing_handler_b = std::make_unique<PairingHandlerLe>(PairingHandlerLe::PHASE1, peripheral_setup);
   }

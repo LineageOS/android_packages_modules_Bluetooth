@@ -16,19 +16,19 @@
  *
  ******************************************************************************/
 
+#include <bluetooth/log.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <memory>
 
 #include "hci/le_security_interface.h"
-#include "packet/raw_builder.h"
-#include "security/pairing_handler_le.h"
-#include "security/test/mocks.h"
-
 #include "os/handler.h"
 #include "os/queue.h"
 #include "os/thread.h"
+#include "packet/raw_builder.h"
+#include "security/pairing_handler_le.h"
+#include "security/test/mocks.h"
 
 using namespace std::chrono_literals;
 using testing::_;
@@ -79,7 +79,7 @@ class FakeL2capTest : public testing::Test {
 };
 
 void my_enqueue_callback() {
-  LOG_INFO("packet ready for dequeue!");
+  log::info("packet ready for dequeue!");
 }
 
 /* This test verifies that Just Works pairing flow works.
