@@ -16,6 +16,8 @@
 
 #include "dumpsys/reflection_schema.h"
 
+#include <bluetooth/log.h>
+
 #include <string>
 
 #include "bundler_schema_generated.h"
@@ -54,7 +56,7 @@ const reflection::Schema* dumpsys::ReflectionSchema::FindInReflectionSchema(cons
     if (it->name()->str() == name) {
       flatbuffers::Verifier verifier(reinterpret_cast<const uint8_t*>(it->data()->Data()), it->data()->size());
       if (!reflection::VerifySchemaBuffer(verifier)) {
-        LOG_WARN("Unable to verify schema buffer name:%s", name.c_str());
+        log::warn("Unable to verify schema buffer name:{}", name);
         return nullptr;
       }
       return reflection::GetSchema(it->data()->Data());
@@ -65,12 +67,12 @@ const reflection::Schema* dumpsys::ReflectionSchema::FindInReflectionSchema(cons
 
 void dumpsys::ReflectionSchema::PrintReflectionSchema() const {
   const flatbuffers::Vector<flatbuffers::Offset<bluetooth::dumpsys::BundledSchemaMap>>* map = bundled_schema_->map();
-  LOG_INFO(
-      "  Bundled schema title:%s root_name:%s",
+  log::info(
+      "Bundled schema title:{} root_name:{}",
       bundled_schema_->title()->c_str(),
       bundled_schema_->root_name()->c_str());
   for (auto it = map->cbegin(); it != map->cend(); ++it) {
-    LOG_INFO("    schema:%s", it->name()->c_str());
+    log::info("schema:{}", it->name()->c_str());
   }
 }
 
