@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <bluetooth/log.h>
+
 #include "hci/hci_packets.h"
 #include "os/log.h"
 
@@ -27,14 +29,14 @@ void check_complete(CommandCompleteView view) {
   ASSERT(view.IsValid());
   auto status_view = T::Create(view);
   if (!status_view.IsValid()) {
-    LOG_ERROR("Invalid packet, opcode 0x%02hx", view.GetCommandOpCode());
+    log::error("Invalid packet, opcode 0x{:02x}", view.GetCommandOpCode());
     return;
   }
   ErrorCode status = status_view.GetStatus();
   OpCode op_code = status_view.GetCommandOpCode();
   if (status != ErrorCode::SUCCESS) {
     std::string error_code = ErrorCodeText(status);
-    LOG_ERROR("Error code %s, opcode 0x%02hx", error_code.c_str(), op_code);
+    log::error("Error code {}, opcode 0x{:02x}", error_code, op_code);
     return;
   }
 }
@@ -44,14 +46,14 @@ void check_status(CommandStatusView view) {
   ASSERT(view.IsValid());
   auto status_view = T::Create(view);
   if (!status_view.IsValid()) {
-    LOG_ERROR("Invalid packet, opcode 0x%02hx", view.GetCommandOpCode());
+    log::error("Invalid packet, opcode 0x{:02x}", view.GetCommandOpCode());
     return;
   }
   ErrorCode status = status_view.GetStatus();
   OpCode op_code = status_view.GetCommandOpCode();
   if (status != ErrorCode::SUCCESS) {
     std::string error_code = ErrorCodeText(status);
-    LOG_ERROR("Error code %s, opcode 0x%02hx", error_code.c_str(), op_code);
+    log::error("Error code {}, opcode 0x{:02x}", error_code, op_code);
     return;
   }
 }

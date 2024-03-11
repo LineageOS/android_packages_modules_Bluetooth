@@ -16,6 +16,7 @@
 #include "hci/distance_measurement_manager.h"
 
 #include <android_bluetooth_flags.h>
+#include <bluetooth/log.h>
 #include <math.h>
 
 #include <complex>
@@ -112,7 +113,7 @@ struct DistanceMeasurementManager::impl {
         hci::SubeventCode::TRANSMIT_POWER_REPORTING,
         handler_->BindOn(this, &impl::on_transmit_power_reporting));
     if (!IS_FLAG_ENABLED(channel_sounding_in_stack)) {
-      LOG_INFO("IS_FLAG_ENABLED channel_sounding_in_stack: false");
+      log::info("IS_FLAG_ENABLED channel_sounding_in_stack: false");
       return;
     }
     distance_measurement_interface_ = hci_layer_->GetDistanceMeasurementInterface(
@@ -132,12 +133,12 @@ struct DistanceMeasurementManager::impl {
 
   void start_distance_measurement(
       const Address& address, uint16_t interval, DistanceMeasurementMethod method) {
-    LOG_INFO("Address:%s, method:%d", ADDRESS_TO_LOGGABLE_CSTR(address), method);
+    log::info("Address:{}, method:{}", ADDRESS_TO_LOGGABLE_CSTR(address), method);
     uint16_t connection_handle = acl_manager_->HACK_GetLeHandle(address);
 
     // Remove this check if we support any connection less method
     if (connection_handle == kIllegalConnectionHandle) {
-      LOG_WARN("Can't find any LE connection for %s", ADDRESS_TO_LOGGABLE_CSTR(address));
+      log::warn("Can't find any LE connection for {}", ADDRESS_TO_LOGGABLE_CSTR(address));
       distance_measurement_callbacks_->OnDistanceMeasurementStartFail(
           address, REASON_NO_LE_CONNECTION, method);
       return;
@@ -169,12 +170,12 @@ struct DistanceMeasurementManager::impl {
 
   void start_distance_measurement_with_cs(
       const Address& cs_remote_address, uint16_t connection_handle, uint16_t interval) {
-    LOG_INFO(
-        "connection_handle: %d, address: %s",
+    log::info(
+        "connection_handle: {}, address: {}",
         connection_handle,
         ADDRESS_TO_LOGGABLE_CSTR(cs_remote_address));
     if (!IS_FLAG_ENABLED(channel_sounding_in_stack)) {
-      LOG_ERROR("Channel Sounding is not enabled");
+      log::error("Channel Sounding is not enabled");
       distance_measurement_callbacks_->OnDistanceMeasurementStartFail(
           cs_remote_address, REASON_INTERNAL_ERROR, METHOD_CS);
       return;
@@ -182,7 +183,7 @@ struct DistanceMeasurementManager::impl {
 
     if (cs_trackers_.find(connection_handle) != cs_trackers_.end() &&
         cs_trackers_[connection_handle].address != cs_remote_address) {
-      LOG_WARN("Remove old tracker for %s ", ADDRESS_TO_LOGGABLE_CSTR(cs_remote_address));
+      log::warn("Remove old tracker for {}", ADDRESS_TO_LOGGABLE_CSTR(cs_remote_address));
       cs_trackers_.erase(connection_handle);
     }
 
@@ -205,8 +206,8 @@ struct DistanceMeasurementManager::impl {
       send_le_cs_create_config(connection_handle);
       return;
     }
-    LOG_INFO(
-        "enable cs procedure regularly with interval: %d ms",
+    log::info(
+        "enable cs procedure regularly with interval: {} ms",
         cs_trackers_[connection_handle].interval_ms);
     cs_trackers_[connection_handle].repeating_alarm->Cancel();
     send_le_cs_procedure_enable(connection_handle, Enable::ENABLED);
@@ -220,12 +221,12 @@ struct DistanceMeasurementManager::impl {
   }
 
   void stop_distance_measurement(const Address& address, DistanceMeasurementMethod method) {
-    LOG_INFO("Address:%s, method:%d", ADDRESS_TO_LOGGABLE_CSTR(address), method);
+    log::info("Address:{}, method:{}", ADDRESS_TO_LOGGABLE_CSTR(address), method);
     switch (method) {
       case METHOD_AUTO:
       case METHOD_RSSI: {
         if (rssi_trackers.find(address) == rssi_trackers.end()) {
-          LOG_WARN("Can't find rssi tracker for %s ", ADDRESS_TO_LOGGABLE_CSTR(address));
+          log::warn("Can't find rssi tracker for {}", ADDRESS_TO_LOGGABLE_CSTR(address));
         } else {
           hci_layer_->EnqueueCommand(
               LeSetTransmitPowerReportingEnableBuilder::Create(
@@ -239,7 +240,7 @@ struct DistanceMeasurementManager::impl {
       case METHOD_CS: {
         uint16_t connection_handle = acl_manager_->HACK_GetLeHandle(address);
         if (cs_trackers_.find(connection_handle) == cs_trackers_.end()) {
-          LOG_WARN("Can't find CS tracker for %s ", ADDRESS_TO_LOGGABLE_CSTR(address));
+          log::warn("Can't find CS tracker for {}", ADDRESS_TO_LOGGABLE_CSTR(address));
         } else {
           cs_trackers_[connection_handle].repeating_alarm->Cancel();
           cs_trackers_[connection_handle].repeating_alarm.reset();
@@ -252,12 +253,12 @@ struct DistanceMeasurementManager::impl {
 
   void send_read_rssi(const Address& address) {
     if (rssi_trackers.find(address) == rssi_trackers.end()) {
-      LOG_WARN("Can't find rssi tracker for %s ", ADDRESS_TO_LOGGABLE_CSTR(address));
+      log::warn("Can't find rssi tracker for {}", ADDRESS_TO_LOGGABLE_CSTR(address));
       return;
     }
     uint16_t connection_handle = acl_manager_->HACK_GetLeHandle(address);
     if (connection_handle == kIllegalConnectionHandle) {
-      LOG_WARN("Can't find connection for %s ", ADDRESS_TO_LOGGABLE_CSTR(address));
+      log::warn("Can't find connection for {}", ADDRESS_TO_LOGGABLE_CSTR(address));
       if (rssi_trackers.find(address) != rssi_trackers.end()) {
         distance_measurement_callbacks_->OnDistanceMeasurementStopped(
             address, REASON_NO_LE_CONNECTION, METHOD_RSSI);
@@ -275,13 +276,13 @@ struct DistanceMeasurementManager::impl {
 
   void handle_event(LeMetaEventView event) {
     if (!event.IsValid()) {
-      LOG_ERROR("Received invalid LeMetaEventView");
+      log::error("Received invalid LeMetaEventView");
       return;
     }
     switch (event.GetSubeventCode()) {
       case hci::SubeventCode::LE_CS_TEST_END_COMPLETE:
       case hci::SubeventCode::LE_CS_READ_REMOTE_FAE_TABLE_COMPLETE: {
-        LOG_WARN("Unhandled subevent %s", hci::SubeventCodeText(event.GetSubeventCode()).c_str());
+        log::warn("Unhandled subevent {}", hci::SubeventCodeText(event.GetSubeventCode()));
       } break;
       case hci::SubeventCode::LE_CS_SUBEVENT_RESULT_CONTINUE:
       case hci::SubeventCode::LE_CS_SUBEVENT_RESULT: {
@@ -301,7 +302,7 @@ struct DistanceMeasurementManager::impl {
             LeCsReadRemoteSupportedCapabilitiesCompleteView::Create(event));
       } break;
       default:
-        LOG_INFO("Unknown subevent %s", hci::SubeventCodeText(event.GetSubeventCode()).c_str());
+        log::info("Unknown subevent {}", hci::SubeventCodeText(event.GetSubeventCode()));
     }
   }
 
@@ -378,14 +379,14 @@ struct DistanceMeasurementManager::impl {
 
   void send_le_cs_procedure_enable(uint16_t connection_handle, Enable enable) {
     if (cs_trackers_.find(connection_handle) == cs_trackers_.end()) {
-      LOG_WARN("Can't find cs tracker for connection %d", connection_handle);
+      log::warn("Can't find cs tracker for connection {}", connection_handle);
       return;
     }
     Address address = cs_trackers_[connection_handle].address;
     // Check if the connection still exists
     uint16_t connection_handle_from_acl_manager = acl_manager_->HACK_GetLeHandle(address);
     if (connection_handle_from_acl_manager == kIllegalConnectionHandle) {
-      LOG_WARN("Can't find connection for %s ", ADDRESS_TO_LOGGABLE_CSTR(address));
+      log::warn("Can't find connection for {}", ADDRESS_TO_LOGGABLE_CSTR(address));
       distance_measurement_callbacks_->OnDistanceMeasurementStopped(
           address, REASON_NO_LE_CONNECTION, METHOD_CS);
       cs_trackers_[connection_handle].repeating_alarm->Cancel();
@@ -401,14 +402,13 @@ struct DistanceMeasurementManager::impl {
   void on_cs_read_local_supported_capabilities(CommandCompleteView view) {
     auto complete_view = LeCsReadLocalSupportedCapabilitiesCompleteView::Create(view);
     if (!complete_view.IsValid()) {
-      LOG_WARN("Get invalid LeCsReadLocalSupportedCapabilitiesComplete");
+      log::warn("Get invalid LeCsReadLocalSupportedCapabilitiesComplete");
       is_channel_sounding_supported_ = false;
       return;
     } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
       std::string error_code = ErrorCodeText(complete_view.GetStatus());
-      LOG_WARN(
-          "Received LeCsReadLocalSupportedCapabilitiesComplete with error code %s",
-          error_code.c_str());
+      log::warn(
+          "Received LeCsReadLocalSupportedCapabilitiesComplete with error code {}", error_code);
       is_channel_sounding_supported_ = false;
       return;
     }
@@ -419,13 +419,13 @@ struct DistanceMeasurementManager::impl {
   void on_cs_read_remote_supported_capabilities_complete(
       LeCsReadRemoteSupportedCapabilitiesCompleteView event_view) {
     if (!event_view.IsValid()) {
-      LOG_WARN("Get invalid LeCsReadRemoteSupportedCapabilitiesCompleteView");
+      log::warn("Get invalid LeCsReadRemoteSupportedCapabilitiesCompleteView");
       return;
     } else if (event_view.GetStatus() != ErrorCode::SUCCESS) {
       std::string error_code = ErrorCodeText(event_view.GetStatus());
-      LOG_WARN(
-          "Received LeCsReadRemoteSupportedCapabilitiesCompleteView with error code %s",
-          error_code.c_str());
+      log::warn(
+          "Received LeCsReadRemoteSupportedCapabilitiesCompleteView with error code {}",
+          error_code);
       return;
     }
     uint16_t connection_handle = event_view.GetConnectionHandle();
@@ -441,45 +441,45 @@ struct DistanceMeasurementManager::impl {
     if (event_view.GetOptionalSubfeaturesSupported().phase_based_ranging_ == 0x01) {
       cs_trackers_[connection_handle].remote_support_phase_based_ranging = true;
     }
-    LOG_INFO(
-        "connection_handle:%d, num_antennas_supported:%d, max_antenna_paths_supported:%d, "
-        "roles_supported:%s, phase_based_ranging_supported: %d ",
+    log::info(
+        "connection_handle:{}, num_antennas_supported:{}, max_antenna_paths_supported:{}, "
+        "roles_supported:{}, phase_based_ranging_supported: {}",
         event_view.GetConnectionHandle(),
         event_view.GetNumAntennasSupported(),
         event_view.GetMaxAntennaPathsSupported(),
-        event_view.GetRolesSupported().ToString().c_str(),
+        event_view.GetRolesSupported().ToString(),
         event_view.GetOptionalSubfeaturesSupported().phase_based_ranging_);
   }
 
   void on_cs_set_default_settings_complete(CommandCompleteView view) {
     auto complete_view = LeCsSetDefaultSettingsCompleteView::Create(view);
     if (!complete_view.IsValid()) {
-      LOG_WARN("Get invalid LeCsSetDefaultSettingsComplete");
+      log::warn("Get invalid LeCsSetDefaultSettingsComplete");
       return;
     } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
       std::string error_code = ErrorCodeText(complete_view.GetStatus());
-      LOG_WARN("Received LeCsSetDefaultSettingsComplete with error code %s", error_code.c_str());
+      log::warn("Received LeCsSetDefaultSettingsComplete with error code {}", error_code);
       return;
     }
   }
 
   void on_cs_security_enable_complete(LeCsSecurityEnableCompleteView event_view) {
     if (!event_view.IsValid()) {
-      LOG_WARN("Get invalid LeCsSecurityEnableCompleteView");
+      log::warn("Get invalid LeCsSecurityEnableCompleteView");
       return;
     } else if (event_view.GetStatus() != ErrorCode::SUCCESS) {
       std::string error_code = ErrorCodeText(event_view.GetStatus());
-      LOG_WARN("Received LeCsSecurityEnableCompleteView with error code %s", error_code.c_str());
+      log::warn("Received LeCsSecurityEnableCompleteView with error code {}", error_code);
       return;
     }
     uint16_t connection_handle = event_view.GetConnectionHandle();
     if (cs_trackers_.find(connection_handle) == cs_trackers_.end()) {
-      LOG_WARN("Can't find cs tracker for connection_handle %d", connection_handle);
+      log::warn("Can't find cs tracker for connection_handle {}", connection_handle);
       return;
     }
     cs_trackers_[connection_handle].setup_complete = true;
-    LOG_INFO(
-        "Setup phase complete, connection_handle: %d, address: %s",
+    log::info(
+        "Setup phase complete, connection_handle: {}, address: {}",
         connection_handle,
         ADDRESS_TO_LOGGABLE_CSTR(cs_trackers_[connection_handle].address));
     if (cs_trackers_[connection_handle].role == CsRole::INITIATOR) {
@@ -489,22 +489,22 @@ struct DistanceMeasurementManager::impl {
 
   void on_cs_config_complete(LeCsConfigCompleteView event_view) {
     if (!event_view.IsValid()) {
-      LOG_WARN("Get invalid LeCsConfigCompleteView");
+      log::warn("Get invalid LeCsConfigCompleteView");
       return;
     } else if (event_view.GetStatus() != ErrorCode::SUCCESS) {
       std::string error_code = ErrorCodeText(event_view.GetStatus());
-      LOG_WARN("Received LeCsConfigCompleteView with error code %s", error_code.c_str());
+      log::warn("Received LeCsConfigCompleteView with error code {}", error_code);
       return;
     }
     uint16_t connection_handle = event_view.GetConnectionHandle();
     if (cs_trackers_.find(connection_handle) == cs_trackers_.end()) {
-      LOG_WARN("Can't find cs tracker for connection_handle %d", connection_handle);
+      log::warn("Can't find cs tracker for connection_handle {}", connection_handle);
       return;
     }
     if (event_view.GetAction() == CsAction::CONFIG_REMOVED) {
       return;
     }
-    LOG_INFO("Get %s", event_view.ToString().c_str());
+    log::info("Get {}", event_view.ToString());
     cs_trackers_[connection_handle].role = event_view.GetRole();
     cs_trackers_[connection_handle].config_set = true;
     cs_trackers_[connection_handle].main_mode_type = event_view.GetMainModeType();
@@ -519,23 +519,22 @@ struct DistanceMeasurementManager::impl {
   void on_cs_set_procedure_parameters(CommandCompleteView view) {
     auto complete_view = LeCsSetProcedureParametersCompleteView::Create(view);
     if (!complete_view.IsValid()) {
-      LOG_WARN("Get Invalid LeCsSetProcedureParametersCompleteView");
+      log::warn("Get Invalid LeCsSetProcedureParametersCompleteView");
       return;
     } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
       std::string error_code = ErrorCodeText(complete_view.GetStatus());
-      LOG_WARN(
-          "Received LeCsSetProcedureParametersCompleteView with error code %s", error_code.c_str());
+      log::warn("Received LeCsSetProcedureParametersCompleteView with error code {}", error_code);
       return;
     }
     uint16_t connection_handle = complete_view.GetConnectionHandle();
     if (cs_trackers_.find(connection_handle) == cs_trackers_.end()) {
-      LOG_WARN("Can't find cs tracker for connection_handle %d", connection_handle);
+      log::warn("Can't find cs tracker for connection_handle {}", connection_handle);
       return;
     }
 
     if (cs_trackers_[connection_handle].role == CsRole::INITIATOR) {
-      LOG_INFO(
-          "enable cs procedure regularly with interval: %d ms",
+      log::info(
+          "enable cs procedure regularly with interval: {} ms",
           cs_trackers_[connection_handle].interval_ms);
       cs_trackers_[connection_handle].repeating_alarm->Cancel();
       send_le_cs_procedure_enable(connection_handle, Enable::ENABLED);
@@ -554,7 +553,7 @@ struct DistanceMeasurementManager::impl {
     uint16_t connection_handle = event_view.GetConnectionHandle();
     if (event_view.GetStatus() != ErrorCode::SUCCESS) {
       std::string error_code = ErrorCodeText(event_view.GetStatus());
-      LOG_WARN("Received LeCsProcedureEnableCompleteView with error code %s", error_code.c_str());
+      log::warn("Received LeCsProcedureEnableCompleteView with error code {}", error_code);
       if (cs_trackers_.find(connection_handle) != cs_trackers_.end() &&
           cs_trackers_[connection_handle].waiting_for_start_callback) {
         cs_trackers_[connection_handle].waiting_for_start_callback = false;
@@ -565,7 +564,7 @@ struct DistanceMeasurementManager::impl {
     }
 
     if (event_view.GetState() == Enable::ENABLED) {
-      LOG_DEBUG("Procedure enabled, %s", event_view.ToString().c_str());
+      log::debug("Procedure enabled, {}", event_view.ToString());
       if (cs_trackers_.find(connection_handle) != cs_trackers_.end() &&
           cs_trackers_[connection_handle].waiting_for_start_callback) {
         cs_trackers_[connection_handle].waiting_for_start_callback = false;
@@ -577,7 +576,7 @@ struct DistanceMeasurementManager::impl {
 
   void on_cs_subevent(LeMetaEventView event) {
     if (!event.IsValid()) {
-      LOG_ERROR("Received invalid LeMetaEventView");
+      log::error("Received invalid LeMetaEventView");
       return;
     }
 
@@ -590,7 +589,7 @@ struct DistanceMeasurementManager::impl {
     if (event.GetSubeventCode() == SubeventCode::LE_CS_SUBEVENT_RESULT) {
       auto cs_event_result = LeCsSubeventResultView::Create(event);
       if (!cs_event_result.IsValid()) {
-        LOG_WARN("Get invalid LeCsSubeventResultView");
+        log::warn("Get invalid LeCsSubeventResultView");
         return;
       }
       connection_handle = cs_event_result.GetConnectionHandle();
@@ -612,7 +611,7 @@ struct DistanceMeasurementManager::impl {
     } else {
       auto cs_event_result = LeCsSubeventResultContinueView::Create(event);
       if (!cs_event_result.IsValid()) {
-        LOG_WARN("Get invalid LeCsSubeventResultContinueView");
+        log::warn("Get invalid LeCsSubeventResultContinueView");
         return;
       }
       connection_handle = cs_event_result.GetConnectionHandle();
@@ -623,19 +622,17 @@ struct DistanceMeasurementManager::impl {
     }
 
     uint16_t counter = cs_trackers_[connection_handle].local_counter;
-    LOG_DEBUG(
-        "Connection_handle %d, procedure_done_status: %s, subevent_done_status: %s, "
-        "counter: "
-        "%d",
+    log::debug(
+        "Connection_handle {}, procedure_done_status: {}, subevent_done_status: {}, counter: {}",
         connection_handle,
-        CsProcedureDoneStatusText(procedure_done_status).c_str(),
-        CsSubeventDoneStatusText(subevent_done_status).c_str(),
+        CsProcedureDoneStatusText(procedure_done_status),
+        CsSubeventDoneStatusText(subevent_done_status),
         counter);
 
     if (procedure_done_status == CsProcedureDoneStatus::ABORTED ||
         subevent_done_status == CsSubeventDoneStatus::ABORTED) {
-      LOG_WARN(
-          "Received CS Subevent with abort reason: %02x, connection_handle:%d, counter:%d",
+      log::warn(
+          "Received CS Subevent with abort reason: {:02x}, connection_handle:{}, counter:{}",
           abort_reason,
           connection_handle,
           counter);
@@ -665,7 +662,7 @@ struct DistanceMeasurementManager::impl {
       uint8_t num_antenna_paths,
       bool local) {
     if (cs_trackers_.find(connection_handle) == cs_trackers_.end()) {
-      LOG_WARN("Can't find any tracker for %d", connection_handle);
+      log::warn("Can't find any tracker for {}", connection_handle);
       return;
     }
     // Update procedure count
@@ -682,11 +679,11 @@ struct DistanceMeasurementManager::impl {
         return;
       }
     }
-    LOG_INFO("Create data for procedure_counter: %d", procedure_counter);
+    log::info("Create data for procedure_counter: {}", procedure_counter);
     data_list.emplace_back(procedure_counter, num_antenna_paths);
 
     if (data_list.size() > kProcedureDataBufferSize) {
-      LOG_WARN("buffer full, drop procedure data with counter: %d", data_list.front().counter);
+      log::warn("buffer full, drop procedure data with counter: {}", data_list.front().counter);
       data_list.erase(data_list.begin());
     }
   }
@@ -701,7 +698,8 @@ struct DistanceMeasurementManager::impl {
       }
     }
     if (procedure_data == nullptr) {
-      LOG_WARN("Can't find data for connection_handle:%d, counter: %d", connection_handle, counter);
+      log::warn(
+          "Can't find data for connection_handle:{}, counter: {}", connection_handle, counter);
     }
     return procedure_data;
   }
@@ -710,8 +708,8 @@ struct DistanceMeasurementManager::impl {
     if (procedure_data->local_status == CsProcedureDoneStatus::ALL_RESULTS_COMPLETE &&
         procedure_data->remote_status == CsProcedureDoneStatus::ALL_RESULTS_COMPLETE &&
         !procedure_data->aborted) {
-      LOG_DEBUG(
-          "Procedure complete counter:%d data size:%d, main_mode_type:%d, sub_mode_type:%d",
+      log::debug(
+          "Procedure complete counter:{} data size:{}, main_mode_type:{}, sub_mode_type:{}",
           (uint16_t)procedure_data->counter,
           (uint16_t)procedure_data->step_channel.size(),
           (uint16_t)cs_trackers_[connection_handle].main_mode_type,
@@ -723,7 +721,7 @@ struct DistanceMeasurementManager::impl {
         procedure_data->remote_status != CsProcedureDoneStatus::PARTIAL_RESULTS) {
       std::vector<CsProcedureData>& data_list = cs_trackers_[connection_handle].procedure_data_list;
       while (data_list.begin()->counter != procedure_data->counter) {
-        LOG_DEBUG("Delete obsolete procedure data, counter:%d", data_list.begin()->counter);
+        log::debug("Delete obsolete procedure data, counter:{}", data_list.begin()->counter);
         data_list.erase(data_list.begin());
       }
     }
@@ -737,8 +735,8 @@ struct DistanceMeasurementManager::impl {
     for (auto result_data_structure : result_data_structures) {
       uint16_t mode = result_data_structure.step_mode_;
       uint16_t step_channel = result_data_structure.step_channel_;
-      LOG_VERBOSE(
-          "mode: %d, channel: %d, data_length: %d",
+      log::verbose(
+          "mode: {}, channel: {}, data_length: {}",
           mode,
           step_channel,
           (uint16_t)result_data_structure.step_data_.size());
@@ -761,32 +759,32 @@ struct DistanceMeasurementManager::impl {
             LeCsMode0InitatorData tone_data_view;
             auto after = LeCsMode0InitatorData::Parse(&tone_data_view, iterator);
             if (after == iterator) {
-              LOG_WARN("Received invalid mode %d data, role:%s", mode, CsRoleText(role).c_str());
+              log::warn("Received invalid mode {} data, role:{}", mode, CsRoleText(role));
               print_raw_data(result_data_structure.step_data_);
               continue;
             }
-            LOG_VERBOSE("step_data: %s", tone_data_view.ToString().c_str());
+            log::verbose("step_data: {}", tone_data_view.ToString());
             procedure_data.measured_freq_offset.push_back(tone_data_view.measured_freq_offset_);
           } else {
             LeCsMode0ReflectorData tone_data_view;
             auto after = LeCsMode0ReflectorData::Parse(&tone_data_view, iterator);
             if (after == iterator) {
-              LOG_WARN("Received invalid mode %d data, role:%s", mode, CsRoleText(role).c_str());
+              log::warn("Received invalid mode {} data, role:{}", mode, CsRoleText(role));
               print_raw_data(result_data_structure.step_data_);
               continue;
             }
-            LOG_VERBOSE("step_data: %s", tone_data_view.ToString().c_str());
+            log::verbose("step_data: {}", tone_data_view.ToString());
           }
         } break;
         case 2: {
           LeCsMode2Data tone_data_view;
           auto after = LeCsMode2Data::Parse(&tone_data_view, iterator);
           if (after == iterator) {
-            LOG_WARN("Received invalid mode %d data, role:%s", mode, CsRoleText(role).c_str());
+            log::warn("Received invalid mode {} data, role:{}", mode, CsRoleText(role));
             print_raw_data(result_data_structure.step_data_);
             continue;
           }
-          LOG_VERBOSE("step_data: %s", tone_data_view.ToString().c_str());
+          log::verbose("step_data: {}", tone_data_view.ToString());
           if (role == CsRole::INITIATOR) {
             procedure_data.step_channel.push_back(step_channel);
           }
@@ -801,7 +799,8 @@ struct DistanceMeasurementManager::impl {
             double i_value = get_iq_value(tone_data[k].i_sample_);
             double q_value = get_iq_value(tone_data[k].q_sample_);
             uint8_t tone_quality_indicator = tone_data[k].tone_quality_indicator_;
-            LOG_VERBOSE("antenna_path %d, %f, %f", (uint16_t)(antenna_path + 1), i_value, q_value);
+            log::verbose(
+                "antenna_path {}, {:f}, {:f}", (uint16_t)(antenna_path + 1), i_value, q_value);
             if (role == CsRole::INITIATOR) {
               procedure_data.tone_pct_initiator[antenna_path].emplace_back(i_value, q_value);
               procedure_data.tone_quality_indicator_initiator[antenna_path].emplace_back(
@@ -815,10 +814,10 @@ struct DistanceMeasurementManager::impl {
         } break;
         case 1:
         case 3:
-          LOG_DEBUG("Unsupported mode: %d ", mode);
+          log::debug("Unsupported mode: {}", mode);
           break;
         default: {
-          LOG_WARN("Invalid mode %d ", mode);
+          log::warn("Invalid mode {}", mode);
         }
       }
     }
@@ -848,7 +847,7 @@ struct DistanceMeasurementManager::impl {
       std::string buffAsStdStr = buff;
       raw_data_str.append(buffAsStdStr);
       if (i % 100 == 0 && i != 0) {
-        LOG_VERBOSE("%s", raw_data_str.c_str());
+        log::verbose("{}", raw_data_str);
         raw_data_str = "";
       }
     }
@@ -856,20 +855,19 @@ struct DistanceMeasurementManager::impl {
     snprintf(buff, sizeof(buff), "%02x", (uint8_t)raw_data[for_end]);
     std::string buffAsStdStr = buff;
     raw_data_str.append(buffAsStdStr);
-    LOG_VERBOSE("%s", raw_data_str.c_str());
+    log::verbose("{}", raw_data_str);
   }
 
   void on_read_remote_transmit_power_level_status(Address address, CommandStatusView view) {
     auto status_view = LeReadRemoteTransmitPowerLevelStatusView::Create(view);
     if (!status_view.IsValid()) {
-      LOG_WARN("Invalid LeReadRemoteTransmitPowerLevelStatus event");
+      log::warn("Invalid LeReadRemoteTransmitPowerLevelStatus event");
       distance_measurement_callbacks_->OnDistanceMeasurementStartFail(
           address, REASON_INTERNAL_ERROR, METHOD_RSSI);
       rssi_trackers.erase(address);
     } else if (status_view.GetStatus() != ErrorCode::SUCCESS) {
       std::string error_code = ErrorCodeText(status_view.GetStatus());
-      LOG_WARN(
-          "Received LeReadRemoteTransmitPowerLevelStatus with error code %s", error_code.c_str());
+      log::warn("Received LeReadRemoteTransmitPowerLevelStatus with error code {}", error_code);
       distance_measurement_callbacks_->OnDistanceMeasurementStartFail(
           address, REASON_INTERNAL_ERROR, METHOD_RSSI);
       rssi_trackers.erase(address);
@@ -879,12 +877,12 @@ struct DistanceMeasurementManager::impl {
   void on_transmit_power_reporting(LeMetaEventView event) {
     auto event_view = LeTransmitPowerReportingView::Create(event);
     if (!event_view.IsValid()) {
-      LOG_WARN("Dropping invalid LeTransmitPowerReporting event");
+      log::warn("Dropping invalid LeTransmitPowerReporting event");
       return;
     }
 
     if (event_view.GetReason() == ReportingReason::LOCAL_TRANSMIT_POWER_CHANGED) {
-      LOG_WARN("Dropping local LeTransmitPowerReporting event");
+      log::warn("Dropping local LeTransmitPowerReporting event");
       return;
     }
 
@@ -896,14 +894,13 @@ struct DistanceMeasurementManager::impl {
     }
 
     if (address.IsEmpty()) {
-      LOG_WARN("Can't find rssi tracker for connection %d", event_view.GetConnectionHandle());
+      log::warn("Can't find rssi tracker for connection {}", event_view.GetConnectionHandle());
       return;
     }
 
     auto status = event_view.GetStatus();
     if (status != ErrorCode::SUCCESS) {
-      LOG_WARN(
-          "Received LeTransmitPowerReporting with error code %s", ErrorCodeText(status).c_str());
+      log::warn("Received LeTransmitPowerReporting with error code {}", ErrorCodeText(status));
     } else {
       rssi_trackers[address].remote_tx_power = event_view.GetTransmitPowerLevel();
     }
@@ -917,7 +914,7 @@ struct DistanceMeasurementManager::impl {
             handler_->BindOnceOn(
                 this, &impl::on_set_transmit_power_reporting_enable_complete, address));
       } else {
-        LOG_WARN("Read remote transmit power level fail");
+        log::warn("Read remote transmit power level fail");
         distance_measurement_callbacks_->OnDistanceMeasurementStartFail(
             address, REASON_INTERNAL_ERROR, METHOD_RSSI);
         rssi_trackers.erase(address);
@@ -928,16 +925,15 @@ struct DistanceMeasurementManager::impl {
   void on_set_transmit_power_reporting_enable_complete(Address address, CommandCompleteView view) {
     auto complete_view = LeSetTransmitPowerReportingEnableCompleteView::Create(view);
     if (!complete_view.IsValid()) {
-      LOG_WARN("Invalid LeSetTransmitPowerReportingEnableComplete event");
+      log::warn("Invalid LeSetTransmitPowerReportingEnableComplete event");
       distance_measurement_callbacks_->OnDistanceMeasurementStartFail(
           address, REASON_INTERNAL_ERROR, METHOD_RSSI);
       rssi_trackers.erase(address);
       return;
     } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
       std::string error_code = ErrorCodeText(complete_view.GetStatus());
-      LOG_WARN(
-          "Received LeSetTransmitPowerReportingEnableComplete with error code %s",
-          error_code.c_str());
+      log::warn(
+          "Received LeSetTransmitPowerReportingEnableComplete with error code {}", error_code);
       distance_measurement_callbacks_->OnDistanceMeasurementStartFail(
           address, REASON_INTERNAL_ERROR, METHOD_RSSI);
       rssi_trackers.erase(address);
@@ -945,12 +941,12 @@ struct DistanceMeasurementManager::impl {
     }
 
     if (rssi_trackers.find(address) == rssi_trackers.end()) {
-      LOG_WARN("Can't find rssi tracker for %s", ADDRESS_TO_LOGGABLE_CSTR(address));
+      log::warn("Can't find rssi tracker for {}", ADDRESS_TO_LOGGABLE_CSTR(address));
       distance_measurement_callbacks_->OnDistanceMeasurementStartFail(
           address, REASON_INTERNAL_ERROR, METHOD_RSSI);
       rssi_trackers.erase(address);
     } else {
-      LOG_INFO("Track rssi for address %s", ADDRESS_TO_LOGGABLE_CSTR(address));
+      log::info("Track rssi for address {}", ADDRESS_TO_LOGGABLE_CSTR(address));
       rssi_trackers[address].started = true;
       distance_measurement_callbacks_->OnDistanceMeasurementStarted(address, METHOD_RSSI);
       rssi_trackers[address].repeating_alarm->Schedule(
@@ -962,11 +958,11 @@ struct DistanceMeasurementManager::impl {
   void on_read_rssi_complete(Address address, CommandCompleteView view) {
     auto complete_view = ReadRssiCompleteView::Create(view);
     if (!complete_view.IsValid()) {
-      LOG_WARN("Dropping invalid read RSSI complete event ");
+      log::warn("Dropping invalid read RSSI complete event");
       return;
     }
     if (rssi_trackers.find(address) == rssi_trackers.end()) {
-      LOG_WARN("Can't find rssi tracker for %s", ADDRESS_TO_LOGGABLE_CSTR(address));
+      log::warn("Can't find rssi tracker for {}", ADDRESS_TO_LOGGABLE_CSTR(address));
       return;
     }
     double remote_tx_power = (int8_t)rssi_trackers[address].remote_tx_power;

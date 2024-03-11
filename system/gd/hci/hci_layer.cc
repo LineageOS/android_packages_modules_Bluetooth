@@ -19,6 +19,8 @@
 #ifdef TARGET_FLOSS
 #include <signal.h>
 #endif
+#include <bluetooth/log.h>
+
 #include <map>
 #include <utility>
 
@@ -57,7 +59,7 @@ using std::unique_ptr;
 static void fail_if_reset_complete_not_success(CommandCompleteView complete) {
   auto reset_complete = ResetCompleteView::Create(complete);
   ASSERT(reset_complete.IsValid());
-  LOG_DEBUG("Reset completed with status: %s", ErrorCodeText(ErrorCode::SUCCESS).c_str());
+  log::debug("Reset completed with status: {}", ErrorCodeText(ErrorCode::SUCCESS));
   ASSERT(reset_complete.GetStatus() == ErrorCode::SUCCESS);
 }
 
@@ -124,7 +126,7 @@ struct HciLayer::impl {
   }
 
   void drop(EventView event) {
-    LOG_INFO("Dropping event %s", EventCodeText(event.GetEventCode()).c_str());
+    log::info("Dropping event {}", EventCodeText(event.GetEventCode()));
   }
 
   void on_outbound_acl_ready() {
@@ -163,11 +165,11 @@ struct HciLayer::impl {
     OpCode op_code = response_view.GetCommandOpCode();
     ErrorCode status = response_view.GetStatus();
     if (status != ErrorCode::SUCCESS) {
-      LOG_ERROR(
-          "Received UNEXPECTED command status:%s opcode:0x%02hx (%s)",
-          ErrorCodeText(status).c_str(),
+      log::error(
+          "Received UNEXPECTED command status:{} opcode:0x{:02x} ({})",
+          ErrorCodeText(status),
           op_code,
-          OpCodeText(op_code).c_str());
+          OpCodeText(op_code));
     }
     handle_command_response<CommandStatusView>(event, "status");
   }
@@ -195,7 +197,8 @@ struct HciLayer::impl {
         op_code,
         OpCodeText(op_code).c_str());
     if (waiting_command_ == OpCode::CONTROLLER_DEBUG_INFO && op_code != OpCode::CONTROLLER_DEBUG_INFO) {
-      LOG_ERROR("Discarding event that came after timeout 0x%02hx (%s)", op_code, OpCodeText(op_code).c_str());
+      log::error(
+          "Discarding event that came after timeout 0x{:02x} ({})", op_code, OpCodeText(op_code));
       common::StopWatch::DumpStopWatchLog();
       return;
     }
@@ -258,10 +261,10 @@ struct HciLayer::impl {
 
   void on_hci_timeout(OpCode op_code) {
     common::StopWatch::DumpStopWatchLog();
-    LOG_ERROR("Timed out waiting for 0x%02hx (%s)", op_code, OpCodeText(op_code).c_str());
+    log::error("Timed out waiting for 0x{:02x} ({})", op_code, OpCodeText(op_code));
     // TODO: LogMetricHciTimeoutEvent(static_cast<uint32_t>(op_code));
 
-    LOG_ERROR("Flushing %zd waiting commands", command_queue_.size());
+    log::error("Flushing {} waiting commands", command_queue_.size());
     // Clear any waiting commands (there is an abort coming anyway)
     command_queue_.clear();
     command_credits_ = 1;
@@ -278,7 +281,7 @@ struct HciLayer::impl {
       hci_abort_alarm_ = new Alarm(module_.GetHandler());
       hci_abort_alarm_->Schedule(BindOnce(&abort_after_time_out, op_code), kHciTimeoutRestartMs);
     } else {
-      LOG_WARN("Unable to schedul abort timer");
+      log::warn("Unable to schedul abort timer");
     }
   }
 
@@ -309,7 +312,7 @@ struct HciLayer::impl {
     if (hci_timeout_alarm_ != nullptr) {
       hci_timeout_alarm_->Schedule(BindOnce(&impl::on_hci_timeout, common::Unretained(this), op_code), kHciTimeoutMs);
     } else {
-      LOG_WARN("%s sent without an hci-timeout timer", OpCodeText(op_code).c_str());
+      log::warn("{} sent without an hci-timeout timer", OpCodeText(op_code));
     }
   }
 
@@ -321,7 +324,7 @@ struct HciLayer::impl {
         EventCodeText(EventCode::LE_META_EVENT).c_str());
     // Allow GD Cert tests to register for CONNECTION_REQUEST
     if (event == EventCode::CONNECTION_REQUEST && module_.on_acl_connection_request_.IsEmpty()) {
-      LOG_INFO("Registering test for CONNECTION_REQUEST, since there's no ACL");
+      log::info("Registering test for CONNECTION_REQUEST, since there's no ACL");
       event_handlers_.erase(event);
     }
     ASSERT_LOG(
@@ -354,8 +357,9 @@ struct HciLayer::impl {
   }
 
   void handle_root_inflammation(uint8_t vse_error_reason) {
-    LOG_ERROR("Received a Root Inflammation Event vendor reason 0x%02hhx, scheduling an abort",
-              vse_error_reason);
+    log::error(
+        "Received a Root Inflammation Event vendor reason 0x{:02x}, scheduling an abort",
+        vse_error_reason);
     bluetooth::os::LogMetricBluetoothHalCrashReason(Address::kEmpty, 0, vse_error_reason);
     // Add Logging for crash reason
     if (hci_timeout_alarm_ != nullptr) {
@@ -367,7 +371,7 @@ struct HciLayer::impl {
       hci_abort_alarm_ = new Alarm(module_.GetHandler());
       hci_abort_alarm_->Schedule(BindOnce(&abort_after_root_inflammation, vse_error_reason), kHciTimeoutRestartMs);
     } else {
-      LOG_WARN("Abort timer already scheduled");
+      log::warn("Abort timer already scheduled");
     }
   }
 
@@ -436,10 +440,7 @@ struct HciLayer::impl {
         break;
       default:
         if (event_handlers_.find(event_code) == event_handlers_.end()) {
-          LOG_WARN(
-              "Unhandled event of type 0x%02hhx (%s)",
-              event_code,
-              EventCodeText(event_code).c_str());
+          log::warn("Unhandled event of type 0x{:02x} ({})", event_code, EventCodeText(event_code));
         } else {
           event_handlers_[event_code].Invoke(event);
         }
@@ -450,13 +451,13 @@ struct HciLayer::impl {
     HardwareErrorView event_view = HardwareErrorView::Create(event);
     ASSERT(event_view.IsValid());
 #ifdef TARGET_FLOSS
-    LOG_WARN("Hardware Error Event with code 0x%02x", event_view.GetHardwareCode());
+    log::warn("Hardware Error Event with code 0x{:02x}", event_view.GetHardwareCode());
     // Sending SIGINT to process the exception from BT controller.
     // The Floss daemon will be restarted. HCI reset during restart will clear the
     // error state of the BT controller.
     kill(getpid(), SIGINT);
 #else
-    LOG_ALWAYS_FATAL("Hardware Error Event with code 0x%02x", event_view.GetHardwareCode());
+    log::fatal("Hardware Error Event with code 0x{:02x}", event_view.GetHardwareCode());
 #endif
   }
 
@@ -465,7 +466,10 @@ struct HciLayer::impl {
     ASSERT(meta_event_view.IsValid());
     SubeventCode subevent_code = meta_event_view.GetSubeventCode();
     if (subevent_handlers_.find(subevent_code) == subevent_handlers_.end()) {
-      LOG_WARN("Unhandled le subevent of type 0x%02hhx (%s)", subevent_code, SubeventCodeText(subevent_code).c_str());
+      log::warn(
+          "Unhandled le subevent of type 0x{:02x} ({})",
+          subevent_code,
+          SubeventCodeText(subevent_code));
       return;
     }
     subevent_handlers_[subevent_code].Invoke(meta_event_view);
@@ -581,7 +585,7 @@ void HciLayer::UnregisterLeEventHandler(SubeventCode event) {
 void HciLayer::on_disconnection_complete(EventView event_view) {
   auto disconnection_view = DisconnectionCompleteView::Create(event_view);
   if (!disconnection_view.IsValid()) {
-    LOG_INFO("Dropping invalid disconnection packet");
+    log::info("Dropping invalid disconnection packet");
     return;
   }
 
@@ -593,7 +597,7 @@ void HciLayer::on_disconnection_complete(EventView event_view) {
 void HciLayer::on_connection_request(EventView event_view) {
   auto view = ConnectionRequestView::Create(event_view);
   if (!view.IsValid()) {
-    LOG_INFO("Dropping invalid connection request packet");
+    log::info("Dropping invalid connection request packet");
     return;
   }
 
@@ -603,7 +607,7 @@ void HciLayer::on_connection_request(EventView event_view) {
   switch (link_type) {
     case ConnectionRequestLinkType::ACL:
       if (on_acl_connection_request_.IsEmpty()) {
-        LOG_WARN("No callback registered for ACL connection requests.");
+        log::warn("No callback registered for ACL connection requests.");
       } else {
         on_acl_connection_request_.Invoke(address, cod);
       }
@@ -611,7 +615,7 @@ void HciLayer::on_connection_request(EventView event_view) {
     case ConnectionRequestLinkType::SCO:
     case ConnectionRequestLinkType::ESCO:
       if (on_sco_connection_request_.IsEmpty()) {
-        LOG_WARN("No callback registered for SCO connection requests.");
+        log::warn("No callback registered for SCO connection requests.");
       } else {
         on_sco_connection_request_.Invoke(address, cod, link_type);
       }

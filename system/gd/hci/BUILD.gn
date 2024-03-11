@@ -45,7 +45,10 @@ source_set("BluetoothHciSources") {
     "//bt/system/gd:gd_default_deps",
   ]
 
-  configs += [ "//bt/system:target_defaults" ]
+  configs += [
+    "//bt/system:target_defaults",
+    "//bt/system/log:log_defaults",
+  ]
 }
 
 if (use.test) {
