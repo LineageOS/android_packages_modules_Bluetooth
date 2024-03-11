@@ -22,6 +22,8 @@
  *
  ******************************************************************************/
 
+#include <bluetooth/log.h>
+
 #include <algorithm>
 #include <cstdint>
 
@@ -180,7 +182,7 @@ Octet16 aes_cmac(const Octet16& key, const uint8_t* input, uint16_t length) {
   if (n == 0) n = 1;
   len = n * kOctet16Length;
 
-  // VLOG(1) << "AES128_CMAC started, allocate buffer size=" << len;
+  // log::verbose("AES128_CMAC started, allocate buffer size={}", len);
 
   /* allocate a memory space of multiple of 16 bytes to hold text  */
   cmac_cb.text = (uint8_t*)alloca(len);
