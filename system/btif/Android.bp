@@ -204,6 +204,7 @@ cc_library_static {
         "src/btif_sdp_server.cc",
         "src/btif_sock.cc",
         "src/btif_sock_l2cap.cc",
+        "src/btif_sock_logging.cc",
         "src/btif_sock_rfc.cc",
         "src/btif_sock_sco.cc",
         "src/btif_sock_sdp.cc",
