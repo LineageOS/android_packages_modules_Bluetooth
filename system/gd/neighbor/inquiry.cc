@@ -17,6 +17,8 @@
 
 #include "neighbor/inquiry.h"
 
+#include <bluetooth/log.h>
+
 #include <memory>
 
 #include "common/bind.h"
@@ -171,7 +173,7 @@ void neighbor::InquiryModule::impl::OnCommandComplete(hci::CommandCompleteView v
     } break;
 
     default:
-      LOG_WARN("Unhandled command:%s", hci::OpCodeText(view.GetCommandOpCode()).c_str());
+      log::warn("Unhandled command:{}", hci::OpCodeText(view.GetCommandOpCode()));
       break;
   }
 }
@@ -184,12 +186,12 @@ void neighbor::InquiryModule::impl::OnCommandStatus(hci::CommandStatusView statu
       auto packet = hci::InquiryStatusView::Create(status);
       ASSERT(packet.IsValid());
       if (active_limited_one_shot_ || active_general_one_shot_) {
-        LOG_INFO("Inquiry started lap: %s", active_limited_one_shot_ ? "Limited" : "General");
+        log::info("Inquiry started lap: {}", active_limited_one_shot_ ? "Limited" : "General");
       }
     } break;
 
     default:
-      LOG_WARN("Unhandled command:%s", hci::OpCodeText(status.GetCommandOpCode()).c_str());
+      log::warn("Unhandled command:{}", hci::OpCodeText(status.GetCommandOpCode()));
       break;
   }
 }
@@ -199,7 +201,7 @@ void neighbor::InquiryModule::impl::OnEvent(hci::EventView view) {
     case hci::EventCode::INQUIRY_COMPLETE: {
       auto packet = hci::InquiryCompleteView::Create(view);
       ASSERT(packet.IsValid());
-      LOG_INFO("inquiry complete");
+      log::info("inquiry complete");
       active_limited_one_shot_ = false;
       active_general_one_shot_ = false;
       inquiry_callbacks_.complete(packet.GetStatus());
@@ -208,32 +210,33 @@ void neighbor::InquiryModule::impl::OnEvent(hci::EventView view) {
     case hci::EventCode::INQUIRY_RESULT: {
       auto packet = hci::InquiryResultView::Create(view);
       ASSERT(packet.IsValid());
-      LOG_INFO("Inquiry result size:%zd num_responses:%zu", packet.size(), packet.GetResponses().size());
+      log::info(
+          "Inquiry result size:{} num_responses:{}", packet.size(), packet.GetResponses().size());
       inquiry_callbacks_.result(packet);
     } break;
 
     case hci::EventCode::INQUIRY_RESULT_WITH_RSSI: {
       auto packet = hci::InquiryResultWithRssiView::Create(view);
       ASSERT(packet.IsValid());
-      LOG_INFO("Inquiry result with rssi num_responses:%zu", packet.GetResponses().size());
+      log::info("Inquiry result with rssi num_responses:{}", packet.GetResponses().size());
       inquiry_callbacks_.result_with_rssi(packet);
     } break;
 
     case hci::EventCode::EXTENDED_INQUIRY_RESULT: {
       auto packet = hci::ExtendedInquiryResultView::Create(view);
       ASSERT(packet.IsValid());
-      LOG_INFO(
-          "Extended inquiry result addr:%s repetition_mode:%s cod:%s clock_offset:%d rssi:%hhd",
+      log::info(
+          "Extended inquiry result addr:{} repetition_mode:{} cod:{} clock_offset:{} rssi:{}",
           ADDRESS_TO_LOGGABLE_CSTR(packet.GetAddress()),
-          hci::PageScanRepetitionModeText(packet.GetPageScanRepetitionMode()).c_str(),
-          packet.GetClassOfDevice().ToString().c_str(),
+          hci::PageScanRepetitionModeText(packet.GetPageScanRepetitionMode()),
+          packet.GetClassOfDevice().ToString(),
           packet.GetClockOffset(),
           packet.GetRssi());
       inquiry_callbacks_.extended_result(packet);
     } break;
 
     default:
-      LOG_ERROR("Unhandled event:%s", hci::EventCodeText(view.GetEventCode()).c_str());
+      log::error("Unhandled event:{}", hci::EventCodeText(view.GetEventCode()));
       break;
   }
 }
@@ -343,30 +346,30 @@ void neighbor::InquiryModule::impl::Start() {
   EnqueueCommandComplete(hci::ReadInquiryScanTypeBuilder::Create());
   EnqueueCommandCompleteSync(hci::ReadInquiryModeBuilder::Create());
 
-  LOG_INFO("Started inquiry module");
+  log::info("Started inquiry module");
 }
 
 void neighbor::InquiryModule::impl::Stop() {
-  LOG_INFO("Inquiry scan interval:%hu window:%hu", inquiry_scan_.interval, inquiry_scan_.window);
-  LOG_INFO(
-      "Inquiry mode:%s scan_type:%s",
-      hci::InquiryModeText(inquiry_mode_).c_str(),
-      hci::InquiryScanTypeText(inquiry_scan_type_).c_str());
-  LOG_INFO("Inquiry response tx power:%hhd", inquiry_response_tx_power_);
-  LOG_INFO("Stopped inquiry module");
+  log::info("Inquiry scan interval:{} window:{}", inquiry_scan_.interval, inquiry_scan_.window);
+  log::info(
+      "Inquiry mode:{} scan_type:{}",
+      hci::InquiryModeText(inquiry_mode_),
+      hci::InquiryScanTypeText(inquiry_scan_type_));
+  log::info("Inquiry response tx power:{}", inquiry_response_tx_power_);
+  log::info("Stopped inquiry module");
 }
 
 void neighbor::InquiryModule::impl::SetInquiryMode(hci::InquiryMode mode) {
   EnqueueCommandComplete(hci::WriteInquiryModeBuilder::Create(mode));
   inquiry_mode_ = mode;
-  LOG_INFO("Set inquiry mode:%s", hci::InquiryModeText(mode).c_str());
+  log::info("Set inquiry mode:{}", hci::InquiryModeText(mode));
 }
 
 void neighbor::InquiryModule::impl::SetScanActivity(ScanParameters params) {
   EnqueueCommandComplete(hci::WriteInquiryScanActivityBuilder::Create(params.interval, params.window));
   inquiry_scan_ = params;
-  LOG_INFO(
-      "Set scan activity interval:0x%x/%.02fms window:0x%x/%.02fms",
+  log::info(
+      "Set scan activity interval:0x{:x}/{:.02f}ms window:0x{:x}/{:.02f}ms",
       params.interval,
       ScanIntervalTimeMs(params.interval),
       params.window,
@@ -375,7 +378,7 @@ void neighbor::InquiryModule::impl::SetScanActivity(ScanParameters params) {
 
 void neighbor::InquiryModule::impl::SetScanType(hci::InquiryScanType scan_type) {
   EnqueueCommandComplete(hci::WriteInquiryScanTypeBuilder::Create(scan_type));
-  LOG_INFO("Set scan type:%s", hci::InquiryScanTypeText(scan_type).c_str());
+  log::info("Set scan type:{}", hci::InquiryScanTypeText(scan_type));
 }
 
 bool neighbor::InquiryModule::impl::HasCallbacks() const {
