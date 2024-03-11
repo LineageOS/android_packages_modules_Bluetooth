@@ -16,6 +16,8 @@
 
 #include "storage/config_cache_helper.h"
 
+#include <bluetooth/log.h>
+
 #include "common/numbers.h"
 #include "common/strings.h"
 
@@ -115,7 +117,7 @@ std::optional<std::vector<uint8_t>> ConfigCacheHelper::GetBin(
   }
   auto value = common::FromHexString(*value_str);
   if (!value) {
-    LOG_WARN("value_str cannot be parsed to std::vector<uint8_t>");
+    log::warn("value_str cannot be parsed to std::vector<uint8_t>");
   }
   return value;
 }
