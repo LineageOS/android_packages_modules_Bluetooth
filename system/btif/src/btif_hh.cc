@@ -1382,7 +1382,8 @@ static bt_status_t connect(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
  *
  ******************************************************************************/
 static bt_status_t disconnect(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
-                              tBT_TRANSPORT transport) {
+                              tBT_TRANSPORT transport,
+                              bool /* reconnect_allowed */) {
   CHECK_BTHH_INIT();
   log::verbose("BTHH");
   btif_hh_device_t* p_dev;
