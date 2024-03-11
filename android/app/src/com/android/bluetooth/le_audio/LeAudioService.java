@@ -1092,7 +1092,7 @@ public class LeAudioService extends ProfileService {
         if (DBG) Log.d(TAG, "startBroadcast");
 
         /* Start timeout to recover from stucked/error start Broadcast operation */
-        mDialingOutTimeoutEvent = new DialingOutTimeoutEvent();
+        mDialingOutTimeoutEvent = new DialingOutTimeoutEvent(broadcastId);
         mHandler.postDelayed(mDialingOutTimeoutEvent, DIALING_OUT_TIMEOUT_MS);
 
         mLeAudioBroadcasterNativeInterface.startBroadcast(broadcastId);
@@ -4323,9 +4323,15 @@ public class LeAudioService extends ProfileService {
     }
 
     class DialingOutTimeoutEvent implements Runnable {
+        Integer mBroadcastId;
+
+        DialingOutTimeoutEvent(Integer broadcastId) {
+            mBroadcastId = broadcastId;
+        }
+
         @Override
         public void run() {
-            Log.w(TAG, "Failed to start Broadcast in time");
+            Log.w(TAG, "Failed to start Broadcast in time: " + mBroadcastId);
 
             mDialingOutTimeoutEvent = null;
 
@@ -4337,6 +4343,8 @@ public class LeAudioService extends ProfileService {
             if (mActiveBroadcastAudioDevice != null) {
                 updateBroadcastActiveDevice(null, mActiveBroadcastAudioDevice, false);
             }
+
+            notifyBroadcastStartFailed(mBroadcastId, BluetoothStatusCodes.ERROR_TIMEOUT);
         }
     }
 
