@@ -16,6 +16,7 @@
 
 #include "common/testing/log_capture.h"
 
+#include <bluetooth/log.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 
@@ -28,8 +29,8 @@ namespace bluetooth {
 namespace testing {
 
 LogCapture::LogCapture() {
-  LOG_INFO(
-      "Log capture disabled for android build dup_fd:%d fd:%d original_stderr_fd:%d",
+  log::info(
+      "Log capture disabled for android build dup_fd:{} fd:{} original_stderr_fd:{}",
       dup_fd_,
       fd_,
       original_stderr_fd_);
