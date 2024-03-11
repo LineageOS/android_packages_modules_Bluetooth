@@ -9,6 +9,8 @@ pub enum PropertyI32 {
     // bluetooth.core.le
     LeInquiryScanInterval,
     LeInquiryScanWindow,
+    LeAdvMonScanInterval,
+    LeAdvMonScanWindow,
 
     // bluetooth.device_id
     ProductId,
@@ -21,11 +23,17 @@ impl Into<(Vec<u8>, i32)> for PropertyI32 {
     /// Convert the property into the property key name and a default value.
     fn into(self) -> (Vec<u8>, i32) {
         let (key, default_value) = match self {
-            // Inquiry scan interval  = N * 0.625 ms; value of 432 = 270ms
-            PropertyI32::LeInquiryScanInterval => ("bluetooth.core.le.inquiry_scan_interval", 430),
+            // Inquiry scan interval = N * 0.625 ms; value of 36 = 22.5ms
+            PropertyI32::LeInquiryScanInterval => ("bluetooth.core.le.inquiry_scan_interval", 36),
 
-            //Inquiry scan window  = N * 0.625 ms; value of 216 = 135ms
-            PropertyI32::LeInquiryScanWindow => ("bluetooth.core.le.inquiry_scan_window", 216),
+            //Inquiry scan window = N * 0.625 ms; value of 18 = 11.25ms
+            PropertyI32::LeInquiryScanWindow => ("bluetooth.core.le.inquiry_scan_window", 18),
+
+            // Adv Mon scan interval = N * 0.625 ms; value of 40 = 25ms
+            PropertyI32::LeAdvMonScanInterval => ("bluetooth.core.le.adv_mon_scan_interval", 40),
+
+            // Adv Mon scan window = N * 0.625 ms; value of 20 = 12.5ms
+            PropertyI32::LeAdvMonScanWindow => ("bluetooth.core.le.adv_mon_scan_window", 20),
 
             PropertyI32::ProductId => ("bluetooth.device_id.product_id", 0),
             PropertyI32::ProductVersion => ("bluetooth.device_id.product_version", 0),
