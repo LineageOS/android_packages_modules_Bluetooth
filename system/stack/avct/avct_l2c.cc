@@ -23,11 +23,11 @@
  ******************************************************************************/
 #define LOG_TAG "avctp"
 
-#include <android_bluetooth_sysprop.h>
 #include <bluetooth/log.h>
 
 #include "avct_api.h"
 #include "avct_int.h"
+#include "btif/include/btif_av.h"
 #include "internal_include/bt_target.h"
 #include "l2c_api.h"
 #include "l2cdefs.h"
@@ -146,7 +146,7 @@ void avct_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
 
   /* if result ok, proceed with connection */
   if (result == L2CAP_CONN_OK) {
-    if (GET_SYSPROP(A2dp, src_sink_coexist, false)) {
+    if (btif_av_src_sink_coexist_enabled()) {
       tAVCT_CCB* p_ccb = &avct_cb.ccb[0];
       for (int i = 0; i < AVCT_NUM_CONN; i++, p_ccb++) {
         if (p_ccb && p_ccb->allocated && (p_ccb->p_lcb == NULL) &&
