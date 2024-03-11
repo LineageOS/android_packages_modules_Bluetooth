@@ -326,9 +326,11 @@ cc_binary {
     ],
     shared_libs: [
         "libPlatformProperties",
+        "libbase",
         "libcrypto",
         "libgrpc++",
         "libgrpc_wrap",
+        "liblog",
         "libprotobuf-cpp-full",
         "libunwindstack",
         "server_configurable_flags",
@@ -879,7 +881,9 @@ cc_library_host_shared {
         "pybind11_headers",
     ],
     static_libs: [
+        "libbase",
         "libbluetooth_l2cap_pdl",
+        "libbluetooth_log",
     ],
     cflags: [
         "-fexceptions",

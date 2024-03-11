@@ -16,6 +16,7 @@
 #include "hci/le_advertising_manager.h"
 
 #include <android_bluetooth_flags.h>
+#include <bluetooth/log.h>
 
 #include <iterator>
 #include <memory>
@@ -106,7 +107,8 @@ AdvertiserAddressType GetAdvertiserAddressTypeFromRequestedTypeAndPolicy(
                  ? AdvertiserAddressType::NONRESOLVABLE_RANDOM
                  : requested_address_type;
     default:
-      LOG_ALWAYS_FATAL("unreachable");
+      log::fatal("unreachable");
+      return AdvertiserAddressType::PUBLIC;
   }
 }
 
@@ -171,7 +173,9 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
       advertising_api_type_ = AdvertisingApiType::LEGACY;
       int vendor_version = os::GetAndroidVendorReleaseVersion();
       if (vendor_version != 0 && vendor_version <= 11 && os::IsRootCanalEnabled()) {
-        LOG_INFO("LeReadAdvertisingPhysicalChannelTxPower is not supported on Android R RootCanal, default to 0");
+        log::info(
+            "LeReadAdvertisingPhysicalChannelTxPower is not supported on Android R RootCanal, "
+            "default to 0");
         le_physical_channel_tx_power_ = 0;
       } else {
         hci_layer_->EnqueueCommand(
@@ -194,13 +198,13 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
       if (compensation_number) {
         int64_t number = compensation_number.value();
         if (number < kLeTxPathLossCompMin || number > kLeTxPathLossCompMax) {
-          LOG_ERROR("Invalid number for tx path loss compensation: %" PRId64, number);
+          log::error("Invalid number for tx path loss compensation: {}", number);
         } else {
           compensation = number;
         }
       }
     }
-    LOG_INFO("Tx path loss compensation: %d", compensation);
+    log::info("Tx path loss compensation: {}", compensation);
     return compensation;
   }
 
@@ -211,11 +215,11 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     int8_t calibrated_tx_power = tx_power;
     int64_t number = tx_power + le_tx_path_loss_comp_;
     if (number < kLeAdvertisingTxPowerMin || number > kLeAdvertisingTxPowerMax) {
-      LOG_ERROR("Invalid number for calibrated tx power: %" PRId64, number);
+      log::error("Invalid number for calibrated tx power: {}", number);
     } else {
       calibrated_tx_power = number;
     }
-    LOG_INFO("tx_power: %d, calibrated_tx_power: %d", tx_power, calibrated_tx_power);
+    log::info("tx_power: {}, calibrated_tx_power: {}", tx_power, calibrated_tx_power);
     return calibrated_tx_power;
   }
 
@@ -247,12 +251,12 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
 
     auto advertiser_id = view.GetAdvertisingInstance();
 
-    LOG_INFO(
-        "Instance: 0x%x StateChangeReason: 0x%s Handle: 0x%x Address: %s",
+    log::info(
+        "Instance: 0x{:x} StateChangeReason: {} Handle: 0x{:x} Address: {}",
         advertiser_id,
-        VseStateChangeReasonText(view.GetStateChangeReason()).c_str(),
+        VseStateChangeReasonText(view.GetStateChangeReason()),
         view.GetConnectionHandle(),
-        advertising_sets_[view.GetAdvertisingInstance()].current_address.ToString().c_str());
+        advertising_sets_[view.GetAdvertisingInstance()].current_address.ToString());
 
     if (view.GetStateChangeReason() == VseStateChangeReason::CONNECTION_RECEIVED) {
       acl_manager_->OnAdvertisingSetTerminated(
@@ -266,7 +270,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
 
       if (!advertising_sets_[advertiser_id].directed) {
         // TODO(250666237) calculate remaining duration and advertising events
-        LOG_INFO("Resuming advertising, since not directed");
+        log::info("Resuming advertising, since not directed");
         enable_advertiser(advertiser_id, true, 0, 0);
       }
     }
@@ -281,13 +285,13 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
         handle_set_terminated(LeAdvertisingSetTerminatedView::Create(event));
         break;
       default:
-        LOG_INFO("Unknown subevent in scanner %s", hci::SubeventCodeText(event.GetSubeventCode()).c_str());
+        log::info("Unknown subevent in scanner {}", hci::SubeventCodeText(event.GetSubeventCode()));
     }
   }
 
   void handle_scan_request(LeScanRequestReceivedView event_view) {
     if (!event_view.IsValid()) {
-      LOG_INFO("Dropping invalid scan request event");
+      log::info("Dropping invalid scan request event");
       return;
     }
     registered_handler_->Post(
@@ -296,21 +300,19 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
 
   void handle_set_terminated(LeAdvertisingSetTerminatedView event_view) {
     if (!event_view.IsValid()) {
-      LOG_INFO("Dropping invalid advertising event");
+      log::info("Dropping invalid advertising event");
       return;
     }
 
     auto status = event_view.GetStatus();
-    LOG_VERBOSE(
-        "Received LE Advertising Set Terminated with status %s", ErrorCodeText(status).c_str());
+    log::verbose("Received LE Advertising Set Terminated with status {}", ErrorCodeText(status));
 
     /* The Bluetooth Core 5.3 specification clearly states that this event
      * shall not be sent when the Host disables the advertising set. So in
      * case of HCI_ERROR_CANCELLED_BY_HOST, just ignore the event.
      */
     if (status == ErrorCode::OPERATION_CANCELLED_BY_HOST) {
-      LOG_WARN(
-          "Unexpected advertising set terminated event status: %s", ErrorCodeText(status).c_str());
+      log::warn("Unexpected advertising set terminated event status: {}", ErrorCodeText(status));
       return;
     }
 
@@ -350,7 +352,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
       // TODO calculate remaining duration and advertising events
       if (advertising_sets_[advertiser_id].duration == 0 &&
           advertising_sets_[advertiser_id].max_extended_advertising_events == 0) {
-        LOG_INFO("Reenable advertising");
+        log::info("Reenable advertising");
         if (was_rotating_address) {
           advertising_sets_[advertiser_id].address_rotation_alarm = std::make_unique<os::Alarm>(module_handler_);
           advertising_sets_[advertiser_id].address_rotation_alarm->Schedule(
@@ -370,7 +372,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
       id++;
     }
     if (id == num_instances_) {
-      LOG_WARN("Number of max instances %d reached", (uint16_t)num_instances_);
+      log::warn("Number of max instances {} reached", (uint16_t)num_instances_);
       return kInvalidId;
     }
     advertising_sets_[id].in_use = true;
@@ -421,7 +423,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
       case AdvertiserAddressType::NONRESOLVABLE_RANDOM:
         return le_address_manager_->NewNonResolvableAddress();
       default:
-        LOG_ALWAYS_FATAL("unreachable");
+        log::fatal("unreachable");
     }
   }
 
@@ -433,7 +435,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
       os::Handler* handler) {
     AdvertiserId id = allocate_advertiser();
     if (id == kInvalidId) {
-      LOG_WARN("Number of max instances reached");
+      log::warn("Number of max instances reached");
       start_advertising_fail(reg_id, AdvertisingCallback::AdvertisingStatus::TOO_MANY_ADVERTISERS);
       return;
     }
@@ -508,7 +510,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
         }
       } break;
       case (AdvertisingApiType::EXTENDED): {
-        LOG_WARN("Unexpected AdvertisingApiType EXTENDED");
+        log::warn("Unexpected AdvertisingApiType EXTENDED");
       } break;
     }
   }
@@ -549,7 +551,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
       os::Handler* handler) {
     AdvertiserId id = allocate_advertiser();
     if (id == kInvalidId) {
-      LOG_WARN("Number of max instances reached");
+      log::warn("Number of max instances reached");
       start_advertising_fail(reg_id, AdvertisingCallback::AdvertisingStatus::TOO_MANY_ADVERTISERS);
       return;
     }
@@ -630,8 +632,8 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
       bool leaudio_requested_nrpa = false;
       if (client_id == kAdvertiserClientIdLeAudio &&
           advertising_sets_[id].address_type == AdvertiserAddressType::NONRESOLVABLE_RANDOM) {
-        LOG_INFO(
-            "Advertiser started by le audio client with address type: %d",
+        log::info(
+            "Advertiser started by le audio client with address type: {}",
             advertising_sets_[id].address_type);
         leaudio_requested_nrpa = true;
       }
@@ -675,7 +677,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
 
   void stop_advertising(AdvertiserId advertiser_id) {
     if (advertising_sets_.find(advertiser_id) == advertising_sets_.end()) {
-      LOG_INFO("Unknown advertising set %u", advertiser_id);
+      log::info("Unknown advertising set {}", advertiser_id);
       return;
     }
     EnabledSet curr_set;
@@ -781,7 +783,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
 
   void get_own_address(AdvertiserId advertiser_id) {
     if (advertising_sets_.find(advertiser_id) == advertising_sets_.end()) {
-      LOG_INFO("Unknown advertising id %u", advertiser_id);
+      log::info("Unknown advertising id {}", advertiser_id);
       return;
     }
     auto current_address = advertising_sets_[advertiser_id].current_address;
@@ -936,8 +938,8 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     }
 
     if (data_len > le_maximum_advertising_data_length_) {
-      LOG_WARN(
-          "advertising data len %d exceeds le_maximum_advertising_data_length_ %d",
+      log::warn(
+          "advertising data len {} exceeds le_maximum_advertising_data_length_ {}",
           data_len,
           le_maximum_advertising_data_length_);
       return false;
@@ -952,7 +954,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     // check data size
     for (size_t i = 0; i < data.size(); i++) {
       if (data[i].size() > data_limit) {
-        LOG_WARN("AD data len shall not greater than %d", data_limit);
+        log::warn("AD data len shall not greater than {}", data_limit);
         return false;
       }
       data_len += data[i].size();
@@ -966,8 +968,8 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     }
 
     if (data_len > le_maximum_advertising_data_length_) {
-      LOG_WARN(
-          "advertising data len %d exceeds le_maximum_advertising_data_length_ %d",
+      log::warn(
+          "advertising data len {} exceeds le_maximum_advertising_data_length_ {}",
           data_len,
           le_maximum_advertising_data_length_);
       return false;
@@ -1050,7 +1052,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
           uint16_t data_limit =
               divide_gap_flag ? kLeMaximumGapDataLength : kLeMaximumFragmentLength;
           if (data[i].size() > data_limit) {
-            LOG_WARN("AD data len shall not greater than %d", data_limit);
+            log::warn("AD data len shall not greater than {}", data_limit);
             if (advertising_callbacks_ != nullptr) {
               if (set_scan_rsp) {
                 advertising_callbacks_->OnScanResponseDataSet(
@@ -1066,8 +1068,8 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
         }
 
         if (data_len > le_maximum_advertising_data_length_) {
-          LOG_WARN(
-              "advertising data len exceeds le_maximum_advertising_data_length_ %d",
+          log::warn(
+              "advertising data len exceeds le_maximum_advertising_data_length_ {}",
               le_maximum_advertising_data_length_);
           if (advertising_callbacks_ != nullptr) {
             if (set_scan_rsp) {
@@ -1225,7 +1227,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     Enable enable_value = enable ? Enable::ENABLED : Enable::DISABLED;
 
     if (!advertising_sets_.count(advertiser_id)) {
-      LOG_WARN("No advertising set with key: %d", advertiser_id);
+      log::warn("No advertising set with key: {}", advertiser_id);
       return;
     }
 
@@ -1307,7 +1309,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     for (size_t i = 0; i < data.size(); i++) {
       uint16_t data_limit = divide_gap_flag ? kLeMaximumGapDataLength : kLeMaximumFragmentLength;
       if (data[i].size() > data_limit) {
-        LOG_WARN("AD data len shall not greater than %d", data_limit);
+        log::warn("AD data len shall not greater than {}", data_limit);
         if (advertising_callbacks_ != nullptr) {
           advertising_callbacks_->OnPeriodicAdvertisingDataSet(
               advertiser_id, AdvertisingCallback::AdvertisingStatus::INTERNAL_ERROR);
@@ -1318,8 +1320,9 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     }
 
     if (data_len > le_maximum_advertising_data_length_) {
-      LOG_WARN(
-          "advertising data len exceeds le_maximum_advertising_data_length_ %d", le_maximum_advertising_data_length_);
+      log::warn(
+          "advertising data len exceeds le_maximum_advertising_data_length_ {}",
+          le_maximum_advertising_data_length_);
       if (advertising_callbacks_ != nullptr) {
         advertising_callbacks_->OnPeriodicAdvertisingDataSet(
             advertiser_id, AdvertisingCallback::AdvertisingStatus::DATA_TOO_LARGE);
@@ -1432,7 +1435,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
 
   void OnPause() override {
     if (!address_manager_registered) {
-      LOG_WARN("Unregistered!");
+      log::warn("Unregistered!");
       return;
     }
     paused = true;
@@ -1476,7 +1479,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
 
   void OnResume() override {
     if (!address_manager_registered) {
-      LOG_WARN("Unregistered!");
+      log::warn("Unregistered!");
       return;
     }
     paused = false;
@@ -1580,13 +1583,13 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     if (!complete_view.IsValid()) {
       auto payload = view.GetPayload();
       if (payload.size() == 1 && payload[0] == static_cast<uint8_t>(ErrorCode::UNKNOWN_HCI_COMMAND)) {
-        LOG_INFO("Unknown command, not setting tx power");
+        log::info("Unknown command, not setting tx power");
         return;
       }
     }
     ASSERT(complete_view.IsValid());
     if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
-      LOG_INFO("Got a command complete with status %s", ErrorCodeText(complete_view.GetStatus()).c_str());
+      log::info("Got a command complete with status {}", ErrorCodeText(complete_view.GetStatus()));
       return;
     }
     le_physical_channel_tx_power_ = complete_view.GetTransmitPowerLevel();
@@ -1603,7 +1606,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     ASSERT(complete_view.IsValid());
     AdvertisingCallback::AdvertisingStatus advertising_status = AdvertisingCallback::AdvertisingStatus::SUCCESS;
     if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
-      LOG_INFO("Got a command complete with status %s", ErrorCodeText(complete_view.GetStatus()).c_str());
+      log::info("Got a command complete with status {}", ErrorCodeText(complete_view.GetStatus()));
     }
 
     if (advertising_callbacks_ == nullptr) {
@@ -1647,7 +1650,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     ASSERT(complete_view.IsValid());
     AdvertisingCallback::AdvertisingStatus advertising_status = AdvertisingCallback::AdvertisingStatus::SUCCESS;
     if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
-      LOG_INFO("Got a command complete with status %s", ErrorCodeText(complete_view.GetStatus()).c_str());
+      log::info("Got a command complete with status {}", ErrorCodeText(complete_view.GetStatus()));
       advertising_status = AdvertisingCallback::AdvertisingStatus::INTERNAL_ERROR;
     }
 
@@ -1690,7 +1693,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     ASSERT(complete_view.IsValid());
     AdvertisingCallback::AdvertisingStatus advertising_status = AdvertisingCallback::AdvertisingStatus::SUCCESS;
     if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
-      LOG_INFO("Got a command complete with status %s", ErrorCodeText(complete_view.GetStatus()).c_str());
+      log::info("Got a command complete with status {}", ErrorCodeText(complete_view.GetStatus()));
       advertising_status = AdvertisingCallback::AdvertisingStatus::INTERNAL_ERROR;
     }
     advertising_sets_[id].tx_power = complete_view.GetSelectedTxPower();
@@ -1707,7 +1710,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     ASSERT(complete_view.IsValid());
     AdvertisingCallback::AdvertisingStatus advertising_status = AdvertisingCallback::AdvertisingStatus::SUCCESS;
     if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
-      LOG_INFO("Got a command complete with status %s", ErrorCodeText(complete_view.GetStatus()).c_str());
+      log::info("Got a command complete with status {}", ErrorCodeText(complete_view.GetStatus()));
       advertising_status = AdvertisingCallback::AdvertisingStatus::INTERNAL_ERROR;
     }
 
@@ -1725,10 +1728,10 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     auto complete_view = LeSetAdvertisingSetRandomAddressCompleteView::Create(view);
     ASSERT(complete_view.IsValid());
     if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
-      LOG_ERROR("Got a command complete with status %s", ErrorCodeText(complete_view.GetStatus()).c_str());
+      log::error("Got a command complete with status {}", ErrorCodeText(complete_view.GetStatus()));
     } else {
-      LOG_INFO(
-          "update random address for advertising set %d : %s",
+      log::info(
+          "update random address for advertising set {} : {}",
           advertiser_id,
           ADDRESS_TO_LOGGABLE_CSTR(address_with_type.GetAddress()));
       advertising_sets_[advertiser_id].current_address = address_with_type;
@@ -1741,14 +1744,14 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     auto status_view = View::Create(view);
     ASSERT(status_view.IsValid());
     if (status_view.GetStatus() != ErrorCode::SUCCESS) {
-      LOG_INFO(
-          "Got a Command complete %s, status %s",
-          OpCodeText(view.GetCommandOpCode()).c_str(),
-          ErrorCodeText(status_view.GetStatus()).c_str());
+      log::info(
+          "Got a Command complete {}, status {}",
+          OpCodeText(view.GetCommandOpCode()),
+          ErrorCodeText(status_view.GetStatus()));
     }
     AdvertisingCallback::AdvertisingStatus advertising_status = AdvertisingCallback::AdvertisingStatus::SUCCESS;
     if (status_view.GetStatus() != ErrorCode::SUCCESS) {
-      LOG_INFO("Got a command complete with status %s", ErrorCodeText(status_view.GetStatus()).c_str());
+      log::info("Got a command complete with status {}", ErrorCodeText(status_view.GetStatus()));
       advertising_status = AdvertisingCallback::AdvertisingStatus::INTERNAL_ERROR;
     }
 
@@ -1801,11 +1804,11 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
             advertising_callbacks_->OnScanResponseDataSet(id, advertising_status);
             break;
           default:
-            LOG_WARN("Unexpected sub event type %s", SubOcfText(command_view.GetSubCmd()).c_str());
+            log::warn("Unexpected sub event type {}", SubOcfText(command_view.GetSubCmd()));
         }
       } break;
       default:
-        LOG_WARN("Unexpected event type %s", OpCodeText(view.GetCommandOpCode()).c_str());
+        log::warn("Unexpected event type {}", OpCodeText(view.GetCommandOpCode()));
     }
   }
 
@@ -1869,7 +1872,7 @@ void LeAdvertisingManager::ExtendedCreateAdvertiser(
     if (config.peer_address == Address::kEmpty) {
       if (config.advertising_type == hci::AdvertisingType::ADV_DIRECT_IND_HIGH ||
           config.advertising_type == hci::AdvertisingType::ADV_DIRECT_IND_LOW) {
-        LOG_WARN("Peer address can not be empty for directed advertising");
+        log::warn("Peer address can not be empty for directed advertising");
         CallOn(
             pimpl_.get(),
             &impl::start_advertising_fail,
@@ -1892,33 +1895,34 @@ void LeAdvertisingManager::ExtendedCreateAdvertiser(
 
   if (config.directed) {
     if (config.peer_address == Address::kEmpty) {
-      LOG_INFO("Peer address can not be empty for directed advertising");
+      log::info("Peer address can not be empty for directed advertising");
       CallOn(
           pimpl_.get(), &impl::start_advertising_fail, reg_id, AdvertisingCallback::AdvertisingStatus::INTERNAL_ERROR);
       return;
     }
   }
   if (config.channel_map == 0) {
-    LOG_INFO("At least one channel must be set in the map");
+    log::info("At least one channel must be set in the map");
     CallOn(pimpl_.get(), &impl::start_advertising_fail, reg_id, AdvertisingCallback::AdvertisingStatus::INTERNAL_ERROR);
     return;
   }
   if (!config.legacy_pdus) {
     if (config.connectable && config.scannable) {
-      LOG_INFO("Extended advertising PDUs can not be connectable and scannable");
+      log::info("Extended advertising PDUs can not be connectable and scannable");
       CallOn(
           pimpl_.get(), &impl::start_advertising_fail, reg_id, AdvertisingCallback::AdvertisingStatus::INTERNAL_ERROR);
       return;
     }
     if (config.high_duty_directed_connectable) {
-      LOG_INFO("Extended advertising PDUs can not be high duty cycle");
+      log::info("Extended advertising PDUs can not be high duty cycle");
       CallOn(
           pimpl_.get(), &impl::start_advertising_fail, reg_id, AdvertisingCallback::AdvertisingStatus::INTERNAL_ERROR);
       return;
     }
   }
   if (config.interval_min > config.interval_max) {
-    LOG_INFO("Advertising interval: min (%hu) > max (%hu)", config.interval_min, config.interval_max);
+    log::info(
+        "Advertising interval: min ({}) > max ({})", config.interval_min, config.interval_max);
     CallOn(pimpl_.get(), &impl::start_advertising_fail, reg_id, AdvertisingCallback::AdvertisingStatus::INTERNAL_ERROR);
     return;
   }

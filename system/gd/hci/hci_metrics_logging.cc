@@ -15,6 +15,7 @@
  */
 #include "hci/hci_metrics_logging.h"
 
+#include <bluetooth/log.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/hci/enums.pb.h>
 
 #include "common/audit_log.h"
@@ -601,7 +602,8 @@ void log_link_layer_connection_event_le_meta(LeMetaEventView le_meta_event_view)
     connection_handle = le_enhanced_connection_complete_view.GetConnectionHandle();
     status = le_enhanced_connection_complete_view.GetStatus();
   } else {
-    LOG_ALWAYS_FATAL("WTF");
+    log::fatal("WTF");
+    return;
   }
 
   os::LogMetricLinkLayerConnectionEvent(
@@ -683,7 +685,7 @@ void log_classic_pairing_other_hci_event(EventView packet) {
     case EventCode::REMOTE_OOB_DATA_REQUEST: {
       RemoteOobDataRequestView remote_oob_data_request_view = RemoteOobDataRequestView::Create(std::move(packet));
       if (!remote_oob_data_request_view.IsValid()) {
-        LOG_WARN("remote_oob_data_request_view not valid");
+        log::warn("remote_oob_data_request_view not valid");
         return;
       }
       address = remote_oob_data_request_view.GetBdAddr();
@@ -699,7 +701,7 @@ void log_classic_pairing_other_hci_event(EventView packet) {
     case EventCode::REMOTE_NAME_REQUEST_COMPLETE: {
       RemoteNameRequestCompleteView remote_name_request_complete_view = RemoteNameRequestCompleteView::Create(std::move(packet));
       if (!remote_name_request_complete_view.IsValid()) {
-        LOG_WARN("remote_name_request_complete_view not valid");
+        log::warn("remote_name_request_complete_view not valid");
         return;
       }
       address = remote_name_request_complete_view.GetBdAddr();
@@ -860,7 +862,7 @@ void log_classic_pairing_command_status(std::unique_ptr<CommandView>& command_vi
       RemoteOobDataRequestReplyView remote_oob_data_request_reply_view
       = RemoteOobDataRequestReplyView::Create(std::move(security_command_view));
       if (!remote_oob_data_request_reply_view.IsValid()) {
-        LOG_WARN("remote_oob_data_request_reply_view is not valid.");
+        log::warn("remote_oob_data_request_reply_view is not valid.");
         return;
       }
       address = remote_oob_data_request_reply_view.GetBdAddr();
@@ -870,7 +872,7 @@ void log_classic_pairing_command_status(std::unique_ptr<CommandView>& command_vi
       RemoteOobDataRequestNegativeReplyView remote_oob_data_request_negative_reply_view
       = RemoteOobDataRequestNegativeReplyView::Create(std::move(security_command_view));
       if (!remote_oob_data_request_negative_reply_view.IsValid()) {
-        LOG_WARN("remote_oob_data_request_negative_reply_view is not valid.");
+        log::warn("remote_oob_data_request_negative_reply_view is not valid.");
         return;
       }
       address = remote_oob_data_request_negative_reply_view.GetBdAddr();
@@ -1023,13 +1025,13 @@ void log_classic_pairing_command_complete(EventView event_view, std::unique_ptr<
     case OpCode::REMOTE_OOB_DATA_REQUEST_REPLY: {
       auto remote_oob_data_request_reply_complete_view = RemoteOobDataRequestReplyCompleteView::Create(std::move(command_complete_view));
       if (!remote_oob_data_request_reply_complete_view.IsValid()) {
-        LOG_WARN("remote_oob_data_request_reply_complete_view is not valid.");
+        log::warn("remote_oob_data_request_reply_complete_view is not valid.");
         return;
       }
       status = remote_oob_data_request_reply_complete_view.GetStatus();
       auto remote_oob_data_request_reply_view = RemoteOobDataRequestReplyView::Create(std::move(security_command_view));
       if (!remote_oob_data_request_reply_view.IsValid()) {
-        LOG_WARN("remote_oob_data_request_reply_view is not valid.");
+        log::warn("remote_oob_data_request_reply_view is not valid.");
         return;
       }
       address = remote_oob_data_request_reply_view.GetBdAddr();
@@ -1038,13 +1040,13 @@ void log_classic_pairing_command_complete(EventView event_view, std::unique_ptr<
     case OpCode::REMOTE_OOB_DATA_REQUEST_NEGATIVE_REPLY: {
       auto remote_oob_data_request_negative_reply_complete_view = RemoteOobDataRequestNegativeReplyCompleteView::Create(std::move(command_complete_view));
       if (!remote_oob_data_request_negative_reply_complete_view.IsValid()) {
-        LOG_WARN("remote_oob_data_request_negative_reply_complete_view is not valid.");
+        log::warn("remote_oob_data_request_negative_reply_complete_view is not valid.");
         return;
       }
       status = remote_oob_data_request_negative_reply_complete_view.GetStatus();
       auto remote_oob_data_request_negative_reply_view = RemoteOobDataRequestNegativeReplyView::Create(std::move(security_command_view));
       if (!remote_oob_data_request_negative_reply_view.IsValid()) {
-        LOG_WARN("remote_oob_data_request_negative_reply_view is not valid.");
+        log::warn("remote_oob_data_request_negative_reply_view is not valid.");
         return;
       }
       address = remote_oob_data_request_negative_reply_view.GetBdAddr();

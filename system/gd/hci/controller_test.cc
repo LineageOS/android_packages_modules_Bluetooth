@@ -17,6 +17,7 @@
 #include "hci/controller.h"
 
 #include <android_bluetooth_flags.h>
+#include <bluetooth/log.h>
 #include <gtest/gtest.h>
 #include <unistd.h>
 
@@ -246,7 +247,7 @@ class HciLayerFakeForController : public HciLayerFake {
         return;
 
       default:
-        LOG_INFO("Dropping unhandled packet (%s)", OpCodeText(command.GetOpCode()).c_str());
+        log::info("Dropping unhandled packet ({})", OpCodeText(command.GetOpCode()));
         return;
     }
     auto packet = GetPacketView(std::move(event_builder));

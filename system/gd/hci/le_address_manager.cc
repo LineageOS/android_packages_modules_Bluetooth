@@ -17,6 +17,7 @@
 #include "hci/le_address_manager.h"
 
 #include <android_bluetooth_flags.h>
+#include <bluetooth/log.h>
 
 #include "common/init_flags.h"
 #include "hci/octets.h"
@@ -59,7 +60,7 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddress(
   if (address_policy_ != AddressPolicy::POLICY_NOT_SET) {
     // Need to update some parameteres like IRK if privacy is supported
     if (supports_ble_privacy) {
-      LOG_INFO("Updating rotation parameters.");
+      log::info("Updating rotation parameters.");
       handler_->CallOn(
           this,
           &LeAddressManager::prepare_to_update_irk,
@@ -72,7 +73,7 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddress(
   ASSERT_LOG(registered_clients_.empty(), "Policy must be set before clients are registered.");
   address_policy_ = address_policy;
   supports_ble_privacy_ = supports_ble_privacy;
-  LOG_INFO("SetPrivacyPolicyForInitiatorAddress with policy %d", address_policy);
+  log::info("SetPrivacyPolicyForInitiatorAddress with policy {}", address_policy);
 
   if (IS_FLAG_ENABLED(nrpa_non_connectable_adv)) {
     minimum_rotation_time_ = minimum_rotation_time;
@@ -94,7 +95,7 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddress(
            address[5] == BLE_ADDR_MASK) ||
           (address[0] == 0xFF && address[1] == 0xFF && address[2] == 0xFF && address[3] == 0xFF && address[4] == 0xFF &&
            address[5] == 0xFF)) {
-        LOG_ALWAYS_FATAL("Bits of the random part of the address shall not be all 1 or all 0");
+        log::fatal("Bits of the random part of the address shall not be all 1 or all 0");
       }
       le_address_ = fixed_address;
       auto packet = hci::LeSetRandomAddressBuilder::Create(le_address_.GetAddress());
@@ -112,7 +113,7 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddress(
       set_random_address();
       break;
     case AddressPolicy::POLICY_NOT_SET:
-      LOG_ALWAYS_FATAL("invalid parameters");
+      log::fatal("invalid parameters");
   }
 }
 
@@ -141,7 +142,7 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddressForTest(
            address[5] == BLE_ADDR_MASK) ||
           (address[0] == 0xFF && address[1] == 0xFF && address[2] == 0xFF && address[3] == 0xFF && address[4] == 0xFF &&
            address[5] == 0xFF)) {
-        LOG_ALWAYS_FATAL("Bits of the random part of the address shall not be all 1 or all 0");
+        log::fatal("Bits of the random part of the address shall not be all 1 or all 0");
       }
       le_address_ = fixed_address;
       auto packet = hci::LeSetRandomAddressBuilder::Create(le_address_.GetAddress());
@@ -156,7 +157,7 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddressForTest(
       set_random_address();
       break;
     case AddressPolicy::POLICY_NOT_SET:
-      LOG_ALWAYS_FATAL("invalid parameters");
+      log::fatal("invalid parameters");
   }
 }
 LeAddressManager::AddressPolicy LeAddressManager::GetAddressPolicy() {
@@ -174,7 +175,7 @@ LeAddressManager::AddressPolicy LeAddressManager::Register(LeAddressManagerCallb
 void LeAddressManager::register_client(LeAddressManagerCallback* callback) {
   registered_clients_.insert(std::pair<LeAddressManagerCallback*, ClientState>(callback, ClientState::RESUMED));
   if (address_policy_ == AddressPolicy::POLICY_NOT_SET) {
-    LOG_INFO("address policy isn't set yet, pause clients and return");
+    log::info("address policy isn't set yet, pause clients and return");
     pause_registered_clients();
     return;
   } else if (
@@ -182,10 +183,10 @@ void LeAddressManager::register_client(LeAddressManagerCallback* callback) {
       address_policy_ == AddressPolicy::USE_NON_RESOLVABLE_ADDRESS) {
       if (registered_clients_.size() == 1) {
         schedule_rotate_random_address();
-        LOG_INFO("Scheduled address rotation for first client registered");
+        log::info("Scheduled address rotation for first client registered");
       }
   }
-  LOG_INFO("Client registered");
+  log::info("Client registered");
 }
 
 void LeAddressManager::Unregister(LeAddressManagerCallback* callback) {
@@ -200,11 +201,11 @@ void LeAddressManager::unregister_client(LeAddressManagerCallback* callback) {
       ack_resume(callback);
     }
     registered_clients_.erase(callback);
-    LOG_INFO("Client unregistered");
+    log::info("Client unregistered");
   }
   if (registered_clients_.empty() && address_rotation_alarm_ != nullptr) {
     address_rotation_alarm_->Cancel();
-    LOG_INFO("Cancelled address rotation alarm");
+    log::info("Cancelled address rotation alarm");
   }
 }
 
@@ -267,27 +268,27 @@ void LeAddressManager::push_command(Command command) {
 
 void LeAddressManager::ack_pause(LeAddressManagerCallback* callback) {
   if (registered_clients_.find(callback) == registered_clients_.end()) {
-    LOG_INFO("No clients registered to ack pause");
+    log::info("No clients registered to ack pause");
     return;
   }
   registered_clients_.find(callback)->second = ClientState::PAUSED;
   for (auto client : registered_clients_) {
     switch (client.second) {
       case ClientState::PAUSED:
-        LOG_INFO("Client already in paused state");
+        log::info("Client already in paused state");
         break;
       case ClientState::WAITING_FOR_PAUSE:
         // make sure all client paused
-        LOG_DEBUG("Wait all clients paused, return");
+        log::debug("Wait all clients paused, return");
         return;
       case WAITING_FOR_RESUME:
       case RESUMED:
-        LOG_DEBUG("Trigger OnPause for client that not paused and not waiting for pause");
+        log::debug("Trigger OnPause for client that not paused and not waiting for pause");
         client.second = ClientState::WAITING_FOR_PAUSE;
         client.first->OnPause();
         return;
       default:
-        LOG_ERROR("Found client in unexpected state:%u", client.second);
+        log::error("Found client in unexpected state:{}", client.second);
     }
   }
 
@@ -303,7 +304,7 @@ void LeAddressManager::resume_registered_clients() {
     return;
   }
 
-  LOG_INFO("Resuming registered clients");
+  log::info("Resuming registered clients");
   for (auto& client : registered_clients_) {
     client.second = ClientState::WAITING_FOR_RESUME;
     client.first->OnResume();
@@ -331,7 +332,7 @@ void LeAddressManager::schedule_rotate_random_address() {
 void LeAddressManager::set_random_address() {
   if (address_policy_ != AddressPolicy::USE_RESOLVABLE_ADDRESS &&
       address_policy_ != AddressPolicy::USE_NON_RESOLVABLE_ADDRESS) {
-    LOG_ALWAYS_FATAL("Invalid address policy!");
+    log::fatal("Invalid address policy!");
     return;
   }
 
@@ -349,7 +350,7 @@ void LeAddressManager::set_random_address() {
 void LeAddressManager::rotate_random_address() {
   if (address_policy_ != AddressPolicy::USE_RESOLVABLE_ADDRESS &&
       address_policy_ != AddressPolicy::USE_NON_RESOLVABLE_ADDRESS) {
-    LOG_ALWAYS_FATAL("Invalid address policy!");
+    log::fatal("Invalid address policy!");
     return;
   }
 
@@ -453,7 +454,7 @@ void LeAddressManager::handle_next_command() {
   for (auto client : registered_clients_) {
     if (client.second != ClientState::PAUSED) {
       // make sure all client paused, if not, this function will be trigger again by ack_pause
-      LOG_INFO("waiting for ack_pause, return");
+      log::info("waiting for ack_pause, return");
       return;
     }
   }
@@ -592,45 +593,47 @@ void LeAddressManager::on_command_complete(CommandCompleteView view) {
 
   auto complete_view = View::Create(view);
   if (!complete_view.IsValid()) {
-    LOG_ERROR("Received %s complete with invalid packet", hci::OpCodeText(op_code).c_str());
+    log::error("Received {} complete with invalid packet", hci::OpCodeText(op_code));
     return;
   }
   auto status = complete_view.GetStatus();
   if (status != ErrorCode::SUCCESS) {
-    LOG_ERROR(
-        "Received %s complete with status %s",
-        hci::OpCodeText(op_code).c_str(),
-        ErrorCodeText(complete_view.GetStatus()).c_str());
+    log::error(
+        "Received {} complete with status {}",
+        hci::OpCodeText(op_code),
+        ErrorCodeText(complete_view.GetStatus()));
   }
 }
 
 void LeAddressManager::OnCommandComplete(bluetooth::hci::CommandCompleteView view) {
   if (!view.IsValid()) {
-    LOG_ERROR("Received command complete with invalid packet");
+    log::error("Received command complete with invalid packet");
     return;
   }
   auto op_code = view.GetCommandOpCode();
-  LOG_INFO("Received command complete with op_code %s", OpCodeText(op_code).c_str());
+  log::info("Received command complete with op_code {}", OpCodeText(op_code));
 
   switch (op_code) {
     case OpCode::LE_SET_RANDOM_ADDRESS: {
       // The command was sent before any client registered, we can make sure all the clients paused when command
       // complete.
       if (address_policy_ == AddressPolicy::USE_STATIC_ADDRESS) {
-        LOG_INFO("Received LE_SET_RANDOM_ADDRESS complete and Address policy is USE_STATIC_ADDRESS, return");
+        log::info(
+            "Received LE_SET_RANDOM_ADDRESS complete and Address policy is USE_STATIC_ADDRESS, "
+            "return");
         return;
       }
       auto complete_view = LeSetRandomAddressCompleteView::Create(view);
       if (!complete_view.IsValid()) {
-        LOG_ERROR("Received LE_SET_RANDOM_ADDRESS complete with invalid packet");
+        log::error("Received LE_SET_RANDOM_ADDRESS complete with invalid packet");
       } else {
         if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
-          LOG_ERROR(
-              "Received LE_SET_RANDOM_ADDRESS complete with status %s",
-              ErrorCodeText(complete_view.GetStatus()).c_str());
+          log::error(
+              "Received LE_SET_RANDOM_ADDRESS complete with status {}",
+              ErrorCodeText(complete_view.GetStatus()));
         } else {
-          LOG_INFO("update random address : %s",
-                   ADDRESS_TO_LOGGABLE_CSTR(cached_address_.GetAddress()));
+          log::info(
+              "update random address : {}", ADDRESS_TO_LOGGABLE_CSTR(cached_address_.GetAddress()));
           le_address_ = cached_address_;
         }
       }
@@ -669,7 +672,7 @@ void LeAddressManager::OnCommandComplete(bluetooth::hci::CommandCompleteView vie
       break;
 
     default:
-      LOG_ERROR("Received UNSUPPORTED command %s complete", hci::OpCodeText(op_code).c_str());
+      log::error("Received UNSUPPORTED command {} complete", hci::OpCodeText(op_code));
       break;
   }
 

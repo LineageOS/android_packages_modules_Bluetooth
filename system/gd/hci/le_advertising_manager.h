@@ -15,6 +15,8 @@
  */
 #pragma once
 
+#include <bluetooth/log.h>
+
 #include <memory>
 #include <vector>
 
@@ -178,3 +180,9 @@ class LeAdvertisingManager : public bluetooth::Module {
 
 }  // namespace hci
 }  // namespace bluetooth
+
+namespace fmt {
+template <>
+struct formatter<bluetooth::hci::AdvertiserAddressType>
+    : enum_formatter<bluetooth::hci::AdvertiserAddressType> {};
+}  // namespace fmt

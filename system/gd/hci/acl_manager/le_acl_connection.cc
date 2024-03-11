@@ -16,6 +16,8 @@
 
 #include "hci/acl_manager/le_acl_connection.h"
 
+#include <bluetooth/log.h>
+
 #include "hci/acl_manager/le_connection_management_callbacks.h"
 #include "os/metrics.h"
 
@@ -141,7 +143,7 @@ AddressWithType LeAclConnection::GetLocalAddress() const {
         if constexpr (std::is_same_v<T, DataAsUninitializedPeripheral>) {
           // This case should never happen outside of acl_manager.cc, since once the connection is
           // passed into the OnConnectSuccess callback, it should be fully initialized.
-          LOG_ALWAYS_FATAL("Attempted to read the local address of an uninitialized connection");
+          log::fatal("Attempted to read the local address of an uninitialized connection");
           return AddressWithType{};
         } else {
           return data.local_address;
@@ -185,7 +187,7 @@ void LeAclConnection::Disconnect(DisconnectReason reason) {
         ASSERT(disconnect_status.IsValid());
         auto error_code = disconnect_status.GetStatus();
         if (error_code != ErrorCode::SUCCESS) {
-          LOG_INFO("Disconnect status %s", ErrorCodeText(error_code).c_str());
+          log::info("Disconnect status {}", ErrorCodeText(error_code));
         }
       }));
 }
@@ -195,7 +197,7 @@ void LeAclConnection::OnLeSubrateRequestStatus(CommandStatusView status) {
   ASSERT(subrate_request_status.IsValid());
   auto hci_status = subrate_request_status.GetStatus();
   if (hci_status != ErrorCode::SUCCESS) {
-    LOG_INFO("LeSubrateRequest status %s", ErrorCodeText(hci_status).c_str());
+    log::info("LeSubrateRequest status {}", ErrorCodeText(hci_status));
     pimpl_->tracker.OnLeSubrateChange(hci_status, 0, 0, 0, 0);
   }
 }
@@ -220,7 +222,7 @@ bool LeAclConnection::LeConnectionUpdate(
     uint16_t min_ce_length,
     uint16_t max_ce_length) {
   if (!check_connection_parameters(conn_interval_min, conn_interval_max, conn_latency, supervision_timeout)) {
-    LOG_ERROR("Invalid parameter");
+    log::error("Invalid parameter");
     return false;
   }
   pimpl_->tracker.le_acl_connection_interface_->EnqueueCommand(
@@ -264,7 +266,7 @@ bool LeAclConnection::check_connection_parameters(
   if (conn_interval_min < 0x0006 || conn_interval_min > 0x0C80 || conn_interval_max < 0x0006 ||
       conn_interval_max > 0x0C80 || conn_latency > 0x01F3 || supervision_timeout < 0x000A ||
       supervision_timeout > 0x0C80) {
-    LOG_ERROR("Invalid parameter");
+    log::error("Invalid parameter");
     return false;
   }
   // The Maximum interval in milliseconds will be conn_interval_max * 1.25 ms
@@ -273,7 +275,7 @@ bool LeAclConnection::check_connection_parameters(
   // milliseconds.
   uint32_t supervision_timeout_min = (uint32_t)(1 + conn_latency) * conn_interval_max * 2 + 1;
   if (supervision_timeout * 8 < supervision_timeout_min || conn_interval_max < conn_interval_min) {
-    LOG_ERROR("Invalid parameter");
+    log::error("Invalid parameter");
     return false;
   }
 
