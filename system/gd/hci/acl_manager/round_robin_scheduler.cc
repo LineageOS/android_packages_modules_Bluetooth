@@ -15,8 +15,10 @@
  */
 
 #include "hci/acl_manager/round_robin_scheduler.h"
-#include "hci/acl_manager/acl_fragmenter.h"
 
+#include <bluetooth/log.h>
+
+#include "hci/acl_manager/acl_fragmenter.h"
 namespace bluetooth {
 namespace hci {
 namespace acl_manager {
@@ -71,7 +73,7 @@ void RoundRobinScheduler::Unregister(uint16_t handle) {
 void RoundRobinScheduler::SetLinkPriority(uint16_t handle, bool high_priority) {
   auto acl_queue_handler = acl_queue_handlers_.find(handle);
   if (acl_queue_handler == acl_queue_handlers_.end()) {
-    LOG_WARN("handle %d is invalid", handle);
+    log::warn("handle {} is invalid", handle);
     return;
   }
   acl_queue_handler->second.high_priority_ = high_priority;
@@ -94,14 +96,14 @@ void RoundRobinScheduler::start_round_robin() {
     bool classic_buffer_full = acl_packet_credits_ == 0 && connection_type == ConnectionType::CLASSIC;
     bool le_buffer_full = le_acl_packet_credits_ == 0 && connection_type == ConnectionType::LE;
     if (classic_buffer_full || le_buffer_full) {
-      LOG_WARN("Buffer of connection_type %d is full", connection_type);
+      log::warn("Buffer of connection_type {} is full", connection_type);
       return;
     }
     send_next_fragment();
     return;
   }
   if (acl_queue_handlers_.empty()) {
-    LOG_INFO("No any acl connection");
+    log::info("No any acl connection");
     return;
   }
 
@@ -135,7 +137,7 @@ void RoundRobinScheduler::buffer_packet(uint16_t acl_handle) {
   BroadcastFlag broadcast_flag = BroadcastFlag::POINT_TO_POINT;
   auto acl_queue_handler = acl_queue_handlers_.find(acl_handle);
   if( acl_queue_handler == acl_queue_handlers_.end()) {
-    LOG_ERROR("Ignore since ACL connection vanished with handle: 0x%X", acl_handle);
+    log::error("Ignore since ACL connection vanished with handle: 0x{:X}", acl_handle);
     return;
   }
 
@@ -229,7 +231,7 @@ void RoundRobinScheduler::incoming_acl_credits(uint16_t handle, uint16_t credits
   if (acl_queue_handler->second.number_of_sent_packets_ >= credits) {
     acl_queue_handler->second.number_of_sent_packets_ -= credits;
   } else {
-    LOG_WARN("receive more credits than we sent");
+    log::warn("receive more credits than we sent");
     acl_queue_handler->second.number_of_sent_packets_ = 0;
   }
 
@@ -241,7 +243,7 @@ void RoundRobinScheduler::incoming_acl_credits(uint16_t handle, uint16_t credits
     acl_packet_credits_ += credits;
     if (acl_packet_credits_ > max_acl_packet_credits_) {
       acl_packet_credits_ = max_acl_packet_credits_;
-      LOG_WARN("acl packet credits overflow due to receive %hx credits", credits);
+      log::warn("acl packet credits overflow due to receive {} credits", credits);
     }
   } else {
     if (le_acl_packet_credits_ == 0) {
@@ -250,7 +252,7 @@ void RoundRobinScheduler::incoming_acl_credits(uint16_t handle, uint16_t credits
     le_acl_packet_credits_ += credits;
     if (le_acl_packet_credits_ > le_max_acl_packet_credits_) {
       le_acl_packet_credits_ = le_max_acl_packet_credits_;
-      LOG_WARN("le acl packet credits overflow due to receive %hx credits", credits);
+      log::warn("le acl packet credits overflow due to receive {} credits", credits);
     }
   }
   if (credit_was_zero) {

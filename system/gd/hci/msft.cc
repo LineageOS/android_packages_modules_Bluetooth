@@ -15,6 +15,7 @@
  */
 #include "hci/msft.h"
 
+#include <bluetooth/log.h>
 #include <hardware/bt_common_types.h>
 
 #include "hal/hci_hal.h"
@@ -48,7 +49,7 @@ struct MsftExtensionManager::impl {
       hal::HciHal* hal,
       hci::HciLayer* hci_layer,
       hci::VendorSpecificEventManager* vendor_specific_event_manager) {
-    LOG_INFO("MsftExtensionManager start()");
+    log::info("MsftExtensionManager start()");
     module_handler_ = handler;
     hal_ = hal;
     hci_layer_ = hci_layer;
@@ -60,7 +61,7 @@ struct MsftExtensionManager::impl {
      * we can issue MSFT vendor specific commands.
      */
     if (!supports_msft_extensions()) {
-      LOG_INFO("MSFT extension is not supported.");
+      log::info("MSFT extension is not supported.");
       return;
     }
 
@@ -75,11 +76,11 @@ struct MsftExtensionManager::impl {
   }
 
   void stop() {
-    LOG_INFO("MsftExtensionManager stop()");
+    log::info("MsftExtensionManager stop()");
   }
 
   void handle_rssi_event(MsftRssiEventPayloadView /* view */) {
-    LOG_WARN("The Microsoft MSFT_RSSI_EVENT is not supported yet.");
+    log::warn("The Microsoft MSFT_RSSI_EVENT is not supported yet.");
   }
 
   void handle_le_monitor_device_event(MsftLeMonitorDeviceEventPayloadView view) {
@@ -94,7 +95,7 @@ struct MsftExtensionManager::impl {
       on_found_on_lost_info.monitor_handle = view.GetMonitorHandle();
       scanning_callbacks_->OnTrackAdvFoundLost(on_found_on_lost_info);
     } else {
-      LOG_WARN("The Microsoft vendor event monitor state is invalid.");
+      log::warn("The Microsoft vendor event monitor state is invalid.");
       return;
     }
   }
@@ -103,7 +104,7 @@ struct MsftExtensionManager::impl {
     auto payload = view.GetPayload();
     for (size_t i = 0; i < msft_.prefix.size() - 1; i++) {
       if (msft_.prefix[i + 1] != payload[i]) {
-        LOG_WARN("The Microsoft vendor event prefix does not match.");
+        log::warn("The Microsoft vendor event prefix does not match.");
         return;
       }
     }
@@ -121,7 +122,7 @@ struct MsftExtensionManager::impl {
         handle_le_monitor_device_event(MsftLeMonitorDeviceEventPayloadView::Create(msft_view));
         break;
       default:
-        LOG_WARN("Unknown MSFT event code %hhu", ev_code);
+        log::warn("Unknown MSFT event code {}", ev_code);
         break;
     }
   }
@@ -133,13 +134,13 @@ struct MsftExtensionManager::impl {
     if (opcode == 0) return false;
 
     msft_.opcode = opcode;
-    LOG_INFO("MSFT opcode 0x%4.4x", msft_.opcode.value());
+    log::info("MSFT opcode 0x{:04x}", msft_.opcode.value());
     return true;
   }
 
   void msft_adv_monitor_add(const MsftAdvMonitor& monitor, MsftAdvMonitorAddCallback cb) {
     if (!supports_msft_extensions()) {
-      LOG_WARN("Disallowed as MSFT extension is not supported.");
+      log::warn("Disallowed as MSFT extension is not supported.");
       return;
     }
 
@@ -150,7 +151,7 @@ struct MsftExtensionManager::impl {
     // (255 - 1 (packet type) - 2 (OGF/OCF) - 1 (length) - 7 (MSFT command parameters)) /
     // 4 (min size of a pattern) = 61
     if (monitor.patterns.size() > 61) {
-      LOG_ERROR("Number of MSFT patterns %zu is too large", monitor.patterns.size());
+      log::error("Number of MSFT patterns {} is too large", monitor.patterns.size());
       return;
     }
     for (auto& p : monitor.patterns) {
@@ -174,7 +175,7 @@ struct MsftExtensionManager::impl {
 
   void msft_adv_monitor_remove(uint8_t monitor_handle, MsftAdvMonitorRemoveCallback cb) {
     if (!supports_msft_extensions()) {
-      LOG_WARN("Disallowed as MSFT extension is not supported.");
+      log::warn("Disallowed as MSFT extension is not supported.");
       return;
     }
 
@@ -187,7 +188,7 @@ struct MsftExtensionManager::impl {
 
   void msft_adv_monitor_enable(bool enable, MsftAdvMonitorEnableCallback cb) {
     if (!supports_msft_extensions()) {
-      LOG_WARN("Disallowed as MSFT extension is not supported.");
+      log::warn("Disallowed as MSFT extension is not supported.");
       return;
     }
 
@@ -211,13 +212,13 @@ struct MsftExtensionManager::impl {
     ASSERT(status_view.IsValid());
 
     if (status_view.GetStatus() != ErrorCode::SUCCESS) {
-      LOG_WARN("MSFT Command complete status %s", ErrorCodeText(status_view.GetStatus()).c_str());
+      log::warn("MSFT Command complete status {}", ErrorCodeText(status_view.GetStatus()));
       return;
     }
 
     MsftSubcommandOpcode sub_opcode = status_view.GetSubcommandOpcode();
     if (sub_opcode != MsftSubcommandOpcode::MSFT_READ_SUPPORTED_FEATURES) {
-      LOG_WARN("Wrong MSFT subcommand opcode %hhu returned", sub_opcode);
+      log::warn("Wrong MSFT subcommand opcode {} returned", sub_opcode);
       return;
     }
 
@@ -228,10 +229,9 @@ struct MsftExtensionManager::impl {
     msft_.prefix.assign(prefix.begin(), prefix.end());
 
     if (prefix.size() > kMsftEventPrefixLengthMax)
-      LOG_WARN("The MSFT prefix length %u is too large", (unsigned int)prefix.size());
+      log::warn("The MSFT prefix length {} is too large", (unsigned int)prefix.size());
 
-    LOG_INFO(
-        "MSFT features 0x%16.16llx prefix length %u", (unsigned long long)msft_.features, (unsigned int)prefix.size());
+    log::info("MSFT features 0x{:016x} prefix length {}", msft_.features, prefix.size());
 
     // We are here because Microsoft Extension is supported. Hence, register the
     // first octet of the vendor prefix so that the vendor specific event manager
@@ -252,7 +252,7 @@ struct MsftExtensionManager::impl {
 
     MsftSubcommandOpcode sub_opcode = status_view.GetSubcommandOpcode();
     if (sub_opcode != MsftSubcommandOpcode::MSFT_LE_MONITOR_ADV) {
-      LOG_WARN("Wrong MSFT subcommand opcode %hhu returned", sub_opcode);
+      log::warn("Wrong MSFT subcommand opcode {} returned", sub_opcode);
       return;
     }
 
@@ -267,7 +267,7 @@ struct MsftExtensionManager::impl {
 
     MsftSubcommandOpcode sub_opcode = status_view.GetSubcommandOpcode();
     if (sub_opcode != MsftSubcommandOpcode::MSFT_LE_CANCEL_MONITOR_ADV) {
-      LOG_WARN("Wrong MSFT subcommand opcode %hhu returned", sub_opcode);
+      log::warn("Wrong MSFT subcommand opcode {} returned", sub_opcode);
       return;
     }
 
@@ -282,7 +282,7 @@ struct MsftExtensionManager::impl {
 
     MsftSubcommandOpcode sub_opcode = status_view.GetSubcommandOpcode();
     if (sub_opcode != MsftSubcommandOpcode::MSFT_LE_SET_ADV_FILTER_ENABLE) {
-      LOG_WARN("Wrong MSFT subcommand opcode %hhu returned", sub_opcode);
+      log::warn("Wrong MSFT subcommand opcode {} returned", sub_opcode);
       return;
     }
 
@@ -302,7 +302,7 @@ struct MsftExtensionManager::impl {
 };
 
 MsftExtensionManager::MsftExtensionManager() {
-  LOG_INFO("MsftExtensionManager()");
+  log::info("MsftExtensionManager()");
   pimpl_ = std::make_unique<impl>(this);
 }
 

@@ -16,6 +16,7 @@
 
 #include "hci/acl_manager.h"
 
+#include <bluetooth/log.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -387,7 +388,7 @@ class AclManagerWithLeConnectionTest : public AclManagerTest {
         });
 
     if (send_early_acl_) {
-      LOG_INFO("Sending a packet with handle 0x%02x (0x%d)", handle_, handle_);
+      log::info("Sending a packet with handle 0x{:02x} ({})", handle_, handle_);
       test_hci_layer_->IncomingAclData(handle_);
     }
 

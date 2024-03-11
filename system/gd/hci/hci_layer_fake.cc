@@ -16,6 +16,7 @@
 
 #include "hci/hci_layer_fake.h"
 
+#include <bluetooth/log.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -89,7 +90,7 @@ CommandView HciLayerFake::GetCommand() {
   std::lock_guard<std::mutex> lock(mutex_);
 
   if (command_queue_.empty()) {
-    LOG_ERROR("Command queue is empty");
+    log::error("Command queue is empty");
     return empty_command_view_;
   }
 

@@ -16,6 +16,7 @@
 
 #include "hci/acl_manager/le_impl.h"
 
+#include <bluetooth/log.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -169,12 +170,12 @@ namespace {
 class TestController : public Controller {
  public:
   bool IsSupported(OpCode op_code) const override {
-    LOG_INFO("IsSupported");
+    log::info("IsSupported");
     return supported_opcodes_.count(op_code) == 1;
   }
 
   void AddSupported(OpCode op_code) {
-    LOG_INFO("AddSupported");
+    log::info("AddSupported");
     supported_opcodes_.insert(op_code);
   }
 
@@ -1419,7 +1420,7 @@ TEST_P(
           ClockAccuracy::PPM_30));
     } break;
     default: {
-      LOG_ALWAYS_FATAL("unexpected case");
+      log::fatal("unexpected case");
     }
   }
   sync_handler();
@@ -1675,7 +1676,7 @@ TEST_F(LeImplTest, direct_connection_after_background_connection) {
       LeCreateConnectionView::Create(LeConnectionManagementCommandView::Create(
           AclCommandView::Create(raw_direct_create_connection)));
   EXPECT_TRUE(direct_create_connection.IsValid());
-  LOG_INFO("Scan Interval %u", direct_create_connection.GetLeScanInterval());
+  log::info("Scan Interval {}", direct_create_connection.GetLeScanInterval());
   ASSERT_NE(direct_create_connection.GetLeScanInterval(), bg_create_connection.GetLeScanInterval());
 }
 

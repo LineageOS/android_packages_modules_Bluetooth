@@ -16,6 +16,8 @@
 
 #include "acl_scheduler.h"
 
+#include <bluetooth/log.h>
+
 #include <optional>
 #include <unordered_set>
 #include <variant>
@@ -77,12 +79,12 @@ struct AclScheduler::impl {
 
   void ReportOutgoingAclConnectionFailure() {
     if (!outgoing_entry_.has_value()) {
-      LOG_ERROR("Outgoing connection failure reported, but none present!");
+      log::error("Outgoing connection failure reported, but none present!");
       return;
     }
     auto entry = std::get_if<AclCreateConnectionQueueEntry>(&outgoing_entry_.value());
     if (entry == nullptr) {
-      LOG_ERROR("Outgoing connection failure reported, but we're currently doing an RNR!");
+      log::error("Outgoing connection failure reported, but we're currently doing an RNR!");
       return;
     }
     outgoing_entry_.reset();
@@ -101,8 +103,9 @@ struct AclScheduler::impl {
         [&]() { cancel_connection.Invoke(); },
         [&](auto /* entry */) { cancel_connection_completed.Invoke(); });
     if (!ok) {
-      LOG_ERROR("Attempted to cancel connection to %s that does not exist",
-                ADDRESS_TO_LOGGABLE_CSTR(address));
+      log::error(
+          "Attempted to cancel connection to {} that does not exist",
+          ADDRESS_TO_LOGGABLE_CSTR(address));
     }
   }
 
@@ -117,7 +120,7 @@ struct AclScheduler::impl {
 
   void ReportRemoteNameRequestCompletion(Address /* address */) {
     if (!outgoing_entry_.has_value()) {
-      LOG_ERROR("Remote name request completion reported, but none taking place!");
+      log::error("Remote name request completion reported, but none taking place!");
       return;
     }
 
@@ -125,11 +128,11 @@ struct AclScheduler::impl {
         [](auto&& entry) {
           using T = std::decay_t<decltype(entry)>;
           if constexpr (std::is_same_v<T, RemoteNameRequestQueueEntry>) {
-            LOG_INFO("Remote name request completed");
+            log::info("Remote name request completed");
           } else if constexpr (std::is_same_v<T, AclCreateConnectionQueueEntry>) {
-            LOG_ERROR(
-                "Received RNR completion when ACL connection is outstanding - assuming the connection has failed and "
-                "continuing");
+            log::error(
+                "Received RNR completion when ACL connection is outstanding - assuming the "
+                "connection has failed and continuing");
           } else {
             static_assert(!sizeof(T*), "non-exhaustive visitor!");
           }
@@ -149,8 +152,9 @@ struct AclScheduler::impl {
         [&]() { cancel_request.Invoke(); },
         [](auto entry) { std::get<RemoteNameRequestQueueEntry>(entry).callback_when_cancelled.Invoke(); });
     if (!ok) {
-      LOG_ERROR("Attempted to cancel remote name request "
-                "to %s that does not exist", ADDRESS_TO_LOGGABLE_CSTR(address));
+      log::error(
+          "Attempted to cancel remote name request to {} that does not exist",
+          ADDRESS_TO_LOGGABLE_CSTR(address));
     }
   };
 
@@ -165,7 +169,7 @@ struct AclScheduler::impl {
     }
     if (incoming_connecting_address_set_.empty() && !outgoing_entry_.has_value() &&
         !pending_outgoing_operations_.empty()) {
-      LOG_INFO("Pending connections is not empty; so sending next connection");
+      log::info("Pending connections is not empty; so sending next connection");
       auto entry = std::move(pending_outgoing_operations_.front());
       pending_outgoing_operations_.pop_front();
       std::visit([](auto&& variant) { variant.callback.Invoke(); }, entry);

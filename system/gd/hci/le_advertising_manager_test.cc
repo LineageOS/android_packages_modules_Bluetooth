@@ -16,6 +16,7 @@
 
 #include "hci/le_advertising_manager.h"
 
+#include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
 #include <flag_macros.h>
 #include <gmock/gmock.h>
@@ -1766,7 +1767,7 @@ TEST_F(LeExtendedAdvertisingAPITest, no_callbacks_on_pause) {
   EXPECT_CALL(mock_advertising_callback_, OnAdvertisingEnabled(_, _, _)).Times(0);
 
   // act
-  LOG_INFO("pause");
+  log::info("pause");
   test_le_address_manager->client_->OnPause();
   test_hci_layer_->GetCommand();
   test_hci_layer_->IncomingEvent(

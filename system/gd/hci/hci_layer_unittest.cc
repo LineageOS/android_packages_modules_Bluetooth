@@ -16,6 +16,7 @@
 
 #include "hci/hci_layer.h"
 
+#include <bluetooth/log.h>
 #include <gtest/gtest.h>
 
 #include <chrono>
@@ -223,7 +224,7 @@ TEST_F(HciLayerTest, event_handler_is_invoked) {
   FailIfResetNotSent();
   hci_->RegisterEventHandler(
       EventCode::COMMAND_COMPLETE, hci_handler_->Bind([](EventView /* view */) {
-        LOG_DEBUG("%s", kOurEventHandlerWasInvoked);
+        log::debug("{}", kOurEventHandlerWasInvoked);
       }));
   hal_->InjectEvent(ResetCompleteBuilder::Create(1, ErrorCode::SUCCESS));
 }
@@ -233,7 +234,7 @@ TEST_F(HciLayerTest, le_event_handler_is_invoked) {
   hci_->RegisterLeEventHandler(
       SubeventCode::ENHANCED_CONNECTION_COMPLETE,
       hci_handler_->Bind(
-          [](LeMetaEventView /* view */) { LOG_DEBUG("%s", kOurLeEventHandlerWasInvoked); }));
+          [](LeMetaEventView /* view */) { log::debug("{}", kOurLeEventHandlerWasInvoked); }));
   hci::Address remote_address;
   Address::FromString("D0:05:04:03:02:01", remote_address);
   hal_->InjectEvent(LeEnhancedConnectionCompleteBuilder::Create(
@@ -282,7 +283,7 @@ TEST_F(HciLayerTest, our_acl_event_callback_is_invoked) {
   FailIfResetNotSent();
   hci_->GetAclConnectionInterface(
       hci_handler_->Bind(
-          [](EventView /* view */) { LOG_DEBUG("%s", kOurAclEventHandlerWasInvoked); }),
+          [](EventView /* view */) { log::debug("{}", kOurAclEventHandlerWasInvoked); }),
       hci_handler_->Bind([](uint16_t /* handle */, ErrorCode /* reason */) {}),
       hci_handler_->Bind([](Address /* bd_addr */, ClassOfDevice /* cod */) {}),
       hci_handler_->Bind([](hci::ErrorCode /* hci_status */,
@@ -298,7 +299,7 @@ TEST_F(HciLayerTest, our_disconnect_callback_is_invoked) {
   hci_->GetAclConnectionInterface(
       hci_handler_->Bind([](EventView /* view */) {}),
       hci_handler_->Bind([](uint16_t /* handle */, ErrorCode /* reason */) {
-        LOG_DEBUG("%s", kOurDisconnectHandlerWasInvoked);
+        log::debug("{}", kOurDisconnectHandlerWasInvoked);
       }),
       hci_handler_->Bind([](Address /* bd_addr */, ClassOfDevice /* cod */) {}),
       hci_handler_->Bind([](hci::ErrorCode /* hci_status */,
@@ -321,7 +322,7 @@ TEST_F(HciLayerTest, our_read_remote_version_callback_is_invoked) {
                             uint8_t /* version */,
                             uint16_t /* manufacturer_name */,
                             uint16_t /* sub_version */) {
-        LOG_DEBUG("%s", kOurReadRemoteVersionHandlerWasInvoked);
+        log::debug("{}", kOurReadRemoteVersionHandlerWasInvoked);
       }));
   hal_->InjectEvent(ReadRemoteVersionInformationCompleteBuilder::Create(
       ErrorCode::SUCCESS, 0x0001, 0x0b, 0x000f, 0x0000));
@@ -331,7 +332,7 @@ TEST_F(HciLayerTest, our_le_acl_event_callback_is_invoked) {
   FailIfResetNotSent();
   hci_->GetLeAclConnectionInterface(
       hci_handler_->Bind(
-          [](LeMetaEventView /* view */) { LOG_DEBUG("%s", kOurLeAclEventHandlerWasInvoked); }),
+          [](LeMetaEventView /* view */) { log::debug("{}", kOurLeAclEventHandlerWasInvoked); }),
       hci_handler_->Bind([](uint16_t /* handle */, ErrorCode /* reason */) {}),
       hci_handler_->Bind([](hci::ErrorCode /* hci_status */,
                             uint16_t /* handle */,
@@ -346,7 +347,7 @@ TEST_F(HciLayerTest, our_le_disconnect_callback_is_invoked) {
   hci_->GetLeAclConnectionInterface(
       hci_handler_->Bind([](LeMetaEventView /* view */) {}),
       hci_handler_->Bind([](uint16_t /* handle */, ErrorCode /* reason */) {
-        LOG_DEBUG("%s", kOurLeDisconnectHandlerWasInvoked);
+        log::debug("{}", kOurLeDisconnectHandlerWasInvoked);
       }),
       hci_handler_->Bind([](hci::ErrorCode /* hci_status */,
                             uint16_t /* handle */,
@@ -367,7 +368,7 @@ TEST_F(HciLayerTest, our_le_read_remote_version_callback_is_invoked) {
                             uint8_t /* version */,
                             uint16_t /* manufacturer_name */,
                             uint16_t /* sub_version */) {
-        LOG_DEBUG("%s", kOurLeReadRemoteVersionHandlerWasInvoked);
+        log::debug("{}", kOurLeReadRemoteVersionHandlerWasInvoked);
       }));
   hal_->InjectEvent(ReadRemoteVersionInformationCompleteBuilder::Create(
       ErrorCode::SUCCESS, 0x0001, 0x0b, 0x000f, 0x0000));
@@ -376,7 +377,7 @@ TEST_F(HciLayerTest, our_le_read_remote_version_callback_is_invoked) {
 TEST_F(HciLayerTest, our_security_callback_is_invoked) {
   FailIfResetNotSent();
   hci_->GetSecurityInterface(hci_handler_->Bind(
-      [](EventView /* view */) { LOG_DEBUG("%s", kOurSecurityEventHandlerWasInvoked); }));
+      [](EventView /* view */) { log::debug("{}", kOurSecurityEventHandlerWasInvoked); }));
   hal_->InjectEvent(EncryptionChangeBuilder::Create(
       ErrorCode::SUCCESS, 0x0001, bluetooth::hci::EncryptionEnabled::ON));
 }
@@ -384,14 +385,14 @@ TEST_F(HciLayerTest, our_security_callback_is_invoked) {
 TEST_F(HciLayerTest, our_le_security_callback_is_invoked) {
   FailIfResetNotSent();
   hci_->GetLeSecurityInterface(hci_handler_->Bind(
-      [](LeMetaEventView /* view */) { LOG_DEBUG("%s", kOurLeSecurityEventHandlerWasInvoked); }));
+      [](LeMetaEventView /* view */) { log::debug("{}", kOurLeSecurityEventHandlerWasInvoked); }));
   hal_->InjectEvent(LeLongTermKeyRequestBuilder::Create(0x0001, {0, 0, 0, 0, 0, 0, 0, 0}, 0));
 }
 
 TEST_F(HciLayerTest, our_le_advertising_callback_is_invoked) {
   FailIfResetNotSent();
   hci_->GetLeAdvertisingInterface(hci_handler_->Bind([](LeMetaEventView /* view */) {
-    LOG_DEBUG("%s", kOurLeAdvertisementEventHandlerWasInvoked);
+    log::debug("{}", kOurLeAdvertisementEventHandlerWasInvoked);
   }));
   hal_->InjectEvent(
       LeAdvertisingSetTerminatedBuilder::Create(ErrorCode::SUCCESS, 0x01, 0x001, 0x01));
@@ -400,14 +401,14 @@ TEST_F(HciLayerTest, our_le_advertising_callback_is_invoked) {
 TEST_F(HciLayerTest, our_le_scanning_callback_is_invoked) {
   FailIfResetNotSent();
   hci_->GetLeScanningInterface(hci_handler_->Bind(
-      [](LeMetaEventView /* view */) { LOG_DEBUG("%s", kOurLeScanningEventHandlerWasInvoked); }));
+      [](LeMetaEventView /* view */) { log::debug("{}", kOurLeScanningEventHandlerWasInvoked); }));
   hal_->InjectEvent(LeScanTimeoutBuilder::Create());
 }
 
 TEST_F(HciLayerTest, our_le_iso_callback_is_invoked) {
   FailIfResetNotSent();
   hci_->GetLeIsoInterface(hci_handler_->Bind(
-      [](LeMetaEventView /* view */) { LOG_DEBUG("%s", kOurLeIsoEventHandlerWasInvoked); }));
+      [](LeMetaEventView /* view */) { log::debug("{}", kOurLeIsoEventHandlerWasInvoked); }));
   hal_->InjectEvent(LeCisRequestBuilder::Create(0x0001, 0x0001, 0x01, 0x01));
 }
 
@@ -416,7 +417,7 @@ TEST_F(HciLayerTest, our_command_complete_callback_is_invoked) {
   hal_->InjectEvent(ResetCompleteBuilder::Create(1, ErrorCode::SUCCESS));
   hci_->EnqueueCommand(
       ResetBuilder::Create(), hci_handler_->BindOnce([](CommandCompleteView /* view */) {
-        LOG_DEBUG("%s", kOurCommandCompleteHandlerWasInvoked);
+        log::debug("{}", kOurCommandCompleteHandlerWasInvoked);
       }));
   hal_->InjectEvent(ResetCompleteBuilder::Create(1, ErrorCode::SUCCESS));
 }
@@ -427,7 +428,7 @@ TEST_F(HciLayerTest, our_command_status_callback_is_invoked) {
   hci_->EnqueueCommand(
       ReadClockOffsetBuilder::Create(0x001),
       hci_handler_->BindOnce([](CommandStatusView /* view */) {
-        LOG_DEBUG("%s", kOurCommandStatusHandlerWasInvoked);
+        log::debug("{}", kOurCommandStatusHandlerWasInvoked);
       }));
   hal_->InjectEvent(ReadClockOffsetStatusBuilder::Create(ErrorCode::SUCCESS, 1));
 }
