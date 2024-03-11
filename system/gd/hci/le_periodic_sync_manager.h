@@ -242,10 +242,12 @@ class PeriodicSyncManager {
   void HandleLePeriodicAdvertisingSyncEstablished(LePeriodicAdvertisingSyncEstablishedView event_view) {
     ASSERT(event_view.IsValid());
     LOG_DEBUG(
-        "[PSync]: status=%d, sync_handle=%d, s_id=%d, "
+        "[PSync]: status=%d, sync_handle=%d, address=%s, s_id=%d, "
         "address_type=%d, adv_phy=%d,adv_interval=%d, clock_acc=%d",
         (uint16_t)event_view.GetStatus(),
         event_view.GetSyncHandle(),
+        ADDRESS_TO_LOGGABLE_CSTR(AddressWithType(
+            event_view.GetAdvertiserAddress(), event_view.GetAdvertiserAddressType())),
         event_view.GetAdvertisingSid(),
         (uint16_t)event_view.GetAdvertiserAddressType(),
         (uint16_t)event_view.GetAdvertiserPhy(),
@@ -295,6 +297,13 @@ class PeriodicSyncManager {
         address_with_type,
         (uint16_t)event_view.GetAdvertiserPhy(),
         event_view.GetPeriodicAdvertisingInterval());
+
+    if (IS_FLAG_ENABLED(leaudio_broadcast_feature_support)) {
+      if (event_view.GetStatus() != ErrorCode::SUCCESS) {
+        periodic_syncs_.erase(periodic_sync);
+      }
+    }
+
     AdvanceRequest();
   }
 
@@ -394,7 +403,7 @@ class PeriodicSyncManager {
     int status = static_cast<int>(ErrorCode::ADVERTISING_TIMEOUT);
     callbacks_->OnPeriodicSyncStarted(
         sync->request_id, status, 0, sync->advertiser_sid, request.address_with_type, 0, 0);
-    RemoveSyncRequest(sync);
+    periodic_syncs_.erase(sync);
   }
 
   void HandleLeBigInfoAdvertisingReport(LeBigInfoAdvertisingReportView event_view) {
@@ -457,10 +466,6 @@ class PeriodicSyncManager {
       }
     }
     return pending_sync_requests_.end();
-  }
-
-  void RemoveSyncRequest(std::list<PeriodicSyncStates>::iterator it) {
-    periodic_syncs_.erase(it);
   }
 
   std::list<PeriodicSyncTransferStates>::iterator GetSyncTransferRequestFromConnectionHandle(
