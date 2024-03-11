@@ -228,7 +228,6 @@ init_flags!(
         always_send_services_if_gatt_disc_done = true,
         always_use_private_gatt_for_debugging,
         bluetooth_power_telemetry = false,
-        bta_dm_clear_conn_id_on_client_close = true,
         btm_dm_flush_discovery_queue_on_search_cancel,
         bta_dm_stop_discovery_on_search_cancel,
         classic_discovery_only,
