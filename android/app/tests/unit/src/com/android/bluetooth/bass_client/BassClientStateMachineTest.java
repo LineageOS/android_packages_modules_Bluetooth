@@ -165,15 +165,6 @@ public class BassClientStateMachineTest {
         doReturn(mEmptyTestDevice)
                 .when(mAdapterService)
                 .getDeviceFromByte(Utils.getBytesFromAddress(EMPTY_BLUETOOTH_DEVICE_ADDRESS));
-        doReturn(mTestDevice)
-                .when(mAdapterService)
-                .getDeviceFromByte(Utils.getBytesFromAddress(mTestDevice.getAddress()));
-        doReturn(mSourceTestDevice)
-                .when(mAdapterService)
-                .getDeviceFromByte(Utils.getBytesFromAddress(mSourceTestDevice.getAddress()));
-        doReturn(mEmptyTestDevice)
-                .when(mAdapterService)
-                .getDeviceFromByte(Utils.getBytesFromAddress(mEmptyTestDevice.getAddress()));
 
         // Set up thread and looper
         mHandlerThread = new HandlerThread("BassClientStateMachineTestHandlerThread");
@@ -728,7 +719,12 @@ public class BassClientStateMachineTest {
 
         cb.onCharacteristicRead(null, characteristic, GATT_SUCCESS);
         TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
-        verify(callbacks).notifyReceiveStateChanged(any(), anyInt(), any());
+
+        ArgumentCaptor<BluetoothLeBroadcastReceiveState> receiveStateCaptor =
+                ArgumentCaptor.forClass(BluetoothLeBroadcastReceiveState.class);
+        verify(callbacks)
+                .notifyReceiveStateChanged(any(), eq(sourceId), receiveStateCaptor.capture());
+        Assert.assertEquals(receiveStateCaptor.getValue().getSourceDevice(), mEmptyTestDevice);
 
         mBassClientStateMachine.mPendingOperation = 0;
         mBassClientStateMachine.mPendingSourceId = 0;
@@ -738,7 +734,9 @@ public class BassClientStateMachineTest {
         Mockito.clearInvocations(callbacks);
         cb.onCharacteristicRead(null, characteristic, GATT_SUCCESS);
         TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
-        verify(callbacks).notifyReceiveStateChanged(any(), anyInt(), any());
+        verify(callbacks)
+                .notifyReceiveStateChanged(any(), eq(sourceId), receiveStateCaptor.capture());
+        Assert.assertEquals(receiveStateCaptor.getValue().getSourceDevice(), mEmptyTestDevice);
 
         mBassClientStateMachine.mPendingMetadata = createBroadcastMetadata();
         sourceId = 1;
@@ -793,7 +791,9 @@ public class BassClientStateMachineTest {
         TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
 
         verify(callbacks).notifySourceAdded(any(), any(), anyInt());
-        verify(callbacks).notifyReceiveStateChanged(any(), anyInt(), any());
+        verify(callbacks)
+                .notifyReceiveStateChanged(any(), eq(sourceId), receiveStateCaptor.capture());
+        Assert.assertEquals(receiveStateCaptor.getValue().getSourceDevice(), mSourceTestDevice);
 
         // set some values for covering more lines of processPASyncState()
         mBassClientStateMachine.mPendingMetadata = null;
@@ -814,7 +814,9 @@ public class BassClientStateMachineTest {
         cb.onCharacteristicRead(null, characteristic, GATT_SUCCESS);
         TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
 
-        verify(callbacks).notifyReceiveStateChanged(any(), anyInt(), any());
+        verify(callbacks)
+                .notifyReceiveStateChanged(any(), eq(sourceId), receiveStateCaptor.capture());
+        Assert.assertEquals(receiveStateCaptor.getValue().getSourceDevice(), mSourceTestDevice);
         assertThat(mBassClientStateMachine.mMsgWhats).contains(REMOVE_BCAST_SOURCE);
 
         mBassClientStateMachine.mIsPendingRemove = null;
@@ -836,7 +838,9 @@ public class BassClientStateMachineTest {
         verify(callbacks)
                 .notifySourceRemoved(
                         any(), anyInt(), eq(BluetoothStatusCodes.REASON_LOCAL_STACK_REQUEST));
-        verify(callbacks).notifyReceiveStateChanged(any(), anyInt(), any());
+        verify(callbacks)
+                .notifyReceiveStateChanged(any(), eq(sourceId), receiveStateCaptor.capture());
+        Assert.assertEquals(receiveStateCaptor.getValue().getSourceDevice(), mEmptyTestDevice);
         assertThat(mBassClientStateMachine.mPendingSourceToSwitch).isEqualTo(null);
     }
 
@@ -865,7 +869,11 @@ public class BassClientStateMachineTest {
         cb.onCharacteristicChanged(null, characteristic);
         verify(characteristic, atLeast(1)).getUuid();
         verify(characteristic, atLeast(1)).getValue();
-        verify(callbacks).notifyReceiveStateChanged(any(), anyInt(), any());
+
+        ArgumentCaptor<BluetoothLeBroadcastReceiveState> receiveStateCaptor =
+                ArgumentCaptor.forClass(BluetoothLeBroadcastReceiveState.class);
+        verify(callbacks).notifyReceiveStateChanged(any(), anyInt(), receiveStateCaptor.capture());
+        Assert.assertEquals(receiveStateCaptor.getValue().getSourceDevice(), mEmptyTestDevice);
     }
 
     @Test

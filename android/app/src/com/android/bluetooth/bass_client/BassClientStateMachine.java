@@ -19,6 +19,7 @@ package com.android.bluetooth.bass_client;
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 
 import android.annotation.Nullable;
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
@@ -867,7 +868,10 @@ public class BassClientStateMachine extends StateMachine {
             byte sourceAddressType = receiverState[BassConstants
                     .BCAST_RCVR_STATE_SRC_ADDR_TYPE_IDX];
             BassUtils.reverse(sourceAddress);
-            BluetoothDevice device = mAdapterService.getDeviceFromByte(sourceAddress);
+            String address = Utils.getAddressStringFromByte(sourceAddress);
+            BluetoothDevice device =
+                    BluetoothAdapter.getDefaultAdapter()
+                            .getRemoteLeDevice(address, sourceAddressType);
             byte sourceAdvSid = receiverState[BassConstants.BCAST_RCVR_STATE_SRC_ADV_SID_IDX];
             recvState = new BluetoothLeBroadcastReceiveState(
                     sourceId,
