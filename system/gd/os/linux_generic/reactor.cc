@@ -16,6 +16,7 @@
 
 #include "os/reactor.h"
 
+#include <bluetooth/log.h>
 #include <fcntl.h>
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
@@ -164,7 +165,7 @@ void Reactor::Run() {
           waiting_for_idle = true;
           continue;
         } else {
-          LOG_ERROR("Unknown control_fd value %" PRIu64 "x", value);
+          log::error("Unknown control_fd value {:x}", value);
           continue;
         }
       }
@@ -202,7 +203,7 @@ void Reactor::Run() {
 
 void Reactor::Stop() {
   if (!is_running_) {
-    LOG_WARN("not running, will stop once it's started");
+    log::warn("not running, will stop once it's started");
   }
   auto control = eventfd_write(control_fd_, kStopReactor);
   ASSERT(control != -1);
@@ -243,7 +244,7 @@ void Reactor::Unregister(Reactor::Reactable* reactable) {
     std::lock_guard<std::mutex> reactable_lock(reactable->mutex_);
     RUN_NO_INTR(result = epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, reactable->fd_, nullptr));
     if (result == -1 && errno == ENOENT) {
-      LOG_INFO("reactable is invalid or unregistered");
+      log::info("reactable is invalid or unregistered");
     } else {
       ASSERT_LOG(result != -1, "could not unregister epoll fd: %s", strerror(errno));
     }
@@ -270,7 +271,7 @@ bool Reactor::WaitForUnregisteredReactable(std::chrono::milliseconds timeout) {
   }
   auto stop_status = executing_reactable_finished_->wait_for(timeout);
   if (stop_status != std::future_status::ready) {
-    LOG_ERROR("Unregister reactable timed out");
+    log::error("Unregister reactable timed out");
   }
   return stop_status == std::future_status::ready;
 }

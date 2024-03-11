@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <bluetooth/log.h>
+
 #include <memory>
 
 namespace bluetooth {
@@ -49,3 +51,9 @@ class WakelockNative {
 }  // namespace internal
 }  // namespace os
 }  // namespace bluetooth
+
+namespace fmt {
+template <>
+struct formatter<bluetooth::os::internal::WakelockNative::StatusCode>
+    : enum_formatter<bluetooth::os::internal::WakelockNative::StatusCode> {};
+}  // namespace fmt

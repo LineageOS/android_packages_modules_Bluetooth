@@ -16,6 +16,7 @@
 
 #include "os/system_properties.h"
 
+#include <bluetooth/log.h>
 #include <cutils/properties.h>
 
 #include <array>
@@ -38,12 +39,15 @@ std::optional<std::string> GetSystemProperty(const std::string& property) {
 
 bool SetSystemProperty(const std::string& property, const std::string& value) {
   if (value.size() >= PROPERTY_VALUE_MAX) {
-    LOG_ERROR("Property value's maximum size is %d, but %zu chars were given", PROPERTY_VALUE_MAX - 1, value.size());
+    log::error(
+        "Property value's maximum size is {}, but {} chars were given",
+        PROPERTY_VALUE_MAX - 1,
+        value.size());
     return false;
   }
   auto ret = property_set(property.c_str(), value.c_str());
   if (ret != 0) {
-    LOG_ERROR("Set property %s failed with error code %d", property.c_str(), ret);
+    log::error("Set property {} failed with error code {}", property, ret);
     return false;
   }
   return true;
@@ -52,14 +56,14 @@ bool SetSystemProperty(const std::string& property, const std::string& value) {
 bool IsRootCanalEnabled() {
   auto value = GetSystemProperty("ro.vendor.build.fingerprint");
   if (value.has_value()) {
-    LOG_INFO("ro.vendor.build.fingerprint='%s', length=%zu", value->c_str(), value->length());
+    log::info("ro.vendor.build.fingerprint='{}', length={}", value->c_str(), value->length());
   } else {
-    LOG_INFO("ro.vendor.build.fingerprint is not found");
+    log::info("ro.vendor.build.fingerprint is not found");
   }
   // aosp_cf_x86_64_phone is just one platform that currently runs root canal
   // When other platforms appears, or there is a better signal, add them here
   if (value->find("generic/aosp_cf_x86_64_phone") == std::string::npos) {
-    LOG_INFO("Not on generic/aosp_cf_x86_64_phone and hence not root canal");
+    log::info("Not on generic/aosp_cf_x86_64_phone and hence not root canal");
     return false;
   }
   return true;
@@ -68,21 +72,24 @@ bool IsRootCanalEnabled() {
 int GetAndroidVendorReleaseVersion() {
   auto value = GetSystemProperty("ro.vendor.build.version.release_or_codename");
   if (!value) {
-    LOG_INFO("ro.vendor.build.version.release_or_codename does not exist");
+    log::info("ro.vendor.build.version.release_or_codename does not exist");
     return 0;
   }
-  LOG_INFO("ro.vendor.build.version.release_or_codename='%s', length=%zu", value->c_str(), value->length());
+  log::info(
+      "ro.vendor.build.version.release_or_codename='{}', length={}",
+      value->c_str(),
+      value->length());
   auto int_value = common::Int64FromString(*value);
   if (int_value) {
     return static_cast<int>(*int_value);
   }
-  LOG_INFO("value '%s' cannot be parsed to int", value->c_str());
+  log::info("value '{}' cannot be parsed to int", value->c_str());
   if (value->empty()) {
-    LOG_INFO("value '%s' is empty", value->c_str());
+    log::info("value '{}' is empty", value->c_str());
     return 0;
   }
   if (value->length() > 1) {
-    LOG_INFO("value '%s' length is %zu, which is > 1", value->c_str(), value->length());
+    log::info("value '{}' length is {}, which is > 1", value->c_str(), value->length());
   }
   char release_code = toupper(value->at(0));
   switch (release_code) {

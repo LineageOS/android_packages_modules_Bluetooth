@@ -24,6 +24,7 @@
 #include <aidl/android/system/suspend/IWakeLock.h>
 #include <android/binder_ibinder.h>
 #include <android/binder_manager.h>
+#include <bluetooth/log.h>
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -66,7 +67,7 @@ struct WakelockNative::Impl {
   Impl() : suspend_death_recipient(AIBinder_DeathRecipient_new(onSuspendDeath)) {}
 
   std::function<void(void)> onDeath = [this] {
-    LOG_ERROR("ISystemSuspend HAL service died!");
+    log::error("ISystemSuspend HAL service died!");
     this->suspend_service = nullptr;
   };
 
@@ -76,7 +77,7 @@ struct WakelockNative::Impl {
 };
 
 void WakelockNative::Initialize() {
-  LOG_INFO("Initializing native wake locks");
+  log::info("Initializing native wake locks");
   const std::string suspendInstance = std::string() + ISystemSuspend::descriptor + "/default";
   pimpl_->suspend_service = ISystemSuspend::fromBinder(
       ndk::SpAIBinder(AServiceManager_waitForService(suspendInstance.c_str())));
@@ -89,19 +90,19 @@ void WakelockNative::Initialize() {
 
 WakelockNative::StatusCode WakelockNative::Acquire(const std::string& lock_name) {
   if (!pimpl_->suspend_service) {
-    LOG_ERROR("lock not acquired, ISystemService is not available");
+    log::error("lock not acquired, ISystemService is not available");
     return StatusCode::NATIVE_SERVICE_NOT_AVAILABLE;
   }
 
   if (pimpl_->current_wakelock) {
-    LOG_INFO("wakelock is already acquired");
+    log::info("wakelock is already acquired");
     return StatusCode::SUCCESS;
   }
 
   auto status = pimpl_->suspend_service->acquireWakeLock(
       WakeLockType::PARTIAL, lock_name, &pimpl_->current_wakelock);
   if (!pimpl_->current_wakelock) {
-    LOG_ERROR("wake lock not acquired: %s", status.getDescription().c_str());
+    log::error("wake lock not acquired: {}", status.getDescription());
     return StatusCode::NATIVE_API_ERROR;
   }
 
@@ -110,7 +111,7 @@ WakelockNative::StatusCode WakelockNative::Acquire(const std::string& lock_name)
 
 WakelockNative::StatusCode WakelockNative::Release(const std::string& /* lock_name */) {
   if (!pimpl_->current_wakelock) {
-    LOG_WARN("no lock is currently acquired");
+    log::warn("no lock is currently acquired");
     return StatusCode::SUCCESS;
   }
   pimpl_->current_wakelock->release();
@@ -119,14 +120,14 @@ WakelockNative::StatusCode WakelockNative::Release(const std::string& /* lock_na
 }
 
 void WakelockNative::CleanUp() {
-  LOG_INFO("Cleaning up native wake locks");
+  log::info("Cleaning up native wake locks");
   if (pimpl_->current_wakelock) {
-    LOG_INFO("releasing current wakelock during clean up");
+    log::info("releasing current wakelock during clean up");
     pimpl_->current_wakelock->release();
     pimpl_->current_wakelock = nullptr;
   }
   if (pimpl_->suspend_service) {
-    LOG_INFO("Unlink death recipient");
+    log::info("Unlink death recipient");
     AIBinder_unlinkToDeath(
         pimpl_->suspend_service->asBinder().get(),
         pimpl_->suspend_death_recipient.get(),
