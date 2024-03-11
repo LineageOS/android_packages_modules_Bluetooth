@@ -227,13 +227,10 @@ void bluetooth::shim::ACL_RemoteNameRequest(const RawAddress& addr,
                 base::BindOnce(
                     [](RawAddress addr, hci::ErrorCode status,
                        std::array<uint8_t, 248> name) {
-                      auto p = (uint8_t*)osi_malloc(name.size());
-                      std::copy(name.begin(), name.end(), p);
-
-                      btm_process_remote_name(&addr, p, name.size(),
+                      btm_process_remote_name(&addr, name.data(), name.size(),
                                               static_cast<tHCI_STATUS>(status));
                       btm_sec_rmt_name_request_complete(
-                          &addr, p, static_cast<tHCI_STATUS>(status));
+                          &addr, name.data(), static_cast<tHCI_STATUS>(status));
                     },
                     addr, status, name));
           },
