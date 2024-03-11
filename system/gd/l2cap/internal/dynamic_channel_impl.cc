@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
+#include "l2cap/internal/dynamic_channel_impl.h"
+
+#include <bluetooth/log.h>
+
 #include <unordered_map>
 
 #include "l2cap/cid.h"
 #include "l2cap/classic/internal/link.h"
 #include "l2cap/classic/security_policy.h"
-#include "l2cap/internal/dynamic_channel_impl.h"
 #include "l2cap/internal/sender.h"
 #include "l2cap/psm.h"
 #include "os/handler.h"
@@ -55,7 +58,7 @@ void DynamicChannelImpl::RegisterOnCloseCallback(DynamicChannel::OnCloseCallback
 
 void DynamicChannelImpl::Close() {
   if (link_ == nullptr) {
-    LOG_ERROR("Channel is already closed");
+    log::error("Channel is already closed");
     return;
   }
   link_->SendDisconnectionRequest(cid_, remote_cid_);

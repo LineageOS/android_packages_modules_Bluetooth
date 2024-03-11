@@ -15,6 +15,9 @@
  */
 
 #include "l2cap/classic/internal/dynamic_channel_service_manager_impl.h"
+
+#include <bluetooth/log.h>
+
 #include "common/bind.h"
 #include "l2cap/classic/internal/dynamic_channel_service_impl.h"
 #include "l2cap/psm.h"
@@ -53,7 +56,7 @@ void DynamicChannelServiceManagerImpl::Unregister(Psm psm, DynamicChannelService
     service_map_.erase(psm);
     callback.Invoke();
   } else {
-    LOG_ERROR("service not registered psm:%d", psm);
+    log::error("service not registered psm:{}", psm);
   }
 }
 

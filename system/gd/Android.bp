@@ -609,6 +609,7 @@ cc_defaults {
         "libcrypto",
         "libgrpc++",
         "libgrpc_wrap",
+        "liblog",
         "server_configurable_flags",
     ],
     cflags: [
@@ -680,9 +681,12 @@ cc_benchmark {
         "benchmark.cc",
     ],
     static_libs: [
+        "libbase",
         "libbluetooth_gd",
+        "libbluetooth_log",
         "libbt_shim_bridge",
         "libchrome",
+        "liblog",
     ],
 }
 

@@ -13,6 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "l2cap/le/internal/link_manager.h"
+
+#include <bluetooth/log.h>
+
 #include <memory>
 #include <unordered_map>
 
@@ -22,8 +26,6 @@
 #include "l2cap/le/internal/link.h"
 #include "os/handler.h"
 #include "os/log.h"
-
-#include "l2cap/le/internal/link_manager.h"
 
 namespace bluetooth {
 namespace l2cap {
@@ -134,8 +136,9 @@ void LinkManager::OnLeConnectFail(hci::AddressWithType address_with_type, hci::E
   auto pending_link = pending_links_.find(address_with_type);
   if (pending_link == pending_links_.end()) {
     // There is no pending link, exit
-    LOG_INFO("Connection to %s failed without a pending link",
-             ADDRESS_TO_LOGGABLE_CSTR(address_with_type));
+    log::info(
+        "Connection to {} failed without a pending link",
+        ADDRESS_TO_LOGGABLE_CSTR(address_with_type));
     return;
   }
   for (auto& pending_fixed_channel_connection : pending_link->second.pending_fixed_channel_connections_) {
