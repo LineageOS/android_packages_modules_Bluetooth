@@ -2027,8 +2027,8 @@ impl IBluetoothGatt for BluetoothGatt {
 
         // If the client is not specifying scan settings, the default one will be used.
         let settings = settings.unwrap_or_else(|| ScanSettings {
-            interval: sysprop::get_i32(sysprop::PropertyI32::LeInquiryScanInterval),
-            window: sysprop::get_i32(sysprop::PropertyI32::LeInquiryScanWindow),
+            interval: sysprop::get_i32(sysprop::PropertyI32::LeAdvMonScanInterval),
+            window: sysprop::get_i32(sysprop::PropertyI32::LeAdvMonScanWindow),
             scan_type: ScanType::default(),
         });
 
