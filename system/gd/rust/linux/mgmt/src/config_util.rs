@@ -222,6 +222,36 @@ pub fn write_floss_ll_privacy_enabled(enabled: bool) -> std::io::Result<()> {
     std::fs::write(format!("{}/{}", FLOSS_SYSPROPS_OVERRIDE_DIR, "privacy_override.conf"), data)
 }
 
+pub fn read_floss_address_privacy_enabled() -> std::io::Result<bool> {
+    let parent = Path::new(FLOSS_SYSPROPS_OVERRIDE_DIR);
+    if !parent.is_dir() {
+        return Ok(false);
+    }
+
+    let data = std::fs::read_to_string(format!(
+        "{}/{}",
+        FLOSS_SYSPROPS_OVERRIDE_DIR, "privacy_address_override.conf"
+    ))?;
+
+    Ok(data == "[Sysprops]\nbluetooth.core.gap.le.privacy.own_address_type.enabled=true\n")
+}
+
+pub fn write_floss_address_privacy_enabled(enabled: bool) -> std::io::Result<()> {
+    let parent = Path::new(FLOSS_SYSPROPS_OVERRIDE_DIR);
+
+    std::fs::create_dir_all(parent)?;
+
+    let data = format!(
+        "[Sysprops]\nbluetooth.core.gap.le.privacy.own_address_type.enabled={}",
+        if enabled { "true\n" } else { "false\n" }
+    );
+
+    std::fs::write(
+        format!("{}/{}", FLOSS_SYSPROPS_OVERRIDE_DIR, "privacy_address_override.conf"),
+        data,
+    )
+}
+
 pub fn set_adapter_coredump_state(enabled: bool) -> std::io::Result<()> {
     let data = format!("{}\n", !enabled as i32);
 

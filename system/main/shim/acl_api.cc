@@ -18,6 +18,7 @@
 
 #include <android_bluetooth_sysprop.h>
 #include <base/location.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 #include <future>
@@ -30,6 +31,7 @@
 #include "main/shim/helpers.h"
 #include "main/shim/stack.h"
 #include "osi/include/allocator.h"
+#include "osi/include/properties.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/btm/security_device_record.h"
 #include "stack/include/bt_hdr.h"
@@ -37,6 +39,10 @@
 #include "stack/include/main_thread.h"
 #include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
+#ifndef PROPERTY_BLE_PRIVACY_OWN_ADDRESS_ENABLED
+#define PROPERTY_BLE_PRIVACY_OWN_ADDRESS_ENABLED \
+  "bluetooth.core.gap.le.privacy.own_address_type.enabled"
+#endif
 
 void bluetooth::shim::ACL_CreateClassicConnection(
     const RawAddress& raw_address) {
@@ -102,6 +108,18 @@ void bluetooth::shim::ACL_ConfigureLePrivacy(bool is_le_privacy_enabled) {
       is_le_privacy_enabled
           ? hci::LeAddressManager::AddressPolicy::USE_RESOLVABLE_ADDRESS
           : hci::LeAddressManager::AddressPolicy::USE_PUBLIC_ADDRESS;
+  /* This is a Floss only flag. Android determines address policy according to
+   * privacy mode, hence it is not necessary to enable resolvable address with
+   * another sysprop */
+  if (com::android::bluetooth::flags::
+          floss_separate_host_privacy_and_llprivacy()) {
+    address_policy = hci::LeAddressManager::AddressPolicy::USE_PUBLIC_ADDRESS;
+    if (osi_property_get_bool(PROPERTY_BLE_PRIVACY_OWN_ADDRESS_ENABLED,
+                              is_le_privacy_enabled))
+      address_policy =
+          hci::LeAddressManager::AddressPolicy::USE_RESOLVABLE_ADDRESS;
+  }
+
   hci::AddressWithType empty_address_with_type(
       hci::Address{}, hci::AddressType::RANDOM_DEVICE_ADDRESS);
 
