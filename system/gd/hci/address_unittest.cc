@@ -246,3 +246,13 @@ TEST(AddressTest, ToStringForLoggingTestOutputUnderDebuggablePropAndInitFlag) {
   std::string ret2 = addr.ToRedactedStringForLogging();
   ASSERT_STREQ(ret2.c_str(), redacted_loggable_str.c_str());
 }
+
+TEST(AddressTest, Inequalities) {
+  Address addr1{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
+  Address addr2{{0x02, 0x03, 0x04, 0x05, 0x06, 0x07}};
+  ASSERT_TRUE(addr1 < addr2);
+  ASSERT_TRUE(addr2 > addr1);
+
+  ASSERT_TRUE(addr1 <= addr1);
+  ASSERT_TRUE(addr2 <= addr2);
+}
