@@ -40,8 +40,6 @@ import com.android.internal.annotations.GuardedBy;
  * This class tracks the data connection associated with Bluetooth
  * reverse tethering. PanService calls it when a reverse tethered
  * connection needs to be activated or deactivated.
- *
- * @hide
  */
 public class BluetoothTetheringNetworkFactory extends NetworkFactory {
     private static final String NETWORK_TYPE = "Bluetooth Tethering";

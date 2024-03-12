@@ -1109,7 +1109,6 @@ public class HeadsetService extends ProfileService {
      *
      * @param device Bluetooth device
      * @return connection policy of the device
-     * @hide
      */
     public int getConnectionPolicy(BluetoothDevice device) {
         return mDatabaseManager

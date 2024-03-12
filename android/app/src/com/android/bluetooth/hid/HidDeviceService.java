@@ -56,7 +56,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
-/** @hide */
 public class HidDeviceService extends ProfileService {
     private static final boolean DBG = false;
     private static final String TAG = HidDeviceService.class.getSimpleName();
@@ -742,7 +741,6 @@ public class HidDeviceService extends ProfileService {
      *
      * @param device Bluetooth device
      * @return connection policy of the device
-     * @hide
      */
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
     public int getConnectionPolicy(BluetoothDevice device) {

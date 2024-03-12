@@ -16,12 +16,8 @@
 
 package com.android.bluetooth.hfp;
 
-/*
- * @hide
- */
-
 public final class HeadsetHalConstants {
-    // Do not modify without upating the HAL bt_hf.h files.
+    // Do not modify without updating the HAL bt_hf.h files.
 
     // match up with bthf_connection_state_t enum of bt_hf.h
     static final int CONNECTION_STATE_DISCONNECTED = 0;

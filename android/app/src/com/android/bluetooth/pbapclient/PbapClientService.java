@@ -54,11 +54,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Provides Bluetooth Phone Book Access Profile Client profile.
- *
- * @hide
- */
+/** Provides Bluetooth Phone Book Access Profile Client profile. */
 public class PbapClientService extends ProfileService {
     private static final String TAG = "PbapClientService";
     private static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
@@ -675,7 +671,6 @@ public class PbapClientService extends ProfileService {
      *
      * @param device Bluetooth device
      * @return connection policy of the device
-     * @hide
      */
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
     public int getConnectionPolicy(BluetoothDevice device) {

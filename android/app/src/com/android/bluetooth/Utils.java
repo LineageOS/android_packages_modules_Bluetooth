@@ -85,9 +85,6 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-/**
- * @hide
- */
 public final class Utils {
     private static final String TAG = "BluetoothUtils";
     private static final int MICROS_PER_UNIT = 625;

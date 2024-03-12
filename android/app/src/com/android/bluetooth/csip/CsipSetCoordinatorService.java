@@ -69,7 +69,6 @@ import java.util.stream.Collectors;
 
 /**
  * Provides Bluetooth CSIP Set Coordinator profile, as a service.
- * @hide
  */
 public class CsipSetCoordinatorService extends ProfileService {
     private static final boolean DBG = false;
@@ -499,8 +498,6 @@ public class CsipSetCoordinatorService extends ProfileService {
      * @param groupId group ID to lock
      * @param callback callback with the lock request result
      * @return unique lock identifier used for unlocking
-     *
-     * @hide
      */
     public @Nullable UUID lockGroup(
             int groupId, @NonNull IBluetoothCsipSetCoordinatorLockCallback callback) {
@@ -553,8 +550,6 @@ public class CsipSetCoordinatorService extends ProfileService {
     /**
      * Unlock a given group.
      * @param lockUuid unique lock identifier used for unlocking
-     *
-     * @hide
      */
     public void unlockGroup(@NonNull UUID lockUuid) {
         if (lockUuid == null) {
@@ -583,8 +578,6 @@ public class CsipSetCoordinatorService extends ProfileService {
      * Check whether a given group is currently locked.
      * @param groupId unique group identifier
      * @return true if group is currently locked, otherwise false.
-     *
-     * @hide
      */
     public boolean isGroupLocked(int groupId) {
         return mLocks.containsKey(groupId);
