@@ -32,7 +32,6 @@
 #include <bluetooth/log.h>
 
 #include "bta/hd/bta_hd_int.h"
-#include "common/init_flags.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
@@ -83,11 +82,6 @@ void BTA_HdEnable(tBTA_HD_CBACK* p_cback) {
  ******************************************************************************/
 void BTA_HdDisable(void) {
   log::verbose("");
-
-  if (!bluetooth::common::init_flags::
-          delay_hidh_cleanup_until_hidh_ready_start_is_enabled()) {
-    bta_sys_deregister(BTA_ID_HD);
-  }
 
   BT_HDR_RIGID* p_buf = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
   p_buf->event = BTA_HD_API_DISABLE_EVT;

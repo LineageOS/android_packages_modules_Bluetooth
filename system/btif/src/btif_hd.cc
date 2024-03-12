@@ -39,7 +39,6 @@
 #include "btif/include/btif_common.h"
 #include "btif/include/btif_profile_storage.h"
 #include "btif/include/btif_util.h"
-#include "common/init_flags.h"
 #include "include/hardware/bt_hd.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
@@ -200,10 +199,6 @@ static void btif_hd_upstreams_evt(uint16_t event, char* p_param) {
                 BTHD_APP_STATE_NOT_REGISTERED);
       if (btif_hd_cb.service_dereg_active) {
         log::warn("disabling hid device service now");
-        if (!bluetooth::common::init_flags::
-                delay_hidh_cleanup_until_hidh_ready_start_is_enabled()) {
-          btif_hd_free_buf();
-        }
         BTA_HdDisable();
       }
       break;
