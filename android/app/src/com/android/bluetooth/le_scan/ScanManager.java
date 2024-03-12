@@ -1354,11 +1354,14 @@ public class ScanManager {
             }
             int deliveryMode = getDeliveryMode(client);
             if (deliveryMode == DELIVERY_MODE_ON_FOUND_LOST) {
-                for (ScanFilter filter : client.filters) {
-                    int entriesToFree = getNumOfTrackingAdvertisements(client.settings);
-                    if (!manageAllocationOfTrackingAdvertisement(entriesToFree, false)) {
-                        Log.e(TAG, "Error freeing for onfound/onlost filter resources "
-                                + entriesToFree);
+                // Decrement the count of trackable advertisements in use
+                int entriesToFreePerFilter = getNumOfTrackingAdvertisements(client.settings);
+                for (int i = 0; i < client.filters.size(); i++) {
+                    if (!manageAllocationOfTrackingAdvertisement(entriesToFreePerFilter, false)) {
+                        Log.e(
+                                TAG,
+                                "Error freeing for onfound/onlost filter resources "
+                                        + entriesToFreePerFilter);
                         try {
                             mScanHelper.onScanManagerErrorCallback(
                                     client.scannerId, ScanCallback.SCAN_FAILED_INTERNAL_ERROR);
@@ -1673,9 +1676,8 @@ public class ScanManager {
             int rssiThreshold = Byte.MIN_VALUE;
             ScanSettings settings = client.settings;
             int onFoundTimeout = getOnFoundOnLostTimeoutMillis(settings, true);
-            int onLostTimeout = getOnFoundOnLostTimeoutMillis(settings, false);
             int onFoundCount = getOnFoundOnLostSightings(settings);
-            onLostTimeout = 10000;
+            int onLostTimeout = 10000;
             if (DBG) {
                 Log.d(TAG, "configureFilterParamter " + onFoundTimeout + " " + onLostTimeout + " "
                         + onFoundCount + " " + numOfTrackingEntries);

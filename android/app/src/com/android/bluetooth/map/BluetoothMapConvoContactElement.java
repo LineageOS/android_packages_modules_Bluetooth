@@ -52,7 +52,6 @@ public class BluetoothMapConvoContactElement
     protected static final String XML_TAG_CONVOCONTACT = "convocontact";
     private static final String TAG = "BluetoothMapConvoContactElement";
     private static final boolean D = false;
-    private static final boolean V = false;
 
     private String mUci = null;
     private String mName = null;

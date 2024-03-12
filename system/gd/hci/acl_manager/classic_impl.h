@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <bluetooth/log.h>
+
 #include <memory>
 
 #include "common/bind.h"
@@ -112,6 +114,9 @@ struct classic_impl : public security::ISecurityManagerListener {
       case EventCode::FLUSH_OCCURRED:
         on_flush_occurred(event_packet);
         break;
+      case EventCode::ENHANCED_FLUSH_COMPLETE:
+        on_enhanced_flush_complete(event_packet);
+        break;
       case EventCode::READ_REMOTE_SUPPORTED_FEATURES_COMPLETE:
         on_read_remote_supported_features_complete(event_packet);
         break;
@@ -125,7 +130,7 @@ struct classic_impl : public security::ISecurityManagerListener {
         on_central_link_key_complete(event_packet);
         break;
       default:
-        LOG_ALWAYS_FATAL("Unhandled event code %s", EventCodeText(event_code).c_str());
+        log::fatal("Unhandled event code {}", EventCodeText(event_code));
     }
   }
 
@@ -242,7 +247,7 @@ struct classic_impl : public security::ISecurityManagerListener {
 
   void on_incoming_connection(Address address, ClassOfDevice cod) {
     if (client_callbacks_ == nullptr) {
-      LOG_ERROR("No callbacks to call");
+      log::error("No callbacks to call");
       auto reason = RejectConnectionReason::LIMITED_RESOURCES;
       this->reject_connection(RejectConnectionRequestBuilder::Create(address, reason));
       return;
@@ -285,7 +290,7 @@ struct classic_impl : public security::ISecurityManagerListener {
 
   void actually_create_connection(Address address, std::unique_ptr<CreateConnectionBuilder> packet) {
     if (is_classic_link_already_connected(address)) {
-      LOG_WARN("already connected: %s", ADDRESS_TO_LOGGABLE_CSTR(address));
+      log::warn("already connected: {}", ADDRESS_TO_LOGGABLE_CSTR(address));
       acl_scheduler_->ReportOutgoingAclConnectionFailure();
       return;
     }
@@ -298,7 +303,7 @@ struct classic_impl : public security::ISecurityManagerListener {
     ASSERT(status.GetCommandOpCode() == OpCode::CREATE_CONNECTION);
     if (status.GetStatus() != hci::ErrorCode::SUCCESS /* = pending */) {
       // something went wrong, but unblock queue and report to caller
-      LOG_ERROR("Failed to create connection, reporting failure and continuing");
+      log::error("Failed to create connection, reporting failure and continuing");
       ASSERT(client_callbacks_ != nullptr);
       client_handler_->Post(common::BindOnce(
           &ConnectionCallbacks::OnConnectFail,
@@ -323,7 +328,7 @@ struct classic_impl : public security::ISecurityManagerListener {
     auto status = connection_complete.GetStatus();
     auto address = connection_complete.GetBdAddr();
     if (client_callbacks_ == nullptr) {
-      LOG_WARN("No client callbacks registered for connection");
+      log::warn("No client callbacks registered for connection");
       return;
     }
     if (status != ErrorCode::SUCCESS) {
@@ -352,8 +357,9 @@ struct classic_impl : public security::ISecurityManagerListener {
       if (delayed_role_change_ == nullptr) {
         callbacks->OnRoleChange(hci::ErrorCode::SUCCESS, current_role);
       } else if (delayed_role_change_->GetBdAddr() == address) {
-        LOG_INFO("Sending delayed role change for %s",
-                 ADDRESS_TO_LOGGABLE_CSTR(delayed_role_change_->GetBdAddr()));
+        log::info(
+            "Sending delayed role change for {}",
+            ADDRESS_TO_LOGGABLE_CSTR(delayed_role_change_->GetBdAddr()));
         callbacks->OnRoleChange(delayed_role_change_->GetStatus(), delayed_role_change_->GetNewRole());
         delayed_role_change_.reset();
       }
@@ -392,11 +398,11 @@ struct classic_impl : public security::ISecurityManagerListener {
                   "No prior connection request for %s expecting:%s",
                   ADDRESS_TO_LOGGABLE_CSTR(address),
                   valid_incoming_addresses.c_str());
-              LOG_WARN(
-                  "No matching connection to %s (%s)",
+              log::warn(
+                  "No matching connection to {} ({})",
                   ADDRESS_TO_LOGGABLE_CSTR(address),
-                  ErrorCodeText(status).c_str());
-              LOG_WARN("Firmware error after RemoteNameRequestCancel?");  // see b/184239841
+                  ErrorCodeText(status));
+              log::warn("Firmware error after RemoteNameRequestCancel?");  // see b/184239841
               remote_name_request_module->ReportRemoteNameRequestCancellation(address);
             },
             common::Unretained(remote_name_request_module_),
@@ -441,12 +447,12 @@ struct classic_impl : public security::ISecurityManagerListener {
   void on_connection_packet_type_changed(EventView packet) {
     ConnectionPacketTypeChangedView packet_type_changed = ConnectionPacketTypeChangedView::Create(packet);
     if (!packet_type_changed.IsValid()) {
-      LOG_ERROR("Received on_connection_packet_type_changed with invalid packet");
+      log::error("Received on_connection_packet_type_changed with invalid packet");
       return;
     } else if (packet_type_changed.GetStatus() != ErrorCode::SUCCESS) {
       auto status = packet_type_changed.GetStatus();
       std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received on_connection_packet_type_changed with error code %s", error_code.c_str());
+      log::error("Received on_connection_packet_type_changed with error code {}", error_code);
       return;
     }
     uint16_t handle = packet_type_changed.GetConnectionHandle();
@@ -458,12 +464,12 @@ struct classic_impl : public security::ISecurityManagerListener {
   void on_central_link_key_complete(EventView packet) {
     CentralLinkKeyCompleteView complete_view = CentralLinkKeyCompleteView::Create(packet);
     if (!complete_view.IsValid()) {
-      LOG_ERROR("Received on_central_link_key_complete with invalid packet");
+      log::error("Received on_central_link_key_complete with invalid packet");
       return;
     } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
       auto status = complete_view.GetStatus();
       std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received on_central_link_key_complete with error code %s", error_code.c_str());
+      log::error("Received on_central_link_key_complete with error code {}", error_code);
       return;
     }
     uint16_t handle = complete_view.GetConnectionHandle();
@@ -476,7 +482,7 @@ struct classic_impl : public security::ISecurityManagerListener {
   void on_authentication_complete(EventView packet) {
     AuthenticationCompleteView authentication_complete = AuthenticationCompleteView::Create(packet);
     if (!authentication_complete.IsValid()) {
-      LOG_ERROR("Received on_authentication_complete with invalid packet");
+      log::error("Received on_authentication_complete with invalid packet");
       return;
     }
     uint16_t handle = authentication_complete.GetConnectionHandle();
@@ -488,12 +494,12 @@ struct classic_impl : public security::ISecurityManagerListener {
   void on_change_connection_link_key_complete(EventView packet) {
     ChangeConnectionLinkKeyCompleteView complete_view = ChangeConnectionLinkKeyCompleteView::Create(packet);
     if (!complete_view.IsValid()) {
-      LOG_ERROR("Received on_change_connection_link_key_complete with invalid packet");
+      log::error("Received on_change_connection_link_key_complete with invalid packet");
       return;
     } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
       auto status = complete_view.GetStatus();
       std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received on_change_connection_link_key_complete with error code %s", error_code.c_str());
+      log::error("Received on_change_connection_link_key_complete with error code {}", error_code);
       return;
     }
     uint16_t handle = complete_view.GetConnectionHandle();
@@ -504,12 +510,12 @@ struct classic_impl : public security::ISecurityManagerListener {
   void on_read_clock_offset_complete(EventView packet) {
     ReadClockOffsetCompleteView complete_view = ReadClockOffsetCompleteView::Create(packet);
     if (!complete_view.IsValid()) {
-      LOG_ERROR("Received on_read_clock_offset_complete with invalid packet");
+      log::error("Received on_read_clock_offset_complete with invalid packet");
       return;
     } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
       auto status = complete_view.GetStatus();
       std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received on_read_clock_offset_complete with error code %s", error_code.c_str());
+      log::error("Received on_read_clock_offset_complete with error code {}", error_code);
       return;
     }
     uint16_t handle = complete_view.GetConnectionHandle();
@@ -522,7 +528,7 @@ struct classic_impl : public security::ISecurityManagerListener {
   void on_mode_change(EventView packet) {
     ModeChangeView mode_change_view = ModeChangeView::Create(packet);
     if (!mode_change_view.IsValid()) {
-      LOG_ERROR("Received on_mode_change with invalid packet");
+      log::error("Received on_mode_change with invalid packet");
       return;
     }
     uint16_t handle = mode_change_view.GetConnectionHandle();
@@ -535,7 +541,7 @@ struct classic_impl : public security::ISecurityManagerListener {
   void on_sniff_subrating(EventView packet) {
     SniffSubratingEventView sniff_subrating_view = SniffSubratingEventView::Create(packet);
     if (!sniff_subrating_view.IsValid()) {
-      LOG_ERROR("Received on_sniff_subrating with invalid packet");
+      log::error("Received on_sniff_subrating with invalid packet");
       return;
     }
     uint16_t handle = sniff_subrating_view.GetConnectionHandle();
@@ -552,12 +558,12 @@ struct classic_impl : public security::ISecurityManagerListener {
   void on_qos_setup_complete(EventView packet) {
     QosSetupCompleteView complete_view = QosSetupCompleteView::Create(packet);
     if (!complete_view.IsValid()) {
-      LOG_ERROR("Received on_qos_setup_complete with invalid packet");
+      log::error("Received on_qos_setup_complete with invalid packet");
       return;
     } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
       auto status = complete_view.GetStatus();
       std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received on_qos_setup_complete with error code %s", error_code.c_str());
+      log::error("Received on_qos_setup_complete with error code {}", error_code);
       return;
     }
     uint16_t handle = complete_view.GetConnectionHandle();
@@ -574,12 +580,12 @@ struct classic_impl : public security::ISecurityManagerListener {
   void on_flow_specification_complete(EventView packet) {
     FlowSpecificationCompleteView complete_view = FlowSpecificationCompleteView::Create(packet);
     if (!complete_view.IsValid()) {
-      LOG_ERROR("Received on_flow_specification_complete with invalid packet");
+      log::error("Received on_flow_specification_complete with invalid packet");
       return;
     } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
       auto status = complete_view.GetStatus();
       std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received on_flow_specification_complete with error code %s", error_code.c_str());
+      log::error("Received on_flow_specification_complete with error code {}", error_code);
       return;
     }
     uint16_t handle = complete_view.GetConnectionHandle();
@@ -598,11 +604,22 @@ struct classic_impl : public security::ISecurityManagerListener {
   void on_flush_occurred(EventView packet) {
     FlushOccurredView flush_occurred_view = FlushOccurredView::Create(packet);
     if (!flush_occurred_view.IsValid()) {
-      LOG_ERROR("Received on_flush_occurred with invalid packet");
+      log::error("Received on_flush_occurred with invalid packet");
       return;
     }
     uint16_t handle = flush_occurred_view.GetConnectionHandle();
     connections.execute(handle, [=](ConnectionManagementCallbacks* callbacks) { callbacks->OnFlushOccurred(); });
+  }
+
+  void on_enhanced_flush_complete(EventView packet) {
+    auto flush_complete = EnhancedFlushCompleteView::Create(packet);
+    if (!flush_complete.IsValid()) {
+      LOG_ERROR("Received an invalid packet");
+      return;
+    }
+    uint16_t handle = flush_complete.GetConnectionHandle();
+    connections.execute(
+        handle, [=](ConnectionManagementCallbacks* callbacks) { callbacks->OnFlushOccurred(); });
   }
 
   void on_read_remote_version_information(
@@ -637,12 +654,12 @@ struct classic_impl : public security::ISecurityManagerListener {
 
   void OnEncryptionStateChanged(EncryptionChangeView encryption_change_view) override {
     if (!encryption_change_view.IsValid()) {
-      LOG_ERROR("Invalid packet");
+      log::error("Invalid packet");
       return;
     } else if (encryption_change_view.GetStatus() != ErrorCode::SUCCESS) {
       auto status = encryption_change_view.GetStatus();
       std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("error_code %s", error_code.c_str());
+      log::error("error_code {}", error_code);
       return;
     }
     uint16_t handle = encryption_change_view.GetConnectionHandle();
@@ -655,7 +672,7 @@ struct classic_impl : public security::ISecurityManagerListener {
   void on_role_change(EventView packet) {
     RoleChangeView role_change_view = RoleChangeView::Create(packet);
     if (!role_change_view.IsValid()) {
-      LOG_ERROR("Received on_role_change with invalid packet");
+      log::error("Received on_role_change with invalid packet");
       return;
     }
     auto hci_status = role_change_view.GetStatus();
@@ -670,14 +687,14 @@ struct classic_impl : public security::ISecurityManagerListener {
     });
     if (!sent) {
       if (delayed_role_change_ != nullptr) {
-        LOG_WARN(
-            "Second delayed role change (@%s dropped)",
+        log::warn(
+            "Second delayed role change (@{} dropped)",
             ADDRESS_TO_LOGGABLE_CSTR(delayed_role_change_->GetBdAddr()));
       }
-      LOG_INFO(
-          "Role change for %s with no matching connection (new role: %s)",
+      log::info(
+          "Role change for {} with no matching connection (new role: {})",
           ADDRESS_TO_LOGGABLE_CSTR(role_change_view.GetBdAddr()),
-          RoleText(role_change_view.GetNewRole()).c_str());
+          RoleText(role_change_view.GetNewRole()));
       delayed_role_change_ = std::make_unique<RoleChangeView>(role_change_view);
     }
   }
@@ -685,7 +702,7 @@ struct classic_impl : public security::ISecurityManagerListener {
   void on_link_supervision_timeout_changed(EventView packet) {
     auto view = LinkSupervisionTimeoutChangedView::Create(packet);
     ASSERT_LOG(view.IsValid(), "Link supervision timeout changed packet invalid");
-    LOG_INFO("UNIMPLEMENTED called");
+    log::info("UNIMPLEMENTED called");
   }
 
   void on_accept_connection_status(Address address, CommandStatusView status) {

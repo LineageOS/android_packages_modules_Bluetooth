@@ -1967,10 +1967,7 @@ static void bta_dm_gatt_disc_complete(uint16_t conn_id, tGATT_STATUS status) {
       bta_sys_sendmsg(p_msg);
     }
   } else {
-    if (bluetooth::common::init_flags::
-            bta_dm_clear_conn_id_on_client_close_is_enabled()) {
-      bta_dm_search_cb.conn_id = GATT_INVALID_CONN_ID;
-    }
+    bta_dm_search_cb.conn_id = GATT_INVALID_CONN_ID;
 
     if (IS_FLAG_ENABLED(bta_dm_disc_stuck_in_cancelling_fix)) {
       log::info(
@@ -2117,10 +2114,7 @@ static void bta_dm_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
       log::info("BTA_GATTC_CLOSE_EVT reason = {}", p_data->close.reason);
 
       if (p_data->close.remote_bda == bta_dm_search_cb.peer_bdaddr) {
-        if (bluetooth::common::init_flags::
-                bta_dm_clear_conn_id_on_client_close_is_enabled()) {
-          bta_dm_search_cb.conn_id = GATT_INVALID_CONN_ID;
-        }
+        bta_dm_search_cb.conn_id = GATT_INVALID_CONN_ID;
       }
 
       switch (bta_dm_search_get_state()) {
@@ -2320,12 +2314,8 @@ bool bta_dm_search_sm_execute(const BT_HDR_RIGID* p_msg) {
           bta_dm_execute_queued_request();
           break;
         case BTA_DM_DISC_CLOSE_TOUT_EVT:
-          if (bluetooth::common::init_flags::
-                  bta_dm_clear_conn_id_on_client_close_is_enabled()) {
-            bta_dm_close_gatt_conn(message);
-            break;
-          }
-          [[fallthrough]];
+          bta_dm_close_gatt_conn(message);
+          break;
         default:
           log::info("Received unexpected event {}[0x{:x}] in state {}",
                     bta_dm_event_text(event), event,
@@ -2358,12 +2348,8 @@ bool bta_dm_search_sm_execute(const BT_HDR_RIGID* p_msg) {
           bta_dm_search_cancel_notify();
           break;
         case BTA_DM_DISC_CLOSE_TOUT_EVT:
-          if (bluetooth::common::init_flags::
-                  bta_dm_clear_conn_id_on_client_close_is_enabled()) {
-            bta_dm_close_gatt_conn(message);
-            break;
-          }
-          [[fallthrough]];
+          bta_dm_close_gatt_conn(message);
+          break;
         default:
           log::info("Received unexpected event {}[0x{:x}] in state {}",
                     bta_dm_event_text(event), event,

@@ -16,6 +16,8 @@
 
 #include "hci/facade/le_advertising_manager_facade.h"
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 #include <unordered_map>
 #include <utility>
@@ -69,13 +71,13 @@ bool AdvertisingConfigFromProto(
   }
 
   if (config_proto.interval_min() > UINT16_MAX || config_proto.interval_min() < 0) {
-    LOG_WARN("Bad interval_min: %d", config_proto.interval_min());
+    log::warn("Bad interval_min: {}", config_proto.interval_min());
     return false;
   }
   config->interval_min = static_cast<uint16_t>(config_proto.interval_min());
 
   if (config_proto.interval_max() > UINT16_MAX || config_proto.interval_max() < 0) {
-    LOG_WARN("Bad interval_max: %d", config_proto.interval_max());
+    log::warn("Bad interval_max: {}", config_proto.interval_max());
     return false;
   }
   config->interval_max = static_cast<uint16_t>(config_proto.interval_max());
@@ -92,13 +94,13 @@ bool AdvertisingConfigFromProto(
   hci::Address::FromString(config_proto.peer_address().address(), config->peer_address);
 
   if (config_proto.channel_map() > UINT8_MAX || config_proto.channel_map() < 0) {
-    LOG_WARN("Bad channel_map: %d", config_proto.channel_map());
+    log::warn("Bad channel_map: {}", config_proto.channel_map());
     return false;
   }
   config->channel_map = static_cast<uint8_t>(config_proto.channel_map());
 
   if (config_proto.tx_power() > UINT8_MAX || config_proto.tx_power() < 0) {
-    LOG_WARN("Bad tx_power: %d", config_proto.tx_power());
+    log::warn("Bad tx_power: {}", config_proto.tx_power());
     return false;
   }
 
@@ -137,7 +139,7 @@ bool AdvertisingConfigFromProto(
 bool ExtendedAdvertisingConfigFromProto(
     const ExtendedAdvertisingConfig& config_proto, hci::AdvertisingConfig* config) {
   if (!AdvertisingConfigFromProto(config_proto.advertising_config(), config)) {
-    LOG_WARN("Error parsing advertising config");
+    log::warn("Error parsing advertising config");
     return false;
   }
   config->connectable = config_proto.connectable();
@@ -159,12 +161,12 @@ bool ExtendedAdvertisingConfigFromProto(
 bool PeriodicAdvertisingParametersFromProto(
     const PeriodicAdvertisingParameters& config_proto, hci::PeriodicAdvertisingParameters* config) {
   if (config_proto.min_interval() > UINT16_MAX || config_proto.min_interval() < 0) {
-    LOG_WARN("Bad interval_min: %d", config_proto.min_interval());
+    log::warn("Bad interval_min: {}", config_proto.min_interval());
     return false;
   }
   config->min_interval = static_cast<uint16_t>(config_proto.min_interval());
   if (config_proto.max_interval() > UINT16_MAX || config_proto.max_interval() < 0) {
-    LOG_WARN("Bad interval_max: %d", config_proto.max_interval());
+    log::warn("Bad interval_max: {}", config_proto.max_interval());
     return false;
   }
   config->max_interval = static_cast<uint16_t>(config_proto.max_interval());
@@ -228,7 +230,7 @@ class LeAdvertisingManagerFacadeService : public LeAdvertisingManagerFacade::Ser
       CreateAdvertiserResponse* response) override {
     hci::AdvertisingConfig config = {};
     if (!AdvertisingConfigFromProto(request->config(), &config)) {
-      LOG_WARN("Error parsing advertising config %s", request->SerializeAsString().c_str());
+      log::warn("Error parsing advertising config {}", request->SerializeAsString());
       response->set_advertiser_id(LeAdvertisingManager::kInvalidId);
       return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "Error while parsing advertising config");
     }
@@ -251,7 +253,7 @@ class LeAdvertisingManagerFacadeService : public LeAdvertisingManagerFacade::Ser
       le_advertiser.SetAdvertiserId(advertiser_id);
       le_advertisers_.push_back(le_advertiser);
     } else {
-      LOG_WARN("Failed to create advertiser");
+      log::warn("Failed to create advertiser");
     }
     response->set_advertiser_id(advertiser_id);
     return ::grpc::Status::OK;
@@ -263,7 +265,7 @@ class LeAdvertisingManagerFacadeService : public LeAdvertisingManagerFacade::Ser
       ExtendedCreateAdvertiserResponse* response) override {
     hci::AdvertisingConfig config = {};
     if (!ExtendedAdvertisingConfigFromProto(request->config(), &config)) {
-      LOG_WARN("Error parsing advertising config %s", request->SerializeAsString().c_str());
+      log::warn("Error parsing advertising config {}", request->SerializeAsString());
       response->set_advertiser_id(LeAdvertisingManager::kInvalidId);
       return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "Error while parsing advertising config");
     }
@@ -285,7 +287,7 @@ class LeAdvertisingManagerFacadeService : public LeAdvertisingManagerFacade::Ser
       le_advertiser.SetAdvertiserId(advertiser_id);
       le_advertisers_.push_back(le_advertiser);
     } else {
-      LOG_WARN("Failed to create advertiser");
+      log::warn("Failed to create advertiser");
     }
     response->set_advertiser_id(advertiser_id);
     return ::grpc::Status::OK;
@@ -317,7 +319,7 @@ class LeAdvertisingManagerFacadeService : public LeAdvertisingManagerFacade::Ser
       ::google::protobuf::Empty* /* response */) override {
     hci::AdvertisingConfig config = {};
     if (!AdvertisingConfigFromProto(request->config(), &config)) {
-      LOG_WARN("Error parsing advertising config %s", request->SerializeAsString().c_str());
+      log::warn("Error parsing advertising config {}", request->SerializeAsString());
       return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "Error while parsing advertising config");
     }
     le_advertising_manager_->SetParameters(request->advertiser_id(), config);
@@ -330,7 +332,7 @@ class LeAdvertisingManagerFacadeService : public LeAdvertisingManagerFacade::Ser
       ::google::protobuf::Empty* /* response */) override {
     hci::PeriodicAdvertisingParameters config = {};
     if (!PeriodicAdvertisingParametersFromProto(request->config(), &config)) {
-      LOG_WARN("Error parsing periodic advertising parameters %s", request->SerializeAsString().c_str());
+      log::warn("Error parsing periodic advertising parameters {}", request->SerializeAsString());
       return ::grpc::Status(
           ::grpc::StatusCode::INVALID_ARGUMENT, "Error while parsing periodic advertising parameters");
     }
@@ -380,7 +382,7 @@ class LeAdvertisingManagerFacadeService : public LeAdvertisingManagerFacade::Ser
       const RemoveAdvertiserRequest* request,
       ::google::protobuf::Empty* /* response */) override {
     if (request->advertiser_id() == LeAdvertisingManager::kInvalidId) {
-      LOG_WARN("Invalid advertiser ID %d", request->advertiser_id());
+      log::warn("Invalid advertiser ID {}", request->advertiser_id());
       return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "Invlid advertiser ID received");
     }
     le_advertising_manager_->RemoveAdvertiser(request->advertiser_id());
@@ -481,8 +483,10 @@ class LeAdvertisingManagerFacadeService : public LeAdvertisingManagerFacade::Ser
   };
 
   void OnOwnAddressRead(uint8_t advertiser_id, uint8_t address_type, Address address) {
-    LOG_INFO("OnOwnAddressRead Address:%s, address_type:%d",
-              ADDRESS_TO_LOGGABLE_CSTR(address), address_type);
+    log::info(
+        "OnOwnAddressRead Address:{}, address_type:{}",
+        ADDRESS_TO_LOGGABLE_CSTR(address),
+        address_type);
     AddressMsg msg;
     msg.set_message_type(AdvertisingCallbackMsgType::OWN_ADDRESS_READ);
     msg.set_advertiser_id(advertiser_id);

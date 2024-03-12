@@ -72,14 +72,12 @@ public class VolumeControlService extends ProfileService {
     // Upper limit of all VolumeControl devices: Bonded or Connected
     private static final int MAX_VC_STATE_MACHINES = 10;
     private static final int LE_AUDIO_MAX_VOL = 255;
-    private static final int LE_AUDIO_MIN_VOL = 0;
 
     private static VolumeControlService sVolumeControlService;
 
     private AdapterService mAdapterService;
     private DatabaseManager mDatabaseManager;
     private HandlerThread mStateMachinesThread;
-    private BluetoothDevice mPreviousAudioDevice;
     private Handler mHandler = null;
     private FeatureFlags mFeatureFlags;
 

@@ -18,7 +18,6 @@ package com.android.bluetooth.pbapclient;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import android.os.Handler;
 
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
@@ -28,7 +27,6 @@ import com.android.obex.PasswordAuthentication;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 
 @SmallTest
 @RunWith(AndroidJUnit4.class)
@@ -36,12 +34,9 @@ public class BluetoothPbapObexAuthenticatorTest {
 
     private BluetoothPbapObexAuthenticator mAuthenticator;
 
-    @Mock
-    Handler mHandler;
-
     @Before
     public void setUp() throws Exception {
-        mAuthenticator = new BluetoothPbapObexAuthenticator(mHandler);
+        mAuthenticator = new BluetoothPbapObexAuthenticator();
     }
 
     @Test

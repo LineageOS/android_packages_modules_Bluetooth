@@ -79,8 +79,14 @@ public class PbapStateMachineTest {
         mHandler = new Handler(mHandlerThread.getLooper());
         mBluetoothPbapService = mock(BluetoothPbapService.class);
         doNothing().when(mBluetoothPbapService).checkOrGetPhonebookPermission(any());
-        mPbapStateMachine = PbapStateMachine.make(mBluetoothPbapService, mHandlerThread.getLooper(),
-                mTestDevice, mSocket, mBluetoothPbapService, mHandler, TEST_NOTIFICATION_ID);
+        mPbapStateMachine =
+                PbapStateMachine.make(
+                        mBluetoothPbapService,
+                        mHandlerThread.getLooper(),
+                        mTestDevice,
+                        mSocket,
+                        mHandler,
+                        TEST_NOTIFICATION_ID);
     }
 
     @After

@@ -340,17 +340,16 @@ public class AdapterService extends Service {
             mMetadataListeners = new HashMap<>();
     private final HashMap<String, Integer> mProfileServicesState = new HashMap<String, Integer>();
     private Set<IBluetoothConnectionCallback> mBluetoothConnectionCallbacks = new HashSet<>();
-    private RemoteCallbackList<IBluetoothPreferredAudioProfilesCallback>
-            mPreferredAudioProfilesCallbacks;
-    private RemoteCallbackList<IBluetoothQualityReportReadyCallback>
-            mBluetoothQualityReportReadyCallbacks;
+    private final RemoteCallbackList<IBluetoothPreferredAudioProfilesCallback>
+            mPreferredAudioProfilesCallbacks = new RemoteCallbackList<>();
+    private final RemoteCallbackList<IBluetoothQualityReportReadyCallback>
+            mBluetoothQualityReportReadyCallbacks = new RemoteCallbackList<>();
     // Map<groupId, PendingAudioProfilePreferenceRequest>
     private final Map<Integer, PendingAudioProfilePreferenceRequest>
             mCsipGroupsPendingAudioProfileChanges = new HashMap<>();
-    // Only BluetoothManagerService should be registered
-    private RemoteCallbackList<IBluetoothCallback> mRemoteCallbacks;
+    private final RemoteCallbackList<IBluetoothCallback>
+            mRemoteCallbacks = new RemoteCallbackList<>();
     private final Map<BluetoothStateCallback, Executor> mLocalCallbacks = new ConcurrentHashMap<>();
-    private int mCurrentRequestId;
     private boolean mQuietmode = false;
     private HashMap<String, CallerInfo> mBondAttemptCallerInfo = new HashMap<>();
 
@@ -360,7 +359,6 @@ public class AdapterService extends Service {
     private BatteryStatsManager mBatteryStatsManager;
     private PowerManager mPowerManager;
     private PowerManager.WakeLock mWakeLock;
-    private String mWakeLockName;
     private UserManager mUserManager;
     private CompanionDeviceManager mCompanionDeviceManager;
 
@@ -525,7 +523,7 @@ public class AdapterService extends Service {
                     }
                     mRunningProfiles.add(profile);
                     // TODO(b/228875190): GATT is assumed supported. GATT starting triggers hardware
-                    // initializtion. Configuring a device without GATT causes start up failures.
+                    // initialization. Configuring a device without GATT causes start up failures.
                     if (GattService.class.getSimpleName().equals(profile.getName())) {
                         mNativeInterface.enable();
                     } else if (mRegisteredProfiles.size() == Config.getSupportedProfiles().length
@@ -618,28 +616,60 @@ public class AdapterService extends Service {
             })
     public void onCreate() {
         super.onCreate();
-        Config.init(this);
+        debugLog("onCreate()");
+        if (!Flags.fastBindToApp()) {
+            init();
+            return;
+        }
+        // OnCreate must perform the minimum of infaillible and mandatory initialization
         if (mLooper == null) {
             mLooper = Looper.getMainLooper();
         }
         mHandler = new AdapterServiceHandler(mLooper);
-        initMetricsLogger();
-        debugLog("onCreate()");
-        mDeviceConfigListener.start();
-
+        mAdapterProperties = new AdapterProperties(this);
+        mAdapterStateMachine = new AdapterState(this, mLooper);
+        mBinder = new AdapterServiceBinder(this);
         mUserManager = getNonNullSystemService(UserManager.class);
         mAppOps = getNonNullSystemService(AppOpsManager.class);
         mPowerManager = getNonNullSystemService(PowerManager.class);
         mBatteryStatsManager = getNonNullSystemService(BatteryStatsManager.class);
         mCompanionDeviceManager = getNonNullSystemService(CompanionDeviceManager.class);
+    }
+
+    private void init() {
+        debugLog("init()");
+        Config.init(this);
+        if (!Flags.fastBindToApp()) {
+            // Moved to OnCreate
+            if (mLooper == null) {
+                mLooper = Looper.getMainLooper();
+            }
+            mHandler = new AdapterServiceHandler(mLooper);
+        }
+        initMetricsLogger();
+        mDeviceConfigListener.start();
+
+        if (!Flags.fastBindToApp()) {
+            // Moved to OnCreate
+            mUserManager = getNonNullSystemService(UserManager.class);
+            mAppOps = getNonNullSystemService(AppOpsManager.class);
+            mPowerManager = getNonNullSystemService(PowerManager.class);
+            mBatteryStatsManager = getNonNullSystemService(BatteryStatsManager.class);
+            mCompanionDeviceManager = getNonNullSystemService(CompanionDeviceManager.class);
+        }
 
         mRemoteDevices = new RemoteDevices(this, mLooper);
         mRemoteDevices.init();
         clearDiscoveringPackages();
-        mBinder = new AdapterServiceBinder(this);
+        if (!Flags.fastBindToApp()) {
+            mBinder = new AdapterServiceBinder(this);
+        }
         mAdapter = BluetoothAdapter.getDefaultAdapter();
-        mAdapterProperties = new AdapterProperties(this);
-        mAdapterStateMachine = new AdapterState(this, mLooper);
+        if (!Flags.fastBindToApp()) {
+            // Moved to OnCreate
+            mAdapterProperties = new AdapterProperties(this);
+            mAdapterStateMachine = new AdapterState(this, mLooper);
+        }
         mBluetoothKeystoreService =
                 new BluetoothKeystoreService(
                         BluetoothKeystoreNativeInterface.getInstance(), isCommonCriteriaMode());
@@ -664,11 +694,6 @@ public class AdapterService extends Service {
                 isAtvDevice,
                 getApplicationInfo().dataDir);
         mNativeAvailable = true;
-        mPreferredAudioProfilesCallbacks =
-                new RemoteCallbackList<IBluetoothPreferredAudioProfilesCallback>();
-        mBluetoothQualityReportReadyCallbacks =
-                new RemoteCallbackList<IBluetoothQualityReportReadyCallback>();
-        mRemoteCallbacks = new RemoteCallbackList<IBluetoothCallback>();
         // Load the name and address
         mNativeInterface.getAdapterProperty(AbstractionLayer.BT_PROPERTY_BDADDR);
         mNativeInterface.getAdapterProperty(AbstractionLayer.BT_PROPERTY_BDNAME);
@@ -1103,25 +1128,24 @@ public class AdapterService extends Service {
         mAdapterProperties.setState(newState);
         invalidateBluetoothGetStateCache();
 
-        if (mRemoteCallbacks != null) {
-            int n = mRemoteCallbacks.beginBroadcast();
-            debugLog(
-                    "updateAdapterState() - Broadcasting state "
-                            + BluetoothAdapter.nameForState(newState)
-                            + " to "
-                            + n
-                            + " receivers.");
-            for (int i = 0; i < n; i++) {
-                try {
-                    mRemoteCallbacks
-                            .getBroadcastItem(i)
-                            .onBluetoothStateChange(prevState, newState);
-                } catch (RemoteException e) {
-                    debugLog("updateAdapterState() - Callback #" + i + " failed (" + e + ")");
-                }
+        // Only BluetoothManagerService should be registered
+        int n = mRemoteCallbacks.beginBroadcast();
+        debugLog(
+                "updateAdapterState() - Broadcasting state "
+                        + BluetoothAdapter.nameForState(newState)
+                        + " to "
+                        + n
+                        + " receivers.");
+        for (int i = 0; i < n; i++) {
+            try {
+                mRemoteCallbacks
+                        .getBroadcastItem(i)
+                        .onBluetoothStateChange(prevState, newState);
+            } catch (RemoteException e) {
+                debugLog("updateAdapterState() - Callback #" + i + " failed (" + e + ")");
             }
-            mRemoteCallbacks.finishBroadcast();
         }
+        mRemoteCallbacks.finishBroadcast();
 
         for (Map.Entry<BluetoothStateCallback, Executor> e : mLocalCallbacks.entrySet()) {
             e.getValue().execute(() -> e.getKey().onBluetoothStateChange(prevState, newState));
@@ -1243,32 +1267,30 @@ public class AdapterService extends Service {
     public int bluetoothQualityReportReadyCallback(
             BluetoothDevice device, BluetoothQualityReport bluetoothQualityReport) {
         synchronized (mBluetoothQualityReportReadyCallbacks) {
-            if (mBluetoothQualityReportReadyCallbacks != null) {
-                int n = mBluetoothQualityReportReadyCallbacks.beginBroadcast();
-                debugLog(
-                        "bluetoothQualityReportReadyCallback() - "
-                                + "Broadcasting Bluetooth Quality Report to "
-                                + n
-                                + " receivers.");
-                for (int i = 0; i < n; i++) {
-                    try {
-                        mBluetoothQualityReportReadyCallbacks
-                                .getBroadcastItem(i)
-                                .onBluetoothQualityReportReady(
-                                        device,
-                                        bluetoothQualityReport,
-                                        BluetoothStatusCodes.SUCCESS);
-                    } catch (RemoteException e) {
-                        debugLog(
-                                "bluetoothQualityReportReadyCallback() - Callback #"
-                                        + i
-                                        + " failed ("
-                                        + e
-                                        + ")");
-                    }
+            int n = mBluetoothQualityReportReadyCallbacks.beginBroadcast();
+            debugLog(
+                    "bluetoothQualityReportReadyCallback() - "
+                            + "Broadcasting Bluetooth Quality Report to "
+                            + n
+                            + " receivers.");
+            for (int i = 0; i < n; i++) {
+                try {
+                    mBluetoothQualityReportReadyCallbacks
+                            .getBroadcastItem(i)
+                            .onBluetoothQualityReportReady(
+                                    device,
+                                    bluetoothQualityReport,
+                                    BluetoothStatusCodes.SUCCESS);
+                } catch (RemoteException e) {
+                    debugLog(
+                            "bluetoothQualityReportReadyCallback() - Callback #"
+                                    + i
+                                    + " failed ("
+                                    + e
+                                    + ")");
                 }
-                mBluetoothQualityReportReadyCallbacks.finishBroadcast();
             }
+            mBluetoothQualityReportReadyCallbacks.finishBroadcast();
         }
 
         return BluetoothStatusCodes.SUCCESS;
@@ -1406,17 +1428,11 @@ public class AdapterService extends Service {
             mBinder = null; // Do not remove. Otherwise Binder leak!
         }
 
-        if (mPreferredAudioProfilesCallbacks != null) {
-            mPreferredAudioProfilesCallbacks.kill();
-        }
+        mPreferredAudioProfilesCallbacks.kill();
 
-        if (mBluetoothQualityReportReadyCallbacks != null) {
-            mBluetoothQualityReportReadyCallbacks.kill();
-        }
+        mBluetoothQualityReportReadyCallbacks.kill();
 
-        if (mRemoteCallbacks != null) {
-            mRemoteCallbacks.kill();
-        }
+        mRemoteCallbacks.kill();
     }
 
     private void invalidateBluetoothCaches() {
@@ -4266,7 +4282,6 @@ public class AdapterService extends Service {
         private void unregisterCallback(IBluetoothCallback callback, AttributionSource source) {
             AdapterService service = getService();
             if (service == null
-                    || service.mRemoteCallbacks == null
                     || !callerIsSystemOrActiveOrManagedUser(service, TAG, "unregisterCallback")
                     || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
                 return;
@@ -5849,10 +5864,6 @@ public class AdapterService extends Service {
 
     private void sendPreferredAudioProfilesCallbackToApps(
             BluetoothDevice device, Bundle preferredAudioProfiles, int status) {
-        if (mPreferredAudioProfilesCallbacks == null) {
-            return;
-        }
-
         int n = mPreferredAudioProfilesCallbacks.beginBroadcast();
         debugLog(
                 "sendPreferredAudioProfilesCallbackToApps() - Broadcasting audio profile "
@@ -5900,6 +5911,10 @@ public class AdapterService extends Service {
                 UserManager.DISALLOW_BLUETOOTH, UserHandle.SYSTEM)) {
             debugLog("enable() called when Bluetooth was disallowed");
             return false;
+        }
+        if (Flags.fastBindToApp()) {
+            // The call to init must be done on the main thread
+            mHandler.post(() -> init());
         }
 
         debugLog("enable() - Enable called with quiet mode status =  " + quietMode);
@@ -7113,18 +7128,8 @@ public class AdapterService extends Service {
                             mIdleTimeTotalMs,
                             mEnergyUsedTotalVoltAmpSecMicro);
 
-            // Count the number of entries that have byte counts > 0
-            int arrayLen = 0;
-            for (int i = 0; i < mUidTraffic.size(); i++) {
-                final UidTraffic traffic = mUidTraffic.valueAt(i);
-                if (traffic.getTxBytes() != 0 || traffic.getRxBytes() != 0) {
-                    arrayLen++;
-                }
-            }
-
             // Copy the traffic objects whose byte counts are > 0
             final List<UidTraffic> result = new ArrayList<>();
-            int putIdx = 0;
             for (int i = 0; i < mUidTraffic.size(); i++) {
                 final UidTraffic traffic = mUidTraffic.valueAt(i);
                 if (traffic.getTxBytes() != 0 || traffic.getRxBytes() != 0) {
@@ -7351,7 +7356,6 @@ public class AdapterService extends Service {
     boolean acquireWakeLock(String lockName) {
         synchronized (this) {
             if (mWakeLock == null) {
-                mWakeLockName = lockName;
                 mWakeLock = mPowerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, lockName);
             }
 

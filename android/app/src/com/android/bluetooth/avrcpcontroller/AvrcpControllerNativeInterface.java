@@ -320,7 +320,6 @@ public class AvrcpControllerNativeInterface {
         return new AvrcpPlayer.Builder()
                 .setDevice(device)
                 .setPlayerId(id)
-                .setPlayerType(playerType)
                 .setSupportedFeatures(transportFlags)
                 .setName(name)
                 .setPlayStatus(toPlaybackStateFromJni(playStatus))

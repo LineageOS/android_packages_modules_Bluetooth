@@ -53,7 +53,6 @@ public class A2dpSinkStreamHandler extends Handler {
 
     // Configuration Variables
     private static final int DEFAULT_DUCK_PERCENT = 25;
-    private static final int SETTLE_TIMEOUT = 400;
 
     // Incoming events.
     public static final int SRC_STR_START = 0; // Audio stream from remote device started

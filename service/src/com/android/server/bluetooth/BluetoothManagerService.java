@@ -972,7 +972,7 @@ class BluetoothManagerService {
     // Monitor change of BLE scan only mode settings.
     private void registerForBleScanModeChange() {
         ContentObserver contentObserver =
-                new ContentObserver(null) {
+                new ContentObserver(new Handler(mLooper)) {
                     @Override
                     public void onChange(boolean selfChange) {
                         if (isBleScanAlwaysAvailable()) {
@@ -1810,7 +1810,9 @@ class BluetoothManagerService {
                             Log.e(TAG, "Unable to register BluetoothCallback", e);
                         }
                         // Inform BluetoothAdapter instances that service is up
-                        sendBluetoothServiceUpCallback();
+                        if (!Flags.fastBindToApp()) {
+                            sendBluetoothServiceUpCallback();
+                        }
 
                         // Get the supported profiles list
                         try {
@@ -1827,6 +1829,9 @@ class BluetoothManagerService {
                             }
                         } catch (RemoteException | TimeoutException e) {
                             Log.e(TAG, "Unable to call enable()", e);
+                        }
+                        if (Flags.fastBindToApp()) {
+                            sendBluetoothServiceUpCallback();
                         }
                     } finally {
                         mAdapterLock.writeLock().unlock();

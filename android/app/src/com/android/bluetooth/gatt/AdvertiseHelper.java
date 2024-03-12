@@ -42,7 +42,6 @@ class AdvertiseHelper {
     private static final int LIST_32_BIT_SERVICE_SOLICITATION_UUIDS = 0x1F;
     private static final int SERVICE_DATA_32_BIT_UUID = 0X20;
     private static final int SERVICE_DATA_128_BIT_UUID = 0X21;
-    private static final int TRANSPORT_DISCOVERY_DATA = 0X26;
     private static final int MANUFACTURER_SPECIFIC_DATA = 0XFF;
 
     public static byte[] advertiseDataToBytes(AdvertiseData data, String name) {

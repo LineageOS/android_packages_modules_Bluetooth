@@ -37,7 +37,6 @@ import java.util.List;
 public class BluetoothMapMessageListing {
     private boolean mHasUnread = false;
     private static final String TAG = "BluetoothMapMessageListing";
-    private static final boolean D = BluetoothMapService.DEBUG;
 
     private List<BluetoothMapMessageListingElement> mList;
 

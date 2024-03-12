@@ -29,6 +29,7 @@
 #include "btif/include/btif_dm.h"
 #include "btif/include/btif_metrics_logging.h"
 #include "btif/include/btif_sock.h"
+#include "btif/include/btif_sock_logging.h"
 #include "btif/include/btif_sock_thread.h"
 #include "btif/include/btif_sock_util.h"
 #include "btif/include/btif_uid.h"
@@ -209,19 +210,16 @@ static void btsock_l2cap_free_l(l2cap_socket* sock) {
   if (!t) /* prever double-frees */
     return;
 
+  log::info(
+      "Disconnected L2CAP connection for device: {}, channel: {}, app_uid: {}, "
+      "id: {}, is_le: {}",
+      ADDRESS_TO_LOGGABLE_CSTR(sock->addr), sock->channel, sock->app_uid,
+      sock->id, sock->is_le_coc);
   btif_sock_connection_logger(
-      SOCKET_CONNECTION_STATE_DISCONNECTED,
-      sock->server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, sock->addr,
-      sock->channel, sock->name);
-
-  // Whenever a socket is freed, the connection must be dropped
-  log_socket_connection_state(
       sock->addr, sock->id, sock->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
-      android::bluetooth::SOCKET_CONNECTION_STATE_DISCONNECTED, sock->tx_bytes,
-      sock->rx_bytes, sock->app_uid, sock->channel,
-      sock->server ? android::bluetooth::SOCKET_ROLE_LISTEN
-                   : android::bluetooth::SOCKET_ROLE_CONNECTION);
-
+      SOCKET_CONNECTION_STATE_DISCONNECTED,
+      sock->server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, sock->app_uid,
+      sock->channel, sock->tx_bytes, sock->rx_bytes, sock->name);
   if (sock->next) sock->next->prev = sock->prev;
 
   if (sock->prev)
@@ -415,18 +413,16 @@ static void on_srv_l2cap_listen_started(tBTA_JV_L2CAP_START* p_start,
 
   sock->handle = p_start->handle;
 
+  log::info(
+      "Listening for L2CAP connection for device: {}, channel: {}, app_uid: "
+      "{}, id: {}, is_le: {}",
+      ADDRESS_TO_LOGGABLE_CSTR(sock->addr), sock->channel, sock->app_uid,
+      sock->id, sock->is_le_coc);
   btif_sock_connection_logger(
-      SOCKET_CONNECTION_STATE_LISTENING,
-      sock->server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, sock->addr,
-      sock->channel, sock->name);
-
-  log_socket_connection_state(
       sock->addr, sock->id, sock->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
-      android::bluetooth::SocketConnectionstateEnum::
-          SOCKET_CONNECTION_STATE_LISTENING,
-      0, 0, sock->app_uid, sock->channel,
-      sock->server ? android::bluetooth::SOCKET_ROLE_LISTEN
-                   : android::bluetooth::SOCKET_ROLE_CONNECTION);
+      SOCKET_CONNECTION_STATE_LISTENING,
+      sock->server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, sock->app_uid,
+      sock->channel, 0, 0, sock->name);
 
   if (!sock->server_psm_sent) {
     if (!send_app_psm_or_chan_l(sock)) {
@@ -483,18 +479,17 @@ static void on_srv_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
   accept_rs->id = sock->id;
   sock->id = new_listen_id;
 
+  log::info(
+      "Connected to L2CAP connection for device: {}, channel: {}, app_uid: {}, "
+      "id: {}, is_le: {}",
+      ADDRESS_TO_LOGGABLE_CSTR(sock->addr), sock->channel, sock->app_uid,
+      sock->id, sock->is_le_coc);
   btif_sock_connection_logger(
-      SOCKET_CONNECTION_STATE_CONNECTED,
-      accept_rs->server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION,
-      accept_rs->addr, accept_rs->channel, accept_rs->name);
-
-  log_socket_connection_state(
       accept_rs->addr, accept_rs->id,
       accept_rs->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
-      android::bluetooth::SOCKET_CONNECTION_STATE_CONNECTED, 0, 0,
-      accept_rs->app_uid, accept_rs->channel,
-      accept_rs->server ? android::bluetooth::SOCKET_ROLE_LISTEN
-                        : android::bluetooth::SOCKET_ROLE_CONNECTION);
+      SOCKET_CONNECTION_STATE_CONNECTED,
+      accept_rs->server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION,
+      accept_rs->app_uid, accept_rs->channel, 0, 0, accept_rs->name);
 
   // start monitor the socket
   btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP,
@@ -528,17 +523,16 @@ static void on_cl_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
     return;
   }
 
+  log::info(
+      "Connected to L2CAP connection for device: {}, channel: {}, app_uid: {}, "
+      "id: {}, is_le: {}",
+      ADDRESS_TO_LOGGABLE_CSTR(sock->addr), sock->channel, sock->app_uid,
+      sock->id, sock->is_le_coc);
   btif_sock_connection_logger(
-      SOCKET_CONNECTION_STATE_CONNECTED,
-      sock->server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, sock->addr,
-      sock->channel, sock->name);
-
-  log_socket_connection_state(
       sock->addr, sock->id, sock->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
-      android::bluetooth::SOCKET_CONNECTION_STATE_CONNECTED, 0, 0,
-      sock->app_uid, sock->channel,
-      sock->server ? android::bluetooth::SOCKET_ROLE_LISTEN
-                   : android::bluetooth::SOCKET_ROLE_CONNECTION);
+      SOCKET_CONNECTION_STATE_CONNECTED,
+      sock->server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, sock->app_uid,
+      sock->channel, 0, 0, sock->name);
 
   // start monitoring the socketpair to get call back when app writing data
   btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD,
@@ -585,17 +579,16 @@ static void on_l2cap_close(tBTA_JV_L2CAP_CLOSE* p_close, uint32_t id) {
     return;
   }
 
+  log::info(
+      "Disconnecting from L2CAP connection for device: {}, channel: {}, "
+      "app_uid: {}, id: {}, is_le: {}",
+      ADDRESS_TO_LOGGABLE_CSTR(sock->addr), sock->channel, sock->app_uid,
+      sock->id, sock->is_le_coc);
   btif_sock_connection_logger(
-      SOCKET_CONNECTION_STATE_DISCONNECTING,
-      sock->server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, sock->addr,
-      sock->channel, sock->name);
-
-  log_socket_connection_state(
       sock->addr, sock->id, sock->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
-      android::bluetooth::SOCKET_CONNECTION_STATE_DISCONNECTING, 0, 0,
-      sock->app_uid, sock->channel,
-      sock->server ? android::bluetooth::SOCKET_ROLE_LISTEN
-                   : android::bluetooth::SOCKET_ROLE_CONNECTION);
+      SOCKET_CONNECTION_STATE_DISCONNECTING,
+      sock->server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, sock->app_uid,
+      sock->channel, 0, 0, sock->name);
 
   if (!send_app_err_code(sock, p_close->reason)) {
     log::error("Unable to send l2cap socket to application socket_id:{}",

@@ -81,8 +81,6 @@ public class BluetoothOppTransferHistory extends Activity
 
     private int mContextMenuPosition;
 
-    private boolean mShowAllIncoming;
-
     private boolean mContextMenu = false;
 
     /** Class to handle Notification Manager updates */

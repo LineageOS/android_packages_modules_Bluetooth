@@ -36,6 +36,7 @@ constexpr EventCode AclConnectionEvents[] = {
     EventCode::READ_REMOTE_SUPPORTED_FEATURES_COMPLETE,
     EventCode::READ_REMOTE_EXTENDED_FEATURES_COMPLETE,
     EventCode::LINK_SUPERVISION_TIMEOUT_CHANGED,
+    EventCode::ENHANCED_FLUSH_COMPLETE,
 };
 
 typedef CommandInterface<AclCommandBuilder> AclConnectionInterface;

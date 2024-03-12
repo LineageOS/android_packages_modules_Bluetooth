@@ -16,6 +16,8 @@
 
 #include "hci/facade/le_scanning_manager_facade.h"
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 #include <unordered_map>
 #include <utility>
@@ -170,7 +172,7 @@ class LeScanningManagerFacadeService : public LeScanningManagerFacade::Service, 
       AddressWithType /* address_with_type */,
       uint8_t /* phy */,
       uint16_t /* interval */) override {
-    LOG_INFO("OnPeriodicSyncStarted in LeScanningManagerFacadeService");
+    log::info("OnPeriodicSyncStarted in LeScanningManagerFacadeService");
   };
 
   void OnPeriodicSyncReport(
@@ -179,20 +181,20 @@ class LeScanningManagerFacadeService : public LeScanningManagerFacade::Service, 
       int8_t /* rssi */,
       uint8_t /* status */,
       std::vector<uint8_t> /* data */) override {
-    LOG_INFO("OnPeriodicSyncReport in LeScanningManagerFacadeService");
+    log::info("OnPeriodicSyncReport in LeScanningManagerFacadeService");
   };
 
   void OnPeriodicSyncLost(uint16_t /* sync_handle */) override {
-    LOG_INFO("OnPeriodicSyncLost in LeScanningManagerFacadeService");
+    log::info("OnPeriodicSyncLost in LeScanningManagerFacadeService");
   };
 
   void OnPeriodicSyncTransferred(
       int /* pa_source */, uint8_t /* status */, Address /* address */) override {
-    LOG_INFO("OnPeriodicSyncTransferred in LeScanningManagerFacadeService");
+    log::info("OnPeriodicSyncTransferred in LeScanningManagerFacadeService");
   };
 
   void OnBigInfoReport(uint16_t /* sync_handle */, bool /* encrypted */) override {
-    LOG_INFO("OnBigInfoReport in LeScanningManagerFacadeService");
+    log::info("OnBigInfoReport in LeScanningManagerFacadeService");
   };
 
   LeScanningManager* le_scanning_manager_;

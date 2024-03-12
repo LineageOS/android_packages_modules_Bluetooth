@@ -77,7 +77,6 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -185,13 +184,7 @@ public class HeadsetServiceAndStateMachineTest {
         doReturn(new ParcelUuid[]{BluetoothUuid.HFP}).when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
-        // We cannot mock HeadsetObjectsFactory.getInstance() with Mockito.
-        // Hence we need to use reflection to call a private method to
-        // initialize properly the HeadsetObjectsFactory.sInstance field.
-        Method method = HeadsetObjectsFactory.class.getDeclaredMethod("setInstanceForTesting",
-                HeadsetObjectsFactory.class);
-        method.setAccessible(true);
-        method.invoke(null, mObjectsFactory);
+        HeadsetObjectsFactory.setInstanceForTesting(mObjectsFactory);
         // This line must be called to make sure relevant objects are initialized properly
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         // Mock methods in AdapterService
@@ -279,11 +272,7 @@ public class HeadsetServiceAndStateMachineTest {
         }
         HeadsetService.sStartVrTimeoutMs = mOriginalVrTimeoutMs;
         Intents.release();
-        Method method =
-                HeadsetObjectsFactory.class.getDeclaredMethod(
-                        "setInstanceForTesting", HeadsetObjectsFactory.class);
-        method.setAccessible(true);
-        method.invoke(null, (HeadsetObjectsFactory) null);
+        HeadsetObjectsFactory.setInstanceForTesting(null);
         mBondedDevices.clear();
         TestUtils.clearAdapterService(mAdapterService);
     }

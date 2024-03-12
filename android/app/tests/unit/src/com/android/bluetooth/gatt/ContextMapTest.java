@@ -114,7 +114,7 @@ public class ContextMapTest {
         int id = 12345;
         doReturn(appAdvertiseStats)
                 .when(mMapMethodProxy)
-                .createAppAdvertiseStats(appUid, id, APP_NAME, contextMap, mMockGatt);
+                .createAppAdvertiseStats(id, APP_NAME, contextMap, mMockGatt);
 
         contextMap.add(id, null, mMockGatt);
 

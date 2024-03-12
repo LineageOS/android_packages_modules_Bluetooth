@@ -122,7 +122,6 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
     public static final UUID UUID_CONTENT_CONTROL_ID =
             UUID.fromString("00002bba-0000-1000-8000-00805f9b34fb");
 
-    private static final byte SEARCH_CONTROL_POINT_RESULT_SUCCESS = 0x01;
     private static final byte SEARCH_CONTROL_POINT_RESULT_FAILURE = 0x02;
 
     private static final float PLAY_SPEED_MIN = 0.25f;
@@ -623,8 +622,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                 // Always ask for the latest position
                 if (op.mCharacteristic.getUuid().equals(
                         mCharacteristics.get(CharId.TRACK_POSITION).getUuid())) {
-                    long positionMs = TRACK_POSITION_UNAVAILABLE;
-                    positionMs = mCallbacks.onGetCurrentTrackPosition();
+                    long positionMs = mCallbacks.onGetCurrentTrackPosition();
                     final int position =
                             (positionMs != TRACK_POSITION_UNAVAILABLE)
                                     ? (int) millisecondsToMcsInterval(positionMs)

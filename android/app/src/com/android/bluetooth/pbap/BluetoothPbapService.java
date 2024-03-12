@@ -943,8 +943,14 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
             return false;
         }
 
-        PbapStateMachine sm = PbapStateMachine.make(this, mHandlerThread.getLooper(), remoteDevice,
-                socket,  this, mSessionStatusHandler, mNextNotificationId);
+        PbapStateMachine sm =
+                PbapStateMachine.make(
+                        this,
+                        mHandlerThread.getLooper(),
+                        remoteDevice,
+                        socket,
+                        mSessionStatusHandler,
+                        mNextNotificationId);
         mNextNotificationId++;
         if (mNextNotificationId == PBAP_NOTIFICATION_ID_END) {
             mNextNotificationId = PBAP_NOTIFICATION_ID_START;

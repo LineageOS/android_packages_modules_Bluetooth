@@ -32,6 +32,24 @@ static const Uuid SEQUENTIAL = Uuid::From128BitBE(
 static const Uuid kBase = Uuid::From128BitBE(
     Uuid::UUID128Bit{{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00, 0x80, 0x5f, 0x9b, 0x34, 0xfb}});
 
+static const Uuid kBaseLe = Uuid::From128BitLE(Uuid::UUID128Bit{
+    {0xfb,
+     0x34,
+     0x9b,
+     0x5f,
+     0x80,
+     0x00,
+     0x00,
+     0x80,
+     0x00,
+     0x10,
+     0x00,
+     0x00,
+     0x00,
+     0x00,
+     0x00,
+     0x00}});
+
 TEST(UuidTest, IsEmpty) {
   ASSERT_TRUE(Uuid::kEmpty.IsEmpty());
   ASSERT_FALSE(kBase.IsEmpty());
@@ -131,6 +149,32 @@ TEST(UuidTest, test_string_to_uuid) {
   ASSERT_TRUE(memcmp(uuid->data(), u3, sizeof(u3)) == 0);
 }
 
+TEST(UuidTest, legacy) {
+  const std::string UUID_BASE_STR = "e39c6285-867f-4b1d-9db0-35fbd9aebf22";
+  auto uuid = Uuid::FromString("e39c6285-867f-4b1d-9db0-35fbd9aebf22");
+  ASSERT_EQ(UUID_BASE_STR, uuid->ToLegacyConfigString());
+  ASSERT_EQ(uuid, Uuid::FromLegacyConfigString(UUID_BASE_STR));
+}
+
+TEST(UuidTest, random) {
+  auto uuid = Uuid::GetRandom();
+  ASSERT_TRUE(!uuid.IsEmpty());
+}
+
+TEST(UuidTest, inequalities) {
+  auto uuid1 = Uuid::kEmpty;
+  auto uuid2 = Uuid::FromString("11111111-1111-1111-1111-111111111111");
+
+  ASSERT_TRUE(uuid1 < uuid2);
+  ASSERT_TRUE(uuid1 != uuid2);
+}
+
+TEST(UuidTest, endianness) {
+  Uuid uuidBe = kBase;
+  Uuid uuidLe = kBaseLe;
+  ASSERT_EQ(kBase, kBaseLe);
+}
+
 TEST(UuidTest, test_string_to_uuid_invalid) {
   ASSERT_FALSE(Uuid::FromString("This is not a UUID"));
   ASSERT_FALSE(Uuid::FromString("11212"));
@@ -139,6 +183,9 @@ TEST(UuidTest, test_string_to_uuid_invalid) {
   ASSERT_FALSE(Uuid::FromString("ABFG"));
   ASSERT_FALSE(Uuid::FromString("e39c6285867f14b1d9db035fbd9aebf22"));
   ASSERT_FALSE(Uuid::FromString("12234567-89ab-cdef-abcd-ef01234567ZZ"));
+  ASSERT_FALSE(Uuid::FromString(std::string()));
+  ASSERT_FALSE(Uuid::FromString("e39c6285 867f 4b1d 9db0 35fbd9aebf22"));
+  ASSERT_FALSE(Uuid::FromString("ab34xx78"));
 }
 
 }  // namespace testing

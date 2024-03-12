@@ -51,8 +51,6 @@ public class PeriodicScanManager {
     Map<IBinder, SyncInfo> mSyncs = new ConcurrentHashMap<>();
     Map<IBinder, SyncTransferInfo> mSyncTransfers = Collections.synchronizedMap(new HashMap<>());
     static int sTempRegistrationId = -1;
-    private static final int PA_SOURCE_LOCAL = 1;
-    private static final int PA_SOURCE_REMOTE = 2;
 
     /** Constructor of {@link PeriodicScanManager}. */
     public PeriodicScanManager(AdapterService adapterService) {

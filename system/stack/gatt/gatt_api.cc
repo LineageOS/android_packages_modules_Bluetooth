@@ -769,7 +769,7 @@ tGATTC_TryMtuRequestResult GATTC_TryMtuRequest(const RawAddress& remote_bda,
                                                tBT_TRANSPORT transport,
                                                uint16_t conn_id,
                                                uint16_t* current_mtu) {
-  log::info("{} conn_id=0x{:04x}", remote_bda.ToString(), conn_id);
+  log::info("{} conn_id=0x{:04x}", ADDRESS_TO_LOGGABLE_STR(remote_bda), conn_id);
   *current_mtu = GATT_DEF_BLE_MTU_SIZE;
 
   if (transport == BT_TRANSPORT_BR_EDR) {

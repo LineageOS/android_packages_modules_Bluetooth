@@ -79,10 +79,8 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
     // The actual incoming connection handle
     private BluetoothSocket mConnSocket = null;
     // The remote connected device
-    private BluetoothDevice mRemoteDevice = null;
     private BluetoothAdapter mAdapter;
 
-    private volatile boolean mInterrupted;              // Used to interrupt socket accept thread
     private volatile boolean mShutdown = false;         // Used to interrupt socket accept thread
     private volatile boolean mAcceptNewConnections = false;
 
@@ -509,7 +507,6 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
         boolean isValid = mMapService.onConnect(device, BluetoothMapMasInstance.this);
 
         if (isValid) {
-            mRemoteDevice = device;
             mConnSocket = socket;
             mAcceptNewConnections = false;
         }

@@ -39,9 +39,6 @@ class PlayerApplicationSettings {
     static final byte SHUFFLE_STATUS = 0x03;
     static final byte SCAN_STATUS = 0x04;
 
-    private static final byte JNI_EQUALIZER_STATUS_OFF = 0x01;
-    private static final byte JNI_EQUALIZER_STATUS_ON = 0x02;
-
     @VisibleForTesting
     static final byte JNI_REPEAT_STATUS_OFF = 0x01;
     @VisibleForTesting
@@ -57,10 +54,6 @@ class PlayerApplicationSettings {
     static final byte JNI_SHUFFLE_STATUS_ALL_TRACK_SHUFFLE = 0x02;
     @VisibleForTesting
     static final byte JNI_SHUFFLE_STATUS_GROUP_SHUFFLE = 0x03;
-
-    private static final byte JNI_SCAN_STATUS_OFF = 0x01;
-    private static final byte JNI_SCAN_STATUS_ALL_TRACK_SCAN = 0x02;
-    private static final byte JNI_SCAN_STATUS_GROUP_SCAN = 0x03;
 
     @VisibleForTesting
     static final byte JNI_STATUS_INVALID = -1;

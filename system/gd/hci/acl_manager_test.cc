@@ -16,6 +16,7 @@
 
 #include "hci/acl_manager.h"
 
+#include <bluetooth/log.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -387,7 +388,7 @@ class AclManagerWithLeConnectionTest : public AclManagerTest {
         });
 
     if (send_early_acl_) {
-      LOG_INFO("Sending a packet with handle 0x%02x (0x%d)", handle_, handle_);
+      log::info("Sending a packet with handle 0x{:02x} ({})", handle_, handle_);
       test_hci_layer_->IncomingAclData(handle_);
     }
 
@@ -956,12 +957,12 @@ TEST_F(AclManagerWithConnectionTest, send_flow_specification) {
 
 TEST_F(AclManagerWithConnectionTest, send_flush) {
   connection_->Flush();
-  auto packet = GetConnectionManagementCommand(OpCode::FLUSH);
-  auto command_view = FlushView::Create(packet);
+  auto packet = GetConnectionManagementCommand(OpCode::ENHANCED_FLUSH);
+  auto command_view = EnhancedFlushView::Create(packet);
   ASSERT_TRUE(command_view.IsValid());
 
   EXPECT_CALL(mock_connection_management_callbacks_, OnFlushOccurred());
-  test_hci_layer_->IncomingEvent(FlushOccurredBuilder::Create(handle_));
+  test_hci_layer_->IncomingEvent(EnhancedFlushCompleteBuilder::Create(handle_));
   sync_client_handler();
 }
 

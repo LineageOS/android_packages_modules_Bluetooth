@@ -85,7 +85,6 @@ public class BassClientStateMachine extends StateMachine {
     private static final byte OPCODE_UPDATE_SOURCE = 0x03;
     private static final byte OPCODE_SET_BCAST_PIN = 0x04;
     private static final byte OPCODE_REMOVE_SOURCE = 0x05;
-    private static final int ADD_SOURCE_FIXED_LENGTH = 16;
     private static final int UPDATE_SOURCE_FIXED_LENGTH = 6;
 
     static final int CONNECT = 1;
@@ -149,7 +148,6 @@ public class BassClientStateMachine extends StateMachine {
     BluetoothGattCharacteristic mBroadcastScanControlPoint;
     private final Map<Integer, Boolean> mFirstTimeBisDiscoveryMap;
     private int mPASyncRetryCounter = 0;
-    private ScanResult mScanRes = null;
     @VisibleForTesting
     int mNumOfBroadcastReceiverStates = 0;
     @VisibleForTesting
@@ -539,11 +537,6 @@ public class BassClientStateMachine extends StateMachine {
             mBluetoothGatt.close();
             mBluetoothGatt = null;
         }
-    }
-
-    private BluetoothLeBroadcastMetadata getBroadcastMetadataFromBaseData(
-            BaseData baseData, BluetoothDevice device, int syncHandle) {
-        return getBroadcastMetadataFromBaseData(baseData, device, syncHandle, false);
     }
 
     private BluetoothLeBroadcastMetadata getBroadcastMetadataFromBaseData(
