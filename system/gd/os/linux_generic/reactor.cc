@@ -138,7 +138,8 @@ void Reactor::Run() {
     epoll_event events[kEpollMaxEvents];
     int count;
     RUN_NO_INTR(count = epoll_wait(epoll_fd_, events, kEpollMaxEvents, timeout_ms));
-    ASSERT(count != -1);
+    ASSERT_LOG(count != -1, "epoll_wait failed: fd=%d, err=%s",
+               epoll_fd_, strerror(errno));
     if (waiting_for_idle && count == 0) {
       timeout_ms = -1;
       waiting_for_idle = false;
@@ -244,7 +245,7 @@ void Reactor::Unregister(Reactor::Reactable* reactable) {
     if (result == -1 && errno == ENOENT) {
       LOG_INFO("reactable is invalid or unregistered");
     } else {
-      ASSERT(result != -1);
+      ASSERT_LOG(result != -1, "could not unregister epoll fd: %s", strerror(errno));
     }
 
     // If we are unregistering during the callback event from this reactable, we delete it after the callback is
