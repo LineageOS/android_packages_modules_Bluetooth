@@ -15,7 +15,6 @@
  */
 package com.android.bluetooth.pbapclient;
 
-import android.accounts.Account;
 import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -36,13 +35,11 @@ public class PhonebookPullRequest extends PullRequest {
     @VisibleForTesting
     static final int MAX_OPS = 250;
 
-    private final Account mAccount;
     private final Context mContext;
     public boolean complete = false;
 
-    public PhonebookPullRequest(Context context, Account account) {
+    public PhonebookPullRequest(Context context) {
         mContext = context;
-        mAccount = account;
         path = PbapClientConnectionHandler.PB_PATH;
     }
 
@@ -60,7 +57,6 @@ public class PhonebookPullRequest extends PullRequest {
         try {
             ContentResolver contactsProvider = mContext.getContentResolver();
             ArrayList<ContentProviderOperation> insertOperations = new ArrayList<>();
-            ArrayList<ContentProviderOperation> currentContactOperations;
             // Group insert operations together to minimize inter process communication and improve
             // processing time.
             for (VCardEntry e : mEntries) {

@@ -44,7 +44,6 @@ import java.util.Objects;
 public class BluetoothMapAccountLoader {
     private static final String TAG = "BluetoothMapAccountLoader";
     private static final boolean D = BluetoothMapService.DEBUG;
-    private static final boolean V = BluetoothMapService.VERBOSE;
     private Context mContext = null;
     private PackageManager mPackageManager = null;
     private ContentResolver mResolver;

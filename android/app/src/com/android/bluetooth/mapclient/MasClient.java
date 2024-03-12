@@ -44,7 +44,6 @@ public class MasClient {
     private static final int REQUEST = 2;
     private static final String TAG = "MasClient";
     private static final boolean DBG = MapClientService.DBG;
-    private static final boolean VDBG = MapClientService.VDBG;
     private static final byte[] BLUETOOTH_UUID_OBEX_MAS = new byte[]{
             (byte) 0xbb,
             0x58,

@@ -541,13 +541,12 @@ public class AppScanStats {
 
     synchronized void recordScanResume(int scannerId) {
         LastScan scan = getScanFromScannerId(scannerId);
-        long suspendDuration = 0;
         if (scan == null || !scan.isSuspended) {
             return;
         }
         scan.isSuspended = false;
         stopTime = SystemClock.elapsedRealtime();
-        suspendDuration = stopTime - scan.suspendStartTime;
+        long suspendDuration = stopTime - scan.suspendStartTime;
         scan.suspendDuration += suspendDuration;
         mTotalSuspendTime += suspendDuration;
     }
@@ -707,7 +706,6 @@ public class AppScanStats {
     public synchronized void dumpToString(StringBuilder sb) {
         long currentTime = System.currentTimeMillis();
         long currTime = SystemClock.elapsedRealtime();
-        long Score = 0;
         long scanDuration = 0;
         long suspendDuration = 0;
         long activeDuration = 0;
@@ -758,9 +756,13 @@ public class AppScanStats {
                 }
             }
         }
-        Score = (oppScanTime * OPPORTUNISTIC_WEIGHT + lowPowerScanTime * LOW_POWER_WEIGHT
-              + balancedScanTime * BALANCED_WEIGHT + lowLatencyScanTime * LOW_LATENCY_WEIGHT
-              + ambientDiscoveryScanTime * AMBIENT_DISCOVERY_WEIGHT) / 100;
+        long Score =
+                (oppScanTime * OPPORTUNISTIC_WEIGHT
+                                + lowPowerScanTime * LOW_POWER_WEIGHT
+                                + balancedScanTime * BALANCED_WEIGHT
+                                + lowLatencyScanTime * LOW_LATENCY_WEIGHT
+                                + ambientDiscoveryScanTime * AMBIENT_DISCOVERY_WEIGHT)
+                        / 100;
 
         sb.append("  " + appName);
         if (isRegistered) {
@@ -867,8 +869,6 @@ public class AppScanStats {
                     sb.append("Regular Scan");
                 }
                 if (scan.suspendStartTime != 0) {
-                    long duration = scan.suspendDuration + (scan.isSuspended ? (currTime
-                            - scan.suspendStartTime) : 0);
                     activeDuration = scan.duration - scan.suspendDuration;
                     sb.append("\n      └ " + "Suspended Time:" + scan.suspendDuration
                             + "ms, Active Time:" + activeDuration);

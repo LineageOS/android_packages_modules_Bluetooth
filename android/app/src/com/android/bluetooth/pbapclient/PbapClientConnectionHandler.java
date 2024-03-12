@@ -86,7 +86,6 @@ class PbapClientConnectionHandler extends Handler {
     };
 
     private static final int PBAP_FEATURE_DEFAULT_IMAGE_FORMAT = 0x00000200;
-    private static final int PBAP_FEATURE_BROWSING = 0x00000002;
     private static final int PBAP_FEATURE_DOWNLOADING = 0x00000001;
 
     private static final long PBAP_FILTER_VERSION = 1 << 0;
@@ -148,7 +147,7 @@ class PbapClientConnectionHandler extends Handler {
         mDevice = pceHandlerbuild.mDevice;
         mContext = pceHandlerbuild.mContext;
         mPbapClientStateMachine = pceHandlerbuild.mClientStateMachine;
-        mAuth = new BluetoothPbapObexAuthenticator(this);
+        mAuth = new BluetoothPbapObexAuthenticator();
         mAccountManager = AccountManager.get(mPbapClientStateMachine.getContext());
         mAccount =
                 new Account(mDevice.getAddress(), mContext.getString(R.string.pbap_account_type));
@@ -389,8 +388,7 @@ class PbapClientConnectionHandler extends Handler {
     void downloadContacts(String path) {
         try {
             PhonebookPullRequest processor =
-                    new PhonebookPullRequest(mPbapClientStateMachine.getContext(),
-                            mAccount);
+                    new PhonebookPullRequest(mPbapClientStateMachine.getContext());
 
             // Download contacts in batches of size DEFAULT_BATCH_SIZE
             BluetoothPbapRequestPullPhoneBookSize requestPbSize =

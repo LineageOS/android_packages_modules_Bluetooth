@@ -142,9 +142,8 @@ public class BluetoothOppReceiver extends BroadcastReceiver {
                 }
             }
 
-            BluetoothOppTransferInfo transInfo = new BluetoothOppTransferInfo();
             Uri uri = intent.getData();
-            transInfo = BluetoothOppUtility.queryRecord(context, uri);
+            BluetoothOppTransferInfo transInfo = BluetoothOppUtility.queryRecord(context, uri);
             if (transInfo == null) {
                 Log.e(TAG, "Error: Can not get data from db");
                 ContentProfileErrorReportUtils.report(
@@ -259,8 +258,8 @@ public class BluetoothOppReceiver extends BroadcastReceiver {
             }
 
             String toastMsg = null;
-            BluetoothOppTransferInfo transInfo = new BluetoothOppTransferInfo();
-            transInfo = BluetoothOppUtility.queryRecord(context, intent.getData());
+            BluetoothOppTransferInfo transInfo =
+                    BluetoothOppUtility.queryRecord(context, intent.getData());
             if (transInfo == null) {
                 Log.e(TAG, "Error: Can not get data from db");
                 ContentProfileErrorReportUtils.report(

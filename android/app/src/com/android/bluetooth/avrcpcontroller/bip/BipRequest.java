@@ -149,10 +149,6 @@ abstract class BipRequest {
         /* nothing here by default */
     }
 
-    private synchronized ClientOperation getOperation() {
-        return mOperation;
-    }
-
     private synchronized void setOperation(ClientOperation operation) {
         mOperation = operation;
     }

@@ -16,18 +16,12 @@
 
 package com.android.bluetooth.hfp;
 
-import android.annotation.NonNull;
-import android.annotation.Nullable;
 import android.annotation.RequiresPermission;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHeadset;
 import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.content.ActivityNotFoundException;
-import android.content.ComponentName;
 import android.content.Intent;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.PowerManager;
@@ -49,7 +43,6 @@ import java.util.List;
 @VisibleForTesting
 public class HeadsetSystemInterface {
     private static final String TAG = HeadsetSystemInterface.class.getSimpleName();
-    private static final boolean DBG = false;
 
     private final HeadsetService mHeadsetService;
     private final AudioManager mAudioManager;
@@ -75,39 +68,6 @@ public class HeadsetSystemInterface {
 
     private BluetoothInCallService getBluetoothInCallServiceInstance() {
         return BluetoothInCallService.getInstance();
-    }
-
-    /**
-     * Special function for use by the system to resolve service
-     * intents to system apps.  Throws an exception if there are
-     * multiple potential matches to the Intent.  Returns null if
-     * there are no matches.
-     */
-    private @Nullable ComponentName resolveSystemService(@NonNull PackageManager pm,
-            int componentInfoFlags, Intent intent) {
-        if (intent.getComponent() != null) {
-            return intent.getComponent();
-        }
-
-        List<ResolveInfo> results = pm.queryIntentServices(intent, componentInfoFlags);
-        if (results == null) {
-            return null;
-        }
-        ComponentName comp = null;
-        for (int i = 0; i < results.size(); i++) {
-            ResolveInfo ri = results.get(i);
-            if ((ri.serviceInfo.applicationInfo.flags& ApplicationInfo.FLAG_SYSTEM) == 0) {
-                continue;
-            }
-            ComponentName foundComp = new ComponentName(ri.serviceInfo.applicationInfo.packageName,
-                    ri.serviceInfo.name);
-            if (comp != null) {
-                throw new IllegalStateException("Multiple system services handle " + this
-                        + ": " + comp + ", " + foundComp);
-            }
-            comp = foundComp;
-        }
-        return comp;
     }
 
     /**

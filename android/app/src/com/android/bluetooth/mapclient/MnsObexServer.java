@@ -19,7 +19,6 @@ package com.android.bluetooth.mapclient;
 import android.util.Log;
 
 import com.android.bluetooth.ObexAppParameters;
-import com.android.bluetooth.ObexServerSockets;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.HeaderSet;
 import com.android.obex.Operation;
@@ -59,12 +58,10 @@ class MnsObexServer extends ServerRequestHandler {
     static final String TYPE = "x-bt/MAP-event-report";
 
     private final WeakReference<MceStateMachine> mStateMachineReference;
-    private final ObexServerSockets mObexServerSockets;
 
-    MnsObexServer(MceStateMachine stateMachine, ObexServerSockets socketOriginator) {
+    MnsObexServer(MceStateMachine stateMachine) {
         super();
         mStateMachineReference = new WeakReference<>(stateMachine);
-        mObexServerSockets = socketOriginator;
     }
 
     @Override
@@ -123,7 +120,6 @@ class MnsObexServer extends ServerRequestHandler {
                 return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
             }
 
-            Byte inst = oap.getByte(Request.OAP_TAGID_MAS_INSTANCE_ID);
             EventReport ev = EventReport.fromStream(op.openDataInputStream());
             op.close();
 

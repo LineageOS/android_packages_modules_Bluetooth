@@ -148,11 +148,6 @@ public class BipImageDescriptor {
     }
 
     /**
-     * The version of the image-descriptor XML string
-     */
-    private String mVersion = null;
-
-    /**
      * The encoding of the image, required by the specification
      */
     private BipEncoding mEncoding = null;
@@ -180,9 +175,7 @@ public class BipImageDescriptor {
      */
     private int mMaxSize = -1;
 
-    private BipImageDescriptor() {
-        mVersion = sVersion;
-    }
+    private BipImageDescriptor() {}
 
     public BipImageDescriptor(InputStream inputStream) {
         parse(inputStream);
@@ -197,9 +190,7 @@ public class BipImageDescriptor {
                 switch (event) {
                     case XmlPullParser.START_TAG:
                         String tag = xpp.getName();
-                        if (tag.equals("image-descriptor")) {
-                            mVersion = xpp.getAttributeValue(null, "version");
-                        } else if (tag.equals("image")) {
+                        if (tag.equals("image")) {
                             mEncoding = new BipEncoding(xpp.getAttributeValue(null, "encoding"));
                             mPixel = new BipPixel(xpp.getAttributeValue(null, "pixel"));
                             mSize = parseInt(xpp.getAttributeValue(null, "size"));

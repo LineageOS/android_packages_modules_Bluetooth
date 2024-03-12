@@ -58,7 +58,6 @@ import java.util.List;
 public final class BluetoothOppProvider extends ContentProvider {
 
     private static final String TAG = "BluetoothOppProvider";
-    private static final boolean D = Constants.DEBUG;
     private static final boolean V = Constants.VERBOSE;
 
     /** Database filename */

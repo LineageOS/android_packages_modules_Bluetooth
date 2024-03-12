@@ -53,7 +53,6 @@ public class BluetoothMnsObexClient {
 
     private ObexTransport mTransport;
     public Handler mHandler = null;
-    private volatile boolean mWaitingForRemote;
     private static final String TYPE_EVENT = "x-bt/MAP-event-report";
     private ClientSession mClientSession;
     private boolean mConnected = false;
@@ -427,9 +426,6 @@ public class BluetoothMnsObexClient {
             };
             hs.setHeader(HeaderSet.TARGET, mnsTarget);
 
-            synchronized (this) {
-                mWaitingForRemote = true;
-            }
             try {
                 mHsConnect = mClientSession.connect(hs);
                 if (D) {
@@ -445,9 +441,6 @@ public class BluetoothMnsObexClient {
                 Log.e(TAG, "OBEX session connect error " + e.getMessage());
             }
             mConnected = connected;
-        }
-        synchronized (this) {
-            mWaitingForRemote = false;
         }
     }
 
@@ -516,9 +509,6 @@ public class BluetoothMnsObexClient {
                         9);
             }
 
-            synchronized (this) {
-                mWaitingForRemote = true;
-            }
             // Send the header first and then the body
             try {
                 if (V) {
@@ -535,9 +525,6 @@ public class BluetoothMnsObexClient {
                         10);
                 Log.e(TAG, "Error when put HeaderSet " + e.getMessage());
                 error = true;
-            }
-            synchronized (this) {
-                mWaitingForRemote = false;
             }
             if (!error) {
                 try {

@@ -32,8 +32,6 @@ class Util {
     public static String TAG = "audio_util.Util";
     public static boolean DEBUG = false;
 
-    private static final String GPM_KEY = "com.google.android.music.mediasession.music_metadata";
-
     // TODO (apanicke): Remove this prefix later, for now it makes debugging easier.
     public static final String NOW_PLAYING_PREFIX = "NowPlayingId";
 

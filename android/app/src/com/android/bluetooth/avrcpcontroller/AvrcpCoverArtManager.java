@@ -90,13 +90,8 @@ public class AvrcpCoverArtManager {
      * Currently contains the mapping of image handles seen to assigned UUIDs.
      */
     private class AvrcpBipSession {
-        private final BluetoothDevice mDevice;
         private Map<String, String> mUuids = new ConcurrentHashMap<>(1); /* handle -> UUID */
         private Map<String, String> mHandles = new ConcurrentHashMap<>(1); /* UUID -> handle */
-
-        AvrcpBipSession(BluetoothDevice device) {
-            mDevice = device;
-        }
 
         public String getHandleUuid(String handle) {
             if (!isValidImageHandle(handle)) return null;
@@ -161,7 +156,7 @@ public class AvrcpCoverArtManager {
         AvrcpBipClient client = new AvrcpBipClient(device, psm, new BipClientCallback(device));
         client.connectAsync();
         mClients.put(device, client);
-        mBipSessions.put(device, new AvrcpBipSession(device));
+        mBipSessions.put(device, new AvrcpBipSession());
         return true;
     }
 

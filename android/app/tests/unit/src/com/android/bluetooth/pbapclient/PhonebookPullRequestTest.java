@@ -18,9 +18,7 @@ package com.android.bluetooth.pbapclient;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.Mockito.mock;
 
-import android.accounts.Account;
 import android.content.Context;
 
 import androidx.test.filters.SmallTest;
@@ -48,7 +46,7 @@ public class PhonebookPullRequestTest {
     @Before
     public void setUp() {
         mTargetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        mRequest = new PhonebookPullRequest(mTargetContext, mock(Account.class));
+        mRequest = new PhonebookPullRequest(mTargetContext);
     }
 
     @Test

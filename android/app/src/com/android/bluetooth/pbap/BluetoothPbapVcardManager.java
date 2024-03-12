@@ -63,8 +63,6 @@ public class BluetoothPbapVcardManager {
 
     private Context mContext;
 
-    private static final int PHONE_NUMBER_COLUMN_INDEX = 3;
-
     static final String SORT_ORDER_PHONE_NUMBER = CommonDataKinds.Phone.NUMBER + " ASC";
 
     static final String[] PHONES_CONTACTS_PROJECTION = new String[]{
@@ -345,7 +343,6 @@ public class BluetoothPbapVcardManager {
             String vCardSelectorOperator) {
         ArrayList<String> nameList = new ArrayList<String>();
         PropertySelector vcardselector = new PropertySelector(selector);
-        VCardComposer composer = null;
         int vcardType;
 
         if (vcardType21) {
@@ -354,7 +351,8 @@ public class BluetoothPbapVcardManager {
             vcardType = VCardConfig.VCARD_TYPE_V30_GENERIC;
         }
 
-        composer = BluetoothPbapUtils.createFilteredVCardComposer(mContext, vcardType, null);
+        VCardComposer composer =
+                BluetoothPbapUtils.createFilteredVCardComposer(mContext, vcardType, null);
         composer.setPhoneNumberTranslationCallback(new VCardPhoneNumberTranslationCallback() {
 
             @Override
@@ -524,7 +522,6 @@ public class BluetoothPbapVcardManager {
         Cursor callCursor = null;
         long count = 0;
         long primaryVcMsb = 0;
-        ArrayList<String> list = new ArrayList<String>();
         try {
             callCursor = BluetoothMethodProxy.getInstance().contentResolverQuery(mResolver,
                     myUri, null, selection, null, null);

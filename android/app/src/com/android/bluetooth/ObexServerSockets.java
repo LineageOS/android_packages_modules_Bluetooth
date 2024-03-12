@@ -25,7 +25,6 @@ import com.android.obex.ResponseCodes;
 import com.android.obex.ServerSession;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Wraps multiple BluetoothServerSocket objects to make it possible to accept connections on
@@ -58,7 +57,6 @@ public class ObexServerSockets {
     private SocketAcceptThread mRfcommThread;
     private SocketAcceptThread mL2capThread;
 
-    private static volatile AtomicInteger sInstanceCounter = new AtomicInteger(0);
 
     private ObexServerSockets(IObexConnectionHandler conHandler, BluetoothServerSocket rfcommSocket,
             BluetoothServerSocket l2capSocket) {

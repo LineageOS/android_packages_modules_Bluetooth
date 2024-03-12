@@ -41,7 +41,6 @@ import com.android.obex.ResponseCodes;
 import com.android.obex.ServerOperation;
 import com.android.vcard.VCardBuilder;
 import com.android.vcard.VCardConfig;
-import com.android.vcard.VCardUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -162,7 +161,6 @@ public class BluetoothPbapSimVcardManager {
         if (TextUtils.isEmpty(name)) {
             name = mCursor.getString(NUMBER_COLUMN_INDEX);
         }
-        final boolean needCharset = !(VCardUtils.containsOnlyPrintableAscii(name));
         // Create ContentValues for making name as Structured name
         List<ContentValues> contentValuesList = new ArrayList<ContentValues>();
         ContentValues nameContentValues = new ContentValues();

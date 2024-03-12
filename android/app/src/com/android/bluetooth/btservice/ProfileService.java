@@ -45,7 +45,6 @@ public abstract class ProfileService extends ContextWrapper {
 
     private final IProfileServiceBinder mBinder;
     private final String mName;
-    private AdapterService mAdapterService;
     private boolean mAvailable = false;
     private volatile boolean mTestModeEnabled = false;
 
