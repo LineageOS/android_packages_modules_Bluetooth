@@ -23,6 +23,13 @@ flag {
 }
 
 flag {
+    name: "fast_bind_to_app"
+    namespace: "bluetooth"
+    description: "Remove complexity and non necessary initialization when simply binding"
+    bug: "328698375"
+}
+
+flag {
     name: "use_new_airplane_mode"
     namespace: "bluetooth"
     description: "Use the new implemention of airplane mode"
