@@ -1074,15 +1074,6 @@ tGATT_CLCB* gatt_clcb_alloc(uint16_t conn_id) {
   gatt_cb.clcb_queue.emplace_back(clcb);
   auto p_clcb = &(gatt_cb.clcb_queue.back());
 
-  if (gatt_cb.clcb_queue.size() > GATT_CL_MAX_LCB) {
-    /* GATT_CL_MAX_LCB is here from the historical reasons. We believe this
-     * limitation is not needed. In addition, number of clcb should not be
-     * bigger than that and also if it is bigger, we  believe it should not
-     * cause the problem. This WARN is just to monitor number of CLCB and will
-     * help in debugging in case we are wrong */
-    log::warn("Number of CLCB: {} > {}", gatt_cb.clcb_queue.size(),
-              GATT_CL_MAX_LCB);
-  }
   return p_clcb;
 }
 

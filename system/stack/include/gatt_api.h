@@ -313,10 +313,6 @@ inline std::string gatt_disconnection_reason_text(
 */
 #define GATT_INVALID_CONN_ID 0xFFFF
 
-#ifndef GATT_CL_MAX_LCB
-#define GATT_CL_MAX_LCB 22
-#endif
-
 /* GATT notification caching timer, default to be three seconds
 */
 #ifndef GATTC_NOTIF_TIMEOUT
