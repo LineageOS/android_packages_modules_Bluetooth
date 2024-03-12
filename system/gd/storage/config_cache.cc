@@ -16,6 +16,8 @@
 
 #include "storage/config_cache.h"
 
+#include <bluetooth/log.h>
+
 #include <ios>
 #include <sstream>
 #include <utility>
@@ -286,7 +288,7 @@ bool ConfigCache::RemoveProperty(const std::string& section, const std::string& 
 
 void ConfigCache::ConvertEncryptOrDecryptKeyIfNeeded() {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
-  LOG_INFO("%s", __func__);
+  log::info("");
   auto persistent_sections = GetPersistentSections();
   for (const auto& section : persistent_sections) {
     auto section_iter = persistent_devices_.find(section);
@@ -327,7 +329,7 @@ void ConfigCache::RemoveSectionWithProperty(const std::string& property) {
   for (auto* config_section : {&information_sections_, &persistent_devices_}) {
     for (auto it = config_section->begin(); it != config_section->end();) {
       if (it->second.contains(property)) {
-        LOG_INFO("Removing persistent section %s with property %s", it->first.c_str(), property.c_str());
+        log::info("Removing persistent section {} with property {}", it->first, property);
         it = config_section->erase(it);
         num_persistent_removed++;
         continue;
@@ -337,7 +339,7 @@ void ConfigCache::RemoveSectionWithProperty(const std::string& property) {
   }
   for (auto it = temporary_devices_.begin(); it != temporary_devices_.end();) {
     if (it->second.contains(property)) {
-      LOG_INFO("Removing temporary section %s with property %s", it->first.c_str(), property.c_str());
+      log::info("Removing temporary section {} with property {}", it->first, property);
       it = temporary_devices_.erase(it);
       continue;
     }

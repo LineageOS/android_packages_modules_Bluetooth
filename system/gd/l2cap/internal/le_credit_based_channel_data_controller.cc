@@ -16,6 +16,8 @@
 
 #include "l2cap/internal/le_credit_based_channel_data_controller.h"
 
+#include <bluetooth/log.h>
+
 #include "l2cap/l2cap_packets.h"
 #include "l2cap/le/internal/link.h"
 #include "packet/fragmenting_inserter.h"
@@ -34,11 +36,11 @@ LeCreditBasedDataController::LeCreditBasedDataController(ILink* link, Cid cid, C
 void LeCreditBasedDataController::OnSdu(std::unique_ptr<packet::BasePacketBuilder> sdu) {
   auto sdu_size = sdu->size();
   if (sdu_size == 0) {
-    LOG_WARN("Received empty SDU");
+    log::warn("Received empty SDU");
     return;
   }
   if (sdu_size > mtu_) {
-    LOG_WARN("Received sdu_size %d > mtu %d", static_cast<int>(sdu_size), mtu_);
+    log::warn("Received sdu_size {} > mtu {}", static_cast<int>(sdu_size), mtu_);
   }
   std::vector<std::unique_ptr<packet::RawBuilder>> segments;
   // TODO: We don't need to waste 2 bytes for continuation segment.
@@ -67,17 +69,20 @@ void LeCreditBasedDataController::OnSdu(std::unique_ptr<packet::BasePacketBuilde
 void LeCreditBasedDataController::OnPdu(packet::PacketView<true> pdu) {
   auto basic_frame_view = BasicFrameView::Create(pdu);
   if (!basic_frame_view.IsValid()) {
-    LOG_WARN("Received invalid frame");
+    log::warn("Received invalid frame");
     return;
   }
   if (basic_frame_view.size() > mps_) {
-    LOG_WARN("Received frame size %d > mps %d, dropping the packet", static_cast<int>(basic_frame_view.size()), mps_);
+    log::warn(
+        "Received frame size {} > mps {}, dropping the packet",
+        static_cast<int>(basic_frame_view.size()),
+        mps_);
     return;
   }
   if (remaining_sdu_continuation_packet_size_ == 0) {
     auto start_frame_view = FirstLeInformationFrameView::Create(basic_frame_view);
     if (!start_frame_view.IsValid()) {
-      LOG_WARN("Received invalid frame");
+      log::warn("Received invalid frame");
       return;
     }
     auto payload = start_frame_view.GetPayload();
@@ -92,7 +97,7 @@ void LeCreditBasedDataController::OnPdu(packet::PacketView<true> pdu) {
   if (remaining_sdu_continuation_packet_size_ == 0) {
     enqueue_buffer_.Enqueue(std::make_unique<PacketView<kLittleEndian>>(reassembly_stage_), handler_);
   } else if (remaining_sdu_continuation_packet_size_ < 0 || reassembly_stage_.size() > mtu_) {
-    LOG_WARN("Received larger SDU size than expected");
+    log::warn("Received larger SDU size than expected");
     reassembly_stage_ = PacketViewForReassembly(PacketView<kLittleEndian>(std::make_shared<std::vector<uint8_t>>()));
     remaining_sdu_continuation_packet_size_ = 0;
     link_->SendDisconnectionRequest(cid_, remote_cid_);

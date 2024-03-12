@@ -16,6 +16,8 @@
 
 #include "l2cap/classic/internal/fixed_channel_service_manager_impl.h"
 
+#include <bluetooth/log.h>
+
 #include "common/bind.h"
 #include "l2cap/cid.h"
 #include "l2cap/classic/internal/fixed_channel_service_impl.h"
@@ -55,7 +57,7 @@ void FixedChannelServiceManagerImpl::Unregister(Cid cid, FixedChannelService::On
     service_map_.erase(cid);
     handler->Post(std::move(callback));
   } else {
-    LOG_ERROR("service not registered cid:%d", cid);
+    log::error("service not registered cid:{}", cid);
   }
 }
 
@@ -95,7 +97,7 @@ uint64_t FixedChannelServiceManagerImpl::GetSupportedFixedChannelMask() {
         result |= kBrEdrSecurityManager;
         continue;
       default:
-        LOG_WARN("Unknown fixed channel is registered: 0x%x", cid);
+        log::warn("Unknown fixed channel is registered: 0x{:x}", cid);
         continue;
     }
   }

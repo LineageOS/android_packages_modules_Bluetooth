@@ -16,6 +16,8 @@
 
 #include "l2cap/classic/internal/signalling_manager.h"
 
+#include <bluetooth/log.h>
+
 #include <chrono>
 
 #include "common/bind.h"
@@ -75,7 +77,7 @@ ClassicSignallingManager::~ClassicSignallingManager() {
 
 void ClassicSignallingManager::OnCommandReject(CommandRejectView command_reject_view) {
   if (command_just_sent_.signal_id_ != command_reject_view.GetIdentifier()) {
-    LOG_WARN("Unexpected command reject: no pending request");
+    log::warn("Unexpected command reject: no pending request");
     return;
   }
   if (command_just_sent_.command_code_ == CommandCode::INFORMATION_REQUEST &&
@@ -85,7 +87,7 @@ void ClassicSignallingManager::OnCommandReject(CommandRejectView command_reject_
   alarm_.Cancel();
   handle_send_next_command();
 
-  LOG_INFO("Command rejected");
+  log::info("Command rejected");
 }
 
 void ClassicSignallingManager::SendConnectionRequest(Psm psm, Cid local_cid) {
@@ -103,11 +105,11 @@ void ClassicSignallingManager::SendConnectionRequest(Psm psm, Cid local_cid) {
 void ClassicSignallingManager::on_security_result_for_outgoing(
     SecurityEnforcementType type, Psm psm, Cid local_cid, bool result) {
   if (enqueue_buffer_.get() == nullptr) {
-    LOG_ERROR("Got security result callback after deletion");
+    log::error("Got security result callback after deletion");
     return;
   }
   if (!result) {
-    LOG_WARN("Security requirement can't be satisfied. Dropping connection request");
+    log::warn("Security requirement can't be satisfied. Dropping connection request");
     DynamicChannelManager::ConnectionResult connection_result{
         .connection_result_code = DynamicChannelManager::ConnectionResultCode::FAIL_SECURITY_BLOCK,
         .hci_error = hci::ErrorCode::SUCCESS,
@@ -162,7 +164,7 @@ void ClassicSignallingManager::SendInformationRequest(InformationRequestInfoType
 }
 
 void ClassicSignallingManager::SendEchoRequest(std::unique_ptr<packet::RawBuilder> /* payload */) {
-  LOG_WARN("Not supported");
+  log::warn("Not supported");
 }
 
 void ClassicSignallingManager::CancelAlarm() {
@@ -171,29 +173,30 @@ void ClassicSignallingManager::CancelAlarm() {
 
 void ClassicSignallingManager::OnConnectionRequest(SignalId signal_id, Psm psm, Cid remote_cid) {
   if (!IsPsmValid(psm)) {
-    LOG_WARN("Invalid psm received from remote psm:%d remote_cid:%d", psm, remote_cid);
+    log::warn("Invalid psm received from remote psm:{} remote_cid:{}", psm, remote_cid);
     send_connection_response(signal_id, remote_cid, kInvalidCid, ConnectionResponseResult::PSM_NOT_SUPPORTED,
                              ConnectionResponseStatus::NO_FURTHER_INFORMATION_AVAILABLE);
     return;
   }
 
   if (remote_cid == kInvalidCid) {
-    LOG_WARN("Invalid remote cid received from remote psm:%d remote_cid:%d", psm, remote_cid);
+    log::warn("Invalid remote cid received from remote psm:{} remote_cid:{}", psm, remote_cid);
     send_connection_response(signal_id, remote_cid, kInvalidCid, ConnectionResponseResult::INVALID_CID,
                              ConnectionResponseStatus::NO_FURTHER_INFORMATION_AVAILABLE);
     return;
   }
   /* TODO(zachoverflow): add back in with policy
   if (channel_allocator_->IsPsmUsed(psm)) {
-    LOG_WARN("Psm already exists");
-    send_connection_response(signal_id, remote_cid, kInvalidCid, ConnectionResponseResult::PSM_NOT_SUPPORTED,
+    log::warn("Psm already exists");
+    send_connection_response(signal_id, remote_cid, kInvalidCid,
+  ConnectionResponseResult::PSM_NOT_SUPPORTED,
                              ConnectionResponseStatus::NO_FURTHER_INFORMATION_AVAILABLE);
     return;
   }
   */
 
   if (!dynamic_service_manager_->IsServiceRegistered(psm)) {
-    LOG_INFO("Service for this psm (%d) is not registered", psm);
+    log::info("Service for this psm ({}) is not registered", psm);
     send_connection_response(signal_id, remote_cid, kInvalidCid, ConnectionResponseResult::PSM_NOT_SUPPORTED,
                              ConnectionResponseStatus::NO_FURTHER_INFORMATION_AVAILABLE);
     return;
@@ -209,7 +212,7 @@ void ClassicSignallingManager::OnConnectionRequest(SignalId signal_id, Psm psm, 
 void ClassicSignallingManager::on_security_result_for_incoming(
     Psm psm, Cid remote_cid, SignalId signal_id, bool result) {
   if (enqueue_buffer_.get() == nullptr) {
-    LOG_ERROR("Got security result callback after deletion");
+    log::error("Got security result callback after deletion");
     return;
   }
   if (!result) {
@@ -229,7 +232,7 @@ void ClassicSignallingManager::on_security_result_for_incoming(
 
   auto new_channel = link_->AllocateDynamicChannel(psm, remote_cid);
   if (new_channel == nullptr) {
-    LOG_WARN("Can't allocate dynamic channel");
+    log::warn("Can't allocate dynamic channel");
     return;
   }
   send_connection_response(
@@ -250,13 +253,15 @@ void ClassicSignallingManager::OnConnectionResponse(
     ConnectionResponseStatus /* status */) {
   if (command_just_sent_.signal_id_ != signal_id ||
       command_just_sent_.command_code_ != CommandCode::CONNECTION_REQUEST) {
-    LOG_WARN("Unexpected response: no pending request. Expected signal id %d type %s, got %d",
-             command_just_sent_.signal_id_.Value(), CommandCodeText(command_just_sent_.command_code_).data(),
-             signal_id.Value());
+    log::warn(
+        "Unexpected response: no pending request. Expected signal id {} type {}, got {}",
+        command_just_sent_.signal_id_.Value(),
+        CommandCodeText(command_just_sent_.command_code_).data(),
+        signal_id.Value());
     return;
   }
   if (command_just_sent_.source_cid_ != cid) {
-    LOG_WARN("SCID doesn't match: expected %d, received %d", command_just_sent_.source_cid_, cid);
+    log::warn("SCID doesn't match: expected {}, received {}", command_just_sent_.source_cid_, cid);
     handle_send_next_command();
     return;
   }
@@ -281,7 +286,7 @@ void ClassicSignallingManager::OnConnectionResponse(
   Psm pending_psm = command_just_sent_.psm_;
   auto new_channel = link_->AllocateReservedDynamicChannel(cid, pending_psm, remote_cid);
   if (new_channel == nullptr) {
-    LOG_WARN("Can't allocate dynamic channel");
+    log::warn("Can't allocate dynamic channel");
     DynamicChannelManager::ConnectionResult connection_result{
         .connection_result_code = DynamicChannelManager::ConnectionResultCode::FAIL_L2CAP_ERROR,
         .hci_error = hci::ErrorCode::SUCCESS,
@@ -299,7 +304,7 @@ void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid ci
                                                       std::vector<std::unique_ptr<ConfigurationOption>> options) {
   auto channel = channel_allocator_->FindChannelByCid(cid);
   if (channel == nullptr) {
-    LOG_WARN("Configuration request for an unknown channel");
+    log::warn("Configuration request for an unknown channel");
     return;
   }
 
@@ -315,7 +320,7 @@ void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid ci
       case ConfigurationOptionType::MTU: {
         auto* config = MtuConfigurationOption::Specialize(option.get());
         if (config->mtu_ < initial_config_option.minimal_remote_mtu) {
-          LOG_WARN("Configuration request with unacceptable MTU");
+          log::warn("Configuration request with unacceptable MTU");
           config->mtu_ = initial_config_option.minimal_remote_mtu;
           result = ConfigurationResponseResult::UNACCEPTABLE_PARAMETERS;
         }
@@ -349,7 +354,9 @@ void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid ci
       }
       default:
         if (option->is_hint_ != ConfigurationOptionIsHint::OPTION_IS_A_HINT) {
-          LOG_WARN("Received some unsupported configuration option: %d", static_cast<int>(option->type_));
+          log::warn(
+              "Received some unsupported configuration option: {}",
+              static_cast<int>(option->type_));
           auto response =
               ConfigurationResponseBuilder::Create(signal_id.Value(), channel->GetRemoteCid(), is_continuation,
                                                    ConfigurationResponseResult::UNKNOWN_OPTIONS, {});
@@ -363,7 +370,7 @@ void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid ci
   if (remote_rfc_mode == RetransmissionAndFlowControlModeOption::L2CAP_BASIC &&
       initial_config_option.channel_mode ==
           DynamicChannelConfigurationOption::RetransmissionAndFlowControlMode::ENHANCED_RETRANSMISSION) {
-    LOG_WARN("ERTM mandatory not allow mode configuration, disconnect channel.");
+    log::warn("ERTM mandatory not allow mode configuration, disconnect channel.");
     SendDisconnectionRequest(channel->GetCid(), channel->GetRemoteCid());
     return;
   }
@@ -485,14 +492,15 @@ void ClassicSignallingManager::negotiate_configuration(
         break;
       }
       default:
-        LOG_WARN("Received some unsupported configuration option: %d", static_cast<int>(option->type_));
+        log::warn(
+            "Received some unsupported configuration option: {}", static_cast<int>(option->type_));
         return;
     }
   }
   if (can_negotiate) {
     send_configuration_request(channel->GetRemoteCid(), std::move(negotiation_config));
   } else {
-    LOG_INFO("No suggested parameter received");
+    log::info("No suggested parameter received");
   }
 }
 
@@ -501,15 +509,17 @@ void ClassicSignallingManager::OnConfigurationResponse(SignalId signal_id, Cid c
                                                        std::vector<std::unique_ptr<ConfigurationOption>> options) {
   if (command_just_sent_.signal_id_ != signal_id ||
       command_just_sent_.command_code_ != CommandCode::CONFIGURATION_REQUEST) {
-    LOG_WARN("Unexpected response: no pending request. Expected signal id %d type %s, got %d",
-             command_just_sent_.signal_id_.Value(), CommandCodeText(command_just_sent_.command_code_).data(),
-             signal_id.Value());
+    log::warn(
+        "Unexpected response: no pending request. Expected signal id {} type {}, got {}",
+        command_just_sent_.signal_id_.Value(),
+        CommandCodeText(command_just_sent_.command_code_).data(),
+        signal_id.Value());
     return;
   }
 
   auto channel = channel_allocator_->FindChannelByCid(cid);
   if (channel == nullptr) {
-    LOG_WARN("Configuration request for an unknown channel");
+    log::warn("Configuration request for an unknown channel");
     handle_send_next_command();
     return;
   }
@@ -519,7 +529,7 @@ void ClassicSignallingManager::OnConfigurationResponse(SignalId signal_id, Cid c
     case ConfigurationResponseResult::REJECTED:
     case ConfigurationResponseResult::UNKNOWN_OPTIONS:
     case ConfigurationResponseResult::FLOW_SPEC_REJECTED:
-      LOG_WARN("Configuration response not SUCCESS: %s", ConfigurationResponseResultText(result).c_str());
+      log::warn("Configuration response not SUCCESS: {}", ConfigurationResponseResultText(result));
       alarm_.Cancel();
       handle_send_next_command();
       return;
@@ -530,7 +540,7 @@ void ClassicSignallingManager::OnConfigurationResponse(SignalId signal_id, Cid c
       return;
 
     case ConfigurationResponseResult::UNACCEPTABLE_PARAMETERS:
-      LOG_INFO("Configuration response with unacceptable parameters");
+      log::info("Configuration response with unacceptable parameters");
       alarm_.Cancel();
       negotiate_configuration(cid, is_continuation, std::move(options));
       handle_send_next_command();
@@ -566,7 +576,8 @@ void ClassicSignallingManager::OnConfigurationResponse(SignalId signal_id, Cid c
         break;
       }
       default:
-        LOG_WARN("Received some unsupported configuration option: %d", static_cast<int>(option->type_));
+        log::warn(
+            "Received some unsupported configuration option: {}", static_cast<int>(option->type_));
         alarm_.Cancel();
         handle_send_next_command();
         return;
@@ -595,7 +606,7 @@ void ClassicSignallingManager::OnDisconnectionRequest(SignalId signal_id, Cid ci
   // TODO: check cid match
   auto channel = channel_allocator_->FindChannelByCid(cid);
   if (channel == nullptr) {
-    LOG_WARN("Disconnect request for an unknown channel");
+    log::warn("Disconnect request for an unknown channel");
     return;
   }
   auto builder = DisconnectionResponseBuilder::Create(signal_id.Value(), cid, remote_cid);
@@ -613,9 +624,11 @@ void ClassicSignallingManager::OnDisconnectionResponse(
     SignalId signal_id, Cid /* remote_cid */, Cid cid) {
   if (command_just_sent_.signal_id_ != signal_id ||
       command_just_sent_.command_code_ != CommandCode::DISCONNECTION_REQUEST) {
-    LOG_WARN("Unexpected response: no pending request. Expected signal id %d type %s, got %d",
-             command_just_sent_.signal_id_.Value(), CommandCodeText(command_just_sent_.command_code_).data(),
-             signal_id.Value());
+    log::warn(
+        "Unexpected response: no pending request. Expected signal id {} type {}, got {}",
+        command_just_sent_.signal_id_.Value(),
+        CommandCodeText(command_just_sent_.command_code_).data(),
+        signal_id.Value());
     return;
   }
 
@@ -623,7 +636,7 @@ void ClassicSignallingManager::OnDisconnectionResponse(
 
   auto channel = channel_allocator_->FindChannelByCid(cid);
   if (channel == nullptr) {
-    LOG_WARN("Disconnect response for an unknown channel");
+    log::warn("Disconnect response for an unknown channel");
     handle_send_next_command();
     return;
   }
@@ -649,12 +662,14 @@ void ClassicSignallingManager::OnEchoRequest(SignalId signal_id, const PacketVie
 void ClassicSignallingManager::OnEchoResponse(
     SignalId signal_id, const PacketView<kLittleEndian>& /* packet */) {
   if (command_just_sent_.signal_id_ != signal_id || command_just_sent_.command_code_ != CommandCode::ECHO_REQUEST) {
-    LOG_WARN("Unexpected response: no pending request. Expected signal id %d type %s, got %d",
-             command_just_sent_.signal_id_.Value(), CommandCodeText(command_just_sent_.command_code_).data(),
-             signal_id.Value());
+    log::warn(
+        "Unexpected response: no pending request. Expected signal id {} type {}, got {}",
+        command_just_sent_.signal_id_.Value(),
+        CommandCodeText(command_just_sent_.command_code_).data(),
+        signal_id.Value());
     return;
   }
-  LOG_INFO("Echo response received");
+  log::info("Echo response received");
   alarm_.Cancel();
   handle_send_next_command();
 }
@@ -686,9 +701,11 @@ void ClassicSignallingManager::OnInformationRequest(SignalId signal_id, Informat
 void ClassicSignallingManager::OnInformationResponse(SignalId signal_id, const InformationResponseView& response) {
   if (command_just_sent_.signal_id_ != signal_id ||
       command_just_sent_.command_code_ != CommandCode::INFORMATION_REQUEST) {
-    LOG_WARN("Unexpected response: no pending request. Expected signal id %d type %s, got %d",
-             command_just_sent_.signal_id_.Value(), CommandCodeText(command_just_sent_.command_code_).data(),
-             signal_id.Value());
+    log::warn(
+        "Unexpected response: no pending request. Expected signal id {} type {}, got {}",
+        command_just_sent_.signal_id_.Value(),
+        CommandCodeText(command_just_sent_.command_code_).data(),
+        signal_id.Value());
     return;
   }
 
@@ -697,7 +714,7 @@ void ClassicSignallingManager::OnInformationResponse(SignalId signal_id, const I
     case InformationRequestInfoType::CONNECTIONLESS_MTU: {
       auto view = InformationResponseConnectionlessMtuView::Create(response);
       if (!view.IsValid()) {
-        LOG_WARN("Invalid InformationResponseConnectionlessMtu received");
+        log::warn("Invalid InformationResponseConnectionlessMtu received");
         return;
       }
       link_->SetRemoteConnectionlessMtu(view.GetConnectionlessMtu());
@@ -706,7 +723,7 @@ void ClassicSignallingManager::OnInformationResponse(SignalId signal_id, const I
     case InformationRequestInfoType::EXTENDED_FEATURES_SUPPORTED: {
       auto view = InformationResponseExtendedFeaturesView::Create(response);
       if (!view.IsValid()) {
-        LOG_WARN("Invalid InformationResponseExtendedFeatures received");
+        log::warn("Invalid InformationResponseExtendedFeatures received");
         return;
       }
       link_->OnRemoteExtendedFeatureReceived(view.GetEnhancedRetransmissionMode(), view.GetFcsOption());
@@ -716,7 +733,7 @@ void ClassicSignallingManager::OnInformationResponse(SignalId signal_id, const I
     case InformationRequestInfoType::FIXED_CHANNELS_SUPPORTED: {
       auto view = InformationResponseFixedChannelsView::Create(response);
       if (!view.IsValid()) {
-        LOG_WARN("Invalid InformationResponseFixedChannel received");
+        log::warn("Invalid InformationResponseFixedChannel received");
         return;
       }
       // We don't use fixed channels (connectionless or BR/EDR security) for now so we don't care
@@ -738,7 +755,7 @@ void ClassicSignallingManager::on_incoming_packet() {
 
 void ClassicSignallingManager::handle_one_command(ControlView control_packet_view) {
   if (!control_packet_view.IsValid()) {
-    LOG_WARN("Invalid signalling packet received");
+    log::warn("Invalid signalling packet received");
     return;
   }
   auto code = control_packet_view.GetCode();
@@ -877,7 +894,7 @@ void ClassicSignallingManager::handle_one_command(ControlView control_packet_vie
       return;
     }
     default:
-      LOG_WARN("Unhandled event 0x%x", static_cast<int>(code));
+      log::warn("Unhandled event 0x{:x}", static_cast<int>(code));
       auto builder = CommandRejectNotUnderstoodBuilder::Create(control_packet_view.GetIdentifier());
       enqueue_buffer_->Enqueue(std::move(builder), handler_);
       return;
@@ -892,12 +909,12 @@ void ClassicSignallingManager::send_connection_response(SignalId signal_id, Cid 
 }
 
 void ClassicSignallingManager::on_command_timeout() {
-  LOG_WARN("Response time out");
+  log::warn("Response time out");
   if (command_just_sent_.signal_id_ == kInvalidSignalId) {
-    LOG_ERROR("No pending command");
+    log::error("No pending command");
     return;
   }
-  LOG_WARN("Response time out for %s", CommandCodeText(command_just_sent_.command_code_).c_str());
+  log::warn("Response time out for {}", CommandCodeText(command_just_sent_.command_code_));
   switch (command_just_sent_.command_code_) {
     case CommandCode::CONNECTION_REQUEST: {
       DynamicChannelManager::ConnectionResult connection_result{
@@ -970,7 +987,8 @@ void ClassicSignallingManager::handle_send_next_command() {
       break;
     }
     default:
-      LOG_WARN("Unsupported command code 0x%x", static_cast<int>(command_just_sent_.command_code_));
+      log::warn(
+          "Unsupported command code 0x{:x}", static_cast<int>(command_just_sent_.command_code_));
   }
 }
 

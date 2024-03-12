@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
+#include "l2cap/classic/internal/fixed_channel_impl.h"
+
+#include <bluetooth/log.h>
+
 #include <unordered_map>
 
 #include "l2cap/cid.h"
-#include "l2cap/classic/internal/fixed_channel_impl.h"
 #include "l2cap/classic/internal/link.h"
 #include "os/handler.h"
 #include "os/log.h"
@@ -71,12 +74,12 @@ void FixedChannelImpl::OnClosed(hci::ErrorCode status) {
 void FixedChannelImpl::Acquire() {
   ASSERT_LOG(user_handler_ != nullptr, "Must register OnCloseCallback before calling any methods");
   if (closed_) {
-    LOG_WARN("%s is already closed", ToLoggableStr(*this).c_str());
+    log::warn("{} is already closed", ToLoggableStr(*this));
     ASSERT(!acquired_);
     return;
   }
   if (acquired_) {
-    LOG_INFO("%s was already acquired", ToLoggableStr(*this).c_str());
+    log::info("{} was already acquired", ToLoggableStr(*this));
     return;
   }
   acquired_ = true;
@@ -86,12 +89,12 @@ void FixedChannelImpl::Acquire() {
 void FixedChannelImpl::Release() {
   ASSERT_LOG(user_handler_ != nullptr, "Must register OnCloseCallback before calling any methods");
   if (closed_) {
-    LOG_WARN("%s is already closed", ToLoggableStr(*this).c_str());
+    log::warn("{} is already closed", ToLoggableStr(*this));
     ASSERT(!acquired_);
     return;
   }
   if (!acquired_) {
-    LOG_INFO("%s was already released", ToLoggableStr(*this).c_str());
+    log::info("{} was already released", ToLoggableStr(*this));
     return;
   }
   acquired_ = false;
