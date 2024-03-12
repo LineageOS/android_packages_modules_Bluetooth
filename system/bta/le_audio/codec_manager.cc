@@ -279,10 +279,12 @@ struct codec_manager_impl {
         if (preferred_quality == bluetooth::le_audio::QUALITY_STANDARD) {
           broadcast_target_config = i;
         } else if (broadcast_target_config == -1 ||
-                   supported_broadcast_config[broadcast_target_config]
-                           .sampling_rate !=
-                       24000u) {  // preferred_quality is QUALITY_HIGH, and
-                                  // haven't get the 48_4 or 48_2 or 24_2
+                   (supported_broadcast_config[broadcast_target_config]
+                            .sampling_rate != 24000u &&
+                    supported_broadcast_config[broadcast_target_config]
+                            .sampling_rate !=
+                        48000u)) {  // preferred_quality is QUALITY_HIGH, and
+                                    // haven't get the 48_4 or 48_2 or 24_2
           broadcast_target_config = i;
         }
       }
