@@ -1,0 +1,9 @@
+package: "com.android.bluetooth.flags"
+container: "com.android.btservices"
+
+flag {
+    name: "stack_sdp_detect_nil_property_type"
+    namespace: "bluetooth"
+    description: "Check for NIL SDP property length"
+    bug: "329171921"
+}
