@@ -23,7 +23,7 @@
 
 #include "le_audio_types.h"
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 
 TEST(ContentControlIdKeeperTest, testStart) {
   auto ccid_keeper = ContentControlIdKeeper::GetInstance();
@@ -123,4 +123,4 @@ TEST(ContentControlIdKeeperTest, testStop) {
   ASSERT_EQ(0LU, all_ccids.size());
 }
 
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

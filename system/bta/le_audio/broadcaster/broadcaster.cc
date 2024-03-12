@@ -46,24 +46,24 @@ using bluetooth::hci::iso_manager::BigCallbacks;
 using bluetooth::le_audio::BasicAudioAnnouncementData;
 using bluetooth::le_audio::BasicAudioAnnouncementSubgroup;
 using bluetooth::le_audio::BroadcastId;
+using bluetooth::le_audio::CodecManager;
+using bluetooth::le_audio::ContentControlIdKeeper;
+using bluetooth::le_audio::DsaMode;
+using bluetooth::le_audio::LeAudioCodecConfiguration;
+using bluetooth::le_audio::LeAudioSourceAudioHalClient;
 using bluetooth::le_audio::PublicBroadcastAnnouncementData;
-using le_audio::CodecManager;
-using le_audio::ContentControlIdKeeper;
-using le_audio::DsaMode;
-using le_audio::LeAudioCodecConfiguration;
-using le_audio::LeAudioSourceAudioHalClient;
-using le_audio::broadcaster::BigConfig;
-using le_audio::broadcaster::BroadcastCodecWrapper;
-using le_audio::broadcaster::BroadcastQosConfig;
-using le_audio::broadcaster::BroadcastStateMachine;
-using le_audio::broadcaster::BroadcastStateMachineConfig;
-using le_audio::broadcaster::IBroadcastStateMachineCallbacks;
-using le_audio::types::AudioContexts;
-using le_audio::types::CodecLocation;
-using le_audio::types::kLeAudioCodingFormatLC3;
-using le_audio::types::LeAudioContextType;
-using le_audio::types::LeAudioLtvMap;
-using le_audio::utils::GetAudioContextsFromSourceMetadata;
+using bluetooth::le_audio::broadcaster::BigConfig;
+using bluetooth::le_audio::broadcaster::BroadcastCodecWrapper;
+using bluetooth::le_audio::broadcaster::BroadcastQosConfig;
+using bluetooth::le_audio::broadcaster::BroadcastStateMachine;
+using bluetooth::le_audio::broadcaster::BroadcastStateMachineConfig;
+using bluetooth::le_audio::broadcaster::IBroadcastStateMachineCallbacks;
+using bluetooth::le_audio::types::AudioContexts;
+using bluetooth::le_audio::types::CodecLocation;
+using bluetooth::le_audio::types::kLeAudioCodingFormatLC3;
+using bluetooth::le_audio::types::LeAudioContextType;
+using bluetooth::le_audio::types::LeAudioLtvMap;
+using bluetooth::le_audio::utils::GetAudioContextsFromSourceMetadata;
 
 namespace {
 class LeAudioBroadcasterImpl;
@@ -221,40 +221,43 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
           auto subgroup_ltv = LeAudioLtvMap(subgroup.metadata);
           bool subgroup_update = false;
 
-          auto existing_context = subgroup_ltv.Find(
-              le_audio::types::kLeAudioMetadataTypeStreamingAudioContext);
+          auto existing_context =
+              subgroup_ltv.Find(bluetooth::le_audio::types::
+                                    kLeAudioMetadataTypeStreamingAudioContext);
           if (existing_context) {
             if (memcmp(stream_context_vec.data(), existing_context->data(),
                        existing_context->size()) != 0) {
-              subgroup_ltv.Add(
-                  le_audio::types::kLeAudioMetadataTypeStreamingAudioContext,
-                  stream_context_vec);
+              subgroup_ltv.Add(bluetooth::le_audio::types::
+                                   kLeAudioMetadataTypeStreamingAudioContext,
+                               stream_context_vec);
               subgroup_update = true;
             }
           } else {
-            subgroup_ltv.Add(
-                le_audio::types::kLeAudioMetadataTypeStreamingAudioContext,
-                stream_context_vec);
+            subgroup_ltv.Add(bluetooth::le_audio::types::
+                                 kLeAudioMetadataTypeStreamingAudioContext,
+                             stream_context_vec);
             subgroup_update = true;
           }
 
-          auto existing_ccid_list =
-              subgroup_ltv.Find(le_audio::types::kLeAudioMetadataTypeCcidList);
+          auto existing_ccid_list = subgroup_ltv.Find(
+              bluetooth::le_audio::types::kLeAudioMetadataTypeCcidList);
           if (existing_ccid_list) {
             if (ccids.empty()) {
               subgroup_ltv.Remove(
-                  le_audio::types::kLeAudioMetadataTypeCcidList);
+                  bluetooth::le_audio::types::kLeAudioMetadataTypeCcidList);
               subgroup_update = true;
 
             } else if (!std::is_permutation(ccids.begin(), ccids.end(),
                                             existing_ccid_list->begin())) {
-              subgroup_ltv.Add(le_audio::types::kLeAudioMetadataTypeCcidList,
-                               ccids);
+              subgroup_ltv.Add(
+                  bluetooth::le_audio::types::kLeAudioMetadataTypeCcidList,
+                  ccids);
               subgroup_update = true;
             }
           } else if (!ccids.empty()) {
-            subgroup_ltv.Add(le_audio::types::kLeAudioMetadataTypeCcidList,
-                             ccids);
+            subgroup_ltv.Add(
+                bluetooth::le_audio::types::kLeAudioMetadataTypeCcidList,
+                ccids);
             subgroup_update = true;
           }
 
@@ -306,8 +309,9 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
               ->get_pts_force_le_audio_multiple_contexts_metadata()) {
         context_type =
             LeAudioContextType::MEDIA | LeAudioContextType::CONVERSATIONAL;
-        auto stream_context_vec = ltv.Find(
-            le_audio::types::kLeAudioMetadataTypeStreamingAudioContext);
+        auto stream_context_vec =
+            ltv.Find(bluetooth::le_audio::types::
+                         kLeAudioMetadataTypeStreamingAudioContext);
         if (stream_context_vec) {
           auto pp = stream_context_vec.value().data();
           if (stream_context_vec.value().size() < 2) {
@@ -319,7 +323,8 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
       }
 
       auto stream_context_vec =
-          ltv.Find(le_audio::types::kLeAudioMetadataTypeStreamingAudioContext);
+          ltv.Find(bluetooth::le_audio::types::
+                       kLeAudioMetadataTypeStreamingAudioContext);
       if (stream_context_vec) {
         auto pp = stream_context_vec.value().data();
         if (stream_context_vec.value().size() < 2) {
@@ -333,7 +338,8 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
       auto ccid_vec =
           ContentControlIdKeeper::GetInstance()->GetAllCcids(context_type);
       if (!ccid_vec.empty()) {
-        ltv.Add(le_audio::types::kLeAudioMetadataTypeCcidList, ccid_vec);
+        ltv.Add(bluetooth::le_audio::types::kLeAudioMetadataTypeCcidList,
+                ccid_vec);
       }
 
       // Push to subgroup ltvs
@@ -448,8 +454,9 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
 
       if (stack_config_get_interface()
               ->get_pts_force_le_audio_multiple_contexts_metadata()) {
-        auto stream_context_vec = ltv.Find(
-            le_audio::types::kLeAudioMetadataTypeStreamingAudioContext);
+        auto stream_context_vec =
+            ltv.Find(bluetooth::le_audio::types::
+                         kLeAudioMetadataTypeStreamingAudioContext);
         if (stream_context_vec) {
           if (stream_context_vec.value().size() < 2) {
             LOG_ERROR("kLeAudioMetadataTypeStreamingAudioContext size < 2");
@@ -463,7 +470,8 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
       }
 
       auto stream_context_vec =
-          ltv.Find(le_audio::types::kLeAudioMetadataTypeStreamingAudioContext);
+          ltv.Find(bluetooth::le_audio::types::
+                       kLeAudioMetadataTypeStreamingAudioContext);
       if (stream_context_vec) {
         if (stream_context_vec.value().size() < 2) {
           LOG_ERROR("kLeAudioMetadataTypeStreamingAudioContext size < 2");
@@ -480,7 +488,8 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
       auto ccid_vec =
           ContentControlIdKeeper::GetInstance()->GetAllCcids(context_type);
       if (!ccid_vec.empty()) {
-        ltv.Add(le_audio::types::kLeAudioMetadataTypeCcidList, ccid_vec);
+        ltv.Add(bluetooth::le_audio::types::kLeAudioMetadataTypeCcidList,
+                ccid_vec);
       }
 
       // Push to subgroup ltvs
@@ -501,11 +510,12 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
         }
         return std::make_pair(
             BroadcastCodecWrapper(
-                {.coding_format = le_audio::types::kLeAudioCodingFormatLC3,
-                 .vendor_company_id =
-                     le_audio::types::kLeAudioVendorCompanyIdUndefined,
-                 .vendor_codec_id =
-                     le_audio::types::kLeAudioVendorCodecIdUndefined},
+                {.coding_format =
+                     bluetooth::le_audio::types::kLeAudioCodingFormatLC3,
+                 .vendor_company_id = bluetooth::le_audio::types::
+                     kLeAudioVendorCompanyIdUndefined,
+                 .vendor_codec_id = bluetooth::le_audio::types::
+                     kLeAudioVendorCodecIdUndefined},
                 {.num_channels =
                      static_cast<uint8_t>(offload_config->stream_map.size()),
                  .sample_rate = offload_config->sampling_rate,
@@ -515,7 +525,8 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
             BroadcastQosConfig(offload_config->retransmission_number,
                                offload_config->max_transport_latency));
       } else {
-        return le_audio::broadcaster::getStreamConfigForContext(context_type);
+        return bluetooth::le_audio::broadcaster::getStreamConfigForContext(
+            context_type);
       }
     }(context_type, BIG_audio_quality);
 
@@ -636,7 +647,8 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
 
       broadcasts_[broadcast_id]->ProcessMessage(
           BroadcastStateMachine::Message::START, nullptr);
-      le_audio::MetricsCollector::Get()->OnBroadcastStateChanged(true);
+      bluetooth::le_audio::MetricsCollector::Get()->OnBroadcastStateChanged(
+          true);
     } else {
       LOG_ERROR("No such broadcast_id=%d", broadcast_id);
     }
@@ -654,7 +666,8 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
     broadcasts_[broadcast_id]->SetMuted(true);
     broadcasts_[broadcast_id]->ProcessMessage(
         BroadcastStateMachine::Message::STOP, nullptr);
-    le_audio::MetricsCollector::Get()->OnBroadcastStateChanged(false);
+    bluetooth::le_audio::MetricsCollector::Get()->OnBroadcastStateChanged(
+        false);
   }
 
   void DestroyAudioBroadcast(uint32_t broadcast_id) override {
@@ -1024,21 +1037,24 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
       : public LeAudioSourceAudioHalClient::Callbacks {
    public:
     LeAudioSourceCallbacksImpl()
-        : codec_wrapper_(le_audio::broadcaster::getStreamConfigForContext(
-                             AudioContexts(LeAudioContextType::UNSPECIFIED))
-                             .first) {}
+        : codec_wrapper_(
+              bluetooth::le_audio::broadcaster::getStreamConfigForContext(
+                  AudioContexts(LeAudioContextType::UNSPECIFIED))
+                  .first) {}
 
     void CheckAndReconfigureEncoders() {
       auto const& codec_id = codec_wrapper_.GetLeAudioCodecId();
       /* TODO: We should act smart and reuse current configurations */
       sw_enc_.clear();
       while (sw_enc_.size() != codec_wrapper_.GetNumChannels()) {
-        auto codec = le_audio::CodecInterface::CreateInstance(codec_id);
+        auto codec =
+            bluetooth::le_audio::CodecInterface::CreateInstance(codec_id);
 
         auto codec_status =
             codec->InitEncoder(codec_wrapper_.GetLeAudioCodecConfiguration(),
                                codec_wrapper_.GetLeAudioCodecConfiguration());
-        if (codec_status != le_audio::CodecInterface::Status::STATUS_OK) {
+        if (codec_status !=
+            bluetooth::le_audio::CodecInterface::Status::STATUS_OK) {
           LOG_ERROR("Channel %d codec setup failed with err: %d",
                     (uint32_t)sw_enc_.size(), codec_status);
           return;
@@ -1058,7 +1074,8 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
 
     static void sendBroadcastData(
         const std::unique_ptr<BroadcastStateMachine>& broadcast,
-        std::vector<std::unique_ptr<le_audio::CodecInterface>>& encoders) {
+        std::vector<std::unique_ptr<bluetooth::le_audio::CodecInterface>>&
+            encoders) {
       auto const& config = broadcast->GetBigConfig();
       if (config == std::nullopt) {
         LOG_ERROR(
@@ -1155,7 +1172,7 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
 
    private:
     BroadcastCodecWrapper codec_wrapper_;
-    std::vector<std::unique_ptr<le_audio::CodecInterface>> sw_enc_;
+    std::vector<std::unique_ptr<bluetooth::le_audio::CodecInterface>> sw_enc_;
   } audio_receiver_;
 
   bluetooth::le_audio::LeAudioBroadcasterCallbacks* callbacks_;

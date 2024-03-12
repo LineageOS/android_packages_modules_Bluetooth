@@ -34,8 +34,8 @@
 
 using namespace std::chrono_literals;
 
-using le_audio::types::AudioContexts;
-using le_audio::types::LeAudioContextType;
+using bluetooth::le_audio::types::AudioContexts;
+using bluetooth::le_audio::types::LeAudioContextType;
 
 using testing::_;
 using testing::AtLeast;
@@ -50,11 +50,11 @@ using testing::Test;
 
 using namespace bluetooth::le_audio;
 
-using le_audio::DsaMode;
-using le_audio::LeAudioCodecConfiguration;
-using le_audio::LeAudioSourceAudioHalClient;
-using le_audio::broadcaster::BigConfig;
-using le_audio::broadcaster::BroadcastCodecWrapper;
+using bluetooth::le_audio::DsaMode;
+using bluetooth::le_audio::LeAudioCodecConfiguration;
+using bluetooth::le_audio::LeAudioSourceAudioHalClient;
+using bluetooth::le_audio::broadcaster::BigConfig;
+using bluetooth::le_audio::broadcaster::BroadcastCodecWrapper;
 
 // Disables most likely false-positives from base::SplitString()
 extern "C" const char* __asan_default_options() {
@@ -115,7 +115,7 @@ static void cleanup_message_loop_thread() {
   message_loop_thread.ShutDown();
 }
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 class MockAudioHalClientEndpoint;
 MockAudioHalClientEndpoint* mock_audio_source_;
 bool is_audio_hal_acquired;
@@ -140,11 +140,13 @@ static constexpr BroadcastCode default_code = {
     0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
     0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10};
 static const std::vector<uint8_t> default_metadata = {
-    le_audio::types::kLeAudioMetadataStreamingAudioContextLen + 1,
-    le_audio::types::kLeAudioMetadataTypeStreamingAudioContext,
+    bluetooth::le_audio::types::kLeAudioMetadataStreamingAudioContextLen + 1,
+    bluetooth::le_audio::types::kLeAudioMetadataTypeStreamingAudioContext,
     default_context & 0x00FF, (default_context & 0xFF00) >> 8};
 static const std::vector<uint8_t> default_public_metadata = {
-    5, le_audio::types::kLeAudioMetadataTypeProgramInfo, 0x1, 0x2, 0x3, 0x4};
+    5,   bluetooth::le_audio::types::kLeAudioMetadataTypeProgramInfo,
+    0x1, 0x2,
+    0x3, 0x4};
 // bit 0: encrypted, bit 1: standard quality present
 static const uint8_t test_public_broadcast_features = 0x3;
 
@@ -154,8 +156,8 @@ static constexpr auto media_context =
     static_cast<std::underlying_type<LeAudioContextType>::type>(
         LeAudioContextType::MEDIA);
 static const std::vector<uint8_t> media_metadata = {
-    le_audio::types::kLeAudioMetadataStreamingAudioContextLen + 1,
-    le_audio::types::kLeAudioMetadataTypeStreamingAudioContext,
+    bluetooth::le_audio::types::kLeAudioMetadataStreamingAudioContextLen + 1,
+    bluetooth::le_audio::types::kLeAudioMetadataTypeStreamingAudioContext,
     media_context & 0x00FF, (media_context & 0xFF00) >> 8};
 static const std::string test_broadcast_name = "Test";
 
@@ -182,16 +184,17 @@ class MockAudioHalClientEndpoint : public LeAudioSourceAudioHalClient {
   MOCK_METHOD((bool), Start,
               (const LeAudioCodecConfiguration& codecConfiguration,
                LeAudioSourceAudioHalClient::Callbacks* audioReceiver,
-               ::le_audio::DsaModes dsa_modes),
+               ::bluetooth::le_audio::DsaModes dsa_modes),
               (override));
   MOCK_METHOD((void), Stop, (), (override));
   MOCK_METHOD((void), ConfirmStreamingRequest, (), (override));
   MOCK_METHOD((void), CancelStreamingRequest, (), (override));
   MOCK_METHOD((void), UpdateRemoteDelay, (uint16_t delay), (override));
   MOCK_METHOD((void), UpdateAudioConfigToHal,
-              (const ::le_audio::offload_config&), (override));
+              (const ::bluetooth::le_audio::offload_config&), (override));
   MOCK_METHOD((void), UpdateBroadcastAudioConfigToHal,
-              (const ::le_audio::broadcast_offload_config&), (override));
+              (const ::bluetooth::le_audio::broadcast_offload_config&),
+              (override));
   MOCK_METHOD((void), SuspendedForReconfiguration, (), (override));
   MOCK_METHOD((void), ReconfigurationComplete, (), (override));
 
@@ -575,9 +578,11 @@ TEST_F(BroadcasterTest, UpdateMetadataFromAudioTrackMetadata) {
 
   std::map<uint8_t, std::vector<uint8_t>> meta = {};
   BroadcastCodecWrapper codec_config(
-      {.coding_format = le_audio::types::kLeAudioCodingFormatLC3,
-       .vendor_company_id = le_audio::types::kLeAudioVendorCompanyIdUndefined,
-       .vendor_codec_id = le_audio::types::kLeAudioVendorCodecIdUndefined},
+      {.coding_format = bluetooth::le_audio::types::kLeAudioCodingFormatLC3,
+       .vendor_company_id =
+           bluetooth::le_audio::types::kLeAudioVendorCompanyIdUndefined,
+       .vendor_codec_id =
+           bluetooth::le_audio::types::kLeAudioVendorCodecIdUndefined},
       {.num_channels = LeAudioCodecConfiguration::kChannelNumberMono,
        .sample_rate = LeAudioCodecConfiguration::kSampleRate16000,
        .bits_per_sample = LeAudioCodecConfiguration::kBitsPerSample16,
@@ -641,9 +646,11 @@ TEST_F(BroadcasterTest, GetMetadata) {
 
   std::map<uint8_t, std::vector<uint8_t>> meta = {};
   BroadcastCodecWrapper codec_config(
-      {.coding_format = le_audio::types::kLeAudioCodingFormatLC3,
-       .vendor_company_id = le_audio::types::kLeAudioVendorCompanyIdUndefined,
-       .vendor_codec_id = le_audio::types::kLeAudioVendorCodecIdUndefined},
+      {.coding_format = bluetooth::le_audio::types::kLeAudioCodingFormatLC3,
+       .vendor_company_id =
+           bluetooth::le_audio::types::kLeAudioVendorCompanyIdUndefined,
+       .vendor_codec_id =
+           bluetooth::le_audio::types::kLeAudioVendorCodecIdUndefined},
       {.num_channels = LeAudioCodecConfiguration::kChannelNumberMono,
        .sample_rate = LeAudioCodecConfiguration::kSampleRate16000,
        .bits_per_sample = LeAudioCodecConfiguration::kBitsPerSample16,
@@ -728,8 +735,9 @@ TEST_F(BroadcasterTest, StreamParamsMedia) {
   // Matches number of bises in the announcement
   ASSERT_EQ(subgroup.bis_configs.size(), expected_channels);
   // Verify CCID for Media
-  auto ccid_list_opt = types::LeAudioLtvMap(subgroup.metadata)
-                           .Find(le_audio::types::kLeAudioMetadataTypeCcidList);
+  auto ccid_list_opt =
+      types::LeAudioLtvMap(subgroup.metadata)
+          .Find(bluetooth::le_audio::types::kLeAudioMetadataTypeCcidList);
   ASSERT_TRUE(ccid_list_opt.has_value());
   auto ccid_list = ccid_list_opt.value();
   ASSERT_EQ(1u, ccid_list.size());
@@ -774,4 +782,4 @@ TEST_F(BroadcasterTest, QueuedBroadcastBusyIso) {
                        true);
 }
 
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

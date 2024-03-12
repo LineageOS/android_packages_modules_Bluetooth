@@ -41,7 +41,7 @@ using bluetooth::has::HasClientInterface;
 using bluetooth::has::PresetInfo;
 using bluetooth::has::PresetInfoReason;
 
-using le_audio::has::HasClient;
+using bluetooth::le_audio::has::HasClient;
 
 namespace {
 std::unique_ptr<HasClientInterface> has_client_instance;

@@ -30,13 +30,13 @@
 #include "types/raw_address.h"
 
 using bluetooth::groups::kGroupUnknown;
+using bluetooth::le_audio::DeviceConnectState;
+using bluetooth::le_audio::LeAudioDevice;
+using bluetooth::le_audio::LeAudioDeviceGroup;
 using bluetooth::le_audio::LeAudioHealthBasedAction;
-using le_audio::DeviceConnectState;
-using le_audio::LeAudioDevice;
-using le_audio::LeAudioDeviceGroup;
-using le_audio::LeAudioHealthDeviceStatType;
-using le_audio::LeAudioHealthGroupStatType;
-using le_audio::LeAudioHealthStatus;
+using bluetooth::le_audio::LeAudioHealthDeviceStatType;
+using bluetooth::le_audio::LeAudioHealthGroupStatType;
+using bluetooth::le_audio::LeAudioHealthStatus;
 
 static const char* test_flags[] = {
     "INIT_logging_debug_enabled_for_all=true",

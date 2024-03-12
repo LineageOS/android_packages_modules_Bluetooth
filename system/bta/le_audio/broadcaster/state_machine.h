@@ -75,7 +75,7 @@ class StateMachine {
  *              The Broadcast Source may also transmit control parameters in
  *              control packets within the broadcast Audio Stream.
  */
-namespace le_audio {
+namespace bluetooth::le_audio {
 namespace broadcaster {
 
 class IBroadcastStateMachineCallbacks;
@@ -221,22 +221,26 @@ class IBroadcastStateMachineCallbacks {
 
 std::ostream& operator<<(
     std::ostream& os,
-    const le_audio::broadcaster::BroadcastStateMachine::Message& state);
+    const bluetooth::le_audio::broadcaster::BroadcastStateMachine::Message&
+        state);
 
 std::ostream& operator<<(
     std::ostream& os,
-    const le_audio::broadcaster::BroadcastStateMachine::State& state);
+    const bluetooth::le_audio::broadcaster::BroadcastStateMachine::State&
+        state);
 
 std::ostream& operator<<(
     std::ostream& os,
-    const le_audio::broadcaster::BroadcastStateMachine& machine);
-
-std::ostream& operator<<(std::ostream& os,
-                         const le_audio::broadcaster::BigConfig& machine);
+    const bluetooth::le_audio::broadcaster::BroadcastStateMachine& machine);
 
 std::ostream& operator<<(
     std::ostream& os,
-    const le_audio::broadcaster::BroadcastStateMachineConfig& machine);
+    const bluetooth::le_audio::broadcaster::BigConfig& machine);
+
+std::ostream& operator<<(
+    std::ostream& os,
+    const bluetooth::le_audio::broadcaster::BroadcastStateMachineConfig&
+        machine);
 
 } /* namespace broadcaster */
-} /* namespace le_audio */
+}  // namespace bluetooth::le_audio

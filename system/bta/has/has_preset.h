@@ -24,7 +24,7 @@
 
 #include "hardware/bt_has.h"
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 namespace has {
 /* Represents preset instance. It stores properties such as preset name,
  * preset index and if it supports renaming. Also stores all the needed
@@ -112,4 +112,4 @@ class HasPreset {
 };
 
 }  // namespace has
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

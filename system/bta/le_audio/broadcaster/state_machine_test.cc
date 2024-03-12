@@ -44,14 +44,16 @@ extern "C" const char* __asan_default_options() {
 
 void btsnd_hcic_ble_rand(base::Callback<void(BT_OCTET8)> cb) {}
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 namespace broadcaster {
 namespace {
 // bit 0: encrypted, bit 1: standard quality present
 static const uint8_t test_public_broadcast_features = 0x3;
 static const std::string test_broadcast_name = "Test";
 static const std::vector<uint8_t> default_public_metadata = {
-    5, le_audio::types::kLeAudioMetadataTypeProgramInfo, 0x1, 0x2, 0x3, 0x4};
+    5,   bluetooth::le_audio::types::kLeAudioMetadataTypeProgramInfo,
+    0x1, 0x2,
+    0x3, 0x4};
 
 class MockBroadcastStatMachineCallbacks
     : public IBroadcastStateMachineCallbacks {
@@ -303,8 +305,8 @@ class StateMachineTest : public Test {
   }
 
   uint32_t InstantiateStateMachine(
-      le_audio::types::LeAudioContextType context =
-          le_audio::types::LeAudioContextType::UNSPECIFIED) {
+      bluetooth::le_audio::types::LeAudioContextType context =
+          bluetooth::le_audio::types::LeAudioContextType::UNSPECIFIED) {
     // We will get the state machine create status update in an async callback
     // so let's wait for it here.
     instance_creation_promise_ = std::promise<uint32_t>();
@@ -463,9 +465,11 @@ TEST_F(StateMachineTest, UpdateAnnouncement) {
   auto broadcast_id = InstantiateStateMachine();
   std::map<uint8_t, std::vector<uint8_t>> metadata = {};
   BroadcastCodecWrapper codec_config(
-      {.coding_format = le_audio::types::kLeAudioCodingFormatLC3,
-       .vendor_company_id = le_audio::types::kLeAudioVendorCompanyIdUndefined,
-       .vendor_codec_id = le_audio::types::kLeAudioVendorCodecIdUndefined},
+      {.coding_format = bluetooth::le_audio::types::kLeAudioCodingFormatLC3,
+       .vendor_company_id =
+           bluetooth::le_audio::types::kLeAudioVendorCompanyIdUndefined,
+       .vendor_codec_id =
+           bluetooth::le_audio::types::kLeAudioVendorCodecIdUndefined},
       {.num_channels = LeAudioCodecConfiguration::kChannelNumberMono,
        .sample_rate = LeAudioCodecConfiguration::kSampleRate16000,
        .bits_per_sample = LeAudioCodecConfiguration::kBitsPerSample16,
@@ -505,7 +509,7 @@ TEST_F(StateMachineTest, ProcessMessageStartWhenConfigured) {
   EXPECT_CALL(*(sm_callbacks_.get()), OnStateMachineCreateStatus(_, true))
       .Times(1);
 
-  auto sound_context = le_audio::types::LeAudioContextType::MEDIA;
+  auto sound_context = bluetooth::le_audio::types::LeAudioContextType::MEDIA;
   uint8_t num_channels = 2;
 
   auto broadcast_id = InstantiateStateMachine(sound_context);
@@ -557,8 +561,8 @@ TEST_F(StateMachineTest, ProcessMessageStopWhenConfigured) {
   EXPECT_CALL(*(sm_callbacks_.get()), OnStateMachineCreateStatus(_, true))
       .Times(1);
 
-  auto broadcast_id =
-      InstantiateStateMachine(le_audio::types::LeAudioContextType::MEDIA);
+  auto broadcast_id = InstantiateStateMachine(
+      bluetooth::le_audio::types::LeAudioContextType::MEDIA);
   ASSERT_EQ(broadcasts_[broadcast_id]->GetState(),
             BroadcastStateMachine::State::CONFIGURED);
 
@@ -583,8 +587,8 @@ TEST_F(StateMachineTest, ProcessMessageSuspendWhenConfigured) {
   EXPECT_CALL(*(sm_callbacks_.get()), OnStateMachineCreateStatus(_, true))
       .Times(1);
 
-  auto broadcast_id =
-      InstantiateStateMachine(le_audio::types::LeAudioContextType::MEDIA);
+  auto broadcast_id = InstantiateStateMachine(
+      bluetooth::le_audio::types::LeAudioContextType::MEDIA);
   ASSERT_EQ(broadcasts_[broadcast_id]->GetState(),
             BroadcastStateMachine::State::CONFIGURED);
 
@@ -600,8 +604,8 @@ TEST_F(StateMachineTest, ProcessMessageSuspendWhenConfigured) {
 }
 
 TEST_F(StateMachineTest, ProcessMessageStartWhenStreaming) {
-  auto broadcast_id =
-      InstantiateStateMachine(le_audio::types::LeAudioContextType::MEDIA);
+  auto broadcast_id = InstantiateStateMachine(
+      bluetooth::le_audio::types::LeAudioContextType::MEDIA);
 
   broadcasts_[broadcast_id]->ProcessMessage(
       BroadcastStateMachine::Message::START);
@@ -621,8 +625,8 @@ TEST_F(StateMachineTest, ProcessMessageStartWhenStreaming) {
 }
 
 TEST_F(StateMachineTest, ProcessMessageStopWhenStreaming) {
-  auto broadcast_id =
-      InstantiateStateMachine(le_audio::types::LeAudioContextType::MEDIA);
+  auto broadcast_id = InstantiateStateMachine(
+      bluetooth::le_audio::types::LeAudioContextType::MEDIA);
 
   broadcasts_[broadcast_id]->ProcessMessage(
       BroadcastStateMachine::Message::START);
@@ -647,8 +651,8 @@ TEST_F(StateMachineTest, ProcessMessageStopWhenStreaming) {
 }
 
 TEST_F(StateMachineTest, ProcessMessageSuspendWhenStreaming) {
-  auto broadcast_id =
-      InstantiateStateMachine(le_audio::types::LeAudioContextType::MEDIA);
+  auto broadcast_id = InstantiateStateMachine(
+      bluetooth::le_audio::types::LeAudioContextType::MEDIA);
 
   broadcasts_[broadcast_id]->ProcessMessage(
       BroadcastStateMachine::Message::START);
@@ -669,8 +673,8 @@ TEST_F(StateMachineTest, ProcessMessageSuspendWhenStreaming) {
 }
 
 TEST_F(StateMachineTest, ProcessMessageStartWhenStopped) {
-  auto broadcast_id =
-      InstantiateStateMachine(le_audio::types::LeAudioContextType::MEDIA);
+  auto broadcast_id = InstantiateStateMachine(
+      bluetooth::le_audio::types::LeAudioContextType::MEDIA);
 
   broadcasts_[broadcast_id]->ProcessMessage(
       BroadcastStateMachine::Message::STOP);
@@ -695,8 +699,8 @@ TEST_F(StateMachineTest, ProcessMessageStartWhenStopped) {
 }
 
 TEST_F(StateMachineTest, ProcessMessageStopWhenStopped) {
-  auto broadcast_id =
-      InstantiateStateMachine(le_audio::types::LeAudioContextType::MEDIA);
+  auto broadcast_id = InstantiateStateMachine(
+      bluetooth::le_audio::types::LeAudioContextType::MEDIA);
 
   broadcasts_[broadcast_id]->ProcessMessage(
       BroadcastStateMachine::Message::STOP);
@@ -716,8 +720,8 @@ TEST_F(StateMachineTest, ProcessMessageStopWhenStopped) {
 }
 
 TEST_F(StateMachineTest, ProcessMessageSuspendWhenStopped) {
-  auto broadcast_id =
-      InstantiateStateMachine(le_audio::types::LeAudioContextType::MEDIA);
+  auto broadcast_id = InstantiateStateMachine(
+      bluetooth::le_audio::types::LeAudioContextType::MEDIA);
 
   broadcasts_[broadcast_id]->ProcessMessage(
       BroadcastStateMachine::Message::STOP);
@@ -740,8 +744,8 @@ TEST_F(StateMachineTest, OnSetupIsoDataPathError) {
   EXPECT_CALL(*(sm_callbacks_.get()), OnStateMachineCreateStatus(_, true))
       .Times(1);
 
-  auto broadcast_id =
-      InstantiateStateMachine(le_audio::types::LeAudioContextType::MEDIA);
+  auto broadcast_id = InstantiateStateMachine(
+      bluetooth::le_audio::types::LeAudioContextType::MEDIA);
   ASSERT_EQ(broadcasts_[broadcast_id]->GetState(),
             BroadcastStateMachine::State::CONFIGURED);
 
@@ -799,8 +803,8 @@ TEST_F(StateMachineTest, OnSetupIsoDataPathError) {
 }
 
 TEST_F(StateMachineTest, OnRemoveIsoDataPathError) {
-  auto broadcast_id =
-      InstantiateStateMachine(le_audio::types::LeAudioContextType::MEDIA);
+  auto broadcast_id = InstantiateStateMachine(
+      bluetooth::le_audio::types::LeAudioContextType::MEDIA);
 
   broadcasts_[broadcast_id]->ProcessMessage(
       BroadcastStateMachine::Message::START);
@@ -850,7 +854,7 @@ TEST_F(StateMachineTest, GetConfig) {
   EXPECT_CALL(*(sm_callbacks_.get()), OnStateMachineCreateStatus(_, true))
       .Times(1);
 
-  auto sound_context = le_audio::types::LeAudioContextType::MEDIA;
+  auto sound_context = bluetooth::le_audio::types::LeAudioContextType::MEDIA;
   uint8_t num_channels = 2;
 
   auto broadcast_id = InstantiateStateMachine(sound_context);
@@ -906,9 +910,11 @@ TEST_F(StateMachineTest, GetBroadcastAnnouncement) {
   auto broadcast_id = InstantiateStateMachine();
   std::map<uint8_t, std::vector<uint8_t>> metadata = {};
   BroadcastCodecWrapper codec_config(
-      {.coding_format = le_audio::types::kLeAudioCodingFormatLC3,
-       .vendor_company_id = le_audio::types::kLeAudioVendorCompanyIdUndefined,
-       .vendor_codec_id = le_audio::types::kLeAudioVendorCodecIdUndefined},
+      {.coding_format = bluetooth::le_audio::types::kLeAudioCodingFormatLC3,
+       .vendor_company_id =
+           bluetooth::le_audio::types::kLeAudioVendorCompanyIdUndefined,
+       .vendor_codec_id =
+           bluetooth::le_audio::types::kLeAudioVendorCodecIdUndefined},
       {.num_channels = LeAudioCodecConfiguration::kChannelNumberMono,
        .sample_rate = LeAudioCodecConfiguration::kSampleRate16000,
        .bits_per_sample = LeAudioCodecConfiguration::kBitsPerSample16,
@@ -1008,4 +1014,4 @@ TEST_F(StateMachineTest, AnnouncementTest) {
 
 }  // namespace
 }  // namespace broadcaster
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

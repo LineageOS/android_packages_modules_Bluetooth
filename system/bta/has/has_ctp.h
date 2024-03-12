@@ -28,7 +28,7 @@
 #include "has_preset.h"
 #include "osi/include/alarm.h"
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 namespace has {
 /* HAS control point Change Id */
 enum class PresetCtpChangeId : uint8_t {
@@ -262,11 +262,11 @@ struct HasCtpGroupOpCoordinator {
 };
 
 }  // namespace has
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio
 
 namespace fmt {
 template <>
-struct formatter<le_audio::has::HasCtpNtf> : ostream_formatter {};
+struct formatter<bluetooth::le_audio::has::HasCtpNtf> : ostream_formatter {};
 template <>
-struct formatter<le_audio::has::HasCtpOp> : ostream_formatter {};
+struct formatter<bluetooth::le_audio::has::HasCtpOp> : ostream_formatter {};
 }  // namespace fmt

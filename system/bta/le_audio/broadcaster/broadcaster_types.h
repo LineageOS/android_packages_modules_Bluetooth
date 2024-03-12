@@ -30,7 +30,7 @@
  * in the API.
  */
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 namespace broadcaster {
 static const uint16_t kBroadcastAudioAnnouncementServiceUuid = 0x1852;
 static const uint16_t kBasicAudioAnnouncementServiceUuid = 0x1851;
@@ -129,7 +129,7 @@ struct BroadcastCodecWrapper {
 
 std::ostream& operator<<(
     std::ostream& os,
-    const le_audio::broadcaster::BroadcastCodecWrapper& config);
+    const bluetooth::le_audio::broadcaster::BroadcastCodecWrapper& config);
 
 struct BroadcastQosConfig {
   BroadcastQosConfig(uint8_t retransmission_number,
@@ -158,20 +158,19 @@ static const BroadcastQosConfig qos_config_4_60 = BroadcastQosConfig(4, 60);
 static const BroadcastQosConfig qos_config_4_65 = BroadcastQosConfig(4, 65);
 
 std::ostream& operator<<(
-    std::ostream& os, const le_audio::broadcaster::BroadcastQosConfig& config);
+    std::ostream& os,
+    const bluetooth::le_audio::broadcaster::BroadcastQosConfig& config);
 
 std::pair<const BroadcastCodecWrapper&, const BroadcastQosConfig&>
 getStreamConfigForContext(types::AudioContexts context);
 
 }  // namespace broadcaster
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio
 
 /* BroadcastAnnouncements compare helper */
-namespace bluetooth {
-namespace le_audio {
+namespace bluetooth::le_audio {
 bool operator==(const BasicAudioAnnouncementData& lhs,
                 const BasicAudioAnnouncementData& rhs);
 bool operator==(const PublicBroadcastAnnouncementData& lhs,
                 const PublicBroadcastAnnouncementData& rhs);
-}  // namespace le_audio
-}  // namespace bluetooth
+}  // namespace bluetooth::le_audio

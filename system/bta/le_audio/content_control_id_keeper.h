@@ -21,7 +21,7 @@
 
 #include "le_audio_types.h"
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 
 class ContentControlIdKeeper {
  public:
@@ -42,4 +42,4 @@ class ContentControlIdKeeper {
   struct impl;
   std::unique_ptr<impl> pimpl_;
 };
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio
