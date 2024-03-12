@@ -104,7 +104,8 @@ class LeAudioSinkAudioHalClient {
     virtual ~Callbacks() = default;
     virtual void OnAudioSuspend(void) = 0;
     virtual void OnAudioResume(void) = 0;
-    virtual void OnAudioMetadataUpdate(sink_metadata_v7 sink_metadata) = 0;
+    virtual void OnAudioMetadataUpdate(
+        const std::vector<struct record_track_metadata_v7> sink_metadata) = 0;
 
     base::WeakPtrFactory<Callbacks> weak_factory_{this};
   };
@@ -144,8 +145,9 @@ class LeAudioSourceAudioHalClient {
     virtual void OnAudioDataReady(const std::vector<uint8_t>& data) = 0;
     virtual void OnAudioSuspend(void) = 0;
     virtual void OnAudioResume(void) = 0;
-    virtual void OnAudioMetadataUpdate(source_metadata_v7 source_metadata,
-                                       DsaMode dsa_mode) = 0;
+    virtual void OnAudioMetadataUpdate(
+        const std::vector<struct playback_track_metadata_v7> source_metadata,
+        DsaMode dsa_mode) = 0;
 
     base::WeakPtrFactory<Callbacks> weak_factory_{this};
   };
