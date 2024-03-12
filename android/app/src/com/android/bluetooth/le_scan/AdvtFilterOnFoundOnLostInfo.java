@@ -18,7 +18,6 @@ package com.android.bluetooth.le_scan;
 
 import android.annotation.Nullable;
 
-/** @hide */
 public class AdvtFilterOnFoundOnLostInfo {
     private int mClientIf;
 

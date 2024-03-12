@@ -61,7 +61,6 @@ import java.util.Objects;
 /**
  * Provides Bluetooth Pan Device profile, as a service in
  * the Bluetooth application.
- * @hide
  */
 public class PanService extends ProfileService {
     private static final String TAG = "PanService";
@@ -577,7 +576,6 @@ public class PanService extends ProfileService {
      *
      * @param device Bluetooth device
      * @return connection policy of the device
-     * @hide
      */
     public int getConnectionPolicy(BluetoothDevice device) {
         return mDatabaseManager

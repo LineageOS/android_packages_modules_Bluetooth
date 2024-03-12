@@ -99,7 +99,6 @@ import java.util.UUID;
 /**
  * Provides Bluetooth Gatt profile, as a service in
  * the Bluetooth application.
- * @hide
  */
 public class GattService extends ProfileService {
     private static final boolean DBG = GattServiceConfig.DBG;

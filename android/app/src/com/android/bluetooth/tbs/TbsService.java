@@ -147,7 +147,6 @@ public class TbsService extends ProfileService {
      * Remove authorization information for the device.
      *
      * @param device device to remove from the service information
-     * @hide
      */
     public void removeDeviceAuthorizationInfo(BluetoothDevice device) {
         Log.i(TAG, "removeDeviceAuthorizationInfo(): device: " + device);
@@ -159,7 +158,6 @@ public class TbsService extends ProfileService {
      *
      * @param device device that would be authorized
      * @param isAuthorized boolean value of authorization permission
-     * @hide
      */
     public void setDeviceAuthorized(BluetoothDevice device, boolean isAuthorized) {
         Log.i(TAG, "setDeviceAuthorized(): device: " + device + ", isAuthorized: " + isAuthorized);
@@ -181,7 +179,6 @@ public class TbsService extends ProfileService {
      * Possible authorization values:
      * {@link BluetoothDevice.ACCESS_UNKNOWN},
      * {@link BluetoothDevice.ACCESS_ALLOWED}
-     * @hide
      */
     public int getDeviceAuthorization(BluetoothDevice device) {
         /* Telephony Bearer Service is allowed for

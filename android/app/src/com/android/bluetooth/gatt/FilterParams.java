@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.gatt;
 
-/** @hide */
 public class FilterParams {
     private int mClientIf;
     private int mFiltIndex;

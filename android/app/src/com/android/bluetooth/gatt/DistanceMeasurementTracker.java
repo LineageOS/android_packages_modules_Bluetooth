@@ -27,8 +27,6 @@ import java.util.UUID;
 
 /**
  * Manages information of apps that registered distance measurement
- *
- * @hide
  */
 class DistanceMeasurementTracker {
     private static final String TAG = "DistanceMeasurementTracker";

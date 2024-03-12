@@ -38,7 +38,6 @@ import android.provider.BaseColumns;
 /**
  * Exposes constants used to interact with the Bluetooth Share manager's content
  * provider.
- * @hide
  */
 
 public final class BluetoothShare implements BaseColumns {

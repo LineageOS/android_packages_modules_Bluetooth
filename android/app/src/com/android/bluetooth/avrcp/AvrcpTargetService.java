@@ -53,10 +53,7 @@ import com.android.internal.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * Provides Bluetooth AVRCP Target profile as a service in the Bluetooth application.
- * @hide
- */
+/** Provides Bluetooth AVRCP Target profile as a service in the Bluetooth application. */
 public class AvrcpTargetService extends ProfileService {
     private static final String TAG = "AvrcpTargetService";
     private static final boolean DEBUG = Log.isLoggable(TAG, Log.DEBUG);
