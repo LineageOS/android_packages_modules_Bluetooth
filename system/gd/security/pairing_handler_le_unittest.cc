@@ -18,6 +18,7 @@
 
 #include "security/pairing_handler_le.h"
 
+#include <bluetooth/log.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -59,9 +60,10 @@ UIMock uiMock;
 
 void OnPairingFinished(PairingResultOrFailure r) {
   if (std::holds_alternative<PairingResult>(r)) {
-    LOG(INFO) << "pairing with " << std::get<PairingResult>(r).connection_address << " finished successfully!";
+    log::info(
+        "pairing with {} finished successfully!", std::get<PairingResult>(r).connection_address);
   } else {
-    LOG(INFO) << "pairing with ... failed!";
+    log::info("pairing with ... failed!");
   }
   pairingResult->OnPairingFinished(r);
 }

@@ -16,6 +16,8 @@
 
 #include "l2cap/le/link_options.h"
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 
 #include "hci/hci_packets.h"
@@ -47,7 +49,7 @@ bool LinkOptions::UpdateConnectionParameter(uint16_t conn_interval_min, uint16_t
   if (conn_interval_min < 0x0006 || conn_interval_min > 0x0C80 || conn_interval_max < 0x0006 ||
       conn_interval_max > 0x0C80 || conn_latency > 0x01F3 || supervision_timeout < 0x000A ||
       supervision_timeout > 0x0C80) {
-    LOG_ERROR("Invalid parameter");
+    log::error("Invalid parameter");
     return false;
   }
 
@@ -63,7 +65,7 @@ bool LinkOptions::SetPhy(
     uint8_t /* tx_phys */,
     uint8_t /* rx_phys */,
     uint16_t /* phy_options */) {
-  LOG_ERROR("Not implemented");
+  log::error("Not implemented");
   return false;
 }
 

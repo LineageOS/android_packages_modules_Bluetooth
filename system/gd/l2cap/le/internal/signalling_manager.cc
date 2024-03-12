@@ -16,6 +16,8 @@
 
 #include "l2cap/le/internal/signalling_manager.h"
 
+#include <bluetooth/log.h>
+
 #include <chrono>
 
 #include "common/bind.h"
@@ -65,7 +67,7 @@ void LeSignallingManager::SendConnectionRequest(Psm psm, Cid local_cid, Mtu mtu)
 
 void LeSignallingManager::on_security_result_for_outgoing(Psm psm, Cid local_cid, Mtu mtu, bool result) {
   if (!result) {
-    LOG_WARN("Security requirement can't be satisfied. Dropping connection request");
+    log::warn("Security requirement can't be satisfied. Dropping connection request");
     return;
   }
 
@@ -123,7 +125,7 @@ void LeSignallingManager::CancelAlarm() {
 void LeSignallingManager::OnCommandReject(LeCommandRejectView command_reject_view) {
   auto signal_id = command_reject_view.GetIdentifier();
   if (signal_id != command_just_sent_.signal_id_) {
-    LOG_WARN("Unexpected response: no pending request");
+    log::warn("Unexpected response: no pending request");
     return;
   }
   alarm_.Cancel();
@@ -133,7 +135,7 @@ void LeSignallingManager::OnCommandReject(LeCommandRejectView command_reject_vie
   }
   handle_send_next_command();
 
-  LOG_WARN("Command rejected");
+  log::warn("Command rejected");
 }
 
 void LeSignallingManager::OnConnectionParameterUpdateRequest(
@@ -143,14 +145,14 @@ void LeSignallingManager::OnConnectionParameterUpdateRequest(
     uint16_t peripheral_latency,
     uint16_t timeout_multiplier) {
   if (link_->GetRole() == hci::Role::PERIPHERAL) {
-    LOG_WARN("Received request from LL central");
+    log::warn("Received request from LL central");
     auto builder = LeCommandRejectNotUnderstoodBuilder::Create(signal_id.Value());
     enqueue_buffer_->Enqueue(std::move(builder), handler_);
     return;
   }
 
   if (!link_->CheckConnectionParameters(interval_min, interval_max, peripheral_latency, timeout_multiplier)) {
-    LOG_WARN("Received invalid connection parameter update request from LL central");
+    log::warn("Received invalid connection parameter update request from LL central");
     auto builder = ConnectionParameterUpdateResponseBuilder::Create(signal_id.Value(),
                                                                     ConnectionParameterUpdateResponseResult::REJECTED);
     enqueue_buffer_->Enqueue(std::move(builder), handler_);
@@ -163,38 +165,38 @@ void LeSignallingManager::OnConnectionParameterUpdateRequest(
 void LeSignallingManager::OnConnectionParameterUpdateResponse(SignalId signal_id,
                                                               ConnectionParameterUpdateResponseResult result) {
   if (signal_id != command_just_sent_.signal_id_) {
-    LOG_WARN("Unexpected response: no pending request");
+    log::warn("Unexpected response: no pending request");
     return;
   }
   if (command_just_sent_.command_code_ != LeCommandCode::CONNECTION_PARAMETER_UPDATE_REQUEST) {
-    LOG_WARN("Unexpected response: no pending request");
+    log::warn("Unexpected response: no pending request");
     return;
   }
   alarm_.Cancel();
   command_just_sent_.signal_id_ = kInitialSignalId;
   if (result != ConnectionParameterUpdateResponseResult::ACCEPTED) {
-    LOG_ERROR("Connection parameter update is not accepted");
+    log::error("Connection parameter update is not accepted");
   }
 }
 
 void LeSignallingManager::OnConnectionRequest(SignalId signal_id, Psm psm, Cid remote_cid, Mtu mtu, uint16_t mps,
                                               uint16_t initial_credits) {
   if (remote_cid == kInvalidCid) {
-    LOG_WARN("Invalid remote cid received from remote psm:%d remote_cid:%d", psm, remote_cid);
+    log::warn("Invalid remote cid received from remote psm:{} remote_cid:{}", psm, remote_cid);
     send_connection_response(signal_id, kInvalidCid, 0, 0, 0,
                              LeCreditBasedConnectionResponseResult::INVALID_SOURCE_CID);
     return;
   }
 
   if (channel_allocator_->IsPsmUsed(psm)) {
-    LOG_WARN("Psm already exists");
+    log::warn("Psm already exists");
     send_connection_response(signal_id, kInvalidCid, 0, 0, 0,
                              LeCreditBasedConnectionResponseResult::LE_PSM_NOT_SUPPORTED);
     return;
   }
 
   if (!dynamic_service_manager_->IsServiceRegistered(psm)) {
-    LOG_INFO("Service for this psm (%d) is not registered", psm);
+    log::info("Service for this psm ({}) is not registered", psm);
     send_connection_response(signal_id, kInvalidCid, 0, 0, 0,
                              LeCreditBasedConnectionResponseResult::LE_PSM_NOT_SUPPORTED);
     return;
@@ -220,7 +222,7 @@ void LeSignallingManager::on_security_result_for_incoming(Psm psm, PendingConnec
     auto security_policy = service->GetSecurityPolicy();
     switch (security_policy) {
       case SecurityPolicy::NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK:
-        LOG_ERROR("If no security requirement, we should never fail");
+        log::error("If no security requirement, we should never fail");
         break;
       case SecurityPolicy::ENCRYPTED_TRANSPORT:
         send_connection_response(signal_id, kInvalidCid, 0, 0, 0,
@@ -247,7 +249,7 @@ void LeSignallingManager::on_security_result_for_incoming(Psm psm, PendingConnec
 
   auto new_channel = link_->AllocateDynamicChannel(psm, request.remote_cid);
   if (new_channel == nullptr) {
-    LOG_WARN("Can't allocate dynamic channel");
+    log::warn("Can't allocate dynamic channel");
     // TODO: We need to respond with the correct reason
     send_connection_response(signal_id, kInvalidCid, 0, 0, 0,
                              LeCreditBasedConnectionResponseResult::SOURCE_CID_ALREADY_ALLOCATED);
@@ -269,17 +271,17 @@ void LeSignallingManager::on_security_result_for_incoming(Psm psm, PendingConnec
 void LeSignallingManager::OnConnectionResponse(SignalId signal_id, Cid remote_cid, Mtu mtu, uint16_t mps,
                                                uint16_t initial_credits, LeCreditBasedConnectionResponseResult result) {
   if (signal_id != command_just_sent_.signal_id_) {
-    LOG_WARN("Unexpected response: no pending request");
+    log::warn("Unexpected response: no pending request");
     return;
   }
   if (command_just_sent_.command_code_ != LeCommandCode::LE_CREDIT_BASED_CONNECTION_REQUEST) {
-    LOG_WARN("Unexpected response: no pending request");
+    log::warn("Unexpected response: no pending request");
     return;
   }
   alarm_.Cancel();
   command_just_sent_.signal_id_ = kInitialSignalId;
   if (result != LeCreditBasedConnectionResponseResult::SUCCESS) {
-    LOG_WARN("Connection failed: %s", LeCreditBasedConnectionResponseResultText(result).data());
+    log::warn("Connection failed: {}", LeCreditBasedConnectionResponseResultText(result).data());
     link_->OnOutgoingConnectionRequestFail(command_just_sent_.source_cid_, result);
     handle_send_next_command();
     return;
@@ -287,7 +289,7 @@ void LeSignallingManager::OnConnectionResponse(SignalId signal_id, Cid remote_ci
   auto new_channel =
       link_->AllocateReservedDynamicChannel(command_just_sent_.source_cid_, command_just_sent_.psm_, remote_cid);
   if (new_channel == nullptr) {
-    LOG_WARN("Can't allocate dynamic channel");
+    log::warn("Can't allocate dynamic channel");
     link_->OnOutgoingConnectionRequestFail(command_just_sent_.source_cid_,
                                            LeCreditBasedConnectionResponseResult::NO_RESOURCES_AVAILABLE);
     handle_send_next_command();
@@ -307,11 +309,11 @@ void LeSignallingManager::OnConnectionResponse(SignalId signal_id, Cid remote_ci
 void LeSignallingManager::OnDisconnectionRequest(SignalId signal_id, Cid cid, Cid remote_cid) {
   auto channel = channel_allocator_->FindChannelByCid(cid);
   if (channel == nullptr) {
-    LOG_WARN("Disconnect request for an unknown channel");
+    log::warn("Disconnect request for an unknown channel");
     return;
   }
   if (channel->GetRemoteCid() != remote_cid) {
-    LOG_WARN("Disconnect request for an unmatching channel");
+    log::warn("Disconnect request for an unmatching channel");
     return;
   }
   auto builder = LeDisconnectionResponseBuilder::Create(signal_id.Value(), cid, remote_cid);
@@ -323,12 +325,16 @@ void LeSignallingManager::OnDisconnectionRequest(SignalId signal_id, Cid cid, Ci
 void LeSignallingManager::OnDisconnectionResponse(SignalId signal_id, Cid remote_cid, Cid cid) {
   if (signal_id != command_just_sent_.signal_id_ ||
       command_just_sent_.command_code_ != LeCommandCode::DISCONNECTION_REQUEST) {
-    LOG_WARN("Unexpected response: no pending request");
+    log::warn("Unexpected response: no pending request");
     return;
   }
   if (command_just_sent_.source_cid_ != cid || command_just_sent_.destination_cid_ != remote_cid) {
-    LOG_WARN("Unexpected response: cid doesn't match. Expected scid %d dcid %d, got scid %d dcid %d",
-             command_just_sent_.source_cid_, command_just_sent_.destination_cid_, cid, remote_cid);
+    log::warn(
+        "Unexpected response: cid doesn't match. Expected scid {} dcid {}, got scid {} dcid {}",
+        command_just_sent_.source_cid_,
+        command_just_sent_.destination_cid_,
+        cid,
+        remote_cid);
     handle_send_next_command();
     return;
   }
@@ -336,7 +342,7 @@ void LeSignallingManager::OnDisconnectionResponse(SignalId signal_id, Cid remote
   command_just_sent_.signal_id_ = kInitialSignalId;
   auto channel = channel_allocator_->FindChannelByCid(cid);
   if (channel == nullptr) {
-    LOG_WARN("Disconnect response for an unknown channel");
+    log::warn("Disconnect response for an unknown channel");
     handle_send_next_command();
     return;
   }
@@ -349,7 +355,7 @@ void LeSignallingManager::OnDisconnectionResponse(SignalId signal_id, Cid remote
 void LeSignallingManager::OnCredit(Cid remote_cid, uint16_t credits) {
   auto channel = channel_allocator_->FindChannelByRemoteCid(remote_cid);
   if (channel == nullptr) {
-    LOG_WARN("Received credit for invalid cid %d", channel->GetCid());
+    log::warn("Received credit for invalid cid {}", channel->GetCid());
     return;
   }
   auto* data_controller = reinterpret_cast<l2cap::internal::LeCreditBasedDataController*>(
@@ -361,7 +367,7 @@ void LeSignallingManager::on_incoming_packet() {
   auto packet = signalling_channel_->GetQueueUpEnd()->TryDequeue();
   LeControlView control_packet_view = LeControlView::Create(*packet);
   if (!control_packet_view.IsValid()) {
-    LOG_WARN("Invalid signalling packet received");
+    log::warn("Invalid signalling packet received");
     return;
   }
   auto code = control_packet_view.GetCode();
@@ -482,7 +488,7 @@ void LeSignallingManager::on_incoming_packet() {
       return;
     }
     default:
-      LOG_WARN("Unhandled event 0x%x", static_cast<int>(code));
+      log::warn("Unhandled event 0x{:x}", static_cast<int>(code));
       auto builder = LeCommandRejectNotUnderstoodBuilder::Create(control_packet_view.GetIdentifier());
       enqueue_buffer_->Enqueue(std::move(builder), handler_);
       return;
@@ -498,9 +504,9 @@ void LeSignallingManager::send_connection_response(SignalId signal_id, Cid local
 }
 
 void LeSignallingManager::on_command_timeout() {
-  LOG_WARN("Response time out");
+  log::warn("Response time out");
   if (command_just_sent_.signal_id_ == kInvalidSignalId) {
-    LOG_ERROR("No pending command");
+    log::error("No pending command");
     return;
   }
   switch (command_just_sent_.command_code_) {
@@ -551,7 +557,8 @@ void LeSignallingManager::handle_send_next_command() {
       break;
     }
     default: {
-      LOG_WARN("Unsupported command code 0x%x", static_cast<int>(command_just_sent_.command_code_));
+      log::warn(
+          "Unsupported command code 0x{:x}", static_cast<int>(command_just_sent_.command_code_));
     }
   }
 }

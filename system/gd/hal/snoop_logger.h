@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <bluetooth/log.h>
+
 #include <fstream>
 #include <string>
 #include <unordered_map>
@@ -353,3 +355,9 @@ class SnoopLogger : public ::bluetooth::Module {
 
 }  // namespace hal
 }  // namespace bluetooth
+
+namespace fmt {
+template <>
+struct formatter<bluetooth::hal::profile_type_t> : enum_formatter<bluetooth::hal::profile_type_t> {
+};
+}  // namespace fmt

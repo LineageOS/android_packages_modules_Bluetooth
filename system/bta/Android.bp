@@ -893,6 +893,7 @@ cc_test {
         "LeAudioSetConfigSchemas_h",
     ],
     shared_libs: [
+        "libbase",
         "libcrypto",
         "libhidlbase",
         "liblog", // __android_log_print

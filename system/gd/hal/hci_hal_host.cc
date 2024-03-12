@@ -16,6 +16,7 @@
 
 #include "hal/hci_hal_host.h"
 
+#include <bluetooth/log.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <poll.h>
@@ -96,7 +97,7 @@ int waitHciDev(int hci_interface) {
 
   fd = socket(PF_BLUETOOTH, SOCK_RAW, BTPROTO_HCI);
   if (fd < 0) {
-    LOG_ERROR("Bluetooth socket error: %s", strerror(errno));
+    bluetooth::log::error("Bluetooth socket error: {}", strerror(errno));
     return -1;
   }
   memset(&addr, 0, sizeof(addr));
@@ -106,7 +107,7 @@ int waitHciDev(int hci_interface) {
 
   ret = bind(fd, (struct sockaddr*)&addr, sizeof(addr));
   if (ret < 0) {
-    LOG_ERROR("HCI Channel Control: %d %s", errno, strerror(errno));
+    bluetooth::log::error("HCI Channel Control: {} {}", errno, strerror(errno));
     close(fd);
     return -1;
   }
@@ -122,7 +123,7 @@ int waitHciDev(int hci_interface) {
   ssize_t wrote;
   REPEAT_ON_INTR(wrote = write(fd, &ev, 6));
   if (wrote != 6) {
-    LOG_ERROR("Unable to write mgmt command: %s", strerror(errno));
+    bluetooth::log::error("Unable to write mgmt command: {}", strerror(errno));
     close(fd);
     return -1;
   }
@@ -131,17 +132,17 @@ int waitHciDev(int hci_interface) {
     int n;
     REPEAT_ON_INTR(n = poll(fds, 1, -1));
     if (n == -1) {
-      LOG_ERROR("Poll error: %s", strerror(errno));
+      bluetooth::log::error("Poll error: {}", strerror(errno));
       break;
     } else if (n == 0) {
-      LOG_ERROR("Timeout, no HCI device detected");
+      bluetooth::log::error("Timeout, no HCI device detected");
       break;
     }
 
     if (fds[0].revents & POLLIN) {
       REPEAT_ON_INTR(n = read(fd, &ev, sizeof(struct mgmt_pkt)));
       if (n < 0) {
-        LOG_ERROR("Error reading control channel: %s", strerror(errno));
+        bluetooth::log::error("Error reading control channel: {}", strerror(errno));
         break;
       }
 
@@ -165,10 +166,11 @@ int waitHciDev(int hci_interface) {
           }
 
           // Chipset might be lost. Wait for index added event.
-          LOG_ERROR("HCI interface(%d) not found in the MGMT lndex list", hci_interface);
+          bluetooth::log::error(
+              "HCI interface({}) not found in the MGMT lndex list", hci_interface);
         } else {
           // Unlikely event (probably developer error or driver shut down).
-          LOG_ERROR("Failed to read index list: status(%d)", cc->status);
+          bluetooth::log::error("Failed to read index list: status({})", cc->status);
         }
 
         // Close and return result of Index List.
@@ -188,7 +190,7 @@ int ConnectToSocket() {
 
   int socket_fd = socket(AF_BLUETOOTH, SOCK_RAW, BTPROTO_HCI);
   if (socket_fd < 0) {
-    LOG_ERROR("can't create socket: %s", strerror(errno));
+    bluetooth::log::error("can't create socket: {}", strerror(errno));
     return INVALID_FD;
   }
 
@@ -208,11 +210,11 @@ int ConnectToSocket() {
 
   ret = bind(socket_fd, (struct sockaddr*)&addr, sizeof(addr));
   if (ret < 0) {
-    LOG_ERROR("HCI Channel Control: %d %s", errno, strerror(errno));
+    bluetooth::log::error("HCI Channel Control: {} {}", errno, strerror(errno));
     ::close(socket_fd);
     return INVALID_FD;
   }
-  LOG_INFO("HCI device ready");
+  bluetooth::log::info("HCI device ready");
   return socket_fd;
 }
 }
@@ -224,23 +226,23 @@ class HciHalHost : public HciHal {
  public:
   void registerIncomingPacketCallback(HciHalCallbacks* callback) override {
     std::lock_guard<std::mutex> lock(api_mutex_);
-    LOG_INFO("%s before", __func__);
+    log::info("before");
     {
       std::lock_guard<std::mutex> incoming_packet_callback_lock(incoming_packet_callback_mutex_);
       ASSERT(incoming_packet_callback_ == nullptr && callback != nullptr);
       incoming_packet_callback_ = callback;
     }
-    LOG_INFO("%s after", __func__);
+    log::info("after");
   }
 
   void unregisterIncomingPacketCallback() override {
     std::lock_guard<std::mutex> lock(api_mutex_);
-    LOG_INFO("%s before", __func__);
+    log::info("before");
     {
       std::lock_guard<std::mutex> incoming_packet_callback_lock(incoming_packet_callback_mutex_);
       incoming_packet_callback_ = nullptr;
     }
-    LOG_INFO("%s after", __func__);
+    log::info("after");
   }
 
   void sendHciCommand(HciPacket command) override {
@@ -297,7 +299,7 @@ class HciHalHost : public HciHal {
 
     // We don't want to crash when the chipset is broken.
     if (sock_fd_ == INVALID_FD) {
-      LOG_ERROR("Failed to connect to HCI socket. Aborting HAL initialization process.");
+      log::error("Failed to connect to HCI socket. Aborting HAL initialization process.");
       raise(SIGINT);
       return;
     }
@@ -309,18 +311,18 @@ class HciHalHost : public HciHal {
     hci_incoming_thread_.GetReactor()->ModifyRegistration(reactable_, os::Reactor::REACT_ON_READ_ONLY);
     link_clocker_ = GetDependency<LinkClocker>();
     btsnoop_logger_ = GetDependency<SnoopLogger>();
-    LOG_INFO("HAL opened successfully");
+    log::info("HAL opened successfully");
   }
 
   void Stop() override {
     std::lock_guard<std::mutex> lock(api_mutex_);
-    LOG_INFO("HAL is closing");
+    log::info("HAL is closing");
     if (reactable_ != nullptr) {
       hci_incoming_thread_.GetReactor()->Unregister(reactable_);
-      LOG_INFO("HAL is stopping, start waiting for last callback");
+      log::info("HAL is stopping, start waiting for last callback");
       // Wait up to 1 second for the last incoming packet callback to finish
       hci_incoming_thread_.GetReactor()->WaitForUnregisteredReactable(std::chrono::milliseconds(1000));
-      LOG_INFO("HAL is stopping, finished waiting for last callback");
+      log::info("HAL is stopping, finished waiting for last callback");
       ASSERT(sock_fd_ != INVALID_FD);
     }
     reactable_ = nullptr;
@@ -330,7 +332,7 @@ class HciHalHost : public HciHal {
     }
     ::close(sock_fd_);
     sock_fd_ = INVALID_FD;
-    LOG_INFO("HAL is closed");
+    log::info("HAL is closed");
   }
 
   std::string ToString() const override {
@@ -376,7 +378,7 @@ class HciHalHost : public HciHal {
     {
       std::lock_guard<std::mutex> incoming_packet_callback_lock(incoming_packet_callback_mutex_);
       if (incoming_packet_callback_ == nullptr) {
-        LOG_INFO("Dropping a packet");
+        log::info("Dropping a packet");
         return;
       }
     }
@@ -387,14 +389,14 @@ class HciHalHost : public HciHal {
 
     // we don't want crash when the chipset is broken.
     if (received_size == -1) {
-      LOG_ERROR("Can't receive from socket: %s", strerror(errno));
+      log::error("Can't receive from socket: {}", strerror(errno));
       close(sock_fd_);
       raise(SIGINT);
       return;
     }
 
     if (received_size == 0) {
-      LOG_WARN("Can't read H4 header. EOF received");
+      log::warn("Can't read H4 header. EOF received");
       // First close sock fd before raising sigint
       close(sock_fd_);
       raise(SIGINT);
@@ -419,7 +421,7 @@ class HciHalHost : public HciHal {
       {
         std::lock_guard<std::mutex> incoming_packet_callback_lock(incoming_packet_callback_mutex_);
         if (incoming_packet_callback_ == nullptr) {
-          LOG_INFO("Dropping an event after processing");
+          log::info("Dropping an event after processing");
           return;
         }
         incoming_packet_callback_->hciEventReceived(receivedHciPacket);
@@ -445,7 +447,7 @@ class HciHalHost : public HciHal {
       {
         std::lock_guard<std::mutex> incoming_packet_callback_lock(incoming_packet_callback_mutex_);
         if (incoming_packet_callback_ == nullptr) {
-          LOG_INFO("Dropping an ACL packet after processing");
+          log::info("Dropping an ACL packet after processing");
           return;
         }
         incoming_packet_callback_->aclDataReceived(receivedHciPacket);
@@ -469,7 +471,7 @@ class HciHalHost : public HciHal {
       {
         std::lock_guard<std::mutex> incoming_packet_callback_lock(incoming_packet_callback_mutex_);
         if (incoming_packet_callback_ == nullptr) {
-          LOG_INFO("Dropping a SCO packet after processing");
+          log::info("Dropping a SCO packet after processing");
           return;
         }
         incoming_packet_callback_->scoDataReceived(receivedHciPacket);
@@ -493,7 +495,7 @@ class HciHalHost : public HciHal {
       {
         std::lock_guard<std::mutex> incoming_packet_callback_lock(incoming_packet_callback_mutex_);
         if (incoming_packet_callback_ == nullptr) {
-          LOG_INFO("Dropping a ISO packet after processing");
+          log::info("Dropping a ISO packet after processing");
           return;
         }
         incoming_packet_callback_->isoDataReceived(receivedHciPacket);

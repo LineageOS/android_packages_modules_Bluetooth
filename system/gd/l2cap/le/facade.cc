@@ -16,6 +16,8 @@
 
 #include "l2cap/le/facade.h"
 
+#include <bluetooth/log.h>
+
 #include "blueberry/facade/l2cap/le/facade.grpc.pb.h"
 #include "grpc/grpc_event_queue.h"
 #include "l2cap/le/dynamic_channel.h"
@@ -165,14 +167,14 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
           common::Bind(&L2capDynamicChannelHelper::on_connect_fail, common::Unretained(this)), handler_);
       std::unique_lock<std::mutex> lock(channel_open_cv_mutex_);
       if (!channel_open_cv_.wait_for(lock, kChannelOpenTimeout, [this] { return channel_ != nullptr; })) {
-        LOG_WARN("Channel is not open for psm %d", psm_);
+        log::warn("Channel is not open for psm {}", psm_);
       }
     }
 
     void on_l2cap_service_registration_complete(DynamicChannelManager::RegistrationResult registration_result,
                                                 std::unique_ptr<DynamicChannelService> service) {
       if (registration_result != DynamicChannelManager::RegistrationResult::SUCCESS) {
-        LOG_ERROR("Service registration failed");
+        log::error("Service registration failed");
       } else {
         service_ = std::move(service);
       }
@@ -222,7 +224,7 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
       if (channel_ == nullptr) {
         std::unique_lock<std::mutex> lock(channel_open_cv_mutex_);
         if (!channel_open_cv_.wait_for(lock, kChannelOpenTimeout, [this] { return channel_ != nullptr; })) {
-          LOG_WARN("Channel is not open for psm %d", psm_);
+          log::warn("Channel is not open for psm {}", psm_);
           return false;
         }
       }
@@ -233,7 +235,7 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
                                  common::Passed(std::move(promise))));
       auto status = future.wait_for(std::chrono::milliseconds(500));
       if (status != std::future_status::ready) {
-        LOG_ERROR("Can't send packet because the previous packet wasn't sent yet");
+        log::error("Can't send packet because the previous packet wasn't sent yet");
         return false;
       }
       return true;
@@ -319,14 +321,14 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
           address, common::BindOnce(&L2capFixedChannelHelper::on_connect_fail, common::Unretained(this)), handler_);
       std::unique_lock<std::mutex> lock(channel_open_cv_mutex_);
       if (!channel_open_cv_.wait_for(lock, kChannelOpenTimeout, [this] { return channel_ != nullptr; })) {
-        LOG_WARN("Channel is not open for cid %d", cid_);
+        log::warn("Channel is not open for cid {}", cid_);
       }
     }
 
     void on_l2cap_service_registration_complete(FixedChannelManager::RegistrationResult registration_result,
                                                 std::unique_ptr<FixedChannelService> service) {
       if (registration_result != FixedChannelManager::RegistrationResult::SUCCESS) {
-        LOG_ERROR("Service registration failed");
+        log::error("Service registration failed");
       } else {
         service_ = std::move(service);
       }
@@ -376,7 +378,7 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
       if (channel_ == nullptr) {
         std::unique_lock<std::mutex> lock(channel_open_cv_mutex_);
         if (!channel_open_cv_.wait_for(lock, kChannelOpenTimeout, [this] { return channel_ != nullptr; })) {
-          LOG_WARN("Channel is not open for cid %d", cid_);
+          log::warn("Channel is not open for cid {}", cid_);
           return false;
         }
       }
@@ -387,7 +389,7 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
                                  common::Passed(std::move(promise))));
       auto status = future.wait_for(std::chrono::milliseconds(500));
       if (status != std::future_status::ready) {
-        LOG_ERROR("Can't send packet because the previous packet wasn't sent yet");
+        log::error("Can't send packet because the previous packet wasn't sent yet");
         return false;
       }
       return true;

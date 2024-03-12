@@ -16,6 +16,8 @@
 
 #include "l2cap/internal/receiver.h"
 
+#include <bluetooth/log.h>
+
 #include "common/bidi_queue.h"
 #include "l2cap/cid.h"
 #include "l2cap/internal/data_pipeline_manager.h"
@@ -46,16 +48,16 @@ void Receiver::link_queue_dequeue_callback() {
   auto packet = link_queue_up_end_->TryDequeue();
   auto basic_frame_view = BasicFrameView::Create(*packet);
   if (!basic_frame_view.IsValid()) {
-    LOG_WARN("Received an invalid basic frame");
+    log::warn("Received an invalid basic frame");
     return;
   }
   Cid cid = static_cast<Cid>(basic_frame_view.GetChannelId());
   auto* data_controller = data_pipeline_manager_->GetDataController(cid);
   if (data_controller == nullptr) {
     // TODO(b/150170271): Buffer a few packets before data controller is attached
-    LOG_WARN("Received a packet without data controller. cid: %d", cid);
+    log::warn("Received a packet without data controller. cid: {}", cid);
     buffered_packets_.emplace(*packet);
-    LOG_WARN("Enqueued the unexpected packet. Current queue size: %zu", buffered_packets_.size());
+    log::warn("Enqueued the unexpected packet. Current queue size: {}", buffered_packets_.size());
     buffer_timer_.Schedule(
         common::BindOnce(&Receiver::check_buffered_packets, common::Unretained(this)), std::chrono::milliseconds(500));
 
@@ -70,13 +72,13 @@ void Receiver::check_buffered_packets() {
     buffered_packets_.pop();
     auto basic_frame_view = BasicFrameView::Create(packet);
     if (!basic_frame_view.IsValid()) {
-      LOG_WARN("Received an invalid basic frame");
+      log::warn("Received an invalid basic frame");
       return;
     }
     Cid cid = static_cast<Cid>(basic_frame_view.GetChannelId());
     auto* data_controller = data_pipeline_manager_->GetDataController(cid);
     if (data_controller == nullptr) {
-      LOG_ERROR("Dropping a packet with invalid cid: %d", cid);
+      log::error("Dropping a packet with invalid cid: {}", cid);
     } else {
       data_controller->OnPdu(packet);
     }

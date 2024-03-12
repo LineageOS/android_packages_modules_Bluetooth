@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <bluetooth/log.h>
+
 #include <future>
 #include <list>
 #include <optional>
@@ -34,7 +36,7 @@ class TestHciHal : public hal::HciHal {
 
   ~TestHciHal() {
     if (callbacks != nullptr) {
-      LOG_ALWAYS_FATAL("unregisterIncomingPacketCallback() must be called");
+      log::fatal("unregisterIncomingPacketCallback() must be called");
     }
   }
 

@@ -16,6 +16,7 @@
 
 #include "hal/snoop_logger.h"
 
+#include <bluetooth/log.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <netinet/in.h>
@@ -40,6 +41,7 @@ using bluetooth::hal::SnoopLoggerSocketThread;
 using bluetooth::hal::SyscallWrapperImpl;
 using bluetooth::os::fake_timer::fake_timerfd_advance;
 using bluetooth::os::fake_timer::fake_timerfd_reset;
+using namespace bluetooth;
 
 namespace {
 std::vector<uint8_t> kInformationRequest = {
@@ -170,8 +172,8 @@ class SnoopLoggerModuleTest : public Test {
     const testing::TestInfo* const test_info =
         testing::UnitTest::GetInstance()->current_test_info();
 
-    LOG_DEBUG(
-        "Setup for test %s in test suite %s.\n", test_info->name(), test_info->test_suite_name());
+    log::debug(
+        "Setup for test {} in test suite {}.", test_info->name(), test_info->test_suite_name());
     const std::filesystem::path temp_dir_ = std::filesystem::temp_directory_path();
 
     temp_snoop_log_ = temp_dir_ / (std::string(test_info->name()) + "_btsnoop_hci.log");
@@ -206,10 +208,8 @@ class SnoopLoggerModuleTest : public Test {
 
     const testing::TestInfo* const test_info =
         testing::UnitTest::GetInstance()->current_test_info();
-    LOG_DEBUG(
-        "TearDown for test %s in test suite %s.\n",
-        test_info->name(),
-        test_info->test_suite_name());
+    log::debug(
+        "TearDown for test {} in test suite {}.", test_info->name(), test_info->test_suite_name());
   }
 
   std::filesystem::path temp_snoop_log_;
@@ -784,8 +784,8 @@ TEST_F(SnoopLoggerModuleTest, headers_filtered_test) {
 
   // Verify states after test
   ASSERT_TRUE(std::filesystem::exists(temp_snoop_log_filtered));
-  LOG_INFO(
-      "const size: %d",
+  log::info(
+      "const size: {}",
       (int)(sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLogger::PacketHeaderType)));
 
   // Packet should be filtered
