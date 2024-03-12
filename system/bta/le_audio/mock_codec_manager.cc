@@ -18,11 +18,11 @@
 
 MockCodecManager* mock_codec_manager_pimpl_;
 MockCodecManager* MockCodecManager::GetInstance() {
-  le_audio::CodecManager::GetInstance();
+  bluetooth::le_audio::CodecManager::GetInstance();
   return mock_codec_manager_pimpl_;
 }
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 
 struct CodecManager::impl : public MockCodecManager {
  public:
@@ -48,7 +48,7 @@ bool CodecManager::IsOffloadDualBiDirSwbSupported(void) const {
 void CodecManager::UpdateActiveAudioConfig(
     const types::BidirectionalPair<stream_parameters>& stream_params,
     types::BidirectionalPair<uint16_t> delays_ms,
-    std::function<void(const ::le_audio::offload_config& config,
+    std::function<void(const ::bluetooth::le_audio::offload_config& config,
                        uint8_t direction)>
         update_receiver) {
   if (pimpl_)
@@ -62,7 +62,7 @@ CodecManager::GetOffloadCodecConfig(types::LeAudioContextType ctx_type) {
   return pimpl_->GetOffloadCodecConfig(ctx_type);
 }
 
-const ::le_audio::broadcast_offload_config*
+const ::bluetooth::le_audio::broadcast_offload_config*
 CodecManager::GetBroadcastOffloadConfig(uint8_t preferred_quality) {
   if (!pimpl_) return nullptr;
   return pimpl_->GetBroadcastOffloadConfig(preferred_quality);
@@ -84,7 +84,8 @@ CodecManager::GetLocalAudioInputCodecCapa() {
 
 void CodecManager::UpdateBroadcastConnHandle(
     const std::vector<uint16_t>& conn_handle,
-    std::function<void(const ::le_audio::broadcast_offload_config& config)>
+    std::function<
+        void(const ::bluetooth::le_audio::broadcast_offload_config& config)>
         update_receiver) {
   if (pimpl_)
     return pimpl_->UpdateBroadcastConnHandle(conn_handle, update_receiver);
@@ -127,4 +128,4 @@ void CodecManager::ClearCisConfiguration(uint8_t direction) {
 
 // CodecManager::~CodecManager() = default;
 
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

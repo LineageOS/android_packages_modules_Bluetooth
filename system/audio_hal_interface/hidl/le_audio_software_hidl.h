@@ -27,8 +27,8 @@ namespace le_audio {
 
 using ::android::hardware::bluetooth::audio::V2_1::PcmParameters;
 using ::bluetooth::audio::hidl::BluetoothAudioCtrlAck;
-using ::le_audio::set_configurations::AudioSetConfiguration;
-using ::le_audio::set_configurations::CodecConfigSetting;
+using ::bluetooth::le_audio::set_configurations::AudioSetConfiguration;
+using ::bluetooth::le_audio::set_configurations::CodecConfigSetting;
 
 using ::bluetooth::audio::le_audio::StartRequestState;
 

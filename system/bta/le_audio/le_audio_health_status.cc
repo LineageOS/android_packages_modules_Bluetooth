@@ -26,11 +26,11 @@
 
 using bluetooth::common::ToString;
 using bluetooth::groups::kGroupUnknown;
-using le_audio::LeAudioDevice;
-using le_audio::LeAudioHealthStatus;
-using le_audio::LeAudioRecommendationActionCb;
+using bluetooth::le_audio::LeAudioDevice;
+using bluetooth::le_audio::LeAudioHealthStatus;
+using bluetooth::le_audio::LeAudioRecommendationActionCb;
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 class LeAudioHealthStatusImpl;
 LeAudioHealthStatusImpl* instance;
 
@@ -391,7 +391,7 @@ class LeAudioHealthStatusImpl : public LeAudioHealthStatus {
     bluetooth::shim::CountCounterMetrics(key, 1);
   }
 };
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio
 
 LeAudioHealthStatus* LeAudioHealthStatus::Get(void) {
   if (instance) {

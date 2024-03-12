@@ -31,9 +31,9 @@ using bluetooth::le_audio::BasicAudioAnnouncementBisConfig;
 using bluetooth::le_audio::BasicAudioAnnouncementCodecConfig;
 using bluetooth::le_audio::BasicAudioAnnouncementData;
 using bluetooth::le_audio::BasicAudioAnnouncementSubgroup;
-using le_audio::types::LeAudioContextType;
+using bluetooth::le_audio::types::LeAudioContextType;
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 namespace broadcaster {
 
 static void EmitHeader(const BasicAudioAnnouncementData& announcement_data,
@@ -375,7 +375,7 @@ types::LeAudioLtvMap BroadcastCodecWrapper::GetSubgroupCodecSpecData() const {
 
 std::ostream& operator<<(
     std::ostream& os,
-    const le_audio::broadcaster::BroadcastCodecWrapper& config) {
+    const bluetooth::le_audio::broadcaster::BroadcastCodecWrapper& config) {
   os << " BroadcastCodecWrapper=[";
   os << "CodecID="
      << "{" << +config.GetLeAudioCodecId().coding_format << ":"
@@ -391,7 +391,8 @@ std::ostream& operator<<(
 }
 
 std::ostream& operator<<(
-    std::ostream& os, const le_audio::broadcaster::BroadcastQosConfig& config) {
+    std::ostream& os,
+    const bluetooth::le_audio::broadcaster::BroadcastQosConfig& config) {
   os << " BroadcastQosConfig=[";
   os << "RTN=" << +config.getRetransmissionNumber();
   os << ", MaxTransportLatency=" << config.getMaxTransportLatency();
@@ -461,11 +462,10 @@ getStreamConfigForContext(types::AudioContexts context) {
 }
 
 } /* namespace broadcaster */
-} /* namespace le_audio */
+}  // namespace bluetooth::le_audio
 
 /* Helper functions for comparing BroadcastAnnouncements */
-namespace bluetooth {
-namespace le_audio {
+namespace bluetooth::le_audio {
 
 static bool isMetadataSame(std::map<uint8_t, std::vector<uint8_t>> m1,
                            std::map<uint8_t, std::vector<uint8_t>> m2) {
@@ -535,5 +535,4 @@ bool operator==(const PublicBroadcastAnnouncementData& lhs,
 
   return true;
 }
-}  // namespace le_audio
-}  // namespace bluetooth
+}  // namespace bluetooth::le_audio

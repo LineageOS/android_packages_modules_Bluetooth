@@ -34,8 +34,8 @@ namespace bluetooth {
 namespace audio {
 namespace le_audio {
 
-using ::le_audio::DsaMode;
-using ::le_audio::DsaModes;
+using ::bluetooth::le_audio::DsaMode;
+using ::bluetooth::le_audio::DsaModes;
 
 enum class StartRequestState {
   IDLE = 0x00,
@@ -66,7 +66,7 @@ struct StreamCallbacks {
   std::function<bool(const sink_metadata_v7_t&)> on_sink_metadata_update_;
 };
 
-std::vector<::le_audio::set_configurations::AudioSetConfiguration>
+std::vector<::bluetooth::le_audio::set_configurations::AudioSetConfiguration>
 get_offload_capabilities();
 
 class LeAudioClientInterface {
@@ -92,7 +92,7 @@ class LeAudioClientInterface {
     virtual void ConfirmStreamingRequestV2() = 0;
     virtual void CancelStreamingRequestV2() = 0;
     virtual void UpdateAudioConfigToHal(
-        const ::le_audio::offload_config& config) = 0;
+        const ::bluetooth::le_audio::offload_config& config) = 0;
     virtual void SuspendedForReconfiguration() = 0;
     virtual void ReconfigurationComplete() = 0;
   };
@@ -113,9 +113,9 @@ class LeAudioClientInterface {
     void ConfirmStreamingRequestV2() override;
     void CancelStreamingRequestV2() override;
     void UpdateAudioConfigToHal(
-        const ::le_audio::offload_config& config) override;
+        const ::bluetooth::le_audio::offload_config& config) override;
     void UpdateBroadcastAudioConfigToHal(
-        const ::le_audio::broadcast_offload_config& config);
+        const ::bluetooth::le_audio::broadcast_offload_config& config);
     void SuspendedForReconfiguration() override;
     void ReconfigurationComplete() override;
     // Read the stream of bytes sinked to us by the upper layers
@@ -139,7 +139,7 @@ class LeAudioClientInterface {
     void ConfirmStreamingRequestV2() override;
     void CancelStreamingRequestV2() override;
     void UpdateAudioConfigToHal(
-        const ::le_audio::offload_config& config) override;
+        const ::bluetooth::le_audio::offload_config& config) override;
     void SuspendedForReconfiguration() override;
     void ReconfigurationComplete() override;
     // Source the given stream of bytes to be sinked into the upper layers

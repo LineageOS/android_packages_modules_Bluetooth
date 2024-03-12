@@ -27,7 +27,7 @@
 
 #include "os/log.h"
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 
 struct CodecInterface::Impl {
   Impl(const types::LeAudioCodecId& codec_id) : codec_id_(codec_id) {}
@@ -295,4 +295,4 @@ uint8_t CodecInterface::GetNumOfBytesPerSample() {
   return impl->GetNumOfBytesPerSample();
 };
 
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

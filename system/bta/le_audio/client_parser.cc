@@ -36,9 +36,9 @@
 #include "os/log.h"
 #include "stack/include/bt_types.h"
 
-using le_audio::types::acs_ac_record;
+using bluetooth::le_audio::types::acs_ac_record;
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 namespace client_parser {
 namespace ascs {
 static std::map<uint8_t, std::string> ase_state_map_string = {
@@ -731,4 +731,4 @@ bool ParseTmapRole(std::bitset<16>& role, uint16_t len, const uint8_t* value) {
 }  // namespace tmap
 
 }  // namespace client_parser
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

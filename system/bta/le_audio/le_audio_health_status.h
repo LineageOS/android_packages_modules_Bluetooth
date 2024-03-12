@@ -27,7 +27,7 @@
 
 using bluetooth::le_audio::LeAudioHealthBasedAction;
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 using LeAudioRecommendationActionCb = base::RepeatingCallback<void(
     const RawAddress& address, int group_id, LeAudioHealthBasedAction action)>;
 
@@ -115,18 +115,22 @@ class LeAudioHealthStatus {
 };
 
 inline std::ostream& operator<<(
-    std::ostream& os, const le_audio::LeAudioHealthGroupStatType& stat) {
+    std::ostream& os,
+    const bluetooth::le_audio::LeAudioHealthGroupStatType& stat) {
   switch (stat) {
-    case le_audio::LeAudioHealthGroupStatType::STREAM_CREATE_SUCCESS:
+    case bluetooth::le_audio::LeAudioHealthGroupStatType::STREAM_CREATE_SUCCESS:
       os << "STREAM_CREATE_SUCCESS";
       break;
-    case le_audio::LeAudioHealthGroupStatType::STREAM_CREATE_CIS_FAILED:
+    case bluetooth::le_audio::LeAudioHealthGroupStatType::
+        STREAM_CREATE_CIS_FAILED:
       os << "STREAM_CREATE_CIS_FAILED";
       break;
-    case le_audio::LeAudioHealthGroupStatType::STREAM_CREATE_SIGNALING_FAILED:
+    case bluetooth::le_audio::LeAudioHealthGroupStatType::
+        STREAM_CREATE_SIGNALING_FAILED:
       os << "STREAM_CREATE_SIGNALING_FAILED";
       break;
-    case le_audio::LeAudioHealthGroupStatType::STREAM_CONTEXT_NOT_AVAILABLE:
+    case bluetooth::le_audio::LeAudioHealthGroupStatType::
+        STREAM_CONTEXT_NOT_AVAILABLE:
       os << "STREAM_CONTEXT_NOT_AVAILABLE";
       break;
     default:
@@ -137,18 +141,19 @@ inline std::ostream& operator<<(
 }
 
 inline std::ostream& operator<<(
-    std::ostream& os, const le_audio::LeAudioHealthDeviceStatType& stat) {
+    std::ostream& os,
+    const bluetooth::le_audio::LeAudioHealthDeviceStatType& stat) {
   switch (stat) {
-    case le_audio::LeAudioHealthDeviceStatType::INVALID_DB:
+    case bluetooth::le_audio::LeAudioHealthDeviceStatType::INVALID_DB:
       os << "INVALID_DB";
       break;
-    case le_audio::LeAudioHealthDeviceStatType::VALID_DB:
+    case bluetooth::le_audio::LeAudioHealthDeviceStatType::VALID_DB:
       os << "VALID_DB";
       break;
-    case le_audio::LeAudioHealthDeviceStatType::INVALID_CSIS:
+    case bluetooth::le_audio::LeAudioHealthDeviceStatType::INVALID_CSIS:
       os << "INVALID_CSIS";
       break;
-    case le_audio::LeAudioHealthDeviceStatType::VALID_CSIS:
+    case bluetooth::le_audio::LeAudioHealthDeviceStatType::VALID_CSIS:
       os << "VALID_CSIS";
       break;
     default:
@@ -157,4 +162,4 @@ inline std::ostream& operator<<(
   }
   return os;
 }
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

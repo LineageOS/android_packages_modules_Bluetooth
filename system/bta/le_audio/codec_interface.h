@@ -25,7 +25,7 @@
 #include "audio_hal_client/audio_hal_client.h"
 #include "le_audio_types.h"
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 
 /* CodecInterface provides a thin abstraction layer above the codec instance. It
  * manages the output buffers internally and resizes them automatically when
@@ -72,4 +72,4 @@ class CodecInterface {
   struct Impl;
   Impl* impl;
 };
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio
