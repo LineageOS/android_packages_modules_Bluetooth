@@ -2320,7 +2320,7 @@ void btm_sec_rmt_name_request_complete(const RawAddress* p_bd_addr,
     }
   }
 
-  if (!p_bd_name) p_bd_name = (const uint8_t*)"";
+  if (!p_bd_name) p_bd_name = (const uint8_t*)kBtmBdNameEmpty;
 
   if (p_dev_rec == nullptr) {
     log::debug(
