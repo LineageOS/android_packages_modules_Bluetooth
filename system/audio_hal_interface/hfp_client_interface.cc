@@ -18,6 +18,8 @@
 
 #define LOG_TAG "BTAudioClientHfpStub"
 
+#include <bluetooth/log.h>
+
 #include "aidl/client_interface_aidl.h"
 #include "aidl/hfp_client_interface_aidl.h"
 #include "hal_version_manager.h"
@@ -110,11 +112,11 @@ bool is_aidl_support_hfp() {
 HfpClientInterface* HfpClientInterface::interface = nullptr;
 HfpClientInterface* HfpClientInterface::Get() {
   if (!is_hal_enabled()) {
-    LOG(ERROR) << __func__ << ": BluetoothAudio HAL is disabled";
+    log::error("BluetoothAudio HAL is disabled");
     return nullptr;
   }
   if (!is_aidl_support_hfp()) {
-    LOG(WARNING) << __func__ << ": Unsupported HIDL or AIDL version";
+    log::warn("Unsupported HIDL or AIDL version");
     return nullptr;
   }
   if (HfpClientInterface::interface == nullptr) {
@@ -125,7 +127,7 @@ HfpClientInterface* HfpClientInterface::Get() {
 
 // Decode client implementation
 void HfpClientInterface::Decode::Cleanup() {
-  LOG(INFO) << __func__ << " decode";
+  log::info("decode");
   StopSession();
   if (HfpDecodingTransport::instance_) {
     delete HfpDecodingTransport::software_hal_interface;
@@ -137,15 +139,15 @@ void HfpClientInterface::Decode::Cleanup() {
 
 void HfpClientInterface::Decode::StartSession() {
   if (!is_aidl_support_hfp()) {
-    LOG(WARNING) << __func__ << ": Unsupported HIDL or AIDL version";
+    log::warn("Unsupported HIDL or AIDL version");
     return;
   }
-  LOG(INFO) << __func__ << " decode";
+  log::info("decode");
   AudioConfiguration audio_config;
   audio_config.set<AudioConfiguration::pcmConfig>(
       get_default_pcm_configuration());
   if (!get_decode_client_interface()->UpdateAudioConfig(audio_config)) {
-    LOG(ERROR) << __func__ << ": cannot update audio config to HAL";
+    log::error("cannot update audio config to HAL");
     return;
   }
   get_decode_client_interface()->StartSession();
@@ -153,10 +155,10 @@ void HfpClientInterface::Decode::StartSession() {
 
 void HfpClientInterface::Decode::StopSession() {
   if (!is_aidl_support_hfp()) {
-    LOG(WARNING) << __func__ << ": Unsupported HIDL or AIDL version";
+    log::warn("Unsupported HIDL or AIDL version");
     return;
   }
-  LOG(INFO) << __func__ << " decode";
+  log::info("decode");
   get_decode_client_interface()->EndSession();
   if (get_decode_transport_instance()) {
     get_decode_transport_instance()->ResetPendingCmd();
@@ -167,22 +169,20 @@ void HfpClientInterface::Decode::StopSession() {
 void HfpClientInterface::Decode::UpdateAudioConfigToHal(
     const ::hfp::offload_config& offload_config) {
   if (!is_aidl_support_hfp()) {
-    LOG(WARNING) << __func__ << ": Unsupported HIDL or AIDL version";
+    log::warn("Unsupported HIDL or AIDL version");
     return;
   }
 
-  LOG(WARNING)
-      << __func__
-      << " decode - Unsupported update audio config for software session";
+  log::warn("decode - Unsupported update audio config for software session");
   return;
 }
 
 size_t HfpClientInterface::Decode::Read(uint8_t* p_buf, uint32_t len) {
   if (!is_aidl_support_hfp()) {
-    LOG(WARNING) << __func__ << ": Unsupported HIDL or AIDL version";
+    log::warn("Unsupported HIDL or AIDL version");
     return 0;
   }
-  LOG(INFO) << __func__ << " decode";
+  log::info("decode");
   return get_decode_client_interface()->ReadAudioData(p_buf, len);
 }
 
@@ -196,10 +196,10 @@ void HfpClientInterface::Decode::ConfirmStreamingRequest() {
       instance->ResetPendingCmd();
       return;
     case aidl::hfp::HFP_CTRL_CMD_NONE:
-      LOG_WARN("no pending start stream request");
+      log::warn("no pending start stream request");
       return;
     default:
-      LOG_WARN("Invalid state, %d", pending_cmd);
+      log::warn("Invalid state, {}", pending_cmd);
   }
 }
 
@@ -213,28 +213,28 @@ void HfpClientInterface::Decode::CancelStreamingRequest() {
       instance->ResetPendingCmd();
       return;
     case aidl::hfp::HFP_CTRL_CMD_NONE:
-      LOG_WARN("no pending start stream request");
+      log::warn("no pending start stream request");
       return;
     default:
-      LOG_WARN("Invalid state, %d", pending_cmd);
+      log::warn("Invalid state, {}", pending_cmd);
   }
 }
 
 HfpClientInterface::Decode* HfpClientInterface::GetDecode(
     bluetooth::common::MessageLoopThread* /*message_loop*/) {
   if (!is_aidl_support_hfp()) {
-    LOG(WARNING) << __func__ << ": Unsupported HIDL or AIDL version";
+    log::warn("Unsupported HIDL or AIDL version");
     return nullptr;
   }
 
   if (decode_ == nullptr) {
     decode_ = new Decode();
   } else {
-    LOG(WARNING) << __func__ << ": Decode is already acquired";
+    log::warn("Decode is already acquired");
     return nullptr;
   }
 
-  LOG(INFO) << __func__ << " decode";
+  log::info("decode");
 
   HfpDecodingTransport::instance_ = new HfpDecodingTransport(
       aidl::SessionType::HFP_SOFTWARE_DECODING_DATAPATH);
@@ -242,7 +242,7 @@ HfpClientInterface::Decode* HfpClientInterface::GetDecode(
       new aidl::BluetoothAudioSinkClientInterface(
           HfpDecodingTransport::instance_);
   if (!HfpDecodingTransport::software_hal_interface->IsValid()) {
-    LOG(WARNING) << __func__ << ": BluetoothAudio HAL for HFP is invalid";
+    log::warn("BluetoothAudio HAL for HFP is invalid");
     delete HfpDecodingTransport::software_hal_interface;
     HfpDecodingTransport::software_hal_interface = nullptr;
     delete HfpDecodingTransport::instance_;
@@ -258,11 +258,11 @@ HfpClientInterface::Decode* HfpClientInterface::GetDecode(
 
 bool HfpClientInterface::ReleaseDecode(HfpClientInterface::Decode* decode) {
   if (decode != decode_) {
-    LOG(WARNING) << __func__ << ", can't release not acquired decode";
+    log::warn("can't release not acquired decode");
     return false;
   }
 
-  LOG(INFO) << __func__ << " decode";
+  log::info("decode");
   if (get_decode_client_interface()) decode->Cleanup();
 
   delete decode_;
@@ -273,7 +273,7 @@ bool HfpClientInterface::ReleaseDecode(HfpClientInterface::Decode* decode) {
 
 // Encoding client implementation
 void HfpClientInterface::Encode::Cleanup() {
-  LOG(INFO) << __func__ << " encode";
+  log::info("encode");
   StopSession();
   if (HfpEncodingTransport::instance_) {
     delete HfpEncodingTransport::software_hal_interface;
@@ -285,15 +285,15 @@ void HfpClientInterface::Encode::Cleanup() {
 
 void HfpClientInterface::Encode::StartSession() {
   if (!is_aidl_support_hfp()) {
-    LOG(WARNING) << __func__ << ": Unsupported HIDL or AIDL version";
+    log::warn("Unsupported HIDL or AIDL version");
     return;
   }
-  LOG(INFO) << __func__ << " encode";
+  log::info("encode");
   AudioConfiguration audio_config;
   audio_config.set<AudioConfiguration::pcmConfig>(
       get_default_pcm_configuration());
   if (!get_encode_client_interface()->UpdateAudioConfig(audio_config)) {
-    LOG(ERROR) << __func__ << ": cannot update audio config to HAL";
+    log::error("cannot update audio config to HAL");
     return;
   }
   get_encode_client_interface()->StartSession();
@@ -301,10 +301,10 @@ void HfpClientInterface::Encode::StartSession() {
 
 void HfpClientInterface::Encode::StopSession() {
   if (!is_aidl_support_hfp()) {
-    LOG(WARNING) << __func__ << ": Unsupported HIDL or AIDL version";
+    log::warn("Unsupported HIDL or AIDL version");
     return;
   }
-  LOG(INFO) << __func__ << " encode";
+  log::info("encode");
   get_encode_client_interface()->EndSession();
   if (get_encode_transport_instance()) {
     get_encode_transport_instance()->ResetPendingCmd();
@@ -315,22 +315,20 @@ void HfpClientInterface::Encode::StopSession() {
 void HfpClientInterface::Encode::UpdateAudioConfigToHal(
     const ::hfp::offload_config& offload_config) {
   if (!is_aidl_support_hfp()) {
-    LOG(WARNING) << __func__ << ": Unsupported HIDL or AIDL version";
+    log::warn("Unsupported HIDL or AIDL version");
     return;
   }
 
-  LOG(WARNING)
-      << __func__
-      << " encode - Unsupported update audio config for software session";
+  log::warn("encode - Unsupported update audio config for software session");
   return;
 }
 
 size_t HfpClientInterface::Encode::Write(const uint8_t* p_buf, uint32_t len) {
   if (!is_aidl_support_hfp()) {
-    LOG(WARNING) << __func__ << ": Unsupported HIDL or AIDL version";
+    log::warn("Unsupported HIDL or AIDL version");
     return 0;
   }
-  LOG(INFO) << __func__ << " encode";
+  log::info("encode");
   return get_encode_client_interface()->WriteAudioData(p_buf, len);
 }
 
@@ -344,10 +342,10 @@ void HfpClientInterface::Encode::ConfirmStreamingRequest() {
       instance->ResetPendingCmd();
       return;
     case aidl::hfp::HFP_CTRL_CMD_NONE:
-      LOG_WARN("no pending start stream request");
+      log::warn("no pending start stream request");
       return;
     default:
-      LOG_WARN("Invalid state, %d", pending_cmd);
+      log::warn("Invalid state, {}", pending_cmd);
   }
 }
 
@@ -361,28 +359,28 @@ void HfpClientInterface::Encode::CancelStreamingRequest() {
       instance->ResetPendingCmd();
       return;
     case aidl::hfp::HFP_CTRL_CMD_NONE:
-      LOG_WARN("no pending start stream request");
+      log::warn("no pending start stream request");
       return;
     default:
-      LOG_WARN("Invalid state, %d", pending_cmd);
+      log::warn("Invalid state, {}", pending_cmd);
   }
 }
 
 HfpClientInterface::Encode* HfpClientInterface::GetEncode(
     bluetooth::common::MessageLoopThread* /*message_loop*/) {
   if (!is_aidl_support_hfp()) {
-    LOG(WARNING) << __func__ << ": Unsupported HIDL or AIDL version";
+    log::warn("Unsupported HIDL or AIDL version");
     return nullptr;
   }
 
   if (encode_ == nullptr) {
     encode_ = new Encode();
   } else {
-    LOG(WARNING) << __func__ << ": Encoding is already acquired";
+    log::warn("Encoding is already acquired");
     return nullptr;
   }
 
-  LOG(INFO) << __func__ << " encode";
+  log::info("encode");
 
   HfpEncodingTransport::instance_ = new HfpEncodingTransport(
       aidl::SessionType::HFP_SOFTWARE_ENCODING_DATAPATH);
@@ -390,7 +388,7 @@ HfpClientInterface::Encode* HfpClientInterface::GetEncode(
       new aidl::BluetoothAudioSourceClientInterface(
           HfpEncodingTransport::instance_);
   if (!HfpEncodingTransport::software_hal_interface->IsValid()) {
-    LOG(WARNING) << __func__ << ": BluetoothAudio HAL for HFP is invalid";
+    log::warn("BluetoothAudio HAL for HFP is invalid");
     delete HfpEncodingTransport::software_hal_interface;
     HfpEncodingTransport::software_hal_interface = nullptr;
     delete HfpEncodingTransport::instance_;
@@ -406,7 +404,7 @@ HfpClientInterface::Encode* HfpClientInterface::GetEncode(
 
 bool HfpClientInterface::ReleaseEncode(HfpClientInterface::Encode* encode) {
   if (encode != encode_) {
-    LOG(WARNING) << __func__ << ", can't release not acquired encode";
+    log::warn("can't release not acquired encode");
     return false;
   }
 
@@ -421,7 +419,7 @@ bool HfpClientInterface::ReleaseEncode(HfpClientInterface::Encode* encode) {
 // Offload client implementation
 // Based on HfpEncodingTransport
 void HfpClientInterface::Offload::Cleanup() {
-  LOG(INFO) << __func__ << " offload";
+  log::info("offload");
   StopSession();
   if (HfpEncodingTransport::instance_) {
     delete HfpEncodingTransport::offloading_hal_interface;
@@ -433,15 +431,15 @@ void HfpClientInterface::Offload::Cleanup() {
 
 void HfpClientInterface::Offload::StartSession() {
   if (!is_aidl_support_hfp()) {
-    LOG(WARNING) << __func__ << ": Unsupported HIDL or AIDL version";
+    log::warn("Unsupported HIDL or AIDL version");
     return;
   }
-  LOG(INFO) << __func__ << " offload";
+  log::info("offload");
   AudioConfiguration audio_config;
   audio_config.set<AudioConfiguration::hfpConfig>(
       get_default_hfp_configuration());
   if (!get_encode_client_interface()->UpdateAudioConfig(audio_config)) {
-    LOG(ERROR) << __func__ << ": cannot update audio config to HAL";
+    log::error("cannot update audio config to HAL");
     return;
   }
   get_encode_client_interface()->StartSession();
@@ -449,10 +447,10 @@ void HfpClientInterface::Offload::StartSession() {
 
 void HfpClientInterface::Offload::StopSession() {
   if (!is_aidl_support_hfp()) {
-    LOG(WARNING) << __func__ << ": Unsupported HIDL or AIDL version";
+    log::warn("Unsupported HIDL or AIDL version");
     return;
   }
-  LOG(INFO) << __func__ << " offload";
+  log::info("offload");
   get_encode_client_interface()->EndSession();
   if (get_encode_transport_instance()) {
     get_encode_transport_instance()->ResetPendingCmd();
@@ -463,11 +461,11 @@ void HfpClientInterface::Offload::StopSession() {
 void HfpClientInterface::Offload::UpdateAudioConfigToHal(
     const ::hfp::offload_config& offload_config) {
   if (!is_aidl_support_hfp()) {
-    LOG(WARNING) << __func__ << ": Unsupported HIDL or AIDL version";
+    log::warn("Unsupported HIDL or AIDL version");
     return;
   }
 
-  LOG(INFO) << __func__ << " offload";
+  log::info("offload");
   get_encode_client_interface()->UpdateAudioConfig(
       offload_config_to_hal_audio_config(offload_config));
 }
@@ -482,10 +480,10 @@ void HfpClientInterface::Offload::ConfirmStreamingRequest() {
       instance->ResetPendingCmd();
       return;
     case aidl::hfp::HFP_CTRL_CMD_NONE:
-      LOG_WARN("no pending start stream request");
+      log::warn("no pending start stream request");
       return;
     default:
-      LOG_WARN("Invalid state, %d", pending_cmd);
+      log::warn("Invalid state, {}", pending_cmd);
   }
 }
 
@@ -499,10 +497,10 @@ void HfpClientInterface::Offload::CancelStreamingRequest() {
       instance->ResetPendingCmd();
       return;
     case aidl::hfp::HFP_CTRL_CMD_NONE:
-      LOG_WARN("no pending start stream request");
+      log::warn("no pending start stream request");
       return;
     default:
-      LOG_WARN("Invalid state, %d", pending_cmd);
+      log::warn("Invalid state, {}", pending_cmd);
   }
 }
 
@@ -515,18 +513,18 @@ HfpClientInterface::Offload::GetHfpScoConfig() {
 HfpClientInterface::Offload* HfpClientInterface::GetOffload(
     bluetooth::common::MessageLoopThread* /*message_loop*/) {
   if (!is_aidl_support_hfp()) {
-    LOG(WARNING) << __func__ << ": Unsupported HIDL or AIDL version";
+    log::warn("Unsupported HIDL or AIDL version");
     return nullptr;
   }
 
   if (offload_ == nullptr) {
     offload_ = new Offload();
   } else {
-    LOG(WARNING) << __func__ << ": Offload is already acquired";
+    log::warn("Offload is already acquired");
     return nullptr;
   }
 
-  LOG(INFO) << __func__ << " offload";
+  log::info("offload");
 
   // Prepare offload hal interface.
   if (bta_ag_get_sco_offload_enabled()) {
@@ -536,8 +534,7 @@ HfpClientInterface::Offload* HfpClientInterface::GetOffload(
         new aidl::BluetoothAudioSourceClientInterface(
             HfpEncodingTransport::instance_);
     if (!HfpEncodingTransport::offloading_hal_interface->IsValid()) {
-      LOG(FATAL) << __func__
-                 << ": BluetoothAudio HAL for HFP offloading is invalid";
+      log::fatal("BluetoothAudio HAL for HFP offloading is invalid");
       delete HfpEncodingTransport::offloading_hal_interface;
       HfpEncodingTransport::offloading_hal_interface = nullptr;
       delete HfpEncodingTransport::instance_;
@@ -558,7 +555,7 @@ HfpClientInterface::Offload* HfpClientInterface::GetOffload(
 
 bool HfpClientInterface::ReleaseOffload(HfpClientInterface::Offload* offload) {
   if (offload != offload_) {
-    LOG(WARNING) << __func__ << ", can't release not acquired offload";
+    log::warn("can't release not acquired offload");
     return false;
   }
 

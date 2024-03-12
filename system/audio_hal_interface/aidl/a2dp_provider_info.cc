@@ -20,6 +20,7 @@
 
 #include <android/binder_manager.h>
 #include <android_bluetooth_flags.h>
+#include <bluetooth/log.h>
 
 #include <optional>
 #include <vector>
@@ -52,14 +53,16 @@ using ::aidl::android::hardware::bluetooth::audio::SessionType;
 std::unique_ptr<ProviderInfo> ProviderInfo::GetProviderInfo(
     bool supports_a2dp_hw_offload_v2) {
   if (!IS_FLAG_ENABLED(a2dp_offload_codec_extensibility)) {
-    LOG(INFO) << "a2dp offload codec extensibility is disabled;"
-              << " not going to load the ProviderInfo";
+    log::info(
+        "a2dp offload codec extensibility is disabled,"
+        " not going to load the ProviderInfo");
     return nullptr;
   }
 
   if (!supports_a2dp_hw_offload_v2) {
-    LOG(INFO) << "a2dp hw offload v2 is not supported by the controller;"
-              << " not going to load the ProviderInfo";
+    log::info(
+        "a2dp hw offload v2 is not supported by the controller,"
+        " not going to load the ProviderInfo");
     return nullptr;
   }
 
@@ -70,8 +73,9 @@ std::unique_ptr<ProviderInfo> ProviderInfo::GetProviderInfo(
       SessionType::A2DP_HARDWARE_OFFLOAD_DECODING_DATAPATH, nullptr);
 
   if (!source_provider_info.has_value() && !sink_provider_info.has_value()) {
-    LOG(INFO) << "a2dp offload codec extensibility is enabled;"
-              << " but the provider info is empty";
+    log::info(
+        "a2dp offload codec extensibility is enabled,"
+        " but the provider info is empty");
     return nullptr;
   }
 
@@ -86,7 +90,7 @@ std::unique_ptr<ProviderInfo> ProviderInfo::GetProviderInfo(
     sink_codecs = std::move(sink_provider_info->codecInfos);
   }
 
-  LOG(INFO) << "successfully loaded provider info";
+  log::info("successfully loaded provider info");
   return std::make_unique<ProviderInfo>(std::move(source_codecs),
                                         std::move(sink_codecs));
 }
@@ -145,8 +149,9 @@ static std::optional<btav_a2dp_codec_index_t> assignSourceCodecIndex(
 
       /* out of extension codec indexes */
       if (*ext_index >= BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MAX) {
-        LOG(ERROR) << "unable to assign a source codec index for vendorId="
-                   << vendor_id << ", codecId=" << codec_id;
+        log::error(
+            "unable to assign a source codec index for vendorId={}, codecId={}",
+            vendor_id, codec_id);
       }
 
       /* assign a new codec index for the
@@ -191,8 +196,9 @@ static std::optional<btav_a2dp_codec_index_t> assignSinkCodecIndex(
 
       /* out of extension codec indexes */
       if (*ext_index >= BTAV_A2DP_CODEC_INDEX_SINK_EXT_MAX) {
-        LOG(ERROR) << "unable to assign a sink codec index for vendorId="
-                   << vendor_id << ", codecId=" << codec_id;
+        log::error(
+            "unable to assign a sink codec index for vendorId={}, codecId={}",
+            vendor_id, codec_id);
       }
 
       /* assign a new codec index for the
@@ -210,7 +216,7 @@ ProviderInfo::ProviderInfo(std::vector<CodecInfo> source_codecs,
       BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MIN;
   for (size_t i = 0; i < this->source_codecs.size(); i++) {
     auto& codec = this->source_codecs[i];
-    LOG(INFO) << "supported source codec " << codec.name;
+    log::info("supported source codec {}", codec.name);
     auto index = assignSourceCodecIndex(codec, &ext_source_index);
     if (index.has_value()) {
       assigned_codec_indexes[index.value()] = &codec;
@@ -220,7 +226,7 @@ ProviderInfo::ProviderInfo(std::vector<CodecInfo> source_codecs,
   btav_a2dp_codec_index_t ext_sink_index = BTAV_A2DP_CODEC_INDEX_SINK_EXT_MIN;
   for (size_t i = 0; i < this->sink_codecs.size(); i++) {
     auto& codec = this->sink_codecs[i];
-    LOG(INFO) << "supports sink codec " << codec.name;
+    log::info("supports sink codec {}", codec.name);
     auto index = assignSinkCodecIndex(codec, &ext_sink_index);
     if (index.has_value()) {
       assigned_codec_indexes[index.value()] = &codec;
