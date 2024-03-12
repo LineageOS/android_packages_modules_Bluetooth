@@ -164,10 +164,6 @@ public class AtPhonebook {
         mCpbrIndex1 = mCpbrIndex2 = cpbrIndex;
     }
 
-    private byte[] getByteAddress(BluetoothDevice device) {
-        return Utils.getBytesFromAddress(device.getAddress());
-    }
-
     public void handleCscsCommand(String atString, int type, BluetoothDevice device) {
         Log.d(TAG, "handleCscsCommand - atString = " + atString);
         // Select Character Set
@@ -507,9 +503,7 @@ public class AtPhonebook {
     /*package*/ int processCpbrCommand(BluetoothDevice device) {
         Log.d(TAG, "processCpbrCommand");
         int atCommandResult = HeadsetHalConstants.AT_RESPONSE_ERROR;
-        int atCommandErrorCode = -1;
         String atCommandResponse = null;
-        StringBuilder response = new StringBuilder();
         String record;
 
         // Shortcut SM phonebook
@@ -522,7 +516,6 @@ public class AtPhonebook {
         PhonebookResult pbr = getPhonebookResult(mCurrentPhonebook, true); //false);
         if (pbr == null) {
             Log.e(TAG, "pbr is null");
-            atCommandErrorCode = BluetoothCmeError.OPERATION_NOT_ALLOWED;
             return atCommandResult;
         }
 
@@ -544,7 +537,6 @@ public class AtPhonebook {
         }
         // Process
         atCommandResult = HeadsetHalConstants.AT_RESPONSE_OK;
-        int errorDetected = -1; // no error
         pbr.cursor.moveToPosition(mCpbrIndex1 - 1);
         Log.d(TAG, "mCpbrIndex1 = " + mCpbrIndex1 + " and mCpbrIndex2 = " + mCpbrIndex2);
         for (int index = mCpbrIndex1; index <= mCpbrIndex2; index++) {

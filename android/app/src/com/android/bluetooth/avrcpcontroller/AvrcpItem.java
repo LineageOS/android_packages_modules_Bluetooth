@@ -34,7 +34,6 @@ import java.util.Objects;
  */
 public class AvrcpItem {
     private static final String TAG = "AvrcpItem";
-    private static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
 
     // AVRCP Specification defined item types
     public static final int TYPE_PLAYER = 0x1;

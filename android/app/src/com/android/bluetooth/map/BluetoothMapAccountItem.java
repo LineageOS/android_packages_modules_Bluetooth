@@ -26,7 +26,6 @@ import android.util.Log;
 public class BluetoothMapAccountItem implements Comparable<BluetoothMapAccountItem> {
     private static final String TAG = "BluetoothMapAccountItem";
 
-    private static final boolean D = BluetoothMapService.DEBUG;
     private static final boolean V = BluetoothMapService.VERBOSE;
 
     protected boolean mIsChecked;

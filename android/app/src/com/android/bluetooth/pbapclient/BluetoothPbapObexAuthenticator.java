@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.pbapclient;
 
-import android.os.Handler;
 import android.util.Log;
 
 import com.android.internal.annotations.VisibleForTesting;
@@ -38,12 +37,6 @@ class BluetoothPbapObexAuthenticator implements Authenticator {
     //Default session key for legacy devices is 0000
     @VisibleForTesting
     String mSessionKey = "0000";
-
-    private final Handler mCallback;
-
-    BluetoothPbapObexAuthenticator(Handler callback) {
-        mCallback = callback;
-    }
 
     @Override
     public PasswordAuthentication onAuthenticationChallenge(String description,

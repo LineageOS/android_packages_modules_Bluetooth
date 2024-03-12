@@ -60,8 +60,6 @@ import java.util.Calendar;
 public class BluetoothOppReceiveFileInfo {
     private static final boolean D = Constants.DEBUG;
     private static final boolean V = Constants.VERBOSE;
-    private static String sDesiredStoragePath = null;
-
     /* To truncate the name of the received file if the length exceeds 237 */
     private static final int OPP_LENGTH_OF_FILE_NAME = 237;
 
@@ -99,7 +97,7 @@ public class BluetoothOppReceiveFileInfo {
 
         ContentResolver contentResolver = context.getContentResolver();
         Uri contentUri = Uri.parse(BluetoothShare.CONTENT_URI + "/" + id);
-        String filename = null, hint = null, mimeType = null;
+        String hint = null, mimeType = null;
         long length = 0;
         Cursor metadataCursor = BluetoothMethodProxy.getInstance().contentResolverQuery(
                 contentResolver, contentUri, new String[]{
@@ -125,7 +123,7 @@ public class BluetoothOppReceiveFileInfo {
             return new BluetoothOppReceiveFileInfo(BluetoothShare.STATUS_ERROR_NO_SDCARD);
         }
 
-        filename = choosefilename(hint);
+        String filename = choosefilename(hint);
         if (filename == null) {
             // should not happen. It must be pre-rejected
             return new BluetoothOppReceiveFileInfo(BluetoothShare.STATUS_FILE_ERROR);
@@ -184,14 +182,17 @@ public class BluetoothOppReceiveFileInfo {
             Log.v(Constants.TAG, "Generated received filename " + fullfilename);
         }
 
-        Uri insertUri = null;
         ContentValues mediaContentValues = new ContentValues();
         mediaContentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fullfilename);
         mediaContentValues.put(MediaStore.MediaColumns.MIME_TYPE, mimeType);
         mediaContentValues.put(MediaStore.MediaColumns.RELATIVE_PATH,
                 Environment.DIRECTORY_DOWNLOADS);
-        insertUri = BluetoothMethodProxy.getInstance().contentResolverInsert(contentResolver,
-                MediaStore.Downloads.EXTERNAL_CONTENT_URI, mediaContentValues);
+        Uri insertUri =
+                BluetoothMethodProxy.getInstance()
+                        .contentResolverInsert(
+                                contentResolver,
+                                MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                                mediaContentValues);
 
         if (insertUri == null) {
             if (D) {

@@ -44,7 +44,6 @@ public class HfpClientConnection extends Connection {
     private boolean mClosed;
     private boolean mClosing = false;
     private boolean mLocalDisconnect;
-    private boolean mClientHasEcc;
     private boolean mAdded;
 
     // Constructor to be used when there's an existing call (such as that created on the AG or
@@ -80,7 +79,6 @@ public class HfpClientConnection extends Connection {
     }
 
     void finishInitializing() {
-        mClientHasEcc = mServiceInterface.hasHfpClientEcc(mDevice);
         setAudioModeIsVoip(false);
         Uri number = Uri.fromParts(PhoneAccount.SCHEME_TEL, mCurrentCall.getNumber(), null);
         setAddress(number, TelecomManager.PRESENTATION_ALLOWED);

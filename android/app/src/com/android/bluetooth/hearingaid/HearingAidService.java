@@ -49,7 +49,6 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.AudioRoutingManager;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
-import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
@@ -100,8 +99,6 @@ public class HearingAidService extends ProfileService {
     private final AudioManagerOnAudioDevicesRemovedCallback
             mAudioManagerOnAudioDevicesRemovedCallback =
             new AudioManagerOnAudioDevicesRemovedCallback();
-
-    private final ServiceFactory mFactory = new ServiceFactory();
 
     public HearingAidService(Context ctx) {
         super(ctx);

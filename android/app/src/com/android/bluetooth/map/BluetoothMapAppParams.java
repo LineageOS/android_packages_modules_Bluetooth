@@ -1298,9 +1298,7 @@ public class BluetoothMapAppParams {
     }
 
     public String getChatStateConvoIdString() {
-        String str = null;
-        str = new String(this.getChatStateConvoIdByteArray());
-        return str;
+        return new String(this.getChatStateConvoIdByteArray());
     }
 
     public void setChatStateConvoId(long idHigh, long idLow) {

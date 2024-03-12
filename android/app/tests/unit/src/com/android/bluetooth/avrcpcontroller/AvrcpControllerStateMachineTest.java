@@ -242,13 +242,16 @@ public class AvrcpControllerStateMachineTest {
         return builder.build();
     }
 
-    private AvrcpPlayer makePlayer(BluetoothDevice device, int playerId, String playerName,
-            int playerType, byte[] playerFeatures, int playStatus) {
+    private AvrcpPlayer makePlayer(
+            BluetoothDevice device,
+            int playerId,
+            String playerName,
+            byte[] playerFeatures,
+            int playStatus) {
         AvrcpPlayer.Builder apb = new AvrcpPlayer.Builder();
         apb.setDevice(device);
         apb.setPlayerId(playerId);
         apb.setName(playerName);
-        apb.setPlayerType(playerType);
         apb.setSupportedFeatures(playerFeatures);
         apb.setPlayStatus(playStatus);
         return apb.build();
@@ -729,7 +732,7 @@ public class AvrcpControllerStateMachineTest {
         //Provide back a player object
         byte[] playerFeatures =
                 new byte[]{0, 0, 0, 0, 0, (byte) 0xb7, 0x01, 0x0c, 0x0a, 0, 0, 0, 0, 0, 0, 0};
-        AvrcpPlayer playerOne = makePlayer(mTestDevice, 1, playerName, 1, playerFeatures, 1);
+        AvrcpPlayer playerOne = makePlayer(mTestDevice, 1, playerName, playerFeatures, 1);
         List<AvrcpPlayer> testPlayers = new ArrayList<>();
         testPlayers.add(playerOne);
         mAvrcpStateMachine.sendMessage(AvrcpControllerStateMachine.MESSAGE_PROCESS_GET_PLAYER_ITEMS,
@@ -805,8 +808,8 @@ public class AvrcpControllerStateMachineTest {
         // Send available players set that contains our addressed player
         byte[] playerFeatures =
                 new byte[]{0, 0, 0, 0, 0, (byte) 0xb7, 0x01, 0x0c, 0x0a, 0, 0, 0, 0, 0, 0, 0};
-        AvrcpPlayer playerOne = makePlayer(mTestDevice, 1, "Player 1", 1, playerFeatures, 1);
-        AvrcpPlayer playerTwo = makePlayer(mTestDevice, 2, "Player 2", 1, playerFeatures, 1);
+        AvrcpPlayer playerOne = makePlayer(mTestDevice, 1, "Player 1", playerFeatures, 1);
+        AvrcpPlayer playerTwo = makePlayer(mTestDevice, 2, "Player 2", playerFeatures, 1);
         List<AvrcpPlayer> testPlayers = new ArrayList<>();
         testPlayers.add(playerOne);
         testPlayers.add(playerTwo);
@@ -857,8 +860,8 @@ public class AvrcpControllerStateMachineTest {
         // Send available players set that does not contain the addressed player
         byte[] playerFeatures =
                 new byte[]{0, 0, 0, 0, 0, (byte) 0xb7, 0x01, 0x0c, 0x0a, 0, 0, 0, 0, 0, 0, 0};
-        AvrcpPlayer playerOne = makePlayer(mTestDevice, 1, "Player 1", 1, playerFeatures, 1);
-        AvrcpPlayer playerTwo = makePlayer(mTestDevice, 2, "Player 2", 1, playerFeatures, 1);
+        AvrcpPlayer playerOne = makePlayer(mTestDevice, 1, "Player 1", playerFeatures, 1);
+        AvrcpPlayer playerTwo = makePlayer(mTestDevice, 2, "Player 2", playerFeatures, 1);
         List<AvrcpPlayer> testPlayers = new ArrayList<>();
         testPlayers.add(playerOne);
         testPlayers.add(playerTwo);
@@ -911,8 +914,8 @@ public class AvrcpControllerStateMachineTest {
         //Provide back two player objects, IDs 1 and 2
         byte[] playerFeatures =
                 new byte[]{0, 0, 0, 0, 0, (byte) 0xb7, 0x01, 0x0c, 0x0a, 0, 0, 0, 0, 0, 0, 0};
-        AvrcpPlayer playerOne = makePlayer(mTestDevice, 1, "Player 1", 1, playerFeatures, 1);
-        AvrcpPlayer playerTwo = makePlayer(mTestDevice, 2, "Player 2", 1, playerFeatures, 1);
+        AvrcpPlayer playerOne = makePlayer(mTestDevice, 1, "Player 1", playerFeatures, 1);
+        AvrcpPlayer playerTwo = makePlayer(mTestDevice, 2, "Player 2", playerFeatures, 1);
         List<AvrcpPlayer> testPlayers = new ArrayList<>();
         testPlayers.add(playerOne);
         testPlayers.add(playerTwo);
@@ -972,7 +975,7 @@ public class AvrcpControllerStateMachineTest {
         //Provide back a player object
         byte[] playerFeatures =
                 new byte[]{0, 0, 0, 0, 0, (byte) 0xb7, 0x01, 0x0c, 0x0a, 0, 0, 0, 0, 0, 0, 0};
-        AvrcpPlayer playerOne = makePlayer(mTestDevice, 1, "Player 1", 1, playerFeatures, 1);
+        AvrcpPlayer playerOne = makePlayer(mTestDevice, 1, "Player 1", playerFeatures, 1);
         List<AvrcpPlayer> testPlayers = new ArrayList<>();
         testPlayers.add(playerOne);
         mAvrcpStateMachine.sendMessage(
@@ -1029,8 +1032,8 @@ public class AvrcpControllerStateMachineTest {
         // Send available players set that contains our addressed player
         byte[] playerFeatures =
                 new byte[]{0, 0, 0, 0, 0, (byte) 0xb7, 0x01, 0x0c, 0x0a, 0, 0, 0, 0, 0, 0, 0};
-        AvrcpPlayer playerOne = makePlayer(mTestDevice, 1, "Player 1", 1, playerFeatures, 1);
-        AvrcpPlayer playerTwo = makePlayer(mTestDevice, 2, "Player 2", 1, playerFeatures, 1);
+        AvrcpPlayer playerOne = makePlayer(mTestDevice, 1, "Player 1", playerFeatures, 1);
+        AvrcpPlayer playerTwo = makePlayer(mTestDevice, 2, "Player 2", playerFeatures, 1);
         List<AvrcpPlayer> testPlayers = new ArrayList<>();
         testPlayers.add(playerOne);
         testPlayers.add(playerTwo);

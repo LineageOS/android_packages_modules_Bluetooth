@@ -133,7 +133,7 @@ public class PbapParserTest {
         BluetoothPbapVcardList pbapVCardList = new BluetoothPbapVcardList(mAccount, fileStream,
                 PbapClientConnectionHandler.VCARD_TYPE_30);
         Assert.assertEquals(1, pbapVCardList.getCount());
-        PhonebookPullRequest processor = new PhonebookPullRequest(mTargetContext, mAccount);
+        PhonebookPullRequest processor = new PhonebookPullRequest(mTargetContext);
         processor.setResults(pbapVCardList.getList());
         Assert.assertFalse(verifyPhonebook("Roid And", "0300000000"));
         processor.onPullComplete();

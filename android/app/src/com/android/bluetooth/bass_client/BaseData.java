@@ -42,25 +42,11 @@ class BaseData {
     private static final int METADATA_PRESENTATIONDELAY_LENGTH = 3;
     private static final int METADATA_CODEC_LENGTH = 5;
     private static final int METADATA_UNKNOWN_CODEC_LENGTH = 1;
-    private static final int CODEC_CAPABILITIES_SAMPLE_RATE_TYPE = 1;
-    private static final int CODEC_CAPABILITIES_FRAME_DURATION_TYPE = 2;
-    private static final int CODEC_CAPABILITIES_CHANNEL_COUNT_TYPE = 3;
-    private static final int CODEC_CAPABILITIES_OCTETS_PER_FRAME_TYPE = 4;
-    private static final int CODEC_CAPABILITIES_MAX_FRAMES_PER_SDU_TYPE = 5;
     private static final int CODEC_CONFIGURATION_SAMPLE_RATE_TYPE = 0x01;
     private static final int CODEC_CONFIGURATION_FRAME_DURATION_TYPE = 0x02;
     private static final int CODEC_CONFIGURATION_CHANNEL_ALLOCATION_TYPE = 0x03;
     private static final int CODEC_CONFIGURATION_OCTETS_PER_FRAME_TYPE = 0x04;
-    private static final int CODEC_CONFIGURATION_BLOCKS_PER_SDU_TYPE = 0x05;
-    private static final int METADATA_PREFERRED_CONTEXTS_TYPE = 0x01;
-    private static final int METADATA_STREAMING_CONTEXTS_TYPE = 0x02;
-    private static final int METADATA_PROGRAM_INFO_TYPE = 0x03;
     private static final int METADATA_LANGUAGE_TYPE = 0x04;
-    private static final int METADATA_CCID_LIST_TYPE = 0x05;
-    private static final int METADATA_PARENTAL_RATING_TYPE = 0x06;
-    private static final int METADATA_PROGRAM_INFO_URI_TYPE = 0x07;
-    private static final int METADATA_EXTENDED_TYPE = 0xFE;
-    private static final int METADATA_VENDOR_TYPE = 0xFF;
     private static final int CODEC_AUDIO_LOCATION_FRONT_LEFT = 0x01000000;
     private static final int CODEC_AUDIO_LOCATION_FRONT_RIGHT = 0x02000000;
     private static final int CODEC_AUDIO_SAMPLE_RATE_8K = 0x01;
@@ -313,9 +299,8 @@ class BaseData {
             Map<Integer, String> uniqueCcis = new HashMap<Integer, String>();
             Set<String> Csfs = levelThree.get(i).consolidatedCodecInfo;
             if (Csfs.size() > 0) {
-                Iterator<String> itr = Csfs.iterator();
-                for (int j = 0; itr.hasNext(); j++) {
-                    byte[] ltvEntries = itr.next().getBytes();
+                for (String codecInfo : Csfs) {
+                    byte[] ltvEntries = codecInfo.getBytes();
                     int k = 0;
                     byte length = ltvEntries[k++];
                     byte[] ltv = new byte[length + 1];
@@ -334,9 +319,8 @@ class BaseData {
             }
             Set<String> Mds = levelThree.get(i).consolidatedMetadata;
             if (Mds.size() > 0) {
-                Iterator<String> itr = Mds.iterator();
-                for (int j = 0; itr.hasNext(); j++) {
-                    byte[] ltvEntries = itr.next().getBytes();
+                for (String metadata : Mds) {
+                    byte[] ltvEntries = metadata.getBytes();
                     int k = 0;
                     byte length = ltvEntries[k++];
                     byte[] ltv = new byte[length + 1];

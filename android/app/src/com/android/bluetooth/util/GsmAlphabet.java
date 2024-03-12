@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.util;
 
-import android.content.res.Resources;
 import android.util.Log;
 import android.util.SparseIntArray;
 
@@ -307,39 +306,11 @@ public class GsmAlphabet {
         return count;
     }
 
-    /**
-     * Enable country-specific language tables from MCC-specific overlays.
-     */
-    private static void enableCountrySpecificEncodings() {
-        Resources r = Resources.getSystem();
-        // See comments in frameworks/base/core/res/res/values/config.xml for allowed values
-        sEnabledSingleShiftTables = r.getIntArray(r.getIdentifier(
-                "config_sms_enabled_single_shift_tables", "array", "android"));
-        sEnabledLockingShiftTables = r.getIntArray(r.getIdentifier(
-                "config_sms_enabled_locking_shift_tables", "array", "android"));
-
-        if (sEnabledSingleShiftTables.length > 0) {
-            sHighestEnabledSingleShiftCode =
-                sEnabledSingleShiftTables[sEnabledSingleShiftTables.length - 1];
-        } else {
-            sHighestEnabledSingleShiftCode = 0;
-        }
-    }
-
     /** Reverse mapping from Unicode characters to indexes into language tables. */
     private static final SparseIntArray[] sCharsToGsmTables;
 
     /** Reverse mapping from Unicode characters to indexes into language shift tables. */
     private static final SparseIntArray[] sCharsToShiftTables;
-
-    /** OEM configured list of enabled national language single shift tables for encoding. */
-    private static int[] sEnabledSingleShiftTables;
-
-    /** OEM configured list of enabled national language locking shift tables for encoding. */
-    private static int[] sEnabledLockingShiftTables;
-
-    /** Highest language code to include in array of single shift counters. */
-    private static int sHighestEnabledSingleShiftCode;
 
     /**
      * GSM default 7 bit alphabet plus national language locking shift character tables.
@@ -671,7 +642,6 @@ public class GsmAlphabet {
     };
 
     static {
-        enableCountrySpecificEncodings();
         int numTables = sLanguageTables.length;
         int numShiftTables = sLanguageShiftTables.length;
         if (numTables != numShiftTables) {

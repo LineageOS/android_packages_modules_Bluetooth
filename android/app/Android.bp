@@ -318,6 +318,9 @@ android_app {
         javacflags: [
             // "-Xep:AndroidFrameworkRequiresPermission:ERROR",
             "-Xep:AlmostJavadoc:ERROR",
+            "-Xep:UnusedMethod:ERROR",
+            "-Xep:UnusedVariable:ERROR",
+            "-XepExcludedPaths:.*/srcjars/.*", // Exclude generated files
         ],
     },
     min_sdk_version: "Tiramisu",

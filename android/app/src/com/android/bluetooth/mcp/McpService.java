@@ -297,7 +297,7 @@ public class McpService extends ProfileService {
             mService = svc;
         }
 
-        private McpService getService(AttributionSource source) {
+        private McpService getService() {
             if (mService != null && mService.isAvailable()) {
                 return mService;
             }
@@ -308,7 +308,7 @@ public class McpService extends ProfileService {
         @Override
         public void setDeviceAuthorized(BluetoothDevice device, boolean isAuthorized,
                 AttributionSource source) {
-            McpService service = getService(source);
+            McpService service = getService();
             if (service == null) {
                 return;
             }

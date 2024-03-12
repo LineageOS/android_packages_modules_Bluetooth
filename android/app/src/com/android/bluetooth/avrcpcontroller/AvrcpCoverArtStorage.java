@@ -169,8 +169,4 @@ public class AvrcpCoverArtStorage {
             Log.d(TAG, msg);
         }
     }
-
-    private void error(String msg) {
-        Log.e(TAG, msg);
-    }
 }

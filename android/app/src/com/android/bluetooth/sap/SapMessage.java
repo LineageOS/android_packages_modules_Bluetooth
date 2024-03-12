@@ -908,8 +908,7 @@ public class SapMessage {
         }
         int serial = msg.getToken();
         int error = msg.getError();
-        Integer reqType = null;
-        reqType = sOngoingRequests.remove(serial);
+        Integer reqType = sOngoingRequests.remove(serial);
         if (VERBOSE) {
             Log.i(TAG, "RIL SOLICITED serial: " + serial + ", error: " + error + " SapReqType: " + (
                     (reqType == null) ? "null" : getMsgTypeName(reqType)));

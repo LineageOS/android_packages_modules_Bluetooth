@@ -92,7 +92,6 @@ public class TbsGeneric {
     private class Bearer {
         final String token;
         final IBluetoothLeCallControlCallback callback;
-        final String uci;
         List<String> uriSchemes;
         final int capabilities;
         final int ccid;
@@ -101,12 +100,16 @@ public class TbsGeneric {
         Map<UUID, Integer> callIdIndexMap = new HashMap<>();
         Map<Integer, Request> requestMap = new HashMap<>();
 
-        public Bearer(String token, IBluetoothLeCallControlCallback callback, String uci,
-                List<String> uriSchemes, int capabilities, String providerName, int technology,
+        Bearer(
+                String token,
+                IBluetoothLeCallControlCallback callback,
+                List<String> uriSchemes,
+                int capabilities,
+                String providerName,
+                int technology,
                 int ccid) {
             this.token = token;
             this.callback = callback;
-            this.uci = uci;
             this.uriSchemes = uriSchemes;
             this.capabilities = capabilities;
             this.providerName = providerName;
@@ -321,9 +324,17 @@ public class TbsGeneric {
         }
 
         // Acquire CCID for TbsObject. The CCID is released on remove()
-        Bearer bearer = new Bearer(token, callback, uci, uriSchemes, capabilities, providerName,
-                technology, ContentControlIdKeeper.acquireCcid(new ParcelUuid(UUID.randomUUID()),
-                        BluetoothLeAudio.CONTEXT_TYPE_CONVERSATIONAL));
+        Bearer bearer =
+                new Bearer(
+                        token,
+                        callback,
+                        uriSchemes,
+                        capabilities,
+                        providerName,
+                        technology,
+                        ContentControlIdKeeper.acquireCcid(
+                                new ParcelUuid(UUID.randomUUID()),
+                                BluetoothLeAudio.CONTEXT_TYPE_CONVERSATIONAL));
         if (isCcidValid(bearer.ccid)) {
             mBearerList.add(bearer);
 

@@ -18,7 +18,6 @@ package com.android.bluetooth.avrcp;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
-import android.content.Context;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothObexTransport;
@@ -49,8 +48,6 @@ public class AvrcpCoverArtService {
      */
     private static final int MAX_TRANSMIT_PACKET_SIZE = 1024;
 
-    private final Context mContext;
-
     // Cover Art and Image Handle objects
     private final AvrcpCoverArtStorage mStorage;
 
@@ -66,8 +63,7 @@ public class AvrcpCoverArtService {
     // Native interface
     private AvrcpNativeInterface mNativeInterface;
 
-    public AvrcpCoverArtService(Context context) {
-        mContext = context;
+    public AvrcpCoverArtService() {
         mNativeInterface = AvrcpNativeInterface.getInstance();
         mAcceptThread = new SocketAcceptor();
         mStorage = new AvrcpCoverArtStorage(COVER_ART_STORAGE_MAX_ITEMS);

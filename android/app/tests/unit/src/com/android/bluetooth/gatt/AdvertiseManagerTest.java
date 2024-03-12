@@ -78,8 +78,7 @@ public class AdvertiseManagerTest {
 
         TestUtils.setAdapterService(mAdapterService);
 
-        mAdvertiseManager =
-                new AdvertiseManager(mService, mNativeInterface, mAdapterService, mAdvertiserMap);
+        mAdvertiseManager = new AdvertiseManager(mService, mNativeInterface, mAdvertiserMap);
 
         AdvertisingSetParameters parameters = new AdvertisingSetParameters.Builder().build();
         AdvertiseData advertiseData = new AdvertiseData.Builder().build();
