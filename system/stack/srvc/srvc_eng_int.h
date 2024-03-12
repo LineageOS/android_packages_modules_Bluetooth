@@ -24,7 +24,7 @@
 #include "srvc_api.h"
 #include "types/raw_address.h"
 
-#define SRVC_MAX_APPS GATT_CL_MAX_LCB
+#define SRVC_MAX_APPS GATT_MAX_APPS
 
 #define SRVC_ID_NONE 0
 #define SRVC_ID_DIS 1
