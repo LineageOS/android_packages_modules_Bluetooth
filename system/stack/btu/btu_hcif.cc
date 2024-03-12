@@ -77,8 +77,6 @@ void acl_disconnect_from_handle(uint16_t handle, tHCI_STATUS reason,
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /******************************************************************************/
 static void btu_hcif_authentication_comp_evt(uint8_t* p);
-static void btu_hcif_rmt_name_request_comp_evt(const uint8_t* p,
-                                               uint16_t evt_len);
 static void btu_hcif_encryption_change_evt(uint8_t* p);
 static void btu_hcif_read_rmt_ext_features_comp_evt(uint8_t* p,
                                                     uint8_t evt_len);
@@ -234,9 +232,6 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id,
     case HCI_AUTHENTICATION_COMP_EVT:
       btu_hcif_authentication_comp_evt(p);
       break;
-    case HCI_RMT_NAME_REQUEST_COMP_EVT:
-      btu_hcif_rmt_name_request_comp_evt(p, hci_evt_len);
-      break;
     case HCI_ENCRYPTION_CHANGE_EVT:
       btu_hcif_encryption_change_evt(p);
       break;
@@ -350,6 +345,7 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id,
     case HCI_READ_RMT_VERSION_COMP_EVT:  // EventCode::READ_REMOTE_VERSION_INFORMATION_COMPLETE
     case HCI_ROLE_CHANGE_EVT:            // EventCode::ROLE_CHANGE
     case HCI_DISCONNECTION_COMP_EVT:     // EventCode::DISCONNECTION_COMPLETE
+    case HCI_RMT_NAME_REQUEST_COMP_EVT:  // EventCode::REMOTE_NAME_REQUEST_COMPLETE
     default:
       log::error(
           "Unexpectedly received event_code:0x{:02x} that should not be "
@@ -782,30 +778,6 @@ static void btu_hcif_authentication_comp_evt(uint8_t* p) {
   STREAM_TO_UINT16(handle, p);
 
   btm_sec_auth_complete(handle, static_cast<tHCI_STATUS>(status));
-}
-
-/*******************************************************************************
- *
- * Function         btu_hcif_rmt_name_request_comp_evt
- *
- * Description      Process event HCI_RMT_NAME_REQUEST_COMP_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_rmt_name_request_comp_evt(const uint8_t* p,
-                                               uint16_t evt_len) {
-  uint8_t status;
-  RawAddress bd_addr;
-
-  STREAM_TO_UINT8(status, p);
-  STREAM_TO_BDADDR(bd_addr, p);
-
-  evt_len -= (1 + BD_ADDR_LEN);
-
-  btm_process_remote_name(&bd_addr, p, evt_len, to_hci_status_code(status));
-
-  btm_sec_rmt_name_request_complete(&bd_addr, p, to_hci_status_code(status));
 }
 
 /*******************************************************************************
