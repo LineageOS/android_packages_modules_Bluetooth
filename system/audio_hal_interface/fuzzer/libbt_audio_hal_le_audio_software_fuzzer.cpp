@@ -40,7 +40,8 @@ bool onResume(bool) { return true; }
 
 bool onSuspend(void) { return true; }
 
-bool onMetadataUpdate(const source_metadata_v7_t&, le_audio::DsaMode) {
+bool onMetadataUpdate(const source_metadata_v7_t&,
+                      bluetooth::le_audio::DsaMode) {
   return true;
 }
 

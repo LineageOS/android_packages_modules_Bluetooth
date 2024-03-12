@@ -37,7 +37,7 @@
 #include "osi/include/alarm.h"
 #include "stack/include/bt_types.h"
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 
 #define UINT8_TO_VEC_UINT8(u8) \
   std::vector<uint8_t> { u8 }
@@ -1070,13 +1070,14 @@ struct QosConfigSetting {
 };
 
 struct SetConfiguration {
-  SetConfiguration(uint8_t direction, uint8_t device_cnt, uint8_t ase_cnt,
-                   CodecConfigSetting codec,
-                   QosConfigSetting qos = {.retransmission_number = 0,
-                                           .max_transport_latency = 0},
-                   le_audio::types::LeAudioConfigurationStrategy strategy =
-                       le_audio::types::LeAudioConfigurationStrategy::
-                           MONO_ONE_CIS_PER_DEVICE)
+  SetConfiguration(
+      uint8_t direction, uint8_t device_cnt, uint8_t ase_cnt,
+      CodecConfigSetting codec,
+      QosConfigSetting qos = {.retransmission_number = 0,
+                              .max_transport_latency = 0},
+      bluetooth::le_audio::types::LeAudioConfigurationStrategy strategy =
+          bluetooth::le_audio::types::LeAudioConfigurationStrategy::
+              MONO_ONE_CIS_PER_DEVICE)
       : direction(direction),
         device_cnt(device_cnt),
         ase_cnt(ase_cnt),
@@ -1164,7 +1165,7 @@ struct stream_configuration {
   bool pending_configuration;
 
   /* Currently selected remote device set configuration */
-  const le_audio::set_configurations::AudioSetConfiguration* conf;
+  const bluetooth::le_audio::set_configurations::AudioSetConfiguration* conf;
 
   /* Currently selected local audio codec */
   types::LeAudioCodecId codec_id;
@@ -1178,4 +1179,4 @@ void AppendMetadataLtvEntryForCcidList(std::vector<uint8_t>& metadata,
 void AppendMetadataLtvEntryForStreamingContext(
     std::vector<uint8_t>& metadata, types::AudioContexts context_type);
 uint8_t GetMaxCodecFramesPerSduFromPac(const types::acs_ac_record* pac_record);
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

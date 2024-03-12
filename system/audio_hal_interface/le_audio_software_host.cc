@@ -23,9 +23,10 @@ namespace audio {
 
 namespace le_audio {
 
-std::vector<::le_audio::set_configurations::AudioSetConfiguration>
+std::vector<::bluetooth::le_audio::set_configurations::AudioSetConfiguration>
 get_offload_capabilities() {
-  return std::vector<::le_audio::set_configurations::AudioSetConfiguration>(0);
+  return std::vector<
+      ::bluetooth::le_audio::set_configurations::AudioSetConfiguration>(0);
 }
 
 LeAudioClientInterface* LeAudioClientInterface::Get() { return nullptr; }
@@ -45,7 +46,7 @@ LeAudioClientInterface::Sink* LeAudioClientInterface::GetSink(
 }
 
 void LeAudioClientInterface::Sink::UpdateBroadcastAudioConfigToHal(
-    ::le_audio::broadcast_offload_config const& config) {
+    ::bluetooth::le_audio::broadcast_offload_config const& config) {
   return;
 }
 

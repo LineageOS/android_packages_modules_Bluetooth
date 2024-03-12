@@ -14,7 +14,7 @@
  *  limitations under the License.
  *
  */
-namespace bluetooth.le_audio;
+namespace bluetooth.fbs.le_audio;
 enum CodecSpecificLtvGenericTypes : byte {
     SUPPORTED_SAMPLING_FREQUENCY = 0x01,
     SUPPORTED_FRAME_DURATION = 0x02,

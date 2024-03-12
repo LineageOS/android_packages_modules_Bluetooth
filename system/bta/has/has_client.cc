@@ -53,22 +53,22 @@ using bluetooth::has::kFeatureBitPresetSynchronizationSupported;
 using bluetooth::has::kHasPresetIndexInvalid;
 using bluetooth::has::PresetInfo;
 using bluetooth::has::PresetInfoReason;
-using le_audio::has::HasClient;
-using le_audio::has::HasCtpGroupOpCoordinator;
-using le_audio::has::HasCtpNtf;
-using le_audio::has::HasCtpOp;
-using le_audio::has::HasDevice;
-using le_audio::has::HasGattOpContext;
-using le_audio::has::HasJournalRecord;
-using le_audio::has::HasPreset;
-using le_audio::has::kControlPointMandatoryOpcodesBitmask;
-using le_audio::has::kControlPointSynchronizedOpcodesBitmask;
-using le_audio::has::kUuidActivePresetIndex;
-using le_audio::has::kUuidHearingAccessService;
-using le_audio::has::kUuidHearingAidFeatures;
-using le_audio::has::kUuidHearingAidPresetControlPoint;
-using le_audio::has::PresetCtpChangeId;
-using le_audio::has::PresetCtpOpcode;
+using bluetooth::le_audio::has::HasClient;
+using bluetooth::le_audio::has::HasCtpGroupOpCoordinator;
+using bluetooth::le_audio::has::HasCtpNtf;
+using bluetooth::le_audio::has::HasCtpOp;
+using bluetooth::le_audio::has::HasDevice;
+using bluetooth::le_audio::has::HasGattOpContext;
+using bluetooth::le_audio::has::HasJournalRecord;
+using bluetooth::le_audio::has::HasPreset;
+using bluetooth::le_audio::has::kControlPointMandatoryOpcodesBitmask;
+using bluetooth::le_audio::has::kControlPointSynchronizedOpcodesBitmask;
+using bluetooth::le_audio::has::kUuidActivePresetIndex;
+using bluetooth::le_audio::has::kUuidHearingAccessService;
+using bluetooth::le_audio::has::kUuidHearingAidFeatures;
+using bluetooth::le_audio::has::kUuidHearingAidPresetControlPoint;
+using bluetooth::le_audio::has::PresetCtpChangeId;
+using bluetooth::le_audio::has::PresetCtpOpcode;
 using namespace bluetooth;
 
 void btif_storage_add_leaudio_has_device(const RawAddress& address,
@@ -715,7 +715,7 @@ class HasClientImpl : public HasClient {
       return ErrorCode::OPERATION_NOT_SUPPORTED;
 
     if (operation.name.value_or("").length() >
-        le_audio::has::HasPreset::kPresetNameLengthLimit)
+        bluetooth::le_audio::has::HasPreset::kPresetNameLengthLimit)
       return ErrorCode::INVALID_PRESET_NAME_LENGTH;
 
     auto context = HasGattOpContext(operation, operation.index);
@@ -960,9 +960,10 @@ class HasClientImpl : public HasClient {
 
     if (osi_property_get_bool("persist.bluetooth.has.always_use_preset_cache",
                               true) == false) {
-      CpReadAllPresetsOperation(HasCtpOp(
-          device.addr, PresetCtpOpcode::READ_PRESETS,
-          le_audio::has::kStartPresetIndex, le_audio::has::kMaxNumOfPresets));
+      CpReadAllPresetsOperation(
+          HasCtpOp(device.addr, PresetCtpOpcode::READ_PRESETS,
+                   bluetooth::le_audio::has::kStartPresetIndex,
+                   bluetooth::le_audio::has::kMaxNumOfPresets));
     }
   }
 
@@ -1751,9 +1752,10 @@ class HasClientImpl : public HasClient {
                                 device->cp_ccc_val);
 
       /* Get all the presets */
-      CpReadAllPresetsOperation(HasCtpOp(
-          device->addr, PresetCtpOpcode::READ_PRESETS,
-          le_audio::has::kStartPresetIndex, le_audio::has::kMaxNumOfPresets));
+      CpReadAllPresetsOperation(
+          HasCtpOp(device->addr, PresetCtpOpcode::READ_PRESETS,
+                   bluetooth::le_audio::has::kStartPresetIndex,
+                   bluetooth::le_audio::has::kMaxNumOfPresets));
 
       /* Read the current active preset index */
       BtaGattQueue::ReadCharacteristic(

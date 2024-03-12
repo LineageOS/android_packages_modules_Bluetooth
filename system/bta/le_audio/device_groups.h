@@ -40,7 +40,7 @@
 #include "devices.h"
 #include "le_audio_types.h"
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 
 class LeAudioDeviceGroup {
  public:
@@ -53,7 +53,7 @@ class LeAudioDeviceGroup {
         : group_(group), state_(types::CigState::NONE) {}
 
     types::CigState GetState(void) const { return state_; }
-    void SetState(le_audio::types::CigState state) {
+    void SetState(bluetooth::le_audio::types::CigState state) {
       LOG_VERBOSE("%s -> %s", bluetooth::common::ToString(state_).c_str(),
                   bluetooth::common::ToString(state).c_str());
       state_ = state;
@@ -151,7 +151,7 @@ class LeAudioDeviceGroup {
   LeAudioDevice* GetFirstDevice(void) const;
   LeAudioDevice* GetFirstDeviceWithAvailableContext(
       types::LeAudioContextType context_type) const;
-  le_audio::types::LeAudioConfigurationStrategy GetGroupStrategy(
+  bluetooth::le_audio::types::LeAudioConfigurationStrategy GetGroupStrategy(
       int expected_group_size) const;
   int GetAseCount(uint8_t direction) const;
   LeAudioDevice* GetNextDevice(LeAudioDevice* leAudioDevice) const;
@@ -444,4 +444,4 @@ class LeAudioDeviceGroups {
   std::vector<std::unique_ptr<LeAudioDeviceGroup>> groups_;
 };
 
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

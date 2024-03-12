@@ -42,11 +42,11 @@ using ::testing::ReturnPointee;
 using ::testing::SaveArg;
 using std::chrono_literals::operator""ms;
 
-using le_audio::DsaMode;
-using le_audio::DsaModes;
-using le_audio::LeAudioCodecConfiguration;
-using le_audio::LeAudioSinkAudioHalClient;
-using le_audio::LeAudioSourceAudioHalClient;
+using bluetooth::le_audio::DsaMode;
+using bluetooth::le_audio::DsaModes;
+using bluetooth::le_audio::LeAudioCodecConfiguration;
+using bluetooth::le_audio::LeAudioSinkAudioHalClient;
+using bluetooth::le_audio::LeAudioSourceAudioHalClient;
 
 bluetooth::common::MessageLoopThread message_loop_thread("test message loop");
 bluetooth::common::MessageLoopThread* get_main_thread() {
@@ -96,9 +96,9 @@ class MockLeAudioClientInterfaceSink : public LeAudioClientInterface::Sink {
   MOCK_METHOD((void), ConfirmStreamingRequest, (), (override));
   MOCK_METHOD((void), CancelStreamingRequest, (), (override));
   MOCK_METHOD((void), UpdateAudioConfigToHal,
-              (const ::le_audio::offload_config&));
+              (const ::bluetooth::le_audio::offload_config&));
   MOCK_METHOD((void), UpdateBroadcastAudioConfigToHal,
-              (const ::le_audio::broadcast_offload_config&));
+              (const ::bluetooth::le_audio::broadcast_offload_config&));
   MOCK_METHOD((size_t), Read, (uint8_t * p_buf, uint32_t len));
 };
 
@@ -114,7 +114,7 @@ class MockLeAudioClientInterfaceSource : public LeAudioClientInterface::Source {
   MOCK_METHOD((void), ConfirmStreamingRequest, (), (override));
   MOCK_METHOD((void), CancelStreamingRequest, (), (override));
   MOCK_METHOD((void), UpdateAudioConfigToHal,
-              (const ::le_audio::offload_config&));
+              (const ::bluetooth::le_audio::offload_config&));
   MOCK_METHOD((size_t), Write, (const uint8_t* p_buf, uint32_t len));
 };
 
@@ -180,9 +180,9 @@ void LeAudioClientInterface::Sink::CancelStreamingRequest(){};
 void LeAudioClientInterface::Sink::ConfirmStreamingRequestV2(){};
 void LeAudioClientInterface::Sink::CancelStreamingRequestV2(){};
 void LeAudioClientInterface::Sink::UpdateAudioConfigToHal(
-    const ::le_audio::offload_config& config){};
+    const ::bluetooth::le_audio::offload_config& config){};
 void LeAudioClientInterface::Sink::UpdateBroadcastAudioConfigToHal(
-    const ::le_audio::broadcast_offload_config& config){};
+    const ::bluetooth::le_audio::broadcast_offload_config& config){};
 void LeAudioClientInterface::Sink::SuspendedForReconfiguration() {}
 void LeAudioClientInterface::Sink::ReconfigurationComplete() {}
 
@@ -197,7 +197,7 @@ void LeAudioClientInterface::Source::CancelStreamingRequest(){};
 void LeAudioClientInterface::Source::ConfirmStreamingRequestV2(){};
 void LeAudioClientInterface::Source::CancelStreamingRequestV2(){};
 void LeAudioClientInterface::Source::UpdateAudioConfigToHal(
-    const ::le_audio::offload_config& config){};
+    const ::bluetooth::le_audio::offload_config& config){};
 void LeAudioClientInterface::Source::SuspendedForReconfiguration() {}
 void LeAudioClientInterface::Source::ReconfigurationComplete() {}
 

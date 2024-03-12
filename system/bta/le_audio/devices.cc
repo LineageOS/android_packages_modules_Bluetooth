@@ -28,19 +28,19 @@
 
 using bluetooth::hci::kIsoCigPhy1M;
 using bluetooth::hci::kIsoCigPhy2M;
-using le_audio::DeviceConnectState;
-using le_audio::set_configurations::CodecConfigSetting;
-using le_audio::types::ase;
-using le_audio::types::AseState;
-using le_audio::types::AudioContexts;
-using le_audio::types::AudioLocations;
-using le_audio::types::BidirectionalPair;
-using le_audio::types::CisState;
-using le_audio::types::DataPathState;
-using le_audio::types::LeAudioContextType;
-using le_audio::types::LeAudioCoreCodecConfig;
+using bluetooth::le_audio::DeviceConnectState;
+using bluetooth::le_audio::set_configurations::CodecConfigSetting;
+using bluetooth::le_audio::types::ase;
+using bluetooth::le_audio::types::AseState;
+using bluetooth::le_audio::types::AudioContexts;
+using bluetooth::le_audio::types::AudioLocations;
+using bluetooth::le_audio::types::BidirectionalPair;
+using bluetooth::le_audio::types::CisState;
+using bluetooth::le_audio::types::DataPathState;
+using bluetooth::le_audio::types::LeAudioContextType;
+using bluetooth::le_audio::types::LeAudioCoreCodecConfig;
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 std::ostream& operator<<(std::ostream& os, const DeviceConnectState& state) {
   const char* char_value_ = "UNKNOWN";
 
@@ -208,7 +208,7 @@ uint32_t PickAudioLocation(types::LeAudioConfigurationStrategy strategy,
 }
 
 bool LeAudioDevice::ConfigureAses(
-    const le_audio::set_configurations::SetConfiguration& ent,
+    const bluetooth::le_audio::set_configurations::SetConfiguration& ent,
     LeAudioContextType context_type,
     uint8_t* number_of_already_active_group_ase,
     BidirectionalPair<AudioLocations>& group_audio_locations_memo,
@@ -237,7 +237,8 @@ bool LeAudioDevice::ConfigureAses(
   uint8_t active_ases = *number_of_already_active_group_ase;
   uint8_t max_required_ase_per_dev =
       ent.ase_cnt / ent.device_cnt + (ent.ase_cnt % ent.device_cnt);
-  le_audio::types::LeAudioConfigurationStrategy strategy = ent.strategy;
+  bluetooth::le_audio::types::LeAudioConfigurationStrategy strategy =
+      ent.strategy;
 
   auto pac = GetCodecConfigurationSupportedPac(ent.direction, ent.codec);
   if (!pac) return false;
@@ -931,7 +932,7 @@ void LeAudioDevice::DisconnectAcl(void) {
       BTM_GetHCIConnHandle(address_, BT_TRANSPORT_LE);
   if (acl_handle != HCI_INVALID_HANDLE) {
     acl_disconnect_from_handle(acl_handle, HCI_ERR_PEER_USER,
-                               "bta::le_audio::client disconnect");
+                               "bta::bluetooth::le_audio::client disconnect");
   }
 }
 
@@ -1014,7 +1015,7 @@ void LeAudioDevice::DeactivateAllAses(void) {
     ase.cis_state = CisState::IDLE;
     ase.data_path_state = DataPathState::IDLE;
     ase.active = false;
-    ase.cis_id = le_audio::kInvalidCisId;
+    ase.cis_id = bluetooth::le_audio::kInvalidCisId;
     ase.cis_conn_hdl = 0;
   }
 }
@@ -1245,4 +1246,4 @@ void LeAudioDevices::Cleanup(tGATT_IF client_if) {
   leAudioDevices_.clear();
 }
 
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

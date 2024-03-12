@@ -21,7 +21,7 @@
 #include "test/common/mock_functions.h"
 #include "types/raw_address.h"
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 namespace has {
 
 void HasClient::Initialize(bluetooth::has::HasClientCallbacks*,
@@ -44,4 +44,4 @@ HasClient* HasClient::Get() {
 }
 
 }  // namespace has
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio
