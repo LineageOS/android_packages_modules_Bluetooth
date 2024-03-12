@@ -257,8 +257,9 @@ public class ContextMap<C, T> {
         synchronized (mAppsLock) {
             synchronized (this) {
                 if (!mAppAdvertiseStats.containsKey(id)) {
-                    AppAdvertiseStats appAdvertiseStats = BluetoothMethodProxy.getInstance()
-                            .createAppAdvertiseStats(appUid, id, appName, this, service);
+                    AppAdvertiseStats appAdvertiseStats =
+                            BluetoothMethodProxy.getInstance()
+                                    .createAppAdvertiseStats(id, appName, this, service);
                     mAppAdvertiseStats.put(id, appAdvertiseStats);
                 }
             }

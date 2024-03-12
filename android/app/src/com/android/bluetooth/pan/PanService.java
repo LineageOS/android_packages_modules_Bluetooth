@@ -68,9 +68,7 @@ public class PanService extends ProfileService {
     private static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
     private static PanService sPanService;
 
-    private static final String BLUETOOTH_IFACE_ADDR_START = "192.168.44.1";
     private static final int BLUETOOTH_MAX_PAN_CONNECTIONS = 5;
-    private static final int BLUETOOTH_PREFIX_LENGTH = 24;
 
     @VisibleForTesting
     HashMap<BluetoothDevice, BluetoothPanDevice> mPanDevices;
@@ -78,7 +76,6 @@ public class PanService extends ProfileService {
     private String mPanIfName;
     @VisibleForTesting
     boolean mIsTethering = false;
-    private boolean mNativeAvailable;
     private HashMap<String, IBluetoothPanCallback> mBluetoothTetheringCallbacks;
 
     private TetheringManager mTetheringManager;
@@ -664,14 +661,13 @@ public class PanService extends ProfileService {
         if (panDevice == null) {
             Log.i(TAG, "state " + state + " Num of connected pan devices: " + mPanDevices.size());
             prevState = BluetoothProfile.STATE_DISCONNECTED;
-            panDevice = new BluetoothPanDevice(state, iface, localRole, remoteRole);
+            panDevice = new BluetoothPanDevice(state, localRole, remoteRole);
             mPanDevices.put(device, panDevice);
         } else {
             prevState = panDevice.mState;
             panDevice.mState = state;
             panDevice.mLocalRole = localRole;
             panDevice.mRemoteRole = remoteRole;
-            panDevice.mIface = iface;
         }
 
         // Avoid race condition that gets this class stuck in STATE_DISCONNECTING. While we
@@ -776,13 +772,11 @@ public class PanService extends ProfileService {
     @VisibleForTesting
     static class BluetoothPanDevice {
         private int mState;
-        private String mIface;
         private int mLocalRole; // Which local role is this PAN device bound to
         private int mRemoteRole; // Which remote role is this PAN device bound to
 
-        BluetoothPanDevice(int state, String iface, int localRole, int remoteRole) {
+        BluetoothPanDevice(int state, int localRole, int remoteRole) {
             mState = state;
-            mIface = iface;
             mLocalRole = localRole;
             mRemoteRole = remoteRole;
         }

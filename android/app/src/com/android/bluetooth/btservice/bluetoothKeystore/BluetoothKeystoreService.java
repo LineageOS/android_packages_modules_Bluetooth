@@ -66,7 +66,6 @@ public class BluetoothKeystoreService {
     private static final boolean DBG = false;
 
     private static BluetoothKeystoreService sBluetoothKeystoreService;
-    private boolean mCleaningUp;
     private boolean mIsCommonCriteriaMode;
 
     private static final String CIPHER_ALGORITHM = "AES/GCM/NoPadding";
@@ -171,11 +170,6 @@ public class BluetoothKeystoreService {
      */
     public void cleanup() {
         debugLog("cleanup");
-        if (mCleaningUp) {
-            debugLog("already doing cleanup");
-        }
-
-        mCleaningUp = true;
 
         if (sBluetoothKeystoreService == null) {
             debugLog("cleanup() called before start()");
@@ -288,10 +282,6 @@ public class BluetoothKeystoreService {
         startThread();
         // Initialize native interface
         mBluetoothKeystoreNativeInterface.init(this);
-    }
-
-    private boolean isAvailable() {
-        return !mCleaningUp;
     }
 
     /**

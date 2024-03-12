@@ -47,9 +47,6 @@ import java.util.UUID;
     // Max length is 31 - 3(flags) - 2 (one byte for length and one byte for type).
     private static final int MAX_LEN_PER_FIELD = 26;
 
-    // Values defined in bluedroid.
-    private static final byte DEVICE_TYPE_ALL = 2;
-
     // Meta data type for Transport Block Filter
     public static final int TYPE_INVALID = 0x00;
     public static final int TYPE_WIFI_NAN_HASH = 0x01; // WIFI NAN HASH type

@@ -150,7 +150,6 @@ public class HeadsetClientStateMachine extends StateMachine {
     private final Connected mConnected;
     private final AudioOn mAudioOn;
     private State mPrevState;
-    private long mClccTimer = 0;
 
     private final HeadsetClientService mService;
     private final HeadsetService mHeadsetService;
@@ -179,10 +178,6 @@ public class HeadsetClientStateMachine extends StateMachine {
     // queue of send actions (pair action, action_data)
     @VisibleForTesting
     Queue<Pair<Integer, Object>> mQueuedActions;
-
-    // last executed command, before action is complete e.g. waiting for some
-    // indicator
-    private Pair<Integer, Object> mPendingAction;
 
     @VisibleForTesting
     int mAudioState;
@@ -350,10 +345,6 @@ public class HeadsetClientStateMachine extends StateMachine {
         }
     }
 
-    private void clearPendingAction() {
-        mPendingAction = new Pair<Integer, Object>(NO_ACTION, 0);
-    }
-
     @VisibleForTesting
     void addQueuedAction(int action) {
         addQueuedAction(action, 0);
@@ -433,7 +424,6 @@ public class HeadsetClientStateMachine extends StateMachine {
 
     private boolean queryCallsStart() {
         logD("queryCallsStart");
-        clearPendingAction();
         mNativeInterface.queryCurrentCalls(mCurrentDevice);
         addQueuedAction(QUERY_CURRENT_CALLS, 0);
         return true;
@@ -930,7 +920,6 @@ public class HeadsetClientStateMachine extends StateMachine {
         mSubscriberInfo = null;
 
         mQueuedActions = new LinkedList<Pair<Integer, Object>>();
-        clearPendingAction();
 
         mCalls.clear();
         mCallsUpdate.clear();
@@ -1043,7 +1032,6 @@ public class HeadsetClientStateMachine extends StateMachine {
             mSubscriberInfo = null;
 
             mQueuedActions = new LinkedList<Pair<Integer, Object>>();
-            clearPendingAction();
 
             mCalls.clear();
             mCallsUpdate.clear();
@@ -1130,7 +1118,6 @@ public class HeadsetClientStateMachine extends StateMachine {
                         // itself
                         mNativeInterface.disconnect(device);
                         // the other profile connection should be initiated
-                        AdapterService adapterService = AdapterService.getAdapterService();
                         // No state transition is involved, fire broadcast immediately
                         broadcastConnectionState(device, BluetoothProfile.STATE_DISCONNECTED,
                                 BluetoothProfile.STATE_DISCONNECTED);
@@ -1669,7 +1656,6 @@ public class HeadsetClientStateMachine extends StateMachine {
 
                             // should not happen but...
                             if (queuedAction == null || queuedAction.first == NO_ACTION) {
-                                clearPendingAction();
                                 break;
                             }
 

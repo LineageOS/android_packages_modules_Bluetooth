@@ -110,9 +110,7 @@ class AvrcpControllerStateMachine extends StateMachine {
      * Notification types for Avrcp protocol JNI.
      */
     private static final byte NOTIFICATION_RSP_TYPE_INTERIM = 0x00;
-    private static final byte NOTIFICATION_RSP_TYPE_CHANGED = 0x01;
 
-    private static BluetoothDevice sActiveDevice;
     private final AudioManager mAudioManager;
     private boolean mShouldSendPlayOnFocusRecovery = false;
     private final boolean mIsVolumeFixed;
@@ -138,7 +136,6 @@ class AvrcpControllerStateMachine extends StateMachine {
     private int mAddressedPlayerId;
     private SparseArray<AvrcpPlayer> mAvailablePlayerList;
 
-    private int mVolumeChangedNotificationsToIgnore = 0;
     private int mVolumeNotificationLabel = -1;
 
     GetFolderList mGetFolderList = null;
@@ -547,7 +544,6 @@ class AvrcpControllerStateMachine extends StateMachine {
                     return true;
 
                 case MESSAGE_PROCESS_SET_ABS_VOL_CMD:
-                    mVolumeChangedNotificationsToIgnore++;
                     removeMessages(MESSAGE_INTERNAL_ABS_VOL_TIMEOUT);
                     sendMessageDelayed(MESSAGE_INTERNAL_ABS_VOL_TIMEOUT,
                             ABS_VOL_TIMEOUT_MILLIS);
@@ -1157,7 +1153,6 @@ class AvrcpControllerStateMachine extends StateMachine {
             logD("Source volume is assumed to be fixed, responding with max volume");
             absVol = ABS_VOL_BASE;
         } else {
-            mVolumeChangedNotificationsToIgnore++;
             removeMessages(MESSAGE_INTERNAL_ABS_VOL_TIMEOUT);
             sendMessageDelayed(MESSAGE_INTERNAL_ABS_VOL_TIMEOUT,
                     ABS_VOL_TIMEOUT_MILLIS);

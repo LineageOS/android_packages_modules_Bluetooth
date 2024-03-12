@@ -267,10 +267,6 @@ public class BluetoothOppUtility {
         if (isRecognizedFileType(context, path, mimetype)) {
             Intent activityIntent = new Intent(Intent.ACTION_VIEW);
             activityIntent.setDataAndTypeAndNormalize(path, mimetype);
-
-            List<ResolveInfo> resInfoList = context.getPackageManager()
-                    .queryIntentActivities(activityIntent, PackageManager.MATCH_DEFAULT_ONLY);
-
             activityIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             activityIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 

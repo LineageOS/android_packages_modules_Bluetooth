@@ -261,12 +261,10 @@ public class BluetoothMethodProxy {
         manager.transferSetInfo(bda, serviceData, advHandle, callback);
     }
 
-    /**
-     * Proxies {@link AppAdvertiseStats}.
-     */
-    public AppAdvertiseStats createAppAdvertiseStats(int appUid, int id, String name,
-            ContextMap map, GattService service) {
-        return new AppAdvertiseStats(appUid, id, name, map, service);
+    /** Proxies {@link AppAdvertiseStats}. */
+    public AppAdvertiseStats createAppAdvertiseStats(
+            int id, String name, ContextMap map, GattService service) {
+        return new AppAdvertiseStats(id, name, map, service);
     }
 
     /** Proxies {@link Thread#start()}. */

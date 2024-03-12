@@ -43,7 +43,6 @@ public class SdpManager {
     private static final String TAG = SdpManager.class.getSimpleName();
 
     private static final boolean D = true;
-    private static final boolean V = false;
 
     // TODO: When changing PBAP to use this new API.
     //       Move the defines to the profile (PBAP already have the feature bits)

@@ -24,7 +24,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 class HandleMap {
-    private static final boolean DBG = GattServiceConfig.DBG;
     private static final String TAG = GattServiceConfig.TAG_PREFIX + "HandleMap";
 
     public static final int TYPE_UNDEFINED = 0;

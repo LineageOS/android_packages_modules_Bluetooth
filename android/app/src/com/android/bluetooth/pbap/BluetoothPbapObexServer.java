@@ -332,10 +332,9 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
         }
 
         try {
-            byte[] appParam = null;
             mConnAppParamValue = new AppParamValue();
-            appParam = (byte[])
-                    mPbapMethodProxy.getHeader(request, HeaderSet.APPLICATION_PARAMETER);
+            byte[] appParam =
+                    (byte[]) mPbapMethodProxy.getHeader(request, HeaderSet.APPLICATION_PARAMETER);
             if ((appParam != null) && !parseApplicationParameter(appParam, mConnAppParamValue)) {
                 return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
             }
@@ -665,13 +664,13 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
 
         // listing request
         if (type.equals(TYPE_LISTING)) {
-            return pullVcardListing(appParam, appParamValue, reply, op, name);
+            return pullVcardListing(appParamValue, reply, op, name);
         } else if (type.equals(TYPE_VCARD)) {
             // pull vcard entry request
-            return pullVcardEntry(appParam, appParamValue, op, reply, name, mCurrentPath);
+            return pullVcardEntry(appParamValue, op, reply, name);
         } else if (type.equals(TYPE_PB)) {
             // down load phone book request
-            return pullPhonebook(appParam, appParamValue, reply, op, name);
+            return pullPhonebook(appParamValue, reply, op, name);
         } else {
             Log.w(TAG, "unknown type request!!!");
             ContentProfileErrorReportUtils.report(
@@ -1306,8 +1305,8 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
         return NEED_SEND_BODY;
     }
 
-    private int pullVcardListing(byte[] appParam, AppParamValue appParamValue, HeaderSet reply,
-            Operation op, String name) {
+    private int pullVcardListing(
+            AppParamValue appParamValue, HeaderSet reply, Operation op, String name) {
         String searchAttr = appParamValue.searchAttr.trim();
 
         if (searchAttr == null || searchAttr.length() == 0) {
@@ -1383,8 +1382,8 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
         return sendVcardListingXml(appParamValue, op, needSendBody, size);
     }
 
-    private int pullVcardEntry(byte[] appParam, AppParamValue appParamValue, Operation op,
-            HeaderSet reply, final String name, final String currentPath) {
+    private int pullVcardEntry(
+            AppParamValue appParamValue, Operation op, HeaderSet reply, final String name) {
         if (name == null || name.length() < VCARD_NAME_SUFFIX_LENGTH) {
             if (D) {
                 Log.d(TAG, "Name is Null, or the length of name < 5 !");
@@ -1490,8 +1489,8 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
         return ResponseCodes.OBEX_HTTP_OK;
     }
 
-    private int pullPhonebook(byte[] appParam, AppParamValue appParamValue, HeaderSet reply,
-            Operation op, final String name) {
+    private int pullPhonebook(
+            AppParamValue appParamValue, HeaderSet reply, Operation op, final String name) {
         // code start for passing PTS3.2 TC_PSE_PBD_BI_01_C
         if (name != null) {
             int dotIndex = name.indexOf(".");

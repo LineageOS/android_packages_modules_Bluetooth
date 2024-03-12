@@ -51,7 +51,7 @@ public class HeadsetObjectsFactory {
      *
      * @param objectsFactory a test instance of the HeadsetObjectsFactory
      */
-    private static void setInstanceForTesting(HeadsetObjectsFactory objectsFactory) {
+    static void setInstanceForTesting(HeadsetObjectsFactory objectsFactory) {
         Utils.enforceInstrumentationTestMode();
         synchronized (INSTANCE_LOCK) {
             Log.d(TAG, "setInstanceForTesting(), set to " + objectsFactory);

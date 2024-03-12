@@ -93,7 +93,6 @@ public class CoverArt {
         if (image == null) return null;
         String hash = null;
         try {
-            final byte[] digestBytes;
             final MessageDigest digest = MessageDigest.getInstance("MD5");
             digest.update(/* Bitmap to input stream */ image);
             byte[] messageDigest = digest.digest();
@@ -115,11 +114,9 @@ public class CoverArt {
     public byte[] getImage() {
         debug("GetImage(native)");
         if (mImage == null) return null;
-        byte[] bytes = null;
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         mImage.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
-        bytes = outputStream.toByteArray();
-        return bytes;
+        return outputStream.toByteArray();
     }
 
     /**
@@ -134,11 +131,9 @@ public class CoverArt {
             return null;
         }
 
-        byte[] bytes = null;
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         mImage.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
-        bytes = outputStream.toByteArray();
-        return bytes;
+        return outputStream.toByteArray();
     }
 
     /**
@@ -163,11 +158,9 @@ public class CoverArt {
     public byte[] getThumbnail() {
         debug("GetImageThumbnail()");
         if (mImage == null) return null;
-        byte[] bytes = null;
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         mImage.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
-        bytes = outputStream.toByteArray();
-        return bytes;
+        return outputStream.toByteArray();
     }
 
     /**

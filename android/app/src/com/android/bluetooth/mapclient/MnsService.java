@@ -18,9 +18,7 @@ package com.android.bluetooth.mapclient;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
-import android.os.Handler;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothObexTransport;
@@ -46,8 +44,6 @@ public class MnsService {
     private static final int MNS_VERSION = 0x0104;
     /* these are shared across instances */
     private static SocketAcceptor sAcceptThread = null;
-    private static Handler sSessionHandler = null;
-    private static BluetoothServerSocket sServerSocket = null;
     private static ObexServerSockets sServerSockets = null;
 
     private static MapClientService sContext;
@@ -111,8 +107,6 @@ public class MnsService {
 
     private class SocketAcceptor implements IObexConnectionHandler {
 
-        private boolean mInterrupted = false;
-
         /**
          * Called when an unrecoverable error occurred in an accept thread.
          * Close down the server socket, and restart.
@@ -144,7 +138,7 @@ public class MnsService {
                         + stateMachine.getCurrentState());
                 return false;
             }
-            MnsObexServer srv = new MnsObexServer(stateMachine, sServerSockets);
+            MnsObexServer srv = new MnsObexServer(stateMachine);
             BluetoothObexTransport transport = new BluetoothObexTransport(socket);
             try {
                 new ServerSession(transport, srv, null);

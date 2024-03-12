@@ -236,7 +236,6 @@ class MapClientContent {
     private void storeSms(Bmessage message, String handle, Long timestamp, boolean seen) {
         logD("storeSms");
         logV(message.toString());
-        VCardEntry originator = message.getOriginator();
         String recipients;
         if (INBOX_PATH.equals(message.getFolder())) {
             recipients = getOriginatorNumber(message);
@@ -248,7 +247,6 @@ class MapClientContent {
             }
         }
         logV("Received SMS from Number " + recipients);
-        String messageContent;
 
         Uri contentUri = INBOX_PATH.equalsIgnoreCase(message.getFolder()) ? Sms.Inbox.CONTENT_URI
                 : Sms.Sent.CONTENT_URI;
@@ -382,8 +380,6 @@ class MapClientContent {
 
             storeAddressPart(message, results);
 
-            String messageContent = mmsBmessage.getMessageAsText();
-
             values.put(Mms.Part.CONTENT_TYPE, "plain/text");
             values.put(Mms.SUBSCRIPTION_ID, mSubscriptionId);
         } catch (Exception e) {
@@ -425,14 +421,6 @@ class MapClientContent {
             values.put(Mms.Addr.TYPE, RECIPIENT_ADDRESS_TYPE);
             mResolver.insert(contentUri, values);
         }
-    }
-
-    private Uri insertIntoMmsTable(String subject) {
-        ContentValues mmsValues = new ContentValues();
-        mmsValues.put(Mms.TEXT_ONLY, 1);
-        mmsValues.put(Mms.MESSAGE_TYPE, 128);
-        mmsValues.put(Mms.SUBJECT, subject);
-        return mResolver.insert(Mms.CONTENT_URI, mmsValues);
     }
 
     /**

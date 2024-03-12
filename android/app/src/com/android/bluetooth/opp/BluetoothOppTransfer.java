@@ -82,10 +82,6 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
     @VisibleForTesting
     static final int SOCKET_ERROR_RETRY = 13;
 
-    private static final int CONNECT_WAIT_TIMEOUT = 45000;
-
-    private static final int CONNECT_RETRY_TIME = 100;
-
     private static final String SOCKET_LINK_KEY_ERROR = "Invalid exchange";
 
     private static final Object INSTANCE_LOCK = new Object();
@@ -508,11 +504,10 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
             }
         }
 
-        BluetoothOppShareInfo info = null;
         if (mBatch == null) {
             return;
         }
-        info = mBatch.getPendingShare();
+        BluetoothOppShareInfo info = mBatch.getPendingShare();
         while (info != null) {
             if (info.mStatus < 200) {
                 info.mStatus = failReason;
@@ -786,18 +781,10 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
 
     @VisibleForTesting
     class SocketConnectThread extends Thread {
-        private final String mHost;
-
         @VisibleForTesting
         final BluetoothDevice mDevice;
 
-        private final int mChannel;
-
         private int mL2cChannel = 0;
-
-        private boolean mIsConnected;
-
-        private long mTimestamp;
 
         private BluetoothSocket mBtSocket = null;
 
@@ -812,9 +799,6 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
         SocketConnectThread(BluetoothDevice device, boolean retry) {
             super("Socket Connect Thread");
             this.mDevice = device;
-            this.mHost = null;
-            this.mChannel = -1;
-            mIsConnected = false;
             mRetry = retry;
             mSdpInitiated = false;
         }
@@ -824,9 +808,6 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                 int l2capChannel) {
             super("Socket Connect Thread");
             this.mDevice = device;
-            this.mHost = null;
-            this.mChannel = -1;
-            mIsConnected = false;
             mRetry = retry;
             mSdpInitiated = sdpInitiated;
             mL2cChannel = l2capChannel;
