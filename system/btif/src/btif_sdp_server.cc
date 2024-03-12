@@ -313,7 +313,7 @@ bt_status_t remove_sdp_record(int record_id) {
       sdp_type = record->hdr.type;
     }
   }
-  tBTA_SERVICE_ID service_id = -1;
+  tBTA_SERVICE_ID service_id = 0;
   switch (sdp_type) {
     case SDP_TYPE_MAP_MAS:
       service_id = BTA_MAP_SERVICE_ID;
@@ -363,7 +363,7 @@ void on_create_record_event(int id) {
    * */
   log::verbose("Sdp Server");
   const sdp_slot_t* sdp_slot = start_create_sdp(id);
-  tBTA_SERVICE_ID service_id = -1;
+  tBTA_SERVICE_ID service_id = 0;
   bluetooth_sdp_record* record;
   /* In the case we are shutting down, sdp_slot is NULL */
   if (sdp_slot != nullptr && (record = sdp_slot->record_data) != nullptr) {
