@@ -213,9 +213,10 @@ static bt_status_t btsock_connect(const RawAddress* bd_addr, btsock_type_t type,
   *sock_fd = INVALID_FD;
   bt_status_t status = BT_STATUS_FAIL;
 
-  btif_sock_connection_logger(
-      *bd_addr, 0, type, SOCKET_CONNECTION_STATE_CONNECTING,
-      SOCKET_ROLE_CONNECTION, app_uid, channel, 0, 0, uuid->ToString().c_str());
+  btif_sock_connection_logger(*bd_addr, 0, type,
+                              SOCKET_CONNECTION_STATE_CONNECTING,
+                              SOCKET_ROLE_CONNECTION, app_uid, channel, 0, 0,
+                              uuid ? uuid->ToString().c_str() : "");
   switch (type) {
     case BTSOCK_RFCOMM:
       status =
@@ -246,7 +247,7 @@ static bt_status_t btsock_connect(const RawAddress* bd_addr, btsock_type_t type,
     btif_sock_connection_logger(*bd_addr, 0, type,
                                 SOCKET_CONNECTION_STATE_DISCONNECTED,
                                 SOCKET_ROLE_CONNECTION, app_uid, channel, 0, 0,
-                                uuid->ToString().c_str());
+                                uuid ? uuid->ToString().c_str() : "");
   }
   return status;
 }
