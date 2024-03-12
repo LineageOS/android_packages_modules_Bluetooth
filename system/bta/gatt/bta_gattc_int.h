@@ -70,7 +70,7 @@ typedef uint16_t tBTA_GATTC_INT_EVT;
 
 #define BTA_GATTC_SERVICE_CHANGED_LEN 4
 
-/* max client application GATTC can support */
+/* Max client application GATTC can support */
 #ifndef BTA_GATTC_CL_MAX
 #define BTA_GATTC_CL_MAX 32
 #endif
@@ -80,8 +80,12 @@ typedef uint16_t tBTA_GATTC_INT_EVT;
 #define BTA_GATTC_KNOWN_SR_MAX 255
 #endif
 
+/* This represents number of gatt client control blocks per connection.
+ *  Because of that this value shall depends on the number of possible GATT
+ *  connections  GATT_MAX_PHY_CHANNEL
+ */
 #ifndef BTA_GATTC_CLCB_MAX
-#define BTA_GATTC_CLCB_MAX GATT_CL_MAX_LCB
+#define BTA_GATTC_CLCB_MAX ((GATT_MAX_PHY_CHANNEL) * (BTA_GATTC_CL_MAX))
 #endif
 
 #define BTA_GATTC_WRITE_PREPARE GATT_WRITE_PREPARE

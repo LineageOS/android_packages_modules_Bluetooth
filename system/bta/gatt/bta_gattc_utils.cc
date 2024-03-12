@@ -98,9 +98,8 @@ tBTA_GATTC_CLCB* bta_gattc_find_clcb_by_cif(uint8_t client_if,
                                             const RawAddress& remote_bda,
                                             tBT_TRANSPORT transport) {
   tBTA_GATTC_CLCB* p_clcb = &bta_gattc_cb.clcb[0];
-  uint8_t i;
 
-  for (i = 0; i < BTA_GATTC_CLCB_MAX; i++, p_clcb++) {
+  for (size_t i = 0; i < BTA_GATTC_CLCB_MAX; i++, p_clcb++) {
     if (p_clcb->in_use && p_clcb->p_rcb->client_if == client_if &&
         p_clcb->transport == transport && p_clcb->bda == remote_bda)
       return p_clcb;
@@ -118,9 +117,8 @@ tBTA_GATTC_CLCB* bta_gattc_find_clcb_by_cif(uint8_t client_if,
  ******************************************************************************/
 tBTA_GATTC_CLCB* bta_gattc_find_clcb_by_conn_id(uint16_t conn_id) {
   tBTA_GATTC_CLCB* p_clcb = &bta_gattc_cb.clcb[0];
-  uint8_t i;
 
-  for (i = 0; i < BTA_GATTC_CLCB_MAX; i++, p_clcb++) {
+  for (size_t i = 0; i < BTA_GATTC_CLCB_MAX; i++, p_clcb++) {
     if (p_clcb->in_use && p_clcb->bta_conn_id == conn_id) return p_clcb;
   }
   return NULL;
@@ -138,10 +136,9 @@ tBTA_GATTC_CLCB* bta_gattc_find_clcb_by_conn_id(uint16_t conn_id) {
 tBTA_GATTC_CLCB* bta_gattc_clcb_alloc(tGATT_IF client_if,
                                       const RawAddress& remote_bda,
                                       tBT_TRANSPORT transport) {
-  uint8_t i_clcb = 0;
   tBTA_GATTC_CLCB* p_clcb = NULL;
 
-  for (i_clcb = 0; i_clcb < BTA_GATTC_CLCB_MAX; i_clcb++) {
+  for (int i_clcb = 0; i_clcb < BTA_GATTC_CLCB_MAX; i_clcb++) {
     if (!bta_gattc_cb.clcb[i_clcb].in_use) {
 #if (BTA_GATT_DEBUG == TRUE)
       log::verbose("found clcb:{} available", i_clcb);
@@ -864,7 +861,7 @@ void bta_gatt_client_dump(int fd) {
   stream << "  -- used: " << entry_count << "\n";
   entry_count = 0;
   stream << " ->clcb (BTA_GATTC_CLCB_MAX=" << BTA_GATTC_CLCB_MAX << ")\n";
-  for (int i = 0; i < BTA_GATTC_CLCB_MAX; i++) {
+  for (size_t i = 0; i < BTA_GATTC_CLCB_MAX; i++) {
     tBTA_GATTC_CLCB* p_clcb = &bta_gattc_cb.clcb[i];
     if (!p_clcb->in_use) {
       continue;
