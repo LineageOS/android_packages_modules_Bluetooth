@@ -38,7 +38,6 @@ import java.util.Map;
 /**
  * ScanStats class helps keep track of information about scans
  * on a per application basis.
- * @hide
  */
 @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
 public class AppAdvertiseStats {

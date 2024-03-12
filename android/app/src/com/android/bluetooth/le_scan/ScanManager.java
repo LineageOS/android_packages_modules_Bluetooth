@@ -66,8 +66,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Class that handles Bluetooth LE scan related operations.
- *
- * @hide
  */
 public class ScanManager {
     private static final boolean DBG = GattServiceConfig.DBG;

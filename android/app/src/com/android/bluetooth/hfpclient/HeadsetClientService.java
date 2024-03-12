@@ -60,8 +60,6 @@ import java.util.UUID;
 /**
  * Provides Bluetooth Headset Client (HF Role) profile, as a service in the
  * Bluetooth application.
- *
- * @hide
  */
 public class HeadsetClientService extends ProfileService {
     private static final boolean DBG = true;
@@ -865,7 +863,6 @@ public class HeadsetClientService extends ProfileService {
      *
      * @param device Bluetooth device
      * @return connection policy of the device
-     * @hide
      */
     public int getConnectionPolicy(BluetoothDevice device) {
         return mDatabaseManager

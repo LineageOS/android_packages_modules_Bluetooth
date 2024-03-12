@@ -6093,7 +6093,6 @@ public class AdapterService extends Service {
      * @param transport - specify data transport.
      * @param callback - callback used to receive the requested {@link OobData}; null will be
      *     ignored silently.
-     * @hide
      */
     public synchronized void generateLocalOobData(
             int transport, IBluetoothOobDataCallback callback) {

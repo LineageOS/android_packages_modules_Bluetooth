@@ -38,8 +38,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Manages Bluetooth LE Periodic scans
- *
- * @hide
  */
 @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
 public class PeriodicScanManager {

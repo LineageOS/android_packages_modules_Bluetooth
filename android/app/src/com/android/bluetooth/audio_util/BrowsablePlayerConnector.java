@@ -60,9 +60,6 @@ public class BrowsablePlayerConnector extends Handler {
         void run(List<BrowsedPlayerWrapper> result);
     }
 
-    /**
-     * @hide
-     */
     @VisibleForTesting
     static void setInstanceForTesting(BrowsablePlayerConnector connector) {
         Utils.enforceInstrumentationTestMode();

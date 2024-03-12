@@ -64,7 +64,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Provides Bluetooth HearingAid profile, as a service in the Bluetooth application.
- * @hide
  */
 public class HearingAidService extends ProfileService {
     private static final boolean DBG = true;
@@ -527,7 +526,6 @@ public class HearingAidService extends ProfileService {
      *
      * @param device Bluetooth device
      * @return connection policy of the device
-     * @hide
      */
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
     public int getConnectionPolicy(BluetoothDevice device) {

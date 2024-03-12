@@ -31,9 +31,6 @@ import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.List;
 
-/**
- * @hide
- */
 final class DataMigration {
     private DataMigration(){}
     private static final String TAG = "DataMigration";

@@ -44,7 +44,6 @@ import java.util.HashMap;
 
 /**
  * Helper for managing phonebook presentation over AT commands
- * @hide
  */
 public class AtPhonebook {
     private static final String TAG = "BluetoothAtPhonebook";

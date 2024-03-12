@@ -635,9 +635,6 @@ public class VolumeControlService extends ProfileService {
         }
     }
 
-    /**
-     * {@hide}
-     */
     public void setGroupVolume(int groupId, int volume) {
         if (volume < 0) {
             Log.w(TAG, "Tried to set invalid volume " + volume + ". Ignored.");
@@ -674,10 +671,6 @@ public class VolumeControlService extends ProfileService {
         }
     }
 
-    /**
-     * {@hide}
-     * @param groupId
-     */
     public int getGroupVolume(int groupId) {
         return mGroupVolumeCache.getOrDefault(groupId,
                         IBluetoothVolumeControl.VOLUME_CONTROL_UNKNOWN_VOLUME);
@@ -688,7 +681,6 @@ public class VolumeControlService extends ProfileService {
      *
      * @param device the device
      * @return the cached volume
-     * @hide
      */
     public int getDeviceVolume(BluetoothDevice device) {
         return mDeviceVolumeCache.getOrDefault(
@@ -727,31 +719,19 @@ public class VolumeControlService extends ProfileService {
         return mGroupMuteCache.getOrDefault(groupId, false);
     }
 
-    /**
-     * {@hide}
-     */
     public void mute(BluetoothDevice device) {
         mVolumeControlNativeInterface.mute(device);
     }
 
-    /**
-     * {@hide}
-     */
     public void muteGroup(int groupId) {
         mGroupMuteCache.put(groupId, true);
         mVolumeControlNativeInterface.muteGroup(groupId);
     }
 
-    /**
-     * {@hide}
-     */
     public void unmute(BluetoothDevice device) {
         mVolumeControlNativeInterface.unmute(device);
     }
 
-    /**
-     * {@hide}
-     */
     public void unmuteGroup(int groupId) {
         mGroupMuteCache.put(groupId, false);
         mVolumeControlNativeInterface.unmuteGroup(groupId);
@@ -859,9 +839,6 @@ public class VolumeControlService extends ProfileService {
         notifyNewCallbackOfKnownVolumeInfo(callback);
     }
 
-    /**
-     * {@hide}
-     */
     public void handleGroupNodeAdded(int groupId, BluetoothDevice device) {
         // Ignore disconnected device, its volume will be set once it connects
         synchronized (mStateMachines) {
@@ -1048,9 +1025,6 @@ public class VolumeControlService extends ProfileService {
         }
     }
 
-    /**
-     * {@hide}
-     */
     public int getAudioDeviceGroupVolume(int groupId) {
         int volume = getGroupVolume(groupId);
         if (getGroupMute(groupId)) {

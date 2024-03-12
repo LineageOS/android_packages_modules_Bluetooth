@@ -46,7 +46,6 @@ import java.util.Objects;
 /**
  * ScanStats class helps keep track of information about scans
  * on a per application basis.
- * @hide
  */
 public class AppScanStats {
     private static final String TAG = AppScanStats.class.getSimpleName();

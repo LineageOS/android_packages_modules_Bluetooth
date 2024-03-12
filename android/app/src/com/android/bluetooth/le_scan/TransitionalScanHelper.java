@@ -78,8 +78,6 @@ import java.util.function.Predicate;
  * com.android.bluetooth.gatt.GattService}. The purpose of this class is to preserve scan
  * functionality within GattService and provide the same functionality in a new scan dedicated
  * {@link com.android.bluetooth.btservice.ProfileService} when introduced.
- *
- * @hide
  */
 public class TransitionalScanHelper {
     private static final boolean DBG = GattServiceConfig.DBG;

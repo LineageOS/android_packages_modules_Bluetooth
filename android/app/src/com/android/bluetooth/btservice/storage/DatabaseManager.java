@@ -767,8 +767,6 @@ public class DatabaseManager {
      * @param devicesList the list of {@link BluetoothDevice} to search in
      * @return the most recently connected {@link BluetoothDevice} in the given
      *         {@code devicesList}, or null if an error occurred
-     *
-     * @hide
      */
     public BluetoothDevice getMostRecentlyConnectedDevicesInList(
             List<BluetoothDevice> devicesList) {
