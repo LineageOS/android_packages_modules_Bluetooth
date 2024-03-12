@@ -16,6 +16,8 @@
 
 #include "l2cap/internal/enhanced_retransmission_mode_channel_data_controller.h"
 
+#include <bluetooth/log.h>
+
 #include <map>
 #include <queue>
 #include <vector>
@@ -167,7 +169,7 @@ struct ErtmController::impl {
       send_rr_or_rnr(Poll::POLL);
       start_monitor_timer();
     } else if (tx_state_ == TxState::WAIT_F) {
-      LOG_INFO("Close channel because max transmit reached");
+      log::info("Close channel because max transmit reached");
       CloseChannel();
     }
   }
@@ -773,7 +775,7 @@ struct ErtmController::impl {
   void retransmit_requested_i_frame(uint8_t req_seq, Poll p) {
     Final f = p == Poll::POLL ? Final::POLL_RESPONSE : Final::NOT_SET;
     if (unacked_list_.find(req_seq) == unacked_list_.end()) {
-      LOG_ERROR("Received invalid SREJ");
+      log::error("Received invalid SREJ");
       return;
     }
     std::unique_ptr<CopyablePacketBuilder> copyable_packet_builder =
@@ -844,14 +846,14 @@ void ErtmController::on_pdu_no_fcs(const packet::PacketView<true>& pdu) {
   }
   auto standard_frame_view = StandardFrameView::Create(basic_frame_view);
   if (!standard_frame_view.IsValid()) {
-    LOG_WARN("Received invalid frame");
+    log::warn("Received invalid frame");
     return;
   }
   auto type = standard_frame_view.GetFrameType();
   if (type == FrameType::I_FRAME) {
     auto i_frame_view = EnhancedInformationFrameView::Create(standard_frame_view);
     if (!i_frame_view.IsValid()) {
-      LOG_WARN("Received invalid frame");
+      log::warn("Received invalid frame");
       return;
     }
     Final f = i_frame_view.GetF();
@@ -861,7 +863,7 @@ void ErtmController::on_pdu_no_fcs(const packet::PacketView<true>& pdu) {
     if (sar == SegmentationAndReassembly::START) {
       auto i_frame_start_view = EnhancedInformationStartFrameView::Create(i_frame_view);
       if (!i_frame_start_view.IsValid()) {
-        LOG_WARN("Received invalid I-Frame START");
+        log::warn("Received invalid I-Frame START");
         return;
       }
       pimpl_->recv_i_frame(f, tx_seq, req_seq, sar, i_frame_start_view.GetL2capSduLength(),
@@ -872,7 +874,7 @@ void ErtmController::on_pdu_no_fcs(const packet::PacketView<true>& pdu) {
   } else if (type == FrameType::S_FRAME) {
     auto s_frame_view = EnhancedSupervisoryFrameView::Create(standard_frame_view);
     if (!s_frame_view.IsValid()) {
-      LOG_WARN("Received invalid frame");
+      log::warn("Received invalid frame");
       return;
     }
     auto req_seq = s_frame_view.GetReqSeq();
@@ -893,7 +895,7 @@ void ErtmController::on_pdu_no_fcs(const packet::PacketView<true>& pdu) {
         break;
     }
   } else {
-    LOG_WARN("Received invalid frame");
+    log::warn("Received invalid frame");
   }
 }
 
@@ -904,14 +906,14 @@ void ErtmController::on_pdu_fcs(const packet::PacketView<true>& pdu) {
   }
   auto standard_frame_view = StandardFrameWithFcsView::Create(basic_frame_view);
   if (!standard_frame_view.IsValid()) {
-    LOG_WARN("Received invalid frame");
+    log::warn("Received invalid frame");
     return;
   }
   auto type = standard_frame_view.GetFrameType();
   if (type == FrameType::I_FRAME) {
     auto i_frame_view = EnhancedInformationFrameWithFcsView::Create(standard_frame_view);
     if (!i_frame_view.IsValid()) {
-      LOG_WARN("Received invalid frame");
+      log::warn("Received invalid frame");
       return;
     }
     Final f = i_frame_view.GetF();
@@ -921,7 +923,7 @@ void ErtmController::on_pdu_fcs(const packet::PacketView<true>& pdu) {
     if (sar == SegmentationAndReassembly::START) {
       auto i_frame_start_view = EnhancedInformationStartFrameWithFcsView::Create(i_frame_view);
       if (!i_frame_start_view.IsValid()) {
-        LOG_WARN("Received invalid I-Frame START");
+        log::warn("Received invalid I-Frame START");
         return;
       }
       pimpl_->recv_i_frame(f, tx_seq, req_seq, sar, i_frame_start_view.GetL2capSduLength(),
@@ -932,7 +934,7 @@ void ErtmController::on_pdu_fcs(const packet::PacketView<true>& pdu) {
   } else if (type == FrameType::S_FRAME) {
     auto s_frame_view = EnhancedSupervisoryFrameWithFcsView::Create(standard_frame_view);
     if (!s_frame_view.IsValid()) {
-      LOG_WARN("Received invalid frame");
+      log::warn("Received invalid frame");
       return;
     }
     auto req_seq = s_frame_view.GetReqSeq();
@@ -953,7 +955,7 @@ void ErtmController::on_pdu_fcs(const packet::PacketView<true>& pdu) {
         break;
     }
   } else {
-    LOG_WARN("Received invalid frame");
+    log::warn("Received invalid frame");
   }
 }
 
@@ -970,7 +972,7 @@ void ErtmController::stage_for_reassembly(SegmentationAndReassembly sar, uint16_
   switch (sar) {
     case SegmentationAndReassembly::UNSEGMENTED:
       if (sar_state_ != SegmentationAndReassembly::END) {
-        LOG_WARN("Received invalid SAR");
+        log::warn("Received invalid SAR");
         close_channel();
         return;
       }
@@ -983,7 +985,7 @@ void ErtmController::stage_for_reassembly(SegmentationAndReassembly sar, uint16_
       break;
     case SegmentationAndReassembly::START:
       if (sar_state_ != SegmentationAndReassembly::END) {
-        LOG_WARN("Received invalid SAR");
+        log::warn("Received invalid SAR");
         close_channel();
         return;
       }
@@ -994,7 +996,7 @@ void ErtmController::stage_for_reassembly(SegmentationAndReassembly sar, uint16_
       break;
     case SegmentationAndReassembly::CONTINUATION:
       if (sar_state_ == SegmentationAndReassembly::END) {
-        LOG_WARN("Received invalid SAR");
+        log::warn("Received invalid SAR");
         close_channel();
         return;
       }
@@ -1003,14 +1005,14 @@ void ErtmController::stage_for_reassembly(SegmentationAndReassembly sar, uint16_
       break;
     case SegmentationAndReassembly::END:
       if (sar_state_ == SegmentationAndReassembly::END) {
-        LOG_WARN("Received invalid SAR");
+        log::warn("Received invalid SAR");
         close_channel();
         return;
       }
       sar_state_ = SegmentationAndReassembly::END;
       remaining_sdu_continuation_packet_size_ -= payload.size();
       if (remaining_sdu_continuation_packet_size_ != 0) {
-        LOG_WARN("Received invalid END I-Frame");
+        log::warn("Received invalid END I-Frame");
         reassembly_stage_ =
             PacketViewForReassembly(PacketView<kLittleEndian>(std::make_shared<std::vector<uint8_t>>()));
         remaining_sdu_continuation_packet_size_ = 0;

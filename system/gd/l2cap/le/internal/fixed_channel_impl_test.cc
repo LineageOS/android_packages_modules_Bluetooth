@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 #include "l2cap/le/internal/fixed_channel_impl.h"
+
+#include <bluetooth/log.h>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include "common/testing/bind_test_util.h"
 #include "hci/address_with_type.h"
 #include "l2cap/cid.h"
 #include "l2cap/internal/parameter_provider_mock.h"
 #include "l2cap/le/internal/link_mock.h"
 #include "os/handler.h"
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
 
 namespace bluetooth {
 namespace l2cap {
@@ -69,7 +71,7 @@ TEST_F(L2capLeFixedChannelImplTest, get_device) {
                         std::unique_ptr<testing::MockLeAclConnection>(mock_acl_connection), nullptr /* LinkManager* */);
   AddressWithType device{{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}}, hci::AddressType::PUBLIC_DEVICE_ADDRESS};
   EXPECT_CALL(mock_le_link, GetDevice()).WillRepeatedly(Return(device));
-  LOG_INFO("------------------");
+  log::info("------------------");
   FixedChannelImpl fixed_channel_impl(kSmpBrCid, &mock_le_link, l2cap_handler_);
   EXPECT_EQ(device, fixed_channel_impl.GetDevice());
 }

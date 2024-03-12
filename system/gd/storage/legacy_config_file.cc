@@ -16,6 +16,8 @@
 
 #include "storage/legacy_config_file.h"
 
+#include <bluetooth/log.h>
+
 #include <cerrno>
 #include <fstream>
 #include <sstream>
@@ -36,7 +38,7 @@ std::optional<ConfigCache> LegacyConfigFile::Read(size_t temp_devices_capacity) 
   ASSERT(!path_.empty());
   std::ifstream config_file(path_);
   if (!config_file || !config_file.is_open()) {
-    LOG_ERROR("unable to open file '%s', error: %s", path_.c_str(), strerror(errno));
+    log::error("unable to open file '{}', error: {}", path_, strerror(errno));
     return std::nullopt;
   }
   [[maybe_unused]] int line_num = 0;
@@ -55,7 +57,7 @@ std::optional<ConfigCache> LegacyConfigFile::Read(size_t temp_devices_capacity) 
     }
     if (line.front() == '[') {
       if (line.back() != ']') {
-        LOG_WARN("unterminated section name on line %d", line_num);
+        log::warn("unterminated section name on line {}", line_num);
         return std::nullopt;
       }
       // Read 'test' from '[text]', hence -2
@@ -63,7 +65,7 @@ std::optional<ConfigCache> LegacyConfigFile::Read(size_t temp_devices_capacity) 
     } else {
       auto tokens = common::StringSplit(line, "=", 2);
       if (tokens.size() != 2) {
-        LOG_WARN("no key/value separator found on line %d", line_num);
+        log::warn("no key/value separator found on line {}", line_num);
         return std::nullopt;
       }
       tokens[0] = common::StringTrim(std::move(tokens[0]));
@@ -80,7 +82,7 @@ bool LegacyConfigFile::Write(const ConfigCache& cache) {
 
 bool LegacyConfigFile::Delete() {
   if (!os::FileExists(path_)) {
-    LOG_WARN("Config file at \"%s\" does not exist", path_.c_str());
+    log::warn("Config file at \"{}\" does not exist", path_);
     return false;
   }
   return os::RemoveFile(path_);

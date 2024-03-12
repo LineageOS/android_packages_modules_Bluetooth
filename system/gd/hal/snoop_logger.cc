@@ -17,6 +17,7 @@
 #include "hal/snoop_logger.h"
 
 #include <arpa/inet.h>
+#include <bluetooth/log.h>
 #include <sys/stat.h>
 
 #include <algorithm>
@@ -91,7 +92,7 @@ void ProfilesFilter::SetupProfilesFilter(bool pbap_filtered, bool map_filtered) 
   }
   setup_done_flag = true;
 
-  LOG_DEBUG("SetupProfilesFilter: pbap=%d, map=%d", pbap_filtered, map_filtered);
+  log::debug("SetupProfilesFilter: pbap={}, map={}", pbap_filtered, map_filtered);
 
   for (int i = 0; i < FILTER_PROFILE_MAX; i++) {
     profiles[i].type = (profile_type_t)i;
@@ -157,15 +158,15 @@ profile_type_t ProfilesFilter::DlciToProfile(bool local, uint16_t cid, uint8_t d
 void ProfilesFilter::ProfileL2capOpen(
     profile_type_t profile, uint16_t lcid, uint16_t rcid, uint16_t psm, bool flow_ext) {
   if (profiles[profile].l2cap_opened == true) {
-    LOG_DEBUG("l2cap for %d was already opened. Override it", profile);
+    log::debug("l2cap for {} was already opened. Override it", profile);
   }
-  LOG_DEBUG(
-      "lcid:=%d, rcid=%d, psm=%d, flow_ext=%d, filter profile=%s",
+  log::debug(
+      "lcid:={}, rcid={}, psm={}, flow_ext={}, filter profile={}",
       lcid,
       rcid,
       psm,
       flow_ext,
-      ProfilesFilter::ProfileToString(profile).c_str());
+      ProfilesFilter::ProfileToString(profile));
   profiles[profile].lcid = lcid;
   profiles[profile].rcid = rcid;
   profiles[profile].psm = psm;
@@ -183,15 +184,15 @@ void ProfilesFilter::ProfileL2capClose(profile_type_t profile) {
 void ProfilesFilter::ProfileRfcommOpen(
     profile_type_t profile, uint16_t lcid, uint8_t dlci, uint16_t uuid, bool flow_ext) {
   if (profiles[profile].rfcomm_opened == true) {
-    LOG_DEBUG("rfcomm for %d was already opened. Override it", profile);
+    log::debug("rfcomm for {} was already opened. Override it", profile);
   }
-  LOG_DEBUG(
-      "lcid:=%d, dlci=%d, uuid=%d, flow_ext=%d, filter profile=%s",
+  log::debug(
+      "lcid:={}, dlci={}, uuid={}, flow_ext={}, filter profile={}",
       lcid,
       dlci,
       uuid,
       flow_ext,
-      ProfilesFilter::ProfileToString(profile).c_str());
+      ProfilesFilter::ProfileToString(profile));
   profiles[profile].rfcomm_uuid = uuid;
   profiles[profile].scn = (dlci >> 1);
   profiles[profile].flow_ext_rfcomm = flow_ext;
@@ -214,13 +215,10 @@ bool ProfilesFilter::IsRfcommChannel(bool local, uint16_t cid) {
 void ProfilesFilter::PrintProfilesConfig() {
   for (int i = 0; i < FILTER_PROFILE_MAX; i++) {
     if (profiles[i].enabled) {
-      LOG_DEBUG(
-          "\ntype: %s"
-          "\nenabled: %d, l2cap_opened: %d, rfcomm_opened: %d"
-          "\nflow_ext_l2cap: %d, flow_ext_rfcomm: %d"
-          "\nlcid: %d, rcid: %d, rfcomm_uuid: %d, psm: %d"
-          "\nscn: %d\n",
-          ProfilesFilter::ProfileToString(profiles[i].type).c_str(),
+      log::debug(
+          "\ntype: {}\nenabled: {}, l2cap_opened: {}, rfcomm_opened: {}\nflow_ext_l2cap: {}, "
+          "flow_ext_rfcomm: {}\nlcid: {}, rcid: {}, rfcomm_uuid: {}, psm: {}\nscn: {}\n",
+          ProfilesFilter::ProfileToString(profiles[i].type),
           profiles[i].enabled,
           profiles[i].l2cap_opened,
           profiles[i].rfcomm_opened,
@@ -332,21 +330,21 @@ std::string get_last_log_path(std::string log_file_path) {
 }
 
 void delete_btsnoop_files(const std::string& log_path) {
-  LOG_INFO("Deleting logs if they exist");
+  log::info("Deleting logs if they exist");
   if (os::FileExists(log_path)) {
     if (!os::RemoveFile(log_path)) {
-      LOG_ERROR("Failed to remove main log file at \"%s\"", log_path.c_str());
+      log::error("Failed to remove main log file at \"{}\"", log_path);
     }
   } else {
-    LOG_INFO("Main log file does not exist at \"%s\"", log_path.c_str());
+    log::info("Main log file does not exist at \"{}\"", log_path);
   }
   auto last_log_path = get_last_log_path(log_path);
   if (os::FileExists(last_log_path)) {
     if (!os::RemoveFile(last_log_path)) {
-      LOG_ERROR("Failed to remove last log file at \"%s\"", log_path.c_str());
+      log::error("Failed to remove last log file at \"{}\"", log_path);
     }
   } else {
-    LOG_INFO("Last log file does not exist at \"%s\"", log_path.c_str());
+    log::info("Last log file does not exist at \"{}\"", log_path);
   }
 }
 
@@ -498,14 +496,14 @@ SnoopLogger::SnoopLogger(
   btsnoop_mode_ = btsnoop_mode;
 
   if (btsnoop_mode_ == kBtSnoopLogModeFiltered) {
-    LOG_INFO("Snoop Logs filtered mode enabled");
+    log::info("Snoop Logs filtered mode enabled");
     EnableFilters();
     // delete unfiltered logs
     delete_btsnoop_files(get_btsnoop_log_path(snoop_log_path_, false));
     // delete snooz logs
     delete_btsnoop_files(snooz_log_path_);
   } else if (btsnoop_mode_ == kBtSnoopLogModeFull) {
-    LOG_INFO("Snoop Logs full mode enabled");
+    log::info("Snoop Logs full mode enabled");
     if (!snoop_log_persists) {
       // delete filtered logs
       delete_btsnoop_files(get_btsnoop_log_path(snoop_log_path_, true));
@@ -513,7 +511,7 @@ SnoopLogger::SnoopLogger(
       delete_btsnoop_files(snooz_log_path_);
     }
   } else {
-    LOG_INFO("Snoop Logs disabled");
+    log::info("Snoop Logs disabled");
     // delete both filtered and unfiltered logs
     delete_btsnoop_files(get_btsnoop_log_path(snoop_log_path_, true));
     delete_btsnoop_files(get_btsnoop_log_path(snoop_log_path_, false));
@@ -542,13 +540,13 @@ void SnoopLogger::OpenNextSnoopLogFile() {
 
   if (os::FileExists(snoop_log_path_)) {
     if (!os::RenameFile(snoop_log_path_, last_file_path)) {
-      LOG_ERROR(
-          "Unabled to rename existing snoop log from \"%s\" to \"%s\"",
-          snoop_log_path_.c_str(),
-          last_file_path.c_str());
+      log::error(
+          "Unabled to rename existing snoop log from \"{}\" to \"{}\"",
+          snoop_log_path_,
+          last_file_path);
     }
   } else {
-    LOG_INFO("Previous log file \"%s\" does not exist, skip renaming", snoop_log_path_.c_str());
+    log::info("Previous log file \"{}\" does not exist, skip renaming", snoop_log_path_);
   }
 
   mode_t prevmask = umask(0);
@@ -558,16 +556,18 @@ void SnoopLogger::OpenNextSnoopLogFile() {
   file_creation_time = fake_timerfd_get_clock();
 #endif
   if (!btsnoop_ostream_.good()) {
-    LOG_ALWAYS_FATAL("Unable to open snoop log at \"%s\", error: \"%s\"", snoop_log_path_.c_str(), strerror(errno));
+    log::fatal(
+        "Unable to open snoop log at \"{}\", error: \"{}\"", snoop_log_path_, strerror(errno));
   }
   umask(prevmask);
   if (!btsnoop_ostream_.write(
           reinterpret_cast<const char*>(&SnoopLoggerCommon::kBtSnoopFileHeader),
           sizeof(SnoopLoggerCommon::FileHeaderType))) {
-    LOG_ALWAYS_FATAL("Unable to write file header to \"%s\", error: \"%s\"", snoop_log_path_.c_str(), strerror(errno));
+    log::fatal(
+        "Unable to write file header to \"{}\", error: \"{}\"", snoop_log_path_, strerror(errno));
   }
   if (!btsnoop_ostream_.flush()) {
-    LOG_ERROR("Failed to flush, error: \"%s\"", strerror(errno));
+    log::error("Failed to flush, error: \"{}\"", strerror(errno));
   }
 }
 
@@ -581,7 +581,7 @@ void SnoopLogger::EnableFilters() {
     if (filter_enabled_property) {
       itr->second = filter_enabled_property.value() == "true";
     }
-    LOG_INFO("%s: %d", itr->first.c_str(), itr->second);
+    log::info("{}: {}", itr->first, itr->second);
   }
   for (auto itr = kBtSnoopLogFilterMode.begin(); itr != kBtSnoopLogFilterMode.end(); itr++) {
     auto filter_mode_property = os::GetSystemProperty(itr->first);
@@ -590,7 +590,7 @@ void SnoopLogger::EnableFilters() {
     } else {
       itr->second = SnoopLogger::kBtSnoopLogFilterProfileModeDisabled;
     }
-    LOG_INFO("%s: %s", itr->first.c_str(), itr->second.c_str());
+    log::info("{}: {}", itr->first, itr->second);
   }
 }
 
@@ -598,11 +598,11 @@ void SnoopLogger::DisableFilters() {
   std::lock_guard<std::mutex> lock(snoop_log_filters_mutex);
   for (auto itr = kBtSnoopLogFilterState.begin(); itr != kBtSnoopLogFilterState.end(); itr++) {
     itr->second = false;
-    LOG_INFO("%s, %d", itr->first.c_str(), itr->second);
+    log::info("{}, {}", itr->first, itr->second);
   }
   for (auto itr = kBtSnoopLogFilterMode.begin(); itr != kBtSnoopLogFilterMode.end(); itr++) {
     itr->second = SnoopLogger::kBtSnoopLogFilterProfileModeDisabled;
-    LOG_INFO("%s, %s", itr->first.c_str(), itr->second.c_str());
+    log::info("{}, {}", itr->first, itr->second);
   }
 }
 
@@ -679,9 +679,9 @@ uint32_t SnoopLogger::PayloadStrip(
     profile_type_t current_profile, uint8_t* packet, uint32_t hdr_len, uint32_t pl_len) {
   uint32_t len = 0;
   std::string profile_filter_mode = "";
-  LOG_DEBUG(
-      "current_profile=%s, hdr len=%d, total len=%d",
-      ProfilesFilter::ProfileToString(current_profile).c_str(),
+  log::debug(
+      "current_profile={}, hdr len={}, total len={}",
+      ProfilesFilter::ProfileToString(current_profile),
       hdr_len,
       pl_len);
   std::lock_guard<std::mutex> lock(snoop_log_filters_mutex);
@@ -879,8 +879,8 @@ void SnoopLogger::AcceptlistL2capChannel(
     return;
   }
 
-  LOG_DEBUG(
-      "Acceptlisting l2cap channel: conn_handle=%d, local cid=%d, remote cid=%d",
+  log::debug(
+      "Acceptlisting l2cap channel: conn_handle={}, local cid={}, remote cid={}",
       conn_handle,
       local_cid,
       remote_cid);
@@ -897,7 +897,7 @@ void SnoopLogger::AcceptlistRfcommDlci(uint16_t conn_handle, uint16_t local_cid,
     return;
   }
 
-  LOG_DEBUG("Acceptlisting rfcomm channel: local cid=%d, dlci=%d", local_cid, dlci);
+  log::debug("Acceptlisting rfcomm channel: local cid={}, dlci={}", local_cid, dlci);
   std::lock_guard<std::mutex> lock(filter_tracker_list_mutex);
 
   filter_tracker_list[conn_handle].AddRfcommDlci(dlci);
@@ -910,8 +910,8 @@ void SnoopLogger::AddRfcommL2capChannel(
     return;
   }
 
-  LOG_DEBUG(
-      "Rfcomm data going over l2cap channel: conn_handle=%d local cid=%d remote cid=%d",
+  log::debug(
+      "Rfcomm data going over l2cap channel: conn_handle={} local cid={} remote cid={}",
       conn_handle,
       local_cid,
       remote_cid);
@@ -928,8 +928,8 @@ void SnoopLogger::ClearL2capAcceptlist(
     return;
   }
 
-  LOG_DEBUG(
-      "Clearing acceptlist from l2cap channel. conn_handle=%d local cid=%d remote cid=%d",
+  log::debug(
+      "Clearing acceptlist from l2cap channel. conn_handle={} local cid={} remote cid={}",
       conn_handle,
       local_cid,
       remote_cid);
@@ -979,8 +979,8 @@ void SnoopLogger::AddA2dpMediaChannel(
   }
 
   if (!SnoopLogger::IsA2dpMediaChannel(conn_handle, local_cid, true)) {
-    LOG_INFO(
-        "Add A2DP media channel filtering. conn_handle=%d local cid=%d remote cid=%d",
+    log::info(
+        "Add A2DP media channel filtering. conn_handle={} local cid={} remote cid={}",
         conn_handle,
         local_cid,
         remote_cid);
@@ -1024,9 +1024,9 @@ void SnoopLogger::SetRfcommPortOpen(
         IsFilterEnabled(kBtSnoopLogFilterProfileMapModeProperty));
   }
 
-  LOG_INFO(
-      "RFCOMM port is opened: handle=%d(0x%x),"
-      " lcid=%d(0x%x), dlci=%d(0x%x), uuid=%d(0x%x)%s",
+  log::info(
+      "RFCOMM port is opened: handle={}(0x{:x}), lcid={}(0x{:x}), dlci={}(0x{:x}), "
+      "uuid={}(0x{:x}){}",
       conn_handle,
       conn_handle,
       local_cid,
@@ -1063,9 +1063,8 @@ void SnoopLogger::SetRfcommPortClose(
   std::lock_guard<std::mutex> lock(profiles_filter_mutex);
 
   auto& filters = profiles_filter_table[handle];
-  LOG_INFO(
-      "RFCOMM port is closed: handle=%d(0x%x),"
-      " lcid=%d(0x%x), dlci=%d(0x%x), uuid=%d(0x%x)",
+  log::info(
+      "RFCOMM port is closed: handle={}(0x{:x}), lcid={}(0x{:x}), dlci={}(0x{:x}), uuid={}(0x{:x})",
       handle,
       handle,
       local_cid,
@@ -1095,9 +1094,8 @@ void SnoopLogger::SetL2capChannelOpen(
         IsFilterEnabled(kBtSnoopLogFilterProfileMapModeProperty));
   }
 
-  LOG_INFO(
-      "L2CAP channel is opened: handle=%d(0x%x), lcid=%d(0x%x),"
-      " rcid=%d(0x%x), psm=0x%x%s",
+  log::info(
+      "L2CAP channel is opened: handle={}(0x{:x}), lcid={}(0x{:x}), rcid={}(0x{:x}), psm=0x{:x}{}",
       handle,
       handle,
       local_cid,
@@ -1132,9 +1130,8 @@ void SnoopLogger::SetL2capChannelClose(uint16_t handle, uint16_t local_cid, uint
 
   auto& filters = profiles_filter_table[handle];
 
-  LOG_INFO(
-      "L2CAP channel is closed: handle=%d(0x%x), lcid=%d(0x%x),"
-      " rcid=%d(0x%x)",
+  log::info(
+      "L2CAP channel is closed: handle={}(0x{:x}), lcid={}(0x{:x}), rcid={}(0x{:x})",
       handle,
       handle,
       local_cid,
@@ -1226,10 +1223,10 @@ void SnoopLogger::Capture(HciPacket& packet, Direction direction, PacketType typ
       size_t included_length = get_btsnooz_packet_length_to_write(packet, type, qualcomm_debug_log_enabled_);
       header.length_captured = htonl(included_length + /* type byte */ PACKET_TYPE_LENGTH);
       if (!ss.write(reinterpret_cast<const char*>(&header), sizeof(PacketHeaderType))) {
-        LOG_ERROR("Failed to write packet header for btsnooz, error: \"%s\"", strerror(errno));
+        log::error("Failed to write packet header for btsnooz, error: \"{}\"", strerror(errno));
       }
       if (!ss.write(reinterpret_cast<const char*>(packet.data()), included_length)) {
-        LOG_ERROR("Failed to write packet payload for btsnooz, error: \"%s\"", strerror(errno));
+        log::error("Failed to write packet payload for btsnooz, error: \"{}\"", strerror(errno));
       }
       btsnooz_buffer_.Push(ss.str());
       return;
@@ -1248,10 +1245,10 @@ void SnoopLogger::Capture(HciPacket& packet, Direction direction, PacketType typ
       OpenNextSnoopLogFile();
     }
     if (!btsnoop_ostream_.write(reinterpret_cast<const char*>(&header), sizeof(PacketHeaderType))) {
-      LOG_ERROR("Failed to write packet header for btsnoop, error: \"%s\"", strerror(errno));
+      log::error("Failed to write packet header for btsnoop, error: \"{}\"", strerror(errno));
     }
     if (!btsnoop_ostream_.write(reinterpret_cast<const char*>(packet.data()), length - 1)) {
-      LOG_ERROR("Failed to write packet payload for btsnoop, error: \"%s\"", strerror(errno));
+      log::error("Failed to write packet payload for btsnoop, error: \"{}\"", strerror(errno));
     }
 
     if (socket_ != nullptr) {
@@ -1264,7 +1261,7 @@ void SnoopLogger::Capture(HciPacket& packet, Direction direction, PacketType typ
     // NOTE: std::ofstream::write() followed by std::ofstream::flush() has similar effect as UNIX write(fd, data, len)
     //       as write() syscall dumps data into kernel memory directly
     if (!btsnoop_ostream_.flush()) {
-      LOG_ERROR("Failed to flush, error: \"%s\"", strerror(errno));
+      log::error("Failed to flush, error: \"{}\"", strerror(errno));
     }
   }
 }
@@ -1272,7 +1269,7 @@ void SnoopLogger::Capture(HciPacket& packet, Direction direction, PacketType typ
 void SnoopLogger::DumpSnoozLogToFile(const std::vector<std::string>& data) const {
   std::lock_guard<std::recursive_mutex> lock(file_mutex_);
   if (btsnoop_mode_ != kBtSnoopLogModeDisabled) {
-    LOG_DEBUG("btsnoop log is enabled, skip dumping btsnooz log");
+    log::debug("btsnoop log is enabled, skip dumping btsnooz log");
     return;
   }
 
@@ -1280,34 +1277,36 @@ void SnoopLogger::DumpSnoozLogToFile(const std::vector<std::string>& data) const
 
   if (os::FileExists(snooz_log_path_)) {
     if (!os::RenameFile(snooz_log_path_, last_file_path)) {
-      LOG_ERROR(
-          "Unabled to rename existing snooz log from \"%s\" to \"%s\"",
-          snooz_log_path_.c_str(),
-          last_file_path.c_str());
+      log::error(
+          "Unabled to rename existing snooz log from \"{}\" to \"{}\"",
+          snooz_log_path_,
+          last_file_path);
     }
   } else {
-    LOG_INFO("Previous log file \"%s\" does not exist, skip renaming", snooz_log_path_.c_str());
+    log::info("Previous log file \"{}\" does not exist, skip renaming", snooz_log_path_);
   }
 
   mode_t prevmask = umask(0);
   // do not use std::ios::app as we want override the existing file
   std::ofstream btsnooz_ostream(snooz_log_path_, std::ios::binary | std::ios::out);
   if (!btsnooz_ostream.good()) {
-    LOG_ALWAYS_FATAL("Unable to open snoop log at \"%s\", error: \"%s\"", snooz_log_path_.c_str(), strerror(errno));
+    log::fatal(
+        "Unable to open snoop log at \"{}\", error: \"{}\"", snooz_log_path_, strerror(errno));
   }
   umask(prevmask);
   if (!btsnooz_ostream.write(
           reinterpret_cast<const char*>(&SnoopLoggerCommon::kBtSnoopFileHeader),
           sizeof(SnoopLoggerCommon::FileHeaderType))) {
-    LOG_ALWAYS_FATAL("Unable to write file header to \"%s\", error: \"%s\"", snooz_log_path_.c_str(), strerror(errno));
+    log::fatal(
+        "Unable to write file header to \"{}\", error: \"{}\"", snooz_log_path_, strerror(errno));
   }
   for (const auto& packet : data) {
     if (!btsnooz_ostream.write(packet.data(), packet.size())) {
-      LOG_ERROR("Failed to write packet payload for btsnooz, error: \"%s\"", strerror(errno));
+      log::error("Failed to write packet payload for btsnooz, error: \"{}\"", strerror(errno));
     }
   }
   if (!btsnooz_ostream.flush()) {
-    LOG_ERROR("Failed to flush, error: \"%s\"", strerror(errno));
+    log::error("Failed to flush, error: \"{}\"", strerror(errno));
   }
 }
 
@@ -1344,7 +1343,7 @@ void SnoopLogger::Start() {
 
 void SnoopLogger::Stop() {
   std::lock_guard<std::recursive_mutex> lock(file_mutex_);
-  LOG_DEBUG("Closing btsnoop log data at %s", snoop_log_path_.c_str());
+  log::debug("Closing btsnoop log data at {}", snoop_log_path_);
   CloseCurrentSnoopLogFile();
 
   if (snoop_logger_socket_thread_ != nullptr) {
@@ -1369,7 +1368,7 @@ void SnoopLogger::Stop() {
 
 DumpsysDataFinisher SnoopLogger::GetDumpsysData(
     flatbuffers::FlatBufferBuilder* /* builder */) const {
-  LOG_DEBUG("Dumping btsnooz log data to %s", snooz_log_path_.c_str());
+  log::debug("Dumping btsnooz log data to {}", snooz_log_path_);
   DumpSnoozLogToFile(btsnooz_buffer_.Pull());
   return EmptyDumpsysDataFinisher;
 }
@@ -1426,7 +1425,7 @@ std::string SnoopLogger::GetBtSnoopMode() {
 
   // If Snoop Logger already set up, return current mode
   bool btsnoop_mode_empty = btsnoop_mode_.empty();
-  LOG_INFO("btsnoop_mode_empty: %d", btsnoop_mode_empty);
+  log::info("btsnoop_mode_empty: {}", btsnoop_mode_empty);
   if (!btsnoop_mode_empty) {
     return btsnoop_mode_;
   }

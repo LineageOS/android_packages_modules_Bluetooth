@@ -16,6 +16,8 @@
 
 #include "storage/storage_module.h"
 
+#include <bluetooth/log.h>
+
 #include <chrono>
 #include <ctime>
 #include <iomanip>
@@ -127,7 +129,7 @@ void StorageModule::SaveImmediately() {
     ASSERT(os::RenameFile(config_file_path_, config_backup_path_));
 #else
     if (!os::RenameFile(config_file_path_, config_backup_path_)) {
-      LOG_ERROR("Unable to rename old config to back up name");
+      log::error("Unable to rename old config to back up name");
     }
 #endif
   }
@@ -136,12 +138,12 @@ void StorageModule::SaveImmediately() {
   ASSERT(LegacyConfigFile::FromPath(config_file_path_).Write(pimpl_->cache_));
 #else
   if (!LegacyConfigFile::FromPath(config_file_path_).Write(pimpl_->cache_)) {
-    LOG_ERROR("Unable to write config file to disk");
+    log::error("Unable to write config file to disk");
   }
 #endif
   // 3. now write back up to disk as well
   if (!LegacyConfigFile::FromPath(config_backup_path_).Write(pimpl_->cache_)) {
-    LOG_ERROR("Unable to write backup config file");
+    log::error("Unable to write backup config file");
   }
   // 4. save checksum if it is running in common criteria mode
   if (bluetooth::os::ParameterProvider::GetBtKeystoreInterface() != nullptr &&
@@ -164,7 +166,7 @@ void StorageModule::Start() {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   std::string file_source;
   if (os::GetSystemProperty(kFactoryResetProperty) == "true") {
-    LOG_INFO("%s is true, delete config files", kFactoryResetProperty.c_str());
+    log::info("{} is true, delete config files", kFactoryResetProperty);
     LegacyConfigFile::FromPath(config_file_path_).Delete();
     LegacyConfigFile::FromPath(config_backup_path_).Delete();
     os::SetSystemProperty(kFactoryResetProperty, "false");
@@ -178,14 +180,15 @@ void StorageModule::Start() {
   bool save_needed = false;
   auto config = LegacyConfigFile::FromPath(config_file_path_).Read(temp_devices_capacity_);
   if (!config || !config->HasSection(kAdapterSection)) {
-    LOG_WARN("cannot load config at %s, using backup at %s.", config_file_path_.c_str(), config_backup_path_.c_str());
+    log::warn(
+        "cannot load config at {}, using backup at {}.", config_file_path_, config_backup_path_);
     config = LegacyConfigFile::FromPath(config_backup_path_).Read(temp_devices_capacity_);
     file_source = "Backup";
     // Make sure to update the file, since it wasn't read from the config_file_path_
     save_needed = true;
   }
   if (!config || !config->HasSection(kAdapterSection)) {
-    LOG_WARN("cannot load backup config at %s; creating new empty ones", config_backup_path_.c_str());
+    log::warn("cannot load backup config at {}; creating new empty ones", config_backup_path_);
     config.emplace(temp_devices_capacity_, Device::kLinkKeyProperties);
     file_source = "Empty";
   }

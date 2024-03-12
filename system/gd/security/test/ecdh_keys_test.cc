@@ -16,16 +16,18 @@
  *
  ******************************************************************************/
 
+#include "security/ecdh_keys.h"
+
+#include <base/strings/string_number_conversions.h>
+#include <bluetooth/log.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <memory>
 
-#include <base/strings/string_number_conversions.h>
 #include "hci/le_security_interface.h"
 #include "os/log.h"
 #include "security/ecc/p_256_ecc_pp.h"
-#include "security/ecdh_keys.h"
 #include "security/test/mocks.h"
 
 using namespace std::chrono_literals;
@@ -55,16 +57,20 @@ TEST_F(EcdhKeysTest, test_generated) {
   EXPECT_EQ(dhkeya, dhkeyb);
 
   if (dhkeya != dhkeyb) {
-    LOG_ERROR("private key a : %s", base::HexEncode(private_key_a.data(), private_key_a.size()).c_str());
-    LOG_ERROR("public key a.x : %s", base::HexEncode(public_key_a.x.data(), public_key_a.x.size()).c_str());
-    LOG_ERROR("public key a.y : %s", base::HexEncode(public_key_a.y.data(), public_key_a.y.size()).c_str());
+    log::error("private key a : {}", base::HexEncode(private_key_a.data(), private_key_a.size()));
+    log::error(
+        "public key a.x : {}", base::HexEncode(public_key_a.x.data(), public_key_a.x.size()));
+    log::error(
+        "public key a.y : {}", base::HexEncode(public_key_a.y.data(), public_key_a.y.size()));
 
-    LOG_ERROR("private key b : %s", base::HexEncode(private_key_b.data(), private_key_b.size()).c_str());
-    LOG_ERROR("public key b.x : %s", base::HexEncode(public_key_b.x.data(), public_key_b.x.size()).c_str());
-    LOG_ERROR("public key b.y : %s", base::HexEncode(public_key_b.y.data(), public_key_b.y.size()).c_str());
+    log::error("private key b : {}", base::HexEncode(private_key_b.data(), private_key_b.size()));
+    log::error(
+        "public key b.x : {}", base::HexEncode(public_key_b.x.data(), public_key_b.x.size()));
+    log::error(
+        "public key b.y : {}", base::HexEncode(public_key_b.y.data(), public_key_b.y.size()));
 
-    LOG_ERROR("dhkeya : %s", base::HexEncode(dhkeya.data(), dhkeya.size()).c_str());
-    LOG_ERROR("dhkeyb : %s", base::HexEncode(dhkeyb.data(), dhkeyb.size()).c_str());
+    log::error("dhkeya : {}", base::HexEncode(dhkeya.data(), dhkeya.size()));
+    log::error("dhkeyb : {}", base::HexEncode(dhkeyb.data(), dhkeyb.size()));
   }
 }
 

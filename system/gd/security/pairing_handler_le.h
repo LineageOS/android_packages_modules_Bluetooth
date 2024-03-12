@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <bluetooth/log.h>
+
 #include <array>
 #include <chrono>
 #include <condition_variable>
@@ -353,19 +355,19 @@ class PairingHandlerLe {
     if (e.type == PairingEvent::L2CAP) {
       auto l2cap_packet = e.l2cap_packet.value();
       if (!l2cap_packet.IsValid()) {
-        LOG_WARN("Malformed L2CAP packet received!");
+        log::warn("Malformed L2CAP packet received!");
         return std::nullopt;
       }
 
       const auto& received_code = l2cap_packet.GetCode();
       if (received_code != Code::PAIRING_CONFIRM) {
-        LOG_WARN("Was waiting for passkey, received bad packet instead!");
+        log::warn("Was waiting for passkey, received bad packet instead!");
         return std::nullopt;
       }
 
       auto pkt = PairingConfirmView::Create(l2cap_packet);
       if (!pkt.IsValid()) {
-        LOG_WARN("Malformed PAIRING_CONFIRM packet");
+        log::warn("Malformed PAIRING_CONFIRM packet");
         return std::nullopt;
       }
 

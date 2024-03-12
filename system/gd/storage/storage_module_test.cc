@@ -16,6 +16,7 @@
 
 #include "storage/storage_module.h"
 
+#include <bluetooth/log.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -246,7 +247,7 @@ TEST_F(StorageModuleTest, save_config_test) {
   // Remove a property
   storage->RemovePropertyPublic("01:02:03:ab:cd:ea", BTIF_STORAGE_KEY_NAME);
   ASSERT_TRUE(WaitForReactorIdle(kTestConfigSaveDelay));
-  LOG_INFO("After waiting 2");
+  bluetooth::log::info("After waiting 2");
   config = LegacyConfigFile::FromPath(temp_config_.string()).Read(kTestTempDevicesCapacity);
   ASSERT_TRUE(config);
   ASSERT_FALSE(config->HasProperty("01:02:03:ab:cd:ea", BTIF_STORAGE_KEY_NAME));
@@ -254,7 +255,7 @@ TEST_F(StorageModuleTest, save_config_test) {
   // Remove a section
   storage->RemoveSectionPublic("01:02:03:ab:cd:ea");
   ASSERT_TRUE(WaitForReactorIdle(kTestConfigSaveDelay));
-  LOG_INFO("After waiting 3");
+  bluetooth::log::info("After waiting 3");
   config = LegacyConfigFile::FromPath(temp_config_.string()).Read(kTestTempDevicesCapacity);
   ASSERT_TRUE(config);
   ASSERT_FALSE(config->HasSection("01:02:03:ab:cd:ea"));

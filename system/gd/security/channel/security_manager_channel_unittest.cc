@@ -17,6 +17,7 @@
  */
 #include "security/channel/security_manager_channel.h"
 
+#include <bluetooth/log.h>
 #include <gtest/gtest.h>
 
 #include "hci/address.h"
@@ -209,7 +210,7 @@ class SecurityManagerChannelCallback : public ISecurityManagerChannelListener {
   }
 
   void OnConnectionClosed(hci::Address address) override {
-    LOG_INFO("Called");
+    log::info("Called");
   }
 };
 

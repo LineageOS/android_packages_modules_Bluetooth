@@ -16,6 +16,8 @@
 
 #include "l2cap/le/internal/link.h"
 
+#include <bluetooth/log.h>
+
 #include <chrono>
 #include <memory>
 
@@ -78,13 +80,18 @@ void Link::OnConnectionUpdate(
     uint16_t connection_interval,
     uint16_t connection_latency,
     uint16_t supervision_timeout) {
-  LOG_INFO(
-      "interval %hx latency %hx supervision_timeout %hx", connection_interval, connection_latency, supervision_timeout);
+  log::info(
+      "interval {:x} latency {:x} supervision_timeout {:x}",
+      connection_interval,
+      connection_latency,
+      supervision_timeout);
   if (update_request_signal_id_ != kInvalidSignalId) {
     hci::ErrorCode result = hci::ErrorCode::SUCCESS;
     if (connection_interval > update_request_interval_max_ || connection_interval < update_request_interval_min_ ||
         connection_latency != update_request_latency_ || supervision_timeout != update_request_supervision_timeout_) {
-      LOG_INFO("Received connection update complete with different parameters that provided by the Host");
+      log::info(
+          "Received connection update complete with different parameters that provided by the "
+          "Host");
     }
 
     if (!CheckConnectionParameters(connection_interval, connection_interval, connection_latency, supervision_timeout)) {
@@ -97,12 +104,21 @@ void Link::OnConnectionUpdate(
 }
 
 void Link::OnDataLengthChange(uint16_t tx_octets, uint16_t tx_time, uint16_t rx_octets, uint16_t rx_time) {
-  LOG_INFO("tx_octets %hx tx_time %hx rx_octets %hx rx_time %hx", tx_octets, tx_time, rx_octets, rx_time);
+  log::info(
+      "tx_octets {:x} tx_time {:x} rx_octets {:x} rx_time {:x}",
+      tx_octets,
+      tx_time,
+      rx_octets,
+      rx_time);
 }
 
 void Link::OnReadRemoteVersionInformationComplete(
     hci::ErrorCode hci_status, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) {
-  LOG_INFO("lmp_version:%hhu manufacturer_name:%hu sub_version:%hu", lmp_version, manufacturer_name, sub_version);
+  log::info(
+      "lmp_version:{} manufacturer_name:{} sub_version:{}",
+      lmp_version,
+      manufacturer_name,
+      sub_version);
   link_manager_->OnReadRemoteVersionInformationComplete(
       hci_status, GetDevice(), lmp_version, manufacturer_name, sub_version);
 }
@@ -119,10 +135,10 @@ void Link::OnLeSubrateChange(
     uint16_t peripheral_latency,
     uint16_t continuation_number,
     uint16_t supervision_timeout) {
-  LOG_INFO(
-      "hci_status: %s, subrate_factor: %#hx, peripheral_latency: %#hx, continuation_number: %#hx, "
-      "supervision_timeout: %#hx",
-      ErrorCodeText(hci_status).c_str(),
+  log::info(
+      "hci_status: {}, subrate_factor: {:#x}, peripheral_latency: {:#x}, continuation_number: "
+      "{:#x}, supervision_timeout: {:#x}",
+      ErrorCodeText(hci_status),
       subrate_factor,
       peripheral_latency,
       continuation_number,
@@ -150,7 +166,7 @@ bool Link::CheckConnectionParameters(
   if (conn_interval_min < 0x0006 || conn_interval_min > 0x0C80 || conn_interval_max < 0x0006 ||
       conn_interval_max > 0x0C80 || conn_latency > 0x01F3 || supervision_timeout < 0x000A ||
       supervision_timeout > 0x0C80) {
-    LOG_ERROR("Invalid parameter");
+    log::error("Invalid parameter");
     return false;
   }
 
@@ -160,7 +176,7 @@ bool Link::CheckConnectionParameters(
   // milliseconds.
   uint32_t supervision_timeout_min = (uint32_t)(1 + conn_latency) * conn_interval_max * 2 + 1;
   if (supervision_timeout * 8 < supervision_timeout_min || conn_interval_max < conn_interval_min) {
-    LOG_ERROR("Invalid parameter");
+    log::error("Invalid parameter");
     return false;
   }
 
@@ -197,7 +213,7 @@ Cid Link::ReserveDynamicChannel() {
 
 void Link::SendConnectionRequest(Psm psm, PendingDynamicChannelConnection pending_dynamic_channel_connection) {
   if (dynamic_channel_allocator_.IsPsmUsed(psm)) {
-    LOG_INFO("Psm %d is already connected", psm);
+    log::info("Psm {} is already connected", psm);
     return;
   }
   auto reserved_cid = ReserveDynamicChannel();
@@ -209,7 +225,7 @@ void Link::SendConnectionRequest(Psm psm, PendingDynamicChannelConnection pendin
 void Link::SendDisconnectionRequest(Cid local_cid, Cid remote_cid) {
   auto channel = dynamic_channel_allocator_.FindChannelByCid(local_cid);
   if (channel == nullptr || channel->GetRemoteCid() != remote_cid) {
-    LOG_ERROR("Invalid cid");
+    log::error("Invalid cid");
   }
   signalling_manager_.SendDisconnectRequest(local_cid, remote_cid);
 }
@@ -311,7 +327,7 @@ void Link::ReadRemoteVersionInformation() {
 
 void Link::on_connection_update_complete(SignalId signal_id, hci::ErrorCode error_code) {
   if (!signal_id.IsValid()) {
-    LOG_INFO("Invalid signal_id");
+    log::info("Invalid signal_id");
     return;
   }
   ConnectionParameterUpdateResponseResult result = (error_code == hci::ErrorCode::SUCCESS)

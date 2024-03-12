@@ -16,6 +16,8 @@
 
 #include "l2cap/classic/facade.h"
 
+#include <bluetooth/log.h>
+
 #include <condition_variable>
 #include <cstdint>
 #include <unordered_map>
@@ -186,7 +188,7 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
     ASSERT(hci::Address::FromString(request->address(), peer));
     auto entry = security_link_map_.find(peer);
     if (entry == security_link_map_.end()) {
-      LOG_WARN("Unknown address '%s'", ADDRESS_TO_LOGGABLE_CSTR(peer));
+      log::warn("Unknown address '{}'", ADDRESS_TO_LOGGABLE_CSTR(peer));
     } else {
       entry->second->Hold();
     }
@@ -201,7 +203,7 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
     ASSERT(hci::Address::FromString(request->address(), peer));
     auto entry = security_link_map_.find(peer);
     if (entry == security_link_map_.end()) {
-      LOG_WARN("Unknown address '%s'", ADDRESS_TO_LOGGABLE_CSTR(peer));
+      log::warn("Unknown address '{}'", ADDRESS_TO_LOGGABLE_CSTR(peer));
     } else {
       entry->second->EnsureAuthenticated();
     }
@@ -217,7 +219,7 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
     outgoing_pairing_remote_devices_.erase(peer);
     auto entry = security_link_map_.find(peer);
     if (entry == security_link_map_.end()) {
-      LOG_WARN("Unknown address '%s'", ADDRESS_TO_LOGGABLE_CSTR(peer));
+      log::warn("Unknown address '{}'", ADDRESS_TO_LOGGABLE_CSTR(peer));
     } else {
       entry->second->Release();
     }
@@ -233,7 +235,7 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
     outgoing_pairing_remote_devices_.erase(peer);
     auto entry = security_link_map_.find(peer);
     if (entry == security_link_map_.end()) {
-      LOG_WARN("Unknown address '%s'", ADDRESS_TO_LOGGABLE_CSTR(peer));
+      log::warn("Unknown address '{}'", ADDRESS_TO_LOGGABLE_CSTR(peer));
     } else {
       entry->second->Disconnect();
     }
@@ -255,7 +257,7 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
   void OnLinkDisconnected(hci::Address remote) override {
     auto entry = security_link_map_.find(remote);
     if (entry == security_link_map_.end()) {
-      LOG_WARN("Unknown address '%s'", ADDRESS_TO_LOGGABLE_CSTR(remote));
+      log::warn("Unknown address '{}'", ADDRESS_TO_LOGGABLE_CSTR(remote));
       return;
     }
     entry->second.reset();
@@ -315,7 +317,7 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
           handler_->BindOnceOn(this, &L2capDynamicChannelHelper::on_connect_fail));
       std::unique_lock<std::mutex> lock(channel_open_cv_mutex_);
       if (!channel_open_cv_.wait_for(lock, std::chrono::seconds(2), [this] { return channel_ != nullptr; })) {
-        LOG_WARN("Channel is not open for psm %d", psm_);
+        log::warn("Channel is not open for psm {}", psm_);
       }
     }
 
@@ -323,7 +325,7 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
       if (channel_ == nullptr) {
         std::unique_lock<std::mutex> lock(channel_open_cv_mutex_);
         if (!channel_open_cv_.wait_for(lock, std::chrono::seconds(2), [this] { return channel_ != nullptr; })) {
-          LOG_WARN("Channel is not open for psm %d", psm_);
+          log::warn("Channel is not open for psm {}", psm_);
           return;
         }
       }
@@ -397,7 +399,7 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
       if (channel_ == nullptr) {
         std::unique_lock<std::mutex> lock(channel_open_cv_mutex_);
         if (!channel_open_cv_.wait_for(lock, std::chrono::seconds(2), [this] { return channel_ != nullptr; })) {
-          LOG_WARN("Channel is not open");
+          log::warn("Channel is not open");
           return false;
         }
       }

@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
+#include "l2cap/internal/dynamic_channel_allocator.h"
+
+#include <bluetooth/log.h>
+
 #include <unordered_map>
 
 #include "l2cap/cid.h"
 #include "l2cap/classic/internal/link.h"
 #include "l2cap/classic/security_policy.h"
-#include "l2cap/internal/dynamic_channel_allocator.h"
 #include "l2cap/internal/dynamic_channel_impl.h"
 #include "os/log.h"
 
@@ -29,7 +32,7 @@ namespace internal {
 
 std::shared_ptr<DynamicChannelImpl> DynamicChannelAllocator::AllocateChannel(Psm psm, Cid remote_cid) {
   if (used_remote_cid_.find(remote_cid) != used_remote_cid_.end()) {
-    LOG_INFO("Remote cid 0x%x is used", remote_cid);
+    log::info("Remote cid 0x{:x} is used", remote_cid);
     return nullptr;
   }
   Cid cid = kFirstDynamicChannel;
@@ -37,7 +40,7 @@ std::shared_ptr<DynamicChannelImpl> DynamicChannelAllocator::AllocateChannel(Psm
     if (used_cid_.find(cid) == used_cid_.end()) break;
   }
   if (cid > kLastDynamicChannel) {
-    LOG_WARN("All cid are used");
+    log::warn("All cid are used");
     return nullptr;
   }
   auto elem =
@@ -56,7 +59,7 @@ std::shared_ptr<DynamicChannelImpl> DynamicChannelAllocator::AllocateChannel(Psm
 std::shared_ptr<DynamicChannelImpl> DynamicChannelAllocator::AllocateReservedChannel(Cid reserved_cid, Psm psm,
                                                                                      Cid remote_cid) {
   if (used_remote_cid_.find(remote_cid) != used_remote_cid_.end()) {
-    LOG_INFO("Remote cid 0x%x is used", remote_cid);
+    log::info("Remote cid 0x{:x} is used", remote_cid);
     return nullptr;
   }
   auto elem = channels_.try_emplace(
@@ -77,7 +80,7 @@ Cid DynamicChannelAllocator::ReserveChannel() {
     if (used_cid_.find(cid) == used_cid_.end()) break;
   }
   if (cid > kLastDynamicChannel) {
-    LOG_WARN("All cid are used");
+    log::warn("All cid are used");
     return kInvalidCid;
   }
   used_cid_.insert(cid);
@@ -88,8 +91,10 @@ void DynamicChannelAllocator::FreeChannel(Cid cid) {
   used_cid_.erase(cid);
   auto channel = FindChannelByCid(cid);
   if (channel == nullptr) {
-    LOG_INFO("Channel is not in use: cid %d, device %s", cid,
-             ADDRESS_TO_LOGGABLE_CSTR(link_->GetDevice()));
+    log::info(
+        "Channel is not in use: cid {}, device {}",
+        cid,
+        ADDRESS_TO_LOGGABLE_CSTR(link_->GetDevice()));
     return;
   }
   used_remote_cid_.erase(channel->GetRemoteCid());
@@ -107,7 +112,7 @@ bool DynamicChannelAllocator::IsPsmUsed(Psm psm) const {
 
 std::shared_ptr<DynamicChannelImpl> DynamicChannelAllocator::FindChannelByCid(Cid cid) {
   if (channels_.find(cid) == channels_.end()) {
-    LOG_WARN("Can't find cid %d", cid);
+    log::warn("Can't find cid {}", cid);
     return nullptr;
   }
   return channels_.find(cid)->second;

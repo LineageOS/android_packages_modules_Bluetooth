@@ -17,6 +17,7 @@
  ******************************************************************************/
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include "crypto_toolbox/crypto_toolbox.h"
 #include "hci/octets.h"
@@ -36,23 +37,23 @@ std::variant<PairingFailure, KeyExchangeResult> PairingHandlerLe::ExchangePublic
                                              ? GenerateECDHKeyPair()
                                              : std::make_pair(i.my_oob_data->private_key, i.my_oob_data->public_key);
 
-  LOG_INFO("Public key exchange start");
+  log::info("Public key exchange start");
   std::unique_ptr<PairingPublicKeyBuilder> myPublicKey = PairingPublicKeyBuilder::Create(public_key.x, public_key.y);
 
   if (!ValidateECDHPoint(public_key)) {
-    LOG_ERROR("Can't validate my own public key!!!");
+    log::error("Can't validate my own public key!!!");
     return PairingFailure("Can't validate my own public key");
   }
 
   if (IAmCentral(i)) {
     // Send pairing public key
-    LOG_INFO("Central sends out public key");
+    log::info("Central sends out public key");
     SendL2capPacket(i, std::move(myPublicKey));
   }
 
-  LOG_INFO(" Waiting for Public key...");
+  log::info("Waiting for Public key...");
   auto response = WaitPairingPublicKey();
-  LOG_INFO(" Received public key");
+  log::info("Received public key");
   if (std::holds_alternative<PairingFailure>(response)) {
     return std::get<PairingFailure>(response);
   }
@@ -61,10 +62,10 @@ std::variant<PairingFailure, KeyExchangeResult> PairingHandlerLe::ExchangePublic
   auto ppkv = std::get<PairingPublicKeyView>(response);
   remote_public_key.x = ppkv.GetPublicKeyX();
   remote_public_key.y = ppkv.GetPublicKeyY();
-  LOG_INFO("Received Public key from remote");
+  log::info("Received Public key from remote");
 
   if (public_key.x == remote_public_key.x) {
-    LOG_INFO("Remote and local public keys can't match");
+    log::info("Remote and local public keys can't match");
     return PairingFailure("Remote and local public keys match");
   }
 
@@ -74,17 +75,17 @@ std::variant<PairingFailure, KeyExchangeResult> PairingHandlerLe::ExchangePublic
     // the correct curve: A device that detects an invalid public key from
     // the peer at any point during the LE Secure Connections pairing
     // process shall not use the resulting LTK, if any.
-    LOG_INFO("Can't validate remote public key");
+    log::info("Can't validate remote public key");
     return PairingFailure("Can't validate remote public key");
   }
 
   if (!IAmCentral(i)) {
-    LOG_INFO("Peripheral sends out public key");
+    log::info("Peripheral sends out public key");
     // Send pairing public key
     SendL2capPacket(i, std::move(myPublicKey));
   }
 
-  LOG_INFO("Public key exchange finish");
+  log::info("Public key exchange finish");
 
   std::array<uint8_t, 32> dhkey = ComputeDHKey(private_key, remote_public_key);
 
@@ -141,7 +142,7 @@ Stage2ResultOrFailure PairingHandlerLe::DoSecureConnectionsStage2(
     const PairingResponseView& pairing_response,
     const Stage1Result stage1result,
     const std::array<uint8_t, 32>& dhkey) {
-  LOG_INFO("Authentication stage 2 started");
+  log::info("Authentication stage 2 started");
 
   auto [Na, Nb, ra, rb] = stage1result;
 
@@ -171,16 +172,16 @@ Stage2ResultOrFailure PairingHandlerLe::DoSecureConnectionsStage2(
   std::array<uint8_t, 3> iocapB{static_cast<uint8_t>(pairing_response.GetIoCapability()),
                                 static_cast<uint8_t>(pairing_response.GetOobDataFlag()), pairing_response.GetAuthReq()};
 
-  // LOG(INFO) << +(IAmCentral(i)) << " LTK = " << base::HexEncode(ltk.data(), ltk.size());
-  // LOG(INFO) << +(IAmCentral(i)) << " MAC_KEY = " << base::HexEncode(mac_key.data(), mac_key.size());
-  // LOG(INFO) << +(IAmCentral(i)) << " Na = " << base::HexEncode(Na.data(), Na.size());
-  // LOG(INFO) << +(IAmCentral(i)) << " Nb = " << base::HexEncode(Nb.data(), Nb.size());
-  // LOG(INFO) << +(IAmCentral(i)) << " ra = " << base::HexEncode(ra.data(), ra.size());
-  // LOG(INFO) << +(IAmCentral(i)) << " rb = " << base::HexEncode(rb.data(), rb.size());
-  // LOG(INFO) << +(IAmCentral(i)) << " iocapA = " << base::HexEncode(iocapA.data(), iocapA.size());
-  // LOG(INFO) << +(IAmCentral(i)) << " iocapB = " << base::HexEncode(iocapB.data(), iocapB.size());
-  // LOG(INFO) << +(IAmCentral(i)) << " a = " << base::HexEncode(a, 7);
-  // LOG(INFO) << +(IAmCentral(i)) << " b = " << base::HexEncode(b, 7);
+  // log::info("{} LTK = {}", (IAmCentral(i)), base::HexEncode(ltk.data(), ltk.size()));
+  // log::info("{} MAC_KEY = {}", (IAmCentral(i)), base::HexEncode(mac_key.data(), mac_key.size()));
+  // log::info("{} Na = {}", (IAmCentral(i)), base::HexEncode(Na.data(), Na.size()));
+  // log::info("{} Nb = {}", (IAmCentral(i)), base::HexEncode(Nb.data(), Nb.size()));
+  // log::info("{} ra = {}", (IAmCentral(i)), base::HexEncode(ra.data(), ra.size()));
+  // log::info("{} rb = {}", (IAmCentral(i)), base::HexEncode(rb.data(), rb.size()));
+  // log::info("{} iocapA = {}", (IAmCentral(i)), base::HexEncode(iocapA.data(), iocapA.size()));
+  // log::info("{} iocapB = {}", (IAmCentral(i)), base::HexEncode(iocapB.data(), iocapB.size()));
+  // log::info("{} a = {}", (IAmCentral(i)), base::HexEncode(a, 7));
+  // log::info("{} b = {}", (IAmCentral(i)), base::HexEncode(b, 7));
 
   Octet16 Ea = crypto_toolbox::f6(mac_key, Na, Nb, rb, iocapA.data(), a, b);
 
@@ -196,7 +197,7 @@ Stage2ResultOrFailure PairingHandlerLe::DoSecureConnectionsStage2(
     }
 
     if (std::get<PairingDhKeyCheckView>(response).GetDhKeyCheck() != Eb) {
-      LOG_INFO("Ea != Eb, aborting!");
+      log::info("Ea != Eb, aborting!");
       SendL2capPacket(i, PairingFailedBuilder::Create(PairingFailedReason::DHKEY_CHECK_FAILED));
       return PairingFailure("Ea != Eb");
     }
@@ -207,7 +208,7 @@ Stage2ResultOrFailure PairingHandlerLe::DoSecureConnectionsStage2(
     }
 
     if (std::get<PairingDhKeyCheckView>(response).GetDhKeyCheck() != Ea) {
-      LOG_INFO("Ea != Eb, aborting!");
+      log::info("Ea != Eb, aborting!");
       SendL2capPacket(i, PairingFailedBuilder::Create(PairingFailedReason::DHKEY_CHECK_FAILED));
       return PairingFailure("Ea != Eb");
     }
@@ -216,7 +217,7 @@ Stage2ResultOrFailure PairingHandlerLe::DoSecureConnectionsStage2(
     SendL2capPacket(i, PairingDhKeyCheckBuilder::Create(Eb));
   }
 
-  LOG_INFO("Authentication stage 2 (DHKey checks) finished");
+  log::info("Authentication stage 2 (DHKey checks) finished");
   return ltk;
 }
 
@@ -224,7 +225,7 @@ Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsOutOfBand(const Initial
                                                                    const EcdhPublicKey& Pka, const EcdhPublicKey& Pkb,
                                                                    OobDataFlag my_oob_flag,
                                                                    OobDataFlag remote_oob_flag) {
-  LOG_INFO("Out Of Band start");
+  log::info("Out Of Band start");
 
   Octet16 zeros{0};
   Octet16 localR = (remote_oob_flag == OobDataFlag::PRESENT && i.my_oob_data) ? i.my_oob_data->r : zeros;
@@ -246,7 +247,7 @@ Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsOutOfBand(const Initial
     }
 
     if (remoteC2 != remoteC) {
-      LOG_ERROR("C_computed != C_from_remote, aborting!");
+      log::error("C_computed != C_from_remote, aborting!");
       return PairingFailure("C_computed != C_from_remote, aborting");
     }
   }
@@ -259,7 +260,7 @@ Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsOutOfBand(const Initial
     // Send Pairing Random
     SendL2capPacket(i, PairingRandomBuilder::Create(Na));
 
-    LOG_INFO("Central waits for Nb");
+    log::info("Central waits for Nb");
     auto random = WaitPairingRandom();
     if (std::holds_alternative<PairingFailure>(random)) {
       return std::get<PairingFailure>(random);
@@ -270,7 +271,7 @@ Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsOutOfBand(const Initial
     rb = localR;
     Nb = GenerateRandom<16>();
 
-    LOG_INFO("Peripheral waits for random");
+    log::info("Peripheral waits for random");
     auto random = WaitPairingRandom();
     if (std::holds_alternative<PairingFailure>(random)) {
       return std::get<PairingFailure>(random);
@@ -287,7 +288,7 @@ Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsPasskeyEntry(const Init
                                                                       const EcdhPublicKey& PKa,
                                                                       const EcdhPublicKey& PKb, IoCapability my_iocaps,
                                                                       IoCapability remote_iocaps) {
-  LOG_INFO("Passkey Entry start");
+  log::info("Passkey Entry start");
   Octet16 Na, Nb, ra{0}, rb{0};
 
   uint32_t passkey;
@@ -315,13 +316,13 @@ Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsPasskeyEntry(const Init
      * have impact on the SMP timeout*/
 
   } else {
-    LOG(FATAL) << "THIS SHOULD NEVER HAPPEN";
+    log::fatal("THIS SHOULD NEVER HAPPEN");
     return PairingFailure("FATAL!");
   }
 
   uint32_t bitmask = 0x01;
   for (int loop = 0; loop < 20; loop++, bitmask <<= 1) {
-    LOG_INFO("Iteration no %d", loop);
+    log::info("Iteration no {}", loop);
     bool bit_set = ((bitmask & passkey) != 0);
     uint8_t ri = bit_set ? 0x81 : 0x80;
 
@@ -332,10 +333,10 @@ Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsPasskeyEntry(const Init
       Cai = crypto_toolbox::f4((uint8_t*)PKa.x.data(), (uint8_t*)PKb.x.data(), Nai, ri);
 
       // Send Pairing Confirm
-      LOG_INFO("Central sends Cai");
+      log::info("Central sends Cai");
       SendL2capPacket(i, PairingConfirmBuilder::Create(Cai));
 
-      LOG_INFO("Central waits for the Cbi");
+      log::info("Central waits for the Cbi");
       auto confirm = WaitPairingConfirm();
       if (std::holds_alternative<PairingFailure>(confirm)) {
         return std::get<PairingFailure>(confirm);
@@ -345,7 +346,7 @@ Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsPasskeyEntry(const Init
       // Send Pairing Random
       SendL2capPacket(i, PairingRandomBuilder::Create(Nai));
 
-      LOG_INFO("Central waits for Nbi");
+      log::info("Central waits for Nbi");
       auto random = WaitPairingRandom();
       if (std::holds_alternative<PairingFailure>(random)) {
         return std::get<PairingFailure>(random);
@@ -354,7 +355,7 @@ Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsPasskeyEntry(const Init
 
       Octet16 Cbi2 = crypto_toolbox::f4((uint8_t*)PKb.x.data(), (uint8_t*)PKa.x.data(), Nbi, ri);
       if (Cbi != Cbi2) {
-        LOG_INFO("Cai != Cbi, aborting!");
+        log::info("Cai != Cbi, aborting!");
         SendL2capPacket(i, PairingFailedBuilder::Create(PairingFailedReason::CONFIRM_VALUE_FAILED));
         return PairingFailure("Cai != Cbi");
       }
@@ -363,7 +364,7 @@ Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsPasskeyEntry(const Init
       // Compute confirm
       Cbi = crypto_toolbox::f4((uint8_t*)PKb.x.data(), (uint8_t*)PKa.x.data(), Nbi, ri);
 
-      LOG_INFO("Peripheral waits for the Cai");
+      log::info("Peripheral waits for the Cai");
       auto confirm = WaitPairingConfirm();
       if (std::holds_alternative<PairingFailure>(confirm)) {
         return std::get<PairingFailure>(confirm);
@@ -371,10 +372,10 @@ Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsPasskeyEntry(const Init
       Cai = std::get<PairingConfirmView>(confirm).GetConfirmValue();
 
       // Send Pairing Confirm
-      LOG_INFO("Peripheral sends confirmation");
+      log::info("Peripheral sends confirmation");
       SendL2capPacket(i, PairingConfirmBuilder::Create(Cbi));
 
-      LOG_INFO("Peripheral waits for random");
+      log::info("Peripheral waits for random");
       auto random = WaitPairingRandom();
       if (std::holds_alternative<PairingFailure>(random)) {
         return std::get<PairingFailure>(random);
@@ -383,7 +384,7 @@ Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsPasskeyEntry(const Init
 
       Octet16 Cai2 = crypto_toolbox::f4((uint8_t*)PKa.x.data(), (uint8_t*)PKb.x.data(), Nai, ri);
       if (Cai != Cai2) {
-        LOG_INFO("Cai != Cai2, aborting!");
+        log::info("Cai != Cai2, aborting!");
         SendL2capPacket(i, PairingFailedBuilder::Create(PairingFailedReason::CONFIRM_VALUE_FAILED));
         return PairingFailure("Cai != Cai2");
       }
@@ -410,7 +411,7 @@ Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsPasskeyEntry(const Init
 Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsNumericComparison(const InitialInformations& i,
                                                                            const EcdhPublicKey& PKa,
                                                                            const EcdhPublicKey& PKb) {
-  LOG_INFO("Numeric Comparison start");
+  log::info("Numeric Comparison start");
   Stage1ResultOrFailure result = SecureConnectionsJustWorks(i, PKa, PKb);
   if (std::holds_alternative<PairingFailure>(result)) {
     return std::get<PairingFailure>(result);
@@ -426,7 +427,7 @@ Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsNumericComparison(const
 
   std::optional<PairingEvent> confirmyesno = WaitUiConfirmYesNo();
   if (!confirmyesno || confirmyesno->ui_value == 0) {
-    LOG_INFO("Was expecting the user value confirm");
+    log::info("Was expecting the user value confirm");
     return PairingFailure("Was expecting the user value confirm");
   }
 
@@ -441,7 +442,7 @@ Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsJustWorks(const Initial
 
   if (IAmCentral(i)) {
     Na = GenerateRandom<16>();
-    LOG_INFO("Central waits for confirmation");
+    log::info("Central waits for confirmation");
     auto confirm = WaitPairingConfirm();
     if (std::holds_alternative<PairingFailure>(confirm)) {
       return std::get<PairingFailure>(confirm);
@@ -451,7 +452,7 @@ Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsJustWorks(const Initial
     // Send Pairing Random
     SendL2capPacket(i, PairingRandomBuilder::Create(Na));
 
-    LOG_INFO("Central waits for Random");
+    log::info("Central waits for Random");
     auto random = WaitPairingRandom();
     if (std::holds_alternative<PairingFailure>(random)) {
       return std::get<PairingFailure>(random);
@@ -462,7 +463,7 @@ Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsJustWorks(const Initial
     Octet16 Cb_local = crypto_toolbox::f4((uint8_t*)PKb.x.data(), (uint8_t*)PKa.x.data(), Nb, 0);
 
     if (Cb_local != Cb) {
-      LOG_INFO("Cb_local != Cb, aborting!");
+      log::info("Cb_local != Cb, aborting!");
       SendL2capPacket(i, PairingFailedBuilder::Create(PairingFailedReason::CONFIRM_VALUE_FAILED));
       return PairingFailure("Cb_local != Cb");
     }
@@ -472,10 +473,10 @@ Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsJustWorks(const Initial
     Cb = crypto_toolbox::f4((uint8_t*)PKb.x.data(), (uint8_t*)PKa.x.data(), Nb, 0);
 
     // Send Pairing Confirm
-    LOG_INFO("Peripheral sends confirmation");
+    log::info("Peripheral sends confirmation");
     SendL2capPacket(i, PairingConfirmBuilder::Create(Cb));
 
-    LOG_INFO("Peripheral waits for random");
+    log::info("Peripheral waits for random");
     auto random = WaitPairingRandom();
     if (std::holds_alternative<PairingFailure>(random)) {
       return std::get<PairingFailure>(random);
