@@ -217,7 +217,6 @@ inline std::string btm_inquiry_cmpl_status_text(
 typedef struct {
   tBTM_STATUS status;
   RawAddress bd_addr;
-  uint16_t length;
   BD_NAME remote_bd_name;
   tHCI_STATUS hci_status;
 } tBTM_REMOTE_DEV_NAME;
