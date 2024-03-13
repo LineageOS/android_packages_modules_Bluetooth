@@ -114,7 +114,11 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
         default void onVolumeOffsetChanged(
                 @NonNull BluetoothDevice device,
                 @IntRange(from = 1, to = 255) int instanceId,
-                @IntRange(from = -255, to = 255) int volumeOffset) {}
+                @IntRange(from = -255, to = 255) int volumeOffset) {
+            if (instanceId == 1) {
+                onVolumeOffsetChanged(device, volumeOffset);
+            }
+        }
 
         /**
          * Callback invoked when callback is registered and when audio location changes on the
@@ -186,10 +190,6 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
         public void onVolumeOffsetChanged(
                 @NonNull BluetoothDevice device, int instanceId, int volumeOffset) {
             Attributable.setAttributionSource(device, mAttributionSource);
-
-            if (instanceId == 1) {
-                forEach((cb) -> cb.onVolumeOffsetChanged(device, volumeOffset));
-            }
             if (Flags.leaudioMultipleVocsInstancesApi()) {
                 forEach((cb) -> cb.onVolumeOffsetChanged(device, instanceId, volumeOffset));
             }
