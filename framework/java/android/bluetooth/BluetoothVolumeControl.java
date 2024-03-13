@@ -298,17 +298,11 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
                 return;
             }
             try {
-                if (service != null) {
-                    final SynchronousResultReceiver<Integer> recv =
-                            SynchronousResultReceiver.get();
-                    mService.registerCallback(mCallback, mAttributionSource, recv);
-                    recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
-                }
+                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
+                mService.registerCallback(mCallback, mAttributionSource, recv);
+                recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
             } catch (RemoteException e) {
-                Log.e(
-                        TAG,
-                        "onBluetoothServiceUp: Failed to register" + "Volume Control callback",
-                        e);
+                Log.e(TAG, "onBluetoothServiceUp: Failed to register VolumeControl callback", e);
             } catch (TimeoutException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
