@@ -16,27 +16,20 @@
 
 #pragma once
 
-#include "audio/asrc/asrc_resampler.h"
 #include "hci_hal.h"
 #include "module.h"
 
 namespace bluetooth::hal {
 
-class NocpIsoEvents : public bluetooth::audio::asrc::ClockSource {
+class ReadClockHandler {
  public:
-  NocpIsoEvents() = default;
-  ~NocpIsoEvents() override;
+  virtual ~ReadClockHandler() = default;
 
-  void Bind(bluetooth::audio::asrc::ClockHandler*) override;
-};
-
-class L2capCreditIndEvents : public bluetooth::audio::asrc::ClockSource {
- public:
-  L2capCreditIndEvents() {}
-  ~L2capCreditIndEvents() override;
-
-  void Bind(bluetooth::audio::asrc::ClockHandler*) override;
-  void Update(int link_id, uint16_t connection_handle, uint16_t stream_cid);
+  /// Report a measurement of the BT clock.
+  /// `timestamp` is the local time measured in microseconds,
+  /// `bt_clock` is the local BT clock measured @ 51.2 KHz (32 times the
+  /// BR/EDR packets rate), with precision 1/3200 Hz.
+  virtual void OnEvent(uint32_t timestamp, uint32_t bt_clock) = 0;
 };
 
 class LinkClocker : public ::bluetooth::Module {
@@ -44,22 +37,20 @@ class LinkClocker : public ::bluetooth::Module {
   static const ModuleFactory Factory;
 
   void OnHciEvent(const HciPacket& packet);
-  void OnAclDataReceived(const HciPacket& packet);
+
+  static void Register(ReadClockHandler*);
+  static void Unregister();
 
  protected:
-  void ListDependencies(ModuleList*) const override{};
-  void Start() override{};
-  void Stop() override{};
+  LinkClocker() = default;
+
+  void ListDependencies(ModuleList*) const override {}
+  void Start() override {}
+  void Stop() override {}
 
   std::string ToString() const override {
     return std::string("LinkClocker");
   }
-
-  LinkClocker();
-
- private:
-  int cig_id_;
-  int cis_handle_;
 };
 
 }  // namespace bluetooth::hal
