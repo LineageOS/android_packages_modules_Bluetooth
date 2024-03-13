@@ -28,11 +28,11 @@
 namespace {
 
 using bluetooth::common::ToString;
-using le_audio::types::LeAudioContextType;
+using bluetooth::le_audio::types::LeAudioContextType;
 
 }  // namespace
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 struct ccid_keeper {
  public:
   ccid_keeper() {}
@@ -165,4 +165,4 @@ std::vector<uint8_t> ContentControlIdKeeper::GetAllCcids(
   return ccid_vec;
 }
 
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

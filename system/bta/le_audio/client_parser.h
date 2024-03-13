@@ -26,7 +26,7 @@
 
 #include "le_audio_types.h"
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 namespace client_parser {
 namespace ascs {
 /*
@@ -257,4 +257,4 @@ bool ParseTmapRole(std::bitset<16>& role, uint16_t len, const uint8_t* value);
 
 }  // namespace tmap
 }  // namespace client_parser
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

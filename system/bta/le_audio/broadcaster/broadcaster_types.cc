@@ -17,10 +17,9 @@
 
 #include "broadcaster_types.h"
 
-#include <lc3.h>
-
 #include <vector>
 
+#include "bta/le_audio/audio_hal_client/audio_hal_client.h"
 #include "bta_le_audio_broadcaster_api.h"
 #include "btm_ble_api_types.h"
 #include "internal_include/stack_config.h"
@@ -31,9 +30,9 @@ using bluetooth::le_audio::BasicAudioAnnouncementBisConfig;
 using bluetooth::le_audio::BasicAudioAnnouncementCodecConfig;
 using bluetooth::le_audio::BasicAudioAnnouncementData;
 using bluetooth::le_audio::BasicAudioAnnouncementSubgroup;
-using le_audio::types::LeAudioContextType;
+using bluetooth::le_audio::types::LeAudioContextType;
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 namespace broadcaster {
 
 static void EmitHeader(const BasicAudioAnnouncementData& announcement_data,
@@ -56,10 +55,13 @@ static void EmitCodecConfiguration(
   uint8_t codec_config_length = 5;
 
   auto ltv = types::LeAudioLtvMap(config.codec_specific_params);
-  auto ltv_raw_sz = ltv.RawPacketSize();
+  auto codec_spec_raw_sz = ltv.RawPacketSize();
+  if (config.vendor_codec_specific_params) {
+    codec_spec_raw_sz = config.vendor_codec_specific_params->size();
+  }
 
   // Add 1 for the codec spec. config length + config spec. data itself
-  codec_config_length += 1 + ltv_raw_sz;
+  codec_config_length += 1 + codec_spec_raw_sz;
 
   // Resize and set the cursor behind the old data
   data.resize(old_size + codec_config_length);
@@ -70,9 +72,15 @@ static void EmitCodecConfiguration(
   UINT16_TO_STREAM(p_value, config.vendor_company_id);
   UINT16_TO_STREAM(p_value, config.vendor_codec_id);
 
-  // Codec specific config length and data
-  UINT8_TO_STREAM(p_value, ltv_raw_sz);
-  p_value = ltv.RawPacket(p_value);
+  // Codec specific config length and data (either vendor specific or the LTVs)
+  UINT8_TO_STREAM(p_value, codec_spec_raw_sz);
+  if (config.vendor_codec_specific_params) {
+    ARRAY_TO_STREAM(
+        p_value, config.vendor_codec_specific_params->data(),
+        static_cast<int>(config.vendor_codec_specific_params->size()));
+  } else {
+    p_value = ltv.RawPacket(p_value);
+  }
 }
 
 static void EmitMetadata(
@@ -226,172 +234,51 @@ void PreparePeriodicData(const BasicAudioAnnouncementData& announcement,
   UINT8_TO_STREAM(data_ptr, periodic_data.size() - 1);
 }
 
-constexpr types::LeAudioCodecId kLeAudioCodecIdLc3 = {
-    .coding_format = types::kLeAudioCodingFormatLC3,
-    .vendor_company_id = types::kLeAudioVendorCompanyIdUndefined,
-    .vendor_codec_id = types::kLeAudioVendorCodecIdUndefined};
-
-static const BroadcastCodecWrapper lc3_mono_16_2 = BroadcastCodecWrapper(
-    kLeAudioCodecIdLc3,
-    // LeAudioCodecConfiguration
-    {.num_channels = LeAudioCodecConfiguration::kChannelNumberMono,
-     .sample_rate = LeAudioCodecConfiguration::kSampleRate16000,
-     .bits_per_sample = LeAudioCodecConfiguration::kBitsPerSample16,
-     .data_interval_us = LeAudioCodecConfiguration::kInterval10000Us},
-    // Frame len.
-    40);
-
-static const BroadcastCodecWrapper lc3_stereo_16_2 = BroadcastCodecWrapper(
-    kLeAudioCodecIdLc3,
-    // LeAudioCodecConfiguration
-    {.num_channels = LeAudioCodecConfiguration::kChannelNumberStereo,
-     .sample_rate = LeAudioCodecConfiguration::kSampleRate16000,
-     .bits_per_sample = LeAudioCodecConfiguration::kBitsPerSample16,
-     .data_interval_us = LeAudioCodecConfiguration::kInterval10000Us},
-    // Frame len.
-    40);
-
-static const BroadcastCodecWrapper lc3_stereo_24_2 = BroadcastCodecWrapper(
-    kLeAudioCodecIdLc3,
-    // LeAudioCodecConfiguration
-    {.num_channels = LeAudioCodecConfiguration::kChannelNumberStereo,
-     .sample_rate = LeAudioCodecConfiguration::kSampleRate24000,
-     .bits_per_sample = LeAudioCodecConfiguration::kBitsPerSample16,
-     .data_interval_us = LeAudioCodecConfiguration::kInterval10000Us},
-    // Frame len.
-    60);
-
-static const BroadcastCodecWrapper lc3_stereo_48_1 = BroadcastCodecWrapper(
-    kLeAudioCodecIdLc3,
-    // LeAudioCodecConfiguration
-    {.num_channels = LeAudioCodecConfiguration::kChannelNumberStereo,
-     .sample_rate = LeAudioCodecConfiguration::kSampleRate48000,
-     .bits_per_sample = LeAudioCodecConfiguration::kBitsPerSample16,
-     .data_interval_us = LeAudioCodecConfiguration::kInterval7500Us},
-    // Frame len.
-    75);
-
-static const BroadcastCodecWrapper lc3_stereo_48_2 = BroadcastCodecWrapper(
-    kLeAudioCodecIdLc3,
-    // LeAudioCodecConfiguration
-    {.num_channels = LeAudioCodecConfiguration::kChannelNumberStereo,
-     .sample_rate = LeAudioCodecConfiguration::kSampleRate48000,
-     .bits_per_sample = LeAudioCodecConfiguration::kBitsPerSample16,
-     .data_interval_us = LeAudioCodecConfiguration::kInterval10000Us},
-    // Frame len.
-    100);
-
-static const BroadcastCodecWrapper lc3_stereo_48_3 = BroadcastCodecWrapper(
-    kLeAudioCodecIdLc3,
-    // LeAudioCodecConfiguration
-    {.num_channels = LeAudioCodecConfiguration::kChannelNumberStereo,
-     .sample_rate = LeAudioCodecConfiguration::kSampleRate48000,
-     .bits_per_sample = LeAudioCodecConfiguration::kBitsPerSample16,
-     .data_interval_us = LeAudioCodecConfiguration::kInterval7500Us},
-    // Frame len.
-    90);
-
-static const BroadcastCodecWrapper lc3_stereo_48_4 = BroadcastCodecWrapper(
-    kLeAudioCodecIdLc3,
-    // LeAudioCodecConfiguration
-    {.num_channels = LeAudioCodecConfiguration::kChannelNumberStereo,
-     .sample_rate = LeAudioCodecConfiguration::kSampleRate48000,
-     .bits_per_sample = LeAudioCodecConfiguration::kBitsPerSample16,
-     .data_interval_us = LeAudioCodecConfiguration::kInterval10000Us},
-    // Frame len.
-    120);
-
-const std::map<uint32_t, uint8_t> sample_rate_to_sampling_freq_map = {
-    {LeAudioCodecConfiguration::kSampleRate8000,
-     codec_spec_conf::kLeAudioSamplingFreq8000Hz},
-    {LeAudioCodecConfiguration::kSampleRate16000,
-     codec_spec_conf::kLeAudioSamplingFreq16000Hz},
-    {LeAudioCodecConfiguration::kSampleRate24000,
-     codec_spec_conf::kLeAudioSamplingFreq24000Hz},
-    {LeAudioCodecConfiguration::kSampleRate32000,
-     codec_spec_conf::kLeAudioSamplingFreq32000Hz},
-    {LeAudioCodecConfiguration::kSampleRate44100,
-     codec_spec_conf::kLeAudioSamplingFreq44100Hz},
-    {LeAudioCodecConfiguration::kSampleRate48000,
-     codec_spec_conf::kLeAudioSamplingFreq48000Hz},
-};
-
-const std::map<uint32_t, uint8_t> data_interval_ms_to_frame_duration = {
-    {LeAudioCodecConfiguration::kInterval7500Us,
-     codec_spec_conf::kLeAudioCodecFrameDur7500us},
-    {LeAudioCodecConfiguration::kInterval10000Us,
-     codec_spec_conf::kLeAudioCodecFrameDur10000us},
-};
-
-types::LeAudioLtvMap BroadcastCodecWrapper::GetBisCodecSpecData(
-    uint8_t bis_idx) const {
-  /* For a single channel this will be set at the subgroup lvl. */
-  if (source_codec_config.num_channels == 1) return {};
-
-  switch (bis_idx) {
-    case 1:
-      return types::LeAudioLtvMap(
-          {{codec_spec_conf::kLeAudioLtvTypeAudioChannelAllocation,
-            UINT32_TO_VEC_UINT8(codec_spec_conf::kLeAudioLocationFrontLeft)}});
-    case 2:
-      return types::LeAudioLtvMap(
-          {{codec_spec_conf::kLeAudioLtvTypeAudioChannelAllocation,
-            UINT32_TO_VEC_UINT8(codec_spec_conf::kLeAudioLocationFrontRight)}});
-      break;
-    default:
-      return {};
-  }
-}
-
-types::LeAudioLtvMap BroadcastCodecWrapper::GetSubgroupCodecSpecData() const {
-  LOG_ASSERT(
-      sample_rate_to_sampling_freq_map.count(source_codec_config.sample_rate))
-      << "Invalid sample_rate";
-  LOG_ASSERT(data_interval_ms_to_frame_duration.count(
-      source_codec_config.data_interval_us))
-      << "Invalid data_interval";
-
-  std::map<uint8_t, std::vector<uint8_t>> codec_spec_ltvs = {
-      {codec_spec_conf::kLeAudioLtvTypeSamplingFreq,
-       UINT8_TO_VEC_UINT8(sample_rate_to_sampling_freq_map.at(
-           source_codec_config.sample_rate))},
-      {codec_spec_conf::kLeAudioLtvTypeFrameDuration,
-       UINT8_TO_VEC_UINT8(data_interval_ms_to_frame_duration.at(
-           source_codec_config.data_interval_us))},
+le_audio::LeAudioCodecConfiguration
+BroadcastConfiguration::GetAudioHalClientConfig() const {
+  return {
+      // Get the maximum number of channels
+      .num_channels = GetNumChannelsMax(),
+      // Get the max sampling frequency
+      .sample_rate = GetSamplingFrequencyHzMax(),
+      // Use the default 16 bits per sample resolution in the audio framework
+      .bits_per_sample = 16,
+      // Get the data interval
+      .data_interval_us = GetSduIntervalUs(),
   };
-
-  if (codec_id.coding_format == kLeAudioCodecIdLc3.coding_format) {
-    codec_spec_ltvs[codec_spec_conf::kLeAudioLtvTypeOctetsPerCodecFrame] =
-        UINT16_TO_VEC_UINT8(octets_per_codec_frame);
-  }
-
-  if (source_codec_config.num_channels == 1) {
-    codec_spec_ltvs[codec_spec_conf::kLeAudioLtvTypeAudioChannelAllocation] =
-        UINT32_TO_VEC_UINT8(codec_spec_conf::kLeAudioLocationFrontCenter);
-  }
-
-  return types::LeAudioLtvMap(codec_spec_ltvs);
 }
 
 std::ostream& operator<<(
     std::ostream& os,
-    const le_audio::broadcaster::BroadcastCodecWrapper& config) {
-  os << " BroadcastCodecWrapper=[";
+    const bluetooth::le_audio::broadcaster::BroadcastSubgroupCodecConfig&
+        config) {
+  os << " BroadcastSubgroupCodecConfig={";
   os << "CodecID="
      << "{" << +config.GetLeAudioCodecId().coding_format << ":"
      << +config.GetLeAudioCodecId().vendor_company_id << ":"
-     << +config.GetLeAudioCodecId().vendor_codec_id << "}";
-  os << ", LeAudioCodecConfiguration="
-     << "{NumChannels=" << +config.GetNumChannels()
-     << ", SampleRate=" << +config.GetSampleRate()
-     << ", BitsPerSample=" << +config.GetBitsPerSample()
-     << ", DataIntervalUs=" << +config.GetDataIntervalUs() << "}";
-  os << "]";
+     << +config.GetLeAudioCodecId().vendor_codec_id << "}, ";
+  os << "BISes=[";
+  for (auto const& bis_config : config.bis_codec_configs_) {
+    os << bis_config << ", ";
+  }
+  os << "\r\r]";
+  os << ", BitsPerSample=" << +config.GetBitsPerSample() << "}";
+  os << "}";
   return os;
 }
 
 std::ostream& operator<<(
-    std::ostream& os, const le_audio::broadcaster::BroadcastQosConfig& config) {
+    std::ostream& os,
+    const le_audio::broadcaster::BroadcastSubgroupBisCodecConfig& config) {
+  os << "BisCfg={numBis=" << +config.GetNumBis()
+     << ", NumChannelsPerBis=" << +config.GetNumChannelsPerBis()
+     << ", SamplingFreqHz=" << +config.GetSamplingFrequencyHz() << "}";
+  return os;
+}
+
+std::ostream& operator<<(
+    std::ostream& os,
+    const bluetooth::le_audio::broadcaster::BroadcastQosConfig& config) {
   os << " BroadcastQosConfig=[";
   os << "RTN=" << +config.getRetransmissionNumber();
   os << ", MaxTransportLatency=" << config.getMaxTransportLatency();
@@ -399,73 +286,30 @@ std::ostream& operator<<(
   return os;
 }
 
-static const std::pair<const BroadcastCodecWrapper&, const BroadcastQosConfig&>
-    lc3_mono_16_2_1 = {lc3_mono_16_2, qos_config_2_10};
-
-static const std::pair<const BroadcastCodecWrapper&, const BroadcastQosConfig&>
-    lc3_mono_16_2_2 = {lc3_mono_16_2, qos_config_4_60};
-
-static const std::pair<const BroadcastCodecWrapper&, const BroadcastQosConfig&>
-    lc3_stereo_16_2_2 = {lc3_stereo_16_2, qos_config_4_60};
-
-static const std::pair<const BroadcastCodecWrapper&, const BroadcastQosConfig&>
-    lc3_stereo_24_2_1 = {lc3_stereo_24_2, qos_config_2_10};
-
-static const std::pair<const BroadcastCodecWrapper&, const BroadcastQosConfig&>
-    lc3_stereo_24_2_2 = {lc3_stereo_24_2, qos_config_4_60};
-
-static const std::pair<const BroadcastCodecWrapper&, const BroadcastQosConfig&>
-    lc3_stereo_48_1_2 = {lc3_stereo_48_1, qos_config_4_50};
-
-static const std::pair<const BroadcastCodecWrapper&, const BroadcastQosConfig&>
-    lc3_stereo_48_2_2 = {lc3_stereo_48_2, qos_config_4_65};
-
-static const std::pair<const BroadcastCodecWrapper&, const BroadcastQosConfig&>
-    lc3_stereo_48_3_2 = {lc3_stereo_48_3, qos_config_4_50};
-
-static const std::pair<const BroadcastCodecWrapper&, const BroadcastQosConfig&>
-    lc3_stereo_48_4_2 = {lc3_stereo_48_4, qos_config_4_65};
-
-std::pair<const BroadcastCodecWrapper&, const BroadcastQosConfig&>
-getStreamConfigForContext(types::AudioContexts context) {
-  const std::string* options =
-      stack_config_get_interface()->get_pts_broadcast_audio_config_options();
-  if (options) {
-    if (!options->compare("lc3_stereo_48_1_2")) return lc3_stereo_48_1_2;
-    if (!options->compare("lc3_stereo_48_2_2")) return lc3_stereo_48_2_2;
-    if (!options->compare("lc3_stereo_48_3_2")) return lc3_stereo_48_3_2;
-    if (!options->compare("lc3_stereo_48_4_2")) return lc3_stereo_48_4_2;
+std::ostream& operator<<(
+    std::ostream& os,
+    const le_audio::broadcaster::BroadcastConfiguration& config) {
+  os << "BroadcastCfg={";
+  for (const auto& subgroup_cfg : config.subgroups) {
+    os << subgroup_cfg << std::endl;
   }
-  // High quality, Low Latency
-  if (context.test_any(LeAudioContextType::GAME | LeAudioContextType::LIVE))
-    return lc3_stereo_24_2_1;
+  os << config.qos << std::endl;
+  os << config.data_path << std::endl;
+  os << ", sduIntervalUs=" << config.sduIntervalUs;
+  os << ", maxSduOctets=" << config.maxSduOctets;
+  os << ", phy=" << config.phy;
+  os << ", packing=" << config.packing;
+  os << ", framing=" << config.framing;
+  os << "}" << std::endl;
 
-  // Low quality, Low Latency
-  if (context.test(LeAudioContextType::INSTRUCTIONAL)) return lc3_mono_16_2_1;
-
-  // Low quality, High Reliability
-  if (context.test_any(LeAudioContextType::SOUNDEFFECTS |
-                       LeAudioContextType::UNSPECIFIED))
-    return lc3_stereo_16_2_2;
-
-  if (context.test_any(LeAudioContextType::ALERTS |
-                       LeAudioContextType::NOTIFICATIONS |
-                       LeAudioContextType::EMERGENCYALARM))
-    return lc3_mono_16_2_2;
-
-  // High quality, High Reliability
-  if (context.test(LeAudioContextType::MEDIA)) return lc3_stereo_24_2_2;
-
-  // Defaults: Low quality, High Reliability
-  return lc3_mono_16_2_2;
+  return os;
 }
 
 } /* namespace broadcaster */
-} /* namespace le_audio */
+}  // namespace bluetooth::le_audio
 
 /* Helper functions for comparing BroadcastAnnouncements */
-namespace bluetooth {
-namespace le_audio {
+namespace bluetooth::le_audio {
 
 static bool isMetadataSame(std::map<uint8_t, std::vector<uint8_t>> m1,
                            std::map<uint8_t, std::vector<uint8_t>> m2) {
@@ -535,5 +379,4 @@ bool operator==(const PublicBroadcastAnnouncementData& lhs,
 
   return true;
 }
-}  // namespace le_audio
-}  // namespace bluetooth
+}  // namespace bluetooth::le_audio

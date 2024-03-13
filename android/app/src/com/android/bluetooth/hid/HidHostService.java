@@ -58,7 +58,6 @@ import java.util.Map;
 /**
  * Provides Bluetooth Hid Host profile, as a service in
  * the Bluetooth application.
- * @hide
  */
 public class HidHostService extends ProfileService {
     private static final boolean DBG = false;
@@ -790,7 +789,6 @@ public class HidHostService extends ProfileService {
      *
      * @param device Bluetooth device
      * @return connection policy of the device
-     * @hide
      */
     public int getConnectionPolicy(BluetoothDevice device) {
         if (DBG) {

@@ -22,7 +22,7 @@
 
 #include "devices.h"
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 bool SerializeSinkPacs(const LeAudioDevice* leAudioDevice,
                        std::vector<uint8_t>& out);
 bool DeserializeSinkPacs(LeAudioDevice* leAudioDevice,
@@ -39,4 +39,4 @@ bool SerializeHandles(const LeAudioDevice* leAudioDevice,
                       std::vector<uint8_t>& out);
 bool DeserializeHandles(LeAudioDevice* leAudioDevice,
                         const std::vector<uint8_t>& in);
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

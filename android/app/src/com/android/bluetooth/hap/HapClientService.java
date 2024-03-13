@@ -64,7 +64,6 @@ import java.util.Objects;
 
 /**
  * Provides Bluetooth Hearing Access profile, as a service.
- * @hide
  */
 public class HapClientService extends ProfileService {
     private static final boolean DBG = true;
@@ -380,7 +379,6 @@ public class HapClientService extends ProfileService {
      *
      * @param device Bluetooth device
      * @return connection policy of the device
-     * @hide
      */
     public int getConnectionPolicy(BluetoothDevice device) {
         return mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.HAP_CLIENT);

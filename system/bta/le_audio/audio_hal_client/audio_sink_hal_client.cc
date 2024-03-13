@@ -26,9 +26,7 @@
 #include "osi/include/wakelock.h"
 #include "stack/include/main_thread.h"
 
-using bluetooth::audio::le_audio::LeAudioClientInterface;
-
-namespace le_audio {
+namespace bluetooth::le_audio {
 namespace {
 // TODO: HAL state should be in the HAL implementation
 enum {
@@ -49,7 +47,7 @@ class SinkImpl : public LeAudioSinkAudioHalClient {
   void CancelStreamingRequest() override;
   void UpdateRemoteDelay(uint16_t remote_delay_ms) override;
   void UpdateAudioConfigToHal(
-      const ::le_audio::offload_config& config) override;
+      const ::bluetooth::le_audio::offload_config& config) override;
   void SuspendedForReconfiguration() override;
   void ReconfigurationComplete() override;
 
@@ -79,7 +77,7 @@ bool SinkImpl::Acquire() {
                                             this, std::placeholders::_1),
   };
 
-  auto halInterface = LeAudioClientInterface::Get();
+  auto halInterface = audio::le_audio::LeAudioClientInterface::Get();
   if (halInterface == nullptr) {
     LOG_ERROR("Can't get LE Audio HAL interface");
     return false;
@@ -108,7 +106,7 @@ void SinkImpl::Release() {
   if (halSourceInterface_) {
     halSourceInterface_->Cleanup();
 
-    auto halInterface = LeAudioClientInterface::Get();
+    auto halInterface = audio::le_audio::LeAudioClientInterface::Get();
     if (halInterface != nullptr) {
       halInterface->ReleaseSource(halSourceInterface_);
     } else {
@@ -162,11 +160,15 @@ bool SinkImpl::OnMetadataUpdateReq(const sink_metadata_v7_t& sink_metadata) {
     return false;
   }
 
+  std::vector<struct record_track_metadata_v7> metadata(
+      sink_metadata.tracks, sink_metadata.tracks + sink_metadata.track_count);
+
   bt_status_t status = do_in_main_thread(
       FROM_HERE,
       base::BindOnce(
           &LeAudioSinkAudioHalClient::Callbacks::OnAudioMetadataUpdate,
-          audioSinkCallbacks_->weak_factory_.GetWeakPtr(), sink_metadata));
+          audioSinkCallbacks_->weak_factory_.GetWeakPtr(),
+          std::move(metadata)));
   if (status == BT_STATUS_SUCCESS) {
     return true;
   }
@@ -193,14 +195,14 @@ bool SinkImpl::Start(const LeAudioCodecConfiguration& codec_configuration,
            codec_configuration.num_channels, codec_configuration.sample_rate,
            codec_configuration.data_interval_us);
 
-  LeAudioClientInterface::PcmParameters pcmParameters = {
+  audio::le_audio::LeAudioClientInterface::PcmParameters pcmParameters = {
       .data_interval_us = codec_configuration.data_interval_us,
       .sample_rate = codec_configuration.sample_rate,
       .bits_per_sample = codec_configuration.bits_per_sample,
       .channels_count = codec_configuration.num_channels};
 
   halSourceInterface_->SetPcmParameters(pcmParameters);
-  LeAudioClientInterface::Get()->SetAllowedDsaModes(dsa_modes);
+  audio::le_audio::LeAudioClientInterface::Get()->SetAllowedDsaModes(dsa_modes);
   halSourceInterface_->StartSession();
 
   audioSinkCallbacks_ = audioReceiver;
@@ -313,7 +315,7 @@ void SinkImpl::UpdateRemoteDelay(uint16_t remote_delay_ms) {
 }
 
 void SinkImpl::UpdateAudioConfigToHal(
-    const ::le_audio::offload_config& config) {
+    const ::bluetooth::le_audio::offload_config& config) {
   if ((halSourceInterface_ == nullptr) ||
       (le_audio_source_hal_state != HAL_STARTED)) {
     LOG_ERROR("Audio HAL Audio source was not started!");
@@ -341,4 +343,4 @@ LeAudioSinkAudioHalClient::AcquireUnicast() {
 void LeAudioSinkAudioHalClient::DebugDump(int fd) {
   /* TODO: Add some statistic for LeAudioSink Audio HAL interface */
 }
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

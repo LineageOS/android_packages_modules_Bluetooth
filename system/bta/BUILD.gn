@@ -91,6 +91,7 @@ static_library("bta") {
     "jv/bta_jv_cfg.cc",
     "le_audio/audio_hal_client/audio_sink_hal_client.cc",
     "le_audio/audio_hal_client/audio_source_hal_client.cc",
+    "le_audio/broadcaster/broadcast_configuration_provider.cc",
     "le_audio/broadcaster/broadcaster.cc",
     "le_audio/broadcaster/broadcaster_types.cc",
     "le_audio/broadcaster/state_machine.cc",

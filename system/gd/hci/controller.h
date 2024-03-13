@@ -208,7 +208,7 @@ class Controller : public Module, public ControllerInterface {
   static constexpr uint64_t kLeEventMask53 = 0x00000007ffffffff;
   static constexpr uint64_t kLeEventMask52 = 0x00000003ffffffff;
   static constexpr uint64_t kLeEventMask51 = 0x0000000000ffffff;
-  static constexpr uint64_t kLeEventMask50 = 0x0000000000ffffff;
+  static constexpr uint64_t kLeEventMask50 = 0x00000000000fffff;
   static constexpr uint64_t kLeEventMask42 = 0x00000000000003ff;
   static constexpr uint64_t kLeEventMask41 = 0x000000000000003f;
 

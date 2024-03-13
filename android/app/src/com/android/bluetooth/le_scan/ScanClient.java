@@ -26,8 +26,6 @@ import java.util.Objects;
 
 /**
  * Helper class identifying a client that has requested LE scan results.
- *
- * @hide
  */
 public class ScanClient {
     public int scannerId;

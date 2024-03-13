@@ -684,7 +684,6 @@ public class A2dpService extends ProfileService {
      *
      * @param device Bluetooth device
      * @return connection policy of the device
-     * @hide
      */
     public int getConnectionPolicy(BluetoothDevice device) {
         return mDatabaseManager
@@ -723,7 +722,6 @@ public class A2dpService extends ProfileService {
      * @param device the remote Bluetooth device. If null, use the current
      * active A2DP Bluetooth device.
      * @return the current codec status
-     * @hide
      */
     public BluetoothCodecStatus getCodecStatus(BluetoothDevice device) {
         if (DBG) {
@@ -750,7 +748,6 @@ public class A2dpService extends ProfileService {
      * @param device the remote Bluetooth device. If null, use the currect
      * active A2DP Bluetooth device.
      * @param codecConfig the codec configuration preference
-     * @hide
      */
     public void setCodecConfigPreference(BluetoothDevice device,
                                          BluetoothCodecConfig codecConfig) {
@@ -782,7 +779,6 @@ public class A2dpService extends ProfileService {
      *
      * @param device the remote Bluetooth device. If null, use the currect
      * active A2DP Bluetooth device.
-     * @hide
      */
     public void enableOptionalCodecs(BluetoothDevice device) {
         if (DBG) {
@@ -813,7 +809,6 @@ public class A2dpService extends ProfileService {
      *
      * @param device the remote Bluetooth device. If null, use the currect
      * active A2DP Bluetooth device.
-     * @hide
      */
     public void disableOptionalCodecs(BluetoothDevice device) {
         if (DBG) {

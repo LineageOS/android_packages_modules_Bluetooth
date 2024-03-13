@@ -19,7 +19,9 @@
 
 #include "types/raw_address.h"
 
+namespace {
 MockEattExtension* mock_pimpl_;
+}
 MockEattExtension* MockEattExtension::GetInstance() {
   bluetooth::eatt::EattExtension::GetInstance();
   return mock_pimpl_;

@@ -27,7 +27,7 @@
 #include "has_ctp.h"
 
 /* Journal and journal entry classes used by the state dumping functionality. */
-namespace le_audio {
+namespace bluetooth::le_audio {
 namespace has {
 static constexpr uint8_t kHasJournalNumRecords = 20;
 
@@ -110,4 +110,4 @@ class CacheList {
 
 using HasJournal = CacheList<HasJournalRecord, kHasJournalNumRecords>;
 }  // namespace has
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

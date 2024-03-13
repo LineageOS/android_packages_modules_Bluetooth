@@ -31,13 +31,9 @@ import java.util.List;
 
 /**
  * Class for regrouping the migration that occur when going mainline
- * @hide
  */
 public final class BluetoothDatabaseMigration {
     private static final String TAG = "BluetoothDatabaseMigration";
-    /**
-     * @hide
-     */
     public static boolean run(Context ctx, Cursor cursor) {
         boolean result = true;
         MetadataDatabase database = MetadataDatabase.createDatabaseWithoutMigration(ctx);

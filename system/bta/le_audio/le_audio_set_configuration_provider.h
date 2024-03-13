@@ -19,7 +19,7 @@
 
 #include "le_audio_types.h"
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 
 /* Audio set configurations provider interface. */
 class AudioSetConfigurationProvider {
@@ -31,8 +31,7 @@ class AudioSetConfigurationProvider {
   static void DebugDump(int fd);
   static void Cleanup();
   virtual const set_configurations::AudioSetConfigurations* GetConfigurations(
-      ::le_audio::types::LeAudioContextType content_type) const;
-  virtual bool IsDualBiDirSwbSupported(void) const;
+      ::bluetooth::le_audio::types::LeAudioContextType content_type) const;
   virtual bool CheckConfigurationIsBiDirSwb(
       const set_configurations::AudioSetConfiguration& set_configuration) const;
   virtual bool CheckConfigurationIsDualBiDirSwb(
@@ -43,4 +42,4 @@ class AudioSetConfigurationProvider {
   std::unique_ptr<impl> pimpl_;
 };
 
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

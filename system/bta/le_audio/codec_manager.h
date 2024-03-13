@@ -18,10 +18,11 @@
 
 #include <vector>
 
+#include "broadcaster/broadcaster_types.h"
 #include "hardware/bt_le_audio.h"
 #include "le_audio_types.h"
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 
 struct stream_map_info {
   stream_map_info(uint16_t stream_handle, uint32_t audio_channel_allocation,
@@ -66,7 +67,7 @@ class CodecManager {
                  offloading_preference);
   void Stop(void);
   virtual types::CodecLocation GetCodecLocation(void) const;
-  virtual bool IsOffloadDualBiDirSwbSupported(void) const;
+  virtual bool IsDualBiDirSwbSupported(void) const;
   virtual void UpdateCisConfiguration(
       const std::vector<struct types::cis>& cises,
       const stream_parameters& stream_params, uint8_t direction);
@@ -76,13 +77,28 @@ class CodecManager {
       types::BidirectionalPair<uint16_t> delays_ms,
       std::function<void(const offload_config& config, uint8_t direction)>
           update_receiver);
-  virtual const ::le_audio::set_configurations::AudioSetConfigurations*
-  GetOffloadCodecConfig(::le_audio::types::LeAudioContextType ctx_type);
-  virtual const ::le_audio::broadcast_offload_config* GetBroadcastOffloadConfig(
-      uint8_t preferred_quality);
+  virtual std::unique_ptr<
+      ::bluetooth::le_audio::set_configurations::AudioSetConfiguration>
+  GetCodecConfig(::bluetooth::le_audio::types::LeAudioContextType ctx_type,
+                 std::function<const set_configurations::AudioSetConfiguration*(
+                     types::LeAudioContextType context_type,
+                     const set_configurations::AudioSetConfigurations* confs)>
+                     non_vendor_config_matcher);
+
+  virtual bool CheckCodecConfigIsBiDirSwb(
+      const ::bluetooth::le_audio::set_configurations::AudioSetConfiguration&
+          config) const;
+  virtual std::unique_ptr<broadcaster::BroadcastConfiguration>
+  GetBroadcastConfig(
+      const std::vector<
+          std::pair<bluetooth::le_audio::types::LeAudioContextType, uint8_t>>&
+          subgroup_quality,
+      std::optional<const types::PublishedAudioCapabilities*> pacs) const;
+
   virtual void UpdateBroadcastConnHandle(
       const std::vector<uint16_t>& conn_handle,
-      std::function<void(const ::le_audio::broadcast_offload_config& config)>
+      std::function<
+          void(const ::bluetooth::le_audio::broadcast_offload_config& config)>
           update_receiver);
   virtual std::vector<bluetooth::le_audio::btle_audio_codec_config_t>
   GetLocalAudioOutputCodecCapa();
@@ -94,4 +110,4 @@ class CodecManager {
   struct impl;
   std::unique_ptr<impl> pimpl_;
 };
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

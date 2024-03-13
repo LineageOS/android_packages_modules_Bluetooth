@@ -19,9 +19,8 @@
 
 #include <base/logging.h>
 
-#include <variant>
+#include <optional>
 
-#include "bta/le_audio/audio_hal_client/audio_hal_client.h"
 #include "bta/le_audio/le_audio_types.h"
 #include "bta_le_audio_api.h"
 #include "bta_le_audio_broadcaster_api.h"
@@ -30,7 +29,9 @@
  * in the API.
  */
 
-namespace le_audio {
+namespace bluetooth::le_audio {
+struct LeAudioCodecConfiguration;
+
 namespace broadcaster {
 static const uint16_t kBroadcastAudioAnnouncementServiceUuid = 0x1852;
 static const uint16_t kBasicAudioAnnouncementServiceUuid = 0x1851;
@@ -51,127 +52,349 @@ void PreparePeriodicData(
     const bluetooth::le_audio::BasicAudioAnnouncementData& announcement,
     std::vector<uint8_t>& periodic_data);
 
-struct BroadcastCodecWrapper {
-  BroadcastCodecWrapper(types::LeAudioCodecId codec_id,
-                        LeAudioCodecConfiguration source_codec_config,
-                        uint32_t octets_per_codec_frame,
-                        uint8_t blocks_per_sdu = 1)
-      : codec_id(codec_id),
-        source_codec_config(source_codec_config),
-        octets_per_codec_frame(octets_per_codec_frame),
-        blocks_per_sdu(blocks_per_sdu) {
-    if (codec_id.coding_format != types::kLeAudioCodingFormatLC3)
-      LOG(ERROR) << "Unsupported coding format!";
+struct BroadcastSubgroupBisCodecConfig {
+  BroadcastSubgroupBisCodecConfig(
+      uint8_t num_bis, types::LeAudioLtvMap codec_specific,
+      std::optional<std::vector<uint8_t>> vendor_codec_specific = std::nullopt)
+      : num_bis_(num_bis),
+        codec_specific_(codec_specific),
+        vendor_codec_specific_(vendor_codec_specific) {}
+
+  bool operator==(const BroadcastSubgroupBisCodecConfig& other) const {
+    return (num_bis_ == other.num_bis_) &&
+           (codec_specific_ == other.codec_specific_) &&
+           (vendor_codec_specific_ == other.vendor_codec_specific_);
   }
 
-  /* We need this copy-assignment operator as we currently use global copy of a
-   * wrapper for the currently active Broadcast. Maybe we should consider using
-   * shared pointer instead.
-   */
-  BroadcastCodecWrapper& operator=(const BroadcastCodecWrapper& other) {
-    codec_id = other.codec_id;
-    source_codec_config = other.source_codec_config;
-    octets_per_codec_frame = other.octets_per_codec_frame;
-    blocks_per_sdu = other.blocks_per_sdu;
-    return *this;
+  bool operator!=(const BroadcastSubgroupBisCodecConfig& other) const {
+    return !(*this == other);
+  }
+
+  uint8_t GetNumBis() const { return num_bis_; }
+
+  const types::LeAudioLtvMap& GetCodecSpecData() const {
+    return codec_specific_;
   };
 
-  types::LeAudioLtvMap GetSubgroupCodecSpecData() const;
-  types::LeAudioLtvMap GetBisCodecSpecData(uint8_t bis_idx) const;
-
-  uint16_t GetMaxSduSizePerChannel() const {
-    if (codec_id.coding_format == types::kLeAudioCodingFormatLC3) {
-      return GetOctetsPerCodecFrame() * blocks_per_sdu;
-    }
-
-    LOG(ERROR) << "Invalid codec ID: "
-               << "[" << +codec_id.coding_format << ":"
-               << +codec_id.vendor_company_id << ":"
-               << +codec_id.vendor_codec_id << "]";
-    return 0;
+  const std::optional<std::vector<uint8_t>>& GetVendorCodecSpecific() const {
+    return vendor_codec_specific_;
   }
 
-  uint16_t GetMaxSduSize() const {
-    return GetNumChannelsPerBis() * GetMaxSduSizePerChannel();
+  bool HasVendorCodecSpecific() const {
+    return vendor_codec_specific_.has_value();
   }
 
-  const LeAudioCodecConfiguration& GetLeAudioCodecConfiguration() const {
-    return source_codec_config;
-  }
+  uint8_t GetNumChannels() const { return num_bis_ * GetNumChannelsPerBis(); }
 
-  const types::LeAudioCodecId& GetLeAudioCodecId() const { return codec_id; }
-
-  uint8_t GetNumChannels() const { return source_codec_config.num_channels; }
-
-  uint32_t GetOctetsPerCodecFrame() const { return octets_per_codec_frame; }
-
-  uint8_t GetBitsPerSample() const {
-    return source_codec_config.bits_per_sample;
-  }
-
-  uint32_t GetSampleRate() const { return source_codec_config.sample_rate; }
-
-  uint32_t GetDataIntervalUs() const {
-    return source_codec_config.data_interval_us;
+  uint32_t GetSamplingFrequencyHz() const {
+    return codec_specific_.GetAsCoreCodecConfig().GetSamplingFrequencyHz();
   }
 
   uint8_t GetNumChannelsPerBis() const {
-    // TODO: Need to handle each BIS has more than one channel case
-    return 1;
+    return codec_specific_.GetAsCoreCodecConfig().GetChannelCountPerIsoStream();
   }
 
  private:
-  types::LeAudioCodecId codec_id;
-  LeAudioCodecConfiguration source_codec_config;
-  uint32_t octets_per_codec_frame;
-  uint8_t blocks_per_sdu;
+  uint8_t num_bis_;
+  /* Codec Specific Configuration */
+  types::LeAudioLtvMap codec_specific_;
+  std::optional<std::vector<uint8_t>> vendor_codec_specific_;
 };
 
 std::ostream& operator<<(
     std::ostream& os,
-    const le_audio::broadcaster::BroadcastCodecWrapper& config);
+    const le_audio::broadcaster::BroadcastSubgroupBisCodecConfig& config);
+
+struct BroadcastSubgroupCodecConfig {
+  BroadcastSubgroupCodecConfig(
+      types::LeAudioCodecId codec_id,
+      std::vector<BroadcastSubgroupBisCodecConfig> bis_codec_configs,
+      uint8_t bits_per_sample,
+      std::optional<std::vector<uint8_t>> subgroup_vendor_codec_config =
+          std::nullopt)
+      : codec_id_(codec_id),
+        bis_codec_configs_(bis_codec_configs),
+        subgroup_vendor_codec_config_(subgroup_vendor_codec_config),
+        bits_per_sample_(bits_per_sample) {}
+
+  bool operator==(const BroadcastSubgroupCodecConfig& other) const {
+    if (subgroup_vendor_codec_config_.has_value() !=
+        other.subgroup_vendor_codec_config_.has_value())
+      return false;
+
+    if (subgroup_vendor_codec_config_.has_value()) {
+      if (subgroup_vendor_codec_config_->size() !=
+          other.subgroup_vendor_codec_config_->size())
+        return false;
+    }
+
+    if (0 != memcmp(subgroup_vendor_codec_config_->data(),
+                    other.subgroup_vendor_codec_config_->data(),
+                    subgroup_vendor_codec_config_->size())) {
+      return false;
+    }
+
+    return (codec_id_ == other.codec_id_) &&
+           (bis_codec_configs_ == other.bis_codec_configs_) &&
+           (bits_per_sample_ == other.bits_per_sample_);
+  }
+
+  bool operator!=(const BroadcastSubgroupCodecConfig& other) const {
+    return !(*this == other);
+  }
+
+  types::LeAudioLtvMap GetCommonBisCodecSpecData() const {
+    if (bis_codec_configs_.empty()) return types::LeAudioLtvMap();
+    auto common_ltv = bis_codec_configs_[0].GetCodecSpecData();
+    for (auto it = bis_codec_configs_.begin() + 1;
+         it != bis_codec_configs_.end(); ++it) {
+      common_ltv = it->GetCodecSpecData().GetIntersection(common_ltv);
+    }
+    return common_ltv;
+  }
+
+  std::optional<std::vector<uint8_t>> GetVendorCodecSpecData() const {
+    return subgroup_vendor_codec_config_;
+  }
+
+  std::optional<std::vector<uint8_t>> GetBisVendorCodecSpecData(
+      uint8_t bis_idx) const {
+    if (bis_codec_configs_.empty()) return std::nullopt;
+    auto config = bis_codec_configs_.at(0);
+    if ((bis_idx != 0) && (bis_idx < bis_codec_configs_.size())) {
+      config = bis_codec_configs_.at(bis_idx);
+    }
+
+    if (config.HasVendorCodecSpecific()) {
+      return config.GetVendorCodecSpecific().value();
+    }
+
+    return std::nullopt;
+  }
+
+  uint16_t GetBisOctetsPerCodecFrame(uint8_t bis_idx) const {
+    // Check the subgroup level parameters first, then the specific BIS
+    auto num_octets = GetCommonBisCodecSpecData()
+                          .GetAsCoreCodecConfig()
+                          .octets_per_codec_frame.value_or(0);
+    if (num_octets) return num_octets;
+
+    // Currently not a single software vendor codec was integrated and only the
+    // LTVs parameters are understood by the BT stack.
+    auto opt_ltvs = GetBisCodecSpecData(bis_idx);
+    if (opt_ltvs) {
+      return opt_ltvs->GetAsCoreCodecConfig().octets_per_codec_frame.value_or(
+                 0) *
+             opt_ltvs->GetAsCoreCodecConfig()
+                 .codec_frames_blocks_per_sdu.value_or(0);
+    }
+
+    return 0;
+  }
+
+  std::optional<types::LeAudioLtvMap> GetBisCodecSpecData(
+      uint8_t bis_idx) const {
+    if (bis_codec_configs_.empty()) return std::nullopt;
+    auto config = bis_codec_configs_.at(0);
+    if ((bis_idx != 0) && (bis_idx < bis_codec_configs_.size())) {
+      config = bis_codec_configs_.at(bis_idx);
+    }
+
+    if (config.HasVendorCodecSpecific()) {
+      return std::nullopt;
+    }
+
+    auto cfg = config.GetCodecSpecData();
+    /* Set the audio locations if not set */
+    if (!cfg.Find(codec_spec_conf::kLeAudioLtvTypeAudioChannelAllocation)) {
+      switch (bis_idx) {
+        case 0:
+          cfg.Add(codec_spec_conf::kLeAudioLtvTypeAudioChannelAllocation,
+                  codec_spec_conf::kLeAudioLocationFrontLeft);
+          break;
+        case 1:
+          cfg.Add(codec_spec_conf::kLeAudioLtvTypeAudioChannelAllocation,
+                  codec_spec_conf::kLeAudioLocationFrontRight);
+          break;
+        default:
+          break;
+      }
+    }
+    return cfg;
+  }
+
+  const types::LeAudioCodecId& GetLeAudioCodecId() const { return codec_id_; }
+
+  uint8_t GetNumBis() const {
+    uint8_t value = 0;
+    // Iterate over BISes
+    for (auto const& cfg : bis_codec_configs_) {
+      value += cfg.GetNumBis();
+    }
+    return value;
+  }
+
+  uint8_t GetNumBis(uint8_t bis_idx) const {
+    if (bis_idx < bis_codec_configs_.size()) {
+      return bis_codec_configs_.at(bis_idx).GetNumBis();
+    }
+    return 0;
+  }
+
+  uint8_t GetNumChannelsTotal() const {
+    uint8_t value = 0;
+    // Iterate over BISes
+    for (auto const& cfg : bis_codec_configs_) {
+      value += cfg.GetNumChannels();
+    }
+    return value;
+  }
+
+  uint32_t GetSamplingFrequencyHzMax() const {
+    uint32_t value = 0;
+    // Iterate over BISes
+    for (auto const& cfg : bis_codec_configs_) {
+      value += cfg.GetSamplingFrequencyHz();
+    }
+    return value;
+  }
+
+  // Local audio source sample resolution
+  uint8_t GetBitsPerSample() const { return bits_per_sample_; }
+
+  size_t GetAllBisConfigCount() const { return bis_codec_configs_.size(); }
+
+  friend std::ostream& operator<<(
+      std::ostream& os,
+      const le_audio::broadcaster::BroadcastSubgroupCodecConfig& config);
+
+ private:
+  types::LeAudioCodecId codec_id_;
+  /* A list of distinct BIS configurations - each config can be allied to
+   * num_bis number of BISes
+   */
+  std::vector<BroadcastSubgroupBisCodecConfig> bis_codec_configs_;
+  std::optional<std::vector<uint8_t>> subgroup_vendor_codec_config_;
+
+  /* Local audio source sample resolution - this should consider the HW
+   * offloader requirements
+   */
+  uint8_t bits_per_sample_;
+};
+
+std::ostream& operator<<(
+    std::ostream& os,
+    const bluetooth::le_audio::broadcaster::BroadcastSubgroupCodecConfig&
+        config);
 
 struct BroadcastQosConfig {
   BroadcastQosConfig(uint8_t retransmission_number,
                      uint16_t max_transport_latency)
-      : retransmission_number(retransmission_number),
-        max_transport_latency(max_transport_latency) {}
+      : retransmission_number_(retransmission_number),
+        max_transport_latency_(max_transport_latency) {}
 
-  BroadcastQosConfig& operator=(const BroadcastQosConfig& other) {
-    retransmission_number = other.retransmission_number;
-    max_transport_latency = other.max_transport_latency;
-    return *this;
-  };
+  bool operator==(const BroadcastQosConfig& other) const {
+    return (retransmission_number_ == other.retransmission_number_) &&
+           (max_transport_latency_ == other.max_transport_latency_);
+  }
 
-  uint8_t getRetransmissionNumber() const { return retransmission_number; }
-  uint16_t getMaxTransportLatency() const { return max_transport_latency; }
+  bool operator!=(const BroadcastQosConfig& other) const {
+    return !(*this == other);
+  }
+
+  uint8_t getRetransmissionNumber() const { return retransmission_number_; }
+  uint16_t getMaxTransportLatency() const { return max_transport_latency_; }
 
  private:
-  uint8_t retransmission_number;
-  uint16_t max_transport_latency;
+  uint8_t retransmission_number_;
+  uint16_t max_transport_latency_;
 };
 
-static const BroadcastQosConfig qos_config_2_10 = BroadcastQosConfig(2, 10);
-static const BroadcastQosConfig qos_config_4_45 = BroadcastQosConfig(4, 45);
-static const BroadcastQosConfig qos_config_4_50 = BroadcastQosConfig(4, 50);
-static const BroadcastQosConfig qos_config_4_60 = BroadcastQosConfig(4, 60);
-static const BroadcastQosConfig qos_config_4_65 = BroadcastQosConfig(4, 65);
+std::ostream& operator<<(
+    std::ostream& os,
+    const bluetooth::le_audio::broadcaster::BroadcastQosConfig& config);
+
+struct BroadcastConfiguration {
+  bool operator==(const BroadcastConfiguration& other) const {
+    if ((sduIntervalUs != other.sduIntervalUs) ||
+        (maxSduOctets != other.maxSduOctets) || (phy != other.phy) ||
+        (packing != other.packing) || (framing != other.framing)) {
+      return false;
+    }
+
+    if (qos != other.qos) return false;
+    if (data_path != other.data_path) return false;
+    if (subgroups.size() != other.subgroups.size()) return false;
+
+    for (auto const& subgroup : subgroups) {
+      if (std::find(other.subgroups.begin(), other.subgroups.end(), subgroup) ==
+          other.subgroups.end()) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  bool operator!=(const BroadcastConfiguration& other) const {
+    return !(*this == other);
+  }
+
+  uint8_t GetNumBisTotal() const {
+    auto count = 0;
+    // Iterate over subgroups
+    for (auto const& cfg : subgroups) {
+      count += cfg.GetNumBis();
+    }
+    return count;
+  }
+
+  uint8_t GetNumChannelsMax() const {
+    uint8_t value = 0;
+    for (auto const& cfg : subgroups) {
+      if (cfg.GetNumChannelsTotal() > value) value = cfg.GetNumChannelsTotal();
+    }
+    return value;
+  }
+
+  uint32_t GetSamplingFrequencyHzMax() const {
+    uint32_t value = 0;
+    for (auto const& cfg : subgroups) {
+      if (cfg.GetSamplingFrequencyHzMax() > value)
+        value = cfg.GetSamplingFrequencyHzMax();
+    }
+    return value;
+  }
+
+  uint32_t GetSduIntervalUs() const { return sduIntervalUs; }
+
+  uint16_t GetMaxSduOctets() const { return maxSduOctets; }
+
+  LeAudioCodecConfiguration GetAudioHalClientConfig() const;
+
+  std::vector<BroadcastSubgroupCodecConfig> subgroups;
+  BroadcastQosConfig qos;
+
+  types::DataPathConfiguration data_path;
+
+  uint32_t sduIntervalUs;
+  uint16_t maxSduOctets;
+  uint8_t phy;
+  uint8_t packing;
+  uint8_t framing;
+};
 
 std::ostream& operator<<(
-    std::ostream& os, const le_audio::broadcaster::BroadcastQosConfig& config);
-
-std::pair<const BroadcastCodecWrapper&, const BroadcastQosConfig&>
-getStreamConfigForContext(types::AudioContexts context);
+    std::ostream& os,
+    const le_audio::broadcaster::BroadcastConfiguration& config);
 
 }  // namespace broadcaster
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio
 
 /* BroadcastAnnouncements compare helper */
-namespace bluetooth {
-namespace le_audio {
+namespace bluetooth::le_audio {
 bool operator==(const BasicAudioAnnouncementData& lhs,
                 const BasicAudioAnnouncementData& rhs);
 bool operator==(const PublicBroadcastAnnouncementData& lhs,
                 const PublicBroadcastAnnouncementData& rhs);
-}  // namespace le_audio
-}  // namespace bluetooth
+}  // namespace bluetooth::le_audio

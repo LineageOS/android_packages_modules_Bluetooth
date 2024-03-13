@@ -16,7 +16,7 @@
 
 #include "mock_codec_interface.h"
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 
 struct CodecInterface::Impl : public MockCodecInterface {
  public:
@@ -64,4 +64,4 @@ uint16_t CodecInterface::GetNumOfSamplesPerChannel() {
 uint8_t CodecInterface::GetNumOfBytesPerSample() {
   return impl->GetNumOfBytesPerSample();
 };
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

@@ -17,6 +17,7 @@
  */
 #include "security/pairing/classic_pairing_handler.h"
 
+#include <bluetooth/log.h>
 #include <gtest/gtest.h>
 
 #include <memory>
@@ -54,19 +55,19 @@ class FakeSecurityManagerChannel : public channel::SecurityManagerChannel {
   ~FakeSecurityManagerChannel() {}
 
   void OnLinkConnected(std::unique_ptr<l2cap::classic::LinkSecurityInterface> link) override {
-    LOG_ERROR("CALLED");
+    log::error("CALLED");
   }
 
   void OnLinkDisconnected(hci::Address address) override {
-    LOG_ERROR("CALLED");
+    log::error("CALLED");
   }
 
   void OnEncryptionChange(hci::Address address, bool encrypted) override {
-    LOG_ERROR("CALLED");
+    log::error("CALLED");
   }
 
   void OnAuthenticationComplete(hci::ErrorCode hci_status, hci::Address remote) override {
-    LOG_ERROR("CALLED");
+    log::error("CALLED");
   }
 };
 
@@ -134,7 +135,7 @@ class SecurityManagerChannelCallback : public channel::ISecurityManagerChannelLi
   }
 
   void OnConnectionClosed(hci::Address address) override {
-    LOG_INFO("Called");
+    log::info("Called");
   }
 
  private:
@@ -277,7 +278,7 @@ hci::SecurityCommandView GetLastCommand(FakeHciLayer* hci_layer) {
   auto command_packet_view = hci::CommandView::Create(command_packet);
   auto security_command_view = hci::SecurityCommandView::Create(command_packet_view);
   if (!security_command_view.IsValid()) {
-    LOG_ERROR("Invalid security command received");
+    log::error("Invalid security command received");
   }
   return security_command_view;
 }

@@ -24,9 +24,9 @@
 #include "os/log.h"
 #include "stack/include/bt_types.h"
 
-using le_audio::types::hdl_pair;
+using bluetooth::le_audio::types::hdl_pair;
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 static constexpr uint8_t LEAUDIO_PACS_STORAGE_CURRENT_LAYOUT_MAGIC = 0x00;
 static constexpr uint8_t LEAUDIO_ASE_STORAGE_CURRENT_LAYOUT_MAGIC = 0x00;
 static constexpr uint8_t LEAUDIO_HANDLES_STORAGE_CURRENT_LAYOUT_MAGIC = 0x00;
@@ -64,8 +64,9 @@ static constexpr size_t LEAUDIO_STORAGE_HANDLES_ENTRIES_SZ =
     sizeof(uint16_t) /*available context type handle*/ +
     sizeof(uint16_t) /*ccc handle*/ + sizeof(uint16_t) /* tmas handle */;
 
-bool serializePacs(const le_audio::types::PublishedAudioCapabilities& pacs,
-                   std::vector<uint8_t>& out) {
+bool serializePacs(
+    const bluetooth::le_audio::types::PublishedAudioCapabilities& pacs,
+    std::vector<uint8_t>& out) {
   auto num_of_pacs = pacs.size();
   if (num_of_pacs == 0 || (num_of_pacs > std::numeric_limits<uint8_t>::max())) {
     LOG_WARN("No pacs available");
@@ -136,7 +137,7 @@ bool serializePacs(const le_audio::types::PublishedAudioCapabilities& pacs,
   return true;
 }
 
-bool SerializeSinkPacs(const le_audio::LeAudioDevice* leAudioDevice,
+bool SerializeSinkPacs(const bluetooth::le_audio::LeAudioDevice* leAudioDevice,
                        std::vector<uint8_t>& out) {
   if (leAudioDevice == nullptr) {
     LOG_WARN(" Skipping unknown device");
@@ -148,8 +149,9 @@ bool SerializeSinkPacs(const le_audio::LeAudioDevice* leAudioDevice,
   return serializePacs(leAudioDevice->snk_pacs_, out);
 }
 
-bool SerializeSourcePacs(const le_audio::LeAudioDevice* leAudioDevice,
-                         std::vector<uint8_t>& out) {
+bool SerializeSourcePacs(
+    const bluetooth::le_audio::LeAudioDevice* leAudioDevice,
+    std::vector<uint8_t>& out) {
   if (leAudioDevice == nullptr) {
     LOG_WARN(" Skipping unknown device");
     return false;
@@ -204,14 +206,15 @@ bool deserializePacs(LeAudioDevice* leAudioDevice,
                 hdl_pair.val_hdl, hdl_pair.ccc_hdl, pac_count);
 
     pacs_db.push_back(std::make_tuple(
-        hdl_pair, std::vector<struct le_audio::types::acs_ac_record>()));
+        hdl_pair,
+        std::vector<struct bluetooth::le_audio::types::acs_ac_record>()));
 
     auto hdl = hdl_pair.val_hdl;
     auto pac_tuple_iter = std::find_if(
         pacs_db.begin(), pacs_db.end(),
         [&hdl](auto& pac_ent) { return std::get<0>(pac_ent).val_hdl == hdl; });
 
-    std::vector<struct le_audio::types::acs_ac_record> pac_recs;
+    std::vector<struct bluetooth::le_audio::types::acs_ac_record> pac_recs;
     while (pac_count--) {
       uint8_t pac_len;
       STREAM_TO_UINT8(pac_len, ptr);
@@ -229,7 +232,7 @@ bool deserializePacs(LeAudioDevice* leAudioDevice,
   return true;
 }
 
-bool DeserializeSinkPacs(le_audio::LeAudioDevice* leAudioDevice,
+bool DeserializeSinkPacs(bluetooth::le_audio::LeAudioDevice* leAudioDevice,
                          const std::vector<uint8_t>& in) {
   LOG_VERBOSE("");
   if (leAudioDevice == nullptr) {
@@ -239,7 +242,7 @@ bool DeserializeSinkPacs(le_audio::LeAudioDevice* leAudioDevice,
   return deserializePacs(leAudioDevice, leAudioDevice->snk_pacs_, in);
 }
 
-bool DeserializeSourcePacs(le_audio::LeAudioDevice* leAudioDevice,
+bool DeserializeSourcePacs(bluetooth::le_audio::LeAudioDevice* leAudioDevice,
                            const std::vector<uint8_t>& in) {
   LOG_VERBOSE("");
   if (leAudioDevice == nullptr) {
@@ -249,7 +252,7 @@ bool DeserializeSourcePacs(le_audio::LeAudioDevice* leAudioDevice,
   return deserializePacs(leAudioDevice, leAudioDevice->src_pacs_, in);
 }
 
-bool SerializeAses(const le_audio::LeAudioDevice* leAudioDevice,
+bool SerializeAses(const bluetooth::le_audio::LeAudioDevice* leAudioDevice,
                    std::vector<uint8_t>& out) {
   if (leAudioDevice == nullptr) {
     LOG_WARN(" Skipping unknown device");
@@ -282,8 +285,9 @@ bool SerializeAses(const le_audio::LeAudioDevice* leAudioDevice,
     LOG_VERBOSE(
         "Storing ASE ID: %d, direction %s, handle 0x%04x, ccc_handle 0x%04x",
         ase.id,
-        ase.direction == le_audio::types::kLeAudioDirectionSink ? "sink "
-                                                                : "source",
+        ase.direction == bluetooth::le_audio::types::kLeAudioDirectionSink
+            ? "sink "
+            : "source",
         ase.hdls.val_hdl, ase.hdls.ccc_hdl);
 
     UINT16_TO_STREAM(ptr, ase.hdls.val_hdl);
@@ -295,7 +299,7 @@ bool SerializeAses(const le_audio::LeAudioDevice* leAudioDevice,
   return true;
 }
 
-bool DeserializeAses(le_audio::LeAudioDevice* leAudioDevice,
+bool DeserializeAses(bluetooth::le_audio::LeAudioDevice* leAudioDevice,
                      const std::vector<uint8_t>& in) {
   if (leAudioDevice == nullptr) {
     LOG_WARN(" Skipping unknown device");
@@ -348,8 +352,9 @@ bool DeserializeAses(le_audio::LeAudioDevice* leAudioDevice,
     LOG_VERBOSE(
         " Loading ASE ID: %d, direction %s, handle 0x%04x, ccc_handle 0x%04x",
         ase_id,
-        direction == le_audio::types::kLeAudioDirectionSink ? "sink "
-                                                            : "source",
+        direction == bluetooth::le_audio::types::kLeAudioDirectionSink
+            ? "sink "
+            : "source",
         handle, ccc_handle);
   }
 
@@ -466,4 +471,4 @@ bool DeserializeHandles(LeAudioDevice* leAudioDevice,
   leAudioDevice->known_service_handles_ = true;
   return true;
 }
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

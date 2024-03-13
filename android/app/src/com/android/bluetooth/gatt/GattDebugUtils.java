@@ -130,7 +130,6 @@ import java.util.UUID;
     /**
      * Attempts to retrieve an extra from an intent first as hex value,
      * then as an ineger.
-     * @hide
      */
     private static int getHandleExtra(Intent intent, String extra, int defaultValue) {
         Bundle extras = intent.getExtras();
@@ -150,7 +149,6 @@ import java.util.UUID;
      * Retrieves the EXTRA_UUID parameter.
      * If a string of length 4 is detected, a 16-bit hex UUID is assumed and
      * the default Bluetooth UUID is appended.
-     * @hide
      */
     private static UUID getUuidExtra(Intent intent) {
         String uuidStr = intent.getStringExtra(EXTRA_UUID);
@@ -160,10 +158,7 @@ import java.util.UUID;
         return (uuidStr != null) ? UUID.fromString(uuidStr) : null;
     }
 
-    /**
-     * Log usage information.
-     * @hide
-     */
+    /** Log usage information. */
     private static void logUsageInfo() {
         StringBuilder b = new StringBuilder();
         b.append("------------ GATT TEST ACTIONS  ----------------");

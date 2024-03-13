@@ -41,7 +41,6 @@ import java.util.Map;
 
 /**
  * Provides Media Control Profile, as a service in the Bluetooth application.
- * @hide
  */
 public class McpService extends ProfileService {
     private static final boolean DBG = true;
@@ -204,7 +203,6 @@ public class McpService extends ProfileService {
      * Remove authorization information for the device.
      *
      * @param device device to remove from the service information
-     * @hide
      */
     public void removeDeviceAuthorizationInfo(BluetoothDevice device) {
         Log.i(TAG, "removeDeviceAuthorizationInfo(): device: " + device);

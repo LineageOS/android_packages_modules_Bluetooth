@@ -24,7 +24,6 @@
 #include "audio_hal_client/audio_hal_client.h"
 #include "audio_set_configurations_generated.h"
 #include "audio_set_scenarios_generated.h"
-#include "codec_manager.h"
 #include "flatbuffers/idl.h"
 #include "flatbuffers/util.h"
 #include "le_audio_set_configuration_provider.h"
@@ -32,16 +31,15 @@
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
 
-using le_audio::set_configurations::AudioSetConfiguration;
-using le_audio::set_configurations::AudioSetConfigurations;
-using le_audio::set_configurations::CodecConfigSetting;
-using le_audio::set_configurations::LeAudioCodecIdLc3;
-using le_audio::set_configurations::QosConfigSetting;
-using le_audio::set_configurations::SetConfiguration;
-using le_audio::types::LeAudioContextType;
+using bluetooth::le_audio::set_configurations::AudioSetConfiguration;
+using bluetooth::le_audio::set_configurations::AudioSetConfigurations;
+using bluetooth::le_audio::set_configurations::CodecConfigSetting;
+using bluetooth::le_audio::set_configurations::LeAudioCodecIdLc3;
+using bluetooth::le_audio::set_configurations::QosConfigSetting;
+using bluetooth::le_audio::set_configurations::SetConfiguration;
+using bluetooth::le_audio::types::LeAudioContextType;
 
-namespace le_audio {
-using ::le_audio::CodecManager;
+namespace bluetooth::le_audio {
 
 #ifdef __ANDROID__
 static const std::vector<
@@ -97,7 +95,7 @@ struct AudioSetConfigurationProviderJson {
    */
   static auto ScenarioToContextTypes(const std::string& scenario) {
     static const std::multimap<std::string,
-                               ::le_audio::types::LeAudioContextType>
+                               ::bluetooth::le_audio::types::LeAudioContextType>
         scenarios = {
             {"Media", types::LeAudioContextType::ALERTS},
             {"Media", types::LeAudioContextType::INSTRUCTIONAL},
@@ -115,7 +113,7 @@ struct AudioSetConfigurationProviderJson {
   }
 
   static std::string ContextTypeToScenario(
-      ::le_audio::types::LeAudioContextType context_type) {
+      ::bluetooth::le_audio::types::LeAudioContextType context_type) {
     switch (context_type) {
       case types::LeAudioContextType::ALERTS:
         FALLTHROUGH_INTENDED;
@@ -167,16 +165,13 @@ struct AudioSetConfigurationProviderJson {
     return nullptr;
   };
 
-  bool IsDualBiDirSwbSupported(void) const {
-    return dual_bidirection_swb_supported_;
-  }
-
  private:
   /* Codec configurations */
   std::map<std::string, const AudioSetConfiguration> configurations_;
 
   /* Maps of context types to a set of configuration structs */
-  std::map<::le_audio::types::LeAudioContextType, AudioSetConfigurations>
+  std::map<::bluetooth::le_audio::types::LeAudioContextType,
+           AudioSetConfigurations>
       context_configurations_;
 
   /* property to check if bidirectional sampling frequency >= 32k dual mic is
@@ -184,12 +179,12 @@ struct AudioSetConfigurationProviderJson {
    */
   bool dual_bidirection_swb_supported_;
 
-  static const bluetooth::le_audio::CodecSpecificConfiguration*
+  static const fbs::le_audio::CodecSpecificConfiguration*
   LookupCodecSpecificParam(
       const flatbuffers::Vector<
-          flatbuffers::Offset<bluetooth::le_audio::CodecSpecificConfiguration>>*
+          flatbuffers::Offset<fbs::le_audio::CodecSpecificConfiguration>>*
           flat_codec_specific_params,
-      bluetooth::le_audio::CodecSpecificLtvGenericTypes type) {
+      fbs::le_audio::CodecSpecificLtvGenericTypes type) {
     auto it = std::find_if(
         flat_codec_specific_params->cbegin(),
         flat_codec_specific_params->cend(),
@@ -198,13 +193,13 @@ struct AudioSetConfigurationProviderJson {
   }
 
   static CodecConfigSetting CodecConfigSettingFromFlat(
-      const bluetooth::le_audio::CodecId* flat_codec_id,
+      const fbs::le_audio::CodecId* flat_codec_id,
       const flatbuffers::Vector<
-          flatbuffers::Offset<bluetooth::le_audio::CodecSpecificConfiguration>>*
+          flatbuffers::Offset<fbs::le_audio::CodecSpecificConfiguration>>*
           flat_codec_specific_params) {
     CodecConfigSetting codec;
 
-    /* Cache the le_audio::types::CodecId type value */
+    /* Cache the bluetooth::le_audio::types::CodecId type value */
     codec.id = types::LeAudioCodecId({
         .coding_format = flat_codec_id->coding_format(),
         .vendor_company_id = flat_codec_id->vendor_company_id(),
@@ -220,7 +215,7 @@ struct AudioSetConfigurationProviderJson {
     }
 
     auto param = codec.params.Find(
-        bluetooth::le_audio::
+        fbs::le_audio::
             CodecSpecificLtvGenericTypes_SUPPORTED_AUDIO_CHANNEL_ALLOCATION);
     if (param) {
       auto ptr = param->data();
@@ -240,7 +235,7 @@ struct AudioSetConfigurationProviderJson {
   }
 
   SetConfiguration SetConfigurationFromFlatSubconfig(
-      const bluetooth::le_audio::AudioSetSubConfiguration* flat_subconfig,
+      const fbs::le_audio::AudioSetSubConfiguration* flat_subconfig,
       QosConfigSetting qos, types::CodecLocation location) {
     auto strategy_int =
         static_cast<int>(flat_subconfig->configuration_strategy());
@@ -296,9 +291,9 @@ struct AudioSetConfigurationProviderJson {
   }
 
   AudioSetConfiguration AudioSetConfigurationFromFlat(
-      const bluetooth::le_audio::AudioSetConfiguration* flat_cfg,
-      std::vector<const bluetooth::le_audio::CodecConfiguration*>* codec_cfgs,
-      std::vector<const bluetooth::le_audio::QosConfiguration*>* qos_cfgs,
+      const fbs::le_audio::AudioSetConfiguration* flat_cfg,
+      std::vector<const fbs::le_audio::CodecConfiguration*>* codec_cfgs,
+      std::vector<const fbs::le_audio::QosConfiguration*>* qos_cfgs,
       types::CodecLocation location) {
     ASSERT_LOG(flat_cfg != nullptr, "flat_cfg cannot be null");
     std::string codec_config_key = flat_cfg->codec_config_name()->str();
@@ -324,7 +319,7 @@ struct AudioSetConfigurationProviderJson {
              flat_cfg->name()->c_str(), codec_config_key.c_str(),
              qos_sink_key.c_str(), qos_source_key.c_str());
 
-    const bluetooth::le_audio::QosConfiguration* qos_sink_cfg = nullptr;
+    const fbs::le_audio::QosConfiguration* qos_sink_cfg = nullptr;
     for (auto i = qos_cfgs->begin(); i != qos_cfgs->end(); ++i) {
       if ((*i)->name()->str() == qos_sink_key) {
         qos_sink_cfg = *i;
@@ -332,7 +327,7 @@ struct AudioSetConfigurationProviderJson {
       }
     }
 
-    const bluetooth::le_audio::QosConfiguration* qos_source_cfg = nullptr;
+    const fbs::le_audio::QosConfiguration* qos_source_cfg = nullptr;
     for (auto i = qos_cfgs->begin(); i != qos_cfgs->end(); ++i) {
       if ((*i)->name()->str() == qos_source_key) {
         qos_source_cfg = *i;
@@ -362,7 +357,7 @@ struct AudioSetConfigurationProviderJson {
       LOG_ERROR("No qos config matching key %s found", qos_source_key.c_str());
     }
 
-    const bluetooth::le_audio::CodecConfiguration* codec_cfg = nullptr;
+    const fbs::le_audio::CodecConfiguration* codec_cfg = nullptr;
     for (auto i = codec_cfgs->begin(); i != codec_cfgs->end(); ++i) {
       if ((*i)->name()->str() == codec_config_key) {
         codec_cfg = *i;
@@ -380,7 +375,8 @@ struct AudioSetConfigurationProviderJson {
     if (codec_cfg != nullptr && codec_cfg->subconfigurations()) {
       /* Load subconfigurations */
       for (auto subconfig : *codec_cfg->subconfigurations()) {
-        if (subconfig->direction() == le_audio::types::kLeAudioDirectionSink) {
+        if (subconfig->direction() ==
+            bluetooth::le_audio::types::kLeAudioDirectionSink) {
           processSubconfig(
               *subconfig, qos_sink, dual_dev_one_chan_stereo_sink_swb,
               single_dev_one_chan_stereo_sink_swb, subconfigs, location);
@@ -413,7 +409,7 @@ struct AudioSetConfigurationProviderJson {
   }
 
   void processSubconfig(
-      const bluetooth::le_audio::AudioSetSubConfiguration& subconfig,
+      const fbs::le_audio::AudioSetSubConfiguration& subconfig,
       const QosConfigSetting& qos_setting, bool& dual_dev_one_chan_stereo_swb,
       bool& single_dev_one_chan_stereo_swb,
       std::vector<SetConfiguration>& subconfigs,
@@ -422,7 +418,7 @@ struct AudioSetConfigurationProviderJson {
         SetConfigurationFromFlatSubconfig(&subconfig, qos_setting, location));
 
     if (subconfigs.back().codec.GetSamplingFrequencyHz() <
-        le_audio::LeAudioCodecConfiguration::kSampleRate32000) {
+        bluetooth::le_audio::LeAudioCodecConfiguration::kSampleRate32000) {
       return;
     }
 
@@ -460,7 +456,7 @@ struct AudioSetConfigurationProviderJson {
     if (!ok) return ok;
 
     /* Import from flatbuffers */
-    auto configurations_root = bluetooth::le_audio::GetAudioSetConfigurations(
+    auto configurations_root = fbs::le_audio::GetAudioSetConfigurations(
         configurations_parser_.builder_.GetBufferPointer());
     if (!configurations_root) return false;
 
@@ -469,7 +465,7 @@ struct AudioSetConfigurationProviderJson {
       return false;
 
     LOG_DEBUG(": Updating %d qos config entries.", flat_qos_configs->size());
-    std::vector<const bluetooth::le_audio::QosConfiguration*> qos_cfgs;
+    std::vector<const fbs::le_audio::QosConfiguration*> qos_cfgs;
     for (auto const& flat_qos_cfg : *flat_qos_configs) {
       qos_cfgs.push_back(flat_qos_cfg);
     }
@@ -480,7 +476,7 @@ struct AudioSetConfigurationProviderJson {
 
     LOG_DEBUG(": Updating %d codec config entries.",
               flat_codec_configs->size());
-    std::vector<const bluetooth::le_audio::CodecConfiguration*> codec_cfgs;
+    std::vector<const fbs::le_audio::CodecConfiguration*> codec_cfgs;
     for (auto const& flat_codec_cfg : *flat_codec_configs) {
       codec_cfgs.push_back(flat_codec_cfg);
     }
@@ -501,7 +497,7 @@ struct AudioSetConfigurationProviderJson {
   }
 
   AudioSetConfigurations AudioSetConfigurationsFromFlatScenario(
-      const bluetooth::le_audio::AudioSetScenario* const flat_scenario) {
+      const fbs::le_audio::AudioSetScenario* const flat_scenario) {
     AudioSetConfigurations items;
     if (!flat_scenario->configurations()) return items;
 
@@ -539,7 +535,7 @@ struct AudioSetConfigurationProviderJson {
     if (!ok) return ok;
 
     /* Import from flatbuffers */
-    auto scenarios_root = bluetooth::le_audio::GetAudioSetScenarios(
+    auto scenarios_root = fbs::le_audio::GetAudioSetScenarios(
         scenarios_parser_.builder_.GetBufferPointer());
     if (!scenarios_root) return false;
 
@@ -681,25 +677,7 @@ AudioSetConfigurationProvider* AudioSetConfigurationProvider::Get() {
 
 const set_configurations::AudioSetConfigurations*
 AudioSetConfigurationProvider::GetConfigurations(
-    ::le_audio::types::LeAudioContextType content_type) const {
-  if (CodecManager::GetInstance()->GetCodecLocation() ==
-      types::CodecLocation::ADSP) {
-    LOG_VERBOSE("Get offload config for the context type: %d",
-                (int)content_type);
-    const AudioSetConfigurations* offload_confs =
-        CodecManager::GetInstance()->GetOffloadCodecConfig(content_type);
-
-    if (offload_confs != nullptr && !(*offload_confs).empty()) {
-      return offload_confs;
-    }
-
-    // TODO: Need to have a mechanism to switch to software session if offload
-    // doesn't support.
-  }
-
-  LOG_VERBOSE("Get software config for the context type: %d",
-              (int)content_type);
-
+    ::bluetooth::le_audio::types::LeAudioContextType content_type) const {
   if (pimpl_->IsRunning())
     return pimpl_->config_provider_impl_->GetConfigurationsByContextType(
         content_type);
@@ -713,11 +691,11 @@ bool AudioSetConfigurationProvider::CheckConfigurationIsBiDirSwb(
 
   for (const auto& conf : set_configuration.confs) {
     if (conf.codec.GetSamplingFrequencyHz() >=
-        le_audio::LeAudioCodecConfiguration::kSampleRate32000) {
+        bluetooth::le_audio::LeAudioCodecConfiguration::kSampleRate32000) {
       dir |= conf.direction;
     }
   }
-  return dir == le_audio::types::kLeAudioDirectionBoth;
+  return dir == bluetooth::le_audio::types::kLeAudioDirectionBoth;
 }
 
 bool AudioSetConfigurationProvider::CheckConfigurationIsDualBiDirSwb(
@@ -727,7 +705,7 @@ bool AudioSetConfigurationProvider::CheckConfigurationIsDualBiDirSwb(
 
   for (const auto& conf : set_configuration.confs) {
     if (conf.codec.GetSamplingFrequencyHz() <
-        le_audio::LeAudioCodecConfiguration::kSampleRate32000) {
+        bluetooth::le_audio::LeAudioCodecConfiguration::kSampleRate32000) {
       return false;
     }
     if (conf.device_cnt == 1 && conf.ase_cnt == 2) {
@@ -737,16 +715,10 @@ bool AudioSetConfigurationProvider::CheckConfigurationIsDualBiDirSwb(
     }
   }
 
-  return single_dev_dual_bidir_swb == le_audio::types::kLeAudioDirectionBoth ||
-         dual_dev_dual_bidir_swb == le_audio::types::kLeAudioDirectionBoth;
+  return single_dev_dual_bidir_swb ==
+             bluetooth::le_audio::types::kLeAudioDirectionBoth ||
+         dual_dev_dual_bidir_swb ==
+             bluetooth::le_audio::types::kLeAudioDirectionBoth;
 }
 
-bool AudioSetConfigurationProvider::IsDualBiDirSwbSupported(void) const {
-  if (pimpl_->IsRunning()) {
-    return pimpl_->config_provider_impl_->IsDualBiDirSwbSupported();
-  }
-
-  return false;
-}
-
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

@@ -1124,7 +1124,7 @@ package android.bluetooth {
     method @FlaggedApi("com.android.bluetooth.flags.leaudio_broadcast_volume_control_for_connected_devices") public default void onDeviceVolumeChanged(@NonNull android.bluetooth.BluetoothDevice, @IntRange(from=0, to=255) int);
     method @FlaggedApi("com.android.bluetooth.flags.leaudio_multiple_vocs_instances_api") public default void onVolumeOffsetAudioDescriptionChanged(@NonNull android.bluetooth.BluetoothDevice, @IntRange(from=1, to=255) int, @NonNull String);
     method @FlaggedApi("com.android.bluetooth.flags.leaudio_multiple_vocs_instances_api") public default void onVolumeOffsetAudioLocationChanged(@NonNull android.bluetooth.BluetoothDevice, @IntRange(from=1, to=255) int, @IntRange(from=0xffffff01, to=255) int);
-    method @Deprecated public void onVolumeOffsetChanged(@NonNull android.bluetooth.BluetoothDevice, @IntRange(from=0xffffff01, to=255) int);
+    method @Deprecated public default void onVolumeOffsetChanged(@NonNull android.bluetooth.BluetoothDevice, @IntRange(from=0xffffff01, to=255) int);
     method @FlaggedApi("com.android.bluetooth.flags.leaudio_multiple_vocs_instances_api") public default void onVolumeOffsetChanged(@NonNull android.bluetooth.BluetoothDevice, @IntRange(from=1, to=255) int, @IntRange(from=0xffffff01, to=255) int);
   }
 

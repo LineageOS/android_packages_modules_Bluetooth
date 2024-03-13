@@ -66,8 +66,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Class that handles Bluetooth LE scan related operations.
- *
- * @hide
  */
 public class ScanManager {
     private static final boolean DBG = GattServiceConfig.DBG;
@@ -177,7 +175,7 @@ public class ScanManager {
         mContext = context;
         mScanHelper = scanHelper;
         mAdapterService = adapterService;
-        mScanNative = new ScanNative();
+        mScanNative = new ScanNative(scanHelper);
         mDm = mContext.getSystemService(DisplayManager.class);
         mActivityManager = mContext.getSystemService(ActivityManager.class);
         mLocationManager = mAdapterService.getSystemService(LocationManager.class);
@@ -1020,8 +1018,9 @@ public class ScanManager {
         private PendingIntent mBatchScanIntervalIntent;
         private ScanNativeInterface mNativeInterface;
 
-        ScanNative() {
+        ScanNative(TransitionalScanHelper scanHelper) {
             mNativeInterface = GattObjectsFactory.getInstance().getScanNativeInterface();
+            mNativeInterface.init(scanHelper);
             mFilterIndexStack = new ArrayDeque<Integer>();
             mClientFilterIndexMap = new HashMap<Integer, Deque<Integer>>();
 
@@ -1033,23 +1032,24 @@ public class ScanManager {
             IntentFilter filter = new IntentFilter();
             filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
             filter.addAction(ACTION_REFRESH_BATCHED_SCAN);
-            mBatchAlarmReceiver = new BroadcastReceiver() {
-                @Override
-                public void onReceive(Context context, Intent intent) {
-                    Log.d(TAG, "awakened up at time " + SystemClock.elapsedRealtime());
-                    String action = intent.getAction();
+            mBatchAlarmReceiver =
+                    new BroadcastReceiver() {
+                        @Override
+                        public void onReceive(Context context, Intent intent) {
+                            Log.d(TAG, "awakened up at time " + SystemClock.elapsedRealtime());
+                            String action = intent.getAction();
 
-                    if (action.equals(ACTION_REFRESH_BATCHED_SCAN)) {
-                        if (mBatchClients.isEmpty()) {
-                            return;
+                            if (action.equals(ACTION_REFRESH_BATCHED_SCAN)) {
+                                if (mBatchClients.isEmpty()) {
+                                    return;
+                                }
+                                // Note this actually flushes all pending batch data.
+                                if (mBatchClients.iterator().hasNext()) {
+                                    flushBatchScanResults(mBatchClients.iterator().next());
+                                }
+                            }
                         }
-                        // Note this actually flushes all pending batch data.
-                        if (mBatchClients.iterator().hasNext()) {
-                            flushBatchScanResults(mBatchClients.iterator().next());
-                        }
-                    }
-                }
-            };
+                    };
             mContext.registerReceiver(mBatchAlarmReceiver, filter);
             mBatchAlarmReceiverRegistered = true;
         }
@@ -1489,6 +1489,7 @@ public class ScanManager {
                 mContext.unregisterReceiver(mBatchAlarmReceiver);
             }
             mBatchAlarmReceiverRegistered = false;
+            mNativeInterface.cleanup();
         }
 
         private long getBatchTriggerIntervalMillis() {
@@ -1549,8 +1550,10 @@ public class ScanManager {
                     if (deliveryMode == DELIVERY_MODE_ON_FOUND_LOST) {
                         trackEntries = getNumOfTrackingAdvertisements(client.settings);
                         if (!manageAllocationOfTrackingAdvertisement(trackEntries, true)) {
-                            Log.e(TAG, "No hardware resources for onfound/onlost filter "
-                                    + trackEntries);
+                            Log.e(
+                                    TAG,
+                                    "No hardware resources for onfound/onlost filter "
+                                            + trackEntries);
                             client.stats.recordTrackingHwFilterNotAvailableCountMetrics();
                             try {
                                 mScanHelper.onScanManagerErrorCallback(
@@ -1703,7 +1706,8 @@ public class ScanManager {
                 return DELIVERY_MODE_ON_FOUND_LOST;
             }
             if (isAllMatchesAutoBatchScanClient(client)) {
-                return isAutoBatchScanClientEnabled(client) ? DELIVERY_MODE_BATCH
+                return isAutoBatchScanClientEnabled(client)
+                        ? DELIVERY_MODE_BATCH
                         : DELIVERY_MODE_IMMEDIATE;
             }
             return settings.getReportDelayMillis() == 0 ? DELIVERY_MODE_IMMEDIATE
@@ -1742,9 +1746,9 @@ public class ScanManager {
                     return mAdapterService.getScreenOffBalancedWindowMillis();
                 default:
                     return Settings.Global.getInt(
-                        resolver,
-                        Settings.Global.BLE_SCAN_LOW_POWER_WINDOW_MS,
-                        SCAN_MODE_LOW_POWER_WINDOW_MS);
+                            resolver,
+                            Settings.Global.BLE_SCAN_LOW_POWER_WINDOW_MS,
+                            SCAN_MODE_LOW_POWER_WINDOW_MS);
             }
         }
 

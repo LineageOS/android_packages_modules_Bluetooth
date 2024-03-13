@@ -48,8 +48,7 @@ import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
-import com.android.bluetooth.flags.FeatureFlags;
-import com.android.bluetooth.flags.FeatureFlagsImpl;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.modules.utils.SynchronousResultReceiver;
@@ -79,7 +78,6 @@ public class VolumeControlService extends ProfileService {
     private DatabaseManager mDatabaseManager;
     private HandlerThread mStateMachinesThread;
     private Handler mHandler = null;
-    private FeatureFlags mFeatureFlags;
 
     @VisibleForTesting RemoteCallbackList<IBluetoothVolumeControlCallback> mCallbacks;
 
@@ -200,13 +198,6 @@ public class VolumeControlService extends ProfileService {
 
     public VolumeControlService(Context ctx) {
         super(ctx);
-        mFeatureFlags = new FeatureFlagsImpl();
-    }
-
-    @VisibleForTesting
-    VolumeControlService(Context ctx, FeatureFlags featureFlags) {
-        super(ctx);
-        mFeatureFlags = featureFlags;
     }
 
     public static boolean isEnabled() {
@@ -599,7 +590,7 @@ public class VolumeControlService extends ProfileService {
     }
 
     void setDeviceVolume(BluetoothDevice device, int volume, boolean isGroupOp) {
-        if (!mFeatureFlags.leaudioBroadcastVolumeControlForConnectedDevices()) {
+        if (!Flags.leaudioBroadcastVolumeControlForConnectedDevices()) {
             return;
         }
         if (DBG) {
@@ -633,9 +624,6 @@ public class VolumeControlService extends ProfileService {
         }
     }
 
-    /**
-     * {@hide}
-     */
     public void setGroupVolume(int groupId, int volume) {
         if (volume < 0) {
             Log.w(TAG, "Tried to set invalid volume " + volume + ". Ignored.");
@@ -672,10 +660,6 @@ public class VolumeControlService extends ProfileService {
         }
     }
 
-    /**
-     * {@hide}
-     * @param groupId
-     */
     public int getGroupVolume(int groupId) {
         return mGroupVolumeCache.getOrDefault(groupId,
                         IBluetoothVolumeControl.VOLUME_CONTROL_UNKNOWN_VOLUME);
@@ -686,7 +670,6 @@ public class VolumeControlService extends ProfileService {
      *
      * @param device the device
      * @return the cached volume
-     * @hide
      */
     public int getDeviceVolume(BluetoothDevice device) {
         return mDeviceVolumeCache.getOrDefault(
@@ -725,31 +708,19 @@ public class VolumeControlService extends ProfileService {
         return mGroupMuteCache.getOrDefault(groupId, false);
     }
 
-    /**
-     * {@hide}
-     */
     public void mute(BluetoothDevice device) {
         mVolumeControlNativeInterface.mute(device);
     }
 
-    /**
-     * {@hide}
-     */
     public void muteGroup(int groupId) {
         mGroupMuteCache.put(groupId, true);
         mVolumeControlNativeInterface.muteGroup(groupId);
     }
 
-    /**
-     * {@hide}
-     */
     public void unmute(BluetoothDevice device) {
         mVolumeControlNativeInterface.unmute(device);
     }
 
-    /**
-     * {@hide}
-     */
     public void unmuteGroup(int groupId) {
         mGroupMuteCache.put(groupId, false);
         mVolumeControlNativeInterface.unmuteGroup(groupId);
@@ -810,7 +781,7 @@ public class VolumeControlService extends ProfileService {
                     } catch (RemoteException e) {
                         // Not every callback had to be defined; just continue
                     }
-                    if (mFeatureFlags.leaudioMultipleVocsInstancesApi()) {
+                    if (Flags.leaudioMultipleVocsInstancesApi()) {
                         try {
                             tempCallbackList
                                     .getBroadcastItem(i)
@@ -832,7 +803,7 @@ public class VolumeControlService extends ProfileService {
 
         tempCallbackList.finishBroadcast();
 
-        if (mFeatureFlags.leaudioBroadcastVolumeControlForConnectedDevices()) {
+        if (Flags.leaudioBroadcastVolumeControlForConnectedDevices()) {
             notifyDevicesVolumeChanged(tempCallbackList, getDevices(), Optional.empty());
         }
 
@@ -857,9 +828,6 @@ public class VolumeControlService extends ProfileService {
         notifyNewCallbackOfKnownVolumeInfo(callback);
     }
 
-    /**
-     * {@hide}
-     */
     public void handleGroupNodeAdded(int groupId, BluetoothDevice device) {
         // Ignore disconnected device, its volume will be set once it connects
         synchronized (mStateMachines) {
@@ -916,7 +884,7 @@ public class VolumeControlService extends ProfileService {
         mGroupVolumeCache.put(groupId, volume);
         mGroupMuteCache.put(groupId, mute);
 
-        if (mFeatureFlags.leaudioBroadcastVolumeControlForConnectedDevices()) {
+        if (Flags.leaudioBroadcastVolumeControlForConnectedDevices()) {
             LeAudioService leAudioService = mFactory.getLeAudioService();
             if (leAudioService != null) {
                 int currentlyActiveGroupId = leAudioService.getActiveGroupId();
@@ -972,7 +940,7 @@ public class VolumeControlService extends ProfileService {
         int groupVolume = getGroupVolume(groupId);
         Boolean groupMute = getGroupMute(groupId);
 
-        if (mFeatureFlags.leaudioBroadcastVolumeControlForConnectedDevices()) {
+        if (Flags.leaudioBroadcastVolumeControlForConnectedDevices()) {
             Log.i(TAG, "handleVolumeControlChanged: " + device + "; volume: " + volume);
             if (device == null) {
                 // notify group devices volume changed
@@ -1046,9 +1014,6 @@ public class VolumeControlService extends ProfileService {
         }
     }
 
-    /**
-     * {@hide}
-     */
     public int getAudioDeviceGroupVolume(int groupId) {
         int volume = getGroupVolume(groupId);
         if (getGroupMute(groupId)) {
@@ -1082,12 +1047,12 @@ public class VolumeControlService extends ProfileService {
             case AudioManager.MODE_IN_CALL:
                 return AudioManager.STREAM_VOICE_CALL;
             case AudioManager.MODE_RINGTONE:
-            if (mFeatureFlags.leaudioVolumeChangeOnRingtoneFix()) {
-                if (DBG) {
-                    Log.d(TAG, " Update during ringtone applied to voice call");
+                if (Flags.leaudioVolumeChangeOnRingtoneFix()) {
+                    if (DBG) {
+                        Log.d(TAG, " Update during ringtone applied to voice call");
+                    }
+                    return AudioManager.STREAM_VOICE_CALL;
                 }
-                return AudioManager.STREAM_VOICE_CALL;
-            }
             // fall through
             case AudioManager.MODE_NORMAL:
             default:
@@ -1161,7 +1126,7 @@ public class VolumeControlService extends ProfileService {
         }
         offsets.setLocation(id, location);
 
-        if (mFeatureFlags.leaudioMultipleVocsInstancesApi()) {
+        if (Flags.leaudioMultipleVocsInstancesApi()) {
             if (mCallbacks == null) {
                 return;
             }
@@ -1194,7 +1159,7 @@ public class VolumeControlService extends ProfileService {
         }
         offsets.setDescription(id, description);
 
-        if (mFeatureFlags.leaudioMultipleVocsInstancesApi()) {
+        if (Flags.leaudioMultipleVocsInstancesApi()) {
             if (mCallbacks == null) {
                 return;
             }

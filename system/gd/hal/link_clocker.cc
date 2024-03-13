@@ -16,6 +16,8 @@
 
 #include "hal/link_clocker.h"
 
+#include <bluetooth/log.h>
+
 #include <algorithm>
 
 namespace bluetooth::hal {
@@ -112,7 +114,7 @@ void LinkClocker::OnHciEvent(const HciPacket& packet) {
       if (status != 0) return;
 
       if (cig_id_ >= 0 && cis_handle_ >= 0 && cig_id_ != cig_id) {
-        LOG_WARN("Multiple groups not supported");
+        log::warn("Multiple groups not supported");
         return;
       }
 

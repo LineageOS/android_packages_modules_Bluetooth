@@ -40,7 +40,7 @@
 #include "devices.h"
 #include "le_audio_types.h"
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 
 class LeAudioDeviceGroup {
  public:
@@ -53,7 +53,7 @@ class LeAudioDeviceGroup {
         : group_(group), state_(types::CigState::NONE) {}
 
     types::CigState GetState(void) const { return state_; }
-    void SetState(le_audio::types::CigState state) {
+    void SetState(bluetooth::le_audio::types::CigState state) {
       LOG_VERBOSE("%s -> %s", bluetooth::common::ToString(state_).c_str(),
                   bluetooth::common::ToString(state).c_str());
       state_ = state;
@@ -151,7 +151,7 @@ class LeAudioDeviceGroup {
   LeAudioDevice* GetFirstDevice(void) const;
   LeAudioDevice* GetFirstDeviceWithAvailableContext(
       types::LeAudioContextType context_type) const;
-  le_audio::types::LeAudioConfigurationStrategy GetGroupStrategy(
+  bluetooth::le_audio::types::LeAudioConfigurationStrategy GetGroupStrategy(
       int expected_group_size) const;
   int GetAseCount(uint8_t direction) const;
   LeAudioDevice* GetNextDevice(LeAudioDevice* leAudioDevice) const;
@@ -198,13 +198,13 @@ class LeAudioDeviceGroup {
   bool UpdateAudioSetConfigurationCache(types::LeAudioContextType ctx_type);
   bool ReloadAudioLocations(void);
   bool ReloadAudioDirections(void);
-  const set_configurations::AudioSetConfiguration* GetActiveConfiguration(
-      void) const;
+  std::shared_ptr<const set_configurations::AudioSetConfiguration>
+  GetActiveConfiguration(void) const;
   bool IsPendingConfiguration(void) const;
-  const set_configurations::AudioSetConfiguration* GetConfiguration(
-      types::LeAudioContextType ctx_type);
-  const set_configurations::AudioSetConfiguration* GetCachedConfiguration(
-      types::LeAudioContextType ctx_type) const;
+  std::shared_ptr<const set_configurations::AudioSetConfiguration>
+  GetConfiguration(types::LeAudioContextType ctx_type);
+  std::shared_ptr<const set_configurations::AudioSetConfiguration>
+  GetCachedConfiguration(types::LeAudioContextType ctx_type) const;
   void InvalidateCachedConfigurations(void);
   void SetPendingConfiguration(void);
   void ClearPendingConfiguration(void);
@@ -374,14 +374,24 @@ class LeAudioDeviceGroup {
   void PrintDebugState(void) const;
   void Dump(int fd, int active_group_id) const;
 
+  /* Codec configuration matcher supporting the legacy configuration provider
+   * mechanism for the non-vendor and software codecs. Only if the codec
+   * parameters are using the common LTV data format, the BT stack can verify
+   * them against the remote device capabilities and find the best possible
+   * configurations. This will not be used for finding best possible vendor
+   * codec configuration.
+   */
+  const set_configurations::AudioSetConfiguration*
+  FindFirstSupportedConfiguration(
+      types::LeAudioContextType context_type,
+      const set_configurations::AudioSetConfigurations* confs) const;
+
  private:
   bool is_enabled_;
 
   uint32_t transport_latency_mtos_us_;
   uint32_t transport_latency_stom_us_;
 
-  const set_configurations::AudioSetConfiguration*
-  FindFirstSupportedConfiguration(types::LeAudioContextType context_type) const;
   bool ConfigureAses(
       const set_configurations::AudioSetConfiguration* audio_set_conf,
       types::LeAudioContextType context_type,
@@ -416,7 +426,8 @@ class LeAudioDeviceGroup {
    * being `false` means that the cached value should be refreshed.
    */
   std::map<types::LeAudioContextType,
-           std::pair<bool, const set_configurations::AudioSetConfiguration*>>
+           std::pair<bool, const std::shared_ptr<
+                               set_configurations::AudioSetConfiguration>>>
       context_to_configuration_cache_map;
 
   types::AseState target_state_;
@@ -444,4 +455,4 @@ class LeAudioDeviceGroups {
   std::vector<std::unique_ptr<LeAudioDeviceGroup>> groups_;
 };
 
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

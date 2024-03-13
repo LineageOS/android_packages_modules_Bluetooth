@@ -42,7 +42,6 @@
 #include "main/shim/entry.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/compat.h"
 #include "rust/src/connection/ffi/connection_shim.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api.h"
@@ -131,8 +130,7 @@ bool BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
                ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
                reinterpret_cast<const char*>(bd_name));
     p_dev_rec->sec_rec.sec_flags |= BTM_SEC_NAME_KNOWN;
-    strlcpy((char*)p_dev_rec->sec_bd_name, (char*)bd_name,
-            BTM_MAX_REM_BD_NAME_LEN + 1);
+    bd_name_copy(p_dev_rec->sec_bd_name, bd_name);
   }
 
   if (p_link_key) {

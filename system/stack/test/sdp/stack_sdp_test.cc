@@ -41,21 +41,20 @@ class StackSdpMainTest : public ::testing::Test {
   void SetUp() override {
     sdp_init();
     test::mock::stack_l2cap_api::L2CA_ConnectReq2.body =
-        [](uint16_t psm, const RawAddress& p_bd_addr, uint16_t sec_level) {
-          return ++L2CA_ConnectReq2_cid;
-        };
-    test::mock::stack_l2cap_api::L2CA_DataWrite.body = [](uint16_t cid,
+        [](uint16_t /* psm */, const RawAddress& /* p_bd_addr */,
+           uint16_t /* sec_level */) { return ++L2CA_ConnectReq2_cid; };
+    test::mock::stack_l2cap_api::L2CA_DataWrite.body = [](uint16_t /* cid */,
                                                           BT_HDR* p_data) {
       osi_free_and_reset((void**)&p_data);
       return 0;
     };
-    test::mock::stack_l2cap_api::L2CA_DisconnectReq.body = [](uint16_t cid) {
-      return true;
-    };
+    test::mock::stack_l2cap_api::L2CA_DisconnectReq.body =
+        [](uint16_t /* cid */) { return true; };
     test::mock::stack_l2cap_api::L2CA_Register2.body =
-        [](uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info, bool enable_snoop,
-           tL2CAP_ERTM_INFO* p_ertm_info, uint16_t my_mtu,
-           uint16_t required_remote_mtu, uint16_t sec_level) {
+        [](uint16_t /* psm */, const tL2CAP_APPL_INFO& /* p_cb_info */,
+           bool /* enable_snoop */, tL2CAP_ERTM_INFO* /* p_ertm_info */,
+           uint16_t /* my_mtu */, uint16_t /* required_remote_mtu */,
+           uint16_t /* sec_level */) {
           return 42;  // return non zero
         };
     test::mock::osi_allocator::osi_malloc.body = [](size_t size) {
@@ -144,7 +143,7 @@ TEST_F(StackSdpMainTest, sdp_service_search_request_queuing) {
   ASSERT_EQ(p_ccb2->con_state, SDP_STATE_IDLE);
 }
 
-void sdp_callback(const RawAddress& bd_addr, tSDP_RESULT result) {
+void sdp_callback(const RawAddress& /* bd_addr */, tSDP_RESULT result) {
   if (result == SDP_SUCCESS) {
     ASSERT_TRUE(SDP_ServiceSearchRequest(addr, sdp_db, nullptr));
   }

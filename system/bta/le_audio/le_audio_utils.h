@@ -29,14 +29,14 @@
 
 #include "le_audio_types.h"
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 namespace utils {
 types::LeAudioContextType AudioContentToLeAudioContext(
     audio_content_type_t content_type, audio_usage_t usage);
 types::AudioContexts GetAudioContextsFromSourceMetadata(
-    const source_metadata_v7& source_metadata);
+    const std::vector<struct playback_track_metadata_v7>& source_metadata);
 types::AudioContexts GetAudioContextsFromSinkMetadata(
-    const sink_metadata_v7& sink_metadata);
+    const std::vector<struct record_track_metadata_v7>& sink_metadata);
 
 /* Helpers to get btle_audio_codec_config_t for Java */
 bluetooth::le_audio::btle_audio_codec_index_t
@@ -59,4 +59,4 @@ GetRemoteBtLeAudioCodecConfigFromPac(
     const types::PublishedAudioCapabilities& group_pacs);
 bool IsCodecUsingLtvFormat(const types::LeAudioCodecId& codec_id);
 }  // namespace utils
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

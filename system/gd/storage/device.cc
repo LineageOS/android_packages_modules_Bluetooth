@@ -16,6 +16,8 @@
 
 #include "storage/device.h"
 
+#include <bluetooth/log.h>
+
 #include <algorithm>
 #include <limits>
 
@@ -60,7 +62,7 @@ std::string GetConfigSection(
       // One cannot create a new device just using LE legacy pseudo address
       [[fallthrough]];
     default:
-      LOG_ALWAYS_FATAL("Unknown key_address_type %d", static_cast<int>(key_address_type));
+      log::fatal("Unknown key_address_type {}", static_cast<int>(key_address_type));
       return "";
   }
 }

@@ -1135,6 +1135,7 @@ cc_test {
         "libbt_shim_ffi",
         "libchrome",
         "libevent",
+        "libgmock",
         "liblog",
         "libosi",
         "libprotobuf-cpp-lite",
@@ -2170,5 +2171,4 @@ cc_test {
         "liblog",
     ],
     header_libs: ["libbluetooth_headers"],
-    cflags: ["-Wno-unused-parameter"],
 }

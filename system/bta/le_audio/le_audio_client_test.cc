@@ -43,10 +43,10 @@
 #include "mock_controller.h"
 #include "mock_csis_client.h"
 #include "mock_device_groups.h"
-#include "mock_iso_manager.h"
 #include "mock_state_machine.h"
 #include "os/log.h"
 #include "test/common/mock_functions.h"
+#include "test/mock/mock_stack_btm_iso.h"
 
 #define TEST_BT com::android::bluetooth::flags
 
@@ -73,24 +73,24 @@ using bluetooth::Uuid;
 
 using namespace bluetooth::le_audio;
 
-using le_audio::LeAudioCodecConfiguration;
-using le_audio::LeAudioDeviceGroup;
-using le_audio::LeAudioHealthStatus;
-using le_audio::LeAudioSinkAudioHalClient;
-using le_audio::LeAudioSourceAudioHalClient;
+using bluetooth::le_audio::LeAudioCodecConfiguration;
+using bluetooth::le_audio::LeAudioDeviceGroup;
+using bluetooth::le_audio::LeAudioHealthStatus;
+using bluetooth::le_audio::LeAudioSinkAudioHalClient;
+using bluetooth::le_audio::LeAudioSourceAudioHalClient;
 
-using le_audio::DsaMode;
-using le_audio::DsaModes;
-using le_audio::types::AudioContexts;
-using le_audio::types::BidirectionalPair;
-using le_audio::types::LeAudioContextType;
+using bluetooth::le_audio::DsaMode;
+using bluetooth::le_audio::DsaModes;
+using bluetooth::le_audio::types::AudioContexts;
+using bluetooth::le_audio::types::BidirectionalPair;
+using bluetooth::le_audio::types::LeAudioContextType;
 
 extern struct fake_osi_alarm_set_on_mloop fake_osi_alarm_set_on_mloop_;
 
 constexpr int max_num_of_ases = 5;
-constexpr le_audio::types::LeAudioContextType
+constexpr bluetooth::le_audio::types::LeAudioContextType
     kLeAudioDefaultConfigurationContext =
-        le_audio::types::LeAudioContextType::UNSPECIFIED;
+        bluetooth::le_audio::types::LeAudioContextType::UNSPECIFIED;
 
 static constexpr char kNotifyUpperLayerAboutGroupBeingInIdleDuringCall[] =
     "persist.bluetooth.leaudio.notify.idle.during.call";
@@ -226,7 +226,7 @@ const stack_config_t* stack_config_get_interface(void) {
   return &mock_stack_config;
 }
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 class MockLeAudioSourceHalClient;
 MockLeAudioSourceHalClient* mock_le_audio_source_hal_client_;
 std::unique_ptr<LeAudioSourceAudioHalClient>
@@ -316,7 +316,7 @@ class MockLeAudioSinkHalClient : public LeAudioSinkAudioHalClient {
   MOCK_METHOD((void), CancelStreamingRequest, (), (override));
   MOCK_METHOD((void), UpdateRemoteDelay, (uint16_t delay), (override));
   MOCK_METHOD((void), UpdateAudioConfigToHal,
-              (const ::le_audio::offload_config&), (override));
+              (const ::bluetooth::le_audio::offload_config&), (override));
   MOCK_METHOD((void), SuspendedForReconfiguration, (), (override));
   MOCK_METHOD((void), ReconfigurationComplete, (), (override));
 
@@ -337,9 +337,10 @@ class MockLeAudioSourceHalClient : public LeAudioSourceAudioHalClient {
   MOCK_METHOD((void), CancelStreamingRequest, (), (override));
   MOCK_METHOD((void), UpdateRemoteDelay, (uint16_t delay), (override));
   MOCK_METHOD((void), UpdateAudioConfigToHal,
-              (const ::le_audio::offload_config&), (override));
+              (const ::bluetooth::le_audio::offload_config&), (override));
   MOCK_METHOD((void), UpdateBroadcastAudioConfigToHal,
-              (const ::le_audio::broadcast_offload_config&), (override));
+              (const ::bluetooth::le_audio::broadcast_offload_config&),
+              (override));
   MOCK_METHOD((void), SuspendedForReconfiguration, (), (override));
   MOCK_METHOD((void), ReconfigurationComplete, (), (override));
 
@@ -463,7 +464,7 @@ class UnicastTestNoInit : public Test {
   }
 
   void InjectGroupDeviceAdded(const RawAddress& address, int group_id) {
-    bluetooth::Uuid uuid = le_audio::uuid::kCapServiceUuid;
+    bluetooth::Uuid uuid = bluetooth::le_audio::uuid::kCapServiceUuid;
 
     int group_members_num = 0;
     for (const auto& [addr, id] : groups) {
@@ -816,10 +817,11 @@ class UnicastTestNoInit : public Test {
     // Our test devices have unique LSB - use it for unique grouping when
     // devices added with a non-CIS context and no grouping info
     ON_CALL(mock_groups_module_,
-            AddDevice(_, le_audio::uuid::kCapServiceUuid, _))
+            AddDevice(_, bluetooth::le_audio::uuid::kCapServiceUuid, _))
         .WillByDefault(
             [this](const RawAddress& addr,
-                   bluetooth::Uuid uuid = le_audio::uuid::kCapServiceUuid,
+                   bluetooth::Uuid uuid =
+                       bluetooth::le_audio::uuid::kCapServiceUuid,
                    int group_id = bluetooth::groups::kGroupUnknown) -> int {
               if (group_id == bluetooth::groups::kGroupUnknown) {
                 /* Generate group id from address */
@@ -852,7 +854,7 @@ class UnicastTestNoInit : public Test {
               LeAudioDevice* leAudioDevice = group->GetFirstDevice();
               while (leAudioDevice != nullptr) {
                 for (auto& ase : leAudioDevice->ases_) {
-                  ase.cis_id = le_audio::kInvalidCisId;
+                  ase.cis_id = bluetooth::le_audio::kInvalidCisId;
                 }
                 leAudioDevice = group->GetNextDevice(leAudioDevice);
               }
@@ -890,8 +892,8 @@ class UnicastTestNoInit : public Test {
                   FROM_HERE,
                   base::BindOnce(
                       [](int group_id,
-                         le_audio::LeAudioGroupStateMachine::Callbacks*
-                             state_machine_callbacks) {
+                         bluetooth::le_audio::LeAudioGroupStateMachine::
+                             Callbacks* state_machine_callbacks) {
                         state_machine_callbacks->StatusReportCb(
                             group_id, GroupStreamStatus::CONFIGURED_BY_USER);
                       },
@@ -930,7 +932,8 @@ class UnicastTestNoInit : public Test {
             auto core_config = ase.codec_config.GetAsCoreCodecConfig();
 
             /* Copied from state_machine.cc ProcessHciNotifSetupIsoDataPath */
-            if (ase.direction == le_audio::types::kLeAudioDirectionSource) {
+            if (ase.direction ==
+                bluetooth::le_audio::types::kLeAudioDirectionSource) {
               auto iter = std::find_if(
                   stream_conf->stream_params.source.stream_locations.begin(),
                   stream_conf->stream_params.source.stream_locations.end(),
@@ -1011,7 +1014,7 @@ class UnicastTestNoInit : public Test {
           LeAudioDevice* leAudioDevice = group->GetFirstDevice();
           while (leAudioDevice != nullptr) {
             for (auto& ase : leAudioDevice->ases_) {
-              ase.cis_id = le_audio::kInvalidCisId;
+              ase.cis_id = bluetooth::le_audio::kInvalidCisId;
             }
             leAudioDevice = group->GetNextDevice(leAudioDevice);
           }
@@ -1063,7 +1066,8 @@ class UnicastTestNoInit : public Test {
               uint16_t cis_conn_hdl = ase.cis_conn_hdl;
 
               /* Copied from state_machine.cc ProcessHciNotifSetupIsoDataPath */
-              if (ase.direction == le_audio::types::kLeAudioDirectionSource) {
+              if (ase.direction ==
+                  bluetooth::le_audio::types::kLeAudioDirectionSource) {
                 auto iter = std::find_if(
                     stream_conf->stream_params.source.stream_locations.begin(),
                     stream_conf->stream_params.source.stream_locations.end(),
@@ -1222,20 +1226,21 @@ class UnicastTestNoInit : public Test {
           streaming_groups[group->group_id_] = group;
 
           /* Assume CIG is created */
-          group->cig.SetState(le_audio::types::CigState::CREATED);
+          group->cig.SetState(bluetooth::le_audio::types::CigState::CREATED);
 
           if (block_streaming_state_callback) return true;
 
           do_in_main_thread(
-              FROM_HERE, base::BindOnce(
-                             [](int group_id,
-                                le_audio::LeAudioGroupStateMachine::Callbacks*
-                                    state_machine_callbacks) {
-                               state_machine_callbacks->StatusReportCb(
-                                   group_id, GroupStreamStatus::STREAMING);
-                             },
-                             group->group_id_,
-                             base::Unretained(this->state_machine_callbacks_)));
+              FROM_HERE,
+              base::BindOnce(
+                  [](int group_id,
+                     bluetooth::le_audio::LeAudioGroupStateMachine::Callbacks*
+                         state_machine_callbacks) {
+                    state_machine_callbacks->StatusReportCb(
+                        group_id, GroupStreamStatus::STREAMING);
+                  },
+                  group->group_id_,
+                  base::Unretained(this->state_machine_callbacks_)));
           return true;
         });
 
@@ -1317,7 +1322,7 @@ class UnicastTestNoInit : public Test {
           group->cig.UnassignCis(leAudioDevice);
 
           if (group->IsEmpty()) {
-            group->cig.SetState(le_audio::types::CigState::NONE);
+            group->cig.SetState(bluetooth::le_audio::types::CigState::NONE);
             InjectCigRemoved(group->group_id_);
           }
         });
@@ -1488,7 +1493,8 @@ class UnicastTestNoInit : public Test {
           do_in_main_thread(
               FROM_HERE,
               base::BindOnce(
-                  [](le_audio::LeAudioGroupStateMachine::Callbacks* cb,
+                  [](bluetooth::le_audio::LeAudioGroupStateMachine::Callbacks*
+                         cb,
                      int group_id) {
                     cb->StatusReportCb(group_id, GroupStreamStatus::IDLE);
                   },
@@ -1519,7 +1525,8 @@ class UnicastTestNoInit : public Test {
         .WillByDefault(SaveArg<0>(&cig_callbacks_));
 
     // Required since we call OnAudioDataReady()
-    const auto codec_location = ::le_audio::types::CodecLocation::HOST;
+    const auto codec_location =
+        ::bluetooth::le_audio::types::CodecLocation::HOST;
 
     SetUpMockAudioHal();
     SetUpMockGroups();
@@ -1533,12 +1540,13 @@ class UnicastTestNoInit : public Test {
     supported_snk_context_types_ = 0xffff;
     supported_src_context_types_ = 0xffff;
 
-    le_audio::AudioSetConfigurationProvider::Initialize(codec_location);
+    bluetooth::le_audio::AudioSetConfigurationProvider::Initialize(
+        codec_location);
     ASSERT_FALSE(LeAudioClient::IsLeAudioClientRunning());
   }
 
   void SetUpMockCodecManager(types::CodecLocation location) {
-    codec_manager_ = le_audio::CodecManager::GetInstance();
+    codec_manager_ = bluetooth::le_audio::CodecManager::GetInstance();
     ASSERT_NE(codec_manager_, nullptr);
     std::vector<bluetooth::le_audio::btle_audio_codec_config_t>
         mock_offloading_preference(0);
@@ -1548,6 +1556,20 @@ class UnicastTestNoInit : public Test {
     ASSERT_NE(mock_codec_manager_, nullptr);
     ON_CALL(*mock_codec_manager_, GetCodecLocation())
         .WillByDefault(Return(location));
+    // Regardless of the codec location, return all the possible configurations
+    ON_CALL(*mock_codec_manager_, GetCodecConfig)
+        .WillByDefault(Invoke(
+            [](types::LeAudioContextType ctx_type,
+               std::function<const set_configurations::AudioSetConfiguration*(
+                   types::LeAudioContextType context_type,
+                   const set_configurations::AudioSetConfigurations* confs)>
+                   non_vendor_config_matcher) {
+              return std::make_unique<
+                  set_configurations::AudioSetConfiguration>(
+                  *non_vendor_config_matcher(
+                      ctx_type, le_audio::AudioSetConfigurationProvider::Get()
+                                    ->GetConfigurations(ctx_type)));
+            }));
   }
 
   void TearDown() override {
@@ -1583,8 +1605,8 @@ class UnicastTestNoInit : public Test {
     owned_mock_le_audio_sink_hal_client_.reset();
     owned_mock_le_audio_source_hal_client_.reset();
 
-    if (le_audio::AudioSetConfigurationProvider::Get())
-      le_audio::AudioSetConfigurationProvider::Cleanup();
+    if (bluetooth::le_audio::AudioSetConfigurationProvider::Get())
+      bluetooth::le_audio::AudioSetConfigurationProvider::Cleanup();
 
     iso_manager_->Stop();
   }
@@ -1911,9 +1933,6 @@ class UnicastTestNoInit : public Test {
       tracks_vec.push_back(desc_track);
     }
 
-    const source_metadata_v7_t source_metadata = {
-        .track_count = tracks_vec.size(), .tracks = tracks_vec.data()};
-
     ASSERT_NE(nullptr, mock_le_audio_source_hal_client_);
     /* Local Source may reconfigure once the metadata is updated */
     if (reconfigure_existing_stream) {
@@ -1934,7 +1953,7 @@ class UnicastTestNoInit : public Test {
     }
 
     ASSERT_NE(unicast_source_hal_cb_, nullptr);
-    unicast_source_hal_cb_->OnAudioMetadataUpdate(source_metadata,
+    unicast_source_hal_cb_->OnAudioMetadataUpdate(std::move(tracks_vec),
                                                   DsaMode::DISABLED);
   }
 
@@ -1975,11 +1994,8 @@ class UnicastTestNoInit : public Test {
       tracks_vec.push_back(desc_track);
     }
 
-    const sink_metadata_v7_t sink_metadata = {.track_count = tracks_vec.size(),
-                                              .tracks = tracks_vec.data()};
-
     ASSERT_NE(nullptr, unicast_sink_hal_cb_);
-    unicast_sink_hal_cb_->OnAudioMetadataUpdate(sink_metadata);
+    unicast_sink_hal_cb_->OnAudioMetadataUpdate(std::move(tracks_vec));
   }
 
   void LocalAudioSourceSuspend(void) {
@@ -2004,7 +2020,7 @@ class UnicastTestNoInit : public Test {
     do_in_main_thread(FROM_HERE,
                       base::BindOnce(
                           [](LeAudioSourceAudioHalClient::Callbacks* cb) {
-                            cb->OnAudioResume();
+                            if (cb) cb->OnAudioResume();
                           },
                           unicast_source_hal_cb_));
 
@@ -2143,8 +2159,8 @@ class UnicastTestNoInit : public Test {
 
     if (cas->start) {
       bool is_primary = true;
-      bob.AddService(cas->start, cas->end, le_audio::uuid::kCapServiceUuid,
-                     is_primary);
+      bob.AddService(cas->start, cas->end,
+                     bluetooth::le_audio::uuid::kCapServiceUuid, is_primary);
       // Include CSIS service inside
       if (cas->csis_include)
         bob.AddIncludedService(cas->csis_include,
@@ -2154,14 +2170,16 @@ class UnicastTestNoInit : public Test {
 
     if (pacs->start) {
       bool is_primary = true;
-      bob.AddService(pacs->start, pacs->end,
-                     le_audio::uuid::kPublishedAudioCapabilityServiceUuid,
-                     is_primary);
+      bob.AddService(
+          pacs->start, pacs->end,
+          bluetooth::le_audio::uuid::kPublishedAudioCapabilityServiceUuid,
+          is_primary);
 
       if (pacs->sink_pac_char) {
         bob.AddCharacteristic(
             pacs->sink_pac_char, pacs->sink_pac_char + 1,
-            le_audio::uuid::kSinkPublishedAudioCapabilityCharacteristicUuid,
+            bluetooth::le_audio::uuid::
+                kSinkPublishedAudioCapabilityCharacteristicUuid,
             GATT_CHAR_PROP_BIT_READ);
         if (pacs->sink_pac_ccc)
           bob.AddDescriptor(pacs->sink_pac_ccc,
@@ -2171,7 +2189,7 @@ class UnicastTestNoInit : public Test {
       if (pacs->sink_audio_loc_char) {
         bob.AddCharacteristic(
             pacs->sink_audio_loc_char, pacs->sink_audio_loc_char + 1,
-            le_audio::uuid::kSinkAudioLocationCharacteristicUuid,
+            bluetooth::le_audio::uuid::kSinkAudioLocationCharacteristicUuid,
             GATT_CHAR_PROP_BIT_READ);
         if (pacs->sink_audio_loc_ccc)
           bob.AddDescriptor(pacs->sink_audio_loc_ccc,
@@ -2181,7 +2199,8 @@ class UnicastTestNoInit : public Test {
       if (pacs->source_pac_char) {
         bob.AddCharacteristic(
             pacs->source_pac_char, pacs->source_pac_char + 1,
-            le_audio::uuid::kSourcePublishedAudioCapabilityCharacteristicUuid,
+            bluetooth::le_audio::uuid::
+                kSourcePublishedAudioCapabilityCharacteristicUuid,
             GATT_CHAR_PROP_BIT_READ);
         if (pacs->source_pac_ccc)
           bob.AddDescriptor(pacs->source_pac_ccc,
@@ -2191,7 +2210,7 @@ class UnicastTestNoInit : public Test {
       if (pacs->source_audio_loc_char) {
         bob.AddCharacteristic(
             pacs->source_audio_loc_char, pacs->source_audio_loc_char + 1,
-            le_audio::uuid::kSourceAudioLocationCharacteristicUuid,
+            bluetooth::le_audio::uuid::kSourceAudioLocationCharacteristicUuid,
             GATT_CHAR_PROP_BIT_READ);
         if (pacs->source_audio_loc_ccc)
           bob.AddDescriptor(pacs->source_audio_loc_ccc,
@@ -2199,10 +2218,11 @@ class UnicastTestNoInit : public Test {
       }
 
       if (pacs->avail_contexts_char) {
-        bob.AddCharacteristic(
-            pacs->avail_contexts_char, pacs->avail_contexts_char + 1,
-            le_audio::uuid::kAudioContextAvailabilityCharacteristicUuid,
-            GATT_CHAR_PROP_BIT_READ);
+        bob.AddCharacteristic(pacs->avail_contexts_char,
+                              pacs->avail_contexts_char + 1,
+                              bluetooth::le_audio::uuid::
+                                  kAudioContextAvailabilityCharacteristicUuid,
+                              GATT_CHAR_PROP_BIT_READ);
         if (pacs->avail_contexts_ccc)
           bob.AddDescriptor(pacs->avail_contexts_ccc,
                             Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG));
@@ -2211,7 +2231,7 @@ class UnicastTestNoInit : public Test {
       if (pacs->supp_contexts_char) {
         bob.AddCharacteristic(
             pacs->supp_contexts_char, pacs->supp_contexts_char + 1,
-            le_audio::uuid::kAudioSupportedContextCharacteristicUuid,
+            bluetooth::le_audio::uuid::kAudioSupportedContextCharacteristicUuid,
             GATT_CHAR_PROP_BIT_READ);
         if (pacs->supp_contexts_ccc)
           bob.AddDescriptor(pacs->supp_contexts_ccc,
@@ -2222,23 +2242,23 @@ class UnicastTestNoInit : public Test {
     if (ascs->start) {
       bool is_primary = true;
       bob.AddService(ascs->start, ascs->end,
-                     le_audio::uuid::kAudioStreamControlServiceUuid,
+                     bluetooth::le_audio::uuid::kAudioStreamControlServiceUuid,
                      is_primary);
       for (int i = 0; i < max_num_of_ases; i++) {
         if (ascs->sink_ase_char[i]) {
-          bob.AddCharacteristic(ascs->sink_ase_char[i],
-                                ascs->sink_ase_char[i] + 1,
-                                le_audio::uuid::kSinkAudioStreamEndpointUuid,
-                                GATT_CHAR_PROP_BIT_READ);
+          bob.AddCharacteristic(
+              ascs->sink_ase_char[i], ascs->sink_ase_char[i] + 1,
+              bluetooth::le_audio::uuid::kSinkAudioStreamEndpointUuid,
+              GATT_CHAR_PROP_BIT_READ);
           if (ascs->sink_ase_ccc[i])
             bob.AddDescriptor(ascs->sink_ase_ccc[i],
                               Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG));
         }
         if (ascs->source_ase_char[i]) {
-          bob.AddCharacteristic(ascs->source_ase_char[i],
-                                ascs->source_ase_char[i] + 1,
-                                le_audio::uuid::kSourceAudioStreamEndpointUuid,
-                                GATT_CHAR_PROP_BIT_READ);
+          bob.AddCharacteristic(
+              ascs->source_ase_char[i], ascs->source_ase_char[i] + 1,
+              bluetooth::le_audio::uuid::kSourceAudioStreamEndpointUuid,
+              GATT_CHAR_PROP_BIT_READ);
           if (ascs->source_ase_ccc[i])
             bob.AddDescriptor(ascs->source_ase_ccc[i],
                               Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG));
@@ -2247,7 +2267,8 @@ class UnicastTestNoInit : public Test {
       if (ascs->ctp_char) {
         bob.AddCharacteristic(
             ascs->ctp_char, ascs->ctp_char + 1,
-            le_audio::uuid::kAudioStreamEndpointControlPointCharacteristicUuid,
+            bluetooth::le_audio::uuid::
+                kAudioStreamEndpointControlPointCharacteristicUuid,
             GATT_CHAR_PROP_BIT_READ);
         if (ascs->ctp_ccc)
           bob.AddDescriptor(ascs->ctp_ccc,
@@ -2588,8 +2609,8 @@ class UnicastTestNoInit : public Test {
                     // ASE ID
                     static_cast<uint8_t>(idx + 1),
                     // State
-                    static_cast<uint8_t>(
-                        le_audio::types::AseState::BTA_LE_AUDIO_ASE_STATE_IDLE),
+                    static_cast<uint8_t>(bluetooth::le_audio::types::AseState::
+                                             BTA_LE_AUDIO_ASE_STATE_IDLE),
                     // No Additional ASE params for IDLE state
                 };
               } else if (is_ase_src_request) {
@@ -2597,8 +2618,8 @@ class UnicastTestNoInit : public Test {
                     // ASE ID
                     static_cast<uint8_t>(idx + 6),
                     // State
-                    static_cast<uint8_t>(
-                        le_audio::types::AseState::BTA_LE_AUDIO_ASE_STATE_IDLE),
+                    static_cast<uint8_t>(bluetooth::le_audio::types::AseState::
+                                             BTA_LE_AUDIO_ASE_STATE_IDLE),
                     // No Additional ASE params for IDLE state
                 };
               }
@@ -2644,7 +2665,8 @@ class UnicastTestNoInit : public Test {
       for (LeAudioDevice* device = group->GetFirstDevice(); device != nullptr;
            device = group->GetNextDevice(device)) {
         for (auto& ase : device->ases_) {
-          if (ase.direction == le_audio::types::kLeAudioDirectionSource) {
+          if (ase.direction ==
+              bluetooth::le_audio::types::kLeAudioDirectionSource) {
             InjectIncomingIsoData(group_id, ase.cis_conn_hdl, in_data_len);
             --cis_count_in;
             if (!cis_count_in) break;
@@ -2726,7 +2748,8 @@ class UnicastTestNoInit : public Test {
   tBTA_GATTC_CBACK* gatt_callback;
   const uint8_t gatt_if = 0xfe;
   uint16_t global_conn_id = 1;
-  le_audio::LeAudioGroupStateMachine::Callbacks* state_machine_callbacks_;
+  bluetooth::le_audio::LeAudioGroupStateMachine::Callbacks*
+      state_machine_callbacks_;
   std::map<int, LeAudioDeviceGroup*> streaming_groups;
   bool block_streaming_state_callback = false;
 
@@ -2735,7 +2758,7 @@ class UnicastTestNoInit : public Test {
   bluetooth::hci::iso_manager::CigCallbacks* cig_callbacks_ = nullptr;
   uint16_t iso_con_counter_ = 1;
 
-  le_audio::CodecManager* codec_manager_;
+  bluetooth::le_audio::CodecManager* codec_manager_;
   MockCodecManager* mock_codec_manager_;
 
   uint16_t available_snk_context_types_ = 0xffff;
@@ -4393,8 +4416,9 @@ TEST_F(UnicastTest, DoubleResumeFromAF) {
   do_in_main_thread(
       FROM_HERE,
       base::BindOnce(
-          [](int group_id, le_audio::LeAudioGroupStateMachine::Callbacks*
-                               state_machine_callbacks) {
+          [](int group_id,
+             bluetooth::le_audio::LeAudioGroupStateMachine::Callbacks*
+                 state_machine_callbacks) {
             state_machine_callbacks->StatusReportCb(
                 group_id, GroupStreamStatus::STREAMING);
           },
@@ -4459,8 +4483,9 @@ TEST_F(UnicastTest, DoubleResumeFromAFOnLocalSink) {
   do_in_main_thread(
       FROM_HERE,
       base::BindOnce(
-          [](int group_id, le_audio::LeAudioGroupStateMachine::Callbacks*
-                               state_machine_callbacks) {
+          [](int group_id,
+             bluetooth::le_audio::LeAudioGroupStateMachine::Callbacks*
+                 state_machine_callbacks) {
             state_machine_callbacks->StatusReportCb(
                 group_id, GroupStreamStatus::STREAMING);
           },
@@ -5675,12 +5700,12 @@ TEST_F(UnicastTest, TwoEarbudsStreaming) {
   ASSERT_TRUE(group
                   ->GetCachedCodecConfigurationByDirection(
                       types::LeAudioContextType::CONVERSATIONAL,
-                      le_audio::types::kLeAudioDirectionSink)
+                      bluetooth::le_audio::types::kLeAudioDirectionSink)
                   .has_value());
   ASSERT_TRUE(group
                   ->GetCachedCodecConfigurationByDirection(
                       types::LeAudioContextType::CONVERSATIONAL,
-                      le_audio::types::kLeAudioDirectionSource)
+                      bluetooth::le_audio::types::kLeAudioDirectionSource)
                   .has_value());
 
   // Release
@@ -5697,12 +5722,12 @@ TEST_F(UnicastTest, TwoEarbudsStreaming) {
   ASSERT_TRUE(group
                   ->GetCachedCodecConfigurationByDirection(
                       types::LeAudioContextType::CONVERSATIONAL,
-                      le_audio::types::kLeAudioDirectionSink)
+                      bluetooth::le_audio::types::kLeAudioDirectionSink)
                   .has_value());
   ASSERT_TRUE(group
                   ->GetCachedCodecConfigurationByDirection(
                       types::LeAudioContextType::CONVERSATIONAL,
-                      le_audio::types::kLeAudioDirectionSource)
+                      bluetooth::le_audio::types::kLeAudioDirectionSource)
                   .has_value());
 }
 
@@ -5818,14 +5843,16 @@ TEST_F(UnicastTest, UpdateActiveAudioConfigForLocalSinkSource) {
              std::function<void(const offload_config& config,
                                 uint8_t direction)>
                  update_receiver) {
-            le_audio::offload_config unicast_cfg;
+            bluetooth::le_audio::offload_config unicast_cfg;
             if (delays_ms.sink != 0) {
-              update_receiver(unicast_cfg,
-                              le_audio::types::kLeAudioDirectionSink);
+              update_receiver(
+                  unicast_cfg,
+                  bluetooth::le_audio::types::kLeAudioDirectionSink);
             }
             if (delays_ms.source != 0) {
-              update_receiver(unicast_cfg,
-                              le_audio::types::kLeAudioDirectionSource);
+              update_receiver(
+                  unicast_cfg,
+                  bluetooth::le_audio::types::kLeAudioDirectionSource);
             }
           });
   StartStreaming(AUDIO_USAGE_VOICE_COMMUNICATION, AUDIO_CONTENT_TYPE_SPEECH,
@@ -5893,14 +5920,16 @@ TEST_F(UnicastTest, UpdateActiveAudioConfigForLocalSource) {
              std::function<void(const offload_config& config,
                                 uint8_t direction)>
                  update_receiver) {
-            le_audio::offload_config unicast_cfg;
+            bluetooth::le_audio::offload_config unicast_cfg;
             if (delays_ms.sink != 0) {
-              update_receiver(unicast_cfg,
-                              le_audio::types::kLeAudioDirectionSink);
+              update_receiver(
+                  unicast_cfg,
+                  bluetooth::le_audio::types::kLeAudioDirectionSink);
             }
             if (delays_ms.source != 0) {
-              update_receiver(unicast_cfg,
-                              le_audio::types::kLeAudioDirectionSource);
+              update_receiver(
+                  unicast_cfg,
+                  bluetooth::le_audio::types::kLeAudioDirectionSource);
             }
           });
   StartStreaming(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, group_id);
@@ -6115,9 +6144,10 @@ TEST_F(UnicastTest, TwoEarbudsStreamingContextSwitchReconfigure) {
   types::BidirectionalPair<types::AudioContexts> contexts = {
       .sink = types::AudioContexts(types::LeAudioContextType::MEDIA),
       .source = types::AudioContexts()};
-  EXPECT_CALL(mock_state_machine_,
-              ConfigureStream(_, le_audio::types::LeAudioContextType::MEDIA,
-                              contexts, ccids))
+  EXPECT_CALL(
+      mock_state_machine_,
+      ConfigureStream(_, bluetooth::le_audio::types::LeAudioContextType::MEDIA,
+                      contexts, ccids))
       .Times(1);
   StartStreaming(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, group_id,
                  AUDIO_SOURCE_INVALID, true);
@@ -6612,7 +6642,8 @@ TEST_F(UnicastTest, StartStream_AvailableContextTypeNotifiedLater) {
 
   EXPECT_CALL(
       mock_state_machine_,
-      StartStream(_, le_audio::types::LeAudioContextType::MEDIA, contexts, _))
+      StartStream(_, bluetooth::le_audio::types::LeAudioContextType::MEDIA,
+                  contexts, _))
       .Times(1);
 
   StartStreaming(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, group_id);
@@ -6672,7 +6703,8 @@ TEST_F(UnicastTest, ModifyContextTypeOnDeviceA_WhileDeviceB_IsDisconnected) {
 
   EXPECT_CALL(
       mock_state_machine_,
-      StartStream(_, le_audio::types::LeAudioContextType::MEDIA, contexts, _))
+      StartStream(_, bluetooth::le_audio::types::LeAudioContextType::MEDIA,
+                  contexts, _))
       .Times(1);
 
   StartStreaming(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, group_id);
@@ -6784,9 +6816,11 @@ TEST_F(UnicastTest, StartStreamToUnsupportedContextTypeUsingUnspecified) {
       .sink = types::AudioContexts(types::LeAudioContextType::UNSPECIFIED),
       .source = types::AudioContexts(0)};
 
-  EXPECT_CALL(mock_state_machine_,
-              StartStream(_, le_audio::types::LeAudioContextType::SOUNDEFFECTS,
-                          contexts, _))
+  EXPECT_CALL(
+      mock_state_machine_,
+      StartStream(_,
+                  bluetooth::le_audio::types::LeAudioContextType::SOUNDEFFECTS,
+                  contexts, _))
       .Times(1);
 
   StartStreaming(AUDIO_USAGE_ASSISTANCE_SONIFICATION,
@@ -6870,9 +6904,11 @@ TEST_F(UnicastTest,
       .sink = types::AudioContexts(types::LeAudioContextType::UNSPECIFIED),
       .source = types::AudioContexts()};
 
-  EXPECT_CALL(mock_state_machine_,
-              StartStream(_, le_audio::types::LeAudioContextType::SOUNDEFFECTS,
-                          contexts, _))
+  EXPECT_CALL(
+      mock_state_machine_,
+      StartStream(_,
+                  bluetooth::le_audio::types::LeAudioContextType::SOUNDEFFECTS,
+                  contexts, _))
       .Times(0);
 
   StartStreaming(AUDIO_USAGE_ASSISTANCE_SONIFICATION,
@@ -6937,7 +6973,8 @@ TEST_F(UnicastTest, StartStreamToSupportedContextTypeThenMixUnavailable) {
 
   EXPECT_CALL(
       mock_state_machine_,
-      StartStream(_, le_audio::types::LeAudioContextType::MEDIA, contexts, _))
+      StartStream(_, bluetooth::le_audio::types::LeAudioContextType::MEDIA,
+                  contexts, _))
       .Times(1);
 
   StartStreaming(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, group_id);
@@ -6958,7 +6995,8 @@ TEST_F(UnicastTest, StartStreamToSupportedContextTypeThenMixUnavailable) {
                                        types::LeAudioContextType::SOUNDEFFECTS);
   EXPECT_CALL(
       mock_state_machine_,
-      StartStream(_, le_audio::types::LeAudioContextType::MEDIA, contexts, _))
+      StartStream(_, bluetooth::le_audio::types::LeAudioContextType::MEDIA,
+                  contexts, _))
       .Times(1);
 
   /* Simulate metadata update, expect upadate , metadata */
@@ -7000,13 +7038,14 @@ TEST_F(UnicastTest, StartStreamToSupportedContextTypeThenMixUnavailable) {
   ASSERT_FALSE(group
                    ->GetCachedCodecConfigurationByDirection(
                        types::LeAudioContextType::MEDIA,
-                       le_audio::types::kLeAudioDirectionSink)
+                       bluetooth::le_audio::types::kLeAudioDirectionSink)
                    .has_value());
   /* Start Media again */
   contexts.sink = types::AudioContexts(types::LeAudioContextType::MEDIA);
   EXPECT_CALL(
       mock_state_machine_,
-      StartStream(_, le_audio::types::LeAudioContextType::MEDIA, contexts, _))
+      StartStream(_, bluetooth::le_audio::types::LeAudioContextType::MEDIA,
+                  contexts, _))
       .Times(1);
 
   StartStreaming(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, group_id);
@@ -7016,7 +7055,7 @@ TEST_F(UnicastTest, StartStreamToSupportedContextTypeThenMixUnavailable) {
   ASSERT_TRUE(group
                   ->GetCachedCodecConfigurationByDirection(
                       types::LeAudioContextType::MEDIA,
-                      le_audio::types::kLeAudioDirectionSink)
+                      bluetooth::le_audio::types::kLeAudioDirectionSink)
                   .has_value());
 
   Mock::VerifyAndClearExpectations(&mock_state_machine_);
@@ -7029,7 +7068,8 @@ TEST_F(UnicastTest, StartStreamToSupportedContextTypeThenMixUnavailable) {
   /* Update metadata, and do not expect new context type*/
   EXPECT_CALL(
       mock_state_machine_,
-      StartStream(_, le_audio::types::LeAudioContextType::MEDIA, contexts, _))
+      StartStream(_, bluetooth::le_audio::types::LeAudioContextType::MEDIA,
+                  contexts, _))
       .Times(1);
 
   /* Simulate metadata update */
@@ -7387,8 +7427,10 @@ TEST_F(UnicastTest, MicrophoneAttachToCurrentMediaScenario) {
   SyncOnMainLoop();
 
   // When the local audio source resumes we have no knowledge of recording
-  EXPECT_CALL(mock_state_machine_,
-              StartStream(_, le_audio::types::LeAudioContextType::MEDIA, _, _))
+  EXPECT_CALL(
+      mock_state_machine_,
+      StartStream(_, bluetooth::le_audio::types::LeAudioContextType::MEDIA, _,
+                  _))
       .Times(1);
 
   StartStreaming(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, group_id,
@@ -7406,7 +7448,8 @@ TEST_F(UnicastTest, MicrophoneAttachToCurrentMediaScenario) {
   // When the local audio sink resumes we should reconfigure
   EXPECT_CALL(
       mock_state_machine_,
-      ConfigureStream(_, le_audio::types::LeAudioContextType::LIVE, _, _))
+      ConfigureStream(_, bluetooth::le_audio::types::LeAudioContextType::LIVE,
+                      _, _))
       .Times(1);
   EXPECT_CALL(*mock_le_audio_source_hal_client_, ReconfigurationComplete())
       .Times(1);
@@ -7588,7 +7631,8 @@ TEST_F(UnicastTest, UpdateMultipleBidirContextTypes) {
       .source = types::AudioContexts(types::LeAudioContextType::LIVE)};
   EXPECT_CALL(
       mock_state_machine_,
-      StartStream(_, le_audio::types::LeAudioContextType::LIVE, contexts, _))
+      StartStream(_, bluetooth::le_audio::types::LeAudioContextType::LIVE,
+                  contexts, _))
       .Times(1);
 
   // 1) Start the recording. Sink resume will trigger the reconfiguration
@@ -7629,8 +7673,9 @@ TEST_F(UnicastTest, UpdateMultipleBidirContextTypes) {
           types::AudioContexts(types::LeAudioContextType::CONVERSATIONAL)};
   EXPECT_CALL(
       mock_state_machine_,
-      StartStream(_, le_audio::types::LeAudioContextType::CONVERSATIONAL,
-                  contexts, _))
+      StartStream(
+          _, bluetooth::le_audio::types::LeAudioContextType::CONVERSATIONAL,
+          contexts, _))
       .Times(1);
 
   // Start with ringtone on local source
@@ -7734,7 +7779,8 @@ TEST_F(UnicastTest, UpdateDisableLocalAudioSinkOnGame) {
       .source = types::AudioContexts(types::LeAudioContextType::GAME)};
   EXPECT_CALL(
       mock_state_machine_,
-      StartStream(_, le_audio::types::LeAudioContextType::GAME, contexts, _))
+      StartStream(_, bluetooth::le_audio::types::LeAudioContextType::GAME,
+                  contexts, _))
       .Times(1);
 
   // 1) Start the recording. Sink resume will trigger the reconfiguration
@@ -7817,8 +7863,9 @@ TEST_F(UnicastTest, MusicDuringCallContextTypes) {
           types::AudioContexts(types::LeAudioContextType::CONVERSATIONAL)};
   EXPECT_CALL(
       mock_state_machine_,
-      StartStream(_, le_audio::types::LeAudioContextType::CONVERSATIONAL,
-                  contexts, _))
+      StartStream(
+          _, bluetooth::le_audio::types::LeAudioContextType::CONVERSATIONAL,
+          contexts, _))
       .Times(1);
   StartStreaming(AUDIO_USAGE_NOTIFICATION_TELEPHONY_RINGTONE,
                  AUDIO_CONTENT_TYPE_UNKNOWN, group_id);
@@ -7843,8 +7890,9 @@ TEST_F(UnicastTest, MusicDuringCallContextTypes) {
           types::AudioContexts(types::LeAudioContextType::CONVERSATIONAL)};
   EXPECT_CALL(
       mock_state_machine_,
-      StartStream(_, le_audio::types::LeAudioContextType::CONVERSATIONAL,
-                  contexts, _))
+      StartStream(
+          _, bluetooth::le_audio::types::LeAudioContextType::CONVERSATIONAL,
+          contexts, _))
       .Times(1);
   UpdateLocalSourceMetadata(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, false);
   SyncOnMainLoop();
@@ -9053,19 +9101,20 @@ TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
   TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 1920, 40);
 
   // Imitate activation of monitor mode
-  do_in_main_thread(FROM_HERE,
-                    base::BindOnce(&LeAudioClient::SetUnicastMonitorMode,
-                                   base::Unretained(LeAudioClient::Get()),
-                                   le_audio::types::kLeAudioDirectionSink,
-                                   true /* enable */));
+  do_in_main_thread(
+      FROM_HERE,
+      base::BindOnce(&LeAudioClient::SetUnicastMonitorMode,
+                     base::Unretained(LeAudioClient::Get()),
+                     bluetooth::le_audio::types::kLeAudioDirectionSink,
+                     true /* enable */));
 
   auto group = streaming_groups.at(group_id);
 
   // Stop streaming and expect Service to be informed about straming suspension
-  EXPECT_CALL(
-      mock_audio_hal_client_callbacks_,
-      OnUnicastMonitorModeStatus(le_audio::types::kLeAudioDirectionSink,
-                                 UnicastMonitorModeStatus::STREAMING_SUSPENDED))
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnUnicastMonitorModeStatus(
+                  bluetooth::le_audio::types::kLeAudioDirectionSink,
+                  UnicastMonitorModeStatus::STREAMING_SUSPENDED))
       .Times(1);
 
   // Stop
@@ -9075,12 +9124,12 @@ TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
   ASSERT_TRUE(group
                   ->GetCachedCodecConfigurationByDirection(
                       types::LeAudioContextType::CONVERSATIONAL,
-                      le_audio::types::kLeAudioDirectionSink)
+                      bluetooth::le_audio::types::kLeAudioDirectionSink)
                   .has_value());
   ASSERT_TRUE(group
                   ->GetCachedCodecConfigurationByDirection(
                       types::LeAudioContextType::CONVERSATIONAL,
-                      le_audio::types::kLeAudioDirectionSource)
+                      bluetooth::le_audio::types::kLeAudioDirectionSource)
                   .has_value());
 
   // Release, Sink HAL client should remain in monitor mode
@@ -9102,18 +9151,18 @@ TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
   ASSERT_TRUE(group
                   ->GetCachedCodecConfigurationByDirection(
                       types::LeAudioContextType::CONVERSATIONAL,
-                      le_audio::types::kLeAudioDirectionSink)
+                      bluetooth::le_audio::types::kLeAudioDirectionSink)
                   .has_value());
   ASSERT_TRUE(group
                   ->GetCachedCodecConfigurationByDirection(
                       types::LeAudioContextType::CONVERSATIONAL,
-                      le_audio::types::kLeAudioDirectionSource)
+                      bluetooth::le_audio::types::kLeAudioDirectionSource)
                   .has_value());
 
-  EXPECT_CALL(
-      mock_audio_hal_client_callbacks_,
-      OnUnicastMonitorModeStatus(le_audio::types::kLeAudioDirectionSink,
-                                 UnicastMonitorModeStatus::STREAMING_REQUESTED))
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnUnicastMonitorModeStatus(
+                  bluetooth::le_audio::types::kLeAudioDirectionSink,
+                  UnicastMonitorModeStatus::STREAMING_REQUESTED))
       .Times(1);
 
   // Start streaming to trigger next group going to IDLE state
@@ -9133,10 +9182,10 @@ TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
   Mock::VerifyAndClearExpectations(&mock_le_audio_source_hal_client_);
 
   // Stop streaming and expect Service to be informed about straming suspension
-  EXPECT_CALL(
-      mock_audio_hal_client_callbacks_,
-      OnUnicastMonitorModeStatus(le_audio::types::kLeAudioDirectionSink,
-                                 UnicastMonitorModeStatus::STREAMING_SUSPENDED))
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnUnicastMonitorModeStatus(
+                  bluetooth::le_audio::types::kLeAudioDirectionSink,
+                  UnicastMonitorModeStatus::STREAMING_SUSPENDED))
       .Times(1);
 
   // Stop
@@ -9157,11 +9206,12 @@ TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
   // De-activate monitoring mode
   EXPECT_CALL(*mock_le_audio_sink_hal_client_, Stop()).Times(1);
   EXPECT_CALL(*mock_le_audio_sink_hal_client_, OnDestroyed()).Times(1);
-  do_in_main_thread(FROM_HERE,
-                    base::BindOnce(&LeAudioClient::SetUnicastMonitorMode,
-                                   base::Unretained(LeAudioClient::Get()),
-                                   le_audio::types::kLeAudioDirectionSink,
-                                   false /* enable */));
+  do_in_main_thread(
+      FROM_HERE,
+      base::BindOnce(&LeAudioClient::SetUnicastMonitorMode,
+                     base::Unretained(LeAudioClient::Get()),
+                     bluetooth::le_audio::types::kLeAudioDirectionSink,
+                     false /* enable */));
   SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_le_audio_sink_hal_client_);
 }
@@ -9174,11 +9224,12 @@ TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
   int group_id = 2;
 
   // Imitate activation of monitor mode
-  do_in_main_thread(FROM_HERE,
-                    base::BindOnce(&LeAudioClient::SetUnicastMonitorMode,
-                                   base::Unretained(LeAudioClient::Get()),
-                                   le_audio::types::kLeAudioDirectionSink,
-                                   true /* enable */));
+  do_in_main_thread(
+      FROM_HERE,
+      base::BindOnce(&LeAudioClient::SetUnicastMonitorMode,
+                     base::Unretained(LeAudioClient::Get()),
+                     bluetooth::le_audio::types::kLeAudioDirectionSink,
+                     true /* enable */));
 
   // Report working CSIS
   ON_CALL(mock_csis_client_module_, IsCsisClientRunning())
@@ -9214,10 +9265,10 @@ TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
   Mock::VerifyAndClearExpectations(&mock_le_audio_source_hal_client_);
 
   // Expect no streaming request on stream resume when group is already active
-  EXPECT_CALL(
-      mock_audio_hal_client_callbacks_,
-      OnUnicastMonitorModeStatus(le_audio::types::kLeAudioDirectionSink,
-                                 UnicastMonitorModeStatus::STREAMING_REQUESTED))
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnUnicastMonitorModeStatus(
+                  bluetooth::le_audio::types::kLeAudioDirectionSink,
+                  UnicastMonitorModeStatus::STREAMING_REQUESTED))
       .Times(0);
 
   StartStreaming(AUDIO_USAGE_VOICE_COMMUNICATION, AUDIO_CONTENT_TYPE_SPEECH,
@@ -9235,10 +9286,10 @@ TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
   auto group = streaming_groups.at(group_id);
 
   // Stop streaming and expect Service to be informed about straming suspension
-  EXPECT_CALL(
-      mock_audio_hal_client_callbacks_,
-      OnUnicastMonitorModeStatus(le_audio::types::kLeAudioDirectionSink,
-                                 UnicastMonitorModeStatus::STREAMING_SUSPENDED))
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnUnicastMonitorModeStatus(
+                  bluetooth::le_audio::types::kLeAudioDirectionSink,
+                  UnicastMonitorModeStatus::STREAMING_SUSPENDED))
       .Times(1);
 
   // Stop
@@ -9248,12 +9299,12 @@ TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
   ASSERT_TRUE(group
                   ->GetCachedCodecConfigurationByDirection(
                       types::LeAudioContextType::CONVERSATIONAL,
-                      le_audio::types::kLeAudioDirectionSink)
+                      bluetooth::le_audio::types::kLeAudioDirectionSink)
                   .has_value());
   ASSERT_TRUE(group
                   ->GetCachedCodecConfigurationByDirection(
                       types::LeAudioContextType::CONVERSATIONAL,
-                      le_audio::types::kLeAudioDirectionSource)
+                      bluetooth::le_audio::types::kLeAudioDirectionSource)
                   .has_value());
 
   // Release, Sink HAL client should remain in monitor mode
@@ -9272,12 +9323,12 @@ TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
   ASSERT_TRUE(group
                   ->GetCachedCodecConfigurationByDirection(
                       types::LeAudioContextType::CONVERSATIONAL,
-                      le_audio::types::kLeAudioDirectionSink)
+                      bluetooth::le_audio::types::kLeAudioDirectionSink)
                   .has_value());
   ASSERT_TRUE(group
                   ->GetCachedCodecConfigurationByDirection(
                       types::LeAudioContextType::CONVERSATIONAL,
-                      le_audio::types::kLeAudioDirectionSource)
+                      bluetooth::le_audio::types::kLeAudioDirectionSource)
                   .has_value());
 }
 
@@ -9289,11 +9340,12 @@ TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
   int group_id = 2;
 
   // Imitate activation of monitor mode
-  do_in_main_thread(FROM_HERE,
-                    base::BindOnce(&LeAudioClient::SetUnicastMonitorMode,
-                                   base::Unretained(LeAudioClient::Get()),
-                                   le_audio::types::kLeAudioDirectionSink,
-                                   true /* enable */));
+  do_in_main_thread(
+      FROM_HERE,
+      base::BindOnce(&LeAudioClient::SetUnicastMonitorMode,
+                     base::Unretained(LeAudioClient::Get()),
+                     bluetooth::le_audio::types::kLeAudioDirectionSink,
+                     true /* enable */));
 
   // Report working CSIS
   ON_CALL(mock_csis_client_module_, IsCsisClientRunning())
@@ -9329,10 +9381,10 @@ TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
   Mock::VerifyAndClearExpectations(&mock_le_audio_source_hal_client_);
 
   // Expect no streaming request on stream resume when group is already active
-  EXPECT_CALL(
-      mock_audio_hal_client_callbacks_,
-      OnUnicastMonitorModeStatus(le_audio::types::kLeAudioDirectionSink,
-                                 UnicastMonitorModeStatus::STREAMING_REQUESTED))
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnUnicastMonitorModeStatus(
+                  bluetooth::le_audio::types::kLeAudioDirectionSink,
+                  UnicastMonitorModeStatus::STREAMING_REQUESTED))
       .Times(0);
 
   StartStreaming(AUDIO_USAGE_VOICE_COMMUNICATION, AUDIO_CONTENT_TYPE_SPEECH,
@@ -9350,11 +9402,12 @@ TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
   auto group = streaming_groups.at(group_id);
 
   // De-activate monitoring mode
-  do_in_main_thread(FROM_HERE,
-                    base::BindOnce(&LeAudioClient::SetUnicastMonitorMode,
-                                   base::Unretained(LeAudioClient::Get()),
-                                   le_audio::types::kLeAudioDirectionSink,
-                                   false /* enable */));
+  do_in_main_thread(
+      FROM_HERE,
+      base::BindOnce(&LeAudioClient::SetUnicastMonitorMode,
+                     base::Unretained(LeAudioClient::Get()),
+                     bluetooth::le_audio::types::kLeAudioDirectionSink,
+                     false /* enable */));
 
   // Stop
   StopStreaming(group_id, true);
@@ -9364,12 +9417,12 @@ TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
   ASSERT_TRUE(group
                   ->GetCachedCodecConfigurationByDirection(
                       types::LeAudioContextType::CONVERSATIONAL,
-                      le_audio::types::kLeAudioDirectionSink)
+                      bluetooth::le_audio::types::kLeAudioDirectionSink)
                   .has_value());
   ASSERT_TRUE(group
                   ->GetCachedCodecConfigurationByDirection(
                       types::LeAudioContextType::CONVERSATIONAL,
-                      le_audio::types::kLeAudioDirectionSource)
+                      bluetooth::le_audio::types::kLeAudioDirectionSource)
                   .has_value());
 
   // Release of sink and source hals due to de-activating monitor mode
@@ -9387,12 +9440,12 @@ TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
   ASSERT_TRUE(group
                   ->GetCachedCodecConfigurationByDirection(
                       types::LeAudioContextType::CONVERSATIONAL,
-                      le_audio::types::kLeAudioDirectionSink)
+                      bluetooth::le_audio::types::kLeAudioDirectionSink)
                   .has_value());
   ASSERT_TRUE(group
                   ->GetCachedCodecConfigurationByDirection(
                       types::LeAudioContextType::CONVERSATIONAL,
-                      le_audio::types::kLeAudioDirectionSource)
+                      bluetooth::le_audio::types::kLeAudioDirectionSource)
                   .has_value());
 }
 
@@ -9408,16 +9461,18 @@ TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
   EXPECT_CALL(*mock_le_audio_sink_hal_client_, OnDestroyed()).Times(1);
 
   // Imitate activation of monitor mode
-  do_in_main_thread(FROM_HERE,
-                    base::BindOnce(&LeAudioClient::SetUnicastMonitorMode,
-                                   base::Unretained(LeAudioClient::Get()),
-                                   le_audio::types::kLeAudioDirectionSink,
-                                   true /* enable */));
-  do_in_main_thread(FROM_HERE,
-                    base::BindOnce(&LeAudioClient::SetUnicastMonitorMode,
-                                   base::Unretained(LeAudioClient::Get()),
-                                   le_audio::types::kLeAudioDirectionSink,
-                                   true /* enable */));
+  do_in_main_thread(
+      FROM_HERE,
+      base::BindOnce(&LeAudioClient::SetUnicastMonitorMode,
+                     base::Unretained(LeAudioClient::Get()),
+                     bluetooth::le_audio::types::kLeAudioDirectionSink,
+                     true /* enable */));
+  do_in_main_thread(
+      FROM_HERE,
+      base::BindOnce(&LeAudioClient::SetUnicastMonitorMode,
+                     base::Unretained(LeAudioClient::Get()),
+                     bluetooth::le_audio::types::kLeAudioDirectionSink,
+                     true /* enable */));
 
   Mock::VerifyAndClearExpectations(&mock_le_audio_source_hal_client_);
   Mock::VerifyAndClearExpectations(&mock_le_audio_sink_hal_client_);
@@ -9432,18 +9487,19 @@ TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
   /* Enabling monitor mode for source while group is not active should result in
    * sending STREAMING_SUSPENDED notification.
    */
-  EXPECT_CALL(
-      mock_audio_hal_client_callbacks_,
-      OnUnicastMonitorModeStatus(le_audio::types::kLeAudioDirectionSource,
-                                 UnicastMonitorModeStatus::STREAMING_SUSPENDED))
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnUnicastMonitorModeStatus(
+                  bluetooth::le_audio::types::kLeAudioDirectionSource,
+                  UnicastMonitorModeStatus::STREAMING_SUSPENDED))
       .Times(1);
 
   // Imitate activation of monitor mode
-  do_in_main_thread(FROM_HERE,
-                    base::BindOnce(&LeAudioClient::SetUnicastMonitorMode,
-                                   base::Unretained(LeAudioClient::Get()),
-                                   le_audio::types::kLeAudioDirectionSource,
-                                   true /* enable */));
+  do_in_main_thread(
+      FROM_HERE,
+      base::BindOnce(&LeAudioClient::SetUnicastMonitorMode,
+                     base::Unretained(LeAudioClient::Get()),
+                     bluetooth::le_audio::types::kLeAudioDirectionSource,
+                     true /* enable */));
   SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
 }
@@ -9459,18 +9515,19 @@ TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
   /* Enabling monitor mode for source while group is not active should result in
    * sending STREAMING_SUSPENDED notification.
    */
-  EXPECT_CALL(
-      mock_audio_hal_client_callbacks_,
-      OnUnicastMonitorModeStatus(le_audio::types::kLeAudioDirectionSource,
-                                 UnicastMonitorModeStatus::STREAMING_SUSPENDED))
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnUnicastMonitorModeStatus(
+                  bluetooth::le_audio::types::kLeAudioDirectionSource,
+                  UnicastMonitorModeStatus::STREAMING_SUSPENDED))
       .Times(1);
 
   // Imitate activation of monitor mode
-  do_in_main_thread(FROM_HERE,
-                    base::BindOnce(&LeAudioClient::SetUnicastMonitorMode,
-                                   base::Unretained(LeAudioClient::Get()),
-                                   le_audio::types::kLeAudioDirectionSource,
-                                   true /* enable */));
+  do_in_main_thread(
+      FROM_HERE,
+      base::BindOnce(&LeAudioClient::SetUnicastMonitorMode,
+                     base::Unretained(LeAudioClient::Get()),
+                     bluetooth::le_audio::types::kLeAudioDirectionSource,
+                     true /* enable */));
   SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
 }
@@ -9528,28 +9585,29 @@ TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
   /* Enabling monitor mode for source while stream is active should result in
    * sending STREAMING notification.
    */
-  EXPECT_CALL(
-      mock_audio_hal_client_callbacks_,
-      OnUnicastMonitorModeStatus(le_audio::types::kLeAudioDirectionSource,
-                                 UnicastMonitorModeStatus::STREAMING))
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnUnicastMonitorModeStatus(
+                  bluetooth::le_audio::types::kLeAudioDirectionSource,
+                  UnicastMonitorModeStatus::STREAMING))
       .Times(1);
 
   // Imitate activation of monitor mode
-  do_in_main_thread(FROM_HERE,
-                    base::BindOnce(&LeAudioClient::SetUnicastMonitorMode,
-                                   base::Unretained(LeAudioClient::Get()),
-                                   le_audio::types::kLeAudioDirectionSource,
-                                   true /* enable */));
+  do_in_main_thread(
+      FROM_HERE,
+      base::BindOnce(&LeAudioClient::SetUnicastMonitorMode,
+                     base::Unretained(LeAudioClient::Get()),
+                     bluetooth::le_audio::types::kLeAudioDirectionSource,
+                     true /* enable */));
   SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
 
   auto group = streaming_groups.at(group_id);
 
   // Stop streaming and expect Service to be informed about straming suspension
-  EXPECT_CALL(
-      mock_audio_hal_client_callbacks_,
-      OnUnicastMonitorModeStatus(le_audio::types::kLeAudioDirectionSource,
-                                 UnicastMonitorModeStatus::STREAMING_SUSPENDED))
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnUnicastMonitorModeStatus(
+                  bluetooth::le_audio::types::kLeAudioDirectionSource,
+                  UnicastMonitorModeStatus::STREAMING_SUSPENDED))
       .Times(1);
 
   // Stop
@@ -9559,12 +9617,12 @@ TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
   ASSERT_TRUE(group
                   ->GetCachedCodecConfigurationByDirection(
                       types::LeAudioContextType::CONVERSATIONAL,
-                      le_audio::types::kLeAudioDirectionSink)
+                      bluetooth::le_audio::types::kLeAudioDirectionSink)
                   .has_value());
   ASSERT_TRUE(group
                   ->GetCachedCodecConfigurationByDirection(
                       types::LeAudioContextType::CONVERSATIONAL,
-                      le_audio::types::kLeAudioDirectionSource)
+                      bluetooth::le_audio::types::kLeAudioDirectionSource)
                   .has_value());
 
   // Both Sink and Source HAL clients should be stopped
@@ -9587,18 +9645,18 @@ TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
   ASSERT_TRUE(group
                   ->GetCachedCodecConfigurationByDirection(
                       types::LeAudioContextType::CONVERSATIONAL,
-                      le_audio::types::kLeAudioDirectionSink)
+                      bluetooth::le_audio::types::kLeAudioDirectionSink)
                   .has_value());
   ASSERT_TRUE(group
                   ->GetCachedCodecConfigurationByDirection(
                       types::LeAudioContextType::CONVERSATIONAL,
-                      le_audio::types::kLeAudioDirectionSource)
+                      bluetooth::le_audio::types::kLeAudioDirectionSource)
                   .has_value());
 
-  EXPECT_CALL(
-      mock_audio_hal_client_callbacks_,
-      OnUnicastMonitorModeStatus(le_audio::types::kLeAudioDirectionSource,
-                                 UnicastMonitorModeStatus::STREAMING_REQUESTED))
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnUnicastMonitorModeStatus(
+                  bluetooth::le_audio::types::kLeAudioDirectionSource,
+                  UnicastMonitorModeStatus::STREAMING_REQUESTED))
       .Times(1);
 
   EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
@@ -9615,10 +9673,10 @@ TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
   Mock::VerifyAndClearExpectations(&mock_le_audio_sink_hal_client_);
 
   // Stop streaming and expect Service to be informed about straming suspension
-  EXPECT_CALL(
-      mock_audio_hal_client_callbacks_,
-      OnUnicastMonitorModeStatus(le_audio::types::kLeAudioDirectionSource,
-                                 UnicastMonitorModeStatus::STREAMING_SUSPENDED))
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnUnicastMonitorModeStatus(
+                  bluetooth::le_audio::types::kLeAudioDirectionSource,
+                  UnicastMonitorModeStatus::STREAMING_SUSPENDED))
       .Times(1);
 
   // Stop
@@ -9637,16 +9695,17 @@ TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
   Mock::VerifyAndClearExpectations(&mock_le_audio_sink_hal_client_);
 
   // De-activate monitoring mode
-  EXPECT_CALL(
-      mock_audio_hal_client_callbacks_,
-      OnUnicastMonitorModeStatus(le_audio::types::kLeAudioDirectionSource,
-                                 UnicastMonitorModeStatus::STREAMING_SUSPENDED))
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnUnicastMonitorModeStatus(
+                  bluetooth::le_audio::types::kLeAudioDirectionSource,
+                  UnicastMonitorModeStatus::STREAMING_SUSPENDED))
       .Times(0);
 
-  do_in_main_thread(FROM_HERE,
-                    base::BindOnce(&LeAudioClient::SetUnicastMonitorMode,
-                                   base::Unretained(LeAudioClient::Get()),
-                                   le_audio::types::kLeAudioDirectionSink,
-                                   false /* enable */));
+  do_in_main_thread(
+      FROM_HERE,
+      base::BindOnce(&LeAudioClient::SetUnicastMonitorMode,
+                     base::Unretained(LeAudioClient::Get()),
+                     bluetooth::le_audio::types::kLeAudioDirectionSink,
+                     false /* enable */));
 }
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

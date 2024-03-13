@@ -30,13 +30,13 @@
 
 #include "common/init_flags.h"
 #include "internal_include/bt_target.h"
-#include "os/log.h"
+#include "os/logging/log_adapter.h"
 #include "osi/include/allocator.h"
-#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_psm_types.h"
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/l2c_api.h"
+#include "stack/include/sdp_status.h"
 #include "stack/sdp/sdpint.h"
 #include "types/raw_address.h"
 
@@ -51,7 +51,7 @@ tSDP_CB sdp_cb;
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /******************************************************************************/
 static void sdp_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
-                            UNUSED_ATTR uint16_t psm, uint8_t l2cap_id);
+                            uint16_t psm, uint8_t l2cap_id);
 static void sdp_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
 static void sdp_config_cfm(uint16_t l2cap_cid, uint16_t result,
                            tL2CAP_CFG_INFO* p_cfg);
@@ -121,7 +121,7 @@ void sdp_free(void) {
  *
  ******************************************************************************/
 static void sdp_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
-                            UNUSED_ATTR uint16_t psm, uint8_t l2cap_id) {
+                            uint16_t /* psm */, uint8_t /* l2cap_id */) {
   tCONN_CB* p_ccb = sdpu_allocate_ccb();
   if (p_ccb == NULL) return;
 
@@ -133,7 +133,7 @@ static void sdp_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
   p_ccb->connection_id = l2cap_cid;
 }
 
-static void sdp_on_l2cap_error(uint16_t l2cap_cid, uint16_t result) {
+static void sdp_on_l2cap_error(uint16_t l2cap_cid, uint16_t /* result */) {
   tCONN_CB* p_ccb = sdpu_find_ccb_by_cid(l2cap_cid);
   if (p_ccb == nullptr) return;
   sdp_disconnect(p_ccb, SDP_CFG_FAILED);
@@ -214,7 +214,7 @@ static void sdp_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
  * Returns          void
  *
  ******************************************************************************/
-static void sdp_config_cfm(uint16_t l2cap_cid, uint16_t initiator,
+static void sdp_config_cfm(uint16_t l2cap_cid, uint16_t /* initiator */,
                            tL2CAP_CFG_INFO* p_cfg) {
   sdp_config_ind(l2cap_cid, p_cfg);
 
@@ -412,8 +412,7 @@ void sdp_disconnect(tCONN_CB* p_ccb, tSDP_REASON reason) {
  * Returns          void
  *
  ******************************************************************************/
-static void sdp_disconnect_cfm(uint16_t l2cap_cid,
-                               UNUSED_ATTR uint16_t result) {
+static void sdp_disconnect_cfm(uint16_t l2cap_cid, uint16_t /* result */) {
   tCONN_CB* p_ccb;
 
   /* Find CCB based on CID */

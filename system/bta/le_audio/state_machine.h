@@ -26,7 +26,7 @@
 #include "hardware/bt_le_audio.h"
 #include "le_audio_types.h"
 
-namespace le_audio {
+namespace bluetooth::le_audio {
 
 /* State machine interface */
 class LeAudioGroupStateMachine {
@@ -101,4 +101,4 @@ class LeAudioGroupStateMachine {
   virtual void ProcessHciNotifAclDisconnected(LeAudioDeviceGroup* group,
                                               LeAudioDevice* leAudioDevice) = 0;
 };
-}  // namespace le_audio
+}  // namespace bluetooth::le_audio

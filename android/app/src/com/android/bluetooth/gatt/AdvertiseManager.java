@@ -42,8 +42,6 @@ import java.util.Map;
 
 /**
  * Manages Bluetooth LE advertising operations and interacts with bluedroid stack. TODO: add tests.
- *
- * @hide
  */
 @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
 public class AdvertiseManager {

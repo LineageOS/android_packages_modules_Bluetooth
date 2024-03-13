@@ -36,9 +36,9 @@ using ::aidl::android::hardware::bluetooth::audio::UnicastCapability;
 using ::bluetooth::audio::aidl::BluetoothAudioCtrlAck;
 using ::bluetooth::audio::aidl::LatencyMode;
 using ::bluetooth::audio::le_audio::StartRequestState;
-using ::le_audio::DsaMode;
-using ::le_audio::set_configurations::AudioSetConfiguration;
-using ::le_audio::set_configurations::CodecConfigSetting;
+using ::bluetooth::le_audio::DsaMode;
+using ::bluetooth::le_audio::set_configurations::AudioSetConfiguration;
+using ::bluetooth::le_audio::set_configurations::CodecConfigSetting;
 
 constexpr uint8_t kChannelNumberMono = 1;
 constexpr uint8_t kChannelNumberStereo = 2;
@@ -61,7 +61,7 @@ bool hal_ucast_capability_to_stack_format(
     const UnicastCapability& ucast_capability,
     CodecConfigSetting& stack_capability);
 AudioConfiguration offload_config_to_hal_audio_config(
-    const ::le_audio::offload_config& offload_config);
+    const ::bluetooth::le_audio::offload_config& offload_config);
 
 std::vector<AudioSetConfiguration> get_offload_capabilities();
 
@@ -101,7 +101,7 @@ class LeAudioTransport {
                                       uint32_t data_interval);
 
   void LeAudioSetBroadcastConfig(
-      const ::le_audio::broadcast_offload_config& offload_config);
+      const ::bluetooth::le_audio::broadcast_offload_config& offload_config);
 
   const LeAudioBroadcastConfiguration& LeAudioGetBroadcastConfig();
 
@@ -165,7 +165,7 @@ class LeAudioSinkTransport
                                       uint32_t data_interval);
 
   void LeAudioSetBroadcastConfig(
-      const ::le_audio::broadcast_offload_config& offload_config);
+      const ::bluetooth::le_audio::broadcast_offload_config& offload_config);
 
   const LeAudioBroadcastConfiguration& LeAudioGetBroadcastConfig();
 
