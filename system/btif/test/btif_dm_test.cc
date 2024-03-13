@@ -188,7 +188,7 @@ TEST_F_WITH_FLAGS(BtifDmWithStackTest,
               .hci_status = HCI_SUCCESS,
           },
   };
-  bd_name_copy(data.disc_res.bd_name, kBdName);
+  bd_name_from_char_pointer(data.disc_res.bd_name, kBdName);
 
   bluetooth::legacy::testing::btif_dm_search_services_evt(BTA_DM_NAME_READ_EVT,
                                                           &data);
