@@ -1231,13 +1231,13 @@ public class HapClientService extends ProfileService {
                 Objects.requireNonNull(source, "source cannot be null");
                 Objects.requireNonNull(receiver, "receiver cannot be null");
 
+                List<BluetoothDevice> defaultValue = new ArrayList<>();
                 HapClientService service = getService(source);
-                if (service == null) {
-                    throw new IllegalStateException("service is null");
+                if (service != null) {
+                    enforceBluetoothPrivilegedPermission(service);
+                    defaultValue = service.getConnectedDevices();
                 }
-                enforceBluetoothPrivilegedPermission(service);
-                List<BluetoothDevice> result = service.getConnectedDevices();
-                receiver.send(result);
+                receiver.send(defaultValue);
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
             }
@@ -1250,13 +1250,13 @@ public class HapClientService extends ProfileService {
                 Objects.requireNonNull(source, "source cannot be null");
                 Objects.requireNonNull(receiver, "receiver cannot be null");
 
+                List<BluetoothDevice> defaultValue = new ArrayList<>();
                 HapClientService service = getService(source);
-                if (service == null) {
-                    throw new IllegalStateException("service is null");
+                if (service != null) {
+                    enforceBluetoothPrivilegedPermission(service);
+                    defaultValue = service.getDevicesMatchingConnectionStates(states);
                 }
-                enforceBluetoothPrivilegedPermission(service);
-                List<BluetoothDevice> result = service.getDevicesMatchingConnectionStates(states);
-                receiver.send(result);
+                receiver.send(defaultValue);
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
             }
@@ -1270,13 +1270,13 @@ public class HapClientService extends ProfileService {
                 Objects.requireNonNull(source, "source cannot be null");
                 Objects.requireNonNull(receiver, "receiver cannot be null");
 
+                int defaultValue = BluetoothProfile.STATE_DISCONNECTED;
                 HapClientService service = getService(source);
-                if (service == null) {
-                    throw new IllegalStateException("service is null");
+                if (service != null) {
+                    enforceBluetoothPrivilegedPermission(service);
+                    defaultValue = service.getConnectionState(device);
                 }
-                enforceBluetoothPrivilegedPermission(service);
-                int result = service.getConnectionState(device);
-                receiver.send(result);
+                receiver.send(defaultValue);
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
             }
@@ -1290,13 +1290,13 @@ public class HapClientService extends ProfileService {
                 Objects.requireNonNull(source, "source cannot be null");
                 Objects.requireNonNull(receiver, "receiver cannot be null");
 
+                boolean defaultValue = false;
                 HapClientService service = getService(source);
-                if (service == null) {
-                    throw new IllegalStateException("service is null");
+                if (service != null) {
+                    enforceBluetoothPrivilegedPermission(service);
+                    defaultValue = service.setConnectionPolicy(device, connectionPolicy);
                 }
-                enforceBluetoothPrivilegedPermission(service);
-                boolean result = service.setConnectionPolicy(device, connectionPolicy);
-                receiver.send(result);
+                receiver.send(defaultValue);
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
             }
@@ -1310,13 +1310,13 @@ public class HapClientService extends ProfileService {
                 Objects.requireNonNull(source, "source cannot be null");
                 Objects.requireNonNull(receiver, "receiver cannot be null");
 
+                int defaultValue = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
                 HapClientService service = getService(source);
-                if (service == null) {
-                    throw new IllegalStateException("service is null");
+                if (service != null) {
+                    enforceBluetoothPrivilegedPermission(service);
+                    defaultValue = service.getConnectionPolicy(device);
                 }
-                enforceBluetoothPrivilegedPermission(service);
-                int result = service.getConnectionPolicy(device);
-                receiver.send(result);
+                receiver.send(defaultValue);
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
             }
@@ -1330,13 +1330,13 @@ public class HapClientService extends ProfileService {
                 Objects.requireNonNull(source, "source cannot be null");
                 Objects.requireNonNull(receiver, "receiver cannot be null");
 
+                int defaultValue = BluetoothHapClient.PRESET_INDEX_UNAVAILABLE;
                 HapClientService service = getService(source);
-                if (service == null) {
-                    throw new IllegalStateException("service is null");
+                if (service != null) {
+                    enforceBluetoothPrivilegedPermission(service);
+                    defaultValue = service.getActivePresetIndex(device);
                 }
-                enforceBluetoothPrivilegedPermission(service);
-                int result = service.getActivePresetIndex(device);
-                receiver.send(result);
+                receiver.send(defaultValue);
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
             }
@@ -1350,13 +1350,13 @@ public class HapClientService extends ProfileService {
                 Objects.requireNonNull(source, "source cannot be null");
                 Objects.requireNonNull(receiver, "receiver cannot be null");
 
+                BluetoothHapPresetInfo defaultValue = null;
                 HapClientService service = getService(source);
-                if (service == null) {
-                    throw new IllegalStateException("service is null");
+                if (service != null) {
+                    enforceBluetoothPrivilegedPermission(service);
+                    defaultValue = service.getActivePresetInfo(device);
                 }
-                enforceBluetoothPrivilegedPermission(service);
-                BluetoothHapPresetInfo result = service.getActivePresetInfo(device);
-                receiver.send(result);
+                receiver.send(defaultValue);
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
             }
@@ -1370,13 +1370,13 @@ public class HapClientService extends ProfileService {
                 Objects.requireNonNull(source, "source cannot be null");
                 Objects.requireNonNull(receiver, "receiver cannot be null");
 
+                int defaultValue = BluetoothCsipSetCoordinator.GROUP_ID_INVALID;
                 HapClientService service = getService(source);
-                if (service == null) {
-                    throw new IllegalStateException("service is null");
+                if (service != null) {
+                    enforceBluetoothPrivilegedPermission(service);
+                    defaultValue = service.getHapGroup(device);
                 }
-                enforceBluetoothPrivilegedPermission(service);
-                int result = service.getHapGroup(device);
-                receiver.send(result);
+                receiver.send(defaultValue);
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
             }
@@ -1488,13 +1488,13 @@ public class HapClientService extends ProfileService {
                 Objects.requireNonNull(source, "source cannot be null");
                 Objects.requireNonNull(receiver, "receiver cannot be null");
 
+                BluetoothHapPresetInfo defaultValue = null;
                 HapClientService service = getService(source);
-                if (service == null) {
-                    throw new IllegalStateException("service is null");
+                if (service != null) {
+                    enforceBluetoothPrivilegedPermission(service);
+                    defaultValue = service.getPresetInfo(device, presetIndex);
                 }
-                enforceBluetoothPrivilegedPermission(service);
-                BluetoothHapPresetInfo result = service.getPresetInfo(device, presetIndex);
-                receiver.send(result);
+                receiver.send(defaultValue);
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
             }
@@ -1508,13 +1508,13 @@ public class HapClientService extends ProfileService {
                 Objects.requireNonNull(source, "source cannot be null");
                 Objects.requireNonNull(receiver, "receiver cannot be null");
 
+                List<BluetoothHapPresetInfo> defaultValue = new ArrayList<>();
                 HapClientService service = getService(source);
-                if (service == null) {
-                    throw new IllegalStateException("service is null");
+                if (service != null) {
+                    enforceBluetoothPrivilegedPermission(service);
+                    defaultValue = service.getAllPresetInfo(device);
                 }
-                enforceBluetoothPrivilegedPermission(service);
-                List<BluetoothHapPresetInfo> result = service.getAllPresetInfo(device);
-                receiver.send(result);
+                receiver.send(defaultValue);
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
             }
@@ -1528,13 +1528,13 @@ public class HapClientService extends ProfileService {
                 Objects.requireNonNull(source, "source cannot be null");
                 Objects.requireNonNull(receiver, "receiver cannot be null");
 
+                int defaultValue = 0x00;
                 HapClientService service = getService(source);
-                if (service == null) {
-                    throw new IllegalStateException("service is null");
+                if (service != null) {
+                    enforceBluetoothPrivilegedPermission(service);
+                    defaultValue = service.getFeatures(device);
                 }
-                enforceBluetoothPrivilegedPermission(service);
-                int result = service.getFeatures(device);
-                receiver.send(result);
+                receiver.send(defaultValue);
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
             }
