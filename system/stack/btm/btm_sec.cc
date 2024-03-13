@@ -2344,8 +2344,7 @@ void btm_sec_rmt_name_request_complete(const RawAddress* p_bd_addr,
         reinterpret_cast<char const*>(p_bd_name),
         security_state_text(p_dev_rec->sec_rec.sec_state).c_str());
 
-    strlcpy((char*)p_dev_rec->sec_bd_name, (const char*)p_bd_name,
-            BTM_MAX_REM_BD_NAME_LEN + 1);
+    bd_name_copy(p_dev_rec->sec_bd_name, p_bd_name);
     p_dev_rec->sec_rec.sec_flags |= BTM_SEC_NAME_KNOWN;
     log::verbose("setting BTM_SEC_NAME_KNOWN sec_flags:0x{:x}",
                  p_dev_rec->sec_rec.sec_flags);
@@ -2806,8 +2805,7 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, const RawAddress bda,
     evt_data.cfm_req.bd_addr = p_dev_rec->bd_addr;
     evt_data.cfm_req.dev_class = p_dev_rec->dev_class;
 
-    strlcpy((char*)evt_data.cfm_req.bd_name, (char*)p_dev_rec->sec_bd_name,
-            BTM_MAX_REM_BD_NAME_LEN + 1);
+    bd_name_copy(evt_data.cfm_req.bd_name, p_dev_rec->sec_bd_name);
 
     switch (event) {
       case BTM_SP_CFM_REQ_EVT:
@@ -3004,8 +3002,7 @@ void btm_rem_oob_req(const RawAddress bd_addr) {
   if ((p_dev_rec != NULL) && btm_sec_cb.api.p_sp_callback) {
     evt_data.bd_addr = p_dev_rec->bd_addr;
     evt_data.dev_class = p_dev_rec->dev_class;
-    strlcpy((char*)evt_data.bd_name, (char*)p_dev_rec->sec_bd_name,
-            BTM_MAX_REM_BD_NAME_LEN + 1);
+    bd_name_copy(evt_data.bd_name, p_dev_rec->sec_bd_name);
 
     btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_WAIT_LOCAL_OOB_RSP);
     if ((*btm_sec_cb.api.p_sp_callback)(BTM_SP_RMT_OOB_EVT,
