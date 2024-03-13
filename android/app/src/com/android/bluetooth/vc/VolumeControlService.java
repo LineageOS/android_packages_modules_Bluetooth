@@ -710,82 +710,47 @@ public class VolumeControlService extends ProfileService {
     void notifyNewCallbackOfKnownVolumeInfo(IBluetoothVolumeControlCallback callback) {
         Log.d(TAG, "notifyNewCallbackOfKnownVolumeInfo");
 
-        RemoteCallbackList<IBluetoothVolumeControlCallback> tempCallbackList =
-                new RemoteCallbackList<>();
-        if (tempCallbackList == null) {
-            Log.w(TAG, "notifyNewCallbackOfKnownVolumeInfo: tempCallbackList not available");
-            return;
-        }
+        // notify volume offset
+        for (Map.Entry<BluetoothDevice, VolumeControlOffsetDescriptor> entry :
+                mAudioOffsets.entrySet()) {
+            VolumeControlOffsetDescriptor descriptor = entry.getValue();
 
-        /* Register callback on temporary list just to execute it now. */
-        tempCallbackList.register(callback);
+            for (int id = 1; id <= descriptor.size(); id++) {
+                BluetoothDevice device = entry.getKey();
+                int offset = descriptor.getValue(id);
+                int location = descriptor.getLocation(id);
+                String description = descriptor.getDescription(id);
 
-        int n = tempCallbackList.beginBroadcast();
-        if (n != 1) {
-            /* There should be only one calback in this place. */
-            Log.e(TAG, "notifyNewCallbackOfKnownVolumeInfo: Shall be 1 but it is " + n);
-        }
-
-        for (int i = 0; i < n; i++) {
-            // notify volume offset
-            for (Map.Entry<BluetoothDevice, VolumeControlOffsetDescriptor> entry :
-                    mAudioOffsets.entrySet()) {
-                VolumeControlOffsetDescriptor descriptor = entry.getValue();
-
-                for (int id = 1; id <= descriptor.size(); id++) {
-                    BluetoothDevice device = entry.getKey();
-                    int offset = descriptor.getValue(id);
-                    int location = descriptor.getLocation(id);
-                    String description = descriptor.getDescription(id);
-
-                    Log.d(
-                            TAG,
-                            "notifyNewCallbackOfKnownVolumeInfo, device: "
-                                    + device
-                                    + ", id: "
-                                    + id
-                                    + ", offset: "
-                                    + offset
-                                    + ", location: "
-                                    + location
-                                    + ", description: "
-                                    + description);
-
-                    try {
-                        tempCallbackList
-                                .getBroadcastItem(i)
-                                .onVolumeOffsetChanged(device, id, offset);
-                    } catch (RemoteException e) {
-                        // Not every callback had to be defined; just continue
-                    }
+                Log.d(
+                        TAG,
+                        "notifyNewCallbackOfKnownVolumeInfo,"
+                                + (" device: " + device)
+                                + (", id: " + id)
+                                + (", offset: " + offset)
+                                + (", location: " + location)
+                                + (", description: " + description));
+                try {
+                    callback.onVolumeOffsetChanged(device, id, offset);
                     if (Flags.leaudioMultipleVocsInstancesApi()) {
-                        try {
-                            tempCallbackList
-                                    .getBroadcastItem(i)
-                                    .onVolumeOffsetAudioLocationChanged(device, id, location);
-                        } catch (RemoteException e) {
-                            // Not every callback had to be defined; just continue
-                        }
-                        try {
-                            tempCallbackList
-                                    .getBroadcastItem(i)
-                                    .onVolumeOffsetAudioDescriptionChanged(device, id, description);
-                        } catch (RemoteException e) {
-                            // Not every callback had to be defined; just continue
-                        }
+                        callback.onVolumeOffsetAudioLocationChanged(device, id, location);
+                        callback.onVolumeOffsetAudioDescriptionChanged(device, id, description);
                     }
+                } catch (RemoteException e) {
+                    // Dead client -- continue
                 }
             }
         }
 
-        tempCallbackList.finishBroadcast();
-
         if (Flags.leaudioBroadcastVolumeControlForConnectedDevices()) {
-            notifyDevicesVolumeChanged(tempCallbackList, getDevices(), Optional.empty());
-        }
+            // using tempCallbackList is a hack to keep using 'notifyDevicesVolumeChanged'
+            // without making any extra modification
+            RemoteCallbackList<IBluetoothVolumeControlCallback> tempCallbackList =
+                    new RemoteCallbackList<>();
 
-        /* User is notified, remove callback from temporary list */
-        tempCallbackList.unregister(callback);
+            tempCallbackList.register(callback);
+            notifyDevicesVolumeChanged(tempCallbackList, getDevices(), Optional.empty());
+            tempCallbackList.unregister(callback);
+        }
     }
 
     void registerCallback(IBluetoothVolumeControlCallback callback) {
