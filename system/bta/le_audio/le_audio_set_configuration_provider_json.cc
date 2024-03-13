@@ -24,7 +24,6 @@
 #include "audio_hal_client/audio_hal_client.h"
 #include "audio_set_configurations_generated.h"
 #include "audio_set_scenarios_generated.h"
-#include "codec_manager.h"
 #include "flatbuffers/idl.h"
 #include "flatbuffers/util.h"
 #include "le_audio_set_configuration_provider.h"
@@ -41,7 +40,6 @@ using bluetooth::le_audio::set_configurations::SetConfiguration;
 using bluetooth::le_audio::types::LeAudioContextType;
 
 namespace bluetooth::le_audio {
-using ::bluetooth::le_audio::CodecManager;
 
 #ifdef __ANDROID__
 static const std::vector<
@@ -166,10 +164,6 @@ struct AudioSetConfigurationProviderJson {
         kDefaultScenario);
     return nullptr;
   };
-
-  bool IsDualBiDirSwbSupported(void) const {
-    return dual_bidirection_swb_supported_;
-  }
 
  private:
   /* Codec configurations */
@@ -684,24 +678,6 @@ AudioSetConfigurationProvider* AudioSetConfigurationProvider::Get() {
 const set_configurations::AudioSetConfigurations*
 AudioSetConfigurationProvider::GetConfigurations(
     ::bluetooth::le_audio::types::LeAudioContextType content_type) const {
-  if (CodecManager::GetInstance()->GetCodecLocation() ==
-      types::CodecLocation::ADSP) {
-    LOG_VERBOSE("Get offload config for the context type: %d",
-                (int)content_type);
-    const AudioSetConfigurations* offload_confs =
-        CodecManager::GetInstance()->GetOffloadCodecConfig(content_type);
-
-    if (offload_confs != nullptr && !(*offload_confs).empty()) {
-      return offload_confs;
-    }
-
-    // TODO: Need to have a mechanism to switch to software session if offload
-    // doesn't support.
-  }
-
-  LOG_VERBOSE("Get software config for the context type: %d",
-              (int)content_type);
-
   if (pimpl_->IsRunning())
     return pimpl_->config_provider_impl_->GetConfigurationsByContextType(
         content_type);
@@ -743,14 +719,6 @@ bool AudioSetConfigurationProvider::CheckConfigurationIsDualBiDirSwb(
              bluetooth::le_audio::types::kLeAudioDirectionBoth ||
          dual_dev_dual_bidir_swb ==
              bluetooth::le_audio::types::kLeAudioDirectionBoth;
-}
-
-bool AudioSetConfigurationProvider::IsDualBiDirSwbSupported(void) const {
-  if (pimpl_->IsRunning()) {
-    return pimpl_->config_provider_impl_->IsDualBiDirSwbSupported();
-  }
-
-  return false;
 }
 
 }  // namespace bluetooth::le_audio

@@ -1345,18 +1345,10 @@ bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
    * when all devices in the group are connected.
    */
   bool dual_bidirection_swb_supported_ =
-      AudioSetConfigurationProvider::Get()->IsDualBiDirSwbSupported();
-  if (Size() > 1 &&
-      AudioSetConfigurationProvider::Get()->CheckConfigurationIsBiDirSwb(
-          *audio_set_conf)) {
-    if (!dual_bidirection_swb_supported_ ||
-        (CodecManager::GetInstance()->GetCodecLocation() ==
-             types::CodecLocation::ADSP &&
-         !CodecManager::GetInstance()->IsOffloadDualBiDirSwbSupported())) {
-      /* two conditions
-       * 1) dual bidirection swb is not supported for both software/offload
-       * 2) offload not supported
-       */
+      CodecManager::GetInstance()->IsDualBiDirSwbSupported();
+  if (Size() > 1 && CodecManager::GetInstance()->CheckCodecConfigIsBiDirSwb(
+                        *audio_set_conf)) {
+    if (!dual_bidirection_swb_supported_) {
       return false;
     }
   }

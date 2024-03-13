@@ -4343,7 +4343,8 @@ TEST_F(StateMachineTest, testConfigureDataPathForHost) {
   /* Can be called for every context when fetching the configuration from the
    * AudioSetConfigurationProvider.
    */
-  EXPECT_CALL(*mock_codec_manager_, GetCodecLocation()).Times(AtLeast(1));
+  EXPECT_CALL(*mock_codec_manager_, IsDualBiDirSwbSupported())
+      .Times(AtLeast(1));
 
   // Prepare fake connected device group
   auto* group = PrepareSingleTestDeviceGroup(leaudio_group_id, context_type);
@@ -4379,7 +4380,8 @@ TEST_F(StateMachineTestAdsp, testConfigureDataPathForAdsp) {
   /* Can be called for every context when fetching the configuration from the
    * AudioSetConfigurationProvider.
    */
-  EXPECT_CALL(*mock_codec_manager_, GetCodecLocation()).Times(AtLeast(1));
+  EXPECT_CALL(*mock_codec_manager_, IsDualBiDirSwbSupported())
+      .Times(AtLeast(1));
 
   // Prepare fake connected device group
   auto* group = PrepareSingleTestDeviceGroup(leaudio_group_id, context_type);
@@ -4431,7 +4433,8 @@ TEST_F(StateMachineTestAdsp, testStreamConfigurationAdspDownMix) {
   /* Can be called for every context when fetching the configuration from
    * the AudioSetConfigurationProvider.
    */
-  EXPECT_CALL(*mock_codec_manager_, GetCodecLocation()).Times(AtLeast(1));
+  EXPECT_CALL(*mock_codec_manager_, IsDualBiDirSwbSupported())
+      .Times(AtLeast(1));
 
   PrepareConfigureCodecHandler(group);
   PrepareConfigureQosHandler(group);
