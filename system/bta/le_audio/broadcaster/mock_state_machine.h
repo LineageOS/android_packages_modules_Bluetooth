@@ -46,8 +46,7 @@ class MockBroadcastStateMachine
               switch (event) {
                 case Message::START:
                   if (result_) SetState(State::STREAMING);
-                  sent_data =
-                      &this->cfg.codec_wrapper.GetLeAudioCodecConfiguration();
+                  sent_data = &this->cfg.config.subgroups;
                   break;
                 case Message::STOP:
                   if (result_) SetState(State::STOPPED);
@@ -67,10 +66,16 @@ class MockBroadcastStateMachine
     });
 
     ON_CALL(*this, GetCodecConfig())
-        .WillByDefault([this]() -> const bluetooth::le_audio::broadcaster::
-                                    BroadcastCodecWrapper& {
-                                      return this->cfg.codec_wrapper;
-                                    });
+        .WillByDefault(
+            [this]() -> const std::vector<bluetooth::le_audio::broadcaster::
+                                              BroadcastSubgroupCodecConfig>& {
+              return this->cfg.config.subgroups;
+            });
+
+    ON_CALL(*this, GetBroadcastConfig())
+        .WillByDefault(
+            [this]() -> const bluetooth::le_audio::broadcaster::
+                         BroadcastConfiguration& { return this->cfg.config; });
 
     ON_CALL(*this, GetBroadcastId())
         .WillByDefault([this]() -> bluetooth::le_audio::BroadcastId {
@@ -109,8 +114,10 @@ class MockBroadcastStateMachine
   }
 
   MOCK_METHOD((bool), Initialize, (), (override));
-  MOCK_METHOD((const bluetooth::le_audio::broadcaster::BroadcastCodecWrapper&),
-              GetCodecConfig, (), (const override));
+  MOCK_METHOD(
+      (const std::vector<
+          bluetooth::le_audio::broadcaster::BroadcastSubgroupCodecConfig>&),
+      GetCodecConfig, (), (const override));
   MOCK_METHOD(
       (std::optional<bluetooth::le_audio::broadcaster::BigConfig> const&),
       GetBigConfig, (), (const override));
@@ -122,6 +129,8 @@ class MockBroadcastStateMachine
       (base::Callback<void(uint8_t /* address_type*/, RawAddress /*address*/)>
            cb),
       (override));
+  MOCK_METHOD((const bluetooth::le_audio::broadcaster::BroadcastConfiguration&),
+              GetBroadcastConfig, (), (const override));
   MOCK_METHOD((void), RequestOwnAddress, (), (override));
   MOCK_METHOD((RawAddress), GetOwnAddress, (), (override));
   MOCK_METHOD((uint8_t), GetOwnAddressType, (), (override));
