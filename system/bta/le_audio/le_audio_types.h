@@ -1145,6 +1145,17 @@ struct CodecConfigSetting {
     return channel_count_per_iso_stream;
   }
 
+  bool operator==(const CodecConfigSetting& other) const {
+    return (id == other.id) &&
+           (channel_count_per_iso_stream ==
+            other.channel_count_per_iso_stream) &&
+           (params == other.params);
+  }
+
+  bool operator!=(const CodecConfigSetting& other) const {
+    return !(*this == other);
+  }
+
   /* TODO: Add vendor parameter or Ltv map viewers for
    * vendor specific LTV types.
    */
@@ -1252,7 +1263,9 @@ struct stream_configuration {
   bool pending_configuration;
 
   /* Currently selected remote device set configuration */
-  const bluetooth::le_audio::set_configurations::AudioSetConfiguration* conf;
+  std::shared_ptr<
+      const bluetooth::le_audio::set_configurations::AudioSetConfiguration>
+      conf;
 
   /* Currently selected local audio codec */
   types::LeAudioCodecId codec_id;

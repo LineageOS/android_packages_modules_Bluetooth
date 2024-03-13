@@ -198,11 +198,36 @@ struct codec_manager_impl {
     }
   }
 
-  const AudioSetConfigurations* GetOffloadCodecConfig(
+  const AudioSetConfigurations* GetSupportedCodecConfigurations(
       types::LeAudioContextType ctx_type) {
-    return context_type_offload_config_map_.count(ctx_type)
-               ? &context_type_offload_config_map_[ctx_type]
-               : nullptr;
+    if (GetCodecLocation() == le_audio::types::CodecLocation::ADSP) {
+      LOG_VERBOSE("Get offload config for the context type: %d", (int)ctx_type);
+
+      // TODO: Need to have a mechanism to switch to software session if offload
+      // doesn't support.
+      return context_type_offload_config_map_.count(ctx_type)
+                 ? &context_type_offload_config_map_[ctx_type]
+                 : nullptr;
+    }
+
+    LOG_VERBOSE("Get software config for the context type: %d", (int)ctx_type);
+    return AudioSetConfigurationProvider::Get()->GetConfigurations(ctx_type);
+  }
+
+  std::unique_ptr<AudioSetConfiguration> GetCodecConfig(
+      types::LeAudioContextType ctx_type,
+      std::function<const set_configurations::AudioSetConfiguration*(
+          types::LeAudioContextType context_type,
+          const set_configurations::AudioSetConfigurations* confs)>
+          non_vendor_config_matcher) {
+    // Note: For the only supported right now legacy software configuration
+    //       provider, we use the device group logic to match the proper
+    //       configuration with group capabilities. Note that this path only
+    //       supports the LC3 codec format. For the multicodec support we should
+    //       rely on the configuration matcher behind the AIDL interface.
+    auto conf = non_vendor_config_matcher(
+        ctx_type, GetSupportedCodecConfigurations(ctx_type));
+    return conf ? std::make_unique<AudioSetConfiguration>(*conf) : nullptr;
   }
 
   bool CheckCodecConfigIsBiDirSwb(const AudioSetConfiguration& config) {
@@ -908,10 +933,15 @@ void CodecManager::UpdateActiveAudioConfig(
         stream_params, delays_ms, update_receiver);
 }
 
-const AudioSetConfigurations* CodecManager::GetOffloadCodecConfig(
-    types::LeAudioContextType ctx_type) {
+std::unique_ptr<AudioSetConfiguration> CodecManager::GetCodecConfig(
+    types::LeAudioContextType ctx_type,
+    std::function<const set_configurations::AudioSetConfiguration*(
+        types::LeAudioContextType context_type,
+        const set_configurations::AudioSetConfigurations* confs)>
+        non_vendor_config_matcher) {
   if (pimpl_->IsRunning()) {
-    return pimpl_->codec_manager_impl_->GetOffloadCodecConfig(ctx_type);
+    return pimpl_->codec_manager_impl_->GetCodecConfig(
+        ctx_type, non_vendor_config_matcher);
   }
 
   return nullptr;

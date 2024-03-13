@@ -44,9 +44,18 @@ class MockCodecManager {
                           uint8_t direction)>
            update_receiver));
   MOCK_METHOD(
-      (bluetooth::le_audio::set_configurations::AudioSetConfigurations*),
-      GetOffloadCodecConfig,
-      (bluetooth::le_audio::types::LeAudioContextType ctx_type), (const));
+      (std::unique_ptr<
+          bluetooth::le_audio::set_configurations::AudioSetConfiguration>),
+      GetCodecConfig,
+      (bluetooth::le_audio::types::LeAudioContextType ctx_type,
+       std::function<
+           const bluetooth::le_audio::set_configurations::
+               AudioSetConfiguration*(
+                   bluetooth::le_audio::types::LeAudioContextType context_type,
+                   const bluetooth::le_audio::set_configurations::
+                       AudioSetConfigurations* confs)>
+           non_vendor_config_matcher),
+      (const));
   MOCK_METHOD(
       (bool), CheckCodecConfigIsBiDirSwb,
       (const bluetooth::le_audio::set_configurations::AudioSetConfiguration&),

@@ -58,10 +58,15 @@ void CodecManager::UpdateActiveAudioConfig(
                                            update_receiver);
 }
 
-const set_configurations::AudioSetConfigurations*
-CodecManager::GetOffloadCodecConfig(types::LeAudioContextType ctx_type) {
+std::unique_ptr<set_configurations::AudioSetConfiguration>
+CodecManager::GetCodecConfig(
+    types::LeAudioContextType ctx_type,
+    std::function<const le_audio::set_configurations::AudioSetConfiguration*(
+        le_audio::types::LeAudioContextType context_type,
+        const le_audio::set_configurations::AudioSetConfigurations* confs)>
+        non_vendor_config_matcher) {
   if (!pimpl_) return nullptr;
-  return pimpl_->GetOffloadCodecConfig(ctx_type);
+  return pimpl_->GetCodecConfig(ctx_type, non_vendor_config_matcher);
 }
 
 std::unique_ptr<::bluetooth::le_audio::broadcaster::BroadcastConfiguration>

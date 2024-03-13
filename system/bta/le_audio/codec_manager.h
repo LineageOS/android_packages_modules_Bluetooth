@@ -77,10 +77,14 @@ class CodecManager {
       types::BidirectionalPair<uint16_t> delays_ms,
       std::function<void(const offload_config& config, uint8_t direction)>
           update_receiver);
-  virtual const ::bluetooth::le_audio::set_configurations::
-      AudioSetConfigurations*
-      GetOffloadCodecConfig(
-          ::bluetooth::le_audio::types::LeAudioContextType ctx_type);
+  virtual std::unique_ptr<
+      ::bluetooth::le_audio::set_configurations::AudioSetConfiguration>
+  GetCodecConfig(::bluetooth::le_audio::types::LeAudioContextType ctx_type,
+                 std::function<const set_configurations::AudioSetConfiguration*(
+                     types::LeAudioContextType context_type,
+                     const set_configurations::AudioSetConfigurations* confs)>
+                     non_vendor_config_matcher);
+
   virtual bool CheckCodecConfigIsBiDirSwb(
       const ::bluetooth::le_audio::set_configurations::AudioSetConfiguration&
           config) const;
