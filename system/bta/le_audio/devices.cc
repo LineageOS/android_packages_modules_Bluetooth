@@ -25,6 +25,7 @@
 #include "btif/include/btif_storage.h"
 #include "internal_include/bt_trace.h"
 #include "le_audio_utils.h"
+#include "os/log.h"
 
 using bluetooth::hci::kIsoCigPhy1M;
 using bluetooth::hci::kIsoCigPhy2M;
@@ -208,25 +209,32 @@ uint32_t PickAudioLocation(types::LeAudioConfigurationStrategy strategy,
 }
 
 bool LeAudioDevice::ConfigureAses(
-    const bluetooth::le_audio::set_configurations::SetConfiguration& ent,
-    LeAudioContextType context_type,
+    const set_configurations::AudioSetConfiguration* audio_set_conf,
+    uint8_t direction, LeAudioContextType context_type,
     uint8_t* number_of_already_active_group_ase,
     BidirectionalPair<AudioLocations>& group_audio_locations_memo,
     const BidirectionalPair<AudioContexts>& metadata_context_types,
     const BidirectionalPair<std::vector<uint8_t>>& ccid_lists,
     bool reuse_cis_id) {
   /* First try to use the already configured ASE */
-  auto ase = GetFirstActiveAseByDirection(ent.direction);
+  auto ase = GetFirstActiveAseByDirection(direction);
   if (ase) {
     LOG_INFO("Using an already active ASE id=%d", ase->id);
   } else {
-    ase = GetFirstInactiveAse(ent.direction, reuse_cis_id);
+    ase = GetFirstInactiveAse(direction, reuse_cis_id);
   }
 
   if (!ase) {
     LOG_ERROR("Unable to find an ASE to configure");
     return false;
   }
+
+  ASSERT_LOG(
+      audio_set_conf->topology_info.has_value(),
+      "No topology info, which is required to properly configure the ASEs");
+  auto device_cnt = audio_set_conf->topology_info->device_count.get(direction);
+  auto strategy = audio_set_conf->topology_info->strategy.get(direction);
+  auto const& ents = audio_set_conf->confs.get(direction);
 
   /* The number_of_already_active_group_ase keeps all the active ases
    * in other devices in the group.
@@ -236,30 +244,28 @@ bool LeAudioDevice::ConfigureAses(
    */
   uint8_t active_ases = *number_of_already_active_group_ase;
   uint8_t max_required_ase_per_dev =
-      ent.ase_cnt / ent.device_cnt + (ent.ase_cnt % ent.device_cnt);
-  bluetooth::le_audio::types::LeAudioConfigurationStrategy strategy =
-      ent.strategy;
+      ents.size() / device_cnt + (ents.size() % device_cnt);
 
-  auto pac = GetCodecConfigurationSupportedPac(ent.direction, ent.codec);
+  auto pac = GetCodecConfigurationSupportedPac(direction, ents[0].codec);
   if (!pac) return false;
 
   int needed_ase = std::min((int)(max_required_ase_per_dev),
-                            (int)(ent.ase_cnt - active_ases));
+                            (int)(ents.size() - active_ases));
 
   AudioLocations audio_locations = 0;
 
   /* Check direction and if audio location allows to create more cise */
-  if (ent.direction == types::kLeAudioDirectionSink) {
+  if (direction == types::kLeAudioDirectionSink) {
     audio_locations = snk_audio_locations_;
   } else {
     audio_locations = src_audio_locations_;
   }
 
-  for (; needed_ase && ase; needed_ase--) {
+  for (int i = 0; needed_ase && ase; needed_ase--) {
     ase->active = true;
     ase->configured_for_context_type = context_type;
-    ase->is_codec_in_controller = ent.is_codec_in_controller;
-    ase->data_path_id = ent.data_path_id;
+    ase->is_codec_in_controller = ents[i].is_codec_in_controller;
+    ase->data_path_id = ents[i].data_path_id;
     active_ases++;
 
     /* In case of late connect, we could be here for STREAMING ase.
@@ -271,15 +277,15 @@ bool LeAudioDevice::ConfigureAses(
       if (ase->state == AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED)
         ase->reconfigure = true;
 
-      ase->target_latency = ent.qos.target_latency;
-      ase->codec_id = ent.codec.id;
-      ase->codec_config = ent.codec.params;
+      ase->target_latency = ents[i].qos.target_latency;
+      ase->codec_id = ents[i].codec.id;
+      ase->codec_config = ents[i].codec.params;
 
       /* Let's choose audio channel allocation if not set */
       ase->codec_config.Add(
           codec_spec_conf::kLeAudioLtvTypeAudioChannelAllocation,
           PickAudioLocation(strategy, audio_locations,
-                            group_audio_locations_memo.get(ent.direction)));
+                            group_audio_locations_memo.get(direction)));
 
       /* Get default value if no requirement for specific frame blocks per sdu
        */
@@ -297,8 +303,8 @@ bool LeAudioDevice::ConfigureAses(
       ase->qos_config.sdu_interval =
           ase->codec_config.GetAsCoreCodecConfig().GetFrameDurationUs();
 
-      ase->qos_config.retrans_nb = ent.qos.retransmission_number;
-      ase->qos_config.max_transport_latency = ent.qos.max_transport_latency;
+      ase->qos_config.retrans_nb = ents[i].qos.retransmission_number;
+      ase->qos_config.max_transport_latency = ents[i].qos.max_transport_latency;
 
       SetMetadataToAse(ase, metadata_context_types, ccid_lists);
     }
@@ -307,14 +313,15 @@ bool LeAudioDevice::ConfigureAses(
         "device=%s, activated ASE id=%d, direction=%s, max_sdu_size=%d, "
         "cis_id=%d, target_latency=%d",
         ADDRESS_TO_LOGGABLE_CSTR(address_), ase->id,
-        (ent.direction == 1 ? "snk" : "src"), ase->qos_config.max_sdu_size,
-        ase->cis_id, ent.qos.target_latency);
+        (direction == 1 ? "snk" : "src"), ase->qos_config.max_sdu_size,
+        ase->cis_id, ents[i].qos.target_latency);
 
     /* Try to use the already active ASE */
     ase = GetNextActiveAseWithSameDirection(ase);
     if (ase == nullptr) {
-      ase = GetFirstInactiveAse(ent.direction, reuse_cis_id);
+      ase = GetFirstInactiveAse(direction, reuse_cis_id);
     }
+    ++i;
   }
 
   *number_of_already_active_group_ase = active_ases;

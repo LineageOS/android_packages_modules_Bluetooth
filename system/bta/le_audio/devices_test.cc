@@ -682,14 +682,13 @@ class LeAudioAseConfigurationTest : public Test {
 
       /* Prepare PAC's */
       PublishedAudioCapabilitiesBuilder snk_pac_builder, src_pac_builder;
-      for (const auto& entry : (*audio_set_conf).confs) {
-        if (entry.direction == kLeAudioDirectionSink) {
-          configuration_directions |= kLeAudioDirectionSink;
-          snk_pac_builder.Add(entry.codec, data[i].audio_channel_counts_snk);
-        } else {
-          configuration_directions |= kLeAudioDirectionSource;
-          src_pac_builder.Add(entry.codec, data[i].audio_channel_counts_src);
-        }
+      for (const auto& entry : (*audio_set_conf).confs.sink) {
+        configuration_directions |= kLeAudioDirectionSink;
+        snk_pac_builder.Add(entry.codec, data[i].audio_channel_counts_snk);
+      }
+      for (const auto& entry : (*audio_set_conf).confs.source) {
+        configuration_directions |= kLeAudioDirectionSource;
+        src_pac_builder.Add(entry.codec, data[i].audio_channel_counts_src);
       }
 
       data[i].device->snk_pacs_ = snk_pac_builder.Get();
@@ -742,47 +741,77 @@ class LeAudioAseConfigurationTest : public Test {
 
       /* Let's go thru devices in the group and configure them*/
       for (int i = 0; i < data_size; i++) {
-        int num_of_ase_snk_per_dev = 0;
-        int num_of_ase_src_per_dev = 0;
+        BidirectionalPair<int> num_of_ase{0, 0};
 
         /* Prepare PAC's for each device. Also make sure configuration is in our
          * interest to test */
-        for (const auto& entry : (*audio_set_conf).confs) {
+        for (auto direction :
+             {kLeAudioDirectionSink, kLeAudioDirectionSource}) {
+          auto const& ase_confs = audio_set_conf->confs.get(direction);
+          ASSERT_TRUE(audio_set_conf->topology_info.has_value());
+          auto device_cnt =
+              audio_set_conf->topology_info->device_count.get(direction);
+          auto strategy =
+              audio_set_conf->topology_info->strategy.get(direction);
+          auto const ase_cnt = ase_confs.size();
+
+          if (ase_cnt == 0) {
+            // Skip the direction if not available
+            continue;
+          }
+          if (device_cnt == 0) {
+            LOG_ERROR("Device count is 0");
+            continue;
+          }
+
           /* We are interested in the configurations which contains exact number
            * of devices and number of ases is same the number of expected ases
            * to active
            */
-          if (entry.device_cnt != data_size) {
+          if (device_cnt != data_size) {
+            LOG_DEBUG("Device count mismatch device!=data (%d!=%d)",
+                      static_cast<int>(device_cnt),
+                      static_cast<int>(data_size));
             interesting_configuration = false;
           }
 
           /* Make sure the strategy is the expected one */
-          if (entry.direction == kLeAudioDirectionSink &&
-              group_->GetGroupStrategy(group_->Size()) != entry.strategy) {
+          if (direction == kLeAudioDirectionSink &&
+              group_->GetGroupSinkStrategy() != strategy) {
+            LOG_DEBUG("Sink strategy mismatch group!=cfg.entry (%d!=%d)",
+                      static_cast<int>(group_->GetGroupSinkStrategy()),
+                      static_cast<int>(strategy));
             interesting_configuration = false;
           }
 
-          if (entry.direction == kLeAudioDirectionSink) {
-            configuration_directions |= kLeAudioDirectionSink;
-            num_of_ase_snk_per_dev = entry.ase_cnt / data_size;
-            snk_pac_builder.Add(entry.codec, data[i].audio_channel_counts_snk);
-          } else {
-            configuration_directions |= kLeAudioDirectionSource;
-            num_of_ase_src_per_dev = entry.ase_cnt / data_size;
-            src_pac_builder.Add(entry.codec, data[i].audio_channel_counts_src);
-          }
+          configuration_directions |= direction;
 
-          data[i].device->snk_pacs_ = snk_pac_builder.Get();
-          data[i].device->src_pacs_ = src_pac_builder.Get();
+          auto& pac_builder = (direction == kLeAudioDirectionSink)
+                                  ? snk_pac_builder
+                                  : src_pac_builder;
+          auto& dest_pacs = (direction == kLeAudioDirectionSink)
+                                ? data[i].device->snk_pacs_
+                                : data[i].device->src_pacs_;
+          auto const& data_channel_counts =
+              (direction == kLeAudioDirectionSink)
+                  ? data[i].audio_channel_counts_snk
+                  : data[i].audio_channel_counts_src;
+
+          for (const auto& entry : ase_confs) {
+            num_of_ase.get(direction)++;
+            pac_builder.Add(entry.codec, data_channel_counts);
+            dest_pacs = pac_builder.Get();
+          }
+          num_of_ase.get(direction) /= data_size;
         }
 
         /* Make sure configuration can satisfy number of expected active ASEs*/
-        if (num_of_ase_snk_per_dev >
+        if (num_of_ase.sink >
             data[i].device->GetAseCount(kLeAudioDirectionSink)) {
           interesting_configuration = false;
         }
 
-        if (num_of_ase_src_per_dev >
+        if (num_of_ase.source >
             data[i].device->GetAseCount(kLeAudioDirectionSource)) {
           interesting_configuration = false;
         }
@@ -1008,16 +1037,12 @@ TEST_F(LeAudioAseConfigurationTest, test_context_update) {
 
   /* Create PACs for conversational and media scenarios */
   PublishedAudioCapabilitiesBuilder snk_pac_builder, src_pac_builder;
-  for (const auto& entry : (*conversational_configuration).confs) {
-    if (entry.direction == kLeAudioDirectionSink) {
+  for (auto const& cfg : {conversational_configuration, media_configuration}) {
+    for (const auto& entry : cfg->confs.sink) {
       snk_pac_builder.Add(entry.codec, 1);
-    } else {
-      src_pac_builder.Add(entry.codec, 1);
     }
-  }
-  for (const auto& entry : (*media_configuration).confs) {
-    if (entry.direction == kLeAudioDirectionSink) {
-      snk_pac_builder.Add(entry.codec, 2);
+    for (const auto& entry : cfg->confs.source) {
+      src_pac_builder.Add(entry.codec, 1);
     }
   }
   left->snk_pacs_ = snk_pac_builder.Get();
@@ -1573,12 +1598,17 @@ TEST_F(LeAudioAseConfigurationTest, test_reconnection_media) {
   BidirectionalPair<std::vector<uint8_t>> ccid_lists = {{}, {}};
   BidirectionalPair<AudioContexts> audio_contexts = {AudioContexts(),
                                                      AudioContexts()};
-  for (auto& ent : configuration->confs) {
-    if (ent.direction == ::bluetooth::le_audio::types::kLeAudioDirectionSink) {
-      left->ConfigureAses(ent, group_->GetConfigurationContextType(),
-                          &number_of_active_ases, group_audio_locations,
-                          audio_contexts, ccid_lists, false);
-    }
+  if (!configuration->confs.sink.empty()) {
+    left->ConfigureAses(configuration, kLeAudioDirectionSink,
+                        group_->GetConfigurationContextType(),
+                        &number_of_active_ases, group_audio_locations,
+                        audio_contexts, ccid_lists, false);
+  }
+  if (!configuration->confs.source.empty()) {
+    left->ConfigureAses(configuration, kLeAudioDirectionSource,
+                        group_->GetConfigurationContextType(),
+                        &number_of_active_ases, group_audio_locations,
+                        audio_contexts, ccid_lists, false);
   }
 
   ASSERT_TRUE(number_of_active_ases == 2);
@@ -1639,12 +1669,11 @@ TEST_F(LeAudioAseConfigurationTest, test_reactivation_conversational) {
   /* Create PACs for conversational scenario which covers also media. Single
    * PAC for each direction is enough.
    */
-  for (const auto& entry : (*conversational_configuration).confs) {
-    if (entry.direction == kLeAudioDirectionSink) {
-      snk_pac_builder.Add(entry.codec, 1);
-    } else {
-      src_pac_builder.Add(entry.codec, 1);
-    }
+  for (const auto& entry : (*conversational_configuration).confs.sink) {
+    snk_pac_builder.Add(entry.codec, 1);
+  }
+  for (const auto& entry : (*conversational_configuration).confs.source) {
+    src_pac_builder.Add(entry.codec, 1);
   }
 
   tws_headset->snk_pacs_ = snk_pac_builder.Get();
@@ -1663,11 +1692,17 @@ TEST_F(LeAudioAseConfigurationTest, test_reactivation_conversational) {
                                                      AudioContexts()};
 
   /* Get entry for the sink direction and use it to set configuration */
-  for (auto& ent : conversational_configuration->confs) {
-    tws_headset->ConfigureAses(ent, group_->GetConfigurationContextType(),
-                               &number_of_already_active_ases,
-                               group_audio_locations, audio_contexts,
-                               ccid_lists, false);
+  if (!conversational_configuration->confs.sink.empty()) {
+    tws_headset->ConfigureAses(
+        conversational_configuration, kLeAudioDirectionSink,
+        group_->GetConfigurationContextType(), &number_of_already_active_ases,
+        group_audio_locations, audio_contexts, ccid_lists, false);
+  }
+  if (!conversational_configuration->confs.source.empty()) {
+    tws_headset->ConfigureAses(
+        conversational_configuration, kLeAudioDirectionSource,
+        group_->GetConfigurationContextType(), &number_of_already_active_ases,
+        group_audio_locations, audio_contexts, ccid_lists, false);
   }
 
   /* Generate CISes, simulate CIG creation and assign cis handles to ASEs.*/
@@ -1748,15 +1783,13 @@ TEST_F(LeAudioAseConfigurationTest, test_getting_cis_count) {
 
   /* Create PACs for media. Single PAC for each direction is enough.
    */
-  for (const auto& entry : (*media_configuration).confs) {
-    if (entry.direction == kLeAudioDirectionSink) {
-      snk_pac_builder.Add(LeAudioCodecIdLc3, 0x00b5, 0x03, 0x03, 0x001a, 0x00f0,
-                          2);
-    }
+  if (media_configuration->confs.sink.size()) {
+    snk_pac_builder.Add(LeAudioCodecIdLc3, 0x00b5, 0x03, 0x03, 0x001a, 0x00f0,
+                        2);
   }
 
   left->snk_pacs_ = snk_pac_builder.Get();
-  left->snk_pacs_ = snk_pac_builder.Get();
+  right->snk_pacs_ = snk_pac_builder.Get();
 
   ::bluetooth::le_audio::types::AudioLocations group_snk_audio_locations = 3;
   ::bluetooth::le_audio::types::AudioLocations group_src_audio_locations = 0;
@@ -1771,8 +1804,9 @@ TEST_F(LeAudioAseConfigurationTest, test_getting_cis_count) {
                                                      AudioContexts()};
 
   /* Get entry for the sink direction and use it to set configuration */
-  for (auto& ent : media_configuration->confs) {
-    left->ConfigureAses(ent, group_->GetConfigurationContextType(),
+  if (!media_configuration->confs.sink.empty()) {
+    left->ConfigureAses(media_configuration, kLeAudioDirectionSink,
+                        group_->GetConfigurationContextType(),
                         &number_of_already_active_ases, group_audio_locations,
                         audio_contexts, ccid_lists, false);
   }
@@ -1790,6 +1824,46 @@ TEST_F(LeAudioAseConfigurationTest, test_getting_cis_count) {
 
   /* Two CIS should be prepared for dual dev expected set */
   ASSERT_EQ(snk_cis_count, 2);
+}
+
+TEST_F(LeAudioAseConfigurationTest, test_config_support) {
+  LeAudioDevice* left = AddTestDevice(2, 1);
+  LeAudioDevice* right = AddTestDevice(0, 0, 0, 0, false, true);
+
+  /* Change location as by default it is stereo */
+  left->snk_audio_locations_ = kChannelAllocationStereo;
+  right->snk_audio_locations_ = kChannelAllocationStereo;
+  group_->ReloadAudioLocations();
+
+  auto test_config = getSpecificConfiguration(
+      "DualDev_OneChanStereoSnk_48_4_OneChanStereoSrc_16_2_Balanced_"
+      "Reliability",
+      LeAudioContextType::VOICEASSISTANTS);
+  ASSERT_NE(nullptr, test_config);
+
+  /* Create PACs for sink */
+  PublishedAudioCapabilitiesBuilder snk_pac_builder;
+  snk_pac_builder.Reset();
+  for (const auto& entry : (*test_config).confs.sink) {
+    snk_pac_builder.Add(entry.codec, 1);
+  }
+  left->snk_pacs_ = snk_pac_builder.Get();
+  right->snk_pacs_ = snk_pac_builder.Get();
+
+  ASSERT_FALSE(group_->IsAudioSetConfigurationSupported(left, test_config));
+  ASSERT_FALSE(group_->IsAudioSetConfigurationSupported(right, test_config));
+
+  /* Create PACs for source */
+  PublishedAudioCapabilitiesBuilder src_pac_builder;
+  src_pac_builder.Reset();
+  for (const auto& entry : (*test_config).confs.source) {
+    src_pac_builder.Add(entry.codec, 1);
+  }
+  left->src_pacs_ = src_pac_builder.Get();
+  right->src_pacs_ = src_pac_builder.Get();
+
+  ASSERT_TRUE(group_->IsAudioSetConfigurationSupported(left, test_config));
+  ASSERT_TRUE(group_->IsAudioSetConfigurationSupported(right, test_config));
 }
 
 }  // namespace

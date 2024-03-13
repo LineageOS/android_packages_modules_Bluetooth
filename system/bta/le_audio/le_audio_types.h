@@ -482,8 +482,6 @@ struct BidirectionalPair {
 
   const T& get(uint8_t direction) const;
   T& get(uint8_t direction);
-
-  BidirectionalPair<T>& operator=(const BidirectionalPair<T>&) = default;
 };
 
 template <typename T>
@@ -1167,26 +1165,12 @@ struct QosConfigSetting {
   uint16_t max_transport_latency;
 };
 
-struct SetConfiguration {
-  SetConfiguration(
-      uint8_t direction, uint8_t device_cnt, uint8_t ase_cnt,
-      CodecConfigSetting codec,
-      QosConfigSetting qos = {.retransmission_number = 0,
-                              .max_transport_latency = 0},
-      bluetooth::le_audio::types::LeAudioConfigurationStrategy strategy =
-          bluetooth::le_audio::types::LeAudioConfigurationStrategy::
-              MONO_ONE_CIS_PER_DEVICE)
-      : direction(direction),
-        device_cnt(device_cnt),
-        ase_cnt(ase_cnt),
-        codec(codec),
-        qos(qos),
-        strategy(strategy) {}
-
-  uint8_t direction;  /* Direction of set */
-  uint8_t device_cnt; /* How many devices must be in set */
-  uint8_t ase_cnt;    /* How many ASE we need in configuration */
-
+struct AseConfiguration {
+  AseConfiguration(CodecConfigSetting codec,
+                   QosConfigSetting qos = {.target_latency = 0,
+                                           .retransmission_number = 0,
+                                           .max_transport_latency = 0})
+      : codec(codec), qos(qos) {}
   /* Whether the codec location is transparent to the controller */
   bool is_codec_in_controller = false;
   /* Datapath ID used to configure an ISO channel for these ASEs */
@@ -1194,13 +1178,27 @@ struct SetConfiguration {
 
   CodecConfigSetting codec;
   QosConfigSetting qos;
-  types::LeAudioConfigurationStrategy strategy;
 };
 
 /* Defined audio scenarios */
 struct AudioSetConfiguration {
-  std::string name;
-  std::vector<struct SetConfiguration> confs;
+  std::string name = "";
+  /* ISO data packing within the CIG */
+  uint8_t packing = bluetooth::hci::kIsoCigPackingSequential;
+  types::BidirectionalPair<std::vector<struct AseConfiguration>> confs;
+
+  struct TopologyInfo {
+    /* How many sink and source devices must be in the set */
+    types::BidirectionalPair<uint8_t> device_count;
+    /* Note: Strategy is used for selecting a particular configuration from the
+     * set of configurations if the configuration provider did not select a
+     * single configuration for us (json file configuration provider).
+     */
+    types::BidirectionalPair<types::LeAudioConfigurationStrategy> strategy = {
+        types::LeAudioConfigurationStrategy::RFU,
+        types::LeAudioConfigurationStrategy::RFU};
+  };
+  std::optional<TopologyInfo> topology_info = std::nullopt;
 };
 
 using AudioSetConfigurations = std::vector<const AudioSetConfiguration*>;
