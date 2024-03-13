@@ -474,7 +474,7 @@ package android.bluetooth {
     method @NonNull public android.bluetooth.BluetoothCodecConfig.Builder setCodecSpecific3(long);
     method @NonNull public android.bluetooth.BluetoothCodecConfig.Builder setCodecSpecific4(long);
     method @Deprecated @NonNull public android.bluetooth.BluetoothCodecConfig.Builder setCodecType(int);
-    method @FlaggedApi("com.android.bluetooth.flags.a2dp_offload_codec_extensibility") @NonNull public android.bluetooth.BluetoothCodecConfig.Builder setCodecType(@Nullable android.bluetooth.BluetoothCodecType);
+    method @FlaggedApi("com.android.bluetooth.flags.a2dp_offload_codec_extensibility") @NonNull public android.bluetooth.BluetoothCodecConfig.Builder setExtendedCodecType(@Nullable android.bluetooth.BluetoothCodecType);
     method @NonNull public android.bluetooth.BluetoothCodecConfig.Builder setSampleRate(int);
   }
 
