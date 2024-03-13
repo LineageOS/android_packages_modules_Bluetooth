@@ -161,7 +161,7 @@ typedef struct {
                                required to be done. Having the flag here avoid
                                duplicate store of inquiry results */
   uint16_t remote_name_len;
-  tBTM_BD_NAME remote_name;
+  BD_NAME remote_name;
   uint8_t remote_name_type;
 } tBTM_INQ_INFO;
 

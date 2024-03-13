@@ -2804,7 +2804,6 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, const RawAddress bda,
       (btm_sec_cb.pairing_bda == p_bda)) {
     evt_data.cfm_req.bd_addr = p_dev_rec->bd_addr;
     evt_data.cfm_req.dev_class = p_dev_rec->dev_class;
-
     bd_name_copy(evt_data.cfm_req.bd_name, p_dev_rec->sec_bd_name);
 
     switch (event) {

@@ -139,9 +139,7 @@ static bool prop2cfg(const RawAddress* remote_bd_addr, bt_property_t* prop) {
       btif_config_set_int(bdstr, BTIF_STORAGE_KEY_TIMESTAMP, (int)time(NULL));
       break;
     case BT_PROPERTY_BDNAME: {
-      int name_length = prop->len > BTM_MAX_LOC_BD_NAME_LEN
-                            ? BTM_MAX_LOC_BD_NAME_LEN
-                            : prop->len;
+      int name_length = prop->len > BD_NAME_LEN ? BD_NAME_LEN : prop->len;
       strncpy(value, (char*)prop->val, name_length);
       value[name_length] = '\0';
       if (remote_bd_addr) {
@@ -1513,7 +1511,7 @@ bool btif_storage_get_stored_remote_name(const RawAddress& bd_addr,
                                          char* name) {
   bt_property_t property;
   property.type = BT_PROPERTY_BDNAME;
-  property.len = BTM_MAX_REM_BD_NAME_LEN;
+  property.len = BD_NAME_LEN;
   property.val = name;
 
   return (btif_storage_get_remote_device_property(&bd_addr, &property) ==

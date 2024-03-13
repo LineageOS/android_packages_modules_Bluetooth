@@ -419,8 +419,8 @@ class tBTM_SEC_DEV_REC {
  public:
   RawAddress bd_addr; /* BD_ADDR of the device */
   tBTM_BLE_ADDR_INFO ble;
-  tBTM_BD_NAME sec_bd_name; /* User friendly name of the device. (may be
-                               truncated to save space in dev_rec table) */
+  BD_NAME sec_bd_name;      /* User friendly name of the device. (may be
+                                    truncated to save space in dev_rec table) */
   DEV_CLASS dev_class;      /* DEV_CLASS of the device            */
   tBT_DEVICE_TYPE device_type;
 

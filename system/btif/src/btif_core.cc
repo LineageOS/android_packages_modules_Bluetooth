@@ -603,10 +603,9 @@ void btif_set_adapter_property(bt_property_t* property) {
 
   switch (property->type) {
     case BT_PROPERTY_BDNAME: {
-      char bd_name[BTM_MAX_LOC_BD_NAME_LEN + 1];
-      uint16_t name_len = property->len > BTM_MAX_LOC_BD_NAME_LEN
-                              ? BTM_MAX_LOC_BD_NAME_LEN
-                              : property->len;
+      char bd_name[BD_NAME_LEN + 1];
+      uint16_t name_len =
+          property->len > BD_NAME_LEN ? BD_NAME_LEN : property->len;
       memcpy(bd_name, property->val, name_len);
       bd_name[name_len] = '\0';
 

@@ -433,7 +433,7 @@ bt_status_t btif_storage_remove_hidd(RawAddress* remote_bd_addr);
 // The device name (if found) is stored in |name|.
 // Returns true if the device name is found, othervise false.
 // Note: |name| should point to a buffer that can store string of length
-// |BTM_MAX_REM_BD_NAME_LEN|.
+// |BD_NAME_LEN|.
 bool btif_storage_get_stored_remote_name(const RawAddress& bd_addr, char* name);
 
 /******************************************************************************
