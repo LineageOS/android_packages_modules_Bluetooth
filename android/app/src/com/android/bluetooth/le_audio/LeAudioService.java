@@ -107,7 +107,6 @@ import java.util.stream.Collectors;
 
 /**
  * Provides Bluetooth LeAudio profile, as a service in the Bluetooth application.
- * @hide
  */
 public class LeAudioService extends ProfileService {
     private static final boolean DBG = true;
@@ -3650,7 +3649,6 @@ public class LeAudioService extends ProfileService {
      *
      * @param device Bluetooth device
      * @return connection policy of the device
-     * @hide
      */
     public int getConnectionPolicy(BluetoothDevice device) {
         int connection_policy = mDatabaseManager
@@ -4161,7 +4159,6 @@ public class LeAudioService extends ProfileService {
      *
      * @param groupId the group id
      * @return the current codec status
-     * @hide
      */
     public BluetoothLeAudioCodecStatus getCodecStatus(int groupId) {
         if (DBG) {
@@ -4180,7 +4177,6 @@ public class LeAudioService extends ProfileService {
      * @param groupId the group id
      * @param inputCodecConfig the input codec configuration preference
      * @param outputCodecConfig the output codec configuration preference
-     * @hide
      */
     public void setCodecConfigPreference(int groupId,
             BluetoothLeAudioCodecConfig inputCodecConfig,

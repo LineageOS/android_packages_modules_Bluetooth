@@ -224,9 +224,6 @@ public final class BluetoothOppProvider extends ContentProvider {
         to.put(key, from.getLong(from.getColumnIndexOrThrow(key)));
     }
 
-    /**
-     * @hide
-     */
     public static boolean oppDatabaseMigration(Context ctx, Cursor cursor) {
         boolean result = true;
         SQLiteDatabase db = new DatabaseHelper(ctx).getWritableDatabase();

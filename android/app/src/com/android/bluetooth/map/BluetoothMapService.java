@@ -701,7 +701,6 @@ public class BluetoothMapService extends ProfileService {
      *
      * @param device Bluetooth device
      * @return connection policy of the device
-     * @hide
      */
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
     int getConnectionPolicy(BluetoothDevice device) {

@@ -30,8 +30,6 @@ import java.util.UUID;
 
 /**
  * Helper class used to manage advertisement package filters.
- *
- * @hide
  */
 /* package */ class ScanFilterQueue {
     public static final int TYPE_DEVICE_ADDRESS = 0;

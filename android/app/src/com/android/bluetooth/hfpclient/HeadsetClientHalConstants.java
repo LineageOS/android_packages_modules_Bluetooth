@@ -17,10 +17,6 @@
 
 package com.android.bluetooth.hfpclient;
 
-/*
- * @hide
- */
-
 public final class HeadsetClientHalConstants {
     // Do not modify without updating the HAL bt_hf_client.h files.
 

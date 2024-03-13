@@ -33,9 +33,6 @@ import com.android.internal.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @hide
- */
 @Entity(tableName = "metadata")
 @VisibleForTesting
 public class Metadata {
@@ -126,9 +123,6 @@ public class Metadata {
         }
     }
 
-    /**
-     * @hide
-     */
     @VisibleForTesting
     public String getAddress() {
         return address;
@@ -216,9 +210,6 @@ public class Metadata {
         }
     }
 
-    /**
-     * @hide
-     */
     @VisibleForTesting
     public int getProfileConnectionPolicy(int profile) {
         switch (profile) {
@@ -359,9 +350,6 @@ public class Metadata {
         }
     }
 
-    /**
-     * @hide
-     */
     @VisibleForTesting
     public byte[] getCustomizedMeta(int key) {
         byte[] value = null;

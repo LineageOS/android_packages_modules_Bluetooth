@@ -683,7 +683,6 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
      *
      * @param device Bluetooth device
      * @return connection policy of the device
-     * @hide
      */
     public int getConnectionPolicy(BluetoothDevice device) {
         if (device == null) {

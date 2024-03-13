@@ -37,8 +37,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * Manages distance measurement operations and interacts with Gabeldorsche stack.
- *
- * @hide
  */
 @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
 public class DistanceMeasurementManager {
