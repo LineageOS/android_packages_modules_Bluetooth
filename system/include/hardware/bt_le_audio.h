@@ -436,10 +436,13 @@ struct BasicAudioAnnouncementCodecConfig {
 
   /* Codec params - series of LTV formatted triplets */
   std::map<uint8_t, std::vector<uint8_t>> codec_specific_params;
+  std::optional<std::vector<uint8_t>> vendor_codec_specific_params;
 };
 
 struct BasicAudioAnnouncementBisConfig {
   std::map<uint8_t, std::vector<uint8_t>> codec_specific_params;
+  std::optional<std::vector<uint8_t>> vendor_codec_specific_params;
+
   uint8_t bis_index;
 };
 

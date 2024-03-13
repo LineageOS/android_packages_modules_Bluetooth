@@ -18,6 +18,7 @@
 
 #include <vector>
 
+#include "broadcaster/broadcaster_types.h"
 #include "hardware/bt_le_audio.h"
 #include "le_audio_types.h"
 
@@ -80,8 +81,13 @@ class CodecManager {
       AudioSetConfigurations*
       GetOffloadCodecConfig(
           ::bluetooth::le_audio::types::LeAudioContextType ctx_type);
-  virtual const ::bluetooth::le_audio::broadcast_offload_config*
-  GetBroadcastOffloadConfig(uint8_t preferred_quality);
+  virtual std::unique_ptr<broadcaster::BroadcastConfiguration>
+  GetBroadcastConfig(
+      const std::vector<
+          std::pair<bluetooth::le_audio::types::LeAudioContextType, uint8_t>>&
+          subgroup_quality,
+      std::optional<const types::PublishedAudioCapabilities*> pacs) const;
+
   virtual void UpdateBroadcastConnHandle(
       const std::vector<uint16_t>& conn_handle,
       std::function<
