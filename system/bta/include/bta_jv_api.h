@@ -216,6 +216,8 @@ typedef struct {
   uint32_t handle;       /* The connection handle */
   RawAddress rem_bda;    /* The peer address */
   int32_t tx_mtu;        /* The transmit MTU */
+  uint16_t local_cid;    /* The local CID */
+  uint16_t remote_cid;   /* The remote CID */
 } tBTA_JV_L2CAP_OPEN;
 
 /* data associated with BTA_JV_L2CAP_OPEN_EVT for LE sockets */
