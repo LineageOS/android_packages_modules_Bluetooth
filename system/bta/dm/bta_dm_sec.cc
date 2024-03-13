@@ -28,7 +28,6 @@
 #include "btif/include/btif_dm.h"
 #include "btif/include/btif_storage.h"
 #include "internal_include/bt_target.h"
-#include "osi/include/compat.h"  // strlcpy
 #include "osi/include/osi.h"     // UNUSED_ATTR
 #include "stack/include/bt_dev_class.h"
 #include "stack/include/btm_ble_sec_api_types.h"
@@ -329,7 +328,7 @@ static uint8_t bta_dm_pin_cback(const RawAddress& bd_addr, DEV_CLASS dev_class,
                                .bd_name = "",
                                .min_16_digit = min_16_digit,
                            }};
-  strlcpy((char*)sec_event.pin_req.bd_name, (char*)bd_name, BD_NAME_LEN + 1);
+  bd_name_copy(sec_event.pin_req.bd_name, bd_name);
 
   bta_dm_sec_cb.p_sec_cback(BTA_DM_PIN_REQ_EVT, &sec_event);
   return BTM_CMD_STARTED;
@@ -546,8 +545,7 @@ static tBTM_STATUS bta_dm_sp_cback(tBTM_SP_EVT event,
         } else {
           sec_event.key_notif.bd_addr = p_data->key_notif.bd_addr;
           sec_event.key_notif.dev_class = p_data->key_notif.dev_class;
-          strlcpy((char*)sec_event.key_notif.bd_name,
-                  (char*)p_data->key_notif.bd_name, BD_NAME_LEN + 1);
+          bd_name_copy(sec_event.key_notif.bd_name, p_data->key_notif.bd_name);
           sec_event.key_notif.bd_name[BD_NAME_LEN] = 0;
         }
       }
@@ -740,7 +738,7 @@ static uint8_t bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda,
       sec_event.ble_req.bd_addr = bda;
       p_name = get_btm_client_interface().security.BTM_SecReadDevName(bda);
       if (p_name != NULL)
-        strlcpy((char*)sec_event.ble_req.bd_name, p_name, BD_NAME_LEN);
+        bd_name_copy(sec_event.ble_req.bd_name, p_name);
       else
         sec_event.ble_req.bd_name[0] = 0;
       bta_dm_sec_cb.p_sec_cback(BTA_DM_BLE_CONSENT_REQ_EVT, &sec_event);
@@ -750,7 +748,7 @@ static uint8_t bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda,
       sec_event.ble_req.bd_addr = bda;
       p_name = get_btm_client_interface().security.BTM_SecReadDevName(bda);
       if (p_name != NULL)
-        strlcpy((char*)sec_event.ble_req.bd_name, p_name, BD_NAME_LEN + 1);
+        bd_name_copy(sec_event.ble_req.bd_name, p_name);
       else
         sec_event.ble_req.bd_name[0] = 0;
       bta_dm_sec_cb.p_sec_cback(BTA_DM_BLE_SEC_REQ_EVT, &sec_event);
@@ -760,7 +758,7 @@ static uint8_t bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda,
       sec_event.key_notif.bd_addr = bda;
       p_name = get_btm_client_interface().security.BTM_SecReadDevName(bda);
       if (p_name != NULL)
-        strlcpy((char*)sec_event.key_notif.bd_name, p_name, BD_NAME_LEN + 1);
+        bd_name_copy(sec_event.key_notif.bd_name, p_name);
       else
         sec_event.key_notif.bd_name[0] = 0;
       sec_event.key_notif.passkey = p_data->key_notif;
@@ -780,8 +778,7 @@ static uint8_t bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda,
     case BTM_LE_NC_REQ_EVT:
       sec_event.key_notif.bd_addr = bda;
       // TODO: get rid of this
-      strlcpy((char*)sec_event.key_notif.bd_name, bta_dm_get_remname(),
-              (BD_NAME_LEN + 1));
+      bd_name_copy(sec_event.key_notif.bd_name, bta_dm_get_remname());
       sec_event.key_notif.passkey = p_data->key_notif;
       bta_dm_sec_cb.p_sec_cback(BTA_DM_BLE_NC_REQ_EVT, &sec_event);
       break;
@@ -812,7 +809,7 @@ static uint8_t bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda,
           bda, &sec_event.auth_cmpl.dev_type, &sec_event.auth_cmpl.addr_type);
       p_name = get_btm_client_interface().security.BTM_SecReadDevName(bda);
       if (p_name != NULL)
-        strlcpy((char*)sec_event.auth_cmpl.bd_name, p_name, (BD_NAME_LEN + 1));
+        bd_name_copy(sec_event.auth_cmpl.bd_name, p_name);
       else
         sec_event.auth_cmpl.bd_name[0] = 0;
 
