@@ -18,6 +18,7 @@ package com.android.server.bluetooth;
 
 import android.annotation.NonNull;
 import android.content.ContentResolver;
+import android.os.Binder;
 import android.os.IBinder;
 import android.provider.Settings;
 
@@ -69,5 +70,16 @@ class BluetoothServerProxy {
 
     int getBluetoothPersistedState(ContentResolver resolver, int defaultValue) {
         return Settings.Global.getInt(resolver, Settings.Global.BLUETOOTH_ON, defaultValue);
+    }
+
+    void setBluetoothPersistedState(ContentResolver resolver, int state) {
+        Log.i(TAG, "setBluetoothPersistedState(" + state + ")");
+        // waive WRITE_SECURE_SETTINGS permission check
+        final long callingIdentity = Binder.clearCallingIdentity();
+        try {
+            Settings.Global.putInt(resolver, Settings.Global.BLUETOOTH_ON, state);
+        } finally {
+            Binder.restoreCallingIdentity(callingIdentity);
+        }
     }
 }
