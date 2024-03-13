@@ -22,57 +22,23 @@
 
 namespace bluetooth::hal {
 
-static constexpr uint16_t kInvalidConnectionHandle = 0xFFFF;
-
-static class : public bluetooth::audio::asrc::ClockHandler {
-  void OnEvent(uint32_t, int, int) override {}
+static class : public ReadClockHandler {
+  void OnEvent(uint32_t, uint32_t) override {}
 } g_empty_handler;
 
-static std::atomic<bluetooth::audio::asrc::ClockHandler*> g_nocp_iso_handler = &g_empty_handler;
+static std::atomic<ReadClockHandler*> g_read_clock_handler = &g_empty_handler;
 
-static struct {
-  std::mutex mutex;
-  bluetooth::audio::asrc::ClockHandler* handler;
-  struct {
-    uint16_t connection_handle;
-    uint16_t stream_cid;
-  } links[2];
-} g_credit_ind_handler = {.handler = &g_empty_handler, .links = {{}, {}}};
-
-NocpIsoEvents::~NocpIsoEvents() {
-  g_nocp_iso_handler = &g_empty_handler;
+void LinkClocker::Register(ReadClockHandler* handler) {
+  g_read_clock_handler = handler;
 }
 
-void NocpIsoEvents::Bind(bluetooth::audio::asrc::ClockHandler* handler) {
-  g_nocp_iso_handler = handler;
+void LinkClocker::Unregister() {
+  g_read_clock_handler = &g_empty_handler;
 }
-
-L2capCreditIndEvents::~L2capCreditIndEvents() {
-  std::lock_guard<std::mutex> guard(g_credit_ind_handler.mutex);
-  g_credit_ind_handler.handler = &g_empty_handler;
-  g_credit_ind_handler.links[0].connection_handle = kInvalidConnectionHandle;
-  g_credit_ind_handler.links[1].connection_handle = kInvalidConnectionHandle;
-}
-
-void L2capCreditIndEvents::Bind(bluetooth::audio::asrc::ClockHandler* handler) {
-  std::lock_guard<std::mutex> guard(g_credit_ind_handler.mutex);
-  g_credit_ind_handler.handler = handler;
-  g_credit_ind_handler.links[0].connection_handle = kInvalidConnectionHandle;
-  g_credit_ind_handler.links[1].connection_handle = kInvalidConnectionHandle;
-}
-
-void L2capCreditIndEvents::Update(int link_id, uint16_t connection_handle, uint16_t stream_cid) {
-  std::lock_guard<std::mutex> guard(g_credit_ind_handler.mutex);
-  g_credit_ind_handler.links[link_id].connection_handle = connection_handle;
-  g_credit_ind_handler.links[link_id].stream_cid = stream_cid;
-}
-
-LinkClocker::LinkClocker() : cig_id_(-1), cis_handle_(-1) {}
 
 void LinkClocker::OnHciEvent(const HciPacket& packet) {
-  const int HCI_CMD_SET_CIG_PARAMETERS = 0x2062;
+  const int HCI_CMD_READ_CLOCK = 0x1407;
   const int HCI_EVT_COMMAND_COMPLETE = 0x0e;
-  const int HCI_EVT_NUMBER_OF_COMPLETED_PACKETS = 0x13;
 
   // HCI Event [Core 4.E.5.4.4]
   // |  [0]  Event Code
@@ -83,146 +49,48 @@ void LinkClocker::OnHciEvent(const HciPacket& packet) {
 
   const uint8_t* payload = packet.data() + 2;
   size_t payload_length = std::min(size_t(packet[1]), packet.size() - 2);
+  int event_code = packet[0];
 
-  switch (packet[0]) {
-      // HCI Command Complete Event [Core 4.E.7.7.14]
-      // |    [0]  Num_HCI_Command_Packets, Ignored
-      // | [1..2]  Command_Opcode, catch `HCI_LE_Set_CIG_Parameters`
-      // |   [3+]  Return Parameters
+  if (event_code != HCI_EVT_COMMAND_COMPLETE) return;
 
-    case HCI_EVT_COMMAND_COMPLETE: {
-      if (payload_length < 3) return;
+  // HCI Command Complete Event [Core 4.E.7.7.14]
+  // |    [0]  Num_HCI_Command_Packets, Ignored
+  // | [1..2]  Command_Opcode, catch `HCI_LE_Set_CIG_Parameters`
+  // |   [3+]  Return Parameters
 
-      int cmd_opcode = payload[1] | (payload[2] << 8);
-      if (cmd_opcode != HCI_CMD_SET_CIG_PARAMETERS) return;
+  if (payload_length < 3) return;
 
-      const uint8_t* parameters = payload + 3;
-      size_t parameters_length = payload_length - 3;
+  uint16_t op_code = payload[1] | (payload[2] << 8);
+  const uint8_t* parameters = payload + 3;
+  size_t parameters_length = payload_length - 3;
 
-      // HCI LE Set CIG Parameters return parameters [4.E.7.8.97]
-      // |    [0]  Status, 0 when OK
-      // |    [1]  CIG_ID
-      // |    [2]  CIS_Count
-      // | [3..4]  Connection_Handle[0]
+  if (op_code != HCI_CMD_READ_CLOCK) return;
 
-      if (parameters_length < 3) return;
+  // HCI Read Clock return parameters [Core 4.E.7.5.6]
+  // |    [0]  Status, 0 when OK
+  // | [1..2]  Connection_handle
+  // | [3..6]  Clock (28-bits meaningful)
+  // | [7..8]  Accuracy
 
-      int status = parameters[0];
-      int cig_id = parameters[1];
-      int cis_count = parameters[2];
+  if (parameters_length < 9) return;
 
-      if (status != 0) return;
+  uint8_t status = parameters[0];
 
-      if (cig_id_ >= 0 && cis_handle_ >= 0 && cig_id_ != cig_id) {
-        log::warn("Multiple groups not supported");
-        return;
-      }
+  if (status != 0) return;
 
-      cig_id_ = -1;
-      cis_handle_ = -1;
+  uint32_t bt_clock = ((uint32_t)parameters[3] << 0) | ((uint32_t)parameters[4] << 8) |
+                      ((uint32_t)parameters[5] << 16) | ((uint32_t)parameters[6] << 24);
 
-      if (cis_count > 0 && parameters_length >= 5) {
-        cig_id_ = cig_id;
-        cis_handle_ = (parameters[3] | (parameters[4] << 8)) & 0xfff;
-      }
+  // The connection handle is ignored as we are reading the local clock
+  // (Which_Clock parameter is 0).
+  // The reason the read clock measurement is extracted here is that
+  // getting the local timestamp from the bound gd HCI event callback
+  // adds jitter.
 
-      break;
-    }
+  auto timestamp = std::chrono::system_clock::now().time_since_epoch();
+  unsigned timestamp_us = std::chrono::duration_cast<std::chrono::microseconds>(timestamp).count();
 
-      // HCI Number Of Completed Packets event [Core 4.E.7.7.19]
-      // | [0]  Num_Handles
-      // | FOR each `Num_Handles` connection handles
-      // | | [0..1]  Connection_Handle, catch the CIS Handle
-      // | | [2..3]  Num_Completed_Packets
-
-    case HCI_EVT_NUMBER_OF_COMPLETED_PACKETS: {
-      if (payload_length < 1) return;
-
-      int i, num_handles = payload[0];
-      const uint8_t* item = payload + 1;
-      if (payload_length < size_t(1 + 4 * num_handles)) return;
-
-      for (i = 0; i < num_handles && ((item[0] | (item[1] << 8)) & 0xfff) != cis_handle_;
-           i++, item += 4)
-        ;
-      if (i >= num_handles) return;
-
-      auto timestamp = std::chrono::system_clock::now().time_since_epoch();
-      unsigned timestamp_us =
-          std::chrono::duration_cast<std::chrono::microseconds>(timestamp).count();
-      int num_of_completed_packets = item[2] | (item[3] << 8);
-      (*g_nocp_iso_handler).OnEvent(timestamp_us, 0, num_of_completed_packets);
-
-      break;
-    }
-  }
-}
-
-/// Filter received L2CAP PDUs for Credit acknowledgments for the registered
-/// L2CAP channels.
-void LinkClocker::OnAclDataReceived(const HciPacket& packet) {
-  const int L2CAP_LE_U_CID = 0x0005;
-  const int L2CAP_FLOW_CONTROL_CREDIT_IND = 0x16;
-
-  // HCI ACL Data Packets [4.E.5.4.2]
-  // | [0..1]  Handle | PBF | BC
-  // | [2..3]  Data Total Length
-  // | [4+]    Data
-
-  if (packet.size() < 4) return;
-
-  uint16_t handle = packet[0] | (packet[1] << 8);
-  int packet_boundary_flag = (handle >> 12) & 0x3;
-  handle &= 0xfff;
-  uint16_t data_total_length = std::min(size_t(packet[2] | (packet[3] << 8)), packet.size() - 4);
-  const uint8_t* data = packet.data() + 4;
-
-  if (data_total_length < 4 || packet_boundary_flag == 0b01 || packet_boundary_flag == 0b11) return;
-
-  // L2CAP Signalling PDU Format [3.A.4]
-  // | [0..1]  PDU Length
-  // | [2..3]  Channel ID
-  // | [4+]    PDU
-  uint16_t pdu_length = std::min(data[0] | (data[1] << 8), data_total_length - 4);
-  uint16_t channel_id = data[2] | (data[3] << 8);
-  data += 4;
-
-  if (channel_id != L2CAP_LE_U_CID) return;
-
-  while (pdu_length >= 4) {
-    // | FOR each command in the PDU
-    // | | [0]     Command Code
-    // | | [1]     Command Identifier
-    // | | [2..3]  Data Length
-    // | | [4+]    Data
-    uint8_t command_code = data[0];
-    uint16_t data_length = std::min(data[2] | (data[3] << 8), pdu_length - 4);
-
-    if (command_code == L2CAP_FLOW_CONTROL_CREDIT_IND && data_length == 4) {
-      // | L2CAP Flow Control Credit Ind [3.A.4.24]
-      // | | [4..5]  CID
-      // | | [6..7]  Credits
-      uint16_t channel_id = data[4] | (data[5] << 8);
-      uint16_t credits = data[6] | (data[7] << 8);
-
-      auto timestamp = std::chrono::system_clock::now().time_since_epoch();
-      unsigned timestamp_us =
-          std::chrono::duration_cast<std::chrono::microseconds>(timestamp).count();
-
-      {
-        std::lock_guard<std::mutex> guard(g_credit_ind_handler.mutex);
-        for (int link_id = 0; link_id < 2; link_id++) {
-          auto const& link = g_credit_ind_handler.links[link_id];
-          if (link.connection_handle == handle && link.stream_cid == channel_id) {
-            g_credit_ind_handler.handler->OnEvent(timestamp_us, link_id, credits);
-          }
-        }
-      }
-    }
-
-    data += data_length + 4;
-    pdu_length -= data_length + 4;
-  }
+  (*g_read_clock_handler).OnEvent(timestamp_us, bt_clock << 4);
 }
 
 const ModuleFactory LinkClocker::Factory = ModuleFactory([]() { return new LinkClocker(); });
