@@ -31,7 +31,7 @@
  * Local device configuration
  */
 typedef struct {
-  tBTM_LOC_BD_NAME bd_name; /* local Bluetooth device name */
+  BD_NAME bd_name;          /* local Bluetooth device name */
   bool pin_type;            /* true if PIN type is fixed */
   uint8_t pin_code_len;     /* Bonding information */
   PIN_CODE pin_code;        /* PIN CODE if pin type is fixed */

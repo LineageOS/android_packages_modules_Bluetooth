@@ -99,7 +99,7 @@ void BTM_SecAddBleDevice(const RawAddress& bd_addr, tBT_DEVICE_TYPE dev_type,
                ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
   }
 
-  memset(p_dev_rec->sec_bd_name, 0, sizeof(tBTM_BD_NAME));
+  memset(p_dev_rec->sec_bd_name, 0, sizeof(BD_NAME));
 
   p_dev_rec->device_type |= dev_type;
   if (is_ble_addr_type_known(addr_type)) {
@@ -1332,7 +1332,7 @@ void btm_ble_link_encrypted(const RawAddress& bd_addr, uint8_t encr_enable) {
       btm_sec_dev_rec_cback_event(p_dev_rec, BTM_ERR_PROCESSING, true);
   }
 
-  tBTM_BD_NAME remote_name = {};
+  BD_NAME remote_name = {};
   /* to notify GATT to send data if any request is pending,
   or if IOP matched, delay notifying until SMP_CMPLT_EVT */
   if (BTM_GetRemoteDeviceName(p_dev_rec->ble.pseudo_addr, remote_name) &&
@@ -1666,7 +1666,7 @@ tBTM_STATUS btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr,
               p_dev_rec->sec_rec.ble_keys.key_type = BTM_LE_KEY_NONE;
             }
           }
-          tBTM_BD_NAME remote_name = {};
+          BD_NAME remote_name = {};
           if (BTM_GetRemoteDeviceName(p_dev_rec->ble.pseudo_addr,
                                       remote_name) &&
               interop_match_name(INTEROP_SUSPEND_ATT_TRAFFIC_DURING_PAIRING,

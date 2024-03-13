@@ -42,8 +42,7 @@ typedef uint8_t(tBTM_AUTHORIZE_CALLBACK)(uint8_t service_id);
  *              Flag indicating the minimum pin code length to be 16 digits
  */
 typedef uint8_t(tBTM_PIN_CALLBACK)(const RawAddress& bd_addr,
-                                   DEV_CLASS dev_class,
-                                   const tBTM_BD_NAME bd_name,
+                                   DEV_CLASS dev_class, const BD_NAME bd_name,
                                    bool min_16_digit);
 
 /* New Link Key for the connection.  Parameters are
@@ -52,8 +51,7 @@ typedef uint8_t(tBTM_PIN_CALLBACK)(const RawAddress& bd_addr,
  *              Key Type: Combination, Local Unit, or Remote Unit
  */
 typedef uint8_t(tBTM_LINK_KEY_CALLBACK)(const RawAddress& bd_addr,
-                                        DEV_CLASS dev_class,
-                                        tBTM_BD_NAME bd_name,
+                                        DEV_CLASS dev_class, BD_NAME bd_name,
                                         const LinkKey& key, uint8_t key_type,
                                         bool is_ctkd);
 
@@ -62,7 +60,7 @@ typedef uint8_t(tBTM_LINK_KEY_CALLBACK)(const RawAddress& bd_addr,
  *              BD Name of remote
  */
 typedef void(tBTM_RMT_NAME_CALLBACK)(const RawAddress& bd_addr, DEV_CLASS dc,
-                                     tBTM_BD_NAME bd_name);
+                                     BD_NAME bd_name);
 
 /* Authentication complete for the connection.  Parameters are
  *              BD Address of remote
@@ -71,8 +69,7 @@ typedef void(tBTM_RMT_NAME_CALLBACK)(const RawAddress& bd_addr, DEV_CLASS dc,
  *
  */
 typedef void(tBTM_AUTH_COMPLETE_CALLBACK)(const RawAddress& bd_addr,
-                                          DEV_CLASS dev_class,
-                                          tBTM_BD_NAME bd_name,
+                                          DEV_CLASS dev_class, BD_NAME bd_name,
                                           tHCI_REASON reason);
 
 /* Request SIRK verification for found member. Parameters are
