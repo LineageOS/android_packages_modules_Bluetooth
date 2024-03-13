@@ -137,7 +137,7 @@ typedef enum {
   LE_AUDIO_FRAME_DURATION_INDEX_10000US = 0x01 << 1
 } btle_audio_frame_duration_index_t;
 
-typedef struct {
+typedef struct btle_audio_codec_config {
   btle_audio_codec_index_t codec_type;
   btle_audio_sample_rate_index_t sample_rate;
   btle_audio_bits_per_sample_index_t bits_per_sample;
@@ -145,6 +145,20 @@ typedef struct {
   btle_audio_frame_duration_index_t frame_duration;
   uint16_t octets_per_frame;
   int32_t codec_priority;
+
+  bool operator!=(const btle_audio_codec_config& other) const {
+    if (codec_type != other.codec_type) return true;
+    if (sample_rate != other.sample_rate) return true;
+    if (bits_per_sample != other.bits_per_sample) return true;
+    if (channel_count != other.channel_count) return true;
+    if (frame_duration != other.frame_duration) return true;
+    if (octets_per_frame != other.octets_per_frame) return true;
+    if (codec_priority != other.codec_priority) return true;
+    return false;
+  };
+  bool operator==(const btle_audio_codec_config& other) const {
+    return !(*this != other);
+  };
 
   std::string ToString() const {
     std::string codec_name_str;

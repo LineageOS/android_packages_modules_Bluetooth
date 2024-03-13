@@ -26,17 +26,18 @@
 #include "audio_set_scenarios_generated.h"
 #include "flatbuffers/idl.h"
 #include "flatbuffers/util.h"
+#include "le_audio/le_audio_types.h"
 #include "le_audio_set_configuration_provider.h"
 #include "os/log.h"
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
 
+using bluetooth::le_audio::set_configurations::AseConfiguration;
 using bluetooth::le_audio::set_configurations::AudioSetConfiguration;
 using bluetooth::le_audio::set_configurations::AudioSetConfigurations;
 using bluetooth::le_audio::set_configurations::CodecConfigSetting;
 using bluetooth::le_audio::set_configurations::LeAudioCodecIdLc3;
 using bluetooth::le_audio::set_configurations::QosConfigSetting;
-using bluetooth::le_audio::set_configurations::SetConfiguration;
 using bluetooth::le_audio::types::LeAudioContextType;
 
 namespace bluetooth::le_audio {
@@ -234,28 +235,16 @@ struct AudioSetConfigurationProviderJson {
     return codec;
   }
 
-  SetConfiguration SetConfigurationFromFlatSubconfig(
+  void SetConfigurationFromFlatSubconfig(
       const fbs::le_audio::AudioSetSubConfiguration* flat_subconfig,
-      QosConfigSetting qos, types::CodecLocation location) {
-    auto strategy_int =
-        static_cast<int>(flat_subconfig->configuration_strategy());
-
-    bool valid_strategy =
-        (strategy_int >=
-         (int)types::LeAudioConfigurationStrategy::MONO_ONE_CIS_PER_DEVICE) &&
-        strategy_int < (int)types::LeAudioConfigurationStrategy::RFU;
-
-    types::LeAudioConfigurationStrategy strategy =
-        valid_strategy
-            ? static_cast<types::LeAudioConfigurationStrategy>(strategy_int)
-            : types::LeAudioConfigurationStrategy::RFU;
-
-    auto config = SetConfiguration(
-        flat_subconfig->direction(), flat_subconfig->device_cnt(),
-        flat_subconfig->ase_cnt(),
+      QosConfigSetting qos, bool& dual_dev_one_chan_stereo_swb,
+      bool& single_dev_one_chan_stereo_swb,
+      std::vector<AseConfiguration>& subconfigs,
+      types::CodecLocation location) {
+    auto config = AseConfiguration(
         CodecConfigSettingFromFlat(flat_subconfig->codec_id(),
                                    flat_subconfig->codec_configuration()),
-        qos, strategy);
+        qos);
 
     // Note that these parameters are set here since for now, we are using the
     // common configuration source for all the codec locations.
@@ -275,7 +264,22 @@ struct AudioSetConfigurationProviderJson {
             bluetooth::hci::iso_manager::kIsoDataPathPlatformDefault;
         break;
     }
-    return config;
+
+    // Check for SWB support
+    if (config.codec.GetSamplingFrequencyHz() >=
+        le_audio::LeAudioCodecConfiguration::kSampleRate32000) {
+      if (flat_subconfig->device_cnt() == 2 && flat_subconfig->ase_cnt() == 2) {
+        dual_dev_one_chan_stereo_swb |= true;
+      }
+      if (flat_subconfig->device_cnt() == 1 && flat_subconfig->ase_cnt() == 2) {
+        single_dev_one_chan_stereo_swb |= true;
+      }
+    }
+
+    // Store each ASE configuration
+    for (auto i = flat_subconfig->ase_cnt(); i; --i) {
+      subconfigs.push_back(std::move(config));
+    }
   }
 
   static uint8_t ValidateTargetLatency(int flat_target_latency) {
@@ -335,23 +339,23 @@ struct AudioSetConfigurationProviderJson {
       }
     }
 
-    QosConfigSetting qos_sink;
+    types::BidirectionalPair<QosConfigSetting> qos;
+
     if (qos_sink_cfg != nullptr) {
-      qos_sink.target_latency =
+      qos.sink.target_latency =
           ValidateTargetLatency(qos_sink_cfg->target_latency());
-      qos_sink.retransmission_number = qos_sink_cfg->retransmission_number();
-      qos_sink.max_transport_latency = qos_sink_cfg->max_transport_latency();
+      qos.sink.retransmission_number = qos_sink_cfg->retransmission_number();
+      qos.sink.max_transport_latency = qos_sink_cfg->max_transport_latency();
     } else {
       LOG_ERROR("No qos config matching key %s found", qos_sink_key.c_str());
     }
 
-    QosConfigSetting qos_source;
     if (qos_source_cfg != nullptr) {
-      qos_source.target_latency =
+      qos.source.target_latency =
           ValidateTargetLatency(qos_source_cfg->target_latency());
-      qos_source.retransmission_number =
+      qos.source.retransmission_number =
           qos_source_cfg->retransmission_number();
-      qos_source.max_transport_latency =
+      qos.source.max_transport_latency =
           qos_source_cfg->max_transport_latency();
     } else {
       LOG_ERROR("No qos config matching key %s found", qos_source_key.c_str());
@@ -365,26 +369,36 @@ struct AudioSetConfigurationProviderJson {
       }
     }
 
-    std::vector<SetConfiguration> subconfigs;
-
-    bool dual_dev_one_chan_stereo_sink_swb = false;
-    bool dual_dev_one_chan_stereo_source_swb = false;
-    bool single_dev_one_chan_stereo_sink_swb = false;
-    bool single_dev_one_chan_stereo_source_swb = false;
+    types::BidirectionalPair<std::vector<AseConfiguration>> subconfigs;
+    types::BidirectionalPair<bool> dual_dev_one_chan_stereo_swb;
+    types::BidirectionalPair<bool> single_dev_one_chan_stereo_swb;
+    types::BidirectionalPair<uint8_t> device_cnt;
+    types::BidirectionalPair<types::LeAudioConfigurationStrategy> strategy = {
+        le_audio::types::LeAudioConfigurationStrategy::MONO_ONE_CIS_PER_DEVICE,
+        le_audio::types::LeAudioConfigurationStrategy::MONO_ONE_CIS_PER_DEVICE};
 
     if (codec_cfg != nullptr && codec_cfg->subconfigurations()) {
       /* Load subconfigurations */
       for (auto subconfig : *codec_cfg->subconfigurations()) {
-        if (subconfig->direction() ==
-            bluetooth::le_audio::types::kLeAudioDirectionSink) {
-          processSubconfig(
-              *subconfig, qos_sink, dual_dev_one_chan_stereo_sink_swb,
-              single_dev_one_chan_stereo_sink_swb, subconfigs, location);
-        } else {
-          processSubconfig(
-              *subconfig, qos_source, dual_dev_one_chan_stereo_source_swb,
-              single_dev_one_chan_stereo_source_swb, subconfigs, location);
-        }
+        auto direction = subconfig->direction();
+
+        auto strategy_int =
+            static_cast<int>(subconfig->configuration_strategy());
+        bool valid_strategy =
+            (strategy_int >= (int)types::LeAudioConfigurationStrategy::
+                                 MONO_ONE_CIS_PER_DEVICE) &&
+            strategy_int < (int)types::LeAudioConfigurationStrategy::RFU;
+
+        strategy.get(direction) =
+            valid_strategy
+                ? static_cast<types::LeAudioConfigurationStrategy>(strategy_int)
+                : types::LeAudioConfigurationStrategy::RFU;
+        device_cnt.get(direction) = subconfig->device_cnt();
+
+        processSubconfig(*subconfig, qos.get(direction),
+                         dual_dev_one_chan_stereo_swb.get(direction),
+                         single_dev_one_chan_stereo_swb.get(direction),
+                         subconfigs.get(direction), location);
       }
     } else {
       if (codec_cfg == nullptr) {
@@ -397,37 +411,36 @@ struct AudioSetConfigurationProviderJson {
     }
 
     if (!dual_bidirection_swb_supported_) {
-      if ((dual_dev_one_chan_stereo_sink_swb &&
-           dual_dev_one_chan_stereo_source_swb) ||
-          (single_dev_one_chan_stereo_sink_swb &&
-           single_dev_one_chan_stereo_source_swb)) {
-        return AudioSetConfiguration({flat_cfg->name()->c_str(), {}});
+      if ((dual_dev_one_chan_stereo_swb.sink &&
+           dual_dev_one_chan_stereo_swb.source) ||
+          (single_dev_one_chan_stereo_swb.sink &&
+           single_dev_one_chan_stereo_swb.source)) {
+        return {
+            .name = flat_cfg->name()->c_str(),
+            .packing = bluetooth::hci::kIsoCigPackingSequential,
+            .confs = {},
+            .topology_info = {{device_cnt, strategy}},
+        };
       }
     }
 
-    return AudioSetConfiguration({flat_cfg->name()->c_str(), subconfigs});
+    return {
+        .name = flat_cfg->name()->c_str(),
+        .packing = bluetooth::hci::kIsoCigPackingSequential,
+        .confs = std::move(subconfigs),
+        .topology_info = {{device_cnt, strategy}},
+    };
   }
 
   void processSubconfig(
       const fbs::le_audio::AudioSetSubConfiguration& subconfig,
       const QosConfigSetting& qos_setting, bool& dual_dev_one_chan_stereo_swb,
       bool& single_dev_one_chan_stereo_swb,
-      std::vector<SetConfiguration>& subconfigs,
+      std::vector<AseConfiguration>& subconfigs,
       types::CodecLocation location) {
-    subconfigs.push_back(
-        SetConfigurationFromFlatSubconfig(&subconfig, qos_setting, location));
-
-    if (subconfigs.back().codec.GetSamplingFrequencyHz() <
-        bluetooth::le_audio::LeAudioCodecConfiguration::kSampleRate32000) {
-      return;
-    }
-
-    if (subconfigs.back().device_cnt == 2 && subconfigs.back().ase_cnt == 2) {
-      dual_dev_one_chan_stereo_swb |= true;
-    }
-    if (subconfigs.back().device_cnt == 1 && subconfigs.back().ase_cnt == 2) {
-      single_dev_one_chan_stereo_swb |= true;
-    }
+    SetConfigurationFromFlatSubconfig(
+        &subconfig, qos_setting, dual_dev_one_chan_stereo_swb,
+        single_dev_one_chan_stereo_swb, subconfigs, location);
   }
 
   bool LoadConfigurationsFromFiles(const char* schema_file,
@@ -488,7 +501,8 @@ struct AudioSetConfigurationProviderJson {
     for (auto const& flat_cfg : *flat_configs) {
       auto configuration = AudioSetConfigurationFromFlat(flat_cfg, &codec_cfgs,
                                                          &qos_cfgs, location);
-      if (!configuration.confs.empty()) {
+      if (!configuration.confs.sink.empty() ||
+          !configuration.confs.source.empty()) {
         configurations_.insert({flat_cfg->name()->str(), configuration});
       }
     }
@@ -606,22 +620,31 @@ struct AudioSetConfigurationProvider::impl {
       if (confs && confs->size() > 0) {
         for (const auto& conf : *confs) {
           stream << "  name: " << conf->name << " \n";
-          for (const auto& ent : conf->confs) {
-            stream << "    direction: "
-                   << (ent.direction == types::kLeAudioDirectionSink
+          for (const auto direction :
+               {types::kLeAudioDirectionSink, types::kLeAudioDirectionSource}) {
+            stream << "   ASE configs for direction: "
+                   << (direction == types::kLeAudioDirectionSink
                            ? "Sink (speaker)\n"
-                           : "Source (mic)\n")
-                   << "     number of devices: " << +ent.device_cnt << " \n"
-                   << "     number of ASEs: " << +ent.ase_cnt << " \n"
-                   << "     strategy: " << (int)(ent.strategy) << " \n"
-                   << "     qos->target latency: " << +ent.qos.target_latency
-                   << " \n"
-                   << "     qos->retransmission_number: "
-                   << +ent.qos.retransmission_number << " \n"
-                   << "     qos->max_transport_latency: "
-                   << +ent.qos.max_transport_latency << " \n"
-                   << "     channel count per ISO stream: "
-                   << +ent.codec.GetChannelCountPerIsoStream() << "\n";
+                           : "Source (microphone)\n");
+            if (conf->topology_info.has_value()) {
+              stream << "    number of devices: "
+                     << +conf->topology_info->device_count.get(direction)
+                     << " \n"
+                     << "    strategy: "
+                     << (int)(conf->topology_info->strategy.get(direction))
+                     << " \n";
+            }
+            for (const auto& ent : conf->confs.get(direction)) {
+              stream << "    ASE config: "
+                     << "     qos->target latency: " << +ent.qos.target_latency
+                     << " \n"
+                     << "     qos->retransmission_number: "
+                     << +ent.qos.retransmission_number << " \n"
+                     << "     qos->max_transport_latency: "
+                     << +ent.qos.max_transport_latency << " \n"
+                     << "     channel count per ISO stream: "
+                     << +ent.codec.GetChannelCountPerIsoStream() << "\n";
+            }
           }
         }
       }
@@ -689,10 +712,13 @@ bool AudioSetConfigurationProvider::CheckConfigurationIsBiDirSwb(
     const set_configurations::AudioSetConfiguration& set_configuration) const {
   uint8_t dir = 0;
 
-  for (const auto& conf : set_configuration.confs) {
-    if (conf.codec.GetSamplingFrequencyHz() >=
-        bluetooth::le_audio::LeAudioCodecConfiguration::kSampleRate32000) {
-      dir |= conf.direction;
+  for (auto direction : {le_audio::types::kLeAudioDirectionSink,
+                         le_audio::types::kLeAudioDirectionSource}) {
+    for (const auto& conf : set_configuration.confs.get(direction)) {
+      if (conf.codec.GetSamplingFrequencyHz() >=
+          bluetooth::le_audio::LeAudioCodecConfiguration::kSampleRate32000) {
+        dir |= direction;
+      }
     }
   }
   return dir == bluetooth::le_audio::types::kLeAudioDirectionBoth;
@@ -700,18 +726,31 @@ bool AudioSetConfigurationProvider::CheckConfigurationIsBiDirSwb(
 
 bool AudioSetConfigurationProvider::CheckConfigurationIsDualBiDirSwb(
     const set_configurations::AudioSetConfiguration& set_configuration) const {
+  /* Check both directions for dual channel SWB */
   uint8_t single_dev_dual_bidir_swb = 0;
   uint8_t dual_dev_dual_bidir_swb = 0;
 
-  for (const auto& conf : set_configuration.confs) {
-    if (conf.codec.GetSamplingFrequencyHz() <
-        bluetooth::le_audio::LeAudioCodecConfiguration::kSampleRate32000) {
-      return false;
+  for (auto direction : {le_audio::types::kLeAudioDirectionSink,
+                         le_audio::types::kLeAudioDirectionSource}) {
+    uint8_t ase_cnt = 0;
+    for (auto const& conf : set_configuration.confs.get(direction)) {
+      if (conf.codec.GetSamplingFrequencyHz() <
+          bluetooth::le_audio::LeAudioCodecConfiguration::kSampleRate32000) {
+        return false;
+      }
+      ++ase_cnt;
     }
-    if (conf.device_cnt == 1 && conf.ase_cnt == 2) {
-      single_dev_dual_bidir_swb |= conf.direction;
-    } else if (conf.device_cnt == 2 && conf.ase_cnt == 2) {
-      dual_dev_dual_bidir_swb |= conf.direction;
+
+    ASSERT_LOG(
+        set_configuration.topology_info.has_value(),
+        "No topology info, which is required to properly configure the ASEs");
+    if (set_configuration.topology_info->device_count.get(direction) == 1 &&
+        ase_cnt == 2) {
+      single_dev_dual_bidir_swb |= direction;
+    }
+    if (set_configuration.topology_info->device_count.get(direction) == 2 &&
+        ase_cnt == 2) {
+      dual_dev_dual_bidir_swb |= direction;
     }
   }
 
