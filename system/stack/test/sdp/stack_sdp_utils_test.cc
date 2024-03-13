@@ -250,7 +250,7 @@ class StackSdpUtilsTest : public ::testing::Test {
           return btif_config_interface_.GetBinLength(section, key);
         };
     test::mock::osi_properties::osi_property_get_bool.body =
-        [](const char* key, bool default_value) { return true; };
+        [](const char* /* key */, bool /* default_value */) { return true; };
 
     localIopMock = std::make_unique<IopMock>();
     localAvrcpVersionMock = std::make_unique<AvrcpVersionMock>();
@@ -581,7 +581,7 @@ TEST_F(StackSdpUtilsTest, check_HFP_version_change_fail) {
   set_hfp_attr(SDP_PROFILE_DESC_LENGTH, ATTR_ID_BT_PROFILE_DESC_LIST,
                UUID_HF_LSB);
   test::mock::osi_properties::osi_property_get_bool.body =
-      [](const char* key, bool default_value) { return false; };
+      [](const char* /* key */, bool /* default_value */) { return false; };
   EXPECT_CALL(*localIopMock,
               InteropMatchAddrOrName(INTEROP_HFP_1_7_ALLOWLIST, &bdaddr,
                                      &btif_storage_get_remote_device_property))
