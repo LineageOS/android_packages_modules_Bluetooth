@@ -43,10 +43,10 @@
 #include "mock_controller.h"
 #include "mock_csis_client.h"
 #include "mock_device_groups.h"
-#include "mock_iso_manager.h"
 #include "mock_state_machine.h"
 #include "os/log.h"
 #include "test/common/mock_functions.h"
+#include "test/mock/mock_stack_btm_iso.h"
 
 #define TEST_BT com::android::bluetooth::flags
 

@@ -153,5 +153,10 @@ void IsoManager::Dump(int fd) {
 
 IsoManager::~IsoManager() = default;
 
+IsoManager* IsoManager::GetInstance() {
+  static IsoManager* instance = new IsoManager();
+  return instance;
+}
+
 }  // namespace hci
 }  // namespace bluetooth
