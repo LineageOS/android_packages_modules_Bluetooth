@@ -298,7 +298,7 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
                 return;
             }
             try {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
+                final SynchronousResultReceiver<Void> recv = SynchronousResultReceiver.get();
                 mService.registerCallback(mCallback, mAttributionSource, recv);
                 recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
             } catch (RemoteException e) {
