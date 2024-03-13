@@ -67,7 +67,7 @@ class CodecManager {
                  offloading_preference);
   void Stop(void);
   virtual types::CodecLocation GetCodecLocation(void) const;
-  virtual bool IsOffloadDualBiDirSwbSupported(void) const;
+  virtual bool IsDualBiDirSwbSupported(void) const;
   virtual void UpdateCisConfiguration(
       const std::vector<struct types::cis>& cises,
       const stream_parameters& stream_params, uint8_t direction);
@@ -77,10 +77,17 @@ class CodecManager {
       types::BidirectionalPair<uint16_t> delays_ms,
       std::function<void(const offload_config& config, uint8_t direction)>
           update_receiver);
-  virtual const ::bluetooth::le_audio::set_configurations::
-      AudioSetConfigurations*
-      GetOffloadCodecConfig(
-          ::bluetooth::le_audio::types::LeAudioContextType ctx_type);
+  virtual std::unique_ptr<
+      ::bluetooth::le_audio::set_configurations::AudioSetConfiguration>
+  GetCodecConfig(::bluetooth::le_audio::types::LeAudioContextType ctx_type,
+                 std::function<const set_configurations::AudioSetConfiguration*(
+                     types::LeAudioContextType context_type,
+                     const set_configurations::AudioSetConfigurations* confs)>
+                     non_vendor_config_matcher);
+
+  virtual bool CheckCodecConfigIsBiDirSwb(
+      const ::bluetooth::le_audio::set_configurations::AudioSetConfiguration&
+          config) const;
   virtual std::unique_ptr<broadcaster::BroadcastConfiguration>
   GetBroadcastConfig(
       const std::vector<

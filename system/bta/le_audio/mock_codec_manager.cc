@@ -39,12 +39,12 @@ types::CodecLocation CodecManager::GetCodecLocation() const {
   return pimpl_->GetCodecLocation();
 }
 
-bool CodecManager::IsOffloadDualBiDirSwbSupported(void) const {
+bool CodecManager::IsDualBiDirSwbSupported(void) const {
   if (!pimpl_) {
     return false;
   }
 
-  return pimpl_->IsOffloadDualBiDirSwbSupported();
+  return pimpl_->IsDualBiDirSwbSupported();
 }
 
 void CodecManager::UpdateActiveAudioConfig(
@@ -58,10 +58,15 @@ void CodecManager::UpdateActiveAudioConfig(
                                            update_receiver);
 }
 
-const set_configurations::AudioSetConfigurations*
-CodecManager::GetOffloadCodecConfig(types::LeAudioContextType ctx_type) {
+std::unique_ptr<set_configurations::AudioSetConfiguration>
+CodecManager::GetCodecConfig(
+    types::LeAudioContextType ctx_type,
+    std::function<const le_audio::set_configurations::AudioSetConfiguration*(
+        le_audio::types::LeAudioContextType context_type,
+        const le_audio::set_configurations::AudioSetConfigurations* confs)>
+        non_vendor_config_matcher) {
   if (!pimpl_) return nullptr;
-  return pimpl_->GetOffloadCodecConfig(ctx_type);
+  return pimpl_->GetCodecConfig(ctx_type, non_vendor_config_matcher);
 }
 
 std::unique_ptr<::bluetooth::le_audio::broadcaster::BroadcastConfiguration>
@@ -75,6 +80,13 @@ CodecManager::GetBroadcastConfig(
         bluetooth::le_audio::broadcaster::BroadcastConfiguration>(
         bluetooth::le_audio::broadcaster::GetBroadcastConfig(subgroup_quality));
   return pimpl_->GetBroadcastConfig(subgroup_quality, pacs);
+}
+
+bool CodecManager::CheckCodecConfigIsBiDirSwb(
+    const bluetooth::le_audio::set_configurations::AudioSetConfiguration&
+        config) const {
+  if (!pimpl_) return false;
+  return pimpl_->CheckCodecConfigIsBiDirSwb(config);
 }
 
 std::vector<bluetooth::le_audio::btle_audio_codec_config_t>
