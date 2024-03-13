@@ -84,8 +84,8 @@ void btif_iot_update_remote_info(tBTA_DM_AUTH_CMPL* p_auth_cmpl, bool is_ble,
 
   // save remote name to iot conf file
   if (strlen((const char*)p_auth_cmpl->bd_name)) {
-    name_length = strlen((char*)p_auth_cmpl->bd_name) > BTM_MAX_LOC_BD_NAME_LEN
-                      ? BTM_MAX_LOC_BD_NAME_LEN
+    name_length = strlen((char*)p_auth_cmpl->bd_name) > BD_NAME_LEN
+                      ? BD_NAME_LEN
                       : strlen((char*)p_auth_cmpl->bd_name) + 1;
     strncpy(value, (char*)p_auth_cmpl->bd_name, name_length);
     DEVICE_IOT_CONFIG_ADDR_SET_STR(p_auth_cmpl->bd_addr,

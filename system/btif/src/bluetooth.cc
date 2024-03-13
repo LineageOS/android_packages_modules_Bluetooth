@@ -1364,7 +1364,7 @@ void invoke_oob_data_request_cb(tBT_TRANSPORT t, bool valid, Octet16 c,
   bt_oob_data_t oob_data = {};
   const char* local_name;
   BTM_ReadLocalDeviceName(&local_name);
-  for (int i = 0; i < BTM_MAX_LOC_BD_NAME_LEN; i++) {
+  for (int i = 0; i < BD_NAME_LEN; i++) {
     oob_data.device_name[i] = local_name[i];
   }
 

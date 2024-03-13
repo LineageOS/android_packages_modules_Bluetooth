@@ -244,16 +244,6 @@
 #define BTM_SEC_MAX_SERVICE_RECORDS 32
 #endif
 
-/* Maximum device name length used in btm database. */
-#ifndef BTM_MAX_REM_BD_NAME_LEN
-#define BTM_MAX_REM_BD_NAME_LEN 248
-#endif
-
-/* Maximum local device name length stored btm database */
-#ifndef BTM_MAX_LOC_BD_NAME_LEN
-#define BTM_MAX_LOC_BD_NAME_LEN 248
-#endif
-
 /* Maximum length of the service name. */
 #ifndef BT_MAX_SERVICE_NAME_LEN
 #define BT_MAX_SERVICE_NAME_LEN 21

@@ -83,8 +83,7 @@ static void bta_dm_inq_results_cb(tBTM_INQ_RESULTS* p_inq, const uint8_t* p_eir,
 static void bta_dm_inq_cmpl(uint8_t num);
 static void bta_dm_inq_cmpl_cb(void* p_result);
 static void bta_dm_service_search_remname_cback(const RawAddress& bd_addr,
-                                                DEV_CLASS dc,
-                                                tBTM_BD_NAME bd_name);
+                                                DEV_CLASS dc, BD_NAME bd_name);
 static void bta_dm_remname_cback(const tBTM_REMOTE_DEV_NAME* p);
 static void bta_dm_find_services(const RawAddress& bd_addr);
 static void bta_dm_discover_next_device(void);
@@ -1552,7 +1551,7 @@ static void bta_dm_inq_cmpl_cb(void* p_result) {
  ******************************************************************************/
 static void bta_dm_service_search_remname_cback(const RawAddress& bd_addr,
                                                 UNUSED_ATTR DEV_CLASS dc,
-                                                tBTM_BD_NAME bd_name) {
+                                                BD_NAME bd_name) {
   tBTM_REMOTE_DEV_NAME rem_name = {};
   tBTM_STATUS btm_status;
 
@@ -2502,7 +2501,7 @@ void bta_dm_search_timer_cback(void* data) {
 }
 
 void bta_dm_service_search_remname_cback(const RawAddress& bd_addr,
-                                         DEV_CLASS dc, tBTM_BD_NAME bd_name) {
+                                         DEV_CLASS dc, BD_NAME bd_name) {
   ::bta_dm_service_search_remname_cback(bd_addr, dc, bd_name);
 }
 

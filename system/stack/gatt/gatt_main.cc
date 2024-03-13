@@ -1148,7 +1148,7 @@ void gatt_proc_srv_chg(void) {
     }
 
     // Some LE GATT clients don't respond to service changed indications.
-    char remote_name[BTM_MAX_REM_BD_NAME_LEN] = "";
+    char remote_name[BD_NAME_LEN] = "";
     if (send_indication &&
         btif_storage_get_stored_remote_name(bda, remote_name)) {
       if (interop_match_name(INTEROP_GATTC_NO_SERVICE_CHANGED_IND,

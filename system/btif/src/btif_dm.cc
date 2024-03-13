@@ -145,7 +145,7 @@ const Uuid UUID_A2DP_SINK = Uuid::FromString("110B");
 #define PROPERTY_PRODUCT_MODEL "ro.product.model"
 #endif
 #define DEFAULT_LOCAL_NAME_MAX 31
-#if (DEFAULT_LOCAL_NAME_MAX > BTM_MAX_LOC_BD_NAME_LEN)
+#if (DEFAULT_LOCAL_NAME_MAX > BD_NAME_LEN)
 #error "default btif local name size exceeds stack supported length"
 #endif
 
