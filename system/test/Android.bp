@@ -394,6 +394,13 @@ filegroup {
 }
 
 filegroup {
+    name: "TestMockStackBtmIso",
+    srcs: [
+        "mock/mock_stack_btm_iso.cc",
+    ],
+}
+
+filegroup {
     name: "TestStubOsi",
     srcs: [
         "stub/osi.cc",
