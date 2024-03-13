@@ -19,17 +19,22 @@
 #include <cstdio>
 #include <iostream>
 
-namespace bluetooth::audio::asrc {
+bluetooth::common::MessageLoopThread message_loop_thread("main message loop");
+bluetooth::common::MessageLoopThread* get_main_thread() {
+  return &message_loop_thread;
+}
 
-class MockClockSource : public ClockSource {
-  void Bind(ClockHandler*) override {}
-};
+namespace bluetooth::hal {
+void LinkClocker::Register(ReadClockHandler*) {}
+void LinkClocker::Unregister() {}
+}  // namespace bluetooth::hal
+
+namespace bluetooth::audio::asrc {
 
 class SourceAudioHalAsrcTest : public SourceAudioHalAsrc {
  public:
   SourceAudioHalAsrcTest(int channels, int bitdepth)
-      : SourceAudioHalAsrc(std::make_unique<MockClockSource>(), channels, 48000,
-                           bitdepth, 10000) {}
+      : SourceAudioHalAsrc(channels, 48000, bitdepth, 10000) {}
 
   template <typename T>
   void Resample(double ratio, const T* in, size_t in_length, size_t* in_count,
