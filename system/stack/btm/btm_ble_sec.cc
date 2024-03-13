@@ -142,7 +142,7 @@ bool BTM_GetRemoteDeviceName(const RawAddress& bd_addr, BD_NAME bd_name) {
   if (btif_storage_get_remote_device_property(&bd_addr, &prop_name) ==
       BT_STATUS_SUCCESS) {
     log::verbose("NV name={}", reinterpret_cast<const char*>(bdname.name));
-    strncpy((char*)bd_name, (char*)bdname.name, BD_NAME_LEN + 1);
+    bd_name_copy(bd_name, bdname.name);
     ret = TRUE;
   }
   return ret;
