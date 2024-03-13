@@ -118,6 +118,45 @@ static const types::LeAudioCodecId kLeAudioCodecIdLc3 = {
     .vendor_company_id = types::kLeAudioVendorCompanyIdUndefined,
     .vendor_codec_id = types::kLeAudioVendorCodecIdUndefined};
 
+static const set_configurations::CodecConfigSetting lc3_16_2 = {
+    .id = kLeAudioCodecIdLc3,
+    .params = types::LeAudioLtvMap({
+        LTV_ENTRY_SAMPLING_FREQUENCY(
+            codec_spec_conf::kLeAudioSamplingFreq16000Hz),
+        LTV_ENTRY_FRAME_DURATION(codec_spec_conf::kLeAudioCodecFrameDur10000us),
+        LTV_ENTRY_AUDIO_CHANNEL_ALLOCATION(
+            codec_spec_conf::kLeAudioLocationStereo),
+        LTV_ENTRY_OCTETS_PER_CODEC_FRAME(40),
+    }),
+    .channel_count_per_iso_stream = 1,
+};
+
+static const set_configurations::CodecConfigSetting lc3_24_2 = {
+    .id = kLeAudioCodecIdLc3,
+    .params = types::LeAudioLtvMap({
+        LTV_ENTRY_SAMPLING_FREQUENCY(
+            codec_spec_conf::kLeAudioSamplingFreq24000Hz),
+        LTV_ENTRY_FRAME_DURATION(codec_spec_conf::kLeAudioCodecFrameDur10000us),
+        LTV_ENTRY_AUDIO_CHANNEL_ALLOCATION(
+            codec_spec_conf::kLeAudioLocationStereo),
+        LTV_ENTRY_OCTETS_PER_CODEC_FRAME(60),
+    }),
+    .channel_count_per_iso_stream = 1,
+};
+
+static const set_configurations::CodecConfigSetting lc3_32_2 = {
+    .id = kLeAudioCodecIdLc3,
+    .params = types::LeAudioLtvMap({
+        LTV_ENTRY_SAMPLING_FREQUENCY(
+            codec_spec_conf::kLeAudioSamplingFreq32000Hz),
+        LTV_ENTRY_FRAME_DURATION(codec_spec_conf::kLeAudioCodecFrameDur10000us),
+        LTV_ENTRY_AUDIO_CHANNEL_ALLOCATION(
+            codec_spec_conf::kLeAudioLocationStereo),
+        LTV_ENTRY_OCTETS_PER_CODEC_FRAME(80),
+    }),
+    .channel_count_per_iso_stream = 1,
+};
+
 static const set_configurations::CodecConfigSetting lc3_48_2 = {
     .id = kLeAudioCodecIdLc3,
     .params = types::LeAudioLtvMap({
@@ -349,10 +388,23 @@ TEST_F(CodecManagerTestAdsp, test_capabilities_none) {
       offloading_preference(0);
   codec_manager->Start(offloading_preference);
 
+  auto match_first_config =
+      [](types::LeAudioContextType context_type,
+         const set_configurations::AudioSetConfigurations* confs)
+      -> const set_configurations::AudioSetConfiguration* {
+    if (confs && confs->size()) {
+      // For simplicity return the first element, the real matcher should
+      // check the group capabilities.
+      return confs->at(0);
+    }
+    return nullptr;
+  };
+
   // Verify every context
   for (::bluetooth::le_audio::types::LeAudioContextType ctx_type :
        ::bluetooth::le_audio::types::kLeAudioContextAllTypesArray) {
-    ASSERT_EQ(nullptr, codec_manager->GetOffloadCodecConfig(ctx_type));
+    ASSERT_EQ(nullptr,
+              codec_manager->GetCodecConfig(ctx_type, match_first_config));
   }
 }
 
@@ -379,9 +431,24 @@ TEST_F(CodecManagerTestAdsp, test_capabilities) {
                  bluetooth::le_audio::LE_AUDIO_CODEC_INDEX_SOURCE_LC3}};
     codec_manager->Start(offloading_preference);
 
-    auto cfg = codec_manager->GetOffloadCodecConfig(test_context);
+    size_t available_configs_size = 0;
+    auto match_first_config =
+        [&available_configs_size](
+            types::LeAudioContextType context_type,
+            const set_configurations::AudioSetConfigurations* confs)
+        -> const set_configurations::AudioSetConfiguration* {
+      if (confs && confs->size()) {
+        available_configs_size = confs->size();
+        // For simplicity return the first element, the real matcher should
+        // check the group capabilities.
+        return confs->at(0);
+      }
+      return nullptr;
+    };
+
+    auto cfg = codec_manager->GetCodecConfig(test_context, match_first_config);
     ASSERT_NE(nullptr, cfg);
-    ASSERT_EQ(offload_capabilities.size(), cfg->size());
+    ASSERT_EQ(offload_capabilities.size(), available_configs_size);
 
     // Clean up the before testing any other offload capabilities.
     codec_manager->Stop();
@@ -487,6 +554,111 @@ TEST_F(CodecManagerTestHost, test_start) {
   codec_manager->Start(offloading_preference);
 
   ASSERT_EQ(codec_manager->GetCodecLocation(), CodecLocation::HOST);
+}
+
+TEST_F(CodecManagerTestHost, test_non_bidir_swb) {
+  const std::vector<bluetooth::le_audio::btle_audio_codec_config_t>
+      offloading_preference = {
+          {.codec_type = bluetooth::le_audio::LE_AUDIO_CODEC_INDEX_SOURCE_LC3}};
+  codec_manager->Start(offloading_preference);
+
+  // NON-SWB configs
+  ASSERT_FALSE(codec_manager->CheckCodecConfigIsBiDirSwb(
+      {.confs = {set_configurations::SetConfiguration(
+                     types::kLeAudioDirectionSink, 1, 2, lc3_16_2),
+                 set_configurations::SetConfiguration(
+                     types::kLeAudioDirectionSource, 1, 2, lc3_16_2)}}));
+  ASSERT_FALSE(codec_manager->CheckCodecConfigIsBiDirSwb(
+      {.confs = {set_configurations::SetConfiguration(
+                     types::kLeAudioDirectionSink, 1, 2, lc3_24_2),
+                 set_configurations::SetConfiguration(
+                     types::kLeAudioDirectionSource, 1, 2, lc3_16_2)}}));
+  ASSERT_FALSE(codec_manager->CheckCodecConfigIsBiDirSwb(
+      {.confs = {set_configurations::SetConfiguration(
+                     types::kLeAudioDirectionSink, 1, 2, lc3_16_2),
+                 set_configurations::SetConfiguration(
+                     types::kLeAudioDirectionSource, 1, 2, lc3_24_2)}}));
+
+  ASSERT_FALSE(codec_manager->CheckCodecConfigIsBiDirSwb(
+      {.confs = {set_configurations::SetConfiguration(
+                     types::kLeAudioDirectionSink, 1, 2, lc3_16_2),
+                 set_configurations::SetConfiguration(
+                     types::kLeAudioDirectionSource, 1, 2, lc3_32_2)}}));
+  ASSERT_FALSE(codec_manager->CheckCodecConfigIsBiDirSwb(
+      {.confs = {set_configurations::SetConfiguration(
+                     types::kLeAudioDirectionSink, 1, 2, lc3_32_2),
+                 set_configurations::SetConfiguration(
+                     types::kLeAudioDirectionSource, 1, 2, lc3_16_2)}}));
+
+  ASSERT_FALSE(codec_manager->CheckCodecConfigIsBiDirSwb(
+      {.confs = {set_configurations::SetConfiguration(
+                     types::kLeAudioDirectionSink, 1, 2, lc3_24_2),
+                 set_configurations::SetConfiguration(
+                     types::kLeAudioDirectionSource, 1, 2, lc3_24_2)}}));
+  ASSERT_FALSE(codec_manager->CheckCodecConfigIsBiDirSwb(
+      {.confs = {set_configurations::SetConfiguration(
+                     types::kLeAudioDirectionSink, 1, 2, lc3_24_2),
+                 set_configurations::SetConfiguration(
+                     types::kLeAudioDirectionSource, 1, 2, lc3_32_2)}}));
+  ASSERT_FALSE(codec_manager->CheckCodecConfigIsBiDirSwb(
+      {.confs = {set_configurations::SetConfiguration(
+                     types::kLeAudioDirectionSink, 1, 2, lc3_32_2),
+                 set_configurations::SetConfiguration(
+                     types::kLeAudioDirectionSource, 1, 2, lc3_24_2)}}));
+
+  ASSERT_FALSE(codec_manager->CheckCodecConfigIsBiDirSwb(
+      {.confs = {set_configurations::SetConfiguration(
+           types::kLeAudioDirectionSink, 1, 2, lc3_16_2)}}));
+  ASSERT_FALSE(codec_manager->CheckCodecConfigIsBiDirSwb(
+      {.confs = {set_configurations::SetConfiguration(
+           types::kLeAudioDirectionSource, 1, 2, lc3_16_2)}}));
+  ASSERT_FALSE(codec_manager->CheckCodecConfigIsBiDirSwb(
+      {.confs = {set_configurations::SetConfiguration(
+           types::kLeAudioDirectionSink, 1, 2, lc3_24_2)}}));
+  ASSERT_FALSE(codec_manager->CheckCodecConfigIsBiDirSwb(
+      {.confs = {set_configurations::SetConfiguration(
+           types::kLeAudioDirectionSource, 1, 2, lc3_24_2)}}));
+  ASSERT_FALSE(codec_manager->CheckCodecConfigIsBiDirSwb(
+      {.confs = {set_configurations::SetConfiguration(
+           types::kLeAudioDirectionSink, 1, 2, lc3_32_2)}}));
+  ASSERT_FALSE(codec_manager->CheckCodecConfigIsBiDirSwb(
+      {.confs = {set_configurations::SetConfiguration(
+           types::kLeAudioDirectionSource, 1, 2, lc3_32_2)}}));
+  ASSERT_FALSE(codec_manager->CheckCodecConfigIsBiDirSwb(
+      {.confs = {set_configurations::SetConfiguration(
+           types::kLeAudioDirectionSink, 1, 2, lc3_48_2)}}));
+  ASSERT_FALSE(codec_manager->CheckCodecConfigIsBiDirSwb(
+      {.confs = {set_configurations::SetConfiguration(
+           types::kLeAudioDirectionSource, 1, 2, lc3_48_2)}}));
+}
+
+TEST_F(CodecManagerTestHost, test_bidir_swb) {
+  const std::vector<bluetooth::le_audio::btle_audio_codec_config_t>
+      offloading_preference = {
+          {.codec_type = bluetooth::le_audio::LE_AUDIO_CODEC_INDEX_SOURCE_LC3}};
+  codec_manager->Start(offloading_preference);
+
+  // SWB configs
+  ASSERT_TRUE(codec_manager->CheckCodecConfigIsBiDirSwb(
+      {.confs = {set_configurations::SetConfiguration(
+                     types::kLeAudioDirectionSink, 1, 2, lc3_32_2),
+                 set_configurations::SetConfiguration(
+                     types::kLeAudioDirectionSource, 1, 2, lc3_32_2)}}));
+  ASSERT_TRUE(codec_manager->CheckCodecConfigIsBiDirSwb(
+      {.confs = {set_configurations::SetConfiguration(
+                     types::kLeAudioDirectionSink, 1, 2, lc3_48_2),
+                 set_configurations::SetConfiguration(
+                     types::kLeAudioDirectionSource, 1, 2, lc3_32_2)}}));
+  ASSERT_TRUE(codec_manager->CheckCodecConfigIsBiDirSwb(
+      {.confs = {set_configurations::SetConfiguration(
+                     types::kLeAudioDirectionSink, 1, 2, lc3_32_2),
+                 set_configurations::SetConfiguration(
+                     types::kLeAudioDirectionSource, 1, 2, lc3_48_2)}}));
+  ASSERT_TRUE(codec_manager->CheckCodecConfigIsBiDirSwb(
+      {.confs = {set_configurations::SetConfiguration(
+                     types::kLeAudioDirectionSink, 1, 2, lc3_48_2),
+                 set_configurations::SetConfiguration(
+                     types::kLeAudioDirectionSource, 1, 2, lc3_48_2)}}));
 }
 
 TEST_F(CodecManagerTestHost, test_dont_update_broadcast_offloader) {

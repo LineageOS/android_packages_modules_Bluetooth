@@ -25,6 +25,7 @@
 #include "device_groups.h"
 #include "le_audio_set_configuration_provider.h"
 #include "le_audio_types.h"
+#include "mock_codec_manager.h"
 #include "mock_controller.h"
 #include "mock_csis_client.h"
 #include "os/log.h"
@@ -473,8 +474,10 @@ class LeAudioAseConfigurationTest : public Test {
     group_ = new LeAudioDeviceGroup(group_id_);
     bluetooth::manager::SetMockBtmInterface(&btm_interface_);
     controller::SetMockControllerInterface(&controller_interface_);
-    ::bluetooth::le_audio::AudioSetConfigurationProvider::Initialize(
-        ::bluetooth::le_audio::types::CodecLocation::ADSP);
+
+    auto codec_location = ::bluetooth::le_audio::types::CodecLocation::HOST;
+    bluetooth::le_audio::AudioSetConfigurationProvider::Initialize(
+        codec_location);
     MockCsisClient::SetMockInstanceForTesting(&mock_csis_client_module_);
     ON_CALL(mock_csis_client_module_, Get())
         .WillByDefault(Return(&mock_csis_client_module_));
@@ -485,6 +488,42 @@ class LeAudioAseConfigurationTest : public Test {
     ON_CALL(mock_csis_client_module_, GetDesiredSize(_))
         .WillByDefault(
             Invoke([this](int group_id) { return (int)(addresses_.size()); }));
+    SetUpMockCodecManager(codec_location);
+  }
+
+  void SetUpMockCodecManager(
+      bluetooth::le_audio::types::CodecLocation location) {
+    codec_manager_ = bluetooth::le_audio::CodecManager::GetInstance();
+    ASSERT_NE(codec_manager_, nullptr);
+    std::vector<bluetooth::le_audio::btle_audio_codec_config_t>
+        mock_offloading_preference(0);
+    codec_manager_->Start(mock_offloading_preference);
+    mock_codec_manager_ = MockCodecManager::GetInstance();
+    ASSERT_NE((void*)mock_codec_manager_, (void*)codec_manager_);
+    ASSERT_NE(mock_codec_manager_, nullptr);
+    ON_CALL(*mock_codec_manager_, GetCodecLocation())
+        .WillByDefault(Return(location));
+    // Regardless of the codec location, return all the possible configurations
+    ON_CALL(*mock_codec_manager_, GetCodecConfig)
+        .WillByDefault(Invoke(
+            [](bluetooth::le_audio::types::LeAudioContextType ctx_type,
+               std::function<
+                   const bluetooth::le_audio::set_configurations::
+                       AudioSetConfiguration*(
+                           bluetooth::le_audio::types::LeAudioContextType
+                               context_type,
+                           const bluetooth::le_audio::set_configurations::
+                               AudioSetConfigurations* confs)>
+                   non_vendor_config_matcher) {
+              auto cfg = non_vendor_config_matcher(
+                  ctx_type,
+                  bluetooth::le_audio::AudioSetConfigurationProvider::Get()
+                      ->GetConfigurations(ctx_type));
+              if (cfg == nullptr) {
+                return std::unique_ptr<AudioSetConfiguration>(nullptr);
+              }
+              return std::make_unique<AudioSetConfiguration>(*cfg);
+            }));
   }
 
   void TearDown() override {
@@ -494,6 +533,13 @@ class LeAudioAseConfigurationTest : public Test {
     addresses_.clear();
     delete group_;
     ::bluetooth::le_audio::AudioSetConfigurationProvider::Cleanup();
+
+    if (mock_codec_manager_) {
+      testing::Mock::VerifyAndClearExpectations(mock_codec_manager_);
+    }
+    if (codec_manager_) {
+      codec_manager_->Stop();
+    }
   }
 
   LeAudioDevice* AddTestDevice(int snk_ase_num, int src_ase_num,
@@ -910,6 +956,9 @@ class LeAudioAseConfigurationTest : public Test {
   bluetooth::manager::MockBtmInterface btm_interface_;
   controller::MockControllerInterface controller_interface_;
   MockCsisClient mock_csis_client_module_;
+
+  bluetooth::le_audio::CodecManager* codec_manager_;
+  MockCodecManager* mock_codec_manager_;
 };
 
 /* Helper */
