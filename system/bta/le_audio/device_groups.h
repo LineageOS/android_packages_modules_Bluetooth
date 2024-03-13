@@ -73,6 +73,10 @@ class LeAudioDeviceGroup {
     types::CigState state_;
   } cig;
 
+  /* Current configuration strategy - recalculated on demand */
+  mutable std::optional<types::LeAudioConfigurationStrategy> strategy_ =
+      std::nullopt;
+
   /* Current audio stream configuration */
   struct stream_configuration stream_conf;
   bool notify_streaming_when_cises_are_ready_;
@@ -151,8 +155,10 @@ class LeAudioDeviceGroup {
   LeAudioDevice* GetFirstDevice(void) const;
   LeAudioDevice* GetFirstDeviceWithAvailableContext(
       types::LeAudioContextType context_type) const;
-  bluetooth::le_audio::types::LeAudioConfigurationStrategy GetGroupStrategy(
+  types::LeAudioConfigurationStrategy GetGroupSinkStrategyFromPacs(
       int expected_group_size) const;
+  types::LeAudioConfigurationStrategy GetGroupSinkStrategy(void) const;
+  inline void InvalidateGroupStrategy(void) { strategy_ = std::nullopt; }
   int GetAseCount(uint8_t direction) const;
   LeAudioDevice* GetNextDevice(LeAudioDevice* leAudioDevice) const;
   LeAudioDevice* GetNextDeviceWithAvailableContext(

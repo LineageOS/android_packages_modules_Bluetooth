@@ -191,8 +191,8 @@ class LeAudioDevice {
   uint8_t GetPhyBitmask(void) const;
   uint8_t GetPreferredPhyBitmask(uint8_t preferred_phy) const;
   bool ConfigureAses(
-      const bluetooth::le_audio::set_configurations::SetConfiguration& ent,
-      types::LeAudioContextType context_type,
+      const set_configurations::AudioSetConfiguration* audio_set_conf,
+      uint8_t direction, types::LeAudioContextType context_type,
       uint8_t* number_of_already_active_group_ase,
       types::BidirectionalPair<types::AudioLocations>&
           group_audio_locations_out,
