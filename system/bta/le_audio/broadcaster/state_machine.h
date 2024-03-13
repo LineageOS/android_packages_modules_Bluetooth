@@ -100,8 +100,7 @@ struct BroadcastStateMachineConfig {
   bluetooth::le_audio::BroadcastId broadcast_id;
   std::string broadcast_name;
   uint8_t streaming_phy;
-  BroadcastCodecWrapper codec_wrapper;
-  BroadcastQosConfig qos_config;
+  BroadcastConfiguration config;
   bluetooth::le_audio::PublicBroadcastAnnouncementData public_announcement;
   bluetooth::le_audio::BasicAudioAnnouncementData announcement;
   std::optional<bluetooth::le_audio::BroadcastCode> broadcast_code;
@@ -152,7 +151,9 @@ class BroadcastStateMachine : public StateMachine<5> {
   virtual uint8_t GetPaInterval() const { return kPaIntervalMax; }
 
   virtual bool Initialize() = 0;
-  virtual const BroadcastCodecWrapper& GetCodecConfig() const = 0;
+  virtual const std::vector<BroadcastSubgroupCodecConfig>& GetCodecConfig()
+      const = 0;
+  virtual const BroadcastConfiguration& GetBroadcastConfig() const = 0;
   virtual std::optional<BigConfig> const& GetBigConfig() const = 0;
   virtual BroadcastStateMachineConfig const& GetStateMachineConfig() const = 0;
   virtual void RequestOwnAddress(
