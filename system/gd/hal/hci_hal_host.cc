@@ -441,8 +441,8 @@ class HciHalHost : public HciHal {
       ASSERT_LOG(hci_acl_data_total_length <= kBufSize - kH4HeaderSize - kHciAclHeaderSize, "packet too long");
 
       HciPacket receivedHciPacket;
-      receivedHciPacket.assign(buf + kH4HeaderSize, buf + kH4HeaderSize + kHciAclHeaderSize + payload_size);
-      link_clocker_->OnAclDataReceived(receivedHciPacket);
+      receivedHciPacket.assign(
+          buf + kH4HeaderSize, buf + kH4HeaderSize + kHciAclHeaderSize + payload_size);
       btsnoop_logger_->Capture(receivedHciPacket, SnoopLogger::Direction::INCOMING, SnoopLogger::PacketType::ACL);
       {
         std::lock_guard<std::mutex> incoming_packet_callback_lock(incoming_packet_callback_mutex_);

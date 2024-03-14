@@ -22,6 +22,7 @@
 #include "broadcaster/broadcast_configuration_provider.h"
 #include "broadcaster/broadcaster_types.h"
 #include "device/include/controller.h"
+#include "le_audio/le_audio_types.h"
 #include "le_audio_set_configuration_provider.h"
 #include "le_audio_utils.h"
 #include "os/log.h"
@@ -39,9 +40,9 @@ using bluetooth::legacy::hci::GetInterface;
 using bluetooth::le_audio::AudioSetConfigurationProvider;
 using bluetooth::le_audio::btle_audio_codec_config_t;
 using bluetooth::le_audio::btle_audio_codec_index_t;
+using bluetooth::le_audio::set_configurations::AseConfiguration;
 using bluetooth::le_audio::set_configurations::AudioSetConfiguration;
 using bluetooth::le_audio::set_configurations::AudioSetConfigurations;
-using bluetooth::le_audio::set_configurations::SetConfiguration;
 
 typedef struct offloader_stream_maps {
   std::vector<bluetooth::le_audio::stream_map_info> streams_map_target;
@@ -240,11 +241,15 @@ struct codec_manager_impl {
     LOG_INFO("UpdateSupportedBroadcastConfig");
 
     for (const auto& adsp_audio_set_conf : adsp_capabilities) {
-      if (adsp_audio_set_conf.confs.size() != 1 ||
-          adsp_audio_set_conf.confs[0].device_cnt != 0) {
+      ASSERT_LOG(
+          adsp_audio_set_conf.topology_info.has_value(),
+          "No topology info, which is required to properly configure the ASEs");
+      if (adsp_audio_set_conf.confs.sink.size() != 1 ||
+          adsp_audio_set_conf.topology_info->device_count.sink != 0 ||
+          adsp_audio_set_conf.topology_info->device_count.source != 0) {
         continue;
       }
-      auto& adsp_config = adsp_audio_set_conf.confs[0];
+      auto& adsp_config = adsp_audio_set_conf.confs.sink[0];
 
       const types::LeAudioCoreCodecConfig core_config =
           adsp_config.codec.params.GetAsCoreCodecConfig();
@@ -627,59 +632,89 @@ struct codec_manager_impl {
     return true;
   }
 
-  bool IsSetConfigurationMatched(const SetConfiguration& software_set_config,
-                                 const SetConfiguration& adsp_set_config) {
-    // Skip the check of stategry and ase_cnt due to ADSP doesn't have the info
-    return (
-        software_set_config.direction == adsp_set_config.direction &&
-        software_set_config.device_cnt == adsp_set_config.device_cnt &&
-        IsLc3ConfigMatched(software_set_config.codec, adsp_set_config.codec));
+  bool IsAseConfigurationMatched(const AseConfiguration& software_ase_config,
+                                 const AseConfiguration& adsp_ase_config) {
+    // Skip the check of strategy due to ADSP doesn't have the info
+    return IsLc3ConfigMatched(software_ase_config.codec, adsp_ase_config.codec);
   }
 
   bool IsAudioSetConfigurationMatched(
       const AudioSetConfiguration* software_audio_set_conf,
       std::unordered_set<uint8_t>& offload_preference_set,
       const std::vector<AudioSetConfiguration>& adsp_capabilities) {
-    if (software_audio_set_conf->confs.empty()) {
+    if (software_audio_set_conf->confs.sink.empty() &&
+        software_audio_set_conf->confs.source.empty()) {
       return false;
     }
 
-    std::unordered_map<uint8_t, const SetConfiguration&>
-        software_set_conf_direction_map;
-
-    for (auto& software_set_conf : software_audio_set_conf->confs) {
-      // Checks offload preference supports the codec
-      if (offload_preference_set.find(
-              software_set_conf.codec.id.coding_format) ==
-          offload_preference_set.end()) {
-        return false;
+    // No match if the codec is not on the preference list
+    for (auto direction : {le_audio::types::kLeAudioDirectionSink,
+                           le_audio::types::kLeAudioDirectionSource}) {
+      for (auto const& conf : software_audio_set_conf->confs.get(direction)) {
+        if (offload_preference_set.find(conf.codec.id.coding_format) ==
+            offload_preference_set.end()) {
+          return false;
+        }
       }
-      software_set_conf_direction_map.emplace(software_set_conf.direction,
-                                              software_set_conf);
     }
 
     // Checks any of offload config matches the input audio set config
     for (const auto& adsp_audio_set_conf : adsp_capabilities) {
-      if (adsp_audio_set_conf.confs.size() !=
-          software_audio_set_conf->confs.size()) {
-        continue;
-      }
-
       size_t match_cnt = 0;
+      size_t expected_match_cnt = 0;
 
-      for (auto& adsp_set_conf : adsp_audio_set_conf.confs) {
-        auto it = software_set_conf_direction_map.find(adsp_set_conf.direction);
+      ASSERT_LOG(adsp_audio_set_conf.topology_info.has_value(),
+                 "ADSP capability is missing the topology information.");
 
-        if (it == software_set_conf_direction_map.end()) {
+      for (auto direction : {le_audio::types::kLeAudioDirectionSink,
+                             le_audio::types::kLeAudioDirectionSource}) {
+        if (software_audio_set_conf->topology_info->device_count.get(
+                direction) !=
+            adsp_audio_set_conf.topology_info->device_count.get(direction)) {
           continue;
         }
 
-        if (IsSetConfigurationMatched(it->second, adsp_set_conf)) {
-          match_cnt++;
+        auto const& software_set_ase_confs =
+            software_audio_set_conf->confs.get(direction);
+        auto const& adsp_set_ase_confs =
+            adsp_audio_set_conf.confs.get(direction);
+
+        if (!software_set_ase_confs.size() || !adsp_set_ase_confs.size()) {
+          continue;
+        }
+
+        // Check for number of ASEs mismatch
+        if (adsp_set_ase_confs.size() != software_set_ase_confs.size()) {
+          LOG_ERROR(
+              "%s: ADSP config size mismatches the software: %zu != %zu",
+              direction == types::kLeAudioDirectionSink ? "Sink" : "Source",
+              adsp_set_ase_confs.size(), software_set_ase_confs.size());
+          continue;
+        }
+
+        // The expected number of ASE configs, the ADSP config needs to match
+        expected_match_cnt += software_set_ase_confs.size();
+        if (expected_match_cnt == 0) {
+          continue;
+        }
+
+        // Check for matching configs
+        for (auto const& adsp_set_conf : adsp_set_ase_confs) {
+          for (auto const& software_set_conf : software_set_ase_confs) {
+            if (IsAseConfigurationMatched(software_set_conf, adsp_set_conf)) {
+              match_cnt++;
+              // Check the next adsp config if the first software config matches
+              break;
+            }
+          }
+        }
+        if (match_cnt != expected_match_cnt) {
+          break;
         }
       }
 
-      if (match_cnt == software_set_conf_direction_map.size()) {
+      // Check the match count
+      if (match_cnt == expected_match_cnt) {
         return true;
       }
     }
@@ -728,44 +763,54 @@ struct codec_manager_impl {
           ::bluetooth::le_audio::set_configurations::AudioSetConfiguration>&
           adsp_capabilities,
       const std::vector<btle_audio_codec_config_t>& offload_preference_set) {
-    LOG_DEBUG(" Print adsp_capabilities:");
+    LOG_DEBUG("Print adsp_capabilities:");
 
-    for (auto adsp : adsp_capabilities) {
-      LOG_DEBUG("%s, number of confs %d", adsp.name.c_str(),
-                (int)(adsp.confs.size()));
-      for (auto conf : adsp.confs) {
+    for (auto& adsp : adsp_capabilities) {
+      LOG_DEBUG("'%s':", adsp.name.c_str());
+      for (auto direction : {le_audio::types::kLeAudioDirectionSink,
+                             le_audio::types::kLeAudioDirectionSource}) {
         LOG_DEBUG(
-            "codecId: %d dir: %s, dev_cnt: %d ase_cnt: %d, strategy: %s, "
-            "sample_freq: %d, interval %d, channel_cnt: %d",
-            conf.codec.id.coding_format,
-            (conf.direction == types::kLeAudioDirectionSink ? "sink"
-                                                            : "source"),
-            conf.device_cnt, conf.ase_cnt,
-            getStrategyString(conf.strategy).c_str(),
-            conf.codec.GetSamplingFrequencyHz(), conf.codec.GetDataIntervalUs(),
-            conf.codec.GetChannelCountPerIsoStream());
+            "dir: %s: number of confs %d:",
+            (direction == types::kLeAudioDirectionSink ? "sink" : "source"),
+            (int)(adsp.confs.get(direction).size()));
+        for (auto conf : adsp.confs.sink) {
+          LOG_DEBUG(
+              "codecId: %d, sample_freq: %d, interval %d, channel_cnt: %d",
+              conf.codec.id.coding_format, conf.codec.GetSamplingFrequencyHz(),
+              conf.codec.GetDataIntervalUs(),
+              conf.codec.GetChannelCountPerIsoStream());
 
-        /* TODO: How to get bits_per_sample ? */
-        btle_audio_codec_config_t capa_to_add = {
-            .sample_rate = utils::translateToBtLeAudioCodecConfigSampleRate(
-                conf.codec.GetSamplingFrequencyHz()),
-            .bits_per_sample =
-                utils::translateToBtLeAudioCodecConfigBitPerSample(16),
-            .channel_count = utils::translateToBtLeAudioCodecConfigChannelCount(
-                conf.codec.GetChannelCountPerIsoStream()),
-            .frame_duration =
-                utils::translateToBtLeAudioCodecConfigFrameDuration(
-                    conf.codec.GetDataIntervalUs()),
-        };
+          /* TODO: How to get bits_per_sample ? */
+          btle_audio_codec_config_t capa_to_add = {
+              .codec_type = (conf.codec.id.coding_format ==
+                             types::kLeAudioCodingFormatLC3)
+                                ? btle_audio_codec_index_t::
+                                      LE_AUDIO_CODEC_INDEX_SOURCE_LC3
+                                : btle_audio_codec_index_t::
+                                      LE_AUDIO_CODEC_INDEX_SOURCE_INVALID,
+              .sample_rate = utils::translateToBtLeAudioCodecConfigSampleRate(
+                  conf.codec.GetSamplingFrequencyHz()),
+              .bits_per_sample =
+                  utils::translateToBtLeAudioCodecConfigBitPerSample(16),
+              .channel_count =
+                  utils::translateToBtLeAudioCodecConfigChannelCount(
+                      conf.codec.GetChannelCountPerIsoStream()),
+              .frame_duration =
+                  utils::translateToBtLeAudioCodecConfigFrameDuration(
+                      conf.codec.GetDataIntervalUs()),
+          };
 
-        if (conf.direction == types::kLeAudioDirectionSink) {
-          LOG_DEBUG("Adding output capa %d",
-                    static_cast<int>(codec_output_capa.size()));
-          codec_output_capa.push_back(capa_to_add);
-        } else {
-          LOG_DEBUG("Adding input capa %d",
-                    static_cast<int>(codec_input_capa.size()));
-          codec_input_capa.push_back(capa_to_add);
+          auto& capa_container = (direction == types::kLeAudioDirectionSink)
+                                     ? codec_output_capa
+                                     : codec_input_capa;
+          if (std::find(capa_container.begin(), capa_container.end(),
+                        capa_to_add) == capa_container.end()) {
+            LOG_DEBUG("Adding %s capa %d",
+                      (direction == types::kLeAudioDirectionSink) ? "output"
+                                                                  : "input",
+                      static_cast<int>(capa_container.size()));
+            capa_container.push_back(capa_to_add);
+          }
         }
       }
     }

@@ -228,7 +228,7 @@ bt_status_t btif_storage_load_bonded_devices(void);
  ******************************************************************************/
 
 bt_status_t btif_storage_add_hid_device_info(
-    RawAddress* remote_bd_addr, uint16_t attr_mask, uint8_t sub_class,
+    tAclLinkSpec* link_spec, uint16_t attr_mask, uint8_t sub_class,
     uint8_t app_id, uint16_t vendor_id, uint16_t product_id, uint16_t version,
     uint8_t ctry_code, uint16_t ssr_max_latency, uint16_t ssr_min_tout,
     uint16_t dl_len, uint8_t* dsc_list);
@@ -256,7 +256,7 @@ bt_status_t btif_storage_load_bonded_hid_info(void);
  *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-bt_status_t btif_storage_remove_hid_info(const RawAddress& remote_bd_addr);
+bt_status_t btif_storage_remove_hid_info(const tAclLinkSpec& link_spec);
 
 /** Loads information about bonded hearing aid devices */
 void btif_storage_load_bonded_hearing_aids();
@@ -433,7 +433,7 @@ bt_status_t btif_storage_remove_hidd(RawAddress* remote_bd_addr);
 // The device name (if found) is stored in |name|.
 // Returns true if the device name is found, othervise false.
 // Note: |name| should point to a buffer that can store string of length
-// |BTM_MAX_REM_BD_NAME_LEN|.
+// |BD_NAME_LEN|.
 bool btif_storage_get_stored_remote_name(const RawAddress& bd_addr, char* name);
 
 /******************************************************************************

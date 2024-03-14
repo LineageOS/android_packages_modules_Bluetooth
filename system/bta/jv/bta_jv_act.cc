@@ -987,6 +987,10 @@ static void bta_jv_l2cap_client_cback(uint16_t gap_handle, uint16_t event,
     case GAP_EVT_CONN_OPENED:
       evt_data.l2c_open.rem_bda = *GAP_ConnGetRemoteAddr(gap_handle);
       evt_data.l2c_open.tx_mtu = GAP_ConnGetRemMtuSize(gap_handle);
+      if (data != nullptr) {
+        evt_data.l2c_open.local_cid = data->l2cap_cids.local_cid;
+        evt_data.l2c_open.remote_cid = data->l2cap_cids.remote_cid;
+      }
       p_cb->state = BTA_JV_ST_CL_OPEN;
       p_cb->p_cback(BTA_JV_L2CAP_OPEN_EVT, &evt_data, p_cb->l2cap_socket_id);
       break;
@@ -1116,7 +1120,7 @@ void bta_jv_l2cap_close(uint32_t handle, tBTA_JV_L2C_CB* p_cb) {
  *
  ******************************************************************************/
 static void bta_jv_l2cap_server_cback(uint16_t gap_handle, uint16_t event,
-                                      tGAP_CB_DATA* /* data */) {
+                                      tGAP_CB_DATA* data) {
   tBTA_JV_L2C_CB* p_cb = &bta_jv_cb.l2c_cb[gap_handle];
   tBTA_JV evt_data;
   tBTA_JV_L2CAP_CBACK* p_cback;
@@ -1132,6 +1136,10 @@ static void bta_jv_l2cap_server_cback(uint16_t gap_handle, uint16_t event,
     case GAP_EVT_CONN_OPENED:
       evt_data.l2c_open.rem_bda = *GAP_ConnGetRemoteAddr(gap_handle);
       evt_data.l2c_open.tx_mtu = GAP_ConnGetRemMtuSize(gap_handle);
+      if (data != nullptr) {
+        evt_data.l2c_open.local_cid = data->l2cap_cids.local_cid;
+        evt_data.l2c_open.remote_cid = data->l2cap_cids.remote_cid;
+      }
       p_cb->state = BTA_JV_ST_SR_OPEN;
       p_cb->p_cback(BTA_JV_L2CAP_OPEN_EVT, &evt_data, p_cb->l2cap_socket_id);
       break;
