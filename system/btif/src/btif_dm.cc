@@ -504,7 +504,6 @@ static uint32_t get_cod(const RawAddress* remote_bdaddr) {
                              sizeof(uint32_t), &remote_cod);
   if (btif_storage_get_remote_device_property(
           (RawAddress*)remote_bdaddr, &prop_name) == BT_STATUS_SUCCESS) {
-    log::info("remote_cod=0x{:08x}", remote_cod);
     return remote_cod;
   }
 
@@ -698,23 +697,17 @@ static void btif_update_remote_properties(const RawAddress& bdaddr,
     num_properties++;
   }
 
+  uint32_t old_cod = get_cod(&bdaddr);
+
   /* class of device */
   cod = devclass2uint(dev_class);
-  if ((cod == 0) || (cod == COD_UNCLASSIFIED)) {
-    /* Try to retrieve cod from storage */
-    log::verbose("class of device (cod) is unclassified, checking storage");
-    BTIF_STORAGE_FILL_PROPERTY(&properties[num_properties],
-                               BT_PROPERTY_CLASS_OF_DEVICE, sizeof(cod), &cod);
-    status = btif_storage_get_remote_device_property(
-        &bdaddr, &properties[num_properties]);
-    log::verbose("cod retrieved from storage is 0x{:06x}", cod);
-    if (cod == 0) {
-      log::info("cod from storage is also unclassified");
-      cod = COD_UNCLASSIFIED;
-    }
-  } else {
-    log::info("class of device (cod) is 0x{:06x}", cod);
+  if ((cod == 0 || cod == COD_UNCLASSIFIED) && old_cod != 0) {
+    cod = old_cod;
   }
+
+  if (old_cod != cod)
+    log::info("{} CoD: 0x{:06x} -> 0x{:06x}", ADDRESS_TO_LOGGABLE_CSTR(bdaddr),
+              old_cod, cod);
 
   BTIF_STORAGE_FILL_PROPERTY(&properties[num_properties],
                              BT_PROPERTY_CLASS_OF_DEVICE, sizeof(cod), &cod);
@@ -1470,16 +1463,7 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event,
         GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
             status, bdaddr, 1, properties);
         /** Fix inquiry time too long @{ */
-        uint32_t cod = 0;
-        /* Check if we already have cod in our btif_storage cache */
-        BTIF_STORAGE_FILL_PROPERTY(&properties[2], BT_PROPERTY_CLASS_OF_DEVICE, sizeof(uint32_t), &cod);
-        if (btif_storage_get_remote_device_property(
-                        &bdaddr, &properties[2]) == BT_STATUS_SUCCESS) {
-          log::verbose("BTA_DM_NAME_READ_EVT, cod in storage=0x{:08x}", cod);
-        } else {
-          log::info("BTA_DM_NAME_READ_EVT, no cod in storage");
-          cod = 0;
-        }
+        uint32_t cod = get_cod(&bdaddr);
         if (cod != 0) {
           BTIF_STORAGE_FILL_PROPERTY(&properties[1], BT_PROPERTY_BDADDR, sizeof(bdaddr), &bdaddr);
           BTIF_STORAGE_FILL_PROPERTY(&properties[2], BT_PROPERTY_CLASS_OF_DEVICE, sizeof(uint32_t), &cod);
@@ -1547,8 +1531,13 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event,
 
         /* DEV_CLASS */
         uint32_t cod = devclass2uint(p_search_data->inq_res.dev_class);
-        log::verbose("cod is 0x{:06x}", cod);
+
         if (cod != 0) {
+          uint32_t old_cod = get_cod(&bdaddr);
+          if (old_cod != cod)
+            log::info("{} CoD: 0x{:06x} -> 0x{:06x}",
+                      ADDRESS_TO_LOGGABLE_CSTR(bdaddr), old_cod, cod);
+
           BTIF_STORAGE_FILL_PROPERTY(&properties[num_properties],
                                      BT_PROPERTY_CLASS_OF_DEVICE, sizeof(cod),
                                      &cod);
