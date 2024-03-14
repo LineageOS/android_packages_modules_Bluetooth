@@ -1,5 +1,8 @@
 use crate::bindings::root as bindings;
-use crate::btif::{BluetoothInterface, BtStatus, RawAddress, SupportedProfiles, ToggleableProfile};
+use crate::btif::{
+    BluetoothInterface, BtAddrType, BtStatus, BtTransport, RawAddress, SupportedProfiles,
+    ToggleableProfile,
+};
 use crate::ccall;
 use crate::profiles::hid_host::bindings::bthh_interface_t;
 use crate::topstack::get_dispatchers;
@@ -103,13 +106,13 @@ fn convert_report(count: i32, raw: *mut u8) -> Vec<u8> {
 
 #[derive(Debug)]
 pub enum HHCallbacks {
-    ConnectionState(RawAddress, BthhConnectionState),
-    VirtualUnplug(RawAddress, BthhStatus),
-    HidInfo(RawAddress, BthhHidInfo),
-    ProtocolMode(RawAddress, BthhStatus, BthhProtocolMode),
-    IdleTime(RawAddress, BthhStatus, i32),
-    GetReport(RawAddress, BthhStatus, Vec<u8>, i32),
-    Handshake(RawAddress, BthhStatus),
+    ConnectionState(RawAddress, BtAddrType, BtTransport, BthhConnectionState),
+    VirtualUnplug(RawAddress, BtAddrType, BtTransport, BthhStatus),
+    HidInfo(RawAddress, BtAddrType, BtTransport, BthhHidInfo),
+    ProtocolMode(RawAddress, BtAddrType, BtTransport, BthhStatus, BthhProtocolMode),
+    IdleTime(RawAddress, BtAddrType, BtTransport, BthhStatus, i32),
+    GetReport(RawAddress, BtAddrType, BtTransport, BthhStatus, Vec<u8>, i32),
+    Handshake(RawAddress, BtAddrType, BtTransport, BthhStatus),
 }
 
 pub struct HHCallbacksDispatcher {
@@ -119,33 +122,33 @@ pub struct HHCallbacksDispatcher {
 type HHCb = Arc<Mutex<HHCallbacksDispatcher>>;
 
 cb_variant!(HHCb, connection_state_cb -> HHCallbacks::ConnectionState,
-*mut RawAddress, bindings::bthh_connection_state_t -> BthhConnectionState, {
+*mut RawAddress, u8 -> BtAddrType, u8 -> BtTransport, bindings::bthh_connection_state_t -> BthhConnectionState, {
     let _0 = unsafe { *_0 };
 });
 cb_variant!(HHCb, virtual_unplug_cb -> HHCallbacks::VirtualUnplug,
-*mut RawAddress, bindings::bthh_status_t -> BthhStatus, {
+*mut RawAddress, u8 -> BtAddrType, u8 -> BtTransport, bindings::bthh_status_t -> BthhStatus, {
     let _0 = unsafe { *_0 };
 });
 cb_variant!(HHCb, hid_info_cb -> HHCallbacks::HidInfo,
-*mut RawAddress, bindings::bthh_hid_info_t -> BthhHidInfo, {
+*mut RawAddress, u8 -> BtAddrType, u8 -> BtTransport, bindings::bthh_hid_info_t -> BthhHidInfo, {
     let _0 = unsafe { *_0 };
 });
 cb_variant!(HHCb, protocol_mode_cb -> HHCallbacks::ProtocolMode,
-*mut RawAddress, bindings::bthh_status_t -> BthhStatus,
+*mut RawAddress, u8 -> BtAddrType, u8 -> BtTransport, bindings::bthh_status_t -> BthhStatus,
 bindings::bthh_protocol_mode_t -> BthhProtocolMode, {
     let _0 = unsafe { *_0 };
 });
 cb_variant!(HHCb, idle_time_cb -> HHCallbacks::IdleTime,
-*mut RawAddress, bindings::bthh_status_t -> BthhStatus, i32, {
+*mut RawAddress, u8 -> BtAddrType, u8 -> BtTransport, bindings::bthh_status_t -> BthhStatus, i32, {
     let _0 = unsafe { *_0 };
 });
 cb_variant!(HHCb, get_report_cb -> HHCallbacks::GetReport,
-*mut RawAddress, bindings::bthh_status_t -> BthhStatus, *mut u8, i32, {
+*mut RawAddress, u8 -> BtAddrType, u8 -> BtTransport, bindings::bthh_status_t -> BthhStatus, *mut u8, i32, {
     let _0 = unsafe { *_0 };
-    let _2 = convert_report(_3, _2);
+    let _4 = convert_report(_5, _4);
 });
 cb_variant!(HHCb, handshake_cb -> HHCallbacks::Handshake,
-*mut RawAddress, bindings::bthh_status_t -> BthhStatus, {
+*mut RawAddress, u8 -> BtAddrType, u8 -> BtTransport, bindings::bthh_status_t -> BthhStatus, {
     let _0 = unsafe { *_0 };
 });
 
@@ -230,67 +233,155 @@ impl HidHost {
     }
 
     #[profile_enabled_or(BtStatus::NotReady)]
-    pub fn connect(&self, addr: &mut RawAddress) -> BtStatus {
+    pub fn connect(
+        &self,
+        addr: &mut RawAddress,
+        address_type: BtAddrType,
+        transport: BtTransport,
+    ) -> BtStatus {
         let addr_ptr = LTCheckedPtrMut::from_ref(addr);
-        BtStatus::from(ccall!(self, connect, addr_ptr.into()))
+        BtStatus::from(ccall!(
+            self,
+            connect,
+            addr_ptr.into(),
+            address_type.into(),
+            transport.into()
+        ))
     }
 
     #[profile_enabled_or(BtStatus::NotReady)]
-    pub fn disconnect(&self, addr: &mut RawAddress) -> BtStatus {
+    pub fn disconnect(
+        &self,
+        addr: &mut RawAddress,
+        address_type: BtAddrType,
+        transport: BtTransport,
+    ) -> BtStatus {
         let addr_ptr = LTCheckedPtrMut::from_ref(addr);
-        BtStatus::from(ccall!(self, disconnect, addr_ptr.into()))
+        BtStatus::from(ccall!(
+            self,
+            disconnect,
+            addr_ptr.into(),
+            address_type.into(),
+            transport.into()
+        ))
     }
 
     #[profile_enabled_or(BtStatus::NotReady)]
-    pub fn virtual_unplug(&self, addr: &mut RawAddress) -> BtStatus {
+    pub fn virtual_unplug(
+        &self,
+        addr: &mut RawAddress,
+        address_type: BtAddrType,
+        transport: BtTransport,
+    ) -> BtStatus {
         let addr_ptr = LTCheckedPtrMut::from_ref(addr);
-        BtStatus::from(ccall!(self, virtual_unplug, addr_ptr.into()))
+        BtStatus::from(ccall!(
+            self,
+            virtual_unplug,
+            addr_ptr.into(),
+            address_type.into(),
+            transport.into()
+        ))
     }
 
     #[profile_enabled_or(BtStatus::NotReady)]
-    pub fn set_info(&self, addr: &mut RawAddress, info: BthhHidInfo) -> BtStatus {
+    pub fn set_info(
+        &self,
+        addr: &mut RawAddress,
+        address_type: BtAddrType,
+        transport: BtTransport,
+        info: BthhHidInfo,
+    ) -> BtStatus {
         let addr_ptr = LTCheckedPtrMut::from_ref(addr);
-        BtStatus::from(ccall!(self, set_info, addr_ptr.into(), info))
+        BtStatus::from(ccall!(
+            self,
+            set_info,
+            addr_ptr.into(),
+            address_type.into(),
+            transport.into(),
+            info
+        ))
     }
 
     #[profile_enabled_or(BtStatus::NotReady)]
-    pub fn get_protocol(&self, addr: &mut RawAddress, mode: BthhProtocolMode) -> BtStatus {
+    pub fn get_protocol(
+        &self,
+        addr: &mut RawAddress,
+        address_type: BtAddrType,
+        transport: BtTransport,
+        mode: BthhProtocolMode,
+    ) -> BtStatus {
         let addr_ptr = LTCheckedPtrMut::from_ref(addr);
         BtStatus::from(ccall!(
             self,
             get_protocol,
             addr_ptr.into(),
+            address_type.into(),
+            transport.into(),
             bindings::bthh_protocol_mode_t::from(mode)
         ))
     }
 
     #[profile_enabled_or(BtStatus::NotReady)]
-    pub fn set_protocol(&self, addr: &mut RawAddress, mode: BthhProtocolMode) -> BtStatus {
+    pub fn set_protocol(
+        &self,
+        addr: &mut RawAddress,
+        address_type: BtAddrType,
+        transport: BtTransport,
+        mode: BthhProtocolMode,
+    ) -> BtStatus {
         let addr_ptr = LTCheckedPtrMut::from_ref(addr);
         BtStatus::from(ccall!(
             self,
             set_protocol,
             addr_ptr.into(),
+            address_type.into(),
+            transport.into(),
             bindings::bthh_protocol_mode_t::from(mode)
         ))
     }
 
     #[profile_enabled_or(BtStatus::NotReady)]
-    pub fn get_idle_time(&self, addr: &mut RawAddress) -> BtStatus {
+    pub fn get_idle_time(
+        &self,
+        addr: &mut RawAddress,
+        address_type: BtAddrType,
+        transport: BtTransport,
+    ) -> BtStatus {
         let addr_ptr = LTCheckedPtrMut::from_ref(addr);
-        BtStatus::from(ccall!(self, get_idle_time, addr_ptr.into()))
+        BtStatus::from(ccall!(
+            self,
+            get_idle_time,
+            addr_ptr.into(),
+            address_type.into(),
+            transport.into()
+        ))
     }
 
     #[profile_enabled_or(BtStatus::NotReady)]
-    pub fn set_idle_time(&self, addr: &mut RawAddress, idle_time: u8) -> BtStatus {
+    pub fn set_idle_time(
+        &self,
+        addr: &mut RawAddress,
+        address_type: BtAddrType,
+        transport: BtTransport,
+        idle_time: u8,
+    ) -> BtStatus {
         let addr_ptr = LTCheckedPtrMut::from_ref(addr);
-        BtStatus::from(ccall!(self, set_idle_time, addr_ptr.into(), idle_time))
+        BtStatus::from(ccall!(
+            self,
+            set_idle_time,
+            addr_ptr.into(),
+            address_type.into(),
+            transport.into(),
+            idle_time
+        ))
     }
 
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn get_report(
         &self,
         addr: &mut RawAddress,
+        address_type: BtAddrType,
+        transport: BtTransport,
         report_type: BthhReportType,
         report_id: u8,
         buffer_size: i32,
@@ -300,6 +391,8 @@ impl HidHost {
             self,
             get_report,
             addr_ptr.into(),
+            address_type.into(),
+            transport.into(),
             bindings::bthh_report_type_t::from(report_type),
             report_id,
             buffer_size
@@ -310,6 +403,8 @@ impl HidHost {
     pub fn set_report(
         &self,
         addr: &mut RawAddress,
+        address_type: BtAddrType,
+        transport: BtTransport,
         report_type: BthhReportType,
         report: &mut [u8],
     ) -> BtStatus {
@@ -319,19 +414,29 @@ impl HidHost {
             self,
             set_report,
             addr_ptr.into(),
+            address_type.into(),
+            transport.into(),
             bindings::bthh_report_type_t::from(report_type),
             report_ptr.cast_into::<std::os::raw::c_char>()
         ))
     }
 
     #[profile_enabled_or(BtStatus::NotReady)]
-    pub fn send_data(&mut self, addr: &mut RawAddress, data: &mut [u8]) -> BtStatus {
+    pub fn send_data(
+        &mut self,
+        addr: &mut RawAddress,
+        address_type: BtAddrType,
+        transport: BtTransport,
+        data: &mut [u8],
+    ) -> BtStatus {
         let addr_ptr = LTCheckedPtrMut::from_ref(addr);
         let data_ptr = LTCheckedPtrMut::from(data);
         BtStatus::from(ccall!(
             self,
             send_data,
             addr_ptr.into(),
+            address_type.into(),
+            transport.into(),
             data_ptr.cast_into::<std::os::raw::c_char>()
         ))
     }
