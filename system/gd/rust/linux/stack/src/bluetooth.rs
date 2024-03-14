@@ -2789,10 +2789,15 @@ impl IBluetooth for Bluetooth {
                                 // TODO(b/328675014): Use BtAddrType
                                 // and BtTransport from
                                 // BluetoothDevice instead of default
+
+                                // TODO(b/329837967): Determine
+                                // correct reconnection behavior based
+                                // on device instead of the default
                                 self.hh.as_ref().unwrap().disconnect(
                                     &mut addr.unwrap(),
                                     BtAddrType::Public,
                                     BtTransport::Auto,
+                                    /*reconnect_allowed=*/ true,
                                 );
                             }
 
@@ -2970,7 +2975,14 @@ impl BtifHHCallbacks for Bluetooth {
                 "[{}]: Rejecting a unbonded device's attempt to connect to HID/HOG profiles",
                 DisplayAddress(&address)
             );
-            self.hh.as_ref().unwrap().disconnect(&mut address, address_type, transport);
+            // TODO(b/329837967): Determine correct reconnection
+            // behavior based on device instead of the default
+            self.hh.as_ref().unwrap().disconnect(
+                &mut address,
+                address_type,
+                transport,
+                /*reconnect_allowed=*/ true,
+            );
         }
     }
 

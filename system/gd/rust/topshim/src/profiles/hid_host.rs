@@ -22,6 +22,7 @@ pub enum BthhConnectionState {
     Connecting,
     Disconnected,
     Disconnecting,
+    Accepting,
     Unknown = 0xff,
 }
 
@@ -255,6 +256,7 @@ impl HidHost {
         addr: &mut RawAddress,
         address_type: BtAddrType,
         transport: BtTransport,
+        reconnect_allowed: bool,
     ) -> BtStatus {
         let addr_ptr = LTCheckedPtrMut::from_ref(addr);
         BtStatus::from(ccall!(
@@ -262,7 +264,8 @@ impl HidHost {
             disconnect,
             addr_ptr.into(),
             address_type.into(),
-            transport.into()
+            transport.into(),
+            reconnect_allowed
         ))
     }
 
