@@ -743,7 +743,7 @@ void bta_hh_co_get_rpt_rsp(uint8_t dev_handle, uint8_t status,
  *                  information in NV if device is bonded and load it back when
  *                  stack reboot.
  *
- * Parameters       remote_bda  - remote device address
+ * Parameters       link_spec   - ACL link specification
  *                  p_entry     - report entry pointer
  *                  app_id      - application id
  *
@@ -786,7 +786,7 @@ void bta_hh_le_co_rpt_info(const tAclLinkSpec& link_spec,
  *                  is completed, bta_hh_le_co_cache_load() is called by the
  *                  application.
  *
- * Parameters       remote_bda  - remote device address
+ * Parameters       link_spec   - ACL link specification
  *                  p_num_rpt   - number of cached report
  *                  app_id      - application id
  *
@@ -829,7 +829,7 @@ tBTA_HH_RPT_CACHE_ENTRY* bta_hh_le_co_cache_load(const tAclLinkSpec& link_spec,
  *
  * Description      This callout function is to reset the HOGP device cache.
  *
- * Parameters       remote_bda  - remote device address
+ * Parameters       link_spec  - ACL link specification
  *
  * Returns          none
  *
