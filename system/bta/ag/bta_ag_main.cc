@@ -463,7 +463,7 @@ void bta_ag_api_disable() {
     }
   }
 
-  if (IS_FLAG_ENABLED(is_sco_managed_by_audio)) {
+  if (bta_ag_is_sco_managed_by_audio()) {
     // Stop session if not done
     bta_clear_active_device();
   }
