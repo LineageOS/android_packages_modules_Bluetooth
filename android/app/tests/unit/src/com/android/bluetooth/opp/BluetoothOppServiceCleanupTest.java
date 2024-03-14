@@ -109,11 +109,11 @@ public class BluetoothOppServiceCleanupTest {
                         COMPONENT_ENABLED_STATE_ENABLED,
                         DONT_KILL_APP);
 
-        ComponentName activityName =
+        ComponentName providerName =
                 new ComponentName(mTargetContext, BluetoothOppProvider.class.getCanonicalName());
         mTargetContext
                 .getPackageManager()
                 .setComponentEnabledSetting(
-                        activityName, COMPONENT_ENABLED_STATE_ENABLED, DONT_KILL_APP);
+                        providerName, COMPONENT_ENABLED_STATE_ENABLED, DONT_KILL_APP);
     }
 }
