@@ -502,7 +502,7 @@ void bta_hh_connect(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
   bt_property_t remote_properties = {BT_PROPERTY_UUIDS, sizeof(remote_uuids),
                                      &remote_uuids};
   const RawAddress& bd_addr = p_data->api_conn.link_spec.addrt.bda;
-
+  p_cb->link_spec = p_data->api_conn.link_spec;
   // Find the device type
   tBT_DEVICE_TYPE dev_type;
   tBLE_ADDR_TYPE addr_type;
@@ -553,6 +553,11 @@ void bta_hh_connect(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
       "dev_type:{}, is_le_device:{}",
       ADDRESS_TO_LOGGABLE_CSTR(bd_addr), bredr, hid_available, le_acl,
       hogp_available, dev_type, p_cb->is_le_device);
+
+  // TODO: Use requested address type and transport
+  p_cb->link_spec.addrt.type = addr_type;
+  p_cb->link_spec.transport =
+      p_cb->is_le_device ? BT_TRANSPORT_LE : BT_TRANSPORT_BR_EDR;
 
   p_cb->mode = p_data->api_conn.mode;
   bta_hh_cb.p_cur = p_cb;
@@ -641,8 +646,7 @@ void bta_hh_open_cmpl_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
                      "%s initiator:%s", (p_cb->is_le_device) ? "le" : "classic",
                      (p_cb->incoming_conn) ? "remote" : "local"));
 
-  if (!p_cb->is_le_device)
-  {
+  if (!p_cb->is_le_device) {
     /* inform role manager */
     bta_sys_conn_open(BTA_ID_HH, p_cb->app_id, p_cb->link_spec.addrt.bda);
 
@@ -1005,7 +1009,8 @@ void bta_hh_maint_dev_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
       dev_info.link_spec = p_dev_info->link_spec;
       /* initialize callback data */
       if (p_cb->hid_handle == BTA_HH_INVALID_HANDLE) {
-        if (BTM_UseLeLink(p_data->api_conn.link_spec.addrt.bda)) {
+        if (BTM_UseLeLink(p_data->api_maintdev.link_spec.addrt.bda)) {
+          p_cb->link_spec.transport = BT_TRANSPORT_LE;
           p_cb->is_le_device = true;
           dev_info.handle = bta_hh_le_add_device(p_cb, p_dev_info);
           if (dev_info.handle != BTA_HH_INVALID_HANDLE)
@@ -1049,8 +1054,7 @@ void bta_hh_maint_dev_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
         bta_hh_le_remove_dev_bg_conn(p_cb);
         bta_hh_sm_execute(p_cb, BTA_HH_API_CLOSE_EVT, NULL);
         bta_hh_clean_up_kdev(p_cb);
-      } else
-      {
+      } else {
         if (HID_HostRemoveDev(dev_info.handle) == HID_SUCCESS) {
           dev_info.status = BTA_HH_OK;
 
