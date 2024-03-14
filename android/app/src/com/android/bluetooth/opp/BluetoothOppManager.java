@@ -51,7 +51,9 @@ import android.util.Pair;
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
+import com.android.bluetooth.Utils;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
@@ -502,7 +504,11 @@ public class BluetoothOppManager {
                 }
 
                 values.put(BluetoothShare.MIMETYPE, contentType);
-                values.put(BluetoothShare.DESTINATION, mRemoteDevice.getIdentityAddress());
+                values.put(
+                        BluetoothShare.DESTINATION,
+                        Flags.identityAddressNullIfUnknown()
+                                ? Utils.getBrEdrAddress(mRemoteDevice)
+                                : mRemoteDevice.getIdentityAddress());
                 values.put(BluetoothShare.TIMESTAMP, ts);
                 if (mIsHandoverInitiated) {
                     values.put(BluetoothShare.USER_CONFIRMATION,
@@ -524,7 +530,11 @@ public class BluetoothOppManager {
             ContentValues values = new ContentValues();
             values.put(BluetoothShare.URI, mUri);
             values.put(BluetoothShare.MIMETYPE, mTypeOfSingleFile);
-            values.put(BluetoothShare.DESTINATION, mRemoteDevice.getIdentityAddress());
+            values.put(
+                    BluetoothShare.DESTINATION,
+                    Flags.identityAddressNullIfUnknown()
+                            ? Utils.getBrEdrAddress(mRemoteDevice)
+                            : mRemoteDevice.getIdentityAddress());
             if (mIsHandoverInitiated) {
                 values.put(BluetoothShare.USER_CONFIRMATION,
                         BluetoothShare.USER_CONFIRMATION_HANDOVER_CONFIRMED);
