@@ -63,6 +63,10 @@
 #include "stack/include/main_thread.h"
 #include "types/raw_address.h"
 
+#ifdef __ANDROID__
+#include <android/sysprop/BluetoothProperties.sysprop.h>
+#endif
+
 using namespace bluetooth;
 
 /*****************************************************************************
@@ -3465,7 +3469,27 @@ bool btif_av_both_enable(void) {
   return (btif_av_sink.Enabled() && btif_av_source.Enabled());
 }
 
+bool is_a2dp_source_property_enabled(void) {
+#ifdef __ANDROID__
+  return android::sysprop::BluetoothProperties::isProfileA2dpSourceEnabled()
+      .value_or(false);
+#else
+  return false;
+#endif
+}
+
+bool is_a2dp_sink_property_enabled(void) {
+#ifdef __ANDROID__
+  return android::sysprop::BluetoothProperties::isProfileA2dpSinkEnabled()
+      .value_or(false);
+#else
+  return false;
+#endif
+}
 bool btif_av_src_sink_coexist_enabled(void) {
+  if (IS_FLAG_ENABLED(a2dp_concurrent_source_sink)) {
+    return is_a2dp_sink_property_enabled() && is_a2dp_source_property_enabled();
+  }
   return GET_SYSPROP(A2dp, src_sink_coexist, false);
 }
 
