@@ -77,6 +77,8 @@ typedef struct l2cap_socket {
   int64_t tx_bytes;
   // Cumulative number of bytes received on this socket
   int64_t rx_bytes;
+  uint16_t local_cid;   // The local CID
+  uint16_t remote_cid;  // The remote CID
 } l2cap_socket;
 
 static void btsock_l2cap_server_listen(l2cap_socket* sock);
@@ -374,7 +376,8 @@ static bool send_app_err_code(l2cap_socket* sock, tBTA_JV_L2CAP_REASON code) {
 
 static bool send_app_connect_signal(int fd, const RawAddress* addr, int channel,
                                     int status, int send_fd, uint16_t rx_mtu,
-                                    uint16_t tx_mtu) {
+                                    uint16_t tx_mtu, uint16_t local_cid,
+                                    uint16_t remote_cid) {
   sock_connect_signal_t cs;
   cs.size = sizeof(cs);
   cs.bd_addr = *addr;
@@ -382,6 +385,8 @@ static bool send_app_connect_signal(int fd, const RawAddress* addr, int channel,
   cs.status = status;
   cs.max_rx_packet_size = rx_mtu;
   cs.max_tx_packet_size = tx_mtu;
+  cs.l2cap_lcid = local_cid;
+  cs.l2cap_rcid = remote_cid;
   if (send_fd != -1) {
     if (sock_send_fd(fd, (const uint8_t*)&cs, sizeof(cs), send_fd) ==
         sizeof(cs))
@@ -472,6 +477,8 @@ static void on_srv_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
       -1; /* We should no longer associate this handle with the server socket */
   accept_rs->is_le_coc = sock->is_le_coc;
   accept_rs->tx_mtu = sock->tx_mtu = p_open->tx_mtu;
+  accept_rs->local_cid = p_open->local_cid;
+  accept_rs->remote_cid = p_open->remote_cid;
 
   /* Swap IDs to hand over the GAP connection to the accepted socket, and start
      a new server on the newly create socket ID. */
@@ -497,7 +504,8 @@ static void on_srv_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
   btsock_thread_add_fd(pth, accept_rs->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD,
                        accept_rs->id);
   send_app_connect_signal(sock->our_fd, &accept_rs->addr, sock->channel, 0,
-                          accept_rs->app_fd, sock->rx_mtu, p_open->tx_mtu);
+                          accept_rs->app_fd, sock->rx_mtu, p_open->tx_mtu,
+                          accept_rs->local_cid, accept_rs->remote_cid);
   accept_rs->app_fd =
       -1;  // The fd is closed after sent to app in send_app_connect_signal()
   // But for some reason we still leak a FD - either the server socket
@@ -509,6 +517,8 @@ static void on_cl_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
                                       l2cap_socket* sock) {
   sock->addr = p_open->rem_bda;
   sock->tx_mtu = p_open->tx_mtu;
+  sock->local_cid = p_open->local_cid;
+  sock->remote_cid = p_open->remote_cid;
 
   if (!send_app_psm_or_chan_l(sock)) {
     log::error("Unable to send l2cap socket to application socket_id:{}",
@@ -517,7 +527,8 @@ static void on_cl_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
   }
 
   if (!send_app_connect_signal(sock->our_fd, &sock->addr, sock->channel, 0, -1,
-                               sock->rx_mtu, p_open->tx_mtu)) {
+                               sock->rx_mtu, p_open->tx_mtu, sock->local_cid,
+                               sock->remote_cid)) {
     log::error("Unable to connect l2cap socket to application socket_id:{}",
                sock->id);
     return;

@@ -52,6 +52,8 @@ typedef struct {
   // The reader must read using a buffer of at least this size to avoid
   // loosing data. (L2CAP only)
   unsigned short max_rx_packet_size;
+  unsigned short l2cap_lcid;
+  unsigned short l2cap_rcid;
 } __attribute__((packed)) sock_connect_signal_t;
 
 typedef struct {

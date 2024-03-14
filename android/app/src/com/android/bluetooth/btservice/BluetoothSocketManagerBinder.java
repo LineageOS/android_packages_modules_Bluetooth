@@ -19,6 +19,7 @@ package com.android.bluetooth.btservice;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.bluetooth.IBluetoothSocketManager;
+import android.content.AttributionSource;
 import android.os.Binder;
 import android.os.ParcelFileDescriptor;
 import android.os.ParcelUuid;
@@ -95,6 +96,21 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
 
         mService.getNative()
                 .requestMaximumTxDataLength(Utils.getBytesFromAddress(device.getAddress()));
+    }
+
+    @Override
+    public boolean checkPermissionForL2capChannelInfo(AttributionSource source) {
+        AdapterService service = mService;
+        if (service == null
+                || !Utils.callerIsSystemOrActiveOrManagedUser(
+                service, TAG, "checkPermissionForL2capChannelInfo")
+                || !Utils.checkConnectPermissionForDataDelivery(
+                service, source,
+                "BluetoothSocketManagerBinder checkPermissionForL2capChannelInfo")) {
+            return false;
+        }
+        Utils.enforceBluetoothPrivilegedPermission(service);
+        return true;
     }
 
     private void enforceActiveUser() {
