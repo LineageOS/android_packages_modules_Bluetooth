@@ -119,6 +119,7 @@ void VectorField::GenExtractor(std::ostream& s, int num_leading_bits, bool for_s
   }
   s << "while (";
   if (size_field_ != nullptr && size_field_->GetFieldType() == CountField::kFieldType) {
+    s << "(" << element_field_->GetName() << "_count > 0) && ";
     s << "(" << element_field_->GetName() << "_count-- > 0) && ";
   }
   if (!element_size_.empty()) {
