@@ -1001,7 +1001,9 @@ public class BassClientService extends ProfileService {
 
         sEventLogger.logd(
                 TAG,
-                "connectionStateChanged: fromState= "
+                "connectionStateChanged: device: "
+                        + device
+                        + ", fromState= "
                         + BluetoothProfile.getConnectionStateName(fromState)
                         + ", toState= "
                         + BluetoothProfile.getConnectionStateName(toState));
@@ -1447,7 +1449,8 @@ public class BassClientService extends ProfileService {
         }
 
         synchronized (mStateMachines) {
-            sEventLogger.logd(TAG, "Select Broadcast Source");
+            sEventLogger.logd(
+                    TAG, "Select Broadcast Source: sink: " + sink + ", result: " + result);
 
             BassClientStateMachine stateMachine = getOrCreateStateMachine(sink);
             if (stateMachine == null) {
@@ -1594,7 +1597,12 @@ public class BassClientService extends ProfileService {
             message.obj = sourceMetadata;
             stateMachine.sendMessage(message);
             if (code != null && code.length != 0) {
-                sEventLogger.logd(TAG, "Set Broadcast Code (Add Source context)");
+                sEventLogger.logd(
+                        TAG,
+                        "Set Broadcast Code (Add Source context): device: "
+                                + device
+                                + ", broadcastId: "
+                                + sourceMetadata.getBroadcastId());
 
                 message = stateMachine.obtainMessage(BassClientStateMachine.SET_BCAST_CODE);
                 message.obj = sourceMetadata;
@@ -1681,7 +1689,12 @@ public class BassClientService extends ProfileService {
             message.obj = updatedMetadata;
             stateMachine.sendMessage(message);
             if (code != null && code.length != 0) {
-                sEventLogger.logd(TAG, "Set Broadcast Code (Modify Source context)");
+                sEventLogger.logd(
+                        TAG,
+                        "Set Broadcast Code (Modify Source context), device: "
+                                + device
+                                + ", sourceId: "
+                                + sourceId);
                 message = stateMachine.obtainMessage(BassClientStateMachine.SET_BCAST_CODE);
                 message.obj = updatedMetadata;
                 message.arg1 = BassClientStateMachine.ARGTYPE_METADATA;
@@ -2313,7 +2326,7 @@ public class BassClientService extends ProfileService {
             sEventLogger.logd(
                     TAG,
                     "notifySourceAdded: "
-                            + "source: "
+                            + "sink: "
                             + sink
                             + ", sourceId: "
                             + recvState.getSourceId()
@@ -2327,7 +2340,13 @@ public class BassClientService extends ProfileService {
         void notifySourceAddFailed(BluetoothDevice sink, BluetoothLeBroadcastMetadata source,
                 int reason) {
             sEventLogger.loge(
-                    TAG, "notifySourceAddFailed: " + ", source: " + sink + ", reason: " + reason);
+                    TAG,
+                    "notifySourceAddFailed: sink: "
+                            + sink
+                            + ", source: "
+                            + source
+                            + ", reason: "
+                            + reason);
             ObjParams param = new ObjParams(sink, source);
             obtainMessage(MSG_SOURCE_ADDED_FAILED, reason, 0, param).sendToTarget();
         }
@@ -2336,7 +2355,7 @@ public class BassClientService extends ProfileService {
             sEventLogger.logd(
                     TAG,
                     "notifySourceModified: "
-                            + "source: "
+                            + "sink: "
                             + sink
                             + ", sourceId: "
                             + sourceId
@@ -2348,7 +2367,12 @@ public class BassClientService extends ProfileService {
         void notifySourceModifyFailed(BluetoothDevice sink, int sourceId, int reason) {
             sEventLogger.loge(
                     TAG,
-                    "notifySourceModifyFailed: " + ", source: " + sink + ", reason: " + reason);
+                    "notifySourceModifyFailed: sink: "
+                            + sink
+                            + ", sourceId: "
+                            + sourceId
+                            + ", reason: "
+                            + reason);
             obtainMessage(MSG_SOURCE_MODIFIED_FAILED, reason, sourceId, sink).sendToTarget();
         }
 
@@ -2356,7 +2380,7 @@ public class BassClientService extends ProfileService {
             sEventLogger.logd(
                     TAG,
                     "notifySourceRemoved: "
-                            + "source: "
+                            + "sink: "
                             + sink
                             + ", sourceId: "
                             + sourceId
@@ -2369,7 +2393,7 @@ public class BassClientService extends ProfileService {
             sEventLogger.loge(
                     TAG,
                     "notifySourceRemoveFailed: "
-                            + ", source: "
+                            + "sink: "
                             + sink
                             + ", sourceId: "
                             + sourceId
@@ -2392,7 +2416,7 @@ public class BassClientService extends ProfileService {
             sEventLogger.logd(
                     TAG,
                     "notifyReceiveStateChanged: "
-                            + "source: "
+                            + "sink: "
                             + sink
                             + ", state: SRC ID: "
                             + state.getSourceId()
