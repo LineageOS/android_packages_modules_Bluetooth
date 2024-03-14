@@ -306,6 +306,7 @@ cc_binary {
     ],
     static_libs: [
         "breakpad_client",
+        "libPlatformProperties",
         "libbluetooth-dumpsys",
         "libbluetooth-gdx",
         "libbluetooth-protos",
@@ -325,7 +326,6 @@ cc_binary {
         "libosi",
     ],
     shared_libs: [
-        "libPlatformProperties",
         "libbase",
         "libcrypto",
         "libgrpc++",
