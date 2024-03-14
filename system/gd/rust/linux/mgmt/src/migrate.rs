@@ -47,6 +47,25 @@ struct LtkInfo {
 }
 
 impl LtkInfo {
+    // BlueZ has 5 valid possibilities of auth (b/329392926).
+    // For simplicity, we only map it to the 2 values Floss supported.
+    // This way we can't distinguish whether the device is using legacy or secure pairing.
+    fn auth_from_bluez(bluez_auth: u8) -> u8 {
+        match bluez_auth {
+            0 | 2 | 4 => 1, // unauthenticated
+            1 | 3 => 2,     // authenticated
+            _ => 0,         // invalid
+        }
+    }
+
+    fn auth_to_bluez(floss_auth: u8) -> u8 {
+        match floss_auth {
+            1 => 2, // unauthenticated, secure pairing
+            2 => 3, // authenticated, secure pairing
+            _ => 5, // invalid
+        }
+    }
+
     fn new_from_bluez(bluez_conf: &Ini, sec: &str) -> Self {
         LtkInfo {
             key: u128::from_str_radix(bluez_conf.get(sec, "Key").unwrap_or_default().as_str(), 16)
@@ -61,11 +80,13 @@ impl LtkInfo {
                 .unwrap_or_default()
                 .parse::<u16>()
                 .unwrap_or_default(),
-            auth: bluez_conf
-                .get(sec, "Authenticated")
-                .unwrap_or_default()
-                .parse::<u8>()
-                .unwrap_or_default(),
+            auth: LtkInfo::auth_from_bluez(
+                bluez_conf
+                    .get(sec, "Authenticated")
+                    .unwrap_or_default()
+                    .parse::<u8>()
+                    .unwrap_or_default(),
+            ),
             len: bluez_conf
                 .get(sec, "EncSize")
                 .unwrap_or_default()
@@ -776,7 +797,11 @@ fn convert_floss_conf(filename: &str) {
                 bluez_info.set(section_name, "Key", Some(format!("{:032X}", ltk.key)));
                 bluez_info.set(section_name, "Rand", Some(format!("{}", ltk.rand)));
                 bluez_info.set(section_name, "EDiv", Some(format!("{}", ltk.ediv)));
-                bluez_info.set(section_name, "Authenticated", Some(format!("{}", ltk.auth)));
+                bluez_info.set(
+                    section_name,
+                    "Authenticated",
+                    Some(format!("{}", LtkInfo::auth_to_bluez(ltk.auth))),
+                );
                 bluez_info.set(section_name, "EncSize", Some(format!("{}", ltk.len)));
                 continue;
             } else if k == "LE_KEY_LENC" {
@@ -791,7 +816,7 @@ fn convert_floss_conf(filename: &str) {
                 bluez_info.set(
                     BLUEZ_LOCAL_LTK_SECTION_NAME,
                     "Authenticated",
-                    Some(format!("{}", ltk.auth)),
+                    Some(format!("{}", LtkInfo::auth_to_bluez(ltk.auth))),
                 );
                 bluez_info.set(
                     BLUEZ_LOCAL_LTK_SECTION_NAME,
@@ -1166,7 +1191,7 @@ mod tests {
         );
         assert_eq!(
             conf.get(test_addr, "LE_KEY_PENC"),
-            Some(String::from("00112233445566778899aabbccddeeff8877665544332211bbaa0110"))
+            Some(String::from("00112233445566778899aabbccddeeff8877665544332211bbaa0210"))
         );
 
         assert_eq!(conf.get(test_addr, "HidAttrMask"), Some(String::from("0")));
