@@ -55,6 +55,7 @@ message SetScanParametersRequest {
   LeScanType scan_type = 2;
   uint32 scan_interval = 3;
   uint32 scan_window = 4;
+  uint32 scan_phy = 5;
 }
 
 message AdvertisingReportMsg {
