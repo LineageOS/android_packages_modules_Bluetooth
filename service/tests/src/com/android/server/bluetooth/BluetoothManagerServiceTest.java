@@ -35,6 +35,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -184,6 +185,20 @@ public class BluetoothManagerServiceTest {
         doReturn("00:11:22:33:44:55")
                 .when(mBluetoothServerProxy)
                 .settingsSecureGetString(any(), eq(Settings.Secure.BLUETOOTH_ADDRESS));
+        // Set persisted state to BLUETOOTH_OFF to not generate unwanted behavior when starting test
+        doReturn(BluetoothManagerService.BLUETOOTH_OFF)
+                .when(mBluetoothServerProxy)
+                .getBluetoothPersistedState(any(), anyInt());
+
+        doAnswer(
+                        inv -> {
+                            doReturn(inv.getArguments()[1])
+                                    .when(mBluetoothServerProxy)
+                                    .getBluetoothPersistedState(any(), anyInt());
+                            return null;
+                        })
+                .when(mBluetoothServerProxy)
+                .setBluetoothPersistedState(any(), anyInt());
 
         // Test is not allowed to send broadcast as Bluetooth. doNothing Prevent SecurityException
         doNothing().when(mContext).sendBroadcastAsUser(any(), any(), any(), any());
@@ -395,11 +410,6 @@ public class BluetoothManagerServiceTest {
 
     @Test
     public void offToBleOn() throws Exception {
-        // In order to go to BLE only, the persisted state should be BLUETOOTH_OFF
-        doReturn(BluetoothManagerService.BLUETOOTH_OFF)
-                .when(mBluetoothServerProxy)
-                .getBluetoothPersistedState(any(), anyInt());
-
         mManagerService.enableBle("test_offToBleOn", mBinder);
         syncHandler(MESSAGE_ENABLE);
 
@@ -412,11 +422,6 @@ public class BluetoothManagerServiceTest {
 
     @Test
     public void offToOn() throws Exception {
-        // In order to not go to BLE only, the persisted state should not be BLUETOOTH_OFF
-        doReturn(BluetoothManagerService.BLUETOOTH_ON_BLUETOOTH)
-                .when(mBluetoothServerProxy)
-                .getBluetoothPersistedState(any(), anyInt());
-
         mManagerService.enable("test_offToOn");
         syncHandler(MESSAGE_ENABLE);
 
