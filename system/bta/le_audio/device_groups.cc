@@ -177,6 +177,7 @@ void LeAudioDeviceGroup::Deactivate(void) {
     for (auto* ase = leAudioDevice->GetFirstActiveAse(); ase;
          ase = leAudioDevice->GetNextActiveAse(ase)) {
       ase->active = false;
+      ase->reconfigure = 0;
     }
   }
 }
