@@ -149,3 +149,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "update_inquiry_result_on_flag_change"
+    namespace: "bluetooth"
+    description: "Update ADV flag in inquiry result as soon as updated flag received"
+    bug: "329872838"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
