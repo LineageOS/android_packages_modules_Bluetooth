@@ -20,6 +20,7 @@ import android.annotation.RequiresPermission;
 import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
@@ -1091,6 +1092,7 @@ public class ScanManager {
                     // convert scanWindow and scanInterval from ms to LE scan units(0.625ms)
                     int scanWindow = Utils.millsToUnit(scanWindowMs);
                     int scanInterval = Utils.millsToUnit(scanIntervalMs);
+                    int scanPhy = getScanPhy(client.settings);
                     mNativeInterface.gattClientScan(false);
                     if (!AppScanStats.recordScanRadioStop()) {
                         Log.w(TAG, "There is no scan radio to stop");
@@ -1103,8 +1105,8 @@ public class ScanManager {
                                 + ", in scan unit: " + scanInterval + " / " + scanWindow + " )"
                                 + client);
                     }
-                    mNativeInterface.gattSetScanParameters(client.scannerId, scanInterval,
-                            scanWindow);
+                    mNativeInterface.gattSetScanParameters(
+                            client.scannerId, scanInterval, scanWindow, scanPhy);
                     mNativeInterface.gattClientScan(true);
                     if (!AppScanStats.recordScanRadioStart(curScanSetting)) {
                         Log.w(TAG, "Scan radio already started");
@@ -1787,6 +1789,13 @@ public class ScanManager {
                         Settings.Global.BLE_SCAN_LOW_POWER_INTERVAL_MS,
                         SCAN_MODE_LOW_POWER_INTERVAL_MS);
             }
+        }
+
+        private int getScanPhy(ScanSettings settings) {
+            if (settings == null) {
+                return BluetoothDevice.PHY_LE_1M;
+            }
+            return settings.getPhy();
         }
 
         private int getOnFoundOnLostTimeoutMillis(ScanSettings settings, boolean onFound) {

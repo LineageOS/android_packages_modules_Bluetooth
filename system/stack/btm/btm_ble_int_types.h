@@ -68,6 +68,8 @@
 #define BTM_VSC_CHIP_CAPABILITY_M_VERSION 95
 #define BTM_VSC_CHIP_CAPABILITY_S_VERSION 98
 
+#define BTM_BLE_DEFAULT_PHYS 0x01
+
 typedef struct {
   uint16_t data_mask;
   uint8_t* p_flags;
@@ -84,6 +86,7 @@ typedef struct {
   uint16_t scan_window;
   uint16_t scan_interval;
   uint8_t scan_type;             /* current scan type: active or passive */
+  uint8_t scan_phy;
 
   tBTM_BLE_AFP afp; /* advertising filter policy */
   tBTM_BLE_SFP sfp; /* scanning filter policy */
