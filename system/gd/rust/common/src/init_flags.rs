@@ -229,7 +229,6 @@ init_flags!(
         always_use_private_gatt_for_debugging,
         bluetooth_power_telemetry = false,
         btm_dm_flush_discovery_queue_on_search_cancel,
-        bta_dm_stop_discovery_on_search_cancel,
         classic_discovery_only,
         device_iot_config_logging,
         dynamic_avrcp_version_enhancement = true,
