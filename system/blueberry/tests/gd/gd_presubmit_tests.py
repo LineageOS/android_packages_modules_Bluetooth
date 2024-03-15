@@ -22,18 +22,12 @@ from mobly import suite_runner
 from blueberry.tests.gd.hci.le_scanning_manager_test import LeScanningManagerTest
 
 # TODO(b/194723246): Investigate failures to re-activate the test class.
-from blueberry.tests.gd.l2cap.classic.l2cap_test import L2capTest
-
-# TODO(b/194723246): Investigate failures to re-activate the test class.
-from blueberry.tests.gd.l2cap.le.le_l2cap_test import LeL2capTest
-
-# TODO(b/194723246): Investigate failures to re-activate the test class.
 from blueberry.tests.gd.security.le_security_test import LeSecurityTest
 
 # TODO(b/194723246): Investigate failures to re-activate the test class.
 from blueberry.tests.gd.security.security_test import SecurityTest
 
-DISABLED_TESTS = {LeScanningManagerTest, L2capTest, LeL2capTest, LeSecurityTest, SecurityTest}
+DISABLED_TESTS = {LeScanningManagerTest, LeSecurityTest, SecurityTest}
 
 PRESUBMIT_TESTS = list(ALL_TESTS - DISABLED_TESTS)
 
