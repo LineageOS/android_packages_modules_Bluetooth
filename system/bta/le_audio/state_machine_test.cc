@@ -29,6 +29,7 @@
 #include "client_parser.h"
 #include "common/init_flags.h"
 #include "fake_osi.h"
+#include "hci/controller_interface_mock.h"
 #include "internal_include/stack_config.h"
 #include "le_audio_set_configuration_provider.h"
 #include "mock_codec_manager.h"
@@ -36,6 +37,7 @@
 #include "mock_csis_client.h"
 #include "stack/include/bt_types.h"
 #include "test/common/mock_functions.h"
+#include "test/mock/mock_main_shim_entry.h"
 #include "test/mock/mock_stack_btm_iso.h"
 #include "types/bt_transport.h"
 
@@ -266,10 +268,10 @@ class StateMachineTestBase : public Test {
   virtual void SetUp() override {
     bluetooth::common::InitFlags::Load(test_flags);
     reset_mock_function_count_map();
-    controller::SetMockControllerInterface(&mock_controller_);
     bluetooth::manager::SetMockBtmInterface(&btm_interface);
     gatt::SetMockBtaGattInterface(&gatt_interface);
     gatt::SetMockBtaGattQueue(&gatt_queue);
+    bluetooth::hci::testing::mock_controller_ = &controller_;
 
     overwrite_cis_status_idx_ = 0;
     use_cis_retry_cnt_ = false;
@@ -303,7 +305,6 @@ class StateMachineTestBase : public Test {
             Invoke([this](int group_id) { return (int)(addresses_.size()); }));
 
     // Support 2M Phy
-    ON_CALL(mock_controller_, SupportsBle2mPhy()).WillByDefault(Return(true));
     ON_CALL(btm_interface, IsPhy2mSupported(_, _)).WillByDefault(Return(true));
     ON_CALL(btm_interface, GetHCIConnHandle(_, _))
         .WillByDefault(
@@ -640,7 +641,6 @@ class StateMachineTestBase : public Test {
     gatt::SetMockBtaGattQueue(nullptr);
     gatt::SetMockBtaGattInterface(nullptr);
     bluetooth::manager::SetMockBtmInterface(nullptr);
-    controller::SetMockControllerInterface(nullptr);
 
     le_audio_devices_.clear();
     addresses_.clear();
@@ -650,6 +650,7 @@ class StateMachineTestBase : public Test {
     cached_remote_qos_configuration_for_ase_.clear();
     LeAudioGroupStateMachine::Cleanup();
     ::bluetooth::le_audio::AudioSetConfigurationProvider::Cleanup();
+    bluetooth::hci::testing::mock_controller_ = nullptr;
   }
 
   std::shared_ptr<LeAudioDevice> PrepareConnectedDevice(
@@ -1550,7 +1551,6 @@ class StateMachineTestBase : public Test {
   }
 
   MockCsisClient mock_csis_client_module_;
-  NiceMock<controller::MockControllerInterface> mock_controller_;
   NiceMock<bluetooth::manager::MockBtmInterface> btm_interface;
   gatt::MockBtaGattInterface gatt_interface;
   gatt::MockBtaGattQueue gatt_queue;
@@ -1576,6 +1576,7 @@ class StateMachineTestBase : public Test {
   std::map<uint8_t, std::unique_ptr<LeAudioDeviceGroup>>
       le_audio_device_groups_;
   bool group_create_command_disallowed_ = false;
+  bluetooth::hci::testing::MockControllerInterface controller_;
 };
 
 class StateMachineTest : public StateMachineTestBase {

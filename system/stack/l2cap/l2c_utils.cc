@@ -2067,7 +2067,7 @@ void l2cu_device_reset(void) {
 /* This function initiates an acl connection to a LE device.
  * Returns true if request started successfully, false otherwise. */
 bool l2cu_create_conn_le(tL2C_LCB* p_lcb) {
-  if (!controller_get_interface()->SupportsBle()) return false;
+  if (!bluetooth::shim::GetController()->SupportsBle()) return false;
   p_lcb->transport = BT_TRANSPORT_LE;
   return (l2cble_create_conn(p_lcb));
 }

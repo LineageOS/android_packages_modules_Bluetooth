@@ -31,6 +31,8 @@
 #include "device/include/controller.h"
 #include "device/include/interop.h"
 #include "device/include/interop_config.h"
+#include "hci/controller_interface.h"
+#include "main/shim/entry.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/properties.h"
@@ -575,7 +577,8 @@ bool BTM_ReadConnectedTransportAddress(RawAddress* remote_bda,
 
 tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr,
                                  uint16_t tx_pdu_length) {
-  if (!controller_get_interface()->SupportsBleDataPacketLengthExtension()) {
+  if (!bluetooth::shim::GetController()
+           ->SupportsBleDataPacketLengthExtension()) {
     log::info("Local controller does not support le packet extension");
     return BTM_ILLEGAL_VALUE;
   }
