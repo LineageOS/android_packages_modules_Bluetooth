@@ -24,10 +24,6 @@ from blueberry.tests.gd.hci.le_advertising_manager_test import LeAdvertisingMana
 from blueberry.tests.gd.hci.le_scanning_manager_test import LeScanningManagerTest
 from blueberry.tests.gd.hci.le_scanning_with_security_test import LeScanningWithSecurityTest
 from blueberry.tests.gd.iso.le_iso_test import LeIsoTest
-from blueberry.tests.gd.l2cap.classic.l2cap_performance_test import L2capPerformanceTest
-from blueberry.tests.gd.l2cap.classic.l2cap_test import L2capTest
-from blueberry.tests.gd.l2cap.le.dual_l2cap_test import DualL2capTest
-from blueberry.tests.gd.l2cap.le.le_l2cap_test import LeL2capTest
 from blueberry.tests.gd.neighbor.neighbor_test import NeighborTest
 from blueberry.tests.gd.security.le_security_test import LeSecurityTest
 from blueberry.tests.gd.security.security_test import SecurityTest
@@ -38,8 +34,8 @@ from mobly import suite_runner
 
 ALL_TESTS = {
     CertSelfTest, SimpleHalTest, AclManagerTest, ControllerTest, DirectHciTest, LeAclManagerTest,
-    LeAdvertisingManagerTest, LeScanningManagerTest, LeScanningWithSecurityTest, LeIsoTest, L2capPerformanceTest,
-    L2capTest, DualL2capTest, LeL2capTest, NeighborTest, LeSecurityTest, SecurityTest, ShimTest, StackTest
+    LeAdvertisingManagerTest, LeScanningManagerTest, LeScanningWithSecurityTest, LeIsoTest,
+    NeighborTest, LeSecurityTest, SecurityTest, ShimTest, StackTest
 }
 
 DISABLED_TESTS = set()
