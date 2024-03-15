@@ -548,10 +548,14 @@ void AvrcpService::SendActiveDeviceChanged(const RawAddress& address) {
 
 void AvrcpService::SendPlayerSettingsChanged(
     std::vector<PlayerAttribute> attributes, std::vector<uint8_t> values) {
-  log::info("");
+  if (attributes.size() != values.size()) {
+    log::error("Attributes size {} doesn't match values size {}",
+               attributes.size(), values.size());
+    return;
+  }
   std::stringstream ss;
   for (size_t i = 0; i < attributes.size(); i++) {
-    ss << "attribute=" << attributes.at(i) << " : ";
+    ss << "{attribute=" << attributes.at(i) << " : ";
     if (attributes.at(i) == PlayerAttribute::REPEAT) {
       ss << "value=" << (PlayerRepeatValue)values.at(i);
     } else if (attributes.at(i) == PlayerAttribute::SHUFFLE) {
@@ -559,7 +563,7 @@ void AvrcpService::SendPlayerSettingsChanged(
     } else {
       ss << "value=" << std::to_string(values.at(i));
     }
-    ss << std::endl;
+    ss << ((i + 1 < attributes.size()) ? "}, " : "}");
   }
 
   log::info("{}", ss.str());
