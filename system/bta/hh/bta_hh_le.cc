@@ -49,14 +49,14 @@ using bluetooth::Uuid;
 using std::vector;
 using namespace bluetooth;
 
+/* TODO: b/329720661 Remove this namespace entirely when
+ * prevent_hogp_reconnect_when_connected flag is shipped */
 namespace {
-
 #ifndef BTA_HH_LE_RECONN
 constexpr bool kBTA_HH_LE_RECONN = true;
 #else
 constexpr bool kBTA_HH_LE_RECONN = false;
 #endif
-
 }  // namespace
 
 #define BTA_HH_APP_ID_LE 0xff
@@ -642,8 +642,11 @@ static void bta_hh_le_open_cmpl(tBTA_HH_DEV_CB* p_cb) {
     bta_hh_le_register_input_notif(p_cb, p_cb->mode, true);
     bta_hh_sm_execute(p_cb, BTA_HH_OPEN_CMPL_EVT, NULL);
 
-    if (kBTA_HH_LE_RECONN && p_cb->status == BTA_HH_OK) {
-      bta_hh_le_add_dev_bg_conn(p_cb);
+    if (!IS_FLAG_ENABLED(prevent_hogp_reconnect_when_connected)) {
+      if (kBTA_HH_LE_RECONN && p_cb->status == BTA_HH_OK) {
+        bta_hh_le_add_dev_bg_conn(p_cb);
+      }
+      return;
     }
   }
 }
