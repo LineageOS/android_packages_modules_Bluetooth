@@ -1255,7 +1255,7 @@ public class HeadsetService extends ProfileService {
             }
             mVoiceRecognitionStarted = false;
             stateMachine.sendMessage(HeadsetStateMachine.VOICE_RECOGNITION_STOP, device);
-            if (Flags.isScoManagedByAudio()) {
+            if (Utils.isScoManagedByAudioEnabled()) {
                 mSystemInterface.getAudioManager().clearCommunicationDevice();
                 return true;
             }
@@ -1919,7 +1919,7 @@ public class HeadsetService extends ProfileService {
             // Suspend A2DP when call about is about to become active
             if (mActiveDevice != null && callState != HeadsetHalConstants.CALL_STATE_DISCONNECTED
                 && !mSystemInterface.isCallIdle() && isCallIdleBefore
-                && !Flags.isScoManagedByAudio()) {
+                && !Utils.isScoManagedByAudioEnabled()) {
                 mSystemInterface.getAudioManager().setA2dpSuspended(true);
                 if (isAtLeastU()) {
                     mSystemInterface.getAudioManager().setLeAudioSuspended(true);
@@ -1929,7 +1929,7 @@ public class HeadsetService extends ProfileService {
         doForEachConnectedStateMachine(
                 stateMachine -> stateMachine.sendMessage(HeadsetStateMachine.CALL_STATE_CHANGED,
                         new HeadsetCallState(numActive, numHeld, callState, number, type, name)));
-        if (Flags.isScoManagedByAudio()) {
+        if (Utils.isScoManagedByAudioEnabled()) {
             if (mActiveDevice == null) {
                 Log.i(TAG, "HeadsetService's active device is null");
             } else {
@@ -1947,7 +1947,8 @@ public class HeadsetService extends ProfileService {
         }
         getStateMachinesThreadHandler().post(() -> {
             if (callState == HeadsetHalConstants.CALL_STATE_IDLE
-                && mSystemInterface.isCallIdle() && !isAudioOn() && !Flags.isScoManagedByAudio()) {
+                && mSystemInterface.isCallIdle() && !isAudioOn()
+                && !Utils.isScoManagedByAudioEnabled()) {
                 // Resume A2DP when call ended and SCO is not connected
                 mSystemInterface.getAudioManager().setA2dpSuspended(false);
                 if (isAtLeastU()) {
