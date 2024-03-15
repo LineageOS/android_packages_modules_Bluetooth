@@ -342,6 +342,13 @@ filegroup {
 }
 
 filegroup {
+    name: "TestMockMainShimStack",
+    srcs: [
+        "mock/mock_main_shim_stack.cc",
+    ],
+}
+
+filegroup {
     name: "TestMockMainShimLeScanning",
     srcs: [
         "mock/mock_main_shim.cc",
