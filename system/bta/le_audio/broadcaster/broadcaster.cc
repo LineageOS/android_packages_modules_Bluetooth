@@ -1081,8 +1081,9 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
       instance->le_audio_source_hal_client_->ConfirmStreamingRequest();
     }
 
-    virtual void OnAudioMetadataUpdate(source_metadata_v7 source_metadata,
-                                       DsaMode dsa_mode) override {
+    virtual void OnAudioMetadataUpdate(
+        const std::vector<struct playback_track_metadata_v7> source_metadata,
+        DsaMode dsa_mode) override {
       LOG_INFO();
       if (!instance) return;
 

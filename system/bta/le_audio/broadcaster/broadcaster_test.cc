@@ -609,10 +609,8 @@ TEST_F(BroadcasterTest, UpdateMetadataFromAudioTrackMetadata) {
     tracks_vec.push_back(desc_track);
   }
 
-  const source_metadata_v7_t source_metadata = {
-      .track_count = tracks_vec.size(), .tracks = tracks_vec.data()};
-
-  audio_receiver->OnAudioMetadataUpdate(source_metadata, DsaMode::DISABLED);
+  audio_receiver->OnAudioMetadataUpdate(std::move(tracks_vec),
+                                        DsaMode::DISABLED);
 
   // Verify ccid
   ASSERT_NE(ccid_list.size(), 0u);
