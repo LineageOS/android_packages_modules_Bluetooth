@@ -51,6 +51,7 @@ import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.RemoteDevices;
@@ -1731,6 +1732,7 @@ public class HeadsetStateMachineTest {
     @Test
     public void testSetAudioParameters_isScoManagedByAudio() {
         mSetFlagsRule.enableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO);
+        Utils.setIsScoManagedByAudioEnabled(true);
 
         setUpConnectedState();
         mHeadsetStateMachine.sendMessage(
@@ -1749,6 +1751,7 @@ public class HeadsetStateMachineTest {
                         mTestDevice));
 
         verify(mAudioManager, times(0)).setParameters(any());
+        Utils.setIsScoManagedByAudioEnabled(false);
     }
 
     /**
