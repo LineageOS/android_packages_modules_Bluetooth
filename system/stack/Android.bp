@@ -410,11 +410,15 @@ cc_fuzz {
         "fuzzers/sdp_fuzzer.cc",
     ],
     static_libs: [
+        "bluetooth_flags_c_lib",
         "libbluetooth-types",
         "libbluetooth_log",
         "libbt-platform-protos-lite",
         "libbt_shim_bridge",
         "libbt_shim_ffi",
+    ],
+    shared_libs: [
+        "server_configurable_flags",
     ],
 }
 
@@ -2139,26 +2143,24 @@ cc_test {
     ],
     include_dirs: [
         "packages/modules/Bluetooth/system",
-        "packages/modules/Bluetooth/system/device/include/",
         "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/stack/btm",
     ],
     srcs: [
         ":LegacyStackSdp",
         ":TestCommonMockFunctions",
+        ":TestFakeOsi",
         ":TestMockBtif",
-        ":TestMockOsi",
         ":TestMockStackBtm",
         ":TestMockStackL2cap",
         ":TestMockStackMetrics",
         "test/sdp/stack_sdp_db_test.cc",
+        "test/sdp/stack_sdp_parse_test.cc",
         "test/sdp/stack_sdp_test.cc",
         "test/sdp/stack_sdp_utils_test.cc",
     ],
-    shared_libs: [
-        "libcutils",
-    ],
     static_libs: [
+        "bluetooth_flags_c_lib",
         "libbase",
         "libbluetooth-types",
         "libbluetooth_gd",
@@ -2168,8 +2170,13 @@ cc_test {
         "libbt_shim_bridge",
         "libbt_shim_ffi",
         "libchrome",
+        "libflagtest",
         "libgmock",
         "liblog",
+    ],
+    shared_libs: [
+        "libcutils",
+        "server_configurable_flags",
     ],
     header_libs: ["libbluetooth_headers"],
 }

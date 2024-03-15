@@ -329,4 +329,7 @@ void sdp_save_local_pse_record_attributes(int32_t rfcomm_channel_number,
                                           uint32_t supported_features,
                                           uint32_t supported_repositories);
 
+size_t sdp_get_num_records(const tSDP_DISCOVERY_DB& db);
+size_t sdp_get_num_attributes(const tSDP_DISC_REC& sdp_disc_rec);
+
 #endif

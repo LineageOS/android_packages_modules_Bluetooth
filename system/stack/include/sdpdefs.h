@@ -25,11 +25,17 @@
 #ifndef SDP_DEFS_H
 #define SDP_DEFS_H
 
-#include <cstdint>
+#include <base/strings/stringprintf.h>
+
+#include <string>
+
+#include "macros.h"
+
 /* Define the service attribute IDs.
 */
 #define ATTR_ID_SERVICE_RECORD_HDL 0x0000
 #define ATTR_ID_SERVICE_CLASS_ID_LIST 0x0001
+#define ATTR_ID_SERVICE_RECORD_STATE 0x0002
 #define ATTR_ID_SERVICE_ID 0x0003
 #define ATTR_ID_PROTOCOL_DESC_LIST 0x0004
 #define ATTR_ID_BROWSE_GROUP_LIST 0x0005
@@ -99,31 +105,92 @@
 #define ATTR_ID_HID_SSR_HOST_MAX_LAT 0x020F
 #define ATTR_ID_HID_SSR_HOST_MIN_TOUT 0x0210
 
+inline std::string sdp_attr_id_text(const unsigned& id) {
+  switch (id) {
+    CASE_RETURN_TEXT(ATTR_ID_SERVICE_RECORD_HDL);
+    CASE_RETURN_TEXT(ATTR_ID_SERVICE_CLASS_ID_LIST);
+    CASE_RETURN_TEXT(ATTR_ID_SERVICE_RECORD_STATE);
+    CASE_RETURN_TEXT(ATTR_ID_SERVICE_ID);
+    CASE_RETURN_TEXT(ATTR_ID_PROTOCOL_DESC_LIST);
+    CASE_RETURN_TEXT(ATTR_ID_BROWSE_GROUP_LIST);
+    CASE_RETURN_TEXT(ATTR_ID_LANGUAGE_BASE_ATTR_ID_LIST);
+    CASE_RETURN_TEXT(ATTR_ID_BT_PROFILE_DESC_LIST);
+    CASE_RETURN_TEXT(ATTR_ID_DOCUMENTATION_URL);
+    CASE_RETURN_TEXT(ATTR_ID_CLIENT_EXE_URL);
+    CASE_RETURN_TEXT(ATTR_ID_ADDITION_PROTO_DESC_LISTS);
+    CASE_RETURN_TEXT(ATTR_ID_SERVICE_NAME);
+    CASE_RETURN_TEXT(ATTR_ID_SERVICE_DESCRIPTION);
+    CASE_RETURN_TEXT(ATTR_ID_PROVIDER_NAME);
+    default:
+      return base::StringPrintf("SDP_ATTR_ID:[%u]", id);
+  }
+}
+
 #define UUID_CODEC_CVSD 0x0001 /* CVSD */
 #define UUID_CODEC_MSBC 0x0002 /* mSBC */
 #define UUID_CODEC_LC3 0x0003  /* LC3 */
 
 /* Define all the 'Descriptor Type' values.
 */
-#define UINT_DESC_TYPE 1
-#define TWO_COMP_INT_DESC_TYPE 2
-#define UUID_DESC_TYPE 3
-#define TEXT_STR_DESC_TYPE 4
-#define BOOLEAN_DESC_TYPE 5
-#define DATA_ELE_SEQ_DESC_TYPE 6
-#define DATA_ELE_ALT_DESC_TYPE 7
-#define URL_DESC_TYPE 8
+enum : unsigned {
+  NIL_DESC_TYPE = 0,
+  UINT_DESC_TYPE = 1,
+  TWO_COMP_INT_DESC_TYPE = 2,
+  UUID_DESC_TYPE = 3,
+  TEXT_STR_DESC_TYPE = 4,
+  BOOLEAN_DESC_TYPE = 5,
+  DATA_ELE_SEQ_DESC_TYPE = 6,
+  DATA_ELE_ALT_DESC_TYPE = 7,
+  URL_DESC_TYPE = 8,
+};
+
+inline std::string sdp_attr_type_text(const unsigned& type) {
+  switch (type) {
+    CASE_RETURN_TEXT(NIL_DESC_TYPE);
+    CASE_RETURN_TEXT(UINT_DESC_TYPE);
+    CASE_RETURN_TEXT(TWO_COMP_INT_DESC_TYPE);
+    CASE_RETURN_TEXT(UUID_DESC_TYPE);
+    CASE_RETURN_TEXT(TEXT_STR_DESC_TYPE);
+    CASE_RETURN_TEXT(BOOLEAN_DESC_TYPE);
+    CASE_RETURN_TEXT(DATA_ELE_SEQ_DESC_TYPE);
+    CASE_RETURN_TEXT(DATA_ELE_ALT_DESC_TYPE);
+    CASE_RETURN_TEXT(URL_DESC_TYPE);
+    default:
+      return base::StringPrintf("UNKNOWN[%u]", type);
+  }
+}
 
 /* Define all the "Descriptor Size" values.
 */
-#define SIZE_ONE_BYTE 0
-#define SIZE_TWO_BYTES 1
-#define SIZE_FOUR_BYTES 2
-#define SIZE_EIGHT_BYTES 3
-#define SIZE_SIXTEEN_BYTES 4
-#define SIZE_IN_NEXT_BYTE 5
-#define SIZE_IN_NEXT_WORD 6
-#define SIZE_IN_NEXT_LONG 7
+enum : unsigned {
+  SIZE_ONE_BYTE = 0,
+  SIZE_TWO_BYTES = 1,
+  SIZE_FOUR_BYTES = 2,
+  SIZE_EIGHT_BYTES = 3,
+  SIZE_SIXTEEN_BYTES = 4,
+  SIZE_IN_NEXT_BYTE = 5,
+  SIZE_IN_NEXT_WORD = 6,
+  SIZE_IN_NEXT_LONG = 7,
+};
+
+inline std::string sdp_attr_size_text(const unsigned& size) {
+  switch (size) {
+    CASE_RETURN_TEXT(SIZE_ONE_BYTE);
+    CASE_RETURN_TEXT(SIZE_TWO_BYTES);
+    CASE_RETURN_TEXT(SIZE_FOUR_BYTES);
+    CASE_RETURN_TEXT(SIZE_EIGHT_BYTES);
+    CASE_RETURN_TEXT(SIZE_SIXTEEN_BYTES);
+    CASE_RETURN_TEXT(SIZE_IN_NEXT_BYTE);
+    CASE_RETURN_TEXT(SIZE_IN_NEXT_WORD);
+    CASE_RETURN_TEXT(SIZE_IN_NEXT_LONG);
+    default:
+      return base::StringPrintf("UNKNOWN[%u]", size);
+  }
+}
+
+inline unsigned element_type(const uint8_t& element) { return element >> 3; }
+
+inline unsigned element_size(const uint8_t& element) { return element & 0x7; }
 
 /* Language Encoding Constants */
 #define LANG_ID_CODE_ENGLISH ((uint16_t)0x656e)     /* "en" */
