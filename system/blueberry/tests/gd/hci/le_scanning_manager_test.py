@@ -141,7 +141,11 @@ class LeScanningManagerTestBase():
     def test_set_scan_parameters_callback(self):
         self.set_address_policy_with_static_address()
         set_scan_parameters_request = le_scanning_facade.SetScanParametersRequest(
-            scanner_id=0x01, scan_type=le_scanning_facade.LeScanType.ACTIVE, scan_interval=0x10, scan_window=0x04)
+            scanner_id=0x01,
+            scan_type=le_scanning_facade.LeScanType.ACTIVE,
+            scan_interval=0x10,
+            scan_window=0x04,
+            scan_phy=0x01)
         self.dut.hci_le_scanning_manager.SetScanParameters(set_scan_parameters_request)
 
         assertThat(self.dut.callback_event_stream).emits(
@@ -151,7 +155,11 @@ class LeScanningManagerTestBase():
     def test_set_scan_parameters_with_invalid_parameter(self):
         self.set_address_policy_with_static_address()
         set_scan_parameters_request = le_scanning_facade.SetScanParametersRequest(
-            scanner_id=0x01, scan_type=le_scanning_facade.LeScanType.ACTIVE, scan_interval=0x00, scan_window=0x00)
+            scanner_id=0x01,
+            scan_type=le_scanning_facade.LeScanType.ACTIVE,
+            scan_interval=0x00,
+            scan_window=0x00,
+            scan_phy=0x01)
         self.dut.hci_le_scanning_manager.SetScanParameters(set_scan_parameters_request)
 
         assertThat(self.dut.callback_event_stream).emits(
@@ -175,7 +183,11 @@ class LeScanningManagerTestBase():
         create_response = self.cert.hci_le_advertising_manager.CreateAdvertiser(request)
 
         set_scan_parameters_request = le_scanning_facade.SetScanParametersRequest(
-            scanner_id=0x01, scan_type=le_scanning_facade.LeScanType.ACTIVE, scan_interval=0x10, scan_window=0x04)
+            scanner_id=0x01,
+            scan_type=le_scanning_facade.LeScanType.ACTIVE,
+            scan_interval=0x10,
+            scan_window=0x04,
+            scan_phy=0x01)
         self.dut.hci_le_scanning_manager.SetScanParameters(set_scan_parameters_request)
         scan_request = le_scanning_facade.ScanRequest(start=True)
         self.dut.hci_le_scanning_manager.Scan(scan_request)
@@ -202,7 +214,11 @@ class LeScanningManagerTestBase():
         create_response = self.cert.hci_le_advertising_manager.CreateAdvertiser(request)
 
         set_scan_parameters_request = le_scanning_facade.SetScanParametersRequest(
-            scanner_id=0x01, scan_type=le_scanning_facade.LeScanType.PASSIVE, scan_interval=0x10, scan_window=0x04)
+            scanner_id=0x01,
+            scan_type=le_scanning_facade.LeScanType.PASSIVE,
+            scan_interval=0x10,
+            scan_window=0x04,
+            scan_phy=0x01)
         self.dut.hci_le_scanning_manager.SetScanParameters(set_scan_parameters_request)
         scan_request = le_scanning_facade.ScanRequest(start=True)
         self.dut.hci_le_scanning_manager.Scan(scan_request)
