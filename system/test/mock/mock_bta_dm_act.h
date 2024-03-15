@@ -44,7 +44,7 @@ namespace bta_dm_act {
 struct BTA_DmSetVisibility {
   bool return_value{false};
   std::function<bool(bt_scan_mode_t mode)> body{
-      [this](bt_scan_mode_t mode) { return return_value; }};
+      [this](bt_scan_mode_t /* mode */) { return return_value; }};
   bool operator()(bt_scan_mode_t mode) { return body(mode); };
 };
 extern struct BTA_DmSetVisibility BTA_DmSetVisibility;
@@ -54,7 +54,7 @@ extern struct BTA_DmSetVisibility BTA_DmSetVisibility;
 // Return: void
 struct BTA_dm_acl_down {
   std::function<void(const RawAddress bd_addr, tBT_TRANSPORT transport)> body{
-      [](const RawAddress bd_addr, tBT_TRANSPORT transport) {}};
+      [](const RawAddress /* bd_addr */, tBT_TRANSPORT /* transport */) {}};
   void operator()(const RawAddress bd_addr, tBT_TRANSPORT transport) {
     body(bd_addr, transport);
   };
@@ -67,8 +67,8 @@ extern struct BTA_dm_acl_down BTA_dm_acl_down;
 struct BTA_dm_acl_up {
   std::function<void(const RawAddress bd_addr, tBT_TRANSPORT transport,
                      uint16_t acl_handle)>
-      body{[](const RawAddress bd_addr, tBT_TRANSPORT transport,
-              uint16_t acl_handle) {}};
+      body{[](const RawAddress /* bd_addr */, tBT_TRANSPORT /* transport */,
+              uint16_t /* acl_handle */) {}};
   void operator()(const RawAddress bd_addr, tBT_TRANSPORT transport,
                   uint16_t acl_handle) {
     body(bd_addr, transport, acl_handle);
@@ -82,8 +82,8 @@ extern struct BTA_dm_acl_up BTA_dm_acl_up;
 struct BTA_dm_acl_up_failed {
   std::function<void(const RawAddress bd_addr, tBT_TRANSPORT transport,
                      tHCI_STATUS hci_status)>
-      body{[](const RawAddress bd_addr, tBT_TRANSPORT transport,
-              tHCI_STATUS hci_status) {}};
+      body{[](const RawAddress /* bd_addr */, tBT_TRANSPORT /* transport */,
+              tHCI_STATUS /* hci_status */) {}};
   void operator()(const RawAddress bd_addr, tBT_TRANSPORT transport,
                   tHCI_STATUS hci_status) {
     body(bd_addr, transport, hci_status);
@@ -96,7 +96,7 @@ extern struct BTA_dm_acl_up_failed BTA_dm_acl_up_failed;
 // Return: void
 struct BTA_dm_notify_remote_features_complete {
   std::function<void(const RawAddress bd_addr)> body{
-      [](const RawAddress bd_addr) {}};
+      [](const RawAddress /* bd_addr */) {}};
   void operator()(const RawAddress bd_addr) { body(bd_addr); };
 };
 extern struct BTA_dm_notify_remote_features_complete
@@ -126,8 +126,8 @@ extern struct BTA_dm_on_hw_on BTA_dm_on_hw_on;
 struct BTA_dm_report_role_change {
   std::function<void(const RawAddress bd_addr, tHCI_ROLE new_role,
                      tHCI_STATUS hci_status)>
-      body{[](const RawAddress bd_addr, tHCI_ROLE new_role,
-              tHCI_STATUS hci_status) {}};
+      body{[](const RawAddress /* bd_addr */, tHCI_ROLE /* new_role */,
+              tHCI_STATUS /* hci_status */) {}};
   void operator()(const RawAddress bd_addr, tHCI_ROLE new_role,
                   tHCI_STATUS hci_status) {
     body(bd_addr, new_role, hci_status);
@@ -141,8 +141,8 @@ extern struct BTA_dm_report_role_change BTA_dm_report_role_change;
 struct bta_dm_acl_up {
   std::function<void(const RawAddress& bd_addr, tBT_TRANSPORT transport,
                      uint16_t acl_handle)>
-      body{[](const RawAddress& bd_addr, tBT_TRANSPORT transport,
-              uint16_t acl_handle) {}};
+      body{[](const RawAddress& /* bd_addr */, tBT_TRANSPORT /* transport */,
+              uint16_t /* acl_handle */) {}};
   void operator()(const RawAddress& bd_addr, tBT_TRANSPORT transport,
                   uint16_t acl_handle) {
     body(bd_addr, transport, acl_handle);
@@ -156,8 +156,8 @@ extern struct bta_dm_acl_up bta_dm_acl_up;
 struct bta_dm_add_ble_device {
   std::function<void(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                      tBT_DEVICE_TYPE dev_type)>
-      body{[](const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-              tBT_DEVICE_TYPE dev_type) {}};
+      body{[](const RawAddress& /* bd_addr */, tBLE_ADDR_TYPE /* addr_type */,
+              tBT_DEVICE_TYPE /* dev_type */) {}};
   void operator()(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                   tBT_DEVICE_TYPE dev_type) {
     body(bd_addr, addr_type, dev_type);
@@ -171,8 +171,8 @@ extern struct bta_dm_add_ble_device bta_dm_add_ble_device;
 struct bta_dm_add_blekey {
   std::function<void(const RawAddress& bd_addr, tBTA_LE_KEY_VALUE blekey,
                      tBTM_LE_KEY_TYPE key_type)>
-      body{[](const RawAddress& bd_addr, tBTA_LE_KEY_VALUE blekey,
-              tBTM_LE_KEY_TYPE key_type) {}};
+      body{[](const RawAddress& /* bd_addr */, tBTA_LE_KEY_VALUE /* blekey */,
+              tBTM_LE_KEY_TYPE /* key_type */) {}};
   void operator()(const RawAddress& bd_addr, tBTA_LE_KEY_VALUE blekey,
                   tBTM_LE_KEY_TYPE key_type) {
     body(bd_addr, blekey, key_type);
@@ -185,7 +185,7 @@ extern struct bta_dm_add_blekey bta_dm_add_blekey;
 // Return: void
 struct bta_dm_add_device {
   std::function<void(std::unique_ptr<tBTA_DM_API_ADD_DEVICE> msg)> body{
-      [](std::unique_ptr<tBTA_DM_API_ADD_DEVICE> msg) {}};
+      [](std::unique_ptr<tBTA_DM_API_ADD_DEVICE> /* msg */) {}};
   void operator()(std::unique_ptr<tBTA_DM_API_ADD_DEVICE> msg) {
     body(std::move(msg));
   };
@@ -196,7 +196,8 @@ extern struct bta_dm_add_device bta_dm_add_device;
 // Params: bool privacy_enable
 // Return: void
 struct bta_dm_ble_config_local_privacy {
-  std::function<void(bool privacy_enable)> body{[](bool privacy_enable) {}};
+  std::function<void(bool privacy_enable)> body{
+      [](bool /* privacy_enable */) {}};
   void operator()(bool privacy_enable) { body(privacy_enable); };
 };
 extern struct bta_dm_ble_config_local_privacy bta_dm_ble_config_local_privacy;
@@ -206,7 +207,7 @@ extern struct bta_dm_ble_config_local_privacy bta_dm_ble_config_local_privacy;
 // Return: void
 struct bta_dm_ble_confirm_reply {
   std::function<void(const RawAddress& bd_addr, bool accept)> body{
-      [](const RawAddress& bd_addr, bool accept) {}};
+      [](const RawAddress& /* bd_addr */, bool /* accept */) {}};
   void operator()(const RawAddress& bd_addr, bool accept) {
     body(bd_addr, accept);
   };
@@ -218,7 +219,7 @@ extern struct bta_dm_ble_confirm_reply bta_dm_ble_confirm_reply;
 // Return: void
 struct bta_dm_ble_csis_observe {
   std::function<void(bool observe, tBTA_DM_SEARCH_CBACK* p_cback)> body{
-      [](bool observe, tBTA_DM_SEARCH_CBACK* p_cback) {}};
+      [](bool /* observe */, tBTA_DM_SEARCH_CBACK* /* p_cback */) {}};
   void operator()(bool observe, tBTA_DM_SEARCH_CBACK* p_cback) {
     body(observe, p_cback);
   };
@@ -230,7 +231,7 @@ extern struct bta_dm_ble_csis_observe bta_dm_ble_csis_observe;
 // Return: void
 struct bta_dm_ble_get_energy_info {
   std::function<void(tBTA_BLE_ENERGY_INFO_CBACK* p_energy_info_cback)> body{
-      [](tBTA_BLE_ENERGY_INFO_CBACK* p_energy_info_cback) {}};
+      [](tBTA_BLE_ENERGY_INFO_CBACK* /* p_energy_info_cback */) {}};
   void operator()(tBTA_BLE_ENERGY_INFO_CBACK* p_energy_info_cback) {
     body(p_energy_info_cback);
   };
@@ -243,7 +244,8 @@ extern struct bta_dm_ble_get_energy_info bta_dm_ble_get_energy_info;
 struct bta_dm_ble_observe {
   std::function<void(bool start, uint8_t duration,
                      tBTA_DM_SEARCH_CBACK* p_cback)>
-      body{[](bool start, uint8_t duration, tBTA_DM_SEARCH_CBACK* p_cback) {}};
+      body{[](bool /* start */, uint8_t /* duration */,
+              tBTA_DM_SEARCH_CBACK* /* p_cback */) {}};
   void operator()(bool start, uint8_t duration, tBTA_DM_SEARCH_CBACK* p_cback) {
     body(start, duration, p_cback);
   };
@@ -273,7 +275,8 @@ extern struct bta_dm_ble_reset_id bta_dm_ble_reset_id;
 // Return: void
 struct bta_dm_ble_passkey_reply {
   std::function<void(const RawAddress& bd_addr, bool accept, uint32_t passkey)>
-      body{[](const RawAddress& bd_addr, bool accept, uint32_t passkey) {}};
+      body{[](const RawAddress& /* bd_addr */, bool /* accept */,
+              uint32_t /* passkey */) {}};
   void operator()(const RawAddress& bd_addr, bool accept, uint32_t passkey) {
     body(bd_addr, accept, passkey);
   };
@@ -285,7 +288,7 @@ extern struct bta_dm_ble_passkey_reply bta_dm_ble_passkey_reply;
 // Return: void
 struct bta_dm_ble_scan {
   std::function<void(bool start, uint8_t duration_sec)> body{
-      [](bool start, uint8_t duration_sec) {}};
+      [](bool /* start */, uint8_t /* duration_sec */) {}};
   void operator()(bool start, uint8_t duration_sec) {
     body(start, duration_sec);
   };
@@ -300,9 +303,9 @@ struct bta_dm_ble_set_conn_params {
   std::function<void(const RawAddress& bd_addr, uint16_t conn_int_min,
                      uint16_t conn_int_max, uint16_t peripheral_latency,
                      uint16_t supervision_tout)>
-      body{[](const RawAddress& bd_addr, uint16_t conn_int_min,
-              uint16_t conn_int_max, uint16_t peripheral_latency,
-              uint16_t supervision_tout) {}};
+      body{[](const RawAddress& /* bd_addr */, uint16_t /* conn_int_min */,
+              uint16_t /* conn_int_max */, uint16_t /* peripheral_latency */,
+              uint16_t /* supervision_tout */) {}};
   void operator()(const RawAddress& bd_addr, uint16_t conn_int_min,
                   uint16_t conn_int_max, uint16_t peripheral_latency,
                   uint16_t supervision_tout) {
@@ -317,7 +320,7 @@ extern struct bta_dm_ble_set_conn_params bta_dm_ble_set_conn_params;
 // Return: void
 struct bta_dm_ble_set_data_length {
   std::function<void(const RawAddress& bd_addr)> body{
-      [](const RawAddress& bd_addr) {}};
+      [](const RawAddress& /* bd_addr */) {}};
   void operator()(const RawAddress& bd_addr) { body(bd_addr); };
 };
 extern struct bta_dm_ble_set_data_length bta_dm_ble_set_data_length;
@@ -330,9 +333,10 @@ struct bta_dm_ble_update_conn_params {
   std::function<void(const RawAddress& bd_addr, uint16_t min_int,
                      uint16_t max_int, uint16_t latency, uint16_t timeout,
                      uint16_t min_ce_len, uint16_t max_ce_len)>
-      body{[](const RawAddress& bd_addr, uint16_t min_int, uint16_t max_int,
-              uint16_t latency, uint16_t timeout, uint16_t min_ce_len,
-              uint16_t max_ce_len) {}};
+      body{[](const RawAddress& /* bd_addr */, uint16_t /* min_int */,
+              uint16_t /* max_int */, uint16_t /* latency */,
+              uint16_t /* timeout */, uint16_t /* min_ce_len */,
+              uint16_t /* max_ce_len */) {}};
   void operator()(const RawAddress& bd_addr, uint16_t min_int, uint16_t max_int,
                   uint16_t latency, uint16_t timeout, uint16_t min_ce_len,
                   uint16_t max_ce_len) {
@@ -347,8 +351,9 @@ extern struct bta_dm_ble_update_conn_params bta_dm_ble_update_conn_params;
 struct bta_dm_bond {
   std::function<void(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                      tBT_TRANSPORT transport, tBT_DEVICE_TYPE device_type)>
-      body{[](const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-              tBT_TRANSPORT transport, tBT_DEVICE_TYPE device_type) {}};
+      body{[](const RawAddress& /* bd_addr */, tBLE_ADDR_TYPE /* addr_type */,
+              tBT_TRANSPORT /* transport */,
+              tBT_DEVICE_TYPE /* device_type */) {}};
   void operator()(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                   tBT_TRANSPORT transport, tBT_DEVICE_TYPE device_type) {
     body(bd_addr, addr_type, transport, device_type);
@@ -361,7 +366,7 @@ extern struct bta_dm_bond bta_dm_bond;
 // Return: void
 struct bta_dm_bond_cancel {
   std::function<void(const RawAddress& bd_addr)> body{
-      [](const RawAddress& bd_addr) {}};
+      [](const RawAddress& /* bd_addr */) {}};
   void operator()(const RawAddress& bd_addr) { body(bd_addr); };
 };
 extern struct bta_dm_bond_cancel bta_dm_bond_cancel;
@@ -372,7 +377,7 @@ extern struct bta_dm_bond_cancel bta_dm_bond_cancel;
 struct bta_dm_check_if_only_hd_connected {
   bool return_value{false};
   std::function<bool(const RawAddress& peer_addr)> body{
-      [this](const RawAddress& peer_addr) { return return_value; }};
+      [this](const RawAddress& /* peer_addr */) { return return_value; }};
   bool operator()(const RawAddress& peer_addr) { return body(peer_addr); };
 };
 extern struct bta_dm_check_if_only_hd_connected
@@ -383,7 +388,7 @@ extern struct bta_dm_check_if_only_hd_connected
 // Return: void
 struct bta_dm_ci_rmt_oob_act {
   std::function<void(std::unique_ptr<tBTA_DM_CI_RMT_OOB> msg)> body{
-      [](std::unique_ptr<tBTA_DM_CI_RMT_OOB> msg) {}};
+      [](std::unique_ptr<tBTA_DM_CI_RMT_OOB> /* msg */) {}};
   void operator()(std::unique_ptr<tBTA_DM_CI_RMT_OOB> msg) {
     body(std::move(msg));
   };
@@ -396,8 +401,8 @@ extern struct bta_dm_ci_rmt_oob_act bta_dm_ci_rmt_oob_act;
 struct bta_dm_close_acl {
   std::function<void(const RawAddress& bd_addr, bool remove_dev,
                      tBT_TRANSPORT transport)>
-      body{[](const RawAddress& bd_addr, bool remove_dev,
-              tBT_TRANSPORT transport) {}};
+      body{[](const RawAddress& /* bd_addr */, bool /* remove_dev */,
+              tBT_TRANSPORT /* transport */) {}};
   void operator()(const RawAddress& bd_addr, bool remove_dev,
                   tBT_TRANSPORT transport) {
     body(bd_addr, remove_dev, transport);
@@ -410,7 +415,7 @@ extern struct bta_dm_close_acl bta_dm_close_acl;
 // Return: void
 struct bta_dm_confirm {
   std::function<void(const RawAddress& bd_addr, bool accept)> body{
-      [](const RawAddress& bd_addr, bool accept) {}};
+      [](const RawAddress& /* bd_addr */, bool /* accept */) {}};
   void operator()(const RawAddress& bd_addr, bool accept) {
     body(bd_addr, accept);
   };
@@ -431,7 +436,7 @@ extern struct bta_dm_disable bta_dm_disable;
 // Return: void
 struct bta_dm_eir_update_cust_uuid {
   std::function<void(const tBTA_CUSTOM_UUID& curr, bool adding)> body{
-      [](const tBTA_CUSTOM_UUID& curr, bool adding) {}};
+      [](const tBTA_CUSTOM_UUID& /* curr */, bool /* adding */) {}};
   void operator()(const tBTA_CUSTOM_UUID& curr, bool adding) {
     body(curr, adding);
   };
@@ -443,7 +448,7 @@ extern struct bta_dm_eir_update_cust_uuid bta_dm_eir_update_cust_uuid;
 // Return: void
 struct bta_dm_eir_update_uuid {
   std::function<void(uint16_t uuid16, bool adding)> body{
-      [](uint16_t uuid16, bool adding) {}};
+      [](uint16_t /* uuid16 */, bool /* adding */) {}};
   void operator()(uint16_t uuid16, bool adding) { body(uuid16, adding); };
 };
 extern struct bta_dm_eir_update_uuid bta_dm_eir_update_uuid;
@@ -453,7 +458,7 @@ extern struct bta_dm_eir_update_uuid bta_dm_eir_update_uuid;
 // Return: void
 struct bta_dm_enable {
   std::function<void(tBTA_DM_SEC_CBACK* p_sec_cback)> body{
-      [](tBTA_DM_SEC_CBACK* p_sec_cback) {}};
+      [](tBTA_DM_SEC_CBACK* /* p_sec_cback */) {}};
   void operator()(tBTA_DM_SEC_CBACK* p_sec_cback) { body(p_sec_cback); };
 };
 extern struct bta_dm_enable bta_dm_enable;
@@ -464,8 +469,8 @@ extern struct bta_dm_enable bta_dm_enable;
 struct bta_dm_encrypt_cback {
   std::function<void(const RawAddress* bd_addr, tBT_TRANSPORT transport,
                      void* p_ref_data, tBTM_STATUS result)>
-      body{[](const RawAddress* bd_addr, tBT_TRANSPORT transport,
-              void* p_ref_data, tBTM_STATUS result) {}};
+      body{[](const RawAddress* /* bd_addr */, tBT_TRANSPORT /* transport */,
+              void* /* p_ref_data */, tBTM_STATUS /* result */) {}};
   void operator()(const RawAddress* bd_addr, tBT_TRANSPORT transport,
                   void* p_ref_data, tBTM_STATUS result) {
     body(bd_addr, transport, p_ref_data, result);
@@ -488,7 +493,7 @@ extern struct bta_dm_is_search_request_queued bta_dm_is_search_request_queued;
 // Return: void
 struct bta_dm_pin_reply {
   std::function<void(std::unique_ptr<tBTA_DM_API_PIN_REPLY> msg)> body{
-      [](std::unique_ptr<tBTA_DM_API_PIN_REPLY> msg) {}};
+      [](std::unique_ptr<tBTA_DM_API_PIN_REPLY> /* msg */) {}};
   void operator()(std::unique_ptr<tBTA_DM_API_PIN_REPLY> msg) {
     body(std::move(msg));
   };
@@ -500,7 +505,7 @@ extern struct bta_dm_pin_reply bta_dm_pin_reply;
 // Return: void
 struct bta_dm_process_remove_device {
   std::function<void(const RawAddress& bd_addr)> body{
-      [](const RawAddress& bd_addr) {}};
+      [](const RawAddress& /* bd_addr */) {}};
   void operator()(const RawAddress& bd_addr) { body(bd_addr); };
 };
 extern struct bta_dm_process_remove_device bta_dm_process_remove_device;
@@ -510,7 +515,7 @@ extern struct bta_dm_process_remove_device bta_dm_process_remove_device;
 // Return: void
 struct bta_dm_remove_device {
   std::function<void(const RawAddress& bd_addr)> body{
-      [](const RawAddress& bd_addr) {}};
+      [](const RawAddress& /* bd_addr */) {}};
   void operator()(const RawAddress& bd_addr) { body(bd_addr); };
 };
 extern struct bta_dm_remove_device bta_dm_remove_device;
@@ -520,7 +525,7 @@ extern struct bta_dm_remove_device bta_dm_remove_device;
 // Return: void
 struct bta_dm_remote_key_missing {
   std::function<void(const RawAddress bd_addr)> body{
-      [](const RawAddress bd_addr) {}};
+      [](const RawAddress /* bd_addr */) {}};
   void operator()(const RawAddress bd_addr) { body(bd_addr); };
 };
 extern struct bta_dm_remote_key_missing bta_dm_remote_key_missing;
@@ -531,8 +536,8 @@ extern struct bta_dm_remote_key_missing bta_dm_remote_key_missing;
 struct bta_dm_rm_cback {
   std::function<void(tBTA_SYS_CONN_STATUS status, uint8_t id, uint8_t app_id,
                      const RawAddress& peer_addr)>
-      body{[](tBTA_SYS_CONN_STATUS status, uint8_t id, uint8_t app_id,
-              const RawAddress& peer_addr) {}};
+      body{[](tBTA_SYS_CONN_STATUS /* status */, uint8_t /* id */,
+              uint8_t /* app_id */, const RawAddress& /* peer_addr */) {}};
   void operator()(tBTA_SYS_CONN_STATUS status, uint8_t id, uint8_t app_id,
                   const RawAddress& peer_addr) {
     body(status, id, app_id, peer_addr);
@@ -544,7 +549,8 @@ extern struct bta_dm_rm_cback bta_dm_rm_cback;
 // Params: tBTA_DM_MSG* p_data
 // Return: void
 struct bta_dm_sdp_result {
-  std::function<void(tBTA_DM_MSG* p_data)> body{[](tBTA_DM_MSG* p_data) {}};
+  std::function<void(tBTA_DM_MSG* p_data)> body{
+      [](tBTA_DM_MSG* /* p_data */) {}};
   void operator()(tBTA_DM_MSG* p_data) { body(p_data); };
 };
 extern struct bta_dm_sdp_result bta_dm_sdp_result;
@@ -571,7 +577,8 @@ extern struct bta_dm_search_cancel_notify bta_dm_search_cancel_notify;
 // Params: tBTA_DM_MSG* p_data
 // Return: void
 struct bta_dm_search_result {
-  std::function<void(tBTA_DM_MSG* p_data)> body{[](tBTA_DM_MSG* p_data) {}};
+  std::function<void(tBTA_DM_MSG* p_data)> body{
+      [](tBTA_DM_MSG* /* p_data */) {}};
   void operator()(tBTA_DM_MSG* p_data) { body(p_data); };
 };
 extern struct bta_dm_search_result bta_dm_search_result;
@@ -581,7 +588,7 @@ extern struct bta_dm_search_result bta_dm_search_result;
 // Return: void
 struct bta_dm_set_dev_name {
   std::function<void(const std::vector<uint8_t>& name)> body{
-      [](const std::vector<uint8_t>& name) {}};
+      [](const std::vector<uint8_t>& /* name */) {}};
   void operator()(const std::vector<uint8_t>& name) { body(name); };
 };
 extern struct bta_dm_set_dev_name bta_dm_set_dev_name;
@@ -593,8 +600,9 @@ struct bta_dm_set_encryption {
   std::function<void(const RawAddress& bd_addr, tBT_TRANSPORT transport,
                      tBTA_DM_ENCRYPT_CBACK* p_callback,
                      tBTM_BLE_SEC_ACT sec_act)>
-      body{[](const RawAddress& bd_addr, tBT_TRANSPORT transport,
-              tBTA_DM_ENCRYPT_CBACK* p_callback, tBTM_BLE_SEC_ACT sec_act) {}};
+      body{[](const RawAddress& /* bd_addr */, tBT_TRANSPORT /* transport */,
+              tBTA_DM_ENCRYPT_CBACK* /* p_callback */,
+              tBTM_BLE_SEC_ACT /* sec_act */) {}};
   void operator()(const RawAddress& bd_addr, tBT_TRANSPORT transport,
                   tBTA_DM_ENCRYPT_CBACK* p_callback, tBTM_BLE_SEC_ACT sec_act) {
     body(bd_addr, transport, p_callback, sec_act);
@@ -607,7 +615,7 @@ extern struct bta_dm_set_encryption bta_dm_set_encryption;
 // Return: void
 struct handle_remote_features_complete {
   std::function<void(const RawAddress& bd_addr)> body{
-      [](const RawAddress& bd_addr) {}};
+      [](const RawAddress& /* bd_addr */) {}};
   void operator()(const RawAddress& bd_addr) { body(bd_addr); };
 };
 extern struct handle_remote_features_complete handle_remote_features_complete;

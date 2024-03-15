@@ -25,14 +25,18 @@
 #include "test/common/mock_functions.h"
 #include "types/raw_address.h"
 
-void BTA_PanClose(uint16_t handle) { inc_func_call_count(__func__); }
+void BTA_PanClose(uint16_t /* handle */) { inc_func_call_count(__func__); }
 void BTA_PanDisable(void) { inc_func_call_count(__func__); }
-void BTA_PanEnable(tBTA_PAN_CBACK p_cback) { inc_func_call_count(__func__); }
-void BTA_PanOpen(const RawAddress& bd_addr, tBTA_PAN_ROLE local_role,
-                 tBTA_PAN_ROLE peer_role) {
+void BTA_PanEnable(tBTA_PAN_CBACK /* p_cback */) {
   inc_func_call_count(__func__);
 }
-void BTA_PanSetRole(tBTA_PAN_ROLE role, const tBTA_PAN_ROLE_INFO p_user_info,
-                    const tBTA_PAN_ROLE_INFO p_nap_info) {
+void BTA_PanOpen(const RawAddress& /* bd_addr */,
+                 tBTA_PAN_ROLE /* local_role */,
+                 tBTA_PAN_ROLE /* peer_role */) {
+  inc_func_call_count(__func__);
+}
+void BTA_PanSetRole(tBTA_PAN_ROLE /* role */,
+                    const tBTA_PAN_ROLE_INFO /* p_user_info */,
+                    const tBTA_PAN_ROLE_INFO /* p_nap_info */) {
   inc_func_call_count(__func__);
 }
