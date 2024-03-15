@@ -23,7 +23,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.content.AttributionSource;
 
-import com.android.bluetooth.x.com.android.modules.utils.SynchronousResultReceiver;
+import com.android.bluetooth.jarjar.com.android.modules.utils.SynchronousResultReceiver;
 
 import org.junit.Before;
 import org.junit.Rule;

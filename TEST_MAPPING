@@ -5,6 +5,9 @@
       "name": "CtsBluetoothTestCases"
     },
     {
+      "name": "CtsStrictJavaPackagesTestCases"
+    },
+    {
       "name": "BluetoothInstrumentationTests"
     },
     {
@@ -328,9 +331,6 @@
     },
     {
       "name": "bluetooth_test_gdx_unit"
-    },
-    {
-      "name": "CtsStrictJavaPackagesTestCases"
     },
     {
       "name": "net_test_bta_jv"

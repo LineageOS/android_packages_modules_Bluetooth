@@ -27,7 +27,7 @@ import android.bluetooth.IBluetoothOobDataCallback;
 import android.content.AttributionSource;
 import android.os.ParcelUuid;
 
-import com.android.bluetooth.x.com.android.modules.utils.SynchronousResultReceiver;
+import com.android.bluetooth.jarjar.com.android.modules.utils.SynchronousResultReceiver;
 
 import org.junit.After;
 import org.junit.Before;
