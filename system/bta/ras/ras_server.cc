@@ -22,6 +22,8 @@
 #include "bta/include/bta_gatt_api.h"
 #include "bta/include/bta_ras_api.h"
 #include "bta/ras/ras_types.h"
+#include "os/logging/log_adapter.h"
+#include "stack/include/bt_types.h"
 
 using namespace bluetooth;
 using namespace ::ras;
@@ -42,6 +44,11 @@ class RasServerImpl : public bluetooth::ras::RasServer {
     uint16_t attribute_handle_ccc_;
   };
 
+  struct ClientTracker {
+    uint16_t conn_id_;
+    std::unordered_map<Uuid, uint16_t> ccc_values_;
+  };
+
   void Initialize() {
     app_uuid_ = bluetooth::Uuid::GetRandom();
     log::info("Register server with uuid:{}", app_uuid_.ToString());
@@ -57,15 +64,39 @@ class RasServerImpl : public bluetooth::ras::RasServer {
   void GattsCallback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data) {
     log::info("event: {}", gatt_server_event_text(event));
     switch (event) {
+      case BTA_GATTS_CONNECT_EVT: {
+        OnGattConnect(p_data);
+      } break;
       case BTA_GATTS_REG_EVT: {
         OnGattServerRegister(p_data);
       } break;
       case BTA_GATTS_READ_CHARACTERISTIC_EVT: {
         OnReadCharacteristic(p_data);
       } break;
+      case BTA_GATTS_READ_DESCRIPTOR_EVT: {
+        OnReadDescriptor(p_data);
+      } break;
+      case BTA_GATTS_WRITE_DESCRIPTOR_EVT: {
+        OnWriteDescriptor(p_data);
+      } break;
       default:
         log::warn("Unhandled event {}", event);
     }
+  }
+
+  void OnGattConnect(tBTA_GATTS* p_data) {
+    auto address = p_data->conn.remote_bda;
+    log::info("Address: {}, conn_id:{}", ADDRESS_TO_LOGGABLE_STR(address),
+              p_data->conn.conn_id);
+    if (p_data->conn.transport == BT_TRANSPORT_BR_EDR) {
+      log::warn("Skip BE/EDR connection");
+      return;
+    }
+
+    if (trackers_.find(address) == trackers_.end()) {
+      log::warn("Create new tracker");
+    }
+    trackers_[address].conn_id_ = p_data->conn.conn_id;
   }
 
   void OnGattServerRegister(tBTA_GATTS* p_data) {
@@ -194,6 +225,70 @@ class RasServerImpl : public bluetooth::ras::RasServer {
                       GATT_SUCCESS, &p_msg);
   }
 
+  void OnReadDescriptor(tBTA_GATTS* p_data) {
+    uint16_t conn_id = p_data->req_data.conn_id;
+    uint16_t read_req_handle = p_data->req_data.p_data->read_req.handle;
+    RawAddress remote_bda = p_data->req_data.remote_bda;
+    log::info("conn_id:{}, read_req_handle:0x{:04x}", conn_id, read_req_handle);
+
+    tGATTS_RSP p_msg;
+    p_msg.attr_value.handle = read_req_handle;
+
+    // Only Client Characteristic Configuration (CCC) descriptor is expected
+    RasCharacteristic* characteristic =
+        GetCharacteristicByCccHandle(read_req_handle);
+    if (characteristic == nullptr) {
+      log::warn("Can't find Characteristic for CCC Descriptor, handle 0x{:04x}",
+                read_req_handle);
+      BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_INVALID_HANDLE,
+                        &p_msg);
+      return;
+    }
+    log::info("Read CCC for uuid, {}", getUuidName(characteristic->uuid_));
+    uint16_t ccc_value = 0;
+    if (trackers_.find(remote_bda) != trackers_.end()) {
+      ccc_value = trackers_[remote_bda].ccc_values_[characteristic->uuid_];
+    }
+
+    p_msg.attr_value.len = kCccValueSize;
+    memcpy(p_msg.attr_value.value, &ccc_value, sizeof(uint16_t));
+
+    log::info("Send response for CCC value 0x{:04x}", ccc_value);
+    BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_SUCCESS, &p_msg);
+  }
+
+  void OnWriteDescriptor(tBTA_GATTS* p_data) {
+    uint16_t conn_id = p_data->req_data.conn_id;
+    uint16_t write_req_handle = p_data->req_data.p_data->write_req.handle;
+    uint16_t len = p_data->req_data.p_data->write_req.len;
+    RawAddress remote_bda = p_data->req_data.remote_bda;
+    log::info("conn_id:{}, write_req_handle:0x{:04x}, len:{}", conn_id,
+              write_req_handle, len);
+
+    tGATTS_RSP p_msg;
+    p_msg.handle = write_req_handle;
+
+    // Only Client Characteristic Configuration (CCC) descriptor is expected
+    RasCharacteristic* characteristic =
+        GetCharacteristicByCccHandle(write_req_handle);
+    if (characteristic == nullptr) {
+      log::warn("Can't find Characteristic for CCC Descriptor, handle 0x{:04x}",
+                write_req_handle);
+      BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_INVALID_HANDLE,
+                        &p_msg);
+      return;
+    }
+    const uint8_t* value = p_data->req_data.p_data->write_req.value;
+    uint16_t ccc_value;
+    STREAM_TO_UINT16(ccc_value, value);
+    if (trackers_.find(remote_bda) != trackers_.end()) {
+      trackers_[remote_bda].ccc_values_[characteristic->uuid_] = ccc_value;
+    }
+    log::info("Write CCC for {}, conn_id:{}, value:0x{:04x}",
+              getUuidName(characteristic->uuid_), conn_id, ccc_value);
+    BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_SUCCESS, &p_msg);
+  }
+
   void OnServiceAdded(tGATT_STATUS status, int server_if,
                       std::vector<btgatt_db_element_t> service) {
     log::info("status: {}, server_if: {}", gatt_status_text(status), server_if);
@@ -217,11 +312,22 @@ class RasServerImpl : public bluetooth::ras::RasServer {
     }
   }
 
+  RasCharacteristic* GetCharacteristicByCccHandle(uint16_t descriptor_handle) {
+    for (auto& [attribute_handle, characteristic] : characteristics_) {
+      if (characteristic.attribute_handle_ccc_ == descriptor_handle) {
+        return &characteristic;
+      }
+    }
+    return nullptr;
+  }
+
  private:
   bluetooth::Uuid app_uuid_;
   uint16_t server_if_;
   // A map to associate characteristics with handles
   std::unordered_map<uint16_t, RasCharacteristic> characteristics_;
+  // A map to client trackers with address
+  std::unordered_map<RawAddress, ClientTracker> trackers_;
 };
 
 }  // namespace
