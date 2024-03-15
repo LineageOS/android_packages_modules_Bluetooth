@@ -139,3 +139,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "ensure_valid_adv_flag"
+    namespace: "bluetooth"
+    description: "Check ADV flag is valid before processing"
+    bug: "329888460"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
