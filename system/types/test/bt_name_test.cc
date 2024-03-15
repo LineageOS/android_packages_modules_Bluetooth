@@ -30,6 +30,9 @@ TEST(BtNameTest, new_name) {
 
   ASSERT_TRUE(bd_name_is_equal(bd_name1, bd_name2));
   ASSERT_FALSE(bd_name_is_equal(bd_name1, bd_name3));
+
+  bd_name_from_char_pointer(bd_name3, "ATestName");
+  ASSERT_TRUE(bd_name_is_equal(bd_name1, bd_name3));
 }
 
 TEST(BtNameTest, new_name_nullptr) {
@@ -40,7 +43,7 @@ TEST(BtNameTest, new_name_nullptr) {
   BD_NAME bd_name2 = {};
   bd_name_from_char_pointer(bd_name2, "ARealTestName");
   bd_name_from_char_pointer(bd_name2, nullptr);
-  ASSERT_FALSE(bd_name_is_empty(bd_name2));
+  ASSERT_TRUE(bd_name_is_empty(bd_name2));
 }
 
 TEST(BtNameTest, clear) {

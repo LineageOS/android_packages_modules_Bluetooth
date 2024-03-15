@@ -86,7 +86,7 @@ TEST_F(BtaSecTest, bta_dm_sp_cback__BTM_SP_CFM_REQ_EVT_WithName) {
           },
   };
   data.cfm_req.dev_class = kDeviceClass;
-  bd_name_copy(data.cfm_req.bd_name, kRemoteName);
+  bd_name_from_char_pointer(data.cfm_req.bd_name, kRemoteName);
 
   ASSERT_EQ(btm_status_text(BTM_CMD_STARTED),
             btm_status_text(bluetooth::legacy::testing::bta_dm_sp_cback(
@@ -221,7 +221,7 @@ TEST_F(BtaSecTest, bta_dm_sp_cback__BTM_SP_KEY_NOTIF_EVT) {
           },
   };
   data.key_notif.dev_class = kDeviceClass;
-  bd_name_copy(data.key_notif.bd_name, kRemoteName);
+  bd_name_from_char_pointer(data.key_notif.bd_name, kRemoteName);
 
   ASSERT_EQ(btm_status_text(BTM_CMD_STARTED),
             btm_status_text(bluetooth::legacy::testing::bta_dm_sp_cback(
