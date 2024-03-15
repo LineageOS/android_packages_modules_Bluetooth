@@ -635,7 +635,7 @@ TEST_F(BtPropertyTest, bt_property_text_test) {
 
   {
     bt_bdname_t bd_name;
-    bd_name_copy(bd_name.name, kRemoteFriendlyName);
+    bd_name_from_char_pointer(bd_name.name, (const char*)kRemoteFriendlyName);
     bt_property_t prop = {
         .type = BT_PROPERTY_REMOTE_FRIENDLY_NAME,
         .len = (int)sizeof(bd_name.name),
