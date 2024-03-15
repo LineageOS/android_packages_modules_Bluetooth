@@ -56,6 +56,7 @@ import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.RemoteDevices;
@@ -704,6 +705,8 @@ public class HeadsetServiceAndStateMachineTest {
     @Test
     public void testVoiceRecognition_SingleHfInitiatedSuccess_ScoManagedByAudio() {
         mSetFlagsRule.enableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO);
+        Utils.setIsScoManagedByAudioEnabled(true);
+
         // Connect HF
         BluetoothDevice device = TestUtils.getTestDevice(mAdapter, 0);
         connectTestDevice(device);
@@ -714,6 +717,8 @@ public class HeadsetServiceAndStateMachineTest {
         verify(mNativeInterface, timeout(ASYNC_CALL_TIMEOUT_MILLIS)).sendBsir(eq(device), eq(true));
         // Start voice recognition
         startVoiceRecognitionFromHf_ScoManagedByAudio(device);
+
+        Utils.setIsScoManagedByAudioEnabled(false);
     }
 
     /**
@@ -863,6 +868,8 @@ public class HeadsetServiceAndStateMachineTest {
     @Test
     public void testVoiceRecognition_SingleAgInitiatedSuccess_ScoManagedByAudio() {
         mSetFlagsRule.enableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO);
+        Utils.setIsScoManagedByAudioEnabled(true);
+
         // Connect HF
         BluetoothDevice device = TestUtils.getTestDevice(mAdapter, 0);
         connectTestDevice(device);
@@ -873,6 +880,8 @@ public class HeadsetServiceAndStateMachineTest {
         verify(mNativeInterface, timeout(ASYNC_CALL_TIMEOUT_MILLIS)).sendBsir(eq(device), eq(true));
         // Start voice recognition
         startVoiceRecognitionFromAg_ScoManagedByAudio();
+
+        Utils.setIsScoManagedByAudioEnabled(false);
     }
 
     /**
@@ -1681,6 +1690,7 @@ public class HeadsetServiceAndStateMachineTest {
     @Test
     public void testPhoneStateChange_SynchronousCallStateChanged() {
         mSetFlagsRule.enableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO);
+        Utils.setIsScoManagedByAudioEnabled(true);
 
         BluetoothDevice device = TestUtils.getTestDevice(mAdapter, 0);
         Assert.assertNotNull(device);
@@ -1711,6 +1721,8 @@ public class HeadsetServiceAndStateMachineTest {
         // verify phoneStateChanged runs synchronously, which means when phoneStateChange returns,
         // HeadsetStateMachine completes processing CALL_STATE_CHANGED message
         verify(mNativeInterface, times(1)).phoneStateChange(device, headsetCallState);
+
+        Utils.setIsScoManagedByAudioEnabled(false);
     }
 
     private void connectTestDevice(BluetoothDevice device) {
