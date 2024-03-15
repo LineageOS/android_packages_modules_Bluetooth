@@ -32,6 +32,8 @@ namespace {
 class RasServerImpl;
 RasServerImpl* instance;
 
+static constexpr uint32_t kSupportedFeatures = 0;
+
 class RasServerImpl : public bluetooth::ras::RasServer {
  public:
   struct RasCharacteristic {
@@ -57,6 +59,9 @@ class RasServerImpl : public bluetooth::ras::RasServer {
     switch (event) {
       case BTA_GATTS_REG_EVT: {
         OnGattServerRegister(p_data);
+      } break;
+      case BTA_GATTS_READ_CHARACTERISTIC_EVT: {
+        OnReadCharacteristic(p_data);
       } break;
       default:
         log::warn("Unhandled event {}", event);
@@ -155,6 +160,38 @@ class RasServerImpl : public bluetooth::ras::RasServer {
                                std::vector<btgatt_db_element_t> service) {
           if (instance) instance->OnServiceAdded(status, server_if, service);
         }));
+  }
+
+  void OnReadCharacteristic(tBTA_GATTS* p_data) {
+    uint16_t read_req_handle = p_data->req_data.p_data->read_req.handle;
+    log::info("read_req_handle: 0x{:04x}, ", read_req_handle);
+
+    tGATTS_RSP p_msg;
+    p_msg.attr_value.handle = read_req_handle;
+    if (characteristics_.find(read_req_handle) == characteristics_.end()) {
+      log::error("Invalid handle 0x{:04x}", read_req_handle);
+      BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
+                        GATT_INVALID_HANDLE, &p_msg);
+      return;
+    }
+
+    auto uuid = characteristics_[read_req_handle].uuid_;
+    log::info("Read uuid, {}", getUuidName(uuid));
+
+    // Check Characteristic UUID
+    switch (uuid.As16Bit()) {
+      case kRasFeaturesCharacteristic16bit: {
+        p_msg.attr_value.len = kFeatureSize;
+        memcpy(p_msg.attr_value.value, &kSupportedFeatures, sizeof(uint32_t));
+      } break;
+      default:
+        log::warn("Unhandled uuid {}", uuid.ToString());
+        BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
+                          GATT_ILLEGAL_PARAMETER, &p_msg);
+        return;
+    }
+    BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
+                      GATT_SUCCESS, &p_msg);
   }
 
   void OnServiceAdded(tGATT_STATUS status, int server_if,
