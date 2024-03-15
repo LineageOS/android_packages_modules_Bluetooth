@@ -55,4 +55,12 @@ std::string getUuidName(const bluetooth::Uuid& uuid);
 
 }  // namespace uuid
 
+namespace feature {
+static const uint32_t kRealTimeRangingData = 0x01;
+static const uint32_t kRetrieveLostRangingDataSegments = 0x02;
+static const uint32_t kAbortOperation = 0x04;
+static const uint32_t kFilterRangingData = 0x08;
+static const uint32_t kPctPhaseFormat = 0xA0;
+}  // namespace feature
+
 }  // namespace ras
