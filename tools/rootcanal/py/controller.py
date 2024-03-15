@@ -305,30 +305,40 @@ class ControllerTest(unittest.IsolatedAsyncioTestCase):
 
     async def expect_ll(self,
                         expected_pdus: typing.Union[list, typing.Union[ll.LinkLayerPacket, type]],
+                        ignored_pdus: typing.Union[list, type] = [],
                         timeout: int = 3) -> ll.LinkLayerPacket:
+        if not isinstance(ignored_pdus, list):
+            ignored_pdus = [ignored_pdus]
+
         if not isinstance(expected_pdus, list):
             expected_pdus = [expected_pdus]
 
-        packet = await asyncio.wait_for(self.controller.receive_ll(), timeout=timeout)
-        pdu = ll.LinkLayerPacket.parse_all(packet)
+        async with asyncio.timeout(timeout):
+            while True:
+                packet = await asyncio.wait_for(self.controller.receive_ll())
+                pdu = ll.LinkLayerPacket.parse_all(packet)
 
-        for expected_pdu in expected_pdus:
-            if isinstance(expected_pdu, type) and isinstance(pdu, expected_pdu):
-                return pdu
-            if isinstance(expected_pdu, ll.LinkLayerPacket) and pdu == expected_pdu:
-                return pdu
+                for ignored_pdu in ignored_pdus:
+                    if isinstance(pdu, ignored_pdu):
+                        continue
 
-        print("received unexpected pdu:")
-        pdu.show()
-        print("expected pdus:")
-        for expected_pdu in expected_pdus:
-            if isinstance(expected_pdu, type):
-                print(f"- {expected_pdu.__name__}")
-            if isinstance(expected_pdu, ll.LinkLayerPacket):
-                print(f"- {expected_pdu.__class__.__name__}")
-                expected_pdu.show()
+                for expected_pdu in expected_pdus:
+                    if isinstance(expected_pdu, type) and isinstance(pdu, expected_pdu):
+                        return pdu
+                    if isinstance(expected_pdu, ll.LinkLayerPacket) and pdu == expected_pdu:
+                        return pdu
 
-        self.assertTrue(False)
+                print("received unexpected pdu:")
+                pdu.show()
+                print("expected pdus:")
+                for expected_pdu in expected_pdus:
+                    if isinstance(expected_pdu, type):
+                        print(f"- {expected_pdu.__name__}")
+                    if isinstance(expected_pdu, ll.LinkLayerPacket):
+                        print(f"- {expected_pdu.__class__.__name__}")
+                        expected_pdu.show()
+
+                self.assertTrue(False)
 
     async def expect_llcp(self,
                           source_address: hci.Address,
