@@ -31,8 +31,9 @@
 #include <cstdint>
 #include <unordered_map>
 
-#include "device/include/controller.h"
+#include "hci/controller_interface.h"
 #include "main/shim/acl_api.h"
+#include "main/shim/entry.h"
 #include "os/log.h"
 #include "stack/btm/btm_ble_int.h"
 #include "stack/btm/btm_dev.h"
@@ -108,7 +109,7 @@ bool BTM_AcceptlistAdd(const RawAddress& address) {
  * connect parameters. Returns false if acceptlist is full and device can't
  * be added, true otherwise. */
 bool BTM_AcceptlistAdd(const RawAddress& address, bool is_direct) {
-  if (!controller_get_interface()->SupportsBle()) {
+  if (!bluetooth::shim::GetController()->SupportsBle()) {
     log::warn("Controller does not support Le");
     return false;
   }
@@ -119,7 +120,7 @@ bool BTM_AcceptlistAdd(const RawAddress& address, bool is_direct) {
 
 /** Removes the device from acceptlist */
 void BTM_AcceptlistRemove(const RawAddress& address) {
-  if (!controller_get_interface()->SupportsBle()) {
+  if (!bluetooth::shim::GetController()->SupportsBle()) {
     log::warn("Controller does not support Le");
     return;
   }
@@ -131,7 +132,7 @@ void BTM_AcceptlistRemove(const RawAddress& address) {
 
 /** Clear the acceptlist, end any pending acceptlist connections */
 void BTM_AcceptlistClear() {
-  if (!controller_get_interface()->SupportsBle()) {
+  if (!bluetooth::shim::GetController()->SupportsBle()) {
     log::warn("Controller does not support Le");
     return;
   }

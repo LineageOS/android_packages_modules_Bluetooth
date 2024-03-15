@@ -36,32 +36,6 @@ typedef struct controller_t {
 
   const uint8_t* (*get_ble_supported_states)(void);
 
-  bool (*supports_enhanced_setup_synchronous_connection)(void);
-  bool (*supports_enhanced_accept_synchronous_connection)(void);
-  bool (*supports_configure_data_path)(void);
-  bool (*supports_set_min_encryption_key_size)(void);
-  bool (*supports_read_encryption_key_size)(void);
-
-  bool (*SupportsBle)(void);
-  bool (*SupportsBleDataPacketLengthExtension)(void);
-  bool (*SupportsBleConnectionParametersRequest)(void);
-  bool (*SupportsBlePrivacy)(void);
-  bool (*supports_ble_set_privacy_mode)(void);
-  bool (*SupportsBle2mPhy)(void);
-  bool (*SupportsBleCodedPhy)(void);
-  bool (*SupportsBleExtendedAdvertising)(void);
-  bool (*SupportsBlePeriodicAdvertising)(void);
-  bool (*SupportsBlePeripheralInitiatedFeaturesExchange)(void);
-  bool (*SupportsBlePeriodicAdvertisingSyncTransferSender)(void);
-  bool (*SupportsBlePeriodicAdvertisingSyncTransferRecipient)(void);
-  bool (*SupportsBleConnectedIsochronousStreamCentral)(void);
-  bool (*SupportsBleConnectedIsochronousStreamPeripheral)(void);
-  bool (*SupportsBleIsochronousBroadcaster)(void);
-  bool (*SupportsBleSynchronizedReceiver)(void);
-
-  bool (*SupportsBleConnectionSubrating)(void);
-  bool (*SupportsBleConnectionSubratingHost)(void);
-
   // Get the cached acl data sizes for the controller.
   uint16_t (*get_acl_data_size_classic)(void);
   uint16_t (*get_acl_data_size_ble)(void);

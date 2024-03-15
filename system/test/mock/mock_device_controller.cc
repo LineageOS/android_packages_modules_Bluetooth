@@ -101,101 +101,6 @@ uint8_t* get_local_supported_codecs(uint8_t* number_of_codecs) {
 
 const uint8_t* get_ble_supported_states(void) { return ble_supported_states; }
 
-bool supports_enhanced_setup_synchronous_connection(void) {
-  return HCI_ENH_SETUP_SYNCH_CONN_SUPPORTED(supported_commands);
-}
-
-bool supports_enhanced_accept_synchronous_connection(void) {
-  return HCI_ENH_ACCEPT_SYNCH_CONN_SUPPORTED(supported_commands);
-}
-
-bool supports_configure_data_path(void) {
-  return HCI_CONFIGURE_DATA_PATH_SUPPORTED(supported_commands);
-}
-
-#define HCI_SET_MIN_ENCRYPTION_KEY_SIZE_SUPPORTED(x) ((x)[45] & 0x80)
-bool supports_set_min_encryption_key_size(void) {
-  return HCI_SET_MIN_ENCRYPTION_KEY_SIZE_SUPPORTED(supported_commands);
-}
-
-#define HCI_READ_ENCRYPTION_KEY_SIZE_SUPPORTED(x) ((x)[20] & 0x10)
-bool supports_read_encryption_key_size(void) {
-  return HCI_READ_ENCRYPTION_KEY_SIZE_SUPPORTED(supported_commands);
-}
-
-bool supports_ble(void) { return ble_supported; }
-
-bool supports_ble_privacy(void) {
-  return HCI_LE_ENHANCED_PRIVACY_SUPPORTED(features_ble.as_array);
-}
-
-bool supports_ble_set_privacy_mode() {
-  return HCI_LE_ENHANCED_PRIVACY_SUPPORTED(features_ble.as_array) &&
-         HCI_LE_SET_PRIVACY_MODE_SUPPORTED(supported_commands);
-}
-
-bool supports_ble_packet_extension(void) {
-  return HCI_LE_DATA_LEN_EXT_SUPPORTED(features_ble.as_array);
-}
-
-bool supports_ble_connection_parameters_request(void) {
-  return HCI_LE_CONN_PARAM_REQ_SUPPORTED(features_ble.as_array);
-}
-
-bool supports_ble_2m_phy(void) {
-  return HCI_LE_2M_PHY_SUPPORTED(features_ble.as_array);
-}
-
-bool supports_ble_coded_phy(void) {
-  return HCI_LE_CODED_PHY_SUPPORTED(features_ble.as_array);
-}
-
-bool supports_ble_extended_advertising(void) {
-  return HCI_LE_EXTENDED_ADVERTISING_SUPPORTED(features_ble.as_array);
-}
-
-bool supports_ble_periodic_advertising(void) {
-  return HCI_LE_PERIODIC_ADVERTISING_SUPPORTED(features_ble.as_array);
-}
-
-bool supports_ble_peripheral_initiated_feature_exchange(void) {
-  return HCI_LE_PERIPHERAL_INIT_FEAT_EXC_SUPPORTED(features_ble.as_array);
-}
-
-bool supports_ble_periodic_advertising_sync_transfer_sender(void) {
-  return HCI_LE_PERIODIC_ADVERTISING_SYNC_TRANSFER_SENDER(
-      features_ble.as_array);
-}
-
-bool supports_ble_periodic_advertising_sync_transfer_recipient(void) {
-  return HCI_LE_PERIODIC_ADVERTISING_SYNC_TRANSFER_RECIPIENT(
-      features_ble.as_array);
-}
-
-bool supports_ble_connected_isochronous_stream_central(void) {
-  return HCI_LE_CIS_CENTRAL(features_ble.as_array);
-}
-
-bool supports_ble_connected_isochronous_stream_peripheral(void) {
-  return HCI_LE_CIS_PERIPHERAL(features_ble.as_array);
-}
-
-bool supports_ble_isochronous_broadcaster(void) {
-  return HCI_LE_ISO_BROADCASTER(features_ble.as_array);
-}
-
-bool supports_ble_synchronized_receiver(void) {
-  return HCI_LE_SYNCHRONIZED_RECEIVER(features_ble.as_array);
-}
-
-bool supports_ble_connection_subrating(void) {
-  return HCI_LE_CONN_SUBRATING_SUPPORT(features_ble.as_array);
-}
-
-bool supports_ble_connection_subrating_host(void) {
-  return HCI_LE_CONN_SUBRATING_HOST_SUPPORT(features_ble.as_array);
-}
-
 uint16_t get_acl_data_size_classic(void) { return acl_data_size_classic; }
 
 uint16_t get_acl_data_size_ble(void) { return acl_data_size_ble; }
@@ -284,31 +189,6 @@ const controller_t interface = {
     get_bt_version,
 
     get_ble_supported_states,
-
-    supports_enhanced_setup_synchronous_connection,
-    supports_enhanced_accept_synchronous_connection,
-    supports_configure_data_path,
-    supports_set_min_encryption_key_size,
-    supports_read_encryption_key_size,
-
-    supports_ble,
-    supports_ble_packet_extension,
-    supports_ble_connection_parameters_request,
-    supports_ble_privacy,
-    supports_ble_set_privacy_mode,
-    supports_ble_2m_phy,
-    supports_ble_coded_phy,
-    supports_ble_extended_advertising,
-    supports_ble_periodic_advertising,
-    supports_ble_peripheral_initiated_feature_exchange,
-    supports_ble_periodic_advertising_sync_transfer_sender,
-    supports_ble_periodic_advertising_sync_transfer_recipient,
-    supports_ble_connected_isochronous_stream_central,
-    supports_ble_connected_isochronous_stream_peripheral,
-    supports_ble_isochronous_broadcaster,
-    supports_ble_synchronized_receiver,
-    supports_ble_connection_subrating,
-    supports_ble_connection_subrating_host,
 
     get_acl_data_size_classic,
     get_acl_data_size_ble,

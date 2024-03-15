@@ -21,10 +21,11 @@
 #include "audio_hal_client/audio_hal_client.h"
 #include "broadcaster/broadcast_configuration_provider.h"
 #include "broadcaster/broadcaster_types.h"
-#include "device/include/controller.h"
+#include "hci/controller_interface.h"
 #include "le_audio/le_audio_types.h"
 #include "le_audio_set_configuration_provider.h"
 #include "le_audio_utils.h"
+#include "main/shim/entry.h"
 #include "os/log.h"
 #include "osi/include/properties.h"
 #include "stack/include/hcimsgs.h"
@@ -105,7 +106,8 @@ struct codec_manager_impl {
       return;
     }
 
-    if (!controller_get_interface()->supports_configure_data_path()) {
+    if (!bluetooth::shim::GetController()->IsSupported(
+            bluetooth::hci::OpCode::CONFIGURE_DATA_PATH)) {
       LOG_WARN("Controller does not support config data path command");
       return;
     }
