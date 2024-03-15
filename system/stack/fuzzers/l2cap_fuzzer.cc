@@ -16,6 +16,7 @@
 
 #include <base/location.h>
 #include <fuzzer/FuzzedDataProvider.h>
+#include <gmock/gmock.h>
 
 #include <cstdint>
 #include <string>
@@ -23,6 +24,7 @@
 
 #include "btif/include/stack_manager_t.h"
 #include "hal/snoop_logger.h"
+#include "hci/controller_interface_mock.h"
 #include "include/check.h"
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_int_types.h"
@@ -33,10 +35,12 @@
 #include "stack/include/l2cap_hci_link_interface.h"
 #include "test/fake/fake_osi.h"
 #include "test/mock/mock_device_controller.h"
+#include "test/mock/mock_main_shim_entry.h"
 #include "test/mock/mock_stack_acl.h"
 #include "test/mock/mock_stack_btm_devctl.h"
 
 using bluetooth::Uuid;
+using testing::Return;
 
 // Verify the passed data is readable
 static void ConsumeData(const uint8_t* data, size_t size) {
@@ -113,11 +117,12 @@ class FakeBtStack {
     GetInterfaceToProfiles()->profileSpecific_HACK->GetHearingAidDeviceCount =
         []() { return 1; };
 
-    test::mock::device_controller::ble_supported = true;
     test::mock::device_controller::acl_data_size_classic = 512;
     test::mock::device_controller::acl_data_size_ble = 512;
     test::mock::device_controller::iso_data_size = 512;
     test::mock::device_controller::ble_suggested_default_data_length = 512;
+    ON_CALL(controller_, SupportsBle).WillByDefault(Return(true));
+    bluetooth::hci::testing::mock_controller_ = &controller_;
   }
 
   ~FakeBtStack() {
@@ -126,7 +131,9 @@ class FakeBtStack {
     test::mock::stack_acl::acl_create_classic_connection = {};
     test::mock::stack_acl::acl_send_data_packet_br_edr = {};
     test::mock::stack_acl::acl_send_data_packet_ble = {};
+    bluetooth::hci::testing::mock_controller_ = nullptr;
   }
+  bluetooth::hci::testing::MockControllerInterface controller_;
 };
 
 class Fakes {

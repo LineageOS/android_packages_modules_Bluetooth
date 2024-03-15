@@ -470,7 +470,7 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
     btm_ble_get_acl_remote_addr(hci_handle, p_acl->active_remote_addr,
                                 &p_acl->active_remote_addr_type);
 
-    if (controller_get_interface()
+    if (bluetooth::shim::GetController()
             ->SupportsBlePeripheralInitiatedFeaturesExchange() ||
         link_role == HCI_ROLE_CENTRAL) {
       btsnd_hcic_ble_read_remote_feat(p_acl->hci_handle);
