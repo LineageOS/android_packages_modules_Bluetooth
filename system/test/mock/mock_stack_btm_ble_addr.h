@@ -36,25 +36,6 @@ namespace mock {
 namespace stack_btm_ble_addr {
 
 // Shared state between mocked functions and tests
-// Name: btm_gen_resolve_paddr_low
-// Params: const RawAddress& address
-// Returns: void
-struct btm_gen_resolve_paddr_low {
-  std::function<void(const RawAddress& address)> body{
-      [](const RawAddress& /* address */) {}};
-  void operator()(const RawAddress& address) { body(address); };
-};
-extern struct btm_gen_resolve_paddr_low btm_gen_resolve_paddr_low;
-// Name: btm_gen_resolvable_private_addr
-// Params:  base::Callback<void(const RawAddress&)> cb
-// Returns: void
-struct btm_gen_resolvable_private_addr {
-  std::function<void(base::Callback<void(const RawAddress&)> cb)> body{
-      [](base::Callback<void(const RawAddress&)> /* cb */) {}};
-  void operator()(base::Callback<void(const RawAddress&)> cb) { body(cb); };
-};
-extern struct btm_gen_resolvable_private_addr btm_gen_resolvable_private_addr;
-
 // Name: btm_ble_init_pseudo_addr
 // Params: tBTM_SEC_DEV_REC* p_dev_rec, const RawAddress& new_pseudo_addr
 // Returns: bool
