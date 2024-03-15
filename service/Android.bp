@@ -178,6 +178,7 @@ android_robolectric_test {
 
     static_libs: [
         "androidx.test.core",
+        "androidx.test.ext.truth",
         "kotlin-test",
         "kotlinx_coroutines",
         "kotlinx_coroutines_test",
