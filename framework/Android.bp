@@ -87,8 +87,7 @@ java_sdk_library {
     permitted_packages: [
         "android.bluetooth",
         "com.android.bluetooth.flags",
-        // Created by jarjar rules.
-        "com.android.bluetooth.x",
+        "com.android.bluetooth.jarjar",
     ],
     errorprone: {
         javacflags: [

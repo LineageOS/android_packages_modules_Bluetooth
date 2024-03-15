@@ -56,7 +56,7 @@ import android.os.Message;
 import androidx.test.filters.LargeTest;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.x.android.hardware.radio.V1_0.ISap;
+import com.android.bluetooth.jarjar.android.hardware.radio.V1_0.ISap;
 
 import org.junit.After;
 import org.junit.Before;
