@@ -33,10 +33,6 @@ inline constexpr BD_NAME kBtmBdNameEmpty = {};
 constexpr size_t kBdNameLength = static_cast<size_t>(BD_NAME_LEN);
 constexpr uint8_t kBdNameDelim = (uint8_t)NULL;
 
-inline size_t bd_name_copy(BD_NAME bd_name_dest, const char* src) {
-  return strlcpy(reinterpret_cast<char*>(bd_name_dest), const_cast<char*>(src),
-                 kBdNameLength + 1);
-}
 inline size_t bd_name_copy(BD_NAME bd_name_dest, const BD_NAME bd_name_src) {
   return strlcpy(reinterpret_cast<char*>(bd_name_dest),
                  reinterpret_cast<const char*>(bd_name_src), kBdNameLength + 1);
@@ -48,9 +44,16 @@ inline bool bd_name_is_empty(const BD_NAME bd_name) {
 
 inline void bd_name_from_char_pointer(BD_NAME bd_name_dest,
                                       const char* bd_name_char) {
-  if (bd_name_char != nullptr) {
-    strlcpy(reinterpret_cast<char*>(bd_name_dest), bd_name_char,
-            kBdNameLength + 1);
+  if (bd_name_char == nullptr) {
+    bd_name_clear(bd_name_dest);
+    return;
+  }
+
+  size_t src_len = strlcpy(reinterpret_cast<char*>(bd_name_dest), bd_name_char,
+                           sizeof(BD_NAME));
+  if (src_len < sizeof(BD_NAME) - 1) {
+    /* Zero the remaining destination memory */
+    memset(bd_name_dest + src_len, 0, sizeof(BD_NAME) - src_len);
   }
 }
 inline bool bd_name_is_equal(const BD_NAME bd_name1, const BD_NAME bd_name2) {
