@@ -796,9 +796,10 @@ void LeAudioDevice::PrintDebugState(void) {
       debug_str
           << "\n  id: " << +ase.id << ", active: " << ase.active << ", dir: "
           << (ase.direction == types::kLeAudioDirectionSink ? "sink" : "source")
+          << ", state: " << bluetooth::common::ToString(ase.state)
           << ", cis_id: " << +ase.cis_id
           << ", cis_handle: " << +ase.cis_conn_hdl
-          << ", state: " << bluetooth::common::ToString(ase.cis_state)
+          << ", cis_state: " << bluetooth::common::ToString(ase.cis_state)
           << ", data_path_state: "
           << bluetooth::common::ToString(ase.data_path_state)
           << "\n ase max_latency: " << +ase.qos_config.max_transport_latency
@@ -808,7 +809,8 @@ void LeAudioDevice::PrintDebugState(void) {
           << ", presentation_delay: " << +ase.qos_config.presentation_delay
           << ", framing: " << +ase.qos_config.framing
           << ", phy: " << +ase.qos_config.phy
-          << ", target latency: " << +ase.target_latency;
+          << ", target latency: " << +ase.target_latency
+          << ", reconfigure: " << ase.reconfigure << "\n";
     }
   }
 
@@ -1022,6 +1024,7 @@ void LeAudioDevice::DeactivateAllAses(void) {
     ase.cis_state = CisState::IDLE;
     ase.data_path_state = DataPathState::IDLE;
     ase.active = false;
+    ase.reconfigure = 0;
     ase.cis_id = bluetooth::le_audio::kInvalidCisId;
     ase.cis_conn_hdl = 0;
   }
