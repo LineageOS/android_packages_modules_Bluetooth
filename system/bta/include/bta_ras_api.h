@@ -24,10 +24,19 @@
 namespace bluetooth {
 namespace ras {
 
+enum ProcedureDoneStatus : uint8_t {
+  ALL_RESULTS_COMPLETE = 0x0,
+  PARTIAL_RESULTS = 0x1,
+  ABORTED = 0xf,
+};
+
 class RasServer {
  public:
   virtual ~RasServer() = default;
   virtual void Initialize() = 0;
+  virtual void PushProcedureData(RawAddress address, uint16_t procedure_count,
+                                 ProcedureDoneStatus procedure_done_status,
+                                 std::vector<uint8_t> data) = 0;
 };
 
 RasServer* GetRasServer();
