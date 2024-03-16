@@ -36,6 +36,7 @@ typedef enum {
   BTHH_CONN_STATE_CONNECTING = 1,
   BTHH_CONN_STATE_DISCONNECTED = 2,
   BTHH_CONN_STATE_DISCONNECTING = 3,
+  BTHH_CONN_STATE_ACCEPTING = 4,
   BTHH_CONN_STATE_UNKNOWN = 0xff,
 } bthh_connection_state_t;
 
@@ -48,6 +49,7 @@ inline std::string bthh_connection_state_text(
     CASE_RETURN_TEXT(BTHH_CONN_STATE_CONNECTING);
     CASE_RETURN_TEXT(BTHH_CONN_STATE_DISCONNECTED);
     CASE_RETURN_TEXT(BTHH_CONN_STATE_DISCONNECTING);
+    CASE_RETURN_TEXT(BTHH_CONN_STATE_ACCEPTING);
     CASE_RETURN_TEXT(BTHH_CONN_STATE_UNKNOWN);
     default:
       return base::StringPrintf("UNKNOWN[%d]", state);
@@ -195,7 +197,7 @@ typedef struct {
 
   /** dis-connect from hid device */
   bt_status_t (*disconnect)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
-                            tBT_TRANSPORT transport);
+                            tBT_TRANSPORT transport, bool reconnect_allowed);
 
   /** Virtual UnPlug (VUP) the specified HID device */
   bt_status_t (*virtual_unplug)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
