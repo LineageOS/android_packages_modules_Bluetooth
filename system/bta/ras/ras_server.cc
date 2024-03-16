@@ -434,12 +434,26 @@ class RasServerImpl : public bluetooth::ras::RasServer {
       case Opcode::ACK_RANGING_DATA: {
         OnAckRangingData(&command, tracker);
       } break;
+      case Opcode::RETRIEVE_LOST_RANGING_DATA_SEGMENTS:
+      case Opcode::ABORT_OPERATION:
+      case Opcode::FILTER:
+      case Opcode::PCT_FORMAT: {
+        log::warn("Unsupported opcode:0x{:02x}, {}", (uint16_t)command.opcode_,
+                  GetOpcodeText(command.opcode_));
+        SendResponseCode(ResponseCodeValue::OP_CODE_NOT_SUPPORTED, tracker);
+      } break;
       default:
         LOG_WARN("Unknown opcode:0x%02x", (uint16_t)command.opcode_);
+        SendResponseCode(ResponseCodeValue::OP_CODE_NOT_SUPPORTED, tracker);
     }
   }
 
   void OnGetRangingData(ControlPointCommand* command, ClientTracker* tracker) {
+    if (command->operator_ != OPERATOR_NULL) {
+      log::warn("Invalid operator 0x{:02x}", command->operator_);
+      SendResponseCode(ResponseCodeValue::INVALID_OPERATOR, tracker);
+      return;
+    }
     const uint8_t* value = command->operand_;
     uint16_t ranging_counter;
     STREAM_TO_UINT16(ranging_counter, value);
@@ -478,10 +492,18 @@ class RasServerImpl : public bluetooth::ras::RasServer {
           response, true);
       tracker->handling_control_point_command_ = false;
       return;
+    } else {
+      log::warn("No Records Found");
+      SendResponseCode(ResponseCodeValue::NO_RECORDS_FOUND, tracker);
     }
   };
 
   void OnAckRangingData(ControlPointCommand* command, ClientTracker* tracker) {
+    if (command->operator_ != OPERATOR_NULL) {
+      log::warn("Invalid operator 0x{:02x}", command->operator_);
+      SendResponseCode(ResponseCodeValue::INVALID_OPERATOR, tracker);
+      return;
+    }
     const uint8_t* value = command->operand_;
     uint16_t ranging_counter;
     STREAM_TO_UINT16(ranging_counter, value);
@@ -496,6 +518,9 @@ class RasServerImpl : public bluetooth::ras::RasServer {
     if (it != tracker->buffers_.end()) {
       tracker->buffers_.erase(it);
       tracker->handling_control_point_command_ = false;
+    } else {
+      log::warn("No Records Found");
+      SendResponseCode(ResponseCodeValue::NO_RECORDS_FOUND, tracker);
     }
   };
 
