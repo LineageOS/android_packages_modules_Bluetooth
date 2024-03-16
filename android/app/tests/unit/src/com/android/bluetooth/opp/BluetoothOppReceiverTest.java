@@ -45,7 +45,6 @@ import android.net.Uri;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.sysprop.BluetoothProperties;
 
-import androidx.test.core.app.ActivityScenario;
 import androidx.test.espresso.intent.Intents;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
@@ -59,7 +58,6 @@ import com.google.common.base.Objects;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -105,7 +103,6 @@ public class BluetoothOppReceiverTest {
         Intents.release();
     }
 
-    @Ignore("b/262201478")
     @Test
     public void onReceive_withActionDeviceSelected_callsStartTransfer() {
         Assume.assumeTrue(BluetoothProperties.isProfileOppEnabled().orElse(false));
@@ -120,13 +117,9 @@ public class BluetoothOppReceiverTest {
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
 
         try {
-            ActivityScenario<BluetoothOppBtEnableActivity> activityScenario =
-                    ActivityScenario.launch(BluetoothOppBtEnableActivity.class);
-            activityScenario.onActivity(
-                    activity -> {
-                        mReceiver.onReceive(mContext, intent);
-                    });
             doNothing().when(bluetoothOppManager).startTransfer(eq(device));
+            InstrumentationRegistry.getInstrumentation()
+                    .runOnMainSync(() -> mReceiver.onReceive(mContext, intent));
             verify(bluetoothOppManager).startTransfer(eq(device));
             BluetoothOppManager.setInstance(null);
         } finally {
@@ -377,14 +370,8 @@ public class BluetoothOppReceiverTest {
 
         Intent intent = new Intent();
         intent.setAction(BluetoothShare.TRANSFER_COMPLETED_ACTION);
-
-        ActivityScenario<BluetoothOppBtEnableActivity> activityScenario
-                = ActivityScenario.launch(BluetoothOppBtEnableActivity.class);
-
-        activityScenario.onActivity(activity -> {
-            mReceiver.onReceive(mContext, intent);
-        });
-        InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+        InstrumentationRegistry.getInstrumentation()
+                .runOnMainSync(() -> mReceiver.onReceive(mContext, intent));
 
         // check Toast with Espresso seems not to work on Android 11+. Check not send broadcast
         // context instead
