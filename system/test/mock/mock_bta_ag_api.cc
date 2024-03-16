@@ -30,42 +30,47 @@
 #include "test/common/mock_functions.h"
 #include "types/raw_address.h"
 
-tBTA_STATUS BTA_AgEnable(tBTA_AG_CBACK* p_cback) {
+tBTA_STATUS BTA_AgEnable(tBTA_AG_CBACK* /* p_cback */) {
   inc_func_call_count(__func__);
   return BTA_SUCCESS;
 }
-void BTA_AgAudioClose(uint16_t handle) { inc_func_call_count(__func__); }
-void BTA_AgAudioOpen(uint16_t handle, tBTA_AG_PEER_CODEC disabled_codecs) {
+void BTA_AgAudioClose(uint16_t /* handle */) { inc_func_call_count(__func__); }
+void BTA_AgAudioOpen(uint16_t /* handle */,
+                     tBTA_AG_PEER_CODEC /* disabled_codecs */) {
   inc_func_call_count(__func__);
 }
-void BTA_AgClose(uint16_t handle) { inc_func_call_count(__func__); }
-void BTA_AgDeregister(uint16_t handle) { inc_func_call_count(__func__); }
+void BTA_AgClose(uint16_t /* handle */) { inc_func_call_count(__func__); }
+void BTA_AgDeregister(uint16_t /* handle */) { inc_func_call_count(__func__); }
 void BTA_AgDisable() { inc_func_call_count(__func__); }
-void BTA_AgOpen(uint16_t handle, const RawAddress& bd_addr) {
+void BTA_AgOpen(uint16_t /* handle */, const RawAddress& /* bd_addr */) {
   inc_func_call_count(__func__);
 }
-void BTA_AgRegister(tBTA_SERVICE_MASK services, tBTA_AG_FEAT features,
-                    const std::vector<std::string>& service_names,
-                    uint8_t app_id) {
+void BTA_AgRegister(tBTA_SERVICE_MASK /* services */,
+                    tBTA_AG_FEAT /* features */,
+                    const std::vector<std::string>& /* service_names */,
+                    uint8_t /* app_id */) {
   inc_func_call_count(__func__);
 }
-void BTA_AgResult(uint16_t handle, tBTA_AG_RES result,
-                  const tBTA_AG_RES_DATA& data) {
+void BTA_AgResult(uint16_t /* handle */, tBTA_AG_RES /* result */,
+                  const tBTA_AG_RES_DATA& /* data */) {
   inc_func_call_count(__func__);
 }
-void BTA_AgSetActiveDevice(const RawAddress& active_device_addr) {
+void BTA_AgSetActiveDevice(const RawAddress& /* active_device_addr */) {
   inc_func_call_count(__func__);
 }
-void BTA_AgSetCodec(uint16_t handle, tBTA_AG_PEER_CODEC codec) {
+void BTA_AgSetCodec(uint16_t /* handle */, tBTA_AG_PEER_CODEC /* codec */) {
   inc_func_call_count(__func__);
 }
-void BTA_AgSetScoOffloadEnabled(bool value) { inc_func_call_count(__func__); }
-void BTA_AgSetScoAllowed(bool value) { inc_func_call_count(__func__); }
+void BTA_AgSetScoOffloadEnabled(bool /* value */) {
+  inc_func_call_count(__func__);
+}
+void BTA_AgSetScoAllowed(bool /* value */) { inc_func_call_count(__func__); }
 bool is_hfp_aptx_voice_enabled() {
   inc_func_call_count(__func__);
   return false;
 };
-bt_status_t enable_aptx_swb_codec(bool enable, RawAddress* bd_addr) {
+bt_status_t enable_aptx_swb_codec(bool /* enable */,
+                                  RawAddress* /* bd_addr */) {
   inc_func_call_count(__func__);
   return BT_STATUS_SUCCESS;
 }

@@ -47,7 +47,7 @@ namespace bta_dm_main {
 // Params: int fd
 // Return: void
 struct DumpsysBtaDm {
-  std::function<void(int fd)> body{[](int fd) {}};
+  std::function<void(int fd)> body{[](int /* fd */) {}};
   void operator()(int fd) { body(fd); };
 };
 extern struct DumpsysBtaDm DumpsysBtaDm;
@@ -67,7 +67,7 @@ extern struct bta_dm_search_sm_disable bta_dm_search_sm_disable;
 struct bta_dm_search_sm_execute {
   static bool return_value;
   std::function<bool(const BT_HDR_RIGID* p_msg)> body{
-      [](const BT_HDR_RIGID* p_msg) { return return_value; }};
+      [](const BT_HDR_RIGID* /* p_msg */) { return return_value; }};
   bool operator()(const BT_HDR_RIGID* p_msg) { return body(p_msg); };
 };
 extern struct bta_dm_search_sm_execute bta_dm_search_sm_execute;

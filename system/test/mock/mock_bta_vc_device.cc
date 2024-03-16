@@ -31,8 +31,8 @@ bool VolumeControlDevice::EnableEncryption() {
   return true;
 }
 bool VolumeControlDevice::EnqueueInitialRequests(
-    tGATT_IF gatt_if, GATT_READ_OP_CB chrc_read_cb,
-    GATT_WRITE_OP_CB cccd_write_cb) {
+    tGATT_IF /* gatt_if */, GATT_READ_OP_CB /* chrc_read_cb */,
+    GATT_WRITE_OP_CB /* cccd_write_cb */) {
   inc_func_call_count(__func__);
   return false;
 }
@@ -44,42 +44,40 @@ bool VolumeControlDevice::UpdateHandles(void) {
   inc_func_call_count(__func__);
   return false;
 }
-bool VolumeControlDevice::VerifyReady(uint16_t handle) {
+bool VolumeControlDevice::VerifyReady(uint16_t /* handle */) {
   inc_func_call_count(__func__);
   return false;
 }
 bool VolumeControlDevice::set_volume_control_service_handles(
-    const gatt::Service& service) {
+    const gatt::Service& /* service */) {
   inc_func_call_count(__func__);
   return false;
 }
 void VolumeControlDevice::set_volume_offset_control_service_handles(
-    const gatt::Service& service) {
+    const gatt::Service& /* service */) {
   inc_func_call_count(__func__);
 }
-bool VolumeControlDevice::subscribe_for_notifications(tGATT_IF gatt_if,
-                                                      uint16_t handle,
-                                                      uint16_t ccc_handle,
-                                                      GATT_WRITE_OP_CB cb) {
+bool VolumeControlDevice::subscribe_for_notifications(
+    tGATT_IF /* gatt_if */, uint16_t /* handle */, uint16_t /* ccc_handle */,
+    GATT_WRITE_OP_CB /* cb */) {
   inc_func_call_count(__func__);
   return false;
 }
-uint16_t VolumeControlDevice::find_ccc_handle(uint16_t chrc_handle) {
+uint16_t VolumeControlDevice::find_ccc_handle(uint16_t /* chrc_handle */) {
   inc_func_call_count(__func__);
   return 0;
 }
-void VolumeControlDevice::ControlPointOperation(uint8_t opcode,
-                                                const std::vector<uint8_t>* arg,
-                                                GATT_WRITE_OP_CB cb,
-                                                void* cb_data) {
+void VolumeControlDevice::ControlPointOperation(
+    uint8_t /* opcode */, const std::vector<uint8_t>* /* arg */,
+    GATT_WRITE_OP_CB /* cb */, void* /* cb_data */) {
   inc_func_call_count(__func__);
 }
-void VolumeControlDevice::Disconnect(tGATT_IF gatt_if) {
+void VolumeControlDevice::Disconnect(tGATT_IF /* gatt_if */) {
   inc_func_call_count(__func__);
 }
 void VolumeControlDevice::EnqueueRemainingRequests(
-    tGATT_IF gatt_if, GATT_READ_OP_CB chrc_read_cb,
-    GATT_WRITE_OP_CB cccd_write_cb) {
+    tGATT_IF /* gatt_if */, GATT_READ_OP_CB /* chrc_read_cb */,
+    GATT_WRITE_OP_CB /* cccd_write_cb */) {
   inc_func_call_count(__func__);
 }
 void VolumeControlDevice::ResetHandles(void) { inc_func_call_count(__func__); }

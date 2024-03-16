@@ -29,11 +29,11 @@
 #include "test/common/mock_functions.h"
 #include "types/raw_address.h"
 
-void VolumeControl::AddFromStorage(const RawAddress& address) {
+void VolumeControl::AddFromStorage(const RawAddress& /* address */) {
   inc_func_call_count(__func__);
 }
 void VolumeControl::CleanUp() { inc_func_call_count(__func__); }
-void VolumeControl::DebugDump(int fd) { inc_func_call_count(__func__); }
+void VolumeControl::DebugDump(int /* fd */) { inc_func_call_count(__func__); }
 VolumeControl* VolumeControl::Get(void) {
   inc_func_call_count(__func__);
   return nullptr;
@@ -42,7 +42,8 @@ bool VolumeControl::IsVolumeControlRunning() {
   inc_func_call_count(__func__);
   return false;
 }
-void VolumeControl::Initialize(bluetooth::vc::VolumeControlCallbacks* callbacks,
-                               const base::Closure& initCb) {
+void VolumeControl::Initialize(
+    bluetooth::vc::VolumeControlCallbacks* /* callbacks */,
+    const base::Closure& /* initCb */) {
   inc_func_call_count(__func__);
 }

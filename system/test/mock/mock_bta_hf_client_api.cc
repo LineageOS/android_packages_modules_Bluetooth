@@ -26,23 +26,30 @@
 #include "test/common/mock_functions.h"
 #include "types/raw_address.h"
 
-tBTA_STATUS BTA_HfClientEnable(tBTA_HF_CLIENT_CBACK* p_cback,
-                               tBTA_HF_CLIENT_FEAT features,
-                               const char* p_service_name) {
+tBTA_STATUS BTA_HfClientEnable(tBTA_HF_CLIENT_CBACK* /* p_cback */,
+                               tBTA_HF_CLIENT_FEAT /* features */,
+                               const char* /* p_service_name */) {
   inc_func_call_count(__func__);
   return BTA_SUCCESS;
 }
-void BTA_HfClientAudioClose(uint16_t handle) { inc_func_call_count(__func__); }
-void BTA_HfClientAudioOpen(uint16_t handle) { inc_func_call_count(__func__); }
-void BTA_HfClientClose(uint16_t handle) { inc_func_call_count(__func__); }
+void BTA_HfClientAudioClose(uint16_t /* handle */) {
+  inc_func_call_count(__func__);
+}
+void BTA_HfClientAudioOpen(uint16_t /* handle */) {
+  inc_func_call_count(__func__);
+}
+void BTA_HfClientClose(uint16_t /* handle */) { inc_func_call_count(__func__); }
 void BTA_HfClientDisable(void) { inc_func_call_count(__func__); }
-void BTA_HfClientDumpStatistics(int fd) { inc_func_call_count(__func__); }
-bt_status_t BTA_HfClientOpen(const RawAddress& bd_addr, uint16_t* p_handle) {
+void BTA_HfClientDumpStatistics(int /* fd */) { inc_func_call_count(__func__); }
+bt_status_t BTA_HfClientOpen(const RawAddress& /* bd_addr */,
+                             uint16_t* /* p_handle */) {
   inc_func_call_count(__func__);
   return BT_STATUS_SUCCESS;
 }
-void BTA_HfClientSendAT(uint16_t handle, tBTA_HF_CLIENT_AT_CMD_TYPE at,
-                        uint32_t val1, uint32_t val2, const char* str) {
+void BTA_HfClientSendAT(uint16_t /* handle */,
+                        tBTA_HF_CLIENT_AT_CMD_TYPE /* at */,
+                        uint32_t /* val1 */, uint32_t /* val2 */,
+                        const char* /* str */) {
   inc_func_call_count(__func__);
 }
 int get_default_hf_client_features() {

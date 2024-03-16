@@ -35,12 +35,12 @@ int HearingAid::GetDeviceCount() {
   return 0;
 }
 
-void HearingAid::AddFromStorage(const HearingDevice& dev_info,
-                                bool is_acceptlisted) {
+void HearingAid::AddFromStorage(const HearingDevice& /* dev_info */,
+                                bool /* is_acceptlisted */) {
   inc_func_call_count(__func__);
 }
 
-void HearingAid::DebugDump(int fd) { inc_func_call_count(__func__); }
+void HearingAid::DebugDump(int /* fd */) { inc_func_call_count(__func__); }
 
 bool HearingAid::IsHearingAidRunning() {
   inc_func_call_count(__func__);
@@ -50,21 +50,23 @@ bool HearingAid::IsHearingAidRunning() {
 void HearingAid::CleanUp() { inc_func_call_count(__func__); }
 
 void HearingAid::Initialize(
-    bluetooth::hearing_aid::HearingAidCallbacks* callbacks,
-    base::Closure initCb) {
+    bluetooth::hearing_aid::HearingAidCallbacks* /* callbacks */,
+    base::Closure /* initCb */) {
   inc_func_call_count(__func__);
 }
 
-void HearingAid::Connect(const RawAddress& address) {
+void HearingAid::Connect(const RawAddress& /* address */) {
   inc_func_call_count(__func__);
 }
 
-void HearingAid::Disconnect(const RawAddress& address) {
+void HearingAid::Disconnect(const RawAddress& /* address */) {
   inc_func_call_count(__func__);
 }
 
-void HearingAid::AddToAcceptlist(const RawAddress& address) {
+void HearingAid::AddToAcceptlist(const RawAddress& /* address */) {
   inc_func_call_count(__func__);
 }
 
-void HearingAid::SetVolume(int8_t volume) { inc_func_call_count(__func__); }
+void HearingAid::SetVolume(int8_t /* volume */) {
+  inc_func_call_count(__func__);
+}
