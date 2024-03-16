@@ -63,4 +63,53 @@ static const uint32_t kFilterRangingData = 0x08;
 static const uint32_t kPctPhaseFormat = 0xA0;
 }  // namespace feature
 
+enum class Opcode : uint8_t {
+  GET_RANGING_DATA = 0x00,
+  ACK_RANGING_DATA = 0x01,
+  RETRIEVE_LOST_RANGING_DATA_SEGMENTS = 0x02,
+  ABORT_OPERATION = 0x03,
+  FILTER = 0x04,
+  PCT_FORMAT = 0x05,
+};
+
+static const uint8_t OPERATOR_NULL = 0x00;
+
+std::string GetOpcodeText(Opcode opcode);
+
+enum class EventCode : uint8_t {
+  COMPLETE_RANGING_DATA_RESPONSE = 0x00,
+  COMPLETE_LOST_RANGING_DATA_SEGMENT_RESPONSE = 0x01,
+  RESPONSE_CODE = 0x02,
+};
+
+enum class ResponseCodeValue : uint8_t {
+  RESERVED_FOR_FUTURE_USE = 0x00,
+  SUCCESS = 0x01,
+  OP_CODE_NOT_SUPPORTED = 0x02,
+  INVALID_OPERATOR = 0x03,
+  OPERATOR_NOT_SUPPORTED = 0x04,
+  INVALID_OPERAND = 0x05,
+  ABORT_UNSUCCESSFUL = 0x06,
+  PROCEDURE_NOT_COMPLETED = 0x07,
+  OPERAND_NOT_SUPPORTED = 0x08,
+  NO_RECORDS_FOUND = 0x09,
+};
+
+std::string GetResponseOpcodeValueText(ResponseCodeValue response_code_value);
+
+struct ControlPointCommand {
+  Opcode opcode_;
+  uint8_t operator_;
+  uint8_t operand_[6];
+};
+
+struct ControlPointResponse {
+  EventCode event_code_;
+  uint8_t operator_;
+  uint8_t operand_[6];
+};
+
+bool ParseControlPointCommand(ControlPointCommand* command,
+                              const uint8_t* value, uint16_t len);
+
 }  // namespace ras
