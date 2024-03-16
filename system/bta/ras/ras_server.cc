@@ -60,6 +60,7 @@ class RasServerImpl : public bluetooth::ras::RasServer {
     uint16_t conn_id_;
     std::unordered_map<Uuid, uint16_t> ccc_values_;
     std::vector<DataBuffer> buffers_;
+    bool handling_control_point_command_ = false;
   };
 
   void Initialize() {
@@ -153,6 +154,9 @@ class RasServerImpl : public bluetooth::ras::RasServer {
       } break;
       case BTA_GATTS_READ_DESCRIPTOR_EVT: {
         OnReadDescriptor(p_data);
+      } break;
+      case BTA_GATTS_WRITE_CHARACTERISTIC_EVT: {
+        OnWriteCharacteristic(p_data);
       } break;
       case BTA_GATTS_WRITE_DESCRIPTOR_EVT: {
         OnWriteDescriptor(p_data);
@@ -335,6 +339,54 @@ class RasServerImpl : public bluetooth::ras::RasServer {
     BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_SUCCESS, &p_msg);
   }
 
+  void OnWriteCharacteristic(tBTA_GATTS* p_data) {
+    uint16_t conn_id = p_data->req_data.conn_id;
+    uint16_t write_req_handle = p_data->req_data.p_data->write_req.handle;
+    uint16_t len = p_data->req_data.p_data->write_req.len;
+    log::info("conn_id:{}, write_req_handle:{}, len:{}", conn_id,
+              write_req_handle, len);
+
+    tGATTS_RSP p_msg;
+    p_msg.handle = write_req_handle;
+    if (characteristics_.find(write_req_handle) == characteristics_.end()) {
+      log::error("Invalid handle {}", write_req_handle);
+      BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
+                        GATT_INVALID_HANDLE, &p_msg);
+      return;
+    }
+
+    auto uuid = characteristics_[write_req_handle].uuid_;
+    log::info("Write uuid, {}", getUuidName(uuid));
+
+    // Check Characteristic UUID
+    switch (uuid.As16Bit()) {
+      case kRasControlPointCharacteristic16bit: {
+        if (trackers_.find(p_data->req_data.remote_bda) == trackers_.end()) {
+          log::warn("Can't find trackers for {}",
+                    ADDRESS_TO_LOGGABLE_STR(p_data->req_data.remote_bda));
+          BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id,
+                            GATT_ILLEGAL_PARAMETER, &p_msg);
+          return;
+        }
+        ClientTracker* tracker = &trackers_[p_data->req_data.remote_bda];
+        if (tracker->handling_control_point_command_) {
+          log::warn("Procedure Already In Progress");
+          BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id,
+                            GATT_PRC_IN_PROGRESS, &p_msg);
+          return;
+        }
+        BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_SUCCESS,
+                          &p_msg);
+        HandleControlPoint(tracker, &p_data->req_data.p_data->write_req);
+      } break;
+      default:
+        log::warn("Unhandled uuid {}", uuid.ToString());
+        BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
+                          GATT_ILLEGAL_PARAMETER, &p_msg);
+        return;
+    }
+  }
+
   void OnWriteDescriptor(tBTA_GATTS* p_data) {
     uint16_t conn_id = p_data->req_data.conn_id;
     uint16_t write_req_handle = p_data->req_data.p_data->write_req.handle;
@@ -365,6 +417,101 @@ class RasServerImpl : public bluetooth::ras::RasServer {
     log::info("Write CCC for {}, conn_id:{}, value:0x{:04x}",
               getUuidName(characteristic->uuid_), conn_id, ccc_value);
     BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_SUCCESS, &p_msg);
+  }
+
+  void HandleControlPoint(ClientTracker* tracker, tGATT_WRITE_REQ* write_req) {
+    ControlPointCommand command;
+    if (!ParseControlPointCommand(&command, write_req->value, write_req->len)) {
+      return;
+    }
+
+    tracker->handling_control_point_command_ = true;
+
+    switch (command.opcode_) {
+      case Opcode::GET_RANGING_DATA: {
+        OnGetRangingData(&command, tracker);
+      } break;
+      case Opcode::ACK_RANGING_DATA: {
+        OnAckRangingData(&command, tracker);
+      } break;
+      default:
+        LOG_WARN("Unknown opcode:0x%02x", (uint16_t)command.opcode_);
+    }
+  }
+
+  void OnGetRangingData(ControlPointCommand* command, ClientTracker* tracker) {
+    const uint8_t* value = command->operand_;
+    uint16_t ranging_counter;
+    STREAM_TO_UINT16(ranging_counter, value);
+    log::info("ranging_counter:{}", ranging_counter);
+
+    uint16_t ccc_value = tracker->ccc_values_[kRasOnDemandDataCharacteristic];
+    uint16_t attr_id =
+        GetCharacteristic(kRasOnDemandDataCharacteristic)->attribute_handle_;
+    bool need_confirm = ccc_value & GATT_CLT_CONFIG_INDICATION;
+
+    std::lock_guard<std::mutex> lock(data_mutex_);
+    auto it = std::find_if(tracker->buffers_.begin(), tracker->buffers_.end(),
+                           [&ranging_counter](const DataBuffer& buffer) {
+                             return buffer.ranging_counter_ == ranging_counter;
+                           });
+    if (it != tracker->buffers_.end()) {
+      for (uint16_t i = 0; i < it->segments_.size(); i++) {
+        if (ccc_value == GATT_CLT_CONFIG_NONE) {
+          log::warn("On Demand Data is not subscribed, Skip");
+          break;
+        }
+        log::info("Send On Demand Ranging Data, segment {}", i);
+        BTA_GATTS_HandleValueIndication(tracker->conn_id_, attr_id,
+                                        it->segments_[i], need_confirm);
+      }
+      log::info("Send COMPLETE_RANGING_DATA_RESPONSE, ranging_counter:{}",
+                ranging_counter);
+      std::vector<uint8_t> response(8, 0);
+      response[0] = (uint8_t)EventCode::COMPLETE_RANGING_DATA_RESPONSE;
+      response[1] = 0;  // Null
+      response[2] = (ranging_counter & 0xFF);
+      response[3] = (ranging_counter >> 8) & 0xFF;
+      BTA_GATTS_HandleValueIndication(
+          tracker->conn_id_,
+          GetCharacteristic(kRasControlPointCharacteristic)->attribute_handle_,
+          response, true);
+      tracker->handling_control_point_command_ = false;
+      return;
+    }
+  };
+
+  void OnAckRangingData(ControlPointCommand* command, ClientTracker* tracker) {
+    const uint8_t* value = command->operand_;
+    uint16_t ranging_counter;
+    STREAM_TO_UINT16(ranging_counter, value);
+    log::info("ranging_counter:{}", ranging_counter);
+
+    std::lock_guard<std::mutex> lock(data_mutex_);
+    auto it = std::find_if(tracker->buffers_.begin(), tracker->buffers_.end(),
+                           [&ranging_counter](const DataBuffer& buffer) {
+                             return buffer.ranging_counter_ == ranging_counter;
+                           });
+    // If found, erase it
+    if (it != tracker->buffers_.end()) {
+      tracker->buffers_.erase(it);
+      tracker->handling_control_point_command_ = false;
+    }
+  };
+
+  void SendResponseCode(ResponseCodeValue response_code_value,
+                        ClientTracker* tracker) {
+    log::info("0x{:02x}, {}", (uint16_t)response_code_value,
+              GetResponseOpcodeValueText(response_code_value));
+    std::vector<uint8_t> response(8, 0);
+    response[0] = (uint8_t)EventCode::RESPONSE_CODE;
+    response[1] = 0;  // Null
+    response[2] = (uint8_t)response_code_value;
+    BTA_GATTS_HandleValueIndication(
+        tracker->conn_id_,
+        GetCharacteristic(kRasControlPointCharacteristic)->attribute_handle_,
+        response, true);
+    tracker->handling_control_point_command_ = false;
   }
 
   void OnServiceAdded(tGATT_STATUS status, int server_if,
