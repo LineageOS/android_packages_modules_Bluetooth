@@ -16,6 +16,7 @@
 
 #include "os/reactor.h"
 
+#include <bluetooth/log.h>
 #include <sys/eventfd.h>
 
 #include <chrono>
@@ -95,7 +96,7 @@ class FakeReactable {
     LOG_INFO();
     uint64_t value = 0;
     auto read_result = eventfd_read(fd_, &value);
-    LOG_INFO("value = %d", (int)value);
+    log::info("value = {}", (int)value);
     EXPECT_EQ(read_result, 0);
     if (value == kSetPromise && g_promise != nullptr) {
       g_promise->set_value(kReadReadyValue);

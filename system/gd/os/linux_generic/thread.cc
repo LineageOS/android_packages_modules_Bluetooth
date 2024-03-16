@@ -16,6 +16,7 @@
 
 #include "os/thread.h"
 
+#include <bluetooth/log.h>
 #include <fcntl.h>
 #include <sys/syscall.h>
 #include <unistd.h>
@@ -42,7 +43,7 @@ void Thread::run(Priority priority) {
     int rc;
     RUN_NO_INTR(rc = sched_setscheduler(linux_tid, SCHED_FIFO, &rt_params));
     if (rc != 0) {
-      LOG_ERROR("unable to set SCHED_FIFO priority: %s", strerror(errno));
+      log::error("unable to set SCHED_FIFO priority: {}", strerror(errno));
     }
   }
   reactor_.Run();
