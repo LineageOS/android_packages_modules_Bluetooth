@@ -31,10 +31,11 @@
 #include "btm_api_mock.h"
 #include "btm_iso_api.h"
 #include "common/message_loop_thread.h"
-#include "device/include/controller.h"
 #include "fake_osi.h"
 #include "gatt/database_builder.h"
+#include "gmock/gmock.h"
 #include "hardware/bt_gatt_types.h"
+#include "hci/controller_interface_mock.h"
 #include "internal_include/stack_config.h"
 #include "le_audio_health_status.h"
 #include "le_audio_set_configuration_provider.h"
@@ -46,6 +47,7 @@
 #include "mock_state_machine.h"
 #include "os/log.h"
 #include "test/common/mock_functions.h"
+#include "test/mock/mock_main_shim_entry.h"
 #include "test/mock/mock_stack_btm_iso.h"
 
 #define TEST_BT com::android::bluetooth::flags
@@ -1504,13 +1506,11 @@ class UnicastTestNoInit : public Test {
 
   void SetUp() override {
     init_message_loop_thread();
-    ON_CALL(controller_interface_, SupportsBleConnectedIsochronousStreamCentral)
+    ON_CALL(controller_, SupportsBleConnectedIsochronousStreamCentral)
         .WillByDefault(Return(true));
-    ON_CALL(controller_interface_,
-            SupportsBleConnectedIsochronousStreamPeripheral)
+    ON_CALL(controller_, SupportsBleConnectedIsochronousStreamPeripheral)
         .WillByDefault(Return(true));
-
-    controller::SetMockControllerInterface(&controller_interface_);
+    bluetooth::hci::testing::mock_controller_ = &controller_;
     bluetooth::manager::SetMockBtmInterface(&mock_btm_interface_);
     gatt::SetMockBtaGattInterface(&mock_gatt_interface_);
     gatt::SetMockBtaGattQueue(&mock_gatt_queue_);
@@ -1609,6 +1609,7 @@ class UnicastTestNoInit : public Test {
       bluetooth::le_audio::AudioSetConfigurationProvider::Cleanup();
 
     iso_manager_->Stop();
+    bluetooth::hci::testing::mock_controller_ = nullptr;
   }
 
  protected:
@@ -2741,7 +2742,6 @@ class UnicastTestNoInit : public Test {
   NiceMock<MockFunction<void()>> mock_storage_load;
   NiceMock<MockFunction<bool()>> mock_hal_2_1_verifier;
 
-  NiceMock<controller::MockControllerInterface> controller_interface_;
   NiceMock<bluetooth::manager::MockBtmInterface> mock_btm_interface_;
   NiceMock<gatt::MockBtaGattInterface> mock_gatt_interface_;
   NiceMock<gatt::MockBtaGattQueue> mock_gatt_queue_;
@@ -2778,6 +2778,7 @@ class UnicastTestNoInit : public Test {
 
   /* Audio track metadata */
   char* test_tags_ptr_ = nullptr;
+  NiceMock<bluetooth::hci::testing::MockControllerInterface> controller_;
 };
 
 class UnicastTest : public UnicastTestNoInit {

@@ -35,64 +35,19 @@
 #include "btm_sec_cb.h"
 #include "crypto_toolbox/crypto_toolbox.h"
 #include "device/include/controller.h"
+#include "hci/controller_interface.h"
+#include "main/shim/entry.h"
 #include "os/log.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/btm_ble_privacy.h"
-#include "stack/include/btm_ble_sec_api.h"
 #include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
 
 using namespace bluetooth;
 
 extern tBTM_CB btm_cb;
-
-/* This function generates Resolvable Private Address (RPA) from Identity
- * Resolving Key |irk| and |random|*/
-static RawAddress generate_rpa_from_irk_and_rand(const Octet16& irk,
-                                                 BT_OCTET8 random) {
-  random[2] &= (~BLE_RESOLVE_ADDR_MASK);
-  random[2] |= BLE_RESOLVE_ADDR_MSB;
-
-  RawAddress address;
-  address.address[2] = random[0];
-  address.address[1] = random[1];
-  address.address[0] = random[2];
-
-  /* encrypt with IRK */
-  Octet16 r{};
-  r[0] = random[0];
-  r[1] = random[1];
-  r[2] = random[2];
-  Octet16 p = crypto_toolbox::aes_128(irk, r);
-
-  /* set hash to be LSB of rpAddress */
-  address.address[5] = p[0];
-  address.address[4] = p[1];
-  address.address[3] = p[2];
-  return address;
-}
-
-/** This function is called when random address for local controller was
- * generated */
-void btm_gen_resolve_paddr_low(const RawAddress& address) {
-  /* when GD advertising and scanning modules are enabled, set random address
-   * via address manager in GD */
-  log::info("GD advertising and scanning modules are enabled, skip");
-}
-
-/** This function generate a resolvable private address using local IRK */
-void btm_gen_resolvable_private_addr(
-    base::Callback<void(const RawAddress&)> cb) {
-  /* generate 3B rand as BD LSB, SRK with it, get BD MSB */
-  btsnd_hcic_ble_rand(base::Bind(
-      [](base::Callback<void(const RawAddress&)> cb, BT_OCTET8 random) {
-        const Octet16& irk = BTM_GetDeviceIDRoot();
-        cb.Run(generate_rpa_from_irk_and_rand(irk, random));
-      },
-      std::move(cb)));
-}
 
 /*******************************************************************************
  *  Utility functions for Random address resolving
@@ -274,7 +229,7 @@ bool btm_random_pseudo_to_identity_addr(RawAddress* random_pseudo,
     if (p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) {
       *p_identity_addr_type = p_dev_rec->ble.identity_address_with_type.type;
       *random_pseudo = p_dev_rec->ble.identity_address_with_type.bda;
-      if (controller_get_interface()->SupportsBlePrivacy())
+      if (bluetooth::shim::GetController()->SupportsBlePrivacy())
         *p_identity_addr_type |= BLE_ADDR_TYPE_ID_BIT;
       return true;
     }

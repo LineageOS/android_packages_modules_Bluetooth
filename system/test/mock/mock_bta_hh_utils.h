@@ -44,10 +44,11 @@ struct bta_hh_add_device_to_list {
                      const tHID_DEV_DSCP_INFO* p_dscp_info, uint8_t sub_class,
                      uint16_t ssr_max_latency, uint16_t ssr_min_tout,
                      uint8_t app_id)>
-      body{[](tBTA_HH_DEV_CB* p_cb, uint8_t handle, uint16_t attr_mask,
-              const tHID_DEV_DSCP_INFO* p_dscp_info, uint8_t sub_class,
-              uint16_t ssr_max_latency, uint16_t ssr_min_tout,
-              uint8_t app_id) {}};
+      body{[](tBTA_HH_DEV_CB* /* p_cb */, uint8_t /* handle */,
+              uint16_t /* attr_mask */,
+              const tHID_DEV_DSCP_INFO* /* p_dscp_info */,
+              uint8_t /* sub_class */, uint16_t /* ssr_max_latency */,
+              uint16_t /* ssr_min_tout */, uint8_t /* app_id */) {}};
   void operator()(tBTA_HH_DEV_CB* p_cb, uint8_t handle, uint16_t attr_mask,
                   const tHID_DEV_DSCP_INFO* p_dscp_info, uint8_t sub_class,
                   uint16_t ssr_max_latency, uint16_t ssr_min_tout,
@@ -62,7 +63,8 @@ extern struct bta_hh_add_device_to_list bta_hh_add_device_to_list;
 // Params: tBTA_HH_DEV_CB* p_cb
 // Return: void
 struct bta_hh_clean_up_kdev {
-  std::function<void(tBTA_HH_DEV_CB* p_cb)> body{[](tBTA_HH_DEV_CB* p_cb) {}};
+  std::function<void(tBTA_HH_DEV_CB* p_cb)> body{
+      [](tBTA_HH_DEV_CB* /* p_cb */) {}};
   void operator()(tBTA_HH_DEV_CB* p_cb) { body(p_cb); };
 };
 extern struct bta_hh_clean_up_kdev bta_hh_clean_up_kdev;
@@ -71,7 +73,8 @@ extern struct bta_hh_clean_up_kdev bta_hh_clean_up_kdev;
 // Params: tBTA_HH_STATUS status
 // Return: void
 struct bta_hh_cleanup_disable {
-  std::function<void(tBTA_HH_STATUS status)> body{[](tBTA_HH_STATUS status) {}};
+  std::function<void(tBTA_HH_STATUS status)> body{
+      [](tBTA_HH_STATUS /* status */) {}};
   void operator()(tBTA_HH_STATUS status) { body(status); };
 };
 extern struct bta_hh_cleanup_disable bta_hh_cleanup_disable;
@@ -82,7 +85,7 @@ extern struct bta_hh_cleanup_disable bta_hh_cleanup_disable;
 struct bta_hh_dev_handle_to_cb_idx {
   uint8_t return_value{0};
   std::function<uint8_t(uint8_t dev_handle)> body{
-      [this](uint8_t dev_handle) { return return_value; }};
+      [this](uint8_t /* dev_handle */) { return return_value; }};
   uint8_t operator()(uint8_t dev_handle) { return body(dev_handle); };
 };
 extern struct bta_hh_dev_handle_to_cb_idx bta_hh_dev_handle_to_cb_idx;
@@ -93,7 +96,7 @@ extern struct bta_hh_dev_handle_to_cb_idx bta_hh_dev_handle_to_cb_idx;
 struct bta_hh_find_cb {
   uint8_t return_value{0};
   std::function<uint8_t(const tAclLinkSpec& link_spec)> body{
-      [this](const tAclLinkSpec& link_spec) { return return_value; }};
+      [this](const tAclLinkSpec& /* link_spec */) { return return_value; }};
   uint8_t operator()(const tAclLinkSpec& link_spec) { return body(link_spec); };
 };
 extern struct bta_hh_find_cb bta_hh_find_cb;
@@ -104,7 +107,7 @@ extern struct bta_hh_find_cb bta_hh_find_cb;
 struct bta_hh_get_cb {
   tBTA_HH_DEV_CB* return_value{0};
   std::function<tBTA_HH_DEV_CB*(const tAclLinkSpec& link_spec)> body{
-      [this](const tAclLinkSpec& link_spec) { return return_value; }};
+      [this](const tAclLinkSpec& /* link_spec */) { return return_value; }};
   tBTA_HH_DEV_CB* operator()(const tAclLinkSpec& link_spec) {
     return body(link_spec);
   };
@@ -119,8 +122,9 @@ struct bta_hh_read_ssr_param {
   std::function<tBTA_HH_STATUS(const tAclLinkSpec& link_spec,
                                uint16_t* p_max_ssr_lat,
                                uint16_t* p_min_ssr_tout)>
-      body{[this](const tAclLinkSpec& link_spec, uint16_t* p_max_ssr_lat,
-                  uint16_t* p_min_ssr_tout) { return return_value; }};
+      body{[this](const tAclLinkSpec& /* link_spec */,
+                  uint16_t* /* p_max_ssr_lat */,
+                  uint16_t* /* p_min_ssr_tout */) { return return_value; }};
   tBTA_HH_STATUS operator()(const tAclLinkSpec& link_spec,
                             uint16_t* p_max_ssr_lat, uint16_t* p_min_ssr_tout) {
     return body(link_spec, p_max_ssr_lat, p_min_ssr_tout);
@@ -134,7 +138,9 @@ extern struct bta_hh_read_ssr_param bta_hh_read_ssr_param;
 struct bta_hh_tod_spt {
   bool return_value{false};
   std::function<bool(tBTA_HH_DEV_CB* p_cb, uint8_t sub_class)> body{
-      [this](tBTA_HH_DEV_CB* p_cb, uint8_t sub_class) { return return_value; }};
+      [this](tBTA_HH_DEV_CB* /* p_cb */, uint8_t /* sub_class */) {
+        return return_value;
+      }};
   bool operator()(tBTA_HH_DEV_CB* p_cb, uint8_t sub_class) {
     return body(p_cb, sub_class);
   };
@@ -157,8 +163,9 @@ struct bta_hh_update_di_info {
   std::function<void(tBTA_HH_DEV_CB* p_cb, uint16_t vendor_id,
                      uint16_t product_id, uint16_t version, uint8_t flag,
                      uint8_t ctry_code)>
-      body{[](tBTA_HH_DEV_CB* p_cb, uint16_t vendor_id, uint16_t product_id,
-              uint16_t version, uint8_t flag, uint8_t ctry_code) {}};
+      body{[](tBTA_HH_DEV_CB* /* p_cb */, uint16_t /* vendor_id */,
+              uint16_t /* product_id */, uint16_t /* version */,
+              uint8_t /* flag */, uint8_t /* ctry_code */) {}};
   void operator()(tBTA_HH_DEV_CB* p_cb, uint16_t vendor_id, uint16_t product_id,
                   uint16_t version, uint8_t flag, uint8_t ctry_code) {
     body(p_cb, vendor_id, product_id, version, flag, ctry_code);
@@ -172,7 +179,7 @@ extern struct bta_hh_update_di_info bta_hh_update_di_info;
 struct bta_hh_le_is_hh_gatt_if {
   bool return_value{false};
   std::function<bool(tGATT_IF client_if)> body{
-      [this](tGATT_IF client_if) { return return_value; }};
+      [this](tGATT_IF /* client_if */) { return return_value; }};
   bool operator()(tGATT_IF client_if) { return body(client_if); };
 };
 extern struct bta_hh_le_is_hh_gatt_if bta_hh_le_is_hh_gatt_if;

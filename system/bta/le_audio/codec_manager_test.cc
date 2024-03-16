@@ -20,11 +20,13 @@
 #include <gtest/gtest.h>
 
 #include "common/init_flags.h"
+#include "hci/controller_interface_mock.h"
+#include "hci/hci_packets.h"
 #include "internal_include/stack_config.h"
 #include "le_audio/le_audio_types.h"
 #include "le_audio_set_configuration_provider.h"
-#include "mock_controller.h"
 #include "test/mock/mock_legacy_hci_interface.h"
+#include "test/mock/mock_main_shim_entry.h"
 
 using ::testing::_;
 using ::testing::Mock;
@@ -32,6 +34,7 @@ using ::testing::NiceMock;
 using ::testing::Return;
 using ::testing::Test;
 
+using bluetooth::hci::OpCode;
 using bluetooth::hci::iso_manager::kIsoDataPathHci;
 using bluetooth::hci::iso_manager::kIsoDataPathPlatformDefault;
 using bluetooth::le_audio::set_configurations::AudioSetConfiguration;
@@ -187,24 +190,21 @@ class CodecManagerTestBase : public Test {
     bluetooth::common::InitFlags::Load(test_flags);
     set_mock_offload_capabilities(offload_capabilities_none);
 
+    bluetooth::legacy::hci::testing::SetMock(legacy_hci_mock_);
+
     ON_CALL(controller_interface, SupportsBleIsochronousBroadcaster)
         .WillByDefault(Return(true));
-    ON_CALL(controller_interface, SupportsConfigureDataPath)
+    ON_CALL(controller_interface, IsSupported(OpCode::CONFIGURE_DATA_PATH))
         .WillByDefault(Return(true));
-
-    controller::SetMockControllerInterface(&controller_interface);
-    bluetooth::legacy::hci::testing::SetMock(legacy_hci_mock_);
+    bluetooth::hci::testing::mock_controller_ = &controller_interface;
 
     codec_manager = CodecManager::GetInstance();
   }
 
-  virtual void TearDown() override {
-    codec_manager->Stop();
+  virtual void TearDown() override { codec_manager->Stop(); }
 
-    controller::SetMockControllerInterface(nullptr);
-  }
-
-  NiceMock<controller::MockControllerInterface> controller_interface;
+  NiceMock<bluetooth::hci::testing::MockControllerInterface>
+      controller_interface;
   CodecManager* codec_manager;
   bluetooth::legacy::hci::testing::MockInterface legacy_hci_mock_;
 };

@@ -29,7 +29,9 @@ filegroup {
 genrule {
     name: "BluetoothGeneratedBundlerSchema_h_bfbs",
     visibility: [
+        "//packages/modules/Bluetooth/system/bta",
         "//packages/modules/Bluetooth/system/btif",
+        "//packages/modules/Bluetooth/system/btm",
         "//packages/modules/Bluetooth/system/gd",
         "//packages/modules/Bluetooth/system/main",
         "//packages/modules/Bluetooth/system/rust",

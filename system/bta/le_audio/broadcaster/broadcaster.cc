@@ -29,9 +29,10 @@
 #include "bta/le_audio/le_audio_utils.h"
 #include "bta/le_audio/metrics_collector.h"
 #include "common/strings.h"
-#include "device/include/controller.h"
+#include "hci/controller_interface.h"
 #include "include/check.h"
 #include "internal_include/stack_config.h"
+#include "main/shim/entry.h"
 #include "os/log.h"
 #include "osi/include/properties.h"
 #include "stack/include/bt_types.h"
@@ -1269,7 +1270,7 @@ void LeAudioBroadcaster::Initialize(
     return;
   }
 
-  if (!controller_get_interface()->SupportsBleIsochronousBroadcaster() &&
+  if (!bluetooth::shim::GetController()->SupportsBleIsochronousBroadcaster() &&
       !osi_property_get_bool("persist.bluetooth.fake_iso_support", false)) {
     LOG_WARN("Isochronous Broadcast not supported by the controller!");
     return;

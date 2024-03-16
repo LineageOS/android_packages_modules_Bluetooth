@@ -37,8 +37,6 @@ namespace mock {
 namespace stack_btm_ble_addr {
 
 // Function state capture and return values, if needed
-struct btm_gen_resolve_paddr_low btm_gen_resolve_paddr_low;
-struct btm_gen_resolvable_private_addr btm_gen_resolvable_private_addr;
 struct btm_ble_init_pseudo_addr btm_ble_init_pseudo_addr;
 struct btm_ble_addr_resolvable btm_ble_addr_resolvable;
 struct btm_ble_resolve_random_addr btm_ble_resolve_random_addr;
@@ -54,15 +52,6 @@ struct btm_ble_refresh_peer_resolvable_private_addr
 }  // namespace test
 
 // Mocked functions, if any
-void btm_gen_resolve_paddr_low(const RawAddress& address) {
-  inc_func_call_count(__func__);
-  test::mock::stack_btm_ble_addr::btm_gen_resolve_paddr_low(address);
-}
-void btm_gen_resolvable_private_addr(
-    base::Callback<void(const RawAddress&)> cb) {
-  inc_func_call_count(__func__);
-  test::mock::stack_btm_ble_addr::btm_gen_resolvable_private_addr(cb);
-}
 bool btm_ble_init_pseudo_addr(tBTM_SEC_DEV_REC* p_dev_rec,
                               const RawAddress& new_pseudo_addr) {
   inc_func_call_count(__func__);

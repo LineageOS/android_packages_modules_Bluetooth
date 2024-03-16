@@ -40,8 +40,8 @@
 #include "common/strings.h"
 #include "common/time_util.h"
 #include "content_control_id_keeper.h"
-#include "device/include/controller.h"
 #include "devices.h"
+#include "hci/controller_interface.h"
 #include "include/check.h"
 #include "internal_include/bt_trace.h"
 #include "internal_include/stack_config.h"
@@ -49,6 +49,7 @@
 #include "le_audio_set_configuration_provider.h"
 #include "le_audio_types.h"
 #include "le_audio_utils.h"
+#include "main/shim/entry.h"
 #include "metrics_collector.h"
 #include "os/log.h"
 #include "osi/include/osi.h"
@@ -2045,7 +2046,7 @@ class LeAudioClientImpl : public LeAudioClient {
     BTA_GATTC_CancelOpen(gatt_if_, address, false);
     BTA_GATTC_Open(gatt_if_, address, reconnection_mode_, false);
 
-    if (controller_get_interface()->SupportsBle2mPhy()) {
+    if (bluetooth::shim::GetController()->SupportsBle2mPhy()) {
       LOG(INFO) << ADDRESS_TO_LOGGABLE_STR(address)
                 << " set preferred PHY to 2M";
       BTM_BleSetPhy(address, PHY_LE_2M, PHY_LE_2M, 0);
@@ -6236,9 +6237,9 @@ void LeAudioClient::Initialize(
     return;
   }
 
-  if (!controller_get_interface()
+  if (!bluetooth::shim::GetController()
            ->SupportsBleConnectedIsochronousStreamCentral() &&
-      !controller_get_interface()
+      !bluetooth::shim::GetController()
            ->SupportsBleConnectedIsochronousStreamPeripheral()) {
     LOG(ERROR) << "Controller reports no ISO support."
                   " LeAudioClient Init aborted.";

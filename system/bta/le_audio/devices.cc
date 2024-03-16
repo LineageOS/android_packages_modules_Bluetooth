@@ -23,8 +23,10 @@
 #include "acl_api.h"
 #include "bta_gatt_queue.h"
 #include "btif/include/btif_storage.h"
+#include "hci/controller_interface.h"
 #include "internal_include/bt_trace.h"
 #include "le_audio_utils.h"
+#include "main/shim/entry.h"
 #include "os/log.h"
 
 using bluetooth::hci::kIsoCigPhy1M;
@@ -820,9 +822,9 @@ void LeAudioDevice::PrintDebugState(void) {
 uint8_t LeAudioDevice::GetPreferredPhyBitmask(uint8_t preferred_phy) const {
   // Start with full local phy support
   uint8_t phy_bitmask = bluetooth::hci::kIsoCigPhy1M;
-  if (controller_get_interface()->SupportsBle2mPhy())
+  if (bluetooth::shim::GetController()->SupportsBle2mPhy())
     phy_bitmask |= bluetooth::hci::kIsoCigPhy2M;
-  if (controller_get_interface()->SupportsBleCodedPhy())
+  if (bluetooth::shim::GetController()->SupportsBleCodedPhy())
     phy_bitmask |= bluetooth::hci::kIsoCigPhyC;
 
   // Check against the remote device support

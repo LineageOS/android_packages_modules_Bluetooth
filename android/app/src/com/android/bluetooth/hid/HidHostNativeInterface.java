@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.hid;
 
-import android.bluetooth.BluetoothProfile;
 import android.util.Log;
 
 import com.android.internal.annotations.GuardedBy;
@@ -64,8 +63,9 @@ public class HidHostNativeInterface {
         return connectHidNative(address, addressType, transport);
     }
 
-    boolean disconnectHid(byte[] address, int addressType, int transport) {
-        return disconnectHidNative(address, addressType, transport);
+    boolean disconnectHid(
+            byte[] address, int addressType, int transport, boolean reconnectAllowed) {
+        return disconnectHidNative(address, addressType, transport, reconnectAllowed);
     }
 
     boolean getProtocolMode(byte[] address, int addressType, int transport) {
@@ -110,16 +110,18 @@ public class HidHostNativeInterface {
     private static int convertHalState(int halState) {
         switch (halState) {
             case CONN_STATE_CONNECTED:
-                return BluetoothProfile.STATE_CONNECTED;
+                return HidHostService.STATE_CONNECTED;
             case CONN_STATE_CONNECTING:
-                return BluetoothProfile.STATE_CONNECTING;
+                return HidHostService.STATE_CONNECTING;
             case CONN_STATE_DISCONNECTED:
-                return BluetoothProfile.STATE_DISCONNECTED;
+                return HidHostService.STATE_DISCONNECTED;
             case CONN_STATE_DISCONNECTING:
-                return BluetoothProfile.STATE_DISCONNECTING;
+                return HidHostService.STATE_DISCONNECTING;
+            case CONN_STATE_ACCEPTING:
+                return HidHostService.STATE_ACCEPTING;
             default:
                 Log.e(TAG, "bad hid connection state: " + halState);
-                return BluetoothProfile.STATE_DISCONNECTED;
+                return HidHostService.STATE_DISCONNECTED;
         }
     }
 
@@ -170,6 +172,7 @@ public class HidHostNativeInterface {
     private static final int CONN_STATE_CONNECTING = 1;
     private static final int CONN_STATE_DISCONNECTED = 2;
     private static final int CONN_STATE_DISCONNECTING = 3;
+    private static final int CONN_STATE_ACCEPTING = 4;
 
     private native void initializeNative();
 
@@ -177,7 +180,8 @@ public class HidHostNativeInterface {
 
     private native boolean connectHidNative(byte[] btAddress, int addressType, int transport);
 
-    private native boolean disconnectHidNative(byte[] btAddress, int addressType, int transport);
+    private native boolean disconnectHidNative(
+            byte[] btAddress, int addressType, int transport, boolean reconnectAllowed);
 
     private native boolean getProtocolModeNative(byte[] btAddress, int addressType, int transport);
 

@@ -31,6 +31,8 @@
 #include "device/include/controller.h"
 #include "device/include/interop.h"
 #include "device/include/interop_config.h"
+#include "hci/controller_interface.h"
+#include "main/shim/entry.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/properties.h"
@@ -575,7 +577,8 @@ bool BTM_ReadConnectedTransportAddress(RawAddress* remote_bda,
 
 tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr,
                                  uint16_t tx_pdu_length) {
-  if (!controller_get_interface()->SupportsBleDataPacketLengthExtension()) {
+  if (!bluetooth::shim::GetController()
+           ->SupportsBleDataPacketLengthExtension()) {
     log::info("Local controller does not support le packet extension");
     return BTM_ILLEGAL_VALUE;
   }
@@ -1885,11 +1888,6 @@ static void btm_ble_reset_id_impl(const Octet16& rand1, const Octet16& rand2) {
       crypto_toolbox::aes_128(btm_sec_cb.devcb.id_keys.ir, btm_ble_irk_pt);
 
   btm_notify_new_key(BTM_BLE_KEY_TYPE_ID);
-
-  /* if privacy is enabled, new RPA should be calculated */
-  if (btm_cb.ble_ctr_cb.privacy_mode != BTM_PRIVACY_NONE) {
-    btm_gen_resolvable_private_addr(base::Bind(&btm_gen_resolve_paddr_low));
-  }
 
   /* proceed generate ER */
   btm_sec_cb.devcb.ble_encryption_key_value = rand2;

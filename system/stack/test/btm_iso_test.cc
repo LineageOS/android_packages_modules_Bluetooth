@@ -19,6 +19,8 @@
 #include <gtest/gtest.h>
 
 #include "btm_iso_api.h"
+#include "hci/controller_interface_mock.h"
+#include "hci/hci_packets.h"
 #include "hci/include/hci_layer.h"
 #include "main/shim/hci_layer.h"
 #include "mock_controller.h"
@@ -29,6 +31,7 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/hcidefs.h"
+#include "test/mock/mock_main_shim_entry.h"
 #include "test/mock/mock_main_shim_hci_layer.h"
 
 using bluetooth::hci::IsoManager;
@@ -141,11 +144,11 @@ class IsoManagerTest : public Test {
     controller::SetMockControllerInterface(&controller_interface_);
     bluetooth::shim::testing::hci_layer_set_interface(
         &bluetooth::shim::interface);
+    bluetooth::hci::testing::mock_controller_ = &controller_;
 
     big_callbacks_.reset(new MockBigCallbacks());
     cig_callbacks_.reset(new MockCigCallbacks());
     IsIsoActive = false;
-
     EXPECT_CALL(controller_interface_, GetIsoBufferCount())
         .Times(AtLeast(1))
         .WillRepeatedly(Return(6));
@@ -166,6 +169,7 @@ class IsoManagerTest : public Test {
     hcic::SetMockHcicInterface(nullptr);
     controller::SetMockControllerInterface(nullptr);
     bluetooth::shim::testing::hci_layer_set_interface(nullptr);
+    bluetooth::hci::testing::mock_controller_ = nullptr;
   }
 
   virtual void InitIsoManager() {
@@ -339,6 +343,7 @@ class IsoManagerTest : public Test {
   IsoManager* manager_instance_;
   bluetooth::shim::MockIsoInterface iso_interface_;
   hcic::MockHcicInterface hcic_interface_;
+  bluetooth::hci::testing::MockControllerInterface controller_;
   controller::MockControllerInterface controller_interface_;
 
   std::unique_ptr<MockBigCallbacks> big_callbacks_;

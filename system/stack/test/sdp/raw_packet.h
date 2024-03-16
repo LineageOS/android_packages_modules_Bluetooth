@@ -14,27 +14,17 @@
  * limitations under the License.
  */
 
-#include "bta/include/bta_ras_api.h"
+#pragma once
 
-using bluetooth::ras::ProcedureDoneStatus;
-
-class MockRasServer : public bluetooth::ras::RasServer {
-  void Initialize() override {}
-  void PushProcedureData(RawAddress address, uint16_t procedure_count,
-                         ProcedureDoneStatus procedure_done_status,
-                         std::vector<uint8_t> data) override{};
-};
+#include <cstddef>
 
 namespace bluetooth {
-namespace ras {
+namespace testing {
 
-RasServer* GetRasServer() {
-  static MockRasServer* instance = nullptr;
-  if (instance == nullptr) {
-    instance = new MockRasServer();
-  }
-  return instance;
-}
+struct raw_packet_t {
+  const unsigned char* data;
+  size_t len;
+};
 
-}  // namespace ras
+}  // namespace testing
 }  // namespace bluetooth

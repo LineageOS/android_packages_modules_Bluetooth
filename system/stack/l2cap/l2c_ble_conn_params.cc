@@ -29,8 +29,10 @@
 #include <bluetooth/log.h>
 #include <log/log.h>
 
+#include "hci/controller_interface.h"
 #include "internal_include/stack_config.h"
 #include "main/shim/acl_api.h"
+#include "main/shim/entry.h"
 #include "os/log.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/include/acl_api.h"
@@ -239,7 +241,7 @@ void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
 
       /* if both side 4.1, or we are central device, send HCI command */
       if (p_lcb->IsLinkRoleCentral() ||
-          (controller_get_interface()
+          (bluetooth::shim::GetController()
                ->SupportsBleConnectionParametersRequest() &&
            acl_peer_supports_ble_connection_parameters_request(
                p_lcb->remote_bd_addr))) {
@@ -259,7 +261,7 @@ void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
     if (p_lcb->conn_update_mask & L2C_BLE_NEW_CONN_PARAM) {
       /* if both side 4.1, or we are central device, send HCI command */
       if (p_lcb->IsLinkRoleCentral() ||
-          (controller_get_interface()
+          (bluetooth::shim::GetController()
                ->SupportsBleConnectionParametersRequest() &&
            acl_peer_supports_ble_connection_parameters_request(
                p_lcb->remote_bd_addr))) {
@@ -433,14 +435,14 @@ static void l2cble_start_subrate_change(tL2C_LCB* p_lcb) {
     return;
   }
 
-  if (!controller_get_interface()->SupportsBleConnectionSubrating() ||
+  if (!bluetooth::shim::GetController()->SupportsBleConnectionSubrating() ||
       !acl_peer_supports_ble_connection_subrating(p_lcb->remote_bd_addr) ||
       !acl_peer_supports_ble_connection_subrating_host(p_lcb->remote_bd_addr)) {
     log::verbose(
         "returning L2C_BLE_NEW_SUBRATE_PARAM local_host_sup={}, "
         "local_conn_subrarte_sup={}, peer_subrate_sup={}, peer_host_sup={}",
-        controller_get_interface()->SupportsBleConnectionSubratingHost(),
-        controller_get_interface()->SupportsBleConnectionSubrating(),
+        bluetooth::shim::GetController()->SupportsBleConnectionSubratingHost(),
+        bluetooth::shim::GetController()->SupportsBleConnectionSubrating(),
         acl_peer_supports_ble_connection_subrating(p_lcb->remote_bd_addr),
         acl_peer_supports_ble_connection_subrating_host(p_lcb->remote_bd_addr));
     return;
