@@ -24,10 +24,13 @@
 #include "bta/ras/ras_types.h"
 #include "os/logging/log_adapter.h"
 #include "stack/include/bt_types.h"
+#include "stack/include/btm_ble_addr.h"
 
 using namespace bluetooth;
 using namespace ::ras;
 using namespace ::ras::uuid;
+
+using bluetooth::ras::ProcedureDoneStatus;
 
 namespace {
 
@@ -35,6 +38,7 @@ class RasServerImpl;
 RasServerImpl* instance;
 
 static constexpr uint32_t kSupportedFeatures = 0;
+static constexpr uint16_t kBufferSize = 3;
 
 class RasServerImpl : public bluetooth::ras::RasServer {
  public:
@@ -44,9 +48,18 @@ class RasServerImpl : public bluetooth::ras::RasServer {
     uint16_t attribute_handle_ccc_;
   };
 
+  // Struct to save data of specific ranging counter
+  struct DataBuffer {
+    DataBuffer(uint16_t ranging_counter)
+        : ranging_counter_(ranging_counter), segments_() {}
+    uint16_t ranging_counter_;
+    std::vector<std::vector<uint8_t>> segments_;
+  };
+
   struct ClientTracker {
     uint16_t conn_id_;
     std::unordered_map<Uuid, uint16_t> ccc_values_;
+    std::vector<DataBuffer> buffers_;
   };
 
   void Initialize() {
@@ -59,6 +72,71 @@ class RasServerImpl : public bluetooth::ras::RasServer {
           if (instance && p_data) instance->GattsCallback(event, p_data);
         },
         false);
+  }
+
+  void PushProcedureData(RawAddress address, uint16_t procedure_counter,
+                         ProcedureDoneStatus procedure_done_status,
+                         std::vector<uint8_t> data) {
+    log::info("{}, counter:{}, procedure_done_status:{}, with size {}",
+              ADDRESS_TO_LOGGABLE_STR(address), procedure_counter,
+              (uint16_t)procedure_done_status, data.size());
+    tBLE_BD_ADDR ble_bd_addr;
+    ResolveAddress(ble_bd_addr, address);
+
+    if (trackers_.find(ble_bd_addr.bda) == trackers_.end()) {
+      log::warn("Can't find tracker for {}",
+                ADDRESS_TO_LOGGABLE_STR(ble_bd_addr.bda));
+      return;
+    }
+    std::lock_guard<std::mutex> lock(data_mutex_);
+    ClientTracker& tracker = trackers_[ble_bd_addr.bda];
+    DataBuffer& data_buffer =
+        InitDataBuffer(ble_bd_addr.bda, procedure_counter);
+    data_buffer.segments_.push_back(data);
+
+    // Send data ready
+    if (procedure_done_status == ProcedureDoneStatus::ALL_RESULTS_COMPLETE ||
+        procedure_done_status == ProcedureDoneStatus::ABORTED) {
+      uint16_t ccc_value =
+          tracker.ccc_values_[kRasRangingDataReadyCharacteristic];
+      if (ccc_value == GATT_CLT_CONFIG_NONE) {
+        log::info("Skip Ranging Data Ready");
+      } else {
+        bool need_confirm = ccc_value & GATT_CLT_CONFIG_INDICATION;
+        log::info("Send data ready, ranging_counter {}", procedure_counter);
+        uint16_t attr_id = GetCharacteristic(kRasRangingDataReadyCharacteristic)
+                               ->attribute_handle_;
+        std::vector<uint8_t> value(kRingingCounterSize);
+        value[0] = (procedure_counter & 0xFF);
+        value[1] = (procedure_counter >> 8) & 0xFF;
+        BTA_GATTS_HandleValueIndication(tracker.conn_id_, attr_id, value,
+                                        need_confirm);
+      }
+    }
+
+    // Send data overwritten
+    if (tracker.buffers_.size() > kBufferSize) {
+      auto begin = tracker.buffers_.begin();
+      uint16_t ccc_value =
+          tracker.ccc_values_[kRasRangingDataOverWrittenCharacteristic];
+      if (ccc_value == GATT_CLT_CONFIG_NONE) {
+        log::info("Skip Ranging Data Over Written");
+        tracker.buffers_.erase(begin);
+        return;
+      }
+      bool need_confirm = ccc_value & GATT_CLT_CONFIG_INDICATION;
+      log::info("Send data over written, ranging_counter {}",
+                begin->ranging_counter_);
+      uint16_t attr_id =
+          GetCharacteristic(kRasRangingDataOverWrittenCharacteristic)
+              ->attribute_handle_;
+      std::vector<uint8_t> value(kRingingCounterSize);
+      value[0] = (begin->ranging_counter_ & 0xFF);
+      value[1] = (begin->ranging_counter_ >> 8) & 0xFF;
+      BTA_GATTS_HandleValueIndication(tracker.conn_id_, attr_id, value,
+                                      need_confirm);
+      tracker.buffers_.erase(begin);
+    }
   }
 
   void GattsCallback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data) {
@@ -312,6 +390,15 @@ class RasServerImpl : public bluetooth::ras::RasServer {
     }
   }
 
+  RasCharacteristic* GetCharacteristic(Uuid uuid) {
+    for (auto& [attribute_handle, characteristic] : characteristics_) {
+      if (characteristic.uuid_ == uuid) {
+        return &characteristic;
+      }
+    }
+    return nullptr;
+  }
+
   RasCharacteristic* GetCharacteristicByCccHandle(uint16_t descriptor_handle) {
     for (auto& [attribute_handle, characteristic] : characteristics_) {
       if (characteristic.attribute_handle_ccc_ == descriptor_handle) {
@@ -321,6 +408,26 @@ class RasServerImpl : public bluetooth::ras::RasServer {
     return nullptr;
   }
 
+  void ResolveAddress(tBLE_BD_ADDR& ble_bd_addr, const RawAddress& address) {
+    ble_bd_addr.bda = address;
+    ble_bd_addr.type = BLE_ADDR_RANDOM;
+    maybe_resolve_address(&ble_bd_addr.bda, &ble_bd_addr.type);
+  }
+
+  DataBuffer& InitDataBuffer(RawAddress address, uint16_t procedure_counter) {
+    std::vector<DataBuffer>& buffers = trackers_[address].buffers_;
+    for (DataBuffer& data_buffer : buffers) {
+      if (data_buffer.ranging_counter_ == procedure_counter) {
+        // Data already exist, return
+        return data_buffer;
+      }
+    }
+    log::info("Create data for ranging_counter: {}, current size {}",
+              procedure_counter, buffers.size());
+    buffers.emplace_back(procedure_counter);
+    return buffers.back();
+  }
+
  private:
   bluetooth::Uuid app_uuid_;
   uint16_t server_if_;
@@ -328,6 +435,7 @@ class RasServerImpl : public bluetooth::ras::RasServer {
   std::unordered_map<uint16_t, RasCharacteristic> characteristics_;
   // A map to client trackers with address
   std::unordered_map<RawAddress, ClientTracker> trackers_;
+  std::mutex data_mutex_;
 };
 
 }  // namespace
