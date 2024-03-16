@@ -129,3 +129,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "ble_check_data_length_on_legacy_advertising"
+    namespace: "bluetooth"
+    description: "Add data length checks for legacy advertising"
+    bug: "329011868"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
