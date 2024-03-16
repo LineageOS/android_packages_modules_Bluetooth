@@ -352,7 +352,7 @@ void BleScannerInterfaceImpl::OnMsftAdvMonitorEnable(
 void BleScannerInterfaceImpl::SetScanParameters(int scanner_id,
                                                 uint8_t scan_type,
                                                 int scan_interval,
-                                                int scan_window,
+                                                int scan_window, int scan_phy,
                                                 Callback /* cb */) {
   LOG(INFO) << __func__ << " in shim layer";
   if (BTM_BLE_ISVALID_PARAM(scan_interval, BTM_BLE_SCAN_INT_MIN,
@@ -362,11 +362,12 @@ void BleScannerInterfaceImpl::SetScanParameters(int scanner_id,
     btm_cb.ble_ctr_cb.inq_var.scan_type = BTM_BLE_SCAN_MODE_ACTI;
     btm_cb.ble_ctr_cb.inq_var.scan_interval = scan_interval;
     btm_cb.ble_ctr_cb.inq_var.scan_window = scan_window;
+    btm_cb.ble_ctr_cb.inq_var.scan_phy = scan_phy;
   }
 
   bluetooth::shim::GetScanning()->SetScanParameters(
       scanner_id, static_cast<bluetooth::hci::LeScanType>(scan_type),
-      scan_interval, scan_window);
+      scan_interval, scan_window, scan_phy);
 }
 
 /* Configure the batchscan storage */

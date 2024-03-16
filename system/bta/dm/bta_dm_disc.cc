@@ -659,7 +659,8 @@ static void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
           // send all result back to app
           tBTA_DM_SEARCH result;
           result.disc_ble_res.bd_addr = bta_dm_search_cb.peer_bdaddr;
-          bd_name_copy(result.disc_ble_res.bd_name, bta_dm_get_remname());
+          bd_name_from_char_pointer(result.disc_ble_res.bd_name,
+                                    bta_dm_get_remname());
 
           result.disc_ble_res.services = &gatt_uuids;
           bta_dm_search_cb.p_search_cback(BTA_DM_GATT_OVER_SDP_RES_EVT,
@@ -795,8 +796,8 @@ static void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
                      bta_dm_search_cb.peer_scn);
       }
       p_msg->disc_result.result.disc_res.bd_addr = bta_dm_search_cb.peer_bdaddr;
-      bd_name_copy(p_msg->disc_result.result.disc_res.bd_name,
-                   bta_dm_get_remname());
+      bd_name_from_char_pointer(p_msg->disc_result.result.disc_res.bd_name,
+                                bta_dm_get_remname());
 
       bta_sys_sendmsg(p_msg);
     }
@@ -821,8 +822,8 @@ static void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
     p_msg->disc_result.result.disc_res.services =
         bta_dm_search_cb.services_found;
     p_msg->disc_result.result.disc_res.bd_addr = bta_dm_search_cb.peer_bdaddr;
-    bd_name_copy(p_msg->disc_result.result.disc_res.bd_name,
-                 bta_dm_get_remname());
+    bd_name_from_char_pointer(p_msg->disc_result.result.disc_res.bd_name,
+                              bta_dm_get_remname());
 
     bta_sys_sendmsg(p_msg);
   }
@@ -866,7 +867,7 @@ static void bta_dm_search_cmpl() {
   std::vector<Uuid> gatt_services;
   result.disc_ble_res.services = &gatt_services;
   result.disc_ble_res.bd_addr = bta_dm_search_cb.peer_bdaddr;
-  bd_name_copy(result.disc_ble_res.bd_name, bta_dm_get_remname());
+  bd_name_from_char_pointer(result.disc_ble_res.bd_name, bta_dm_get_remname());
 
   bool send_gatt_results =
       bluetooth::common::init_flags::
@@ -1235,8 +1236,8 @@ static void bta_dm_find_services(const RawAddress& bd_addr) {
     p_msg->disc_result.result.disc_res.services =
         bta_dm_search_cb.services_found;
     p_msg->disc_result.result.disc_res.bd_addr = bta_dm_search_cb.peer_bdaddr;
-    bd_name_copy(p_msg->disc_result.result.disc_res.bd_name,
-                 bta_dm_get_remname());
+    bd_name_from_char_pointer(p_msg->disc_result.result.disc_res.bd_name,
+                              bta_dm_get_remname());
 
     bta_sys_sendmsg(p_msg);
   }
@@ -1441,8 +1442,8 @@ static void bta_dm_discover_device(const RawAddress& remote_bd_addr) {
   p_msg->disc_result.result.disc_res.result = BTA_SUCCESS;
   p_msg->disc_result.result.disc_res.services = bta_dm_search_cb.services_found;
   p_msg->disc_result.result.disc_res.bd_addr = bta_dm_search_cb.peer_bdaddr;
-  bd_name_copy(p_msg->disc_result.result.disc_res.bd_name,
-               bta_dm_get_remname());
+  bd_name_from_char_pointer(p_msg->disc_result.result.disc_res.bd_name,
+                            bta_dm_get_remname());
 
   bta_sys_sendmsg(p_msg);
 }
@@ -1939,8 +1940,8 @@ static void bta_dm_gatt_disc_complete(uint16_t conn_id, tGATT_STATUS status) {
   p_msg->disc_result.result.disc_res.num_uuids = 0;
   p_msg->disc_result.result.disc_res.p_uuid_list = NULL;
   p_msg->disc_result.result.disc_res.bd_addr = bta_dm_search_cb.peer_bdaddr;
-  bd_name_copy(p_msg->disc_result.result.disc_res.bd_name,
-               bta_dm_get_remname());
+  bd_name_from_char_pointer(p_msg->disc_result.result.disc_res.bd_name,
+                            bta_dm_get_remname());
 
   p_msg->disc_result.result.disc_res.device_type |= BT_DEVICE_TYPE_BLE;
 

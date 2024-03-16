@@ -137,7 +137,7 @@ def generate_java_coverage(bt_apex_name, trace_path, coverage_out):
   # From google3/configs/wireless/android/testing/atp/prod/mainline-engprod/templates/modules/bluetooth.gcl.
   framework_exclude_classes = [
       # Exclude statically linked & jarjar'ed classes.
-      '**/com/android/bluetooth/x/**/*.class',
+      '**/com/android/bluetooth/jarjar/**/*.class',
       # Exclude AIDL generated interfaces.
       '**/android/bluetooth/I*$Default.class',
       '**/android/bluetooth/**/I*$Default.class',
@@ -152,7 +152,7 @@ def generate_java_coverage(bt_apex_name, trace_path, coverage_out):
       # Exclude statically linked & jarjar'ed classes.
       '**/android/support/**/*.class',
       '**/androidx/**/*.class',
-      '**/com/android/bluetooth/x/**/*.class',
+      '**/com/android/bluetooth/jarjar/**/*.class',
       '**/com/android/internal/**/*.class',
       '**/com/google/**/*.class',
       '**/kotlin/**/*.class',
@@ -166,7 +166,7 @@ def generate_java_coverage(bt_apex_name, trace_path, coverage_out):
       '**/android/net/**/*.class',
       '**/android/support/**/*.class',
       '**/androidx/**/*.class',
-      '**/com/android/bluetooth/x/**/*.class',
+      '**/com/android/bluetooth/jarjar/**/*.class',
       '**/com/android/internal/**/*.class',
       '**/com/android/obex/**/*.class',
       '**/com/android/vcard/**/*.class',

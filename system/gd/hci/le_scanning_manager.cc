@@ -213,6 +213,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
       api_type_ = ScanApiType::EXTENDED;
       interval_ms_ = kDefaultLeExtendedScanInterval;
       window_ms_ = kDefaultLeExtendedScanWindow;
+      phy_ = static_cast<uint8_t>(PhyType::LE_1M);
     } else if (controller_->IsSupported(OpCode::LE_EXTENDED_SCAN_PARAMS)) {
       api_type_ = ScanApiType::ANDROID_HCI;
     } else {
@@ -497,12 +498,16 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
 
   void configure_scan() {
     std::vector<PhyScanParameters> parameter_vector;
-    PhyScanParameters phy_scan_parameters;
-    phy_scan_parameters.le_scan_window_ = window_ms_;
-    phy_scan_parameters.le_scan_interval_ = interval_ms_;
-    phy_scan_parameters.le_scan_type_ = le_scan_type_;
-    parameter_vector.push_back(phy_scan_parameters);
-    uint8_t phys_in_use = 1;
+    for (int i = 0; i < 7; i++) {
+      if ((phy_ & 1 << i) != 0) {
+        PhyScanParameters phy_scan_parameters;
+        phy_scan_parameters.le_scan_window_ = window_ms_;
+        phy_scan_parameters.le_scan_interval_ = interval_ms_;
+        phy_scan_parameters.le_scan_type_ = le_scan_type_;
+        parameter_vector.push_back(phy_scan_parameters);
+      }
+    }
+    uint8_t phys_in_use = phy_;
 
     // The Host shall not issue set scan parameter command when scanning is enabled
     stop_scan();
@@ -657,7 +662,12 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
     }
   }
 
-  void set_scan_parameters(ScannerId scanner_id, LeScanType scan_type, uint16_t scan_interval, uint16_t scan_window) {
+  void set_scan_parameters(
+      ScannerId scanner_id,
+      LeScanType scan_type,
+      uint16_t scan_interval,
+      uint16_t scan_window,
+      uint8_t scan_phy) {
     uint32_t max_scan_interval = kLeScanIntervalMax;
     uint32_t max_scan_window = kLeScanWindowMax;
     if (api_type_ == ScanApiType::EXTENDED) {
@@ -686,6 +696,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
     le_scan_type_ = scan_type;
     interval_ms_ = scan_interval;
     window_ms_ = scan_window;
+    if (IS_FLAG_ENABLED(phy_to_native)) phy_ = scan_phy;
     scanning_callbacks_->OnSetScannerParameterComplete(scanner_id, ScanningCallback::SUCCESS);
   }
 
@@ -1709,6 +1720,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
   LeScanType le_scan_type_ = LeScanType::ACTIVE;
   uint32_t interval_ms_{1000};
   uint16_t window_ms_{1000};
+  uint8_t phy_{(uint8_t)PhyType::LE_1M};
   OwnAddressType own_address_type_{OwnAddressType::PUBLIC_DEVICE_ADDRESS};
   LeScanningFilterPolicy filter_policy_{LeScanningFilterPolicy::ACCEPT_ALL};
   BatchScanConfig batch_scan_config_;
@@ -1762,8 +1774,19 @@ void LeScanningManager::Scan(bool start) {
 }
 
 void LeScanningManager::SetScanParameters(
-    ScannerId scanner_id, LeScanType scan_type, uint16_t scan_interval, uint16_t scan_window) {
-  CallOn(pimpl_.get(), &impl::set_scan_parameters, scanner_id, scan_type, scan_interval, scan_window);
+    ScannerId scanner_id,
+    LeScanType scan_type,
+    uint16_t scan_interval,
+    uint16_t scan_window,
+    uint8_t scan_phy) {
+  CallOn(
+      pimpl_.get(),
+      &impl::set_scan_parameters,
+      scanner_id,
+      scan_type,
+      scan_interval,
+      scan_window,
+      scan_phy);
 }
 
 void LeScanningManager::SetScanFilterPolicy(LeScanningFilterPolicy filter_policy) {

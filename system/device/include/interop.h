@@ -347,6 +347,9 @@ typedef enum {
   // collision.
   INTEROP_DELAY_AUTH,
 
+  // Some LE HID devices contain more than one HOGP service.
+  INTEROP_MULTIPLE_HOGP_SERVICE_CHOOSE_THIRD,
+
   END_OF_INTEROP_LIST
 } interop_feature_t;
 

@@ -21,6 +21,7 @@ import static android.bluetooth.BluetoothUtils.getSyncTimeout;
 
 import static java.util.Objects.requireNonNull;
 
+import android.annotation.BroadcastBehavior;
 import android.annotation.CallbackExecutor;
 import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
@@ -801,6 +802,50 @@ public final class BluetoothAdapter {
                 STATE_DISCONNECTING,
             })
     public @interface ConnectionState {}
+
+    /**
+     * Broadcast Action: The AutoOn feature state has been changed for one user
+     *
+     * <p>Always contains the extra fields {@link #EXTRA_AUTO_ON_STATE}
+     *
+     * @hide
+     */
+    @SystemApi
+    @FlaggedApi(Flags.FLAG_AUTO_ON_FEATURE)
+    @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
+    @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
+    @BroadcastBehavior(registeredOnly = true, protectedBroadcast = true)
+    public static final String ACTION_AUTO_ON_STATE_CHANGED =
+            "android.bluetooth.action.AUTO_ON_STATE_CHANGED";
+
+    /**
+     * Used as an int extra field in {@link #ACTION_AUTO_ON_STATE_CHANGED} intents.
+     *
+     * <p>Possible values are: {@link #AUTO_ON_STATE_OFF}, {@link #AUTO_ON_STATE_ON}
+     *
+     * @hide
+     */
+    @SystemApi
+    @FlaggedApi(Flags.FLAG_AUTO_ON_FEATURE)
+    public static final String EXTRA_AUTO_ON_STATE = "android.bluetooth.extra.AUTO_ON_STATE";
+
+    /**
+     * Indicates the AutoOn feature is OFF.
+     *
+     * @hide
+     */
+    @SystemApi
+    @FlaggedApi(Flags.FLAG_AUTO_ON_FEATURE)
+    public static final int AUTO_ON_STATE_OFF = 1;
+
+    /**
+     * Indicates the AutoOn feature is ON.
+     *
+     * @hide
+     */
+    @SystemApi
+    @FlaggedApi(Flags.FLAG_AUTO_ON_FEATURE)
+    public static final int AUTO_ON_STATE_ON = 2;
 
     /**
      * Audio mode representing output only.
@@ -5833,7 +5878,8 @@ public final class BluetoothAdapter {
     }
 
     /**
-     * Set the value of the automatic restart of the Bluetooth stack for the current user
+     * Set the value of the automatic restart of the Bluetooth stack for the current user. Client
+     * can subscribe to update by listening to {@link ACTION_AUTO_ON_STATE_CHANGED} intent
      *
      * @param status true if the feature is enabled
      * @throws IllegalStateException if feature is not supported

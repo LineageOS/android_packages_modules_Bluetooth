@@ -482,9 +482,9 @@ class BluetoothManagerService {
         synchronized (this) {
             if (isBluetoothPersistedStateOn()) {
                 if (isAirplaneModeOn) {
-                    persistBluetoothSetting(BLUETOOTH_ON_AIRPLANE);
+                    setBluetoothPersistedState(BLUETOOTH_ON_AIRPLANE);
                 } else {
-                    persistBluetoothSetting(BLUETOOTH_ON_BLUETOOTH);
+                    setBluetoothPersistedState(BLUETOOTH_ON_BLUETOOTH);
                 }
             }
 
@@ -803,17 +803,8 @@ class BluetoothManagerService {
         return state == BLUETOOTH_ON_BLUETOOTH;
     }
 
-    /** Save the Bluetooth on/off state */
-    private void persistBluetoothSetting(int value) {
-        Log.i(TAG, "Persisting Bluetooth Setting: " + value);
-        // waive WRITE_SECURE_SETTINGS permission check
-        final long callingIdentity = Binder.clearCallingIdentity();
-        try {
-            Settings.Global.putInt(
-                    mContext.getContentResolver(), Settings.Global.BLUETOOTH_ON, value);
-        } finally {
-            Binder.restoreCallingIdentity(callingIdentity);
-        }
+    private void setBluetoothPersistedState(int state) {
+        BluetoothServerProxy.getInstance().setBluetoothPersistedState(mContentResolver, state);
     }
 
     /**
@@ -1152,7 +1143,7 @@ class BluetoothManagerService {
                 Log.i(TAG, "continueFromBleOnState: Starting br edr");
                 // This triggers transition to STATE_ON
                 mAdapter.startBrEdr(mContext.getAttributionSource());
-                persistBluetoothSetting(BLUETOOTH_ON_BLUETOOTH);
+                setBluetoothPersistedState(BLUETOOTH_ON_BLUETOOTH);
             } else {
                 Log.i(TAG, "continueFromBleOnState: Staying in BLE_ON");
             }
@@ -1281,7 +1272,7 @@ class BluetoothManagerService {
             }
 
             if (persist) {
-                persistBluetoothSetting(BLUETOOTH_OFF);
+                setBluetoothPersistedState(BLUETOOTH_OFF);
             }
             mEnableExternal = false;
             sendDisableMsg(
@@ -1609,7 +1600,7 @@ class BluetoothManagerService {
                     mEnable = true;
 
                     if (isBle == 0) {
-                        persistBluetoothSetting(BLUETOOTH_ON_BLUETOOTH);
+                        setBluetoothPersistedState(BLUETOOTH_ON_BLUETOOTH);
                     }
 
                     // Use service interface to get the exact state
@@ -1759,7 +1750,7 @@ class BluetoothManagerService {
                 case MESSAGE_RESTORE_USER_SETTING:
                     if ((msg.arg1 == RESTORE_SETTING_TO_OFF) && mEnable) {
                         Log.d(TAG, "MESSAGE_RESTORE_USER_SETTING: set Bluetooth state to disabled");
-                        persistBluetoothSetting(BLUETOOTH_OFF);
+                        setBluetoothPersistedState(BLUETOOTH_OFF);
                         mEnableExternal = false;
                         sendDisableMsg(
                                 BluetoothProtoEnums.ENABLE_DISABLE_REASON_RESTORE_USER_SETTING,
@@ -2181,7 +2172,7 @@ class BluetoothManagerService {
         // Notify all proxy objects first of adapter state change
         if (newState == STATE_ON) {
             if (mDeviceConfigAllowAutoOn) {
-                AutoOnFeature.notifyBluetoothOn(mCurrentUserContext.getContentResolver());
+                AutoOnFeature.notifyBluetoothOn(mCurrentUserContext);
             }
             sendBluetoothOnCallback();
         } else if (newState == STATE_OFF) {

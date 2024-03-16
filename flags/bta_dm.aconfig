@@ -35,3 +35,10 @@ flag {
     description: "Report Bluetooth system context through bta_ble_energy_info_cmpl"
     bug: "323083457"
 }
+
+flag {
+    name: "continue_service_discovery_when_cancel_device_discovery"
+    namespace: "bluetooth"
+    description: "Continue service discovery when API cancel device discovery called"
+    bug: "329642681"
+}

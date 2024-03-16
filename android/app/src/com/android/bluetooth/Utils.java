@@ -63,8 +63,11 @@ import android.provider.DeviceConfig;
 import android.provider.Telephony;
 import android.util.Log;
 
+import androidx.annotation.VisibleForTesting;
+
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.flags.Flags;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -94,6 +97,11 @@ public final class Utils {
             "persist.bluetooth.enable_dual_mode_audio";
     private static boolean sDualModeEnabled =
             SystemProperties.getBoolean(ENABLE_DUAL_MODE_AUDIO, false);
+
+    private static final String ENABLE_SCO_MANAGED_BY_AUDIO = "bluetooth.sco.managed_by_audio";
+
+    private static boolean isScoManagedByAudioEnabled =
+            SystemProperties.getBoolean(ENABLE_SCO_MANAGED_BY_AUDIO, false);
 
     private static final String KEY_TEMP_ALLOW_LIST_DURATION_MS = "temp_allow_list_duration_ms";
     private static final long DEFAULT_TEMP_ALLOW_LIST_DURATION_MS = 20_000;
@@ -141,6 +149,30 @@ public final class Utils {
     public static boolean isDualModeAudioEnabled() {
         Log.i(TAG, "Dual mode enable state is: " + sDualModeEnabled);
         return sDualModeEnabled;
+    }
+
+    /**
+     * Check if SCO managed by Audio is enabled. This is set via the system property
+     * bluetooth.sco.managed_by_audio.
+     *
+     * <p>When set to {@code false}, Bluetooth will managed the start and end of the SCO.
+     *
+     * <p>When set to {@code true}, Audio will manage the start and end of the SCO through HAL.
+     *
+     * @return true if SCO managed by Audio is enabled, false otherwise
+     */
+    public static boolean isScoManagedByAudioEnabled() {
+        if (Flags.isScoManagedByAudio()) {
+            Log.d(TAG, "isScoManagedByAudioEnabled state is: " + isScoManagedByAudioEnabled);
+            return isScoManagedByAudioEnabled;
+        }
+        return false;
+    }
+
+    @VisibleForTesting
+    public static void setIsScoManagedByAudioEnabled(boolean enabled) {
+        Log.i(TAG, "Updating isScoManagedByAudioEnabled for testing to: " + enabled);
+        isScoManagedByAudioEnabled = enabled;
     }
 
     /**

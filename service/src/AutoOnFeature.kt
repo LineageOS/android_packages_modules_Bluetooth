@@ -18,6 +18,10 @@
 
 package com.android.server.bluetooth
 
+import android.bluetooth.BluetoothAdapter.ACTION_AUTO_ON_STATE_CHANGED
+import android.bluetooth.BluetoothAdapter.AUTO_ON_STATE_OFF
+import android.bluetooth.BluetoothAdapter.AUTO_ON_STATE_ON
+import android.bluetooth.BluetoothAdapter.EXTRA_AUTO_ON_STATE
 import android.bluetooth.BluetoothAdapter.STATE_ON
 import android.content.BroadcastReceiver
 import android.content.ContentResolver
@@ -89,13 +93,13 @@ public fun pause() {
     timer = null
 }
 
-public fun notifyBluetoothOn(resolver: ContentResolver) {
+public fun notifyBluetoothOn(context: Context) {
     timer?.cancel()
     timer = null
 
-    if (!isFeatureSupportedForUser(resolver)) {
+    if (!isFeatureSupportedForUser(context.contentResolver)) {
         val defaultFeatureValue = true
-        if (!setFeatureEnabledForUserUnchecked(resolver, defaultFeatureValue)) {
+        if (!setFeatureEnabledForUserUnchecked(context, defaultFeatureValue)) {
             Log.e(TAG, "Failed to set feature to its default value ${defaultFeatureValue}")
         } else {
             Log.i(TAG, "Feature was set to its default value ${defaultFeatureValue}")
@@ -122,7 +126,7 @@ public fun setUserEnabled(
     if (!isUserSupported(context.contentResolver)) {
         throw IllegalStateException("AutoOnFeature not supported for user: ${context.getUser()}")
     }
-    if (!setFeatureEnabledForUserUnchecked(context.contentResolver, status)) {
+    if (!setFeatureEnabledForUserUnchecked(context, status)) {
         throw IllegalStateException("AutoOnFeature database failure for user: ${context.getUser()}")
     }
     Counter.logIncrement(
@@ -272,8 +276,18 @@ private fun isFeatureSupportedForUser(resolver: ContentResolver): Boolean {
  *
  * @return whether the auto on feature is enabled for this user
  */
-private fun setFeatureEnabledForUserUnchecked(resolver: ContentResolver, status: Boolean): Boolean {
-    return Settings.Secure.putInt(resolver, USER_SETTINGS_KEY, if (status) 1 else 0)
+private fun setFeatureEnabledForUserUnchecked(context: Context, status: Boolean): Boolean {
+    val ret =
+        Settings.Secure.putInt(context.contentResolver, USER_SETTINGS_KEY, if (status) 1 else 0)
+    if (ret) {
+        context.sendBroadcast(
+            Intent(ACTION_AUTO_ON_STATE_CHANGED)
+                .addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY)
+                .putExtra(EXTRA_AUTO_ON_STATE, if (status) AUTO_ON_STATE_ON else AUTO_ON_STATE_OFF),
+            android.Manifest.permission.BLUETOOTH_PRIVILEGED,
+        )
+    }
+    return ret
 }
 
 // Listener is needed because code should be actionable prior to V API release
