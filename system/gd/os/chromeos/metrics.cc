@@ -18,6 +18,7 @@
 
 #include "os/metrics.h"
 
+#include <bluetooth/log.h>
 #include <metrics/structured_events.h>
 
 #include "metrics/utils.h"
@@ -66,10 +67,10 @@ void LogMetricA2dpAudioOverrunEvent(
 
   addr_string = address.ToString();
 
-  LOG_DEBUG(
-      "A2dpAudioOverrun: %s, %s, %llu, %d, %d, %d",
-      boot_id.c_str(),
-      addr_string.c_str(),
+  log::debug(
+      "A2dpAudioOverrun: {}, {}, {}, {}, {}, {}",
+      boot_id,
+      addr_string,
       (long long unsigned)encoding_interval_millis,
       num_dropped_buffers,
       num_dropped_encoded_bytes,
@@ -94,10 +95,10 @@ void LogMetricHfpPacketLossStats(
 
   addr_string = address.ToString();
 
-  LOG_DEBUG(
-      "HfpPacketLoss: %s, %s, %d, %f, %u",
-      boot_id.c_str(),
-      addr_string.c_str(),
+  log::debug(
+      "HfpPacketLoss: {}, {}, {}, {:f}, {}",
+      boot_id,
+      addr_string,
       num_decoded_frames,
       packet_loss_ratio,
       codec_type);
@@ -117,9 +118,9 @@ void LogMetricMmcTranscodeRttStats(
 
   if (!metrics::GetBootId(&boot_id)) return;
 
-  LOG_DEBUG(
-      "MmcTranscodeRttStats: %s, %d, %f, %d, %d",
-      boot_id.c_str(),
+  log::debug(
+      "MmcTranscodeRttStats: {}, {}, {:f}, {}, {}",
+      boot_id,
       maximum_rtt,
       mean_rtt,
       num_requests,
@@ -207,10 +208,10 @@ void LogMetricA2dpSessionMetricsEvent(
 
   addr_string = address.ToString();
 
-  LOG_DEBUG(
-      "A2dpSessionMetrics: %s, %s, %lld, %d, %d, %d, %d, %d, %d, %f, %d, %lld, %d",
-      boot_id.c_str(),
-      addr_string.c_str(),
+  log::debug(
+      "A2dpSessionMetrics: {}, {}, {}, {}, {}, {}, {}, {}, {}, {:f}, {}, {}, {}",
+      boot_id,
+      addr_string,
       (long long int)audio_duration_ms,
       media_timer_min_ms,
       media_timer_max_ms,

@@ -16,6 +16,7 @@
 
 #include "os/files.h"
 
+#include <bluetooth/log.h>
 #include <fcntl.h>
 #include <libgen.h>
 #include <sys/stat.h>
@@ -57,7 +58,7 @@ bool FileExists(const std::string& path) {
 
 bool RenameFile(const std::string& from, const std::string& to) {
   if (std::rename(from.c_str(), to.c_str()) != 0) {
-    LOG_ERROR("unable to rename file from '%s' to '%s', error: %s", from.c_str(), to.c_str(), strerror(errno));
+    log::error("unable to rename file from '{}' to '{}', error: {}", from, to, strerror(errno));
     return false;
   }
   return true;
@@ -66,21 +67,21 @@ bool RenameFile(const std::string& from, const std::string& to) {
 std::optional<std::string> ReadSmallFile(const std::string& path) {
   std::ifstream input(path, std::ios::binary | std::ios::ate);
   if (!input) {
-    LOG_WARN("Failed to open file '%s', error: %s", path.c_str(), strerror(errno));
+    log::warn("Failed to open file '{}', error: {}", path, strerror(errno));
     return std::nullopt;
   }
   auto file_size = input.tellg();
   if (file_size < 0) {
-    LOG_WARN("Failed to get file size for '%s', error: %s", path.c_str(), strerror(errno));
+    log::warn("Failed to get file size for '{}', error: {}", path, strerror(errno));
     return std::nullopt;
   }
   std::string result(file_size, '\0');
   if (!input.seekg(0)) {
-    LOG_WARN("Failed to go back to the beginning of file '%s', error: %s", path.c_str(), strerror(errno));
+    log::warn("Failed to go back to the beginning of file '{}', error: {}", path, strerror(errno));
     return std::nullopt;
   }
   if (!input.read(result.data(), result.size())) {
-    LOG_WARN("Failed to read file '%s', error: %s", path.c_str(), strerror(errno));
+    log::warn("Failed to read file '{}', error: {}", path, strerror(errno));
     return std::nullopt;
   }
   input.close();
@@ -116,32 +117,32 @@ bool WriteToFile(const std::string& path, const std::string& data) {
     directory_path.append(dirname(temp_path_for_dir.data()));
   }
   if (directory_path.empty()) {
-    LOG_ERROR("error extracting directory from '%s', error: %s", path.c_str(), strerror(errno));
+    log::error("error extracting directory from '{}', error: {}", path, strerror(errno));
     return false;
   }
 
   int dir_fd = open(directory_path.c_str(), O_RDONLY | O_DIRECTORY);
   if (dir_fd < 0) {
-    LOG_ERROR("unable to open dir '%s', error: %s", directory_path.c_str(), strerror(errno));
+    log::error("unable to open dir '{}', error: {}", directory_path, strerror(errno));
     return false;
   }
 
   FILE* fp = std::fopen(temp_path.c_str(), "wt");
   if (!fp) {
-    LOG_ERROR("unable to write to file '%s', error: %s", temp_path.c_str(), strerror(errno));
+    log::error("unable to write to file '{}', error: {}", temp_path, strerror(errno));
     HandleError(temp_path, &dir_fd, &fp);
     return false;
   }
 
   if (std::fprintf(fp, "%s", data.c_str()) < 0) {
-    LOG_ERROR("unable to write to file '%s', error: %s", temp_path.c_str(), strerror(errno));
+    log::error("unable to write to file '{}', error: {}", temp_path, strerror(errno));
     HandleError(temp_path, &dir_fd, &fp);
     return false;
   }
 
   // Flush the stream buffer to the temp file.
   if (std::fflush(fp) != 0) {
-    LOG_ERROR("unable to write flush buffer to file '%s', error: %s", temp_path.c_str(), strerror(errno));
+    log::error("unable to write flush buffer to file '{}', error: {}", temp_path, strerror(errno));
     HandleError(temp_path, &dir_fd, &fp);
     return false;
   }
@@ -149,12 +150,12 @@ bool WriteToFile(const std::string& path, const std::string& data) {
   // Sync written temp file out to disk. fsync() is blocking until data makes it
   // to disk.
   if (fsync(fileno(fp)) != 0) {
-    LOG_WARN("unable to fsync file '%s', error: %s", temp_path.c_str(), strerror(errno));
+    log::warn("unable to fsync file '{}', error: {}", temp_path, strerror(errno));
     // Allow fsync to fail and continue
   }
 
   if (std::fclose(fp) != 0) {
-    LOG_ERROR("unable to close file '%s', error: %s", temp_path.c_str(), strerror(errno));
+    log::error("unable to close file '{}', error: {}", temp_path, strerror(errno));
     HandleError(temp_path, &dir_fd, &fp);
     return false;
   }
@@ -162,24 +163,24 @@ bool WriteToFile(const std::string& path, const std::string& data) {
 
   // Change the file's permissions to Read/Write by User and Group
   if (chmod(temp_path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) != 0) {
-    LOG_ERROR("unable to change file permissions '%s', error: %s", temp_path.c_str(), strerror(errno));
+    log::error("unable to change file permissions '{}', error: {}", temp_path, strerror(errno));
 
     struct stat dirstat {};
     if (fstat(dir_fd, &dirstat) == 0) {
-      LOG_ERROR("dir st_mode = 0x%02x", dirstat.st_mode);
-      LOG_ERROR("dir uid = %d", dirstat.st_uid);
-      LOG_ERROR("dir gid = %d", dirstat.st_gid);
+      log::error("dir st_mode = 0x{:02x}", dirstat.st_mode);
+      log::error("dir uid = {}", dirstat.st_uid);
+      log::error("dir gid = {}", dirstat.st_gid);
     } else {
-      LOG_ERROR("unable to call fstat on the directory, error: %s", strerror(errno));
+      log::error("unable to call fstat on the directory, error: {}", strerror(errno));
     }
 
     struct stat filestat {};
     if (stat(temp_path.c_str(), &filestat) == 0) {
-      LOG_ERROR("file st_mode = 0x%02x", filestat.st_mode);
-      LOG_ERROR("file uid = %d", filestat.st_uid);
-      LOG_ERROR("file gid = %d", filestat.st_gid);
+      log::error("file st_mode = 0x{:02x}", filestat.st_mode);
+      log::error("file uid = {}", filestat.st_uid);
+      log::error("file gid = {}", filestat.st_gid);
     } else {
-      LOG_ERROR("unable to call stat, error: %s", strerror(errno));
+      log::error("unable to call stat, error: {}", strerror(errno));
     }
 
     HandleError(temp_path, &dir_fd, &fp);
@@ -188,18 +189,19 @@ bool WriteToFile(const std::string& path, const std::string& data) {
 
   // Rename written temp file to the actual config file.
   if (std::rename(temp_path.c_str(), path.c_str()) != 0) {
-    LOG_ERROR("unable to commit file from '%s' to '%s', error: %s", temp_path.c_str(), path.c_str(), strerror(errno));
+    log::error(
+        "unable to commit file from '{}' to '{}', error: {}", temp_path, path, strerror(errno));
     HandleError(temp_path, &dir_fd, &fp);
     return false;
   }
 
   // This should ensure the directory is updated as well.
   if (fsync(dir_fd) != 0) {
-    LOG_WARN("unable to fsync dir '%s', error: %s", directory_path.c_str(), strerror(errno));
+    log::warn("unable to fsync dir '{}', error: {}", directory_path, strerror(errno));
   }
 
   if (close(dir_fd) != 0) {
-    LOG_ERROR("unable to close dir '%s', error: %s", directory_path.c_str(), strerror(errno));
+    log::error("unable to close dir '{}', error: {}", directory_path, strerror(errno));
     HandleError(temp_path, &dir_fd, &fp);
     return false;
   }
@@ -208,7 +210,7 @@ bool WriteToFile(const std::string& path, const std::string& data) {
 
 bool RemoveFile(const std::string& path) {
   if (remove(path.c_str()) != 0) {
-    LOG_ERROR("unable to remove file '%s', error: %s", path.c_str(), strerror(errno));
+    log::error("unable to remove file '{}', error: {}", path, strerror(errno));
     return false;
   }
   return true;
@@ -218,7 +220,7 @@ std::optional<std::chrono::time_point<std::chrono::system_clock, std::chrono::na
     const std::string& path) {
   struct stat file_info;
   if (stat(path.c_str(), &file_info) != 0) {
-    LOG_ERROR("unable to read '%s' file metadata, error: %s", path.c_str(), strerror(errno));
+    log::error("unable to read '{}' file metadata, error: {}", path, strerror(errno));
     return std::nullopt;
   }
   using namespace std::chrono;

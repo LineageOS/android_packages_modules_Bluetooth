@@ -16,6 +16,7 @@
 
 #include "os/parameter_provider.h"
 
+#include <bluetooth/log.h>
 #include <unistd.h>
 
 #include <cerrno>
@@ -44,7 +45,9 @@ std::string ParameterProvider::ConfigFilePath() {
   }
   char cwd[PATH_MAX] = {};
   if (getcwd(cwd, sizeof(cwd)) == nullptr) {
-    LOG_ERROR("Failed to get current working directory due to \"%s\", returning default", strerror(errno));
+    log::error(
+        "Failed to get current working directory due to \"{}\", returning default",
+        strerror(errno));
     return "bt_config.conf";
   }
   return std::string(cwd) + "/bt_config.conf";
@@ -64,7 +67,9 @@ std::string ParameterProvider::SnoopLogFilePath() {
   }
   char cwd[PATH_MAX] = {};
   if (getcwd(cwd, sizeof(cwd)) == nullptr) {
-    LOG_ERROR("Failed to get current working directory due to \"%s\", returning default", strerror(errno));
+    log::error(
+        "Failed to get current working directory due to \"{}\", returning default",
+        strerror(errno));
     return "btsnoop_hci.log";
   }
   return std::string(cwd) + "/btsnoop_hci.log";
@@ -85,7 +90,9 @@ std::string ParameterProvider::SnoozLogFilePath() {
   }
   char cwd[PATH_MAX] = {};
   if (getcwd(cwd, sizeof(cwd)) == nullptr) {
-    LOG_ERROR("Failed to get current working directory due to \"%s\", returning default", strerror(errno));
+    log::error(
+        "Failed to get current working directory due to \"{}\", returning default",
+        strerror(errno));
     return "bt_config.conf";
   }
   return std::string(cwd) + "/btsnooz_hci.log";

@@ -16,6 +16,8 @@
 
 #include "os/handler.h"
 
+#include <bluetooth/log.h>
+
 #include <cstring>
 
 #include "common/bind.h"
@@ -46,7 +48,7 @@ void Handler::Post(OnceClosure closure) {
   {
     std::lock_guard<std::mutex> lock(mutex_);
     if (was_cleared()) {
-      LOG_WARN("Posting to a handler which has been cleared");
+      log::warn("Posting to a handler which has been cleared");
       return;
     }
     tasks_->emplace(std::move(closure));

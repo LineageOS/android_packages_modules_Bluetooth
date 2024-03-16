@@ -20,6 +20,8 @@
 
 #include "os/internal/wakelock_native.h"
 
+#include <bluetooth/log.h>
+
 #include "os/log.h"
 
 namespace bluetooth {
@@ -29,20 +31,20 @@ namespace internal {
 struct WakelockNative::Impl {};
 
 void WakelockNative::Initialize() {
-  LOG_INFO("Linux native wakelock is not implemented");
+  log::info("Linux native wakelock is not implemented");
 }
 
 WakelockNative::StatusCode WakelockNative::Acquire(const std::string& lock_name) {
-  LOG_INFO("Linux native wakelock is not implemented");
+  log::info("Linux native wakelock is not implemented");
   return StatusCode::SUCCESS;
 }
 
 WakelockNative::StatusCode WakelockNative::Release(const std::string& lock_name) {
-  LOG_INFO("Linux native wakelock is not implemented");
+  log::info("Linux native wakelock is not implemented");
   return StatusCode::SUCCESS;
 }
 void WakelockNative::CleanUp() {
-  LOG_INFO("Linux native wakelock is not implemented");
+  log::info("Linux native wakelock is not implemented");
 }
 
 WakelockNative::WakelockNative() : pimpl_(std::make_unique<Impl>()) {}
