@@ -20,6 +20,8 @@
 
 #include "os/wakelock_manager.h"
 
+#include <bluetooth/log.h>
+
 #include <cerrno>
 #include <mutex>
 
@@ -35,7 +37,7 @@ using StatusCode = WakelockNative::StatusCode;
 uint64_t now_ms() {
   struct timespec ts = {};
   if (clock_gettime(CLOCK_BOOTTIME, &ts) == -1) {
-    LOG_ERROR("unable to get current time: %s", strerror(errno));
+    log::error("unable to get current time: {}", strerror(errno));
     return 0;
   }
   return (ts.tv_sec * 1000LL) + (ts.tv_nsec / 1000000LL);
@@ -181,7 +183,7 @@ struct WakelockManager::Stats {
 void WakelockManager::SetOsCallouts(OsCallouts* callouts, Handler* handler) {
   std::lock_guard<std::recursive_mutex> lock_guard(mutex_);
   if (initialized_) {
-    LOG_WARN("Setting OS callouts after initialization can lead to wakelock leak!");
+    log::warn("Setting OS callouts after initialization can lead to wakelock leak!");
   }
   os_callouts_ = callouts;
   os_callouts_handler_ = handler;
@@ -189,7 +191,7 @@ void WakelockManager::SetOsCallouts(OsCallouts* callouts, Handler* handler) {
   if (is_native_) {
     ASSERT_LOG(os_callouts_handler_ != nullptr, "handler must not be null when callout is not null");
   }
-  LOG_INFO("set to %s", is_native_ ? "native" : "non-native");
+  log::info("set to {}", is_native_ ? "native" : "non-native");
 }
 
 bool WakelockManager::Acquire() {
@@ -212,7 +214,7 @@ bool WakelockManager::Acquire() {
   pstats_->UpdateAcquiredStats(status);
 
   if (status != StatusCode::SUCCESS) {
-    LOG_ERROR("unable to acquire wake lock, error code: %u", status);
+    log::error("unable to acquire wake lock, error code: {}", status);
   }
 
   return status == StatusCode ::SUCCESS;
@@ -238,7 +240,7 @@ bool WakelockManager::Release() {
   pstats_->UpdateReleasedStats(status);
 
   if (status != StatusCode::SUCCESS) {
-    LOG_ERROR("unable to release wake lock, error code: %u", status);
+    log::error("unable to release wake lock, error code: {}", status);
   }
 
   return status == StatusCode ::SUCCESS;
@@ -247,11 +249,11 @@ bool WakelockManager::Release() {
 void WakelockManager::CleanUp() {
   std::lock_guard<std::recursive_mutex> lock_guard(mutex_);
   if (!initialized_) {
-    LOG_ERROR("Already uninitialized");
+    log::error("Already uninitialized");
     return;
   }
   if (pstats_->is_acquired) {
-    LOG_ERROR("Releasing wake lock as part of cleanup");
+    log::error("Releasing wake lock as part of cleanup");
     Release();
   }
   if (is_native_) {
