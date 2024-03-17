@@ -228,7 +228,7 @@ bt_status_t btif_storage_load_bonded_devices(void);
  ******************************************************************************/
 
 bt_status_t btif_storage_add_hid_device_info(
-    tAclLinkSpec* link_spec, uint16_t attr_mask, uint8_t sub_class,
+    const tAclLinkSpec& link_spec, uint16_t attr_mask, uint8_t sub_class,
     uint8_t app_id, uint16_t vendor_id, uint16_t product_id, uint16_t version,
     uint8_t ctry_code, uint16_t ssr_max_latency, uint16_t ssr_min_tout,
     uint16_t dl_len, uint8_t* dsc_list);
@@ -447,7 +447,7 @@ bool btif_storage_get_stored_remote_name(const RawAddress& bd_addr, char* name);
  ******************************************************************************/
 
 bt_status_t btif_storage_set_hid_connection_policy(
-    const tAclLinkSpec* link_spec, bool reconnect_allowed);
+    const tAclLinkSpec& link_spec, bool reconnect_allowed);
 
 /*******************************************************************************
  *
@@ -460,7 +460,7 @@ bt_status_t btif_storage_set_hid_connection_policy(
  ******************************************************************************/
 
 bt_status_t btif_storage_get_hid_connection_policy(
-    const tAclLinkSpec* link_spec, bool* reconnect_allowed);
+    const tAclLinkSpec& link_spec, bool* reconnect_allowed);
 
 /******************************************************************************
  * Exported for unit tests

@@ -862,7 +862,7 @@ static void btif_dm_cb_create_bond(const RawAddress bd_addr,
     link_spec.transport = transport;
     const bt_status_t status =
         GetInterfaceToProfiles()->profileSpecific_HACK->btif_hh_connect(
-            &link_spec);
+            link_spec);
     if (status != BT_STATUS_SUCCESS)
       bond_state_changed(status, bd_addr, BT_BOND_STATE_NONE);
   } else {
@@ -2899,7 +2899,7 @@ void btif_dm_remove_bond(const RawAddress bd_addr) {
   link_spec.addrt.type = BLE_ADDR_PUBLIC;
 
   if (GetInterfaceToProfiles()->profileSpecific_HACK->btif_hh_virtual_unplug(
-          &link_spec) != BT_STATUS_SUCCESS)
+          link_spec) != BT_STATUS_SUCCESS)
 #endif
   {
     log::debug("Removing HH device");
