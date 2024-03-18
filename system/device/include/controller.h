@@ -36,16 +36,7 @@ typedef struct controller_t {
 
   const uint8_t* (*get_ble_supported_states)(void);
 
-  // Get the cached acl data sizes for the controller.
-  uint16_t (*get_acl_data_size_classic)(void);
-  uint16_t (*get_acl_data_size_ble)(void);
   uint16_t (*get_iso_data_size)(void);
-
-  // Get the cached acl packet sizes for the controller.
-  // This is a convenience function for the respective
-  // acl data size + size of the acl header.
-  uint16_t (*get_acl_packet_size_classic)(void);
-  uint16_t (*get_acl_packet_size_ble)(void);
   uint16_t (*get_iso_packet_size)(void);
 
   uint16_t (*get_ble_default_data_packet_length)(void);

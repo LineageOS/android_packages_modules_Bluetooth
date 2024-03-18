@@ -52,8 +52,6 @@ bt_device_features_t features_classic[MAX_FEATURES_CLASSIC_PAGE_COUNT] = {{
 }};
 uint8_t last_features_classic_page_index{0};
 
-uint16_t acl_data_size_classic{0};
-uint16_t acl_data_size_ble{0};
 uint16_t iso_data_size{0};
 
 uint16_t acl_buffer_count_classic{0};
@@ -101,19 +99,7 @@ uint8_t* get_local_supported_codecs(uint8_t* number_of_codecs) {
 
 const uint8_t* get_ble_supported_states(void) { return ble_supported_states; }
 
-uint16_t get_acl_data_size_classic(void) { return acl_data_size_classic; }
-
-uint16_t get_acl_data_size_ble(void) { return acl_data_size_ble; }
-
 uint16_t get_iso_data_size(void) { return iso_data_size; }
-
-uint16_t get_acl_packet_size_classic(void) {
-  return acl_data_size_classic + HCI_DATA_PREAMBLE_SIZE;
-}
-
-uint16_t get_acl_packet_size_ble(void) {
-  return acl_data_size_ble + HCI_DATA_PREAMBLE_SIZE;
-}
 
 uint16_t get_iso_packet_size(void) {
   return iso_data_size + HCI_DATA_PREAMBLE_SIZE;
@@ -190,12 +176,8 @@ const controller_t interface = {
 
     get_ble_supported_states,
 
-    get_acl_data_size_classic,
-    get_acl_data_size_ble,
     get_iso_data_size,
 
-    get_acl_packet_size_classic,
-    get_acl_packet_size_ble,
     get_iso_packet_size,
 
     get_ble_suggested_default_data_length,
