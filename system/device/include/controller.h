@@ -36,20 +36,12 @@ typedef struct controller_t {
 
   const uint8_t* (*get_ble_supported_states)(void);
 
-  uint16_t (*get_iso_data_size)(void);
-  uint16_t (*get_iso_packet_size)(void);
-
   uint16_t (*get_ble_default_data_packet_length)(void);
   uint16_t (*get_ble_maximum_tx_data_length)(void);
   uint16_t (*get_ble_maximum_tx_time)(void);
   uint16_t (*get_ble_maximum_advertising_data_length)(void);
   uint8_t (*get_ble_number_of_supported_advertising_sets)(void);
   uint8_t (*get_ble_periodic_advertiser_list_size)(void);
-
-  // Get the number of acl packets the controller can buffer.
-  uint16_t (*get_acl_buffer_count_classic)(void);
-  uint8_t (*get_acl_buffer_count_ble)(void);
-  uint8_t (*get_iso_buffer_count)(void);
 
   uint8_t (*get_ble_acceptlist_size)(void);
 
