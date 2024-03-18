@@ -565,6 +565,10 @@ struct tBTM_MSBC_INFO {
 
   size_t write(const std::vector<uint8_t>& input) {
     if (input.size() > decode_buf_avail_len()) {
+      log::warn(
+          "Cannot write input with size {} into decode_buf with {} empty "
+          "space.",
+          input.size(), decode_buf_avail_len());
       return 0;
     }
 
@@ -656,8 +660,6 @@ struct tBTM_MSBC_INFO {
 
   const uint8_t* sco_pkt_read_ptr() {
     if (encode_buf_wo - encode_buf_ro < packet_size) {
-      log::debug("Insufficient data to dequeue. buf_wo:{}, buf_ro:{}",
-                 encode_buf_wo, encode_buf_ro);
       return nullptr;
     }
 
@@ -959,6 +961,10 @@ struct tBTM_LC3_INFO {
 
   size_t write(const std::vector<uint8_t>& input) {
     if (input.size() > buf_size - decode_buf_wo) {
+      log::warn(
+          "Cannot write input with size {} into decode_buf with {} empty "
+          "space.",
+          input.size(), buf_size - decode_buf_wo);
       return 0;
     }
 
@@ -1007,8 +1013,6 @@ struct tBTM_LC3_INFO {
 
   const uint8_t* sco_pkt_read_ptr() {
     if (encode_buf_wo - encode_buf_ro < packet_size) {
-      log::debug("Insufficient data to dequeue. buf_wo:{}, buf_ro:{}",
-                 encode_buf_wo, encode_buf_ro);
       return nullptr;
     }
 
