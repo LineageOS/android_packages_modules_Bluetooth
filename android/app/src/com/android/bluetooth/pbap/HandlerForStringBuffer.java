@@ -40,9 +40,7 @@ public class HandlerForStringBuffer {
     public HandlerForStringBuffer(Operation op, String ownerVCard) {
         mOperation = op;
         mOwnerVCard = ownerVCard;
-        if (BluetoothPbapService.VERBOSE) {
-            Log.v(TAG, "ownerVCard \n " + mOwnerVCard);
-        }
+        Log.v(TAG, "ownerVCard \n " + mOwnerVCard);
     }
 
     public boolean init() {
@@ -82,12 +80,6 @@ public class HandlerForStringBuffer {
 
     public void terminate() {
         boolean result = BluetoothPbapObexServer.closeStream(mOutputStream, mOperation);
-        if (BluetoothPbapService.VERBOSE) {
-            if (result) {
-                Log.v(TAG, "closeStream succeeded!");
-            } else {
-                Log.v(TAG, "closeStream failed!");
-            }
-        }
+        Log.v(TAG, "closeStream " + (result ? "succeeded" : "failed") + "!");
     }
 }

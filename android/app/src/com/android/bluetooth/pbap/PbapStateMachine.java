@@ -70,8 +70,6 @@ import java.io.IOException;
 @VisibleForTesting(visibility = Visibility.PACKAGE)
 public class PbapStateMachine extends StateMachine {
     private static final String TAG = "PbapStateMachine";
-    private static final boolean DEBUG = true;
-    private static final boolean VERBOSE = true;
     private static final String PBAP_OBEX_NOTIFICATION_CHANNEL = "pbap_obex_notification_channel";
 
     static final int AUTHORIZED = 1;
@@ -111,6 +109,11 @@ public class PbapStateMachine extends StateMachine {
             Handler pbapHandler,
             int notificationId) {
         super(TAG, looper);
+
+        // Let the logging framework enforce the log level. TAG is set above in the parent
+        // constructor.
+        setDbg(true);
+
         mService = service;
         mRemoteDevice = device;
         mServiceHandler = pbapHandler;
@@ -224,7 +227,7 @@ public class PbapStateMachine extends StateMachine {
         }
 
         void stateLogD(String msg) {
-            log(getName() + ": currentDevice=" + mRemoteDevice + ", msg=" + msg);
+            Log.d(TAG, getName() + ": currentDevice=" + mRemoteDevice + ", msg=" + msg);
         }
     }
 
@@ -369,9 +372,7 @@ public class PbapStateMachine extends StateMachine {
         }
 
         private void startObexServerSession() throws IOException {
-            if (VERBOSE) {
-                Log.v(TAG, "Pbap Service startObexServerSession");
-            }
+            Log.v(TAG, "Pbap Service startObexServerSession");
 
             // acquire the wakeLock before start Obex transaction thread
             mServiceHandler.sendMessage(
@@ -392,9 +393,7 @@ public class PbapStateMachine extends StateMachine {
         }
 
         private void stopObexServerSession() {
-            if (VERBOSE) {
-                Log.v(TAG, "Pbap Service stopObexServerSession");
-            }
+            Log.v(TAG, "Pbap Service stopObexServerSession");
             transitionTo(mFinished);
         }
 
@@ -476,12 +475,5 @@ public class PbapStateMachine extends StateMachine {
             return BluetoothProfile.STATE_DISCONNECTED;
         }
         return state.getConnectionStateInt();
-    }
-
-    @Override
-    protected void log(String msg) {
-        if (DEBUG) {
-            super.log(msg);
-        }
     }
 }

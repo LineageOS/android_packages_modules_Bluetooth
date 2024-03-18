@@ -54,7 +54,6 @@ public class BluetoothPbapActivity extends AlertActivity
         implements Preference.OnPreferenceChangeListener, TextWatcher {
     private static final String TAG = "BluetoothPbapActivity";
 
-    private static final boolean V = BluetoothPbapService.VERBOSE;
 
     private static final int BLUETOOTH_OBEX_AUTHKEY_MAX_LENGTH = 16;
 
@@ -223,9 +222,7 @@ public class BluetoothPbapActivity extends AlertActivity
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         mTimeout = savedInstanceState.getBoolean(KEY_USER_TIMEOUT);
-        if (V) {
-            Log.v(TAG, "onRestoreInstanceState() mTimeout: " + mTimeout);
-        }
+        Log.v(TAG, "onRestoreInstanceState() mTimeout: " + mTimeout);
         if (mTimeout) {
             onTimeout();
         }
@@ -268,9 +265,7 @@ public class BluetoothPbapActivity extends AlertActivity
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case DISMISS_TIMEOUT_DIALOG:
-                    if (V) {
-                        Log.v(TAG, "Received DISMISS_TIMEOUT_DIALOG msg.");
-                    }
+                    Log.v(TAG, "Received DISMISS_TIMEOUT_DIALOG msg.");
                     finish();
                     break;
                 default:
