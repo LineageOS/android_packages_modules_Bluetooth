@@ -197,7 +197,7 @@ void BTM_reset_complete() {
 
   btm_pm_reset();
 
-  l2c_link_init(controller->get_acl_buffer_count_classic());
+  l2c_link_init(bluetooth::shim::GetController()->GetNumAclPacketBuffers());
 
   // setup the random number generator
   std::srand(std::time(nullptr));
@@ -216,7 +216,9 @@ void BTM_reset_complete() {
   }
 
   if (bluetooth::shim::GetController()->SupportsBle()) {
-    l2c_link_processs_ble_num_bufs(controller->get_acl_buffer_count_ble());
+    l2c_link_processs_ble_num_bufs(bluetooth::shim::GetController()
+                                       ->GetLeBufferSize()
+                                       .total_num_le_packets_);
   }
 
   BTM_SetPinType(btm_sec_cb.cfg.pin_type, btm_sec_cb.cfg.pin_code,

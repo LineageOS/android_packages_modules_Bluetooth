@@ -43,8 +43,6 @@ extern uint8_t supported_commands[HCI_SUPPORTED_COMMANDS_ARRAY_SIZE];
 extern bt_device_features_t features_classic[MAX_FEATURES_CLASSIC_PAGE_COUNT];
 extern uint8_t last_features_classic_page_index;
 
-extern uint16_t acl_data_size_classic;
-extern uint16_t acl_data_size_ble;
 extern uint16_t iso_data_size;
 
 extern uint16_t acl_buffer_count_classic;
