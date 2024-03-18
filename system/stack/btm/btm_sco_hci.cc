@@ -139,6 +139,14 @@ size_t write(const uint8_t* p_buf, uint32_t len) {
   return UIPC_Send(*sco_uipc, UIPC_CH_ID_AV_AUDIO, 0, p_buf, len) ? len : 0;
 }
 
+enum decode_buf_state {
+  DECODE_BUF_EMPTY,
+  DECODE_BUF_FULL,
+
+  // Neither empty nor full.
+  DECODE_BUF_HALFFULL,
+};
+
 namespace wbs {
 
 /* Second octet of H2 header is composed by 4 bits fixed 0x8 and 4 bits
@@ -395,14 +403,6 @@ struct tBTM_MSBC_PLC {
 struct tBTM_MSBC_INFO {
   size_t packet_size; /* SCO mSBC packet size supported by lower layer */
   size_t buf_size; /* The size of the buffer, determined by the packet_size. */
-
-  enum decode_buf_state {
-    DECODE_BUF_EMPTY,
-    DECODE_BUF_FULL,
-
-    // Neither empty nor full.
-    DECODE_BUF_HALFFULL,
-  };
 
   uint8_t* packet_buf;      /* Temporary buffer to store the data */
   uint8_t* msbc_decode_buf; /* Buffer to store mSBC packets to decode */
@@ -843,20 +843,43 @@ constexpr uint8_t btm_h2_header_frames_count[] = {0x08, 0x38, 0xc8, 0xf8};
  * code ties to limited packet size values. Specifically list them out
  * to check against when setting packet size. The first entry is the default
  * value as a fallback. */
-constexpr size_t btm_swb_supported_pkt_size[] = {BTM_LC3_PKT_LEN, 72, 0};
+constexpr size_t btm_swb_supported_pkt_size[] = {BTM_LC3_PKT_LEN, 72, 24, 0};
 
 /* Buffer size should be set to least common multiple of SCO packet size and
  * BTM_LC3_PKT_LEN for optimizing buffer copy. */
-constexpr size_t btm_swb_lc3_buffer_size[] = {BTM_LC3_PKT_LEN, 360, 0};
+constexpr size_t btm_swb_lc3_buffer_size[] = {BTM_LC3_PKT_LEN, 360, 120, 0};
 
 /* Define the structure that contains LC3 data */
 struct tBTM_LC3_INFO {
   size_t packet_size; /* SCO LC3 packet size supported by lower layer */
   size_t buf_size; /* The size of the buffer, determined by the packet_size. */
 
+  uint8_t* packet_buf;     /* Temporary buffer to store the data */
   uint8_t* lc3_decode_buf; /* Buffer to store LC3 packets to decode */
   size_t decode_buf_wo;    /* Write offset of the decode buffer */
   size_t decode_buf_ro;    /* Read offset of the decode buffer */
+
+  /* Within the circular buffer, which can be visualized as having
+     two halves, mirror indicators track the pointer's location,
+     signaling whether it resides in the first or second segment:
+
+              [buf_size-1] ┼ - - -─┼ [0]
+                           │       │
+                           │       │
+     wo = x, wo_mirror = 0 ^       v ro = x, ro_mirror = 1
+                           │       │
+                           │       │
+                       [0] ┼ - - - ┼ [buf_size-1]
+              (First Half)           (Second Half)
+  */
+  bool decode_buf_wo_mirror; /* The mirror indicator specifies whether
+                                the write pointer is currently located
+                                in the first or second half of the
+                                circular buffer */
+  bool decode_buf_ro_mirror; /* The mirror indicator specifies whether
+                                the read pointer is currently located
+                                in the first or second half of the
+                                circular buffer */
   bool read_corrupted;     /* If the current LC3 packet read is corrupted */
 
   uint8_t* lc3_encode_buf; /* Buffer to store the encoded SCO packets */
@@ -902,12 +925,17 @@ struct tBTM_LC3_INFO {
   size_t init(size_t pkt_size) {
     decode_buf_wo = 0;
     decode_buf_ro = 0;
+    decode_buf_wo_mirror = false;
+    decode_buf_ro_mirror = false;
+
     encode_buf_wo = 0;
     encode_buf_ro = 0;
 
     pkt_size = get_supported_packet_size(pkt_size, &buf_size);
     if (pkt_size == packet_size) return packet_size;
     packet_size = pkt_size;
+
+    if (!packet_buf) packet_buf = (uint8_t*)osi_calloc(BTM_LC3_PKT_LEN);
 
     if (lc3_decode_buf) osi_free(lc3_decode_buf);
     lc3_decode_buf = (uint8_t*)osi_calloc(buf_size);
@@ -924,11 +952,44 @@ struct tBTM_LC3_INFO {
 
   void deinit() {
     if (lc3_decode_buf) osi_free(lc3_decode_buf);
+    if (packet_buf) osi_free(packet_buf);
     if (lc3_encode_buf) osi_free(lc3_encode_buf);
     if (pkt_status) osi_free_and_reset((void**)&pkt_status);
   }
 
-  size_t decodable() { return decode_buf_wo - decode_buf_ro; }
+  void incr_buf_offset(size_t& offset, bool& mirror, size_t bsize,
+                       size_t amount) {
+    if (bsize - offset > amount) {
+      offset += amount;
+      return;
+    }
+
+    mirror = !mirror;
+    offset = amount - (bsize - offset);
+  }
+
+  decode_buf_state decode_buf_status() {
+    if (decode_buf_ro == decode_buf_wo) {
+      if (decode_buf_ro_mirror == decode_buf_wo_mirror) return DECODE_BUF_EMPTY;
+      return DECODE_BUF_FULL;
+    }
+    return DECODE_BUF_HALFFULL;
+  }
+
+  size_t decode_buf_data_len() {
+    switch (decode_buf_status()) {
+      case DECODE_BUF_EMPTY:
+        return 0;
+      case DECODE_BUF_FULL:
+        return buf_size;
+      case DECODE_BUF_HALFFULL:
+      default:
+        if (decode_buf_wo > decode_buf_ro) return decode_buf_wo - decode_buf_ro;
+        return buf_size - (decode_buf_ro - decode_buf_wo);
+    };
+  }
+
+  size_t decode_buf_avail_len() { return buf_size - decode_buf_data_len(); }
 
   uint8_t* fill_lc3_pkt_template() {
     uint8_t* wp = &lc3_encode_buf[encode_buf_wo];
@@ -946,29 +1007,35 @@ struct tBTM_LC3_INFO {
   }
 
   void mark_pkt_decoded() {
-    if (decode_buf_ro + BTM_LC3_PKT_LEN > decode_buf_wo) {
+    if (decode_buf_data_len() < BTM_LC3_PKT_LEN) {
       log::error("Trying to mark read offset beyond write offset.");
       return;
     }
 
-    decode_buf_ro += BTM_LC3_PKT_LEN;
-    if (decode_buf_ro == decode_buf_wo) {
-      decode_buf_ro = 0;
-      decode_buf_wo = 0;
-    }
+    incr_buf_offset(decode_buf_ro, decode_buf_ro_mirror, buf_size,
+                    BTM_LC3_PKT_LEN);
   }
 
   size_t write(const std::vector<uint8_t>& input) {
-    if (input.size() > buf_size - decode_buf_wo) {
+    if (input.size() > decode_buf_avail_len()) {
       log::warn(
           "Cannot write input with size {} into decode_buf with {} empty "
           "space.",
-          input.size(), buf_size - decode_buf_wo);
+          input.size(), decode_buf_avail_len());
       return 0;
     }
 
-    std::copy(input.begin(), input.end(), lc3_decode_buf + decode_buf_wo);
-    decode_buf_wo += input.size();
+    if (buf_size - decode_buf_wo > input.size()) {
+      std::copy(input.begin(), input.end(), lc3_decode_buf + decode_buf_wo);
+    } else {
+      std::copy(input.begin(), input.begin() + buf_size - decode_buf_wo,
+                lc3_decode_buf + decode_buf_wo);
+      std::copy(input.begin() + buf_size - decode_buf_wo, input.end(),
+                lc3_decode_buf);
+    }
+
+    incr_buf_offset(decode_buf_wo, decode_buf_wo_mirror, buf_size,
+                    input.size());
     return input.size();
   }
 
@@ -979,10 +1046,12 @@ struct tBTM_LC3_INFO {
     }
 
     size_t rp = 0;
-    while (rp < BTM_LC3_PKT_LEN &&
-           decode_buf_wo - (decode_buf_ro + rp) >= BTM_LC3_PKT_LEN) {
-      if ((lc3_decode_buf[decode_buf_ro + rp] != BTM_LC3_H2_HEADER_0) ||
-          !verify_h2_header_seq_num(lc3_decode_buf[decode_buf_ro + rp + 1])) {
+    size_t data_len = decode_buf_data_len();
+    while (rp < BTM_LC3_PKT_LEN && data_len - rp >= BTM_LC3_PKT_LEN) {
+      if ((lc3_decode_buf[(decode_buf_ro + rp) % buf_size] !=
+           BTM_LC3_H2_HEADER_0) ||
+          !verify_h2_header_seq_num(
+              lc3_decode_buf[(decode_buf_ro + rp + 1) % buf_size])) {
         rp++;
         continue;
       }
@@ -990,9 +1059,20 @@ struct tBTM_LC3_INFO {
       if (rp != 0) {
         log::warn("Skipped {} bytes of LC3 data ahead of a valid LC3 frame",
                   (unsigned long)rp);
-        decode_buf_ro += rp;
+        incr_buf_offset(decode_buf_ro, decode_buf_ro_mirror, buf_size, rp);
       }
-      return &lc3_decode_buf[decode_buf_ro];
+
+      // Get the frame head.
+      if (buf_size - decode_buf_ro >= BTM_LC3_PKT_LEN) {
+        return &lc3_decode_buf[decode_buf_ro];
+      }
+
+      std::copy(lc3_decode_buf + decode_buf_ro, lc3_decode_buf + buf_size,
+                packet_buf);
+      std::copy(lc3_decode_buf,
+                lc3_decode_buf + BTM_LC3_PKT_LEN - (buf_size - decode_buf_ro),
+                packet_buf + (buf_size - decode_buf_ro));
+      return packet_buf;
     }
 
     return nullptr;
@@ -1099,7 +1179,7 @@ size_t decode(const uint8_t** out_data) {
     return 0;
   }
 
-  if (lc3_info->decodable() < BTM_LC3_PKT_LEN) {
+  if (lc3_info->decode_buf_data_len() < BTM_LC3_PKT_LEN) {
     return 0;
   }
 
