@@ -117,21 +117,9 @@ static const uint8_t* get_ble_supported_states(void) {
 #define FORWARD_GETTER(type, legacy, gd) \
   static type legacy(void) { return gd; }
 
-FORWARD_GETTER(uint16_t, get_acl_buffer_length,
-               GetController()->GetAclPacketLength())
-FORWARD_GETTER(uint16_t, get_le_buffer_length,
-               GetController()->GetLeBufferSize().le_data_packet_length_)
 FORWARD_GETTER(
     uint16_t, get_iso_buffer_length,
     GetController()->GetControllerIsoBufferSize().le_data_packet_length_)
-
-static uint16_t get_acl_packet_size_classic(void) {
-  return get_acl_buffer_length() + kHciDataPreambleSize;
-}
-
-static uint16_t get_acl_packet_size_ble(void) {
-  return get_le_buffer_length() + kHciDataPreambleSize;
-}
 
 static uint16_t get_iso_packet_size(void) {
   return get_iso_buffer_length() + kHciDataPreambleSize;
@@ -238,12 +226,8 @@ static const controller_t interface = {
 
     .get_ble_supported_states = get_ble_supported_states,
 
-    .get_acl_data_size_classic = get_acl_buffer_length,
-    .get_acl_data_size_ble = get_le_buffer_length,
     .get_iso_data_size = get_iso_buffer_length,
 
-    .get_acl_packet_size_classic = get_acl_packet_size_classic,
-    .get_acl_packet_size_ble = get_acl_packet_size_ble,
     .get_iso_packet_size = get_iso_packet_size,
 
     .get_ble_default_data_packet_length = get_le_suggested_default_data_length,

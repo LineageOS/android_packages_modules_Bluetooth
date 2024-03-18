@@ -22,15 +22,16 @@
 #include <vector>
 
 #include "bind_helpers.h"
+#include "hci/controller_interface_mock.h"
 #include "l2c_api.h"
 #include "mock_btif_storage.h"
 #include "mock_btm_api_layer.h"
-#include "mock_controller.h"
 #include "mock_eatt.h"
 #include "mock_gatt_layer.h"
 #include "mock_l2cap_layer.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_psm_types.h"
+#include "test/mock/mock_main_shim_entry.h"
 #include "types/raw_address.h"
 
 using testing::_;
@@ -213,11 +214,15 @@ class EattTest : public testing::Test {
   }
 
   void SetUp() override {
+    le_buffer_size_.le_data_packet_length_ = 128;
+    le_buffer_size_.total_num_le_packets_ = 24;
+    ON_CALL(controller_, GetLeBufferSize)
+        .WillByDefault(Return(le_buffer_size_));
     bluetooth::l2cap::SetMockInterface(&l2cap_interface_);
     bluetooth::manager::SetMockBtmApiInterface(&btm_api_interface_);
     bluetooth::manager::SetMockBtifStorageInterface(&btif_storage_interface_);
     bluetooth::gatt::SetMockGattInterface(&gatt_interface_);
-    controller::SetMockControllerInterface(&controller_interface);
+    bluetooth::hci::testing::mock_controller_ = &controller_;
 
     // Clear the static memory for each test case
     memset(&test_tcb, 0, sizeof(test_tcb));
@@ -233,9 +238,6 @@ class EattTest : public testing::Test {
 
     ON_CALL(l2cap_interface_, GetBleConnRole(_))
         .WillByDefault(DoAll(Return(hci_role_)));
-
-    ON_CALL(controller_interface, GetAclDataSizeBle())
-        .WillByDefault(Return(128));
 
     eatt_instance_ = EattExtension::GetInstance();
     eatt_instance_->Start();
@@ -255,7 +257,7 @@ class EattTest : public testing::Test {
     bluetooth::l2cap::SetMockInterface(nullptr);
     bluetooth::manager::SetMockBtifStorageInterface(nullptr);
     bluetooth::manager::SetMockBtmApiInterface(nullptr);
-    controller::SetMockControllerInterface(nullptr);
+    bluetooth::hci::testing::mock_controller_ = nullptr;
 
     Test::TearDown();
   }
@@ -264,7 +266,8 @@ class EattTest : public testing::Test {
   bluetooth::manager::MockBtmApiInterface btm_api_interface_;
   bluetooth::l2cap::MockL2capInterface l2cap_interface_;
   bluetooth::gatt::MockGattInterface gatt_interface_;
-  controller::MockControllerInterface controller_interface;
+  bluetooth::hci::testing::MockControllerInterface controller_;
+  bluetooth::hci::LeBufferSize le_buffer_size_;
 
   tL2CAP_APPL_INFO l2cap_app_info_;
   EattExtension* eatt_instance_;

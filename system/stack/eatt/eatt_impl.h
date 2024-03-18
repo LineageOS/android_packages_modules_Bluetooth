@@ -22,11 +22,12 @@
 #include <vector>
 
 #include "bind_helpers.h"
-#include "device/include/controller.h"
 #include "eatt.h"
+#include "hci/controller_interface.h"
 #include "internal_include/bt_trace.h"
 #include "internal_include/stack_config.h"
 #include "l2c_api.h"
+#include "main/shim/entry.h"
 #include "os/log.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
@@ -150,7 +151,8 @@ struct eatt_impl {
       eatt_dev = add_eatt_device(bda);
     }
 
-    uint16_t max_mps = controller_get_interface()->get_acl_data_size_ble();
+    uint16_t max_mps =
+        shim::GetController()->GetLeBufferSize().le_data_packet_length_;
 
     tL2CAP_LE_CFG_INFO local_coc_cfg = {
         .mtu = eatt_dev->rx_mtu_,
@@ -564,7 +566,8 @@ struct eatt_impl {
                     uint8_t num_of_channels = L2CAP_CREDIT_BASED_MAX_CIDS) {
     /* Let us use maximum possible mps */
     if (eatt_dev->rx_mps_ == EATT_MIN_MTU_MPS)
-      eatt_dev->rx_mps_ = controller_get_interface()->get_acl_data_size_ble();
+      eatt_dev->rx_mps_ =
+          shim::GetController()->GetLeBufferSize().le_data_packet_length_;
 
     tL2CAP_LE_CFG_INFO local_coc_cfg = {
         .mtu = eatt_dev->rx_mtu_,

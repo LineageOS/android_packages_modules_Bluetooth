@@ -323,7 +323,7 @@ public class AvrcpTargetService extends ProfileService {
         if (device == null || mNativeInterface == null) return;
         if (newState == BluetoothProfile.STATE_DISCONNECTED) {
             // If there is no connection, disconnectDevice() will do nothing
-            if (mNativeInterface.disconnectDevice(device.getAddress())) {
+            if (mNativeInterface.disconnectDevice(device)) {
                 Log.d(TAG, "request to disconnect device " + device);
             }
         }
