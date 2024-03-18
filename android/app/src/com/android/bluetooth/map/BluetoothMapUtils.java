@@ -34,6 +34,8 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Calendar;
@@ -759,8 +761,7 @@ public class BluetoothMapUtils {
         }
     }
 
-
-    static String getDateTimeString( long timestamp) {
+    static String getDateTimeString(long timestamp) {
         SimpleDateFormat format = (mPeerSupportUtcTimeStamp) ? new
             SimpleDateFormat("yyyyMMdd'T'HHmmssZ") : new SimpleDateFormat("yyyyMMdd'T'HHmmss");
         Calendar cal = Calendar.getInstance();
@@ -783,6 +784,12 @@ public class BluetoothMapUtils {
             return true;
         }
         return false;
+    }
+
+    static boolean isDateTimeOlderThanDuration(long timestamp, Duration duration) {
+        Instant nowMinusDuration = Instant.now().minus(duration);
+        Instant dateTime = Instant.ofEpochMilli(timestamp);
+        return dateTime.isBefore(nowMinusDuration);
     }
 
     static void savePeerSupportUtcTimeStamp(int remoteFeatureMask) {

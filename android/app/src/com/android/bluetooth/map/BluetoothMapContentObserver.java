@@ -57,6 +57,7 @@ import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
 import com.android.bluetooth.map.BluetoothMapbMessageMime.MimePart;
 import com.android.bluetooth.mapapi.BluetoothMapContract;
@@ -74,6 +75,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -91,6 +93,10 @@ public class BluetoothMapContentObserver {
 
     private static final boolean D = BluetoothMapService.DEBUG;
     private static final boolean V = BluetoothMapService.VERBOSE;
+
+    // A message older than this will be ignored when notifying a new message.
+    @VisibleForTesting
+    static final Duration NEW_MESSAGE_DURATION_FOR_NOTIFICATION = Duration.ofDays(7);
 
     @VisibleForTesting
     static final String EVENT_TYPE_NEW = "NewMessage";
@@ -1537,18 +1543,24 @@ public class BluetoothMapContentObserver {
                             /* New message */
                             msg = new Msg(id, type, threadId, read);
                             msgListSms.put(id, msg);
-                            listChanged = true;
                             Event evt;
                             if (mTransmitEvents && // extract contact details only if needed
                                     mMapEventReportVersion
                                             > BluetoothMapUtils.MAP_EVENT_REPORT_V10) {
                                 long timestamp = c.getLong(c.getColumnIndex(Sms.DATE));
                                 String date = BluetoothMapUtils.getDateTimeString(timestamp);
-                                if (BluetoothMapUtils.isDateTimeOlderThanOneYear(timestamp)) {
-                                    // Skip sending message events older than one year
-                                    listChanged = false;
-                                    msgListSms.remove(id);
-                                    continue;
+                                if (Flags.mapLimitNotification()) {
+                                    if (BluetoothMapUtils.isDateTimeOlderThanDuration(
+                                            timestamp, NEW_MESSAGE_DURATION_FOR_NOTIFICATION)) {
+                                        msgListSms.remove(id);
+                                        continue;
+                                    }
+                                } else {
+                                    if (BluetoothMapUtils.isDateTimeOlderThanOneYear(timestamp)) {
+                                        // Skip sending message events older than one year
+                                        msgListSms.remove(id);
+                                        continue;
+                                    }
                                 }
                                 String subject = c.getString(c.getColumnIndex(Sms.BODY));
                                 if (subject == null) {
@@ -1591,6 +1603,7 @@ public class BluetoothMapContentObserver {
                                 evt = new Event(EVENT_TYPE_NEW, id, getSmsFolderName(type), null,
                                         mSmsType);
                             }
+                            listChanged = true;
                             sendEvent(evt);
                         } else {
                             /* Existing message */
@@ -1730,11 +1743,20 @@ public class BluetoothMapContentObserver {
                                         TimeUnit.SECONDS.toMillis(
                                             c.getLong(c.getColumnIndex(Mms.DATE)));
                                 String date = BluetoothMapUtils.getDateTimeString(timestamp);
-                                if (BluetoothMapUtils.isDateTimeOlderThanOneYear(timestamp)) {
-                                    // Skip sending new message events older than one year
-                                    msgListMms.remove(id);
-                                    continue;
+                                if (Flags.mapLimitNotification()) {
+                                    if (BluetoothMapUtils.isDateTimeOlderThanDuration(
+                                            timestamp, NEW_MESSAGE_DURATION_FOR_NOTIFICATION)) {
+                                        msgListMms.remove(id);
+                                        continue;
+                                    }
+                                } else {
+                                    if (BluetoothMapUtils.isDateTimeOlderThanOneYear(timestamp)) {
+                                        // Skip sending new message events older than one year
+                                        msgListMms.remove(id);
+                                        continue;
+                                    }
                                 }
+
                                 String subject = c.getString(c.getColumnIndex(Mms.SUBJECT));
                                 if (subject == null || subject.length() == 0) {
                                     /* Get subject from mms text body parts - if any exists */
@@ -3164,7 +3186,6 @@ public class BluetoothMapContentObserver {
         Uri uri = Mms.CONTENT_URI;
 
         synchronized (getMsgListMms()) {
-
             uri = mResolver.insert(uri, values);
 
             if (uri == null) {
@@ -3412,7 +3433,6 @@ public class BluetoothMapContentObserver {
 
 
     public void sendMessage(PushMsgInfo msgInfo, String msgBody) {
-
         SmsManager smsMng = SmsManager.getDefault();
         ArrayList<String> parts = smsMng.divideMessage(msgBody);
         msgInfo.parts = parts.size();
