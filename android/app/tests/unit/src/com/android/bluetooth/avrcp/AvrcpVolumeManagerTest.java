@@ -100,7 +100,7 @@ public class AvrcpVolumeManagerTest {
     public void sendVolumeChanged() {
         mAvrcpVolumeManager.sendVolumeChanged(mRemoteDevice, TEST_DEVICE_MAX_VOUME);
 
-        verify(mNativeInterface).sendVolumeChanged(REMOTE_DEVICE_ADDRESS, AVRCP_MAX_VOL);
+        verify(mNativeInterface).sendVolumeChanged(mRemoteDevice, AVRCP_MAX_VOL);
     }
 
     @Test

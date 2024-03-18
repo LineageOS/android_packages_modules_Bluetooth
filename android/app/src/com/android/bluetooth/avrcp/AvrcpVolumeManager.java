@@ -95,7 +95,7 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
             int avrcpVolume = systemToAvrcpVolume(savedVolume);
             mVolumeEventLogger.logd(TAG,
                     "switchVolumeDevice: Updating device volume: avrcpVolume=" + avrcpVolume);
-            mNativeInterface.sendVolumeChanged(device.getAddress(), avrcpVolume);
+            mNativeInterface.sendVolumeChanged(device, avrcpVolume);
         }
     }
 
@@ -200,7 +200,7 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
                         + " avrcpVolume=" + avrcpVolume
                         + " deviceVolume=" + deviceVolume
                         + " sDeviceMaxVolume=" + sDeviceMaxVolume);
-        mNativeInterface.sendVolumeChanged(device.getAddress(), avrcpVolume);
+        mNativeInterface.sendVolumeChanged(device, avrcpVolume);
         storeVolumeForDevice(device);
     }
 
