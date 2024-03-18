@@ -62,7 +62,6 @@ import java.io.IOException;
 public class BluetoothOppSendFileInfo {
     private static final String TAG = "BluetoothOppSendFileInfo";
 
-    private static final boolean D = Constants.DEBUG;
 
 
     /** Reusable SendFileInfo for error status. */
@@ -163,9 +162,7 @@ public class BluetoothOppSendFileInfo {
                         if (indexSize != -1) {
                             length = metadataCursor.getLong(indexSize);
                         }
-                        if (D) {
-                            Log.d(TAG, "fileName = " + fileName + " length = " + length);
-                        }
+                        Log.d(TAG, "fileName = " + fileName + " length = " + length);
                     }
                 } finally {
                     metadataCursor.close();
@@ -174,7 +171,7 @@ public class BluetoothOppSendFileInfo {
             if (fileName == null) {
                 // use last segment of URI if DISPLAY_NAME query fails
                 fileName = uri.getLastPathSegment();
-                if (D) Log.d(TAG, "fileName from URI :" + fileName);
+                Log.d(TAG, "fileName from URI :" + fileName);
             }
         } else if ("file".equals(scheme)) {
             if (uri.getPath() == null) {

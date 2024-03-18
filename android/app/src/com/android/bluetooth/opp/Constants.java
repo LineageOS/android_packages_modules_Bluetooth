@@ -222,9 +222,7 @@ public class Constants {
      * To log debug/verbose in OPP, use the command "setprop log.tag.BluetoothOpp DEBUG" or
      * "setprop log.tag.BluetoothOpp VERBOSE" and then "adb root" + "adb shell "stop; start""
      **/
-    static final boolean DEBUG = true;
 
-    static final boolean VERBOSE = Log.isLoggable(TAG, Log.VERBOSE);
 
     static final int MAX_RECORDS_IN_DATABASE = 50;
 

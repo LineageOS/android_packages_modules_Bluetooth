@@ -64,7 +64,6 @@ import java.util.HashMap;
  */
 class BluetoothOppNotification {
     private static final String TAG = "BluetoothOppNotification";
-    private static final boolean V = Constants.VERBOSE;
 
     static final String STATUS = "(" + BluetoothShare.STATUS + " == '192'" + ")";
 
@@ -192,15 +191,11 @@ class BluetoothOppNotification {
         synchronized (BluetoothOppNotification.this) {
             mPendingUpdate++;
             if (mPendingUpdate > 1) {
-                if (V) {
-                    Log.v(TAG, "update too frequent, put in queue");
-                }
+                Log.v(TAG, "update too frequent, put in queue");
                 return;
             }
             if (!mHandler.hasMessages(NOTIFY)) {
-                if (V) {
-                    Log.v(TAG, "send message");
-                }
+                Log.v(TAG, "send message");
                 mHandler.sendMessage(mHandler.obtainMessage(NOTIFY));
             }
         }
@@ -221,19 +216,13 @@ class BluetoothOppNotification {
                 case NOTIFY:
                     synchronized (BluetoothOppNotification.this) {
                         if (mPendingUpdate > 0 && mUpdateNotificationThread == null) {
-                            if (V) {
-                                Log.v(TAG, "new notify threadi!");
-                            }
+                            Log.v(TAG, "new notify threadi!");
                             mUpdateNotificationThread = new NotificationUpdateThread();
                             mUpdateNotificationThread.start();
-                            if (V) {
-                                Log.v(TAG, "send delay message");
-                            }
+                            Log.v(TAG, "send delay message");
                             mHandler.sendMessageDelayed(mHandler.obtainMessage(NOTIFY), 1000);
                         } else if (mPendingUpdate > 0) {
-                            if (V) {
-                                Log.v(TAG, "previous thread is not finished yet");
-                            }
+                            Log.v(TAG, "previous thread is not finished yet");
                             mHandler.sendMessageDelayed(mHandler.obtainMessage(NOTIFY), 1000);
                         }
                         break;
@@ -283,9 +272,7 @@ class BluetoothOppNotification {
         } else {
             mUpdateCompleteNotification = true;
         }
-        if (V) {
-            Log.v(TAG, "mUpdateCompleteNotification = " + mUpdateCompleteNotification);
-        }
+        Log.v(TAG, "mUpdateCompleteNotification = " + mUpdateCompleteNotification);
 
         // Collate the notifications
         final int timestampIndex = cursor.getColumnIndexOrThrow(BluetoothShare.TIMESTAMP);
@@ -333,9 +320,7 @@ class BluetoothOppNotification {
                     item.description =
                             mContext.getString(R.string.notification_receiving, fileName);
                 } else {
-                    if (V) {
-                        Log.v(TAG, "mDirection ERROR!");
-                    }
+                    Log.v(TAG, "mDirection ERROR!");
                 }
                 item.totalCurrent = current;
                 item.totalTotal = total;
@@ -344,10 +329,8 @@ class BluetoothOppNotification {
                 item.destination = destination;
                 mNotifications.put(batchID, item);
 
-                if (V) {
-                    Log.v(TAG, "ID=" + item.id + "; batchID=" + batchID + "; totoalCurrent"
-                            + item.totalCurrent + "; totalTotal=" + item.totalTotal);
-                }
+                Log.v(TAG, "ID=" + item.id + "; batchID=" + batchID + "; totoalCurrent"
+                        + item.totalCurrent + "; totalTotal=" + item.totalTotal);
             }
         }
         cursor.close();
@@ -389,11 +372,9 @@ class BluetoothOppNotification {
             b.setSubText(
                     BluetoothOppUtility.formatProgressText(item.totalTotal, item.totalCurrent));
             if (item.totalTotal != 0) {
-                if (V) {
-                    Log.v(TAG, "mCurrentBytes: " + item.totalCurrent + " mTotalBytes: "
-                            + item.totalTotal + " (" + (int) ((item.totalCurrent * 100)
-                            / item.totalTotal) + " %)");
-                }
+                Log.v(TAG, "mCurrentBytes: " + item.totalCurrent + " mTotalBytes: "
+                        + item.totalTotal + " (" + (int) ((item.totalCurrent * 100)
+                        / item.totalTotal) + " %)");
                 b.setProgress(100, (int) ((item.totalCurrent * 100) / item.totalTotal),
                         item.totalTotal == -1);
             } else {
@@ -405,9 +386,7 @@ class BluetoothOppNotification {
             } else if (item.direction == BluetoothShare.DIRECTION_INBOUND) {
                 b.setSmallIcon(android.R.drawable.stat_sys_download);
             } else {
-                if (V) {
-                    Log.v(TAG, "mDirection ERROR!");
-                }
+                Log.v(TAG, "mDirection ERROR!");
             }
             b.setOngoing(true);
             b.setLocalOnly(true);
@@ -458,9 +437,7 @@ class BluetoothOppNotification {
                 outboundSuccNumber++;
             }
         }
-        if (V) {
-            Log.v(TAG, "outbound: succ-" + outboundSuccNumber + "  fail-" + outboundFailNumber);
-        }
+        Log.v(TAG, "outbound: succ-" + outboundSuccNumber + "  fail-" + outboundFailNumber);
         cursor.close();
 
         outboundNum = outboundSuccNumber + outboundFailNumber;
@@ -513,9 +490,7 @@ class BluetoothOppNotification {
         } else {
             if (mNotificationMgr != null) {
                 mNotificationMgr.cancel(NOTIFICATION_ID_OUTBOUND_COMPLETE);
-                if (V) {
-                    Log.v(TAG, "outbound notification was removed.");
-                }
+                Log.v(TAG, "outbound notification was removed.");
             }
         }
 
@@ -540,9 +515,7 @@ class BluetoothOppNotification {
                 inboundSuccNumber++;
             }
         }
-        if (V) {
-            Log.v(TAG, "inbound: succ-" + inboundSuccNumber + "  fail-" + inboundFailNumber);
-        }
+        Log.v(TAG, "inbound: succ-" + inboundSuccNumber + "  fail-" + inboundFailNumber);
         cursor.close();
 
         inboundNum = inboundSuccNumber + inboundFailNumber;
@@ -596,9 +569,7 @@ class BluetoothOppNotification {
         } else {
             if (mNotificationMgr != null) {
                 mNotificationMgr.cancel(NOTIFICATION_ID_INBOUND_COMPLETE);
-                if (V) {
-                    Log.v(TAG, "inbound notification was removed.");
-                }
+                Log.v(TAG, "inbound notification was removed.");
             }
         }
 
@@ -734,9 +705,7 @@ class BluetoothOppNotification {
     }
 
     void cancelNotifications() {
-        if (V) {
-            Log.v(TAG, "cancelNotifications ");
-        }
+        Log.v(TAG, "cancelNotifications ");
         mHandler.removeCallbacksAndMessages(null);
         mNotificationMgr.cancelAll();
     }

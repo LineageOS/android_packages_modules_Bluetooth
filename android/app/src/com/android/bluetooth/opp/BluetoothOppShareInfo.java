@@ -125,4 +125,9 @@ public class BluetoothOppShareInfo {
         return false;
     }
 
+    @Override
+    public String toString() {
+        return "BluetoothOppShareInfo<mId=" + mId + ">";
+    }
+
 }

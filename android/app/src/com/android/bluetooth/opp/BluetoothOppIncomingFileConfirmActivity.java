@@ -64,8 +64,6 @@ import com.android.internal.annotations.VisibleForTesting;
 // Next tag value for ContentProfileErrorReportUtils.report(): 1
 public class BluetoothOppIncomingFileConfirmActivity extends AlertActivity {
     private static final String TAG = "BluetoothIncomingFileConfirmActivity";
-    private static final boolean D = Constants.DEBUG;
-    private static final boolean V = Constants.VERBOSE;
 
     @VisibleForTesting
     static final int DISMISS_TIMEOUT_DIALOG = 0;
@@ -88,9 +86,7 @@ public class BluetoothOppIncomingFileConfirmActivity extends AlertActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         setTheme(R.style.Theme_Material_Settings_Floating);
-        if (V) {
-            Log.d(TAG, "onCreate(): action = " + getIntent().getAction());
-        }
+        Log.v(TAG, "onCreate(): action = " + getIntent().getAction());
         super.onCreate(savedInstanceState);
 
         getWindow().addSystemFlags(SYSTEM_FLAG_HIDE_NON_SYSTEM_OVERLAY_WINDOWS);
@@ -99,9 +95,7 @@ public class BluetoothOppIncomingFileConfirmActivity extends AlertActivity {
         mTransInfo = new BluetoothOppTransferInfo();
         mTransInfo = BluetoothOppUtility.queryRecord(this, mUri);
         if (mTransInfo == null) {
-            if (V) {
-                Log.e(TAG, "Error: Can not get data from db");
-            }
+            Log.w(TAG, "Error: Can not get data from db");
             ContentProfileErrorReportUtils.report(
                     BluetoothProfile.OPP,
                     BluetoothProtoEnums.BLUETOOTH_OPP_INCOMING_FILE_CONFIRM_ACTIVITY,
@@ -119,16 +113,12 @@ public class BluetoothOppIncomingFileConfirmActivity extends AlertActivity {
                 (dialog, which) -> onIncomingFileConfirmCancel());
 
         setupAlert();
-        if (V) {
-            Log.v(TAG, "mTimeout: " + mTimeout);
-        }
+        Log.v(TAG, "mTimeout: " + mTimeout);
         if (mTimeout) {
             onTimeout();
         }
 
-        if (V) {
-            Log.v(TAG, "BluetoothIncomingFileConfirmActivity: Got uri:" + mUri);
-        }
+        Log.v(TAG, "BluetoothIncomingFileConfirmActivity: Got uri:" + mUri);
 
         mReceiver = new BroadcastReceiver() {
             @Override
@@ -187,9 +177,7 @@ public class BluetoothOppIncomingFileConfirmActivity extends AlertActivity {
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
-            if (D) {
-                Log.d(TAG, "onKeyDown() called; Key: back key");
-            }
+            Log.d(TAG, "onKeyDown() called; Key: back key");
             finish();
             return true;
         }
@@ -208,9 +196,7 @@ public class BluetoothOppIncomingFileConfirmActivity extends AlertActivity {
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         mTimeout = savedInstanceState.getBoolean(PREFERENCE_USER_TIMEOUT);
-        if (V) {
-            Log.v(TAG, "onRestoreInstanceState() mTimeout: " + mTimeout);
-        }
+        Log.v(TAG, "onRestoreInstanceState() mTimeout: " + mTimeout);
         if (mTimeout) {
             onTimeout();
         }
@@ -219,9 +205,7 @@ public class BluetoothOppIncomingFileConfirmActivity extends AlertActivity {
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        if (V) {
-            Log.v(TAG, "onSaveInstanceState() mTimeout: " + mTimeout);
-        }
+        Log.v(TAG, "onSaveInstanceState() mTimeout: " + mTimeout);
         outState.putBoolean(PREFERENCE_USER_TIMEOUT, mTimeout);
     }
 
@@ -245,9 +229,7 @@ public class BluetoothOppIncomingFileConfirmActivity extends AlertActivity {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case DISMISS_TIMEOUT_DIALOG:
-                    if (V) {
-                        Log.v(TAG, "Received DISMISS_TIMEOUT_DIALOG msg.");
-                    }
+                    Log.v(TAG, "Received DISMISS_TIMEOUT_DIALOG msg.");
                     finish();
                     break;
                 default:
