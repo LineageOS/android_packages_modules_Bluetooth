@@ -117,8 +117,12 @@ class FakeBtStack {
     GetInterfaceToProfiles()->profileSpecific_HACK->GetHearingAidDeviceCount =
         []() { return 1; };
 
-    test::mock::device_controller::iso_data_size = 512;
     test::mock::device_controller::ble_suggested_default_data_length = 512;
+    bluetooth::hci::LeBufferSize iso_size;
+    iso_size.le_data_packet_length_ = 512;
+    iso_size.total_num_le_packets_ = 6;
+    ON_CALL(controller_, GetControllerIsoBufferSize)
+        .WillByDefault(Return(iso_size));
     bluetooth::hci::LeBufferSize le_size;
     le_size.le_data_packet_length_ = 512;
     le_size.total_num_le_packets_ = 6;
