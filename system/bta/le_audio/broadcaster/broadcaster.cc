@@ -28,6 +28,7 @@
 #include "bta/le_audio/le_audio_types.h"
 #include "bta/le_audio/le_audio_utils.h"
 #include "bta/le_audio/metrics_collector.h"
+#include "bta_le_audio_api.h"
 #include "common/strings.h"
 #include "hci/controller_interface.h"
 #include "include/check.h"
@@ -130,6 +131,10 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
     broadcasts_.clear();
     callbacks_ = nullptr;
     is_iso_running_ = false;
+
+    if (!LeAudioClient::IsLeAudioClientRunning())
+      IsoManager::GetInstance()->Stop();
+
     queued_start_broadcast_request_ = std::nullopt;
     queued_create_broadcast_request_ = std::nullopt;
 
