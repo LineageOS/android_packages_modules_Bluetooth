@@ -19,8 +19,8 @@
 package com.android.server.bluetooth
 
 import android.bluetooth.BluetoothAdapter.ACTION_AUTO_ON_STATE_CHANGED
-import android.bluetooth.BluetoothAdapter.AUTO_ON_STATE_OFF
-import android.bluetooth.BluetoothAdapter.AUTO_ON_STATE_ON
+import android.bluetooth.BluetoothAdapter.AUTO_ON_STATE_DISABLED
+import android.bluetooth.BluetoothAdapter.AUTO_ON_STATE_ENABLED
 import android.bluetooth.BluetoothAdapter.EXTRA_AUTO_ON_STATE
 import android.bluetooth.BluetoothAdapter.STATE_ON
 import android.content.BroadcastReceiver
@@ -283,7 +283,10 @@ private fun setFeatureEnabledForUserUnchecked(context: Context, status: Boolean)
         context.sendBroadcast(
             Intent(ACTION_AUTO_ON_STATE_CHANGED)
                 .addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY)
-                .putExtra(EXTRA_AUTO_ON_STATE, if (status) AUTO_ON_STATE_ON else AUTO_ON_STATE_OFF),
+                .putExtra(
+                    EXTRA_AUTO_ON_STATE,
+                    if (status) AUTO_ON_STATE_ENABLED else AUTO_ON_STATE_DISABLED
+                ),
             android.Manifest.permission.BLUETOOTH_PRIVILEGED,
         )
     }

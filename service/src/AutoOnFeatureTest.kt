@@ -271,7 +271,7 @@ class AutoOnFeatureTest {
             hasFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY)
             extras()
                 .integer(BluetoothAdapter.EXTRA_AUTO_ON_STATE)
-                .isEqualTo(BluetoothAdapter.AUTO_ON_STATE_OFF)
+                .isEqualTo(BluetoothAdapter.AUTO_ON_STATE_DISABLED)
         }
     }
 
@@ -285,7 +285,7 @@ class AutoOnFeatureTest {
             hasFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY)
             extras()
                 .integer(BluetoothAdapter.EXTRA_AUTO_ON_STATE)
-                .isEqualTo(BluetoothAdapter.AUTO_ON_STATE_ON)
+                .isEqualTo(BluetoothAdapter.AUTO_ON_STATE_ENABLED)
         }
     }
 
