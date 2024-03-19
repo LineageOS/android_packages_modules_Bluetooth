@@ -19,7 +19,7 @@
 
 #include <gmock/gmock.h>
 
-#include "btm_iso_api.h"
+#include "stack/include/btm_iso_api.h"
 
 struct MockIsoManager {
  public:

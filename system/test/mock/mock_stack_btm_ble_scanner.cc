@@ -20,9 +20,9 @@
 #include <base/memory/weak_ptr.h>
 #include <base/strings/string_number_conversions.h>
 
-#include "ble_scanner.h"
 #include "stack/btm/ble_scanner_hci_interface.h"
 #include "stack/btm/btm_ble_int.h"
+#include "stack/include/ble_scanner.h"
 #include "test/common/mock_functions.h"
 
 void BleScanningManager::CleanUp() { inc_func_call_count(__func__); }

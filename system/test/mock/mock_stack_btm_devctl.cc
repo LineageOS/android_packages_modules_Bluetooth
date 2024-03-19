@@ -24,7 +24,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-#include "bt_dev_class.h"
+#include "stack/include/bt_dev_class.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_status.h"
 #include "test/common/mock_functions.h"

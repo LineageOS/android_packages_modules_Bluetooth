@@ -27,9 +27,9 @@
 
 #include <string>
 
-#include "btm_api.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/include/bt_octets.h"
+#include "stack/include/btm_api.h"
 #include "test/common/mock_functions.h"
 #include "types/raw_address.h"
 
