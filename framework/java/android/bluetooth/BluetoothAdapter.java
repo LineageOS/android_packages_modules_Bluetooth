@@ -812,7 +812,7 @@ public final class BluetoothAdapter {
      */
     @SystemApi
     @FlaggedApi(Flags.FLAG_AUTO_ON_FEATURE)
-    @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
+    @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
     @BroadcastBehavior(registeredOnly = true, protectedBroadcast = true)
     public static final String ACTION_AUTO_ON_STATE_CHANGED =
@@ -821,7 +821,7 @@ public final class BluetoothAdapter {
     /**
      * Used as an int extra field in {@link #ACTION_AUTO_ON_STATE_CHANGED} intents.
      *
-     * <p>Possible values are: {@link #AUTO_ON_STATE_OFF}, {@link #AUTO_ON_STATE_ON}
+     * <p>Possible values are: {@link #AUTO_ON_STATE_DISABLED}, {@link #AUTO_ON_STATE_ENABLED}
      *
      * @hide
      */
@@ -836,7 +836,7 @@ public final class BluetoothAdapter {
      */
     @SystemApi
     @FlaggedApi(Flags.FLAG_AUTO_ON_FEATURE)
-    public static final int AUTO_ON_STATE_OFF = 1;
+    public static final int AUTO_ON_STATE_DISABLED = 1;
 
     /**
      * Indicates the AutoOn feature is ON.
@@ -845,7 +845,7 @@ public final class BluetoothAdapter {
      */
     @SystemApi
     @FlaggedApi(Flags.FLAG_AUTO_ON_FEATURE)
-    public static final int AUTO_ON_STATE_ON = 2;
+    public static final int AUTO_ON_STATE_ENABLED = 2;
 
     /**
      * Audio mode representing output only.

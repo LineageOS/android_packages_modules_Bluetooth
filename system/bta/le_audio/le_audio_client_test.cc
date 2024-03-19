@@ -27,6 +27,7 @@
 #include "bta_gatt_queue_mock.h"
 #include "bta_groups.h"
 #include "bta_le_audio_api.h"
+#include "bta_le_audio_broadcaster_api.h"
 #include "btif_storage_mock.h"
 #include "btm_api_mock.h"
 #include "btm_iso_api.h"
@@ -227,6 +228,8 @@ stack_config_t mock_stack_config{
 const stack_config_t* stack_config_get_interface(void) {
   return &mock_stack_config;
 }
+
+bool LeAudioBroadcaster::IsLeAudioBroadcasterRunning() { return false; }
 
 namespace bluetooth::le_audio {
 class MockLeAudioSourceHalClient;

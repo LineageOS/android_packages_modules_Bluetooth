@@ -18,7 +18,8 @@
 
 #include <memory>
 
-#include "main/shim/controller.h"
+#include "hci/controller_interface.h"
+#include "main/shim/entry.h"
 #include "rust/cxx.h"
 #include "types/raw_address.h"
 
@@ -28,17 +29,16 @@ namespace rust {
 
 class ControllerIntf {
  public:
-  ControllerIntf() : controller_(controller_get_interface()) {}
+  ControllerIntf() : controller_(shim::GetController()) {}
   ~ControllerIntf();
 
   RawAddress read_local_addr() const;
   uint64_t get_ble_supported_states() const;
 
  private:
-  const controller_t* controller_;
+  const hci::ControllerInterface* controller_;
 };
 
-// ControllerIntf* GetControllerInterface();
 std::unique_ptr<ControllerIntf> GetControllerInterface();
 
 }  // namespace rust

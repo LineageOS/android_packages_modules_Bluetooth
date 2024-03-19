@@ -149,12 +149,11 @@ class IsoManagerTest : public Test {
     big_callbacks_.reset(new MockBigCallbacks());
     cig_callbacks_.reset(new MockCigCallbacks());
     IsIsoActive = false;
-    EXPECT_CALL(controller_interface_, GetIsoBufferCount())
-        .Times(AtLeast(1))
-        .WillRepeatedly(Return(6));
-    EXPECT_CALL(controller_interface_, GetIsoDataSize())
-        .Times(AtLeast(1))
-        .WillRepeatedly(Return(1024));
+
+    iso_sizes_.total_num_le_packets_ = 6;
+    iso_sizes_.le_data_packet_length_ = 1024;
+    ON_CALL(controller_, GetControllerIsoBufferSize())
+        .WillByDefault(Return(iso_sizes_));
 
     InitIsoManager();
   }
@@ -344,6 +343,7 @@ class IsoManagerTest : public Test {
   bluetooth::shim::MockIsoInterface iso_interface_;
   hcic::MockHcicInterface hcic_interface_;
   bluetooth::hci::testing::MockControllerInterface controller_;
+  bluetooth::hci::LeBufferSize iso_sizes_;
   controller::MockControllerInterface controller_interface_;
 
   std::unique_ptr<MockBigCallbacks> big_callbacks_;
@@ -2191,7 +2191,8 @@ TEST_F(IsoManagerTest, SendIsoDataBigValid) {
 }
 
 TEST_F(IsoManagerTest, SendIsoDataNoCredits) {
-  uint8_t num_buffers = controller_interface_.GetIsoBufferCount();
+  uint8_t num_buffers =
+      controller_.GetControllerIsoBufferSize().total_num_le_packets_;
   std::vector<uint8_t> data_vec(108, 0);
 
   // Check on CIG
@@ -2242,7 +2243,8 @@ TEST_F(IsoManagerTest, SendIsoDataNoCredits) {
 }
 
 TEST_F(IsoManagerTest, SendIsoDataCreditsReturned) {
-  uint8_t num_buffers = controller_interface_.GetIsoBufferCount();
+  uint8_t num_buffers =
+      controller_.GetControllerIsoBufferSize().total_num_le_packets_;
   std::vector<uint8_t> data_vec(108, 0);
 
   // Check on CIG
@@ -2317,7 +2319,8 @@ TEST_F(IsoManagerTest, SendIsoDataCreditsReturned) {
 }
 
 TEST_F(IsoManagerTest, SendIsoDataCreditsReturnedByDisconnection) {
-  uint8_t num_buffers = controller_interface_.GetIsoBufferCount();
+  uint8_t num_buffers =
+      controller_.GetControllerIsoBufferSize().total_num_le_packets_;
   std::vector<uint8_t> data_vec(108, 0);
 
   // Check on CIG
@@ -2554,7 +2557,8 @@ TEST_F(IsoManagerDeathTestNoCleanup, HandleLateArivingEventHandleDisconnect) {
  */
 TEST_F(IsoManagerDeathTestNoCleanup,
        HandleLateArivingEventHandleNumComplDataPkts) {
-  uint8_t num_buffers = controller_interface_.GetIsoBufferCount();
+  uint8_t num_buffers =
+      controller_.GetControllerIsoBufferSize().total_num_le_packets_;
 
   IsoManager::GetInstance()->CreateCig(
       volatile_test_cig_create_cmpl_evt_.cig_id, kDefaultCigParams);

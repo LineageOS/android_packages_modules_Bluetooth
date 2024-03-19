@@ -120,6 +120,8 @@ static void cleanup_message_loop_thread() {
   message_loop_thread.ShutDown();
 }
 
+bool LeAudioClient::IsLeAudioClientRunning(void) { return false; }
+
 namespace bluetooth::le_audio {
 namespace broadcaster {
 BroadcastConfiguration GetBroadcastConfig(

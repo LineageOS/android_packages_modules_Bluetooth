@@ -166,6 +166,7 @@ public class AudioRoutingManager extends ActiveDeviceManager {
         mp.threadStart(mHandlerThread);
         mHandler = new AudioRoutingHandler(mp.handlerThreadGetLooper(mHandlerThread));
 
+        mAudioManager.addOnModeChangedListener(cmd -> mHandler.post(cmd), mHandler);
         mAudioManager.registerAudioDeviceCallback(mAudioManagerAudioDeviceCallback, mHandler);
         mAdapterService.registerBluetoothStateCallback((command) -> mHandler.post(command), this);
     }
@@ -176,6 +177,7 @@ public class AudioRoutingManager extends ActiveDeviceManager {
             Log.d(TAG, "cleanup()");
         }
 
+        mAudioManager.removeOnModeChangedListener(mHandler);
         mAudioManager.unregisterAudioDeviceCallback(mAudioManagerAudioDeviceCallback);
         mAdapterService.unregisterBluetoothStateCallback(this);
         if (mHandlerThread != null) {
@@ -250,13 +252,16 @@ public class AudioRoutingManager extends ActiveDeviceManager {
         public void onAudioDevicesRemoved(AudioDeviceInfo[] removedDevices) {}
     }
 
-    private class AudioRoutingHandler extends Handler {
+    private class AudioRoutingHandler extends Handler
+            implements AudioManager.OnModeChangedListener {
         private final ArrayMap<BluetoothDevice, AudioRoutingDevice> mConnectedDevices =
                 new ArrayMap<>();
         private final SparseArray<List<BluetoothDevice>> mActiveDevices = new SparseArray<>();
+        private int mAudioMode;
 
         AudioRoutingHandler(Looper looper) {
             super(looper);
+            mAudioMode = mAudioManager.getMode();
         }
 
         public void handleProfileConnected(int profile, BluetoothDevice device) {
@@ -329,6 +334,41 @@ public class AudioRoutingManager extends ActiveDeviceManager {
                             + BluetoothProfile.getProfileName(profile)
                             + ", device="
                             + device);
+        }
+
+        @Override
+        public void onModeChanged(int mode) {
+            if (DBG) {
+                Log.d(TAG, "onModeChanged: " + mAudioMode + " -> " + mode);
+            }
+            List<BluetoothDevice> a2dpActiveDevices = getActiveDevices(BluetoothProfile.A2DP);
+            List<BluetoothDevice> hfpActiveDevices = getActiveDevices(BluetoothProfile.HEADSET);
+            if (mode == AudioManager.MODE_NORMAL) {
+                for (BluetoothDevice d : a2dpActiveDevices) {
+                    // When an A2DP device that also support HFP as well is in use,
+                    // be sure that HFP is also activated.
+                    if (!hfpActiveDevices.contains(d)
+                            && getAudioRoutingDevice(d)
+                                    .connectedProfiles
+                                    .contains(BluetoothProfile.HEADSET)) {
+                        setActiveDevice(BluetoothProfile.HEADSET, d);
+                        break;
+                    }
+                }
+            } else if (mode == AudioManager.MODE_IN_CALL) {
+                for (BluetoothDevice d : hfpActiveDevices) {
+                    // When a HFP device that also support A2DP as well is in use,
+                    // be sure that A2DP is also activated.
+                    if (!a2dpActiveDevices.contains(d)
+                            && getAudioRoutingDevice(d)
+                                    .connectedProfiles
+                                    .contains(BluetoothProfile.A2DP)) {
+                        setActiveDevice(BluetoothProfile.A2DP, d);
+                        break;
+                    }
+                }
+            }
+            mAudioMode = mode;
         }
 
         private Optional<BluetoothDevice> getFallbackDevice(
@@ -679,7 +719,7 @@ public class AudioRoutingManager extends ActiveDeviceManager {
                 if (!getActiveDevices(p).isEmpty()) {
                     BluetoothMethodProxy mp = BluetoothMethodProxy.getInstance();
                     if (!mp.mediaSessionManagerGetActiveSessions(mSessionManager).isEmpty()
-                            || mAudioManager.getMode() == AudioManager.MODE_IN_CALL) {
+                            || mAudioMode == AudioManager.MODE_IN_CALL) {
                         Log.i(
                                 TAG,
                                 "Do not activate the connected device when another device is in"

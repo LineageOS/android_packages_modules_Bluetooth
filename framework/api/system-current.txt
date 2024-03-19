@@ -100,7 +100,7 @@ package android.bluetooth {
     method @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public boolean unregisterBluetoothConnectionCallback(@NonNull android.bluetooth.BluetoothAdapter.BluetoothConnectionCallback);
     method @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public int unregisterBluetoothQualityReportReadyCallback(@NonNull android.bluetooth.BluetoothAdapter.BluetoothQualityReportReadyCallback);
     method @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public int unregisterPreferredAudioProfilesChangedCallback(@NonNull android.bluetooth.BluetoothAdapter.PreferredAudioProfilesChangedCallback);
-    field @FlaggedApi("com.android.bluetooth.flags.auto_on_feature") @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public static final String ACTION_AUTO_ON_STATE_CHANGED = "android.bluetooth.action.AUTO_ON_STATE_CHANGED";
+    field @FlaggedApi("com.android.bluetooth.flags.auto_on_feature") @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED) public static final String ACTION_AUTO_ON_STATE_CHANGED = "android.bluetooth.action.AUTO_ON_STATE_CHANGED";
     field public static final String ACTION_BLE_STATE_CHANGED = "android.bluetooth.adapter.action.BLE_STATE_CHANGED";
     field public static final String ACTION_REQUEST_BLE_SCAN_ALWAYS_AVAILABLE = "android.bluetooth.adapter.action.REQUEST_BLE_SCAN_ALWAYS_AVAILABLE";
     field @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public static final String ACTION_REQUEST_DISABLE = "android.bluetooth.adapter.action.REQUEST_DISABLE";
@@ -109,8 +109,8 @@ package android.bluetooth {
     field public static final int ACTIVE_DEVICE_PHONE_CALL = 1; // 0x1
     field public static final String AUDIO_MODE_DUPLEX = "audio_mode_duplex";
     field public static final String AUDIO_MODE_OUTPUT_ONLY = "audio_mode_output_only";
-    field @FlaggedApi("com.android.bluetooth.flags.auto_on_feature") public static final int AUTO_ON_STATE_OFF = 1; // 0x1
-    field @FlaggedApi("com.android.bluetooth.flags.auto_on_feature") public static final int AUTO_ON_STATE_ON = 2; // 0x2
+    field @FlaggedApi("com.android.bluetooth.flags.auto_on_feature") public static final int AUTO_ON_STATE_DISABLED = 1; // 0x1
+    field @FlaggedApi("com.android.bluetooth.flags.auto_on_feature") public static final int AUTO_ON_STATE_ENABLED = 2; // 0x2
     field public static final int BT_SNOOP_LOG_MODE_DISABLED = 0; // 0x0
     field public static final int BT_SNOOP_LOG_MODE_FILTERED = 1; // 0x1
     field public static final int BT_SNOOP_LOG_MODE_FULL = 2; // 0x2

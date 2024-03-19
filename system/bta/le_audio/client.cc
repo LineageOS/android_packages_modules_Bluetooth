@@ -32,6 +32,7 @@
 #include "bta_gatt_queue.h"
 #include "bta_groups.h"
 #include "bta_le_audio_api.h"
+#include "bta_le_audio_broadcaster_api.h"
 #include "btif/include/btif_profile_storage.h"
 #include "btm_iso_api.h"
 #include "client_parser.h"
@@ -6305,7 +6306,10 @@ void LeAudioClient::Cleanup(void) {
   CodecManager::GetInstance()->Stop();
   ContentControlIdKeeper::GetInstance()->Stop();
   LeAudioGroupStateMachine::Cleanup();
-  IsoManager::GetInstance()->Stop();
+
+  if (!LeAudioBroadcaster::IsLeAudioBroadcasterRunning())
+    IsoManager::GetInstance()->Stop();
+
   bluetooth::le_audio::MetricsCollector::Get()->Flush();
 }
 

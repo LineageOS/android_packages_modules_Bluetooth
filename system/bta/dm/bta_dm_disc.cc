@@ -2340,7 +2340,10 @@ bool bta_dm_search_sm_execute(const BT_HDR_RIGID* p_msg) {
           break;
         case BTA_DM_API_SEARCH_CANCEL_EVT:
           bta_dm_search_clear_queue();
-          bta_dm_search_set_state(BTA_DM_SEARCH_CANCELLING);
+          if (IS_FLAG_ENABLED(
+                  continue_service_discovery_when_cancel_device_discovery)) {
+            bta_dm_search_set_state(BTA_DM_SEARCH_CANCELLING);
+          }
           bta_dm_search_cancel_notify();
           break;
         case BTA_DM_DISC_CLOSE_TOUT_EVT:

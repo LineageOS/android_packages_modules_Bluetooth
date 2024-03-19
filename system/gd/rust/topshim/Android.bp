@@ -57,6 +57,7 @@ cc_library_static {
         "hfp/hfp_shim.cc",
     ],
     generated_headers: [
+        "BluetoothGeneratedDumpsysDataSchema_h",
         "cxx-bridge-header",
         "libbt_init_flags_bridge_header",
         "libbt_topshim_bridge_header",
@@ -71,8 +72,10 @@ cc_library_static {
     ],
     host_supported: true,
     static_libs: [
+        "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libchrome",
+        "libflatbuffers-cpp",
     ],
 }
 
