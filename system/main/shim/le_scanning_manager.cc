@@ -24,7 +24,6 @@
 #include <hardware/bluetooth.h>
 #include <stdio.h>
 
-#include "advertise_data_parser.h"
 #include "btif/include/btif_common.h"
 #include "hci/address.h"
 #include "hci/le_scanning_manager.h"
@@ -37,6 +36,7 @@
 #include "main/shim/shim.h"
 #include "os/log.h"
 #include "stack/btm/btm_int_types.h"
+#include "stack/include/advertise_data_parser.h"
 #include "stack/include/bt_dev_class.h"
 #include "stack/include/btm_log_history.h"
 #include "storage/device.h"
@@ -127,8 +127,6 @@ class DefaultScanningCallback : public ::ScanningCallbacks {
 ::ScanningCallbacks* bluetooth::shim::default_scanning_callback =
     static_cast<::ScanningCallbacks*>(&default_scanning_callback_);
 extern ::ScanningCallbacks* bluetooth::shim::default_scanning_callback;
-
-extern tBTM_CB btm_cb;
 
 void btm_ble_process_adv_pkt_cont_for_inquiry(
     uint16_t event_type, tBLE_ADDR_TYPE address_type,
