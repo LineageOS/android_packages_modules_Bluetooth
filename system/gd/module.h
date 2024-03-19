@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <bluetooth/log.h>
+
 #include <chrono>
 #include <functional>
 #include <future>
@@ -217,7 +219,7 @@ class FuzzTestModuleRegistry : public TestModuleRegistry {
 
   void WaitForIdleAndStopAll() {
     if (!GetTestThread().GetReactor()->WaitForIdle(std::chrono::milliseconds(100))) {
-      LOG_ERROR("idle timed out");
+      log::error("idle timed out");
     }
     StopAll();
   }

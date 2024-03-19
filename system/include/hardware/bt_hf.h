@@ -159,4 +159,16 @@ struct formatter<bluetooth::headset::bthf_call_state_t>
 template <>
 struct formatter<bluetooth::headset::bthf_call_direction_t>
     : enum_formatter<bluetooth::headset::bthf_call_direction_t> {};
+template <>
+struct formatter<bluetooth::headset::bthf_hf_ind_type_t>
+    : enum_formatter<bluetooth::headset::bthf_hf_ind_type_t> {};
+template <>
+struct formatter<bluetooth::headset::bthf_wbs_config_t>
+    : enum_formatter<bluetooth::headset::bthf_wbs_config_t> {};
+template <>
+struct formatter<bluetooth::headset::bthf_swb_codec_t>
+    : enum_formatter<bluetooth::headset::bthf_swb_codec_t> {};
+template <>
+struct formatter<bluetooth::headset::bthf_swb_config_t>
+    : enum_formatter<bluetooth::headset::bthf_swb_config_t> {};
 }  // namespace fmt

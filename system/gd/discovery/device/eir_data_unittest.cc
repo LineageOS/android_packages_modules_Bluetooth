@@ -16,6 +16,8 @@
 
 #include "discovery/device/eir_data.h"
 
+#include <bluetooth/log.h>
+
 #include "discovery/device/eir_test_data_packets.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -38,13 +40,13 @@ constexpr char kChromeBoxForMeetings[] = "Chromebox for Meetings";
 namespace debug {
 void LogUuids16(const std::vector<uint16_t>& uuids16) {
   for (const auto& uuid : uuids16) {
-    LOG_INFO("  uuid:0x%x", uuid);
+    log::info("uuid:0x{:x}", uuid);
   }
 }
 
 void LogUuids128(const std::vector<hci::Uuid>& uuids128) {
   for (const auto& uuid : uuids128) {
-    LOG_INFO("  uuid:%s", uuid.ToString().c_str());
+    log::info("uuid:{}", uuid.ToString());
   }
 }
 }  // namespace debug

@@ -18,6 +18,8 @@
 
 #include "att/att_module.h"
 
+#include <bluetooth/log.h>
+
 #include <memory>
 
 #include "l2cap/classic/l2cap_classic_module.h"
@@ -35,11 +37,11 @@ namespace {
 void OnAttRegistrationCompleteLe(
     l2cap::le::FixedChannelManager::RegistrationResult /* result */,
     std::unique_ptr<l2cap::le::FixedChannelService> /* le_smp_service */) {
-  LOG_INFO("ATT channel registration complete");
+  log::info("ATT channel registration complete");
 }
 
 void OnAttConnectionOpenLe(std::unique_ptr<l2cap::le::FixedChannel> /* channel */) {
-  LOG_INFO("ATT conneciton opened");
+  log::info("ATT conneciton opened");
 }
 }  // namespace
 

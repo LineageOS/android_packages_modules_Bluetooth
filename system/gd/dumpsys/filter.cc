@@ -16,6 +16,8 @@
 
 #include "dumpsys/filter.h"
 
+#include <bluetooth/log.h>
+
 #include <memory>
 
 #include "common/init_flags.h"
@@ -123,7 +125,7 @@ bool UserPrivacyFilter::FilterField(const reflection::Field* field, flatbuffers:
       return internal::FilterTypeLong(*field, table, privacy_level);
       break;
     default:
-      LOG_WARN("Unsupported base type:%s", internal::FlatbufferTypeText(type).c_str());
+      log::warn("Unsupported base type:{}", internal::FlatbufferTypeText(type));
       break;
   }
   return false;
@@ -136,20 +138,20 @@ void UserPrivacyFilter::FilterObject(const reflection::Object* object, flatbuffe
   }
   for (auto it = object->fields()->cbegin(); it != object->fields()->cend(); ++it) {
     if (!FilterField(*it, table)) {
-      LOG_ERROR("%s Unable to filter field from an object when it's expected it will work", __func__);
+      log::error("Unable to filter field from an object when it's expected it will work");
     };
   }
 }
 
 void UserPrivacyFilter::FilterTable(const reflection::Schema* schema, flatbuffers::Table* table) {
   if (schema == nullptr) {
-    LOG_WARN("%s schema is nullptr...probably ok", __func__);
+    log::warn("schema is nullptr...probably ok");
     return;
   }
 
   const reflection::Object* object = schema->root_table();
   if (object == nullptr) {
-    LOG_WARN("%s reflection object is nullptr...is ok ?", __func__);
+    log::warn("reflection object is nullptr...is ok ?");
     return;
   }
 
@@ -179,7 +181,7 @@ void UserPrivacyFilter::FilterTable(const reflection::Schema* schema, flatbuffer
       if (sub_object != nullptr) {
         FilterObject(sub_object, sub_table);
       } else {
-        LOG_ERROR("Unable to find reflection sub object:%s\n", name->c_str());
+        log::error("Unable to find reflection sub object:{}", name->c_str());
       }
     }
   }

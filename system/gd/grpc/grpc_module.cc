@@ -16,6 +16,8 @@
 
 #include "grpc/grpc_module.h"
 
+#include <bluetooth/log.h>
+
 #include "os/log.h"
 
 using ::grpc::Server;
@@ -49,7 +51,7 @@ void GrpcModule::StartServer(const std::string& address, int port) {
   completion_queue_ = builder.AddCompletionQueue();
   server_ = builder.BuildAndStart();
   ASSERT(server_ != nullptr);
-  LOG_INFO("gRPC server started on %s", listening_port.c_str());
+  log::info("gRPC server started on {}", listening_port);
 
   for (const auto& facade : facades_) {
     facade->OnServerStarted();
@@ -93,7 +95,7 @@ void GrpcModule::RunGrpcLoop() {
   bool ok;
   while (true) {
     if (!completion_queue_->Next(&tag, &ok)) {
-      LOG_INFO("gRPC is shutdown");
+      log::info("gRPC is shutdown");
       break;
     }
   }

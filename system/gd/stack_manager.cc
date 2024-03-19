@@ -16,7 +16,9 @@
 
 #include "stack_manager.h"
 
+#include <bluetooth/log.h>
 #include <stdio.h>
+
 #include <chrono>
 #include <future>
 #include <queue>
@@ -51,14 +53,14 @@ void StackManager::StartUp(ModuleList* modules, Thread* stack_thread) {
 
   WakelockManager::Get().Release();
 
-  LOG_INFO("init_status == %d", init_status);
+  log::info("init_status == {}", int(init_status));
 
   ASSERT_LOG(
       init_status == std::future_status::ready,
       "Can't start stack, last instance: %s",
       registry_.last_instance_.c_str());
 
-  LOG_INFO("init complete");
+  log::info("init complete");
 }
 
 void StackManager::handle_start_up(ModuleList* modules, Thread* stack_thread, std::promise<void> promise) {

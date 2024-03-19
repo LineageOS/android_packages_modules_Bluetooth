@@ -3,6 +3,7 @@
 #include <android/hardware/bluetooth/1.0/types.h>
 #include <android/hardware/bluetooth/1.1/IBluetoothHci.h>
 #include <android/hardware/bluetooth/1.1/IBluetoothHciCallbacks.h>
+#include <bluetooth/log.h>
 #include <stdlib.h>
 
 #include "os/log.h"
@@ -22,7 +23,7 @@ namespace {
 class HciDeathRecipient : public ::android::hardware::hidl_death_recipient {
  public:
   virtual void serviceDied(uint64_t /*cookie*/, const android::wp<::android::hidl::base::V1_0::IBase>& /*who*/) {
-    LOG_ERROR("Bluetooth HAL service died!");
+    log::error("Bluetooth HAL service died!");
     abort();
   }
 };
@@ -92,7 +93,7 @@ void stop_hal() {
 
   auto death_unlink = bt_hci_->unlinkToDeath(hci_death_recipient_);
   if (!death_unlink.isOk()) {
-    LOG_ERROR("Error unlinking death recipient from the Bluetooth HAL");
+    log::error("Error unlinking death recipient from the Bluetooth HAL");
   }
   bt_hci_->close();
   bt_hci_ = nullptr;
@@ -117,7 +118,7 @@ void send_sco(rust::Slice<const uint8_t> data) {
 
 void send_iso(rust::Slice<const uint8_t> data) {
   if (bt_hci_1_1_ == nullptr) {
-    LOG_ERROR("ISO is not supported in HAL v1.0");
+    log::error("ISO is not supported in HAL v1.0");
     return;
   }
 
