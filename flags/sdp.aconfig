@@ -5,7 +5,7 @@ flag {
     name: "stack_sdp_detect_nil_property_type"
     namespace: "bluetooth"
     description: "Check for NIL SDP property length"
-    bug: "329171921"
+    bug: "329171845"
 }
 
 flag {
