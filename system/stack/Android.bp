@@ -522,9 +522,11 @@ cc_fuzz {
         "libbluetooth_l2cap_pdl",
         "libbluetooth_log",
         "libbluetooth_smp_pdl",
+        "libbt-common",
         "libbt-platform-protos-lite",
         "libbt_shim_bridge",
         "libbt_shim_ffi",
+        "libevent",
     ],
 }
 

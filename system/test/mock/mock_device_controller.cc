@@ -28,7 +28,6 @@
 #include "device/include/controller.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_status.h"
-#include "stack/include/hcidefs.h"
 #include "types/raw_address.h"
 
 // Mocked compile conditionals, if any
@@ -134,7 +133,6 @@ tBTM_STATUS clear_event_filter() { return BTM_SUCCESS; }
 
 tBTM_STATUS clear_event_mask() { return BTM_SUCCESS; }
 
-tBTM_STATUS le_rand(LeRandCallback /* cb */) { return BTM_SUCCESS; }
 tBTM_STATUS set_event_filter_connection_setup_all_devices() {
   return BTM_SUCCESS;
 }
@@ -173,7 +171,6 @@ const controller_t interface = {
     get_le_all_initiating_phys,
     clear_event_filter,
     clear_event_mask,
-    le_rand,
     set_event_filter_connection_setup_all_devices,
     set_event_filter_allow_device_connection,
     set_default_event_mask_except,

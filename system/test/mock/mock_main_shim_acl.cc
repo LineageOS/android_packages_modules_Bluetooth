@@ -226,10 +226,6 @@ void shim::legacy::Acl::ClearFilterAcceptList() {
   inc_func_call_count(__func__);
 }
 
-void shim::legacy::Acl::LeRand(LeRandCallback /* cb */) {
-  inc_func_call_count(__func__);
-}
-
 void shim::legacy::Acl::AddToAddressResolution(
     const hci::AddressWithType& /* address_with_type */,
     const std::array<uint8_t, 16>& /* peer_irk */,

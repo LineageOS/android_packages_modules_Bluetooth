@@ -31,8 +31,6 @@
 #include "packet/raw_builder.h"
 #include "types/raw_address.h"
 
-using LeRandCallback = base::OnceCallback<void(uint64_t)>;
-
 namespace bluetooth {
 namespace shim {
 namespace legacy {
@@ -121,7 +119,6 @@ class Acl : public hci::acl_manager::ConnectionCallbacks,
 
   void ClearFilterAcceptList();
   void DisconnectAllForSuspend();
-  void LeRand(LeRandCallback cb);
   void SetSystemSuspendState(bool suspended);
 
  protected:
