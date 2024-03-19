@@ -13,15 +13,15 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from blueberry.tests.gd.cert.closable import safeClose
 from blueberry.tests.gd.cert.matchers import IsoMatchers
 from blueberry.tests.gd.cert.metadata import metadata
-from blueberry.tests.gd.cert.py_l2cap import PyLeL2cap
+from blueberry.tests.gd.cert.py_le_acl_manager import PyLeAclManager
 from blueberry.tests.gd.cert.py_le_iso import PyLeIso
 from blueberry.tests.gd.cert.py_le_iso import CisTestParameters
 from blueberry.tests.gd.cert.truth import assertThat
 from blueberry.tests.gd.cert import gd_base_test
 from blueberry.tests.gd.iso.cert_le_iso import CertLeIso
-from blueberry.tests.gd.l2cap.le.cert_le_l2cap import CertLeL2cap
 from blueberry.facade import common_pb2 as common
 from blueberry.facade.hci import controller_facade_pb2 as controller_facade
 from blueberry.facade.hci import le_advertising_manager_facade_pb2 as le_advertising_facade
@@ -34,13 +34,14 @@ import hci_packets as hci
 class LeIsoTest(gd_base_test.GdBaseTestClass):
 
     def setup_class(self):
-        gd_base_test.GdBaseTestClass.setup_class(self, dut_module='L2CAP', cert_module='HCI_INTERFACES')
+        gd_base_test.GdBaseTestClass.setup_class(self, dut_module='HCI_INTERFACES', cert_module='HCI_INTERFACES')
 
     def setup_test(self):
         gd_base_test.GdBaseTestClass.setup_test(self)
 
-        self.dut_l2cap = PyLeL2cap(self.dut)
-        self.cert_l2cap = CertLeL2cap(self.cert)
+        self.dut_le_acl_manager = PyLeAclManager(self.dut)
+        self.cert_le_acl_manager = PyLeAclManager(self.cert)
+
         self.dut_address = common.BluetoothAddressWithType(
             address=common.BluetoothAddress(address=bytes(b'D0:05:04:03:02:01')), type=common.RANDOM_DEVICE_ADDRESS)
         self.cert_address = common.BluetoothAddressWithType(
@@ -51,14 +52,14 @@ class LeIsoTest(gd_base_test.GdBaseTestClass):
             rotation_irk=b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
             minimum_rotation_time=0,
             maximum_rotation_time=0)
-        self.dut_l2cap._device.hci_le_initiator_address.SetPrivacyPolicyForInitiatorAddress(dut_privacy_policy)
+        self.dut.hci_le_initiator_address.SetPrivacyPolicyForInitiatorAddress(dut_privacy_policy)
         privacy_policy = le_initiator_address_facade.PrivacyPolicy(
             address_policy=le_initiator_address_facade.AddressPolicy.USE_STATIC_ADDRESS,
             address_with_type=self.cert_address,
             rotation_irk=b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
             minimum_rotation_time=0,
             maximum_rotation_time=0)
-        self.cert_l2cap._device.hci_le_initiator_address.SetPrivacyPolicyForInitiatorAddress(privacy_policy)
+        self.cert.hci_le_initiator_address.SetPrivacyPolicyForInitiatorAddress(privacy_policy)
 
         self.dut_iso = PyLeIso(self.dut)
         self.cert_iso = CertLeIso(self.cert)
@@ -67,8 +68,8 @@ class LeIsoTest(gd_base_test.GdBaseTestClass):
         self.dut_iso.close()
         self.cert_iso.close()
 
-        self.cert_l2cap.close()
-        self.dut_l2cap.close()
+        safeClose(self.dut_le_acl_manager)
+        safeClose(self.cert_le_acl_manager)
         gd_base_test.GdBaseTestClass.teardown_test(self)
 
     #cert becomes central of connection, dut peripheral
@@ -81,12 +82,13 @@ class LeIsoTest(gd_base_test.GdBaseTestClass):
             interval_min=512,
             interval_max=768,
             advertising_type=le_advertising_facade.AdvertisingEventType.ADV_IND,
-            own_address_type=common.USE_RANDOM_DEVICE_ADDRESS,
+            own_address_type=common.USE_PUBLIC_DEVICE_ADDRESS,
             channel_map=7,
             filter_policy=le_advertising_facade.AdvertisingFilterPolicy.ALL_DEVICES)
         request = le_advertising_facade.CreateAdvertiserRequest(config=config)
         create_response = self.dut.hci_le_advertising_manager.CreateAdvertiser(request)
-        self.cert_l2cap.connect_le_acl(self.dut_address)
+        self.dut_le_acl = self.dut_le_acl_manager.listen_for_incoming_connections()
+        self.cert_le_acl = self.cert_le_acl_manager.connect_to_remote(self.dut_address)
 
     def _setup_cis_from_cert(self, cig_id, sdu_interval_m_to_s, sdu_interval_s_to_m, peripherals_clock_accuracy,
                              packing, framing, max_transport_latency_m_to_s, max_transport_latency_s_to_m, cis_id,
@@ -101,7 +103,7 @@ class LeIsoTest(gd_base_test.GdBaseTestClass):
 
         cis_handle = cis_handles[0]
 
-        acl_connection_handle = self.cert_l2cap._le_acl.handle
+        acl_connection_handle = self.cert_le_acl.handle
         self.cert_iso.le_cretate_cis([(cis_handle, acl_connection_handle)])
         dut_cis_stream = self.dut_iso.wait_le_cis_established()
         cert_cis_stream = self.cert_iso.wait_le_cis_established()
