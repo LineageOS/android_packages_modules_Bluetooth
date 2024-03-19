@@ -195,227 +195,253 @@ public class HidHostService extends ProfileService {
                     if (DBG) Log.v(TAG, "handleMessage(): msg.what=" + msg.what);
 
                     switch (msg.what) {
-                        case MESSAGE_CONNECT: {
-                                BluetoothDevice device = (BluetoothDevice) msg.obj;
-                                // TODO: b/324094542 Use the preferred transport
-                                if (!mNativeInterface.connectHid(
-                                        getByteAddress(device),
-                                        BluetoothDevice.ADDRESS_TYPE_PUBLIC,
-                                        BluetoothDevice.TRANSPORT_AUTO)) {
-                                    broadcastConnectionState(
-                                            device, BluetoothProfile.STATE_DISCONNECTING);
-                                    broadcastConnectionState(
-                                            device, BluetoothProfile.STATE_DISCONNECTED);
-                                    break;
-                                }
-                                mTargetDevice = device;
-                            }
+                        case MESSAGE_CONNECT:
+                            handleMessageConnect(msg);
                             break;
-                        case MESSAGE_DISCONNECT: {
-                                BluetoothDevice device = (BluetoothDevice) msg.obj;
-                                boolean reconnectAllowed = false;
-                                if (getConnectionPolicy(device)
-                                        == BluetoothProfile.CONNECTION_POLICY_ALLOWED) {
-                                    reconnectAllowed = true;
-                                }
-                                // TODO: b/324094542 Use the preferred transport
-                                if (!mNativeInterface.disconnectHid(
-                                        getByteAddress(device),
-                                        BluetoothDevice.ADDRESS_TYPE_PUBLIC,
-                                        BluetoothDevice.TRANSPORT_AUTO,
-                                        reconnectAllowed)) {
-                                    broadcastConnectionState(
-                                            device, BluetoothProfile.STATE_DISCONNECTING);
-                                    broadcastConnectionState(
-                                            device, BluetoothProfile.STATE_DISCONNECTED);
-                                    break;
-                                }
-                            }
+                        case MESSAGE_DISCONNECT:
+                            handleMessageDisconnect(msg);
                             break;
-                        case MESSAGE_CONNECT_STATE_CHANGED: {
-                                BluetoothDevice device =
-                                        mAdapterService.getDeviceFromByte((byte[]) msg.obj);
-                                int state = msg.arg1;
-                                Integer prevStateInteger = mInputDevices.get(device);
-                                int prevState =
-                                        (prevStateInteger == null)
-                                                ? BluetoothProfile.STATE_DISCONNECTED
-                                                : prevStateInteger;
-                                if (DBG) {
-                                    Log.d(
-                                            TAG,
-                                            "MESSAGE_CONNECT_STATE_CHANGED"
-                                                    + (" newState=" + state)
-                                                    + (" prevState=" + prevState));
-                                }
-                                if (state == STATE_ACCEPTING) {
-                                    // TODO: b/324094542 save the preferred transport
-                                    state = BluetoothProfile.STATE_DISCONNECTED;
-                                }
-                                if (state == BluetoothProfile.STATE_CONNECTED
-                                        && prevState == BluetoothProfile.STATE_DISCONNECTED
-                                        && (!okToConnect(device))) {
-                                    if (DBG) {
-                                        Log.d(TAG, "Incoming HID connection rejected");
-                                    }
-                                    // TODO: b/324094542 Use the preferred transport
-                                    mNativeInterface.virtualUnPlug(
-                                            getByteAddress(device),
-                                            BluetoothDevice.ADDRESS_TYPE_PUBLIC,
-                                            BluetoothDevice.TRANSPORT_AUTO);
-                                } else {
-                                    broadcastConnectionState(device, state);
-                                }
-                                if (state == BluetoothProfile.STATE_CONNECTED
-                                        && (mTargetDevice != null
-                                                && mTargetDevice.equals(device))) {
-                                    mTargetDevice = null;
-                                    // local device originated connection to hid device, move out
-                                    // of quiet mode
-                                    AdapterService adapterService =
-                                            AdapterService.getAdapterService();
-                                    adapterService.enable(false);
-                                }
-                            }
+                        case MESSAGE_CONNECT_STATE_CHANGED:
+                            handleMessageConnectStateChanged(msg);
                             break;
-                        case MESSAGE_GET_PROTOCOL_MODE: {
-                                BluetoothDevice device = (BluetoothDevice) msg.obj;
-                                // TODO: b/324094542 Use the preferred transport
-                                if (!mNativeInterface.getProtocolMode(
-                                        getByteAddress(device),
-                                        BluetoothDevice.ADDRESS_TYPE_PUBLIC,
-                                        BluetoothDevice.TRANSPORT_AUTO)) {
-                                    Log.e(TAG, "Error: get protocol mode native returns false");
-                                }
-                            }
+                        case MESSAGE_GET_PROTOCOL_MODE:
+                            handleMessageGetProtocolMode(msg);
                             break;
-
-                        case MESSAGE_ON_GET_PROTOCOL_MODE: {
-                                BluetoothDevice device =
-                                        mAdapterService.getDeviceFromByte((byte[]) msg.obj);
-                                int protocolMode = msg.arg1;
-                                broadcastProtocolMode(device, protocolMode);
-                            }
+                        case MESSAGE_ON_GET_PROTOCOL_MODE:
+                            handleMessageOnGetProtocolMode(msg);
                             break;
-                        case MESSAGE_VIRTUAL_UNPLUG: {
-                                BluetoothDevice device = (BluetoothDevice) msg.obj;
-                                // TODO: b/324094542 Use the preferred transport
-                                if (!mNativeInterface.virtualUnPlug(
-                                        getByteAddress(device),
-                                        BluetoothDevice.ADDRESS_TYPE_PUBLIC,
-                                        BluetoothDevice.TRANSPORT_AUTO)) {
-                                    Log.e(TAG, "Error: virtual unplug native returns false");
-                                }
-                            }
+                        case MESSAGE_VIRTUAL_UNPLUG:
+                            handleMessageVirtualUnplug(msg);
                             break;
-                        case MESSAGE_SET_PROTOCOL_MODE: {
-                                BluetoothDevice device = (BluetoothDevice) msg.obj;
-                                byte protocolMode = (byte) msg.arg1;
-                                Log.d(TAG, "sending set protocol mode(" + protocolMode + ")");
-                                // TODO: b/324094542 Use the preferred transport
-                                if (!mNativeInterface.setProtocolMode(
-                                        getByteAddress(device),
-                                        BluetoothDevice.ADDRESS_TYPE_PUBLIC,
-                                        BluetoothDevice.TRANSPORT_AUTO,
-                                        protocolMode)) {
-                                    Log.e(TAG, "Error: set protocol mode native returns false");
-                                }
-                            }
+                        case MESSAGE_SET_PROTOCOL_MODE:
+                            handleMessageSetProtocolMode(msg);
                             break;
-                        case MESSAGE_GET_REPORT: {
-                                BluetoothDevice device = (BluetoothDevice) msg.obj;
-                                Bundle data = msg.getData();
-                                byte reportType = data.getByte(BluetoothHidHost.EXTRA_REPORT_TYPE);
-                                byte reportId = data.getByte(BluetoothHidHost.EXTRA_REPORT_ID);
-                                int bufferSize =
-                                        data.getInt(BluetoothHidHost.EXTRA_REPORT_BUFFER_SIZE);
-                                // TODO: b/324094542 Use the preferred transport
-                                if (!mNativeInterface.getReport(
-                                        getByteAddress(device),
-                                        BluetoothDevice.ADDRESS_TYPE_PUBLIC,
-                                        BluetoothDevice.TRANSPORT_AUTO,
-                                        reportType,
-                                        reportId,
-                                        bufferSize)) {
-                                    Log.e(TAG, "Error: get report native returns false");
-                                }
-                            }
+                        case MESSAGE_GET_REPORT:
+                            handleMessageGetReport(msg);
                             break;
-                        case MESSAGE_ON_GET_REPORT: {
-                                BluetoothDevice device =
-                                        mAdapterService.getDeviceFromByte((byte[]) msg.obj);
-                                Bundle data = msg.getData();
-                                byte[] report = data.getByteArray(BluetoothHidHost.EXTRA_REPORT);
-                                int bufferSize =
-                                        data.getInt(BluetoothHidHost.EXTRA_REPORT_BUFFER_SIZE);
-                                broadcastReport(device, report, bufferSize);
-                            }
+                        case MESSAGE_ON_GET_REPORT:
+                            handleMessageOnGetReport(msg);
                             break;
-                        case MESSAGE_ON_HANDSHAKE: {
-                                BluetoothDevice device =
-                                        mAdapterService.getDeviceFromByte((byte[]) msg.obj);
-                                int status = msg.arg1;
-                                broadcastHandshake(device, status);
-                            }
+                        case MESSAGE_ON_HANDSHAKE:
+                            handleMessageOnHandshake(msg);
                             break;
-                        case MESSAGE_SET_REPORT: {
-                                BluetoothDevice device = (BluetoothDevice) msg.obj;
-                                Bundle data = msg.getData();
-                                byte reportType = data.getByte(BluetoothHidHost.EXTRA_REPORT_TYPE);
-                                String report = data.getString(BluetoothHidHost.EXTRA_REPORT);
-                                // TODO: b/324094542 Use the preferred transport
-                                if (!mNativeInterface.setReport(
-                                        getByteAddress(device),
-                                        BluetoothDevice.ADDRESS_TYPE_PUBLIC,
-                                        BluetoothDevice.TRANSPORT_AUTO,
-                                        reportType,
-                                        report)) {
-                                    Log.e(TAG, "Error: set report native returns false");
-                                }
-                            }
+                        case MESSAGE_SET_REPORT:
+                            handleMessageSetProtocol(msg);
                             break;
-                        case MESSAGE_ON_VIRTUAL_UNPLUG: {
-                                BluetoothDevice device =
-                                        mAdapterService.getDeviceFromByte((byte[]) msg.obj);
-                                int status = msg.arg1;
-                                broadcastVirtualUnplugStatus(device, status);
-                            }
+                        case MESSAGE_ON_VIRTUAL_UNPLUG:
+                            handleMessageOnVirtualUnplug(msg);
                             break;
-                        case MESSAGE_GET_IDLE_TIME: {
-                                BluetoothDevice device = (BluetoothDevice) msg.obj;
-                                // TODO: b/324094542 Use the preferred transport
-                                if (!mNativeInterface.getIdleTime(
-                                        getByteAddress(device),
-                                        BluetoothDevice.ADDRESS_TYPE_PUBLIC,
-                                        BluetoothDevice.TRANSPORT_AUTO)) {
-                                    Log.e(TAG, "Error: get idle time native returns false");
-                                }
-                            }
+                        case MESSAGE_GET_IDLE_TIME:
+                            handleMessageGetIdleTime(msg);
                             break;
-                        case MESSAGE_ON_GET_IDLE_TIME: {
-                                BluetoothDevice device =
-                                        mAdapterService.getDeviceFromByte((byte[]) msg.obj);
-                                int idleTime = msg.arg1;
-                                broadcastIdleTime(device, idleTime);
-                            }
+                        case MESSAGE_ON_GET_IDLE_TIME:
+                            handleMessageOnGetIdleTime(msg);
                             break;
-                        case MESSAGE_SET_IDLE_TIME: {
-                                BluetoothDevice device = (BluetoothDevice) msg.obj;
-                                Bundle data = msg.getData();
-                                byte idleTime = data.getByte(BluetoothHidHost.EXTRA_IDLE_TIME);
-                                // TODO: b/324094542 Use the preferred transport
-                                if (!mNativeInterface.setIdleTime(
-                                        getByteAddress(device),
-                                        BluetoothDevice.ADDRESS_TYPE_PUBLIC,
-                                        BluetoothDevice.TRANSPORT_AUTO,
-                                        idleTime)) {
-                                    Log.e(TAG, "Error: get idle time native returns false");
-                                }
-                            }
+                        case MESSAGE_SET_IDLE_TIME:
+                            handleMessageSetIdleTime(msg);
                             break;
                     }
                 }
             };
+
+    private void handleMessageSetIdleTime(Message msg) {
+        BluetoothDevice device = (BluetoothDevice) msg.obj;
+        Bundle data = msg.getData();
+        byte idleTime = data.getByte(BluetoothHidHost.EXTRA_IDLE_TIME);
+        // TODO: b/324094542 Use the preferred transport
+        if (!mNativeInterface.setIdleTime(
+                getByteAddress(device),
+                BluetoothDevice.ADDRESS_TYPE_PUBLIC,
+                BluetoothDevice.TRANSPORT_AUTO,
+                idleTime)) {
+            Log.e(TAG, "Error: get idle time native returns false");
+        }
+    }
+
+    private void handleMessageOnGetIdleTime(Message msg) {
+        BluetoothDevice device = mAdapterService.getDeviceFromByte((byte[]) msg.obj);
+        int idleTime = msg.arg1;
+        broadcastIdleTime(device, idleTime);
+    }
+
+    private void handleMessageGetIdleTime(Message msg) {
+        BluetoothDevice device = (BluetoothDevice) msg.obj;
+        // TODO: b/324094542 Use the preferred transport
+        if (!mNativeInterface.getIdleTime(
+                getByteAddress(device),
+                BluetoothDevice.ADDRESS_TYPE_PUBLIC,
+                BluetoothDevice.TRANSPORT_AUTO)) {
+            Log.e(TAG, "Error: get idle time native returns false");
+        }
+    }
+
+    private void handleMessageOnVirtualUnplug(Message msg) {
+        BluetoothDevice device = mAdapterService.getDeviceFromByte((byte[]) msg.obj);
+        int status = msg.arg1;
+        broadcastVirtualUnplugStatus(device, status);
+    }
+
+    private void handleMessageSetProtocol(Message msg) {
+        BluetoothDevice device = (BluetoothDevice) msg.obj;
+        Bundle data = msg.getData();
+        byte reportType = data.getByte(BluetoothHidHost.EXTRA_REPORT_TYPE);
+        String report = data.getString(BluetoothHidHost.EXTRA_REPORT);
+        // TODO: b/324094542 Use the preferred transport
+        if (!mNativeInterface.setReport(
+                getByteAddress(device),
+                BluetoothDevice.ADDRESS_TYPE_PUBLIC,
+                BluetoothDevice.TRANSPORT_AUTO,
+                reportType,
+                report)) {
+            Log.e(TAG, "Error: set report native returns false");
+        }
+    }
+
+    private void handleMessageOnHandshake(Message msg) {
+        BluetoothDevice device = mAdapterService.getDeviceFromByte((byte[]) msg.obj);
+        int status = msg.arg1;
+        broadcastHandshake(device, status);
+    }
+
+    private void handleMessageOnGetReport(Message msg) {
+        BluetoothDevice device = mAdapterService.getDeviceFromByte((byte[]) msg.obj);
+        Bundle data = msg.getData();
+        byte[] report = data.getByteArray(BluetoothHidHost.EXTRA_REPORT);
+        int bufferSize = data.getInt(BluetoothHidHost.EXTRA_REPORT_BUFFER_SIZE);
+        broadcastReport(device, report, bufferSize);
+    }
+
+    private void handleMessageGetReport(Message msg) {
+        BluetoothDevice device = (BluetoothDevice) msg.obj;
+        Bundle data = msg.getData();
+        byte reportType = data.getByte(BluetoothHidHost.EXTRA_REPORT_TYPE);
+        byte reportId = data.getByte(BluetoothHidHost.EXTRA_REPORT_ID);
+        int bufferSize = data.getInt(BluetoothHidHost.EXTRA_REPORT_BUFFER_SIZE);
+        // TODO: b/324094542 Use the preferred transport
+        if (!mNativeInterface.getReport(
+                getByteAddress(device),
+                BluetoothDevice.ADDRESS_TYPE_PUBLIC,
+                BluetoothDevice.TRANSPORT_AUTO,
+                reportType,
+                reportId,
+                bufferSize)) {
+            Log.e(TAG, "Error: get report native returns false");
+        }
+    }
+
+    private void handleMessageSetProtocolMode(Message msg) {
+        BluetoothDevice device = (BluetoothDevice) msg.obj;
+        byte protocolMode = (byte) msg.arg1;
+        Log.d(TAG, "sending set protocol mode(" + protocolMode + ")");
+        // TODO: b/324094542 Use the preferred transport
+        if (!mNativeInterface.setProtocolMode(
+                getByteAddress(device),
+                BluetoothDevice.ADDRESS_TYPE_PUBLIC,
+                BluetoothDevice.TRANSPORT_AUTO,
+                protocolMode)) {
+            Log.e(TAG, "Error: set protocol mode native returns false");
+        }
+    }
+
+    private void handleMessageVirtualUnplug(Message msg) {
+        BluetoothDevice device = (BluetoothDevice) msg.obj;
+        // TODO: b/324094542 Use the preferred transport
+        if (!mNativeInterface.virtualUnPlug(
+                getByteAddress(device),
+                BluetoothDevice.ADDRESS_TYPE_PUBLIC,
+                BluetoothDevice.TRANSPORT_AUTO)) {
+            Log.e(TAG, "Error: virtual unplug native returns false");
+        }
+    }
+
+    private void handleMessageOnGetProtocolMode(Message msg) {
+        BluetoothDevice device = mAdapterService.getDeviceFromByte((byte[]) msg.obj);
+        int protocolMode = msg.arg1;
+        broadcastProtocolMode(device, protocolMode);
+    }
+
+    private void handleMessageGetProtocolMode(Message msg) {
+        BluetoothDevice device = (BluetoothDevice) msg.obj;
+        // TODO: b/324094542 Use the preferred transport
+        if (!mNativeInterface.getProtocolMode(
+                getByteAddress(device),
+                BluetoothDevice.ADDRESS_TYPE_PUBLIC,
+                BluetoothDevice.TRANSPORT_AUTO)) {
+            Log.e(TAG, "Error: get protocol mode native returns false");
+        }
+    }
+
+    private void handleMessageConnectStateChanged(Message msg) {
+        BluetoothDevice device = mAdapterService.getDeviceFromByte((byte[]) msg.obj);
+        int state = msg.arg1;
+        Integer prevStateInteger = mInputDevices.get(device);
+        int prevState =
+                (prevStateInteger == null) ? BluetoothProfile.STATE_DISCONNECTED : prevStateInteger;
+        if (DBG) {
+            Log.d(
+                    TAG,
+                    "MESSAGE_CONNECT_STATE_CHANGED"
+                            + (" newState=" + state)
+                            + (" prevState=" + prevState));
+        }
+        if (state == STATE_ACCEPTING) {
+            // TODO: b/324094542 save the preferred transport
+            state = BluetoothProfile.STATE_DISCONNECTED;
+        }
+        if (state == BluetoothProfile.STATE_CONNECTED
+                && prevState == BluetoothProfile.STATE_DISCONNECTED
+                && (!okToConnect(device))) {
+            if (DBG) {
+                Log.d(TAG, "Incoming HID connection rejected");
+            }
+            // TODO: b/324094542 Use the preferred transport
+            mNativeInterface.virtualUnPlug(
+                    getByteAddress(device),
+                    BluetoothDevice.ADDRESS_TYPE_PUBLIC,
+                    BluetoothDevice.TRANSPORT_AUTO);
+        } else {
+            broadcastConnectionState(device, state);
+        }
+        if (state == BluetoothProfile.STATE_CONNECTED
+                && (mTargetDevice != null && mTargetDevice.equals(device))) {
+            mTargetDevice = null;
+            // local device originated connection to hid device, move out
+            // of quiet mode
+            AdapterService adapterService = AdapterService.getAdapterService();
+            adapterService.enable(false);
+        }
+    }
+
+    private void handleMessageDisconnect(Message msg) {
+        BluetoothDevice device = (BluetoothDevice) msg.obj;
+        boolean reconnectAllowed = false;
+        if (getConnectionPolicy(device) == BluetoothProfile.CONNECTION_POLICY_ALLOWED) {
+            reconnectAllowed = true;
+        }
+        // TODO: b/324094542 Use the preferred transport
+        if (!mNativeInterface.disconnectHid(
+                getByteAddress(device),
+                BluetoothDevice.ADDRESS_TYPE_PUBLIC,
+                BluetoothDevice.TRANSPORT_AUTO,
+                reconnectAllowed)) {
+            broadcastConnectionState(device, BluetoothProfile.STATE_DISCONNECTING);
+            broadcastConnectionState(device, BluetoothProfile.STATE_DISCONNECTED);
+        }
+    }
+
+    private void handleMessageConnect(Message msg) {
+        BluetoothDevice device = (BluetoothDevice) msg.obj;
+        // TODO: b/324094542 Use the preferred transport
+        if (!mNativeInterface.connectHid(
+                getByteAddress(device),
+                BluetoothDevice.ADDRESS_TYPE_PUBLIC,
+                BluetoothDevice.TRANSPORT_AUTO)) {
+            broadcastConnectionState(device, BluetoothProfile.STATE_DISCONNECTING);
+            broadcastConnectionState(device, BluetoothProfile.STATE_DISCONNECTED);
+            return;
+        }
+        mTargetDevice = device;
+    }
 
     /**
      * Handlers for incoming service calls
