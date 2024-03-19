@@ -70,9 +70,13 @@
 #include "common/metrics.h"
 #include "device/include/controller.h"
 #include "device/include/interop.h"
+#include "hci/controller_interface.h"
+#include "hci/le_rand_callback.h"
 #include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/stack_config.h"
+#include "main/shim/entry.h"
+#include "main/shim/helpers.h"
 #include "main/shim/le_advertising_manager.h"
 #include "main_thread.h"
 #include "os/log.h"
@@ -84,6 +88,7 @@
 #include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/acl_api_types.h"
+#include "stack/include/bt_dev_class.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
@@ -4243,7 +4248,7 @@ void btif_dm_clear_filter_accept_list() { BTA_DmClearFilterAcceptList(); }
 
 void btif_dm_disconnect_all_acls() { BTA_DmDisconnectAllAcls(); }
 
-void btif_dm_le_rand(LeRandCallback callback) {
+void btif_dm_le_rand(bluetooth::hci::LeRandCallback callback) {
   BTA_DmLeRand(std::move(callback));
 }
 

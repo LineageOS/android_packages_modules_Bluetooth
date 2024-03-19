@@ -15,13 +15,13 @@
  */
 #pragma once
 
-#include "common/callback.h"
+#include "common/contextual_callback.h"
 
 // Define new enums or parsers for existing enums
 namespace bluetooth {
 namespace hci {
 
-using LeRandCallback = common::OnceCallback<void(uint64_t)>;
+using LeRandCallback = common::ContextualOnceCallback<void(uint64_t)>;
 
 }  // namespace hci
 }  // namespace bluetooth
