@@ -18,6 +18,7 @@
 
 #include "crypto_toolbox/crypto_toolbox.h"
 
+#include <bluetooth/log.h>
 #include <gtest/gtest.h>
 
 #include <vector>
@@ -46,9 +47,9 @@ TEST(CryptoToolboxTest, bt_spec_test_d_1_test) {
   EXPECT_TRUE(memcmp(output, aes_cmac_k_m, kOctet16Length) == 0);
 
   // useful for debugging
-  // LOG(INFO) << "k " << base::HexEncode(k, OCTET16_LEN);
-  // LOG(INFO) << "m " << base::HexEncode(m, sizeof(m));
-  // LOG(INFO) << "output " << base::HexEncode(output, OCTET16_LEN);
+  // log::info("k {}", base::HexEncode(k, OCTET16_LEN));
+  // log::info("m {}", base::HexEncode(m, sizeof(m)));
+  // log::info("output {}", base::HexEncode(output, OCTET16_LEN));
 }
 
 // BT Spec 5.0 | Vol 3, Part H D.1.1
@@ -66,9 +67,8 @@ TEST(CryptoToolboxTest, bt_spec_example_d_1_1_test) {
   EXPECT_EQ(output, aes_cmac_k_m);
 
   // useful for debugging
-  // LOG(INFO) << "k " << base::HexEncode(k.data(), k.size());
-  // LOG(INFO) << "aes_cmac(k,nullptr) "
-  //           << base::HexEncode(output.data(), output.size());
+  // log::info("k {}", base::HexEncode(k.data(), k.size()));
+  // log::info("aes_cmac(k,nullptr) {}", base::HexEncode(output.data(), output.size()));
 }
 
 // BT Spec 5.0 | Vol 3, Part H D.1.2
@@ -89,10 +89,9 @@ TEST(CryptoToolboxTest, bt_spec_example_d_1_2_test) {
   EXPECT_EQ(output, aes_cmac_k_m);
 
   // useful for debugging
-  // LOG(INFO) << "k " << base::HexEncode(k.data(), k.size());
-  // LOG(INFO) << "m " << base::HexEncode(m, sizeof(m));
-  // LOG(INFO) << "aes_cmac(k,m) "
-  //           << base::HexEncode(output.data(), output.size());
+  // log::info("k {}", base::HexEncode(k.data(), k.size()));
+  // log::info("m {}", base::HexEncode(m, sizeof(m)));
+  // log::info("aes_cmac(k,m) {}", base::HexEncode(output.data(), output.size()));
 }
 
 // BT Spec 5.0 | Vol 3, Part H D.1.3

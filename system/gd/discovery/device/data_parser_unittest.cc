@@ -16,6 +16,8 @@
 
 #include "discovery/device/data_parser.h"
 
+#include <bluetooth/log.h>
+
 #include <algorithm>
 
 #include "gtest/gtest.h"
@@ -261,7 +263,7 @@ TEST(DataParserTest, random) {
     DataParser data_parser(data);
 
     if (((i + 1) % 100) == 0) {
-      LOG_INFO("loop %d", i);
+      bluetooth::log::info("loop {}", i);
     }
   }
 }

@@ -16,6 +16,7 @@
 
 #include "crypto_toolbox.h"
 
+#include <bluetooth/log.h>
 #include <endian.h>
 
 #include <algorithm>
@@ -40,10 +41,10 @@ Octet16 f4(const uint8_t* u, const uint8_t* v, const Octet16& x, uint8_t z) {
   constexpr size_t msg_len =
       kOctet32Length /* U size */ + kOctet32Length /* V size */ + 1 /* Z size */;
 
-  // VLOG(1) << "U=" << HexEncode(u, kOctet32Length)
-  //          << ", V=" << HexEncode(v, kOctet32Length)
-  //          << ", X=" << HexEncode(x.data(), x.size()) << ", Z=" << std::hex
-  //          << +z;
+#if 0
+  log::verbose("U={}, V={}, X={}, Z={:x}", HexEncode(u, kOctet32Length),
+               HexEncode(v, kOctet32Length), HexEncode(x.data(), x.size()), z);
+#endif
 
   std::array<uint8_t, msg_len> msg;
   auto it = msg.begin();
@@ -88,15 +89,18 @@ void f5(
     uint8_t* a2,
     Octet16* mac_key,
     Octet16* ltk) {
-  // VLOG(1) << __func__ << "W=" << HexEncode(w, kOctet32Length) << ", N1=" <<
-  // HexEncode(n1.data(), n1.size())
-  //          << ", N2=" << HexEncode(n2.data(), n2.size()) << ", A1=" << HexEncode(a1, 7) << ",
-  //          A2=" << HexEncode(a2, 7);
+#if 0
+ log::verbose("W={}, N1={}, N2={}, A1={}, A2={}", HexEncode(w, kOctet32Length),
+              HexEncode(n1.data(), n1.size()), HexEncode(n2.data(), n2.size()),
+              HexEncode(a1, 7), HexEncode(a2, 7));
+#endif
 
   const Octet16 salt{0xBE, 0x83, 0x60, 0x5A, 0xDB, 0x0B, 0x37, 0x60, 0x38, 0xA5, 0xF5, 0xAA, 0x91, 0x83, 0x88, 0x6C};
   Octet16 t = aes_cmac(salt, w, kOctet32Length);
 
-  // VLOG(1) << "T=" << HexEncode(t.data(), t.size());
+#if 0
+  log::verbose("T={}", HexEncode(t.data(), t.size()));
+#endif
 
   uint8_t key_id[4] = {0x65, 0x6c, 0x74, 0x62}; /* 0x62746c65 */
   uint8_t length[2] = {0x00, 0x01};             /* 0x0100 */
@@ -105,8 +109,10 @@ void f5(
 
   *ltk = calculate_mac_key_or_ltk(t, 1, key_id, n1, n2, a1, a2, length);
 
-  // VLOG(1) << "mac_key=" << HexEncode(mac_key->data(), mac_key->size());
-  // VLOG(1) << "ltk=" << HexEncode(ltk->data(), ltk->size());
+#if 0
+  log::verbose("mac_key={}", HexEncode(mac_key->data(), mac_key->size()));
+  log::verbose("ltk={}", HexEncode(ltk->data(), ltk->size()));
+#endif
 }
 
 Octet16
@@ -114,13 +120,12 @@ f6(const Octet16& w, const Octet16& n1, const Octet16& n2, const Octet16& r, uin
   const uint8_t msg_len = kOctet16Length /* N1 size */ + kOctet16Length /* N2 size */ +
                           kOctet16Length /* R size */ + 3 /* IOcap size */ + 7 /* A1 size*/ +
                           7 /* A2 size*/;
-
-  // VLOG(1) << __func__ << "W=" << HexEncode(w.data(), w.size()) << ", N1=" <<
-  // HexEncode(n1.data(), n1.size())
-  //          << ", N2=" << HexEncode(n2.data(), n2.size()) << ", R=" << HexEncode(r.data(),
-  //          r.size())
-  //          << ", IOcap=" << HexEncode(iocap, 3) << ", A1=" << HexEncode(a1, 7) << ", A2=" <<
-  //          HexEncode(a2, 7);
+#if 0
+  log::verbose("W={}, N1={}, N2={}, R={}, IOcap={}, A1={}, A2={}",
+               HexEncode(w.data(), w.size()), HexEncode(n1.data(), n1.size()),
+               HexEncode(n2.data(), n2.size()), HexEncode(r.data(), r.size()),
+               HexEncode(iocap, 3), HexEncode(a1, 7), HexEncode(a2, 7));
+#endif
 
   std::array<uint8_t, msg_len> msg;
   auto it = msg.begin();
@@ -137,10 +142,11 @@ f6(const Octet16& w, const Octet16& n1, const Octet16& n2, const Octet16& r, uin
 uint32_t g2(const uint8_t* u, const uint8_t* v, const Octet16& x, const Octet16& y) {
   constexpr size_t msg_len = kOctet32Length /* U size */ + kOctet32Length /* V size */
                              + kOctet16Length /* Y size */;
-
-  // VLOG(1) << __func__ << "U=" << HexEncode(u, kOctet32Length) << ", V=" << HexEncode(v,
-  // kOctet32Length)
-  //          << ", X=" << HexEncode(x.data(), x.size()) << ", Y=" << HexEncode(y.data(), y.size());
+#if 0
+  log::verbose("U={}, V={}, X={}, Y={}", HexEncode(u, kOctet32Length),
+               HexEncode(v, kOctet32Length), HexEncode(x.data(), x.size()),
+               HexEncode(y.data(), y.size()));
+#endif
 
   std::array<uint8_t, msg_len> msg;
   auto it = msg.begin();
