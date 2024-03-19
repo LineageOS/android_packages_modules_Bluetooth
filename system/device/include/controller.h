@@ -26,8 +26,6 @@
 #include "btcore/include/version.h"
 #include "types/raw_address.h"
 
-using LeRandCallback = base::OnceCallback<void(uint64_t)>;
-
 typedef struct controller_t {
   bool (*get_is_ready)(void);
 
@@ -51,7 +49,6 @@ typedef struct controller_t {
   uint8_t (*get_le_all_initiating_phys)(void);
   uint8_t (*clear_event_filter)(void);
   uint8_t (*clear_event_mask)(void);
-  uint8_t (*le_rand)(LeRandCallback);
   uint8_t (*set_event_filter_connection_setup_all_devices)(void);
   uint8_t (*set_event_filter_allow_device_connection)(
       std::vector<RawAddress> devices);

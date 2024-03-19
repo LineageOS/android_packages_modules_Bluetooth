@@ -32,6 +32,7 @@
 
 #include "bta/include/bta_api.h"
 #include "bta/include/bta_sec_api.h"
+#include "hci/le_rand_callback.h"
 #include "stack/include/bt_device_type.h"
 #include "stack/include/bt_octets.h"
 #include "types/ble_address_with_type.h"
@@ -399,11 +400,12 @@ struct BTA_DmGetConnectionState {
 extern struct BTA_DmGetConnectionState BTA_DmGetConnectionState;
 
 // Name: BTA_DmLeRand
-// Params: LeRandCallback cb
+// Params: bluetooth::hci::LeRandCallback cb
 // Return: void
 struct BTA_DmLeRand {
-  std::function<void(LeRandCallback cb)> body{[](LeRandCallback /* cb */) {}};
-  void operator()(LeRandCallback cb) { body(std::move(cb)); };
+  std::function<void(bluetooth::hci::LeRandCallback cb)> body{
+      [](bluetooth::hci::LeRandCallback /* cb */) {}};
+  void operator()(bluetooth::hci::LeRandCallback cb) { body(std::move(cb)); };
 };
 extern struct BTA_DmLeRand BTA_DmLeRand;
 
