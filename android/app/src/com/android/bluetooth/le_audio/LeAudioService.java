@@ -2480,8 +2480,9 @@ public class LeAudioService extends ProfileService {
                     Log.i(TAG, "updateInbandRingtoneForTheGroup, setting inband ringtone to: "
                                 + groupDescriptor.mInbandRingtoneEnabled + " for " + device
                                 + " " + deviceDescriptor.mDevInbandRingtoneEnabled);
-                    if (groupDescriptor.mInbandRingtoneEnabled
-                                    == deviceDescriptor.mDevInbandRingtoneEnabled) {
+                    if (Objects.equals(
+                            groupDescriptor.mInbandRingtoneEnabled,
+                            deviceDescriptor.mDevInbandRingtoneEnabled)) {
                         if (DBG) {
                             Log.d(TAG, "Device " + device + " has already set inband ringtone to "
                                             + groupDescriptor.mInbandRingtoneEnabled);
@@ -5054,7 +5055,7 @@ public class LeAudioService extends ProfileService {
                 for (Map.Entry<BluetoothDevice, LeAudioDeviceDescriptor> deviceEntry
                         : mDeviceDescriptors.entrySet()) {
                     LeAudioDeviceDescriptor deviceDescriptor = deviceEntry.getValue();
-                    if (deviceDescriptor.mGroupId != groupId) {
+                    if (!Objects.equals(deviceDescriptor.mGroupId, groupId)) {
                         if (deviceDescriptor.mGroupId == LE_AUDIO_GROUP_ID_INVALID) {
                             numberOfUngroupedDevs++;
                         }
