@@ -252,3 +252,103 @@ cc_test {
     header_libs: ["libbluetooth_headers"],
     cflags: ["-Wno-unused-parameter"],
 }
+
+cc_test {
+    name: "net_test_main_dumpsys",
+    test_suites: ["general-tests"],
+    host_supported: true,
+    test_options: {
+        unit_test: true,
+    },
+    defaults: [
+        "fluoride_defaults",
+        "mts_defaults",
+    ],
+    include_dirs: [
+        "packages/modules/Bluetooth/system",
+        "packages/modules/Bluetooth/system/gd",
+        "packages/modules/Bluetooth/system/stack/btm",
+        "packages/modules/Bluetooth/system/stack/include",
+    ],
+    generated_headers: [
+        "BluetoothGeneratedBundlerSchema_h_bfbs",
+        "BluetoothGeneratedDumpsysDataSchema_h",
+    ],
+    srcs: [
+        ":BluetoothOsSources_host",
+        ":BluetoothStackManagerSources",
+        ":LibBluetoothShimSources",
+        ":TestCommonMainHandler",
+        ":TestCommonMockFunctions",
+        ":TestMockBta",
+        ":TestMockBtif",
+        ":TestMockBtu",
+        ":TestMockJni",
+        ":TestMockLegacyHciCommands",
+        ":TestMockLegacyHciInterface",
+        ":TestMockStack",
+        "test/main_shim_stack_dumpsys_test.cc",
+    ],
+    static_libs: [
+        "libbase",
+        "libbluetooth-dumpsys",
+        "libbluetooth-gdx",
+        "libbluetooth-types",
+        "libbluetooth_crypto_toolbox",
+        "libbluetooth_gd",
+        "libbluetooth_hci_pdl",
+        "libbluetooth_log",
+        "libbt-common",
+        "libbt-platform-protos-lite",
+        "libbt_shim_bridge",
+        "libbt_shim_ffi",
+        "libbtdevice",
+        "libchrome",
+        "libcom.android.sysprop.bluetooth.wrapped",
+        "libevent",
+        "libflatbuffers-cpp",
+        "libgmock",
+        "liblog",
+        "libosi",
+    ],
+    shared_libs: [
+        "libPlatformProperties",
+        "libcrypto",
+        "server_configurable_flags",
+    ],
+    target: {
+        linux: {
+            srcs: [
+                ":BluetoothOsSources_fake_timer",
+            ],
+        },
+        android: {
+            static_libs: [
+                "android.hardware.bluetooth@1.0",
+                "android.hardware.bluetooth@1.1",
+                "android.system.suspend-V1-ndk",
+                "android.system.suspend.control-V1-ndk",
+                "libstatslog_bt",
+            ],
+            shared_libs: [
+                "libbinder_ndk",
+                "libcutils",
+                "libhidlbase",
+                "libstatssocket",
+                "libutils",
+            ],
+        },
+    },
+    sanitize: {
+        address: true,
+        all_undefined: true,
+        cfi: true,
+        integer_overflow: true,
+        scs: true,
+        diag: {
+            undefined: true,
+        },
+    },
+    min_sdk_version: "Tiramisu",
+    header_libs: ["libbluetooth_headers"],
+}
