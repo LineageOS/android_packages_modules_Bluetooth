@@ -895,7 +895,8 @@ class BtPropertyMultiAllocationTest : public testing::Test {
   void TearDown() override {}
 
   std::vector<std::future<std::vector<std::shared_ptr<BtProperty>>>> future_vector;
-  bt_property_t bt_properties[kNumberTestedProperties][kNumThreads] = {};
+
+  bt_property_t bt_properties[kNumThreads][kNumberTestedProperties] = {};
 
   std::vector<std::shared_ptr<BtProperty>> properties;
 };
@@ -904,7 +905,7 @@ TEST_F(BtPropertyMultiAllocationTest, async_data_multi) {
   for (size_t i = 0; i < kNumThreads; i++) {
     future_vector.push_back(std::async(std::launch::async, [i]() {
       std::vector<std::shared_ptr<BtProperty>> properties;
-      properties.push_back(RemoteDeviceTimestamp::Create((uint32_t)i));
+      properties.emplace_back(RemoteDeviceTimestamp::Create((uint32_t)i));
       return properties;
     }));
   }
