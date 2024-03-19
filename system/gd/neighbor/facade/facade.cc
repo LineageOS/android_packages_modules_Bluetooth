@@ -16,6 +16,8 @@
 
 #include "neighbor/facade/facade.h"
 
+#include <bluetooth/log.h>
+
 #include <memory>
 
 #include "blueberry/facade/neighbor/facade.grpc.pb.h"
@@ -78,7 +80,7 @@ class NeighborFacadeService : public NeighborFacade::Service {
         discoverability_module_->StartGeneralDiscoverability();
         break;
       default:
-        LOG_ALWAYS_FATAL("Unknown discoverability mode %d", static_cast<int>(request->mode()));
+        log::fatal("Unknown discoverability mode {}", static_cast<int>(request->mode()));
     }
     return ::grpc::Status::OK;
   }
@@ -99,7 +101,7 @@ class NeighborFacadeService : public NeighborFacade::Service {
         inquiry_module_->SetExtendedInquiryResultMode();
         break;
       default:
-        LOG_ALWAYS_FATAL("Unknown result mode %d", static_cast<int>(request->result_mode()));
+        log::fatal("Unknown result mode {}", static_cast<int>(request->result_mode()));
     }
     switch (request->inquiry_mode()) {
       case DiscoverabilityMode::OFF:
@@ -112,7 +114,7 @@ class NeighborFacadeService : public NeighborFacade::Service {
         inquiry_module_->StartGeneralInquiry(request->length_1_28s(), request->max_results());
         break;
       default:
-        LOG_ALWAYS_FATAL("Unknown discoverability mode %d", static_cast<int>(request->inquiry_mode()));
+        log::fatal("Unknown discoverability mode {}", static_cast<int>(request->inquiry_mode()));
     }
     return pending_events_.RunLoop(context, writer);
   }
@@ -135,7 +137,10 @@ class NeighborFacadeService : public NeighborFacade::Service {
         mode = hci::PageScanRepetitionMode::R2;
         break;
       default:
-        LOG_ALWAYS_FATAL("Unknown PageScanRepetition mode %d", static_cast<int>(request->page_scan_repetition_mode()));
+        log::fatal(
+            "Unknown PageScanRepetition mode {}",
+            static_cast<int>(request->page_scan_repetition_mode()));
+        std::abort();
     }
     name_module_->StartRemoteNameRequest(
         remote,

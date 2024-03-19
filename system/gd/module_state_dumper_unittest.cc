@@ -20,6 +20,7 @@
 #include <base/functional/bind.h>
 #include <base/location.h>
 #include <base/threading/platform_thread.h>
+#include <bluetooth/log.h>
 #include <sys/syscall.h>
 
 #include <sstream>
@@ -67,21 +68,21 @@ const bluetooth::ModuleFactory StateDumperTestModule::Factory =
 
 DumpsysDataFinisher StateDumperTestModule::GetDumpsysData(
     flatbuffers::FlatBufferBuilder* /* builder */) const {
-  LOG_INFO("flatbuffers");
+  log::info("flatbuffers");
   return EmptyDumpsysDataFinisher;
 }
 
 void StateDumperTestModule::GetDumpsysData() const {
-  LOG_INFO("void");
+  log::info("void");
 }
 
 void StateDumperTestModule::GetDumpsysData(int fd) const {
-  LOG_INFO("fd");
+  log::info("fd");
   dprintf(fd, "GetDumpsysData(int fd)");
 }
 
 void StateDumperTestModule::GetDumpsysData(std::ostringstream& oss) const {
-  LOG_INFO("oss");
+  log::info("oss");
   oss << "GetDumpsysData(std::ostringstream& oss)";
 }
 
@@ -171,7 +172,7 @@ TEST_F(ModuleStateDumperWithStackTest, dump_state) {
   std::ostringstream oss;
   dumper.DumpState(&output, oss);
 
-  LOG_INFO("DUMP STATE");
-  LOG_INFO("%s", oss.str().c_str());
-  LOG_INFO("%s", output.c_str());
+  log::info("DUMP STATE");
+  log::info("{}", oss.str());
+  log::info("{}", output);
 }

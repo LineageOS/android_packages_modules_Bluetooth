@@ -17,6 +17,8 @@
 
 #include "neighbor/discoverability.h"
 
+#include <bluetooth/log.h>
+
 #include <memory>
 
 #include "common/bind.h"
@@ -85,7 +87,7 @@ void neighbor::DiscoverabilityModule::impl::OnCommandComplete(hci::CommandComple
       num_supported_iac_ = packet.GetNumSupportIac();
     } break;
     default:
-      LOG_WARN("Unhandled command:%s", hci::OpCodeText(status.GetCommandOpCode()).c_str());
+      log::warn("Unhandled command:{}", hci::OpCodeText(status.GetCommandOpCode()));
       break;
   }
 }
@@ -121,14 +123,14 @@ void neighbor::DiscoverabilityModule::impl::Start() {
 
   hci_layer_->EnqueueCommand(
       hci::ReadNumberOfSupportedIacBuilder::Create(), handler_->BindOnceOn(this, &impl::OnCommandComplete));
-  LOG_INFO("Started discoverability module");
+  log::info("Started discoverability module");
 }
 
 void neighbor::DiscoverabilityModule::impl::Dump() const {
-  LOG_INFO("Number of supported iacs:%hhd", num_supported_iac_);
-  LOG_INFO("Number of current iacs:%zd", laps_.size());
+  log::info("Number of supported iacs:{}", num_supported_iac_);
+  log::info("Number of current iacs:{}", laps_.size());
   for (auto it : laps_) {
-    LOG_INFO("  discoverability lap:%x", it.lap_);
+    log::info("discoverability lap:{:x}", it.lap_);
   }
 }
 

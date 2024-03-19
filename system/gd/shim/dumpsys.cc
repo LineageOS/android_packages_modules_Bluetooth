@@ -18,6 +18,7 @@
 #include "dumpsys/dumpsys.h"
 
 #include <android_bluetooth_flags.h>
+#include <bluetooth/log.h>
 #include <unistd.h>
 
 #include <future>
@@ -96,7 +97,7 @@ std::string Dumpsys::impl::PrintAsJson(std::string* dumpsys_data) const {
   if (root_name.empty()) {
     char buf[255];
     snprintf(buf, sizeof(buf), "ERROR: Unable to find root name in prebundled reflection schema\n");
-    LOG_WARN("%s", buf);
+    log::warn("{}", buf);
     return std::string(buf);
   }
 
@@ -104,7 +105,7 @@ std::string Dumpsys::impl::PrintAsJson(std::string* dumpsys_data) const {
   if (schema == nullptr) {
     char buf[255];
     snprintf(buf, sizeof(buf), "ERROR: Unable to find schema root name:%s\n", root_name.c_str());
-    LOG_WARN("%s", buf);
+    log::warn("{}", buf);
     return std::string(buf);
   }
 
@@ -114,7 +115,7 @@ std::string Dumpsys::impl::PrintAsJson(std::string* dumpsys_data) const {
   if (!parser.Deserialize(schema)) {
     char buf[255];
     snprintf(buf, sizeof(buf), "ERROR: Unable to deserialize bundle root name:%s\n", root_name.c_str());
-    LOG_WARN("%s", buf);
+    log::warn("{}", buf);
     return std::string(buf);
   }
 
@@ -129,7 +130,7 @@ std::string Dumpsys::impl::PrintAsJson(std::string* dumpsys_data) const {
 #else
   const char* error = flatbuffers::GenText(parser, dumpsys_data->data(), &jsongen);
   if (error != nullptr) {
-    LOG_WARN("%s", error);
+    log::warn("{}", error);
   }
 #endif
   return jsongen;

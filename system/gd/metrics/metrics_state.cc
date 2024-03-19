@@ -16,6 +16,7 @@
 
 #include "metrics_state.h"
 
+#include <bluetooth/log.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/hci/enums.pb.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/le/enums.pb.h>
 
@@ -74,7 +75,7 @@ void LEConnectionMetricState::AddStateChangedEvent(
       if (connection_type_cid != -1) {
         LeConnectionType connection_type = GetLeConnectionTypeFromCID(connection_type_cid);
         if (connection_type != LeConnectionType::CONNECTION_TYPE_UNSPECIFIED) {
-          LOG_INFO("LEConnectionMetricsRemoteDevice: Populating the connection type\n");
+          log::info("LEConnectionMetricsRemoteDevice: Populating the connection type");
           input_connection_type = connection_type;
         }
       }
@@ -150,8 +151,8 @@ void LEConnectionMetricsRemoteDevice::UploadLEConnectionSession(const hci::Addre
     session_options.acl_latency = session_options.latency;
     session_options.is_cancelled = it->second->is_cancelled;
     metrics_logger_module->LogMetricBluetoothLESession(session_options);
-    LOG_INFO(
-        "LEConnectionMetricsRemoteDevice: The session is uploaded for %s\n",
+    log::info(
+        "LEConnectionMetricsRemoteDevice: The session is uploaded for {}",
         ADDRESS_TO_LOGGABLE_CSTR(address));
     opened_devices.erase(it);
   }
@@ -164,23 +165,23 @@ void LEConnectionMetricsRemoteDevice::AddStateChangedEvent(
     LeConnectionType connection_type,
     LeConnectionState transaction_state,
     std::vector<std::pair<os::ArgumentType, int>> argument_list) {
-  LOG_INFO(
-        "LEConnectionMetricsRemoteDevice: Transaction State %s, Connection Type %s, Origin Type %s\n",
-        common::ToHexString(transaction_state).c_str(),
-        common::ToHexString(connection_type).c_str(),
-        common::ToHexString(origin_type).c_str());
+  log::info(
+      "LEConnectionMetricsRemoteDevice: Transaction State {}, Connection Type {}, Origin Type {}",
+      common::ToHexString(transaction_state),
+      common::ToHexString(connection_type),
+      common::ToHexString(origin_type));
 
   std::unique_lock<std::mutex> lock(le_connection_metrics_remote_device_guard);
   if (address.IsEmpty()) {
-    LOG_INFO(
-        "LEConnectionMetricsRemoteDevice: Empty Address Cancellation %s, %s, %s\n",
-        common::ToHexString(transaction_state).c_str(),
-        common::ToHexString(connection_type).c_str(),
-        common::ToHexString(transaction_state).c_str());
+    log::info(
+        "LEConnectionMetricsRemoteDevice: Empty Address Cancellation {}, {}, {}",
+        common::ToHexString(transaction_state),
+        common::ToHexString(connection_type),
+        common::ToHexString(transaction_state));
     for (auto& device_metric : device_metrics) {
       if (device_metric->IsStarted() &&
           transaction_state == LeConnectionState::STATE_LE_ACL_CANCEL) {
-        LOG_INFO("LEConnectionMetricsRemoteDevice: Cancellation Begin");
+        log::info("LEConnectionMetricsRemoteDevice: Cancellation Begin");
         // cancel the connection
         device_metric->AddStateChangedEvent(
             origin_type, connection_type, transaction_state, argument_list);

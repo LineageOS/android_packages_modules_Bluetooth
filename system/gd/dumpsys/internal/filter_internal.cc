@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
+#include "dumpsys/internal/filter_internal.h"
+
+#include <bluetooth/log.h>
+
 #include <algorithm>
 #include <string>
 
-#include "dumpsys/internal/filter_internal.h"
 #include "flatbuffers/flatbuffers.h"
 #include "flatbuffers/idl.h"
 #include "os/log.h"
@@ -154,8 +157,8 @@ bool internal::FilterTypeInteger(
   }
 
   if (DBG) {
-    LOG_INFO(
-        "Integer Field_name:%s privacy_level:%s old_value:%d / 0x%x ==> new_value:%d\n",
+    log::info(
+        "Integer Field_name:{} privacy_level:{} old_value:{} / 0x{:x} ==> new_value:{}",
         field.name()->c_str(),
         PrivacyLevelName(privacy_level),
         val,
@@ -190,8 +193,8 @@ bool internal::FilterTypeFloat(const reflection::Field& field, flatbuffers::Tabl
       break;
   }
   if (DBG) {
-    LOG_INFO(
-        "Float Field_name:%s privacy_level:%s old_value:%f ==> new_value:%f",
+    log::info(
+        "Float Field_name:{} privacy_level:{} old_value:{:f} ==> new_value:{:f}",
         field.name()->c_str(),
         PrivacyLevelName(privacy_level),
         val,
@@ -257,13 +260,12 @@ bool internal::FilterTypeString(const reflection::Field& field, flatbuffers::Tab
       break;
   }
   if (DBG) {
-    LOG_INFO(
-        "%s Field_name:%s size:%u privacy_level:%s old_string:%s ==> new_string:%s",
-        __func__,
+    log::info(
+        "Field_name:{} size:{} privacy_level:{} old_string:{} ==> new_string:{}",
         field.name()->c_str(),
         string->size(),
         PrivacyLevelName(privacy_level),
-        old_string.c_str(),
+        old_string,
         string->c_str());
   }
   return kFieldHasBeenFiltered;
@@ -279,8 +281,10 @@ bool internal::FilterTypeStruct(const reflection::Field& field, flatbuffers::Tab
     flatbuffers::SetFieldT(table, field, nullptr);
     internal::ScrubFromTable(table, field_offset);
     if (DBG) {
-      LOG_INFO(
-          " Table Removing field name:%s privacy_level:%s", field.name()->c_str(), PrivacyLevelName(privacy_level));
+      log::info(
+          "Table Removing field name:{} privacy_level:{}",
+          field.name()->c_str(),
+          PrivacyLevelName(privacy_level));
     }
   }
   return kFieldContinueFiltering;
