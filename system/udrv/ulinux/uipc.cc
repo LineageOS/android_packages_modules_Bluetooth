@@ -579,7 +579,7 @@ void UIPC_Close(tUIPC_STATE& uipc, tUIPC_CH_ID ch_id) {
 bool UIPC_Send(tUIPC_STATE& uipc, tUIPC_CH_ID ch_id,
                UNUSED_ATTR uint16_t msg_evt, const uint8_t* p_buf,
                uint16_t msglen) {
-  LOG_DEBUG("UIPC_Send : ch_id:%d %d bytes", ch_id, msglen);
+  LOG_VERBOSE("UIPC_Send : ch_id:%d %d bytes", ch_id, msglen);
 
   std::lock_guard<std::recursive_mutex> lock(uipc.mutex);
 
