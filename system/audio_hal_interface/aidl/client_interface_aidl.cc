@@ -24,6 +24,7 @@
 #include <thread>
 #include <vector>
 
+#include "bta/ag/bta_ag_int.h"
 #include "include/check.h"
 
 namespace bluetooth {
@@ -287,7 +288,7 @@ bool BluetoothAudioClientInterface::UpdateAudioConfig(
            SessionType::LE_AUDIO_SOFTWARE_DECODING_DATAPATH ||
        transport_->GetSessionType() ==
            SessionType::LE_AUDIO_BROADCAST_SOFTWARE_ENCODING_DATAPATH ||
-       (IS_FLAG_ENABLED(is_sco_managed_by_audio) &&
+       (bta_ag_is_sco_managed_by_audio() &&
         (transport_->GetSessionType() ==
              SessionType::HFP_SOFTWARE_ENCODING_DATAPATH ||
          transport_->GetSessionType() ==
@@ -318,7 +319,7 @@ bool BluetoothAudioClientInterface::UpdateAudioConfig(
       (is_leaudio_broadcast_offload_session &&
        audio_config_tag == AudioConfiguration::leAudioBroadcastConfig);
   bool is_hfp_offload_audio_config =
-      (IS_FLAG_ENABLED(is_sco_managed_by_audio) &&
+      (bta_ag_is_sco_managed_by_audio() &&
        transport_->GetSessionType() ==
            SessionType::HFP_HARDWARE_OFFLOAD_DATAPATH &&
        audio_config_tag == AudioConfiguration::hfpConfig);
@@ -424,7 +425,7 @@ int BluetoothAudioClientInterface::StartSession() {
              transport_->GetSessionType() ==
                  SessionType::
                      LE_AUDIO_BROADCAST_HARDWARE_OFFLOAD_ENCODING_DATAPATH ||
-             (IS_FLAG_ENABLED(is_sco_managed_by_audio) &&
+             (bta_ag_is_sco_managed_by_audio() &&
               transport_->GetSessionType() ==
                   SessionType::HFP_HARDWARE_OFFLOAD_DATAPATH)) {
     transport_->ResetPresentationPosition();
@@ -518,7 +519,7 @@ void BluetoothAudioClientInterface::FlushAudioData() {
           SessionType::LE_AUDIO_HARDWARE_OFFLOAD_DECODING_DATAPATH ||
       transport_->GetSessionType() ==
           SessionType::LE_AUDIO_BROADCAST_HARDWARE_OFFLOAD_ENCODING_DATAPATH ||
-      (IS_FLAG_ENABLED(is_sco_managed_by_audio) &&
+      (bta_ag_is_sco_managed_by_audio() &&
        transport_->GetSessionType() ==
            SessionType::HFP_HARDWARE_OFFLOAD_DATAPATH)) {
     return;
