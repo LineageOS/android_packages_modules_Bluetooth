@@ -20,7 +20,6 @@
 #include <stdio.h>
 
 #include "common/init_flags.h"
-#include "common/testing/log_capture.h"
 #include "common/time_util.h"
 #include "osi/include/allocator.h"
 #include "stack/include/a2dp_vendor_ldac_constants.h"
@@ -128,25 +127,27 @@ class A2dpLdacTest : public ::testing::Test {
   A2dpCodecs* a2dp_codecs_;
   tA2DP_ENCODER_INTERFACE* encoder_iface_;
   tA2DP_DECODER_INTERFACE* decoder_iface_;
-  std::unique_ptr<LogCapture> log_capture_;
 };
 
 TEST_F(A2dpLdacTest, a2dp_source_read_underflow) {
-  // log_capture_ = std::make_unique<LogCapture>();
+  static int enqueue_cb_invoked = 0;
+
   auto read_cb = +[](uint8_t* p_buf, uint32_t len) -> uint32_t {
     return 0;
   };
+
   auto enqueue_cb = +[](BT_HDR* p_buf, size_t frames_n, uint32_t len) -> bool {
+    enqueue_cb_invoked += 1;
     return false;
   };
+
   InitializeEncoder(read_cb, enqueue_cb);
   uint64_t timestamp_us = bluetooth::common::time_gettimeofday_us();
   encoder_iface_->send_frames(timestamp_us);
-  usleep(kA2dpTickUs);
-  timestamp_us = bluetooth::common::time_gettimeofday_us();
-  encoder_iface_->send_frames(timestamp_us);
-  // log_capture_->WaitUntilLogContains("a2dp_ldac_encode_frames: underflow");
+  encoder_iface_->send_frames(timestamp_us + kA2dpTickUs);
+
+  ASSERT_EQ(enqueue_cb_invoked, 0);
 }
 
 }  // namespace testing
-}  //namespace bluetooth
+}  // namespace bluetooth
