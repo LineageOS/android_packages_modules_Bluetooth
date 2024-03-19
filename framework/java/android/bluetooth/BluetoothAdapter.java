@@ -812,7 +812,7 @@ public final class BluetoothAdapter {
      */
     @SystemApi
     @FlaggedApi(Flags.FLAG_AUTO_ON_FEATURE)
-    @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
+    @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
     @BroadcastBehavior(registeredOnly = true, protectedBroadcast = true)
     public static final String ACTION_AUTO_ON_STATE_CHANGED =
