@@ -109,8 +109,8 @@ package android.bluetooth {
     field public static final int ACTIVE_DEVICE_PHONE_CALL = 1; // 0x1
     field public static final String AUDIO_MODE_DUPLEX = "audio_mode_duplex";
     field public static final String AUDIO_MODE_OUTPUT_ONLY = "audio_mode_output_only";
-    field @FlaggedApi("com.android.bluetooth.flags.auto_on_feature") public static final int AUTO_ON_STATE_OFF = 1; // 0x1
-    field @FlaggedApi("com.android.bluetooth.flags.auto_on_feature") public static final int AUTO_ON_STATE_ON = 2; // 0x2
+    field @FlaggedApi("com.android.bluetooth.flags.auto_on_feature") public static final int AUTO_ON_STATE_DISABLED = 1; // 0x1
+    field @FlaggedApi("com.android.bluetooth.flags.auto_on_feature") public static final int AUTO_ON_STATE_ENABLED = 2; // 0x2
     field public static final int BT_SNOOP_LOG_MODE_DISABLED = 0; // 0x0
     field public static final int BT_SNOOP_LOG_MODE_FILTERED = 1; // 0x1
     field public static final int BT_SNOOP_LOG_MODE_FULL = 2; // 0x2
