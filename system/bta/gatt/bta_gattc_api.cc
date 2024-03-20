@@ -33,8 +33,6 @@
 #include <vector>
 
 #include "bta/gatt/bta_gattc_int.h"
-#include "device/include/controller.h"
-#include "internal_include/bt_target.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
@@ -136,7 +134,8 @@ void BTA_GATTC_AppDeregister(tGATT_IF client_if) {
  ******************************************************************************/
 void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
                     tBTM_BLE_CONN_TYPE connection_type, bool opportunistic) {
-  uint8_t phy = controller_get_interface()->get_le_all_initiating_phys();
+  constexpr uint8_t kPhyLe1M = 0x01;  // From the old controller shim.
+  uint8_t phy = kPhyLe1M;
   BTA_GATTC_Open(client_if, remote_bda, connection_type, BT_TRANSPORT_LE,
                  opportunistic, phy);
 }

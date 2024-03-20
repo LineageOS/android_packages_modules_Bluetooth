@@ -50,7 +50,10 @@
 #include "common/init_flags.h"
 #include "core_callbacks.h"
 #include "device/include/controller.h"
+#include "hci/controller_interface.h"
 #include "internal_include/bt_target.h"
+#include "main/shim/entry.h"
+#include "main/shim/helpers.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/bt_uuid16.h"
@@ -652,7 +655,8 @@ bt_status_t btif_storage_get_adapter_property(bt_property_t* property) {
       return BT_STATUS_FAIL;
     } else {
       log::info("Controller ready!");
-      *bd_addr = *controller->get_address();
+      *bd_addr = bluetooth::ToRawAddress(
+          bluetooth::shim::GetController()->GetMacAddress());
     }
     property->len = RawAddress::kLength;
     return BT_STATUS_SUCCESS;

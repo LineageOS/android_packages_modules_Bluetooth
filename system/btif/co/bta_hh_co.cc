@@ -33,9 +33,9 @@
 
 #include "bta_hh_api.h"
 #include "btif_hh.h"
-#include "device/include/controller.h"
+#include "hci/controller_interface.h"
 #include "include/check.h"
-#include "os/log.h"
+#include "main/shim/entry.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
 #include "osi/include/osi.h"
@@ -609,10 +609,10 @@ void bta_hh_co_send_hid_info(btif_hh_device_t* p_dev, const char* dev_name,
 
   // Write controller address to phys field to correlate the hid device with a
   // specific bluetooth controller.
-  const controller_t* controller = controller_get_interface();
+  auto controller = bluetooth::shim::GetController();
   // TODO (b/258090765) fix: ToString -> ToColonSepHexString
   snprintf((char*)ev.u.create.phys, sizeof(ev.u.create.phys), "%s",
-           controller->get_address()->ToString().c_str());
+           controller->GetMacAddress().ToString().c_str());
 
   ev.u.create.rd_size = dscp_len;
   ev.u.create.rd_data = p_dscp;
