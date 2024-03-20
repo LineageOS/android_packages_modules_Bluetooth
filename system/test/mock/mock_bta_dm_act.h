@@ -180,18 +180,6 @@ struct bta_dm_add_blekey {
 };
 extern struct bta_dm_add_blekey bta_dm_add_blekey;
 
-// Name: bta_dm_add_device
-// Params: std::unique_ptr<tBTA_DM_API_ADD_DEVICE> msg
-// Return: void
-struct bta_dm_add_device {
-  std::function<void(std::unique_ptr<tBTA_DM_API_ADD_DEVICE> msg)> body{
-      [](std::unique_ptr<tBTA_DM_API_ADD_DEVICE> /* msg */) {}};
-  void operator()(std::unique_ptr<tBTA_DM_API_ADD_DEVICE> msg) {
-    body(std::move(msg));
-  };
-};
-extern struct bta_dm_add_device bta_dm_add_device;
-
 // Name: bta_dm_ble_config_local_privacy
 // Params: bool privacy_enable
 // Return: void

@@ -127,32 +127,6 @@ void bta_dm_remote_key_missing(const RawAddress bd_addr) {
   }
 }
 
-/*******************************************************************************
- *
- * Function         bta_dm_add_device
- *
- * Description      This function adds a Link Key to an security database entry.
- *                  It is normally called during host startup to restore all
- *                  required information stored in the NVRAM.
- ******************************************************************************/
-void bta_dm_add_device(std::unique_ptr<tBTA_DM_API_ADD_DEVICE> msg) {
-  DEV_CLASS dc = kDevClassEmpty;
-  LinkKey* p_lc = NULL;
-
-  /* If not all zeros, the device class has been specified */
-  if (msg->dc_known) dc = msg->dc;
-
-  if (msg->link_key_known) p_lc = &msg->link_key;
-
-  auto add_result = get_btm_client_interface().security.BTM_SecAddDevice(
-      msg->bd_addr, dc, msg->bd_name, nullptr, p_lc, msg->key_type,
-      msg->pin_length);
-  if (!add_result) {
-    log::error("Error adding device:{}",
-               ADDRESS_TO_LOGGABLE_CSTR(msg->bd_addr));
-  }
-}
-
 /** Bonds with peer device */
 void bta_dm_bond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                  tBT_TRANSPORT transport, tBT_DEVICE_TYPE device_type) {

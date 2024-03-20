@@ -77,26 +77,20 @@ static void wipe_secrets_and_remove(tBTM_SEC_DEV_REC* p_dev_rec) {
  *
  * Parameters:      bd_addr          - BD address of the peer
  *                  dev_class        - Device Class
- *                  bd_name          - Name of the peer device. NULL if unknown.
- *                  features         - Remote device's features (up to 3 pages).
- *                                     NULL if not known
  *                  link_key         - Connection link key. NULL if unknown.
  *
- * Returns          true if added OK, else false
+ * Returns          void
  *
  ******************************************************************************/
-bool BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
-                      const BD_NAME& bd_name, uint8_t* features,
-                      LinkKey* p_link_key, uint8_t key_type,
-                      uint8_t pin_length) {
+void BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
+                      LinkKey link_key, uint8_t key_type, uint8_t pin_length) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
   if (!p_dev_rec) {
     p_dev_rec = btm_sec_allocate_dev_rec();
-    log::debug(
-        "Caching new record from config file device:{} link_key_type:{:x} "
-        "name:{}",
-        ADDRESS_TO_LOGGABLE_STR(bd_addr), key_type,
-        reinterpret_cast<const char*>(bd_name));
+    log::info(
+        "Caching new record from config file device: {}, dev_class: 0x{:02x}, "
+        "link_key_type: 0x{:x}",
+        ADDRESS_TO_LOGGABLE_STR(bd_addr), fmt::join(dev_class, ""), key_type);
 
     p_dev_rec->bd_addr = bd_addr;
     p_dev_rec->hci_handle = BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_BR_EDR);
@@ -105,9 +99,10 @@ bool BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
     /* update conn params, use default value for background connection params */
     memset(&p_dev_rec->conn_params, 0xff, sizeof(tBTM_LE_CONN_PRAMS));
   } else {
-    log::debug(
-        "Caching existing record from config file device:{} link_key_type:{:x}",
-        ADDRESS_TO_LOGGABLE_STR(bd_addr), key_type);
+    log::info(
+        "Caching existing record from config file device: {}, dev_class: "
+        "0x{:02x}, link_key_type: 0x{:x}",
+        ADDRESS_TO_LOGGABLE_STR(bd_addr), fmt::join(dev_class, ""), key_type);
 
     /* "Bump" timestamp for existing record */
     p_dev_rec->timestamp = btm_sec_cb.dev_rec_count++;
@@ -125,39 +120,25 @@ bool BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
 
   memset(p_dev_rec->sec_bd_name, 0, sizeof(BD_NAME));
 
-  if (bd_name && bd_name[0]) {
-    log::debug("  Remote name known for device:{} name:{}",
-               ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
-               reinterpret_cast<const char*>(bd_name));
-    p_dev_rec->sec_rec.sec_flags |= BTM_SEC_NAME_KNOWN;
-    bd_name_copy(p_dev_rec->sec_bd_name, bd_name);
+  p_dev_rec->sec_rec.sec_flags |= BTM_SEC_LINK_KEY_KNOWN;
+  p_dev_rec->sec_rec.link_key = link_key;
+  p_dev_rec->sec_rec.link_key_type = key_type;
+  p_dev_rec->sec_rec.pin_code_length = pin_length;
+
+  if (IS_FLAG_ENABLED(correct_bond_type_of_loaded_devices)) {
+    p_dev_rec->sec_rec.bond_type = BOND_TYPE_PERSISTENT;
   }
 
-  if (p_link_key) {
-    log::debug("  Link key known for device:{}",
-               ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
-    p_dev_rec->sec_rec.sec_flags |= BTM_SEC_LINK_KEY_KNOWN;
-    p_dev_rec->sec_rec.link_key = *p_link_key;
-    p_dev_rec->sec_rec.link_key_type = key_type;
-    p_dev_rec->sec_rec.pin_code_length = pin_length;
-
-    if (IS_FLAG_ENABLED(correct_bond_type_of_loaded_devices)) {
-      p_dev_rec->sec_rec.bond_type = BOND_TYPE_PERSISTENT;
-    }
-
-    if (pin_length >= 16 || key_type == BTM_LKEY_TYPE_AUTH_COMB ||
-        key_type == BTM_LKEY_TYPE_AUTH_COMB_P_256) {
-      // Set the flag if the link key was made by using either a 16 digit
-      // pin or MITM.
-      p_dev_rec->sec_rec.sec_flags |=
-          BTM_SEC_16_DIGIT_PIN_AUTHED | BTM_SEC_LINK_KEY_AUTHED;
-    }
+  if (pin_length >= 16 || key_type == BTM_LKEY_TYPE_AUTH_COMB ||
+      key_type == BTM_LKEY_TYPE_AUTH_COMB_P_256) {
+    // Set the flag if the link key was made by using either a 16 digit
+    // pin or MITM.
+    p_dev_rec->sec_rec.sec_flags |=
+        BTM_SEC_16_DIGIT_PIN_AUTHED | BTM_SEC_LINK_KEY_AUTHED;
   }
 
   p_dev_rec->sec_rec.rmt_io_caps = BTM_IO_CAP_OUT;
   p_dev_rec->device_type |= BT_DEVICE_TYPE_BREDR;
-
-  return true;
 }
 
 /** Removes the device from acceptlist */
