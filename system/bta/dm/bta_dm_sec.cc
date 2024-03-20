@@ -161,7 +161,6 @@ void bta_dm_bond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
              bt_transport_text(transport), DeviceTypeText(device_type));
 
   tBTA_DM_SEC sec_event;
-  const char* p_name;
 
   tBTM_STATUS status = get_btm_client_interface().security.BTM_SecBond(
       bd_addr, addr_type, transport, device_type);
@@ -169,11 +168,9 @@ void bta_dm_bond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
   if (bta_dm_sec_cb.p_sec_cback && (status != BTM_CMD_STARTED)) {
     memset(&sec_event, 0, sizeof(tBTA_DM_SEC));
     sec_event.auth_cmpl.bd_addr = bd_addr;
-    p_name = get_btm_client_interface().security.BTM_SecReadDevName(bd_addr);
-    if (p_name != NULL) {
-      memcpy(sec_event.auth_cmpl.bd_name, p_name, BD_NAME_LEN);
-      sec_event.auth_cmpl.bd_name[BD_NAME_LEN] = 0;
-    }
+    bd_name_from_char_pointer(
+        sec_event.auth_cmpl.bd_name,
+        get_btm_client_interface().security.BTM_SecReadDevName(bd_addr));
 
     /*      taken care of by memset [above]
             sec_event.auth_cmpl.key_present = false;
@@ -243,7 +240,6 @@ void bta_dm_ci_rmt_oob_act(std::unique_ptr<tBTA_DM_CI_RMT_OOB> msg) {
 static void bta_dm_pinname_cback(const tBTM_REMOTE_DEV_NAME* p_data) {
   tBTM_REMOTE_DEV_NAME* p_result = (tBTM_REMOTE_DEV_NAME*)p_data;
   tBTA_DM_SEC sec_event;
-  uint32_t bytes_to_copy;
   tBTA_DM_SEC_EVT event = bta_dm_sec_cb.pin_evt;
 
   if (BTA_DM_SP_CFM_REQ_EVT == event) {
@@ -252,11 +248,7 @@ static void bta_dm_pinname_cback(const tBTM_REMOTE_DEV_NAME* p_data) {
     sec_event.cfm_req.dev_class = bta_dm_sec_cb.pin_dev_class;
 
     if (p_result && p_result->status == BTM_SUCCESS) {
-      bytes_to_copy =
-          (p_result->length < BD_NAME_LEN) ? p_result->length : BD_NAME_LEN;
-      memcpy(sec_event.cfm_req.bd_name, p_result->remote_bd_name,
-             bytes_to_copy);
-      sec_event.pin_req.bd_name[BD_NAME_LEN] = 0;
+      bd_name_copy(sec_event.cfm_req.bd_name, p_result->remote_bd_name);
     } else /* No name found */
       sec_event.cfm_req.bd_name[0] = 0;
 
@@ -277,11 +269,7 @@ static void bta_dm_pinname_cback(const tBTM_REMOTE_DEV_NAME* p_data) {
     sec_event.pin_req.dev_class = bta_dm_sec_cb.pin_dev_class;
 
     if (p_result && p_result->status == BTM_SUCCESS) {
-      bytes_to_copy = (p_result->length < BD_NAME_LEN) ? p_result->length
-                                                       : (BD_NAME_LEN - 1);
-      memcpy(sec_event.pin_req.bd_name, p_result->remote_bd_name,
-             bytes_to_copy);
-      sec_event.pin_req.bd_name[BD_NAME_LEN] = 0;
+      bd_name_copy(sec_event.pin_req.bd_name, p_result->remote_bd_name);
     } else /* No name found */
       sec_event.pin_req.bd_name[0] = 0;
 
@@ -356,8 +344,7 @@ static uint8_t bta_dm_new_link_key_cback(const RawAddress& bd_addr,
 
   p_auth_cmpl->bd_addr = bd_addr;
 
-  memcpy(p_auth_cmpl->bd_name, bd_name, BD_NAME_LEN);
-  p_auth_cmpl->bd_name[BD_NAME_LEN] = 0;
+  bd_name_copy(p_auth_cmpl->bd_name, bd_name);
   p_auth_cmpl->key_present = true;
   p_auth_cmpl->key_type = key_type;
   p_auth_cmpl->success = true;
@@ -402,8 +389,7 @@ static void bta_dm_authentication_complete_cback(
                   .bd_addr = bd_addr,
               },
       };
-      memcpy(sec_event.auth_cmpl.bd_name, bd_name, BD_NAME_LEN);
-      sec_event.auth_cmpl.bd_name[BD_NAME_LEN] = 0;
+      bd_name_copy(sec_event.auth_cmpl.bd_name, bd_name);
 
       // Report the BR link key based on the BR/EDR address and type
       get_btm_client_interface().peer.BTM_ReadDevInfo(

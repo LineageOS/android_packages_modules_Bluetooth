@@ -1999,12 +1999,7 @@ void btm_ble_read_remote_name_cmpl(bool status, const RawAddress& bda,
                                    uint16_t length, char* p_name) {
   tHCI_STATUS hci_status = HCI_SUCCESS;
   BD_NAME bd_name;
-
-  memset(bd_name, 0, (BD_NAME_LEN + 1));
-  if (length > BD_NAME_LEN) {
-    length = BD_NAME_LEN;
-  }
-  memcpy((uint8_t*)bd_name, p_name, length);
+  bd_name_from_char_pointer(bd_name, p_name);
 
   if ((!status) || (length == 0)) {
     hci_status = HCI_ERR_HOST_TIMEOUT;
