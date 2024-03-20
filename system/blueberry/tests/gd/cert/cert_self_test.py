@@ -28,7 +28,6 @@ from blueberry.tests.gd.cert.behavior import ReplyStage
 from blueberry.tests.gd.cert.event_stream import EventStream, FilteringEventStream
 from blueberry.tests.gd.cert.metadata import metadata
 from blueberry.tests.gd.cert.truth import assertThat
-from bluetooth_packets_python3 import l2cap_packets
 import hci_packets as hci
 
 from mobly import asserts
@@ -191,25 +190,6 @@ class CertSelfTest(base_test.BaseTestClass):
                           payload=inside.serialize())
         logging.debug(outside.serialize())
         logging.debug("Done!")
-
-    def test_l2cap_config_options(self):
-        mtu_opt = l2cap_packets.MtuConfigurationOption()
-        mtu_opt.mtu = 123
-        fcs_opt = l2cap_packets.FrameCheckSequenceOption()
-        fcs_opt.fcs_type = l2cap_packets.FcsType.DEFAULT
-        request = l2cap_packets.ConfigurationRequestBuilder(
-            0x1d,  # Command ID
-            0xc1d,  # Channel ID
-            l2cap_packets.Continuation.END,
-            [mtu_opt, fcs_opt])
-        request_b_frame = l2cap_packets.BasicFrameBuilder(0x01, request)
-        handle = 123
-        wrapped = hci.Acl(handle=handle,
-                          packet_boundary_flag=hci.PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
-                          broadcast_flag=hci.BroadcastFlag.POINT_TO_POINT,
-                          payload=bytes(request_b_frame.Serialize()))
-        # Size is ACL (4) + L2CAP (4) + Configure (8) + MTU (4) + FCS (3)
-        asserts.assert_true(len(wrapped.serialize()) == 23, "Packet serialized incorrectly")
 
     def test_assertThat_boolean_success(self):
         assertThat(True).isTrue()

@@ -874,19 +874,14 @@ cc_library_host_shared {
     srcs: [
         ":BluetoothPacketSources",
         "common/strings.cc",
-        "l2cap/fcs.cc",
         "packet/python3_module.cc",
 
-    ],
-    generated_sources: [
-        "BluetoothGeneratedPackets_python3_cc",
     ],
     header_libs: [
         "pybind11_headers",
     ],
     static_libs: [
         "libbase",
-        "libbluetooth_l2cap_pdl",
         "libbluetooth_log",
     ],
     cflags: [
