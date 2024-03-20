@@ -208,7 +208,6 @@ typedef struct {
   uint8_t disc_active;
   tBTA_HH_STATUS status;
   tBTM_STATUS btm_status;
-  bool is_le_device;
   tBTA_HH_LE_HID_SRVC hid_srvc;
   uint16_t conn_id;
   bool in_bg_conn;

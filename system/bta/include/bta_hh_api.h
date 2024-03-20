@@ -236,7 +236,6 @@ typedef struct {
   tAclLinkSpec link_spec; /* HID device ACL link specification */
   tBTA_HH_STATUS status; /* operation status         */
   uint8_t handle;        /* device handle            */
-  bool le_hid;           /* is LE devices? */
   bool scps_supported;   /* scan parameter service supported */
   uint8_t sub_class;     /* Cod sub class */
   uint16_t attr_mask;    /* attribute mask */
