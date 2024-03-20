@@ -82,7 +82,10 @@ install_config("install_minijail_config") {
 }
 
 source_set("libmmc") {
-  configs += [ ":target_defaults" ]
+  configs += [
+    ":target_defaults",
+    "//bt/system/log:log_defaults",
+  ]
   sources = [
     "daemon/service.cc",
   ]
@@ -97,8 +100,17 @@ source_set("libmmc") {
 }
 
 executable("mmc_service") {
-  configs += [ ":target_defaults" ]
-  deps = [ ":libmmc" ]
+  configs += [
+    ":target_defaults",
+    "//bt/system/log:log_defaults",
+  ]
+  deps = [
+    ":libmmc",
+    "//bt/system/log:libbluetooth_log",
+  ]
+  libs = [
+    "fmt",
+  ]
   sources = [ "main.cc" ]
 }
 
@@ -117,6 +129,7 @@ if (use.test) {
     ]
     configs += [
       ":target_defaults",
+      "//bt/system/log:log_defaults",
       "//bt/system:external_gtest_main",
     ]
     deps = [
@@ -141,6 +154,7 @@ if (use.test) {
     ]
     configs += [
       ":target_defaults",
+      "//bt/system/log:log_defaults",
       "//bt/system:external_gtest_main",
     ]
     deps = [

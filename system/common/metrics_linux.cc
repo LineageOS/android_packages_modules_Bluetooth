@@ -17,6 +17,7 @@
  ******************************************************************************/
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include "leaky_bonded_queue.h"
 #include "metrics.h"
@@ -29,7 +30,7 @@ namespace common {
 void A2dpSessionMetrics::Update(const A2dpSessionMetrics& metrics) {}
 
 bool A2dpSessionMetrics::operator==(const A2dpSessionMetrics& rhs) const {
-  LOG(INFO) << "UNIMPLEMENTED";
+  log::info("UNIMPLEMENTED");
   return true;
 }
 

@@ -16,11 +16,12 @@
 
 #include "repeating_timer.h"
 
-#include "message_loop_thread.h"
-#include "time_util.h"
-
 #include <base/functional/callback.h>
 #include <base/logging.h>
+#include <bluetooth/log.h>
+
+#include "message_loop_thread.h"
+#include "time_util.h"
 
 namespace bluetooth {
 
@@ -43,8 +44,7 @@ bool RepeatingTimer::SchedulePeriodic(
     const base::Location& from_here, base::RepeatingClosure task,
     std::chrono::microseconds period) {
   if (period < kMinimumPeriod) {
-    LOG(ERROR) << __func__ << ": period must be at least "
-               << kMinimumPeriod.count();
+    log::error("period must be at least {}", kMinimumPeriod.count());
     return false;
   }
 
@@ -52,7 +52,7 @@ bool RepeatingTimer::SchedulePeriodic(
   uint64_t time_next_task_us = time_now_us + period.count();
   std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
   if (thread == nullptr) {
-    LOG(ERROR) << __func__ << ": thread must be non-null";
+    log::error("thread must be non-null");
     return false;
   }
   CancelAndWait();
@@ -66,9 +66,8 @@ bool RepeatingTimer::SchedulePeriodic(
   if (!thread->DoInThreadDelayed(
           from_here, task_wrapper_.callback(),
           std::chrono::microseconds(time_until_next_us))) {
-    LOG(ERROR) << __func__
-               << ": failed to post task to message loop for thread " << *thread
-               << ", from " << from_here.ToString();
+    log::error("failed to post task to message loop for thread {}, from {}",
+               *thread, from_here.ToString());
     expected_time_next_task_us_ = 0;
     task_wrapper_.Cancel();
     message_loop_thread_ = nullptr;
@@ -132,8 +131,7 @@ bool RepeatingTimer::IsScheduled() const {
 // This runs on message loop thread
 void RepeatingTimer::RunTask() {
   if (message_loop_thread_ == nullptr || !message_loop_thread_->IsRunning()) {
-    LOG(ERROR) << __func__
-               << ": message_loop_thread_ is null or is not running";
+    log::error("message_loop_thread_ is null or is not running");
     return;
   }
   CHECK_EQ(message_loop_thread_->GetThreadId(),
@@ -159,9 +157,10 @@ void RepeatingTimer::RunTask() {
   auto task_time_us =
       static_cast<int64_t>(time_after_task_us - time_before_task_us);
   if (task_time_us > period_.count()) {
-    LOG(ERROR) << __func__ << ": Periodic task execution took " << task_time_us
-               << " microseconds, longer than interval " << period_.count()
-               << " microseconds";
+    log::error(
+        "Periodic task execution took {} microseconds, longer than interval {} "
+        "microseconds",
+        task_time_us, period_.count());
   }
 }
 
