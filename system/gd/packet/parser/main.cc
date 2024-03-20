@@ -46,14 +46,6 @@ bool generate_cpp_headers_one_file(
     const std::filesystem::path& out_dir,
     const std::string& root_namespace);
 
-bool generate_pybind11_sources_one_file(
-    const Declarations& decls,
-    const std::filesystem::path& input_file,
-    const std::filesystem::path& include_dir,
-    const std::filesystem::path& out_dir,
-    const std::string& root_namespace,
-    size_t num_shards);
-
 bool parse_declarations_one_file(const std::filesystem::path& input_file, Declarations* declarations) {
   void* scanner;
   yylex_init(&scanner);
@@ -115,9 +107,6 @@ void usage(const char* prog) {
 
   ofs << std::setw(24) << "--source_root= ";
   ofs << "Root path to the source directory. Find input files relative to this." << std::endl;
-
-  ofs << std::setw(24) << "--num_shards= ";
-  ofs << "Number of shards per output pybind11 cc file." << std::endl;
 }
 
 int main(int argc, const char** argv) {
@@ -126,8 +115,6 @@ int main(int argc, const char** argv) {
   std::filesystem::path cwd = std::filesystem::current_path();
   std::filesystem::path source_root = cwd;
   std::string root_namespace = "bluetooth";
-  // Number of shards per output pybind11 cc file
-  size_t num_shards = 1;
   bool generate_fuzzing = false;
   bool generate_tests = false;
   std::queue<std::filesystem::path> input_files;
@@ -135,7 +122,6 @@ int main(int argc, const char** argv) {
   const std::string arg_out = "--out=";
   const std::string arg_include = "--include=";
   const std::string arg_namespace = "--root_namespace=";
-  const std::string arg_num_shards = "--num_shards=";
   const std::string arg_fuzzing = "--fuzzing";
   const std::string arg_testing = "--testing";
   const std::string arg_source_root = "--source_root=";
@@ -157,8 +143,6 @@ int main(int argc, const char** argv) {
       include_dir = source_root / std::filesystem::path(arg.substr(arg_include.size()));
     } else if (arg.find(arg_namespace) == 0) {
       root_namespace = arg.substr(arg_namespace.size());
-    } else if (arg.find(arg_num_shards) == 0) {
-      num_shards = std::stoul(arg.substr(arg_num_shards.size()));
     } else if (arg.find(arg_fuzzing) == 0) {
       generate_fuzzing = true;
     } else if (arg.find(arg_testing) == 0) {
@@ -169,7 +153,7 @@ int main(int argc, const char** argv) {
       input_files.emplace(source_root / std::filesystem::path(arg));
     }
   }
-  if (out_dir == std::filesystem::path() || include_dir == std::filesystem::path() || num_shards == 0) {
+  if (out_dir == std::filesystem::path() || include_dir == std::filesystem::path()) {
     usage(argv[0]);
     return 1;
   }
@@ -183,7 +167,7 @@ int main(int argc, const char** argv) {
       std::cerr << "Cannot parse " << input_files.front() << " correctly" << std::endl;
       return 2;
     }
-    std::cout << "generating c++ and pybind11" << std::endl;
+    std::cout << "generating c++" << std::endl;
     if (!generate_cpp_headers_one_file(
             declarations,
             generate_fuzzing,
@@ -194,11 +178,6 @@ int main(int argc, const char** argv) {
             root_namespace)) {
       std::cerr << "Didn't generate cpp headers for " << input_files.front() << std::endl;
       return 3;
-    }
-    if (!generate_pybind11_sources_one_file(
-            declarations, input_files.front(), include_dir, out_dir, root_namespace, num_shards)) {
-      std::cerr << "Didn't generate pybind11 sources for " << input_files.front() << std::endl;
-      return 4;
     }
     input_files.pop();
   }

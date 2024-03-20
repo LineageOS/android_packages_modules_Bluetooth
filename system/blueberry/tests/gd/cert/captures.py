@@ -15,11 +15,8 @@
 #   limitations under the License.
 
 import bluetooth_packets_python3 as bt_packets
-from bluetooth_packets_python3 import l2cap_packets
-from bluetooth_packets_python3.l2cap_packets import CommandCode, LeCommandCode
 from blueberry.tests.gd.cert.capture import Capture
 from blueberry.tests.gd.cert.matchers import HciMatchers
-from blueberry.tests.gd.cert.matchers import L2capMatchers
 from blueberry.tests.gd.cert.matchers import SecurityMatchers
 from blueberry.facade.security.facade_pb2 import UiMsgType
 import hci_packets as hci
@@ -97,64 +94,6 @@ class HciCaptures(object):
     def SimplePairingCompleteCapture():
         return Capture(HciMatchers.EventWithCode(hci.EventCode.SIMPLE_PAIRING_COMPLETE),
                        lambda packet: hci.Event.parse_all(packet.payload))
-
-
-class L2capCaptures(object):
-
-    @staticmethod
-    def ConnectionRequest(psm):
-        return Capture(L2capMatchers.ConnectionRequest(psm), L2capCaptures._extract_connection_request)
-
-    @staticmethod
-    def _extract_connection_request(packet):
-        frame = L2capMatchers.control_frame_with_code(packet, CommandCode.CONNECTION_REQUEST)
-        return l2cap_packets.ConnectionRequestView(frame)
-
-    @staticmethod
-    def ConnectionResponse(scid):
-        return Capture(L2capMatchers.ConnectionResponse(scid), L2capCaptures._extract_connection_response)
-
-    @staticmethod
-    def _extract_connection_response(packet):
-        frame = L2capMatchers.control_frame_with_code(packet, CommandCode.CONNECTION_RESPONSE)
-        return l2cap_packets.ConnectionResponseView(frame)
-
-    @staticmethod
-    def ConfigurationRequest(cid=None):
-        return Capture(L2capMatchers.ConfigurationRequest(cid), L2capCaptures._extract_configuration_request)
-
-    @staticmethod
-    def _extract_configuration_request(packet):
-        frame = L2capMatchers.control_frame_with_code(packet, CommandCode.CONFIGURATION_REQUEST)
-        return l2cap_packets.ConfigurationRequestView(frame)
-
-    @staticmethod
-    def CreditBasedConnectionRequest(psm):
-        return Capture(L2capMatchers.CreditBasedConnectionRequest(psm),
-                       L2capCaptures._extract_credit_based_connection_request)
-
-    @staticmethod
-    def _extract_credit_based_connection_request(packet):
-        frame = L2capMatchers.le_control_frame_with_code(packet, LeCommandCode.LE_CREDIT_BASED_CONNECTION_REQUEST)
-        return l2cap_packets.LeCreditBasedConnectionRequestView(frame)
-
-    @staticmethod
-    def CreditBasedConnectionResponse():
-        return Capture(L2capMatchers.CreditBasedConnectionResponse(),
-                       L2capCaptures._extract_credit_based_connection_response)
-
-    @staticmethod
-    def _extract_credit_based_connection_response(packet):
-        frame = L2capMatchers.le_control_frame_with_code(packet, LeCommandCode.LE_CREDIT_BASED_CONNECTION_RESPONSE)
-        return l2cap_packets.LeCreditBasedConnectionResponseView(frame)
-
-    @staticmethod
-    def LinkSecurityInterfaceCallbackEvent(type):
-        return Capture(L2capMatchers.LinkSecurityInterfaceCallbackEvent(type), L2capCaptures._extract_address)
-
-    @staticmethod
-    def _extract_address(packet):
-        return packet.address
 
 
 class SecurityCaptures(object):
