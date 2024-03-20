@@ -383,12 +383,10 @@ TEST_F(BtaDmTest, bta_dm_remname_cback__typical) {
   tBTM_REMOTE_DEV_NAME name = {
       .status = BTM_SUCCESS,
       .bd_addr = kRawAddress,
-      .length = static_cast<uint16_t>(strlen(kRemoteName)),
       .remote_bd_name = {},
       .hci_status = HCI_SUCCESS,
   };
-  strlcpy(reinterpret_cast<char*>(&name.remote_bd_name), kRemoteName,
-          strlen(kRemoteName));
+  bd_name_from_char_pointer(name.remote_bd_name, kRemoteName);
 
   mock_btm_client_interface.security.BTM_SecDeleteRmtNameNotifyCallback =
       [](tBTM_RMT_NAME_CALLBACK*) -> bool {
@@ -415,12 +413,10 @@ TEST_F(BtaDmTest, bta_dm_remname_cback__wrong_address) {
   tBTM_REMOTE_DEV_NAME name = {
       .status = BTM_SUCCESS,
       .bd_addr = kRawAddress2,
-      .length = static_cast<uint16_t>(strlen(kRemoteName)),
       .remote_bd_name = {},
       .hci_status = HCI_SUCCESS,
   };
-  strlcpy(reinterpret_cast<char*>(&name.remote_bd_name), kRemoteName,
-          strlen(kRemoteName));
+  bd_name_from_char_pointer(name.remote_bd_name, kRemoteName);
 
   mock_btm_client_interface.security.BTM_SecDeleteRmtNameNotifyCallback =
       [](tBTM_RMT_NAME_CALLBACK*) -> bool {
@@ -443,12 +439,10 @@ TEST_F(BtaDmTest, bta_dm_remname_cback__HCI_ERR_CONNECTION_EXISTS) {
   tBTM_REMOTE_DEV_NAME name = {
       .status = BTM_SUCCESS,
       .bd_addr = RawAddress::kEmpty,
-      .length = static_cast<uint16_t>(strlen(kRemoteName)),
       .remote_bd_name = {},
       .hci_status = HCI_ERR_CONNECTION_EXISTS,
   };
-  strlcpy(reinterpret_cast<char*>(&name.remote_bd_name), kRemoteName,
-          strlen(kRemoteName));
+  bd_name_from_char_pointer(name.remote_bd_name, kRemoteName);
 
   mock_btm_client_interface.security.BTM_SecDeleteRmtNameNotifyCallback =
       [](tBTM_RMT_NAME_CALLBACK*) -> bool {
