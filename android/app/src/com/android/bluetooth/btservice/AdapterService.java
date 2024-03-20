@@ -941,7 +941,6 @@ public class AdapterService extends Service {
             long socketCreationTimeNanos,
             boolean isSerialPort,
             int appUid) {
-
         int metricId = getMetricId(device);
         long currentTime = System.nanoTime();
         long endToEndLatencyNanos = currentTime - socketCreationTimeNanos;
