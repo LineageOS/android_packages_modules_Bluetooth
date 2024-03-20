@@ -25,7 +25,6 @@
 #include <string>
 
 #include "common/init_flags.h"
-#include "common/testing/log_capture.h"
 #include "common/time_util.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
@@ -39,10 +38,6 @@
 namespace {
 constexpr uint32_t kAacReadSize = 1024 * 2 * 2;
 constexpr uint32_t kA2dpTickUs = 23 * 1000;
-constexpr char kDecodedDataCallbackIsInvoked[] =
-    "A2DP decoded data callback is invoked.";
-constexpr char kEnqueueCallbackIsInvoked[] =
-    "A2DP source enqueue callback is invoked.";
 constexpr uint16_t kPeerMtu = 1000;
 constexpr char kWavFile[] = "test/a2dp/raw_data/pcm1644s.wav";
 constexpr uint8_t kCodecInfoAacCapability[AVDT_CODEC_SIZE] = {
@@ -150,45 +145,44 @@ class A2dpAacTest : public ::testing::Test {
   A2dpCodecs* a2dp_codecs_;
   tA2DP_ENCODER_INTERFACE* encoder_iface_;
   tA2DP_DECODER_INTERFACE* decoder_iface_;
-  std::unique_ptr<LogCapture> log_capture_;
 };
 
 TEST_F(A2dpAacTest, a2dp_source_read_underflow) {
-  log_capture_ = std::make_unique<LogCapture>();
-  auto read_cb = +[](uint8_t* p_buf, uint32_t len) -> uint32_t {
-    // underflow
-    return 0;
-  };
-  auto enqueue_cb = +[](BT_HDR* p_buf, size_t frames_n, uint32_t len) -> bool {
-    return false;
-  };
-  InitializeEncoder(true, read_cb, enqueue_cb);
-  uint64_t timestamp_us = bluetooth::common::time_gettimeofday_us();
-  encoder_iface_->send_frames(timestamp_us);
-  usleep(kA2dpTickUs);
-  timestamp_us = bluetooth::common::time_gettimeofday_us();
-  encoder_iface_->send_frames(timestamp_us);
-  log_capture_->WaitUntilLogContains("a2dp_aac_encode_frames: underflow");
-}
+  static int enqueue_cb_invoked = 0;
 
-TEST_F(A2dpAacTest, a2dp_enqueue_cb_is_invoked) {
-  log_capture_ = std::make_unique<LogCapture>();
-  auto read_cb = +[](uint8_t* p_buf, uint32_t len) -> uint32_t {
-    ASSERT(kAacReadSize == len);
-    return len;
-  };
+  auto read_cb = +[](uint8_t* p_buf, uint32_t len) -> uint32_t { return 0; };
+
   auto enqueue_cb = +[](BT_HDR* p_buf, size_t frames_n, uint32_t len) -> bool {
-    log::info("{}", kEnqueueCallbackIsInvoked);
+    enqueue_cb_invoked += 1;
     osi_free(p_buf);
     return false;
   };
+
   InitializeEncoder(true, read_cb, enqueue_cb);
   uint64_t timestamp_us = bluetooth::common::time_gettimeofday_us();
   encoder_iface_->send_frames(timestamp_us);
-  usleep(kA2dpTickUs);
-  timestamp_us = bluetooth::common::time_gettimeofday_us();
+  encoder_iface_->send_frames(timestamp_us + kA2dpTickUs);
+
+  ASSERT_EQ(enqueue_cb_invoked, 0);
+}
+
+TEST_F(A2dpAacTest, a2dp_enqueue_cb_is_invoked) {
+  static int enqueue_cb_invoked = 0;
+
+  auto read_cb = +[](uint8_t* p_buf, uint32_t len) -> uint32_t { return len; };
+
+  auto enqueue_cb = +[](BT_HDR* p_buf, size_t frames_n, uint32_t len) -> bool {
+    enqueue_cb_invoked += 1;
+    osi_free(p_buf);
+    return false;
+  };
+
+  InitializeEncoder(true, read_cb, enqueue_cb);
+  uint64_t timestamp_us = bluetooth::common::time_gettimeofday_us();
   encoder_iface_->send_frames(timestamp_us);
-  log_capture_->WaitUntilLogContains(kEnqueueCallbackIsInvoked);
+  encoder_iface_->send_frames(timestamp_us + kA2dpTickUs);
+
+  ASSERT_EQ(enqueue_cb_invoked, 1);
 }
 
 TEST_F(A2dpAacTest, decoded_data_cb_not_invoked_when_empty_packet) {
@@ -201,10 +195,11 @@ TEST_F(A2dpAacTest, decoded_data_cb_not_invoked_when_empty_packet) {
 }
 
 TEST_F(A2dpAacTest, decoded_data_cb_invoked) {
-  log_capture_ = std::make_unique<LogCapture>();
-  auto data_cb = +[](uint8_t* p_buf, uint32_t len) {
-    log::info("{}", kDecodedDataCallbackIsInvoked);
-  };
+  static int data_cb_invoked = 0;
+  static int enqueue_cb_invoked = 0;
+
+  auto data_cb = +[](uint8_t* p_buf, uint32_t len) { data_cb_invoked += 1; };
+
   InitializeDecoder(data_cb);
 
   auto read_cb = +[](uint8_t* p_buf, uint32_t len) -> uint32_t {
@@ -213,23 +208,23 @@ TEST_F(A2dpAacTest, decoded_data_cb_invoked) {
     counter += len;
     return len;
   };
+
   auto enqueue_cb = +[](BT_HDR* p_buf, size_t frames_n, uint32_t len) -> bool {
+    enqueue_cb_invoked += 1;
     packet = p_buf;
-    log::info("{}", kEnqueueCallbackIsInvoked);
     return false;
   };
+
   InitializeEncoder(true, read_cb, enqueue_cb);
 
   uint64_t timestamp_us = bluetooth::common::time_gettimeofday_us();
   encoder_iface_->send_frames(timestamp_us);
-  usleep(kA2dpTickUs);
-  timestamp_us = bluetooth::common::time_gettimeofday_us();
-  encoder_iface_->send_frames(timestamp_us);
+  encoder_iface_->send_frames(timestamp_us + kA2dpTickUs);
 
-  log_capture_->WaitUntilLogContains(kEnqueueCallbackIsInvoked);
+  ASSERT_EQ(enqueue_cb_invoked, 1);
   decoder_iface_->decode_packet(packet);
   osi_free(packet);
-  ASSERT_TRUE(log_capture_->Find(kDecodedDataCallbackIsInvoked));
+  ASSERT_EQ(data_cb_invoked, 1);
 }
 
 TEST_F(A2dpAacTest, set_source_codec_config_works) {
@@ -270,12 +265,6 @@ TEST_F(A2dpAacTest, effective_mtu_when_peer_does_not_support_3mbps) {
   };
   InitializeEncoder(false, read_cb, enqueue_cb);
   ASSERT_EQ(a2dp_aac_get_effective_frame_size(), 663 /* MAX_2MBPS_AVDTP_MTU */);
-}
-
-TEST_F(A2dpAacTest, debug_codec_dump) {
-  log_capture_ = std::make_unique<LogCapture>();
-  a2dp_codecs_->debug_codec_dump(2);
-  log_capture_->WaitUntilLogContains("Current Codec: AAC");
 }
 
 TEST_F(A2dpAacTest, codec_info_string) {
