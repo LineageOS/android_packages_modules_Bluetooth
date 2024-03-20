@@ -30,8 +30,8 @@
 
 #include "bta/include/bta_api.h"
 #include "bta_sec_api.h"
+#include "include/macros.h"
 #include "internal_include/bt_target.h"
-#include "macros.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/l2c_api.h"
 #include "types/bluetooth/uuid.h"
@@ -156,42 +156,64 @@ typedef uint8_t tBTA_JV_CONN_STATE;
 #define BTA_JV_CONN_TYPE_L2CAP_LE 2
 typedef int tBTA_JV_CONN_TYPE;
 
-/* Java I/F callback events */
-/* events received by tBTA_JV_DM_CBACK */
-#define BTA_JV_ENABLE_EVT 0         /* JV enabled */
-#define BTA_JV_GET_SCN_EVT 6        /* Reserved an SCN */
-#define BTA_JV_GET_PSM_EVT 7        /* Reserved a PSM */
-#define BTA_JV_DISCOVERY_COMP_EVT 8 /* SDP discovery complete */
-#define BTA_JV_CREATE_RECORD_EVT 11 /* the result for BTA_JvCreateRecord */
-/* events received by tBTA_JV_L2CAP_CBACK */
-#define BTA_JV_L2CAP_OPEN_EVT 16     /* open status of L2CAP connection */
-#define BTA_JV_L2CAP_CLOSE_EVT 17    /* L2CAP connection closed */
-#define BTA_JV_L2CAP_START_EVT 18    /* L2CAP server started */
-#define BTA_JV_L2CAP_CL_INIT_EVT 19  /* L2CAP client initiated a connection */
-#define BTA_JV_L2CAP_DATA_IND_EVT 20 /* L2CAP connection received data */
-#define BTA_JV_L2CAP_CONG_EVT \
-  21 /* L2CAP connection congestion status changed */
-#define BTA_JV_L2CAP_READ_EVT 22  /* the result for BTA_JvL2capRead */
-#define BTA_JV_L2CAP_WRITE_EVT 24 /* the result for BTA_JvL2capWrite*/
+enum tBTA_JV_EVT : uint16_t {
+  /* Java I/F callback events */
+  /* events received by tBTA_JV_DM_CBACK */
+  BTA_JV_ENABLE_EVT = 0,          // JV enabled
+  BTA_JV_GET_SCN_EVT = 6,         // Reserved an SCN
+  BTA_JV_GET_PSM_EVT = 7,         // Reserved a PSM
+  BTA_JV_DISCOVERY_COMP_EVT = 8,  // SDP discovery complete
+  BTA_JV_CREATE_RECORD_EVT = 11,  // the result for BTA_JvCreateRecord
+  /* events received by tBTA_JV_L2CAP_CBACK */
+  BTA_JV_L2CAP_OPEN_EVT = 16,      // open status of L2CAP connection
+  BTA_JV_L2CAP_CLOSE_EVT = 17,     // L2CAP connection closed
+  BTA_JV_L2CAP_START_EVT = 18,     // L2CAP server started
+  BTA_JV_L2CAP_CL_INIT_EVT = 19,   // L2CAP client initiated a connection
+  BTA_JV_L2CAP_DATA_IND_EVT = 20,  // L2CAP connection received data
+  BTA_JV_L2CAP_CONG_EVT = 21,      // L2CAP connection congestion status changed
+  BTA_JV_L2CAP_READ_EVT = 22,      // the result for BTA_JvL2capRead
+  BTA_JV_L2CAP_WRITE_EVT = 24,     // the result for BTA_JvL2capWrite
 
-/* events received by tBTA_JV_RFCOMM_CBACK */
-#define BTA_JV_RFCOMM_OPEN_EVT                                                \
-  26                               /* open status of RFCOMM Client connection \
-                                      */
-#define BTA_JV_RFCOMM_CLOSE_EVT 27 /* RFCOMM connection closed */
-#define BTA_JV_RFCOMM_START_EVT 28 /* RFCOMM server started */
-#define BTA_JV_RFCOMM_CL_INIT_EVT                                             \
-  29                                  /* RFCOMM client initiated a connection \
-                                         */
-#define BTA_JV_RFCOMM_DATA_IND_EVT 30 /* RFCOMM connection received data */
-#define BTA_JV_RFCOMM_CONG_EVT \
-  31 /* RFCOMM connection congestion status changed */
-#define BTA_JV_RFCOMM_WRITE_EVT 33 /* the result for BTA_JvRfcommWrite*/
-#define BTA_JV_RFCOMM_SRV_OPEN_EVT \
-  34                      /* open status of Server RFCOMM connection */
-#define BTA_JV_MAX_EVT 35 /* max number of JV events */
+  /* events received by tBTA_JV_RFCOMM_CBACK */
+  BTA_JV_RFCOMM_OPEN_EVT = 26,      // open status of RFCOMM Client connection
+  BTA_JV_RFCOMM_CLOSE_EVT = 27,     // RFCOMM connection closed
+  BTA_JV_RFCOMM_START_EVT = 28,     // RFCOMM server started
+  BTA_JV_RFCOMM_CL_INIT_EVT = 29,   // RFCOMM client initiated a connection
+  BTA_JV_RFCOMM_DATA_IND_EVT = 30,  // RFCOMM connection received data
+  BTA_JV_RFCOMM_CONG_EVT = 31,   // RFCOMM connection congestion status changed
+  BTA_JV_RFCOMM_WRITE_EVT = 33,  // the result for BTA_JvRfcommWrite
+  BTA_JV_RFCOMM_SRV_OPEN_EVT = 34,  // open status of Server RFCOMM connection
+  BTA_JV_MAX_EVT = 35,              // max number of JV events
+};
 
-typedef uint16_t tBTA_JV_EVT;
+inline std::string bta_jv_event_text(const tBTA_JV_EVT& event) {
+  switch (event) {
+    CASE_RETURN_TEXT(BTA_JV_ENABLE_EVT);
+    CASE_RETURN_TEXT(BTA_JV_GET_SCN_EVT);
+    CASE_RETURN_TEXT(BTA_JV_GET_PSM_EVT);
+    CASE_RETURN_TEXT(BTA_JV_DISCOVERY_COMP_EVT);
+    CASE_RETURN_TEXT(BTA_JV_CREATE_RECORD_EVT);
+    CASE_RETURN_TEXT(BTA_JV_L2CAP_OPEN_EVT);
+    CASE_RETURN_TEXT(BTA_JV_L2CAP_CLOSE_EVT);
+    CASE_RETURN_TEXT(BTA_JV_L2CAP_START_EVT);
+    CASE_RETURN_TEXT(BTA_JV_L2CAP_CL_INIT_EVT);
+    CASE_RETURN_TEXT(BTA_JV_L2CAP_DATA_IND_EVT);
+    CASE_RETURN_TEXT(BTA_JV_L2CAP_CONG_EVT);
+    CASE_RETURN_TEXT(BTA_JV_L2CAP_READ_EVT);
+    CASE_RETURN_TEXT(BTA_JV_L2CAP_WRITE_EVT);
+    CASE_RETURN_TEXT(BTA_JV_RFCOMM_OPEN_EVT);
+    CASE_RETURN_TEXT(BTA_JV_RFCOMM_CLOSE_EVT);
+    CASE_RETURN_TEXT(BTA_JV_RFCOMM_START_EVT);
+    CASE_RETURN_TEXT(BTA_JV_RFCOMM_CL_INIT_EVT);
+    CASE_RETURN_TEXT(BTA_JV_RFCOMM_DATA_IND_EVT);
+    CASE_RETURN_TEXT(BTA_JV_RFCOMM_CONG_EVT);
+    CASE_RETURN_TEXT(BTA_JV_RFCOMM_WRITE_EVT);
+    CASE_RETURN_TEXT(BTA_JV_RFCOMM_SRV_OPEN_EVT);
+    CASE_RETURN_TEXT(BTA_JV_MAX_EVT);
+    default:
+      return base::StringPrintf("UNKNOWN[%hu]", event);
+  }
+}
 
 /* data associated with BTA_JV_SET_DISCOVER_EVT */
 typedef struct {
