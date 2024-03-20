@@ -55,8 +55,7 @@ import java.util.Objects;
 
 /** Provides Bluetooth AVRCP Target profile as a service in the Bluetooth application. */
 public class AvrcpTargetService extends ProfileService {
-    private static final String TAG = "AvrcpTargetService";
-    private static final boolean DEBUG = Log.isLoggable(TAG, Log.DEBUG);
+    private static final String TAG = AvrcpTargetService.class.getSimpleName();
 
     private static final int MEDIA_KEY_EVENT_LOGGER_SIZE = 20;
     private static final String MEDIA_KEY_EVENT_LOGGER_TITLE = "BTAudio Media Key Events";
@@ -116,10 +115,8 @@ public class AvrcpTargetService extends ProfileService {
             boolean state = !MediaPlayerWrapper.playstateEquals(mCurrentData.state, data.state);
             boolean queue = !Objects.equals(mCurrentData.queue, data.queue);
 
-            if (DEBUG) {
-                Log.d(TAG, "onMediaUpdated: track_changed=" + metadata
-                        + " state=" + state + " queue=" + queue);
-            }
+            Log.d(TAG, "onMediaUpdated: track_changed=" + metadata
+                    + " state=" + state + " queue=" + queue);
             mCurrentData = data;
 
             mNativeInterface.sendMediaUpdate(metadata, state, queue);

@@ -39,8 +39,7 @@ import java.security.NoSuchAlgorithmException;
  * All return values are ready to use by a BIP server.
  */
 public class CoverArt {
-    private static final String TAG = "CoverArt";
-    private static final boolean DEBUG = Log.isLoggable(TAG, Log.DEBUG);
+    private static final String TAG = CoverArt.class.getSimpleName();
     private static final BipPixel PIXEL_THUMBNAIL = BipPixel.createFixed(200, 200);
 
     private String mImageHandle = null;
@@ -204,9 +203,7 @@ public class CoverArt {
      * Print a message to DEBUG if debug output is enabled
      */
     private void debug(String msg) {
-        if (DEBUG) {
-            Log.d(TAG, msg);
-        }
+        Log.d(TAG, msg);
     }
 
     /**
