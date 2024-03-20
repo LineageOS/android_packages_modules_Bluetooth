@@ -16,16 +16,14 @@
 
 #pragma once
 
-#include <functional>
 #include <memory>
 #include <mutex>
 #include <queue>
 
 #include "common/bind.h"
 #include "common/callback.h"
-#include "common/contextual_callback.h"
+#include "common/postable_context.h"
 #include "os/thread.h"
-#include "os/utils.h"
 
 namespace bluetooth {
 namespace os {
@@ -33,7 +31,7 @@ namespace os {
 // A message-queue style handler for reactor-based thread to handle incoming events from different threads. When it's
 // constructed, it will register a reactable on the specified thread; when it's destroyed, it will unregister itself
 // from the thread.
-class Handler : public common::IPostableContext {
+class Handler : public common::PostableContext {
  public:
   // Create and register a handler on given thread
   explicit Handler(Thread* thread);
@@ -61,30 +59,6 @@ class Handler : public common::IPostableContext {
   template <typename T, typename Functor, typename... Args>
   void CallOn(T* obj, Functor&& functor, Args&&... args) {
     Post(common::BindOnce(std::forward<Functor>(functor), common::Unretained(obj), std::forward<Args>(args)...));
-  }
-
-  template <typename Functor, typename... Args>
-  auto BindOnce(Functor&& functor, Args&&... args) {
-    return common::ContextualOnceCallback(
-        common::BindOnce(std::forward<Functor>(functor), std::forward<Args>(args)...), this);
-  }
-
-  template <typename Functor, typename T, typename... Args>
-  auto BindOnceOn(T* obj, Functor&& functor, Args&&... args) {
-    return common::ContextualOnceCallback(
-        common::BindOnce(std::forward<Functor>(functor), common::Unretained(obj), std::forward<Args>(args)...), this);
-  }
-
-  template <typename Functor, typename... Args>
-  auto Bind(Functor&& functor, Args&&... args) {
-    return common::ContextualCallback(
-        common::Bind(std::forward<Functor>(functor), std::forward<Args>(args)...), this);
-  }
-
-  template <typename Functor, typename T, typename... Args>
-  auto BindOn(T* obj, Functor&& functor, Args&&... args) {
-    return common::ContextualCallback(
-        common::Bind(std::forward<Functor>(functor), common::Unretained(obj), std::forward<Args>(args)...), this);
   }
 
   template <typename T>
