@@ -30,7 +30,6 @@ import java.util.List;
 
 class Util {
     public static String TAG = "audio_util.Util";
-    public static boolean DEBUG = false;
 
     // TODO (apanicke): Remove this prefix later, for now it makes debugging easier.
     public static final String NOW_PLAYING_PREFIX = "NowPlayingId";
