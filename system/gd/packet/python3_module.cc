@@ -32,11 +32,6 @@
 namespace py = pybind11;
 
 namespace bluetooth {
-
-namespace l2cap {
-void define_l2cap_packets_submodule(py::module&);
-}
-
 namespace packet {
 
 using ::bluetooth::packet::BasePacketBuilder;
@@ -94,9 +89,6 @@ PYBIND11_MODULE(bluetooth_packets_python3, m) {
     auto bytes_shared = std::make_shared<std::vector<uint8_t>>(bytes);
     return std::make_unique<PacketView<!kLittleEndian>>(bytes_shared);
   }));
-
-  py::module l2cap_m = m.def_submodule("l2cap_packets", "A submodule of l2cap_packets");
-  bluetooth::l2cap::define_l2cap_packets_submodule(l2cap_m);
 }
 
 }  // namespace packet
