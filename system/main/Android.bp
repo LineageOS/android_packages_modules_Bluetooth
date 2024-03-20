@@ -190,7 +190,6 @@ cc_test {
         "shim/btm.cc",
         "shim/btm_api.cc",
         "shim/config.cc",
-        "shim/controller.cc",
         "shim/distance_measurement_manager.cc",
         "shim/dumpsys.cc",
         "shim/hci_layer.cc",

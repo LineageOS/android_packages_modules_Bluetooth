@@ -30,7 +30,6 @@
 #include <cstring>
 
 #include "crypto_toolbox/crypto_toolbox.h"
-#include "device/include/controller.h"
 #include "hci/controller_interface.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/stack_config.h"

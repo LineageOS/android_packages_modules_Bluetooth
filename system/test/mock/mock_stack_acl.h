@@ -26,7 +26,6 @@
 #include <string>
 
 // Original included files, if any
-#include "device/include/controller.h"
 #include "hci/class_of_device.h"
 #include "stack/acl/acl.h"
 #include "stack/btm/security_device_record.h"
@@ -602,12 +601,10 @@ struct BTM_RequestPeerSCA {
 };
 extern struct BTM_RequestPeerSCA BTM_RequestPeerSCA;
 // Name: BTM_acl_after_controller_started
-// Params: const controller_t* controller
 // Returns: void
 struct BTM_acl_after_controller_started {
-  std::function<void(const controller_t* controller)> body{
-      [](const controller_t* /* controller */) { ; }};
-  void operator()(const controller_t* controller) { body(controller); };
+  std::function<void()> body{[]() { ; }};
+  void operator()() { body(); };
 };
 extern struct BTM_acl_after_controller_started BTM_acl_after_controller_started;
 // Name: BTM_block_role_switch_for
