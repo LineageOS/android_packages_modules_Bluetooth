@@ -81,8 +81,8 @@ OUT_TARGET="${ANDROID_BUILD_TOP}/out/target"
 TEST_CONFIG="${ANDROID_BUILD_TOP}/packages/modules/Bluetooth/system/blueberry/tests/gd/host_config.yaml"
 TEST_FILTER="--presubmit"
 TEST_RUNNER="blueberry/tests/gd/gd_test_runner.py"
-CPP_BUILD_TARGET="bluetooth_stack_with_facade root-canal bluetooth_packets_python3 gd_hci_packets_python3_gen gd_smp_packets_python3_gen"
-RUST_BUILD_TARGET="bluetooth_with_facades root-canal bluetooth_packets_python3 bt_topshim_facade gd_hci_packets_python3_gen gd_smp_packets_python3_gen"
+CPP_BUILD_TARGET="bluetooth_stack_with_facade root-canal gd_hci_packets_python3_gen gd_smp_packets_python3_gen"
+RUST_BUILD_TARGET="bluetooth_with_facades root-canal bt_topshim_facade gd_hci_packets_python3_gen gd_smp_packets_python3_gen"
 BUILD_TARGET=$CPP_BUILD_TARGET
 
 CLEAN_VENV=false
@@ -344,8 +344,6 @@ function incremental_venv {
     cp {$HOST_BIN,$DEST_DIR}/bt_topshim_facade
     cp {$HOST_BIN,$DEST_DIR}/root-canal
 
-    cp {$HOST_LIB,$DEST_DIR}/bluetooth_packets_python3.so
-
     cp {$HOST_LIB,$DEST_LIB_DIR}/libbase.so
     cp {$HOST_LIB,$DEST_LIB_DIR}/libbluetooth_gd.so
     cp {$HOST_LIB,$DEST_LIB_DIR}/libc++.so
@@ -384,15 +382,6 @@ function venv_common {
         echo -e "${RED}Error installing GD Python libraries${NOCOLOR}"
         exit 1
     fi
-
-"${CERT_TEST_VENV}/bin/python" -c "
-import bluetooth_packets_python3 as bp3
-bp3.BaseStruct
-"
-if [[ $? -ne 0 ]] ; then
-  echo -e "${RED}Setup failed as bluetooth_packets_python3 cannot be imported${NOCOLOR}"
-  exit 1
-fi
 
 if [ "${VERBOSE_MODE}" == true ] ; then
   TEMP_CONFIG=/tmp/temp_mobly_config.yaml
