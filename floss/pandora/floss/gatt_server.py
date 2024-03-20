@@ -1,13 +1,13 @@
 # Copyright 2023 Google LLC
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     https://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
+# distributed under the License is distributed on an 'AS IS' BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
@@ -92,31 +92,31 @@ class GattServerCallbacks:
         """
         pass
 
-    def on_characteristic_write_request(self, addr, trans_id, offset, len, is_prep, need_rsp, handle, value):
+    def on_characteristic_write_request(self, addr, trans_id, offset, length, is_prep, need_rsp, handle, value):
         """Called when there is a request to write a characteristic.
 
         Args:
             addr: Remote device MAC address.
             trans_id: Transaction id.
             offset: Represents the offset at which the attribute value should be written.
-            len: The length of the attribute value that should be written.
-            is_prep: A boolean value representing whether it's a "prepare write" command.
-            need_rsp: A boolean value representing whether it's a "write no response" command.
+            length: The length of the attribute value that should be written.
+            is_prep: A boolean value representing whether it's a 'prepare write' command.
+            need_rsp: A boolean value representing whether it's a 'write no response' command.
             handle: The characteristic handle.
             value: The value that should be written to the attribute.
         """
         pass
 
-    def on_descriptor_write_request(self, addr, trans_id, offset, len, is_prep, need_rsp, handle, value):
+    def on_descriptor_write_request(self, addr, trans_id, offset, length, is_prep, need_rsp, handle, value):
         """Called when there is a request to write a descriptor.
 
         Args:
             addr: Remote device MAC address.
             trans_id: Transaction id.
             offset: The offset value at which the value should be written.
-            len: The length of the value that should be written.
-            is_prep: A boolean value representing whether it's a "prepare write" command.
-            need_rsp: A boolean value representing whether it's a "write no response" command.
+            length: The length of the value that should be written.
+            is_prep: A boolean value representing whether it's a 'prepare write' command.
+            need_rsp: A boolean value representing whether it's a 'write no response' command.
             handle: The descriptor handle.
             value: The value that should be written to the descriptor.
         """
@@ -300,7 +300,7 @@ class FlossGattServer(GattServerCallbacks):
                     <arg type="s" name="addr" direction="in" />
                     <arg type="i" name="trans_id" direction="in" />
                     <arg type="i" name="offset" direction="in" />
-                    <arg type="i" name="len" direction="in" />
+                    <arg type="i" name="length" direction="in" />
                     <arg type="b" name="is_prep" direction="in" />
                     <arg type="b" name="need_rsp" direction="in" />
                     <arg type="i" name="handle" direction="in" />
@@ -310,7 +310,7 @@ class FlossGattServer(GattServerCallbacks):
                     <arg type="s" name="addr" direction="in" />
                     <arg type="i" name="trans_id" direction="in" />
                     <arg type="i" name="offset" direction="in" />
-                    <arg type="i" name="len" direction="in" />
+                    <arg type="i" name="length" direction="in" />
                     <arg type="b" name="is_prep" direction="in" />
                     <arg type="b" name="need_rsp" direction="in" />
                     <arg type="i" name="handle" direction="in" />
@@ -419,21 +419,22 @@ class FlossGattServer(GattServerCallbacks):
             for observer in self.observers.values():
                 observer.on_characteristic_read_request(addr, trans_id, offset, is_long, handle)
 
-        def OnCharacteristicWriteRequest(self, addr, trans_id, offset, len, is_prep, need_rsp, handle, value):
+        def OnCharacteristicWriteRequest(self, addr, trans_id, offset, length, is_prep, need_rsp, handle, value):
             """Handles characteristic write request callback.
 
             Args:
                 addr: Remote device MAC address.
                 trans_id: Transaction id.
                 offset: Represents the offset from which the attribute value should be read.
-                len: The length of the value that should be written.
+                length: The length of the value that should be written.
                 is_prep: A boolean value representing whether it's a 'prepare write' command.
                 need_rsp: A boolean value representing whether it's a 'write no response' command.
                 handle: The descriptor handle.
                 value: The value that should be written to the descriptor.
             """
             for observer in self.observers.values():
-                observer.on_characteristic_write_request(addr, trans_id, offset, len, is_prep, need_rsp, handle, value)
+                observer.on_characteristic_write_request(addr, trans_id, offset, length, is_prep, need_rsp, handle,
+                                                         value)
 
         def OnDescriptorReadRequest(self, addr, trans_id, offset, is_long, handle):
             """Handles descriptor read request callback.
@@ -449,21 +450,21 @@ class FlossGattServer(GattServerCallbacks):
             for observer in self.observers.values():
                 observer.on_descriptor_read_request(addr, trans_id, offset, is_long, handle)
 
-        def OnDescriptorWriteRequest(self, addr, trans_id, offset, len, is_prep, need_rsp, handle, value):
+        def OnDescriptorWriteRequest(self, addr, trans_id, offset, length, is_prep, need_rsp, handle, value):
             """Handles descriptor write request callback.
 
             Args:
                 addr: Remote device MAC address.
                 trans_id: Transaction id.
                 offset: The offset value at which the value should be written.
-                len: The length of the value that should be written.
-                is_prep: A boolean value representing whether it's a "prepare write" command.
-                need_rsp: A boolean value representing whether it's a "write no response" command.
+                length: The length of the value that should be written.
+                is_prep: A boolean value representing whether it's a 'prepare write' command.
+                need_rsp: A boolean value representing whether it's a 'write no response' command.
                 handle: The descriptor handle.
                 value: The value that should be written to the descriptor.
             """
             for observer in self.observers.values():
-                observer.on_descriptor_write_request(addr, trans_id, offset, len, is_prep, need_rsp, handle, value)
+                observer.on_descriptor_write_request(addr, trans_id, offset, length, is_prep, need_rsp, handle, value)
 
         def OnExecuteWrite(self, addr, trans_id, exec_write):
             """Handles execute write callback.
@@ -561,7 +562,7 @@ class FlossGattServer(GattServerCallbacks):
         self.objpath = self.GATT_OBJECT_PATTERN.format(hci)
         self.cb_dbus_objpath = utils.generate_dbus_cb_objpath(self.GATT_CB_OBJ_NAME, self.hci)
 
-        # Create and publish callbacks
+        # Create and publish callbacks.
         self.callbacks = self.ExportedGattServerCallbacks()
         self.callbacks.add_observer('gatt_testing_server', self)
         self.bus.register_object(self.cb_dbus_objpath, self.callbacks, None)
@@ -1173,42 +1174,42 @@ class FlossGattServer(GattServerCallbacks):
         self.on_attr_read(addr, trans_id, offset, is_long, handle)
 
     @utils.glib_callback()
-    def on_characteristic_write_request(self, addr, trans_id, offset, len, is_prep, need_rsp, handle, value):
+    def on_characteristic_write_request(self, addr, trans_id, offset, length, is_prep, need_rsp, handle, value):
         """Handles the write request of the characteristic callback.
 
         Args:
             addr: Remote device MAC address.
             trans_id: Transaction id.
             offset: Represents the offset at which the attribute value should be written.
-            len: The length of the attribute value that should be written.
-            is_prep: A boolean value representing whether it's a "prepare write" command.
-            need_rsp: A boolean value representing whether it's a "write no response" command.
+            length: The length of the attribute value that should be written.
+            is_prep: A boolean value representing whether it's a 'prepare write' command.
+            need_rsp: A boolean value representing whether it's a 'write no response' command.
             handle: The characteristic handle.
             value: The value that should be written to the attribute.
         """
         logging.debug(
             'on_characteristic_write_request: device address: %s, trans_id: %s, offset: %s, length: %s, is_prep: %s, '
-            'need_rsp: %s, handle: %s, values: %s', addr, trans_id, offset, len, is_prep, need_rsp, handle, value)
-        self.on_attr_write(addr, trans_id, offset, len, is_prep, need_rsp, handle, value)
+            'need_rsp: %s, handle: %s, values: %s', addr, trans_id, offset, length, is_prep, need_rsp, handle, value)
+        self.on_attr_write(addr, trans_id, offset, length, is_prep, need_rsp, handle, value)
 
     @utils.glib_callback()
-    def on_descriptor_write_request(self, addr, trans_id, offset, len, is_prep, need_rsp, handle, value):
+    def on_descriptor_write_request(self, addr, trans_id, offset, length, is_prep, need_rsp, handle, value):
         """Handles the write request of the descriptor callback.
 
         Args:
             addr: Remote device MAC address.
             trans_id: Transaction id.
             offset: The offset value at which the value should be written.
-            len: The length of the value that should be written.
-            is_prep: A boolean value representing whether it's a "prepare write" command.
-            need_rsp: A boolean value representing whether it's a "write no response" command.
+            length: The length of the value that should be written.
+            is_prep: A boolean value representing whether it's a 'prepare write' command.
+            need_rsp: A boolean value representing whether it's a 'write no response' command.
             handle: The descriptor handle.
             value: The value that should be written to the descriptor.
         """
         logging.debug(
             'on_descriptor_write_request: device address: %s, trans_id: %s, offset: %s, length: %s, is_prep: %s, '
-            'need_rsp: %s, handle: %s, values: %s', addr, trans_id, offset, len, is_prep, need_rsp, handle, value)
-        self.on_attr_write(addr, trans_id, offset, len, is_prep, need_rsp, handle, value)
+            'need_rsp: %s, handle: %s, values: %s', addr, trans_id, offset, length, is_prep, need_rsp, handle, value)
+        self.on_attr_write(addr, trans_id, offset, length, is_prep, need_rsp, handle, value)
 
     @utils.glib_callback()
     def on_execute_write(self, addr, trans_id, exec_write):
