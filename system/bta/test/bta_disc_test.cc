@@ -19,20 +19,16 @@
 #include <gtest/gtest.h>
 #include <sys/socket.h>
 
-#include <memory>
-
 #include "bta/dm/bta_dm_disc.h"
 #include "bta/dm/bta_dm_disc_int.h"
+#include "bta/test/bta_test_fixtures.h"
 #include "stack/btm/neighbor_inquiry.h"
 #include "stack/include/gatt_api.h"
 #include "test/common/main_handler.h"
-#include "test/fake/fake_osi.h"
 #include "types/bt_transport.h"
 
 namespace {
-
 const RawAddress kRawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
-
 }
 
 // Test hooks
@@ -70,37 +66,35 @@ void store_avrcp_profile_feature(tSDP_DISC_REC* sdp_rec);
 }  // namespace legacy
 }  // namespace bluetooth
 
-class BtaDiscTest : public testing::Test {
+class BtaInitializedTest : public BtaWithContextTest {
  protected:
   void SetUp() override {
-    fake_osi_ = std::make_unique<test::fake::FakeOsi>();
-    main_thread_start_up();
+    BtaWithContextTest::SetUp();
+    BTA_dm_init();
   }
 
   void TearDown() override {
-    sync_main_handler();
-    main_thread_shut_down();
+    bta_sys_deregister(BTA_ID_DM_SEARCH);
+    BtaWithContextTest::TearDown();
   }
-
-  std::unique_ptr<test::fake::FakeOsi> fake_osi_;
 };
 
-TEST_F(BtaDiscTest, nop) {}
+TEST_F(BtaInitializedTest, nop) {}
 
-TEST_F(BtaDiscTest, DumpsysBtaDmDisc) {
+TEST_F(BtaInitializedTest, DumpsysBtaDmDisc) {
   std::FILE* file = std::tmpfile();
   DumpsysBtaDmDisc(fileno(file));
 }
 
-TEST_F(BtaDiscTest, bta_dm_ble_csis_observe) {
+TEST_F(BtaInitializedTest, bta_dm_ble_csis_observe) {
   bta_dm_ble_csis_observe(true, [](tBTA_DM_SEARCH_EVT, tBTA_DM_SEARCH*) {});
 };
 
-TEST_F(BtaDiscTest, bta_dm_ble_csis_observe__false) {
+TEST_F(BtaInitializedTest, bta_dm_ble_csis_observe__false) {
   bta_dm_ble_csis_observe(false, [](tBTA_DM_SEARCH_EVT, tBTA_DM_SEARCH*) {});
 };
 
-TEST_F(BtaDiscTest, bta_dm_ble_scan) {
+TEST_F(BtaInitializedTest, bta_dm_ble_scan) {
   // bool start, uint8_t duration_sec, bool low_latency_scan
   constexpr bool kStartLeScan = true;
   constexpr bool kStopLeScan = false;
@@ -115,41 +109,40 @@ TEST_F(BtaDiscTest, bta_dm_ble_scan) {
   bta_dm_ble_scan(kStopLeScan, duration_in_seconds, kHighLatencyScan);
 }
 
-TEST_F(BtaDiscTest, bta_dm_disc_discover_next_device) {
+TEST_F(BtaInitializedTest, bta_dm_disc_discover_next_device) {
   bta_dm_disc_discover_next_device();
 }
 
-TEST_F(BtaDiscTest, bta_dm_disc_remove_device) {
+TEST_F(BtaInitializedTest, bta_dm_disc_remove_device) {
   bta_dm_disc_remove_device(kRawAddress);
 }
 
-TEST_F(BtaDiscTest, bta_dm_discover_next_device) {
+TEST_F(BtaInitializedTest, bta_dm_discover_next_device) {
   bluetooth::legacy::testing::bta_dm_discover_next_device();
 }
 
-TEST_F(BtaDiscTest, bta_dm_execute_queued_request) {
+TEST_F(BtaInitializedTest, bta_dm_execute_queued_request) {
   bluetooth::legacy::testing::bta_dm_execute_queued_request();
 }
 
-TEST_F(BtaDiscTest, bta_dm_find_services) {
+TEST_F(BtaInitializedTest, bta_dm_find_services) {
   bluetooth::legacy::testing::bta_dm_find_services(kRawAddress);
 }
 
-TEST_F(BtaDiscTest, bta_dm_inq_cmpl) {
-  bluetooth::legacy::testing::bta_dm_inq_cmpl();
+TEST_F(BtaInitializedTest, bta_dm_inq_cmpl) {
   bluetooth::legacy::testing::bta_dm_inq_cmpl();
 }
 
-TEST_F(BtaDiscTest, bta_dm_inq_cmpl_cb) {
+TEST_F(BtaInitializedTest, bta_dm_inq_cmpl_cb) {
   tBTM_INQUIRY_CMPL complete;
   bluetooth::legacy::testing::bta_dm_inq_cmpl_cb(&complete);
 }
 
-TEST_F(BtaDiscTest, bta_dm_observe_cmpl_cb) {
+TEST_F(BtaInitializedTest, bta_dm_observe_cmpl_cb) {
   tBTM_INQUIRY_CMPL complete;
   bluetooth::legacy::testing::bta_dm_observe_cmpl_cb(&complete);
 }
-TEST_F(BtaDiscTest, bta_dm_observe_results_cb) {
+TEST_F(BtaInitializedTest, bta_dm_observe_results_cb) {
   tBTM_INQ_RESULTS result;
   const uint8_t p_eir[] = {0x0, 0x1, 0x2, 0x3};
   uint16_t eir_len = sizeof(p_eir);
@@ -157,7 +150,7 @@ TEST_F(BtaDiscTest, bta_dm_observe_results_cb) {
                                                         eir_len);
 }
 
-TEST_F(BtaDiscTest, bta_dm_opportunistic_observe_results_cb) {
+TEST_F(BtaInitializedTest, bta_dm_opportunistic_observe_results_cb) {
   tBTM_INQ_RESULTS result;
   const uint8_t p_eir[] = {0x0, 0x1, 0x2, 0x3};
   uint16_t eir_len = sizeof(p_eir);
@@ -165,7 +158,7 @@ TEST_F(BtaDiscTest, bta_dm_opportunistic_observe_results_cb) {
       &result, p_eir, eir_len);
 }
 
-TEST_F(BtaDiscTest, bta_dm_queue_search) {
+TEST_F(BtaInitializedTest, bta_dm_queue_search) {
   tBTA_DM_MSG msg = {
       .search = {},
   };
@@ -175,29 +168,29 @@ TEST_F(BtaDiscTest, bta_dm_queue_search) {
   bta_dm_disc_stop();
 }
 
-TEST_F(BtaDiscTest, bta_dm_read_remote_device_name) {
+TEST_F(BtaInitializedTest, bta_dm_read_remote_device_name) {
   bluetooth::legacy::testing::bta_dm_read_remote_device_name(
       kRawAddress, BT_TRANSPORT_BR_EDR);
 }
 
-TEST_F(BtaDiscTest, bta_dm_search_result) {
+TEST_F(BtaInitializedTest, bta_dm_search_result) {
   tBTA_DM_MSG msg = {
       .disc_result = {},
   };
   bluetooth::legacy::testing::bta_dm_search_result(&msg);
 }
 
-TEST_F(BtaDiscTest, bta_dm_search_sm_execute) {
+TEST_F(BtaInitializedTest, bta_dm_search_sm_execute) {
   BT_HDR_RIGID bt_hdr = {};
   bta_dm_search_sm_execute(&bt_hdr);
 }
 
-TEST_F(BtaDiscTest, bta_dm_search_timer_cback) {
+TEST_F(BtaInitializedTest, bta_dm_search_timer_cback) {
   constexpr void* kUnusedPointer = nullptr;
   bluetooth::legacy::testing::bta_dm_search_timer_cback(kUnusedPointer);
 }
 
-TEST_F(BtaDiscTest, bta_dm_service_search_remname_cback__expected_name) {
+TEST_F(BtaInitializedTest, bta_dm_service_search_remname_cback__expected_name) {
   DEV_CLASS dc;
   BD_NAME bd_name;
   tBTA_DM_SEARCH_CB search_cb =
@@ -208,7 +201,8 @@ TEST_F(BtaDiscTest, bta_dm_service_search_remname_cback__expected_name) {
                                                                   dc, bd_name);
 }
 
-TEST_F(BtaDiscTest, bta_dm_service_search_remname_cback__unexpected_name) {
+TEST_F(BtaInitializedTest,
+       bta_dm_service_search_remname_cback__unexpected_name) {
   DEV_CLASS dc;
   BD_NAME bd_name;
   tBTA_DM_SEARCH_CB search_cb =
@@ -219,7 +213,7 @@ TEST_F(BtaDiscTest, bta_dm_service_search_remname_cback__unexpected_name) {
                                                                   dc, bd_name);
 }
 
-TEST_F(BtaDiscTest, bta_dm_start_scan) {
+TEST_F(BtaInitializedTest, bta_dm_start_scan) {
   constexpr bool kLowLatencyScan = true;
   constexpr bool kHighLatencyScan = false;
   const uint8_t duration_sec = 5;
@@ -227,51 +221,57 @@ TEST_F(BtaDiscTest, bta_dm_start_scan) {
   bluetooth::legacy::testing::bta_dm_start_scan(duration_sec, kHighLatencyScan);
 }
 
-TEST_F(BtaDiscTest, store_avrcp_profile_feature) {
+TEST_F(BtaInitializedTest, store_avrcp_profile_feature) {
   tSDP_DISC_REC sdp_rec = {};
   bluetooth::legacy::testing::store_avrcp_profile_feature(&sdp_rec);
 }
 
-TEST_F(BtaDiscTest, bta_dm_disc_start_device_discovery) {
+TEST_F(BtaInitializedTest, bta_dm_disc_start_device_discovery) {
   bta_dm_disc_start_device_discovery(
       [](tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH* p_data) {});
 }
 
-TEST_F(BtaDiscTest, bta_dm_disc_stop_device_discovery) {
+TEST_F(BtaInitializedTest, bta_dm_disc_stop_device_discovery) {
   bta_dm_disc_stop_device_discovery();
 }
 
-TEST_F(BtaDiscTest, bta_dm_disc_start_service_discovery__BT_TRANSPORT_AUTO) {
+TEST_F(BtaInitializedTest,
+       bta_dm_disc_start_service_discovery__BT_TRANSPORT_AUTO) {
   bta_dm_disc_start_service_discovery(
       [](tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH* p_data) {}, kRawAddress,
       BT_TRANSPORT_AUTO);
 }
 
-TEST_F(BtaDiscTest, bta_dm_disc_start_service_discovery__BT_TRANSPORT_BR_EDR) {
+TEST_F(BtaInitializedTest,
+       bta_dm_disc_start_service_discovery__BT_TRANSPORT_BR_EDR) {
   bta_dm_disc_start_service_discovery(
       [](tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH* p_data) {}, kRawAddress,
       BT_TRANSPORT_BR_EDR);
 }
 
-TEST_F(BtaDiscTest, bta_dm_disc_start_service_discovery__BT_TRANSPORT_LE) {
+TEST_F(BtaInitializedTest,
+       bta_dm_disc_start_service_discovery__BT_TRANSPORT_LE) {
   bta_dm_disc_start_service_discovery(
       [](tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH* p_data) {}, kRawAddress,
       BT_TRANSPORT_LE);
 }
 
-TEST_F(BtaDiscTest, bta_dm_disc_stop_service_discovery__BT_TRANSPORT_AUTO) {
+TEST_F(BtaInitializedTest,
+       bta_dm_disc_stop_service_discovery__BT_TRANSPORT_AUTO) {
   bta_dm_disc_stop_service_discovery(kRawAddress, BT_TRANSPORT_AUTO);
 }
 
-TEST_F(BtaDiscTest, bta_dm_disc_stop_service_discovery__BT_TRANSPORT_BR_EDR) {
+TEST_F(BtaInitializedTest,
+       bta_dm_disc_stop_service_discovery__BT_TRANSPORT_BR_EDR) {
   bta_dm_disc_stop_service_discovery(kRawAddress, BT_TRANSPORT_BR_EDR);
 }
 
-TEST_F(BtaDiscTest, bta_dm_disc_stop_service_discovery__BT_TRANSPORT_LE) {
+TEST_F(BtaInitializedTest,
+       bta_dm_disc_stop_service_discovery__BT_TRANSPORT_LE) {
   bta_dm_disc_stop_service_discovery(kRawAddress, BT_TRANSPORT_LE);
 }
 
-TEST_F(BtaDiscTest, init_bta_dm_search_cb__conn_id) {
+TEST_F(BtaInitializedTest, init_bta_dm_search_cb__conn_id) {
   constexpr uint16_t kConnId = 123;
 
   // Set the global search block target field to some non-reset value

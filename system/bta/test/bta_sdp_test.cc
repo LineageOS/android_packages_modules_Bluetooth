@@ -20,7 +20,7 @@
 #include <string>
 
 #include "bta/dm/bta_dm_disc_int.h"
-#include "bta/test/bta_base_test.h"
+#include "bta/test/bta_test_fixtures.h"
 #include "osi/include/allocator.h"
 #include "test/common/main_handler.h"
 #include "test/mock/mock_stack_btm_interface.h"
@@ -46,41 +46,11 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data);
 }  // namespace legacy
 }  // namespace bluetooth
 
-class BtaSdpTest : public BtaBaseTest {
+class BtaSdpTest : public BtaWithHwOnTest {
  protected:
-  void SetUp() override {
-    BtaBaseTest::SetUp();
-    test::mock::stack_gatt_api::GATT_Register.body =
-        [](const bluetooth::Uuid& p_app_uuid128, const std::string name,
-           tGATT_CBACK* p_cb_info, bool eatt_support) { return 5; };
-    mock_btm_client_interface.eir.BTM_GetEirSupportedServices =
-        [](uint32_t* p_eir_uuid, uint8_t** p, uint8_t max_num_uuid16,
-           uint8_t* p_num_uuid16) -> uint8_t { return 0; };
-    mock_btm_client_interface.eir.BTM_WriteEIR =
-        [](BT_HDR* p_buf) -> tBTM_STATUS {
-      osi_free(p_buf);
-      return BTM_SUCCESS;
-    };
-    mock_btm_client_interface.local.BTM_ReadLocalDeviceNameFromController =
-        [](tBTM_CMPL_CB* cb) -> tBTM_STATUS { return BTM_CMD_STARTED; };
-    mock_btm_client_interface.security.BTM_SecRegister =
-        [](const tBTM_APPL_INFO* p_cb_info) -> bool { return true; };
+  void SetUp() override { BtaWithHwOnTest::SetUp(); }
 
-    main_thread_start_up();
-    sync_main_handler();
-
-    BTA_dm_on_hw_on();
-  }
-
-  void TearDown() override {
-    BTA_dm_on_hw_off();
-
-    sync_main_handler();
-    main_thread_shut_down();
-
-    test::mock::stack_gatt_api::GATT_Register = {};
-    BtaBaseTest::TearDown();
-  }
+  void TearDown() override { BtaWithHwOnTest::TearDown(); }
 };
 
 class BtaSdpRegisteredTest : public BtaSdpTest {
