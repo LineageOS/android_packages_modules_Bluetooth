@@ -28,7 +28,6 @@
 
 #include "btif/include/btif_storage.h"
 #include "crypto_toolbox/crypto_toolbox.h"
-#include "device/include/controller.h"
 #include "device/include/interop.h"
 #include "device/include/interop_config.h"
 #include "hci/controller_interface.h"
@@ -605,8 +604,9 @@ tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr,
 
   uint16_t tx_time = BTM_BLE_DATA_TX_TIME_MAX_LEGACY;
 
-  if (controller_get_interface()->get_bt_version()->hci_version >=
-      HCI_PROTO_VERSION_5_0)
+  if (bluetooth::shim::GetController()
+          ->GetLocalVersionInformation()
+          .hci_version_ >= bluetooth::hci::HciVersion::V_5_0)
     tx_time = BTM_BLE_DATA_TX_TIME_MAX;
 
   if (!BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
@@ -622,11 +622,13 @@ tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr,
     return BTM_ILLEGAL_VALUE;
   }
 
-  tx_pdu_length = std::min<uint16_t>(
-      tx_pdu_length,
-      controller_get_interface()->get_ble_maximum_tx_data_length());
-  tx_time = std::min<uint16_t>(
-      tx_time, controller_get_interface()->get_ble_maximum_tx_time());
+  tx_pdu_length =
+      std::min<uint16_t>(tx_pdu_length, bluetooth::shim::GetController()
+                                            ->GetLeMaximumDataLength()
+                                            .supported_max_tx_octets_);
+  tx_time = std::min<uint16_t>(tx_time, bluetooth::shim::GetController()
+                                            ->GetLeMaximumDataLength()
+                                            .supported_max_tx_time_);
 
   btsnd_hcic_ble_set_data_length(hci_handle, tx_pdu_length, tx_time);
   p_dev_rec->set_suggested_tx_octect(tx_pdu_length);

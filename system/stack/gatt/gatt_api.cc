@@ -32,7 +32,6 @@
 
 #include <string>
 
-#include "device/include/controller.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/bt_trace.h"
 #include "internal_include/stack_config.h"
@@ -46,7 +45,6 @@
 #include "stack/gatt/connection_manager.h"
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_hdr.h"
-#include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/l2cap_acl_interface.h"
 #include "stack/include/sdp_api.h"
@@ -1398,7 +1396,8 @@ void GATT_StartIf(tGATT_IF gatt_if) {
 bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr,
                   tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport,
                   bool opportunistic) {
-  uint8_t phy = controller_get_interface()->get_le_all_initiating_phys();
+  constexpr uint8_t kPhyLe1M = 0x01;  // From the old controller shim.
+  uint8_t phy = kPhyLe1M;
   return GATT_Connect(gatt_if, bd_addr, connection_type, transport,
                       opportunistic, phy);
 }

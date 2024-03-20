@@ -31,8 +31,11 @@
 
 #include "crypto_toolbox/crypto_toolbox.h"
 #include "device/include/controller.h"
+#include "hci/controller_interface.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/stack_config.h"
+#include "main/shim/entry.h"
+#include "main/shim/helpers.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"
@@ -675,7 +678,8 @@ static BT_HDR* smp_build_id_addr_cmd(UNUSED_ATTR uint8_t cmd_code,
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
   UINT8_TO_STREAM(p, SMP_OPCODE_ID_ADDR);
   UINT8_TO_STREAM(p, 0);
-  BDADDR_TO_STREAM(p, *controller_get_interface()->get_address());
+  BDADDR_TO_STREAM(p, bluetooth::ToRawAddress(
+                          bluetooth::shim::GetController()->GetMacAddress()));
 
   p_buf->offset = L2CAP_MIN_OFFSET;
   p_buf->len = SMP_ID_ADDR_SIZE;

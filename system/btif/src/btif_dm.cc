@@ -69,7 +69,6 @@
 #include "common/init_flags.h"
 #include "common/lru_cache.h"
 #include "common/metrics.h"
-#include "device/include/controller.h"
 #include "device/include/interop.h"
 #include "hci/controller_interface.h"
 #include "hci/le_rand_callback.h"
@@ -3469,7 +3468,9 @@ void btif_dm_proc_loc_oob(tBT_TRANSPORT transport, bool is_valid,
     start_oob_advertiser(transport, is_valid, c, r);
   } else {
     GetInterfaceToProfiles()->events->invoke_oob_data_request_cb(
-        transport, is_valid, c, r, *controller_get_interface()->get_address(),
+        transport, is_valid, c, r,
+        bluetooth::ToRawAddress(
+            bluetooth::shim::GetController()->GetMacAddress()),
         0x00);
   }
 }
