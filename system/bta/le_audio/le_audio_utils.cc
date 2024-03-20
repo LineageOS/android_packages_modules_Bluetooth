@@ -16,6 +16,8 @@
 
 #include "le_audio_utils.h"
 
+#include <bluetooth/log.h>
+
 #include "bta/le_audio/content_control_id_keeper.h"
 #include "common/strings.h"
 #include "le_audio_types.h"
@@ -24,6 +26,18 @@
 using bluetooth::common::ToString;
 using bluetooth::le_audio::types::AudioContexts;
 using bluetooth::le_audio::types::LeAudioContextType;
+
+namespace fmt {
+template <>
+struct formatter<audio_usage_t> : enum_formatter<audio_usage_t> {};
+template <>
+struct formatter<audio_content_type_t> : enum_formatter<audio_content_type_t> {
+};
+template <>
+struct formatter<audio_source_t> : enum_formatter<audio_source_t> {};
+template <>
+struct formatter<audio_devices_t> : enum_formatter<audio_devices_t> {};
+}  // namespace fmt
 
 namespace bluetooth::le_audio {
 namespace utils {
@@ -174,10 +188,10 @@ AudioContexts GetAudioContextsFromSourceMetadata(
     auto track = entry.base;
     if (track.content_type == 0 && track.usage == 0) continue;
 
-    LOG_INFO("%s: usage=%s(%d), content_type=%s(%d), gain=%f, tag:%s", __func__,
-             usageToString(track.usage).c_str(), track.usage,
-             contentTypeToString(track.content_type).c_str(),
-             track.content_type, track.gain, entry.tags);
+    log::info("usage={}({}), content_type={}({}), gain={:f}, tag:{}",
+              usageToString(track.usage), track.usage,
+              contentTypeToString(track.content_type),
+              track.content_type, track.gain, entry.tags);
 
     if (isMetadataTagPresent(entry.tags, "VX_AOSP_SAMPLESOUND")) {
       track_contexts.set(LeAudioContextType::SOUNDEFFECTS);
