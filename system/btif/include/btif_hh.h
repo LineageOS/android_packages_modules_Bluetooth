@@ -132,9 +132,9 @@ typedef struct {
 extern btif_hh_cb_t btif_hh_cb;
 
 btif_hh_device_t* btif_hh_find_connected_dev_by_handle(uint8_t handle);
+bt_status_t btif_hh_connect(const tAclLinkSpec& link_spec);
+bt_status_t btif_hh_virtual_unplug(const tAclLinkSpec& link_spec);
 void btif_hh_remove_device(const tAclLinkSpec& link_spec);
-bt_status_t btif_hh_virtual_unplug(const tAclLinkSpec* link_spec);
-void btif_hh_disconnect(const tAclLinkSpec* link_spec);
 void btif_hh_setreport(btif_hh_device_t* p_dev, bthh_report_type_t r_type,
                        uint16_t size, uint8_t* report);
 void btif_hh_senddata(btif_hh_device_t* p_dev, uint16_t size, uint8_t* report);

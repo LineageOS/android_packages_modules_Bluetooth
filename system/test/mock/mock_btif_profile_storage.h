@@ -72,25 +72,25 @@ struct btif_storage_add_hearing_aid {
 extern struct btif_storage_add_hearing_aid btif_storage_add_hearing_aid;
 
 // Name: btif_storage_add_hid_device_info
-// Params: tAclLinkSpec* link_spec, uint16_t attr_mask, uint8_t sub_class,
+// Params: const tAclLinkSpec& link_spec, uint16_t attr_mask, uint8_t sub_class,
 // uint8_t app_id, uint16_t vendor_id, uint16_t product_id, uint16_t version,
 // uint8_t ctry_code, uint16_t ssr_max_latency, uint16_t ssr_min_tout, uint16_t
 // dl_len, uint8_t* dsc_list Return: bt_status_t
 struct btif_storage_add_hid_device_info {
   static bt_status_t return_value;
   std::function<bt_status_t(
-      tAclLinkSpec* link_spec, uint16_t attr_mask, uint8_t sub_class,
+      const tAclLinkSpec& link_spec, uint16_t attr_mask, uint8_t sub_class,
       uint8_t app_id, uint16_t vendor_id, uint16_t product_id, uint16_t version,
       uint8_t ctry_code, uint16_t ssr_max_latency, uint16_t ssr_min_tout,
       uint16_t dl_len, uint8_t* dsc_list)>
-      body{[](tAclLinkSpec* /* link_spec */, uint16_t /* attr_mask */,
+      body{[](const tAclLinkSpec& /* link_spec */, uint16_t /* attr_mask */,
               uint8_t /* sub_class */, uint8_t /* app_id */,
               uint16_t /* vendor_id */, uint16_t /* product_id */,
               uint16_t /* version */, uint8_t /* ctry_code */,
               uint16_t /* ssr_max_latency */, uint16_t /* ssr_min_tout */,
               uint16_t /* dl_len */,
               uint8_t* /* dsc_list */) { return return_value; }};
-  bt_status_t operator()(tAclLinkSpec* link_spec, uint16_t attr_mask,
+  bt_status_t operator()(const tAclLinkSpec& link_spec, uint16_t attr_mask,
                          uint8_t sub_class, uint8_t app_id, uint16_t vendor_id,
                          uint16_t product_id, uint16_t version,
                          uint8_t ctry_code, uint16_t ssr_max_latency,
