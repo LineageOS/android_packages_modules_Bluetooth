@@ -96,10 +96,10 @@ MockCodecInterface mock_codec_msbcCodec;
 MockCodecInterface mock_codec_lc3Codec;
 
 HACK_ProfileInterface mock_HACK_profile_interface = {
-    .btif_hh_connect = [](const tAclLinkSpec* /* link_spec */) -> bt_status_t {
+    .btif_hh_connect = [](const tAclLinkSpec& /* link_spec */) -> bt_status_t {
       return BT_STATUS_SUCCESS;
     },
-    .btif_hh_virtual_unplug = [](const tAclLinkSpec* /* link_spec */)
+    .btif_hh_virtual_unplug = [](const tAclLinkSpec& /* link_spec */)
         -> bt_status_t { return BT_STATUS_SUCCESS; },
     .bta_hh_read_ssr_param =
         [](const tAclLinkSpec& /* link_spec */, uint16_t* /* p_max_ssr_lat */,

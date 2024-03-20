@@ -31,7 +31,6 @@
  *
  *****************************************************************************/
 
-#include "main/shim/entry.h"
 #define LOG_TAG "btm_acl"
 
 #include <bluetooth/log.h>
@@ -52,6 +51,8 @@
 #include "main/shim/acl_api.h"
 #include "main/shim/controller.h"
 #include "main/shim/dumpsys.h"
+#include "main/shim/entry.h"
+#include "main/shim/helpers.h"
 #include "os/log.h"
 #include "os/parameter_provider.h"
 #include "osi/include/allocator.h"
@@ -227,8 +228,8 @@ void hci_btm_set_link_supervision_timeout(tACL_CONN& link, uint16_t timeout) {
     return;
   }
 
-  if (!bluetooth::shim::
-          controller_is_write_link_supervision_timeout_supported()) {
+  if (!bluetooth::shim::GetController()->IsSupported(
+          bluetooth::hci::OpCode::WRITE_LINK_SUPERVISION_TIMEOUT)) {
     log::warn(
         "UNSUPPORTED by controller write link supervision timeout:{:.2f}ms "
         "bd_addr:{}",
@@ -1123,8 +1124,8 @@ tBTM_STATUS BTM_SetLinkSuperTout(const RawAddress& remote_bda,
 
   /* Only send if current role is Central; 2.0 spec requires this */
   if (p_acl->link_role == HCI_ROLE_CENTRAL) {
-    if (!bluetooth::shim::
-            controller_is_write_link_supervision_timeout_supported()) {
+    if (!bluetooth::shim::GetController()->IsSupported(
+            bluetooth::hci::OpCode::WRITE_LINK_SUPERVISION_TIMEOUT)) {
       log::warn(
           "UNSUPPORTED by controller write link supervision timeout:{:.2f}ms "
           "bd_addr:{}",
@@ -1542,7 +1543,8 @@ uint16_t BTM_GetMaxPacketSize(const RawAddress& addr) {
     pkt_types = p->pkt_types_mask;
   } else {
     /* Special case for when info for the local device is requested */
-    if (addr == *controller_get_interface()->get_address()) {
+    if (addr == bluetooth::ToRawAddress(
+                    bluetooth::shim::GetController()->GetMacAddress())) {
       pkt_types = btm_cb.acl_cb_.DefaultPacketTypes();
     }
   }
@@ -2803,3 +2805,14 @@ void find_in_device_record(const RawAddress& bd_addr,
   *address_with_type = {.type = BLE_ADDR_PUBLIC, .bda = bd_addr};
   return;
 }
+
+/*******************************************************************************
+ *
+ * Function         btm_acl_flush
+ *
+ * Description      This function is called by L2CAP to flush an ACL link.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void btm_acl_flush(uint16_t handle) { bluetooth::shim::ACL_Flush(handle); }

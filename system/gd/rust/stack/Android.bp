@@ -36,6 +36,13 @@ rust_library {
     proc_macros: [
         "libnum_derive",
     ],
+    shared_libs: [
+        "libbase",
+        "liblog",
+    ],
+    static_libs: [
+        "libbluetooth_log",
+    ],
     min_sdk_version: "30",
     target: {
         android: {
@@ -123,6 +130,9 @@ cc_library_static {
         "android.hardware.bluetooth@1.1",
         "libhidlbase",
         "libutils",
+    ],
+    static_libs: [
+        "libbluetooth_log",
     ],
     min_sdk_version: "30",
 }

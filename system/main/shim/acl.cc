@@ -34,7 +34,6 @@
 #include "common/interfaces/ILoggable.h"
 #include "common/strings.h"
 #include "common/sync_map_count.h"
-#include "device/include/controller.h"
 #include "hci/acl_manager.h"
 #include "hci/acl_manager/acl_connection.h"
 #include "hci/acl_manager/classic_acl_connection.h"
@@ -717,6 +716,8 @@ class ClassicShimAclConnection
     return connection_->locally_initiated_;
   }
 
+  void Flush() { connection_->Flush(); }
+
  private:
   OnDisconnect on_disconnect_;
   const shim::legacy::acl_classic_link_interface_t interface_;
@@ -883,6 +884,14 @@ struct shim::legacy::Acl::impl {
     ASSERT_LOG(IsClassicAcl(handle), "handle %d is not a classic connection",
                handle);
     handle_to_classic_connection_map_[handle]->EnqueuePacket(std::move(packet));
+  }
+
+  void Flush(HciHandle handle) {
+    if (IsClassicAcl(handle)) {
+      handle_to_classic_connection_map_[handle]->Flush();
+    } else {
+      LOG_ERROR("handle %d is not a classic connection", handle);
+    }
   }
 
   bool IsLeAcl(HciHandle handle) {
@@ -1114,10 +1123,6 @@ struct shim::legacy::Acl::impl {
     GetAclManager()->ClearFilterAcceptList();
     shadow_acceptlist_.Clear();
     LOG_DEBUG("Cleared entire Le address acceptlist count:%zu", count);
-  }
-
-  void le_rand(LeRandCallback cb ) {
-    controller_get_interface()->le_rand(std::move(cb));
   }
 
   void AddToAddressResolution(const hci::AddressWithType& address_with_type,
@@ -1434,6 +1439,13 @@ void shim::legacy::Acl::WriteData(HciHandle handle,
   handler_->Post(common::BindOnce(&Acl::write_data_sync,
                                   common::Unretained(this), handle,
                                   std::move(packet)));
+}
+
+void shim::legacy::Acl::flush(HciHandle handle) { pimpl_->Flush(handle); }
+
+void shim::legacy::Acl::Flush(HciHandle handle) {
+  handler_->Post(
+      common::BindOnce(&Acl::flush, common::Unretained(this), handle));
 }
 
 void shim::legacy::Acl::CreateClassicConnection(const hci::Address& address) {
@@ -1863,10 +1875,6 @@ void shim::legacy::Acl::FinalShutdown() {
 
 void shim::legacy::Acl::ClearFilterAcceptList() {
   handler_->CallOn(pimpl_.get(), &Acl::impl::clear_acceptlist);
-}
-
-void shim::legacy::Acl::LeRand(LeRandCallback cb) {
-  handler_->CallOn(pimpl_.get(), &Acl::impl::le_rand, std::move(cb));
 }
 
 void shim::legacy::Acl::AddToAddressResolution(

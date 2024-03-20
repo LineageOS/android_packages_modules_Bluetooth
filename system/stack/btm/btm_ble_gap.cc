@@ -38,7 +38,6 @@
 
 #include "bta/include/bta_api.h"
 #include "common/time_util.h"
-#include "device/include/controller.h"
 #include "hci/controller.h"
 #include "hci/controller_interface.h"
 #include "include/check.h"
@@ -469,10 +468,9 @@ const uint8_t btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX] = {
     }};
 
 /* check LE combo state supported */
-inline bool BTM_LE_STATES_SUPPORTED(const uint8_t* x, uint8_t bit_num) {
-  uint8_t mask = 1 << (bit_num % 8);
-  uint8_t offset = bit_num / 8;
-  return ((x)[offset] & mask);
+inline bool BTM_LE_STATES_SUPPORTED(const uint64_t x, uint8_t bit_num) {
+  uint64_t mask = 1 << bit_num;
+  return ((x)&mask);
 }
 
 void BTM_BleOpportunisticObserve(bool enable,
@@ -763,8 +761,9 @@ static void btm_ble_vendor_capability_vsc_cmpl_cback(
   }
 
   if (btm_cb.cmn_ble_vsc_cb.filter_support == 1 &&
-      controller_get_interface()->get_bt_version()->manufacturer ==
-          LMP_COMPID_QTI) {
+      bluetooth::shim::GetController()
+              ->GetLocalVersionInformation()
+              .manufacturer_name_ == LMP_COMPID_QTI) {
     // QTI controller, TDS data filter are supported by default. Check is added
     // to keep backward compatibility.
     btm_cb.cmn_ble_vsc_cb.adv_filter_extended_features_mask = 0x01;
@@ -787,7 +786,7 @@ static void btm_ble_vendor_capability_vsc_cmpl_cback(
   if (bluetooth::shim::GetController()->SupportsBle() &&
       bluetooth::shim::GetController()->SupportsBlePrivacy() &&
       btm_cb.cmn_ble_vsc_cb.max_irk_list_sz > 0 &&
-      controller_get_interface()->get_ble_resolving_list_max_size() == 0)
+      bluetooth::shim::GetController()->GetLeResolvingListSize() == 0)
     btm_ble_resolving_list_init(btm_cb.cmn_ble_vsc_cb.max_irk_list_sz);
 
   if (p_ctrl_le_feature_rd_cmpl_cback != NULL)
@@ -843,8 +842,8 @@ void BTM_BleReadControllerFeatures(tBTM_BLE_CTRL_FEATURES_CBACK* p_vsc_cback) {
 
   if (IS_FLAG_ENABLED(report_vsc_data_from_the_gd_controller)) {
     btm_cb.cmn_ble_vsc_cb.values_read = true;
-    bluetooth::hci::Controller::VendorCapabilities vendor_capabilities =
-        GetController()->GetVendorCapabilities();
+    bluetooth::hci::ControllerInterface::VendorCapabilities
+        vendor_capabilities = GetController()->GetVendorCapabilities();
 
     btm_cb.cmn_ble_vsc_cb.adv_inst_max =
         vendor_capabilities.max_advt_instances_;
@@ -1999,12 +1998,7 @@ void btm_ble_read_remote_name_cmpl(bool status, const RawAddress& bda,
                                    uint16_t length, char* p_name) {
   tHCI_STATUS hci_status = HCI_SUCCESS;
   BD_NAME bd_name;
-
-  memset(bd_name, 0, (BD_NAME_LEN + 1));
-  if (length > BD_NAME_LEN) {
-    length = BD_NAME_LEN;
-  }
-  memcpy((uint8_t*)bd_name, p_name, length);
+  bd_name_from_char_pointer(bd_name, p_name);
 
   if ((!status) || (length == 0)) {
     hci_status = HCI_ERR_HOST_TIMEOUT;
@@ -3230,8 +3224,8 @@ bool btm_ble_topology_check(tBTM_BLE_STATE_MASK request_state_mask) {
 
   /* check if the requested state is supported or not */
   uint8_t bit_num = btm_le_state_combo_tbl[0][request_state - 1];
-  const uint8_t* ble_supported_states =
-      controller_get_interface()->get_ble_supported_states();
+  uint64_t ble_supported_states =
+      bluetooth::shim::GetController()->GetLeSupportedStates();
 
   if (!BTM_LE_STATES_SUPPORTED(ble_supported_states, bit_num)) {
     log::error("state requested not supported: {}", request_state);

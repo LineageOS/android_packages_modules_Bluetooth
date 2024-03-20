@@ -17,6 +17,8 @@
 
 #include "neighbor/scan.h"
 
+#include <bluetooth/log.h>
+
 #include <memory>
 
 #include "hci/hci_layer.h"
@@ -76,7 +78,7 @@ void neighbor::ScanModule::impl::OnCommandComplete(hci::CommandCompleteView view
     } break;
 
     default:
-      LOG_ERROR("Unhandled command %s", hci::OpCodeText(view.GetCommandOpCode()).c_str());
+      log::error("Unhandled command {}", hci::OpCodeText(view.GetCommandOpCode()));
       break;
   }
 }
@@ -156,7 +158,8 @@ void neighbor::ScanModule::impl::Start() {
 }
 
 void neighbor::ScanModule::impl::Stop() {
-  LOG_INFO("inquiry scan enabled:%d page scan enabled:%d", inquiry_scan_enabled_, page_scan_enabled_);
+  log::info(
+      "inquiry scan enabled:{} page scan enabled:{}", inquiry_scan_enabled_, page_scan_enabled_);
 }
 
 neighbor::ScanModule::ScanModule() : pimpl_(std::make_unique<impl>(*this)) {}

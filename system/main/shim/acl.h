@@ -31,8 +31,6 @@
 #include "packet/raw_builder.h"
 #include "types/raw_address.h"
 
-using LeRandCallback = base::OnceCallback<void(uint64_t)>;
-
 namespace bluetooth {
 namespace shim {
 namespace legacy {
@@ -113,6 +111,8 @@ class Acl : public hci::acl_manager::ConnectionCallbacks,
   void WriteData(uint16_t hci_handle,
                  std::unique_ptr<packet::RawBuilder> packet);
 
+  void Flush(uint16_t hci_handle);
+
   void Dump(int fd) const;
   void DumpConnectionHistory(int fd) const;
 
@@ -121,13 +121,13 @@ class Acl : public hci::acl_manager::ConnectionCallbacks,
 
   void ClearFilterAcceptList();
   void DisconnectAllForSuspend();
-  void LeRand(LeRandCallback cb);
   void SetSystemSuspendState(bool suspended);
 
  protected:
   void on_incoming_acl_credits(uint16_t handle, uint16_t credits);
   void write_data_sync(uint16_t hci_handle,
                        std::unique_ptr<packet::RawBuilder> packet);
+  void flush(uint16_t hci_handle);
 
  private:
   os::Handler* handler_;

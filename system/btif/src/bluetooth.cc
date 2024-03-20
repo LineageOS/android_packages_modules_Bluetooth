@@ -180,7 +180,6 @@ bt_status_t btif_av_sink_execute_service(bool b_enable);
 bt_status_t btif_hh_execute_service(bool b_enable);
 bt_status_t btif_hf_client_execute_service(bool b_enable);
 bt_status_t btif_sdp_execute_service(bool b_enable);
-bt_status_t btif_hh_connect(const tAclLinkSpec* link_spec);
 bt_status_t btif_hd_execute_service(bool b_enable);
 
 extern void gatt_tcb_dump(int fd);
@@ -761,8 +760,8 @@ static int le_rand() {
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
   do_in_main_thread(
-      FROM_HERE,
-      base::BindOnce(btif_dm_le_rand, base::BindOnce(&le_rand_btif_cb)));
+      FROM_HERE, base::BindOnce(btif_dm_le_rand,
+                                get_main_thread()->BindOnce(&le_rand_btif_cb)));
   return BT_STATUS_SUCCESS;
 }
 

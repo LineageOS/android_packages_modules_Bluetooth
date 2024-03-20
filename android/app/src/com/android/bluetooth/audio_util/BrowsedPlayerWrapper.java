@@ -38,8 +38,7 @@ import java.util.Map;
  * Right now this is ok because the BrowsablePlayerConnector will handle timeouts.
  */
 class BrowsedPlayerWrapper {
-    private static final String TAG = "BrowsedPlayerWrapper";
-    private static final boolean DEBUG = Log.isLoggable(TAG, Log.DEBUG);
+    private static final String TAG = BrowsedPlayerWrapper.class.getSimpleName();
 
     enum ConnectionState {
         DISCONNECTED,
@@ -152,7 +151,7 @@ class BrowsedPlayerWrapper {
      * currently open.
      */
     void disconnect() {
-        if (DEBUG) Log.d(TAG, "disconnect: Disconnecting from " + mPackageName);
+        Log.d(TAG, "disconnect: Disconnecting from " + mPackageName);
         mWrappedBrowser.disconnect();
         clearCallback();
     }
@@ -165,7 +164,7 @@ class BrowsedPlayerWrapper {
             }
             mCallback = callback;
         }
-        if (DEBUG) Log.d(TAG, "Set mCallback, connecting to " + mPackageName);
+        Log.d(TAG, "Set mCallback, connecting to " + mPackageName);
         mWrappedBrowser.connect();
         return true;
     }
@@ -179,7 +178,7 @@ class BrowsedPlayerWrapper {
             }
             callback = mCallback;
         }
-        if (DEBUG) Log.d(TAG, "Executing callback");
+        Log.d(TAG, "Executing callback");
         callback.run(status, player);
     }
 
@@ -187,7 +186,7 @@ class BrowsedPlayerWrapper {
         synchronized (mCallbackLock) {
             mCallback = null;
         }
-        if (DEBUG) Log.d(TAG, "mCallback = null");
+        Log.d(TAG, "mCallback = null");
     }
 
     public String getPackageName() {
@@ -205,9 +204,9 @@ class BrowsedPlayerWrapper {
      * @return False if any other requests are being serviced, True otherwise
      */
     public boolean playItem(String mediaId) {
-        if (DEBUG) Log.d(TAG, "playItem: Play item from media ID: " + mediaId);
+        Log.d(TAG, "playItem: Play item from media ID: " + mediaId);
         return setCallbackAndConnect((int status, BrowsedPlayerWrapper wrapper) -> {
-            if (DEBUG) Log.d(TAG, "playItem: Connected to browsable player " + mPackageName);
+            Log.d(TAG, "playItem: Connected to browsable player " + mPackageName);
             MediaController controller = MediaControllerFactory.make(mContext,
                     wrapper.mWrappedBrowser.getSessionToken());
             MediaController.TransportControls ctrl = controller.getTransportControls();
@@ -249,7 +248,7 @@ class BrowsedPlayerWrapper {
                     + "with null browse callback");
         }
 
-        if (DEBUG) Log.d(TAG, "getFolderItems: Connecting to browsable player: " + mPackageName);
+        Log.d(TAG, "getFolderItems: Connecting to browsable player: " + mPackageName);
         return setCallbackAndConnect((int status, BrowsedPlayerWrapper wrapper) -> {
             Log.i(TAG, "getFolderItems: Connected to browsable player: " + mPackageName);
             if (status != STATUS_SUCCESS) {
@@ -390,7 +389,7 @@ class BrowsedPlayerWrapper {
 
         @Override
         public void onPlaybackStateChanged(@Nullable PlaybackState state) {
-            if (DEBUG) Log.d(TAG, "MediaPlayback: " + mPackageName + " -> " + state.toString());
+            Log.d(TAG, "MediaPlayback: " + mPackageName + " -> " + state.toString());
             if (state.getState() == PlaybackState.STATE_PLAYING) {
                 mTimeoutHandler.removeMessages(TimeoutHandler.MSG_TIMEOUT);
                 mPlaybackCallback.run(STATUS_SUCCESS);
@@ -424,9 +423,7 @@ class BrowsedPlayerWrapper {
 
         @Override
         public void onChildrenLoaded(String parentId, List<MediaItem> children) {
-            if (DEBUG) {
-                Log.d(TAG, "onChildrenLoaded: mediaId=" + parentId + " size= " + children.size());
-            }
+            Log.d(TAG, "onChildrenLoaded: mediaId=" + parentId + " size= " + children.size());
 
             if (mBrowseCallback == null) {
                 Log.w(TAG, "onChildrenLoaded: " + mPackageName
@@ -441,10 +438,8 @@ class BrowsedPlayerWrapper {
             ArrayList<ListItem> return_list = new ArrayList<ListItem>();
 
             for (MediaItem item : children) {
-                if (DEBUG) {
-                    Log.d(TAG, "onChildrenLoaded: Child=\"" + item.toString()
-                            + "\",  ID=\"" + item.getMediaId() + "\"");
-                }
+                Log.d(TAG, "onChildrenLoaded: Child=\"" + item.toString()
+                        + "\",  ID=\"" + item.getMediaId() + "\"");
 
                 if (item.isBrowsable()) {
                     CharSequence titleCharSequence = item.getDescription().getTitle();

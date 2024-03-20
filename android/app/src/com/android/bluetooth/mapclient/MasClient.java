@@ -39,11 +39,11 @@ import java.lang.ref.WeakReference;
  * construction.  After use shutdown() must be called to properly clean up.
  */
 public class MasClient {
+    private static final String TAG = MasClient.class.getSimpleName();
+
     private static final int CONNECT = 0;
     private static final int DISCONNECT = 1;
     private static final int REQUEST = 2;
-    private static final String TAG = "MasClient";
-    private static final boolean DBG = MapClientService.DBG;
     private static final byte[] BLUETOOTH_UUID_OBEX_MAS = new byte[]{
             (byte) 0xbb,
             0x58,
@@ -107,18 +107,14 @@ public class MasClient {
             int l2capSocket = mSdpMasRecord.getL2capPsm();
 
             if (l2capSocket != L2CAP_INVALID_PSM) {
-                if (DBG) {
-                    Log.d(TAG, "Connecting to OBEX on L2CAP channel " + l2capSocket);
-                }
+                Log.d(TAG, "Connecting to OBEX on L2CAP channel " + l2capSocket);
                 mSocket = mRemoteDevice.createL2capSocket(l2capSocket);
             } else {
-                if (DBG) {
-                    Log.d(TAG, "Connecting to OBEX on RFCOM channel "
-                            + mSdpMasRecord.getRfcommCannelNumber());
-                }
+                Log.d(TAG, "Connecting to OBEX on RFCOM channel "
+                        + mSdpMasRecord.getRfcommCannelNumber());
                 mSocket = mRemoteDevice.createRfcommSocket(mSdpMasRecord.getRfcommCannelNumber());
             }
-            if (DBG) Log.d(TAG, mRemoteDevice.toString() + "Socket: " + mSocket.toString());
+            Log.d(TAG, mRemoteDevice.toString() + "Socket: " + mSocket.toString());
             mSocket.connect();
             mTransport = new BluetoothObexTransport(mSocket);
 
@@ -132,12 +128,10 @@ public class MasClient {
             oap.addToHeaderSet(headerset);
 
             headerset = mSession.connect(headerset);
-            if (DBG) Log.d(TAG, "Connection results" + headerset.getResponseCode());
+            Log.d(TAG, "Connection results" + headerset.getResponseCode());
 
             if (headerset.getResponseCode() == ResponseCodes.OBEX_HTTP_OK) {
-                if (DBG) {
-                    Log.d(TAG, "Connection Successful");
-                }
+                Log.d(TAG, "Connection Successful");
                 mConnected = true;
                 mCallback.sendMessage(MceStateMachine.MSG_MAS_CONNECTED);
             } else {
@@ -174,18 +168,14 @@ public class MasClient {
             request.execute(mSession);
             mCallback.sendMessage(MceStateMachine.MSG_MAS_REQUEST_COMPLETED, request);
         } catch (IOException e) {
-            if (DBG) {
-                Log.d(TAG, "Request failed: " + request);
-            }
+            Log.d(TAG, "Request failed: " + request);
             // Disconnect to cleanup.
             disconnect();
         }
     }
 
     public boolean makeRequest(Request request) {
-        if (DBG) {
-            Log.d(TAG, "makeRequest called with: " + request);
-        }
+        Log.d(TAG, "makeRequest called with: " + request);
 
         boolean status = mHandler.sendMessage(mHandler.obtainMessage(REQUEST, request));
         if (!status) {
@@ -201,9 +191,7 @@ public class MasClient {
      * @param request The {@link Request} to abort.
      */
     public void abortRequest(Request request) {
-        if (DBG) {
-            Log.d(TAG, "abortRequest called with: " + request);
-        }
+        Log.d(TAG, "abortRequest called with: " + request);
 
         request.abort();
         mHandler.removeMessages(REQUEST, request);

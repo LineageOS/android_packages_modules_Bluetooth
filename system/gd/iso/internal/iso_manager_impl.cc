@@ -17,6 +17,8 @@
  */
 #include "iso_manager_impl.h"
 
+#include <bluetooth/log.h>
+
 #include "common/bind.h"
 #include "hci/hci_packets.h"
 #include "iso/iso_manager.h"
@@ -51,7 +53,7 @@ void IsoManagerImpl::OnHciLeEvent(hci::LeMetaEventView event) {
   if (code == hci::SubeventCode::CIS_ESTABLISHED) {
     hci::LeCisEstablishedView le_cis_established_view = hci::LeCisEstablishedView::Create(event);
     if (!le_cis_established_view.IsValid()) {
-      LOG_ERROR("Invalid LeCisEstablishedView packet received");
+      log::error("Invalid LeCisEstablishedView packet received");
       return;
     }
 
@@ -60,20 +62,20 @@ void IsoManagerImpl::OnHciLeEvent(hci::LeMetaEventView event) {
   } else if (code == hci::SubeventCode::CIS_REQUEST) {
     hci::LeCisRequestView le_cis_request_view = hci::LeCisRequestView::Create(event);
     if (!le_cis_request_view.IsValid()) {
-      LOG_ERROR("Invalid LeCisRequestView packet received");
+      log::error("Invalid LeCisRequestView packet received");
       return;
     }
 
     hci_le_iso_interface_->EnqueueCommand(
         hci::LeAcceptCisRequestBuilder::Create(le_cis_request_view.GetCisConnectionHandle()),
         iso_handler_->BindOnce([](hci::CommandStatusView command_status) {
-          LOG_INFO("command_status=%hhu ", command_status.GetStatus());
+          log::info("command_status={}", command_status.GetStatus());
         }));
 
     return;
   }
 
-  LOG_ERROR("Unhandled HCI LE ISO event, code %s", hci::SubeventCodeText(code).c_str());
+  log::error("Unhandled HCI LE ISO event, code {}", hci::SubeventCodeText(code));
   ASSERT_LOG(false, "Unhandled HCI LE ISO event");
 }
 
@@ -230,8 +232,9 @@ void IsoManagerImpl::LeCreateCis(std::vector<std::pair<uint16_t, uint16_t>> cis_
   }
 
   hci_le_iso_interface_->EnqueueCommand(
-      hci::LeCreateCisBuilder::Create(cis_configs), iso_handler_->BindOnce([](hci::CommandStatusView command_status) {
-        LOG_INFO("command_status=%hhu ", command_status.GetStatus());
+      hci::LeCreateCisBuilder::Create(cis_configs),
+      iso_handler_->BindOnce([](hci::CommandStatusView command_status) {
+        log::info("command_status={}", command_status.GetStatus());
       }));
 }
 
@@ -258,7 +261,6 @@ void IsoManagerImpl::SendIsoPacket(uint16_t cis_handle, std::vector<uint8_t> pac
       packet.size() /* iso_sdu_length */,
       hci::IsoPacketStatusFlag::VALID,
       std::make_unique<bluetooth::packet::RawBuilder>(packet));
-  LOG_INFO("%c%c", packet[0], packet[1]);
   iso_enqueue_buffer_->Enqueue(std::move(builder), iso_handler_);
 }
 

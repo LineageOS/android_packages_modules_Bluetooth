@@ -24,25 +24,12 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <chrono>
-#include <iostream>
 #include <memory>
 #include <string>
 
 #include "bta/ag/bta_ag_int.h"
 #include "bta/include/bta_ag_swb_aptx.h"
-#include "bta/include/bta_api.h"
-#include "bta/include/bta_dm_api.h"
-#include "bta/include/bta_hf_client_api.h"
-#include "bta/include/bta_le_audio_api.h"
-#include "common/message_loop_thread.h"
 #include "hci/controller_interface_mock.h"
-#include "os/system_properties.h"
-#include "osi/include/compat.h"
-#include "stack/btm/btm_int_types.h"
-#include "stack/include/bt_device_type.h"
-#include "stack/include/bt_name.h"
-#include "stack/include/btm_status.h"
 #include "test/common/main_handler.h"
 #include "test/common/mock_functions.h"
 #include "test/fake/fake_osi.h"

@@ -763,17 +763,15 @@ struct Controller::impl {
     std::unique_ptr<LeRandBuilder> packet = LeRandBuilder::Create();
     hci_->EnqueueCommand(
         std::move(packet),
-        module_.GetHandler()->BindOnceOn(
-            this, &Controller::impl::le_rand_cb<LeRandCompleteView>, std::move(cb)));
+        module_.GetHandler()->BindOnceOn(this, &Controller::impl::le_rand_cb, std::move(cb)));
   }
 
-  template <class T>
   void le_rand_cb(LeRandCallback cb, CommandCompleteView view) {
     ASSERT(view.IsValid());
-    auto status_view = T::Create(view);
+    auto status_view = LeRandCompleteView::Create(view);
     ASSERT(status_view.IsValid());
     ASSERT(status_view.GetStatus() == ErrorCode::SUCCESS);
-    std::move(cb).Run(status_view.GetRandomNumber());
+    std::move(cb).Invoke(status_view.GetRandomNumber());
   }
 
   void set_event_filter(std::unique_ptr<SetEventFilterBuilder> packet) {

@@ -102,6 +102,7 @@ typedef struct {
   fixed_queue_t* set_rpt_id_queue;
 #endif // ENABLE_UHID_SET_REPORT
   bool local_vup;  // Indicated locally initiated VUP
+  bool reconnect_allowed;  // Connection policy
 } btif_hh_device_t;
 
 /* Control block to maintain properties of devices */
@@ -131,17 +132,20 @@ typedef struct {
 extern btif_hh_cb_t btif_hh_cb;
 
 btif_hh_device_t* btif_hh_find_connected_dev_by_handle(uint8_t handle);
+bt_status_t btif_hh_connect(const tAclLinkSpec& link_spec);
+bt_status_t btif_hh_virtual_unplug(const tAclLinkSpec& link_spec);
 void btif_hh_remove_device(const tAclLinkSpec& link_spec);
-bool btif_hh_add_added_dev(const tAclLinkSpec& link_spec,
-                           tBTA_HH_ATTR_MASK attr_mask);
-bt_status_t btif_hh_virtual_unplug(const tAclLinkSpec* link_spec);
-void btif_hh_disconnect(const tAclLinkSpec* link_spec);
 void btif_hh_setreport(btif_hh_device_t* p_dev, bthh_report_type_t r_type,
                        uint16_t size, uint8_t* report);
 void btif_hh_senddata(btif_hh_device_t* p_dev, uint16_t size, uint8_t* report);
 void btif_hh_getreport(btif_hh_device_t* p_dev, bthh_report_type_t r_type,
                        uint8_t reportId, uint16_t bufferSize);
 void btif_hh_service_registration(bool enable);
+
+void btif_hh_load_bonded_dev(const tAclLinkSpec& link_spec,
+                             tBTA_HH_ATTR_MASK attr_mask, uint8_t sub_class,
+                             uint8_t app_id, tBTA_HH_DEV_DSCP_INFO dscp_info,
+                             bool reconnect_allowed);
 
 void DumpsysHid(int fd);
 

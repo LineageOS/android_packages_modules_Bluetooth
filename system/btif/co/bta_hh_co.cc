@@ -18,6 +18,7 @@
 
 #include "bta_hh_co.h"
 
+#include <android_bluetooth_flags.h>
 #include <base/logging.h>
 #include <fcntl.h>
 #include <linux/uhid.h>
@@ -32,9 +33,9 @@
 
 #include "bta_hh_api.h"
 #include "btif_hh.h"
-#include "device/include/controller.h"
+#include "hci/controller_interface.h"
 #include "include/check.h"
-#include "os/log.h"
+#include "main/shim/entry.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
 #include "osi/include/osi.h"
@@ -382,7 +383,26 @@ int bta_hh_co_write(int fd, uint8_t* rpt, uint16_t len) {
 
   return uhid_write(fd, &ev);
 }
+static bool hh_co_update_device(btif_hh_device_t* p_dev, uint8_t dev_handle,
+                                uint8_t sub_class, tBTA_HH_ATTR_MASK attr_mask,
+                                uint8_t app_id) {
+  p_dev->fd = -1;
+  p_dev->hh_keep_polling = 0;
 
+  // This is a new device, open the uhid driver now.
+  if (!uhid_fd_open(p_dev)) {
+    return false;
+  }
+
+  p_dev->dev_handle = dev_handle;
+  p_dev->attr_mask = attr_mask;
+  p_dev->sub_class = sub_class;
+  p_dev->app_id = app_id;
+  p_dev->local_vup = false;
+  btif_hh_cb.device_num++;
+
+  return true;
+}
 /*******************************************************************************
  *
  * Function      bta_hh_co_open
@@ -417,6 +437,14 @@ bool bta_hh_co_open(uint8_t dev_handle, uint8_t sub_class,
         return false;
       }
       break;
+    } else if (IS_FLAG_ENABLED(allow_switching_hid_and_hogp) &&
+               p_dev->dev_status == BTHH_CONN_STATE_ACCEPTING &&
+               p_dev->dev_handle == BTA_HH_INVALID_HANDLE) {
+      if (!hh_co_update_device(p_dev, dev_handle, sub_class, attr_mask,
+                               app_id)) {
+        return false;
+      }
+      break;
     }
     p_dev = NULL;
   }
@@ -426,21 +454,10 @@ bool bta_hh_co_open(uint8_t dev_handle, uint8_t sub_class,
     for (i = 0; i < BTIF_HH_MAX_HID; i++) {
       if (btif_hh_cb.devices[i].dev_status == BTHH_CONN_STATE_UNKNOWN) {
         p_dev = &btif_hh_cb.devices[i];
-        p_dev->fd = -1;
-        p_dev->hh_keep_polling = 0;
-
-        // This is a new device, open the uhid driver now.
-        if (!uhid_fd_open(p_dev)) {
+        if (!hh_co_update_device(p_dev, dev_handle, sub_class, attr_mask,
+                                 app_id)) {
           return false;
         }
-
-        p_dev->dev_handle = dev_handle;
-        p_dev->attr_mask = attr_mask;
-        p_dev->sub_class = sub_class;
-        p_dev->app_id = app_id;
-        p_dev->local_vup = false;
-
-        btif_hh_cb.device_num++;
         break;
       }
     }
@@ -592,10 +609,10 @@ void bta_hh_co_send_hid_info(btif_hh_device_t* p_dev, const char* dev_name,
 
   // Write controller address to phys field to correlate the hid device with a
   // specific bluetooth controller.
-  const controller_t* controller = controller_get_interface();
+  auto controller = bluetooth::shim::GetController();
   // TODO (b/258090765) fix: ToString -> ToColonSepHexString
   snprintf((char*)ev.u.create.phys, sizeof(ev.u.create.phys), "%s",
-           controller->get_address()->ToString().c_str());
+           controller->GetMacAddress().ToString().c_str());
 
   ev.u.create.rd_size = dscp_len;
   ev.u.create.rd_data = p_dscp;

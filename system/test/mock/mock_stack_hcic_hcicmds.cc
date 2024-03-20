@@ -44,7 +44,6 @@ struct btsnd_hcic_delete_stored_key btsnd_hcic_delete_stored_key;
 struct btsnd_hcic_enable_test_mode btsnd_hcic_enable_test_mode;
 struct btsnd_hcic_enhanced_accept_synchronous_connection
     btsnd_hcic_enhanced_accept_synchronous_connection;
-struct btsnd_hcic_enhanced_flush btsnd_hcic_enhanced_flush;
 struct btsnd_hcic_enhanced_set_up_synchronous_connection
     btsnd_hcic_enhanced_set_up_synchronous_connection;
 struct btsnd_hcic_exit_park_mode btsnd_hcic_exit_park_mode;
@@ -152,11 +151,6 @@ void btsnd_hcic_enhanced_accept_synchronous_connection(
   inc_func_call_count(__func__);
   test::mock::stack_hcic_hcicmds::
       btsnd_hcic_enhanced_accept_synchronous_connection(bd_addr, p_params);
-}
-void btsnd_hcic_enhanced_flush(uint16_t handle, uint8_t packet_type) {
-  inc_func_call_count(__func__);
-  test::mock::stack_hcic_hcicmds::btsnd_hcic_enhanced_flush(handle,
-                                                            packet_type);
 }
 void btsnd_hcic_enhanced_set_up_synchronous_connection(
     uint16_t conn_handle, enh_esco_params_t* p_params) {

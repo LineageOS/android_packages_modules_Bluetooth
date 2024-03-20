@@ -46,6 +46,7 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_ble_api.h"
 #include "stack/include/btm_ble_sec_api.h"
+#include "stack/include/main_thread.h"
 #include "types/raw_address.h"
 
 using bluetooth::common::BindOnce;
@@ -1074,5 +1075,6 @@ void smp_start_nonce_generation(tSMP_CB* p_cb) {
 }
 
 static void send_ble_rand(OnceCallback<void(uint64_t)> callback) {
-  bluetooth::shim::GetController()->LeRand(std::move(callback));
+  bluetooth::shim::GetController()->LeRand(
+      get_main_thread()->BindOnce(std::move(callback)));
 }

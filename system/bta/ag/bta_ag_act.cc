@@ -789,7 +789,7 @@ void bta_ag_post_sco_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
                                         "BTA_AG_POST_SCO_CALL_END_INCALL")) {
           break;
         }
-        if (IS_FLAG_ENABLED(is_sco_managed_by_audio)) {
+        if (bta_ag_is_sco_managed_by_audio()) {
           // let Audio HAL open the SCO
           break;
         }

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <bluetooth/log.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -44,6 +45,7 @@ using ::bluetooth::ModuleList;
 using ::bluetooth::StackManager;
 using ::bluetooth::hal::HciHalHostRootcanalConfig;
 using ::bluetooth::os::Thread;
+using namespace bluetooth;
 
 extern "C" const char* __asan_default_options() {
   return "detect_container_overflow=0";
@@ -59,13 +61,14 @@ struct sigaction old_act = {};
 void interrupt_handler(int signal_number) {
   if (!interrupted) {
     interrupted = true;
-    LOG_INFO("Stopping gRPC root server due to signal: %s[%d]", strsignal(signal_number), signal_number);
+    log::info(
+        "Stopping gRPC root server due to signal: {}[{}]", strsignal(signal_number), signal_number);
     interrupt_promise.set_value();
   } else {
-    LOG_WARN("Already interrupted by signal: %s[%d]", strsignal(signal_number), signal_number);
+    log::warn("Already interrupted by signal: {}[{}]", strsignal(signal_number), signal_number);
   }
   if (old_act.sa_handler != nullptr && old_act.sa_handler != SIG_IGN && old_act.sa_handler != SIG_DFL) {
-    LOG_INFO("Calling saved signal handler");
+    log::info("Calling saved signal handler");
     old_act.sa_handler(signal_number);
   }
 }
@@ -77,19 +80,23 @@ bool crash_callback(const void* crash_context, size_t crash_context_size, void* 
     auto* ctx = static_cast<const google_breakpad::ExceptionHandler::CrashContext*>(crash_context);
     tid = ctx->tid;
     int signal_number = ctx->siginfo.si_signo;
-    LOG_ERROR("Process crashed, signal: %s[%d], tid: %d", strsignal(signal_number), signal_number, ctx->tid);
+    log::error(
+        "Process crashed, signal: {}[{}], tid: {}",
+        strsignal(signal_number),
+        signal_number,
+        ctx->tid);
   } else {
-    LOG_ERROR("Process crashed, signal: unknown, tid: unknown");
+    log::error("Process crashed, signal: unknown, tid: unknown");
   }
   unwindstack::AndroidLocalUnwinder unwinder;
   unwindstack::AndroidUnwinderData data;
   if (!unwinder.Unwind(tid, data)) {
-    LOG_ERROR("Unwind failed");
+    log::error("Unwind failed");
     return false;
   }
-  LOG_ERROR("Backtrace:");
+  log::error("Backtrace:");
   for (const auto& frame : data.frames) {
-    LOG_ERROR("%s", unwinder.FormatFrame(frame).c_str());
+    log::error("{}", unwinder.FormatFrame(frame));
   }
   return true;
 }
@@ -97,9 +104,9 @@ bool crash_callback(const void* crash_context, size_t crash_context_size, void* 
 // Need to stop server on a thread that is not part of a signal handler due to an issue with gRPC
 // See: https://github.com/grpc/grpc/issues/24884
 void thread_check_shutdown() {
-  LOG_INFO("shutdown thread waiting for interruption");
+  log::info("shutdown thread waiting for interruption");
   interrupt_future.wait();
-  LOG_INFO("interrupted, stopping server");
+  log::info("interrupted, stopping server");
   grpc_root_server.StopServer();
 }
 
@@ -154,19 +161,19 @@ int main(int argc, const char** argv) {
 
   int ret = sigaction(SIGINT, &new_act, &old_act);
   if (ret < 0) {
-    LOG_ERROR("sigaction error: %s", strerror(errno));
+    log::error("sigaction error: {}", strerror(errno));
   }
 
-  LOG_INFO("Starting Server");
+  log::info("Starting Server");
   grpc_root_server.StartServer("0.0.0.0", root_server_port, grpc_port);
-  LOG_INFO("Server started");
+  log::info("Server started");
   auto wait_thread = std::thread([] { grpc_root_server.RunGrpcLoop(); });
   interrupt_future = interrupt_promise.get_future();
   auto shutdown_thread = std::thread{thread_check_shutdown};
   wait_thread.join();
-  LOG_INFO("Server terminated");
+  log::info("Server terminated");
   shutdown_thread.join();
-  LOG_INFO("Shutdown thread terminated");
+  log::info("Shutdown thread terminated");
 
   return 0;
 }

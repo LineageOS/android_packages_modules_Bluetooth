@@ -46,6 +46,7 @@
 #include "internal_include/bt_target.h"
 #include "l2c_api.h"
 #include "main/shim/entry.h"
+#include "main/shim/helpers.h"
 #include "osi/include/allocator.h"
 #include "osi/include/properties.h"
 #include "stack/btm/btm_ble_int.h"
@@ -4406,7 +4407,8 @@ void btm_sec_pin_code_request(const RawAddress p_bda) {
              ADDRESS_TO_LOGGABLE_CSTR(p_bda),
              tBTM_SEC_CB::btm_pair_state_descr(btm_sec_cb.pairing_state));
 
-  RawAddress local_bd_addr = *controller_get_interface()->get_address();
+  RawAddress local_bd_addr = bluetooth::ToRawAddress(
+      bluetooth::shim::GetController()->GetMacAddress());
   if (p_bda == local_bd_addr) {
     btsnd_hcic_pin_code_neg_reply(p_bda);
     return;

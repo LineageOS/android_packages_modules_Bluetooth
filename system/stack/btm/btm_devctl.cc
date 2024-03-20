@@ -174,8 +174,6 @@ static bool set_sec_state_idle(void* data, void* context) {
 }
 
 void BTM_reset_complete() {
-  const controller_t* controller = controller_get_interface();
-
   /* Tell L2CAP that all connections are gone */
   l2cu_device_reset();
 
@@ -205,8 +203,9 @@ void BTM_reset_complete() {
   /* Set up the BLE privacy settings */
   if (bluetooth::shim::GetController()->SupportsBle() &&
       bluetooth::shim::GetController()->SupportsBlePrivacy() &&
-      controller->get_ble_resolving_list_max_size() > 0) {
-    btm_ble_resolving_list_init(controller->get_ble_resolving_list_max_size());
+      bluetooth::shim::GetController()->GetLeResolvingListSize() > 0) {
+    btm_ble_resolving_list_init(
+        bluetooth::shim::GetController()->GetLeResolvingListSize());
     /* set the default random private address timeout */
     btsnd_hcic_ble_set_rand_priv_addr_timeout(
         btm_get_next_private_addrress_interval_ms() / 1000);

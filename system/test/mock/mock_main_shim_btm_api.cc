@@ -19,9 +19,6 @@
  *   Functions generated:85
  */
 
-#include <base/functional/bind.h>
-#include <base/functional/callback.h>
-
 #include <cstdint>
 
 #include "main/shim/btm_api.h"
@@ -198,11 +195,6 @@ tBTM_STATUS bluetooth::shim::BTM_ClearFilterAcceptList() {
 }
 
 tBTM_STATUS bluetooth::shim::BTM_DisconnectAllAcls() {
-  inc_func_call_count(__func__);
-  return BTM_SUCCESS;
-}
-
-tBTM_STATUS bluetooth::shim::BTM_LeRand(LeRandCallback /* cb */) {
   inc_func_call_count(__func__);
   return BTM_SUCCESS;
 }

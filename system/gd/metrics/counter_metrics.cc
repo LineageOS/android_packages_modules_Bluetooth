@@ -17,6 +17,8 @@
 
 #include "metrics/counter_metrics.h"
 
+#include <bluetooth/log.h>
+
 #include "common/bind.h"
 #include "os/log.h"
 #include "os/metrics.h"
@@ -36,7 +38,7 @@ void CounterMetrics::Start() {
       common::Bind(&CounterMetrics::DrainBufferedCounters,
            bluetooth::common::Unretained(this)),
       std::chrono::minutes(COUNTER_METRICS_PERDIOD_MINUTES));
-  LOG_INFO("Counter metrics initialized");
+  log::info("Counter metrics initialized");
   initialized_ = true;
 }
 
@@ -45,16 +47,16 @@ void CounterMetrics::Stop() {
   initialized_ = false;
   alarm_->Cancel();
   alarm_.reset();
-  LOG_INFO("Counter metrics canceled");
+  log::info("Counter metrics canceled");
 }
 
 bool CounterMetrics::CacheCount(int32_t key, int64_t count) {
   if (!IsInitialized()) {
-    LOG_WARN("Counter metrics isn't initialized");
+    log::warn("Counter metrics isn't initialized");
     return false;
   }
   if (count <= 0) {
-    LOG_WARN("count is not larger than 0. count: %s, key: %d", std::to_string(count).c_str(), key);
+    log::warn("count is not larger than 0. count: {}, key: {}", std::to_string(count), key);
     return false;
   }
   int64_t total = 0;
@@ -63,10 +65,13 @@ bool CounterMetrics::CacheCount(int32_t key, int64_t count) {
     total = counters_[key];
   }
   if (LLONG_MAX - total < count) {
-      LOG_WARN("Counter metric overflows. count %s current total: %s key: %d",
-               std::to_string(count).c_str(), std::to_string(total).c_str(), key);
-      counters_[key] = LLONG_MAX;
-      return false;
+    log::warn(
+        "Counter metric overflows. count {} current total: {} key: {}",
+        std::to_string(count),
+        std::to_string(total),
+        key);
+    counters_[key] = LLONG_MAX;
+    return false;
   }
   counters_[key] = total + count;
   return true;
@@ -74,11 +79,11 @@ bool CounterMetrics::CacheCount(int32_t key, int64_t count) {
 
 bool CounterMetrics::Count(int32_t key, int64_t count) {
   if (!IsInitialized()) {
-    LOG_WARN("Counter metrics isn't initialized");
+    log::warn("Counter metrics isn't initialized");
     return false;
   }
   if (count <= 0) {
-    LOG_WARN("count is not larger than 0. count: %s, key: %d", std::to_string(count).c_str(), key);
+    log::warn("count is not larger than 0. count: {}, key: {}", std::to_string(count), key);
     return false;
   }
   os::LogMetricBluetoothCodePathCounterMetrics(key, count);
@@ -87,11 +92,11 @@ bool CounterMetrics::Count(int32_t key, int64_t count) {
 
 void CounterMetrics::DrainBufferedCounters() {
   if (!IsInitialized()) {
-    LOG_WARN("Counter metrics isn't initialized");
+    log::warn("Counter metrics isn't initialized");
     return ;
   }
   std::lock_guard<std::mutex> lock(mutex_);
-  LOG_INFO("Draining buffered counters");
+  log::info("Draining buffered counters");
   for (auto const& pair : counters_) {
     Count(pair.first, pair.second);
   }

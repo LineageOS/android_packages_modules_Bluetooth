@@ -34,7 +34,6 @@
 #include "btm_dev.h"
 #include "btm_sec_cb.h"
 #include "crypto_toolbox/crypto_toolbox.h"
-#include "device/include/controller.h"
 #include "hci/controller_interface.h"
 #include "main/shim/entry.h"
 #include "os/log.h"
@@ -194,7 +193,7 @@ bool btm_identity_addr_to_random_pseudo(RawAddress* bd_addr,
   /* evt reported on static address, map static address to random pseudo */
   /* if RPA offloading is supported, or 4.2 controller, do RPA refresh */
   if (refresh &&
-      controller_get_interface()->get_ble_resolving_list_max_size() != 0) {
+      bluetooth::shim::GetController()->GetLeResolvingListSize() != 0) {
     btm_ble_read_resolving_list_entry(p_dev_rec);
   }
 

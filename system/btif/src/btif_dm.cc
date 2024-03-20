@@ -54,6 +54,7 @@
 
 #include "advertise_data_parser.h"
 #include "bt_dev_class.h"
+#include "bt_name.h"
 #include "bta/dm/bta_dm_disc.h"
 #include "bta/include/bta_api.h"
 #include "btif/include/stack_manager_t.h"
@@ -68,11 +69,14 @@
 #include "common/init_flags.h"
 #include "common/lru_cache.h"
 #include "common/metrics.h"
-#include "device/include/controller.h"
 #include "device/include/interop.h"
+#include "hci/controller_interface.h"
+#include "hci/le_rand_callback.h"
 #include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/stack_config.h"
+#include "main/shim/entry.h"
+#include "main/shim/helpers.h"
 #include "main/shim/le_advertising_manager.h"
 #include "main_thread.h"
 #include "os/log.h"
@@ -84,6 +88,7 @@
 #include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/acl_api_types.h"
+#include "stack/include/bt_dev_class.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
@@ -862,7 +867,7 @@ static void btif_dm_cb_create_bond(const RawAddress bd_addr,
     link_spec.transport = transport;
     const bt_status_t status =
         GetInterfaceToProfiles()->profileSpecific_HACK->btif_hh_connect(
-            &link_spec);
+            link_spec);
     if (status != BT_STATUS_SUCCESS)
       bond_state_changed(status, bd_addr, BT_BOND_STATE_NONE);
   } else {
@@ -1006,8 +1011,7 @@ static void btif_dm_pin_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
                                 (tBT_DEVICE_TYPE)dev_type);
 
   const RawAddress& bd_addr = p_pin_req->bd_addr;
-  memcpy(bd_name.name, p_pin_req->bd_name, BD_NAME_LEN);
-  bd_name.name[BD_NAME_LEN] = '\0';
+  bd_name_copy(bd_name.name, p_pin_req->bd_name);
 
   if (pairing_cb.state == BT_BOND_STATE_BONDING &&
       bd_addr != pairing_cb.bd_addr) {
@@ -2144,7 +2148,7 @@ static void btif_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
         }
         bt_property_t properties[] = {{
             .type = BT_PROPERTY_BDNAME,
-            .len = (int)strlen((char*)disc_res.bd_name),
+            .len = (int)strnlen((char*)disc_res.bd_name, BD_NAME_LEN),
             .val = (void*)disc_res.bd_name,
         }};
         const bt_status_t status = btif_storage_set_remote_device_property(
@@ -2899,7 +2903,7 @@ void btif_dm_remove_bond(const RawAddress bd_addr) {
   link_spec.addrt.type = BLE_ADDR_PUBLIC;
 
   if (GetInterfaceToProfiles()->profileSpecific_HACK->btif_hh_virtual_unplug(
-          &link_spec) != BT_STATUS_SUCCESS)
+          link_spec) != BT_STATUS_SUCCESS)
 #endif
   {
     log::debug("Removing HH device");
@@ -3464,7 +3468,9 @@ void btif_dm_proc_loc_oob(tBT_TRANSPORT transport, bool is_valid,
     start_oob_advertiser(transport, is_valid, c, r);
   } else {
     GetInterfaceToProfiles()->events->invoke_oob_data_request_cb(
-        transport, is_valid, c, r, *controller_get_interface()->get_address(),
+        transport, is_valid, c, r,
+        bluetooth::ToRawAddress(
+            bluetooth::shim::GetController()->GetMacAddress()),
         0x00);
   }
 }
@@ -3580,8 +3586,7 @@ static void btif_dm_ble_key_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif) {
                                        p_ssp_key_notif->bd_name, kDevClassEmpty,
                                        (tBT_DEVICE_TYPE)dev_type);
   bd_addr = p_ssp_key_notif->bd_addr;
-  memcpy(bd_name.name, p_ssp_key_notif->bd_name, BD_NAME_LEN);
-  bd_name.name[BD_NAME_LEN] = '\0';
+  bd_name_copy(bd_name.name, p_ssp_key_notif->bd_name);
 
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
   pairing_cb.is_ssp = false;
@@ -3835,8 +3840,7 @@ static void btif_dm_ble_sec_req_evt(tBTA_DM_BLE_SEC_REQ* p_ble_req,
                                        (tBT_DEVICE_TYPE)dev_type);
 
   RawAddress bd_addr = p_ble_req->bd_addr;
-  memcpy(bd_name.name, p_ble_req->bd_name, BD_NAME_LEN);
-  bd_name.name[BD_NAME_LEN] = '\0';
+  bd_name_copy(bd_name.name, p_ble_req->bd_name);
 
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
 
@@ -3879,8 +3883,7 @@ static void btif_dm_ble_passkey_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
                                        (tBT_DEVICE_TYPE)dev_type);
 
   RawAddress bd_addr = p_pin_req->bd_addr;
-  memcpy(bd_name.name, p_pin_req->bd_name, BD_NAME_LEN);
-  bd_name.name[BD_NAME_LEN] = '\0';
+  bd_name_copy(bd_name.name, p_pin_req->bd_name);
 
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
   pairing_cb.is_le_only = true;
@@ -3904,8 +3907,7 @@ static void btif_dm_ble_key_nc_req_evt(tBTA_DM_SP_KEY_NOTIF* p_notif_req) {
   RawAddress bd_addr = p_notif_req->bd_addr;
 
   bt_bdname_t bd_name;
-  memcpy(bd_name.name, p_notif_req->bd_name, BD_NAME_LEN);
-  bd_name.name[BD_NAME_LEN] = '\0';
+  bd_name_copy(bd_name.name, p_notif_req->bd_name);
 
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
   pairing_cb.is_ssp = false;
@@ -4243,7 +4245,7 @@ void btif_dm_clear_filter_accept_list() { BTA_DmClearFilterAcceptList(); }
 
 void btif_dm_disconnect_all_acls() { BTA_DmDisconnectAllAcls(); }
 
-void btif_dm_le_rand(LeRandCallback callback) {
+void btif_dm_le_rand(bluetooth::hci::LeRandCallback callback) {
   BTA_DmLeRand(std::move(callback));
 }
 

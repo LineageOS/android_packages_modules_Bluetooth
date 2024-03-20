@@ -42,7 +42,6 @@ import java.util.Objects;
  */
 public class MediaPlayerWrapper {
     private static final String TAG = "AudioMediaPlayerWrapper";
-    private static final boolean DEBUG = Log.isLoggable(TAG, Log.DEBUG);
     static boolean sTesting = false;
     private static final int PLAYBACK_STATE_CHANGE_EVENT_LOGGER_SIZE = 5;
     private static final String PLAYBACK_STATE_CHANGE_LOGGER_EVENT_TITLE =
@@ -275,11 +274,9 @@ public class MediaPlayerWrapper {
             Metadata qitem = Util.toMetadata(mContext, currItem);
             Metadata mdata = Util.toMetadata(mContext, getMetadata());
             if (currItem == null || !qitem.equals(mdata)) {
-                if (DEBUG) {
-                    Log.d(TAG, "Metadata currently out of sync for " + mPackageName);
-                    Log.d(TAG, "  └ Current queueItem: " + qitem);
-                    Log.d(TAG, "  └ Current metadata : " + mdata);
-                }
+                Log.d(TAG, "Metadata currently out of sync for " + mPackageName);
+                Log.d(TAG, "  └ Current queueItem: " + qitem);
+                Log.d(TAG, "  └ Current metadata : " + mdata);
 
                 // Some player do not provide full song info in queue item, allow case
                 // that only title and artist match.
@@ -469,10 +466,8 @@ public class MediaPlayerWrapper {
                 return;
             }
 
-            if (DEBUG) {
-                Log.v(TAG, "onMetadataChanged(): " + mPackageName + " : "
-                        + Util.toMetadata(mContext, mediaMetadata));
-            }
+            Log.v(TAG, "onMetadataChanged(): " + mPackageName + " : "
+                    + Util.toMetadata(mContext, mediaMetadata));
 
             if (!Objects.equals(mediaMetadata, getMetadata())) {
                 e("The callback metadata doesn't match controller metadata");
@@ -549,7 +544,9 @@ public class MediaPlayerWrapper {
                 return;
             }
 
-            if (DEBUG) {
+            // The following is a large enough debug operation such that we want to guard it was an
+            // isLoggable check
+            if (Log.isLoggable(TAG, Log.DEBUG)) {
                 for (int i = 0; i < current_queue.size(); i++) {
                     Log.d(TAG, "  └ QueueItem(" + i + "): " + current_queue.get(i));
                 }
@@ -601,7 +598,7 @@ public class MediaPlayerWrapper {
     }
 
     private void d(String message) {
-        if (DEBUG) Log.d(TAG, mPackageName + ": " + message);
+        Log.d(TAG, mPackageName + ": " + message);
     }
 
     @VisibleForTesting

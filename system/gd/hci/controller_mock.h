@@ -15,16 +15,14 @@
  */
 #pragma once
 
+#include <gmock/gmock.h>
+
 #include <cstdint>
 
-#include "common/contextual_callback.h"
 #include "hci/address.h"
 #include "hci/controller.h"
 #include "hci/hci_packets.h"
-#include "module.h"
-#include "os/handler.h"
-
-#include <gmock/gmock.h>
+#include "hci/le_rand_callback.h"
 
 // Unit test interfaces
 namespace bluetooth {

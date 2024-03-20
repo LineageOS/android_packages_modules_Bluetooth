@@ -25,6 +25,7 @@
 
 #include <cstdint>
 
+#include "hci/le_rand_callback.h"
 #include "test/common/mock_functions.h"
 
 // Original usings
@@ -235,7 +236,7 @@ bool BTA_DmGetConnectionState(const RawAddress& bd_addr) {
   inc_func_call_count(__func__);
   return test::mock::bta_dm_api::BTA_DmGetConnectionState(bd_addr);
 }
-void BTA_DmLeRand(LeRandCallback cb) {
+void BTA_DmLeRand(bluetooth::hci::LeRandCallback cb) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_api::BTA_DmLeRand(std::move(cb));
 }

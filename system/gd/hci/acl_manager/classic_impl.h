@@ -619,7 +619,7 @@ struct classic_impl : public security::ISecurityManagerListener {
     }
     uint16_t handle = flush_complete.GetConnectionHandle();
     connections.execute(
-        handle, [=](ConnectionManagementCallbacks* callbacks) { callbacks->OnFlushOccurred(); });
+        handle, [](ConnectionManagementCallbacks* callbacks) { callbacks->OnFlushOccurred(); });
   }
 
   void on_read_remote_version_information(
