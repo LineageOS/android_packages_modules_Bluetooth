@@ -16,6 +16,8 @@
 
 #include "common/strings.h"
 
+#include <bluetooth/log.h>
+
 #include <algorithm>
 #include <charconv>
 #include <cstdlib>
@@ -54,11 +56,11 @@ bool IsValidHexString(const std::string& str) {
 
 std::optional<std::vector<uint8_t>> FromHexString(const std::string& str) {
   if (str.size() % 2 != 0) {
-    LOG_INFO("str size is not divisible by 2, size is %zu", str.size());
+    log::info("str size is not divisible by 2, size is {}", str.size());
     return std::nullopt;
   }
   if (std::find_if_not(str.begin(), str.end(), IsHexDigit{}) != str.end()) {
-    LOG_INFO("value contains none hex digit");
+    log::info("value contains none hex digit");
     return std::nullopt;
   }
   std::vector<uint8_t> value;
@@ -67,7 +69,7 @@ std::optional<std::vector<uint8_t>> FromHexString(const std::string& str) {
     uint8_t v = 0;
     auto ret = std::from_chars(str.c_str() + i, str.c_str() + i + 2, v, 16);
     if (std::make_error_code(ret.ec)) {
-      LOG_INFO("failed to parse hex char at index %zu", i);
+      log::info("failed to parse hex char at index {}", i);
       return std::nullopt;
     }
     value.push_back(v);
@@ -115,15 +117,15 @@ std::optional<int64_t> Int64FromString(const std::string& str) {
   errno = 0;
   int64_t value = std::strtoll(str.c_str(), &ptr, 10);
   if (errno != 0) {
-    LOG_INFO("cannot parse string '%s' with error '%s'", str.c_str(), strerror(errno));
+    log::info("cannot parse string '{}' with error '{}'", str, strerror(errno));
     return std::nullopt;
   }
   if (ptr == str.c_str()) {
-    LOG_INFO("string '%s' is empty or has wrong format", str.c_str());
+    log::info("string '{}' is empty or has wrong format", str);
     return std::nullopt;
   }
   if (ptr != (str.c_str() + str.size())) {
-    LOG_INFO("cannot parse whole string '%s'", str.c_str());
+    log::info("cannot parse whole string '{}'", str);
     return std::nullopt;
   }
   return value;
@@ -135,22 +137,22 @@ std::string ToString(int64_t value) {
 
 std::optional<uint64_t> Uint64FromString(const std::string& str) {
   if (str.find('-') != std::string::npos) {
-    LOG_INFO("string '%s' contains minus sign, this function is for unsigned", str.c_str());
+    log::info("string '{}' contains minus sign, this function is for unsigned", str);
     return std::nullopt;
   }
   char* ptr = nullptr;
   errno = 0;
   uint64_t value = std::strtoull(str.c_str(), &ptr, 10);
   if (errno != 0) {
-    LOG_INFO("cannot parse string '%s' with error '%s'", str.c_str(), strerror(errno));
+    log::info("cannot parse string '{}' with error '{}'", str, strerror(errno));
     return std::nullopt;
   }
   if (ptr == str.c_str()) {
-    LOG_INFO("string '%s' is empty or has wrong format", str.c_str());
+    log::info("string '{}' is empty or has wrong format", str);
     return std::nullopt;
   }
   if (ptr != (str.c_str() + str.size())) {
-    LOG_INFO("cannot parse whole string '%s'", str.c_str());
+    log::info("cannot parse whole string '{}'", str);
     return std::nullopt;
   }
   return value;
@@ -166,7 +168,7 @@ std::optional<bool> BoolFromString(const std::string& str) {
   } else if (str == "false") {
     return false;
   } else {
-    LOG_INFO("string '%s' is neither true nor false", str.c_str());
+    log::info("string '{}' is neither true nor false", str);
     return std::nullopt;
   }
 }

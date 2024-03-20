@@ -18,6 +18,7 @@
 
 #include <android/hardware/bluetooth/audio/2.1/IBluetoothAudioProvider.h>
 #include <android/hardware/bluetooth/audio/2.1/types.h>
+#include <bluetooth/log.h>
 #include <fmq/MessageQueue.h>
 #include <hardware/audio.h>
 #include <time.h>
@@ -294,3 +295,9 @@ class BluetoothAudioSourceClientInterface
 }  // namespace hidl
 }  // namespace audio
 }  // namespace bluetooth
+
+namespace fmt {
+template <>
+struct formatter<bluetooth::audio::hidl::BluetoothAudioCtrlAck>
+    : enum_formatter<bluetooth::audio::hidl::BluetoothAudioCtrlAck> {};
+}  // namespace fmt

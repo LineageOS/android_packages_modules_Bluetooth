@@ -19,6 +19,8 @@
 
 #include "le_audio_software_hidl.h"
 
+#include <bluetooth/log.h>
+
 #include "os/log.h"
 
 namespace bluetooth {
@@ -113,23 +115,23 @@ BluetoothAudioCtrlAck LeAudioTransport::StartRequest() {
   SetStartRequestState(StartRequestState::PENDING_BEFORE_RESUME);
   if (stream_cb_.on_resume_(true)) {
     if (start_request_state_ == StartRequestState::CONFIRMED) {
-      LOG_INFO("Start completed.");
+      log::info("Start completed.");
       SetStartRequestState(StartRequestState::IDLE);
       return BluetoothAudioCtrlAck::SUCCESS_FINISHED;
     }
 
     if (start_request_state_ == StartRequestState::CANCELED) {
-      LOG_INFO("Start request failed.");
+      log::info("Start request failed.");
       SetStartRequestState(StartRequestState::IDLE);
       return BluetoothAudioCtrlAck::FAILURE;
     }
 
-    LOG_INFO("Start pending.");
+    log::info("Start pending.");
     SetStartRequestState(StartRequestState::PENDING_AFTER_RESUME);
     return BluetoothAudioCtrlAck::PENDING;
   }
 
-  LOG_ERROR("Start request failed.");
+  log::error("Start request failed.");
   SetStartRequestState(StartRequestState::IDLE);
   return BluetoothAudioCtrlAck::FAILURE;
 }
@@ -139,29 +141,29 @@ BluetoothAudioCtrlAck LeAudioTransport::StartRequestV2() {
   if (stream_cb_.on_resume_(true)) {
     std::lock_guard<std::mutex> guard(start_request_state_mutex_);
     if (start_request_state_ == StartRequestState::CONFIRMED) {
-      LOG_INFO("Start completed.");
+      log::info("Start completed.");
       SetStartRequestState(StartRequestState::IDLE);
       return BluetoothAudioCtrlAck::SUCCESS_FINISHED;
     }
 
     if (start_request_state_ == StartRequestState::CANCELED) {
-      LOG_INFO("Start request failed.");
+      log::info("Start request failed.");
       SetStartRequestState(StartRequestState::IDLE);
       return BluetoothAudioCtrlAck::FAILURE;
     }
 
-    LOG_INFO("Start pending.");
+    log::info("Start pending.");
     SetStartRequestState(StartRequestState::PENDING_AFTER_RESUME);
     return BluetoothAudioCtrlAck::PENDING;
   }
 
-  LOG_ERROR("Start request failed.");
+  log::error("Start request failed.");
   SetStartRequestState(StartRequestState::IDLE);
   return BluetoothAudioCtrlAck::FAILURE;
 }
 
 BluetoothAudioCtrlAck LeAudioTransport::SuspendRequest() {
-  LOG(INFO) << __func__;
+  log::info("");
   if (stream_cb_.on_suspend_()) {
     flush_();
     return BluetoothAudioCtrlAck::SUCCESS_FINISHED;
@@ -171,7 +173,7 @@ BluetoothAudioCtrlAck LeAudioTransport::SuspendRequest() {
 }
 
 void LeAudioTransport::StopRequest() {
-  LOG(INFO) << __func__;
+  log::info("");
   if (stream_cb_.on_suspend_()) {
     flush_();
   }
@@ -180,10 +182,9 @@ void LeAudioTransport::StopRequest() {
 bool LeAudioTransport::GetPresentationPosition(uint64_t* remote_delay_report_ns,
                                                uint64_t* total_bytes_processed,
                                                timespec* data_position) {
-  VLOG(2) << __func__ << ": data=" << total_bytes_processed_
-          << " byte(s), timestamp=" << data_position_.tv_sec << "."
-          << data_position_.tv_nsec
-          << "s, delay report=" << remote_delay_report_ms_ << " msec.";
+  log::verbose("data={} byte(s), timestamp={}.{}s, delay report={} msec.",
+               total_bytes_processed_, data_position_.tv_sec,
+               data_position_.tv_nsec, remote_delay_report_ms_);
   if (remote_delay_report_ns != nullptr) {
     *remote_delay_report_ns = remote_delay_report_ms_ * 1000000u;
   }
@@ -199,7 +200,7 @@ void LeAudioTransport::MetadataChanged(
   auto track_count = source_metadata.track_count;
 
   if (track_count == 0) {
-    LOG(WARNING) << ", invalid number of metadata changed tracks";
+    log::warn(", invalid number of metadata changed tracks");
     return;
   }
   std::vector<playback_track_metadata_v7> tracks_vec;
@@ -221,7 +222,7 @@ void LeAudioTransport::MetadataChanged(
 }
 
 void LeAudioTransport::ResetPresentationPosition() {
-  VLOG(2) << __func__ << ": called.";
+  log::verbose("called.");
   remote_delay_report_ms_ = 0;
   total_bytes_processed_ = 0;
   data_position_ = {};
@@ -235,7 +236,7 @@ void LeAudioTransport::LogBytesProcessed(size_t bytes_processed) {
 }
 
 void LeAudioTransport::SetRemoteDelay(uint16_t delay_report_ms) {
-  LOG(INFO) << __func__ << ": delay_report=" << delay_report_ms << " msec";
+  log::info("delay_report={} msec", delay_report_ms);
   remote_delay_report_ms_ = delay_report_ms;
 }
 
@@ -264,9 +265,9 @@ bool LeAudioTransport::IsRequestCompletedAfterUpdate(
   }
 
   auto ret = std::get<1>(result);
-  LOG_VERBOSE("new state: %d, return: %s",
-              static_cast<int>(start_request_state_.load()),
-              ret ? "true" : "false");
+  log::verbose("new state: {}, return: {}",
+               static_cast<int>(start_request_state_.load()),
+               ret ? "true" : "false");
   return ret;
 }
 

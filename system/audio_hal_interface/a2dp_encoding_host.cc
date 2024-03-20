@@ -16,6 +16,7 @@
 
 #include "a2dp_encoding_host.h"
 
+#include <bluetooth/log.h>
 #include <grp.h>
 #include <sys/stat.h>
 
@@ -36,14 +37,21 @@
 // TODO(b/198260375): Make A2DP data owner group configurable.
 #define A2DP_HOST_DATA_GROUP "bluetooth-audio"
 
+namespace fmt {
+template <>
+struct formatter<tUIPC_EVENT> : enum_formatter<tUIPC_EVENT> {};
+template <>
+struct formatter<tA2DP_CTRL_CMD> : enum_formatter<tA2DP_CTRL_CMD> {};
+}  // namespace fmt
+
 namespace {
 
 std::unique_ptr<tUIPC_STATE> a2dp_uipc = nullptr;
 
 static void btif_a2dp_data_cb([[maybe_unused]] tUIPC_CH_ID ch_id,
                               tUIPC_EVENT event) {
-  LOG_WARN("%s: BTIF MEDIA (A2DP-DATA) EVENT %s", __func__,
-           dump_uipc_event(event));
+  bluetooth::log::warn("BTIF MEDIA (A2DP-DATA) EVENT {}",
+                       dump_uipc_event(event));
 
   switch (event) {
     case UIPC_OPEN_EVT:
@@ -67,7 +75,7 @@ static void btif_a2dp_data_cb([[maybe_unused]] tUIPC_CH_ID ch_id,
       break;
 
     default:
-      LOG_ERROR("%s: ### A2DP-DATA EVENT %d NOT HANDLED ###", __func__, event);
+      bluetooth::log::error("### A2DP-DATA EVENT {} NOT HANDLED ###", event);
       break;
   }
 }
@@ -84,7 +92,7 @@ static void a2dp_data_path_open() {
   if (grp) {
     int res = chown(A2DP_HOST_DATA_PATH, -1, grp->gr_gid);
     if (res == -1) {
-      LOG_ERROR("%s failed: %s", __func__, strerror(errno));
+      bluetooth::log::error("failed: {}", strerror(errno));
     }
   }
 }
@@ -119,16 +127,16 @@ bool StartRequest() {
 
   // Check if a previous request is not finished
   if (a2dp_pending_cmd_ == A2DP_CTRL_CMD_START) {
-    LOG_INFO("%s: A2DP_CTRL_CMD_START in progress", __func__);
+    log::info("A2DP_CTRL_CMD_START in progress");
     return false;
   } else if (a2dp_pending_cmd_ != A2DP_CTRL_CMD_NONE) {
-    LOG_WARN("%s: busy in pending_cmd=%u", __func__, a2dp_pending_cmd_);
+    log::warn("busy in pending_cmd={}", a2dp_pending_cmd_);
     return false;
   }
 
   // Don't send START request to stack while we are in a call
   if (!bluetooth::headset::IsCallIdle()) {
-    LOG_ERROR("%s: call state is busy", __func__);
+    log::error("call state is busy");
     return false;
   }
 
@@ -147,13 +155,13 @@ bool StartRequest() {
     a2dp_pending_cmd_ = A2DP_CTRL_CMD_START;
     btif_av_stream_start(A2dpType::kSource);
     if (btif_av_get_peer_sep(A2dpType::kSource) != AVDT_TSEP_SRC) {
-      LOG_INFO("%s: accepted", __func__);
+      log::info("accepted");
       return true;  // NOTE: The request is placed, but could still fail.
     }
     a2dp_pending_cmd_ = A2DP_CTRL_CMD_NONE;
     return true;
   }
-  LOG_ERROR("%s: AV stream is not ready to start", __func__);
+  log::error("AV stream is not ready to start");
   return false;
 }
 
@@ -164,7 +172,7 @@ bool StopRequest() {
     btif_av_clear_remote_suspend_flag(A2dpType::kSource);
     return true;
   }
-  LOG_INFO("%s: handling", __func__);
+  log::info("handling");
   a2dp_pending_cmd_ = A2DP_CTRL_CMD_STOP;
   btif_av_stream_stop(RawAddress::kEmpty);
   return true;
@@ -172,14 +180,14 @@ bool StopRequest() {
 
 bool SuspendRequest() {
   if (a2dp_pending_cmd_ != A2DP_CTRL_CMD_NONE) {
-    LOG_WARN("%s: busy in pending_cmd=%u", __func__, a2dp_pending_cmd_);
+    log::warn("busy in pending_cmd={}", a2dp_pending_cmd_);
     return false;
   }
   if (!btif_av_stream_started_ready(A2dpType::kSource)) {
-    LOG_WARN("%s: AV stream is not started", __func__);
+    log::warn("AV stream is not started");
     return false;
   }
-  LOG_INFO("%s: handling", __func__);
+  log::info("handling");
   a2dp_pending_cmd_ = A2DP_CTRL_CMD_SUSPEND;
   btif_av_stream_suspend();
   return true;
