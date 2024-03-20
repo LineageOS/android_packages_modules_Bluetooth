@@ -51,6 +51,9 @@ cc_library_shared {
         "libhidlbase",
     ],
     cflags: ["-Wno-unused-parameter"],
+    visibility: [
+        "//device/generic/goldfish/audio",
+    ],
 }
 
 cc_test {
