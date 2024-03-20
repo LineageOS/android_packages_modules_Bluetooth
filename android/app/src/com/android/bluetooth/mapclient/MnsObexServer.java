@@ -30,9 +30,7 @@ import java.lang.ref.WeakReference;
 import java.util.Arrays;
 
 class MnsObexServer extends ServerRequestHandler {
-
-    private static final String TAG = "MnsObexServer";
-    private static final boolean VDBG = MapClientService.VDBG;
+    private static final String TAG = MnsObexServer.class.getSimpleName();
 
     @VisibleForTesting
     static final byte[] MNS_TARGET = new byte[]{
@@ -66,9 +64,7 @@ class MnsObexServer extends ServerRequestHandler {
 
     @Override
     public int onConnect(final HeaderSet request, HeaderSet reply) {
-        if (VDBG) {
-            Log.v(TAG, "onConnect");
-        }
+        Log.v(TAG, "onConnect");
 
         try {
             byte[] uuid = (byte[]) request.getHeader(HeaderSet.TARGET);
@@ -87,9 +83,7 @@ class MnsObexServer extends ServerRequestHandler {
 
     @Override
     public void onDisconnect(final HeaderSet request, HeaderSet reply) {
-        if (VDBG) {
-            Log.v(TAG, "onDisconnect");
-        }
+        Log.v(TAG, "onDisconnect");
         MceStateMachine currentStateMachine = mStateMachineReference.get();
         if (currentStateMachine != null) {
             currentStateMachine.disconnect();
@@ -98,17 +92,13 @@ class MnsObexServer extends ServerRequestHandler {
 
     @Override
     public int onGet(final Operation op) {
-        if (VDBG) {
-            Log.v(TAG, "onGet");
-        }
+        Log.v(TAG, "onGet");
         return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
     }
 
     @Override
     public int onPut(final Operation op) {
-        if (VDBG) {
-            Log.v(TAG, "onPut");
-        }
+        Log.v(TAG, "onPut");
 
         try {
             HeaderSet headerset;
@@ -136,25 +126,19 @@ class MnsObexServer extends ServerRequestHandler {
 
     @Override
     public int onAbort(final HeaderSet request, HeaderSet reply) {
-        if (VDBG) {
-            Log.v(TAG, "onAbort");
-        }
+        Log.v(TAG, "onAbort");
         return ResponseCodes.OBEX_HTTP_NOT_IMPLEMENTED;
     }
 
     @Override
     public int onSetPath(final HeaderSet request, HeaderSet reply, final boolean backup,
             final boolean create) {
-        if (VDBG) {
-            Log.v(TAG, "onSetPath");
-        }
+        Log.v(TAG, "onSetPath");
         return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
     }
 
     @Override
     public void onClose() {
-        if (VDBG) {
-            Log.v(TAG, "onClose");
-        }
+        Log.v(TAG, "onClose");
     }
 }

@@ -293,8 +293,6 @@ class RequestGetMessagesListingForOwnNumber extends Request {
     }
 
     private static void logD(String message) {
-        if (MapClientService.DBG) {
-            Log.d(TAG, message);
-        }
+        Log.d(TAG, message);
     }
 }

@@ -34,12 +34,11 @@ import java.io.IOException;
  * Message Notification Server implementation
  */
 public class MnsService {
+    private static final String TAG = MnsService.class.getSimpleName();
+
     static final int MSG_EVENT = 1;
     /* for Client */
     static final int EVENT_REPORT = 1001;
-    private static final String TAG = "MnsService";
-    private static final Boolean DBG = MapClientService.DBG;
-    private static final Boolean VDBG = MapClientService.VDBG;
     /* MAP version 1.4 */
     private static final int MNS_VERSION = 0x0104;
     /* these are shared across instances */
@@ -51,9 +50,7 @@ public class MnsService {
     private int mSdpHandle = -1;
 
     MnsService(MapClientService context) {
-        if (VDBG) {
-            Log.v(TAG, "MnsService()");
-        }
+        Log.v(TAG, "MnsService()");
         sContext = context;
         sAcceptThread = new SocketAcceptor();
         sServerSockets = ObexServerSockets.create(sAcceptThread);
@@ -72,9 +69,7 @@ public class MnsService {
     }
 
     void stop() {
-        if (VDBG) {
-            Log.v(TAG, "stop()");
-        }
+        Log.v(TAG, "stop()");
         mShutdown = true;
         cleanUpSdpRecord();
         if (sServerSockets != null) {
@@ -117,15 +112,13 @@ public class MnsService {
             Log.e(TAG, "OnAcceptFailed");
             sServerSockets = null; // Will cause a new to be created when calling start.
             if (mShutdown) {
-                Log.e(TAG, "Failed to accept incomming connection - " + "shutdown");
+                Log.e(TAG, "Failed to accept incoming connection - shutdown");
             }
         }
 
         @Override
         public synchronized boolean onConnect(BluetoothDevice device, BluetoothSocket socket) {
-            if (DBG) {
-                Log.d(TAG, "onConnect" + device + " SOCKET: " + socket);
-            }
+            Log.d(TAG, "onConnect" + device + " SOCKET: " + socket);
             /* Signal to the service that we have received an incoming connection.*/
             MceStateMachine stateMachine = sContext.getMceStateMachineForDevice(device);
             if (stateMachine == null) {
