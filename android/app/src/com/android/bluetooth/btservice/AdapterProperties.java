@@ -763,7 +763,8 @@ class AdapterProperties {
         if (state == BluetoothProfile.STATE_CONNECTING) {
             BluetoothStatsLog.write(BluetoothStatsLog.BLUETOOTH_DEVICE_NAME_REPORTED,
                     metricId, device.getName());
-            MetricsLogger.getInstance().logSanitizedBluetoothDeviceName(metricId, device.getName());
+            MetricsLogger.getInstance()
+                    .logAllowlistedDeviceNameHash(metricId, device.getName(), true);
         }
         BluetoothStatsLog.write(BluetoothStatsLog.BLUETOOTH_CONNECTION_STATE_CHANGED, state,
                 0 /* deprecated */, profile, mService.obfuscateAddress(device),
