@@ -243,6 +243,7 @@ const char* dump_hf_client_event(uint16_t event) {
 
 const char* dump_hh_event(uint16_t event) {
   switch (event) {
+    CASE_RETURN_STR(BTA_HH_EMPTY_EVT)
     CASE_RETURN_STR(BTA_HH_ENABLE_EVT)
     CASE_RETURN_STR(BTA_HH_DISABLE_EVT)
     CASE_RETURN_STR(BTA_HH_OPEN_EVT)
