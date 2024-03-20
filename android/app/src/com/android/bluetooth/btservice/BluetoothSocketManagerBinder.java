@@ -25,6 +25,7 @@ import android.os.ParcelFileDescriptor;
 import android.os.ParcelUuid;
 
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.flags.Flags;
 
 class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
     private static final String TAG = "BluetoothSocketManagerBinder";
@@ -51,13 +52,18 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
             return null;
         }
 
+        String brEdrAddress =
+                Flags.identityAddressNullIfUnknown()
+                        ? Utils.getBrEdrAddress(device)
+                        : mService.getIdentityAddress(device.getAddress());
+
         return marshalFd(
                 mService.getNative()
                         .connectSocket(
                                 Utils.getBytesFromAddress(
                                         type == BluetoothSocket.TYPE_L2CAP_LE
                                                 ? device.getAddress()
-                                                : mService.getIdentityAddress(device.getAddress())),
+                                                : brEdrAddress),
                                 type,
                                 Utils.uuidToByteArray(uuid),
                                 port,
