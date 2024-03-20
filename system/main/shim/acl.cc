@@ -716,6 +716,8 @@ class ClassicShimAclConnection
     return connection_->locally_initiated_;
   }
 
+  void Flush() { connection_->Flush(); }
+
  private:
   OnDisconnect on_disconnect_;
   const shim::legacy::acl_classic_link_interface_t interface_;
@@ -882,6 +884,14 @@ struct shim::legacy::Acl::impl {
     ASSERT_LOG(IsClassicAcl(handle), "handle %d is not a classic connection",
                handle);
     handle_to_classic_connection_map_[handle]->EnqueuePacket(std::move(packet));
+  }
+
+  void Flush(HciHandle handle) {
+    if (IsClassicAcl(handle)) {
+      handle_to_classic_connection_map_[handle]->Flush();
+    } else {
+      LOG_ERROR("handle %d is not a classic connection", handle);
+    }
   }
 
   bool IsLeAcl(HciHandle handle) {
@@ -1429,6 +1439,13 @@ void shim::legacy::Acl::WriteData(HciHandle handle,
   handler_->Post(common::BindOnce(&Acl::write_data_sync,
                                   common::Unretained(this), handle,
                                   std::move(packet)));
+}
+
+void shim::legacy::Acl::flush(HciHandle handle) { pimpl_->Flush(handle); }
+
+void shim::legacy::Acl::Flush(HciHandle handle) {
+  handler_->Post(
+      common::BindOnce(&Acl::flush, common::Unretained(this), handle));
 }
 
 void shim::legacy::Acl::CreateClassicConnection(const hci::Address& address) {

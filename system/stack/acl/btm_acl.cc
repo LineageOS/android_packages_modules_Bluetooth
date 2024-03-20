@@ -2805,3 +2805,14 @@ void find_in_device_record(const RawAddress& bd_addr,
   *address_with_type = {.type = BLE_ADDR_PUBLIC, .bda = bd_addr};
   return;
 }
+
+/*******************************************************************************
+ *
+ * Function         btm_acl_flush
+ *
+ * Description      This function is called by L2CAP to flush an ACL link.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void btm_acl_flush(uint16_t handle) { bluetooth::shim::ACL_Flush(handle); }

@@ -111,6 +111,8 @@ class Acl : public hci::acl_manager::ConnectionCallbacks,
   void WriteData(uint16_t hci_handle,
                  std::unique_ptr<packet::RawBuilder> packet);
 
+  void Flush(uint16_t hci_handle);
+
   void Dump(int fd) const;
   void DumpConnectionHistory(int fd) const;
 
@@ -125,6 +127,7 @@ class Acl : public hci::acl_manager::ConnectionCallbacks,
   void on_incoming_acl_credits(uint16_t handle, uint16_t credits);
   void write_data_sync(uint16_t hci_handle,
                        std::unique_ptr<packet::RawBuilder> packet);
+  void flush(uint16_t hci_handle);
 
  private:
   os::Handler* handler_;

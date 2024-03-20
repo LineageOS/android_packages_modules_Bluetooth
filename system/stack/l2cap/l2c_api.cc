@@ -45,7 +45,6 @@
 #include "os/log.h"
 #include "os/system_properties.h"
 #include "osi/include/allocator.h"
-#include "stack/btm/btm_sec.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_psm_types.h"
 #include "stack/include/btm_api.h"
@@ -56,9 +55,6 @@
 #include "types/raw_address.h"
 
 using namespace bluetooth;
-
-void btsnd_hcic_enhanced_flush(uint16_t handle,
-                               uint8_t packet_type);  // TODO Remove
 
 using base::StringPrintf;
 
@@ -1586,7 +1582,7 @@ uint16_t L2CA_FlushChannel(uint16_t lcid, uint16_t num_to_flush) {
       if (bluetooth::shim::GetController()->SupportsNonFlushablePb() &&
           (BTM_GetNumScoLinks() == 0)) {
         /* The only packet type defined - 0 - Automatically-Flushable Only */
-        btsnd_hcic_enhanced_flush(p_lcb->Handle(), 0);
+        l2c_acl_flush(p_lcb->Handle());
       }
     }
 

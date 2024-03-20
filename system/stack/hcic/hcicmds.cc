@@ -317,8 +317,6 @@
 /* Read Default Erroneous Data Reporting */
 #define HCIC_PARAM_SIZE_R_ERR_DATA_RPT 0
 
-#define HCIC_PARAM_SIZE_ENHANCED_FLUSH 3
-
 #define HCIC_PARAM_SIZE_SEND_KEYPRESS_NOTIF 7
 
 #define HCI_SEND_KEYPRESS_NOTIF_BD_ADDR_OFF 0
@@ -1477,21 +1475,6 @@ void btsnd_hcic_rem_oob_neg_reply(const RawAddress& bd_addr) {
 }
 
 /**** end of Simple Pairing Commands ****/
-
-void btsnd_hcic_enhanced_flush(uint16_t handle, uint8_t packet_type) {
-  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
-  uint8_t* pp = (uint8_t*)(p + 1);
-
-  p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_ENHANCED_FLUSH;
-  p->offset = 0;
-  UINT16_TO_STREAM(pp, HCI_ENHANCED_FLUSH);
-  UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_ENHANCED_FLUSH);
-
-  UINT16_TO_STREAM(pp, handle);
-  UINT8_TO_STREAM(pp, packet_type);
-
-  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
-}
 
 /*************************
  * End of Lisbon Commands
