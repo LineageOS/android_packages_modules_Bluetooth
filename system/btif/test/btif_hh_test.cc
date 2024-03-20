@@ -47,8 +47,8 @@ module_t rust_module;
 const tBTA_AG_RES_DATA tBTA_AG_RES_DATA::kEmpty = {};
 
 const bthh_interface_t* btif_hh_get_interface();
-bt_status_t btif_hh_connect(const tAclLinkSpec* link_spec);
-bt_status_t btif_hh_virtual_unplug(const tAclLinkSpec* link_spec);
+bt_status_t btif_hh_connect(const tAclLinkSpec& link_spec);
+bt_status_t btif_hh_virtual_unplug(const tAclLinkSpec& link_spec);
 
 namespace bluetooth {
 namespace legacy {
@@ -292,7 +292,7 @@ TEST_F(BtifHHVirtualUnplugTest, test_btif_hh_virtual_unplug_device_not_open) {
   auto future = g_bthh_connection_state_promise.get_future();
 
   /* Make device in connecting state */
-  ASSERT_EQ(btif_hh_connect(&kDeviceConnecting), BT_STATUS_SUCCESS);
+  ASSERT_EQ(btif_hh_connect(kDeviceConnecting), BT_STATUS_SUCCESS);
 
   ASSERT_EQ(std::future_status::ready, future.wait_for(2s));
 
@@ -304,7 +304,7 @@ TEST_F(BtifHHVirtualUnplugTest, test_btif_hh_virtual_unplug_device_not_open) {
 
   g_bthh_connection_state_promise = std::promise<connection_state_cb_t>();
   future = g_bthh_connection_state_promise.get_future();
-  btif_hh_virtual_unplug(&kDeviceConnecting);
+  btif_hh_virtual_unplug(kDeviceConnecting);
 
   ASSERT_EQ(std::future_status::ready, future.wait_for(2s));
 

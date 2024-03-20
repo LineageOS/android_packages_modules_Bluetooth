@@ -43,7 +43,7 @@
  ******************************************************************************/
 
 bt_status_t btif_storage_add_hid_device_info(
-    tAclLinkSpec* link_spec, uint16_t attr_mask, uint8_t sub_class,
+    const tAclLinkSpec& link_spec, uint16_t attr_mask, uint8_t sub_class,
     uint8_t app_id, uint16_t vendor_id, uint16_t product_id, uint16_t version,
     uint8_t ctry_code, uint16_t ssr_max_latency, uint16_t ssr_min_tout,
     uint16_t dl_len, uint8_t* dsc_list);

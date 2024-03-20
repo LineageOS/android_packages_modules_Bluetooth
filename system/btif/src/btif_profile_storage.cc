@@ -133,12 +133,12 @@ static void btif_storage_hogp_device_info(std::string bdstr, uint16_t attr_mask,
  ******************************************************************************/
 
 bt_status_t btif_storage_add_hid_device_info(
-    tAclLinkSpec* link_spec, uint16_t attr_mask, uint8_t sub_class,
+    const tAclLinkSpec& link_spec, uint16_t attr_mask, uint8_t sub_class,
     uint8_t app_id, uint16_t vendor_id, uint16_t product_id, uint16_t version,
     uint8_t ctry_code, uint16_t ssr_max_latency, uint16_t ssr_min_tout,
     uint16_t dl_len, uint8_t* dsc_list) {
-  log::verbose("btif_storage_add_hid_device_info:");
-  std::string bdstr = link_spec->addrt.bda.ToString();
+  log::verbose("link spec: {}", link_spec.ToRedactedStringForLogging());
+  std::string bdstr = link_spec.addrt.bda.ToString();
 
   if (!IS_FLAG_ENABLED(allow_switching_hid_and_hogp)) {
     btif_storage_hid_device_info(
@@ -147,13 +147,13 @@ bt_status_t btif_storage_add_hid_device_info(
     return BT_STATUS_SUCCESS;
   }
 
-  if (link_spec->transport == BT_TRANSPORT_AUTO) {
+  if (link_spec.transport == BT_TRANSPORT_AUTO) {
     LOG_ERROR("Unexpected transport!");
     return BT_STATUS_FAIL;
   }
   btif_config_set_int(bdstr, BTIF_STORAGE_KEY_HID_DB_VERSION,
                       STORAGE_HID_DB_VERSION);
-  if (link_spec->transport == BT_TRANSPORT_BR_EDR) {
+  if (link_spec.transport == BT_TRANSPORT_BR_EDR) {
     btif_storage_hid_device_info(
         bdstr, attr_mask, sub_class, app_id, vendor_id, product_id, version,
         ctry_code, ssr_max_latency, ssr_min_tout, dl_len, dsc_list);
@@ -217,7 +217,7 @@ static void btif_storage_load_bonded_hid_device(const tAclLinkSpec link_spec) {
                         (uint8_t*)dscp_info.descriptor.dsc_list, &len);
   }
 
-  btif_storage_get_hid_connection_policy(&link_spec, &reconnect_allowed);
+  btif_storage_get_hid_connection_policy(link_spec, &reconnect_allowed);
   // add extracted information to BTA HH
   btif_hh_load_bonded_dev(link_spec, attr_mask, sub_class, app_id, dscp_info,
                           reconnect_allowed);
@@ -266,7 +266,7 @@ static void btif_storage_load_bonded_hogp_device(const tAclLinkSpec link_spec) {
                         (uint8_t*)dscp_info.descriptor.dsc_list, &len);
   }
 
-  btif_storage_get_hid_connection_policy(&link_spec, &reconnect_allowed);
+  btif_storage_get_hid_connection_policy(link_spec, &reconnect_allowed);
   // add extracted information to BTA HH
   btif_hh_load_bonded_dev(link_spec, attr_mask, sub_class, app_id, dscp_info,
                           reconnect_allowed);
@@ -286,16 +286,16 @@ bt_status_t btif_storage_load_bonded_hid_info(void) {
     auto name = bd_addr.ToString();
     tAclLinkSpec link_spec = {};
     link_spec.addrt.bda = bd_addr;
-    int db_version = 0;
-
-    log::verbose("Remote device:{}", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
-
     link_spec.addrt.type = BLE_ADDR_PUBLIC;
     link_spec.transport = BT_TRANSPORT_AUTO;
 
+    int db_version = 0;
     if (IS_FLAG_ENABLED(allow_switching_hid_and_hogp)) {
       btif_config_get_int(name, BTIF_STORAGE_KEY_HID_DB_VERSION, &db_version);
     }
+
+    log::info("link spec: {}; db version: {}",
+              ADDRESS_TO_LOGGABLE_CSTR(link_spec), db_version);
 
     if (db_version == 0) {
       btif_storage_load_bonded_hid_device(link_spec);
@@ -1223,13 +1223,13 @@ bt_status_t btif_storage_remove_hidd(RawAddress* remote_bd_addr) {
  *
  ******************************************************************************/
 bt_status_t btif_storage_set_hid_connection_policy(
-    const tAclLinkSpec* link_spec, bool reconnect_allowed) {
-  std::string bdstr = link_spec->addrt.bda.ToString();
+    const tAclLinkSpec& link_spec, bool reconnect_allowed) {
+  std::string bdstr = link_spec.addrt.bda.ToString();
 
-  if (link_spec->transport == BT_TRANSPORT_LE) {
+  if (link_spec.transport == BT_TRANSPORT_LE) {
     btif_config_set_int(bdstr, BTIF_STORAGE_KEY_HOGP_RECONNECT_ALLOWED,
                         reconnect_allowed);
-  } else if (link_spec->transport == BT_TRANSPORT_BR_EDR) {
+  } else if (link_spec.transport == BT_TRANSPORT_BR_EDR) {
     btif_config_set_int(bdstr, BTIF_STORAGE_KEY_HID_RECONNECT_ALLOWED,
                         reconnect_allowed);
   } else {
@@ -1249,13 +1249,13 @@ bt_status_t btif_storage_set_hid_connection_policy(
  *
  ******************************************************************************/
 bt_status_t btif_storage_get_hid_connection_policy(
-    const tAclLinkSpec* link_spec, bool* reconnect_allowed) {
-  std::string bdstr = link_spec->addrt.bda.ToString();
+    const tAclLinkSpec& link_spec, bool* reconnect_allowed) {
+  std::string bdstr = link_spec.addrt.bda.ToString();
 
   int value = 0;
-  if (link_spec->transport == BT_TRANSPORT_LE) {
+  if (link_spec.transport == BT_TRANSPORT_LE) {
     btif_config_get_int(bdstr, BTIF_STORAGE_KEY_HOGP_RECONNECT_ALLOWED, &value);
-  } else if (link_spec->transport == BT_TRANSPORT_BR_EDR) {
+  } else if (link_spec.transport == BT_TRANSPORT_BR_EDR) {
     btif_config_get_int(bdstr, BTIF_STORAGE_KEY_HID_RECONNECT_ALLOWED, &value);
   } else {
     LOG_ERROR("Un expected!");
