@@ -34,10 +34,8 @@ class PlayerApplicationSettings {
     /*
      * Values for SetPlayerApplicationSettings from AVRCP Spec V1.6 Appendix F.
      */
-    static final byte EQUALIZER_STATUS = 0x01;
     static final byte REPEAT_STATUS = 0x02;
     static final byte SHUFFLE_STATUS = 0x03;
-    static final byte SCAN_STATUS = 0x04;
 
     @VisibleForTesting
     static final byte JNI_REPEAT_STATUS_OFF = 0x01;
@@ -176,5 +174,41 @@ class PlayerApplicationSettings {
             }
         }
         return JNI_STATUS_INVALID;
+    }
+
+    public static String repeatStatusToString(int repeatMode) {
+        switch (repeatMode) {
+            case PlaybackStateCompat.REPEAT_MODE_ALL:
+                return "ALL";
+            case PlaybackStateCompat.REPEAT_MODE_GROUP:
+                return "GROUP";
+            case PlaybackStateCompat.REPEAT_MODE_NONE:
+                return "NONE";
+            case PlaybackStateCompat.REPEAT_MODE_ONE:
+                return "ONE";
+            default:
+                return "Unsupported";
+        }
+    }
+
+    public static String shuffleStatusToString(int shuffleMode) {
+        switch (shuffleMode) {
+            case PlaybackStateCompat.SHUFFLE_MODE_NONE:
+                return "NONE";
+            case PlaybackStateCompat.SHUFFLE_MODE_ALL:
+                return "ALL";
+            case PlaybackStateCompat.SHUFFLE_MODE_GROUP:
+                return "GROUP";
+            default:
+                return "Unsupported";
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "<PlayerApplicationSettings"
+                + " repeat=" + repeatStatusToString(getSetting(REPEAT_STATUS))
+                + " shuffle=" + shuffleStatusToString(getSetting(SHUFFLE_STATUS))
+                + ">";
     }
 }
