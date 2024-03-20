@@ -16,19 +16,14 @@
 
 #pragma once
 
-#ifdef __cplusplus
 #include <cstdint>
 #include <cstring>
-#else
-#include <stdint.h>
-#include <string.h>
-#endif
+
+#include "osi/include/compat.h"  // strlcpy
 
 #define BD_NAME_LEN 248
 typedef uint8_t BD_NAME[BD_NAME_LEN + 1]; /* Device name */
 
-#ifdef __cplusplus
-#include "osi/include/compat.h"  // strlcpy
 inline constexpr BD_NAME kBtmBdNameEmpty = {};
 constexpr size_t kBdNameLength = static_cast<size_t>(BD_NAME_LEN);
 constexpr uint8_t kBdNameDelim = (uint8_t)NULL;
@@ -61,4 +56,3 @@ inline bool bd_name_is_equal(const BD_NAME bd_name1, const BD_NAME bd_name2) {
                 reinterpret_cast<void*>(const_cast<uint8_t*>(bd_name2)),
                 kBdNameLength + 1) == 0;
 }
-#endif
