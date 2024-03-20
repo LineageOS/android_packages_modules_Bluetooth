@@ -801,6 +801,7 @@ cc_test {
         "LeAudioSetConfigSchemas_h",
     ],
     shared_libs: [
+        "libbase",
         "libcrypto",
         "libhidlbase",
         "liblog", // __android_log_print
@@ -1087,6 +1088,7 @@ cc_test {
         "le_audio/mock_codec_manager.cc",
     ],
     shared_libs: [
+        "libbase",
         "libcrypto",
         "liblog",
     ],
@@ -1156,6 +1158,7 @@ cc_test {
         "test/common/mock_controller.cc",
     ],
     shared_libs: [
+        "libbase",
         "libbinder_ndk",
         "libcrypto",
         "libfmq",
