@@ -62,8 +62,7 @@ import java.util.UUID;
  * Bluetooth application.
  */
 public class HeadsetClientService extends ProfileService {
-    private static final boolean DBG = true;
-    private static final String TAG = "HeadsetClientService";
+    private static final String TAG = HeadsetClientService.class.getSimpleName();
 
     // This is also used as a lock for shared data in {@link HeadsetClientService}
     @GuardedBy("mStateMachineMap")
@@ -101,9 +100,7 @@ public class HeadsetClientService extends ProfileService {
     @Override
     public void start() {
         synchronized (mStartStopLock) {
-            if (DBG) {
-                Log.d(TAG, "start()");
-            }
+            Log.d(TAG, "start()");
             if (getHeadsetClientService() != null) {
                 throw new IllegalStateException("start() called twice");
             }
@@ -202,20 +199,16 @@ public class HeadsetClientService extends ProfileService {
             // ({@link HeadsetClientStateMachine#SET_SPEAKER_VOLUME} in
             // {@link HeadsetClientStateMachine} for details.
             if (action.equals(AudioManager.ACTION_VOLUME_CHANGED)) {
-                if (DBG) {
-                    Log.d(TAG, "Volume changed for stream: " + intent.getIntExtra(
-                            AudioManager.EXTRA_VOLUME_STREAM_TYPE, -1));
-                }
+                Log.d(TAG, "Volume changed for stream: " + intent.getIntExtra(
+                        AudioManager.EXTRA_VOLUME_STREAM_TYPE, -1));
                 int streamType = intent.getIntExtra(AudioManager.EXTRA_VOLUME_STREAM_TYPE, -1);
                 if (streamType == AudioManager.STREAM_VOICE_CALL) {
                     int streamValue =
                             intent.getIntExtra(AudioManager.EXTRA_VOLUME_STREAM_VALUE, -1);
                     int hfVol = HeadsetClientStateMachine.amToHfVol(streamValue);
-                    if (DBG) {
-                        Log.d(TAG,
-                                "Setting volume to audio manager: " + streamValue + " hands free: "
-                                        + hfVol);
-                    }
+                    Log.d(TAG,
+                            "Setting volume to audio manager: " + streamValue + " hands free: "
+                                    + hfVol);
                     mAudioManager.setHfpVolume(hfVol);
                     synchronized (mStateMachineMap) {
                         for (HeadsetClientStateMachine sm : mStateMachineMap.values()) {
@@ -235,10 +228,8 @@ public class HeadsetClientService extends ProfileService {
                 }
                 mLastBatteryLevel = batteryLevel;
 
-                if (DBG) {
-                    Log.d(TAG,
-                            "Send battery level update BIEV(2," + batteryLevel + ") command");
-                }
+                Log.d(TAG,
+                        "Send battery level update BIEV(2," + batteryLevel + ") command");
 
                 synchronized (mStateMachineMap) {
                     for (HeadsetClientStateMachine sm : mStateMachineMap.values()) {
@@ -724,16 +715,12 @@ public class HeadsetClientService extends ProfileService {
     /** Set a {@link HeadsetClientService} instance. */
     @VisibleForTesting(visibility = VisibleForTesting.Visibility.PRIVATE)
     public static synchronized void setHeadsetClientService(HeadsetClientService instance) {
-        if (DBG) {
-            Log.d(TAG, "setHeadsetClientService(): set to: " + instance);
-        }
+        Log.d(TAG, "setHeadsetClientService(): set to: " + instance);
         sHeadsetClientService = instance;
     }
 
     public boolean connect(BluetoothDevice device) {
-        if (DBG) {
-            Log.d(TAG, "connect " + device);
-        }
+        Log.d(TAG, "connect " + device);
         if (getConnectionPolicy(device) == BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
             Log.w(TAG, "Connection not allowed: <" + device.getAddress()
                     + "> is CONNECTION_POLICY_FORBIDDEN");
@@ -837,9 +824,7 @@ public class HeadsetClientService extends ProfileService {
      * @return true if connectionPolicy is set, false on error
      */
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
-        if (DBG) {
-            Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
-        }
+        Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
         if (!mDatabaseManager.setProfileConnectionPolicy(device, BluetoothProfile.HEADSET_CLIENT,
                   connectionPolicy)) {
@@ -1037,11 +1022,9 @@ public class HeadsetClientService extends ProfileService {
                     continue;
                 }
                 int connectionState = entry.getValue().getConnectionState(entry.getKey());
-                if (DBG) {
-                    Log.d(TAG,
-                            "Accepting a call on device " + device + ". Possibly disconnecting on "
-                                    + entry.getValue());
-                }
+                Log.d(TAG,
+                        "Accepting a call on device " + device + ". Possibly disconnecting on "
+                                + entry.getValue());
                 if (connectionState == BluetoothProfile.STATE_CONNECTED) {
                     entry.getValue()
                             .obtainMessage(HeadsetClientStateMachine.TERMINATE_CALL)
@@ -1306,9 +1289,7 @@ public class HeadsetClientService extends ProfileService {
         }
 
         if (sm != null) {
-            if (DBG) {
-                Log.d(TAG, "Found SM for device " + device);
-            }
+            Log.d(TAG, "Found SM for device " + device);
         } else if (isConnectionEvent) {
             // The only time a new state machine should be created when none was found is for
             // connection events.
@@ -1338,9 +1319,7 @@ public class HeadsetClientService extends ProfileService {
         synchronized (mStateMachineMap) {
             HeadsetClientStateMachine sm = mStateMachineMap.get(device);
             if (sm != null) {
-                if (DBG) {
-                    Log.d(TAG, "allocateStateMachine: SM already exists for device " + device);
-                }
+                Log.d(TAG, "allocateStateMachine: SM already exists for device " + device);
                 return sm;
             }
 
@@ -1369,10 +1348,8 @@ public class HeadsetClientService extends ProfileService {
                 if (entry.getValue() != null) {
                     int audioState = entry.getValue().getAudioState(entry.getKey());
                     if (audioState == HeadsetClientHalConstants.AUDIO_STATE_CONNECTED) {
-                        if (DBG) {
-                            Log.d(TAG, "Device " + entry.getKey() + " audio state " + audioState
-                                    + " Connected");
-                        }
+                        Log.d(TAG, "Device " + entry.getKey() + " audio state " + audioState
+                                + " Connected");
                         return true;
                     }
                 }
