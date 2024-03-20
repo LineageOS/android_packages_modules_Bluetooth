@@ -36,8 +36,7 @@ import java.util.Map;
 import java.util.Objects;
 
 class AvrcpVolumeManager extends AudioDeviceCallback {
-    public static final String TAG = "AvrcpVolumeManager";
-    public static final boolean DEBUG = true;
+    public static final String TAG = AvrcpVolumeManager.class.getSimpleName();
 
     // All volumes are stored at system volume values, not AVRCP values
     private static final String VOLUME_MAP = "bluetooth_volume_map";
@@ -320,8 +319,6 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
     }
 
     static void d(String msg) {
-        if (DEBUG) {
-            Log.d(TAG, msg);
-        }
+        Log.d(TAG, msg);
     }
 }

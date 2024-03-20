@@ -27,7 +27,7 @@ import com.android.bluetooth.avrcp.AvrcpTargetService;
  * Manager class for player apps.
  */
 public class PlayerSettingsManager {
-    private static final String TAG = "PlayerSettingsManager";
+    private static final String TAG = PlayerSettingsManager.class.getSimpleName();
 
     private final MediaPlayerList mMediaPlayerList;
     private final AvrcpTargetService mService;

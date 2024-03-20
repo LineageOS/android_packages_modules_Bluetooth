@@ -38,8 +38,7 @@ import java.util.Objects;
  * data.
  */
 public class AvrcpNativeInterface {
-    private static final String TAG = "AvrcpNativeInterface";
-    private static final boolean DEBUG = Log.isLoggable(TAG, Log.DEBUG);
+    private static final String TAG = AvrcpNativeInterface.class.getSimpleName();
 
     @GuardedBy("INSTANCE_LOCK")
     private static AvrcpNativeInterface sInstance;
@@ -399,8 +398,6 @@ public class AvrcpNativeInterface {
     private native void sendPlayerSettingsNative(byte[] attributes, byte[] values);
 
     private static void d(String msg) {
-        if (DEBUG) {
-            Log.d(TAG, msg);
-        }
+        Log.d(TAG, msg);
     }
 }
