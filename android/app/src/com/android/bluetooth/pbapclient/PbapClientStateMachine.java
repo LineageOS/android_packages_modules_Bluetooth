@@ -71,8 +71,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 class PbapClientStateMachine extends StateMachine {
-    private static final String TAG = "PbapClientStateMachine";
-    private static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
+    private static final String TAG = PbapClientStateMachine.class.getSimpleName();
 
     // Messages for handling connect/disconnect requests.
     private static final int MSG_DISCONNECT = 2;
@@ -137,7 +136,7 @@ class PbapClientStateMachine extends StateMachine {
     class Disconnected extends State {
         @Override
         public void enter() {
-            if (DBG) Log.d(TAG, "Enter Disconnected: " + getCurrentMessage().what);
+            Log.d(TAG, "Enter Disconnected: " + getCurrentMessage().what);
             onConnectionStateChanged(mCurrentDevice, mMostRecentState,
                     BluetoothProfile.STATE_DISCONNECTED);
             mMostRecentState = BluetoothProfile.STATE_DISCONNECTED;
@@ -149,9 +148,7 @@ class PbapClientStateMachine extends StateMachine {
 
         @Override
         public void enter() {
-            if (DBG) {
-                Log.d(TAG, "Enter Connecting: " + getCurrentMessage().what);
-            }
+            Log.d(TAG, "Enter Connecting: " + getCurrentMessage().what);
             onConnectionStateChanged(mCurrentDevice, mMostRecentState,
                     BluetoothProfile.STATE_CONNECTING);
             mCurrentDevice.sdpSearch(BluetoothUuid.PBAP_PSE);
@@ -180,9 +177,7 @@ class PbapClientStateMachine extends StateMachine {
 
         @Override
         public boolean processMessage(Message message) {
-            if (DBG) {
-                Log.d(TAG, "Processing MSG " + message.what + " from " + this.getName());
-            }
+            Log.d(TAG, "Processing MSG " + message.what + " from " + this.getName());
             switch (message.what) {
                 case MSG_DISCONNECT:
                     if (message.obj instanceof BluetoothDevice && message.obj.equals(
@@ -223,7 +218,7 @@ class PbapClientStateMachine extends StateMachine {
     class Disconnecting extends State {
         @Override
         public void enter() {
-            if (DBG) Log.d(TAG, "Enter Disconnecting: " + getCurrentMessage().what);
+            Log.d(TAG, "Enter Disconnecting: " + getCurrentMessage().what);
             onConnectionStateChanged(mCurrentDevice, mMostRecentState,
                     BluetoothProfile.STATE_DISCONNECTING);
             mMostRecentState = BluetoothProfile.STATE_DISCONNECTING;
@@ -238,9 +233,7 @@ class PbapClientStateMachine extends StateMachine {
 
         @Override
         public boolean processMessage(Message message) {
-            if (DBG) {
-                Log.d(TAG, "Processing MSG " + message.what + " from " + this.getName());
-            }
+            Log.d(TAG, "Processing MSG " + message.what + " from " + this.getName());
             PbapClientConnectionHandler connectionHandler = mConnectionHandler;
             HandlerThread handlerThread = mHandlerThread;
 
@@ -283,7 +276,7 @@ class PbapClientStateMachine extends StateMachine {
     class Connected extends State {
         @Override
         public void enter() {
-            if (DBG) Log.d(TAG, "Enter Connected: " + getCurrentMessage().what);
+            Log.d(TAG, "Enter Connected: " + getCurrentMessage().what);
             onConnectionStateChanged(mCurrentDevice, mMostRecentState,
                     BluetoothProfile.STATE_CONNECTED);
             mMostRecentState = BluetoothProfile.STATE_CONNECTED;
@@ -292,9 +285,7 @@ class PbapClientStateMachine extends StateMachine {
 
         @Override
         public boolean processMessage(Message message) {
-            if (DBG) {
-                Log.d(TAG, "Processing MSG " + message.what + " from " + this.getName());
-            }
+            Log.d(TAG, "Processing MSG " + message.what + " from " + this.getName());
             switch (message.what) {
                 case MSG_DISCONNECT:
                     if ((message.obj instanceof BluetoothDevice)
@@ -359,7 +350,7 @@ class PbapClientStateMachine extends StateMachine {
     }
 
     public void disconnect(BluetoothDevice device) {
-        if (DBG) Log.d(TAG, "Disconnect Request " + device);
+        Log.d(TAG, "Disconnect Request " + device);
         sendMessage(MSG_DISCONNECT, device);
     }
 
