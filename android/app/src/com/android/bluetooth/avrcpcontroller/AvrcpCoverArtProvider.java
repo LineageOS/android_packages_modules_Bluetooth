@@ -46,8 +46,7 @@ import java.io.IOException;
  * enable that usage pattern.
  */
 public class AvrcpCoverArtProvider extends ContentProvider {
-    private static final String TAG = "AvrcpCoverArtProvider";
-    private static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
+    private static final String TAG = AvrcpCoverArtProvider.class.getSimpleName();
 
     private BluetoothAdapter mAdapter;
 
@@ -177,8 +176,6 @@ public class AvrcpCoverArtProvider extends ContentProvider {
     }
 
     private static void debug(String msg) {
-        if (DBG) {
-            Log.d(TAG, msg);
-        }
+        Log.d(TAG, msg);
     }
 }

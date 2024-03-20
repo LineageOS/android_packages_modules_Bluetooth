@@ -29,8 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * An abstraction of the cover art image storage mechanism.
  */
 public class AvrcpCoverArtStorage {
-    private static final String TAG = "AvrcpCoverArtStorage";
-    private static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
+    private static final String TAG = AvrcpCoverArtStorage.class.getSimpleName();
 
     private final Context mContext;
 
@@ -165,8 +164,6 @@ public class AvrcpCoverArtStorage {
     }
 
     private void debug(String msg) {
-        if (DBG) {
-            Log.d(TAG, msg);
-        }
+        Log.d(TAG, msg);
     }
 }
