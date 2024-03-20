@@ -3594,3 +3594,12 @@ uint16_t le_result_to_l2c_conn(uint16_t result) {
       return L2CAP_CONN_OTHER_ERROR;
   }
 }
+
+/*******************************************************************************
+ *
+ * Function         l2c_acl_flush
+ *
+ * Description      API functions call this function to flush data.
+ *
+ ******************************************************************************/
+void l2c_acl_flush(uint16_t handle) { btm_acl_flush(handle); }

@@ -292,6 +292,8 @@ void btm_acl_create_failed(const RawAddress& bda, tBT_TRANSPORT transport,
 
 void btm_acl_removed(uint16_t handle);
 
+void btm_acl_flush(uint16_t handle);
+
 void acl_disconnect_from_handle(uint16_t handle, tHCI_STATUS reason,
                                 std::string comment);
 void acl_disconnect_after_role_switch(uint16_t conn_handle, tHCI_STATUS reason,

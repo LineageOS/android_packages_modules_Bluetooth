@@ -266,6 +266,15 @@ struct ACL_WriteData {
 };
 extern struct ACL_WriteData ACL_WriteData;
 
+// Name: ACL_Flush
+// Params: uint16_t handle
+// Return: void
+struct ACL_Flush {
+  std::function<void(uint16_t handle)> body{[](uint16_t /* handle */) {}};
+  void operator()(uint16_t handle) { body(handle); };
+};
+extern struct ACL_Flush ACL_Flush;
+
 }  // namespace main_shim_acl_api
 }  // namespace mock
 }  // namespace test

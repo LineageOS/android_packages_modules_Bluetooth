@@ -148,18 +148,6 @@ struct btsnd_hcic_enhanced_accept_synchronous_connection {
 extern struct btsnd_hcic_enhanced_accept_synchronous_connection
     btsnd_hcic_enhanced_accept_synchronous_connection;
 
-// Name: btsnd_hcic_enhanced_flush
-// Params: uint16_t handle, uint8_t packet_type
-// Return: void
-struct btsnd_hcic_enhanced_flush {
-  std::function<void(uint16_t handle, uint8_t packet_type)> body{
-      [](uint16_t /* handle */, uint8_t /* packet_type */) {}};
-  void operator()(uint16_t handle, uint8_t packet_type) {
-    body(handle, packet_type);
-  };
-};
-extern struct btsnd_hcic_enhanced_flush btsnd_hcic_enhanced_flush;
-
 // Name: btsnd_hcic_enhanced_set_up_synchronous_connection
 // Params: uint16_t conn_handle, enh_esco_params_t* p_params
 // Return: void
