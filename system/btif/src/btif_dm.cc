@@ -54,6 +54,7 @@
 
 #include "advertise_data_parser.h"
 #include "bt_dev_class.h"
+#include "bt_name.h"
 #include "bta/dm/bta_dm_disc.h"
 #include "bta/include/bta_api.h"
 #include "btif/include/stack_manager_t.h"
@@ -2148,7 +2149,7 @@ static void btif_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
         }
         bt_property_t properties[] = {{
             .type = BT_PROPERTY_BDNAME,
-            .len = (int)strlen((char*)disc_res.bd_name),
+            .len = (int)strnlen((char*)disc_res.bd_name, BD_NAME_LEN),
             .val = (void*)disc_res.bd_name,
         }};
         const bt_status_t status = btif_storage_set_remote_device_property(

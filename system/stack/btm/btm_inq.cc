@@ -37,6 +37,7 @@
 #include <mutex>
 
 #include "advertise_data_parser.h"
+#include "bt_name.h"
 #include "btif/include/btif_acl.h"
 #include "btif/include/btif_config.h"
 #include "common/time_util.h"
@@ -1995,18 +1996,14 @@ void btm_process_remote_name(const RawAddress* bda, const BD_NAME bdn,
       /* Copy the name from the data stream into the return structure */
       /* Note that even if it is not being returned, it is used as a  */
       /*      temporary buffer.                                       */
-      rem_name.length = (evt_len < BD_NAME_LEN) ? evt_len : BD_NAME_LEN;
       rem_name.status = BTM_SUCCESS;
       rem_name.hci_status = hci_status;
-
       bd_name_copy(rem_name.remote_bd_name, bdn);
-      rem_name.remote_bd_name[rem_name.length] = 0;
     } else {
       /* If processing a stand alone remote name then report the error in the
          callback */
       rem_name.status = BTM_BAD_VALUE_RET;
       rem_name.hci_status = hci_status;
-      rem_name.length = 0;
       rem_name.remote_bd_name[0] = 0;
     }
     /* Reset the remote BAD to zero and call callback if possible */
