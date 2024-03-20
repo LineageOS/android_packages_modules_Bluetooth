@@ -42,8 +42,7 @@ import java.util.Map;
 import java.util.Objects;
 
 public class HfpClientConnectionService extends ConnectionService {
-    private static final String TAG = "HfpClientConnService";
-    private static final boolean DBG = true;
+    private static final String TAG = HfpClientConnectionService.class.getSimpleName();
 
     public static final String HFP_SCHEME = "hfpc";
 
@@ -128,18 +127,14 @@ public class HfpClientConnectionService extends ConnectionService {
     private void onConnectionStateChangedInternal(BluetoothDevice device, int newState,
             int oldState) {
         if (newState == BluetoothProfile.STATE_CONNECTED) {
-            if (DBG) {
-                Log.d(TAG, "Established connection with " + device);
-            }
+            Log.d(TAG, "Established connection with " + device);
 
             HfpClientDeviceBlock block = createBlockForDevice(device);
             if (block == null) {
                 Log.w(TAG, "Block already exists for device= " + device + ", ignoring.");
             }
         } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-            if (DBG) {
-                Log.d(TAG, "Disconnecting from " + device);
-            }
+            Log.d(TAG, "Disconnecting from " + device);
 
             // Disconnect any inflight calls from the connection service.
             synchronized (HfpClientConnectionService.this) {
@@ -197,9 +192,7 @@ public class HfpClientConnectionService extends ConnectionService {
     @Override
     public void onCreate() {
         super.onCreate();
-        if (DBG) {
-            Log.d(TAG, "onCreate");
-        }
+        Log.d(TAG, "onCreate");
         mTelecomManager = getSystemService(TelecomManager.class);
         if (mTelecomManager != null) mTelecomManager.clearPhoneAccounts();
 
@@ -215,9 +208,7 @@ public class HfpClientConnectionService extends ConnectionService {
 
     @Override
     public void onDestroy() {
-        if (DBG) {
-            Log.d(TAG, "onDestroy called");
-        }
+        Log.d(TAG, "onDestroy called");
 
         // Unregister the phone account. This should ideally happen when disconnection ensues but in
         // case the service crashes we may need to force clean.
@@ -236,9 +227,7 @@ public class HfpClientConnectionService extends ConnectionService {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (DBG) {
-            Log.d(TAG, "onStartCommand " + intent);
-        }
+        Log.d(TAG, "onStartCommand " + intent);
         // In order to make sure that the service is sticky (recovers from errors when HFP
         // connection is still active) and to stop it we need a special intent since stopService
         // only recreates it.
@@ -259,10 +248,8 @@ public class HfpClientConnectionService extends ConnectionService {
     @Override
     public Connection onCreateIncomingConnection(PhoneAccountHandle connectionManagerAccount,
             ConnectionRequest request) {
-        if (DBG) {
-            Log.d(TAG,
-                    "onCreateIncomingConnection " + connectionManagerAccount + " req: " + request);
-        }
+        Log.d(TAG,
+                "onCreateIncomingConnection " + connectionManagerAccount + " req: " + request);
 
         HfpClientDeviceBlock block = findBlockForHandle(connectionManagerAccount);
         if (block == null) {
@@ -282,9 +269,7 @@ public class HfpClientConnectionService extends ConnectionService {
     @Override
     public Connection onCreateOutgoingConnection(PhoneAccountHandle connectionManagerAccount,
             ConnectionRequest request) {
-        if (DBG) {
-            Log.d(TAG, "onCreateOutgoingConnection " + connectionManagerAccount);
-        }
+        Log.d(TAG, "onCreateOutgoingConnection " + connectionManagerAccount);
         HfpClientDeviceBlock block = findBlockForHandle(connectionManagerAccount);
         if (block == null) {
             Log.w(TAG, "HfpClient does not support having a connection manager");
@@ -300,9 +285,7 @@ public class HfpClientConnectionService extends ConnectionService {
     @Override
     public Connection onCreateUnknownConnection(PhoneAccountHandle connectionManagerAccount,
             ConnectionRequest request) {
-        if (DBG) {
-            Log.d(TAG, "onCreateUnknownConnection " + connectionManagerAccount);
-        }
+        Log.d(TAG, "onCreateUnknownConnection " + connectionManagerAccount);
         HfpClientDeviceBlock block = findBlockForHandle(connectionManagerAccount);
         if (block == null) {
             Log.w(TAG, "HfpClient does not support having a connection manager");
@@ -319,9 +302,7 @@ public class HfpClientConnectionService extends ConnectionService {
 
     @Override
     public void onConference(Connection connection1, Connection connection2) {
-        if (DBG) {
-            Log.d(TAG, "onConference " + connection1 + " " + connection2);
-        }
+        Log.d(TAG, "onConference " + connection1 + " " + connection2);
 
         BluetoothDevice bd1 = ((HfpClientConnection) connection1).getDevice();
         BluetoothDevice bd2 = ((HfpClientConnection) connection2).getDevice();
@@ -395,9 +376,7 @@ public class HfpClientConnectionService extends ConnectionService {
                         .setSupportedUriSchemes(Arrays.asList(PhoneAccount.SCHEME_TEL))
                         .setCapabilities(capabilities)
                         .build();
-        if (DBG) {
-            Log.d(TAG, "phoneaccount: " + account);
-        }
+        Log.d(TAG, "phoneaccount: " + account);
         return account;
     }
 
