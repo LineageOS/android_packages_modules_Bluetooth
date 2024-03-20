@@ -120,14 +120,6 @@ class DevNullOrStdErr {
 
 bluetooth::common::TimestamperInMilliseconds timestamper_in_milliseconds;
 
-uint8_t mock_get_ble_acceptlist_size() { return 123; }
-
-struct controller_t mock_controller {
-  .get_ble_acceptlist_size = mock_get_ble_acceptlist_size,
-};
-
-const controller_t* controller_get_interface() { return &mock_controller; }
-
 void mock_on_send_data_upwards(BT_HDR*) {}
 
 void mock_on_packets_completed(uint16_t handle, uint16_t num_packets) {}
