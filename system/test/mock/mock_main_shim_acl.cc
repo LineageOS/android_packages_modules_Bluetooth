@@ -24,7 +24,6 @@
 #include <string>
 
 #include "common/sync_map_count.h"
-#include "device/include/controller.h"
 #include "hci/acl_manager.h"
 #include "hci/acl_manager/classic_acl_connection.h"
 #include "hci/acl_manager/le_acl_connection.h"

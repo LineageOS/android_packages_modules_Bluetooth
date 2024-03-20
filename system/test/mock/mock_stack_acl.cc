@@ -402,9 +402,9 @@ void BTM_RequestPeerSCA(const RawAddress& remote_bda, tBT_TRANSPORT transport) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::BTM_RequestPeerSCA(remote_bda, transport);
 }
-void BTM_acl_after_controller_started(const controller_t* controller) {
+void BTM_acl_after_controller_started() {
   inc_func_call_count(__func__);
-  test::mock::stack_acl::BTM_acl_after_controller_started(controller);
+  test::mock::stack_acl::BTM_acl_after_controller_started();
 }
 void BTM_block_role_switch_for(const RawAddress& peer_addr) {
   inc_func_call_count(__func__);

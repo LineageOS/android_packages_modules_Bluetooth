@@ -33,7 +33,6 @@
 #include "internal_include/stack_config.h"
 #include "le_audio_set_configuration_provider.h"
 #include "mock_codec_manager.h"
-#include "mock_controller.h"
 #include "mock_csis_client.h"
 #include "stack/include/bt_types.h"
 #include "test/common/mock_functions.h"

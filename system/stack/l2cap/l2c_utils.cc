@@ -28,7 +28,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "device/include/controller.h"
 #include "hal/snoop_logger.h"
 #include "hci/controller_interface.h"
 #include "internal_include/bt_target.h"

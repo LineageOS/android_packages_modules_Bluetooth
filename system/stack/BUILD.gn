@@ -236,7 +236,6 @@ if (use.test) {
     sources = [
       "btm/btm_iso.cc",
       "test/btm_iso_test.cc",
-      "test/common/mock_controller.cc",
       "test/common/mock_gatt_layer.cc",
       "test/common/mock_hcic_layer.cc",
     ]

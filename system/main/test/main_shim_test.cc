@@ -28,7 +28,6 @@
 #include <vector>
 
 #include "btif/include/btif_hh.h"
-#include "device/include/controller.h"
 #include "hal/hci_hal.h"
 #include "hci/acl_manager.h"
 #include "hci/acl_manager/classic_acl_connection.h"
@@ -49,7 +48,6 @@
 #include "main/shim/dumpsys.h"
 #include "main/shim/helpers.h"
 #include "main/shim/le_advertising_manager.h"
-#include "main/shim/utils.h"
 #include "main/shim/le_scanning_manager.h"
 #include "main/shim/utils.h"
 #include "os/handler.h"
