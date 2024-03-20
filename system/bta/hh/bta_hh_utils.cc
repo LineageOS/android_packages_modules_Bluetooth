@@ -66,7 +66,7 @@ uint8_t bta_hh_find_cb(const tAclLinkSpec& link_spec) {
   /* See how many active devices there are. */
   for (xx = 0; xx < BTA_HH_MAX_DEVICE; xx++) {
     /* check if any active/known devices is a match */
-    if ((link_spec.addrt.bda == bta_hh_cb.kdev[xx].link_spec.addrt.bda &&
+    if ((link_spec == bta_hh_cb.kdev[xx].link_spec &&
          !link_spec.addrt.bda.IsEmpty())) {
 #if (BTA_HH_DEBUG == TRUE)
       log::verbose("found kdev_cb[{}] hid_handle={}", xx,
@@ -120,7 +120,7 @@ tBTA_HH_DEV_CB* bta_hh_get_cb(const tAclLinkSpec& link_spec) {
 void bta_hh_clean_up_kdev(tBTA_HH_DEV_CB* p_cb) {
   uint8_t index;
 
-  if (p_cb->is_le_device) {
+  if (p_cb->link_spec.transport == BT_TRANSPORT_LE) {
     uint8_t le_hid_handle = BTA_HH_GET_LE_CB_IDX(p_cb->hid_handle);
     if (le_hid_handle >= BTA_HH_LE_MAX_KNOWN) {
       log::warn("Invalid LE hid_handle {}", p_cb->hid_handle);
