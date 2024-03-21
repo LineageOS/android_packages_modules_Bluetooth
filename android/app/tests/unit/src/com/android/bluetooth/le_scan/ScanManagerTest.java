@@ -682,8 +682,6 @@ public class ScanManagerTest {
 
     @Test
     public void testScanTimeoutResetForNewScan() {
-        mSetFlagsRule.enableFlags(Flags.FLAG_SCAN_TIMEOUT_RESET);
-
         mTestLooper.stopAutoDispatchAndIgnoreExceptions();
         // Set filtered scan flag
         final boolean isFiltered = false;
