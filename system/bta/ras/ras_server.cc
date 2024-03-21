@@ -443,7 +443,7 @@ class RasServerImpl : public bluetooth::ras::RasServer {
         SendResponseCode(ResponseCodeValue::OP_CODE_NOT_SUPPORTED, tracker);
       } break;
       default:
-        LOG_WARN("Unknown opcode:0x%02x", (uint16_t)command.opcode_);
+        log::warn("Unknown opcode:0x{:02x}", (uint16_t)command.opcode_);
         SendResponseCode(ResponseCodeValue::OP_CODE_NOT_SUPPORTED, tracker);
     }
   }

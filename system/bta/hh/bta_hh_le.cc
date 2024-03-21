@@ -2306,7 +2306,7 @@ static bool bta_hh_le_iso_data_callback(const RawAddress& addr,
                                         uint16_t cis_conn_hdl, uint8_t* data,
                                         uint16_t size, uint32_t timestamp) {
   if (!IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
-    LOG_WARN("DSA not supported");
+    log::warn("DSA not supported");
     return false;
   }
 
@@ -2316,7 +2316,7 @@ static bool bta_hh_le_iso_data_callback(const RawAddress& addr,
 
   tBTA_HH_DEV_CB* p_dev_cb = bta_hh_le_find_dev_cb_by_bda(link_spec);
   if (p_dev_cb == nullptr) {
-    LOG_WARN("Device not connected: %s", ADDRESS_TO_LOGGABLE_CSTR(link_spec));
+    log::warn("Device not connected: {}", ADDRESS_TO_LOGGABLE_CSTR(link_spec));
     return false;
   }
 

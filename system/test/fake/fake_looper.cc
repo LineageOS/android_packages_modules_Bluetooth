@@ -17,6 +17,7 @@
 #include "test/fake/fake_looper.h"
 
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 #include <gtest/gtest.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -60,8 +61,8 @@ void* run_message_loop(void* arg) {
 
   // thread->tid_ = syscall(__NR_gettid);
   thread->tid_ = get_thread_id();
-  LOG_DEBUG("Thread message loop is operational name:%s tid:%u",
-            thread->name_.c_str(), thread->tid_);
+  bluetooth::log::debug("Thread message loop is operational name:{} tid:{}",
+                        thread->name_, thread->tid_);
 
   while (thread->is_running()) {
     thread->work_queue_semaphore.wait();

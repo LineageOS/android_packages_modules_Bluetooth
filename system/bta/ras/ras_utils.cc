@@ -59,7 +59,7 @@ bool ParseControlPointCommand(ControlPointCommand* command,
                               const uint8_t* value, uint16_t len) {
   // Check for minimum expected length
   if (len != kControlPointCommandSize) {
-    LOG_WARN("Invalid len %d", len);
+    log::warn("Invalid len {}", len);
     return false;
   }
   command->opcode_ = static_cast<Opcode>(value[0]);

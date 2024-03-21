@@ -18,6 +18,8 @@
 
 #include "test/headless/scan/scan.h"
 
+#include <bluetooth/log.h>
+
 #include "base/logging.h"  // LOG() stdout and android log
 #include "os/log.h"
 #include "test/headless/get_options.h"
@@ -29,12 +31,13 @@
 #include "test/headless/stopwatch.h"
 
 using namespace bluetooth::test;
+using namespace bluetooth;
 using namespace std::chrono_literals;
 
 namespace {
 
 int start_scan([[maybe_unused]] unsigned int num_loops) {
-  LOG(INFO) << "Started Device Scan";
+  log::info("Started Device Scan");
 
   ASSERT(bluetoothInterface.start_discovery() == BT_STATUS_SUCCESS);
   LOG_CONSOLE("Started inquiry - device discovery");
