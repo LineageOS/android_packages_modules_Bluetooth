@@ -457,7 +457,7 @@ public final class BluetoothSocket implements Closeable {
             }
             mPfd = socketManager.connectSocket(mDevice, mType, mUuid, mPort, getSecurityFlags());
             synchronized (this) {
-                if (DBG) Log.d(TAG, "connect(), SocketState: " + mSocketState + ", mPfd: " + mPfd);
+                Log.i(TAG, "connect(), SocketState: " + mSocketState + ", mPfd: " + mPfd);
                 if (mSocketState == SocketState.CLOSED) {
                     throw new BluetoothSocketException(
                             BluetoothSocketException.SOCKET_CLOSED);
@@ -487,7 +487,7 @@ public final class BluetoothSocket implements Closeable {
                     throw new BluetoothSocketException(BluetoothSocketException.SOCKET_CLOSED);
                 }
                 mSocketState = SocketState.CONNECTED;
-                if (DBG) Log.d(TAG, "connect(), socket connected");
+                Log.i(TAG, "connect(), socket connected. mPort=" + mPort);
             }
         } catch (BluetoothSocketException e) {
             SocketMetrics.logSocketConnect(
