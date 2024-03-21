@@ -15,6 +15,7 @@
  */
 package com.android.server.bluetooth.test
 
+import android.app.AlarmManager
 import android.app.Application
 import android.bluetooth.BluetoothAdapter
 import android.content.Context
@@ -165,7 +166,11 @@ class AutoOnFeatureTest {
     fun setupTimer_whenBtOffAndUserEnabled_triggerCallback() {
         setupTimer()
 
-        shadowOf(looper).runToEndOfTasks()
+        val shadowAlarmManager = shadowOf(context.getSystemService(AlarmManager::class.java))
+        shadowAlarmManager.fireAlarm(shadowAlarmManager.peekNextScheduledAlarm())
+
+        shadowOf(looper).runOneTask()
+
         expect.that(callback_count).isEqualTo(1)
         expect.that(timer).isNull()
     }
@@ -176,7 +181,11 @@ class AutoOnFeatureTest {
         setupTimer()
         setupTimer()
 
-        shadowOf(looper).runToEndOfTasks()
+        val shadowAlarmManager = shadowOf(context.getSystemService(AlarmManager::class.java))
+        shadowAlarmManager.fireAlarm(shadowAlarmManager.peekNextScheduledAlarm())
+
+        shadowOf(looper).runOneTask()
+
         expect.that(callback_count).isEqualTo(1)
         expect.that(timer).isNull()
     }
