@@ -75,8 +75,6 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 class AdapterProperties {
-    private static final boolean DBG = true;
-    private static final boolean VDBG = false;
     private static final String TAG = "AdapterProperties";
 
     private static final String MAX_CONNECTED_AUDIO_DEVICES_PROPERTY =
@@ -1321,15 +1319,11 @@ class AdapterProperties {
     }
 
     private static void infoLog(String msg) {
-        if (VDBG) {
-            Log.i(TAG, msg);
-        }
+        Log.i(TAG, msg);
     }
 
     private static void debugLog(String msg) {
-        if (DBG) {
-            Log.d(TAG, msg);
-        }
+        Log.d(TAG, msg);
     }
 
     private static void errorLog(String msg) {
