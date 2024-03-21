@@ -2323,6 +2323,12 @@ void btm_sec_rmt_name_request_complete(const RawAddress* p_bd_addr,
 
   if (!p_bd_name) p_bd_name = (const uint8_t*)kBtmBdNameEmpty;
 
+  BTM_LogHistory(kBtmLogTag, (p_bd_addr) ? *p_bd_addr : RawAddress::kEmpty,
+                 "RNR complete",
+                 base::StringPrintf("status:%s name:%s",
+                                    hci_error_code_text(status).c_str(),
+                                    PRIVATE_NAME(p_bd_name)));
+
   if (p_dev_rec == nullptr) {
     log::debug(
         "Remote read request complete for unknown device pairing_state:{} "
