@@ -14,7 +14,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import bluetooth_packets_python3 as bt_packets
 from blueberry.tests.gd.cert.capture import Capture
 from blueberry.tests.gd.cert.matchers import HciMatchers
 from blueberry.tests.gd.cert.matchers import SecurityMatchers
