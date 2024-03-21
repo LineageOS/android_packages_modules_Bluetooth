@@ -272,11 +272,6 @@ typedef struct {
   uint16_t clock_offset;
 } tBTA_DM_INQ_RES;
 
-/* Structure associated with BTA_DM_INQ_CMPL_EVT */
-typedef struct {
-  uint8_t num_resps; /* Number of inquiry responses. */
-} tBTA_DM_INQ_CMPL;
-
 /* Structure associated with BTA_DM_OBSERVE_CMPL_EVT */
 typedef struct {
   uint8_t num_resps; /* Number of responses. */
@@ -314,7 +309,6 @@ typedef struct {
 /* Union of all search callback structures */
 typedef union {
   tBTA_DM_INQ_RES inq_res;   /* Inquiry result for a peer device. */
-  tBTA_DM_INQ_CMPL inq_cmpl; /* Inquiry complete. */
   tBTA_DM_DISC_RES disc_res; /* Discovery result for a peer device. */
   tBTA_DM_DISC_BLE_RES
       disc_ble_res;             /* discovery result for GATT based service */

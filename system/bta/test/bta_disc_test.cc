@@ -49,7 +49,7 @@ void bta_dm_disc_search_cb(const tBTA_DM_SEARCH_CB& search_cb);
 void bta_dm_discover_next_device();
 void bta_dm_execute_queued_request();
 void bta_dm_find_services(const RawAddress& bd_addr);
-void bta_dm_inq_cmpl(uint8_t num);
+void bta_dm_inq_cmpl();
 void bta_dm_inq_cmpl_cb(void* p_result);
 void bta_dm_observe_cmpl_cb(void* p_result);
 void bta_dm_observe_results_cb(tBTM_INQ_RESULTS* p_inq, const uint8_t* p_eir,
@@ -136,10 +136,8 @@ TEST_F(BtaDiscTest, bta_dm_find_services) {
 }
 
 TEST_F(BtaDiscTest, bta_dm_inq_cmpl) {
-  bluetooth::legacy::testing::bta_dm_inq_cmpl(0);
-  bluetooth::legacy::testing::bta_dm_inq_cmpl(1);
-  bluetooth::legacy::testing::bta_dm_inq_cmpl(2);
-  bluetooth::legacy::testing::bta_dm_inq_cmpl(255);
+  bluetooth::legacy::testing::bta_dm_inq_cmpl();
+  bluetooth::legacy::testing::bta_dm_inq_cmpl();
 }
 
 TEST_F(BtaDiscTest, bta_dm_inq_cmpl_cb) {
