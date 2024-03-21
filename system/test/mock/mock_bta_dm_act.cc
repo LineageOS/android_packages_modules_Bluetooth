@@ -48,7 +48,6 @@ struct BTA_dm_report_role_change BTA_dm_report_role_change;
 struct bta_dm_acl_up bta_dm_acl_up;
 struct bta_dm_add_ble_device bta_dm_add_ble_device;
 struct bta_dm_add_blekey bta_dm_add_blekey;
-struct bta_dm_add_device bta_dm_add_device;
 struct bta_dm_ble_config_local_privacy bta_dm_ble_config_local_privacy;
 struct bta_dm_ble_confirm_reply bta_dm_ble_confirm_reply;
 struct bta_dm_ble_csis_observe bta_dm_ble_csis_observe;
@@ -136,10 +135,6 @@ void bta_dm_add_blekey(const RawAddress& bd_addr, tBTA_LE_KEY_VALUE blekey,
                        tBTM_LE_KEY_TYPE key_type) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_act::bta_dm_add_blekey(bd_addr, blekey, key_type);
-}
-void bta_dm_add_device(std::unique_ptr<tBTA_DM_API_ADD_DEVICE> msg) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_add_device(std::move(msg));
 }
 void bta_dm_ble_config_local_privacy(bool privacy_enable) {
   inc_func_call_count(__func__);

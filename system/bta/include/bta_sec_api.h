@@ -337,9 +337,8 @@ void BTA_DmConfirm(const RawAddress& bd_addr, bool accept);
  * Returns          void
  *
  ******************************************************************************/
-void BTA_DmAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
-                     const LinkKey& link_key, uint8_t key_type,
-                     uint8_t pin_length);
+void BTA_DmAddDevice(RawAddress bd_addr, DEV_CLASS dev_class, LinkKey link_key,
+                     uint8_t key_type, uint8_t pin_length);
 
 /*******************************************************************************
  *
