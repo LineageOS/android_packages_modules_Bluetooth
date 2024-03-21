@@ -31,9 +31,8 @@
 #include "common/time_util.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/bt_trace.h"
-#include "os/log.h"
+#include "os/logging/log_adapter.h"
 #include "osi/include/allocator.h"
-#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_psm_types.h"
 #include "stack/include/l2c_api.h"
@@ -91,7 +90,7 @@ void rfcomm_l2cap_if_init(void) {
  *
  ******************************************************************************/
 void RFCOMM_ConnectInd(const RawAddress& bd_addr, uint16_t lcid,
-                       UNUSED_ATTR uint16_t psm, uint8_t id) {
+                       uint16_t /* psm */, uint8_t id) {
   tRFC_MCB* p_mcb = rfc_alloc_multiplexer_channel(bd_addr, false);
 
   if ((p_mcb) && (p_mcb->state != RFC_MX_STATE_IDLE)) {
@@ -214,7 +213,7 @@ void RFCOMM_ConfigInd(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
  *                  event to the FSM.
  *
  ******************************************************************************/
-void RFCOMM_ConfigCnf(uint16_t lcid, UNUSED_ATTR uint16_t initiator,
+void RFCOMM_ConfigCnf(uint16_t lcid, uint16_t /* initiator */,
                       tL2CAP_CFG_INFO* p_cfg) {
   RFCOMM_ConfigInd(lcid, p_cfg);
 
