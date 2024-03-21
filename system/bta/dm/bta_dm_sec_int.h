@@ -45,17 +45,6 @@ typedef struct {
 } tBTA_DM_CI_RMT_OOB;
 
 typedef struct {
-  RawAddress bd_addr;
-  DEV_CLASS dc;
-  LinkKey link_key;
-  uint8_t key_type;
-  bool link_key_known;
-  bool dc_known;
-  BD_NAME bd_name;
-  uint8_t pin_length;
-} tBTA_DM_API_ADD_DEVICE;
-
-typedef struct {
   tBTA_DM_SEC_CBACK* p_sec_cback;
   tBTA_DM_SEC_CBACK* p_sec_sirk_cback;
 /* Storage for pin code request parameters */
@@ -80,7 +69,6 @@ void bta_dm_add_ble_device(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                            tBT_DEVICE_TYPE dev_type);
 void bta_dm_add_blekey(const RawAddress& bd_addr, tBTA_LE_KEY_VALUE blekey,
                        tBTM_LE_KEY_TYPE key_type);
-void bta_dm_add_device(std::unique_ptr<tBTA_DM_API_ADD_DEVICE> msg);
 void bta_dm_ble_config_local_privacy(bool privacy_enable);
 void bta_dm_ble_confirm_reply(const RawAddress& bd_addr, bool accept);
 void bta_dm_ble_passkey_reply(const RawAddress& bd_addr, bool accept,
