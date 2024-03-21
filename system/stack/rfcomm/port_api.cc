@@ -27,6 +27,7 @@
 #include "stack/include/port_api.h"
 
 #include <base/logging.h>
+#include <base/strings/stringprintf.h>
 #include <bluetooth/log.h>
 
 #include <cstdint>
@@ -39,6 +40,7 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
+#include "stack/include/btm_log_history.h"
 #include "stack/rfcomm/rfc_int.h"
 #include "types/raw_address.h"
 
@@ -72,6 +74,10 @@ static const char* result_code_strings[] = {"Success",
                                             "Page timeout",
                                             "Invalid SCN",
                                             "Unknown result code"};
+
+namespace {
+const char kBtmLogTag[] = "RFCOMM";
+}  // namespace
 
 /*******************************************************************************
  *
@@ -225,8 +231,15 @@ int RFCOMM_CreateConnectionWithSecurity(uint16_t uuid, uint8_t scn,
 
   // If this is not initiator of the connection need to just wait
   if (p_port->is_server) {
+    BTM_LogHistory(kBtmLogTag, bd_addr, "Server started",
+                   base::StringPrintf("handle:%hu scn:%hhu dlci:%hhu mtu:%hu",
+                                      *p_handle, scn, dlci, mtu));
     return (PORT_SUCCESS);
   }
+
+  BTM_LogHistory(kBtmLogTag, bd_addr, "Connection opened",
+                 base::StringPrintf("handle:%hu scn:%hhu dlci:%hhu mtu:%hu",
+                                    *p_handle, scn, dlci, mtu));
 
   // Open will be continued after security checks are passed
   return port_open_continue(p_port);
@@ -299,6 +312,14 @@ int RFCOMM_RemoveConnection(uint16_t handle) {
     return (PORT_SUCCESS);
   }
 
+  const RawAddress bd_addr =
+      (p_port->rfc.p_mcb) ? (p_port->rfc.p_mcb->bd_addr) : (RawAddress::kEmpty);
+  BTM_LogHistory(
+      kBtmLogTag, bd_addr, "Connection closed",
+      base::StringPrintf("handle:%hu scn:%hhu dlci:%hhu is_server:%s", handle,
+                         p_port->scn, p_port->dlci,
+                         logbool(p_port->is_server).c_str()));
+
   p_port->state = PORT_CONNECTION_STATE_CLOSING;
 
   port_start_close(p_port);
@@ -331,6 +352,14 @@ int RFCOMM_RemoveServer(uint16_t handle) {
     return (PORT_SUCCESS);
   }
   log::info("handle={}", handle);
+
+  const RawAddress bd_addr =
+      (p_port->rfc.p_mcb) ? (p_port->rfc.p_mcb->bd_addr) : (RawAddress::kEmpty);
+  BTM_LogHistory(
+      kBtmLogTag, bd_addr, "Server stopped",
+      base::StringPrintf("handle:%hu scn:%hhu dlci:%hhu is_server:%s", handle,
+                         p_port->scn, p_port->dlci,
+                         logbool(p_port->is_server).c_str()));
 
   /* this port will be deallocated after closing */
   p_port->keep_port_handle = false;
