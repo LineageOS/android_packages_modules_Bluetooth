@@ -23,8 +23,8 @@
 
 #include <memory>
 
-#include "btm_ble_api.h"
 #include "stack/btm/btm_ble_int.h"
+#include "stack/include/btm_ble_api.h"
 #include "test/common/mock_functions.h"
 
 void BTM_BleAdvFilterParamSetup(
