@@ -32,7 +32,6 @@ import com.android.bluetooth.BluetoothMetricsProto;
 
 /** Base class for a background service that runs a Bluetooth profile */
 public abstract class ProfileService extends ContextWrapper {
-    private static final boolean DBG = false;
 
     public static final String BLUETOOTH_PERM =
             android.Manifest.permission.BLUETOOTH;
@@ -90,9 +89,7 @@ public abstract class ProfileService extends ContextWrapper {
     protected ProfileService(Context ctx) {
         super(ctx);
         mName = getName();
-        if (DBG) {
-            Log.d(mName, "Service created");
-        }
+        Log.d(mName, "Service created");
         mBinder = requireNonNull(initBinder(), "Binder null is not allowed for " + mName);
     }
 
@@ -114,10 +111,8 @@ public abstract class ProfileService extends ContextWrapper {
      */
     @RequiresPermission(android.Manifest.permission.CHANGE_COMPONENT_ENABLED_STATE)
     protected void setComponentAvailable(String className, boolean enable) {
-        if (DBG) {
-            Log.d(mName, "setComponentAvailable(className=" + className + ", enable=" + enable
-                    + ")");
-        }
+        Log.d(mName, "setComponentAvailable(className=" + className + ", enable=" + enable
+                + ")");
         if (className == null) {
             return;
         }
@@ -137,10 +132,8 @@ public abstract class ProfileService extends ContextWrapper {
      */
     @RequiresPermission(android.Manifest.permission.CHANGE_COMPONENT_ENABLED_STATE)
     protected void setComponentAvailable(ComponentName component, boolean enable) {
-        if (DBG) {
-            Log.d(mName, "setComponentAvailable(component=" + component + ", enable=" + enable
-                    + ")");
-        }
+        Log.d(mName, "setComponentAvailable(component=" + component + ", enable=" + enable
+                + ")");
         if (component == null) {
             return;
         }

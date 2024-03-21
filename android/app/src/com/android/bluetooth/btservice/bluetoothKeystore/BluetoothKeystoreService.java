@@ -61,9 +61,7 @@ import javax.crypto.spec.GCMParameterSpec;
  * Service used for handling encryption and decryption of the bt_config.conf
  */
 public class BluetoothKeystoreService {
-    private static final String TAG = "BluetoothKeystoreService";
-
-    private static final boolean DBG = false;
+    private static final String TAG = BluetoothKeystoreService.class.getSimpleName();
 
     private static BluetoothKeystoreService sBluetoothKeystoreService;
     private boolean mIsCommonCriteriaMode;
@@ -791,9 +789,7 @@ public class BluetoothKeystoreService {
     }
 
     private static void infoLog(String msg) {
-        if (DBG) {
-            Log.i(TAG, msg);
-        }
+        Log.i(TAG, msg);
     }
 
     private static void debugLog(String msg) {

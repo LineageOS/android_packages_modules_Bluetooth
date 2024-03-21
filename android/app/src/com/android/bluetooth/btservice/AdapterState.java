@@ -56,7 +56,6 @@ import com.android.internal.util.StateMachine;
  */
 
 final class AdapterState extends StateMachine {
-    private static final boolean DBG = true;
     private static final String TAG = AdapterState.class.getSimpleName();
 
     static final int USER_TURN_ON = 1;
@@ -162,9 +161,7 @@ final class AdapterState extends StateMachine {
         }
 
         void infoLog(String msg) {
-            if (DBG) {
-                Log.i(TAG, BluetoothAdapter.nameForState(getStateValue()) + " : " + msg);
-            }
+            Log.i(TAG, BluetoothAdapter.nameForState(getStateValue()) + " : " + msg);
         }
 
         void errorLog(String msg) {
