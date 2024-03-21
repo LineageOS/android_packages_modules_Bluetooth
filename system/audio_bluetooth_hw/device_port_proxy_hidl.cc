@@ -22,7 +22,6 @@
 #include <android-base/stringprintf.h>
 #include <audio_utils/primitives.h>
 #include <inttypes.h>
-#include <log/log.h>
 #include <stdlib.h>
 
 #include "BluetoothAudioSessionControl_2_1.h"

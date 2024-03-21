@@ -26,7 +26,6 @@
 #include <android_bluetooth_flags.h>
 #include <base/logging.h>
 #include <bluetooth/log.h>
-#include <log/log.h>
 
 #include <array>
 #include <cstdint>

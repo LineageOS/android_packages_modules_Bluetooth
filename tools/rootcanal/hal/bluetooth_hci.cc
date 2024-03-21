@@ -24,7 +24,6 @@
 #include <string.h>
 
 #include "hci_internals.h"
-#include "log/log.h"
 #include "model/devices/hci_device.h"
 #include "model/devices/link_layer_socket_device.h"
 #include "model/hci/hci_socket_transport.h"

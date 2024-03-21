@@ -27,7 +27,6 @@
 #include <base/logging.h>
 #include <base/strings/stringprintf.h>
 #include <bluetooth/log.h>
-#include <log/log.h>
 
 #ifdef __ANDROID__
 #include <android/sysprop/BluetoothProperties.sysprop.h>
