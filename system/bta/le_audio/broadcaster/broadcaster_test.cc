@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include <bluetooth/log.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <hardware/audio.h>
@@ -53,6 +54,7 @@ using testing::SaveArg;
 using testing::Test;
 
 using namespace bluetooth::le_audio;
+using namespace bluetooth;
 
 using bluetooth::le_audio::DsaMode;
 using bluetooth::le_audio::LeAudioCodecConfiguration;
@@ -90,7 +92,7 @@ bt_status_t do_in_main_thread(const base::Location& from_here,
                 num_async_tasks--;
               },
               std::move(task), std::ref(num_async_tasks)))) {
-    LOG(ERROR) << __func__ << ": failed from " << from_here.ToString();
+    log::error("failed from {}", from_here.ToString());
     return BT_STATUS_FAIL;
   }
   num_async_tasks++;
@@ -108,7 +110,7 @@ static void init_message_loop_thread() {
   }
 
   if (!message_loop_thread.EnableRealTimeScheduling())
-    LOG(ERROR) << "Unable to set real time scheduling";
+    log::error("Unable to set real time scheduling");
 
   message_loop_ = message_loop_thread.message_loop();
   if (message_loop_ == nullptr) FAIL() << "unable to get message loop.";

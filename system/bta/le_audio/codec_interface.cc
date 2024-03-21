@@ -19,6 +19,7 @@
 #include "codec_interface.h"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 #include <lc3.h>
 
 #include <memory>
@@ -63,8 +64,8 @@ struct CodecInterface::Impl {
       return Status::STATUS_OK;
     }
 
-    LOG_ERROR("Invalid codec ID: [%d:%d:%d]", codec_id_.coding_format,
-              codec_id_.vendor_company_id, codec_id_.vendor_codec_id);
+    log::error("Invalid codec ID: [{}:{}:{}]", codec_id_.coding_format,
+               codec_id_.vendor_company_id, codec_id_.vendor_codec_id);
     return Status::STATUS_ERR_INVALID_CODEC_ID;
   }
 
@@ -101,15 +102,15 @@ struct CodecInterface::Impl {
       return Status::STATUS_OK;
     }
 
-    LOG_ERROR("Invalid codec ID: [%d:%d:%d]", codec_id_.coding_format,
-              codec_id_.vendor_company_id, codec_id_.vendor_codec_id);
+    log::error("Invalid codec ID: [{}:{}:{}]", codec_id_.coding_format,
+               codec_id_.vendor_company_id, codec_id_.vendor_codec_id);
     return Status::STATUS_ERR_INVALID_CODEC_ID;
   }
 
   std::vector<int16_t>& GetDecodedSamples() { return output_channel_data_; }
   CodecInterface::Status Decode(uint8_t* data, uint16_t size) {
     if (!IsReady()) {
-      LOG_ERROR("decoder not ready");
+      log::error("decoder not ready");
       return Status::STATUS_ERR_CODEC_NOT_READY;
     }
 
@@ -119,15 +120,15 @@ struct CodecInterface::Impl {
       auto err = lc3_decode(lc3_.decoder_, data, size, lc3_.pcm_format_,
                             output_channel_data_.data(), 1 /* stride */);
       if (err < 0) {
-        LOG(ERROR) << " bad decoding parameters: " << static_cast<int>(err);
+        log::error("bad decoding parameters: {}", static_cast<int>(err));
         return Status::STATUS_ERR_CODING_ERROR;
       }
 
       return Status::STATUS_OK;
     }
 
-    LOG_ERROR("Invalid codec ID: [%d:%d:%d]", codec_id_.coding_format,
-              codec_id_.vendor_company_id, codec_id_.vendor_codec_id);
+    log::error("Invalid codec ID: [{}:{}:{}]", codec_id_.coding_format,
+               codec_id_.vendor_company_id, codec_id_.vendor_codec_id);
     return Status::STATUS_ERR_INVALID_CODEC_ID;
   }
 
@@ -136,12 +137,12 @@ struct CodecInterface::Impl {
                                 std::vector<int16_t>* out_buffer = nullptr,
                                 uint16_t out_offset = 0) {
     if (!IsReady()) {
-      LOG_ERROR("decoder not ready");
+      log::error("decoder not ready");
       return Status::STATUS_ERR_CODEC_NOT_READY;
     }
 
     if (out_size == 0) {
-      LOG_ERROR("out_size cannot be 0");
+      log::error("out_size cannot be 0");
       return Status::STATUS_ERR_CODING_ERROR;
     }
 
@@ -165,15 +166,15 @@ struct CodecInterface::Impl {
           lc3_encode(lc3_.encoder_, lc3_.pcm_format_, data, stride, out_size,
                      ((uint8_t*)out_buffer->data()) + out_offset);
       if (err < 0) {
-        LOG(ERROR) << " bad encoding parameters: " << static_cast<int>(err);
+        log::error("bad encoding parameters: {}", static_cast<int>(err));
         return Status::STATUS_ERR_CODING_ERROR;
       }
 
       return Status::STATUS_OK;
     }
 
-    LOG_ERROR("Invalid codec ID: [%d:%d:%d]", codec_id_.coding_format,
-              codec_id_.vendor_company_id, codec_id_.vendor_codec_id);
+    log::error("Invalid codec ID: [{}:{}:{}]", codec_id_.coding_format,
+               codec_id_.vendor_company_id, codec_id_.vendor_codec_id);
     return Status::STATUS_ERR_INVALID_CODEC_ID;
   }
 
@@ -188,7 +189,7 @@ struct CodecInterface::Impl {
 
   uint16_t GetNumOfSamplesPerChannel() {
     if (!IsReady()) {
-      LOG_ERROR("decoder not ready");
+      log::error("decoder not ready");
       return 0;
     }
 
@@ -197,8 +198,8 @@ struct CodecInterface::Impl {
                                pcm_config_->sample_rate);
     }
 
-    LOG_ERROR("Invalid codec ID: [%d:%d:%d]", codec_id_.coding_format,
-              codec_id_.vendor_company_id, codec_id_.vendor_codec_id);
+    log::error("Invalid codec ID: [{}:{}:{}]", codec_id_.coding_format,
+               codec_id_.vendor_company_id, codec_id_.vendor_codec_id);
     return 0;
   }
 
@@ -207,8 +208,8 @@ struct CodecInterface::Impl {
       return lc3_.bits_to_bytes_per_sample(bt_codec_config_.bits_per_sample);
     }
 
-    LOG_ERROR("Invalid codec ID: [%d:%d:%d]", codec_id_.coding_format,
-              codec_id_.vendor_company_id, codec_id_.vendor_codec_id);
+    log::error("Invalid codec ID: [{}:{}:{}]", codec_id_.coding_format,
+               codec_id_.vendor_company_id, codec_id_.vendor_codec_id);
     return 0;
   }
 
@@ -256,8 +257,8 @@ CodecInterface::CodecInterface(const types::LeAudioCodecId& codec_id) {
   if (codec_id.coding_format == types::kLeAudioCodingFormatLC3) {
     impl = new Impl(codec_id);
   } else {
-    LOG_ERROR("Invalid codec ID: [%d:%d:%d]", codec_id.coding_format,
-              codec_id.vendor_company_id, codec_id.vendor_codec_id);
+    log::error("Invalid codec ID: [{}:{}:{}]", codec_id.coding_format,
+               codec_id.vendor_company_id, codec_id.vendor_codec_id);
   }
 }
 

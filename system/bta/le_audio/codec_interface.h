@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <bluetooth/log.h>
 #include <stdint.h>
 
 #include <vector>
@@ -72,4 +73,11 @@ class CodecInterface {
   struct Impl;
   Impl* impl;
 };
+
 }  // namespace bluetooth::le_audio
+
+namespace fmt {
+template <>
+struct formatter<bluetooth::le_audio::CodecInterface::Status>
+    : enum_formatter<bluetooth::le_audio::CodecInterface::Status> {};
+}  // namespace fmt
