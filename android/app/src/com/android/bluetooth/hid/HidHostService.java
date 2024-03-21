@@ -386,7 +386,7 @@ public class HidHostService extends ProfileService {
                             handleMessageOnHandshake(msg);
                             break;
                         case MESSAGE_SET_REPORT:
-                            handleMessageSetProtocol(msg);
+                            handleMessageSetReport(msg);
                             break;
                         case MESSAGE_ON_VIRTUAL_UNPLUG:
                             handleMessageOnVirtualUnplug(msg);
@@ -488,7 +488,7 @@ public class HidHostService extends ProfileService {
         broadcastVirtualUnplugStatus(device, status);
     }
 
-    private void handleMessageSetProtocol(Message msg) {
+    private void handleMessageSetReport(Message msg) {
         BluetoothDevice device = (BluetoothDevice) msg.obj;
         Bundle data = msg.getData();
         byte reportType = data.getByte(BluetoothHidHost.EXTRA_REPORT_TYPE);
