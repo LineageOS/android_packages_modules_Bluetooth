@@ -18,12 +18,14 @@
 #include <base/command_line.h>
 #include <base/logging.h>
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 #include <os/log.h>
 
 #include "main_int.h"
 
 #ifdef TARGET_FLOSS
 #include <syslog.h>
+
 static bool MessageHandler(int severity, const char* file, int line,
                            size_t message_start, const std::string& message) {
   ASSERT(message_start <= message.size());
@@ -91,7 +93,7 @@ void init_cpp_logging(config_t* config) {
   logging::LoggingSettings log_settings;
 
   if (!logging::InitLogging(log_settings)) {
-    LOG_ERROR("Failed to set up logging");
+    bluetooth::log::error("Failed to set up logging");
   }
 
   // Android already logs thread_id, proc_id, timestamp, so disable those.

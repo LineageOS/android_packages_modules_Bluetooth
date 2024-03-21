@@ -97,12 +97,14 @@ cc_test {
         },
     },
     shared_libs: [
+        "libbase",
         "libcrypto",
         "liblog",
     ],
     static_libs: [
         "libbluetooth-types",
         "libbluetooth_crypto_toolbox",
+        "libbluetooth_log",
         "libbluetooth_log",
         "libbt-common",
         "libbt-platform-protos-lite",
@@ -135,9 +137,11 @@ cc_test {
         "test/thread_performance_test.cc",
     ],
     shared_libs: [
+        "libbase",
         "liblog",
     ],
     static_libs: [
+        "libbluetooth_log",
         "libbt-common",
         "libchrome",
         "libevent",
@@ -162,9 +166,11 @@ cc_benchmark {
         "benchmark/thread_performance_benchmark.cc",
     ],
     shared_libs: [
+        "libbase",
         "liblog",
     ],
     static_libs: [
+        "libbluetooth_log",
         "libbt-common",
         "libchrome",
         "libevent",

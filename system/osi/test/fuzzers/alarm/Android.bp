@@ -15,12 +15,14 @@ cc_fuzz {
         "fuzz_alarm.cc",
     ],
     shared_libs: [
+        "libbase",
         "libcutils",
         "liblog",
         "libprotobuf-cpp-lite",
         "libstatssocket",
     ],
     static_libs: [
+        "libbluetooth_log",
         "libbt-common",
         "libchrome",
         "libgmock",

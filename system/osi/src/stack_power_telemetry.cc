@@ -19,6 +19,7 @@
 #include "osi/include/stack_power_telemetry.h"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 #include <sys/stat.h>
 #include <time.h>
 
@@ -34,6 +35,8 @@
 #include "stack/include/bt_psm_types.h"
 #include "stack/include/btm_status.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth;
 
 time_t get_current_time() { return time(0); }
 
@@ -287,9 +290,9 @@ void power_telemetry::PowerTelemetryImpl::RecordLogDataContainer() {
 
   LogDataContainer& ldc = GetCurrentLogDataContainer();
 
-  LOG_INFO(
-      "bt_power: scan: %d, inqScan: %d, aclTx: %d, aclRx: %d, hciCmd: %d, "
-      "hciEvt: %d, bleScan: %d",
+  log::info(
+      "bt_power: scan: {}, inqScan: {}, aclTx: {}, aclRx: {}, hciCmd: {}, "
+      "hciEvt: {}, bleScan: {}",
       ldc.scan_details.count, ldc.inq_scan_details.count,
       ldc.acl_pkt_ds.tx.pkt_count, ldc.acl_pkt_ds.rx.pkt_count,
       ldc.hci_cmd_evt_ds.tx.pkt_count, ldc.hci_cmd_evt_ds.rx.pkt_count,
@@ -352,7 +355,7 @@ void power_telemetry::PowerTelemetry::LogBleAdvStopped() {
 
   LogDataContainer& ldc = pimpl_->GetCurrentLogDataContainer();
   if (ldc.adv_list.size() == 0) {
-    LOG_WARN("Empty advList. Skip LogBleAdvDetails.");
+    log::warn("Empty advList. Skip LogBleAdvDetails.");
     return;
   }
   ldc.adv_list.back().active.end = current_time;

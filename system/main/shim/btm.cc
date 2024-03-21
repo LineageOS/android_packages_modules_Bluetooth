@@ -19,6 +19,7 @@
 #include "main/shim/btm.h"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include <chrono>
 #include <cstddef>
@@ -41,6 +42,8 @@
 #include "types/ble_address_with_type.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth;
 
 extern tBTM_CB btm_cb;
 
@@ -185,7 +188,7 @@ bool Btm::StartInquiry(
     LegacyInquiryCompleteCallback legacy_inquiry_complete_callback) {
   switch (mode) {
     case kInquiryModeOff:
-      LOG_INFO("%s Stopping inquiry mode", __func__);
+      log::info("Stopping inquiry mode");
       if (limited_inquiry_active_ || general_inquiry_active_) {
         GetInquiry()->StopInquiry();
         limited_inquiry_active_ = false;
@@ -197,18 +200,14 @@ bool Btm::StartInquiry(
     case kLimitedInquiryMode:
     case kGeneralInquiryMode: {
       if (mode == kLimitedInquiryMode) {
-        LOG_INFO(
-
-            "%s Starting limited inquiry mode duration:%hhd max responses:%hhd",
-            __func__, duration, max_responses);
+        log::info("Starting limited inquiry mode duration:{} max responses:{}",
+                  duration, max_responses);
         limited_inquiry_active_ = true;
         GetInquiry()->StartLimitedInquiry(duration, max_responses);
         active_inquiry_mode_ = kLimitedInquiryMode;
       } else {
-        LOG_INFO(
-
-            "%s Starting general inquiry mode duration:%hhd max responses:%hhd",
-            __func__, duration, max_responses);
+        log::info("Starting general inquiry mode duration:{} max responses:{}",
+                  duration, max_responses);
         general_inquiry_active_ = true;
         GetInquiry()->StartGeneralInquiry(duration, max_responses);
         legacy_inquiry_complete_callback_ = legacy_inquiry_complete_callback;
@@ -216,14 +215,14 @@ bool Btm::StartInquiry(
     } break;
 
     default:
-      LOG_WARN("%s Unknown inquiry mode:%d", __func__, mode);
+      log::warn("Unknown inquiry mode:{}", mode);
       return false;
   }
   return true;
 }
 
 void Btm::CancelInquiry() {
-  LOG_INFO("%s", __func__);
+  log::info("");
   if (limited_inquiry_active_ || general_inquiry_active_) {
     GetInquiry()->StopInquiry();
     limited_inquiry_active_ = false;
@@ -256,12 +255,12 @@ bool Btm::StartPeriodicInquiry(uint8_t mode, uint8_t duration,
     case kLimitedInquiryMode:
     case kGeneralInquiryMode: {
       if (mode == kLimitedInquiryMode) {
-        LOG_INFO("%s Starting limited periodic inquiry mode", __func__);
+        log::info("Starting limited periodic inquiry mode");
         limited_periodic_inquiry_active_ = true;
         GetInquiry()->StartLimitedPeriodicInquiry(duration, max_responses,
                                                   max_delay, min_delay);
       } else {
-        LOG_INFO("%s Starting general periodic inquiry mode", __func__);
+        log::info("Starting general periodic inquiry mode");
         general_periodic_inquiry_active_ = true;
         GetInquiry()->StartGeneralPeriodicInquiry(duration, max_responses,
                                                   max_delay, min_delay);
@@ -269,7 +268,7 @@ bool Btm::StartPeriodicInquiry(uint8_t mode, uint8_t duration,
     } break;
 
     default:
-      LOG_WARN("%s Unknown inquiry mode:%d", __func__, mode);
+      log::warn("Unknown inquiry mode:{}", mode);
       return false;
   }
   return true;
@@ -324,15 +323,11 @@ DiscoverabilityState Btm::GetClassicDiscoverabilityState() const {
   return state;
 }
 
-void Btm::SetLeGeneralDiscoverability() {
-  LOG_WARN("UNIMPLEMENTED %s", __func__);
-}
+void Btm::SetLeGeneralDiscoverability() { log::warn("UNIMPLEMENTED"); }
 
-void Btm::SetLeLimitedDiscoverability() {
-  LOG_WARN("UNIMPLEMENTED %s", __func__);
-}
+void Btm::SetLeLimitedDiscoverability() { log::warn("UNIMPLEMENTED"); }
 
-void Btm::SetLeDiscoverabilityOff() { LOG_WARN("UNIMPLEMENTED %s", __func__); }
+void Btm::SetLeDiscoverabilityOff() { log::warn("UNIMPLEMENTED"); }
 
 DiscoverabilityState Btm::GetLeDiscoverabilityState() const {
   DiscoverabilityState state{
@@ -340,7 +335,7 @@ DiscoverabilityState Btm::GetLeDiscoverabilityState() const {
       .interval = 0,
       .window = 0,
   };
-  LOG_WARN("UNIMPLEMENTED %s", __func__);
+  log::warn("UNIMPLEMENTED");
   return state;
 }
 
@@ -371,9 +366,9 @@ void Btm::SetInterlacedPageScan() { GetPage()->SetInterlacedScan(); }
 
 void Btm::SetStandardPageScan() { GetPage()->SetStandardScan(); }
 
-void Btm::SetLeConnectibleOn() { LOG_WARN("UNIMPLEMENTED %s", __func__); }
+void Btm::SetLeConnectibleOn() { log::warn("UNIMPLEMENTED"); }
 
-void Btm::SetLeConnectibleOff() { LOG_WARN("UNIMPLEMENTED %s", __func__); }
+void Btm::SetLeConnectibleOff() { log::warn("UNIMPLEMENTED"); }
 
 ConnectabilityState Btm::GetLeConnectabilityState() const {
   ConnectabilityState state{
@@ -381,7 +376,7 @@ ConnectabilityState Btm::GetLeConnectabilityState() const {
       .interval = 0,
       .window = 0,
   };
-  LOG_WARN("UNIMPLEMENTED %s", __func__);
+  log::warn("UNIMPLEMENTED");
   return state;
 }
 
@@ -399,25 +394,25 @@ bool Btm::UseLeLink(const RawAddress& raw_address) const {
 
 BtmStatus Btm::ReadClassicRemoteDeviceName(const RawAddress& /* raw_address */,
                                            tBTM_NAME_CMPL_CB* /* callback */) {
-  LOG_ALWAYS_FATAL("unreachable");
+  log::fatal("unreachable");
   return BTM_UNDEFINED;
 }
 
 BtmStatus Btm::CancelAllReadRemoteDeviceName() {
-  LOG_ALWAYS_FATAL("unreachable");
+  log::fatal("unreachable");
   return BTM_UNDEFINED;
 }
 
-void Btm::StartAdvertising() { LOG_ALWAYS_FATAL("unreachable"); }
+void Btm::StartAdvertising() { log::fatal("unreachable"); }
 
 void Btm::StopAdvertising() {
   if (advertiser_id_ == hci::LeAdvertisingManager::kInvalidId) {
-    LOG_WARN("%s No active advertising", __func__);
+    log::warn("No active advertising");
     return;
   }
   GetAdvertising()->RemoveAdvertiser(advertiser_id_);
   advertiser_id_ = hci::LeAdvertisingManager::kInvalidId;
-  LOG_INFO("%s Stopped advertising", __func__);
+  log::info("Stopped advertising");
 }
 
 void Btm::StartConnectability() { StartAdvertising(); }
@@ -482,7 +477,7 @@ hci::AddressWithType Btm::GetAddressAndType(const RawAddress& bd_addr) {
                                p_dev_rec->ble.AddressType());
     }
   }
-  LOG(ERROR) << "Unknown bd_addr. Use public address";
+  log::error("Unknown bd_addr. Use public address");
   return ToAddressWithType(bd_addr, BLE_ADDR_PUBLIC);
 }
 

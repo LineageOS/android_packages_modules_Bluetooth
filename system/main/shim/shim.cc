@@ -18,6 +18,8 @@
 
 #include "main/shim/shim.h"
 
+#include <bluetooth/log.h>
+
 #include "common/init_flags.h"
 #include "main/shim/entry.h"
 #include "main/shim/hci_layer.h"
@@ -33,8 +35,8 @@ static void post_to_main_message_loop(const base::Location& from_here,
                                       BT_HDR* p_msg) {
   if (do_in_main_thread(from_here, base::Bind(&btu_hci_msg_process, p_msg)) !=
       BT_STATUS_SUCCESS) {
-    LOG_ERROR(": do_in_main_thread failed from %s",
-              from_here.ToString().c_str());
+    bluetooth::log::error(": do_in_main_thread failed from {}",
+                          from_here.ToString());
   }
 }
 

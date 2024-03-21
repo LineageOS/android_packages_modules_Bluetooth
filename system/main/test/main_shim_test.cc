@@ -14,6 +14,7 @@
  *  limitations under the License.
  */
 
+#include <bluetooth/log.h>
 #include <fcntl.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -350,7 +351,7 @@ class MainShimTest : public testing::Test {
  protected:
   void SetUp() override {
     main_thread_start_up();
-    post_on_bt_main([]() { LOG_INFO("Main thread started"); });
+    post_on_bt_main([]() { log::info("Main thread started"); });
 
     thread_ = new os::Thread("acl_thread", os::Thread::Priority::NORMAL);
     handler_ = new os::Handler(thread_);
@@ -382,7 +383,7 @@ class MainShimTest : public testing::Test {
     delete handler_;
     delete thread_;
 
-    post_on_bt_main([]() { LOG_INFO("Main thread stopped"); });
+    post_on_bt_main([]() { log::info("Main thread stopped"); });
     main_thread_shut_down();
     reset_mock_function_count_map();
   }
