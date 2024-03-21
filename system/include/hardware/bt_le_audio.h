@@ -570,4 +570,7 @@ struct formatter<bluetooth::le_audio::btle_audio_channel_count_index_t>
 template <>
 struct formatter<bluetooth::le_audio::btle_audio_frame_duration_index_t>
     : enum_formatter<bluetooth::le_audio::btle_audio_frame_duration_index_t> {};
+template <>
+struct formatter<bluetooth::le_audio::GroupStreamStatus>
+    : enum_formatter<bluetooth::le_audio::GroupStreamStatus> {};
 }  // namespace fmt

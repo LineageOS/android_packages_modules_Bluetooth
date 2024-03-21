@@ -16,6 +16,8 @@
 
 #include "le_audio_health_status.h"
 
+#include <bluetooth/log.h>
+
 #include <vector>
 
 #include "bta/include/bta_groups.h"
@@ -36,7 +38,7 @@ LeAudioHealthStatusImpl* instance;
 
 class LeAudioHealthStatusImpl : public LeAudioHealthStatus {
  public:
-  LeAudioHealthStatusImpl(void) { LOG_DEBUG(" Initiated"); }
+  LeAudioHealthStatusImpl(void) { log::debug("Initiated"); }
 
   ~LeAudioHealthStatusImpl(void) { clear_module(); }
 
@@ -45,7 +47,7 @@ class LeAudioHealthStatusImpl : public LeAudioHealthStatus {
   }
 
   void RemoveStatistics(const RawAddress& address, int group_id) override {
-    LOG_DEBUG("%s, group_id: %d", ADDRESS_TO_LOGGABLE_CSTR(address), group_id);
+    log::debug("{}, group_id: {}", ADDRESS_TO_LOGGABLE_CSTR(address), group_id);
     remove_device(address);
     remove_group(group_id);
   }
@@ -53,20 +55,20 @@ class LeAudioHealthStatusImpl : public LeAudioHealthStatus {
   void AddStatisticForDevice(const LeAudioDevice* device,
                              LeAudioHealthDeviceStatType type) override {
     if (device == nullptr) {
-      LOG_ERROR("device is null");
+      log::error("device is null");
       return;
     }
 
     const RawAddress& address = device->address_;
-    LOG_DEBUG("%s, %s", ADDRESS_TO_LOGGABLE_CSTR(address),
-              ToString(type).c_str());
+    log::debug("{}, {}", ADDRESS_TO_LOGGABLE_CSTR(address), ToString(type));
 
     auto dev = find_device(address);
     if (dev == nullptr) {
       add_device(address);
       dev = find_device(address);
       if (dev == nullptr) {
-        LOG_ERROR("Could not add device %s", ADDRESS_TO_LOGGABLE_CSTR(address));
+        log::error("Could not add device {}",
+                   ADDRESS_TO_LOGGABLE_CSTR(address));
         return;
       }
     }
@@ -103,27 +105,27 @@ class LeAudioHealthStatusImpl : public LeAudioHealthStatus {
   void AddStatisticForGroup(const LeAudioDeviceGroup* device_group,
                             LeAudioHealthGroupStatType type) override {
     if (device_group == nullptr) {
-      LOG_ERROR("device_group is null");
+      log::error("device_group is null");
       return;
     }
 
     int group_id = device_group->group_id_;
-    LOG_DEBUG("group_id: %d, %s", group_id, ToString(type).c_str());
+    log::debug("group_id: {}, {}", group_id, ToString(type));
 
     auto group = find_group(group_id);
     if (group == nullptr) {
       add_group(group_id);
       group = find_group(group_id);
       if (group == nullptr) {
-        LOG_ERROR("Could not add group %d", group_id);
+        log::error("Could not add group {}", group_id);
         return;
       }
     }
 
     LeAudioDevice* device = device_group->GetFirstDevice();
     if (device == nullptr) {
-      LOG_ERROR("Front device is null. Number of devices: %d",
-                device_group->Size());
+      log::error("Front device is null. Number of devices: {}",
+                 device_group->Size());
       return;
     }
     // log counter metrics
@@ -231,8 +233,8 @@ class LeAudioHealthStatusImpl : public LeAudioHealthStatus {
 
   void send_recommendation_for_device(const RawAddress& address,
                                       LeAudioHealthBasedAction recommendation) {
-    LOG_DEBUG("%s, %s", ADDRESS_TO_LOGGABLE_CSTR(address),
-              ToString(recommendation).c_str());
+    log::debug("{}, {}", ADDRESS_TO_LOGGABLE_CSTR(address),
+               ToString(recommendation));
     /* Notify new user about known groups */
     for (auto& cb : callbacks_) {
       cb.Run(address, kGroupUnknown, recommendation);
@@ -241,7 +243,7 @@ class LeAudioHealthStatusImpl : public LeAudioHealthStatus {
 
   void send_recommendation_for_group(
       int group_id, const LeAudioHealthBasedAction recommendation) {
-    LOG_DEBUG("group_id: %d, %s", group_id, ToString(recommendation).c_str());
+    log::debug("group_id: {}, {}", group_id, ToString(recommendation));
     /* Notify new user about known groups */
     for (auto& cb : callbacks_) {
       cb.Run(RawAddress::kEmpty, group_id, recommendation);
@@ -301,8 +303,7 @@ class LeAudioHealthStatusImpl : public LeAudioHealthStatus {
 
   void log_counter_metrics_for_device(LeAudioHealthDeviceStatType type,
                                       bool in_allowlist) {
-    LOG_DEBUG("in_allowlist: %d, type: %s", in_allowlist,
-              ToString(type).c_str());
+    log::debug("in_allowlist: {}, type: {}", in_allowlist, ToString(type));
     android::bluetooth::CodePathCounterKeyEnum key;
     if (in_allowlist) {
       switch (type) {
@@ -320,7 +321,7 @@ class LeAudioHealthStatusImpl : public LeAudioHealthStatus {
               LE_AUDIO_ALLOWLIST_DEVICE_HEALTH_STATUS_BAD_INVALID_CSIS;
           break;
         default:
-          LOG_ERROR("Metric unhandled %d", type);
+          log::error("Metric unhandled {}", type);
           return;
       }
     } else {
@@ -339,7 +340,7 @@ class LeAudioHealthStatusImpl : public LeAudioHealthStatus {
               LE_AUDIO_NONALLOWLIST_DEVICE_HEALTH_STATUS_BAD_INVALID_CSIS;
           break;
         default:
-          LOG_ERROR("Metric unhandled %d", type);
+          log::error("Metric unhandled {}", type);
           return;
       }
     }
@@ -348,8 +349,7 @@ class LeAudioHealthStatusImpl : public LeAudioHealthStatus {
 
   void log_counter_metrics_for_group(LeAudioHealthGroupStatType type,
                                      bool in_allowlist) {
-    LOG_DEBUG("in_allowlist: %d, type: %s", in_allowlist,
-              ToString(type).c_str());
+    log::debug("in_allowlist: {}, type: {}", in_allowlist, ToString(type));
     android::bluetooth::CodePathCounterKeyEnum key;
     if (in_allowlist) {
       switch (type) {
@@ -366,7 +366,7 @@ class LeAudioHealthStatusImpl : public LeAudioHealthStatus {
               LE_AUDIO_ALLOWLIST_GROUP_HEALTH_STATUS_BAD_ONCE_SIGNALING_FAILED;
           break;
         default:
-          LOG_ERROR("Metric unhandled %d", type);
+          log::error("Metric unhandled {}", type);
           return;
       }
     } else {
@@ -384,7 +384,7 @@ class LeAudioHealthStatusImpl : public LeAudioHealthStatus {
               LE_AUDIO_NONALLOWLIST_GROUP_HEALTH_STATUS_BAD_ONCE_SIGNALING_FAILED;
           break;
         default:
-          LOG_ERROR("Metric unhandled %d", type);
+          log::error("Metric unhandled {}", type);
           return;
       }
     }
