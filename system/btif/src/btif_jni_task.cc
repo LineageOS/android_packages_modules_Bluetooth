@@ -26,6 +26,7 @@
 #include <utility>
 
 #include "common/message_loop_thread.h"
+#include "common/postable_context.h"
 #include "include/hardware/bluetooth.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_types.h"
@@ -124,3 +125,5 @@ void post_on_bt_jni(BtJniClosure closure) {
                                                     std::move(closure))) ==
          BT_STATUS_SUCCESS);
 }
+
+bluetooth::common::PostableContext* get_jni() { return jni_thread.Postable(); }
