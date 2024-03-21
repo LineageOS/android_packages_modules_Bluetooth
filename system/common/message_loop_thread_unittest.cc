@@ -68,8 +68,8 @@ class MessageLoopThreadTest : public ::testing::Test {
   static bool CanSetCurrentThreadPriority() {
     struct __user_cap_header_struct linux_user_header = {
         .version = _LINUX_CAPABILITY_VERSION_3};
-    struct __user_cap_data_struct linux_user_data = {};
-    if (capget(&linux_user_header, &linux_user_data) != 0) {
+    struct __user_cap_data_struct linux_user_data[2] = {};
+    if (capget(&linux_user_header, linux_user_data) != 0) {
       LOG(ERROR) << "Failed to get capability for current thread, error: "
                  << strerror(errno);
       // Log record in XML
@@ -77,7 +77,7 @@ class MessageLoopThreadTest : public ::testing::Test {
                      strerror(errno));
       return false;
     }
-    return ((linux_user_data.permitted >> CAP_SYS_NICE) & 0x1) != 0;
+    return ((linux_user_data[0].permitted >> CAP_SYS_NICE) & 0x1) != 0;
   }
 };
 
