@@ -15,7 +15,11 @@
 #
 
 source_set("libcodec_client"){
-  configs += [ "//bt/system/stack/mmc:target_defaults" ]
+  configs += [
+    "//bt/system/stack/mmc:target_defaults",
+    "//bt/system/log:log_defaults",
+  ]
+
   sources = [
     "codec_client.cc",
   ]
