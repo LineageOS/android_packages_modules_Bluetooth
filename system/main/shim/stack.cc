@@ -18,6 +18,7 @@
 
 #include "main/shim/stack.h"
 
+#include <bluetooth/log.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -64,7 +65,7 @@ Stack* Stack::GetInstance() {
 void Stack::StartEverything() {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   ASSERT_LOG(!is_running_, "%s Gd stack already running", __func__);
-  LOG_INFO("%s Starting Gd stack", __func__);
+  log::info("Starting Gd stack");
   ModuleList modules;
 
   modules.add<metrics::CounterMetrics>();
@@ -93,7 +94,7 @@ void Stack::StartEverything() {
                            GetController()->GetLeFilterAcceptListSize(),
                            GetController()->GetLeResolvingListSize());
   } else {
-    LOG_ERROR("Unable to create shim ACL layer as Controller has not started");
+    log::error("Unable to create shim ACL layer as Controller has not started");
   }
 
   bluetooth::shim::hci_on_reset_complete();
@@ -107,7 +108,7 @@ void Stack::StartModuleStack(const ModuleList* modules,
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   ASSERT_LOG(!is_running_, "%s Gd stack already running", __func__);
   stack_thread_ = const_cast<os::Thread*>(thread);
-  LOG_INFO("Starting Gd stack");
+  log::info("Starting Gd stack");
 
   stack_manager_.StartUp(const_cast<ModuleList*>(modules), stack_thread_);
   stack_handler_ = new os::Handler(stack_thread_);
@@ -118,7 +119,7 @@ void Stack::StartModuleStack(const ModuleList* modules,
 
 void Stack::Start(ModuleList* modules) {
   ASSERT_LOG(!is_running_, "%s Gd stack already running", __func__);
-  LOG_INFO("%s Starting Gd stack", __func__);
+  log::info("Starting Gd stack");
 
   stack_thread_ =
       new os::Thread("gd_stack_thread", os::Thread::Priority::REAL_TIME);
@@ -126,7 +127,7 @@ void Stack::Start(ModuleList* modules) {
 
   stack_handler_ = new os::Handler(stack_thread_);
 
-  LOG_INFO("%s Successfully toggled Gd stack", __func__);
+  log::info("Successfully toggled Gd stack");
 }
 
 void Stack::Stop() {
@@ -157,7 +158,7 @@ void Stack::Stop() {
   delete stack_thread_;
   stack_thread_ = nullptr;
 
-  LOG_INFO("%s Successfully shut down Gd stack", __func__);
+  log::info("Successfully shut down Gd stack");
 }
 
 bool Stack::IsRunning() {
