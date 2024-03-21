@@ -57,8 +57,6 @@ public class MetricsLogger {
     private static final String BLOOMFILTER_FILE = "/devices_for_metrics";
     public static final String BLOOMFILTER_FULL_PATH = BLOOMFILTER_PATH + BLOOMFILTER_FILE;
 
-    public static final boolean DEBUG = false;
-
     // 6 hours timeout for counter metrics
     private static final long BLUETOOTH_COUNTER_METRICS_ACTION_DURATION_MILLIS = 6L * 3600L * 1000L;
     private static final int MAX_WORDS_ALLOWED_IN_DEVICE_NAME = 7;
@@ -258,9 +256,7 @@ public class MetricsLogger {
         if (!mInitialized) {
             return false;
         }
-        if (DEBUG) {
-            Log.d(TAG, "close()");
-        }
+        Log.d(TAG, "close()");
         cancelPendingDrain();
         drainBufferedCounters();
         mAlarmManager = null;
