@@ -31,16 +31,14 @@
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 
 #include <cstdint>
-#include <string>
 
 #include "hal/snoop_logger.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/bt_trace.h"
 #include "main/shim/entry.h"
-#include "os/log.h"
+#include "os/logging/log_adapter.h"
 #include "osi/include/allocator.h"
 #include "osi/include/mutex.h"
-#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/stack_metrics_logging.h"
@@ -552,8 +550,8 @@ void PORT_PortNegInd(tRFC_MCB* p_mcb, uint8_t dlci, tPORT_STATE* p_pars,
  *                  state for the port.  Propagate change to the user.
  *
  ******************************************************************************/
-void PORT_PortNegCnf(tRFC_MCB* p_mcb, uint8_t dlci,
-                     UNUSED_ATTR tPORT_STATE* p_pars, uint16_t result) {
+void PORT_PortNegCnf(tRFC_MCB* p_mcb, uint8_t dlci, tPORT_STATE* /* p_pars */,
+                     uint16_t result) {
   tPORT* p_port = port_find_mcb_dlci_port(p_mcb, dlci);
 
   log::verbose("PORT_PortNegCnf");
@@ -640,8 +638,7 @@ void PORT_ControlInd(tRFC_MCB* p_mcb, uint8_t dlci, tPORT_CTRL* p_pars) {
  *                  peer acknowleges change of the modem signals.
  *
  ******************************************************************************/
-void PORT_ControlCnf(tRFC_MCB* p_mcb, uint8_t dlci,
-                     UNUSED_ATTR tPORT_CTRL* p_pars) {
+void PORT_ControlCnf(tRFC_MCB* p_mcb, uint8_t dlci, tPORT_CTRL* /* p_pars */) {
   tPORT* p_port = port_find_mcb_dlci_port(p_mcb, dlci);
   uint32_t event = 0;
 
