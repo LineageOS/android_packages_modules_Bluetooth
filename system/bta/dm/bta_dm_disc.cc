@@ -1797,13 +1797,12 @@ static void bta_dm_opportunistic_observe_results_cb(tBTM_INQ_RESULTS* p_inq,
  *
  ******************************************************************************/
 static void bta_dm_observe_cmpl_cb(void* p_result) {
-  tBTA_DM_SEARCH data;
-
   log::verbose("bta_dm_observe_cmpl_cb");
 
-  data.inq_cmpl.num_resps = ((tBTM_INQUIRY_CMPL*)p_result)->num_resp;
   if (bta_dm_search_cb.p_csis_scan_cback) {
-    bta_dm_search_cb.p_csis_scan_cback(BTA_DM_INQ_CMPL_EVT, &data);
+    auto num_resps = ((tBTM_INQUIRY_CMPL*)p_result)->num_resp;
+    tBTA_DM_SEARCH data{.observe_cmpl{.num_resps = num_resps}};
+    bta_dm_search_cb.p_csis_scan_cback(BTA_DM_OBSERVE_CMPL_EVT, &data);
   }
 }
 
@@ -1814,15 +1813,10 @@ static void bta_dm_start_scan(uint8_t duration_sec,
       low_latency_scan);
 
   if (status != BTM_CMD_STARTED) {
-    tBTA_DM_SEARCH data = {
-        .inq_cmpl =
-            {
-                .num_resps = 0,
-            },
-    };
     log::warn("BTM_BleObserve  failed. status {}", status);
     if (bta_dm_search_cb.p_csis_scan_cback) {
-      bta_dm_search_cb.p_csis_scan_cback(BTA_DM_INQ_CMPL_EVT, &data);
+      tBTA_DM_SEARCH data{.observe_cmpl = {.num_resps = 0}};
+      bta_dm_search_cb.p_csis_scan_cback(BTA_DM_OBSERVE_CMPL_EVT, &data);
     }
   }
 }
