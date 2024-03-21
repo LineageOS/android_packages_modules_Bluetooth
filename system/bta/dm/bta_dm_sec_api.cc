@@ -30,6 +30,7 @@
 #include "stack/btm/btm_sec.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/btm_ble_sec_api.h"
+#include "stack/include/btm_client_interface.h"
 #include "stack/include/main_thread.h"
 #include "types/raw_address.h"
 
@@ -134,35 +135,19 @@ void BTA_DmConfirm(const RawAddress& bd_addr, bool accept) {
  * Description      This function adds a device to the security database list of
  *                  peer device
  *
- *
  * Returns          void
  *
  ******************************************************************************/
-void BTA_DmAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
-                     const LinkKey& link_key, uint8_t key_type,
-                     uint8_t pin_length) {
-  std::unique_ptr<tBTA_DM_API_ADD_DEVICE> msg =
-      std::make_unique<tBTA_DM_API_ADD_DEVICE>();
-
-  msg->bd_addr = bd_addr;
-  msg->link_key_known = true;
-  msg->key_type = key_type;
-  msg->link_key = link_key;
-
-  /* Load device class if specified */
-  if (dev_class != kDevClassEmpty) {
-    msg->dc_known = true;
-    msg->dc = dev_class;
-  }
-
-  memset(msg->bd_name, 0, BD_NAME_LEN + 1);
-  msg->pin_length = pin_length;
+void BTA_DmAddDevice(RawAddress bd_addr, DEV_CLASS dev_class, LinkKey link_key,
+                     uint8_t key_type, uint8_t pin_length) {
+  auto closure =
+      base::Bind(get_btm_client_interface().security.BTM_SecAddDevice, bd_addr,
+                 dev_class, link_key, key_type, pin_length);
 
   if (IS_FLAG_ENABLED(synchronous_bta_sec)) {
-    bta_dm_add_device(std::move(msg));
+    closure.Run();
   } else {
-    do_in_main_thread(FROM_HERE,
-                      base::Bind(bta_dm_add_device, base::Passed(&msg)));
+    do_in_main_thread(FROM_HERE, closure);
   }
 }
 
