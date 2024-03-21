@@ -34,7 +34,6 @@ import com.android.internal.annotations.VisibleForTesting;
  */
 public class HearingAidNativeInterface {
     private static final String TAG = "HearingAidNativeInterface";
-    private static final boolean DBG = true;
     private BluetoothAdapter mAdapter;
 
     @GuardedBy("INSTANCE_LOCK")
@@ -162,9 +161,7 @@ public class HearingAidNativeInterface {
         event.device = getDevice(address);
         event.valueInt1 = state;
 
-        if (DBG) {
-            Log.d(TAG, "onConnectionStateChanged: " + event);
-        }
+        Log.d(TAG, "onConnectionStateChanged: " + event);
         sendMessageToService(event);
     }
 
@@ -176,9 +173,7 @@ public class HearingAidNativeInterface {
         event.valueInt1 = capabilities;
         event.valueLong2 = hiSyncId;
 
-        if (DBG) {
-            Log.d(TAG, "onDeviceAvailable: " + event);
-        }
+        Log.d(TAG, "onDeviceAvailable: " + event);
         sendMessageToService(event);
     }
 

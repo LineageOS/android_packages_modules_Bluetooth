@@ -48,7 +48,6 @@ import java.util.UUID;
  * It manages Battery service of a BLE device
  */
 public class BatteryStateMachine extends StateMachine {
-    private static final boolean DBG = false;
     private static final String TAG = "BatteryStateMachine";
 
     static final UUID GATT_BATTERY_SERVICE_UUID =
@@ -262,15 +261,11 @@ public class BatteryStateMachine extends StateMachine {
 
     @Override
     protected void log(String msg) {
-        if (DBG) {
-            super.log(msg);
-        }
+        super.log(msg);
     }
 
     static void log(String tag, String msg) {
-        if (DBG) {
-            Log.d(tag, msg);
-        }
+        Log.d(tag, msg);
     }
 
     @VisibleForTesting

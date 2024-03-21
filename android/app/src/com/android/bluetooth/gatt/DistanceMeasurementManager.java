@@ -40,8 +40,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  */
 @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
 public class DistanceMeasurementManager {
-    private static final boolean DBG = GattServiceConfig.DBG;
-    private static final String TAG = "DistanceMeasurementManager";
+    private static final String TAG = DistanceMeasurementManager.class.getSimpleName();
 
     private static final int RSSI_LOW_FREQUENCY_INTERVAL_MS = 3000;
     private static final int RSSI_MEDIUM_FREQUENCY_INTERVAL_MS = 1000;
@@ -472,8 +471,6 @@ public class DistanceMeasurementManager {
 
     /** Logs the message in debug ROM. */
     private static void logd(String msg) {
-        if (DBG) {
-            Log.d(TAG, msg);
-        }
+        Log.d(TAG, msg);
     }
 }

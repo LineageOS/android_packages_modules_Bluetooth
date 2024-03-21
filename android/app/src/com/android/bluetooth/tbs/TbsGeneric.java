@@ -51,7 +51,6 @@ import java.util.UUID;
 public class TbsGeneric {
 
     private static final String TAG = "TbsGeneric";
-    private static final boolean DBG = true;
 
     private static final String UCI = "GTBS";
     private static final String DEFAULT_PROVIDER_NAME = "none";
@@ -159,9 +158,7 @@ public class TbsGeneric {
     };
 
     public synchronized boolean init(TbsGatt tbsGatt) {
-        if (DBG) {
-            Log.d(TAG, "init");
-        }
+        Log.d(TAG, "init");
         mTbsGatt = tbsGatt;
 
         int ccid = ContentControlIdKeeper.acquireCcid(new ParcelUuid(TbsGatt.UUID_GTBS),
@@ -205,9 +202,7 @@ public class TbsGeneric {
     }
 
     public synchronized void cleanup() {
-        if (DBG) {
-            Log.d(TAG, "cleanup");
-        }
+        Log.d(TAG, "cleanup");
 
         if (mTbsGatt != null) {
             if (mReceiver != null) {
@@ -307,12 +302,10 @@ public class TbsGeneric {
     public synchronized boolean addBearer(String token, IBluetoothLeCallControlCallback callback,
             String uci, List<String> uriSchemes, int capabilities, String providerName,
             int technology) {
-        if (DBG) {
-            Log.d(TAG,
-                    "addBearer: token=" + token + " uci=" + uci + " uriSchemes=" + uriSchemes
-                            + " capabilities=" + capabilities + " providerName=" + providerName
-                            + " technology=" + technology);
-        }
+        Log.d(TAG,
+                "addBearer: token=" + token + " uci=" + uci + " uriSchemes=" + uriSchemes
+                        + " capabilities=" + capabilities + " providerName=" + providerName
+                        + " technology=" + technology);
         if (!mIsInitialized) {
             Log.w(TAG, "addBearer called while not initialized.");
             return false;
@@ -359,9 +352,7 @@ public class TbsGeneric {
     }
 
     public synchronized void removeBearer(String token) {
-        if (DBG) {
-            Log.d(TAG, "removeBearer: token=" + token);
-        }
+        Log.d(TAG, "removeBearer: token=" + token);
 
         if (!mIsInitialized) {
             Log.w(TAG, "removeBearer called while not initialized.");
@@ -405,9 +396,7 @@ public class TbsGeneric {
         }
 
         if (requestEntry == null) {
-            if (DBG) {
-                Log.d(TAG, "requestEntry is null");
-            }
+            Log.d(TAG, "requestEntry is null");
             return;
         }
 
@@ -491,10 +480,8 @@ public class TbsGeneric {
     }
 
     public synchronized void requestResult(int ccid, int requestId, int result) {
-        if (DBG) {
-            Log.d(TAG, "requestResult: ccid=" + ccid + " requestId=" + requestId + " result="
-                    + result);
-        }
+        Log.d(TAG, "requestResult: ccid=" + ccid + " requestId=" + requestId + " result="
+                + result);
 
         if (!mIsInitialized) {
             Log.w(TAG, "requestResult called while not initialized.");
@@ -525,9 +512,7 @@ public class TbsGeneric {
     }
 
     public synchronized void callAdded(int ccid, BluetoothLeCall call) {
-        if (DBG) {
-            Log.d(TAG, "callAdded: ccid=" + ccid + " call=" + call);
-        }
+        Log.d(TAG, "callAdded: ccid=" + ccid + " call=" + call);
 
         if (!mIsInitialized) {
             Log.w(TAG, "callAdded called while not initialized.");
@@ -574,9 +559,7 @@ public class TbsGeneric {
     }
 
     public synchronized void callRemoved(int ccid, UUID callId, int reason) {
-        if (DBG) {
-            Log.d(TAG, "callRemoved: ccid=" + ccid + "reason=" + reason);
-        }
+        Log.d(TAG, "callRemoved: ccid=" + ccid + "reason=" + reason);
 
         if (!mIsInitialized) {
             Log.w(TAG, "callRemoved called while not initialized.");
@@ -619,9 +602,7 @@ public class TbsGeneric {
     }
 
     public synchronized void callStateChanged(int ccid, UUID callId, int state) {
-        if (DBG) {
-            Log.d(TAG, "callStateChanged: ccid=" + ccid + " callId=" + callId + " state=" + state);
-        }
+        Log.d(TAG, "callStateChanged: ccid=" + ccid + " callId=" + callId + " state=" + state);
 
         if (!mIsInitialized) {
             Log.w(TAG, "callStateChanged called while not initialized.");
@@ -658,9 +639,7 @@ public class TbsGeneric {
     }
 
     public synchronized void currentCallsList(int ccid, List<BluetoothLeCall> calls) {
-        if (DBG) {
-            Log.d(TAG, "currentCallsList: ccid=" + ccid + " callsNum=" + calls.size());
-        }
+        Log.d(TAG, "currentCallsList: ccid=" + ccid + " callsNum=" + calls.size());
 
         if (!mIsInitialized) {
             Log.w(TAG, "currentCallsList called while not initialized.");
@@ -714,10 +693,8 @@ public class TbsGeneric {
     }
 
     public synchronized void networkStateChanged(int ccid, String providerName, int technology) {
-        if (DBG) {
-            Log.d(TAG, "networkStateChanged: ccid=" + ccid + " providerName=" + providerName
-                    + " technology=" + technology);
-        }
+        Log.d(TAG, "networkStateChanged: ccid=" + ccid + " providerName=" + providerName
+                + " technology=" + technology);
 
         if (!mIsInitialized) {
             Log.w(TAG, "networkStateChanged called while not initialized.");
@@ -794,9 +771,7 @@ public class TbsGeneric {
         @Override
         public void onServiceAdded(boolean success) {
             synchronized (TbsGeneric.this) {
-                if (DBG) {
-                    Log.d(TAG, "onServiceAdded: success=" + success);
-                }
+                Log.d(TAG, "onServiceAdded: success=" + success);
             }
         }
 
@@ -813,11 +788,9 @@ public class TbsGeneric {
         @Override
         public void onCallControlPointRequest(BluetoothDevice device, int opcode, byte[] args) {
             synchronized (TbsGeneric.this) {
-                if (DBG) {
-                    Log.d(TAG, "onCallControlPointRequest: device=" + device + " opcode="
-                            + callControlRequestOpcodeStr(opcode) + "(" + opcode + ")"
-                            + " argsLen=" + args.length);
-                }
+                Log.d(TAG, "onCallControlPointRequest: device=" + device + " opcode="
+                        + callControlRequestOpcodeStr(opcode) + "(" + opcode + ")"
+                        + " argsLen=" + args.length);
 
                 if (!mIsInitialized) {
                     Log.w(TAG, "onCallControlPointRequest called while not initialized.");
@@ -1068,9 +1041,7 @@ public class TbsGeneric {
     }
 
     private synchronized void setForegroundBearer(Bearer bearer) {
-        if (DBG) {
-            Log.d(TAG, "setForegroundBearer: bearer=" + bearer);
-        }
+        Log.d(TAG, "setForegroundBearer: bearer=" + bearer);
 
         if (bearer == null) {
             mTbsGatt.setBearerProviderName(DEFAULT_PROVIDER_NAME);
@@ -1111,9 +1082,7 @@ public class TbsGeneric {
     }
 
     private synchronized void notifyCclc() {
-        if (DBG) {
-            Log.d(TAG, "notifyCclc");
-        }
+        Log.d(TAG, "notifyCclc");
 
         if (isLeAudioServiceAvailable()) {
             if (mCurrentCallsList.size() > 0) {
