@@ -1685,9 +1685,6 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event,
       }
     } break;
 
-    case BTA_DM_INQ_CMPL_EVT: {
-      /* do nothing */
-    } break;
     case BTA_DM_DISC_CMPL_EVT: {
       GetInterfaceToProfiles()->events->invoke_discovery_state_changed_cb(
           BT_DISCOVERY_STOPPED);
@@ -1707,9 +1704,6 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event,
             BT_DISCOVERY_STOPPED);
       }
     } break;
-    case BTA_DM_GATT_OVER_LE_RES_EVT:
-    case BTA_DM_DID_RES_EVT:
-    case BTA_DM_GATT_OVER_SDP_RES_EVT:
     default:
       log::warn("Unhandled event:{}", bta_dm_search_evt_text(event));
       break;
@@ -1934,14 +1928,6 @@ static void btif_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
             BT_STATUS_SUCCESS, bd_addr, 1, &prop);
       }
     } break;
-
-    case BTA_DM_DISC_CMPL_EVT:
-      /* fixme */
-      break;
-
-    case BTA_DM_SEARCH_CANCEL_CMPL_EVT:
-      /* no-op */
-      break;
 
     case BTA_DM_GATT_OVER_SDP_RES_EVT:
     case BTA_DM_GATT_OVER_LE_RES_EVT: {
