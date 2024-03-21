@@ -27,8 +27,8 @@
 #include <string>
 
 // Original included files, if any
-#include "bt_dev_class.h"
 #include "stack/btm/security_device_record.h"
+#include "stack/include/bt_dev_class.h"
 #include "stack/include/bt_device_type.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/hci_error_code.h"
