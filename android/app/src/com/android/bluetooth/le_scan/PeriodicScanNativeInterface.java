@@ -19,14 +19,12 @@ package com.android.bluetooth.le_scan;
 import android.bluetooth.BluetoothDevice;
 import android.util.Log;
 
-import com.android.bluetooth.gatt.GattServiceConfig;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
 /** NativeInterface for PeriodicScanManager */
 public class PeriodicScanNativeInterface {
     private static final String TAG = PeriodicScanNativeInterface.class.getSimpleName();
-    private static final boolean DBG = GattServiceConfig.DBG;
 
     private static final int PA_SOURCE_LOCAL = 1;
     private static final int PA_SOURCE_REMOTE = 2;
@@ -100,47 +98,37 @@ public class PeriodicScanNativeInterface {
             int interval,
             int status)
             throws Exception {
-        if (DBG) {
-            Log.d(
-                    TAG,
-                    "onSyncStarted(): "
-                            + (" regId=" + regId)
-                            + (" syncHandle=" + syncHandle)
-                            + (" status=" + status));
-        }
+        Log.d(
+                TAG,
+                "onSyncStarted(): "
+                        + (" regId=" + regId)
+                        + (" syncHandle=" + syncHandle)
+                        + (" status=" + status));
         mManager.onSyncStarted(regId, syncHandle, sid, addressType, address, phy, interval, status);
     }
 
     void onSyncReport(int syncHandle, int txPower, int rssi, int dataStatus, byte[] data)
             throws Exception {
-        if (DBG) {
-            Log.d(TAG, "onSyncReport(): syncHandle=" + syncHandle);
-        }
+        Log.d(TAG, "onSyncReport(): syncHandle=" + syncHandle);
         mManager.onSyncReport(syncHandle, txPower, rssi, dataStatus, data);
     }
 
     void onSyncLost(int syncHandle) throws Exception {
-        if (DBG) {
-            Log.d(TAG, "onSyncLost(): syncHandle=" + syncHandle);
-        }
+        Log.d(TAG, "onSyncLost(): syncHandle=" + syncHandle);
         mManager.onSyncLost(syncHandle);
     }
 
     void onSyncTransferredCallback(int paSource, int status, String bda) {
-        if (DBG) {
-            Log.d(TAG, "onSyncTransferredCallback()");
-        }
+        Log.d(TAG, "onSyncTransferredCallback()");
         mManager.onSyncTransferredCallback(paSource, status, bda);
     }
 
     void onBigInfoReport(int syncHandle, boolean encrypted) throws Exception {
-        if (DBG) {
-            Log.d(
-                    TAG,
-                    "onBigInfoReport():"
-                            + (" syncHandle=" + syncHandle)
-                            + (" encrypted=" + encrypted));
-        }
+        Log.d(
+                TAG,
+                "onBigInfoReport():"
+                        + (" syncHandle=" + syncHandle)
+                        + (" encrypted=" + encrypted));
         mManager.onBigInfoReport(syncHandle, encrypted);
     }
 

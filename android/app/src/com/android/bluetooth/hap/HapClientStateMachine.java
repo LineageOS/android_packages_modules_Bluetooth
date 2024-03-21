@@ -71,7 +71,6 @@ final class HapClientStateMachine extends StateMachine {
     static final int DISCONNECT = 2;
     @VisibleForTesting
     static final int STACK_EVENT = 101;
-    private static final boolean DBG = true;
     private static final String TAG = "HapClientStateMachine";
     @VisibleForTesting
     static final int CONNECT_TIMEOUT = 201;
@@ -209,9 +208,7 @@ final class HapClientStateMachine extends StateMachine {
 
     @Override
     protected void log(String msg) {
-        if (DBG) {
-            super.log(msg);
-        }
+        super.log(msg);
     }
 
     @VisibleForTesting
@@ -264,9 +261,7 @@ final class HapClientStateMachine extends StateMachine {
                     break;
                 case STACK_EVENT:
                     HapClientStackEvent event = (HapClientStackEvent) message.obj;
-                    if (DBG) {
-                        Log.d(TAG, "Disconnected: stack event: " + event);
-                    }
+                    Log.d(TAG, "Disconnected: stack event: " + event);
                     if (!mDevice.equals(event.device)) {
                         Log.wtf(TAG, "Device(" + mDevice + "): event mismatch: " + event);
                     }

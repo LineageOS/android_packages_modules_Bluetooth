@@ -189,8 +189,6 @@ public class PeriodicAdvertisementResult {
     }
 
     static void log(String msg) {
-        if (BassConstants.BASS_DBG) {
-            Log.d(TAG, msg);
-        }
+        Log.d(TAG, msg);
     }
 }

@@ -24,7 +24,6 @@ import java.util.UUID;
  * Broadcast Audio Scan Service constants class
  */
 public class BassConstants {
-    public static final boolean BASS_DBG = true;
     public static final ParcelUuid BAAS_UUID =
             ParcelUuid.fromString("00001852-0000-1000-8000-00805F9B34FB");
     public static final UUID BASS_UUID =
