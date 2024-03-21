@@ -163,3 +163,12 @@ inline std::ostream& operator<<(
   return os;
 }
 }  // namespace bluetooth::le_audio
+
+namespace fmt {
+template <>
+struct formatter<bluetooth::le_audio::LeAudioHealthDeviceStatType>
+    : enum_formatter<bluetooth::le_audio::LeAudioHealthDeviceStatType> {};
+template <>
+struct formatter<bluetooth::le_audio::LeAudioHealthGroupStatType>
+    : enum_formatter<bluetooth::le_audio::LeAudioHealthGroupStatType> {};
+}  // namespace fmt

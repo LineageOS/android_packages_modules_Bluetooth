@@ -36,6 +36,7 @@
 #endif
 
 #include <android_bluetooth_flags.h>
+#include <bluetooth/log.h>
 
 #include "devices.h"
 #include "le_audio_types.h"
@@ -54,8 +55,8 @@ class LeAudioDeviceGroup {
 
     types::CigState GetState(void) const { return state_; }
     void SetState(bluetooth::le_audio::types::CigState state) {
-      LOG_VERBOSE("%s -> %s", bluetooth::common::ToString(state_).c_str(),
-                  bluetooth::common::ToString(state).c_str());
+      log::verbose("{} -> {}", bluetooth::common::ToString(state_),
+                   bluetooth::common::ToString(state));
       state_ = state;
     }
 
@@ -238,9 +239,9 @@ class LeAudioDeviceGroup {
 
   inline types::AseState GetState(void) const { return current_state_; }
   void SetState(types::AseState state) {
-    LOG_INFO(" current state: %s, new state %s, in_transition_ %d",
-             bluetooth::common::ToString(current_state_).c_str(),
-             bluetooth::common::ToString(state).c_str(), in_transition_);
+    log::info("current state: {}, new state {}, in_transition_ {}",
+              bluetooth::common::ToString(current_state_),
+              bluetooth::common::ToString(state), in_transition_);
     LeAudioLogHistory::Get()->AddLogHistory(
         kLogStateMachineTag, group_id_, RawAddress::kEmpty, kLogStateChangedOp,
         bluetooth::common::ToString(current_state_) + "->" +
@@ -249,7 +250,7 @@ class LeAudioDeviceGroup {
 
     if (target_state_ == current_state_) {
       in_transition_ = false;
-      LOG_INFO("In transition flag cleared");
+      log::info("In transition flag cleared");
     }
   }
 
@@ -261,9 +262,9 @@ class LeAudioDeviceGroup {
     return notify_streaming_when_cises_are_ready_;
   }
   void SetTargetState(types::AseState state) {
-    LOG_INFO("target state: %s, new target state: %s, in_transition_ %d",
-             bluetooth::common::ToString(target_state_).c_str(),
-             bluetooth::common::ToString(state).c_str(), in_transition_);
+    log::info("target state: {}, new target state: {}, in_transition_ {}",
+              bluetooth::common::ToString(target_state_),
+              bluetooth::common::ToString(state), in_transition_);
     LeAudioLogHistory::Get()->AddLogHistory(
         kLogStateMachineTag, group_id_, RawAddress::kEmpty,
         kLogTargetStateChangedOp,
@@ -273,7 +274,7 @@ class LeAudioDeviceGroup {
     target_state_ = state;
 
     in_transition_ = target_state_ != current_state_;
-    LOG_INFO("In transition flag  = %d", in_transition_);
+    log::info("In transition flag  = {}", in_transition_);
   }
 
   /* Returns context types for which support was recently added or removed */
@@ -308,12 +309,11 @@ class LeAudioDeviceGroup {
   inline void SetAvailableContexts(
       types::BidirectionalPair<types::AudioContexts> new_contexts) {
     group_available_contexts_ = new_contexts;
-    LOG_DEBUG(
-        " group id: %d, available contexts sink: %s, available contexts "
-        "source: "
-        "%s",
-        group_id_, group_available_contexts_.sink.to_string().c_str(),
-        group_available_contexts_.source.to_string().c_str());
+    log::debug(
+        "group id: {}, available contexts sink: {}, available contexts source: "
+        "{}",
+        group_id_, group_available_contexts_.sink.to_string(),
+        group_available_contexts_.source.to_string());
   }
 
   types::AudioContexts GetAvailableContexts(
@@ -321,12 +321,11 @@ class LeAudioDeviceGroup {
     ASSERT_LOG(direction <= (types::kLeAudioDirectionBoth),
                "Invalid direction used.");
     if (direction < types::kLeAudioDirectionBoth) {
-      LOG_DEBUG(
-          " group id: %d, available contexts sink: %s, available contexts "
-          "source: "
-          "%s",
-          group_id_, group_available_contexts_.sink.to_string().c_str(),
-          group_available_contexts_.source.to_string().c_str());
+      log::debug(
+          "group id: {}, available contexts sink: {}, available contexts "
+          "source: {}",
+          group_id_, group_available_contexts_.sink.to_string(),
+          group_available_contexts_.source.to_string());
       return group_available_contexts_.get(direction);
     } else {
       return types::get_bidirectional(group_available_contexts_);

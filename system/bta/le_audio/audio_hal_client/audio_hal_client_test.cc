@@ -18,6 +18,7 @@
 
 #include "audio_hal_client.h"
 
+#include <bluetooth/log.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -48,6 +49,8 @@ using bluetooth::le_audio::LeAudioCodecConfiguration;
 using bluetooth::le_audio::LeAudioSinkAudioHalClient;
 using bluetooth::le_audio::LeAudioSourceAudioHalClient;
 
+using namespace bluetooth;
+
 bluetooth::common::MessageLoopThread message_loop_thread("test message loop");
 bluetooth::common::MessageLoopThread* get_main_thread() {
   return &message_loop_thread;
@@ -55,7 +58,7 @@ bluetooth::common::MessageLoopThread* get_main_thread() {
 bt_status_t do_in_main_thread(const base::Location& from_here,
                               base::OnceClosure task) {
   if (!message_loop_thread.DoInThread(from_here, std::move(task))) {
-    LOG(ERROR) << __func__ << ": failed from " << from_here.ToString();
+    log::error("failed from {}", from_here.ToString());
     return BT_STATUS_FAIL;
   }
   return BT_STATUS_SUCCESS;
@@ -71,7 +74,7 @@ static void init_message_loop_thread() {
   }
 
   if (!message_loop_thread.EnableRealTimeScheduling())
-    LOG(ERROR) << "Unable to set real time scheduling";
+    log::error("Unable to set real time scheduling");
 
   message_loop_ = message_loop_thread.message_loop();
   if (message_loop_ == nullptr) FAIL() << "unable to get message loop.";
