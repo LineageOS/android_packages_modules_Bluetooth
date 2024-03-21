@@ -42,8 +42,6 @@ import java.util.Arrays;
 public class SdpManager {
     private static final String TAG = SdpManager.class.getSimpleName();
 
-    private static final boolean D = true;
-
     // TODO: When changing PBAP to use this new API.
     //       Move the defines to the profile (PBAP already have the feature bits)
     /* PBAP repositories */
@@ -227,12 +225,8 @@ public class SdpManager {
                 sdpRecord = new SdpMasRecord(masInstanceId, l2capPsm, rfcommCannelNumber,
                         profileVersion, supportedFeatures, supportedMessageTypes, serviceName);
             }
-            if (D) {
-                Log.d(TAG, "UUID: " + Arrays.toString(uuid));
-            }
-            if (D) {
-                Log.d(TAG, "UUID in parcel: " + ((Utils.byteArrayToUuid(uuid))[0]).toString());
-            }
+            Log.d(TAG, "UUID: " + Arrays.toString(uuid));
+            Log.d(TAG, "UUID in parcel: " + ((Utils.byteArrayToUuid(uuid))[0]).toString());
             sendSdpIntent(inst, sdpRecord, moreResults);
         }
     }
@@ -253,12 +247,8 @@ public class SdpManager {
                 sdpRecord = new SdpMnsRecord(l2capPsm, rfcommCannelNumber, profileVersion,
                         supportedFeatures, serviceName);
             }
-            if (D) {
-                Log.d(TAG, "UUID: " + Arrays.toString(uuid));
-            }
-            if (D) {
-                Log.d(TAG, "UUID in parcel: " + ((Utils.byteArrayToUuid(uuid))[0]).toString());
-            }
+            Log.d(TAG, "UUID: " + Arrays.toString(uuid));
+            Log.d(TAG, "UUID in parcel: " + ((Utils.byteArrayToUuid(uuid))[0]).toString());
             sendSdpIntent(inst, sdpRecord, moreResults);
         }
     }
@@ -278,12 +268,8 @@ public class SdpManager {
                 sdpRecord = new SdpPseRecord(l2capPsm, rfcommCannelNumber, profileVersion,
                         supportedFeatures, supportedRepositories, serviceName);
             }
-            if (D) {
-                Log.d(TAG, "UUID: " + Arrays.toString(uuid));
-            }
-            if (D) {
-                Log.d(TAG, "UUID in parcel: " + ((Utils.byteArrayToUuid(uuid))[0]).toString());
-            }
+            Log.d(TAG, "UUID: " + Arrays.toString(uuid));
+            Log.d(TAG, "UUID in parcel: " + ((Utils.byteArrayToUuid(uuid))[0]).toString());
             sendSdpIntent(inst, sdpRecord, moreResults);
         }
     }
@@ -305,12 +291,8 @@ public class SdpManager {
                 sdpRecord = new SdpOppOpsRecord(serviceName, rfcommCannelNumber, l2capPsm,
                         profileVersion, formatsList);
             }
-            if (D) {
-                Log.d(TAG, "UUID: " + Arrays.toString(uuid));
-            }
-            if (D) {
-                Log.d(TAG, "UUID in parcel: " + ((Utils.byteArrayToUuid(uuid))[0]).toString());
-            }
+            Log.d(TAG, "UUID: " + Arrays.toString(uuid));
+            Log.d(TAG, "UUID in parcel: " + ((Utils.byteArrayToUuid(uuid))[0]).toString());
             sendSdpIntent(inst, sdpRecord, moreResults);
         }
     }
@@ -329,12 +311,8 @@ public class SdpManager {
             if (status == AbstractionLayer.BT_STATUS_SUCCESS) {
                 sdpRecord = new SdpSapsRecord(rfcommCannelNumber, profileVersion, serviceName);
             }
-            if (D) {
-                Log.d(TAG, "UUID: " + Arrays.toString(uuid));
-            }
-            if (D) {
-                Log.d(TAG, "UUID in parcel: " + ((Utils.byteArrayToUuid(uuid))[0]).toString());
-            }
+            Log.d(TAG, "UUID: " + Arrays.toString(uuid));
+            Log.d(TAG, "UUID in parcel: " + ((Utils.byteArrayToUuid(uuid))[0]).toString());
             sendSdpIntent(inst, sdpRecord, moreResults);
         }
     }
@@ -353,21 +331,15 @@ public class SdpManager {
               return;
             }
             inst.setStatus(status);
-            if (D) {
-                Log.d(TAG, "sdpDipRecordFoundCallback: status " + status);
-            }
+            Log.d(TAG, "sdpDipRecordFoundCallback: status " + status);
             if (status == AbstractionLayer.BT_STATUS_SUCCESS) {
                 sdpRecord = new SdpDipRecord(specificationId,
                         vendorId, vendorIdSource,
                         productId, version,
                         primaryRecord);
             }
-            if (D) {
-                Log.d(TAG, "UUID: " + Arrays.toString(uuid));
-            }
-            if (D) {
-                Log.d(TAG, "UUID in parcel: " + ((Utils.byteArrayToUuid(uuid))[0]).toString());
-            }
+            Log.d(TAG, "UUID: " + Arrays.toString(uuid));
+            Log.d(TAG, "UUID in parcel: " + ((Utils.byteArrayToUuid(uuid))[0]).toString());
             sendSdpIntent(inst, sdpRecord, moreResults);
         }
     }
@@ -385,20 +357,12 @@ public class SdpManager {
             }
             inst.setStatus(status);
             if (status == AbstractionLayer.BT_STATUS_SUCCESS) {
-                if (D) {
-                    Log.d(TAG, "sdpRecordFoundCallback: found a sdp record of size " + sizeRecord);
-                }
-                if (D) {
-                    Log.d(TAG, "Record:" + Arrays.toString(record));
-                }
+                Log.d(TAG, "sdpRecordFoundCallback: found a sdp record of size " + sizeRecord);
+                Log.d(TAG, "Record:" + Arrays.toString(record));
                 sdpRecord = new SdpRecord(sizeRecord, record);
             }
-            if (D) {
-                Log.d(TAG, "UUID: " + Arrays.toString(uuid));
-            }
-            if (D) {
-                Log.d(TAG, "UUID in parcel: " + ((Utils.byteArrayToUuid(uuid))[0]).toString());
-            }
+            Log.d(TAG, "UUID: " + Arrays.toString(uuid));
+            Log.d(TAG, "UUID in parcel: " + ((Utils.byteArrayToUuid(uuid))[0]).toString());
             sendSdpIntent(inst, sdpRecord, false);
         }
     }
@@ -428,9 +392,7 @@ public class SdpManager {
         SdpSearchInstance inst = sSdpSearchTracker.getNext();
 
         if ((inst != null) && (!sSearchInProgress)) {
-            if (D) {
-                Log.d(TAG, "Starting search for UUID: " + inst.getUuid());
-            }
+            Log.d(TAG, "Starting search for UUID: " + inst.getUuid());
             sSearchInProgress = true;
 
             inst.startSearch(); // Trigger timeout message
@@ -441,10 +403,8 @@ public class SdpManager {
                             : sAdapterService.getByteIdentityAddress(inst.getDevice()),
                     Utils.uuidToByteArray(inst.getUuid()));
         } else { // Else queue is empty.
-            if (D) {
-                Log.d(TAG, "startSearch(): nextInst = " + inst + " mSearchInProgress = "
-                        + sSearchInProgress + " - search busy or queue empty.");
-            }
+            Log.d(TAG, "startSearch(): nextInst = " + inst + " mSearchInProgress = "
+                    + sSearchInProgress + " - search busy or queue empty.");
         }
     }
 
