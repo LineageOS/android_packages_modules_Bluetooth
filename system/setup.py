@@ -87,8 +87,6 @@ def main():
         author='Android Open Source Project',
         license='Apache2.0',
         description="""Bluetooth Cert Tests Package""",
-        # Include root package so that bluetooth_packets_python3.so can be
-        # included as well
         packages=[''] + find_packages(exclude=['llvm_binutils', 'llvm_binutils.*']),
         install_requires=install_requires,
         package_data={
