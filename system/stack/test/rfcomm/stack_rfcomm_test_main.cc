@@ -23,8 +23,6 @@
 #include <bluetooth/log.h>
 #include <gtest/gtest.h>
 
-#include <string>
-
 using namespace bluetooth;
 
 int main(int argc, char** argv) {
