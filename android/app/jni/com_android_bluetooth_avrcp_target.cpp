@@ -18,6 +18,7 @@
 
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
+
 #include <map>
 #include <mutex>
 #include <shared_mutex>
@@ -25,7 +26,6 @@
 
 #include "avrcp.h"
 #include "com_android_bluetooth.h"
-#include "utils/Log.h"
 
 using namespace bluetooth::avrcp;
 

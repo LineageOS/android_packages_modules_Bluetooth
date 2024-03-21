@@ -19,7 +19,7 @@
 #include <android/hardware/bluetooth/1.1/IBluetoothHci.h>
 #include <hidl/HidlSupport.h>
 #include <hidl/HidlTransportSupport.h>
-#include <utils/Log.h>
+#include <log/log.h>
 
 #include "bluetooth_hci.h"
 
