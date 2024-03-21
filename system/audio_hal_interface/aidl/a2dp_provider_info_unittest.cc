@@ -18,6 +18,7 @@
 
 #include "a2dp_provider_info.h"
 
+#include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
 #include <flag_macros.h>
 #include <gmock/gmock.h>
@@ -41,6 +42,8 @@ using bluetooth::audio::aidl::a2dp::ProviderInfo;
 using ::testing::_;
 using ::testing::Return;
 using ::testing::Test;
+
+using namespace bluetooth;
 
 tA2DP_CODEC_TYPE A2DP_GetCodecType(const uint8_t* p_codec_info) {
   return (tA2DP_CODEC_TYPE)(p_codec_info[AVDT_CODEC_TYPE_INDEX]);
@@ -268,8 +271,8 @@ TEST_F_WITH_FLAGS(ProviderInfoTest, TestGetCodecSbc,
       provider_info->GetCodec(BTAV_A2DP_CODEC_INDEX_SOURCE_SBC);
   ASSERT_TRUE(received_codec_info_sbc.has_value());
   auto codec_info = received_codec_info_sbc.value();
-  LOG(ERROR) << codec_info->toString();
-  LOG(ERROR) << test_source_provider_info.codecInfos[0].toString();
+  log::error("{}", codec_info->toString());
+  log::error("{}", test_source_provider_info.codecInfos[0].toString());
   ASSERT_EQ(*codec_info, test_source_provider_info.codecInfos[0]);
 }
 
@@ -282,8 +285,8 @@ TEST_F_WITH_FLAGS(ProviderInfoTest, TestGetCodecAac,
       provider_info->GetCodec(BTAV_A2DP_CODEC_INDEX_SOURCE_AAC);
   ASSERT_TRUE(received_codec_info_aac.has_value());
   auto codec_info = received_codec_info_aac.value();
-  LOG(ERROR) << codec_info->toString();
-  LOG(ERROR) << test_source_provider_info.codecInfos[1].toString();
+  log::error("{}", codec_info->toString());
+  log::error("{}", test_source_provider_info.codecInfos[1].toString());
   ASSERT_EQ(*codec_info, test_source_provider_info.codecInfos[1]);
 }
 
@@ -296,8 +299,8 @@ TEST_F_WITH_FLAGS(ProviderInfoTest, TestGetCodecOpus,
       provider_info->GetCodec(BTAV_A2DP_CODEC_INDEX_SOURCE_OPUS);
   ASSERT_TRUE(received_codec_info_opus.has_value());
   auto codec_info = received_codec_info_opus.value();
-  LOG(ERROR) << codec_info->toString();
-  LOG(ERROR) << test_source_provider_info.codecInfos[2].toString();
+  log::error("{}", codec_info->toString());
+  log::error("{}", test_source_provider_info.codecInfos[2].toString());
   ASSERT_EQ(*codec_info, test_source_provider_info.codecInfos[2]);
 }
 
@@ -310,8 +313,8 @@ TEST_F_WITH_FLAGS(ProviderInfoTest, TestGetCodecFoobar,
       provider_info->GetCodec(BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MIN);
   ASSERT_TRUE(received_codec_info_foobar.has_value());
   auto codec_info = received_codec_info_foobar.value();
-  LOG(ERROR) << codec_info->toString();
-  LOG(ERROR) << test_source_provider_info.codecInfos[3].toString();
+  log::error("{}", codec_info->toString());
+  log::error("{}", test_source_provider_info.codecInfos[3].toString());
   ASSERT_EQ(*codec_info, test_source_provider_info.codecInfos[3]);
 }
 

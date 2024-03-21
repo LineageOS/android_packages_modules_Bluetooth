@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 #include <unordered_map>
 
@@ -168,3 +170,9 @@ class HfpEncodingTransport
 }  // namespace aidl
 }  // namespace audio
 }  // namespace bluetooth
+
+namespace fmt {
+template <>
+struct formatter<bluetooth::audio::aidl::hfp::tHFP_CTRL_CMD>
+    : enum_formatter<bluetooth::audio::aidl::hfp::tHFP_CTRL_CMD> {};
+}  // namespace fmt
