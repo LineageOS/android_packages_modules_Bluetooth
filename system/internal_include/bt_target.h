@@ -390,8 +390,15 @@
  * create l2cap connection, it will use this fixed ID. */
 #define CONN_MGR_ID_L2CAP (GATT_MAX_APPS + 10)
 
+/* This value is used for static allocation of resources. The actual maximum at
+ * runtime is controlled by a system property. */
 #ifndef GATT_MAX_PHY_CHANNEL
-#define GATT_MAX_PHY_CHANNEL 7
+#define GATT_MAX_PHY_CHANNEL 16
+#endif
+
+/* Devices must support at least 8 GATT channels per the CDD. */
+#ifndef GATT_MAX_PHY_CHANNEL_FLOOR
+#define GATT_MAX_PHY_CHANNEL_FLOOR 8
 #endif
 
 /* Used for conformance testing ONLY */
