@@ -160,21 +160,6 @@ struct BTA_DmBleGetEnergyInfo {
 };
 extern struct BTA_DmBleGetEnergyInfo BTA_DmBleGetEnergyInfo;
 
-// Name: BTA_DmBleObserve
-// Params: bool start, uint8_t duration, tBTA_DM_SEARCH_CBACK* p_results_cb
-// Return: void
-struct BTA_DmBleObserve {
-  std::function<void(bool start, uint8_t duration,
-                     tBTA_DM_SEARCH_CBACK* p_results_cb)>
-      body{[](bool /* start */, uint8_t /* duration */,
-              tBTA_DM_SEARCH_CBACK* /* p_results_cb */) {}};
-  void operator()(bool start, uint8_t duration,
-                  tBTA_DM_SEARCH_CBACK* p_results_cb) {
-    body(start, duration, p_results_cb);
-  };
-};
-extern struct BTA_DmBleObserve BTA_DmBleObserve;
-
 // Name: BTA_DmBlePasskeyReply
 // Params: const RawAddress& bd_addr, bool accept, uint32_t passkey
 // Return: void
