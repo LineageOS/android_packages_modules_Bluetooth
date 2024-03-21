@@ -24,7 +24,6 @@ from blueberry.facade.hci import le_acl_manager_facade_pb2 as le_acl_manager_fac
 from blueberry.facade.hci import le_advertising_manager_facade_pb2 as le_advertising_facade
 from blueberry.facade.hci import le_initiator_address_facade_pb2 as le_initiator_address_facade
 from blueberry.facade.hci import hci_facade_pb2 as hci_facade
-from bluetooth_packets_python3 import RawBuilder
 from mobly import test_runner
 import hci_packets as hci
 

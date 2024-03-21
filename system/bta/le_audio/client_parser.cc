@@ -23,6 +23,7 @@
 
 #include <base/logging.h>
 #include <base/strings/string_number_conversions.h>
+#include <bluetooth/log.h>
 #include <endian.h>
 #include <hardware/bt_common_types.h>
 #include <hardware/bt_gatt_types.h>
@@ -127,8 +128,7 @@ static std::map<uint8_t, std::map<uint8_t, std::string>*>
 bool ParseAseStatusHeader(ase_rsp_hdr& arh, uint16_t len,
                           const uint8_t* value) {
   if (len < kAseRspHdrMinLen) {
-    LOG(ERROR) << __func__
-               << ", wrong len of ASE char (header): " << static_cast<int>(len);
+    log::error("wrong len of ASE char (header): {}", static_cast<int>(len));
 
     return false;
   }
@@ -136,10 +136,8 @@ bool ParseAseStatusHeader(ase_rsp_hdr& arh, uint16_t len,
   STREAM_TO_UINT8(arh.id, value);
   STREAM_TO_UINT8(arh.state, value);
 
-  LOG(INFO) << "ASE status: "
-            << "\tASE id: " << loghex(arh.id)
-            << "\tASE state: " << ase_state_map_string[arh.state] << " ("
-            << loghex(arh.state) << ")";
+  log::info("ASE status: \tASE id: {}\tASE state: {} ({})", loghex(arh.id),
+            ase_state_map_string[arh.state], loghex(arh.state));
 
   return true;
 }
@@ -150,7 +148,7 @@ bool ParseAseStatusCodecConfiguredStateParams(
   uint8_t codec_spec_conf_len;
 
   if (len < kAseStatusCodecConfMinLen) {
-    LOG(ERROR) << "Wrong len of codec conf status (Codec conf header)";
+    log::error("Wrong len of codec conf status (Codec conf header)");
     return false;
   }
 
@@ -170,33 +168,29 @@ bool ParseAseStatusCodecConfiguredStateParams(
   len -= kAseStatusCodecConfMinLen;
 
   if (len != codec_spec_conf_len) {
-    LOG(ERROR) << "Wrong len of codec conf status (Codec spec conf)";
+    log::error("Wrong len of codec conf status (Codec spec conf)");
     return false;
   }
   if (codec_spec_conf_len)
     rsp.codec_spec_conf =
         std::vector<uint8_t>(value, value + codec_spec_conf_len);
 
-  LOG(INFO) << __func__ << ", Codec configuration"
-            << "\n\tFraming: " << loghex(rsp.framing)
-            << "\n\tPreferred PHY: " << loghex(rsp.preferred_phy)
-            << "\n\tPreferred retransmission number: "
-            << loghex(rsp.preferred_retrans_nb) << "\n\tMax transport latency: "
-            << loghex(rsp.max_transport_latency)
-            << "\n\tPresence delay min: " << loghex(rsp.pres_delay_min)
-            << "\n\tPresence delay max: " << loghex(rsp.pres_delay_max)
-            << "\n\tPreferredPresentationDelayMin: "
-            << loghex(rsp.preferred_pres_delay_min)
-            << "\n\tPreferredPresentationDelayMax: "
-            << loghex(rsp.preferred_pres_delay_max)
-            << "\n\tCoding format: " << loghex(rsp.codec_id.coding_format)
-            << "\n\tVendor codec company ID: "
-            << loghex(rsp.codec_id.vendor_company_id)
-            << "\n\tVendor codec ID: " << loghex(rsp.codec_id.vendor_codec_id)
-            << "\n\tCodec specific conf len: " << (int)codec_spec_conf_len
-            << "\n\tCodec specific conf: "
-            << base::HexEncode(rsp.codec_spec_conf.data(),
-                               rsp.codec_spec_conf.size());
+  log::info(
+      "Codec configuration\n\tFraming: {}\n\tPreferred PHY: {}\n\tPreferred "
+      "retransmission number: {}\n\tMax transport latency: {}\n\tPresence "
+      "delay min: {}\n\tPresence delay max: "
+      "{}\n\tPreferredPresentationDelayMin: "
+      "{}\n\tPreferredPresentationDelayMax: {}\n\tCoding format: {}\n\tVendor "
+      "codec company ID: {}\n\tVendor codec ID: {}\n\tCodec specific conf len: "
+      "{}\n\tCodec specific conf: {}",
+      loghex(rsp.framing), loghex(rsp.preferred_phy),
+      loghex(rsp.preferred_retrans_nb), loghex(rsp.max_transport_latency),
+      loghex(rsp.pres_delay_min), loghex(rsp.pres_delay_max),
+      loghex(rsp.preferred_pres_delay_min),
+      loghex(rsp.preferred_pres_delay_max), loghex(rsp.codec_id.coding_format),
+      loghex(rsp.codec_id.vendor_company_id),
+      loghex(rsp.codec_id.vendor_codec_id), (int)codec_spec_conf_len,
+      base::HexEncode(rsp.codec_spec_conf.data(), rsp.codec_spec_conf.size()));
 
   return true;
 }
@@ -205,7 +199,7 @@ bool ParseAseStatusQosConfiguredStateParams(
     struct ase_qos_configured_state_params& rsp, uint16_t len,
     const uint8_t* value) {
   if (len != kAseStatusCodecQosConfMinLen) {
-    LOG(ERROR) << "Wrong len of ASE characteristic (QOS conf header)";
+    log::error("Wrong len of ASE characteristic (QOS conf header)");
     return false;
   }
 
@@ -219,17 +213,14 @@ bool ParseAseStatusQosConfiguredStateParams(
   STREAM_TO_UINT16(rsp.max_transport_latency, value);
   STREAM_TO_UINT24(rsp.pres_delay, value);
 
-  LOG(INFO) << __func__ << ", Codec QoS Configured"
-            << "\n\tCIG: " << loghex(rsp.cig_id)
-            << "\n\tCIS: " << loghex(rsp.cis_id)
-            << "\n\tSDU interval: " << loghex(rsp.sdu_interval)
-            << "\n\tFraming: " << loghex(rsp.framing)
-            << "\n\tPHY: " << loghex(rsp.phy)
-            << "\n\tMax SDU: " << loghex(rsp.max_sdu)
-            << "\n\tRetransmission number: " << loghex(rsp.retrans_nb)
-            << "\n\tMax transport latency: "
-            << loghex(rsp.max_transport_latency)
-            << "\n\tPresentation delay: " << loghex(rsp.pres_delay);
+  log::info(
+      "Codec QoS Configured\n\tCIG: {}\n\tCIS: {}\n\tSDU interval: "
+      "{}\n\tFraming: {}\n\tPHY: {}\n\tMax SDU: {}\n\tRetransmission number: "
+      "{}\n\tMax transport latency: {}\n\tPresentation delay: {}",
+      loghex(rsp.cig_id), loghex(rsp.cis_id), loghex(rsp.sdu_interval),
+      loghex(rsp.framing), loghex(rsp.phy), loghex(rsp.max_sdu),
+      loghex(rsp.retrans_nb), loghex(rsp.max_transport_latency),
+      loghex(rsp.pres_delay));
 
   return true;
 }
@@ -239,7 +230,7 @@ bool ParseAseStatusTransientStateParams(struct ase_transient_state_params& rsp,
   uint8_t metadata_len;
 
   if (len < kAseStatusTransMinLen) {
-    LOG(ERROR) << "Wrong len of ASE characteristic (metadata)";
+    log::error("Wrong len of ASE characteristic (metadata)");
     return false;
   }
 
@@ -249,17 +240,18 @@ bool ParseAseStatusTransientStateParams(struct ase_transient_state_params& rsp,
   len -= kAseStatusTransMinLen;
 
   if (len != metadata_len) {
-    LOG(ERROR) << "Wrong len of ASE characteristic (metadata)";
+    log::error("Wrong len of ASE characteristic (metadata)");
     return false;
   }
 
   if (metadata_len > 0)
     rsp.metadata = std::vector<uint8_t>(value, value + metadata_len);
 
-  LOG(INFO) << __func__ << ", Status enabling/streaming/disabling"
-            << "\n\tCIG: " << loghex(rsp.cig_id)
-            << "\n\tCIS: " << loghex(rsp.cis_id) << "\n\tMetadata: "
-            << base::HexEncode(rsp.metadata.data(), rsp.metadata.size());
+  log::info(
+      "Status enabling/streaming/disabling\n\tCIG: {}\n\tCIS: {}\n\tMetadata: "
+      "{}",
+      loghex(rsp.cig_id), loghex(rsp.cis_id),
+      base::HexEncode(rsp.metadata.data(), rsp.metadata.size()));
 
   return true;
 }
@@ -269,7 +261,7 @@ bool ParseAseCtpNotification(struct ctp_ntf& ntf, uint16_t len,
   uint8_t num_entries;
 
   if (len < kCtpNtfMinLen) {
-    LOG(ERROR) << "Wrong len of ASE control point notification: " << (int)len;
+    log::error("Wrong len of ASE control point notification: {}", (int)len);
     return false;
   }
 
@@ -277,7 +269,7 @@ bool ParseAseCtpNotification(struct ctp_ntf& ntf, uint16_t len,
   STREAM_TO_UINT8(num_entries, value);
 
   if (len != kCtpNtfMinLen + (num_entries * kCtpAseEntryMinLen)) {
-    LOG(ERROR) << "Wrong len of ASE control point notification (ASE IDs)";
+    log::error("Wrong len of ASE control point notification (ASE IDs)");
     return false;
   }
 
@@ -291,22 +283,18 @@ bool ParseAseCtpNotification(struct ctp_ntf& ntf, uint16_t len,
     ntf.entries.push_back(std::move(entry));
   }
 
-  LOG(INFO) << __func__ << ", Control point notification"
-            << "\n\tOpcode: " << ctp_opcode_map_string[ntf.op] << " ("
-            << loghex(ntf.op) << ")"
-            << "\n\tNum ASE IDs: " << (int)num_entries;
+  log::info("Control point notification\n\tOpcode: {} ({})\n\tNum ASE IDs: {}",
+            ctp_opcode_map_string[ntf.op], loghex(ntf.op), (int)num_entries);
   for (size_t i = 0; i < num_entries; i++)
-    LOG(INFO) << "\n\tASE ID[" << loghex(ntf.entries[i].ase_id)
-              << "] response: "
-              << ctp_response_code_map_string[ntf.entries[i].response_code]
-              << " (" << loghex(ntf.entries[i].response_code) << ")"
-              << " reason: "
-              << ((ctp_response_code_map.count(ntf.entries[i].response_code) !=
-                   0)
-                      ? (*ctp_response_code_map[ntf.entries[i].response_code])
-                            [ntf.entries[i].reason]
-                      : "")
-              << " (" << loghex(ntf.entries[i].reason) << ")";
+    log::info("\n\tASE ID[{}] response: {} ({}) reason: {} ({})",
+              loghex(ntf.entries[i].ase_id),
+              ctp_response_code_map_string[ntf.entries[i].response_code],
+              loghex(ntf.entries[i].response_code),
+              ((ctp_response_code_map.count(ntf.entries[i].response_code) != 0)
+                   ? (*ctp_response_code_map[ntf.entries[i].response_code])
+                         [ntf.entries[i].reason]
+                   : ""),
+              loghex(ntf.entries[i].reason));
 
   return true;
 }
@@ -358,20 +346,15 @@ bool PrepareAseCtpCodecConfig(const std::vector<struct ctp_codec_conf>& confs,
     ARRAY_TO_STREAM(msg, conf.codec_config.data(),
                     static_cast<int>(conf.codec_config.size()));
 
-    LOG(INFO) << __func__ << ", Codec configuration"
-              << "\n\tAse id: " << loghex(conf.ase_id)
-              << "\n\tTarget latency: " << loghex(conf.target_latency)
-              << "\n\tTarget PHY: " << loghex(conf.target_phy)
-              << "\n\tCoding format: " << loghex(conf.codec_id.coding_format)
-              << "\n\tVendor codec company ID: "
-              << loghex(conf.codec_id.vendor_company_id)
-              << "\n\tVendor codec ID: "
-              << loghex(conf.codec_id.vendor_codec_id)
-              << "\n\tCodec config len: "
-              << static_cast<int>(conf.codec_config.size())
-              << "\n\tCodec spec conf: "
-              << "\n"
-              << conf_ents_str.str();
+    log::info(
+        "Codec configuration\n\tAse id: {}\n\tTarget latency: {}\n\tTarget "
+        "PHY: {}\n\tCoding format: {}\n\tVendor codec company ID: {}\n\tVendor "
+        "codec ID: {}\n\tCodec config len: {}\n\tCodec spec conf: \n{}",
+        loghex(conf.ase_id), loghex(conf.target_latency),
+        loghex(conf.target_phy), loghex(conf.codec_id.coding_format),
+        loghex(conf.codec_id.vendor_company_id),
+        loghex(conf.codec_id.vendor_codec_id),
+        static_cast<int>(conf.codec_config.size()), conf_ents_str.str());
   }
 
   return true;
@@ -398,18 +381,14 @@ bool PrepareAseCtpConfigQos(const std::vector<struct ctp_qos_conf>& confs,
     UINT16_TO_STREAM(msg, conf.max_transport_latency);
     UINT24_TO_STREAM(msg, conf.pres_delay);
 
-    LOG(INFO) << __func__ << ", QoS configuration"
-              << "\n\tAse id: " << loghex(conf.ase_id)
-              << "\n\tcig: " << loghex(conf.cig)
-              << "\n\tCis: " << loghex(conf.cis)
-              << "\n\tSDU interval: " << loghex(conf.sdu_interval)
-              << "\n\tFraming: " << loghex(conf.framing)
-              << "\n\tPhy: " << loghex(conf.phy)
-              << "\n\tMax sdu size: " << loghex(conf.max_sdu)
-              << "\n\tRetrans nb: " << loghex(conf.retrans_nb)
-              << "\n\tMax Transport latency: "
-              << loghex(conf.max_transport_latency)
-              << "\n\tPres delay: " << loghex(conf.pres_delay);
+    log::info(
+        "QoS configuration\n\tAse id: {}\n\tcig: {}\n\tCis: {}\n\tSDU "
+        "interval: {}\n\tFraming: {}\n\tPhy: {}\n\tMax sdu size: {}\n\tRetrans "
+        "nb: {}\n\tMax Transport latency: {}\n\tPres delay: {}",
+        loghex(conf.ase_id), loghex(conf.cig), loghex(conf.cis),
+        loghex(conf.sdu_interval), loghex(conf.framing), loghex(conf.phy),
+        loghex(conf.max_sdu), loghex(conf.retrans_nb),
+        loghex(conf.max_transport_latency), loghex(conf.pres_delay));
   }
 
   return true;
@@ -420,18 +399,18 @@ bool PrepareAseCtpEnable(const std::vector<struct ctp_enable>& confs,
   if (confs.size() == 0) return false;
 
   if (confs.size() > UINT8_MAX) {
-    LOG_ERROR(" To many ASEs to update metadata");
+    log::error("To many ASEs to update metadata");
     return false;
   }
 
   uint16_t msg_len = confs.size() * kCtpEnableMinLen + kAseNumSize + kCtpOpSize;
   for (auto& conf : confs) {
     if (msg_len > GATT_MAX_ATTR_LEN) {
-      LOG_ERROR(" Message length above GATT maximum");
+      log::error("Message length above GATT maximum");
       return false;
     }
     if (conf.metadata.size() > UINT8_MAX) {
-      LOG_ERROR(" ase[%d] metadata length is invalid", conf.ase_id);
+      log::error("ase[{}] metadata length is invalid", conf.ase_id);
       return false;
     }
 
@@ -449,9 +428,8 @@ bool PrepareAseCtpEnable(const std::vector<struct ctp_enable>& confs,
     ARRAY_TO_STREAM(msg, conf.metadata.data(),
                     static_cast<int>(conf.metadata.size()));
 
-    LOG(INFO) << __func__ << ", Enable"
-              << "\n\tAse id: " << loghex(conf.ase_id) << "\n\tMetadata: "
-              << base::HexEncode(conf.metadata.data(), conf.metadata.size());
+    log::info("Enable\n\tAse id: {}\n\tMetadata: {}", loghex(conf.ase_id),
+              base::HexEncode(conf.metadata.data(), conf.metadata.size()));
   }
 
   return true;
@@ -469,8 +447,7 @@ bool PrepareAseCtpAudioReceiverStartReady(const std::vector<uint8_t>& ase_ids,
   for (const uint8_t& id : ase_ids) {
     UINT8_TO_STREAM(msg, id);
 
-    LOG(INFO) << __func__ << ", ReceiverStartReady"
-              << "\n\tAse id: " << loghex(id);
+    log::info("ReceiverStartReady\n\tAse id: {}", loghex(id));
   }
 
   return true;
@@ -488,8 +465,7 @@ bool PrepareAseCtpDisable(const std::vector<uint8_t>& ase_ids,
   for (const uint8_t& id : ase_ids) {
     UINT8_TO_STREAM(msg, id);
 
-    LOG(INFO) << __func__ << ", Disable"
-              << "\n\tAse id: " << loghex(id);
+    log::info("Disable\n\tAse id: {}", loghex(id));
   }
 
   return true;
@@ -507,8 +483,7 @@ bool PrepareAseCtpAudioReceiverStopReady(const std::vector<uint8_t>& ase_ids,
   for (const uint8_t& ase_id : ase_ids) {
     UINT8_TO_STREAM(msg, ase_id);
 
-    LOG(INFO) << __func__ << ", ReceiverStopReady"
-              << "\n\tAse id: " << loghex(ase_id);
+    log::info("ReceiverStopReady\n\tAse id: {}", loghex(ase_id));
   }
 
   return true;
@@ -520,7 +495,7 @@ bool PrepareAseCtpUpdateMetadata(
   if (confs.size() == 0) return false;
 
   if (confs.size() > UINT8_MAX) {
-    LOG_ERROR(" To many ASEs to update metadata");
+    log::error("To many ASEs to update metadata");
     return false;
   }
 
@@ -528,11 +503,11 @@ bool PrepareAseCtpUpdateMetadata(
       confs.size() * kCtpUpdateMetadataMinLen + kAseNumSize + kCtpOpSize;
   for (auto& conf : confs) {
     if (msg_len > GATT_MAX_ATTR_LEN) {
-      LOG_ERROR(" Message length above GATT maximum");
+      log::error("Message length above GATT maximum");
       return false;
     }
     if (conf.metadata.size() > UINT8_MAX) {
-      LOG_ERROR(" ase[%d] metadata length is invalid", conf.ase_id);
+      log::error("ase[{}] metadata length is invalid", conf.ase_id);
       return false;
     }
 
@@ -550,9 +525,9 @@ bool PrepareAseCtpUpdateMetadata(
     ARRAY_TO_STREAM(msg, conf.metadata.data(),
                     static_cast<int>(conf.metadata.size()));
 
-    LOG(INFO) << __func__ << ", Update Metadata"
-              << "\n\tAse id: " << loghex(conf.ase_id) << "\n\tMetadata: "
-              << base::HexEncode(conf.metadata.data(), conf.metadata.size());
+    log::info("Update Metadata\n\tAse id: {}\n\tMetadata: {}",
+              loghex(conf.ase_id),
+              base::HexEncode(conf.metadata.data(), conf.metadata.size()));
   }
 
   return true;
@@ -570,8 +545,7 @@ bool PrepareAseCtpRelease(const std::vector<uint8_t>& ase_ids,
   for (const uint8_t& ase_id : ase_ids) {
     UINT8_TO_STREAM(msg, ase_id);
 
-    LOG(INFO) << __func__ << ", Release"
-              << "\n\tAse id: " << loghex(ase_id);
+    log::info("Release\n\tAse id: {}", loghex(ase_id));
   }
 
   return true;
@@ -586,7 +560,7 @@ int ParseSinglePac(std::vector<struct acs_ac_record>& pac_recs, uint16_t len,
   uint8_t codec_spec_cap_len, metadata_len;
 
   if (len < kAcsPacRecordMinLen) {
-    LOG_ERROR("Wrong len of PAC record (%d!=%d)", len, kAcsPacRecordMinLen);
+    log::error("Wrong len of PAC record ({}!={})", len, kAcsPacRecordMinLen);
     pac_recs.clear();
     return -1;
   }
@@ -598,8 +572,8 @@ int ParseSinglePac(std::vector<struct acs_ac_record>& pac_recs, uint16_t len,
   len -= kAcsPacRecordMinLen - kAcsPacMetadataLenLen;
 
   if (len < codec_spec_cap_len + kAcsPacMetadataLenLen) {
-    LOG_ERROR("Wrong len of PAC record (codec specific capabilities) (%d!=%d)",
-              len, codec_spec_cap_len + kAcsPacMetadataLenLen);
+    log::error("Wrong len of PAC record (codec specific capabilities) ({}!={})",
+               len, codec_spec_cap_len + kAcsPacMetadataLenLen);
     pac_recs.clear();
     return -1;
   }
@@ -620,7 +594,8 @@ int ParseSinglePac(std::vector<struct acs_ac_record>& pac_recs, uint16_t len,
   len -= kAcsPacMetadataLenLen;
 
   if (len < metadata_len) {
-    LOG_ERROR("Wrong len of PAC record (metadata) (%d!=%d)", len, metadata_len);
+    log::error("Wrong len of PAC record (metadata) ({}!={})", len,
+               metadata_len);
     pac_recs.clear();
     return -1;
   }
@@ -637,8 +612,8 @@ int ParseSinglePac(std::vector<struct acs_ac_record>& pac_recs, uint16_t len,
 bool ParsePacs(std::vector<struct acs_ac_record>& pac_recs, uint16_t len,
                const uint8_t* value) {
   if (len < kAcsPacDiscoverRspMinLen) {
-    LOG_ERROR("Wrong len of PAC characteristic (%d!=%d)", len,
-              kAcsPacDiscoverRspMinLen);
+    log::error("Wrong len of PAC characteristic ({}!={})", len,
+               kAcsPacDiscoverRspMinLen);
     return false;
   }
 
@@ -661,13 +636,13 @@ bool ParsePacs(std::vector<struct acs_ac_record>& pac_recs, uint16_t len,
 bool ParseAudioLocations(types::AudioLocations& audio_locations, uint16_t len,
                          const uint8_t* value) {
   if (len != kAudioLocationsRspMinLen) {
-    LOG(ERROR) << "Wrong len of Audio Location characteristic";
+    log::error("Wrong len of Audio Location characteristic");
     return false;
   }
 
   STREAM_TO_UINT32(audio_locations, value);
 
-  LOG(INFO) << "Audio locations: " << audio_locations.to_string();
+  log::info("Audio locations: {}", audio_locations.to_string());
 
   return true;
 }
@@ -676,16 +651,17 @@ bool ParseSupportedAudioContexts(
     types::BidirectionalPair<types::AudioContexts>& contexts, uint16_t len,
     const uint8_t* value) {
   if (len != kAseAudioSuppContRspMinLen) {
-    LOG(ERROR) << "Wrong len of Audio Supported Context characteristic";
+    log::error("Wrong len of Audio Supported Context characteristic");
     return false;
   }
 
   STREAM_TO_UINT16(contexts.sink.value_ref(), value);
   STREAM_TO_UINT16(contexts.source.value_ref(), value);
 
-  LOG(INFO) << "Supported Audio Contexts: "
-            << "\n\tSupported Sink Contexts: " << contexts.sink.to_string()
-            << "\n\tSupported Source Contexts: " << contexts.source.to_string();
+  log::info(
+      "Supported Audio Contexts: \n\tSupported Sink Contexts: {}\n\tSupported "
+      "Source Contexts: {}",
+      contexts.sink.to_string(), contexts.source.to_string());
 
   return true;
 }
@@ -694,16 +670,17 @@ bool ParseAvailableAudioContexts(
     types::BidirectionalPair<types::AudioContexts>& contexts, uint16_t len,
     const uint8_t* value) {
   if (len != kAseAudioAvailRspMinLen) {
-    LOG(ERROR) << "Wrong len of Audio Availability characteristic";
+    log::error("Wrong len of Audio Availability characteristic");
     return false;
   }
 
   STREAM_TO_UINT16(contexts.sink.value_ref(), value);
   STREAM_TO_UINT16(contexts.source.value_ref(), value);
 
-  LOG(INFO) << "Available Audio Contexts: "
-            << "\n\tAvailable Sink Contexts: " << contexts.sink.to_string()
-            << "\n\tAvailable Source Contexts: " << contexts.source.to_string();
+  log::info(
+      "Available Audio Contexts: \n\tAvailable Sink Contexts: {}\n\tAvailable "
+      "Source Contexts: {}",
+      contexts.sink.to_string(), contexts.source.to_string());
 
   return true;
 }
@@ -713,18 +690,15 @@ namespace tmap {
 
 bool ParseTmapRole(std::bitset<16>& role, uint16_t len, const uint8_t* value) {
   if (len != kTmapRoleLen) {
-    LOG_ERROR(
-        ", Wrong len of Telephony Media Audio Profile Role, "
-        "characteristic");
+    log::error(
+        ", Wrong len of Telephony Media Audio Profile Role, characteristic");
     return false;
   }
 
   STREAM_TO_UINT16(role, value);
 
-  LOG_INFO(
-      ", Telephony Media Audio Profile Role:"
-      "\n\tRole: %s",
-      role.to_string().c_str());
+  log::info(", Telephony Media Audio Profile Role:\n\tRole: {}",
+            role.to_string());
 
   return true;
 }

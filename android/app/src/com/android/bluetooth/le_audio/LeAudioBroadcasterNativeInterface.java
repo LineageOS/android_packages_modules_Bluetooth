@@ -36,7 +36,6 @@ import com.android.internal.annotations.VisibleForTesting;
  */
 public class LeAudioBroadcasterNativeInterface {
     private static final String TAG = "LeAudioBroadcasterNativeInterface";
-    private static final boolean DBG = true;
     private BluetoothAdapter mAdapter;
 
     @GuardedBy("INSTANCE_LOCK")
@@ -88,9 +87,7 @@ public class LeAudioBroadcasterNativeInterface {
     // Callbacks from the native stack back into the Java framework.
     @VisibleForTesting
     public void onBroadcastCreated(int broadcastId, boolean success) {
-        if (DBG) {
-            Log.d(TAG, "onBroadcastCreated: broadcastId=" + broadcastId);
-        }
+        Log.d(TAG, "onBroadcastCreated: broadcastId=" + broadcastId);
         LeAudioStackEvent event =
                 new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_CREATED);
 
@@ -101,9 +98,7 @@ public class LeAudioBroadcasterNativeInterface {
 
     @VisibleForTesting
     public void onBroadcastDestroyed(int broadcastId) {
-        if (DBG) {
-            Log.d(TAG, "onBroadcastDestroyed: broadcastId=" + broadcastId);
-        }
+        Log.d(TAG, "onBroadcastDestroyed: broadcastId=" + broadcastId);
         LeAudioStackEvent event =
                 new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_DESTROYED);
 
@@ -113,9 +108,7 @@ public class LeAudioBroadcasterNativeInterface {
 
     @VisibleForTesting
     public void onBroadcastStateChanged(int broadcastId, int state) {
-        if (DBG) {
-            Log.d(TAG, "onBroadcastStateChanged: broadcastId=" + broadcastId + " state=" + state);
-        }
+        Log.d(TAG, "onBroadcastStateChanged: broadcastId=" + broadcastId + " state=" + state);
         LeAudioStackEvent event =
                 new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_STATE);
 
@@ -133,9 +126,7 @@ public class LeAudioBroadcasterNativeInterface {
 
     @VisibleForTesting
     public void onBroadcastMetadataChanged(int broadcastId, BluetoothLeBroadcastMetadata metadata) {
-        if (DBG) {
-            Log.d(TAG, "onBroadcastMetadataChanged: broadcastId=" + broadcastId);
-        }
+        Log.d(TAG, "onBroadcastMetadataChanged: broadcastId=" + broadcastId);
         LeAudioStackEvent event =
                 new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_METADATA_CHANGED);
 

@@ -669,6 +669,8 @@ cc_fuzz {
         "libbt_shim_ffi",
     ],
     shared_libs: [
+        "libbase",
+        "liblog",
         "server_configurable_flags",
     ],
     target: {
@@ -706,6 +708,7 @@ cc_test {
     shared_libs: [
         "libPlatformProperties",
         "libaaudio",
+        "libbase",
         "libcrypto",
         "libcutils",
         "libdl",
@@ -807,6 +810,7 @@ cc_test {
         ":TestMockHci",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
+        ":TestMockStackBtm",
         ":TestMockStackMetrics",
         "rfcomm/port_api.cc",
         "rfcomm/port_rfc.cc",
@@ -818,7 +822,6 @@ cc_test {
         "rfcomm/rfc_ts_frames.cc",
         "rfcomm/rfc_utils.cc",
         "test/common/mock_btm_layer.cc",
-        "test/common/mock_btu_layer.cc",
         "test/common/mock_l2cap_layer.cc",
         "test/common/stack_test_packet_utils.cc",
         "test/rfcomm/stack_rfcomm_test.cc",
@@ -1427,7 +1430,6 @@ cc_test {
         ":TestMockMainShimEntry",
         "btm/btm_iso.cc",
         "test/btm_iso_test.cc",
-        "test/common/mock_controller.cc",
         "test/common/mock_gatt_layer.cc",
         "test/common/mock_hcic_layer.cc",
     ],
@@ -1495,7 +1497,6 @@ cc_test {
         "eatt/eatt.cc",
         "test/common/mock_btif_storage.cc",
         "test/common/mock_btm_api_layer.cc",
-        "test/common/mock_controller.cc",
         "test/common/mock_gatt_layer.cc",
         "test/common/mock_l2cap_layer.cc",
         "test/eatt/eatt_test.cc",
@@ -1691,6 +1692,7 @@ cc_test {
         "test/hci/stack_hci_test.cc",
     ],
     static_libs: [
+        "libbase",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_log",
         "libbt-common",

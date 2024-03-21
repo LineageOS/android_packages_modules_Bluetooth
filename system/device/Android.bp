@@ -21,7 +21,6 @@ cc_library_static {
         "packages/modules/Bluetooth/system/stack/include",
     ],
     srcs: [
-        "src/controller.cc",
         "src/device_iot_config.cc",
         "src/device_iot_config_int.cc",
         "src/esco_parameters.cc",

@@ -28,7 +28,6 @@
 #include "btm_dev.h"
 #include "btm_iso_api.h"
 #include "common/time_util.h"
-#include "device/include/controller.h"
 #include "hci/controller_interface.h"
 #include "hci/include/hci_layer.h"
 #include "internal_include/bt_trace.h"

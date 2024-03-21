@@ -32,7 +32,6 @@ import java.util.UUID;
  */
 public class CsipSetCoordinatorNativeInterface {
     private static final String TAG = "CsipSetCoordinatorNativeInterface";
-    private static final boolean DBG = false;
     private BluetoothAdapter mAdapter;
 
     @GuardedBy("INSTANCE_LOCK")
@@ -146,9 +145,7 @@ public class CsipSetCoordinatorNativeInterface {
         event.device = getDevice(address);
         event.valueInt1 = state;
 
-        if (DBG) {
-            Log.d(TAG, "onConnectionStateChanged: " + event);
-        }
+        Log.d(TAG, "onConnectionStateChanged: " + event);
         sendMessageToService(event);
     }
 
@@ -165,9 +162,7 @@ public class CsipSetCoordinatorNativeInterface {
         event.valueInt3 = rank;
         event.valueUuid1 = uuid;
 
-        if (DBG) {
-            Log.d(TAG, "onDeviceAvailable: " + event);
-        }
+        Log.d(TAG, "onDeviceAvailable: " + event);
         sendMessageToService(event);
     }
 
@@ -184,9 +179,7 @@ public class CsipSetCoordinatorNativeInterface {
                 CsipSetCoordinatorStackEvent.EVENT_TYPE_SET_MEMBER_AVAILABLE);
         event.device = getDevice(address);
         event.valueInt1 = groupId;
-        if (DBG) {
-            Log.d(TAG, "onSetMemberAvailable: " + event);
-        }
+        Log.d(TAG, "onSetMemberAvailable: " + event);
         sendMessageToService(event);
     }
 
@@ -205,9 +198,7 @@ public class CsipSetCoordinatorNativeInterface {
         event.valueInt1 = groupId;
         event.valueInt2 = status;
         event.valueBool1 = locked;
-        if (DBG) {
-            Log.d(TAG, "onGroupLockChanged: " + event);
-        }
+        Log.d(TAG, "onGroupLockChanged: " + event);
         sendMessageToService(event);
     }
 

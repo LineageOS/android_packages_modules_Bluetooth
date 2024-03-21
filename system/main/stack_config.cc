@@ -21,10 +21,13 @@
 #include "internal_include/stack_config.h"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include "include/check.h"
 #include "os/log.h"
 #include "osi/include/future.h"
+
+using namespace bluetooth;
 
 namespace {
 const char* PTS_AVRCP_TEST = "PTS_AvrcpTest";
@@ -69,11 +72,11 @@ static future_t* init() {
 #endif  // defined(__ANDROID__)
   CHECK(path != NULL);
 
-  LOG_INFO("%s attempt to load stack conf from %s", __func__, path);
+  log::info("attempt to load stack conf from {}", path);
 
   config = config_new(path);
   if (!config) {
-    LOG_INFO("%s file >%s< not found", __func__, path);
+    log::info("file >{}< not found", path);
     config = config_new_empty();
   }
 
@@ -191,7 +194,7 @@ static bool get_pts_l2cap_ecoc_reconfigure(void) {
 
 static const std::string* get_pts_broadcast_audio_config_options(void) {
   if (!config) {
-    LOG_INFO("Config isn't ready, use default option");
+    log::info("Config isn't ready, use default option");
     return NULL;
   }
   return config_get_string(*config, CONFIG_DEFAULT_SECTION,

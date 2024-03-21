@@ -80,8 +80,6 @@ import java.util.function.Predicate;
  * {@link com.android.bluetooth.btservice.ProfileService} when introduced.
  */
 public class TransitionalScanHelper {
-    private static final boolean DBG = GattServiceConfig.DBG;
-    private static final boolean VDBG = GattServiceConfig.VDBG;
     private static final String TAG = GattServiceConfig.TAG_PREFIX + "ScanHelper";
 
     // Batch scan related constants.
@@ -341,41 +339,37 @@ public class TransitionalScanHelper {
             int periodicAdvInt,
             byte[] advData,
             String originalAddress) {
-        if (VDBG) {
-            Log.d(
-                    TAG,
-                    "onScanResult() - eventType=0x"
-                            + Integer.toHexString(eventType)
-                            + ", addressType="
-                            + addressType
-                            + ", address="
-                            + address
-                            + ", primaryPhy="
-                            + primaryPhy
-                            + ", secondaryPhy="
-                            + secondaryPhy
-                            + ", advertisingSid=0x"
-                            + Integer.toHexString(advertisingSid)
-                            + ", txPower="
-                            + txPower
-                            + ", rssi="
-                            + rssi
-                            + ", periodicAdvInt=0x"
-                            + Integer.toHexString(periodicAdvInt)
-                            + ", originalAddress="
-                            + originalAddress);
-        }
+        Log.v(
+                TAG,
+                "onScanResult() - eventType=0x"
+                        + Integer.toHexString(eventType)
+                        + ", addressType="
+                        + addressType
+                        + ", address="
+                        + address
+                        + ", primaryPhy="
+                        + primaryPhy
+                        + ", secondaryPhy="
+                        + secondaryPhy
+                        + ", advertisingSid=0x"
+                        + Integer.toHexString(advertisingSid)
+                        + ", txPower="
+                        + txPower
+                        + ", rssi="
+                        + rssi
+                        + ", periodicAdvInt=0x"
+                        + Integer.toHexString(periodicAdvInt)
+                        + ", originalAddress="
+                        + originalAddress);
 
         String identityAddress = mAdapterService.getIdentityAddress(address);
         if (!address.equals(identityAddress)) {
-            if (VDBG) {
-                Log.d(
-                        TAG,
-                        "found identityAddress of "
-                                + address
-                                + ", replace originalAddress as "
-                                + identityAddress);
-            }
+            Log.v(
+                    TAG,
+                    "found identityAddress of "
+                            + address
+                            + ", replace originalAddress as "
+                            + identityAddress);
             originalAddress = identityAddress;
         }
 
@@ -384,9 +378,7 @@ public class TransitionalScanHelper {
         for (ScanClient client : mScanManager.getRegularScanQueue()) {
             ScannerMap.App app = mScannerMap.getById(client.scannerId);
             if (app == null) {
-                if (VDBG) {
-                    Log.d(TAG, "App is null; skip.");
-                }
+                Log.v(TAG, "App is null; skip.");
                 continue;
             }
 
@@ -399,9 +391,7 @@ public class TransitionalScanHelper {
             if (settings.getLegacy()) {
                 if ((eventType & ET_LEGACY_MASK) == 0) {
                     // If this is legacy scan, but nonlegacy result - skip.
-                    if (VDBG) {
-                        Log.d(TAG, "Legacy scan, non legacy result; skip.");
-                    }
+                    Log.v(TAG, "Legacy scan, non legacy result; skip.");
                     continue;
                 } else {
                     // Some apps are used to fixed-size advertise data.
@@ -450,23 +440,19 @@ public class TransitionalScanHelper {
             }
             boolean matchResult = matchesFilters(client, result, originalAddress);
             if (!hasPermission || !matchResult) {
-                if (VDBG) {
-                    Log.d(
-                            TAG,
-                            "Skipping client: permission="
-                                    + hasPermission
-                                    + " matches="
-                                    + matchResult);
-                }
+                Log.v(
+                        TAG,
+                        "Skipping client: permission="
+                                + hasPermission
+                                + " matches="
+                                + matchResult);
                 continue;
             }
 
             int callbackType = settings.getCallbackType();
             if (!(callbackType == ScanSettings.CALLBACK_TYPE_ALL_MATCHES
                     || callbackType == ScanSettings.CALLBACK_TYPE_ALL_MATCHES_AUTO_BATCH)) {
-                if (VDBG) {
-                    Log.d(TAG, "Skipping client: CALLBACK_TYPE_ALL_MATCHES");
-                }
+                Log.v(TAG, "Skipping client: CALLBACK_TYPE_ALL_MATCHES");
                 continue;
             }
 
@@ -531,16 +517,14 @@ public class TransitionalScanHelper {
     public void onScannerRegistered(int status, int scannerId, long uuidLsb, long uuidMsb)
             throws RemoteException {
         UUID uuid = new UUID(uuidMsb, uuidLsb);
-        if (DBG) {
-            Log.d(
-                    TAG,
-                    "onScannerRegistered() - UUID="
-                            + uuid
-                            + ", scannerId="
-                            + scannerId
-                            + ", status="
-                            + status);
-        }
+        Log.d(
+                TAG,
+                "onScannerRegistered() - UUID="
+                        + uuid
+                        + ", scannerId="
+                        + scannerId
+                        + ", status="
+                        + status);
 
         // First check the callback map
         ScannerMap.App cbApp = mScannerMap.getByUuid(uuid);
@@ -613,81 +597,71 @@ public class TransitionalScanHelper {
 
     /** Callback method for scan filter enablement/disablement. */
     public void onScanFilterEnableDisabled(int action, int status, int clientIf) {
-        if (DBG) {
-            Log.d(
-                    TAG,
-                    "onScanFilterEnableDisabled() - clientIf="
-                            + clientIf
-                            + ", status="
-                            + status
-                            + ", action="
-                            + action);
-        }
+        Log.d(
+                TAG,
+                "onScanFilterEnableDisabled() - clientIf="
+                        + clientIf
+                        + ", status="
+                        + status
+                        + ", action="
+                        + action);
         mScanManager.callbackDone(clientIf, status);
     }
 
     /** Callback method for configuration of scan filter params. */
     public void onScanFilterParamsConfigured(
             int action, int status, int clientIf, int availableSpace) {
-        if (DBG) {
-            Log.d(
-                    TAG,
-                    "onScanFilterParamsConfigured() - clientIf="
-                            + clientIf
-                            + ", status="
-                            + status
-                            + ", action="
-                            + action
-                            + ", availableSpace="
-                            + availableSpace);
-        }
+        Log.d(
+                TAG,
+                "onScanFilterParamsConfigured() - clientIf="
+                        + clientIf
+                        + ", status="
+                        + status
+                        + ", action="
+                        + action
+                        + ", availableSpace="
+                        + availableSpace);
         mScanManager.callbackDone(clientIf, status);
     }
 
     /** Callback method for configuration of scan filter. */
     public void onScanFilterConfig(
             int action, int status, int clientIf, int filterType, int availableSpace) {
-        if (DBG) {
-            Log.d(
-                    TAG,
-                    "onScanFilterConfig() - clientIf="
-                            + clientIf
-                            + ", action = "
-                            + action
-                            + " status = "
-                            + status
-                            + ", filterType="
-                            + filterType
-                            + ", availableSpace="
-                            + availableSpace);
-        }
+        Log.d(
+                TAG,
+                "onScanFilterConfig() - clientIf="
+                        + clientIf
+                        + ", action = "
+                        + action
+                        + " status = "
+                        + status
+                        + ", filterType="
+                        + filterType
+                        + ", availableSpace="
+                        + availableSpace);
 
         mScanManager.callbackDone(clientIf, status);
     }
 
     /** Callback method for configuration of batch scan storage. */
     public void onBatchScanStorageConfigured(int status, int clientIf) {
-        if (DBG) {
-            Log.d(
-                    TAG,
-                    "onBatchScanStorageConfigured() - clientIf=" + clientIf + ", status=" + status);
-        }
+        Log.d(
+                TAG,
+                "onBatchScanStorageConfigured() - clientIf=" + clientIf + ", status=" + status);
         mScanManager.callbackDone(clientIf, status);
     }
 
     /** Callback method for start/stop of batch scan. */
     // TODO: split into two different callbacks : onBatchScanStarted and onBatchScanStopped.
     public void onBatchScanStartStopped(int startStopAction, int status, int clientIf) {
-        if (DBG) {
-            Log.d(
-                    TAG,
-                    "onBatchScanStartStopped() - clientIf="
-                            + clientIf
-                            + ", status="
-                            + status
-                            + ", startStopAction="
-                            + startStopAction);
-        }
+        Log.d(
+                TAG,
+                "onBatchScanStartStopped() - clientIf="
+                        + clientIf
+                        + ", status="
+                        + status
+                        + ", startStopAction="
+                        + startStopAction);
         mScanManager.callbackDone(clientIf, status);
     }
 
@@ -715,18 +689,16 @@ public class TransitionalScanHelper {
     void onBatchScanReportsInternal(
             int status, int scannerId, int reportType, int numRecords, byte[] recordData)
             throws RemoteException {
-        if (DBG) {
-            Log.d(
-                    TAG,
-                    "onBatchScanReports() - scannerId="
-                            + scannerId
-                            + ", status="
-                            + status
-                            + ", reportType="
-                            + reportType
-                            + ", numRecords="
-                            + numRecords);
-        }
+        Log.d(
+                TAG,
+                "onBatchScanReports() - scannerId="
+                        + scannerId
+                        + ", status="
+                        + status
+                        + ", reportType="
+                        + reportType
+                        + ", numRecords="
+                        + numRecords);
 
         Set<ScanResult> results = parseBatchScanResults(numRecords, reportType, recordData);
         if (reportType == ScanManager.SCAN_RESULT_TYPE_TRUNCATED) {
@@ -787,17 +759,13 @@ public class TransitionalScanHelper {
         try {
             if (app.callback != null) {
                 if (mScanManager.isAutoBatchScanClientEnabled(client)) {
-                    if (DBG) {
-                        Log.d(TAG, "sendBatchScanResults() to onScanResult()" + client);
-                    }
+                    Log.d(TAG, "sendBatchScanResults() to onScanResult()" + client);
                     for (ScanResult result : results) {
                         app.appScanStats.addResult(client.scannerId);
                         app.callback.onScanResult(result);
                     }
                 } else {
-                    if (DBG) {
-                        Log.d(TAG, "sendBatchScanResults() to onBatchScanResults()" + client);
-                    }
+                    Log.d(TAG, "sendBatchScanResults() to onBatchScanResults()" + client);
                     app.callback.onBatchScanResults(results);
                 }
             } else {
@@ -859,9 +827,7 @@ public class TransitionalScanHelper {
         if (numRecords == 0) {
             return Collections.emptySet();
         }
-        if (DBG) {
-            Log.d(TAG, "current time is " + SystemClock.elapsedRealtimeNanos());
-        }
+        Log.d(TAG, "current time is " + SystemClock.elapsedRealtimeNanos());
         if (reportType == ScanManager.SCAN_RESULT_TYPE_TRUNCATED) {
             return parseTruncatedResults(numRecords, batchRecord);
         } else {
@@ -870,9 +836,7 @@ public class TransitionalScanHelper {
     }
 
     private Set<ScanResult> parseTruncatedResults(int numRecords, byte[] batchRecord) {
-        if (DBG) {
-            Log.d(TAG, "batch record " + Arrays.toString(batchRecord));
-        }
+        Log.d(TAG, "batch record " + Arrays.toString(batchRecord));
         Set<ScanResult> results = new HashSet<ScanResult>(numRecords);
         long now = SystemClock.elapsedRealtimeNanos();
         for (int i = 0; i < numRecords; ++i) {
@@ -898,9 +862,7 @@ public class TransitionalScanHelper {
     }
 
     private Set<ScanResult> parseFullResults(int numRecords, byte[] batchRecord) {
-        if (DBG) {
-            Log.d(TAG, "Batch record : " + Arrays.toString(batchRecord));
-        }
+        Log.d(TAG, "Batch record : " + Arrays.toString(batchRecord));
         Set<ScanResult> results = new HashSet<ScanResult>(numRecords);
         int position = 0;
         long now = SystemClock.elapsedRealtimeNanos();
@@ -929,9 +891,7 @@ public class TransitionalScanHelper {
             System.arraycopy(advertiseBytes, 0, scanRecord, 0, advertisePacketLen);
             System.arraycopy(
                     scanResponseBytes, 0, scanRecord, advertisePacketLen, scanResponsePacketLen);
-            if (DBG) {
-                Log.d(TAG, "ScanRecord : " + Arrays.toString(scanRecord));
-            }
+            Log.d(TAG, "ScanRecord : " + Arrays.toString(scanRecord));
             results.add(
                     new ScanResult(
                             device, ScanRecord.parseFromBytes(scanRecord), rssi, timestampNanos));
@@ -958,9 +918,7 @@ public class TransitionalScanHelper {
 
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)
     public void onBatchScanThresholdCrossed(int clientIf) {
-        if (DBG) {
-            Log.d(TAG, "onBatchScanThresholdCrossed() - clientIf=" + clientIf);
-        }
+        Log.d(TAG, "onBatchScanThresholdCrossed() - clientIf=" + clientIf);
         flushPendingBatchResults(clientIf, mContext.getAttributionSource());
     }
 
@@ -997,16 +955,14 @@ public class TransitionalScanHelper {
 
     public void onTrackAdvFoundLost(AdvtFilterOnFoundOnLostInfo trackingInfo)
             throws RemoteException {
-        if (DBG) {
-            Log.d(
-                    TAG,
-                    "onTrackAdvFoundLost() - scannerId= "
-                            + trackingInfo.getClientIf()
-                            + " address = "
-                            + trackingInfo.getAddress()
-                            + " adv_state = "
-                            + trackingInfo.getAdvState());
-        }
+        Log.d(
+                TAG,
+                "onTrackAdvFoundLost() - scannerId= "
+                        + trackingInfo.getClientIf()
+                        + " address = "
+                        + trackingInfo.getAddress()
+                        + " adv_state = "
+                        + trackingInfo.getAdvState());
 
         ScannerMap.App app = mScannerMap.getById(trackingInfo.getClientIf());
         if (app == null || (app.callback == null && app.info == null)) {
@@ -1046,16 +1002,14 @@ public class TransitionalScanHelper {
                                 app.info, result, ScanSettings.CALLBACK_TYPE_MATCH_LOST, client);
                     }
                 } else {
-                    if (DBG) {
-                        Log.d(
-                                TAG,
-                                "Not reporting onlost/onfound : "
-                                        + advertiserState
-                                        + " scannerId = "
-                                        + client.scannerId
-                                        + " callbackType "
-                                        + settings.getCallbackType());
-                    }
+                    Log.d(
+                            TAG,
+                            "Not reporting onlost/onfound : "
+                                    + advertiserState
+                                    + " scannerId = "
+                                    + client.scannerId
+                                    + " callbackType "
+                                    + settings.getCallbackType());
                 }
             }
         }
@@ -1067,9 +1021,7 @@ public class TransitionalScanHelper {
             Log.e(TAG, "Advertise app or callback is null");
             return;
         }
-        if (DBG) {
-            Log.d(TAG, "onScanParamSetupCompleted : " + status);
-        }
+        Log.d(TAG, "onScanParamSetupCompleted : " + status);
     }
 
     // callback from ScanManager for dispatch of errors apps.
@@ -1104,9 +1056,7 @@ public class TransitionalScanHelper {
         }
 
         UUID uuid = UUID.randomUUID();
-        if (DBG) {
-            Log.d(TAG, "registerScanner() - UUID=" + uuid);
-        }
+        Log.d(TAG, "registerScanner() - UUID=" + uuid);
 
         enforceImpersonatationPermissionIfNeeded(workSource);
 
@@ -1130,9 +1080,7 @@ public class TransitionalScanHelper {
             return;
         }
 
-        if (DBG) {
-            Log.d(TAG, "unregisterScanner() - scannerId=" + scannerId);
-        }
+        Log.d(TAG, "unregisterScanner() - scannerId=" + scannerId);
         mScannerMap.remove(scannerId);
         mScanManager.unregisterScanner(scannerId);
     }
@@ -1169,9 +1117,7 @@ public class TransitionalScanHelper {
             ScanSettings settings,
             List<ScanFilter> filters,
             AttributionSource attributionSource) {
-        if (DBG) {
-            Log.d(TAG, "start scan with filters");
-        }
+        Log.d(TAG, "start scan with filters");
 
         if (!Utils.checkScanPermissionForDataDelivery(
                 mContext, attributionSource, "Starting GATT scan.")) {
@@ -1233,9 +1179,7 @@ public class TransitionalScanHelper {
             ScanSettings settings,
             List<ScanFilter> filters,
             AttributionSource attributionSource) {
-        if (DBG) {
-            Log.d(TAG, "start scan with filters, for PendingIntent");
-        }
+        Log.d(TAG, "start scan with filters, for PendingIntent");
 
         if (!Utils.checkScanPermissionForDataDelivery(
                 mContext, attributionSource, "Starting GATT scan.")) {
@@ -1253,14 +1197,12 @@ public class TransitionalScanHelper {
         piInfo.filters = filters;
         piInfo.callingPackage = callingPackage;
         piInfo.callingUid = callingUid;
-        if (DBG) {
-            Log.d(
-                    TAG,
-                    "startScan(PI) -"
-                            + (" UUID=" + uuid)
-                            + (" Package=" + callingPackage)
-                            + (" UID=" + callingUid));
-        }
+        Log.d(
+                TAG,
+                "startScan(PI) -"
+                        + (" UUID=" + uuid)
+                        + (" Package=" + callingPackage)
+                        + (" UID=" + callingUid));
 
         // Don't start scan if the Pi scan already in mScannerMap.
         if (mScannerMap.getByContextInfo(piInfo) != null) {
@@ -1342,9 +1284,7 @@ public class TransitionalScanHelper {
                 mContext, attributionSource, "ScanHelper flushPendingBatchResults")) {
             return;
         }
-        if (DBG) {
-            Log.d(TAG, "flushPendingBatchResults - scannerId=" + scannerId);
-        }
+        Log.d(TAG, "flushPendingBatchResults - scannerId=" + scannerId);
         mScanManager.flushBatchScanResults(new ScanClient(scannerId));
     }
 
@@ -1356,9 +1296,7 @@ public class TransitionalScanHelper {
         }
         int scanQueueSize =
                 mScanManager.getBatchScanQueue().size() + mScanManager.getRegularScanQueue().size();
-        if (DBG) {
-            Log.d(TAG, "stopScan() - queue size =" + scanQueueSize);
-        }
+        Log.d(TAG, "stopScan() - queue size =" + scanQueueSize);
 
         AppScanStats app = mScannerMap.getAppScanStatsById(scannerId);
         if (app != null) {
@@ -1377,9 +1315,7 @@ public class TransitionalScanHelper {
         PendingIntentInfo pii = new PendingIntentInfo();
         pii.intent = intent;
         ContextMap.App app = mScannerMap.getByContextInfo(pii);
-        if (VDBG) {
-            Log.d(TAG, "stopScan(PendingIntent): app found = " + app);
-        }
+        Log.v(TAG, "stopScan(PendingIntent): app found = " + app);
         if (app != null) {
             intent.removeCancelListener(mScanIntentCancelListener);
             final int scannerId = app.id;
@@ -1456,15 +1392,13 @@ public class TransitionalScanHelper {
 
         @Override
         public void binderDied() {
-            if (DBG) {
-                Log.d(
-                        TAG,
-                        "Binder is dead - unregistering scanner ("
-                                + mPackageName
-                                + " "
-                                + mScannerId
-                                + ")!");
-            }
+            Log.d(
+                    TAG,
+                    "Binder is dead - unregistering scanner ("
+                            + mPackageName
+                            + " "
+                            + mScannerId
+                            + ")!");
 
             ScanClient client = getScanClient(mScannerId);
             if (client != null) {
@@ -1523,9 +1457,7 @@ public class TransitionalScanHelper {
      */
     @SuppressLint("AndroidFrameworkRequiresPermission")
     private void enforcePrivilegedPermissionIfNeeded(List<ScanFilter> filters) {
-        if (DBG) {
-            Log.d(TAG, "enforcePrivilegedPermissionIfNeeded(" + filters + ")");
-        }
+        Log.d(TAG, "enforcePrivilegedPermissionIfNeeded(" + filters + ")");
         // Some 3p API cases may have null filters, need to allow
         if (filters != null) {
             for (ScanFilter filter : filters) {

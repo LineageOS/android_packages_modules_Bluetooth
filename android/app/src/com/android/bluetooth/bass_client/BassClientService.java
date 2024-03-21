@@ -76,7 +76,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * Broacast Assistant Scan Service
  */
 public class BassClientService extends ProfileService {
-    private static final boolean DBG = true;
     private static final String TAG = BassClientService.class.getSimpleName();
     private static final int MAX_BASS_CLIENT_STATE_MACHINES = 10;
     private static final int MAX_ACTIVE_SYNCED_SOURCES_NUM = 4;
@@ -381,9 +380,7 @@ public class BassClientService extends ProfileService {
 
     @Override
     public void start() {
-        if (DBG) {
-            Log.d(TAG, "start()");
-        }
+        Log.d(TAG, "start()");
         if (sService != null) {
             throw new IllegalStateException("start() called twice");
         }
@@ -415,9 +412,7 @@ public class BassClientService extends ProfileService {
 
     @Override
     public void stop() {
-        if (DBG) {
-            Log.d(TAG, "stop()");
-        }
+        Log.d(TAG, "stop()");
 
         mUnicastSourceStreamStatus = Optional.empty();
 
@@ -530,9 +525,7 @@ public class BassClientService extends ProfileService {
     }
 
     private static synchronized void setBassClientService(BassClientService instance) {
-        if (DBG) {
-            Log.d(TAG, "setBassClientService(): set to: " + instance);
-        }
+        Log.d(TAG, "setBassClientService(): set to: " + instance);
         sService = instance;
     }
 
@@ -1056,9 +1049,7 @@ public class BassClientService extends ProfileService {
      * @return true if BAss profile successfully connected, false otherwise
      */
     public boolean connect(BluetoothDevice device) {
-        if (DBG) {
-            Log.d(TAG, "connect(): " + device);
-        }
+        Log.d(TAG, "connect(): " + device);
         if (device == null) {
             Log.e(TAG, "connect: device is null");
             return false;
@@ -1086,9 +1077,7 @@ public class BassClientService extends ProfileService {
      * @return true if Bass client profile successfully disconnected, false otherwise
      */
     public boolean disconnect(BluetoothDevice device) {
-        if (DBG) {
-            Log.d(TAG, "disconnect(): " + device);
-        }
+        Log.d(TAG, "disconnect(): " + device);
         if (device == null) {
             Log.e(TAG, "disconnect: device is null");
             return false;
@@ -1220,9 +1209,7 @@ public class BassClientService extends ProfileService {
      * @return true if connectionPolicy is set, false on error
      */
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
-        if (DBG) {
-            Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
-        }
+        Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
         boolean setSuccessfully =
                 mDatabaseManager.setProfileConnectionPolicy(device,
                         BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT, connectionPolicy);
@@ -1858,15 +1845,11 @@ public class BassClientService extends ProfileService {
     }
 
     static void log(String msg) {
-        if (BassConstants.BASS_DBG) {
-            Log.d(TAG, msg);
-        }
+        Log.d(TAG, msg);
     }
 
     private void stopSourceReceivers(int broadcastId, boolean store) {
-        if (DBG) {
-            Log.d(TAG, "stopSourceReceivers(), broadcastId: " + broadcastId + ", store: " + store);
-        }
+        Log.d(TAG, "stopSourceReceivers(), broadcastId: " + broadcastId + ", store: " + store);
 
         if (store && !mPausedBroadcastSinks.isEmpty()) {
             Log.w(TAG, "stopSourceReceivers(), paused broadcast sinks are replaced");

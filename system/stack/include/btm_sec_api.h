@@ -38,15 +38,13 @@
  * Description      Add/modify device.  This function will be normally called
  *                  during host startup to restore all required information
  *                  stored in the NVRAM.
- *                  dev_class, bd_name, link_key, and features are NULL if
- *                  unknown
+ *                  dev_class, link_key are NULL if unknown
  *
- * Returns          true if added OK, else false
+ * Returns          void
  *
  ******************************************************************************/
-bool BTM_SecAddDevice(const RawAddress& bd_addr, const DEV_CLASS dev_class,
-                      const BD_NAME& bd_name, uint8_t* features,
-                      LinkKey* link_key, uint8_t key_type, uint8_t pin_length);
+void BTM_SecAddDevice(const RawAddress& bd_addr, const DEV_CLASS dev_class,
+                      LinkKey link_key, uint8_t key_type, uint8_t pin_length);
 
 /** Free resources associated with the device associated with |bd_addr| address.
  *

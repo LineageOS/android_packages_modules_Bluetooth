@@ -27,9 +27,9 @@
 
 #include <string>
 
-#include "btm_api.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/include/bt_octets.h"
+#include "stack/include/btm_api.h"
 #include "test/common/mock_functions.h"
 #include "types/raw_address.h"
 
@@ -45,13 +45,10 @@ struct maybe_resolve_address maybe_resolve_address;
 }  // namespace mock
 }  // namespace test
 
-bool BTM_SecAddDevice(const RawAddress& /* bd_addr */,
-                      const DEV_CLASS /* dev_class */,
-                      const BD_NAME& /* bd_name */, uint8_t* /* features */,
-                      LinkKey* /* p_link_key */, uint8_t /* key_type */,
-                      uint8_t /* pin_length */) {
+void BTM_SecAddDevice(const RawAddress& /* bd_addr */,
+                      const DEV_CLASS /* dev_class */, LinkKey /* link_key */,
+                      uint8_t /* key_type */, uint8_t /* pin_length */) {
   inc_func_call_count(__func__);
-  return false;
 }
 bool BTM_SecDeleteDevice(const RawAddress& /* bd_addr */) {
   inc_func_call_count(__func__);

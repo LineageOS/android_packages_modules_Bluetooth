@@ -17,6 +17,7 @@
 
 #include "devices.h"
 
+#include <bluetooth/log.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -26,7 +27,6 @@
 #include "le_audio_set_configuration_provider.h"
 #include "le_audio_types.h"
 #include "mock_codec_manager.h"
-#include "mock_controller.h"
 #include "mock_csis_client.h"
 #include "os/log.h"
 #include "stack/btm/btm_int_types.h"
@@ -67,12 +67,10 @@ class LeAudioDevicesTest : public Test {
   void SetUp() override {
     devices_ = new LeAudioDevices();
     bluetooth::manager::SetMockBtmInterface(&btm_interface);
-    controller::SetMockControllerInterface(&controller_interface_);
     bluetooth::storage::SetMockBtifStorageInterface(&mock_btif_storage_);
   }
 
   void TearDown() override {
-    controller::SetMockControllerInterface(nullptr);
     bluetooth::manager::SetMockBtmInterface(nullptr);
     bluetooth::storage::SetMockBtifStorageInterface(nullptr);
     delete devices_;
@@ -80,7 +78,6 @@ class LeAudioDevicesTest : public Test {
 
   LeAudioDevices* devices_ = nullptr;
   bluetooth::manager::MockBtmInterface btm_interface;
-  controller::MockControllerInterface controller_interface_;
   bluetooth::storage::MockBtifStorageInterface mock_btif_storage_;
 };
 
@@ -473,7 +470,6 @@ class LeAudioAseConfigurationTest : public Test {
   void SetUp() override {
     group_ = new LeAudioDeviceGroup(group_id_);
     bluetooth::manager::SetMockBtmInterface(&btm_interface_);
-    controller::SetMockControllerInterface(&controller_interface_);
 
     auto codec_location = ::bluetooth::le_audio::types::CodecLocation::HOST;
     bluetooth::le_audio::AudioSetConfigurationProvider::Initialize(
@@ -527,7 +523,6 @@ class LeAudioAseConfigurationTest : public Test {
   }
 
   void TearDown() override {
-    controller::SetMockControllerInterface(nullptr);
     bluetooth::manager::SetMockBtmInterface(nullptr);
     devices_.clear();
     addresses_.clear();
@@ -551,9 +546,9 @@ class LeAudioAseConfigurationTest : public Test {
     auto device = (std::make_shared<LeAudioDevice>(
         GetTestAddress(index), DeviceConnectState::DISCONNECTED));
     devices_.push_back(device);
-    LOG_INFO(" addresses %d", (int)(addresses_.size()));
+    log::info("addresses {}", (int)(addresses_.size()));
     addresses_.push_back(device->address_);
-    LOG_INFO(" Addresses %d", (int)(addresses_.size()));
+    log::info("Addresses {}", (int)(addresses_.size()));
 
     if (out_of_range_device == false) {
       group_->AddNode(device);
@@ -983,7 +978,6 @@ class LeAudioAseConfigurationTest : public Test {
   std::vector<RawAddress> addresses_;
   LeAudioDeviceGroup* group_ = nullptr;
   bluetooth::manager::MockBtmInterface btm_interface_;
-  controller::MockControllerInterface controller_interface_;
   MockCsisClient mock_csis_client_module_;
 
   bluetooth::le_audio::CodecManager* codec_manager_;

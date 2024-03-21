@@ -182,8 +182,6 @@ import java.util.stream.Collectors;
 
 public class AdapterService extends Service {
     private static final String TAG = "BluetoothAdapterService";
-    private static final boolean DBG = true;
-    private static final boolean VERBOSE = false;
 
     private static final int MESSAGE_PROFILE_SERVICE_STATE_CHANGED = 1;
     private static final int MESSAGE_PROFILE_SERVICE_REGISTERED = 2;
@@ -346,9 +344,7 @@ public class AdapterService extends Service {
     };
 
     static {
-        if (DBG) {
-            Log.d(TAG, "Loading JNI Library");
-        }
+        Log.d(TAG, "Loading JNI Library");
         if (Utils.isInstrumentationTestMode()) {
             Log.w(TAG, "App is instrumented. Skip loading the native");
         } else {
@@ -941,7 +937,6 @@ public class AdapterService extends Service {
             long socketCreationTimeNanos,
             boolean isSerialPort,
             int appUid) {
-
         int metricId = getMetricId(device);
         long currentTime = System.nanoTime();
         long endToEndLatencyNanos = currentTime - socketCreationTimeNanos;
@@ -1598,12 +1593,10 @@ public class AdapterService extends Service {
                     + BluetoothProfile.getProfileName(profile) + "): remote device Uuids Empty");
         }
 
-        if (VERBOSE) {
-            Log.v(TAG, "isProfileSupported(device=" + device + ", profile="
-                    + BluetoothProfile.getProfileName(profile) + "): local_uuids="
-                    + Arrays.toString(localDeviceUuids) + ", remote_uuids="
-                    + Arrays.toString(remoteDeviceUuids));
-        }
+        Log.v(TAG, "isProfileSupported(device=" + device + ", profile="
+                + BluetoothProfile.getProfileName(profile) + "): local_uuids="
+                + Arrays.toString(localDeviceUuids) + ", remote_uuids="
+                + Arrays.toString(remoteDeviceUuids));
 
         if (profile == BluetoothProfile.HEADSET) {
             return (Utils.arrayContains(localDeviceUuids, BluetoothUuid.HSP_AG)
@@ -7588,15 +7581,11 @@ public class AdapterService extends Service {
     }
 
     private void debugLog(String msg) {
-        if (DBG) {
-            Log.d(TAG, msg);
-        }
+        Log.d(TAG, msg);
     }
 
     private void verboseLog(String msg) {
-        if (VERBOSE) {
-            Log.v(TAG, msg);
-        }
+        Log.v(TAG, msg);
     }
 
     private void errorLog(String msg) {
@@ -7790,9 +7779,12 @@ public class AdapterService extends Service {
                 "screen_off_balanced_interval_millis";
         private static final String LE_AUDIO_ALLOW_LIST = "le_audio_allow_list";
 
-        /** Default denylist which matches Eddystone and iBeacon payloads. */
+        /**
+         * Default denylist which matches Eddystone (except for Eddystone-E2EE-EID) and iBeacon
+         * payloads.
+         */
         private static final String DEFAULT_LOCATION_DENYLIST_ADVERTISING_DATA =
-                "⊆0016AAFE/00FFFFFF,⊆00FF4C0002/00FFFFFFFF";
+                "⊈0016AAFE40/00FFFFFFF0,⊆0016AAFE/00FFFFFF,⊆00FF4C0002/00FFFFFFFF";
 
         private static final int DEFAULT_SCAN_QUOTA_COUNT = 5;
         private static final long DEFAULT_SCAN_QUOTA_WINDOW_MILLIS = 30 * SECOND_IN_MILLIS;
@@ -8123,10 +8115,8 @@ public class AdapterService extends Service {
             return;
         }
         Log.i(TAG, "sendUuidsInternal: Received service discovery UUIDs for device " + device);
-        if (DBG) {
-            for (int i = 0; i < uuids.length; i++) {
-                Log.d(TAG, "sendUuidsInternal: index=" + i + " uuid=" + uuids[i]);
-            }
+        for (int i = 0; i < uuids.length; i++) {
+            Log.d(TAG, "sendUuidsInternal: index=" + i + " uuid=" + uuids[i]);
         }
         if (mPhonePolicy != null) {
             mPhonePolicy.onUuidsDiscovered(device, uuids);

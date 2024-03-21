@@ -15,6 +15,8 @@ cc_fuzz {
         "fuzz_allocator.cc",
     ],
     static_libs: [
+        "libbase",
+        "libbluetooth_log",
         "libchrome",
         "liblog",
         "libosi",

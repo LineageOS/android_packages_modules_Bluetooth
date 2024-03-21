@@ -16,6 +16,7 @@
 
 #include "common/testing/log_capture.h"
 
+#include <bluetooth/log.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 
@@ -38,20 +39,20 @@ namespace testing {
 LogCapture::LogCapture() {
   std::tie(dup_fd_, fd_) = create_backing_store();
   if (dup_fd_ == -1 || fd_ == -1) {
-    LOG_ERROR("Unable to create backing storage : %s", strerror(errno));
+    log::error("Unable to create backing storage : {}", strerror(errno));
     return;
   }
   if (!set_non_blocking(dup_fd_)) {
-    LOG_ERROR("Unable to set socket non-blocking : %s", strerror(errno));
+    log::error("Unable to set socket non-blocking : {}", strerror(errno));
     return;
   }
   original_stderr_fd_ = fcntl(kStandardErrorFd, F_DUPFD_CLOEXEC);
   if (original_stderr_fd_ == -1) {
-    LOG_ERROR("Unable to save original fd : %s", strerror(errno));
+    log::error("Unable to save original fd : {}", strerror(errno));
     return;
   }
   if (dup3(dup_fd_, kStandardErrorFd, O_CLOEXEC) == -1) {
-    LOG_ERROR("Unable to duplicate stderr fd : %s", strerror(errno));
+    log::error("Unable to duplicate stderr fd : {}", strerror(errno));
     return;
   }
 }
@@ -64,7 +65,7 @@ LogCapture::~LogCapture() {
 LogCapture* LogCapture::Rewind() {
   if (fd_ != -1) {
     if (lseek(fd_, 0, SEEK_SET) != 0) {
-      LOG_ERROR("Unable to rewind log capture : %s", strerror(errno));
+      log::error("Unable to rewind log capture : {}", strerror(errno));
     }
   }
   return this;
@@ -97,13 +98,13 @@ void LogCapture::Sync() {
 void LogCapture::Reset() {
   if (fd_ != -1) {
     if (ftruncate(fd_, 0UL) == -1) {
-      LOG_ERROR("Unable to truncate backing storage : %s", strerror(errno));
+      log::error("Unable to truncate backing storage : {}", strerror(errno));
     }
     this->Rewind();
     // The only time we rewind the dup()'ed fd is during Reset()
     if (dup_fd_ != -1) {
       if (lseek(dup_fd_, 0, SEEK_SET) != 0) {
-        LOG_ERROR("Unable to rewind log capture : %s", strerror(errno));
+        log::error("Unable to rewind log capture : {}", strerror(errno));
       }
     }
   }
@@ -155,11 +156,11 @@ std::pair<int, int> LogCapture::create_backing_store() const {
 bool LogCapture::set_non_blocking(int fd) const {
   int flags = fcntl(fd, F_GETFL, 0);
   if (flags == -1) {
-    LOG_ERROR("Unable to get file descriptor flags : %s", strerror(errno));
+    log::error("Unable to get file descriptor flags : {}", strerror(errno));
     return false;
   }
   if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1) {
-    LOG_ERROR("Unable to set file descriptor flags : %s", strerror(errno));
+    log::error("Unable to set file descriptor flags : {}", strerror(errno));
     return false;
   }
   return true;
@@ -168,7 +169,7 @@ bool LogCapture::set_non_blocking(int fd) const {
 void LogCapture::clean_up() {
   if (original_stderr_fd_ != -1) {
     if (dup3(original_stderr_fd_, kStandardErrorFd, O_CLOEXEC) != kStandardErrorFd) {
-      LOG_ERROR("Unable to restore original fd : %s", strerror(errno));
+      log::error("Unable to restore original fd : {}", strerror(errno));
     }
   }
   if (dup_fd_ != -1) {

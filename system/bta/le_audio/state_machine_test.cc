@@ -17,6 +17,7 @@
 
 #include "state_machine.h"
 
+#include <bluetooth/log.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -33,7 +34,6 @@
 #include "internal_include/stack_config.h"
 #include "le_audio_set_configuration_provider.h"
 #include "mock_codec_manager.h"
-#include "mock_controller.h"
 #include "mock_csis_client.h"
 #include "stack/include/bt_types.h"
 #include "test/common/mock_functions.h"
@@ -289,8 +289,8 @@ class StateMachineTestBase : public Test {
     ON_CALL(mock_callbacks_, StatusReportCb(_, _))
         .WillByDefault(Invoke(
             [](int group_id, bluetooth::le_audio::GroupStreamStatus status) {
-              LOG_DEBUG(" [Testing] StatusReportCb: group id: %d, status: %d",
-                        group_id, status);
+              log::debug("[Testing] StatusReportCb: group id: {}, status: {}",
+                         group_id, status);
             }));
 
     MockCsisClient::SetMockInstanceForTesting(&mock_csis_client_module_);
@@ -1213,8 +1213,8 @@ class StateMachineTestBase : public Test {
             ase_p += 3;
 
             if (caching) {
-              LOG(INFO) << __func__ << " Device: "
-                        << ADDRESS_TO_LOGGABLE_STR(device->address_);
+              log::info("Device: {}",
+                        ADDRESS_TO_LOGGABLE_STR(device->address_));
               if (cached_ase_to_cis_id_map_.count(device->address_) > 0) {
                 auto ase_list = cached_ase_to_cis_id_map_.at(device->address_);
                 if (ase_list.count(ase_id) > 0) {
@@ -1502,8 +1502,8 @@ class StateMachineTestBase : public Test {
                     this](LeAudioDevice* device, std::vector<uint8_t> value,
                           GATT_WRITE_OP_CB cb, void* cb_data) {
               if (dev != nullptr && device != dev) {
-                LOG_INFO("Do nothing for %s",
-                         ADDRESS_TO_LOGGABLE_CSTR(dev->address_));
+                log::info("Do nothing for {}",
+                          ADDRESS_TO_LOGGABLE_CSTR(dev->address_));
                 return;
               }
 
@@ -4246,8 +4246,8 @@ TEST_F(StateMachineTest, testHandlingCachedCodecConfig2Devices) {
   LeAudioGroupStateMachine::Get()->StopStream(group);
 
   for (auto& ase : firstDevice->ases_) {
-    LOG_DEBUG("%s , %d, %s", ADDRESS_TO_LOGGABLE_CSTR(firstDevice->address_),
-              ase.id, bluetooth::common::ToString(ase.state).c_str());
+    log::debug("{} , {}, {}", ADDRESS_TO_LOGGABLE_CSTR(firstDevice->address_),
+               ase.id, bluetooth::common::ToString(ase.state));
     ASSERT_EQ(ase.state, types::AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING);
     // Simulate autonomus configured state.
     InjectAseStateNotification(&ase, firstDevice, group,
@@ -4265,8 +4265,8 @@ TEST_F(StateMachineTest, testHandlingCachedCodecConfig2Devices) {
           bluetooth::le_audio::GroupStreamStatus::CONFIGURED_AUTONOMOUS))
       .Times(1);
   for (auto& ase : secondDevice->ases_) {
-    LOG_DEBUG("%s , %d, %s", ADDRESS_TO_LOGGABLE_CSTR(firstDevice->address_),
-              ase.id, bluetooth::common::ToString(ase.state).c_str());
+    log::debug("{} , {}, {}", ADDRESS_TO_LOGGABLE_CSTR(firstDevice->address_),
+               ase.id, bluetooth::common::ToString(ase.state));
     ASSERT_EQ(ase.state, types::AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING);
     // Simulate autonomus configured state.
     InjectAseStateNotification(&ase, secondDevice, group,
@@ -5099,8 +5099,8 @@ TEST_F(StateMachineTest, testAutonomousConfiguredAndAttachToStream) {
     if (ase.id == bluetooth::le_audio::types::ase::kAseIdInvalid) {
       continue;
     }
-    LOG_ERROR("ID : %d,  status %s", ase.id,
-              bluetooth::common::ToString(ase.state).c_str());
+    log::error("ID : {},  status {}", ase.id,
+               bluetooth::common::ToString(ase.state));
     num_of_notifications++;
     InjectAseStateNotification(&ase, lastDevice, group,
                                ascs::kAseStateCodecConfigured,

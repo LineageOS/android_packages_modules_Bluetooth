@@ -18,6 +18,8 @@
 
 #include "codec_status_hidl.h"
 
+#include <bluetooth/log.h>
+
 #include <vector>
 
 #include "a2dp_aac_constants.h"
@@ -48,6 +50,8 @@ using ::android::hardware::bluetooth::audio::V2_0::SbcChannelMode;
 using ::android::hardware::bluetooth::audio::V2_0::SbcNumSubbands;
 using ::android::hardware::bluetooth::audio::V2_0::SbcParameters;
 
+using namespace bluetooth;
+
 // capabilities from BluetoothAudioSinkClientInterface::GetAudioCapabilities()
 std::vector<AudioCapabilities> audio_hal_capabilities(0);
 // capabilities that audio HAL supports and frameworks / Bluetooth SoC / runtime
@@ -77,12 +81,12 @@ bool sbc_offloading_capability_match(const SbcParameters& sbc_capability,
       (sbc_config.minBitpool < sbc_capability.minBitpool ||
        sbc_config.maxBitpool < sbc_config.minBitpool ||
        sbc_capability.maxBitpool < sbc_config.maxBitpool)) {
-    LOG(WARNING) << __func__ << ": software codec=" << toString(sbc_config)
-                 << " capability=" << toString(sbc_capability);
+    log::warn("software codec={} capability={}", toString(sbc_config),
+              toString(sbc_capability));
     return false;
   }
-  VLOG(1) << __func__ << ": offloading codec=" << toString(sbc_config)
-          << " capability=" << toString(sbc_capability);
+  log::verbose("offloading codec={} capability={}", toString(sbc_config),
+               toString(sbc_capability));
   return true;
 }
 
@@ -102,12 +106,12 @@ bool aac_offloading_capability_match(const AacParameters& aac_capability,
       (static_cast<BitsPerSample>(aac_capability.bitsPerSample &
                                   aac_config.bitsPerSample) ==
        BitsPerSample::BITS_UNKNOWN)) {
-    LOG(WARNING) << __func__ << ": software codec=" << toString(aac_config)
-                 << " capability=" << toString(aac_capability);
+    log::warn("software codec={} capability={}", toString(aac_config),
+              toString(aac_capability));
     return false;
   }
-  VLOG(1) << __func__ << ": offloading codec=" << toString(aac_config)
-          << " capability=" << toString(aac_capability);
+  log::verbose("offloading codec={} capability={}", toString(aac_config),
+               toString(aac_capability));
   return true;
 }
 
@@ -122,12 +126,12 @@ bool aptx_offloading_capability_match(const AptxParameters& aptx_capability,
       (static_cast<BitsPerSample>(aptx_capability.bitsPerSample &
                                   aptx_config.bitsPerSample) ==
        BitsPerSample::BITS_UNKNOWN)) {
-    LOG(WARNING) << __func__ << ": software codec=" << toString(aptx_config)
-                 << " capability=" << toString(aptx_capability);
+    log::warn("software codec={} capability={}", toString(aptx_config),
+              toString(aptx_capability));
     return false;
   }
-  VLOG(1) << __func__ << ": offloading codec=" << toString(aptx_config)
-          << " capability=" << toString(aptx_capability);
+  log::verbose("offloading codec={} capability={}", toString(aptx_config),
+               toString(aptx_capability));
   return true;
 }
 
@@ -142,12 +146,12 @@ bool ldac_offloading_capability_match(const LdacParameters& ldac_capability,
       (static_cast<BitsPerSample>(ldac_capability.bitsPerSample &
                                   ldac_config.bitsPerSample) ==
        BitsPerSample::BITS_UNKNOWN)) {
-    LOG(WARNING) << __func__ << ": software codec=" << toString(ldac_config)
-                 << " capability=" << toString(ldac_capability);
+    log::warn("software codec={} capability={}", toString(ldac_config),
+              toString(ldac_capability));
     return false;
   }
-  VLOG(1) << __func__ << ": offloading codec=" << toString(ldac_config)
-          << " capability=" << toString(ldac_capability);
+  log::verbose("offloading codec={} capability={}", toString(ldac_config),
+               toString(ldac_capability));
   return true;
 }
 }  // namespace
@@ -229,8 +233,7 @@ bool A2dpSbcToHalConfig(CodecConfiguration* codec_config,
   auto sbc_config = codec_config->config.sbcConfig();
   sbc_config.sampleRate = A2dpCodecToHalSampleRate(current_codec);
   if (sbc_config.sampleRate == SampleRate::RATE_UNKNOWN) {
-    LOG(ERROR) << __func__
-               << ": Unknown SBC sample_rate=" << current_codec.sample_rate;
+    log::error("Unknown SBC sample_rate={}", current_codec.sample_rate);
     return false;
   }
   uint8_t channel_mode = a2dp_offload.codec_info[3] & A2DP_SBC_IE_CH_MD_MSK;
@@ -248,7 +251,7 @@ bool A2dpSbcToHalConfig(CodecConfiguration* codec_config,
       sbc_config.channelMode = SbcChannelMode::MONO;
       break;
     default:
-      LOG(ERROR) << __func__ << ": Unknown SBC channel_mode=" << channel_mode;
+      log::error("Unknown SBC channel_mode={}", channel_mode);
       sbc_config.channelMode = SbcChannelMode::UNKNOWN;
       return false;
   }
@@ -267,7 +270,7 @@ bool A2dpSbcToHalConfig(CodecConfiguration* codec_config,
       sbc_config.blockLength = SbcBlockLength::BLOCKS_16;
       break;
     default:
-      LOG(ERROR) << __func__ << ": Unknown SBC block_length=" << block_length;
+      log::error("Unknown SBC block_length={}", block_length);
       return false;
   }
   uint8_t sub_bands = a2dp_offload.codec_info[0] & A2DP_SBC_IE_SUBBAND_MSK;
@@ -279,7 +282,7 @@ bool A2dpSbcToHalConfig(CodecConfiguration* codec_config,
       sbc_config.numSubbands = SbcNumSubbands::SUBBAND_8;
       break;
     default:
-      LOG(ERROR) << __func__ << ": Unknown SBC Subbands=" << sub_bands;
+      log::error("Unknown SBC Subbands={}", sub_bands);
       return false;
   }
   uint8_t alloc_method = a2dp_offload.codec_info[0] & A2DP_SBC_IE_ALLOC_MD_MSK;
@@ -291,15 +294,14 @@ bool A2dpSbcToHalConfig(CodecConfiguration* codec_config,
       sbc_config.allocMethod = SbcAllocMethod::ALLOC_MD_L;
       break;
     default:
-      LOG(ERROR) << __func__ << ": Unknown SBC alloc_method=" << alloc_method;
+      log::error("Unknown SBC alloc_method={}", alloc_method);
       return false;
   }
   sbc_config.minBitpool = a2dp_offload.codec_info[1];
   sbc_config.maxBitpool = a2dp_offload.codec_info[2];
   sbc_config.bitsPerSample = A2dpCodecToHalBitsPerSample(current_codec);
   if (sbc_config.bitsPerSample == BitsPerSample::BITS_UNKNOWN) {
-    LOG(ERROR) << __func__ << ": Unknown SBC bits_per_sample="
-               << current_codec.bits_per_sample;
+    log::error("Unknown SBC bits_per_sample={}", current_codec.bits_per_sample);
     return false;
   }
   codec_config->config.sbcConfig(sbc_config);
@@ -334,19 +336,17 @@ bool A2dpAacToHalConfig(CodecConfiguration* codec_config,
       aac_config.objectType = AacObjectType::MPEG4_SCALABLE;
       break;
     default:
-      LOG(ERROR) << __func__ << ": Unknown AAC object_type=" << +object_type;
+      log::error("Unknown AAC object_type={}", object_type);
       return false;
   }
   aac_config.sampleRate = A2dpCodecToHalSampleRate(current_codec);
   if (aac_config.sampleRate == SampleRate::RATE_UNKNOWN) {
-    LOG(ERROR) << __func__
-               << ": Unknown AAC sample_rate=" << current_codec.sample_rate;
+    log::error("Unknown AAC sample_rate={}", current_codec.sample_rate);
     return false;
   }
   aac_config.channelMode = A2dpCodecToHalChannelMode(current_codec);
   if (aac_config.channelMode == ChannelMode::UNKNOWN) {
-    LOG(ERROR) << __func__
-               << ": Unknown AAC channel_mode=" << current_codec.channel_mode;
+    log::error("Unknown AAC channel_mode={}", current_codec.channel_mode);
     return false;
   }
   uint8_t vbr_enabled =
@@ -359,13 +359,12 @@ bool A2dpAacToHalConfig(CodecConfiguration* codec_config,
       aac_config.variableBitRateEnabled = AacVariableBitRate::DISABLED;
       break;
     default:
-      LOG(ERROR) << __func__ << ": Unknown AAC VBR=" << +vbr_enabled;
+      log::error("Unknown AAC VBR={}", vbr_enabled);
       return false;
   }
   aac_config.bitsPerSample = A2dpCodecToHalBitsPerSample(current_codec);
   if (aac_config.bitsPerSample == BitsPerSample::BITS_UNKNOWN) {
-    LOG(ERROR) << __func__ << ": Unknown AAC bits_per_sample="
-               << current_codec.bits_per_sample;
+    log::error("Unknown AAC bits_per_sample={}", current_codec.bits_per_sample);
     return false;
   }
   codec_config->config.aacConfig(aac_config);
@@ -391,20 +390,18 @@ bool A2dpAptxToHalConfig(CodecConfiguration* codec_config,
   auto aptx_config = codec_config->config.aptxConfig();
   aptx_config.sampleRate = A2dpCodecToHalSampleRate(current_codec);
   if (aptx_config.sampleRate == SampleRate::RATE_UNKNOWN) {
-    LOG(ERROR) << __func__
-               << ": Unknown aptX sample_rate=" << current_codec.sample_rate;
+    log::error("Unknown aptX sample_rate={}", current_codec.sample_rate);
     return false;
   }
   aptx_config.channelMode = A2dpCodecToHalChannelMode(current_codec);
   if (aptx_config.channelMode == ChannelMode::UNKNOWN) {
-    LOG(ERROR) << __func__
-               << ": Unknown aptX channel_mode=" << current_codec.channel_mode;
+    log::error("Unknown aptX channel_mode={}", current_codec.channel_mode);
     return false;
   }
   aptx_config.bitsPerSample = A2dpCodecToHalBitsPerSample(current_codec);
   if (aptx_config.bitsPerSample == BitsPerSample::BITS_UNKNOWN) {
-    LOG(ERROR) << __func__ << ": Unknown aptX bits_per_sample="
-               << current_codec.bits_per_sample;
+    log::error("Unknown aptX bits_per_sample={}",
+               current_codec.bits_per_sample);
     return false;
   }
   codec_config->config.aptxConfig(aptx_config);
@@ -425,8 +422,7 @@ bool A2dpLdacToHalConfig(CodecConfiguration* codec_config,
   auto ldac_config = codec_config->config.ldacConfig();
   ldac_config.sampleRate = A2dpCodecToHalSampleRate(current_codec);
   if (ldac_config.sampleRate == SampleRate::RATE_UNKNOWN) {
-    LOG(ERROR) << __func__
-               << ": Unknown LDAC sample_rate=" << current_codec.sample_rate;
+    log::error("Unknown LDAC sample_rate={}", current_codec.sample_rate);
     return false;
   }
   switch (a2dp_offload.codec_info[7]) {
@@ -440,8 +436,7 @@ bool A2dpLdacToHalConfig(CodecConfiguration* codec_config,
       ldac_config.channelMode = LdacChannelMode::MONO;
       break;
     default:
-      LOG(ERROR) << __func__ << ": Unknown LDAC channel_mode="
-                 << a2dp_offload.codec_info[7];
+      log::error("Unknown LDAC channel_mode={}", a2dp_offload.codec_info[7]);
       ldac_config.channelMode = LdacChannelMode::UNKNOWN;
       return false;
   }
@@ -459,14 +454,13 @@ bool A2dpLdacToHalConfig(CodecConfiguration* codec_config,
       ldac_config.qualityIndex = LdacQualityIndex::QUALITY_ABR;
       break;
     default:
-      LOG(ERROR) << __func__ << ": Unknown LDAC QualityIndex="
-                 << a2dp_offload.codec_info[6];
+      log::error("Unknown LDAC QualityIndex={}", a2dp_offload.codec_info[6]);
       return false;
   }
   ldac_config.bitsPerSample = A2dpCodecToHalBitsPerSample(current_codec);
   if (ldac_config.bitsPerSample == BitsPerSample::BITS_UNKNOWN) {
-    LOG(ERROR) << __func__ << ": Unknown LDAC bits_per_sample="
-               << current_codec.bits_per_sample;
+    log::error("Unknown LDAC bits_per_sample={}",
+               current_codec.bits_per_sample);
     return false;
   }
   codec_config->config.ldacConfig(ldac_config);
@@ -497,14 +491,12 @@ bool UpdateOffloadingCapabilities(
         codec_type_masks |= CodecType::LDAC;
         break;
       case BTAV_A2DP_CODEC_INDEX_SOURCE_LC3:
-        LOG(WARNING) << __func__
-                     << ": Ignore source codec_type=" << preference.codec_type
-                     << ", not supported";
+        log::warn("Ignore source codec_type={}, not supported",
+                  preference.codec_type);
         break;
       case BTAV_A2DP_CODEC_INDEX_SOURCE_OPUS:
-        LOG(WARNING) << __func__
-                     << ": Ignore source codec_type=" << preference.codec_type
-                     << ", not supported on HIDL";
+        log::warn("Ignore source codec_type={}, not supported on HIDL",
+                  preference.codec_type);
         break;
       case BTAV_A2DP_CODEC_INDEX_SINK_SBC:
         [[fallthrough]];
@@ -513,14 +505,12 @@ bool UpdateOffloadingCapabilities(
       case BTAV_A2DP_CODEC_INDEX_SINK_LDAC:
         [[fallthrough]];
       case BTAV_A2DP_CODEC_INDEX_SINK_OPUS:
-        LOG(WARNING) << __func__
-                     << ": Ignore sink codec_type=" << preference.codec_type;
+        log::warn("Ignore sink codec_type={}", preference.codec_type);
         break;
       case BTAV_A2DP_CODEC_INDEX_MAX:
         [[fallthrough]];
       default:
-        LOG(ERROR) << __func__
-                   << ": Unknown codec_type=" << preference.codec_type;
+        log::error("Unknown codec_type={}", preference.codec_type);
         return false;
     }
   }
@@ -528,12 +518,10 @@ bool UpdateOffloadingCapabilities(
   for (auto capability : audio_hal_capabilities) {
     if (static_cast<CodecType>(capability.codecCapabilities().codecType &
                                codec_type_masks) != CodecType::UNKNOWN) {
-      LOG(INFO) << __func__
-                << ": enabled offloading capability=" << toString(capability);
+      log::info("enabled offloading capability={}", toString(capability));
       offloading_preference.push_back(capability);
     } else {
-      LOG(INFO) << __func__
-                << ": disabled offloading capability=" << toString(capability);
+      log::info("disabled offloading capability={}", toString(capability));
     }
   }
   // TODO: Bluetooth SoC and runtime property
@@ -573,12 +561,12 @@ bool IsCodecOffloadingEnabled(const CodecConfiguration& codec_config) {
       case CodecType::UNKNOWN:
         [[fallthrough]];
       default:
-        LOG(ERROR) << __func__ << ": Unknown codecType="
-                   << toString(codec_capability.codecType);
+        log::error("Unknown codecType={}",
+                   toString(codec_capability.codecType));
         return false;
     }
   }
-  LOG(INFO) << __func__ << ": software codec=" << toString(codec_config);
+  log::info("software codec={}", toString(codec_config));
   return false;
 }
 

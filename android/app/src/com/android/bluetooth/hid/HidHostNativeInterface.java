@@ -24,7 +24,6 @@ import com.android.internal.annotations.VisibleForTesting;
 /** Provides Bluetooth Hid Host profile, as a service in the Bluetooth application. */
 public class HidHostNativeInterface {
     private static final String TAG = HidHostNativeInterface.class.getSimpleName();
-    private static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
 
     private HidHostService mHidHostService;
 
@@ -130,34 +129,34 @@ public class HidHostNativeInterface {
     /**********************************************************************************************/
 
     private void onConnectStateChanged(byte[] address, int addressType, int transport, int state) {
-        if (DBG) Log.d(TAG, "onConnectStateChanged: state=" + state);
+        Log.d(TAG, "onConnectStateChanged: state=" + state);
         mHidHostService.onConnectStateChanged(
                 address, addressType, transport, convertHalState(state));
     }
 
     private void onGetProtocolMode(byte[] address, int addressType, int transport, int mode) {
-        if (DBG) Log.d(TAG, "onGetProtocolMode()");
+        Log.d(TAG, "onGetProtocolMode()");
         mHidHostService.onGetProtocolMode(address, addressType, transport, mode);
     }
 
     private void onGetReport(
             byte[] address, int addressType, int transport, byte[] report, int rptSize) {
-        if (DBG) Log.d(TAG, "onGetReport()");
+        Log.d(TAG, "onGetReport()");
         mHidHostService.onGetReport(address, addressType, transport, report, rptSize);
     }
 
     private void onHandshake(byte[] address, int addressType, int transport, int status) {
-        if (DBG) Log.d(TAG, "onHandshake: status=" + status);
+        Log.d(TAG, "onHandshake: status=" + status);
         mHidHostService.onHandshake(address, addressType, transport, status);
     }
 
     private void onVirtualUnplug(byte[] address, int addressType, int transport, int status) {
-        if (DBG) Log.d(TAG, "onVirtualUnplug: status=" + status);
+        Log.d(TAG, "onVirtualUnplug: status=" + status);
         mHidHostService.onVirtualUnplug(address, addressType, transport, status);
     }
 
     private void onGetIdleTime(byte[] address, int addressType, int transport, int idleTime) {
-        if (DBG) Log.d(TAG, "onGetIdleTime()");
+        Log.d(TAG, "onGetIdleTime()");
         mHidHostService.onGetIdleTime(address, addressType, transport, idleTime);
     }
 

@@ -327,32 +327,9 @@ void BTA_DmCloseACL(const RawAddress& bd_addr, bool remove_dev,
 
 /*******************************************************************************
  *
- * Function         BTA_DmBleObserve
- *
- * Description      This procedure keep the device listening for advertising
- *                  events from a broadcast device.
- *
- * Parameters       start: start or stop observe.
- *
- * Returns          void
-
- *
- * Returns          void.
- *
- ******************************************************************************/
-void BTA_DmBleObserve(bool start, uint8_t duration,
-                      tBTA_DM_SEARCH_CBACK* p_results_cb) {
-  log::verbose("start = {}", start);
-  do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_ble_observe, start,
-                                              duration, p_results_cb));
-}
-
-/*******************************************************************************
- *
  * Function         BTA_DmBleScan
  *
- * Description      Start or stop the scan procedure if it's not already started
- *                  with BTA_DmBleObserve().
+ * Description      Start or stop the scan procedure.
  *
  * Parameters       start: start or stop the scan procedure,
  *                  duration_sec: Duration of the scan. Continuous scan if 0 is

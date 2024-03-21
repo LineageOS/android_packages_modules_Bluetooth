@@ -29,9 +29,8 @@
 #include <cstdint>
 
 #include "include/check.h"
-#include "os/log.h"
+#include "os/logging/log_adapter.h"
 #include "osi/include/allocator.h"
-#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_psm_types.h"
 #include "stack/include/l2c_api.h"
@@ -57,7 +56,7 @@ static void rfc_mx_sm_sabme_wait_ua(tRFC_MCB* p_mcb, tRFC_MX_EVENT event,
 static void rfc_mx_sm_state_wait_sabme(tRFC_MCB* p_mcb, tRFC_MX_EVENT event,
                                        void* p_data);
 static void rfc_mx_sm_state_connected(tRFC_MCB* p_mcb, tRFC_MX_EVENT event,
-                                      UNUSED_ATTR void* p_data);
+                                      void* p_data);
 static void rfc_mx_sm_state_disc_wait_ua(tRFC_MCB* p_mcb, tRFC_MX_EVENT event,
                                          void* p_data);
 
@@ -322,7 +321,7 @@ void rfc_mx_sm_state_configure(tRFC_MCB* p_mcb, tRFC_MX_EVENT event,
  *
  ******************************************************************************/
 void rfc_mx_sm_sabme_wait_ua(tRFC_MCB* p_mcb, tRFC_MX_EVENT event,
-                             UNUSED_ATTR void* p_data) {
+                             void* /* p_data */) {
   log::verbose("event {}", event);
   switch (event) {
     case RFC_MX_EVENT_START_REQ:
@@ -450,7 +449,7 @@ void rfc_mx_sm_state_wait_sabme(tRFC_MCB* p_mcb, tRFC_MX_EVENT event,
  *
  ******************************************************************************/
 void rfc_mx_sm_state_connected(tRFC_MCB* p_mcb, tRFC_MX_EVENT event,
-                               UNUSED_ATTR void* p_data) {
+                               void* /* p_data */) {
   log::verbose("event {}", event);
 
   switch (event) {

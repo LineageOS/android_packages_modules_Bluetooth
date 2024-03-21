@@ -66,7 +66,6 @@ import java.util.Objects;
  * Provides Bluetooth Hearing Access profile, as a service.
  */
 public class HapClientService extends ProfileService {
-    private static final boolean DBG = true;
     private static final String TAG = "HapClientService";
 
     // Upper limit of all HearingAccess devices: Bonded or Connected
@@ -99,9 +98,7 @@ public class HapClientService extends ProfileService {
 
     @VisibleForTesting
     static synchronized void setHapClient(HapClientService instance) {
-        if (DBG) {
-            Log.d(TAG, "setHapClient(): set to: " + instance);
-        }
+        Log.d(TAG, "setHapClient(): set to: " + instance);
         sHapClient = instance;
     }
 
@@ -129,9 +126,7 @@ public class HapClientService extends ProfileService {
 
     @Override
     public void cleanup() {
-        if (DBG) {
-            Log.d(TAG, "cleanup()");
-        }
+        Log.d(TAG, "cleanup()");
     }
 
     @Override
@@ -141,9 +136,7 @@ public class HapClientService extends ProfileService {
 
     @Override
     public void start() {
-        if (DBG) {
-            Log.d(TAG, "start()");
-        }
+        Log.d(TAG, "start()");
 
         if (sHapClient != null) {
             throw new IllegalStateException("start() called twice");
@@ -176,9 +169,7 @@ public class HapClientService extends ProfileService {
 
     @Override
     public void stop() {
-        if (DBG) {
-            Log.d(TAG, "stop()");
-        }
+        Log.d(TAG, "stop()");
         if (sHapClient == null) {
             Log.w(TAG, "stop() called before start()");
             return;
@@ -233,9 +224,7 @@ public class HapClientService extends ProfileService {
 
     @VisibleForTesting
     void bondStateChanged(BluetoothDevice device, int bondState) {
-        if (DBG) {
-            Log.d(TAG, "Bond state changed for device: " + device + " state: " + bondState);
-        }
+        Log.d(TAG, "Bond state changed for device: " + device + " state: " + bondState);
 
         // Remove state machine if the bonding for a device is removed
         if (bondState != BluetoothDevice.BOND_NONE) {
@@ -356,9 +345,7 @@ public class HapClientService extends ProfileService {
      */
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         enforceBluetoothPrivilegedPermission(this);
-        if (DBG) {
-            Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
-        }
+        Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
         mDatabaseManager.setProfileConnectionPolicy(device, BluetoothProfile.HAP_CLIENT,
                         connectionPolicy);
         if (connectionPolicy == BluetoothProfile.CONNECTION_POLICY_ALLOWED) {
@@ -428,9 +415,7 @@ public class HapClientService extends ProfileService {
         if (toState == BluetoothProfile.STATE_DISCONNECTED) {
             int bondState = mAdapterService.getBondState(device);
             if (bondState == BluetoothDevice.BOND_NONE) {
-                if (DBG) {
-                    Log.d(TAG, device + " is unbond. Remove state machine");
-                }
+                Log.d(TAG, device + " is unbond. Remove state machine");
                 removeStateMachine(device);
             }
         }
@@ -451,9 +436,7 @@ public class HapClientService extends ProfileService {
      */
     public boolean connect(BluetoothDevice device) {
         enforceBluetoothPrivilegedPermission(this);
-        if (DBG) {
-            Log.d(TAG, "connect(): " + device);
-        }
+        Log.d(TAG, "connect(): " + device);
         if (device == null) {
             return false;
         }
@@ -487,9 +470,7 @@ public class HapClientService extends ProfileService {
      */
     public boolean disconnect(BluetoothDevice device) {
         enforceBluetoothPrivilegedPermission(this);
-        if (DBG) {
-            Log.d(TAG, "disconnect(): " + device);
-        }
+        Log.d(TAG, "disconnect(): " + device);
         if (device == null) {
             return false;
         }
@@ -519,9 +500,7 @@ public class HapClientService extends ProfileService {
                         + MAX_HEARING_ACCESS_STATE_MACHINES);
                 return null;
             }
-            if (DBG) {
-                Log.d(TAG, "Creating a new state machine for " + device);
-            }
+            Log.d(TAG, "Creating a new state machine for " + device);
             sm = HapClientStateMachine.make(device, this,
                     mHapClientNativeInterface, mStateMachinesThread.getLooper());
             mStateMachines.put(device, sm);

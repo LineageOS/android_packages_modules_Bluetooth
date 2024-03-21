@@ -16,6 +16,8 @@
 
 #include "codec_manager.h"
 
+#include <bluetooth/log.h>
+
 #include <bitset>
 
 #include "audio_hal_client/audio_hal_client.h"
@@ -97,22 +99,22 @@ struct codec_manager_impl {
                       !osi_property_get_bool(
                           "persist.bluetooth.leaudio_offload.disabled", true);
     if (offload_enable_ == false) {
-      LOG_INFO("offload disabled");
+      log::info("offload disabled");
       return;
     }
 
     if (!LeAudioHalVerifier::SupportsLeAudioHardwareOffload()) {
-      LOG_WARN("HAL not support hardware offload");
+      log::warn("HAL not support hardware offload");
       return;
     }
 
     if (!bluetooth::shim::GetController()->IsSupported(
             bluetooth::hci::OpCode::CONFIGURE_DATA_PATH)) {
-      LOG_WARN("Controller does not support config data path command");
+      log::warn("Controller does not support config data path command");
       return;
     }
 
-    LOG_INFO("LeAudioCodecManagerImpl: configure_data_path for encode");
+    log::info("LeAudioCodecManagerImpl: configure_data_path for encode");
     GetInterface().ConfigureDataPath(hci_data_direction_t::HOST_TO_CONTROLLER,
                                      kIsoDataPathPlatformDefault, {});
     GetInterface().ConfigureDataPath(hci_data_direction_t::CONTROLLER_TO_HOST,
@@ -240,7 +242,7 @@ struct codec_manager_impl {
 
   void UpdateSupportedBroadcastConfig(
       const std::vector<AudioSetConfiguration>& adsp_capabilities) {
-    LOG_INFO("UpdateSupportedBroadcastConfig");
+    log::info("UpdateSupportedBroadcastConfig");
 
     for (const auto& adsp_audio_set_conf : adsp_capabilities) {
       ASSERT_LOG(
@@ -277,21 +279,21 @@ struct codec_manager_impl {
         broadcast_config.max_transport_latency = qos.getMaxTransportLatency();
         supported_broadcast_config.push_back(broadcast_config);
       } else {
-        LOG_ERROR(
+        log::error(
             "Cannot find the correspoding QoS config for the sampling_rate: "
-            "%d, frame_duration: %d",
+            "{}, frame_duration: {}",
             sample_rate, frame_duration);
       }
 
-      LOG_INFO("broadcast_config sampling_rate: %d",
-               broadcast_config.sampling_rate);
+      log::info("broadcast_config sampling_rate: {}",
+                broadcast_config.sampling_rate);
     }
   }
 
   const broadcast_offload_config* GetBroadcastOffloadConfig(
       uint8_t preferred_quality) {
     if (supported_broadcast_config.empty()) {
-      LOG_ERROR("There is no valid broadcast offload config");
+      log::error("There is no valid broadcast offload config");
       return nullptr;
     }
     /* Broadcast audio config selection based on source broadcast capability
@@ -349,10 +351,10 @@ struct codec_manager_impl {
       return nullptr;
     }
 
-    LOG_INFO(
-        "stream_map.size(): %zu, sampling_rate: %d, frame_duration(us): %d, "
-        "octets_per_frame: %d, blocks_per_sdu %d, "
-        "retransmission_number: %d, max_transport_latency: %d",
+    log::info(
+        "stream_map.size(): {}, sampling_rate: {}, frame_duration(us): {}, "
+        "octets_per_frame: {}, blocks_per_sdu {}, retransmission_number: {}, "
+        "max_transport_latency: {}",
         supported_broadcast_config[broadcast_target_config].stream_map.size(),
         supported_broadcast_config[broadcast_target_config].sampling_rate,
         supported_broadcast_config[broadcast_target_config].frame_duration,
@@ -523,7 +525,7 @@ struct codec_manager_impl {
     auto available_allocations =
         AdjustAllocationForOffloader(stream_params.audio_channel_allocation);
     if (available_allocations == 0) {
-      LOG_ERROR("There is no CIS connected");
+      log::error("There is no CIS connected");
       return;
     }
 
@@ -585,11 +587,11 @@ struct codec_manager_impl {
               codec_spec_conf::kLeAudioLocationStereo & ~available_allocations;
         }
 
-        LOG_INFO(
-            "%s: Cis handle 0x%04x, target allocation  0x%08x, current "
-            "allocation 0x%08x, active: %d",
-            tag.c_str(), cis_entry.conn_handle, target_allocation,
-            current_allocation, is_active);
+        log::info(
+            "{}: Cis handle 0x{:04x}, target allocation  0x{:08x}, current "
+            "allocation 0x{:08x}, active: {}",
+            tag, cis_entry.conn_handle, target_allocation, current_allocation,
+            is_active);
 
         if (stream_map.is_initial ||
             LeAudioHalVerifier::SupportsStreamActiveApi()) {
@@ -765,19 +767,19 @@ struct codec_manager_impl {
           ::bluetooth::le_audio::set_configurations::AudioSetConfiguration>&
           adsp_capabilities,
       const std::vector<btle_audio_codec_config_t>& offload_preference_set) {
-    LOG_DEBUG("Print adsp_capabilities:");
+    log::debug("Print adsp_capabilities:");
 
     for (auto& adsp : adsp_capabilities) {
-      LOG_DEBUG("'%s':", adsp.name.c_str());
+      log::debug("'{}':", adsp.name.c_str());
       for (auto direction : {le_audio::types::kLeAudioDirectionSink,
                              le_audio::types::kLeAudioDirectionSource}) {
-        LOG_DEBUG(
-            "dir: %s: number of confs %d:",
+        log::debug(
+            "dir: {}: number of confs {}:",
             (direction == types::kLeAudioDirectionSink ? "sink" : "source"),
             (int)(adsp.confs.get(direction).size()));
         for (auto conf : adsp.confs.sink) {
-          LOG_DEBUG(
-              "codecId: %d, sample_freq: %d, interval %d, channel_cnt: %d",
+          log::debug(
+              "codecId: {}, sample_freq: {}, interval {}, channel_cnt: {}",
               conf.codec.id.coding_format, conf.codec.GetSamplingFrequencyHz(),
               conf.codec.GetDataIntervalUs(),
               conf.codec.GetChannelCountPerIsoStream());
@@ -807,37 +809,36 @@ struct codec_manager_impl {
                                      : codec_input_capa;
           if (std::find(capa_container.begin(), capa_container.end(),
                         capa_to_add) == capa_container.end()) {
-            LOG_DEBUG("Adding %s capa %d",
-                      (direction == types::kLeAudioDirectionSink) ? "output"
-                                                                  : "input",
-                      static_cast<int>(capa_container.size()));
+            log::debug("Adding {} capa {}",
+                       (direction == types::kLeAudioDirectionSink) ? "output"
+                                                                   : "input",
+                       static_cast<int>(capa_container.size()));
             capa_container.push_back(capa_to_add);
           }
         }
       }
     }
 
-    LOG_DEBUG("Output capa: %d, Input capa: %d",
-              static_cast<int>(codec_output_capa.size()),
-              static_cast<int>(codec_input_capa.size()));
+    log::debug("Output capa: {}, Input capa: {}",
+               static_cast<int>(codec_output_capa.size()),
+               static_cast<int>(codec_input_capa.size()));
 
-    LOG_DEBUG(" Print offload_preference_set: %d ",
-              (int)(offload_preference_set.size()));
+    log::debug("Print offload_preference_set: {}",
+               (int)(offload_preference_set.size()));
 
     int i = 0;
     for (auto set : offload_preference_set) {
-      LOG_DEBUG("set %d, %s ", i++, set.ToString().c_str());
+      log::debug("set {}, {}", i++, set.ToString());
     }
   }
 
   void UpdateOffloadCapability(
       const std::vector<btle_audio_codec_config_t>& offloading_preference) {
-    LOG(INFO) << __func__;
+    log::info("");
     std::unordered_set<uint8_t> offload_preference_set;
 
     if (AudioSetConfigurationProvider::Get() == nullptr) {
-      LOG(ERROR) << __func__
-                 << " Audio set configuration provider is not available.";
+      log::error("Audio set configuration provider is not available.");
       return;
     }
 
@@ -867,8 +868,8 @@ struct codec_manager_impl {
         if (IsAudioSetConfigurationMatched(software_audio_set_conf,
                                            offload_preference_set,
                                            adsp_capabilities)) {
-          LOG(INFO) << "Offload supported conf, context type: " << (int)ctx_type
-                    << ", settings -> " << software_audio_set_conf->name;
+          log::info("Offload supported conf, context type: {}, settings -> {}",
+                    (int)ctx_type, software_audio_set_conf->name);
           if (dual_bidirection_swb_supported_ &&
               AudioSetConfigurationProvider::Get()
                   ->CheckConfigurationIsDualBiDirSwb(

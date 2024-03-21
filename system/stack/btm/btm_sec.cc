@@ -31,6 +31,7 @@
 #include <base/strings/stringprintf.h>
 #include <bluetooth/log.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 
@@ -39,7 +40,6 @@
 #include "common/init_flags.h"
 #include "common/metrics.h"
 #include "common/time_util.h"
-#include "device/include/controller.h"
 #include "device/include/device_iot_config.h"
 #include "device/include/interop.h"
 #include "hci/controller_interface.h"
@@ -500,7 +500,7 @@ void BTM_SetPinType(uint8_t pin_type, PIN_CODE pin_code, uint8_t pin_code_len) {
 
   /* If device is not up security mode will be set as a part of startup */
   if ((btm_sec_cb.cfg.pin_type != pin_type) &&
-      controller_get_interface()->get_is_ready()) {
+      bluetooth::shim::GetController() != nullptr) {
     btsnd_hcic_write_pin_type(pin_type);
   }
 
@@ -725,7 +725,7 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
     return (BTM_NO_RESOURCES);
   }
 
-  if (!controller_get_interface()->get_is_ready()) {
+  if (bluetooth::shim::GetController() == nullptr) {
     log::error("controller module is not ready");
     return (BTM_NO_RESOURCES);
   }
@@ -2322,6 +2322,12 @@ void btm_sec_rmt_name_request_complete(const RawAddress* p_bd_addr,
   }
 
   if (!p_bd_name) p_bd_name = (const uint8_t*)kBtmBdNameEmpty;
+
+  BTM_LogHistory(kBtmLogTag, (p_bd_addr) ? *p_bd_addr : RawAddress::kEmpty,
+                 "RNR complete",
+                 base::StringPrintf("status:%s name:%s",
+                                    hci_error_code_text(status).c_str(),
+                                    PRIVATE_NAME(p_bd_name)));
 
   if (p_dev_rec == nullptr) {
     log::debug(

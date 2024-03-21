@@ -22,7 +22,6 @@
 #include "bta/include/bta_hf_client_api.h"
 #include "common/message_loop_thread.h"
 #include "device/include/esco_parameters.h"
-#include "test/mock/mock_device_controller.h"
 #include "types/raw_address.h"
 
 namespace base {

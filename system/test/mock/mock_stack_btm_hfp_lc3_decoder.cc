@@ -25,7 +25,7 @@
 
 #include <cstdint>
 
-#include "hfp_lc3_decoder.h"
+#include "stack/include/hfp_lc3_decoder.h"
 #include "test/common/mock_functions.h"
 
 // Original usings

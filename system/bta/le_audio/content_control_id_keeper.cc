@@ -17,6 +17,7 @@
 #include "content_control_id_keeper.h"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include <bitset>
 #include <map>
@@ -41,12 +42,11 @@ struct ccid_keeper {
 
   void SetCcid(types::LeAudioContextType context_type, int ccid) {
     if (context_type >= LeAudioContextType::RFU) {
-      LOG_ERROR("Unknownd context type %s", ToString(context_type).c_str());
+      log::error("Unknownd context type {}", ToString(context_type));
       return;
     }
 
-    LOG_DEBUG("Ccid: %d, context type %s", ccid,
-              ToString(context_type).c_str());
+    log::debug("Ccid: {}, context type {}", ccid, ToString(context_type));
     ccids_.insert_or_assign(context_type, ccid);
   }
 
@@ -62,7 +62,7 @@ struct ccid_keeper {
   }
 
   void RemoveCcid(int ccid) {
-    LOG_DEBUG("Ccid: %d", ccid);
+    log::debug("Ccid: {}", ccid);
 
     auto iter = ccids_.begin();
     while (iter != ccids_.end()) {
@@ -76,12 +76,12 @@ struct ccid_keeper {
 
   int GetCcid(types::LeAudioContextType context_type) const {
     if (context_type >= LeAudioContextType::RFU) {
-      LOG_ERROR("Unknownd context type %s", ToString(context_type).c_str());
+      log::error("Unknownd context type {}", ToString(context_type));
       return -1;
     }
 
     if (ccids_.count(context_type) == 0) {
-      LOG_DEBUG("No CCID for context %s", ToString(context_type).c_str());
+      log::debug("No CCID for context {}", ToString(context_type));
       return -1;
     }
 

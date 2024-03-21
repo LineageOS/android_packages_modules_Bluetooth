@@ -14,6 +14,7 @@
  *  limitations under the License.
  */
 
+#include <bluetooth/log.h>
 #include <fcntl.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -28,7 +29,6 @@
 #include <vector>
 
 #include "btif/include/btif_hh.h"
-#include "device/include/controller.h"
 #include "hal/hci_hal.h"
 #include "hci/acl_manager.h"
 #include "hci/acl_manager/classic_acl_connection.h"
@@ -49,7 +49,6 @@
 #include "main/shim/dumpsys.h"
 #include "main/shim/helpers.h"
 #include "main/shim/le_advertising_manager.h"
-#include "main/shim/utils.h"
 #include "main/shim/le_scanning_manager.h"
 #include "main/shim/utils.h"
 #include "os/handler.h"
@@ -352,7 +351,7 @@ class MainShimTest : public testing::Test {
  protected:
   void SetUp() override {
     main_thread_start_up();
-    post_on_bt_main([]() { LOG_INFO("Main thread started"); });
+    post_on_bt_main([]() { log::info("Main thread started"); });
 
     thread_ = new os::Thread("acl_thread", os::Thread::Priority::NORMAL);
     handler_ = new os::Handler(thread_);
@@ -384,7 +383,7 @@ class MainShimTest : public testing::Test {
     delete handler_;
     delete thread_;
 
-    post_on_bt_main([]() { LOG_INFO("Main thread stopped"); });
+    post_on_bt_main([]() { log::info("Main thread stopped"); });
     main_thread_shut_down();
     reset_mock_function_count_map();
   }

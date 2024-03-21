@@ -788,7 +788,6 @@ cc_test {
         "le_audio/le_audio_set_configuration_provider_json.cc",
         "le_audio/le_audio_types.cc",
         "le_audio/le_audio_utils.cc",
-        "test/common/mock_controller.cc",
     ],
     data: [
         ":audio_set_configurations_bfbs",
@@ -801,6 +800,7 @@ cc_test {
         "LeAudioSetConfigSchemas_h",
     ],
     shared_libs: [
+        "libbase",
         "libcrypto",
         "libhidlbase",
         "liblog", // __android_log_print
@@ -893,7 +893,6 @@ cc_test {
         "test/common/bta_gatt_queue_mock.cc",
         "test/common/btif_storage_mock.cc",
         "test/common/btm_api_mock.cc",
-        "test/common/mock_controller.cc",
         "test/common/mock_csis_client.cc",
     ],
     data: [
@@ -988,7 +987,6 @@ cc_test {
         "test/common/bta_gatt_queue_mock.cc",
         "test/common/btif_storage_mock.cc",
         "test/common/btm_api_mock.cc",
-        "test/common/mock_controller.cc",
         "test/common/mock_csis_client.cc",
         "test/common/mock_device_groups.cc",
     ],
@@ -1087,6 +1085,7 @@ cc_test {
         "le_audio/mock_codec_manager.cc",
     ],
     shared_libs: [
+        "libbase",
         "libcrypto",
         "liblog",
     ],
@@ -1153,9 +1152,9 @@ cc_test {
         "le_audio/metrics_collector_linux.cc",
         "le_audio/mock_codec_interface.cc",
         "le_audio/mock_codec_manager.cc",
-        "test/common/mock_controller.cc",
     ],
     shared_libs: [
+        "libbase",
         "libbinder_ndk",
         "libcrypto",
         "libfmq",
@@ -1224,7 +1223,6 @@ cc_test {
         "test/common/bta_gatt_queue_mock.cc",
         "test/common/btif_storage_mock.cc",
         "test/common/btm_api_mock.cc",
-        "test/common/mock_controller.cc",
         "test/common/mock_csis_client.cc",
     ],
     shared_libs: [

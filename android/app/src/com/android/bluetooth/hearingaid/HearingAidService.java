@@ -65,7 +65,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * Provides Bluetooth HearingAid profile, as a service in the Bluetooth application.
  */
 public class HearingAidService extends ProfileService {
-    private static final boolean DBG = true;
     private static final String TAG = "HearingAidService";
 
     // Timeout for state machine thread join, to prevent potential ANR.
@@ -114,9 +113,7 @@ public class HearingAidService extends ProfileService {
 
     @Override
     public void start() {
-        if (DBG) {
-            Log.d(TAG, "start()");
-        }
+        Log.d(TAG, "start()");
         if (sHearingAidService != null) {
             throw new IllegalStateException("start() called twice");
         }
@@ -150,9 +147,7 @@ public class HearingAidService extends ProfileService {
 
     @Override
     public void stop() {
-        if (DBG) {
-            Log.d(TAG, "stop()");
-        }
+        Log.d(TAG, "stop()");
         if (sHearingAidService == null) {
             Log.w(TAG, "stop() called before start()");
             return;
@@ -204,9 +199,7 @@ public class HearingAidService extends ProfileService {
 
     @Override
     public void cleanup() {
-        if (DBG) {
-            Log.d(TAG, "cleanup()");
-        }
+        Log.d(TAG, "cleanup()");
     }
 
     /**
@@ -228,9 +221,7 @@ public class HearingAidService extends ProfileService {
 
     @VisibleForTesting
     static synchronized void setHearingAidService(HearingAidService instance) {
-        if (DBG) {
-            Log.d(TAG, "setHearingAidService(): set to: " + instance);
-        }
+        Log.d(TAG, "setHearingAidService(): set to: " + instance);
         sHearingAidService = instance;
     }
 
@@ -244,9 +235,7 @@ public class HearingAidService extends ProfileService {
     public boolean connect(BluetoothDevice device) {
         enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED,
                 "Need BLUETOOTH_PRIVILEGED permission");
-        if (DBG) {
-            Log.d(TAG, "connect(): " + device);
-        }
+        Log.d(TAG, "connect(): " + device);
         if (device == null) {
             return false;
         }
@@ -312,9 +301,7 @@ public class HearingAidService extends ProfileService {
     public boolean disconnect(BluetoothDevice device) {
         enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED,
                 "Need BLUETOOTH_PRIVILEGED permission");
-        if (DBG) {
-            Log.d(TAG, "disconnect(): " + device);
-        }
+        Log.d(TAG, "disconnect(): " + device);
         if (device == null) {
             return false;
         }
@@ -497,9 +484,7 @@ public class HearingAidService extends ProfileService {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED,
                 "Need BLUETOOTH_PRIVILEGED permission");
-        if (DBG) {
-            Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
-        }
+        Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
         if (!mDatabaseManager.setProfileConnectionPolicy(device, BluetoothProfile.HEARING_AID,
                   connectionPolicy)) {
@@ -584,9 +569,7 @@ public class HearingAidService extends ProfileService {
      * @return true on success, otherwise false
      */
     public boolean removeActiveDevice(boolean stopAudio) {
-        if (DBG) {
-            Log.d(TAG, "removeActiveDevice: stopAudio=" + stopAudio);
-        }
+        Log.d(TAG, "removeActiveDevice: stopAudio=" + stopAudio);
         synchronized (mStateMachines) {
             if (mActiveDeviceHiSyncId != BluetoothHearingAid.HI_SYNC_ID_INVALID) {
                 reportActiveDevice(null, stopAudio);
@@ -607,15 +590,11 @@ public class HearingAidService extends ProfileService {
             Log.e(TAG, "setActiveDevice: device should not be null!");
             return removeActiveDevice(true);
         }
-        if (DBG) {
-            Log.d(TAG, "setActiveDevice: " + device);
-        }
+        Log.d(TAG, "setActiveDevice: " + device);
         synchronized (mStateMachines) {
             /* No action needed since this is the same device as previousely activated */
             if (device.equals(mActiveDevice)) {
-                if (DBG) {
-                    Log.d(TAG, "setActiveDevice: The device is already active. Ignoring.");
-                }
+                Log.d(TAG, "setActiveDevice: The device is already active. Ignoring.");
                 return true;
             }
 
@@ -673,10 +652,8 @@ public class HearingAidService extends ProfileService {
             BluetoothDevice device = stackEvent.device;
             int capabilities = stackEvent.valueInt1;
             long hiSyncId = stackEvent.valueLong2;
-            if (DBG) {
-                Log.d(TAG, "Device available: device=" + device + " capabilities="
-                        + capabilities + " hiSyncId=" + hiSyncId);
-            }
+            Log.d(TAG, "Device available: device=" + device + " capabilities="
+                    + capabilities + " hiSyncId=" + hiSyncId);
             mDeviceCapabilitiesMap.put(device, capabilities);
             mDeviceHiSyncIdMap.put(device, hiSyncId);
             return;
@@ -720,9 +697,7 @@ public class HearingAidService extends ProfileService {
         public void onAudioDevicesRemoved(AudioDeviceInfo[] removedDevices) {
             for (AudioDeviceInfo deviceInfo : removedDevices) {
                 if (deviceInfo.getType() == AudioDeviceInfo.TYPE_HEARING_AID) {
-                    if (DBG) {
-                        Log.d(TAG, " onAudioDevicesRemoved: device type: " + deviceInfo.getType());
-                    }
+                    Log.d(TAG, " onAudioDevicesRemoved: device type: " + deviceInfo.getType());
                     if (mAudioManager != null) {
                         notifyActiveDeviceChanged();
                         mAudioManager.unregisterAudioDeviceCallback(this);
@@ -740,9 +715,7 @@ public class HearingAidService extends ProfileService {
         public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
             for (AudioDeviceInfo deviceInfo : addedDevices) {
                 if (deviceInfo.getType() == AudioDeviceInfo.TYPE_HEARING_AID) {
-                    if (DBG) {
-                        Log.d(TAG, " onAudioDevicesAdded: device type: " + deviceInfo.getType());
-                    }
+                    Log.d(TAG, " onAudioDevicesAdded: device type: " + deviceInfo.getType());
                     if (mAudioManager != null) {
                         notifyActiveDeviceChanged();
                         mAudioManager.unregisterAudioDeviceCallback(this);
@@ -770,9 +743,7 @@ public class HearingAidService extends ProfileService {
                         + MAX_HEARING_AID_STATE_MACHINES);
                 return null;
             }
-            if (DBG) {
-                Log.d(TAG, "Creating a new state machine for " + device);
-            }
+            Log.d(TAG, "Creating a new state machine for " + device);
             sm = HearingAidStateMachine.make(device, this,
                     mHearingAidNativeInterface, mStateMachinesThread.getLooper());
             mStateMachines.put(device, sm);
@@ -787,9 +758,7 @@ public class HearingAidService extends ProfileService {
      * @param stopAudio whether to stop audio when device is null.
      */
     private void reportActiveDevice(BluetoothDevice device, boolean stopAudio) {
-        if (DBG) {
-            Log.d(TAG, "reportActiveDevice: device=" + device + " stopAudio=" + stopAudio);
-        }
+        Log.d(TAG, "reportActiveDevice: device=" + device + " stopAudio=" + stopAudio);
 
         if (device != null && stopAudio) {
             Log.e(TAG, "Illegal arguments: stopAudio should be false when device is not null!");
@@ -812,10 +781,8 @@ public class HearingAidService extends ProfileService {
                 BluetoothProfile.HEARING_AID, mAdapterService.obfuscateAddress(device),
                 mAdapterService.getMetricId(device));
 
-        if (DBG) {
-            Log.d(TAG, "Hearing Aid audio: " + previousAudioDevice + " -> " + device
-                    + ". Stop audio: " + stopAudio);
-        }
+        Log.d(TAG, "Hearing Aid audio: " + previousAudioDevice + " -> " + device
+                + ". Stop audio: " + stopAudio);
 
         if (device != null) {
             mAudioManager.registerAudioDeviceCallback(mAudioManagerOnAudioDevicesAddedCallback,
@@ -844,9 +811,7 @@ public class HearingAidService extends ProfileService {
      */
     @VisibleForTesting
     void bondStateChanged(BluetoothDevice device, int bondState) {
-        if (DBG) {
-            Log.d(TAG, "Bond state changed for device: " + device + " state: " + bondState);
-        }
+        Log.d(TAG, "Bond state changed for device: " + device + " state: " + bondState);
         // Remove state machine if the bonding for a device is removed
         if (bondState != BluetoothDevice.BOND_NONE) {
             return;
@@ -921,9 +886,7 @@ public class HearingAidService extends ProfileService {
         if (toState == BluetoothProfile.STATE_DISCONNECTED) {
             int bondState = mAdapterService.getBondState(device);
             if (bondState == BluetoothDevice.BOND_NONE) {
-                if (DBG) {
-                    Log.d(TAG, device + " is unbond. Remove state machine");
-                }
+                Log.d(TAG, device + " is unbond. Remove state machine");
                 removeStateMachine(device);
             }
         }

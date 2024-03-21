@@ -40,8 +40,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  */
 @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
 public class DistanceMeasurementManager {
-    private static final boolean DBG = GattServiceConfig.DBG;
-    private static final String TAG = "DistanceMeasurementManager";
+    private static final String TAG = DistanceMeasurementManager.class.getSimpleName();
 
     private static final int RSSI_LOW_FREQUENCY_INTERVAL_MS = 3000;
     private static final int RSSI_MEDIUM_FREQUENCY_INTERVAL_MS = 1000;
@@ -85,13 +84,15 @@ public class DistanceMeasurementManager {
             IDistanceMeasurementCallback callback) {
         Log.i(TAG, "startDistanceMeasurement device:" + params.getDevice().getAnonymizedAddress()
                 + ", method: " + params.getMethodId());
-        String identityAddress = mAdapterService.getIdentityAddress(
-                params.getDevice().getAddress());
-        if (identityAddress == null) {
-            identityAddress = params.getDevice().getAddress();
+        String address = mAdapterService.getIdentityAddress(params.getDevice().getAddress());
+        if (address == null) {
+            address = params.getDevice().getAddress();
         }
-        logd("Get identityAddress: " + params.getDevice().getAnonymizedAddress() + " => "
-                + BluetoothUtils.toAnonymizedAddress(identityAddress));
+        logd(
+                "Get identityAddress: "
+                        + params.getDevice().getAnonymizedAddress()
+                        + " => "
+                        + BluetoothUtils.toAnonymizedAddress(address));
 
         int interval = getIntervalValue(params.getFrequency(), params.getMethodId());
         if (interval == -1) {
@@ -101,8 +102,7 @@ public class DistanceMeasurementManager {
         }
 
         DistanceMeasurementTracker tracker =
-                new DistanceMeasurementTracker(
-                        this, params, identityAddress, uuid, interval, callback);
+                new DistanceMeasurementTracker(this, params, address, uuid, interval, callback);
 
         switch (params.getMethodId()) {
             case DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_AUTO:
@@ -158,19 +158,22 @@ public class DistanceMeasurementManager {
             boolean timeout) {
         Log.i(TAG, "stopDistanceMeasurement device:" + device.getAnonymizedAddress()
                 + ", method: " + method + " timeout " + timeout);
-        String identityAddress = mAdapterService.getIdentityAddress(device.getAddress());
-        if (identityAddress == null) {
-            identityAddress = device.getAddress();
+        String address = mAdapterService.getIdentityAddress(device.getAddress());
+        if (address == null) {
+            address = device.getAddress();
         }
-        logd("Get identityAddress: " + device.getAnonymizedAddress() + " => "
-                + BluetoothUtils.toAnonymizedAddress(identityAddress));
+        logd(
+                "Get identityAddress: "
+                        + device.getAnonymizedAddress()
+                        + " => "
+                        + BluetoothUtils.toAnonymizedAddress(address));
 
         switch (method) {
             case DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_AUTO:
             case DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI:
-                return stopRssiTracker(uuid, identityAddress, timeout);
+                return stopRssiTracker(uuid, address, timeout);
             case DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING:
-                return stopCsTracker(uuid, identityAddress, timeout);
+                return stopCsTracker(uuid, address, timeout);
             default:
                 Log.w(TAG, "stopDistanceMeasurement with invalid method:" + method);
                 return BluetoothStatusCodes.ERROR_DISTANCE_MEASUREMENT_INTERNAL;
@@ -468,8 +471,6 @@ public class DistanceMeasurementManager {
 
     /** Logs the message in debug ROM. */
     private static void logd(String msg) {
-        if (DBG) {
-            Log.d(TAG, msg);
-        }
+        Log.d(TAG, msg);
     }
 }

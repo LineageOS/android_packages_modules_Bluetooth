@@ -16,6 +16,7 @@
 
 #include "common/strings.h"
 
+#include <bluetooth/log.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -74,7 +75,7 @@ TEST(StringsTest, to_hex_string_from_number) {
     ASSERT_EQ(ToHexString(LONG_MIN), "LONG_MIN");
     ASSERT_EQ(ToHexString(LONG_MIN + 1L), "-0x7fffffffffffffff");
   } else {
-    LOG_ERROR("Unknown architecture");
+    bluetooth::log::error("Unknown architecture");
     ASSERT_TRUE(false);
   }
   ASSERT_EQ(ToHexString('a'), "0x61");
