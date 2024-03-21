@@ -27,7 +27,6 @@ import com.android.internal.annotations.VisibleForTesting;
 
 public class VolumeControlNativeInterface {
     private static final String TAG = "VolumeControlNativeInterface";
-    private static final boolean DBG = true;
     private BluetoothAdapter mAdapter;
 
     @GuardedBy("INSTANCE_LOCK")
@@ -273,9 +272,7 @@ public class VolumeControlNativeInterface {
         event.device = getDevice(address);
         event.valueInt1 = state;
 
-        if (DBG) {
-            Log.d(TAG, "onConnectionStateChanged: " + event);
-        }
+        Log.d(TAG, "onConnectionStateChanged: " + event);
         sendMessageToService(event);
     }
 
@@ -291,9 +288,7 @@ public class VolumeControlNativeInterface {
         event.valueBool1 = mute;
         event.valueBool2 = isAutonomous;
 
-        if (DBG) {
-            Log.d(TAG, "onVolumeStateChanged: " + event);
-        }
+        Log.d(TAG, "onVolumeStateChanged: " + event);
         sendMessageToService(event);
     }
 
@@ -309,9 +304,7 @@ public class VolumeControlNativeInterface {
         event.valueBool1 = mute;
         event.valueBool2 = isAutonomous;
 
-        if (DBG) {
-            Log.d(TAG, "onGroupVolumeStateChanged: " + event);
-        }
+        Log.d(TAG, "onGroupVolumeStateChanged: " + event);
         sendMessageToService(event);
     }
 
@@ -324,9 +317,7 @@ public class VolumeControlNativeInterface {
         event.device = getDevice(address);
         event.valueInt1 = numOfExternalOutputs;
 
-        if (DBG) {
-            Log.d(TAG, "onDeviceAvailable: " + event);
-        }
+        Log.d(TAG, "onDeviceAvailable: " + event);
         sendMessageToService(event);
     }
 
@@ -340,9 +331,7 @@ public class VolumeControlNativeInterface {
         event.valueInt1 = externalOutputId;
         event.valueInt2 = offset;
 
-        if (DBG) {
-            Log.d(TAG, "onExtAudioOutVolumeOffsetChanged: " + event);
-        }
+        Log.d(TAG, "onExtAudioOutVolumeOffsetChanged: " + event);
         sendMessageToService(event);
     }
 
@@ -356,9 +345,7 @@ public class VolumeControlNativeInterface {
         event.valueInt1 = externalOutputId;
         event.valueInt2 = location;
 
-        if (DBG) {
-            Log.d(TAG, "onExtAudioOutLocationChanged: " + event);
-        }
+        Log.d(TAG, "onExtAudioOutLocationChanged: " + event);
         sendMessageToService(event);
     }
 
@@ -372,9 +359,7 @@ public class VolumeControlNativeInterface {
         event.valueInt1 = externalOutputId;
         event.valueString1 = descr;
 
-        if (DBG) {
-            Log.d(TAG, "onExtAudioOutLocationChanged: " + event);
-        }
+        Log.d(TAG, "onExtAudioOutLocationChanged: " + event);
         sendMessageToService(event);
     }
 

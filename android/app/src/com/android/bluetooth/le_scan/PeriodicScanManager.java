@@ -41,7 +41,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
 public class PeriodicScanManager {
-    private static final boolean DBG = GattServiceConfig.DBG;
     private static final String TAG = GattServiceConfig.TAG_PREFIX + "SyncManager";
 
     private final BluetoothAdapter mAdapter;
@@ -52,18 +51,14 @@ public class PeriodicScanManager {
 
     /** Constructor of {@link PeriodicScanManager}. */
     public PeriodicScanManager(AdapterService adapterService) {
-        if (DBG) {
-            Log.d(TAG, "periodic scan manager created");
-        }
+        Log.d(TAG, "periodic scan manager created");
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         mNativeInterface = PeriodicScanNativeInterface.getInstance();
         mNativeInterface.init(this);
     }
 
     public void cleanup() {
-        if (DBG) {
-            Log.d(TAG, "cleanup()");
-        }
+        Log.d(TAG, "cleanup()");
         mNativeInterface.cleanup();
         mSyncs.clear();
         sTempRegistrationId = -1;
@@ -128,9 +123,7 @@ public class PeriodicScanManager {
 
         @Override
         public void binderDied() {
-            if (DBG) {
-                Log.d(TAG, "Binder is dead - unregistering advertising set");
-            }
+            Log.d(TAG, "Binder is dead - unregistering advertising set");
             stopSync(callback);
         }
     }
@@ -274,23 +267,19 @@ public class PeriodicScanManager {
         String address = scanResult.getDevice().getAddress();
         int addressType = scanResult.getDevice().getAddressType();
         int sid = scanResult.getAdvertisingSid();
-        if (DBG) {
-            Log.d(
-                    TAG,
-                    "startSync for Device: "
-                            + address
-                            + " addressType: "
-                            + addressType
-                            + " sid: "
-                            + sid);
-        }
+        Log.d(
+                TAG,
+                "startSync for Device: "
+                        + address
+                        + " addressType: "
+                        + addressType
+                        + " sid: "
+                        + sid);
         synchronized (mSyncs) {
             Map.Entry<IBinder, SyncInfo> entry = findMatchingSync(sid, address);
             if (entry != null) {
                 //Found matching sync. Copy sync handle
-                if (DBG) {
-                    Log.d(TAG, "startSync: Matching entry found");
-                }
+                Log.d(TAG, "startSync: Matching entry found");
                 mSyncs.put(binder, new SyncInfo(entry.getValue().id, sid, address,
                         entry.getValue().skip, entry.getValue().timeout, deathRecipient,
                         callback));
@@ -317,17 +306,13 @@ public class PeriodicScanManager {
         mSyncs.put(binder, new SyncInfo(cbId, sid, address, skip, timeout,
                 deathRecipient, callback));
 
-        if (DBG) {
-            Log.d(TAG, "startSync() - reg_id=" + cbId + ", callback: " + binder);
-        }
+        Log.d(TAG, "startSync() - reg_id=" + cbId + ", callback: " + binder);
         mNativeInterface.startSync(sid, address, skip, timeout, cbId);
     }
 
     public void stopSync(IPeriodicAdvertisingCallback callback) {
         IBinder binder = toBinder(callback);
-        if (DBG) {
-            Log.d(TAG, "stopSync() " + binder);
-        }
+        Log.d(TAG, "stopSync() " + binder);
         SyncInfo sync = null;
         synchronized (mSyncs) {
             sync = mSyncs.remove(binder);
@@ -387,9 +372,7 @@ public class PeriodicScanManager {
                   int advHandle, IPeriodicAdvertisingCallback callback) {
         SyncDeathRecipient deathRecipient = new SyncDeathRecipient(callback);
         IBinder binder = toBinder(callback);
-        if (DBG) {
-            Log.d(TAG, "transferSetInfo() " + binder);
-        }
+        Log.d(TAG, "transferSetInfo() " + binder);
         try {
             binder.linkToDeath(deathRecipient, 0);
         } catch (RemoteException e) {

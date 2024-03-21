@@ -62,7 +62,6 @@ import java.util.stream.Stream;
  */
 public class MediaControlProfile implements MediaControlServiceCallbacks {
     private static final String TAG = "MediaControlProfile";
-    private static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
     private final Context mContext;
 
     private static final int LOG_NB_EVENTS = 100;
@@ -152,7 +151,7 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
     }
 
     private void onCurrentPlayerQueueUpdated() {
-        if (DBG) Log.d(TAG, "onCurrentPlayerQueueUpdated: not implemented");
+        Log.d(TAG, "onCurrentPlayerQueueUpdated: not implemented");
 
         /* TODO: Implement once we have the Object Transfer Service */
         if (mCurrentData.queue == null) return;
@@ -577,7 +576,7 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
     }
 
     private void processPendingPlayerStateRequest() {
-        if (DBG) Log.d(TAG, "GMCS processPendingPlayerStateRequest");
+        Log.d(TAG, "GMCS processPendingPlayerStateRequest");
 
         Map<PlayerStateField, Object> handled_request_map = new HashMap<>();
 
@@ -666,13 +665,11 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
             }
         }
 
-        if (DBG) {
-            synchronized (this) {
-                if (mPendingStateRequest != null && !mPendingStateRequest.isEmpty()) {
-                    Log.w(TAG, "MCS service state fields left unhandled: ");
-                    for (PlayerStateField item : mPendingStateRequest) {
-                        Log.w(TAG, "   > " + item);
-                    }
+        synchronized (this) {
+            if (mPendingStateRequest != null && !mPendingStateRequest.isEmpty()) {
+                Log.w(TAG, "MCS service state fields left unhandled: ");
+                for (PlayerStateField item : mPendingStateRequest) {
+                    Log.w(TAG, "   > " + item);
                 }
             }
         }

@@ -53,7 +53,6 @@ import java.util.Objects;
  */
 public class BatteryService extends ProfileService {
     private static final String TAG = "BatteryService";
-    private static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
 
     // Timeout for state machine thread join, to prevent potential ANR.
     private static final int SM_THREAD_JOIN_TIMEOUT_MS = 1_000;
@@ -81,9 +80,7 @@ public class BatteryService extends ProfileService {
 
     @Override
     public void start() {
-        if (DBG) {
-            Log.d(TAG, "start()");
-        }
+        Log.d(TAG, "start()");
         if (sBatteryService != null) {
             throw new IllegalStateException("start() called twice");
         }
@@ -103,9 +100,7 @@ public class BatteryService extends ProfileService {
 
     @Override
     public void stop() {
-        if (DBG) {
-            Log.d(TAG, "stop()");
-        }
+        Log.d(TAG, "stop()");
         if (sBatteryService == null) {
             Log.w(TAG, "stop() called before start()");
             return;
@@ -144,9 +139,7 @@ public class BatteryService extends ProfileService {
 
     @Override
     public void cleanup() {
-        if (DBG) {
-            Log.d(TAG, "cleanup()");
-        }
+        Log.d(TAG, "cleanup()");
     }
 
     /**
@@ -170,9 +163,7 @@ public class BatteryService extends ProfileService {
      */
     @VisibleForTesting
     public static synchronized void setBatteryService(BatteryService instance) {
-        if (DBG) {
-            Log.d(TAG, "setBatteryService(): set to: " + instance);
-        }
+        Log.d(TAG, "setBatteryService(): set to: " + instance);
         sBatteryService = instance;
     }
 
@@ -183,9 +174,7 @@ public class BatteryService extends ProfileService {
     public boolean connect(BluetoothDevice device) {
         enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED,
                 "Need BLUETOOTH_PRIVILEGED permission");
-        if (DBG) {
-            Log.d(TAG, "connect(): " + device);
-        }
+        Log.d(TAG, "connect(): " + device);
         if (device == null) {
             Log.w(TAG, "Ignore connecting to null device");
             return false;
@@ -235,9 +224,7 @@ public class BatteryService extends ProfileService {
     public boolean disconnect(BluetoothDevice device) {
         enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED,
                 "Need BLUETOOTH_PRIVILEGED permission");
-        if (DBG) {
-            Log.d(TAG, "disconnect(): " + device);
-        }
+        Log.d(TAG, "disconnect(): " + device);
         if (device == null) {
             Log.w(TAG, "Ignore disconnecting to null device");
             return false;
@@ -314,9 +301,7 @@ public class BatteryService extends ProfileService {
         if (toState == BluetoothProfile.STATE_DISCONNECTED) {
             int bondState = mAdapterService.getBondState(device);
             if (bondState == BluetoothDevice.BOND_NONE) {
-                if (DBG) {
-                    Log.d(TAG, device + " is unbonded. Remove state machine");
-                }
+                Log.d(TAG, device + " is unbonded. Remove state machine");
                 removeStateMachine(device);
             }
         }
@@ -403,9 +388,7 @@ public class BatteryService extends ProfileService {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED,
                 "Need BLUETOOTH_PRIVILEGED permission");
-        if (DBG) {
-            Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
-        }
+        Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
         mDatabaseManager.setProfileConnectionPolicy(device, BluetoothProfile.BATTERY,
                         connectionPolicy);
         if (connectionPolicy == BluetoothProfile.CONNECTION_POLICY_ALLOWED) {
@@ -449,9 +432,7 @@ public class BatteryService extends ProfileService {
                         + MAX_BATTERY_STATE_MACHINES);
                 return null;
             }
-            if (DBG) {
-                Log.d(TAG, "Creating a new state machine for " + device);
-            }
+            Log.d(TAG, "Creating a new state machine for " + device);
             sm = BatteryStateMachine.make(device, this, mStateMachinesThread.getLooper());
             mStateMachines.put(device, sm);
             return sm;
@@ -473,9 +454,7 @@ public class BatteryService extends ProfileService {
      */
     @VisibleForTesting
     void bondStateChanged(BluetoothDevice device, int bondState) {
-        if (DBG) {
-            Log.d(TAG, "Bond state changed for device: " + device + " state: " + bondState);
-        }
+        Log.d(TAG, "Bond state changed for device: " + device + " state: " + bondState);
         // Remove state machine if the bonding for a device is removed
         if (bondState != BluetoothDevice.BOND_NONE) {
             return;

@@ -39,7 +39,6 @@ import java.util.Scanner;
 
 public class VolumeControlStateMachine extends StateMachine {
 
-    private static final boolean DBG = false;
     private static final String TAG = "VolumeControlStateMachine";
 
     static final int CONNECT = 1;
@@ -151,9 +150,7 @@ public class VolumeControlStateMachine extends StateMachine {
                     break;
                 case STACK_EVENT:
                     VolumeControlStackEvent event = (VolumeControlStackEvent) message.obj;
-                    if (DBG) {
-                        Log.d(TAG, "Disconnected: stack event: " + event);
-                    }
+                    Log.d(TAG, "Disconnected: stack event: " + event);
                     if (!mDevice.equals(event.device)) {
                         Log.wtf(TAG, "Device(" + mDevice + "): event mismatch: " + event);
                     }
@@ -568,8 +565,6 @@ public class VolumeControlStateMachine extends StateMachine {
 
     @Override
     protected void log(String msg) {
-        if (DBG) {
-            super.log(msg);
-        }
+        super.log(msg);
     }
 }
