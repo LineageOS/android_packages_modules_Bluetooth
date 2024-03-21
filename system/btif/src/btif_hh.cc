@@ -1201,36 +1201,40 @@ static void btif_hh_upstreams_evt(uint16_t event, char* p_param) {
       log::verbose("BTA_HH_VC_UNPLUG_EVT: status = {}, handle = {}",
                    p_data->dev_status.status, p_data->dev_status.handle);
       p_dev = btif_hh_find_connected_dev_by_handle(p_data->dev_status.handle);
+
+      if (p_dev == NULL) {
+        log::error("BTA_HH_VC_UNPLUG_EVT: device not found handle {}",
+                   p_data->dev_status.handle);
+        return;
+      }
+
       if (p_dev->link_spec.transport == BT_TRANSPORT_LE) {
         log::error("BTA_HH_VC_UNPLUG_EVT: not expected for {}",
                    p_dev->link_spec.ToRedactedStringForLogging());
         return;
       }
-
       btif_hh_cb.status = (BTIF_HH_STATUS)BTIF_HH_DEV_DISCONNECTED;
-      if (p_dev != NULL) {
-        log::verbose("BTA_HH_VC_UNPLUG_EVT: link_spec = {}",
-                     p_dev->link_spec.ToRedactedStringForLogging());
+      log::verbose("BTA_HH_VC_UNPLUG_EVT: link_spec = {}",
+                   p_dev->link_spec.ToRedactedStringForLogging());
 
-        /* Stop the VUP timer */
-        btif_hh_stop_vup_timer(p_dev->link_spec);
-        p_dev->dev_status = hh_get_state_on_disconnect(p_dev->link_spec);
-        log::verbose("--Sending connection state change");
-        BTHH_STATE_UPDATE(p_dev->link_spec, p_dev->dev_status);
-        log::verbose("--Removing HID bond");
-        /* If it is locally initiated VUP or remote device has its major COD as
-        Peripheral removed the bond.*/
-        if (p_dev->local_vup || check_cod_hid(&(p_dev->link_spec.addrt.bda))) {
-          p_dev->local_vup = false;
-          BTA_DmRemoveDevice(p_dev->link_spec.addrt.bda);
-        } else {
-          btif_hh_remove_device(p_dev->link_spec);
-        }
-        HAL_CBACK(bt_hh_callbacks, virtual_unplug_cb,
-                  &(p_dev->link_spec.addrt.bda), p_dev->link_spec.addrt.type,
-                  p_dev->link_spec.transport,
-                  (bthh_status_t)p_data->dev_status.status);
+      /* Stop the VUP timer */
+      btif_hh_stop_vup_timer(p_dev->link_spec);
+      p_dev->dev_status = hh_get_state_on_disconnect(p_dev->link_spec);
+      log::verbose("--Sending connection state change");
+      BTHH_STATE_UPDATE(p_dev->link_spec, p_dev->dev_status);
+      log::verbose("--Removing HID bond");
+      /* If it is locally initiated VUP or remote device has its major COD as
+      Peripheral removed the bond.*/
+      if (p_dev->local_vup || check_cod_hid(&(p_dev->link_spec.addrt.bda))) {
+        p_dev->local_vup = false;
+        BTA_DmRemoveDevice(p_dev->link_spec.addrt.bda);
+      } else {
+        btif_hh_remove_device(p_dev->link_spec);
       }
+      HAL_CBACK(bt_hh_callbacks, virtual_unplug_cb,
+                &(p_dev->link_spec.addrt.bda), p_dev->link_spec.addrt.type,
+                p_dev->link_spec.transport,
+                (bthh_status_t)p_data->dev_status.status);
       break;
 
     case BTA_HH_API_ERR_EVT:
