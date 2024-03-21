@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <bluetooth/log.h>
+
 #include <memory>
 #include <vector>
 
@@ -37,14 +39,14 @@ template <class A, class B, std::unique_ptr<B> (*A_TO_B)(std::unique_ptr<A>)>
 class WiredPairOfBiDiQueues {
   void dequeue_callback_a() {
     auto down_thing = queue_a_.GetDownEnd()->TryDequeue();
-    if (!down_thing) LOG_ERROR("Received dequeue, but no data ready...");
+    if (!down_thing) log::error("Received dequeue, but no data ready...");
 
     down_buffer_b_.Enqueue(A_TO_B(std::move(down_thing)), handler_);
   }
 
   void dequeue_callback_b() {
     auto down_thing = queue_b_.GetDownEnd()->TryDequeue();
-    if (!down_thing) LOG_ERROR("Received dequeue, but no data ready...");
+    if (!down_thing) log::error("Received dequeue, but no data ready...");
 
     down_buffer_a_.Enqueue(A_TO_B(std::move(down_thing)), handler_);
   }

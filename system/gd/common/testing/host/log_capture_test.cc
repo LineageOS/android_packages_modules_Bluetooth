@@ -16,6 +16,7 @@
 
 #include "../log_capture.h"
 
+#include <bluetooth/log.h>
 #include <gtest/gtest.h>
 
 #include <cstring>
@@ -51,7 +52,7 @@ class LogCaptureTest : public ::testing::Test {
 
   // The line number is part of the log output and must be factored out
   size_t CalibrateOneLine(const char* log_line) {
-    LOG_INFO("%s", log_line);
+    log::info("{}", log_line);
     return strlen(log_line);
   }
 };
@@ -108,11 +109,11 @@ TEST_F(LogCaptureTest, DISABLED_typical) {
   bluetooth::common::InitFlags::Load(nullptr);
   std::unique_ptr<LogCapture> log_capture = std::make_unique<LogCapture>();
 
-  LOG_ERROR("%s", kLogError);
-  LOG_WARN("%s", kLogWarn);
-  LOG_INFO("%s", kLogInfo);
-  LOG_DEBUG("%s", kLogDebug);
-  LOG_VERBOSE("%s", kLogVerbose);
+  log::error("{}", kLogError);
+  log::warn("{}", kLogWarn);
+  log::info("{}", kLogInfo);
+  log::debug("{}", kLogDebug);
+  log::verbose("{}", kLogVerbose);
 
   ASSERT_TRUE(log_capture->Rewind()->Find(kLogError));
   ASSERT_TRUE(log_capture->Rewind()->Find(kLogWarn));
@@ -126,11 +127,11 @@ TEST_F(LogCaptureTest, DISABLED_with_logging_debug_enabled_for_all) {
   bluetooth::common::InitFlags::Load(test_flags);
   std::unique_ptr<LogCapture> log_capture = std::make_unique<LogCapture>();
 
-  LOG_ERROR("%s", kLogError);
-  LOG_WARN("%s", kLogWarn);
-  LOG_INFO("%s", kLogInfo);
-  LOG_DEBUG("%s", kLogDebug);
-  LOG_VERBOSE("%s", kLogVerbose);
+  log::error("{}", kLogError);
+  log::warn("{}", kLogWarn);
+  log::info("{}", kLogInfo);
+  log::debug("{}", kLogDebug);
+  log::verbose("{}", kLogVerbose);
 
   ASSERT_TRUE(log_capture->Rewind()->Find(kLogError));
   ASSERT_TRUE(log_capture->Rewind()->Find(kLogWarn));
@@ -145,7 +146,7 @@ TEST_F(LogCaptureTest, DISABLED_wait_until_log_contains) {
   bluetooth::common::InitFlags::Load(test_flags);
   std::unique_ptr<LogCapture> log_capture = std::make_unique<LogCapture>();
 
-  LOG_DEBUG("%s", kLogDebug);
+  log::debug("{}", kLogDebug);
   log_capture->WaitUntilLogContains(kLogDebug);
   bluetooth::common::InitFlags::Load(nullptr);
 }

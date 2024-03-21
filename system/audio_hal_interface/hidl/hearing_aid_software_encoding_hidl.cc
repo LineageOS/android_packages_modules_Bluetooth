@@ -18,10 +18,20 @@
 
 #include "hidl/hearing_aid_software_encoding_hidl.h"
 
+#include <bluetooth/log.h>
+
 #include "audio_hearing_aid_hw/include/audio_hearing_aid_hw.h"
 #include "client_interface_hidl.h"
 #include "os/log.h"
 #include "osi/include/properties.h"
+
+namespace fmt {
+template <>
+struct formatter<audio_usage_t> : enum_formatter<audio_usage_t> {};
+template <>
+struct formatter<audio_content_type_t> : enum_formatter<audio_content_type_t> {
+};
+}  // namespace fmt
 
 namespace {
 
@@ -35,6 +45,8 @@ using ::bluetooth::audio::hidl::SampleRate;
 using ::bluetooth::audio::hidl::SessionType;
 using ::bluetooth::audio::hidl::SessionType_2_1;
 using ::bluetooth::audio::hidl::hearing_aid::StreamCallbacks;
+
+using namespace bluetooth;
 
 // Transport implementation for Hearing Aids
 class HearingAidTransport
@@ -50,7 +62,7 @@ class HearingAidTransport
         data_position_({}){};
 
   BluetoothAudioCtrlAck StartRequest() override {
-    LOG(INFO) << __func__;
+    log::info("");
     if (stream_cb_.on_resume_(true)) {
       return BluetoothAudioCtrlAck::SUCCESS_FINISHED;
     }
@@ -58,7 +70,7 @@ class HearingAidTransport
   }
 
   BluetoothAudioCtrlAck SuspendRequest() override {
-    LOG(INFO) << __func__;
+    log::info("");
     if (stream_cb_.on_suspend_()) {
       uint8_t p_buf[AUDIO_STREAM_OUTPUT_BUFFER_SZ * 2];
       ::bluetooth::audio::hidl::hearing_aid::read(p_buf, sizeof(p_buf));
@@ -69,7 +81,7 @@ class HearingAidTransport
   }
 
   void StopRequest() override {
-    LOG(INFO) << __func__;
+    log::info("");
     if (stream_cb_.on_suspend_()) {
       // flush
       uint8_t p_buf[AUDIO_STREAM_OUTPUT_BUFFER_SZ * 2];
@@ -80,10 +92,9 @@ class HearingAidTransport
   bool GetPresentationPosition(uint64_t* remote_delay_report_ns,
                                uint64_t* total_bytes_read,
                                timespec* data_position) override {
-    VLOG(2) << __func__ << ": data=" << total_bytes_read_
-            << " byte(s), timestamp=" << data_position_.tv_sec << "."
-            << data_position_.tv_nsec
-            << "s, delay report=" << remote_delay_report_ms_ << " msec.";
+    log::verbose("data={} byte(s), timestamp={}.{}s, delay report={} msec.",
+                 total_bytes_read_, data_position_.tv_sec,
+                 data_position_.tv_nsec, remote_delay_report_ms_);
     if (remote_delay_report_ns != nullptr) {
       *remote_delay_report_ns = remote_delay_report_ms_ * 1000000u;
     }
@@ -96,18 +107,17 @@ class HearingAidTransport
   void MetadataChanged(const source_metadata_t& source_metadata) override {
     auto track_count = source_metadata.track_count;
     auto tracks = source_metadata.tracks;
-    LOG(INFO) << __func__ << ": " << track_count << " track(s) received";
+    log::info("{} track(s) received", track_count);
     while (track_count) {
-      VLOG(1) << __func__ << ": usage=" << tracks->usage
-              << ", content_type=" << tracks->content_type
-              << ", gain=" << tracks->gain;
+      log::verbose("usage={}, content_type={}, gain={}", tracks->usage,
+                   tracks->content_type, tracks->gain);
       --track_count;
       ++tracks;
     }
   }
 
   void ResetPresentationPosition() override {
-    VLOG(2) << __func__ << ": called.";
+    log::verbose("called.");
     remote_delay_report_ms_ = 0;
     total_bytes_read_ = 0;
     data_position_ = {};
@@ -121,7 +131,7 @@ class HearingAidTransport
   }
 
   void SetRemoteDelay(uint16_t delay_report_ms) {
-    LOG(INFO) << __func__ << ": delay_report=" << delay_report_ms << " msec";
+    log::info("delay_report={} msec", delay_report_ms);
     remote_delay_report_ms_ = delay_report_ms;
   }
 
@@ -173,10 +183,10 @@ bool is_hal_2_0_enabled() { return hearing_aid_hal_clientinterface != nullptr; }
 
 bool init(StreamCallbacks stream_cb,
           bluetooth::common::MessageLoopThread* message_loop) {
-  LOG(INFO) << __func__;
+  log::info("");
 
   if (is_hal_2_0_force_disabled()) {
-    LOG(ERROR) << __func__ << ": BluetoothAudio HAL is disabled";
+    log::error("BluetoothAudio HAL is disabled");
     return false;
   }
 
@@ -185,8 +195,7 @@ bool init(StreamCallbacks stream_cb,
       new bluetooth::audio::hidl::BluetoothAudioSinkClientInterface(
           hearing_aid_sink, message_loop);
   if (!hearing_aid_hal_clientinterface->IsValid()) {
-    LOG(WARNING) << __func__
-                 << ": BluetoothAudio HAL for Hearing Aid is invalid?!";
+    log::warn("BluetoothAudio HAL for Hearing Aid is invalid?!");
     delete hearing_aid_hal_clientinterface;
     hearing_aid_hal_clientinterface = nullptr;
     delete hearing_aid_sink;
@@ -195,7 +204,7 @@ bool init(StreamCallbacks stream_cb,
   }
 
   if (remote_delay_ms != 0) {
-    LOG(INFO) << __func__ << ": restore DELAY " << remote_delay_ms << " ms";
+    log::info("restore DELAY {} ms", remote_delay_ms);
     hearing_aid_sink->SetRemoteDelay(remote_delay_ms);
     remote_delay_ms = 0;
   }
@@ -204,7 +213,7 @@ bool init(StreamCallbacks stream_cb,
 }
 
 void cleanup() {
-  LOG(INFO) << __func__;
+  log::info("");
   if (!is_hal_2_0_enabled()) return;
   end_session();
   delete hearing_aid_hal_clientinterface;
@@ -215,24 +224,24 @@ void cleanup() {
 }
 
 void start_session() {
-  LOG(INFO) << __func__;
+  log::info("");
   if (!is_hal_2_0_enabled()) return;
   AudioConfiguration audio_config;
   PcmParameters pcm_config{};
   if (!HearingAidGetSelectedHalPcmConfig(&pcm_config)) {
-    LOG(ERROR) << __func__ << ": cannot get PCM config";
+    log::error("cannot get PCM config");
     return;
   }
   audio_config.pcmConfig(pcm_config);
   if (!hearing_aid_hal_clientinterface->UpdateAudioConfig(audio_config)) {
-    LOG(ERROR) << __func__ << ": cannot update audio config to HAL";
+    log::error("cannot update audio config to HAL");
     return;
   }
   hearing_aid_hal_clientinterface->StartSession();
 }
 
 void end_session() {
-  LOG(INFO) << __func__;
+  log::info("");
   if (!is_hal_2_0_enabled()) return;
   hearing_aid_hal_clientinterface->EndSession();
 }
@@ -245,12 +254,11 @@ size_t read(uint8_t* p_buf, uint32_t len) {
 // Update Hearing Aids delay report to BluetoothAudio HAL
 void set_remote_delay(uint16_t delay_report_ms) {
   if (!is_hal_2_0_enabled()) {
-    LOG(INFO) << __func__ << ":  not ready for DelayReport " << delay_report_ms
-              << " ms";
+    log::info("not ready for DelayReport {} ms", delay_report_ms);
     remote_delay_ms = delay_report_ms;
     return;
   }
-  LOG(INFO) << __func__ << ": delay_report_ms=" << delay_report_ms << " ms";
+  log::info("delay_report_ms={} ms", delay_report_ms);
   hearing_aid_sink->SetRemoteDelay(delay_report_ms);
 }
 

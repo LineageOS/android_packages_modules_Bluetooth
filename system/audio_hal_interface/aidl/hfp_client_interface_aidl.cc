@@ -17,6 +17,8 @@
 
 #include "hfp_client_interface_aidl.h"
 
+#include <bluetooth/log.h>
+
 #include <map>
 
 #include "aidl/android/hardware/bluetooth/audio/AudioConfiguration.h"
@@ -46,17 +48,17 @@ std::map<bt_status_t, BluetoothAudioCtrlAck> status_to_ack_map = {
 tBTA_AG_SCB* get_hfp_active_device_callback() {
   const RawAddress& addr = bta_ag_get_active_device();
   if (addr.IsEmpty()) {
-    LOG(ERROR) << __func__ << ": No active device found";
+    log::error("No active device found");
     return nullptr;
   }
   auto idx = bta_ag_idx_by_bdaddr(&addr);
   if (idx == 0) {
-    LOG(ERROR) << __func__ << ": No index found for active device";
+    log::error("No index found for active device");
     return nullptr;
   }
   auto cb = bta_ag_scb_by_idx(idx);
   if (cb == nullptr) {
-    LOG(ERROR) << __func__ << ": No callback for the active device";
+    log::error("No callback for the active device");
     return nullptr;
   }
   return cb;
@@ -73,10 +75,10 @@ HfpTransport::HfpTransport() { hfp_pending_cmd_ = HFP_CTRL_CMD_NONE; }
 
 BluetoothAudioCtrlAck HfpTransport::StartRequest() {
   if (hfp_pending_cmd_ == HFP_CTRL_CMD_START) {
-    LOG(INFO) << __func__ << ": HFP_CTRL_CMD_START in progress";
+    log::info("HFP_CTRL_CMD_START in progress");
     return BluetoothAudioCtrlAck::PENDING;
   } else if (hfp_pending_cmd_ != HFP_CTRL_CMD_NONE) {
-    LOG(WARNING) << __func__ << ": busy in pending_cmd=" << hfp_pending_cmd_;
+    log::warn("busy in pending_cmd={}", hfp_pending_cmd_);
     return BluetoothAudioCtrlAck::FAILURE_BUSY;
   }
 
@@ -94,11 +96,10 @@ BluetoothAudioCtrlAck HfpTransport::StartRequest() {
   // status
   auto status =
       bluetooth::headset::GetInterface()->ConnectAudio(&cb->peer_addr, 0);
-  LOG(INFO) << __func__ << ": ConnectAudio status = " << status << " - "
-            << bt_status_text(status).c_str();
+  log::info("ConnectAudio status = {} - {}", status, bt_status_text(status));
   auto ctrl_ack = status_to_ack_map.find(status);
   if (ctrl_ack == status_to_ack_map.end()) {
-    LOG_WARN("Unmapped status=%d", status);
+    log::warn("Unmapped status={}", status);
     return BluetoothAudioCtrlAck::FAILURE;
   }
   if (ctrl_ack->second != BluetoothAudioCtrlAck::SUCCESS_FINISHED) {
@@ -108,16 +109,15 @@ BluetoothAudioCtrlAck HfpTransport::StartRequest() {
 }
 
 void HfpTransport::StopRequest() {
-  LOG(INFO) << __func__ << ": handling";
+  log::info("handling");
   RawAddress addr = bta_ag_get_active_device();
   if (addr.IsEmpty()) {
-    LOG(ERROR) << __func__ << ": No active device found";
+    log::error("No active device found");
     return;
   }
   hfp_pending_cmd_ = HFP_CTRL_CMD_STOP;
   auto status = bluetooth::headset::GetInterface()->DisconnectAudio(&addr);
-  LOG(INFO) << __func__ << ": DisconnectAudio status = " << status << " - "
-            << bt_status_text(status).c_str();
+  log::info("DisconnectAudio status = {} - {}", status, bt_status_text(status));
   hfp_pending_cmd_ = HFP_CTRL_CMD_NONE;
   return;
 }
