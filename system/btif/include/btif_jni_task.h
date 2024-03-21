@@ -17,6 +17,7 @@
 #pragma once
 
 #include "btif/include/btif_common.h"
+#include "common/postable_context.h"
 #include "include/hardware/bluetooth.h"
 
 void jni_thread_startup();
@@ -55,3 +56,5 @@ bt_status_t do_in_jni_thread(base::OnceClosure task);
 bool is_on_jni_thread();
 
 void post_on_bt_jni(BtJniClosure closure);
+
+bluetooth::common::PostableContext* get_jni();

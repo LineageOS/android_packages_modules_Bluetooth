@@ -29,6 +29,8 @@
 #include <string>
 #include <thread>
 
+#include "common/postable_context.h"
+
 namespace bluetooth {
 namespace common {
 
@@ -214,6 +216,8 @@ void MessageLoopThread::Run(std::promise<void> start_up_promise) {
 void MessageLoopThread::Post(base::OnceClosure closure) {
   DoInThread(FROM_HERE, std::move(closure));
 }
+
+PostableContext* MessageLoopThread::Postable() { return this; }
 
 }  // namespace common
 }  // namespace bluetooth
