@@ -85,13 +85,15 @@ public class DistanceMeasurementManager {
             IDistanceMeasurementCallback callback) {
         Log.i(TAG, "startDistanceMeasurement device:" + params.getDevice().getAnonymizedAddress()
                 + ", method: " + params.getMethodId());
-        String identityAddress = mAdapterService.getIdentityAddress(
-                params.getDevice().getAddress());
-        if (identityAddress == null) {
-            identityAddress = params.getDevice().getAddress();
+        String address = mAdapterService.getIdentityAddress(params.getDevice().getAddress());
+        if (address == null) {
+            address = params.getDevice().getAddress();
         }
-        logd("Get identityAddress: " + params.getDevice().getAnonymizedAddress() + " => "
-                + BluetoothUtils.toAnonymizedAddress(identityAddress));
+        logd(
+                "Get identityAddress: "
+                        + params.getDevice().getAnonymizedAddress()
+                        + " => "
+                        + BluetoothUtils.toAnonymizedAddress(address));
 
         int interval = getIntervalValue(params.getFrequency(), params.getMethodId());
         if (interval == -1) {
@@ -101,8 +103,7 @@ public class DistanceMeasurementManager {
         }
 
         DistanceMeasurementTracker tracker =
-                new DistanceMeasurementTracker(
-                        this, params, identityAddress, uuid, interval, callback);
+                new DistanceMeasurementTracker(this, params, address, uuid, interval, callback);
 
         switch (params.getMethodId()) {
             case DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_AUTO:
@@ -158,19 +159,22 @@ public class DistanceMeasurementManager {
             boolean timeout) {
         Log.i(TAG, "stopDistanceMeasurement device:" + device.getAnonymizedAddress()
                 + ", method: " + method + " timeout " + timeout);
-        String identityAddress = mAdapterService.getIdentityAddress(device.getAddress());
-        if (identityAddress == null) {
-            identityAddress = device.getAddress();
+        String address = mAdapterService.getIdentityAddress(device.getAddress());
+        if (address == null) {
+            address = device.getAddress();
         }
-        logd("Get identityAddress: " + device.getAnonymizedAddress() + " => "
-                + BluetoothUtils.toAnonymizedAddress(identityAddress));
+        logd(
+                "Get identityAddress: "
+                        + device.getAnonymizedAddress()
+                        + " => "
+                        + BluetoothUtils.toAnonymizedAddress(address));
 
         switch (method) {
             case DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_AUTO:
             case DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI:
-                return stopRssiTracker(uuid, identityAddress, timeout);
+                return stopRssiTracker(uuid, address, timeout);
             case DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING:
-                return stopCsTracker(uuid, identityAddress, timeout);
+                return stopCsTracker(uuid, address, timeout);
             default:
                 Log.w(TAG, "stopDistanceMeasurement with invalid method:" + method);
                 return BluetoothStatusCodes.ERROR_DISTANCE_MEASUREMENT_INTERNAL;
