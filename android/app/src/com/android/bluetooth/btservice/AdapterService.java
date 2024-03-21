@@ -7779,9 +7779,12 @@ public class AdapterService extends Service {
                 "screen_off_balanced_interval_millis";
         private static final String LE_AUDIO_ALLOW_LIST = "le_audio_allow_list";
 
-        /** Default denylist which matches Eddystone and iBeacon payloads. */
+        /**
+         * Default denylist which matches Eddystone (except for Eddystone-E2EE-EID) and iBeacon
+         * payloads.
+         */
         private static final String DEFAULT_LOCATION_DENYLIST_ADVERTISING_DATA =
-                "⊆0016AAFE/00FFFFFF,⊆00FF4C0002/00FFFFFFFF";
+                "⊈0016AAFE40/00FFFFFFF0,⊆0016AAFE/00FFFFFF,⊆00FF4C0002/00FFFFFFFF";
 
         private static final int DEFAULT_SCAN_QUOTA_COUNT = 5;
         private static final long DEFAULT_SCAN_QUOTA_WINDOW_MILLIS = 30 * SECOND_IN_MILLIS;
