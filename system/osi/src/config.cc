@@ -20,6 +20,7 @@
 
 #include <base/files/file_util.h>
 #include <base/logging.h>
+#include <bluetooth/log.h>
 #include <ctype.h>
 #include <fcntl.h>
 #include <libgen.h>
@@ -35,6 +36,8 @@
 #include <type_traits>
 
 #include "check.h"
+
+using namespace bluetooth;
 
 void section_t::Set(std::string key, std::string value) {
   for (entry_t& entry : entries) {
@@ -103,8 +106,7 @@ std::unique_ptr<config_t> config_new(const char* filename) {
 
   FILE* fp = fopen(filename, "rt");
   if (!fp) {
-    LOG(ERROR) << __func__ << ": unable to open file '" << filename
-               << "': " << strerror(errno);
+    log::error("unable to open file '{}': {}", filename, strerror(errno));
     return nullptr;
   }
 
@@ -119,12 +121,12 @@ std::unique_ptr<config_t> config_new(const char* filename) {
 std::string checksum_read(const char* filename) {
   base::FilePath path(filename);
   if (!base::PathExists(path)) {
-    LOG(ERROR) << __func__ << ": unable to locate file '" << filename << "'";
+    log::error("unable to locate file '{}'", filename);
     return "";
   }
   std::string encrypted_hash;
   if (!base::ReadFileToString(path, &encrypted_hash)) {
-    LOG(ERROR) << __func__ << ": unable to read file '" << filename << "'";
+    log::error("unable to read file '{}'", filename);
   }
   return encrypted_hash;
 }
@@ -283,22 +285,21 @@ bool config_save(const config_t& config, const std::string& filename) {
   // Extract directory from file path (e.g. /data/misc/bluedroid).
   const std::string directoryname = base::FilePath(filename).DirName().value();
   if (directoryname.empty()) {
-    LOG(ERROR) << __func__ << ": error extracting directory from '" << filename
-               << "': " << strerror(errno);
+    log::error("error extracting directory from '{}': {}", filename,
+               strerror(errno));
     goto error;
   }
 
   dir_fd = open(directoryname.c_str(), O_RDONLY);
   if (dir_fd < 0) {
-    LOG(ERROR) << __func__ << ": unable to open dir '" << directoryname
-               << "': " << strerror(errno);
+    log::error("unable to open dir '{}': {}", directoryname, strerror(errno));
     goto error;
   }
 
   fp = fopen(temp_filename.c_str(), "wt");
   if (!fp) {
-    LOG(ERROR) << __func__ << ": unable to write to file '" << temp_filename
-               << "': " << strerror(errno);
+    log::error("unable to write to file '{}': {}", temp_filename,
+               strerror(errno));
     goto error;
   }
 
@@ -312,28 +313,26 @@ bool config_save(const config_t& config, const std::string& filename) {
   }
 
   if (fprintf(fp, "%s", serialized.str().c_str()) < 0) {
-    LOG(ERROR) << __func__ << ": unable to write to file '" << temp_filename
-               << "': " << strerror(errno);
+    log::error("unable to write to file '{}': {}", temp_filename,
+               strerror(errno));
     goto error;
   }
 
   // Flush the stream buffer to the temp file.
   if (fflush(fp) < 0) {
-    LOG(ERROR) << __func__ << ": unable to write flush buffer to file '"
-               << temp_filename << "': " << strerror(errno);
+    log::error("unable to write flush buffer to file '{}': {}", temp_filename,
+               strerror(errno));
     goto error;
   }
 
   // Sync written temp file out to disk. fsync() is blocking until data makes it
   // to disk.
   if (fsync(fileno(fp)) < 0) {
-    LOG(WARNING) << __func__ << ": unable to fsync file '" << temp_filename
-                 << "': " << strerror(errno);
+    log::warn("unable to fsync file '{}': {}", temp_filename, strerror(errno));
   }
 
   if (fclose(fp) == EOF) {
-    LOG(ERROR) << __func__ << ": unable to close file '" << temp_filename
-               << "': " << strerror(errno);
+    log::error("unable to close file '{}': {}", temp_filename, strerror(errno));
     goto error;
   }
   fp = nullptr;
@@ -341,27 +340,24 @@ bool config_save(const config_t& config, const std::string& filename) {
   // Change the file's permissions to Read/Write by User and Group
   if (chmod(temp_filename.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) ==
       -1) {
-    LOG(ERROR) << __func__ << ": unable to change file permissions '"
-               << filename << "': " << strerror(errno);
+    log::error("unable to change file permissions '{}': {}", filename,
+               strerror(errno));
     goto error;
   }
 
   // Rename written temp file to the actual config file.
   if (rename(temp_filename.c_str(), filename.c_str()) == -1) {
-    LOG(ERROR) << __func__ << ": unable to commit file '" << filename
-               << "': " << strerror(errno);
+    log::error("unable to commit file '{}': {}", filename, strerror(errno));
     goto error;
   }
 
   // This should ensure the directory is updated as well.
   if (fsync(dir_fd) < 0) {
-    LOG(WARNING) << __func__ << ": unable to fsync dir '" << directoryname
-                 << "': " << strerror(errno);
+    log::warn("unable to fsync dir '{}': {}", directoryname, strerror(errno));
   }
 
   if (close(dir_fd) < 0) {
-    LOG(ERROR) << __func__ << ": unable to close dir '" << directoryname
-               << "': " << strerror(errno);
+    log::error("unable to close dir '{}': {}", directoryname, strerror(errno));
     goto error;
   }
 
@@ -400,41 +396,38 @@ bool checksum_save(const std::string& checksum, const std::string& filename) {
   // Extract directory from file path (e.g. /data/misc/bluedroid).
   const std::string directoryname = base::FilePath(filename).DirName().value();
   if (directoryname.empty()) {
-    LOG(ERROR) << __func__ << ": error extracting directory from '" << filename
-               << "': " << strerror(errno);
+    log::error("error extracting directory from '{}': {}", filename,
+               strerror(errno));
     goto error2;
   }
 
   dir_fd = open(directoryname.c_str(), O_RDONLY);
   if (dir_fd < 0) {
-    LOG(ERROR) << __func__ << ": unable to open dir '" << directoryname
-               << "': " << strerror(errno);
+    log::error("unable to open dir '{}': {}", directoryname, strerror(errno));
     goto error2;
   }
 
   if (base::WriteFile(path, checksum.data(), checksum.size()) !=
       (int)checksum.size()) {
-    LOG(ERROR) << __func__ << ": unable to write file '" << filename.c_str();
+    log::error("unable to write file '{}", filename);
     goto error2;
   }
 
   fp = fopen(temp_filename.c_str(), "rb");
   if (!fp) {
-    LOG(ERROR) << __func__ << ": unable to write to file '" << temp_filename
-               << "': " << strerror(errno);
+    log::error("unable to write to file '{}': {}", temp_filename,
+               strerror(errno));
     goto error2;
   }
 
   // Sync written temp file out to disk. fsync() is blocking until data makes it
   // to disk.
   if (fsync(fileno(fp)) < 0) {
-    LOG(WARNING) << __func__ << ": unable to fsync file '" << temp_filename
-                 << "': " << strerror(errno);
+    log::warn("unable to fsync file '{}': {}", temp_filename, strerror(errno));
   }
 
   if (fclose(fp) == EOF) {
-    LOG(ERROR) << __func__ << ": unable to close file '" << temp_filename
-               << "': " << strerror(errno);
+    log::error("unable to close file '{}': {}", temp_filename, strerror(errno));
     goto error2;
   }
   fp = nullptr;
@@ -442,27 +435,24 @@ bool checksum_save(const std::string& checksum, const std::string& filename) {
   // Change the file's permissions to Read/Write by User and Group
   if (chmod(temp_filename.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) ==
       -1) {
-    LOG(ERROR) << __func__ << ": unable to change file permissions '"
-               << filename << "': " << strerror(errno);
+    log::error("unable to change file permissions '{}': {}", filename,
+               strerror(errno));
     goto error2;
   }
 
   // Rename written temp file to the actual config file.
   if (rename(temp_filename.c_str(), filename.c_str()) == -1) {
-    LOG(ERROR) << __func__ << ": unable to commit file '" << filename
-               << "': " << strerror(errno);
+    log::error("unable to commit file '{}': {}", filename, strerror(errno));
     goto error2;
   }
 
   // This should ensure the directory is updated as well.
   if (fsync(dir_fd) < 0) {
-    LOG(WARNING) << __func__ << ": unable to fsync dir '" << directoryname
-                 << "': " << strerror(errno);
+    log::warn("unable to fsync dir '{}': {}", directoryname, strerror(errno));
   }
 
   if (close(dir_fd) < 0) {
-    LOG(ERROR) << __func__ << ": unable to close dir '" << directoryname
-               << "': " << strerror(errno);
+    log::error("unable to close dir '{}': {}", directoryname, strerror(errno));
     goto error2;
   }
 
@@ -508,8 +498,7 @@ static bool config_parse(FILE* fp, config_t* config) {
     if (*line_ptr == '[') {
       size_t len = strlen(line_ptr);
       if (line_ptr[len - 1] != ']') {
-        VLOG(1) << __func__ << ": unterminated section name on line "
-                << line_num;
+        log::verbose("unterminated section name on line {}", line_num);
         return false;
       }
       strncpy(section, line_ptr + 1, len - 2);  // NOLINT (len < 4096)
@@ -517,8 +506,7 @@ static bool config_parse(FILE* fp, config_t* config) {
     } else {
       char* split = strchr(line_ptr, '=');
       if (!split) {
-        VLOG(1) << __func__ << ": no key/value separator found on line "
-                << line_num;
+        log::verbose("no key/value separator found on line {}", line_num);
         return false;
       }
 

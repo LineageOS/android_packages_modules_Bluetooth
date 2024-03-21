@@ -18,6 +18,8 @@
 
 #define LOG_TAG "bt_bte_conf"
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 #include <cstdio>
 #include <memory>
@@ -28,6 +30,8 @@
 #include "osi/include/compat.h"  // strlcpy
 #include "osi/include/config.h"
 
+using namespace bluetooth;
+
 // Parses the specified Device ID configuration file and registers the
 // Device ID records with SDP.
 void bte_load_did_conf(const char* p_path) {
@@ -35,7 +39,7 @@ void bte_load_did_conf(const char* p_path) {
 
   std::unique_ptr<config_t> config = config_new(p_path);
   if (!config) {
-    LOG_ERROR("%s unable to load DID config '%s'.", __func__, p_path);
+    log::error("unable to load DID config '{}'.", p_path);
     return;
   }
 
@@ -44,7 +48,7 @@ void bte_load_did_conf(const char* p_path) {
     snprintf(section_name, sizeof(section_name), "DID%d", i);
 
     if (!config_has_section(*config, section_name)) {
-      LOG_INFO("%s no section named %s.", __func__, section_name);
+      log::info("no section named {}.", section_name);
       break;
     }
 
@@ -75,26 +79,25 @@ void bte_load_did_conf(const char* p_path) {
 
     if (record.vendor_id_source != DI_VENDOR_ID_SOURCE_BTSIG &&
         record.vendor_id_source != DI_VENDOR_ID_SOURCE_USBIF) {
-      LOG_ERROR("%s invalid vendor id source %d; ignoring DID record %d.",
-                __func__, record.vendor_id_source, i);
+      log::error("invalid vendor id source {}; ignoring DID record {}.",
+                 record.vendor_id_source, i);
       continue;
     }
 
-    LOG_INFO("Device ID record %d : %s", i,
-             (record.primary_record ? "primary" : "not primary"));
-    LOG_INFO("  vendorId            = %04x", record.vendor);
-    LOG_INFO("  vendorIdSource      = %04x", record.vendor_id_source);
-    LOG_INFO("  product             = %04x", record.product);
-    LOG_INFO("  version             = %04x", record.version);
-    LOG_INFO("  clientExecutableURL = %s", record.client_executable_url);
-    LOG_INFO("  serviceDescription  = %s", record.service_description);
-    LOG_INFO("  documentationURL    = %s", record.documentation_url);
+    log::info("Device ID record {} : {}", i,
+              (record.primary_record ? "primary" : "not primary"));
+    log::info("vendorId            = {:04x}", record.vendor);
+    log::info("vendorIdSource      = {:04x}", record.vendor_id_source);
+    log::info("product             = {:04x}", record.product);
+    log::info("version             = {:04x}", record.version);
+    log::info("clientExecutableURL = {}", record.client_executable_url);
+    log::info("serviceDescription  = {}", record.service_description);
+    log::info("documentationURL    = {}", record.documentation_url);
 
     uint32_t record_handle;
     tBTA_STATUS status = BTA_DmSetLocalDiRecord(&record, &record_handle);
     if (status != BTA_SUCCESS) {
-      LOG_ERROR("%s unable to set device ID record %d: error %d.", __func__, i,
-                status);
+      log::error("unable to set device ID record {}: error {}.", i, status);
     }
   }
 }

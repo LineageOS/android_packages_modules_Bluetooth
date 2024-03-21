@@ -15,6 +15,8 @@
  */
 #pragma once
 
+#include <bluetooth/log.h>
+
 #include <vector>
 
 #include "common/init_flags.h"
@@ -69,7 +71,7 @@ inline hci::AddressWithType ToAddressWithType(
   else if (legacy_type == BLE_ADDR_RANDOM_ID)
     type = hci::AddressType::RANDOM_IDENTITY_ADDRESS;
   else {
-    LOG_ALWAYS_FATAL("Bad address type %02x", legacy_type);
+    log::fatal("Bad address type {:02x}", legacy_type);
     return hci::AddressWithType{address,
                                 hci::AddressType::PUBLIC_DEVICE_ADDRESS};
   }
@@ -101,8 +103,8 @@ inline tBLE_BD_ADDR ToLegacyAddressWithType(
              hci::AddressType::RANDOM_IDENTITY_ADDRESS) {
     legacy_address_with_type.type = BLE_ADDR_RANDOM_ID;
   } else {
-    LOG_ALWAYS_FATAL("%s Bad address type %02x", __func__,
-                     static_cast<uint8_t>(address_with_type.GetAddressType()));
+    log::fatal("Bad address type {:02x}",
+               static_cast<uint8_t>(address_with_type.GetAddressType()));
     legacy_address_with_type.type = BLE_ADDR_PUBLIC;
   }
   return legacy_address_with_type;
@@ -274,7 +276,7 @@ inline void DumpBtHdr(const BT_HDR* p_buf, const char* token) {
       if (len == 0) break;
       pbuf += sprintf(pbuf, "0x%02x ", *data);
     }
-    LOG_DEBUG("%s %s", token, buf);
+    log::debug("{} {}", token, buf);
   }
 }
 
