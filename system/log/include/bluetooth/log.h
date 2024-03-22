@@ -38,11 +38,24 @@ enum Level {
   kFatal = 7,
 };
 
+/// Information about the location a log is printed from.
+/// Passing this parameter by default value will fill in
+/// the correct information.
+struct source_location {
+  source_location(char const* file_name = __builtin_FILE(),
+                  int line = __builtin_LINE(),
+                  char const* function_name = __builtin_FUNCTION())
+      : line(line), file_name(file_name), function_name(function_name) {}
+
+  int line;
+  char const* file_name;
+  char const* function_name;
+};
+
 /// Write a single log line.
 /// The implementation of this function is dependent on the backend.
-void vlog(Level level, char const* tag, char const* file_name, int line,
-          char const* function_name, fmt::string_view fmt,
-          fmt::format_args vargs);
+void vlog(Level level, char const* tag, source_location location,
+          fmt::string_view fmt, fmt::format_args vargs);
 
 /// Capture invalid parameter values that would cause runtime
 /// formatting errors.
@@ -70,10 +83,8 @@ char*& format_replace(char*& arg) {
 template <Level level, typename... T>
 struct log {
   log(fmt::format_string<T...> fmt, T&&... args,
-      char const* file_name = __builtin_FILE(), int line = __builtin_LINE(),
-      char const* function_name = __builtin_FUNCTION()) {
-    vlog(level, LOG_TAG, file_name, line, function_name,
-         static_cast<fmt::string_view>(fmt),
+      source_location location = source_location()) {
+    vlog(level, LOG_TAG, location, static_cast<fmt::string_view>(fmt),
          fmt::make_format_args(format_replace(args)...));
   }
 };
@@ -149,11 +160,10 @@ verbose(fmt::format_string<T...>, T&&...) -> verbose<T...>;
 template <typename... T>
 struct fatal_if {
   fatal_if(bool cond, fmt::format_string<T...> fmt, T&&... args,
-           char const* file_name = __builtin_FILE(),
-           int line = __builtin_LINE(),
-           char const* function_name = __builtin_FUNCTION()) {
+           log_internal::source_location location =
+               log_internal::source_location()) {
     if (cond) {
-      vlog(log_internal::kFatal, LOG_TAG, file_name, line, function_name,
+      vlog(log_internal::kFatal, LOG_TAG, location,
            static_cast<fmt::string_view>(fmt),
            fmt::make_format_args(format_replace(args)...));
     }
