@@ -2610,6 +2610,9 @@ void btm_ble_process_adv_pkt_cont_for_inquiry(
     include_rsi = true;
   }
 
+  const uint8_t* p_flag = AdvertiseDataParser::GetFieldByType(
+      advertising_data, BTM_BLE_AD_TYPE_FLAG, &len);
+
   tINQ_DB_ENT* p_i = btm_inq_db_find(bda);
 
   /* Check if this address has already been processed for this inquiry */
@@ -2618,7 +2621,9 @@ void btm_ble_process_adv_pkt_cont_for_inquiry(
     if (p_i && (!(p_i->inq_info.results.device_type & BT_DEVICE_TYPE_BLE) ||
                 /* scan response to be updated */
                 (!p_i->scan_rsp) ||
-                (!p_i->inq_info.results.include_rsi && include_rsi))) {
+                (!p_i->inq_info.results.include_rsi && include_rsi) ||
+                (IS_FLAG_ENABLED(update_inquiry_result_on_flag_change) &&
+                 !p_i->inq_info.results.flag && p_flag && *p_flag))) {
       update = true;
     } else if (btm_cb.ble_ctr_cb.is_ble_observe_active()) {
       btm_cb.neighbor.le_observe.results++;
