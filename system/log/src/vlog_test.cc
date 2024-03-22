@@ -118,6 +118,37 @@ TEST(BluetoothLoggerTest, error) {
                "TestBody: error test");
 }
 
+TEST(BluetoothLoggerTest, fatal) {
+  androidLogMessage.reset();
+
+  ASSERT_DEATH(
+      {
+        log::fatal("fatal test");
+        // Validate that the compiler is correctly handling log::fatal as
+        // [[noreturn]] by attempting to invoke an undefined function.
+        // This test will fail linking if this check fails.
+        void undefined_function();
+        undefined_function();
+      },
+      "fatal test");
+
+  ASSERT_DEATH(
+      {
+        log::fatal("fatal test {}", "2");
+        void undefined_function();
+        undefined_function();
+      },
+      "fatal test 2");
+
+  ASSERT_DEATH(
+      {
+        log::fatal("fatal test {}, {}", 2, 3);
+        void undefined_function();
+        undefined_function();
+      },
+      "fatal test 2, 3");
+}
+
 TEST(BluetoothLoggerTest, fatal_if) {
   androidLogMessage.reset();
 
@@ -133,7 +164,7 @@ TEST(BluetoothLoggerTest, null_string_parameter) {
   char const* const_null_str = nullptr;
   log::info("input: {}", const_null_str);
   EXPECT_STREQ(androidLogMessage->message,
-               "packages/modules/Bluetooth/system/log/src/vlog_test.cc:134 "
+               "packages/modules/Bluetooth/system/log/src/vlog_test.cc:165 "
                "TestBody: input: (nullptr)");
 
   androidLogMessage.reset();
@@ -141,7 +172,7 @@ TEST(BluetoothLoggerTest, null_string_parameter) {
   char* null_str = nullptr;
   log::info("input: {}", null_str);
   EXPECT_STREQ(androidLogMessage->message,
-               "packages/modules/Bluetooth/system/log/src/vlog_test.cc:142 "
+               "packages/modules/Bluetooth/system/log/src/vlog_test.cc:173 "
                "TestBody: input: (nullptr)");
 
   androidLogMessage.reset();
@@ -149,6 +180,6 @@ TEST(BluetoothLoggerTest, null_string_parameter) {
   char const* nonnull_str = "hello world";
   log::info("input: {}", nonnull_str);
   EXPECT_STREQ(androidLogMessage->message,
-               "packages/modules/Bluetooth/system/log/src/vlog_test.cc:150 "
+               "packages/modules/Bluetooth/system/log/src/vlog_test.cc:181 "
                "TestBody: input: hello world");
 }

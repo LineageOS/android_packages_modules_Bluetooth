@@ -103,8 +103,6 @@ namespace bluetooth::log {
 #if (__cplusplus >= 202002L && defined(__GNUC__) && !defined(__clang__))
 
 template <typename... T>
-using fatal = log_internal::log<log_internal::kFatal, T...>;
-template <typename... T>
 using error = log_internal::log<log_internal::kError, T...>;
 template <typename... T>
 using warning = log_internal::log<log_internal::kWarning, T...>;
@@ -117,10 +115,6 @@ using verbose = log_internal::log<log_internal::kVerbose, T...>;
 
 #else
 
-template <typename... T>
-struct fatal : log_internal::log<log_internal::kFatal, T...> {
-  using log_internal::log<log_internal::kFatal, T...>::log;
-};
 template <typename... T>
 struct error : log_internal::log<log_internal::kError, T...> {
   using log_internal::log<log_internal::kError, T...>::log;
@@ -143,8 +137,6 @@ struct verbose : log_internal::log<log_internal::kVerbose, T...> {
 };
 
 template <typename... T>
-fatal(fmt::format_string<T...>, T&&...) -> fatal<T...>;
-template <typename... T>
 error(fmt::format_string<T...>, T&&...) -> error<T...>;
 template <typename... T>
 warn(fmt::format_string<T...>, T&&...) -> warn<T...>;
@@ -156,6 +148,61 @@ template <typename... T>
 verbose(fmt::format_string<T...>, T&&...) -> verbose<T...>;
 
 #endif  // GCC / C++20
+
+[[noreturn]] [[maybe_unused]] static void fatal(
+    fmt::format_string<> fmt,
+    log_internal::source_location location = log_internal::source_location()) {
+  vlog(log_internal::kFatal, LOG_TAG, location,
+       static_cast<fmt::string_view>(fmt), fmt::make_format_args());
+  std::abort();  // Enforce [[noreturn]]
+}
+
+template <typename T0>
+[[noreturn]] [[maybe_unused]] static void fatal(
+    fmt::format_string<T0> fmt, T0&& arg0,
+    log_internal::source_location location = log_internal::source_location()) {
+  vlog(log_internal::kFatal, LOG_TAG, location,
+       static_cast<fmt::string_view>(fmt),
+       fmt::make_format_args(log_internal::format_replace(arg0)));
+  std::abort();  // Enforce [[noreturn]]
+}
+
+template <typename T0, typename T1>
+[[noreturn]] [[maybe_unused]] static void fatal(
+    fmt::format_string<T0, T1> fmt, T0&& arg0, T1&& arg1,
+    log_internal::source_location location = log_internal::source_location()) {
+  vlog(log_internal::kFatal, LOG_TAG, location,
+       static_cast<fmt::string_view>(fmt),
+       fmt::make_format_args(log_internal::format_replace(arg0),
+                             log_internal::format_replace(arg1)));
+  std::abort();  // Enforce [[noreturn]]
+}
+
+template <typename T0, typename T1, typename T2>
+[[noreturn]] [[maybe_unused]] static void fatal(
+    fmt::format_string<T0, T1, T2> fmt, T0&& arg0, T1&& arg1, T2&& arg2,
+    log_internal::source_location location = log_internal::source_location()) {
+  vlog(log_internal::kFatal, LOG_TAG, location,
+       static_cast<fmt::string_view>(fmt),
+       fmt::make_format_args(log_internal::format_replace(arg0),
+                             log_internal::format_replace(arg1),
+                             log_internal::format_replace(arg2)));
+  std::abort();  // Enforce [[noreturn]]
+}
+
+template <typename T0, typename T1, typename T2, typename T3>
+[[noreturn]] [[maybe_unused]] static void fatal(
+    fmt::format_string<T0, T1, T2, T3> fmt, T0&& arg0, T1&& arg1, T2&& arg2,
+    T3&& arg3,
+    log_internal::source_location location = log_internal::source_location()) {
+  vlog(log_internal::kFatal, LOG_TAG, location,
+       static_cast<fmt::string_view>(fmt),
+       fmt::make_format_args(log_internal::format_replace(arg0),
+                             log_internal::format_replace(arg1),
+                             log_internal::format_replace(arg2),
+                             log_internal::format_replace(arg3)));
+  std::abort();  // Enforce [[noreturn]]
+}
 
 template <typename... T>
 struct fatal_if {
