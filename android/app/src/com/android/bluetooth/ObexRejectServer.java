@@ -37,7 +37,6 @@ import java.io.IOException;
 public class ObexRejectServer extends ServerRequestHandler implements Handler.Callback {
 
     private static final String TAG = "ObexRejectServer";
-    private static final boolean V = true;
     private final int mResult;
     private final HandlerThread mHandlerThread;
     private final Handler mMessageHandler;
@@ -64,9 +63,7 @@ public class ObexRejectServer extends ServerRequestHandler implements Handler.Ca
     // OBEX operation handlers
     @Override
     public int onConnect(HeaderSet request, HeaderSet reply) {
-        if (V) {
-            Log.i(TAG, "onConnect() returning error");
-        }
+        Log.i(TAG, "onConnect() returning error");
         return mResult;
     }
 
@@ -83,9 +80,7 @@ public class ObexRejectServer extends ServerRequestHandler implements Handler.Ca
 
     @Override
     public boolean handleMessage(Message msg) {
-        if (V) {
-            Log.i(TAG, "Handling message ID: " + msg.what);
-        }
+        Log.i(TAG, "Handling message ID: " + msg.what);
         switch (msg.what) {
             case MSG_ID_TIMEOUT:
                 shutdown();
