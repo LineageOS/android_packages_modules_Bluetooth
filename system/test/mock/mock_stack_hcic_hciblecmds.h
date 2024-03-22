@@ -571,29 +571,6 @@ struct btsnd_hcic_ble_transmitter_test {
 };
 extern struct btsnd_hcic_ble_transmitter_test btsnd_hcic_ble_transmitter_test;
 
-// Name: btsnd_hcic_ble_upd_ll_conn_params
-// Params: uint16_t handle, uint16_t conn_int_min, uint16_t conn_int_max,
-// uint16_t conn_latency, uint16_t conn_timeout, uint16_t min_ce_len, uint16_t
-// max_ce_len Return: void
-struct btsnd_hcic_ble_upd_ll_conn_params {
-  std::function<void(uint16_t handle, uint16_t conn_int_min,
-                     uint16_t conn_int_max, uint16_t conn_latency,
-                     uint16_t conn_timeout, uint16_t min_ce_len,
-                     uint16_t max_ce_len)>
-      body{[](uint16_t /* handle */, uint16_t /* conn_int_min */,
-              uint16_t /* conn_int_max */, uint16_t /* conn_latency */,
-              uint16_t /* conn_timeout */, uint16_t /* min_ce_len */,
-              uint16_t /* max_ce_len */) {}};
-  void operator()(uint16_t handle, uint16_t conn_int_min, uint16_t conn_int_max,
-                  uint16_t conn_latency, uint16_t conn_timeout,
-                  uint16_t min_ce_len, uint16_t max_ce_len) {
-    body(handle, conn_int_min, conn_int_max, conn_latency, conn_timeout,
-         min_ce_len, max_ce_len);
-  };
-};
-extern struct btsnd_hcic_ble_upd_ll_conn_params
-    btsnd_hcic_ble_upd_ll_conn_params;
-
 // Name: btsnd_hcic_ble_write_adv_params
 // Params: uint16_t adv_int_min, uint16_t adv_int_max, uint8_t adv_type,
 // tBLE_ADDR_TYPE addr_type_own, tBLE_ADDR_TYPE addr_type_dir, const RawAddress&

@@ -85,7 +85,6 @@ struct btsnd_hcic_ble_set_scan_params btsnd_hcic_ble_set_scan_params;
 struct btsnd_hcic_ble_start_enc btsnd_hcic_ble_start_enc;
 struct btsnd_hcic_ble_test_end btsnd_hcic_ble_test_end;
 struct btsnd_hcic_ble_transmitter_test btsnd_hcic_ble_transmitter_test;
-struct btsnd_hcic_ble_upd_ll_conn_params btsnd_hcic_ble_upd_ll_conn_params;
 struct btsnd_hcic_ble_write_adv_params btsnd_hcic_ble_write_adv_params;
 struct btsnd_hcic_create_big btsnd_hcic_create_big;
 struct btsnd_hcic_create_cis btsnd_hcic_create_cis;
@@ -328,17 +327,6 @@ void btsnd_hcic_ble_transmitter_test(uint8_t tx_freq, uint8_t test_data_len,
   inc_func_call_count(__func__);
   test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_transmitter_test(
       tx_freq, test_data_len, payload);
-}
-void btsnd_hcic_ble_upd_ll_conn_params(uint16_t handle, uint16_t conn_int_min,
-                                       uint16_t conn_int_max,
-                                       uint16_t conn_latency,
-                                       uint16_t conn_timeout,
-                                       uint16_t min_ce_len,
-                                       uint16_t max_ce_len) {
-  inc_func_call_count(__func__);
-  test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_upd_ll_conn_params(
-      handle, conn_int_min, conn_int_max, conn_latency, conn_timeout,
-      min_ce_len, max_ce_len);
 }
 void btsnd_hcic_ble_write_adv_params(uint16_t adv_int_min, uint16_t adv_int_max,
                                      uint8_t adv_type,
