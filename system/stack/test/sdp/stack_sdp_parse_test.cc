@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
 #include <flag_macros.h>
 #include <gtest/gtest.h>
@@ -157,8 +158,8 @@ class StackSdpAsClientParseTest : public StackSdpParserInitTest {
              pkt->len - kSdpPacketStartOffset);
       sdp_disc_server_rsp(p_ccb_, bt_hdr);
       osi_free(data);
-      LOG_INFO("i:%zu L2CA_DisconnectReq:%d", i,
-               get_func_call_count("L2CA_DisconnectReq"));
+      bluetooth::log::info("i:{} L2CA_DisconnectReq:{}", i,
+                           get_func_call_count("L2CA_DisconnectReq"));
     }
   }
 };

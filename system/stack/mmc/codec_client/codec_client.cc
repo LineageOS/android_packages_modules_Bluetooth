@@ -18,6 +18,7 @@
 
 #include <base/logging.h>
 #include <base/timer/elapsed_timer.h>
+#include <bluetooth/log.h>
 #include <dbus/bus.h>
 #include <dbus/message.h>
 #include <dbus/object_proxy.h>
@@ -37,6 +38,8 @@
 namespace mmc {
 namespace {
 
+using namespace bluetooth;
+
 // Codec param field number in |ConfigParam|
 const int kUnsupportedType = -1;
 const int kHfpLc3EncoderId = 1;
@@ -53,7 +56,7 @@ int CodecId(const ConfigParam& config) {
   } else if (config.has_a2dp_aac_encoder_param()) {
     return kA2dpAacEncoderId;
   } else {
-    LOG(WARNING) << "Unsupported codec type is used.";
+    log::warn("Unsupported codec type is used.");
     return kUnsupportedType;
   }
 }
@@ -70,7 +73,7 @@ CodecClient::CodecClient() {
   bus_ = new dbus::Bus(options);
 
   if (!bus_->Connect()) {
-    LOG(ERROR) << "Failed to connect system bus";
+    log::error("Failed to connect system bus");
     return;
   }
 
@@ -78,7 +81,7 @@ CodecClient::CodecClient() {
   codec_manager_ = bus_->GetObjectProxy(mmc::kMmcServiceName,
                                         dbus::ObjectPath(mmc::kMmcServicePath));
   if (!codec_manager_) {
-    LOG(ERROR) << "Failed to get object proxy";
+    log::error("Failed to get object proxy");
     return;
   }
 }
@@ -101,7 +104,7 @@ int CodecClient::init(const ConfigParam config) {
   mmc::CodecInitRequest request;
   *request.mutable_config() = config;
   if (!writer.AppendProtoAsArrayOfBytes(request)) {
-    LOG(ERROR) << "Failed to encode CodecInitRequest protobuf";
+    log::error("Failed to encode CodecInitRequest protobuf");
     return -EINVAL;
   }
 
@@ -116,31 +119,31 @@ int CodecClient::init(const ConfigParam config) {
       ;
 
   if (!dbus_response) {
-    LOG(ERROR) << "CodecInit failed";
+    log::error("CodecInit failed");
     return -ECOMM;
   }
 
   dbus::MessageReader reader(dbus_response.get());
   mmc::CodecInitResponse response;
   if (!reader.PopArrayOfBytesAsProto(&response)) {
-    LOG(ERROR) << "Failed to parse response protobuf";
+    log::error("Failed to parse response protobuf");
     return -EINVAL;
   }
 
   if (response.socket_token().empty()) {
-    LOG(ERROR) << "CodecInit returned empty socket token";
+    log::error("CodecInit returned empty socket token");
     return -EBADMSG;
   }
 
   if (response.input_frame_size() < 0) {
-    LOG(ERROR) << "CodecInit returned negative frame size";
+    log::error("CodecInit returned negative frame size");
     return -EBADMSG;
   }
 
   // Create socket.
   skt_fd_ = socket(AF_UNIX, SOCK_SEQPACKET, 0);
   if (skt_fd_ < 0) {
-    LOG(ERROR) << "Failed to create socket: " << strerror(errno);
+    log::error("Failed to create socket: {}", strerror(errno));
     return -errno;
   }
 
@@ -153,7 +156,7 @@ int CodecClient::init(const ConfigParam config) {
   int rc =
       connect(skt_fd_, (struct sockaddr*)&addr, sizeof(struct sockaddr_un));
   if (rc < 0) {
-    LOG(ERROR) << "Failed to connect socket: " << strerror(errno);
+    log::error("Failed to connect socket: {}", strerror(errno));
     return -errno;
   }
   unlink(addr.sun_path);
@@ -186,7 +189,7 @@ void CodecClient::cleanup() {
       ;
 
   if (!dbus_response) {
-    LOG(WARNING) << "CodecCleanUp failed";
+    log::warn("CodecCleanUp failed");
   }
   return;
 }
@@ -198,12 +201,12 @@ int CodecClient::transcode(uint8_t* i_buf, int i_len, uint8_t* o_buf,
 
   // i_buf and o_buf cannot be null.
   if (i_buf == nullptr || o_buf == nullptr) {
-    LOG(ERROR) << "Buffer is null";
+    log::error("Buffer is null");
     return -EINVAL;
   }
 
   if (i_len <= 0 || o_len <= 0) {
-    LOG(ERROR) << "Non-positive buffer length";
+    log::error("Non-positive buffer length");
     return -EINVAL;
   }
 
@@ -211,12 +214,12 @@ int CodecClient::transcode(uint8_t* i_buf, int i_len, uint8_t* o_buf,
   int rc = send(skt_fd_, i_buf, i_len, MSG_NOSIGNAL);
 
   if (rc < 0) {
-    LOG(ERROR) << "Failed to send data: " << strerror(errno);
+    log::error("Failed to send data: {}", strerror(errno));
     return -errno;
   }
   // Full packet should be sent under SOCK_SEQPACKET setting.
   if (rc < i_len) {
-    LOG(ERROR) << "Failed to send full packet";
+    log::error("Failed to send full packet");
     return -EIO;
   }
 
@@ -226,24 +229,24 @@ int CodecClient::transcode(uint8_t* i_buf, int i_len, uint8_t* o_buf,
 
   int pollret = poll(&pfd, 1, -1);
   if (pollret < 0) {
-    LOG(ERROR) << "Failed to poll: " << strerror(errno);
+    log::error("Failed to poll: {}", strerror(errno));
     return -errno;
   }
 
   if (pfd.revents & (POLLHUP | POLLNVAL)) {
-    LOG(ERROR) << "Socket closed remotely.";
+    log::error("Socket closed remotely.");
     return -EIO;
   }
 
   // POLLIN is returned..
   rc = recv(skt_fd_, o_buf, o_len, MSG_NOSIGNAL);
   if (rc < 0) {
-    LOG(ERROR) << "Failed to recv data: " << strerror(errno);
+    log::error("Failed to recv data: {}", strerror(errno));
     return -errno;
   }
   // Should be able to recv data when POLLIN is returned.
   if (rc == 0) {
-    LOG(ERROR) << "Failed to recv data";
+    log::error("Failed to recv data");
     return -EIO;
   }
 

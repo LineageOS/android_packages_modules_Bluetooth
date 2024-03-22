@@ -16,6 +16,7 @@
 
 #include <base/functional/bind.h>
 #include <base/location.h>
+#include <bluetooth/log.h>
 
 #include <cstdint>
 #include <optional>
@@ -56,8 +57,8 @@ void GattServerCallbacks::OnServerRead(uint16_t conn_id, uint32_t trans_id,
                                        uint32_t offset, bool is_long) const {
   auto addr = AddressOfConnection(conn_id);
   if (!addr.has_value()) {
-    LOG_WARN(
-        "Dropping server read characteristic since connection %d not found",
+    log::warn(
+        "Dropping server read characteristic since connection {} not found",
         conn_id);
     return;
   }
@@ -76,7 +77,7 @@ void GattServerCallbacks::OnServerRead(uint16_t conn_id, uint32_t trans_id,
                          trans_id, addr.value(), attr_handle, offset, is_long));
       break;
     default:
-      LOG_ALWAYS_FATAL("Unexpected backing type %d", attr_type);
+      log::fatal("Unexpected backing type {}", attr_type);
   }
 }
 
@@ -86,8 +87,8 @@ void GattServerCallbacks::OnServerWrite(
     bool is_prepare, ::rust::Slice<const uint8_t> value) const {
   auto addr = AddressOfConnection(conn_id);
   if (!addr.has_value()) {
-    LOG_WARN(
-        "Dropping server write characteristic since connection %d not found",
+    log::warn(
+        "Dropping server write characteristic since connection {} not found",
         conn_id);
     return;
   }
@@ -113,7 +114,7 @@ void GattServerCallbacks::OnServerWrite(
                          value.size()));
       break;
     default:
-      LOG_ALWAYS_FATAL("Unexpected backing type %hhu", attr_type);
+      log::fatal("Unexpected backing type {}", attr_type);
   }
 }
 
@@ -127,8 +128,8 @@ void GattServerCallbacks::OnExecute(uint16_t conn_id, uint32_t trans_id,
                                     bool execute) const {
   auto addr = AddressOfConnection(conn_id);
   if (!addr.has_value()) {
-    LOG_WARN("Dropping server execute write since connection %d not found",
-             conn_id);
+    log::warn("Dropping server execute write since connection {} not found",
+              conn_id);
     return;
   }
 

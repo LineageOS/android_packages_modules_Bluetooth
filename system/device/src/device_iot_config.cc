@@ -16,10 +16,12 @@
  *  limitations under the License.
  *
  ******************************************************************************/
-#include "internal_include/bt_target.h"
-
 #define LOG_TAG "device_iot_config"
+
+#include "device/include/device_iot_config.h"
+
 #include <base/logging.h>
+#include <bluetooth/log.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
@@ -30,9 +32,9 @@
 #include <string>
 
 #include "common/init_flags.h"
-#include "device/include/device_iot_config.h"
 #include "device_iot_config_int.h"
 #include "include/check.h"
+#include "internal_include/bt_target.h"
 #include "os/log.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
@@ -49,6 +51,7 @@ std::unique_ptr<config_t> config;
 alarm_t* config_timer;
 
 using bluetooth::common::InitFlags;
+using namespace bluetooth;
 
 bool device_iot_config_has_section(const std::string& section) {
   if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return false;
@@ -275,12 +278,12 @@ bool device_iot_config_set_bin(const std::string& section,
 
   CHECK(config != NULL);
 
-  LOG_VERBOSE("Key = %s", key.c_str());
+  log::verbose("Key = {}", key);
   if (length > 0) CHECK(value != NULL);
 
   char* str = (char*)osi_calloc(length * 2 + 1);
   if (str == NULL) {
-    LOG_ERROR("Unable to allocate a str.");
+    log::error("Unable to allocate a str.");
     return false;
   }
 
@@ -320,7 +323,7 @@ void device_iot_config_flush(void) {
 
   int event = alarm_is_scheduled(config_timer) ? IOT_CONFIG_SAVE_TIMER_FIRED_EVT
                                                : IOT_CONFIG_FLUSH_EVT;
-  LOG_VERBOSE("evt=%d", event);
+  log::verbose("evt={}", event);
   alarm_cancel(config_timer);
   device_iot_config_write(event, NULL);
 }
@@ -331,7 +334,7 @@ bool device_iot_config_clear(void) {
   CHECK(config != NULL);
   CHECK(config_timer != NULL);
 
-  LOG_INFO("");
+  log::info("");
   alarm_cancel(config_timer);
 
   std::unique_lock<std::mutex> lock(config_lock);

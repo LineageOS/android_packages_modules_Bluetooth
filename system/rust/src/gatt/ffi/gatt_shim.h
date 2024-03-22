@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 
 #include "include/hardware/bluetooth.h"
@@ -58,3 +60,9 @@ class GattServerCallbacks {
 
 }  // namespace gatt
 }  // namespace bluetooth
+
+namespace fmt {
+template <>
+struct formatter<bluetooth::gatt::AttributeBackingType>
+    : enum_formatter<bluetooth::gatt::AttributeBackingType> {};
+}  // namespace fmt

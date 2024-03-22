@@ -21,6 +21,7 @@
 #include <base/run_loop.h>
 #include <base/strings/stringprintf.h>
 #include <base/task/single_thread_task_executor.h>
+#include <bluetooth/log.h>
 #include <sys/syslog.h>
 
 #include "mmc/daemon/service.h"
@@ -86,7 +87,7 @@ int main(int argc, char* argv[]) {
   logging::InitLogging(settings);
   logging::SetLogMessageHandler(MessageHandler);
 
-  LOG(INFO) << "Start MMC daemon";
+  bluetooth::log::info("Start MMC daemon");
 
   // These are needed to send D-Bus signals and receive messages.
   // Even though they are not used directly, they set up some global state

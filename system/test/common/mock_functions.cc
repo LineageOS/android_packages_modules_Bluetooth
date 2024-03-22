@@ -16,6 +16,8 @@
 
 #include "test/common/mock_functions.h"
 
+#include <bluetooth/log.h>
+
 #include <map>
 
 #include "os/log.h"
@@ -35,10 +37,10 @@ void reset_mock_function_count_map() { _get_func_call_count_map().clear(); }
 int get_func_call_size() { return _get_func_call_count_map().size(); }
 
 void dump_mock_function_count_map() {
-  LOG_INFO("Mock function count map size:%zu",
-           _get_func_call_count_map().size());
+  bluetooth::log::info("Mock function count map size:{}",
+                       _get_func_call_count_map().size());
 
   for (const auto& it : _get_func_call_count_map()) {
-    LOG_INFO("function:%s: call_count:%d", it.first.c_str(), it.second);
+    bluetooth::log::info("function:{}: call_count:{}", it.first, it.second);
   }
 }

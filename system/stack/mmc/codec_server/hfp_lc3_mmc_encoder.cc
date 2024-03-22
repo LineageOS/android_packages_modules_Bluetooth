@@ -17,6 +17,7 @@
 #include "mmc/codec_server/hfp_lc3_mmc_encoder.h"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 #include <lc3.h>
 
 #include <algorithm>
@@ -27,6 +28,8 @@
 
 namespace mmc {
 
+using namespace bluetooth;
+
 HfpLc3Encoder::HfpLc3Encoder() : hfp_lc3_encoder_mem_(nullptr) {}
 
 HfpLc3Encoder::~HfpLc3Encoder() { cleanup(); }
@@ -35,7 +38,7 @@ int HfpLc3Encoder::init(ConfigParam config) {
   cleanup();
 
   if (!config.has_hfp_lc3_encoder_param()) {
-    LOG(ERROR) << "HFP LC3 encoder params are not set";
+    log::error("HFP LC3 encoder params are not set");
     return -EINVAL;
   }
 
@@ -51,7 +54,7 @@ int HfpLc3Encoder::init(ConfigParam config) {
       lc3_setup_encoder(dt_us, sr_hz, sr_pcm_hz, hfp_lc3_encoder_mem_);
 
   if (hfp_lc3_encoder_ == nullptr) {
-    LOG(ERROR) << "Wrong parameters provided";
+    log::error("Wrong parameters provided");
     return -EINVAL;
   }
 
@@ -61,14 +64,14 @@ int HfpLc3Encoder::init(ConfigParam config) {
 void HfpLc3Encoder::cleanup() {
   if (hfp_lc3_encoder_mem_) {
     osi_free_and_reset((void**)&hfp_lc3_encoder_mem_);
-    LOG(INFO) << "Released the encoder instance";
+    log::info("Released the encoder instance");
   }
 }
 
 int HfpLc3Encoder::transcode(uint8_t* i_buf, int i_len, uint8_t* o_buf,
                              int o_len) {
   if (i_buf == nullptr || o_buf == nullptr) {
-    LOG(ERROR) << "Buffer is null";
+    log::error("Buffer is null");
     return -EINVAL;
   }
 
@@ -77,7 +80,7 @@ int HfpLc3Encoder::transcode(uint8_t* i_buf, int i_len, uint8_t* o_buf,
                       param_.stride(), HFP_LC3_PKT_FRAME_LEN, o_buf);
 
   if (rc != 0) {
-    LOG(WARNING) << "Wrong encode parameters";
+    log::warn("Wrong encode parameters");
     std::fill(o_buf, o_buf + o_len, 0);
   }
 
