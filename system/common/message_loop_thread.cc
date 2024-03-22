@@ -21,6 +21,7 @@
 #include <base/logging.h>
 #include <base/strings/stringprintf.h>
 #include <base/time/time.h>
+#include <bluetooth/log.h>
 #include <sys/syscall.h>
 #include <unistd.h>
 
@@ -62,7 +63,7 @@ void MessageLoopThread::StartUp() {
   {
     std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
     if (thread_ != nullptr) {
-      LOG(WARNING) << __func__ << ": thread " << *this << " is already started";
+      log::warn("thread {} is already started", *this);
 
       return;
     }
@@ -84,15 +85,14 @@ bool MessageLoopThread::DoInThreadDelayed(const base::Location& from_here,
   std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
 
   if (message_loop_ == nullptr) {
-    LOG(ERROR) << __func__ << ": message loop is null for thread " << *this
-               << ", from " << from_here.ToString();
+    log::error("message loop is null for thread {}, from {}", *this,
+               from_here.ToString());
     return false;
   }
   if (!message_loop_->task_runner()->PostDelayedTask(
           from_here, std::move(task), timeDeltaFromMicroseconds(delay))) {
-    LOG(ERROR) << __func__
-               << ": failed to post task to message loop for thread " << *this
-               << ", from " << from_here.ToString();
+    log::error("failed to post task to message loop for thread {}, from {}",
+               *this, from_here.ToString());
     return false;
   }
   return true;
@@ -102,15 +102,15 @@ void MessageLoopThread::ShutDown() {
   {
     std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
     if (thread_ == nullptr) {
-      LOG(INFO) << __func__ << ": thread " << *this << " is already stopped";
+      log::info("thread {} is already stopped", *this);
       return;
     }
     if (message_loop_ == nullptr) {
-      LOG(INFO) << __func__ << ": message_loop_ is null. Already stopping";
+      log::info("message_loop_ is null. Already stopping");
       return;
     }
     if (shutting_down_) {
-      LOG(INFO) << __func__ << ": waiting for thread to join";
+      log::info("waiting for thread to join");
       return;
     }
     shutting_down_ = true;
@@ -161,7 +161,7 @@ bool MessageLoopThread::EnableRealTimeScheduling() {
   std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
 
   if (!IsRunning()) {
-    LOG(ERROR) << __func__ << ": thread " << *this << " is not running";
+    log::error("thread {} is not running", *this);
     return false;
   }
 
@@ -169,10 +169,10 @@ bool MessageLoopThread::EnableRealTimeScheduling() {
                                       kRealTimeFifoSchedulingPriority};
   int rc = sched_setscheduler(linux_tid_, SCHED_FIFO, &rt_params);
   if (rc != 0) {
-    LOG(ERROR) << __func__ << ": unable to set SCHED_FIFO priority "
-               << kRealTimeFifoSchedulingPriority << " for linux_tid "
-               << std::to_string(linux_tid_) << ", thread " << *this
-               << ", error: " << strerror(errno);
+    log::error(
+        "unable to set SCHED_FIFO priority {} for linux_tid {}, thread {}, "
+        "error: {}",
+        kRealTimeFifoSchedulingPriority, linux_tid_, *this, strerror(errno));
     return false;
   }
   return true;
@@ -187,8 +187,7 @@ void MessageLoopThread::Run(std::promise<void> start_up_promise) {
   {
     std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
 
-    LOG(INFO) << __func__ << ": message loop starting for thread "
-              << thread_name_;
+    log::info("message loop starting for thread {}", thread_name_);
     base::PlatformThread::SetName(thread_name_);
     message_loop_ = new btbase::AbstractMessageLoop();
     run_loop_ = new base::RunLoop();
@@ -208,8 +207,7 @@ void MessageLoopThread::Run(std::promise<void> start_up_promise) {
     message_loop_ = nullptr;
     delete run_loop_;
     run_loop_ = nullptr;
-    LOG(INFO) << __func__ << ": message loop finished for thread "
-              << thread_name_;
+    log::info("message loop finished for thread {}", thread_name_);
   }
 }
 

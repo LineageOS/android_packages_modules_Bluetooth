@@ -19,6 +19,7 @@
 #include "metric_id_allocator.h"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include <functional>
 #include <mutex>
@@ -58,9 +59,9 @@ bool MetricIdAllocator::Init(
 
   // init paired_devices_map
   if (paired_device_map.size() > kMaxNumPairedDevicesInMemory) {
-    LOG(FATAL)
-        << LOGGING_TAG
-        << "Paired device map is bigger than kMaxNumPairedDevicesInMemory";
+    log::fatal(
+        "{}Paired device map is bigger than kMaxNumPairedDevicesInMemory",
+        LOGGING_TAG);
     // fail loudly to let caller know
     return false;
   }
@@ -68,7 +69,7 @@ bool MetricIdAllocator::Init(
   next_id_ = kMinId;
   for (const auto& p : paired_device_map) {
     if (p.second < kMinId || p.second > kMaxId) {
-      LOG(FATAL) << LOGGING_TAG << "Invalid Bluetooth Metric Id in config";
+      log::fatal("{}Invalid Bluetooth Metric Id in config", LOGGING_TAG);
     }
     auto evicted = paired_device_cache_.Put(p.first, p.second);
     if (evicted) {
@@ -130,7 +131,7 @@ int MetricIdAllocator::AllocateId(const RawAddress& mac_address) {
     next_id_++;
     if (next_id_ > kMaxId) {
       next_id_ = kMinId;
-      LOG(WARNING) << LOGGING_TAG << "Bluetooth metric id overflow.";
+      log::warn("{}Bluetooth metric id overflow.", LOGGING_TAG);
     }
   }
   id = next_id_++;
@@ -154,14 +155,15 @@ bool MetricIdAllocator::SaveDevice(const RawAddress& mac_address) {
     return true;
   }
   if (!temporary_device_cache_.Get(mac_address, &id)) {
-    LOG(ERROR) << LOGGING_TAG
-               << "Failed to save device because device is not in "
-               << "temporary_device_cache_";
+    log::error(
+        "{}Failed to save device because device is not in "
+        "temporary_device_cache_",
+        LOGGING_TAG);
     return false;
   }
   if (!temporary_device_cache_.Remove(mac_address)) {
-    LOG(ERROR) << LOGGING_TAG
-               << "Failed to remove device from temporary_device_cache_";
+    log::error("{}Failed to remove device from temporary_device_cache_",
+               LOGGING_TAG);
     return false;
   }
   auto evicted = paired_device_cache_.Put(mac_address, id);
@@ -169,8 +171,8 @@ bool MetricIdAllocator::SaveDevice(const RawAddress& mac_address) {
     ForgetDevicePostprocess(evicted->first, evicted->second);
   }
   if (!save_id_callback_(mac_address, id)) {
-    LOG(ERROR) << LOGGING_TAG
-               << "Callback returned false after saving the device";
+    log::error("{}Callback returned false after saving the device",
+               LOGGING_TAG);
     return false;
   }
   return true;
@@ -181,14 +183,15 @@ void MetricIdAllocator::ForgetDevice(const RawAddress& mac_address) {
   std::lock_guard<std::mutex> lock(id_allocator_mutex_);
   int id = 0;
   if (!paired_device_cache_.Get(mac_address, &id)) {
-    LOG(ERROR) << LOGGING_TAG
-               << "Failed to forget device because device is not in "
-               << "paired_device_cache_";
+    log::error(
+        "{}Failed to forget device because device is not in "
+        "paired_device_cache_",
+        LOGGING_TAG);
     return;
   }
   if (!paired_device_cache_.Remove(mac_address)) {
-    LOG(ERROR) << LOGGING_TAG
-               << "Failed to remove device from paired_device_cache_";
+    log::error("{}Failed to remove device from paired_device_cache_",
+               LOGGING_TAG);
     return;
   }
   ForgetDevicePostprocess(mac_address, id);

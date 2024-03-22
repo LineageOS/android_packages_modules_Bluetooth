@@ -20,6 +20,7 @@
 #include <base/location.h>
 #include <base/run_loop.h>
 #include <base/threading/platform_thread.h>
+#include <bluetooth/log.h>
 #include <unistd.h>
 
 #include <future>
@@ -217,5 +218,9 @@ inline std::ostream& operator<<(std::ostream& os,
 }
 
 }  // namespace common
-
 }  // namespace bluetooth
+
+namespace fmt {
+template <>
+struct formatter<bluetooth::common::MessageLoopThread> : ostream_formatter {};
+}  // namespace fmt

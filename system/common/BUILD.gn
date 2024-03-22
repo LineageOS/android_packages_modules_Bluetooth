@@ -62,6 +62,7 @@ if (use.test) {
       "//bt/system:external_gtest_main",
       "//bt/system:external_gmock_main",
       "//bt/system:target_defaults",
+      "//bt/system/log:log_defaults",
     ]
 
     libs = [
