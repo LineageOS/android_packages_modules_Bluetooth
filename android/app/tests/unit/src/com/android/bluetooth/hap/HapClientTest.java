@@ -66,7 +66,6 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
-import com.android.bluetooth.jarjar.com.android.modules.utils.SynchronousResultReceiver;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -81,7 +80,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -259,11 +257,7 @@ public class HapClientTest {
                 .getProfileConnectionPolicy(mDevice, BluetoothProfile.HAP_CLIENT))
                 .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
         // call getConnectionPolicy via binder
-        final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-        int defaultRecvValue = -1000;
-        mServiceBinder.getConnectionPolicy(mDevice, mAttributionSource, recv);
-        int policy = recv.awaitResultNoInterrupt(Duration.ofMillis(TIMEOUT_MS))
-                .getValue(defaultRecvValue);
+        int policy = mServiceBinder.getConnectionPolicy(mDevice, mAttributionSource);
         Assert.assertEquals("Setting device policy to POLICY_ALLOWED",
                 BluetoothProfile.CONNECTION_POLICY_ALLOWED, policy);
     }
@@ -422,11 +416,7 @@ public class HapClientTest {
                                         hasExtra(EXTRA_PREVIOUS_STATE, STATE_CONNECTING))),
                         any());
 
-        final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-        int defaultRecvValue = -1000;
-        mServiceBinder.getConnectionState(mDevice, mAttributionSource, recv);
-        int state = recv.awaitResultNoInterrupt(Duration.ofMillis(TIMEOUT_MS))
-                .getValue(defaultRecvValue);
+        int state = mServiceBinder.getConnectionState(mDevice, mAttributionSource);
         Assert.assertEquals(BluetoothProfile.STATE_DISCONNECTED, state);
     }
 
@@ -447,11 +437,7 @@ public class HapClientTest {
         testConnectingDevice(order, Device2);
 
         // indirect call of mService.getConnectedDevices to test BluetoothHearingAidBinder
-        final SynchronousResultReceiver<List<BluetoothDevice>> recv =
-                SynchronousResultReceiver.get();
-        mServiceBinder.getConnectedDevices(mAttributionSource, recv);
-        List<BluetoothDevice> devices = recv.awaitResultNoInterrupt(Duration.ofMillis(TIMEOUT_MS))
-                .getValue(null);
+        List<BluetoothDevice> devices = mServiceBinder.getConnectedDevices(mAttributionSource);
         Assert.assertTrue(devices.contains(mDevice));
         Assert.assertTrue(devices.contains(Device2));
         Assert.assertNotEquals(mDevice, Device2);
@@ -496,11 +482,7 @@ public class HapClientTest {
         Assert.assertEquals(3, mService.getHapGroup(mDevice3));
 
         /* Third one has no coordinated operations support but is part of the group */
-        final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-        int defaultRecvValue = -1000;
-        mServiceBinder.getHapGroup(mDevice2, mAttributionSource, recv);
-        int hapGroup = recv.awaitResultNoInterrupt(Duration.ofMillis(TIMEOUT_MS))
-                .getValue(defaultRecvValue);
+        int hapGroup = mServiceBinder.getHapGroup(mDevice2, mAttributionSource);
         Assert.assertEquals(2, hapGroup);
     }
 
@@ -637,11 +619,7 @@ public class HapClientTest {
         testOnPresetSelected(mDevice, 0x01);
 
         // Verify cached value via binder
-        final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-        int defaultRecvValue = -1000;
-        mServiceBinder.getActivePresetIndex(mDevice, mAttributionSource, recv);
-        int presetIndex = recv.awaitResultNoInterrupt(Duration.ofMillis(TIMEOUT_MS))
-                .getValue(defaultRecvValue);
+        int presetIndex = mServiceBinder.getActivePresetIndex(mDevice, mAttributionSource);
         Assert.assertEquals(0x01, presetIndex);
     }
 
@@ -656,17 +634,11 @@ public class HapClientTest {
         testConnectingDevice(order, mDevice2);
 
         // Check when active preset is not known yet
-        final SynchronousResultReceiver<List<BluetoothHapPresetInfo>> presetListRecv =
-                SynchronousResultReceiver.get();
-        mServiceBinder.getAllPresetInfo(mDevice2, mAttributionSource, presetListRecv);
-        List<BluetoothHapPresetInfo> presetList = presetListRecv.awaitResultNoInterrupt(
-                Duration.ofMillis(TIMEOUT_MS)).getValue(null);
+        List<BluetoothHapPresetInfo> presetList =
+                mServiceBinder.getAllPresetInfo(mDevice2, mAttributionSource);
 
-        final SynchronousResultReceiver<BluetoothHapPresetInfo> presetRecv =
-                SynchronousResultReceiver.get();
-        mServiceBinder.getPresetInfo(mDevice2, 0x01, mAttributionSource, presetRecv);
-        BluetoothHapPresetInfo presetInfo = presetRecv.awaitResultNoInterrupt(
-                Duration.ofMillis(TIMEOUT_MS)).getValue(null);
+        BluetoothHapPresetInfo presetInfo =
+                mServiceBinder.getPresetInfo(mDevice2, 0x01, mAttributionSource);
         Assert.assertTrue(presetList.contains(presetInfo));
         Assert.assertEquals(0x01, presetInfo.getIndex());
 
@@ -679,11 +651,8 @@ public class HapClientTest {
 
         // Check when active preset is known
         Assert.assertEquals(0x01, mService.getActivePresetIndex(mDevice2));
-        final SynchronousResultReceiver<BluetoothHapPresetInfo> recv =
-                SynchronousResultReceiver.get();
-        mServiceBinder.getActivePresetInfo(mDevice2, mAttributionSource, recv);
-        BluetoothHapPresetInfo info = recv.awaitResultNoInterrupt(Duration.ofMillis(TIMEOUT_MS))
-                .getValue(null);
+        BluetoothHapPresetInfo info =
+                mServiceBinder.getActivePresetInfo(mDevice2, mAttributionSource);
         Assert.assertNotNull(info);
         Assert.assertEquals("One", info.getName());
     }
@@ -995,33 +964,23 @@ public class HapClientTest {
 
     @Test
     public void testServiceBinderGetDevicesMatchingConnectionStates() throws Exception {
-        final SynchronousResultReceiver<List<BluetoothDevice>> recv =
-                SynchronousResultReceiver.get();
-        mServiceBinder.getDevicesMatchingConnectionStates(null, mAttributionSource, recv);
-        List<BluetoothDevice> devices = recv.awaitResultNoInterrupt(Duration.ofMillis(TIMEOUT_MS))
-                .getValue(null);
+        List<BluetoothDevice> devices =
+                mServiceBinder.getDevicesMatchingConnectionStates(null, mAttributionSource);
         Assert.assertEquals(0, devices.size());
     }
 
     @Test
     public void testServiceBinderSetConnectionPolicy() throws Exception {
-        final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-        boolean defaultRecvValue = false;
-        mServiceBinder.setConnectionPolicy(
-                mDevice, BluetoothProfile.CONNECTION_POLICY_UNKNOWN, mAttributionSource, recv);
-        Assert.assertTrue(recv.awaitResultNoInterrupt(Duration.ofMillis(TIMEOUT_MS))
-                .getValue(defaultRecvValue));
+        Assert.assertTrue(
+                mServiceBinder.setConnectionPolicy(
+                        mDevice, BluetoothProfile.CONNECTION_POLICY_UNKNOWN, mAttributionSource));
         verify(mDatabaseManager).setProfileConnectionPolicy(
                 mDevice, BluetoothProfile.HAP_CLIENT, BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
     }
 
     @Test
     public void testServiceBinderGetFeatures() throws Exception {
-        final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-        int defaultRecvValue = -1000;
-        mServiceBinder.getFeatures(mDevice, mAttributionSource, recv);
-        int features = recv.awaitResultNoInterrupt(Duration.ofMillis(TIMEOUT_MS))
-                .getValue(defaultRecvValue);
+        int features = mServiceBinder.getFeatures(mDevice, mAttributionSource);
         Assert.assertEquals(0x00, features);
     }
 
@@ -1032,14 +991,10 @@ public class HapClientTest {
         when(callback.asBinder()).thenReturn(binder);
 
         int size = mService.mCallbacks.getRegisteredCallbackCount();
-        SynchronousResultReceiver<Void> recv = SynchronousResultReceiver.get();
-        mServiceBinder.registerCallback(callback, mAttributionSource, recv);
-        recv.awaitResultNoInterrupt(Duration.ofMillis(TIMEOUT_MS)).getValue(null);
+        mServiceBinder.registerCallback(callback, mAttributionSource);
         Assert.assertEquals(size + 1, mService.mCallbacks.getRegisteredCallbackCount());
 
-        recv = SynchronousResultReceiver.get();
-        mServiceBinder.unregisterCallback(callback, mAttributionSource, recv);
-        recv.awaitResultNoInterrupt(Duration.ofMillis(TIMEOUT_MS)).getValue(null);
+        mServiceBinder.unregisterCallback(callback, mAttributionSource);
         Assert.assertEquals(size, mService.mCallbacks.getRegisteredCallbackCount());
 
     }

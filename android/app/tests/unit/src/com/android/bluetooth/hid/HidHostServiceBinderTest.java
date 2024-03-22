@@ -24,7 +24,6 @@ import android.bluetooth.BluetoothProfile;
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
 import com.android.bluetooth.flags.Flags;
-import com.android.bluetooth.jarjar.com.android.modules.utils.SynchronousResultReceiver;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -56,21 +55,21 @@ public class HidHostServiceBinderTest {
 
     @Test
     public void connect_callsServiceMethod() {
-        mBinder.connect(mRemoteDevice, null, SynchronousResultReceiver.get());
+        mBinder.connect(mRemoteDevice, null);
 
         verify(mService).connect(mRemoteDevice);
     }
 
     @Test
     public void disconnect_callsServiceMethod() {
-        mBinder.disconnect(mRemoteDevice, null, SynchronousResultReceiver.get());
+        mBinder.disconnect(mRemoteDevice, null);
 
         verify(mService).disconnect(mRemoteDevice);
     }
 
     @Test
     public void getConnectedDevices_callsServiceMethod() {
-        mBinder.getConnectedDevices(null, SynchronousResultReceiver.get());
+        mBinder.getConnectedDevices(null);
 
         verify(mService).getDevicesMatchingConnectionStates(
                 new int[] { BluetoothProfile.STATE_CONNECTED });
@@ -79,14 +78,14 @@ public class HidHostServiceBinderTest {
     @Test
     public void getDevicesMatchingConnectionStates_callsServiceMethod() {
         int[] states = new int[] {BluetoothProfile.STATE_CONNECTED};
-        mBinder.getDevicesMatchingConnectionStates(states, null, SynchronousResultReceiver.get());
+        mBinder.getDevicesMatchingConnectionStates(states, null);
 
         verify(mService).getDevicesMatchingConnectionStates(states);
     }
 
     @Test
     public void getConnectionState_callsServiceMethod() {
-        mBinder.getConnectionState(mRemoteDevice, null, SynchronousResultReceiver.get());
+        mBinder.getConnectionState(mRemoteDevice, null);
 
         verify(mService).getConnectionState(mRemoteDevice);
     }
@@ -94,15 +93,14 @@ public class HidHostServiceBinderTest {
     @Test
     public void setConnectionPolicy_callsServiceMethod() {
         int connectionPolicy = BluetoothProfile.CONNECTION_POLICY_ALLOWED;
-        mBinder.setConnectionPolicy(mRemoteDevice, connectionPolicy,
-                null, SynchronousResultReceiver.get());
+        mBinder.setConnectionPolicy(mRemoteDevice, connectionPolicy, null);
 
         verify(mService).setConnectionPolicy(mRemoteDevice, connectionPolicy);
     }
 
     @Test
     public void getConnectionPolicy_callsServiceMethod() {
-        mBinder.getConnectionPolicy(mRemoteDevice, null, SynchronousResultReceiver.get());
+        mBinder.getConnectionPolicy(mRemoteDevice, null);
 
         verify(mService).getConnectionPolicy(mRemoteDevice);
     }
@@ -111,8 +109,7 @@ public class HidHostServiceBinderTest {
     public void setPreferredTransport_callsServiceMethod() {
         mSetFlagsRule.enableFlags(Flags.FLAG_ALLOW_SWITCHING_HID_AND_HOGP);
         int preferredTransport = BluetoothDevice.TRANSPORT_AUTO;
-        mBinder.setPreferredTransport(
-                mRemoteDevice, preferredTransport, null, SynchronousResultReceiver.get());
+        mBinder.setPreferredTransport(mRemoteDevice, preferredTransport, null);
 
         verify(mService).setPreferredTransport(mRemoteDevice, preferredTransport);
     }
@@ -120,22 +117,21 @@ public class HidHostServiceBinderTest {
     @Test
     public void getPreferredTransport_callsServiceMethod() {
         mSetFlagsRule.enableFlags(Flags.FLAG_ALLOW_SWITCHING_HID_AND_HOGP);
-        mBinder.getPreferredTransport(mRemoteDevice, null, SynchronousResultReceiver.get());
+        mBinder.getPreferredTransport(mRemoteDevice, null);
 
         verify(mService).getPreferredTransport(mRemoteDevice);
     }
 
     @Test
     public void getProtocolMode_callsServiceMethod() {
-        mBinder.getProtocolMode(mRemoteDevice, null,
-                SynchronousResultReceiver.get());
+        mBinder.getProtocolMode(mRemoteDevice, null);
 
         verify(mService).getProtocolMode(mRemoteDevice);
     }
 
     @Test
     public void virtualUnplug_callsServiceMethod() {
-        mBinder.virtualUnplug(mRemoteDevice, null, SynchronousResultReceiver.get());
+        mBinder.virtualUnplug(mRemoteDevice, null);
 
         verify(mService).virtualUnplug(mRemoteDevice);
     }
@@ -143,7 +139,7 @@ public class HidHostServiceBinderTest {
     @Test
     public void setProtocolMode_callsServiceMethod() {
         int protocolMode = 1;
-        mBinder.setProtocolMode(mRemoteDevice, protocolMode, null, SynchronousResultReceiver.get());
+        mBinder.setProtocolMode(mRemoteDevice, protocolMode, null);
 
         verify(mService).setProtocolMode(mRemoteDevice, protocolMode);
     }
@@ -153,8 +149,7 @@ public class HidHostServiceBinderTest {
         byte reportType = 1;
         byte reportId = 2;
         int bufferSize = 16;
-        mBinder.getReport(mRemoteDevice, reportType, reportId, bufferSize, null,
-                SynchronousResultReceiver.get());
+        mBinder.getReport(mRemoteDevice, reportType, reportId, bufferSize, null);
 
         verify(mService).getReport(mRemoteDevice, reportType, reportId, bufferSize);
     }
@@ -163,8 +158,7 @@ public class HidHostServiceBinderTest {
     public void setReport_callsServiceMethod() {
         byte reportType = 1;
         String report = "test_report";
-        mBinder.setReport(mRemoteDevice, reportType, report, null,
-                SynchronousResultReceiver.get());
+        mBinder.setReport(mRemoteDevice, reportType, report, null);
 
         verify(mService).setReport(mRemoteDevice, reportType, report);
     }
@@ -172,8 +166,7 @@ public class HidHostServiceBinderTest {
     @Test
     public void sendData_callsServiceMethod() {
         String report = "test_report";
-        mBinder.sendData(mRemoteDevice, report, null,
-                SynchronousResultReceiver.get());
+        mBinder.sendData(mRemoteDevice, report, null);
 
         verify(mService).sendData(mRemoteDevice, report);
     }
@@ -181,15 +174,14 @@ public class HidHostServiceBinderTest {
     @Test
     public void setIdleTime_callsServiceMethod() {
         byte idleTime = 1;
-        mBinder.setIdleTime(mRemoteDevice, idleTime, null,
-                SynchronousResultReceiver.get());
+        mBinder.setIdleTime(mRemoteDevice, idleTime, null);
 
         verify(mService).setIdleTime(mRemoteDevice, idleTime);
     }
 
     @Test
     public void getIdleTime_callsServiceMethod() {
-        mBinder.getIdleTime(mRemoteDevice, null, SynchronousResultReceiver.get());
+        mBinder.getIdleTime(mRemoteDevice, null);
 
         verify(mService).getIdleTime(mRemoteDevice);
     }

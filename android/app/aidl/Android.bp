@@ -12,7 +12,6 @@ filegroup {
     name: "Bluetooth-binder-aidl",
     srcs: [
         ":framework-bluetooth-updatable-exported-aidl-sources",
-        ":modules-utils-synchronous-result-receiver-aidl",
         "android/bluetooth/IBluetooth.aidl",
         "android/bluetooth/IBluetoothA2dp.aidl",
         "android/bluetooth/IBluetoothA2dpSink.aidl",

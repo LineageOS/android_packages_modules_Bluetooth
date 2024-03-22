@@ -25,8 +25,6 @@ import android.bluetooth.BluetoothProfile;
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.jarjar.com.android.modules.utils.SynchronousResultReceiver;
-
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -57,21 +55,21 @@ public class PanServiceBinderTest {
 
     @Test
     public void connect_callsServiceMethod() {
-        mBinder.connect(mRemoteDevice, null, SynchronousResultReceiver.get());
+        mBinder.connect(mRemoteDevice, null);
 
         verify(mService).connect(mRemoteDevice);
     }
 
     @Test
     public void disconnect_callsServiceMethod() {
-        mBinder.disconnect(mRemoteDevice, null, SynchronousResultReceiver.get());
+        mBinder.disconnect(mRemoteDevice, null);
 
         verify(mService).disconnect(mRemoteDevice);
     }
 
     @Test
     public void getConnectedDevices_callsServiceMethod() {
-        mBinder.getConnectedDevices(null, SynchronousResultReceiver.get());
+        mBinder.getConnectedDevices(null);
 
         verify(mService).getConnectedDevices();
     }
@@ -79,14 +77,14 @@ public class PanServiceBinderTest {
     @Test
     public void getDevicesMatchingConnectionStates_callsServiceMethod() {
         int[] states = new int[] {BluetoothProfile.STATE_CONNECTED};
-        mBinder.getDevicesMatchingConnectionStates(states, null, SynchronousResultReceiver.get());
+        mBinder.getDevicesMatchingConnectionStates(states, null);
 
         verify(mService).getDevicesMatchingConnectionStates(states);
     }
 
     @Test
     public void getConnectionState_callsServiceMethod() {
-        mBinder.getConnectionState(mRemoteDevice, null, SynchronousResultReceiver.get());
+        mBinder.getConnectionState(mRemoteDevice, null);
 
         verify(mService).getConnectionState(mRemoteDevice);
     }
@@ -94,15 +92,14 @@ public class PanServiceBinderTest {
     @Test
     public void setConnectionPolicy_callsServiceMethod() {
         int connectionPolicy = BluetoothProfile.CONNECTION_POLICY_ALLOWED;
-        mBinder.setConnectionPolicy(mRemoteDevice, connectionPolicy,
-                null, SynchronousResultReceiver.get());
+        mBinder.setConnectionPolicy(mRemoteDevice, connectionPolicy, null);
 
         verify(mService).setConnectionPolicy(mRemoteDevice, connectionPolicy);
     }
 
     @Test
     public void isTetheringOn_callsServiceMethod() {
-        mBinder.isTetheringOn(null, SynchronousResultReceiver.get());
+        mBinder.isTetheringOn(null);
 
         verify(mService).isTetheringOn();
     }

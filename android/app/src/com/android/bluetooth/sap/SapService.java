@@ -35,7 +35,6 @@ import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.sdp.SdpManagerNativeInterface;
 import com.android.internal.annotations.VisibleForTesting;
-import com.android.modules.utils.SynchronousResultReceiver;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -968,144 +967,110 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
         }
 
         @Override
-        public void getState(AttributionSource source, SynchronousResultReceiver receiver) {
+        public int getState(AttributionSource source) {
             Log.v(TAG, "getState()");
-            try {
-                int defaultValue = BluetoothSap.STATE_DISCONNECTED;
-                SapService service = getService(source);
-                if (service != null) {
-                    defaultValue = service.getState();
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+
+            SapService service = getService(source);
+            if (service == null) {
+                return BluetoothSap.STATE_DISCONNECTED;
             }
+
+            return service.getState();
         }
 
         @Override
-        public void getClient(AttributionSource source, SynchronousResultReceiver receiver) {
+        public BluetoothDevice getClient(AttributionSource source) {
             Log.v(TAG, "getClient()");
-            try {
-                BluetoothDevice defaultValue = null;
-                SapService service = getService(source);
-                if (service != null) {
-                    defaultValue = service.getRemoteDevice();
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+
+            SapService service = getService(source);
+            if (service == null) {
+                return null;
             }
+
+            Log.v(TAG, "getClient() - returning " + service.getRemoteDevice());
+            return service.getRemoteDevice();
         }
 
         @Override
-        public void isConnected(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
+        public boolean isConnected(BluetoothDevice device, AttributionSource source) {
             Log.v(TAG, "isConnected()");
-            try {
-                boolean defaultValue = false;
-                SapService service = getService(source);
-                if (service != null) {
-                    defaultValue = service.getConnectionState(device)
-                        == BluetoothProfile.STATE_CONNECTED;
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+
+            SapService service = getService(source);
+            if (service == null) {
+                return false;
             }
+
+            return service.getConnectionState(device) == BluetoothProfile.STATE_CONNECTED;
         }
 
         @Override
-        public void disconnect(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
+        public boolean disconnect(BluetoothDevice device, AttributionSource source) {
             Log.v(TAG, "disconnect()");
-            try {
-                boolean defaultValue = false;
-                SapService service = getService(source);
-                if (service != null) {
-                    defaultValue = service.disconnect(device);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+
+            SapService service = getService(source);
+            if (service == null) {
+                return false;
             }
+
+            return service.disconnect(device);
         }
 
         @Override
-        public void getConnectedDevices(AttributionSource source,
-                SynchronousResultReceiver receiver) {
+        public List<BluetoothDevice> getConnectedDevices(AttributionSource source) {
             Log.v(TAG, "getConnectedDevices()");
-            try {
-                List<BluetoothDevice> defaultValue = new ArrayList<BluetoothDevice>(0);
-                SapService service = getService(source);
-                if (service != null) {
-                    defaultValue = service.getConnectedDevices();
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+
+            SapService service = getService(source);
+            if (service == null) {
+                return new ArrayList<BluetoothDevice>(0);
             }
+
+            return service.getConnectedDevices();
         }
 
         @Override
-        public void getDevicesMatchingConnectionStates(int[] states,
-                AttributionSource source, SynchronousResultReceiver receiver) {
+        public List<BluetoothDevice> getDevicesMatchingConnectionStates(
+                int[] states, AttributionSource source) {
             Log.v(TAG, "getDevicesMatchingConnectionStates()");
-            try {
-                List<BluetoothDevice> defaultValue = new ArrayList<BluetoothDevice>(0);
-                SapService service = getService(source);
-                if (service != null) {
-                    defaultValue = service.getDevicesMatchingConnectionStates(states);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+
+            SapService service = getService(source);
+            if (service == null) {
+                return new ArrayList<BluetoothDevice>(0);
             }
+
+            return service.getDevicesMatchingConnectionStates(states);
         }
 
         @Override
-        public void getConnectionState(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
+        public int getConnectionState(BluetoothDevice device, AttributionSource source) {
             Log.v(TAG, "getConnectionState()");
-            try {
-                int defaultValue = BluetoothProfile.STATE_DISCONNECTED;
-                SapService service = getService(source);
-                if (service != null) {
-                    defaultValue = service.getConnectionState(device);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+
+            SapService service = getService(source);
+            if (service == null) {
+                return BluetoothProfile.STATE_DISCONNECTED;
             }
+
+            return service.getConnectionState(device);
         }
 
         @Override
-        public void setConnectionPolicy(BluetoothDevice device, int connectionPolicy,
-                AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                boolean defaultValue = false;
-                SapService service = getService(source);
-                if (service != null) {
-                    defaultValue = service.setConnectionPolicy(device, connectionPolicy);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public boolean setConnectionPolicy(
+                BluetoothDevice device, int connectionPolicy, AttributionSource source) {
+            SapService service = getService(source);
+            if (service == null) {
+                return false;
             }
+
+            return service.setConnectionPolicy(device, connectionPolicy);
         }
 
         @Override
-        public void getConnectionPolicy(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                int defaultValue = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-                SapService service = getService(source);
-                if (service != null) {
-                    defaultValue = service.getConnectionPolicy(device);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public int getConnectionPolicy(BluetoothDevice device, AttributionSource source) {
+            SapService service = getService(source);
+            if (service == null) {
+                return BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
             }
+
+            return service.getConnectionPolicy(device);
         }
     }
 }
