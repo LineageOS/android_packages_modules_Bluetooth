@@ -147,7 +147,8 @@ class AvrcpControllerStateMachine extends StateMachine {
     AvrcpControllerStateMachine(
             BluetoothDevice device,
             AvrcpControllerService service,
-            AvrcpControllerNativeInterface nativeInterface) {
+            AvrcpControllerNativeInterface nativeInterface,
+            boolean isControllerAbsoluteVolumeEnabled) {
         super(TAG);
         mDevice = device;
         mDeviceAddress = Utils.getByteAddress(mDevice);
@@ -184,7 +185,7 @@ class AvrcpControllerStateMachine extends StateMachine {
         mGetFolderList = new GetFolderList();
         addState(mGetFolderList, mConnected);
         mAudioManager = service.getSystemService(AudioManager.class);
-        mIsVolumeFixed = mAudioManager.isVolumeFixed();
+        mIsVolumeFixed = mAudioManager.isVolumeFixed() || isControllerAbsoluteVolumeEnabled;
 
         setInitialState(mDisconnected);
 
@@ -1171,8 +1172,15 @@ class AvrcpControllerStateMachine extends StateMachine {
         int maxLocalVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
         int curLocalVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
         int reqLocalVolume = (maxLocalVolume * absVol) / ABS_VOL_BASE;
-        debug("setAbsVolme: absVol = " + absVol + ", reqLocal = " + reqLocalVolume
-                + ", curLocal = " + curLocalVolume + ", maxLocal = " + maxLocalVolume);
+        debug(
+                "setAbsVolume: absVol = "
+                        + absVol
+                        + ", reqLocal = "
+                        + reqLocalVolume
+                        + ", curLocal = "
+                        + curLocalVolume
+                        + ", maxLocal = "
+                        + maxLocalVolume);
 
         /*
          * In some cases change in percentage is not sufficient enough to warrant
