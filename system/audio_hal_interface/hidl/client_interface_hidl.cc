@@ -319,7 +319,9 @@ void BluetoothAudioClientInterface::FetchAudioProvider() {
         if (status == BluetoothAudioStatus::SUCCESS) {
           provider_ = provider;
         }
-        ALOGE_IF(!provider_, "Failed to open BluetoothAudio provider");
+        if (!provider_) {
+          log::error("Failed to open BluetoothAudio provider");
+        }
         openProvider_promise.set_value();
       };
   hidl_retval = providersFactory->openProvider(transport_->GetSessionType(),
@@ -385,7 +387,9 @@ void BluetoothAudioClientInterface::FetchAudioProvider_2_1() {
         if (status == BluetoothAudioStatus::SUCCESS) {
           provider_2_1_ = provider_2_1;
         }
-        ALOGE_IF(!provider_2_1_, "Failed to open BluetoothAudio provider_2_1");
+        if (!provider_2_1_) {
+          log::error("Failed to open BluetoothAudio provider_2_1");
+        }
         openProvider_promise.set_value();
       };
   hidl_retval = providersFactory->openProvider_2_1(
@@ -588,12 +592,14 @@ int BluetoothAudioClientInterface::StartSession() {
     transport_->ResetPresentationPosition();
     session_started_ = true;
     return 0;
-  } else {
-    ALOGE_IF(!mDataMQ, "Failed to obtain audio data path");
-    ALOGE_IF(mDataMQ && !mDataMQ->isValid(), "Audio data path is invalid");
-    session_started_ = false;
-    return -EIO;
   }
+  if (!mDataMQ) {
+    log::error("Failed to obtain audio data path");
+  } else {
+    log::error("Audio data path is invalid");
+  }
+  session_started_ = false;
+  return -EIO;
 }
 
 int BluetoothAudioClientInterface::StartSession_2_1() {
@@ -647,12 +653,14 @@ int BluetoothAudioClientInterface::StartSession_2_1() {
     transport_->ResetPresentationPosition();
     session_started_ = true;
     return 0;
-  } else {
-    ALOGE_IF(!mDataMQ, "Failed to obtain audio data path");
-    ALOGE_IF(mDataMQ && !mDataMQ->isValid(), "Audio data path is invalid");
-    session_started_ = false;
-    return -EIO;
   }
+  if (!mDataMQ) {
+    log::error("Failed to obtain audio data path");
+  } else {
+    log::error("Audio data path is invalid");
+  }
+  session_started_ = false;
+  return -EIO;
 }
 
 void BluetoothAudioClientInterface::StreamStarted(

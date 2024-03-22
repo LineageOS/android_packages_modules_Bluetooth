@@ -18,7 +18,6 @@
 
 #include <android-base/logging.h>
 #include <hardware/hardware.h>
-#include <log/log.h>
 #include <malloc.h>
 #include <string.h>
 #include <system/audio.h>

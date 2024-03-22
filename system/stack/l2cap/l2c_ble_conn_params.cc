@@ -27,7 +27,6 @@
 
 #include <base/logging.h>
 #include <bluetooth/log.h>
-#include <log/log.h>
 
 #include "hci/controller_interface.h"
 #include "internal_include/stack_config.h"

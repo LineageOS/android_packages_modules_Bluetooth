@@ -14,14 +14,14 @@
 // limitations under the License.
 //
 
+#define LOG_TAG "android.hardware.bluetooth-hci-h4"
+
 #include "h4_protocol.h"
 
-#define LOG_TAG "android.hardware.bluetooth-hci-h4"
-#include <android-base/logging.h>
 #include <assert.h>
 #include <fcntl.h>
+#include <log/log.h>
 #include <sys/uio.h>
-#include <utils/Log.h>
 
 namespace android {
 namespace hardware {

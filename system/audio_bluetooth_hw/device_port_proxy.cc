@@ -21,7 +21,6 @@
 #include <android-base/logging.h>
 #include <android-base/stringprintf.h>
 #include <audio_utils/primitives.h>
-#include <log/log.h>
 #include <stdlib.h>
 
 #include <vector>

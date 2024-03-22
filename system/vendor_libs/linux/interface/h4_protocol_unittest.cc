@@ -31,7 +31,6 @@
 #include <vector>
 
 #include "async_fd_watcher.h"
-#include "log/log.h"
 
 using android::hardware::bluetooth::async::AsyncFdWatcher;
 using android::hardware::bluetooth::hci::H4Protocol;

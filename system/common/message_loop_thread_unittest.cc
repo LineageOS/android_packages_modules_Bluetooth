@@ -15,18 +15,19 @@
  */
 #include "message_loop_thread.h"
 
+#include <base/functional/bind.h>
+#include <base/threading/platform_thread.h>
+#include <bluetooth/log.h>
+#include <gtest/gtest.h>
+#include <sys/capability.h>
+#include <syscall.h>
+
 #include <condition_variable>
 #include <memory>
 #include <mutex>
 
-#include <gtest/gtest.h>
-
-#include <base/functional/bind.h>
-#include <base/threading/platform_thread.h>
-#include <sys/capability.h>
-#include <syscall.h>
-
 using bluetooth::common::MessageLoopThread;
+using namespace bluetooth;
 
 /**
  * Unit tests to verify MessageLoopThread. Must have CAP_SYS_NICE capability.
@@ -68,16 +69,16 @@ class MessageLoopThreadTest : public ::testing::Test {
   static bool CanSetCurrentThreadPriority() {
     struct __user_cap_header_struct linux_user_header = {
         .version = _LINUX_CAPABILITY_VERSION_3};
-    struct __user_cap_data_struct linux_user_data = {};
-    if (capget(&linux_user_header, &linux_user_data) != 0) {
-      LOG(ERROR) << "Failed to get capability for current thread, error: "
-                 << strerror(errno);
+    struct __user_cap_data_struct linux_user_data[2] = {};
+    if (capget(&linux_user_header, linux_user_data) != 0) {
+      log::error("Failed to get capability for current thread, error: {}",
+                 strerror(errno));
       // Log record in XML
       RecordProperty("MessageLoopThreadTestCannotGetCapabilityReason",
                      strerror(errno));
       return false;
     }
-    return ((linux_user_data.permitted >> CAP_SYS_NICE) & 0x1) != 0;
+    return ((linux_user_data[0].permitted >> CAP_SYS_NICE) & 0x1) != 0;
   }
 };
 
@@ -181,8 +182,9 @@ TEST_F(MessageLoopThreadTest, test_set_realtime_priority_success) {
     if (CanSetCurrentThreadPriority()) {
       FAIL() << "Cannot set real time priority even though we have permission";
     } else {
-      LOG(WARNING) << "Allowing EnableRealTimeScheduling to fail because we"
-                      " don't have CAP_SYS_NICE capability";
+      log::warn(
+          "Allowing EnableRealTimeScheduling to fail because we don't have "
+          "CAP_SYS_NICE capability");
       // Log record in XML
       RecordProperty("MessageLoopThreadTestConditionalSuccess",
                      "Mark test as success even though EnableRealTimeScheduling"
@@ -246,17 +248,17 @@ TEST_F(MessageLoopThreadTest, test_to_string_method) {
   MessageLoopThread message_loop_thread(name);
   std::string thread_string_before_start = message_loop_thread.ToString();
   ASSERT_FALSE(thread_string_before_start.empty());
-  LOG(INFO) << "Before start: " << message_loop_thread;
+  log::info("Before start: {}", message_loop_thread);
   message_loop_thread.StartUp();
   std::string thread_string_running = message_loop_thread.ToString();
   ASSERT_FALSE(thread_string_running.empty());
-  LOG(INFO) << "Running: " << message_loop_thread;
+  log::info("Running: {}", message_loop_thread);
   // String representation should look different when thread is not running
   ASSERT_STRNE(thread_string_running.c_str(),
                thread_string_before_start.c_str());
   message_loop_thread.ShutDown();
   std::string thread_string_after_shutdown = message_loop_thread.ToString();
-  LOG(INFO) << "After shutdown: " << message_loop_thread;
+  log::info("After shutdown: {}", message_loop_thread);
   // String representation should look the same when thread is not running
   ASSERT_STREQ(thread_string_after_shutdown.c_str(),
                thread_string_before_start.c_str());

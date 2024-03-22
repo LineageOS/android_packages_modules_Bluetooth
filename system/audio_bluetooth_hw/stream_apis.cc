@@ -21,7 +21,6 @@
 #include <android-base/stringprintf.h>
 #include <cutils/properties.h>
 #include <inttypes.h>
-#include <log/log.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>

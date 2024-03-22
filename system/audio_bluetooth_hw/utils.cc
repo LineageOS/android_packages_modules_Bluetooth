@@ -20,8 +20,8 @@
 
 #include <android-base/logging.h>
 #include <android-base/strings.h>
-#include <log/log.h>
 #include <stdlib.h>
+
 #include <sstream>
 #include <vector>
 
