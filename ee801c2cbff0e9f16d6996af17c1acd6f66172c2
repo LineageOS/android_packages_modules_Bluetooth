@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "375eeb27_45343ddb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 4550
+      },
+      "writtenOn": "2024-03-22T18:56:04Z",
+      "side": 1,
+      "message": "The BT stack no longer supports those, so maybe fix your downstream source?",
+      "revId": "ee801c2cbff0e9f16d6996af17c1acd6f66172c2",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
