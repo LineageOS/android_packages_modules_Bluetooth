@@ -19,7 +19,6 @@
 #define LOG_TAG "android.hardware.bluetooth.hci_packetizer"
 #include <dlfcn.h>
 #include <fcntl.h>
-#include <log/log.h>
 
 namespace {
 

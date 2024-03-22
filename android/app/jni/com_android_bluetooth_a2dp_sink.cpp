@@ -23,7 +23,6 @@
 
 #include "com_android_bluetooth.h"
 #include "hardware/bt_av.h"
-#include "utils/Log.h"
 
 namespace android {
 static jmethodID method_onConnectionStateChanged;

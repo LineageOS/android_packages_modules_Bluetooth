@@ -28,6 +28,7 @@ cc_library_static {
     ],
     shared_libs: [
         "libchrome",
+        "liblog",
     ],
     static_libs: [
         "libbase",
@@ -64,6 +65,7 @@ cc_library_host_shared {
         "libbluetooth_headers",
     ],
     static_libs: [
+        "libbase",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbt-common",
@@ -72,6 +74,7 @@ cc_library_host_shared {
         "libevent",
         "libflatbuffers-cpp",
         "libgmock",
+        "liblog",
     ],
     stl: "libc++_static",
     generated_headers: [

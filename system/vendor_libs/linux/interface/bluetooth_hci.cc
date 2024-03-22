@@ -18,12 +18,12 @@
 #include "bluetooth_hci.h"
 
 #include <fcntl.h>
+#include <log/log.h>
 #include <poll.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <utils/Log.h>
 
 #include <cerrno>
 

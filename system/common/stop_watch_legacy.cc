@@ -19,6 +19,7 @@
 #include "common/stop_watch_legacy.h"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include <iomanip>
 #include <mutex>
@@ -39,12 +40,12 @@ static std::recursive_mutex stopwatch_log_mutex;
 void StopWatchLegacy::RecordLog(StopWatchLog log) {
   std::unique_lock<std::recursive_mutex> lock(stopwatch_log_mutex, std::defer_lock);
   if (!lock.try_lock()) {
-    LOG_INFO("try_lock fail. log content: %s, took %zu us", log.message.c_str(),
-             static_cast<size_t>(
-                 std::chrono::duration_cast<std::chrono::microseconds>(
-                     stopwatch_logs[current_buffer_index].end_timestamp -
-                     stopwatch_logs[current_buffer_index].start_timestamp)
-                     .count()));
+    log::info("try_lock fail. log content: {}, took {} us", log.message,
+              static_cast<size_t>(
+                  std::chrono::duration_cast<std::chrono::microseconds>(
+                      stopwatch_logs[current_buffer_index].end_timestamp -
+                      stopwatch_logs[current_buffer_index].start_timestamp)
+                      .count()));
     return;
   }
   if (current_buffer_index >= LOG_BUFFER_LENGTH) {
@@ -57,8 +58,8 @@ void StopWatchLegacy::RecordLog(StopWatchLog log) {
 
 void StopWatchLegacy::DumpStopWatchLog() {
   std::lock_guard<std::recursive_mutex> lock(stopwatch_log_mutex);
-  LOG_INFO("=-----------------------------------=");
-  LOG_INFO("bluetooth stopwatch log history:");
+  log::info("=-----------------------------------=");
+  log::info("bluetooth stopwatch log history:");
   for (int i = 0; i < LOG_BUFFER_LENGTH; i++) {
     if (current_buffer_index >= LOG_BUFFER_LENGTH) {
       current_buffer_index = 0;
@@ -76,16 +77,16 @@ void StopWatchLegacy::DumpStopWatchLog() {
     ss << std::put_time(std::localtime(&now_time_t), "%Y-%m-%d %H:%M:%S");
     ss << '.' << std::setfill('0') << std::setw(3) << millis.count();
     std::string start_timestamp = ss.str();
-    LOG_INFO("%s: %s: took %zu us", start_timestamp.c_str(),
-             stopwatch_logs[current_buffer_index].message.c_str(),
-             static_cast<size_t>(
-                 std::chrono::duration_cast<std::chrono::microseconds>(
-                     stopwatch_logs[current_buffer_index].end_timestamp -
-                     stopwatch_logs[current_buffer_index].start_timestamp)
-                     .count()));
+    log::info("{}: {}: took {} us", start_timestamp,
+              stopwatch_logs[current_buffer_index].message,
+              static_cast<size_t>(
+                  std::chrono::duration_cast<std::chrono::microseconds>(
+                      stopwatch_logs[current_buffer_index].end_timestamp -
+                      stopwatch_logs[current_buffer_index].start_timestamp)
+                      .count()));
     current_buffer_index++;
   }
-  LOG_INFO("=-----------------------------------=");
+  log::info("=-----------------------------------=");
 }
 
 StopWatchLegacy::StopWatchLegacy(std::string text)
