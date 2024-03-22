@@ -327,12 +327,6 @@ void btsnd_hcic_ble_set_scan_enable(uint8_t scan_enable, uint8_t duplicate);
 
 void btsnd_hcic_ble_read_acceptlist_size(void);
 
-void btsnd_hcic_ble_upd_ll_conn_params(uint16_t handle, uint16_t conn_int_min,
-                                       uint16_t conn_int_max,
-                                       uint16_t conn_latency,
-                                       uint16_t conn_timeout, uint16_t min_len,
-                                       uint16_t max_len);
-
 void btsnd_hcic_ble_read_remote_feat(uint16_t handle);
 
 void btsnd_hcic_ble_rand(base::Callback<void(BT_OCTET8)> cb);

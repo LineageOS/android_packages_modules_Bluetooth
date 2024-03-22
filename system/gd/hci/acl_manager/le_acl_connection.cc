@@ -19,6 +19,7 @@
 #include <bluetooth/log.h>
 
 #include "hci/acl_manager/le_connection_management_callbacks.h"
+#include "hci/event_checkers.h"
 #include "os/metrics.h"
 
 using bluetooth::hci::Address;
@@ -234,10 +235,7 @@ bool LeAclConnection::LeConnectionUpdate(
           supervision_timeout,
           min_ce_length,
           max_ce_length),
-      pimpl_->tracker.client_handler_->BindOnce([](CommandStatusView status) {
-        ASSERT(status.IsValid());
-        ASSERT(status.GetCommandOpCode() == OpCode::LE_CONNECTION_UPDATE);
-      }));
+      pimpl_->tracker.client_handler_->BindOnce(check_status<LeConnectionUpdateStatusView>));
   return true;
 }
 

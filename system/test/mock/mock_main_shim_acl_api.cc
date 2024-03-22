@@ -110,3 +110,11 @@ void bluetooth::shim::ACL_LeSubrateRequest(uint16_t /* hci_handle */,
 }
 
 void bluetooth::shim::ACL_Shutdown() { inc_func_call_count(__func__); }
+
+void bluetooth::shim::ACL_SendConnectionParameterUpdateRequest(
+    uint16_t /* hci_handle */, uint16_t /* conn_int_min */,
+    uint16_t /* conn_int_max */, uint16_t /* conn_latency */,
+    uint16_t /* conn_timeout */, uint16_t /* min_ce_len */,
+    uint16_t /* max_ce_len */) {
+  inc_func_call_count(__func__);
+}

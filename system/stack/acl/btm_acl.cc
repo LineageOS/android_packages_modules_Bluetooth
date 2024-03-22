@@ -2231,6 +2231,15 @@ bool acl_peer_supports_ble_connection_parameters_request(
   return HCI_LE_CONN_PARAM_REQ_SUPPORTED(p_acl->peer_le_features);
 }
 
+void acl_ble_connection_parameters_request(
+    uint16_t handle, uint16_t conn_int_min, uint16_t conn_int_max,
+    uint16_t conn_latency, uint16_t conn_timeout, uint16_t min_ce_len,
+    uint16_t max_ce_len) {
+  bluetooth::shim::ACL_SendConnectionParameterUpdateRequest(
+      handle, conn_int_min, conn_int_max, conn_latency, conn_timeout,
+      min_ce_len, max_ce_len);
+}
+
 bool acl_peer_supports_sniff_subrating(const RawAddress& remote_bda) {
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(remote_bda, BT_TRANSPORT_BR_EDR);
   if (p_acl == nullptr) {
