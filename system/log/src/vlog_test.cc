@@ -118,13 +118,22 @@ TEST(BluetoothLoggerTest, error) {
                "TestBody: error test");
 }
 
+TEST(BluetoothLoggerTest, fatal_if) {
+  androidLogMessage.reset();
+
+  log::fatal_if(false, "fatal_if test false");
+
+  ASSERT_DEATH(
+      { log::fatal_if(true, "fatal_if test true"); }, "fatal_if test true");
+}
+
 TEST(BluetoothLoggerTest, null_string_parameter) {
   androidLogMessage.reset();
 
   char const* const_null_str = nullptr;
   log::info("input: {}", const_null_str);
   EXPECT_STREQ(androidLogMessage->message,
-               "packages/modules/Bluetooth/system/log/src/vlog_test.cc:125 "
+               "packages/modules/Bluetooth/system/log/src/vlog_test.cc:134 "
                "TestBody: input: (nullptr)");
 
   androidLogMessage.reset();
@@ -132,7 +141,7 @@ TEST(BluetoothLoggerTest, null_string_parameter) {
   char* null_str = nullptr;
   log::info("input: {}", null_str);
   EXPECT_STREQ(androidLogMessage->message,
-               "packages/modules/Bluetooth/system/log/src/vlog_test.cc:133 "
+               "packages/modules/Bluetooth/system/log/src/vlog_test.cc:142 "
                "TestBody: input: (nullptr)");
 
   androidLogMessage.reset();
@@ -140,6 +149,6 @@ TEST(BluetoothLoggerTest, null_string_parameter) {
   char const* nonnull_str = "hello world";
   log::info("input: {}", nonnull_str);
   EXPECT_STREQ(androidLogMessage->message,
-               "packages/modules/Bluetooth/system/log/src/vlog_test.cc:141 "
+               "packages/modules/Bluetooth/system/log/src/vlog_test.cc:150 "
                "TestBody: input: hello world");
 }

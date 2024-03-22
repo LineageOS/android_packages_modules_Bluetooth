@@ -146,6 +146,23 @@ verbose(fmt::format_string<T...>, T&&...) -> verbose<T...>;
 
 #endif  // GCC / C++20
 
+template <typename... T>
+struct fatal_if {
+  fatal_if(bool cond, fmt::format_string<T...> fmt, T&&... args,
+           char const* file_name = __builtin_FILE(),
+           int line = __builtin_LINE(),
+           char const* function_name = __builtin_FUNCTION()) {
+    if (cond) {
+      vlog(log_internal::kFatal, LOG_TAG, file_name, line, function_name,
+           static_cast<fmt::string_view>(fmt),
+           fmt::make_format_args(format_replace(args)...));
+    }
+  }
+};
+
+template <typename... T>
+fatal_if(fmt::format_string<T...>, T&&...) -> fatal_if<T...>;
+
 }  // namespace bluetooth::log
 
 namespace fmt {
