@@ -22,7 +22,6 @@
 #include <chrono>
 
 #include "common/bidi_queue.h"
-#include "common/testing/log_capture.h"
 #include "hci/acl_manager/acl_scheduler.h"
 #include "hci/acl_manager/connection_callbacks_mock.h"
 #include "hci/acl_manager/connection_management_callbacks_mock.h"
@@ -43,7 +42,6 @@ using ::bluetooth::os::Handler;
 using ::bluetooth::os::Thread;
 using ::bluetooth::packet::BitInserter;
 using ::bluetooth::packet::RawBuilder;
-using ::bluetooth::testing::LogCapture;
 
 using ::testing::_;
 using ::testing::DoAll;
