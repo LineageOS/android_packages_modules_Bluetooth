@@ -74,8 +74,8 @@ ChannelType PsmToChannelType(const uint16_t& psm) {
 }
 
 struct Duration {
-  time_t begin;
-  time_t end;
+  time_t begin = 0;
+  time_t end = 0;
 };
 
 struct DataTransfer {
@@ -85,14 +85,14 @@ struct DataTransfer {
 };
 
 struct LinkDetails {
-  RawAddress bd_addr;
+  RawAddress bd_addr = RawAddress::kEmpty;
   uint16_t handle = 0;
   Duration duration;
   uint8_t tx_power_level = 0;
 };
 
 struct ChannelDetails {
-  RawAddress bd_addr;
+  RawAddress bd_addr = RawAddress::kEmpty;
   int32_t psm = 0;
   struct {
     uint16_t cid = 0;
@@ -102,7 +102,7 @@ struct ChannelDetails {
   DataTransfer data_transfer;
   Duration duration;
   struct {
-    time_t last_data_sent;
+    time_t last_data_sent = 0;
   } rx, tx;
 };
 
@@ -122,7 +122,7 @@ struct ScanDetails {
 };
 
 struct SniffData {
-  RawAddress bd_addr;
+  RawAddress bd_addr = RawAddress::kEmpty;
   uint32_t sniff_count = 0, active_count = 0;
   time_t sniff_duration_ts = 0, active_duration_ts = 0;
   time_t last_mode_change_ts = get_current_time();
@@ -181,7 +181,7 @@ struct power_telemetry::PowerTelemetryImpl {
   } rx, tx;
 
   struct {
-    uint16_t count_;
+    uint16_t count_ = 0;
   } scan, inq_scan, ble_adv, ble_scan;
 
   struct {
