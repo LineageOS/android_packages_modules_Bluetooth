@@ -851,6 +851,13 @@ class LeShimAclConnection
     return connection_->IsInFilterAcceptList();
   }
 
+  void UpdateConnectionParameters(uint16_t conn_int_min, uint16_t conn_int_max,
+                                  uint16_t conn_latency, uint16_t conn_timeout,
+                                  uint16_t min_ce_len, uint16_t max_ce_len) {
+    connection_->LeConnectionUpdate(conn_int_min, conn_int_max, conn_latency,
+                                    conn_timeout, min_ce_len, max_ce_len);
+  }
+
  private:
   OnDisconnect on_disconnect_;
   const shim::legacy::acl_le_link_interface_t interface_;
@@ -1093,6 +1100,21 @@ struct shim::legacy::Acl::impl {
       log::warn("Unable to disconnect unknown le connection handle:0x{:04x}",
                 handle);
     }
+  }
+
+  void update_connection_parameters(uint16_t handle, uint16_t conn_int_min,
+                                    uint16_t conn_int_max,
+                                    uint16_t conn_latency,
+                                    uint16_t conn_timeout, uint16_t min_ce_len,
+                                    uint16_t max_ce_len) {
+    auto connection = handle_to_le_connection_map_.find(handle);
+    if (connection == handle_to_le_connection_map_.end()) {
+      LOG_WARN("Unknown le connection handle:0x%04x", handle);
+      return;
+    }
+    connection->second->UpdateConnectionParameters(conn_int_min, conn_int_max,
+                                                   conn_latency, conn_timeout,
+                                                   min_ce_len, max_ce_len);
   }
 
   void accept_le_connection_from(const hci::AddressWithType& address_with_type,
@@ -1765,6 +1787,15 @@ void shim::legacy::Acl::DisconnectLe(uint16_t handle, tHCI_STATUS reason,
                                      std::string comment) {
   handler_->CallOn(pimpl_.get(), &Acl::impl::disconnect_le, handle, reason,
                    comment);
+}
+
+void shim::legacy::Acl::UpdateConnectionParameters(
+    uint16_t handle, uint16_t conn_int_min, uint16_t conn_int_max,
+    uint16_t conn_latency, uint16_t conn_timeout, uint16_t min_ce_len,
+    uint16_t max_ce_len) {
+  handler_->CallOn(pimpl_.get(), &Acl::impl::update_connection_parameters,
+                   handle, conn_int_min, conn_int_max, conn_latency,
+                   conn_timeout, min_ce_len, max_ce_len);
 }
 
 bool shim::legacy::Acl::HoldMode(uint16_t hci_handle, uint16_t max_interval,

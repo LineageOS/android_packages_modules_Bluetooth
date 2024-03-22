@@ -76,6 +76,15 @@ void bluetooth::shim::ACL_Flush(uint16_t handle) {
   Stack::GetInstance()->GetAcl()->Flush(handle);
 }
 
+void bluetooth::shim::ACL_SendConnectionParameterUpdateRequest(
+    uint16_t handle, uint16_t conn_int_min, uint16_t conn_int_max,
+    uint16_t conn_latency, uint16_t conn_timeout, uint16_t min_ce_len,
+    uint16_t max_ce_len) {
+  Stack::GetInstance()->GetAcl()->UpdateConnectionParameters(
+      handle, conn_int_min, conn_int_max, conn_latency, conn_timeout,
+      min_ce_len, max_ce_len);
+}
+
 void bluetooth::shim::ACL_ConfigureLePrivacy(bool is_le_privacy_enabled) {
   hci::LeAddressManager::AddressPolicy address_policy =
       is_le_privacy_enabled

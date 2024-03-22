@@ -59,6 +59,8 @@ struct acl_peer_supports_ble_coded_phy acl_peer_supports_ble_coded_phy;
 struct acl_send_data_packet_br_edr acl_send_data_packet_br_edr;
 struct acl_peer_supports_ble_connection_parameters_request
     acl_peer_supports_ble_connection_parameters_request;
+struct acl_ble_connection_parameters_request
+    acl_ble_connection_parameters_request;
 struct acl_peer_supports_ble_packet_extension
     acl_peer_supports_ble_packet_extension;
 struct acl_peer_supports_sniff_subrating acl_peer_supports_sniff_subrating;
@@ -245,6 +247,15 @@ bool acl_peer_supports_ble_connection_parameters_request(
   inc_func_call_count(__func__);
   return test::mock::stack_acl::
       acl_peer_supports_ble_connection_parameters_request(remote_bda);
+}
+void acl_ble_connection_parameters_request(
+    uint16_t handle, uint16_t conn_int_min, uint16_t conn_int_max,
+    uint16_t conn_latency, uint16_t conn_timeout, uint16_t min_ce_len,
+    uint16_t max_ce_len) {
+  inc_func_call_count(__func__);
+  test::mock::stack_acl::acl_ble_connection_parameters_request(
+      handle, conn_int_min, conn_int_max, conn_latency, conn_timeout,
+      min_ce_len, max_ce_len);
 }
 bool acl_peer_supports_ble_packet_extension(uint16_t hci_handle) {
   inc_func_call_count(__func__);

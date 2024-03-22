@@ -244,3 +244,13 @@ void shim::legacy::Acl::ClearAddressResolution() {
 void shim::legacy::Acl::SetSystemSuspendState(bool /* suspended */) {
   inc_func_call_count(__func__);
 }
+
+void shim::legacy::Acl::UpdateConnectionParameters(uint16_t /* handle */,
+                                                   uint16_t /* conn_int_min */,
+                                                   uint16_t /* conn_int_max */,
+                                                   uint16_t /* conn_latency */,
+                                                   uint16_t /* conn_timeout */,
+                                                   uint16_t /* min_ce_len */,
+                                                   uint16_t /* max_ce_len */) {
+  inc_func_call_count(__func__);
+}
