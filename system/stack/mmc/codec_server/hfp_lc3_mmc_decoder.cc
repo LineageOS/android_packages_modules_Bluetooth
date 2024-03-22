@@ -17,6 +17,7 @@
 #include "mmc/codec_server/hfp_lc3_mmc_decoder.h"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 #include <lc3.h>
 
 #include "mmc/codec_server/lc3_utils.h"
@@ -24,6 +25,8 @@
 #include "osi/include/allocator.h"
 
 namespace mmc {
+
+using namespace bluetooth;
 
 HfpLc3Decoder::HfpLc3Decoder() : hfp_lc3_decoder_mem_(nullptr) {}
 
@@ -33,7 +36,7 @@ int HfpLc3Decoder::init(ConfigParam config) {
   cleanup();
 
   if (!config.has_hfp_lc3_decoder_param()) {
-    LOG(ERROR) << "HFP LC3 decoder params are not set";
+    log::error("HFP LC3 decoder params are not set");
     return -EINVAL;
   }
 
@@ -49,7 +52,7 @@ int HfpLc3Decoder::init(ConfigParam config) {
       lc3_setup_decoder(dt_us, sr_hz, sr_pcm_hz, hfp_lc3_decoder_mem_);
 
   if (hfp_lc3_decoder_ == nullptr) {
-    LOG(ERROR) << "Wrong parameters provided";
+    log::error("Wrong parameters provided");
     return -EINVAL;
   }
 
@@ -59,14 +62,14 @@ int HfpLc3Decoder::init(ConfigParam config) {
 void HfpLc3Decoder::cleanup() {
   if (hfp_lc3_decoder_mem_) {
     osi_free_and_reset((void**)&hfp_lc3_decoder_mem_);
-    LOG(INFO) << "Released the decoder instance";
+    log::info("Released the decoder instance");
   }
 }
 
 int HfpLc3Decoder::transcode(uint8_t* i_buf, int i_len, uint8_t* o_buf,
                              int o_len) {
   if (o_buf == nullptr || o_len < HFP_LC3_PCM_BYTES + 1) {
-    LOG(ERROR) << "Output buffer size is less than LC3 frame size";
+    log::error("Output buffer size is less than LC3 frame size");
     return -EINVAL;
   }
 
@@ -82,7 +85,7 @@ int HfpLc3Decoder::transcode(uint8_t* i_buf, int i_len, uint8_t* o_buf,
                       MapLc3PcmFmt(param_.fmt()), out_frame, param_.stride());
 
   if (rc != 0 && rc != 1) {
-    LOG(WARNING) << "Wrong decode parameters";
+    log::warn("Wrong decode parameters");
     std::fill(o_buf, o_buf + o_len, 0);
   } else
     o_buf[0] = rc;

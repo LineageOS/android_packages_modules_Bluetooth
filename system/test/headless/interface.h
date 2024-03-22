@@ -17,6 +17,7 @@
 #pragma once
 
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 
 #include <deque>
 #include <string>
@@ -28,6 +29,8 @@
 #include "test/headless/property.h"
 #include "test/headless/text.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth;
 
 enum class Callback {
   AclStateChanged,
@@ -102,9 +105,9 @@ struct callback_params_with_properties_t : public callback_params_t {
                                     ::bt_property_t* properties)
       : callback_params_t(name, callback_type) {
     for (int i = 0; i < num_properties; i++) {
-      LOG_DEBUG("Processing property %d/%d %p type:%d val:%p", i,
-                num_properties, &properties[i], properties[i].type,
-                properties[i].val);
+      log::debug("Processing property {}/{} {} type:{} val:{}", i,
+                 num_properties, fmt::ptr(&properties[i]), properties[i].type,
+                 fmt::ptr(properties[i].val));
       property_queue_.push_back(
           bluetooth::test::headless::property_factory(properties[i]));
     }

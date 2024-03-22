@@ -25,12 +25,15 @@ extern "C" {
 }
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include "a2dp_aac.h"
 #include "mmc/proto/mmc_config.pb.h"
 
 namespace mmc {
 namespace {
+
+using namespace bluetooth;
 
 const int A2DP_AAC_HEADER_LEN = 9;
 const int A2DP_AAC_MAX_LEN_REPR = 4;
@@ -51,20 +54,20 @@ A2dpAacEncoder::~A2dpAacEncoder() { cleanup(); }
 
 int A2dpAacEncoder::init(ConfigParam config) {
   if (!config.has_a2dp_aac_encoder_param()) {
-    LOG(ERROR) << "A2DP AAC Encoder params are not set";
+    log::error("A2DP AAC Encoder params are not set");
     return -EINVAL;
   }
 
   const AVCodec* codec = avcodec_find_encoder(AV_CODEC_ID_AAC);
   if (!codec) {
-    LOG(ERROR) << "Codec not found";
+    log::error("Codec not found");
     return -ENOENT;
   }
 
   if (!avctx_) {
     avctx_ = avcodec_alloc_context3(codec);
     if (!avctx_) {
-      LOG(ERROR) << "Cannot allocate context";
+      log::error("Cannot allocate context");
       return -EINVAL;
     }
   }
@@ -81,12 +84,12 @@ int A2dpAacEncoder::init(ConfigParam config) {
     AVChannelLayout stereo = AV_CHANNEL_LAYOUT_STEREO;
     av_channel_layout_copy(&avctx_->ch_layout, &stereo);
   } else {
-    LOG(ERROR) << "Invalid number of channels: " << channel_count;
+    log::error("Invalid number of channels: {}", channel_count);
     return -EINVAL;
   }
 
   if (sample_rate != 44100 && sample_rate != 48000) {
-    LOG(ERROR) << "Unsupported sample rate: " << sample_rate;
+    log::error("Unsupported sample rate: {}", sample_rate);
     return -EINVAL;
   }
 
@@ -97,7 +100,7 @@ int A2dpAacEncoder::init(ConfigParam config) {
 
   int rc = avcodec_open2(avctx_, codec, NULL);
   if (rc < 0) {
-    LOG(ERROR) << "Could not open context: " << rc;
+    log::error("Could not open context: {}", rc);
     return -EINVAL;
   }
 
@@ -117,7 +120,7 @@ int A2dpAacEncoder::transcode(uint8_t* i_buf, int i_len, uint8_t* o_buf,
 
   AVFrame* frame = av_frame_alloc();
   if (!frame) {
-    LOG(ERROR) << "Could not alloc frame";
+    log::error("Could not alloc frame");
     return -ENOMEM;
   }
 
@@ -127,21 +130,21 @@ int A2dpAacEncoder::transcode(uint8_t* i_buf, int i_len, uint8_t* o_buf,
 
   rc = av_channel_layout_copy(&frame->ch_layout, &avctx_->ch_layout);
   if (rc < 0) {
-    LOG(ERROR) << "Failed to copy channel layout: " << rc;
+    log::error("Failed to copy channel layout: {}", rc);
     av_frame_free(&frame);
     return -EINVAL;
   }
 
   rc = av_frame_get_buffer(frame, 0);
   if (rc < 0) {
-    LOG(ERROR) << "Failed to get buffer for frame: " << rc;
+    log::error("Failed to get buffer for frame: {}", rc);
     av_frame_free(&frame);
     return -EIO;
   }
 
   rc = av_frame_make_writable(frame);
   if (rc < 0) {
-    LOG(ERROR) << "Failed to make frame writable: " << rc;
+    log::error("Failed to make frame writable: {}", rc);
     av_frame_free(&frame);
     return -EIO;
   }
@@ -182,13 +185,13 @@ int A2dpAacEncoder::transcode(uint8_t* i_buf, int i_len, uint8_t* o_buf,
 
   AVPacket* pkt = av_packet_alloc();
   if (!pkt) {
-    LOG(ERROR) << "Could not alloc packet";
+    log::error("Could not alloc packet");
     return -ENOMEM;
   }
 
   rc = avcodec_send_frame(avctx_, frame);
   if (rc < 0) {
-    LOG(ERROR) << "Failed to send frame: " << rc;
+    log::error("Failed to send frame: {}", rc);
     av_frame_free(&frame);
     av_packet_free(&pkt);
     return -EIO;
@@ -196,7 +199,7 @@ int A2dpAacEncoder::transcode(uint8_t* i_buf, int i_len, uint8_t* o_buf,
 
   rc = avcodec_receive_packet(avctx_, pkt);
   if (rc < 0 && rc != -EAGAIN) {
-    LOG(ERROR) << "Failed to receive packet: " << rc;
+    log::error("Failed to receive packet: {}", rc);
     av_frame_free(&frame);
     av_packet_free(&pkt);
     return -EIO;
@@ -215,7 +218,7 @@ int A2dpAacEncoder::transcode(uint8_t* i_buf, int i_len, uint8_t* o_buf,
   int cap = param_.effective_frame_size();
   if (rc == -EAGAIN || cap < pkt->size + A2DP_AAC_MAX_PREFIX_SIZE) {
     if (rc != -EAGAIN) {
-      LOG(WARNING) << "Dropped pkt: size=" << pkt->size << ", cap=" << cap;
+      log::warn("Dropped pkt: size={}, cap={}", pkt->size, cap);
     }
     static uint8_t silent_frame[7] = {
         0x06, 0x21, 0x10, 0x04, 0x60, 0x8c, 0x1c,

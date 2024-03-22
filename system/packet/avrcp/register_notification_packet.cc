@@ -17,6 +17,7 @@
 #include "register_notification_packet.h"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include "include/check.h"
 #include "internal_include/bt_trace.h"
@@ -188,7 +189,7 @@ size_t RegisterNotificationResponseBuilder::size() const {
       data_size = 2;
       break;
     case Event::VOLUME_CHANGED:
-      LOG(FATAL) << "Volume Changed Notification Not Implemented";
+      log::fatal("Volume Changed Notification Not Implemented");
       break;
   }
 
@@ -244,7 +245,7 @@ bool RegisterNotificationResponseBuilder::Serialize(
     }
     case Event::VOLUME_CHANGED:
       // TODO (apanicke): Add Volume Changed builder for when we are controller.
-      LOG(FATAL) << "Volume Changed Notification Not Implemented";
+      log::fatal("Volume Changed Notification Not Implemented");
       break;
   }
 

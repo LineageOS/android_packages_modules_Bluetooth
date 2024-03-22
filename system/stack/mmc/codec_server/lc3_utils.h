@@ -18,6 +18,7 @@
 #define MMC_CODEC_SERVER_LC3_UTILS_H_
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 #include <lc3.h>
 
 #include "mmc/proto/mmc_config.pb.h"
@@ -37,8 +38,8 @@ inline lc3_pcm_format MapLc3PcmFmt(Lc3Param_PcmFmt fmt) {
     case Lc3Param::kLc3PcmFormatS24:
       return LC3_PCM_FORMAT_S24;
     default:
-      LOG(INFO)
-          << "No corresponding LC3 PCM format, return `LC3_PCM_FORMAT_S16`.";
+      bluetooth::log::info(
+          "No corresponding LC3 PCM format, return `LC3_PCM_FORMAT_S16`.");
       return LC3_PCM_FORMAT_S16;
   }
 }
