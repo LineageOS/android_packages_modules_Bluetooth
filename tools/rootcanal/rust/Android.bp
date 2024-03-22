@@ -31,7 +31,7 @@ rust_ffi {
         "librand",
         "libthiserror",
     ],
-    include_dirs: ["include"],
+    export_include_dirs: ["include"],
 }
 
 genrule {
