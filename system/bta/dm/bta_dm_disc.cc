@@ -1726,9 +1726,6 @@ static void bta_dm_observe_results_cb(tBTM_INQ_RESULTS* p_inq,
     result.inq_res.remt_name_not_required = false;
   }
 
-  if (bta_dm_search_cb.p_scan_cback)
-    bta_dm_search_cb.p_scan_cback(BTA_DM_INQ_RES_EVT, &result);
-
   if (p_inq_info) {
     /* application indicates if it knows the remote name, inside the callback
      copy that to the inquiry data base*/
@@ -1805,9 +1802,6 @@ static void bta_dm_observe_cmpl_cb(void* p_result) {
   log::verbose("bta_dm_observe_cmpl_cb");
 
   data.inq_cmpl.num_resps = ((tBTM_INQUIRY_CMPL*)p_result)->num_resp;
-  if (bta_dm_search_cb.p_scan_cback) {
-    bta_dm_search_cb.p_scan_cback(BTA_DM_INQ_CMPL_EVT, &data);
-  }
   if (bta_dm_search_cb.p_csis_scan_cback) {
     bta_dm_search_cb.p_csis_scan_cback(BTA_DM_INQ_CMPL_EVT, &data);
   }
@@ -1827,33 +1821,14 @@ static void bta_dm_start_scan(uint8_t duration_sec,
             },
     };
     log::warn("BTM_BleObserve  failed. status {}", status);
-    if (bta_dm_search_cb.p_scan_cback) {
-      bta_dm_search_cb.p_scan_cback(BTA_DM_INQ_CMPL_EVT, &data);
-    }
     if (bta_dm_search_cb.p_csis_scan_cback) {
       bta_dm_search_cb.p_csis_scan_cback(BTA_DM_INQ_CMPL_EVT, &data);
     }
   }
 }
 
-void bta_dm_ble_observe(bool start, uint8_t duration,
-                        tBTA_DM_SEARCH_CBACK* p_cback) {
-  if (!start) {
-    bta_dm_search_cb.p_scan_cback = NULL;
-    get_btm_client_interface().ble.BTM_BleObserve(false, 0, NULL, NULL, false);
-    return;
-  }
-
-  /*Save the  callback to be called when a scan results are available */
-  bta_dm_search_cb.p_scan_cback = p_cback;
-  bta_dm_start_scan(duration);
-}
-
 void bta_dm_ble_scan(bool start, uint8_t duration_sec,
                      bool low_latency_scan = false) {
-  /* Start or stop only if there is no active main scanner */
-  if (bta_dm_search_cb.p_scan_cback != NULL) return;
-
   if (!start) {
     get_btm_client_interface().ble.BTM_BleObserve(false, 0, NULL, NULL, false);
     return;
