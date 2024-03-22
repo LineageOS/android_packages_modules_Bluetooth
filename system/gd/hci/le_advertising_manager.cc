@@ -79,6 +79,7 @@ struct Advertiser {
   uint16_t duration;
   uint8_t max_extended_advertising_events;
   bool started = false;
+  bool is_legacy = false;
   bool connectable = false;
   bool discoverable = false;
   bool directed = false;
@@ -793,6 +794,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
 
   void set_parameters(AdvertiserId advertiser_id, AdvertisingConfig config) {
     config.tx_power = get_tx_power_after_calibration(static_cast<int8_t>(config.tx_power));
+    advertising_sets_[advertiser_id].is_legacy = config.legacy_pdus;
     advertising_sets_[advertiser_id].connectable = config.connectable;
     advertising_sets_[advertiser_id].discoverable = config.discoverable;
     advertising_sets_[advertiser_id].tx_power = config.tx_power;
@@ -1067,10 +1069,13 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
           data_len += data[i].size();
         }
 
-        if (data_len > le_maximum_advertising_data_length_) {
-          log::warn(
-              "advertising data len exceeds le_maximum_advertising_data_length_ {}",
-              le_maximum_advertising_data_length_);
+        int maxDataLength = (IS_FLAG_ENABLED(ble_check_data_length_on_legacy_advertising) &&
+                             advertising_sets_[advertiser_id].is_legacy)
+                                ? kLeMaximumLegacyAdvertisingDataLength
+                                : le_maximum_advertising_data_length_;
+
+        if (data_len > maxDataLength) {
+          log::warn("advertising data len {} exceeds maxDataLength {}", data_len, maxDataLength);
           if (advertising_callbacks_ != nullptr) {
             if (set_scan_rsp) {
               advertising_callbacks_->OnScanResponseDataSet(
