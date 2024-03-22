@@ -14,6 +14,8 @@
 
 #include "connection_shim.h"
 
+#include <bluetooth/log.h>
+
 #include <algorithm>
 #include <cstdint>
 #include <iterator>
@@ -35,13 +37,13 @@ namespace connection {
 #ifdef TARGET_FLOSS
 struct LeAclManagerCallbackShim {
   void OnLeConnectSuccess(core::AddressWithType addr) const {
-    LOG_ALWAYS_FATAL("system/rust not available in Floss");
+    log::fatal("system/rust not available in Floss");
   }
   void OnLeConnectFail(core::AddressWithType addr, uint8_t status) const {
-    LOG_ALWAYS_FATAL("system/rust not available in Floss");
+    log::fatal("system/rust not available in Floss");
   };
   void OnLeDisconnection(core::AddressWithType addr) const {
-    LOG_ALWAYS_FATAL("system/rust not available in Floss");
+    log::fatal("system/rust not available in Floss");
   };
 };
 

@@ -18,6 +18,8 @@
 
 #include "test/headless/adapter/adapter.h"
 
+#include <bluetooth/log.h>
+
 #include "base/logging.h"  // LOG() stdout and android log
 #include "gd/os/log.h"
 #include "test/headless/headless.h"
@@ -27,6 +29,7 @@
 #include "test/headless/stopwatch.h"
 
 using namespace bluetooth::test;
+using namespace bluetooth;
 using namespace std::chrono_literals;
 
 namespace {
@@ -34,7 +37,7 @@ namespace {
 unsigned kTimeoutMs = 5000;
 
 int get_adapter_info([[maybe_unused]] unsigned int num_loops) {
-  LOG(INFO) << "Started Device Adapter Properties";
+  log::info("Started Device Adapter Properties");
 
   ASSERT(bluetoothInterface.get_adapter_properties() == BT_STATUS_SUCCESS);
   LOG_CONSOLE("Started get adapter properties");

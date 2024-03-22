@@ -132,8 +132,12 @@ if (use.test) {
       "//bt/system/log:log_defaults",
       "//bt/system:external_gtest_main",
     ]
+    libs = [
+      "fmt",
+    ]
     deps = [
       "//bt/system/stack/mmc/proto:mmc_config_proto",
+      "//bt/system/log:libbluetooth_log",
       "//bt/system/common",
       "//bt/system/osi",
       "//bt/system/types",
@@ -157,8 +161,12 @@ if (use.test) {
       "//bt/system/log:log_defaults",
       "//bt/system:external_gtest_main",
     ]
+    libs = [
+      "fmt",
+    ]
     deps = [
       "//bt/system/stack/mmc/proto:mmc_config_proto",
+      "//bt/system/log:libbluetooth_log",
       "//bt/system/common",
       "//bt/system/osi",
       "//bt/system/types",

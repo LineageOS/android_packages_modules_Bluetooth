@@ -33,6 +33,7 @@ static_library("hci") {
 
   configs += [
     "//bt/system:target_defaults",
+    "//bt/system/log:log_defaults",
   ]
 }
 

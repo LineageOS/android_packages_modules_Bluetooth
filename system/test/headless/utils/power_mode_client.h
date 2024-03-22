@@ -19,6 +19,7 @@
 #define LOG_TAG "bt_headless_mode"
 
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 
 #include <future>
 #include <mutex>
@@ -31,6 +32,7 @@
 #include "types/raw_address.h"
 
 using namespace std::chrono_literals;
+using namespace bluetooth;
 
 namespace {
 const tBTM_PM_PWR_MD default_mandatory_sniff_mode = {
@@ -89,12 +91,11 @@ namespace {
 class Queue {
  public:
   void CallbackReceived(const power_mode_callback_t& data) {
-    LOG_INFO("Power mode callback cnt:%zu data:%s", cnt++,
-             data.ToString().c_str());
+    log::info("Power mode callback cnt:{} data:{}", cnt++, data.ToString());
     std::unique_lock<std::mutex> lk(mutex);
     if (promises_map_[data.bd_addr].empty()) {
-      LOG_INFO("Received unsolicited power mode callback: %s",
-               data.ToString().c_str());
+      log::info("Received unsolicited power mode callback: {}",
+                data.ToString());
       return;
     }
     promises_map_[data.bd_addr].front().set_value(data);

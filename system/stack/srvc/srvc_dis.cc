@@ -266,7 +266,7 @@ void dis_c_cmpl_cback(tSRVC_CLCB* p_clcb, tGATTC_OPTYPE op, tGATT_STATUS status,
   uint16_t conn_id = p_clcb->conn_id;
 
   if (dis_cb.dis_read_uuid_idx >= (sizeof(dis_attr_uuid)/sizeof(dis_attr_uuid[0]))) {
-    LOG(ERROR) << "invalid dis_cb.dis_read_uuid_idx";
+    log::error("invalid dis_cb.dis_read_uuid_idx");
     return;
   }
 
