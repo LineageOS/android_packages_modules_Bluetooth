@@ -33,6 +33,23 @@
       "message": "Fixes BT firmware crashes on MT6895, tested on plato.",
       "revId": "e40e2bbfba750e7d7cdc811b941acd0687d80c1d",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a4f13aaf_7ec55fdb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 32253
+      },
+      "writtenOn": "2024-03-23T17:14:18Z",
+      "side": 1,
+      "message": "__ouch__",
+      "revId": "e40e2bbfba750e7d7cdc811b941acd0687d80c1d",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
