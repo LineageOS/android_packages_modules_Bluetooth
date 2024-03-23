@@ -56,6 +56,7 @@ filegroup {
         "android/bluetooth/IBluetoothProfileServiceConnection.aidl",
         "android/bluetooth/IBluetoothQualityReportReadyCallback.aidl",
         "android/bluetooth/IBluetoothSap.aidl",
+        "android/bluetooth/IBluetoothScan.aidl",
         "android/bluetooth/IBluetoothSocketManager.aidl",
         "android/bluetooth/IBluetoothVolumeControl.aidl",
         "android/bluetooth/IBluetoothVolumeControlCallback.aidl",

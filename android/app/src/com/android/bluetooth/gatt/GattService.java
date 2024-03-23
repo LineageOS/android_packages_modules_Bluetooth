@@ -225,9 +225,11 @@ public class GattService extends ProfileService {
                         AdvertiseManagerNativeInterface.getInstance(),
                         mAdvertiserMap);
 
-        HandlerThread thread = new HandlerThread("BluetoothScanManager");
-        thread.start();
-        mTransitionalScanHelper.start(thread.getLooper());
+        if (!Flags.scanManagerRefactor()) {
+            HandlerThread thread = new HandlerThread("BluetoothScanManager");
+            thread.start();
+            mTransitionalScanHelper.start(thread.getLooper());
+        }
         mDistanceMeasurementManager = GattObjectsFactory.getInstance()
                 .createDistanceMeasurementManager(mAdapterService);
 
@@ -1570,7 +1572,8 @@ public class GattService extends ProfileService {
             if (service == null) {
                 return 0;
             }
-            return service.numHwTrackFiltersAvailable(attributionSource);
+            return service.getTransitionalScanHelper()
+                    .numHwTrackFiltersAvailable(attributionSource);
         }
 
         @Override
@@ -2504,16 +2507,6 @@ public class GattService extends ProfileService {
 
         Log.d(TAG, "clientReadPhy() - address=" + address + ", connId=" + connId);
         mNativeInterface.gattClientReadPhy(clientIf, address);
-    }
-
-    @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
-    int numHwTrackFiltersAvailable(AttributionSource attributionSource) {
-        if (!Utils.checkConnectPermissionForDataDelivery(
-                this, attributionSource, "GattService numHwTrackFiltersAvailable")) {
-            return 0;
-        }
-        return (AdapterService.getAdapterService().getTotalNumOfTrackableAdvertisements()
-                - mTransitionalScanHelper.getCurrentUsedTrackingAdvertisement());
     }
 
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)

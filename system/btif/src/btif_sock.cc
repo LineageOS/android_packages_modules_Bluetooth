@@ -62,15 +62,22 @@ static bt_status_t btsock_control_req(uint8_t dlci, const RawAddress& bd_addr,
 
 static void btsock_signaled(int fd, int type, int flags, uint32_t user_id);
 static bt_status_t btsock_disconnect_all(const RawAddress* bd_addr);
+static bt_status_t btsock_get_l2cap_local_cid(Uuid& conn_uuid, uint16_t* cid);
+static bt_status_t btsock_get_l2cap_remote_cid(Uuid& conn_uuid, uint16_t* cid);
 
 static std::atomic_int thread_handle{-1};
 static thread_t* thread;
 
 const btsock_interface_t* btif_sock_get_interface(void) {
   static btsock_interface_t interface = {
-      sizeof(interface),  btsock_listen,
-      btsock_connect,     btsock_request_max_tx_data_length,
-      btsock_control_req, btsock_disconnect_all,
+      sizeof(interface),
+      btsock_listen,
+      btsock_connect,
+      btsock_request_max_tx_data_length,
+      btsock_control_req,
+      btsock_disconnect_all,
+      btsock_get_l2cap_local_cid,
+      btsock_get_l2cap_remote_cid,
   };
 
   return &interface;
@@ -288,4 +295,12 @@ static bt_status_t btsock_disconnect_all(const RawAddress* bd_addr) {
     return l2cap_status;
   }
   return rfc_status;
+}
+
+static bt_status_t btsock_get_l2cap_local_cid(Uuid& conn_uuid, uint16_t* cid) {
+  return btsock_l2cap_get_l2cap_local_cid(conn_uuid, cid);
+}
+
+static bt_status_t btsock_get_l2cap_remote_cid(Uuid& conn_uuid, uint16_t* cid) {
+  return btsock_l2cap_get_l2cap_remote_cid(conn_uuid, cid);
 }

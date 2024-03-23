@@ -605,7 +605,7 @@ public class GattServiceTest {
 
     @Test
     public void numHwTrackFiltersAvailable() {
-        mService.numHwTrackFiltersAvailable(mAttributionSource);
+        mService.getTransitionalScanHelper().numHwTrackFiltersAvailable(mAttributionSource);
         verify(mScanManager).getCurrentUsedTrackingAdvertisement();
     }
 
