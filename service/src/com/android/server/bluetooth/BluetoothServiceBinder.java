@@ -127,7 +127,7 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
             return false;
         }
 
-        if (!mPermissionUtils.isCallerNfc(getCallingAppId())) {
+        if (!BtPermissionUtils.isCallerNfc(getCallingAppId())) {
             throw new SecurityException("No permission to enable Bluetooth quietly");
         }
 
@@ -139,7 +139,7 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
         requireNonNull(source, "AttributionSource cannot be null in disable");
 
         if (!persist) {
-            mPermissionUtils.enforcePrivileged(mContext);
+            BtPermissionUtils.enforcePrivileged(mContext);
         }
 
         final String errorMsg =
@@ -192,7 +192,7 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
             return BluetoothAdapter.DEFAULT_MAC_ADDRESS;
         }
 
-        return mBluetoothManagerService.getAddress(source);
+        return mBluetoothManagerService.getAddress();
     }
 
     @Override
@@ -211,7 +211,7 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
             return null;
         }
 
-        return mBluetoothManagerService.getName(source);
+        return mBluetoothManagerService.getName();
     }
 
     @Override
@@ -219,14 +219,14 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
     public boolean onFactoryReset(AttributionSource source) {
         requireNonNull(source, "AttributionSource cannot be null in onFactoryReset");
 
-        mPermissionUtils.enforcePrivileged(mContext);
+        BtPermissionUtils.enforcePrivileged(mContext);
 
         if (!checkConnectPermissionForDataDelivery(
                 mContext, mPermissionManager, source, "onFactoryReset")) {
             return false;
         }
 
-        return mBluetoothManagerService.onFactoryReset(source);
+        return mBluetoothManagerService.onFactoryReset();
     }
 
     @Override
@@ -277,7 +277,7 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
             return false;
         }
 
-        return mBluetoothManagerService.disableBle(source, source.getPackageName(), token);
+        return mBluetoothManagerService.disableBle(source.getPackageName(), token);
     }
 
     @Override
@@ -293,7 +293,7 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
     @Override
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
     public int setBtHciSnoopLogMode(int mode) {
-        mPermissionUtils.enforcePrivileged(mContext);
+        BtPermissionUtils.enforcePrivileged(mContext);
 
         return mBluetoothManagerService.setBtHciSnoopLogMode(mode);
     }
@@ -301,7 +301,7 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
     @Override
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
     public int getBtHciSnoopLogMode() {
-        mPermissionUtils.enforcePrivileged(mContext);
+        BtPermissionUtils.enforcePrivileged(mContext);
 
         return mBluetoothManagerService.getBtHciSnoopLogMode();
     }
