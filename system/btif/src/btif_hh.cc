@@ -144,6 +144,7 @@ static tHID_KB_LIST hid_kb_numlock_on_list[] = {{LOGITECH_KB_MX5500_PRODUCT_ID,
  *  Static functions
  ******************************************************************************/
 
+static void btif_hh_transport_select(tAclLinkSpec& link_spec);
 /*******************************************************************************
  *  Externs
  ******************************************************************************/
@@ -514,12 +515,30 @@ static bool hh_add_device(const tAclLinkSpec& link_spec,
   return false;
 }
 
-void btif_hh_load_bonded_dev(const tAclLinkSpec& link_spec,
+void btif_hh_load_bonded_dev(const tAclLinkSpec& link_spec_ref,
                              tBTA_HH_ATTR_MASK attr_mask, uint8_t sub_class,
                              uint8_t app_id, tBTA_HH_DEV_DSCP_INFO dscp_info,
                              bool reconnect_allowed) {
   btif_hh_device_t* p_dev;
   uint8_t i;
+  tAclLinkSpec link_spec = link_spec_ref;
+
+  if (IS_FLAG_ENABLED(allow_switching_hid_and_hogp) &&
+      link_spec.transport == BT_TRANSPORT_AUTO) {
+    log::warn("Resolving link spec {} transport to BREDR/LE",
+              link_spec.ToRedactedStringForLogging());
+    btif_hh_transport_select(link_spec);
+    reconnect_allowed = true;
+    btif_storage_set_hid_connection_policy(link_spec, reconnect_allowed);
+
+    // remove and re-write the hid info
+    btif_storage_remove_hid_info(link_spec);
+    btif_storage_add_hid_device_info(
+        link_spec, attr_mask, sub_class, app_id, dscp_info.vendor_id,
+        dscp_info.product_id, dscp_info.version, dscp_info.ctry_code,
+        dscp_info.ssr_max_latency, dscp_info.ssr_min_tout,
+        dscp_info.descriptor.dl_len, dscp_info.descriptor.dsc_list);
+  }
 
   if (hh_add_device(link_spec, attr_mask)) {
     BTA_HhAddDev(link_spec, attr_mask, sub_class, app_id, dscp_info);
