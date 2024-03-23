@@ -32,6 +32,7 @@ import android.content.IntentFilter
 import android.database.ContentObserver
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.provider.Settings
 import androidx.annotation.VisibleForTesting
 import com.android.modules.expresslog.Counter
@@ -171,7 +172,7 @@ private constructor(
         writeDateToStorage(target, context.contentResolver)
         alarmManager.set(
             AlarmManager.ELAPSED_REALTIME,
-            timeToSleep.inWholeMilliseconds,
+            SystemClock.elapsedRealtime() + timeToSleep.inWholeMilliseconds,
             "Bluetooth AutoOnFeature",
             this,
             handler
