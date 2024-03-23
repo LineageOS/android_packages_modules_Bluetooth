@@ -79,6 +79,7 @@ typedef struct l2cap_socket {
   int64_t rx_bytes;
   uint16_t local_cid;   // The local CID
   uint16_t remote_cid;  // The remote CID
+  Uuid conn_uuid;       // The connection uuid
 } l2cap_socket;
 
 static void btsock_l2cap_server_listen(l2cap_socket* sock);
@@ -201,6 +202,20 @@ static l2cap_socket* btsock_l2cap_find_by_id_l(uint32_t id) {
   while (sock && sock->id != id) sock = sock->next;
 
   return sock;
+}
+
+/* only call with std::mutex taken */
+static l2cap_socket* btsock_l2cap_find_by_conn_uuid_l(Uuid& conn_uuid) {
+  l2cap_socket* sock = socks;
+
+  while (sock) {
+    if (sock->conn_uuid == conn_uuid) {
+      return sock;
+    }
+    sock = sock->next;
+  }
+
+  return nullptr;
 }
 
 static void btsock_l2cap_free_l(l2cap_socket* sock) {
@@ -374,10 +389,33 @@ static bool send_app_err_code(l2cap_socket* sock, tBTA_JV_L2CAP_REASON code) {
          sizeof(code);
 }
 
+static uint64_t uuid_lsb(const Uuid& uuid) {
+  uint64_t lsb = 0;
+
+  auto uu = uuid.To128BitBE();
+  for (int i = 8; i <= 15; i++) {
+    lsb <<= 8;
+    lsb |= uu[i];
+  }
+
+  return lsb;
+}
+
+static uint64_t uuid_msb(const Uuid& uuid) {
+  uint64_t msb = 0;
+
+  auto uu = uuid.To128BitBE();
+  for (int i = 0; i <= 7; i++) {
+    msb <<= 8;
+    msb |= uu[i];
+  }
+
+  return msb;
+}
+
 static bool send_app_connect_signal(int fd, const RawAddress* addr, int channel,
                                     int status, int send_fd, uint16_t rx_mtu,
-                                    uint16_t tx_mtu, uint16_t local_cid,
-                                    uint16_t remote_cid) {
+                                    uint16_t tx_mtu, const Uuid& conn_uuid) {
   sock_connect_signal_t cs;
   cs.size = sizeof(cs);
   cs.bd_addr = *addr;
@@ -385,8 +423,8 @@ static bool send_app_connect_signal(int fd, const RawAddress* addr, int channel,
   cs.status = status;
   cs.max_rx_packet_size = rx_mtu;
   cs.max_tx_packet_size = tx_mtu;
-  cs.l2cap_lcid = local_cid;
-  cs.l2cap_rcid = remote_cid;
+  cs.conn_uuid_lsb = uuid_lsb(conn_uuid);
+  cs.conn_uuid_msb = uuid_msb(conn_uuid);
   if (send_fd != -1) {
     if (sock_send_fd(fd, (const uint8_t*)&cs, sizeof(cs), send_fd) ==
         sizeof(cs))
@@ -479,6 +517,7 @@ static void on_srv_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
   accept_rs->tx_mtu = sock->tx_mtu = p_open->tx_mtu;
   accept_rs->local_cid = p_open->local_cid;
   accept_rs->remote_cid = p_open->remote_cid;
+  accept_rs->conn_uuid = Uuid::GetRandom();
 
   /* Swap IDs to hand over the GAP connection to the accepted socket, and start
      a new server on the newly create socket ID. */
@@ -505,7 +544,7 @@ static void on_srv_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
                        accept_rs->id);
   send_app_connect_signal(sock->our_fd, &accept_rs->addr, sock->channel, 0,
                           accept_rs->app_fd, sock->rx_mtu, p_open->tx_mtu,
-                          accept_rs->local_cid, accept_rs->remote_cid);
+                          accept_rs->conn_uuid);
   accept_rs->app_fd =
       -1;  // The fd is closed after sent to app in send_app_connect_signal()
   // But for some reason we still leak a FD - either the server socket
@@ -519,6 +558,7 @@ static void on_cl_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
   sock->tx_mtu = p_open->tx_mtu;
   sock->local_cid = p_open->local_cid;
   sock->remote_cid = p_open->remote_cid;
+  sock->conn_uuid = Uuid::GetRandom();
 
   if (!send_app_psm_or_chan_l(sock)) {
     log::error("Unable to send l2cap socket to application socket_id:{}",
@@ -527,8 +567,7 @@ static void on_cl_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
   }
 
   if (!send_app_connect_signal(sock->our_fd, &sock->addr, sock->channel, 0, -1,
-                               sock->rx_mtu, p_open->tx_mtu, sock->local_cid,
-                               sock->remote_cid)) {
+                               sock->rx_mtu, p_open->tx_mtu, sock->conn_uuid)) {
     log::error("Unable to connect l2cap socket to application socket_id:{}",
                sock->id);
     return;
@@ -993,5 +1032,33 @@ bt_status_t btsock_l2cap_disconnect(const RawAddress* bd_addr) {
     sock = next;
   }
 
+  return BT_STATUS_SUCCESS;
+}
+
+bt_status_t btsock_l2cap_get_l2cap_local_cid(Uuid& conn_uuid, uint16_t* cid) {
+  l2cap_socket* sock;
+
+  std::unique_lock<std::mutex> lock(state_lock);
+  sock = btsock_l2cap_find_by_conn_uuid_l(conn_uuid);
+  if (!sock) {
+    log::error("Unable to find l2cap socket with conn_uuid:{}",
+               conn_uuid.ToString());
+    return BT_STATUS_FAIL;
+  }
+  *cid = sock->local_cid;
+  return BT_STATUS_SUCCESS;
+}
+
+bt_status_t btsock_l2cap_get_l2cap_remote_cid(Uuid& conn_uuid, uint16_t* cid) {
+  l2cap_socket* sock;
+
+  std::unique_lock<std::mutex> lock(state_lock);
+  sock = btsock_l2cap_find_by_conn_uuid_l(conn_uuid);
+  if (!sock) {
+    log::error("Unable to find l2cap socket with conn_uuid:{}",
+               conn_uuid.ToString());
+    return BT_STATUS_FAIL;
+  }
+  *cid = sock->remote_cid;
   return BT_STATUS_SUCCESS;
 }
