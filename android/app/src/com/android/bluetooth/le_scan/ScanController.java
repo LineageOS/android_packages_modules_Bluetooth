@@ -26,7 +26,6 @@ import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.AttributionSource;
 import android.content.Context;
-import android.os.Build;
 import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.WorkSource;
@@ -35,7 +34,6 @@ import android.util.Log;
 import java.util.List;
 
 public class ScanController {
-    private static final boolean DBG = Build.TYPE.equals("userdebug") || Build.TYPE.equals("eng");
     private static final String TAG = ScanController.class.getSimpleName();
 
     public final TransitionalScanHelper mTransitionalScanHelper;
@@ -50,9 +48,7 @@ public class ScanController {
     }
 
     public void start() {
-        if (DBG) {
-            Log.d(TAG, "start()");
-        }
+        Log.d(TAG, "start()");
         isAvailable = true;
         HandlerThread thread = new HandlerThread("BluetoothScanManager");
         thread.start();
@@ -60,9 +56,7 @@ public class ScanController {
     }
 
     public void stop() {
-        if (DBG) {
-            Log.d(TAG, "stop()");
-        }
+        Log.d(TAG, "stop()");
         isAvailable = false;
         mTransitionalScanHelper.stop();
         mTransitionalScanHelper.cleanup();
