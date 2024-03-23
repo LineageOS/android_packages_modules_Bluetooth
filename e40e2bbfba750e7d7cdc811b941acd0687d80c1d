@@ -16,6 +16,23 @@
       "message": "Fixes A2DP on mt6895",
       "revId": "e40e2bbfba750e7d7cdc811b941acd0687d80c1d",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "98badb4c_d9ad0e58",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 32222
+      },
+      "writtenOn": "2024-03-23T17:11:06Z",
+      "side": 1,
+      "message": "Fixes BT firmware crashes on MT6895, tested on plato.",
+      "revId": "e40e2bbfba750e7d7cdc811b941acd0687d80c1d",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
