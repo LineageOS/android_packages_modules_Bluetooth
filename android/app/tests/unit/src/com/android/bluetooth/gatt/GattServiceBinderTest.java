@@ -765,7 +765,7 @@ public class GattServiceBinderTest {
     public void numHwTrackFiltersAvailable() throws Exception {
         mBinder.numHwTrackFiltersAvailable(mAttributionSource, SynchronousResultReceiver.get());
 
-        verify(mService).numHwTrackFiltersAvailable(mAttributionSource);
+        verify(mScanHelper).numHwTrackFiltersAvailable(mAttributionSource);
     }
 
     @Test
