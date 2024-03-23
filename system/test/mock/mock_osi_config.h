@@ -30,7 +30,6 @@
 #include <base/logging.h>
 #include <fcntl.h>
 #include <libgen.h>
-#include <log/log.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>

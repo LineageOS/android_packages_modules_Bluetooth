@@ -20,7 +20,6 @@
 
 #include <fmt/format.h>
 #include <gtest/gtest.h>
-#include <log/log.h>
 
 using namespace bluetooth::log_internal;
 

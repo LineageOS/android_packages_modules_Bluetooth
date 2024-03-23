@@ -387,15 +387,11 @@ cc_test {
         host: {
             srcs: [
                 ":BluetoothHalTestSources_hci_host",
-                ":BluetoothHostTestingLogCapture",
-                ":BluetoothHostTestingLogCaptureTest",
                 ":BluetoothOsTestSources_host",
             ],
         },
         android: {
             srcs: [
-                ":BluetoothAndroidTestingLogCapture",
-                ":BluetoothAndroidTestingLogCaptureTest",
                 ":BluetoothHalTestSources_hci_android_hidl",
                 ":BluetoothOsTestSources_android",
             ],

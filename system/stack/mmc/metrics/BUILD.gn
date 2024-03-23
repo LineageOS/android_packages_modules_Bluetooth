@@ -15,7 +15,10 @@
 #
 
 source_set("libmmc_metrics"){
-  configs += [ "//bt/system/stack/mmc:target_defaults" ]
+  configs += [
+    "//bt/system/stack/mmc:target_defaults",
+    "//bt/system/log:log_defaults",
+  ]
   sources = [
     "mmc_rtt_logger.cc",
   ]

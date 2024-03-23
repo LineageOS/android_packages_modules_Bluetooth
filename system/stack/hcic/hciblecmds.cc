@@ -225,33 +225,6 @@ void btsnd_hcic_ble_set_scan_enable(uint8_t scan_enable, uint8_t duplicate) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_ble_upd_ll_conn_params(uint16_t handle, uint16_t conn_int_min,
-                                       uint16_t conn_int_max,
-                                       uint16_t conn_latency,
-                                       uint16_t conn_timeout,
-                                       uint16_t min_ce_len,
-                                       uint16_t max_ce_len) {
-  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
-  uint8_t* pp = (uint8_t*)(p + 1);
-
-  p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_BLE_UPD_LL_CONN_PARAMS;
-  p->offset = 0;
-
-  UINT16_TO_STREAM(pp, HCI_BLE_UPD_LL_CONN_PARAMS);
-  UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_BLE_UPD_LL_CONN_PARAMS);
-
-  UINT16_TO_STREAM(pp, handle);
-
-  UINT16_TO_STREAM(pp, conn_int_min);
-  UINT16_TO_STREAM(pp, conn_int_max);
-  UINT16_TO_STREAM(pp, conn_latency);
-  UINT16_TO_STREAM(pp, conn_timeout);
-  UINT16_TO_STREAM(pp, min_ce_len);
-  UINT16_TO_STREAM(pp, max_ce_len);
-
-  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
-}
-
 void btsnd_hcic_ble_read_remote_feat(uint16_t handle) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);

@@ -52,7 +52,6 @@ struct bta_dm_ble_config_local_privacy bta_dm_ble_config_local_privacy;
 struct bta_dm_ble_confirm_reply bta_dm_ble_confirm_reply;
 struct bta_dm_ble_csis_observe bta_dm_ble_csis_observe;
 struct bta_dm_ble_get_energy_info bta_dm_ble_get_energy_info;
-struct bta_dm_ble_observe bta_dm_ble_observe;
 struct bta_dm_ble_passkey_reply bta_dm_ble_passkey_reply;
 struct bta_dm_ble_scan bta_dm_ble_scan;
 struct bta_dm_ble_set_conn_params bta_dm_ble_set_conn_params;
@@ -152,11 +151,6 @@ void bta_dm_ble_get_energy_info(
     tBTA_BLE_ENERGY_INFO_CBACK* p_energy_info_cback) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_act::bta_dm_ble_get_energy_info(p_energy_info_cback);
-}
-void bta_dm_ble_observe(bool start, uint8_t duration,
-                        tBTA_DM_SEARCH_CBACK* p_cback) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_ble_observe(start, duration, p_cback);
 }
 void bta_dm_ble_passkey_reply(const RawAddress& bd_addr, bool accept,
                               uint32_t passkey) {

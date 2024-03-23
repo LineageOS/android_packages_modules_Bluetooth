@@ -614,7 +614,7 @@ struct classic_impl : public security::ISecurityManagerListener {
   void on_enhanced_flush_complete(EventView packet) {
     auto flush_complete = EnhancedFlushCompleteView::Create(packet);
     if (!flush_complete.IsValid()) {
-      LOG_ERROR("Received an invalid packet");
+      log::error("Received an invalid packet");
       return;
     }
     uint16_t handle = flush_complete.GetConnectionHandle();

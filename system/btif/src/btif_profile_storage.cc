@@ -148,7 +148,7 @@ bt_status_t btif_storage_add_hid_device_info(
   }
 
   if (link_spec.transport == BT_TRANSPORT_AUTO) {
-    LOG_ERROR("Unexpected transport!");
+    log::error("Unexpected transport!");
     return BT_STATUS_FAIL;
   }
   btif_config_set_int(bdstr, BTIF_STORAGE_KEY_HID_DB_VERSION,
@@ -1233,7 +1233,7 @@ bt_status_t btif_storage_set_hid_connection_policy(
     btif_config_set_int(bdstr, BTIF_STORAGE_KEY_HID_RECONNECT_ALLOWED,
                         reconnect_allowed);
   } else {
-    LOG_ERROR("Unexpected!");
+    log::error("Unexpected!");
   }
 
   return BT_STATUS_SUCCESS;
@@ -1258,7 +1258,7 @@ bt_status_t btif_storage_get_hid_connection_policy(
   } else if (link_spec.transport == BT_TRANSPORT_BR_EDR) {
     btif_config_get_int(bdstr, BTIF_STORAGE_KEY_HID_RECONNECT_ALLOWED, &value);
   } else {
-    LOG_ERROR("Un expected!");
+    log::error("Un expected!");
   }
   *reconnect_allowed = value ? true : false;
 

@@ -1206,9 +1206,9 @@ TEST_F(CsisClientTest, test_csis_member_not_found) {
   ASSERT_NE(p_results_cb, nullptr);
 
   tBTA_DM_SEARCH result;
-  result.inq_cmpl.num_resps = 80;
+  result.observe_cmpl.num_resps = 80;
 
-  p_results_cb(BTA_DM_INQ_CMPL_EVT, &result);
+  p_results_cb(BTA_DM_OBSERVE_CMPL_EVT, &result);
 
   /* Verify that scanner has been called to stop filtering  */
   ASSERT_EQ(2, get_func_call_count("set_empty_filter"));

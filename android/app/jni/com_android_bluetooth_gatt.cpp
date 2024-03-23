@@ -18,7 +18,6 @@
 
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
-#include <cutils/log.h>
 #include <string.h>
 
 #include <array>
@@ -32,7 +31,6 @@
 #include "rust/cxx.h"
 #include "rust/src/gatt/ffi/gatt_shim.h"
 #include "src/gatt/ffi.rs.h"
-#include "utils/Log.h"
 
 using bluetooth::Uuid;
 

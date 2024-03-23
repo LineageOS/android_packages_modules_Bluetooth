@@ -18,6 +18,7 @@
 
 package com.android.server.bluetooth
 
+import android.app.AlarmManager
 import android.bluetooth.BluetoothAdapter.ACTION_AUTO_ON_STATE_CHANGED
 import android.bluetooth.BluetoothAdapter.AUTO_ON_STATE_DISABLED
 import android.bluetooth.BluetoothAdapter.AUTO_ON_STATE_ENABLED
@@ -157,24 +158,23 @@ private constructor(
     looper: Looper,
     private val context: Context,
     private val receiver: BroadcastReceiver,
-    callback_on: () -> Unit,
+    private val callback_on: () -> Unit,
     private val now: LocalDateTime,
     private val target: LocalDateTime,
     private val timeToSleep: Duration
-) {
+) : AlarmManager.OnAlarmListener {
+    private val alarmManager: AlarmManager = context.getSystemService(AlarmManager::class.java)!!
+
     private val handler = Handler(looper)
 
     init {
         writeDateToStorage(target, context.contentResolver)
-        handler.postDelayed(
-            {
-                Log.i(TAG, "[${this}]: Bluetooth restarting now")
-                callback_on()
-                cancel()
-                // Set global instance to null to prevent further action. Job is done here
-                timer = null
-            },
-            timeToSleep.inWholeMilliseconds
+        alarmManager.set(
+            AlarmManager.ELAPSED_REALTIME,
+            timeToSleep.inWholeMilliseconds,
+            "Bluetooth AutoOnFeature",
+            this,
+            handler
         )
         Log.i(TAG, "[${this}]: Scheduling next Bluetooth restart")
 
@@ -188,6 +188,13 @@ private constructor(
             null,
             handler
         )
+    }
+
+    override fun onAlarm() {
+        Log.i(TAG, "[${this}]: Bluetooth restarting now")
+        callback_on()
+        cancel()
+        timer = null
     }
 
     companion object {
@@ -236,6 +243,7 @@ private constructor(
     internal fun pause() {
         Log.i(TAG, "[${this}]: Pausing timer")
         context.unregisterReceiver(receiver)
+        alarmManager.cancel(this)
         handler.removeCallbacksAndMessages(null)
     }
 
@@ -244,11 +252,13 @@ private constructor(
     internal fun cancel() {
         Log.i(TAG, "[${this}]: Cancelling timer")
         context.unregisterReceiver(receiver)
+        alarmManager.cancel(this)
         handler.removeCallbacksAndMessages(null)
         resetStorage(context.contentResolver)
     }
 
-    override fun toString() = "Timer scheduled ${now} for target=${target} (=${timeToSleep} delay)."
+    override fun toString() =
+        "Timer was scheduled at ${now} and should expire at ${target}. (sleep for ${timeToSleep})."
 }
 
 @VisibleForTesting internal val USER_SETTINGS_KEY = "bluetooth_automatic_turn_on"

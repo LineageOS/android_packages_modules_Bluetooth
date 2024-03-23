@@ -18,6 +18,7 @@
 
 #include "test/headless/connect/connect.h"
 
+#include <bluetooth/log.h>
 #include <inttypes.h>
 
 #include <chrono>
@@ -41,6 +42,7 @@
 #include "types/raw_address.h"
 
 using namespace bluetooth::test;
+using namespace bluetooth;
 using namespace std::chrono_literals;
 
 const stack_manager_t* stack_manager_get_interface();
@@ -72,7 +74,7 @@ int do_connect([[maybe_unused]] unsigned int num_loops,
   };
 
   LOG_CONSOLE("Creating connection to:%s", bd_addr.ToString().c_str());
-  LOG(INFO) << "Creating classic connection to " << bd_addr.ToString();
+  log::info("Creating classic connection to {}", bd_addr.ToString());
   acl_create_classic_connection(bd_addr, false, false);
 
   std::shared_ptr<callback_params_t> acl{nullptr};
@@ -106,7 +108,7 @@ int do_connect([[maybe_unused]] unsigned int num_loops,
 
   if (f_simulate_stack_crash) {
     LOG_CONSOLE("Just crushing stack");
-    LOG(INFO) << "Just crushing stack";
+    log::info("Just crushing stack");
     bluetoothInterface.disable();
   }
   std::shared_ptr<callback_params_t> acl2{nullptr};

@@ -1196,15 +1196,7 @@ cc_test {
         "packages/modules/Bluetooth/system/stack/include",
     ],
     target: {
-        host: {
-            srcs: [
-                ":BluetoothHostTestingLogCapture",
-            ],
-        },
         android: {
-            srcs: [
-                ":BluetoothAndroidTestingLogCapture",
-            ],
             test_config: "test/a2dp/AndroidTest.xml",
         },
         android_x86: {

@@ -234,6 +234,27 @@ struct acl_peer_supports_ble_connection_parameters_request {
 };
 extern struct acl_peer_supports_ble_connection_parameters_request
     acl_peer_supports_ble_connection_parameters_request;
+// Name: acl_peer_supports_ble_connection_parameters_request
+// Params:  const RawAddress& remote_bda
+// Returns: bool
+struct acl_ble_connection_parameters_request {
+  std::function<void(uint16_t handle, uint16_t conn_int_min,
+                     uint16_t conn_int_max, uint16_t conn_latency,
+                     uint16_t conn_timeout, uint16_t min_ce_len,
+                     uint16_t max_ce_len)>
+      body{[](uint16_t /* handle */, uint16_t /* conn_int_min */,
+              uint16_t /* conn_int_max */, uint16_t /* conn_latency */,
+              uint16_t /* conn_timeout */, uint16_t /* min_ce_len */,
+              uint16_t /* max_ce_len */) {}};
+  void operator()(uint16_t handle, uint16_t conn_int_min, uint16_t conn_int_max,
+                  uint16_t conn_latency, uint16_t conn_timeout,
+                  uint16_t min_ce_len, uint16_t max_ce_len) {
+    body(handle, conn_int_min, conn_int_max, conn_latency, conn_timeout,
+         min_ce_len, max_ce_len);
+  };
+};
+extern struct acl_ble_connection_parameters_request
+    acl_ble_connection_parameters_request;
 // Name: acl_peer_supports_ble_packet_extension
 // Params: uint16_t hci_handle
 // Returns: bool

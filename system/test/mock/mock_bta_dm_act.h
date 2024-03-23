@@ -226,20 +226,6 @@ struct bta_dm_ble_get_energy_info {
 };
 extern struct bta_dm_ble_get_energy_info bta_dm_ble_get_energy_info;
 
-// Name: bta_dm_ble_observe
-// Params: bool start, uint8_t duration, tBTA_DM_SEARCH_CBACK* p_cback
-// Return: void
-struct bta_dm_ble_observe {
-  std::function<void(bool start, uint8_t duration,
-                     tBTA_DM_SEARCH_CBACK* p_cback)>
-      body{[](bool /* start */, uint8_t /* duration */,
-              tBTA_DM_SEARCH_CBACK* /* p_cback */) {}};
-  void operator()(bool start, uint8_t duration, tBTA_DM_SEARCH_CBACK* p_cback) {
-    body(start, duration, p_cback);
-  };
-};
-extern struct bta_dm_ble_observe bta_dm_ble_observe;
-
 // Name: bta_dm_clear_event_filter
 // Params: None
 // Return: void

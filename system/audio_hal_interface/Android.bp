@@ -146,18 +146,6 @@ cc_test {
         "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/stack/include",
     ],
-    target: {
-        host: {
-            srcs: [
-                ":BluetoothHostTestingLogCapture",
-            ],
-        },
-        android: {
-            srcs: [
-                ":BluetoothAndroidTestingLogCapture",
-            ],
-        },
-    },
     sanitize: {
         cfi: true,
         scs: true,
