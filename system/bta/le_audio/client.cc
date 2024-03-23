@@ -5821,7 +5821,7 @@ class LeAudioClientImpl : public LeAudioClient {
                  << ", Invalid group: " << static_cast<int>(active_group_id_);
     } else {
       handleAsymmetricPhyForUnicast(group);
-      LOG_VERBOSE("ClientAudioInterfaceRelease - cleanup");
+      log::info("ClientAudioInterfaceRelease - cleanup");
     }
 
     if (le_audio_source_hal_client_) {
@@ -5904,18 +5904,24 @@ class LeAudioClientImpl : public LeAudioClient {
   void SetAsymmetricBlePhy(LeAudioDeviceGroup* group, bool asymmetric) {
     LeAudioDevice* leAudioDevice = group->GetFirstDevice();
     if (leAudioDevice == nullptr) {
-      LOG_ERROR("Shouldn't be called without a device.");
+      log::error("Shouldn't be called without a device.");
       return;
     }
 
     for (auto tmpDevice = leAudioDevice; tmpDevice != nullptr;
          tmpDevice = group->GetNextDevice(tmpDevice)) {
+      log::info(
+          "tmpDevice->acl_asymmetric_: {}, asymmetric: {}, address: {}, "
+          "acl_connected: {} ",
+          tmpDevice->acl_asymmetric_ == asymmetric, asymmetric,
+          ADDRESS_TO_LOGGABLE_CSTR(tmpDevice->address_),
+          BTM_IsAclConnectionUp(tmpDevice->address_, BT_TRANSPORT_LE));
       if (tmpDevice->acl_asymmetric_ == asymmetric ||
           !BTM_IsAclConnectionUp(tmpDevice->address_, BT_TRANSPORT_LE))
         continue;
 
-      LOG_VERBOSE("SetAsymmetricBlePhy: %d for %s", asymmetric,
-                  ADDRESS_TO_LOGGABLE_CSTR(tmpDevice->address_));
+      log::info("SetAsymmetricBlePhy: {} for {}", asymmetric,
+                ADDRESS_TO_LOGGABLE_CSTR(tmpDevice->address_));
       BTM_BleSetPhy(tmpDevice->address_, PHY_LE_2M,
                     asymmetric ? PHY_LE_1M : PHY_LE_2M, 0);
       tmpDevice->acl_asymmetric_ = asymmetric;

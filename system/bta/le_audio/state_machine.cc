@@ -975,6 +975,9 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
           group->asymmetric_phy_for_unidirectional_cis_supported == true &&
           group->GetSduInterval(
               bluetooth::le_audio::types::kLeAudioDirectionSource) == 0) {
+        log::info(
+            "Remote device may not support asymmetric phy for CIS, retry "
+            "symmetric setting again");
         group->asymmetric_phy_for_unidirectional_cis_supported = false;
       }
 
