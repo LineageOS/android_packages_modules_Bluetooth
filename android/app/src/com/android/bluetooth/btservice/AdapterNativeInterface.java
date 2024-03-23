@@ -17,6 +17,7 @@
 package com.android.bluetooth.btservice;
 
 import android.bluetooth.OobData;
+import android.os.ParcelUuid;
 
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
@@ -246,6 +247,18 @@ public class AdapterNativeInterface {
         return isLogRedactionEnabledNative();
     }
 
+    int getSocketL2capLocalChannelId(ParcelUuid connectionUuid) {
+        return getSocketL2capLocalChannelIdNative(
+                connectionUuid.getUuid().getLeastSignificantBits(),
+                connectionUuid.getUuid().getMostSignificantBits());
+    }
+
+    int getSocketL2capRemoteChannelId(ParcelUuid connectionUuid) {
+        return getSocketL2capRemoteChannelIdNative(
+                connectionUuid.getUuid().getLeastSignificantBits(),
+                connectionUuid.getUuid().getMostSignificantBits());
+    }
+
     /**********************************************************************************************/
     /*********************************** callbacks from native ************************************/
     /**********************************************************************************************/
@@ -352,4 +365,10 @@ public class AdapterNativeInterface {
     private native boolean pbapPseDynamicVersionUpgradeIsEnabledNative();
 
     private native boolean isLogRedactionEnabledNative();
+
+    private native int getSocketL2capLocalChannelIdNative(
+            long connectionUuidLsb, long connectionUuidMsb);
+
+    private native int getSocketL2capRemoteChannelIdNative(
+            long connectionUuidLsb, long connectionUuidMsb);
 }

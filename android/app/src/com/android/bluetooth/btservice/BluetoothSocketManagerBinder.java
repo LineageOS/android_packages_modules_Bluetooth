@@ -32,6 +32,8 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
 
     private static final int INVALID_FD = -1;
 
+    private static final int INVALID_CID = -1;
+
     private AdapterService mService;
 
     BluetoothSocketManagerBinder(AdapterService service) {
@@ -105,18 +107,31 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
     }
 
     @Override
-    public boolean checkPermissionForL2capChannelInfo(AttributionSource source) {
+    public int getL2capLocalChannelId(ParcelUuid connectionUuid, AttributionSource source) {
         AdapterService service = mService;
         if (service == null
                 || !Utils.callerIsSystemOrActiveOrManagedUser(
-                service, TAG, "checkPermissionForL2capChannelInfo")
+                        service, TAG, "getL2capLocalChannelId")
                 || !Utils.checkConnectPermissionForDataDelivery(
-                service, source,
-                "BluetoothSocketManagerBinder checkPermissionForL2capChannelInfo")) {
-            return false;
+                        service, source, "BluetoothSocketManagerBinder getL2capLocalChannelId")) {
+            return INVALID_CID;
         }
         Utils.enforceBluetoothPrivilegedPermission(service);
-        return true;
+        return service.getNative().getSocketL2capLocalChannelId(connectionUuid);
+    }
+
+    @Override
+    public int getL2capRemoteChannelId(ParcelUuid connectionUuid, AttributionSource source) {
+        AdapterService service = mService;
+        if (service == null
+                || !Utils.callerIsSystemOrActiveOrManagedUser(
+                        service, TAG, "getL2capRemoteChannelId")
+                || !Utils.checkConnectPermissionForDataDelivery(
+                        service, source, "BluetoothSocketManagerBinder getL2capRemoteChannelId")) {
+            return INVALID_CID;
+        }
+        Utils.enforceBluetoothPrivilegedPermission(service);
+        return service.getNative().getSocketL2capRemoteChannelId(connectionUuid);
     }
 
     private void enforceActiveUser() {
