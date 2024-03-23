@@ -1048,8 +1048,7 @@ public class TransitionalScanHelper {
 
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)
     public void registerScanner(
-            IScannerCallback callback, WorkSource workSource, AttributionSource attributionSource)
-            throws RemoteException {
+            IScannerCallback callback, WorkSource workSource, AttributionSource attributionSource) {
         if (!Utils.checkScanPermissionForDataDelivery(
                 mContext, attributionSource, "ScanHelper registerScanner")) {
             return;
@@ -1065,7 +1064,11 @@ public class TransitionalScanHelper {
                 && app.isScanningTooFrequently()
                 && !Utils.checkCallerHasPrivilegedPermission(mContext)) {
             Log.e(TAG, "App '" + app.appName + "' is scanning too frequently");
-            callback.onScannerRegistered(ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY, -1);
+            try {
+                callback.onScannerRegistered(ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY, -1);
+            } catch (RemoteException e) {
+                Log.e(TAG, "Exception: " + e);
+            }
             return;
         }
 
@@ -1375,6 +1378,16 @@ public class TransitionalScanHelper {
             return;
         }
         mPeriodicScanManager.transferSetInfo(bda, serviceData, advHandle, callback);
+    }
+
+    @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
+    public int numHwTrackFiltersAvailable(AttributionSource attributionSource) {
+        if (!Utils.checkConnectPermissionForDataDelivery(
+            mContext, attributionSource, "ScanHelper numHwTrackFiltersAvailable")) {
+            return 0;
+        }
+        return (AdapterService.getAdapterService().getTotalNumOfTrackableAdvertisements()
+                - getCurrentUsedTrackingAdvertisement());
     }
 
     /**
