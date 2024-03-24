@@ -2217,29 +2217,29 @@ public class AdapterService extends Service {
         }
 
         @Override
-        public boolean enable(boolean quietMode, AttributionSource attributionSource) {
+        public void enable(boolean quietMode, AttributionSource attributionSource) {
             AdapterService service = getService();
             if (service == null
                     || !callerIsSystemOrActiveOrManagedUser(service, TAG, "enable")
                     || !Utils.checkConnectPermissionForDataDelivery(
                             service, attributionSource, "AdapterService enable")) {
-                return false;
+                return;
             }
 
-            return service.enable(quietMode);
+            service.enable(quietMode);
         }
 
         @Override
-        public boolean disable(AttributionSource attributionSource) {
+        public void disable(AttributionSource attributionSource) {
             AdapterService service = getService();
             if (service == null
                     || !callerIsSystemOrActiveOrManagedUser(service, TAG, "disable")
                     || !Utils.checkConnectPermissionForDataDelivery(
                             service, attributionSource, "AdapterService disable")) {
-                return false;
+                return;
             }
 
-            return service.disable();
+            service.disable();
         }
 
         @Override
@@ -4519,12 +4519,12 @@ public class AdapterService extends Service {
                 android.Manifest.permission.INTERACT_ACROSS_USERS,
                 android.Manifest.permission.MANAGE_USERS,
             })
-    public synchronized boolean enable(boolean quietMode) {
+    public synchronized void enable(boolean quietMode) {
         // Enforce the user restriction for disallowing Bluetooth if it was set.
         if (mUserManager.hasUserRestrictionForUser(
                 UserManager.DISALLOW_BLUETOOTH, UserHandle.SYSTEM)) {
             debugLog("enable() called when Bluetooth was disallowed");
-            return false;
+            return;
         }
         if (Flags.fastBindToApp()) {
             // The call to init must be done on the main thread
@@ -4534,13 +4534,11 @@ public class AdapterService extends Service {
         debugLog("enable() - Enable called with quiet mode status =  " + quietMode);
         mQuietmode = quietMode;
         mAdapterStateMachine.sendMessage(AdapterState.BLE_TURN_ON);
-        return true;
     }
 
-    boolean disable() {
+    void disable() {
         debugLog("disable() called with mRunningProfiles.size() = " + mRunningProfiles.size());
         mAdapterStateMachine.sendMessage(AdapterState.USER_TURN_OFF);
-        return true;
     }
 
     public String getName() {

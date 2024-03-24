@@ -1814,9 +1814,7 @@ class BluetoothManagerService {
 
                         // Do enable request
                         try {
-                            if (!mAdapter.enable(mQuietEnable, mContext.getAttributionSource())) {
-                                Log.e(TAG, "IBluetooth.enable() returned false");
-                            }
+                            mAdapter.enable(mQuietEnable, mContext.getAttributionSource());
                         } catch (RemoteException e) {
                             Log.e(TAG, "Unable to call enable()", e);
                         }
@@ -2089,9 +2087,7 @@ class BluetoothManagerService {
             } else if (mAdapter != null) {
                 // Enable bluetooth
                 try {
-                    if (!mAdapter.enable(mQuietEnable, mContext.getAttributionSource())) {
-                        Log.e(TAG, "IBluetooth.enable() returned false");
-                    }
+                    mAdapter.enable(mQuietEnable, mContext.getAttributionSource());
                 } catch (RemoteException e) {
                     Log.e(TAG, "Unable to call enable()", e);
                 }
@@ -2117,9 +2113,7 @@ class BluetoothManagerService {
         try {
             if (mAdapter != null) {
                 Log.d(TAG, "handleDisable: Sending off request.");
-                if (!mAdapter.disable(mContext.getAttributionSource())) {
-                    Log.e(TAG, "IBluetooth.disable() returned false");
-                }
+                mAdapter.disable(mContext.getAttributionSource());
             }
         } catch (RemoteException e) {
             Log.e(TAG, "Unable to call disable()", e);

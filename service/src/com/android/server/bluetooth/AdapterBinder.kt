@@ -32,13 +32,13 @@ class AdapterBinder(rawBinder: IBinder) {
         "[Binder=" + adapterBinder.hashCode() + ", createdAt=" + timeToLog(createdAt) + "]"
 
     @Throws(RemoteException::class)
-    fun disable(source: AttributionSource): Boolean {
-        return adapterBinder.disable(source)
+    fun disable(source: AttributionSource) {
+        adapterBinder.disable(source)
     }
 
     @Throws(RemoteException::class)
-    fun enable(quietMode: Boolean, source: AttributionSource): Boolean {
-        return adapterBinder.enable(quietMode, source)
+    fun enable(quietMode: Boolean, source: AttributionSource) {
+        adapterBinder.enable(quietMode, source)
     }
 
     @Throws(RemoteException::class)

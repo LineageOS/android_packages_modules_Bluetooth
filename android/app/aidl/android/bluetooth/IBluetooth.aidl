@@ -50,9 +50,9 @@ interface IBluetooth
     int getState();
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT},anyOf={android.Manifest.permission.INTERACT_ACROSS_USERS,android.Manifest.permission.MANAGE_USERS})")
-    boolean enable(boolean quietMode, in AttributionSource attributionSource);
+    oneway void enable(boolean quietMode, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    boolean disable(in AttributionSource attributionSource);
+    oneway void disable(in AttributionSource attributionSource);
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.LOCAL_MAC_ADDRESS})")
     String getAddress(in AttributionSource attributionSource);
@@ -161,9 +161,9 @@ interface IBluetooth
     boolean setSimAccessPermission(in BluetoothDevice device, int value, in AttributionSource attributionSource);
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
-    void registerCallback(in IBluetoothCallback callback, in AttributionSource attributionSource);
+    oneway void registerCallback(in IBluetoothCallback callback, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
-    void unregisterCallback(in IBluetoothCallback callback, in AttributionSource attributionSource);
+    oneway void unregisterCallback(in IBluetoothCallback callback, in AttributionSource attributionSource);
 
     // For Socket
     @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
@@ -231,9 +231,9 @@ interface IBluetooth
     oneway void requestActivityInfo(in IBluetoothActivityEnergyInfoListener listener, in AttributionSource attributionSource);
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
-    void startBrEdr(in AttributionSource attributionSource);
+    oneway void startBrEdr(in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
-    void stopBle(in AttributionSource attributionSource);
+    oneway void stopBle(in AttributionSource attributionSource);
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED,android.Manifest.permission.MODIFY_PHONE_STATE})")
     int connectAllEnabledProfiles(in BluetoothDevice device, in AttributionSource attributionSource);
@@ -310,7 +310,7 @@ interface IBluetooth
     IBinder getBluetoothScan();
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void unregAllGattClient(in AttributionSource attributionSource);
+    oneway void unregAllGattClient(in AttributionSource attributionSource);
 
     @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     IBinder getProfile(int profile);
