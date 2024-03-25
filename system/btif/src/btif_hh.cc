@@ -347,6 +347,43 @@ btif_hh_device_t* btif_hh_find_connected_dev_by_handle(uint8_t handle) {
 
 /*******************************************************************************
  *
+ * Function         btif_hh_find_dev_by_handle
+ *
+ * Description      Return the device pointer of the specified device handle
+ *
+ * Returns          Device entry pointer in the device table
+ ******************************************************************************/
+btif_hh_device_t* btif_hh_find_dev_by_handle(uint8_t handle) {
+  for (int i = 0; i < BTIF_HH_MAX_HID; i++) {
+    btif_hh_device_t* p_dev = &btif_hh_cb.devices[i];
+    if (p_dev->dev_status != BTHH_CONN_STATE_UNKNOWN &&
+        p_dev->dev_handle == handle) {
+      return p_dev;
+    }
+  }
+  return nullptr;
+}
+
+/*******************************************************************************
+ *
+ * Function         btif_hh_find_empty_dev
+ *
+ * Description      Return an empty device
+ *
+ * Returns          Device entry pointer in the device table
+ ******************************************************************************/
+btif_hh_device_t* btif_hh_find_empty_dev(void) {
+  for (int i = 0; i < BTIF_HH_MAX_HID; i++) {
+    btif_hh_device_t* p_dev = &btif_hh_cb.devices[i];
+    if (p_dev->dev_status == BTHH_CONN_STATE_UNKNOWN) {
+      return p_dev;
+    }
+  }
+  return nullptr;
+}
+
+/*******************************************************************************
+ *
  * Function         btif_hh_find_dev_by_link_spec
  *
  * Description      Return the device pointer of the specified ACL link

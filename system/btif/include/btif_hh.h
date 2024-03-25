@@ -132,6 +132,8 @@ typedef struct {
 extern btif_hh_cb_t btif_hh_cb;
 
 btif_hh_device_t* btif_hh_find_connected_dev_by_handle(uint8_t handle);
+btif_hh_device_t* btif_hh_find_dev_by_handle(uint8_t handle);
+btif_hh_device_t* btif_hh_find_empty_dev(void);
 bt_status_t btif_hh_connect(const tAclLinkSpec& link_spec);
 bt_status_t btif_hh_virtual_unplug(const tAclLinkSpec& link_spec);
 void btif_hh_remove_device(const tAclLinkSpec& link_spec);
