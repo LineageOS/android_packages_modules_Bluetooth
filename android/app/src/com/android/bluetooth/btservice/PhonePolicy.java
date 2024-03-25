@@ -698,35 +698,49 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
                 + BluetoothProfile.getProfileName(profileId) + " isDualModeAudioEnabled="
                 + isDualModeAudioEnabled());
 
-        if (device != null) {
-            mDatabaseManager.setConnection(device, profileId);
+        if (device == null) {
+            return;
+        }
 
-            if (isDualModeAudioEnabled()) return;
-            if (profileId == BluetoothProfile.LE_AUDIO) {
-                A2dpService a2dpService = mFactory.getA2dpService();
-                HeadsetService hsService = mFactory.getHeadsetService();
-                LeAudioService leAudioService = mFactory.getLeAudioService();
-                if (leAudioService == null) {
-                    debugLog("processActiveDeviceChanged: LeAudioService is null");
-                    return;
+        mDatabaseManager.setConnection(device, profileId);
+
+        boolean isDualMode = isDualModeAudioEnabled();
+
+        if (profileId == BluetoothProfile.LE_AUDIO) {
+            A2dpService a2dpService = mFactory.getA2dpService();
+            HeadsetService hsService = mFactory.getHeadsetService();
+            LeAudioService leAudioService = mFactory.getLeAudioService();
+            HearingAidService hearingAidService = mFactory.getHearingAidService();
+
+            if (leAudioService == null) {
+                debugLog("processActiveDeviceChanged: LeAudioService is null");
+                return;
+            }
+            List<BluetoothDevice> leAudioActiveGroupDevices =
+                    leAudioService.getGroupDevices(leAudioService.getGroupId(device));
+
+            // Disable classic audio profiles and ASHA for all group devices as lead can change
+            for (BluetoothDevice activeGroupDevice : leAudioActiveGroupDevices) {
+                if (hsService != null && !isDualMode) {
+                    debugLog(
+                            "Disable HFP for the LE audio dual mode group device "
+                                    + activeGroupDevice);
+                    hsService.setConnectionPolicy(
+                            activeGroupDevice, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
                 }
-                List<BluetoothDevice> leAudioActiveGroupDevices =
-                        leAudioService.getGroupDevices(leAudioService.getGroupId(device));
-
-                // Disable classic audio profiles for all group devices as lead can change
-                for (BluetoothDevice activeGroupDevice: leAudioActiveGroupDevices) {
-                    if (hsService != null) {
-                        debugLog("Disable HFP for the LE audio dual mode group device "
-                                + activeGroupDevice);
-                        hsService.setConnectionPolicy(activeGroupDevice,
-                                BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
-                    }
-                    if (a2dpService != null) {
-                        debugLog("Disable A2DP for the LE audio dual mode group device "
-                                + activeGroupDevice);
-                        a2dpService.setConnectionPolicy(activeGroupDevice,
-                                BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
-                    }
+                if (a2dpService != null && !isDualMode) {
+                    debugLog(
+                            "Disable A2DP for the LE audio dual mode group device "
+                                    + activeGroupDevice);
+                    a2dpService.setConnectionPolicy(
+                            activeGroupDevice, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+                }
+                if (hearingAidService != null) {
+                    debugLog(
+                            "Disable ASHA for the LE audio dual mode group device "
+                                    + activeGroupDevice);
+                    hearingAidService.setConnectionPolicy(
+                            activeGroupDevice, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
                 }
             }
         }
