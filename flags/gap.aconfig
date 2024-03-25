@@ -52,6 +52,7 @@ flag {
 
 flag {
     name: "enumerate_gatt_errors"
+    is_exported: true
     namespace: "bluetooth"
     description: "Enumerate GATT error situations"
     bug: "320574336"

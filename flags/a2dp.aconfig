@@ -3,6 +3,7 @@ container: "com.android.btservices"
 
 flag {
     name: "a2dp_offload_codec_extensibility"
+    is_exported: true
     namespace: "bluetooth"
     description: "Enable a2dp offload codec extensibility"
     bug: "308686081"
