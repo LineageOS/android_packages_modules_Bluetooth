@@ -47,7 +47,6 @@ import android.view.Display;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.BluetoothAdapterProxy;
-import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.gatt.FilterParams;
 import com.android.bluetooth.gatt.GattObjectsFactory;
 import com.android.bluetooth.gatt.GattServiceConfig;
@@ -448,9 +447,7 @@ public class ScanManager {
                         Message msg = obtainMessage(MSG_SCAN_TIMEOUT);
                         msg.obj = client;
                         // Only one timeout message should exist at any time
-                        if (Flags.scanTimeoutReset()) {
-                            removeMessages(MSG_SCAN_TIMEOUT, client);
-                        }
+                        removeMessages(MSG_SCAN_TIMEOUT, client);
                         sendMessageDelayed(msg, mAdapterService.getScanTimeoutMillis());
                         Log.d(TAG,
                                 "apply scan timeout (" + mAdapterService.getScanTimeoutMillis()
