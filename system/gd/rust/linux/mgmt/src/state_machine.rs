@@ -1,6 +1,6 @@
 use crate::bluetooth_manager::BluetoothManager;
 use crate::config_util;
-use bt_common::time::Alarm;
+use crate::time::Alarm;
 use bt_utils::socket::{
     BtSocket, HciChannels, MgmtCommand, MgmtCommandResponse, MgmtEvent, HCI_DEV_NONE,
 };
