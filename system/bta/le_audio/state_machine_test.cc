@@ -60,10 +60,6 @@ using ::testing::Test;
 extern struct fake_osi_alarm_set_on_mloop fake_osi_alarm_set_on_mloop_;
 
 void osi_property_set_bool(const char* key, bool value);
-static const char* test_flags[] = {
-    "INIT_logging_debug_enabled_for_all=true",
-    nullptr,
-};
 
 constexpr uint8_t media_ccid = 0xC0;
 constexpr auto media_context = LeAudioContextType::MEDIA;
@@ -266,7 +262,6 @@ class StateMachineTestBase : public Test {
   bool stop_inject_configured_ase_after_first_ase_configured_;
 
   virtual void SetUp() override {
-    bluetooth::common::InitFlags::Load(test_flags);
     reset_mock_function_count_map();
     bluetooth::manager::SetMockBtmInterface(&btm_interface);
     gatt::SetMockBtaGattInterface(&gatt_interface);

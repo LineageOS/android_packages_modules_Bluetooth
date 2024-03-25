@@ -22,11 +22,6 @@
 
 using bluetooth::le_audio::LeAudioDevice;
 
-const char* test_flags[] = {
-    "INIT_logging_debug_enabled_for_all=true",
-    nullptr,
-};
-
 namespace bluetooth::le_audio {
 RawAddress GetTestAddress(uint8_t index) {
   CHECK_LT(index, UINT8_MAX);
@@ -34,12 +29,7 @@ RawAddress GetTestAddress(uint8_t index) {
   return result;
 }
 
-class StorageHelperTest : public ::testing::Test {
- protected:
-  void SetUp() override { bluetooth::common::InitFlags::Load(test_flags); }
-
-  void TearDown() override {}
-};
+class StorageHelperTest : public ::testing::Test {};
 
 TEST(StorageHelperTest, DeserializeSinkPacs) {
   // clang-format off

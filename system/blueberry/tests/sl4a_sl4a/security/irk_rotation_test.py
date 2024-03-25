@@ -98,7 +98,7 @@ class IrkRotationTest(sl4a_sl4a_base_test.Sl4aSl4aBaseTestClass):
         self.cert.sl4a.bluetoothDisableBLE()
         disable_bluetooth(self.cert.sl4a, self.cert.ed)
         self.cert.adb.shell("setprop bluetooth.core.gap.le.privacy.enabled false")
-        self.cert.adb.shell("device_config put bluetooth INIT_logging_debug_enabled_for_all true")
+        self.cert.adb.shell("setprop log.tag.bluetooth VERBOSE")
         enable_bluetooth(self.cert.sl4a, self.cert.ed)
         self.cert.sl4a.bluetoothDisableBLE()
         self._test_le_reconnect_after_irk_rotation(False)

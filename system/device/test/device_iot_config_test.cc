@@ -36,13 +36,11 @@
 using namespace testing;
 
 const char* test_flags_feature_enabled[] = {
-    "INIT_logging_debug_enabled_for_all=true",
     "INIT_device_iot_config_logging=true",
     nullptr,
 };
 
 const char* test_flags_feature_disabled[] = {
-    "INIT_logging_debug_enabled_for_all=true",
     "INIT_device_iot_config_logging=false",
     nullptr,
 };

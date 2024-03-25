@@ -133,11 +133,6 @@ class TestLeScanningInterface : public LeScanningInterface {
   mutable std::mutex mutex_;
 };
 
-const char* test_flags[] = {
-  "INIT_logging_debug_enabled_for_all=true",
-  nullptr,
-};
-
 class PeriodicSyncManagerTest : public ::testing::Test {
  protected:
   void SetUp() override {
@@ -146,7 +141,6 @@ class PeriodicSyncManagerTest : public ::testing::Test {
     test_le_scanning_interface_ = new TestLeScanningInterface();
     periodic_sync_manager_ = new PeriodicSyncManager(&mock_callbacks_);
     periodic_sync_manager_->Init(test_le_scanning_interface_, handler_);
-    bluetooth::common::InitFlags::Load(test_flags);
   }
 
   void TearDown() override {
