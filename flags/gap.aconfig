@@ -44,13 +44,6 @@ flag {
 }
 
 flag {
-    name: "scan_timeout_reset"
-    namespace: "bluetooth"
-    description: "Ensure scan timeout is reset if new scan started"
-    bug: "316266556"
-}
-
-flag {
     name: "le_scan_fix_remote_exception"
     namespace: "bluetooth"
     description: "Fix handling remote exception for LE scanners"
