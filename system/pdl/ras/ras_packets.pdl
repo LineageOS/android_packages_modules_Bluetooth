@@ -1,0 +1,55 @@
+little_endian_packets
+
+// Ranging Service
+
+enum PctFormat : 2 {
+  IQ = 0,
+  PHASE = 1,
+}
+
+enum RangingDoneStatus : 8 {
+  ALL_RESULTS_COMPLETE = 0x0,
+  PARTIAL_RESULTS = 0x1,
+  ABORTED = 0xF,
+}
+
+enum SubeventDoneStatus : 8 {
+  ALL_RESULTS_COMPLETE = 0x0,
+  ABORTED = 0xF,
+}
+
+struct RasSubeventHeader {
+  start_acl_conn_event : 16,
+  frequency_compensation : 16,
+  ranging_done_status : RangingDoneStatus,
+  subevent_done_status : SubeventDoneStatus,
+  reference_power_level : 8,
+  num_steps_reported : 8,
+}
+
+packet RasSubevent {
+  subevent_header : RasSubeventHeader,
+  subevent_data : 8[],
+}
+
+struct RangingHeader {
+  ranging_counter : 4,
+  configuration_id : 4,
+  selected_tx_power : 8,
+  antenna_paths_mask : 4,
+  _reserved_ : 2,
+  pct_format : PctFormat,
+}
+
+struct SegmentationHeader {
+  first_segment : 1,
+  last_segment : 1,
+  rolling_segment_counter: 6,
+}
+
+packet OnDemandRangingData {
+  segmentation_header : SegmentationHeader,
+  ranging_counter : 16,
+  ranging_header : RangingHeader,
+  ras_subevents : 8[],
+}
