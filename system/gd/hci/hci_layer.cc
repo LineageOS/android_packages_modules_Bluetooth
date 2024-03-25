@@ -34,6 +34,7 @@
 #include "os/metrics.h"
 #include "os/queue.h"
 #include "osi/include/stack_power_telemetry.h"
+#include "packet/raw_builder.h"
 #include "storage/storage_module.h"
 
 namespace bluetooth {
@@ -218,10 +219,19 @@ struct HciLayer::impl {
       // we can't treat this as hard failure since we have no way of probing this lack of support at
       // earlier time. Instead we let the command complete handler handle a empty Command Complete
       // packet, which will be interpreted as invalid response.
-      CommandCompleteView command_complete_view = CommandCompleteView::Create(
-          EventView::Create(PacketView<kLittleEndian>(std::make_shared<std::vector<uint8_t>>(std::vector<uint8_t>()))));
-      command_queue_.front().GetCallback<CommandCompleteView>()->Invoke(
-          std::move(command_complete_view));
+
+      auto payload = std::make_unique<packet::RawBuilder>();
+      payload->AddOctets1(static_cast<uint8_t>(status_view.GetStatus()));
+      auto complete_event_builder = CommandCompleteBuilder::Create(
+          status_view.GetNumHciCommandPackets(),
+          status_view.GetCommandOpCode(),
+          std::move(payload));
+      auto complete =
+          std::make_shared<std::vector<std::uint8_t>>(complete_event_builder->SerializeToBytes());
+      CommandCompleteView command_complete_view =
+          CommandCompleteView::Create(EventView::Create(PacketView<kLittleEndian>(complete)));
+      ASSERT(command_complete_view.IsValid());
+      command_queue_.front().GetCallback<CommandCompleteView>()->Invoke(command_complete_view);
     } else {
       ASSERT_LOG(
           command_queue_.front().waiting_for_status_ == is_status,
