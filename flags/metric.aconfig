@@ -1,0 +1,9 @@
+package: "com.android.bluetooth.flags"
+container: "com.android.btservices"
+
+flag {
+    name: "bluetooth_power_telemetry"
+    namespace: "bluetooth"
+    description: "Toggle the bluetooth power telemetry feature."
+    bug: "301874865"
+}
