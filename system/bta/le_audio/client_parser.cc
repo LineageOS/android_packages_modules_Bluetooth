@@ -320,7 +320,7 @@ bool PrepareAseCtpCodecConfig(const std::vector<struct ctp_codec_conf>& confs,
             }
             return cur_len + conf.codec_config.size();
           }
-          LOG_ERROR("Error parsing codec configuration LTV data.");
+          log::error("Error parsing codec configuration LTV data.");
         }
 
         conf_ents_str << "\t"
