@@ -21,8 +21,6 @@ edition = "2018"
 [dependencies]
 # BT dependencies
 bt_common = { path = "../common" }
-bt_facade_helpers = { path = "../facade/helpers" }
-bluetooth_rs = { path = "../stack" }
 topshim_macros = { path = "macros" }
 
 cxx = "1.0"
