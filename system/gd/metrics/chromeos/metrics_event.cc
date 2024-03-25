@@ -81,6 +81,8 @@ enum class ProfilesFloss {
   A2dpSink = 0,
   A2dpSource,
   AdvAudioDist,
+  Bas,
+  Dis,
   Hsp,
   HspAg,
   Hfp,

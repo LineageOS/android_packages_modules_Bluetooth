@@ -41,6 +41,7 @@ pub const COORDINATED_SET: &str = "00001846-0000-1000-8000-00805F9B34FB";
 pub const BASE_UUID: &str = "00000000-0000-1000-8000-00805F9B34FB";
 
 /// List of profiles that with known uuids.
+/// Append new profiles to the end of the enum. Do not insert it in the middle.
 #[derive(Clone, Debug, Hash, PartialEq, PartialOrd, Eq, Ord, FromPrimitive, ToPrimitive, Copy)]
 #[repr(u32)]
 pub enum Profile {
