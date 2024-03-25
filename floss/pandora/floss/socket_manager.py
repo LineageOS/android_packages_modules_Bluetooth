@@ -14,7 +14,6 @@
 """Client class to access the Floss socket manager interface."""
 
 import logging
-import os
 
 from floss.pandora.floss import floss_enums
 from floss.pandora.floss import observer_base
@@ -150,20 +149,6 @@ class FlossSocketManagerClient(SocketManagerCallbacks):
         self.callback_id = None
         self.objpath = self.ADAPTER_OBJECT_PATTERN.format(hci)
 
-        # key = listener_id, val = (socket_info, status)
-        self.ready_sockets = {}
-
-        # key = listener_id, val = (socket_info, [incoming_sockets])
-        # Where incoming_sockets are tuples: (socket_info, fd)
-        # fds are NOT file object, they only work with low-level I/O functions
-        # such as os.read() and os.write().
-        self.listening_sockets = {}
-
-        # key = connecting_id, val = (status, socket_info, fd)
-        # fds are NOT file object, they only work with low-level I/O functions
-        # such as os.read() and os.write().
-        self.connecting_sockets = {}
-
     def __del__(self):
         """Destructor."""
         del self.callbacks
@@ -172,47 +157,16 @@ class FlossSocketManagerClient(SocketManagerCallbacks):
     def on_incoming_socket_ready(self, socket, status):
         """Handles incoming socket ready callback."""
         logging.debug('on_incoming_socket_ready: socket: %s, status: %s', socket, status)
-        socket_id = socket['id']
-        self.ready_sockets[socket_id] = (socket, status)
-
-        if floss_enums.BtStatus(status) != floss_enums.BtStatus.SUCCESS:
-            return
-        if socket_id in self.listening_sockets:
-            logging.warn('The socket_id: %s, is already registered', socket_id)
-        else:
-            self.listening_sockets[socket_id] = (socket, [])
 
     @utils.glib_callback()
     def on_incoming_socket_closed(self, listener_id, reason):
         """Handles incoming socket closed callback."""
         logging.debug('on_incoming_socket_closed: listener_id: %s, reason: %s', listener_id, reason)
-        if listener_id in self.listening_sockets:
-            self.listening_sockets.pop(listener_id)
-        else:
-            logging.warn('The socket_id: %s, is not registered yet', listener_id)
 
     @utils.glib_callback()
     def on_handle_incoming_connection(self, listener_id, connection, *, dbus_unix_fd_list=None):
         """Handles incoming socket connection callback."""
         logging.debug('on_handle_incoming_connection: listener_id: %s, connection: %s', listener_id, connection)
-        optional_fd = connection['fd']
-        if not optional_fd:
-            return
-
-        if not dbus_unix_fd_list or dbus_unix_fd_list.get_length() < 1:
-            logging.error('on_handle_incoming_connection: Empty fd list')
-            return
-
-        fd_handle = optional_fd['optional_value']
-        if fd_handle > dbus_unix_fd_list.get_length():
-            logging.error('on_handle_incoming_connection: Invalid fd handle')
-            return
-
-        fd = dbus_unix_fd_list.get(fd_handle)
-        fd_dup = os.dup(fd)
-        logging.debug('on_handle_incoming_connection: Got fd %s, dup to %s', fd, fd_dup)
-
-        self.listening_sockets[listener_id][1].append((connection, fd_dup))
 
     @utils.glib_callback()
     def on_outgoing_connection_result(self, connecting_id, result, socket, *, dbus_unix_fd_list=None):
@@ -220,35 +174,11 @@ class FlossSocketManagerClient(SocketManagerCallbacks):
         logging.debug('on_outgoing_connection_result: connecting_id: %s, result: %s, socket: %s', connecting_id, result,
                       socket)
 
-        self.connecting_sockets[connecting_id] = (result, socket, None)
-
-        if not socket:
-            return
-
-        optional_fd = socket['optional_value']['fd']
-        if not optional_fd:
-            return
-
-        if not dbus_unix_fd_list or dbus_unix_fd_list.get_length() < 1:
-            logging.error('on_outgoing_connection_result: Empty fd list')
-            return
-
-        fd_handle = optional_fd['optional_value']
-        if fd_handle > dbus_unix_fd_list.get_length():
-            logging.error('on_outgoing_connection_result: Invalid fd handle')
-            return
-
-        fd = dbus_unix_fd_list.get(fd_handle)
-        fd_dup = os.dup(fd)
-        logging.debug('on_outgoing_connection_result: Got fd %s, dup to %s', fd, fd_dup)
-
-        self.connecting_sockets[connecting_id] = (result, socket, fd_dup)
-
-    def _make_dbus_device(self, address, name):
+    def make_dbus_device(self, address, name):
         return {'address': GLib.Variant('s', address), 'name': GLib.Variant('s', name)}
 
     def _make_dbus_timeout(self, timeout):
-        return utils.dbus_optional_value('i', timeout)
+        return utils.dbus_optional_value('u', timeout)
 
     @utils.glib_call(False)
     def has_proxy(self):
@@ -280,27 +210,25 @@ class FlossSocketManagerClient(SocketManagerCallbacks):
         self.callback_id = self.proxy().RegisterCallback(objpath)
         return True
 
-    def wait_for_incoming_socket_ready(self, socket_id):
-        """Waits for incoming socket ready.
+    def register_callback_observer(self, name, observer):
+        """Add an observer for all callbacks.
 
         Args:
-            socket_id: Socket id.
-
-        Returns:
-             Socket, status for specific socket_id on success, (None, None) otherwise.
+            name: Name of the observer.
+            observer: Observer that implements all callback classes.
         """
-        try:
-            utils.poll_for_condition(condition=(lambda: socket_id in self.ready_sockets),
-                                     timeout=self.FLOSS_RESPONSE_LATENCY_SECS)
-        except TimeoutError:
-            logging.error('on_incoming_socket_ready not called')
-            return None, None
-        socket, status = self.ready_sockets[socket_id]
+        if isinstance(observer, SocketManagerCallbacks):
+            self.callbacks.add_observer(name, observer)
 
-        # Consume the result here because we have no straightforward timing to drop the info.
-        del self.ready_sockets[socket_id]
+    def unregister_callback_observer(self, name, observer):
+        """Remove an observer for all callbacks.
 
-        return socket, status
+        Args:
+            name: Name of the observer.
+            observer: Observer that implements all callback classes.
+        """
+        if isinstance(observer, SocketManagerCallbacks):
+            self.callbacks.remove_observer(name, observer)
 
     @utils.glib_call(None)
     def listen_using_l2cap_channel(self):
@@ -346,32 +274,6 @@ class FlossSocketManagerClient(SocketManagerCallbacks):
             SocketResult as {status:BtStatus, id:int} on success, None otherwise.
         """
         return self.proxy().ListenUsingRfcommWithServiceRecord(self.callback_id, name, uuid)
-
-    def listen_using_rfcomm_with_service_record_sync(self, name, uuid):
-        """Listens using RFCOMM channel with service record sync.
-
-        Args:
-            name: Service name.
-            uuid: 128-bit service UUID.
-
-        Returns:
-            BluetoothServerSocket on success, None otherwise.
-        """
-        socket_result = self.listen_using_rfcomm_with_service_record(name, uuid)
-        # Failed if we have issue in D-bus (None) or returned non success status.
-        if socket_result is None or socket_result['status'] != floss_enums.BtStatus.SUCCESS:
-            logging.error('Failed to listen using rfcomm socket with service record')
-            return None
-
-        socket_id = socket_result['id']
-        _, status = self.wait_for_incoming_socket_ready(socket_id)
-        if status is None:
-            return None
-
-        if floss_enums.BtStatus(status) != floss_enums.BtStatus.SUCCESS:
-            logging.error('Failed to start socket with id: %s, status = %s', socket_id, status)
-            return None
-        return socket_result
 
     @utils.glib_call(None)
     def create_insecure_l2cap_channel(self, device, psm):
@@ -453,53 +355,3 @@ class FlossSocketManagerClient(SocketManagerCallbacks):
         if floss_enums.BtStatus(status) != floss_enums.BtStatus.SUCCESS:
             logging.error('Failed to close socket with id: %s, status = %s', socket_id, status)
         return floss_enums.BtStatus(status) == floss_enums.BtStatus.SUCCESS
-
-    def wait_for_incoming_socket_closed(self, socket_id):
-        """Waits for incoming socket closed.
-
-        Args:
-            socket_id: Socket id.
-
-        Returns:
-            True on success, False otherwise.
-        """
-        try:
-            utils.poll_for_condition(condition=(lambda: socket_id not in self.listening_sockets),
-                                     timeout=self.FLOSS_RESPONSE_LATENCY_SECS)
-
-            return True
-        except TimeoutError:
-            logging.error('on_incoming_socket_closed not called')
-            return False
-
-    def close_sync(self, socket_id):
-        """Closes socket connection sync.
-
-        Args:
-            socket_id: Socket id to be closed.
-
-        Returns:
-            True on success, False otherwise.
-        """
-        if not self.close(socket_id):
-            return False
-
-        return self.wait_for_incoming_socket_closed(socket_id)
-
-    def close_all(self):
-        """Closes all sockets connections.
-
-        Returns:
-            True on success, False otherwise.
-        """
-        # Copy the keys of self.listening_sockets as the following loop will pop the keys via self.close_sync().
-        failed_socket_ids = []
-        socket_ids = [i for i in self.listening_sockets]
-        for i in socket_ids:
-            if not self.close_sync(i):
-                failed_socket_ids.append(i)
-
-        if failed_socket_ids:
-            logging.error('Failed to close sockets with ids: %s', ','.join(failed_socket_ids))
-            return False
-        return True
