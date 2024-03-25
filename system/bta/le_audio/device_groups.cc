@@ -761,9 +761,12 @@ bool LeAudioDeviceGroup::UpdateAudioContextAvailability(void) {
 
 bool LeAudioDeviceGroup::UpdateAudioSetConfigurationCache(
     LeAudioContextType ctx_type) {
+  CodecManager::UnicastConfigurationRequirements requirements = {
+      .audio_context_type = ctx_type};
   auto new_conf = CodecManager::GetInstance()->GetCodecConfig(
-      ctx_type, std::bind(&LeAudioDeviceGroup::FindFirstSupportedConfiguration,
-                          this, std::placeholders::_1, std::placeholders::_2));
+      requirements,
+      std::bind(&LeAudioDeviceGroup::FindFirstSupportedConfiguration, this,
+                std::placeholders::_1, std::placeholders::_2));
   auto update_config = true;
 
   if (context_to_configuration_cache_map.count(ctx_type) != 0) {
@@ -1286,20 +1289,21 @@ bool CheckIfStrategySupported(types::LeAudioConfigurationStrategy strategy,
  */
 bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
     const set_configurations::AudioSetConfiguration* audio_set_conf,
-    LeAudioContextType context_type,
+    const CodecManager::UnicastConfigurationRequirements& requirements,
     types::LeAudioConfigurationStrategy required_snk_strategy) const {
   /* When at least one device supports the configuration context, configure
    * for these devices only. Otherwise configure for all devices - we will
    * not put this context into the metadata if not supported.
    */
-  auto num_of_connected = NumOfConnected(context_type);
+  auto num_of_connected = NumOfConnected(requirements.audio_context_type);
   if (num_of_connected == 0) {
     num_of_connected = NumOfConnected();
   }
   if (!set_configurations::check_if_may_cover_scenario(audio_set_conf,
                                                        num_of_connected)) {
     log::debug("cannot cover scenario  {}, num. of connected: {}",
-               bluetooth::common::ToString(context_type), num_of_connected);
+               bluetooth::common::ToString(requirements.audio_context_type),
+               num_of_connected);
     return false;
   }
 
@@ -1891,14 +1895,15 @@ bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
 
 const set_configurations::AudioSetConfiguration*
 LeAudioDeviceGroup::FindFirstSupportedConfiguration(
-    LeAudioContextType context_type,
+    const CodecManager::UnicastConfigurationRequirements& requirements,
     const set_configurations::AudioSetConfigurations* confs) const {
   log::assert_that(confs != nullptr, "confs should not be null");
 
   log::debug("context type: {},  number of connected devices: {}",
-             bluetooth::common::ToString(context_type), NumOfConnected());
+             bluetooth::common::ToString(requirements.audio_context_type),
+             NumOfConnected());
 
-  auto num_of_connected = NumOfConnected(context_type);
+  auto num_of_connected = NumOfConnected(requirements.audio_context_type);
   if (num_of_connected == 0) {
     num_of_connected = NumOfConnected();
   }
@@ -1913,7 +1918,7 @@ LeAudioDeviceGroup::FindFirstSupportedConfiguration(
   auto required_snk_strategy = GetGroupSinkStrategy();
   for (const auto& conf : *confs) {
     log::assert_that(conf != nullptr, "confs should not be null");
-    if (IsAudioSetConfigurationSupported(conf, context_type,
+    if (IsAudioSetConfigurationSupported(conf, requirements,
                                          required_snk_strategy)) {
       log::debug("found: {}", conf->name);
       return conf;
