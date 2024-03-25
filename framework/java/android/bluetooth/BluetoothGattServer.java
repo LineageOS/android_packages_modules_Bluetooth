@@ -721,7 +721,12 @@ public final class BluetoothGattServer implements BluetoothProfile {
         try {
             // autoConnect is inverse of "isDirect"
             mService.serverConnect(
-                    mServerIf, device.getAddress(), !autoConnect, mTransport, mAttributionSource);
+                    mServerIf,
+                    device.getAddress(),
+                    device.getAddressType(),
+                    !autoConnect,
+                    mTransport,
+                    mAttributionSource);
         } catch (RemoteException e) {
             Log.e(TAG, "", e);
             return false;

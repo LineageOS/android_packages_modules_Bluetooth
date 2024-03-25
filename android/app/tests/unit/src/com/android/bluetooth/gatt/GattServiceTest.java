@@ -511,11 +511,14 @@ public class GattServiceTest {
     public void serverConnect() {
         int serverIf = 1;
         String address = REMOTE_DEVICE_ADDRESS;
+        int addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM;
         boolean isDirect = true;
         int transport = 2;
 
-        mService.serverConnect(serverIf, address, isDirect, transport, mAttributionSource);
-        verify(mNativeInterface).gattServerConnect(serverIf, address, isDirect, transport);
+        mService.serverConnect(
+                serverIf, address, addressType, isDirect, transport, mAttributionSource);
+        verify(mNativeInterface)
+                .gattServerConnect(serverIf, address, addressType, isDirect, transport);
     }
 
     @Test
