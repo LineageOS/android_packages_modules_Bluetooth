@@ -63,17 +63,6 @@ using namespace bluetooth;
 
 #define COLON_IDX_4_VGSVGM 4
 
-/* Local events which will not trigger a higher layer callback */
-enum {
-  BTA_AG_LOCAL_EVT_FIRST = 0x100,
-  BTA_AG_LOCAL_EVT_CCWA,
-  BTA_AG_LOCAL_EVT_CLIP,
-  BTA_AG_LOCAL_EVT_CMER,
-  BTA_AG_LOCAL_EVT_BRSF,
-  BTA_AG_LOCAL_EVT_CMEE,
-  BTA_AG_LOCAL_EVT_BCC,
-};
-
 /* AT command interpreter table for HSP */
 static const tBTA_AG_AT_CMD bta_ag_hsp_cmd[] = {
     {"+CKPD", BTA_AG_AT_CKPD_EVT, BTA_AG_AT_SET, BTA_AG_AT_INT, 200, 200},

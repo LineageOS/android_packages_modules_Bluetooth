@@ -94,6 +94,17 @@ enum {
   BTA_AG_MAX_EVT,
 };
 
+/* Local events which will not trigger a higher layer callback */
+enum {
+  BTA_AG_LOCAL_EVT_FIRST = 0x100,
+  BTA_AG_LOCAL_EVT_CCWA,
+  BTA_AG_LOCAL_EVT_CLIP,
+  BTA_AG_LOCAL_EVT_CMER,
+  BTA_AG_LOCAL_EVT_BRSF,
+  BTA_AG_LOCAL_EVT_CMEE,
+  BTA_AG_LOCAL_EVT_BCC,
+};
+
 /* Actions to perform after a SCO event */
 enum {
   BTA_AG_POST_SCO_NONE,      /* no action */
