@@ -306,42 +306,38 @@ struct codec_manager_impl {
      */
     broadcast_target_config = -1;
     for (int i = 0; i < (int)supported_broadcast_config.size(); i++) {
-      if (supported_broadcast_config[i].sampling_rate == 48000u) {
-        if (preferred_quality == bluetooth::le_audio::QUALITY_STANDARD)
-          continue;
+      if (preferred_quality == bluetooth::le_audio::QUALITY_STANDARD) {
+        if (supported_broadcast_config[i].sampling_rate == 24000u &&
+            supported_broadcast_config[i].octets_per_frame == 60) {  // 24_2
+          broadcast_target_config = i;
+          break;
+        }
 
-        if (supported_broadcast_config[i].octets_per_frame == 120) {  // 48_4
-          broadcast_target_config = i;
-          break;
-        } else if (supported_broadcast_config[i].octets_per_frame ==
-                   100) {  // 48_2
+        if (supported_broadcast_config[i].sampling_rate == 16000u &&
+            supported_broadcast_config[i].octets_per_frame == 40) {  // 16_2
           broadcast_target_config = i;
         }
-      } else if (supported_broadcast_config[i].sampling_rate == 24000u &&
-                 supported_broadcast_config[i].octets_per_frame ==
-                     60) {  // 24_2
-        if (preferred_quality == bluetooth::le_audio::QUALITY_STANDARD) {
+
+        continue;
+      }
+
+      // perferred_quality = bluetooth::le_audio::QUALITY_HIGH
+      if (supported_broadcast_config[i].sampling_rate == 48000u &&
+          supported_broadcast_config[i].octets_per_frame == 120) {  // 48_4
+        broadcast_target_config = i;
+        break;
+      }
+
+      if ((supported_broadcast_config[i].sampling_rate == 48000u &&
+           supported_broadcast_config[i].octets_per_frame == 100) ||  // 48_2
+          (supported_broadcast_config[i].sampling_rate == 24000u &&
+           supported_broadcast_config[i].octets_per_frame == 60) ||  // 24_2
+          (supported_broadcast_config[i].sampling_rate == 16000u &&
+           supported_broadcast_config[i].octets_per_frame == 40)) {  // 16_2
+        if (broadcast_target_config == -1 ||
+            (supported_broadcast_config[i].sampling_rate >
+             supported_broadcast_config[broadcast_target_config].sampling_rate))
           broadcast_target_config = i;
-          break;
-        } else if (broadcast_target_config ==
-                   -1) {  // preferred_quality is QUALITY_HIGH, and
-                          // haven't get the 48_4 or 48_2
-          broadcast_target_config = i;
-        }
-      } else if (supported_broadcast_config[i].sampling_rate == 16000u &&
-                 supported_broadcast_config[i].octets_per_frame ==
-                     40) {  // 16_2
-        if (preferred_quality == bluetooth::le_audio::QUALITY_STANDARD) {
-          broadcast_target_config = i;
-        } else if (broadcast_target_config == -1 ||
-                   (supported_broadcast_config[broadcast_target_config]
-                            .sampling_rate != 24000u &&
-                    supported_broadcast_config[broadcast_target_config]
-                            .sampling_rate !=
-                        48000u)) {  // preferred_quality is QUALITY_HIGH, and
-                                    // haven't get the 48_4 or 48_2 or 24_2
-          broadcast_target_config = i;
-        }
       }
     }
 
