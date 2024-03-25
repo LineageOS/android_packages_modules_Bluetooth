@@ -38,6 +38,7 @@ import com.android.internal.annotations.VisibleForTesting;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class SapService extends ProfileService implements AdapterService.BluetoothStateCallback {
@@ -1021,7 +1022,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
 
             SapService service = getService(source);
             if (service == null) {
-                return new ArrayList<BluetoothDevice>(0);
+                return Collections.emptyList();
             }
 
             return service.getConnectedDevices();
@@ -1034,7 +1035,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
 
             SapService service = getService(source);
             if (service == null) {
-                return new ArrayList<BluetoothDevice>(0);
+                return Collections.emptyList();
             }
 
             return service.getDevicesMatchingConnectionStates(states);

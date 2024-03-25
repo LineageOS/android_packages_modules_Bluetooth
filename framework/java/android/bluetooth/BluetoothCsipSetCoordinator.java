@@ -37,8 +37,8 @@ import android.util.Log;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -367,7 +367,7 @@ public final class BluetoothCsipSetCoordinator implements BluetoothProfile, Auto
                 throw e.rethrowAsRuntimeException();
             }
         }
-        return new ArrayList<>();
+        return Collections.emptyList();
     }
 
     /** {@inheritDoc} */
@@ -385,7 +385,7 @@ public final class BluetoothCsipSetCoordinator implements BluetoothProfile, Auto
                 throw e.rethrowAsRuntimeException();
             }
         }
-        return new ArrayList<>();
+        return Collections.emptyList();
     }
 
     /** {@inheritDoc} */
@@ -404,7 +404,7 @@ public final class BluetoothCsipSetCoordinator implements BluetoothProfile, Auto
                 throw e.rethrowAsRuntimeException();
             }
         }
-        return new ArrayList<>();
+        return Collections.emptyList();
     }
 
     /** {@inheritDoc} */
