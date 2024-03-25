@@ -19,6 +19,7 @@ packetgen_headers("BluetoothGeneratedPackets_h") {
   sources = [
     "hci/hci_packets.pdl",
     "l2cap/l2cap_packets.pdl",
+    "ras/ras_packets.pdl",
     "security/smp_packets.pdl",
   ]
 
