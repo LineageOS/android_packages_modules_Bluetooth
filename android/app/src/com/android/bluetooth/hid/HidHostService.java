@@ -193,18 +193,45 @@ public class HidHostService extends ProfileService {
         setHidHostService(null);
     }
 
-    private byte[] getByteAddress(BluetoothDevice device) {
-        if (Utils.arrayContains(device.getUuids(), BluetoothUuid.HOGP)) {
-            // Use pseudo address when HOGP is available
-            return Utils.getByteAddress(device);
+    private byte[] getIdentityAddress(BluetoothDevice device) {
+        if (Flags.identityAddressNullIfUnknown()) {
+            return Utils.getByteBrEdrAddress(device);
         } else {
-            // Use BR/EDR address if only HID is available
-            if (Flags.identityAddressNullIfUnknown()) {
-                return Utils.getByteBrEdrAddress(device);
+            return mAdapterService.getByteIdentityAddress(device);
+        }
+    }
+
+    private byte[] getByteAddress(BluetoothDevice device, int transport) {
+        if (!Flags.allowSwitchingHidAndHogp()) {
+            if (Utils.arrayContains(device.getUuids(), BluetoothUuid.HOGP)) {
+                // Use pseudo address when HOGP is available
+                return Utils.getByteAddress(device);
             } else {
-                return mAdapterService.getByteIdentityAddress(device);
+                // Otherwise use identity address
+                return getIdentityAddress(device);
             }
         }
+
+        if (transport == BluetoothDevice.TRANSPORT_LE) {
+            // Use pseudo address when HOGP is to be used
+            return Utils.getByteAddress(device);
+        } else if (transport == BluetoothDevice.TRANSPORT_BREDR) {
+            // Use identity address if HID is to be used
+            return getIdentityAddress(device);
+        } else { // BluetoothDevice.TRANSPORT_AUTO
+            // Prefer HID over HOGP
+            if (Utils.arrayContains(device.getUuids(), BluetoothUuid.HID)) {
+                // Use identity address if HID is available
+                return getIdentityAddress(device);
+            } else {
+                // Otherwise use pseudo address
+                return Utils.getByteAddress(device);
+            }
+        }
+    }
+
+    private byte[] getByteAddress(BluetoothDevice device) {
+        return getByteAddress(device, getTransport(device));
     }
 
     /**
@@ -301,7 +328,7 @@ public class HidHostService extends ProfileService {
      */
     private boolean nativeConnect(BluetoothDevice device, int transport) {
         if (!mNativeInterface.connectHid(
-                getByteAddress(device), getAddressType(device), transport)) {
+                getByteAddress(device, transport), getAddressType(device), transport)) {
             Log.w(
                     TAG,
                     "nativeConnect: "
@@ -331,7 +358,10 @@ public class HidHostService extends ProfileService {
     private boolean nativeDisconnect(
             BluetoothDevice device, int transport, boolean reconnectAllowed) {
         if (!mNativeInterface.disconnectHid(
-                getByteAddress(device), getAddressType(device), transport, reconnectAllowed)) {
+                getByteAddress(device, transport),
+                getAddressType(device),
+                transport,
+                reconnectAllowed)) {
             Log.w(
                     TAG,
                     "nativeDisconnect: "
@@ -1294,10 +1324,7 @@ public class HidHostService extends ProfileService {
         }
 
         return mNativeInterface.sendData(
-                getByteAddress(device),
-                (byte) BluetoothDevice.ADDRESS_TYPE_PUBLIC,
-                (byte) BluetoothDevice.TRANSPORT_AUTO,
-                report);
+                getByteAddress(device), getAddressType(device), getTransport(device), report);
     }
 
     boolean getIdleTime(BluetoothDevice device) {
