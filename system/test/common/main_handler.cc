@@ -25,6 +25,7 @@
 #include <future>
 
 #include "common/message_loop_thread.h"
+#include "common/postable_context.h"
 #include "include/hardware/bluetooth.h"
 #include "os/log.h"
 
@@ -73,3 +74,7 @@ void main_thread_shut_down() { main_thread.ShutDown(); }
 
 // osi_alarm
 bluetooth::common::MessageLoopThread* get_main_thread() { return &main_thread; }
+
+bluetooth::common::PostableContext* get_main() {
+  return main_thread.Postable();
+}
