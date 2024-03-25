@@ -60,9 +60,11 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.RemoteDevices;
+import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.btservice.SilenceDeviceManager;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.le_audio.LeAudioService;
 
 import org.hamcrest.Matchers;
 import org.junit.After;
@@ -122,6 +124,10 @@ public class HeadsetServiceAndStateMachineTest {
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock private HeadsetNativeInterface mNativeInterface;
+
+    @Mock private LeAudioService mLeAudioService;
+
+    @Mock private ServiceFactory mServiceFactory;
 
     private class HeadsetIntentReceiver extends BroadcastReceiver {
         @Override
@@ -1594,6 +1600,41 @@ public class HeadsetServiceAndStateMachineTest {
                 .enableSwb(
                         eq(HeadsetHalConstants.BTHF_SWB_CODEC_VENDOR_APTX), eq(true), eq(device));
         configureHeadsetServiceForAptxVoice(false);
+    }
+
+    @Test
+    public void testHfpHandoverToLeAudioAfterScoDisconnect() {
+        mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_RESUME_ACTIVE_AFTER_HFP_HANDOVER);
+
+        Assert.assertNotNull(mHeadsetService.mFactory);
+        doReturn(mLeAudioService).when(mServiceFactory).getLeAudioService();
+        mHeadsetService.mFactory = mServiceFactory;
+        doReturn(true).when(mSystemInterface).isCallIdle();
+
+        // Connect HF
+        BluetoothDevice device = TestUtils.getTestDevice(mAdapter, 0);
+        connectTestDevice(device);
+        // Make device active
+        Assert.assertTrue(mHeadsetService.setActiveDevice(device));
+        verify(mNativeInterface).setActiveDevice(device);
+        Assert.assertEquals(device, mHeadsetService.getActiveDevice());
+        verify(mNativeInterface, timeout(ASYNC_CALL_TIMEOUT_MILLIS)).sendBsir(eq(device), eq(true));
+
+        mHeadsetService.messageFromNative(
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED,
+                        HeadsetHalConstants.AUDIO_STATE_CONNECTED,
+                        device));
+        TestUtils.waitForLooperToFinishScheduledTask(
+                mHeadsetService.getStateMachinesThreadLooper());
+
+        // Audio disconnected
+        mHeadsetService.messageFromNative(
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED,
+                        HeadsetHalConstants.AUDIO_STATE_DISCONNECTED,
+                        device));
+        verify(mLeAudioService, timeout(1000).atLeastOnce()).setActiveAfterHfpHandover();
     }
 
     private void startVoiceRecognitionFromHf(BluetoothDevice device) {
