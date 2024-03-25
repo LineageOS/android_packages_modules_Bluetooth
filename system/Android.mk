@@ -14,7 +14,6 @@ LOCAL_cert_test_sources := \
 
 LOCAL_host_executables := \
 	$(HOST_OUT_EXECUTABLES)/bluetooth_stack_with_facade \
-	$(HOST_OUT_EXECUTABLES)/bluetooth_with_facades \
 	$(HOST_OUT_EXECUTABLES)/bt_topshim_facade \
 	$(HOST_OUT_EXECUTABLES)/root-canal
 
