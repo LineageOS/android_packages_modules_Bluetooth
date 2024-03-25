@@ -769,8 +769,8 @@ static void btsock_l2cap_cbk(tBTA_JV_EVT event, tBTA_JV* p_data,
       break;
 
     default:
-      log::error("Unhandled event:{} l2cap_socket_id:{}", event,
-                 l2cap_socket_id);
+      log::error("Unhandled event:{} l2cap_socket_id:{}",
+                 bta_jv_event_text(event), l2cap_socket_id);
       break;
   }
 }
