@@ -437,14 +437,6 @@ bool bta_hh_co_open(uint8_t dev_handle, uint8_t sub_class,
         return false;
       }
       break;
-    } else if (IS_FLAG_ENABLED(allow_switching_hid_and_hogp) &&
-               p_dev->dev_status == BTHH_CONN_STATE_ACCEPTING &&
-               p_dev->dev_handle == BTA_HH_INVALID_HANDLE) {
-      if (!hh_co_update_device(p_dev, dev_handle, sub_class, attr_mask,
-                               app_id)) {
-        return false;
-      }
-      break;
     }
     p_dev = NULL;
   }
