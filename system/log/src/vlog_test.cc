@@ -43,7 +43,7 @@ void __android_log_write_log_message(
 
 using namespace bluetooth;
 
-TEST(BluetoothLoggerTest, verbose) {
+TEST(BluetoothLogTest, verbose) {
   androidLogMessage.reset();
 
   log::verbose("verbose test");
@@ -58,7 +58,7 @@ TEST(BluetoothLoggerTest, verbose) {
                "TestBody: verbose test");
 }
 
-TEST(BluetoothLoggerTest, debug) {
+TEST(BluetoothLogTest, debug) {
   androidLogMessage.reset();
 
   log::debug("debug test");
@@ -73,7 +73,7 @@ TEST(BluetoothLoggerTest, debug) {
                "TestBody: debug test");
 }
 
-TEST(BluetoothLoggerTest, info) {
+TEST(BluetoothLogTest, info) {
   androidLogMessage.reset();
 
   log::info("info test");
@@ -88,7 +88,7 @@ TEST(BluetoothLoggerTest, info) {
                "TestBody: info test");
 }
 
-TEST(BluetoothLoggerTest, warn) {
+TEST(BluetoothLogTest, warn) {
   androidLogMessage.reset();
 
   log::warn("warn test");
@@ -103,7 +103,7 @@ TEST(BluetoothLoggerTest, warn) {
                "TestBody: warn test");
 }
 
-TEST(BluetoothLoggerTest, error) {
+TEST(BluetoothLogTest, error) {
   androidLogMessage.reset();
 
   log::error("error test");
@@ -118,7 +118,7 @@ TEST(BluetoothLoggerTest, error) {
                "TestBody: error test");
 }
 
-TEST(BluetoothLoggerTest, fatal) {
+TEST(BluetoothLogDeathTest, fatal) {
   androidLogMessage.reset();
 
   ASSERT_DEATH(
@@ -149,7 +149,7 @@ TEST(BluetoothLoggerTest, fatal) {
       "fatal test 2, 3");
 }
 
-TEST(BluetoothLoggerTest, fatal_if) {
+TEST(BluetoothLogDeathTest, fatal_if) {
   androidLogMessage.reset();
 
   log::fatal_if(false, "fatal_if test false");
@@ -158,7 +158,7 @@ TEST(BluetoothLoggerTest, fatal_if) {
       { log::fatal_if(true, "fatal_if test true"); }, "fatal_if test true");
 }
 
-TEST(BluetoothLoggerTest, null_string_parameter) {
+TEST(BluetoothLogTest, null_string_parameter) {
   androidLogMessage.reset();
 
   char const* const_null_str = nullptr;
