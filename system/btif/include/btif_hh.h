@@ -102,7 +102,6 @@ typedef struct {
   fixed_queue_t* set_rpt_id_queue;
 #endif // ENABLE_UHID_SET_REPORT
   bool local_vup;  // Indicated locally initiated VUP
-  bool reconnect_allowed;  // Connection policy
 } btif_hh_device_t;
 
 /* Control block to maintain properties of devices */
@@ -110,6 +109,7 @@ typedef struct {
   uint8_t dev_handle;
   tAclLinkSpec link_spec;
   tBTA_HH_ATTR_MASK attr_mask;
+  bool reconnect_allowed;  // Connection policy
 } btif_hh_added_device_t;
 
 /**
