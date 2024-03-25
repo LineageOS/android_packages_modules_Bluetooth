@@ -232,3 +232,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_broadcast_assistant_handle_command_statuses"
+    namespace: "bluetooth"
+    description: "Handle command statuses to recover from errors"
+    bug: "331167629"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
