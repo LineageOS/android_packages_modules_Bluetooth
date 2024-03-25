@@ -408,7 +408,7 @@ public class HidHostService extends ProfileService {
             };
 
     private void handleMessageSetPreferredTransport(Message msg) {
-        BluetoothDevice device = mAdapterService.getDeviceFromByte((byte[]) msg.obj);
+        BluetoothDevice device = (BluetoothDevice) msg.obj;
         int transport = msg.arg1;
 
         int prevTransport = getTransport(device);
