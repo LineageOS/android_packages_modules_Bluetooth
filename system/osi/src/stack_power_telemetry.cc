@@ -18,6 +18,7 @@
 
 #include "osi/include/stack_power_telemetry.h"
 
+#include <android_bluetooth_flags.h>
 #include <base/logging.h>
 #include <bluetooth/log.h>
 #include <sys/stat.h>
@@ -46,8 +47,9 @@ constexpr int64_t kTrafficLogTime = 120;  // 120seconds
 constexpr uint8_t kLogEntriesSize{15};
 constexpr std::string_view kLogPerChannelProperty =
     "bluetooth.powertelemetry.log_per_channel.enabled";
-bool power_telemerty_enabled_ =
-    bluetooth::common::init_flags::bluetooth_power_telemetry_is_enabled();
+constexpr std::string_view kPowerTelemetryEnabledProperty =
+    "bluetooth.powertelemetry.enabled";
+bool power_telemerty_enabled_ = false;
 
 std::string GetTimeString(time_t tstamp) {
   char buffer[15];
@@ -154,6 +156,12 @@ struct power_telemetry::PowerTelemetryImpl {
     traffic_logged_ts_ = get_current_time();
     log_per_channel_ = osi_property_get_bool(
         std::string(kLogPerChannelProperty).c_str(), false);
+    power_telemetry_enabled_property_ = osi_property_get_bool(
+        std::string(kPowerTelemetryEnabledProperty).c_str(), true);
+
+    // Enable this feature when both feature flag and sysprops turn on.
+    power_telemerty_enabled_ = IS_FLAG_ENABLED(bluetooth_power_telemetry) &&
+                               power_telemetry_enabled_property_;
   }
 
   LogDataContainer& GetCurrentLogDataContainer() {
@@ -192,6 +200,7 @@ struct power_telemetry::PowerTelemetryImpl {
   } cmd, event;
   bool scan_timer_started_ = false;
   bool log_per_channel_ = false;
+  bool power_telemetry_enabled_property_ = false;
 };
 
 void power_telemetry::PowerTelemetryImpl::LogDataTransfer() {
