@@ -386,3 +386,14 @@ class Bluetooth(object):
 
     def accept_socket(self, socket_id, timeout_ms=None):
         return self.socket_manager.accept(socket_id, timeout_ms)
+
+    def create_insecure_rfcomm_socket_to_service_record(self, address, uuid):
+        name = self.adapter_client.get_remote_property(address, 'Name')
+        device = self.socket_manager.make_dbus_device(address, name)
+        return self.socket_manager.create_insecure_rfcomm_socket_to_service_record(device, uuid)
+
+    def listen_using_insecure_rfcomm_with_service_record(self, name, uuid):
+        return self.socket_manager.listen_using_insecure_rfcomm_with_service_record(name, uuid)
+
+    def close_socket(self, socket_id):
+        return self.socket_manager.close(socket_id)
