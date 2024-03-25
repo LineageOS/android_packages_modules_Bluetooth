@@ -21,6 +21,7 @@
 
 #include <chrono>
 #include <future>
+#include <memory>
 
 #include "common/bind.h"
 #include "common/init_flags.h"
@@ -431,6 +432,29 @@ TEST_F(HciLayerTest, our_command_status_callback_is_invoked) {
         log::debug("{}", kOurCommandStatusHandlerWasInvoked);
       }));
   hal_->InjectEvent(ReadClockOffsetStatusBuilder::Create(ErrorCode::SUCCESS, 1));
+}
+
+TEST_F(HciLayerTest, vendor_specific_status_instead_of_complete) {
+  std::promise<OpCode> callback_promise;
+  auto callback_future = callback_promise.get_future();
+  FailIfResetNotSent();
+  hal_->InjectEvent(ResetCompleteBuilder::Create(1, ErrorCode::SUCCESS));
+  hci_->EnqueueCommand(
+      LeGetVendorCapabilitiesBuilder::Create(),
+      hci_handler_->BindOnce(
+          [](std::promise<OpCode> promise, CommandCompleteView view) {
+            ASSERT_TRUE(view.IsValid());
+            promise.set_value(view.GetCommandOpCode());
+          },
+          std::move(callback_promise)));
+  hal_->InjectEvent(CommandStatusBuilder::Create(
+      ErrorCode::UNKNOWN_HCI_COMMAND,
+      1,
+      OpCode::LE_GET_VENDOR_CAPABILITIES,
+      std::make_unique<RawBuilder>()));
+
+  ASSERT_EQ(std::future_status::ready, callback_future.wait_for(std::chrono::seconds(1)));
+  ASSERT_EQ(OpCode::LE_GET_VENDOR_CAPABILITIES, callback_future.get());
 }
 
 TEST_F(

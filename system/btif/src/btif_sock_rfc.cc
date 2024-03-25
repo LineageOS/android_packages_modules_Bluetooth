@@ -682,9 +682,11 @@ static uint32_t rfcomm_cback(tBTA_JV_EVT event, tBTA_JV* p_data,
 
   // Write events are too frequent to log at info level
   if (event != BTA_JV_RFCOMM_WRITE_EVT) {
-    log::info("handling event:{} id:{}", event, rfcomm_slot_id);
+    log::info("handling event:{} id:{}", bta_jv_event_text(event),
+              rfcomm_slot_id);
   } else {
-    log::verbose("handling event:{} id:{}", event, rfcomm_slot_id);
+    log::verbose("handling event:{} id:{}", bta_jv_event_text(event),
+                 rfcomm_slot_id);
   }
 
   switch (event) {
@@ -727,20 +729,22 @@ static uint32_t rfcomm_cback(tBTA_JV_EVT event, tBTA_JV* p_data,
       break;
 
     default:
-      log::error("unhandled event {}, slot id: {}", event, rfcomm_slot_id);
+      log::error("unhandled event {}, slot id: {}", bta_jv_event_text(event),
+                 rfcomm_slot_id);
       break;
   }
   return id;
 }
 
 static void jv_dm_cback(tBTA_JV_EVT event, tBTA_JV* p_data, uint32_t id) {
-  log::info("handling event:{}, id:{}", event, id);
+  log::info("handling event:{}, id:{}", bta_jv_event_text(event), id);
   switch (event) {
     case BTA_JV_GET_SCN_EVT: {
       std::unique_lock<std::recursive_mutex> lock(slot_lock);
       rfc_slot_t* rs = find_rfc_slot_by_id(id);
       if (!rs) {
-        log::error("RFCOMM slot with id {} not found. event:{}", id, event);
+        log::error("RFCOMM slot with id {} not found. event:{}", id,
+                   bta_jv_event_text(event));
         break;
       }
       if (p_data->scn == 0) {
@@ -789,7 +793,8 @@ static void jv_dm_cback(tBTA_JV_EVT event, tBTA_JV* p_data, uint32_t id) {
       rfc_slot_t* slot = find_rfc_slot_by_id(id);
 
       if (!slot) {
-        log::error("RFCOMM slot with id {} not found. event:{}", id, event);
+        log::error("RFCOMM slot with id {} not found. event:{}", id,
+                   bta_jv_event_text(event));
         break;
       }
 
@@ -820,7 +825,8 @@ static void jv_dm_cback(tBTA_JV_EVT event, tBTA_JV* p_data, uint32_t id) {
     }
 
     default:
-      log::debug("unhandled event:{}, slot id:{}", event, id);
+      log::debug("unhandled event:{}, slot id:{}", bta_jv_event_text(event),
+                 id);
       break;
   }
 }

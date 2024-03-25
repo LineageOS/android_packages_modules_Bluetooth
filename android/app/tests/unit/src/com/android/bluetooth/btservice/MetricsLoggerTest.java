@@ -18,15 +18,21 @@ package com.android.bluetooth.btservice;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doReturn;
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMetricsProto.BluetoothLog;
+import com.android.bluetooth.BluetoothMetricsProto.BluetoothRemoteDeviceInformation;
 import com.android.bluetooth.BluetoothMetricsProto.ProfileConnectionStats;
 import com.android.bluetooth.BluetoothMetricsProto.ProfileId;
+import com.android.bluetooth.TestUtils;
 
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
+import com.google.protobuf.InvalidProtocolBufferException;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -87,8 +93,7 @@ public class MetricsLoggerTest {
     private TestableMetricsLogger mTestableMetricsLogger;
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private AdapterService mMockAdapterService;
+    @Mock private AdapterService mMockAdapterService;
 
     public class TestableMetricsLogger extends MetricsLogger {
         public HashMap<Integer, Long> mTestableCounters = new HashMap<>();
@@ -253,6 +258,25 @@ public class MetricsLoggerTest {
             Assert.assertEquals(
                     sha256,
                     mTestableMetricsLogger.logAllowlistedDeviceNameHash(1, deviceName, true));
+        }
+    }
+
+    @Test
+    public void testOuiFromBluetoothDevice() {
+        BluetoothDevice bluetoothDevice =
+                TestUtils.getTestDevice(BluetoothAdapter.getDefaultAdapter(), 0);
+
+        byte[] remoteDeviceInformationBytes =
+                MetricsLogger.getInstance().getRemoteDeviceInfoProto(bluetoothDevice);
+
+        try {
+            BluetoothRemoteDeviceInformation bluetoothRemoteDeviceInformation =
+                    BluetoothRemoteDeviceInformation.parseFrom(remoteDeviceInformationBytes);
+            int oui = (0 << 16) | (1 << 8) | 2; // OUI from the above mac address
+            Assert.assertEquals(bluetoothRemoteDeviceInformation.getOui(), oui);
+
+        } catch (InvalidProtocolBufferException e) {
+            Assert.assertNull(e.getMessage()); // test failure here
         }
     }
 
