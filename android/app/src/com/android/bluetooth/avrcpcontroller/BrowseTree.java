@@ -26,6 +26,7 @@ import com.android.bluetooth.Utils;
 import com.google.common.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -447,18 +448,14 @@ public class BrowseTree {
         }
     }
 
-    /**
-     * Get a list of items using the piece of cover art identified by the given handle.
-     */
-    synchronized ArrayList<String> getNodesUsingCoverArt(String handle) {
-        if (!mCoverArtMap.containsKey(handle)) return new ArrayList<String>();
-        return (ArrayList<String>) mCoverArtMap.get(handle).clone();
+    /** Get a list of items using the piece of cover art identified by the given handle. */
+    synchronized List<String> getNodesUsingCoverArt(String handle) {
+        if (!mCoverArtMap.containsKey(handle)) return Collections.emptyList();
+        return (List<String>) mCoverArtMap.get(handle).clone();
     }
 
-    /**
-     * Get a list of Cover Art UUIDs that are no longer being used by the tree. Clear that list.
-     */
-    synchronized ArrayList<String> getAndClearUnusedCoverArt() {
+    /** Get a list of Cover Art UUIDs that are no longer being used by the tree. Clear that list. */
+    synchronized List<String> getAndClearUnusedCoverArt() {
         ArrayList<String> unused = new ArrayList<String>();
         for (String uuid : mCoverArtMap.keySet()) {
             if (mCoverArtMap.get(uuid).isEmpty()) {
@@ -478,7 +475,7 @@ public class BrowseTree {
      */
     synchronized Set<BrowseNode> notifyImageDownload(String uuid, Uri uri) {
         Log.d(TAG, "Received downloaded image handle to cascade to BrowseNodes using it");
-        ArrayList<String> nodes = getNodesUsingCoverArt(uuid);
+        List<String> nodes = getNodesUsingCoverArt(uuid);
         HashSet<BrowseNode> parents = new HashSet<BrowseNode>();
         for (String nodeId : nodes) {
             BrowseNode node = findBrowseNodeByID(nodeId);
