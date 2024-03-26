@@ -573,6 +573,26 @@ class UnicastTestNoInit : public Test {
             base::Unretained(this->gatt_callback), event_data));
   }
 
+  void InjectPhyChangedEvent(uint16_t conn_id, uint8_t tx_phy, uint8_t rx_phy,
+                             tGATT_STATUS status) {
+    ASSERT_NE(conn_id, GATT_INVALID_CONN_ID);
+    tBTA_GATTC_PHY_UPDATE event_data = {
+        .conn_id = conn_id,
+        .tx_phy = tx_phy,
+        .rx_phy = rx_phy,
+        .status = status,
+    };
+
+    do_in_main_thread(FROM_HERE,
+                      base::BindOnce(
+                          [](tBTA_GATTC_CBACK* gatt_callback,
+                             tBTA_GATTC_PHY_UPDATE event_data) {
+                            gatt_callback(BTA_GATTC_PHY_UPDATE_EVT,
+                                          (tBTA_GATTC*)&event_data);
+                          },
+                          base::Unretained(this->gatt_callback), event_data));
+  }
+
   void InjectSearchCompleteEvent(uint16_t conn_id) {
     ASSERT_NE(conn_id, GATT_INVALID_CONN_ID);
     tBTA_GATTC_SEARCH_CMPL event_data = {
@@ -1502,6 +1522,7 @@ class UnicastTestNoInit : public Test {
         .WillByDefault(Return(true));
     ON_CALL(controller_, SupportsBleConnectedIsochronousStreamPeripheral)
         .WillByDefault(Return(true));
+    ON_CALL(controller_, SupportsBle2mPhy).WillByDefault(Return(true));
     bluetooth::hci::testing::mock_controller_ = &controller_;
     bluetooth::manager::SetMockBtmInterface(&mock_btm_interface_);
     gatt::SetMockBtaGattInterface(&mock_gatt_interface_);
@@ -2906,6 +2927,63 @@ TEST_F(UnicastTestNoInit, InitializeNoHal_2_1) {
           framework_encode_preference),
       ", LE Audio Client requires Bluetooth Audio HAL V2.1 at least. Either "
       "disable LE Audio Profile, or update your HAL");
+}
+
+TEST_F(UnicastTest, ConnectAndSetupPhy) {
+  const RawAddress test_address0 = GetTestAddress(0);
+  uint16_t conn_id = 1;
+  SetSampleDatabaseEarbudsValid(
+      1, test_address0, codec_spec_conf::kLeAudioLocationStereo,
+      codec_spec_conf::kLeAudioLocationStereo, default_channel_cnt,
+      default_channel_cnt, 0x0004,
+      /* source sample freq 16khz */ true, /*add_csis*/
+      true,                                /*add_cas*/
+      true,                                /*add_pacs*/
+      default_ase_cnt /*add_ascs*/);
+
+  EXPECT_CALL(mock_btm_interface_,
+              BleSetPhy(test_address0, PHY_LE_2M, PHY_LE_2M, 0))
+      .Times(1);
+  ConnectLeAudio(test_address0, false);
+  Mock::VerifyAndClearExpectations(&mock_btm_interface_);
+
+  EXPECT_CALL(mock_btm_interface_,
+              BleSetPhy(test_address0, PHY_LE_2M, PHY_LE_2M, 0))
+      .Times(1);
+  InjectPhyChangedEvent(conn_id, 0, 0, GATT_REQ_NOT_SUPPORTED);
+  SyncOnMainLoop();
+  ON_CALL(mock_btm_interface_, BTM_IsEncrypted(test_address0, _))
+      .WillByDefault(DoAll(Return(true)));
+  InjectEncryptionChangedEvent(test_address0);
+  SyncOnMainLoop();
+  Mock::VerifyAndClearExpectations(&mock_btm_interface_);
+
+  /* Make sure flag `acl_phy_update_done_` is cleared after disconnect.
+   * Just repeat previous steps after reconnection
+   */
+  InjectDisconnectedEvent(conn_id);
+  SyncOnMainLoop();
+
+  EXPECT_CALL(mock_btm_interface_,
+              BleSetPhy(test_address0, PHY_LE_2M, PHY_LE_2M, 0))
+      .Times(1);
+
+  ON_CALL(mock_btm_interface_, BTM_IsEncrypted(test_address0, _))
+      .WillByDefault(DoAll(Return(false)));
+  InjectConnectedEvent(test_address0, 1);
+  SyncOnMainLoop();
+  Mock::VerifyAndClearExpectations(&mock_btm_interface_);
+
+  EXPECT_CALL(mock_btm_interface_,
+              BleSetPhy(test_address0, PHY_LE_2M, PHY_LE_2M, 0))
+      .Times(1);
+  InjectPhyChangedEvent(conn_id, 0, 0, GATT_REQ_NOT_SUPPORTED);
+  SyncOnMainLoop();
+  ON_CALL(mock_btm_interface_, BTM_IsEncrypted(test_address0, _))
+      .WillByDefault(DoAll(Return(true)));
+  InjectEncryptionChangedEvent(test_address0);
+  SyncOnMainLoop();
+  Mock::VerifyAndClearExpectations(&mock_btm_interface_);
 }
 
 TEST_F(UnicastTest, ConnectOneEarbudEmpty) {
