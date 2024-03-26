@@ -153,3 +153,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "ble_gatt_server_use_address_type_in_connection"
+    namespace: "bluetooth"
+    description: "Use address type when initiating connection from BluetoothGattServer"
+    bug: "331147673"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
