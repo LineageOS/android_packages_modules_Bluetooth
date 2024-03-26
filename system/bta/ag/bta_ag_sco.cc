@@ -230,7 +230,13 @@ static void bta_ag_sco_disc_cback(uint16_t sco_idx) {
       /* If SCO open was initiated by AG and failed for mSBC T2, try mSBC T1
        * 'Safe setting' first. If T1 also fails, try CVSD
        * same operations for LC3 settings */
-      if (bta_ag_sco_is_opening(bta_ag_cb.sco.p_curr_scb)) {
+      if (bta_ag_sco_is_opening(bta_ag_cb.sco.p_curr_scb) &&
+#if TARGET_FLOSS
+          (false ||
+#else
+          (!IS_FLAG_ENABLED(fix_hfp_qual_1_9) ||
+#endif
+           bta_ag_cb.sco.is_local)) {
         /* Don't bother to edit |p_curr_scb->state| because it is in
          * |BTA_AG_OPEN_ST|, which has the same value as |BTA_AG_SCO_CODEC_ST|
          */
@@ -268,7 +274,13 @@ static void bta_ag_sco_disc_cback(uint16_t sco_idx) {
           }
         }
       }
-    } else if (bta_ag_sco_is_opening(bta_ag_cb.sco.p_curr_scb)) {
+    } else if (bta_ag_sco_is_opening(bta_ag_cb.sco.p_curr_scb) &&
+#if TARGET_FLOSS
+               (false ||
+#else
+               (!IS_FLAG_ENABLED(fix_hfp_qual_1_9) ||
+#endif
+                bta_ag_cb.sco.is_local)) {
       if (IS_FLAG_ENABLED(retry_esco_with_zero_retransmission_effort) &&
           bta_ag_cb.sco.p_curr_scb->retransmission_effort_retries == 0) {
         bta_ag_cb.sco.p_curr_scb->retransmission_effort_retries++;
