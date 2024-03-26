@@ -52,6 +52,7 @@ import com.android.internal.annotations.VisibleForTesting;
 import com.android.modules.utils.HandlerExecutor;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -386,7 +387,7 @@ public class PanService extends ProfileService {
         public List<BluetoothDevice> getConnectedDevices(AttributionSource source) {
             PanService service = getService(source);
             if (service == null) {
-                return new ArrayList<>();
+                return Collections.emptyList();
             }
 
             return service.getConnectedDevices();
@@ -397,7 +398,7 @@ public class PanService extends ProfileService {
                 int[] states, AttributionSource source) {
             PanService service = getService(source);
             if (service == null) {
-                return new ArrayList<>();
+                return Collections.emptyList();
             }
 
             return service.getDevicesMatchingConnectionStates(states);

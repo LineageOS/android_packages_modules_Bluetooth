@@ -34,7 +34,7 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -213,7 +213,7 @@ public final class BluetoothA2dpSink implements BluetoothProfile {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return new ArrayList<>();
+        return Collections.emptyList();
     }
 
     /**
@@ -239,7 +239,7 @@ public final class BluetoothA2dpSink implements BluetoothProfile {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return new ArrayList<>();
+        return Collections.emptyList();
     }
 
     /**
