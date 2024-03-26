@@ -6,7 +6,7 @@ use std::convert::TryFrom;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Error, ErrorKind, Read};
 
-use bt_packets::hci::{Acl, AclChild, Command, Event};
+use hcidoc_packets::hci::{Acl, AclChild, Command, Event};
 use hcidoc_packets::l2cap::{
     BasicFrame, BasicFrameChild, Control, ControlFrameChild, GroupFrameChild, LeControl,
     LeControlFrameChild,

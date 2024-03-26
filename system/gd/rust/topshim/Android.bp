@@ -19,7 +19,6 @@ rust_library_host_rlib {
     rustlibs: [
         "libbitflags",
         "libbt_common",
-        "libbt_packets",
         "libcxx",
         "libfutures",
         "libgrpcio",

@@ -7,7 +7,7 @@ use std::slice::Iter;
 
 use crate::engine::{Rule, RuleGroup, Signal};
 use crate::parser::{Packet, PacketChild};
-use bt_packets::hci::{
+use hcidoc_packets::hci::{
     Acl, AclCommandChild, Address, AuthenticatedPayloadTimeoutExpired, CommandChild,
     ConnectionManagementCommandChild, DisconnectReason, Enable, ErrorCode, EventChild,
     InitiatorFilterPolicy, LeConnectionManagementCommandChild, LeMetaEventChild,
@@ -483,7 +483,8 @@ impl OddDisconnectionsRule {
         let use_accept_list = self
             .last_le_connection_filter_policy
             .map_or(false, |policy| policy == InitiatorFilterPolicy::UseFilterAcceptList);
-        let addr_to_remove = if use_accept_list { bt_packets::hci::EMPTY_ADDRESS } else { address };
+        let addr_to_remove =
+            if use_accept_list { hcidoc_packets::hci::EMPTY_ADDRESS } else { address };
 
         if let Some(_) = self.le_connection_attempt.remove(&addr_to_remove) {
             if status == ErrorCode::Success {

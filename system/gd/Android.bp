@@ -689,53 +689,6 @@ cc_benchmark {
     ],
 }
 
-rust_library {
-    name: "libbt_packets",
-    defaults: ["gd_rust_defaults"],
-    crate_name: "bt_packets",
-    srcs: [
-        "rust/packets/lib.rs",
-
-        ":BluetoothGeneratedPackets_rust",
-    ],
-    edition: "2018",
-    vendor_available: true,
-    host_supported: true,
-    proc_macros: ["libnum_derive"],
-    rustlibs: [
-        "libbytes",
-        "liblog_rust",
-        "libpdl_runtime",
-        "libthiserror",
-    ],
-    apex_available: [
-        "com.android.btservices",
-    ],
-    min_sdk_version: "30",
-}
-
-rust_test_host {
-    name: "libbt_packets_test",
-    defaults: [
-        "gd_rust_defaults",
-        "mts_defaults",
-    ],
-    srcs: [
-        "rust/packets/lib.rs",
-
-        ":BluetoothGeneratedPackets_rust",
-    ],
-    test_suites: ["general-tests"],
-    edition: "2018",
-    proc_macros: ["libnum_derive"],
-    rustlibs: [
-        "libbytes",
-        "liblog_rust",
-        "libpdl_runtime",
-        "libthiserror",
-    ],
-}
-
 // Generates binary schema data to be bundled and source file generated
 genrule {
     name: "BluetoothGeneratedDumpsysBinarySchema_bfbs",
