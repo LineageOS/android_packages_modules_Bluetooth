@@ -3507,9 +3507,9 @@ static void read_encryption_key_size_complete_after_encryption_change(
 
   if (IS_FLAG_ENABLED(bluffs_mitigation)) {
     if (btm_sec_is_session_key_size_downgrade(handle, key_size)) {
-      LOG_ERROR(
+      log::error(
           "encryption key size lower than cached value, disconnecting. "
-          "handle: 0x%x attempted key size: %d",
+          "handle: 0x{:x} attempted key size: {}",
           handle, key_size);
       acl_disconnect_from_handle(
           handle, HCI_ERR_HOST_REJECT_SECURITY,
