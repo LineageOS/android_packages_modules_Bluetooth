@@ -39,6 +39,7 @@
 #include "hci/msft.h"
 #include "hci/remote_name_request.h"
 #include "hci/vendor_specific_event_manager.h"
+#include "main/shim/acl.h"
 #include "main/shim/acl_legacy_interface.h"
 #include "main/shim/distance_measurement_manager.h"
 #include "main/shim/entry.h"
@@ -56,6 +57,12 @@ namespace shim {
 
 using ::bluetooth::common::InitFlags;
 using ::bluetooth::common::StringFormat;
+
+struct Stack::impl {
+  legacy::Acl* acl_ = nullptr;
+};
+
+Stack::Stack() { pimpl_ = std::make_shared<Stack::impl>(); }
 
 Stack* Stack::GetInstance() {
   static Stack instance;
@@ -90,9 +97,9 @@ void Stack::StartEverything() {
   ASSERT(stack_manager_.GetInstance<storage::StorageModule>() != nullptr);
   ASSERT(stack_manager_.GetInstance<shim::Dumpsys>() != nullptr);
   if (stack_manager_.IsStarted<hci::Controller>()) {
-    acl_ = new legacy::Acl(stack_handler_, legacy::GetAclInterface(),
-                           GetController()->GetLeFilterAcceptListSize(),
-                           GetController()->GetLeResolvingListSize());
+    pimpl_->acl_ = new legacy::Acl(stack_handler_, legacy::GetAclInterface(),
+                                   GetController()->GetLeFilterAcceptListSize(),
+                                   GetController()->GetLeResolvingListSize());
   } else {
     log::error("Unable to create shim ACL layer as Controller has not started");
   }
@@ -135,10 +142,10 @@ void Stack::Stop() {
   bluetooth::shim::hci_on_shutting_down();
 
   // Make sure gd acl flag is enabled and we started it up
-  if (acl_ != nullptr) {
-    acl_->FinalShutdown();
-    delete acl_;
-    acl_ = nullptr;
+  if (pimpl_->acl_ != nullptr) {
+    pimpl_->acl_->FinalShutdown();
+    delete pimpl_->acl_;
+    pimpl_->acl_ = nullptr;
   }
 
   ASSERT_LOG(is_running_, "%s Gd stack not running", __func__);
@@ -181,15 +188,15 @@ const StackManager* Stack::GetStackManager() const {
 legacy::Acl* Stack::GetAcl() {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   ASSERT(is_running_);
-  ASSERT_LOG(acl_ != nullptr, "Acl shim layer has not been created");
-  return acl_;
+  ASSERT_LOG(pimpl_->acl_ != nullptr, "Acl shim layer has not been created");
+  return pimpl_->acl_;
 }
 
 LinkPolicyInterface* Stack::LinkPolicy() {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   ASSERT(is_running_);
-  ASSERT_LOG(acl_ != nullptr, "Acl shim layer has not been created");
-  return acl_;
+  ASSERT_LOG(pimpl_->acl_ != nullptr, "Acl shim layer has not been created");
+  return pimpl_->acl_;
 }
 
 Btm* Stack::GetBtm() {

@@ -19,7 +19,6 @@
 #include <functional>
 #include <mutex>
 
-#include "main/shim/acl.h"
 #include "main/shim/btm.h"
 #include "main/shim/link_policy_interface.h"
 #include "module.h"
@@ -30,13 +29,16 @@
 // The shim layer implementation on the Gd stack side.
 namespace bluetooth {
 namespace shim {
+namespace legacy {
+class Acl;
+};  // namespace legacy
 
 // GD shim stack, having modes corresponding to legacy stack
 class Stack {
  public:
   static Stack* GetInstance();
 
-  Stack() = default;
+  Stack();
   Stack(const Stack&) = delete;
   Stack& operator=(const Stack&) = delete;
 
@@ -77,12 +79,14 @@ class Stack {
   size_t NumModules() const { return num_modules_; }
 
  private:
+  struct impl;
+  std::shared_ptr<impl> pimpl_;
+
   mutable std::recursive_mutex mutex_;
   StackManager stack_manager_;
   bool is_running_ = false;
   os::Thread* stack_thread_ = nullptr;
   os::Handler* stack_handler_ = nullptr;
-  legacy::Acl* acl_ = nullptr;
   Btm* btm_ = nullptr;
   size_t num_modules_{0};
   void Start(ModuleList* modules);
