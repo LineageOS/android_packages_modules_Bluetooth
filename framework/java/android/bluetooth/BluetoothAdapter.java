@@ -17,8 +17,6 @@
 
 package android.bluetooth;
 
-import static android.bluetooth.BluetoothUtils.getSyncTimeout;
-
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.BroadcastBehavior;
@@ -74,7 +72,6 @@ import android.util.Pair;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
 import com.android.modules.expresslog.Counter;
-import com.android.modules.utils.SynchronousResultReceiver;
 
 import java.io.IOException;
 import java.lang.annotation.Retention;
@@ -93,7 +90,6 @@ import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiFunction;
 
@@ -1481,13 +1477,9 @@ public final class BluetoothAdapter {
                 @Override
                 public @InternalAdapterState Integer apply(IBluetooth serviceQuery) {
                     try {
-                        final SynchronousResultReceiver<Integer> recv =
-                                SynchronousResultReceiver.get();
-                        serviceQuery.getState(recv);
-                        return recv.awaitResultNoInterrupt(getSyncTimeout())
-                                .getValue(BluetoothAdapter.STATE_OFF);
-                    } catch (RemoteException | TimeoutException e) {
-                        throw new RuntimeException(e);
+                        return serviceQuery.getState();
+                    } catch (RemoteException e) {
+                        throw e.rethrowAsRuntimeException();
                     }
                 }
             };
@@ -1516,8 +1508,7 @@ public final class BluetoothAdapter {
                 return sBluetoothGetStateCache.query(mService);
             }
         } catch (RuntimeException e) {
-            if (!(e.getCause() instanceof TimeoutException)
-                    && !(e.getCause() instanceof RemoteException)) {
+            if (!(e.getCause() instanceof RemoteException)) {
                 throw e;
             }
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
@@ -1756,11 +1747,9 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                mService.getNameLengthForAdvertise(mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(-1);
+                return mService.getNameLengthForAdvertise(mAttributionSource);
             }
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
@@ -1785,16 +1774,14 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                mService.factoryReset(mAttributionSource, recv);
-                if (recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(false)
+                if (mService.factoryReset(mAttributionSource)
                         && mManagerService.onFactoryReset(mAttributionSource)) {
                     return true;
                 }
             }
             Log.e(TAG, "factoryReset(): Setting persist.bluetooth.factoryreset to retry later");
             BluetoothProperties.factory_reset(true);
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
@@ -1850,12 +1837,9 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<List<ParcelUuid>> recv =
-                        SynchronousResultReceiver.get();
-                mService.getUuids(mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
+                return mService.getUuids(mAttributionSource);
             }
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
@@ -1888,11 +1872,9 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                mService.setName(name, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(false);
+                return mService.setName(name, mAttributionSource);
             }
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
@@ -1917,12 +1899,9 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                mService.getIoCapability(mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout())
-                        .getValue(BluetoothAdapter.IO_CAPABILITY_UNKNOWN);
+                return mService.getIoCapability(mAttributionSource);
             }
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
@@ -1953,11 +1932,9 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                mService.setIoCapability(capability, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(false);
+                return mService.setIoCapability(capability, mAttributionSource);
             }
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
@@ -1991,12 +1968,8 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                mService.getScanMode(mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(SCAN_MODE_NONE);
+                return mService.getScanMode(mAttributionSource);
             }
-        } catch (TimeoutException e) {
-            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } catch (RemoteException e) {
             throw e.rethrowAsRuntimeException();
         } finally {
@@ -2042,13 +2015,8 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                mService.setScanMode(mode, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout())
-                        .getValue(BluetoothStatusCodes.ERROR_UNKNOWN);
+                return mService.setScanMode(mode, mAttributionSource);
             }
-        } catch (TimeoutException e) {
-            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } catch (RemoteException e) {
             throw e.rethrowAsRuntimeException();
         } finally {
@@ -2071,13 +2039,9 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Long> recv = SynchronousResultReceiver.get();
-                mService.getDiscoverableTimeout(mAttributionSource, recv);
-                long timeout = recv.awaitResultNoInterrupt(getSyncTimeout()).getValue((long) -1);
+                long timeout = mService.getDiscoverableTimeout(mAttributionSource);
                 return (timeout == -1) ? null : Duration.ofSeconds(timeout);
             }
-        } catch (TimeoutException e) {
-            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } catch (RemoteException e) {
             throw e.rethrowAsRuntimeException();
         } finally {
@@ -2120,13 +2084,8 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                mService.setDiscoverableTimeout(timeout.toSeconds(), mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout())
-                        .getValue(BluetoothStatusCodes.ERROR_UNKNOWN);
+                return mService.setDiscoverableTimeout(timeout.toSeconds(), mAttributionSource);
             }
-        } catch (TimeoutException e) {
-            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } catch (RemoteException e) {
             throw e.rethrowAsRuntimeException();
         } finally {
@@ -2154,11 +2113,9 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Long> recv = SynchronousResultReceiver.get();
-                mService.getDiscoveryEndMillis(mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue((long) -1);
+                return mService.getDiscoveryEndMillis(mAttributionSource);
             }
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
@@ -2208,11 +2165,9 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                mService.startDiscovery(mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(false);
+                return mService.startDiscovery(mAttributionSource);
             }
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
@@ -2245,11 +2200,9 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                mService.cancelDiscovery(mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(false);
+                return mService.cancelDiscovery(mAttributionSource);
             }
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
@@ -2284,11 +2237,9 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                mService.isDiscovering(mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(false);
+                return mService.isDiscovering(mAttributionSource);
             }
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
@@ -2330,11 +2281,9 @@ public final class BluetoothAdapter {
         try {
             if (mService != null) {
                 if (DBG) Log.d(TAG, "removeActiveDevice, profiles: " + profiles);
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                mService.removeActiveDevice(profiles, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(false);
+                return mService.removeActiveDevice(profiles, mAttributionSource);
             }
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
@@ -2386,11 +2335,9 @@ public final class BluetoothAdapter {
                 if (DBG) {
                     Log.d(TAG, "setActiveDevice, device: " + device + ", profiles: " + profiles);
                 }
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                mService.setActiveDevice(device, profiles, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(false);
+                return mService.setActiveDevice(device, profiles, mAttributionSource);
             }
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
@@ -2438,12 +2385,9 @@ public final class BluetoothAdapter {
                                     + BluetoothProfile.getProfileName(profile)
                                     + ")");
                 }
-                final SynchronousResultReceiver<List<BluetoothDevice>> recv =
-                        SynchronousResultReceiver.get();
-                mService.getActiveDevices(profile, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(new ArrayList<>());
+                return mService.getActiveDevices(profile, mAttributionSource);
             }
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
@@ -2466,11 +2410,9 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                mService.isMultiAdvertisementSupported(recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(false);
+                return mService.isMultiAdvertisementSupported();
             }
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
@@ -2506,12 +2448,9 @@ public final class BluetoothAdapter {
                 @Override
                 public Boolean apply(IBluetooth serviceQuery) {
                     try {
-                        final SynchronousResultReceiver<Boolean> recv =
-                                SynchronousResultReceiver.get();
-                        serviceQuery.isOffloadedFilteringSupported(recv);
-                        return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(false);
-                    } catch (RemoteException | TimeoutException e) {
-                        throw new RuntimeException(e);
+                        return serviceQuery.isOffloadedFilteringSupported();
+                    } catch (RemoteException e) {
+                        throw e.rethrowAsRuntimeException();
                     }
                 }
             };
@@ -2547,8 +2486,7 @@ public final class BluetoothAdapter {
         try {
             if (mService != null) return sBluetoothFilteringCache.query(mService);
         } catch (RuntimeException e) {
-            if (!(e.getCause() instanceof TimeoutException)
-                    && !(e.getCause() instanceof RemoteException)) {
+            if (!(e.getCause() instanceof RemoteException)) {
                 throw e;
             }
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
@@ -2572,11 +2510,9 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                mService.isOffloadedScanBatchingSupported(recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(false);
+                return mService.isOffloadedScanBatchingSupported();
             }
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
@@ -2598,11 +2534,9 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                mService.isLe2MPhySupported(recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(false);
+                return mService.isLe2MPhySupported();
             }
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
@@ -2624,11 +2558,9 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                mService.isLeCodedPhySupported(recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(false);
+                return mService.isLeCodedPhySupported();
             }
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
@@ -2650,11 +2582,9 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                mService.isLeExtendedAdvertisingSupported(recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(false);
+                return mService.isLeExtendedAdvertisingSupported();
             }
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
@@ -2676,11 +2606,9 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                mService.isLePeriodicAdvertisingSupported(recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(false);
+                return mService.isLePeriodicAdvertisingSupported();
             }
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
@@ -2715,22 +2643,16 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                mService.isLeAudioSupported(recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout())
-                        .getValue(BluetoothStatusCodes.ERROR_UNKNOWN);
+                return mService.isLeAudioSupported();
             } else {
                 throw new IllegalStateException(
                         "LE state is on, but there is no bluetooth service.");
             }
-        } catch (TimeoutException e) {
-            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } catch (RemoteException e) {
             throw e.rethrowAsRuntimeException();
         } finally {
             mServiceLock.readLock().unlock();
         }
-        return BluetoothStatusCodes.ERROR_UNKNOWN;
     }
 
     /**
@@ -2749,23 +2671,16 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                mService.isLeAudioBroadcastSourceSupported(recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout())
-                        .getValue(BluetoothStatusCodes.ERROR_UNKNOWN);
+                return mService.isLeAudioBroadcastSourceSupported();
             } else {
                 throw new IllegalStateException(
                         "LE state is on, but there is no bluetooth service.");
             }
-        } catch (TimeoutException e) {
-            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } catch (RemoteException e) {
             throw e.rethrowAsRuntimeException();
         } finally {
             mServiceLock.readLock().unlock();
         }
-
-        return BluetoothStatusCodes.ERROR_UNKNOWN;
     }
 
     /**
@@ -2784,22 +2699,16 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                mService.isLeAudioBroadcastAssistantSupported(recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout())
-                        .getValue(BluetoothStatusCodes.ERROR_UNKNOWN);
+                return mService.isLeAudioBroadcastAssistantSupported();
             } else {
                 throw new IllegalStateException(
                         "LE state is on, but there is no bluetooth service.");
             }
-        } catch (TimeoutException e) {
-            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } catch (RemoteException e) {
             throw e.rethrowAsRuntimeException();
         } finally {
             mServiceLock.readLock().unlock();
         }
-        return BluetoothStatusCodes.ERROR_UNKNOWN;
     }
 
     /**
@@ -2822,22 +2731,16 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                mService.isDistanceMeasurementSupported(mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout())
-                        .getValue(BluetoothStatusCodes.ERROR_UNKNOWN);
+                return mService.isDistanceMeasurementSupported(mAttributionSource);
             } else {
                 throw new IllegalStateException(
                         "LE state is on, but there is no bluetooth service.");
             }
-        } catch (TimeoutException e) {
-            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } catch (RemoteException e) {
             throw e.rethrowAsRuntimeException();
         } finally {
             mServiceLock.readLock().unlock();
         }
-        return BluetoothStatusCodes.ERROR_UNKNOWN;
     }
 
     /**
@@ -2855,11 +2758,9 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                mService.getLeMaximumAdvertisingDataLength(recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(0);
+                return mService.getLeMaximumAdvertisingDataLength();
             }
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
@@ -2895,11 +2796,9 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                mService.getMaxConnectedAudioDevices(mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(1);
+                return mService.getMaxConnectedAudioDevices(mAttributionSource);
             }
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
@@ -2925,10 +2824,8 @@ public final class BluetoothAdapter {
                 // BLE is not supported
                 return false;
             }
-            final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-            iGatt.numHwTrackFiltersAvailable(mAttributionSource, recv);
-            return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(0) != 0;
-        } catch (TimeoutException | RemoteException e) {
+            return iGatt.numHwTrackFiltersAvailable(mAttributionSource) != 0;
+        } catch (RemoteException e) {
             Log.e(TAG, "", e);
         }
         return false;
@@ -2998,14 +2895,11 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<List<BluetoothDevice>> recv =
-                        SynchronousResultReceiver.get();
-                mService.getMostRecentlyConnectedDevices(mAttributionSource, recv);
                 return Attributable.setAttributionSource(
-                        recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(new ArrayList<>()),
+                        mService.getMostRecentlyConnectedDevices(mAttributionSource),
                         mAttributionSource);
             }
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
@@ -3033,17 +2927,12 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<List<BluetoothDevice>> recv =
-                        SynchronousResultReceiver.get();
-                mService.getBondedDevices(mAttributionSource, recv);
                 return toDeviceSet(
                         Attributable.setAttributionSource(
-                                recv.awaitResultNoInterrupt(getSyncTimeout())
-                                        .getValue(new ArrayList<>()),
-                                mAttributionSource));
+                                mService.getBondedDevices(mAttributionSource), mAttributionSource));
             }
             return toDeviceSet(Arrays.asList());
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
@@ -3074,10 +2963,8 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Long> recv = SynchronousResultReceiver.get();
-                mService.getSupportedProfiles(mAttributionSource, recv);
                 final long supportedProfilesBitMask =
-                        recv.awaitResultNoInterrupt(getSyncTimeout()).getValue((long) 0);
+                        mService.getSupportedProfiles(mAttributionSource);
 
                 for (int i = 0; i <= BluetoothProfile.MAX_PROFILE_ID; i++) {
                     if ((supportedProfilesBitMask & (1 << i)) != 0) {
@@ -3090,7 +2977,7 @@ public final class BluetoothAdapter {
                     supportedProfiles.add(BluetoothProfile.HEARING_AID);
                 }
             }
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
@@ -3106,13 +2993,9 @@ public final class BluetoothAdapter {
                         @Override
                         public Integer apply(IBluetooth serviceQuery) {
                             try {
-                                final SynchronousResultReceiver<Integer> recv =
-                                        SynchronousResultReceiver.get();
-                                serviceQuery.getAdapterConnectionState(recv);
-                                return recv.awaitResultNoInterrupt(getSyncTimeout())
-                                        .getValue(STATE_DISCONNECTED);
-                            } catch (RemoteException | TimeoutException e) {
-                                throw new RuntimeException(e);
+                                return serviceQuery.getAdapterConnectionState();
+                            } catch (RemoteException e) {
+                                throw e.rethrowAsRuntimeException();
                             }
                         }
                     };
@@ -3156,8 +3039,7 @@ public final class BluetoothAdapter {
         try {
             if (mService != null) return sBluetoothGetAdapterConnectionStateCache.query(mService);
         } catch (RuntimeException e) {
-            if (!(e.getCause() instanceof TimeoutException)
-                    && !(e.getCause() instanceof RemoteException)) {
+            if (!(e.getCause() instanceof RemoteException)) {
                 throw e;
             }
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
@@ -3178,15 +3060,10 @@ public final class BluetoothAdapter {
                             IBluetooth service = pairQuery.first;
                             AttributionSource source = pairQuery.second.first;
                             Integer profile = pairQuery.second.second;
-                            final int defaultValue = STATE_DISCONNECTED;
                             try {
-                                final SynchronousResultReceiver<Integer> recv =
-                                        SynchronousResultReceiver.get();
-                                service.getProfileConnectionState(profile, source, recv);
-                                return recv.awaitResultNoInterrupt(getSyncTimeout())
-                                        .getValue(defaultValue);
-                            } catch (RemoteException | TimeoutException e) {
-                                throw new RuntimeException(e);
+                                return service.getProfileConnectionState(profile, source);
+                            } catch (RemoteException e) {
+                                throw e.rethrowAsRuntimeException();
                             }
                         }
                     };
@@ -3229,8 +3106,7 @@ public final class BluetoothAdapter {
                         new Pair<>(mService, new Pair<>(mAttributionSource, profile)));
             }
         } catch (RuntimeException e) {
-            if (!(e.getCause() instanceof TimeoutException)
-                    && !(e.getCause() instanceof RemoteException)) {
+            if (!(e.getCause() instanceof RemoteException)) {
                 throw e;
             }
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
@@ -3382,13 +3258,10 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                mService.startRfcommListener(
-                        name, new ParcelUuid(uuid), pendingIntent, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout())
-                        .getValue(BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND);
+                return mService.startRfcommListener(
+                        name, new ParcelUuid(uuid), pendingIntent, mAttributionSource);
             }
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, "Failed to transact RFCOMM listener start request", e);
             return BluetoothStatusCodes.ERROR_TIMEOUT;
         } finally {
@@ -3418,14 +3291,10 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                mService.stopRfcommListener(new ParcelUuid(uuid), mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout())
-                        .getValue(BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND);
+                return mService.stopRfcommListener(new ParcelUuid(uuid), mAttributionSource);
             }
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, "Failed to transact RFCOMM listener stop request", e);
-            return BluetoothStatusCodes.ERROR_TIMEOUT;
         } finally {
             mServiceLock.readLock().unlock();
         }
@@ -3459,13 +3328,11 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<IncomingRfcommSocketInfo> recv =
-                        SynchronousResultReceiver.get();
-                mService.retrievePendingSocketForServiceRecord(
-                        new ParcelUuid(uuid), mAttributionSource, recv);
-                socketInfo = recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
+                socketInfo =
+                        mService.retrievePendingSocketForServiceRecord(
+                                new ParcelUuid(uuid), mAttributionSource);
             }
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             return null;
         } finally {
@@ -3964,16 +3831,11 @@ public final class BluetoothAdapter {
                             mMetadataListeners.forEach(
                                     (device, pair) -> {
                                         try {
-                                            final SynchronousResultReceiver recv =
-                                                    SynchronousResultReceiver.get();
                                             mService.registerMetadataListener(
                                                     mBluetoothMetadataListener,
                                                     device,
-                                                    mAttributionSource,
-                                                    recv);
-                                            recv.awaitResultNoInterrupt(getSyncTimeout())
-                                                    .getValue(null);
-                                        } catch (RemoteException | TimeoutException e) {
+                                                    mAttributionSource);
+                                        } catch (RemoteException e) {
                                             Log.e(TAG, "Failed to register metadata listener", e);
                                             Log.e(
                                                     TAG,
@@ -3987,15 +3849,10 @@ public final class BluetoothAdapter {
                         synchronized (mAudioProfilesChangedCallbackExecutorMap) {
                             if (!mAudioProfilesChangedCallbackExecutorMap.isEmpty()) {
                                 try {
-                                    final SynchronousResultReceiver recv =
-                                            SynchronousResultReceiver.get();
                                     mService.registerPreferredAudioProfilesChangedCallback(
                                             mPreferredAudioProfilesChangedCallback,
-                                            mAttributionSource,
-                                            recv);
-                                    recv.awaitResultNoInterrupt(getSyncTimeout())
-                                            .getValue(BluetoothStatusCodes.ERROR_UNKNOWN);
-                                } catch (RemoteException | TimeoutException e) {
+                                            mAttributionSource);
+                                } catch (RemoteException e) {
                                     Log.e(
                                             TAG,
                                             "onBluetoothServiceUp: Failed to register bluetooth"
@@ -4007,15 +3864,10 @@ public final class BluetoothAdapter {
                         synchronized (mBluetoothQualityReportReadyCallbackExecutorMap) {
                             if (!mBluetoothQualityReportReadyCallbackExecutorMap.isEmpty()) {
                                 try {
-                                    final SynchronousResultReceiver recv =
-                                            SynchronousResultReceiver.get();
                                     mService.registerBluetoothQualityReportReadyCallback(
                                             mBluetoothQualityReportReadyCallback,
-                                            mAttributionSource,
-                                            recv);
-                                    recv.awaitResultNoInterrupt(getSyncTimeout())
-                                            .getValue(BluetoothStatusCodes.ERROR_UNKNOWN);
-                                } catch (RemoteException | TimeoutException e) {
+                                            mAttributionSource);
+                                } catch (RemoteException e) {
                                     Log.e(
                                             TAG,
                                             "onBluetoothServiceUp: Failed to register bluetooth"
@@ -4027,12 +3879,9 @@ public final class BluetoothAdapter {
                         synchronized (mBluetoothConnectionCallbackExecutorMap) {
                             if (!mBluetoothConnectionCallbackExecutorMap.isEmpty()) {
                                 try {
-                                    final SynchronousResultReceiver recv =
-                                            SynchronousResultReceiver.get();
                                     mService.registerBluetoothConnectionCallback(
-                                            mConnectionCallback, mAttributionSource, recv);
-                                    recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
-                                } catch (RemoteException | TimeoutException e) {
+                                            mConnectionCallback, mAttributionSource);
+                                } catch (RemoteException e) {
                                     Log.e(
                                             TAG,
                                             "onBluetoothServiceUp: Failed to register "
@@ -4256,15 +4105,12 @@ public final class BluetoothAdapter {
             mServiceLock.readLock().lock();
             try {
                 if (mService != null) {
-                    final SynchronousResultReceiver recv = SynchronousResultReceiver.get();
                     mService.generateLocalOobData(
                             transport,
                             new WrappedOobDataCallback(callback, executor),
-                            mAttributionSource,
-                            recv);
-                    recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
+                            mAttributionSource);
                 }
-            } catch (RemoteException | TimeoutException e) {
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             } finally {
                 mServiceLock.readLock().unlock();
@@ -4382,40 +4228,33 @@ public final class BluetoothAdapter {
      * @hide
      */
     public @Nullable IBluetoothGatt getBluetoothGatt() {
-        IBluetoothGatt defaultValue = null;
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<IBinder> recv = SynchronousResultReceiver.get();
-                mService.getBluetoothGatt(recv);
-                return IBluetoothGatt.Stub.asInterface(
-                        recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null));
+                return IBluetoothGatt.Stub.asInterface(mService.getBluetoothGatt());
             }
 
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
         }
-        return defaultValue;
+        return null;
     }
 
     /** Return a binder to a Profile service */
     private @Nullable IBinder getProfile(int profile) {
-        IBinder defaultValue = null;
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<IBinder> recv = SynchronousResultReceiver.get();
-                mService.getProfile(profile, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
+                return mService.getProfile(profile);
             }
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
         }
-        return defaultValue;
+        return null;
     }
 
     /*package*/ void removeServiceStateCallback(IBluetoothManagerCallback cb) {
@@ -4807,11 +4646,10 @@ public final class BluetoothAdapter {
 
                 boolean ret = false;
                 try {
-                    final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                    mService.registerMetadataListener(
-                            mBluetoothMetadataListener, device, mAttributionSource, recv);
-                    ret = recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(false);
-                } catch (RemoteException | TimeoutException e) {
+                    ret =
+                            mService.registerMetadataListener(
+                                    mBluetoothMetadataListener, device, mAttributionSource);
+                } catch (RemoteException e) {
                     Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
                 } finally {
                     if (!ret) {
@@ -4876,12 +4714,9 @@ public final class BluetoothAdapter {
                 mServiceLock.readLock().lock();
                 try {
                     if (mService != null) {
-                        final SynchronousResultReceiver<Boolean> recv =
-                                SynchronousResultReceiver.get();
-                        mService.unregisterMetadataListener(device, mAttributionSource, recv);
-                        return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(false);
+                        return mService.unregisterMetadataListener(device, mAttributionSource);
                     }
-                } catch (RemoteException | TimeoutException e) {
+                } catch (RemoteException e) {
                     Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
                     return false;
                 } finally {
@@ -4967,15 +4802,12 @@ public final class BluetoothAdapter {
                 mServiceLock.readLock().lock();
                 try {
                     if (mService != null) {
-                        final SynchronousResultReceiver<Boolean> recv =
-                                SynchronousResultReceiver.get();
-                        mService.registerBluetoothConnectionCallback(
-                                mConnectionCallback, mAttributionSource, recv);
-                        if (!recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(false)) {
+                        if (!mService.registerBluetoothConnectionCallback(
+                                mConnectionCallback, mAttributionSource)) {
                             return false;
                         }
                     }
-                } catch (RemoteException | TimeoutException e) {
+                } catch (RemoteException e) {
                     Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
                     mBluetoothConnectionCallbackExecutorMap.remove(callback);
                 } finally {
@@ -5028,12 +4860,10 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                mService.unregisterBluetoothConnectionCallback(
-                        mConnectionCallback, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(false);
+                return mService.unregisterBluetoothConnectionCallback(
+                        mConnectionCallback, mAttributionSource);
             }
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
@@ -5206,26 +5036,20 @@ public final class BluetoothAdapter {
                             + modeToProfileBundle.getInt(AUDIO_MODE_DUPLEX));
         }
 
-        final int defaultValue = BluetoothStatusCodes.ERROR_UNKNOWN;
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                mService.setPreferredAudioProfiles(
-                        device, modeToProfileBundle, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
+                return mService.setPreferredAudioProfiles(
+                        device, modeToProfileBundle, mAttributionSource);
             } else {
                 return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
             }
         } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             throw e.rethrowAsRuntimeException();
-        } catch (TimeoutException e) {
-            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
         }
-        return defaultValue;
     }
 
     /**
@@ -5275,24 +5099,19 @@ public final class BluetoothAdapter {
             throw new IllegalArgumentException("device cannot have an invalid address");
         }
 
-        final Bundle defaultValue = Bundle.EMPTY;
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Bundle> recv = SynchronousResultReceiver.get();
-                mService.getPreferredAudioProfiles(device, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
+                return mService.getPreferredAudioProfiles(device, mAttributionSource);
             }
         } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             throw e.rethrowAsRuntimeException();
-        } catch (TimeoutException e) {
-            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
         }
 
-        return defaultValue;
+        return Bundle.EMPTY;
     }
 
     /** @hide */
@@ -5338,24 +5157,19 @@ public final class BluetoothAdapter {
             throw new IllegalArgumentException("device cannot have an invalid address");
         }
 
-        final int defaultValue = BluetoothStatusCodes.ERROR_UNKNOWN;
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                mService.notifyActiveDeviceChangeApplied(device, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
+                return mService.notifyActiveDeviceChangeApplied(device, mAttributionSource);
             }
         } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             throw e.rethrowAsRuntimeException();
-        } catch (TimeoutException e) {
-            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
         }
 
-        return defaultValue;
+        return BluetoothStatusCodes.ERROR_UNKNOWN;
     }
 
     @SuppressLint("AndroidFrameworkBluetoothPermission")
@@ -5419,26 +5233,19 @@ public final class BluetoothAdapter {
         requireNonNull(executor, "executor cannot be null");
         requireNonNull(callback, "callback cannot be null");
 
-        final int defaultValue = BluetoothStatusCodes.ERROR_UNKNOWN;
-        int serviceCallStatus = defaultValue;
         synchronized (mAudioProfilesChangedCallbackExecutorMap) {
             // If the callback map is empty, we register the service-to-app callback
             if (mAudioProfilesChangedCallbackExecutorMap.isEmpty()) {
+                int serviceCallStatus = BluetoothStatusCodes.ERROR_UNKNOWN;
                 mServiceLock.readLock().lock();
                 try {
                     if (mService != null) {
-                        final SynchronousResultReceiver<Integer> recv =
-                                SynchronousResultReceiver.get();
-                        mService.registerPreferredAudioProfilesChangedCallback(
-                                mPreferredAudioProfilesChangedCallback, mAttributionSource, recv);
                         serviceCallStatus =
-                                recv.awaitResultNoInterrupt(getSyncTimeout())
-                                        .getValue(defaultValue);
+                                mService.registerPreferredAudioProfilesChangedCallback(
+                                        mPreferredAudioProfilesChangedCallback, mAttributionSource);
                     }
                 } catch (RemoteException e) {
                     throw e.rethrowAsRuntimeException();
-                } catch (TimeoutException e) {
-                    Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
                 } finally {
                     mServiceLock.readLock().unlock();
                 }
@@ -5505,25 +5312,20 @@ public final class BluetoothAdapter {
             return BluetoothStatusCodes.SUCCESS;
         }
 
-        final int defaultValue = BluetoothStatusCodes.ERROR_UNKNOWN;
         // If the callback map is empty, we unregister the service-to-app callback
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                mService.unregisterPreferredAudioProfilesChangedCallback(
-                        mPreferredAudioProfilesChangedCallback, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
+                return mService.unregisterPreferredAudioProfilesChangedCallback(
+                        mPreferredAudioProfilesChangedCallback, mAttributionSource);
             }
-        } catch (TimeoutException e) {
-            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } catch (RemoteException e) {
             throw e.rethrowAsRuntimeException();
         } finally {
             mServiceLock.readLock().unlock();
         }
 
-        return defaultValue;
+        return BluetoothStatusCodes.ERROR_UNKNOWN;
     }
 
     /**
@@ -5625,26 +5427,19 @@ public final class BluetoothAdapter {
         requireNonNull(executor, "executor cannot be null");
         requireNonNull(callback, "callback cannot be null");
 
-        final int defaultValue = BluetoothStatusCodes.ERROR_UNKNOWN;
-        int serviceCallStatus = defaultValue;
         synchronized (mBluetoothQualityReportReadyCallbackExecutorMap) {
             // If the callback map is empty, we register the service-to-app callback
             if (mBluetoothQualityReportReadyCallbackExecutorMap.isEmpty()) {
+                int serviceCallStatus = BluetoothStatusCodes.ERROR_UNKNOWN;
                 mServiceLock.readLock().lock();
                 try {
                     if (mService != null) {
-                        final SynchronousResultReceiver<Integer> recv =
-                                SynchronousResultReceiver.get();
-                        mService.registerBluetoothQualityReportReadyCallback(
-                                mBluetoothQualityReportReadyCallback, mAttributionSource, recv);
                         serviceCallStatus =
-                                recv.awaitResultNoInterrupt(getSyncTimeout())
-                                        .getValue(defaultValue);
+                                mService.registerBluetoothQualityReportReadyCallback(
+                                        mBluetoothQualityReportReadyCallback, mAttributionSource);
                     }
                 } catch (RemoteException e) {
                     throw e.rethrowAsRuntimeException();
-                } catch (TimeoutException e) {
-                    Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
                 } finally {
                     mServiceLock.readLock().unlock();
                 }
@@ -5709,25 +5504,20 @@ public final class BluetoothAdapter {
             return BluetoothStatusCodes.SUCCESS;
         }
 
-        final int defaultValue = BluetoothStatusCodes.ERROR_UNKNOWN;
         // If the callback map is empty, we unregister the service-to-app callback
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                mService.unregisterBluetoothQualityReportReadyCallback(
-                        mBluetoothQualityReportReadyCallback, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
+                return mService.unregisterBluetoothQualityReportReadyCallback(
+                        mBluetoothQualityReportReadyCallback, mAttributionSource);
             }
-        } catch (TimeoutException e) {
-            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } catch (RemoteException e) {
             throw e.rethrowAsRuntimeException();
         } finally {
             mServiceLock.readLock().unlock();
         }
 
-        return defaultValue;
+        return BluetoothStatusCodes.ERROR_UNKNOWN;
     }
 
     /**
@@ -5930,12 +5720,9 @@ public final class BluetoothAdapter {
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                mService.getOffloadedTransportDiscoveryDataScanSupported(mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout())
-                        .getValue(BluetoothStatusCodes.ERROR_UNKNOWN);
+                return mService.getOffloadedTransportDiscoveryDataScanSupported(mAttributionSource);
             }
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();

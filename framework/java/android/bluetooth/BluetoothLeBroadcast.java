@@ -16,8 +16,6 @@
 
 package android.bluetooth;
 
-import static android.bluetooth.BluetoothUtils.getSyncTimeout;
-
 import android.annotation.CallbackExecutor;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
@@ -33,8 +31,6 @@ import android.os.RemoteException;
 import android.util.CloseGuard;
 import android.util.Log;
 
-import com.android.modules.utils.SynchronousResultReceiver;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Collections;
@@ -43,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeoutException;
 
 /**
  * This class provides the public APIs to control the BAP Broadcast Source profile.
@@ -399,13 +394,8 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
                 try {
                     final IBluetoothLeAudio service = getService();
                     if (service != null) {
-                        final SynchronousResultReceiver<Integer> recv =
-                                SynchronousResultReceiver.get();
-                        service.registerLeBroadcastCallback(mCallback, mAttributionSource, recv);
-                        recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
+                        service.registerLeBroadcastCallback(mCallback, mAttributionSource);
                     }
-                } catch (TimeoutException e) {
-                    Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
                 } catch (RemoteException e) {
                     throw e.rethrowAsRuntimeException();
                 }
@@ -455,11 +445,9 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
             try {
                 final IBluetoothLeAudio service = getService();
                 if (service != null) {
-                    final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                    service.unregisterLeBroadcastCallback(mCallback, mAttributionSource, recv);
-                    recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
+                    service.unregisterLeBroadcastCallback(mCallback, mAttributionSource);
                 }
-            } catch (TimeoutException | IllegalStateException e) {
+            } catch (IllegalStateException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             } catch (RemoteException e) {
                 throw e.rethrowAsRuntimeException();
@@ -528,18 +516,11 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
                 service.startBroadcast(
                         buildBroadcastSettingsFromMetadata(contentMetadata, broadcastCode),
-                        mAttributionSource,
-                        recv);
-                recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
-            } catch (TimeoutException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+                        mAttributionSource);
             } catch (RemoteException e) {
                 throw e.rethrowAsRuntimeException();
-            } catch (SecurityException e) {
-                throw e;
             }
         }
     }
@@ -571,15 +552,9 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                service.startBroadcast(broadcastSettings, mAttributionSource, recv);
-                recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
-            } catch (TimeoutException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+                service.startBroadcast(broadcastSettings, mAttributionSource);
             } catch (RemoteException e) {
                 throw e.rethrowAsRuntimeException();
-            } catch (SecurityException e) {
-                throw e;
             }
         }
     }
@@ -618,19 +593,12 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
                 service.updateBroadcast(
                         broadcastId,
                         buildBroadcastSettingsFromMetadata(contentMetadata, null),
-                        mAttributionSource,
-                        recv);
-                recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
-            } catch (TimeoutException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+                        mAttributionSource);
             } catch (RemoteException e) {
                 throw e.rethrowAsRuntimeException();
-            } catch (SecurityException e) {
-                throw e;
             }
         }
     }
@@ -668,15 +636,9 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                service.updateBroadcast(broadcastId, broadcastSettings, mAttributionSource, recv);
-                recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
-            } catch (TimeoutException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+                service.updateBroadcast(broadcastId, broadcastSettings, mAttributionSource);
             } catch (RemoteException e) {
                 throw e.rethrowAsRuntimeException();
-            } catch (SecurityException e) {
-                throw e;
             }
         }
     }
@@ -711,15 +673,9 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                service.stopBroadcast(broadcastId, mAttributionSource, recv);
-                recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
-            } catch (TimeoutException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+                service.stopBroadcast(broadcastId, mAttributionSource);
             } catch (RemoteException e) {
                 throw e.rethrowAsRuntimeException();
-            } catch (SecurityException e) {
-                throw e;
             }
         }
     }
@@ -741,22 +697,17 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
             })
     public boolean isPlaying(int broadcastId) {
         final IBluetoothLeAudio service = getService();
-        final boolean defaultValue = false;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                service.isPlaying(broadcastId, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (TimeoutException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+                return service.isPlaying(broadcastId, mAttributionSource);
             } catch (RemoteException e) {
                 throw e.rethrowAsRuntimeException();
             }
         }
-        return defaultValue;
+        return false;
     }
 
     /**
@@ -775,23 +726,17 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
             })
     public @NonNull List<BluetoothLeBroadcastMetadata> getAllBroadcastMetadata() {
         final IBluetoothLeAudio service = getService();
-        final List<BluetoothLeBroadcastMetadata> defaultValue = Collections.emptyList();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
-                final SynchronousResultReceiver<List<BluetoothLeBroadcastMetadata>> recv =
-                        SynchronousResultReceiver.get();
-                service.getAllBroadcastMetadata(mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (TimeoutException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+                return service.getAllBroadcastMetadata(mAttributionSource);
             } catch (RemoteException e) {
                 throw e.rethrowAsRuntimeException();
             }
         }
-        return defaultValue;
+        return Collections.emptyList();
     }
 
     /**
@@ -804,22 +749,17 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
     public int getMaximumNumberOfBroadcasts() {
         final IBluetoothLeAudio service = getService();
-        final int defaultValue = 1;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                service.getMaximumNumberOfBroadcasts(mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (TimeoutException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+                return service.getMaximumNumberOfBroadcasts(mAttributionSource);
             } catch (RemoteException e) {
                 throw e.rethrowAsRuntimeException();
             }
         }
-        return defaultValue;
+        return 1;
     }
 
     /**
@@ -832,22 +772,17 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
     public int getMaximumStreamsPerBroadcast() {
         final IBluetoothLeAudio service = getService();
-        final int defaultValue = 1;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                service.getMaximumStreamsPerBroadcast(mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (TimeoutException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+                return service.getMaximumStreamsPerBroadcast(mAttributionSource);
             } catch (RemoteException e) {
                 throw e.rethrowAsRuntimeException();
             }
         }
-        return defaultValue;
+        return 1;
     }
 
     /**
@@ -863,22 +798,17 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
     public int getMaximumSubgroupsPerBroadcast() {
         final IBluetoothLeAudio service = getService();
-        final int defaultValue = 1;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                service.getMaximumSubgroupsPerBroadcast(mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (TimeoutException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+                return service.getMaximumSubgroupsPerBroadcast(mAttributionSource);
             } catch (RemoteException e) {
                 throw e.rethrowAsRuntimeException();
             }
         }
-        return defaultValue;
+        return 1;
     }
 
     /**
@@ -924,11 +854,9 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
             }
             try {
                 if (service != null) {
-                    final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                    mService.registerLeBroadcastCallback(mCallback, mAttributionSource, recv);
-                    recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
+                    mService.registerLeBroadcastCallback(mCallback, mAttributionSource);
                 }
-            } catch (RemoteException | TimeoutException e) {
+            } catch (RemoteException e) {
                 Log.e(
                         TAG,
                         "onServiceConnected: Failed to register " + "Le Broadcaster callback",

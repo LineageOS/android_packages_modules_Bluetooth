@@ -16,8 +16,6 @@
 
 package android.bluetooth;
 
-import static android.bluetooth.BluetoothUtils.getSyncTimeout;
-
 import android.annotation.RequiresFeature;
 import android.annotation.RequiresNoPermission;
 import android.annotation.RequiresPermission;
@@ -30,11 +28,8 @@ import android.content.pm.PackageManager;
 import android.os.RemoteException;
 import android.util.Log;
 
-import com.android.modules.utils.SynchronousResultReceiver;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeoutException;
 
 /**
  * High level manager used to obtain an instance of an {@link BluetoothAdapter} and to conduct
@@ -157,14 +152,11 @@ public final class BluetoothManager {
         try {
             IBluetoothGatt iGatt = mAdapter.getBluetoothGatt();
             if (iGatt == null) return devices;
-            final SynchronousResultReceiver<List<BluetoothDevice>> recv =
-                    SynchronousResultReceiver.get();
-            iGatt.getDevicesMatchingConnectionStates(states, mAttributionSource, recv);
             devices =
                     Attributable.setAttributionSource(
-                            recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(devices),
+                            iGatt.getDevicesMatchingConnectionStates(states, mAttributionSource),
                             mAttributionSource);
-        } catch (RemoteException | TimeoutException e) {
+        } catch (RemoteException e) {
             Log.e(TAG, "", e);
         }
 
