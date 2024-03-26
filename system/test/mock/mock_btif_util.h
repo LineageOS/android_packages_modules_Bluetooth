@@ -163,18 +163,6 @@ struct dump_hf_event {
       [](uint16_t /* event */) { return return_value; }};
   const char* operator()(uint16_t event) { return body(event); };
 };
-extern struct dump_hf_event dump_hf_event;
-
-// Name: dump_hh_event
-// Params: uint16_t event
-// Return: const char*
-struct dump_hh_event {
-  static const char* return_value;
-  std::function<const char*(uint16_t event)> body{
-      [](uint16_t /* event */) { return return_value; }};
-  const char* operator()(uint16_t event) { return body(event); };
-};
-extern struct dump_hh_event dump_hh_event;
 
 // Name: dump_property_type
 // Params: bt_property_type_t type
