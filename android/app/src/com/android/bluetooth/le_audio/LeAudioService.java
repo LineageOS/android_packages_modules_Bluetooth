@@ -2196,7 +2196,9 @@ public class LeAudioService extends ProfileService {
             case LeAudioStackEvent.HEALTH_RECOMMENDATION_ACTION_INACTIVATE_GROUP:
                 if (Flags.leaudioUnicastInactivateDeviceBasedOnContext()) {
                     LeAudioGroupDescriptor groupDescriptor = getGroupDescriptor(groupId);
-                    if (groupDescriptor != null && groupDescriptor.mIsActive) {
+                    if (groupDescriptor != null
+                            && groupDescriptor.mIsActive
+                            && !isGroupReceivingBroadcast(groupId)) {
                         Log.i(
                                 TAG,
                                 "Group "
@@ -2330,6 +2332,19 @@ public class LeAudioService extends ProfileService {
         } else {
             Log.e(TAG, "handleUnicastStreamStatusChange: invalid direction: " + direction);
         }
+    }
+
+    private boolean isGroupReceivingBroadcast(int groupId) {
+        if (!Flags.leaudioBroadcastAudioHandoverPolicies()) {
+            return false;
+        }
+
+        BassClientService bassClientService = getBassClientService();
+        if (bassClientService == null) {
+            return false;
+        }
+
+        return bassClientService.isAnyReceiverReceivingBroadcast(getGroupDevices(groupId));
     }
 
     private void notifyGroupStreamStatusChanged(int groupId, int groupStreamStatus) {
