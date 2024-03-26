@@ -27,3 +27,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "opp_remove_incomplete_download"
+    namespace: "bluetooth"
+    description: "Remove incomplete file download (e.g. BT turned off while downloading)"
+    bug: "331298337"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
