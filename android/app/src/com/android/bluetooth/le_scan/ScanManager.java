@@ -1038,19 +1038,33 @@ public class ScanManager {
                     // convert scanWindow and scanInterval from ms to LE scan units(0.625ms)
                     int scanWindow = Utils.millsToUnit(scanWindowMs);
                     int scanInterval = Utils.millsToUnit(scanIntervalMs);
-                    int scanPhy = getScanPhy(client.settings);
+                    int scanPhyMask = getScanPhyMask(client.settings);
                     mNativeInterface.gattClientScan(false);
                     if (!AppScanStats.recordScanRadioStop()) {
                         Log.w(TAG, "There is no scan radio to stop");
                     }
-                    Log.d(TAG, "Start gattClientScanNative with"
-                            + " old scanMode " + mLastConfiguredScanSetting
-                            + " new scanMode " + curScanSetting
-                            + " ( in MS: " + scanIntervalMs + " / " + scanWindowMs
-                            + ", in scan unit: " + scanInterval + " / " + scanWindow + " )"
-                            + client);
+                    Log.d(
+                            TAG,
+                            "Start gattClientScanNative with"
+                                    + " old scanMode "
+                                    + mLastConfiguredScanSetting
+                                    + " new scanMode "
+                                    + curScanSetting
+                                    + " ( in MS: "
+                                    + scanIntervalMs
+                                    + " / "
+                                    + scanWindowMs
+                                    + ", in scan unit: "
+                                    + scanInterval
+                                    + " / "
+                                    + scanWindow
+                                    + ", "
+                                    + "scanPhyMask: "
+                                    + scanPhyMask
+                                    + " )"
+                                    + client);
                     mNativeInterface.gattSetScanParameters(
-                            client.scannerId, scanInterval, scanWindow, scanPhy);
+                            client.scannerId, scanInterval, scanWindow, scanPhyMask);
                     mNativeInterface.gattClientScan(true);
                     if (!AppScanStats.recordScanRadioStart(curScanSetting)) {
                         Log.w(TAG, "Scan radio already started");
@@ -1700,9 +1714,9 @@ public class ScanManager {
                         SCAN_MODE_BALANCED_INTERVAL_MS);
                 case ScanSettings.SCAN_MODE_LOW_POWER:
                     return Settings.Global.getInt(
-                        resolver,
-                        Settings.Global.BLE_SCAN_LOW_POWER_INTERVAL_MS,
-                        SCAN_MODE_LOW_POWER_INTERVAL_MS);
+                            resolver,
+                            Settings.Global.BLE_SCAN_LOW_POWER_INTERVAL_MS,
+                            SCAN_MODE_LOW_POWER_INTERVAL_MS);
                 case ScanSettings.SCAN_MODE_SCREEN_OFF:
                     return mAdapterService.getScreenOffLowPowerIntervalMillis();
                 case ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED:
@@ -1720,6 +1734,25 @@ public class ScanManager {
                 return BluetoothDevice.PHY_LE_1M;
             }
             return settings.getPhy();
+        }
+
+        private int getScanPhyMask(ScanSettings settings) {
+            int phy = getScanPhy(settings);
+
+            switch (phy) {
+                case BluetoothDevice.PHY_LE_1M:
+                    return BluetoothDevice.PHY_LE_1M_MASK;
+                case BluetoothDevice.PHY_LE_CODED:
+                    return BluetoothDevice.PHY_LE_CODED_MASK;
+                case ScanSettings.PHY_LE_ALL_SUPPORTED:
+                    if (mAdapterService.isLeCodedPhySupported()) {
+                        return BluetoothDevice.PHY_LE_1M_MASK | BluetoothDevice.PHY_LE_CODED_MASK;
+                    } else {
+                        return BluetoothDevice.PHY_LE_1M_MASK;
+                    }
+                default:
+                    return BluetoothDevice.PHY_LE_1M_MASK;
+            }
         }
 
         private int getOnFoundOnLostTimeoutMillis(ScanSettings settings, boolean onFound) {
