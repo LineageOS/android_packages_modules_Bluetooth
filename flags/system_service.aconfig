@@ -10,6 +10,7 @@ flag {
 
 flag {
     name: "auto_on_feature"
+    is_exported: true
     namespace: "bluetooth"
     description: "Turn bluetooth on next morning at 5 am"
     bug: "323060869"
