@@ -1218,7 +1218,7 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
 
     virtual void OnAudioMetadataUpdate(source_metadata_v7 source_metadata,
                                        DsaMode dsa_mode) override {
-      LOG_INFO();
+      log::info("");
       if (!instance) return;
 
       /* TODO: Should we take supported contexts from ASCS? */
