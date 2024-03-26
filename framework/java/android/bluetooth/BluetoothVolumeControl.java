@@ -17,8 +17,6 @@
 
 package android.bluetooth;
 
-import static android.bluetooth.BluetoothUtils.getSyncTimeout;
-
 import android.Manifest;
 import android.annotation.CallbackExecutor;
 import android.annotation.FlaggedApi;
@@ -40,7 +38,6 @@ import android.util.Log;
 
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
-import com.android.modules.utils.SynchronousResultReceiver;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -48,7 +45,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 /**
@@ -298,13 +294,9 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
                 return;
             }
             try {
-                final SynchronousResultReceiver<Void> recv = SynchronousResultReceiver.get();
-                mService.registerCallback(mCallback, mAttributionSource, recv);
-                recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
+                mService.registerCallback(mCallback, mAttributionSource);
             } catch (RemoteException e) {
                 Log.e(TAG, "onBluetoothServiceUp: Failed to register VolumeControl callback", e);
-            } catch (TimeoutException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
     }
@@ -341,23 +333,18 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
     public @NonNull List<BluetoothDevice> getConnectedDevices() {
         if (DBG) log("getConnectedDevices()");
         final IBluetoothVolumeControl service = getService();
-        final List<BluetoothDevice> defaultValue = new ArrayList<BluetoothDevice>();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
-                final SynchronousResultReceiver<List<BluetoothDevice>> recv =
-                        SynchronousResultReceiver.get();
-                service.getConnectedDevices(mAttributionSource, recv);
                 return Attributable.setAttributionSource(
-                        recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue),
-                        mAttributionSource);
-            } catch (RemoteException | TimeoutException e) {
+                        service.getConnectedDevices(mAttributionSource), mAttributionSource);
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return defaultValue;
+        return new ArrayList<>();
     }
 
     /**
@@ -371,23 +358,19 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
     public List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
         if (DBG) log("getDevicesMatchingStates()");
         final IBluetoothVolumeControl service = getService();
-        final List<BluetoothDevice> defaultValue = new ArrayList<BluetoothDevice>();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
-                final SynchronousResultReceiver<List<BluetoothDevice>> recv =
-                        SynchronousResultReceiver.get();
-                service.getDevicesMatchingConnectionStates(states, mAttributionSource, recv);
                 return Attributable.setAttributionSource(
-                        recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue),
+                        service.getDevicesMatchingConnectionStates(states, mAttributionSource),
                         mAttributionSource);
-            } catch (RemoteException | TimeoutException e) {
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return defaultValue;
+        return new ArrayList<>();
     }
 
     /**
@@ -401,20 +384,17 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
     public int getConnectionState(BluetoothDevice device) {
         if (DBG) log("getConnectionState(" + device + ")");
         final IBluetoothVolumeControl service = getService();
-        final int defaultValue = BluetoothProfile.STATE_DISCONNECTED;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                service.getConnectionState(device, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (RemoteException | TimeoutException e) {
+                return service.getConnectionState(device, mAttributionSource);
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return defaultValue;
+        return BluetoothProfile.STATE_DISCONNECTED;
     }
 
     /**
@@ -461,8 +441,6 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
                 return;
             }
             try {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-
                 /* If the callback map is empty, we register the service-to-app callback.
                  *  Otherwise, callback is registered in mCallbackExecutorMap and we just notify
                  *  user over callback with current values.
@@ -471,20 +449,16 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
                 mCallbackExecutorMap.put(callback, executor);
 
                 if (isRegisterCallbackRequired) {
-                    service.registerCallback(mCallback, mAttributionSource, recv);
+                    service.registerCallback(mCallback, mAttributionSource);
                 } else {
                     service.notifyNewRegisteredCallback(
                             new VolumeControlNotifyCallback(Map.of(callback, executor)),
-                            mAttributionSource,
-                            recv);
+                            mAttributionSource);
                 }
-                recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
             } catch (RemoteException e) {
                 mCallbackExecutorMap.remove(callback);
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
                 throw e.rethrowAsRuntimeException();
-            } catch (TimeoutException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
     }
@@ -525,14 +499,12 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
         try {
             final IBluetoothVolumeControl service = getService();
             if (service != null) {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                service.unregisterCallback(mCallback, mAttributionSource, recv);
-                recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
+                service.unregisterCallback(mCallback, mAttributionSource);
             }
         } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             throw e.rethrowAsRuntimeException();
-        } catch (IllegalStateException | TimeoutException e) {
+        } catch (IllegalStateException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         }
     }
@@ -623,10 +595,8 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
-                final SynchronousResultReceiver recv = SynchronousResultReceiver.get();
-                service.setVolumeOffset(device, instanceId, volumeOffset, mAttributionSource, recv);
-                recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
-            } catch (RemoteException | TimeoutException e) {
+                service.setVolumeOffset(device, instanceId, volumeOffset, mAttributionSource);
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
@@ -661,16 +631,13 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
             return false;
         }
 
-        final boolean defaultValue = false;
         try {
-            final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-            service.isVolumeOffsetAvailable(device, mAttributionSource, recv);
-            return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-        } catch (RemoteException | TimeoutException e) {
+            return service.isVolumeOffsetAvailable(device, mAttributionSource);
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         }
 
-        return defaultValue;
+        return false;
     }
 
     /**
@@ -703,10 +670,8 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
             return defaultValue;
         }
         try {
-            final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-            service.getNumberOfVolumeOffsetInstances(device, mAttributionSource, recv);
-            return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-        } catch (RemoteException | TimeoutException e) {
+            return service.getNumberOfVolumeOffsetInstances(device, mAttributionSource);
+        } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
         }
 
@@ -736,7 +701,6 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
             @NonNull BluetoothDevice device, @ConnectionPolicy int connectionPolicy) {
         if (DBG) log("setConnectionPolicy(" + device + ", " + connectionPolicy + ")");
         final IBluetoothVolumeControl service = getService();
-        final boolean defaultValue = false;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
@@ -745,14 +709,12 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
                 && (connectionPolicy == BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
                         || connectionPolicy == BluetoothProfile.CONNECTION_POLICY_ALLOWED)) {
             try {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                service.setConnectionPolicy(device, connectionPolicy, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (RemoteException | TimeoutException e) {
+                return service.setConnectionPolicy(device, connectionPolicy, mAttributionSource);
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return defaultValue;
+        return false;
     }
 
     /**
@@ -775,20 +737,17 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
     public @ConnectionPolicy int getConnectionPolicy(@NonNull BluetoothDevice device) {
         if (VDBG) log("getConnectionPolicy(" + device + ")");
         final IBluetoothVolumeControl service = getService();
-        final int defaultValue = BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                service.getConnectionPolicy(device, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (RemoteException | TimeoutException e) {
+                return service.getConnectionPolicy(device, mAttributionSource);
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return defaultValue;
+        return BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
     }
 
     /**
@@ -830,10 +789,8 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
-                final SynchronousResultReceiver recv = SynchronousResultReceiver.get();
-                service.setDeviceVolume(device, volume, isGroupOperation, mAttributionSource, recv);
-                recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
-            } catch (RemoteException | TimeoutException e) {
+                service.setDeviceVolume(device, volume, isGroupOperation, mAttributionSource);
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }

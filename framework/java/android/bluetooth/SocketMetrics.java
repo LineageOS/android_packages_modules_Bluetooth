@@ -16,14 +16,8 @@
 
 package android.bluetooth;
 
-import static android.bluetooth.BluetoothUtils.getSyncTimeout;
-
 import android.os.RemoteException;
 import android.util.Log;
-
-import com.android.modules.utils.SynchronousResultReceiver;
-
-import java.util.concurrent.TimeoutException;
 
 /** Utility class for socket metrics */
 class SocketMetrics {
@@ -68,7 +62,6 @@ class SocketMetrics {
         }
         if (connType == BluetoothSocket.TYPE_L2CAP_LE) {
             try {
-                final SynchronousResultReceiver recv = SynchronousResultReceiver.get();
                 bluetoothProxy.logL2capcocClientConnection(
                         device,
                         port,
@@ -76,25 +69,20 @@ class SocketMetrics {
                         getL2capLeConnectStatusCode(socketExceptionCode),
                         socketCreationTimeNanos, // to calculate end to end latency
                         socketCreationLatencyNanos, // latency of the constructor
-                        socketConnectionTimeNanos, // to calculate the latency of connect()
-                        recv);
-                recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
-            } catch (RemoteException | TimeoutException e) {
+                        socketConnectionTimeNanos); // to calculate the latency of connect()
+            } catch (RemoteException e) {
                 Log.w(TAG, "logL2capcocServerConnection failed", e);
             }
         } else if (connType == BluetoothSocket.TYPE_RFCOMM) {
             boolean isSerialPort = true; // BluetoothSocket#connect API always uses serial port uuid
             try {
-                final SynchronousResultReceiver recv = SynchronousResultReceiver.get();
                 bluetoothProxy.logRfcommConnectionAttempt(
                         device,
                         auth,
                         getRfcommConnectStatusCode(socketExceptionCode),
                         socketCreationTimeNanos, // to calculate end to end latency
-                        isSerialPort,
-                        recv);
-                recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
-            } catch (RemoteException | TimeoutException e) {
+                        isSerialPort);
+            } catch (RemoteException e) {
                 Log.w(TAG, "logL2capcocServerConnection failed", e);
             }
         } else {
@@ -121,7 +109,6 @@ class SocketMetrics {
             return;
         }
         try {
-            final SynchronousResultReceiver recv = SynchronousResultReceiver.get();
             bluetoothProxy.logL2capcocServerConnection(
                     acceptedSocket == null ? null : acceptedSocket.getRemoteDevice(),
                     channel,
@@ -130,11 +117,8 @@ class SocketMetrics {
                     socketCreationTimeMillis, // pass creation time to calculate end to end latency
                     socketCreationLatencyMillis, // socket creation latency
                     socketConnectionTimeMillis, // send connection start time for connection latency
-                    timeout,
-                    recv);
-            recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
-
-        } catch (RemoteException | TimeoutException e) {
+                    timeout);
+        } catch (RemoteException e) {
             Log.w(TAG, "logL2capcocServerConnection failed", e);
         }
     }

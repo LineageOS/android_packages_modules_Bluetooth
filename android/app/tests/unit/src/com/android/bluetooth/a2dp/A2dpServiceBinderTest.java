@@ -26,10 +26,8 @@ import static org.mockito.Mockito.verify;
 import android.bluetooth.BluetoothA2dp;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothCodecConfig;
-import android.bluetooth.BluetoothCodecStatus;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BufferConstraints;
 import android.content.AttributionSource;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
@@ -38,7 +36,6 @@ import android.platform.test.flag.junit.SetFlagsRule;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AudioRoutingManager;
 import com.android.bluetooth.flags.Flags;
-import com.android.bluetooth.jarjar.com.android.modules.utils.SynchronousResultReceiver;
 
 import org.junit.After;
 import org.junit.Before;
@@ -48,7 +45,6 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-import java.util.List;
 
 public class A2dpServiceBinderTest {
     private static final AttributionSource sSource = new AttributionSource.Builder(0).build();
@@ -83,45 +79,33 @@ public class A2dpServiceBinderTest {
 
     @Test
     public void connect() {
-        final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-
-        mBinder.connect(sDevice, sSource, recv);
+        mBinder.connect(sDevice, sSource);
         verify(mA2dpService).connect(sDevice);
     }
 
     @Test
     public void disconnect() {
-        final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-
-        mBinder.disconnect(sDevice, sSource, recv);
+        mBinder.disconnect(sDevice, sSource);
         verify(mA2dpService).disconnect(sDevice);
     }
 
     @Test
     public void getConnectedDevices() {
-        final SynchronousResultReceiver<List<BluetoothDevice>> recv =
-                SynchronousResultReceiver.get();
-
-        mBinder.getConnectedDevices(sSource, recv);
+        mBinder.getConnectedDevices(sSource);
         verify(mA2dpService).getConnectedDevices();
     }
 
     @Test
     public void getDevicesMatchingConnectionStates() {
         int[] states = new int[] {BluetoothProfile.STATE_CONNECTED };
-        final SynchronousResultReceiver<List<BluetoothDevice>> recv =
-                SynchronousResultReceiver.get();
 
-        mBinder.getDevicesMatchingConnectionStates(states, sSource, recv);
+        mBinder.getDevicesMatchingConnectionStates(states, sSource);
         verify(mA2dpService).getDevicesMatchingConnectionStates(states);
     }
 
     @Test
     public void getConnectionState() {
-        final SynchronousResultReceiver<List<BluetoothDevice>> recv =
-                SynchronousResultReceiver.get();
-
-        mBinder.getConnectionState(sDevice, sSource, recv);
+        mBinder.getConnectionState(sDevice, sSource);
         verify(mA2dpService).getConnectionState(sDevice);
     }
 
@@ -129,8 +113,7 @@ public class A2dpServiceBinderTest {
     public void setActiveDevice() {
         mSetFlagsRule.disableFlags(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION);
 
-        SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-        mBinder.setActiveDevice(sDevice, sSource, recv);
+        mBinder.setActiveDevice(sDevice, sSource);
         verify(mA2dpService).setActiveDevice(sDevice);
     }
 
@@ -138,42 +121,35 @@ public class A2dpServiceBinderTest {
     public void setActiveDeviceWithAudioRouting() {
         mSetFlagsRule.enableFlags(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION);
 
-        SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-        mBinder.setActiveDevice(sDevice, sSource, recv);
-        verify(mAudioRoutingManager).activateDeviceProfile(sDevice, BluetoothProfile.A2DP, recv);
+        mBinder.setActiveDevice(sDevice, sSource);
+        verify(mAudioRoutingManager).activateDeviceProfile(sDevice, BluetoothProfile.A2DP);
     }
 
     @Test
     public void setActiveDevice_withNull_callsRemoveActiveDevice() {
         mSetFlagsRule.disableFlags(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION);
-        final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
 
-        mBinder.setActiveDevice(null, sSource, recv);
+        mBinder.setActiveDevice(null, sSource);
         verify(mA2dpService).removeActiveDevice(false);
     }
 
     @Test
     public void getActiveDevice() {
-        final SynchronousResultReceiver<BluetoothDevice> recv = SynchronousResultReceiver.get();
-
-        mBinder.getActiveDevice(sSource, recv);
+        mBinder.getActiveDevice(sSource);
         verify(mA2dpService).getActiveDevice();
     }
 
     @Test
     public void setConnectionPolicy() {
         int connectionPolicy = BluetoothProfile.CONNECTION_POLICY_ALLOWED;
-        final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
 
-        mBinder.setConnectionPolicy(sDevice, connectionPolicy, sSource, recv);
+        mBinder.setConnectionPolicy(sDevice, connectionPolicy, sSource);
         verify(mA2dpService).setConnectionPolicy(sDevice, connectionPolicy);
     }
 
     @Test
     public void getConnectionPolicy() {
-        final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-
-        mBinder.getConnectionPolicy(sDevice, sSource, recv);
+        mBinder.getConnectionPolicy(sDevice, sSource);
         verify(mA2dpService).getConnectionPolicy(sDevice);
     }
 
@@ -187,18 +163,13 @@ public class A2dpServiceBinderTest {
 
     @Test
     public void isA2dpPlaying() {
-        final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-
-        mBinder.isA2dpPlaying(sDevice, sSource, recv);
+        mBinder.isA2dpPlaying(sDevice, sSource);
         verify(mA2dpService).isA2dpPlaying(sDevice);
     }
 
     @Test
     public void getCodecStatus() {
-        final SynchronousResultReceiver<BluetoothCodecStatus> recv =
-                SynchronousResultReceiver.get();
-
-        mBinder.getCodecStatus(sDevice, sSource, recv);
+        mBinder.getCodecStatus(sDevice, sSource);
         verify(mA2dpService).getCodecStatus(sDevice);
     }
 
@@ -226,17 +197,13 @@ public class A2dpServiceBinderTest {
 
     @Test
     public void isOptionalCodecsSupported() {
-        final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-
-        mBinder.isOptionalCodecsSupported(sDevice, sSource, recv);
+        mBinder.isOptionalCodecsSupported(sDevice, sSource);
         verify(mA2dpService).getSupportsOptionalCodecs(sDevice);
     }
 
     @Test
     public void isOptionalCodecsEnabled() {
-        final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-
-        mBinder.isOptionalCodecsEnabled(sDevice, sSource, recv);
+        mBinder.isOptionalCodecsEnabled(sDevice, sSource);
         verify(mA2dpService).getOptionalCodecsEnabled(sDevice);
     }
 
@@ -250,17 +217,13 @@ public class A2dpServiceBinderTest {
 
     @Test
     public void getDynamicBufferSupport() {
-        final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-
-        mBinder.getDynamicBufferSupport(sSource, recv);
+        mBinder.getDynamicBufferSupport(sSource);
         verify(mA2dpService).getDynamicBufferSupport();
     }
 
     @Test
     public void getBufferConstraints() {
-        final SynchronousResultReceiver<BufferConstraints> recv = SynchronousResultReceiver.get();
-
-        mBinder.getBufferConstraints(sSource, recv);
+        mBinder.getBufferConstraints(sSource);
         verify(mA2dpService).getBufferConstraints();
     }
 
@@ -268,9 +231,8 @@ public class A2dpServiceBinderTest {
     public void setBufferLengthMillis() {
         int codec = 0;
         int value = BluetoothA2dp.OPTIONAL_CODECS_PREF_UNKNOWN;
-        final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
 
-        mBinder.setBufferLengthMillis(codec, value, sSource, recv);
+        mBinder.setBufferLengthMillis(codec, value, sSource);
         verify(mA2dpService).setBufferLengthMillis(codec, value);
     }
 }

@@ -19,7 +19,6 @@ package android.bluetooth;
 import android.os.UserHandle;
 import android.util.Log;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -30,16 +29,6 @@ public final class BluetoothUtils {
 
     /** This utility class cannot be instantiated */
     private BluetoothUtils() {}
-
-    /** Timeout value for synchronous binder call */
-    private static final Duration SYNC_CALLS_TIMEOUT = Duration.ofSeconds(3);
-
-    /**
-     * @return timeout value for synchronous binder call
-     */
-    static Duration getSyncTimeout() {
-        return SYNC_CALLS_TIMEOUT;
-    }
 
     /** Match with UserHandl.NULL but accessible inside bluetooth package */
     public static final UserHandle USER_HANDLE_NULL = UserHandle.of(-10000);

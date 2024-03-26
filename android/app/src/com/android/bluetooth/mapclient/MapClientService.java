@@ -40,7 +40,6 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.internal.annotations.VisibleForTesting;
-import com.android.modules.utils.SynchronousResultReceiver;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -450,206 +449,162 @@ public class MapClientService extends ProfileService {
         }
 
         @Override
-        public void isConnected(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
+        public boolean isConnected(BluetoothDevice device, AttributionSource source) {
             Log.v(TAG, "isConnected()");
-            try {
-                MapClientService service = getService(source);
-                boolean result = false;
-                if (service != null) {
-                    result = service.getConnectionState(device) == BluetoothProfile.STATE_CONNECTED;
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+
+            MapClientService service = getService(source);
+            if (service == null) {
+                return false;
             }
+
+            return service.getConnectionState(device) == BluetoothProfile.STATE_CONNECTED;
         }
 
         @Override
-        public void connect(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
+        public boolean connect(BluetoothDevice device, AttributionSource source) {
             Log.v(TAG, "connect()");
-            try {
-                MapClientService service = getService(source);
-                boolean result = false;
-                if (service != null) {
-                    result = service.connect(device);
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+
+            MapClientService service = getService(source);
+            if (service == null) {
+                return false;
             }
+
+            return service.connect(device);
         }
 
         @Override
-        public void disconnect(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
+        public boolean disconnect(BluetoothDevice device, AttributionSource source) {
             Log.v(TAG, "disconnect()");
-            try {
-                MapClientService service = getService(source);
-                boolean result = false;
-                if (service != null) {
-                    result = service.disconnect(device);
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+
+            MapClientService service = getService(source);
+            if (service == null) {
+                return false;
             }
+
+            return service.disconnect(device);
         }
 
         @Override
-        public void getConnectedDevices(AttributionSource source,
-                SynchronousResultReceiver receiver) {
+        public List<BluetoothDevice> getConnectedDevices(AttributionSource source) {
             Log.v(TAG, "getConnectedDevices()");
-            try {
-                MapClientService service = getService(source);
-                List<BluetoothDevice> connectedDevices = new ArrayList<BluetoothDevice>(0);
-                if (service != null) {
-                    connectedDevices = service.getConnectedDevices();
-                }
-                receiver.send(connectedDevices);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+
+            MapClientService service = getService(source);
+            if (service == null) {
+                return new ArrayList<>();
             }
+
+            return service.getConnectedDevices();
         }
 
         @Override
-        public void getDevicesMatchingConnectionStates(int[] states,
-                AttributionSource source, SynchronousResultReceiver receiver) {
+        public List<BluetoothDevice> getDevicesMatchingConnectionStates(
+                int[] states, AttributionSource source) {
             Log.v(TAG, "getDevicesMatchingConnectionStates()");
-            try {
-                MapClientService service = getService(source);
-                List<BluetoothDevice> devices = new ArrayList<BluetoothDevice>(0);
-                if (service != null) {
-                    devices = service.getDevicesMatchingConnectionStates(states);
-                }
-                receiver.send(devices);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+
+            MapClientService service = getService(source);
+            if (service == null) {
+                return new ArrayList<>();
             }
+            return service.getDevicesMatchingConnectionStates(states);
         }
 
         @Override
-        public void getConnectionState(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
+        public int getConnectionState(BluetoothDevice device, AttributionSource source) {
             Log.v(TAG, "getConnectionState()");
-            try {
-                MapClientService service = getService(source);
-                int state = BluetoothProfile.STATE_DISCONNECTED;
-                if (service != null) {
-                    state = service.getConnectionState(device);
-                }
-                receiver.send(state);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+
+            MapClientService service = getService(source);
+            if (service == null) {
+                return BluetoothProfile.STATE_DISCONNECTED;
             }
+
+            return service.getConnectionState(device);
         }
 
         @Override
-        public void setConnectionPolicy(BluetoothDevice device, int connectionPolicy,
-                AttributionSource source, SynchronousResultReceiver receiver) {
+        public boolean setConnectionPolicy(
+                BluetoothDevice device, int connectionPolicy, AttributionSource source) {
             Log.v(TAG, "setConnectionPolicy()");
-            try {
-                MapClientService service = getService(source);
-                boolean result = false;
-                if (service != null) {
-                    result = service.setConnectionPolicy(device, connectionPolicy);
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+
+            MapClientService service = getService(source);
+            if (service == null) {
+                return false;
             }
+
+            return service.setConnectionPolicy(device, connectionPolicy);
         }
 
         @Override
-        public void getConnectionPolicy(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
+        public int getConnectionPolicy(BluetoothDevice device, AttributionSource source) {
             Log.v(TAG, "getConnectionPolicy()");
-            try {
-                MapClientService service = getService(source);
-                int policy = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-                if (service != null) {
-                    policy = service.getConnectionPolicy(device);
-                }
-                receiver.send(policy);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+
+            MapClientService service = getService(source);
+            if (service == null) {
+                return BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
             }
+
+            return service.getConnectionPolicy(device);
         }
 
         @Override
-        public void sendMessage(BluetoothDevice device, Uri[] contacts, String message,
-                PendingIntent sentIntent, PendingIntent deliveredIntent, AttributionSource source,
-                SynchronousResultReceiver receiver) {
+        public boolean sendMessage(
+                BluetoothDevice device,
+                Uri[] contacts,
+                String message,
+                PendingIntent sentIntent,
+                PendingIntent deliveredIntent,
+                AttributionSource source) {
             Log.v(TAG, "sendMessage()");
-            try {
-                MapClientService service = getService(source);
-                boolean result = false;
-                if (service != null) {
-                    Log.d(TAG, "Checking Permission of sendMessage");
-                    service.enforceCallingOrSelfPermission(Manifest.permission.SEND_SMS,
-                            "Need SEND_SMS permission");
-                    result = service.sendMessage(device, contacts, message, sentIntent,
-                            deliveredIntent);
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+
+            MapClientService service = getService(source);
+            if (service == null) {
+                return false;
             }
+
+            Log.d(TAG, "Checking Permission of sendMessage");
+            mService.enforceCallingOrSelfPermission(
+                    Manifest.permission.SEND_SMS, "Need SEND_SMS permission");
+
+            return service.sendMessage(device, contacts, message, sentIntent, deliveredIntent);
         }
 
         @Override
-        public void getUnreadMessages(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
+        public boolean getUnreadMessages(BluetoothDevice device, AttributionSource source) {
             Log.v(TAG, "getUnreadMessages()");
-            try {
-                MapClientService service = getService(source);
-                boolean result = false;
-                if (service != null) {
-                    service.enforceCallingOrSelfPermission(Manifest.permission.READ_SMS,
-                            "Need READ_SMS permission");
-                    result = service.getUnreadMessages(device);
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+
+            MapClientService service = getService(source);
+            if (service == null) {
+                return false;
             }
+
+            mService.enforceCallingOrSelfPermission(
+                    Manifest.permission.READ_SMS, "Need READ_SMS permission");
+            return service.getUnreadMessages(device);
         }
 
         @Override
-        public void getSupportedFeatures(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
+        public int getSupportedFeatures(BluetoothDevice device, AttributionSource source) {
             Log.v(TAG, "getSupportedFeatures()");
-            try {
-                MapClientService service = getService(source);
-                int feature = 0;
-                if (service != null) {
-                    feature = service.getSupportedFeatures(device);
-                } else {
-                    Log.d(TAG, "in MapClientService getSupportedFeatures stub, returning 0");
-                }
-                receiver.send(feature);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+
+            MapClientService service = getService(source);
+            if (service == null) {
+                Log.d(TAG, "in MapClientService getSupportedFeatures stub, returning 0");
+                return 0;
             }
+            return service.getSupportedFeatures(device);
         }
 
         @Override
-        public void setMessageStatus(BluetoothDevice device, String handle, int status,
-                AttributionSource source, SynchronousResultReceiver receiver) {
+        public boolean setMessageStatus(
+                BluetoothDevice device, String handle, int status, AttributionSource source) {
             Log.v(TAG, "setMessageStatus()");
-            try {
-                MapClientService service = getService(source);
-                boolean result = false;
-                if (service != null) {
-                    service.enforceCallingOrSelfPermission(Manifest.permission.READ_SMS,
-                            "Need READ_SMS permission");
-                    result = service.setMessageStatus(device, handle, status);
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+
+            MapClientService service = getService(source);
+            if (service == null) {
+                return false;
             }
+            mService.enforceCallingOrSelfPermission(
+                    Manifest.permission.READ_SMS, "Need READ_SMS permission");
+            return service.setMessageStatus(device, handle, status);
         }
     }
 

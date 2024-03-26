@@ -88,6 +88,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public final class Utils {
@@ -110,6 +112,9 @@ public final class Utils {
 
     static final int BD_ADDR_LEN = 6; // bytes
     static final int BD_UUID_LEN = 16; // bytes
+
+    /** Thread pool to handle background and outgoing blocking task */
+    public static final ExecutorService BackgroundExecutor = Executors.newSingleThreadExecutor();
 
     /*
      * Special character

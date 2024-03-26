@@ -25,8 +25,6 @@ import android.bluetooth.BluetoothProfile;
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.jarjar.com.android.modules.utils.SynchronousResultReceiver;
-
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -57,7 +55,7 @@ public class AvrcpControllerServiceBinderTest {
 
     @Test
     public void getConnectedDevices_callsServiceMethod() {
-        mBinder.getConnectedDevices(null, SynchronousResultReceiver.get());
+        mBinder.getConnectedDevices(null);
 
         verify(mService).getConnectedDevices();
     }
@@ -65,27 +63,26 @@ public class AvrcpControllerServiceBinderTest {
     @Test
     public void getDevicesMatchingConnectionStates_callsServiceMethod() {
         int[] states = new int[] {BluetoothProfile.STATE_CONNECTED};
-        mBinder.getDevicesMatchingConnectionStates(states, null, SynchronousResultReceiver.get());
+        mBinder.getDevicesMatchingConnectionStates(states, null);
 
         verify(mService).getDevicesMatchingConnectionStates(states);
     }
 
     @Test
     public void getConnectionState_callsServiceMethod() {
-        mBinder.getConnectionState(mRemoteDevice, null, SynchronousResultReceiver.get());
+        mBinder.getConnectionState(mRemoteDevice, null);
 
         verify(mService).getConnectionState(mRemoteDevice);
     }
 
     @Test
     public void sendGroupNavigationCmd_notImplemented_doesNothing() {
-        mBinder.sendGroupNavigationCmd(mRemoteDevice, 1, 2,
-                null, SynchronousResultReceiver.get());
+        mBinder.sendGroupNavigationCmd(mRemoteDevice, 1, 2, null);
     }
 
     @Test
     public void getPlayerSettings_notImplemented_doesNothing() {
-        mBinder.getPlayerSettings(mRemoteDevice, null, SynchronousResultReceiver.get());
+        mBinder.getPlayerSettings(mRemoteDevice, null);
     }
 
     @Test
