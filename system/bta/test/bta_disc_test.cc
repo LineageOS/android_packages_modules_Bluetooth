@@ -239,7 +239,7 @@ TEST_F(BtaInitializedTest,
        bta_dm_disc_start_service_discovery__BT_TRANSPORT_AUTO) {
   bta_dm_disc_start_service_discovery(
       {[](tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH* p_data) {}, nullptr,
-       nullptr},
+       nullptr, nullptr},
       kRawAddress, BT_TRANSPORT_AUTO);
 }
 
@@ -247,7 +247,7 @@ TEST_F(BtaInitializedTest,
        bta_dm_disc_start_service_discovery__BT_TRANSPORT_BR_EDR) {
   bta_dm_disc_start_service_discovery(
       {[](tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH* p_data) {}, nullptr,
-       nullptr},
+       nullptr, nullptr},
       kRawAddress, BT_TRANSPORT_BR_EDR);
 }
 
@@ -255,7 +255,7 @@ TEST_F(BtaInitializedTest,
        bta_dm_disc_start_service_discovery__BT_TRANSPORT_LE) {
   bta_dm_disc_start_service_discovery(
       {[](tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH* p_data) {}, nullptr,
-       nullptr},
+       nullptr, nullptr},
       kRawAddress, BT_TRANSPORT_LE);
 }
 

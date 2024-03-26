@@ -1915,176 +1915,173 @@ static void btif_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
       }
     } break;
 
-    case BTA_DM_GATT_OVER_SDP_RES_EVT:
-    case BTA_DM_GATT_OVER_LE_RES_EVT: {
-      int num_properties = 0;
-      bt_property_t prop[2];
-      std::vector<uint8_t> property_value;
-      std::set<Uuid> uuids;
-      RawAddress& bd_addr = p_data->disc_ble_res.bd_addr;
-      RawAddress static_addr_copy = pairing_cb.static_bdaddr;
-      bool lea_supported =
-          is_le_audio_capable_during_service_discovery(bd_addr);
-
-      if (event == BTA_DM_GATT_OVER_LE_RES_EVT) {
-        log::info("New GATT over LE UUIDs for {}:",
-                  ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
-        BTM_LogHistory(kBtmLogTag, bd_addr,
-                       "Discovered GATT services using LE transport");
-        if (btif_is_gatt_service_discovery_post_pairing(bd_addr)) {
-          pairing_cb.gatt_over_le =
-              btif_dm_pairing_cb_t::ServiceDiscoveryState::FINISHED;
-
-          if (pairing_cb.sdp_over_classic !=
-              btif_dm_pairing_cb_t::ServiceDiscoveryState::SCHEDULED) {
-            // Both SDP and bonding are either done, or not scheduled,
-            // we are safe to clear the service discovery part of CB.
-            log::debug("clearing pairing_cb");
-            pairing_cb = {};
-          }
-
-          if (IS_FLAG_ENABLED(le_audio_fast_bond_params) && lea_supported) {
-            /* LE Audio profile should relax parameters when it connects. If
-             * profile is not enabled, relax parameters after timeout. */
-            log::debug("Scheduling conn params unlock for {}",
-                       ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
-            do_in_main_thread_delayed(
-                FROM_HERE,
-                base::BindOnce(
-                    [](RawAddress bd_addr) {
-                      L2CA_LockBleConnParamsForProfileConnection(bd_addr,
-                                                                 false);
-                    },
-                    bd_addr),
-                std::chrono::seconds(15));
-          }
-        }
-      } else {
-        log::debug("New GATT over SDP UUIDs for {}:",
-                   ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
-        BTM_LogHistory(kBtmLogTag, bd_addr,
-                       "Discovered GATT services using SDP transport");
-      }
-
-      for (Uuid uuid : *p_data->disc_ble_res.services) {
-        if (btif_is_interesting_le_service(uuid)) {
-          if (btif_should_ignore_uuid(uuid)) {
-            continue;
-          }
-          log::info("index:{} uuid:{}", static_cast<int>(uuids.size()),
-                    uuid.ToString());
-          uuids.insert(uuid);
-        }
-      }
-
-      if (uuids.empty()) {
-        log::info("No well known GATT services discovered");
-
-        /* If services were returned as part of SDP discovery, we will
-         * immediately send them with rest of SDP results in BTA_DM_DISC_RES_EVT
-         */
-        if (event == BTA_DM_GATT_OVER_SDP_RES_EVT) {
-          return;
-        }
-
-        if (lea_supported) {
-          if (bluetooth::common::init_flags::
-                  sdp_return_classic_services_when_le_discovery_fails_is_enabled()) {
-            log::info(
-                "Will return Classic SDP results, if done, to unblock bonding");
-          } else {
-            // LEA device w/o this flag
-            // TODO: we might want to remove bond or do some action on
-            // half-discovered device
-            log::warn("No GATT service found for the LE Audio device {}",
-                      ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
-            return;
-          }
-        } else {
-          log::info("LE audio not supported, no need to report any UUIDs");
-          return;
-        }
-      }
-
-      Uuid existing_uuids[BT_MAX_NUM_UUIDS] = {};
-
-      // Look up UUIDs using pseudo address (either RPA or static address)
-      bt_status_t existing_lookup_result =
-          btif_get_existing_uuids(&bd_addr, existing_uuids);
-
-      if (existing_lookup_result != BT_STATUS_FAIL) {
-        log::info("Got some existing UUIDs by address {}",
-                  ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
-
-        for (int i = 0; i < BT_MAX_NUM_UUIDS; i++) {
-          Uuid uuid = existing_uuids[i];
-          if (uuid.IsEmpty()) {
-            continue;
-          }
-          uuids.insert(uuid);
-        }
-      }
-
-      if (bd_addr != static_addr_copy) {
-        // Look up UUID using static address, if different than sudo address
-        existing_lookup_result =
-            btif_get_existing_uuids(&static_addr_copy, existing_uuids);
-        if (existing_lookup_result != BT_STATUS_FAIL) {
-          log::info("Got some existing UUIDs by static address {}",
-                    ADDRESS_TO_LOGGABLE_CSTR(static_addr_copy));
-          for (int i = 0; i < BT_MAX_NUM_UUIDS; i++) {
-            Uuid uuid = existing_uuids[i];
-            if (uuid.IsEmpty()) {
-              continue;
-            }
-            uuids.insert(uuid);
-          }
-        }
-      }
-
-      for (auto& uuid : uuids) {
-        auto uuid_128bit = uuid.To128BitBE();
-        property_value.insert(property_value.end(), uuid_128bit.begin(),
-                              uuid_128bit.end());
-      }
-
-      prop[0].type = BT_PROPERTY_UUIDS;
-      prop[0].val = (void*)property_value.data();
-      prop[0].len = Uuid::kNumBytes128 * uuids.size();
-
-      /* Also write this to the NVRAM */
-      bt_status_t ret =
-          btif_storage_set_remote_device_property(&bd_addr, &prop[0]);
-      ASSERTC(ret == BT_STATUS_SUCCESS, "storing remote services failed", ret);
-      num_properties++;
-
-      /* Remote name update */
-      if (strnlen((const char*)p_data->disc_ble_res.bd_name, BD_NAME_LEN)) {
-        prop[1].type = BT_PROPERTY_BDNAME;
-        prop[1].val = p_data->disc_ble_res.bd_name;
-        prop[1].len = strnlen((char*)p_data->disc_ble_res.bd_name, BD_NAME_LEN);
-
-        ret = btif_storage_set_remote_device_property(&bd_addr, &prop[1]);
-        ASSERTC(ret == BT_STATUS_SUCCESS,
-                "failed to save remote device property", ret);
-        num_properties++;
-      }
-
-      /* If services were returned as part of SDP discovery, we will immediately
-       * send them with rest of SDP results in BTA_DM_DISC_RES_EVT */
-      if (event == BTA_DM_GATT_OVER_SDP_RES_EVT) {
-        return;
-      }
-
-      /* Send the event to the BTIF */
-      GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
-          BT_STATUS_SUCCESS, bd_addr, num_properties, prop);
-    } break;
-
     default: {
       ASSERTC(0, "unhandled search services event", event);
     } break;
   }
+}
+
+void btif_on_gatt_results(RawAddress bd_addr, BD_NAME bd_name,
+                          std::vector<bluetooth::Uuid>& services,
+                          bool transport_le) {
+  int num_properties = 0;
+  bt_property_t prop[2];
+  std::vector<uint8_t> property_value;
+  std::set<Uuid> uuids;
+  RawAddress static_addr_copy = pairing_cb.static_bdaddr;
+  bool lea_supported = is_le_audio_capable_during_service_discovery(bd_addr);
+
+  if (transport_le) {
+    log::info("New GATT over LE UUIDs for {}:",
+              ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+    BTM_LogHistory(kBtmLogTag, bd_addr,
+                   "Discovered GATT services using LE transport");
+    if (btif_is_gatt_service_discovery_post_pairing(bd_addr)) {
+      pairing_cb.gatt_over_le =
+          btif_dm_pairing_cb_t::ServiceDiscoveryState::FINISHED;
+
+      if (pairing_cb.sdp_over_classic !=
+          btif_dm_pairing_cb_t::ServiceDiscoveryState::SCHEDULED) {
+        // Both SDP and bonding are either done, or not scheduled,
+        // we are safe to clear the service discovery part of CB.
+        log::debug("clearing pairing_cb");
+        pairing_cb = {};
+      }
+
+      if (IS_FLAG_ENABLED(le_audio_fast_bond_params) && lea_supported) {
+        /* LE Audio profile should relax parameters when it connects. If
+         * profile is not enabled, relax parameters after timeout. */
+        log::debug("Scheduling conn params unlock for {}",
+                   ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+        do_in_main_thread_delayed(
+            FROM_HERE,
+            base::BindOnce(
+                [](RawAddress bd_addr) {
+                  L2CA_LockBleConnParamsForProfileConnection(bd_addr, false);
+                },
+                bd_addr),
+            std::chrono::seconds(15));
+      }
+    }
+  } else {
+    log::debug("New GATT over SDP UUIDs for {}:",
+               ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+    BTM_LogHistory(kBtmLogTag, bd_addr,
+                   "Discovered GATT services using SDP transport");
+  }
+
+  for (Uuid uuid : services) {
+    if (btif_is_interesting_le_service(uuid)) {
+      if (btif_should_ignore_uuid(uuid)) {
+        continue;
+      }
+      log::info("index:{} uuid:{}", static_cast<int>(uuids.size()),
+                uuid.ToString());
+      uuids.insert(uuid);
+    }
+  }
+
+  if (uuids.empty()) {
+    log::info("No well known GATT services discovered");
+
+    /* If services were returned as part of SDP discovery, we will
+     * immediately send them with rest of SDP results in BTA_DM_DISC_RES_EVT
+     */
+    if (!transport_le) {
+      return;
+    }
+
+    if (lea_supported) {
+      if (bluetooth::common::init_flags::
+              sdp_return_classic_services_when_le_discovery_fails_is_enabled()) {
+        log::info(
+            "Will return Classic SDP results, if done, to unblock bonding");
+      } else {
+        // LEA device w/o this flag
+        // TODO: we might want to remove bond or do some action on
+        // half-discovered device
+        log::warn("No GATT service found for the LE Audio device {}",
+                  ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+        return;
+      }
+    } else {
+      log::info("LE audio not supported, no need to report any UUIDs");
+      return;
+    }
+  }
+
+  Uuid existing_uuids[BT_MAX_NUM_UUIDS] = {};
+
+  // Look up UUIDs using pseudo address (either RPA or static address)
+  bt_status_t existing_lookup_result =
+      btif_get_existing_uuids(&bd_addr, existing_uuids);
+
+  if (existing_lookup_result != BT_STATUS_FAIL) {
+    log::info("Got some existing UUIDs by address {}",
+              ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+
+    for (int i = 0; i < BT_MAX_NUM_UUIDS; i++) {
+      Uuid uuid = existing_uuids[i];
+      if (uuid.IsEmpty()) {
+        continue;
+      }
+      uuids.insert(uuid);
+    }
+  }
+
+  if (bd_addr != static_addr_copy) {
+    // Look up UUID using static address, if different than sudo address
+    existing_lookup_result =
+        btif_get_existing_uuids(&static_addr_copy, existing_uuids);
+    if (existing_lookup_result != BT_STATUS_FAIL) {
+      log::info("Got some existing UUIDs by static address {}",
+                ADDRESS_TO_LOGGABLE_CSTR(static_addr_copy));
+      for (int i = 0; i < BT_MAX_NUM_UUIDS; i++) {
+        Uuid uuid = existing_uuids[i];
+        if (uuid.IsEmpty()) {
+          continue;
+        }
+        uuids.insert(uuid);
+      }
+    }
+  }
+
+  for (auto& uuid : uuids) {
+    auto uuid_128bit = uuid.To128BitBE();
+    property_value.insert(property_value.end(), uuid_128bit.begin(),
+                          uuid_128bit.end());
+  }
+
+  prop[0].type = BT_PROPERTY_UUIDS;
+  prop[0].val = (void*)property_value.data();
+  prop[0].len = Uuid::kNumBytes128 * uuids.size();
+
+  /* Also write this to the NVRAM */
+  bt_status_t ret = btif_storage_set_remote_device_property(&bd_addr, &prop[0]);
+  ASSERTC(ret == BT_STATUS_SUCCESS, "storing remote services failed", ret);
+  num_properties++;
+
+  /* Remote name update */
+  if (strnlen((const char*)bd_name, BD_NAME_LEN)) {
+    prop[1].type = BT_PROPERTY_BDNAME;
+    prop[1].val = bd_name;
+    prop[1].len = strnlen((char*)bd_name, BD_NAME_LEN);
+
+    ret = btif_storage_set_remote_device_property(&bd_addr, &prop[1]);
+    ASSERTC(ret == BT_STATUS_SUCCESS, "failed to save remote device property",
+            ret);
+    num_properties++;
+  }
+
+  /* If services were returned as part of SDP discovery, we will immediately
+   * send them with rest of SDP results in BTA_DM_DISC_RES_EVT */
+  if (!transport_le) {
+    return;
+  }
+
+  /* Send the event to the BTIF */
+  GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
+      BT_STATUS_SUCCESS, bd_addr, num_properties, prop);
 }
 
 void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status,
@@ -3145,6 +3142,7 @@ void btif_dm_get_remote_services(RawAddress remote_addr, const int transport) {
   BTA_DmDiscover(remote_addr,
                  service_discovery_callbacks{
                      btif_dm_search_services_evt,
+                     btif_on_gatt_results,
                      btif_on_did_received,
                      btif_on_name_read,
                  },
