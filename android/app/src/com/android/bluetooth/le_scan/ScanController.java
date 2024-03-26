@@ -94,7 +94,8 @@ public class ScanController {
             if (mScanController == null) {
                 return;
             }
-            mScanController.getTransitionalScanHelper()
+            mScanController
+                    .getTransitionalScanHelper()
                     .registerScanner(callback, workSource, attributionSource);
         }
 
@@ -104,18 +105,23 @@ public class ScanController {
             if (mScanController == null) {
                 return;
             }
-            mScanController.getTransitionalScanHelper()
+            mScanController
+                    .getTransitionalScanHelper()
                     .unregisterScanner(scannerId, attributionSource);
         }
 
         @Override
-        public void startScan(int scannerId, ScanSettings settings, List<ScanFilter> filters,
+        public void startScan(
+                int scannerId,
+                ScanSettings settings,
+                List<ScanFilter> filters,
                 AttributionSource attributionSource) {
             ScanController mScanController = getScanController();
             if (mScanController == null) {
                 return;
             }
-            mScanController.getTransitionalScanHelper()
+            mScanController
+                    .getTransitionalScanHelper()
                     .startScan(scannerId, settings, filters, attributionSource);
         }
 
@@ -129,7 +135,8 @@ public class ScanController {
             if (mScanController == null) {
                 return;
             }
-            mScanController.getTransitionalScanHelper()
+            mScanController
+                    .getTransitionalScanHelper()
                     .registerPiAndStartScan(intent, settings, filters, attributionSource);
         }
 
@@ -157,51 +164,65 @@ public class ScanController {
             if (mScanController == null) {
                 return;
             }
-            mScanController.getTransitionalScanHelper()
+            mScanController
+                    .getTransitionalScanHelper()
                     .flushPendingBatchResults(scannerId, attributionSource);
         }
 
         @Override
-        public void registerSync(ScanResult scanResult, int skip, int timeout,
-                IPeriodicAdvertisingCallback callback, AttributionSource attributionSource) {
+        public void registerSync(
+                ScanResult scanResult,
+                int skip,
+                int timeout,
+                IPeriodicAdvertisingCallback callback,
+                AttributionSource attributionSource) {
             ScanController mScanController = getScanController();
             if (mScanController == null) {
                 return;
             }
-            mScanController.getTransitionalScanHelper()
+            mScanController
+                    .getTransitionalScanHelper()
                     .registerSync(scanResult, skip, timeout, callback, attributionSource);
         }
 
         @Override
-        public void unregisterSync(IPeriodicAdvertisingCallback callback,
-                AttributionSource attributionSource) {
-            ScanController mScanController = getScanController();
-            if (mScanController == null) {
-                return;
-            }
-            mScanController.getTransitionalScanHelper()
-                    .unregisterSync(callback, attributionSource);
-        }
-
-        @Override
-        public void transferSync(BluetoothDevice bda, int serviceData, int syncHandle,
-                AttributionSource attributionSource) {
-            ScanController mScanController = getScanController();
-            if (mScanController == null) {
-                return;
-            }
-            mScanController.getTransitionalScanHelper()
-                    .transferSync(bda, serviceData, syncHandle, attributionSource);
-        }
-
-        @Override
-        public void transferSetInfo(BluetoothDevice bda, int serviceData, int advHandle,
+        public void unregisterSync(
                 IPeriodicAdvertisingCallback callback, AttributionSource attributionSource) {
             ScanController mScanController = getScanController();
             if (mScanController == null) {
                 return;
             }
-            mScanController.getTransitionalScanHelper()
+            mScanController.getTransitionalScanHelper().unregisterSync(callback, attributionSource);
+        }
+
+        @Override
+        public void transferSync(
+                BluetoothDevice bda,
+                int serviceData,
+                int syncHandle,
+                AttributionSource attributionSource) {
+            ScanController mScanController = getScanController();
+            if (mScanController == null) {
+                return;
+            }
+            mScanController
+                    .getTransitionalScanHelper()
+                    .transferSync(bda, serviceData, syncHandle, attributionSource);
+        }
+
+        @Override
+        public void transferSetInfo(
+                BluetoothDevice bda,
+                int serviceData,
+                int advHandle,
+                IPeriodicAdvertisingCallback callback,
+                AttributionSource attributionSource) {
+            ScanController mScanController = getScanController();
+            if (mScanController == null) {
+                return;
+            }
+            mScanController
+                    .getTransitionalScanHelper()
                     .transferSetInfo(bda, serviceData, advHandle, callback, attributionSource);
         }
 
@@ -211,7 +232,8 @@ public class ScanController {
             if (mScanController == null) {
                 return 0;
             }
-            return mScanController.getTransitionalScanHelper()
+            return mScanController
+                    .getTransitionalScanHelper()
                     .numHwTrackFiltersAvailable(attributionSource);
         }
     }
