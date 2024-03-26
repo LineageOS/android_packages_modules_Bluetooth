@@ -507,7 +507,11 @@ static void hh_open_handler(tBTA_HH_CONN& conn) {
       return;
     }
   }
-  BTHH_STATE_UPDATE(conn.link_spec, BTHH_CONN_STATE_CONNECTING);
+
+  if (!IS_FLAG_ENABLED(allow_switching_hid_and_hogp)) {
+    BTHH_STATE_UPDATE(conn.link_spec, BTHH_CONN_STATE_CONNECTING);
+  }
+
   btif_hh_cb.pending_link_spec = {};
 
   if (conn.status != BTA_HH_OK) {
