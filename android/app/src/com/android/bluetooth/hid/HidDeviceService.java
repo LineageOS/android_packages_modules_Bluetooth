@@ -51,6 +51,7 @@ import com.android.internal.annotations.VisibleForTesting;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -470,7 +471,7 @@ public class HidDeviceService extends ProfileService {
 
             HidDeviceService service = getService(source);
             if (service == null) {
-                return new ArrayList<BluetoothDevice>(0);
+                return Collections.emptyList();
             }
 
             return service.getDevicesMatchingConnectionStates(states);

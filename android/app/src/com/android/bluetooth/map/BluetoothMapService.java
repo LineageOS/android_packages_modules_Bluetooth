@@ -64,6 +64,7 @@ import com.android.internal.annotations.VisibleForTesting;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -1448,7 +1449,7 @@ public class BluetoothMapService extends ProfileService {
             try {
                 BluetoothMapService service = getService(source);
                 if (service == null) {
-                    return new ArrayList<>();
+                    return Collections.emptyList();
                 }
 
                 enforceBluetoothPrivilegedPermission(service);
@@ -1472,7 +1473,7 @@ public class BluetoothMapService extends ProfileService {
             try {
                 BluetoothMapService service = getService(source);
                 if (service == null) {
-                    return new ArrayList<>();
+                    return Collections.emptyList();
                 }
 
                 return service.getDevicesMatchingConnectionStates(states);

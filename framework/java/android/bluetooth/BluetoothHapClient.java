@@ -38,7 +38,7 @@ import com.android.bluetooth.flags.Flags;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -754,7 +754,7 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
                 throw e.rethrowAsRuntimeException();
             }
         }
-        return new ArrayList<>();
+        return Collections.emptyList();
     }
 
     /**
@@ -786,7 +786,7 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
                 throw e.rethrowAsRuntimeException();
             }
         }
-        return new ArrayList<>();
+        return Collections.emptyList();
     }
 
     /**
@@ -1173,7 +1173,7 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
                 throw e.rethrowAsRuntimeException();
             }
         }
-        return new ArrayList<>();
+        return Collections.emptyList();
     }
 
     /**
