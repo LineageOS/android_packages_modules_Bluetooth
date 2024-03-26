@@ -949,9 +949,12 @@ static void bta_dm_disc_result(tBTA_DM_MSG* p_data) {
   /* if any BR/EDR service discovery has been done, report the event */
   if (!is_gatt_over_ble && (bta_dm_search_cb.services &
                             ((BTA_ALL_SERVICE_MASK | BTA_USER_SERVICE_MASK) &
-                             ~BTA_BLE_SERVICE_MASK)))
-    bta_dm_search_cb.service_search_cbacks.legacy(BTA_DM_DISC_RES_EVT,
-                                                  &p_data->disc_result.result);
+                             ~BTA_BLE_SERVICE_MASK))) {
+    auto& r = p_data->disc_result.result.disc_res;
+    bta_dm_search_cb.service_search_cbacks.on_service_discovery_results(
+        r.bd_addr, r.bd_name, r.services, r.device_type, r.num_uuids,
+        r.p_uuid_list, r.result, r.hci_status);
+  }
 
   get_gatt_interface().BTA_GATTC_CancelOpen(0, bta_dm_search_cb.peer_bdaddr,
                                             true);
@@ -977,9 +980,11 @@ static void bta_dm_search_result(tBTA_DM_MSG* p_data) {
   if ((!bta_dm_search_cb.services) ||
       ((bta_dm_search_cb.services) &&
        (p_data->disc_result.result.disc_res.services))) {
-    if (bta_dm_search_cb.service_search_cbacks.legacy) {
-      bta_dm_search_cb.service_search_cbacks.legacy(
-          BTA_DM_DISC_RES_EVT, &p_data->disc_result.result);
+    if (bta_dm_search_cb.service_search_cbacks.on_service_discovery_results) {
+      auto& r = p_data->disc_result.result.disc_res;
+      bta_dm_search_cb.service_search_cbacks.on_service_discovery_results(
+          r.bd_addr, r.bd_name, r.services, r.device_type, r.num_uuids,
+          r.p_uuid_list, r.result, r.hci_status);
     } else {
       log::warn("Received search result without valid callback");
     }

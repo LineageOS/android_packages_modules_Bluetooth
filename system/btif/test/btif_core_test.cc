@@ -255,7 +255,6 @@ TEST_F(BtifCoreTest, dump_dm_search_event) {
   std::vector<std::pair<uint16_t, std::string>> events = {
       std::make_pair(BTA_DM_INQ_RES_EVT, "BTA_DM_INQ_RES_EVT"),
       std::make_pair(BTA_DM_INQ_CMPL_EVT, "BTA_DM_INQ_CMPL_EVT"),
-      std::make_pair(BTA_DM_DISC_RES_EVT, "BTA_DM_DISC_RES_EVT"),
       std::make_pair(BTA_DM_DISC_CMPL_EVT, "BTA_DM_DISC_CMPL_EVT"),
       std::make_pair(BTA_DM_SEARCH_CANCEL_CMPL_EVT,
                      "BTA_DM_SEARCH_CANCEL_CMPL_EVT"),

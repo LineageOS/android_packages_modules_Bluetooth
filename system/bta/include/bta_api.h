@@ -302,12 +302,17 @@ typedef void(tBTA_DM_DID_RES_CBACK)(RawAddress bd_addr, uint8_t vendor_id_src,
 typedef void(tBTA_DM_NAME_READ_CBACK)(RawAddress bd_addr,
                                       tHCI_ERROR_CODE hci_status,
                                       const BD_NAME bd_name);
+typedef void(tBTA_DM_DISC_CBACK)(RawAddress bd_addr, BD_NAME bd_name,
+                                 tBTA_SERVICE_MASK services,
+                                 tBT_DEVICE_TYPE device_type, size_t num_uuids,
+                                 bluetooth::Uuid* p_uuid_list,
+                                 tBTA_STATUS result, tHCI_STATUS hci_status);
 struct service_discovery_callbacks {
   /* legacy callback I'll tear apart and get rid of */
-  tBTA_DM_SEARCH_CBACK* legacy;
   tBTA_DM_GATT_DISC_CBACK* on_gatt_results;
   tBTA_DM_DID_RES_CBACK* on_did_received;
   tBTA_DM_NAME_READ_CBACK* on_name_read;
+  tBTA_DM_DISC_CBACK* on_service_discovery_results;
 };
 
 /* Execute call back */
