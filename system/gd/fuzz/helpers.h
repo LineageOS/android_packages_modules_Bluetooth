@@ -21,7 +21,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "os/handler.h"
+#include "common/contextual_callback.h"
 
 namespace bluetooth {
 namespace fuzz {
@@ -43,7 +43,9 @@ void InvokeIfValid(common::ContextualOnceCallback<void(TView)> callback, std::ve
   if (!packet.IsValid()) {
     return;
   }
-  callback.InvokeIfNotEmpty(packet);
+  if (!callback.IsEmpty()) {
+    callback.Invoke(packet);
+  }
 }
 
 template <typename TView>
@@ -52,7 +54,9 @@ void InvokeIfValid(common::ContextualCallback<void(TView)> callback, std::vector
   if (!packet.IsValid()) {
     return;
   }
-  callback.InvokeIfNotEmpty(packet);
+  if (!callback.IsEmpty()) {
+    callback.Invoke(packet);
+  }
 }
 
 }  // namespace fuzz
