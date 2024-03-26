@@ -3,6 +3,7 @@ container: "com.android.btservices"
 
 flag {
     name: "channel_sounding"
+    is_exported: true
     namespace: "bluetooth"
     description: "Enable Channel Sounding"
     bug: "317683528"

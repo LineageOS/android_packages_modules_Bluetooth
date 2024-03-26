@@ -3,6 +3,7 @@ container: "com.android.btservices"
 
 flag {
     name: "mfi_has_uuid"
+    is_exported: true
     namespace: "bluetooth"
     description: "Use MFi HAS uuid to judge if a device is hearing aid"
     bug: "310543599"
@@ -10,6 +11,7 @@ flag {
 
 flag {
     name: "support_metadata_device_types_apis"
+    is_exported: true
     namespace: "bluetooth"
     description: "Support more device types in bt device metadata"
     bug: "289584302"
@@ -17,6 +19,7 @@ flag {
 
 flag {
     name: "support_exclusive_manager"
+    is_exported: true
     namespace: "bluetooth"
     description: "Support setting/retrieving the exclusive manager app for a BluetoothDevice"
     bug: "319716512"
@@ -24,6 +27,7 @@ flag {
 
 flag {
     name: "key_missing_broadcast"
+    is_exported: true
     namespace: "bluetooth"
     description: "Broadcast when remote device it lost bond"
     bug: "311447399"
@@ -45,6 +49,7 @@ flag {
 
 flag {
     name: "get_address_type_api"
+    is_exported: true
     namespace: "bluetooth"
     description: "Change visibility of BluetoothDevice#getAddressType API to public"
     bug: "321120941"
