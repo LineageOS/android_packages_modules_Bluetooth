@@ -52,7 +52,6 @@ import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
-import com.android.modules.utils.SynchronousResultReceiver;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -1204,161 +1203,116 @@ public class HapClientService extends ProfileService {
         }
 
         @Override
-        public void getConnectedDevices(AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
+        public List<BluetoothDevice> getConnectedDevices(AttributionSource source) {
+            Objects.requireNonNull(source, "source cannot be null");
 
-                List<BluetoothDevice> defaultValue = new ArrayList<>();
-                HapClientService service = getService(source);
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    defaultValue = service.getConnectedDevices();
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+            HapClientService service = getService(source);
+            if (service == null) {
+                return new ArrayList<>();
             }
+
+            enforceBluetoothPrivilegedPermission(service);
+            return service.getConnectedDevices();
         }
 
         @Override
-        public void getDevicesMatchingConnectionStates(int[] states,
-                AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
+        public List<BluetoothDevice> getDevicesMatchingConnectionStates(
+                int[] states, AttributionSource source) {
+            Objects.requireNonNull(source, "source cannot be null");
 
-                List<BluetoothDevice> defaultValue = new ArrayList<>();
-                HapClientService service = getService(source);
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    defaultValue = service.getDevicesMatchingConnectionStates(states);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+            HapClientService service = getService(source);
+            if (service == null) {
+                return new ArrayList<>();
             }
+
+            enforceBluetoothPrivilegedPermission(service);
+            return service.getDevicesMatchingConnectionStates(states);
         }
 
         @Override
-        public void getConnectionState(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(device, "device cannot be null");
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
+        public int getConnectionState(BluetoothDevice device, AttributionSource source) {
+            Objects.requireNonNull(device, "device cannot be null");
+            Objects.requireNonNull(source, "source cannot be null");
 
-                int defaultValue = BluetoothProfile.STATE_DISCONNECTED;
-                HapClientService service = getService(source);
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    defaultValue = service.getConnectionState(device);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+            HapClientService service = getService(source);
+            if (service == null) {
+                return BluetoothProfile.STATE_DISCONNECTED;
             }
+
+            enforceBluetoothPrivilegedPermission(service);
+            return service.getConnectionState(device);
         }
 
         @Override
-        public void setConnectionPolicy(BluetoothDevice device, int connectionPolicy,
-                AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(device, "device cannot be null");
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
+        public boolean setConnectionPolicy(
+                BluetoothDevice device, int connectionPolicy, AttributionSource source) {
+            Objects.requireNonNull(device, "device cannot be null");
+            Objects.requireNonNull(source, "source cannot be null");
 
-                boolean defaultValue = false;
-                HapClientService service = getService(source);
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    defaultValue = service.setConnectionPolicy(device, connectionPolicy);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+            HapClientService service = getService(source);
+            if (service == null) {
+                return false;
             }
+
+            enforceBluetoothPrivilegedPermission(service);
+            return service.setConnectionPolicy(device, connectionPolicy);
         }
 
         @Override
-        public void getConnectionPolicy(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(device, "device cannot be null");
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
+        public int getConnectionPolicy(BluetoothDevice device, AttributionSource source) {
+            Objects.requireNonNull(device, "device cannot be null");
+            Objects.requireNonNull(source, "source cannot be null");
 
-                int defaultValue = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-                HapClientService service = getService(source);
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    defaultValue = service.getConnectionPolicy(device);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+            HapClientService service = getService(source);
+            if (service == null) {
+                return BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
             }
+
+            enforceBluetoothPrivilegedPermission(service);
+            return service.getConnectionPolicy(device);
         }
 
         @Override
-        public void getActivePresetIndex(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(device, "device cannot be null");
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
+        public int getActivePresetIndex(BluetoothDevice device, AttributionSource source) {
+            Objects.requireNonNull(device, "device cannot be null");
+            Objects.requireNonNull(source, "source cannot be null");
 
-                int defaultValue = BluetoothHapClient.PRESET_INDEX_UNAVAILABLE;
-                HapClientService service = getService(source);
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    defaultValue = service.getActivePresetIndex(device);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+            HapClientService service = getService(source);
+            if (service == null) {
+                return BluetoothHapClient.PRESET_INDEX_UNAVAILABLE;
             }
+
+            enforceBluetoothPrivilegedPermission(service);
+            return service.getActivePresetIndex(device);
         }
 
         @Override
-        public void getActivePresetInfo(BluetoothDevice device,
-                AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(device, "device cannot be null");
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
+        public BluetoothHapPresetInfo getActivePresetInfo(
+                BluetoothDevice device, AttributionSource source) {
+            Objects.requireNonNull(device, "device cannot be null");
+            Objects.requireNonNull(source, "source cannot be null");
 
-                BluetoothHapPresetInfo defaultValue = null;
-                HapClientService service = getService(source);
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    defaultValue = service.getActivePresetInfo(device);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+            HapClientService service = getService(source);
+            if (service == null) {
+                return null;
             }
+
+            enforceBluetoothPrivilegedPermission(service);
+            return service.getActivePresetInfo(device);
         }
 
         @Override
-        public void getHapGroup(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(device, "device cannot be null");
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
+        public int getHapGroup(BluetoothDevice device, AttributionSource source) {
+            Objects.requireNonNull(device, "device cannot be null");
+            Objects.requireNonNull(source, "source cannot be null");
 
-                int defaultValue = BluetoothCsipSetCoordinator.GROUP_ID_INVALID;
-                HapClientService service = getService(source);
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    defaultValue = service.getHapGroup(device);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+            HapClientService service = getService(source);
+            if (service == null) {
+                return BluetoothCsipSetCoordinator.GROUP_ID_INVALID;
             }
+
+            enforceBluetoothPrivilegedPermission(service);
+            return service.getHapGroup(device);
         }
 
         @Override
@@ -1459,64 +1413,47 @@ public class HapClientService extends ProfileService {
         }
 
         @Override
-        public void getPresetInfo(BluetoothDevice device, int presetIndex,
-                AttributionSource source, SynchronousResultReceiver receiver) {
+        public BluetoothHapPresetInfo getPresetInfo(
+                BluetoothDevice device, int presetIndex, AttributionSource source) {
+            Objects.requireNonNull(device, "device cannot be null");
+            Objects.requireNonNull(source, "source cannot be null");
 
-            try {
-                Objects.requireNonNull(device, "device cannot be null");
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
-
-                BluetoothHapPresetInfo defaultValue = null;
-                HapClientService service = getService(source);
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    defaultValue = service.getPresetInfo(device, presetIndex);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+            HapClientService service = getService(source);
+            if (service == null) {
+                return null;
             }
+
+            enforceBluetoothPrivilegedPermission(service);
+            return service.getPresetInfo(device, presetIndex);
         }
 
         @Override
-        public void getAllPresetInfo(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(device, "device cannot be null");
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
+        public List<BluetoothHapPresetInfo> getAllPresetInfo(
+                BluetoothDevice device, AttributionSource source) {
+            Objects.requireNonNull(device, "device cannot be null");
+            Objects.requireNonNull(source, "source cannot be null");
 
-                List<BluetoothHapPresetInfo> defaultValue = new ArrayList<>();
-                HapClientService service = getService(source);
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    defaultValue = service.getAllPresetInfo(device);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+            HapClientService service = getService(source);
+            if (service == null) {
+                return new ArrayList<>();
             }
+
+            enforceBluetoothPrivilegedPermission(service);
+            return service.getAllPresetInfo(device);
         }
 
         @Override
-        public void getFeatures(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(device, "device cannot be null");
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
+        public int getFeatures(BluetoothDevice device, AttributionSource source) {
+            Objects.requireNonNull(device, "device cannot be null");
+            Objects.requireNonNull(source, "source cannot be null");
 
-                int defaultValue = 0x00;
-                HapClientService service = getService(source);
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    defaultValue = service.getFeatures(device);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+            HapClientService service = getService(source);
+            if (service == null) {
+                return 0x00;
             }
+
+            enforceBluetoothPrivilegedPermission(service);
+            return service.getFeatures(device);
         }
 
         @Override
@@ -1565,42 +1502,33 @@ public class HapClientService extends ProfileService {
         }
 
         @Override
-        public void registerCallback(IBluetoothHapClientCallback callback,
-                AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(callback, "callback cannot be null");
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
-                HapClientService service = getService(source);
-                if (service == null) {
-                    throw new IllegalStateException("Service is unavailable");
-                }
-                enforceBluetoothPrivilegedPermission(service);
-                service.mCallbacks.register(callback);
-                receiver.send(null);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public void registerCallback(
+                IBluetoothHapClientCallback callback, AttributionSource source) {
+            Objects.requireNonNull(callback, "callback cannot be null");
+            Objects.requireNonNull(source, "source cannot be null");
+
+            HapClientService service = getService(source);
+            if (service == null) {
+                throw new IllegalStateException("Service is unavailable");
             }
+
+            enforceBluetoothPrivilegedPermission(service);
+            service.mCallbacks.register(callback);
         }
 
         @Override
-        public void unregisterCallback(IBluetoothHapClientCallback callback,
-                AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(callback, "callback cannot be null");
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
+        public void unregisterCallback(
+                IBluetoothHapClientCallback callback, AttributionSource source) {
+            Objects.requireNonNull(callback, "callback cannot be null");
+            Objects.requireNonNull(source, "source cannot be null");
 
-                HapClientService service = getService(source);
-                if (service == null) {
-                    throw new IllegalStateException("Service is unavailable");
-                }
-                enforceBluetoothPrivilegedPermission(service);
-                service.mCallbacks.unregister(callback);
-                receiver.send(null);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+            HapClientService service = getService(source);
+            if (service == null) {
+                throw new IllegalStateException("Service is unavailable");
             }
+
+            enforceBluetoothPrivilegedPermission(service);
+            service.mCallbacks.unregister(callback);
         }
     }
 }

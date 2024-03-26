@@ -46,7 +46,6 @@ import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.hfpclient.HfpClientConnectionService;
 import com.android.bluetooth.sdp.SdpManagerNativeInterface;
 import com.android.internal.annotations.VisibleForTesting;
-import com.android.modules.utils.SynchronousResultReceiver;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -92,27 +91,39 @@ public class PbapClientService extends ProfileService {
     private int mAccountVisibilityCheckTries = 0;
     private final Handler mAuthServiceHandler = new Handler();
     private Handler mHandler;
-    private final Runnable mCheckAuthService = new Runnable() {
-        @Override
-        public void run() {
-            // If our accounts are finally visible to use, clean up old ones and tell devices they
-            // can issue downloads if they're ready. Otherwise, wait and try again.
-            if (isAuthenticationServiceReady()) {
-                Log.i(TAG, "Service ready! Clean up old accounts and try contacts downloads");
-                removeUncleanAccounts();
-                for (PbapClientStateMachine stateMachine : mPbapClientStateMachineMap.values()) {
-                    stateMachine.tryDownloadIfConnected();
+    private final Runnable mCheckAuthService =
+            new Runnable() {
+                @Override
+                public void run() {
+                    // If our accounts are finally visible to use, clean up old ones and tell
+                    // devices they can issue downloads if they're ready. Otherwise, wait and try
+                    // again.
+                    if (isAuthenticationServiceReady()) {
+                        Log.i(
+                                TAG,
+                                "Service ready! Clean up old accounts and try contacts downloads");
+                        removeUncleanAccounts();
+                        for (PbapClientStateMachine stateMachine :
+                                mPbapClientStateMachineMap.values()) {
+                            stateMachine.tryDownloadIfConnected();
+                        }
+                    } else if (mAccountVisibilityCheckTries < ACCOUNT_VISIBILITY_CHECK_TRIES_MAX) {
+                        mAccountVisibilityCheckTries += 1;
+                        Log.w(
+                                TAG,
+                                "AccountManager hasn't registered our service yet. Retry "
+                                        + mAccountVisibilityCheckTries
+                                        + "/"
+                                        + ACCOUNT_VISIBILITY_CHECK_TRIES_MAX);
+                        mAuthServiceHandler.postDelayed(this, ACCOUNT_VISIBILITY_CHECK_MS);
+                    } else {
+                        Log.e(
+                                TAG,
+                                "Failed to register Authentication Service and get account"
+                                        + " visibility");
+                    }
                 }
-            } else if (mAccountVisibilityCheckTries < ACCOUNT_VISIBILITY_CHECK_TRIES_MAX) {
-                mAccountVisibilityCheckTries += 1;
-                Log.w(TAG, "AccountManager hasn't registered our service yet. Retry "
-                        + mAccountVisibilityCheckTries + "/" + ACCOUNT_VISIBILITY_CHECK_TRIES_MAX);
-                mAuthServiceHandler.postDelayed(this, ACCOUNT_VISIBILITY_CHECK_MS);
-            } else {
-                Log.e(TAG, "Failed to register Authenication Service and get account visibility");
-            }
-        }
-    };
+            };
 
     public PbapClientService(Context ctx) {
         super(ctx);
@@ -174,7 +185,7 @@ public class PbapClientService extends ProfileService {
             mHandler = null;
         }
 
-        cleanupAuthenicationService();
+        cleanupAuthenticationService();
         setComponentAvailable(AUTHENTICATOR_SERVICE, false);
     }
 
@@ -198,7 +209,7 @@ public class PbapClientService extends ProfileService {
         mAuthServiceHandler.postDelayed(mCheckAuthService, ACCOUNT_VISIBILITY_CHECK_MS);
     }
 
-    private void cleanupAuthenicationService() {
+    private void cleanupAuthenticationService() {
         mAuthServiceHandler.removeCallbacks(mCheckAuthService);
         removeUncleanAccounts();
     }
@@ -374,111 +385,78 @@ public class PbapClientService extends ProfileService {
         }
 
         @Override
-        public void connect(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            Log.d(TAG, "PbapClient Binder connect");
-            try {
-                PbapClientService service = getService(source);
-                boolean defaultValue = false;
-                if (service != null) {
-                    defaultValue = service.connect(device);
-                } else {
-                    Log.e(TAG, "PbapClient Binder connect no service");
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public boolean connect(BluetoothDevice device, AttributionSource source) {
+            Log.d(TAG, "PbapClient Binder connect ");
+
+            PbapClientService service = getService(source);
+            if (service == null) {
+                Log.e(TAG, "PbapClient Binder connect no service");
+                return false;
             }
+
+            return service.connect(device);
         }
 
         @Override
-        public void disconnect(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                PbapClientService service = getService(source);
-                boolean defaultValue = false;
-                if (service != null) {
-                    defaultValue = service.disconnect(device);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public boolean disconnect(BluetoothDevice device, AttributionSource source) {
+            PbapClientService service = getService(source);
+            if (service == null) {
+                return false;
             }
+
+            return service.disconnect(device);
         }
 
         @Override
-        public void getConnectedDevices(AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                PbapClientService service = getService(source);
-                List<BluetoothDevice> defaultValue = new ArrayList<BluetoothDevice>(0);
-                if (service != null) {
-                    defaultValue = service.getConnectedDevices();
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public List<BluetoothDevice> getConnectedDevices(AttributionSource source) {
+            PbapClientService service = getService(source);
+            if (service == null) {
+                return new ArrayList<>();
             }
+
+            return service.getConnectedDevices();
         }
 
         @Override
-        public void getDevicesMatchingConnectionStates(int[] states,
-                AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                PbapClientService service = getService(source);
-                List<BluetoothDevice> defaultValue = new ArrayList<BluetoothDevice>(0);
-                if (service != null) {
-                    defaultValue = service.getDevicesMatchingConnectionStates(states);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public List<BluetoothDevice> getDevicesMatchingConnectionStates(
+                int[] states, AttributionSource source) {
+            PbapClientService service = getService(source);
+            if (service == null) {
+                return new ArrayList<>();
             }
+
+            return service.getDevicesMatchingConnectionStates(states);
         }
 
         @Override
-        public void getConnectionState(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                PbapClientService service = getService(source);
-                int defaultValue = BluetoothProfile.STATE_DISCONNECTED;
-                if (service != null) {
-                    defaultValue = service.getConnectionState(device);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public int getConnectionState(BluetoothDevice device, AttributionSource source) {
+            PbapClientService service = getService(source);
+            if (service == null) {
+                return BluetoothProfile.STATE_DISCONNECTED;
             }
+
+            return service.getConnectionState(device);
         }
 
         @Override
-        public void setConnectionPolicy(BluetoothDevice device, int connectionPolicy,
-                AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                PbapClientService service = getService(source);
-                boolean defaultValue = false;
-                if (service != null) {
-                    defaultValue = service.setConnectionPolicy(device, connectionPolicy);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public boolean setConnectionPolicy(
+                BluetoothDevice device, int connectionPolicy, AttributionSource source) {
+            PbapClientService service = getService(source);
+            if (service == null) {
+                return false;
             }
+
+            return service.setConnectionPolicy(device, connectionPolicy);
         }
 
         @Override
-        public void getConnectionPolicy(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                PbapClientService service = getService(source);
-                int defaultValue = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-                if (service != null) {
-                    defaultValue = service.getConnectionPolicy(device);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public int getConnectionPolicy(BluetoothDevice device, AttributionSource source) {
+            PbapClientService service = getService(source);
+            if (service == null) {
+                return BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
             }
+
+            return service.getConnectionPolicy(device);
         }
 
 

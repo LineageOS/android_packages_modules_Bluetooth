@@ -16,8 +16,6 @@
 
 package android.bluetooth;
 
-import static android.bluetooth.BluetoothUtils.getSyncTimeout;
-
 import android.annotation.RequiresPermission;
 import android.annotation.SdkConstant;
 import android.annotation.SdkConstant.SdkConstantType;
@@ -29,11 +27,8 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
 
-import com.android.modules.utils.SynchronousResultReceiver;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeoutException;
 
 /**
  * This class provides the public APIs to control the Bluetooth AVRCP Controller. It currently
@@ -139,23 +134,18 @@ public final class BluetoothAvrcpController implements BluetoothProfile {
     public List<BluetoothDevice> getConnectedDevices() {
         if (VDBG) log("getConnectedDevices()");
         final IBluetoothAvrcpController service = getService();
-        final List<BluetoothDevice> defaultValue = new ArrayList<BluetoothDevice>();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
-                final SynchronousResultReceiver<List<BluetoothDevice>> recv =
-                        SynchronousResultReceiver.get();
-                service.getConnectedDevices(mAttributionSource, recv);
                 return Attributable.setAttributionSource(
-                        recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue),
-                        mAttributionSource);
-            } catch (RemoteException | TimeoutException e) {
+                        service.getConnectedDevices(mAttributionSource), mAttributionSource);
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return defaultValue;
+        return new ArrayList<>();
     }
 
     /** {@inheritDoc} */
@@ -165,23 +155,19 @@ public final class BluetoothAvrcpController implements BluetoothProfile {
     public List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
         if (VDBG) log("getDevicesMatchingStates()");
         final IBluetoothAvrcpController service = getService();
-        final List<BluetoothDevice> defaultValue = new ArrayList<BluetoothDevice>();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
-                final SynchronousResultReceiver<List<BluetoothDevice>> recv =
-                        SynchronousResultReceiver.get();
-                service.getDevicesMatchingConnectionStates(states, mAttributionSource, recv);
                 return Attributable.setAttributionSource(
-                        recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue),
+                        service.getDevicesMatchingConnectionStates(states, mAttributionSource),
                         mAttributionSource);
-            } catch (RemoteException | TimeoutException e) {
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return defaultValue;
+        return new ArrayList<>();
     }
 
     /** {@inheritDoc} */
@@ -191,20 +177,17 @@ public final class BluetoothAvrcpController implements BluetoothProfile {
     public int getConnectionState(BluetoothDevice device) {
         if (VDBG) log("getState(" + device + ")");
         final IBluetoothAvrcpController service = getService();
-        final int defaultValue = BluetoothProfile.STATE_DISCONNECTED;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                service.getConnectionState(device, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (RemoteException | TimeoutException e) {
+                return service.getConnectionState(device, mAttributionSource);
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return defaultValue;
+        return BluetoothProfile.STATE_DISCONNECTED;
     }
 
     /**
@@ -217,21 +200,17 @@ public final class BluetoothAvrcpController implements BluetoothProfile {
     public BluetoothAvrcpPlayerSettings getPlayerSettings(BluetoothDevice device) {
         if (DBG) Log.d(TAG, "getPlayerSettings");
         final IBluetoothAvrcpController service = getService();
-        final BluetoothAvrcpPlayerSettings defaultValue = null;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
-                final SynchronousResultReceiver<BluetoothAvrcpPlayerSettings> recv =
-                        SynchronousResultReceiver.get();
-                service.getPlayerSettings(device, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (RemoteException | TimeoutException e) {
+                return service.getPlayerSettings(device, mAttributionSource);
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return defaultValue;
+        return null;
     }
 
     /**
@@ -243,20 +222,17 @@ public final class BluetoothAvrcpController implements BluetoothProfile {
     public boolean setPlayerApplicationSetting(BluetoothAvrcpPlayerSettings plAppSetting) {
         if (DBG) Log.d(TAG, "setPlayerApplicationSetting");
         final IBluetoothAvrcpController service = getService();
-        final boolean defaultValue = false;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                service.setPlayerApplicationSetting(plAppSetting, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (RemoteException | TimeoutException e) {
+                service.setPlayerApplicationSetting(plAppSetting, mAttributionSource);
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return defaultValue;
+        return false;
     }
 
     /**
@@ -280,11 +256,8 @@ public final class BluetoothAvrcpController implements BluetoothProfile {
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
-                final SynchronousResultReceiver recv = SynchronousResultReceiver.get();
-                service.sendGroupNavigationCmd(device, keyCode, keyState, mAttributionSource, recv);
-                recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
-                return;
-            } catch (RemoteException | TimeoutException e) {
+                service.sendGroupNavigationCmd(device, keyCode, keyState, mAttributionSource);
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }

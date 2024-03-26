@@ -16,8 +16,6 @@
 
 package android.bluetooth.le;
 
-import static android.bluetooth.le.BluetoothLeUtils.getSyncTimeout;
-
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.RequiresPermission;
@@ -29,15 +27,11 @@ import android.content.AttributionSource;
 import android.os.Binder;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
-import android.util.Log;
-
-import com.android.modules.utils.SynchronousResultReceiver;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Objects;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeoutException;
 
 /**
  * This class provides a way to control an active distance measurement session.
@@ -110,22 +104,15 @@ public final class DistanceMeasurementSession {
                 android.Manifest.permission.BLUETOOTH_PRIVILEGED,
             })
     public @StopSessionReturnValues int stopSession() {
-        final int defaultValue = BluetoothStatusCodes.ERROR_TIMEOUT;
         try {
-            final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-            mGatt.stopDistanceMeasurement(
+            return mGatt.stopDistanceMeasurement(
                     mUuid,
                     mDistanceMeasurementParams.getDevice(),
                     mDistanceMeasurementParams.getMethodId(),
-                    mAttributionSource,
-                    recv);
-            return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-        } catch (TimeoutException e) {
-            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+                    mAttributionSource);
         } catch (RemoteException e) {
             throw e.rethrowAsRuntimeException();
         }
-        return defaultValue;
     }
 
     /** @hide */

@@ -47,7 +47,6 @@ import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.internal.annotations.VisibleForTesting;
-import com.android.modules.utils.SynchronousResultReceiver;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -325,215 +324,165 @@ public class HidDeviceService extends ProfileService {
         }
 
         @Override
-        public void registerApp(BluetoothHidDeviceAppSdpSettings sdp,
-                BluetoothHidDeviceAppQosSettings inQos, BluetoothHidDeviceAppQosSettings outQos,
-                IBluetoothHidDeviceCallback callback, AttributionSource source,
-                SynchronousResultReceiver receiver) {
+        public boolean registerApp(
+                BluetoothHidDeviceAppSdpSettings sdp,
+                BluetoothHidDeviceAppQosSettings inQos,
+                BluetoothHidDeviceAppQosSettings outQos,
+                IBluetoothHidDeviceCallback callback,
+                AttributionSource source) {
             Log.d(TAG, "registerApp()");
-            try {
-                HidDeviceService service = getService(source);
-                boolean defaultValue = false;
-                if (service != null) {
-                    defaultValue = service.registerApp(sdp, inQos, outQos, callback);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+
+            HidDeviceService service = getService(source);
+            if (service == null) {
+                return false;
             }
+
+            return service.registerApp(sdp, inQos, outQos, callback);
         }
 
         @Override
-        public void unregisterApp(AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                Log.d(TAG, "unregisterApp()");
-                boolean defaultValue = false;
+        public boolean unregisterApp(AttributionSource source) {
+            Log.d(TAG, "unregisterApp()");
 
-                HidDeviceService service = getService(source);
-                if (service != null) {
-
-                    defaultValue = service.unregisterApp();
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+            HidDeviceService service = getService(source);
+            if (service == null) {
+                return false;
             }
+
+            return service.unregisterApp();
         }
 
         @Override
-        public void sendReport(BluetoothDevice device, int id, byte[] data,
-                AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                Log.d(TAG, "sendReport(): device=" + device + "  id=" + id);
-                boolean defaultValue = false ;
+        public boolean sendReport(
+                BluetoothDevice device, int id, byte[] data, AttributionSource source) {
+            Log.d(TAG, "sendReport(): device=" + device + "  id=" + id);
 
-                HidDeviceService service = getService(source);
-                if (service != null) {
-
-                    defaultValue = service.sendReport(device, id, data);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+            HidDeviceService service = getService(source);
+            if (service == null) {
+                return false;
             }
+
+            return service.sendReport(device, id, data);
         }
 
         @Override
-        public void replyReport(BluetoothDevice device, byte type, byte id, byte[] data,
-                AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                Log.d(TAG, "replyReport(): device=" + device
-                        + " type=" + type + " id=" + id);
-                boolean defaultValue = false;
-                HidDeviceService service = getService(source);
-                if (service != null) {
-                    defaultValue = service.replyReport(device, type, id, data);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public boolean replyReport(
+                BluetoothDevice device, byte type, byte id, byte[] data, AttributionSource source) {
+            Log.d(TAG, "replyReport(): device=" + device + " type=" + type + " id=" + id);
+
+            HidDeviceService service = getService(source);
+            if (service == null) {
+                return false;
             }
+
+            return service.replyReport(device, type, id, data);
         }
 
         @Override
-        public void unplug(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                Log.d(TAG, "unplug(): device=" + device);
-                boolean defaultValue = false;
-                HidDeviceService service = getService(source);
-                if (service != null) {
-                    defaultValue = service.unplug(device);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public boolean unplug(BluetoothDevice device, AttributionSource source) {
+            Log.d(TAG, "unplug(): device=" + device);
+
+            HidDeviceService service = getService(source);
+            if (service == null) {
+                return false;
             }
+
+            return service.unplug(device);
         }
 
         @Override
-        public void connect(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                Log.d(TAG, "connect(): device=" + device);
-                HidDeviceService service = getService(source);
-                boolean defaultValue = false;
-                if (service != null) {
+        public boolean connect(BluetoothDevice device, AttributionSource source) {
+            Log.d(TAG, "connect(): device=" + device);
 
-                    defaultValue = service.connect(device);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+            HidDeviceService service = getService(source);
+            if (service == null) {
+                return false;
             }
+
+            return service.connect(device);
         }
 
         @Override
-        public void disconnect(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                Log.d(TAG, "disconnect(): device=" + device);
-                HidDeviceService service = getService(source);
-                boolean defaultValue = false;
-                if (service != null) {
+        public boolean disconnect(BluetoothDevice device, AttributionSource source) {
+            Log.d(TAG, "disconnect(): device=" + device);
 
-                    defaultValue = service.disconnect(device);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+            HidDeviceService service = getService(source);
+            if (service == null) {
+                return false;
             }
+
+            return service.disconnect(device);
         }
 
         @Override
-        public void setConnectionPolicy(BluetoothDevice device, int connectionPolicy,
-                AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                Log.d(TAG, "setConnectionPolicy(): device=" + device + " connectionPolicy="
-                        + connectionPolicy);
-                HidDeviceService service = getService(source);
-                boolean defaultValue = false;
-                if (service != null) {
+        public boolean setConnectionPolicy(
+                BluetoothDevice device, int connectionPolicy, AttributionSource source) {
+            Log.d(
+                    TAG,
+                    "setConnectionPolicy():"
+                            + (" device=" + device)
+                            + (" connectionPolicy=" + connectionPolicy));
 
-                    defaultValue = service.setConnectionPolicy(device, connectionPolicy);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+            HidDeviceService service = getService(source);
+            if (service == null) {
+                return false;
             }
+
+            return service.setConnectionPolicy(device, connectionPolicy);
         }
 
         @Override
-        public void reportError(BluetoothDevice device, byte error, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                Log.d(TAG, "reportError(): device=" + device + " error=" + error);
+        public boolean reportError(BluetoothDevice device, byte error, AttributionSource source) {
+            Log.d(TAG, "reportError(): device=" + device + " error=" + error);
 
-                HidDeviceService service = getService(source);
-                boolean defaultValue = false;
-                if (service != null) {
-                    defaultValue = service.reportError(device, error);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+            HidDeviceService service = getService(source);
+            if (service == null) {
+                return false;
             }
+
+            return service.reportError(device, error);
         }
 
         @Override
-        public void getConnectionState(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                Log.d(TAG, "getConnectionState(): device=" + device);
+        public int getConnectionState(BluetoothDevice device, AttributionSource source) {
+            Log.d(TAG, "getConnectionState(): device=" + device);
 
-                HidDeviceService service = getService(source);
-                int defaultValue = BluetoothHidDevice.STATE_DISCONNECTED;
-                if (service != null) {
-                    defaultValue = service.getConnectionState(device);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+            HidDeviceService service = getService(source);
+            if (service == null) {
+                return BluetoothHidDevice.STATE_DISCONNECTED;
             }
+
+            return service.getConnectionState(device);
         }
 
         @Override
-        public void getConnectedDevices(AttributionSource source,
-                SynchronousResultReceiver receiver) {
+        public List<BluetoothDevice> getConnectedDevices(AttributionSource source) {
             Log.d(TAG, "getConnectedDevices()");
 
-            getDevicesMatchingConnectionStates(new int[] { BluetoothProfile.STATE_CONNECTED },
-                    source, receiver);
+            return getDevicesMatchingConnectionStates(
+                    new int[] {BluetoothProfile.STATE_CONNECTED}, source);
         }
 
         @Override
-        public void getDevicesMatchingConnectionStates(int[] states,
-                AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                Log.d(TAG, "getDevicesMatchingConnectionStates(): states="
-                        + Arrays.toString(states));
-                HidDeviceService service = getService(source);
-                List<BluetoothDevice> defaultValue = new ArrayList<BluetoothDevice>(0);
-                if (service != null) {
-                    defaultValue = service.getDevicesMatchingConnectionStates(states);
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public List<BluetoothDevice> getDevicesMatchingConnectionStates(
+                int[] states, AttributionSource source) {
+            Log.d(TAG, "getDevicesMatchingConnectionStates(): states=" + Arrays.toString(states));
+
+            HidDeviceService service = getService(source);
+            if (service == null) {
+                return new ArrayList<BluetoothDevice>(0);
             }
+
+            return service.getDevicesMatchingConnectionStates(states);
         }
 
         @Override
-        public void getUserAppName(AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                HidDeviceService service = getService(source);
-                String defaultValue = "";
-                if (service != null) {
-                    defaultValue = service.getUserAppName();
-                }
-                receiver.send(defaultValue);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public String getUserAppName(AttributionSource source) {
+            HidDeviceService service = getService(source);
+            if (service == null) {
+                return "";
             }
+            return service.getUserAppName();
         }
     }
 

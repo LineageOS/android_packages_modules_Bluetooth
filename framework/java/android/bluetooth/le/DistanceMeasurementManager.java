@@ -16,8 +16,6 @@
 
 package android.bluetooth.le;
 
-import static android.bluetooth.le.BluetoothLeUtils.getSyncTimeout;
-
 import android.annotation.FlaggedApi;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
@@ -35,7 +33,6 @@ import android.os.RemoteException;
 import android.util.Log;
 
 import com.android.bluetooth.flags.Flags;
-import com.android.modules.utils.SynchronousResultReceiver;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +40,6 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeoutException;
 
 /**
  * This class provides methods to perform distance measurement related operations. An application
@@ -91,19 +87,15 @@ public final class DistanceMeasurementManager {
                 android.Manifest.permission.BLUETOOTH_PRIVILEGED,
             })
     public @NonNull List<DistanceMeasurementMethod> getSupportedMethods() {
-        final ArrayList<DistanceMeasurementMethod> supportedMethods =
-                new ArrayList<DistanceMeasurementMethod>();
+        final List<DistanceMeasurementMethod> supportedMethods = new ArrayList<>();
         try {
             IBluetoothGatt gatt = mBluetoothAdapter.getBluetoothGatt();
             if (gatt == null) {
                 Log.e(TAG, "Bluetooth GATT is null");
                 return supportedMethods;
             }
-            final SynchronousResultReceiver<List<DistanceMeasurementMethod>> recv =
-                    SynchronousResultReceiver.get();
-            gatt.getSupportedDistanceMeasurementMethods(mAttributionSource, recv);
-            return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(new ArrayList<>());
-        } catch (TimeoutException | RemoteException e) {
+            return gatt.getSupportedDistanceMeasurementMethods(mAttributionSource);
+        } catch (RemoteException e) {
             Log.e(TAG, "Failed to get supported methods - ", e);
         }
         return supportedMethods;
@@ -161,14 +153,8 @@ public final class DistanceMeasurementManager {
             }
 
             mSessionMap.put(params.getDevice(), session);
-            final SynchronousResultReceiver recv = SynchronousResultReceiver.get();
-            gatt.startDistanceMeasurement(
-                    mUuid, params, mCallbackWrapper, mAttributionSource, recv);
-            recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
+            gatt.startDistanceMeasurement(mUuid, params, mCallbackWrapper, mAttributionSource);
             return cancellationSignal;
-        } catch (TimeoutException e) {
-            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
-            return null;
         } catch (RemoteException e) {
             throw e.rethrowAsRuntimeException();
         }
@@ -202,11 +188,9 @@ public final class DistanceMeasurementManager {
                 Log.e(TAG, "Bluetooth GATT is null");
                 return defaultValue;
             }
-            final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-            gatt.getChannelSoundingMaxSupportedSecurityLevel(
-                    remoteDevice, mAttributionSource, recv);
-            return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-        } catch (TimeoutException | RemoteException e) {
+            return gatt.getChannelSoundingMaxSupportedSecurityLevel(
+                    remoteDevice, mAttributionSource);
+        } catch (RemoteException e) {
             Log.e(TAG, "Failed to get supported security Level - ", e);
         }
         return defaultValue;
@@ -237,10 +221,8 @@ public final class DistanceMeasurementManager {
                 Log.e(TAG, "Bluetooth GATT is null");
                 return defaultValue;
             }
-            final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-            gatt.getLocalChannelSoundingMaxSupportedSecurityLevel(mAttributionSource, recv);
-            return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-        } catch (TimeoutException | RemoteException e) {
+            return gatt.getLocalChannelSoundingMaxSupportedSecurityLevel(mAttributionSource);
+        } catch (RemoteException e) {
             Log.e(TAG, "Failed to get supported security Level - ", e);
         }
         return defaultValue;

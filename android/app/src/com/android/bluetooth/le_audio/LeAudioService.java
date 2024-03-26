@@ -89,7 +89,6 @@ import com.android.bluetooth.tbs.TbsService;
 import com.android.bluetooth.vc.VolumeControlService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
-import com.android.modules.utils.SynchronousResultReceiver;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -465,11 +464,11 @@ public class LeAudioService extends ProfileService {
                 for (Map.Entry<Integer, LeAudioGroupDescriptor> entry :
                         mGroupDescriptorsView.entrySet()) {
                     LeAudioGroupDescriptor descriptor = entry.getValue();
-                    Integer group_id = entry.getKey();
+                    Integer groupId = entry.getKey();
                     if (descriptor.mIsActive) {
                         descriptor.mIsActive = false;
                         updateActiveDevices(
-                                group_id,
+                                groupId,
                                 descriptor.mDirection,
                                 AUDIO_DIRECTION_NONE,
                                 descriptor.mIsActive,
@@ -888,7 +887,8 @@ public class LeAudioService extends ProfileService {
 
     /**
      * Checks if given group exists.
-     * @param group_id group Id to verify
+     *
+     * @param groupId group Id to verify
      * @return true given group exists, otherwise false
      */
     public boolean isValidDeviceGroup(int groupId) {
@@ -4262,608 +4262,430 @@ public class LeAudioService extends ProfileService {
         }
 
         @Override
-        public void connect(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(device, "device cannot be null");
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
-
-                LeAudioService service = getService(source);
-                boolean result = false;
-                if (service != null) {
-                    result = service.connect(device);
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
-        }
-
-        @Override
-        public void disconnect(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(device, "device cannot be null");
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
-
-                LeAudioService service = getService(source);
-                boolean result = false;
-                if (service != null) {
-                    result = service.disconnect(device);
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
-        }
-
-        @Override
-        public void getConnectedDevices(AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
-
-                LeAudioService service = getService(source);
-                List<BluetoothDevice> result = new ArrayList<>(0);
-                if (service != null) {
-                    result = service.getConnectedDevices();
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
-        }
-
-        @Override
-        public void getConnectedGroupLeadDevice(int groupId, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
-
-                LeAudioService service = getService(source);
-                BluetoothDevice result = null;
-                if (service != null) {
-                    result = service.getConnectedGroupLeadDevice(groupId);
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
-        }
-
-        @Override
-        public void getDevicesMatchingConnectionStates(int[] states,
-                AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
-
-                LeAudioService service = getService(source);
-                List<BluetoothDevice> result = new ArrayList<>(0);
-                if (service != null) {
-                    result = service.getDevicesMatchingConnectionStates(states);
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
-        }
-
-        @Override
-        public void getConnectionState(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(device, "device cannot be null");
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
-
-                LeAudioService service = getService(source);
-                int result = BluetoothProfile.STATE_DISCONNECTED;
-                if (service != null) {
-                    result = service.getConnectionState(device);
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
-        }
-
-        @Override
-        public void setActiveDevice(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
-                LeAudioService service = getService(source);
-                if (service != null) {
-                    if (Flags.audioRoutingCentralization()) {
-                        ((AudioRoutingManager) service.mAdapterService.getActiveDeviceManager())
-                                .activateDeviceProfile(device, BluetoothProfile.LE_AUDIO, receiver);
-                    } else {
-                        boolean result;
-                        if (device == null) {
-                            result = service.removeActiveDevice(true);
-                        } else {
-                            result = service.setActiveDevice(device);
-                        }
-                        receiver.send(result);
-                    }
-                } else {
-                    receiver.send(false);
-                }
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
-        }
-
-        @Override
-        public void getActiveDevices(AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
-
-                LeAudioService service = getService(source);
-                List<BluetoothDevice> result = new ArrayList<>();
-                if (service != null) {
-                    result = service.getActiveDevices();
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
-        }
-
-        @Override
-        public void getAudioLocation(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(device, "device cannot be null");
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
-
-                LeAudioService service = getService(source);
-                int result = BluetoothLeAudio.AUDIO_LOCATION_INVALID;
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    result = service.getAudioLocation(device);
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
-        }
-
-        @Override
-        public void isInbandRingtoneEnabled(AttributionSource source,
-                SynchronousResultReceiver receiver, int groupId) {
-            try {
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
-
-                LeAudioService service = getService(source);
-                boolean result = false;
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    result = service.isInbandRingtoneEnabled(groupId);
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
-        }
-
-        @Override
-        public void setConnectionPolicy(BluetoothDevice device, int connectionPolicy,
-                AttributionSource source, SynchronousResultReceiver receiver) {
+        public boolean connect(BluetoothDevice device, AttributionSource source) {
             Objects.requireNonNull(device, "device cannot be null");
             Objects.requireNonNull(source, "source cannot be null");
-            Objects.requireNonNull(receiver, "receiver cannot be null");
 
-            try {
-                LeAudioService service = getService(source);
-                boolean result = false;
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    result = service.setConnectionPolicy(device, connectionPolicy);
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return false;
+            }
+
+            return service.connect(device);
+        }
+
+        @Override
+        public boolean disconnect(BluetoothDevice device, AttributionSource source) {
+            Objects.requireNonNull(device, "device cannot be null");
+            Objects.requireNonNull(source, "source cannot be null");
+
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return false;
+            }
+
+            return service.disconnect(device);
+        }
+
+        @Override
+        public List<BluetoothDevice> getConnectedDevices(AttributionSource source) {
+            Objects.requireNonNull(source, "source cannot be null");
+
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return new ArrayList<>(0);
+            }
+
+            return service.getConnectedDevices();
+        }
+
+        @Override
+        public BluetoothDevice getConnectedGroupLeadDevice(int groupId, AttributionSource source) {
+            Objects.requireNonNull(source, "source cannot be null");
+
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return null;
+            }
+
+            return service.getConnectedGroupLeadDevice(groupId);
+        }
+
+        @Override
+        public List<BluetoothDevice> getDevicesMatchingConnectionStates(
+                int[] states, AttributionSource source) {
+            Objects.requireNonNull(source, "source cannot be null");
+
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return new ArrayList<>(0);
+            }
+
+            return service.getDevicesMatchingConnectionStates(states);
+        }
+
+        @Override
+        public int getConnectionState(BluetoothDevice device, AttributionSource source) {
+            Objects.requireNonNull(device, "device cannot be null");
+            Objects.requireNonNull(source, "source cannot be null");
+
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return BluetoothProfile.STATE_DISCONNECTED;
+            }
+
+            return service.getConnectionState(device);
+        }
+
+        @Override
+        public boolean setActiveDevice(BluetoothDevice device, AttributionSource source) {
+            Objects.requireNonNull(source, "source cannot be null");
+
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return false;
+            }
+
+            if (Flags.audioRoutingCentralization()) {
+                return ((AudioRoutingManager) service.mAdapterService.getActiveDeviceManager())
+                        .activateDeviceProfile(device, BluetoothProfile.LE_AUDIO);
+            }
+            if (device == null) {
+                return service.removeActiveDevice(true);
+            } else {
+                return service.setActiveDevice(device);
             }
         }
 
         @Override
-        public void getConnectionPolicy(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(device, "device cannot be null");
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
+        public List<BluetoothDevice> getActiveDevices(AttributionSource source) {
+            Objects.requireNonNull(source, "source cannot be null");
 
-                int result = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-                LeAudioService service = getService(source);
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    result = service.getConnectionPolicy(device);
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return new ArrayList<>();
+            }
+
+            return service.getActiveDevices();
+        }
+
+        @Override
+        public int getAudioLocation(BluetoothDevice device, AttributionSource source) {
+            Objects.requireNonNull(device, "device cannot be null");
+            Objects.requireNonNull(source, "source cannot be null");
+
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return BluetoothLeAudio.AUDIO_LOCATION_INVALID;
+            }
+
+            enforceBluetoothPrivilegedPermission(service);
+            return service.getAudioLocation(device);
+        }
+
+        @Override
+        public boolean isInbandRingtoneEnabled(AttributionSource source, int groupId) {
+            Objects.requireNonNull(source, "source cannot be null");
+
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return false;
+            }
+
+            enforceBluetoothPrivilegedPermission(service);
+            return service.isInbandRingtoneEnabled(groupId);
+        }
+
+        @Override
+        public boolean setConnectionPolicy(
+                BluetoothDevice device, int connectionPolicy, AttributionSource source) {
+            Objects.requireNonNull(device, "device cannot be null");
+            Objects.requireNonNull(source, "source cannot be null");
+
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return false;
+            }
+
+            enforceBluetoothPrivilegedPermission(service);
+            return service.setConnectionPolicy(device, connectionPolicy);
+        }
+
+        @Override
+        public int getConnectionPolicy(BluetoothDevice device, AttributionSource source) {
+            Objects.requireNonNull(device, "device cannot be null");
+            Objects.requireNonNull(source, "source cannot be null");
+
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
+            }
+
+            enforceBluetoothPrivilegedPermission(service);
+            return service.getConnectionPolicy(device);
+        }
+
+        @Override
+        public void setCcidInformation(
+                ParcelUuid userUuid, int ccid, int contextType, AttributionSource source) {
+            Objects.requireNonNull(userUuid, "userUuid cannot be null");
+            Objects.requireNonNull(source, "source cannot be null");
+
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return;
+            }
+
+            enforceBluetoothPrivilegedPermission(service);
+            service.setCcidInformation(userUuid, ccid, contextType);
+        }
+
+        @Override
+        public int getGroupId(BluetoothDevice device, AttributionSource source) {
+            Objects.requireNonNull(device, "device cannot be null");
+            Objects.requireNonNull(source, "source cannot be null");
+
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return LE_AUDIO_GROUP_ID_INVALID;
+            }
+
+            return service.getGroupId(device);
+        }
+
+        @Override
+        public boolean groupAddNode(int groupId, BluetoothDevice device, AttributionSource source) {
+            Objects.requireNonNull(device, "device cannot be null");
+            Objects.requireNonNull(source, "source cannot be null");
+
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return false;
+            }
+
+            enforceBluetoothPrivilegedPermission(service);
+            return service.groupAddNode(groupId, device);
+        }
+
+        @Override
+        public void setInCall(boolean inCall, AttributionSource source) {
+            Objects.requireNonNull(source, "source cannot be null");
+
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return;
+            }
+
+            enforceBluetoothPrivilegedPermission(service);
+            service.setInCall(inCall);
+        }
+
+        @Override
+        public void setInactiveForHfpHandover(
+                BluetoothDevice hfpHandoverDevice, AttributionSource source) {
+            Objects.requireNonNull(source, "source cannot be null");
+
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return;
+            }
+
+            enforceBluetoothPrivilegedPermission(service);
+            service.setInactiveForHfpHandover(hfpHandoverDevice);
+        }
+
+        @Override
+        public boolean groupRemoveNode(
+                int groupId, BluetoothDevice device, AttributionSource source) {
+            Objects.requireNonNull(device, "device cannot be null");
+            Objects.requireNonNull(source, "source cannot be null");
+
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return false;
+            }
+
+            enforceBluetoothPrivilegedPermission(service);
+            return service.groupRemoveNode(groupId, device);
+        }
+
+        @Override
+        public void setVolume(int volume, AttributionSource source) {
+            Objects.requireNonNull(source, "source cannot be null");
+
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return;
+            }
+
+            enforceBluetoothPrivilegedPermission(service);
+            service.setVolume(volume);
+        }
+
+        @Override
+        public void registerCallback(IBluetoothLeAudioCallback callback, AttributionSource source) {
+            Objects.requireNonNull(callback, "callback cannot be null");
+            Objects.requireNonNull(source, "source cannot be null");
+
+            LeAudioService service = getService(source);
+            if ((service == null) || (service.mLeAudioCallbacks == null)) {
+                throw new IllegalStateException("Service is unavailable: " + service);
+            }
+
+            enforceBluetoothPrivilegedPermission(service);
+            service.mLeAudioCallbacks.register(callback);
+            if (!service.mBluetoothEnabled) {
+                service.handleBluetoothEnabled();
             }
         }
 
         @Override
-        public void setCcidInformation(ParcelUuid userUuid, int ccid, int contextType,
-                AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(userUuid, "userUuid cannot be null");
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
+        public void unregisterCallback(
+                IBluetoothLeAudioCallback callback, AttributionSource source) {
+            Objects.requireNonNull(callback, "callback cannot be null");
+            Objects.requireNonNull(source, "source cannot be null");
 
-                LeAudioService service = getService(source);
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    service.setCcidInformation(userUuid, ccid, contextType);
-                }
-                receiver.send(null);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+            LeAudioService service = getService(source);
+            if ((service == null) || (service.mLeAudioCallbacks == null)) {
+                throw new IllegalStateException("Service is unavailable");
             }
+
+            enforceBluetoothPrivilegedPermission(service);
+            service.mLeAudioCallbacks.unregister(callback);
         }
 
         @Override
-        public void getGroupId(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(device, "device cannot be null");
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
+        public void registerLeBroadcastCallback(
+                IBluetoothLeBroadcastCallback callback, AttributionSource source) {
+            Objects.requireNonNull(callback, "callback cannot be null");
+            Objects.requireNonNull(source, "source cannot be null");
 
-                int result = LE_AUDIO_GROUP_ID_INVALID;
-                LeAudioService service = getService(source);
-                if (service != null) {
-                    result = service.getGroupId(device);
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+            LeAudioService service = getService(source);
+            if ((service == null) || (service.mBroadcastCallbacks == null)) {
+                throw new IllegalStateException("Service is unavailable");
             }
+
+            enforceBluetoothPrivilegedPermission(service);
+            service.mBroadcastCallbacks.register(callback);
         }
 
         @Override
-        public void groupAddNode(int group_id, BluetoothDevice device,
-                AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(device, "device cannot be null");
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
+        public void unregisterLeBroadcastCallback(
+                IBluetoothLeBroadcastCallback callback, AttributionSource source) {
+            Objects.requireNonNull(callback, "callback cannot be null");
+            Objects.requireNonNull(source, "source cannot be null");
 
-                boolean result = false;
-                LeAudioService service = getService(source);
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    result = service.groupAddNode(group_id, device);
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+            LeAudioService service = getService(source);
+            if ((service == null) || (service.mBroadcastCallbacks == null)) {
+                throw new IllegalStateException("Service is unavailable");
             }
-        }
 
-        @Override
-        public void setInCall(boolean inCall, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
-
-                LeAudioService service = getService(source);
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    service.setInCall(inCall);
-                }
-                receiver.send(null);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
-        }
-
-        @Override
-        public void setInactiveForHfpHandover(BluetoothDevice hfpHandoverDevice,
-                AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
-
-                LeAudioService service = getService(source);
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    service.setInactiveForHfpHandover(hfpHandoverDevice);
-                }
-                receiver.send(null);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
-        }
-
-        @Override
-        public void groupRemoveNode(int groupId, BluetoothDevice device,
-                AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(device, "device cannot be null");
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
-
-                boolean result = false;
-                LeAudioService service = getService(source);
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    result = service.groupRemoveNode(groupId, device);
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
-        }
-
-        @Override
-        public void setVolume(int volume, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
-
-                LeAudioService service = getService(source);
-                if (service == null) {
-                    receiver.send(null);
-                    return;
-                }
-                enforceBluetoothPrivilegedPermission(service);
-                receiver.send(null);
-                service.setVolume(volume);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
-        }
-
-        @Override
-        public void registerCallback(IBluetoothLeAudioCallback callback,
-                AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(callback, "callback cannot be null");
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
-
-                LeAudioService service = getService(source);
-                if ((service == null) || (service.mLeAudioCallbacks == null)) {
-                    throw new IllegalStateException("Service is unavailable: " + service);
-                }
-
-                enforceBluetoothPrivilegedPermission(service);
-                service.mLeAudioCallbacks.register(callback);
-                if (!service.mBluetoothEnabled) {
-                    service.handleBluetoothEnabled();
-                }
-                receiver.send(null);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
-        }
-
-        @Override
-        public void unregisterCallback(IBluetoothLeAudioCallback callback,
-                AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(callback, "callback cannot be null");
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
-
-                LeAudioService service = getService(source);
-                if ((service == null) || (service.mLeAudioCallbacks == null)) {
-                    throw new IllegalStateException("Service is unavailable");
-                }
-
-                enforceBluetoothPrivilegedPermission(service);
-
-                service.mLeAudioCallbacks.unregister(callback);
-                receiver.send(null);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
-        }
-
-        @Override
-        public void registerLeBroadcastCallback(IBluetoothLeBroadcastCallback callback,
-                AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                Objects.requireNonNull(callback, "callback cannot be null");
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
-
-                LeAudioService service = getService(source);
-                if ((service == null) || (service.mBroadcastCallbacks == null)) {
-                    throw new IllegalStateException("Service is unavailable");
-                }
-
-                enforceBluetoothPrivilegedPermission(service);
-
-                service.mBroadcastCallbacks.register(callback);
-                receiver.send(null);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
-        }
-
-        @Override
-        public void unregisterLeBroadcastCallback(IBluetoothLeBroadcastCallback callback,
-                AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                LeAudioService service = getService(source);
-                if ((service == null) || (service.mBroadcastCallbacks == null)) {
-                    throw new IllegalStateException("Service is unavailable");
-                }
-
-                enforceBluetoothPrivilegedPermission(service);
-                Objects.requireNonNull(callback, "callback cannot be null");
-                Objects.requireNonNull(source, "source cannot be null");
-                Objects.requireNonNull(receiver, "receiver cannot be null");
-
-                service.mBroadcastCallbacks.unregister(callback);
-                receiver.send(null);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
+            enforceBluetoothPrivilegedPermission(service);
+            service.mBroadcastCallbacks.unregister(callback);
         }
 
         @Override
         public void startBroadcast(
-                BluetoothLeBroadcastSettings broadcastSettings, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                LeAudioService service = getService(source);
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    service.createBroadcast(broadcastSettings);
-                }
-                receiver.send(null);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+                BluetoothLeBroadcastSettings broadcastSettings, AttributionSource source) {
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return;
             }
+
+            enforceBluetoothPrivilegedPermission(service);
+            service.createBroadcast(broadcastSettings);
         }
 
         @Override
-        public void stopBroadcast(int broadcastId, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                LeAudioService service = getService(source);
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    service.stopBroadcast(broadcastId);
-                }
-                receiver.send(null);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public void stopBroadcast(int broadcastId, AttributionSource source) {
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return;
             }
+
+            enforceBluetoothPrivilegedPermission(service);
+            service.stopBroadcast(broadcastId);
         }
 
         @Override
         public void updateBroadcast(
                 int broadcastId,
                 BluetoothLeBroadcastSettings broadcastSettings,
-                AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                LeAudioService service = getService(source);
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    service.updateBroadcast(broadcastId, broadcastSettings);
-                }
-                receiver.send(null);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+                AttributionSource source) {
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return;
             }
+
+            enforceBluetoothPrivilegedPermission(service);
+            service.updateBroadcast(broadcastId, broadcastSettings);
         }
 
         @Override
-        public void isPlaying(int broadcastId, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                boolean result = false;
-                LeAudioService service = getService(source);
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    result = service.isPlaying(broadcastId);
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public boolean isPlaying(int broadcastId, AttributionSource source) {
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return false;
             }
+
+            enforceBluetoothPrivilegedPermission(service);
+            return service.isPlaying(broadcastId);
         }
 
         @Override
-        public void getAllBroadcastMetadata(AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                List<BluetoothLeBroadcastMetadata> result = new ArrayList<>();
-                LeAudioService service = getService(source);
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    result = service.getAllBroadcastMetadata();
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public List<BluetoothLeBroadcastMetadata> getAllBroadcastMetadata(
+                AttributionSource source) {
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return new ArrayList<>();
             }
+
+            enforceBluetoothPrivilegedPermission(service);
+            return service.getAllBroadcastMetadata();
         }
 
         @Override
-        public void getMaximumNumberOfBroadcasts(AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                int result = 0;
-                LeAudioService service = getService(source);
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    result = service.getMaximumNumberOfBroadcasts();
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public int getMaximumNumberOfBroadcasts(AttributionSource source) {
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return 0;
             }
+
+            enforceBluetoothPrivilegedPermission(service);
+            return service.getMaximumNumberOfBroadcasts();
         }
 
         @Override
-        public void getMaximumStreamsPerBroadcast(
-                AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                int result = 0;
-                LeAudioService service = getService(source);
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    result = service.getMaximumStreamsPerBroadcast();
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public int getMaximumStreamsPerBroadcast(AttributionSource source) {
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return 0;
             }
+
+            enforceBluetoothPrivilegedPermission(service);
+            return service.getMaximumStreamsPerBroadcast();
         }
 
         @Override
-        public void getMaximumSubgroupsPerBroadcast(
-                AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                int result = 0;
-                LeAudioService service = getService(source);
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    result = service.getMaximumSubgroupsPerBroadcast();
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public int getMaximumSubgroupsPerBroadcast(AttributionSource source) {
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return 0;
             }
+
+            enforceBluetoothPrivilegedPermission(service);
+            return service.getMaximumSubgroupsPerBroadcast();
         }
 
         @Override
-        public void getCodecStatus(int groupId,
-                AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                LeAudioService service = getService(source);
-                BluetoothLeAudioCodecStatus codecStatus = null;
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    codecStatus = service.getCodecStatus(groupId);
-                }
-                receiver.send(codecStatus);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public BluetoothLeAudioCodecStatus getCodecStatus(int groupId, AttributionSource source) {
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return null;
             }
+
+            enforceBluetoothPrivilegedPermission(service);
+            return service.getCodecStatus(groupId);
         }
 
         @Override
@@ -4881,19 +4703,14 @@ public class LeAudioService extends ProfileService {
         }
 
         @Override
-        public void isBroadcastActive(
-                AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                boolean result = false;
-                LeAudioService service = getService(source);
-                if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
-                    result = service.isBroadcastActive();
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public boolean isBroadcastActive(AttributionSource source) {
+            LeAudioService service = getService(source);
+            if (service == null) {
+                return false;
             }
+
+            enforceBluetoothPrivilegedPermission(service);
+            return service.isBroadcastActive();
         }
     }
 

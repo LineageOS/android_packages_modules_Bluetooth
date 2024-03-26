@@ -27,7 +27,6 @@ java_defaults {
         "PlatformProperties",
         "bluetooth_flags_java_lib",
         "modules-utils-expresslog",
-        "modules-utils-synchronous-result-receiver",
     ],
     libs: [
         "app-compat-annotations",

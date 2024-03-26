@@ -26,8 +26,6 @@ import android.net.Uri;
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.jarjar.com.android.modules.utils.SynchronousResultReceiver;
-
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -58,21 +56,21 @@ public class MapClientServiceBinderTest {
 
     @Test
     public void connect_callsServiceMethod() {
-        mBinder.connect(mRemoteDevice, null, SynchronousResultReceiver.get());
+        mBinder.connect(mRemoteDevice, null);
 
         verify(mService).connect(mRemoteDevice);
     }
 
     @Test
     public void disconnect_callsServiceMethod() {
-        mBinder.disconnect(mRemoteDevice, null, SynchronousResultReceiver.get());
+        mBinder.disconnect(mRemoteDevice, null);
 
         verify(mService).disconnect(mRemoteDevice);
     }
 
     @Test
     public void getConnectedDevices_callsServiceMethod() {
-        mBinder.getConnectedDevices(null, SynchronousResultReceiver.get());
+        mBinder.getConnectedDevices(null);
 
         verify(mService).getConnectedDevices();
     }
@@ -80,14 +78,14 @@ public class MapClientServiceBinderTest {
     @Test
     public void getDevicesMatchingConnectionStates_callsServiceMethod() {
         int[] states = new int[] {BluetoothProfile.STATE_CONNECTED};
-        mBinder.getDevicesMatchingConnectionStates(states, null, SynchronousResultReceiver.get());
+        mBinder.getDevicesMatchingConnectionStates(states, null);
 
         verify(mService).getDevicesMatchingConnectionStates(states);
     }
 
     @Test
     public void getConnectionState_callsServiceMethod() {
-        mBinder.getConnectionState(mRemoteDevice, null, SynchronousResultReceiver.get());
+        mBinder.getConnectionState(mRemoteDevice, null);
 
         verify(mService).getConnectionState(mRemoteDevice);
     }
@@ -95,15 +93,14 @@ public class MapClientServiceBinderTest {
     @Test
     public void setConnectionPolicy_callsServiceMethod() {
         int connectionPolicy = BluetoothProfile.CONNECTION_POLICY_ALLOWED;
-        mBinder.setConnectionPolicy(mRemoteDevice, connectionPolicy,
-                null, SynchronousResultReceiver.get());
+        mBinder.setConnectionPolicy(mRemoteDevice, connectionPolicy, null);
 
         verify(mService).setConnectionPolicy(mRemoteDevice, connectionPolicy);
     }
 
     @Test
     public void getConnectionPolicy_callsServiceMethod() {
-        mBinder.getConnectionPolicy(mRemoteDevice, null, SynchronousResultReceiver.get());
+        mBinder.getConnectionPolicy(mRemoteDevice, null);
 
         verify(mService).getConnectionPolicy(mRemoteDevice);
     }
@@ -112,22 +109,21 @@ public class MapClientServiceBinderTest {
     public void sendMessage_callsServiceMethod() {
         Uri[] contacts = new Uri[] {};
         String message = "test_message";
-        mBinder.sendMessage(mRemoteDevice, contacts, message, null, null, null,
-                SynchronousResultReceiver.get());
+        mBinder.sendMessage(mRemoteDevice, contacts, message, null, null, null);
 
         verify(mService).sendMessage(mRemoteDevice, contacts, message, null, null);
     }
 
     @Test
     public void getUnreadMessages_callsServiceMethod() {
-        mBinder.getUnreadMessages(mRemoteDevice, null, SynchronousResultReceiver.get());
+        mBinder.getUnreadMessages(mRemoteDevice, null);
 
         verify(mService).getUnreadMessages(mRemoteDevice);
     }
 
     @Test
     public void getSupportedFeatures_callsServiceMethod() {
-        mBinder.getSupportedFeatures(mRemoteDevice, null, SynchronousResultReceiver.get());
+        mBinder.getSupportedFeatures(mRemoteDevice, null);
 
         verify(mService).getSupportedFeatures(mRemoteDevice);
     }
@@ -136,8 +132,7 @@ public class MapClientServiceBinderTest {
     public void setMessageStatus_callsServiceMethod() {
         String handle = "FFAB";
         int status = 1234;
-        mBinder.setMessageStatus(mRemoteDevice, handle, status, null,
-                SynchronousResultReceiver.get());
+        mBinder.setMessageStatus(mRemoteDevice, handle, status, null);
 
         verify(mService).setMessageStatus(mRemoteDevice, handle, status);
     }

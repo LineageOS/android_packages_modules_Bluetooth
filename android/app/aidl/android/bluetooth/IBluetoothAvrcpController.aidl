@@ -19,25 +19,25 @@ package android.bluetooth;
 import android.bluetooth.BluetoothAvrcpPlayerSettings;
 import android.bluetooth.BluetoothDevice;
 import android.content.AttributionSource;
-
-import com.android.modules.utils.SynchronousResultReceiver;
+import android.media.MediaMetadata;
+import android.media.session.PlaybackState;
 
 /**
  * APIs for Bluetooth AVRCP controller service
  *
  * @hide
  */
-oneway interface IBluetoothAvrcpController {
+interface IBluetoothAvrcpController {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void getConnectedDevices(in AttributionSource attributionSource, in SynchronousResultReceiver receiver);
+    List<BluetoothDevice> getConnectedDevices(in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void getDevicesMatchingConnectionStates(in int[] states, in AttributionSource attributionSource, in SynchronousResultReceiver receiver);
+    List<BluetoothDevice> getDevicesMatchingConnectionStates(in int[] states, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void getConnectionState(in BluetoothDevice device, in AttributionSource attributionSource, in SynchronousResultReceiver receiver);
+    int getConnectionState(in BluetoothDevice device, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void getPlayerSettings(in BluetoothDevice device, in AttributionSource attributionSource, in SynchronousResultReceiver receiver);
+    BluetoothAvrcpPlayerSettings getPlayerSettings(in BluetoothDevice device, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void setPlayerApplicationSetting(in BluetoothAvrcpPlayerSettings plAppSetting, in AttributionSource attributionSource, in SynchronousResultReceiver receiver);
+    void setPlayerApplicationSetting(in BluetoothAvrcpPlayerSettings plAppSetting, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void sendGroupNavigationCmd(in BluetoothDevice device, int keyCode, int keyState, in AttributionSource attributionSource, in SynchronousResultReceiver receiver);
+    void sendGroupNavigationCmd(in BluetoothDevice device, int keyCode, int keyState, in AttributionSource attributionSource);
 }

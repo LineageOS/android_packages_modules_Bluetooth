@@ -47,7 +47,6 @@ import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.le_scan.TransitionalScanHelper;
-import com.android.bluetooth.jarjar.com.android.modules.utils.SynchronousResultReceiver;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -97,8 +96,7 @@ public class GattServiceBinderTest {
     public void getDevicesMatchingConnectionStates() {
         int[] states = new int[] {BluetoothProfile.STATE_CONNECTED};
 
-        mBinder.getDevicesMatchingConnectionStates(states, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.getDevicesMatchingConnectionStates(states, mAttributionSource);
 
         verify(mService).getDevicesMatchingConnectionStates(states, mAttributionSource);
     }
@@ -109,8 +107,7 @@ public class GattServiceBinderTest {
         IBluetoothGattCallback callback = mock(IBluetoothGattCallback.class);
         boolean eattSupport = true;
 
-        mBinder.registerClient(new ParcelUuid(uuid), callback, eattSupport, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.registerClient(new ParcelUuid(uuid), callback, eattSupport, mAttributionSource);
 
         verify(mService).registerClient(uuid, callback, eattSupport, mAttributionSource);
     }
@@ -119,7 +116,7 @@ public class GattServiceBinderTest {
     public void unregisterClient() {
         int clientIf = 3;
 
-        mBinder.unregisterClient(clientIf, mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.unregisterClient(clientIf, mAttributionSource);
 
         verify(mService).unregisterClient(clientIf, mAttributionSource);
     }
@@ -129,8 +126,7 @@ public class GattServiceBinderTest {
         IScannerCallback callback = mock(IScannerCallback.class);
         WorkSource workSource = mock(WorkSource.class);
 
-        mBinder.registerScanner(callback, workSource, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.registerScanner(callback, workSource, mAttributionSource);
 
         verify(mScanHelper).registerScanner(callback, workSource, mAttributionSource);
     }
@@ -139,7 +135,7 @@ public class GattServiceBinderTest {
     public void unregisterScanner() {
         int scannerId = 3;
 
-        mBinder.unregisterScanner(scannerId, mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.unregisterScanner(scannerId, mAttributionSource);
 
         verify(mScanHelper).unregisterScanner(scannerId, mAttributionSource);
     }
@@ -150,8 +146,7 @@ public class GattServiceBinderTest {
         ScanSettings settings = new ScanSettings.Builder().build();
         List<ScanFilter> filters = new ArrayList<>();
 
-        mBinder.startScan(scannerId, settings, filters, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.startScan(scannerId, settings, filters, mAttributionSource);
 
         verify(mScanHelper).startScan(scannerId, settings, filters, mAttributionSource);
     }
@@ -161,8 +156,7 @@ public class GattServiceBinderTest {
         ScanSettings settings = new ScanSettings.Builder().build();
         List<ScanFilter> filters = new ArrayList<>();
 
-        mBinder.startScanForIntent(mPendingIntent, settings, filters, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.startScanForIntent(mPendingIntent, settings, filters, mAttributionSource);
 
         verify(mScanHelper)
                 .registerPiAndStartScan(mPendingIntent, settings, filters, mAttributionSource);
@@ -170,8 +164,7 @@ public class GattServiceBinderTest {
 
     @Test
     public void stopScanForIntent() throws Exception {
-        mBinder.stopScanForIntent(mPendingIntent, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.stopScanForIntent(mPendingIntent, mAttributionSource);
 
         verify(mScanHelper).stopScan(mPendingIntent, mAttributionSource);
     }
@@ -180,7 +173,7 @@ public class GattServiceBinderTest {
     public void stopScan() throws Exception {
         int scannerId = 3;
 
-        mBinder.stopScan(scannerId, mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.stopScan(scannerId, mAttributionSource);
 
         verify(mScanHelper).stopScan(scannerId, mAttributionSource);
     }
@@ -189,8 +182,7 @@ public class GattServiceBinderTest {
     public void flushPendingBatchResults() throws Exception {
         int scannerId = 3;
 
-        mBinder.flushPendingBatchResults(scannerId, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.flushPendingBatchResults(scannerId, mAttributionSource);
 
         verify(mScanHelper).flushPendingBatchResults(scannerId, mAttributionSource);
     }
@@ -205,8 +197,15 @@ public class GattServiceBinderTest {
         boolean opportunistic = true;
         int phy = 3;
 
-        mBinder.clientConnect(clientIf, address, addressType, isDirect, transport, opportunistic,
-                phy, mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.clientConnect(
+                clientIf,
+                address,
+                addressType,
+                isDirect,
+                transport,
+                opportunistic,
+                phy,
+                mAttributionSource);
 
         verify(mService).clientConnect(clientIf, address, addressType, isDirect, transport,
                 opportunistic, phy, mAttributionSource);
@@ -217,8 +216,7 @@ public class GattServiceBinderTest {
         int clientIf = 1;
         String address = REMOTE_DEVICE_ADDRESS;
 
-        mBinder.clientDisconnect(clientIf, address, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.clientDisconnect(clientIf, address, mAttributionSource);
 
         verify(mService).clientDisconnect(clientIf, address, mAttributionSource);
     }
@@ -231,8 +229,8 @@ public class GattServiceBinderTest {
         int rxPhy = 1;
         int phyOptions = 3;
 
-        mBinder.clientSetPreferredPhy(clientIf, address, txPhy, rxPhy, phyOptions,
-                mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.clientSetPreferredPhy(
+                clientIf, address, txPhy, rxPhy, phyOptions, mAttributionSource);
 
         verify(mService).clientSetPreferredPhy(clientIf, address, txPhy, rxPhy, phyOptions,
                 mAttributionSource);
@@ -243,8 +241,7 @@ public class GattServiceBinderTest {
         int clientIf = 1;
         String address = REMOTE_DEVICE_ADDRESS;
 
-        mBinder.clientReadPhy(clientIf, address, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.clientReadPhy(clientIf, address, mAttributionSource);
 
         verify(mService).clientReadPhy(clientIf, address, mAttributionSource);
     }
@@ -254,8 +251,7 @@ public class GattServiceBinderTest {
         int clientIf = 1;
         String address = REMOTE_DEVICE_ADDRESS;
 
-        mBinder.refreshDevice(clientIf, address, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.refreshDevice(clientIf, address, mAttributionSource);
 
         verify(mService).refreshDevice(clientIf, address, mAttributionSource);
     }
@@ -265,8 +261,7 @@ public class GattServiceBinderTest {
         int clientIf = 1;
         String address = REMOTE_DEVICE_ADDRESS;
 
-        mBinder.discoverServices(clientIf, address, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.discoverServices(clientIf, address, mAttributionSource);
 
         verify(mService).discoverServices(clientIf, address, mAttributionSource);
     }
@@ -277,8 +272,7 @@ public class GattServiceBinderTest {
         String address = REMOTE_DEVICE_ADDRESS;
         UUID uuid = UUID.randomUUID();
 
-        mBinder.discoverServiceByUuid(clientIf, address, new ParcelUuid(uuid), mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.discoverServiceByUuid(clientIf, address, new ParcelUuid(uuid), mAttributionSource);
 
         verify(mService).discoverServiceByUuid(clientIf, address, uuid, mAttributionSource);
     }
@@ -290,8 +284,7 @@ public class GattServiceBinderTest {
         int handle = 2;
         int authReq = 3;
 
-        mBinder.readCharacteristic(clientIf, address, handle, authReq, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.readCharacteristic(clientIf, address, handle, authReq, mAttributionSource);
 
         verify(mService).readCharacteristic(clientIf, address, handle, authReq, mAttributionSource);
     }
@@ -305,9 +298,14 @@ public class GattServiceBinderTest {
         int endHandle = 3;
         int authReq = 4;
 
-        mBinder.readUsingCharacteristicUuid(clientIf, address, new ParcelUuid(uuid),
-                startHandle, endHandle, authReq, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.readUsingCharacteristicUuid(
+                clientIf,
+                address,
+                new ParcelUuid(uuid),
+                startHandle,
+                endHandle,
+                authReq,
+                mAttributionSource);
 
         verify(mService).readUsingCharacteristicUuid(clientIf, address, uuid, startHandle,
                 endHandle, authReq, mAttributionSource);
@@ -322,8 +320,8 @@ public class GattServiceBinderTest {
         int authReq = 4;
         byte[] value = new byte[] {5, 6};
 
-        mBinder.writeCharacteristic(clientIf, address, handle, writeType, authReq,
-                value, mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.writeCharacteristic(
+                clientIf, address, handle, writeType, authReq, value, mAttributionSource);
 
         verify(mService).writeCharacteristic(clientIf, address, handle, writeType, authReq, value,
                 mAttributionSource);
@@ -336,8 +334,7 @@ public class GattServiceBinderTest {
         int handle = 2;
         int authReq = 3;
 
-        mBinder.readDescriptor(clientIf, address, handle, authReq, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.readDescriptor(clientIf, address, handle, authReq, mAttributionSource);
 
         verify(mService).readDescriptor(clientIf, address, handle, authReq, mAttributionSource);
     }
@@ -350,8 +347,7 @@ public class GattServiceBinderTest {
         int authReq = 3;
         byte[] value = new byte[] {4, 5};
 
-        mBinder.writeDescriptor(clientIf, address, handle, authReq, value,
-                mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.writeDescriptor(clientIf, address, handle, authReq, value, mAttributionSource);
 
         verify(mService).writeDescriptor(clientIf, address, handle, authReq, value,
                 mAttributionSource);
@@ -362,8 +358,7 @@ public class GattServiceBinderTest {
         int clientIf = 1;
         String address = REMOTE_DEVICE_ADDRESS;
 
-        mBinder.beginReliableWrite(clientIf, address, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.beginReliableWrite(clientIf, address, mAttributionSource);
 
         verify(mService).beginReliableWrite(clientIf, address, mAttributionSource);
     }
@@ -374,8 +369,7 @@ public class GattServiceBinderTest {
         String address = REMOTE_DEVICE_ADDRESS;
         boolean execute = true;
 
-        mBinder.endReliableWrite(clientIf, address, execute, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.endReliableWrite(clientIf, address, execute, mAttributionSource);
 
         verify(mService).endReliableWrite(clientIf, address, execute, mAttributionSource);
     }
@@ -387,8 +381,7 @@ public class GattServiceBinderTest {
         int handle = 2;
         boolean enable = true;
 
-        mBinder.registerForNotification(clientIf, address, handle, enable,
-                mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.registerForNotification(clientIf, address, handle, enable, mAttributionSource);
 
         verify(mService).registerForNotification(clientIf, address, handle, enable,
                 mAttributionSource);
@@ -399,8 +392,7 @@ public class GattServiceBinderTest {
         int clientIf = 1;
         String address = REMOTE_DEVICE_ADDRESS;
 
-        mBinder.readRemoteRssi(clientIf, address, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.readRemoteRssi(clientIf, address, mAttributionSource);
 
         verify(mService).readRemoteRssi(clientIf, address, mAttributionSource);
     }
@@ -411,8 +403,7 @@ public class GattServiceBinderTest {
         String address = REMOTE_DEVICE_ADDRESS;
         int mtu = 2;
 
-        mBinder.configureMTU(clientIf, address, mtu, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.configureMTU(clientIf, address, mtu, mAttributionSource);
 
         verify(mService).configureMTU(clientIf, address, mtu, mAttributionSource);
     }
@@ -423,8 +414,8 @@ public class GattServiceBinderTest {
         String address = REMOTE_DEVICE_ADDRESS;
         int connectionPriority = 2;
 
-        mBinder.connectionParameterUpdate(clientIf, address, connectionPriority,
-                mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.connectionParameterUpdate(
+                clientIf, address, connectionPriority, mAttributionSource);
 
         verify(mService).connectionParameterUpdate(clientIf, address, connectionPriority,
                 mAttributionSource);
@@ -441,9 +432,16 @@ public class GattServiceBinderTest {
         int minConnectionEventLen = 7;
         int maxConnectionEventLen = 8;
 
-        mBinder.leConnectionUpdate(clientIf, address, minConnectionInterval, maxConnectionInterval,
-                peripheralLatency, supervisionTimeout, minConnectionEventLen,
-                maxConnectionEventLen, mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.leConnectionUpdate(
+                clientIf,
+                address,
+                minConnectionInterval,
+                maxConnectionInterval,
+                peripheralLatency,
+                supervisionTimeout,
+                minConnectionEventLen,
+                maxConnectionEventLen,
+                mAttributionSource);
 
         verify(mService).leConnectionUpdate(
                 clientIf, address, minConnectionInterval, maxConnectionInterval,
@@ -457,8 +455,7 @@ public class GattServiceBinderTest {
         IBluetoothGattServerCallback callback = mock(IBluetoothGattServerCallback.class);
         boolean eattSupport = true;
 
-        mBinder.registerServer(new ParcelUuid(uuid), callback, eattSupport, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.registerServer(new ParcelUuid(uuid), callback, eattSupport, mAttributionSource);
 
         verify(mService).registerServer(uuid, callback, eattSupport, mAttributionSource);
     }
@@ -467,7 +464,7 @@ public class GattServiceBinderTest {
     public void unregisterServer() {
         int serverIf = 3;
 
-        mBinder.unregisterServer(serverIf, mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.unregisterServer(serverIf, mAttributionSource);
 
         verify(mService).unregisterServer(serverIf, mAttributionSource);
     }
@@ -479,8 +476,7 @@ public class GattServiceBinderTest {
         boolean isDirect = true;
         int transport = 2;
 
-        mBinder.serverConnect(serverIf, address, isDirect, transport, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.serverConnect(serverIf, address, isDirect, transport, mAttributionSource);
 
         verify(mService).serverConnect(serverIf, address, isDirect, transport, mAttributionSource);
     }
@@ -490,8 +486,7 @@ public class GattServiceBinderTest {
         int serverIf = 1;
         String address = REMOTE_DEVICE_ADDRESS;
 
-        mBinder.serverDisconnect(serverIf, address, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.serverDisconnect(serverIf, address, mAttributionSource);
 
         verify(mService).serverDisconnect(serverIf, address, mAttributionSource);
     }
@@ -504,8 +499,8 @@ public class GattServiceBinderTest {
         int rxPhy = 1;
         int phyOptions = 3;
 
-        mBinder.serverSetPreferredPhy(serverIf, address, txPhy, rxPhy, phyOptions,
-                mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.serverSetPreferredPhy(
+                serverIf, address, txPhy, rxPhy, phyOptions, mAttributionSource);
 
         verify(mService).serverSetPreferredPhy(serverIf, address, txPhy, rxPhy, phyOptions,
                 mAttributionSource);
@@ -516,8 +511,7 @@ public class GattServiceBinderTest {
         int serverIf = 1;
         String address = REMOTE_DEVICE_ADDRESS;
 
-        mBinder.serverReadPhy(serverIf, address, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.serverReadPhy(serverIf, address, mAttributionSource);
 
         verify(mService).serverReadPhy(serverIf, address, mAttributionSource);
     }
@@ -527,8 +521,7 @@ public class GattServiceBinderTest {
         int serverIf = 1;
         BluetoothGattService svc = mock(BluetoothGattService.class);
 
-        mBinder.addService(serverIf, svc, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.addService(serverIf, svc, mAttributionSource);
 
         verify(mService).addService(serverIf, svc, mAttributionSource);
     }
@@ -538,8 +531,7 @@ public class GattServiceBinderTest {
         int serverIf = 1;
         int handle = 2;
 
-        mBinder.removeService(serverIf, handle, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.removeService(serverIf, handle, mAttributionSource);
 
         verify(mService).removeService(serverIf, handle, mAttributionSource);
     }
@@ -548,7 +540,7 @@ public class GattServiceBinderTest {
     public void clearServices() {
         int serverIf = 1;
 
-        mBinder.clearServices(serverIf, mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.clearServices(serverIf, mAttributionSource);
 
         verify(mService).clearServices(serverIf, mAttributionSource);
     }
@@ -562,8 +554,8 @@ public class GattServiceBinderTest {
         int offset = 4;
         byte[] value = new byte[] {5, 6};
 
-        mBinder.sendResponse(serverIf, address, requestId, status, offset, value,
-                mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.sendResponse(
+                serverIf, address, requestId, status, offset, value, mAttributionSource);
 
         verify(mService).sendResponse(serverIf, address, requestId, status, offset, value,
                 mAttributionSource);
@@ -577,8 +569,7 @@ public class GattServiceBinderTest {
         boolean confirm = true;
         byte[] value = new byte[] {5, 6};
 
-        mBinder.sendNotification(serverIf, address, handle, confirm, value,
-                mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.sendNotification(serverIf, address, handle, confirm, value, mAttributionSource);
 
         verify(mService).sendNotification(serverIf, address, handle, confirm, value,
                 mAttributionSource);
@@ -597,9 +588,17 @@ public class GattServiceBinderTest {
         int serverIf = 3;
         IAdvertisingSetCallback callback = mock(IAdvertisingSetCallback.class);
 
-        mBinder.startAdvertisingSet(parameters, advertiseData, scanResponse, periodicParameters,
-                periodicData, duration, maxExtAdvEvents, serverIf, callback,
-                mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.startAdvertisingSet(
+                parameters,
+                advertiseData,
+                scanResponse,
+                periodicParameters,
+                periodicData,
+                duration,
+                maxExtAdvEvents,
+                serverIf,
+                callback,
+                mAttributionSource);
 
         verify(mService).startAdvertisingSet(parameters, advertiseData, scanResponse,
                 periodicParameters, periodicData, duration, maxExtAdvEvents,
@@ -610,7 +609,7 @@ public class GattServiceBinderTest {
     public void stopAdvertisingSet() throws Exception {
         IAdvertisingSetCallback callback = mock(IAdvertisingSetCallback.class);
 
-        mBinder.stopAdvertisingSet(callback, mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.stopAdvertisingSet(callback, mAttributionSource);
 
         verify(mService).stopAdvertisingSet(callback, mAttributionSource);
     }
@@ -619,7 +618,7 @@ public class GattServiceBinderTest {
     public void getOwnAddress() throws Exception {
         int advertiserId = 1;
 
-        mBinder.getOwnAddress(advertiserId, mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.getOwnAddress(advertiserId, mAttributionSource);
 
         verify(mService).getOwnAddress(advertiserId, mAttributionSource);
     }
@@ -631,8 +630,8 @@ public class GattServiceBinderTest {
         int duration = 3;
         int maxExtAdvEvents = 4;
 
-        mBinder.enableAdvertisingSet(advertiserId, enable, duration, maxExtAdvEvents,
-                mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.enableAdvertisingSet(
+                advertiserId, enable, duration, maxExtAdvEvents, mAttributionSource);
 
         verify(mService).enableAdvertisingSet(advertiserId, enable, duration, maxExtAdvEvents,
                 mAttributionSource);
@@ -643,8 +642,7 @@ public class GattServiceBinderTest {
         int advertiserId = 1;
         AdvertiseData data = new AdvertiseData.Builder().build();
 
-        mBinder.setAdvertisingData(advertiserId, data,
-                mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.setAdvertisingData(advertiserId, data, mAttributionSource);
 
         verify(mService).setAdvertisingData(advertiserId, data, mAttributionSource);
     }
@@ -654,8 +652,7 @@ public class GattServiceBinderTest {
         int advertiserId = 1;
         AdvertiseData data = new AdvertiseData.Builder().build();
 
-        mBinder.setScanResponseData(advertiserId, data,
-                mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.setScanResponseData(advertiserId, data, mAttributionSource);
 
         verify(mService).setScanResponseData(advertiserId, data, mAttributionSource);
     }
@@ -665,8 +662,7 @@ public class GattServiceBinderTest {
         int advertiserId = 1;
         AdvertisingSetParameters parameters = new AdvertisingSetParameters.Builder().build();
 
-        mBinder.setAdvertisingParameters(advertiserId, parameters,
-                mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.setAdvertisingParameters(advertiserId, parameters, mAttributionSource);
 
         verify(mService).setAdvertisingParameters(advertiserId, parameters, mAttributionSource);
     }
@@ -677,8 +673,7 @@ public class GattServiceBinderTest {
         PeriodicAdvertisingParameters parameters =
                 new PeriodicAdvertisingParameters.Builder().build();
 
-        mBinder.setPeriodicAdvertisingParameters(advertiserId, parameters,
-                mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.setPeriodicAdvertisingParameters(advertiserId, parameters, mAttributionSource);
 
         verify(mService).setPeriodicAdvertisingParameters(advertiserId, parameters,
                 mAttributionSource);
@@ -689,8 +684,7 @@ public class GattServiceBinderTest {
         int advertiserId = 1;
         AdvertiseData data = new AdvertiseData.Builder().build();
 
-        mBinder.setPeriodicAdvertisingData(advertiserId, data,
-                mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.setPeriodicAdvertisingData(advertiserId, data, mAttributionSource);
 
         verify(mService).setPeriodicAdvertisingData(advertiserId, data, mAttributionSource);
     }
@@ -700,8 +694,7 @@ public class GattServiceBinderTest {
         int advertiserId = 1;
         boolean enable = true;
 
-        mBinder.setPeriodicAdvertisingEnable(advertiserId, enable,
-                mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.setPeriodicAdvertisingEnable(advertiserId, enable, mAttributionSource);
 
         verify(mService).setPeriodicAdvertisingEnable(advertiserId, enable, mAttributionSource);
     }
@@ -713,8 +706,7 @@ public class GattServiceBinderTest {
         int timeout = 2;
         IPeriodicAdvertisingCallback callback = mock(IPeriodicAdvertisingCallback.class);
 
-        mBinder.registerSync(scanResult, skip, timeout, callback,
-                mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.registerSync(scanResult, skip, timeout, callback, mAttributionSource);
 
         verify(mScanHelper).registerSync(scanResult, skip, timeout, callback, mAttributionSource);
     }
@@ -724,8 +716,7 @@ public class GattServiceBinderTest {
         int serviceData = 1;
         int syncHandle = 2;
 
-        mBinder.transferSync(mDevice, serviceData, syncHandle,
-                mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.transferSync(mDevice, serviceData, syncHandle, mAttributionSource);
 
         verify(mScanHelper).transferSync(mDevice, serviceData, syncHandle, mAttributionSource);
     }
@@ -736,8 +727,7 @@ public class GattServiceBinderTest {
         int advHandle = 2;
         IPeriodicAdvertisingCallback callback = mock(IPeriodicAdvertisingCallback.class);
 
-        mBinder.transferSetInfo(mDevice, serviceData, advHandle, callback,
-                mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.transferSetInfo(mDevice, serviceData, advHandle, callback, mAttributionSource);
 
         verify(mScanHelper)
                 .transferSetInfo(mDevice, serviceData, advHandle, callback, mAttributionSource);
@@ -747,7 +737,7 @@ public class GattServiceBinderTest {
     public void unregisterSync() throws Exception {
         IPeriodicAdvertisingCallback callback = mock(IPeriodicAdvertisingCallback.class);
 
-        mBinder.unregisterSync(callback, mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.unregisterSync(callback, mAttributionSource);
 
         verify(mScanHelper).unregisterSync(callback, mAttributionSource);
     }
@@ -756,14 +746,14 @@ public class GattServiceBinderTest {
     public void disconnectAll() throws Exception {
         IPeriodicAdvertisingCallback callback = mock(IPeriodicAdvertisingCallback.class);
 
-        mBinder.disconnectAll(mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.disconnectAll(mAttributionSource);
 
         verify(mService).disconnectAll(mAttributionSource);
     }
 
     @Test
     public void numHwTrackFiltersAvailable() throws Exception {
-        mBinder.numHwTrackFiltersAvailable(mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.numHwTrackFiltersAvailable(mAttributionSource);
 
         verify(mScanHelper).numHwTrackFiltersAvailable(mAttributionSource);
     }

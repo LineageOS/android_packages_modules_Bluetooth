@@ -17,8 +17,6 @@
 
 package android.bluetooth;
 
-import static android.bluetooth.BluetoothUtils.getSyncTimeout;
-
 import android.annotation.CallbackExecutor;
 import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
@@ -37,7 +35,6 @@ import android.util.CloseGuard;
 import android.util.Log;
 
 import com.android.bluetooth.flags.Flags;
-import com.android.modules.utils.SynchronousResultReceiver;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -47,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeoutException;
 
 /**
  * This class provides a public APIs to control the Bluetooth Hearing Access Profile client service.
@@ -533,11 +529,9 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
 
             try {
                 if (service != null) {
-                    final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                    mService.registerCallback(mCallback, mAttributionSource, recv);
-                    recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
+                    mService.registerCallback(mCallback, mAttributionSource);
                 }
-            } catch (RemoteException | TimeoutException e) {
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
@@ -600,13 +594,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
                 try {
                     final IBluetoothHapClient service = getService();
                     if (service != null) {
-                        final SynchronousResultReceiver<Integer> recv =
-                                SynchronousResultReceiver.get();
-                        service.registerCallback(mCallback, mAttributionSource, recv);
-                        recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
+                        service.registerCallback(mCallback, mAttributionSource);
                     }
-                } catch (TimeoutException e) {
-                    Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
                 } catch (RemoteException e) {
                     throw e.rethrowAsRuntimeException();
                 }
@@ -656,12 +645,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
             try {
                 final IBluetoothHapClient service = getService();
                 if (service != null) {
-                    final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                    service.unregisterCallback(mCallback, mAttributionSource, recv);
-                    recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
+                    service.unregisterCallback(mCallback, mAttributionSource);
                 }
-            } catch (TimeoutException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             } catch (RemoteException e) {
                 throw e.rethrowAsRuntimeException();
             }
@@ -692,7 +677,6 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
         if (DBG) log("setConnectionPolicy(" + device + ", " + connectionPolicy + ")");
         Objects.requireNonNull(device, "BluetoothDevice cannot be null");
         final IBluetoothHapClient service = getService();
-        final boolean defaultValue = false;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
@@ -701,16 +685,12 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
                 && (connectionPolicy == BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
                         || connectionPolicy == BluetoothProfile.CONNECTION_POLICY_ALLOWED)) {
             try {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                service.setConnectionPolicy(device, connectionPolicy, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (TimeoutException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+                return service.setConnectionPolicy(device, connectionPolicy, mAttributionSource);
             } catch (RemoteException e) {
                 throw e.rethrowAsRuntimeException();
             }
         }
-        return defaultValue;
+        return false;
     }
 
     /**
@@ -734,22 +714,17 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
     public @ConnectionPolicy int getConnectionPolicy(@Nullable BluetoothDevice device) {
         if (VDBG) log("getConnectionPolicy(" + device + ")");
         final IBluetoothHapClient service = getService();
-        final int defaultValue = BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (mAdapter.isEnabled() && isValidDevice(device)) {
             try {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                service.getConnectionPolicy(device, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (TimeoutException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+                return service.getConnectionPolicy(device, mAttributionSource);
             } catch (RemoteException e) {
                 throw e.rethrowAsRuntimeException();
             }
         }
-        return defaultValue;
+        return BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
     }
 
     /**
@@ -768,24 +743,18 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
     public @NonNull List<BluetoothDevice> getConnectedDevices() {
         if (VDBG) Log.d(TAG, "getConnectedDevices()");
         final IBluetoothHapClient service = getService();
-        final List defaultValue = new ArrayList<BluetoothDevice>();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
-                final SynchronousResultReceiver<List> recv = SynchronousResultReceiver.get();
-                service.getConnectedDevices(mAttributionSource, recv);
                 return Attributable.setAttributionSource(
-                        recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue),
-                        mAttributionSource);
-            } catch (TimeoutException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+                        service.getConnectedDevices(mAttributionSource), mAttributionSource);
             } catch (RemoteException e) {
                 throw e.rethrowAsRuntimeException();
             }
         }
-        return defaultValue;
+        return new ArrayList<>();
     }
 
     /**
@@ -805,24 +774,19 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
     public List<BluetoothDevice> getDevicesMatchingConnectionStates(@NonNull int[] states) {
         if (VDBG) Log.d(TAG, "getDevicesMatchingConnectionStates()");
         final IBluetoothHapClient service = getService();
-        final List defaultValue = new ArrayList<BluetoothDevice>();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
-                final SynchronousResultReceiver<List> recv = SynchronousResultReceiver.get();
-                service.getDevicesMatchingConnectionStates(states, mAttributionSource, recv);
                 return Attributable.setAttributionSource(
-                        recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue),
+                        service.getDevicesMatchingConnectionStates(states, mAttributionSource),
                         mAttributionSource);
-            } catch (TimeoutException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             } catch (RemoteException e) {
                 throw e.rethrowAsRuntimeException();
             }
         }
-        return defaultValue;
+        return new ArrayList<>();
     }
 
     /**
@@ -842,22 +806,17 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
     public int getConnectionState(@NonNull BluetoothDevice device) {
         if (VDBG) Log.d(TAG, "getConnectionState(" + device + ")");
         final IBluetoothHapClient service = getService();
-        final int defaultValue = BluetoothProfile.STATE_DISCONNECTED;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                service.getConnectionState(device, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (TimeoutException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+                return service.getConnectionState(device, mAttributionSource);
             } catch (RemoteException e) {
                 throw e.rethrowAsRuntimeException();
             }
         }
-        return defaultValue;
+        return BluetoothProfile.STATE_DISCONNECTED;
     }
 
     /**
@@ -884,22 +843,17 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
             })
     public int getHapGroup(@NonNull BluetoothDevice device) {
         final IBluetoothHapClient service = getService();
-        final int defaultValue = BluetoothCsipSetCoordinator.GROUP_ID_INVALID;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                service.getHapGroup(device, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (TimeoutException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+                return service.getHapGroup(device, mAttributionSource);
             } catch (RemoteException e) {
                 throw e.rethrowAsRuntimeException();
             }
         }
-        return defaultValue;
+        return BluetoothCsipSetCoordinator.GROUP_ID_INVALID;
     }
 
     /**
@@ -919,22 +873,17 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
             })
     public int getActivePresetIndex(@NonNull BluetoothDevice device) {
         final IBluetoothHapClient service = getService();
-        final int defaultValue = PRESET_INDEX_UNAVAILABLE;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                service.getActivePresetIndex(device, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (TimeoutException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+                return service.getActivePresetIndex(device, mAttributionSource);
             } catch (RemoteException e) {
                 throw e.rethrowAsRuntimeException();
             }
         }
-        return defaultValue;
+        return PRESET_INDEX_UNAVAILABLE;
     }
 
     /**
@@ -954,24 +903,18 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
             })
     public @Nullable BluetoothHapPresetInfo getActivePresetInfo(@NonNull BluetoothDevice device) {
         final IBluetoothHapClient service = getService();
-        final BluetoothHapPresetInfo defaultValue = null;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
-                final SynchronousResultReceiver<BluetoothHapPresetInfo> recv =
-                        SynchronousResultReceiver.get();
-                service.getActivePresetInfo(device, mAttributionSource, recv);
-                recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (TimeoutException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+                return service.getActivePresetInfo(device, mAttributionSource);
             } catch (RemoteException e) {
                 throw e.rethrowAsRuntimeException();
             }
         }
 
-        return defaultValue;
+        return null;
     }
 
     /**
@@ -1191,23 +1134,17 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
     @Nullable
     public BluetoothHapPresetInfo getPresetInfo(@NonNull BluetoothDevice device, int presetIndex) {
         final IBluetoothHapClient service = getService();
-        final BluetoothHapPresetInfo defaultValue = null;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
-                final SynchronousResultReceiver<BluetoothHapPresetInfo> recv =
-                        SynchronousResultReceiver.get();
-                service.getPresetInfo(device, presetIndex, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (TimeoutException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+                return service.getPresetInfo(device, presetIndex, mAttributionSource);
             } catch (RemoteException e) {
                 throw e.rethrowAsRuntimeException();
             }
         }
-        return defaultValue;
+        return null;
     }
 
     /**
@@ -1226,23 +1163,17 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
             })
     public @NonNull List<BluetoothHapPresetInfo> getAllPresetInfo(@NonNull BluetoothDevice device) {
         final IBluetoothHapClient service = getService();
-        final List<BluetoothHapPresetInfo> defaultValue = new ArrayList<BluetoothHapPresetInfo>();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
-                final SynchronousResultReceiver<List<BluetoothHapPresetInfo>> recv =
-                        SynchronousResultReceiver.get();
-                service.getAllPresetInfo(device, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (TimeoutException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+                return service.getAllPresetInfo(device, mAttributionSource);
             } catch (RemoteException e) {
                 throw e.rethrowAsRuntimeException();
             }
         }
-        return defaultValue;
+        return new ArrayList<>();
     }
 
     /**
@@ -1260,22 +1191,17 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
             })
     public int getFeatures(@NonNull BluetoothDevice device) {
         final IBluetoothHapClient service = getService();
-        final int defaultValue = 0x00;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                service.getFeatures(device, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (TimeoutException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+                return service.getFeatures(device, mAttributionSource);
             } catch (RemoteException e) {
                 throw e.rethrowAsRuntimeException();
             }
         }
-        return defaultValue;
+        return 0x00;
     }
 
     /**

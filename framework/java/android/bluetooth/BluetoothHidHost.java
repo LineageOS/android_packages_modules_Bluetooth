@@ -16,8 +16,6 @@
 
 package android.bluetooth;
 
-import static android.bluetooth.BluetoothUtils.getSyncTimeout;
-
 import android.Manifest;
 import android.annotation.FlaggedApi;
 import android.annotation.NonNull;
@@ -37,12 +35,10 @@ import android.os.RemoteException;
 import android.util.Log;
 
 import com.android.bluetooth.flags.Flags;
-import com.android.modules.utils.SynchronousResultReceiver;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeoutException;
 
 /**
  * This class provides the public APIs to control the Bluetooth Input Device Profile.
@@ -255,20 +251,17 @@ public final class BluetoothHidHost implements BluetoothProfile {
     public boolean connect(BluetoothDevice device) {
         if (DBG) log("connect(" + device + ")");
         final IBluetoothHidHost service = getService();
-        final boolean defaultValue = false;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                service.connect(device, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (RemoteException | TimeoutException e) {
+                return service.connect(device, mAttributionSource);
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return defaultValue;
+        return false;
     }
 
     /**
@@ -298,20 +291,17 @@ public final class BluetoothHidHost implements BluetoothProfile {
     public boolean disconnect(BluetoothDevice device) {
         if (DBG) log("disconnect(" + device + ")");
         final IBluetoothHidHost service = getService();
-        final boolean defaultValue = false;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                service.disconnect(device, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (RemoteException | TimeoutException e) {
+                return service.disconnect(device, mAttributionSource);
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return defaultValue;
+        return false;
     }
 
     /**
@@ -326,23 +316,18 @@ public final class BluetoothHidHost implements BluetoothProfile {
     public @NonNull List<BluetoothDevice> getConnectedDevices() {
         if (VDBG) log("getConnectedDevices()");
         final IBluetoothHidHost service = getService();
-        final List<BluetoothDevice> defaultValue = new ArrayList<BluetoothDevice>();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
-                final SynchronousResultReceiver<List<BluetoothDevice>> recv =
-                        SynchronousResultReceiver.get();
-                service.getConnectedDevices(mAttributionSource, recv);
                 return Attributable.setAttributionSource(
-                        recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue),
-                        mAttributionSource);
-            } catch (RemoteException | TimeoutException e) {
+                        service.getConnectedDevices(mAttributionSource), mAttributionSource);
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return defaultValue;
+        return new ArrayList<>();
     }
 
     /**
@@ -356,23 +341,19 @@ public final class BluetoothHidHost implements BluetoothProfile {
     public List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
         if (VDBG) log("getDevicesMatchingStates()");
         final IBluetoothHidHost service = getService();
-        final List<BluetoothDevice> defaultValue = new ArrayList<BluetoothDevice>();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
-                final SynchronousResultReceiver<List<BluetoothDevice>> recv =
-                        SynchronousResultReceiver.get();
-                service.getDevicesMatchingConnectionStates(states, mAttributionSource, recv);
                 return Attributable.setAttributionSource(
-                        recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue),
+                        service.getDevicesMatchingConnectionStates(states, mAttributionSource),
                         mAttributionSource);
-            } catch (RemoteException | TimeoutException e) {
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return defaultValue;
+        return new ArrayList<>();
     }
 
     /**
@@ -390,20 +371,17 @@ public final class BluetoothHidHost implements BluetoothProfile {
             throw new IllegalArgumentException("device must not be null");
         }
         final IBluetoothHidHost service = getService();
-        final int defaultValue = BluetoothProfile.STATE_DISCONNECTED;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                service.getConnectionState(device, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (RemoteException | TimeoutException e) {
+                return service.getConnectionState(device, mAttributionSource);
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return defaultValue;
+        return BluetoothProfile.STATE_DISCONNECTED;
     }
 
     /**
@@ -453,7 +431,6 @@ public final class BluetoothHidHost implements BluetoothProfile {
             throw new IllegalArgumentException("device must not be null");
         }
         final IBluetoothHidHost service = getService();
-        final boolean defaultValue = false;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
@@ -462,14 +439,12 @@ public final class BluetoothHidHost implements BluetoothProfile {
                 && (connectionPolicy == BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
                         || connectionPolicy == BluetoothProfile.CONNECTION_POLICY_ALLOWED)) {
             try {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                service.setConnectionPolicy(device, connectionPolicy, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (RemoteException | TimeoutException e) {
+                return service.setConnectionPolicy(device, connectionPolicy, mAttributionSource);
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return defaultValue;
+        return false;
     }
 
     /**
@@ -505,7 +480,6 @@ public final class BluetoothHidHost implements BluetoothProfile {
         }
 
         final IBluetoothHidHost service = getService();
-        final boolean defaultValue = false;
 
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
@@ -516,14 +490,12 @@ public final class BluetoothHidHost implements BluetoothProfile {
             throw new IllegalArgumentException("Invalid device");
         } else {
             try {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                service.setPreferredTransport(device, transport, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (RemoteException | TimeoutException e) {
+                return service.setPreferredTransport(device, transport, mAttributionSource);
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return defaultValue;
+        return false;
     }
 
     /**
@@ -570,20 +542,17 @@ public final class BluetoothHidHost implements BluetoothProfile {
             throw new IllegalArgumentException("device must not be null");
         }
         final IBluetoothHidHost service = getService();
-        final int defaultValue = BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                service.getConnectionPolicy(device, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (RemoteException | TimeoutException e) {
+                return service.getConnectionPolicy(device, mAttributionSource);
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return defaultValue;
+        return BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
     }
 
     /**
@@ -608,7 +577,6 @@ public final class BluetoothHidHost implements BluetoothProfile {
         Objects.requireNonNull(device, "device must not be null");
 
         final IBluetoothHidHost service = getService();
-        final int defaultValue = BluetoothDevice.TRANSPORT_AUTO;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
@@ -618,14 +586,12 @@ public final class BluetoothHidHost implements BluetoothProfile {
             throw new IllegalArgumentException("Invalid device");
         } else {
             try {
-                final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
-                service.getPreferredTransport(device, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (RemoteException | TimeoutException e) {
+                return service.getPreferredTransport(device, mAttributionSource);
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return defaultValue;
+        return BluetoothDevice.TRANSPORT_AUTO;
     }
 
     private boolean isEnabled() {
@@ -649,20 +615,17 @@ public final class BluetoothHidHost implements BluetoothProfile {
     public boolean virtualUnplug(BluetoothDevice device) {
         if (DBG) log("virtualUnplug(" + device + ")");
         final IBluetoothHidHost service = getService();
-        final boolean defaultValue = false;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                service.virtualUnplug(device, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (RemoteException | TimeoutException e) {
+                return service.virtualUnplug(device, mAttributionSource);
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return defaultValue;
+        return false;
     }
 
     /**
@@ -678,20 +641,17 @@ public final class BluetoothHidHost implements BluetoothProfile {
     public boolean getProtocolMode(BluetoothDevice device) {
         if (VDBG) log("getProtocolMode(" + device + ")");
         final IBluetoothHidHost service = getService();
-        final boolean defaultValue = false;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                service.getProtocolMode(device, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (RemoteException | TimeoutException e) {
+                return service.getProtocolMode(device, mAttributionSource);
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return defaultValue;
+        return false;
     }
 
     /**
@@ -707,20 +667,17 @@ public final class BluetoothHidHost implements BluetoothProfile {
     public boolean setProtocolMode(BluetoothDevice device, int protocolMode) {
         if (DBG) log("setProtocolMode(" + device + ")");
         final IBluetoothHidHost service = getService();
-        final boolean defaultValue = false;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                service.setProtocolMode(device, protocolMode, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (RemoteException | TimeoutException e) {
+                return service.setProtocolMode(device, protocolMode, mAttributionSource);
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return defaultValue;
+        return false;
     }
 
     /**
@@ -750,21 +707,18 @@ public final class BluetoothHidHost implements BluetoothProfile {
                             + bufferSize);
         }
         final IBluetoothHidHost service = getService();
-        final boolean defaultValue = false;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                service.getReport(
-                        device, reportType, reportId, bufferSize, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (RemoteException | TimeoutException e) {
+                return service.getReport(
+                        device, reportType, reportId, bufferSize, mAttributionSource);
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return defaultValue;
+        return false;
     }
 
     /**
@@ -782,20 +736,17 @@ public final class BluetoothHidHost implements BluetoothProfile {
     public boolean setReport(BluetoothDevice device, byte reportType, String report) {
         if (VDBG) log("setReport(" + device + "), reportType=" + reportType + " report=" + report);
         final IBluetoothHidHost service = getService();
-        final boolean defaultValue = false;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                service.setReport(device, reportType, report, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (RemoteException | TimeoutException e) {
+                return service.setReport(device, reportType, report, mAttributionSource);
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return defaultValue;
+        return false;
     }
 
     /**
@@ -812,20 +763,17 @@ public final class BluetoothHidHost implements BluetoothProfile {
     public boolean sendData(BluetoothDevice device, String report) {
         if (DBG) log("sendData(" + device + "), report=" + report);
         final IBluetoothHidHost service = getService();
-        final boolean defaultValue = false;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                service.sendData(device, report, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (RemoteException | TimeoutException e) {
+                return service.sendData(device, report, mAttributionSource);
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return defaultValue;
+        return false;
     }
 
     /**
@@ -841,20 +789,17 @@ public final class BluetoothHidHost implements BluetoothProfile {
     public boolean getIdleTime(BluetoothDevice device) {
         if (DBG) log("getIdletime(" + device + ")");
         final IBluetoothHidHost service = getService();
-        final boolean defaultValue = false;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                service.getIdleTime(device, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (RemoteException | TimeoutException e) {
+                return service.getIdleTime(device, mAttributionSource);
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return defaultValue;
+        return false;
     }
 
     /**
@@ -871,20 +816,17 @@ public final class BluetoothHidHost implements BluetoothProfile {
     public boolean setIdleTime(BluetoothDevice device, byte idleTime) {
         if (DBG) log("setIdletime(" + device + "), idleTime=" + idleTime);
         final IBluetoothHidHost service = getService();
-        final boolean defaultValue = false;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
-                final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
-                service.setIdleTime(device, idleTime, mAttributionSource, recv);
-                return recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(defaultValue);
-            } catch (RemoteException | TimeoutException e) {
+                return service.setIdleTime(device, idleTime, mAttributionSource);
+            } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return defaultValue;
+        return false;
     }
 
     private static void log(String msg) {
