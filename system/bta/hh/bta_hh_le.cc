@@ -1805,7 +1805,8 @@ static void read_report_cb(uint16_t conn_id, tGATT_STATUS status,
                            void* data) {
   tBTA_HH_DEV_CB* p_dev_cb = (tBTA_HH_DEV_CB*)data;
   if (p_dev_cb->w4_evt != BTA_HH_GET_RPT_EVT) {
-    log::warn("Unexpected Read response, w4_evt={}", p_dev_cb->w4_evt);
+    log::warn("Unexpected Read response, w4_evt={}",
+              bta_hh_event_text(p_dev_cb->w4_evt));
     return;
   }
 
@@ -1894,7 +1895,7 @@ static void write_report_cb(uint16_t conn_id, tGATT_STATUS status,
   uint16_t cb_evt = p_dev_cb->w4_evt;
   if (cb_evt == BTA_HH_EMPTY_EVT) return;
 
-  log::verbose("w4_evt:{}", p_dev_cb->w4_evt);
+  log::verbose("w4_evt:{}", bta_hh_event_text(p_dev_cb->w4_evt));
 
   const gatt::Characteristic* p_char =
       BTA_GATTC_GetCharacteristic(conn_id, handle);

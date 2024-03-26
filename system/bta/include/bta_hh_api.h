@@ -166,6 +166,29 @@ inline std::string bta_hh_status_text(const tBTA_HH_STATUS& status) {
   }
 }
 
+inline std::string bta_hh_event_text(uint16_t event) {
+  switch (event) {
+    CASE_RETURN_TEXT(BTA_HH_EMPTY_EVT);
+    CASE_RETURN_TEXT(BTA_HH_ENABLE_EVT);
+    CASE_RETURN_TEXT(BTA_HH_DISABLE_EVT);
+    CASE_RETURN_TEXT(BTA_HH_OPEN_EVT);
+    CASE_RETURN_TEXT(BTA_HH_CLOSE_EVT);
+    CASE_RETURN_TEXT(BTA_HH_GET_DSCP_EVT);
+    CASE_RETURN_TEXT(BTA_HH_GET_PROTO_EVT);
+    CASE_RETURN_TEXT(BTA_HH_GET_RPT_EVT);
+    CASE_RETURN_TEXT(BTA_HH_GET_IDLE_EVT);
+    CASE_RETURN_TEXT(BTA_HH_SET_PROTO_EVT);
+    CASE_RETURN_TEXT(BTA_HH_SET_RPT_EVT);
+    CASE_RETURN_TEXT(BTA_HH_SET_IDLE_EVT);
+    CASE_RETURN_TEXT(BTA_HH_VC_UNPLUG_EVT);
+    CASE_RETURN_TEXT(BTA_HH_ADD_DEV_EVT);
+    CASE_RETURN_TEXT(BTA_HH_RMV_DEV_EVT);
+    CASE_RETURN_TEXT(BTA_HH_API_ERR_EVT);
+    default:
+      return base::StringPrintf("UNKNOWN[%hu]", event);
+  }
+}
+
 typedef uint16_t tBTA_HH_ATTR_MASK;
 
 /* supported type of device and corresponding application ID */
