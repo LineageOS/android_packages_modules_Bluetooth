@@ -124,9 +124,13 @@ public class BluetoothMapUtils {
     }
 
     public static void printCursor(Cursor c) {
-        if (D) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("\nprintCursor:\n");
+        StringBuilder sb = new StringBuilder();
+        sb.append("\nprintCursor:\n");
+        if (c == null) {
+            sb.append(" null");
+        } else if (c.isBeforeFirst() || c.isAfterLast()) {
+            sb.append(" cursor points to invalid position");
+        } else {
             for (int i = 0; i < c.getColumnCount(); i++) {
                 if (c.getColumnName(i).equals(BluetoothMapContract.MessageColumns.DATE)
                         || c.getColumnName(i)
@@ -148,8 +152,8 @@ public class BluetoothMapUtils {
                             .append("\n");
                 }
             }
-            Log.d(TAG, sb.toString());
         }
+        Log.v(TAG, sb.toString());
     }
 
     public static String getLongAsString(long v) {
