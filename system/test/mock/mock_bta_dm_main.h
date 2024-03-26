@@ -52,17 +52,6 @@ struct DumpsysBtaDm {
 };
 extern struct DumpsysBtaDm DumpsysBtaDm;
 
-// Name: bta_dm_search_sm_execute
-// Params: const BT_HDR_RIGID* p_msg
-// Return: bool
-struct bta_dm_search_sm_execute {
-  static bool return_value;
-  std::function<bool(const BT_HDR_RIGID* p_msg)> body{
-      [](const BT_HDR_RIGID* /* p_msg */) { return return_value; }};
-  bool operator()(const BT_HDR_RIGID* p_msg) { return body(p_msg); };
-};
-extern struct bta_dm_search_sm_execute bta_dm_search_sm_execute;
-
 }  // namespace bta_dm_main
 }  // namespace mock
 }  // namespace test
