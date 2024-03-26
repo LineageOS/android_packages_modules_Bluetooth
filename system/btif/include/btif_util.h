@@ -47,7 +47,6 @@ const char* dump_dm_search_event(uint16_t event);
 const char* dump_dm_event(uint16_t event);
 const char* dump_hf_event(uint16_t event);
 const char* dump_hf_client_event(uint16_t event);
-const char* dump_hh_event(uint16_t event);
 const char* dump_hd_event(uint16_t event);
 const char* dump_property_type(bt_property_type_t type);
 const char* dump_adapter_scan_mode(bt_scan_mode_t mode);

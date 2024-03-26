@@ -69,7 +69,6 @@ static void bta_hh_cback(uint8_t dev_handle, const RawAddress& addr,
                          uint8_t event, uint32_t data, BT_HDR* pdata);
 static tBTA_HH_STATUS bta_hh_get_trans_status(uint32_t result);
 
-static const char* bta_hh_get_w4_event(uint16_t event);
 static const char* bta_hh_hid_event_name(uint16_t event);
 
 /*****************************************************************************
@@ -679,7 +678,7 @@ void bta_hh_data_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
  ******************************************************************************/
 void bta_hh_handsk_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
   log::verbose("HANDSHAKE received for: event={} data={}",
-               bta_hh_get_w4_event(p_cb->w4_evt), p_data->hid_cback.data);
+               bta_hh_event_text(p_cb->w4_evt), p_data->hid_cback.data);
 
   tBTA_HH bta_hh;
   memset(&bta_hh, 0, sizeof(tBTA_HH));
@@ -724,7 +723,8 @@ void bta_hh_handsk_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
 
     default:
       /* unknow transaction handshake response */
-      log::verbose("unknown transaction type");
+      log::verbose("unknown transaction type {}",
+                   bta_hh_event_text(p_cb->w4_evt));
       break;
   }
 
@@ -748,7 +748,7 @@ void bta_hh_ctrl_dat_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
   tBTA_HH_HSDATA hs_data;
 
   log::verbose("Ctrl DATA received w4: event[{}]",
-               bta_hh_get_w4_event(p_cb->w4_evt));
+               bta_hh_event_text(p_cb->w4_evt));
   if (pdata->len == 0) {
     p_cb->w4_evt = BTA_HH_EMPTY_EVT;
     osi_free_and_reset((void**)&pdata);
@@ -783,7 +783,7 @@ void bta_hh_ctrl_dat_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
       FALLTHROUGH_INTENDED; /* FALLTHROUGH */
     default:
       log::verbose("invalid  transaction type for DATA payload:4_evt[{}]",
-                   bta_hh_get_w4_event(p_cb->w4_evt));
+                   bta_hh_event_text(p_cb->w4_evt));
       break;
   }
 
@@ -1233,27 +1233,6 @@ static tBTA_HH_STATUS bta_hh_get_trans_status(uint32_t result) {
 /*****************************************************************************
  *  Debug Functions
  ****************************************************************************/
-
-static const char* bta_hh_get_w4_event(uint16_t event) {
-  switch (event) {
-    case BTA_HH_GET_RPT_EVT:
-      return "BTA_HH_GET_RPT_EVT";
-    case BTA_HH_SET_RPT_EVT:
-      return "BTA_HH_SET_RPT_EVT";
-    case BTA_HH_GET_PROTO_EVT:
-      return "BTA_HH_GET_PROTO_EVT";
-    case BTA_HH_SET_PROTO_EVT:
-      return "BTA_HH_SET_PROTO_EVT";
-    case BTA_HH_GET_IDLE_EVT:
-      return "BTA_HH_GET_IDLE_EVT";
-    case BTA_HH_SET_IDLE_EVT:
-      return "BTA_HH_SET_IDLE_EVT";
-    case BTA_HH_OPEN_EVT:
-      return "BTA_HH_OPEN_EVT";
-    default:
-      return "Unknown event";
-  }
-}
 
 static const char* bta_hh_hid_event_name(uint16_t event) {
   switch (event) {

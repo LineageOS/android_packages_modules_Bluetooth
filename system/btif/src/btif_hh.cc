@@ -939,7 +939,7 @@ static void btif_hh_upstreams_evt(uint16_t event, char* p_param) {
   tBTA_HH* p_data = (tBTA_HH*)p_param;
   btif_hh_device_t* p_dev = NULL;
 
-  log::verbose("event={} dereg = {}", dump_hh_event(event),
+  log::verbose("event={} dereg = {}", bta_hh_event_text(event),
                btif_hh_cb.service_dereg_active);
 
   switch (event) {
