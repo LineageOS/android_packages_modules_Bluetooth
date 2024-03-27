@@ -403,6 +403,9 @@ public class AdapterServiceTest {
             IBluetoothCallback callback,
             AdapterNativeInterface nativeInterface) {
         adapter.enable(false);
+        if (Flags.fastBindToApp()) {
+            TestUtils.syncHandler(looper, 0); // when fastBindToApp is enable init need to be run
+        }
         TestUtils.syncHandler(looper, AdapterState.BLE_TURN_ON);
         verifyStateChange(callback, STATE_OFF, STATE_BLE_TURNING_ON);
 
@@ -617,6 +620,9 @@ public class AdapterServiceTest {
         assertThat(mAdapterService.getState()).isEqualTo(STATE_OFF);
 
         mAdapterService.enable(false);
+        if (Flags.fastBindToApp()) {
+            syncHandler(0); // when fastBindToApp is enable init need to be run
+        }
         syncHandler(AdapterState.BLE_TURN_ON);
         verifyStateChange(STATE_OFF, STATE_BLE_TURNING_ON);
         assertThat(mAdapterService.getBluetoothGatt()).isNotNull();

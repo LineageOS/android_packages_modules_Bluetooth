@@ -622,6 +622,7 @@ public class AdapterService extends Service {
             return;
         }
         // OnCreate must perform the minimum of infaillible and mandatory initialization
+        mRemoteDevices = new RemoteDevices(this, mLooper);
         mAdapterProperties = new AdapterProperties(this);
         mAdapterStateMachine = new AdapterState(this, mLooper);
         mBinder = new AdapterServiceBinder(this);
@@ -630,6 +631,7 @@ public class AdapterService extends Service {
         mPowerManager = getNonNullSystemService(PowerManager.class);
         mBatteryStatsManager = getNonNullSystemService(BatteryStatsManager.class);
         mCompanionDeviceManager = getNonNullSystemService(CompanionDeviceManager.class);
+        setAdapterService(this);
     }
 
     private void init() {
@@ -645,9 +647,9 @@ public class AdapterService extends Service {
             mPowerManager = getNonNullSystemService(PowerManager.class);
             mBatteryStatsManager = getNonNullSystemService(BatteryStatsManager.class);
             mCompanionDeviceManager = getNonNullSystemService(CompanionDeviceManager.class);
+            mRemoteDevices = new RemoteDevices(this, mLooper);
         }
 
-        mRemoteDevices = new RemoteDevices(this, mLooper);
         clearDiscoveringPackages();
         if (!Flags.fastBindToApp()) {
             mBinder = new AdapterServiceBinder(this);
@@ -735,7 +737,9 @@ public class AdapterService extends Service {
 
         mBluetoothSocketManagerBinder = new BluetoothSocketManagerBinder(this);
 
-        setAdapterService(this);
+        if (!Flags.fastBindToApp()) {
+            setAdapterService(this);
+        }
 
         invalidateBluetoothCaches();
 
