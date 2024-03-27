@@ -182,7 +182,7 @@ public class SdpManager {
         this(adapterService, Looper.myLooper());
     }
 
-    SdpManager(AdapterService adapterService, Looper looper) {
+    public SdpManager(AdapterService adapterService, Looper looper) {
         mAdapterService = adapterService;
         mNativeInterface.init(this);
         mNativeAvailable = true;
