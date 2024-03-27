@@ -29,14 +29,13 @@ void check_complete(CommandCompleteView view) {
   ASSERT(view.IsValid());
   auto status_view = T::Create(view);
   if (!status_view.IsValid()) {
-    log::error("Invalid packet, opcode 0x{:02x}", view.GetCommandOpCode());
+    log::error("Invalid packet, opcode {}", OpCodeText(view.GetCommandOpCode()));
     return;
   }
   ErrorCode status = status_view.GetStatus();
   OpCode op_code = status_view.GetCommandOpCode();
   if (status != ErrorCode::SUCCESS) {
-    std::string error_code = ErrorCodeText(status);
-    log::error("Error code {}, opcode 0x{:02x}", error_code, op_code);
+    log::error("Error code {}, opcode {}", ErrorCodeText(status), OpCodeText(op_code));
     return;
   }
 }
@@ -46,14 +45,13 @@ void check_status(CommandStatusView view) {
   ASSERT(view.IsValid());
   auto status_view = T::Create(view);
   if (!status_view.IsValid()) {
-    log::error("Invalid packet, opcode 0x{:02x}", view.GetCommandOpCode());
+    log::error("Invalid packet, opcode {}", OpCodeText(view.GetCommandOpCode()));
     return;
   }
   ErrorCode status = status_view.GetStatus();
   OpCode op_code = status_view.GetCommandOpCode();
   if (status != ErrorCode::SUCCESS) {
-    std::string error_code = ErrorCodeText(status);
-    log::error("Error code {}, opcode 0x{:02x}", error_code, op_code);
+    log::error("Error code {}, opcode {}", ErrorCodeText(status), OpCodeText(op_code));
     return;
   }
 }
