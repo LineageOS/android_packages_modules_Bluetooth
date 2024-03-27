@@ -2406,13 +2406,13 @@ static void btm_ble_update_inq_result(tINQ_DB_ENT* p_i, uint8_t addr_type,
       }
       if (has_advertising_flags && (local_flag & BTM_BLE_BREDR_NOT_SPT) == 0) {
         if (p_cur->ble_addr_type != BLE_ADDR_RANDOM) {
-          LOG_VERBOSE("NOT_BR_EDR support bit not set, treat device as DUMO");
+          log::verbose("NOT_BR_EDR support bit not set, treat device as DUMO");
           p_cur->device_type |= BT_DEVICE_TYPE_DUMO;
         } else {
-          LOG_VERBOSE("Random address, treat device as LE only");
+          log::verbose("Random address, treat device as LE only");
         }
       } else {
-        LOG_VERBOSE("NOT_BR/EDR support bit set, treat device as LE only");
+        log::verbose("NOT_BR/EDR support bit set, treat device as LE only");
       }
     }
   }

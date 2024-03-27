@@ -98,7 +98,7 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
         current_phy_(PHY_LE_2M),
         audio_data_path_state_(AudioDataPathState::INACTIVE),
         le_audio_source_hal_client_(nullptr) {
-    LOG_INFO();
+    log::info("");
 
     /* Register State machine callbacks */
     BroadcastStateMachine::Initialize(&state_machine_callbacks_,
@@ -430,8 +430,7 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
   /* Choose the dominating audio context when multiple contexts are mixed */
   LeAudioContextType ChooseConfigurationContextType(
       AudioContexts audio_contexts) {
-    LOG_DEBUG("Got contexts=%s",
-              bluetooth::common::ToString(audio_contexts).c_str());
+    log::debug("Got contexts={}", bluetooth::common::ToString(audio_contexts));
 
     /* Prioritize the most common use cases. */
     if (audio_contexts.any()) {
@@ -443,16 +442,15 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
       };
       for (auto ct : context_priority_list) {
         if (audio_contexts.test(ct)) {
-          LOG_DEBUG("Selecting configuration context type: %s",
-                    ToString(ct).c_str());
+          log::debug("Selecting configuration context type: {}", ToString(ct));
           return ct;
         }
       }
     }
 
     auto fallback_config = LeAudioContextType::MEDIA;
-    LOG_DEBUG("Selecting configuration context type: %s",
-              ToString(fallback_config).c_str());
+    log::debug("Selecting configuration context type: {}",
+               ToString(fallback_config));
     return fallback_config;
   }
 
@@ -595,7 +593,7 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
 
     if (public_features & bluetooth::le_audio::kLeAudioQualityHigh &&
         config->GetSamplingFrequencyHzMax() < 48000) {
-      LOG_WARN(
+      log::warn(
           "Preferred quality isn't supported. Fallback to standard audio "
           "quality");
       public_features &= (0xFFFF & ~bluetooth::le_audio::kLeAudioQualityHigh);
@@ -1158,7 +1156,7 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
 
       if (!broadcast_config_.has_value() ||
           (broadcast_config_->subgroups.size() == 0)) {
-        LOG_ERROR("Codec was not configured properly");
+        log::error("Codec was not configured properly");
         return;
       }
 
@@ -1195,14 +1193,14 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
     }
 
     virtual void OnAudioSuspend(void) override {
-      LOG_INFO();
+      log::info("");
       /* TODO: Should we suspend all broadcasts - remove BIGs? */
       if (instance)
         instance->audio_data_path_state_ = AudioDataPathState::SUSPENDED;
     }
 
     virtual void OnAudioResume(void) override {
-      LOG_INFO();
+      log::info("");
       if (!instance) return;
 
       /* TODO: Should we resume all broadcasts - recreate BIGs? */
@@ -1268,7 +1266,7 @@ void LeAudioBroadcaster::Initialize(
     bluetooth::le_audio::LeAudioBroadcasterCallbacks* callbacks,
     base::Callback<bool()> audio_hal_verifier) {
   std::scoped_lock<std::mutex> lock(instance_mutex);
-  LOG_INFO();
+  log::info("");
   if (instance) {
     log::error("Already initialized");
     return;
@@ -1299,13 +1297,13 @@ void LeAudioBroadcaster::Initialize(
 bool LeAudioBroadcaster::IsLeAudioBroadcasterRunning() { return instance; }
 
 LeAudioBroadcaster* LeAudioBroadcaster::Get(void) {
-  LOG_INFO();
+  log::info("");
   CHECK(instance);
   return instance;
 }
 
 void LeAudioBroadcaster::Stop(void) {
-  LOG_INFO();
+  log::info("");
 
   if (instance) {
     instance->Stop();
@@ -1314,7 +1312,7 @@ void LeAudioBroadcaster::Stop(void) {
 
 void LeAudioBroadcaster::Cleanup(void) {
   std::scoped_lock<std::mutex> lock(instance_mutex);
-  LOG_INFO();
+  log::info("");
 
   if (instance == nullptr) return;
 

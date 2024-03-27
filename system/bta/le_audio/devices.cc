@@ -721,8 +721,8 @@ uint8_t LeAudioDevice::GetSupportedAudioChannelCounts(uint8_t direction) const {
 
     for (const auto pac : pac_recs) {
       if (!utils::IsCodecUsingLtvFormat(pac.codec_id)) {
-        LOG_WARN("Unknown codec PAC record for codec: %s",
-                 bluetooth::common::ToString(pac.codec_id).c_str());
+        log::warn("Unknown codec PAC record for codec: {}",
+                  bluetooth::common::ToString(pac.codec_id));
         continue;
       }
       ASSERT_LOG(!pac.codec_spec_caps.IsEmpty(),
@@ -833,10 +833,11 @@ uint8_t LeAudioDevice::GetPreferredPhyBitmask(uint8_t preferred_phy) const {
   // Take the preferences if possible
   if (preferred_phy && (phy_bitmask & preferred_phy)) {
     phy_bitmask &= preferred_phy;
-    LOG_DEBUG("Using ASE preferred phy 0x%02x", static_cast<int>(phy_bitmask));
+    log::debug("Using ASE preferred phy 0x{:02x}",
+               static_cast<int>(phy_bitmask));
   } else {
-    LOG_WARN(
-        "ASE preferred 0x%02x has nothing common with phy_bitfield  0x%02x ",
+    log::warn(
+        "ASE preferred 0x{:02x} has nothing common with phy_bitfield  0x{:02x}",
         static_cast<int>(preferred_phy), static_cast<int>(phy_bitmask));
   }
   return phy_bitmask;
