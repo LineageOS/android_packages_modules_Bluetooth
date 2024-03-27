@@ -41,8 +41,8 @@ import com.android.bluetooth.flags.Flags;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -399,7 +399,7 @@ public final class BluetoothA2dp implements BluetoothProfile {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return Collections.emptyList();
+        return new ArrayList<>();
     }
 
     /** {@inheritDoc} */
@@ -421,7 +421,7 @@ public final class BluetoothA2dp implements BluetoothProfile {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return Collections.emptyList();
+        return new ArrayList<>();
     }
 
     /** {@inheritDoc} */
@@ -719,7 +719,7 @@ public final class BluetoothA2dp implements BluetoothProfile {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return Collections.emptyList();
+        return new ArrayList<>();
     }
 
     /**

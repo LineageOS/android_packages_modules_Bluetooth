@@ -42,7 +42,6 @@ import com.android.internal.annotations.VisibleForTesting;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -546,7 +545,7 @@ public class BatteryService extends ProfileService {
         public List<BluetoothDevice> getConnectedDevices(AttributionSource source) {
             BatteryService service = getService(source);
             if (service == null) {
-                return Collections.emptyList();
+                return new ArrayList<>();
             }
 
             enforceBluetoothPrivilegedPermission(service);
@@ -558,7 +557,7 @@ public class BatteryService extends ProfileService {
                 int[] states, AttributionSource source) {
             BatteryService service = getService(source);
             if (service == null) {
-                return Collections.emptyList();
+                return new ArrayList<>();
             }
 
             return service.getDevicesMatchingConnectionStates(states);

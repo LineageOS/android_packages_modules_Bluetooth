@@ -37,7 +37,7 @@ import android.os.RemoteException;
 import android.util.CloseGuard;
 import android.util.Log;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -739,7 +739,7 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
                 throw e.rethrowAsRuntimeException();
             }
         }
-        return Collections.emptyList();
+        return new ArrayList<>();
     }
 
     /**
@@ -772,7 +772,7 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
                 throw e.rethrowAsRuntimeException();
             }
         }
-        return Collections.emptyList();
+        return new ArrayList<>();
     }
 
     /**

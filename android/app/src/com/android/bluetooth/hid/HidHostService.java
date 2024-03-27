@@ -50,6 +50,7 @@ import com.android.bluetooth.flags.Flags;
 
 import com.google.common.primitives.Ints;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -880,7 +881,7 @@ public class HidHostService extends ProfileService {
                 int[] states, AttributionSource source) {
             HidHostService service = getService(source);
             if (service == null) {
-                return Collections.emptyList();
+                return new ArrayList<BluetoothDevice>(0);
             }
             return service.getDevicesMatchingConnectionStates(states);
         }
