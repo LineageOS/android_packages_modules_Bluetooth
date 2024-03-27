@@ -83,7 +83,7 @@ class ContextualCallback<R(Args...)> {
   ContextualCallback& operator=(ContextualCallback&&) noexcept = default;
 
   void operator()(Args... args) {
-    context_->Post(common::BindOnce(std::move(callback_), std::forward<Args>(args)...));
+    context_->Post(common::BindOnce(callback_, std::forward<Args>(args)...));
   }
 
   operator bool() const {

@@ -89,7 +89,7 @@ struct VendorSpecificEventManager::impl {
       log::warn("Unhandled vendor specific event of type 0x{:02x}", vse_subevent_code);
       return;
     }
-    subevent_handlers_[vse_subevent_code].Invoke(vendor_specific_event_view);
+    subevent_handlers_[vse_subevent_code](vendor_specific_event_view);
   }
 
   Module* module_;

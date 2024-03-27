@@ -815,7 +815,7 @@ void SecurityManagerImpl::InternalEnforceSecurityPolicy(
     l2cap::classic::SecurityEnforcementInterface::ResultCallback result_callback) {
   if (IsSecurityRequirementSatisfied(remote, policy)) {
     // Notify client immediately if already satisfied
-    std::move(result_callback).Invoke(true);
+    std::move(result_callback)(true);
     return;
   }
 
@@ -855,7 +855,7 @@ void SecurityManagerImpl::UpdateLinkSecurityCondition(hci::AddressWithType remot
     log::error("No L2CAP security policy callback pending for {}", remote);
     return;
   }
-  std::move(entry->second.callback_).Invoke(IsSecurityRequirementSatisfied(remote, entry->second.policy_));
+  std::move(entry->second.callback_)(IsSecurityRequirementSatisfied(remote, entry->second.policy_));
   enforce_security_policy_callback_map_.erase(entry);
 }
 
@@ -905,7 +905,7 @@ void SecurityManagerImpl::EnforceLeSecurityPolicy(
     case l2cap::le::SecurityPolicy::_NOT_FOR_YOU__AUTHORIZATION:
       break;
   }
-  result_callback.Invoke(result);
+  result_callback(result);
 }
 }  // namespace internal
 }  // namespace security

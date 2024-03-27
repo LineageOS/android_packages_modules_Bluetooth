@@ -99,7 +99,7 @@ class HciLayerTest : public ::testing::Test {
   }
 
   void FailIfResetNotSent() {
-    hci_handler_->BindOnceOn(this, &HciLayerTest::fail_if_reset_not_sent).Invoke();
+    (hci_handler_->BindOnceOn(this, &HciLayerTest::fail_if_reset_not_sent))();
     sync_handler();
   }
 

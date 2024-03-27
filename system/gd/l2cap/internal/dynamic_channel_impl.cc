@@ -50,7 +50,7 @@ void DynamicChannelImpl::RegisterOnCloseCallback(DynamicChannel::OnCloseCallback
   log::assert_that(on_close_callback_.IsEmpty(), "OnCloseCallback can only be registered once");
   // If channel is already closed, call the callback immediately without saving it
   if (closed_) {
-    on_close_callback.Invoke(close_reason_);
+    on_close_callback(close_reason_);
     return;
   }
   on_close_callback_ = std::move(on_close_callback);
@@ -76,7 +76,7 @@ void DynamicChannelImpl::OnClosed(hci::ErrorCode status) {
   close_reason_ = status;
   link_ = nullptr;
   l2cap_handler_ = nullptr;
-  on_close_callback_.Invoke(close_reason_);
+  on_close_callback_(close_reason_);
   on_close_callback_ = {};
 }
 

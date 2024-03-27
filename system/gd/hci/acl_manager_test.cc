@@ -95,7 +95,7 @@ class TestController : public testing::MockController {
   }
 
   void CompletePackets(uint16_t handle, uint16_t packets) {
-    acl_cb_.Invoke(handle, packets);
+    acl_cb_(handle, packets);
   }
 
   uint16_t acl_buffer_length_ = 1024;

@@ -236,7 +236,7 @@ struct HciLayer::impl {
           OpCodeText(op_code),
           logging_id);
 
-      command_queue_.front().GetCallback<TResponse>()->Invoke(std::move(response_view));
+      (*command_queue_.front().GetCallback<TResponse>())(std::move(response_view));
     }
 
 #ifdef TARGET_FLOSS
@@ -329,7 +329,7 @@ struct HciLayer::impl {
         "Can not register handler for {}",
         EventCodeText(EventCode::LE_META_EVENT));
     // Allow GD Cert tests to register for CONNECTION_REQUEST
-    if (event == EventCode::CONNECTION_REQUEST && module_.on_acl_connection_request_.IsEmpty()) {
+    if (event == EventCode::CONNECTION_REQUEST && !module_.on_acl_connection_request_) {
       log::info("Registering test for CONNECTION_REQUEST, since there's no ACL");
       event_handlers_.erase(event);
     }
@@ -444,7 +444,7 @@ struct HciLayer::impl {
         if (event_handlers_.find(event_code) == event_handlers_.end()) {
           log::warn("Unhandled event of type {}", EventCodeText(event_code));
         } else {
-          event_handlers_[event_code].Invoke(event);
+          event_handlers_[event_code](event);
         }
     }
   }
@@ -471,7 +471,7 @@ struct HciLayer::impl {
       log::warn("Unhandled le subevent of type {}", SubeventCodeText(subevent_code));
       return;
     }
-    subevent_handlers_[subevent_code].Invoke(meta_event_view);
+    subevent_handlers_[subevent_code](meta_event_view);
   }
 
   hal::HciHal* hal_;
@@ -605,18 +605,18 @@ void HciLayer::on_connection_request(EventView event_view) {
   ConnectionRequestLinkType link_type = view.GetLinkType();
   switch (link_type) {
     case ConnectionRequestLinkType::ACL:
-      if (on_acl_connection_request_.IsEmpty()) {
+      if (!on_acl_connection_request_) {
         log::warn("No callback registered for ACL connection requests.");
       } else {
-        on_acl_connection_request_.Invoke(address, cod);
+        on_acl_connection_request_(address, cod);
       }
       break;
     case ConnectionRequestLinkType::SCO:
     case ConnectionRequestLinkType::ESCO:
-      if (on_sco_connection_request_.IsEmpty()) {
+      if (!on_sco_connection_request_) {
         log::warn("No callback registered for SCO connection requests.");
       } else {
-        on_sco_connection_request_.Invoke(address, cod, link_type);
+        on_sco_connection_request_(address, cod, link_type);
       }
       break;
   }
@@ -625,7 +625,7 @@ void HciLayer::on_connection_request(EventView event_view) {
 void HciLayer::Disconnect(uint16_t handle, ErrorCode reason) {
   std::unique_lock<std::mutex> lock(callback_handlers_guard_);
   for (auto callback : disconnect_handlers_) {
-    callback.Invoke(handle, reason);
+    callback(handle, reason);
   }
 }
 
@@ -649,7 +649,7 @@ void HciLayer::ReadRemoteVersion(
     hci::ErrorCode hci_status, uint16_t handle, uint8_t version, uint16_t manufacturer_name, uint16_t sub_version) {
   std::unique_lock<std::mutex> lock(callback_handlers_guard_);
   for (auto callback : read_remote_version_handlers_) {
-    callback.Invoke(hci_status, handle, version, manufacturer_name, sub_version);
+    callback(hci_status, handle, version, manufacturer_name, sub_version);
   }
 }
 

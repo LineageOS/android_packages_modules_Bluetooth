@@ -303,7 +303,7 @@ void LinkManager::OnConnectFail(hci::Address device, hci::ErrorCode reason, bool
         hci::ErrorCodeText(reason));
     if (pending_dynamic_channels_callbacks_.find(device) != pending_dynamic_channels_callbacks_.end()) {
       for (Link::PendingDynamicChannelConnection& callbacks : pending_dynamic_channels_callbacks_[device]) {
-        callbacks.on_fail_callback_.Invoke(DynamicChannelManager::ConnectionResult{
+        callbacks.on_fail_callback_(DynamicChannelManager::ConnectionResult{
             .hci_error = hci::ErrorCode::CONNECTION_TIMEOUT,
         });
       }

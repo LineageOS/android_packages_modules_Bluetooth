@@ -18,7 +18,6 @@
 
 #include <bluetooth/log.h>
 
-#include "common/bind.h"
 #include "l2cap/classic/internal/dynamic_channel_service_impl.h"
 #include "l2cap/psm.h"
 #include "os/log.h"
@@ -32,12 +31,14 @@ void DynamicChannelServiceManagerImpl::Register(Psm psm,
                                                 DynamicChannelServiceImpl::PendingRegistration pending_registration) {
   if (!IsPsmValid(psm)) {
     std::unique_ptr<DynamicChannelService> invalid_service(new DynamicChannelService());
-    pending_registration.on_registration_complete_callback_.Invoke(
-        DynamicChannelManager::RegistrationResult::FAIL_INVALID_SERVICE, std::move(invalid_service));
+    pending_registration.on_registration_complete_callback_(
+        DynamicChannelManager::RegistrationResult::FAIL_INVALID_SERVICE,
+        std::move(invalid_service));
   } else if (IsServiceRegistered(psm)) {
     std::unique_ptr<DynamicChannelService> invalid_service(new DynamicChannelService());
-    pending_registration.on_registration_complete_callback_.Invoke(
-        DynamicChannelManager::RegistrationResult::FAIL_DUPLICATE_SERVICE, std::move(invalid_service));
+    pending_registration.on_registration_complete_callback_(
+        DynamicChannelManager::RegistrationResult::FAIL_DUPLICATE_SERVICE,
+        std::move(invalid_service));
   } else {
     service_map_.try_emplace(
         psm,
@@ -46,7 +47,7 @@ void DynamicChannelServiceManagerImpl::Register(Psm psm,
             std::move(pending_registration.on_connection_open_callback_),
             pending_registration.configuration_));
     std::unique_ptr<DynamicChannelService> user_service(new DynamicChannelService(psm, this, l2cap_layer_handler_));
-    pending_registration.on_registration_complete_callback_.Invoke(
+    pending_registration.on_registration_complete_callback_(
         DynamicChannelManager::RegistrationResult::SUCCESS, std::move(user_service));
   }
 }
@@ -54,7 +55,7 @@ void DynamicChannelServiceManagerImpl::Register(Psm psm,
 void DynamicChannelServiceManagerImpl::Unregister(Psm psm, DynamicChannelService::OnUnregisteredCallback callback) {
   if (IsServiceRegistered(psm)) {
     service_map_.erase(psm);
-    callback.Invoke();
+    callback();
   } else {
     log::error("service not registered psm:{}", psm);
   }
