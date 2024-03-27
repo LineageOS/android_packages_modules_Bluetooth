@@ -712,11 +712,11 @@ struct DistanceMeasurementManager::impl {
       append_vector(procedure_data->ras_subevents, subevent_raw);
       // erase buffer
       procedure_data->ras_subevent_data_.clear();
-      send_on_demand_data(procedure_data);
+      send_on_demand_data(cs_trackers_[connection_handle].address, procedure_data);
     }
   }
 
-  void send_on_demand_data(CsProcedureData* procedure_data) {
+  void send_on_demand_data(Address address, CsProcedureData* procedure_data) {
     if (procedure_data->local_status != CsProcedureDoneStatus::PARTIAL_RESULTS) {
       procedure_data->segmentation_header_.last_segment_ = 1;
     }
@@ -727,7 +727,11 @@ struct DistanceMeasurementManager::impl {
         procedure_data->ras_subevents);
     auto raw_data = builder_to_bytes(std::move(builder));
     log::debug("counter: {}, size:{}", procedure_data->counter, (uint16_t)raw_data.size());
-    // TODO, push data to RAS server
+    distance_measurement_callbacks_->OnRasFragmentReady(
+        address,
+        procedure_data->counter,
+        procedure_data->local_status != CsProcedureDoneStatus::PARTIAL_RESULTS,
+        raw_data);
 
     procedure_data->ras_subevents.clear();
     procedure_data->segmentation_header_.first_segment_ = 0;
