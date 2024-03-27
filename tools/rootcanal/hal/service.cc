@@ -16,11 +16,10 @@
 
 #define LOG_TAG "android.hardware.bluetooth@1.1-service.sim"
 
-#include "os/log.h"
-
 #include <android/hardware/bluetooth/1.1/IBluetoothHci.h>
 #include <hidl/HidlSupport.h>
 #include <hidl/HidlTransportSupport.h>
+#include <log/log.h>
 
 #include "bluetooth_hci.h"
 
@@ -37,5 +36,5 @@ int main(int /* argc */, char** /* argv */) {
   if (status == android::OK)
     joinRpcThreadpool();
   else
-    LOG_ERROR("Could not register as a service!");
+    ALOGE("Could not register as a service!");
 }

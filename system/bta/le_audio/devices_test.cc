@@ -755,7 +755,7 @@ class LeAudioAseConfigurationTest : public Test {
             continue;
           }
           if (device_cnt == 0) {
-            LOG_ERROR("Device count is 0");
+            log::error("Device count is 0");
             continue;
           }
 
@@ -764,18 +764,18 @@ class LeAudioAseConfigurationTest : public Test {
            * to active
            */
           if (device_cnt != data_size) {
-            LOG_DEBUG("Device count mismatch device!=data (%d!=%d)",
-                      static_cast<int>(device_cnt),
-                      static_cast<int>(data_size));
+            log::debug("Device count mismatch device!=data ({}!={})",
+                       static_cast<int>(device_cnt),
+                       static_cast<int>(data_size));
             interesting_configuration = false;
           }
 
           /* Make sure the strategy is the expected one */
           if (direction == kLeAudioDirectionSink &&
               group_->GetGroupSinkStrategy() != strategy) {
-            LOG_DEBUG("Sink strategy mismatch group!=cfg.entry (%d!=%d)",
-                      static_cast<int>(group_->GetGroupSinkStrategy()),
-                      static_cast<int>(strategy));
+            log::debug("Sink strategy mismatch group!=cfg.entry ({}!={})",
+                       static_cast<int>(group_->GetGroupSinkStrategy()),
+                       static_cast<int>(strategy));
             interesting_configuration = false;
           }
 

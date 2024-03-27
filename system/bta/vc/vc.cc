@@ -930,12 +930,12 @@ class VolumeControlImpl : public VolumeControl {
   }
 
   void Mute(std::variant<RawAddress, int> addr_or_group_id) override {
-    LOG_DEBUG();
+    log::debug("");
     MuteUnmute(addr_or_group_id, true /* mute */);
   }
 
   void UnMute(std::variant<RawAddress, int> addr_or_group_id) override {
-    LOG_DEBUG();
+    log::debug("");
     MuteUnmute(addr_or_group_id, false /* mute */);
   }
 

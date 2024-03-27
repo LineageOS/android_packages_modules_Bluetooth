@@ -486,7 +486,7 @@ uint8_t LeAudioDeviceGroup::GetSCA(void) const {
 
 uint8_t LeAudioDeviceGroup::GetPacking(void) const {
   if (!stream_conf.conf) {
-    LOG_ERROR("No stream configuration has been set.");
+    log::error("No stream configuration has been set.");
     return bluetooth::hci::kIsoCigPackingSequential;
   }
   return stream_conf.conf->packing;
@@ -943,19 +943,21 @@ types::LeAudioConfigurationStrategy LeAudioDeviceGroup::GetGroupSinkStrategy()
     /* Choose the group configuration strategy based on PAC records */
     strategy_ = GetGroupSinkStrategyFromPacs(expected_group_size);
 
-    LOG_INFO("Group strategy set to: %s", [](types::LeAudioConfigurationStrategy
-                                                 strategy) {
-      switch (strategy) {
-        case types::LeAudioConfigurationStrategy::MONO_ONE_CIS_PER_DEVICE:
-          return "MONO_ONE_CIS_PER_DEVICE";
-        case types::LeAudioConfigurationStrategy::STEREO_TWO_CISES_PER_DEVICE:
-          return "STEREO_TWO_CISES_PER_DEVICE";
-        case types::LeAudioConfigurationStrategy::STEREO_ONE_CIS_PER_DEVICE:
-          return "STEREO_ONE_CIS_PER_DEVICE";
-        default:
-          return "RFU";
-      }
-    }(*strategy_));
+    log::info(
+        "Group strategy set to: {}",
+        [](types::LeAudioConfigurationStrategy strategy) {
+          switch (strategy) {
+            case types::LeAudioConfigurationStrategy::MONO_ONE_CIS_PER_DEVICE:
+              return "MONO_ONE_CIS_PER_DEVICE";
+            case types::LeAudioConfigurationStrategy::
+                STEREO_TWO_CISES_PER_DEVICE:
+              return "STEREO_TWO_CISES_PER_DEVICE";
+            case types::LeAudioConfigurationStrategy::STEREO_ONE_CIS_PER_DEVICE:
+              return "STEREO_ONE_CIS_PER_DEVICE";
+            default:
+              return "RFU";
+          }
+        }(*strategy_));
   }
   return *strategy_;
 }
@@ -1309,9 +1311,8 @@ bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
    */
   for (auto direction :
        {types::kLeAudioDirectionSink, types::kLeAudioDirectionSource}) {
-    LOG_DEBUG("Looking for configuration: %s - %s",
-              audio_set_conf->name.c_str(),
-              (direction == types::kLeAudioDirectionSink ? "Sink" : "Source"));
+    log::debug("Looking for configuration: {} - {}", audio_set_conf->name,
+               (direction == types::kLeAudioDirectionSink ? "Sink" : "Source"));
     auto const& ase_confs = audio_set_conf->confs.get(direction);
 
     ASSERT_LOG(
@@ -1324,11 +1325,11 @@ bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
     auto const ase_cnt = ase_confs.size();
 
     if (ase_cnt == 0) {
-      LOG_ERROR("ASE count is 0");
+      log::error("ASE count is 0");
       continue;
     }
     if (device_cnt == 0) {
-      LOG_ERROR("Device count is 0");
+      log::error("Device count is 0");
       continue;
     }
 
@@ -1356,7 +1357,7 @@ bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
          device != nullptr && required_device_cnt > 0;
          device = GetNextDevice(device)) {
       if (device->ases_.empty()) {
-        LOG_ERROR("Device has no ASEs.");
+        log::error("Device has no ASEs.");
         continue;
       }
 
@@ -1366,12 +1367,12 @@ bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
 
       for (auto const& ent : ase_confs) {
         if (!device->GetCodecConfigurationSupportedPac(direction, ent.codec)) {
-          LOG_DEBUG("Insufficient PAC");
+          log::debug("Insufficient PAC");
           continue;
         }
 
         if (!CheckIfStrategySupported(strategy, ent, direction, *device)) {
-          LOG_DEBUG("Strategy not supported");
+          log::debug("Strategy not supported");
           continue;
         }
         for (auto& ase : device->ases_) {
@@ -1385,8 +1386,8 @@ bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
       }
 
       if (needed_ase_per_dev > 0) {
-        LOG_DEBUG("Not enough ASEs on the device (needs %d more).",
-                  needed_ase_per_dev);
+        log::debug("Not enough ASEs on the device (needs {} more).",
+                   needed_ase_per_dev);
         return false;
       }
 
@@ -1395,8 +1396,8 @@ bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
 
     if (required_device_cnt > 0) {
       /* Don't left any active devices if requirements are not met */
-      LOG_DEBUG(
-          "Could not configure all the devices for direction: %s",
+      log::debug(
+          "Could not configure all the devices for direction: {}",
           (direction == types::kLeAudioDirectionSink ? "Sink" : "Source"));
       return false;
     }
@@ -1463,11 +1464,11 @@ bool LeAudioDeviceGroup::ConfigureAses(
        {types::kLeAudioDirectionSink, types::kLeAudioDirectionSource}) {
     auto direction_str =
         (direction == types::kLeAudioDirectionSink ? "Sink" : "Source");
-    LOG_DEBUG("%s: Looking for requirements: %s", direction_str,
-              audio_set_conf->name.c_str());
+    log::debug("{}: Looking for requirements: {}", direction_str,
+               audio_set_conf->name);
 
     if (audio_set_conf->confs.get(direction).empty()) {
-      LOG_WARN("No %s configuration available.", direction_str);
+      log::warn("No {} configuration available.", direction_str);
       continue;
     }
 
@@ -1870,20 +1871,20 @@ bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
     const auto& confs = audio_set_conf->confs.get(direction);
     if (confs.size() == 0) continue;
 
-    LOG_INFO("Looking for requirements: %s - %s", audio_set_conf->name.c_str(),
-             (direction == 1 ? "snk" : "src"));
+    log::info("Looking for requirements: {} - {}", audio_set_conf->name,
+              (direction == 1 ? "snk" : "src"));
     for (const auto& ent : confs) {
       if (!leAudioDevice->GetCodecConfigurationSupportedPac(direction,
                                                             ent.codec)) {
-        LOG_INFO("Configuration is NOT supported by device %s",
-                 ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+        log::info("Configuration is NOT supported by device {}",
+                  ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
         return false;
       }
     }
   }
 
-  LOG_INFO("Configuration is supported by device %s",
-           ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+  log::info("Configuration is supported by device {}",
+            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
   return true;
 }
 
