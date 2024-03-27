@@ -2393,7 +2393,7 @@ public final class BluetoothAdapter {
             mServiceLock.readLock().unlock();
         }
 
-        return Collections.emptyList();
+        return new ArrayList<>();
     }
 
     /**
@@ -2890,7 +2890,7 @@ public final class BluetoothAdapter {
             })
     public @NonNull List<BluetoothDevice> getMostRecentlyConnectedDevices() {
         if (getState() != STATE_ON) {
-            return Collections.emptyList();
+            return new ArrayList<>();
         }
         mServiceLock.readLock().lock();
         try {
@@ -2904,7 +2904,7 @@ public final class BluetoothAdapter {
         } finally {
             mServiceLock.readLock().unlock();
         }
-        return Collections.emptyList();
+        return new ArrayList<>();
     }
 
     /**

@@ -165,7 +165,6 @@ import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -2274,7 +2273,7 @@ public class AdapterService extends Service {
                     || !callerIsSystemOrActiveOrManagedUser(service, TAG, "getUuids")
                     || !Utils.checkConnectPermissionForDataDelivery(
                             service, attributionSource, "AdapterService getUuids")) {
-                return Collections.emptyList();
+                return new ArrayList<>();
             }
 
             ParcelUuid[] parcels = service.mAdapterProperties.getUuids();
@@ -2496,7 +2495,7 @@ public class AdapterService extends Service {
                             service,
                             attributionSource,
                             "AdapterService getMostRecentlyConnectedDevices")) {
-                return Collections.emptyList();
+                return new ArrayList<>();
             }
 
             enforceBluetoothPrivilegedPermission(service);
@@ -2511,7 +2510,7 @@ public class AdapterService extends Service {
             if (service == null
                     || !Utils.checkConnectPermissionForDataDelivery(
                             service, attributionSource, "AdapterService getBondedDevices")) {
-                return Collections.emptyList();
+                return new ArrayList<>();
             }
 
             return Arrays.asList(service.getBondedDevices());
@@ -2785,7 +2784,7 @@ public class AdapterService extends Service {
             if (service == null
                     || !callerIsSystemOrActiveOrManagedUser(service, TAG, "getActiveDevices")
                     || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
-                return Collections.emptyList();
+                return new ArrayList<>();
             }
 
             enforceBluetoothPrivilegedPermission(service);
@@ -2951,7 +2950,7 @@ public class AdapterService extends Service {
                     || !callerIsSystemOrActiveOrManagedUser(service, TAG, "getRemoteUuids")
                     || !Utils.checkConnectPermissionForDataDelivery(
                             service, attributionSource, "AdapterService getRemoteUuids")) {
-                return Collections.emptyList();
+                return new ArrayList<>();
             }
 
             ParcelUuid[] parcels = service.getRemoteUuids(device);

@@ -26,7 +26,6 @@ import android.util.Log;
 import com.android.bluetooth.R;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 class Util {
@@ -118,15 +117,15 @@ class Util {
      */
     public static List<Metadata> toMetadataList(Context context,
             List<MediaSession.QueueItem> items) {
-
-        if (items == null) return Collections.emptyList();
-
         ArrayList<Metadata> list = new ArrayList<Metadata>();
+
+        if (items == null) return list;
+
         for (int i = 0; i < items.size(); i++) {
             Metadata data = toMetadata(context, items.get(i));
             if (isEmptyData(data)) {
                 Log.e(TAG, "Received an empty Metadata item in list. Returning an empty queue");
-                return Collections.emptyList();
+                return new ArrayList<Metadata>();
             }
             data.trackNum = "" + (i + 1);
             data.numTracks = "" + items.size();

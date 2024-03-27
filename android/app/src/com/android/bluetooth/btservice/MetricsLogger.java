@@ -49,7 +49,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -342,7 +341,7 @@ public class MetricsLogger {
 
     private List<String> getWordBreakdownList(String deviceName) {
         if (deviceName == null) {
-            return Collections.emptyList();
+            return new ArrayList<String>();
         }
         // remove more than one spaces in a row
         deviceName = deviceName.trim().replaceAll(" +", " ");
@@ -351,7 +350,7 @@ public class MetricsLogger {
 
         if (words.length > MAX_WORDS_ALLOWED_IN_DEVICE_NAME) {
             // Validity checking here to avoid excessively long sequences
-            return Collections.emptyList();
+            return new ArrayList<String>();
         }
         // collect the word breakdown in an arraylist
         ArrayList<String> wordBreakdownList = new ArrayList<String>();
