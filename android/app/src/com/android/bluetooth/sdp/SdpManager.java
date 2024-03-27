@@ -26,6 +26,7 @@ import android.bluetooth.SdpRecord;
 import android.bluetooth.SdpSapsRecord;
 import android.content.Intent;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.os.ParcelUuid;
 import android.os.Parcelable;
@@ -67,6 +68,8 @@ public class SdpManager {
     // We need a reference to the adapter service, to be able to send intents
     private final AdapterService mAdapterService;
     private boolean mNativeAvailable;
+
+    private final Handler mHandler;
 
     private final SdpManagerNativeInterface mNativeInterface =
             SdpManagerNativeInterface.getInstance();
@@ -122,7 +125,6 @@ public class SdpManager {
         }
     }
 
-
     /* We wrap the ArrayList class to decorate with functionality to
      * find an instance based on UUID AND device address.
      * As we use a mix of byte[] and object instances, this is more
@@ -177,9 +179,28 @@ public class SdpManager {
     }
 
     public SdpManager(AdapterService adapterService) {
+        this(adapterService, Looper.myLooper());
+    }
+
+    SdpManager(AdapterService adapterService, Looper looper) {
         mAdapterService = adapterService;
         mNativeInterface.init(this);
         mNativeAvailable = true;
+        mHandler =
+                new Handler(looper) {
+                    @Override
+                    public void handleMessage(Message msg) {
+                        switch (msg.what) {
+                            case MESSAGE_SDP_INTENT:
+                                SdpSearchInstance msgObj = (SdpSearchInstance) msg.obj;
+                                Log.w(TAG, "Search timedout for UUID " + msgObj.getUuid());
+                                synchronized (TRACKER_LOCK) {
+                                    sendSdpIntent(msgObj, null, false);
+                                }
+                                break;
+                        }
+                    }
+                };
     }
 
     public void cleanup() {
@@ -438,19 +459,4 @@ public class SdpManager {
             startSearch();
         }
     }
-
-    private final Handler mHandler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case MESSAGE_SDP_INTENT:
-                    SdpSearchInstance msgObj = (SdpSearchInstance) msg.obj;
-                    Log.w(TAG, "Search timedout for UUID " + msgObj.getUuid());
-                    synchronized (TRACKER_LOCK) {
-                        sendSdpIntent(msgObj, null, false);
-                    }
-                    break;
-            }
-        }
-    };
 }
