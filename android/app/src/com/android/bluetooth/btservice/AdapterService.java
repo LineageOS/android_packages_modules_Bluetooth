@@ -250,6 +250,9 @@ public class AdapterService extends Service {
 
     private final DeviceConfigListener mDeviceConfigListener = new DeviceConfigListener();
 
+    private final Looper mLooper;
+    private final AdapterServiceHandler mHandler;
+
     private int mStackReportedState;
     private long mTxTimeTotalMs;
     private long mRxTimeTotalMs;
@@ -282,8 +285,8 @@ public class AdapterService extends Service {
     @Nullable private PhonePolicy mPhonePolicy;
 
     private ActiveDeviceManager mActiveDeviceManager;
-    private DatabaseManager mDatabaseManager;
-    private SilenceDeviceManager mSilenceDeviceManager;
+    private final DatabaseManager mDatabaseManager;
+    private final SilenceDeviceManager mSilenceDeviceManager;
     private CompanionManager mBtCompanionManager;
     private AppOpsManager mAppOps;
 
@@ -316,8 +319,6 @@ public class AdapterService extends Service {
     private volatile boolean mTestModeEnabled = false;
 
     private MetricsLogger mMetricsLogger;
-    private Looper mLooper;
-    private AdapterServiceHandler mHandler;
 
     /** Handlers for incoming service calls */
     private AdapterServiceBinder mBinder;
@@ -355,15 +356,21 @@ public class AdapterService extends Service {
     }
 
     // Keep a constructor for ActivityThread.handleCreateService
-    AdapterService() {}
+    AdapterService() {
+        this(Looper.getMainLooper());
+    }
 
     @VisibleForTesting
     AdapterService(Looper looper) {
-        mLooper = looper;
+        mLooper = requireNonNull(looper);
+        mHandler = new AdapterServiceHandler(mLooper);
+        mSilenceDeviceManager = new SilenceDeviceManager(this, new ServiceFactory(), mLooper);
+        mDatabaseManager = new DatabaseManager(this);
     }
 
     @VisibleForTesting
     AdapterService(Context ctx) {
+        this(Looper.getMainLooper());
         attachBaseContext(ctx);
     }
 
@@ -615,10 +622,6 @@ public class AdapterService extends Service {
             return;
         }
         // OnCreate must perform the minimum of infaillible and mandatory initialization
-        if (mLooper == null) {
-            mLooper = Looper.getMainLooper();
-        }
-        mHandler = new AdapterServiceHandler(mLooper);
         mAdapterProperties = new AdapterProperties(this);
         mAdapterStateMachine = new AdapterState(this, mLooper);
         mBinder = new AdapterServiceBinder(this);
@@ -632,13 +635,6 @@ public class AdapterService extends Service {
     private void init() {
         debugLog("init()");
         Config.init(this);
-        if (!Flags.fastBindToApp()) {
-            // Moved to OnCreate
-            if (mLooper == null) {
-                mLooper = Looper.getMainLooper();
-            }
-            mHandler = new AdapterServiceHandler(mLooper);
-        }
         initMetricsLogger();
         mDeviceConfigListener.start();
 
@@ -705,7 +701,6 @@ public class AdapterService extends Service {
             mSdpManager = new SdpManager(this);
         }
 
-        mDatabaseManager = new DatabaseManager(this);
         mDatabaseManager.start(MetadataDatabase.createDatabase(this));
 
         boolean isAutomotiveDevice =
@@ -734,7 +729,6 @@ public class AdapterService extends Service {
         }
         mActiveDeviceManager.start();
 
-        mSilenceDeviceManager = new SilenceDeviceManager(this, new ServiceFactory(), mLooper);
         mSilenceDeviceManager.start();
 
         mBtCompanionManager = new CompanionManager(this, new ServiceFactory());
@@ -1358,9 +1352,7 @@ public class AdapterService extends Service {
             }
         }
 
-        if (mDatabaseManager != null) {
-            mDatabaseManager.cleanup();
-        }
+        mDatabaseManager.cleanup();
 
         if (mAdapterStateMachine != null) {
             mAdapterStateMachine.doQuit();
@@ -1402,9 +1394,7 @@ public class AdapterService extends Service {
             mPhonePolicy.cleanup();
         }
 
-        if (mSilenceDeviceManager != null) {
-            mSilenceDeviceManager.cleanup();
-        }
+        mSilenceDeviceManager.cleanup();
 
         if (mActiveDeviceManager != null) {
             mActiveDeviceManager.cleanup();
@@ -5687,9 +5677,7 @@ public class AdapterService extends Service {
 
     @VisibleForTesting
     boolean factoryReset() {
-        if (mDatabaseManager != null) {
-            mDatabaseManager.factoryReset();
-        }
+        mDatabaseManager.factoryReset();
 
         if (mBluetoothKeystoreService != null) {
             mBluetoothKeystoreService.factoryReset();
@@ -5935,9 +5923,7 @@ public class AdapterService extends Service {
         if (mCsipSetCoordinatorService != null && mCsipSetCoordinatorService.isAvailable()) {
             mCsipSetCoordinatorService.handleBondStateChanged(device, fromState, toState);
         }
-        if (mDatabaseManager != null) {
-            mDatabaseManager.handleBondStateChanged(device, fromState, toState);
-        }
+        mDatabaseManager.handleBondStateChanged(device, fromState, toState);
     }
 
     static int convertScanModeToHal(int mode) {

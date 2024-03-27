@@ -50,6 +50,7 @@ import android.os.BatteryStatsManager;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
 import android.os.Process;
@@ -115,7 +116,21 @@ public class AdapterServiceTest {
     private static final int MESSAGE_PROFILE_SERVICE_REGISTERED = 2;
     private static final int MESSAGE_PROFILE_SERVICE_UNREGISTERED = 3;
 
-    private AdapterService mAdapterService;
+    private MockAdapterService mAdapterService;
+
+    static class MockAdapterService extends AdapterService {
+
+        int mSetProfileServiceStateCounter = 0;
+
+        MockAdapterService(Looper looper) {
+            super(looper);
+        }
+
+        @Override
+        void setProfileServiceState(int profileId, int state) {
+            mSetProfileServiceStateCounter++;
+        }
+    }
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
@@ -208,11 +223,9 @@ public class AdapterServiceTest {
         ScanNativeInterface.setInstance(mScanNativeInterface);
 
         // Post the creation of AdapterService since it rely on Looper.myLooper()
-        handler.post(() -> mAdapterService = spy(new AdapterService(mLooper.getLooper())));
+        handler.post(() -> mAdapterService = new MockAdapterService(mLooper.getLooper()));
         assertThat(mLooper.dispatchAll()).isEqualTo(1);
         assertThat(mAdapterService).isNotNull();
-
-        doNothing().when(mAdapterService).setProfileServiceState(anyInt(), anyInt());
 
         mMockPackageManager = mock(PackageManager.class);
         when(mMockPackageManager.getPermissionInfo(any(), anyInt()))
@@ -406,7 +419,7 @@ public class AdapterServiceTest {
 
     static void onToBleOn(
             TestLooper looper,
-            AdapterService adapter,
+            MockAdapterService adapter,
             Context ctx,
             IBluetoothCallback callback,
             boolean onlyGatt,
@@ -417,7 +430,7 @@ public class AdapterServiceTest {
 
         if (!onlyGatt) {
             // Stop PBAP and PAN services
-            verify(adapter, times(4)).setProfileServiceState(anyInt(), anyInt());
+            assertThat(adapter.mSetProfileServiceStateCounter).isEqualTo(4);
 
             for (ProfileService service : services) {
                 adapter.onProfileServiceStateChanged(service, STATE_OFF);
@@ -441,11 +454,12 @@ public class AdapterServiceTest {
                 List.of(mMockService, mMockService2),
                 mNativeInterface);
     }
+
     // Method is re-used in other AdapterService*Test
     static void doEnable(
             TestLooper looper,
             ProfileService gattService,
-            AdapterService adapter,
+            MockAdapterService adapter,
             Context ctx,
             boolean onlyGatt,
             List<ProfileService> services,
@@ -467,7 +481,7 @@ public class AdapterServiceTest {
 
         if (!onlyGatt) {
             // Start Mock PBAP and PAN services
-            verify(adapter, times(2)).setProfileServiceState(anyInt(), anyInt());
+            assertThat(adapter.mSetProfileServiceStateCounter).isEqualTo(2);
 
             for (ProfileService service : services) {
                 adapter.addProfile(service);
@@ -502,7 +516,7 @@ public class AdapterServiceTest {
     private static void doDisable(
             TestLooper looper,
             ProfileService gattService,
-            AdapterService adapter,
+            MockAdapterService adapter,
             Context ctx,
             boolean onlyGatt,
             List<ProfileService> services,
@@ -674,8 +688,7 @@ public class AdapterServiceTest {
         mAdapterService.startBrEdr();
         syncHandler(AdapterState.USER_TURN_ON);
         verifyStateChange(STATE_BLE_ON, STATE_TURNING_ON);
-        verify(mAdapterService, times(2))
-                .setProfileServiceState(anyInt(), anyInt()); // Register Mock PBAP and PAN services
+        assertThat(mAdapterService.mSetProfileServiceStateCounter).isEqualTo(2);
 
         mAdapterService.addProfile(mMockService);
         syncHandler(MESSAGE_PROFILE_SERVICE_REGISTERED);
@@ -690,8 +703,7 @@ public class AdapterServiceTest {
         syncHandler(AdapterState.BREDR_START_TIMEOUT);
 
         verifyStateChange(STATE_TURNING_ON, STATE_TURNING_OFF);
-        verify(mAdapterService, times(4))
-                .setProfileServiceState(anyInt(), anyInt()); // Stop PBAP and PAN services
+        assertThat(mAdapterService.mSetProfileServiceStateCounter).isEqualTo(4);
 
         mAdapterService.onProfileServiceStateChanged(mMockService, STATE_OFF);
         syncHandler(MESSAGE_PROFILE_SERVICE_STATE_CHANGED);
@@ -702,10 +714,7 @@ public class AdapterServiceTest {
         assertThat(mAdapterService.getBluetoothGatt()).isNotNull();
     }
 
-    /**
-     * Test: Don't stop a classic profile
-     * Check whether the AdapterService quits gracefully
-     */
+    /** Test: Don't stop a classic profile Check whether the AdapterService quits gracefully */
     @Test
     public void testProfileStopTimeout() {
         doEnable(false);
@@ -713,7 +722,7 @@ public class AdapterServiceTest {
         mAdapterService.disable();
         syncHandler(AdapterState.USER_TURN_OFF);
         verifyStateChange(STATE_ON, STATE_TURNING_OFF);
-        verify(mAdapterService, times(4)).setProfileServiceState(anyInt(), anyInt());
+        assertThat(mAdapterService.mSetProfileServiceStateCounter).isEqualTo(4);
 
         mAdapterService.onProfileServiceStateChanged(mMockService, STATE_OFF);
         syncHandler(MESSAGE_PROFILE_SERVICE_STATE_CHANGED);
