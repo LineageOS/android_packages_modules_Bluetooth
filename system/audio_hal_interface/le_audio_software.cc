@@ -351,51 +351,39 @@ void LeAudioClientInterface::Sink::CancelStreamingRequest() {
 }
 
 void LeAudioClientInterface::Sink::CancelStreamingRequestV2() {
-  if (HalVersionManager::GetHalTransport() ==
-      BluetoothAudioHalTransport::HIDL) {
-    auto hidl_instance = hidl::le_audio::LeAudioSinkTransport::instance;
-    auto start_request_state = hidl_instance->GetStartRequestState();
-    switch (start_request_state) {
+  auto lambda = [&](StartRequestState currect_start_request_state)
+      -> std::pair<StartRequestState, bool> {
+    switch (currect_start_request_state) {
       case StartRequestState::IDLE:
         log::warn(", no pending start stream request");
-        return;
+        return std::make_pair(StartRequestState::IDLE, false);
       case StartRequestState::PENDING_BEFORE_RESUME:
         log::info("Response before sending PENDING to audio HAL");
-        hidl_instance->SetStartRequestState(StartRequestState::CANCELED);
-        return;
+        return std::make_pair(StartRequestState::CANCELED, false);
       case StartRequestState::PENDING_AFTER_RESUME:
         log::info("Response after sending PENDING to audio HAL");
-        hidl_instance->ClearStartRequestState();
-        hidl::le_audio::LeAudioSinkTransport::interface->StreamStarted(
-            hidl::BluetoothAudioCtrlAck::FAILURE);
-        return;
+        return std::make_pair(StartRequestState::IDLE, true);
       case StartRequestState::CONFIRMED:
       case StartRequestState::CANCELED:
         log::error("Invalid state, start stream already confirmed");
-        break;
+        return std::make_pair(currect_start_request_state, false);
     }
+  };
+
+  if (HalVersionManager::GetHalTransport() ==
+      BluetoothAudioHalTransport::HIDL) {
+    auto hidl_instance = hidl::le_audio::LeAudioSinkTransport::instance;
+    if (hidl_instance->IsRequestCompletedAfterUpdate(lambda)) {
+      hidl::le_audio::LeAudioSinkTransport::interface->StreamStarted(
+          hidl::BluetoothAudioCtrlAck::FAILURE);
+    }
+    return;
   }
 
   auto aidl_instance = get_aidl_transport_instance(is_broadcaster_);
-  auto start_request_state = aidl_instance->GetStartRequestState();
-  switch (start_request_state) {
-    case StartRequestState::IDLE:
-      log::warn(", no pending start stream request");
-      return;
-    case StartRequestState::PENDING_BEFORE_RESUME:
-      log::info("Response before sending PENDING to audio HAL");
-      aidl_instance->SetStartRequestState(StartRequestState::CANCELED);
-      return;
-    case StartRequestState::PENDING_AFTER_RESUME:
-      log::info("Response after sending PENDING to audio HAL");
-      aidl_instance->ClearStartRequestState();
-      get_aidl_client_interface(is_broadcaster_)
-          ->StreamStarted(aidl::BluetoothAudioCtrlAck::FAILURE);
-      return;
-    case StartRequestState::CONFIRMED:
-    case StartRequestState::CANCELED:
-      log::error("Invalid state, start stream already confirmed");
-      break;
+  if (aidl_instance->IsRequestCompletedAfterUpdate(lambda)) {
+    get_aidl_client_interface(is_broadcaster_)
+        ->StreamStarted(aidl::BluetoothAudioCtrlAck::FAILURE);
   }
 }
 
