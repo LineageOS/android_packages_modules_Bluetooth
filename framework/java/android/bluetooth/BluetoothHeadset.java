@@ -38,7 +38,7 @@ import android.util.Log;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -496,7 +496,7 @@ public final class BluetoothHeadset implements BluetoothProfile {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return new ArrayList<>();
+        return Collections.emptyList();
     }
 
     /** {@inheritDoc} */
@@ -518,7 +518,7 @@ public final class BluetoothHeadset implements BluetoothProfile {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return new ArrayList<>();
+        return Collections.emptyList();
     }
 
     /** {@inheritDoc} */
