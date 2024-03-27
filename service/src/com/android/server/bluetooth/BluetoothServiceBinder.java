@@ -38,11 +38,14 @@ import android.bluetooth.IBluetoothManager;
 import android.bluetooth.IBluetoothManagerCallback;
 import android.content.AttributionSource;
 import android.content.Context;
+import android.os.Build;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.ParcelFileDescriptor;
 import android.os.UserManager;
 import android.permission.PermissionManager;
+
+import androidx.annotation.RequiresApi;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -337,6 +340,7 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
 
     @Override
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     public void setAutoOnEnabled(boolean status) {
         BtPermissionUtils.enforcePrivileged(mContext);
         mBluetoothManagerService.setAutoOnEnabled(status);
