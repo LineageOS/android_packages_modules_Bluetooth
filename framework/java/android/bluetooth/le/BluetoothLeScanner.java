@@ -16,8 +16,6 @@
 
 package android.bluetooth.le;
 
-import static android.bluetooth.le.BluetoothLeUtils.getSyncTimeout;
-
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresNoPermission;
@@ -39,14 +37,11 @@ import android.os.RemoteException;
 import android.os.WorkSource;
 import android.util.Log;
 
-import com.android.modules.utils.SynchronousResultReceiver;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.TimeoutException;
 
 /**
  * This class provides methods to perform scan related operations for Bluetooth LE devices. An
@@ -280,11 +275,8 @@ public final class BluetoothLeScanner {
                 wrapper.startRegistration();
             } else {
                 try {
-                    final SynchronousResultReceiver recv = SynchronousResultReceiver.get();
-                    gatt.startScanForIntent(
-                            callbackIntent, settings, filters, mAttributionSource, recv);
-                    recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
-                } catch (TimeoutException | RemoteException e) {
+                    gatt.startScanForIntent(callbackIntent, settings, filters, mAttributionSource);
+                } catch (RemoteException e) {
                     return ScanCallback.SCAN_FAILED_INTERNAL_ERROR;
                 }
             }
@@ -329,10 +321,8 @@ public final class BluetoothLeScanner {
                 Log.w(TAG, "stopScan called after bluetooth has been turned off");
                 return;
             }
-            final SynchronousResultReceiver recv = SynchronousResultReceiver.get();
-            gatt.stopScanForIntent(callbackIntent, mAttributionSource, recv);
-            recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
-        } catch (TimeoutException | RemoteException e) {
+            gatt.stopScanForIntent(callbackIntent, mAttributionSource);
+        } catch (RemoteException e) {
             Log.e(TAG, "Failed to stop scan", e);
         }
     }
@@ -431,11 +421,9 @@ public final class BluetoothLeScanner {
                 // Scan stopped.
                 if (mScannerId == -1 || mScannerId == -2) return;
                 try {
-                    final SynchronousResultReceiver recv = SynchronousResultReceiver.get();
-                    mBluetoothGatt.registerScanner(this, mWorkSource, mAttributionSource, recv);
-                    recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
+                    mBluetoothGatt.registerScanner(this, mWorkSource, mAttributionSource);
                     wait(REGISTRATION_CALLBACK_TIMEOUT_MILLIS);
-                } catch (TimeoutException | InterruptedException | RemoteException e) {
+                } catch (InterruptedException | RemoteException e) {
                     Log.e(TAG, "application registration exception", e);
                     postCallbackError(mScanCallback, ScanCallback.SCAN_FAILED_INTERNAL_ERROR);
                 }
@@ -464,14 +452,10 @@ public final class BluetoothLeScanner {
                     return;
                 }
                 try {
-                    final SynchronousResultReceiver recv = SynchronousResultReceiver.get();
-                    mBluetoothGatt.stopScan(mScannerId, mAttributionSource, recv);
-                    recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
+                    mBluetoothGatt.stopScan(mScannerId, mAttributionSource);
 
-                    final SynchronousResultReceiver recv2 = SynchronousResultReceiver.get();
-                    mBluetoothGatt.unregisterScanner(mScannerId, mAttributionSource, recv2);
-                    recv2.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
-                } catch (TimeoutException | RemoteException e) {
+                    mBluetoothGatt.unregisterScanner(mScannerId, mAttributionSource);
+                } catch (RemoteException e) {
                     Log.e(TAG, "Failed to stop scan and unregister", e);
                 }
                 mScannerId = -1;
@@ -486,10 +470,8 @@ public final class BluetoothLeScanner {
                     return;
                 }
                 try {
-                    final SynchronousResultReceiver recv = SynchronousResultReceiver.get();
-                    mBluetoothGatt.flushPendingBatchResults(mScannerId, mAttributionSource, recv);
-                    recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
-                } catch (TimeoutException | RemoteException e) {
+                    mBluetoothGatt.flushPendingBatchResults(mScannerId, mAttributionSource);
+                } catch (RemoteException e) {
                     Log.e(TAG, "Failed to get pending scan results", e);
                 }
             }
@@ -509,17 +491,15 @@ public final class BluetoothLeScanner {
             synchronized (this) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
                     try {
-                        final SynchronousResultReceiver recv = SynchronousResultReceiver.get();
                         if (mScannerId == -1) {
                             // Registration succeeds after timeout, unregister scanner.
-                            mBluetoothGatt.unregisterScanner(scannerId, mAttributionSource, recv);
+                            mBluetoothGatt.unregisterScanner(scannerId, mAttributionSource);
                         } else {
                             mScannerId = scannerId;
                             mBluetoothGatt.startScan(
-                                    mScannerId, mSettings, mFilters, mAttributionSource, recv);
+                                    mScannerId, mSettings, mFilters, mAttributionSource);
                         }
-                        recv.awaitResultNoInterrupt(getSyncTimeout()).getValue(null);
-                    } catch (TimeoutException | RemoteException e) {
+                    } catch (RemoteException e) {
                         Log.e(TAG, "fail to start le scan: " + e);
                         mScannerId = -1;
                     }

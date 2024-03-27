@@ -197,8 +197,28 @@ flag {
 }
 
 flag {
+    name: "leaudio_resume_active_after_hfp_handover"
+    namespace: "bluetooth"
+    description: "Fix for if HFP- LE Audio handover happened, LE audio resume active after the call"
+    bug: "331468678"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "leaudio_allow_leaudio_only_devices"
     namespace: "bluetooth"
     description: "Enable Le Audio for LeAudio only devices"
     bug: "328471369"
+}
+
+flag {
+    name: "leaudio_mono_location_errata"
+    namespace: "bluetooth"
+    description: "Add mono location as per Bluetooth Assigned Numbers"
+    bug: "331139722"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
 }

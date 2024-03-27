@@ -18,12 +18,14 @@
 
 #include <android_bluetooth_sysprop.h>
 #include <base/location.h>
+
 #include <cstdint>
 #include <future>
 #include <optional>
 
 #include "hci/acl_manager.h"
 #include "hci/remote_name_request.h"
+#include "main/shim/acl.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "main/shim/stack.h"

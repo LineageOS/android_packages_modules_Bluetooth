@@ -34,8 +34,6 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class SapRilReceiver implements ISapRilReceiver {
     private static final String TAG = "SapRilReceiver";
-    public static final boolean DEBUG = true;
-    public static final boolean VERBOSE = true;
 
     // todo: add support for slot2 and slot3
     private static final String HAL_INSTANCE_NAME = ISap.DESCRIPTOR + "/slot1";
@@ -189,10 +187,8 @@ public class SapRilReceiver implements ISapRilReceiver {
 
     private void removeOngoingReqAndSendMessage(int token, SapMessage sapMessage) {
         Integer reqType = SapMessage.sOngoingRequests.remove(token);
-        if (VERBOSE) {
-            Log.d(TAG, "removeOngoingReqAndSendMessage: token " + token + " reqType " + (
-                    reqType == null ? "null" : SapMessage.getMsgTypeName(reqType)));
-        }
+        Log.v(TAG, "removeOngoingReqAndSendMessage: token " + token + " reqType " + (
+                reqType == null ? "null" : SapMessage.getMsgTypeName(reqType)));
         sendSapMessage(sapMessage);
     }
 
@@ -259,10 +255,8 @@ public class SapRilReceiver implements ISapRilReceiver {
             Log.d(TAG, "powerResponse: token " + token + " resultCode " + resultCode);
             SapService.notifyUpdateWakeLock(mSapServiceHandler);
             Integer reqType = SapMessage.sOngoingRequests.remove(token);
-            if (VERBOSE) {
-                Log.d(TAG, "powerResponse: reqType " + (reqType == null ? "null"
-                        : SapMessage.getMsgTypeName(reqType)));
-            }
+            Log.v(TAG, "powerResponse: reqType " + (reqType == null ? "null"
+                    : SapMessage.getMsgTypeName(reqType)));
             SapMessage sapMessage;
             if (reqType == SapMessage.ID_POWER_SIM_OFF_REQ) {
                 sapMessage = new SapMessage(SapMessage.ID_POWER_SIM_OFF_RESP);
@@ -394,7 +388,7 @@ public class SapRilReceiver implements ISapRilReceiver {
     @Override
     public void resetSapProxy() {
         synchronized (mSapProxyLock) {
-            if (DEBUG) Log.d(TAG, "resetSapProxy :" + mSapProxy);
+            Log.d(TAG, "resetSapProxy :" + mSapProxy);
             if (mSapProxy == null) {
                 return;
             }
@@ -418,9 +412,7 @@ public class SapRilReceiver implements ISapRilReceiver {
 
     @Override
     public void notifyShutdown() {
-        if (DEBUG) {
-            Log.i(TAG, "notifyShutdown()");
-        }
+        Log.d(TAG, "notifyShutdown()");
         synchronized (mSapProxyLock) {
             // If we are already shutdown, don't bother sending a notification.
             if (mSapProxy != null) {

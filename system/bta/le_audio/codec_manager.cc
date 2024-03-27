@@ -206,7 +206,8 @@ struct codec_manager_impl {
   const AudioSetConfigurations* GetSupportedCodecConfigurations(
       types::LeAudioContextType ctx_type) {
     if (GetCodecLocation() == le_audio::types::CodecLocation::ADSP) {
-      LOG_VERBOSE("Get offload config for the context type: %d", (int)ctx_type);
+      log::verbose("Get offload config for the context type: {}",
+                   (int)ctx_type);
 
       // TODO: Need to have a mechanism to switch to software session if offload
       // doesn't support.
@@ -215,7 +216,7 @@ struct codec_manager_impl {
                  : nullptr;
     }
 
-    LOG_VERBOSE("Get software config for the context type: %d", (int)ctx_type);
+    log::verbose("Get software config for the context type: {}", (int)ctx_type);
     return AudioSetConfigurationProvider::Get()->GetConfigurations(ctx_type);
   }
 
@@ -342,7 +343,7 @@ struct codec_manager_impl {
     }
 
     if (broadcast_target_config == -1) {
-      LOG_ERROR(
+      log::error(
           "There is no valid broadcast offload config with preferred_quality");
       return nullptr;
     }
@@ -388,8 +389,8 @@ struct codec_manager_impl {
 
     auto offload_config = GetBroadcastOffloadConfig(BIG_audio_quality);
     if (offload_config == nullptr) {
-      LOG_ERROR("No Offload configuration supported for quality index: %d.",
-                BIG_audio_quality);
+      log::error("No Offload configuration supported for quality index: {}.",
+                 BIG_audio_quality);
       return nullptr;
     }
 
@@ -438,7 +439,7 @@ struct codec_manager_impl {
     }
 
     if (subgroup_quality.size() > 1) {
-      LOG_ERROR("More than one subgroup is not supported!");
+      log::error("More than one subgroup is not supported!");
     }
 
     return std::make_unique<broadcaster::BroadcastConfiguration>(
@@ -465,7 +466,7 @@ struct codec_manager_impl {
 
     if (broadcast_target_config == -1 ||
         broadcast_target_config >= (int)supported_broadcast_config.size()) {
-      LOG_ERROR("There is no valid broadcast offload config");
+      log::error("There is no valid broadcast offload config");
       return;
     }
 
@@ -685,8 +686,8 @@ struct codec_manager_impl {
 
         // Check for number of ASEs mismatch
         if (adsp_set_ase_confs.size() != software_set_ase_confs.size()) {
-          LOG_ERROR(
-              "%s: ADSP config size mismatches the software: %zu != %zu",
+          log::error(
+              "{}: ADSP config size mismatches the software: {} != {}",
               direction == types::kLeAudioDirectionSink ? "Sink" : "Source",
               adsp_set_ase_confs.size(), software_set_ase_confs.size());
           continue;

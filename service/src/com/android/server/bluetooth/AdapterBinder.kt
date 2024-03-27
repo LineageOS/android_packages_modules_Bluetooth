@@ -21,12 +21,7 @@ import android.bluetooth.IBluetoothCallback
 import android.content.AttributionSource
 import android.os.IBinder
 import android.os.RemoteException
-import com.android.modules.utils.SynchronousResultReceiver
 import com.android.server.bluetooth.BluetoothManagerService.timeToLog
-import java.time.Duration
-import java.util.concurrent.TimeoutException
-
-val SYNC_TIMEOUT = Duration.ofSeconds(3)
 
 class AdapterBinder(rawBinder: IBinder) {
     private val TAG = "AdapterBinder"
@@ -36,68 +31,50 @@ class AdapterBinder(rawBinder: IBinder) {
     override fun toString(): String =
         "[Binder=" + adapterBinder.hashCode() + ", createdAt=" + timeToLog(createdAt) + "]"
 
-    @Throws(RemoteException::class, TimeoutException::class)
-    fun disable(source: AttributionSource): Boolean {
-        val recv: SynchronousResultReceiver<Boolean> = SynchronousResultReceiver.get()
-        adapterBinder.disable(source, recv)
-        return recv.awaitResultNoInterrupt(SYNC_TIMEOUT).getValue(false)
+    @Throws(RemoteException::class)
+    fun disable(source: AttributionSource) {
+        adapterBinder.disable(source)
     }
 
-    @Throws(RemoteException::class, TimeoutException::class)
-    fun enable(quietMode: Boolean, source: AttributionSource): Boolean {
-        val recv: SynchronousResultReceiver<Boolean> = SynchronousResultReceiver.get()
-        adapterBinder.enable(quietMode, source, recv)
-        return recv.awaitResultNoInterrupt(SYNC_TIMEOUT).getValue(false)
+    @Throws(RemoteException::class)
+    fun enable(quietMode: Boolean, source: AttributionSource) {
+        adapterBinder.enable(quietMode, source)
     }
 
-    @Throws(RemoteException::class, TimeoutException::class)
+    @Throws(RemoteException::class)
     fun getAddress(source: AttributionSource): String? {
-        val recv: SynchronousResultReceiver<String> = SynchronousResultReceiver.get()
-        adapterBinder.getAddress(source, recv)
-        return recv.awaitResultNoInterrupt(SYNC_TIMEOUT).getValue(null)
+        return adapterBinder.getAddress(source)
     }
 
-    @Throws(RemoteException::class, TimeoutException::class)
+    @Throws(RemoteException::class)
     fun getName(source: AttributionSource): String? {
-        val recv: SynchronousResultReceiver<String> = SynchronousResultReceiver.get()
-        adapterBinder.getName(source, recv)
-        return recv.awaitResultNoInterrupt(SYNC_TIMEOUT).getValue(null)
+        return adapterBinder.getName(source)
     }
 
-    @Throws(RemoteException::class, TimeoutException::class)
+    @Throws(RemoteException::class)
     fun stopBle(source: AttributionSource) {
-        val recv: SynchronousResultReceiver<Any> = SynchronousResultReceiver.get()
-        adapterBinder.stopBle(source, recv)
-        recv.awaitResultNoInterrupt(SYNC_TIMEOUT).getValue(null)
+        adapterBinder.stopBle(source)
     }
 
-    @Throws(RemoteException::class, TimeoutException::class)
+    @Throws(RemoteException::class)
     fun startBrEdr(source: AttributionSource) {
-        val recv: SynchronousResultReceiver<Any> = SynchronousResultReceiver.get()
-        adapterBinder.startBrEdr(source, recv)
-        recv.awaitResultNoInterrupt(SYNC_TIMEOUT).getValue(null)
+        adapterBinder.startBrEdr(source)
     }
 
-    @Throws(RemoteException::class, TimeoutException::class)
+    @Throws(RemoteException::class)
     fun registerCallback(callback: IBluetoothCallback, source: AttributionSource) {
-        val recv: SynchronousResultReceiver<Any> = SynchronousResultReceiver.get()
-        adapterBinder.registerCallback(callback, source, recv)
-        recv.awaitResultNoInterrupt(SYNC_TIMEOUT).getValue(null)
+        adapterBinder.registerCallback(callback, source)
     }
 
-    @Throws(RemoteException::class, TimeoutException::class)
+    @Throws(RemoteException::class)
     fun unregisterCallback(callback: IBluetoothCallback, source: AttributionSource) {
-        val recv: SynchronousResultReceiver<Any> = SynchronousResultReceiver.get()
-        adapterBinder.unregisterCallback(callback, source, recv)
-        recv.awaitResultNoInterrupt(SYNC_TIMEOUT).getValue(null)
+        adapterBinder.unregisterCallback(callback, source)
     }
 
-    @Throws(RemoteException::class, TimeoutException::class)
+    @Throws(RemoteException::class)
     fun getSupportedProfiles(source: AttributionSource): MutableList<Int> {
         val supportedProfiles = ArrayList<Int>()
-        val recv: SynchronousResultReceiver<Long> = SynchronousResultReceiver.get()
-        adapterBinder.getSupportedProfiles(source, recv)
-        val supportedProfilesBitMask = recv.awaitResultNoInterrupt(SYNC_TIMEOUT).getValue(0L)
+        val supportedProfilesBitMask = adapterBinder.getSupportedProfiles(source)
         for (i in 0..BluetoothProfile.MAX_PROFILE_ID) {
             if (supportedProfilesBitMask and (1 shl i).toLong() != 0L) {
                 supportedProfiles.add(i)
@@ -111,27 +88,17 @@ class AdapterBinder(rawBinder: IBinder) {
         adapterBinder.setForegroundUserId(userId, source)
     }
 
-    @Throws(RemoteException::class, TimeoutException::class)
+    @Throws(RemoteException::class)
     fun unregAllGattClient(source: AttributionSource) {
-        val recv: SynchronousResultReceiver<Any> = SynchronousResultReceiver.get()
-        adapterBinder.unregAllGattClient(source, recv)
-        recv.awaitResultNoInterrupt(SYNC_TIMEOUT).getValue(null)
+        adapterBinder.unregAllGattClient(source)
     }
 
     fun isMediaProfileConnected(source: AttributionSource): Boolean {
         try {
-            val recv: SynchronousResultReceiver<Boolean> = SynchronousResultReceiver.get()
-            adapterBinder.isMediaProfileConnected(source, recv)
-            return recv.awaitResultNoInterrupt(SYNC_TIMEOUT).getValue(false)
-        } catch (ex: Exception) {
-            when (ex) {
-                is RemoteException,
-                is TimeoutException -> {
-                    Log.e(TAG, "Error when calling isMediaProfileConnected", ex)
-                }
-                else -> throw ex
-            }
-            return false
+            return adapterBinder.isMediaProfileConnected(source)
+        } catch (ex: RemoteException) {
+            Log.e(TAG, "Error when calling isMediaProfileConnected", ex)
         }
+        return false
     }
 }

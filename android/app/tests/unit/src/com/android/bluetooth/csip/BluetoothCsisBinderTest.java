@@ -26,8 +26,6 @@ import android.bluetooth.IBluetoothCsipSetCoordinatorLockCallback;
 import android.content.AttributionSource;
 import android.os.ParcelUuid;
 
-import com.android.bluetooth.jarjar.com.android.modules.utils.SynchronousResultReceiver;
-
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -57,49 +55,45 @@ public class BluetoothCsisBinderTest {
 
     @Test
     public void connect() {
-        mBinder.connect(mTestDevice, mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.connect(mTestDevice, mAttributionSource);
         verify(mService).connect(mTestDevice);
     }
 
     @Test
     public void disconnect() {
-        mBinder.disconnect(mTestDevice, mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.disconnect(mTestDevice, mAttributionSource);
         verify(mService).disconnect(mTestDevice);
     }
 
     @Test
     public void getConnectedDevices() {
-        mBinder.getConnectedDevices(mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.getConnectedDevices(mAttributionSource);
         verify(mService).getConnectedDevices();
     }
 
     @Test
     public void getDevicesMatchingConnectionStates() {
         int[] states = new int[] { BluetoothProfile.STATE_CONNECTED };
-        mBinder.getDevicesMatchingConnectionStates(states, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.getDevicesMatchingConnectionStates(states, mAttributionSource);
         verify(mService).getDevicesMatchingConnectionStates(states);
     }
 
     @Test
     public void getConnectionState() {
-        mBinder.getConnectionState(mTestDevice, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.getConnectionState(mTestDevice, mAttributionSource);
         verify(mService).getConnectionState(mTestDevice);
     }
 
     @Test
     public void setConnectionPolicy() {
         int connectionPolicy = BluetoothProfile.CONNECTION_POLICY_ALLOWED;
-        mBinder.setConnectionPolicy(mTestDevice, connectionPolicy, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.setConnectionPolicy(mTestDevice, connectionPolicy, mAttributionSource);
         verify(mService).setConnectionPolicy(mTestDevice, connectionPolicy);
     }
 
     @Test
     public void getConnectionPolicy() {
-        mBinder.getConnectionPolicy(mTestDevice, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.getConnectionPolicy(mTestDevice, mAttributionSource);
         verify(mService).getConnectionPolicy(mTestDevice);
     }
 
@@ -108,36 +102,34 @@ public class BluetoothCsisBinderTest {
         int groupId = 100;
         IBluetoothCsipSetCoordinatorLockCallback cb =
                 mock(IBluetoothCsipSetCoordinatorLockCallback.class);
-        mBinder.lockGroup(groupId, cb, mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.lockGroup(groupId, cb, mAttributionSource);
         verify(mService).lockGroup(groupId, cb);
     }
 
     @Test
     public void unlockGroup() {
         ParcelUuid uuid = ParcelUuid.fromString("0000110A-0000-1000-8000-00805F9B34FB");
-        mBinder.unlockGroup(uuid, mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.unlockGroup(uuid, mAttributionSource);
         verify(mService).unlockGroup(uuid.getUuid());
     }
 
     @Test
     public void getAllGroupIds() {
         ParcelUuid uuid = ParcelUuid.fromString("0000110A-0000-1000-8000-00805F9B34FB");
-        mBinder.getAllGroupIds(uuid, mAttributionSource, SynchronousResultReceiver.get());
+        mBinder.getAllGroupIds(uuid, mAttributionSource);
         verify(mService).getAllGroupIds(uuid);
     }
 
     @Test
     public void getGroupUuidMapByDevice() {
-        mBinder.getGroupUuidMapByDevice(mTestDevice, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.getGroupUuidMapByDevice(mTestDevice, mAttributionSource);
         verify(mService).getGroupUuidMapByDevice(mTestDevice);
     }
 
     @Test
     public void getDesiredGroupSize() {
         int groupId = 100;
-        mBinder.getDesiredGroupSize(groupId, mAttributionSource,
-                SynchronousResultReceiver.get());
+        mBinder.getDesiredGroupSize(groupId, mAttributionSource);
         verify(mService).getDesiredGroupSize(groupId);
     }
 }

@@ -29,12 +29,29 @@ import android.media.AudioManager;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothEventLogger;
+import com.android.bluetooth.Utils;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
+/**
+ * Handles volume changes from or to the remote device or system.
+ *
+ * <p>{@link AudioManager#setDeviceVolumeBehavior} is used to inform Media Framework of the current
+ * active {@link BluetoothDevice} and its absolute volume support.
+ *
+ * <p>When absolute volume is supported, the volume should be synced between Media framework and the
+ * remote device. Otherwise, only system volume is used.
+ *
+ * <p>AVRCP volume ranges from 0 to 127 which might not correspond to the system volume. As such,
+ * volume sent to either Media Framework or remote device is converted accordingly.
+ *
+ * <p>Volume changes are stored as system volume in {@link SharedPreferences} and retrieved at
+ * device connection.
+ */
 class AvrcpVolumeManager extends AudioDeviceCallback {
     public static final String TAG = AvrcpVolumeManager.class.getSimpleName();
 
@@ -55,15 +72,31 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
     AudioManager mAudioManager;
     AvrcpNativeInterface mNativeInterface;
 
+    // Absolute volume support map.
     HashMap<BluetoothDevice, Boolean> mDeviceMap = new HashMap();
+
+    // Volume stored is system volume (0 - {@code sDeviceMaxVolume}).
     HashMap<BluetoothDevice, Integer> mVolumeMap = new HashMap();
+
     BluetoothDevice mCurrentDevice = null;
     boolean mAbsoluteVolumeSupported = false;
 
+    /**
+     * Converts given {@code avrcpVolume} (0 - 127) to equivalent in system volume (0 - {@code
+     * sDeviceMaxVolume}).
+     *
+     * <p>Max system volume is retrieved from {@link AudioManager}.
+     */
     static int avrcpToSystemVolume(int avrcpVolume) {
         return (int) Math.round((double) avrcpVolume * sDeviceMaxVolume / AVRCP_MAX_VOL);
     }
 
+    /**
+     * Converts given {@code deviceVolume} (0 - {@code sDeviceMaxVolume}) to equivalent in AVRCP
+     * volume (0 - 127).
+     *
+     * <p>Max system volume is retrieved from {@link AudioManager}.
+     */
     static int systemToAvrcpVolume(int deviceVolume) {
         int avrcpVolume =
                 (int) Math.round((double) deviceVolume * AVRCP_MAX_VOL / sDeviceMaxVolume);
@@ -71,18 +104,49 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
         return avrcpVolume;
     }
 
+    /**
+     * Retrieves the {@link SharedPreferences} of the map device / volume.
+     *
+     * <p>The map is read to retrieve the last volume set for a bonded {@link BluetoothDevice}.
+     *
+     * <p>The map is written each time a volume update occurs from or to the remote device.
+     */
     private SharedPreferences getVolumeMap() {
         return mContext.getSharedPreferences(VOLUME_MAP, Context.MODE_PRIVATE);
     }
 
+    /**
+     * Informs {@link AudioManager} that a new {@link BluetoothDevice} has been connected and is the
+     * new desired audio output.
+     *
+     * <p>If AVRCP absolute volume is supported, this will also send the saved or new volume to the
+     * remote device.
+     *
+     * <p>Absolute volume support is conditional to its presence in the {@code mDeviceMap}.
+     */
     private void switchVolumeDevice(@NonNull BluetoothDevice device) {
         // Inform the audio manager that the device has changed
         d("switchVolumeDevice: Set Absolute volume support to " + mDeviceMap.get(device));
-        mAudioManager.setDeviceVolumeBehavior(new AudioDeviceAttributes(
-                    AudioDeviceAttributes.ROLE_OUTPUT, AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
-                    device.getAddress()),
-                 mDeviceMap.get(device) ? AudioManager.DEVICE_VOLUME_BEHAVIOR_ABSOLUTE
-                 : AudioManager.DEVICE_VOLUME_BEHAVIOR_VARIABLE);
+        final AudioDeviceAttributes deviceAttributes =
+                new AudioDeviceAttributes(
+                        AudioDeviceAttributes.ROLE_OUTPUT,
+                        AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
+                        device.getAddress());
+        final int deviceVolumeBehavior =
+                mDeviceMap.get(device)
+                        ? AudioManager.DEVICE_VOLUME_BEHAVIOR_ABSOLUTE
+                        : AudioManager.DEVICE_VOLUME_BEHAVIOR_VARIABLE;
+
+        CompletableFuture.runAsync(
+                        () ->
+                                mAudioManager.setDeviceVolumeBehavior(
+                                        deviceAttributes, deviceVolumeBehavior),
+                        Utils.BackgroundExecutor)
+                .exceptionally(
+                        e -> {
+                            Log.e(TAG, "switchVolumeDevice has thrown an Exception", e);
+                            return null;
+                        });
 
         // Get the current system volume and try to get the preference volume
         int savedVolume = getVolume(device, sNewDeviceVolume);
@@ -98,6 +162,12 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
         }
     }
 
+    /**
+     * Instantiates all class variables.
+     *
+     * <p>Fills {@code mVolumeMap} with content from {@link #getVolumeMap}, removing unbonded
+     * devices if necessary.
+     */
     AvrcpVolumeManager(Context context, AudioManager audioManager,
             AvrcpNativeInterface nativeInterface) {
         mContext = context;
@@ -128,6 +198,10 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
         volumeMapEditor.apply();
     }
 
+    /**
+     * Stores system volume (0 - {@code sDeviceMaxVolume}) for device in {@code mVolumeMap} and
+     * writes the map in the {@link SharedPreferences}.
+     */
     synchronized void storeVolumeForDevice(@NonNull BluetoothDevice device, int storeVolume) {
         if (device.getBondState() != BluetoothDevice.BOND_BONDED) {
             return;
@@ -142,11 +216,19 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
         pref.apply();
     }
 
+    /**
+     * Retrieves system volume (0 - {@code sDeviceMaxVolume}) and calls {@link
+     * #storeVolumeForDevice(BluetoothDevice, int)} with {@code device}.
+     */
     synchronized void storeVolumeForDevice(@NonNull BluetoothDevice device) {
         int storeVolume =  mAudioManager.getLastAudibleStreamVolume(STREAM_MUSIC);
         storeVolumeForDevice(device, storeVolume);
     }
 
+    /**
+     * Removes the stored volume of a device from {@code mVolumeMap} and writes the map in the
+     * {@link SharedPreferences}.
+     */
     synchronized void removeStoredVolumeForDevice(@NonNull BluetoothDevice device) {
         if (device.getBondState() != BluetoothDevice.BOND_NONE) {
             return;
@@ -161,6 +243,12 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
         pref.apply();
     }
 
+    /**
+     * Returns system volume (0 - {@code sDeviceMaxVolume}) stored in {@code mVolumeMap} for
+     * corresponding {@code device}.
+     *
+     * @param defaultValue Value to return if device is not in the map.
+     */
     synchronized int getVolume(@NonNull BluetoothDevice device, int defaultValue) {
         if (!mVolumeMap.containsKey(device)) {
             Log.w(TAG, "getVolume: Couldn't find volume preference for device: " + device);
@@ -171,10 +259,18 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
         return mVolumeMap.get(device);
     }
 
+    /** Returns the system volume (0 - {@code sDeviceMaxVolume}) applied to a new device */
     public int getNewDeviceVolume() {
         return sNewDeviceVolume;
     }
 
+    /**
+     * Informs {@link AudioManager} of a remote device volume change and stores it.
+     *
+     * <p>See {@link #avrcpToSystemVolume}.
+     *
+     * @param avrcpVolume in range (0 - 127) received from remote device.
+     */
     void setVolume(@NonNull BluetoothDevice device, int avrcpVolume) {
         int deviceVolume = avrcpToSystemVolume(avrcpVolume);
         mVolumeEventLogger.logd(TAG, "setVolume:"
@@ -188,6 +284,13 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
         storeVolumeForDevice(device);
     }
 
+    /**
+     * Informs remote device of a system volume change and stores it.
+     *
+     * <p>See {@link #systemToAvrcpVolume}.
+     *
+     * @param deviceVolume in range (0 - {@code sDeviceMaxVolume}) received from system.
+     */
     void sendVolumeChanged(@NonNull BluetoothDevice device, int deviceVolume) {
         if (deviceVolume == getVolume(device, -1)) {
             d("sendVolumeChanged: Skipping update volume to same as current.");
@@ -203,10 +306,7 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
         storeVolumeForDevice(device);
     }
 
-    /**
-     * True if remote device supported Absolute volume, false if remote device is not supported or
-     * not connected.
-     */
+    /** Returns whether absolute volume is supported by {@code device}. */
     boolean getAbsoluteVolumeSupported(BluetoothDevice device) {
         if (mDeviceMap.containsKey(device)) {
             return mDeviceMap.get(device);
@@ -214,6 +314,16 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
         return false;
     }
 
+    /**
+     * Callback from Media Framework to indicate new audio device was added.
+     *
+     * <p>Checks if the current active device is in the {@code addedDevices} list in order to inform
+     * {@link AudioManager} to take it as selected audio output. See {@link #switchVolumeDevice}.
+     *
+     * <p>If the remote device absolute volume support hasn't been established yet or if the current
+     * active device is not in the {@code addedDevices} list, this doesn't inform {@link
+     * AudioManager}. See {@link #deviceConnected} and {@link #volumeDeviceSwitched}.
+     */
     @Override
     public synchronized void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
         if (mCurrentDevice == null) {
@@ -248,6 +358,10 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
         switchVolumeDevice(mCurrentDevice);
     }
 
+    /**
+     * Stores absolute volume support for {@code device}. If the current active device is the same
+     * as {@code device}, calls {@link #switchVolumeDevice}.
+     */
     synchronized void deviceConnected(@NonNull BluetoothDevice device, boolean absoluteVolume) {
         d("deviceConnected: device=" + device + " absoluteVolume=" + absoluteVolume);
 
@@ -260,6 +374,10 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
         }
     }
 
+    /**
+     * Called when the A2DP active device changed, this will call {@link #switchVolumeDevice} if we
+     * already know the absolute volume support of {@code device}.
+     */
     synchronized void volumeDeviceSwitched(@Nullable BluetoothDevice device) {
         d("volumeDeviceSwitched: mCurrentDevice=" + mCurrentDevice + " device=" + device);
 

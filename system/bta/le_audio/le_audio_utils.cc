@@ -342,7 +342,7 @@ static void fillRemotePacsCapabitiliesToBtLeAudioCodecConfig(
     const struct types::acs_ac_record& record,
     std::vector<bluetooth::le_audio::btle_audio_codec_config_t>& vec) {
   if (!utils::IsCodecUsingLtvFormat(record.codec_id)) {
-    LOG_WARN(
+    log::warn(
         "Unknown codec capability format. Unable to report known codec "
         "parameters.");
     return;

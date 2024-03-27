@@ -44,9 +44,9 @@ class SecurityEnforcementRejectAllImpl : public SecurityEnforcementInterface {
       SecurityPolicy policy,
       ResultCallback result_callback) override {
     if (policy == SecurityPolicy::NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK) {
-      result_callback.InvokeIfNotEmpty(true);
+      result_callback.Invoke(true);
     } else {
-      result_callback.InvokeIfNotEmpty(false);
+      result_callback.Invoke(false);
     }
   }
 };

@@ -586,10 +586,9 @@ public final class OobData implements Parcelable {
         }
 
         /**
-         * Validates and builds the {@link OobDat object for Classic Security.
+         * Validates and builds the {@link OobData} object for Classic Security.
          *
          * @return {@link OobData} with previously given builder values.
-         *
          * @hide
          */
         @NonNull

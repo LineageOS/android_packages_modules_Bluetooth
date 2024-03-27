@@ -93,7 +93,7 @@ class FakeReactable {
   }
 
   void OnReadReady() {
-    LOG_INFO();
+    log::info("");
     uint64_t value = 0;
     auto read_result = eventfd_read(fd_, &value);
     log::info("value = {}", (int)value);
@@ -330,14 +330,14 @@ TEST_F(ReactorTest, hot_unregister_from_same_thread) {
   auto write_result = eventfd_write(fake_reactable.fd_, FakeReactable::kRegisterSampleReactable);
   EXPECT_EQ(write_result, 0);
   EXPECT_EQ(future.get(), kReadReadyValue);
-  LOG_INFO();
+  log::info("");
   delete g_promise;
   g_promise = new std::promise<int>;
   future = g_promise->get_future();
   write_result = eventfd_write(fake_reactable.fd_, FakeReactable::kUnregisterSampleReactable);
   EXPECT_EQ(write_result, 0);
   EXPECT_EQ(future.get(), kReadReadyValue);
-  LOG_INFO();
+  log::info("");
   reactor_->Stop();
   reactor_thread.join();
 

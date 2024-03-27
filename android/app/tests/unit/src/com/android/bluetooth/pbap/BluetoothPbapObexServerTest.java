@@ -852,8 +852,8 @@ public class BluetoothPbapObexServerTest {
     }
 
     @Test
-    public void appParamValueDump_doesNotCrash() {
+    public void appParamValueToString_doesNotCrash() {
         AppParamValue appParamValue = new AppParamValue();
-        appParamValue.dump();
+        assertThat(appParamValue.toString()).isNotNull();
     }
 }

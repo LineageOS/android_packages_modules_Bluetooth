@@ -900,7 +900,7 @@ struct shim::legacy::Acl::impl {
     if (IsClassicAcl(handle)) {
       handle_to_classic_connection_map_[handle]->Flush();
     } else {
-      LOG_ERROR("handle %d is not a classic connection", handle);
+      log::error("handle {} is not a classic connection", handle);
     }
   }
 
@@ -1109,7 +1109,7 @@ struct shim::legacy::Acl::impl {
                                     uint16_t max_ce_len) {
     auto connection = handle_to_le_connection_map_.find(handle);
     if (connection == handle_to_le_connection_map_.end()) {
-      LOG_WARN("Unknown le connection handle:0x%04x", handle);
+      log::warn("Unknown le connection handle:0x{:04x}", handle);
       return;
     }
     connection->second->UpdateConnectionParameters(conn_int_min, conn_int_max,

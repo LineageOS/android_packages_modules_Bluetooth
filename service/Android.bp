@@ -176,6 +176,8 @@ android_robolectric_test {
         "src/satellite/ModeListenerTest.kt",
     ],
 
+    jarjar_rules: ":bluetooth-jarjar-rules",
+
     static_libs: [
         "androidx.test.core",
         "androidx.test.ext.truth",

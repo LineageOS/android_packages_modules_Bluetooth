@@ -52,7 +52,6 @@ import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
-import com.android.modules.utils.SynchronousResultReceiver;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -935,238 +934,165 @@ public class HearingAidService extends ProfileService {
         }
 
         @Override
-        public void connect(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                HearingAidService service = getService(source);
-                boolean result = false;
-                if (service != null) {
-                    result = service.connect(device);
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public boolean connect(BluetoothDevice device, AttributionSource source) {
+            HearingAidService service = getService(source);
+            if (service == null) {
+                return false;
+            }
+
+            return service.connect(device);
+        }
+
+        @Override
+        public boolean disconnect(BluetoothDevice device, AttributionSource source) {
+            HearingAidService service = getService(source);
+            if (service == null) {
+                return false;
+            }
+
+            return service.disconnect(device);
+        }
+
+        @Override
+        public List<BluetoothDevice> getConnectedDevices(AttributionSource source) {
+            HearingAidService service = getService(source);
+            if (service == null) {
+                return new ArrayList<>();
+            }
+
+            return service.getConnectedDevices();
+        }
+
+        @Override
+        public List<BluetoothDevice> getDevicesMatchingConnectionStates(
+                int[] states, AttributionSource source) {
+            HearingAidService service = getService(source);
+            if (service == null) {
+                return new ArrayList<>();
+            }
+
+            return service.getDevicesMatchingConnectionStates(states);
+        }
+
+        @Override
+        public int getConnectionState(BluetoothDevice device, AttributionSource source) {
+            HearingAidService service = getService(source);
+            if (service == null) {
+                return BluetoothProfile.STATE_DISCONNECTED;
+            }
+
+            return service.getConnectionState(device);
+        }
+
+        @Override
+        public boolean setActiveDevice(BluetoothDevice device, AttributionSource source) {
+            HearingAidService service = getService(source);
+            if (service == null) {
+                return false;
+            }
+
+            if (Flags.audioRoutingCentralization()) {
+                return ((AudioRoutingManager) service.mAdapterService.getActiveDeviceManager())
+                        .activateDeviceProfile(device, BluetoothProfile.HEARING_AID);
+            }
+            if (device == null) {
+                return service.removeActiveDevice(false);
+            } else {
+                return service.setActiveDevice(device);
             }
         }
 
         @Override
-        public void disconnect(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                HearingAidService service = getService(source);
-                boolean result = false;
-                if (service != null) {
-                    result = service.disconnect(device);
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public List<BluetoothDevice> getActiveDevices(AttributionSource source) {
+            HearingAidService service = getService(source);
+            if (service == null) {
+                return new ArrayList<>();
             }
+
+            return service.getActiveDevices();
         }
 
         @Override
-        public void getConnectedDevices(AttributionSource source,
-               SynchronousResultReceiver receiver) {
-            try {
-                HearingAidService service = getService(source);
-                List<BluetoothDevice> devices = new ArrayList<>();
-                if (service != null) {
-                    devices = service.getConnectedDevices();
-                }
-                receiver.send(devices);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public boolean setConnectionPolicy(
+                BluetoothDevice device, int connectionPolicy, AttributionSource source) {
+            HearingAidService service = getService(source);
+            if (service == null) {
+                return false;
             }
+
+            return service.setConnectionPolicy(device, connectionPolicy);
         }
 
         @Override
-        public void getDevicesMatchingConnectionStates(int[] states,
-                AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                HearingAidService service = getService(source);
-                List<BluetoothDevice> devices = new ArrayList<>();
-                if (service != null) {
-                    devices = service.getDevicesMatchingConnectionStates(states);
-                }
-                receiver.send(devices);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public int getConnectionPolicy(BluetoothDevice device, AttributionSource source) {
+            HearingAidService service = getService(source);
+            if (service == null) {
+                return BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
             }
+
+            return service.getConnectionPolicy(device);
         }
 
         @Override
-        public void getConnectionState(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                HearingAidService service = getService(source);
-                int state = BluetoothProfile.STATE_DISCONNECTED;
-                if (service != null) {
-                    state = service.getConnectionState(device);
-                }
-                receiver.send(state);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public void setVolume(int volume, AttributionSource source) {
+            HearingAidService service = getService(source);
+            if (service == null) {
+                return;
             }
+
+            service.setVolume(volume);
         }
 
         @Override
-        public void setActiveDevice(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                HearingAidService service = getService(source);
-                if (service != null) {
-                    if (Flags.audioRoutingCentralization()) {
-                        ((AudioRoutingManager) service.mAdapterService.getActiveDeviceManager())
-                                .activateDeviceProfile(
-                                        device, BluetoothProfile.HEARING_AID, receiver);
-                    } else {
-                        boolean result;
-                        if (device == null) {
-                            result = service.removeActiveDevice(false);
-                        } else {
-                            result = service.setActiveDevice(device);
-                        }
-                        receiver.send(result);
-                    }
-                } else {
-                    receiver.send(false);
-                }
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public long getHiSyncId(BluetoothDevice device, AttributionSource source) {
+            HearingAidService service = getService(source);
+            if (service == null) {
+                return BluetoothHearingAid.HI_SYNC_ID_INVALID;
             }
+
+            return service.getHiSyncId(device);
         }
 
         @Override
-        public void getActiveDevices(AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                HearingAidService service = getService(source);
-                List<BluetoothDevice> devices = new ArrayList<>();
-                if (service != null) {
-                    devices = service.getActiveDevices();
-                }
-                receiver.send(devices);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public int getDeviceSide(BluetoothDevice device, AttributionSource source) {
+            HearingAidService service = getService(source);
+            if (service == null) {
+                return BluetoothHearingAid.SIDE_UNKNOWN;
             }
+
+            int side = service.getCapabilities(device);
+            if (side != BluetoothHearingAid.SIDE_UNKNOWN) {
+                side &= 1;
+            }
+
+            return side;
         }
 
         @Override
-        public void setConnectionPolicy(BluetoothDevice device, int connectionPolicy,
-                AttributionSource source, SynchronousResultReceiver receiver) {
-            try {
-                HearingAidService service = getService(source);
-                boolean result = false;
-                if (service != null) {
-                    result = service.setConnectionPolicy(device, connectionPolicy);
-                }
-                receiver.send(result);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public int getDeviceMode(BluetoothDevice device, AttributionSource source) {
+            HearingAidService service = getService(source);
+            if (service == null) {
+                return BluetoothHearingAid.MODE_UNKNOWN;
             }
+
+            int mode = service.getCapabilities(device);
+            if (mode != BluetoothHearingAid.MODE_UNKNOWN) {
+                mode = mode >> 1 & 1;
+            }
+
+            return mode;
         }
 
         @Override
-        public void getConnectionPolicy(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                HearingAidService service = getService(source);
-                int policy = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-                if (service != null) {
-                    policy = service.getConnectionPolicy(device);
-                }
-                receiver.send(policy);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
+        public AdvertisementServiceData getAdvertisementServiceData(
+                BluetoothDevice device, AttributionSource source) {
+            if (!Utils.checkServiceAvailable(mService, TAG)
+                    || !Utils.checkCallerIsSystemOrActiveOrManagedUser(mService, TAG)
+                    || !Utils.checkScanPermissionForDataDelivery(mService, source, TAG)) {
+                return null;
             }
-        }
 
-        @Override
-        public void setVolume(int volume, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                HearingAidService service = getService(source);
-                if (service != null) {
-                    service.setVolume(volume);
-                }
-                receiver.send(null);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
-        }
-
-        @Override
-        public void getHiSyncId(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                HearingAidService service = getService(source);
-                long id = BluetoothHearingAid.HI_SYNC_ID_INVALID;
-                if (service != null) {
-                    id = service.getHiSyncId(device);
-                }
-                receiver.send(id);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
-        }
-
-        @Override
-        public void getDeviceSide(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                HearingAidService service = getService(source);
-                int side = BluetoothHearingAid.SIDE_UNKNOWN;
-                if (service != null) {
-                    side = service.getCapabilities(device);
-                    if (side != BluetoothHearingAid.SIDE_UNKNOWN) {
-                        side &= 1;
-                    }
-                }
-                receiver.send(side);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
-        }
-
-        @Override
-        public void getDeviceMode(BluetoothDevice device, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                HearingAidService service = getService(source);
-                int mode = BluetoothHearingAid.MODE_UNKNOWN;
-                if (service != null) {
-                    mode = service.getCapabilities(device);
-                    if (mode != BluetoothHearingAid.MODE_UNKNOWN) {
-                        mode = mode >> 1 & 1;
-                    }
-                }
-                receiver.send(mode);
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
-        }
-
-        @RequiresPermission(
-                allOf = {
-                    android.Manifest.permission.BLUETOOTH_SCAN,
-                    android.Manifest.permission.BLUETOOTH_PRIVILEGED,
-                })
-        @Override
-        public void getAdvertisementServiceData(
-                BluetoothDevice device,
-                AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                if (!Utils.checkServiceAvailable(mService, TAG)
-                        || !Utils.checkCallerIsSystemOrActiveOrManagedUser(mService, TAG)
-                        || !Utils.checkScanPermissionForDataDelivery(mService, source, TAG)) {
-                    receiver.send(null);
-                    return;
-                }
-                receiver.send(mService.getAdvertisementServiceData(device, source));
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
+            return mService.getAdvertisementServiceData(device, source);
         }
     }
 

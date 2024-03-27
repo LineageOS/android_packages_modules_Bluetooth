@@ -43,7 +43,6 @@ import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
-import com.android.bluetooth.jarjar.com.android.modules.utils.SynchronousResultReceiver;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -231,7 +230,7 @@ public class PbapClientServiceTest {
         PbapClientService.BluetoothPbapClientBinder binder =
                 new PbapClientService.BluetoothPbapClientBinder(mockService);
 
-        binder.connect(mRemoteDevice, null, SynchronousResultReceiver.get());
+        binder.connect(mRemoteDevice, null);
 
         verify(mockService).connect(mRemoteDevice);
     }
@@ -242,7 +241,7 @@ public class PbapClientServiceTest {
         PbapClientService.BluetoothPbapClientBinder binder =
                 new PbapClientService.BluetoothPbapClientBinder(mockService);
 
-        binder.disconnect(mRemoteDevice, null, SynchronousResultReceiver.get());
+        binder.disconnect(mRemoteDevice, null);
 
         verify(mockService).disconnect(mRemoteDevice);
     }
@@ -253,7 +252,7 @@ public class PbapClientServiceTest {
         PbapClientService.BluetoothPbapClientBinder binder =
                 new PbapClientService.BluetoothPbapClientBinder(mockService);
 
-        binder.getConnectedDevices(null, SynchronousResultReceiver.get());
+        binder.getConnectedDevices(null);
 
         verify(mockService).getConnectedDevices();
     }
@@ -265,7 +264,7 @@ public class PbapClientServiceTest {
                 new PbapClientService.BluetoothPbapClientBinder(mockService);
 
         int[] states = new int[] {BluetoothProfile.STATE_CONNECTED};
-        binder.getDevicesMatchingConnectionStates(states, null, SynchronousResultReceiver.get());
+        binder.getDevicesMatchingConnectionStates(states, null);
 
         verify(mockService).getDevicesMatchingConnectionStates(states);
     }
@@ -276,7 +275,7 @@ public class PbapClientServiceTest {
         PbapClientService.BluetoothPbapClientBinder binder =
                 new PbapClientService.BluetoothPbapClientBinder(mockService);
 
-        binder.getConnectionState(mRemoteDevice, null, SynchronousResultReceiver.get());
+        binder.getConnectionState(mRemoteDevice, null);
 
         verify(mockService).getConnectionState(mRemoteDevice);
     }
@@ -288,8 +287,7 @@ public class PbapClientServiceTest {
                 new PbapClientService.BluetoothPbapClientBinder(mockService);
 
         int connectionPolicy = BluetoothProfile.CONNECTION_POLICY_ALLOWED;
-        binder.setConnectionPolicy(mRemoteDevice, connectionPolicy,
-                null, SynchronousResultReceiver.get());
+        binder.setConnectionPolicy(mRemoteDevice, connectionPolicy, null);
 
         verify(mockService).setConnectionPolicy(mRemoteDevice, connectionPolicy);
     }
@@ -300,7 +298,7 @@ public class PbapClientServiceTest {
         PbapClientService.BluetoothPbapClientBinder binder =
                 new PbapClientService.BluetoothPbapClientBinder(mockService);
 
-        binder.getConnectionPolicy(mRemoteDevice, null, SynchronousResultReceiver.get());
+        binder.getConnectionPolicy(mRemoteDevice, null);
 
         verify(mockService).getConnectionPolicy(mRemoteDevice);
     }

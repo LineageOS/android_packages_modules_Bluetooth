@@ -19,6 +19,7 @@
 package com.android.server.bluetooth
 
 import android.app.AlarmManager
+import android.app.BroadcastOptions
 import android.bluetooth.BluetoothAdapter.ACTION_AUTO_ON_STATE_CHANGED
 import android.bluetooth.BluetoothAdapter.AUTO_ON_STATE_DISABLED
 import android.bluetooth.BluetoothAdapter.AUTO_ON_STATE_ENABLED
@@ -30,10 +31,12 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.database.ContentObserver
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.provider.Settings
+import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import com.android.modules.expresslog.Counter
 import com.android.server.bluetooth.airplane.hasUserToggledApm as hasUserToggledApm
@@ -95,6 +98,7 @@ public fun pause() {
     timer = null
 }
 
+@RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 public fun notifyBluetoothOn(context: Context) {
     timer?.cancel()
     timer = null
@@ -118,6 +122,7 @@ public fun isUserEnabled(context: Context): Boolean {
     return isFeatureEnabledForUser(context.contentResolver)
 }
 
+@RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 public fun setUserEnabled(
     looper: Looper,
     context: Context,
@@ -287,6 +292,7 @@ private fun isFeatureSupportedForUser(resolver: ContentResolver): Boolean {
  *
  * @return whether the auto on feature is enabled for this user
  */
+@RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 private fun setFeatureEnabledForUserUnchecked(context: Context, status: Boolean): Boolean {
     val ret =
         Settings.Secure.putInt(context.contentResolver, USER_SETTINGS_KEY, if (status) 1 else 0)
@@ -299,6 +305,9 @@ private fun setFeatureEnabledForUserUnchecked(context: Context, status: Boolean)
                     if (status) AUTO_ON_STATE_ENABLED else AUTO_ON_STATE_DISABLED
                 ),
             android.Manifest.permission.BLUETOOTH_PRIVILEGED,
+            BroadcastOptions.makeBasic()
+                .setDeferralPolicy(BroadcastOptions.DEFERRAL_POLICY_UNTIL_ACTIVE)
+                .toBundle(),
         )
     }
     return ret

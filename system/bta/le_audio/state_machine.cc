@@ -975,6 +975,9 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
           group->asymmetric_phy_for_unidirectional_cis_supported == true &&
           group->GetSduInterval(
               bluetooth::le_audio::types::kLeAudioDirectionSource) == 0) {
+        log::info(
+            "Remote device may not support asymmetric phy for CIS, retry "
+            "symmetric setting again");
         group->asymmetric_phy_for_unidirectional_cis_supported = false;
       }
 
@@ -1969,10 +1972,10 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
         out_cfg.max_transport_latency = rsp.max_transport_latency;
         out_cfg.retrans_nb = rsp.preferred_retrans_nb;
         out_cfg.phy = leAudioDevice->GetPreferredPhyBitmask(rsp.preferred_phy);
-        LOG_INFO(
-            "Using server preferred QoS settings. Max Transport Latency: %d, "
-            "Retransmission Number: %d, Phy: %d",
-            +out_cfg.max_transport_latency, out_cfg.retrans_nb, +out_cfg.phy);
+        log::info(
+            "Using server preferred QoS settings. Max Transport Latency: {}, "
+            "Retransmission Number: {}, Phy: {}",
+            out_cfg.max_transport_latency, out_cfg.retrans_nb, out_cfg.phy);
       }
     };
 

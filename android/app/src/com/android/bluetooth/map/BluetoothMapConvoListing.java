@@ -40,7 +40,6 @@ import java.util.List;
 public class BluetoothMapConvoListing {
     private boolean mHasUnread = false;
     private static final String TAG = "BluetoothMapConvoListing";
-    private static final boolean D = BluetoothMapService.DEBUG;
     private static final String XML_TAG = "MAP-convo-listing";
 
     private List<BluetoothMapConvoListingElement> mList;
@@ -172,9 +171,7 @@ public class BluetoothMapConvoListing {
                 // Skip until we get a folder-listing tag
                 String name = parser.getName();
                 if (!name.equalsIgnoreCase(XML_TAG)) {
-                    if (D) {
-                        Log.i(TAG, "Unknown XML tag: " + name);
-                    }
+                    Log.w(TAG, "Unknown XML tag: " + name);
                     Utils.skipCurrentTag(parser);
                 }
                 readConversations(parser);
@@ -194,9 +191,7 @@ public class BluetoothMapConvoListing {
     private void readConversations(XmlPullParser parser)
             throws XmlPullParserException, IOException, ParseException {
         int type;
-        if (D) {
-            Log.i(TAG, "readConversations(): ");
-        }
+        Log.d(TAG, "readConversations");
         while ((type = parser.next()) != XmlPullParser.END_TAG
                 && type != XmlPullParser.END_DOCUMENT) {
             // Skip until we get a start tag
@@ -207,9 +202,7 @@ public class BluetoothMapConvoListing {
             String name = parser.getName();
             if (!name.trim()
                     .equalsIgnoreCase(BluetoothMapConvoListingElement.XML_TAG_CONVERSATION)) {
-                if (D) {
-                    Log.i(TAG, "Unknown XML tag: " + name);
-                }
+                Log.w(TAG, "Unknown XML tag: " + name);
                 Utils.skipCurrentTag(parser);
                 continue;
             }

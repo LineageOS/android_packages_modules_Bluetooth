@@ -240,8 +240,8 @@ bool IsCodecConfigSettingSupported(
                                       codec_config_setting.params);
   }
 
-  LOG_ERROR("Codec %s, seems to be not supported here.",
-            bluetooth::common::ToString(codec_id).c_str());
+  log::error("Codec {}, seems to be not supported here.",
+             bluetooth::common::ToString(codec_id));
   return false;
 }
 
@@ -535,7 +535,7 @@ LeAudioLtvMap LeAudioLtvMap::Parse(const uint8_t* p_value, uint8_t len,
   LeAudioLtvMap ltv_map;
   success = ltv_map.Parse(p_value, len);
   if (!success) {
-    LOG(ERROR) << __func__ << "Error parsing LTV map";
+    log::error("Error parsing LTV map");
   }
   return ltv_map;
 }
