@@ -656,12 +656,11 @@ public class HidHostService extends ProfileService {
                     Log.e(
                             TAG,
                             "handleMessageConnectStateChanged: "
-                                    + "remove unknown device: "
+                                    + "disconnect and disable the unknown device: "
                                     + device
                                     + " state: "
                                     + state);
-                    mNativeInterface.virtualUnPlug(
-                            getByteAddress(device), getAddressType(device), getTransport(device));
+                    nativeDisconnect(device, transport, false);
                     return;
                 }
             }
