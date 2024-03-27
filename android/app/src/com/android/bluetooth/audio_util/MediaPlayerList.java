@@ -161,6 +161,14 @@ public class MediaPlayerList {
                 mContext.getMainExecutor(), mMediaKeyEventSessionChangedListener);
     }
 
+    /**
+     * Retrieves the list of active {@link android.media.session.MediaController}, convert them to
+     * local {@link MediaController}, converts them again to {@link MediaPlayerWrapper} and add them
+     * to the local list ({@link #mMediaPlayers}).
+     *
+     * <p>If we already received an onActiveSessionsChanged callback, set this player as active,
+     * otherwise set the highest priority one as active (first in the list).
+     */
     private void constructCurrentPlayers() {
         // Construct the list of current players
         d("Initializing list of current media players");
@@ -191,6 +199,7 @@ public class MediaPlayerList {
         }
     }
 
+    /** Initiates browsable players and calls {@link #constructCurrentPlayers}. */
     public void init(MediaUpdateCallback callback) {
         Log.v(TAG, "Initializing MediaPlayerList");
         mCallback = callback;
@@ -278,10 +287,16 @@ public class MediaPlayerList {
         mBrowsablePlayers.clear();
     }
 
+    /**
+     * Current player ID is always Bluetooth player ID.
+     *
+     * <p>All browsable players are subdirectories of Bluetooth player.
+     */
     public int getCurrentPlayerId() {
         return BLUETOOTH_PLAYER_ID;
     }
 
+    /** Get the next ID available in the IDs map. */
     int getFreeMediaPlayerId() {
         int id = 1;
         while (mMediaPlayerIds.containsValue(id)) {
@@ -290,12 +305,21 @@ public class MediaPlayerList {
         return id;
     }
 
+    /** Returns the {@link #MediaPlayerWrapper} with ID matching {@link #mActivePlayerId}. */
     public MediaPlayerWrapper getActivePlayer() {
         return mMediaPlayers.get(mActivePlayerId);
     }
 
-    // In this case the displayed player is the Bluetooth Player, the number of items is equal
-    // to the number of players. The root ID will always be empty string in this case as well.
+    /**
+     * This is used by setBrowsedPlayer as the browsed player is always the Bluetooth player.
+     *
+     * <p>If the requested player ID is not {@link #BLUETOOTH_PLAYER_ID}, success will be false.
+     *
+     * <p>The number of items will be the number of browsable players as they all are direct
+     * subdirectories of the Bluetooth player ID.
+     *
+     * <p>The root ID will always be an empty string to correspond to bluetooth player ID.
+     */
     public void getPlayerRoot(int playerId, GetPlayerRootCallback cb) {
         /** M: Fix PTS AVRCP/TG/MCN/CB/BI-02-C fail @{ */
         if (Utils.isPtsTestMode()) {
@@ -316,7 +340,11 @@ public class MediaPlayerList {
         cb.run(playerId, playerId == BLUETOOTH_PLAYER_ID, "", mBrowsablePlayers.size());
     }
 
-    // Return the "Bluetooth Player" as the only player always
+    /**
+     * Returns a list containing only the Bluetooth player.
+     *
+     * <p>See class documentation.
+     */
     public List<PlayerInfo> getMediaPlayerList() {
         PlayerInfo info = new PlayerInfo();
         info.id = BLUETOOTH_PLAYER_ID;
@@ -332,6 +360,12 @@ public class MediaPlayerList {
         return ret;
     }
 
+    /**
+     * Returns the active queue item id of the active player.
+     *
+     * <p>If the player's queue is empty, if the active queue item id is unknown or if the {@link
+     * android.media.session.PlaybackState} is null, returns an empty string.
+     */
     @NonNull
     public String getCurrentMediaId() {
         final MediaPlayerWrapper player = getActivePlayer();
@@ -353,6 +387,10 @@ public class MediaPlayerList {
         return Util.NOW_PLAYING_PREFIX + state.getActiveQueueItemId();
     }
 
+    /**
+     * Returns the active {@link android.media.session.MediaController}'s metadata, converted to
+     * {@link Metadata}.
+     */
     @NonNull
     public Metadata getCurrentSongInfo() {
         final MediaPlayerWrapper player = getActivePlayer();
@@ -361,6 +399,13 @@ public class MediaPlayerList {
         return player.getCurrentMetadata();
     }
 
+    /**
+     * Returns the current playing state of the active player.
+     *
+     * <p>If {@link #mAudioPlaybackIsActive} is true and the returned state is different from {@link
+     * android.media.session.PlaybackState.STATE_PLAYING}, returns a copy of the state with playing
+     * state {@link android.media.session.PlaybackState.STATE_PLAYING}.
+     */
     public PlaybackState getCurrentPlayStatus() {
         final MediaPlayerWrapper player = getActivePlayer();
         if (player == null) return null;
@@ -377,6 +422,13 @@ public class MediaPlayerList {
         return state;
     }
 
+    /**
+     * Returns the current queue of the active player.
+     *
+     * <p>If there is no queue, returns a list containing only the active player's Metadata.
+     *
+     * <p>See {@link #getCurrentSongInfo} and {@link #getCurrentMediaId}.
+     */
     @NonNull
     public List<Metadata> getNowPlayingList() {
         // Only send the current song for the now playing if there is no active song. See
@@ -392,6 +444,13 @@ public class MediaPlayerList {
         return getActivePlayer().getCurrentQueue();
     }
 
+    /**
+     * Informs Media that there is a new request to play {@code mediaId}.
+     *
+     * <p>If the {@code nowPlaying} parameter is true, this will try to select the item from the
+     * current active player's queue. Otherwise this means that the item is from a browsable player
+     * and this calls {@link BrowsedPlayerWrapper} to handle the change.
+     */
     public void playItem(int playerId, boolean nowPlaying, String mediaId) {
         if (nowPlaying) {
             playNowPlayingItem(mediaId);
@@ -400,6 +459,11 @@ public class MediaPlayerList {
         }
     }
 
+    /**
+     * Retrieves the active player and plays item from queue.
+     *
+     * <p>See {@link #playItem}.
+     */
     private void playNowPlayingItem(String mediaId) {
         d("playNowPlayingItem: mediaId=" + mediaId);
 
@@ -417,6 +481,11 @@ public class MediaPlayerList {
         }
     }
 
+    /**
+     * Retrieves the {@link BrowsedPlayerWrapper} corresponding to the {@code mediaId} and plays it.
+     *
+     * <p>See {@link #playItem}.
+     */
     private void playFolderItem(String mediaId) {
         d("playFolderItem: mediaId=" + mediaId);
 
@@ -445,6 +514,14 @@ public class MediaPlayerList {
         wrapper.playItem(itemId);
     }
 
+    /**
+     * Calls {@code cb} with the list of browsable players as folder items.
+     *
+     * <p>As browsable players are subdirectories of the root Bluetooth player, the list always
+     * contains all the browsable players.
+     *
+     * <p>See {@link #getFolderItems}.
+     */
     void getFolderItemsMediaPlayerList(GetFolderItemsCallback cb) {
         d("getFolderItemsMediaPlayerList: Sending Media Player list for root directory");
 
@@ -462,6 +539,15 @@ public class MediaPlayerList {
         return;
     }
 
+    /**
+     * Calls {@code cb} with a list of browsable folders.
+     *
+     * <p>If {@code mediaId} is empty, {@code cb} will be called with all the browsable players as
+     * they are subdirectories of the root Bluetooth player.
+     *
+     * <p>If {@code mediaId} corresponds to a known {@link BrowsedPlayerWrapper}, {@code cb} will be
+     * called with the folder items list of the {@link BrowsedPlayerWrapper}.
+     */
     public void getFolderItems(int playerId, String mediaId, GetFolderItemsCallback cb) {
         // The playerId is unused since we always assume the remote device is using the
         // Bluetooth Player.
@@ -533,6 +619,16 @@ public class MediaPlayerList {
         }
     }
 
+    /**
+     * Adds a {@link MediaController} to the {@link #mMediaPlayers} map and returns its ID.
+     *
+     * <p>Each {@link MediaController} is mapped to an ID and each ID is mapped to a package name.
+     * If the new {@link MediaController}'s package name is already present in {@link
+     * #mMediaPlayerIds}, we keep the ID and replace the {@link MediaController}. Otherwise, we add
+     * an entry in both {@link #mMediaPlayerIds} and {@link #mMediaPlayers} maps.
+     *
+     * <p>Also sends the new {@link MediaData} to the AVRCP service.
+     */
     @VisibleForTesting
     int addMediaPlayer(MediaController controller) {
         // Each new player has an ID of 1 plus the highest ID. The ID 0 is reserved to signify that
@@ -572,9 +668,12 @@ public class MediaPlayerList {
         return playerId;
     }
 
-    // Adds the controller to the MediaPlayerList or updates the controller if we already had
-    // a controller for a package. Returns the new ID of the controller where its added or its
-    // previous value if it already existed. Returns -1 if the controller passed in is invalid
+    /**
+     * Adds a {@link android.media.session.MediaController} to the {@link #mMediaPlayers} map and
+     * returns its ID. If the {@link android.media.session.MediaController} is null, returns -1.
+     *
+     * <p>See {@link #addMediaPlayer(MediaController)}.
+     */
     int addMediaPlayer(android.media.session.MediaController controller) {
         if (controller == null) {
             e("Trying to add a null MediaController");
@@ -584,25 +683,42 @@ public class MediaPlayerList {
         return addMediaPlayer(MediaControllerFactory.wrap(controller));
     }
 
+    /** Returns true if {@code packageName} is present in {@link #mMediaPlayerIds}. */
     boolean havePlayerId(String packageName) {
         if (packageName == null) return false;
         return mMediaPlayerIds.containsKey(packageName);
     }
 
+    /**
+     * Returns true if {@code packageName} is present in {@link #mMediaPlayerIds} and the
+     * corresponding ID has a {@link MediaPlayerWrapper} set in {@link #mMediaPlayers}.
+     */
     boolean haveMediaPlayer(String packageName) {
         if (!havePlayerId(packageName)) return false;
         int playerId = mMediaPlayerIds.get(packageName);
         return mMediaPlayers.containsKey(playerId);
     }
 
+    /** Returns true if {@code playerId} is present in {@link #mMediaPlayers}. */
     boolean haveMediaPlayer(int playerId) {
         return mMediaPlayers.containsKey(playerId);
     }
 
+    /** Returns true if {@code playerId} is present in {@link #mBrowsablePlayers}. */
     boolean haveMediaBrowser(int playerId) {
         return mBrowsablePlayers.containsKey(playerId);
     }
 
+    /**
+     * Removes the entry corresponding to {@code playerId} from {@link #mMediaPlayers} and {@link
+     * #mMediaPlayerIds}.
+     *
+     * <p>If the removed player was the active one, we consider that there is no more active players
+     * until we receive a {@link MediaSessionManager.OnActiveSessionsChangedListener} callback
+     * saying otherwise.
+     *
+     * <p>Also sends empty {@link MediaData} to the AVRCP service.
+     */
     void removeMediaPlayer(int playerId) {
         if (!haveMediaPlayer(playerId)) {
             e("Trying to remove nonexistent media player: " + playerId);
@@ -635,6 +751,12 @@ public class MediaPlayerList {
         wrapper.cleanup();
     }
 
+    /**
+     * Sets {@code playerId} as the new active player and sends the new player's {@link Mediadata}
+     * to the AVRCP service.
+     *
+     * <p>Also informs the {@link #PlayerSettingsManager} about the change of active player.
+     */
     void setActivePlayer(int playerId) {
         if (!haveMediaPlayer(playerId)) {
             e("Player doesn't exist in list(): " + playerId);
@@ -675,6 +797,7 @@ public class MediaPlayerList {
         sendMediaUpdate(data);
     }
 
+    /** Informs AVRCP service that there has been an update in browsable players. */
     private void sendFolderUpdate(boolean availablePlayers, boolean addressedPlayers,
             boolean uids) {
         d("sendFolderUpdate");
@@ -685,6 +808,7 @@ public class MediaPlayerList {
         mCallback.run(availablePlayers, addressedPlayers, uids);
     }
 
+    /** Indicates that there have been a {@link MediaData} update for the current active player. */
     private void sendMediaUpdate(MediaData data) {
         d("sendMediaUpdate");
         if (mCallback == null || data == null) {
@@ -702,6 +826,19 @@ public class MediaPlayerList {
         mCallback.run(data);
     }
 
+    /**
+     * Callback from Media Framework to indicate that the active session changed.
+     *
+     * <p>As sessions can have multiple {@link android.media.session.MediaController}, we add all
+     * the new players, keeping only the highest priority {@link
+     * android.media.session.MediaController} per package name (priority is defined by order in the
+     * list).
+     *
+     * <p>Note: This does not set the current active player, only adds the new {@link
+     * MediaController} to the {@link #mMediaPlayerIds} and {@link mMediaPlayers} maps.
+     *
+     * <p>See {@link #onMediaKeyEventSessionChanged}.
+     */
     @VisibleForTesting
     final MediaSessionManager.OnActiveSessionsChangedListener
             mActiveSessionsChangedListener =
@@ -747,7 +884,19 @@ public class MediaPlayerList {
         }
     };
 
-    // TODO (apanicke): Write a test that tests uninstalling the active session
+    /**
+     * {@link android.content.BroadcastReceiver} to catch intents indicating package add, change and
+     * removal.
+     *
+     * <p>If a package is removed while its corresponding {@link MediaPlayerWrapper} is present in
+     * the {@link #mMediaPlayerIds} and {@link mMediaPlayers} maps, remove it.
+     *
+     * <p>If a package is added or changed, currently nothing is done. Ideally, this should add it
+     * to the {@link #mMediaPlayerIds} and {@link mMediaPlayers} maps.
+     *
+     * <p>See {@link #removeMediaPlayer} and {@link
+     * #addMediaPlayer(android.media.session.MediaController)}
+     */
     private final BroadcastReceiver mPackageChangedBroadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -775,6 +924,12 @@ public class MediaPlayerList {
         }
     };
 
+    /**
+     * Retrieves and sends the current {@link MediaData} of the active player (if present) to the
+     * AVRCP service or if there is no active player, sends an empty {@link MediaData}.
+     *
+     * <p>See {@link #sendMediaUpdate}.
+     */
     void updateMediaForAudioPlayback() {
         MediaData currMediaData = null;
         PlaybackState currState = null;
@@ -812,16 +967,24 @@ public class MediaPlayerList {
         sendMediaUpdate(currMediaData);
     }
 
+    /** For testing purposes only, sets the {@link #mAudioPlaybackIsActive} flag. */
     @VisibleForTesting
     void injectAudioPlaybacActive(boolean isActive) {
         mAudioPlaybackIsActive = isActive;
         updateMediaForAudioPlayback();
     }
 
+    /**
+     * Saves the reference to {@link MediaPlayerSettingsEventListener} to be called when the active
+     * player changed, so that {@link #PlayerSettingsManager} always has the right player.
+     */
     void setPlayerSettingsCallback(MediaPlayerSettingsEventListener listener) {
         mPlayerSettingsListener = listener;
     }
 
+    /**
+     * Listens to playback configurations changes, to set the {@link #mAudioPlaybackIsActive} flag.
+     */
     private final AudioManager.AudioPlaybackCallback mAudioPlaybackCallback =
             new AudioManager.AudioPlaybackCallback() {
         @Override
@@ -854,6 +1017,14 @@ public class MediaPlayerList {
         }
     };
 
+    /**
+     * Callback from {@link MediaPlayerWrapper}.
+     *
+     * <p>{@link #mediaUpdatedCallback} listens for {@link #MediaData} changes on the active player.
+     *
+     * <p>{@link #sessionUpdatedCallback} is called when the active session is destroyed so we need
+     * to remove the media player from the {@link #mMediaPlayerIds} and {@link mMediaPlayers} maps.
+     */
     private final MediaPlayerWrapper.Callback mMediaPlayerCallback =
             new MediaPlayerWrapper.Callback() {
         @Override
@@ -884,6 +1055,21 @@ public class MediaPlayerList {
         }
     };
 
+    /**
+     * Listens for Media key events session changes.
+     *
+     * <p>The Media session that listens to key events is considered the active session.
+     *
+     * <p>This will retrieve the {@link android.media.session.MediaController} for this session with
+     * the {@code token} provided and set it as the active one.
+     *
+     * <p>If the {@link android.media.session.MediaController} flags include the {@link
+     * MediaSession.FLAG_EXCLUSIVE_GLOBAL_PRIORITY}, the session change shall be ignored as this
+     * flag is used only by Telecom to handle wired headsets key events.
+     *
+     * <p>It can happen that {@code token} is null, in such case wecan still check if we have a
+     * {@link MediaController} corresponding to {@code packageName} and set it as active.
+     */
     @VisibleForTesting
     final MediaSessionManager.OnMediaKeyEventSessionChangedListener
             mMediaKeyEventSessionChangedListener =
@@ -933,7 +1119,7 @@ public class MediaPlayerList {
                 }
             };
 
-
+    /** Dumps all players and browsable players currently listed in this class. */
     public void dump(StringBuilder sb) {
         sb.append("List of MediaControllers: size=" + mMediaPlayers.size() + "\n");
         for (int id : mMediaPlayers.keySet()) {
