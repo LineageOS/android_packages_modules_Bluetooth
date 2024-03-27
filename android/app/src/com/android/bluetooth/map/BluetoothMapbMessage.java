@@ -16,7 +16,6 @@ package com.android.bluetooth.map;
 
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
-import android.os.Environment;
 import android.telephony.PhoneNumberUtils;
 import android.util.Log;
 
@@ -26,10 +25,6 @@ import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -39,8 +34,6 @@ import java.util.ArrayList;
 public abstract class BluetoothMapbMessage {
 
     protected static final String TAG = "BluetoothMapbMessage";
-    protected static final boolean D = BluetoothMapService.DEBUG;
-    protected static final boolean V = BluetoothMapService.VERBOSE;
 
     private String mVersionString = "VERSION:1.0";
 
@@ -507,97 +500,6 @@ public abstract class BluetoothMapbMessage {
         TYPE type = null;
         String folder = null;
 
-        /* This section is used for debug. It will write the incoming message to a file on the
-         * SD-card, hence should only be used for test/debug.
-         * If an error occurs, it will result in a OBEX_HTTP_PRECON_FAILED to be send to the client,
-         * even though the message might be formatted correctly, hence only enable this code for
-         * test. */
-        if (V) {
-            /* Read the entire stream into a file on the SD card*/
-            File sdCard = Environment.getExternalStorageDirectory();
-            File dir = new File(sdCard.getAbsolutePath() + "/bluetooth/log/");
-            dir.mkdirs();
-            File file = new File(dir, "receivedBMessage.txt");
-            FileOutputStream outStream = null;
-            boolean failed = false;
-            int writtenLen = 0;
-
-            try {
-                /* overwrite if it does already exist */
-                outStream = new FileOutputStream(file, false);
-
-                byte[] buffer = new byte[4 * 1024];
-                int len = 0;
-                while ((len = bMsgStream.read(buffer)) > 0) {
-                    outStream.write(buffer, 0, len);
-                    writtenLen += len;
-                }
-            } catch (FileNotFoundException e) {
-                ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.MAP,
-                        BluetoothProtoEnums.BLUETOOTH_MAP_BMESSAGE,
-                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                        3);
-                Log.e(TAG, "Unable to create output stream", e);
-            } catch (IOException e) {
-                ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.MAP,
-                        BluetoothProtoEnums.BLUETOOTH_MAP_BMESSAGE,
-                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                        4);
-                Log.e(TAG, "Failed to copy the received message", e);
-                if (writtenLen != 0) {
-                    failed = true; /* We failed to write the complete file,
-                                      hence the received message is lost... */
-                }
-            } finally {
-                if (outStream != null) {
-                    try {
-                        outStream.close();
-                    } catch (IOException e) {
-                        ContentProfileErrorReportUtils.report(
-                                BluetoothProfile.MAP,
-                                BluetoothProtoEnums.BLUETOOTH_MAP_BMESSAGE,
-                                BluetoothStatsLog
-                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                                5);
-                        Log.w(TAG, e);
-                    }
-                }
-            }
-
-            /* Return if we corrupted the incoming bMessage. */
-            if (failed) {
-                throw new IllegalArgumentException(); /* terminate this function with an error. */
-            }
-
-            if (outStream == null) {
-                /* We failed to create the log-file, just continue using the original bMsgStream. */
-            } else {
-                /* overwrite the bMsgStream using the file written to the SD-Card */
-                try {
-                    bMsgStream.close();
-                } catch (IOException e) {
-                    /* Ignore if we cannot close the stream. */
-                }
-                /* Open the file and overwrite bMsgStream to read from the file */
-                try {
-                    bMsgStream = new FileInputStream(file);
-                } catch (FileNotFoundException e) {
-                    ContentProfileErrorReportUtils.report(
-                            BluetoothProfile.MAP,
-                            BluetoothProtoEnums.BLUETOOTH_MAP_BMESSAGE,
-                            BluetoothStatsLog
-                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                            6);
-                    Log.e(TAG, "Failed to open the bMessage file", e);
-                    /* terminate this function with an error */
-                    throw new IllegalArgumentException();
-                }
-            }
-            Log.i(TAG, "The incoming bMessage have been dumped to " + file.getAbsolutePath());
-        } /* End of if(V) log-section */
-
         reader = new BMsgReader(bMsgStream);
         reader.expect("BEGIN:BMSG");
         reader.expect("VERSION");
@@ -683,9 +585,7 @@ public abstract class BluetoothMapbMessage {
 
         // Now check for originator VCARDs
         while (line.contains("BEGIN:VCARD")) {
-            if (D) {
-                Log.d(TAG, "Decoding vCard");
-            }
+            Log.d(TAG, "Decoding vCard");
             newBMsg.addOriginator(VCard.parseVcard(reader, 0));
             line = reader.getLineEnforce();
         }
@@ -719,14 +619,10 @@ public abstract class BluetoothMapbMessage {
     private void parseEnvelope(BMsgReader reader, int level) {
         String line;
         line = reader.getLineEnforce();
-        if (D) {
-            Log.d(TAG, "Decoding envelope level " + level);
-        }
+        Log.d(TAG, "Decoding envelope level " + level);
 
         while (line.contains("BEGIN:VCARD")) {
-            if (D) {
-                Log.d(TAG, "Decoding recipient vCard level " + level);
-            }
+            Log.d(TAG, "Decoding recipient vCard level " + level);
             if (mRecipient == null) {
                 mRecipient = new ArrayList<VCard>(1);
             }
@@ -734,15 +630,11 @@ public abstract class BluetoothMapbMessage {
             line = reader.getLineEnforce();
         }
         if (line.contains("BEGIN:BENV")) {
-            if (D) {
-                Log.d(TAG, "Decoding nested envelope");
-            }
+            Log.d(TAG, "Decoding nested envelope");
             parseEnvelope(reader, ++level); // Nested BENV
         }
         if (line.contains("BEGIN:BBODY")) {
-            if (D) {
-                Log.d(TAG, "Decoding bbody");
-            }
+            Log.d(TAG, "Decoding bbody");
             parseBody(reader);
         }
     }
@@ -805,9 +697,7 @@ public abstract class BluetoothMapbMessage {
                     throw new IllegalArgumentException("Missing value for 'LENGTH': " + line);
                 }
             } else if (line.contains("BEGIN:MSG")) {
-                if (V) {
-                    Log.v(TAG, "bMsgLength: " + mBMsgLength);
-                }
+                Log.v(TAG, "bMsgLength: " + mBMsgLength);
                 if (mBMsgLength == INVALID_VALUE) {
                     throw new IllegalArgumentException("Missing value for 'LENGTH'. "
                             + "Unable to read remaining part of the message");
@@ -1003,20 +893,22 @@ public abstract class BluetoothMapbMessage {
     protected byte[] decodeBinary(String data) {
         byte[] out = new byte[data.length() / 2];
         String value;
-        if (D) {
-            Log.d(TAG, "Decoding binary data: START:" + data + ":END");
-        }
+        Log.d(TAG, "Decoding binary data: START:" + data + ":END");
         for (int i = 0, j = 0, n = out.length; i < n; i++, j += 2) {
             value = data.substring(j, j + 2);
             out[i] = (byte) (Integer.valueOf(value, 16) & 0xff);
         }
-        if (D) {
+
+        // The following is a large enough debug operation such that we want to guard it with an
+        // isLoggable check
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
             StringBuilder sb = new StringBuilder(out.length);
             for (int i = 0, n = out.length; i < n; i++) {
                 sb.append(String.format("%02X", out[i] & 0xff));
             }
             Log.d(TAG, "Decoded binary data: START:" + sb.toString() + ":END");
         }
+
         return out;
     }
 
@@ -1051,9 +943,7 @@ public abstract class BluetoothMapbMessage {
         sb.append("BEGIN:BENV").append("\r\n");
         if (mRecipient != null) {
             for (VCard element : mRecipient) {
-                if (V) {
-                    Log.v(TAG, "encodeGeneric: recipient email" + element.getFirstEmail());
-                }
+                Log.v(TAG, "encodeGeneric: recipient email" + element.getFirstEmail());
                 element.encode(sb);
             }
         }
@@ -1096,9 +986,7 @@ public abstract class BluetoothMapbMessage {
             }
             stream.write(msgEnd);
 
-            if (V) {
-                Log.v(TAG, stream.toString("UTF-8"));
-            }
+            Log.v(TAG, stream.toString("UTF-8"));
             return stream.toByteArray();
         } catch (IOException e) {
             ContentProfileErrorReportUtils.report(

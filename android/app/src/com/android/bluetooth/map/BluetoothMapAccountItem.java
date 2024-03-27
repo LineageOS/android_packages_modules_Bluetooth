@@ -26,8 +26,6 @@ import android.util.Log;
 public class BluetoothMapAccountItem implements Comparable<BluetoothMapAccountItem> {
     private static final String TAG = "BluetoothMapAccountItem";
 
-    private static final boolean V = BluetoothMapService.VERBOSE;
-
     protected boolean mIsChecked;
     private final String mName;
     private final String mPackageName;
@@ -96,41 +94,29 @@ public class BluetoothMapAccountItem implements Comparable<BluetoothMapAccountIt
     public int compareTo(BluetoothMapAccountItem other) {
 
         if (!other.mId.equals(this.mId)) {
-            if (V) {
-                Log.d(TAG, "Wrong id : " + this.mId + " vs " + other.mId);
-            }
+            Log.v(TAG, "Wrong id : " + this.mId + " vs " + other.mId);
             return -1;
         }
         if (!other.mName.equals(this.mName)) {
-            if (V) {
-                Log.d(TAG, "Wrong name : " + this.mName + " vs " + other.mName);
-            }
+            Log.v(TAG, "Wrong name : " + this.mName + " vs " + other.mName);
             return -1;
         }
         if (!other.mPackageName.equals(this.mPackageName)) {
-            if (V) {
-                Log.d(TAG,
-                        "Wrong packageName : " + this.mPackageName + " vs " + other.mPackageName);
-            }
+            Log.v(TAG,
+                    "Wrong packageName : " + this.mPackageName + " vs " + other.mPackageName);
             return -1;
         }
         if (!other.mProviderAuthority.equals(this.mProviderAuthority)) {
-            if (V) {
-                Log.d(TAG, "Wrong providerName : " + this.mProviderAuthority + " vs "
-                        + other.mProviderAuthority);
-            }
+            Log.v(TAG, "Wrong providerName : " + this.mProviderAuthority + " vs "
+                    + other.mProviderAuthority);
             return -1;
         }
         if (other.mIsChecked != this.mIsChecked) {
-            if (V) {
-                Log.d(TAG, "Wrong isChecked : " + this.mIsChecked + " vs " + other.mIsChecked);
-            }
+            Log.v(TAG, "Wrong isChecked : " + this.mIsChecked + " vs " + other.mIsChecked);
             return -1;
         }
         if (!other.mType.equals(this.mType)) {
-            if (V) {
-                Log.d(TAG, "Wrong appType : " + this.mType + " vs " + other.mType);
-            }
+            Log.v(TAG, "Wrong appType : " + this.mType + " vs " + other.mType);
             return -1;
         }
         return 0;

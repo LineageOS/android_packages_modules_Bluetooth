@@ -60,6 +60,7 @@ public class BluetoothMapUtilsTest {
         MatrixCursor cursor = new MatrixCursor(new String[] {
                 BluetoothMapContract.PresenceColumns.LAST_ONLINE, "Name"});
         cursor.addRow(new Object[] {345345226L, "test_name"});
+        cursor.moveToFirst();
 
         BluetoothMapUtils.printCursor(cursor);
     }

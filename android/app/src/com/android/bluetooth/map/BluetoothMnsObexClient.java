@@ -48,8 +48,6 @@ import java.io.OutputStream;
 public class BluetoothMnsObexClient {
 
     private static final String TAG = "BluetoothMnsObexClient";
-    private static final boolean D = BluetoothMapService.DEBUG;
-    private static final boolean V = BluetoothMapService.VERBOSE;
 
     private ObexTransport mTransport;
     public Handler mHandler = null;
@@ -124,16 +122,12 @@ public class BluetoothMnsObexClient {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case MSG_MNS_NOTIFICATION_REGISTRATION:
-                    if (V) {
-                        Log.v(TAG, "Reg  masId:  " + msg.arg1 + " notfStatus: " + msg.arg2);
-                    }
+                    Log.v(TAG, "Reg  masId:  " + msg.arg1 + " notfStatus: " + msg.arg2);
                     if (isValidMnsRecord()) {
                         handleRegistration(msg.arg1 /*masId*/, msg.arg2 /*status*/);
                     } else {
                         //Should not happen
-                        if (D) {
-                            Log.d(TAG, "MNS SDP info not available yet - Cannot Connect.");
-                        }
+                        Log.d(TAG, "MNS SDP info not available yet - Cannot Connect.");
                     }
                     break;
                 case MSG_MNS_SEND_EVENT:
@@ -148,9 +142,7 @@ public class BluetoothMnsObexClient {
                     Message msgReg =
                             mHandler.obtainMessage(MSG_MNS_NOTIFICATION_REGISTRATION, msg.arg1,
                                     msg.arg2);
-                    if (V) {
-                        Log.v(TAG, "SearchReg  masId:  " + msg.arg1 + " notfStatus: " + msg.arg2);
-                    }
+                    Log.v(TAG, "SearchReg  masId:  " + msg.arg1 + " notfStatus: " + msg.arg2);
                     mHandler.sendMessageDelayed(msgReg, MNS_SDP_SEARCH_DELAY);
                     break;
                 default:
@@ -171,9 +163,7 @@ public class BluetoothMnsObexClient {
         try {
             if (mClientSession != null) {
                 mClientSession.disconnect(null);
-                if (D) {
-                    Log.d(TAG, "OBEX session disconnected");
-                }
+                Log.d(TAG, "OBEX session disconnected");
             }
         } catch (IOException e) {
             ContentProfileErrorReportUtils.report(
@@ -185,14 +175,10 @@ public class BluetoothMnsObexClient {
         }
         try {
             if (mClientSession != null) {
-                if (D) {
-                    Log.d(TAG, "OBEX session close mClientSession");
-                }
+                Log.d(TAG, "OBEX session close mClientSession");
                 mClientSession.close();
                 mClientSession = null;
-                if (D) {
-                    Log.d(TAG, "OBEX session closed");
-                }
+                Log.d(TAG, "OBEX session closed");
             }
         } catch (IOException e) {
             ContentProfileErrorReportUtils.report(
@@ -204,15 +190,11 @@ public class BluetoothMnsObexClient {
         }
         if (mTransport != null) {
             try {
-                if (D) {
-                    Log.d(TAG, "Close Obex Transport");
-                }
+                Log.d(TAG, "Close Obex Transport");
                 mTransport.close();
                 mTransport = null;
                 mConnected = false;
-                if (D) {
-                    Log.d(TAG, "Obex Transport Closed");
-                }
+                Log.d(TAG, "Obex Transport Closed");
             } catch (IOException e) {
                 ContentProfileErrorReportUtils.report(
                         BluetoothProfile.MAP,
@@ -252,9 +234,7 @@ public class BluetoothMnsObexClient {
      * @param notificationStatus
      */
     public synchronized void handleRegistration(int masId, int notificationStatus) {
-        if (D) {
-            Log.d(TAG, "handleRegistration( " + masId + ", " + notificationStatus + ")");
-        }
+        Log.d(TAG, "handleRegistration( " + masId + ", " + notificationStatus + ")");
         boolean sendObserverRegistration = true;
         if (notificationStatus == BluetoothMapAppParams.NOTIFICATION_STATUS_NO) {
             mRegisteredMasIds.delete(masId);
@@ -267,9 +247,7 @@ public class BluetoothMnsObexClient {
              * this thread as Handler.
              */
             if (!isConnected()) {
-                if (D) {
-                    Log.d(TAG, "handleRegistration: connect");
-                }
+                Log.d(TAG, "handleRegistration: connect");
                 connect();
             }
             sendObserverRegistration = isConnected();
@@ -281,16 +259,12 @@ public class BluetoothMnsObexClient {
 
         if (mRegisteredMasIds.size() == 0) {
             // No more registrations - disconnect
-            if (D) {
-                Log.d(TAG, "handleRegistration: disconnect");
-            }
+            Log.d(TAG, "handleRegistration: disconnect");
             disconnect();
         }
 
         //Register ContentObserver After connect/disconnect MNS channel.
-        if (V) {
-            Log.v(TAG, "Send  registerObserver: " + sendObserverRegistration);
-        }
+        Log.v(TAG, "Send  registerObserver: " + sendObserverRegistration);
         if (mCallback != null && sendObserverRegistration) {
             Message msg = Message.obtain(mCallback);
             msg.what = BluetoothMapService.MSG_OBSERVER_REGISTRATION;
@@ -305,9 +279,7 @@ public class BluetoothMnsObexClient {
     }
 
     public void setMnsRecord(SdpMnsRecord mnsRecord) {
-        if (V) {
-            Log.v(TAG, "setMNSRecord");
-        }
+        Log.v(TAG, "setMNSRecord");
         if (isValidMnsRecord()) {
             Log.w(TAG, "MNS Record already available. Still update.");
             ContentProfileErrorReportUtils.report(
@@ -328,24 +300,18 @@ public class BluetoothMnsObexClient {
                     // Clear saved info.
                     mMnsLstRegRqst = null;
                 } else {
-                    if (V) {
-                        Log.v(TAG, "Handle registration for last saved request");
-                    }
+                    Log.v(TAG, "Handle registration for last saved request");
                     Message msgReg = mHandler.obtainMessage(MSG_MNS_NOTIFICATION_REGISTRATION);
                     msgReg.arg1 = mMnsLstRegRqst.lastMasId;
                     msgReg.arg2 = mMnsLstRegRqst.lastNotificationStatus;
-                    if (V) {
-                        Log.v(TAG, "SearchReg  masId:  " + msgReg.arg1 + " notfStatus: "
-                                + msgReg.arg2);
-                    }
+                    Log.v(TAG, "SearchReg  masId:  " + msgReg.arg1 + " notfStatus: "
+                            + msgReg.arg2);
                     //Handle notification registration.
                     mHandler.sendMessageDelayed(msgReg, MNS_NOTIFICATION_DELAY);
                 }
             }
         } else {
-            if (V) {
-                Log.v(TAG, "No last saved MNSSDPInfo to handle");
-            }
+            Log.v(TAG, "No last saved MNSSDPInfo to handle");
         }
     }
 
@@ -428,9 +394,7 @@ public class BluetoothMnsObexClient {
 
             try {
                 mHsConnect = mClientSession.connect(hs);
-                if (D) {
-                    Log.d(TAG, "OBEX session created");
-                }
+                Log.d(TAG, "OBEX session created");
                 connected = true;
             } catch (IOException e) {
                 ContentProfileErrorReportUtils.report(
@@ -511,9 +475,7 @@ public class BluetoothMnsObexClient {
 
             // Send the header first and then the body
             try {
-                if (V) {
-                    Log.v(TAG, "Send headerset Event ");
-                }
+                Log.v(TAG, "Send headerset Event ");
                 putOperation = (ClientOperation) clientSession.put(request);
                 // TODO - Should this be kept or Removed
 
@@ -528,9 +490,7 @@ public class BluetoothMnsObexClient {
             }
             if (!error) {
                 try {
-                    if (V) {
-                        Log.v(TAG, "Send headerset Event ");
-                    }
+                    Log.v(TAG, "Send headerset Event ");
                     outputStream = putOperation.openOutputStream();
                 } catch (IOException e) {
                     ContentProfileErrorReportUtils.report(
@@ -595,9 +555,7 @@ public class BluetoothMnsObexClient {
                 if ((!error) && (putOperation != null)) {
                     responseCode = putOperation.getResponseCode();
                     if (responseCode != -1) {
-                        if (V) {
-                            Log.v(TAG, "Put response code " + responseCode);
-                        }
+                        Log.v(TAG, "Put response code " + responseCode);
                         if (responseCode != ResponseCodes.OBEX_HTTP_OK) {
                             Log.i(TAG, "Response error code is " + responseCode);
                         }

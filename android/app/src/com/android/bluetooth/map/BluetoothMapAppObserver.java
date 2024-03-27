@@ -42,8 +42,6 @@ public class BluetoothMapAppObserver {
 
     private static final String TAG = "BluetoothMapAppObserver";
 
-    private static final boolean D = BluetoothMapService.DEBUG;
-    private static final boolean V = BluetoothMapService.VERBOSE;
     /*  */
     private LinkedHashMap<BluetoothMapAccountItem, ArrayList<BluetoothMapAccountItem>> mFullList;
     private LinkedHashMap<String, ContentObserver> mObserverMap =
@@ -68,32 +66,22 @@ public class BluetoothMapAppObserver {
 
 
     private BluetoothMapAccountItem getApp(String authoritiesName) {
-        if (V) {
-            Log.d(TAG, "getApp(): Looking for " + authoritiesName);
-        }
+        Log.v(TAG, "getApp(): Looking for " + authoritiesName);
         for (BluetoothMapAccountItem app : mFullList.keySet()) {
-            if (V) {
-                Log.d(TAG, "  Comparing: " + app.getProviderAuthority());
-            }
+            Log.v(TAG, "  Comparing: " + app.getProviderAuthority());
             if (app.getProviderAuthority().equals(authoritiesName)) {
-                if (V) {
-                    Log.d(TAG, "  found " + app.mBase_uri_no_account);
-                }
+                Log.v(TAG, "  found " + app.mBase_uri_no_account);
                 return app;
             }
         }
-        if (V) {
-            Log.d(TAG, "  NOT FOUND!");
-        }
+        Log.v(TAG, "  NOT FOUND!");
         return null;
     }
 
     private void handleAccountChanges(String packageNameWithProvider) {
 
-        if (D) {
-            Log.d(TAG, "handleAccountChanges (packageNameWithProvider: " + packageNameWithProvider
-                    + "\n");
-        }
+        Log.d(TAG, "handleAccountChanges (packageNameWithProvider: " + packageNameWithProvider
+                + "\n");
         //String packageName = packageNameWithProvider.replaceFirst("\\.[^\\.]+$", "");
         BluetoothMapAccountItem app = getApp(packageNameWithProvider);
         if (app != null) {
@@ -121,9 +109,7 @@ public class BluetoothMapAppObserver {
                             // Name Changed and the acc is visible - Change Name in SDP record
                             mMapService.updateMasInstances(
                                     BluetoothMapService.UPDATE_MAS_INSTANCES_ACCOUNT_RENAMED);
-                            if (V) {
-                                Log.d(TAG, "    UPDATE_MAS_INSTANCES_ACCOUNT_RENAMED");
-                            }
+                            Log.v(TAG, "    UPDATE_MAS_INSTANCES_ACCOUNT_RENAMED");
                         }
                         if (newAcc.mIsChecked != oldAcc.mIsChecked) {
                             // Visibility changed
@@ -131,18 +117,14 @@ public class BluetoothMapAppObserver {
                                 // account added - create SDP record
                                 mMapService.updateMasInstances(
                                         BluetoothMapService.UPDATE_MAS_INSTANCES_ACCOUNT_ADDED);
-                                if (V) {
-                                    Log.d(TAG, "UPDATE_MAS_INSTANCES_ACCOUNT_ADDED "
-                                            + "isChecked changed");
-                                }
+                                Log.v(TAG, "UPDATE_MAS_INSTANCES_ACCOUNT_ADDED "
+                                        + "isChecked changed");
                             } else {
                                 // account removed - remove SDP record
                                 mMapService.updateMasInstances(
                                         BluetoothMapService.UPDATE_MAS_INSTANCES_ACCOUNT_REMOVED);
-                                if (V) {
-                                    Log.d(TAG, "    UPDATE_MAS_INSTANCES_ACCOUNT_REMOVED "
-                                            + "isChecked changed");
-                                }
+                                Log.v(TAG, "    UPDATE_MAS_INSTANCES_ACCOUNT_REMOVED "
+                                        + "isChecked changed");
                             }
                         }
                         break;
@@ -153,17 +135,13 @@ public class BluetoothMapAppObserver {
             for (BluetoothMapAccountItem removedAcc : removedAccountList) {
                 mMapService.updateMasInstances(
                         BluetoothMapService.UPDATE_MAS_INSTANCES_ACCOUNT_REMOVED);
-                if (V) {
-                    Log.d(TAG, "    UPDATE_MAS_INSTANCES_ACCOUNT_REMOVED " + removedAcc);
-                }
+                Log.v(TAG, "    UPDATE_MAS_INSTANCES_ACCOUNT_REMOVED " + removedAcc);
             }
             // Notify on any new accounts
             for (BluetoothMapAccountItem addedAcc : addedAccountList) {
                 mMapService.updateMasInstances(
                         BluetoothMapService.UPDATE_MAS_INSTANCES_ACCOUNT_ADDED);
-                if (V) {
-                    Log.d(TAG, "    UPDATE_MAS_INSTANCES_ACCOUNT_ADDED " + addedAcc);
-                }
+                Log.v(TAG, "    UPDATE_MAS_INSTANCES_ACCOUNT_ADDED " + addedAcc);
             }
 
         } else {
@@ -184,9 +162,7 @@ public class BluetoothMapAppObserver {
      */
     public void registerObserver(BluetoothMapAccountItem app) {
         Uri uri = BluetoothMapContract.buildAccountUri(app.getProviderAuthority());
-        if (V) {
-            Log.d(TAG, "registerObserver for URI " + uri.toString() + "\n");
-        }
+        Log.v(TAG, "registerObserver for URI " + uri.toString() + "\n");
         ContentObserver observer =
                 new ContentObserver(null) {
                     @Override
@@ -196,16 +172,14 @@ public class BluetoothMapAppObserver {
 
                     @Override
                     public void onChange(boolean selfChange, Uri uri) {
-                        if (V) {
-                            Log.d(
-                                    TAG,
-                                    "onChange on thread: "
-                                            + Thread.currentThread().getId()
-                                            + " Uri: "
-                                            + uri
-                                            + " selfchange: "
-                                            + selfChange);
-                        }
+                        Log.v(
+                                TAG,
+                                "onChange on thread: "
+                                        + Thread.currentThread().getId()
+                                        + " Uri: "
+                                        + uri
+                                        + " selfchange: "
+                                        + selfChange);
                         if (uri != null) {
                             handleAccountChanges(uri.getHost());
                         } else {
@@ -226,35 +200,27 @@ public class BluetoothMapAppObserver {
 
     public void unregisterObserver(BluetoothMapAccountItem app) {
         Uri uri = BluetoothMapContract.buildAccountUri(app.getProviderAuthority());
-        if (V) {
-            Log.d(TAG, "unregisterObserver(" + uri.toString() + ")\n");
-        }
+        Log.v(TAG, "unregisterObserver(" + uri.toString() + ")\n");
         mResolver.unregisterContentObserver(mObserverMap.get(uri.toString()));
         mObserverMap.remove(uri.toString());
     }
 
     private void initObservers() {
-        if (D) {
-            Log.d(TAG, "initObservers()");
-        }
+        Log.d(TAG, "initObservers()");
         for (BluetoothMapAccountItem app : mFullList.keySet()) {
             registerObserver(app);
         }
     }
 
     private void deinitObservers() {
-        if (D) {
-            Log.d(TAG, "deinitObservers()");
-        }
+        Log.d(TAG, "deinitObservers()");
         for (BluetoothMapAccountItem app : mFullList.keySet()) {
             unregisterObserver(app);
         }
     }
 
     private void createReceiver() {
-        if (D) {
-            Log.d(TAG, "createReceiver()\n");
-        }
+        Log.d(TAG, "createReceiver()\n");
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
         intentFilter.addAction(Intent.ACTION_PACKAGE_ADDED);
@@ -264,17 +230,13 @@ public class BluetoothMapAppObserver {
                 new BroadcastReceiver() {
                     @Override
                     public void onReceive(Context context, Intent intent) {
-                        if (D) {
-                            Log.d(TAG, "onReceive\n");
-                        }
+                        Log.d(TAG, "onReceive\n");
                         String action = intent.getAction();
 
                         if (Intent.ACTION_PACKAGE_ADDED.equals(action)) {
                             Uri data = intent.getData();
                             String packageName = data.getEncodedSchemeSpecificPart();
-                            if (D) {
-                                Log.d(TAG, "The installed package is: " + packageName);
-                            }
+                            Log.d(TAG, "The installed package is: " + packageName);
 
                             BluetoothMapUtils.TYPE msgType = BluetoothMapUtils.TYPE.NONE;
                             ResolveInfo resolveInfo = null;
@@ -294,14 +256,12 @@ public class BluetoothMapAppObserver {
                                         mPackageManager.queryIntentContentProviders(
                                                 searchIntent, 0);
                                 if (resInfos != null) {
-                                    if (D) {
-                                        Log.d(
-                                                TAG,
-                                                "Found "
-                                                        + resInfos.size()
-                                                        + " application(s) with intent "
-                                                        + searchIntent.getAction());
-                                    }
+                                    Log.d(
+                                            TAG,
+                                            "Found "
+                                                    + resInfos.size()
+                                                    + " application(s) with intent "
+                                                    + searchIntent.getAction());
                                     for (ResolveInfo rInfo : resInfos) {
                                         if (rInfo != null) {
                                             // Find out if package contain Bluetooth MAP support
@@ -327,14 +287,12 @@ public class BluetoothMapAppObserver {
                             }
                             // if application found with Bluetooth MAP support add to list
                             if (resolveInfo != null) {
-                                if (D) {
-                                    Log.d(
-                                            TAG,
-                                            "Found "
-                                                    + resolveInfo.providerInfo.packageName
-                                                    + " application of type "
-                                                    + msgType);
-                                }
+                                Log.d(
+                                        TAG,
+                                        "Found "
+                                                + resolveInfo.providerInfo.packageName
+                                                + " application of type "
+                                                + msgType);
                                 BluetoothMapAccountItem app =
                                         mLoader.createAppItem(resolveInfo, false, msgType);
                                 if (app != null) {
@@ -349,9 +307,7 @@ public class BluetoothMapAppObserver {
                         } else if (Intent.ACTION_PACKAGE_REMOVED.equals(action)) {
                             Uri data = intent.getData();
                             String packageName = data.getEncodedSchemeSpecificPart();
-                            if (D) {
-                                Log.d(TAG, "The removed package is: " + packageName);
-                            }
+                            Log.d(TAG, "The removed package is: " + packageName);
                             BluetoothMapAccountItem app = getApp(packageName);
                             /* Find the object and remove from fullList */
                             if (app != null) {
@@ -377,9 +333,7 @@ public class BluetoothMapAppObserver {
     }
 
     private void removeReceiver() {
-        if (D) {
-            Log.d(TAG, "removeReceiver()\n");
-        }
+        Log.d(TAG, "removeReceiver()\n");
         if (mRegisteredReceiver) {
             try {
                 mRegisteredReceiver = false;
@@ -401,9 +355,7 @@ public class BluetoothMapAppObserver {
      * @return Arraylist<BluetoothMapAccountItem> containing all enabled accounts
      */
     public ArrayList<BluetoothMapAccountItem> getEnabledAccountItems() {
-        if (D) {
-            Log.d(TAG, "getEnabledAccountItems()\n");
-        }
+        Log.d(TAG, "getEnabledAccountItems()\n");
         ArrayList<BluetoothMapAccountItem> list = new ArrayList<BluetoothMapAccountItem>();
         for (BluetoothMapAccountItem app : mFullList.keySet()) {
             if (app != null) {
@@ -440,9 +392,7 @@ public class BluetoothMapAppObserver {
      * @return Arraylist<BluetoothMapAccountItem> containing all accounts
      */
     public ArrayList<BluetoothMapAccountItem> getAllAccountItems() {
-        if (D) {
-            Log.d(TAG, "getAllAccountItems()\n");
-        }
+        Log.d(TAG, "getAllAccountItems()\n");
         ArrayList<BluetoothMapAccountItem> list = new ArrayList<BluetoothMapAccountItem>();
         for (BluetoothMapAccountItem app : mFullList.keySet()) {
             ArrayList<BluetoothMapAccountItem> accountList = mFullList.get(app);

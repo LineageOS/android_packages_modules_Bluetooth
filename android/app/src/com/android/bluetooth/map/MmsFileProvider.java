@@ -116,10 +116,8 @@ public class MmsFileProvider extends ContentProvider {
         @Override
         public void writeDataToPipe(ParcelFileDescriptor output, Uri uri, String mimeType,
                 Bundle opts, Cursor c) {
-            if (BluetoothMapService.DEBUG) {
-                Log.d(TAG, "writeDataToPipe(): uri=" + uri.toString() + " - getLastPathSegment() = "
-                        + uri.getLastPathSegment());
-            }
+            Log.d(TAG, "writeDataToPipe(): uri=" + uri.toString() + " - getLastPathSegment() = "
+                    + uri.getLastPathSegment());
 
             FileOutputStream fout = null;
             GenericPdu pdu = null;

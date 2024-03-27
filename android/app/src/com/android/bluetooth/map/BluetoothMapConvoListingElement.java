@@ -48,7 +48,6 @@ public class BluetoothMapConvoListingElement
     private static final String XML_ATT_VERSION_COUNTER = "version_counter";
     private static final String XML_ATT_SUMMARY = "summary";
     private static final String TAG = "BluetoothMapConvoListingElement";
-    private static final boolean D = BluetoothMapService.DEBUG;
 
     private SignedLongLong mId = null;
     private String mName = ""; //title of the conversation #REQUIRED, but allowed empty
@@ -70,9 +69,7 @@ public class BluetoothMapConvoListingElement
 
     public void setCursorIndex(int cursorIndex) {
         this.mCursorIndex = cursorIndex;
-        if (D) {
-            Log.d(TAG, "setCursorIndex: " + cursorIndex);
-        }
+        Log.d(TAG, "setCursorIndex: " + cursorIndex);
     }
 
     public long getVersionCounter() {
@@ -80,9 +77,7 @@ public class BluetoothMapConvoListingElement
     }
 
     public void setVersionCounter(long vcount) {
-        if (D) {
-            Log.d(TAG, "setVersionCounter: " + vcount);
-        }
+        Log.d(TAG, "setVersionCounter: " + vcount);
         this.mVersionCounter = vcount;
     }
 
@@ -91,9 +86,7 @@ public class BluetoothMapConvoListingElement
     }
 
     private void setVersionCounter(String vcount) {
-        if (D) {
-            Log.d(TAG, "setVersionCounter: " + vcount);
-        }
+        Log.d(TAG, "setVersionCounter: " + vcount);
         try {
             this.mVersionCounter = Long.parseLong(vcount);
         } catch (NumberFormatException e) {
@@ -112,9 +105,7 @@ public class BluetoothMapConvoListingElement
     }
 
     public void setName(String name) {
-        if (D) {
-            Log.d(TAG, "setName: " + name);
-        }
+        Log.d(TAG, "setName: " + name);
         this.mName = name;
     }
 
@@ -161,9 +152,7 @@ public class BluetoothMapConvoListingElement
     }
 
     public void setLastActivity(long last) {
-        if (D) {
-            Log.d(TAG, "setLastActivity: " + last);
-        }
+        Log.d(TAG, "setLastActivity: " + last);
         this.mLastActivity = last;
     }
 
@@ -187,9 +176,7 @@ public class BluetoothMapConvoListingElement
 
     public void setRead(boolean read, boolean reportRead) {
         this.mRead = read;
-        if (D) {
-            Log.d(TAG, "setRead: " + read);
-        }
+        Log.d(TAG, "setRead: " + read);
         this.mReportRead = reportRead;
     }
 
@@ -210,9 +197,7 @@ public class BluetoothMapConvoListingElement
      */
     public void setConvoId(long type, long threadId) {
         this.mId = new SignedLongLong(threadId, type);
-        if (D) {
-            Log.d(TAG, "setConvoId: " + threadId + " type:" + type);
-        }
+        Log.d(TAG, "setConvoId: " + threadId + " type:" + type);
     }
 
     public String getConvoId() {
@@ -333,9 +318,7 @@ public class BluetoothMapConvoListingElement
             } else if (attributeName.equalsIgnoreCase(XML_ATT_SUMMARY)) {
                 newElement.setSummary(attributeValue);
             } else {
-                if (D) {
-                    Log.i(TAG, "Unknown XML attribute: " + parser.getAttributeName(i));
-                }
+                Log.w(TAG, "Unknown XML attribute: " + parser.getAttributeName(i));
             }
         }
 
@@ -351,9 +334,7 @@ public class BluetoothMapConvoListingElement
             if (name.equalsIgnoreCase(BluetoothMapConvoContactElement.XML_TAG_CONVOCONTACT)) {
                 newElement.addContact(BluetoothMapConvoContactElement.createFromXml(parser));
             } else {
-                if (D) {
-                    Log.i(TAG, "Unknown XML tag: " + name);
-                }
+                Log.w(TAG, "Unknown XML tag: " + name);
                 Utils.skipCurrentTag(parser);
                 continue;
             }
