@@ -24,7 +24,7 @@ import android.os.IBinder;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -280,7 +280,7 @@ public final class BluetoothHealth implements BluetoothProfile {
     @SuppressLint("AndroidFrameworkRequiresPermission")
     public List<BluetoothDevice> getConnectedDevices() {
         Log.e(TAG, "getConnectedDevices(): BluetoothHealth is deprecated");
-        return Collections.emptyList();
+        return new ArrayList<>();
     }
 
     /**
@@ -303,7 +303,7 @@ public final class BluetoothHealth implements BluetoothProfile {
     @SuppressLint("AndroidFrameworkRequiresPermission")
     public List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
         Log.e(TAG, "getDevicesMatchingConnectionStates(): BluetoothHealth is deprecated");
-        return Collections.emptyList();
+        return new ArrayList<>();
     }
 
     /**

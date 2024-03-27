@@ -65,7 +65,6 @@ import com.android.bluetooth.util.DevicePolicyUtils;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -850,7 +849,7 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
             Log.d(TAG, "getConnectedDevices");
             BluetoothPbapService service = getService(source);
             if (service == null) {
-                return Collections.emptyList();
+                return new ArrayList<>(0);
             }
             return service.getConnectedDevices();
         }
@@ -861,7 +860,7 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
             Log.d(TAG, "getDevicesMatchingConnectionStates");
             BluetoothPbapService service = getService(source);
             if (service == null) {
-                return Collections.emptyList();
+                return new ArrayList<>(0);
             }
             return service.getDevicesMatchingConnectionStates(states);
         }

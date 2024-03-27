@@ -36,7 +36,7 @@ import android.util.Log;
 
 import com.android.bluetooth.flags.Flags;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -327,7 +327,7 @@ public final class BluetoothHidHost implements BluetoothProfile {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return Collections.emptyList();
+        return new ArrayList<>();
     }
 
     /**
@@ -353,7 +353,7 @@ public final class BluetoothHidHost implements BluetoothProfile {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return Collections.emptyList();
+        return new ArrayList<>();
     }
 
     /**

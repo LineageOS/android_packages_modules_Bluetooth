@@ -371,7 +371,7 @@ class AvrcpControllerStateMachine extends StateMachine {
         if (mCoverArtManager == null) return;
         AvrcpItem currentTrack = getCurrentTrack();
         String currentTrackUuid = currentTrack != null ? currentTrack.getCoverArtUuid() : null;
-        List<String> unusedArtwork = mBrowseTree.getAndClearUnusedCoverArt();
+        ArrayList<String> unusedArtwork = mBrowseTree.getAndClearUnusedCoverArt();
         for (String uuid : unusedArtwork) {
             if (!uuid.equals(currentTrackUuid)) {
                 mCoverArtManager.removeImage(mDevice, uuid);

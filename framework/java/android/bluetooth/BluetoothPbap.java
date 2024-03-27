@@ -31,8 +31,8 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -153,7 +153,7 @@ public class BluetoothPbap implements BluetoothProfile {
         final IBluetoothPbap service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            return Collections.emptyList();
+            return new ArrayList<BluetoothDevice>();
         }
         try {
             return Attributable.setAttributionSource(
@@ -161,7 +161,7 @@ public class BluetoothPbap implements BluetoothProfile {
         } catch (RemoteException e) {
             Log.e(TAG, e.toString());
         }
-        return Collections.emptyList();
+        return new ArrayList<BluetoothDevice>();
     }
 
     /**
@@ -207,7 +207,7 @@ public class BluetoothPbap implements BluetoothProfile {
         final IBluetoothPbap service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            return Collections.emptyList();
+            return new ArrayList<BluetoothDevice>();
         }
         try {
             return Attributable.setAttributionSource(
@@ -216,7 +216,7 @@ public class BluetoothPbap implements BluetoothProfile {
         } catch (RemoteException e) {
             Log.e(TAG, e.toString());
         }
-        return Collections.emptyList();
+        return new ArrayList<BluetoothDevice>();
     }
 
     /**

@@ -40,7 +40,7 @@ import android.util.Log;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Executor;
@@ -412,7 +412,7 @@ public final class BluetoothPan implements BluetoothProfile {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return Collections.emptyList();
+        return new ArrayList<>();
     }
 
     /**
@@ -443,7 +443,7 @@ public final class BluetoothPan implements BluetoothProfile {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return Collections.emptyList();
+        return new ArrayList<>();
     }
 
     /**
