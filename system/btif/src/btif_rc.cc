@@ -860,10 +860,9 @@ void handle_rc_connect(tBTA_AV_RC_OPEN* p_rc_open) {
 
   // check if already some RC is connected
   if (p_dev->rc_connected) {
-    LOG_ERROR(
-        "%s: Got RC OPEN in connected state, Connected RC: %d \
-            and Current RC: %d",
-        __func__, p_dev->rc_handle, p_rc_open->rc_handle);
+    log::error(
+        "Got RC OPEN in connected state, Connected RC: {} and Current RC: {}",
+        p_dev->rc_handle, p_rc_open->rc_handle);
     if (p_dev->rc_handle != p_rc_open->rc_handle &&
         p_dev->rc_addr != p_rc_open->peer_addr) {
       log::verbose("Got RC connected for some other handle");
@@ -1536,10 +1535,10 @@ static void send_metamsg_rsp(btif_rc_device_cb_t* p_dev, int index,
     }
 
     if (!bSent) {
-      LOG_VERBOSE(
-          "%s: Notification not sent, as there are no RC connections or the \
-                CT has not subscribed for event_id: %s",
-          __func__, dump_rc_notification_event_id(event_id));
+      log::verbose(
+          "Notification not sent, as there are no RC connections or the CT has "
+          "not subscribed for event_id: {}",
+          dump_rc_notification_event_id(event_id));
     }
   } else {
     /* All other commands go here */
@@ -1727,10 +1726,10 @@ static void btif_rc_upstreams_evt(uint16_t event, tAVRC_COMMAND* pavrc_cmd,
       uint8_t num_attr;
       num_attr = pavrc_cmd->get_items.attr_count;
 
-      LOG_VERBOSE(
-          "%s: AVRC_PDU_GET_FOLDER_ITEMS num_attr: %d, start_item [%d] \
-                end_item [%d]",
-          __func__, num_attr, pavrc_cmd->get_items.start_item,
+      log::verbose(
+          "AVRC_PDU_GET_FOLDER_ITEMS num_attr: {}, start_item [{}] end_item "
+          "[{}]",
+          num_attr, pavrc_cmd->get_items.start_item,
           pavrc_cmd->get_items.end_item);
 
       /* num_attr requested:

@@ -697,7 +697,7 @@ class CsisClientImpl : public CsisClient {
   }
 
   void CleanUp() {
-    LOG_DEBUG();
+    log::debug("");
 
     BTA_GATTC_AppDeregister(gatt_if_);
     for (auto& device : devices_) {
@@ -2047,7 +2047,7 @@ class CsisClientImpl : public CsisClient {
         return;
       }
 
-      LOG_VERBOSE();
+      log::verbose("");
 
       const std::list<gatt::Service>* all_services =
           BTA_GATTC_GetServices(device->conn_id);

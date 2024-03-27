@@ -93,7 +93,7 @@ bool SinkImpl::Acquire() {
     return false;
   }
 
-  LOG_INFO();
+  log::info("");
   le_audio_source_hal_state = HAL_STOPPED;
   return true;
 }
@@ -104,7 +104,7 @@ void SinkImpl::Release() {
     return;
   }
 
-  LOG_INFO();
+  log::info("");
   if (halSourceInterface_) {
     halSourceInterface_->Cleanup();
 
@@ -219,7 +219,7 @@ void SinkImpl::Stop() {
     return;
   }
 
-  LOG_INFO();
+  log::info("");
 
   halSourceInterface_->StopSession();
   le_audio_source_hal_state = HAL_STOPPED;
@@ -256,7 +256,7 @@ void SinkImpl::ConfirmStreamingRequest() {
     return;
   }
 
-  LOG_INFO();
+  log::info("");
   if (IS_FLAG_ENABLED(leaudio_start_stream_race_fix)) {
     halSourceInterface_->ConfirmStreamingRequestV2();
   } else {
@@ -271,7 +271,7 @@ void SinkImpl::SuspendedForReconfiguration() {
     return;
   }
 
-  LOG_INFO();
+  log::info("");
   halSourceInterface_->SuspendedForReconfiguration();
 }
 
@@ -282,7 +282,7 @@ void SinkImpl::ReconfigurationComplete() {
     return;
   }
 
-  LOG_INFO();
+  log::info("");
   halSourceInterface_->ReconfigurationComplete();
 }
 
@@ -293,7 +293,7 @@ void SinkImpl::CancelStreamingRequest() {
     return;
   }
 
-  LOG_INFO();
+  log::info("");
   if (IS_FLAG_ENABLED(leaudio_start_stream_race_fix)) {
     halSourceInterface_->CancelStreamingRequestV2();
   } else {
@@ -308,7 +308,7 @@ void SinkImpl::UpdateRemoteDelay(uint16_t remote_delay_ms) {
     return;
   }
 
-  LOG_INFO();
+  log::info("");
   halSourceInterface_->SetRemoteDelay(remote_delay_ms);
 }
 
@@ -320,7 +320,7 @@ void SinkImpl::UpdateAudioConfigToHal(
     return;
   }
 
-  LOG_INFO();
+  log::info("");
   halSourceInterface_->UpdateAudioConfigToHal(config);
 }
 }  // namespace
@@ -334,7 +334,7 @@ LeAudioSinkAudioHalClient::AcquireUnicast() {
     return nullptr;
   }
 
-  LOG_INFO();
+  log::info("");
   return std::move(impl);
 }
 

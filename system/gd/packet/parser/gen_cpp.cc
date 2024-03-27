@@ -96,7 +96,6 @@ bool generate_cpp_headers_one_file(
 #include "packet/packet_view.h"
 #include "packet/checksum_type_checker.h"
 #include "packet/custom_type_checker.h"
-#include "os/log.h"
 )";
 
   if (generate_fuzzing || generate_tests) {
@@ -105,6 +104,7 @@ bool generate_cpp_headers_one_file(
 
 #if defined(PACKET_FUZZ_TESTING) || defined(PACKET_TESTING) || defined(FUZZ_TARGET)
 #include "packet/raw_builder.h"
+#include <bluetooth/log.h>
 #endif
 )";
   }

@@ -27,7 +27,6 @@
 #include "model/setup/test_model.h"
 #include "net/posix/posix_async_socket_connector.h"
 #include "net/posix/posix_async_socket_server.h"
-#include "os/log.h"
 
 namespace android {
 namespace hardware {
