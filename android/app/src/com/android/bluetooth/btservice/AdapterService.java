@@ -700,7 +700,7 @@ public class AdapterService extends Service {
                         "BluetoothQualityReportNativeInterface cannot be null when BQR starts");
         mBluetoothQualityReportNativeInterface.init();
 
-        mSdpManager = SdpManager.init(this);
+        mSdpManager = new SdpManager(this);
 
         mDatabaseManager = new DatabaseManager(this);
         mDatabaseManager.start(MetadataDatabase.createDatabase(this));
