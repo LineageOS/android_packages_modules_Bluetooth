@@ -102,10 +102,12 @@ public class AvrcpTargetService extends ProfileService {
         super(ctx);
     }
 
+    /** Checks for profile enabled state in Bluetooth sysprops. */
     public static boolean isEnabled() {
         return BluetoothProperties.isProfileAvrcpTargetEnabled().orElse(false);
     }
 
+    /** Callbacks from {@link MediaPlayerList} to update the MediaData and folder updates. */
     class ListCallback implements MediaPlayerList.MediaUpdateCallback {
         @Override
         public void run(MediaData data) {
@@ -131,6 +133,10 @@ public class AvrcpTargetService extends ProfileService {
         }
     }
 
+    /**
+     * Listens for {@link AudioManager.ACTION_VOLUME_CHANGED} events to update {@link
+     * AvrcpVolumeManager}.
+     */
     private class AvrcpBroadcastReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -150,21 +156,22 @@ public class AvrcpTargetService extends ProfileService {
         }
     }
 
-    /**
-     * Set the AvrcpTargetService instance.
-     */
+    /** Sets the AvrcpTargetService instance. */
     @VisibleForTesting
     public static void set(AvrcpTargetService instance) {
         sInstance = instance;
     }
 
     /**
-     * Get the AvrcpTargetService instance. Returns null if the service hasn't been initialized.
+     * Returns the {@link AvrcpTargetService} instance.
+     *
+     * <p>Returns null if the service hasn't been initialized.
      */
     public static AvrcpTargetService get() {
         return sInstance;
     }
 
+    /** Returns the {@link AvrcpCoverArtService} instance. */
     public AvrcpCoverArtService getCoverArtService() {
         return mAvrcpCoverArtService;
     }
@@ -264,6 +271,7 @@ public class AvrcpTargetService extends ProfileService {
         mReceiver = null;
     }
 
+    /** Returns the active A2DP {@link BluetoothDevice} */
     private BluetoothDevice getA2dpActiveDevice() {
         A2dpService service = mFactory.getA2dpService();
         if (service == null) {
@@ -272,6 +280,12 @@ public class AvrcpTargetService extends ProfileService {
         return service.getActiveDevice();
     }
 
+    /**
+     * Sets a {@link BluetoothDevice} as active A2DP device.
+     *
+     * <p>This will be called by the native stack when a play event is received from a remote
+     * device. See packages/modules/Bluetooth/system/profile/avrcp/device.cc.
+     */
     private void setA2dpActiveDevice(@NonNull BluetoothDevice device) {
         A2dpService service = A2dpService.getA2dpService();
         if (service == null) {
@@ -281,20 +295,20 @@ public class AvrcpTargetService extends ProfileService {
         service.setActiveDevice(device);
     }
 
+    /** Informs {@link AvrcpVolumeManager} that a new device is connected */
     void deviceConnected(BluetoothDevice device, boolean absoluteVolume) {
         Log.i(TAG, "deviceConnected: device=" + device + " absoluteVolume=" + absoluteVolume);
         mVolumeManager.deviceConnected(device, absoluteVolume);
         MetricsLogger.logProfileConnectionEvent(BluetoothMetricsProto.ProfileId.AVRCP);
     }
 
+    /** Informs {@link AvrcpVolumeManager} that a device is disconnected */
     void deviceDisconnected(BluetoothDevice device) {
         Log.i(TAG, "deviceDisconnected: device=" + device);
         mVolumeManager.deviceDisconnected(device);
     }
 
-    /**
-     * Remove the stored volume for a device.
-     */
+    /** Removes the stored volume for a device. */
     public void removeStoredVolumeForDevice(BluetoothDevice device) {
         if (device == null) return;
 
@@ -302,8 +316,9 @@ public class AvrcpTargetService extends ProfileService {
     }
 
     /**
-     * Retrieve the remembered volume for a device. Returns -1 if there is no volume for the
-     * device.
+     * Returns the remembered volume for a device or -1 if none.
+     *
+     * <p>See {@link AvrcpVolumeManager}.
      */
     public int getRememberedVolumeForDevice(BluetoothDevice device) {
         if (device == null) return -1;
@@ -325,12 +340,15 @@ public class AvrcpTargetService extends ProfileService {
             }
         }
     }
+
     /**
-     * Handle when Active Device changes in A2DP.
+     * Handles active device changes in A2DP.
      *
-     * <p>Signal to the service that the current audio out device has changed and to inform the
-     * audio service whether the new device supports absolute volume. If it does, also set the
-     * absolute volume level on the remote device.
+     * <p>Signals {@link AvrcpVolumeManager} that the current A2DP active device has changed which
+     * will then inform {@link AudioManager} about its absolute volume support. If absolute volume
+     * is supported, it will also set the volume level on the remote device.
+     *
+     * <p>Informs all remote devices that there is a play status update.
      */
     public void handleA2dpActiveDeviceChanged(BluetoothDevice device) {
         mVolumeManager.volumeDeviceSwitched(device);
@@ -340,7 +358,7 @@ public class AvrcpTargetService extends ProfileService {
         }
     }
 
-    // TODO (apanicke): Add checks to rejectlist Absolute Volume devices if they behave poorly.
+    /** Informs {@link AvrcpVolumeManager} that a remote device requests a volume change */
     void setVolume(int avrcpVolume) {
         BluetoothDevice activeDevice = getA2dpActiveDevice();
         if (activeDevice == null) {
@@ -352,8 +370,11 @@ public class AvrcpTargetService extends ProfileService {
     }
 
     /**
-     * Set the volume on the remote device. Does nothing if the device doesn't support absolute
-     * volume.
+     * Sends a volume change request to the remote device.
+     *
+     * <p>Does nothing if the device doesn't support absolute volume.
+     *
+     * <p>The remote device that will receive the request is the A2DP active device.
      */
     public void sendVolumeChanged(int deviceVolume) {
         BluetoothDevice activeDevice = getA2dpActiveDevice();
@@ -365,6 +386,12 @@ public class AvrcpTargetService extends ProfileService {
         mVolumeManager.sendVolumeChanged(activeDevice, deviceVolume);
     }
 
+    /**
+     * Returns the current song info from the active player in {@link MediaPlayerList}.
+     *
+     * <p>If a {@link com.android.bluetooth.audio_util.Image} is present in the {@link Metadata},
+     * add its handle from {@link AvrcpCoverArtService}.
+     */
     Metadata getCurrentSongInfo() {
         Metadata metadata = mMediaPlayerList.getCurrentSongInfo();
         if (mAvrcpCoverArtService != null && metadata.image != null) {
@@ -374,11 +401,13 @@ public class AvrcpTargetService extends ProfileService {
         return metadata;
     }
 
+    /** Returns the current play status of the active player from {@link MediaPlayerList}. */
     PlayStatus getPlayState() {
         return PlayStatus.fromPlaybackState(mMediaPlayerList.getCurrentPlayStatus(),
                 Long.parseLong(getCurrentSongInfo().duration));
     }
 
+    /** Returns the current media ID of the active player from {@link MediaPlayerList}. */
     String getCurrentMediaId() {
         String id = mMediaPlayerList.getCurrentMediaId();
         if (id != null && !id.isEmpty()) return id;
@@ -390,6 +419,12 @@ public class AvrcpTargetService extends ProfileService {
         return "error";
     }
 
+    /**
+     * Returns the playing queue of the active player from {@link MediaPlayerList}.
+     *
+     * <p>If a {@link com.android.bluetooth.audio_util.Image} is present in the {@link Metadata} of
+     * the queued items, add its handle from {@link AvrcpCoverArtService}.
+     */
     List<Metadata> getNowPlayingList() {
         String currentMediaId = getCurrentMediaId();
         Metadata currentTrack = null;
@@ -418,29 +453,44 @@ public class AvrcpTargetService extends ProfileService {
         return nowPlayingList;
     }
 
+    /**
+     * Returns the active browsable player ID from {@link MediaPlayerList}.
+     *
+     * <p>Note: Currently, only returns the Bluetooth player ID. Browsable players are
+     * subdirectories of the Bluetooth player. See {@link MediaPlayerList} class description.
+     */
     int getCurrentPlayerId() {
         return mMediaPlayerList.getCurrentPlayerId();
     }
 
-    // TODO (apanicke): Have the Player List also contain info about the play state of each player
+    /**
+     * Returns the list of browsable players from {@link MediaPlayerList}.
+     *
+     * <p>Note: Currently, only returns the Bluetooth player. Browsable players are subdirectories
+     * of the Bluetooth player. See {@link MediaPlayerList} class description.
+     */
     List<PlayerInfo> getMediaPlayerList() {
         return mMediaPlayerList.getMediaPlayerList();
     }
 
+    /** See {@link MediaPlayerList#getPlayerRoot}. */
     void getPlayerRoot(int playerId, MediaPlayerList.GetPlayerRootCallback cb) {
         mMediaPlayerList.getPlayerRoot(playerId, cb);
     }
 
+    /** See {@link MediaPlayerList#getFolderItems}. */
     void getFolderItems(int playerId, String mediaId, MediaPlayerList.GetFolderItemsCallback cb) {
         mMediaPlayerList.getFolderItems(playerId, mediaId, cb);
     }
 
+    /** See {@link MediaPlayerList#playItem}. */
     void playItem(int playerId, boolean nowPlaying, String mediaId) {
         // NOTE: playerId isn't used if nowPlaying is true, since its assumed to be the current
         // active player
         mMediaPlayerList.playItem(playerId, nowPlaying, mediaId);
     }
 
+    /** Informs {@link AudioManager} of an incoming key event from a remote device. */
     void sendMediaKeyEvent(int key, boolean pushed) {
         BluetoothDevice activeDevice = getA2dpActiveDevice();
         MediaPlayerWrapper player = mMediaPlayerList.getActivePlayer();
@@ -460,6 +510,12 @@ public class AvrcpTargetService extends ProfileService {
         mAudioManager.dispatchMediaKeyEvent(event);
     }
 
+    /**
+     * Sets a {@link BluetoothDevice} as active A2DP device.
+     *
+     * <p>This will be called by the native stack when a play event is received from a remote
+     * device. See packages/modules/Bluetooth/system/profile/avrcp/device.cc.
+     */
     void setActiveDevice(BluetoothDevice device) {
         Log.i(TAG, "setActiveDevice: device=" + device);
         if (device == null) {
@@ -469,37 +525,27 @@ public class AvrcpTargetService extends ProfileService {
         setA2dpActiveDevice(device);
     }
 
-    /**
-     * Called from native to update current active player shuffle mode.
-     */
+    /** Called from native to update current active player shuffle mode. */
     boolean setShuffleMode(int shuffleMode) {
         return mPlayerSettingsManager.setPlayerShuffleMode(shuffleMode);
     }
 
-    /**
-     * Called from native to update current active player repeat mode.
-     */
+    /** Called from native to update current active player repeat mode. */
     boolean setRepeatMode(int repeatMode) {
         return mPlayerSettingsManager.setPlayerRepeatMode(repeatMode);
     }
 
-    /**
-     * Called from native to get the current active player repeat mode.
-     */
+    /** Called from native to get the current active player repeat mode. */
     int getRepeatMode() {
         return mPlayerSettingsManager.getPlayerRepeatMode();
     }
 
-    /**
-     * Called from native to get the current active player shuffle mode.
-     */
+    /** Called from native to get the current active player shuffle mode. */
     int getShuffleMode() {
         return mPlayerSettingsManager.getPlayerShuffleMode();
     }
 
-    /**
-     * Called from player callback to indicate new settings to remote device.
-     */
+    /** Called from player callback to indicate new settings to remote device. */
     public void sendPlayerSettings(int repeatMode, int shuffleMode) {
         if (mNativeInterface == null) {
             Log.i(TAG, "Tried to send Player Settings while native interface is null");
@@ -509,9 +555,7 @@ public class AvrcpTargetService extends ProfileService {
         mNativeInterface.sendPlayerSettings(repeatMode, shuffleMode);
     }
 
-    /**
-     * Dump debugging information to the string builder
-     */
+    /** Dump debugging information to the string builder */
     public void dump(StringBuilder sb) {
         sb.append("\nProfile: AvrcpTargetService:\n");
         if (sInstance == null) {
