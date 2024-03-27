@@ -52,7 +52,6 @@ import java.util.List;
 public class BluetoothPbapSimVcardManager {
     private static final String TAG = "PbapSIMvCardComposer";
 
-    private static final boolean V = BluetoothPbapService.VERBOSE;
 
     @VisibleForTesting
     public static final String FAILURE_REASON_FAILED_TO_GET_DATABASE_INFO =
@@ -315,9 +314,9 @@ public class BluetoothPbapSimVcardManager {
             }
         }
         if (orderByWhat == BluetoothPbapObexServer.ORDER_BY_INDEXED) {
-            if (V) Log.v(TAG, "getPhonebookNameList, order by index");
+            Log.v(TAG, "getPhonebookNameList, order by index");
         } else if (orderByWhat == BluetoothPbapObexServer.ORDER_BY_ALPHABETICAL) {
-            if (V) Log.v(TAG, "getPhonebookNameList, order by alpha");
+            Log.v(TAG, "getPhonebookNameList, order by alpha");
             Collections.sort(allnames, new Comparator <String> () {
                 @Override
                 public int compare(String str1, String str2) {
@@ -346,23 +345,23 @@ public class BluetoothPbapSimVcardManager {
                         .moveToNext()) {
                     String number = contactCursor.getString(NUMBER_COLUMN_INDEX);
                     if (number == null) {
-                        if (V) Log.v(TAG, "number is null");
+                        Log.v(TAG, "number is null");
                         continue;
                     }
 
-                    if (V) Log.v(TAG, "number: " + number + " phoneNumber:" + phoneNumber);
+                    Log.v(TAG, "number: " + number + " phoneNumber:" + phoneNumber);
                     if ((number.endsWith(phoneNumber)) || (number.startsWith(phoneNumber))) {
                         String name = contactCursor.getString(NAME_COLUMN_INDEX);
                         if (TextUtils.isEmpty(name)) {
                             name = mContext.getString(android.R.string.unknownName);
                         }
-                        if (V) Log.v(TAG, "got name " + name + " by number " + phoneNumber);
+                        Log.v(TAG, "got name " + name + " by number " + phoneNumber);
 
                         if (number.endsWith(phoneNumber)) {
-                            if (V) Log.v(TAG, "Adding to end name list");
+                            Log.v(TAG, "Adding to end name list");
                             nameList.add(name);
                         } else {
-                            if (V) Log.v(TAG, "Adding to start name list");
+                            Log.v(TAG, "Adding to start name list");
                             startNameList.add(name);
                         }
                     }
@@ -448,7 +447,7 @@ public class BluetoothPbapSimVcardManager {
                     4);
             return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
         }
-        if (V) Log.v(TAG, "composeAndSendSIMPhonebookOneVcard orderByWhat " + orderByWhat);
+        Log.v(TAG, "composeAndSendSIMPhonebookOneVcard orderByWhat " + orderByWhat);
         BluetoothPbapSimVcardManager composer = null;
         HandlerForStringBuffer buffer = null;
         try {
