@@ -1060,7 +1060,7 @@ public class CsipSetCoordinatorService extends ProfileService {
 
             CsipSetCoordinatorService service = getService();
             if (service == null) {
-                return Collections.emptyList();
+                return new ArrayList<>();
             }
 
             enforceBluetoothPrivilegedPermission(service);
@@ -1074,7 +1074,7 @@ public class CsipSetCoordinatorService extends ProfileService {
 
             CsipSetCoordinatorService service = getService();
             if (service == null) {
-                return Collections.emptyList();
+                return new ArrayList<>();
             }
 
             enforceBluetoothPrivilegedPermission(service);
@@ -1164,7 +1164,7 @@ public class CsipSetCoordinatorService extends ProfileService {
 
             CsipSetCoordinatorService service = getService();
             if (service == null) {
-                return Collections.emptyList();
+                return new ArrayList<Integer>();
             }
 
             enforceBluetoothPrivilegedPermission(service);

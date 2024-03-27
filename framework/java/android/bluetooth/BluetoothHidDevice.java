@@ -30,7 +30,7 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -490,7 +490,7 @@ public final class BluetoothHidDevice implements BluetoothProfile {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return Collections.emptyList();
+        return new ArrayList<>();
     }
 
     /** {@inheritDoc} */
@@ -511,7 +511,7 @@ public final class BluetoothHidDevice implements BluetoothProfile {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return Collections.emptyList();
+        return new ArrayList<>();
     }
 
     /** {@inheritDoc} */

@@ -71,7 +71,6 @@ import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -1365,7 +1364,7 @@ public class A2dpService extends ProfileService {
         public List<BluetoothDevice> getConnectedDevices(AttributionSource source) {
             A2dpService service = getService(source);
             if (service == null) {
-                return Collections.emptyList();
+                return new ArrayList<>();
             }
 
             return service.getConnectedDevices();
@@ -1376,7 +1375,7 @@ public class A2dpService extends ProfileService {
                 int[] states, AttributionSource source) {
             A2dpService service = getService(source);
             if (service == null) {
-                return Collections.emptyList();
+                return new ArrayList<>();
             }
 
             return service.getDevicesMatchingConnectionStates(states);
@@ -1468,7 +1467,7 @@ public class A2dpService extends ProfileService {
         public List<BluetoothCodecType> getSupportedCodecTypes(AttributionSource source) {
             A2dpService service = getService(source);
             if (service == null) {
-                return Collections.emptyList();
+                return new ArrayList<>();
             }
 
             enforceBluetoothPrivilegedPermission(service);

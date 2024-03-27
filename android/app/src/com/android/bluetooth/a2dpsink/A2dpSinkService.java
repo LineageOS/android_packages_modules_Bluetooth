@@ -39,7 +39,6 @@ import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -249,7 +248,7 @@ public class A2dpSinkService extends ProfileService {
         public List<BluetoothDevice> getConnectedDevices(AttributionSource source) {
             A2dpSinkService service = getService(source);
             if (service == null) {
-                return Collections.emptyList();
+                return new ArrayList<BluetoothDevice>(0);
             }
             return service.getConnectedDevices();
         }
@@ -259,7 +258,7 @@ public class A2dpSinkService extends ProfileService {
                 int[] states, AttributionSource source) {
             A2dpSinkService service = getService(source);
             if (service == null) {
-                return Collections.emptyList();
+                return new ArrayList<BluetoothDevice>(0);
             }
             return service.getDevicesMatchingConnectionStates(states);
         }

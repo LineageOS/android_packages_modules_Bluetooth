@@ -37,7 +37,7 @@ import android.util.CloseGuard;
 import android.util.Log;
 import android.util.Pair;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -299,7 +299,7 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return Collections.emptyList();
+        return new ArrayList<>();
     }
 
     /**
@@ -325,7 +325,7 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return Collections.emptyList();
+        return new ArrayList<>();
     }
 
     /**

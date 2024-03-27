@@ -48,7 +48,6 @@ import com.android.bluetooth.sdp.SdpManagerNativeInterface;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -412,7 +411,7 @@ public class PbapClientService extends ProfileService {
         public List<BluetoothDevice> getConnectedDevices(AttributionSource source) {
             PbapClientService service = getService(source);
             if (service == null) {
-                return Collections.emptyList();
+                return new ArrayList<>();
             }
 
             return service.getConnectedDevices();
@@ -423,7 +422,7 @@ public class PbapClientService extends ProfileService {
                 int[] states, AttributionSource source) {
             PbapClientService service = getService(source);
             if (service == null) {
-                return Collections.emptyList();
+                return new ArrayList<>();
             }
 
             return service.getDevicesMatchingConnectionStates(states);
