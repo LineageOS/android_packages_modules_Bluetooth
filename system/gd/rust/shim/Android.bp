@@ -32,7 +32,7 @@ rust_defaults {
     crate_name: "bt_shim",
     srcs: ["src/lib.rs"],
     rustlibs: [
-        "libbt_common_only_init_flags",
+        "libbt_common",
         "libcxx",
     ],
     proc_macros: [

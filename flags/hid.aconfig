@@ -10,6 +10,7 @@ flag {
 
 flag {
     name: "allow_switching_hid_and_hogp"
+    is_exported: true
     namespace: "bluetooth"
     description: "Allow switching between HID and HOGP supported on the same device"
     bug: "320762367"

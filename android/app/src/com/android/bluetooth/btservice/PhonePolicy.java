@@ -20,6 +20,7 @@ import static com.android.bluetooth.Utils.isDualModeAudioEnabled;
 
 import android.annotation.RequiresPermission;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothCsipSetCoordinator;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothUuid;
@@ -181,6 +182,104 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
                 SystemProperties.getBoolean(LE_AUDIO_CONNECTION_BY_DEFAULT_PROPERTY, true);
     }
 
+    boolean isLeAudioOnlyGroup(BluetoothDevice device) {
+        if (!Flags.leaudioAllowLeaudioOnlyDevices()) {
+            debugLog(" leaudio_allow_leaudio_only_devices is not enabled ");
+            return false;
+        }
+
+        CsipSetCoordinatorService csipSetCoordinatorService =
+                mFactory.getCsipSetCoordinatorService();
+
+        if (csipSetCoordinatorService == null) {
+            debugLog("isLeAudioOnlyGroup: no csip service known yet for " + device);
+            return false;
+        }
+
+        int groupId = csipSetCoordinatorService.getGroupId(device, BluetoothUuid.CAP);
+        if (groupId == BluetoothCsipSetCoordinator.GROUP_ID_INVALID) {
+            debugLog("isLeAudioOnlyGroup: no LeAudio groupID yet known for " + device);
+            return false;
+        }
+
+        int groupSize = csipSetCoordinatorService.getDesiredGroupSize(groupId);
+        List<BluetoothDevice> groupDevices =
+                csipSetCoordinatorService.getGroupDevicesOrdered(groupId);
+
+        if (groupDevices.size() != groupSize) {
+            debugLog(
+                    "isLeAudioOnlyGroup: Group is not yet complete ("
+                            + groupDevices.size()
+                            + " != "
+                            + groupSize
+                            + ")");
+            return false;
+        }
+
+        for (BluetoothDevice dev : groupDevices) {
+            int remoteType = mAdapterService.getRemoteType(dev);
+            debugLog("isLeAudioOnlyGroup: " + dev + " is type: " + remoteType);
+
+            if (remoteType != BluetoothDevice.DEVICE_TYPE_LE) {
+                debugLog("isLeAudioOnlyGroup: " + dev + " is type: " + remoteType);
+                return false;
+            }
+
+            if (!mAdapterService.isProfileSupported(dev, BluetoothProfile.LE_AUDIO)) {
+                debugLog("isLeAudioOnlyGroup: " + dev + " does not support LE AUDIO");
+                return false;
+            }
+
+            if (mAdapterService.isProfileSupported(dev, BluetoothProfile.HEARING_AID)) {
+                debugLog("isLeAudioOnlyGroup: " + dev + " supports ASHA");
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    boolean isLeAudioOnlyDevice(BluetoothDevice device, ParcelUuid[] uuids) {
+        /* This functions checks if device belongs to the LeAudio group which
+         * is LeAudio only. This is either
+         * - LeAudio only Headset (no BR/EDR mode)
+         * - LeAudio Hearing Aid  (no ASHA)
+         *
+         * Note, that we need to have all set bonded to take the decision.
+         * If the set is not bonded, we cannot assume that.
+         */
+
+        if (!Flags.leaudioAllowLeaudioOnlyDevices()) {
+            debugLog(" leaudio_allow_leaudio_only_devices is not enabled ");
+            return false;
+        }
+
+        if (!Utils.arrayContains(uuids, BluetoothUuid.LE_AUDIO)) {
+            return false;
+        }
+
+        int deviceType = mAdapterService.getRemoteType(device);
+
+        if (deviceType != BluetoothDevice.DEVICE_TYPE_LE) {
+            debugLog("isLeAudioOnlyDevice: " + device + " is type" + deviceType);
+            return false;
+        }
+
+        if (Utils.arrayContains(uuids, BluetoothUuid.HEARING_AID)) {
+            debugLog("isLeAudioOnlyDevice: " + device + " supports ASHA");
+            return false;
+        }
+
+        /* For no CSIS device, allow LE Only devices. */
+        if (!Utils.arrayContains(uuids, BluetoothUuid.COORDINATED_SET)) {
+            debugLog("isLeAudioOnlyDevice: " + device + " is LeAudio only.");
+            return true;
+        }
+
+        // For CSIS devices it is bit harder to check.
+        return isLeAudioOnlyGroup(device);
+    }
+
     // Policy implementation, all functions MUST be private
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
     private void processInitProfilePriorities(BluetoothDevice device, ParcelUuid[] uuids) {
@@ -202,13 +301,16 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
         final boolean isBypassLeAudioAllowlist =
                 SystemProperties.getBoolean(BYPASS_LE_AUDIO_ALLOWLIST_PROPERTY, false);
 
+        boolean isLeAudioOnly = isLeAudioOnlyDevice(device, uuids);
         boolean isLeAudioProfileAllowed =
                 (leAudioService != null)
                         && Utils.arrayContains(uuids, BluetoothUuid.LE_AUDIO)
                         && (leAudioService.getConnectionPolicy(device)
                                 != BluetoothProfile.CONNECTION_POLICY_FORBIDDEN)
                         && (mLeAudioEnabledByDefault || isDualModeAudioEnabled())
-                        && (isBypassLeAudioAllowlist || mAdapterService.isLeAudioAllowed(device));
+                        && (isBypassLeAudioAllowlist
+                                || mAdapterService.isLeAudioAllowed(device)
+                                || isLeAudioOnly);
 
         debugLog(
                 "mLeAudioEnabledByDefault: "
@@ -216,7 +318,13 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
                         + ", isBypassLeAudioAllowlist: "
                         + isBypassLeAudioAllowlist
                         + ", isLeAudioAllowDevice: "
-                        + mAdapterService.isLeAudioAllowed(device));
+                        + mAdapterService.isLeAudioAllowed(device)
+                        + ", mAutoConnectProfilesSupported: "
+                        + mAutoConnectProfilesSupported
+                        + ", isLeAudioProfileAllowed: "
+                        + isLeAudioProfileAllowed
+                        + ", isLeAudioOnly: "
+                        + isLeAudioOnly);
 
         // Set profile priorities only for the profiles discovered on the remote device.
         // This avoids needless auto-connect attempts to profiles non-existent on the remote device
@@ -475,6 +583,44 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
         }
     }
 
+    void handleLeAudioOnlyDeviceAfterCsipConnect(BluetoothDevice device) {
+        debugLog("handleLeAudioOnlyDeviceAfterCsipConnect: " + device);
+
+        LeAudioService leAudioService = mFactory.getLeAudioService();
+        if (leAudioService == null
+                || (leAudioService.getConnectionPolicy(device)
+                        == BluetoothProfile.CONNECTION_POLICY_ALLOWED)
+                || !mAdapterService.isProfileSupported(device, BluetoothProfile.LE_AUDIO)) {
+            debugLog("handleLeAudioOnlyDeviceAfterCsipConnect: nothing to do for " + device);
+            return;
+        }
+
+        if (!isLeAudioOnlyGroup(device)) {
+            /* Log no needed as above function will log on error. */
+            return;
+        }
+
+        CsipSetCoordinatorService csipSetCoordinatorService =
+                mFactory.getCsipSetCoordinatorService();
+        /* Since isLeAudioOnlyGroup return true it means csipSetCoordinatorService is valid */
+        List<BluetoothDevice> groupDevices =
+                csipSetCoordinatorService.getGroupDevicesOrdered(
+                        csipSetCoordinatorService.getGroupId(device, BluetoothUuid.CAP));
+
+        debugLog("handleLeAudioOnlyDeviceAfterCsipConnect: enabling LeAudioOnlyDevice");
+        for (BluetoothDevice dev : groupDevices) {
+            if (leAudioService.getConnectionPolicy(dev)
+                    != BluetoothProfile.CONNECTION_POLICY_ALLOWED) {
+                /* Setting LeAudio service as allowed is sufficient,
+                 * because other LeAudio services e.g. VC will
+                 * be enabled by LeAudio service automatically.
+                 */
+                debugLog("...." + dev);
+                leAudioService.setConnectionPolicy(dev, BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+            }
+        }
+    }
+
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
     private void processProfileStateChanged(BluetoothDevice device, int profileId, int nextState,
             int prevState) {
@@ -494,6 +640,9 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
                         break;
                     case BluetoothProfile.HEADSET:
                         mHeadsetRetrySet.remove(device);
+                        break;
+                    case BluetoothProfile.CSIP_SET_COORDINATOR:
+                        handleLeAudioOnlyDeviceAfterCsipConnect(device);
                         break;
                 }
                 connectOtherProfile(device);

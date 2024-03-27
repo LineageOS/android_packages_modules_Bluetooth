@@ -751,7 +751,7 @@ static void write_proto_mode_cb(uint16_t conn_id, tGATT_STATUS status,
     /* Set protocol finished in CONN state*/
 
     uint16_t cb_evt = p_dev_cb->w4_evt;
-    if (cb_evt == 0) return;
+    if (cb_evt == BTA_HH_EMPTY_EVT) return;
 
     tBTA_HH_CBDATA cback_data;
 
@@ -761,7 +761,7 @@ static void write_proto_mode_cb(uint16_t conn_id, tGATT_STATUS status,
     if (status == GATT_SUCCESS)
       bta_hh_le_register_input_notif(p_dev_cb, p_dev_cb->mode, false);
 
-    p_dev_cb->w4_evt = 0;
+    p_dev_cb->w4_evt = BTA_HH_EMPTY_EVT;
     (*bta_hh_cb.p_cback)(cb_evt, (tBTA_HH*)&cback_data);
   } else if (p_dev_cb->state == BTA_HH_W4_CONN_ST) {
     p_dev_cb->status = (status == GATT_SUCCESS) ? BTA_HH_OK : BTA_HH_ERR_PROTO;
@@ -853,7 +853,7 @@ static void get_protocol_mode_cb(uint16_t conn_id, tGATT_STATUS status,
                (hs_data.rsp_data.proto_mode == BTA_HH_PROTO_RPT_MODE) ? "Report"
                                                                       : "Boot");
 
-  p_dev_cb->w4_evt = 0;
+  p_dev_cb->w4_evt = BTA_HH_EMPTY_EVT;
   (*bta_hh_cb.p_cback)(BTA_HH_GET_PROTO_EVT, (tBTA_HH*)&hs_data);
 }
 
@@ -880,7 +880,7 @@ static void bta_hh_le_get_protocol_mode(tBTA_HH_DEV_CB* p_cb) {
   hs_data.status = BTA_HH_OK;
   hs_data.handle = p_cb->hid_handle;
   hs_data.rsp_data.proto_mode = BTA_HH_PROTO_RPT_MODE;
-  p_cb->w4_evt = 0;
+  p_cb->w4_evt = BTA_HH_EMPTY_EVT;
   (*bta_hh_cb.p_cback)(BTA_HH_GET_PROTO_EVT, (tBTA_HH*)&hs_data);
 }
 
@@ -1805,7 +1805,8 @@ static void read_report_cb(uint16_t conn_id, tGATT_STATUS status,
                            void* data) {
   tBTA_HH_DEV_CB* p_dev_cb = (tBTA_HH_DEV_CB*)data;
   if (p_dev_cb->w4_evt != BTA_HH_GET_RPT_EVT) {
-    log::warn("Unexpected Read response, w4_evt={}", p_dev_cb->w4_evt);
+    log::warn("Unexpected Read response, w4_evt={}",
+              bta_hh_event_text(p_dev_cb->w4_evt));
     return;
   }
 
@@ -1857,7 +1858,7 @@ static void read_report_cb(uint16_t conn_id, tGATT_STATUS status,
     }
   }
 
-  p_dev_cb->w4_evt = 0;
+  p_dev_cb->w4_evt = BTA_HH_EMPTY_EVT;
   (*bta_hh_cb.p_cback)(BTA_HH_GET_RPT_EVT, (tBTA_HH*)&hs_data);
   osi_free(hs_data.rsp_data.p_rpt_data);
 }
@@ -1892,10 +1893,9 @@ static void write_report_cb(uint16_t conn_id, tGATT_STATUS status,
   tBTA_HH_CBDATA cback_data;
   tBTA_HH_DEV_CB* p_dev_cb = (tBTA_HH_DEV_CB*)data;
   uint16_t cb_evt = p_dev_cb->w4_evt;
+  if (cb_evt == BTA_HH_EMPTY_EVT) return;
 
-  if (cb_evt == 0) return;
-
-  log::verbose("w4_evt:{}", p_dev_cb->w4_evt);
+  log::verbose("w4_evt:{}", bta_hh_event_text(p_dev_cb->w4_evt));
 
   const gatt::Characteristic* p_char =
       BTA_GATTC_GetCharacteristic(conn_id, handle);
@@ -1912,7 +1912,7 @@ static void write_report_cb(uint16_t conn_id, tGATT_STATUS status,
   /* Set Report finished */
   cback_data.handle = p_dev_cb->hid_handle;
   cback_data.status = (status == GATT_SUCCESS) ? BTA_HH_OK : BTA_HH_ERR;
-  p_dev_cb->w4_evt = 0;
+  p_dev_cb->w4_evt = BTA_HH_EMPTY_EVT;
   (*bta_hh_cb.p_cback)(cb_evt, (tBTA_HH*)&cback_data);
 }
 /*******************************************************************************

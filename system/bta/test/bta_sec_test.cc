@@ -20,7 +20,7 @@
 #include <sys/socket.h>
 
 #include "bta/dm/bta_dm_sec_int.h"
-#include "bta/test/bta_base_test.h"
+#include "bta/test/bta_test_fixtures.h"
 #include "test/mock/mock_stack_btm_inq.h"
 #include "test/mock/mock_stack_btm_interface.h"
 #include "types/raw_address.h"
@@ -48,11 +48,11 @@ void btm_set_local_io_caps(uint8_t io_caps);
 }  // namespace legacy
 }  // namespace bluetooth
 
-class BtaSecTest : public BtaBaseTest {
+class BtaSecTest : public BtaWithHwOnTest {
  protected:
-  void SetUp() override { BtaBaseTest::SetUp(); }
+  void SetUp() override { BtaWithHwOnTest::SetUp(); }
 
-  void TearDown() override { BtaBaseTest::TearDown(); }
+  void TearDown() override { BtaWithHwOnTest::TearDown(); }
 };
 
 TEST_F(BtaSecTest, bta_dm_sp_cback__BTM_SP_CFM_REQ_EVT_WithName) {

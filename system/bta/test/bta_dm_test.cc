@@ -31,7 +31,7 @@
 #include "bta/dm/bta_dm_sec_int.h"
 #include "bta/hf_client/bta_hf_client_int.h"
 #include "bta/include/bta_api.h"
-#include "bta/test/bta_base_test.h"
+#include "bta/test/bta_test_fixtures.h"
 #include "osi/include/compat.h"
 #include "osi/include/osi.h"
 #include "stack/include/btm_status.h"
@@ -55,17 +55,12 @@ const RawAddress kRawAddress2({0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc});
 
 constexpr char kRemoteName[] = "TheRemoteName";
 
-bool bta_dm_search_sm_execute(const BT_HDR_RIGID* p_msg) { return true; }
-void bta_dm_search_sm_disable() { bta_sys_deregister(BTA_ID_DM_SEARCH); }
-
 const tBTA_SYS_REG bta_dm_search_reg = {bta_dm_search_sm_execute,
                                         bta_dm_search_sm_disable};
 
 }  // namespace
 
-namespace bluetooth {
-namespace legacy {
-namespace testing {
+namespace bluetooth::legacy::testing {
 
 const tBTA_DM_SEARCH_CB& bta_dm_disc_search_cb();
 tBTA_DM_SEARCH_CB bta_dm_disc_get_search_cb();
@@ -75,18 +70,14 @@ void bta_dm_init_cb();
 void bta_dm_remote_name_cmpl(const tBTA_DM_MSG* p_data);
 void bta_dm_sdp_result(tBTA_DM_MSG* p_data);
 
-}  // namespace testing
-}  // namespace legacy
-}  // namespace bluetooth
+}  // namespace bluetooth::legacy::testing
 
-class BtaDmTest : public BtaBaseTest {
+class BtaDmTest : public BtaWithContextTest {
  protected:
   void SetUp() override {
-    BtaBaseTest::SetUp();
-    main_thread_start_up();
-    post_on_bt_main([]() { log::info("Main thread started up"); });
+    BtaWithContextTest::SetUp();
 
-    bta_sys_register(BTA_ID_DM_SEARCH, &bta_dm_search_reg);
+    BTA_dm_init();
     bluetooth::legacy::testing::bta_dm_init_cb();
 
     for (int i = 0; i < BTA_DM_NUM_PM_TIMER; i++) {
@@ -98,9 +89,7 @@ class BtaDmTest : public BtaBaseTest {
   void TearDown() override {
     bta_sys_deregister(BTA_ID_DM_SEARCH);
     bluetooth::legacy::testing::bta_dm_deinit_cb();
-    post_on_bt_main([]() { log::info("Main thread shutting down"); });
-    main_thread_shut_down();
-    BtaBaseTest::TearDown();
+    BtaWithContextTest::TearDown();
   }
 };
 
@@ -405,7 +394,8 @@ TEST_F(BtaDmTest, bta_dm_remname_cback__typical) {
 TEST_F(BtaDmTest, bta_dm_remname_cback__wrong_address) {
   tBTA_DM_SEARCH_CB search_cb =
       bluetooth::legacy::testing::bta_dm_disc_get_search_cb();
-  search_cb.p_search_cback = nullptr;
+  search_cb.p_device_search_cback = nullptr;
+  search_cb.p_service_search_cback = nullptr;
   search_cb.peer_bdaddr = kRawAddress;
   search_cb.name_discover_done = false;
   bluetooth::legacy::testing::bta_dm_disc_search_cb(search_cb);

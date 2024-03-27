@@ -113,7 +113,7 @@ public class ScanManager {
 
     private int mLastConfiguredScanSetting = Integer.MIN_VALUE;
     // Scan parameters for batch scan.
-    private BatchScanParams mBatchScanParms;
+    private BatchScanParams mBatchScanParams;
 
     private final Object mCurUsedTrackableAdvertisementsLock = new Object();
     @GuardedBy("mCurUsedTrackableAdvertisementsLock")
@@ -384,7 +384,7 @@ public class ScanManager {
                     handleProfileConnectionStateChanged(msg);
                 default:
                     // Shouldn't happen.
-                    Log.e(TAG, "received an unkown message : " + msg.what);
+                    Log.e(TAG, "received an unknown message : " + msg.what);
             }
         }
 
@@ -1160,7 +1160,7 @@ public class ScanManager {
             int scannerId = client.scannerId;
             BatchScanParams batchScanParams = getBatchScanParams();
             // Stop batch if batch scan params changed and previous params is not null.
-            if (mBatchScanParms != null && (!mBatchScanParms.equals(batchScanParams))) {
+            if (mBatchScanParams != null && (!mBatchScanParams.equals(batchScanParams))) {
                 Log.d(TAG, "stopping BLe Batch");
                 resetCountDownLatch();
                 mNativeInterface.gattClientStopBatchScan(scannerId);
@@ -1170,7 +1170,7 @@ public class ScanManager {
                 flushBatchResults(scannerId);
             }
             // Start batch if batchScanParams changed and current params is not null.
-            if (batchScanParams != null && (!batchScanParams.equals(mBatchScanParms))) {
+            if (batchScanParams != null && (!batchScanParams.equals(mBatchScanParams))) {
                 int notifyThreshold = 95;
                 Log.d(TAG, "Starting BLE batch scan");
                 int resultType = getResultType(batchScanParams);
@@ -1189,7 +1189,7 @@ public class ScanManager {
                         scanWindow, 0, DISCARD_OLDEST_WHEN_BUFFER_FULL);
                 waitForCallback();
             }
-            mBatchScanParms = batchScanParams;
+            mBatchScanParams = batchScanParams;
             setBatchAlarm();
         }
 
@@ -1228,7 +1228,7 @@ public class ScanManager {
         }
 
         // Batched scan doesn't require high duty cycle scan because scan result is reported
-        // infrequently anyway. To avoid redefining paramete sets, map to the low duty cycle
+        // infrequently anyway. To avoid redefining parameter sets, map to the low duty cycle
         // parameter set as follows.
         private int getBatchScanWindowMillis(int scanMode) {
             ContentResolver resolver = mContext.getContentResolver();
@@ -1395,16 +1395,16 @@ public class ScanManager {
 
         void flushBatchResults(int scannerId) {
             Log.d(TAG, "flushPendingBatchResults - scannerId = " + scannerId);
-            if (mBatchScanParms.fullScanscannerId != -1) {
+            if (mBatchScanParams.fullScanscannerId != -1) {
                 resetCountDownLatch();
-                mNativeInterface.gattClientReadScanReports(mBatchScanParms.fullScanscannerId,
-                        SCAN_RESULT_TYPE_FULL);
+                mNativeInterface.gattClientReadScanReports(
+                        mBatchScanParams.fullScanscannerId, SCAN_RESULT_TYPE_FULL);
                 waitForCallback();
             }
-            if (mBatchScanParms.truncatedScanscannerId != -1) {
+            if (mBatchScanParams.truncatedScanscannerId != -1) {
                 resetCountDownLatch();
-                mNativeInterface.gattClientReadScanReports(mBatchScanParms.truncatedScanscannerId,
-                        SCAN_RESULT_TYPE_TRUNCATED);
+                mNativeInterface.gattClientReadScanReports(
+                        mBatchScanParams.truncatedScanscannerId, SCAN_RESULT_TYPE_TRUNCATED);
                 waitForCallback();
             }
             setBatchAlarm();
@@ -1818,7 +1818,7 @@ public class ScanManager {
 
     @VisibleForTesting
     BatchScanParams getBatchScanParams() {
-        return mBatchScanParms;
+        return mBatchScanParams;
     }
 
     private boolean isScreenOn() {

@@ -1874,7 +1874,7 @@ class LeAudioClientImpl : public LeAudioClient {
         return;
       }
 
-      if (group->IsReleasingOrIdle()) {
+      if (!group->IsStreaming()) {
         /* Group is not streaming. Device does not have to be attach to the
          * stream, and we can update context availability for the group
          */

@@ -383,26 +383,7 @@ int bta_hh_co_write(int fd, uint8_t* rpt, uint16_t len) {
 
   return uhid_write(fd, &ev);
 }
-static bool hh_co_update_device(btif_hh_device_t* p_dev, uint8_t dev_handle,
-                                uint8_t sub_class, tBTA_HH_ATTR_MASK attr_mask,
-                                uint8_t app_id) {
-  p_dev->fd = -1;
-  p_dev->hh_keep_polling = 0;
 
-  // This is a new device, open the uhid driver now.
-  if (!uhid_fd_open(p_dev)) {
-    return false;
-  }
-
-  p_dev->dev_handle = dev_handle;
-  p_dev->attr_mask = attr_mask;
-  p_dev->sub_class = sub_class;
-  p_dev->app_id = app_id;
-  p_dev->local_vup = false;
-  btif_hh_cb.device_num++;
-
-  return true;
-}
 /*******************************************************************************
  *
  * Function      bta_hh_co_open
@@ -414,61 +395,50 @@ static bool hh_co_update_device(btif_hh_device_t* p_dev, uint8_t dev_handle,
  ******************************************************************************/
 bool bta_hh_co_open(uint8_t dev_handle, uint8_t sub_class,
                     tBTA_HH_ATTR_MASK attr_mask, uint8_t app_id) {
-  uint32_t i;
-  btif_hh_device_t* p_dev = NULL;
+  bool new_device = false;
 
   if (dev_handle == BTA_HH_INVALID_HANDLE) {
     log::warn("dev_handle ({}) is invalid", dev_handle);
     return false;
   }
 
-  for (i = 0; i < BTIF_HH_MAX_HID; i++) {
-    p_dev = &btif_hh_cb.devices[i];
-    if (p_dev->dev_status != BTHH_CONN_STATE_UNKNOWN &&
-        p_dev->dev_handle == dev_handle) {
-      // We found a device with the same handle. Must be a device reconnected.
-      log::info(
-          "Found an existing device with the same handle dev_status={}, "
-          "address={}, attr_mask=0x{:04x}, sub_class=0x{:02x}, app_id={}",
-          p_dev->dev_status, ADDRESS_TO_LOGGABLE_CSTR(p_dev->link_spec),
-          p_dev->attr_mask, p_dev->sub_class, p_dev->app_id);
-
-      if (!uhid_fd_open(p_dev)) {
-        return false;
-      }
-      break;
-    } else if (IS_FLAG_ENABLED(allow_switching_hid_and_hogp) &&
-               p_dev->dev_status == BTHH_CONN_STATE_ACCEPTING &&
-               p_dev->dev_handle == BTA_HH_INVALID_HANDLE) {
-      if (!hh_co_update_device(p_dev, dev_handle, sub_class, attr_mask,
-                               app_id)) {
-        return false;
-      }
-      break;
+  // Reuse existing instance if possible
+  btif_hh_device_t* p_dev = btif_hh_find_dev_by_handle(dev_handle);
+  if (p_dev != nullptr) {
+    log::info(
+        "Found an existing device with the same handle dev_status={}, "
+        "device={}, attr_mask=0x{:04x}, sub_class=0x{:02x}, app_id={}, "
+        "dev_handle={}",
+        p_dev->dev_status, ADDRESS_TO_LOGGABLE_CSTR(p_dev->link_spec),
+        p_dev->attr_mask, p_dev->sub_class, p_dev->app_id, dev_handle);
+  } else {  // Use an empty slot
+    p_dev = btif_hh_find_empty_dev();
+    if (p_dev == nullptr) {
+      log::error("Too many HID devices are connected");
+      return false;
     }
-    p_dev = NULL;
+
+    new_device = true;
+    log::verbose("New HID device added for handle {}", dev_handle);
+
+    p_dev->fd = -1;
+    p_dev->hh_keep_polling = 0;
+    p_dev->attr_mask = attr_mask;
+    p_dev->sub_class = sub_class;
+    p_dev->app_id = app_id;
+    p_dev->local_vup = false;
   }
 
-  if (p_dev == NULL) {
-    // Did not find a device reconnection case. Find an empty slot now.
-    for (i = 0; i < BTIF_HH_MAX_HID; i++) {
-      if (btif_hh_cb.devices[i].dev_status == BTHH_CONN_STATE_UNKNOWN) {
-        p_dev = &btif_hh_cb.devices[i];
-        if (!hh_co_update_device(p_dev, dev_handle, sub_class, attr_mask,
-                                 app_id)) {
-          return false;
-        }
-        break;
-      }
-    }
-  }
-
-  if (p_dev == NULL) {
-    log::error("Too many HID devices are connected");
+  if (!uhid_fd_open(p_dev)) {
     return false;
   }
 
+  if (new_device) {
+    btif_hh_cb.device_num++;
+  }
+
   p_dev->dev_status = BTHH_CONN_STATE_CONNECTED;
+  p_dev->dev_handle = dev_handle;
   p_dev->get_rpt_id_queue = fixed_queue_new(SIZE_MAX);
   CHECK(p_dev->get_rpt_id_queue);
 #if ENABLE_UHID_SET_REPORT

@@ -47,20 +47,21 @@
 #endif
 
 /* BTA HID Host callback events */
-#define BTA_HH_ENABLE_EVT 0     /* HH enabled */
-#define BTA_HH_DISABLE_EVT 1    /* HH disabled */
-#define BTA_HH_OPEN_EVT 2       /* connection opened */
-#define BTA_HH_CLOSE_EVT 3      /* connection closed */
-#define BTA_HH_GET_RPT_EVT 4    /* BTA_HhGetReport callback */
-#define BTA_HH_SET_RPT_EVT 5    /* BTA_HhSetReport callback */
-#define BTA_HH_GET_PROTO_EVT 6  /* BTA_GetProtoMode callback */
-#define BTA_HH_SET_PROTO_EVT 7  /* BTA_HhSetProtoMode callback */
-#define BTA_HH_GET_IDLE_EVT 8   /* BTA_HhGetIdle comes callback */
-#define BTA_HH_SET_IDLE_EVT 9   /* BTA_HhSetIdle finish callback */
-#define BTA_HH_GET_DSCP_EVT 10  /* Get report descriptor */
-#define BTA_HH_ADD_DEV_EVT 11   /* Add Device callback */
-#define BTA_HH_RMV_DEV_EVT 12   /* remove device finished */
-#define BTA_HH_VC_UNPLUG_EVT 13 /* virtually unplugged */
+#define BTA_HH_EMPTY_EVT 0      /* No op */
+#define BTA_HH_ENABLE_EVT 1     /* HH enabled */
+#define BTA_HH_DISABLE_EVT 2    /* HH disabled */
+#define BTA_HH_OPEN_EVT 3       /* connection opened */
+#define BTA_HH_CLOSE_EVT 4      /* connection closed */
+#define BTA_HH_GET_RPT_EVT 5    /* BTA_HhGetReport callback */
+#define BTA_HH_SET_RPT_EVT 6    /* BTA_HhSetReport callback */
+#define BTA_HH_GET_PROTO_EVT 7  /* BTA_GetProtoMode callback */
+#define BTA_HH_SET_PROTO_EVT 8  /* BTA_HhSetProtoMode callback */
+#define BTA_HH_GET_IDLE_EVT 9   /* BTA_HhGetIdle comes callback */
+#define BTA_HH_SET_IDLE_EVT 10  /* BTA_HhSetIdle finish callback */
+#define BTA_HH_GET_DSCP_EVT 11  /* Get report descriptor */
+#define BTA_HH_ADD_DEV_EVT 12   /* Add Device callback */
+#define BTA_HH_RMV_DEV_EVT 13   /* remove device finished */
+#define BTA_HH_VC_UNPLUG_EVT 14 /* virtually unplugged */
 #define BTA_HH_DATA_EVT 15
 #define BTA_HH_API_ERR_EVT 16     /* API error is caught */
 #define BTA_HH_UPDATE_SCPP_EVT 17 /* update scan paramter complete */
@@ -162,6 +163,29 @@ inline std::string bta_hh_status_text(const tBTA_HH_STATUS& status) {
     CASE_RETURN_TEXT(BTA_HH_ERR_SEC);
     default:
       return base::StringPrintf("UNKNOWN[%hhu]", status);
+  }
+}
+
+inline std::string bta_hh_event_text(uint16_t event) {
+  switch (event) {
+    CASE_RETURN_TEXT(BTA_HH_EMPTY_EVT);
+    CASE_RETURN_TEXT(BTA_HH_ENABLE_EVT);
+    CASE_RETURN_TEXT(BTA_HH_DISABLE_EVT);
+    CASE_RETURN_TEXT(BTA_HH_OPEN_EVT);
+    CASE_RETURN_TEXT(BTA_HH_CLOSE_EVT);
+    CASE_RETURN_TEXT(BTA_HH_GET_DSCP_EVT);
+    CASE_RETURN_TEXT(BTA_HH_GET_PROTO_EVT);
+    CASE_RETURN_TEXT(BTA_HH_GET_RPT_EVT);
+    CASE_RETURN_TEXT(BTA_HH_GET_IDLE_EVT);
+    CASE_RETURN_TEXT(BTA_HH_SET_PROTO_EVT);
+    CASE_RETURN_TEXT(BTA_HH_SET_RPT_EVT);
+    CASE_RETURN_TEXT(BTA_HH_SET_IDLE_EVT);
+    CASE_RETURN_TEXT(BTA_HH_VC_UNPLUG_EVT);
+    CASE_RETURN_TEXT(BTA_HH_ADD_DEV_EVT);
+    CASE_RETURN_TEXT(BTA_HH_RMV_DEV_EVT);
+    CASE_RETURN_TEXT(BTA_HH_API_ERR_EVT);
+    default:
+      return base::StringPrintf("UNKNOWN[%hu]", event);
   }
 }
 

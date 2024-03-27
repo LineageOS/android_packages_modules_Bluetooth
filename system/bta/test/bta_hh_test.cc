@@ -104,5 +104,5 @@ TEST_F(BtaHhTest, bta_hh_ctrl_dat_act__BTA_HH_GET_RPT_EVT) {
   };
 
   bta_hh_ctrl_dat_act(&cb, &data);
-  ASSERT_EQ(cb.w4_evt, 0);
+  ASSERT_EQ(cb.w4_evt, BTA_HH_EMPTY_EVT);
 }
