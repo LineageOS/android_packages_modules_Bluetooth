@@ -64,9 +64,8 @@ pub struct ConnectionComplete {
     pub max_rx_packet_size: u16,
 }
 
-/// Size of connect complete data. The data read from libbluetooth is packed but
-/// the Rust struct is not, so depend on this value for validation.
-pub const CONNECT_COMPLETE_SIZE: usize = 20;
+/// Size of connect complete data. This is the packed data length from libbluetooth.
+pub const CONNECT_COMPLETE_SIZE: usize = std::mem::size_of::<bindings::sock_connect_signal_t>();
 
 // Convert from raw bytes to struct.
 impl TryFrom<&[u8]> for ConnectionComplete {
@@ -261,37 +260,48 @@ mod tests {
     #[test]
     fn test_conncomplete_parsing() {
         // Actual slice size doesn't match
-        let small_input = [0u8; 18];
-        let large_input = [0u8; 21];
+        let small_input = [0u8; CONNECT_COMPLETE_SIZE - 1];
+        let large_input = [0u8; CONNECT_COMPLETE_SIZE + 1];
 
         assert_eq!(false, ConnectionComplete::try_from(&small_input[0..]).is_ok());
         assert_eq!(false, ConnectionComplete::try_from(&large_input[0..]).is_ok());
 
         // Size param in slice doesn't match.
-        let mut size_no_match = vec![0x0u8, 0x13u8];
-        size_no_match.extend([0u8; 18]);
+        let mut size_no_match: Vec<u8> = vec![];
+        size_no_match.extend(i16::to_ne_bytes((CONNECT_COMPLETE_SIZE - 1) as i16));
+        size_no_match.extend([0u8; CONNECT_COMPLETE_SIZE - 2]);
 
         assert_eq!(false, ConnectionComplete::try_from(size_no_match.as_slice()).is_ok());
 
-        // Valid input with various values.
-        let raw_addr = RawAddress { address: [0x1, 0x2, 0x3, 0x4, 0x5, 0x6] };
-        let mut valid: Vec<u8> = vec![];
-        valid.extend(u16::to_ne_bytes(20));
-        valid.extend(raw_addr.to_byte_arr());
-        valid.extend(i32::to_ne_bytes(1));
-        valid.extend(i32::to_ne_bytes(5));
-        valid.extend(u16::to_ne_bytes(16));
-        valid.extend(u16::to_ne_bytes(17));
+        let valid_signal = bindings::sock_connect_signal_t {
+            size: CONNECT_COMPLETE_SIZE as i16,
+            bd_addr: RawAddress { address: [0x1, 0x2, 0x3, 0x4, 0x5, 0x6] },
+            channel: 1_i32,
+            status: 5_i32,
+            max_tx_packet_size: 16_u16,
+            max_rx_packet_size: 17_u16,
+            conn_uuid_lsb: 0x0000113500001135_u64,
+            conn_uuid_msb: 0x1135000011350000_u64,
+        };
+        // SAFETY: The sock_connect_signal_t type has size CONNECT_COMPLETE_SIZE,
+        // and has no padding, so it's safe to convert it to a byte array.
+        let valid_raw_data: &[u8] = unsafe {
+            std::slice::from_raw_parts(
+                (&valid_signal as *const bindings::sock_connect_signal_t) as *const u8,
+                CONNECT_COMPLETE_SIZE,
+            )
+        };
 
-        let result = ConnectionComplete::try_from(valid.as_slice());
+        let result = ConnectionComplete::try_from(valid_raw_data);
         assert_eq!(true, result.is_ok());
 
         if let Ok(cc) = result {
-            assert_eq!(cc.size, 20u16);
-            assert_eq!(cc.channel, 1);
-            assert_eq!(cc.status, 5);
-            assert_eq!(cc.max_tx_packet_size, 16u16);
-            assert_eq!(cc.max_rx_packet_size, 17u16);
+            assert_eq!(cc.size, CONNECT_COMPLETE_SIZE as u16);
+            assert_eq!(cc.addr, RawAddress { address: [0x1, 0x2, 0x3, 0x4, 0x5, 0x6] });
+            assert_eq!(cc.channel, 1_i32);
+            assert_eq!(cc.status, 5_i32);
+            assert_eq!(cc.max_tx_packet_size, 16_u16);
+            assert_eq!(cc.max_rx_packet_size, 17_u16);
         }
     }
 }
