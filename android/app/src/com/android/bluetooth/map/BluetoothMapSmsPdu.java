@@ -43,7 +43,6 @@ import java.util.Random;
 public class BluetoothMapSmsPdu {
 
     private static final String TAG = "BluetoothMapSmsPdu";
-    private static final boolean V = false;
     private static final int INVALID_VALUE = -1;
     public static final int SMS_TYPE_GSM = 1;
     public static final int SMS_TYPE_CDMA = 2;
@@ -382,14 +381,12 @@ public class BluetoothMapSmsPdu {
                 mMsgSeptetCount = userDataLength;
                 mUserDataMsgOffset = gsmSubmitGetTpUdOffset();
             }
-            if (V) {
-                Log.v(TAG, "encoding:" + mEncoding);
-                Log.v(TAG, "msgSeptetCount:" + mMsgSeptetCount);
-                Log.v(TAG, "userDataSeptetPadding:" + mUserDataSeptetPadding);
-                Log.v(TAG, "languageShiftTable:" + mLanguageShiftTable);
-                Log.v(TAG, "languageTable:" + mLanguageTable);
-                Log.v(TAG, "userDataMsgOffset:" + mUserDataMsgOffset);
-            }
+            Log.v(TAG, "encoding:" + mEncoding);
+            Log.v(TAG, "msgSeptetCount:" + mMsgSeptetCount);
+            Log.v(TAG, "userDataSeptetPadding:" + mUserDataSeptetPadding);
+            Log.v(TAG, "languageShiftTable:" + mLanguageShiftTable);
+            Log.v(TAG, "languageTable:" + mLanguageTable);
+            Log.v(TAG, "userDataMsgOffset:" + mUserDataMsgOffset);
         }
 
         private void gsmWriteDate(ByteArrayOutputStream header, long time)
@@ -397,9 +394,7 @@ public class BluetoothMapSmsPdu {
             SimpleDateFormat format = new SimpleDateFormat("yyMMddHHmmss");
             Date date = new Date(time);
             String timeStr = format.format(date); // Format to YYMMDDTHHMMSS UTC time
-            if (V) {
-                Log.v(TAG, "Generated time string: " + timeStr);
-            }
+            Log.v(TAG, "Generated time string: " + timeStr);
             byte[] timeChars = timeStr.getBytes("US-ASCII");
 
             for (int i = 0, n = timeStr.length(); i < n; i += 2) {

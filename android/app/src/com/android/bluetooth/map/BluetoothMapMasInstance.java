@@ -46,8 +46,6 @@ import java.util.concurrent.atomic.AtomicLong;
 // Next tag value for ContentProfileErrorReportUtils.report(): 4
 public class BluetoothMapMasInstance implements IObexConnectionHandler {
     private static final String TAG = "BluetoothMapMasInstance";
-    private static final boolean D = BluetoothMapService.DEBUG;
-    private static final boolean V = BluetoothMapService.VERBOSE;
 
     @VisibleForTesting
     static volatile int sInstanceCounter = 0;
@@ -541,15 +539,11 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
 
     // Per-Instance logging
     public void verbose(String message) {
-        if (V) {
-            Log.v(TAG, "[instance=" + mObjectInstanceId + "] " + message);
-        }
+        Log.v(TAG, "[instance=" + mObjectInstanceId + "] " + message);
     }
 
     public void debug(String message) {
-        if (D) {
-            Log.d(TAG, "[instance=" + mObjectInstanceId + "] " + message);
-        }
+        Log.d(TAG, "[instance=" + mObjectInstanceId + "] " + message);
     }
 
     public void error(String message) {

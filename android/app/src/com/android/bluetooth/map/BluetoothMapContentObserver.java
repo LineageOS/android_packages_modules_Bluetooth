@@ -91,8 +91,6 @@ import java.util.concurrent.TimeUnit;
 public class BluetoothMapContentObserver {
     private static final String TAG = "BluetoothMapContentObserver";
 
-    private static final boolean D = BluetoothMapService.DEBUG;
-    private static final boolean V = BluetoothMapService.VERBOSE;
 
     // A message older than this will be ignored when notifying a new message.
     @VisibleForTesting
@@ -334,10 +332,8 @@ public class BluetoothMapContentObserver {
     }
 
     public int getObserverRemoteFeatureMask() {
-        if (V) {
-            Log.v(TAG, "getObserverRemoteFeatureMask : " + mMapEventReportVersion
-                    + " mMapSupportedFeatures: " + mMapSupportedFeatures);
-        }
+        Log.v(TAG, "getObserverRemoteFeatureMask : " + mMapEventReportVersion
+                + " mMapSupportedFeatures: " + mMapSupportedFeatures);
         return mMapSupportedFeatures;
     }
 
@@ -367,11 +363,9 @@ public class BluetoothMapContentObserver {
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
                     0);
         }
-        if (D) {
-            Log.d(TAG,
-                    "setObserverRemoteFeatureMask: mMapEventReportVersion=" + mMapEventReportVersion
-                            + " mMapSupportedFeatures=" + mMapSupportedFeatures);
-        }
+        Log.d(TAG,
+                "setObserverRemoteFeatureMask: mMapEventReportVersion=" + mMapEventReportVersion
+                        + " mMapSupportedFeatures=" + mMapSupportedFeatures);
     }
 
     @VisibleForTesting
@@ -523,16 +517,14 @@ public class BluetoothMapContentObserver {
                         return;
                     }
 
-                    if (V) {
-                        Log.d(
-                                TAG,
-                                "onChange on thread: "
-                                        + Thread.currentThread().getId()
-                                        + " Uri: "
-                                        + uri.toString()
-                                        + " selfchange: "
-                                        + selfChange);
-                    }
+                    Log.v(
+                            TAG,
+                            "onChange on thread: "
+                                    + Thread.currentThread().getId()
+                                    + " Uri: "
+                                    + uri.toString()
+                                    + " selfchange: "
+                                    + selfChange);
 
                     if (uri.toString().contains(BluetoothMapContract.TABLE_CONVOCONTACT)) {
                         handleContactListChanges(uri);
@@ -883,32 +875,24 @@ public class BluetoothMapContentObserver {
                         BluetoothProtoEnums.BLUETOOTH_MAP_CONTENT_OBSERVER,
                         BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                         4);
-                if (D) {
-                    Log.w(TAG, e);
-                }
+                Log.w(TAG, e);
             } catch (IllegalStateException e) {
                 ContentProfileErrorReportUtils.report(
                         BluetoothProfile.MAP,
                         BluetoothProtoEnums.BLUETOOTH_MAP_CONTENT_OBSERVER,
                         BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                         5);
-                if (D) {
-                    Log.w(TAG, e);
-                }
+                Log.w(TAG, e);
             } catch (IOException e) {
                 ContentProfileErrorReportUtils.report(
                         BluetoothProfile.MAP,
                         BluetoothProtoEnums.BLUETOOTH_MAP_CONTENT_OBSERVER,
                         BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                         6);
-                if (D) {
-                    Log.w(TAG, e);
-                }
+                Log.w(TAG, e);
             }
 
-            if (V) {
-                Log.d(TAG, sw.toString());
-            }
+            Log.v(TAG, sw.toString());
 
             return sw.toString().getBytes("UTF-8");
         }
@@ -979,9 +963,7 @@ public class BluetoothMapContentObserver {
 
     public int setNotificationRegistration(int notificationStatus) throws RemoteException {
         // Forward the request to the MNS thread as a message - including the MAS instance ID.
-        if (D) {
-            Log.d(TAG, "setNotificationRegistration() enter");
-        }
+        Log.d(TAG, "setNotificationRegistration() enter");
         if (mMnsClient == null) {
             return ResponseCodes.OBEX_HTTP_UNAVAILABLE;
         }
@@ -1017,15 +999,11 @@ public class BluetoothMapContentObserver {
             mns.sendMessageDelayed(msg, 10); // Send message without forcing a context switch
             /* Some devices - e.g. PTS needs to get the unregister confirm before we actually
              * disconnect the MNS. */
-            if (D) {
-                Log.d(TAG, "setNotificationRegistration() send : " + msg.what + " to MNS ");
-            }
+            Log.d(TAG, "setNotificationRegistration() send : " + msg.what + " to MNS ");
             return ResponseCodes.OBEX_HTTP_OK;
         } else {
             // This should not happen except at shutdown.
-            if (D) {
-                Log.d(TAG, "setNotificationRegistration() Unable to send registration request");
-            }
+            Log.d(TAG, "setNotificationRegistration() Unable to send registration request");
             return ResponseCodes.OBEX_HTTP_UNAVAILABLE;
         }
     }
@@ -1060,9 +1038,7 @@ public class BluetoothMapContentObserver {
     }
 
     public void registerObserver() throws RemoteException {
-        if (V) {
-            Log.d(TAG, "registerObserver");
-        }
+        Log.v(TAG, "registerObserver");
 
         if (mObserverRegistered) {
             return;
@@ -1098,34 +1074,26 @@ public class BluetoothMapContentObserver {
             /* For URI's without account ID */
             Uri uri = Uri.parse(
                     mAccount.mBase_uri_no_account + "/" + BluetoothMapContract.TABLE_MESSAGE);
-            if (D) {
-                Log.d(TAG, "Registering observer for: " + uri);
-            }
+            Log.d(TAG, "Registering observer for: " + uri);
             mResolver.registerContentObserver(uri, true, mObserver);
 
             /* For URI's with account ID - is handled the same way as without ID, but is
              * only triggered for MAS instances with matching account ID. */
             uri = Uri.parse(mAccount.mBase_uri + "/" + BluetoothMapContract.TABLE_MESSAGE);
-            if (D) {
-                Log.d(TAG, "Registering observer for: " + uri);
-            }
+            Log.d(TAG, "Registering observer for: " + uri);
             mResolver.registerContentObserver(uri, true, mObserver);
 
             if (mAccount.getType() == TYPE.IM) {
 
                 uri = Uri.parse(mAccount.mBase_uri_no_account + "/"
                         + BluetoothMapContract.TABLE_CONVOCONTACT);
-                if (D) {
-                    Log.d(TAG, "Registering observer for: " + uri);
-                }
+                Log.d(TAG, "Registering observer for: " + uri);
                 mResolver.registerContentObserver(uri, true, mObserver);
 
                 /* For URI's with account ID - is handled the same way as without ID, but is
                  * only triggered for MAS instances with matching account ID. */
                 uri = Uri.parse(mAccount.mBase_uri + "/" + BluetoothMapContract.TABLE_CONVOCONTACT);
-                if (D) {
-                    Log.d(TAG, "Registering observer for: " + uri);
-                }
+                Log.d(TAG, "Registering observer for: " + uri);
                 mResolver.registerContentObserver(uri, true, mObserver);
             }
 
@@ -1134,9 +1102,7 @@ public class BluetoothMapContentObserver {
     }
 
     public void unregisterObserver() {
-        if (V) {
-            Log.d(TAG, "unregisterObserver");
-        }
+        Log.v(TAG, "unregisterObserver");
         mResolver.unregisterContentObserver(mObserver);
         mObserverRegistered = false;
         if (mProviderClient != null) {
@@ -1210,17 +1176,13 @@ public class BluetoothMapContentObserver {
     void sendEvent(Event evt) {
 
         if (!mTransmitEvents) {
-            if (V) {
-                Log.v(TAG, "mTransmitEvents == false - don't send event.");
-            }
+            Log.v(TAG, "mTransmitEvents == false - don't send event.");
             return;
         }
 
-        if (D) {
-            Log.d(TAG, "sendEvent: " + evt.eventType + " " + evt.handle + " " + evt.folder + " "
-                    + evt.oldFolder + " " + evt.msgType.name() + " " + evt.datetime + " "
-                    + evt.subject + " " + evt.senderName + " " + evt.priority);
-        }
+        Log.d(TAG, "sendEvent: " + evt.eventType + " " + evt.handle + " " + evt.folder + " "
+                + evt.oldFolder + " " + evt.msgType + " " + evt.datetime + " "
+                + evt.subject + " " + evt.senderName + " " + evt.priority);
 
         if (mMnsClient == null || !mMnsClient.isConnected()) {
             Log.d(TAG, "sendEvent: No MNS client registered or connected- don't send event");
@@ -1235,86 +1197,62 @@ public class BluetoothMapContentObserver {
          * HENCE: always use the EVENT_TYPE_"defines" */
         if (Objects.equals(evt.eventType, EVENT_TYPE_NEW)) {
             if (!sendEventNewMessage(eventFilter)) {
-                if (D) {
-                    Log.d(TAG, "Skip sending event of type: " + evt.eventType);
-                }
+                Log.d(TAG, "Skip sending event of type: " + evt.eventType);
                 return;
             }
         } else if (Objects.equals(evt.eventType, EVENT_TYPE_DELETE)) {
             if (!sendEventMessageDeleted(eventFilter)) {
-                if (D) {
-                    Log.d(TAG, "Skip sending event of type: " + evt.eventType);
-                }
+                Log.d(TAG, "Skip sending event of type: " + evt.eventType);
                 return;
             }
         } else if (Objects.equals(evt.eventType, EVENT_TYPE_REMOVED)) {
             if (!sendEventMessageRemoved(eventFilter)) {
-                if (D) {
-                    Log.d(TAG, "Skip sending event of type: " + evt.eventType);
-                }
+                Log.d(TAG, "Skip sending event of type: " + evt.eventType);
                 return;
             }
         } else if (Objects.equals(evt.eventType, EVENT_TYPE_SHIFT)) {
             if (!sendEventMessageShift(eventFilter)) {
-                if (D) {
-                    Log.d(TAG, "Skip sending event of type: " + evt.eventType);
-                }
+                Log.d(TAG, "Skip sending event of type: " + evt.eventType);
                 return;
             }
         } else if (Objects.equals(evt.eventType, EVENT_TYPE_DELEVERY_SUCCESS)) {
             if (!sendEventDeliverySuccess(eventFilter)) {
-                if (D) {
-                    Log.d(TAG, "Skip sending event of type: " + evt.eventType);
-                }
+                Log.d(TAG, "Skip sending event of type: " + evt.eventType);
                 return;
             }
         } else if (Objects.equals(evt.eventType, EVENT_TYPE_SENDING_SUCCESS)) {
             if (!sendEventSendingSuccess(eventFilter)) {
-                if (D) {
-                    Log.d(TAG, "Skip sending event of type: " + evt.eventType);
-                }
+                Log.d(TAG, "Skip sending event of type: " + evt.eventType);
                 return;
             }
         } else if (Objects.equals(evt.eventType, EVENT_TYPE_SENDING_FAILURE)) {
             if (!sendEventSendingFailed(eventFilter)) {
-                if (D) {
-                    Log.d(TAG, "Skip sending event of type: " + evt.eventType);
-                }
+                Log.d(TAG, "Skip sending event of type: " + evt.eventType);
                 return;
             }
         } else if (Objects.equals(evt.eventType, EVENT_TYPE_DELIVERY_FAILURE)) {
             if (!sendEventDeliveryFailed(eventFilter)) {
-                if (D) {
-                    Log.d(TAG, "Skip sending event of type: " + evt.eventType);
-                }
+                Log.d(TAG, "Skip sending event of type: " + evt.eventType);
                 return;
             }
         } else if (Objects.equals(evt.eventType, EVENT_TYPE_READ_STATUS)) {
             if (!sendEventReadStatusChanged(eventFilter)) {
-                if (D) {
-                    Log.d(TAG, "Skip sending event of type: " + evt.eventType);
-                }
+                Log.d(TAG, "Skip sending event of type: " + evt.eventType);
                 return;
             }
         } else if (Objects.equals(evt.eventType, EVENT_TYPE_CONVERSATION)) {
             if (!sendEventConversationChanged(eventFilter)) {
-                if (D) {
-                    Log.d(TAG, "Skip sending event of type: " + evt.eventType);
-                }
+                Log.d(TAG, "Skip sending event of type: " + evt.eventType);
                 return;
             }
         } else if (Objects.equals(evt.eventType, EVENT_TYPE_PRESENCE)) {
             if (!sendEventParticipantPresenceChanged(eventFilter)) {
-                if (D) {
-                    Log.d(TAG, "Skip sending event of type: " + evt.eventType);
-                }
+                Log.d(TAG, "Skip sending event of type: " + evt.eventType);
                 return;
             }
         } else if (Objects.equals(evt.eventType, EVENT_TYPE_CHAT_STATE)) {
             if (!sendEventParticipantChatstateChanged(eventFilter)) {
-                if (D) {
-                    Log.d(TAG, "Skip sending event of type: " + evt.eventType);
-                }
+                Log.d(TAG, "Skip sending event of type: " + evt.eventType);
                 return;
             }
         }
@@ -1328,17 +1266,13 @@ public class BluetoothMapContentObserver {
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                     8);
             /* do nothing */
-            if (D) {
-                Log.e(TAG, "Exception - should not happen: ", ex);
-            }
+            Log.w(TAG, "Exception encoding sendEvent response", ex);
         }
     }
 
     @VisibleForTesting
     void initMsgList() throws RemoteException {
-        if (V) {
-            Log.d(TAG, "initMsgList");
-        }
+        Log.v(TAG, "initMsgList");
         UserManager manager = mContext.getSystemService(UserManager.class);
         if (manager == null || !manager.isUserUnlocked()) {
             return;
@@ -1444,13 +1378,9 @@ public class BluetoothMapContentObserver {
 
     @VisibleForTesting
     void initContactsList() throws RemoteException {
-        if (V) {
-            Log.d(TAG, "initContactsList");
-        }
+        Log.v(TAG, "initContactsList");
         if (mContactUri == null) {
-            if (D) {
-                Log.d(TAG, "initContactsList() no mContactUri - nothing to init");
-            }
+            Log.d(TAG, "initContactsList() no mContactUri - nothing to init");
             return;
         }
         Uri uri = mContactUri;
@@ -1467,9 +1397,7 @@ public class BluetoothMapContentObserver {
                     if (convoId == 0) {
                         continue;
                     }
-                    if (V) {
-                        BluetoothMapUtils.printCursor(c);
-                    }
+                    BluetoothMapUtils.printCursor(c);
                     String uci = c.getString(cInfo.mContactColUci);
                     String name = c.getString(cInfo.mContactColName);
                     String displayName = c.getString(cInfo.mContactColNickname);
@@ -1499,9 +1427,7 @@ public class BluetoothMapContentObserver {
 
     @VisibleForTesting
     void handleMsgListChangesSms() {
-        if (V) {
-            Log.d(TAG, "handleMsgListChangesSms");
-        }
+        Log.v(TAG, "handleMsgListChangesSms");
 
         HashMap<Long, Msg> msgListSms = new HashMap<Long, Msg>();
         boolean listChanged = false;
@@ -1667,7 +1593,7 @@ public class BluetoothMapContentObserver {
                 // "old_folder" used only for MessageShift event
                 if (mMapEventReportVersion >= BluetoothMapUtils.MAP_EVENT_REPORT_V12) {
                     eventType = EVENT_TYPE_REMOVED;
-                    if (V) Log.v(TAG," sent EVENT_TYPE_REMOVED");
+                    Log.v(TAG, " sent EVENT_TYPE_REMOVED");
                 }
                 Event evt = new Event(eventType, msg.id, getSmsFolderName(msg.type), null,
                         mSmsType);
@@ -1681,9 +1607,7 @@ public class BluetoothMapContentObserver {
 
     @VisibleForTesting
     void handleMsgListChangesMms() {
-        if (V) {
-            Log.d(TAG, "handleMsgListChangesMms");
-        }
+        Log.v(TAG, "handleMsgListChangesMms");
 
         HashMap<Long, Msg> msgListMms = new HashMap<Long, Msg>();
         boolean listChanged = false;
@@ -1875,9 +1799,7 @@ public class BluetoothMapContentObserver {
 
     @VisibleForTesting
     void handleMsgListChangesMsg(Uri uri) throws RemoteException {
-        if (V) {
-            Log.v(TAG, "handleMsgListChangesMsg uri: " + uri.toString());
-        }
+        Log.v(TAG, "handleMsgListChangesMsg uri: " + uri.toString());
 
         // TODO: Change observer to handle accountId and message ID if present
 
@@ -1953,10 +1875,8 @@ public class BluetoothMapContentObserver {
                         } else {
                             /* Existing message */
                             if (folderId != msg.folderId && msg.folderId != -1) {
-                                if (D) {
-                                    Log.d(TAG, "new folderId: " + folderId + " old folderId: "
-                                            + msg.folderId);
-                                }
+                                Log.d(TAG, "new folderId: " + folderId + " old folderId: "
+                                        + msg.folderId);
                                 BluetoothMapFolderElement oldFolderElement =
                                         mFolders.getFolderById(msg.folderId);
                                 String oldFolder;
@@ -2069,10 +1989,8 @@ public class BluetoothMapContentObserver {
     private void handleMsgListChanges(Uri uri) {
         if (uri.getAuthority().equals(mAuthority)) {
             try {
-                if (D) {
-                    Log.d(TAG, "handleMsgListChanges: account type = " + mAccount.getType()
-                            .toString());
-                }
+                Log.d(TAG, "handleMsgListChanges: account type = " + mAccount.getType()
+                        .toString());
                 handleMsgListChangesMsg(uri);
             } catch (RemoteException e) {
                 ContentProfileErrorReportUtils.report(
@@ -2097,9 +2015,7 @@ public class BluetoothMapContentObserver {
     void handleContactListChanges(Uri uri) {
         if (uri.getAuthority().equals(mAuthority)) {
             try {
-                if (V) {
-                    Log.v(TAG, "handleContactListChanges uri: " + uri.toString());
-                }
+                Log.v(TAG, "handleContactListChanges uri: " + uri.toString());
                 Cursor c = null;
                 boolean listChanged = false;
                 try {
@@ -2112,10 +2028,8 @@ public class BluetoothMapContentObserver {
                                 null, null, null);
                         cInfo.setConvoColunms(c);
                     } else {
-                        if (V) {
-                            Log.v(TAG, "handleContactListChanges MAP version does not"
-                                    + "support convocontact notifications");
-                        }
+                        Log.v(TAG, "handleContactListChanges MAP version does not"
+                                + "support convocontact notifications");
                         return;
                     }
 
@@ -2132,9 +2046,7 @@ public class BluetoothMapContentObserver {
                                     continue;
                                 }
 
-                                if (V) {
-                                    BluetoothMapUtils.printCursor(c);
-                                }
+                                BluetoothMapUtils.printCursor(c);
 
                                 BluetoothMapConvoContactElement contact =
                                         getContactList().remove(uci);
@@ -2332,9 +2244,7 @@ public class BluetoothMapContentObserver {
                          * initiated actions. */
                         msg.folderId = folderId;
                     }
-                    if (D) {
-                        Log.d(TAG, "Deleted MSG: " + handle + " from folderId: " + folderId);
-                    }
+                    Log.d(TAG, "Deleted MSG: " + handle + " from folderId: " + folderId);
                 } else {
                     Log.w(TAG, "Msg: " + handle + " - Set delete status " + status
                             + " failed for folderId " + folderId);
@@ -2360,10 +2270,8 @@ public class BluetoothMapContentObserver {
                         if (inboxFolder != null) {
                             folderId = inboxFolder.getFolderId();
                         }
-                        if (D) {
-                            Log.d(TAG, "We did not delete the message, hence the old folder "
-                                    + "is unknown. Moving to inbox.");
-                        }
+                        Log.d(TAG, "We did not delete the message, hence the old folder "
+                                + "is unknown. Moving to inbox.");
                     }
                     contentValues.put(BluetoothMapContract.MessageColumns.FOLDER_ID, folderId);
                     updateCount = BluetoothMethodProxy.getInstance().contentResolverUpdate(
@@ -2382,25 +2290,14 @@ public class BluetoothMapContentObserver {
                             msg.folderId = folderId;
                         }
                     } else {
-                        if (D) {
-                            Log.d(TAG, "We did not delete the message, hence the old folder "
-                                    + "is unknown. Moving to inbox.");
-                        }
+                        Log.d(TAG, "We did not delete the message, hence the old folder "
+                                + "is unknown. Moving to inbox.");
                     }
                 }
             }
-            if (V) {
-                BluetoothMapFolderElement folderElement;
-                String folderName = "unknown";
-                if (msg != null) {
-                    folderElement = mCurrentFolder.getFolderById(msg.folderId);
-                    if (folderElement != null) {
-                        folderName = folderElement.getName();
-                    }
-                }
-                Log.d(TAG, "setEmailMessageStatusDelete: " + handle + " from " + folderName
-                        + " status: " + status);
-            }
+
+            Log.v(TAG, "setEmailMessageStatusDelete: " + handle + " from "
+                    + mCurrentFolder.getFolderById(msg.folderId) + " status: " + status);
         }
         if (!res) {
             Log.w(TAG, "Set delete status " + status + " failed.");
@@ -2608,18 +2505,14 @@ public class BluetoothMapContentObserver {
     boolean setMessageStatusDeleted(long handle, TYPE type,
             BluetoothMapFolderElement mCurrentFolder, String uriStr, int statusValue) {
         boolean res = false;
-        if (D) {
-            Log.d(TAG, "setMessageStatusDeleted: handle " + handle + " type " + type + " value "
-                    + statusValue);
-        }
+        Log.d(TAG, "setMessageStatusDeleted: handle " + handle + " type " + type + " value "
+                + statusValue);
 
         if (type == TYPE.EMAIL) {
             res = setEmailMessageStatusDelete(mCurrentFolder, uriStr, handle, statusValue);
         } else if (type == TYPE.IM) {
             // TODO: to do when deleting IM message
-            if (D) {
-                Log.d(TAG, "setMessageStatusDeleted: IM not handled");
-            }
+            Log.d(TAG, "setMessageStatusDeleted: IM not handled");
         } else {
             if (statusValue == BluetoothMapAppParams.STATUS_VALUE_YES) {
                 if (type == TYPE.SMS_GSM || type == TYPE.SMS_CDMA) {
@@ -2645,10 +2538,8 @@ public class BluetoothMapContentObserver {
             throws RemoteException {
         int count = 0;
 
-        if (D) {
-            Log.d(TAG, "setMessageStatusRead: handle " + handle + " type " + type + " value "
-                    + statusValue);
-        }
+        Log.d(TAG, "setMessageStatusRead: handle " + handle + " type " + type + " value "
+                + statusValue);
 
         /* Approved MAP spec errata 3445 states that read status initiated
          * by the MCE shall change the MSE read status. */
@@ -2658,9 +2549,7 @@ public class BluetoothMapContentObserver {
             contentValues.put(Sms.READ, statusValue);
             contentValues.put(Sms.SEEN, statusValue);
             String values = contentValues.toString();
-            if (D) {
-                Log.d(TAG, " -> SMS Uri: " + uri.toString() + " values " + values);
-            }
+            Log.d(TAG, " -> SMS Uri: " + uri.toString() + " values " + values);
             synchronized (getMsgListSms()) {
                 Msg msg = getMsgListSms().get(handle);
                 if (msg != null) { // This will always be the case
@@ -2669,15 +2558,11 @@ public class BluetoothMapContentObserver {
             }
             count = BluetoothMethodProxy.getInstance().contentResolverUpdate(mResolver, uri,
                     contentValues, null, null);
-            if (D) {
-                Log.d(TAG, " -> " + count + " rows updated!");
-            }
+            Log.d(TAG, " -> " + count + " rows updated!");
 
         } else if (type == TYPE.MMS) {
             Uri uri = ContentUris.withAppendedId(Mms.CONTENT_URI, handle);
-            if (D) {
-                Log.d(TAG, " -> MMS Uri: " + uri.toString());
-            }
+            Log.d(TAG, " -> MMS Uri: " + uri.toString());
             ContentValues contentValues = new ContentValues();
             contentValues.put(Mms.READ, statusValue);
             synchronized (getMsgListMms()) {
@@ -2688,9 +2573,7 @@ public class BluetoothMapContentObserver {
             }
             count = BluetoothMethodProxy.getInstance().contentResolverUpdate(mResolver, uri,
                     contentValues, null, null);
-            if (D) {
-                Log.d(TAG, " -> " + count + " rows updated!");
-            }
+            Log.d(TAG, " -> " + count + " rows updated!");
         } else if (type == TYPE.EMAIL || type == TYPE.IM) {
             Uri uri = mMessageUri;
             ContentValues contentValues = new ContentValues();
@@ -2781,9 +2664,7 @@ public class BluetoothMapContentObserver {
     public long pushMessage(BluetoothMapbMessage msg, BluetoothMapFolderElement folderElement,
             BluetoothMapAppParams ap, String emailBaseUri)
             throws IllegalArgumentException, RemoteException, IOException {
-        if (D) {
-            Log.d(TAG, "pushMessage");
-        }
+        Log.d(TAG, "pushMessage");
         ArrayList<BluetoothMapbMessage.VCard> recipientList = msg.getRecipients();
         int transparent = (ap.getTransparent() == BluetoothMapAppParams.INVALID_VALUE_PARAMETER) ? 0
                 : ap.getTransparent();
@@ -2817,22 +2698,20 @@ public class BluetoothMapContentObserver {
         if (msg.getType().equals(TYPE.EMAIL)) {
             /* Write the message to the database */
             String msgBody = ((BluetoothMapbMessageEmail) msg).getEmailBody();
-            if (V) {
-                int length = msgBody.length();
-                Log.v(TAG, "pushMessage: message string length = " + length);
-                String[] messages = msgBody.split("\r\n");
-                Log.v(TAG, "pushMessage: messages count=" + messages.length);
-                for (int i = 0; i < messages.length; i++) {
-                    Log.v(TAG, "part " + i + ":" + messages[i]);
-                }
+
+            Log.v(TAG, "pushMessage: message string length = " + msgBody.length());
+
+            String[] messages = msgBody.split("\r\n");
+            Log.v(TAG, "pushMessage: messages count=" + messages.length);
+            for (int i = 0; i < messages.length; i++) {
+                Log.v(TAG, "part " + i + ": " + messages[i]);
             }
+
             FileOutputStream os = null;
             ParcelFileDescriptor fdOut = null;
             Uri uriInsert = Uri.parse(emailBaseUri + BluetoothMapContract.TABLE_MESSAGE);
-            if (D) {
-                Log.d(TAG, "pushMessage - uriInsert= " + uriInsert.toString() + ", intoFolder id="
-                        + folderElement.getFolderId());
-            }
+            Log.d(TAG, "pushMessage - uriInsert= " + uriInsert.toString() + ", intoFolder id="
+                    + folderElement.getFolderId());
 
             synchronized (getMsgListMsg()) {
                 // Now insert the empty message into folder
@@ -2840,9 +2719,7 @@ public class BluetoothMapContentObserver {
                 folderId = folderElement.getFolderId();
                 values.put(BluetoothMapContract.MessageColumns.FOLDER_ID, folderId);
                 Uri uriNew = mProviderClient.insert(uriInsert, values);
-                if (D) {
-                    Log.d(TAG, "pushMessage - uriNew= " + uriNew.toString());
-                }
+                Log.d(TAG, "pushMessage - uriNew= " + uriNew.toString());
                 handle = Long.parseLong(uriNew.getLastPathSegment());
 
                 try {
@@ -2941,16 +2818,12 @@ public class BluetoothMapContentObserver {
                         ArrayList<String> parts = smsMng.divideMessage(msgBody);
                         int smsParts = parts.size();
                         if (smsParts <= CONVERT_MMS_TO_SMS_PART_COUNT) {
-                            if (D) {
-                                Log.d(TAG, "pushMessage - converting MMS to SMS, sms parts="
-                                        + smsParts);
-                            }
+                            Log.d(TAG, "pushMessage - converting MMS to SMS, sms parts="
+                                    + smsParts);
                             msg.setType(mSmsType);
                         } else {
-                            if (D) {
-                                Log.d(TAG, "pushMessage - MMS text only but to big to "
-                                        + "convert to SMS");
-                            }
+                            Log.d(TAG, "pushMessage - MMS text only but to big to "
+                                    + "convert to SMS");
                             msgBody = null;
                         }
 
@@ -2980,13 +2853,9 @@ public class BluetoothMapContentObserver {
                             uri = addMessageToUri(mResolver, contentUri, phone, msgBody, "",
                                     System.currentTimeMillis());
 
-                            if (V) {
-                                Log.v(TAG, "Sms.addMessageToUri() returned: " + uri);
-                            }
+                            Log.v(TAG, "Sms.addMessageToUri() returned: " + uri);
                             if (uri == null) {
-                                if (D) {
-                                    Log.d(TAG, "pushMessage - failure on add to uri " + contentUri);
-                                }
+                                Log.d(TAG, "pushMessage - failure on add to uri " + contentUri);
                                 return -1;
                             }
                             Cursor c = mResolver.query(uri, SMS_PROJECTION_SHORT, null, null, null);
@@ -2999,11 +2868,9 @@ public class BluetoothMapContentObserver {
                                     int type = c.getInt(c.getColumnIndex(Sms.TYPE));
                                     int threadId = c.getInt(c.getColumnIndex(Sms.THREAD_ID));
                                     int readFlag = c.getInt(c.getColumnIndex(Sms.READ));
-                                    if (V) {
-                                        Log.v(TAG, "add message with id=" + id + " type=" + type
-                                                + " threadId=" + threadId + " readFlag=" + readFlag
-                                                + "to mMsgListSms");
-                                    }
+                                    Log.v(TAG, "add message with id=" + id + " type=" + type
+                                            + " threadId=" + threadId + " readFlag=" + readFlag
+                                            + "to mMsgListSms");
                                     Msg newMsg = new Msg(id, type, threadId, readFlag);
                                     getMsgListSms().put(id, newMsg);
                                     c.close();
@@ -3033,18 +2900,14 @@ public class BluetoothMapContentObserver {
                                         new PushMsgInfo(handle, transparent, retry, phone, uri);
                                 mPushMsgList.put(handle, msgInfo);
                                 sendMessage(msgInfo, msgBody);
-                                if (V) {
-                                    Log.v(TAG, "sendMessage returned...");
-                                }
+                                Log.v(TAG, "sendMessage returned...");
                             } /* else just added to draft */
 
                             /* sendMessage causes the message to be deleted and reinserted,
                              * hence we need to lock the list while this is happening. */
                         }
                     } else {
-                        if (D) {
-                            Log.d(TAG, "pushMessage - failure on type ");
-                        }
+                        Log.d(TAG, "pushMessage - failure on type ");
                         return -1;
                     }
                 }
@@ -3125,9 +2988,7 @@ public class BluetoothMapContentObserver {
                         data.put(Mms.MESSAGE_BOX, folder);
                         BluetoothMethodProxy.getInstance().contentResolverUpdate(resolver, uri,
                                 data, whereClause, null);
-                        if (D) {
-                            Log.d(TAG, "moved MMS message to " + getMmsFolderName(folder));
-                        }
+                        Log.d(TAG, "moved MMS message to " + getMmsFolderName(folder));
                     }
                 } else {
                     Log.w(TAG, "Could not move MMS message to " + getMmsFolderName(folder));
@@ -3225,9 +3086,7 @@ public class BluetoothMapContentObserver {
         } // Done adding changes, unlock access to mMsgListMms to allow sending MMS events again
 
         long handle = Long.parseLong(uri.getLastPathSegment());
-        if (V) {
-            Log.v(TAG, " NEW URI " + uri.toString());
-        }
+        Log.v(TAG, " NEW URI " + uri.toString());
 
         try {
             if (msg.getMimeParts() == null) {
@@ -3240,9 +3099,7 @@ public class BluetoothMapContentObserver {
                         BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
                         25);
             } else {
-                if (V) {
-                    Log.v(TAG, "Adding " + msg.getMimeParts().size() + " parts to the data base.");
-                }
+                Log.v(TAG, "Adding " + msg.getMimeParts().size() + " parts to the data base.");
                 for (MimePart part : msg.getMimeParts()) {
                     int count = 0;
                     count++;
@@ -3285,9 +3142,7 @@ public class BluetoothMapContentObserver {
                         values.put(Mms.Part.TEXT, part.getDataAsString());
                         uri = Uri.parse(Mms.CONTENT_URI + "/" + handle + "/part");
                         uri = mResolver.insert(uri, values);
-                        if (V) {
-                            Log.v(TAG, "Added TEXT part");
-                        }
+                        Log.v(TAG, "Added TEXT part");
 
                     } else if (part.mContentType != null && part.mContentType.toUpperCase()
                             .contains("SMIL")) {
@@ -3313,21 +3168,15 @@ public class BluetoothMapContentObserver {
 
                         uri = Uri.parse(Mms.CONTENT_URI + "/" + handle + "/part");
                         uri = mResolver.insert(uri, values);
-                        if (V) {
-                            Log.v(TAG, "Added SMIL part");
-                        }
+                        Log.v(TAG, "Added SMIL part");
 
                     } else /*VIDEO/AUDIO/IMAGE*/ {
                         writeMmsDataPart(handle, part, count);
-                        if (V) {
-                            Log.v(TAG, "Added OTHER part");
-                        }
+                        Log.v(TAG, "Added OTHER part");
                     }
                     if (uri != null) {
-                        if (V) {
-                            Log.v(TAG, "Added part with content-type: " + part.mContentType
-                                    + " to Uri: " + uri.toString());
-                        }
+                        Log.v(TAG, "Added part with content-type: " + part.mContentType
+                                + " to Uri: " + uri.toString());
                     }
                 }
             }
@@ -3356,9 +3205,7 @@ public class BluetoothMapContentObserver {
         uri = Uri.parse(Mms.CONTENT_URI + "/" + handle + "/addr");
         uri = mResolver.insert(uri, values);
         if (uri != null) {
-            if (V) {
-                Log.v(TAG, " NEW URI " + uri.toString());
-            }
+            Log.v(TAG, " NEW URI " + uri.toString());
         }
 
         values.clear();
@@ -3370,9 +3217,7 @@ public class BluetoothMapContentObserver {
             uri = Uri.parse(Mms.CONTENT_URI + "/" + handle + "/addr");
             uri = mResolver.insert(uri, values);
             if (uri != null) {
-                if (V) {
-                    Log.v(TAG, " NEW URI " + uri.toString());
-                }
+                Log.v(TAG, " NEW URI " + uri.toString());
             }
         }
         return handle;
@@ -3561,10 +3406,8 @@ public class BluetoothMapContentObserver {
                      */
                     msgInfo.failedSent = true;
                 }
-                if (D) {
-                    Log.d(TAG, "onReceive: msgInfo.partsSent = " + msgInfo.partsSent
-                            + ", msgInfo.parts = " + msgInfo.parts + " result = " + result);
-                }
+                Log.d(TAG, "onReceive: msgInfo.partsSent = " + msgInfo.partsSent
+                        + ", msgInfo.parts = " + msgInfo.parts + " result = " + result);
 
                 if (msgInfo.partsSent == msgInfo.parts) {
                     actionMessageSent(context, msgInfo, handle);
@@ -3585,16 +3428,12 @@ public class BluetoothMapContentObserver {
              */
             boolean delete = false;
 
-            if (D) {
-                Log.d(TAG, "actionMessageSent(): msgInfo.failedSent = " + msgInfo.failedSent);
-            }
+            Log.d(TAG, "actionMessageSent(): msgInfo.failedSent = " + msgInfo.failedSent);
 
             msgInfo.sendInProgress = false;
 
             if (!msgInfo.failedSent) {
-                if (D) {
-                    Log.d(TAG, "actionMessageSent: result OK");
-                }
+                Log.d(TAG, "actionMessageSent: result OK");
                 if (msgInfo.transparent == 0) {
                     if (!Utils.moveMessageToFolder(context, msgInfo.uri, true)) {
                         Log.w(TAG, "Failed to move " + msgInfo.uri + " to SENT");
@@ -3653,9 +3492,7 @@ public class BluetoothMapContentObserver {
                 Uri msgUri = ContentUris.withAppendedId(Sms.CONTENT_URI, handle);
                 int nRows = mResolver.delete(msgUri, null, null);
                 if (nRows > 0) {
-                    if (V) {
-                        Log.v(TAG, "Deleted message with Uri = " + msgUri);
-                    }
+                    Log.v(TAG, "Deleted message with Uri = " + msgUri);
                 }
             }
         }
@@ -3738,9 +3575,7 @@ public class BluetoothMapContentObserver {
          *   Result == Fail:
          *     move to outbox (send delivery fail notification)
          */
-        if (D) {
-            Log.d(TAG, "actionMmsSent()");
-        }
+        Log.d(TAG, "actionMmsSent()");
         int transparent = intent.getIntExtra(EXTRA_MESSAGE_SENT_TRANSPARENT, 0);
         long handle = intent.getLongExtra(EXTRA_MESSAGE_SENT_HANDLE, -1);
         if (handle < 0) {
@@ -3768,9 +3603,7 @@ public class BluetoothMapContentObserver {
                 }
             }
             /* Delete message */
-            if (D) {
-                Log.d(TAG, "Transparent in use - delete");
-            }
+            Log.d(TAG, "Transparent in use - delete");
             BluetoothMethodProxy.getInstance().contentResolverDelete(resolver, uri, null, null);
         } else if (result == Activity.RESULT_OK) {
             /* This will trigger a notification */
@@ -3992,14 +3825,10 @@ public class BluetoothMapContentObserver {
     }
 
     public boolean handleMmsSendIntent(Context context, Intent intent) {
-        if (D) {
-            Log.d(TAG, "handleMmsSendIntent()");
-        }
+        Log.d(TAG, "handleMmsSendIntent()");
         if (!mMnsClient.isConnected()) {
             // No need to handle notifications, just use default handling
-            if (D) {
-                Log.w(TAG, "MNS not connected - use static handling");
-            }
+            Log.w(TAG, "MNS not connected - use static handling");
             ContentProfileErrorReportUtils.report(
                     BluetoothProfile.MAP,
                     BluetoothProtoEnums.BLUETOOTH_MAP_CONTENT_OBSERVER,

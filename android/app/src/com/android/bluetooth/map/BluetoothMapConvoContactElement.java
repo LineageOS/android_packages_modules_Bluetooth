@@ -51,7 +51,6 @@ public class BluetoothMapConvoContactElement
     private static final String XML_ATT_UCI = "x_bt_uci";
     protected static final String XML_TAG_CONVOCONTACT = "convocontact";
     private static final String TAG = "BluetoothMapConvoContactElement";
-    private static final boolean D = false;
 
     private String mUci = null;
     private String mName = null;
@@ -279,9 +278,7 @@ public class BluetoothMapConvoContactElement
             } else if (attributeName.equalsIgnoreCase(XML_ATT_PRIORITY)) {
                 newElement.setPriority(Integer.parseInt(attributeValue));
             } else {
-                if (D) {
-                    Log.i(TAG, "Unknown XML attribute: " + parser.getAttributeName(i));
-                }
+                Log.w(TAG, "Unknown XML attribute: " + parser.getAttributeName(i));
             }
         }
         parser.nextTag(); // Consume the end-tag
