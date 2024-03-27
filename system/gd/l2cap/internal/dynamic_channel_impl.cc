@@ -76,7 +76,7 @@ void DynamicChannelImpl::OnClosed(hci::ErrorCode status) {
   close_reason_ = status;
   link_ = nullptr;
   l2cap_handler_ = nullptr;
-  on_close_callback_.InvokeIfNotEmpty(close_reason_);
+  on_close_callback_.Invoke(close_reason_);
   on_close_callback_ = {};
 }
 
