@@ -49,15 +49,11 @@ public class BluetoothMapbMessageSms extends BluetoothMapbMessage {
     @Override
     public void parseMsgPart(String msgPart) {
         if (mAppParamCharset == BluetoothMapAppParams.CHARSET_NATIVE) {
-            if (D) {
-                Log.d(TAG, "Decoding \"" + msgPart + "\" as native PDU");
-            }
+            Log.d(TAG, "Decoding \"" + msgPart + "\" as native PDU");
             byte[] msgBytes = decodeBinary(msgPart);
             if (msgBytes.length > 0 && msgBytes[0] < msgBytes.length - 1
                     && (msgBytes[msgBytes[0] + 1] & 0x03) != 0x01) {
-                if (D) {
-                    Log.d(TAG, "Only submit PDUs are supported");
-                }
+                Log.d(TAG, "Only submit PDUs are supported");
                 throw new IllegalArgumentException("Only submit PDUs are supported");
             }
 

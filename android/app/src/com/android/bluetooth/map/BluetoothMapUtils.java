@@ -47,8 +47,6 @@ import java.util.regex.Pattern;
 public class BluetoothMapUtils {
 
     private static final String TAG = "BluetoothMapUtils";
-    private static final boolean D = BluetoothMapService.DEBUG;
-    private static final boolean V = BluetoothMapService.VERBOSE;
     /* We use the upper 4 bits for the type mask.
      * TODO: When more types are needed, consider just using a number
      *       in stead of a bit to indicate the message type. Then 4
@@ -124,9 +122,13 @@ public class BluetoothMapUtils {
     }
 
     public static void printCursor(Cursor c) {
-        if (D) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("\nprintCursor:\n");
+        StringBuilder sb = new StringBuilder();
+        sb.append("\nprintCursor:\n");
+        if (c == null) {
+            sb.append(" null");
+        } else if (c.isBeforeFirst() || c.isAfterLast()) {
+            sb.append(" cursor points to invalid position");
+        } else {
             for (int i = 0; i < c.getColumnCount(); i++) {
                 if (c.getColumnName(i).equals(BluetoothMapContract.MessageColumns.DATE)
                         || c.getColumnName(i)
@@ -148,8 +150,8 @@ public class BluetoothMapUtils {
                             .append("\n");
                 }
             }
-            Log.d(TAG, sb.toString());
         }
+        Log.v(TAG, sb.toString());
     }
 
     public static String getLongAsString(long v) {
@@ -186,14 +188,10 @@ public class BluetoothMapUtils {
         if (valueStr == null) {
             throw new NullPointerException();
         }
-        if (V) {
-            Log.i(TAG, "getLongFromString(): converting: " + valueStr);
-        }
+        Log.v(TAG, "getLongFromString(): converting: " + valueStr);
         byte[] nibbles;
         nibbles = valueStr.getBytes("US-ASCII");
-        if (V) {
-            Log.i(TAG, "  byte values: " + Arrays.toString(nibbles));
-        }
+        Log.v(TAG, "  byte values: " + Arrays.toString(nibbles));
         byte c;
         int count = 0;
         int length = nibbles.length;
@@ -207,10 +205,8 @@ public class BluetoothMapUtils {
             } else if (c >= 'a' && c <= 'f') {
                 c -= ('a' - 10);
             } else if (c <= ' ' || c == '-') {
-                if (V) {
-                    Log.v(TAG,
-                            "Skipping c = '" + new String(new byte[]{(byte) c}, "US-ASCII") + "'");
-                }
+                Log.v(TAG,
+                        "Skipping c = '" + new String(new byte[]{(byte) c}, "US-ASCII") + "'");
                 continue; // Skip any whitespace and '-' (which is used for UUIDs)
             } else {
                 throw new NumberFormatException("Invalid character:" + c);
@@ -222,9 +218,7 @@ public class BluetoothMapUtils {
                 throw new NullPointerException("String to large - count: " + count);
             }
         }
-        if (V) {
-            Log.i(TAG, "  length: " + count);
-        }
+        Log.v(TAG, "  length: " + count);
         return value;
     }
 
@@ -298,9 +292,7 @@ public class BluetoothMapUtils {
                     throw new IllegalArgumentException("Message type not supported");
             }
         } else {
-            if (D) {
-                Log.e(TAG, " Invalid messageType input");
-            }
+            Log.e(TAG, " Invalid messageType input");
             ContentProfileErrorReportUtils.report(
                     BluetoothProfile.MAP,
                     BluetoothProtoEnums.BLUETOOTH_MAP_UTILS,
@@ -352,14 +344,10 @@ public class BluetoothMapUtils {
      */
     public static long getCpHandle(String mapHandle) {
         long cpHandle = getMsgHandleAsLong(mapHandle);
-        if (D) {
-            Log.d(TAG, "-> MAP handle:" + mapHandle);
-        }
+        Log.d(TAG, "-> MAP handle:" + mapHandle);
         /* remove masks as the call should already know what type of message this handle is for */
         cpHandle &= ~HANDLE_TYPE_MASK;
-        if (D) {
-            Log.d(TAG, "->CP handle:" + cpHandle);
-        }
+        Log.d(TAG, "->CP handle:" + cpHandle);
 
         return cpHandle;
     }
@@ -605,9 +593,7 @@ public class BluetoothMapUtils {
                 if (((b1 >= '0' && b1 <= '9') || (b1 >= 'A' && b1 <= 'F') || (b1 >= 'a'
                         && b1 <= 'f')) && ((b2 >= '0' && b2 <= '9') || (b2 >= 'A' && b2 <= 'F') || (
                         b2 >= 'a' && b2 <= 'f'))) {
-                    if (V) {
-                        Log.v(TAG, "Found hex number: " + String.format("%c%c", b1, b2));
-                    }
+                    Log.v(TAG, "Found hex number: " + String.format("%c%c", b1, b2));
                     if (b1 <= '9') {
                         b1 = (byte) (b1 - '0');
                     } else if (b1 <= 'F') {
@@ -624,15 +610,11 @@ public class BluetoothMapUtils {
                         b2 = (byte) (b2 - 'a' + 10);
                     }
 
-                    if (V) {
-                        Log.v(TAG,
-                                "Resulting nibble values: " + String.format("b1=%x b2=%x", b1, b2));
-                    }
+                    Log.v(TAG,
+                            "Resulting nibble values: " + String.format("b1=%x b2=%x", b1, b2));
 
                     output[out++] = (byte) (b1 << 4 | b2); // valid hex char, append
-                    if (V) {
-                        Log.v(TAG, "Resulting value: " + String.format("0x%2x", output[out - 1]));
-                    }
+                    Log.v(TAG, "Resulting value: " + String.format("0x%2x", output[out - 1]));
                     continue;
                 }
                 Log.w(TAG, "Received wrongly quoted printable encoded text. "
@@ -766,7 +748,7 @@ public class BluetoothMapUtils {
             SimpleDateFormat("yyyyMMdd'T'HHmmssZ") : new SimpleDateFormat("yyyyMMdd'T'HHmmss");
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(timestamp);
-        if (V) Log.v(TAG, "getDateTimeString  timestamp :" + timestamp + " time:"
+        Log.v(TAG, "getDateTimeString  timestamp :" + timestamp + " time:"
                 + format.format(cal.getTime()));
         return format.format(cal.getTime());
     }
@@ -777,10 +759,8 @@ public class BluetoothMapUtils {
         Calendar oneYearAgo = Calendar.getInstance();
         oneYearAgo.add(Calendar.YEAR, -1);
         if (cal.before(oneYearAgo)) {
-            if (V) {
-                Log.v(TAG, "isDateTimeOlderThanOneYear " + cal.getTimeInMillis()
-                        + " oneYearAgo: " + oneYearAgo.getTimeInMillis());
-            }
+            Log.v(TAG, "isDateTimeOlderThanOneYear " + cal.getTimeInMillis()
+                    + " oneYearAgo: " + oneYearAgo.getTimeInMillis());
             return true;
         }
         return false;
@@ -799,7 +779,7 @@ public class BluetoothMapUtils {
         } else {
             mPeerSupportUtcTimeStamp = false;
         }
-        if (V) Log.v(TAG, "savePeerSupportUtcTimeStamp " + mPeerSupportUtcTimeStamp);
+        Log.v(TAG, "savePeerSupportUtcTimeStamp " + mPeerSupportUtcTimeStamp);
     }
 
 }
