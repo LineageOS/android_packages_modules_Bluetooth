@@ -129,14 +129,14 @@ class MockAclScheduler : public AclScheduler {
       common::ContextualOnceCallback<void()> handle_incoming_connection,
       common::ContextualOnceCallback<void(std::string)> handle_unknown_connection) override {
     if (handle_outgoing_connection_) {
-      handle_outgoing_connection.InvokeIfNotEmpty();
+      handle_outgoing_connection.Invoke();
       return;
     }
 
     if (handle_incoming_connection_) {
-      handle_incoming_connection.InvokeIfNotEmpty();
+      handle_incoming_connection.Invoke();
     } else {
-      handle_unknown_connection.InvokeIfNotEmpty("set_of_incoming_connecting_addresses()");
+      handle_unknown_connection.Invoke("set_of_incoming_connecting_addresses()");
     }
   }
 };
