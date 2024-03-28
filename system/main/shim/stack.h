@@ -19,7 +19,6 @@
 #include <functional>
 #include <mutex>
 
-#include "main/shim/link_policy_interface.h"
 #include "module.h"
 #include "os/handler.h"
 #include "os/thread.h"
@@ -57,7 +56,6 @@ class Stack {
   const StackManager* GetStackManager() const;
 
   legacy::Acl* GetAcl();
-  LinkPolicyInterface* LinkPolicy();
 
   Btm* GetBtm();
   os::Handler* GetHandler();

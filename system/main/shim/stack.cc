@@ -194,13 +194,6 @@ legacy::Acl* Stack::GetAcl() {
   return pimpl_->acl_;
 }
 
-LinkPolicyInterface* Stack::LinkPolicy() {
-  std::lock_guard<std::recursive_mutex> lock(mutex_);
-  ASSERT(is_running_);
-  ASSERT_LOG(pimpl_->acl_ != nullptr, "Acl shim layer has not been created");
-  return pimpl_->acl_;
-}
-
 Btm* Stack::GetBtm() {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   ASSERT(is_running_);

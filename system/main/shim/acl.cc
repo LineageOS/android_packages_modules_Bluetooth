@@ -1798,36 +1798,6 @@ void shim::legacy::Acl::UpdateConnectionParameters(
                    conn_timeout, min_ce_len, max_ce_len);
 }
 
-bool shim::legacy::Acl::HoldMode(uint16_t hci_handle, uint16_t max_interval,
-                                 uint16_t min_interval) {
-  handler_->CallOn(pimpl_.get(), &Acl::impl::HoldMode, hci_handle, max_interval,
-                   min_interval);
-  return false;  // TODO void
-}
-
-bool shim::legacy::Acl::SniffMode(uint16_t hci_handle, uint16_t max_interval,
-                                  uint16_t min_interval, uint16_t attempt,
-                                  uint16_t timeout) {
-  handler_->CallOn(pimpl_.get(), &Acl::impl::SniffMode, hci_handle,
-                   max_interval, min_interval, attempt, timeout);
-  return false;
-}
-
-bool shim::legacy::Acl::ExitSniffMode(uint16_t hci_handle) {
-  handler_->CallOn(pimpl_.get(), &Acl::impl::ExitSniffMode, hci_handle);
-  return false;
-}
-
-bool shim::legacy::Acl::SniffSubrating(uint16_t hci_handle,
-                                       uint16_t maximum_latency,
-                                       uint16_t minimum_remote_timeout,
-                                       uint16_t minimum_local_timeout) {
-  handler_->CallOn(pimpl_.get(), &Acl::impl::SniffSubrating, hci_handle,
-                   maximum_latency, minimum_remote_timeout,
-                   minimum_local_timeout);
-  return false;
-}
-
 void shim::legacy::Acl::LeSetDefaultSubrate(uint16_t subrate_min,
                                             uint16_t subrate_max,
                                             uint16_t max_latency,
