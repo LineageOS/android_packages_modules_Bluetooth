@@ -65,7 +65,6 @@ static void fail_if_reset_complete_not_success(CommandCompleteView complete) {
 }
 
 static void abort_after_time_out(OpCode op_code) {
-  bluetooth::os::LogMetricHciTimeoutEvent(static_cast<uint32_t>(op_code));
   ASSERT_LOG(false, "Done waiting for debug information after HCI timeout (%s)", OpCodeText(op_code).c_str());
 }
 
@@ -272,7 +271,8 @@ struct HciLayer::impl {
   void on_hci_timeout(OpCode op_code) {
     common::StopWatch::DumpStopWatchLog();
     log::error("Timed out waiting for 0x{:02x} ({})", op_code, OpCodeText(op_code));
-    // TODO: LogMetricHciTimeoutEvent(static_cast<uint32_t>(op_code));
+
+    bluetooth::os::LogMetricHciTimeoutEvent(static_cast<uint32_t>(op_code));
 
     log::error("Flushing {} waiting commands", command_queue_.size());
     // Clear any waiting commands (there is an abort coming anyway)
