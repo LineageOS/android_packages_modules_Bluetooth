@@ -48,6 +48,7 @@ import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -308,7 +309,7 @@ public class HeadsetClientService extends ProfileService {
         public List<BluetoothDevice> getConnectedDevices(AttributionSource source) {
             HeadsetClientService service = getService(source);
             if (service == null) {
-                return new ArrayList<BluetoothDevice>(0);
+                return Collections.emptyList();
             }
 
             return service.getConnectedDevices();
@@ -319,7 +320,7 @@ public class HeadsetClientService extends ProfileService {
                 int[] states, AttributionSource source) {
             HeadsetClientService service = getService(source);
             if (service == null) {
-                return new ArrayList<BluetoothDevice>(0);
+                return Collections.emptyList();
             }
 
             return service.getDevicesMatchingConnectionStates(states);

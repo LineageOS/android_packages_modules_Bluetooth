@@ -43,6 +43,7 @@ import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -382,7 +383,7 @@ public class AvrcpControllerService extends ProfileService {
         public List<BluetoothDevice> getConnectedDevices(AttributionSource source) {
             AvrcpControllerService service = getService(source);
             if (service == null) {
-                return new ArrayList<BluetoothDevice>(0);
+                return Collections.emptyList();
             }
             return service.getConnectedDevices();
         }
@@ -392,7 +393,7 @@ public class AvrcpControllerService extends ProfileService {
                 int[] states, AttributionSource source) {
             AvrcpControllerService service = getService(source);
             if (service == null) {
-                return new ArrayList<BluetoothDevice>(0);
+                return Collections.emptyList();
             }
             return service.getDevicesMatchingConnectionStates(states);
         }

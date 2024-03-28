@@ -4308,7 +4308,7 @@ public class LeAudioService extends ProfileService {
 
             LeAudioService service = getService(source);
             if (service == null) {
-                return new ArrayList<>(0);
+                return Collections.emptyList();
             }
 
             return service.getConnectedDevices();
@@ -4333,7 +4333,7 @@ public class LeAudioService extends ProfileService {
 
             LeAudioService service = getService(source);
             if (service == null) {
-                return new ArrayList<>(0);
+                return Collections.emptyList();
             }
 
             return service.getDevicesMatchingConnectionStates(states);
@@ -4378,7 +4378,7 @@ public class LeAudioService extends ProfileService {
 
             LeAudioService service = getService(source);
             if (service == null) {
-                return new ArrayList<>();
+                return Collections.emptyList();
             }
 
             return service.getActiveDevices();
@@ -4652,7 +4652,7 @@ public class LeAudioService extends ProfileService {
                 AttributionSource source) {
             LeAudioService service = getService(source);
             if (service == null) {
-                return new ArrayList<>();
+                return Collections.emptyList();
             }
 
             enforceBluetoothPrivilegedPermission(service);
