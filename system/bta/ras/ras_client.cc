@@ -19,10 +19,12 @@
 #include "bta/include/bta_ras_api.h"
 #include "bta/ras/ras_types.h"
 #include "os/logging/log_adapter.h"
+#include "stack/include/bt_types.h"
 #include "stack/include/btm_ble_addr.h"
 
 using namespace bluetooth;
 using namespace ::ras;
+using namespace ::ras::feature;
 using namespace ::ras::uuid;
 
 namespace {
@@ -37,6 +39,24 @@ class RasClientImpl : public bluetooth::ras::RasClient {
     uint16_t conn_id_;
     RawAddress address_;
     const gatt::Service* service_;
+    uint32_t remote_supported_features_;
+
+    const gatt::Characteristic* FindCharacteristicByUuid(Uuid uuid) {
+      for (auto& characteristic : service_->characteristics) {
+        if (characteristic.uuid == uuid) {
+          return &characteristic;
+        }
+      }
+      return nullptr;
+    }
+    const gatt::Characteristic* FindCharacteristicByHandle(uint16_t handle) {
+      for (auto& characteristic : service_->characteristics) {
+        if (characteristic.value_handle == handle) {
+          return &characteristic;
+        }
+      }
+      return nullptr;
+    }
   };
 
   void Initialize() override {
@@ -139,6 +159,23 @@ class RasClientImpl : public bluetooth::ras::RasClient {
       log::info("Found Ranging Service");
       ListCharacteristic(tracker->service_);
     }
+
+    // Read Ras Features
+    log::info("Read Ras Features");
+    auto characteristic =
+        tracker->FindCharacteristicByUuid(kRasFeaturesCharacteristic);
+    if (characteristic == nullptr) {
+      log::error("Can not find Characteristic for Ras Features");
+      return;
+    }
+    BTA_GATTC_ReadCharacteristic(
+        tracker->conn_id_, characteristic->value_handle, GATT_AUTH_REQ_MITM,
+        [](uint16_t conn_id, tGATT_STATUS status, uint16_t handle, uint16_t len,
+           uint8_t* value, void* data) {
+          instance->OnReadCharacteristicCallback(conn_id, status, handle, len,
+                                                 value, data);
+        },
+        nullptr);
   }
 
   void ListCharacteristic(const gatt::Service* service) {
@@ -158,6 +195,70 @@ class RasClientImpl : public bluetooth::ras::RasClient {
     ble_bd_addr.bda = address;
     ble_bd_addr.type = BLE_ADDR_RANDOM;
     maybe_resolve_address(&ble_bd_addr.bda, &ble_bd_addr.type);
+  }
+
+  void OnReadCharacteristicCallback(uint16_t conn_id, tGATT_STATUS status,
+                                    uint16_t handle, uint16_t len,
+                                    uint8_t* value, void* data) {
+    log::info("conn_id: {}, handle: {}, len: {}", conn_id, handle, len);
+    if (status != GATT_SUCCESS) {
+      log::error("Fail with status {}", gatt_status_text(status).c_str());
+      return;
+    }
+    auto tracker = FindTrackerByHandle(conn_id);
+    if (tracker == nullptr) {
+      log::warn("Can't find tracker for conn_id:{}", conn_id);
+      return;
+    }
+    auto characteristic = tracker->FindCharacteristicByHandle(handle);
+    if (characteristic == nullptr) {
+      log::warn("Can't find characteristic for handle:{}", handle);
+      return;
+    }
+
+    uint16_t uuid_16bit = characteristic->uuid.As16Bit();
+    log::info("Handle uuid 0x{:04x}, {}", uuid_16bit,
+              getUuidName(characteristic->uuid).c_str());
+
+    switch (uuid_16bit) {
+      case kRasFeaturesCharacteristic16bit: {
+        if (len != kFeatureSize) {
+          log::error("Invalid len for Ras features");
+          return;
+        }
+        STREAM_TO_UINT32(tracker->remote_supported_features_, value);
+        log::info(
+            "Remote supported features : {}",
+            getFeaturesString(tracker->remote_supported_features_).c_str());
+      } break;
+      default:
+        log::warn("Unexpected UUID");
+    }
+  }
+
+  std::string getFeaturesString(uint32_t value) {
+    std::stringstream ss;
+    ss << value;
+    if (value == 0) {
+      ss << "|No feature supported";
+    } else {
+      if ((value & kRealTimeRangingData) != 0) {
+        ss << "|Real-time Ranging Data";
+      }
+      if ((value & kRetrieveLostRangingDataSegments) != 0) {
+        ss << "|Retrieve Lost Ranging Data Segments";
+      }
+      if ((value & kAbortOperation) != 0) {
+        ss << "|Abort Operation";
+      }
+      if ((value & kFilterRangingData) != 0) {
+        ss << "|Filter Ranging Data";
+      }
+      if ((value & kPctPhaseFormat) != 0) {
+        ss << "|PCT Phase Format";
+      }
+    }
+    return ss.str();
   }
 
   std::shared_ptr<RasTracker> FindTrackerByHandle(uint16_t conn_id) const {
