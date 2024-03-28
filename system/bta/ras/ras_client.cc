@@ -21,6 +21,7 @@
 #include "os/logging/log_adapter.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_ble_addr.h"
+#include "stack/include/gap_api.h"
 
 using namespace bluetooth;
 using namespace ::ras;
@@ -176,6 +177,53 @@ class RasClientImpl : public bluetooth::ras::RasClient {
                                                  value, data);
         },
         nullptr);
+
+    // Subscribe Characteristics
+    SubscribeCharacteristic(tracker, kRasOnDemandDataCharacteristic);
+    SubscribeCharacteristic(tracker, kRasControlPointCharacteristic);
+    SubscribeCharacteristic(tracker, kRasRangingDataReadyCharacteristic);
+    SubscribeCharacteristic(tracker, kRasRangingDataOverWrittenCharacteristic);
+  }
+
+  void SubscribeCharacteristic(std::shared_ptr<RasTracker> tracker,
+                               const Uuid uuid) {
+    auto characteristic = tracker->FindCharacteristicByUuid(uuid);
+    if (characteristic == nullptr) {
+      log::warn("Can't find characteristic 0x{:04x}", uuid.As16Bit());
+      return;
+    }
+    uint16_t ccc_handle = FindCccHandle(characteristic);
+    if (ccc_handle == GAP_INVALID_HANDLE) {
+      log::warn("Can't find Client Characteristic Configuration descriptor");
+      return;
+    }
+
+    tGATT_STATUS register_status = BTA_GATTC_RegisterForNotifications(
+        gatt_if_, tracker->address_, characteristic->value_handle);
+    if (register_status != GATT_SUCCESS) {
+      log::error("Fail to register, {}",
+                 gatt_status_text(register_status).c_str());
+      return;
+    }
+
+    std::vector<uint8_t> value(2);
+    uint8_t* value_ptr = value.data();
+    UINT16_TO_STREAM(value_ptr, GATT_CHAR_CLIENT_CONFIG_INDICTION);
+    BTA_GATTC_WriteCharDescr(
+        tracker->conn_id_, ccc_handle, value, GATT_AUTH_REQ_NONE,
+        [](uint16_t conn_id, tGATT_STATUS status, uint16_t handle, uint16_t len,
+           const uint8_t* value, void* data) {
+          if (instance)
+            instance->OnDescriptorWrite(conn_id, status, handle, len, value,
+                                        data);
+        },
+        nullptr);
+  }
+
+  void OnDescriptorWrite(uint16_t conn_id, tGATT_STATUS status, uint16_t handle,
+                         uint16_t len, const uint8_t* value, void* data) {
+    log::info("conn_id:{}, handle:{}, status:{}", conn_id, handle,
+              gatt_status_text(status).c_str());
   }
 
   void ListCharacteristic(const gatt::Service* service) {
@@ -259,6 +307,15 @@ class RasClientImpl : public bluetooth::ras::RasClient {
       }
     }
     return ss.str();
+  }
+
+  uint16_t FindCccHandle(const gatt::Characteristic* characteristic) {
+    for (auto descriptor : characteristic->descriptors) {
+      if (descriptor.uuid == kClientCharacteristicConfiguration) {
+        return descriptor.handle;
+      }
+    }
+    return GAP_INVALID_HANDLE;
   }
 
   std::shared_ptr<RasTracker> FindTrackerByHandle(uint16_t conn_id) const {
