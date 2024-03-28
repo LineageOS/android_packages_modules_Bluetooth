@@ -32,10 +32,7 @@
         <option name="throw-if-cmd-fail" value="true" />
         <option name="run-command" value="setprop persist.bluetooth.btsnooplogmode full" />
         <option name="run-command" value="device_config set_sync_disabled_for_tests persistent" />
-        <option name="run-command"
-                value="device_config put bluetooth INIT_logging_debug_enabled_for_all true" />
-        <option name="run-command"
-                value="device_config put bluetooth INIT_default_log_level_str LOG_VERBOSE" />
+        <option name="run-command" value="setprop log.tag.bluetooth VERBOSE" />
         <option name="run-command" value="settings put global ble_scan_always_enabled 0" />
         <option name="run-command" value="cmd bluetooth_manager disable" />
         <option name="run-command" value="cmd bluetooth_manager wait-for-state:STATE_OFF" />

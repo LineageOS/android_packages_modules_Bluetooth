@@ -28,11 +28,6 @@
 #include "hal/syscall_wrapper_impl.h"
 #include "os/utils.h"
 
-static const char* test_flags[] = {
-    "INIT_logging_debug_enabled_for_all=true",
-    nullptr,
-};
-
 namespace testing {
 
 using bluetooth::hal::SnoopLoggerCommon;
@@ -42,14 +37,7 @@ using bluetooth::hal::SyscallWrapperImpl;
 
 static constexpr int INVALID_FD = -1;
 
-class SnoopLoggerSocketThreadModuleTest : public Test {
- protected:
-  void SetUp() override {
-    bluetooth::common::InitFlags::Load(test_flags);
-  }
-
-  void TearDown() override {}
-};
+class SnoopLoggerSocketThreadModuleTest : public Test {};
 
 TEST_F(SnoopLoggerSocketThreadModuleTest, socket_start_no_stop_test) {
   {
