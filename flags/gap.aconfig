@@ -163,3 +163,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "scan_record_manufacturer_data_merge"
+    namespace: "bluetooth"
+    description: "If a scan record has multiple datas under same manufacturer id, merge the values"
+    bug: "331723396"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
