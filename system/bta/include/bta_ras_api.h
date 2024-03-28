@@ -38,6 +38,7 @@ class RasClient {
  public:
   virtual ~RasClient() = default;
   virtual void Initialize() = 0;
+  virtual void Connect(const RawAddress& address) = 0;
 };
 
 RasClient* GetRasClient();

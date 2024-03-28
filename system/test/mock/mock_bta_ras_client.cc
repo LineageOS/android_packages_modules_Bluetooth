@@ -18,6 +18,7 @@
 
 class MockRasClient : public bluetooth::ras::RasClient {
   void Initialize() override {}
+  void Connect(const RawAddress& /* address */) override{};
 };
 
 namespace bluetooth {
