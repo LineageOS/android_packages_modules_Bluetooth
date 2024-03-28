@@ -76,8 +76,6 @@ import java.util.concurrent.ConcurrentHashMap;
 // Next tag value for ContentProfileErrorReportUtils.report(): 10
 public class BluetoothOppUtility {
     private static final String TAG = "BluetoothOppUtility";
-    private static final boolean D = Constants.DEBUG;
-    private static final boolean V = Constants.VERBOSE;
     /** Whether the device has the "nosdcard" characteristic, or null if not-yet-known. */
     private static Boolean sNoSdCard = null;
 
@@ -105,9 +103,7 @@ public class BluetoothOppUtility {
             cursor.close();
         } else {
             info = null;
-            if (V) {
-                Log.v(TAG, "BluetoothOppManager Error: not got data from db for uri:" + uri);
-            }
+            Log.v(TAG, "BluetoothOppManager Error: not got data from db for uri:" + uri);
         }
         return info;
     }
@@ -154,9 +150,7 @@ public class BluetoothOppUtility {
         info.mHandoverInitiated =
                 confirmationType == BluetoothShare.USER_CONFIRMATION_HANDOVER_CONFIRMED;
 
-        if (V) {
-            Log.v(TAG, "Get data from db:" + info.mFileName + info.mFileType + info.mDestAddr);
-        }
+        Log.v(TAG, "Get data from db:" + info.mFileName + info.mFileType + info.mDestAddr);
     }
 
     /**
@@ -188,9 +182,7 @@ public class BluetoothOppUtility {
                 path = Uri.fromFile(new File(fileName));
             }
             uris.add(path.toString());
-            if (V) {
-                Log.d(TAG, "Uri in this batch: " + path.toString());
-            }
+            Log.v(TAG, "Uri in this batch: " + path.toString());
         }
         metadataCursor.close();
         return uris;
@@ -256,9 +248,7 @@ public class BluetoothOppUtility {
 
             // Due to the file is not existing, delete related info in btopp db
             // to prevent this file from appearing in live folder
-            if (V) {
-                Log.d(TAG, "This uri will be deleted: " + uri);
-            }
+            Log.v(TAG, "This uri will be deleted: " + uri);
             BluetoothMethodProxy.getInstance().contentResolverDelete(context.getContentResolver(),
                     uri, null, null);
             return;
@@ -271,9 +261,7 @@ public class BluetoothOppUtility {
             activityIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
             try {
-                if (V) {
-                    Log.d(TAG, "ACTION_VIEW intent sent out: " + path + " / " + mimetype);
-                }
+                Log.v(TAG, "ACTION_VIEW intent sent out: " + path + " / " + mimetype);
                 context.startActivity(activityIntent);
             } catch (ActivityNotFoundException ex) {
                 ContentProfileErrorReportUtils.report(
@@ -281,9 +269,7 @@ public class BluetoothOppUtility {
                         BluetoothProtoEnums.BLUETOOTH_OPP_UTILITY,
                         BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                         3);
-                if (V) {
-                    Log.d(TAG, "no activity for handling ACTION_VIEW intent:  " + mimetype, ex);
-                }
+                Log.v(TAG, "no activity for handling ACTION_VIEW intent:  " + mimetype, ex);
             }
         } else {
             Intent in = new Intent(context, BluetoothOppBtErrorActivity.class);
@@ -320,9 +306,7 @@ public class BluetoothOppUtility {
     public static boolean isRecognizedFileType(Context context, Uri fileUri, String mimetype) {
         boolean ret = true;
 
-        if (D) {
-            Log.d(TAG, "RecognizedFileType() fileUri: " + fileUri + " mimetype: " + mimetype);
-        }
+        Log.d(TAG, "RecognizedFileType() fileUri: " + fileUri + " mimetype: " + mimetype);
 
         Intent mimetypeIntent = new Intent(Intent.ACTION_VIEW);
         mimetypeIntent.setDataAndTypeAndNormalize(fileUri, mimetype);
@@ -330,9 +314,7 @@ public class BluetoothOppUtility {
                 .queryIntentActivities(mimetypeIntent, PackageManager.MATCH_DEFAULT_ONLY);
 
         if (list.size() == 0) {
-            if (D) {
-                Log.d(TAG, "NO application to handle MIME type " + mimetype);
-            }
+            Log.d(TAG, "NO application to handle MIME type " + mimetype);
             ret = false;
         }
         return ret;
@@ -444,10 +426,8 @@ public class BluetoothOppUtility {
 
         final Uri contentUri =
                 context.getContentResolver().insert(BluetoothShare.CONTENT_URI, values);
-        if (V) {
-            Log.v(TAG,
-                    "Insert contentUri: " + contentUri + "  to device: " + transInfo.mDeviceName);
-        }
+        Log.v(TAG,
+                "Insert contentUri: " + contentUri + "  to device: " + transInfo.mDeviceName);
     }
 
     static Uri originalUri(Uri uri) {
@@ -457,7 +437,7 @@ public class BluetoothOppUtility {
             mUri = mUri.substring(0, atIndex);
             uri = Uri.parse(mUri);
         }
-        if (V) Log.v(TAG, "originalUri: " + uri);
+        Log.v(TAG, "originalUri: " + uri);
         return uri;
     }
 
@@ -466,14 +446,12 @@ public class BluetoothOppUtility {
         int atIndex = fileInfo.lastIndexOf("@");
         fileInfo = fileInfo.substring(atIndex);
         uri = Uri.parse(uri + fileInfo);
-        if (V) Log.v(TAG, "generateUri: " + uri);
+        Log.v(TAG, "generateUri: " + uri);
         return uri;
     }
 
     static void putSendFileInfo(Uri uri, BluetoothOppSendFileInfo sendFileInfo) {
-        if (D) {
-            Log.d(TAG, "putSendFileInfo: uri=" + uri + " sendFileInfo=" + sendFileInfo);
-        }
+        Log.d(TAG, "putSendFileInfo: uri=" + uri + " sendFileInfo=" + sendFileInfo);
         if (sendFileInfo == BluetoothOppSendFileInfo.SEND_FILE_INFO_ERROR) {
             Log.e(TAG, "putSendFileInfo: bad sendFileInfo, URI: " + uri);
             ContentProfileErrorReportUtils.report(
@@ -486,17 +464,13 @@ public class BluetoothOppUtility {
     }
 
     static BluetoothOppSendFileInfo getSendFileInfo(Uri uri) {
-        if (D) {
-            Log.d(TAG, "getSendFileInfo: uri=" + uri);
-        }
+        Log.d(TAG, "getSendFileInfo: uri=" + uri);
         BluetoothOppSendFileInfo info = sSendFileMap.get(uri);
         return (info != null) ? info : BluetoothOppSendFileInfo.SEND_FILE_INFO_ERROR;
     }
 
     static void closeSendFileInfo(Uri uri) {
-        if (D) {
-            Log.d(TAG, "closeSendFileInfo: uri=" + uri);
-        }
+        Log.d(TAG, "closeSendFileInfo: uri=" + uri);
         BluetoothOppSendFileInfo info = sSendFileMap.remove(uri);
         if (info != null && info.mInputStream != null) {
             try {
