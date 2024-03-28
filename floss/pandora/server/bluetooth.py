@@ -19,13 +19,14 @@ import traceback
 
 from floss.pandora.floss import adapter_client
 from floss.pandora.floss import advertising_client
+from floss.pandora.floss import floss_enums
+from floss.pandora.floss import gatt_client
+from floss.pandora.floss import gatt_server
 from floss.pandora.floss import manager_client
+from floss.pandora.floss import media_client
 from floss.pandora.floss import qa_client
 from floss.pandora.floss import scanner_client
 from floss.pandora.floss import socket_manager
-from floss.pandora.floss import gatt_client
-from floss.pandora.floss import gatt_server
-from floss.pandora.floss import floss_enums
 from floss.pandora.floss import utils
 from gi.repository import GLib
 import pydbus
@@ -66,6 +67,7 @@ class Bluetooth(object):
         self.advertising_client = advertising_client.FlossAdvertisingClient(self.bus, self.DEFAULT_ADAPTER)
         self.scanner_client = scanner_client.FlossScannerClient(self.bus, self.DEFAULT_ADAPTER)
         self.qa_client = qa_client.FlossQAClient(self.bus, self.DEFAULT_ADAPTER)
+        self.media_client = media_client.FlossMediaClient(self.bus, self.DEFAULT_ADAPTER)
         self.gatt_client = gatt_client.FlossGattClient(self.bus, self.DEFAULT_ADAPTER)
         self.gatt_server = gatt_server.FlossGattServer(self.bus, self.DEFAULT_ADAPTER)
         self.socket_manager = socket_manager.FlossSocketManagerClient(self.bus, self.DEFAULT_ADAPTER)
@@ -133,6 +135,9 @@ class Bluetooth(object):
         if not self.qa_client.register_qa_callback():
             logging.error('qa_client: Failed to register callbacks')
             return False
+        if not self.media_client.register_callback():
+            logging.error('media_client: Failed to register callbacks')
+            return False
         if not self.gatt_client.register_client(self.FAKE_GATT_APP_ID, False):
             logging.error('gatt_client: Failed to register callbacks')
             return False
@@ -153,6 +158,7 @@ class Bluetooth(object):
             self.advertising_client.has_proxy(),
             self.scanner_client.has_proxy(),
             self.qa_client.has_proxy(),
+            self.media_client.has_proxy(),
             self.gatt_client.has_proxy(),
             self.gatt_server.has_proxy(),
             self.socket_manager.has_proxy()
@@ -189,6 +195,7 @@ class Bluetooth(object):
             self.advertising_client = advertising_client.FlossAdvertisingClient(self.bus, default_adapter)
             self.scanner_client = scanner_client.FlossScannerClient(self.bus, default_adapter)
             self.qa_client = qa_client.FlossQAClient(self.bus, default_adapter)
+            self.media_client = media_client.FlossMediaClient(self.bus, default_adapter)
             self.gatt_client = gatt_client.FlossGattClient(self.bus, default_adapter)
             self.gatt_server = gatt_server.FlossGattServer(self.bus, default_adapter)
             self.socket_manager = socket_manager.FlossSocketManagerClient(self.bus, default_adapter)
@@ -397,3 +404,9 @@ class Bluetooth(object):
 
     def close_socket(self, socket_id):
         return self.socket_manager.close(socket_id)
+
+    def get_connected_audio_devices(self):
+        return self.media_client.devices
+
+    def disconnect_media(self, address):
+        return self.media_client.disconnect(address)

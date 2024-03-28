@@ -16,6 +16,7 @@
 import asyncio
 import logging
 
+from floss.pandora.server import a2dp
 from floss.pandora.server import bluetooth as bluetooth_module
 from floss.pandora.server import gatt
 from floss.pandora.server import hid
@@ -24,6 +25,7 @@ from floss.pandora.server import l2cap
 from floss.pandora.server import rfcomm
 from floss.pandora.server import security
 import grpc
+from pandora import a2dp_grpc_aio
 from pandora import host_grpc_aio
 from pandora import security_grpc_aio
 from pandora_experimental import gatt_grpc_aio
@@ -41,7 +43,7 @@ async def serve(port):
         while True:
             bluetooth = bluetooth_module.Bluetooth()
             bluetooth.reset()
-            logging.info("bluetooth initialized")
+            logging.info('bluetooth initialized')
 
             server = grpc.aio.server()
             security_service = security.SecurityService(bluetooth)
@@ -65,10 +67,13 @@ async def serve(port):
             rfcomm_service = rfcomm.RFCOMMService(bluetooth)
             rfcomm_grpc_aio.add_RFCOMMServicer_to_server(rfcomm_service, server)
 
+            a2dp_service = a2dp.A2DPService(bluetooth)
+            a2dp_grpc_aio.add_A2DPServicer_to_server(a2dp_service, server)
+
             server.add_insecure_port(f'[::]:{port}')
 
             await server.start()
-            logging.info("server started")
+            logging.info('server started')
 
             await server.wait_for_termination()
             bluetooth.cleanup()
