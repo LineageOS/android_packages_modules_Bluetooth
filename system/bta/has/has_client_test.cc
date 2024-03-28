@@ -663,6 +663,9 @@ class HasClientTestBase : public ::testing::Test {
 
     encryption_result = true;
 
+    ON_CALL(btm_interface, IsLinkKeyKnown(_, _))
+        .WillByDefault(DoAll(Return(true)));
+
     ON_CALL(btm_interface, SetEncryption(_, _, _, _, _))
         .WillByDefault(
             Invoke([this](const RawAddress& bd_addr, tBT_TRANSPORT transport,
@@ -1229,6 +1232,27 @@ TEST_F(HasClientTest, test_connect) { TestConnect(GetTestAddress(1)); }
 TEST_F(HasClientTest, test_add_from_storage) {
   TestAddFromStorage(GetTestAddress(1), 0, true);
   TestAddFromStorage(GetTestAddress(2), 0, false);
+}
+
+TEST_F(HasClientTest, test_connect_after_remove) {
+  const RawAddress test_address = GetTestAddress(1);
+
+  /* Override the default action to prevent us sendind the connected event */
+  EXPECT_CALL(gatt_interface,
+              Open(gatt_if, test_address, BTM_BLE_DIRECT_CONNECTION, _))
+      .WillOnce(Return());
+  HasClient::Get()->Connect(test_address);
+  TestDisconnect(test_address, GATT_INVALID_CONN_ID);
+  Mock::VerifyAndClearExpectations(&gatt_interface);
+
+  EXPECT_CALL(*callbacks,
+              OnConnectionState(ConnectionState::DISCONNECTED, test_address));
+
+  // Device has no Link Key
+  ON_CALL(btm_interface, IsLinkKeyKnown(test_address, _))
+      .WillByDefault(DoAll(Return(true)));
+  HasClient::Get()->Connect(test_address);
+  Mock::VerifyAndClearExpectations(&callbacks);
 }
 
 TEST_F(HasClientTest, test_disconnect_non_connected) {
