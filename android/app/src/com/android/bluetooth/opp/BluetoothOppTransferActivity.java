@@ -69,8 +69,6 @@ import com.google.common.annotations.VisibleForTesting;
 public class BluetoothOppTransferActivity extends AlertActivity
         implements DialogInterface.OnClickListener {
     private static final String TAG = "BluetoothOppTransferActivity";
-    private static final boolean D = Constants.DEBUG;
-    private static final boolean V = Constants.VERBOSE;
 
     private Uri mUri;
 
@@ -123,9 +121,7 @@ public class BluetoothOppTransferActivity extends AlertActivity
 
         @Override
         public void onChange(boolean selfChange) {
-            if (V) {
-                Log.v(TAG, "received db changes.");
-            }
+            Log.v(TAG, "received db changes.");
             mNeedUpdateButton = true;
             updateProgressbar();
         }
@@ -142,9 +138,7 @@ public class BluetoothOppTransferActivity extends AlertActivity
         mTransInfo = new BluetoothOppTransferInfo();
         mTransInfo = BluetoothOppUtility.queryRecord(this, mUri);
         if (mTransInfo == null) {
-            if (V) {
-                Log.e(TAG, "Error: Can not get data from db");
-            }
+            Log.e(TAG, "Error: Can not get data from db");
             ContentProfileErrorReportUtils.report(
                     BluetoothProfile.OPP,
                     BluetoothProtoEnums.BLUETOOTH_OPP_TRANSFER_ACTIVITY,
@@ -176,9 +170,7 @@ public class BluetoothOppTransferActivity extends AlertActivity
 
     @Override
     protected void onDestroy() {
-        if (D) {
-            Log.d(TAG, "onDestroy()");
-        }
+        Log.d(TAG, "onDestroy()");
 
         if (mObserver != null) {
             getContentResolver().unregisterContentObserver(mObserver);
@@ -215,10 +207,8 @@ public class BluetoothOppTransferActivity extends AlertActivity
             }
         }
 
-        if (V) {
-            Log.v(TAG, " WhichDialog/dir/isComplete/failOrSuccess" + mWhichDialog + direction
-                    + isComplete + isSuccess);
-        }
+        Log.v(TAG, " WhichDialog/dir/isComplete/failOrSuccess" + mWhichDialog + direction
+                + isComplete + isSuccess);
     }
 
     private void setUpDialog() {
@@ -402,9 +392,7 @@ public class BluetoothOppTransferActivity extends AlertActivity
     private void updateProgressbar() {
         mTransInfo = BluetoothOppUtility.queryRecord(this, mUri);
         if (mTransInfo == null) {
-            if (V) {
-                Log.e(TAG, "Error: Can not get data from db");
-            }
+            Log.e(TAG, "Error: Can not get data from db");
             ContentProfileErrorReportUtils.report(
                     BluetoothProfile.OPP,
                     BluetoothProtoEnums.BLUETOOTH_OPP_TRANSFER_ACTIVITY,
@@ -417,11 +405,9 @@ public class BluetoothOppTransferActivity extends AlertActivity
         mProgressTransfer.setMax(100);
 
         if (mTransInfo.mTotalBytes != 0) {
-            if (V) {
-                Log.v(TAG, "mCurrentBytes: " + mTransInfo.mCurrentBytes + " mTotalBytes: "
-                        + mTransInfo.mTotalBytes + " (" + (int) ((mTransInfo.mCurrentBytes * 100)
-                        / mTransInfo.mTotalBytes) + "%)");
-            }
+            Log.v(TAG, "mCurrentBytes: " + mTransInfo.mCurrentBytes + " mTotalBytes: "
+                    + mTransInfo.mTotalBytes + " (" + (int) ((mTransInfo.mCurrentBytes * 100)
+                    / mTransInfo.mTotalBytes) + "%)");
             mProgressTransfer.setProgress(
                     (int) ((mTransInfo.mCurrentBytes * 100) / mTransInfo.mTotalBytes));
         } else {

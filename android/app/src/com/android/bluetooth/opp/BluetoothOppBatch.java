@@ -60,7 +60,6 @@ import java.util.ArrayList;
 
 public class BluetoothOppBatch {
     private static final String TAG = "BtOppBatch";
-    private static final boolean V = Constants.VERBOSE;
 
     public int mId;
     public int mStatus;
@@ -111,9 +110,7 @@ public class BluetoothOppBatch {
         mStatus = Constants.BATCH_STATUS_PENDING;
         mShares.add(info);
 
-        if (V) {
-            Log.v(TAG, "New Batch created for info " + info.mId);
-        }
+        Log.v(TAG, "New Batch created for info " + info.mId);
     }
 
     /**
@@ -137,9 +134,7 @@ public class BluetoothOppBatch {
      * 3) update ContentProvider for these canceled transfer
      */
     public void cancelBatch() {
-        if (V) {
-            Log.v(TAG, "batch " + this.mId + " is canceled");
-        }
+        Log.v(TAG, "batch " + this.mId + " is canceled");
 
         if (mListener != null) {
             mListener.onBatchCanceled();
@@ -154,9 +149,7 @@ public class BluetoothOppBatch {
                             mContext.getContentResolver(), info.mUri, null, null
                     );
                 }
-                if (V) {
-                    Log.v(TAG, "Cancel batch for info " + info.mId);
-                }
+                Log.v(TAG, "Cancel batch for info " + info.mId);
 
                 Constants.updateShareStatus(mContext, info.mId, BluetoothShare.STATUS_CANCELED);
             }
