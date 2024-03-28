@@ -1394,6 +1394,12 @@ class LeAudioClientImpl : public LeAudioClient {
 
     LeAudioDevice* leAudioDevice = leAudioDevices_.FindByAddress(address);
     if (!leAudioDevice) {
+      if (!BTM_IsLinkKeyKnown(address, BT_TRANSPORT_LE)) {
+        log::error("Connecting  {} when not bonded",
+                   ADDRESS_TO_LOGGABLE_CSTR(address));
+        callbacks_->OnConnectionState(ConnectionState::DISCONNECTED, address);
+        return;
+      }
       leAudioDevices_.Add(address, DeviceConnectState::CONNECTING_BY_USER);
     } else {
       auto current_connect_state = leAudioDevice->GetConnectionState();
