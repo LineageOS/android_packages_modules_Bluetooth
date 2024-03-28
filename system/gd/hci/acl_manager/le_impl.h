@@ -646,6 +646,10 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     return connections.HACK_get_handle(address);
   }
 
+  Address HACK_get_address(uint16_t connection_handle) {
+    return connections.getAddressWithType(connection_handle).GetAddress();
+  }
+
   void OnAdvertisingSetTerminated(
       uint16_t conn_handle,
       uint8_t adv_set_id,
