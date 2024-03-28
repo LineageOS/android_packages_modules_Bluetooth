@@ -26,7 +26,6 @@
 #include "hci/class_of_device.h"
 #include "main/shim/acl_legacy_interface.h"
 #include "main/shim/link_connection_interface.h"
-#include "main/shim/link_policy_interface.h"
 #include "os/handler.h"
 #include "packet/raw_builder.h"
 #include "types/raw_address.h"
@@ -37,8 +36,7 @@ namespace legacy {
 
 class Acl : public hci::acl_manager::ConnectionCallbacks,
             public hci::acl_manager::LeConnectionCallbacks,
-            public LinkConnectionInterface,
-            public LinkPolicyInterface {
+            public LinkConnectionInterface {
  public:
   Acl(os::Handler* handler, const acl_interface_t& acl_interface,
       uint8_t max_acceptlist_size, uint8_t max_address_resolution_size);
@@ -95,16 +93,6 @@ class Acl : public hci::acl_manager::ConnectionCallbacks,
       const hci::AddressWithType& address_with_type);
   void ClearAddressResolution();
 
-  // LinkPolicyInterface
-  bool HoldMode(uint16_t hci_handle, uint16_t max_interval,
-                uint16_t min_interval) override;
-  bool SniffMode(uint16_t hci_handle, uint16_t max_interval,
-                 uint16_t min_interval, uint16_t attempt,
-                 uint16_t timeout) override;
-  bool ExitSniffMode(uint16_t hci_handle) override;
-  bool SniffSubrating(uint16_t hci_handle, uint16_t maximum_latency,
-                      uint16_t minimum_remote_timeout,
-                      uint16_t minimum_local_timeout) override;
   void LeSetDefaultSubrate(uint16_t subrate_min, uint16_t subrate_max,
                            uint16_t max_latency, uint16_t cont_num,
                            uint16_t sup_tout);
