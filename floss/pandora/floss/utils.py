@@ -17,7 +17,9 @@ import functools
 import logging
 import threading
 import time
+import uuid
 from typing import List, Optional
+import traceback
 
 from floss.pandora.floss import floss_enums
 from gi.repository import GLib
@@ -74,6 +76,64 @@ def poll_for_condition(condition, exception=None, timeout=10, sleep_interval=0.1
 
         # TODO: b/292696514 - Use event base system and remove this.
         time.sleep(sleep_interval)
+
+
+def dbus_safe(default_return_value, return_error=False):
+    """Catches all DBus exceptions and return a default value instead.
+
+    Wrap a function with a try block that catches DBus exceptions and returns the error with the specified return
+    status. The exception is logged to aid in debugging.
+
+    If |return_error| is set, the call will return a tuple with (default_return_value, str(error)).
+
+    Args:
+        default_return_value: What value to return in case of errors.
+        return_error: Whether to return the error string as well.
+
+    Returns:
+        Either the return value from the method call if successful or the |default_return_value| or
+        a tuple(default_return_value, str(error)).
+    """
+
+    def decorator(wrapped_function):
+        """Calls a function and catch DBus errors.
+
+        Args:
+            wrapped_function: Function to call in dbus safe context.
+
+        Returns:
+            Function return value or default_return_value on failure.
+        """
+
+        @functools.wraps(wrapped_function)
+        def wrapper(*args, **kwargs):
+            """Passes args and kwargs to a dbus safe function.
+
+            Args:
+                args: Formal python arguments.
+                kwargs: Keyword python arguments.
+
+            Returns:
+                Function return value or default_return_value on failure.
+            """
+            logging.debug('%s()', wrapped_function.__name__)
+            try:
+                return wrapped_function(*args, **kwargs)
+            except GLib.Error as e:
+                logging.debug('Exception while performing operation %s: %s', wrapped_function.__name__, e)
+
+                if return_error:
+                    return (default_return_value, str(e))
+                else:
+                    return default_return_value
+            except Exception as e:
+                logging.debug('Exception in %s: %s', wrapped_function.__name__, e)
+                logging.debug(traceback.format_exc())
+                raise
+
+        return wrapper
+
+    return decorator
 
 
 def generate_dbus_cb_objpath(name, hci=None):
@@ -387,6 +447,18 @@ def uuid16_to_uuid128(uuid16: str):
 
 def uuid32_to_uuid128(uuid32: str):
     return f'{uuid32}-0000-1000-8000-00805f9b34fb'
+
+
+def get_uuid_as_list(str_uuid):
+    """Converts string uuid to a list of bytes.
+
+    Args:
+        str_uuid: String UUID.
+
+    Returns:
+        UUID string as list of bytes.
+    """
+    return list(uuid.UUID(str_uuid).bytes)
 
 
 def advertise_data_from(request_data: host_pb2.DataTypes):
