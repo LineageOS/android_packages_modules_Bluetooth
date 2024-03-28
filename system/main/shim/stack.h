@@ -19,8 +19,6 @@
 #include <functional>
 #include <mutex>
 
-#include "main/shim/btm.h"
-#include "main/shim/link_policy_interface.h"
 #include "module.h"
 #include "os/handler.h"
 #include "os/thread.h"
@@ -29,6 +27,9 @@
 // The shim layer implementation on the Gd stack side.
 namespace bluetooth {
 namespace shim {
+
+class Btm;
+
 namespace legacy {
 class Acl;
 };  // namespace legacy
@@ -55,7 +56,6 @@ class Stack {
   const StackManager* GetStackManager() const;
 
   legacy::Acl* GetAcl();
-  LinkPolicyInterface* LinkPolicy();
 
   Btm* GetBtm();
   os::Handler* GetHandler();
@@ -87,7 +87,6 @@ class Stack {
   bool is_running_ = false;
   os::Thread* stack_thread_ = nullptr;
   os::Handler* stack_handler_ = nullptr;
-  Btm* btm_ = nullptr;
   size_t num_modules_{0};
   void Start(ModuleList* modules);
 };

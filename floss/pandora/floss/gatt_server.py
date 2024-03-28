@@ -1,20 +1,22 @@
 # Copyright 2023 Google LLC
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     https://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
+# distributed under the License is distributed on an 'AS IS' BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Client Class to access the Floss GATT server interface."""
 
+import collections
 import logging
 
+from floss.pandora.floss import bluetooth_gatt_service
 from floss.pandora.floss import floss_enums
 from floss.pandora.floss import observer_base
 from floss.pandora.floss import utils
@@ -90,31 +92,31 @@ class GattServerCallbacks:
         """
         pass
 
-    def on_characteristic_write_request(self, addr, trans_id, offset, len, is_prep, need_rsp, handle, value):
+    def on_characteristic_write_request(self, addr, trans_id, offset, length, is_prep, need_rsp, handle, value):
         """Called when there is a request to write a characteristic.
 
         Args:
             addr: Remote device MAC address.
             trans_id: Transaction id.
             offset: Represents the offset at which the attribute value should be written.
-            len: The length of the attribute value that should be written.
-            is_prep: A boolean value representing whether it's a "prepare write" command.
-            need_rsp: A boolean value representing whether it's a "write no response" command.
+            length: The length of the attribute value that should be written.
+            is_prep: A boolean value representing whether it's a 'prepare write' command.
+            need_rsp: A boolean value representing whether it's a 'write no response' command.
             handle: The characteristic handle.
             value: The value that should be written to the attribute.
         """
         pass
 
-    def on_descriptor_write_request(self, addr, trans_id, offset, len, is_prep, need_rsp, handle, value):
+    def on_descriptor_write_request(self, addr, trans_id, offset, length, is_prep, need_rsp, handle, value):
         """Called when there is a request to write a descriptor.
 
         Args:
             addr: Remote device MAC address.
             trans_id: Transaction id.
             offset: The offset value at which the value should be written.
-            len: The length of the value that should be written.
-            is_prep: A boolean value representing whether it's a "prepare write" command.
-            need_rsp: A boolean value representing whether it's a "write no response" command.
+            length: The length of the value that should be written.
+            is_prep: A boolean value representing whether it's a 'prepare write' command.
+            need_rsp: A boolean value representing whether it's a 'write no response' command.
             handle: The descriptor handle.
             value: The value that should be written to the descriptor.
         """
@@ -196,6 +198,18 @@ class GattServerCallbacks:
         pass
 
 
+def uuid16_to_uuid128(uuid):
+    """Converts 16-bit UUID to 128-bit UUID.
+
+    Args:
+        uuid: 16-bit UUID value.
+
+    Returns:
+        128-bit UUID.
+    """
+    return utils.uuid16_to_uuid128(uuid).upper()
+
+
 class FlossGattServer(GattServerCallbacks):
     """Handles method calls and callbacks from the GATT server interface."""
 
@@ -204,6 +218,48 @@ class FlossGattServer(GattServerCallbacks):
     GATT_OBJECT_PATTERN = '/org/chromium/bluetooth/hci{}/gatt'
     GATT_CB_OBJ_NAME = 'test_gatt_server'
     CB_EXPORTED_INTF = 'org.chromium.bluetooth.BluetoothGattServerCallback'
+
+    # Bluetooth GATT DataBase attribute type.
+    BTGATT_DB_PRIMARY_SERVICE = 0
+    BTGATT_DB_SECONDARY_SERVICE = 1
+    BTGATT_DB_INCLUDED_SERVICE = 2
+    BTGATT_DB_CHARACTERISTIC = 3
+    BTGATT_DB_DESCRIPTOR = 4
+
+    GATT_READ_AUTH_REQUIRED = floss_enums.GattPermission.PERM_READ_ENCRYPTED
+    GATT_READ_MITM_REQUIRED = floss_enums.GattPermission.PERM_READ_ENC_MITM
+    GATT_WRITE_AUTH_REQUIRED = (floss_enums.GattPermission.PERM_WRITE_ENCRYPTED |
+                                floss_enums.GattPermission.PERM_WRITE_SIGNED)
+    GATT_WRITE_MITM_REQUIRED = (floss_enums.GattPermission.PERM_WRITE_ENC_MITM |
+                                floss_enums.GattPermission.PERM_WRITE_SIGNED_MITM)
+
+    SERVICE_ATTR_UUID = uuid16_to_uuid128('7777')
+    SERVER_CHANGED_CHAR_UUID = uuid16_to_uuid128('2a05')
+    SERVER_SUP_FEAT_UUID = uuid16_to_uuid128('2b3a')
+    CLIENT_SUP_FEAT_UUID = uuid16_to_uuid128('2b29')
+    DATABASE_HASH_UUID = uuid16_to_uuid128('2b2a')
+    LONG_CHAR_UUID = uuid16_to_uuid128('b000')
+    DESCRIPTOR_UUID = uuid16_to_uuid128('b001')
+    KEY_SIZE_CHAR_UUID = uuid16_to_uuid128('b002')
+    UNAUTHORIZED_CHAR_UUID = uuid16_to_uuid128('b003')
+    AUTHENTICATION_CHAR_UUID = uuid16_to_uuid128('b004')
+    INVALID_FOR_LE_UUID = uuid16_to_uuid128('b005')
+    INVALID_FOR_BR_EDR_UUID = uuid16_to_uuid128('b006')
+    NO_READ_CHAR_UUID = uuid16_to_uuid128('b007')
+    NO_WRITE_CHAR_UUID = uuid16_to_uuid128('b008')
+    SHORT_CHAR_UUID = uuid16_to_uuid128('b009')
+    WRITE_NO_RESPONSE_CHAR_UUID = uuid16_to_uuid128('b00a')
+    NOTIFY_CHAR_UUID = uuid16_to_uuid128('b00b')
+    AUTHENTICATE_SHORT_CHAR_UUID = uuid16_to_uuid128('b00c')
+    CCC_DESCRIPTOR_UUID = uuid16_to_uuid128('2902')
+    LONG_CHAR_512_UUID = uuid16_to_uuid128('b00d')
+    MITM_SHORT_CHAR_UUID = uuid16_to_uuid128('b00e')
+
+    LONG_TEST_VALUE_512 = [bytes([7])] * 512
+    LONG_TEST_VALUE = [bytes([7])] * 48
+    SHORT_TEST_VALUE = [bytes([7])] * 2
+    NOTIFICATION_VALUE = [bytes([1]), bytes([0])]
+    INDICATION_VALUE = [bytes([2]), bytes([0])]
 
     class ExportedGattServerCallbacks(observer_base.ObserverBase):
         """
@@ -244,7 +300,7 @@ class FlossGattServer(GattServerCallbacks):
                     <arg type="s" name="addr" direction="in" />
                     <arg type="i" name="trans_id" direction="in" />
                     <arg type="i" name="offset" direction="in" />
-                    <arg type="i" name="len" direction="in" />
+                    <arg type="i" name="length" direction="in" />
                     <arg type="b" name="is_prep" direction="in" />
                     <arg type="b" name="need_rsp" direction="in" />
                     <arg type="i" name="handle" direction="in" />
@@ -254,7 +310,7 @@ class FlossGattServer(GattServerCallbacks):
                     <arg type="s" name="addr" direction="in" />
                     <arg type="i" name="trans_id" direction="in" />
                     <arg type="i" name="offset" direction="in" />
-                    <arg type="i" name="len" direction="in" />
+                    <arg type="i" name="length" direction="in" />
                     <arg type="b" name="is_prep" direction="in" />
                     <arg type="b" name="need_rsp" direction="in" />
                     <arg type="i" name="handle" direction="in" />
@@ -363,6 +419,23 @@ class FlossGattServer(GattServerCallbacks):
             for observer in self.observers.values():
                 observer.on_characteristic_read_request(addr, trans_id, offset, is_long, handle)
 
+        def OnCharacteristicWriteRequest(self, addr, trans_id, offset, length, is_prep, need_rsp, handle, value):
+            """Handles characteristic write request callback.
+
+            Args:
+                addr: Remote device MAC address.
+                trans_id: Transaction id.
+                offset: Represents the offset from which the attribute value should be read.
+                length: The length of the value that should be written.
+                is_prep: A boolean value representing whether it's a 'prepare write' command.
+                need_rsp: A boolean value representing whether it's a 'write no response' command.
+                handle: The descriptor handle.
+                value: The value that should be written to the descriptor.
+            """
+            for observer in self.observers.values():
+                observer.on_characteristic_write_request(addr, trans_id, offset, length, is_prep, need_rsp, handle,
+                                                         value)
+
         def OnDescriptorReadRequest(self, addr, trans_id, offset, is_long, handle):
             """Handles descriptor read request callback.
 
@@ -377,37 +450,21 @@ class FlossGattServer(GattServerCallbacks):
             for observer in self.observers.values():
                 observer.on_descriptor_read_request(addr, trans_id, offset, is_long, handle)
 
-        def OnCharacteristicWrite(self, addr, trans_id, offset, len, is_prep, need_rsp, handle, value):
-            """Handles characteristic write request callback.
-
-            Args:
-                addr: Remote device MAC address.
-                trans_id: Transaction id.
-                offset: Represents the offset at which the attribute value should be written.
-                len: The length of the attribute value that should be written.
-                is_prep: A boolean value representing whether it's a "prepare write" command.
-                need_rsp: A boolean value representing whether it's a "write no response" command.
-                handle: The characteristic handle.
-                value: The value that should be written to the attribute.
-            """
-            for observer in self.observers.values():
-                observer.on_characteristic_write_request(addr, trans_id, offset, len, is_prep, need_rsp, handle, value)
-
-        def OnDescriptorWriteRequest(self, addr, trans_id, offset, len, is_prep, need_rsp, handle, value):
+        def OnDescriptorWriteRequest(self, addr, trans_id, offset, length, is_prep, need_rsp, handle, value):
             """Handles descriptor write request callback.
 
             Args:
                 addr: Remote device MAC address.
                 trans_id: Transaction id.
                 offset: The offset value at which the value should be written.
-                len: The length of the value that should be written.
-                is_prep: A boolean value representing whether it's a "prepare write" command.
-                need_rsp: A boolean value representing whether it's a "write no response" command.
+                length: The length of the value that should be written.
+                is_prep: A boolean value representing whether it's a 'prepare write' command.
+                need_rsp: A boolean value representing whether it's a 'write no response' command.
                 handle: The descriptor handle.
                 value: The value that should be written to the descriptor.
             """
             for observer in self.observers.values():
-                observer.on_descriptor_write_request(addr, trans_id, offset, len, is_prep, need_rsp, handle, value)
+                observer.on_descriptor_write_request(addr, trans_id, offset, length, is_prep, need_rsp, handle, value)
 
         def OnExecuteWrite(self, addr, trans_id, exec_write):
             """Handles execute write callback.
@@ -505,16 +562,526 @@ class FlossGattServer(GattServerCallbacks):
         self.objpath = self.GATT_OBJECT_PATTERN.format(hci)
         self.cb_dbus_objpath = utils.generate_dbus_cb_objpath(self.GATT_CB_OBJ_NAME, self.hci)
 
-        # Create and publish callbacks
+        # Create and publish callbacks.
         self.callbacks = self.ExportedGattServerCallbacks()
         self.callbacks.add_observer('gatt_testing_server', self)
         self.bus.register_object(self.cb_dbus_objpath, self.callbacks, None)
-        self.server_connect_id = None
         self.server_id = None
+        self.mtu_value = -1
+        self.write_requests = collections.deque([])
+        self.gatt_services = []
+        # Indicate if PTS attribute values were set or not (set only one time).
+        self.pts_set_values = False
 
     def __del__(self):
         """Destructor."""
         del self.callbacks
+
+    def check_permissions(self, uuid):
+        """Checks request UUID permission.
+
+        Args:
+            uuid: 128-bit UUID value as string.
+
+        Returns:
+            GATT status.
+        """
+        if uuid is None:
+            logging.debug('check_permissions uuid is None or value is None')
+            return floss_enums.GattStatus.NOT_FOUND
+        elif uuid == self.LONG_CHAR_UUID:
+            logging.debug('check_permissions: uuid == long_char, return GATT_SUCCESS')
+        elif uuid == self.DESCRIPTOR_UUID:
+            logging.debug('check_permissions: uuid == descriptor, return GATT_SUCCESS')
+        elif uuid == self.UNAUTHORIZED_CHAR_UUID:
+            logging.debug('check_permissions: uuid == unauthorize_char, return GATT_INSUF_AUTHORIZATION')
+            return floss_enums.GattStatus.INSUF_AUTHORIZATION
+        elif uuid == self.AUTHENTICATION_CHAR_UUID:
+            logging.debug('check_permissions: uuid == authenticate_char, return GATT_SUCCESS')
+        elif uuid == self.INVALID_FOR_LE_UUID:
+            logging.debug('check_permissions: uuid == invalid_for_le, return GATT_SUCCESS')
+            return floss_enums.GattStatus.INTERNAL_ERROR
+        elif uuid == self.INVALID_FOR_BR_EDR_UUID:
+            logging.debug('check_permissions: uuid == invalid_for_bredr, return GATT_SUCCESS')
+            return floss_enums.GattStatus.INTERNAL_ERROR
+        elif uuid == self.NO_READ_CHAR_UUID:
+            logging.debug('check_permissions: uuid == no_read_char, return GATT_READ_NOT_PERMIT')
+            return floss_enums.GattStatus.READ_NOT_PERMIT
+        elif uuid == self.NO_WRITE_CHAR_UUID:
+            logging.debug('check_permissions: uuid == no_write_char, return GATT_WRITE_NOT_PERMIT')
+            return floss_enums.GattStatus.WRITE_NOT_PERMIT
+        elif uuid == self.SHORT_CHAR_UUID:
+            logging.debug('check_permissions: uuid == short_char, return GATT_SUCCESS')
+        elif uuid == self.WRITE_NO_RESPONSE_CHAR_UUID:
+            logging.debug('check_permissions: uuid == write_no_rsp_char, return GATT_SUCCESS')
+        elif uuid == self.AUTHENTICATE_SHORT_CHAR_UUID:
+            logging.debug('check_permissions: uuid == authenticate_short_char, return GATT_SUCCESS')
+        elif uuid == self.CCC_DESCRIPTOR_UUID:
+            logging.debug('check_permissions: uuid == ccc_descriptor, return GATT_SUCCESS')
+        elif uuid == self.LONG_CHAR_512_UUID:
+            logging.debug('check_permissions: uuid == long_char512, return GATT_SUCCESS')
+        elif uuid == self.MITM_SHORT_CHAR_UUID:
+            logging.debug('check_permissions: uuid == mitm_short_char, return GATT_SUCCESS')
+        else:
+            logging.debug('check_permissions: uuid: %s unknown return GATT_NOT_FOUND', uuid)
+            return floss_enums.GattStatus.NOT_FOUND
+        return floss_enums.GattStatus.SUCCESS
+
+    def generic_write(self, offset, length, handle, value):
+        """Writes GATT attribute value.
+
+        Args:
+            offset: Represents the offset at which the attribute value should be written.
+            length: The length of the attribute value that should be written.
+            handle: The attribute handle.
+            value: The value that should be written to the attribute.
+
+        Returns:
+            (Bluetooth Gatt status, attribute value).
+        """
+        attribute = self.get_attribute_from_handle(handle)
+        attr_value = attribute.value if attribute is not None else []
+
+        if len(attr_value) < offset:
+            logging.info('len(char_value) < offset')
+            return floss_enums.GattStatus.INVALID_OFFSET, []
+
+        if offset + length > len(attr_value):
+            logging.info('offset + len > len(char_value)')
+            return floss_enums.GattStatus.INVALID_ATTRLEN, []
+
+        attr_value[offset:(offset + length)] = value
+        self.update_attribute_value(attribute.uuid, attr_value)
+        return floss_enums.GattStatus.SUCCESS, attr_value
+
+    def generic_read(self, offset, handle):
+        """Reads GATT attribute value.
+
+        Args:
+            offset: Represents the offset from which the attribute value should be read.
+            handle: The attribute handle.
+
+        Returns:
+            (Bluetooth Gatt status, attribute value).
+        """
+        attr_value = self.get_attribute_value_from_handle(handle)
+
+        if offset < 0 or offset > len(attr_value):
+            logging.info('generic_read len(value) < offset')
+            return floss_enums.GattStatus.INVALID_OFFSET, []
+
+        return floss_enums.GattStatus.SUCCESS, attr_value[offset:]
+
+    def get_uuid_from_handle(self, handle):
+        """Gets attribute UUID from handle.
+
+        Args:
+            handle: The attribute handle.
+
+        Returns:
+            Attribute UUID as string if found, empty string otherwise.
+        """
+        attribute = self.get_attribute_from_handle(handle)
+        return '' if attribute is None else attribute.uuid
+
+    def get_attribute_value_from_handle(self, handle):
+        """Gets attribute value from handle.
+
+        Args:
+            handle: The attribute handle.
+
+        Returns:
+            Attribute value as list if found, empty list otherwise.
+        """
+        attribute = self.get_attribute_from_handle(handle)
+        return [] if attribute is None else attribute.value
+
+    def get_attribute_from_handle(self, handle):
+        """Gets GATT attribute from handle.
+
+        Args:
+            handle: The attribute handle.
+
+        Returns:
+            GATT attribute if found, None otherwise.
+        """
+        for service in self.gatt_services:
+            if int(service.instance_id) == int(handle):
+                return service
+            for char in service.characteristics:
+                if int(char.instance_id) == int(handle):
+                    return char
+                for desc in char.descriptors:
+                    if int(desc.instance_id) == int(handle):
+                        return desc
+
+        return None
+
+    def update_attribute_value(self, uuid, value):
+        """Update GATT attribute value.
+
+        Args:
+            uuid: GATT attribute uuid as string.
+            value: Attribute value as list.
+        """
+        for service in self.gatt_services:
+            if service.uuid == uuid:
+                service.value = value
+                return
+            for char in service.characteristics:
+                if char.uuid == uuid:
+                    char.value = value
+                    return
+                for desc in char.descriptors:
+                    if desc.uuid == uuid:
+                        desc.value = value
+                        return
+        logging.error('No attribute found with uuid = %s!', uuid)
+
+    def on_attr_read(self, addr, trans_id, offset, is_long, handle):
+        """Handles the read request for GATT attribute.
+
+        Args:
+            addr: Remote device MAC address.
+            trans_id: Transaction id.
+            offset: Represents the offset from which the attribute value should be read.
+            is_long: A boolean value representing whether the attribute size is longer than what we can put in the ATT
+                     PDU.
+            handle: The attribute handle.
+        """
+        uuid = self.get_uuid_from_handle(handle)
+        status = self.check_permissions(uuid)
+        value = []
+        if status == floss_enums.GattStatus.SUCCESS:
+            if not is_long:
+                offset = 0
+            status, value = self.generic_read(offset, handle)
+
+        self.proxy().SendResponse(self.server_id, addr, trans_id, status, offset, value)
+
+    def on_attr_write(self, addr, trans_id, offset, length, is_prep, need_rsp, handle, value):
+        """Handles the read request for GATT attribute.
+
+        Args:
+            addr: Remote device MAC address.
+            trans_id: Transaction id.
+            offset: Represents the offset at which the attribute value should be written.
+            length: The length of the attribute value that should be written.
+            is_prep: A boolean value representing whether it's a 'prepare write' command.
+            need_rsp: A boolean value representing whether it's a 'write no response' command.
+            handle: The attribute handle.
+            value: The value that should be written to the attribute.
+        """
+        uuid = self.get_uuid_from_handle(handle)
+        status = self.check_permissions(uuid)
+
+        if status == floss_enums.GattStatus.SUCCESS:
+            if is_prep:
+                self.write_requests.append((addr, trans_id, offset, length, is_prep, need_rsp, handle, value))
+            else:
+                # write request.
+                status, value = self.generic_write(offset, length, handle, value)
+        else:
+            value = []
+
+        if need_rsp:
+            self.proxy().SendResponse(self.server_id, addr, trans_id, status, offset, value)
+        else:
+            logging.info('No need to send response.')
+
+    def __set_pts_attributes_value(self):
+        """Sets PTS attributes value."""
+        if not self.pts_set_values:
+            self.update_attribute_value(self.SERVICE_ATTR_UUID, self.SHORT_TEST_VALUE)
+            self.update_attribute_value(self.SERVER_CHANGED_CHAR_UUID, self.SHORT_TEST_VALUE)
+            self.update_attribute_value(self.SERVER_SUP_FEAT_UUID, self.SHORT_TEST_VALUE)
+            self.update_attribute_value(self.CLIENT_SUP_FEAT_UUID, self.SHORT_TEST_VALUE)
+            self.update_attribute_value(self.DATABASE_HASH_UUID, self.SHORT_TEST_VALUE)
+            self.update_attribute_value(self.LONG_CHAR_UUID, self.LONG_TEST_VALUE)
+            self.update_attribute_value(self.DESCRIPTOR_UUID, self.LONG_TEST_VALUE)
+            self.update_attribute_value(self.KEY_SIZE_CHAR_UUID, self.LONG_TEST_VALUE)
+            self.update_attribute_value(self.UNAUTHORIZED_CHAR_UUID, self.LONG_TEST_VALUE)
+            self.update_attribute_value(self.AUTHENTICATION_CHAR_UUID, self.LONG_TEST_VALUE)
+            self.update_attribute_value(self.INVALID_FOR_LE_UUID, self.LONG_TEST_VALUE)
+            self.update_attribute_value(self.INVALID_FOR_BR_EDR_UUID, self.LONG_TEST_VALUE)
+            self.update_attribute_value(self.NO_READ_CHAR_UUID, self.LONG_TEST_VALUE)
+            self.update_attribute_value(self.NO_WRITE_CHAR_UUID, self.LONG_TEST_VALUE)
+            self.update_attribute_value(self.SHORT_CHAR_UUID, self.SHORT_TEST_VALUE)
+            self.update_attribute_value(self.WRITE_NO_RESPONSE_CHAR_UUID, self.LONG_TEST_VALUE)
+            self.update_attribute_value(self.NOTIFY_CHAR_UUID, self.SHORT_TEST_VALUE)
+            self.update_attribute_value(self.AUTHENTICATE_SHORT_CHAR_UUID, self.SHORT_TEST_VALUE)
+            self.update_attribute_value(self.CCC_DESCRIPTOR_UUID, self.INDICATION_VALUE)
+            self.update_attribute_value(self.LONG_CHAR_512_UUID, self.LONG_TEST_VALUE_512)
+            self.update_attribute_value(self.MITM_SHORT_CHAR_UUID, self.SHORT_TEST_VALUE)
+            self.pts_set_values = True
+
+    def __define_services(self):
+        """Defines GATT services for PTS testing."""
+
+        service = bluetooth_gatt_service.Service()
+        characteristic = bluetooth_gatt_service.Characteristic()
+        descriptor = bluetooth_gatt_service.Descriptor()
+        service.included_services = []
+        service.characteristics = []
+        characteristic.descriptors = []
+
+        service.uuid = self.SERVICE_ATTR_UUID
+        service.instance_id = 0
+        service.service_type = self.BTGATT_DB_PRIMARY_SERVICE
+
+        characteristic.uuid = self.SERVER_CHANGED_CHAR_UUID
+        characteristic.instance_id = 1
+        characteristic.properties = floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_INDICATE
+        characteristic.permissions = floss_enums.GattPermission.PERM_READ | floss_enums.GattPermission.PERM_WRITE
+        characteristic.key_size = 0
+        characteristic.write_type = floss_enums.GattWriteType.WRITE
+
+        descriptor.uuid = self.CCC_DESCRIPTOR_UUID
+        descriptor.instance_id = 2
+        descriptor.permissions = floss_enums.GattPermission.PERM_READ | floss_enums.GattPermission.PERM_WRITE
+        characteristic.descriptors.append(descriptor)
+
+        service.characteristics.append(characteristic)
+
+        # ----------------------------------------------------
+        characteristic = bluetooth_gatt_service.Characteristic()
+        characteristic.uuid = self.SERVER_SUP_FEAT_UUID
+        characteristic.instance_id = 3
+        characteristic.properties = floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_READ
+        characteristic.permissions = floss_enums.GattPermission.PERM_READ
+        characteristic.key_size = 0
+        characteristic.write_type = floss_enums.GattWriteType.INVALID
+        characteristic.descriptors = []
+
+        service.characteristics.append(characteristic)
+
+        # ----------------------------------------------------
+        characteristic = bluetooth_gatt_service.Characteristic()
+        characteristic.uuid = self.CLIENT_SUP_FEAT_UUID
+        characteristic.instance_id = 4
+        characteristic.properties = (floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_READ |
+                                     floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_WRITE)
+        characteristic.permissions = floss_enums.GattPermission.PERM_READ | floss_enums.GattPermission.PERM_WRITE
+        characteristic.key_size = 0
+        characteristic.write_type = floss_enums.GattWriteType.INVALID
+        characteristic.descriptors = []
+
+        service.characteristics.append(characteristic)
+
+        # ----------------------------------------------------
+        characteristic = bluetooth_gatt_service.Characteristic()
+        characteristic.uuid = self.DATABASE_HASH_UUID
+        characteristic.instance_id = 5
+        characteristic.properties = floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_READ
+        characteristic.permissions = floss_enums.GattPermission.PERM_READ
+        characteristic.key_size = 0
+        characteristic.write_type = floss_enums.GattWriteType.INVALID
+        characteristic.descriptors = []
+
+        service.characteristics.append(characteristic)
+
+        # ----------------------------------------------------
+        characteristic = bluetooth_gatt_service.Characteristic()
+        characteristic.uuid = self.DATABASE_HASH_UUID
+        characteristic.instance_id = 5
+        characteristic.properties = floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_READ
+        characteristic.permissions = floss_enums.GattPermission.PERM_READ
+        characteristic.key_size = 0
+        characteristic.write_type = floss_enums.GattWriteType.INVALID
+        characteristic.descriptors = []
+
+        service.characteristics.append(characteristic)
+
+        # ----------------------------------------------------
+        characteristic = bluetooth_gatt_service.Characteristic()
+        descriptor = bluetooth_gatt_service.Descriptor()
+        characteristic.uuid = self.LONG_CHAR_UUID
+        characteristic.instance_id = 6
+        characteristic.properties = (floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_READ |
+                                     floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_WRITE)
+        characteristic.permissions = floss_enums.GattPermission.PERM_READ | floss_enums.GattPermission.PERM_WRITE
+        characteristic.key_size = 0
+        characteristic.write_type = floss_enums.GattWriteType.WRITE
+        characteristic.descriptors = []
+
+        descriptor.uuid = self.DESCRIPTOR_UUID
+        descriptor.instance_id = 7
+        descriptor.permissions = floss_enums.GattPermission.PERM_READ | floss_enums.GattPermission.PERM_WRITE
+        characteristic.descriptors.append(descriptor)
+        service.characteristics.append(characteristic)
+
+        # ----------------------------------------------------
+        characteristic = bluetooth_gatt_service.Characteristic()
+        characteristic.uuid = self.KEY_SIZE_CHAR_UUID
+        characteristic.instance_id = 8
+        characteristic.properties = (floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_READ |
+                                     floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_WRITE)
+        characteristic.permissions = (
+            10 << 12) | floss_enums.GattPermission.PERM_READ_ENCRYPTED | floss_enums.GattPermission.PERM_WRITE_ENCRYPTED
+        characteristic.key_size = 10
+        characteristic.write_type = floss_enums.GattWriteType.WRITE
+        characteristic.descriptors = []
+
+        service.characteristics.append(characteristic)
+        # ----------------------------------------------------
+        characteristic = bluetooth_gatt_service.Characteristic()
+        characteristic.uuid = self.UNAUTHORIZED_CHAR_UUID
+        characteristic.instance_id = 9
+        characteristic.properties = (floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_READ |
+                                     floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_WRITE)
+        characteristic.permissions = floss_enums.GattPermission.PERM_READ | floss_enums.GattPermission.PERM_WRITE
+        characteristic.key_size = 0
+        characteristic.write_type = floss_enums.GattWriteType.WRITE
+        characteristic.descriptors = []
+
+        service.characteristics.append(characteristic)
+        # ----------------------------------------------------
+        characteristic = bluetooth_gatt_service.Characteristic()
+        characteristic.uuid = self.AUTHENTICATION_CHAR_UUID
+        characteristic.instance_id = 10
+        characteristic.properties = (floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_READ |
+                                     floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_WRITE |
+                                     floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_AUTH)
+        characteristic.permissions = self.GATT_READ_AUTH_REQUIRED | self.GATT_WRITE_AUTH_REQUIRED
+        characteristic.key_size = 0
+        characteristic.write_type = floss_enums.GattWriteType.WRITE
+        characteristic.descriptors = []
+
+        service.characteristics.append(characteristic)
+
+        # ----------------------------------------------------
+        characteristic = bluetooth_gatt_service.Characteristic()
+        characteristic.uuid = self.INVALID_FOR_LE_UUID
+        characteristic.instance_id = 11
+        characteristic.properties = (floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_READ |
+                                     floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_WRITE)
+        characteristic.permissions = floss_enums.GattPermission.PERM_READ | floss_enums.GattPermission.PERM_WRITE
+        characteristic.key_size = 0
+        characteristic.write_type = floss_enums.GattWriteType.WRITE
+        characteristic.descriptors = []
+
+        service.characteristics.append(characteristic)
+        # ----------------------------------------------------
+        characteristic = bluetooth_gatt_service.Characteristic()
+        characteristic.uuid = self.INVALID_FOR_BR_EDR_UUID
+        characteristic.instance_id = 12
+        characteristic.properties = (floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_READ |
+                                     floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_WRITE)
+        characteristic.permissions = floss_enums.GattPermission.PERM_READ | floss_enums.GattPermission.PERM_WRITE
+        characteristic.key_size = 0
+        characteristic.write_type = floss_enums.GattWriteType.WRITE
+        characteristic.descriptors = []
+
+        service.characteristics.append(characteristic)
+        # ----------------------------------------------------
+        characteristic = bluetooth_gatt_service.Characteristic()
+        characteristic.uuid = self.NO_READ_CHAR_UUID
+        characteristic.instance_id = 13
+        # Only write property.
+        characteristic.properties = floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_WRITE
+        # Only write permission.
+        characteristic.permissions = floss_enums.GattPermission.PERM_WRITE
+        characteristic.key_size = 0
+        characteristic.write_type = floss_enums.GattWriteType.WRITE
+        characteristic.descriptors = []
+
+        service.characteristics.append(characteristic)
+        # ----------------------------------------------------
+        characteristic = bluetooth_gatt_service.Characteristic()
+        characteristic.uuid = self.NO_WRITE_CHAR_UUID
+        characteristic.instance_id = 14
+        # Only read property.
+        characteristic.properties = floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_READ
+        # Only read permission.
+        characteristic.permissions = floss_enums.GattPermission.PERM_READ
+        characteristic.key_size = 0
+        characteristic.write_type = floss_enums.GattWriteType.INVALID
+        characteristic.descriptors = []
+
+        service.characteristics.append(characteristic)
+        # ----------------------------------------------------
+        characteristic = bluetooth_gatt_service.Characteristic()
+        characteristic.uuid = self.SHORT_CHAR_UUID
+        characteristic.instance_id = 15
+        characteristic.properties = (floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_READ |
+                                     floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_WRITE)
+        characteristic.permissions = floss_enums.GattPermission.PERM_READ | floss_enums.GattPermission.PERM_WRITE
+        characteristic.key_size = 0
+        characteristic.write_type = floss_enums.GattWriteType.WRITE
+        characteristic.descriptors = []
+
+        service.characteristics.append(characteristic)
+        # ----------------------------------------------------
+        characteristic = bluetooth_gatt_service.Characteristic()
+        characteristic.uuid = self.WRITE_NO_RESPONSE_CHAR_UUID
+        characteristic.instance_id = 16
+        # Write without response property.
+        characteristic.properties = (floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_READ |
+                                     floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_WRITE_NR)
+        characteristic.permissions = floss_enums.GattPermission.PERM_READ | floss_enums.GattPermission.PERM_WRITE
+        characteristic.key_size = 0
+        characteristic.write_type = floss_enums.GattWriteType.WRITE_NO_RSP
+        characteristic.descriptors = []
+
+        service.characteristics.append(characteristic)
+        # ----------------------------------------------------
+        characteristic = bluetooth_gatt_service.Characteristic()
+        descriptor = bluetooth_gatt_service.Descriptor()
+        characteristic.uuid = self.NOTIFY_CHAR_UUID
+        characteristic.instance_id = 17
+        characteristic.properties = (floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_NOTIFY |
+                                     floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_INDICATE)
+        characteristic.permissions = floss_enums.GattPermission.PERM_READ | floss_enums.GattPermission.PERM_WRITE
+        characteristic.key_size = 0
+        characteristic.write_type = floss_enums.GattWriteType.WRITE
+        characteristic.descriptors = []
+
+        descriptor.uuid = self.CCC_DESCRIPTOR_UUID
+        descriptor.instance_id = 18
+        descriptor.permissions = floss_enums.GattPermission.PERM_READ | floss_enums.GattPermission.PERM_WRITE
+
+        characteristic.descriptors.append(descriptor)
+        service.characteristics.append(characteristic)
+        # ----------------------------------------------------
+        characteristic = bluetooth_gatt_service.Characteristic()
+        characteristic.uuid = self.AUTHENTICATE_SHORT_CHAR_UUID
+        characteristic.instance_id = 19
+        characteristic.properties = (floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_READ |
+                                     floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_WRITE |
+                                     floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_AUTH)
+        characteristic.permissions = self.GATT_READ_AUTH_REQUIRED | self.GATT_WRITE_AUTH_REQUIRED
+        characteristic.key_size = 0
+        characteristic.write_type = floss_enums.GattWriteType.WRITE
+        characteristic.descriptors = []
+
+        service.characteristics.append(characteristic)
+        # ----------------------------------------------------
+        characteristic = bluetooth_gatt_service.Characteristic()
+        characteristic.uuid = self.LONG_CHAR_512_UUID
+        characteristic.instance_id = 20
+        characteristic.properties = (floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_READ |
+                                     floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_WRITE)
+        characteristic.permissions = floss_enums.GattPermission.PERM_READ | floss_enums.GattPermission.PERM_WRITE
+        characteristic.key_size = 0
+        characteristic.write_type = floss_enums.GattWriteType.WRITE
+        characteristic.descriptors = []
+
+        service.characteristics.append(characteristic)
+        # ----------------------------------------------------
+        characteristic = bluetooth_gatt_service.Characteristic()
+        characteristic.uuid = self.MITM_SHORT_CHAR_UUID
+        characteristic.instance_id = 21
+        characteristic.properties = (floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_READ |
+                                     floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_WRITE |
+                                     floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_AUTH)
+        characteristic.permissions = self.GATT_READ_MITM_REQUIRED | self.GATT_WRITE_MITM_REQUIRED
+        characteristic.key_size = 0
+        characteristic.write_type = floss_enums.GattWriteType.WRITE
+        characteristic.descriptors = []
+        service.characteristics.append(characteristic)
+        # ----------------------------------------------------
+        service_dict = bluetooth_gatt_service.convert_object_to_dict(service)
+        self.proxy().AddService(self.server_id, self.make_dbus_service(service_dict))
 
     @utils.glib_callback()
     def on_server_registered(self, status, server_id):
@@ -530,6 +1097,7 @@ class FlossGattServer(GattServerCallbacks):
             logging.error('Failed to register server with id: %s, status = %s', server_id, status)
             return
         self.server_id = server_id
+        self.__define_services()
 
     @utils.glib_callback()
     def on_server_connection_state(self, server_id, connected, addr):
@@ -551,7 +1119,14 @@ class FlossGattServer(GattServerCallbacks):
             status: floss_enums.GattStatus.
             service: BluetoothGattService.
         """
+        if status != floss_enums.GattStatus.SUCCESS:
+            return
+        self.gatt_services.append(bluetooth_gatt_service.create_gatt_service(service))
+
         logging.debug('on_service_added: status: %s, service: %s', status, service)
+
+        # This function will run once when the server is initiated.
+        self.__set_pts_attributes_value()
 
     @utils.glib_callback()
     def on_service_removed(self, status, handle):
@@ -579,6 +1154,8 @@ class FlossGattServer(GattServerCallbacks):
             'on_characteristic_read_request: device address: %s, trans_id: %s, offset: %s, is_long: %s, handle: %s',
             addr, trans_id, offset, is_long, handle)
 
+        self.on_attr_read(addr, trans_id, offset, is_long, handle)
+
     @utils.glib_callback()
     def on_descriptor_read_request(self, addr, trans_id, offset, is_long, handle):
         """Handles the read request of the descriptor callback.
@@ -594,42 +1171,45 @@ class FlossGattServer(GattServerCallbacks):
         logging.debug(
             'on_descriptor_read_request: device address: %s, trans_id: %s, offset: %s, is_long: %s, handle: %s', addr,
             trans_id, offset, is_long, handle)
+        self.on_attr_read(addr, trans_id, offset, is_long, handle)
 
     @utils.glib_callback()
-    def on_characteristic_write_request(self, addr, trans_id, offset, len, is_prep, need_rsp, handle, value):
+    def on_characteristic_write_request(self, addr, trans_id, offset, length, is_prep, need_rsp, handle, value):
         """Handles the write request of the characteristic callback.
 
         Args:
             addr: Remote device MAC address.
             trans_id: Transaction id.
             offset: Represents the offset at which the attribute value should be written.
-            len: The length of the attribute value that should be written.
-            is_prep: A boolean value representing whether it's a "prepare write" command.
-            need_rsp: A boolean value representing whether it's a "write no response" command.
+            length: The length of the attribute value that should be written.
+            is_prep: A boolean value representing whether it's a 'prepare write' command.
+            need_rsp: A boolean value representing whether it's a 'write no response' command.
             handle: The characteristic handle.
             value: The value that should be written to the attribute.
         """
         logging.debug(
             'on_characteristic_write_request: device address: %s, trans_id: %s, offset: %s, length: %s, is_prep: %s, '
-            'need_rsp: %s, handle: %s, values: %s', addr, trans_id, offset, len, is_prep, need_rsp, handle, value)
+            'need_rsp: %s, handle: %s, values: %s', addr, trans_id, offset, length, is_prep, need_rsp, handle, value)
+        self.on_attr_write(addr, trans_id, offset, length, is_prep, need_rsp, handle, value)
 
     @utils.glib_callback()
-    def on_descriptor_write_request(self, addr, trans_id, offset, len, is_prep, need_rsp, handle, value):
+    def on_descriptor_write_request(self, addr, trans_id, offset, length, is_prep, need_rsp, handle, value):
         """Handles the write request of the descriptor callback.
 
         Args:
             addr: Remote device MAC address.
             trans_id: Transaction id.
             offset: The offset value at which the value should be written.
-            len: The length of the value that should be written.
-            is_prep: A boolean value representing whether it's a "prepare write" command.
-            need_rsp: A boolean value representing whether it's a "write no response" command.
+            length: The length of the value that should be written.
+            is_prep: A boolean value representing whether it's a 'prepare write' command.
+            need_rsp: A boolean value representing whether it's a 'write no response' command.
             handle: The descriptor handle.
             value: The value that should be written to the descriptor.
         """
         logging.debug(
             'on_descriptor_write_request: device address: %s, trans_id: %s, offset: %s, length: %s, is_prep: %s, '
-            'need_rsp: %s, handle: %s, values: %s', addr, trans_id, offset, len, is_prep, need_rsp, handle, value)
+            'need_rsp: %s, handle: %s, values: %s', addr, trans_id, offset, length, is_prep, need_rsp, handle, value)
+        self.on_attr_write(addr, trans_id, offset, length, is_prep, need_rsp, handle, value)
 
     @utils.glib_callback()
     def on_execute_write(self, addr, trans_id, exec_write):
@@ -641,6 +1221,19 @@ class FlossGattServer(GattServerCallbacks):
             exec_write: A boolean value that indicates whether the write operation should be executed or canceled.
         """
         logging.debug('on_execute_write: device address: %s, trans_id: %s, exec_write: %s', addr, trans_id, exec_write)
+
+        if not exec_write:
+            self.write_requests.clear()
+            status = floss_enums.GattStatus.SUCCESS
+        else:
+            write_requests, self.write_requests = self.write_requests, collections.deque([])
+            for request in write_requests:
+                _, _, offset2, length, _, _, handle2, value2 = request
+                status, _ = self.generic_write(offset2, length, handle2, value2)
+                if status != floss_enums.GattStatus.SUCCESS:
+                    break
+
+        self.proxy().SendResponse(self.server_id, addr, trans_id, status, 0, [])
 
     @utils.glib_callback()
     def on_notification_sent(self, addr, status):
@@ -661,6 +1254,7 @@ class FlossGattServer(GattServerCallbacks):
             mtu: Maximum transmission unit.
         """
         logging.debug('on_mtu_changed: device address: %s, mtu : %s', addr, mtu)
+        self.mtu_value = mtu
 
     @utils.glib_callback()
     def on_phy_update(self, addr, tx_phy, rx_phy, status):
@@ -898,15 +1492,16 @@ class FlossGattServer(GattServerCallbacks):
         """Makes struct for descriptor D-Bus.
 
         Args:
-            uuid : Descriptor UUID as array of bytes.
+            uuid : Descriptor UUID as string.
             instance_id: Descriptor identifier.
             permissions: Descriptor permissions.
 
         Returns:
             Dictionary of descriptor.
         """
+        desc_uuid = utils.get_uuid_as_list(uuid)
         return {
-            'uuid': GLib.Variant('ay', uuid),
+            'uuid': GLib.Variant('ay', desc_uuid),
             'instance_id': GLib.Variant('i', instance_id),
             'permissions': GLib.Variant('i', permissions)
         }
@@ -915,7 +1510,7 @@ class FlossGattServer(GattServerCallbacks):
         """Makes struct for characteristic D-Bus.
 
         Args:
-            uuid : Characteristic UUID as array of bytes.
+            uuid : Characteristic UUID as string.
             instance_id: Characteristic handle id.
             properties: Characteristic properties.
             permissions: Characteristic permissions.
@@ -929,8 +1524,9 @@ class FlossGattServer(GattServerCallbacks):
         desc = []
         for d in descriptors:
             desc.append(self.make_dbus_descriptor(d['uuid'], d['instance_id'], d['permissions']))
+        char_uuid = utils.get_uuid_as_list(uuid)
         return {
-            'uuid': GLib.Variant('ay', uuid),
+            'uuid': GLib.Variant('ay', char_uuid),
             'instance_id': GLib.Variant('i', instance_id),
             'properties': GLib.Variant('i', properties),
             'permissions': GLib.Variant('i', permissions),
@@ -957,9 +1553,9 @@ class FlossGattServer(GattServerCallbacks):
         included_services = []
         for s in service['included_services']:
             included_services.append(self.make_dbus_service(s))
-
+        service_uuid = utils.get_uuid_as_list(service['uuid'])
         return {
-            'uuid': GLib.Variant('ay', service['uuid']),
+            'uuid': GLib.Variant('ay', service_uuid),
             'instance_id': GLib.Variant('i', service['instance_id']),
             'service_type': GLib.Variant('i', service['service_type']),
             'characteristics': GLib.Variant('aa{sv}', characteristics),

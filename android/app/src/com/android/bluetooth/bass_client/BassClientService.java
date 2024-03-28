@@ -636,7 +636,7 @@ public class BassClientService extends ProfileService {
             return;
         }
 
-        boolean isAssistantActive = isAnyReceiverReceivingBroadcast();
+        boolean isAssistantActive = isAnyReceiverReceivingBroadcast(getConnectedDevices());
 
         if (isAssistantActive) {
             /* Assistant become active */
@@ -1908,25 +1908,6 @@ public class BassClientService extends ProfileService {
         return true;
     }
 
-    private boolean isAnyReceiverReceivingBroadcast() {
-        for (BluetoothDevice device : getConnectedDevices()) {
-            for (BluetoothLeBroadcastReceiveState receiveState : getAllSources(device)) {
-                for (int i = 0; i < receiveState.getNumSubgroups(); i++) {
-                    Long syncState = receiveState.getBisSyncState().get(i);
-
-                    /* Not synced to BIS of failed to sync to BIG */
-                    if (syncState == 0x00000000 || syncState == 0xFFFFFFFF) {
-                        continue;
-                    }
-
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
     /** Return true if there is any non primary device receiving broadcast */
     private boolean isAudioSharingModeOn(Integer broadcastId) {
         if (mLocalBroadcastReceivers == null) {
@@ -2069,7 +2050,7 @@ public class BassClientService extends ProfileService {
         mUnicastSourceStreamStatus = Optional.of(status);
 
         if (status == STATUS_LOCAL_STREAM_REQUESTED) {
-            if (isAnyReceiverReceivingBroadcast()) {
+            if (isAnyReceiverReceivingBroadcast(getConnectedDevices())) {
                 suspendAllReceiversSourceSynchronization();
             }
         } else if (status == STATUS_LOCAL_STREAM_SUSPENDED) {
@@ -2090,6 +2071,25 @@ public class BassClientService extends ProfileService {
         } else if (status == STATUS_LOCAL_STREAM_STREAMING) {
             Log.d(TAG, "Ignore STREAMING source status");
         }
+    }
+
+    /** Check if any sink receivers are receiving broadcast stream */
+    public boolean isAnyReceiverReceivingBroadcast(List<BluetoothDevice> devices) {
+        for (BluetoothDevice device : devices) {
+            for (BluetoothLeBroadcastReceiveState receiveState : getAllSources(device)) {
+                for (int i = 0; i < receiveState.getNumSubgroups(); i++) {
+                    Long syncState = receiveState.getBisSyncState().get(i);
+                    /* Not synced to BIS of failed to sync to BIG */
+                    if (syncState == 0x00000000 || syncState == 0xFFFFFFFF) {
+                        continue;
+                    }
+
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /** Handle broadcast state changed */

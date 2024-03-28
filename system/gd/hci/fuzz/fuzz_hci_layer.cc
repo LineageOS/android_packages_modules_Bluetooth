@@ -181,8 +181,11 @@ void FuzzHciLayer::injectAclEvent(std::vector<uint8_t> data) {
 }
 
 void FuzzHciLayer::injectAclDisconnect(FuzzedDataProvider& fdp) {
-  acl_on_disconnect_.InvokeIfNotEmpty(fdp.ConsumeIntegral<uint16_t>(),
-                                      static_cast<hci::ErrorCode>(fdp.ConsumeIntegral<uint8_t>()));
+  if (!acl_on_disconnect_.IsEmpty()) {
+    acl_on_disconnect_.Invoke(
+        fdp.ConsumeIntegral<uint16_t>(),
+        static_cast<hci::ErrorCode>(fdp.ConsumeIntegral<uint8_t>()));
+  }
 }
 
 void FuzzHciLayer::injectLeAclEvent(std::vector<uint8_t> data) {
@@ -190,8 +193,11 @@ void FuzzHciLayer::injectLeAclEvent(std::vector<uint8_t> data) {
 }
 
 void FuzzHciLayer::injectLeAclDisconnect(FuzzedDataProvider& fdp) {
-  le_acl_on_disconnect_.InvokeIfNotEmpty(fdp.ConsumeIntegral<uint16_t>(),
-                                         static_cast<hci::ErrorCode>(fdp.ConsumeIntegral<uint8_t>()));
+  if (!le_acl_on_disconnect_.IsEmpty()) {
+    le_acl_on_disconnect_.Invoke(
+        fdp.ConsumeIntegral<uint16_t>(),
+        static_cast<hci::ErrorCode>(fdp.ConsumeIntegral<uint8_t>()));
+  }
 }
 
 void FuzzHciLayer::injectLeAdvertisingEvent(std::vector<uint8_t> data) {

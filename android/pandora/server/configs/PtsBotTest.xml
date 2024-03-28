@@ -27,6 +27,11 @@
         <option name="host-background-command" value="adb -s $SERIAL shell am instrument --no-hidden-api-checks -w com.android.pandora/.Main" />
     </target_preparer>
 
+    <target_preparer class="com.android.tradefed.targetprep.RunCommandTargetPreparer">
+        <option name="run-command" value="setprop persist.bluetooth.btsnooplogmode full" />
+        <option name="run-command" value="setprop log.tag.bluetooth VERBOSE" />
+    </target_preparer>
+
     <target_preparer class="com.android.tradefed.targetprep.PythonVirtualenvPreparer">
         <option name="dep-module" value="grpcio" />
         <option name="dep-module" value="protobuf==3.20.1" />

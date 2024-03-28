@@ -115,11 +115,6 @@ using bluetooth::TestModuleRegistry;
 using bluetooth::hal::SnoopLogger;
 using namespace std::chrono_literals;
 
-const char* test_flags[] = {
-    "INIT_logging_debug_enabled_for_all=true",
-    nullptr,
-};
-
 // Expose protected constructor for test
 class TestSnoopLoggerModule : public SnoopLogger {
  public:
@@ -195,8 +190,6 @@ class SnoopLoggerModuleTest : public Test {
     ASSERT_FALSE(std::filesystem::exists(temp_snooz_log_last_));
 
     test_registry = new TestModuleRegistry();
-
-    bluetooth::common::InitFlags::Load(test_flags);
   }
 
   void TearDown() override {

@@ -182,6 +182,7 @@ class FlossMediaClient(BluetoothMediaCallbacks):
         self.bus = bus
         self.hci = hci
         self.objpath = self.MEDIA_OBJECT_PATTERN.format(hci)
+        self.devices = []
 
         # We don't register callbacks by default.
         self.callbacks = None
@@ -198,6 +199,9 @@ class FlossMediaClient(BluetoothMediaCallbacks):
             device: The struct of BluetoothAudioDevice.
         """
         logging.debug('on_bluetooth_audio_device_added: device: %s', device)
+        if device['address'] in self.devices:
+            logging.debug("Device already added")
+        self.devices.append(device['address'])
 
     @utils.glib_callback()
     def on_bluetooth_audio_device_removed(self, addr):
@@ -207,6 +211,8 @@ class FlossMediaClient(BluetoothMediaCallbacks):
             addr: Address of device to be removed.
         """
         logging.debug('on_bluetooth_audio_device_removed: address: %s', addr)
+        if addr in self.devices:
+            self.devices.remove(addr)
 
     @utils.glib_callback()
     def on_absolute_volume_supported_changed(self, supported):
@@ -523,3 +529,23 @@ class FlossMediaClient(BluetoothMediaCallbacks):
         """
         self.proxy().SetPlayerMetadata(metadata)
         return True
+
+    def register_callback_observer(self, name, observer):
+        """Adds an observer for all callbacks.
+
+        Args:
+            name: Name of the observer.
+            observer: Observer that implements all callback classes.
+        """
+        if isinstance(observer, BluetoothMediaCallbacks):
+            self.callbacks.add_observer(name, observer)
+
+    def unregister_callback_observer(self, name, observer):
+        """Removes an observer for all callbacks.
+
+        Args:
+            name: Name of the observer.
+            observer: Observer that implements all callback classes.
+        """
+        if isinstance(observer, BluetoothMediaCallbacks):
+            self.callbacks.remove_observer(name, observer)

@@ -78,14 +78,14 @@ class Sl4aSl4aBaseTestClass(BaseTestClass):
         self.dut.adb.shell("setprop persist.bluetooth.btsnooplogmode full")
         getprop_result = self.dut.adb.getprop("persist.bluetooth.btsnooplogmode")
         if getprop_result is None or ("full" not in getprop_result.lower()):
-            self.dut.log.warning("Failed to enable Bluetooth HCI Snoop Logging on DUT, mode is {}"
-                                 .format(getprop_result))
+            self.dut.log.warning(
+                "Failed to enable Bluetooth HCI Snoop Logging on DUT, mode is {}".format(getprop_result))
         self.cert.adb.root()
         self.cert.adb.shell("setprop persist.bluetooth.btsnooplogmode full")
         getprop_result = self.cert.adb.getprop("persist.bluetooth.btsnooplogmode")
         if getprop_result is None or ("full" not in getprop_result.lower()):
-            self.cert.log.warning("Failed to enable Bluetooth HCI Snoop Logging on CERT, mode is {}"
-                                  .format(getprop_result))
+            self.cert.log.warning(
+                "Failed to enable Bluetooth HCI Snoop Logging on CERT, mode is {}".format(getprop_result))
 
         self.ble = BleLib(dut=self.dut)
 
@@ -103,7 +103,7 @@ class Sl4aSl4aBaseTestClass(BaseTestClass):
         device.sl4a.bluetoothDisableBLE()
         disable_bluetooth(device.sl4a, device.ed)
         # Enable full verbose logging for Bluetooth
-        device.adb.shell("device_config put bluetooth INIT_logging_debug_enabled_for_all true")
+        device.adb.shell("setprop log.tag.bluetooth VERBOSE")
         # Then enable Bluetooth
         enable_bluetooth(device.sl4a, device.ed)
         device.sl4a.bluetoothDisableBLE()
