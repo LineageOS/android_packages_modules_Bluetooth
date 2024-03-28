@@ -88,6 +88,7 @@ import libcore.util.HexEncoding;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -417,7 +418,7 @@ public class GattService extends ProfileService {
                 int[] states, AttributionSource attributionSource) {
             GattService service = getService();
             if (service == null) {
-                return new ArrayList<>();
+                return Collections.emptyList();
             }
             return service.getDevicesMatchingConnectionStates(states, attributionSource);
         }
@@ -1055,7 +1056,7 @@ public class GattService extends ProfileService {
                     || !Utils.checkConnectPermissionForDataDelivery(
                     service, attributionSource,
                     "GattService getSupportedDistanceMeasurementMethods")) {
-                return new ArrayList<>();
+                return Collections.emptyList();
             }
             enforceBluetoothPrivilegedPermission(service);
             return Arrays.asList(service.getSupportedDistanceMeasurementMethods());
@@ -1625,7 +1626,7 @@ public class GattService extends ProfileService {
         if (!Utils.checkConnectPermissionForDataDelivery(
                 this, attributionSource,
                 "GattService getDevicesMatchingConnectionStates")) {
-            return new ArrayList<>(0);
+            return Collections.emptyList();
         }
 
         Map<BluetoothDevice, Integer> deviceStates = new HashMap<BluetoothDevice, Integer>();
@@ -1933,7 +1934,7 @@ public class GattService extends ProfileService {
     synchronized List<ParcelUuid> getRegisteredServiceUuids(AttributionSource attributionSource) {
         if (!Utils.checkConnectPermissionForDataDelivery(
                 this, attributionSource, "GattService getRegisteredServiceUuids")) {
-            return new ArrayList<>(0);
+            return Collections.emptyList();
         }
         List<ParcelUuid> serviceUuids = new ArrayList<ParcelUuid>();
         for (HandleMap.Entry entry : mHandleMap.getEntries()) {
@@ -1946,7 +1947,7 @@ public class GattService extends ProfileService {
     List<String> getConnectedDevices(AttributionSource attributionSource) {
         if (!Utils.checkConnectPermissionForDataDelivery(
                 this, attributionSource, "GattService getConnectedDevices")) {
-            return new ArrayList<>(0);
+            return Collections.emptyList();
         }
 
         Set<String> connectedDevAddress = new HashSet<String>();

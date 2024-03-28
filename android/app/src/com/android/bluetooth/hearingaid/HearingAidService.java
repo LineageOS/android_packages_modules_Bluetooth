@@ -54,6 +54,7 @@ import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -957,7 +958,7 @@ public class HearingAidService extends ProfileService {
         public List<BluetoothDevice> getConnectedDevices(AttributionSource source) {
             HearingAidService service = getService(source);
             if (service == null) {
-                return new ArrayList<>();
+                return Collections.emptyList();
             }
 
             return service.getConnectedDevices();
@@ -968,7 +969,7 @@ public class HearingAidService extends ProfileService {
                 int[] states, AttributionSource source) {
             HearingAidService service = getService(source);
             if (service == null) {
-                return new ArrayList<>();
+                return Collections.emptyList();
             }
 
             return service.getDevicesMatchingConnectionStates(states);
@@ -1006,7 +1007,7 @@ public class HearingAidService extends ProfileService {
         public List<BluetoothDevice> getActiveDevices(AttributionSource source) {
             HearingAidService service = getService(source);
             if (service == null) {
-                return new ArrayList<>();
+                return Collections.emptyList();
             }
 
             return service.getActiveDevices();

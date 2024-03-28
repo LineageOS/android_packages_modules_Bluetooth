@@ -43,6 +43,7 @@ import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -490,7 +491,7 @@ public class MapClientService extends ProfileService {
 
             MapClientService service = getService(source);
             if (service == null) {
-                return new ArrayList<>();
+                return Collections.emptyList();
             }
 
             return service.getConnectedDevices();
@@ -503,7 +504,7 @@ public class MapClientService extends ProfileService {
 
             MapClientService service = getService(source);
             if (service == null) {
-                return new ArrayList<>();
+                return Collections.emptyList();
             }
             return service.getDevicesMatchingConnectionStates(states);
         }
