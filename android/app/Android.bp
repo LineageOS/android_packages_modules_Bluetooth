@@ -300,6 +300,7 @@ android_app {
             "UseSparseArrays",
             "UseValueOf",
         ],
+        extra_check_modules: ["BluetoothLintChecker"],
         baseline_filename: "lint-baseline.xml",
     },
 
