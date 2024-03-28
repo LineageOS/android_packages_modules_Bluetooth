@@ -646,13 +646,7 @@ TEST_F(MainShimTest, DISABLED_BleScannerInterfaceImpl_OnScanResult) {
   run_all_jni_thread_task();
 }
 
-const char* test_flags[] = {
-    "INIT_logging_debug_enabled_for_all=true",
-    nullptr,
-};
-
 TEST_F(MainShimTest, DISABLED_LeShimAclConnection_local_disconnect) {
-  bluetooth::common::InitFlags::Load(test_flags);
   auto acl = MakeAcl();
   EXPECT_CALL(*test::mock_acl_manager_, CreateLeConnection(_, _)).Times(1);
 

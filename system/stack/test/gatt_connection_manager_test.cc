@@ -21,11 +21,6 @@ using testing::SaveArg;
 
 using connection_manager::tAPP_ID;
 
-const char* test_flags[] = {
-    "INIT_logging_debug_enabled_for_all=true",
-    nullptr,
-};
-
 namespace {
 // convenience mock, for verifying acceptlist operations on lower layer are
 // actually scheduled
@@ -92,7 +87,6 @@ uint16_t BTM_GetHCIConnHandle(RawAddress const&, unsigned char) {
 namespace connection_manager {
 class BleConnectionManager : public testing::Test {
   void SetUp() override {
-    bluetooth::common::InitFlags::Load(test_flags);
     localAcceptlistMock = std::make_unique<AcceptlistMock>();
   }
 

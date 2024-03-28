@@ -34,11 +34,6 @@
 tBTM_CB btm_cb;
 
 namespace {
-const char* test_flags[] = {
-    "INIT_logging_debug_enabled_for_all=true",
-    nullptr,
-};
-
 const RawAddress kRawAddress = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
 }  // namespace
 
@@ -54,7 +49,6 @@ class StackAclTest : public testing::Test {
  protected:
   void SetUp() override {
     reset_mock_function_count_map();
-    bluetooth::common::InitFlags::Load(test_flags);
     bluetooth::hci::testing::mock_controller_ = &controller_;
   }
   void TearDown() override {

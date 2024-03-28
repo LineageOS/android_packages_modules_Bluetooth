@@ -38,11 +38,6 @@ using bluetooth::le_audio::LeAudioHealthDeviceStatType;
 using bluetooth::le_audio::LeAudioHealthGroupStatType;
 using bluetooth::le_audio::LeAudioHealthStatus;
 
-static const char* test_flags[] = {
-    "INIT_logging_debug_enabled_for_all=true",
-    nullptr,
-};
-
 LeAudioHealthBasedAction recommendation_in_callback =
     LeAudioHealthBasedAction::NONE;
 RawAddress address_in_callback = RawAddress::kEmpty;
@@ -60,7 +55,6 @@ class LeAudioHealthStatusTest : public ::testing::Test {
   void SetUp() override {
     reset_mock_function_count_map();
     group_ = new LeAudioDeviceGroup(group_id_);
-    bluetooth::common::InitFlags::Load(test_flags);
     le_audio_health_status_instance_ = LeAudioHealthStatus::Get();
     le_audio_health_status_instance_->RegisterCallback(
         base::BindRepeating(healthCallback));
