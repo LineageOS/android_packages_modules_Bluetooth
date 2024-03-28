@@ -218,7 +218,7 @@ public final class BluetoothPbapClient implements BluetoothProfile, AutoCloseabl
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return true;
+        return false;
     }
 
     /**
