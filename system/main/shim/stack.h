@@ -60,7 +60,7 @@ class Stack {
   Btm* GetBtm();
   os::Handler* GetHandler();
 
-  void LockForDumpsys(std::function<void()> dumpsys_callback);
+  bool LockForDumpsys(std::function<void()> dumpsys_callback);
 
   // Start the list of modules with the given stack manager thread
   void StartModuleStack(const ModuleList* modules, const os::Thread* thread);
