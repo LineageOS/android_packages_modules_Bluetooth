@@ -64,6 +64,8 @@ class DistanceMeasurementCallbacks {
       int altitude_angle,
       int error_altitude_angle,
       DistanceMeasurementMethod method) = 0;
+  virtual void OnRasFragmentReady(
+      Address address, uint16_t procedure_counter, bool is_last, std::vector<uint8_t> raw_data) = 0;
 };
 
 class DistanceMeasurementManager : public bluetooth::Module {
