@@ -214,15 +214,11 @@ typedef struct {
   tBTA_PM_TIMER pm_timer[BTA_DM_NUM_PM_TIMER];
   uint8_t cur_av_count;   /* current AV connecions */
 
-#if (BTA_EIR_CANNED_UUID_LIST != TRUE)
   /* store UUID list for EIR */
   uint32_t eir_uuid[BTM_EIR_SERVICE_ARRAY_SIZE];
 #if (BTA_EIR_SERVER_NUM_CUSTOM_UUID > 0)
   tBTA_CUSTOM_UUID bta_custom_uuid[BTA_EIR_SERVER_NUM_CUSTOM_UUID];
 #endif
-
-#endif
-
   alarm_t* switch_delay_timer;
 } tBTA_DM_CB;
 

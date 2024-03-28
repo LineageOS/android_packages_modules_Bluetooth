@@ -209,11 +209,10 @@ typedef struct {
   uint32_t handle;
 } tBTA_CUSTOM_UUID;
 
-#if (BTA_EIR_CANNED_UUID_LIST != TRUE)
 /* eir callback for adding/removeing UUID */
 typedef void(tBTA_SYS_EIR_CBACK)(uint16_t uuid16, bool adding);
-typedef void(tBTA_SYS_CUST_EIR_CBACK)(const tBTA_CUSTOM_UUID &curr, bool adding);
-#endif
+typedef void(tBTA_SYS_CUST_EIR_CBACK)(const tBTA_CUSTOM_UUID& curr,
+                                      bool adding);
 
 /* registration structure */
 typedef struct {
@@ -276,7 +275,6 @@ void bta_sys_collision_register(tBTA_SYS_ID bta_id,
                                 tBTA_SYS_CONN_CBACK* p_cback);
 void bta_sys_notify_collision(const RawAddress& peer_addr);
 
-#if (BTA_EIR_CANNED_UUID_LIST != TRUE)
 void bta_sys_eir_register(tBTA_SYS_EIR_CBACK* p_cback);
 void bta_sys_eir_unregister();
 void bta_sys_add_uuid(uint16_t uuid16);
@@ -284,15 +282,6 @@ void bta_sys_remove_uuid(uint16_t uuid16);
 void bta_sys_cust_eir_register(tBTA_SYS_CUST_EIR_CBACK* p_cback);
 void bta_sys_add_cust_uuid(const tBTA_CUSTOM_UUID& curr);
 void bta_sys_remove_cust_uuid(const tBTA_CUSTOM_UUID& curr);
-#else
-#define bta_sys_eir_register(ut)
-#define bta_sys_eir_unregister()
-#define bta_sys_add_uuid(ut)
-#define bta_sys_remove_uuid(ut)
-#define bta_sys_cust_eir_register(ut)
-#define bta_sys_add_cust_uuid(ut)
-#define bta_sys_remove_cust_uuid(ut)
-#endif
 
 namespace fmt {
 template <>
