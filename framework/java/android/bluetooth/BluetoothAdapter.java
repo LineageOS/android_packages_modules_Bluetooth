@@ -2819,12 +2819,21 @@ public final class BluetoothAdapter {
             return false;
         }
         try {
-            IBluetoothGatt iGatt = getBluetoothGatt();
-            if (iGatt == null) {
-                // BLE is not supported
-                return false;
+            if (Flags.scanManagerRefactor()) {
+                IBluetoothScan scan = getBluetoothScan();
+                if (scan == null) {
+                    // BLE is not supported
+                    return false;
+                }
+                return scan.numHwTrackFiltersAvailable(mAttributionSource) != 0;
+            } else {
+                IBluetoothGatt iGatt = getBluetoothGatt();
+                if (iGatt == null) {
+                    // BLE is not supported
+                    return false;
+                }
+                return iGatt.numHwTrackFiltersAvailable(mAttributionSource) != 0;
             }
-            return iGatt.numHwTrackFiltersAvailable(mAttributionSource) != 0;
         } catch (RemoteException e) {
             Log.e(TAG, "", e);
         }
@@ -4236,6 +4245,25 @@ public final class BluetoothAdapter {
 
         } catch (RemoteException e) {
             Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+        } finally {
+            mServiceLock.readLock().unlock();
+        }
+        return null;
+    }
+
+    /**
+     * Return a binder to BluetoothScan
+     *
+     * @hide
+     */
+    public @Nullable IBluetoothScan getBluetoothScan() {
+        mServiceLock.readLock().lock();
+        try {
+            if (mService != null) {
+                return IBluetoothScan.Stub.asInterface(mService.getBluetoothScan());
+            }
+        } catch (RemoteException e) {
+            Log.e(TAG, e + "\n" + Log.getStackTraceString(new Throwable()));
         } finally {
             mServiceLock.readLock().unlock();
         }
