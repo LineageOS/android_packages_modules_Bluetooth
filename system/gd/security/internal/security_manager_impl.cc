@@ -65,7 +65,10 @@ void SecurityManagerImpl::DispatchPairingHandler(
       break;
     }
     default:
-      ASSERT_LOG(false, "Pairing type %hhu not implemented!", record->GetPseudoAddress()->GetAddressType());
+      ASSERT_LOG(
+          false,
+          "Pairing type %hhu not implemented!",
+          (uint8_t)record->GetPseudoAddress()->GetAddressType());
   }
   auto new_entry = std::pair<hci::Address, std::shared_ptr<pairing::PairingHandler>>(
       record->GetPseudoAddress()->GetAddress(), pairing_handler);
