@@ -493,15 +493,26 @@ static void hh_open_handler(tBTA_HH_CONN& conn) {
              conn.link_spec.ToRedactedStringForLogging(), conn.status,
              conn.handle);
 
-  if (IS_FLAG_ENABLED(allow_switching_hid_and_hogp) &&
-      conn.link_spec.transport != BT_TRANSPORT_AUTO) {
+  if (IS_FLAG_ENABLED(allow_switching_hid_and_hogp)) {
+    // Initialize with disconnected/accepting state based on reconnection policy
+    bthh_connection_state_t dev_status =
+        hh_get_state_on_disconnect(conn.link_spec);
+
+    // Use current state if the device instance already exists
     btif_hh_device_t* p_dev = btif_hh_find_dev_by_link_spec(conn.link_spec);
-    if ((p_dev != NULL) && (p_dev->dev_status != BTHH_CONN_STATE_ACCEPTING &&
-                            p_dev->dev_status != BTHH_CONN_STATE_CONNECTING)) {
+    if (p_dev != nullptr) {
+      dev_status = p_dev->dev_status;
+    }
+
+    if (dev_status != BTHH_CONN_STATE_ACCEPTING &&
+        dev_status != BTHH_CONN_STATE_CONNECTING) {
       log::warn("Reject Incoming HID Connection, device: {}, state: {}",
-                p_dev->link_spec.ToRedactedStringForLogging(),
-                p_dev->dev_status);
-      p_dev->dev_status = BTHH_CONN_STATE_DISCONNECTED;
+                conn.link_spec.ToRedactedStringForLogging(), dev_status);
+
+      if (p_dev != nullptr) {
+        p_dev->dev_status = BTHH_CONN_STATE_DISCONNECTED;
+      }
+
       hh_connect_complete(conn.handle, conn.link_spec,
                           BTIF_HH_DEV_DISCONNECTED);
       return;
@@ -1619,7 +1630,8 @@ static bt_status_t disconnect(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
     btif_hh_added_device_t* added_dev = btif_hh_find_added_dev(link_spec);
     if (added_dev != nullptr) {
       added_dev->reconnect_allowed = reconnect_allowed;
-      btif_storage_set_hid_connection_policy(link_spec, reconnect_allowed);
+      btif_storage_set_hid_connection_policy(added_dev->link_spec,
+                                             reconnect_allowed);
     }
   }
 
