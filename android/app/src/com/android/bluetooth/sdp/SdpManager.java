@@ -44,13 +44,11 @@ import java.util.Arrays;
 public class SdpManager {
     private static final String TAG = SdpManager.class.getSimpleName();
 
-    // TODO: When changing PBAP to use this new API.
-    //       Move the defines to the profile (PBAP already have the feature bits)
-    /* PBAP repositories */
-    public static final byte PBAP_REPO_LOCAL = 0x01 << 0;
-    public static final byte PBAP_REPO_SIM = 0x01 << 1;
-    public static final byte PBAP_REPO_SPEED_DAIL = 0x01 << 2;
-    public static final byte PBAP_REPO_FAVORITES = 0x01 << 3;
+    private static final Object TRACKER_LOCK = new Object();
+
+    /* The timeout to wait for reply from native. Should never fire. */
+    private static final int SDP_INTENT_DELAY = 11000;
+    private static final int MESSAGE_SDP_INTENT = 2;
 
     /* Variables to keep track of ongoing and queued search requests.
      * mTrackerLock must be held, when using/changing mSdpSearchTracker
@@ -58,21 +56,13 @@ public class SdpManager {
     @GuardedBy("TRACKER_LOCK")
     private final SdpSearchTracker mSdpSearchTracker = new SdpSearchTracker();
 
-    private boolean mSearchInProgress = false;
-    static final Object TRACKER_LOCK = new Object();
-
-    /* The timeout to wait for reply from native. Should never fire. */
-    private static final int SDP_INTENT_DELAY = 11000;
-    private static final int MESSAGE_SDP_INTENT = 2;
-
-    // We need a reference to the adapter service, to be able to send intents
     private final AdapterService mAdapterService;
-    private boolean mNativeAvailable;
-
     private final Handler mHandler;
-
     private final SdpManagerNativeInterface mNativeInterface =
             SdpManagerNativeInterface.getInstance();
+
+    private boolean mSearchInProgress = false;
+    private boolean mNativeAvailable;
 
     /* Inner class used for wrapping sdp search instance data */
     private class SdpSearchInstance {
