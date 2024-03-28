@@ -171,6 +171,7 @@ class AclManager : public Module {
  private:
   virtual uint16_t HACK_GetHandle(const Address address);
   virtual uint16_t HACK_GetLeHandle(const Address address);
+  virtual Address HACK_GetLeAddress(uint16_t connection_handle);
 
   virtual void HACK_SetAclTxPriority(uint8_t handle, bool high_priority);
 
