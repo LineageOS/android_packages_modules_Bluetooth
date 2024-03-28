@@ -56,3 +56,13 @@ flag {
     description: "during ongoing call, pretend network service in +CIND when network is unavailable"
     bug: "317307596"
 }
+
+flag {
+    name: "bta_ag_cmd_brsf_allow_uint32"
+    namespace: "bluetooth"
+    description: "Allow and ignore the RFU bits set to 0b1 rather than responding ERROR"
+    bug: "331129986"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
