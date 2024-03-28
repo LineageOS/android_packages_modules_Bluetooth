@@ -117,7 +117,7 @@ class Util {
      */
     public static List<Metadata> toMetadataList(Context context,
             List<MediaSession.QueueItem> items) {
-        ArrayList<Metadata> list = new ArrayList<Metadata>();
+        ArrayList<Metadata> list = new ArrayList<>();
 
         if (items == null) return list;
 
@@ -125,7 +125,7 @@ class Util {
             Metadata data = toMetadata(context, items.get(i));
             if (isEmptyData(data)) {
                 Log.e(TAG, "Received an empty Metadata item in list. Returning an empty queue");
-                return new ArrayList<Metadata>();
+                return new ArrayList<>();
             }
             data.trackNum = "" + (i + 1);
             data.numTracks = "" + items.size();

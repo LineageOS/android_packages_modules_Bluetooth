@@ -1208,7 +1208,7 @@ public class HapClientService extends ProfileService {
 
             HapClientService service = getService(source);
             if (service == null) {
-                return new ArrayList<>();
+                return Collections.emptyList();
             }
 
             enforceBluetoothPrivilegedPermission(service);
@@ -1222,7 +1222,7 @@ public class HapClientService extends ProfileService {
 
             HapClientService service = getService(source);
             if (service == null) {
-                return new ArrayList<>();
+                return Collections.emptyList();
             }
 
             enforceBluetoothPrivilegedPermission(service);
@@ -1435,7 +1435,7 @@ public class HapClientService extends ProfileService {
 
             HapClientService service = getService(source);
             if (service == null) {
-                return new ArrayList<>();
+                return Collections.emptyList();
             }
 
             enforceBluetoothPrivilegedPermission(service);
