@@ -71,8 +71,6 @@ import java.util.regex.Pattern;
 // Next tag value for ContentProfileErrorReportUtils.report(): 11
 public class BluetoothOppLauncherActivity extends Activity {
     private static final String TAG = "BluetoothOppLauncherActivity";
-    private static final boolean D = Constants.DEBUG;
-    private static final boolean V = Constants.VERBOSE;
 
     // Regex that matches characters that have special meaning in HTML. '<', '>', '&' and
     // multiple continuous spaces.
@@ -124,10 +122,8 @@ public class BluetoothOppLauncherActivity extends Activity {
                 // EXTRA_TEXT, we will try send this TEXT out; Currently in
                 // Browser, share one link goes to this case;
                 if (stream != null && type != null) {
-                    if (V) {
-                        Log.v(TAG,
-                                "Get ACTION_SEND intent: Uri = " + stream + "; mimetype = " + type);
-                    }
+                    Log.v(TAG,
+                            "Get ACTION_SEND intent: Uri = " + stream + "; mimetype = " + type);
                     // Save type/stream, will be used when adding transfer
                     // session to DB.
                     Thread t = new Thread(new Runnable() {
@@ -140,11 +136,9 @@ public class BluetoothOppLauncherActivity extends Activity {
                     t.start();
                     return;
                 } else if (extraText != null && type != null) {
-                    if (V) {
-                        Log.v(TAG,
-                                "Get ACTION_SEND intent with Extra_text = " + extraText.toString()
-                                        + "; mimetype = " + type);
-                    }
+                    Log.v(TAG,
+                            "Get ACTION_SEND intent with Extra_text = " + extraText.toString()
+                                    + "; mimetype = " + type);
                     final Uri fileUri = createFileForSharedContent(
                             this.createCredentialProtectedStorageContext(), extraText);
                     if (fileUri != null) {
@@ -183,10 +177,8 @@ public class BluetoothOppLauncherActivity extends Activity {
                 final String mimeType = intent.getType();
                 final ArrayList<Uri> uris = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
                 if (mimeType != null && uris != null) {
-                    if (V) {
-                        Log.v(TAG, "Get ACTION_SHARE_MULTIPLE intent: uris " + uris + "\n Type= "
-                                + mimeType);
-                    }
+                    Log.v(TAG, "Get ACTION_SHARE_MULTIPLE intent: uris " + uris + "\n Type= "
+                            + mimeType);
                     Thread t =
                             new Thread(
                                     new Runnable() {
@@ -233,9 +225,7 @@ public class BluetoothOppLauncherActivity extends Activity {
             }
         } else if (action.equals(Constants.ACTION_OPEN)) {
             Uri uri = getIntent().getData();
-            if (V) {
-                Log.v(TAG, "Get ACTION_OPEN intent: Uri = " + uri);
-            }
+            Log.v(TAG, "Get ACTION_OPEN intent: Uri = " + uri);
             Intent intent1 = new Intent(Constants.ACTION_OPEN);
             intent1.setClassName(this, BluetoothOppReceiver.class.getName());
             intent1.setDataAndNormalize(uri);
@@ -265,16 +255,12 @@ public class BluetoothOppLauncherActivity extends Activity {
         // directly,
         // and let DevicePickerActivity to handle Bluetooth Enable.
         if (!BluetoothOppManager.getInstance(this).isEnabled()) {
-            if (V) {
-                Log.v(TAG, "Prepare Enable BT!! ");
-            }
+            Log.v(TAG, "Prepare Enable BT!! ");
             Intent in = new Intent(this, BluetoothOppBtEnableActivity.class);
             in.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(in);
         } else {
-            if (V) {
-                Log.v(TAG, "BT already enabled!! ");
-            }
+            Log.v(TAG, "BT already enabled!! ");
             Intent in1 = new Intent(BluetoothDevicePicker.ACTION_LAUNCH);
             in1.setFlags(Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
             in1.putExtra(BluetoothDevicePicker.EXTRA_NEED_AUTH, false);
@@ -283,9 +269,7 @@ public class BluetoothOppLauncherActivity extends Activity {
             in1.putExtra(BluetoothDevicePicker.EXTRA_LAUNCH_PACKAGE, getPackageName());
             in1.putExtra(BluetoothDevicePicker.EXTRA_LAUNCH_CLASS,
                     BluetoothOppReceiver.class.getName());
-            if (V) {
-                Log.d(TAG, "Launching " + BluetoothDevicePicker.ACTION_LAUNCH);
-            }
+            Log.v(TAG, "Launching " + BluetoothDevicePicker.ACTION_LAUNCH);
             startActivity(in1);
         }
     }
@@ -394,9 +378,7 @@ public class BluetoothOppLauncherActivity extends Activity {
                 outStream.write(byteBuff, 0, byteBuff.length);
                 fileUri = Uri.fromFile(new File(context.getFilesDir(), fileName));
                 if (fileUri != null) {
-                    if (D) {
-                        Log.d(TAG, "Created one file for shared content: " + fileUri.toString());
-                    }
+                    Log.d(TAG, "Created one file for shared content: " + fileUri.toString());
                 }
             }
         } catch (FileNotFoundException e) {

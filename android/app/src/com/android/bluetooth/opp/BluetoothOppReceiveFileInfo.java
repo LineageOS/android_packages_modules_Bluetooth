@@ -58,8 +58,6 @@ import java.util.Calendar;
  */
 // Next tag value for ContentProfileErrorReportUtils.report(): 2
 public class BluetoothOppReceiveFileInfo {
-    private static final boolean D = Constants.DEBUG;
-    private static final boolean V = Constants.VERBOSE;
     /* To truncate the name of the received file if the length exceeds 237 */
     private static final int OPP_LENGTH_OF_FILE_NAME = 237;
 
@@ -117,9 +115,7 @@ public class BluetoothOppReceiveFileInfo {
         }
 
         if (!Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-            if (D) {
-                Log.d(Constants.TAG, "Receive File aborted - no external storage");
-            }
+            Log.d(Constants.TAG, "Receive File aborted - no external storage");
             return new BluetoothOppReceiveFileInfo(BluetoothShare.STATUS_ERROR_NO_SDCARD);
         }
 
@@ -141,9 +137,7 @@ public class BluetoothOppReceiveFileInfo {
             extension = filename.substring(dotIndex);
             filename = filename.substring(0, dotIndex);
         }
-        if (D) {
-            Log.d(Constants.TAG, " File Name " + filename);
-        }
+        Log.d(Constants.TAG, " File Name " + filename);
 
         if (filename.getBytes().length > OPP_LENGTH_OF_FILE_NAME) {
           /* Including extn of the file, Linux supports 255 character as a maximum length of the
@@ -169,18 +163,14 @@ public class BluetoothOppReceiveFileInfo {
                         0);
                 Log.e(Constants.TAG, "Exception: " + e);
             }
-            if (D) {
-                Log.d(Constants.TAG, "File name is too long. Name is truncated as: " + filename);
-            }
+            Log.d(Constants.TAG, "File name is too long. Name is truncated as: " + filename);
         }
 
         DateFormat dateFormat = new SimpleDateFormat("_hhmmss");
         String currentTime = dateFormat.format(Calendar.getInstance().getTime());
         String fullfilename = filename + currentTime + extension;
 
-        if (V) {
-            Log.v(Constants.TAG, "Generated received filename " + fullfilename);
-        }
+        Log.v(Constants.TAG, "Generated received filename " + fullfilename);
 
         ContentValues mediaContentValues = new ContentValues();
         mediaContentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fullfilename);
@@ -195,9 +185,7 @@ public class BluetoothOppReceiveFileInfo {
                                 mediaContentValues);
 
         if (insertUri == null) {
-            if (D) {
-                Log.e(Constants.TAG, "Error when creating file " + fullfilename);
-            }
+            Log.e(Constants.TAG, "Error when creating file " + fullfilename);
             ContentProfileErrorReportUtils.report(
                     BluetoothProfile.OPP,
                     BluetoothProtoEnums.BLUETOOTH_OPP_RECEIVE_FILE_INFO,
@@ -224,9 +212,7 @@ public class BluetoothOppReceiveFileInfo {
             // Replace illegal fat filesystem characters from the
             // filename hint i.e. :"<>*?| with something safe.
             hint = hint.replaceAll("[:\"<>*?|]", "_");
-            if (V) {
-                Log.v(Constants.TAG, "getting filename from hint");
-            }
+            Log.v(Constants.TAG, "getting filename from hint");
             int index = hint.lastIndexOf('/') + 1;
             if (index > 0) {
                 filename = hint.substring(index);
