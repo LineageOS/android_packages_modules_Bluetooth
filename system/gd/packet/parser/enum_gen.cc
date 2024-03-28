@@ -44,18 +44,18 @@ void EnumGen::GenDefinitionPybind11(std::ostream& stream) {
 void EnumGen::GenLogging(std::ostream& stream) {
   // Print out the switch statement that converts all the constants to strings.
   stream << "inline std::string " << e_.name_ << "Text(const " << e_.name_ << "& param) {";
+  stream << "std::stringstream builder;";
   stream << "switch (param) {";
   for (const auto& pair : e_.constants_) {
     stream << "case " << e_.name_ << "::" << pair.second << ":";
-    stream << "  return \"" << pair.second << "\";";
+    stream << "  builder << \"" << pair.second << "\"; break;";
   }
   stream << "default:";
-  stream << "  return std::string(\"Unknown " << e_.name_ << ": \") + std::to_string(static_cast<int>(param));";
+  stream << "  builder << \"Unknown " << e_.name_ << "\";";
   stream << "}";
+  stream << "builder << \"(\" << std::hex << \"0x\" << std::setfill('0')";
+  stream << "<< std::setw(" << (e_.size_ > 0 ? e_.size_ : 0) << "/4)";
+  stream << "<< static_cast<uint64_t>(param) << \")\";";
+  stream << "return builder.str();";
   stream << "}\n\n";
-
-  // Print out the stream operator so that the constant can be written to streams.
-  stream << "inline std::ostream& operator<<(std::ostream& os, const " << e_.name_ << "& param) {";
-  stream << "  return os << " << e_.name_ << "Text(param);";
-  stream << "}\n";
 }

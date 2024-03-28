@@ -166,9 +166,8 @@ struct HciLayer::impl {
     ErrorCode status = response_view.GetStatus();
     if (status != ErrorCode::SUCCESS) {
       log::error(
-          "Received UNEXPECTED command status:{} opcode:0x{:02x} ({})",
+          "Received UNEXPECTED command status:{} opcode:{}",
           ErrorCodeText(status),
-          op_code,
           OpCodeText(op_code));
     }
     handle_command_response<CommandStatusView>(event, "status");
@@ -192,22 +191,18 @@ struct HciLayer::impl {
 
     ASSERT_LOG(
         !command_queue_.empty(),
-        "Unexpected %s event with OpCode 0x%02hx (%s)",
+        "Unexpected %s event with OpCode (%s)",
         logging_id.c_str(),
-        op_code,
         OpCodeText(op_code).c_str());
     if (waiting_command_ == OpCode::CONTROLLER_DEBUG_INFO && op_code != OpCode::CONTROLLER_DEBUG_INFO) {
-      log::error(
-          "Discarding event that came after timeout 0x{:02x} ({})", op_code, OpCodeText(op_code));
+      log::error("Discarding event that came after timeout {}", OpCodeText(op_code));
       common::StopWatch::DumpStopWatchLog();
       return;
     }
     ASSERT_LOG(
         waiting_command_ == op_code,
-        "Waiting for 0x%02hx (%s), got 0x%02hx (%s)",
-        waiting_command_,
+        "Waiting for %s, got %s",
         OpCodeText(waiting_command_).c_str(),
-        op_code,
         OpCodeText(op_code).c_str());
 
     bool is_vendor_specific = static_cast<int>(op_code) & (0x3f << 10);
@@ -234,8 +229,7 @@ struct HciLayer::impl {
     } else {
       ASSERT_LOG(
           command_queue_.front().waiting_for_status_ == is_status,
-          "0x%02hx (%s) was not expecting %s event",
-          op_code,
+          "%s was not expecting %s event",
           OpCodeText(op_code).c_str(),
           logging_id.c_str());
 
@@ -270,7 +264,7 @@ struct HciLayer::impl {
 
   void on_hci_timeout(OpCode op_code) {
     common::StopWatch::DumpStopWatchLog();
-    log::error("Timed out waiting for 0x{:02x} ({})", op_code, OpCodeText(op_code));
+    log::error("Timed out waiting for {}", OpCodeText(op_code));
 
     bluetooth::os::LogMetricHciTimeoutEvent(static_cast<uint32_t>(op_code));
 
@@ -329,8 +323,7 @@ struct HciLayer::impl {
   void register_event(EventCode event, ContextualCallback<void(EventView)> handler) {
     ASSERT_LOG(
         event != EventCode::LE_META_EVENT,
-        "Can not register handler for %02hhx (%s)",
-        EventCode::LE_META_EVENT,
+        "Can not register handler for %s",
         EventCodeText(EventCode::LE_META_EVENT).c_str());
     // Allow GD Cert tests to register for CONNECTION_REQUEST
     if (event == EventCode::CONNECTION_REQUEST && module_.on_acl_connection_request_.IsEmpty()) {
@@ -339,8 +332,7 @@ struct HciLayer::impl {
     }
     ASSERT_LOG(
         event_handlers_.count(event) == 0,
-        "Can not register a second handler for %02hhx (%s)",
-        event,
+        "Can not register a second handler for %s",
         EventCodeText(event).c_str());
     event_handlers_[event] = handler;
   }
@@ -352,8 +344,7 @@ struct HciLayer::impl {
   void register_le_event(SubeventCode event, ContextualCallback<void(LeMetaEventView)> handler) {
     ASSERT_LOG(
         subevent_handlers_.count(event) == 0,
-        "Can not register a second handler for %02hhx (%s)",
-        event,
+        "Can not register a second handler for %s",
         SubeventCodeText(event).c_str());
     subevent_handlers_[event] = handler;
   }
@@ -397,10 +388,9 @@ struct HciLayer::impl {
         auto op_code = view.GetCommandOpCode();
         ASSERT_LOG(
             op_code == OpCode::NONE,
-            "Received %s event with OpCode 0x%02hx (%s) without a waiting command"
+            "Received %s event with OpCode %s without a waiting command"
             "(is the HAL sending commands, but not handling the events?)",
             EventCodeText(event_code).c_str(),
-            op_code,
             OpCodeText(op_code).c_str());
       }
       if (event_code == EventCode::COMMAND_STATUS) {
@@ -409,10 +399,9 @@ struct HciLayer::impl {
         auto op_code = view.GetCommandOpCode();
         ASSERT_LOG(
             op_code == OpCode::NONE,
-            "Received %s event with OpCode 0x%02hx (%s) without a waiting command"
+            "Received %s event with OpCode %s without a waiting command"
             "(is the HAL sending commands, but not handling the events?)",
             EventCodeText(event_code).c_str(),
-            op_code,
             OpCodeText(op_code).c_str());
       }
       std::unique_ptr<CommandView> no_waiting_command{nullptr};
@@ -450,7 +439,7 @@ struct HciLayer::impl {
         break;
       default:
         if (event_handlers_.find(event_code) == event_handlers_.end()) {
-          log::warn("Unhandled event of type 0x{:02x} ({})", event_code, EventCodeText(event_code));
+          log::warn("Unhandled event of type {}", EventCodeText(event_code));
         } else {
           event_handlers_[event_code].Invoke(event);
         }
@@ -476,10 +465,7 @@ struct HciLayer::impl {
     ASSERT(meta_event_view.IsValid());
     SubeventCode subevent_code = meta_event_view.GetSubeventCode();
     if (subevent_handlers_.find(subevent_code) == subevent_handlers_.end()) {
-      log::warn(
-          "Unhandled le subevent of type 0x{:02x} ({})",
-          subevent_code,
-          SubeventCodeText(subevent_code));
+      log::warn("Unhandled le subevent of type {}", SubeventCodeText(subevent_code));
       return;
     }
     subevent_handlers_[subevent_code].Invoke(meta_event_view);

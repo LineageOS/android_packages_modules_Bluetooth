@@ -1936,6 +1936,13 @@ TEST(GeneratedPacketTest, testToStringOutput) {
       view.ToString());
 }
 
+TEST(GeneratedPacketTest, testEnumText) {
+  EXPECT_EQ("FIVE(0x5)", FourBitsText(FourBits::FIVE));
+  EXPECT_EQ("THREE(0x3)", TwoBitsText(TwoBits::THREE));
+  EXPECT_EQ("FOUR_BYTE(0x04)", StructTypeText(StructType::FOUR_BYTE));
+  EXPECT_EQ("TWO_THREE(0x0302)", ForArraysText(ForArrays::TWO_THREE));
+}
+
 TEST(GeneratedPacketTest, testToStringOneFixedTypesStruct) {
   StructWithFixedTypes swf;
   swf.four_bits_ = FourBits::FIVE;
@@ -1960,8 +1967,8 @@ TEST(GeneratedPacketTest, testToStringOneFixedTypesStruct) {
   ASSERT_TRUE(view.IsValid());
 
   ASSERT_EQ(
-      "OneFixedTypesStruct { one = StructWithFixedTypes { four_bits = FIVE, id = 0xd, array = ARRAY[0x1, 0x2, 0x3], "
-      "example_checksum = CHECKSUM, six_bytes = SixBytes } }",
+      "OneFixedTypesStruct { one = StructWithFixedTypes { four_bits = FIVE(0x5), id = 0xd, "
+      "array = ARRAY[0x1, 0x2, 0x3], example_checksum = CHECKSUM, six_bytes = SixBytes } }",
       view.ToString());
 }
 

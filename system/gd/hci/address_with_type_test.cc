@@ -307,7 +307,7 @@ TEST(AddressWithTypeTest, StringStream) {
 
   std::stringstream oss;
   oss << address_with_type;
-  ASSERT_STREQ("66:55:44:33:22:11[PUBLIC_DEVICE_ADDRESS]", oss.str().c_str());
+  ASSERT_STREQ("66:55:44:33:22:11[PUBLIC_DEVICE_ADDRESS(0x00)]", oss.str().c_str());
 }
 
 }  // namespace hci
