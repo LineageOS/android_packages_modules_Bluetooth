@@ -374,9 +374,9 @@ class VolumeControlImpl : public VolumeControl {
 
   void HandleAutonomusVolumeChange(VolumeControlDevice* device,
                                    bool is_volume_change, bool is_mute_change) {
-    DLOG(INFO) << __func__ << ADDRESS_TO_LOGGABLE_STR(device->address)
-               << " is volume change: " << is_volume_change
-               << " is mute change: " << is_mute_change;
+    log::debug("{}, is volume change: {}, is mute change: {}",
+               ADDRESS_TO_LOGGABLE_CSTR(device->address), is_volume_change,
+               is_mute_change);
 
     if (!is_volume_change && !is_mute_change) {
       log::error("Autonomous change but volume and mute did not changed.");
@@ -385,7 +385,7 @@ class VolumeControlImpl : public VolumeControl {
 
     auto csis_api = CsisClient::Get();
     if (!csis_api) {
-      DLOG(INFO) << __func__ << " Csis is not available";
+      log::warn("Csis module is not available");
       callbacks_->OnVolumeStateChanged(device->address, device->volume,
                                        device->mute, true);
       return;
@@ -394,8 +394,8 @@ class VolumeControlImpl : public VolumeControl {
     auto group_id =
         csis_api->GetGroupId(device->address, le_audio::uuid::kCapServiceUuid);
     if (group_id == bluetooth::groups::kGroupUnknown) {
-      DLOG(INFO) << __func__ << " No group for device "
-                 << ADDRESS_TO_LOGGABLE_STR(device->address);
+      log::warn("No group for device {}",
+                ADDRESS_TO_LOGGABLE_CSTR(device->address));
       callbacks_->OnVolumeStateChanged(device->address, device->volume,
                                        device->mute, true);
       return;
@@ -479,22 +479,18 @@ class VolumeControlImpl : public VolumeControl {
                         return it != operation.devices_.end();
                       });
     if (op == ongoing_operations_.end()) {
-      DLOG(INFO) << __func__ << " Could not find operation id for device: "
-                 << ADDRESS_TO_LOGGABLE_STR(device->address)
-                 << ". Autonomus change";
+      log::debug("Could not find operation id for device: {}. Autonomus change",
+                 ADDRESS_TO_LOGGABLE_CSTR(device->address));
       HandleAutonomusVolumeChange(device, is_volume_change, is_mute_change);
       return;
     }
-
-    DLOG(INFO) << __func__ << " operation found: " << op->operation_id_
-               << " for group id: " << op->group_id_;
 
     /* Received notification from the device we do expect */
     auto it = find(op->devices_.begin(), op->devices_.end(), device->address);
     op->devices_.erase(it);
     if (!op->devices_.empty()) {
-      DLOG(INFO) << __func__ << " wait for more responses for operation_id: "
-                 << op->operation_id_;
+      log::debug("wait for more responses for operation_id: {}",
+                 op->operation_id_);
       return;
     }
 
@@ -728,6 +724,7 @@ class VolumeControlImpl : public VolumeControl {
 
   void RemovePendingVolumeControlOperations(std::vector<RawAddress>& devices,
                                             int group_id) {
+    log::debug("");
     for (auto op = ongoing_operations_.begin();
          op != ongoing_operations_.end();) {
       // We only remove operations that don't affect the mute field.
@@ -740,17 +737,21 @@ class VolumeControlImpl : public VolumeControl {
       }
       if (group_id != bluetooth::groups::kGroupUnknown &&
           op->group_id_ == group_id) {
+        log::debug("Removing operation {}", op->operation_id_);
         op = ongoing_operations_.erase(op);
         continue;
       }
       for (auto const& addr : devices) {
         auto it = find(op->devices_.begin(), op->devices_.end(), addr);
         if (it != op->devices_.end()) {
+          log::debug("Removing {} from operation",
+                     ADDRESS_TO_LOGGABLE_CSTR(*it));
           op->devices_.erase(it);
         }
       }
       if (op->devices_.empty()) {
         op = ongoing_operations_.erase(op);
+        log::debug("Removing operation {}", op->operation_id_);
       } else {
         op++;
       }
@@ -941,8 +942,6 @@ class VolumeControlImpl : public VolumeControl {
 
   void SetVolume(std::variant<RawAddress, int> addr_or_group_id,
                  uint8_t volume) override {
-    DLOG(INFO) << __func__ << " vol: " << +volume;
-
     std::vector<uint8_t> arg({volume});
     uint8_t opcode = kControlPointOpcodeSetAbsoluteVolume;
 
@@ -966,7 +965,7 @@ class VolumeControlImpl : public VolumeControl {
     } else {
       /* Handle group change */
       auto group_id = std::get<int>(addr_or_group_id);
-      DLOG(INFO) << __func__ << " group: " << group_id;
+      log::debug("group_id: {}, vol: {}", group_id, volume);
       auto csis_api = CsisClient::Get();
       if (!csis_api) {
         log::error("Csis is not there");
