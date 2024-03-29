@@ -138,10 +138,3 @@ static_assert(LOG_TAG != nullptr, "LOG_TAG should never be NULL");
 #define LOG_ALWAYS_FATAL(fmt, args...)                                        \
   LOG_ALWAYS_FATAL_INT(_PREPEND_SRC_LOC_IN_LOG(fmt, ##args))
 #endif
-
-#define ASSERT(condition)                                    \
-  do {                                                       \
-    if (!(condition)) {                                      \
-      LOG_ALWAYS_FATAL("assertion '" #condition "' failed"); \
-    }                                                        \
-  } while (false)
