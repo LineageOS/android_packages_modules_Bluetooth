@@ -115,6 +115,7 @@ static_library("bta") {
     "pan/bta_pan_api.cc",
     "pan/bta_pan_ci.cc",
     "pan/bta_pan_main.cc",
+    "ras/ras_client.cc",
     "ras/ras_server.cc",
     "ras/ras_utils.cc",
     "rfcomm/bta_rfcomm_scn.cc",
