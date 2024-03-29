@@ -42,4 +42,22 @@ fn generate_packets() {
         output.status,
         String::from_utf8_lossy(output.stderr.as_slice())
     );
+
+    let out_file = File::create(out_dir.join("hci_packets.rs")).unwrap();
+    let in_file = PathBuf::from("../../../system/pdl/hci/hci_packets.pdl");
+
+    println!("cargo:rerun-if-changed={}", in_file.display());
+    let output = Command::new("pdlc")
+        .arg("--output-format")
+        .arg("rust")
+        .arg(in_file)
+        .stdout(Stdio::from(out_file))
+        .output()
+        .unwrap();
+
+    println!(
+        "Status: {}, stderr: {}",
+        output.status,
+        String::from_utf8_lossy(output.stderr.as_slice())
+    );
 }

@@ -9,7 +9,7 @@ use std::io::Write;
 
 use crate::engine::{Rule, RuleGroup, Signal};
 use crate::parser::{get_acl_content, AclContent, Packet, PacketChild};
-use bt_packets::hci::{
+use hcidoc_packets::hci::{
     AclCommandChild, Address, CommandChild, ConnectionManagementCommandChild, DisconnectReason,
     ErrorCode, EventChild, GapData, GapDataType, LeMetaEventChild,
 };

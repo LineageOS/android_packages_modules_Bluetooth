@@ -5,7 +5,7 @@ use std::io::Write;
 
 use crate::engine::{Rule, RuleGroup, Signal};
 use crate::parser::{Packet, PacketChild};
-use bt_packets::hci::{ErrorCode, EventChild, OpCode};
+use hcidoc_packets::hci::{ErrorCode, EventChild, OpCode};
 
 enum CollisionSignal {
     RnrAndInquiry,

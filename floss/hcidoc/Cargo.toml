@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bt_packets = { path = "../../system/gd/rust/packets" }
 hcidoc_packets = { path = "packets" }
 clap = "4.0"
 chrono = "0.4"
