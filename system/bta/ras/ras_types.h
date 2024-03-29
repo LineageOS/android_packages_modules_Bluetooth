@@ -22,7 +22,6 @@ namespace ras {
 static const uint16_t kFeatureSize = 0x04;
 static const uint16_t kRingingCounterSize = 0x02;
 static const uint16_t kCccValueSize = 0x02;
-static const uint16_t kControlPointCommandSize = 0x08;
 
 namespace uuid {
 static const uint16_t kRangingService16Bit = 0x7F7D;
@@ -99,14 +98,12 @@ std::string GetResponseOpcodeValueText(ResponseCodeValue response_code_value);
 
 struct ControlPointCommand {
   Opcode opcode_;
-  uint8_t operator_;
-  uint8_t operand_[6];
+  uint8_t parameter_[4];
 };
 
 struct ControlPointResponse {
   EventCode event_code_;
-  uint8_t operator_;
-  uint8_t operand_[6];
+  uint8_t parameter_[4];
 };
 
 bool ParseControlPointCommand(ControlPointCommand* command,
