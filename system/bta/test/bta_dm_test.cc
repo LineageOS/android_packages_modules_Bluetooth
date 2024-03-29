@@ -395,7 +395,7 @@ TEST_F(BtaDmTest, bta_dm_remname_cback__wrong_address) {
   tBTA_DM_SEARCH_CB search_cb =
       bluetooth::legacy::testing::bta_dm_disc_get_search_cb();
   search_cb.p_device_search_cback = nullptr;
-  search_cb.p_service_search_cback = nullptr;
+  search_cb.service_search_cbacks = {};
   search_cb.peer_bdaddr = kRawAddress;
   search_cb.name_discover_done = false;
   bluetooth::legacy::testing::bta_dm_disc_search_cb(search_cb);
