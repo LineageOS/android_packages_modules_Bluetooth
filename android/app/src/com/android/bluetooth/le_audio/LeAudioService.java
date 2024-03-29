@@ -2205,7 +2205,7 @@ public class LeAudioService extends ProfileService {
                                         + groupId
                                         + " is inactivated due to blocked media context");
                         groupDescriptor.mInactivatedDueToContextType = true;
-                        setActiveGroupWithDevice(null, true);
+                        setActiveGroupWithDevice(null, false);
                     }
                 }
             default:
@@ -2729,16 +2729,45 @@ public class LeAudioService extends ProfileService {
                                     BluetoothLeAudio.GROUP_STATUS_INACTIVE);
                         }
                     }
+                    boolean availableContextChanged =
+                            Integer.bitCount(descriptor.mAvailableContexts)
+                                    != Integer.bitCount(available_contexts);
+
                     descriptor.mDirection = direction;
                     descriptor.mAvailableContexts = available_contexts;
                     updateInbandRingtoneForTheGroup(groupId);
 
-                    boolean mediaIsAvailable =
-                            ((descriptor.mAvailableContexts & BluetoothLeAudio.CONTEXT_TYPE_MEDIA)
-                                    != 0);
+                    if (!availableContextChanged) {
+                        Log.d(
+                                TAG,
+                                " Context did not changed for "
+                                        + groupId
+                                        + ": "
+                                        + descriptor.mAvailableContexts);
+                        return;
+                    }
 
-                    if (descriptor.mInactivatedDueToContextType && mediaIsAvailable) {
-                        Log.i(TAG, " Media context type again available for " + groupId);
+                    if (descriptor.mAvailableContexts == 0) {
+                        if (descriptor.mIsActive) {
+                            Log.i(
+                                    TAG,
+                                    " Inactivating group "
+                                            + groupId
+                                            + " due to unavailable context types");
+                            descriptor.mInactivatedDueToContextType = true;
+                            setActiveGroupWithDevice(null, false);
+                        }
+                        return;
+                    }
+
+                    if (descriptor.mInactivatedDueToContextType) {
+                        Log.i(
+                                TAG,
+                                " Some context got available again for "
+                                        + groupId
+                                        + ", try it out: "
+                                        + descriptor.mAvailableContexts);
+                        descriptor.mInactivatedDueToContextType = false;
                         setActiveGroupWithDevice(getLeadDeviceForTheGroup(groupId), true);
                     }
                 } else {
@@ -3236,6 +3265,7 @@ public class LeAudioService extends ProfileService {
 
             if (getConnectedPeerDevices(groupId).isEmpty()) {
                 descriptor.mIsConnected = false;
+                descriptor.mInactivatedDueToContextType = false;
                 if (descriptor.mIsActive) {
                     /* Notify Native layer */
                     removeActiveDevice(hasFallbackDevice);
@@ -3316,6 +3346,7 @@ public class LeAudioService extends ProfileService {
 
             if (getConnectedPeerDevices(deviceDescriptor.mGroupId).isEmpty()) {
                 descriptor.mIsConnected = false;
+                descriptor.mInactivatedDueToContextType = false;
                 if (descriptor.mIsActive) {
                     /* Notify Native layer */
                     removeActiveDevice(hasFallbackDevice);
