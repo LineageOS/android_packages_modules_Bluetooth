@@ -369,7 +369,7 @@ static bool force_disconnect_all_acl_connections() {
 }
 
 static void bta_dm_wait_for_acl_to_drain_cback(void* data) {
-  ASSERT(data != nullptr);
+  log::assert_that(data != nullptr, "assert failed: data != nullptr");
   const WaitForAllAclConnectionsToDrain* pass =
       WaitForAllAclConnectionsToDrain::FromAlarmCallbackData(data);
 
@@ -1094,7 +1094,7 @@ static void bta_dm_set_eir(char* local_name) {
 
   /* Allocate a buffer to hold HCI command */
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(BTM_CMD_BUF_SIZE);
-  ASSERT(p_buf != nullptr);
+  log::assert_that(p_buf != nullptr, "assert failed: p_buf != nullptr");
   p = (uint8_t*)p_buf + BTM_HCI_EIR_OFFSET;
 
   memset(p, 0x00, HCI_EXT_INQ_RESPONSE_LEN);

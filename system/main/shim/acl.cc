@@ -698,25 +698,38 @@ class ClassicShimAclConnection
   }
 
   void HoldMode(uint16_t max_interval, uint16_t min_interval) {
-    ASSERT(connection_->HoldMode(max_interval, min_interval));
+    log::assert_that(
+        connection_->HoldMode(max_interval, min_interval),
+        "assert failed: connection_->HoldMode(max_interval, min_interval)");
   }
 
   void SniffMode(uint16_t max_interval, uint16_t min_interval, uint16_t attempt,
                  uint16_t timeout) {
-    ASSERT(
-        connection_->SniffMode(max_interval, min_interval, attempt, timeout));
+    log::assert_that(
+        connection_->SniffMode(max_interval, min_interval, attempt, timeout),
+        "assert failed:  connection_->SniffMode(max_interval, min_interval, "
+        "attempt, timeout)");
   }
 
-  void ExitSniffMode() { ASSERT(connection_->ExitSniffMode()); }
+  void ExitSniffMode() {
+    log::assert_that(connection_->ExitSniffMode(),
+                     "assert failed: connection_->ExitSniffMode()");
+  }
 
   void SniffSubrating(uint16_t maximum_latency, uint16_t minimum_remote_timeout,
                       uint16_t minimum_local_timeout) {
-    ASSERT(connection_->SniffSubrating(maximum_latency, minimum_remote_timeout,
-                                       minimum_local_timeout));
+    log::assert_that(
+        connection_->SniffSubrating(maximum_latency, minimum_remote_timeout,
+                                    minimum_local_timeout),
+        "assert failed: connection_->SniffSubrating(maximum_latency, "
+        "minimum_remote_timeout, minimum_local_timeout)");
   }
 
   void SetConnectionEncryption(hci::Enable is_encryption_enabled) {
-    ASSERT(connection_->SetConnectionEncryption(is_encryption_enabled));
+    log::assert_that(
+        connection_->SetConnectionEncryption(is_encryption_enabled),
+        "assert failed: "
+        "connection_->SetConnectionEncryption(is_encryption_enabled)");
   }
 
   bool IsLocallyInitiated() const override {
@@ -1396,7 +1409,7 @@ shim::legacy::Acl::Acl(os::Handler* handler,
                        uint8_t max_acceptlist_size,
                        uint8_t max_address_resolution_size)
     : handler_(handler), acl_interface_(acl_interface) {
-  ASSERT(handler_ != nullptr);
+  log::assert_that(handler_ != nullptr, "assert failed: handler_ != nullptr");
   ValidateAclInterface(acl_interface_);
   pimpl_ = std::make_unique<Acl::impl>(max_acceptlist_size,
                                        max_address_resolution_size);
@@ -1616,7 +1629,8 @@ void shim::legacy::Acl::OnLeLinkDisconnected(HciHandle handle,
 
 void shim::legacy::Acl::OnConnectSuccess(
     std::unique_ptr<hci::acl_manager::ClassicAclConnection> connection) {
-  ASSERT(connection != nullptr);
+  log::assert_that(connection != nullptr,
+                   "assert failed: connection != nullptr");
   auto handle = connection->GetHandle();
   bool locally_initiated = connection->locally_initiated_;
   const hci::Address remote_address = connection->GetAddress();
@@ -1676,7 +1690,8 @@ void shim::legacy::Acl::OnConnectFail(hci::Address address,
 void shim::legacy::Acl::OnLeConnectSuccess(
     hci::AddressWithType address_with_type,
     std::unique_ptr<hci::acl_manager::LeAclConnection> connection) {
-  ASSERT(connection != nullptr);
+  log::assert_that(connection != nullptr,
+                   "assert failed: connection != nullptr");
   auto handle = connection->GetHandle();
 
   // Save the peer address, if any

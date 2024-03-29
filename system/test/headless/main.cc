@@ -68,7 +68,8 @@ void start_trick_the_android_logging_subsystem() {
 }
 
 void stop_trick_the_android_logging_subsystem() {
-  ASSERT(redirected_stderr_ != nullptr);
+  log::assert_that(redirected_stderr_ != nullptr,
+                   "assert failed: redirected_stderr_ != nullptr");
   fclose(redirected_stderr_);
   redirected_stderr_ = nullptr;
 }
@@ -124,7 +125,7 @@ class Main : public HeadlessTest<int> {
 
   int Run() override {
     console_fd = fcntl(STDERR_FILENO, F_DUPFD_CLOEXEC, STDERR_FILENO);
-    ASSERT(console_fd != -1);
+    log::assert_that(console_fd != -1, "assert failed: console_fd != -1");
     if (options_.close_stderr_) {
       fclose(stderr);
     }

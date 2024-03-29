@@ -3291,7 +3291,8 @@ void bta_av_offload_req(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
                bta_av_cb.audio_open_cnt);
 
   A2dpCodecConfig* codec_config = bta_av_get_a2dp_current_codec();
-  ASSERT(codec_config != nullptr);
+  log::assert_that(codec_config != nullptr,
+                   "assert failed: codec_config != nullptr");
 
   /* Check if stream has already been started. */
   /* Support offload if only one audio source stream is open. */

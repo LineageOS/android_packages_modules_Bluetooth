@@ -265,7 +265,7 @@ void SecurityManagerImpl::NotifyEncryptionStateChanged(hci::EncryptionChangeView
 
 template <class T>
 void SecurityManagerImpl::HandleEvent(T packet) {
-  ASSERT(packet.IsValid());
+  log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
   auto entry = pairing_handler_map_.find(packet.GetBdAddr());
 
   if (entry == pairing_handler_map_.end()) {

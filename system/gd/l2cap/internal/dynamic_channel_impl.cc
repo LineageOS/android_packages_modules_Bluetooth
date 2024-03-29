@@ -36,10 +36,10 @@ DynamicChannelImpl::DynamicChannelImpl(Psm psm, Cid cid, Cid remote_cid, l2cap::
                                        os::Handler* l2cap_handler)
     : psm_(psm), cid_(cid), remote_cid_(remote_cid), link_(link), l2cap_handler_(l2cap_handler),
       device_(link->GetDevice()) {
-  ASSERT(cid_ > 0);
-  ASSERT(remote_cid_ > 0);
-  ASSERT(link_ != nullptr);
-  ASSERT(l2cap_handler_ != nullptr);
+  log::assert_that(cid_ > 0, "assert failed: cid_ > 0");
+  log::assert_that(remote_cid_ > 0, "assert failed: remote_cid_ > 0");
+  log::assert_that(link_ != nullptr, "assert failed: link_ != nullptr");
+  log::assert_that(l2cap_handler_ != nullptr, "assert failed: l2cap_handler_ != nullptr");
 }
 
 hci::AddressWithType DynamicChannelImpl::GetDevice() const {

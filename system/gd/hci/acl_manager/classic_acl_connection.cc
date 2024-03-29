@@ -35,7 +35,9 @@ class AclConnectionTracker : public ConnectionManagementCallbacks {
       : acl_connection_interface_(acl_connection_interface), address_(address), connection_handle_(connection_handle) {}
   ~AclConnectionTracker() {
     // If callbacks were registered, they should have been delivered.
-    ASSERT(client_callbacks_ == nullptr || queued_callbacks_.empty());
+    log::assert_that(
+        client_callbacks_ == nullptr || queued_callbacks_.empty(),
+        "assert failed: client_callbacks_ == nullptr || queued_callbacks_.empty()");
   }
   void RegisterCallbacks(ConnectionManagementCallbacks* callbacks, os::Handler* handler) {
     client_handler_ = handler;

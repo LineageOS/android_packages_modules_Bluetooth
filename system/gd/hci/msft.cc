@@ -84,7 +84,7 @@ struct MsftExtensionManager::impl {
   }
 
   void handle_le_monitor_device_event(MsftLeMonitorDeviceEventPayloadView view) {
-    ASSERT(view.IsValid());
+    log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
 
     // The monitor state is 0x00 when the controller stops monitoring the device.
     if (view.GetMonitorState() == 0x00 || view.GetMonitorState() == 0x01) {
@@ -111,7 +111,7 @@ struct MsftExtensionManager::impl {
 
     auto msft_view = MsftEventPayloadView::Create(
         payload.GetLittleEndianSubview(msft_.prefix.size() - 1, payload.size()));
-    ASSERT(msft_view.IsValid());
+    log::assert_that(msft_view.IsValid(), "assert failed: msft_view.IsValid()");
 
     MsftEventCode ev_code = msft_view.GetMsftEventCode();
     switch (ev_code) {
@@ -207,9 +207,9 @@ struct MsftExtensionManager::impl {
    * Vendor Specific events. Also get the MSFT supported features.
    */
   void on_msft_read_supported_features_complete(CommandCompleteView view) {
-    ASSERT(view.IsValid());
+    log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
     auto status_view = MsftReadSupportedFeaturesCommandCompleteView::Create(MsftCommandCompleteView::Create(view));
-    ASSERT(status_view.IsValid());
+    log::assert_that(status_view.IsValid(), "assert failed: status_view.IsValid()");
 
     if (status_view.GetStatus() != ErrorCode::SUCCESS) {
       log::warn("MSFT Command complete status {}", ErrorCodeText(status_view.GetStatus()));
@@ -245,10 +245,10 @@ struct MsftExtensionManager::impl {
   }
 
   void on_msft_adv_monitor_add_complete(CommandCompleteView view) {
-    ASSERT(view.IsValid());
+    log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
     auto status_view =
         MsftLeMonitorAdvCommandCompleteView::Create(MsftCommandCompleteView::Create(view));
-    ASSERT(status_view.IsValid());
+    log::assert_that(status_view.IsValid(), "assert failed: status_view.IsValid()");
 
     MsftSubcommandOpcode sub_opcode = status_view.GetSubcommandOpcode();
     if (sub_opcode != MsftSubcommandOpcode::MSFT_LE_MONITOR_ADV) {
@@ -260,10 +260,10 @@ struct MsftExtensionManager::impl {
   }
 
   void on_msft_adv_monitor_remove_complete(CommandCompleteView view) {
-    ASSERT(view.IsValid());
+    log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
     auto status_view =
         MsftLeCancelMonitorAdvCommandCompleteView::Create(MsftCommandCompleteView::Create(view));
-    ASSERT(status_view.IsValid());
+    log::assert_that(status_view.IsValid(), "assert failed: status_view.IsValid()");
 
     MsftSubcommandOpcode sub_opcode = status_view.GetSubcommandOpcode();
     if (sub_opcode != MsftSubcommandOpcode::MSFT_LE_CANCEL_MONITOR_ADV) {
@@ -275,10 +275,10 @@ struct MsftExtensionManager::impl {
   }
 
   void on_msft_adv_monitor_enable_complete(CommandCompleteView view) {
-    ASSERT(view.IsValid());
+    log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
     auto status_view =
         MsftLeSetAdvFilterEnableCommandCompleteView::Create(MsftCommandCompleteView::Create(view));
-    ASSERT(status_view.IsValid());
+    log::assert_that(status_view.IsValid(), "assert failed: status_view.IsValid()");
 
     MsftSubcommandOpcode sub_opcode = status_view.GetSubcommandOpcode();
     if (sub_opcode != MsftSubcommandOpcode::MSFT_LE_SET_ADV_FILTER_ENABLE) {

@@ -57,8 +57,8 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
  public:
   L2capLeModuleFacadeService(L2capLeModule* l2cap_layer, os::Handler* facade_handler)
       : l2cap_layer_(l2cap_layer), facade_handler_(facade_handler) {
-    ASSERT(l2cap_layer_ != nullptr);
-    ASSERT(facade_handler_ != nullptr);
+    log::assert_that(l2cap_layer_ != nullptr, "assert failed: l2cap_layer_ != nullptr");
+    log::assert_that(facade_handler_ != nullptr, "assert failed: facade_handler_ != nullptr");
   }
 
   ::grpc::Status FetchL2capData(
@@ -77,7 +77,10 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
       return ::grpc::Status(::grpc::StatusCode::FAILED_PRECONDITION, "Psm not registered");
     }
     hci::Address peer_address;
-    ASSERT(hci::Address::FromString(request->remote().address().address(), peer_address));
+    log::assert_that(
+        hci::Address::FromString(request->remote().address().address(), peer_address),
+        "assert failed: hci::Address::FromString(request->remote().address().address(), "
+        "peer_address)");
     // TODO: Support different address type
     hci::AddressWithType peer(peer_address, hci::AddressType::RANDOM_DEVICE_ADDRESS);
     service_helper->second->Connect(peer);
@@ -99,7 +102,10 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
     }
     auto address = service_helper->second->channel_->GetDevice().GetAddress();
     hci::Address peer_address;
-    ASSERT(hci::Address::FromString(request->remote().address().address(), peer_address));
+    log::assert_that(
+        hci::Address::FromString(request->remote().address().address(), peer_address),
+        "assert failed: hci::Address::FromString(request->remote().address().address(), "
+        "peer_address)");
     if (address != peer_address) {
       return ::grpc::Status(::grpc::StatusCode::FAILED_PRECONDITION, "Remote address doesn't match");
     }

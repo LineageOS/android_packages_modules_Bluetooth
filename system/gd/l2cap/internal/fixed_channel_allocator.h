@@ -41,8 +41,8 @@ template <typename FixedChannelImplType, typename LinkType>
 class FixedChannelAllocator {
  public:
   FixedChannelAllocator(LinkType* link, os::Handler* l2cap_handler) : link_(link), l2cap_handler_(l2cap_handler) {
-    ASSERT(link_ != nullptr);
-    ASSERT(l2cap_handler_ != nullptr);
+    log::assert_that(link_ != nullptr, "assert failed: link_ != nullptr");
+    log::assert_that(l2cap_handler_ != nullptr, "assert failed: l2cap_handler_ != nullptr");
   }
 
   virtual ~FixedChannelAllocator() = default;
@@ -64,7 +64,7 @@ class FixedChannelAllocator {
         "Failed to create channel for cid 0x{:x} link {}",
         cid,
         ToLoggableStr(*link_));  // TODO RENAME ADDRESS_TO_LOGGABLE_CSTR
-    ASSERT(elem.first->second != nullptr);
+    log::assert_that(elem.first->second != nullptr, "assert failed: elem.first->second != nullptr");
     return elem.first->second;
   }
 

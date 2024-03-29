@@ -39,7 +39,10 @@ unsigned kTimeoutMs = 5000;
 int get_adapter_info([[maybe_unused]] unsigned int num_loops) {
   log::info("Started Device Adapter Properties");
 
-  ASSERT(bluetoothInterface.get_adapter_properties() == BT_STATUS_SUCCESS);
+  log::assert_that(
+      bluetoothInterface.get_adapter_properties() == BT_STATUS_SUCCESS,
+      "assert failed: bluetoothInterface.get_adapter_properties() == "
+      "BT_STATUS_SUCCESS");
   LOG_CONSOLE("Started get adapter properties");
 
   headless::messenger::Context context{

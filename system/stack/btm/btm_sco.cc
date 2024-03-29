@@ -109,7 +109,7 @@ static void sco_data_callback() {
     return;
   }
   auto packet = hci_sco_queue_end->TryDequeue();
-  ASSERT(packet != nullptr);
+  log::assert_that(packet != nullptr, "assert failed: packet != nullptr");
   if (!packet->IsValid()) {
     log::info("Dropping invalid packet of size {}", packet->size());
     return;

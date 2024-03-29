@@ -96,8 +96,13 @@ void Stack::StartEverything() {
   Start(&modules);
   is_running_ = true;
   // Make sure the leaf modules are started
-  ASSERT(stack_manager_.GetInstance<storage::StorageModule>() != nullptr);
-  ASSERT(stack_manager_.GetInstance<shim::Dumpsys>() != nullptr);
+  log::assert_that(
+      stack_manager_.GetInstance<storage::StorageModule>() != nullptr,
+      "assert failed: stack_manager_.GetInstance<storage::StorageModule>() != "
+      "nullptr");
+  log::assert_that(
+      stack_manager_.GetInstance<shim::Dumpsys>() != nullptr,
+      "assert failed: stack_manager_.GetInstance<shim::Dumpsys>() != nullptr");
   if (stack_manager_.IsStarted<hci::Controller>()) {
     pimpl_->acl_ = new legacy::Acl(stack_handler_, legacy::GetAclInterface(),
                                    GetController()->GetLeFilterAcceptListSize(),
@@ -177,19 +182,19 @@ bool Stack::IsRunning() {
 
 StackManager* Stack::GetStackManager() {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
-  ASSERT(is_running_);
+  log::assert_that(is_running_, "assert failed: is_running_");
   return &stack_manager_;
 }
 
 const StackManager* Stack::GetStackManager() const {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
-  ASSERT(is_running_);
+  log::assert_that(is_running_, "assert failed: is_running_");
   return &stack_manager_;
 }
 
 legacy::Acl* Stack::GetAcl() {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
-  ASSERT(is_running_);
+  log::assert_that(is_running_, "assert failed: is_running_");
   log::assert_that(pimpl_->acl_ != nullptr,
                    "Acl shim layer has not been created");
   return pimpl_->acl_;
@@ -197,13 +202,13 @@ legacy::Acl* Stack::GetAcl() {
 
 Btm* Stack::GetBtm() {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
-  ASSERT(is_running_);
+  log::assert_that(is_running_, "assert failed: is_running_");
   return pimpl_->btm_;
 }
 
 os::Handler* Stack::GetHandler() {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
-  ASSERT(is_running_);
+  log::assert_that(is_running_, "assert failed: is_running_");
   return stack_handler_;
 }
 

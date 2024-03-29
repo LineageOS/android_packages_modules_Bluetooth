@@ -88,7 +88,7 @@ void SecurityManagerChannel::SendCommand(
 
 void SecurityManagerChannel::OnHciEventReceived(hci::EventView packet) {
   log::assert_that(listener_ != nullptr, "No listener set!");
-  ASSERT(packet.IsValid());
+  log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
   listener_->OnHciEventReceived(packet);
 }
 

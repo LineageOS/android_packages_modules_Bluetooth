@@ -155,7 +155,7 @@ struct AclManager::impl {
     }
 
     auto packet = hci_queue_end_->TryDequeue();
-    ASSERT(packet != nullptr);
+    log::assert_that(packet != nullptr, "assert failed: packet != nullptr");
     if (!packet->IsValid()) {
       log::info("Dropping invalid packet of size {}", packet->size());
       return;
@@ -205,7 +205,9 @@ struct AclManager::impl {
 AclManager::AclManager() : pimpl_(std::make_unique<impl>(*this)) {}
 
 void AclManager::RegisterCallbacks(ConnectionCallbacks* callbacks, os::Handler* handler) {
-  ASSERT(callbacks != nullptr && handler != nullptr);
+  log::assert_that(
+      callbacks != nullptr && handler != nullptr,
+      "assert failed: callbacks != nullptr && handler != nullptr");
   GetHandler()->Post(common::BindOnce(
       &classic_impl::handle_register_callbacks,
       common::Unretained(pimpl_->classic_impl_),
@@ -214,7 +216,7 @@ void AclManager::RegisterCallbacks(ConnectionCallbacks* callbacks, os::Handler* 
 }
 
 void AclManager::UnregisterCallbacks(ConnectionCallbacks* callbacks, std::promise<void> promise) {
-  ASSERT(callbacks != nullptr);
+  log::assert_that(callbacks != nullptr, "assert failed: callbacks != nullptr");
   CallOn(
       pimpl_->classic_impl_,
       &classic_impl::handle_unregister_callbacks,
@@ -223,7 +225,9 @@ void AclManager::UnregisterCallbacks(ConnectionCallbacks* callbacks, std::promis
 }
 
 void AclManager::RegisterLeCallbacks(LeConnectionCallbacks* callbacks, os::Handler* handler) {
-  ASSERT(callbacks != nullptr && handler != nullptr);
+  log::assert_that(
+      callbacks != nullptr && handler != nullptr,
+      "assert failed: callbacks != nullptr && handler != nullptr");
   CallOn(
       pimpl_->le_impl_,
       &le_impl::handle_register_le_callbacks,
@@ -232,7 +236,7 @@ void AclManager::RegisterLeCallbacks(LeConnectionCallbacks* callbacks, os::Handl
 }
 
 void AclManager::RegisterLeAcceptlistCallbacks(LeAcceptlistCallbacks* callbacks) {
-  ASSERT(callbacks != nullptr);
+  log::assert_that(callbacks != nullptr, "assert failed: callbacks != nullptr");
   CallOn(
       pimpl_->le_impl_,
       &le_impl::handle_register_le_acceptlist_callbacks,
@@ -240,13 +244,13 @@ void AclManager::RegisterLeAcceptlistCallbacks(LeAcceptlistCallbacks* callbacks)
 }
 
 void AclManager::UnregisterLeCallbacks(LeConnectionCallbacks* callbacks, std::promise<void> promise) {
-  ASSERT(callbacks != nullptr);
+  log::assert_that(callbacks != nullptr, "assert failed: callbacks != nullptr");
   CallOn(pimpl_->le_impl_, &le_impl::handle_unregister_le_callbacks, common::Unretained(callbacks), std::move(promise));
 }
 
 void AclManager::UnregisterLeAcceptlistCallbacks(
     LeAcceptlistCallbacks* callbacks, std::promise<void> promise) {
-  ASSERT(callbacks != nullptr);
+  log::assert_that(callbacks != nullptr, "assert failed: callbacks != nullptr");
   CallOn(
       pimpl_->le_impl_,
       &le_impl::handle_unregister_le_acceptlist_callbacks,
@@ -478,7 +482,7 @@ void AclManager::impl::Dump(
 }
 
 DumpsysDataFinisher AclManager::GetDumpsysData(flatbuffers::FlatBufferBuilder* fb_builder) const {
-  ASSERT(fb_builder != nullptr);
+  log::assert_that(fb_builder != nullptr, "assert failed: fb_builder != nullptr");
 
   std::promise<flatbuffers::Offset<AclManagerData>> promise;
   auto future = promise.get_future();

@@ -75,12 +75,12 @@ void Reactor::Event::Clear() {
 void Reactor::Event::Close() {
   int close_status;
   RUN_NO_INTR(close_status = close(pimpl_->fd_));
-  ASSERT(close_status != -1);
+  log::assert_that(close_status != -1, "assert failed: close_status != -1");
 }
 void Reactor::Event::Notify() {
   uint64_t val = 1;
   auto write_result = eventfd_write(pimpl_->fd_, val);
-  ASSERT(write_result != -1);
+  log::assert_that(write_result != -1, "assert failed: write_result != -1");
 }
 
 class Reactor::Reactable {
@@ -105,29 +105,29 @@ Reactor::Reactor() : epoll_fd_(0), control_fd_(0), is_running_(false) {
   log::assert_that(epoll_fd_ != -1, "could not create epoll fd: {}", strerror(errno));
 
   control_fd_ = eventfd(0, EFD_NONBLOCK);
-  ASSERT(control_fd_ != -1);
+  log::assert_that(control_fd_ != -1, "assert failed: control_fd_ != -1");
 
   epoll_event control_epoll_event = {EPOLLIN, {.ptr = nullptr}};
   int result;
   RUN_NO_INTR(result = epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, control_fd_, &control_epoll_event));
-  ASSERT(result != -1);
+  log::assert_that(result != -1, "assert failed: result != -1");
 }
 
 Reactor::~Reactor() {
   int result;
   RUN_NO_INTR(result = epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, control_fd_, nullptr));
-  ASSERT(result != -1);
+  log::assert_that(result != -1, "assert failed: result != -1");
 
   RUN_NO_INTR(result = close(control_fd_));
-  ASSERT(result != -1);
+  log::assert_that(result != -1, "assert failed: result != -1");
 
   RUN_NO_INTR(result = close(epoll_fd_));
-  ASSERT(result != -1);
+  log::assert_that(result != -1, "assert failed: result != -1");
 }
 
 void Reactor::Run() {
   bool already_running = is_running_.exchange(true);
-  ASSERT(!already_running);
+  log::assert_that(!already_running, "assert failed: !already_running");
 
   int timeout_ms = -1;
   bool waiting_for_idle = false;
@@ -150,7 +150,7 @@ void Reactor::Run() {
 
     for (int i = 0; i < count; ++i) {
       auto event = events[i];
-      ASSERT(event.events != 0u);
+      log::assert_that(event.events != 0u, "assert failed: event.events != 0u");
 
       // If the ptr stored in epoll_event.data is nullptr, it means the control fd triggered
       if (event.data.ptr == nullptr) {
@@ -205,7 +205,7 @@ void Reactor::Stop() {
     log::warn("not running, will stop once it's started");
   }
   auto control = eventfd_write(control_fd_, kStopReactor);
-  ASSERT(control != -1);
+  log::assert_that(control != -1, "assert failed: control != -1");
 }
 
 std::unique_ptr<Reactor::Event> Reactor::NewEvent() const {
@@ -227,12 +227,12 @@ Reactor::Reactable* Reactor::Register(int fd, Closure on_read_ready, Closure on_
   };
   int register_fd;
   RUN_NO_INTR(register_fd = epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &event));
-  ASSERT(register_fd != -1);
+  log::assert_that(register_fd != -1, "assert failed: register_fd != -1");
   return reactable;
 }
 
 void Reactor::Unregister(Reactor::Reactable* reactable) {
-  ASSERT(reactable != nullptr);
+  log::assert_that(reactable != nullptr, "assert failed: reactable != nullptr");
   {
     std::lock_guard<std::mutex> lock(mutex_);
     invalidation_list_.push_back(reactable);
@@ -284,14 +284,14 @@ bool Reactor::WaitForIdle(std::chrono::milliseconds timeout) {
   }
 
   auto control = eventfd_write(control_fd_, kWaitForIdle);
-  ASSERT(control != -1);
+  log::assert_that(control != -1, "assert failed: control != -1");
 
   auto idle_status = future->wait_for(timeout);
   return idle_status == std::future_status::ready;
 }
 
 void Reactor::ModifyRegistration(Reactor::Reactable* reactable, ReactOn react_on) {
-  ASSERT(reactable != nullptr);
+  log::assert_that(reactable != nullptr, "assert failed: reactable != nullptr");
 
   uint32_t poll_event_type = 0;
   if (react_on == REACT_ON_READ_ONLY || react_on == REACT_ON_READ_WRITE) {
@@ -306,7 +306,7 @@ void Reactor::ModifyRegistration(Reactor::Reactable* reactable, ReactOn react_on
   };
   int modify_fd;
   RUN_NO_INTR(modify_fd = epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, reactable->fd_, &event));
-  ASSERT(modify_fd != -1);
+  log::assert_that(modify_fd != -1, "assert failed: modify_fd != -1");
 }
 
 }  // namespace os

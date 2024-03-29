@@ -101,7 +101,7 @@ neighbor::InquiryModule::impl::impl(neighbor::InquiryModule& module) : module_(m
 
 void neighbor::InquiryModule::impl::OnCommandCompleteSync(hci::CommandCompleteView view) {
   OnCommandComplete(view);
-  ASSERT(command_sync_ != nullptr);
+  log::assert_that(command_sync_ != nullptr, "assert failed: command_sync_ != nullptr");
   command_sync_->set_value();
 }
 
@@ -109,66 +109,86 @@ void neighbor::InquiryModule::impl::OnCommandComplete(hci::CommandCompleteView v
   switch (view.GetCommandOpCode()) {
     case hci::OpCode::INQUIRY_CANCEL: {
       auto packet = hci::InquiryCancelCompleteView::Create(view);
-      ASSERT(packet.IsValid());
-      ASSERT(packet.GetStatus() == hci::ErrorCode::SUCCESS);
+      log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
+      log::assert_that(
+          packet.GetStatus() == hci::ErrorCode::SUCCESS,
+          "assert failed: packet.GetStatus() == hci::ErrorCode::SUCCESS");
     } break;
 
     case hci::OpCode::PERIODIC_INQUIRY_MODE: {
       auto packet = hci::PeriodicInquiryModeCompleteView::Create(view);
-      ASSERT(packet.IsValid());
-      ASSERT(packet.GetStatus() == hci::ErrorCode::SUCCESS);
+      log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
+      log::assert_that(
+          packet.GetStatus() == hci::ErrorCode::SUCCESS,
+          "assert failed: packet.GetStatus() == hci::ErrorCode::SUCCESS");
     } break;
 
     case hci::OpCode::EXIT_PERIODIC_INQUIRY_MODE: {
       auto packet = hci::ExitPeriodicInquiryModeCompleteView::Create(view);
-      ASSERT(packet.IsValid());
-      ASSERT(packet.GetStatus() == hci::ErrorCode::SUCCESS);
+      log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
+      log::assert_that(
+          packet.GetStatus() == hci::ErrorCode::SUCCESS,
+          "assert failed: packet.GetStatus() == hci::ErrorCode::SUCCESS");
     } break;
 
     case hci::OpCode::WRITE_INQUIRY_MODE: {
       auto packet = hci::WriteInquiryModeCompleteView::Create(view);
-      ASSERT(packet.IsValid());
-      ASSERT(packet.GetStatus() == hci::ErrorCode::SUCCESS);
+      log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
+      log::assert_that(
+          packet.GetStatus() == hci::ErrorCode::SUCCESS,
+          "assert failed: packet.GetStatus() == hci::ErrorCode::SUCCESS");
     } break;
 
     case hci::OpCode::READ_INQUIRY_MODE: {
       auto packet = hci::ReadInquiryModeCompleteView::Create(view);
-      ASSERT(packet.IsValid());
-      ASSERT(packet.GetStatus() == hci::ErrorCode::SUCCESS);
+      log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
+      log::assert_that(
+          packet.GetStatus() == hci::ErrorCode::SUCCESS,
+          "assert failed: packet.GetStatus() == hci::ErrorCode::SUCCESS");
       inquiry_mode_ = packet.GetInquiryMode();
     } break;
 
     case hci::OpCode::READ_INQUIRY_RESPONSE_TRANSMIT_POWER_LEVEL: {
       auto packet = hci::ReadInquiryResponseTransmitPowerLevelCompleteView::Create(view);
-      ASSERT(packet.IsValid());
-      ASSERT(packet.GetStatus() == hci::ErrorCode::SUCCESS);
+      log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
+      log::assert_that(
+          packet.GetStatus() == hci::ErrorCode::SUCCESS,
+          "assert failed: packet.GetStatus() == hci::ErrorCode::SUCCESS");
       inquiry_response_tx_power_ = packet.GetTxPower();
     } break;
 
     case hci::OpCode::WRITE_INQUIRY_SCAN_ACTIVITY: {
       auto packet = hci::WriteInquiryScanActivityCompleteView::Create(view);
-      ASSERT(packet.IsValid());
-      ASSERT(packet.GetStatus() == hci::ErrorCode::SUCCESS);
+      log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
+      log::assert_that(
+          packet.GetStatus() == hci::ErrorCode::SUCCESS,
+          "assert failed: packet.GetStatus() == hci::ErrorCode::SUCCESS");
     } break;
 
     case hci::OpCode::READ_INQUIRY_SCAN_ACTIVITY: {
       auto packet = hci::ReadInquiryScanActivityCompleteView::Create(view);
-      ASSERT(packet.IsValid());
-      ASSERT(packet.GetStatus() == hci::ErrorCode::SUCCESS);
+      log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
+      log::assert_that(
+          packet.GetStatus() == hci::ErrorCode::SUCCESS,
+          "assert failed: packet.GetStatus() == hci::ErrorCode::SUCCESS");
       inquiry_scan_.interval = packet.GetInquiryScanInterval();
       inquiry_scan_.window = packet.GetInquiryScanWindow();
     } break;
 
     case hci::OpCode::WRITE_INQUIRY_SCAN_TYPE: {
       auto packet = hci::WriteInquiryScanTypeCompleteView::Create(view);
-      ASSERT(packet.IsValid());
-      ASSERT(packet.GetStatus() == hci::ErrorCode::SUCCESS);
+      log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
+      log::assert_that(
+          packet.GetStatus() == hci::ErrorCode::SUCCESS,
+          "assert failed: packet.GetStatus() == hci::ErrorCode::SUCCESS");
     } break;
 
     case hci::OpCode::READ_INQUIRY_SCAN_TYPE: {
       auto packet = hci::ReadInquiryScanTypeCompleteView::Create(view);
-      ASSERT(packet.IsValid());
-      ASSERT(packet.GetStatus() == hci::ErrorCode::SUCCESS);
+      log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
+      log::assert_that(
+          packet.GetStatus() == hci::ErrorCode::SUCCESS,
+          "assert failed: packet.GetStatus() == hci::ErrorCode::SUCCESS");
       inquiry_scan_type_ = packet.GetInquiryScanType();
     } break;
 
@@ -179,12 +199,14 @@ void neighbor::InquiryModule::impl::OnCommandComplete(hci::CommandCompleteView v
 }
 
 void neighbor::InquiryModule::impl::OnCommandStatus(hci::CommandStatusView status) {
-  ASSERT(status.GetStatus() == hci::ErrorCode::SUCCESS);
+  log::assert_that(
+      status.GetStatus() == hci::ErrorCode::SUCCESS,
+      "assert failed: status.GetStatus() == hci::ErrorCode::SUCCESS");
 
   switch (status.GetCommandOpCode()) {
     case hci::OpCode::INQUIRY: {
       auto packet = hci::InquiryStatusView::Create(status);
-      ASSERT(packet.IsValid());
+      log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
       if (active_limited_one_shot_ || active_general_one_shot_) {
         log::info("Inquiry started lap: {}", active_limited_one_shot_ ? "Limited" : "General");
       }
@@ -200,7 +222,7 @@ void neighbor::InquiryModule::impl::OnEvent(hci::EventView view) {
   switch (view.GetEventCode()) {
     case hci::EventCode::INQUIRY_COMPLETE: {
       auto packet = hci::InquiryCompleteView::Create(view);
-      ASSERT(packet.IsValid());
+      log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
       log::info("inquiry complete");
       active_limited_one_shot_ = false;
       active_general_one_shot_ = false;
@@ -209,7 +231,7 @@ void neighbor::InquiryModule::impl::OnEvent(hci::EventView view) {
 
     case hci::EventCode::INQUIRY_RESULT: {
       auto packet = hci::InquiryResultView::Create(view);
-      ASSERT(packet.IsValid());
+      log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
       log::info(
           "Inquiry result size:{} num_responses:{}", packet.size(), packet.GetResponses().size());
       inquiry_callbacks_.result(packet);
@@ -217,14 +239,14 @@ void neighbor::InquiryModule::impl::OnEvent(hci::EventView view) {
 
     case hci::EventCode::INQUIRY_RESULT_WITH_RSSI: {
       auto packet = hci::InquiryResultWithRssiView::Create(view);
-      ASSERT(packet.IsValid());
+      log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
       log::info("Inquiry result with rssi num_responses:{}", packet.GetResponses().size());
       inquiry_callbacks_.result_with_rssi(packet);
     } break;
 
     case hci::EventCode::EXTENDED_INQUIRY_RESULT: {
       auto packet = hci::ExtendedInquiryResultView::Create(view);
-      ASSERT(packet.IsValid());
+      log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
       log::info(
           "Extended inquiry result addr:{} repetition_mode:{} cod:{} clock_offset:{} rssi:{}",
           ADDRESS_TO_LOGGABLE_CSTR(packet.GetAddress()),
@@ -275,7 +297,7 @@ void neighbor::InquiryModule::impl::EnqueueCommandStatus(std::unique_ptr<hci::Co
 }
 
 void neighbor::InquiryModule::impl::EnqueueCommandCompleteSync(std::unique_ptr<hci::CommandBuilder> command) {
-  ASSERT(command_sync_ == nullptr);
+  log::assert_that(command_sync_ == nullptr, "assert failed: command_sync_ == nullptr");
   command_sync_ = new std::promise<void>();
   auto command_received = command_sync_->get_future();
   hci_layer_->EnqueueCommand(std::move(command), handler_->BindOnceOn(this, &impl::OnCommandCompleteSync));
@@ -286,8 +308,8 @@ void neighbor::InquiryModule::impl::EnqueueCommandCompleteSync(std::unique_ptr<h
 
 void neighbor::InquiryModule::impl::StartOneShotInquiry(
     bool limited, InquiryLength inquiry_length, NumResponses num_responses) {
-  ASSERT(HasCallbacks());
-  ASSERT(!IsInquiryActive());
+  log::assert_that(HasCallbacks(), "assert failed: HasCallbacks()");
+  log::assert_that(!IsInquiryActive(), "assert failed: !IsInquiryActive()");
   hci::Lap lap;
   if (limited) {
     active_limited_one_shot_ = true;
@@ -300,7 +322,9 @@ void neighbor::InquiryModule::impl::StartOneShotInquiry(
 }
 
 void neighbor::InquiryModule::impl::StopOneShotInquiry() {
-  ASSERT(active_general_one_shot_ || active_limited_one_shot_);
+  log::assert_that(
+      active_general_one_shot_ || active_limited_one_shot_,
+      "assert failed: active_general_one_shot_ || active_limited_one_shot_");
   active_general_one_shot_ = false;
   active_limited_one_shot_ = false;
   EnqueueCommandComplete(hci::InquiryCancelBuilder::Create());
@@ -312,8 +336,8 @@ void neighbor::InquiryModule::impl::StartPeriodicInquiry(
     NumResponses num_responses,
     PeriodLength max_delay,
     PeriodLength min_delay) {
-  ASSERT(HasCallbacks());
-  ASSERT(!IsInquiryActive());
+  log::assert_that(HasCallbacks(), "assert failed: HasCallbacks()");
+  log::assert_that(!IsInquiryActive(), "assert failed: !IsInquiryActive()");
   hci::Lap lap;
   if (limited) {
     active_limited_periodic_ = true;
@@ -327,7 +351,9 @@ void neighbor::InquiryModule::impl::StartPeriodicInquiry(
 }
 
 void neighbor::InquiryModule::impl::StopPeriodicInquiry() {
-  ASSERT(active_general_periodic_ || active_limited_periodic_);
+  log::assert_that(
+      active_general_periodic_ || active_limited_periodic_,
+      "assert failed: active_general_periodic_ || active_limited_periodic_");
   active_general_periodic_ = false;
   active_limited_periodic_ = false;
   EnqueueCommandComplete(hci::ExitPeriodicInquiryModeBuilder::Create());

@@ -97,7 +97,9 @@ class InternalHciCallbacks : public IBluetoothHciCallbacks_1_1 {
 
   void SetCallback(HciHalCallbacks* callback) {
     std::lock_guard<std::mutex> incoming_packet_callback_lock(incoming_packet_callback_mutex_);
-    ASSERT(callback_ == nullptr && callback != nullptr);
+    log::assert_that(
+        callback_ == nullptr && callback != nullptr,
+        "assert failed: callback_ == nullptr && callback != nullptr");
     callback_ = callback;
   }
 
@@ -196,7 +198,9 @@ class AidlHciCallbacks : public ::aidl::android::hardware::bluetooth::BnBluetoot
 
   void SetCallback(HciHalCallbacks* callback) {
     std::lock_guard<std::mutex> incoming_packet_callback_lock(incoming_packet_callback_mutex_);
-    ASSERT(callback_ == nullptr && callback != nullptr);
+    log::assert_that(
+        callback_ == nullptr && callback != nullptr,
+        "assert failed: callback_ == nullptr && callback != nullptr");
     callback_ = callback;
   }
 
@@ -211,7 +215,7 @@ class AidlHciCallbacks : public ::aidl::android::hardware::bluetooth::BnBluetoot
 
   ::ndk::ScopedAStatus initializationComplete(AidlStatus status) {
     common::StopWatch stop_watch(__func__);
-    ASSERT(status == AidlStatus::SUCCESS);
+    log::assert_that(status == AidlStatus::SUCCESS, "assert failed: status == AidlStatus::SUCCESS");
     init_promise_->set_value();
     return ::ndk::ScopedAStatus::ok();
   }
@@ -377,9 +381,9 @@ class HciHalHidl : public HciHal {
     common::StopWatch stop_watch(__func__);
 
     // Start can't be called more than once before Stop is called.
-    ASSERT(bt_hci_ == nullptr);
-    ASSERT(bt_hci_1_1_ == nullptr);
-    ASSERT(aidl_hci_ == nullptr);
+    log::assert_that(bt_hci_ == nullptr, "assert failed: bt_hci_ == nullptr");
+    log::assert_that(bt_hci_1_1_ == nullptr, "assert failed: bt_hci_1_1_ == nullptr");
+    log::assert_that(aidl_hci_ == nullptr, "assert failed: aidl_hci_ == nullptr");
 
     link_clocker_ = GetDependency<LinkClocker>();
     btsnoop_logger_ = GetDependency<SnoopLogger>();
@@ -456,7 +460,7 @@ class HciHalHidl : public HciHal {
     get_service_alarm->Cancel();
     delete get_service_alarm;
 
-    ASSERT(bt_hci_ != nullptr);
+    log::assert_that(bt_hci_ != nullptr, "assert failed: bt_hci_ != nullptr");
     auto death_link = bt_hci_->linkToDeath(hci_death_recipient_, 0);
     log::assert_that(death_link.isOk(), "Unable to set the death recipient for the Bluetooth HAL");
     hidl_callbacks_ = new InternalHciCallbacks(btsnoop_logger_, link_clocker_);
@@ -483,7 +487,7 @@ class HciHalHidl : public HciHal {
 
  private:
   void stop_hidl() {
-    ASSERT(bt_hci_ != nullptr);
+    log::assert_that(bt_hci_ != nullptr, "assert failed: bt_hci_ != nullptr");
     auto death_unlink = bt_hci_->unlinkToDeath(hci_death_recipient_);
     if (!death_unlink.isOk()) {
       log::error("Error unlinking death recipient from the Bluetooth HAL");
@@ -498,7 +502,7 @@ class HciHalHidl : public HciHal {
   }
 
   void stop_aidl() {
-    ASSERT(aidl_hci_ != nullptr);
+    log::assert_that(aidl_hci_ != nullptr, "assert failed: aidl_hci_ != nullptr");
     auto death_unlink =
         AIBinder_unlinkToDeath(aidl_hci_->asBinder().get(), aidl_death_recipient_.get(), this);
     if (death_unlink != STATUS_OK) {

@@ -156,8 +156,8 @@ void Btm::ScanningCallbacks::OnBigInfoReport(uint16_t /* sync_handle */,
 
 Btm::Btm(os::Handler* handler, neighbor::InquiryModule* inquiry)
     : scanning_timer_(handler), observing_timer_(handler) {
-  ASSERT(handler != nullptr);
-  ASSERT(inquiry != nullptr);
+  log::assert_that(handler != nullptr, "assert failed: handler != nullptr");
+  log::assert_that(inquiry != nullptr, "assert failed: inquiry != nullptr");
 }
 
 void Btm::SetStandardInquiryResultMode() {

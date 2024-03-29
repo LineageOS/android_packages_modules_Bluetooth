@@ -160,7 +160,7 @@ GrpcRootServer::GrpcRootServer() : pimpl_(new impl()) {}
 GrpcRootServer::~GrpcRootServer() = default;
 
 void GrpcRootServer::StartServer(const std::string& address, int grpc_root_server_port, int grpc_port) {
-  ASSERT(!pimpl_->started_);
+  log::assert_that(!pimpl_->started_, "assert failed: !pimpl_->started_");
   pimpl_->started_ = true;
 
   std::string listening_port = address + ":" + std::to_string(grpc_root_server_port);
@@ -171,17 +171,17 @@ void GrpcRootServer::StartServer(const std::string& address, int grpc_root_serve
   builder.AddListeningPort(listening_port, ::grpc::InsecureServerCredentials());
   pimpl_->server_ = builder.BuildAndStart();
 
-  ASSERT(pimpl_->server_ != nullptr);
+  log::assert_that(pimpl_->server_ != nullptr, "assert failed: pimpl_->server_ != nullptr");
 }
 
 void GrpcRootServer::StopServer() {
-  ASSERT(pimpl_->started_);
+  log::assert_that(pimpl_->started_, "assert failed: pimpl_->started_");
   pimpl_->server_->Shutdown();
   pimpl_->started_ = false;
 }
 
 void GrpcRootServer::RunGrpcLoop() {
-  ASSERT(pimpl_->started_);
+  log::assert_that(pimpl_->started_, "assert failed: pimpl_->started_");
   pimpl_->server_->Wait();
 }
 

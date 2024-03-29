@@ -68,8 +68,12 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddress(
     }
     return;
   }
-  ASSERT(address_policy_ == AddressPolicy::POLICY_NOT_SET);
-  ASSERT(address_policy != AddressPolicy::POLICY_NOT_SET);
+  log::assert_that(
+      address_policy_ == AddressPolicy::POLICY_NOT_SET,
+      "assert failed: address_policy_ == AddressPolicy::POLICY_NOT_SET");
+  log::assert_that(
+      address_policy != AddressPolicy::POLICY_NOT_SET,
+      "assert failed: address_policy != AddressPolicy::POLICY_NOT_SET");
   log::assert_that(
       registered_clients_.empty(), "Policy must be set before clients are registered.");
   address_policy_ = address_policy;
@@ -127,7 +131,9 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddressForTest(
     Octet16 rotation_irk,
     std::chrono::milliseconds minimum_rotation_time,
     std::chrono::milliseconds maximum_rotation_time) {
-  ASSERT(address_policy != AddressPolicy::POLICY_NOT_SET);
+  log::assert_that(
+      address_policy != AddressPolicy::POLICY_NOT_SET,
+      "assert failed: address_policy != AddressPolicy::POLICY_NOT_SET");
   log::assert_that(
       registered_clients_.empty(), "Policy must be set before clients are registered.");
   address_policy_ = address_policy;
@@ -232,12 +238,14 @@ void LeAddressManager::AckResume(LeAddressManagerCallback* callback) {
 }
 
 AddressWithType LeAddressManager::GetInitiatorAddress() {
-  ASSERT(address_policy_ != AddressPolicy::POLICY_NOT_SET);
+  log::assert_that(
+      address_policy_ != AddressPolicy::POLICY_NOT_SET,
+      "assert failed: address_policy_ != AddressPolicy::POLICY_NOT_SET");
   return le_address_;
 }
 
 AddressWithType LeAddressManager::NewResolvableAddress() {
-  ASSERT(RotatingAddress());
+  log::assert_that(RotatingAddress(), "assert failed: RotatingAddress()");
   hci::Address address = generate_rpa();
   auto random_address = AddressWithType(address, AddressType::RANDOM_DEVICE_ADDRESS);
   return random_address;
@@ -245,7 +253,7 @@ AddressWithType LeAddressManager::NewResolvableAddress() {
 
 AddressWithType LeAddressManager::NewNonResolvableAddress() {
   if (!IS_FLAG_ENABLED(nrpa_non_connectable_adv)) {
-    ASSERT(RotatingAddress());
+    log::assert_that(RotatingAddress(), "assert failed: RotatingAddress()");
   }
   hci::Address address = generate_nrpa();
   auto random_address = AddressWithType(address, AddressType::RANDOM_DEVICE_ADDRESS);
@@ -465,7 +473,7 @@ void LeAddressManager::handle_next_command() {
     }
   }
 
-  ASSERT(!cached_commands_.empty());
+  log::assert_that(!cached_commands_.empty(), "assert failed: !cached_commands_.empty()");
   auto command = std::move(cached_commands_.front());
   cached_commands_.pop();
 

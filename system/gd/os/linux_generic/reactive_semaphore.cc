@@ -30,7 +30,7 @@ namespace bluetooth {
 namespace os {
 
 ReactiveSemaphore::ReactiveSemaphore(unsigned int value) : fd_(eventfd(value, EFD_SEMAPHORE | EFD_NONBLOCK)) {
-  ASSERT(fd_ != -1);
+  log::assert_that(fd_ != -1, "assert failed: fd_ != -1");
 }
 
 ReactiveSemaphore::~ReactiveSemaphore() {

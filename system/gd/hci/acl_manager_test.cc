@@ -167,7 +167,9 @@ class AclManagerNoCallbacksTest : public ::testing::Test {
   }
 
   void sync_client_handler() {
-    ASSERT(thread_.GetReactor()->WaitForIdle(std::chrono::seconds(2)));
+    log::assert_that(
+        thread_.GetReactor()->WaitForIdle(std::chrono::seconds(2)),
+        "assert failed: thread_.GetReactor()->WaitForIdle(std::chrono::seconds(2))");
   }
 
   TestModuleRegistry fake_registry_;

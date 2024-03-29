@@ -68,7 +68,9 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
       ::grpc::ServerWriter<ConnectionEvent>* writer) override {
     log::info("peer={}", request->address());
     Address peer;
-    ASSERT(Address::FromString(request->address(), peer));
+    log::assert_that(
+        Address::FromString(request->address(), peer),
+        "assert failed: Address::FromString(request->address(), peer)");
     acl_manager_->CreateConnection(peer);
     if (per_connection_events_.size() > current_connection_request_) {
       return ::grpc::Status(::grpc::StatusCode::RESOURCE_EXHAUSTED, "Only one outstanding request is supported");

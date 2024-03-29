@@ -418,7 +418,7 @@ struct Controller::impl {
     ASSERT(view.GetCommandOpCode() == OpCode::READ_DEFAULT_ERRONEOUS_DATA_REPORTING);
     auto complete_view = ReadDefaultErroneousDataReportingCompleteView::Create(view);
     // Check to see that the opcode was correct.
-    // ASSERT(complete_view.IsValid()) is not used here to avoid process abort.
+    // log::assert_that is not used here to avoid process abort.
     // Some devices, such as mokey_go32, may claim to support it but do not
     // actually do so (b/277589118).
     if (!complete_view.IsValid()) {
@@ -453,7 +453,7 @@ struct Controller::impl {
     ASSERT(view.GetCommandOpCode() == OpCode::WRITE_DEFAULT_ERRONEOUS_DATA_REPORTING);
     auto complete_view = WriteDefaultErroneousDataReportingCompleteView::Create(view);
     // Check to see that the opcode was correct.
-    // ASSERT(complete_view.IsValid()) is not used here to avoid process abort.
+    // log::assert_that is not used here to avoid process abort.
     // Some devices, such as mokey_go32, may claim to support it but do not
     // actually do so (b/277589118).
     if (!complete_view.IsValid()) {

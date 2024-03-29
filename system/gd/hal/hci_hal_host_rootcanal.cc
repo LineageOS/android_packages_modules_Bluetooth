@@ -104,7 +104,9 @@ class HciHalHost : public HciHal {
     log::info("before");
     {
       std::lock_guard<std::mutex> incoming_packet_callback_lock(incoming_packet_callback_mutex_);
-      ASSERT(incoming_packet_callback_ == nullptr && callback != nullptr);
+      log::assert_that(
+          incoming_packet_callback_ == nullptr && callback != nullptr,
+          "assert failed: incoming_packet_callback_ == nullptr && callback != nullptr");
       incoming_packet_callback_ = callback;
     }
     log::info("after");
@@ -122,7 +124,7 @@ class HciHalHost : public HciHal {
 
   void sendHciCommand(HciPacket command) override {
     std::lock_guard<std::mutex> lock(api_mutex_);
-    ASSERT(sock_fd_ != INVALID_FD);
+    log::assert_that(sock_fd_ != INVALID_FD, "assert failed: sock_fd_ != INVALID_FD");
     std::vector<uint8_t> packet = std::move(command);
     btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::CMD);
     packet.insert(packet.cbegin(), kH4Command);
@@ -131,7 +133,7 @@ class HciHalHost : public HciHal {
 
   void sendAclData(HciPacket data) override {
     std::lock_guard<std::mutex> lock(api_mutex_);
-    ASSERT(sock_fd_ != INVALID_FD);
+    log::assert_that(sock_fd_ != INVALID_FD, "assert failed: sock_fd_ != INVALID_FD");
     std::vector<uint8_t> packet = std::move(data);
     btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::ACL);
     packet.insert(packet.cbegin(), kH4Acl);
@@ -140,7 +142,7 @@ class HciHalHost : public HciHal {
 
   void sendScoData(HciPacket data) override {
     std::lock_guard<std::mutex> lock(api_mutex_);
-    ASSERT(sock_fd_ != INVALID_FD);
+    log::assert_that(sock_fd_ != INVALID_FD, "assert failed: sock_fd_ != INVALID_FD");
     std::vector<uint8_t> packet = std::move(data);
     btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::SCO);
     packet.insert(packet.cbegin(), kH4Sco);
@@ -149,7 +151,7 @@ class HciHalHost : public HciHal {
 
   void sendIsoData(HciPacket data) override {
     std::lock_guard<std::mutex> lock(api_mutex_);
-    ASSERT(sock_fd_ != INVALID_FD);
+    log::assert_that(sock_fd_ != INVALID_FD, "assert failed: sock_fd_ != INVALID_FD");
     std::vector<uint8_t> packet = std::move(data);
     btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::ISO);
     packet.insert(packet.cbegin(), kH4Iso);
@@ -164,9 +166,9 @@ class HciHalHost : public HciHal {
 
   void Start() override {
     std::lock_guard<std::mutex> lock(api_mutex_);
-    ASSERT(sock_fd_ == INVALID_FD);
+    log::assert_that(sock_fd_ == INVALID_FD, "assert failed: sock_fd_ == INVALID_FD");
     sock_fd_ = ConnectToSocket();
-    ASSERT(sock_fd_ != INVALID_FD);
+    log::assert_that(sock_fd_ != INVALID_FD, "assert failed: sock_fd_ != INVALID_FD");
     reactable_ = hci_incoming_thread_.GetReactor()->Register(
         sock_fd_,
         common::Bind(&HciHalHost::incoming_packet_received, common::Unretained(this)),
@@ -185,7 +187,7 @@ class HciHalHost : public HciHal {
       // Wait up to 1 second for the last incoming packet callback to finish
       hci_incoming_thread_.GetReactor()->WaitForUnregisteredReactable(std::chrono::milliseconds(1000));
       log::info("HAL is stopping, finished waiting for last callback");
-      ASSERT(sock_fd_ != INVALID_FD);
+      log::assert_that(sock_fd_ != INVALID_FD, "assert failed: sock_fd_ != INVALID_FD");
     }
     reactable_ = nullptr;
     {

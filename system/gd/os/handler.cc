@@ -69,8 +69,10 @@ void Handler::Clear() {
 }
 
 void Handler::WaitUntilStopped(std::chrono::milliseconds timeout) {
-  ASSERT(reactable_ == nullptr);
-  ASSERT(thread_->GetReactor()->WaitForUnregisteredReactable(timeout));
+  log::assert_that(reactable_ == nullptr, "assert failed: reactable_ == nullptr");
+  log::assert_that(
+      thread_->GetReactor()->WaitForUnregisteredReactable(timeout),
+      "assert failed: thread_->GetReactor()->WaitForUnregisteredReactable(timeout)");
 }
 
 void Handler::handle_next_event() {

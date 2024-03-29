@@ -66,15 +66,19 @@ void neighbor::ScanModule::impl::OnCommandComplete(hci::CommandCompleteView view
   switch (view.GetCommandOpCode()) {
     case hci::OpCode::READ_SCAN_ENABLE: {
       auto packet = hci::ReadScanEnableCompleteView::Create(view);
-      ASSERT(packet.IsValid());
-      ASSERT(packet.GetStatus() == hci::ErrorCode::SUCCESS);
+      log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
+      log::assert_that(
+          packet.GetStatus() == hci::ErrorCode::SUCCESS,
+          "assert failed: packet.GetStatus() == hci::ErrorCode::SUCCESS");
       ReadScanEnable(packet.GetScanEnable());
     } break;
 
     case hci::OpCode::WRITE_SCAN_ENABLE: {
       auto packet = hci::WriteScanEnableCompleteView::Create(view);
-      ASSERT(packet.IsValid());
-      ASSERT(packet.GetStatus() == hci::ErrorCode::SUCCESS);
+      log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
+      log::assert_that(
+          packet.GetStatus() == hci::ErrorCode::SUCCESS,
+          "assert failed: packet.GetStatus() == hci::ErrorCode::SUCCESS");
     } break;
 
     default:

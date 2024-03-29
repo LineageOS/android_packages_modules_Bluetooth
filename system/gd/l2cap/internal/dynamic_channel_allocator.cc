@@ -50,7 +50,7 @@ std::shared_ptr<DynamicChannelImpl> DynamicChannelAllocator::AllocateChannel(Psm
       "Failed to create channel for psm 0x{:x} device {}",
       psm,
       ADDRESS_TO_LOGGABLE_CSTR(link_->GetDevice()));
-  ASSERT(elem.first->second != nullptr);
+  log::assert_that(elem.first->second != nullptr, "assert failed: elem.first->second != nullptr");
   used_remote_cid_.insert(remote_cid);
   used_cid_.insert(cid);
   return elem.first->second;
@@ -69,7 +69,7 @@ std::shared_ptr<DynamicChannelImpl> DynamicChannelAllocator::AllocateReservedCha
       "Failed to create channel for psm 0x{:x} device {}",
       psm,
       ADDRESS_TO_LOGGABLE_CSTR(link_->GetDevice()));
-  ASSERT(elem.first->second != nullptr);
+  log::assert_that(elem.first->second != nullptr, "assert failed: elem.first->second != nullptr");
   used_remote_cid_.insert(remote_cid);
   return elem.first->second;
 }

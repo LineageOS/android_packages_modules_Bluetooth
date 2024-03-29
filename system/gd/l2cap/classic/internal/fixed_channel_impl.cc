@@ -34,8 +34,8 @@ FixedChannelImpl::FixedChannelImpl(Cid cid, Link* link, os::Handler* l2cap_handl
     : cid_(cid), device_(link->GetDevice()), link_(link), l2cap_handler_(l2cap_handler) {
   log::assert_that(
       cid_ >= kFirstFixedChannel && cid_ <= kLastFixedChannel, "Invalid cid: {}", cid_);
-  ASSERT(link_ != nullptr);
-  ASSERT(l2cap_handler_ != nullptr);
+  log::assert_that(link_ != nullptr, "assert failed: link_ != nullptr");
+  log::assert_that(l2cap_handler_ != nullptr, "assert failed: l2cap_handler_ != nullptr");
 }
 
 void FixedChannelImpl::RegisterOnCloseCallback(os::Handler* user_handler,
@@ -77,7 +77,7 @@ void FixedChannelImpl::Acquire() {
       user_handler_ != nullptr, "Must register OnCloseCallback before calling any methods");
   if (closed_) {
     log::warn("{} is already closed", ToLoggableStr(*this));
-    ASSERT(!acquired_);
+    log::assert_that(!acquired_, "assert failed: !acquired_");
     return;
   }
   if (acquired_) {
@@ -93,7 +93,7 @@ void FixedChannelImpl::Release() {
       user_handler_ != nullptr, "Must register OnCloseCallback before calling any methods");
   if (closed_) {
     log::warn("{} is already closed", ToLoggableStr(*this));
-    ASSERT(!acquired_);
+    log::assert_that(!acquired_, "assert failed: !acquired_");
     return;
   }
   if (!acquired_) {

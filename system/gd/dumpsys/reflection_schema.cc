@@ -30,7 +30,7 @@ using namespace bluetooth;
 dumpsys::ReflectionSchema::ReflectionSchema(const std::string& pre_bundled_schema)
     : pre_bundled_schema_(pre_bundled_schema) {
   bundled_schema_ = flatbuffers::GetRoot<bluetooth::dumpsys::BundledSchema>(pre_bundled_schema_.data());
-  ASSERT(bundled_schema_ != nullptr);
+  log::assert_that(bundled_schema_ != nullptr, "assert failed: bundled_schema_ != nullptr");
 }
 
 int dumpsys::ReflectionSchema::GetNumberOfBundledSchemas() const {

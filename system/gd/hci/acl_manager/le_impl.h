@@ -246,7 +246,9 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
           std::piecewise_construct,
           std::forward_as_tuple(handle),
           std::forward_as_tuple(remote_address, std::move(pending_connection), queue_end, handler));
-      ASSERT(emplace_pair.second);  // Make sure the connection is unique
+      log::assert_that(
+          emplace_pair.second,
+          "assert failed: emplace_pair.second");  // Make sure the connection is unique
       emplace_pair.first->second.le_connection_management_callbacks_ = le_connection_management_callbacks;
     }
 
@@ -343,7 +345,8 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
 
     if (packet.GetSubeventCode() == SubeventCode::CONNECTION_COMPLETE) {
       LeConnectionCompleteView connection_complete = LeConnectionCompleteView::Create(packet);
-      ASSERT(connection_complete.IsValid());
+      log::assert_that(
+          connection_complete.IsValid(), "assert failed: connection_complete.IsValid()");
       status = connection_complete.GetStatus();
       address = connection_complete.GetPeerAddress();
       peer_address_type = connection_complete.GetPeerAddressType();
@@ -356,7 +359,8 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     } else if (packet.GetSubeventCode() == SubeventCode::ENHANCED_CONNECTION_COMPLETE) {
       LeEnhancedConnectionCompleteView connection_complete =
           LeEnhancedConnectionCompleteView::Create(packet);
-      ASSERT(connection_complete.IsValid());
+      log::assert_that(
+          connection_complete.IsValid(), "assert failed: connection_complete.IsValid()");
       status = connection_complete.GetStatus();
       address = connection_complete.GetPeerAddress();
       peer_address_type = connection_complete.GetPeerAddressType();
@@ -472,7 +476,8 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     if (packet.GetSubeventCode() == SubeventCode::ENHANCED_CONNECTION_COMPLETE) {
       LeEnhancedConnectionCompleteView connection_complete =
           LeEnhancedConnectionCompleteView::Create(packet);
-      ASSERT(connection_complete.IsValid());
+      log::assert_that(
+          connection_complete.IsValid(), "assert failed: connection_complete.IsValid()");
 
       connection->local_resolvable_private_address_ =
           connection_complete.GetLocalResolvablePrivateAddress();
@@ -789,14 +794,18 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
   }
 
   void on_extended_create_connection(CommandStatusView status) {
-    ASSERT(status.IsValid());
-    ASSERT(status.GetCommandOpCode() == OpCode::LE_EXTENDED_CREATE_CONNECTION);
+    log::assert_that(status.IsValid(), "assert failed: status.IsValid()");
+    log::assert_that(
+        status.GetCommandOpCode() == OpCode::LE_EXTENDED_CREATE_CONNECTION,
+        "assert failed: status.GetCommandOpCode() == OpCode::LE_EXTENDED_CREATE_CONNECTION");
     update_connectability_state_after_armed(status.GetStatus());
   }
 
   void on_create_connection(CommandStatusView status) {
-    ASSERT(status.IsValid());
-    ASSERT(status.GetCommandOpCode() == OpCode::LE_CREATE_CONNECTION);
+    log::assert_that(status.IsValid(), "assert failed: status.IsValid()");
+    log::assert_that(
+        status.GetCommandOpCode() == OpCode::LE_CREATE_CONNECTION,
+        "assert failed: status.GetCommandOpCode() == OpCode::LE_CREATE_CONNECTION");
     update_connectability_state_after_armed(status.GetStatus());
   }
 
@@ -841,7 +850,11 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     uint16_t conn_interval_max = os::GetSystemPropertyUint32(kPropertyMaxConnInterval, kConnIntervalMax);
     uint16_t conn_latency = os::GetSystemPropertyUint32(kPropertyConnLatency, kConnLatency);
     uint16_t supervision_timeout = os::GetSystemPropertyUint32(kPropertyConnSupervisionTimeout, kSupervisionTimeout);
-    ASSERT(check_connection_parameters(conn_interval_min, conn_interval_max, conn_latency, supervision_timeout));
+    log::assert_that(
+        check_connection_parameters(
+            conn_interval_min, conn_interval_max, conn_latency, supervision_timeout),
+        "assert failed: check_connection_parameters(conn_interval_min, conn_interval_max, "
+        "conn_latency, supervision_timeout)");
 
     AddressWithType address_with_type = connection_peer_address_with_type_;
     if (initiator_filter_policy == InitiatorFilterPolicy::USE_FILTER_ACCEPT_LIST) {
@@ -1044,7 +1057,7 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
         LeSetDefaultSubrateBuilder::Create(subrate_min, subrate_max, max_latency, cont_num, sup_tout),
         handler_->BindOnce([](CommandCompleteView complete) {
           auto complete_view = LeSetDefaultSubrateCompleteView::Create(complete);
-          ASSERT(complete_view.IsValid());
+          log::assert_that(complete_view.IsValid(), "assert failed: complete_view.IsValid()");
           ErrorCode status = complete_view.GetStatus();
           log::assert_that(status == ErrorCode::SUCCESS, "Status = {}", ErrorCodeText(status));
         }));
@@ -1081,14 +1094,16 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
   }
 
   void handle_register_le_callbacks(LeConnectionCallbacks* callbacks, os::Handler* handler) {
-    ASSERT(le_client_callbacks_ == nullptr);
-    ASSERT(le_client_handler_ == nullptr);
+    log::assert_that(
+        le_client_callbacks_ == nullptr, "assert failed: le_client_callbacks_ == nullptr");
+    log::assert_that(le_client_handler_ == nullptr, "assert failed: le_client_handler_ == nullptr");
     le_client_callbacks_ = callbacks;
     le_client_handler_ = handler;
   }
 
   void handle_register_le_acceptlist_callbacks(LeAcceptlistCallbacks* callbacks) {
-    ASSERT(le_acceptlist_callbacks_ == nullptr);
+    log::assert_that(
+        le_acceptlist_callbacks_ == nullptr, "assert failed: le_acceptlist_callbacks_ == nullptr");
     le_acceptlist_callbacks_ = callbacks;
   }
 
@@ -1174,7 +1189,7 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
 
   void on_create_connection_cancel_complete(CommandCompleteView view) {
     auto complete_view = LeCreateConnectionCancelCompleteView::Create(view);
-    ASSERT(complete_view.IsValid());
+    log::assert_that(complete_view.IsValid(), "assert failed: complete_view.IsValid()");
     if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
       auto status = complete_view.GetStatus();
       std::string error_code = ErrorCodeText(status);

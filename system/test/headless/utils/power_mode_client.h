@@ -200,12 +200,14 @@ class PowerMode {
   }
 
   ~PowerMode() {
-    ASSERT(BTM_SUCCESS == get_btm_client_interface().lifecycle.BTM_PmRegister(
-                              BTM_PM_DEREG, &pm_id_,
-                              []([[maybe_unused]] const RawAddress& bd_addr,
-                                 [[maybe_unused]] tBTM_PM_STATUS status,
-                                 [[maybe_unused]] uint16_t value,
-                                 [[maybe_unused]] tHCI_STATUS hci_status) {}));
+    auto status = get_btm_client_interface().lifecycle.BTM_PmRegister(
+        BTM_PM_DEREG, &pm_id_,
+        []([[maybe_unused]] const RawAddress& bd_addr,
+           [[maybe_unused]] tBTM_PM_STATUS status,
+           [[maybe_unused]] uint16_t value,
+           [[maybe_unused]] tHCI_STATUS hci_status) {});
+    log::assert_that(BTM_SUCCESS == status,
+                     "assert failed: BTM_SUCCESS == status");
   }
 
   Client GetClient(const RawAddress bd_addr) { return Client(pm_id_, bd_addr); }

@@ -81,7 +81,9 @@ struct VendorSpecificEventManager::impl {
 
   void on_vendor_specific_event(EventView event_view) {
     auto vendor_specific_event_view = VendorSpecificEventView::Create(event_view);
-    ASSERT(vendor_specific_event_view.IsValid());
+    log::assert_that(
+        vendor_specific_event_view.IsValid(),
+        "assert failed: vendor_specific_event_view.IsValid()");
     VseSubeventCode vse_subevent_code = vendor_specific_event_view.GetSubeventCode();
     if (subevent_handlers_.find(vse_subevent_code) == subevent_handlers_.end()) {
       log::warn("Unhandled vendor specific event of type 0x{:02x}", vse_subevent_code);

@@ -26,7 +26,8 @@ namespace security {
 namespace pairing {
 
 void ClassicPairingHandler::NotifyUiDisplayYesNo(uint32_t numeric_value) {
-  ASSERT(user_interface_handler_ != nullptr);
+  log::assert_that(
+      user_interface_handler_ != nullptr, "assert failed: user_interface_handler_ != nullptr");
   ConfirmationData data(*GetRecord()->GetPseudoAddress(), device_name_, numeric_value);
   data.SetRemoteIoCaps(remote_io_capability_);
   data.SetRemoteAuthReqs(remote_authentication_requirements_);
@@ -35,7 +36,8 @@ void ClassicPairingHandler::NotifyUiDisplayYesNo(uint32_t numeric_value) {
 }
 
 void ClassicPairingHandler::NotifyUiDisplayYesNo() {
-  ASSERT(user_interface_handler_ != nullptr);
+  log::assert_that(
+      user_interface_handler_ != nullptr, "assert failed: user_interface_handler_ != nullptr");
   ConfirmationData data(*GetRecord()->GetPseudoAddress(), device_name_);
   data.SetRemoteIoCaps(remote_io_capability_);
   data.SetRemoteAuthReqs(remote_authentication_requirements_);
@@ -44,7 +46,8 @@ void ClassicPairingHandler::NotifyUiDisplayYesNo() {
 }
 
 void ClassicPairingHandler::NotifyUiDisplayPasskey(uint32_t passkey) {
-  ASSERT(user_interface_handler_ != nullptr);
+  log::assert_that(
+      user_interface_handler_ != nullptr, "assert failed: user_interface_handler_ != nullptr");
   ConfirmationData data(*GetRecord()->GetPseudoAddress(), device_name_, passkey);
   data.SetRemoteIoCaps(remote_io_capability_);
   data.SetRemoteAuthReqs(remote_authentication_requirements_);
@@ -53,7 +56,8 @@ void ClassicPairingHandler::NotifyUiDisplayPasskey(uint32_t passkey) {
 }
 
 void ClassicPairingHandler::NotifyUiDisplayPasskeyInput() {
-  ASSERT(user_interface_handler_ != nullptr);
+  log::assert_that(
+      user_interface_handler_ != nullptr, "assert failed: user_interface_handler_ != nullptr");
   ConfirmationData data(*GetRecord()->GetPseudoAddress(), device_name_);
   data.SetRemoteIoCaps(remote_io_capability_);
   data.SetRemoteAuthReqs(remote_authentication_requirements_);
@@ -62,7 +66,8 @@ void ClassicPairingHandler::NotifyUiDisplayPasskeyInput() {
 }
 
 void ClassicPairingHandler::NotifyUiDisplayPinCodeInput() {
-  ASSERT(user_interface_handler_ != nullptr);
+  log::assert_that(
+      user_interface_handler_ != nullptr, "assert failed: user_interface_handler_ != nullptr");
   ConfirmationData data(*GetRecord()->GetPseudoAddress(), device_name_);
   data.SetRemoteIoCaps(remote_io_capability_);
   data.SetRemoteAuthReqs(remote_authentication_requirements_);
@@ -71,7 +76,8 @@ void ClassicPairingHandler::NotifyUiDisplayPinCodeInput() {
 }
 
 void ClassicPairingHandler::NotifyUiDisplayCancel() {
-  ASSERT(user_interface_handler_ != nullptr);
+  log::assert_that(
+      user_interface_handler_ != nullptr, "assert failed: user_interface_handler_ != nullptr");
   user_interface_handler_->CallOn(user_interface_, &UI::Cancel, *GetRecord()->GetPseudoAddress());
 }
 
@@ -171,17 +177,17 @@ void ClassicPairingHandler::Cancel() {
 }
 
 void ClassicPairingHandler::OnReceive(hci::ChangeConnectionLinkKeyCompleteView packet) {
-  ASSERT(packet.IsValid());
+  log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
   log::info("Received unsupported event: {}", hci::EventCodeText(packet.GetEventCode()));
 }
 
 void ClassicPairingHandler::OnReceive(hci::CentralLinkKeyCompleteView packet) {
-  ASSERT(packet.IsValid());
+  log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
   log::info("Received unsupported event: {}", hci::EventCodeText(packet.GetEventCode()));
 }
 
 void ClassicPairingHandler::OnReceive(hci::PinCodeRequestView packet) {
-  ASSERT(packet.IsValid());
+  log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
   log::info("Received: {}", hci::EventCodeText(packet.GetEventCode()));
   log::assert_that(
       GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
@@ -193,7 +199,7 @@ void ClassicPairingHandler::OnReceive(hci::PinCodeRequestView packet) {
 }
 
 void ClassicPairingHandler::OnReceive(hci::LinkKeyRequestView packet) {
-  ASSERT(packet.IsValid());
+  log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
   if (already_link_key_replied_) {
     log::warn("Pairing is already in progress...");
     return;
@@ -216,7 +222,7 @@ void ClassicPairingHandler::OnReceive(hci::LinkKeyRequestView packet) {
 }
 
 void ClassicPairingHandler::OnReceive(hci::LinkKeyNotificationView packet) {
-  ASSERT(packet.IsValid());
+  log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
   log::info("Received: {}", hci::EventCodeText(packet.GetEventCode()));
   log::assert_that(
       GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
@@ -232,7 +238,7 @@ void ClassicPairingHandler::OnReceive(hci::LinkKeyNotificationView packet) {
 }
 
 void ClassicPairingHandler::OnReceive(hci::IoCapabilityRequestView packet) {
-  ASSERT(packet.IsValid());
+  log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
   log::info("Received: {}", hci::EventCodeText(packet.GetEventCode()));
   log::assert_that(
       GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
@@ -249,7 +255,7 @@ void ClassicPairingHandler::OnReceive(hci::IoCapabilityRequestView packet) {
 }
 
 void ClassicPairingHandler::OnReceive(hci::IoCapabilityResponseView packet) {
-  ASSERT(packet.IsValid());
+  log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
   log::info("Received: {}", hci::EventCodeText(packet.GetEventCode()));
   log::assert_that(
       GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
@@ -315,7 +321,7 @@ void ClassicPairingHandler::OnReceive(hci::IoCapabilityResponseView packet) {
 }
 
 void ClassicPairingHandler::OnReceive(hci::SimplePairingCompleteView packet) {
-  ASSERT(packet.IsValid());
+  log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
   log::info("Received: {}", hci::EventCodeText(packet.GetEventCode()));
   log::assert_that(
       GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
@@ -328,22 +334,22 @@ void ClassicPairingHandler::OnReceive(hci::SimplePairingCompleteView packet) {
 }
 
 void ClassicPairingHandler::OnReceive(hci::ReturnLinkKeysView packet) {
-  ASSERT(packet.IsValid());
+  log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
   log::info("Received: {}", hci::EventCodeText(packet.GetEventCode()));
 }
 
 void ClassicPairingHandler::OnReceive(hci::EncryptionChangeView packet) {
-  ASSERT(packet.IsValid());
+  log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
   log::info("Received: {}", hci::EventCodeText(packet.GetEventCode()));
 }
 
 void ClassicPairingHandler::OnReceive(hci::EncryptionKeyRefreshCompleteView packet) {
-  ASSERT(packet.IsValid());
+  log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
   log::info("Received: {}", hci::EventCodeText(packet.GetEventCode()));
 }
 
 void ClassicPairingHandler::OnReceive(hci::RemoteOobDataRequestView packet) {
-  ASSERT(packet.IsValid());
+  log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
   log::info("Received: {}", hci::EventCodeText(packet.GetEventCode()));
   log::assert_that(
       GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
@@ -395,7 +401,7 @@ void ClassicPairingHandler::OnReceive(hci::RemoteOobDataRequestView packet) {
 }
 
 void ClassicPairingHandler::OnReceive(hci::UserPasskeyNotificationView packet) {
-  ASSERT(packet.IsValid());
+  log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
   log::info("Received: {}", hci::EventCodeText(packet.GetEventCode()));
   log::assert_that(
       GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
@@ -403,7 +409,7 @@ void ClassicPairingHandler::OnReceive(hci::UserPasskeyNotificationView packet) {
 }
 
 void ClassicPairingHandler::OnReceive(hci::KeypressNotificationView packet) {
-  ASSERT(packet.IsValid());
+  log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
   log::info("Received: {}", hci::EventCodeText(packet.GetEventCode()));
   log::info(
       "Notification Type: {}", hci::KeypressNotificationTypeText(packet.GetNotificationType()));
@@ -439,7 +445,7 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
     user_confirmation_request_ = std::make_optional<hci::UserConfirmationRequestView>(packet);
     return;
   }
-  ASSERT(packet.IsValid());
+  log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
   log::info("Received: {}", hci::EventCodeText(packet.GetEventCode()));
   log::assert_that(
       GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
@@ -647,7 +653,7 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
 }
 
 void ClassicPairingHandler::OnReceive(hci::UserPasskeyRequestView packet) {
-  ASSERT(packet.IsValid());
+  log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
   log::assert_that(
       GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
 }

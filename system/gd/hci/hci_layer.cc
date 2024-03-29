@@ -59,9 +59,11 @@ using std::unique_ptr;
 
 static void fail_if_reset_complete_not_success(CommandCompleteView complete) {
   auto reset_complete = ResetCompleteView::Create(complete);
-  ASSERT(reset_complete.IsValid());
+  log::assert_that(reset_complete.IsValid(), "assert failed: reset_complete.IsValid()");
   log::debug("Reset completed with status: {}", ErrorCodeText(ErrorCode::SUCCESS));
-  ASSERT(reset_complete.GetStatus() == ErrorCode::SUCCESS);
+  log::assert_that(
+      reset_complete.GetStatus() == ErrorCode::SUCCESS,
+      "assert failed: reset_complete.GetStatus() == ErrorCode::SUCCESS");
 }
 
 static void abort_after_time_out(OpCode op_code) {
@@ -161,7 +163,7 @@ struct HciLayer::impl {
 
   void on_command_status(EventView event) {
     CommandStatusView response_view = CommandStatusView::Create(event);
-    ASSERT(response_view.IsValid());
+    log::assert_that(response_view.IsValid(), "assert failed: response_view.IsValid()");
     OpCode op_code = response_view.GetCommandOpCode();
     ErrorCode status = response_view.GetStatus();
     if (status != ErrorCode::SUCCESS) {
@@ -180,7 +182,7 @@ struct HciLayer::impl {
   template <typename TResponse>
   void handle_command_response(EventView event, std::string logging_id) {
     TResponse response_view = TResponse::Create(event);
-    ASSERT(response_view.IsValid());
+    log::assert_that(response_view.IsValid(), "assert failed: response_view.IsValid()");
     command_credits_ = response_view.GetNumHciCommandPackets();
     OpCode op_code = response_view.GetCommandOpCode();
     if (op_code == OpCode::NONE) {
@@ -224,7 +226,8 @@ struct HciLayer::impl {
           std::make_shared<std::vector<std::uint8_t>>(complete_event_builder->SerializeToBytes());
       CommandCompleteView command_complete_view =
           CommandCompleteView::Create(EventView::Create(PacketView<kLittleEndian>(complete)));
-      ASSERT(command_complete_view.IsValid());
+      log::assert_that(
+          command_complete_view.IsValid(), "assert failed: command_complete_view.IsValid()");
       command_queue_.front().GetCallback<CommandCompleteView>()->Invoke(command_complete_view);
     } else {
       log::assert_that(
@@ -305,7 +308,7 @@ struct HciLayer::impl {
     hal_->sendHciCommand(*bytes);
 
     auto cmd_view = CommandView::Create(PacketView<kLittleEndian>(bytes));
-    ASSERT(cmd_view.IsValid());
+    log::assert_that(cmd_view.IsValid(), "assert failed: cmd_view.IsValid()");
     OpCode op_code = cmd_view.GetOpCode();
     power_telemetry::GetInstance().LogHciCmdDetail();
     command_queue_.front().command_view = std::make_unique<CommandView>(std::move(cmd_view));
@@ -377,14 +380,14 @@ struct HciLayer::impl {
   }
 
   void on_hci_event(EventView event) {
-    ASSERT(event.IsValid());
+    log::assert_that(event.IsValid(), "assert failed: event.IsValid()");
     if (command_queue_.empty()) {
       auto event_code = event.GetEventCode();
       // BT Core spec 5.2 (Volume 4, Part E section 4.4) allows anytime
       // COMMAND_COMPLETE and COMMAND_STATUS with opcode 0x0 for flow control
       if (event_code == EventCode::COMMAND_COMPLETE) {
         auto view = CommandCompleteView::Create(event);
-        ASSERT(view.IsValid());
+        log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
         auto op_code = view.GetCommandOpCode();
         log::assert_that(
             op_code == OpCode::NONE,
@@ -395,7 +398,7 @@ struct HciLayer::impl {
       }
       if (event_code == EventCode::COMMAND_STATUS) {
         auto view = CommandStatusView::Create(event);
-        ASSERT(view.IsValid());
+        log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
         auto op_code = view.GetCommandOpCode();
         log::assert_that(
             op_code == OpCode::NONE,
@@ -414,7 +417,7 @@ struct HciLayer::impl {
     // Root Inflamation is a special case, since it aborts here
     if (event_code == EventCode::VENDOR_SPECIFIC) {
       auto view = VendorSpecificEventView::Create(event);
-      ASSERT(view.IsValid());
+      log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
       if (view.GetSubeventCode() == VseSubeventCode::BQR_EVENT) {
         auto bqr_event = BqrEventView::Create(view);
         auto inflammation = BqrRootInflammationEventView::Create(bqr_event);
@@ -448,7 +451,7 @@ struct HciLayer::impl {
 
   void on_hardware_error(EventView event) {
     HardwareErrorView event_view = HardwareErrorView::Create(event);
-    ASSERT(event_view.IsValid());
+    log::assert_that(event_view.IsValid(), "assert failed: event_view.IsValid()");
 #ifdef TARGET_FLOSS
     log::warn("Hardware Error Event with code 0x{:02x}", event_view.GetHardwareCode());
     // Sending SIGINT to process the exception from BT controller.
@@ -462,7 +465,7 @@ struct HciLayer::impl {
 
   void on_le_meta_event(EventView event) {
     LeMetaEventView meta_event_view = LeMetaEventView::Create(event);
-    ASSERT(meta_event_view.IsValid());
+    log::assert_that(meta_event_view.IsValid(), "assert failed: meta_event_view.IsValid()");
     SubeventCode subevent_code = meta_event_view.GetSubeventCode();
     if (subevent_handlers_.find(subevent_code) == subevent_handlers_.end()) {
       log::warn("Unhandled le subevent of type {}", SubeventCodeText(subevent_code));

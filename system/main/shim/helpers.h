@@ -251,7 +251,7 @@ inline hci::DisconnectReason ToDisconnectReasonFromLegacy(
 }
 
 inline bool IsPacketFlushable(const BT_HDR* p_buf) {
-  ASSERT(p_buf != nullptr);
+  log::assert_that(p_buf != nullptr, "assert failed: p_buf != nullptr");
   return ToPacketData<const HciDataPreamble>(p_buf)->IsFlushable();
 }
 
