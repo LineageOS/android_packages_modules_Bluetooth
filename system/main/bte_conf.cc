@@ -26,9 +26,10 @@
 
 #include "bta/include/bta_api.h"
 #include "include/check.h"
-#include "os/log.h"
 #include "osi/include/compat.h"  // strlcpy
 #include "osi/include/config.h"
+#include "stack/include/hcidefs.h"
+#include "stack/include/sdpdefs.h"
 
 using namespace bluetooth;
 
