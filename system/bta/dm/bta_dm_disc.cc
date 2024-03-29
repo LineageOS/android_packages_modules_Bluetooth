@@ -341,7 +341,7 @@ static void bta_dm_discover(tBTA_DM_MSG* p_data) {
 
   bta_dm_gattc_register();
 
-  bta_dm_search_cb.p_service_search_cback = p_data->discover.p_cback;
+  bta_dm_search_cb.service_search_cbacks = p_data->discover.cbacks;
   bta_dm_search_cb.services_to_search = bta_dm_search_cb.services;
   bta_dm_search_cb.service_index = 0;
   bta_dm_search_cb.services_found = 0;
@@ -485,7 +485,7 @@ static void bta_dm_remote_name_cmpl(const tBTA_DM_MSG* p_data) {
 
   // Callback with this property
   if (bta_dm_search_cb.p_device_search_cback != nullptr ||
-      bta_dm_search_cb.p_service_search_cback != nullptr) {
+      bta_dm_search_cb.service_search_cbacks.legacy != nullptr) {
     tBTA_DM_SEARCH search_data = {
         .disc_res =  // tBTA_DM_DISC_RES
         {
@@ -508,9 +508,9 @@ static void bta_dm_remote_name_cmpl(const tBTA_DM_MSG* p_data) {
     if (bta_dm_search_cb.p_device_search_cback != nullptr) {
       bta_dm_search_cb.p_device_search_cback(BTA_DM_NAME_READ_EVT,
                                              &search_data);
-    } else if (bta_dm_search_cb.p_service_search_cback != nullptr) {
-      bta_dm_search_cb.p_service_search_cback(BTA_DM_NAME_READ_EVT,
-                                              &search_data);
+    } else if (bta_dm_search_cb.service_search_cbacks.legacy != nullptr) {
+      bta_dm_search_cb.service_search_cbacks.legacy(BTA_DM_NAME_READ_EVT,
+                                                    &search_data);
     }
   } else {
     log::warn("Received remote name complete without callback");
@@ -668,8 +668,8 @@ static void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
                                     bta_dm_get_remname());
 
           result.disc_ble_res.services = &gatt_uuids;
-          bta_dm_search_cb.p_service_search_cback(BTA_DM_GATT_OVER_SDP_RES_EVT,
-                                                  &result);
+          bta_dm_search_cb.service_search_cbacks.legacy(
+              BTA_DM_GATT_OVER_SDP_RES_EVT, &result);
         }
       } else {
         /* SDP_DB_FULL means some records with the
@@ -735,7 +735,8 @@ static void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
       result.did_res.vendor_id = di_record.rec.vendor;
       result.did_res.product_id = di_record.rec.product;
       result.did_res.version = di_record.rec.version;
-      bta_dm_search_cb.p_service_search_cback(BTA_DM_DID_RES_EVT, &result);
+      bta_dm_search_cb.service_search_cbacks.legacy(BTA_DM_DID_RES_EVT,
+                                                    &result);
     }
 #endif
 
@@ -847,7 +848,7 @@ static void bta_dm_read_dis_cmpl(const RawAddress& addr,
     result.did_res.vendor_id = p_dis_value->pnp_id.vendor_id;
     result.did_res.product_id = p_dis_value->pnp_id.product_id;
     result.did_res.version = p_dis_value->pnp_id.product_version;
-    bta_dm_search_cb.p_service_search_cback(BTA_DM_DID_RES_EVT, &result);
+    bta_dm_search_cb.service_search_cbacks.legacy(BTA_DM_DID_RES_EVT, &result);
   }
 
   bta_dm_execute_queued_request();
@@ -913,10 +914,10 @@ static void bta_dm_search_cmpl() {
 
   // send all result back to app
   if (send_gatt_results) {
-    if (bta_dm_search_cb.p_service_search_cback) {
+    if (bta_dm_search_cb.service_search_cbacks.legacy) {
       log::info("Sending GATT results to upper layer");
-      bta_dm_search_cb.p_service_search_cback(BTA_DM_GATT_OVER_LE_RES_EVT,
-                                              &result);
+      bta_dm_search_cb.service_search_cbacks.legacy(BTA_DM_GATT_OVER_LE_RES_EVT,
+                                                    &result);
     }
   }
 
@@ -958,8 +959,8 @@ static void bta_dm_disc_result(tBTA_DM_MSG* p_data) {
   if (!is_gatt_over_ble && (bta_dm_search_cb.services &
                             ((BTA_ALL_SERVICE_MASK | BTA_USER_SERVICE_MASK) &
                              ~BTA_BLE_SERVICE_MASK)))
-    bta_dm_search_cb.p_service_search_cback(BTA_DM_DISC_RES_EVT,
-                                            &p_data->disc_result.result);
+    bta_dm_search_cb.service_search_cbacks.legacy(BTA_DM_DISC_RES_EVT,
+                                                  &p_data->disc_result.result);
 
   get_gatt_interface().BTA_GATTC_CancelOpen(0, bta_dm_search_cb.peer_bdaddr,
                                             true);
@@ -985,9 +986,9 @@ static void bta_dm_search_result(tBTA_DM_MSG* p_data) {
   if ((!bta_dm_search_cb.services) ||
       ((bta_dm_search_cb.services) &&
        (p_data->disc_result.result.disc_res.services))) {
-    if (bta_dm_search_cb.p_service_search_cback) {
-      bta_dm_search_cb.p_service_search_cback(BTA_DM_DISC_RES_EVT,
-                                              &p_data->disc_result.result);
+    if (bta_dm_search_cb.service_search_cbacks.legacy) {
+      bta_dm_search_cb.service_search_cbacks.legacy(
+          BTA_DM_DISC_RES_EVT, &p_data->disc_result.result);
     } else {
       log::warn("Received search result without valid callback");
     }
@@ -2400,7 +2401,7 @@ void bta_dm_disc_stop_device_discovery() {
   bta_sys_sendmsg(p_msg);
 }
 
-void bta_dm_disc_start_service_discovery(tBTA_DM_SEARCH_CBACK* p_cback,
+void bta_dm_disc_start_service_discovery(service_discovery_callbacks cbacks,
                                          const RawAddress& bd_addr,
                                          tBT_TRANSPORT transport) {
   tBTA_DM_API_DISCOVER* p_msg =
@@ -2409,7 +2410,7 @@ void bta_dm_disc_start_service_discovery(tBTA_DM_SEARCH_CBACK* p_cback,
   p_msg->hdr.event = BTA_DM_API_DISCOVER_EVT;
   p_msg->bd_addr = bd_addr;
   p_msg->transport = transport;
-  p_msg->p_cback = p_cback;
+  p_msg->cbacks = cbacks;
 
   bta_sys_sendmsg(p_msg);
 }

@@ -3141,7 +3141,9 @@ void btif_dm_get_remote_services(RawAddress remote_addr, const int transport) {
       kBtmLogTag, remote_addr, "Service discovery",
       base::StringPrintf("transport:%s", bt_transport_text(transport).c_str()));
 
-  BTA_DmDiscover(remote_addr, btif_dm_search_services_evt, transport);
+  BTA_DmDiscover(remote_addr,
+                 service_discovery_callbacks{btif_dm_search_services_evt},
+                 transport);
 }
 
 void btif_dm_enable_service(tBTA_SERVICE_ID service_id, bool enable) {
