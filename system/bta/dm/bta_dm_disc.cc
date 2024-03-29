@@ -729,14 +729,9 @@ static void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
     tSDP_DI_GET_RECORD di_record;
     if (get_legacy_stack_sdp_api()->device_id.SDP_GetDiRecord(
             1, &di_record, bta_dm_search_cb.p_sdp_db) == SDP_SUCCESS) {
-      tBTA_DM_SEARCH result;
-      result.did_res.bd_addr = bta_dm_search_cb.peer_bdaddr;
-      result.did_res.vendor_id_src = di_record.rec.vendor_id_source;
-      result.did_res.vendor_id = di_record.rec.vendor;
-      result.did_res.product_id = di_record.rec.product;
-      result.did_res.version = di_record.rec.version;
-      bta_dm_search_cb.service_search_cbacks.legacy(BTA_DM_DID_RES_EVT,
-                                                    &result);
+      bta_dm_search_cb.service_search_cbacks.on_did_received(
+          bta_dm_search_cb.peer_bdaddr, di_record.rec.vendor_id_source,
+          di_record.rec.vendor, di_record.rec.product, di_record.rec.version);
     }
 #endif
 
@@ -842,13 +837,9 @@ static void bta_dm_read_dis_cmpl(const RawAddress& addr,
   if (!p_dis_value) {
     log::warn("read DIS failed");
   } else {
-    tBTA_DM_SEARCH result;
-    result.did_res.bd_addr = addr;
-    result.did_res.vendor_id_src = p_dis_value->pnp_id.vendor_id_src;
-    result.did_res.vendor_id = p_dis_value->pnp_id.vendor_id;
-    result.did_res.product_id = p_dis_value->pnp_id.product_id;
-    result.did_res.version = p_dis_value->pnp_id.product_version;
-    bta_dm_search_cb.service_search_cbacks.legacy(BTA_DM_DID_RES_EVT, &result);
+    bta_dm_search_cb.service_search_cbacks.on_did_received(
+        addr, p_dis_value->pnp_id.vendor_id_src, p_dis_value->pnp_id.vendor_id,
+        p_dis_value->pnp_id.product_id, p_dis_value->pnp_id.product_version);
   }
 
   bta_dm_execute_queued_request();
