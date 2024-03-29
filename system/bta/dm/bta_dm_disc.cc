@@ -485,32 +485,34 @@ static void bta_dm_remote_name_cmpl(const tBTA_DM_MSG* p_data) {
 
   // Callback with this property
   if (bta_dm_search_cb.p_device_search_cback != nullptr ||
-      bta_dm_search_cb.service_search_cbacks.legacy != nullptr) {
-    tBTA_DM_SEARCH search_data = {
-        .disc_res =  // tBTA_DM_DISC_RES
-        {
-            .bd_addr = remote_name_msg.bd_addr,
-            .bd_name = {},
-            .services = {},
-            .device_type = {},
-            .num_uuids = 0UL,
-            .p_uuid_list = nullptr,
-            .result = (remote_name_msg.hci_status == HCI_SUCCESS) ? BTA_SUCCESS
-                                                                  : BTA_FAILURE,
-            .hci_status = remote_name_msg.hci_status,
-        },
-    };
-    if (remote_name_msg.hci_status == HCI_SUCCESS) {
-      bd_name_copy(search_data.disc_res.bd_name, remote_name_msg.bd_name);
-    }
+      bta_dm_search_cb.service_search_cbacks.on_name_read != nullptr) {
     // Both device and service search callbacks end up sending event to java.
     // It's enough to send callback to just one of them.
     if (bta_dm_search_cb.p_device_search_cback != nullptr) {
+      tBTA_DM_SEARCH search_data = {
+          .disc_res =  // tBTA_DM_DISC_RES
+          {
+              .bd_addr = remote_name_msg.bd_addr,
+              .bd_name = {},
+              .services = {},
+              .device_type = {},
+              .num_uuids = 0UL,
+              .p_uuid_list = nullptr,
+              .result = (remote_name_msg.hci_status == HCI_SUCCESS)
+                            ? BTA_SUCCESS
+                            : BTA_FAILURE,
+              .hci_status = remote_name_msg.hci_status,
+          },
+      };
+      if (remote_name_msg.hci_status == HCI_SUCCESS) {
+        bd_name_copy(search_data.disc_res.bd_name, remote_name_msg.bd_name);
+      }
       bta_dm_search_cb.p_device_search_cback(BTA_DM_NAME_READ_EVT,
                                              &search_data);
-    } else if (bta_dm_search_cb.service_search_cbacks.legacy != nullptr) {
-      bta_dm_search_cb.service_search_cbacks.legacy(BTA_DM_NAME_READ_EVT,
-                                                    &search_data);
+    } else if (bta_dm_search_cb.service_search_cbacks.on_name_read != nullptr) {
+      bta_dm_search_cb.service_search_cbacks.on_name_read(
+          remote_name_msg.bd_addr, remote_name_msg.hci_status,
+          remote_name_msg.bd_name);
     }
   } else {
     log::warn("Received remote name complete without callback");
