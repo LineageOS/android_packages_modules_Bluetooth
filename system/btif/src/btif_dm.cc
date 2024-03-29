@@ -2081,45 +2081,44 @@ static void btif_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
           BT_STATUS_SUCCESS, bd_addr, num_properties, prop);
     } break;
 
-    case BTA_DM_NAME_READ_EVT: {
-      if (IS_FLAG_ENABLED(rnr_present_during_service_discovery)) {
-        const tBTA_DM_DISC_RES& disc_res = p_data->disc_res;
-        if (disc_res.hci_status != HCI_SUCCESS) {
-          log::warn("Received RNR event with bad status addr:{} hci_status:{}",
-                    ADDRESS_TO_LOGGABLE_CSTR(disc_res.bd_addr),
-                    hci_error_code_text(disc_res.hci_status));
-          break;
-        }
-        if (disc_res.bd_name[0] == '\0') {
-          log::warn("Received RNR event without valid name addr:{}",
-                    ADDRESS_TO_LOGGABLE_CSTR(disc_res.bd_addr));
-          break;
-        }
-        bt_property_t properties[] = {{
-            .type = BT_PROPERTY_BDNAME,
-            .len = (int)strnlen((char*)disc_res.bd_name, BD_NAME_LEN),
-            .val = (void*)disc_res.bd_name,
-        }};
-        const bt_status_t status = btif_storage_set_remote_device_property(
-            &disc_res.bd_addr, properties);
-        ASSERT_LOG(status == BT_STATUS_SUCCESS,
-                   "Failed to save remote device property status:%s",
-                   bt_status_text(status).c_str());
-        const size_t num_props = sizeof(properties) / sizeof(bt_property_t);
-        GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
-            status, disc_res.bd_addr, (int)num_props, properties);
-        log::info(
-            "Callback for read name event addr:{} name:{}",
-            ADDRESS_TO_LOGGABLE_CSTR(disc_res.bd_addr),
-            PRIVATE_NAME(reinterpret_cast<char const*>(disc_res.bd_name)));
-      } else {
-        log::info("Skipping name read event - called on bad callback.");
-      }
-    } break;
-
     default: {
       ASSERTC(0, "unhandled search services event", event);
     } break;
+  }
+}
+
+void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status,
+                       const BD_NAME bd_name) {
+  if (IS_FLAG_ENABLED(rnr_present_during_service_discovery)) {
+    if (hci_status != HCI_SUCCESS) {
+      log::warn("Received RNR event with bad status addr:{} hci_status:{}",
+                ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
+                hci_error_code_text(hci_status));
+      return;
+    }
+    if (bd_name[0] == '\0') {
+      log::warn("Received RNR event without valid name addr:{}",
+                ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+      return;
+    }
+    bt_property_t properties[] = {{
+        .type = BT_PROPERTY_BDNAME,
+        .len = (int)strnlen((char*)bd_name, BD_NAME_LEN),
+        .val = (void*)bd_name,
+    }};
+    const bt_status_t status =
+        btif_storage_set_remote_device_property(&bd_addr, properties);
+    ASSERT_LOG(status == BT_STATUS_SUCCESS,
+               "Failed to save remote device property status:%s",
+               bt_status_text(status).c_str());
+    const size_t num_props = sizeof(properties) / sizeof(bt_property_t);
+    GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
+        status, bd_addr, (int)num_props, properties);
+    log::info("Callback for read name event addr:{} name:{}",
+              ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
+              PRIVATE_NAME(reinterpret_cast<char const*>(bd_name)));
+  } else {
+    log::info("Skipping name read event - called on bad callback.");
   }
 }
 
@@ -3143,8 +3142,11 @@ void btif_dm_get_remote_services(RawAddress remote_addr, const int transport) {
       base::StringPrintf("transport:%s", bt_transport_text(transport).c_str()));
 
   BTA_DmDiscover(remote_addr,
-                 service_discovery_callbacks{btif_dm_search_services_evt,
-                                             btif_on_did_received},
+                 service_discovery_callbacks{
+                     btif_dm_search_services_evt,
+                     btif_on_did_received,
+                     btif_on_name_read,
+                 },
                  transport);
 }
 
@@ -4281,6 +4283,10 @@ void btif_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
   ::btif_dm_search_services_evt(event, p_data);
 }
 
+void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status,
+                       const BD_NAME bd_name) {
+  ::btif_on_name_read(bd_addr, hci_status, bd_name);
+}
 }  // namespace testing
 }  // namespace legacy
 }  // namespace bluetooth
