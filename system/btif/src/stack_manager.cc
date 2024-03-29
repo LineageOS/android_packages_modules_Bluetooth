@@ -332,6 +332,7 @@ static void event_start_up_stack(bluetooth::core::CoreInterface* interface,
   module_start_up(get_local_module(RUST_MODULE));
   if (IS_FLAG_ENABLED(channel_sounding_in_stack)) {
     bluetooth::ras::GetRasServer()->Initialize();
+    bluetooth::ras::GetRasClient()->Initialize();
   }
 
   stack_is_running = true;
