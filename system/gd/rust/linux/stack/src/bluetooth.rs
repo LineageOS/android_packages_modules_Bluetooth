@@ -1468,18 +1468,24 @@ impl BtifBluetoothCallbacks for Bluetooth {
                     for addr in bondlist.iter() {
                         let address = addr.to_string();
 
-                        // Update bonded state if already in the list. Otherwise create a new
-                        // context with empty properties and name.
-                        self.bonded_devices
-                            .entry(address.clone())
-                            .and_modify(|d| d.bond_state = BtBondState::Bonded)
-                            .or_insert(BluetoothDeviceContext::new(
+                        // On BT started, the |remote_device_properties_changed| event from BTIF
+                        // could comes earlier then this |AdapterBondedDevices| prop. In that case
+                        // the updated remote device properties would be stored in |found_devices|,
+                        // so we need to move out and reuse them, otherwise those properties
+                        // (usually the device name) would be lost.
+                        // If the device doesn't exist in both map, create a new context with
+                        // empty properties and name.
+                        let device = self.found_devices.remove(&address).unwrap_or(
+                            BluetoothDeviceContext::new(
                                 BtBondState::Bonded,
                                 BtAclState::Disconnected,
                                 BluetoothDevice::new(address.clone(), "".to_string()),
                                 Instant::now(),
                                 vec![],
-                            ));
+                            ),
+                        );
+                        self.bonded_devices.entry(address.clone()).or_insert(device).bond_state =
+                            BtBondState::Bonded;
                     }
                 }
                 BluetoothProperty::BdName(bdname) => {
