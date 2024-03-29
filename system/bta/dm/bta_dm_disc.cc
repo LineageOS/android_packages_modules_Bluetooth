@@ -665,7 +665,7 @@ static void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
 
           // send all result back to app
           BD_NAME bd_name;
-          strlcpy((char*)bd_name, bta_dm_get_remname(), BD_NAME_LEN + 1);
+          bd_name_from_char_pointer(bd_name, bta_dm_get_remname());
 
           bta_dm_search_cb.service_search_cbacks.on_gatt_results(
               bta_dm_search_cb.peer_bdaddr, bd_name, gatt_uuids,
@@ -901,14 +901,16 @@ static void bta_dm_search_cmpl() {
 
   // send all result back to app
   if (send_gatt_results) {
-    if (bta_dm_search_cb.service_search_cbacks.on_gatt_results) {
+    if (bta_dm_search_cb.service_search_cbacks.on_gatt_results != nullptr) {
       log::info("Sending GATT results to upper layer");
 
       BD_NAME bd_name;
-      strlcpy((char*)bd_name, bta_dm_get_remname(), BD_NAME_LEN + 1);
+      bd_name_from_char_pointer(bd_name, bta_dm_get_remname());
       bta_dm_search_cb.service_search_cbacks.on_gatt_results(
           bta_dm_search_cb.peer_bdaddr, bd_name, gatt_services,
           /* transport_le */ true);
+    } else {
+      log::warn("on_gatt_results is nullptr!");
     }
   }
 
