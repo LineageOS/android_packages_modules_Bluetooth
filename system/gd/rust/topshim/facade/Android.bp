@@ -21,7 +21,6 @@ rust_defaults {
     rustlibs: [
         "libbluetooth_core_rs_for_facade",
         "libbt_common",
-        "libbt_packets",
         "libbt_shim",
         "libbt_topshim",
         "libbt_topshim_facade_protobuf",
