@@ -1235,30 +1235,33 @@ class HasClientImpl : public HasClient {
       if (nt.change_id != PresetCtpChangeId::PRESET_GENERIC_UPDATE) break;
 
       if (nt.preset.has_value()) {
-        /* Erase old value if exist */
-        device.has_presets.erase(nt.preset->GetIndex());
-
         /* Erase in-between indices */
-        if (nt.prev_index != 0) {
-          auto it = device.has_presets.begin();
-          while (it != device.has_presets.end()) {
-            if ((it->GetIndex() > nt.prev_index) &&
-                (it->GetIndex() < nt.preset->GetIndex())) {
-              auto info = device.GetPresetInfo(it->GetIndex());
-              if (info.has_value()) deleted_infos.push_back(info.value());
+        auto it = device.has_presets.begin();
+        while (it != device.has_presets.end()) {
+          if ((it->GetIndex() > nt.prev_index) &&
+              (it->GetIndex() < nt.preset->GetIndex())) {
+            auto info = device.GetPresetInfo(it->GetIndex());
+            if (info.has_value()) deleted_infos.push_back(info.value());
 
-              it = device.has_presets.erase(it);
+            it = device.has_presets.erase(it);
 
-            } else {
-              ++it;
-            }
+          } else {
+            ++it;
           }
         }
         /* Update presets */
-        device.has_presets.insert(*nt.preset);
-
-        auto info = device.GetPresetInfo(nt.preset->GetIndex());
-        if (info.has_value()) updated_infos.push_back(info.value());
+        auto info = device.GetPreset(nt.preset->GetIndex());
+        if (info) {
+          if (*info != *nt.preset) {
+            device.has_presets.erase(nt.preset->GetIndex());
+            device.has_presets.insert(*nt.preset);
+            updated_infos.push_back(
+                *device.GetPresetInfo(nt.preset->GetIndex()));
+          }
+        } else {
+          device.has_presets.insert(*nt.preset);
+          updated_infos.push_back(*device.GetPresetInfo(nt.preset->GetIndex()));
+        }
       }
 
       /* Journal update */
@@ -1319,13 +1322,15 @@ class HasClientImpl : public HasClient {
         }
       }
 
-      if (!updated_infos.empty())
+      if (!updated_infos.empty()) {
         callbacks_->OnPresetInfo(
             device.addr, PresetInfoReason::PRESET_INFO_UPDATE, updated_infos);
+      }
 
-      if (!deleted_infos.empty())
+      if (!deleted_infos.empty()) {
         callbacks_->OnPresetInfo(device.addr, PresetInfoReason::PRESET_DELETED,
                                  deleted_infos);
+      }
     }
   }
 
