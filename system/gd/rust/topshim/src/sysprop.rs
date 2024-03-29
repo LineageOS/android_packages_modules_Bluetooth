@@ -61,3 +61,31 @@ pub fn get_i32(prop: PropertyI32) -> i32 {
         )
     }
 }
+
+/// List of properties accessible to Rust. Add new ones here as they become
+/// necessary.
+pub enum PropertyBool {
+    // bluetooth.core.le
+    LeAdvMonRtlQuirk,
+}
+
+impl Into<(Vec<u8>, bool)> for PropertyBool {
+    /// Convert the property into the property key name and a default value.
+    fn into(self) -> (Vec<u8>, bool) {
+        let (key, default_value) = match self {
+            PropertyBool::LeAdvMonRtlQuirk => ("bluetooth.core.le.adv_mon_rtl_quirk", false),
+        };
+
+        (key.bytes().chain("\0".bytes()).collect::<Vec<u8>>(), default_value)
+    }
+}
+
+/// Get the boolean value for a system property.
+pub fn get_bool(prop: PropertyBool) -> bool {
+    let (key, default_value) = prop.into();
+    let key_cptr = LTCheckedPtr::from(&key);
+
+    unsafe {
+        bindings::osi_property_get_bool(key_cptr.cast_into::<std::os::raw::c_char>(), default_value)
+    }
+}
