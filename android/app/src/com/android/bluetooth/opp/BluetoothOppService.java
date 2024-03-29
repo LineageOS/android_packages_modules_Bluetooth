@@ -894,11 +894,12 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                     Log.v(TAG,
                             "Service create new Batch " + newBatch.mId + " for OUTBOUND info "
                                     + info.mId);
-                    mTransfer = new BluetoothOppTransfer(this, newBatch);
+                    mTransfer = new BluetoothOppTransfer(mAdapterService, newBatch);
                 } else if (info.mDirection == BluetoothShare.DIRECTION_INBOUND) {
                     Log.v(TAG, "Service create new Batch " + newBatch.mId + " for INBOUND info "
                             + info.mId);
-                    mServerTransfer = new BluetoothOppTransfer(this, newBatch, mServerSession);
+                    mServerTransfer =
+                            new BluetoothOppTransfer(mAdapterService, newBatch, mServerSession);
                 }
 
                 if (info.mDirection == BluetoothShare.DIRECTION_OUTBOUND && mTransfer != null) {
@@ -1131,7 +1132,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                     // just finish a transfer, start pending outbound transfer
                     if (nextBatch.mDirection == BluetoothShare.DIRECTION_OUTBOUND) {
                         Log.v(TAG, "Start pending outbound batch " + nextBatch.mId);
-                        mTransfer = new BluetoothOppTransfer(this, nextBatch);
+                        mTransfer = new BluetoothOppTransfer(mAdapterService, nextBatch);
                         mTransfer.start();
                         return;
                     } else if (nextBatch.mDirection == BluetoothShare.DIRECTION_INBOUND
@@ -1139,7 +1140,9 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                         // have to support pending inbound transfer
                         // if an outbound transfer and incoming socket happens together
                         Log.v(TAG, "Start pending inbound batch " + nextBatch.mId);
-                        mServerTransfer = new BluetoothOppTransfer(this, nextBatch, mServerSession);
+                        mServerTransfer =
+                                new BluetoothOppTransfer(
+                                        mAdapterService, nextBatch, mServerSession);
                         mServerTransfer.start();
                         if (nextBatch.getPendingShare() != null
                                 && nextBatch.getPendingShare().mConfirm
