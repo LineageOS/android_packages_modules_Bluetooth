@@ -2099,17 +2099,18 @@ void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status,
 void btif_on_did_received(RawAddress bd_addr, uint8_t vendor_id_src,
                           uint16_t vendor_id, uint16_t product_id,
                           uint16_t version) {
-  bt_property_t prop_did;
-  bt_vendor_product_info_t vp_info;
+  bt_vendor_product_info_t vp_info{
+      .vendor_id_src = vendor_id_src,
+      .vendor_id = vendor_id,
+      .product_id = product_id,
+      .version = version,
+  };
 
-  vp_info.vendor_id_src = vendor_id_src;
-  vp_info.vendor_id = vendor_id;
-  vp_info.product_id = product_id;
-  vp_info.version = version;
-
-  prop_did.type = BT_PROPERTY_VENDOR_PRODUCT_INFO;
-  prop_did.val = &vp_info;
-  prop_did.len = sizeof(vp_info);
+  bt_property_t prop_did{
+      .type = BT_PROPERTY_VENDOR_PRODUCT_INFO,
+      .len = sizeof(vp_info),
+      .val = &vp_info,
+  };
 
   bt_status_t ret =
       btif_storage_set_remote_device_property(&bd_addr, &prop_did);
@@ -3115,11 +3116,14 @@ void btif_dm_get_remote_services(RawAddress remote_addr, const int transport) {
       kBtmLogTag, remote_addr, "Service discovery",
       base::StringPrintf("transport:%s", bt_transport_text(transport).c_str()));
 
-  BTA_DmDiscover(remote_addr,
-                 service_discovery_callbacks{
-                     btif_on_gatt_results, btif_on_did_received,
-                     btif_on_name_read, btif_on_service_discovery_results},
-                 transport);
+  BTA_DmDiscover(
+      remote_addr,
+      service_discovery_callbacks{
+          .on_gatt_results = btif_on_gatt_results,
+          .on_did_received = btif_on_did_received,
+          .on_name_read = btif_on_name_read,
+          .on_service_discovery_results = btif_on_service_discovery_results},
+      transport);
 }
 
 void btif_dm_enable_service(tBTA_SERVICE_ID service_id, bool enable) {
