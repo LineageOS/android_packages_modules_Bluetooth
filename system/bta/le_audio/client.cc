@@ -2183,6 +2183,17 @@ class LeAudioClientImpl : public LeAudioClient {
       return;
     }
 
+    /* If PHY update did not succeed after ACL connection, which can happen
+     * when remote feature read was not that quick, lets try to change phy here
+     * one more time
+     */
+    if (!leAudioDevice->acl_phy_update_done_ &&
+        bluetooth::shim::GetController()->SupportsBle2mPhy()) {
+      log::info("{} set preferred PHY to 2M",
+                ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+      BTM_BleSetPhy(address, PHY_LE_2M, PHY_LE_2M, 0);
+    }
+
     changeMtuIfPossible(leAudioDevice);
 
     leAudioDevice->encrypted_ = true;
@@ -2368,6 +2379,7 @@ class LeAudioClientImpl : public LeAudioClient {
     leAudioDevice->mtu_ = 0;
     leAudioDevice->closing_stream_for_disconnection_ = false;
     leAudioDevice->encrypted_ = false;
+    leAudioDevice->acl_phy_update_done_ = false;
 
     groupStateMachine_->ProcessHciNotifAclDisconnected(group, leAudioDevice);
 
@@ -2567,6 +2579,23 @@ class LeAudioClientImpl : public LeAudioClient {
     }
 
     leAudioDevice->mtu_ = mtu;
+  }
+
+  void OnPhyUpdate(uint16_t conn_id, uint8_t tx_phy, uint8_t rx_phy,
+                   tGATT_STATUS status) {
+    LeAudioDevice* leAudioDevice = leAudioDevices_.FindByConnId(conn_id);
+    if (leAudioDevice == nullptr) {
+      log::debug("Unknown conn_id {:#x}", conn_id);
+      return;
+    }
+
+    log::info("{}, tx_phy: {:#x}, rx_phy: {:#x} , status: {:#x}",
+              ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_), tx_phy, rx_phy,
+              status);
+
+    if (status == 0) {
+      leAudioDevice->acl_phy_update_done_ = true;
+    }
   }
 
   void OnGattServiceDiscoveryDone(const RawAddress& address) {
@@ -5999,7 +6028,11 @@ void le_audio_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
     case BTA_GATTC_CFG_MTU_EVT:
       instance->OnMtuChanged(p_data->cfg_mtu.conn_id, p_data->cfg_mtu.mtu);
       break;
-
+    case BTA_GATTC_PHY_UPDATE_EVT:
+      instance->OnPhyUpdate(
+          p_data->phy_update.conn_id, p_data->phy_update.tx_phy,
+          p_data->phy_update.rx_phy, p_data->phy_update.status);
+      break;
     default:
       break;
   }
