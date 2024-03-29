@@ -14,34 +14,23 @@
  * limitations under the License.
  */
 
-#pragma once
+#include "bta/include/bta_ras_api.h"
 
-#include <cstdint>
-#include <vector>
-
-#include "types/raw_address.h"
+class MockRasClient : public bluetooth::ras::RasClient {
+  void Initialize() override {}
+  void Connect(const RawAddress& /* address */) override{};
+};
 
 namespace bluetooth {
 namespace ras {
 
-class RasServer {
- public:
-  virtual ~RasServer() = default;
-  virtual void Initialize() = 0;
-  virtual void PushProcedureData(RawAddress address, uint16_t procedure_count,
-                                 bool is_last, std::vector<uint8_t> data) = 0;
-};
-
-RasServer* GetRasServer();
-
-class RasClient {
- public:
-  virtual ~RasClient() = default;
-  virtual void Initialize() = 0;
-  virtual void Connect(const RawAddress& address) = 0;
-};
-
-RasClient* GetRasClient();
+RasClient* GetRasClient() {
+  static MockRasClient* instance = nullptr;
+  if (instance == nullptr) {
+    instance = new MockRasClient();
+  }
+  return instance;
+}
 
 }  // namespace ras
 }  // namespace bluetooth
