@@ -369,7 +369,7 @@ public class AdapterService extends Service {
     }
 
     @VisibleForTesting
-    AdapterService(Context ctx) {
+    public AdapterService(Context ctx) {
         this(Looper.getMainLooper());
         attachBaseContext(ctx);
     }

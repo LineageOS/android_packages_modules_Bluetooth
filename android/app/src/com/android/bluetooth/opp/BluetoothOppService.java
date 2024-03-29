@@ -74,6 +74,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -136,14 +137,14 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
 
     private boolean mUpdateThreadRunning;
 
-    @VisibleForTesting ArrayList<BluetoothOppShareInfo> mShares;
-    @VisibleForTesting ArrayList<BluetoothOppBatch> mBatches;
+    @VisibleForTesting final List<BluetoothOppShareInfo> mShares = new ArrayList<>();
+    @VisibleForTesting final List<BluetoothOppBatch> mBatches = new ArrayList<>();
 
     private BluetoothOppTransfer mTransfer;
 
     private BluetoothOppTransfer mServerTransfer;
 
-    private int mBatchId;
+    private int mBatchId = 1;
 
     /**
      * Array used when extracting strings from content provider
@@ -166,7 +167,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
 
     boolean mAcceptNewConnections;
 
-    private AdapterService mAdapterService;
+    private final AdapterService mAdapterService;
 
     private static final String INVISIBLE =
             BluetoothShare.VISIBILITY + "=" + BluetoothShare.VISIBILITY_HIDDEN;
@@ -202,12 +203,10 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
      */
     private BluetoothOppObexServerSession mServerSession;
 
-    public BluetoothOppService(Context ctx) {
-        super(ctx);
+    public BluetoothOppService(AdapterService adapterService) {
+        super(adapterService);
 
-        mShares = new ArrayList();
-        mBatches = new ArrayList();
-        mBatchId = 1;
+        mAdapterService = adapterService;
 
         IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
         filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
@@ -262,7 +261,6 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
             }
         }.start();
 
-        mAdapterService = AdapterService.getAdapterService();
         mObserver = new BluetoothShareContentObserver();
         getContentResolver().registerContentObserver(BluetoothShare.CONTENT_URI, true, mObserver);
         mNotifier = new BluetoothOppNotification(this);
@@ -541,15 +539,10 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
         if (!Flags.oppServiceFixIndexOutOfBoundsExceptionInUpdateThread()) {
             stopListeners();
         }
-        if (mBatches != null) {
-            mBatches.clear();
-        }
-        if (mShares != null) {
-            mShares.clear();
-        }
-        if (mHandler != null) {
-            mHandler.removeCallbacksAndMessages(null);
-        }
+
+        mBatches.clear();
+        mShares.clear();
+        mHandler.removeCallbacksAndMessages(null);
     }
 
     private void unregisterReceivers() {
@@ -1296,7 +1289,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
 
     private void stopListeners() {
         SdpManagerNativeInterface nativeInterface = SdpManagerNativeInterface.getInstance();
-        if (mAdapterService != null && mOppSdpHandle >= 0 && nativeInterface.isAvailable()) {
+        if (mOppSdpHandle >= 0 && nativeInterface.isAvailable()) {
             Log.d(TAG, "Removing SDP record mOppSdpHandle :" + mOppSdpHandle);
             boolean status = nativeInterface.removeSdpRecord(mOppSdpHandle);
             Log.d(TAG, "RemoveSDPrecord returns " + status);
