@@ -238,24 +238,27 @@ TEST_F(BtaInitializedTest, bta_dm_disc_stop_device_discovery) {
 TEST_F(BtaInitializedTest,
        bta_dm_disc_start_service_discovery__BT_TRANSPORT_AUTO) {
   bta_dm_disc_start_service_discovery(
-      {[](tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH* p_data) {}, nullptr,
-       nullptr},
+      {nullptr, nullptr, nullptr,
+       [](RawAddress, BD_NAME, tBTA_SERVICE_MASK, tBT_DEVICE_TYPE, size_t,
+          bluetooth::Uuid*, tBTA_STATUS, tHCI_STATUS) {}},
       kRawAddress, BT_TRANSPORT_AUTO);
 }
 
 TEST_F(BtaInitializedTest,
        bta_dm_disc_start_service_discovery__BT_TRANSPORT_BR_EDR) {
   bta_dm_disc_start_service_discovery(
-      {[](tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH* p_data) {}, nullptr,
-       nullptr},
+      {nullptr, nullptr, nullptr,
+       [](RawAddress, BD_NAME, tBTA_SERVICE_MASK, tBT_DEVICE_TYPE, size_t,
+          bluetooth::Uuid*, tBTA_STATUS, tHCI_STATUS) {}},
       kRawAddress, BT_TRANSPORT_BR_EDR);
 }
 
 TEST_F(BtaInitializedTest,
        bta_dm_disc_start_service_discovery__BT_TRANSPORT_LE) {
   bta_dm_disc_start_service_discovery(
-      {[](tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH* p_data) {}, nullptr,
-       nullptr},
+      {nullptr, nullptr, nullptr,
+       [](RawAddress, BD_NAME, tBTA_SERVICE_MASK, tBT_DEVICE_TYPE, size_t,
+          bluetooth::Uuid*, tBTA_STATUS, tHCI_STATUS) {}},
       kRawAddress, BT_TRANSPORT_LE);
 }
 

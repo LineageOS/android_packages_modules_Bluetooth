@@ -531,14 +531,9 @@ TEST_F(BtaDmTest, bta_dm_search_evt_text) {
   std::vector<std::pair<tBTA_DM_SEARCH_EVT, std::string>> events = {
       std::make_pair(BTA_DM_INQ_RES_EVT, "BTA_DM_INQ_RES_EVT"),
       std::make_pair(BTA_DM_INQ_CMPL_EVT, "BTA_DM_INQ_CMPL_EVT"),
-      std::make_pair(BTA_DM_DISC_RES_EVT, "BTA_DM_DISC_RES_EVT"),
-      std::make_pair(BTA_DM_GATT_OVER_LE_RES_EVT,
-                     "BTA_DM_GATT_OVER_LE_RES_EVT"),
       std::make_pair(BTA_DM_DISC_CMPL_EVT, "BTA_DM_DISC_CMPL_EVT"),
       std::make_pair(BTA_DM_SEARCH_CANCEL_CMPL_EVT,
                      "BTA_DM_SEARCH_CANCEL_CMPL_EVT"),
-      std::make_pair(BTA_DM_GATT_OVER_SDP_RES_EVT,
-                     "BTA_DM_GATT_OVER_SDP_RES_EVT"),
       std::make_pair(BTA_DM_NAME_READ_EVT, "BTA_DM_NAME_READ_EVT"),
   };
   for (const auto& event : events) {
