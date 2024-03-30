@@ -39,7 +39,7 @@ import android.util.Log;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -344,7 +344,7 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return new ArrayList<>();
+        return Collections.emptyList();
     }
 
     /**
@@ -370,7 +370,7 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return new ArrayList<>();
+        return Collections.emptyList();
     }
 
     /**

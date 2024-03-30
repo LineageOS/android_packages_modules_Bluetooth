@@ -44,6 +44,7 @@ class DistanceMeasurementInterfaceImpl
 
   void StartDistanceMeasurement(RawAddress raw_address, uint16_t interval,
                                 uint8_t method) {
+    bluetooth::ras::GetRasClient()->Connect(raw_address);
     bluetooth::shim::GetDistanceMeasurementManager()->StartDistanceMeasurement(
         bluetooth::ToGdAddress(raw_address), interval,
         static_cast<DistanceMeasurementMethod>(method));

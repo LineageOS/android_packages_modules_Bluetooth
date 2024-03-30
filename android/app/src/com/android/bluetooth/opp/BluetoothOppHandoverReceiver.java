@@ -31,21 +31,18 @@ import java.util.ArrayList;
 
 public class BluetoothOppHandoverReceiver extends BroadcastReceiver {
     public static final String TAG = "BluetoothOppHandoverReceiver";
-    private static final boolean D = Constants.DEBUG;
 
     @Override
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
-        if (D) Log.d(TAG, "Action :" + action);
+        Log.d(TAG, "Action :" + action);
         if (action == null) return;
         if (action.equals(Constants.ACTION_HANDOVER_SEND) || action.equals(
                 Constants.ACTION_HANDOVER_SEND_MULTIPLE)) {
             final BluetoothDevice device =
                     (BluetoothDevice) intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
             if (device == null) {
-                if (D) {
-                    Log.d(TAG, "No device attached to handover intent.");
-                }
+                Log.d(TAG, "No device attached to handover intent.");
                 return;
             }
 
@@ -74,9 +71,7 @@ public class BluetoothOppHandoverReceiver extends BroadcastReceiver {
                 });
                 t.start();
             } else {
-                if (D) {
-                    Log.d(TAG, "No mimeType or stream attached to handover request");
-                }
+                Log.d(TAG, "No mimeType or stream attached to handover request");
                 return;
             }
         } else if (action.equals(Constants.ACTION_ACCEPTLIST_DEVICE)) {
@@ -89,25 +84,19 @@ public class BluetoothOppHandoverReceiver extends BroadcastReceiver {
                     Flags.identityAddressNullIfUnknown()
                             ? Utils.getBrEdrAddress(device)
                             : device.getIdentityAddress();
-            if (D) {
-                Log.d(TAG, "Adding " + brEdrAddress + " to acceptlist");
-            }
+            Log.d(TAG, "Adding " + brEdrAddress + " to acceptlist");
             BluetoothOppManager.getInstance(context).addToAcceptlist(brEdrAddress);
         } else if (action.equals(Constants.ACTION_STOP_HANDOVER)) {
             int id = intent.getIntExtra(Constants.EXTRA_BT_OPP_TRANSFER_ID, -1);
             if (id != -1) {
                 Uri contentUri = Uri.parse(BluetoothShare.CONTENT_URI + "/" + id);
 
-                if (D) {
-                    Log.d(TAG, "Stopping handover transfer with Uri " + contentUri);
-                }
+                Log.d(TAG, "Stopping handover transfer with Uri " + contentUri);
                 BluetoothMethodProxy.getInstance().contentResolverDelete(
                         context.getContentResolver(), contentUri, null, null);
             }
         } else {
-            if (D) {
-                Log.d(TAG, "Unknown action: " + action);
-            }
+            Log.d(TAG, "Unknown action: " + action);
         }
     }
 

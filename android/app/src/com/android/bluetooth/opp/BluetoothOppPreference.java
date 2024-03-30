@@ -46,7 +46,6 @@ import java.util.HashMap;
  */
 public class BluetoothOppPreference {
     private static final String TAG = "BluetoothOppPreference";
-    private static final boolean V = Constants.VERBOSE;
 
     private static BluetoothOppPreference sInstance;
 
@@ -117,25 +116,19 @@ public class BluetoothOppPreference {
 
     public int getChannel(BluetoothDevice remoteDevice, int uuid) {
         String key = getChannelKey(remoteDevice, uuid);
-        if (V) {
-            Log.v(TAG, "getChannel " + key);
-        }
+        Log.v(TAG, "getChannel " + key);
         Integer channel = null;
         if (mChannels != null) {
             channel = mChannels.get(key);
-            if (V) {
-                Log.v(TAG,
-                        "getChannel for " + remoteDevice.getIdentityAddress() + "_" + Integer.toHexString(uuid) + " as "
-                                + channel);
-            }
+            Log.v(TAG,
+                    "getChannel for " + remoteDevice.getIdentityAddress() + "_"
+                            + Integer.toHexString(uuid) + " as " + channel);
         }
         return (channel != null) ? channel : -1;
     }
 
     public void setName(BluetoothDevice remoteDevice, String name) {
-        if (V) {
-            Log.v(TAG, "Setname for " + remoteDevice.getIdentityAddress() + " to " + name);
-        }
+        Log.v(TAG, "Setname for " + remoteDevice.getIdentityAddress() + " to " + name);
         if (name != null && !name.equals(getName(remoteDevice))) {
             Editor ed = mNamePreference.edit();
             ed.putString(remoteDevice.getIdentityAddress(), name);
@@ -145,10 +138,8 @@ public class BluetoothOppPreference {
     }
 
     public void setChannel(BluetoothDevice remoteDevice, int uuid, int channel) {
-        if (V) {
-            Log.v(TAG, "Setchannel for " + remoteDevice.getIdentityAddress() + "_" + Integer.toHexString(uuid) + " to "
-                    + channel);
-        }
+        Log.v(TAG, "Setchannel for " + remoteDevice.getIdentityAddress() + "_"
+                + Integer.toHexString(uuid) + " to " + channel);
         if (channel != getChannel(remoteDevice, uuid)) {
             String key = getChannelKey(remoteDevice, uuid);
             Editor ed = mChannelPreference.edit();

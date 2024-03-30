@@ -104,7 +104,8 @@ class VolumeControlDevice : public bluetooth::common::IRedactableLoggable {
            << "    mute: " << +mute << "\n"
            << "    flags: " << +flags << "\n"
            << "    device read: " << device_ready << "\n"
-           << "    connecting_actively_: " << connecting_actively << "\n";
+           << "    connecting_actively: " << connecting_actively << "\n"
+           << "    change_counter: " << +change_counter << "\n";
 
     dprintf(fd, "%s", stream.str().c_str());
     audio_offsets.Dump(fd);

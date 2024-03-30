@@ -7,7 +7,7 @@ use std::io::Write;
 
 use crate::engine::{Rule, RuleGroup, Signal};
 use crate::parser::{NewIndex, Packet, PacketChild};
-use bt_packets::hci::{CommandCompleteChild, ErrorCode, EventChild, LocalVersionInformation};
+use hcidoc_packets::hci::{CommandCompleteChild, ErrorCode, EventChild, LocalVersionInformation};
 
 enum ControllerSignal {
     HardwareError,            // Controller reports HCI event: Hardware Error

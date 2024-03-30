@@ -54,8 +54,8 @@ void bta_energy_info_cb(tBTM_BLE_TX_TIME_MS tx_time,
                         tBTM_BLE_ENERGY_USED energy_used,
                         tBTM_CONTRL_STATE ctrl_state, tBTA_STATUS status);
 
-void btif_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
-                                 tBTA_DM_SEARCH* p_data);
+void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status,
+                       const BD_NAME bd_name);
 
 }  // namespace testing
 }  // namespace legacy
@@ -174,24 +174,11 @@ TEST_F_WITH_FLAGS(BtifDmWithStackTest,
         };
       };
 
-  tBTA_DM_SEARCH data = {
-      .disc_res =
-          {
-              // tBTA_DM_DISC_RES
-              .bd_addr = kRawAddress,
-              .bd_name = {},
-              .services = 0,
-              .device_type = BT_DEVICE_TYPE_UNKNOWN,
-              .num_uuids = 0,
-              .p_uuid_list = nullptr,
-              .result = BTA_SUCCESS,
-              .hci_status = HCI_SUCCESS,
-          },
-  };
-  bd_name_from_char_pointer(data.disc_res.bd_name, kBdName);
+  BD_NAME bd_name;
+  bd_name_from_char_pointer(bd_name, kBdName);
 
-  bluetooth::legacy::testing::btif_dm_search_services_evt(BTA_DM_NAME_READ_EVT,
-                                                          &data);
+  bluetooth::legacy::testing::btif_on_name_read(kRawAddress, HCI_SUCCESS,
+                                                bd_name);
 
   ASSERT_EQ(BT_STATUS_SUCCESS, invoke_remote_device_properties_cb.status);
   ASSERT_EQ(kRawAddress, invoke_remote_device_properties_cb.bd_addr);

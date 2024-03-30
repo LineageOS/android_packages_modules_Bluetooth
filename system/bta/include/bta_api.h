@@ -214,17 +214,13 @@ typedef void(tBTA_DM_ACL_CBACK)(tBTA_DM_ACL_EVT event, tBTA_DM_ACL* p_data);
 
 /* Search callback events */
 typedef enum : uint8_t {
-  BTA_DM_INQ_RES_EVT = 0,  /* Inquiry result for a peer device. */
-  BTA_DM_INQ_CMPL_EVT = 1, /* Inquiry complete. */
-  BTA_DM_DISC_RES_EVT = 2, /* Service Discovery result for a peer device. */
-  BTA_DM_GATT_OVER_LE_RES_EVT =
-      3,                    /* GATT services over LE transport discovered */
-  BTA_DM_DISC_CMPL_EVT = 4, /* Discovery complete. */
-  BTA_DM_SEARCH_CANCEL_CMPL_EVT = 5, /* Search cancelled */
-  BTA_DM_DID_RES_EVT = 6,            /* Vendor/Product ID search result */
-  BTA_DM_GATT_OVER_SDP_RES_EVT = 7,  /* GATT services over SDP discovered */
-  BTA_DM_NAME_READ_EVT = 8,          /* Name read complete. */
-  BTA_DM_OBSERVE_CMPL_EVT = 9,       /* Observe complete. */
+  BTA_DM_INQ_RES_EVT = 0,   /* Inquiry result for a peer device. */
+  BTA_DM_INQ_CMPL_EVT = 1,  /* Inquiry complete. */
+  BTA_DM_DISC_RES_EVT = 2,  /* Service Discovery result for a peer device. */
+  BTA_DM_DISC_CMPL_EVT = 3, /* Discovery complete. */
+  BTA_DM_SEARCH_CANCEL_CMPL_EVT = 4, /* Search cancelled */
+  BTA_DM_NAME_READ_EVT = 5,          /* Name read complete. */
+  BTA_DM_OBSERVE_CMPL_EVT = 6,       /* Observe complete. */
 } tBTA_DM_SEARCH_EVT;
 
 inline std::string bta_dm_search_evt_text(const tBTA_DM_SEARCH_EVT& event) {
@@ -232,11 +228,8 @@ inline std::string bta_dm_search_evt_text(const tBTA_DM_SEARCH_EVT& event) {
     CASE_RETURN_TEXT(BTA_DM_INQ_RES_EVT);
     CASE_RETURN_TEXT(BTA_DM_INQ_CMPL_EVT);
     CASE_RETURN_TEXT(BTA_DM_DISC_RES_EVT);
-    CASE_RETURN_TEXT(BTA_DM_GATT_OVER_LE_RES_EVT);
     CASE_RETURN_TEXT(BTA_DM_DISC_CMPL_EVT);
     CASE_RETURN_TEXT(BTA_DM_SEARCH_CANCEL_CMPL_EVT);
-    CASE_RETURN_TEXT(BTA_DM_DID_RES_EVT);
-    CASE_RETURN_TEXT(BTA_DM_GATT_OVER_SDP_RES_EVT);
     CASE_RETURN_TEXT(BTA_DM_NAME_READ_EVT);
     CASE_RETURN_TEXT(BTA_DM_OBSERVE_CMPL_EVT);
     default:
@@ -289,36 +282,38 @@ typedef struct {
   tHCI_STATUS hci_status;
 } tBTA_DM_DISC_RES;
 
-/* Structure associated with tBTA_DM_DISC_BLE_RES */
-typedef struct {
-  RawAddress bd_addr; /* BD address peer device. */
-  BD_NAME bd_name;  /* Name of peer device. */
-  std::vector<bluetooth::Uuid>*
-      services; /* GATT based Services UUID found on peer device. */
-} tBTA_DM_DISC_BLE_RES;
-
-/* Structure associated with tBTA_DM_DID_RES */
-typedef struct {
-  RawAddress bd_addr; /* BD address peer device. */
-  uint8_t vendor_id_src;
-  uint16_t vendor_id;
-  uint16_t product_id;
-  uint16_t version;
-} tBTA_DM_DID_RES;
-
 /* Union of all search callback structures */
 typedef union {
   tBTA_DM_INQ_RES inq_res;   /* Inquiry result for a peer device. */
   tBTA_DM_DISC_RES disc_res; /* Discovery result for a peer device. */
-  tBTA_DM_DISC_BLE_RES
-      disc_ble_res;             /* discovery result for GATT based service */
-  tBTA_DM_DID_RES did_res;      /* Vendor and Product ID of peer device */
   tBTA_DM_OBSERVE_CMPL observe_cmpl; /* Observe complete. */
 } tBTA_DM_SEARCH;
 
 /* Search callback */
 typedef void(tBTA_DM_SEARCH_CBACK)(tBTA_DM_SEARCH_EVT event,
                                    tBTA_DM_SEARCH* p_data);
+typedef void(tBTA_DM_GATT_DISC_CBACK)(RawAddress bd_addr, BD_NAME bd_name,
+                                      std::vector<bluetooth::Uuid>& services,
+                                      bool transport_le);
+typedef void(tBTA_DM_DID_RES_CBACK)(RawAddress bd_addr, uint8_t vendor_id_src,
+                                    uint16_t vendor_id, uint16_t product_id,
+                                    uint16_t version);
+
+typedef void(tBTA_DM_NAME_READ_CBACK)(RawAddress bd_addr,
+                                      tHCI_ERROR_CODE hci_status,
+                                      const BD_NAME bd_name);
+typedef void(tBTA_DM_DISC_CBACK)(RawAddress bd_addr, BD_NAME bd_name,
+                                 tBTA_SERVICE_MASK services,
+                                 tBT_DEVICE_TYPE device_type, size_t num_uuids,
+                                 bluetooth::Uuid* p_uuid_list,
+                                 tBTA_STATUS result, tHCI_STATUS hci_status);
+struct service_discovery_callbacks {
+  /* legacy callback I'll tear apart and get rid of */
+  tBTA_DM_GATT_DISC_CBACK* on_gatt_results;
+  tBTA_DM_DID_RES_CBACK* on_did_received;
+  tBTA_DM_NAME_READ_CBACK* on_name_read;
+  tBTA_DM_DISC_CBACK* on_service_discovery_results;
+};
 
 /* Execute call back */
 typedef void(tBTA_DM_EXEC_CBACK)(void* p_param);
@@ -580,8 +575,8 @@ void BTA_DmSearchCancel(void);
  * Returns          void
  *
  ******************************************************************************/
-void BTA_DmDiscover(const RawAddress& bd_addr, tBTA_DM_SEARCH_CBACK* p_cback,
-                    tBT_TRANSPORT transport);
+void BTA_DmDiscover(const RawAddress& bd_addr,
+                    service_discovery_callbacks cback, tBT_TRANSPORT transport);
 
 /*******************************************************************************
  *

@@ -395,7 +395,7 @@ TEST_F(BtaDmTest, bta_dm_remname_cback__wrong_address) {
   tBTA_DM_SEARCH_CB search_cb =
       bluetooth::legacy::testing::bta_dm_disc_get_search_cb();
   search_cb.p_device_search_cback = nullptr;
-  search_cb.p_service_search_cback = nullptr;
+  search_cb.service_search_cbacks = {};
   search_cb.peer_bdaddr = kRawAddress;
   search_cb.name_discover_done = false;
   bluetooth::legacy::testing::bta_dm_disc_search_cb(search_cb);
@@ -531,15 +531,9 @@ TEST_F(BtaDmTest, bta_dm_search_evt_text) {
   std::vector<std::pair<tBTA_DM_SEARCH_EVT, std::string>> events = {
       std::make_pair(BTA_DM_INQ_RES_EVT, "BTA_DM_INQ_RES_EVT"),
       std::make_pair(BTA_DM_INQ_CMPL_EVT, "BTA_DM_INQ_CMPL_EVT"),
-      std::make_pair(BTA_DM_DISC_RES_EVT, "BTA_DM_DISC_RES_EVT"),
-      std::make_pair(BTA_DM_GATT_OVER_LE_RES_EVT,
-                     "BTA_DM_GATT_OVER_LE_RES_EVT"),
       std::make_pair(BTA_DM_DISC_CMPL_EVT, "BTA_DM_DISC_CMPL_EVT"),
       std::make_pair(BTA_DM_SEARCH_CANCEL_CMPL_EVT,
                      "BTA_DM_SEARCH_CANCEL_CMPL_EVT"),
-      std::make_pair(BTA_DM_DID_RES_EVT, "BTA_DM_DID_RES_EVT"),
-      std::make_pair(BTA_DM_GATT_OVER_SDP_RES_EVT,
-                     "BTA_DM_GATT_OVER_SDP_RES_EVT"),
       std::make_pair(BTA_DM_NAME_READ_EVT, "BTA_DM_NAME_READ_EVT"),
   };
   for (const auto& event : events) {

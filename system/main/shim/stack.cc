@@ -211,9 +211,12 @@ bool Stack::IsDumpsysModuleStarted() const {
   return GetStackManager()->IsStarted<Dumpsys>();
 }
 
-void Stack::LockForDumpsys(std::function<void()> dumpsys_callback) {
+bool Stack::LockForDumpsys(std::function<void()> dumpsys_callback) {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
-  dumpsys_callback();
+  if (is_running_) {
+    dumpsys_callback();
+  }
+  return is_running_;
 }
 
 }  // namespace shim

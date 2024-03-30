@@ -145,7 +145,10 @@ class PeriodicSyncManager {
       log::warn("[PSync]: Sync state is pending");
       le_scanning_interface_->EnqueueCommand(
           hci::LePeriodicAdvertisingCreateSyncCancelBuilder::Create(),
-          handler_->BindOnceOn(this, &PeriodicSyncManager::HandlePeriodicAdvertisingCreateSyncCancelStatus));
+          handler_->BindOnceOn(
+              this,
+              &PeriodicSyncManager::HandlePeriodicAdvertisingCreateSyncCancelStatus<
+                  LePeriodicAdvertisingCreateSyncCancelCompleteView>));
     } else if (periodic_sync->sync_state == PERIODIC_SYNC_STATE_IDLE) {
       log::debug("[PSync]: Removing Sync request from queue");
       CleanUpRequest(adv_sid, address);
@@ -207,9 +210,62 @@ class PeriodicSyncManager {
             check_complete<LeSetDefaultPeriodicAdvertisingSyncTransferParametersCompleteView>));
   }
 
-  void HandlePeriodicAdvertisingCreateSyncStatus(CommandStatusView) {}
+  template <class View>
+  void HandlePeriodicAdvertisingCreateSyncStatus(CommandStatusView view) {
+    if (!IS_FLAG_ENABLED(leaudio_broadcast_assistant_handle_command_statuses)) {
+      return;
+    }
+    ASSERT(view.IsValid());
+    auto status_view = View::Create(view);
+    ASSERT(status_view.IsValid());
+    auto status = status_view.GetStatus();
+    if (status != ErrorCode::SUCCESS) {
+      auto& request = pending_sync_requests_.front();
+      request.sync_timeout_alarm.Cancel();
+      log::warn(
+          "Got a Command status {}, status {}, SID={:04X}, bd_addr={}",
+          OpCodeText(view.GetCommandOpCode()),
+          ErrorCodeText(status),
+          request.advertiser_sid,
+          ADDRESS_TO_LOGGABLE_CSTR(request.address_with_type));
 
-  void HandlePeriodicAdvertisingCreateSyncCancelStatus(CommandCompleteView) {}
+      uint8_t adv_sid = request.advertiser_sid;
+      AddressWithType address_with_type = request.address_with_type;
+      auto sync = GetSyncFromAddressWithTypeAndSid(address_with_type, adv_sid);
+      callbacks_->OnPeriodicSyncStarted(
+          sync->request_id,
+          (uint8_t)status,
+          0,
+          sync->advertiser_sid,
+          request.address_with_type,
+          0,
+          0);
+      periodic_syncs_.erase(sync);
+      AdvanceRequest();
+    }
+  }
+
+  template <class View>
+  void HandlePeriodicAdvertisingCreateSyncCancelStatus(CommandCompleteView view) {
+    if (!IS_FLAG_ENABLED(leaudio_broadcast_assistant_handle_command_statuses)) {
+      return;
+    }
+    ASSERT(view.IsValid());
+    auto status_view = View::Create(view);
+    ASSERT(status_view.IsValid());
+    auto status = status_view.GetStatus();
+    if (status != ErrorCode::SUCCESS) {
+      auto& request = pending_sync_requests_.front();
+      request.sync_timeout_alarm.Cancel();
+      log::warn(
+          "Got a Command complete {}, status {}, SID={:04X}, bd_addr={}",
+          OpCodeText(view.GetCommandOpCode()),
+          ErrorCodeText(status),
+          request.advertiser_sid,
+          ADDRESS_TO_LOGGABLE_CSTR(request.address_with_type));
+      AdvanceRequest();
+    }
+  }
 
   template <class View>
   void HandlePeriodicAdvertisingSyncTransferComplete(uint16_t connection_handle, CommandCompleteView view) {
@@ -401,7 +457,10 @@ class PeriodicSyncManager {
     auto sync = GetSyncFromAddressWithTypeAndSid(address_with_type, adv_sid);
     le_scanning_interface_->EnqueueCommand(
         hci::LePeriodicAdvertisingCreateSyncCancelBuilder::Create(),
-        handler_->BindOnceOn(this, &PeriodicSyncManager::HandlePeriodicAdvertisingCreateSyncCancelStatus));
+        handler_->BindOnceOn(
+            this,
+            &PeriodicSyncManager::HandlePeriodicAdvertisingCreateSyncCancelStatus<
+                LePeriodicAdvertisingCreateSyncCancelCompleteView>));
     int status = static_cast<int>(ErrorCode::ADVERTISING_TIMEOUT);
     callbacks_->OnPeriodicSyncStarted(
         sync->request_id, status, 0, sync->advertiser_sid, request.address_with_type, 0, 0);
@@ -501,8 +560,17 @@ class PeriodicSyncManager {
         static_cast<AdvertisingAddressType>(address_with_type.GetAddressType());
     le_scanning_interface_->EnqueueCommand(
         hci::LePeriodicAdvertisingCreateSyncBuilder::Create(
-            options, sid, advertisingAddressType, address_with_type.GetAddress(), skip, timeout, sync_cte_type),
-        handler_->BindOnceOn(this, &PeriodicSyncManager::HandlePeriodicAdvertisingCreateSyncStatus));
+            options,
+            sid,
+            advertisingAddressType,
+            address_with_type.GetAddress(),
+            skip,
+            timeout,
+            sync_cte_type),
+        handler_->BindOnceOn(
+            this,
+            &PeriodicSyncManager::HandlePeriodicAdvertisingCreateSyncStatus<
+                LePeriodicAdvertisingCreateSyncStatusView>));
   }
 
   void HandleNextRequest() {

@@ -629,6 +629,9 @@ void btif_hh_load_bonded_dev(const tAclLinkSpec& link_spec_ref,
   }
 
   if (hh_add_device(link_spec, attr_mask, reconnect_allowed)) {
+    if (IS_FLAG_ENABLED(allow_switching_hid_and_hogp) && reconnect_allowed) {
+      BTHH_STATE_UPDATE(link_spec, BTHH_CONN_STATE_ACCEPTING);
+    }
     BTA_HhAddDev(link_spec, attr_mask, sub_class, app_id, dscp_info);
   }
 }

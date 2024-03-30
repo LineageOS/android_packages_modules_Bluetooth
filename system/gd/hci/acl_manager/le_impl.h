@@ -1045,7 +1045,7 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
           auto complete_view = LeSetDefaultSubrateCompleteView::Create(complete);
           ASSERT(complete_view.IsValid());
           ErrorCode status = complete_view.GetStatus();
-          ASSERT_LOG(status == ErrorCode::SUCCESS, "Status 0x%02hhx, %s", status, ErrorCodeText(status).c_str());
+          ASSERT_LOG(status == ErrorCode::SUCCESS, "Status = %s", ErrorCodeText(status).c_str());
         }));
   }
 

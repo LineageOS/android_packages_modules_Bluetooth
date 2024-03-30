@@ -979,11 +979,12 @@ public class HapClientService extends ProfileService {
             case HapClientStackEvent.PRESET_INFO_REASON_PRESET_INFO_REQUEST_RESPONSE: {
                 List current_presets = mPresetsMap.get(device);
                 if (current_presets != null) {
-                    ListIterator<BluetoothHapPresetInfo> iter = current_presets.listIterator();
                     for (BluetoothHapPresetInfo new_preset : presets) {
+                        ListIterator<BluetoothHapPresetInfo> iter = current_presets.listIterator();
                         while (iter.hasNext()) {
                             if (iter.next().getIndex() == new_preset.getIndex()) {
                                 iter.remove();
+                                break;
                             }
                         }
                     }
@@ -998,11 +999,12 @@ public class HapClientService extends ProfileService {
             case HapClientStackEvent.PRESET_INFO_REASON_PRESET_DELETED: {
                 List current_presets = mPresetsMap.get(device);
                 if (current_presets != null) {
-                    ListIterator<BluetoothHapPresetInfo> iter = current_presets.listIterator();
                     for (BluetoothHapPresetInfo new_preset : presets) {
+                        ListIterator<BluetoothHapPresetInfo> iter = current_presets.listIterator();
                         while (iter.hasNext()) {
                             if (iter.next().getIndex() == new_preset.getIndex()) {
                                 iter.remove();
+                                break;
                             }
                         }
                     }
@@ -1208,7 +1210,7 @@ public class HapClientService extends ProfileService {
 
             HapClientService service = getService(source);
             if (service == null) {
-                return new ArrayList<>();
+                return Collections.emptyList();
             }
 
             enforceBluetoothPrivilegedPermission(service);
@@ -1222,7 +1224,7 @@ public class HapClientService extends ProfileService {
 
             HapClientService service = getService(source);
             if (service == null) {
-                return new ArrayList<>();
+                return Collections.emptyList();
             }
 
             enforceBluetoothPrivilegedPermission(service);
@@ -1435,7 +1437,7 @@ public class HapClientService extends ProfileService {
 
             HapClientService service = getService(source);
             if (service == null) {
-                return new ArrayList<>();
+                return Collections.emptyList();
             }
 
             enforceBluetoothPrivilegedPermission(service);

@@ -69,7 +69,6 @@ public class BluetoothOppTransferHistory extends Activity
         implements View.OnCreateContextMenuListener, OnItemClickListener {
     private static final String TAG = "BluetoothOppTransferHistory";
 
-    private static final boolean V = Constants.VERBOSE;
 
     private ListView mListView;
 
@@ -293,9 +292,7 @@ public class BluetoothOppTransferHistory extends Activity
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         // Open the selected item
-        if (V) {
-            Log.v(TAG, "onItemClick: ContextMenu = " + mContextMenu);
-        }
+        Log.v(TAG, "onItemClick: ContextMenu = " + mContextMenu);
         if (!mContextMenu) {
             mTransferCursor.moveToPosition(position);
             openCompleteTransfer();
@@ -342,9 +339,7 @@ public class BluetoothOppTransferHistory extends Activity
     private void updateNotificationWhenBtDisabled() {
         BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
         if (!adapter.isEnabled()) {
-            if (V) {
-                Log.v(TAG, "Bluetooth is not enabled, update notification manually.");
-            }
+            Log.v(TAG, "Bluetooth is not enabled, update notification manually.");
             mNotifier.updateNotification();
         }
     }
