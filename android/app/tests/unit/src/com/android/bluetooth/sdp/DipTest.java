@@ -79,7 +79,7 @@ public class DipTest {
         }
 
         mAdapter = BluetoothAdapter.getDefaultAdapter();
-        mSdpManager = SdpManager.init(mAdapterService);
+        mSdpManager = new SdpManager(mAdapterService);
 
         // Get a device for testing
         mTestDevice = mAdapter.getRemoteDevice("00:01:02:03:04:05");

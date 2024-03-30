@@ -65,9 +65,6 @@ public class SdpManager {
     private static AdapterService sAdapterService;
     private static boolean sNativeAvailable;
 
-    // This object is a singleton
-    private static SdpManager sSdpManager = null;
-
     private final SdpManagerNativeInterface mNativeInterface =
             SdpManagerNativeInterface.getInstance();
 
@@ -128,7 +125,7 @@ public class SdpManager {
      * As we use a mix of byte[] and object instances, this is more
      * efficient than implementing comparable. */
     class SdpSearchTracker {
-        private final ArrayList<SdpSearchInstance> mList = new ArrayList<SdpSearchInstance>();
+        private final ArrayList<SdpSearchInstance> mList = new ArrayList<>();
 
         void clear() {
             mList.clear();
@@ -176,22 +173,11 @@ public class SdpManager {
         }
     }
 
-
-    private SdpManager(AdapterService adapterService) {
+    public SdpManager(AdapterService adapterService) {
         sSdpSearchTracker = new SdpSearchTracker();
         sAdapterService = adapterService;
         mNativeInterface.init(this);
         sNativeAvailable = true;
-    }
-
-
-    public static SdpManager init(AdapterService adapterService) {
-        sSdpManager = new SdpManager(adapterService);
-        return sSdpManager;
-    }
-
-    public static SdpManager getDefaultManager() {
-        return sSdpManager;
     }
 
     public void cleanup() {
@@ -205,7 +191,6 @@ public class SdpManager {
             mNativeInterface.cleanup();
             sNativeAvailable = false;
         }
-        sSdpManager = null;
     }
 
 
