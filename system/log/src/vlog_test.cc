@@ -149,13 +149,15 @@ TEST(BluetoothLogDeathTest, fatal) {
       "fatal test 2, 3");
 }
 
-TEST(BluetoothLogDeathTest, fatal_if) {
+TEST(BluetoothLogDeathTest, assert_that) {
   androidLogMessage.reset();
 
-  log::fatal_if(false, "fatal_if test false");
+  log::assert_that(true, "assert_that test true");
+  log::assert_that(true, "assert_that test {}", "true");
 
   ASSERT_DEATH(
-      { log::fatal_if(true, "fatal_if test true"); }, "fatal_if test true");
+      { log::assert_that(false, "assert_that test false"); },
+      "assert_that test false");
 }
 
 TEST(BluetoothLogTest, null_string_parameter) {
@@ -164,7 +166,7 @@ TEST(BluetoothLogTest, null_string_parameter) {
   char const* const_null_str = nullptr;
   log::info("input: {}", const_null_str);
   EXPECT_STREQ(androidLogMessage->message,
-               "packages/modules/Bluetooth/system/log/src/vlog_test.cc:165 "
+               "packages/modules/Bluetooth/system/log/src/vlog_test.cc:167 "
                "TestBody: input: (nullptr)");
 
   androidLogMessage.reset();
@@ -172,7 +174,7 @@ TEST(BluetoothLogTest, null_string_parameter) {
   char* null_str = nullptr;
   log::info("input: {}", null_str);
   EXPECT_STREQ(androidLogMessage->message,
-               "packages/modules/Bluetooth/system/log/src/vlog_test.cc:173 "
+               "packages/modules/Bluetooth/system/log/src/vlog_test.cc:175 "
                "TestBody: input: (nullptr)");
 
   androidLogMessage.reset();
@@ -180,6 +182,6 @@ TEST(BluetoothLogTest, null_string_parameter) {
   char const* nonnull_str = "hello world";
   log::info("input: {}", nonnull_str);
   EXPECT_STREQ(androidLogMessage->message,
-               "packages/modules/Bluetooth/system/log/src/vlog_test.cc:181 "
+               "packages/modules/Bluetooth/system/log/src/vlog_test.cc:183 "
                "TestBody: input: hello world");
 }
