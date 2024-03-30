@@ -35,6 +35,7 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AbstractionLayer;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
+import com.android.internal.annotations.GuardedBy;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,10 +52,12 @@ public class SdpManager {
     public static final byte PBAP_REPO_FAVORITES = 0x01 << 3;
 
     /* Variables to keep track of ongoing and queued search requests.
-     * mTrackerLock must be held, when using/changing sSdpSearchTracker
+     * mTrackerLock must be held, when using/changing mSdpSearchTracker
      * and mSearchInProgress. */
-    static SdpSearchTracker sSdpSearchTracker;
-    static boolean sSearchInProgress = false;
+    @GuardedBy("TRACKER_LOCK")
+    private final SdpSearchTracker mSdpSearchTracker = new SdpSearchTracker();
+
+    private boolean mSearchInProgress = false;
     static final Object TRACKER_LOCK = new Object();
 
     /* The timeout to wait for reply from native. Should never fire. */
@@ -62,8 +65,8 @@ public class SdpManager {
     private static final int MESSAGE_SDP_INTENT = 2;
 
     // We need a reference to the adapter service, to be able to send intents
-    private static AdapterService sAdapterService;
-    private static boolean sNativeAvailable;
+    private final AdapterService mAdapterService;
+    private boolean mNativeAvailable;
 
     private final SdpManagerNativeInterface mNativeInterface =
             SdpManagerNativeInterface.getInstance();
@@ -148,11 +151,11 @@ public class SdpManager {
 
         SdpSearchInstance getSearchInstance(byte[] address, byte[] uuidBytes) {
             String addressString = Utils.getAddressStringFromByte(address);
-            addressString = sAdapterService.getIdentityAddress(addressString);
+            addressString = mAdapterService.getIdentityAddress(addressString);
             ParcelUuid uuid = Utils.byteArrayToUuid(uuidBytes)[0];
             for (SdpSearchInstance inst : mList) {
                 String instAddressString =
-                        sAdapterService.getIdentityAddress(inst.getDevice().getAddress());
+                        mAdapterService.getIdentityAddress(inst.getDevice().getAddress());
                 if (instAddressString.equals(addressString) && inst.getUuid().equals(uuid)) {
                     return inst;
                 }
@@ -161,10 +164,10 @@ public class SdpManager {
         }
 
         boolean isSearching(BluetoothDevice device, ParcelUuid uuid) {
-            String addressString = sAdapterService.getIdentityAddress(device.getAddress());
+            String addressString = mAdapterService.getIdentityAddress(device.getAddress());
             for (SdpSearchInstance inst : mList) {
                 String instAddressString =
-                        sAdapterService.getIdentityAddress(inst.getDevice().getAddress());
+                        mAdapterService.getIdentityAddress(inst.getDevice().getAddress());
                 if (instAddressString.equals(addressString) && inst.getUuid().equals(uuid)) {
                     return inst.isSearching();
                 }
@@ -174,22 +177,19 @@ public class SdpManager {
     }
 
     public SdpManager(AdapterService adapterService) {
-        sSdpSearchTracker = new SdpSearchTracker();
-        sAdapterService = adapterService;
+        mAdapterService = adapterService;
         mNativeInterface.init(this);
-        sNativeAvailable = true;
+        mNativeAvailable = true;
     }
 
     public void cleanup() {
-        if (sSdpSearchTracker != null) {
-            synchronized (TRACKER_LOCK) {
-                sSdpSearchTracker.clear();
-            }
+        synchronized (TRACKER_LOCK) {
+            mSdpSearchTracker.clear();
         }
 
-        if (sNativeAvailable) {
+        if (mNativeAvailable) {
             mNativeInterface.cleanup();
-            sNativeAvailable = false;
+            mNativeAvailable = false;
         }
     }
 
@@ -199,7 +199,7 @@ public class SdpManager {
             int supportedMessageTypes, String serviceName, boolean moreResults) {
 
         synchronized (TRACKER_LOCK) {
-            SdpSearchInstance inst = sSdpSearchTracker.getSearchInstance(address, uuid);
+            SdpSearchInstance inst = mSdpSearchTracker.getSearchInstance(address, uuid);
             SdpMasRecord sdpRecord = null;
             if (inst == null) {
                 Log.e(TAG, "sdpMasRecordFoundCallback: Search instance is NULL");
@@ -220,8 +220,7 @@ public class SdpManager {
             int rfcommCannelNumber, int profileVersion, int supportedFeatures, String serviceName,
             boolean moreResults) {
         synchronized (TRACKER_LOCK) {
-
-            SdpSearchInstance inst = sSdpSearchTracker.getSearchInstance(address, uuid);
+            SdpSearchInstance inst = mSdpSearchTracker.getSearchInstance(address, uuid);
             SdpMnsRecord sdpRecord = null;
             if (inst == null) {
                 Log.e(TAG, "sdpMnsRecordFoundCallback: Search instance is NULL");
@@ -242,7 +241,7 @@ public class SdpManager {
             int rfcommCannelNumber, int profileVersion, int supportedFeatures,
             int supportedRepositories, String serviceName, boolean moreResults) {
         synchronized (TRACKER_LOCK) {
-            SdpSearchInstance inst = sSdpSearchTracker.getSearchInstance(address, uuid);
+            SdpSearchInstance inst = mSdpSearchTracker.getSearchInstance(address, uuid);
             SdpPseRecord sdpRecord = null;
             if (inst == null) {
                 Log.e(TAG, "sdpPseRecordFoundCallback: Search instance is NULL");
@@ -264,7 +263,7 @@ public class SdpManager {
             boolean moreResults) {
 
         synchronized (TRACKER_LOCK) {
-            SdpSearchInstance inst = sSdpSearchTracker.getSearchInstance(address, uuid);
+            SdpSearchInstance inst = mSdpSearchTracker.getSearchInstance(address, uuid);
             SdpOppOpsRecord sdpRecord = null;
 
             if (inst == null) {
@@ -286,7 +285,7 @@ public class SdpManager {
             int profileVersion, String serviceName, boolean moreResults) {
 
         synchronized (TRACKER_LOCK) {
-            SdpSearchInstance inst = sSdpSearchTracker.getSearchInstance(address, uuid);
+            SdpSearchInstance inst = mSdpSearchTracker.getSearchInstance(address, uuid);
             SdpSapsRecord sdpRecord = null;
             if (inst == null) {
                 Log.e(TAG, "sdpSapsRecordFoundCallback: Search instance is NULL");
@@ -302,26 +301,35 @@ public class SdpManager {
         }
     }
 
-    void sdpDipRecordFoundCallback(int status, byte[] address,
-            byte[] uuid,  int specificationId,
-            int vendorId, int vendorIdSource,
-            int productId, int version,
+    void sdpDipRecordFoundCallback(
+            int status,
+            byte[] address,
+            byte[] uuid,
+            int specificationId,
+            int vendorId,
+            int vendorIdSource,
+            int productId,
+            int version,
             boolean primaryRecord,
             boolean moreResults) {
-        synchronized(TRACKER_LOCK) {
-            SdpSearchInstance inst = sSdpSearchTracker.getSearchInstance(address, uuid);
+        synchronized (TRACKER_LOCK) {
+            SdpSearchInstance inst = mSdpSearchTracker.getSearchInstance(address, uuid);
             SdpDipRecord sdpRecord = null;
             if (inst == null) {
-              Log.e(TAG, "sdpDipRecordFoundCallback: Search instance is NULL");
-              return;
+                Log.e(TAG, "sdpDipRecordFoundCallback: Search instance is NULL");
+                return;
             }
             inst.setStatus(status);
             Log.d(TAG, "sdpDipRecordFoundCallback: status " + status);
             if (status == AbstractionLayer.BT_STATUS_SUCCESS) {
-                sdpRecord = new SdpDipRecord(specificationId,
-                        vendorId, vendorIdSource,
-                        productId, version,
-                        primaryRecord);
+                sdpRecord =
+                        new SdpDipRecord(
+                                specificationId,
+                                vendorId,
+                                vendorIdSource,
+                                productId,
+                                version,
+                                primaryRecord);
             }
             Log.d(TAG, "UUID: " + Arrays.toString(uuid));
             Log.d(TAG, "UUID in parcel: " + ((Utils.byteArrayToUuid(uuid))[0]).toString());
@@ -330,11 +338,10 @@ public class SdpManager {
     }
 
     /* TODO: Test or remove! */
-    void sdpRecordFoundCallback(int status, byte[] address, byte[] uuid, int sizeRecord,
-            byte[] record) {
+    void sdpRecordFoundCallback(
+            int status, byte[] address, byte[] uuid, int sizeRecord, byte[] record) {
         synchronized (TRACKER_LOCK) {
-
-            SdpSearchInstance inst = sSdpSearchTracker.getSearchInstance(address, uuid);
+            SdpSearchInstance inst = mSdpSearchTracker.getSearchInstance(address, uuid);
             SdpRecord sdpRecord = null;
             if (inst == null) {
                 Log.e(TAG, "sdpRecordFoundCallback: Search instance is NULL");
@@ -353,52 +360,57 @@ public class SdpManager {
     }
 
     public void sdpSearch(BluetoothDevice device, ParcelUuid uuid) {
-        if (!sNativeAvailable) {
+        if (!mNativeAvailable) {
             Log.e(TAG, "Native not initialized!");
             return;
         }
         synchronized (TRACKER_LOCK) {
-            if (sSdpSearchTracker.isSearching(device, uuid)) {
+            if (mSdpSearchTracker.isSearching(device, uuid)) {
                 /* Search already in progress */
                 return;
             }
 
             SdpSearchInstance inst = new SdpSearchInstance(0, device, uuid);
-            sSdpSearchTracker.add(inst); // Queue the request
+            mSdpSearchTracker.add(inst); // Queue the request
 
             startSearch(); // Start search if not busy
         }
-
     }
 
     /* Caller must hold the mTrackerLock */
+    @GuardedBy("TRACKER_LOCK")
     private void startSearch() {
 
-        SdpSearchInstance inst = sSdpSearchTracker.getNext();
+        SdpSearchInstance inst = mSdpSearchTracker.getNext();
 
-        if ((inst != null) && (!sSearchInProgress)) {
+        if ((inst != null) && (!mSearchInProgress)) {
             Log.d(TAG, "Starting search for UUID: " + inst.getUuid());
-            sSearchInProgress = true;
+            mSearchInProgress = true;
 
             inst.startSearch(); // Trigger timeout message
 
             mNativeInterface.sdpSearch(
                     Flags.identityAddressNullIfUnknown()
                             ? Utils.getByteBrEdrAddress(inst.getDevice())
-                            : sAdapterService.getByteIdentityAddress(inst.getDevice()),
+                            : mAdapterService.getByteIdentityAddress(inst.getDevice()),
                     Utils.uuidToByteArray(inst.getUuid()));
         } else { // Else queue is empty.
-            Log.d(TAG, "startSearch(): nextInst = " + inst + " mSearchInProgress = "
-                    + sSearchInProgress + " - search busy or queue empty.");
+            Log.d(
+                    TAG,
+                    "startSearch():"
+                            + (" nextInst = " + inst)
+                            + (" mSearchInProgress = " + mSearchInProgress)
+                            + " - search busy or queue empty.");
         }
     }
 
     /* Caller must hold the mTrackerLock */
+    @GuardedBy("TRACKER_LOCK")
     private void sendSdpIntent(SdpSearchInstance inst, Parcelable record, boolean moreResults) {
 
         inst.stopSearch();
 
-        sAdapterService.sendSdpSearchRecord(
+        mAdapterService.sendSdpSearchRecord(
                 inst.getDevice(), inst.getStatus(), record, inst.getUuid());
 
         Intent intent = new Intent(BluetoothDevice.ACTION_SDP_RECORD);
@@ -413,13 +425,16 @@ public class SdpManager {
          * Keep in mind that the MAP client needs to use this as well,
          * hence to make it call-backs, the MAP client profile needs to be
          * part of the Bluetooth APK. */
-        Utils.sendBroadcast(sAdapterService, intent, BLUETOOTH_CONNECT,
+        Utils.sendBroadcast(
+                mAdapterService,
+                intent,
+                BLUETOOTH_CONNECT,
                 Utils.getTempAllowlistBroadcastOptions());
 
         if (!moreResults) {
             //Remove the outstanding UUID request
-            sSdpSearchTracker.remove(inst);
-            sSearchInProgress = false;
+            mSdpSearchTracker.remove(inst);
+            mSearchInProgress = false;
             startSearch();
         }
     }
