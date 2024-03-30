@@ -3046,16 +3046,7 @@ public class AdapterService extends Service {
                 return BluetoothDevice.CONNECTION_STATE_DISCONNECTED;
             }
 
-            if (Flags.apiGetConnectionStateUsingIdentityAddress()) {
-                final long token = Binder.clearCallingIdentity();
-                try {
-                    return service.getConnectionState(device);
-                } finally {
-                    Binder.restoreCallingIdentity(token);
-                }
-            } else {
-                return service.getConnectionState(device);
-            }
+            return service.getConnectionState(device);
         }
 
         @Override
