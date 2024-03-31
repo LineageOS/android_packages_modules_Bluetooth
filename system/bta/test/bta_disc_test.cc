@@ -73,10 +73,7 @@ class BtaInitializedTest : public BtaWithContextTest {
     BTA_dm_init();
   }
 
-  void TearDown() override {
-    bta_sys_deregister(BTA_ID_DM_SEARCH);
-    BtaWithContextTest::TearDown();
-  }
+  void TearDown() override { BtaWithContextTest::TearDown(); }
 };
 
 TEST_F(BtaInitializedTest, nop) {}
@@ -178,11 +175,6 @@ TEST_F(BtaInitializedTest, bta_dm_search_result) {
       .disc_result = {},
   };
   bluetooth::legacy::testing::bta_dm_search_result(&msg);
-}
-
-TEST_F(BtaInitializedTest, bta_dm_search_sm_execute) {
-  BT_HDR_RIGID bt_hdr = {};
-  bta_dm_search_sm_execute(&bt_hdr);
 }
 
 TEST_F(BtaInitializedTest, bta_dm_search_timer_cback) {

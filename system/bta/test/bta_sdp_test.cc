@@ -55,15 +55,9 @@ class BtaSdpTest : public BtaWithHwOnTest {
 
 class BtaSdpRegisteredTest : public BtaSdpTest {
  protected:
-  void SetUp() override {
-    BtaSdpTest::SetUp();
-    bta_sys_register(BTA_ID_DM_SEARCH, &bta_sys_reg);
-  }
+  void SetUp() override { BtaSdpTest::SetUp(); }
 
-  void TearDown() override {
-    bta_sys_deregister(BTA_ID_DM_SEARCH);
-    BtaSdpTest::TearDown();
-  }
+  void TearDown() override { BtaSdpTest::TearDown(); }
 
   tBTA_SYS_REG bta_sys_reg = {
       .evt_hdlr = [](const BT_HDR_RIGID* p_msg) -> bool {

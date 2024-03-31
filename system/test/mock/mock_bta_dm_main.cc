@@ -35,7 +35,6 @@ namespace bta_dm_main {
 
 // Function state capture and return values, if needed
 struct DumpsysBtaDm DumpsysBtaDm;
-struct bta_dm_search_sm_disable bta_dm_search_sm_disable;
 struct bta_dm_search_sm_execute bta_dm_search_sm_execute;
 
 }  // namespace bta_dm_main
@@ -57,10 +56,6 @@ bool bta_dm_search_sm_execute::return_value = false;
 void DumpsysBtaDm(int fd) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_main::DumpsysBtaDm(fd);
-}
-void bta_dm_search_sm_disable() {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_main::bta_dm_search_sm_disable();
 }
 bool bta_dm_search_sm_execute(const BT_HDR_RIGID* p_msg) {
   inc_func_call_count(__func__);

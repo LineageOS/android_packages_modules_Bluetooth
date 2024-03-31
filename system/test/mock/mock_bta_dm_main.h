@@ -52,15 +52,6 @@ struct DumpsysBtaDm {
 };
 extern struct DumpsysBtaDm DumpsysBtaDm;
 
-// Name: bta_dm_search_sm_disable
-// Params:
-// Return: void
-struct bta_dm_search_sm_disable {
-  std::function<void()> body{[]() {}};
-  void operator()() { body(); };
-};
-extern struct bta_dm_search_sm_disable bta_dm_search_sm_disable;
-
 // Name: bta_dm_search_sm_execute
 // Params: const BT_HDR_RIGID* p_msg
 // Return: bool

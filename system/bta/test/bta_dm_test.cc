@@ -55,9 +55,6 @@ const RawAddress kRawAddress2({0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc});
 
 constexpr char kRemoteName[] = "TheRemoteName";
 
-const tBTA_SYS_REG bta_dm_search_reg = {bta_dm_search_sm_execute,
-                                        bta_dm_search_sm_disable};
-
 }  // namespace
 
 namespace bluetooth::legacy::testing {
@@ -87,7 +84,6 @@ class BtaDmTest : public BtaWithContextTest {
     }
   }
   void TearDown() override {
-    bta_sys_deregister(BTA_ID_DM_SEARCH);
     bluetooth::legacy::testing::bta_dm_deinit_cb();
     BtaWithContextTest::TearDown();
   }

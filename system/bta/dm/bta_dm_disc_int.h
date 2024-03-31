@@ -36,7 +36,7 @@
 /* DM search events */
 typedef enum : uint16_t {
   /* DM search API events */
-  BTA_DM_API_SEARCH_EVT = BTA_SYS_EVT_START(BTA_ID_DM_SEARCH),
+  BTA_DM_API_SEARCH_EVT,
   BTA_DM_API_SEARCH_CANCEL_EVT,
   BTA_DM_API_DISCOVER_EVT,
   BTA_DM_INQUIRY_CMPL_EVT,

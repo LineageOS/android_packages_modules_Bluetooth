@@ -35,8 +35,6 @@ void bta_dm_disc_start_service_discovery(service_discovery_callbacks cbacks,
                                          tBT_TRANSPORT transport);
 
 // Bta subsystem entrypoint and lifecycle
-bool bta_dm_search_sm_execute(const BT_HDR_RIGID* p_msg);
-void bta_dm_search_sm_disable();
 void bta_dm_disc_disable_search_and_disc();
 // Indication that an acl has gone down and to examine the current
 // service discovery procedure, if any.
