@@ -29,6 +29,7 @@ cxxbridge_header("btif_bridge_header") {
     "src/profiles/avrcp.rs",
     "src/profiles/gatt.rs",
     "src/profiles/hfp.rs",
+    "src/profiles/le_audio.rs",
   ]
   all_dependent_configs = [ ":rust_topshim_config" ]
   deps = [ ":cxxlibheader" ]
@@ -43,6 +44,7 @@ cxxbridge_cc("btif_bridge_code") {
     "src/profiles/avrcp.rs",
     "src/profiles/gatt.rs",
     "src/profiles/hfp.rs",
+    "src/profiles/le_audio.rs",
   ]
   deps = [
     ":btif_bridge_header",
@@ -64,6 +66,7 @@ source_set("btif_cxx_bridge_code") {
     "gatt/gatt_ble_scanner_shim.cc",
     "gatt/gatt_shim.cc",
     "hfp/hfp_shim.cc",
+    "le_audio/le_audio_shim.cc",
     "metrics/metrics_shim.cc",
   ]
 

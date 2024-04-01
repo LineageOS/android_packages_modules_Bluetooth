@@ -32,5 +32,6 @@ pub mod gatt;
 pub mod hf_client;
 pub mod hfp;
 pub mod hid_host;
+pub mod le_audio;
 pub mod sdp;
 pub mod socket;
