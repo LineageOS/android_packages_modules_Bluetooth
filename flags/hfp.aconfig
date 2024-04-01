@@ -66,3 +66,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "reset_after_collision"
+    namespace: "bluetooth"
+    description: "Reset p_scb when collision occured and rfcomm is not opened yet"
+    bug: "332324315"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
