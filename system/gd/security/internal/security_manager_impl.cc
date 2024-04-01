@@ -65,9 +65,8 @@ void SecurityManagerImpl::DispatchPairingHandler(
       break;
     }
     default:
-      ASSERT_LOG(
-          false,
-          "Pairing type %hhu not implemented!",
+      log::fatal(
+          "Pairing type {} not implemented!",
           (uint8_t)record->GetPseudoAddress()->GetAddressType());
   }
   auto new_entry = std::pair<hci::Address, std::shared_ptr<pairing::PairingHandler>>(
@@ -82,7 +81,7 @@ void SecurityManagerImpl::Init() {
   security_manager_channel_->SendCommand(hci::WriteSimplePairingModeBuilder::Create(hci::Enable::ENABLED));
   security_manager_channel_->SendCommand(hci::WriteSecureConnectionsHostSupportBuilder::Create(hci::Enable::ENABLED));
 
-  ASSERT_LOG(storage_module_ != nullptr, "Storage module must not be null!");
+  log::assert_that(storage_module_ != nullptr, "Storage module must not be null!");
   security_database_.LoadRecordsFromStorage();
 
   auto irk_prop =
@@ -108,8 +107,8 @@ void SecurityManagerImpl::Init() {
       hci::AddressWithType(controllerAddress, hci::AddressType::PUBLIC_DEVICE_ADDRESS);
   irk_prop =
       storage_module_->GetBin(BTIF_STORAGE_SECTION_ADAPTER, BTIF_STORAGE_KEY_LE_LOCAL_KEY_IRK);
-  ASSERT_LOG(irk_prop.has_value(), "Irk not found in storage");
-  ASSERT_LOG(irk_prop->size() == 16, "Irk corrupted in storage");
+  log::assert_that(irk_prop.has_value(), "Irk not found in storage");
+  log::assert_that(irk_prop->size() == 16, "Irk corrupted in storage");
   std::copy(irk_prop->begin(), irk_prop->end(), local_identity_resolving_key_.data());
 
   hci::LeAddressManager::AddressPolicy address_policy = hci::LeAddressManager::AddressPolicy::USE_RESOLVABLE_ADDRESS;
@@ -301,7 +300,7 @@ void SecurityManagerImpl::HandleEvent(T packet) {
 
 void SecurityManagerImpl::OnHciEventReceived(hci::EventView packet) {
   auto event = hci::EventView::Create(packet);
-  ASSERT_LOG(event.IsValid(), "Received invalid packet");
+  log::assert_that(event.IsValid(), "Received invalid packet");
   const hci::EventCode code = event.GetEventCode();
   switch (code) {
     case hci::EventCode::PIN_CODE_REQUEST:
@@ -353,7 +352,7 @@ void SecurityManagerImpl::OnHciEventReceived(hci::EventView packet) {
     }
 
     default:
-      ASSERT_LOG(false, "Cannot handle received packet: %s", hci::EventCodeText(code).c_str());
+      log::fatal("Cannot handle received packet: {}", hci::EventCodeText(code));
       break;
   }
 }
@@ -467,7 +466,7 @@ void SecurityManagerImpl::OnPairingHandlerComplete(hci::Address address, Pairing
 void SecurityManagerImpl::OnL2capRegistrationCompleteLe(
     l2cap::le::FixedChannelManager::RegistrationResult result,
     [[maybe_unused]] std::unique_ptr<l2cap::le::FixedChannelService> le_smp_service) {
-  ASSERT_LOG(
+  log::assert_that(
       result == bluetooth::l2cap::le::FixedChannelManager::RegistrationResult::SUCCESS,
       "Failed to register to LE SMP Fixed Channel Service");
 }
@@ -836,7 +835,7 @@ void SecurityManagerImpl::InternalEnforceSecurityPolicy(
       break;
     default:
       // I could hear the voice of Myles, "This should be an ASSERT!"
-      ASSERT_LOG(false, "Unreachable code path");
+      log::fatal("Unreachable code path");
       return;
   }
 

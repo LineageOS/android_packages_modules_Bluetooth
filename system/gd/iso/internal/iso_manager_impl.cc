@@ -76,7 +76,7 @@ void IsoManagerImpl::OnHciLeEvent(hci::LeMetaEventView event) {
   }
 
   log::error("Unhandled HCI LE ISO event, code {}", hci::SubeventCodeText(code));
-  ASSERT_LOG(false, "Unhandled HCI LE ISO event");
+  log::fatal("Unhandled HCI LE ISO event");
 }
 
 void IsoManagerImpl::SetCigParameters(

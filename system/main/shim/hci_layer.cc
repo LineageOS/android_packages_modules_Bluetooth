@@ -240,8 +240,9 @@ static void transmit_iso_fragment(const uint8_t* stream, size_t length) {
   auto ts_flag =
       static_cast<bluetooth::hci::TimeStampFlag>(handle_with_flags >> 14);
   uint16_t handle = HCID_GET_HANDLE(handle_with_flags);
-  ASSERT_LOG(handle <= HCI_HANDLE_MAX, "Require handle <= 0x%X, but is 0x%X",
-             HCI_HANDLE_MAX, handle);
+  log::assert_that(handle <= HCI_HANDLE_MAX,
+                   "Require handle <= 0x{:X}, but is 0x{:X}", HCI_HANDLE_MAX,
+                   handle);
   length -= 2;
   // skip data total length
   stream += 2;

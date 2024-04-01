@@ -86,7 +86,7 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service,
   void OnL2capRegistrationCompleteLe(
       l2cap::le::FixedChannelManager::RegistrationResult result,
       std::unique_ptr<l2cap::le::FixedChannelService> /* le_smp_service */) {
-    ASSERT_LOG(
+    log::assert_that(
         result == bluetooth::l2cap::le::FixedChannelManager::RegistrationResult::SUCCESS,
         "Failed to register to LE SMP Fixed Channel Service");
   }

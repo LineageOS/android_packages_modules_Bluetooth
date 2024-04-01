@@ -16,6 +16,7 @@
 
 #include "os/alarm.h"
 
+#include <bluetooth/log.h>
 #include <sys/timerfd.h>
 #include <unistd.h>
 
@@ -38,7 +39,7 @@ using common::Closure;
 using common::OnceClosure;
 
 Alarm::Alarm(Handler* handler) : handler_(handler), fd_(TIMERFD_CREATE(ALARM_CLOCK, 0)) {
-  ASSERT_LOG(fd_ != -1, "cannot create timerfd: %s", strerror(errno));
+  log::assert_that(fd_ != -1, "cannot create timerfd: {}", strerror(errno));
 
   token_ = handler_->thread_->GetReactor()->Register(
       fd_, common::Bind(&Alarm::on_fire, common::Unretained(this)), Closure());
@@ -76,9 +77,9 @@ void Alarm::on_fire() {
   auto bytes_read = read(fd_, &times_invoked, sizeof(uint64_t));
   lock.unlock();
   ASSERT(bytes_read == static_cast<ssize_t>(sizeof(uint64_t)));
-  ASSERT_LOG(
+  log::assert_that(
       times_invoked == static_cast<uint64_t>(1),
-      "Invoked number of times:%lu fd:%d",
+      "Invoked number of times:{} fd:{}",
       (unsigned long)times_invoked,
       fd_);
   std::move(task).Run();

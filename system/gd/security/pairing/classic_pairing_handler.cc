@@ -183,7 +183,8 @@ void ClassicPairingHandler::OnReceive(hci::CentralLinkKeyCompleteView packet) {
 void ClassicPairingHandler::OnReceive(hci::PinCodeRequestView packet) {
   ASSERT(packet.IsValid());
   log::info("Received: {}", hci::EventCodeText(packet.GetEventCode()));
-  ASSERT_LOG(GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
+  log::assert_that(
+      GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
   is_legacy_pin_code_ = true;
   GetNameDbModule()->ReadRemoteNameRequest(
       GetRecord()->GetPseudoAddress()->GetAddress(),
@@ -199,7 +200,8 @@ void ClassicPairingHandler::OnReceive(hci::LinkKeyRequestView packet) {
   }
   already_link_key_replied_ = true;
   log::info("Received: {}", hci::EventCodeText(packet.GetEventCode()));
-  ASSERT_LOG(GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
+  log::assert_that(
+      GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
   if (GetRecord()->IsPaired()) {
     log::info("Sending: LINK_KEY_REQUEST_REPLY");
     this->GetChannel()->SendCommand(hci::LinkKeyRequestReplyBuilder::Create(
@@ -216,7 +218,8 @@ void ClassicPairingHandler::OnReceive(hci::LinkKeyRequestView packet) {
 void ClassicPairingHandler::OnReceive(hci::LinkKeyNotificationView packet) {
   ASSERT(packet.IsValid());
   log::info("Received: {}", hci::EventCodeText(packet.GetEventCode()));
-  ASSERT_LOG(GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
+  log::assert_that(
+      GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
   GetRecord()->SetLinkKey(packet.GetLinkKey(), packet.GetKeyType());
   if (!has_gotten_name_response_) {
     link_key_notification_ = std::make_optional<hci::LinkKeyNotificationView>(packet);
@@ -231,7 +234,8 @@ void ClassicPairingHandler::OnReceive(hci::LinkKeyNotificationView packet) {
 void ClassicPairingHandler::OnReceive(hci::IoCapabilityRequestView packet) {
   ASSERT(packet.IsValid());
   log::info("Received: {}", hci::EventCodeText(packet.GetEventCode()));
-  ASSERT_LOG(GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
+  log::assert_that(
+      GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
   hci::IoCapability io_capability = local_io_capability_;
   hci::OobDataPresent oob_present = remote_oob_present_;
   hci::AuthenticationRequirements authentication_requirements = local_authentication_requirements_;
@@ -247,7 +251,8 @@ void ClassicPairingHandler::OnReceive(hci::IoCapabilityRequestView packet) {
 void ClassicPairingHandler::OnReceive(hci::IoCapabilityResponseView packet) {
   ASSERT(packet.IsValid());
   log::info("Received: {}", hci::EventCodeText(packet.GetEventCode()));
-  ASSERT_LOG(GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
+  log::assert_that(
+      GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
 
   remote_io_capability_ = packet.GetIoCapability();
   remote_authentication_requirements_ = packet.GetAuthenticationRequirements();
@@ -312,7 +317,8 @@ void ClassicPairingHandler::OnReceive(hci::IoCapabilityResponseView packet) {
 void ClassicPairingHandler::OnReceive(hci::SimplePairingCompleteView packet) {
   ASSERT(packet.IsValid());
   log::info("Received: {}", hci::EventCodeText(packet.GetEventCode()));
-  ASSERT_LOG(GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
+  log::assert_that(
+      GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
   last_status_ = packet.GetStatus();
   if (last_status_ != hci::ErrorCode::SUCCESS) {
     log::info("Failed SimplePairingComplete: {}", hci::ErrorCodeText(last_status_));
@@ -339,7 +345,8 @@ void ClassicPairingHandler::OnReceive(hci::EncryptionKeyRefreshCompleteView pack
 void ClassicPairingHandler::OnReceive(hci::RemoteOobDataRequestView packet) {
   ASSERT(packet.IsValid());
   log::info("Received: {}", hci::EventCodeText(packet.GetEventCode()));
-  ASSERT_LOG(GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
+  log::assert_that(
+      GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
 
   // Corev5.2 V2PF
   switch (remote_oob_present_) {
@@ -390,7 +397,8 @@ void ClassicPairingHandler::OnReceive(hci::RemoteOobDataRequestView packet) {
 void ClassicPairingHandler::OnReceive(hci::UserPasskeyNotificationView packet) {
   ASSERT(packet.IsValid());
   log::info("Received: {}", hci::EventCodeText(packet.GetEventCode()));
-  ASSERT_LOG(GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
+  log::assert_that(
+      GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
   NotifyUiDisplayPasskey(packet.GetPasskey());
 }
 
@@ -433,7 +441,8 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
   }
   ASSERT(packet.IsValid());
   log::info("Received: {}", hci::EventCodeText(packet.GetEventCode()));
-  ASSERT_LOG(GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
+  log::assert_that(
+      GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
   // if locally_initialized, use default, otherwise us remote io caps
   hci::IoCapability initiator_io_capability = (locally_initiated_) ? local_io_capability_ : remote_io_capability_;
   hci::IoCapability responder_io_capability = (!locally_initiated_) ? local_io_capability_ : remote_io_capability_;
@@ -639,7 +648,8 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
 
 void ClassicPairingHandler::OnReceive(hci::UserPasskeyRequestView packet) {
   ASSERT(packet.IsValid());
-  ASSERT_LOG(GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
+  log::assert_that(
+      GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
 }
 
 void ClassicPairingHandler::OnUserInput(bool user_input) {

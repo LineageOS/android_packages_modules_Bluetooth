@@ -205,8 +205,8 @@ class LeAudioDevice {
 
   inline types::AudioContexts GetSupportedContexts(
       int direction = types::kLeAudioDirectionBoth) const {
-    ASSERT_LOG(direction <= (types::kLeAudioDirectionBoth),
-               "Invalid direction used.");
+    log::assert_that(direction <= (types::kLeAudioDirectionBoth),
+                     "Invalid direction used.");
 
     if (direction < types::kLeAudioDirectionBoth)
       return supp_contexts_.get(direction);
@@ -220,8 +220,8 @@ class LeAudioDevice {
 
   inline types::AudioContexts GetAvailableContexts(
       int direction = types::kLeAudioDirectionBoth) const {
-    ASSERT_LOG(direction <= (types::kLeAudioDirectionBoth),
-               "Invalid direction used.");
+    log::assert_that(direction <= (types::kLeAudioDirectionBoth),
+                     "Invalid direction used.");
 
     if (direction < types::kLeAudioDirectionBoth)
       return avail_contexts_.get(direction);

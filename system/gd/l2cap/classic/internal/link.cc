@@ -265,7 +265,7 @@ void Link::RefreshRefCount() {
   if (used_by_security_module_) {
     ref_count += 1;
   }
-  ASSERT_LOG(ref_count >= 0, "ref_count %d is less than 0", ref_count);
+  log::assert_that(ref_count >= 0, "ref_count {} is less than 0", ref_count);
   if (ref_count > 0) {
     link_idle_disconnect_alarm_.Cancel();
   } else {

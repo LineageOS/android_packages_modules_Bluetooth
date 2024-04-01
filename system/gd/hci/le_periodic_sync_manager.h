@@ -103,10 +103,11 @@ class PeriodicSyncManager {
       return;
     }
     auto address_type = request.address_with_type.GetAddressType();
-    ASSERT_LOG(
-        (address_type == AddressType::PUBLIC_DEVICE_ADDRESS || address_type == AddressType::RANDOM_DEVICE_ADDRESS),
-        "Invalid address type %s",
-        AddressTypeText(address_type).c_str());
+    log::assert_that(
+        (address_type == AddressType::PUBLIC_DEVICE_ADDRESS ||
+         address_type == AddressType::RANDOM_DEVICE_ADDRESS),
+        "Invalid address type {}",
+        AddressTypeText(address_type));
     periodic_syncs_.emplace_back(request);
     log::debug(
         "address = {}, sid = {}",

@@ -59,9 +59,9 @@ namespace bluetooth::le_audio {
 template <>
 offloader_stream_maps_t& types::BidirectionalPair<offloader_stream_maps_t>::get(
     uint8_t direction) {
-  ASSERT_LOG(direction < types::kLeAudioDirectionBoth,
-             "Unsupported complex direction. Reference to a single complex"
-             " direction value is not supported.");
+  log::assert_that(direction < types::kLeAudioDirectionBoth,
+                   "Unsupported complex direction. Reference to a single "
+                   "complex direction value is not supported.");
   return (direction == types::kLeAudioDirectionSink) ? sink : source;
 }
 
@@ -246,7 +246,7 @@ struct codec_manager_impl {
     log::info("UpdateSupportedBroadcastConfig");
 
     for (const auto& adsp_audio_set_conf : adsp_capabilities) {
-      ASSERT_LOG(
+      log::assert_that(
           adsp_audio_set_conf.topology_info.has_value(),
           "No topology info, which is required to properly configure the ASEs");
       if (adsp_audio_set_conf.confs.sink.size() != 1 ||
@@ -664,8 +664,8 @@ struct codec_manager_impl {
       size_t match_cnt = 0;
       size_t expected_match_cnt = 0;
 
-      ASSERT_LOG(adsp_audio_set_conf.topology_info.has_value(),
-                 "ADSP capability is missing the topology information.");
+      log::assert_that(adsp_audio_set_conf.topology_info.has_value(),
+                       "ADSP capability is missing the topology information.");
 
       for (auto direction : {le_audio::types::kLeAudioDirectionSink,
                              le_audio::types::kLeAudioDirectionSource}) {

@@ -411,7 +411,7 @@ class HciHalHidl : public HciHal {
       auto death_link =
           AIBinder_linkToDeath(aidl_hci_->asBinder().get(), aidl_death_recipient_.get(), this);
 
-      ASSERT_LOG(
+      log::assert_that(
           death_link == STATUS_OK, "Unable to set the death recipient for the Bluetooth HAL");
 
       aidl_callbacks_ =
@@ -458,7 +458,7 @@ class HciHalHidl : public HciHal {
 
     ASSERT(bt_hci_ != nullptr);
     auto death_link = bt_hci_->linkToDeath(hci_death_recipient_, 0);
-    ASSERT_LOG(death_link.isOk(), "Unable to set the death recipient for the Bluetooth HAL");
+    log::assert_that(death_link.isOk(), "Unable to set the death recipient for the Bluetooth HAL");
     hidl_callbacks_ = new InternalHciCallbacks(btsnoop_logger_, link_clocker_);
 
     if (bt_hci_1_1_ != nullptr) {

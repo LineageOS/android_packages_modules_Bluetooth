@@ -45,10 +45,10 @@ using common::Closure;
 struct Reactor::Event::impl {
   impl() {
     fd_ = eventfd(0, EFD_SEMAPHORE | EFD_NONBLOCK);
-    ASSERT_LOG(fd_ != -1, "Unable to create nonblocking event file descriptor semaphore");
+    log::assert_that(fd_ != -1, "Unable to create nonblocking event file descriptor semaphore");
   }
   ~impl() {
-    ASSERT_LOG(fd_ != -1, "Unable to close a never-opened event file descriptor");
+    log::assert_that(fd_ != -1, "Unable to close a never-opened event file descriptor");
     close(fd_);
     fd_ = -1;
   }
@@ -102,7 +102,7 @@ class Reactor::Reactable {
 
 Reactor::Reactor() : epoll_fd_(0), control_fd_(0), is_running_(false) {
   RUN_NO_INTR(epoll_fd_ = epoll_create1(EPOLL_CLOEXEC));
-  ASSERT_LOG(epoll_fd_ != -1, "could not create epoll fd: %s", strerror(errno));
+  log::assert_that(epoll_fd_ != -1, "could not create epoll fd: {}", strerror(errno));
 
   control_fd_ = eventfd(0, EFD_NONBLOCK);
   ASSERT(control_fd_ != -1);
@@ -139,8 +139,7 @@ void Reactor::Run() {
     epoll_event events[kEpollMaxEvents];
     int count;
     RUN_NO_INTR(count = epoll_wait(epoll_fd_, events, kEpollMaxEvents, timeout_ms));
-    ASSERT_LOG(count != -1, "epoll_wait failed: fd=%d, err=%s",
-               epoll_fd_, strerror(errno));
+    log::assert_that(count != -1, "epoll_wait failed: fd={}, err={}", epoll_fd_, strerror(errno));
     if (waiting_for_idle && count == 0) {
       timeout_ms = -1;
       waiting_for_idle = false;
@@ -246,7 +245,7 @@ void Reactor::Unregister(Reactor::Reactable* reactable) {
     if (result == -1 && errno == ENOENT) {
       log::info("reactable is invalid or unregistered");
     } else {
-      ASSERT_LOG(result != -1, "could not unregister epoll fd: %s", strerror(errno));
+      log::assert_that(result != -1, "could not unregister epoll fd: {}", strerror(errno));
     }
 
     // If we are unregistering during the callback event from this reactable, we delete it after the callback is

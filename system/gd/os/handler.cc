@@ -36,7 +36,7 @@ Handler::Handler(Thread* thread) : tasks_(new std::queue<OnceClosure>()), thread
 Handler::~Handler() {
   {
     std::lock_guard<std::mutex> lock(mutex_);
-    ASSERT_LOG(was_cleared(), "Handlers must be cleared before they are destroyed");
+    log::assert_that(was_cleared(), "Handlers must be cleared before they are destroyed");
   }
   event_->Close();
 }
@@ -57,7 +57,7 @@ void Handler::Clear() {
   std::queue<OnceClosure>* tmp = nullptr;
   {
     std::lock_guard<std::mutex> lock(mutex_);
-    ASSERT_LOG(!was_cleared(), "Handlers must only be cleared once");
+    log::assert_that(!was_cleared(), "Handlers must only be cleared once");
     std::swap(tasks_, tmp);
   }
   delete tmp;
@@ -82,7 +82,7 @@ void Handler::handle_next_event() {
     if (was_cleared()) {
       return;
     }
-    ASSERT_LOG(has_data, "Notified for work but no work available");
+    log::assert_that(has_data, "Notified for work but no work available");
 
     closure = std::move(tasks_->front());
     tasks_->pop();

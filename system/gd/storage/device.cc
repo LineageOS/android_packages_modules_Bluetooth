@@ -38,8 +38,8 @@ const std::string kLeLegacyPseudoAddr = "LeLegacyPseudoAddr";
 
 std::string GetConfigSection(
     ConfigCache* config, const hci::Address& key_address, Device::ConfigKeyAddressType key_address_type) {
-  ASSERT_LOG(config != nullptr, "config cannot be null");
-  ASSERT_LOG(!key_address.IsEmpty(), "key_address cannot be empty");
+  log::assert_that(config != nullptr, "config cannot be null");
+  log::assert_that(!key_address.IsEmpty(), "key_address cannot be empty");
   // assume lower case
   auto key_address_string = key_address.ToString();
   switch (key_address_type) {

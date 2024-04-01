@@ -23,7 +23,7 @@ namespace l2cap {
 namespace classic {
 
 void DynamicChannelService::Unregister(OnUnregisteredCallback on_unregistered) {
-  ASSERT_LOG(manager_ != nullptr, "this service is invalid");
+  log::assert_that(manager_ != nullptr, "this service is invalid");
   l2cap_layer_handler_->CallOn(
       manager_, &internal::DynamicChannelServiceManagerImpl::Unregister, psm_, std::move(on_unregistered));
 }

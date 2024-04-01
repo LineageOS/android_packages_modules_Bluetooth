@@ -281,7 +281,7 @@ void Link::RefreshRefCount() {
   int ref_count = 0;
   ref_count += fixed_channel_allocator_.GetRefCount();
   ref_count += dynamic_channel_allocator_.NumberOfChannels();
-  ASSERT_LOG(ref_count >= 0, "ref_count %d is less than 0", ref_count);
+  log::assert_that(ref_count >= 0, "ref_count {} is less than 0", ref_count);
   if (ref_count > 0) {
     link_idle_disconnect_alarm_.Cancel();
   } else {

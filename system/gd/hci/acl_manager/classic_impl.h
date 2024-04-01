@@ -184,7 +184,8 @@ struct classic_impl : public security::ISecurityManagerListener {
       if (callbacks != nullptr)
         execute(callbacks);
       else
-        ASSERT_LOG(!crash_on_unknown_handle_, "Received command for unknown handle:0x%x", handle);
+        log::assert_that(
+            !crash_on_unknown_handle_, "Received command for unknown handle:0x{:x}", handle);
       if (remove_afterwards) remove(handle);
     }
     void execute(const Address& address, std::function<void(ConnectionManagementCallbacks* callbacks)> execute) {
@@ -393,11 +394,11 @@ struct classic_impl : public security::ISecurityManagerListener {
                 Address address,
                 ErrorCode status,
                 std::string valid_incoming_addresses) {
-              ASSERT_LOG(
+              log::assert_that(
                   status == ErrorCode::UNKNOWN_CONNECTION,
-                  "No prior connection request for %s expecting:%s",
+                  "No prior connection request for {} expecting:{}",
                   ADDRESS_TO_LOGGABLE_CSTR(address),
-                  valid_incoming_addresses.c_str());
+                  valid_incoming_addresses);
               log::warn(
                   "No matching connection to {} ({})",
                   ADDRESS_TO_LOGGABLE_CSTR(address),
@@ -631,7 +632,7 @@ struct classic_impl : public security::ISecurityManagerListener {
 
   void on_read_remote_supported_features_complete(EventView packet) {
     auto view = ReadRemoteSupportedFeaturesCompleteView::Create(packet);
-    ASSERT_LOG(view.IsValid(), "Read remote supported features packet invalid");
+    log::assert_that(view.IsValid(), "Read remote supported features packet invalid");
     uint16_t handle = view.GetConnectionHandle();
     bluetooth::os::LogMetricBluetoothRemoteSupportedFeatures(
         connections.get_address(handle), 0, view.GetLmpFeatures(), handle);
@@ -642,7 +643,7 @@ struct classic_impl : public security::ISecurityManagerListener {
 
   void on_read_remote_extended_features_complete(EventView packet) {
     auto view = ReadRemoteExtendedFeaturesCompleteView::Create(packet);
-    ASSERT_LOG(view.IsValid(), "Read remote extended features packet invalid");
+    log::assert_that(view.IsValid(), "Read remote extended features packet invalid");
     uint16_t handle = view.GetConnectionHandle();
     bluetooth::os::LogMetricBluetoothRemoteSupportedFeatures(
         connections.get_address(handle), view.GetPageNumber(), view.GetExtendedLmpFeatures(), handle);
@@ -701,7 +702,7 @@ struct classic_impl : public security::ISecurityManagerListener {
 
   void on_link_supervision_timeout_changed(EventView packet) {
     auto view = LinkSupervisionTimeoutChangedView::Create(packet);
-    ASSERT_LOG(view.IsValid(), "Link supervision timeout changed packet invalid");
+    log::assert_that(view.IsValid(), "Link supervision timeout changed packet invalid");
     log::info("UNIMPLEMENTED called");
   }
 
@@ -768,7 +769,9 @@ struct classic_impl : public security::ISecurityManagerListener {
   }
 
   void handle_unregister_callbacks(ConnectionCallbacks* callbacks, std::promise<void> promise) {
-    ASSERT_LOG(client_callbacks_ == callbacks, "Registered callback entity is different then unregister request");
+    log::assert_that(
+        client_callbacks_ == callbacks,
+        "Registered callback entity is different then unregister request");
     client_callbacks_ = nullptr;
     client_handler_ = nullptr;
     promise.set_value();

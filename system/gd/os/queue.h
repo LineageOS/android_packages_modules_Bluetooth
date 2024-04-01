@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <bluetooth/log.h>
 #include <unistd.h>
 
 #include <functional>
@@ -162,8 +163,8 @@ Queue<T>::Queue(size_t capacity) : enqueue_(capacity), dequeue_(0){};
 
 template <typename T>
 Queue<T>::~Queue() {
-  ASSERT_LOG(enqueue_.handler_ == nullptr, "Enqueue is not unregistered");
-  ASSERT_LOG(dequeue_.handler_ == nullptr, "Dequeue is not unregistered");
+  log::assert_that(enqueue_.handler_ == nullptr, "Enqueue is not unregistered");
+  log::assert_that(dequeue_.handler_ == nullptr, "Dequeue is not unregistered");
 };
 
 template <typename T>

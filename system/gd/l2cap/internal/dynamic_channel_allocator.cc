@@ -45,9 +45,9 @@ std::shared_ptr<DynamicChannelImpl> DynamicChannelAllocator::AllocateChannel(Psm
   }
   auto elem =
       channels_.try_emplace(cid, std::make_shared<DynamicChannelImpl>(psm, cid, remote_cid, link_, l2cap_handler_));
-  ASSERT_LOG(
+  log::assert_that(
       elem.second,
-      "Failed to create channel for psm 0x%x device %s",
+      "Failed to create channel for psm 0x{:x} device {}",
       psm,
       ADDRESS_TO_LOGGABLE_CSTR(link_->GetDevice()));
   ASSERT(elem.first->second != nullptr);
@@ -64,9 +64,9 @@ std::shared_ptr<DynamicChannelImpl> DynamicChannelAllocator::AllocateReservedCha
   }
   auto elem = channels_.try_emplace(
       reserved_cid, std::make_shared<DynamicChannelImpl>(psm, reserved_cid, remote_cid, link_, l2cap_handler_));
-  ASSERT_LOG(
+  log::assert_that(
       elem.second,
-      "Failed to create channel for psm 0x%x device %s",
+      "Failed to create channel for psm 0x{:x} device {}",
       psm,
       ADDRESS_TO_LOGGABLE_CSTR(link_->GetDevice()));
   ASSERT(elem.first->second != nullptr);

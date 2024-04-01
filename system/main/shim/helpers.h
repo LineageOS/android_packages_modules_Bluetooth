@@ -145,7 +145,7 @@ inline hci::Role ToHciRole(const hci_role_t& role) {
     case HCI_ROLE_PERIPHERAL:
       return hci::Role::PERIPHERAL;
     default:
-      ASSERT_LOG(false, "Unable to determine legacy role:%u", role);
+      log::fatal("Unable to determine legacy role:{}", role);
   }
 }
 

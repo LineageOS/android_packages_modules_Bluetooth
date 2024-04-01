@@ -290,15 +290,15 @@ class AclConnectionTracker : public ConnectionManagementCallbacks {
   }
 
   void on_read_remote_version_information_status(CommandStatusView view) {
-    ASSERT_LOG(view.IsValid(), "Bad status packet!");
+    log::assert_that(view.IsValid(), "Bad status packet!");
   }
 
   void on_read_remote_supported_features_status(CommandStatusView view) {
-    ASSERT_LOG(view.IsValid(), "Bad status packet!");
+    log::assert_that(view.IsValid(), "Bad status packet!");
   }
 
   void on_read_remote_extended_features_status(CommandStatusView view) {
-    ASSERT_LOG(view.IsValid(), "Bad status packet!");
+    log::assert_that(view.IsValid(), "Bad status packet!");
   }
 
   void on_read_clock_complete(CommandCompleteView view) {
@@ -333,7 +333,8 @@ struct ClassicAclConnection::impl {
       uint16_t connection_handle)
       : tracker(acl_connection_interface, address, connection_handle), queue_(std::move(queue)) {}
   ConnectionManagementCallbacks* GetEventCallbacks(std::function<void(uint16_t)> invalidate_callbacks) {
-    ASSERT_LOG(!invalidate_callbacks_, "Already returned event callbacks for this connection");
+    log::assert_that(
+        !invalidate_callbacks_, "Already returned event callbacks for this connection");
     invalidate_callbacks_ = std::move(invalidate_callbacks);
     return &tracker;
   }

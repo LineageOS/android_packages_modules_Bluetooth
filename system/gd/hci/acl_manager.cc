@@ -360,7 +360,7 @@ void AclManager::SwitchRole(Address address, Role role) {
 }
 
 uint16_t AclManager::ReadDefaultLinkPolicySettings() {
-  ASSERT_LOG(pimpl_->default_link_policy_settings_ != 0xffff, "Settings were never written");
+  log::assert_that(pimpl_->default_link_policy_settings_ != 0xffff, "Settings were never written");
   return pimpl_->default_link_policy_settings_;
 }
 

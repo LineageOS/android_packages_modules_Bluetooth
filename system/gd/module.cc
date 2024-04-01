@@ -32,7 +32,7 @@ ModuleFactory::ModuleFactory(std::function<Module*()> ctor) : ctor_(ctor) {
 }
 
 Handler* Module::GetHandler() const {
-  ASSERT_LOG(handler_ != nullptr, "Can't get handler when it's not started");
+  log::assert_that(handler_ != nullptr, "Can't get handler when it's not started");
   return handler_;
 }
 
@@ -47,12 +47,14 @@ Module* Module::GetDependency(const ModuleFactory* module) const {
     }
   }
 
-  ASSERT_LOG(false, "Module was not listed as a dependency in ListDependencies");
+  log::fatal("Module was not listed as a dependency in ListDependencies");
 }
 
 Module* ModuleRegistry::Get(const ModuleFactory* module) const {
   auto instance = started_modules_.find(module);
-  ASSERT_LOG(instance != started_modules_.end(), "Request for module not started up, maybe not in Start(ModuleList)?");
+  log::assert_that(
+      instance != started_modules_.end(),
+      "Request for module not started up, maybe not in Start(ModuleList)?");
   return instance->second;
 }
 

@@ -76,9 +76,10 @@ StorageModule::StorageModule(
       is_single_user_mode_(is_single_user_mode) {
   // e.g. "/data/misc/bluedroid/bt_config.conf" to "/data/misc/bluedroid/bt_config.bak"
   config_backup_path_ = config_file_path_.substr(0, config_file_path_.find_last_of('.')) + ".bak";
-  ASSERT_LOG(
+  log::assert_that(
       config_save_delay > kMinConfigSaveDelay,
-      "Config save delay of %lld ms is not enough, must be at least %lld ms to avoid overwhelming the disk",
+      "Config save delay of {} ms is not enough, must be at least {} ms to avoid overwhelming the "
+      "disk",
       config_save_delay_.count(),
       kMinConfigSaveDelay.count());
 };

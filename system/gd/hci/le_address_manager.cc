@@ -70,7 +70,8 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddress(
   }
   ASSERT(address_policy_ == AddressPolicy::POLICY_NOT_SET);
   ASSERT(address_policy != AddressPolicy::POLICY_NOT_SET);
-  ASSERT_LOG(registered_clients_.empty(), "Policy must be set before clients are registered.");
+  log::assert_that(
+      registered_clients_.empty(), "Policy must be set before clients are registered.");
   address_policy_ = address_policy;
   supports_ble_privacy_ = supports_ble_privacy;
   log::info("SetPrivacyPolicyForInitiatorAddress with policy {}", address_policy);
@@ -89,7 +90,9 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddress(
       auto addr = fixed_address.GetAddress();
       auto address = addr.address;
       // The two most significant bits of the static address shall be equal to 1
-      ASSERT_LOG((address[5] & BLE_ADDR_MASK) == BLE_ADDR_MASK, "The two most significant bits shall be equal to 1");
+      log::assert_that(
+          (address[5] & BLE_ADDR_MASK) == BLE_ADDR_MASK,
+          "The two most significant bits shall be equal to 1");
       // Bits of the random part of the address shall not be all 1 or all 0
       if ((address[0] == 0x00 && address[1] == 0x00 && address[2] == 0x00 && address[3] == 0x00 && address[4] == 0x00 &&
            address[5] == BLE_ADDR_MASK) ||
@@ -125,7 +128,8 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddressForTest(
     std::chrono::milliseconds minimum_rotation_time,
     std::chrono::milliseconds maximum_rotation_time) {
   ASSERT(address_policy != AddressPolicy::POLICY_NOT_SET);
-  ASSERT_LOG(registered_clients_.empty(), "Policy must be set before clients are registered.");
+  log::assert_that(
+      registered_clients_.empty(), "Policy must be set before clients are registered.");
   address_policy_ = address_policy;
 
   switch (address_policy_) {
@@ -136,7 +140,9 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddressForTest(
       auto addr = fixed_address.GetAddress();
       auto address = addr.address;
       // The two most significant bits of the static address shall be equal to 1
-      ASSERT_LOG((address[5] & BLE_ADDR_MASK) == BLE_ADDR_MASK, "The two most significant bits shall be equal to 1");
+      log::assert_that(
+          (address[5] & BLE_ADDR_MASK) == BLE_ADDR_MASK,
+          "The two most significant bits shall be equal to 1");
       // Bits of the random part of the address shall not be all 1 or all 0
       if ((address[0] == 0x00 && address[1] == 0x00 && address[2] == 0x00 && address[3] == 0x00 && address[4] == 0x00 &&
            address[5] == BLE_ADDR_MASK) ||

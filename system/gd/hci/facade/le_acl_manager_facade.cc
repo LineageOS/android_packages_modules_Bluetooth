@@ -252,7 +252,7 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeC
 
   std::unique_ptr<BasePacketBuilder> enqueue_packet(const LeAclData* request, std::promise<void> promise) {
     auto connection = acl_connections_.find(request->handle());
-    ASSERT_LOG(connection != acl_connections_.end(), "handle %d", request->handle());
+    log::assert_that(connection != acl_connections_.end(), "handle {}", request->handle());
     connection->second.connection_->GetAclQueueEnd()->UnregisterEnqueue();
     std::unique_ptr<RawBuilder> packet =
         std::make_unique<RawBuilder>(std::vector<uint8_t>(request->payload().begin(), request->payload().end()));
@@ -284,7 +284,7 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeC
         ADDRESS_TO_LOGGABLE_CSTR(connection->GetRemoteAddress()));
     auto packet = connection->GetAclQueueEnd()->TryDequeue();
     auto connection_tracker = acl_connections_.find(handle);
-    ASSERT_LOG(connection_tracker != acl_connections_.end(), "handle %d", handle);
+    log::assert_that(connection_tracker != acl_connections_.end(), "handle {}", handle);
     LeAclData acl_data;
     acl_data.set_handle(handle);
     acl_data.set_payload(std::string(packet->begin(), packet->end()));
@@ -310,9 +310,10 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeC
       per_connection_events_.emplace(peer, direct_connection_events_);
       direct_connection_events_.reset();
     } else {
-      ASSERT_LOG(
+      log::assert_that(
           per_connection_events_.count(peer) > 0,
-          "No connection request for %s", ADDRESS_TO_LOGGABLE_CSTR(peer));
+          "No connection request for {}",
+          ADDRESS_TO_LOGGABLE_CSTR(peer));
     }
     acl_connections_.erase(handle);
     acl_connections_.emplace(

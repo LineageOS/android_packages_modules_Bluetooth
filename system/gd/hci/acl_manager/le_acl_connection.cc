@@ -103,7 +103,8 @@ struct LeAclConnection::impl {
   impl(LeAclConnectionInterface* le_acl_connection_interface, std::shared_ptr<Queue> queue, uint16_t connection_handle)
       : queue_(std::move(queue)), tracker(le_acl_connection_interface, connection_handle) {}
   LeConnectionManagementCallbacks* GetEventCallbacks(std::function<void(uint16_t)> invalidate_callbacks) {
-    ASSERT_LOG(!invalidate_callbacks_, "Already returned event callbacks for this connection");
+    log::assert_that(
+        !invalidate_callbacks_, "Already returned event callbacks for this connection");
     invalidate_callbacks_ = std::move(invalidate_callbacks);
     return &tracker;
   }

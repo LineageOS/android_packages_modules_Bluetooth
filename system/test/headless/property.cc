@@ -124,7 +124,7 @@ headless::bt_property_t* bluetooth::test::headless::property_factory(
   const size_t size = static_cast<size_t>(bt_property.len);
 
   if (size > 0) {
-    ASSERT_LOG(data != nullptr, "Property value pointer is null");
+    log::assert_that(data != nullptr, "Property value pointer is null");
   }
 
   const auto factory = property_map.find(bt_property.type);

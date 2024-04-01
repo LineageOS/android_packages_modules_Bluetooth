@@ -261,7 +261,7 @@ class HciHalHost : public HciHal {
 
     ssize_t received_size;
     RUN_NO_INTR(received_size = recv(sock_fd_, buf, kH4HeaderSize, 0));
-    ASSERT_LOG(received_size != -1, "Can't receive from socket: %s", strerror(errno));
+    log::assert_that(received_size != -1, "Can't receive from socket: {}", strerror(errno));
     if (received_size == 0) {
       log::warn("Can't read H4 header. EOF received");
       raise(SIGINT);
@@ -269,13 +269,15 @@ class HciHalHost : public HciHal {
     }
 
     if (buf[0] == kH4Event) {
-      ASSERT_LOG(
-          socketRecvAll(buf + kH4HeaderSize, kHciEvtHeaderSize), "Can't receive from socket: %s", strerror(errno));
+      log::assert_that(
+          socketRecvAll(buf + kH4HeaderSize, kHciEvtHeaderSize),
+          "Can't receive from socket: {}",
+          strerror(errno));
 
       uint8_t hci_evt_parameter_total_length = buf[2];
-      ASSERT_LOG(
+      log::assert_that(
           socketRecvAll(buf + kH4HeaderSize + kHciEvtHeaderSize, hci_evt_parameter_total_length),
-          "Can't receive from socket: %s",
+          "Can't receive from socket: {}",
           strerror(errno));
 
       HciPacket receivedHciPacket;
@@ -293,13 +295,15 @@ class HciHalHost : public HciHal {
     }
 
     if (buf[0] == kH4Acl) {
-      ASSERT_LOG(
-          socketRecvAll(buf + kH4HeaderSize, kHciAclHeaderSize), "Can't receive from socket: %s", strerror(errno));
+      log::assert_that(
+          socketRecvAll(buf + kH4HeaderSize, kHciAclHeaderSize),
+          "Can't receive from socket: {}",
+          strerror(errno));
 
       uint16_t hci_acl_data_total_length = (buf[4] << 8) + buf[3];
-      ASSERT_LOG(
+      log::assert_that(
           socketRecvAll(buf + kH4HeaderSize + kHciAclHeaderSize, hci_acl_data_total_length),
-          "Can't receive from socket: %s",
+          "Can't receive from socket: {}",
           strerror(errno));
 
       HciPacket receivedHciPacket;
@@ -317,13 +321,15 @@ class HciHalHost : public HciHal {
     }
 
     if (buf[0] == kH4Sco) {
-      ASSERT_LOG(
-          socketRecvAll(buf + kH4HeaderSize, kHciScoHeaderSize), "Can't receive from socket: %s", strerror(errno));
+      log::assert_that(
+          socketRecvAll(buf + kH4HeaderSize, kHciScoHeaderSize),
+          "Can't receive from socket: {}",
+          strerror(errno));
 
       uint8_t hci_sco_data_total_length = buf[3];
-      ASSERT_LOG(
+      log::assert_that(
           socketRecvAll(buf + kH4HeaderSize + kHciScoHeaderSize, hci_sco_data_total_length),
-          "Can't receive from socket: %s",
+          "Can't receive from socket: {}",
           strerror(errno));
 
       HciPacket receivedHciPacket;
@@ -341,13 +347,15 @@ class HciHalHost : public HciHal {
     }
 
     if (buf[0] == kH4Iso) {
-      ASSERT_LOG(
-          socketRecvAll(buf + kH4HeaderSize, kHciIsoHeaderSize), "Can't receive from socket: %s", strerror(errno));
+      log::assert_that(
+          socketRecvAll(buf + kH4HeaderSize, kHciIsoHeaderSize),
+          "Can't receive from socket: {}",
+          strerror(errno));
 
       uint16_t hci_iso_data_total_length = ((buf[4] & 0x3f) << 8) + buf[3];
-      ASSERT_LOG(
+      log::assert_that(
           socketRecvAll(buf + kH4HeaderSize + kHciIsoHeaderSize, hci_iso_data_total_length),
-          "Can't receive from socket: %s",
+          "Can't receive from socket: {}",
           strerror(errno));
 
       HciPacket receivedHciPacket;

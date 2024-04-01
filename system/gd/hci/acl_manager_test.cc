@@ -181,13 +181,13 @@ class AclManagerNoCallbacksTest : public ::testing::Test {
   const bool use_accept_list_ = true;  // gd currently only supports connect list
 
   std::future<void> GetConnectionFuture() {
-    ASSERT_LOG(connection_promise_ == nullptr, "Promises promises ... Only one at a time");
+    log::assert_that(connection_promise_ == nullptr, "Promises promises ... Only one at a time");
     connection_promise_ = std::make_unique<std::promise<void>>();
     return connection_promise_->get_future();
   }
 
   std::future<void> GetLeConnectionFuture() {
-    ASSERT_LOG(le_connection_promise_ == nullptr, "Promises promises ... Only one at a time");
+    log::assert_that(le_connection_promise_ == nullptr, "Promises promises ... Only one at a time");
     le_connection_promise_ = std::make_unique<std::promise<void>>();
     return le_connection_promise_->get_future();
   }

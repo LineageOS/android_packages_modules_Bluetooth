@@ -404,13 +404,15 @@ class HciHalHost : public HciHal {
     }
 
     if (buf[0] == kH4Event) {
-      ASSERT_LOG(
-          received_size >= kH4HeaderSize + kHciEvtHeaderSize, "Received bad HCI_EVT packet size: %zu", received_size);
+      log::assert_that(
+          received_size >= kH4HeaderSize + kHciEvtHeaderSize,
+          "Received bad HCI_EVT packet size: {}",
+          received_size);
       uint8_t hci_evt_parameter_total_length = buf[2];
       ssize_t payload_size = received_size - (kH4HeaderSize + kHciEvtHeaderSize);
-      ASSERT_LOG(
+      log::assert_that(
           payload_size == hci_evt_parameter_total_length,
-          "malformed HCI event total parameter size received: %zu != %d",
+          "malformed HCI event total parameter size received: {} != {}",
           payload_size,
           hci_evt_parameter_total_length);
 
@@ -429,16 +431,20 @@ class HciHalHost : public HciHal {
     }
 
     if (buf[0] == kH4Acl) {
-      ASSERT_LOG(
-          received_size >= kH4HeaderSize + kHciAclHeaderSize, "Received bad HCI_ACL packet size: %zu", received_size);
+      log::assert_that(
+          received_size >= kH4HeaderSize + kHciAclHeaderSize,
+          "Received bad HCI_ACL packet size: {}",
+          received_size);
       int payload_size = received_size - (kH4HeaderSize + kHciAclHeaderSize);
       uint16_t hci_acl_data_total_length = (buf[4] << 8) + buf[3];
-      ASSERT_LOG(
+      log::assert_that(
           payload_size == hci_acl_data_total_length,
-          "malformed ACL length received: %d != %d",
+          "malformed ACL length received: {} != {}",
           payload_size,
           hci_acl_data_total_length);
-      ASSERT_LOG(hci_acl_data_total_length <= kBufSize - kH4HeaderSize - kHciAclHeaderSize, "packet too long");
+      log::assert_that(
+          hci_acl_data_total_length <= kBufSize - kH4HeaderSize - kHciAclHeaderSize,
+          "packet too long");
 
       HciPacket receivedHciPacket;
       receivedHciPacket.assign(
@@ -455,13 +461,15 @@ class HciHalHost : public HciHal {
     }
 
     if (buf[0] == kH4Sco) {
-      ASSERT_LOG(
-          received_size >= kH4HeaderSize + kHciScoHeaderSize, "Received bad HCI_SCO packet size: %zu", received_size);
+      log::assert_that(
+          received_size >= kH4HeaderSize + kHciScoHeaderSize,
+          "Received bad HCI_SCO packet size: {}",
+          received_size);
       int payload_size = received_size - (kH4HeaderSize + kHciScoHeaderSize);
       uint8_t hci_sco_data_total_length = buf[3];
-      ASSERT_LOG(
+      log::assert_that(
           payload_size == hci_sco_data_total_length,
-          "malformed SCO length received: %d != %d",
+          "malformed SCO length received: {} != {}",
           payload_size,
           hci_sco_data_total_length);
 
@@ -479,13 +487,15 @@ class HciHalHost : public HciHal {
     }
 
     if (buf[0] == kH4Iso) {
-      ASSERT_LOG(
-          received_size >= kH4HeaderSize + kHciIsoHeaderSize, "Received bad HCI_ISO packet size: %zu", received_size);
+      log::assert_that(
+          received_size >= kH4HeaderSize + kHciIsoHeaderSize,
+          "Received bad HCI_ISO packet size: {}",
+          received_size);
       int payload_size = received_size - (kH4HeaderSize + kHciIsoHeaderSize);
       uint16_t hci_iso_data_total_length = ((buf[4] & 0x3f) << 8) + buf[3];
-      ASSERT_LOG(
+      log::assert_that(
           payload_size == hci_iso_data_total_length,
-          "malformed ISO length received: %d != %d",
+          "malformed ISO length received: {} != {}",
           payload_size,
           hci_iso_data_total_length);
 

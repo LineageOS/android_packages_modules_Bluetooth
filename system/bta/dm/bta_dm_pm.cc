@@ -330,10 +330,10 @@ static void bta_dm_pm_stop_timer_by_index(tBTA_PM_TIMER* p_timer,
     return;
   } /* The timer was not scheduled */
 
-  ASSERT_LOG(p_timer->in_use,
-             "Timer was not scheduled p_timer->srvc_id[timer_idx]:%hhu",
-             p_timer->srvc_id[timer_idx]);
-  ASSERT_LOG(p_timer->active > 0, "No tasks on timer are active");
+  log::assert_that(p_timer->in_use,
+                   "Timer was not scheduled p_timer->srvc_id[timer_idx]:{}",
+                   p_timer->srvc_id[timer_idx]);
+  log::assert_that(p_timer->active > 0, "No tasks on timer are active");
 
   p_timer->srvc_id[timer_idx] = BTA_ID_MAX;
   /* NOTE: pm_action[timer_idx] intentionally not reset */

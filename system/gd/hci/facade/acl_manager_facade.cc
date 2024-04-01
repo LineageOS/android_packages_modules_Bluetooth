@@ -317,7 +317,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
 
   std::unique_ptr<BasePacketBuilder> enqueue_packet(const AclData* request, std::promise<void> promise) {
     auto connection = acl_connections_.find(request->handle());
-    ASSERT_LOG(connection != acl_connections_.end(), "handle %d", request->handle());
+    log::assert_that(connection != acl_connections_.end(), "handle {}", request->handle());
     connection->second.connection_->GetAclQueueEnd()->UnregisterEnqueue();
     std::unique_ptr<RawBuilder> packet =
         std::make_unique<RawBuilder>(std::vector<uint8_t>(request->payload().begin(), request->payload().end()));
@@ -353,7 +353,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
         ADDRESS_TO_LOGGABLE_CSTR(connection->GetAddress()));
     auto packet = connection->GetAclQueueEnd()->TryDequeue();
     auto connection_tracker = acl_connections_.find(handle);
-    ASSERT_LOG(connection_tracker != acl_connections_.end(), "handle %d", handle);
+    log::assert_that(connection_tracker != acl_connections_.end(), "handle {}", handle);
     AclData acl_data;
     acl_data.set_handle(handle);
     acl_data.set_payload(std::string(packet->begin(), packet->end()));

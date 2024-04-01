@@ -73,7 +73,7 @@ Stack* Stack::GetInstance() {
 
 void Stack::StartEverything() {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
-  ASSERT_LOG(!is_running_, "%s Gd stack already running", __func__);
+  log::assert_that(!is_running_, "Gd stack already running");
   log::info("Starting Gd stack");
   ModuleList modules;
 
@@ -115,7 +115,7 @@ void Stack::StartEverything() {
 void Stack::StartModuleStack(const ModuleList* modules,
                              const os::Thread* thread) {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
-  ASSERT_LOG(!is_running_, "%s Gd stack already running", __func__);
+  log::assert_that(!is_running_, "Gd stack already running");
   stack_thread_ = const_cast<os::Thread*>(thread);
   log::info("Starting Gd stack");
 
@@ -127,7 +127,7 @@ void Stack::StartModuleStack(const ModuleList* modules,
 }
 
 void Stack::Start(ModuleList* modules) {
-  ASSERT_LOG(!is_running_, "%s Gd stack already running", __func__);
+  log::assert_that(!is_running_, "Gd stack already running");
   log::info("Starting Gd stack");
 
   stack_thread_ =
@@ -150,7 +150,7 @@ void Stack::Stop() {
     pimpl_->acl_ = nullptr;
   }
 
-  ASSERT_LOG(is_running_, "%s Gd stack not running", __func__);
+  log::assert_that(is_running_, "Gd stack not running");
   is_running_ = false;
 
   delete pimpl_->btm_;
@@ -190,7 +190,8 @@ const StackManager* Stack::GetStackManager() const {
 legacy::Acl* Stack::GetAcl() {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   ASSERT(is_running_);
-  ASSERT_LOG(pimpl_->acl_ != nullptr, "Acl shim layer has not been created");
+  log::assert_that(pimpl_->acl_ != nullptr,
+                   "Acl shim layer has not been created");
   return pimpl_->acl_;
 }
 

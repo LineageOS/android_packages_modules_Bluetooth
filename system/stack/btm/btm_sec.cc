@@ -2073,8 +2073,8 @@ void btm_sec_check_pending_reqs(void) {
  *
  ******************************************************************************/
 void btm_sec_dev_reset(void) {
-  ASSERT_LOG(bluetooth::shim::GetController()->SupportsSimplePairing(),
-             "only controllers with SSP is supported");
+  log::assert_that(bluetooth::shim::GetController()->SupportsSimplePairing(),
+                   "only controllers with SSP is supported");
 
   /* set the default IO capabilities */
   btm_sec_cb.devcb.loc_io_caps = btif_storage_get_local_io_caps();

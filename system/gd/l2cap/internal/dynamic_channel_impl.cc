@@ -47,7 +47,7 @@ hci::AddressWithType DynamicChannelImpl::GetDevice() const {
 }
 
 void DynamicChannelImpl::RegisterOnCloseCallback(DynamicChannel::OnCloseCallback on_close_callback) {
-  ASSERT_LOG(on_close_callback_.IsEmpty(), "OnCloseCallback can only be registered once");
+  log::assert_that(on_close_callback_.IsEmpty(), "OnCloseCallback can only be registered once");
   // If channel is already closed, call the callback immediately without saving it
   if (closed_) {
     on_close_callback.Invoke(close_reason_);
@@ -65,9 +65,9 @@ void DynamicChannelImpl::Close() {
 }
 
 void DynamicChannelImpl::OnClosed(hci::ErrorCode status) {
-  ASSERT_LOG(
+  log::assert_that(
       !closed_,
-      "Device %s Cid 0x%x closed twice, old status 0x%x, new status 0x%x",
+      "Device {} Cid 0x{:x} closed twice, old status 0x{:x}, new status 0x{:x}",
       ADDRESS_TO_LOGGABLE_CSTR(device_),
       cid_,
       static_cast<int>(close_reason_),
