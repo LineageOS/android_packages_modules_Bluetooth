@@ -27,6 +27,7 @@ import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.collect.Sets
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.Empty
+import io.grpc.Context as GrpcContext
 import io.grpc.Deadline
 import java.util.UUID
 import java.util.concurrent.TimeUnit
@@ -77,8 +78,19 @@ public class DckGattTest(private val connected: Boolean) {
 
     @Before
     fun setUp() {
+        // 1. Register Bumble's DCK (Digital Car Key) service via a gRPC call:
+        // - `dckBlocking()` is likely a stub that accesses the DCK service over gRPC in a
+        //   blocking/synchronous manner.
+        // - `withDeadline(Deadline.after(TIMEOUT, TimeUnit.MILLISECONDS))` sets a timeout for the
+        //   gRPC call.
+        // - `register(Empty.getDefaultInstance())` sends a registration request to the server.
+        mBumble
+            .dckBlocking()
+            .withDeadline(Deadline.after(TIMEOUT, TimeUnit.MILLISECONDS))
+            .register(Empty.getDefaultInstance())
+
         if (connected) {
-            advertiseWithBumble()
+            val advertiseContext = advertiseWithBumble()
 
             // Connect DUT to Ref as prerequisite
             val device =
@@ -93,6 +105,11 @@ public class DckGattTest(private val connected: Boolean) {
                     eq(BluetoothGatt.GATT_SUCCESS),
                     eq(BluetoothProfile.STATE_CONNECTED)
                 )
+            advertiseContext.cancel(null)
+
+            // Wait a bit for the advertising to stop.
+            // b/332322761
+            Thread.sleep(1000)
         }
 
         clearInvocations(gattCallbackMock)
@@ -133,16 +150,6 @@ public class DckGattTest(private val connected: Boolean) {
      */
     @Test
     fun testDiscoverDkGattService() {
-        // 1. Register Bumble's DCK (Digital Car Key) service via a gRPC call:
-        // - `dckBlocking()` is likely a stub that accesses the DCK service over gRPC in a
-        //   blocking/synchronous manner.
-        // - `withDeadline(Deadline.after(TIMEOUT, TimeUnit.MILLISECONDS))` sets a timeout for the
-        //   gRPC call.
-        // - `register(Empty.getDefaultInstance())` sends a registration request to the server.
-        mBumble
-            .dckBlocking()
-            .withDeadline(Deadline.after(TIMEOUT, TimeUnit.MILLISECONDS))
-            .register(Empty.getDefaultInstance())
 
         // 2. Advertise the host's (presumably the car's) Bluetooth capabilities using another
         //    gRPC call:
@@ -219,7 +226,7 @@ public class DckGattTest(private val connected: Boolean) {
         assumeFalse(connected)
 
         // Start advertisement on Ref
-        advertiseWithBumble()
+        val advertiseStreamObserver = advertiseWithBumble()
 
         // Start IRK scan for Ref on DUT
         val scanSettings =
@@ -258,6 +265,7 @@ public class DckGattTest(private val connected: Boolean) {
 
         // Stop scan on DUT after GATT connect
         leScanner.stopScan(scanCallbackMock)
+        advertiseStreamObserver.cancel(null)
     }
 
     /*
@@ -302,7 +310,7 @@ public class DckGattTest(private val connected: Boolean) {
             )
     }
 
-    private fun advertiseWithBumble(withUuid: Boolean = false) {
+    private fun advertiseWithBumble(withUuid: Boolean = false): GrpcContext.CancellableContext {
         val requestBuilder =
             AdvertiseRequest.newBuilder()
                 .setLegacy(true)
@@ -315,7 +323,13 @@ public class DckGattTest(private val connected: Boolean) {
                     .addCompleteServiceClassUuids128(CCC_DK_UUID.toString())
                     .build()
         }
-        mBumble.hostBlocking().advertise(requestBuilder.build())
+
+        val cancellableContext = GrpcContext.current().withCancellation()
+        with(cancellableContext) {
+            run { mBumble.hostBlocking().advertise(requestBuilder.build()) }
+        }
+
+        return cancellableContext
     }
 
     companion object {
