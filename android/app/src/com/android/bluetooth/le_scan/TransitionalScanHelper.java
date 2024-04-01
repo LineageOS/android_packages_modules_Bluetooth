@@ -1097,7 +1097,7 @@ public class TransitionalScanHelper {
 
         final long identity = Binder.clearCallingIdentity();
         try {
-            for (AssociationInfo info : Utils.getCdmAssociations(mCompanionManager)) {
+            for (AssociationInfo info : mCompanionManager.getAllAssociations()) {
                 if (info.getPackageName().equals(callingPackage)
                         && !info.isSelfManaged()
                         && info.getDeviceMacAddress() != null) {
