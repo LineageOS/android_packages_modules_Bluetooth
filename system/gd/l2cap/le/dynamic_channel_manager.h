@@ -134,9 +134,10 @@ class DynamicChannelManager {
   DynamicChannelManager(internal::DynamicChannelServiceManagerImpl* service_manager,
                         internal::LinkManager* link_manager, os::Handler* l2cap_layer_handler)
       : service_manager_(service_manager), link_manager_(link_manager), l2cap_layer_handler_(l2cap_layer_handler) {
-    ASSERT(service_manager_ != nullptr);
-    ASSERT(link_manager_ != nullptr);
-    ASSERT(l2cap_layer_handler_ != nullptr);
+    log::assert_that(service_manager_ != nullptr, "assert failed: service_manager_ != nullptr");
+    log::assert_that(link_manager_ != nullptr, "assert failed: link_manager_ != nullptr");
+    log::assert_that(
+        l2cap_layer_handler_ != nullptr, "assert failed: l2cap_layer_handler_ != nullptr");
   }
   internal::DynamicChannelServiceManagerImpl* service_manager_ = nullptr;
   internal::LinkManager* link_manager_ = nullptr;

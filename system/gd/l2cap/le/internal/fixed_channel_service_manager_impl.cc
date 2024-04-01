@@ -66,7 +66,7 @@ bool FixedChannelServiceManagerImpl::IsServiceRegistered(Cid cid) const {
 }
 
 FixedChannelServiceImpl* FixedChannelServiceManagerImpl::GetService(Cid cid) {
-  ASSERT(IsServiceRegistered(cid));
+  log::assert_that(IsServiceRegistered(cid), "assert failed: IsServiceRegistered(cid)");
   return &service_map_.find(cid)->second;
 }
 

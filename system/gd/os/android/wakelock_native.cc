@@ -81,7 +81,7 @@ void WakelockNative::Initialize() {
   const std::string suspendInstance = std::string() + ISystemSuspend::descriptor + "/default";
   pimpl_->suspend_service = ISystemSuspend::fromBinder(
       ndk::SpAIBinder(AServiceManager_waitForService(suspendInstance.c_str())));
-  ASSERT_LOG(pimpl_->suspend_service, "Cannot get ISystemSuspend service");
+  log::assert_that(pimpl_->suspend_service != nullptr, "Cannot get ISystemSuspend service");
   AIBinder_linkToDeath(
       pimpl_->suspend_service->asBinder().get(),
       pimpl_->suspend_death_recipient.get(),

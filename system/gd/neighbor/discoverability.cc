@@ -69,21 +69,27 @@ void neighbor::DiscoverabilityModule::impl::OnCommandComplete(hci::CommandComple
   switch (status.GetCommandOpCode()) {
     case hci::OpCode::READ_CURRENT_IAC_LAP: {
       auto packet = hci::ReadCurrentIacLapCompleteView::Create(status);
-      ASSERT(packet.IsValid());
-      ASSERT(packet.GetStatus() == hci::ErrorCode::SUCCESS);
+      log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
+      log::assert_that(
+          packet.GetStatus() == hci::ErrorCode::SUCCESS,
+          "assert failed: packet.GetStatus() == hci::ErrorCode::SUCCESS");
       laps_ = packet.GetLapsToRead();
     } break;
 
     case hci::OpCode::WRITE_CURRENT_IAC_LAP: {
       auto packet = hci::WriteCurrentIacLapCompleteView::Create(status);
-      ASSERT(packet.IsValid());
-      ASSERT(packet.GetStatus() == hci::ErrorCode::SUCCESS);
+      log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
+      log::assert_that(
+          packet.GetStatus() == hci::ErrorCode::SUCCESS,
+          "assert failed: packet.GetStatus() == hci::ErrorCode::SUCCESS");
     } break;
 
     case hci::OpCode::READ_NUMBER_OF_SUPPORTED_IAC: {
       auto packet = hci::ReadNumberOfSupportedIacCompleteView::Create(status);
-      ASSERT(packet.IsValid());
-      ASSERT(packet.GetStatus() == hci::ErrorCode::SUCCESS);
+      log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
+      log::assert_that(
+          packet.GetStatus() == hci::ErrorCode::SUCCESS,
+          "assert failed: packet.GetStatus() == hci::ErrorCode::SUCCESS");
       num_supported_iac_ = packet.GetNumSupportIac();
     } break;
     default:
@@ -93,7 +99,8 @@ void neighbor::DiscoverabilityModule::impl::OnCommandComplete(hci::CommandComple
 }
 
 void neighbor::DiscoverabilityModule::impl::StartDiscoverability(std::vector<hci::Lap>& laps) {
-  ASSERT(laps.size() <= num_supported_iac_);
+  log::assert_that(
+      laps.size() <= num_supported_iac_, "assert failed: laps.size() <= num_supported_iac_");
   hci_layer_->EnqueueCommand(
       hci::WriteCurrentIacLapBuilder::Create(laps), handler_->BindOnceOn(this, &impl::OnCommandComplete));
   hci_layer_->EnqueueCommand(

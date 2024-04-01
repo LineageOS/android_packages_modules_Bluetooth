@@ -39,7 +39,7 @@ std::string ClassicDevice::ToLogString() const {
 hci::Address ClassicDevice::GetAddress() const {
   // section name of a classic device is its MAC address
   auto addr = hci::Address::FromString(section_);
-  ASSERT(addr.has_value());
+  log::assert_that(addr.has_value(), "assert failed: addr.has_value()");
   return std::move(addr.value());
 }
 

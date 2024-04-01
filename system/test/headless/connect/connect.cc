@@ -64,7 +64,7 @@ int do_connect([[maybe_unused]] unsigned int num_loops,
       if (v[0] == "wait") disconnect_wait_time = std::stoi(v[1]);
     }
   }
-  ASSERT_LOG(disconnect_wait_time >= 0, "Time cannot go backwards");
+  log::assert_that(disconnect_wait_time >= 0, "Time cannot go backwards");
 
   headless::messenger::Context context{
       .stop_watch = Stopwatch("Connect_timeout"),

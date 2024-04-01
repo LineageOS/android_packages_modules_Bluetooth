@@ -104,23 +104,23 @@ void messenger_stats() {
 // Callbacks that the messenger will handle from the bluetooth stack
 void start_messenger() {
   headless_add_callback("acl_state_changed", [](callback_data_t* data) {
-    ASSERT_LOG(data != nullptr, "Received nullptr callback data:%s", __func__);
+    log::assert_that(data != nullptr, "Received nullptr callback data");
     messenger::callback_data_.Push(std::make_shared<acl_state_changed_params_t>(
         *(static_cast<acl_state_changed_params_t*>(data))));
   });
   headless_add_callback("adapter_properties", [](callback_data_t* data) {
-    ASSERT_LOG(data != nullptr, "Received nullptr callback data:%s", __func__);
+    log::assert_that(data != nullptr, "Received nullptr callback data");
     messenger::callback_data_.Push(
         std::make_shared<adapter_properties_params_t>(
             *(static_cast<adapter_properties_params_t*>(data))));
   });
   headless_add_callback("device_found", [](callback_data_t* data) {
-    ASSERT_LOG(data != nullptr, "Received nullptr callback data:%s", __func__);
+    log::assert_that(data != nullptr, "Received nullptr callback data");
     messenger::callback_data_.Push(std::make_shared<device_found_params_t>(
         *(static_cast<device_found_params_t*>(data))));
   });
   headless_add_callback("remote_device_properties", [](callback_data_t* data) {
-    ASSERT_LOG(data != nullptr, "Received nullptr callback data:%s", __func__);
+    log::assert_that(data != nullptr, "Received nullptr callback data");
     messenger::callback_data_.Push(
         std::make_shared<remote_device_properties_params_t>(
             *(static_cast<remote_device_properties_params_t*>(data))));

@@ -27,7 +27,9 @@ namespace internal {
 
 Fifo::Fifo(DataPipelineManager* data_pipeline_manager, LowerQueueUpEnd* link_queue_up_end, os::Handler* handler)
     : data_pipeline_manager_(data_pipeline_manager), link_queue_up_end_(link_queue_up_end), handler_(handler) {
-  ASSERT(link_queue_up_end_ != nullptr && handler_ != nullptr);
+  log::assert_that(
+      link_queue_up_end_ != nullptr && handler_ != nullptr,
+      "assert failed: link_queue_up_end_ != nullptr && handler_ != nullptr");
 }
 
 // Invoked from some external Handler context
@@ -72,7 +74,9 @@ void Fifo::RemoveChannel(Cid cid) {
 
 // Invoked from some external Queue Reactable context
 std::unique_ptr<Fifo::UpperDequeue> Fifo::link_queue_enqueue_callback() {
-  ASSERT(!next_to_dequeue_and_num_packets.empty());
+  log::assert_that(
+      !next_to_dequeue_and_num_packets.empty(),
+      "assert failed: !next_to_dequeue_and_num_packets.empty()");
   auto& channel_id_and_number_packets = next_to_dequeue_and_num_packets.front();
   auto channel_id = channel_id_and_number_packets.first;
   channel_id_and_number_packets.second--;

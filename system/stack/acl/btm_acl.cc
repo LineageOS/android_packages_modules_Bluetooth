@@ -2479,8 +2479,8 @@ void on_acl_br_edr_connected(const RawAddress& bda, uint16_t handle,
 
 void on_acl_br_edr_failed(const RawAddress& bda, tHCI_STATUS status,
                           bool locally_initiated) {
-  ASSERT_LOG(status != HCI_SUCCESS,
-             "Successful connection entering failing code path");
+  log::assert_that(status != HCI_SUCCESS,
+                   "Successful connection entering failing code path");
   if (delayed_role_change_ != nullptr && delayed_role_change_->bd_addr == bda) {
     btm_sec_connected(bda, HCI_INVALID_HANDLE, status, false,
                       delayed_role_change_->new_role);

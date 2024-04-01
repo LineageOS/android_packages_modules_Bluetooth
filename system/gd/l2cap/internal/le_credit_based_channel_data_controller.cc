@@ -107,7 +107,7 @@ void LeCreditBasedDataController::OnPdu(packet::PacketView<true> pdu) {
 }
 
 std::unique_ptr<packet::BasePacketBuilder> LeCreditBasedDataController::GetNextPacket() {
-  ASSERT(!pdu_queue_.empty());
+  log::assert_that(!pdu_queue_.empty(), "assert failed: !pdu_queue_.empty()");
   auto next = std::move(pdu_queue_.front());
   pdu_queue_.pop();
   return next;

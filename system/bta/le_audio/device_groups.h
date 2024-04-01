@@ -318,8 +318,8 @@ class LeAudioDeviceGroup {
 
   types::AudioContexts GetAvailableContexts(
       int direction = types::kLeAudioDirectionBoth) const {
-    ASSERT_LOG(direction <= (types::kLeAudioDirectionBoth),
-               "Invalid direction used.");
+    log::assert_that(direction <= (types::kLeAudioDirectionBoth),
+                     "Invalid direction used.");
     if (direction < types::kLeAudioDirectionBoth) {
       log::debug(
           "group id: {}, available contexts sink: {}, available contexts "

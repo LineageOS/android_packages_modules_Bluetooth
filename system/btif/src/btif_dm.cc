@@ -946,20 +946,21 @@ uint16_t btif_dm_get_connection_state_sync(const RawAddress& bd_addr) {
   std::promise<uint16_t> promise;
   std::future future = promise.get_future();
 
-  ASSERT(BT_STATUS_SUCCESS ==
-         do_in_main_thread(
-             FROM_HERE,
-             base::BindOnce(
-                 [](const RawAddress bd_addr, std::promise<uint16_t> promise) {
-                   // Experiment to try with maybe resolved address
-                   uint16_t state = btif_dm_get_resolved_connection_state({
-                       .type = BLE_ADDR_RANDOM,
-                       .bda = bd_addr,
-                   });
-                   state |= btif_dm_get_connection_state(bd_addr);
-                   promise.set_value(state);
-                 },
-                 bd_addr, std::move(promise))));
+  auto status = do_in_main_thread(
+      FROM_HERE,
+      base::BindOnce(
+          [](const RawAddress bd_addr, std::promise<uint16_t> promise) {
+            // Experiment to try with maybe resolved address
+            uint16_t state = btif_dm_get_resolved_connection_state({
+                .type = BLE_ADDR_RANDOM,
+                .bda = bd_addr,
+            });
+            state |= btif_dm_get_connection_state(bd_addr);
+            promise.set_value(state);
+          },
+          bd_addr, std::move(promise)));
+  log::assert_that(BT_STATUS_SUCCESS == status,
+                   "assert failed: BT_STATUS_SUCCESS == status");
   return future.get();
 }
 
@@ -2085,9 +2086,9 @@ void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status,
   }};
   const bt_status_t status =
       btif_storage_set_remote_device_property(&bd_addr, properties);
-  ASSERT_LOG(status == BT_STATUS_SUCCESS,
-             "Failed to save remote device property status:%s",
-             bt_status_text(status).c_str());
+  log::assert_that(status == BT_STATUS_SUCCESS,
+                   "Failed to save remote device property status:{}",
+                   bt_status_text(status));
   const size_t num_props = sizeof(properties) / sizeof(bt_property_t);
   GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
       status, bd_addr, (int)num_props, properties);
@@ -3695,15 +3696,17 @@ void btif_dm_load_ble_local_keys(void) {
 void btif_dm_get_ble_local_keys(tBTA_DM_BLE_LOCAL_KEY_MASK* p_key_mask,
                                 Octet16* p_er,
                                 tBTA_BLE_LOCAL_ID_KEYS* p_id_keys) {
-  ASSERT(p_key_mask != nullptr);
+  log::assert_that(p_key_mask != nullptr,
+                   "assert failed: p_key_mask != nullptr");
   if (ble_local_key_cb.is_er_rcvd) {
-    ASSERT(p_er != nullptr);
+    log::assert_that(p_er != nullptr, "assert failed: p_er != nullptr");
     *p_er = ble_local_key_cb.er;
     *p_key_mask |= BTA_BLE_LOCAL_KEY_TYPE_ER;
   }
 
   if (ble_local_key_cb.is_id_keys_rcvd) {
-    ASSERT(p_id_keys != nullptr);
+    log::assert_that(p_id_keys != nullptr,
+                     "assert failed: p_id_keys != nullptr");
     p_id_keys->ir = ble_local_key_cb.id_keys.ir;
     p_id_keys->irk = ble_local_key_cb.id_keys.irk;
     p_id_keys->dhk = ble_local_key_cb.id_keys.dhk;

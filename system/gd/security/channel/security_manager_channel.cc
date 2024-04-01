@@ -41,7 +41,7 @@ SecurityManagerChannel::~SecurityManagerChannel() {
 }
 
 void SecurityManagerChannel::Connect(hci::Address address) {
-  ASSERT_LOG(l2cap_security_interface_ != nullptr, "L2cap Security Interface is null!");
+  log::assert_that(l2cap_security_interface_ != nullptr, "L2cap Security Interface is null!");
   auto entry = link_map_.find(address);
   if (entry != link_map_.end()) {
     log::warn("Already connected to '{}'", ADDRESS_TO_LOGGABLE_CSTR(address));
@@ -73,7 +73,7 @@ void SecurityManagerChannel::Disconnect(hci::Address address) {
 }
 
 void SecurityManagerChannel::OnCommandComplete(hci::CommandCompleteView packet) {
-  ASSERT_LOG(packet.IsValid(), "Bad command response");
+  log::assert_that(packet.IsValid(), "Bad command response");
 }
 
 void SecurityManagerChannel::SendCommand(std::unique_ptr<hci::SecurityCommandBuilder> command) {
@@ -87,8 +87,8 @@ void SecurityManagerChannel::SendCommand(
 }
 
 void SecurityManagerChannel::OnHciEventReceived(hci::EventView packet) {
-  ASSERT_LOG(listener_ != nullptr, "No listener set!");
-  ASSERT(packet.IsValid());
+  log::assert_that(listener_ != nullptr, "No listener set!");
+  log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
   listener_->OnHciEventReceived(packet);
 }
 
@@ -111,13 +111,13 @@ void SecurityManagerChannel::OnLinkDisconnected(hci::Address address) {
   }
   entry->second.reset();
   link_map_.erase(entry);
-  ASSERT_LOG(listener_ != nullptr, "Set listener!");
+  log::assert_that(listener_ != nullptr, "Set listener!");
   listener_->OnConnectionClosed(address);
 }
 
 void SecurityManagerChannel::OnAuthenticationComplete(
     hci::ErrorCode /* hci_status */, hci::Address remote) {
-  ASSERT_LOG(l2cap_security_interface_ != nullptr, "L2cap Security Interface is null!");
+  log::assert_that(l2cap_security_interface_ != nullptr, "L2cap Security Interface is null!");
   auto entry = link_map_.find(remote);
   if (entry != link_map_.end()) {
     entry->second->EnsureEncrypted();

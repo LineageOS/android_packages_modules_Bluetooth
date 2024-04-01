@@ -103,7 +103,7 @@ CommandView HciLayerFake::GetCommand() {
   }
 
   CommandView command_packet_view = CommandView::Create(GetPacketView(std::move(last)));
-  ASSERT_LOG(command_packet_view.IsValid(), "Got invalid command");
+  log::assert_that(command_packet_view.IsValid(), "Got invalid command");
   return command_packet_view;
 }
 

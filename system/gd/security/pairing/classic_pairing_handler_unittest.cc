@@ -89,7 +89,7 @@ class SecurityManagerChannelCallback : public channel::ISecurityManagerChannelLi
       : pairing_handler_(pairing_handler) {}
   void OnHciEventReceived(hci::EventView packet) override {
     auto event = hci::EventView::Create(packet);
-    ASSERT_LOG(event.IsValid(), "Received invalid packet");
+    log::assert_that(event.IsValid(), "Received invalid packet");
     const hci::EventCode code = event.GetEventCode();
     switch (code) {
       case hci::EventCode::PIN_CODE_REQUEST:
@@ -129,7 +129,7 @@ class SecurityManagerChannelCallback : public channel::ISecurityManagerChannelLi
         pairing_handler_->OnReceive(hci::UserPasskeyRequestView::Create(event));
         break;
       default:
-        ASSERT_LOG(false, "Cannot handle received packet: %s", hci::EventCodeText(code).c_str());
+        log::fatal("Cannot handle received packet: {}", hci::EventCodeText(code));
         break;
     }
   }

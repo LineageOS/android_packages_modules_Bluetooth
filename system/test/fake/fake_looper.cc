@@ -49,7 +49,8 @@ pid_t get_thread_id() {
 
 // message loop
 void* run_message_loop(void* arg) {
-  ASSERT_LOG(arg != nullptr, "Must pass in a thread start argument");
+  bluetooth::log::assert_that(arg != nullptr,
+                              "Must pass in a thread start argument");
   thread_t* thread = nullptr;
   {
     // Decouple thread portion from |start_arg| wrapper

@@ -16,7 +16,8 @@
 
 #include "packet/fragmenting_inserter.h"
 
-#include "os/log.h"
+#undef NDEBUG
+#include <cassert>
 
 namespace bluetooth {
 namespace packet {
@@ -27,7 +28,7 @@ FragmentingInserter::FragmentingInserter(size_t mtu,
       iterator_(iterator) {}
 
 void FragmentingInserter::insert_bits(uint8_t byte, size_t num_bits) {
-  ASSERT(curr_packet_ != nullptr);
+  assert(curr_packet_ != nullptr);
   size_t total_bits = num_bits + num_saved_bits_;
   uint16_t new_value = static_cast<uint8_t>(saved_bits_) | (static_cast<uint16_t>(byte) << num_saved_bits_);
   if (total_bits >= 8) {

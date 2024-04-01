@@ -231,7 +231,9 @@ class LeAdvertisingManagerTest : public ::testing::Test {
   void on_set_terminated(ErrorCode /* error_code */, uint8_t, uint8_t) {}
 
   void sync_client_handler() {
-    ASSERT(thread_.GetReactor()->WaitForIdle(2s));
+    log::assert_that(
+        thread_.GetReactor()->WaitForIdle(2s),
+        "assert failed: thread_.GetReactor()->WaitForIdle(2s)");
   }
 
   class MockAdvertisingCallback : public AdvertisingCallback {

@@ -1114,10 +1114,10 @@ class UnicastTestNoInit : public Test {
                     stream_conf->stream_params.source.sample_frequency_hz =
                         core_config.GetSamplingFrequencyHz();
                   } else {
-                    ASSERT_LOG(
+                    log::assert_that(
                         stream_conf->stream_params.source.sample_frequency_hz ==
                             core_config.GetSamplingFrequencyHz(),
-                        "sample freq mismatch: %d!=%d",
+                        "sample freq mismatch: {}!={}",
                         stream_conf->stream_params.source.sample_frequency_hz,
                         core_config.GetSamplingFrequencyHz());
                   }
@@ -1127,13 +1127,13 @@ class UnicastTestNoInit : public Test {
                     stream_conf->stream_params.source.octets_per_codec_frame =
                         *core_config.octets_per_codec_frame;
                   } else {
-                    ASSERT_LOG(stream_conf->stream_params.source
-                                       .octets_per_codec_frame ==
-                                   *core_config.octets_per_codec_frame,
-                               "octets per frame mismatch: %d!=%d",
-                               stream_conf->stream_params.source
-                                   .octets_per_codec_frame,
-                               *core_config.octets_per_codec_frame);
+                    log::assert_that(stream_conf->stream_params.source
+                                             .octets_per_codec_frame ==
+                                         *core_config.octets_per_codec_frame,
+                                     "octets per frame mismatch: {}!={}",
+                                     stream_conf->stream_params.source
+                                         .octets_per_codec_frame,
+                                     *core_config.octets_per_codec_frame);
                   }
 
                   if (stream_conf->stream_params.source
@@ -1142,13 +1142,14 @@ class UnicastTestNoInit : public Test {
                         .codec_frames_blocks_per_sdu =
                         *core_config.codec_frames_blocks_per_sdu;
                   } else {
-                    ASSERT_LOG(stream_conf->stream_params.source
-                                       .codec_frames_blocks_per_sdu ==
-                                   *core_config.codec_frames_blocks_per_sdu,
-                               "codec_frames_blocks_per_sdu: %d!=%d",
-                               stream_conf->stream_params.source
-                                   .codec_frames_blocks_per_sdu,
-                               *core_config.codec_frames_blocks_per_sdu);
+                    log::assert_that(
+                        stream_conf->stream_params.source
+                                .codec_frames_blocks_per_sdu ==
+                            *core_config.codec_frames_blocks_per_sdu,
+                        "codec_frames_blocks_per_sdu: {}!={}",
+                        stream_conf->stream_params.source
+                            .codec_frames_blocks_per_sdu,
+                        *core_config.codec_frames_blocks_per_sdu);
                   }
 
                   log::info(
@@ -1185,10 +1186,10 @@ class UnicastTestNoInit : public Test {
                     stream_conf->stream_params.sink.sample_frequency_hz =
                         core_config.GetSamplingFrequencyHz();
                   } else {
-                    ASSERT_LOG(
+                    log::assert_that(
                         stream_conf->stream_params.sink.sample_frequency_hz ==
                             core_config.GetSamplingFrequencyHz(),
-                        "sample freq mismatch: %d!=%d",
+                        "sample freq mismatch: {}!={}",
                         stream_conf->stream_params.sink.sample_frequency_hz,
                         core_config.GetSamplingFrequencyHz());
                   }
@@ -1198,11 +1199,11 @@ class UnicastTestNoInit : public Test {
                     stream_conf->stream_params.sink.octets_per_codec_frame =
                         *core_config.octets_per_codec_frame;
                   } else {
-                    ASSERT_LOG(
+                    log::assert_that(
                         stream_conf->stream_params.sink
                                 .octets_per_codec_frame ==
                             *core_config.octets_per_codec_frame,
-                        "octets per frame mismatch: %d!=%d",
+                        "octets per frame mismatch: {}!={}",
                         stream_conf->stream_params.sink.octets_per_codec_frame,
                         *core_config.octets_per_codec_frame);
                   }
@@ -1213,13 +1214,14 @@ class UnicastTestNoInit : public Test {
                         .codec_frames_blocks_per_sdu =
                         *core_config.codec_frames_blocks_per_sdu;
                   } else {
-                    ASSERT_LOG(stream_conf->stream_params.sink
-                                       .codec_frames_blocks_per_sdu ==
-                                   *core_config.codec_frames_blocks_per_sdu,
-                               "codec_frames_blocks_per_sdu: %d!=%d",
-                               stream_conf->stream_params.sink
-                                   .codec_frames_blocks_per_sdu,
-                               *core_config.codec_frames_blocks_per_sdu);
+                    log::assert_that(
+                        stream_conf->stream_params.sink
+                                .codec_frames_blocks_per_sdu ==
+                            *core_config.codec_frames_blocks_per_sdu,
+                        "codec_frames_blocks_per_sdu: {}!={}",
+                        stream_conf->stream_params.sink
+                            .codec_frames_blocks_per_sdu,
+                        *core_config.codec_frames_blocks_per_sdu);
                   }
 
                   log::info(

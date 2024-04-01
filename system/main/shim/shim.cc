@@ -42,7 +42,7 @@ static void post_to_main_message_loop(const base::Location& from_here,
 
 static future_t* ShimModuleStartUp() {
   hci = bluetooth::shim::hci_layer_get_interface();
-  ASSERT_LOG(hci, "%s could not get hci layer interface.", __func__);
+  bluetooth::log::assert_that(hci, "could not get hci layer interface.");
 
   hci->set_data_cb(base::Bind(&post_to_main_message_loop));
 

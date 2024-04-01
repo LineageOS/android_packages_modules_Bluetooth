@@ -28,13 +28,17 @@ namespace l2cap {
 namespace internal {
 
 void DataPipelineManager::AttachChannel(Cid cid, std::shared_ptr<ChannelImpl> channel, ChannelMode mode) {
-  ASSERT(sender_map_.find(cid) == sender_map_.end());
+  log::assert_that(
+      sender_map_.find(cid) == sender_map_.end(),
+      "assert failed: sender_map_.find(cid) == sender_map_.end()");
   sender_map_.emplace(std::piecewise_construct, std::forward_as_tuple(cid),
                       std::forward_as_tuple(handler_, link_, scheduler_.get(), channel, mode));
 }
 
 void DataPipelineManager::DetachChannel(Cid cid) {
-  ASSERT(sender_map_.find(cid) != sender_map_.end());
+  log::assert_that(
+      sender_map_.find(cid) != sender_map_.end(),
+      "assert failed: sender_map_.find(cid) != sender_map_.end()");
   sender_map_.erase(cid);
   scheduler_->RemoveChannel(cid);
   scheduler_->SetChannelTxPriority(cid, false);
@@ -48,17 +52,23 @@ DataController* DataPipelineManager::GetDataController(Cid cid) {
 }
 
 void DataPipelineManager::OnPacketSent(Cid cid) {
-  ASSERT(sender_map_.find(cid) != sender_map_.end());
+  log::assert_that(
+      sender_map_.find(cid) != sender_map_.end(),
+      "assert failed: sender_map_.find(cid) != sender_map_.end()");
   sender_map_.find(cid)->second.OnPacketSent();
 }
 
 void DataPipelineManager::UpdateClassicConfiguration(Cid cid, classic::internal::ChannelConfigurationState config) {
-  ASSERT(sender_map_.find(cid) != sender_map_.end());
+  log::assert_that(
+      sender_map_.find(cid) != sender_map_.end(),
+      "assert failed: sender_map_.find(cid) != sender_map_.end()");
   sender_map_.find(cid)->second.UpdateClassicConfiguration(config);
 }
 
 void DataPipelineManager::SetChannelTxPriority(Cid cid, bool high_priority) {
-  ASSERT(sender_map_.find(cid) != sender_map_.end());
+  log::assert_that(
+      sender_map_.find(cid) != sender_map_.end(),
+      "assert failed: sender_map_.find(cid) != sender_map_.end()");
   scheduler_->SetChannelTxPriority(cid, high_priority);
 }
 

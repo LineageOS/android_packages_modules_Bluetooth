@@ -121,9 +121,10 @@ typedef enum : uint8_t {
 } tBTA_PREF_ROLES;
 
 inline tBTA_PREF_ROLES toBTA_PREF_ROLES(uint8_t role) {
-  ASSERT_LOG(role <= BTA_PERIPHERAL_ROLE_ONLY,
-             "Passing illegal preferred role:0x%02x [0x%02x<=>0x%02x]", role,
-             BTA_ANY_ROLE, BTA_PERIPHERAL_ROLE_ONLY);
+  bluetooth::log::assert_that(
+      role <= BTA_PERIPHERAL_ROLE_ONLY,
+      "Passing illegal preferred role:0x{:02x} [0x{:02x}<=>0x{:02x}]", role,
+      int(BTA_ANY_ROLE), int(BTA_PERIPHERAL_ROLE_ONLY));
   return static_cast<tBTA_PREF_ROLES>(role);
 }
 
@@ -949,6 +950,8 @@ template <>
 struct formatter<tBTA_DM_SEARCH_EVT> : enum_formatter<tBTA_DM_SEARCH_EVT> {};
 template <>
 struct formatter<tBTA_DM_ACL_EVT> : enum_formatter<tBTA_DM_ACL_EVT> {};
+template <>
+struct formatter<tBTA_PREF_ROLES> : enum_formatter<tBTA_PREF_ROLES> {};
 }  // namespace fmt
 
 #endif /* BTA_API_H */

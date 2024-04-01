@@ -60,9 +60,9 @@ Link::Link(
           &dynamic_channel_allocator_,
           fixed_service_manager_),
       acl_handle_(acl_connection_->GetHandle()) {
-  ASSERT(l2cap_handler_ != nullptr);
-  ASSERT(acl_connection_ != nullptr);
-  ASSERT(parameter_provider_ != nullptr);
+  log::assert_that(l2cap_handler_ != nullptr, "assert failed: l2cap_handler_ != nullptr");
+  log::assert_that(acl_connection_ != nullptr, "assert failed: acl_connection_ != nullptr");
+  log::assert_that(parameter_provider_ != nullptr, "assert failed: parameter_provider_ != nullptr");
   link_idle_disconnect_alarm_.Schedule(common::BindOnce(&Link::Disconnect, common::Unretained(this)),
                                        parameter_provider_->GetClassicLinkIdleDisconnectTimeout());
   acl_connection_->RegisterCallbacks(this, l2cap_handler_);
@@ -179,7 +179,9 @@ void Link::SetChannelTxPriority(Cid local_cid, bool high_priority) {
 
 void Link::SetPendingDynamicChannels(std::list<Psm> psm_list,
                                      std::list<Link::PendingDynamicChannelConnection> callback_list) {
-  ASSERT(psm_list.size() == callback_list.size());
+  log::assert_that(
+      psm_list.size() == callback_list.size(),
+      "assert failed: psm_list.size() == callback_list.size()");
   pending_dynamic_psm_list_ = std::move(psm_list);
   pending_dynamic_channel_callback_list_ = std::move(callback_list);
 }
@@ -245,8 +247,11 @@ std::shared_ptr<l2cap::internal::DynamicChannelImpl> Link::AllocateReservedDynam
 }
 
 classic::DynamicChannelConfigurationOption Link::GetConfigurationForInitialConfiguration(Cid cid) {
-  ASSERT(local_cid_to_pending_dynamic_channel_connection_map_.find(cid) !=
-         local_cid_to_pending_dynamic_channel_connection_map_.end());
+  log::assert_that(
+      local_cid_to_pending_dynamic_channel_connection_map_.find(cid) !=
+          local_cid_to_pending_dynamic_channel_connection_map_.end(),
+      "assert failed: local_cid_to_pending_dynamic_channel_connection_map_.find(cid) != "
+      "local_cid_to_pending_dynamic_channel_connection_map_.end()");
   return local_cid_to_pending_dynamic_channel_connection_map_[cid].configuration_;
 }
 
@@ -265,7 +270,7 @@ void Link::RefreshRefCount() {
   if (used_by_security_module_) {
     ref_count += 1;
   }
-  ASSERT_LOG(ref_count >= 0, "ref_count %d is less than 0", ref_count);
+  log::assert_that(ref_count >= 0, "ref_count {} is less than 0", ref_count);
   if (ref_count > 0) {
     link_idle_disconnect_alarm_.Cancel();
   } else {
@@ -275,16 +280,22 @@ void Link::RefreshRefCount() {
 }
 
 void Link::NotifyChannelCreation(Cid cid, std::unique_ptr<DynamicChannel> user_channel) {
-  ASSERT(local_cid_to_pending_dynamic_channel_connection_map_.find(cid) !=
-         local_cid_to_pending_dynamic_channel_connection_map_.end());
+  log::assert_that(
+      local_cid_to_pending_dynamic_channel_connection_map_.find(cid) !=
+          local_cid_to_pending_dynamic_channel_connection_map_.end(),
+      "assert failed: local_cid_to_pending_dynamic_channel_connection_map_.find(cid) != "
+      "local_cid_to_pending_dynamic_channel_connection_map_.end()");
   auto& pending_dynamic_channel_connection = local_cid_to_pending_dynamic_channel_connection_map_[cid];
   pending_dynamic_channel_connection.on_open_callback_.Invoke(std::move(user_channel));
   local_cid_to_pending_dynamic_channel_connection_map_.erase(cid);
 }
 
 void Link::NotifyChannelFail(Cid cid, ConnectionResult result) {
-  ASSERT(local_cid_to_pending_dynamic_channel_connection_map_.find(cid) !=
-         local_cid_to_pending_dynamic_channel_connection_map_.end());
+  log::assert_that(
+      local_cid_to_pending_dynamic_channel_connection_map_.find(cid) !=
+          local_cid_to_pending_dynamic_channel_connection_map_.end(),
+      "assert failed: local_cid_to_pending_dynamic_channel_connection_map_.find(cid) != "
+      "local_cid_to_pending_dynamic_channel_connection_map_.end()");
   auto& pending_dynamic_channel_connection = local_cid_to_pending_dynamic_channel_connection_map_[cid];
   pending_dynamic_channel_connection.on_fail_callback_.Invoke(result);
   local_cid_to_pending_dynamic_channel_connection_map_.erase(cid);

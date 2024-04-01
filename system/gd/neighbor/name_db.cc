@@ -98,7 +98,10 @@ void neighbor::NameDbModule::impl::ReadRemoteNameRequest(
 
 void neighbor::NameDbModule::impl::OnRemoteNameResponse(
     hci::Address address, hci::ErrorCode status, RemoteName name) {
-  ASSERT(address_to_pending_read_map_.find(address) != address_to_pending_read_map_.end());
+  log::assert_that(
+      address_to_pending_read_map_.find(address) != address_to_pending_read_map_.end(),
+      "assert failed: address_to_pending_read_map_.find(address) != "
+      "address_to_pending_read_map_.end()");
   if (status == hci::ErrorCode::SUCCESS) {
     address_to_name_map_[address] = name;
   }
@@ -114,7 +117,7 @@ bool neighbor::NameDbModule::impl::IsNameCached(hci::Address address) const {
 }
 
 RemoteName neighbor::NameDbModule::impl::ReadCachedRemoteName(hci::Address address) const {
-  ASSERT(IsNameCached(address));
+  log::assert_that(IsNameCached(address), "assert failed: IsNameCached(address)");
   return address_to_name_map_.at(address);
 }
 

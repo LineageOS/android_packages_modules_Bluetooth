@@ -172,7 +172,7 @@ TEST_F(A2dpSbcTest, a2dp_source_read_underflow) {
 TEST_F(A2dpSbcTest, a2dp_enqueue_cb_is_invoked) {
   promise = {};
   auto read_cb = +[](uint8_t* p_buf, uint32_t len) -> uint32_t {
-    ASSERT(kSbcReadSize == len);
+    log::assert_that(kSbcReadSize == len, "assert failed: kSbcReadSize == len");
     return len;
   };
   auto enqueue_cb = +[](BT_HDR* p_buf, size_t frames_n, uint32_t len) -> bool {
@@ -255,7 +255,7 @@ TEST_F(A2dpSbcTest, sink_supports_sbc) {
 
 TEST_F(A2dpSbcTest, effective_mtu_when_peer_supports_3mbps) {
   auto read_cb = +[](uint8_t* p_buf, uint32_t len) -> uint32_t {
-    ASSERT(kSbcReadSize == len);
+    log::assert_that(kSbcReadSize == len, "assert failed: kSbcReadSize == len");
     return len;
   };
   auto enqueue_cb = +[](BT_HDR* p_buf, size_t frames_n, uint32_t len) -> bool {
@@ -268,7 +268,7 @@ TEST_F(A2dpSbcTest, effective_mtu_when_peer_supports_3mbps) {
 
 TEST_F(A2dpSbcTest, effective_mtu_when_peer_does_not_support_3mbps) {
   auto read_cb = +[](uint8_t* p_buf, uint32_t len) -> uint32_t {
-    ASSERT(kSbcReadSize == len);
+    log::assert_that(kSbcReadSize == len, "assert failed: kSbcReadSize == len");
     return len;
   };
   auto enqueue_cb = +[](BT_HDR* p_buf, size_t frames_n, uint32_t len) -> bool {

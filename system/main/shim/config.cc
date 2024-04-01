@@ -43,7 +43,7 @@ bool BtifConfigInterface::HasProperty(const std::string& section,
 
 bool BtifConfigInterface::GetInt(const std::string& section,
                                  const std::string& property, int* value) {
-  ASSERT(value != nullptr);
+  log::assert_that(value != nullptr, "assert failed: value != nullptr");
   auto ret = GetStorage()->GetInt(section, property);
   if (ret) {
     *value = *ret;
@@ -60,7 +60,7 @@ bool BtifConfigInterface::SetInt(const std::string& section,
 bool BtifConfigInterface::GetUint64(const std::string& section,
                                     const std::string& property,
                                     uint64_t* value) {
-  ASSERT(value != nullptr);
+  log::assert_that(value != nullptr, "assert failed: value != nullptr");
   auto ret = GetStorage()->GetUint64(section, property);
   if (ret) {
     *value = *ret;
@@ -78,8 +78,9 @@ bool BtifConfigInterface::SetUint64(const std::string& section,
 bool BtifConfigInterface::GetStr(const std::string& section,
                                  const std::string& property, char* value,
                                  int* size_bytes) {
-  ASSERT(value != nullptr);
-  ASSERT(size_bytes != nullptr);
+  log::assert_that(value != nullptr, "assert failed: value != nullptr");
+  log::assert_that(size_bytes != nullptr,
+                   "assert failed: size_bytes != nullptr");
   if (*size_bytes == 0) {
     return HasProperty(section, property);
   }
@@ -111,8 +112,8 @@ bool BtifConfigInterface::SetStr(const std::string& section,
 bool BtifConfigInterface::GetBin(const std::string& section,
                                  const std::string& property, uint8_t* value,
                                  size_t* length) {
-  ASSERT(value != nullptr);
-  ASSERT(length != nullptr);
+  log::assert_that(value != nullptr, "assert failed: value != nullptr");
+  log::assert_that(length != nullptr, "assert failed: length != nullptr");
   auto value_vec = GetStorage()->GetBin(section, property);
   if (!value_vec) {
     return false;
@@ -132,7 +133,7 @@ size_t BtifConfigInterface::GetBinLength(const std::string& section,
 bool BtifConfigInterface::SetBin(const std::string& section,
                                  const std::string& property,
                                  const uint8_t* value, size_t length) {
-  ASSERT(value != nullptr);
+  log::assert_that(value != nullptr, "assert failed: value != nullptr");
   std::vector<uint8_t> value_vec(value, value + length);
   GetStorage()->SetBin(section, property, value_vec);
   return true;

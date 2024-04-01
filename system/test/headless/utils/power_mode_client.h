@@ -110,8 +110,8 @@ class Queue {
 
   void PopFront(const RawAddress& bd_addr) {
     std::unique_lock<std::mutex> lk(mutex);
-    ASSERT_LOG(!promises_map_[bd_addr].empty(),
-               "Unable to remove promise from empty bag of promises");
+    log::assert_that(!promises_map_[bd_addr].empty(),
+                     "Unable to remove promise from empty bag of promises");
     promises_map_[bd_addr].pop_front();
   }
 
@@ -194,17 +194,20 @@ class PowerMode {
               });
             });
 
-    ASSERT_LOG(BTM_SUCCESS == btm_status, "Failed to register power mode:%s",
-               btm_status_text(btm_status).c_str());
+    log::assert_that(BTM_SUCCESS == btm_status,
+                     "Failed to register power mode:{}",
+                     btm_status_text(btm_status));
   }
 
   ~PowerMode() {
-    ASSERT(BTM_SUCCESS == get_btm_client_interface().lifecycle.BTM_PmRegister(
-                              BTM_PM_DEREG, &pm_id_,
-                              []([[maybe_unused]] const RawAddress& bd_addr,
-                                 [[maybe_unused]] tBTM_PM_STATUS status,
-                                 [[maybe_unused]] uint16_t value,
-                                 [[maybe_unused]] tHCI_STATUS hci_status) {}));
+    auto status = get_btm_client_interface().lifecycle.BTM_PmRegister(
+        BTM_PM_DEREG, &pm_id_,
+        []([[maybe_unused]] const RawAddress& bd_addr,
+           [[maybe_unused]] tBTM_PM_STATUS status,
+           [[maybe_unused]] uint16_t value,
+           [[maybe_unused]] tHCI_STATUS hci_status) {});
+    log::assert_that(BTM_SUCCESS == status,
+                     "assert failed: BTM_SUCCESS == status");
   }
 
   Client GetClient(const RawAddress bd_addr) { return Client(pm_id_, bd_addr); }

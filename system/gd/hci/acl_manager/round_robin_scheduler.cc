@@ -43,7 +43,9 @@ RoundRobinScheduler::~RoundRobinScheduler() {
 
 void RoundRobinScheduler::Register(ConnectionType connection_type, uint16_t handle,
                                    std::shared_ptr<acl_manager::AclConnection::Queue> queue) {
-  ASSERT(acl_queue_handlers_.count(handle) == 0);
+  log::assert_that(
+      acl_queue_handlers_.count(handle) == 0,
+      "assert failed: acl_queue_handlers_.count(handle) == 0");
   acl_queue_handler acl_queue_handler = {connection_type, std::move(queue), false, 0};
   acl_queue_handlers_.insert(std::pair<uint16_t, RoundRobinScheduler::acl_queue_handler>(handle, acl_queue_handler));
   if (fragments_to_send_.size() == 0) {
@@ -52,7 +54,9 @@ void RoundRobinScheduler::Register(ConnectionType connection_type, uint16_t hand
 }
 
 void RoundRobinScheduler::Unregister(uint16_t handle) {
-  ASSERT(acl_queue_handlers_.count(handle) == 1);
+  log::assert_that(
+      acl_queue_handlers_.count(handle) == 1,
+      "assert failed: acl_queue_handlers_.count(handle) == 1");
   auto acl_queue_handler = acl_queue_handlers_.find(handle)->second;
   // Reclaim outstanding packets
   if (acl_queue_handler.connection_type_ == ConnectionType::CLASSIC) {
@@ -144,7 +148,7 @@ void RoundRobinScheduler::buffer_packet(uint16_t acl_handle) {
   // Wrap packet and enqueue it
   uint16_t handle = acl_queue_handler->first;
   auto packet = acl_queue_handler->second.queue_->GetDownEnd()->TryDequeue();
-  ASSERT(packet != nullptr);
+  log::assert_that(packet != nullptr, "assert failed: packet != nullptr");
 
   ConnectionType connection_type = acl_queue_handler->second.connection_type_;
   size_t mtu = connection_type == ConnectionType::CLASSIC ? hci_mtu_ : le_hci_mtu_;
@@ -169,7 +173,7 @@ void RoundRobinScheduler::buffer_packet(uint16_t acl_handle) {
       packet_boundary_flag = PacketBoundaryFlag::CONTINUING_FRAGMENT;
     }
   }
-  ASSERT(fragments_to_send_.size() > 0);
+  log::assert_that(fragments_to_send_.size() > 0, "assert failed: fragments_to_send_.size() > 0");
   unregister_all_connections();
 
   acl_queue_handler->second.number_of_sent_packets_ += fragments_to_send_.size();
@@ -197,10 +201,10 @@ void RoundRobinScheduler::send_next_fragment() {
 std::unique_ptr<AclBuilder> RoundRobinScheduler::handle_enqueue_next_fragment() {
   ConnectionType connection_type = fragments_to_send_.front().first;
   if (connection_type == ConnectionType::CLASSIC) {
-    ASSERT(acl_packet_credits_ > 0);
+    log::assert_that(acl_packet_credits_ > 0, "assert failed: acl_packet_credits_ > 0");
     acl_packet_credits_ -= 1;
   } else {
-    ASSERT(le_acl_packet_credits_ > 0);
+    log::assert_that(le_acl_packet_credits_ > 0, "assert failed: le_acl_packet_credits_ > 0");
     le_acl_packet_credits_ -= 1;
   }
 

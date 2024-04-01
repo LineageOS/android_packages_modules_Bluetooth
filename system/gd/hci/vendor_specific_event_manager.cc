@@ -44,10 +44,10 @@ struct VendorSpecificEventManager::impl {
   void stop() {}
 
   void register_event(VseSubeventCode event, common::ContextualCallback<void(VendorSpecificEventView)> handler) {
-    ASSERT_LOG(
+    log::assert_that(
         subevent_handlers_.count(event) == 0,
-        "Can not register a second handler opcode:%s",
-        VseSubeventCodeText(event).c_str());
+        "Can not register a second handler opcode:{}",
+        VseSubeventCodeText(event));
     subevent_handlers_[event] = handler;
   }
 
@@ -81,7 +81,9 @@ struct VendorSpecificEventManager::impl {
 
   void on_vendor_specific_event(EventView event_view) {
     auto vendor_specific_event_view = VendorSpecificEventView::Create(event_view);
-    ASSERT(vendor_specific_event_view.IsValid());
+    log::assert_that(
+        vendor_specific_event_view.IsValid(),
+        "assert failed: vendor_specific_event_view.IsValid()");
     VseSubeventCode vse_subevent_code = vendor_specific_event_view.GetSubeventCode();
     if (subevent_handlers_.find(vse_subevent_code) == subevent_handlers_.end()) {
       log::warn("Unhandled vendor specific event of type 0x{:02x}", vse_subevent_code);

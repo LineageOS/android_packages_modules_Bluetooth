@@ -89,7 +89,7 @@ std::optional<std::string> ReadSmallFile(const std::string& path) {
 }
 
 bool WriteToFile(const std::string& path, const std::string& data) {
-  ASSERT(!path.empty());
+  log::assert_that(!path.empty(), "assert failed: !path.empty()");
   // Steps to ensure content of data gets to disk:
   //
   // 1) Open and write to temp file (e.g. bt_config.conf.new).

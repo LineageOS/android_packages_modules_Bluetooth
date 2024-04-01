@@ -238,7 +238,7 @@ Phase1ResultOrFailure PairingHandlerLe::ExchangePairingFeature(const InitialInfo
     PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
     auto temp_cmd_view = CommandView::Create(packet_bytes_view);
     auto pairing_request = PairingRequestView::Create(temp_cmd_view);
-    ASSERT(pairing_request.IsValid());
+    log::assert_that(pairing_request.IsValid(), "assert failed: pairing_request.IsValid()");
 
     log::info("Sending Pairing Request");
     SendL2capPacket(i, std::move(pairing_request_builder));
@@ -315,7 +315,7 @@ Phase1ResultOrFailure PairingHandlerLe::ExchangePairingFeature(const InitialInfo
     PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
     auto temp_cmd_view = CommandView::Create(packet_bytes_view);
     auto pairing_response = PairingResponseView::Create(temp_cmd_view);
-    ASSERT(pairing_response.IsValid());
+    log::assert_that(pairing_response.IsValid(), "assert failed: pairing_response.IsValid()");
 
     log::info("Sending Pairing Response");
     SendL2capPacket(i, std::move(pairing_response_builder));

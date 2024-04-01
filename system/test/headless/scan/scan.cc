@@ -39,7 +39,9 @@ namespace {
 int start_scan([[maybe_unused]] unsigned int num_loops) {
   log::info("Started Device Scan");
 
-  ASSERT(bluetoothInterface.start_discovery() == BT_STATUS_SUCCESS);
+  log::assert_that(bluetoothInterface.start_discovery() == BT_STATUS_SUCCESS,
+                   "assert failed: bluetoothInterface.start_discovery() == "
+                   "BT_STATUS_SUCCESS");
   LOG_CONSOLE("Started inquiry - device discovery");
 
   headless::messenger::Context context{

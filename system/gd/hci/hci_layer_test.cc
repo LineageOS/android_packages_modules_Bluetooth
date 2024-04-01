@@ -114,7 +114,7 @@ class DependsOnHci : public Module {
       return {};
     }
     auto event = EventView::Create(incoming_events_.take());
-    ASSERT(event.IsValid());
+    log::assert_that(event.IsValid(), "assert failed: event.IsValid()");
     return event;
   }
 
@@ -124,7 +124,7 @@ class DependsOnHci : public Module {
       return {};
     }
     auto acl = AclView::Create(incoming_acl_.take());
-    ASSERT(acl.IsValid());
+    log::assert_that(acl.IsValid(), "assert failed: acl.IsValid()");
     return acl;
   }
 
@@ -134,7 +134,7 @@ class DependsOnHci : public Module {
       return {};
     }
     auto iso = IsoView::Create(incoming_iso_.take());
-    ASSERT(iso.IsValid());
+    log::assert_that(iso.IsValid(), "assert failed: iso.IsValid()");
     return iso;
   }
 

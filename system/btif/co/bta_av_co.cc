@@ -1181,14 +1181,15 @@ BtaAvCoSep* BtaAvCo::SelectProviderCodecConfiguration(
   auto* p_sink = peer_cache_->FindPeerSink(
       p_peer, provider_codec_config.codec_parameters.codec_type,
       ContentProtectFlag());
-  ASSERT_LOG(p_sink != nullptr, "Unable to find the selected codec config");
+  log::assert_that(p_sink != nullptr,
+                   "Unable to find the selected codec config");
 
   // Identify the selected codec.
   auto* codec_config = reinterpret_cast<A2dpCodecConfigExt*>(
       p_peer->GetCodecs()->findSourceCodecConfig(
           provider_codec_config.codec_parameters.codec_type));
-  ASSERT_LOG(codec_config != nullptr,
-             "Unable to find the selected codec config");
+  log::assert_that(codec_config != nullptr,
+                   "Unable to find the selected codec config");
 
   // Update the vendor codec parameters and codec configuration.
   codec_config->setCodecConfig(
