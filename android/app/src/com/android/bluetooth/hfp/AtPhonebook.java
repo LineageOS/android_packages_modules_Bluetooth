@@ -652,9 +652,15 @@ public class AtPhonebook {
             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, remoteDevice);
             // Leave EXTRA_PACKAGE_NAME and EXTRA_CLASS_NAME field empty.
             // BluetoothHandsfree's broadcast receiver is anonymous, cannot be targeted.
-            Utils.sendOrderedBroadcast(mContext, intent, BLUETOOTH_CONNECT,
-                    Utils.getTempAllowlistBroadcastOptions(), null, null,
-                    Activity.RESULT_OK, null, null);
+            mContext.sendOrderedBroadcast(
+                    intent,
+                    BLUETOOTH_CONNECT,
+                    Utils.getTempAllowlistBroadcastOptions(),
+                    null,
+                    null,
+                    Activity.RESULT_OK,
+                    null,
+                    null);
         }
 
         return permission;

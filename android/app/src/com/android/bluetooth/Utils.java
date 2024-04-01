@@ -42,10 +42,8 @@ import android.bluetooth.BluetoothDevice;
 import android.companion.AssociationInfo;
 import android.companion.CompanionDeviceManager;
 import android.content.AttributionSource;
-import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.location.LocationManager;
@@ -53,7 +51,6 @@ import android.net.Uri;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.ParcelUuid;
 import android.os.PowerExemptionManager;
 import android.os.Process;
@@ -1185,18 +1182,6 @@ public final class Utils {
             Binder.restoreCallingIdentity(ident);
         }
         return bOptions;
-    }
-
-    /**
-     * @see Context#sendOrderedBroadcast(Intent, String, Bundle, BroadcastReceiver, Handler,
-     *          int, String, Bundle)
-     */
-    public static void sendOrderedBroadcast(@NonNull Context context, @NonNull Intent intent,
-            @Nullable String receiverPermission, @Nullable Bundle options,
-            @Nullable BroadcastReceiver resultReceiver, @Nullable Handler scheduler,
-            int initialCode, @Nullable String initialData, @Nullable Bundle initialExtras) {
-        context.sendOrderedBroadcast(intent, receiverPermission, options, resultReceiver, scheduler,
-                initialCode, initialData, initialExtras);
     }
 
     /**

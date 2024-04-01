@@ -970,9 +970,15 @@ public class BluetoothMapService extends ProfileService {
             intent.putExtra(BluetoothDevice.EXTRA_ACCESS_REQUEST_TYPE,
                     BluetoothDevice.REQUEST_TYPE_MESSAGE_ACCESS);
             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, sRemoteDevice);
-            Utils.sendOrderedBroadcast(this, intent, BLUETOOTH_CONNECT,
-                    Utils.getTempAllowlistBroadcastOptions(), null, null,
-                    Activity.RESULT_OK, null, null);
+            sendOrderedBroadcast(
+                    intent,
+                    BLUETOOTH_CONNECT,
+                    Utils.getTempAllowlistBroadcastOptions(),
+                    null,
+                    null,
+                    Activity.RESULT_OK,
+                    null,
+                    null);
 
             Log.v(TAG, "waiting for authorization for connection from: " + sRemoteDeviceName);
             //Queue USER_TIMEOUT to disconnect MAP OBEX session. If user doesn't
