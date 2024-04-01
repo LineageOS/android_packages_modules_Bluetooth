@@ -1535,8 +1535,7 @@ public class LeAudioService extends ProfileService {
         intent.addFlags(
                 Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
                         | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
-        Utils.sendBroadcast(
-                this, intent, BLUETOOTH_CONNECT, Utils.getTempAllowlistBroadcastOptions());
+        sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempAllowlistBroadcastOptions());
     }
 
     void sentActiveDeviceChangeIntent(BluetoothDevice device) {

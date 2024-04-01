@@ -1188,18 +1188,6 @@ public final class Utils {
     }
 
     /**
-     * Sends the {@code intent} as a broadcast in the provided {@code context} to receivers that
-     * have been granted the specified {@code receiverPermission} with the {@link BroadcastOptions}
-     * {@code options}.
-     *
-     * @see Context#sendBroadcast(Intent, String, Bundle)
-     */
-    public static void sendBroadcast(@NonNull Context context, @NonNull Intent intent,
-            @Nullable String receiverPermission, @Nullable Bundle options) {
-        context.sendBroadcast(intent, receiverPermission, options);
-    }
-
-    /**
      * @see Context#sendOrderedBroadcast(Intent, String, Bundle, BroadcastReceiver, Handler,
      *          int, String, Bundle)
      */

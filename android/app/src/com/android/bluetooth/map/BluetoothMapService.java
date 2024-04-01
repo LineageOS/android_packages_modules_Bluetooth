@@ -389,7 +389,9 @@ public class BluetoothMapService extends ProfileService {
                         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, sRemoteDevice);
                         intent.putExtra(BluetoothDevice.EXTRA_ACCESS_REQUEST_TYPE,
                                 BluetoothDevice.REQUEST_TYPE_MESSAGE_ACCESS);
-                        Utils.sendBroadcast(BluetoothMapService.this, intent, BLUETOOTH_CONNECT,
+                        BluetoothMapService.this.sendBroadcast(
+                                intent,
+                                BLUETOOTH_CONNECT,
                                 Utils.getTempAllowlistBroadcastOptions());
                         cancelUserTimeoutAlarm();
                         mIsWaitingAuthorization = false;
@@ -537,8 +539,7 @@ public class BluetoothMapService extends ProfileService {
             intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState);
             intent.putExtra(BluetoothProfile.EXTRA_STATE, mState);
             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, sRemoteDevice);
-            Utils.sendBroadcast(this, intent, BLUETOOTH_CONNECT,
-                    Utils.getTempAllowlistBroadcastOptions());
+            sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempAllowlistBroadcastOptions());
         }
     }
 

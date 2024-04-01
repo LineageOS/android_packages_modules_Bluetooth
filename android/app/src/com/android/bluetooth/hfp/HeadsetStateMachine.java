@@ -2493,8 +2493,8 @@ public class HeadsetStateMachine extends StateMachine {
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
         intent.putExtra(BluetoothHeadset.EXTRA_HF_INDICATORS_IND_ID, indId);
         intent.putExtra(BluetoothHeadset.EXTRA_HF_INDICATORS_IND_VALUE, indValue);
-        Utils.sendBroadcast(mHeadsetService, intent, BLUETOOTH_CONNECT,
-                Utils.getTempAllowlistBroadcastOptions());
+        mHeadsetService.sendBroadcast(
+                intent, BLUETOOTH_CONNECT, Utils.getTempAllowlistBroadcastOptions());
     }
 
     private void processAtBind(String atString, BluetoothDevice device) {

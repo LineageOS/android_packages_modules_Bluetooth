@@ -647,7 +647,9 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler
                         Constants.COUNT_HEADER_UNAVAILABLE);
             }
             intent.putExtra(Constants.EXTRA_BT_OPP_ADDRESS, destination);
-            Utils.sendBroadcast(mContext, intent, Constants.HANDOVER_STATUS_PERMISSION,
+            mContext.sendBroadcast(
+                    intent,
+                    Constants.HANDOVER_STATUS_PERMISSION,
                     Utils.getTempAllowlistBroadcastOptions());
         }
         mTimestamp = System.currentTimeMillis();
