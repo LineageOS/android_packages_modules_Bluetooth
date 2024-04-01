@@ -476,7 +476,7 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
         } else {
             Log.d(TAG, "Notification Not Required.");
             if (sNotificationManager != null) {
-                sNotificationManager.cancelAll();
+                sNotificationManager.cancel(android.R.drawable.stat_sys_data_bluetooth);
             }
         }
     }

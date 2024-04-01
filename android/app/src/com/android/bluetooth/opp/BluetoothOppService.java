@@ -266,7 +266,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
         mObserver = new BluetoothShareContentObserver();
         getContentResolver().registerContentObserver(BluetoothShare.CONTENT_URI, true, mObserver);
         mNotifier = new BluetoothOppNotification(this);
-        mNotifier.mNotificationMgr.cancelAll();
+        mNotifier.cancelOppNotifications();
         updateFromProvider();
         setBluetoothOppService(this);
     }
@@ -618,7 +618,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
         }
 
         if (mNotifier != null) {
-            mNotifier.cancelNotifications();
+            mNotifier.cancelOppNotifications();
         }
     }
 

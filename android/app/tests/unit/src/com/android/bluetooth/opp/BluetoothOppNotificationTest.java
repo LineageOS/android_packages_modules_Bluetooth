@@ -101,7 +101,7 @@ public class BluetoothOppNotificationTest {
                 mReceiverName, COMPONENT_ENABLED_STATE_ENABLED, DONT_KILL_APP);
 
         // clear all OPP notifications before each test
-        mOppNotification.cancelNotifications();
+        mOppNotification.cancelOppNotifications();
     }
 
     @After
@@ -117,7 +117,7 @@ public class BluetoothOppNotificationTest {
                 mReceiverName, mPreviousState, DONT_KILL_APP);
 
         // clear all OPP notifications after each test
-        mOppNotification.cancelNotifications();
+        mOppNotification.cancelOppNotifications();
     }
 
     @Ignore("b/288660228")
@@ -164,8 +164,6 @@ public class BluetoothOppNotificationTest {
         device.wait(Until.hasObject(By.text(titleString)), TIMEOUT_MS);
         UiObject2 title = device.findObject(By.text(titleString));
         assertThat(title).isNotNull();
-
-        mOppNotification.cancelNotifications();
     }
 
     @Test
