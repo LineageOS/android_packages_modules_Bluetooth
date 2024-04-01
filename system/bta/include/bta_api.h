@@ -318,11 +318,6 @@ struct service_discovery_callbacks {
 /* Execute call back */
 typedef void(tBTA_DM_EXEC_CBACK)(void* p_param);
 
-/* Encryption callback*/
-typedef void(tBTA_DM_ENCRYPT_CBACK)(const RawAddress& bd_addr,
-                                    tBT_TRANSPORT transport,
-                                    tBTA_STATUS result);
-
 typedef void(tBTA_BLE_ENERGY_INFO_CBACK)(tBTM_BLE_TX_TIME_MS tx_time,
                                          tBTM_BLE_RX_TIME_MS rx_time,
                                          tBTM_BLE_IDLE_TIME_MS idle_time,
