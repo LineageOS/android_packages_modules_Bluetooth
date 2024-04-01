@@ -50,7 +50,6 @@ import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.ParcelUuid;
 import android.os.PowerExemptionManager;
 import android.os.Process;
@@ -1156,13 +1155,6 @@ public final class Utils {
 
         return 1 == BluetoothMethodProxy.getInstance().contentResolverUpdate(
                 context.getContentResolver(), uri, values, null, null);
-    }
-
-    /**
-     * Returns bundled broadcast options.
-     */
-    public static @NonNull Bundle getTempAllowlistBroadcastOptions() {
-        return getTempBroadcastOptions().toBundle();
     }
 
     /**

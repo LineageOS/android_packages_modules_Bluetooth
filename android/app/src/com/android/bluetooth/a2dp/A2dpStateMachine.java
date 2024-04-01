@@ -742,7 +742,7 @@ final class A2dpStateMachine extends StateMachine {
                         | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
         mA2dpService.handleConnectionStateChanged(mDevice, prevState, newState);
         mA2dpService.sendBroadcast(
-                intent, BLUETOOTH_CONNECT, Utils.getTempAllowlistBroadcastOptions());
+                intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
     }
 
     private void broadcastAudioState(int newState, int prevState) {
@@ -754,7 +754,7 @@ final class A2dpStateMachine extends StateMachine {
         intent.putExtra(BluetoothProfile.EXTRA_STATE, newState);
         intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
         mA2dpService.sendBroadcast(
-                intent, BLUETOOTH_CONNECT, Utils.getTempAllowlistBroadcastOptions());
+                intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
     }
 
     @Override

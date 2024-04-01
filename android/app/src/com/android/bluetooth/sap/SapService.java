@@ -388,7 +388,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
                         SapService.this.sendBroadcast(
                                 intent,
                                 BLUETOOTH_CONNECT,
-                                Utils.getTempAllowlistBroadcastOptions());
+                                Utils.getTempBroadcastOptions().toBundle());
 
                         Log.v(TAG, "waiting for authorization for connection from: "
                                 + sRemoteDeviceName);
@@ -502,7 +502,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
             intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState);
             intent.putExtra(BluetoothProfile.EXTRA_STATE, mState);
             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mRemoteDevice);
-            sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempAllowlistBroadcastOptions());
+            sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
         }
     }
 

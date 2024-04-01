@@ -650,7 +650,7 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler
             mContext.sendBroadcast(
                     intent,
                     Constants.HANDOVER_STATUS_PERMISSION,
-                    Utils.getTempAllowlistBroadcastOptions());
+                    Utils.getTempBroadcastOptions().toBundle());
         }
         mTimestamp = System.currentTimeMillis();
         mNumFilesAttemptedToReceive = 0;

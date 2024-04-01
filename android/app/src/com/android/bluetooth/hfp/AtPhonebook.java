@@ -631,12 +631,12 @@ public class AtPhonebook {
     }
 
     /**
-     * Checks if the remote device has premission to read our phone book.
-     * If the return value is {@link BluetoothDevice#ACCESS_UNKNOWN}, it means this method has sent
-     * an Intent to Settings application to ask user preference.
+     * Checks if the remote device has permission to read our phone book. If the return value is
+     * {@link BluetoothDevice#ACCESS_UNKNOWN}, it means this method has sent an Intent to Settings
+     * application to ask user preference.
      *
      * @return {@link BluetoothDevice#ACCESS_UNKNOWN}, {@link BluetoothDevice#ACCESS_ALLOWED} or
-     *         {@link BluetoothDevice#ACCESS_REJECTED}.
+     *     {@link BluetoothDevice#ACCESS_REJECTED}.
      */
     @VisibleForTesting
     int checkAccessPermission(BluetoothDevice remoteDevice) {
@@ -655,7 +655,7 @@ public class AtPhonebook {
             mContext.sendOrderedBroadcast(
                     intent,
                     BLUETOOTH_CONNECT,
-                    Utils.getTempAllowlistBroadcastOptions(),
+                    Utils.getTempBroadcastOptions().toBundle(),
                     null,
                     null,
                     Activity.RESULT_OK,

@@ -360,7 +360,7 @@ class BluetoothOppNotification {
                 mContext.sendBroadcast(
                         intent,
                         Constants.HANDOVER_STATUS_PERMISSION,
-                        Utils.getTempAllowlistBroadcastOptions());
+                        Utils.getTempBroadcastOptions().toBundle());
                 continue;
             }
             // Build the notification object

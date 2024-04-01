@@ -269,7 +269,7 @@ public class BluetoothOppReceiver extends BroadcastReceiver {
                 context.sendBroadcast(
                         handoverIntent,
                         Constants.HANDOVER_STATUS_PERMISSION,
-                        Utils.getTempAllowlistBroadcastOptions());
+                        Utils.getTempBroadcastOptions().toBundle());
                 return;
             }
 
