@@ -33,7 +33,11 @@ java_defaults {
         "framework-tethering.stubs.module_lib",
         "unsupportedappusage", // for android.compat.annotation.UnsupportedAppUsage
     ],
-    stub_only_libs: ["framework-tethering.stubs.module_lib"],
+    stub_only_libs: [
+        // TODO: b/332362688 --- Metalava should already ignore our library
+        "bluetooth_flags_java_lib",
+        "framework-tethering.stubs.module_lib",
+    ],
     srcs: [
         ":Bluetooth-binder-aidl",
         ":framework-bluetooth-sources",
