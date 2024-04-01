@@ -34,10 +34,10 @@
 
 #include "bta_api_data_types.h"
 #include "hci/le_rand_callback.h"
-#include "internal_include/bt_target.h"
 #include "macros.h"
 #include "os/log.h"
 #include "stack/btm/power_mode.h"
+#include "stack/include/bt_dev_class.h"
 #include "stack/include/bt_device_type.h"
 #include "stack/include/bt_name.h"
 #include "stack/include/btm_api_types.h"

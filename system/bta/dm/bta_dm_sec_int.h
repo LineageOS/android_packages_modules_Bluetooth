@@ -16,11 +16,12 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 
-#include "bta/include/bta_api.h"
 #include "bta/include/bta_sec_api.h"
-#include "osi/include/osi.h"  // UNUSED_ATTR
+#include "stack/include/bt_hdr.h"
+#include "stack/include/btm_sec_api_types.h"
 
 typedef struct {
   RawAddress bd_addr;
@@ -85,7 +86,7 @@ void bta_dm_confirm(const RawAddress& bd_addr, bool accept);
 void bta_dm_consolidate(const RawAddress& identity_addr, const RawAddress& rpa);
 void bta_dm_enable(tBTA_DM_SEC_CBACK* p_sec_cback);
 void bta_dm_encrypt_cback(const RawAddress* bd_addr, tBT_TRANSPORT transport,
-                          UNUSED_ATTR void* p_ref_data, tBTM_STATUS result);
+                          void* /* p_ref_data */, tBTM_STATUS result);
 void bta_dm_pin_reply(std::unique_ptr<tBTA_DM_API_PIN_REPLY> msg);
 void bta_dm_set_encryption(const RawAddress& bd_addr, tBT_TRANSPORT transport,
                            tBTA_DM_ENCRYPT_CBACK* p_callback,
