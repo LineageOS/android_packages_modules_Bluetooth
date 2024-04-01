@@ -4816,17 +4816,17 @@ public class AdapterService extends Service {
     }
 
     int getConnectionState(BluetoothDevice device) {
+        final String address = device.getAddress();
         if (Flags.apiGetConnectionStateUsingIdentityAddress()) {
-            int connectionState =
-                    mNativeInterface.getConnectionState(getBytesFromAddress(device.getAddress()));
-            final String identityAddress = device.getIdentityAddress();
+            int connectionState = mNativeInterface.getConnectionState(getBytesFromAddress(address));
+            final String identityAddress = getIdentityAddress(address);
             if (identityAddress != null) {
                 connectionState |=
                         mNativeInterface.getConnectionState(getBytesFromAddress(identityAddress));
             }
             return connectionState;
         }
-        return mNativeInterface.getConnectionState(getBytesFromAddress(device.getAddress()));
+        return mNativeInterface.getConnectionState(getBytesFromAddress(address));
     }
 
     int getConnectionHandle(BluetoothDevice device, int transport) {
