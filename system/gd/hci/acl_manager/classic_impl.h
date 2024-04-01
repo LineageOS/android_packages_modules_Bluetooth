@@ -353,7 +353,7 @@ struct classic_impl : public security::ISecurityManagerListener {
         queue_down_end,
         handler_,
         connection->GetEventCallbacks([this](uint16_t handle) { this->connections.invalidate(handle); }));
-    connections.execute(address, [=](ConnectionManagementCallbacks* callbacks) {
+    connections.execute(address, [=, this](ConnectionManagementCallbacks* callbacks) {
       if (delayed_role_change_ == nullptr) {
         callbacks->OnRoleChange(hci::ErrorCode::SUCCESS, current_role);
       } else if (delayed_role_change_->GetBdAddr() == address) {
@@ -436,7 +436,7 @@ struct classic_impl : public security::ISecurityManagerListener {
     connections.crash_on_unknown_handle_ = false;
     connections.execute(
         handle,
-        [=](ConnectionManagementCallbacks* callbacks) {
+        [=, this](ConnectionManagementCallbacks* callbacks) {
           round_robin_scheduler_->Unregister(handle);
           callbacks->OnDisconnection(reason);
         },

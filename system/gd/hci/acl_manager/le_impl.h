@@ -533,7 +533,7 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     connections.crash_on_unknown_handle_ = false;
     connections.execute(
         handle,
-        [=](LeConnectionManagementCallbacks* callbacks) {
+        [=, this](LeConnectionManagementCallbacks* callbacks) {
           round_robin_scheduler_->Unregister(handle);
           callbacks->OnDisconnection(reason);
         },
@@ -609,7 +609,7 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     }
 
     auto handle = request_view.GetConnectionHandle();
-    connections.execute(handle, [=](LeConnectionManagementCallbacks* /* callbacks */) {
+    connections.execute(handle, [=, this](LeConnectionManagementCallbacks* /* callbacks */) {
       // TODO: this is blindly accepting any parameters, just so we don't hang connection
       // have proper parameter negotiation
       le_acl_connection_interface_->EnqueueCommand(
