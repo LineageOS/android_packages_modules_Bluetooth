@@ -23,7 +23,7 @@ from bumble.sdp import (
     SDP_ALL_ATTRIBUTES_RANGE,
     SDP_PUBLIC_BROWSE_ROOT,
     SDP_SERVICE_CLASS_ID_LIST_ATTRIBUTE_ID,
-    Client as SDP_Client,
+    Client as SdpClient,
     ServiceAttribute,
 )
 from mobly import base_test, test_runner
@@ -90,8 +90,8 @@ class SdpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         # Connect to the SDP Server
         self.ref.log.info(f'Connecting to SDP Server')
-        sdp_client = SDP_Client(self.ref.device)  # type: ignore
-        await sdp_client.connect(connection)  # type: ignore
+        sdp_client = SdpClient(connection)  # type: ignore
+        await sdp_client.connect()  # type: ignore
         self.ref.log.info(f'Connected to SDP Server')
 
         # SDP Client disconnect
@@ -119,8 +119,8 @@ class SdpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         # Connect to the SDP Server
         self.ref.log.info(f'Connecting to SDP Server')
-        sdp_client = SDP_Client(self.ref.device)  # type: ignore
-        await sdp_client.connect(connection)  # type: ignore
+        sdp_client = SdpClient(connection)  # type: ignore
+        await sdp_client.connect()  # type: ignore
         self.ref.log.info(f'Connected to SDP Server')
 
         # List all services in the root browse group
@@ -163,8 +163,8 @@ class SdpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         # Connect to the SDP Server
         self.ref.log.info(f'Connecting to SDP Server')
-        sdp_client = SDP_Client(self.ref.device)  # type: ignore
-        await sdp_client.connect(connection)  # type: ignore
+        sdp_client = SdpClient(connection)  # type: ignore
+        await sdp_client.connect()  # type: ignore
         self.ref.log.info(f'Connected to SDP Server')
 
         # List all services in the root browse group
