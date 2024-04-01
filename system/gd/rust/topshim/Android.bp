@@ -53,6 +53,7 @@ cc_library_static {
         "gatt/gatt_ble_scanner_shim.cc",
         "gatt/gatt_shim.cc",
         "hfp/hfp_shim.cc",
+        "le_audio/le_audio_shim.cc",
         "vc/vc_shim.cc",
     ],
     generated_headers: [
@@ -90,6 +91,7 @@ gensrcs {
         "src/profiles/csis.rs",
         "src/profiles/gatt.rs",
         "src/profiles/hfp.rs",
+        "src/profiles/le_audio.rs",
         "src/profiles/vc.rs",
     ],
     output_extension: "rs.h",
@@ -108,6 +110,7 @@ gensrcs {
         "src/profiles/csis.rs",
         "src/profiles/gatt.rs",
         "src/profiles/hfp.rs",
+        "src/profiles/le_audio.rs",
         "src/profiles/vc.rs",
     ],
     output_extension: "cc",
