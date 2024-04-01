@@ -267,40 +267,6 @@ struct btsnd_hcic_ble_rand {
 };
 extern struct btsnd_hcic_ble_rand btsnd_hcic_ble_rand;
 
-// Name: btsnd_hcic_ble_rc_param_req_neg_reply
-// Params: uint16_t handle, uint8_t reason
-// Return: void
-struct btsnd_hcic_ble_rc_param_req_neg_reply {
-  std::function<void(uint16_t handle, uint8_t reason)> body{
-      [](uint16_t /* handle */, uint8_t /* reason */) {}};
-  void operator()(uint16_t handle, uint8_t reason) { body(handle, reason); };
-};
-extern struct btsnd_hcic_ble_rc_param_req_neg_reply
-    btsnd_hcic_ble_rc_param_req_neg_reply;
-
-// Name: btsnd_hcic_ble_rc_param_req_reply
-// Params: uint16_t handle, uint16_t conn_int_min, uint16_t conn_int_max,
-// uint16_t conn_latency, uint16_t conn_timeout, uint16_t min_ce_len, uint16_t
-// max_ce_len Return: void
-struct btsnd_hcic_ble_rc_param_req_reply {
-  std::function<void(uint16_t handle, uint16_t conn_int_min,
-                     uint16_t conn_int_max, uint16_t conn_latency,
-                     uint16_t conn_timeout, uint16_t min_ce_len,
-                     uint16_t max_ce_len)>
-      body{[](uint16_t /* handle */, uint16_t /* conn_int_min */,
-              uint16_t /* conn_int_max */, uint16_t /* conn_latency */,
-              uint16_t /* conn_timeout */, uint16_t /* min_ce_len */,
-              uint16_t /* max_ce_len */) {}};
-  void operator()(uint16_t handle, uint16_t conn_int_min, uint16_t conn_int_max,
-                  uint16_t conn_latency, uint16_t conn_timeout,
-                  uint16_t min_ce_len, uint16_t max_ce_len) {
-    body(handle, conn_int_min, conn_int_max, conn_latency, conn_timeout,
-         min_ce_len, max_ce_len);
-  };
-};
-extern struct btsnd_hcic_ble_rc_param_req_reply
-    btsnd_hcic_ble_rc_param_req_reply;
-
 // Name: btsnd_hcic_ble_read_adv_chnl_tx_power
 // Params: void
 // Return: void

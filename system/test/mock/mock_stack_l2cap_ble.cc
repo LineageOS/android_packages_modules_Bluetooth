@@ -50,7 +50,6 @@ struct l2cble_process_sig_cmd l2cble_process_sig_cmd;
 struct l2cble_create_conn l2cble_create_conn;
 struct l2c_link_processs_ble_num_bufs l2c_link_processs_ble_num_bufs;
 struct l2c_ble_link_adjust_allocation l2c_ble_link_adjust_allocation;
-struct l2cble_process_rc_param_request_evt l2cble_process_rc_param_request_evt;
 struct l2cble_update_data_length l2cble_update_data_length;
 struct l2cble_process_data_length_change_event
     l2cble_process_data_length_change_event;
@@ -131,13 +130,6 @@ void l2c_link_processs_ble_num_bufs(uint16_t num_lm_ble_bufs) {
 void l2c_ble_link_adjust_allocation(void) {
   inc_func_call_count(__func__);
   test::mock::stack_l2cap_ble::l2c_ble_link_adjust_allocation();
-}
-void l2cble_process_rc_param_request_evt(uint16_t handle, uint16_t int_min,
-                                         uint16_t int_max, uint16_t latency,
-                                         uint16_t timeout) {
-  inc_func_call_count(__func__);
-  test::mock::stack_l2cap_ble::l2cble_process_rc_param_request_evt(
-      handle, int_min, int_max, latency, timeout);
 }
 void l2cble_update_data_length(tL2C_LCB* p_lcb) {
   inc_func_call_count(__func__);
