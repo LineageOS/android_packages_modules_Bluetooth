@@ -236,11 +236,10 @@ public final class Utils {
      * @return either identity address or device address in String format
      */
     public static String getBrEdrAddress(BluetoothDevice device) {
-        String address = device.getIdentityAddress();
-        if (address == null) {
-            address = device.getAddress();
-        }
-        return address;
+        final AdapterService service = AdapterService.getAdapterService();
+        final String address = device.getAddress();
+        String identity = service != null ? service.getIdentityAddress(address) : null;
+        return identity != null ? identity : address;
     }
 
     /**
