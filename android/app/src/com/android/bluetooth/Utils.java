@@ -492,10 +492,6 @@ public final class Utils {
      * @return the list of AssociationInfo objects
      */
     @RequiresPermission("android.permission.MANAGE_COMPANION_DEVICES")
-    // TODO(b/193460475): Android Lint handles change from SystemApi to public incorrectly.
-    // CompanionDeviceManager#getAllAssociations() is public in U,
-    // but existed in T as an identical SystemApi.
-    @SuppressLint("NewApi")
     public static List<AssociationInfo> getCdmAssociations(CompanionDeviceManager cdm) {
         return cdm.getAllAssociations();
     }
@@ -1176,8 +1172,6 @@ public final class Utils {
     /**
      * Returns bundled broadcast options.
      */
-    // TODO(b/193460475): Remove when tooling supports SystemApi to public API.
-    @SuppressLint("NewApi")
     public static @NonNull Bundle getTempAllowlistBroadcastOptions() {
         return getTempBroadcastOptions().toBundle();
     }
@@ -1185,8 +1179,6 @@ public final class Utils {
     /**
      * Returns broadcast options.
      */
-    // TODO(b/193460475): Remove when tooling supports SystemApi to public API.
-    @SuppressLint("NewApi")
     public static @NonNull BroadcastOptions getTempBroadcastOptions() {
         final BroadcastOptions bOptions = BroadcastOptions.makeBasic();
         // Use the Bluetooth process identity to pass permission check when reading DeviceConfig
@@ -1210,8 +1202,6 @@ public final class Utils {
      *
      * @see Context#sendBroadcast(Intent, String, Bundle)
      */
-    // TODO(b/193460475): Remove when tooling supports SystemApi to public API.
-    @SuppressLint("NewApi")
     public static void sendBroadcast(@NonNull Context context, @NonNull Intent intent,
             @Nullable String receiverPermission, @Nullable Bundle options) {
         context.sendBroadcast(intent, receiverPermission, options);
@@ -1221,8 +1211,6 @@ public final class Utils {
      * @see Context#sendOrderedBroadcast(Intent, String, Bundle, BroadcastReceiver, Handler,
      *          int, String, Bundle)
      */
-    // TODO(b/193460475): Remove when tooling supports SystemApi to public API.
-    @SuppressLint("NewApi")
     public static void sendOrderedBroadcast(@NonNull Context context, @NonNull Intent intent,
             @Nullable String receiverPermission, @Nullable Bundle options,
             @Nullable BroadcastReceiver resultReceiver, @Nullable Handler scheduler,
