@@ -80,9 +80,7 @@ impl TryFrom<&[u8]> for ConnectionComplete {
         // the native endianness of the machine when writing to the socket. When
         // parsing, make sure to use native endianness here.
         let (size_bytes, rest) = bytes.split_at(std::mem::size_of::<u16>());
-        if u16::from_ne_bytes(size_bytes.clone().try_into().unwrap())
-            != (CONNECT_COMPLETE_SIZE as u16)
-        {
+        if u16::from_ne_bytes(size_bytes.try_into().unwrap()) != (CONNECT_COMPLETE_SIZE as u16) {
             return Err(format!("Wrong size in Connection Complete: {:?}", size_bytes));
         }
 
