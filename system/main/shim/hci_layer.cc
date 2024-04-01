@@ -240,8 +240,9 @@ static void transmit_iso_fragment(const uint8_t* stream, size_t length) {
   auto ts_flag =
       static_cast<bluetooth::hci::TimeStampFlag>(handle_with_flags >> 14);
   uint16_t handle = HCID_GET_HANDLE(handle_with_flags);
-  ASSERT_LOG(handle <= HCI_HANDLE_MAX, "Require handle <= 0x%X, but is 0x%X",
-             HCI_HANDLE_MAX, handle);
+  log::assert_that(handle <= HCI_HANDLE_MAX,
+                   "Require handle <= 0x{:X}, but is 0x{:X}", HCI_HANDLE_MAX,
+                   handle);
   length -= 2;
   // skip data total length
   stream += 2;
@@ -271,7 +272,7 @@ static void iso_data_callback() {
     return;
   }
   auto packet = hci_iso_queue_end->TryDequeue();
-  ASSERT(packet != nullptr);
+  log::assert_that(packet != nullptr, "assert failed: packet != nullptr");
   if (!packet->IsValid()) {
     log::info("Dropping invalid packet of size {}", packet->size());
     return;
@@ -380,7 +381,8 @@ const hci_t* bluetooth::shim::hci_layer_get_interface() {
 }
 
 void bluetooth::shim::hci_on_reset_complete() {
-  ASSERT(send_data_upwards);
+  log::assert_that(!send_data_upwards.is_null(),
+                   "assert failed: !send_data_upwards.is_null()");
 
   for (uint16_t event_code_raw = 0; event_code_raw < 0x100; event_code_raw++) {
     auto event_code = static_cast<bluetooth::hci::EventCode>(event_code_raw);

@@ -54,12 +54,12 @@ class SecurityRecord {
   }
 
   std::array<uint8_t, 16> GetLinkKey() {
-    ASSERT(IsClassicLinkKeyValid());
+    log::assert_that(IsClassicLinkKeyValid(), "assert failed: IsClassicLinkKeyValid()");
     return link_key_;
   }
 
   hci::KeyType GetKeyType() {
-    ASSERT(IsClassicLinkKeyValid());
+    log::assert_that(IsClassicLinkKeyValid(), "assert failed: IsClassicLinkKeyValid()");
     return key_type_;
   }
 

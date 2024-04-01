@@ -121,9 +121,13 @@ bool is_on_jni_thread() {
 static void do_post_on_bt_jni(BtJniClosure closure) { closure(); }
 
 void post_on_bt_jni(BtJniClosure closure) {
-  ASSERT(do_in_jni_thread(FROM_HERE, base::BindOnce(do_post_on_bt_jni,
-                                                    std::move(closure))) ==
-         BT_STATUS_SUCCESS);
+  log::assert_that(
+      do_in_jni_thread(FROM_HERE,
+                       base::BindOnce(do_post_on_bt_jni, std::move(closure))) ==
+          BT_STATUS_SUCCESS,
+      "assert failed: do_in_jni_thread(FROM_HERE, "
+      "base::BindOnce(do_post_on_bt_jni, std::move(closure))) == "
+      "BT_STATUS_SUCCESS");
 }
 
 bluetooth::common::PostableContext* get_jni() { return jni_thread.Postable(); }

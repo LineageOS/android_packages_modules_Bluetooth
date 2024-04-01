@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <bluetooth/log.h>
+
 #include <functional>
 #include <iterator>
 #include <list>
@@ -60,7 +62,7 @@ class LruCache {
 
   // Constructor a LRU cache with |capacity|
   explicit LruCache(size_t capacity) : capacity_(capacity) {
-    ASSERT_LOG(capacity_ != 0, "Unable to have 0 LRU Cache capacity");
+    log::assert_that(capacity_ != 0, "Unable to have 0 LRU Cache capacity");
   }
 
   // for move

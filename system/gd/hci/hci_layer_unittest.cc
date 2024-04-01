@@ -111,7 +111,9 @@ class HciLayerTest : public ::testing::Test {
   }
 
   void sync_handler() {
-    ASSERT(fake_registry_.GetTestThread().GetReactor()->WaitForIdle(2s));
+    log::assert_that(
+        fake_registry_.GetTestThread().GetReactor()->WaitForIdle(2s),
+        "assert failed: fake_registry_.GetTestThread().GetReactor()->WaitForIdle(2s)");
   }
 
   hal::TestHciHal* hal_ = nullptr;

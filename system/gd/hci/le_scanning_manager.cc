@@ -1401,7 +1401,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
     switch (view.GetCommandOpCode()) {
       case (OpCode::LE_SET_SCAN_PARAMETERS): {
         auto status_view = LeSetScanParametersCompleteView::Create(view);
-        ASSERT(status_view.IsValid());
+        log::assert_that(status_view.IsValid(), "assert failed: status_view.IsValid()");
         if (status_view.GetStatus() != ErrorCode::SUCCESS) {
           log::info(
               "Receive set scan parameter complete with error code {}",
@@ -1410,7 +1410,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
       } break;
       case (OpCode::LE_EXTENDED_SCAN_PARAMS): {
         auto status_view = LeExtendedScanParamsCompleteView::Create(view);
-        ASSERT(status_view.IsValid());
+        log::assert_that(status_view.IsValid(), "assert failed: status_view.IsValid()");
         if (status_view.GetStatus() != ErrorCode::SUCCESS) {
           log::info(
               "Receive extended scan parameter complete with error code {}",
@@ -1419,7 +1419,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
       } break;
       case (OpCode::LE_SET_EXTENDED_SCAN_PARAMETERS): {
         auto status_view = LeSetExtendedScanParametersCompleteView::Create(view);
-        ASSERT(status_view.IsValid());
+        log::assert_that(status_view.IsValid(), "assert failed: status_view.IsValid()");
         if (status_view.GetStatus() != ErrorCode::SUCCESS) {
           log::info(
               "Receive set extended scan parameter complete with error code {}",
@@ -1432,9 +1432,9 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
   }
 
   void on_advertising_filter_complete(CommandCompleteView view) {
-    ASSERT(view.IsValid());
+    log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
     auto status_view = LeAdvFilterCompleteView::Create(view);
-    ASSERT(status_view.IsValid());
+    log::assert_that(status_view.IsValid(), "assert failed: status_view.IsValid()");
     if (status_view.GetStatus() != ErrorCode::SUCCESS) {
       log::info(
           "Got a Command complete {}, status {}",
@@ -1446,18 +1446,18 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
     switch (apcf_opcode) {
       case ApcfOpcode::ENABLE: {
         auto complete_view = LeAdvFilterEnableCompleteView::Create(status_view);
-        ASSERT(complete_view.IsValid());
+        log::assert_that(complete_view.IsValid(), "assert failed: complete_view.IsValid()");
         scanning_callbacks_->OnFilterEnable(complete_view.GetApcfEnable(), (uint8_t)complete_view.GetStatus());
       } break;
       case ApcfOpcode::SET_FILTERING_PARAMETERS: {
         auto complete_view = LeAdvFilterSetFilteringParametersCompleteView::Create(status_view);
-        ASSERT(complete_view.IsValid());
+        log::assert_that(complete_view.IsValid(), "assert failed: complete_view.IsValid()");
         scanning_callbacks_->OnFilterParamSetup(
             complete_view.GetApcfAvailableSpaces(), complete_view.GetApcfAction(), (uint8_t)complete_view.GetStatus());
       } break;
       case ApcfOpcode::BROADCASTER_ADDRESS: {
         auto complete_view = LeAdvFilterBroadcasterAddressCompleteView::Create(status_view);
-        ASSERT(complete_view.IsValid());
+        log::assert_that(complete_view.IsValid(), "assert failed: complete_view.IsValid()");
         scanning_callbacks_->OnFilterConfigCallback(
             ApcfFilterType::BROADCASTER_ADDRESS,
             complete_view.GetApcfAvailableSpaces(),
@@ -1466,7 +1466,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
       } break;
       case ApcfOpcode::SERVICE_UUID: {
         auto complete_view = LeAdvFilterServiceUuidCompleteView::Create(status_view);
-        ASSERT(complete_view.IsValid());
+        log::assert_that(complete_view.IsValid(), "assert failed: complete_view.IsValid()");
         scanning_callbacks_->OnFilterConfigCallback(
             ApcfFilterType::SERVICE_UUID,
             complete_view.GetApcfAvailableSpaces(),
@@ -1475,7 +1475,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
       } break;
       case ApcfOpcode::SERVICE_SOLICITATION_UUID: {
         auto complete_view = LeAdvFilterSolicitationUuidCompleteView::Create(status_view);
-        ASSERT(complete_view.IsValid());
+        log::assert_that(complete_view.IsValid(), "assert failed: complete_view.IsValid()");
         scanning_callbacks_->OnFilterConfigCallback(
             ApcfFilterType::SERVICE_SOLICITATION_UUID,
             complete_view.GetApcfAvailableSpaces(),
@@ -1484,7 +1484,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
       } break;
       case ApcfOpcode::LOCAL_NAME: {
         auto complete_view = LeAdvFilterLocalNameCompleteView::Create(status_view);
-        ASSERT(complete_view.IsValid());
+        log::assert_that(complete_view.IsValid(), "assert failed: complete_view.IsValid()");
         scanning_callbacks_->OnFilterConfigCallback(
             ApcfFilterType::LOCAL_NAME,
             complete_view.GetApcfAvailableSpaces(),
@@ -1493,7 +1493,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
       } break;
       case ApcfOpcode::MANUFACTURER_DATA: {
         auto complete_view = LeAdvFilterManufacturerDataCompleteView::Create(status_view);
-        ASSERT(complete_view.IsValid());
+        log::assert_that(complete_view.IsValid(), "assert failed: complete_view.IsValid()");
         scanning_callbacks_->OnFilterConfigCallback(
             ApcfFilterType::MANUFACTURER_DATA,
             complete_view.GetApcfAvailableSpaces(),
@@ -1502,7 +1502,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
       } break;
       case ApcfOpcode::SERVICE_DATA: {
         auto complete_view = LeAdvFilterServiceDataCompleteView::Create(status_view);
-        ASSERT(complete_view.IsValid());
+        log::assert_that(complete_view.IsValid(), "assert failed: complete_view.IsValid()");
         scanning_callbacks_->OnFilterConfigCallback(
             ApcfFilterType::SERVICE_DATA,
             complete_view.GetApcfAvailableSpaces(),
@@ -1511,7 +1511,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
       } break;
       case ApcfOpcode::TRANSPORT_DISCOVERY_DATA: {
         auto complete_view = LeAdvFilterTransportDiscoveryDataCompleteView::Create(status_view);
-        ASSERT(complete_view.IsValid());
+        log::assert_that(complete_view.IsValid(), "assert failed: complete_view.IsValid()");
         scanning_callbacks_->OnFilterConfigCallback(
             ApcfFilterType::TRANSPORT_DISCOVERY_DATA,
             complete_view.GetApcfAvailableSpaces(),
@@ -1520,7 +1520,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
       } break;
       case ApcfOpcode::AD_TYPE: {
         auto complete_view = LeAdvFilterADTypeCompleteView::Create(status_view);
-        ASSERT(complete_view.IsValid());
+        log::assert_that(complete_view.IsValid(), "assert failed: complete_view.IsValid()");
         scanning_callbacks_->OnFilterConfigCallback(
             ApcfFilterType::AD_TYPE,
             complete_view.GetApcfAvailableSpaces(),
@@ -1533,7 +1533,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
   }
 
   void on_apcf_read_extended_features_complete(CommandCompleteView view) {
-    ASSERT(view.IsValid());
+    log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
     auto status_view = LeAdvFilterCompleteView::Create(view);
     if (!status_view.IsValid()) {
       log::warn("Can not get valid LeAdvFilterCompleteView, return");
@@ -1547,7 +1547,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
       return;
     }
     auto complete_view = LeAdvFilterReadExtendedFeaturesCompleteView::Create(status_view);
-    ASSERT(complete_view.IsValid());
+    log::assert_that(complete_view.IsValid(), "assert failed: complete_view.IsValid()");
     is_transport_discovery_data_filter_supported_ =
         complete_view.GetTransportDiscoveryDataFilter() == 1;
     is_ad_type_filter_supported_ = complete_view.GetAdTypeFilter() == 1;
@@ -1559,9 +1559,9 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
   }
 
   void on_batch_scan_complete(CommandCompleteView view) {
-    ASSERT(view.IsValid());
+    log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
     auto status_view = LeBatchScanCompleteView::Create(view);
-    ASSERT(status_view.IsValid());
+    log::assert_that(status_view.IsValid(), "assert failed: status_view.IsValid()");
     if (status_view.GetStatus() != ErrorCode::SUCCESS) {
       log::info(
           "Got a Command complete {}, status {}, batch_scan_opcode {}",
@@ -1572,11 +1572,11 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
   }
 
   void on_batch_scan_enable_complete(CommandCompleteView view) {
-    ASSERT(view.IsValid());
+    log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
     auto status_view = LeBatchScanCompleteView::Create(view);
-    ASSERT(status_view.IsValid());
+    log::assert_that(status_view.IsValid(), "assert failed: status_view.IsValid()");
     auto complete_view = LeBatchScanEnableCompleteView::Create(status_view);
-    ASSERT(complete_view.IsValid());
+    log::assert_that(complete_view.IsValid(), "assert failed: complete_view.IsValid()");
     if (status_view.GetStatus() != ErrorCode::SUCCESS) {
       log::info(
           "Got batch scan enable complete, status {}", ErrorCodeText(status_view.GetStatus()));
@@ -1587,22 +1587,24 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
   }
 
   void on_batch_scan_disable_complete(CommandCompleteView view) {
-    ASSERT(view.IsValid());
+    log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
     auto status_view = LeBatchScanCompleteView::Create(view);
-    ASSERT(status_view.IsValid());
+    log::assert_that(status_view.IsValid(), "assert failed: status_view.IsValid()");
     auto complete_view = LeBatchScanSetScanParametersCompleteView::Create(status_view);
-    ASSERT(complete_view.IsValid());
-    ASSERT(status_view.GetStatus() == ErrorCode::SUCCESS);
+    log::assert_that(complete_view.IsValid(), "assert failed: complete_view.IsValid()");
+    log::assert_that(
+        status_view.GetStatus() == ErrorCode::SUCCESS,
+        "assert failed: status_view.GetStatus() == ErrorCode::SUCCESS");
     batch_scan_config_.current_state = BatchScanState::DISABLED_STATE;
   }
 
   void on_batch_scan_read_result_complete(
       ScannerId scanner_id, uint16_t total_num_of_records, CommandCompleteView view) {
-    ASSERT(view.IsValid());
+    log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
     auto status_view = LeBatchScanCompleteView::Create(view);
-    ASSERT(status_view.IsValid());
+    log::assert_that(status_view.IsValid(), "assert failed: status_view.IsValid()");
     auto complete_view = LeBatchScanReadResultParametersCompleteRawView::Create(status_view);
-    ASSERT(complete_view.IsValid());
+    log::assert_that(complete_view.IsValid(), "assert failed: complete_view.IsValid()");
     if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
       log::info(
           "Got batch scan read result complete, status {}", ErrorCodeText(status_view.GetStatus()));
@@ -1632,7 +1634,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
 
   void on_advertisement_tracking(VendorSpecificEventView event) {
     auto view = LEAdvertisementTrackingEventView::Create(event);
-    ASSERT(view.IsValid());
+    log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
     uint8_t filter_index = view.GetApcfFilterIndex();
     if (tracker_id_map_.find(filter_index) == tracker_id_map_.end()) {
       log::warn("Advertisement track for filter_index {} is not register", (uint16_t)filter_index);
@@ -1648,7 +1650,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
     /* Extract the adv info details */
     if (on_found_on_lost_info.advertiser_info_present == AdvtInfoPresent::ADVT_INFO_PRESENT) {
       auto info_view = LEAdvertisementTrackingWithInfoEventView::Create(view);
-      ASSERT(info_view.IsValid());
+      log::assert_that(info_view.IsValid(), "assert failed: info_view.IsValid()");
       on_found_on_lost_info.tx_power = info_view.GetTxPower();
       on_found_on_lost_info.rssi = info_view.GetRssi();
       on_found_on_lost_info.time_stamp = info_view.GetTimestamp();

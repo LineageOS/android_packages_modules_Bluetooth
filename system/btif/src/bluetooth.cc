@@ -1247,7 +1247,7 @@ bt_property_t* property_deep_copy_array(int num_properties,
 
     copy = (bt_property_t*)osi_calloc((sizeof(bt_property_t) * num_properties) +
                                       content_len);
-    ASSERT(copy != nullptr);
+    log::assert_that(copy != nullptr, "assert failed: copy != nullptr");
     uint8_t* content = (uint8_t*)(copy + num_properties);
 
     for (int i = 0; i < num_properties; i++) {

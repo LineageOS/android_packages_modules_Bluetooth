@@ -86,7 +86,7 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service,
   void OnL2capRegistrationCompleteLe(
       l2cap::le::FixedChannelManager::RegistrationResult result,
       std::unique_ptr<l2cap::le::FixedChannelService> /* le_smp_service */) {
-    ASSERT_LOG(
+    log::assert_that(
         result == bluetooth::l2cap::le::FixedChannelManager::RegistrationResult::SUCCESS,
         "Failed to register to LE SMP Fixed Channel Service");
   }
@@ -110,7 +110,9 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service,
       const blueberry::facade::BluetoothAddressWithType* request,
       ::google::protobuf::Empty* /* response */) override {
     hci::Address peer;
-    ASSERT(hci::Address::FromString(request->address().address(), peer));
+    log::assert_that(
+        hci::Address::FromString(request->address().address(), peer),
+        "assert failed: hci::Address::FromString(request->address().address(), peer)");
     hci::AddressType peer_type = static_cast<hci::AddressType>(request->type());
     security_module_->GetSecurityManager()->CreateBond(hci::AddressWithType(peer, peer_type));
     return ::grpc::Status::OK;
@@ -121,7 +123,9 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service,
       const OobDataBondMessage* request,
       ::google::protobuf::Empty* /* response */) override {
     hci::Address peer;
-    ASSERT(hci::Address::FromString(request->address().address().address(), peer));
+    log::assert_that(
+        hci::Address::FromString(request->address().address().address(), peer),
+        "assert failed: hci::Address::FromString(request->address().address().address(), peer)");
     hci::AddressType peer_type = static_cast<hci::AddressType>(request->address().type());
     pairing::SimplePairingHash c;
     pairing::SimplePairingRandomizer r;
@@ -163,7 +167,9 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service,
       const blueberry::facade::BluetoothAddressWithType* request,
       ::google::protobuf::Empty* /* response */) override {
     hci::Address peer;
-    ASSERT(hci::Address::FromString(request->address().address(), peer));
+    log::assert_that(
+        hci::Address::FromString(request->address().address(), peer),
+        "assert failed: hci::Address::FromString(request->address().address(), peer)");
     hci::AddressType peer_type = static_cast<hci::AddressType>(request->type());
     security_module_->GetSecurityManager()->CreateBondLe(hci::AddressWithType(peer, peer_type));
     return ::grpc::Status::OK;
@@ -174,7 +180,9 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service,
       const blueberry::facade::BluetoothAddressWithType* request,
       ::google::protobuf::Empty* /* response */) override {
     hci::Address peer;
-    ASSERT(hci::Address::FromString(request->address().address(), peer));
+    log::assert_that(
+        hci::Address::FromString(request->address().address(), peer),
+        "assert failed: hci::Address::FromString(request->address().address(), peer)");
     hci::AddressType peer_type = hci::AddressType::PUBLIC_DEVICE_ADDRESS;
     security_module_->GetSecurityManager()->CancelBond(hci::AddressWithType(peer, peer_type));
     return ::grpc::Status::OK;
@@ -185,7 +193,9 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service,
       const blueberry::facade::BluetoothAddressWithType* request,
       ::google::protobuf::Empty* /* response */) override {
     hci::Address peer;
-    ASSERT(hci::Address::FromString(request->address().address(), peer));
+    log::assert_that(
+        hci::Address::FromString(request->address().address(), peer),
+        "assert failed: hci::Address::FromString(request->address().address(), peer)");
     hci::AddressType peer_type = hci::AddressType::PUBLIC_DEVICE_ADDRESS;
     security_module_->GetSecurityManager()->RemoveBond(hci::AddressWithType(peer, peer_type));
     return ::grpc::Status::OK;
@@ -203,7 +213,9 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service,
       const UiCallbackMsg* request,
       ::google::protobuf::Empty* /* response */) override {
     hci::Address peer;
-    ASSERT(hci::Address::FromString(request->address().address().address(), peer));
+    log::assert_that(
+        hci::Address::FromString(request->address().address().address(), peer),
+        "assert failed: hci::Address::FromString(request->address().address().address(), peer)");
     hci::AddressType remote_type = static_cast<hci::AddressType>(request->address().type());
 
     switch (request->message_type()) {
@@ -373,7 +385,10 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service,
         static_cast<hci::LeAddressManager::AddressPolicy>(request->address_policy());
     if (address_policy == hci::LeAddressManager::AddressPolicy::USE_STATIC_ADDRESS ||
         address_policy == hci::LeAddressManager::AddressPolicy::USE_PUBLIC_ADDRESS) {
-      ASSERT(Address::FromString(request->address_with_type().address().address(), address));
+      log::assert_that(
+          Address::FromString(request->address_with_type().address().address(), address),
+          "assert failed: Address::FromString(request->address_with_type().address().address(), "
+          "address)");
     }
     hci::AddressWithType address_with_type(address, static_cast<hci::AddressType>(request->address_with_type().type()));
     hci::Octet16 irk = {};
@@ -382,7 +397,7 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service,
       std::vector<uint8_t> irk_data(request->rotation_irk().begin(), request->rotation_irk().end());
       std::copy_n(irk_data.begin(), hci::kOctet16Length, irk.begin());
     } else {
-      ASSERT(request_irk_length == 0);
+      log::assert_that(request_irk_length == 0, "assert failed: request_irk_length == 0");
     }
     auto minimum_rotation_time = std::chrono::milliseconds(request->minimum_rotation_time());
     auto maximum_rotation_time = std::chrono::milliseconds(request->maximum_rotation_time());
@@ -403,7 +418,9 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service,
       const SecurityPolicyMessage* request,
       ::google::protobuf::Empty* /* response */) override {
     hci::Address peer;
-    ASSERT(hci::Address::FromString(request->address().address().address(), peer));
+    log::assert_that(
+        hci::Address::FromString(request->address().address().address(), peer),
+        "assert failed: hci::Address::FromString(request->address().address().address(), peer)");
     hci::AddressType peer_type = static_cast<hci::AddressType>(request->address().type());
     hci::AddressWithType peer_with_type(peer, peer_type);
     l2cap::classic::SecurityEnforcementInterface::ResultCallback callback =
@@ -437,7 +454,9 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service,
       const OobDataMessage* request,
       ::google::protobuf::Empty* /* response */) override {
     hci::Address peer;
-    ASSERT(hci::Address::FromString(request->address().address().address(), peer));
+    log::assert_that(
+        hci::Address::FromString(request->address().address().address(), peer),
+        "assert failed: hci::Address::FromString(request->address().address().address(), peer)");
     hci::AddressType peer_type = static_cast<hci::AddressType>(request->address().type());
     hci::AddressWithType peer_with_type(peer, peer_type);
 
@@ -466,9 +485,9 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service,
 
   void OobDataEventOccurred(bluetooth::hci::CommandCompleteView packet) {
     log::info("Got OOB Data event");
-    ASSERT(packet.IsValid());
+    log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
     auto cc = bluetooth::hci::ReadLocalOobDataCompleteView::Create(packet);
-    ASSERT(cc.IsValid());
+    log::assert_that(cc.IsValid(), "assert failed: cc.IsValid()");
     OobDataBondMessage msg;
     OobDataMessage p192;
     // Just need this to satisfy the proto message

@@ -33,7 +33,7 @@ class LeAclConnectionTracker : public LeConnectionManagementCallbacks {
   LeAclConnectionTracker(LeAclConnectionInterface* le_acl_connection_interface, uint16_t connection_handle)
       : le_acl_connection_interface_(le_acl_connection_interface), connection_handle_(connection_handle) {}
   ~LeAclConnectionTracker() {
-    ASSERT(queued_callbacks_.empty());
+    log::assert_that(queued_callbacks_.empty(), "assert failed: queued_callbacks_.empty()");
   }
   void RegisterCallbacks(LeConnectionManagementCallbacks* callbacks, os::Handler* handler) {
     client_handler_ = handler;
@@ -103,7 +103,8 @@ struct LeAclConnection::impl {
   impl(LeAclConnectionInterface* le_acl_connection_interface, std::shared_ptr<Queue> queue, uint16_t connection_handle)
       : queue_(std::move(queue)), tracker(le_acl_connection_interface, connection_handle) {}
   LeConnectionManagementCallbacks* GetEventCallbacks(std::function<void(uint16_t)> invalidate_callbacks) {
-    ASSERT_LOG(!invalidate_callbacks_, "Already returned event callbacks for this connection");
+    log::assert_that(
+        !invalidate_callbacks_, "Already returned event callbacks for this connection");
     invalidate_callbacks_ = std::move(invalidate_callbacks);
     return &tracker;
   }
@@ -182,10 +183,12 @@ void LeAclConnection::Disconnect(DisconnectReason reason) {
   pimpl_->tracker.le_acl_connection_interface_->EnqueueCommand(
       DisconnectBuilder::Create(handle_, reason),
       pimpl_->tracker.client_handler_->BindOnce([](CommandStatusView status) {
-        ASSERT(status.IsValid());
-        ASSERT(status.GetCommandOpCode() == OpCode::DISCONNECT);
+        log::assert_that(status.IsValid(), "assert failed: status.IsValid()");
+        log::assert_that(
+            status.GetCommandOpCode() == OpCode::DISCONNECT,
+            "assert failed: status.GetCommandOpCode() == OpCode::DISCONNECT");
         auto disconnect_status = DisconnectStatusView::Create(status);
-        ASSERT(disconnect_status.IsValid());
+        log::assert_that(disconnect_status.IsValid(), "assert failed: disconnect_status.IsValid()");
         auto error_code = disconnect_status.GetStatus();
         if (error_code != ErrorCode::SUCCESS) {
           log::info("Disconnect status {}", ErrorCodeText(error_code));
@@ -195,7 +198,8 @@ void LeAclConnection::Disconnect(DisconnectReason reason) {
 
 void LeAclConnection::OnLeSubrateRequestStatus(CommandStatusView status) {
   auto subrate_request_status = LeSubrateRequestStatusView::Create(status);
-  ASSERT(subrate_request_status.IsValid());
+  log::assert_that(
+      subrate_request_status.IsValid(), "assert failed: subrate_request_status.IsValid()");
   auto hci_status = subrate_request_status.GetStatus();
   if (hci_status != ErrorCode::SUCCESS) {
     log::info("LeSubrateRequest status {}", ErrorCodeText(hci_status));
@@ -243,8 +247,10 @@ bool LeAclConnection::ReadRemoteVersionInformation() {
   pimpl_->tracker.le_acl_connection_interface_->EnqueueCommand(
       ReadRemoteVersionInformationBuilder::Create(handle_),
       pimpl_->tracker.client_handler_->BindOnce([](CommandStatusView status) {
-        ASSERT(status.IsValid());
-        ASSERT(status.GetCommandOpCode() == OpCode::READ_REMOTE_VERSION_INFORMATION);
+        log::assert_that(status.IsValid(), "assert failed: status.IsValid()");
+        log::assert_that(
+            status.GetCommandOpCode() == OpCode::READ_REMOTE_VERSION_INFORMATION,
+            "assert failed: status.GetCommandOpCode() == OpCode::READ_REMOTE_VERSION_INFORMATION");
       }));
   return true;
 }
@@ -253,8 +259,10 @@ bool LeAclConnection::LeReadRemoteFeatures() {
   pimpl_->tracker.le_acl_connection_interface_->EnqueueCommand(
       LeReadRemoteFeaturesBuilder::Create(handle_),
       pimpl_->tracker.client_handler_->BindOnce([](CommandStatusView status) {
-        ASSERT(status.IsValid());
-        ASSERT(status.GetCommandOpCode() == OpCode::LE_READ_REMOTE_FEATURES);
+        log::assert_that(status.IsValid(), "assert failed: status.IsValid()");
+        log::assert_that(
+            status.GetCommandOpCode() == OpCode::LE_READ_REMOTE_FEATURES,
+            "assert failed: status.GetCommandOpCode() == OpCode::LE_READ_REMOTE_FEATURES");
       }));
   return true;
 }

@@ -153,7 +153,8 @@ class HciFacadeService : public HciFacade::Service {
         facade_handler_,
         common::Bind(&HciFacadeService::handle_enqueue_acl, common::Unretained(this), common::Unretained(&enqueued)));
     auto result = future.wait_for(std::chrono::milliseconds(100));
-    ASSERT(std::future_status::ready == result);
+    log::assert_that(
+        std::future_status::ready == result, "assert failed: std::future_status::ready == result");
     return ::grpc::Status::OK;
   }
 
@@ -176,8 +177,8 @@ class HciFacadeService : public HciFacade::Service {
 
   void on_acl_ready() {
     auto acl_ptr = hci_layer_->GetAclQueueEnd()->TryDequeue();
-    ASSERT(acl_ptr != nullptr);
-    ASSERT(acl_ptr->IsValid());
+    log::assert_that(acl_ptr != nullptr, "assert failed: acl_ptr != nullptr");
+    log::assert_that(acl_ptr->IsValid(), "assert failed: acl_ptr->IsValid()");
     log::info("Got an Acl message for handle 0x{:x}", acl_ptr->GetHandle());
     ::blueberry::facade::Data incoming;
     incoming.set_payload(std::string(acl_ptr->begin(), acl_ptr->end()));
@@ -185,7 +186,7 @@ class HciFacadeService : public HciFacade::Service {
   }
 
   void on_event(hci::EventView view) {
-    ASSERT(view.IsValid());
+    log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
     log::info("Got an Event {}", EventCodeText(view.GetEventCode()));
     ::blueberry::facade::Data response;
     response.set_payload(std::string(view.begin(), view.end()));
@@ -193,7 +194,7 @@ class HciFacadeService : public HciFacade::Service {
   }
 
   void on_le_subevent(hci::LeMetaEventView view) {
-    ASSERT(view.IsValid());
+    log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
     log::info("Got an LE Event {}", SubeventCodeText(view.GetSubeventCode()));
     ::blueberry::facade::Data response;
     response.set_payload(std::string(view.begin(), view.end()));
@@ -201,7 +202,7 @@ class HciFacadeService : public HciFacade::Service {
   }
 
   void on_complete(hci::CommandCompleteView view) {
-    ASSERT(view.IsValid());
+    log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
     log::info("Got a Command complete {}", OpCodeText(view.GetCommandOpCode()));
     ::blueberry::facade::Data response;
     response.set_payload(std::string(view.begin(), view.end()));
@@ -209,7 +210,7 @@ class HciFacadeService : public HciFacade::Service {
   }
 
   void on_status(hci::CommandStatusView view) {
-    ASSERT(view.IsValid());
+    log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
     log::info("Got a Command status {}", OpCodeText(view.GetCommandOpCode()));
     ::blueberry::facade::Data response;
     response.set_payload(std::string(view.begin(), view.end()));

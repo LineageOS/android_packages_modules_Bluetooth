@@ -572,7 +572,7 @@ struct DistanceMeasurementManager::impl {
   }
 
   void on_cs_procedure_enable_complete(LeCsProcedureEnableCompleteView event_view) {
-    ASSERT(event_view.IsValid());
+    log::assert_that(event_view.IsValid(), "assert failed: event_view.IsValid()");
     uint16_t connection_handle = event_view.GetConnectionHandle();
     if (event_view.GetStatus() != ErrorCode::SUCCESS) {
       std::string error_code = ErrorCodeText(event_view.GetStatus());

@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <bluetooth/log.h>
 #include <unistd.h>
 
 #include <functional>
@@ -132,7 +133,7 @@ class EnqueueBuffer {
 
   void NotifyOnEmpty(common::OnceClosure callback) {
     std::lock_guard<std::mutex> lock(mutex_);
-    ASSERT(callback_on_empty_.is_null());
+    log::assert_that(callback_on_empty_.is_null(), "assert failed: callback_on_empty_.is_null()");
     callback_on_empty_ = std::move(callback);
   }
 
@@ -162,15 +163,15 @@ Queue<T>::Queue(size_t capacity) : enqueue_(capacity), dequeue_(0){};
 
 template <typename T>
 Queue<T>::~Queue() {
-  ASSERT_LOG(enqueue_.handler_ == nullptr, "Enqueue is not unregistered");
-  ASSERT_LOG(dequeue_.handler_ == nullptr, "Dequeue is not unregistered");
+  log::assert_that(enqueue_.handler_ == nullptr, "Enqueue is not unregistered");
+  log::assert_that(dequeue_.handler_ == nullptr, "Dequeue is not unregistered");
 };
 
 template <typename T>
 void Queue<T>::RegisterEnqueue(Handler* handler, EnqueueCallback callback) {
   std::lock_guard<std::mutex> lock(mutex_);
-  ASSERT(enqueue_.handler_ == nullptr);
-  ASSERT(enqueue_.reactable_ == nullptr);
+  log::assert_that(enqueue_.handler_ == nullptr, "assert failed: enqueue_.handler_ == nullptr");
+  log::assert_that(enqueue_.reactable_ == nullptr, "assert failed: enqueue_.reactable_ == nullptr");
   enqueue_.handler_ = handler;
   enqueue_.reactable_ = enqueue_.handler_->thread_->GetReactor()->Register(
       enqueue_.reactive_semaphore_.GetFd(),
@@ -185,7 +186,8 @@ void Queue<T>::UnregisterEnqueue() {
   bool wait_for_unregister = false;
   {
     std::lock_guard<std::mutex> lock(mutex_);
-    ASSERT(enqueue_.reactable_ != nullptr);
+    log::assert_that(
+        enqueue_.reactable_ != nullptr, "assert failed: enqueue_.reactable_ != nullptr");
     reactor = enqueue_.handler_->thread_->GetReactor();
     wait_for_unregister = (!enqueue_.handler_->thread_->IsSameThread());
     to_unregister = enqueue_.reactable_;
@@ -201,8 +203,8 @@ void Queue<T>::UnregisterEnqueue() {
 template <typename T>
 void Queue<T>::RegisterDequeue(Handler* handler, DequeueCallback callback) {
   std::lock_guard<std::mutex> lock(mutex_);
-  ASSERT(dequeue_.handler_ == nullptr);
-  ASSERT(dequeue_.reactable_ == nullptr);
+  log::assert_that(dequeue_.handler_ == nullptr, "assert failed: dequeue_.handler_ == nullptr");
+  log::assert_that(dequeue_.reactable_ == nullptr, "assert failed: dequeue_.reactable_ == nullptr");
   dequeue_.handler_ = handler;
   dequeue_.reactable_ = dequeue_.handler_->thread_->GetReactor()->Register(
       dequeue_.reactive_semaphore_.GetFd(), callback, base::Closure());
@@ -215,7 +217,8 @@ void Queue<T>::UnregisterDequeue() {
   bool wait_for_unregister = false;
   {
     std::lock_guard<std::mutex> lock(mutex_);
-    ASSERT(dequeue_.reactable_ != nullptr);
+    log::assert_that(
+        dequeue_.reactable_ != nullptr, "assert failed: dequeue_.reactable_ != nullptr");
     reactor = dequeue_.handler_->thread_->GetReactor();
     wait_for_unregister = (!dequeue_.handler_->thread_->IsSameThread());
     to_unregister = dequeue_.reactable_;
@@ -249,7 +252,7 @@ std::unique_ptr<T> Queue<T>::TryDequeue() {
 template <typename T>
 void Queue<T>::EnqueueCallbackInternal(EnqueueCallback callback) {
   std::unique_ptr<T> data = callback.Run();
-  ASSERT(data != nullptr);
+  log::assert_that(data != nullptr, "assert failed: data != nullptr");
   std::lock_guard<std::mutex> lock(mutex_);
   enqueue_.reactive_semaphore_.Decrease();
   queue_.push(std::move(data));

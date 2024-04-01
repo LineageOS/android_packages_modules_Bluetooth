@@ -62,7 +62,7 @@ bool DynamicChannelServiceManagerImpl::IsServiceRegistered(Psm psm) const {
 }
 
 DynamicChannelServiceImpl* DynamicChannelServiceManagerImpl::GetService(Psm psm) {
-  ASSERT(IsServiceRegistered(psm));
+  log::assert_that(IsServiceRegistered(psm), "assert failed: IsServiceRegistered(psm)");
   return &service_map_.find(psm)->second;
 }
 

@@ -672,9 +672,9 @@ class LeAudioClientImpl : public LeAudioClient {
         return;
       }
     } else {
-      ASSERT_LOG(id == group_id,
-                 " group id missmatch? leaudio id: %d, groups module %d",
-                 group_id, id);
+      log::assert_that(id == group_id,
+                       "group id missmatch? leaudio id: {}, groups module {}",
+                       group_id, id);
       new_group = aseGroups_.FindById(group_id);
       if (!new_group) {
         new_group = aseGroups_.Add(group_id);
@@ -1114,10 +1114,12 @@ class LeAudioClientImpl : public LeAudioClient {
      * This is why we don't have to check if session is started already.
      * Just check if it is acquired.
      */
-    ASSERT_LOG(active_group_id_ == bluetooth::groups::kGroupUnknown,
-               "Active group is not set.");
-    ASSERT_LOG(le_audio_source_hal_client_, "Source session not acquired");
-    ASSERT_LOG(le_audio_sink_hal_client_, "Sink session not acquired");
+    log::assert_that(active_group_id_ == bluetooth::groups::kGroupUnknown,
+                     "Active group is not set.");
+    log::assert_that(le_audio_source_hal_client_ != nullptr,
+                     "Source session not acquired");
+    log::assert_that(le_audio_sink_hal_client_ != nullptr,
+                     "Sink session not acquired");
 
     DsaModes dsa_modes = {DsaMode::DISABLED};
     if (IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
@@ -1131,7 +1133,7 @@ class LeAudioClientImpl : public LeAudioClient {
     } else if (!sink_config->IsInvalid()) {
       frame_duration_us = sink_config->data_interval_us;
     } else {
-      ASSERT_LOG(true, "Both configs are invalid");
+      log::assert_that(true, "Both configs are invalid");
     }
 
     audio_framework_source_config.data_interval_us = frame_duration_us;
@@ -5267,14 +5269,14 @@ class LeAudioClientImpl : public LeAudioClient {
       case bluetooth::hci::iso_manager::kIsoEventCigOnCreateCmpl: {
         auto* evt = static_cast<cig_create_cmpl_evt*>(data);
         LeAudioDeviceGroup* group = aseGroups_.FindById(evt->cig_id);
-        ASSERT_LOG(group, "Group id: %d is null", evt->cig_id);
+        log::assert_that(group, "Group id: {} is null", evt->cig_id);
         groupStateMachine_->ProcessHciNotifOnCigCreate(
             group, evt->status, evt->cig_id, evt->conn_handles);
       } break;
       case bluetooth::hci::iso_manager::kIsoEventCigOnRemoveCmpl: {
         auto* evt = static_cast<cig_remove_cmpl_evt*>(data);
         LeAudioDeviceGroup* group = aseGroups_.FindById(evt->cig_id);
-        ASSERT_LOG(group, "Group id: %d is null", evt->cig_id);
+        log::assert_that(group, "Group id: {} is null", evt->cig_id);
         groupStateMachine_->ProcessHciNotifOnCigRemove(evt->status, group);
         remove_group_if_possible(group);
       } break;
@@ -5554,8 +5556,8 @@ class LeAudioClientImpl : public LeAudioClient {
 
     switch (status) {
       case GroupStreamStatus::STREAMING: {
-        ASSERT_LOG(group_id == active_group_id_, "invalid group id %d!=%d",
-                   group_id, active_group_id_);
+        log::assert_that(group_id == active_group_id_,
+                         "invalid group id {}!={}", group_id, active_group_id_);
 
         take_stream_time();
 

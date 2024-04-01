@@ -16,13 +16,13 @@
 
 #pragma once
 
+#include <cassert>
 #include <cstdint>
 #include <forward_list>
 #include <iterator>
 #include <memory>
 #include <vector>
 
-#include "os/log.h"
 #include "packet/bit_inserter.h"
 #include "packet/custom_field_fixed_size_interface.h"
 
@@ -69,7 +69,7 @@ class EndianInserter {
   // Write num_bits bits using the iterator
   template <typename T, typename std::enable_if<std::is_trivial<T>::value, int>::type = 0>
   void insert(T value, BitInserter& it, size_t num_bits) const {
-    ASSERT(num_bits <= (sizeof(T) * 8));
+    assert(num_bits <= (sizeof(T) * 8));
 
     for (size_t i = 0; i < num_bits / 8; i++) {
       if (little_endian == true) {

@@ -48,8 +48,8 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
  public:
   L2capClassicModuleFacadeService(L2capClassicModule* l2cap_layer, os::Handler* facade_handler)
       : l2cap_layer_(l2cap_layer), facade_handler_(facade_handler), security_interface_(nullptr) {
-    ASSERT(l2cap_layer_ != nullptr);
-    ASSERT(facade_handler_ != nullptr);
+    log::assert_that(l2cap_layer_ != nullptr, "assert failed: l2cap_layer_ != nullptr");
+    log::assert_that(facade_handler_ != nullptr, "assert failed: facade_handler_ != nullptr");
   }
 
   ::grpc::Status FetchConnectionComplete(
@@ -90,7 +90,9 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
       return ::grpc::Status(::grpc::StatusCode::FAILED_PRECONDITION, "Psm not registered");
     }
     hci::Address peer;
-    ASSERT(hci::Address::FromString(request->remote().address(), peer));
+    log::assert_that(
+        hci::Address::FromString(request->remote().address(), peer),
+        "assert failed: hci::Address::FromString(request->remote().address(), peer)");
     dynamic_channel_helper_map_[request->psm()]->Connect(peer);
     return ::grpc::Status::OK;
   }
@@ -156,7 +158,9 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
       const blueberry::facade::BluetoothAddress* request,
       ::google::protobuf::Empty* /* response */) override {
     hci::Address peer;
-    ASSERT(hci::Address::FromString(request->address(), peer));
+    log::assert_that(
+        hci::Address::FromString(request->address(), peer),
+        "assert failed: hci::Address::FromString(request->address(), peer)");
     outgoing_pairing_remote_devices_.insert(peer);
     security_interface_->InitiateConnectionForSecurity(peer);
     return ::grpc::Status::OK;
@@ -185,7 +189,9 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
       const blueberry::facade::BluetoothAddress* request,
       ::google::protobuf::Empty* /* response */) override {
     hci::Address peer;
-    ASSERT(hci::Address::FromString(request->address(), peer));
+    log::assert_that(
+        hci::Address::FromString(request->address(), peer),
+        "assert failed: hci::Address::FromString(request->address(), peer)");
     auto entry = security_link_map_.find(peer);
     if (entry == security_link_map_.end()) {
       log::warn("Unknown address '{}'", ADDRESS_TO_LOGGABLE_CSTR(peer));
@@ -200,7 +206,9 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
       const blueberry::facade::BluetoothAddress* request,
       ::google::protobuf::Empty* /* response */) override {
     hci::Address peer;
-    ASSERT(hci::Address::FromString(request->address(), peer));
+    log::assert_that(
+        hci::Address::FromString(request->address(), peer),
+        "assert failed: hci::Address::FromString(request->address(), peer)");
     auto entry = security_link_map_.find(peer);
     if (entry == security_link_map_.end()) {
       log::warn("Unknown address '{}'", ADDRESS_TO_LOGGABLE_CSTR(peer));
@@ -215,7 +223,9 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
       const blueberry::facade::BluetoothAddress* request,
       ::google::protobuf::Empty* /* response */) override {
     hci::Address peer;
-    ASSERT(hci::Address::FromString(request->address(), peer));
+    log::assert_that(
+        hci::Address::FromString(request->address(), peer),
+        "assert failed: hci::Address::FromString(request->address(), peer)");
     outgoing_pairing_remote_devices_.erase(peer);
     auto entry = security_link_map_.find(peer);
     if (entry == security_link_map_.end()) {
@@ -231,7 +241,9 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
       const blueberry::facade::BluetoothAddress* request,
       ::google::protobuf::Empty* /* response */) override {
     hci::Address peer;
-    ASSERT(hci::Address::FromString(request->address(), peer));
+    log::assert_that(
+        hci::Address::FromString(request->address(), peer),
+        "assert failed: hci::Address::FromString(request->address(), peer)");
     outgoing_pairing_remote_devices_.erase(peer);
     auto entry = security_link_map_.find(peer);
     if (entry == security_link_map_.end()) {

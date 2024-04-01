@@ -153,7 +153,7 @@ struct bdaddr_t : public bt_property_t {
     uint8_t* s = reinterpret_cast<uint8_t*>(data.get());
     // TODO This may need to be reversed
     RawAddress bd_addr;
-    ASSERT_LOG(6U == bd_addr.FromOctets(s), "Mac address is not 6 bytes");
+    log::assert_that(6U == bd_addr.FromOctets(s), "Mac address is not 6 bytes");
     return bd_addr;
   }
 

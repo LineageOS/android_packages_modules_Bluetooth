@@ -41,7 +41,7 @@ class LeInitiatorAddressFacadeService : public LeInitiatorAddressFacade::Service
       : acl_manager_(acl_manager),
         address_manager_(acl_manager_->GetLeAddressManager()),
         facade_handler_(facade_handler) {
-    ASSERT(facade_handler_ != nullptr);
+    log::assert_that(facade_handler_ != nullptr, "assert failed: facade_handler_ != nullptr");
   }
 
   ::grpc::Status SetPrivacyPolicyForInitiatorAddress(
@@ -52,7 +52,10 @@ class LeInitiatorAddressFacadeService : public LeInitiatorAddressFacade::Service
     LeAddressManager::AddressPolicy address_policy =
         static_cast<LeAddressManager::AddressPolicy>(request->address_policy());
     if (address_policy == LeAddressManager::AddressPolicy::USE_STATIC_ADDRESS) {
-      ASSERT(Address::FromString(request->address_with_type().address().address(), address));
+      log::assert_that(
+          Address::FromString(request->address_with_type().address().address(), address),
+          "assert failed: Address::FromString(request->address_with_type().address().address(), "
+          "address)");
     }
     AddressWithType address_with_type(address, static_cast<AddressType>(request->address_with_type().type()));
     auto minimum_rotation_time = std::chrono::milliseconds(request->minimum_rotation_time());
@@ -67,7 +70,7 @@ class LeInitiatorAddressFacadeService : public LeInitiatorAddressFacade::Service
     } else {
       acl_manager_->SetPrivacyPolicyForInitiatorAddress(
           address_policy, address_with_type, minimum_rotation_time, maximum_rotation_time);
-      ASSERT(request_irk_length == 0);
+      log::assert_that(request_irk_length == 0, "assert failed: request_irk_length == 0");
     }
     return ::grpc::Status::OK;
   }

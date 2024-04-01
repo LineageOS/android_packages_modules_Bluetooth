@@ -38,8 +38,8 @@ const std::string kLeLegacyPseudoAddr = "LeLegacyPseudoAddr";
 
 std::string GetConfigSection(
     ConfigCache* config, const hci::Address& key_address, Device::ConfigKeyAddressType key_address_type) {
-  ASSERT_LOG(config != nullptr, "config cannot be null");
-  ASSERT_LOG(!key_address.IsEmpty(), "key_address cannot be empty");
+  log::assert_that(config != nullptr, "config cannot be null");
+  log::assert_that(!key_address.IsEmpty(), "key_address cannot be empty");
   // assume lower case
   auto key_address_string = key_address.ToString();
   switch (key_address_type) {
@@ -96,22 +96,26 @@ MutationEntry Device::RemoveFromTempConfig() {
 
 LeDevice Device::Le() {
   auto device_type = GetDeviceType();
-  ASSERT(device_type);
-  ASSERT(device_type == DeviceType::LE || device_type == DeviceType::DUAL);
+  log::assert_that(device_type.has_value(), "assert failed: device_type.has_value()");
+  log::assert_that(
+      device_type == DeviceType::LE || device_type == DeviceType::DUAL,
+      "assert failed: device_type == DeviceType::LE || device_type == DeviceType::DUAL");
   return LeDevice(config_, memory_only_config_, section_);
 }
 
 ClassicDevice Device::Classic() {
   auto device_type = GetDeviceType();
-  ASSERT(device_type);
-  ASSERT(device_type == DeviceType::BR_EDR || device_type == DeviceType::DUAL);
+  log::assert_that(device_type.has_value(), "assert failed: device_type.has_value()");
+  log::assert_that(
+      device_type == DeviceType::BR_EDR || device_type == DeviceType::DUAL,
+      "assert failed: device_type == DeviceType::BR_EDR || device_type == DeviceType::DUAL");
   return ClassicDevice(config_, memory_only_config_, section_);
 }
 
 hci::Address Device::GetAddress() const {
   // section name of a device is its address
   auto addr = hci::Address::FromString(section_);
-  ASSERT(addr.has_value());
+  log::assert_that(addr.has_value(), "assert failed: addr.has_value()");
   return addr.value();
 }
 

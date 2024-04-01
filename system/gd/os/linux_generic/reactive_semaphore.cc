@@ -16,6 +16,7 @@
 
 #include "reactive_semaphore.h"
 
+#include <bluetooth/log.h>
 #include <string.h>
 #include <sys/eventfd.h>
 #include <unistd.h>
@@ -29,25 +30,25 @@ namespace bluetooth {
 namespace os {
 
 ReactiveSemaphore::ReactiveSemaphore(unsigned int value) : fd_(eventfd(value, EFD_SEMAPHORE | EFD_NONBLOCK)) {
-  ASSERT(fd_ != -1);
+  log::assert_that(fd_ != -1, "assert failed: fd_ != -1");
 }
 
 ReactiveSemaphore::~ReactiveSemaphore() {
   int close_status;
   RUN_NO_INTR(close_status = close(fd_));
-  ASSERT_LOG(close_status != -1, "close failed: %s", strerror(errno));
+  log::assert_that(close_status != -1, "close failed: {}", strerror(errno));
 }
 
 void ReactiveSemaphore::Decrease() {
   uint64_t val = 0;
   auto read_result = eventfd_read(fd_, &val);
-  ASSERT_LOG(read_result != -1, "decrease failed: %s", strerror(errno));
+  log::assert_that(read_result != -1, "decrease failed: {}", strerror(errno));
 }
 
 void ReactiveSemaphore::Increase() {
   uint64_t val = 1;
   auto write_result = eventfd_write(fd_, val);
-  ASSERT_LOG(write_result != -1, "increase failed: %s", strerror(errno));
+  log::assert_that(write_result != -1, "increase failed: {}", strerror(errno));
 }
 
 int ReactiveSemaphore::GetFd() {

@@ -36,7 +36,7 @@ constexpr bool kFieldHasBeenFiltered = true;
 constexpr bool kFieldContinueFiltering = false;
 
 void internal::ScrubFromTable(flatbuffers::Table* table, flatbuffers::voffset_t field_offset) {
-  ASSERT(table != nullptr);
+  log::assert_that(table != nullptr, "assert failed: table != nullptr");
   uint8_t* vtable = const_cast<uint8_t*>(table->GetVTable());
   vtable[field_offset] = kErasedFromTable;
 }
@@ -98,8 +98,8 @@ internal::PrivacyLevel internal::FindFieldPrivacyLevel(const reflection::Field& 
 
 const reflection::Object* internal::FindReflectionObject(
     const flatbuffers::Vector<flatbuffers::Offset<reflection::Object>>* objects, const flatbuffers::String* name) {
-  ASSERT(objects != nullptr);
-  ASSERT(name != nullptr);
+  log::assert_that(objects != nullptr, "assert failed: objects != nullptr");
+  log::assert_that(name != nullptr, "assert failed: name != nullptr");
   for (auto it = objects->cbegin(); it != objects->cend(); ++it) {
     if (it->name()->str() == name->str()) {
       return *it;
@@ -109,7 +109,7 @@ const reflection::Object* internal::FindReflectionObject(
 }
 
 bool internal::FilterTypeBool(const reflection::Field& field, flatbuffers::Table* table, PrivacyLevel privacy_level) {
-  ASSERT(table != nullptr);
+  log::assert_that(table != nullptr, "assert failed: table != nullptr");
 
   const bool default_val = flatbuffers::GetFieldDefaultI<int8_t>(field);
   flatbuffers::voffset_t field_offset = field.offset();
@@ -131,8 +131,10 @@ bool internal::FilterTypeBool(const reflection::Field& field, flatbuffers::Table
 
 bool internal::FilterTypeInteger(
     const reflection::Field& field, flatbuffers::Table* table, PrivacyLevel privacy_level) {
-  ASSERT(table != nullptr);
-  ASSERT(flatbuffers::IsInteger(field.type()->base_type()));
+  log::assert_that(table != nullptr, "assert failed: table != nullptr");
+  log::assert_that(
+      flatbuffers::IsInteger(field.type()->base_type()),
+      "assert failed: flatbuffers::IsInteger(field.type()->base_type())");
 
   int32_t default_val = flatbuffers::GetFieldDefaultI<int32_t>(field);
   flatbuffers::voffset_t field_offset = field.offset();
@@ -169,8 +171,10 @@ bool internal::FilterTypeInteger(
 }
 
 bool internal::FilterTypeFloat(const reflection::Field& field, flatbuffers::Table* table, PrivacyLevel privacy_level) {
-  ASSERT(table != nullptr);
-  ASSERT(flatbuffers::IsFloat(field.type()->base_type()));
+  log::assert_that(table != nullptr, "assert failed: table != nullptr");
+  log::assert_that(
+      flatbuffers::IsFloat(field.type()->base_type()),
+      "assert failed: flatbuffers::IsFloat(field.type()->base_type())");
 
   float default_val = flatbuffers::GetFieldDefaultI<float>(field);
   flatbuffers::voffset_t field_offset = field.offset();
@@ -204,7 +208,7 @@ bool internal::FilterTypeFloat(const reflection::Field& field, flatbuffers::Tabl
 }
 
 bool internal::FilterTypeLong(const reflection::Field& field, flatbuffers::Table* table, PrivacyLevel privacy_level) {
-  ASSERT(table != nullptr);
+  log::assert_that(table != nullptr, "assert failed: table != nullptr");
 
   const int64_t default_val = flatbuffers::GetFieldDefaultI<int64_t>(field);
   flatbuffers::voffset_t field_offset = field.offset();
@@ -230,8 +234,10 @@ bool internal::FilterTypeLong(const reflection::Field& field, flatbuffers::Table
 }
 
 bool internal::FilterTypeString(const reflection::Field& field, flatbuffers::Table* table, PrivacyLevel privacy_level) {
-  ASSERT(table != nullptr);
-  ASSERT(field.type()->base_type() == reflection::BaseType::String);
+  log::assert_that(table != nullptr, "assert failed: table != nullptr");
+  log::assert_that(
+      field.type()->base_type() == reflection::BaseType::String,
+      "assert failed: field.type()->base_type() == reflection::BaseType::String");
 
   flatbuffers::voffset_t field_offset = field.offset();
 
@@ -240,7 +246,7 @@ bool internal::FilterTypeString(const reflection::Field& field, flatbuffers::Tab
     return kFieldIsNotPopulated;
     // Field is not populated
   }
-  ASSERT(string != nullptr);
+  log::assert_that(string != nullptr, "assert failed: string != nullptr");
   flatbuffers::String* mutable_string = const_cast<flatbuffers::String*>(string);
 
   [[maybe_unused]] std::string old_string(string->str());
@@ -272,8 +278,10 @@ bool internal::FilterTypeString(const reflection::Field& field, flatbuffers::Tab
 }
 
 bool internal::FilterTypeStruct(const reflection::Field& field, flatbuffers::Table* table, PrivacyLevel privacy_level) {
-  ASSERT(table != nullptr);
-  ASSERT(!flatbuffers::IsScalar(field.type()->base_type()));
+  log::assert_that(table != nullptr, "assert failed: table != nullptr");
+  log::assert_that(
+      !flatbuffers::IsScalar(field.type()->base_type()),
+      "assert failed: !flatbuffers::IsScalar(field.type()->base_type())");
 
   flatbuffers::voffset_t field_offset = field.offset();
 

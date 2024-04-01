@@ -46,8 +46,8 @@ class DynamicChannelAllocator {
  public:
   DynamicChannelAllocator(l2cap::internal::ILink* link, os::Handler* l2cap_handler)
       : link_(link), l2cap_handler_(l2cap_handler) {
-    ASSERT(link_ != nullptr);
-    ASSERT(l2cap_handler_ != nullptr);
+    log::assert_that(link_ != nullptr, "assert failed: link_ != nullptr");
+    log::assert_that(l2cap_handler_ != nullptr, "assert failed: l2cap_handler_ != nullptr");
   }
 
   // Allocates a channel. If psm is used, OR the remote cid already exists, return nullptr.

@@ -58,8 +58,8 @@ ClassicSignallingManager::ClassicSignallingManager(os::Handler* handler, Link* l
     : handler_(handler), link_(link), data_pipeline_manager_(data_pipeline_manager),
       dynamic_service_manager_(dynamic_service_manager), channel_allocator_(channel_allocator),
       fixed_service_manager_(fixed_service_manager), alarm_(handler) {
-  ASSERT(handler_ != nullptr);
-  ASSERT(link_ != nullptr);
+  log::assert_that(handler_ != nullptr, "assert failed: handler_ != nullptr");
+  log::assert_that(link_ != nullptr, "assert failed: link_ != nullptr");
   signalling_channel_ = link_->AllocateFixedChannel(kClassicSignallingCid);
   signalling_channel_->GetQueueUpEnd()->RegisterDequeue(
       handler_, common::Bind(&ClassicSignallingManager::on_incoming_packet, common::Unretained(this)));

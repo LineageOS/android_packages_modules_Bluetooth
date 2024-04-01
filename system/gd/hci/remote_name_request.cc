@@ -117,7 +117,7 @@ struct RemoteNameRequestModule::impl {
       RemoteHostSupportedFeaturesCallback on_remote_host_supported_features_notification,
       std::shared_ptr<RemoteNameCallback> on_remote_name_complete_ptr) {
     log::info("Starting remote name request to {}", address.ToRedactedStringForLogging());
-    ASSERT(pending_ == false);
+    log::assert_that(pending_ == false, "assert failed: pending_ == false");
     pending_ = true;
     on_remote_host_supported_features_notification_ =
         std::move(on_remote_host_supported_features_notification);
@@ -133,14 +133,16 @@ struct RemoteNameRequestModule::impl {
     // TODO(b/294961421): Remove the ifdef when firmware fix in place. Realtek controllers
     // unexpectedly sent a Remote Name Req Complete HCI event without the corresponding HCI command.
 #ifndef TARGET_FLOSS
-    ASSERT(pending_ == true);
+    log::assert_that(pending_ == true, "assert failed: pending_ == true");
 #else
     if (pending_ != true) {
       log::warn("Unexpected remote name response with no request pending");
       return;
     }
 #endif
-    ASSERT(status.GetCommandOpCode() == OpCode::REMOTE_NAME_REQUEST);
+    log::assert_that(
+        status.GetCommandOpCode() == OpCode::REMOTE_NAME_REQUEST,
+        "assert failed: status.GetCommandOpCode() == OpCode::REMOTE_NAME_REQUEST");
     log::info(
         "Started remote name request peer:{} status:{}",
         address.ToString(),
@@ -165,7 +167,7 @@ struct RemoteNameRequestModule::impl {
             address.ToRedactedStringForLogging());
       }
     } else {
-      ASSERT(pending_ == true);
+      log::assert_that(pending_ == true, "assert failed: pending_ == true");
       log::info("Cancelling remote name request to {}", address.ToRedactedStringForLogging());
       hci_layer_->EnqueueCommand(
           RemoteNameRequestCancelBuilder::Create(address),
@@ -175,7 +177,7 @@ struct RemoteNameRequestModule::impl {
 
   void on_remote_host_supported_features_notification(EventView view) {
     auto packet = RemoteHostSupportedFeaturesNotificationView::Create(view);
-    ASSERT(packet.IsValid());
+    log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
     if (pending_ && !on_remote_host_supported_features_notification_.IsEmpty()) {
       log::info(
           "Received REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION from {}",
@@ -196,7 +198,7 @@ struct RemoteNameRequestModule::impl {
 
   void on_remote_name_request_complete(EventView view) {
     auto packet = RemoteNameRequestCompleteView::Create(view);
-    ASSERT(packet.IsValid());
+    log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
     if (pending_) {
       log::info(
           "Received REMOTE_NAME_REQUEST_COMPLETE from {}",

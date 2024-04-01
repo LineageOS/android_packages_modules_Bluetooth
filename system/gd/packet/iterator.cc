@@ -16,7 +16,8 @@
 
 #include "packet/iterator.h"
 
-#include "os/log.h"
+#undef NDEBUG
+#include <cassert>
 
 namespace bluetooth {
 namespace packet {
@@ -130,12 +131,7 @@ bool Iterator<little_endian>::operator>=(const Iterator<little_endian>& itr) con
 
 template <bool little_endian>
 uint8_t Iterator<little_endian>::operator*() const {
-  ASSERT_LOG(
-      NumBytesRemaining() > 0,
-      "Index %zu out of bounds: [%zu,%zu)",
-      index_,
-      begin_,
-      end_);
+  assert(NumBytesRemaining() > 0);
   size_t index = index_;
 
   for (auto view : data_) {
@@ -144,7 +140,9 @@ uint8_t Iterator<little_endian>::operator*() const {
     }
     index -= view.size();
   }
-  ASSERT_LOG(false, "Out of fragments searching for index %zu", index_);
+
+  // Out of fragments searching for index.
+  std::abort();
   return 0;
 }
 

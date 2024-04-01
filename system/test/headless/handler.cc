@@ -16,6 +16,8 @@
 
 #include "os/handler.h"
 
+#include <bluetooth/log.h>
+
 #include <chrono>
 
 #include "os/thread.h"
@@ -38,7 +40,7 @@ headless::Handler::~Handler() {
 }
 
 void headless::Handler::Post(common::OnceClosure closure) {
-  ASSERT_LOG(handler_ != nullptr, "Handler is not valid");
+  log::assert_that(handler_ != nullptr, "Handler is not valid");
   handler_->Post(std::move(closure));
 }
 

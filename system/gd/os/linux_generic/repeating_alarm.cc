@@ -16,6 +16,7 @@
 
 #include "os/repeating_alarm.h"
 
+#include <bluetooth/log.h>
 #include <sys/timerfd.h>
 #include <unistd.h>
 
@@ -37,7 +38,7 @@ namespace os {
 using common::Closure;
 
 RepeatingAlarm::RepeatingAlarm(Handler* handler) : handler_(handler), fd_(TIMERFD_CREATE(ALARM_CLOCK, 0)) {
-  ASSERT(fd_ != -1);
+  log::assert_that(fd_ != -1, "assert failed: fd_ != -1");
 
   token_ = handler_->thread_->GetReactor()->Register(
       fd_, common::Bind(&RepeatingAlarm::on_fire, common::Unretained(this)), common::Closure());
@@ -48,7 +49,7 @@ RepeatingAlarm::~RepeatingAlarm() {
 
   int close_status;
   RUN_NO_INTR(close_status = TIMERFD_CLOSE(fd_));
-  ASSERT(close_status != -1);
+  log::assert_that(close_status != -1, "assert failed: close_status != -1");
 }
 
 void RepeatingAlarm::Schedule(Closure task, std::chrono::milliseconds period) {
@@ -57,7 +58,7 @@ void RepeatingAlarm::Schedule(Closure task, std::chrono::milliseconds period) {
   itimerspec timer_itimerspec{{period_ms / 1000, period_ms % 1000 * 1000000},
                               {period_ms / 1000, period_ms % 1000 * 1000000}};
   int result = TIMERFD_SETTIME(fd_, 0, &timer_itimerspec, nullptr);
-  ASSERT(result == 0);
+  log::assert_that(result == 0, "assert failed: result == 0");
 
   task_ = std::move(task);
 }
@@ -66,7 +67,7 @@ void RepeatingAlarm::Cancel() {
   std::lock_guard<std::mutex> lock(mutex_);
   itimerspec disarm_itimerspec{/* disarm timer */};
   int result = TIMERFD_SETTIME(fd_, 0, &disarm_itimerspec, nullptr);
-  ASSERT(result == 0);
+  log::assert_that(result == 0, "assert failed: result == 0");
 }
 
 void RepeatingAlarm::on_fire() {
@@ -76,7 +77,9 @@ void RepeatingAlarm::on_fire() {
   auto bytes_read = read(fd_, &times_invoked, sizeof(uint64_t));
   lock.unlock();
   task.Run();
-  ASSERT(bytes_read == static_cast<ssize_t>(sizeof(uint64_t)));
+  log::assert_that(
+      bytes_read == static_cast<ssize_t>(sizeof(uint64_t)),
+      "assert failed: bytes_read == static_cast<ssize_t>(sizeof(uint64_t))");
 }
 
 }  // namespace os

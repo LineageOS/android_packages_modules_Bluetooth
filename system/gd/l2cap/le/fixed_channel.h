@@ -43,8 +43,8 @@ class FixedChannel {
   // Should only be constructed by modules that have access to LinkManager
   FixedChannel(std::shared_ptr<internal::FixedChannelImpl> impl, os::Handler* l2cap_handler)
       : impl_(std::move(impl)), l2cap_handler_(l2cap_handler) {
-    ASSERT(impl_ != nullptr);
-    ASSERT(l2cap_handler_ != nullptr);
+    log::assert_that(impl_ != nullptr, "assert failed: impl_ != nullptr");
+    log::assert_that(l2cap_handler_ != nullptr, "assert failed: l2cap_handler_ != nullptr");
   }
 
   hci::AddressWithType GetDevice() const;

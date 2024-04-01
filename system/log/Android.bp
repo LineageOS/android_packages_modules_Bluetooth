@@ -15,6 +15,10 @@ cc_library {
     srcs: [
         "src/vlog_android.cc",
     ],
+    visibility: [
+        "//hardware/interfaces/bluetooth/aidl/vts",
+        "//packages/modules/Bluetooth:__subpackages__",
+    ],
 }
 
 cc_test {
