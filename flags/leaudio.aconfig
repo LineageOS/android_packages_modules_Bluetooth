@@ -252,3 +252,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "le_audio_base_ecosystem_interval"
+    namespace: "bluetooth"
+    description: "Set base ecosystem interval when LE Audio is in use"
+    bug: "332574780"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
