@@ -23,6 +23,17 @@ import static android.bluetooth.BluetoothAdapter.STATE_OFF;
 import static android.bluetooth.BluetoothAdapter.STATE_ON;
 import static android.bluetooth.BluetoothAdapter.STATE_TURNING_OFF;
 import static android.bluetooth.BluetoothAdapter.STATE_TURNING_ON;
+import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_AIRPLANE_MODE;
+import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_APPLICATION_REQUEST;
+import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_CRASH;
+import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_DISALLOWED;
+import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_FACTORY_RESET;
+import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_RESTARTED;
+import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_RESTORE_USER_SETTING;
+import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_SATELLITE_MODE;
+import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_START_ERROR;
+import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_SYSTEM_BOOT;
+import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_USER_SWITCH;
 import static android.os.PowerExemptionManager.TEMPORARY_ALLOW_LIST_TYPE_FOREGROUND_SERVICE_ALLOWED;
 
 import static com.android.modules.utils.build.SdkLevel.isAtLeastV;
@@ -34,7 +45,6 @@ import android.annotation.RequiresPermission;
 import android.app.ActivityManager;
 import android.app.BroadcastOptions;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.IBluetooth;
 import android.bluetooth.IBluetoothCallback;
@@ -302,9 +312,7 @@ class BluetoothManagerService {
         // DISALLOW_BLUETOOTH can only be set by DO or PO on the system user.
         // Only trigger once instead of for all users
         if (UserHandle.SYSTEM.equals(userHandle) && newBluetoothDisallowed) {
-            sendDisableMsg(
-                    BluetoothProtoEnums.ENABLE_DISABLE_REASON_DISALLOWED,
-                    mContext.getPackageName());
+            sendDisableMsg(ENABLE_DISABLE_REASON_DISALLOWED, mContext.getPackageName());
         }
     }
 
@@ -328,17 +336,11 @@ class BluetoothManagerService {
                 return false;
             }
             if (state == STATE_BLE_ON) {
-                addActiveLog(
-                        BluetoothProtoEnums.ENABLE_DISABLE_REASON_FACTORY_RESET,
-                        mContext.getPackageName(),
-                        false);
+                addActiveLog(ENABLE_DISABLE_REASON_FACTORY_RESET, mContext.getPackageName(), false);
                 mAdapter.stopBle(mContext.getAttributionSource());
                 return true;
             } else if (state == STATE_ON) {
-                addActiveLog(
-                        BluetoothProtoEnums.ENABLE_DISABLE_REASON_FACTORY_RESET,
-                        mContext.getPackageName(),
-                        false);
+                addActiveLog(ENABLE_DISABLE_REASON_FACTORY_RESET, mContext.getPackageName(), false);
                 mAdapter.disable(mContext.getAttributionSource());
                 return true;
             }
@@ -493,7 +495,7 @@ class BluetoothManagerService {
                     try {
                         if (mAdapter != null) {
                             addActiveLog(
-                                    BluetoothProtoEnums.ENABLE_DISABLE_REASON_AIRPLANE_MODE,
+                                    ENABLE_DISABLE_REASON_AIRPLANE_MODE,
                                     mContext.getPackageName(),
                                     false);
                             mAdapter.stopBle(mContext.getAttributionSource());
@@ -506,14 +508,12 @@ class BluetoothManagerService {
                         mAdapterLock.readLock().unlock();
                     }
                 } else if (st == STATE_ON) {
-                    sendDisableMsg(
-                            BluetoothProtoEnums.ENABLE_DISABLE_REASON_AIRPLANE_MODE,
-                            mContext.getPackageName());
+                    sendDisableMsg(ENABLE_DISABLE_REASON_AIRPLANE_MODE, mContext.getPackageName());
                 }
             } else if (mEnableExternal) {
                 sendEnableMsg(
                         mQuietEnableExternal,
-                        BluetoothProtoEnums.ENABLE_DISABLE_REASON_AIRPLANE_MODE,
+                        ENABLE_DISABLE_REASON_AIRPLANE_MODE,
                         mContext.getPackageName());
             } else if (st != STATE_ON) {
                 autoOnSetupTimer();
@@ -525,13 +525,11 @@ class BluetoothManagerService {
         if (shouldBluetoothBeOn(isSatelliteModeOn) && getState() != STATE_ON) {
             sendEnableMsg(
                     mQuietEnableExternal,
-                    BluetoothProtoEnums.ENABLE_DISABLE_REASON_SATELLITE_MODE,
+                    ENABLE_DISABLE_REASON_SATELLITE_MODE,
                     mContext.getPackageName());
         } else if (!shouldBluetoothBeOn(isSatelliteModeOn) && getState() != STATE_OFF) {
             AutoOnFeature.pause();
-            sendDisableMsg(
-                    BluetoothProtoEnums.ENABLE_DISABLE_REASON_SATELLITE_MODE,
-                    mContext.getPackageName());
+            sendDisableMsg(ENABLE_DISABLE_REASON_SATELLITE_MODE, mContext.getPackageName());
         } else if (!isSatelliteModeOn
                 && !shouldBluetoothBeOn(isSatelliteModeOn)
                 && getState() != STATE_ON) {
@@ -928,8 +926,7 @@ class BluetoothManagerService {
                         try {
                             if (mAdapter != null) {
                                 addActiveLog(
-                                        BluetoothProtoEnums
-                                                .ENABLE_DISABLE_REASON_APPLICATION_REQUEST,
+                                        ENABLE_DISABLE_REASON_APPLICATION_REQUEST,
                                         mContext.getPackageName(),
                                         false);
                                 mAdapter.stopBle(mContext.getAttributionSource());
@@ -1016,11 +1013,7 @@ class BluetoothManagerService {
         }
         synchronized (mReceiver) {
             // waive WRITE_SECURE_SETTINGS permission check
-            sendEnableMsg(
-                    false,
-                    BluetoothProtoEnums.ENABLE_DISABLE_REASON_APPLICATION_REQUEST,
-                    packageName,
-                    true);
+            sendEnableMsg(false, ENABLE_DISABLE_REASON_APPLICATION_REQUEST, packageName, true);
         }
         return true;
     }
@@ -1050,10 +1043,7 @@ class BluetoothManagerService {
                 disableBleScanMode();
             }
             if (!mEnableExternal) {
-                addActiveLog(
-                        BluetoothProtoEnums.ENABLE_DISABLE_REASON_APPLICATION_REQUEST,
-                        packageName,
-                        false);
+                addActiveLog(ENABLE_DISABLE_REASON_APPLICATION_REQUEST, packageName, false);
                 sendBrEdrDownCallback();
             }
         }
@@ -1156,10 +1146,7 @@ class BluetoothManagerService {
         synchronized (mReceiver) {
             mQuietEnableExternal = true;
             mEnableExternal = true;
-            sendEnableMsg(
-                    true,
-                    BluetoothProtoEnums.ENABLE_DISABLE_REASON_APPLICATION_REQUEST,
-                    packageName);
+            sendEnableMsg(true, ENABLE_DISABLE_REASON_APPLICATION_REQUEST, packageName);
         }
         return true;
     }
@@ -1188,10 +1175,7 @@ class BluetoothManagerService {
             } finally {
                 Binder.restoreCallingIdentity(callingIdentity);
             }
-            sendEnableMsg(
-                    false,
-                    BluetoothProtoEnums.ENABLE_DISABLE_REASON_APPLICATION_REQUEST,
-                    packageName);
+            sendEnableMsg(false, ENABLE_DISABLE_REASON_APPLICATION_REQUEST, packageName);
         }
         return true;
     }
@@ -1218,8 +1202,7 @@ class BluetoothManagerService {
                 setBluetoothPersistedState(BLUETOOTH_OFF);
             }
             mEnableExternal = false;
-            sendDisableMsg(
-                    BluetoothProtoEnums.ENABLE_DISABLE_REASON_APPLICATION_REQUEST, packageName);
+            sendDisableMsg(ENABLE_DISABLE_REASON_APPLICATION_REQUEST, packageName);
         }
         return true;
     }
@@ -1289,7 +1272,7 @@ class BluetoothManagerService {
             Log.i(TAG, "internalHandleOnBootPhase: Auto-enabling Bluetooth.");
             sendEnableMsg(
                     mQuietEnableExternal,
-                    BluetoothProtoEnums.ENABLE_DISABLE_REASON_SYSTEM_BOOT,
+                    ENABLE_DISABLE_REASON_SYSTEM_BOOT,
                     mContext.getPackageName());
         } else if (!isNameAndAddressSet()) {
             Log.i(TAG, "internalHandleOnBootPhase: Getting adapter name and address");
@@ -1679,7 +1662,7 @@ class BluetoothManagerService {
                         setBluetoothPersistedState(BLUETOOTH_OFF);
                         mEnableExternal = false;
                         sendDisableMsg(
-                                BluetoothProtoEnums.ENABLE_DISABLE_REASON_RESTORE_USER_SETTING,
+                                ENABLE_DISABLE_REASON_RESTORE_USER_SETTING,
                                 mContext.getPackageName());
                     } else if ((msg.arg1 == RESTORE_SETTING_TO_ON) && !mEnable) {
                         Log.d(TAG, "MESSAGE_RESTORE_USER_SETTING: set Bluetooth state to enabled");
@@ -1687,7 +1670,7 @@ class BluetoothManagerService {
                         mEnableExternal = true;
                         sendEnableMsg(
                                 false,
-                                BluetoothProtoEnums.ENABLE_DISABLE_REASON_RESTORE_USER_SETTING,
+                                ENABLE_DISABLE_REASON_RESTORE_USER_SETTING,
                                 mContext.getPackageName());
                     } else {
                         Log.w(
@@ -1825,10 +1808,7 @@ class BluetoothManagerService {
 
                     // log the unexpected crash
                     addCrashLog();
-                    addActiveLog(
-                            BluetoothProtoEnums.ENABLE_DISABLE_REASON_CRASH,
-                            mContext.getPackageName(),
-                            false);
+                    addActiveLog(ENABLE_DISABLE_REASON_CRASH, mContext.getPackageName(), false);
                     if (mEnable) {
                         mEnable = false;
                         mHandler.sendEmptyMessageDelayed(
@@ -1863,9 +1843,7 @@ class BluetoothManagerService {
                          * service restarts */
                         mEnable = true;
                         addActiveLog(
-                                BluetoothProtoEnums.ENABLE_DISABLE_REASON_RESTARTED,
-                                mContext.getPackageName(),
-                                true);
+                                ENABLE_DISABLE_REASON_RESTARTED, mContext.getPackageName(), true);
                         handleEnable(mQuietEnable);
                     } else {
                         mAdapterLock.writeLock().lock();
@@ -1950,10 +1928,7 @@ class BluetoothManagerService {
             assert (mState.oneOf(STATE_ON));
 
             // disable
-            addActiveLog(
-                    BluetoothProtoEnums.ENABLE_DISABLE_REASON_USER_SWITCH,
-                    mContext.getPackageName(),
-                    false);
+            addActiveLog(ENABLE_DISABLE_REASON_USER_SWITCH, mContext.getPackageName(), false);
             handleDisable();
             // Pbap service need receive STATE_TURNING_OFF intent to close
             bluetoothStateChangeHandler(STATE_ON, STATE_TURNING_OFF);
@@ -1976,10 +1951,7 @@ class BluetoothManagerService {
             mHandler.removeMessages(MESSAGE_BLUETOOTH_STATE_CHANGE);
             mState.set(STATE_OFF);
             // enable
-            addActiveLog(
-                    BluetoothProtoEnums.ENABLE_DISABLE_REASON_USER_SWITCH,
-                    mContext.getPackageName(),
-                    true);
+            addActiveLog(ENABLE_DISABLE_REASON_USER_SWITCH, mContext.getPackageName(), true);
             // mEnable flag could have been reset on stopBle. Reenable it.
             mEnable = true;
             handleEnable(mQuietEnable);
@@ -2218,10 +2190,7 @@ class BluetoothManagerService {
         SystemClock.sleep(500);
 
         // disable
-        addActiveLog(
-                BluetoothProtoEnums.ENABLE_DISABLE_REASON_START_ERROR,
-                mContext.getPackageName(),
-                false);
+        addActiveLog(ENABLE_DISABLE_REASON_START_ERROR, mContext.getPackageName(), false);
         handleDisable();
 
         waitForState(STATE_OFF);
@@ -2495,29 +2464,28 @@ class BluetoothManagerService {
 
     private static String getEnableDisableReasonString(int reason) {
         switch (reason) {
-            case BluetoothProtoEnums.ENABLE_DISABLE_REASON_APPLICATION_REQUEST:
+            case ENABLE_DISABLE_REASON_APPLICATION_REQUEST:
                 return "APPLICATION_REQUEST";
-            case BluetoothProtoEnums.ENABLE_DISABLE_REASON_AIRPLANE_MODE:
+            case ENABLE_DISABLE_REASON_AIRPLANE_MODE:
                 return "AIRPLANE_MODE";
-            case BluetoothProtoEnums.ENABLE_DISABLE_REASON_DISALLOWED:
+            case ENABLE_DISABLE_REASON_DISALLOWED:
                 return "DISALLOWED";
-            case BluetoothProtoEnums.ENABLE_DISABLE_REASON_RESTARTED:
+            case ENABLE_DISABLE_REASON_RESTARTED:
                 return "RESTARTED";
-            case BluetoothProtoEnums.ENABLE_DISABLE_REASON_START_ERROR:
+            case ENABLE_DISABLE_REASON_START_ERROR:
                 return "START_ERROR";
-            case BluetoothProtoEnums.ENABLE_DISABLE_REASON_SYSTEM_BOOT:
+            case ENABLE_DISABLE_REASON_SYSTEM_BOOT:
                 return "SYSTEM_BOOT";
-            case BluetoothProtoEnums.ENABLE_DISABLE_REASON_CRASH:
+            case ENABLE_DISABLE_REASON_CRASH:
                 return "CRASH";
-            case BluetoothProtoEnums.ENABLE_DISABLE_REASON_USER_SWITCH:
+            case ENABLE_DISABLE_REASON_USER_SWITCH:
                 return "USER_SWITCH";
-            case BluetoothProtoEnums.ENABLE_DISABLE_REASON_RESTORE_USER_SETTING:
+            case ENABLE_DISABLE_REASON_RESTORE_USER_SETTING:
                 return "RESTORE_USER_SETTING";
-            case BluetoothProtoEnums.ENABLE_DISABLE_REASON_FACTORY_RESET:
+            case ENABLE_DISABLE_REASON_FACTORY_RESET:
                 return "FACTORY_RESET";
-            case BluetoothProtoEnums.ENABLE_DISABLE_REASON_INIT_FLAGS_CHANGED:
-                return "INIT_FLAGS_CHANGED";
-            case BluetoothProtoEnums.ENABLE_DISABLE_REASON_UNSPECIFIED:
+            case ENABLE_DISABLE_REASON_SATELLITE_MODE:
+                return "SATELLITE MODE";
             default:
                 return "UNKNOWN[" + reason + "]";
         }
