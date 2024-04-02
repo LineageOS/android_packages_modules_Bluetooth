@@ -34,6 +34,7 @@ namespace shim {
 
 extern ::ScanningCallbacks* default_scanning_callback;
 
+#if TARGET_FLOSS
 class MsftCallbacks {
  public:
   using MsftAdvMonitorAddCallback =
@@ -47,6 +48,7 @@ class MsftCallbacks {
   MsftAdvMonitorRemoveCallback Remove;
   MsftAdvMonitorEnableCallback Enable;
 };
+#endif
 
 class BleScannerInterfaceImpl : public ::BleScannerInterface,
                                 public bluetooth::hci::ScanningCallback {
@@ -67,6 +69,7 @@ class BleScannerInterfaceImpl : public ::BleScannerInterface,
                      FilterConfigCallback cb) override;
   void ScanFilterClear(int filter_index, FilterConfigCallback cb) override;
   void ScanFilterEnable(bool enable, EnableCallback cb) override;
+#if TARGET_FLOSS
   bool IsMsftSupported() override;
   void MsftAdvMonitorAdd(MsftAdvMonitor monitor,
                          MsftAdvMonitorAddCallback cb) override;
@@ -74,6 +77,7 @@ class BleScannerInterfaceImpl : public ::BleScannerInterface,
                             MsftAdvMonitorRemoveCallback cb) override;
   void MsftAdvMonitorEnable(bool enable,
                             MsftAdvMonitorEnableCallback cb) override;
+#endif
   void SetScanParameters(int scanner_id, uint8_t scan_type, int scan_interval,
                          int scan_window, int scan_phy, Callback cb) override;
   void BatchscanConfigStorage(int client_if, int batch_scan_full_max,
@@ -134,11 +138,13 @@ class BleScannerInterfaceImpl : public ::BleScannerInterface,
   void OnBigInfoReport(uint16_t sync_handle, bool encrypted) override;
 
   ::ScanningCallbacks* scanning_callbacks_ = default_scanning_callback;
+#if TARGET_FLOSS
   void OnMsftAdvMonitorAdd(uint8_t monitor_handle,
                            bluetooth::hci::ErrorCode status);
   void OnMsftAdvMonitorRemove(bluetooth::hci::ErrorCode status);
   void OnMsftAdvMonitorEnable(bool enable, bluetooth::hci::ErrorCode status);
   MsftCallbacks msft_callbacks_;
+#endif
 
  private:
   bool parse_filter_command(

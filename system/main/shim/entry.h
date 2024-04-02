@@ -52,7 +52,9 @@ class DistanceMeasurementManager;
 class LeAdvertisingManager;
 class LeScanningManager;
 class VendorSpecificEventManager;
+#if TARGET_FLOSS
 class MsftExtensionManager;
+#endif
 }
 
 namespace metrics {
@@ -85,7 +87,9 @@ storage::StorageModule* GetStorage();
 hci::AclManager* GetAclManager();
 hci::VendorSpecificEventManager* GetVendorSpecificEventManager();
 metrics::CounterMetrics* GetCounterMetrics();
+#if TARGET_FLOSS
 hci::MsftExtensionManager* GetMsftExtensionManager();
+#endif
 
 }  // namespace shim
 }  // namespace bluetooth

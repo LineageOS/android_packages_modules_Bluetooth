@@ -24,7 +24,9 @@
 #include "hci/hci_layer.h"
 #include "hci/le_advertising_manager.h"
 #include "hci/le_scanning_manager.h"
+#if TARGET_FLOSS
 #include "hci/msft.h"
+#endif
 #include "hci/remote_name_request.h"
 #include "hci/vendor_specific_event_manager.h"
 #include "main/shim/stack.h"
@@ -134,11 +136,13 @@ metrics::CounterMetrics* GetCounterMetrics() {
       ->GetInstance<metrics::CounterMetrics>();
 }
 
+#if TARGET_FLOSS
 hci::MsftExtensionManager* GetMsftExtensionManager() {
   return Stack::GetInstance()
       ->GetStackManager()
       ->GetInstance<hci::MsftExtensionManager>();
 }
+#endif
 
 }  // namespace shim
 }  // namespace bluetooth
