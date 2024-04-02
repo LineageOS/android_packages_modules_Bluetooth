@@ -242,3 +242,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_getting_active_state_support"
+    namespace: "bluetooth"
+    description: "Introduce getting active state for LE Audio to avoid unnecessary broadcast handover when changing active group"
+    bug: "331387253"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
