@@ -1229,6 +1229,34 @@ TEST_F(VolumeControlValueSetTest, test_volume_operation_failed) {
   ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
 }
 
+TEST_F(VolumeControlValueSetTest,
+       test_volume_operation_failed_due_to_device_disconnection) {
+  const std::vector<uint8_t> vol_x10({0x04, 0x00, 0x10});
+  EXPECT_CALL(gatt_queue,
+              WriteCharacteristic(conn_id, 0x0024, vol_x10, GATT_WRITE, _, _))
+      .Times(1);
+  ON_CALL(gatt_queue, WriteCharacteristic(_, _, _, _, _, _))
+      .WillByDefault(Invoke(
+          [](uint16_t conn_id, uint16_t handle, std::vector<uint8_t> value,
+             tGATT_WRITE_TYPE write_type, GATT_WRITE_OP_CB cb, void* cb_data) {
+            /* Do nothing */
+          }));
+
+  ASSERT_EQ(0, get_func_call_count("alarm_set_on_mloop"));
+  ASSERT_EQ(0, get_func_call_count("alarm_cancel"));
+
+  VolumeControl::Get()->SetVolume(test_address, 0x10);
+  Mock::VerifyAndClearExpectations(&gatt_queue);
+
+  EXPECT_CALL(*callbacks,
+              OnConnectionState(ConnectionState::DISCONNECTED, test_address));
+  GetDisconnectedEvent(test_address, conn_id);
+  Mock::VerifyAndClearExpectations(callbacks.get());
+
+  ASSERT_EQ(1, get_func_call_count("alarm_set_on_mloop"));
+  ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
+}
+
 TEST_F(VolumeControlValueSetTest, test_set_volume) {
   const std::vector<uint8_t> vol_x10({0x04, 0x00, 0x10});
   EXPECT_CALL(gatt_queue,

@@ -700,6 +700,26 @@ class VolumeControlImpl : public VolumeControl {
     }
   }
 
+  void RemoveDeviceFromOperationList(const RawAddress& addr) {
+    if (ongoing_operations_.empty()) {
+      return;
+    }
+
+    for (auto& op : ongoing_operations_) {
+      auto it = find(op.devices_.begin(), op.devices_.end(), addr);
+      if (it == op.devices_.end()) {
+        continue;
+      }
+      op.devices_.erase(it);
+    }
+
+    // Remove operations with no devices
+    ongoing_operations_.erase(
+        std::remove_if(ongoing_operations_.begin(), ongoing_operations_.end(),
+                       [](auto& op) { return op.devices_.empty(); }),
+        ongoing_operations_.end());
+  }
+
   void RemoveDeviceFromOperationList(const RawAddress& addr, int operation_id) {
     auto op = find_if(ongoing_operations_.begin(), ongoing_operations_.end(),
                       [operation_id](auto& operation) {
@@ -1136,6 +1156,9 @@ class VolumeControlImpl : public VolumeControl {
 
   void device_cleanup_helper(VolumeControlDevice* device, bool notify) {
     device->Disconnect(gatt_if_);
+
+    RemoveDeviceFromOperationList(device->address);
+
     if (notify)
       callbacks_->OnConnectionState(ConnectionState::DISCONNECTED,
                                     device->address);
