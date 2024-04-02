@@ -28,6 +28,7 @@
 #include "hardware/bt_gatt_types.h"
 #include "mock_csis_client.h"
 #include "stack/include/bt_uuid16.h"
+#include "test/common/mock_functions.h"
 #include "types.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
@@ -245,6 +246,7 @@ class VolumeControlTest : public ::testing::Test {
     gatt::SetMockBtaGattInterface(&gatt_interface);
     gatt::SetMockBtaGattQueue(&gatt_queue);
     callbacks.reset(new MockVolumeControlCallbacks());
+    reset_mock_function_count_map();
 
     // default action for GetCharacteristic function call
     ON_CALL(gatt_interface, GetCharacteristic(_, _))
@@ -1199,6 +1201,33 @@ class VolumeControlValueSetTest : public VolumeControlTest {
     VolumeControlTest::TearDown();
   }
 };
+
+TEST_F(VolumeControlValueSetTest, test_volume_operation_failed) {
+  const std::vector<uint8_t> vol_x10({0x04, 0x00, 0x10});
+  EXPECT_CALL(gatt_queue,
+              WriteCharacteristic(conn_id, 0x0024, vol_x10, GATT_WRITE, _, _))
+      .Times(1);
+  ON_CALL(gatt_queue, WriteCharacteristic(_, _, _, _, _, _))
+      .WillByDefault(
+          Invoke([this](uint16_t conn_id, uint16_t handle,
+                        std::vector<uint8_t> value, tGATT_WRITE_TYPE write_type,
+                        GATT_WRITE_OP_CB cb, void* cb_data) {
+            auto* svc = gatt::FindService(services_map[conn_id], handle);
+            if (svc == nullptr) return;
+
+            tGATT_STATUS status = GATT_ERROR;
+            if (cb)
+              cb(conn_id, status, handle, value.size(), value.data(), cb_data);
+          }));
+  ASSERT_EQ(0, get_func_call_count("alarm_set_on_mloop"));
+  ASSERT_EQ(0, get_func_call_count("alarm_cancel"));
+
+  VolumeControl::Get()->SetVolume(test_address, 0x10);
+  Mock::VerifyAndClearExpectations(&gatt_queue);
+
+  ASSERT_EQ(1, get_func_call_count("alarm_set_on_mloop"));
+  ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
+}
 
 TEST_F(VolumeControlValueSetTest, test_set_volume) {
   const std::vector<uint8_t> vol_x10({0x04, 0x00, 0x10});
