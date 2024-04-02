@@ -1436,16 +1436,16 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event,
   switch (event) {
     case BTA_DM_NAME_READ_EVT: {
       /* Remote name update */
-      if (strlen((const char*)p_search_data->disc_res.bd_name)) {
+      if (strlen((const char*)p_search_data->name_res.bd_name)) {
         /** Fix inquiry time too long @{ */
         bt_property_t properties[3];
         /** @} */
         bt_status_t status;
 
         properties[0].type = BT_PROPERTY_BDNAME;
-        properties[0].val = p_search_data->disc_res.bd_name;
-        properties[0].len = strlen((char*)p_search_data->disc_res.bd_name);
-        RawAddress& bdaddr = p_search_data->disc_res.bd_addr;
+        properties[0].val = p_search_data->name_res.bd_name;
+        properties[0].len = strlen((char*)p_search_data->name_res.bd_name);
+        RawAddress& bdaddr = p_search_data->name_res.bd_addr;
 
         status =
             btif_storage_set_remote_device_property(&bdaddr, &properties[0]);
@@ -1464,7 +1464,7 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event,
           log::info("Skipping RNR callback because cod is zero addr:{} name:{}",
                     ADDRESS_TO_LOGGABLE_CSTR(bdaddr),
                     PRIVATE_NAME(reinterpret_cast<char const*>(
-                        p_search_data->disc_res.bd_name)));
+                        p_search_data->name_res.bd_name)));
         }
         /** @} */
       }
@@ -1742,9 +1742,9 @@ static bool btif_is_gatt_service_discovery_post_pairing(const RawAddress bd_addr
 }
 
 static void btif_on_service_discovery_results(
-    RawAddress bd_addr, BD_NAME bd_name, tBTA_SERVICE_MASK services,
-    tBT_DEVICE_TYPE device_type, size_t num_uuids, bluetooth::Uuid* p_uuid_list,
-    tBTA_STATUS result, tHCI_STATUS hci_status) {
+    RawAddress bd_addr, tBTA_SERVICE_MASK services, tBT_DEVICE_TYPE device_type,
+    const std::vector<bluetooth::Uuid>& uuids_param, tBTA_STATUS result,
+    tHCI_STATUS hci_status) {
   bt_property_t prop;
   std::vector<uint8_t> property_value;
   std::set<Uuid> uuids;
@@ -1776,15 +1776,14 @@ static void btif_on_service_discovery_results(
 
   prop.type = BT_PROPERTY_UUIDS;
   prop.len = 0;
-  if ((result == BTA_SUCCESS) && (num_uuids > 0)) {
+  if ((result == BTA_SUCCESS) && !uuids_param.empty()) {
     log::info("New UUIDs for {}:", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
-    for (size_t i = 0; i < num_uuids; i++) {
-      auto uuid = p_uuid_list + i;
-      if (btif_should_ignore_uuid(*uuid)) {
+    for (const auto& uuid : uuids_param) {
+      if (btif_should_ignore_uuid(uuid)) {
         continue;
       }
-      log::info("index:{} uuid:{}", i, uuid->ToString());
-      uuids.insert(*uuid);
+      log::info("uuid:{}", uuid.ToString());
+      uuids.insert(uuid);
     }
 
     Uuid existing_uuids[BT_MAX_NUM_UUIDS] = {};
@@ -1871,9 +1870,9 @@ static void btif_on_service_discovery_results(
   BTM_LogHistory(kBtmLogTagSdp, bd_addr, "Discovered services",
                  base::StringPrintf("bta_status:%s sdp_uuids:%zu eir_uuids:%zu",
                                     bta_status_text(bta_status).c_str(),
-                                    num_uuids, num_eir_uuids));
+                                    uuids_param.size(), num_eir_uuids));
 
-  if (num_uuids != 0 || num_eir_uuids != 0) {
+  if (!uuids_param.empty() || num_eir_uuids != 0) {
     /* Also write this to the NVRAM */
     const bt_status_t ret =
         btif_storage_set_remote_device_property(&bd_addr, &prop);

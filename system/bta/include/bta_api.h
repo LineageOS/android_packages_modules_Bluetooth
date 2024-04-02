@@ -266,22 +266,16 @@ typedef struct {
   uint8_t num_resps; /* Number of responses. */
 } tBTA_DM_OBSERVE_CMPL;
 
-/* Structure associated with BTA_DM_DISC_RES_EVT */
+/* Structure associated with BTA_DM_NAME_READ_EVT */
 typedef struct {
   RawAddress bd_addr;          /* BD address peer device. */
   BD_NAME bd_name;             /* Name of peer device. */
-  tBTA_SERVICE_MASK services;  /* Services found on peer device. */
-  tBT_DEVICE_TYPE device_type; /* device type in case it is BLE device */
-  size_t num_uuids;
-  bluetooth::Uuid* p_uuid_list;
-  tBTA_STATUS result;
-  tHCI_STATUS hci_status;
-} tBTA_DM_DISC_RES;
+} tBTA_DM_NAME_READ_CMPL;
 
 /* Union of all search callback structures */
 typedef union {
   tBTA_DM_INQ_RES inq_res;   /* Inquiry result for a peer device. */
-  tBTA_DM_DISC_RES disc_res; /* Discovery result for a peer device. */
+  tBTA_DM_NAME_READ_CMPL name_res;   /* Name read result for a peer device. */
   tBTA_DM_OBSERVE_CMPL observe_cmpl; /* Observe complete. */
 } tBTA_DM_SEARCH;
 
@@ -298,10 +292,9 @@ typedef void(tBTA_DM_DID_RES_CBACK)(RawAddress bd_addr, uint8_t vendor_id_src,
 typedef void(tBTA_DM_NAME_READ_CBACK)(RawAddress bd_addr,
                                       tHCI_ERROR_CODE hci_status,
                                       const BD_NAME bd_name);
-typedef void(tBTA_DM_DISC_CBACK)(RawAddress bd_addr, BD_NAME bd_name,
-                                 tBTA_SERVICE_MASK services,
-                                 tBT_DEVICE_TYPE device_type, size_t num_uuids,
-                                 bluetooth::Uuid* p_uuid_list,
+typedef void(tBTA_DM_DISC_CBACK)(RawAddress bd_addr, tBTA_SERVICE_MASK services,
+                                 tBT_DEVICE_TYPE device_type,
+                                 const std::vector<bluetooth::Uuid>& uuids,
                                  tBTA_STATUS result, tHCI_STATUS hci_status);
 struct service_discovery_callbacks {
   /* legacy callback I'll tear apart and get rid of */
