@@ -783,11 +783,6 @@
  * BTA
  *
  *****************************************************************************/
-/* BTA EIR canned UUID list (default is dynamic) */
-#ifndef BTA_EIR_CANNED_UUID_LIST
-#define BTA_EIR_CANNED_UUID_LIST FALSE
-#endif
-
 /* Number of supported customer UUID in EIR */
 #ifndef BTA_EIR_SERVER_NUM_CUSTOM_UUID
 #define BTA_EIR_SERVER_NUM_CUSTOM_UUID 8

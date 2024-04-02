@@ -380,11 +380,9 @@ void bta_pan_disable(void) {
   /* close all connections */
   PAN_SetRole(0, std::string(), std::string());
 
-#if (BTA_EIR_CANNED_UUID_LIST != TRUE)
   bta_sys_remove_uuid(UUID_SERVCLASS_NAP);
   bta_sys_remove_uuid(UUID_SERVCLASS_GN);
   bta_sys_remove_uuid(UUID_SERVCLASS_PANU);
-#endif  // BTA_EIR_CANNED_UUID_LIST
   /* free all queued up data buffers */
   for (i = 0; i < BTA_PAN_NUM_CONN; i++, p_scb++) {
     if (p_scb->in_use) {

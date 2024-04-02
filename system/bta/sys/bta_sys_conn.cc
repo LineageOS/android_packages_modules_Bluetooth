@@ -422,7 +422,6 @@ void bta_sys_busy(tBTA_SYS_ID id, uint8_t app_id, const RawAddress& peer_addr) {
   }
 }
 
-#if (BTA_EIR_CANNED_UUID_LIST != TRUE)
 /*******************************************************************************
  *
  * Function         bta_sys_eir_register
@@ -524,4 +523,3 @@ void bta_sys_remove_cust_uuid(const tBTA_CUSTOM_UUID& curr) {
     bta_sys_cb.cust_eir_cb(curr, false);
   }
 }
-#endif
