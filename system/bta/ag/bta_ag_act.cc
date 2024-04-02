@@ -352,6 +352,7 @@ void bta_ag_open_fail(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
  *
  ******************************************************************************/
 void bta_ag_rfc_fail(tBTA_AG_SCB* p_scb, UNUSED_ATTR const tBTA_AG_DATA& data) {
+  log::info("reset p_scb with index={}", bta_ag_scb_to_idx(p_scb));
   RawAddress peer_addr = p_scb->peer_addr;
   /* reinitialize stuff */
   p_scb->conn_handle = 0;
@@ -585,7 +586,8 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
         // Fail the outgoing connection to clean up any upper layer states
         bta_ag_rfc_fail(&ag_scb, tBTA_AG_DATA::kEmpty);
       }
-      // If client port is opened, close it
+      // If client port is opened, close it, state machine will handle rfcomm
+      // closed in opening state as failure and pass to upper layer
       if (ag_scb.conn_handle > 0) {
         status = RFCOMM_RemoveConnection(ag_scb.conn_handle);
         if (status != PORT_SUCCESS) {
@@ -593,6 +595,10 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
               "RFCOMM_RemoveConnection failed for {}, handle {}, error {}",
               ADDRESS_TO_LOGGABLE_STR(dev_addr), ag_scb.conn_handle, status);
         }
+      } else if (IS_FLAG_ENABLED(reset_after_collision)) {
+        // As no existing outgoing rfcomm connection, then manual reset current
+        // state, and use the incoming one
+        bta_ag_rfc_fail(&ag_scb, tBTA_AG_DATA::kEmpty);
       }
     }
     log::info("dev_addr={}, peer_addr={}, in_use={}, index={}",
