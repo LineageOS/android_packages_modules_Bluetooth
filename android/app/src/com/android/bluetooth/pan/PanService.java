@@ -487,7 +487,7 @@ public class PanService extends ProfileService {
             Intent intent = new Intent(BluetoothPan.ACTION_TETHERING_STATE_CHANGED);
             intent.putExtra(BluetoothPan.EXTRA_TETHERING_STATE,
                     mTetherOn ? BluetoothPan.TETHERING_STATE_ON : BluetoothPan.TETHERING_STATE_OFF);
-            Utils.sendBroadcast(this, intent, null, Utils.getTempAllowlistBroadcastOptions());
+            sendBroadcast(intent, null, Utils.getTempBroadcastOptions().toBundle());
         }
     }
 
