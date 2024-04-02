@@ -30,13 +30,17 @@ namespace os {
 template <size_t SIZE>
 std::array<uint8_t, SIZE> GenerateRandom() {
   std::array<uint8_t, SIZE> ret;
-  ASSERT(RAND_bytes(ret.data(), ret.size()) == 1);
+  log::assert_that(
+      RAND_bytes(ret.data(), ret.size()) == 1,
+      "assert failed: RAND_bytes(ret.data(), ret.size()) == 1");
   return ret;
 }
 
 inline uint32_t GenerateRandom() {
   uint32_t ret{};
-  ASSERT(RAND_bytes((uint8_t*)(&ret), sizeof(uint32_t)) == 1);
+  log::assert_that(
+      RAND_bytes((uint8_t*)(&ret), sizeof(uint32_t)) == 1,
+      "assert failed: RAND_bytes((uint8_t*)(&ret), sizeof(uint32_t)) == 1");
   return ret;
 }
 

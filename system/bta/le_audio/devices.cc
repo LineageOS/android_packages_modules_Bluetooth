@@ -232,7 +232,7 @@ bool LeAudioDevice::ConfigureAses(
     return false;
   }
 
-  ASSERT_LOG(
+  log::assert_that(
       audio_set_conf->topology_info.has_value(),
       "No topology info, which is required to properly configure the ASEs");
   auto device_cnt = audio_set_conf->topology_info->device_count.get(direction);
@@ -725,8 +725,9 @@ uint8_t LeAudioDevice::GetSupportedAudioChannelCounts(uint8_t direction) const {
                   bluetooth::common::ToString(pac.codec_id));
         continue;
       }
-      ASSERT_LOG(!pac.codec_spec_caps.IsEmpty(),
-                 "Codec specific capabilities are not parsed approprietly.");
+      log::assert_that(
+          !pac.codec_spec_caps.IsEmpty(),
+          "Codec specific capabilities are not parsed approprietly.");
 
       auto supported_channel_count_ltv = pac.codec_spec_caps.Find(
           codec_spec_caps::kLeAudioLtvTypeSupportedAudioChannelCounts);

@@ -243,7 +243,7 @@ TEST_F(A2dpAacTest, sink_supports_aac) {
 
 TEST_F(A2dpAacTest, effective_mtu_when_peer_supports_3mbps) {
   auto read_cb = +[](uint8_t* p_buf, uint32_t len) -> uint32_t {
-    ASSERT(kAacReadSize == len);
+    log::assert_that(kAacReadSize == len, "assert failed: kAacReadSize == len");
     return len;
   };
   auto enqueue_cb = +[](BT_HDR* p_buf, size_t frames_n, uint32_t len) -> bool {
@@ -256,7 +256,7 @@ TEST_F(A2dpAacTest, effective_mtu_when_peer_supports_3mbps) {
 
 TEST_F(A2dpAacTest, effective_mtu_when_peer_does_not_support_3mbps) {
   auto read_cb = +[](uint8_t* p_buf, uint32_t len) -> uint32_t {
-    ASSERT(kAacReadSize == len);
+    log::assert_that(kAacReadSize == len, "assert failed: kAacReadSize == len");
     return len;
   };
   auto enqueue_cb = +[](BT_HDR* p_buf, size_t frames_n, uint32_t len) -> bool {

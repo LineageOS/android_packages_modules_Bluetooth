@@ -76,7 +76,7 @@ void IsoManagerImpl::OnHciLeEvent(hci::LeMetaEventView event) {
   }
 
   log::error("Unhandled HCI LE ISO event, code {}", hci::SubeventCodeText(code));
-  ASSERT_LOG(false, "Unhandled HCI LE ISO event");
+  log::fatal("Unhandled HCI LE ISO event");
 }
 
 void IsoManagerImpl::SetCigParameters(
@@ -114,18 +114,21 @@ void IsoManagerImpl::SetCigParametersComplete(
     const std::vector<hci::CisParametersConfig>& cis_configs,
     SetCigParametersCallback command_complete_callback,
     hci::CommandCompleteView command_complete) {
-  ASSERT(command_complete.IsValid());
+  log::assert_that(command_complete.IsValid(), "assert failed: command_complete.IsValid()");
 
   hci::LeSetCigParametersCompleteView setCigParamsComplete =
       hci::LeSetCigParametersCompleteView::Create(command_complete);
-  ASSERT(setCigParamsComplete.IsValid());
+  log::assert_that(setCigParamsComplete.IsValid(), "assert failed: setCigParamsComplete.IsValid()");
 
   if (setCigParamsComplete.GetStatus() == hci::ErrorCode::SUCCESS) {
     uint8_t cig_id_back_from_ctrl = setCigParamsComplete.GetCigId();
     auto conn_handles = setCigParamsComplete.GetConnectionHandle();
 
-    ASSERT(cig_id_back_from_ctrl == cig_id);
-    ASSERT(conn_handles.size() == cis_configs.size());
+    log::assert_that(
+        cig_id_back_from_ctrl == cig_id, "assert failed: cig_id_back_from_ctrl == cig_id");
+    log::assert_that(
+        conn_handles.size() == cis_configs.size(),
+        "assert failed: conn_handles.size() == cis_configs.size()");
 
     auto cis_it = cis_configs.begin();
     auto handle_it = conn_handles.begin();
@@ -187,18 +190,21 @@ void IsoManagerImpl::SetCigParametersTestComplete(
     const std::vector<hci::LeCisParametersTestConfig>& cis_configs,
     SetCigParametersCallback command_complete_callback,
     hci::CommandCompleteView command_complete) {
-  ASSERT(command_complete.IsValid());
+  log::assert_that(command_complete.IsValid(), "assert failed: command_complete.IsValid()");
 
   hci::LeSetCigParametersTestCompleteView setCigParamsComplete =
       hci::LeSetCigParametersTestCompleteView::Create(command_complete);
-  ASSERT(setCigParamsComplete.IsValid());
+  log::assert_that(setCigParamsComplete.IsValid(), "assert failed: setCigParamsComplete.IsValid()");
 
   if (setCigParamsComplete.GetStatus() == hci::ErrorCode::SUCCESS) {
     uint8_t cig_id_back_from_ctrl = setCigParamsComplete.GetCigId();
     auto conn_handles = setCigParamsComplete.GetConnectionHandle();
 
-    ASSERT(cig_id_back_from_ctrl == cig_id);
-    ASSERT(conn_handles.size() == cis_configs.size());
+    log::assert_that(
+        cig_id_back_from_ctrl == cig_id, "assert failed: cig_id_back_from_ctrl == cig_id");
+    log::assert_that(
+        conn_handles.size() == cis_configs.size(),
+        "assert failed: conn_handles.size() == cis_configs.size()");
 
     auto cis_it = cis_configs.begin();
     auto handle_it = conn_handles.begin();
@@ -239,7 +245,7 @@ void IsoManagerImpl::LeCreateCis(std::vector<std::pair<uint16_t, uint16_t>> cis_
 }
 
 void IsoManagerImpl::RemoveCig(uint8_t cig_id) {
-  ASSERT(IsKnownCig(cig_id));
+  log::assert_that(IsKnownCig(cig_id), "assert failed: IsKnownCig(cig_id)");
 
   hci_le_iso_interface_->EnqueueCommand(
       hci::LeRemoveCigBuilder::Create(cig_id),
@@ -247,10 +253,10 @@ void IsoManagerImpl::RemoveCig(uint8_t cig_id) {
 }
 
 void IsoManagerImpl::RemoveCigComplete(hci::CommandCompleteView command_complete) {
-  ASSERT(command_complete.IsValid());
+  log::assert_that(command_complete.IsValid(), "assert failed: command_complete.IsValid()");
 
   hci::LeRemoveCigCompleteView removeCigComplete = hci::LeRemoveCigCompleteView::Create(command_complete);
-  ASSERT(removeCigComplete.IsValid());
+  log::assert_that(removeCigComplete.IsValid(), "assert failed: removeCigComplete.IsValid()");
 }
 
 void IsoManagerImpl::SendIsoPacket(uint16_t cis_handle, std::vector<uint8_t> packet) {

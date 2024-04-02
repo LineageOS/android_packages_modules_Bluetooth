@@ -100,8 +100,8 @@ class UserPrivacyFilter : public Filter {
 };
 
 bool UserPrivacyFilter::FilterField(const reflection::Field* field, flatbuffers::Table* table) {
-  ASSERT(field != nullptr);
-  ASSERT(table != nullptr);
+  log::assert_that(field != nullptr, "assert failed: field != nullptr");
+  log::assert_that(table != nullptr, "assert failed: table != nullptr");
   internal::PrivacyLevel privacy_level = internal::FindFieldPrivacyLevel(*field);
 
   const auto type = static_cast<flatbuffers::BaseType>(field->type()->base_type());
@@ -132,7 +132,7 @@ bool UserPrivacyFilter::FilterField(const reflection::Field* field, flatbuffers:
 }
 
 void UserPrivacyFilter::FilterObject(const reflection::Object* object, flatbuffers::Table* table) {
-  ASSERT(object != nullptr);
+  log::assert_that(object != nullptr, "assert failed: object != nullptr");
   if (table == nullptr) {
     return;  // table data is not populated
   }
@@ -166,7 +166,7 @@ void UserPrivacyFilter::FilterTable(const reflection::Schema* schema, flatbuffer
     // Get the index of this complex non-string object from the schema which is
     // also the same index into the data table.
     int32_t index = it->type()->index();
-    ASSERT(index != -1);
+    log::assert_that(index != -1, "assert failed: index != -1");
 
     flatbuffers::Table* sub_table = table->GetPointer<flatbuffers::Table*>(it->offset());
     const reflection::Schema* sub_schema =
@@ -188,7 +188,7 @@ void UserPrivacyFilter::FilterTable(const reflection::Schema* schema, flatbuffer
 }
 
 void UserPrivacyFilter::FilterInPlace(char* dumpsys_data) {
-  ASSERT(dumpsys_data != nullptr);
+  log::assert_that(dumpsys_data != nullptr, "assert failed: dumpsys_data != nullptr");
   const reflection::Schema* root_schema = reflection_schema_.FindInReflectionSchema(reflection_schema_.GetRootName());
   flatbuffers::Table* table = const_cast<flatbuffers::Table*>(flatbuffers::GetRoot<flatbuffers::Table>(dumpsys_data));
   FilterTable(root_schema, table);

@@ -84,7 +84,7 @@ std::string StringTrim(std::string str) {
 }
 
 std::vector<std::string> StringSplit(const std::string& str, const std::string& delim, size_t max_token) {
-  ASSERT_LOG(!delim.empty(), "delim cannot be empty");
+  log::assert_that(!delim.empty(), "delim cannot be empty");
   std::vector<std::string> tokens;
   // Use std::string::find and std::string::substr to avoid copying str into a stringstream
   std::string::size_type starting_index = 0;

@@ -97,6 +97,22 @@ bool generate_cpp_headers_one_file(
 #include "packet/packet_view.h"
 #include "packet/checksum_type_checker.h"
 #include "packet/custom_type_checker.h"
+
+#if __has_include(<bluetooth/log.h>)
+
+#include <bluetooth/log.h>
+
+#ifndef ASSERT
+#define ASSERT(cond) bluetooth::log::assert_that(cond, #cond)
+#endif // !defined(ASSERT)
+
+#else
+
+#ifndef ASSERT
+#define ASSERT(cond) assert(cond)
+#endif // !defined(ASSERT)
+
+#endif // __has_include(<bluetooth/log.h>)
 )";
 
   if (generate_fuzzing || generate_tests) {
@@ -105,7 +121,6 @@ bool generate_cpp_headers_one_file(
 
 #if defined(PACKET_FUZZ_TESTING) || defined(PACKET_TESTING) || defined(FUZZ_TARGET)
 #include "packet/raw_builder.h"
-#include <bluetooth/log.h>
 #endif
 )";
   }
@@ -258,9 +273,7 @@ using ::bluetooth::packet::RawBuilder;
     namespace_prefix += "::";
   }
 
-  out_file << "#if __has_include(<bluetooth/log.h>)" << std::endl
-           << "#include <bluetooth/log.h>" << std::endl
-           << "namespace fmt {" << std::endl;
+  out_file << "#if __has_include(<bluetooth/log.h>)" << std::endl << "namespace fmt {" << std::endl;
   for (const auto& e : decls.type_defs_queue_) {
     if (e.second->GetDefinitionType() == TypeDef::Type::ENUM) {
       const auto* enum_def = static_cast<const EnumDef*>(e.second);

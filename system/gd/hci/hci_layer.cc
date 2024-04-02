@@ -59,13 +59,15 @@ using std::unique_ptr;
 
 static void fail_if_reset_complete_not_success(CommandCompleteView complete) {
   auto reset_complete = ResetCompleteView::Create(complete);
-  ASSERT(reset_complete.IsValid());
+  log::assert_that(reset_complete.IsValid(), "assert failed: reset_complete.IsValid()");
   log::debug("Reset completed with status: {}", ErrorCodeText(ErrorCode::SUCCESS));
-  ASSERT(reset_complete.GetStatus() == ErrorCode::SUCCESS);
+  log::assert_that(
+      reset_complete.GetStatus() == ErrorCode::SUCCESS,
+      "assert failed: reset_complete.GetStatus() == ErrorCode::SUCCESS");
 }
 
 static void abort_after_time_out(OpCode op_code) {
-  ASSERT_LOG(false, "Done waiting for debug information after HCI timeout (%s)", OpCodeText(op_code).c_str());
+  log::fatal("Done waiting for debug information after HCI timeout ({})", OpCodeText(op_code));
 }
 
 class CommandQueueEntry {
@@ -161,7 +163,7 @@ struct HciLayer::impl {
 
   void on_command_status(EventView event) {
     CommandStatusView response_view = CommandStatusView::Create(event);
-    ASSERT(response_view.IsValid());
+    log::assert_that(response_view.IsValid(), "assert failed: response_view.IsValid()");
     OpCode op_code = response_view.GetCommandOpCode();
     ErrorCode status = response_view.GetStatus();
     if (status != ErrorCode::SUCCESS) {
@@ -180,7 +182,7 @@ struct HciLayer::impl {
   template <typename TResponse>
   void handle_command_response(EventView event, std::string logging_id) {
     TResponse response_view = TResponse::Create(event);
-    ASSERT(response_view.IsValid());
+    log::assert_that(response_view.IsValid(), "assert failed: response_view.IsValid()");
     command_credits_ = response_view.GetNumHciCommandPackets();
     OpCode op_code = response_view.GetCommandOpCode();
     if (op_code == OpCode::NONE) {
@@ -189,21 +191,21 @@ struct HciLayer::impl {
     }
     bool is_status = logging_id == "status";
 
-    ASSERT_LOG(
+    log::assert_that(
         !command_queue_.empty(),
-        "Unexpected %s event with OpCode (%s)",
-        logging_id.c_str(),
-        OpCodeText(op_code).c_str());
+        "Unexpected {} event with OpCode {}",
+        logging_id,
+        OpCodeText(op_code));
     if (waiting_command_ == OpCode::CONTROLLER_DEBUG_INFO && op_code != OpCode::CONTROLLER_DEBUG_INFO) {
       log::error("Discarding event that came after timeout {}", OpCodeText(op_code));
       common::StopWatch::DumpStopWatchLog();
       return;
     }
-    ASSERT_LOG(
+    log::assert_that(
         waiting_command_ == op_code,
-        "Waiting for %s, got %s",
-        OpCodeText(waiting_command_).c_str(),
-        OpCodeText(op_code).c_str());
+        "Waiting for {}, got {}",
+        OpCodeText(waiting_command_),
+        OpCodeText(op_code));
 
     bool is_vendor_specific = static_cast<int>(op_code) & (0x3f << 10);
     CommandStatusView status_view = CommandStatusView::Create(event);
@@ -224,14 +226,15 @@ struct HciLayer::impl {
           std::make_shared<std::vector<std::uint8_t>>(complete_event_builder->SerializeToBytes());
       CommandCompleteView command_complete_view =
           CommandCompleteView::Create(EventView::Create(PacketView<kLittleEndian>(complete)));
-      ASSERT(command_complete_view.IsValid());
+      log::assert_that(
+          command_complete_view.IsValid(), "assert failed: command_complete_view.IsValid()");
       command_queue_.front().GetCallback<CommandCompleteView>()->Invoke(command_complete_view);
     } else {
-      ASSERT_LOG(
+      log::assert_that(
           command_queue_.front().waiting_for_status_ == is_status,
-          "%s was not expecting %s event",
-          OpCodeText(op_code).c_str(),
-          logging_id.c_str());
+          "{} was not expecting {} event",
+          OpCodeText(op_code),
+          logging_id);
 
       command_queue_.front().GetCallback<TResponse>()->Invoke(std::move(response_view));
     }
@@ -305,7 +308,7 @@ struct HciLayer::impl {
     hal_->sendHciCommand(*bytes);
 
     auto cmd_view = CommandView::Create(PacketView<kLittleEndian>(bytes));
-    ASSERT(cmd_view.IsValid());
+    log::assert_that(cmd_view.IsValid(), "assert failed: cmd_view.IsValid()");
     OpCode op_code = cmd_view.GetOpCode();
     power_telemetry::GetInstance().LogHciCmdDetail();
     command_queue_.front().command_view = std::make_unique<CommandView>(std::move(cmd_view));
@@ -321,19 +324,19 @@ struct HciLayer::impl {
   }
 
   void register_event(EventCode event, ContextualCallback<void(EventView)> handler) {
-    ASSERT_LOG(
+    log::assert_that(
         event != EventCode::LE_META_EVENT,
-        "Can not register handler for %s",
-        EventCodeText(EventCode::LE_META_EVENT).c_str());
+        "Can not register handler for {}",
+        EventCodeText(EventCode::LE_META_EVENT));
     // Allow GD Cert tests to register for CONNECTION_REQUEST
     if (event == EventCode::CONNECTION_REQUEST && module_.on_acl_connection_request_.IsEmpty()) {
       log::info("Registering test for CONNECTION_REQUEST, since there's no ACL");
       event_handlers_.erase(event);
     }
-    ASSERT_LOG(
+    log::assert_that(
         event_handlers_.count(event) == 0,
-        "Can not register a second handler for %s",
-        EventCodeText(event).c_str());
+        "Can not register a second handler for {}",
+        EventCodeText(event));
     event_handlers_[event] = handler;
   }
 
@@ -342,10 +345,10 @@ struct HciLayer::impl {
   }
 
   void register_le_event(SubeventCode event, ContextualCallback<void(LeMetaEventView)> handler) {
-    ASSERT_LOG(
+    log::assert_that(
         subevent_handlers_.count(event) == 0,
-        "Can not register a second handler for %s",
-        SubeventCodeText(event).c_str());
+        "Can not register a second handler for {}",
+        SubeventCodeText(event));
     subevent_handlers_[event] = handler;
   }
 
@@ -354,7 +357,7 @@ struct HciLayer::impl {
   }
 
   static void abort_after_root_inflammation(uint8_t vse_error) {
-    ASSERT_LOG(false, "Root inflammation with reason 0x%02hhx", vse_error);
+    log::fatal("Root inflammation with reason 0x{:02x}", vse_error);
   }
 
   void handle_root_inflammation(uint8_t vse_error_reason) {
@@ -377,32 +380,32 @@ struct HciLayer::impl {
   }
 
   void on_hci_event(EventView event) {
-    ASSERT(event.IsValid());
+    log::assert_that(event.IsValid(), "assert failed: event.IsValid()");
     if (command_queue_.empty()) {
       auto event_code = event.GetEventCode();
       // BT Core spec 5.2 (Volume 4, Part E section 4.4) allows anytime
       // COMMAND_COMPLETE and COMMAND_STATUS with opcode 0x0 for flow control
       if (event_code == EventCode::COMMAND_COMPLETE) {
         auto view = CommandCompleteView::Create(event);
-        ASSERT(view.IsValid());
+        log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
         auto op_code = view.GetCommandOpCode();
-        ASSERT_LOG(
+        log::assert_that(
             op_code == OpCode::NONE,
-            "Received %s event with OpCode %s without a waiting command"
-            "(is the HAL sending commands, but not handling the events?)",
-            EventCodeText(event_code).c_str(),
-            OpCodeText(op_code).c_str());
+            "Received {} event with OpCode {} without a waiting command(is the HAL "
+            "sending commands, but not handling the events?)",
+            EventCodeText(event_code),
+            OpCodeText(op_code));
       }
       if (event_code == EventCode::COMMAND_STATUS) {
         auto view = CommandStatusView::Create(event);
-        ASSERT(view.IsValid());
+        log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
         auto op_code = view.GetCommandOpCode();
-        ASSERT_LOG(
+        log::assert_that(
             op_code == OpCode::NONE,
-            "Received %s event with OpCode %s without a waiting command"
-            "(is the HAL sending commands, but not handling the events?)",
-            EventCodeText(event_code).c_str(),
-            OpCodeText(op_code).c_str());
+            "Received {} event with OpCode {} without a waiting command(is the HAL "
+            "sending commands, but not handling the events?)",
+            EventCodeText(event_code),
+            OpCodeText(op_code));
       }
       std::unique_ptr<CommandView> no_waiting_command{nullptr};
       log_hci_event(no_waiting_command, event, module_.GetDependency<storage::StorageModule>());
@@ -414,7 +417,7 @@ struct HciLayer::impl {
     // Root Inflamation is a special case, since it aborts here
     if (event_code == EventCode::VENDOR_SPECIFIC) {
       auto view = VendorSpecificEventView::Create(event);
-      ASSERT(view.IsValid());
+      log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
       if (view.GetSubeventCode() == VseSubeventCode::BQR_EVENT) {
         auto bqr_event = BqrEventView::Create(view);
         auto inflammation = BqrRootInflammationEventView::Create(bqr_event);
@@ -448,7 +451,7 @@ struct HciLayer::impl {
 
   void on_hardware_error(EventView event) {
     HardwareErrorView event_view = HardwareErrorView::Create(event);
-    ASSERT(event_view.IsValid());
+    log::assert_that(event_view.IsValid(), "assert failed: event_view.IsValid()");
 #ifdef TARGET_FLOSS
     log::warn("Hardware Error Event with code 0x{:02x}", event_view.GetHardwareCode());
     // Sending SIGINT to process the exception from BT controller.
@@ -462,7 +465,7 @@ struct HciLayer::impl {
 
   void on_le_meta_event(EventView event) {
     LeMetaEventView meta_event_view = LeMetaEventView::Create(event);
-    ASSERT(meta_event_view.IsValid());
+    log::assert_that(meta_event_view.IsValid(), "assert failed: meta_event_view.IsValid()");
     SubeventCode subevent_code = meta_event_view.GetSubeventCode();
     if (subevent_handlers_.find(subevent_code) == subevent_handlers_.end()) {
       log::warn("Unhandled le subevent of type {}", SubeventCodeText(subevent_code));
@@ -633,7 +636,7 @@ void HciLayer::RegisterForDisconnects(ContextualCallback<void(uint16_t, ErrorCod
 
 void HciLayer::on_read_remote_version_complete(EventView event_view) {
   auto view = ReadRemoteVersionInformationCompleteView::Create(event_view);
-  ASSERT_LOG(view.IsValid(), "Read remote version information packet invalid");
+  log::assert_that(view.IsValid(), "Read remote version information packet invalid");
   ReadRemoteVersion(
       view.GetStatus(),
       view.GetConnectionHandle(),

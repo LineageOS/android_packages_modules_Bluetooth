@@ -990,7 +990,7 @@ void btif_storage_load_bonded_leaudio_has_devices() {
                       Bind(&bluetooth::le_audio::has::HasClient::AddFromStorage,
                            bd_addr, features, is_acceptlisted));
 #else
-    ASSERT_LOG(false, "TODO - Fix LE audio build.");
+    log::fatal("TODO - Fix LE audio build.");
 #endif
   }
 }

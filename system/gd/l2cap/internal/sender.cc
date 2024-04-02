@@ -83,7 +83,7 @@ void Sender::try_register_dequeue() {
 // From external context
 void Sender::dequeue_callback() {
   auto packet = queue_end_->TryDequeue();
-  ASSERT(packet != nullptr);
+  log::assert_that(packet != nullptr, "assert failed: packet != nullptr");
   handler_->Post(
       common::BindOnce(&DataController::OnSdu, common::Unretained(data_controller_.get()), std::move(packet)));
   if (is_dequeue_registered_.exchange(false)) {

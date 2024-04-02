@@ -242,14 +242,14 @@ class LinkSecurityInterfaceImpl : public LinkSecurityInterface {
 void LinkManager::OnConnectSuccess(std::unique_ptr<hci::acl_manager::ClassicAclConnection> acl_connection) {
   // Same link should not be connected twice
   hci::Address device = acl_connection->GetAddress();
-  ASSERT_LOG(
+  log::assert_that(
       GetLink(device) == nullptr,
-      "%s is connected twice without disconnection",
+      "{} is connected twice without disconnection",
       ADDRESS_TO_LOGGABLE_CSTR(acl_connection->GetAddress()));
   links_.try_emplace(device, l2cap_handler_, std::move(acl_connection), parameter_provider_,
                      dynamic_channel_service_manager_, fixed_channel_service_manager_, this);
   auto* link = GetLink(device);
-  ASSERT(link != nullptr);
+  log::assert_that(link != nullptr, "assert failed: link != nullptr");
   link->SendInformationRequest(InformationRequestInfoType::EXTENDED_FEATURES_SUPPORTED);
   link->SendInformationRequest(InformationRequestInfoType::FIXED_CHANNELS_SUPPORTED);
   link->ReadRemoteVersionInformation();
@@ -324,9 +324,9 @@ void LinkManager::OnConnectFail(hci::Address device, hci::ErrorCode reason, bool
 
 void LinkManager::OnDisconnect(hci::Address device, hci::ErrorCode status) {
   auto* link = GetLink(device);
-  ASSERT_LOG(
+  log::assert_that(
       link != nullptr,
-      "Device %s is disconnected with reason 0x%x, but not in local database",
+      "Device {} is disconnected with reason 0x{:x}, but not in local database",
       ADDRESS_TO_LOGGABLE_CSTR(device),
       static_cast<uint8_t>(status));
   if (link_security_interface_listener_handler_ != nullptr) {

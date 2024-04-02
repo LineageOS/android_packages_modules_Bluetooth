@@ -60,18 +60,18 @@ struct L2capClassicModule::impl {
     SecurityInterfaceImpl(impl* module_impl) : module_impl_(module_impl) {}
 
     void RegisterLinkSecurityInterfaceListener(os::Handler* handler, LinkSecurityInterfaceListener* listener) {
-      ASSERT(!registered_);
+      log::assert_that(!registered_, "assert failed: !registered_");
       module_impl_->link_manager_.RegisterLinkSecurityInterfaceListener(handler, listener);
       registered_ = true;
     }
 
     void InitiateConnectionForSecurity(hci::Address remote) override {
-      ASSERT(registered_);
+      log::assert_that(registered_, "assert failed: registered_");
       module_impl_->link_manager_.InitiateConnectionForSecurity(remote);
     }
 
     void Unregister() override {
-      ASSERT(registered_);
+      log::assert_that(registered_, "assert failed: registered_");
       module_impl_->link_manager_.RegisterLinkSecurityInterfaceListener(nullptr, nullptr);
       registered_ = false;
     }
@@ -152,7 +152,7 @@ void L2capClassicModule::impl::Dump(
 }
 
 DumpsysDataFinisher L2capClassicModule::GetDumpsysData(flatbuffers::FlatBufferBuilder* fb_builder) const {
-  ASSERT(fb_builder != nullptr);
+  log::assert_that(fb_builder != nullptr, "assert failed: fb_builder != nullptr");
 
   std::promise<flatbuffers::Offset<L2capClassicModuleData>> promise;
   auto future = promise.get_future();

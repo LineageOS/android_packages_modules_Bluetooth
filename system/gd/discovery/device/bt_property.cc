@@ -276,8 +276,8 @@ BtPropertyLegacy::BtPropertyLegacy(const std::vector<std::shared_ptr<BtProperty>
 }
 
 void BtPropertyLegacy::Export(bt_property_t* bt_properties, size_t size) {
-  ASSERT(bt_properties != nullptr);
-  ASSERT(size >= properties_.size());
+  log::assert_that(bt_properties != nullptr, "assert failed: bt_properties != nullptr");
+  log::assert_that(size >= properties_.size(), "assert failed: size >= properties_.size()");
 
   for (const auto& p : bt_properties_) {
     *bt_properties++ = {
@@ -319,7 +319,7 @@ std::shared_ptr<AdapterScanMode> AdapterScanMode::Create(const bt_scan_mode_t& m
 }
 std::shared_ptr<AdapterBondedDevices> AdapterBondedDevices::Create(
     const RawAddress* bd_addr, size_t len) {
-  ASSERT(bd_addr != nullptr);
+  log::assert_that(bd_addr != nullptr, "assert failed: bd_addr != nullptr");
   return std::make_shared<AdapterBondedDevices>(AdapterBondedDevices(bd_addr, len));
 }
 std::shared_ptr<AdapterDiscoverableTimeout> AdapterDiscoverableTimeout::Create(

@@ -16,9 +16,9 @@
 
 #include "packet/packet_view.h"
 
+#undef NDEBUG
 #include <algorithm>
-
-#include "os/log.h"
+#include <cassert>
 
 namespace bluetooth {
 namespace packet {
@@ -52,14 +52,15 @@ uint8_t PacketView<little_endian>::operator[](size_t index) const {
 
 template <bool little_endian>
 uint8_t PacketView<little_endian>::at(size_t index) const {
-  ASSERT_LOG(index < length_, "Index %zu out of bounds", index);
+  assert(index < length_);
   for (const auto& fragment : fragments_) {
     if (index < fragment.size()) {
       return fragment[index];
     }
     index -= fragment.size();
   }
-  ASSERT_LOG(false, "Out of fragments searching for index %zu", index);
+  // Out of fragments searching for index.
+  std::abort();
   return 0;
 }
 
@@ -70,8 +71,8 @@ size_t PacketView<little_endian>::size() const {
 
 template <bool little_endian>
 std::forward_list<View> PacketView<little_endian>::GetSubviewList(size_t begin, size_t end) const {
-  ASSERT(begin <= end);
-  ASSERT(end <= length_);
+  assert(begin <= end);
+  assert(end <= length_);
 
   std::forward_list<View> view_list;
   std::forward_list<View>::iterator it = view_list.before_begin();
@@ -109,7 +110,7 @@ void PacketView<little_endian>::Append(PacketView to_add) {
       insertion_point++;
     }
   }
-  ASSERT(insertion_point != fragments_.end());
+  assert(insertion_point != fragments_.end());
   for (const auto& fragment : to_add.fragments_) {
     fragments_.insert_after(insertion_point, fragment);
     insertion_point++;

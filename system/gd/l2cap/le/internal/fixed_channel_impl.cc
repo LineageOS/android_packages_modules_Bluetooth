@@ -41,14 +41,15 @@ hci::acl_manager::LeAclConnection* FixedChannelImpl::GetAclConnection() const {
 
 FixedChannelImpl::FixedChannelImpl(Cid cid, Link* link, os::Handler* l2cap_handler)
     : cid_(cid), device_(link->GetDevice()), link_(link), l2cap_handler_(l2cap_handler) {
-  ASSERT_LOG(cid_ >= kFirstFixedChannel && cid_ <= kLastFixedChannel, "Invalid cid: %d", cid_);
-  ASSERT(link_ != nullptr);
-  ASSERT(l2cap_handler_ != nullptr);
+  log::assert_that(
+      cid_ >= kFirstFixedChannel && cid_ <= kLastFixedChannel, "Invalid cid: {}", cid_);
+  log::assert_that(link_ != nullptr, "assert failed: link_ != nullptr");
+  log::assert_that(l2cap_handler_ != nullptr, "assert failed: l2cap_handler_ != nullptr");
 }
 
 void FixedChannelImpl::RegisterOnCloseCallback(os::Handler* user_handler,
                                                FixedChannel::OnCloseCallback on_close_callback) {
-  ASSERT_LOG(user_handler_ == nullptr, "OnCloseCallback can only be registered once");
+  log::assert_that(user_handler_ == nullptr, "OnCloseCallback can only be registered once");
   // If channel is already closed, call the callback immediately without saving it
   if (closed_) {
     user_handler->Post(common::BindOnce(std::move(on_close_callback), close_reason_));
@@ -59,9 +60,9 @@ void FixedChannelImpl::RegisterOnCloseCallback(os::Handler* user_handler,
 }
 
 void FixedChannelImpl::OnClosed(hci::ErrorCode status) {
-  ASSERT_LOG(
+  log::assert_that(
       !closed_,
-      "Device %s Cid 0x%x closed twice, old status 0x%x, new status 0x%x",
+      "Device {} Cid 0x{:x} closed twice, old status 0x{:x}, new status 0x{:x}",
       ADDRESS_TO_LOGGABLE_CSTR(device_),
       cid_,
       static_cast<int>(close_reason_),
@@ -81,10 +82,11 @@ void FixedChannelImpl::OnClosed(hci::ErrorCode status) {
 }
 
 void FixedChannelImpl::Acquire() {
-  ASSERT_LOG(user_handler_ != nullptr, "Must register OnCloseCallback before calling any methods");
+  log::assert_that(
+      user_handler_ != nullptr, "Must register OnCloseCallback before calling any methods");
   if (closed_) {
     log::warn("{} is already closed", ToLoggableStr(*this));
-    ASSERT(!acquired_);
+    log::assert_that(!acquired_, "assert failed: !acquired_");
     return;
   }
   if (acquired_) {
@@ -96,10 +98,11 @@ void FixedChannelImpl::Acquire() {
 }
 
 void FixedChannelImpl::Release() {
-  ASSERT_LOG(user_handler_ != nullptr, "Must register OnCloseCallback before calling any methods");
+  log::assert_that(
+      user_handler_ != nullptr, "Must register OnCloseCallback before calling any methods");
   if (closed_) {
     log::warn("{} is already closed", ToLoggableStr(*this));
-    ASSERT(!acquired_);
+    log::assert_that(!acquired_, "assert failed: !acquired_");
     return;
   }
   if (!acquired_) {

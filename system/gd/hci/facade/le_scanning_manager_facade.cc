@@ -47,8 +47,9 @@ class LeScanningManagerFacadeService : public LeScanningManagerFacade::Service, 
  public:
   LeScanningManagerFacadeService(LeScanningManager* le_scanning_manager, os::Handler* facade_handler)
       : le_scanning_manager_(le_scanning_manager), facade_handler_(facade_handler) {
-    ASSERT(le_scanning_manager_ != nullptr);
-    ASSERT(facade_handler_ != nullptr);
+    log::assert_that(
+        le_scanning_manager_ != nullptr, "assert failed: le_scanning_manager_ != nullptr");
+    log::assert_that(facade_handler_ != nullptr, "assert failed: facade_handler_ != nullptr");
     le_scanning_manager_->RegisterScanningCallback(this);
   }
 

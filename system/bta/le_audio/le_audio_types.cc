@@ -46,7 +46,7 @@ using types::LeAudioCoreCodecConfig;
 
 static uint8_t min_req_devices_cnt(
     const AudioSetConfiguration* audio_set_conf) {
-  ASSERT_LOG(
+  log::assert_that(
       audio_set_conf->topology_info.has_value(),
       "No topology info, which is required to properly configure the ASEs");
   return std::max(audio_set_conf->topology_info->device_count.sink,
@@ -234,8 +234,9 @@ bool IsCodecConfigSettingSupported(
   log::debug(": Settings for format: 0x{:02x}", codec_id.coding_format);
 
   if (utils::IsCodecUsingLtvFormat(codec_id)) {
-    ASSERT_LOG(!pac.codec_spec_caps.IsEmpty(),
-               "Codec specific capabilities are not parsed approprietly.");
+    log::assert_that(
+        !pac.codec_spec_caps.IsEmpty(),
+        "Codec specific capabilities are not parsed approprietly.");
     return IsCodecConfigCoreSupported(pac.codec_spec_caps,
                                       codec_config_setting.params);
   }
@@ -608,7 +609,8 @@ std::string LeAudioLtvMap::ToString(
 
 const struct LeAudioCoreCodecConfig& LeAudioLtvMap::GetAsCoreCodecConfig()
     const {
-  ASSERT_LOG(!core_capabilities, "LTVs were already parsed for capabilities!");
+  log::assert_that(!core_capabilities,
+                   "LTVs were already parsed for capabilities!");
 
   if (!core_config) {
     core_config = LtvMapToCoreCodecConfig(*this);
@@ -618,7 +620,8 @@ const struct LeAudioCoreCodecConfig& LeAudioLtvMap::GetAsCoreCodecConfig()
 
 const struct LeAudioCoreCodecCapabilities&
 LeAudioLtvMap::GetAsCoreCodecCapabilities() const {
-  ASSERT_LOG(!core_config, "LTVs were already parsed for configurations!");
+  log::assert_that(!core_config,
+                   "LTVs were already parsed for configurations!");
 
   if (!core_capabilities) {
     core_capabilities = LtvMapToCoreCodecCapabilities(*this);
@@ -827,18 +830,17 @@ std::ostream& operator<<(std::ostream& os, const AudioContexts& contexts) {
 
 template <typename T>
 const T& BidirectionalPair<T>::get(uint8_t direction) const {
-  ASSERT_LOG(
-      direction < types::kLeAudioDirectionBoth,
-      "Unsupported complex direction. Consider using get_bidirectional<>() "
-      "instead.");
+  log::assert_that(direction < types::kLeAudioDirectionBoth,
+                   "Unsupported complex direction. Consider using "
+                   "get_bidirectional<>() instead.");
   return (direction == types::kLeAudioDirectionSink) ? sink : source;
 }
 
 template <typename T>
 T& BidirectionalPair<T>::get(uint8_t direction) {
-  ASSERT_LOG(direction < types::kLeAudioDirectionBoth,
-             "Unsupported complex direction. Reference to a single complex"
-             " direction value is not supported.");
+  log::assert_that(direction < types::kLeAudioDirectionBoth,
+                   "Unsupported complex direction. Reference to a single "
+                   "complex direction value is not supported.");
   return (direction == types::kLeAudioDirectionSink) ? sink : source;
 }
 

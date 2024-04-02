@@ -81,17 +81,17 @@ bool Dumpsys::impl::IsDebuggable() const {
 }
 
 void Dumpsys::impl::FilterAsDeveloper(std::string* dumpsys_data) const {
-  ASSERT(dumpsys_data != nullptr);
+  log::assert_that(dumpsys_data != nullptr, "assert failed: dumpsys_data != nullptr");
   dumpsys::FilterInPlace(dumpsys::FilterType::AS_DEVELOPER, reflection_schema_, dumpsys_data);
 }
 
 void Dumpsys::impl::FilterAsUser(std::string* dumpsys_data) const {
-  ASSERT(dumpsys_data != nullptr);
+  log::assert_that(dumpsys_data != nullptr, "assert failed: dumpsys_data != nullptr");
   dumpsys::FilterInPlace(dumpsys::FilterType::AS_USER, reflection_schema_, dumpsys_data);
 }
 
 std::string Dumpsys::impl::PrintAsJson(std::string* dumpsys_data) const {
-  ASSERT(dumpsys_data != nullptr);
+  log::assert_that(dumpsys_data != nullptr, "assert failed: dumpsys_data != nullptr");
 
   const std::string root_name = reflection_schema_.GetRootName();
   if (root_name.empty()) {

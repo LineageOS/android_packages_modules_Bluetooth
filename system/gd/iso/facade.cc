@@ -35,8 +35,8 @@ class IsoModuleFacadeService : public IsoModuleFacade::Service {
  public:
   IsoModuleFacadeService(IsoModule* iso_module, AclManager* acl_manager, ::bluetooth::os::Handler* iso_handler)
       : iso_module_(iso_module), acl_manager_(acl_manager), iso_handler_(iso_handler) {
-    ASSERT(iso_module_);
-    ASSERT(iso_handler_);
+    log::assert_that(iso_module_, "assert failed: iso_module_");
+    log::assert_that(iso_handler_, "assert failed: iso_handler_");
 
     iso_module_->GetIsoManager()->RegisterIsoEstablishedCallback(iso_handler_->Bind(
         [](::bluetooth::grpc::GrpcEventQueue<LeIsoEventsMsg>* le_iso_events_, uint16_t cis_connection_handle) {
@@ -177,14 +177,14 @@ class IsoModuleFacadeService : public IsoModuleFacade::Service {
   }
 
   void OnIsoPacketReceived(std::unique_ptr<hci::IsoView> iso_view) {
-    ASSERT(iso_view->IsValid());
+    log::assert_that(iso_view->IsValid(), "assert failed: iso_view->IsValid()");
 
     IsoPacket packet;
     packet.set_handle(iso_view->GetConnectionHandle());
 
     if (iso_view->GetTsFlag() == hci::TimeStampFlag::NOT_PRESENT) {
       hci::IsoWithoutTimestampView nts = hci::IsoWithoutTimestampView::Create(*iso_view);
-      ASSERT(nts.IsValid());
+      log::assert_that(nts.IsValid(), "assert failed: nts.IsValid()");
 
       auto data_vec = nts.GetPayload();
       std::string data = std::string(data_vec.begin(), data_vec.end());
@@ -192,7 +192,7 @@ class IsoModuleFacadeService : public IsoModuleFacade::Service {
       le_iso_data_.OnIncomingEvent(packet);
     } else {
       hci::IsoWithTimestampView tsv = hci::IsoWithTimestampView::Create(*iso_view);
-      ASSERT(tsv.IsValid());
+      log::assert_that(tsv.IsValid(), "assert failed: tsv.IsValid()");
 
       auto data_vec = tsv.GetPayload();
       std::string data = std::string(data_vec.begin(), data_vec.end());

@@ -66,7 +66,7 @@ uint32_t hfp_lc3_encode_frames(int16_t* input, uint8_t* output) {
   int rc = lc3_encode(hfp_lc3_encoder, LC3_PCM_FORMAT_S16, input, 1,
                       HFP_LC3_PKT_FRAME_LEN, output);
 
-  ASSERT(rc == 0);
+  log::assert_that(rc == 0, "assert failed: rc == 0");
 
   return HFP_LC3_PCM_BYTES;
 }

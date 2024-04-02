@@ -145,10 +145,3 @@ static_assert(LOG_TAG != nullptr, "LOG_TAG should never be NULL");
       LOG_ALWAYS_FATAL("assertion '" #condition "' failed"); \
     }                                                        \
   } while (false)
-
-#define ASSERT_LOG(condition, fmt, args...)                                 \
-  do {                                                                      \
-    if (!(condition)) {                                                     \
-      LOG_ALWAYS_FATAL("assertion '" #condition "' failed - " fmt, ##args); \
-    }                                                                       \
-  } while (false)

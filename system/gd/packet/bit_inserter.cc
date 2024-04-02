@@ -16,7 +16,8 @@
 
 #include "packet/bit_inserter.h"
 
-#include "os/log.h"
+#undef NDEBUG
+#include <cassert>
 
 namespace bluetooth {
 namespace packet {
@@ -24,7 +25,7 @@ namespace packet {
 BitInserter::BitInserter(std::vector<uint8_t>& vector) : ByteInserter(vector) {}
 
 BitInserter::~BitInserter() {
-  ASSERT(num_saved_bits_ == 0);
+  assert(num_saved_bits_ == 0);
 }
 
 void BitInserter::insert_bits(uint8_t byte, size_t num_bits) {

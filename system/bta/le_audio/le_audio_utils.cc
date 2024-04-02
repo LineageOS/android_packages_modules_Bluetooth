@@ -347,8 +347,8 @@ static void fillRemotePacsCapabitiliesToBtLeAudioCodecConfig(
         "parameters.");
     return;
   }
-  ASSERT_LOG(!record.codec_spec_caps.IsEmpty(),
-             "Codec specific capabilities are not parsed approprietly.");
+  log::assert_that(!record.codec_spec_caps.IsEmpty(),
+                   "Codec specific capabilities are not parsed approprietly.");
 
   const struct types::LeAudioCoreCodecCapabilities capa =
       record.codec_spec_caps.GetAsCoreCodecCapabilities();

@@ -65,8 +65,7 @@ void headless_add_callback(const std::string interface_name,
 void headless_remove_callback(const std::string interface_name) {
   if (interface_api_callback_map_.find(interface_name) ==
       interface_api_callback_map_.end()) {
-    ASSERT_LOG(false, "No callbacks registered for interface:%s",
-               interface_name.c_str());
+    log::fatal("No callbacks registered for interface:{}", interface_name);
   }
   interface_api_callback_map_.erase(interface_name);
 }

@@ -22,7 +22,7 @@ namespace l2cap {
 namespace le {
 
 void FixedChannelService::Unregister(OnUnregisteredCallback on_unregistered, os::Handler* on_unregistered_handler) {
-  ASSERT_LOG(manager_ != nullptr, "this service is invalid");
+  log::assert_that(manager_ != nullptr, "this service is invalid");
   l2cap_layer_handler_->Post(common::BindOnce(&internal::FixedChannelServiceManagerImpl::Unregister,
                                               common::Unretained(manager_), cid_, std::move(on_unregistered),
                                               on_unregistered_handler));

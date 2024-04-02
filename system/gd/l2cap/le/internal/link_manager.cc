@@ -108,9 +108,9 @@ void LinkManager::OnLeConnectSuccess(hci::AddressWithType connecting_address_wit
   // Same link should not be connected twice
   hci::AddressWithType connected_address_with_type = acl_connection->GetRemoteAddress();
   uint16_t handle = acl_connection->GetHandle();
-  ASSERT_LOG(
+  log::assert_that(
       GetLink(connected_address_with_type) == nullptr,
-      "%s is connected twice without disconnection",
+      "{} is connected twice without disconnection",
       ADDRESS_TO_LOGGABLE_CSTR(acl_connection->GetRemoteAddress()));
   links_.try_emplace(connected_address_with_type, l2cap_handler_, std::move(acl_connection), parameter_provider_,
                      dynamic_channel_service_manager_, fixed_channel_service_manager_, this);
@@ -153,9 +153,9 @@ void LinkManager::OnLeConnectFail(hci::AddressWithType address_with_type, hci::E
 
 void LinkManager::OnDisconnect(bluetooth::hci::AddressWithType address_with_type) {
   auto* link = GetLink(address_with_type);
-  ASSERT_LOG(
+  log::assert_that(
       link != nullptr,
-      "Device %s is disconnected but not in local database",
+      "Device {} is disconnected but not in local database",
       ADDRESS_TO_LOGGABLE_CSTR(address_with_type));
   if (links_with_pending_packets_.count(address_with_type) != 0) {
     disconnected_links_.emplace(address_with_type);

@@ -124,7 +124,9 @@ class NeighborFacadeService : public NeighborFacade::Service {
       const RemoteNameRequestMsg* request,
       ::google::protobuf::Empty* /* response */) override {
     hci::Address remote;
-    ASSERT(hci::Address::FromString(request->address(), remote));
+    log::assert_that(
+        hci::Address::FromString(request->address(), remote),
+        "assert failed: hci::Address::FromString(request->address(), remote)");
     hci::PageScanRepetitionMode mode;
     switch (request->page_scan_repetition_mode()) {
       case 0:

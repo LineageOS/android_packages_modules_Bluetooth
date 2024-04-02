@@ -260,8 +260,10 @@ class ClassicAclConnectionTest : public ::testing::Test {
   }
 
   void sync_handler() {
-    ASSERT(thread_ != nullptr);
-    ASSERT(thread_->GetReactor()->WaitForIdle(2s));
+    log::assert_that(thread_ != nullptr, "assert failed: thread_ != nullptr");
+    log::assert_that(
+        thread_->GetReactor()->WaitForIdle(2s),
+        "assert failed: thread_->GetReactor()->WaitForIdle(2s)");
   }
 
   Address address_;

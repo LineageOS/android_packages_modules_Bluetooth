@@ -41,8 +41,8 @@ template <typename FixedChannelImplType, typename LinkType>
 class FixedChannelAllocator {
  public:
   FixedChannelAllocator(LinkType* link, os::Handler* l2cap_handler) : link_(link), l2cap_handler_(l2cap_handler) {
-    ASSERT(link_ != nullptr);
-    ASSERT(l2cap_handler_ != nullptr);
+    log::assert_that(link_ != nullptr, "assert failed: link_ != nullptr");
+    log::assert_that(l2cap_handler_ != nullptr, "assert failed: l2cap_handler_ != nullptr");
   }
 
   virtual ~FixedChannelAllocator() = default;
@@ -50,26 +50,31 @@ class FixedChannelAllocator {
   // Allocates a channel. If cid is used, return nullptr. NOTE: The returned BaseFixedChannelImpl object is still
   // owned by the channel allocator, NOT the client.
   virtual std::shared_ptr<FixedChannelImplType> AllocateChannel(Cid cid) {
-    ASSERT_LOG(!IsChannelAllocated(cid),
-               "Cid 0x%x for link %s is already in use",
-               cid, ToLoggableStr(*link_).c_str());
-
-    ASSERT_LOG(cid >= kFirstFixedChannel && cid <= kLastFixedChannel, "Cid %d out of bound", cid);
-    auto elem = channels_.try_emplace(cid, std::make_shared<FixedChannelImplType>(cid, link_, l2cap_handler_));
-    ASSERT_LOG(
-        elem.second,
-        "Failed to create channel for cid 0x%x link %s",
+    log::assert_that(
+        !IsChannelAllocated(cid),
+        "Cid 0x{:x} for link {} is already in use",
         cid,
-        ToLoggableStr(*link_).c_str());  // TODO RENAME ADDRESS_TO_LOGGABLE_CSTR
-    ASSERT(elem.first->second != nullptr);
+        ToLoggableStr(*link_));
+
+    log::assert_that(
+        cid >= kFirstFixedChannel && cid <= kLastFixedChannel, "Cid {} out of bound", cid);
+    auto elem = channels_.try_emplace(cid, std::make_shared<FixedChannelImplType>(cid, link_, l2cap_handler_));
+    log::assert_that(
+        elem.second,
+        "Failed to create channel for cid 0x{:x} link {}",
+        cid,
+        ToLoggableStr(*link_));  // TODO RENAME ADDRESS_TO_LOGGABLE_CSTR
+    log::assert_that(elem.first->second != nullptr, "assert failed: elem.first->second != nullptr");
     return elem.first->second;
   }
 
   // Frees a channel. If cid doesn't exist, it will crash
   virtual void FreeChannel(Cid cid) {
-    ASSERT_LOG(IsChannelAllocated(cid),
-               "Channel is not in use: cid %d, link %s",
-               cid, ToLoggableStr(*link_).c_str());
+    log::assert_that(
+        IsChannelAllocated(cid),
+        "Channel is not in use: cid {}, link {}",
+        cid,
+        ToLoggableStr(*link_));
 
     channels_.erase(cid);
   }
@@ -79,9 +84,11 @@ class FixedChannelAllocator {
   }
 
   virtual std::shared_ptr<FixedChannelImplType> FindChannel(Cid cid) {
-    ASSERT_LOG(IsChannelAllocated(cid),
-               "Channel is not in use: cid %d, link %s",
-               cid, ToLoggableStr(*link_).c_str());
+    log::assert_that(
+        IsChannelAllocated(cid),
+        "Channel is not in use: cid {}, link {}",
+        cid,
+        ToLoggableStr(*link_));
 
     return channels_.find(cid)->second;
   }

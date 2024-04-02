@@ -66,41 +66,53 @@ void neighbor::PageModule::impl::OnCommandComplete(hci::CommandCompleteView view
   switch (view.GetCommandOpCode()) {
     case hci::OpCode::WRITE_PAGE_SCAN_ACTIVITY: {
       auto packet = hci::WritePageScanActivityCompleteView::Create(view);
-      ASSERT(packet.IsValid());
-      ASSERT(packet.GetStatus() == hci::ErrorCode::SUCCESS);
+      log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
+      log::assert_that(
+          packet.GetStatus() == hci::ErrorCode::SUCCESS,
+          "assert failed: packet.GetStatus() == hci::ErrorCode::SUCCESS");
     } break;
 
     case hci::OpCode::READ_PAGE_SCAN_ACTIVITY: {
       auto packet = hci::ReadPageScanActivityCompleteView::Create(view);
-      ASSERT(packet.IsValid());
-      ASSERT(packet.GetStatus() == hci::ErrorCode::SUCCESS);
+      log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
+      log::assert_that(
+          packet.GetStatus() == hci::ErrorCode::SUCCESS,
+          "assert failed: packet.GetStatus() == hci::ErrorCode::SUCCESS");
       scan_parameters_.interval = packet.GetPageScanInterval();
       scan_parameters_.window = packet.GetPageScanWindow();
     } break;
 
     case hci::OpCode::WRITE_PAGE_SCAN_TYPE: {
       auto packet = hci::WritePageScanTypeCompleteView::Create(view);
-      ASSERT(packet.IsValid());
-      ASSERT(packet.GetStatus() == hci::ErrorCode::SUCCESS);
+      log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
+      log::assert_that(
+          packet.GetStatus() == hci::ErrorCode::SUCCESS,
+          "assert failed: packet.GetStatus() == hci::ErrorCode::SUCCESS");
     } break;
 
     case hci::OpCode::READ_PAGE_SCAN_TYPE: {
       auto packet = hci::ReadPageScanTypeCompleteView::Create(view);
-      ASSERT(packet.IsValid());
-      ASSERT(packet.GetStatus() == hci::ErrorCode::SUCCESS);
+      log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
+      log::assert_that(
+          packet.GetStatus() == hci::ErrorCode::SUCCESS,
+          "assert failed: packet.GetStatus() == hci::ErrorCode::SUCCESS");
       scan_type_ = packet.GetPageScanType();
     } break;
 
     case hci::OpCode::WRITE_PAGE_TIMEOUT: {
       auto packet = hci::WritePageTimeoutCompleteView::Create(view);
-      ASSERT(packet.IsValid());
-      ASSERT(packet.GetStatus() == hci::ErrorCode::SUCCESS);
+      log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
+      log::assert_that(
+          packet.GetStatus() == hci::ErrorCode::SUCCESS,
+          "assert failed: packet.GetStatus() == hci::ErrorCode::SUCCESS");
     } break;
 
     case hci::OpCode::READ_PAGE_TIMEOUT: {
       auto packet = hci::ReadPageTimeoutCompleteView::Create(view);
-      ASSERT(packet.IsValid());
-      ASSERT(packet.GetStatus() == hci::ErrorCode::SUCCESS);
+      log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
+      log::assert_that(
+          packet.GetStatus() == hci::ErrorCode::SUCCESS,
+          "assert failed: packet.GetStatus() == hci::ErrorCode::SUCCESS");
       timeout_ = packet.GetPageTimeout();
     } break;
 

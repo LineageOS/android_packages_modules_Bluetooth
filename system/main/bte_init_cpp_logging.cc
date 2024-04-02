@@ -28,7 +28,8 @@
 
 static bool MessageHandler(int severity, const char* file, int line,
                            size_t message_start, const std::string& message) {
-  ASSERT(message_start <= message.size());
+  bluetooth::log::assert_that(message_start <= message.size(),
+                              "assert failed: message_start <= message.size()");
 
   const auto str = base::StringPrintf("%s:%d - %s", file, line,
                                       message.substr(message_start).c_str());

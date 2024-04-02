@@ -369,7 +369,7 @@ static bool force_disconnect_all_acl_connections() {
 }
 
 static void bta_dm_wait_for_acl_to_drain_cback(void* data) {
-  ASSERT(data != nullptr);
+  log::assert_that(data != nullptr, "assert failed: data != nullptr");
   const WaitForAllAclConnectionsToDrain* pass =
       WaitForAllAclConnectionsToDrain::FromAlarmCallbackData(data);
 
@@ -937,10 +937,10 @@ static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, tBTA_SYS_ID id,
         if (((p_bta_dm_rm_cfg[j].app_id == app_id) ||
              (p_bta_dm_rm_cfg[j].app_id == BTA_ALL_APP_ID)) &&
             (p_bta_dm_rm_cfg[j].id == id)) {
-          ASSERT_LOG(p_bta_dm_rm_cfg[j].cfg <= BTA_PERIPHERAL_ROLE_ONLY,
-                     "Passing illegal preferred role:0x%02x [0x%02x<=>0x%02x]",
-                     p_bta_dm_rm_cfg[j].cfg, BTA_ANY_ROLE,
-                     BTA_PERIPHERAL_ROLE_ONLY);
+          log::assert_that(
+              p_bta_dm_rm_cfg[j].cfg <= BTA_PERIPHERAL_ROLE_ONLY,
+              "Passing illegal preferred role:0x{:02x} [0x{:02x}<=>0x{:02x}]",
+              p_bta_dm_rm_cfg[j].cfg, BTA_ANY_ROLE, BTA_PERIPHERAL_ROLE_ONLY);
           role = static_cast<tBTA_PREF_ROLES>(p_bta_dm_rm_cfg[j].cfg);
           if (role > p_dev->pref_role) p_dev->pref_role = role;
           break;
@@ -1094,7 +1094,7 @@ static void bta_dm_set_eir(char* local_name) {
 
   /* Allocate a buffer to hold HCI command */
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(BTM_CMD_BUF_SIZE);
-  ASSERT(p_buf != nullptr);
+  log::assert_that(p_buf != nullptr, "assert failed: p_buf != nullptr");
   p = (uint8_t*)p_buf + BTM_HCI_EIR_OFFSET;
 
   memset(p, 0x00, HCI_EXT_INQ_RESPONSE_LEN);

@@ -28,34 +28,34 @@ namespace hci {
 
 void log_hci_event(
     std::unique_ptr<CommandView>& command_view, EventView event_view, storage::StorageModule* storage_module) {
-  ASSERT(event_view.IsValid());
+  log::assert_that(event_view.IsValid(), "assert failed: event_view.IsValid()");
   EventCode event_code = event_view.GetEventCode();
   switch (event_code) {
     case EventCode::COMMAND_COMPLETE: {
       CommandCompleteView complete_view = CommandCompleteView::Create(event_view);
-      ASSERT(complete_view.IsValid());
+      log::assert_that(complete_view.IsValid(), "assert failed: complete_view.IsValid()");
       if (complete_view.GetCommandOpCode() == OpCode::NONE) {
         return;
       }
-      ASSERT(command_view->IsValid());
+      log::assert_that(command_view->IsValid(), "assert failed: command_view->IsValid()");
       log_link_layer_connection_command_complete(event_view, command_view);
       log_classic_pairing_command_complete(event_view, command_view);
       break;
     }
     case EventCode::COMMAND_STATUS: {
       CommandStatusView response_view = CommandStatusView::Create(event_view);
-      ASSERT(response_view.IsValid());
+      log::assert_that(response_view.IsValid(), "assert failed: response_view.IsValid()");
       if (response_view.GetCommandOpCode() == OpCode::NONE) {
         return;
       }
-      ASSERT(command_view->IsValid());
+      log::assert_that(command_view->IsValid(), "assert failed: command_view->IsValid()");
       log_link_layer_connection_command_status(command_view, response_view.GetStatus());
       log_classic_pairing_command_status(command_view, response_view.GetStatus());
       break;
     }
     case EventCode::LE_META_EVENT: {
       LeMetaEventView le_meta_event_view = LeMetaEventView::Create(event_view);
-      ASSERT(le_meta_event_view.IsValid());
+      log::assert_that(le_meta_event_view.IsValid(), "assert failed: le_meta_event_view.IsValid()");
       log_link_layer_connection_event_le_meta(le_meta_event_view);
       break;
     }
@@ -67,7 +67,7 @@ void log_hci_event(
 
 void log_link_layer_connection_command(std::unique_ptr<CommandView>& command_view) {
   // get op_code
-  ASSERT(command_view->IsValid());
+  log::assert_that(command_view->IsValid(), "assert failed: command_view->IsValid()");
   OpCode op_code = command_view->GetOpCode();
 
   // init parameters to log
@@ -83,11 +83,14 @@ void log_link_layer_connection_command(std::unique_ptr<CommandView>& command_vie
   // get ConnectionManagementCommandView
   ConnectionManagementCommandView connection_management_command_view =
       ConnectionManagementCommandView::Create(AclCommandView::Create(*command_view));
-  ASSERT(connection_management_command_view.IsValid());
+  log::assert_that(
+      connection_management_command_view.IsValid(),
+      "assert failed: connection_management_command_view.IsValid()");
   switch (op_code) {
     case OpCode::CREATE_CONNECTION: {
       auto create_connection_view = CreateConnectionView::Create(std::move(connection_management_command_view));
-      ASSERT(create_connection_view.IsValid());
+      log::assert_that(
+          create_connection_view.IsValid(), "assert failed: create_connection_view.IsValid()");
       address = create_connection_view.GetBdAddr();
       direction = android::bluetooth::DIRECTION_OUTGOING;
       link_type = android::bluetooth::LINK_TYPE_ACL;
@@ -96,7 +99,9 @@ void log_link_layer_connection_command(std::unique_ptr<CommandView>& command_vie
     case OpCode::CREATE_CONNECTION_CANCEL: {
       auto create_connection_cancel_view =
           CreateConnectionCancelView::Create(std::move(connection_management_command_view));
-      ASSERT(create_connection_cancel_view.IsValid());
+      log::assert_that(
+          create_connection_cancel_view.IsValid(),
+          "assert failed: create_connection_cancel_view.IsValid()");
       address = create_connection_cancel_view.GetBdAddr();
       direction = android::bluetooth::DIRECTION_OUTGOING;
       link_type = android::bluetooth::LINK_TYPE_ACL;
@@ -104,7 +109,7 @@ void log_link_layer_connection_command(std::unique_ptr<CommandView>& command_vie
     }
     case OpCode::DISCONNECT: {
       auto disconnect_view = DisconnectView::Create(std::move(connection_management_command_view));
-      ASSERT(disconnect_view.IsValid());
+      log::assert_that(disconnect_view.IsValid(), "assert failed: disconnect_view.IsValid()");
       connection_handle = disconnect_view.GetConnectionHandle();
       reason = static_cast<uint16_t>(disconnect_view.GetReason());
       break;
@@ -112,7 +117,9 @@ void log_link_layer_connection_command(std::unique_ptr<CommandView>& command_vie
     case OpCode::SETUP_SYNCHRONOUS_CONNECTION: {
       auto setup_synchronous_connection_view = SetupSynchronousConnectionView::Create(
           ScoConnectionCommandView::Create(std::move(connection_management_command_view)));
-      ASSERT(setup_synchronous_connection_view.IsValid());
+      log::assert_that(
+          setup_synchronous_connection_view.IsValid(),
+          "assert failed: setup_synchronous_connection_view.IsValid()");
       connection_handle = setup_synchronous_connection_view.GetConnectionHandle();
       direction = android::bluetooth::DIRECTION_OUTGOING;
       break;
@@ -120,7 +127,9 @@ void log_link_layer_connection_command(std::unique_ptr<CommandView>& command_vie
     case OpCode::ENHANCED_SETUP_SYNCHRONOUS_CONNECTION: {
       auto enhanced_setup_synchronous_connection_view = EnhancedSetupSynchronousConnectionView::Create(
           ScoConnectionCommandView::Create(std::move(connection_management_command_view)));
-      ASSERT(enhanced_setup_synchronous_connection_view.IsValid());
+      log::assert_that(
+          enhanced_setup_synchronous_connection_view.IsValid(),
+          "assert failed: enhanced_setup_synchronous_connection_view.IsValid()");
       connection_handle = enhanced_setup_synchronous_connection_view.GetConnectionHandle();
       direction = android::bluetooth::DIRECTION_OUTGOING;
       break;
@@ -128,7 +137,9 @@ void log_link_layer_connection_command(std::unique_ptr<CommandView>& command_vie
     case OpCode::ACCEPT_CONNECTION_REQUEST: {
       auto accept_connection_request_view =
           AcceptConnectionRequestView::Create(std::move(connection_management_command_view));
-      ASSERT(accept_connection_request_view.IsValid());
+      log::assert_that(
+          accept_connection_request_view.IsValid(),
+          "assert failed: accept_connection_request_view.IsValid()");
       address = accept_connection_request_view.GetBdAddr();
       direction = android::bluetooth::DIRECTION_INCOMING;
       break;
@@ -136,7 +147,9 @@ void log_link_layer_connection_command(std::unique_ptr<CommandView>& command_vie
     case OpCode::ACCEPT_SYNCHRONOUS_CONNECTION: {
       auto accept_synchronous_connection_view = AcceptSynchronousConnectionView::Create(
           ScoConnectionCommandView::Create(std::move(connection_management_command_view)));
-      ASSERT(accept_synchronous_connection_view.IsValid());
+      log::assert_that(
+          accept_synchronous_connection_view.IsValid(),
+          "assert failed: accept_synchronous_connection_view.IsValid()");
       address = accept_synchronous_connection_view.GetBdAddr();
       direction = android::bluetooth::DIRECTION_INCOMING;
       break;
@@ -144,7 +157,9 @@ void log_link_layer_connection_command(std::unique_ptr<CommandView>& command_vie
     case OpCode::ENHANCED_ACCEPT_SYNCHRONOUS_CONNECTION: {
       auto enhanced_accept_synchronous_connection_view = EnhancedAcceptSynchronousConnectionView::Create(
           ScoConnectionCommandView::Create(std::move(connection_management_command_view)));
-      ASSERT(enhanced_accept_synchronous_connection_view.IsValid());
+      log::assert_that(
+          enhanced_accept_synchronous_connection_view.IsValid(),
+          "assert failed: enhanced_accept_synchronous_connection_view.IsValid()");
       address = enhanced_accept_synchronous_connection_view.GetBdAddr();
       direction = android::bluetooth::DIRECTION_INCOMING;
       break;
@@ -152,7 +167,9 @@ void log_link_layer_connection_command(std::unique_ptr<CommandView>& command_vie
     case OpCode::REJECT_CONNECTION_REQUEST: {
       auto reject_connection_request_view =
           RejectConnectionRequestView::Create(std::move(connection_management_command_view));
-      ASSERT(reject_connection_request_view.IsValid());
+      log::assert_that(
+          reject_connection_request_view.IsValid(),
+          "assert failed: reject_connection_request_view.IsValid()");
       address = reject_connection_request_view.GetBdAddr();
       reason = static_cast<uint16_t>(reject_connection_request_view.GetReason());
       direction = android::bluetooth::DIRECTION_INCOMING;
@@ -161,7 +178,9 @@ void log_link_layer_connection_command(std::unique_ptr<CommandView>& command_vie
     case OpCode::REJECT_SYNCHRONOUS_CONNECTION: {
       auto reject_synchronous_connection_view = RejectSynchronousConnectionView::Create(
           ScoConnectionCommandView::Create(std::move(connection_management_command_view)));
-      ASSERT(reject_synchronous_connection_view.IsValid());
+      log::assert_that(
+          reject_synchronous_connection_view.IsValid(),
+          "assert failed: reject_synchronous_connection_view.IsValid()");
       address = reject_synchronous_connection_view.GetBdAddr();
       reason = static_cast<uint16_t>(reject_synchronous_connection_view.GetReason());
       direction = android::bluetooth::DIRECTION_INCOMING;
@@ -170,7 +189,9 @@ void log_link_layer_connection_command(std::unique_ptr<CommandView>& command_vie
     case OpCode::LE_CREATE_CONNECTION: {
       auto le_create_connection_view = LeCreateConnectionView::Create(
           LeConnectionManagementCommandView::Create(std::move(connection_management_command_view)));
-      ASSERT(le_create_connection_view.IsValid());
+      log::assert_that(
+          le_create_connection_view.IsValid(),
+          "assert failed: le_create_connection_view.IsValid()");
       address = le_create_connection_view.GetPeerAddress();
       direction = android::bluetooth::DIRECTION_INCOMING;
       link_type = android::bluetooth::LINK_TYPE_ACL;
@@ -179,7 +200,9 @@ void log_link_layer_connection_command(std::unique_ptr<CommandView>& command_vie
     case OpCode::LE_EXTENDED_CREATE_CONNECTION: {
       auto le_extended_create_connection_view = LeExtendedCreateConnectionView::Create(
           LeConnectionManagementCommandView::Create(std::move(connection_management_command_view)));
-      ASSERT(le_extended_create_connection_view.IsValid());
+      log::assert_that(
+          le_extended_create_connection_view.IsValid(),
+          "assert failed: le_extended_create_connection_view.IsValid()");
       address = le_extended_create_connection_view.GetPeerAddress();
       direction = android::bluetooth::DIRECTION_OUTGOING;
       link_type = android::bluetooth::LINK_TYPE_ACL;
@@ -188,7 +211,9 @@ void log_link_layer_connection_command(std::unique_ptr<CommandView>& command_vie
     case OpCode::LE_CREATE_CONNECTION_CANCEL: {
       auto le_create_connection_cancel_view = LeCreateConnectionCancelView::Create(
           LeConnectionManagementCommandView::Create(std::move(connection_management_command_view)));
-      ASSERT(le_create_connection_cancel_view.IsValid());
+      log::assert_that(
+          le_create_connection_cancel_view.IsValid(),
+          "assert failed: le_create_connection_cancel_view.IsValid()");
       direction = android::bluetooth::DIRECTION_OUTGOING;
       link_type = android::bluetooth::LINK_TYPE_ACL;
       break;
@@ -196,7 +221,9 @@ void log_link_layer_connection_command(std::unique_ptr<CommandView>& command_vie
     case OpCode::LE_CLEAR_FILTER_ACCEPT_LIST: {
       auto le_clear_filter_accept_list_view = LeClearFilterAcceptListView::Create(
           LeConnectionManagementCommandView::Create(std::move(connection_management_command_view)));
-      ASSERT(le_clear_filter_accept_list_view.IsValid());
+      log::assert_that(
+          le_clear_filter_accept_list_view.IsValid(),
+          "assert failed: le_clear_filter_accept_list_view.IsValid()");
       direction = android::bluetooth::DIRECTION_INCOMING;
       link_type = android::bluetooth::LINK_TYPE_ACL;
       break;
@@ -204,7 +231,9 @@ void log_link_layer_connection_command(std::unique_ptr<CommandView>& command_vie
     case OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST: {
       auto le_add_device_to_accept_list_view = LeAddDeviceToFilterAcceptListView::Create(
           LeConnectionManagementCommandView::Create(std::move(connection_management_command_view)));
-      ASSERT(le_add_device_to_accept_list_view.IsValid());
+      log::assert_that(
+          le_add_device_to_accept_list_view.IsValid(),
+          "assert failed: le_add_device_to_accept_list_view.IsValid()");
       address = le_add_device_to_accept_list_view.GetAddress();
       direction = android::bluetooth::DIRECTION_INCOMING;
       link_type = android::bluetooth::LINK_TYPE_ACL;
@@ -213,7 +242,9 @@ void log_link_layer_connection_command(std::unique_ptr<CommandView>& command_vie
     case OpCode::LE_REMOVE_DEVICE_FROM_FILTER_ACCEPT_LIST: {
       auto le_remove_device_from_accept_list_view = LeRemoveDeviceFromFilterAcceptListView::Create(
           LeConnectionManagementCommandView::Create(std::move(connection_management_command_view)));
-      ASSERT(le_remove_device_from_accept_list_view.IsValid());
+      log::assert_that(
+          le_remove_device_from_accept_list_view.IsValid(),
+          "assert failed: le_remove_device_from_accept_list_view.IsValid()");
       address = le_remove_device_from_accept_list_view.GetAddress();
       direction = android::bluetooth::DIRECTION_INCOMING;
       link_type = android::bluetooth::LINK_TYPE_ACL;
@@ -236,7 +267,7 @@ void log_link_layer_connection_command(std::unique_ptr<CommandView>& command_vie
 
 void log_link_layer_connection_command_status(std::unique_ptr<CommandView>& command_view, ErrorCode status) {
   // get op_code
-  ASSERT(command_view->IsValid());
+  log::assert_that(command_view->IsValid(), "assert failed: command_view->IsValid()");
   OpCode op_code = command_view->GetOpCode();
 
   // init parameters to log
@@ -251,11 +282,14 @@ void log_link_layer_connection_command_status(std::unique_ptr<CommandView>& comm
   // get ConnectionManagementCommandView
   ConnectionManagementCommandView connection_management_command_view =
       ConnectionManagementCommandView::Create(AclCommandView::Create(*command_view));
-  ASSERT(connection_management_command_view.IsValid());
+  log::assert_that(
+      connection_management_command_view.IsValid(),
+      "assert failed: connection_management_command_view.IsValid()");
   switch (op_code) {
     case OpCode::CREATE_CONNECTION: {
       auto create_connection_view = CreateConnectionView::Create(std::move(connection_management_command_view));
-      ASSERT(create_connection_view.IsValid());
+      log::assert_that(
+          create_connection_view.IsValid(), "assert failed: create_connection_view.IsValid()");
       address = create_connection_view.GetBdAddr();
       direction = android::bluetooth::DIRECTION_OUTGOING;
       link_type = android::bluetooth::LINK_TYPE_ACL;
@@ -264,7 +298,9 @@ void log_link_layer_connection_command_status(std::unique_ptr<CommandView>& comm
     case OpCode::CREATE_CONNECTION_CANCEL: {
       auto create_connection_cancel_view =
           CreateConnectionCancelView::Create(std::move(connection_management_command_view));
-      ASSERT(create_connection_cancel_view.IsValid());
+      log::assert_that(
+          create_connection_cancel_view.IsValid(),
+          "assert failed: create_connection_cancel_view.IsValid()");
       address = create_connection_cancel_view.GetBdAddr();
       direction = android::bluetooth::DIRECTION_OUTGOING;
       link_type = android::bluetooth::LINK_TYPE_ACL;
@@ -272,7 +308,7 @@ void log_link_layer_connection_command_status(std::unique_ptr<CommandView>& comm
     }
     case OpCode::DISCONNECT: {
       auto disconnect_view = DisconnectView::Create(std::move(connection_management_command_view));
-      ASSERT(disconnect_view.IsValid());
+      log::assert_that(disconnect_view.IsValid(), "assert failed: disconnect_view.IsValid()");
       connection_handle = disconnect_view.GetConnectionHandle();
       reason = static_cast<uint16_t>(disconnect_view.GetReason());
       break;
@@ -280,7 +316,9 @@ void log_link_layer_connection_command_status(std::unique_ptr<CommandView>& comm
     case OpCode::SETUP_SYNCHRONOUS_CONNECTION: {
       auto setup_synchronous_connection_view = SetupSynchronousConnectionView::Create(
           ScoConnectionCommandView::Create(std::move(connection_management_command_view)));
-      ASSERT(setup_synchronous_connection_view.IsValid());
+      log::assert_that(
+          setup_synchronous_connection_view.IsValid(),
+          "assert failed: setup_synchronous_connection_view.IsValid()");
       connection_handle = setup_synchronous_connection_view.GetConnectionHandle();
       direction = android::bluetooth::DIRECTION_OUTGOING;
       break;
@@ -288,7 +326,9 @@ void log_link_layer_connection_command_status(std::unique_ptr<CommandView>& comm
     case OpCode::ENHANCED_SETUP_SYNCHRONOUS_CONNECTION: {
       auto enhanced_setup_synchronous_connection_view = EnhancedSetupSynchronousConnectionView::Create(
           ScoConnectionCommandView::Create(std::move(connection_management_command_view)));
-      ASSERT(enhanced_setup_synchronous_connection_view.IsValid());
+      log::assert_that(
+          enhanced_setup_synchronous_connection_view.IsValid(),
+          "assert failed: enhanced_setup_synchronous_connection_view.IsValid()");
       connection_handle = enhanced_setup_synchronous_connection_view.GetConnectionHandle();
       direction = android::bluetooth::DIRECTION_OUTGOING;
       break;
@@ -296,7 +336,9 @@ void log_link_layer_connection_command_status(std::unique_ptr<CommandView>& comm
     case OpCode::ACCEPT_CONNECTION_REQUEST: {
       auto accept_connection_request_view =
           AcceptConnectionRequestView::Create(std::move(connection_management_command_view));
-      ASSERT(accept_connection_request_view.IsValid());
+      log::assert_that(
+          accept_connection_request_view.IsValid(),
+          "assert failed: accept_connection_request_view.IsValid()");
       address = accept_connection_request_view.GetBdAddr();
       direction = android::bluetooth::DIRECTION_INCOMING;
       break;
@@ -304,7 +346,9 @@ void log_link_layer_connection_command_status(std::unique_ptr<CommandView>& comm
     case OpCode::ACCEPT_SYNCHRONOUS_CONNECTION: {
       auto accept_synchronous_connection_view = AcceptSynchronousConnectionView::Create(
           ScoConnectionCommandView::Create(std::move(connection_management_command_view)));
-      ASSERT(accept_synchronous_connection_view.IsValid());
+      log::assert_that(
+          accept_synchronous_connection_view.IsValid(),
+          "assert failed: accept_synchronous_connection_view.IsValid()");
       address = accept_synchronous_connection_view.GetBdAddr();
       direction = android::bluetooth::DIRECTION_INCOMING;
       break;
@@ -312,7 +356,9 @@ void log_link_layer_connection_command_status(std::unique_ptr<CommandView>& comm
     case OpCode::ENHANCED_ACCEPT_SYNCHRONOUS_CONNECTION: {
       auto enhanced_accept_synchronous_connection_view = EnhancedAcceptSynchronousConnectionView::Create(
           ScoConnectionCommandView::Create(std::move(connection_management_command_view)));
-      ASSERT(enhanced_accept_synchronous_connection_view.IsValid());
+      log::assert_that(
+          enhanced_accept_synchronous_connection_view.IsValid(),
+          "assert failed: enhanced_accept_synchronous_connection_view.IsValid()");
       address = enhanced_accept_synchronous_connection_view.GetBdAddr();
       direction = android::bluetooth::DIRECTION_INCOMING;
       break;
@@ -320,7 +366,9 @@ void log_link_layer_connection_command_status(std::unique_ptr<CommandView>& comm
     case OpCode::REJECT_CONNECTION_REQUEST: {
       auto reject_connection_request_view =
           RejectConnectionRequestView::Create(std::move(connection_management_command_view));
-      ASSERT(reject_connection_request_view.IsValid());
+      log::assert_that(
+          reject_connection_request_view.IsValid(),
+          "assert failed: reject_connection_request_view.IsValid()");
       address = reject_connection_request_view.GetBdAddr();
       reason = static_cast<uint16_t>(reject_connection_request_view.GetReason());
       direction = android::bluetooth::DIRECTION_INCOMING;
@@ -329,7 +377,9 @@ void log_link_layer_connection_command_status(std::unique_ptr<CommandView>& comm
     case OpCode::REJECT_SYNCHRONOUS_CONNECTION: {
       auto reject_synchronous_connection_view = RejectSynchronousConnectionView::Create(
           ScoConnectionCommandView::Create(std::move(connection_management_command_view)));
-      ASSERT(reject_synchronous_connection_view.IsValid());
+      log::assert_that(
+          reject_synchronous_connection_view.IsValid(),
+          "assert failed: reject_synchronous_connection_view.IsValid()");
       address = reject_synchronous_connection_view.GetBdAddr();
       reason = static_cast<uint16_t>(reject_synchronous_connection_view.GetReason());
       direction = android::bluetooth::DIRECTION_INCOMING;
@@ -338,7 +388,9 @@ void log_link_layer_connection_command_status(std::unique_ptr<CommandView>& comm
     case OpCode::LE_CREATE_CONNECTION: {
       auto le_create_connection_view = LeCreateConnectionView::Create(
           LeConnectionManagementCommandView::Create(std::move(connection_management_command_view)));
-      ASSERT(le_create_connection_view.IsValid());
+      log::assert_that(
+          le_create_connection_view.IsValid(),
+          "assert failed: le_create_connection_view.IsValid()");
       uint8_t initiator_filter_policy = static_cast<uint8_t>(le_create_connection_view.GetInitiatorFilterPolicy());
       if (initiator_filter_policy != 0x00 && status == ErrorCode::SUCCESS) {
         return;
@@ -351,7 +403,9 @@ void log_link_layer_connection_command_status(std::unique_ptr<CommandView>& comm
     case OpCode::LE_EXTENDED_CREATE_CONNECTION: {
       auto le_extended_create_connection_view = LeExtendedCreateConnectionView::Create(
           LeConnectionManagementCommandView::Create(std::move(connection_management_command_view)));
-      ASSERT(le_extended_create_connection_view.IsValid());
+      log::assert_that(
+          le_extended_create_connection_view.IsValid(),
+          "assert failed: le_extended_create_connection_view.IsValid()");
       uint8_t initiator_filter_policy =
           static_cast<uint8_t>(le_extended_create_connection_view.GetInitiatorFilterPolicy());
       if (initiator_filter_policy != 0x00 && status == ErrorCode::SUCCESS) {
@@ -365,7 +419,9 @@ void log_link_layer_connection_command_status(std::unique_ptr<CommandView>& comm
     case OpCode::LE_CREATE_CONNECTION_CANCEL: {
       auto le_create_connection_cancel_view = LeCreateConnectionCancelView::Create(
           LeConnectionManagementCommandView::Create(std::move(connection_management_command_view)));
-      ASSERT(le_create_connection_cancel_view.IsValid());
+      log::assert_that(
+          le_create_connection_cancel_view.IsValid(),
+          "assert failed: le_create_connection_cancel_view.IsValid()");
       if (status == ErrorCode::SUCCESS) {
         return;
       }
@@ -376,7 +432,9 @@ void log_link_layer_connection_command_status(std::unique_ptr<CommandView>& comm
     case OpCode::LE_CLEAR_FILTER_ACCEPT_LIST: {
       auto le_clear_filter_accept_list_view = LeClearFilterAcceptListView::Create(
           LeConnectionManagementCommandView::Create(std::move(connection_management_command_view)));
-      ASSERT(le_clear_filter_accept_list_view.IsValid());
+      log::assert_that(
+          le_clear_filter_accept_list_view.IsValid(),
+          "assert failed: le_clear_filter_accept_list_view.IsValid()");
       direction = android::bluetooth::DIRECTION_INCOMING;
       link_type = android::bluetooth::LINK_TYPE_ACL;
       break;
@@ -384,7 +442,9 @@ void log_link_layer_connection_command_status(std::unique_ptr<CommandView>& comm
     case OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST: {
       auto le_add_device_to_accept_list_view = LeAddDeviceToFilterAcceptListView::Create(
           LeConnectionManagementCommandView::Create(std::move(connection_management_command_view)));
-      ASSERT(le_add_device_to_accept_list_view.IsValid());
+      log::assert_that(
+          le_add_device_to_accept_list_view.IsValid(),
+          "assert failed: le_add_device_to_accept_list_view.IsValid()");
       address = le_add_device_to_accept_list_view.GetAddress();
       direction = android::bluetooth::DIRECTION_INCOMING;
       link_type = android::bluetooth::LINK_TYPE_ACL;
@@ -393,7 +453,9 @@ void log_link_layer_connection_command_status(std::unique_ptr<CommandView>& comm
     case OpCode::LE_REMOVE_DEVICE_FROM_FILTER_ACCEPT_LIST: {
       auto le_remove_device_from_accept_list_view = LeRemoveDeviceFromFilterAcceptListView::Create(
           LeConnectionManagementCommandView::Create(std::move(connection_management_command_view)));
-      ASSERT(le_remove_device_from_accept_list_view.IsValid());
+      log::assert_that(
+          le_remove_device_from_accept_list_view.IsValid(),
+          "assert failed: le_remove_device_from_accept_list_view.IsValid()");
       address = le_remove_device_from_accept_list_view.GetAddress();
       direction = android::bluetooth::DIRECTION_INCOMING;
       link_type = android::bluetooth::LINK_TYPE_ACL;
@@ -416,7 +478,8 @@ void log_link_layer_connection_command_status(std::unique_ptr<CommandView>& comm
 
 void log_link_layer_connection_command_complete(EventView event_view, std::unique_ptr<CommandView>& command_view) {
   CommandCompleteView command_complete_view = CommandCompleteView::Create(std::move(event_view));
-  ASSERT(command_complete_view.IsValid());
+  log::assert_that(
+      command_complete_view.IsValid(), "assert failed: command_complete_view.IsValid()");
   OpCode op_code = command_complete_view.GetCommandOpCode();
 
   // init parameters to log
@@ -432,13 +495,17 @@ void log_link_layer_connection_command_complete(EventView event_view, std::uniqu
   // get ConnectionManagementCommandView
   ConnectionManagementCommandView connection_management_command_view =
       ConnectionManagementCommandView::Create(AclCommandView::Create(*command_view));
-  ASSERT(connection_management_command_view.IsValid());
+  log::assert_that(
+      connection_management_command_view.IsValid(),
+      "assert failed: connection_management_command_view.IsValid()");
 
   switch (op_code) {
     case OpCode::LE_CLEAR_FILTER_ACCEPT_LIST: {
       auto le_clear_filter_accept_list_view = LeClearFilterAcceptListView::Create(
           LeConnectionManagementCommandView::Create(std::move(connection_management_command_view)));
-      ASSERT(le_clear_filter_accept_list_view.IsValid());
+      log::assert_that(
+          le_clear_filter_accept_list_view.IsValid(),
+          "assert failed: le_clear_filter_accept_list_view.IsValid()");
       direction = android::bluetooth::DIRECTION_INCOMING;
       link_type = android::bluetooth::LINK_TYPE_ACL;
       break;
@@ -446,7 +513,9 @@ void log_link_layer_connection_command_complete(EventView event_view, std::uniqu
     case OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST: {
       auto le_add_device_to_accept_list_view = LeAddDeviceToFilterAcceptListView::Create(
           LeConnectionManagementCommandView::Create(std::move(connection_management_command_view)));
-      ASSERT(le_add_device_to_accept_list_view.IsValid());
+      log::assert_that(
+          le_add_device_to_accept_list_view.IsValid(),
+          "assert failed: le_add_device_to_accept_list_view.IsValid()");
       address = le_add_device_to_accept_list_view.GetAddress();
       direction = android::bluetooth::DIRECTION_INCOMING;
       link_type = android::bluetooth::LINK_TYPE_ACL;
@@ -455,7 +524,9 @@ void log_link_layer_connection_command_complete(EventView event_view, std::uniqu
     case OpCode::LE_REMOVE_DEVICE_FROM_FILTER_ACCEPT_LIST: {
       auto le_remove_device_from_accept_list_view = LeRemoveDeviceFromFilterAcceptListView::Create(
           LeConnectionManagementCommandView::Create(std::move(connection_management_command_view)));
-      ASSERT(le_remove_device_from_accept_list_view.IsValid());
+      log::assert_that(
+          le_remove_device_from_accept_list_view.IsValid(),
+          "assert failed: le_remove_device_from_accept_list_view.IsValid()");
       address = le_remove_device_from_accept_list_view.GetAddress();
       direction = android::bluetooth::DIRECTION_INCOMING;
       link_type = android::bluetooth::LINK_TYPE_ACL;
@@ -464,7 +535,9 @@ void log_link_layer_connection_command_complete(EventView event_view, std::uniqu
     case OpCode::CREATE_CONNECTION_CANCEL: {
       auto create_connection_cancel_complete_view =
           CreateConnectionCancelCompleteView::Create(std::move(command_complete_view));
-      ASSERT(create_connection_cancel_complete_view.IsValid());
+      log::assert_that(
+          create_connection_cancel_complete_view.IsValid(),
+          "assert failed: create_connection_cancel_complete_view.IsValid()");
       address = create_connection_cancel_complete_view.GetBdAddr();
       direction = android::bluetooth::DIRECTION_OUTGOING;
       link_type = android::bluetooth::LINK_TYPE_ACL;
@@ -474,7 +547,9 @@ void log_link_layer_connection_command_complete(EventView event_view, std::uniqu
     case OpCode::LE_CREATE_CONNECTION_CANCEL: {
       auto le_create_connection_cancel_complete_view =
           LeCreateConnectionCancelCompleteView::Create(std::move(command_complete_view));
-      ASSERT(le_create_connection_cancel_complete_view.IsValid());
+      log::assert_that(
+          le_create_connection_cancel_complete_view.IsValid(),
+          "assert failed: le_create_connection_cancel_complete_view.IsValid()");
       direction = android::bluetooth::DIRECTION_OUTGOING;
       link_type = android::bluetooth::LINK_TYPE_ACL;
       status = le_create_connection_cancel_complete_view.GetStatus();
@@ -507,7 +582,8 @@ void log_link_layer_connection_other_hci_event(EventView packet, storage::Storag
   switch (event_code) {
     case EventCode::CONNECTION_COMPLETE: {
       auto connection_complete_view = ConnectionCompleteView::Create(std::move(packet));
-      ASSERT(connection_complete_view.IsValid());
+      log::assert_that(
+          connection_complete_view.IsValid(), "assert failed: connection_complete_view.IsValid()");
       address = connection_complete_view.GetBdAddr();
       connection_handle = connection_complete_view.GetConnectionHandle();
       link_type = static_cast<uint16_t>(connection_complete_view.GetLinkType());
@@ -528,7 +604,8 @@ void log_link_layer_connection_other_hci_event(EventView packet, storage::Storag
     }
     case EventCode::CONNECTION_REQUEST: {
       auto connection_request_view = ConnectionRequestView::Create(std::move(packet));
-      ASSERT(connection_request_view.IsValid());
+      log::assert_that(
+          connection_request_view.IsValid(), "assert failed: connection_request_view.IsValid()");
       address = connection_request_view.GetBdAddr();
       link_type = static_cast<uint16_t>(connection_request_view.GetLinkType());
       direction = android::bluetooth::DIRECTION_INCOMING;
@@ -536,7 +613,9 @@ void log_link_layer_connection_other_hci_event(EventView packet, storage::Storag
     }
     case EventCode::DISCONNECTION_COMPLETE: {
       auto disconnection_complete_view = DisconnectionCompleteView::Create(std::move(packet));
-      ASSERT(disconnection_complete_view.IsValid());
+      log::assert_that(
+          disconnection_complete_view.IsValid(),
+          "assert failed: disconnection_complete_view.IsValid()");
       status = disconnection_complete_view.GetStatus();
       connection_handle = disconnection_complete_view.GetConnectionHandle();
       reason = disconnection_complete_view.GetReason();
@@ -544,7 +623,9 @@ void log_link_layer_connection_other_hci_event(EventView packet, storage::Storag
     }
     case EventCode::SYNCHRONOUS_CONNECTION_COMPLETE: {
       auto synchronous_connection_complete_view = SynchronousConnectionCompleteView::Create(std::move(packet));
-      ASSERT(synchronous_connection_complete_view.IsValid());
+      log::assert_that(
+          synchronous_connection_complete_view.IsValid(),
+          "assert failed: synchronous_connection_complete_view.IsValid()");
       connection_handle = synchronous_connection_complete_view.GetConnectionHandle();
       address = synchronous_connection_complete_view.GetBdAddr();
       link_type = static_cast<uint16_t>(synchronous_connection_complete_view.GetLinkType());
@@ -553,7 +634,9 @@ void log_link_layer_connection_other_hci_event(EventView packet, storage::Storag
     }
     case EventCode::SYNCHRONOUS_CONNECTION_CHANGED: {
       auto synchronous_connection_changed_view = SynchronousConnectionChangedView::Create(std::move(packet));
-      ASSERT(synchronous_connection_changed_view.IsValid());
+      log::assert_that(
+          synchronous_connection_changed_view.IsValid(),
+          "assert failed: synchronous_connection_changed_view.IsValid()");
       status = synchronous_connection_changed_view.GetStatus();
       connection_handle = synchronous_connection_changed_view.GetConnectionHandle();
       break;
@@ -591,13 +674,17 @@ void log_link_layer_connection_event_le_meta(LeMetaEventView le_meta_event_view)
 
   if (leEvt == SubeventCode::CONNECTION_COMPLETE) {
     auto le_connection_complete_view = LeConnectionCompleteView::Create(std::move(le_meta_event_view));
-    ASSERT(le_connection_complete_view.IsValid());
+    log::assert_that(
+        le_connection_complete_view.IsValid(),
+        "assert failed: le_connection_complete_view.IsValid()");
     address = le_connection_complete_view.GetPeerAddress();
     connection_handle = le_connection_complete_view.GetConnectionHandle();
     status = le_connection_complete_view.GetStatus();
   } else if (leEvt == SubeventCode::ENHANCED_CONNECTION_COMPLETE) {
     auto le_enhanced_connection_complete_view = LeEnhancedConnectionCompleteView::Create(std::move(le_meta_event_view));
-    ASSERT(le_enhanced_connection_complete_view.IsValid());
+    log::assert_that(
+        le_enhanced_connection_complete_view.IsValid(),
+        "assert failed: le_enhanced_connection_complete_view.IsValid()");
     address = le_enhanced_connection_complete_view.GetPeerAddress();
     connection_handle = le_enhanced_connection_complete_view.GetConnectionHandle();
     status = le_enhanced_connection_complete_view.GetStatus();
@@ -636,49 +723,64 @@ void log_classic_pairing_other_hci_event(EventView packet) {
   switch (event_code) {
     case EventCode::IO_CAPABILITY_REQUEST: {
       IoCapabilityRequestView io_capability_request_view = IoCapabilityRequestView::Create(std::move(packet));
-      ASSERT(io_capability_request_view.IsValid());
+      log::assert_that(
+          io_capability_request_view.IsValid(),
+          "assert failed: io_capability_request_view.IsValid()");
       address = io_capability_request_view.GetBdAddr();
       break;
     }
     case EventCode::IO_CAPABILITY_RESPONSE: {
       IoCapabilityResponseView io_capability_response_view = IoCapabilityResponseView::Create(std::move(packet));
-      ASSERT(io_capability_response_view.IsValid());
+      log::assert_that(
+          io_capability_response_view.IsValid(),
+          "assert failed: io_capability_response_view.IsValid()");
       address = io_capability_response_view.GetBdAddr();
       break;
     }
     case EventCode::LINK_KEY_REQUEST: {
       LinkKeyRequestView link_key_request_view = LinkKeyRequestView::Create(std::move(packet));
-      ASSERT(link_key_request_view.IsValid());
+      log::assert_that(
+          link_key_request_view.IsValid(), "assert failed: link_key_request_view.IsValid()");
       address = link_key_request_view.GetBdAddr();
       break;
     }
     case EventCode::LINK_KEY_NOTIFICATION: {
       LinkKeyNotificationView link_key_notification_view = LinkKeyNotificationView::Create(std::move(packet));
-      ASSERT(link_key_notification_view.IsValid());
+      log::assert_that(
+          link_key_notification_view.IsValid(),
+          "assert failed: link_key_notification_view.IsValid()");
       address = link_key_notification_view.GetBdAddr();
       break;
     }
     case EventCode::USER_PASSKEY_REQUEST: {
       UserPasskeyRequestView user_passkey_request_view = UserPasskeyRequestView::Create(std::move(packet));
-      ASSERT(user_passkey_request_view.IsValid());
+      log::assert_that(
+          user_passkey_request_view.IsValid(),
+          "assert failed: user_passkey_request_view.IsValid()");
       address = user_passkey_request_view.GetBdAddr();
       break;
     }
     case EventCode::USER_PASSKEY_NOTIFICATION: {
       UserPasskeyNotificationView user_passkey_notification_view = UserPasskeyNotificationView::Create(std::move(packet));
-      ASSERT(user_passkey_notification_view.IsValid());
+      log::assert_that(
+          user_passkey_notification_view.IsValid(),
+          "assert failed: user_passkey_notification_view.IsValid()");
       address = user_passkey_notification_view.GetBdAddr();
       break;
     }
     case EventCode::USER_CONFIRMATION_REQUEST: {
       UserConfirmationRequestView user_confirmation_request_view = UserConfirmationRequestView::Create(std::move(packet));
-      ASSERT(user_confirmation_request_view.IsValid());
+      log::assert_that(
+          user_confirmation_request_view.IsValid(),
+          "assert failed: user_confirmation_request_view.IsValid()");
       address = user_confirmation_request_view.GetBdAddr();
       break;
     }
     case EventCode::KEYPRESS_NOTIFICATION: {
       KeypressNotificationView keypress_notification_view = KeypressNotificationView::Create(std::move(packet));
-      ASSERT(keypress_notification_view.IsValid());
+      log::assert_that(
+          keypress_notification_view.IsValid(),
+          "assert failed: keypress_notification_view.IsValid()");
       address = keypress_notification_view.GetBdAddr();
       break;
     }
@@ -693,7 +795,9 @@ void log_classic_pairing_other_hci_event(EventView packet) {
     }
     case EventCode::SIMPLE_PAIRING_COMPLETE: {
       SimplePairingCompleteView simple_pairing_complete_view = SimplePairingCompleteView::Create(std::move(packet));
-      ASSERT(simple_pairing_complete_view.IsValid());
+      log::assert_that(
+          simple_pairing_complete_view.IsValid(),
+          "assert failed: simple_pairing_complete_view.IsValid()");
       address = simple_pairing_complete_view.GetBdAddr();
       status = simple_pairing_complete_view.GetStatus();
       break;
@@ -710,14 +814,17 @@ void log_classic_pairing_other_hci_event(EventView packet) {
     }
     case EventCode::AUTHENTICATION_COMPLETE: {
       AuthenticationCompleteView authentication_complete_view = AuthenticationCompleteView::Create(std::move(packet));
-      ASSERT(authentication_complete_view.IsValid());
+      log::assert_that(
+          authentication_complete_view.IsValid(),
+          "assert failed: authentication_complete_view.IsValid()");
       status = authentication_complete_view.GetStatus();
       connection_handle = authentication_complete_view.GetConnectionHandle();
       break;
     }
     case EventCode::ENCRYPTION_CHANGE: {
       EncryptionChangeView encryption_change_view = EncryptionChangeView::Create(std::move(packet));
-      ASSERT(encryption_change_view.IsValid());
+      log::assert_that(
+          encryption_change_view.IsValid(), "assert failed: encryption_change_view.IsValid()");
       status = encryption_change_view.GetStatus();
       connection_handle = encryption_change_view.GetConnectionHandle();
       value = static_cast<int64_t>(encryption_change_view.GetEncryptionEnabled());
@@ -738,7 +845,7 @@ void log_classic_pairing_other_hci_event(EventView packet) {
 
 void log_classic_pairing_command_status(std::unique_ptr<CommandView>& command_view, ErrorCode status) {
   // get op_code
-  ASSERT(command_view->IsValid());
+  log::assert_that(command_view->IsValid(), "assert failed: command_view->IsValid()");
   OpCode op_code = command_view->GetOpCode();
 
   // init parameters
@@ -750,111 +857,141 @@ void log_classic_pairing_command_status(std::unique_ptr<CommandView>& command_vi
 
   // create SecurityCommandView
   SecurityCommandView security_command_view = SecurityCommandView::Create(*command_view);
-  ASSERT(security_command_view.IsValid());
+  log::assert_that(
+      security_command_view.IsValid(), "assert failed: security_command_view.IsValid()");
 
   // create ConnectionManagementCommandView
   ConnectionManagementCommandView connection_management_command_view =
       ConnectionManagementCommandView::Create(AclCommandView::Create(*command_view));
-  ASSERT(connection_management_command_view.IsValid());
+  log::assert_that(
+      connection_management_command_view.IsValid(),
+      "assert failed: connection_management_command_view.IsValid()");
 
   // create DiscoveryCommandView
   DiscoveryCommandView discovery_command_view = DiscoveryCommandView::Create(*command_view);
-  ASSERT(discovery_command_view.IsValid());
+  log::assert_that(
+      discovery_command_view.IsValid(), "assert failed: discovery_command_view.IsValid()");
 
   switch (op_code) {
     case OpCode::READ_LOCAL_OOB_DATA: {
       ReadLocalOobDataView read_local_oob_data_view = ReadLocalOobDataView::Create(std::move(security_command_view));
-      ASSERT(read_local_oob_data_view.IsValid());
+      log::assert_that(
+          read_local_oob_data_view.IsValid(), "assert failed: read_local_oob_data_view.IsValid()");
       break;
     }
     case OpCode::WRITE_SIMPLE_PAIRING_MODE: {
       WriteSimplePairingModeView write_simple_pairing_mode_view
       = WriteSimplePairingModeView::Create(std::move(security_command_view));
-      ASSERT(write_simple_pairing_mode_view.IsValid());
+      log::assert_that(
+          write_simple_pairing_mode_view.IsValid(),
+          "assert failed: write_simple_pairing_mode_view.IsValid()");
       value = static_cast<int64_t>(write_simple_pairing_mode_view.GetSimplePairingMode());
       break;
     }
     case OpCode::WRITE_SECURE_CONNECTIONS_HOST_SUPPORT: {
       WriteSecureConnectionsHostSupportView write_secure_connections_host_support_view
       = WriteSecureConnectionsHostSupportView::Create(std::move(security_command_view));
-      ASSERT(write_secure_connections_host_support_view.IsValid());
+      log::assert_that(
+          write_secure_connections_host_support_view.IsValid(),
+          "assert failed: write_secure_connections_host_support_view.IsValid()");
       value = static_cast<int64_t>(write_secure_connections_host_support_view.GetSecureConnectionsHostSupport());
       break;
     }
     case OpCode::AUTHENTICATION_REQUESTED: {
       AuthenticationRequestedView authentication_requested_view
       = AuthenticationRequestedView::Create(std::move(connection_management_command_view));
-      ASSERT(authentication_requested_view.IsValid());
+      log::assert_that(
+          authentication_requested_view.IsValid(),
+          "assert failed: authentication_requested_view.IsValid()");
       connection_handle = authentication_requested_view.GetConnectionHandle();
       break;
     }
     case OpCode::SET_CONNECTION_ENCRYPTION: {
       SetConnectionEncryptionView set_connection_encryption_view
       = SetConnectionEncryptionView::Create(std::move(connection_management_command_view));
-      ASSERT(set_connection_encryption_view.IsValid());
+      log::assert_that(
+          set_connection_encryption_view.IsValid(),
+          "assert failed: set_connection_encryption_view.IsValid()");
       connection_handle = set_connection_encryption_view.GetConnectionHandle();
       value = static_cast<int64_t>(set_connection_encryption_view.GetEncryptionEnable());
       break;
     }
     case OpCode::REMOTE_NAME_REQUEST: {
       RemoteNameRequestView remote_name_request_view = RemoteNameRequestView::Create(std::move(discovery_command_view));
-      ASSERT(remote_name_request_view.IsValid());
+      log::assert_that(
+          remote_name_request_view.IsValid(), "assert failed: remote_name_request_view.IsValid()");
       address = remote_name_request_view.GetBdAddr();
       break;
     }
     case OpCode::REMOTE_NAME_REQUEST_CANCEL: {
       RemoteNameRequestCancelView remote_name_request_cancel_view
       = RemoteNameRequestCancelView::Create(std::move(discovery_command_view));
-      ASSERT(remote_name_request_cancel_view.IsValid());
+      log::assert_that(
+          remote_name_request_cancel_view.IsValid(),
+          "assert failed: remote_name_request_cancel_view.IsValid()");
       address = remote_name_request_cancel_view.GetBdAddr();
       break;
     }
     case OpCode::LINK_KEY_REQUEST_REPLY: {
       LinkKeyRequestReplyView link_key_request_reply_view
       = LinkKeyRequestReplyView::Create(std::move(security_command_view));
-      ASSERT(link_key_request_reply_view.IsValid());
+      log::assert_that(
+          link_key_request_reply_view.IsValid(),
+          "assert failed: link_key_request_reply_view.IsValid()");
       address = link_key_request_reply_view.GetBdAddr();
       break;
     }
     case OpCode::LINK_KEY_REQUEST_NEGATIVE_REPLY: {
       LinkKeyRequestNegativeReplyView link_key_request_negative_reply_view
       = LinkKeyRequestNegativeReplyView::Create(std::move(security_command_view));
-      ASSERT(link_key_request_negative_reply_view.IsValid());
+      log::assert_that(
+          link_key_request_negative_reply_view.IsValid(),
+          "assert failed: link_key_request_negative_reply_view.IsValid()");
       address = link_key_request_negative_reply_view.GetBdAddr();
       break;
     }
     case OpCode::IO_CAPABILITY_REQUEST_REPLY: {
       IoCapabilityRequestReplyView io_capability_request_reply_view
       = IoCapabilityRequestReplyView::Create(std::move(security_command_view));
-      ASSERT(io_capability_request_reply_view.IsValid());
+      log::assert_that(
+          io_capability_request_reply_view.IsValid(),
+          "assert failed: io_capability_request_reply_view.IsValid()");
       address = io_capability_request_reply_view.GetBdAddr();
       break;
     }
     case OpCode::USER_CONFIRMATION_REQUEST_REPLY: {
       UserConfirmationRequestReplyView user_confirmation_request_reply
       = UserConfirmationRequestReplyView::Create(std::move(security_command_view));
-      ASSERT(user_confirmation_request_reply.IsValid());
+      log::assert_that(
+          user_confirmation_request_reply.IsValid(),
+          "assert failed: user_confirmation_request_reply.IsValid()");
       address = user_confirmation_request_reply.GetBdAddr();
       break;
     }
     case OpCode::USER_CONFIRMATION_REQUEST_NEGATIVE_REPLY: {
       UserConfirmationRequestNegativeReplyView user_confirmation_request_negative_reply
       = UserConfirmationRequestNegativeReplyView::Create(std::move(security_command_view));
-      ASSERT(user_confirmation_request_negative_reply.IsValid());
+      log::assert_that(
+          user_confirmation_request_negative_reply.IsValid(),
+          "assert failed: user_confirmation_request_negative_reply.IsValid()");
       address = user_confirmation_request_negative_reply.GetBdAddr();
       break;
     }
     case OpCode::USER_PASSKEY_REQUEST_REPLY: {
       UserPasskeyRequestReplyView user_passkey_request_reply
       = UserPasskeyRequestReplyView::Create(std::move(security_command_view));
-      ASSERT(user_passkey_request_reply.IsValid());
+      log::assert_that(
+          user_passkey_request_reply.IsValid(),
+          "assert failed: user_passkey_request_reply.IsValid()");
       address = user_passkey_request_reply.GetBdAddr();
       break;
     }
     case OpCode::USER_PASSKEY_REQUEST_NEGATIVE_REPLY: {
       UserPasskeyRequestNegativeReplyView user_passkey_request_negative_reply
       = UserPasskeyRequestNegativeReplyView::Create(std::move(security_command_view));
-      ASSERT(user_passkey_request_negative_reply.IsValid());
+      log::assert_that(
+          user_passkey_request_negative_reply.IsValid(),
+          "assert failed: user_passkey_request_negative_reply.IsValid()");
       address = user_passkey_request_negative_reply.GetBdAddr();
       break;
     }
@@ -881,7 +1018,9 @@ void log_classic_pairing_command_status(std::unique_ptr<CommandView>& command_vi
     case OpCode::IO_CAPABILITY_REQUEST_NEGATIVE_REPLY: {
       IoCapabilityRequestNegativeReplyView io_capability_request_negative_reply_view
       = IoCapabilityRequestNegativeReplyView::Create(std::move(security_command_view));
-      ASSERT(io_capability_request_negative_reply_view.IsValid());
+      log::assert_that(
+          io_capability_request_negative_reply_view.IsValid(),
+          "assert failed: io_capability_request_negative_reply_view.IsValid()");
       address = io_capability_request_negative_reply_view.GetBdAddr();
       reason = io_capability_request_negative_reply_view.GetReason();
       break;
@@ -903,7 +1042,8 @@ void log_classic_pairing_command_complete(EventView event_view, std::unique_ptr<
 
   // get op_code
   CommandCompleteView command_complete_view = CommandCompleteView::Create(std::move(event_view));
-  ASSERT(command_complete_view.IsValid());
+  log::assert_that(
+      command_complete_view.IsValid(), "assert failed: command_complete_view.IsValid()");
   OpCode op_code = command_complete_view.GetCommandOpCode();
 
   // init parameters
@@ -917,34 +1057,45 @@ void log_classic_pairing_command_complete(EventView event_view, std::unique_ptr<
   // get ConnectionManagementCommandView
   ConnectionManagementCommandView connection_management_command_view =
       ConnectionManagementCommandView::Create(AclCommandView::Create(*command_view));
-  ASSERT(connection_management_command_view.IsValid());
+  log::assert_that(
+      connection_management_command_view.IsValid(),
+      "assert failed: connection_management_command_view.IsValid()");
 
   // create SecurityCommandView
   SecurityCommandView security_command_view = SecurityCommandView::Create(*command_view);
-  ASSERT(security_command_view.IsValid());
+  log::assert_that(
+      security_command_view.IsValid(), "assert failed: security_command_view.IsValid()");
 
   switch (op_code) {
     case OpCode::READ_LOCAL_OOB_DATA: {
       auto read_local_oob_data_complete_view = ReadLocalOobDataCompleteView::Create(std::move(command_complete_view));
-      ASSERT(read_local_oob_data_complete_view.IsValid());
+      log::assert_that(
+          read_local_oob_data_complete_view.IsValid(),
+          "assert failed: read_local_oob_data_complete_view.IsValid()");
       status = read_local_oob_data_complete_view.GetStatus();
       break;
     }
     case OpCode::WRITE_SIMPLE_PAIRING_MODE: {
       auto write_simple_pairing_mode_complete_view = WriteSimplePairingModeCompleteView::Create(std::move(command_complete_view));
-      ASSERT(write_simple_pairing_mode_complete_view.IsValid());
+      log::assert_that(
+          write_simple_pairing_mode_complete_view.IsValid(),
+          "assert failed: write_simple_pairing_mode_complete_view.IsValid()");
       status = write_simple_pairing_mode_complete_view.GetStatus();
       break;
     }
     case OpCode::WRITE_SECURE_CONNECTIONS_HOST_SUPPORT: {
       auto write_secure_connections_host_support_complete_view = WriteSecureConnectionsHostSupportCompleteView::Create(std::move(command_complete_view));
-      ASSERT(write_secure_connections_host_support_complete_view.IsValid());
+      log::assert_that(
+          write_secure_connections_host_support_complete_view.IsValid(),
+          "assert failed: write_secure_connections_host_support_complete_view.IsValid()");
       status = write_secure_connections_host_support_complete_view.GetStatus();
       break;
     }
     case OpCode::READ_ENCRYPTION_KEY_SIZE: {
       auto read_encryption_key_size_complete_view = ReadEncryptionKeySizeCompleteView::Create(std::move(command_complete_view));
-      ASSERT(read_encryption_key_size_complete_view.IsValid());
+      log::assert_that(
+          read_encryption_key_size_complete_view.IsValid(),
+          "assert failed: read_encryption_key_size_complete_view.IsValid()");
       status = read_encryption_key_size_complete_view.GetStatus();
       connection_handle = read_encryption_key_size_complete_view.GetConnectionHandle();
       value = read_encryption_key_size_complete_view.GetKeySize();
@@ -952,73 +1103,105 @@ void log_classic_pairing_command_complete(EventView event_view, std::unique_ptr<
     }
     case OpCode::LINK_KEY_REQUEST_REPLY: {
       auto link_key_request_reply_complete_view = LinkKeyRequestReplyCompleteView::Create(std::move(command_complete_view));
-      ASSERT(link_key_request_reply_complete_view.IsValid());
+      log::assert_that(
+          link_key_request_reply_complete_view.IsValid(),
+          "assert failed: link_key_request_reply_complete_view.IsValid()");
       status = link_key_request_reply_complete_view.GetStatus();
       auto link_key_request_reply_view = LinkKeyRequestReplyView::Create(std::move(security_command_view));
-      ASSERT(link_key_request_reply_view.IsValid());
+      log::assert_that(
+          link_key_request_reply_view.IsValid(),
+          "assert failed: link_key_request_reply_view.IsValid()");
       address = link_key_request_reply_view.GetBdAddr();
       break;
     }
     case OpCode::LINK_KEY_REQUEST_NEGATIVE_REPLY: {
       auto link_key_request_negative_reply_complete_view = LinkKeyRequestNegativeReplyCompleteView::Create(std::move(command_complete_view));
-      ASSERT(link_key_request_negative_reply_complete_view.IsValid());
+      log::assert_that(
+          link_key_request_negative_reply_complete_view.IsValid(),
+          "assert failed: link_key_request_negative_reply_complete_view.IsValid()");
       status = link_key_request_negative_reply_complete_view.GetStatus();
       auto link_key_request_negative_reply_view = LinkKeyRequestNegativeReplyView::Create(std::move(security_command_view));
-      ASSERT(link_key_request_negative_reply_view.IsValid());
+      log::assert_that(
+          link_key_request_negative_reply_view.IsValid(),
+          "assert failed: link_key_request_negative_reply_view.IsValid()");
       address = link_key_request_negative_reply_view.GetBdAddr();
       break;
     }
     case OpCode::IO_CAPABILITY_REQUEST_REPLY: {
       auto io_capability_request_reply_complete_view = IoCapabilityRequestReplyCompleteView::Create(std::move(command_complete_view));
-      ASSERT(io_capability_request_reply_complete_view.IsValid());
+      log::assert_that(
+          io_capability_request_reply_complete_view.IsValid(),
+          "assert failed: io_capability_request_reply_complete_view.IsValid()");
       status = io_capability_request_reply_complete_view.GetStatus();
       auto io_capability_request_reply_view = IoCapabilityRequestReplyView::Create(std::move(security_command_view));
-      ASSERT(io_capability_request_reply_view.IsValid());
+      log::assert_that(
+          io_capability_request_reply_view.IsValid(),
+          "assert failed: io_capability_request_reply_view.IsValid()");
       address = io_capability_request_reply_view.GetBdAddr();
       break;
     }
     case OpCode::IO_CAPABILITY_REQUEST_NEGATIVE_REPLY: {
       auto io_capability_request_negative_reply_complete_view = IoCapabilityRequestNegativeReplyCompleteView::Create(std::move(command_complete_view));
-      ASSERT(io_capability_request_negative_reply_complete_view.IsValid());
+      log::assert_that(
+          io_capability_request_negative_reply_complete_view.IsValid(),
+          "assert failed: io_capability_request_negative_reply_complete_view.IsValid()");
       status = io_capability_request_negative_reply_complete_view.GetStatus();
       auto io_capability_request_negative_reply_view = IoCapabilityRequestNegativeReplyView::Create(std::move(security_command_view));
-      ASSERT(io_capability_request_negative_reply_view.IsValid());
+      log::assert_that(
+          io_capability_request_negative_reply_view.IsValid(),
+          "assert failed: io_capability_request_negative_reply_view.IsValid()");
       address = io_capability_request_negative_reply_view.GetBdAddr();
       break;
     }
     case OpCode::USER_CONFIRMATION_REQUEST_REPLY: {
       auto user_confirmation_request_reply_complete_view = UserConfirmationRequestReplyCompleteView::Create(std::move(command_complete_view));
-      ASSERT(user_confirmation_request_reply_complete_view.IsValid());
+      log::assert_that(
+          user_confirmation_request_reply_complete_view.IsValid(),
+          "assert failed: user_confirmation_request_reply_complete_view.IsValid()");
       status = user_confirmation_request_reply_complete_view.GetStatus();
       auto user_confirmation_request_reply_view = UserConfirmationRequestReplyView::Create(std::move(security_command_view));
-      ASSERT(user_confirmation_request_reply_view.IsValid());
+      log::assert_that(
+          user_confirmation_request_reply_view.IsValid(),
+          "assert failed: user_confirmation_request_reply_view.IsValid()");
       address = user_confirmation_request_reply_view.GetBdAddr();
       break;
     }
     case OpCode::USER_CONFIRMATION_REQUEST_NEGATIVE_REPLY: {
       auto user_confirmation_request_negative_reply_complete_view = UserConfirmationRequestNegativeReplyCompleteView::Create(std::move(command_complete_view));
-      ASSERT(user_confirmation_request_negative_reply_complete_view.IsValid());
+      log::assert_that(
+          user_confirmation_request_negative_reply_complete_view.IsValid(),
+          "assert failed: user_confirmation_request_negative_reply_complete_view.IsValid()");
       status = user_confirmation_request_negative_reply_complete_view.GetStatus();
       auto user_confirmation_request_negative_reply_view = UserConfirmationRequestNegativeReplyView::Create(std::move(security_command_view));
-      ASSERT(user_confirmation_request_negative_reply_view.IsValid());
+      log::assert_that(
+          user_confirmation_request_negative_reply_view.IsValid(),
+          "assert failed: user_confirmation_request_negative_reply_view.IsValid()");
       address = user_confirmation_request_negative_reply_view.GetBdAddr();
       break;
     }
     case OpCode::USER_PASSKEY_REQUEST_REPLY: {
       auto user_passkey_request_reply_complete_view = UserPasskeyRequestReplyCompleteView::Create(std::move(command_complete_view));
-      ASSERT(user_passkey_request_reply_complete_view.IsValid());
+      log::assert_that(
+          user_passkey_request_reply_complete_view.IsValid(),
+          "assert failed: user_passkey_request_reply_complete_view.IsValid()");
       status = user_passkey_request_reply_complete_view.GetStatus();
       auto user_passkey_request_reply_view = UserPasskeyRequestReplyView::Create(std::move(security_command_view));
-      ASSERT(user_passkey_request_reply_view.IsValid());
+      log::assert_that(
+          user_passkey_request_reply_view.IsValid(),
+          "assert failed: user_passkey_request_reply_view.IsValid()");
       address = user_passkey_request_reply_view.GetBdAddr();
       break;
     }
     case OpCode::USER_PASSKEY_REQUEST_NEGATIVE_REPLY: {
       auto user_passkey_request_negative_reply_complete_view = UserPasskeyRequestNegativeReplyCompleteView::Create(std::move(command_complete_view));
-      ASSERT(user_passkey_request_negative_reply_complete_view.IsValid());
+      log::assert_that(
+          user_passkey_request_negative_reply_complete_view.IsValid(),
+          "assert failed: user_passkey_request_negative_reply_complete_view.IsValid()");
       status = user_passkey_request_negative_reply_complete_view.GetStatus();
       auto user_passkey_request_negative_reply_view = UserPasskeyRequestNegativeReplyView::Create(std::move(security_command_view));
-      ASSERT(user_passkey_request_negative_reply_view.IsValid());
+      log::assert_that(
+          user_passkey_request_negative_reply_view.IsValid(),
+          "assert failed: user_passkey_request_negative_reply_view.IsValid()");
       address = user_passkey_request_negative_reply_view.GetBdAddr();
       break;
     }

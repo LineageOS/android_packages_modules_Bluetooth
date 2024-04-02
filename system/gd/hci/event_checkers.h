@@ -26,7 +26,7 @@ namespace hci {
 
 template <class T>
 void check_complete(CommandCompleteView view) {
-  ASSERT(view.IsValid());
+  log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
   auto status_view = T::Create(view);
   if (!status_view.IsValid()) {
     log::error("Invalid packet, opcode {}", OpCodeText(view.GetCommandOpCode()));
@@ -42,7 +42,7 @@ void check_complete(CommandCompleteView view) {
 
 template <class T>
 void check_status(CommandStatusView view) {
-  ASSERT(view.IsValid());
+  log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
   auto status_view = T::Create(view);
   if (!status_view.IsValid()) {
     log::error("Invalid packet, opcode {}", OpCodeText(view.GetCommandOpCode()));
