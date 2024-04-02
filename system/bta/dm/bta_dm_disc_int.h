@@ -19,6 +19,7 @@
 #include <base/strings/stringprintf.h>
 #include <bluetooth/log.h>
 
+#include <queue>
 #include <string>
 
 #include "bta/include/bta_api.h"
@@ -154,7 +155,7 @@ typedef struct {
   alarm_t* search_timer;
   uint8_t service_index;
   std::unique_ptr<tBTA_DM_MSG> p_pending_search;
-  fixed_queue_t* pending_discovery_queue;
+  std::queue<tBTA_DM_API_DISCOVER> pending_discovery_queue;
   bool wait_disc;
   bool sdp_results;
   bluetooth::Uuid uuid;
