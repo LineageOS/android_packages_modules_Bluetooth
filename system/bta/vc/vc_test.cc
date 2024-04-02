@@ -246,6 +246,9 @@ class VolumeControlTest : public ::testing::Test {
     gatt::SetMockBtaGattQueue(&gatt_queue);
     callbacks.reset(new MockVolumeControlCallbacks());
 
+    ON_CALL(btm_interface, IsLinkKeyKnown(_, _))
+        .WillByDefault(DoAll(Return(true)));
+
     // default action for GetCharacteristic function call
     ON_CALL(gatt_interface, GetCharacteristic(_, _))
         .WillByDefault(
@@ -565,6 +568,34 @@ TEST_F(VolumeControlTest, test_app_registration) {
 TEST_F(VolumeControlTest, test_connect) {
   TestAppRegister();
   TestConnect(GetTestAddress(0));
+  TestAppUnregister();
+}
+
+TEST_F(VolumeControlTest, test_connect_after_remove) {
+  TestAppRegister();
+
+  const RawAddress test_address = GetTestAddress(0);
+  uint16_t conn_id = 1;
+
+  TestConnect(test_address);
+  GetConnectedEvent(test_address, conn_id);
+  Mock::VerifyAndClearExpectations(callbacks.get());
+
+  EXPECT_CALL(*callbacks,
+              OnConnectionState(ConnectionState::DISCONNECTED, test_address))
+      .Times(1);
+
+  TestRemove(test_address, conn_id);
+  Mock::VerifyAndClearExpectations(callbacks.get());
+
+  EXPECT_CALL(*callbacks,
+              OnConnectionState(ConnectionState::DISCONNECTED, test_address))
+      .Times(1);
+  ON_CALL(btm_interface, IsLinkKeyKnown(_, _))
+      .WillByDefault(DoAll(Return(false)));
+
+  VolumeControl::Get()->Connect(test_address);
+  Mock::VerifyAndClearExpectations(callbacks.get());
   TestAppUnregister();
 }
 
