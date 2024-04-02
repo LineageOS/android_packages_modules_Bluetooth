@@ -113,7 +113,7 @@ class Rfcomm(val context: Context) : RFCOMMImplBase(), Closeable {
     }
 
     override fun startServer(
-        request: ServerOptions,
+        request: StartServerRequest,
         responseObserver: StreamObserver<StartServerResponse>,
     ) {
         grpcUnary(scope, responseObserver) {
