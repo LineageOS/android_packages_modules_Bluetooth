@@ -596,7 +596,7 @@ void CheckReceivedCredits(uint16_t handle, uint16_t credits) {
       credits2_set.set_value();
       break;
     default:
-      ASSERT_LOG(false, "Unknown handle 0x%0hx with 0x%0hx credits", handle, credits);
+      log::fatal("Unknown handle 0x{:0x} with 0x{:0x} credits", handle, credits);
   }
 }
 

@@ -16,7 +16,8 @@
 
 #include "packet/byte_inserter.h"
 
-#include "os/log.h"
+#undef NDEBUG
+#include <cassert>
 
 namespace bluetooth {
 namespace packet {
@@ -24,7 +25,7 @@ namespace packet {
 ByteInserter::ByteInserter(std::vector<uint8_t>& vector) : std::back_insert_iterator<std::vector<uint8_t>>(vector) {}
 
 ByteInserter::~ByteInserter() {
-  ASSERT(registered_observers_.empty());
+  assert(registered_observers_.empty());
 }
 
 void ByteInserter::RegisterObserver(const ByteObserver& observer) {

@@ -74,7 +74,7 @@ bool hfp_lc3_decoder_decode_packet(const uint8_t* i_buf, int16_t* o_buf,
   int rc = lc3_decode(hfp_lc3_decoder, frame, HFP_LC3_PKT_FRAME_LEN,
                       LC3_PCM_FORMAT_S16, o_buf, 1);
 
-  ASSERT(rc == 0 || rc == 1);
+  log::assert_that(rc == 0 || rc == 1, "assert failed: rc == 0 || rc == 1");
 
   return !rc;
 }

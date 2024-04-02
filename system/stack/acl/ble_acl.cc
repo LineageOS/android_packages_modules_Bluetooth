@@ -99,7 +99,8 @@ void acl_ble_enhanced_connection_complete(
 static bool maybe_resolve_received_address(
     const tBLE_BD_ADDR& address_with_type,
     tBLE_BD_ADDR* resolved_address_with_type) {
-  ASSERT(resolved_address_with_type != nullptr);
+  log::assert_that(resolved_address_with_type != nullptr,
+                   "assert failed: resolved_address_with_type != nullptr");
 
   *resolved_address_with_type = address_with_type;
   return maybe_resolve_address(&resolved_address_with_type->bda,

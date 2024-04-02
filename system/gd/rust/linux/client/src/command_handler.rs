@@ -343,6 +343,7 @@ fn build_commands() -> HashMap<String, CommandOption> {
                 String::from("telephony set-roaming <on|off>"),
                 String::from("telephony set-signal <strength>"),
                 String::from("telephony set-battery <level>"),
+                String::from("telephony set-phone-opss <on|off>"),
                 String::from("telephony <enable|disable>"),
                 String::from("telephony <incoming-call|dialing-call> <number>"),
                 String::from("telephony <answer-call|hangup-call>"),
@@ -2064,6 +2065,22 @@ impl CommandHandler {
                         return Err(format!("Failed to remove SDP record").into());
                     }
                 }
+            }
+            "set-phone-ops" => {
+                let on_or_off = match &get_arg(args, 1)?[..] {
+                    "on" => true,
+                    "off" => false,
+                    _ => {
+                        return Err("Failed to parse on|off".into());
+                    }
+                };
+                self.context
+                    .lock()
+                    .unwrap()
+                    .telephony_dbus
+                    .as_mut()
+                    .unwrap()
+                    .set_phone_ops_enabled(on_or_off);
             }
             "incoming-call" => {
                 let success = self

@@ -98,8 +98,10 @@ class TestLeScanningInterface : public LeScanningInterface {
       EXPECT_NE(std::future_status::timeout, result);
     }
     std::lock_guard<std::mutex> lock(mutex_);
-    ASSERT_LOG(
-        !command_queue_.empty(), "Expecting command %s but command queue was empty", OpCodeText(op_code).c_str());
+    log::assert_that(
+        !command_queue_.empty(),
+        "Expecting command {} but command queue was empty",
+        OpCodeText(op_code));
     CommandView command_packet_view = GetLastCommand();
     EXPECT_TRUE(command_packet_view.IsValid());
     EXPECT_EQ(command_packet_view.GetOpCode(), op_code);
@@ -156,8 +158,10 @@ class PeriodicSyncManagerTest : public ::testing::Test {
   }
 
   void sync_handler() {
-    ASSERT(thread_ != nullptr);
-    ASSERT(thread_->GetReactor()->WaitForIdle(2s));
+    log::assert_that(thread_ != nullptr, "assert failed: thread_ != nullptr");
+    log::assert_that(
+        thread_->GetReactor()->WaitForIdle(2s),
+        "assert failed: thread_->GetReactor()->WaitForIdle(2s)");
   }
 
   class MockCallbacks : public bluetooth::hci::ScanningCallback {

@@ -779,6 +779,38 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
             .expectClean()
     }
 
+    @Test
+    fun testVariableCreationWithBooleanWrapperClass_issuesFound() {
+        lint()
+            .files(
+                java(
+                        """
+                package com.android.bluetooth;
+
+                import android.util.Log;
+
+                public final class Foo {
+                    private static final String TAG = Foo.class.getSimpleName();
+                    private static final Boolean WHYYYY_DBG = true;
+
+                    public Foo() {
+                        Log.d(TAG, "created Foo without an enforcement variable");
+                    }
+                }
+                """
+                    )
+                    .indented(),
+                *stubs
+            )
+            .issues(LogEnforcementVariableCreationDetector.ISSUE)
+            .run()
+            .expectContains(
+                LogEnforcementVariableCreationDetector.LOG_ENFORCEMENT_VARIABLE_USAGE_ERROR
+            )
+            .expectContains(createErrorCountString(1, 0))
+            .expectFixDiffs(createFixDiff(7, "    private static final Boolean WHYYYY_DBG = true;"))
+    }
+
     private val logFramework: TestFile =
         java(
                 """

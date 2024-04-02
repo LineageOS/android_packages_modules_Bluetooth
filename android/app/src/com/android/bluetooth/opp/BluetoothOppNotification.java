@@ -116,7 +116,7 @@ class BluetoothOppNotification {
 
     private Context mContext;
 
-    private HashMap<String, NotificationItem> mNotifications;
+    private final HashMap<String, NotificationItem> mNotifications = new HashMap<>();
 
     private NotificationUpdateThread mUpdateNotificationThread;
 
@@ -179,7 +179,6 @@ class BluetoothOppNotification {
                 NotificationManager.IMPORTANCE_HIGH);
 
         mNotificationMgr.createNotificationChannel(mNotificationChannel);
-        mNotifications = new HashMap<String, NotificationItem>();
         // Get Content Resolver object one time
         mContentResolver = mContext.getContentResolver();
     }
@@ -357,8 +356,10 @@ class BluetoothOppNotification {
                 intent.putExtra(Constants.EXTRA_BT_OPP_TRANSFER_ID, item.id);
                 intent.putExtra(Constants.EXTRA_BT_OPP_TRANSFER_PROGRESS, progress);
                 intent.putExtra(Constants.EXTRA_BT_OPP_ADDRESS, item.destination);
-                Utils.sendBroadcast(mContext, intent, Constants.HANDOVER_STATUS_PERMISSION,
-                        Utils.getTempAllowlistBroadcastOptions());
+                mContext.sendBroadcast(
+                        intent,
+                        Constants.HANDOVER_STATUS_PERMISSION,
+                        Utils.getTempBroadcastOptions().toBundle());
                 continue;
             }
             // Build the notification object
@@ -704,9 +705,12 @@ class BluetoothOppNotification {
         cursor.close();
     }
 
-    void cancelNotifications() {
-        Log.v(TAG, "cancelNotifications ");
+    void cancelOppNotifications() {
+        Log.v(TAG, "cancelOppNotifications ");
         mHandler.removeCallbacksAndMessages(null);
-        mNotificationMgr.cancelAll();
+        mNotificationMgr.cancel(NOTIFICATION_ID_PROGRESS);
+        mNotificationMgr.cancel(NOTIFICATION_ID_OUTBOUND_COMPLETE);
+        mNotificationMgr.cancel(NOTIFICATION_ID_INBOUND_COMPLETE);
+        mNotificationMgr.cancel(NOTIFICATION_ID_COMPLETE_SUMMARY);
     }
 }

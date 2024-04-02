@@ -56,9 +56,9 @@ Link::Link(
           dynamic_service_manager_,
           &dynamic_channel_allocator_),
       link_manager_(link_manager) {
-  ASSERT(l2cap_handler_ != nullptr);
-  ASSERT(acl_connection_ != nullptr);
-  ASSERT(parameter_provider_ != nullptr);
+  log::assert_that(l2cap_handler_ != nullptr, "assert failed: l2cap_handler_ != nullptr");
+  log::assert_that(acl_connection_ != nullptr, "assert failed: acl_connection_ != nullptr");
+  log::assert_that(parameter_provider_ != nullptr, "assert failed: parameter_provider_ != nullptr");
   link_idle_disconnect_alarm_.Schedule(common::BindOnce(&Link::Disconnect, common::Unretained(this)),
                                        parameter_provider_->GetLeLinkIdleDisconnectTimeout());
   acl_connection_->RegisterCallbacks(this, l2cap_handler_);
@@ -281,7 +281,7 @@ void Link::RefreshRefCount() {
   int ref_count = 0;
   ref_count += fixed_channel_allocator_.GetRefCount();
   ref_count += dynamic_channel_allocator_.NumberOfChannels();
-  ASSERT_LOG(ref_count >= 0, "ref_count %d is less than 0", ref_count);
+  log::assert_that(ref_count >= 0, "ref_count {} is less than 0", ref_count);
   if (ref_count > 0) {
     link_idle_disconnect_alarm_.Cancel();
   } else {
@@ -291,8 +291,11 @@ void Link::RefreshRefCount() {
 }
 
 void Link::NotifyChannelCreation(Cid cid, std::unique_ptr<DynamicChannel> user_channel) {
-  ASSERT(local_cid_to_pending_dynamic_channel_connection_map_.find(cid) !=
-         local_cid_to_pending_dynamic_channel_connection_map_.end());
+  log::assert_that(
+      local_cid_to_pending_dynamic_channel_connection_map_.find(cid) !=
+          local_cid_to_pending_dynamic_channel_connection_map_.end(),
+      "assert failed: local_cid_to_pending_dynamic_channel_connection_map_.find(cid) != "
+      "local_cid_to_pending_dynamic_channel_connection_map_.end()");
   auto& pending_dynamic_channel_connection = local_cid_to_pending_dynamic_channel_connection_map_[cid];
   pending_dynamic_channel_connection.handler_->Post(
       common::BindOnce(std::move(pending_dynamic_channel_connection.on_open_callback_), std::move(user_channel)));
@@ -300,8 +303,11 @@ void Link::NotifyChannelCreation(Cid cid, std::unique_ptr<DynamicChannel> user_c
 }
 
 void Link::NotifyChannelFail(Cid cid, DynamicChannelManager::ConnectionResult result) {
-  ASSERT(local_cid_to_pending_dynamic_channel_connection_map_.find(cid) !=
-         local_cid_to_pending_dynamic_channel_connection_map_.end());
+  log::assert_that(
+      local_cid_to_pending_dynamic_channel_connection_map_.find(cid) !=
+          local_cid_to_pending_dynamic_channel_connection_map_.end(),
+      "assert failed: local_cid_to_pending_dynamic_channel_connection_map_.find(cid) != "
+      "local_cid_to_pending_dynamic_channel_connection_map_.end()");
   auto& pending_dynamic_channel_connection = local_cid_to_pending_dynamic_channel_connection_map_[cid];
   // TODO(cmanton) Pass proper connection falure result to user
   pending_dynamic_channel_connection.handler_->Post(

@@ -154,7 +154,8 @@ void bluetooth::test::headless::GetOpt::ProcessOption(int option_index,
 void bluetooth::test::headless::GetOpt::ParseStackInitFlags() {
   if (init_flags_.size() == 0) return;
 
-  ASSERT(stack_init_flags_ == nullptr);
+  log::assert_that(stack_init_flags_ == nullptr,
+                   "assert failed: stack_init_flags_ == nullptr");
 
   unsigned idx = 0;
   stack_init_flags_ = (const char**)calloc(sizeof(char*), init_flags_.size());

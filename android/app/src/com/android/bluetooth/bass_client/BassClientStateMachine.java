@@ -1658,8 +1658,8 @@ public class BassClientStateMachine extends StateMachine {
                 // Broadcast for testing purpose only
                 if (Utils.isInstrumentationTestMode()) {
                     Intent intent = new Intent("android.bluetooth.bass_client.NOTIFY_TEST");
-                    Utils.sendBroadcast(mService, intent, BLUETOOTH_CONNECT,
-                            Utils.getTempAllowlistBroadcastOptions());
+                    mService.sendBroadcast(
+                            intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
                 }
             } else {
                 broadcastConnectionState(mDevice, mLastConnectionState,
@@ -2024,8 +2024,8 @@ public class BassClientStateMachine extends StateMachine {
             // Broadcast for testing purpose only
             if (Utils.isInstrumentationTestMode()) {
                 Intent intent = new Intent("android.bluetooth.bass_client.NOTIFY_TEST");
-                Utils.sendBroadcast(mService, intent, BLUETOOTH_CONNECT,
-                        Utils.getTempAllowlistBroadcastOptions());
+                mService.sendBroadcast(
+                        intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
             }
         }
         @Override
@@ -2138,8 +2138,8 @@ public class BassClientStateMachine extends StateMachine {
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mDevice);
         intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
                     | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
-        Utils.sendBroadcast(mService, intent, BLUETOOTH_CONNECT,
-                Utils.getTempAllowlistBroadcastOptions());
+        mService.sendBroadcast(
+                intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
     }
 
     int getConnectionState() {

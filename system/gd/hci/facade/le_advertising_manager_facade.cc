@@ -56,7 +56,7 @@ hci::GapData GapDataFromProto(const GapDataMsg& gap_data_proto) {
   auto data_copy = std::make_shared<std::vector<uint8_t>>(gap_data_proto.data().begin(), gap_data_proto.data().end());
   packet::PacketView<packet::kLittleEndian> packet(data_copy);
   auto after = hci::GapData::Parse(&gap_data, packet.begin());
-  ASSERT(after != packet.begin());
+  log::assert_that(after != packet.begin(), "assert failed: after != packet.begin()");
   return gap_data;
 }
 
@@ -219,8 +219,9 @@ class LeAdvertisingManagerFacadeService : public LeAdvertisingManagerFacade::Ser
  public:
   LeAdvertisingManagerFacadeService(LeAdvertisingManager* le_advertising_manager, os::Handler* facade_handler)
       : le_advertising_manager_(le_advertising_manager), facade_handler_(facade_handler) {
-    ASSERT(le_advertising_manager_ != nullptr);
-    ASSERT(facade_handler_ != nullptr);
+    log::assert_that(
+        le_advertising_manager_ != nullptr, "assert failed: le_advertising_manager_ != nullptr");
+    log::assert_that(facade_handler_ != nullptr, "assert failed: facade_handler_ != nullptr");
     le_advertising_manager_->RegisterAdvertisingCallback(this);
   }
 

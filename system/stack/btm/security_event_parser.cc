@@ -62,7 +62,8 @@ static void log_address(const Address& bda, EventCode event_code) {
 }
 static void parse_encryption_change(const EventView event) {
   auto change_opt = EncryptionChangeView::CreateOptional(event);
-  ASSERT(change_opt.has_value());
+  log::assert_that(change_opt.has_value(),
+                   "assert failed: change_opt.has_value()");
   auto change = change_opt.value();
 
   ErrorCode status = change.GetStatus();
@@ -80,7 +81,8 @@ static void parse_encryption_change(const EventView event) {
 static void parse_change_connection_link_key_complete(const EventView event) {
   auto complete_opt =
       ChangeConnectionLinkKeyCompleteView::CreateOptional(event);
-  ASSERT(complete_opt.has_value());
+  log::assert_that(complete_opt.has_value(),
+                   "assert failed: complete_opt.has_value()");
   auto complete = complete_opt.value();
 
   log_classic_pairing_event(ToRawAddress(Address::kEmpty),
@@ -92,27 +94,31 @@ static void parse_change_connection_link_key_complete(const EventView event) {
 }
 static void parse_central_link_key_complete(const EventView event) {
   auto event_opt = CentralLinkKeyCompleteView::CreateOptional(event);
-  ASSERT(event_opt.has_value());
+  log::assert_that(event_opt.has_value(),
+                   "assert failed: event_opt.has_value()");
   auto complete = event_opt.value();
 
   log::info("Unhandled event: {}", EventCodeText(event.GetEventCode()).c_str());
 }
 static void parse_return_link_keys(const EventView event) {
   auto event_opt = ReturnLinkKeysView::CreateOptional(event);
-  ASSERT(event_opt.has_value());
+  log::assert_that(event_opt.has_value(),
+                   "assert failed: event_opt.has_value()");
   auto view = event_opt.value();
 
   log::info("Unhandled event: {}", EventCodeText(event.GetEventCode()).c_str());
 }
 static void parse_pin_code_request(const EventView event) {
   auto event_opt = PinCodeRequestView::CreateOptional(event);
-  ASSERT(event_opt.has_value());
+  log::assert_that(event_opt.has_value(),
+                   "assert failed: event_opt.has_value()");
   auto request = event_opt.value();
   btm_sec_pin_code_request(ToRawAddress(request.GetBdAddr()));
 }
 static void parse_link_key_request(const EventView event) {
   auto event_opt = LinkKeyRequestView::CreateOptional(event);
-  ASSERT(event_opt.has_value());
+  log::assert_that(event_opt.has_value(),
+                   "assert failed: event_opt.has_value()");
   auto request = event_opt.value();
 
   btm_sec_link_key_request(ToRawAddress(request.GetBdAddr()));
@@ -120,7 +126,8 @@ static void parse_link_key_request(const EventView event) {
 }
 static void parse_link_key_notification(const EventView event) {
   auto event_opt = LinkKeyNotificationView::CreateOptional(event);
-  ASSERT(event_opt.has_value());
+  log::assert_that(event_opt.has_value(),
+                   "assert failed: event_opt.has_value()");
   auto notification = event_opt.value();
 
   btm_sec_link_key_notification(
@@ -130,7 +137,8 @@ static void parse_link_key_notification(const EventView event) {
 }
 static void parse_encryption_key_refresh_complete(const EventView event) {
   auto event_opt = EncryptionKeyRefreshCompleteView::CreateOptional(event);
-  ASSERT(event_opt.has_value());
+  log::assert_that(event_opt.has_value(),
+                   "assert failed: event_opt.has_value()");
   auto refresh = event_opt.value();
 
   btm_sec_encryption_key_refresh_complete(
@@ -139,7 +147,8 @@ static void parse_encryption_key_refresh_complete(const EventView event) {
 }
 static void parse_io_capabilities_req(const EventView event) {
   auto event_opt = IoCapabilityRequestView::CreateOptional(event);
-  ASSERT(event_opt.has_value());
+  log::assert_that(event_opt.has_value(),
+                   "assert failed: event_opt.has_value()");
   auto request = event_opt.value();
 
   RawAddress peer = ToRawAddress(request.GetBdAddr());
@@ -149,7 +158,8 @@ static void parse_io_capabilities_req(const EventView event) {
 }
 static void parse_io_capabilities_rsp(const EventView event) {
   auto response_opt = IoCapabilityResponseView::CreateOptional(event);
-  ASSERT(response_opt.has_value());
+  log::assert_that(response_opt.has_value(),
+                   "assert failed: response_opt.has_value()");
   auto response = response_opt.value();
 
   tBTM_SP_IO_RSP evt_data{
@@ -165,7 +175,8 @@ static void parse_io_capabilities_rsp(const EventView event) {
 }
 static void parse_remote_oob_data_request(const EventView event) {
   auto event_opt = RemoteOobDataRequestView::CreateOptional(event);
-  ASSERT(event_opt.has_value());
+  log::assert_that(event_opt.has_value(),
+                   "assert failed: event_opt.has_value()");
   auto request = event_opt.value();
 
   btm_rem_oob_req(ToRawAddress(request.GetBdAddr()));
@@ -173,7 +184,8 @@ static void parse_remote_oob_data_request(const EventView event) {
 }
 static void parse_simple_pairing_complete(const EventView event) {
   auto event_opt = SimplePairingCompleteView::CreateOptional(event);
-  ASSERT(event_opt.has_value());
+  log::assert_that(event_opt.has_value(),
+                   "assert failed: event_opt.has_value()");
   auto complete = event_opt.value();
 
   btm_simple_pair_complete(ToRawAddress(complete.GetBdAddr()),
@@ -183,7 +195,8 @@ static void parse_simple_pairing_complete(const EventView event) {
 }
 static void parse_user_passkey_notification(const EventView event) {
   auto event_opt = UserPasskeyNotificationView::CreateOptional(event);
-  ASSERT(event_opt.has_value());
+  log::assert_that(event_opt.has_value(),
+                   "assert failed: event_opt.has_value()");
   auto notification = event_opt.value();
 
   btm_proc_sp_req_evt(BTM_SP_KEY_NOTIF_EVT,
@@ -193,7 +206,8 @@ static void parse_user_passkey_notification(const EventView event) {
 }
 static void parse_keypress_notification(const EventView event) {
   auto event_opt = KeypressNotificationView::CreateOptional(event);
-  ASSERT(event_opt.has_value());
+  log::assert_that(event_opt.has_value(),
+                   "assert failed: event_opt.has_value()");
   auto notification = event_opt.value();
 
   log::info("Unhandled event: {}", EventCodeText(event.GetEventCode()).c_str());
@@ -201,7 +215,8 @@ static void parse_keypress_notification(const EventView event) {
 }
 static void parse_user_confirmation_request(const EventView event) {
   auto event_opt = UserConfirmationRequestView::CreateOptional(event);
-  ASSERT(event_opt.has_value());
+  log::assert_that(event_opt.has_value(),
+                   "assert failed: event_opt.has_value()");
   auto request = event_opt.value();
 
   btm_proc_sp_req_evt(BTM_SP_CFM_REQ_EVT, ToRawAddress(request.GetBdAddr()),
@@ -210,7 +225,8 @@ static void parse_user_confirmation_request(const EventView event) {
 }
 static void parse_user_passkey_request(const EventView event) {
   auto event_opt = UserPasskeyRequestView::CreateOptional(event);
-  ASSERT(event_opt.has_value());
+  log::assert_that(event_opt.has_value(),
+                   "assert failed: event_opt.has_value()");
   auto request = event_opt.value();
 
   btm_proc_sp_req_evt(BTM_SP_KEY_REQ_EVT, ToRawAddress(request.GetBdAddr()),

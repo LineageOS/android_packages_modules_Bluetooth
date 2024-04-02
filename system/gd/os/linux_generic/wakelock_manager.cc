@@ -189,7 +189,8 @@ void WakelockManager::SetOsCallouts(OsCallouts* callouts, Handler* handler) {
   os_callouts_handler_ = handler;
   is_native_ = (os_callouts_ == nullptr);
   if (is_native_) {
-    ASSERT_LOG(os_callouts_handler_ != nullptr, "handler must not be null when callout is not null");
+    log::assert_that(
+        os_callouts_handler_ != nullptr, "handler must not be null when callout is not null");
   }
   log::info("set to {}", is_native_ ? "native" : "non-native");
 }

@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <bluetooth/log.h>
 #include <limits.h>
 #include <string.h>
 
@@ -119,13 +120,13 @@ std::string ToString(bool value);
 template <typename... Args>
 std::string StringFormat(const std::string& format, Args... args) {
   auto size = std::snprintf(nullptr, 0, format.c_str(), args...);
-  ASSERT_LOG(size >= 0, "return value %d, error %d, text '%s'", size, errno, strerror(errno));
+  log::assert_that(size >= 0, "return value {}, error {}, text '{}'", size, errno, strerror(errno));
   // Add 1 for terminating null byte
   std::vector<char> buffer(size + 1);
   auto actual_size = std::snprintf(buffer.data(), buffer.size(), format.c_str(), args...);
-  ASSERT_LOG(
+  log::assert_that(
       size == actual_size,
-      "asked size %d, actual size %d, error %d, text '%s'",
+      "asked size {}, actual size {}, error {}, text '{}'",
       size,
       actual_size,
       errno,

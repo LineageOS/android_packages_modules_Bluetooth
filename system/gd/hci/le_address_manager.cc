@@ -68,9 +68,14 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddress(
     }
     return;
   }
-  ASSERT(address_policy_ == AddressPolicy::POLICY_NOT_SET);
-  ASSERT(address_policy != AddressPolicy::POLICY_NOT_SET);
-  ASSERT_LOG(registered_clients_.empty(), "Policy must be set before clients are registered.");
+  log::assert_that(
+      address_policy_ == AddressPolicy::POLICY_NOT_SET,
+      "assert failed: address_policy_ == AddressPolicy::POLICY_NOT_SET");
+  log::assert_that(
+      address_policy != AddressPolicy::POLICY_NOT_SET,
+      "assert failed: address_policy != AddressPolicy::POLICY_NOT_SET");
+  log::assert_that(
+      registered_clients_.empty(), "Policy must be set before clients are registered.");
   address_policy_ = address_policy;
   supports_ble_privacy_ = supports_ble_privacy;
   log::info("SetPrivacyPolicyForInitiatorAddress with policy {}", address_policy);
@@ -89,7 +94,9 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddress(
       auto addr = fixed_address.GetAddress();
       auto address = addr.address;
       // The two most significant bits of the static address shall be equal to 1
-      ASSERT_LOG((address[5] & BLE_ADDR_MASK) == BLE_ADDR_MASK, "The two most significant bits shall be equal to 1");
+      log::assert_that(
+          (address[5] & BLE_ADDR_MASK) == BLE_ADDR_MASK,
+          "The two most significant bits shall be equal to 1");
       // Bits of the random part of the address shall not be all 1 or all 0
       if ((address[0] == 0x00 && address[1] == 0x00 && address[2] == 0x00 && address[3] == 0x00 && address[4] == 0x00 &&
            address[5] == BLE_ADDR_MASK) ||
@@ -124,8 +131,11 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddressForTest(
     Octet16 rotation_irk,
     std::chrono::milliseconds minimum_rotation_time,
     std::chrono::milliseconds maximum_rotation_time) {
-  ASSERT(address_policy != AddressPolicy::POLICY_NOT_SET);
-  ASSERT_LOG(registered_clients_.empty(), "Policy must be set before clients are registered.");
+  log::assert_that(
+      address_policy != AddressPolicy::POLICY_NOT_SET,
+      "assert failed: address_policy != AddressPolicy::POLICY_NOT_SET");
+  log::assert_that(
+      registered_clients_.empty(), "Policy must be set before clients are registered.");
   address_policy_ = address_policy;
 
   switch (address_policy_) {
@@ -136,7 +146,9 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddressForTest(
       auto addr = fixed_address.GetAddress();
       auto address = addr.address;
       // The two most significant bits of the static address shall be equal to 1
-      ASSERT_LOG((address[5] & BLE_ADDR_MASK) == BLE_ADDR_MASK, "The two most significant bits shall be equal to 1");
+      log::assert_that(
+          (address[5] & BLE_ADDR_MASK) == BLE_ADDR_MASK,
+          "The two most significant bits shall be equal to 1");
       // Bits of the random part of the address shall not be all 1 or all 0
       if ((address[0] == 0x00 && address[1] == 0x00 && address[2] == 0x00 && address[3] == 0x00 && address[4] == 0x00 &&
            address[5] == BLE_ADDR_MASK) ||
@@ -226,12 +238,14 @@ void LeAddressManager::AckResume(LeAddressManagerCallback* callback) {
 }
 
 AddressWithType LeAddressManager::GetInitiatorAddress() {
-  ASSERT(address_policy_ != AddressPolicy::POLICY_NOT_SET);
+  log::assert_that(
+      address_policy_ != AddressPolicy::POLICY_NOT_SET,
+      "assert failed: address_policy_ != AddressPolicy::POLICY_NOT_SET");
   return le_address_;
 }
 
 AddressWithType LeAddressManager::NewResolvableAddress() {
-  ASSERT(RotatingAddress());
+  log::assert_that(RotatingAddress(), "assert failed: RotatingAddress()");
   hci::Address address = generate_rpa();
   auto random_address = AddressWithType(address, AddressType::RANDOM_DEVICE_ADDRESS);
   return random_address;
@@ -239,7 +253,7 @@ AddressWithType LeAddressManager::NewResolvableAddress() {
 
 AddressWithType LeAddressManager::NewNonResolvableAddress() {
   if (!IS_FLAG_ENABLED(nrpa_non_connectable_adv)) {
-    ASSERT(RotatingAddress());
+    log::assert_that(RotatingAddress(), "assert failed: RotatingAddress()");
   }
   hci::Address address = generate_nrpa();
   auto random_address = AddressWithType(address, AddressType::RANDOM_DEVICE_ADDRESS);
@@ -459,7 +473,7 @@ void LeAddressManager::handle_next_command() {
     }
   }
 
-  ASSERT(!cached_commands_.empty());
+  log::assert_that(!cached_commands_.empty(), "assert failed: !cached_commands_.empty()");
   auto command = std::move(cached_commands_.front());
   cached_commands_.pop();
 

@@ -1792,7 +1792,7 @@ bool L2CA_GetPeerChannelId(uint16_t lcid, uint16_t* rcid) {
     return false;
   }
 
-  ASSERT(rcid != nullptr);
+  log::assert_that(rcid != nullptr, "assert failed: rcid != nullptr");
   *rcid = p_ccb->remote_cid;
   return true;
 }

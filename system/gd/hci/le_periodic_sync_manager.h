@@ -103,10 +103,11 @@ class PeriodicSyncManager {
       return;
     }
     auto address_type = request.address_with_type.GetAddressType();
-    ASSERT_LOG(
-        (address_type == AddressType::PUBLIC_DEVICE_ADDRESS || address_type == AddressType::RANDOM_DEVICE_ADDRESS),
-        "Invalid address type %s",
-        AddressTypeText(address_type).c_str());
+    log::assert_that(
+        (address_type == AddressType::PUBLIC_DEVICE_ADDRESS ||
+         address_type == AddressType::RANDOM_DEVICE_ADDRESS),
+        "Invalid address type {}",
+        AddressTypeText(address_type));
     periodic_syncs_.emplace_back(request);
     log::debug(
         "address = {}, sid = {}",
@@ -215,9 +216,9 @@ class PeriodicSyncManager {
     if (!IS_FLAG_ENABLED(leaudio_broadcast_assistant_handle_command_statuses)) {
       return;
     }
-    ASSERT(view.IsValid());
+    log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
     auto status_view = View::Create(view);
-    ASSERT(status_view.IsValid());
+    log::assert_that(status_view.IsValid(), "assert failed: status_view.IsValid()");
     auto status = status_view.GetStatus();
     if (status != ErrorCode::SUCCESS) {
       auto& request = pending_sync_requests_.front();
@@ -250,9 +251,9 @@ class PeriodicSyncManager {
     if (!IS_FLAG_ENABLED(leaudio_broadcast_assistant_handle_command_statuses)) {
       return;
     }
-    ASSERT(view.IsValid());
+    log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
     auto status_view = View::Create(view);
-    ASSERT(status_view.IsValid());
+    log::assert_that(status_view.IsValid(), "assert failed: status_view.IsValid()");
     auto status = status_view.GetStatus();
     if (status != ErrorCode::SUCCESS) {
       auto& request = pending_sync_requests_.front();
@@ -269,9 +270,9 @@ class PeriodicSyncManager {
 
   template <class View>
   void HandlePeriodicAdvertisingSyncTransferComplete(uint16_t connection_handle, CommandCompleteView view) {
-    ASSERT(view.IsValid());
+    log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
     auto status_view = View::Create(view);
-    ASSERT(status_view.IsValid());
+    log::assert_that(status_view.IsValid(), "assert failed: status_view.IsValid()");
     if (status_view.GetStatus() != ErrorCode::SUCCESS) {
       log::warn(
           "Got a Command complete {}, status {}, connection_handle {}",
@@ -298,7 +299,7 @@ class PeriodicSyncManager {
   }
 
   void HandleLePeriodicAdvertisingSyncEstablished(LePeriodicAdvertisingSyncEstablishedView event_view) {
-    ASSERT(event_view.IsValid());
+    log::assert_that(event_view.IsValid(), "assert failed: event_view.IsValid()");
     log::debug(
         "[PSync]: status={}, sync_handle={}, address={}, s_id={}, address_type={}, adv_phy={}, "
         "adv_interval={}, "
@@ -367,7 +368,7 @@ class PeriodicSyncManager {
   }
 
   void HandleLePeriodicAdvertisingReport(LePeriodicAdvertisingReportView event_view) {
-    ASSERT(event_view.IsValid());
+    log::assert_that(event_view.IsValid(), "assert failed: event_view.IsValid()");
     log::debug(
         "[PSync]: sync_handle = {}, tx_power = {}, rssi = {},cte_type = {}, data_status = {}, "
         "data_len = {}",
@@ -404,7 +405,7 @@ class PeriodicSyncManager {
   }
 
   void HandleLePeriodicAdvertisingSyncLost(LePeriodicAdvertisingSyncLostView event_view) {
-    ASSERT(event_view.IsValid());
+    log::assert_that(event_view.IsValid(), "assert failed: event_view.IsValid()");
     uint16_t sync_handle = event_view.GetSyncHandle();
     log::debug("[PSync]: sync_handle = {}", sync_handle);
     callbacks_->OnPeriodicSyncLost(sync_handle);
@@ -417,7 +418,7 @@ class PeriodicSyncManager {
   }
 
   void HandleLePeriodicAdvertisingSyncTransferReceived(LePeriodicAdvertisingSyncTransferReceivedView event_view) {
-    ASSERT(event_view.IsValid());
+    log::assert_that(event_view.IsValid(), "assert failed: event_view.IsValid()");
     uint8_t status = (uint8_t)event_view.GetStatus();
     uint8_t advertiser_phy = (uint8_t)event_view.GetAdvertiserPhy();
     log::debug(
@@ -468,7 +469,7 @@ class PeriodicSyncManager {
   }
 
   void HandleLeBigInfoAdvertisingReport(LeBigInfoAdvertisingReportView event_view) {
-    ASSERT(event_view.IsValid());
+    log::assert_that(event_view.IsValid(), "assert failed: event_view.IsValid()");
     log::debug(
         "[PAST]:sync_handle {}, num_bises = {}, nse = {},iso_interval = {}, bn = {}, pto = {}, irc "
         "= {}, max_pdu = {} sdu_interval = {}, max_sdu = {}, phy = {}, framing = {}, encryption  = "

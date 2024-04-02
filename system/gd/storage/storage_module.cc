@@ -76,9 +76,10 @@ StorageModule::StorageModule(
       is_single_user_mode_(is_single_user_mode) {
   // e.g. "/data/misc/bluedroid/bt_config.conf" to "/data/misc/bluedroid/bt_config.bak"
   config_backup_path_ = config_file_path_.substr(0, config_file_path_.find_last_of('.')) + ".bak";
-  ASSERT_LOG(
+  log::assert_that(
       config_save_delay > kMinConfigSaveDelay,
-      "Config save delay of %lld ms is not enough, must be at least %lld ms to avoid overwhelming the disk",
+      "Config save delay of {} ms is not enough, must be at least {} ms to avoid overwhelming the "
+      "disk",
       config_save_delay_.count(),
       kMinConfigSaveDelay.count());
 };
@@ -126,7 +127,9 @@ void StorageModule::SaveImmediately() {
   // 1. rename old config to backup name
   if (os::FileExists(config_file_path_)) {
 #ifndef TARGET_FLOSS
-    ASSERT(os::RenameFile(config_file_path_, config_backup_path_));
+    log::assert_that(
+        os::RenameFile(config_file_path_, config_backup_path_),
+        "assert failed: os::RenameFile(config_file_path_, config_backup_path_)");
 #else
     if (!os::RenameFile(config_file_path_, config_backup_path_)) {
       log::error("Unable to rename old config to back up name");
@@ -135,7 +138,9 @@ void StorageModule::SaveImmediately() {
   }
   // 2. write in-memory config to disk, if failed, backup can still be used
 #ifndef TARGET_FLOSS
-  ASSERT(LegacyConfigFile::FromPath(config_file_path_).Write(pimpl_->cache_));
+  log::assert_that(
+      LegacyConfigFile::FromPath(config_file_path_).Write(pimpl_->cache_),
+      "assert failed: LegacyConfigFile::FromPath(config_file_path_).Write(pimpl_->cache_)");
 #else
   if (!LegacyConfigFile::FromPath(config_file_path_).Write(pimpl_->cache_)) {
     log::error("Unable to write config file to disk");

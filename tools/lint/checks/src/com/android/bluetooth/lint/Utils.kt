@@ -21,8 +21,8 @@ import org.jetbrains.uast.UClass
 val BLUETOOTH_PLATFORM_PACKAGE = "com.android.bluetooth"
 
 /** Returns true */
-fun isBluetoothClass(node: UClass): Boolean {
-    return node.qualifiedName?.startsWith(BLUETOOTH_PLATFORM_PACKAGE) ?: false
+fun isBluetoothClass(node: UClass?): Boolean {
+    return node?.qualifiedName?.startsWith(BLUETOOTH_PLATFORM_PACKAGE) ?: false
 }
 
 /** Writes lines to debug output, visible in the isolated Java output */

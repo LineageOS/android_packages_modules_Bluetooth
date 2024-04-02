@@ -36,10 +36,10 @@ DynamicChannelImpl::DynamicChannelImpl(Psm psm, Cid cid, Cid remote_cid, l2cap::
                                        os::Handler* l2cap_handler)
     : psm_(psm), cid_(cid), remote_cid_(remote_cid), link_(link), l2cap_handler_(l2cap_handler),
       device_(link->GetDevice()) {
-  ASSERT(cid_ > 0);
-  ASSERT(remote_cid_ > 0);
-  ASSERT(link_ != nullptr);
-  ASSERT(l2cap_handler_ != nullptr);
+  log::assert_that(cid_ > 0, "assert failed: cid_ > 0");
+  log::assert_that(remote_cid_ > 0, "assert failed: remote_cid_ > 0");
+  log::assert_that(link_ != nullptr, "assert failed: link_ != nullptr");
+  log::assert_that(l2cap_handler_ != nullptr, "assert failed: l2cap_handler_ != nullptr");
 }
 
 hci::AddressWithType DynamicChannelImpl::GetDevice() const {
@@ -47,7 +47,7 @@ hci::AddressWithType DynamicChannelImpl::GetDevice() const {
 }
 
 void DynamicChannelImpl::RegisterOnCloseCallback(DynamicChannel::OnCloseCallback on_close_callback) {
-  ASSERT_LOG(on_close_callback_.IsEmpty(), "OnCloseCallback can only be registered once");
+  log::assert_that(on_close_callback_.IsEmpty(), "OnCloseCallback can only be registered once");
   // If channel is already closed, call the callback immediately without saving it
   if (closed_) {
     on_close_callback.Invoke(close_reason_);
@@ -65,9 +65,9 @@ void DynamicChannelImpl::Close() {
 }
 
 void DynamicChannelImpl::OnClosed(hci::ErrorCode status) {
-  ASSERT_LOG(
+  log::assert_that(
       !closed_,
-      "Device %s Cid 0x%x closed twice, old status 0x%x, new status 0x%x",
+      "Device {} Cid 0x{:x} closed twice, old status 0x{:x}, new status 0x{:x}",
       ADDRESS_TO_LOGGABLE_CSTR(device_),
       cid_,
       static_cast<int>(close_reason_),

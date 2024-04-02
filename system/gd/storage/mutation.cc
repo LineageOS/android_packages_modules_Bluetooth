@@ -23,8 +23,8 @@ namespace storage {
 
 Mutation::Mutation(ConfigCache* config, ConfigCache* memory_only_config)
     : config_(config), memory_only_config_(memory_only_config) {
-  ASSERT(config_ != nullptr);
-  ASSERT(memory_only_config_ != nullptr);
+  log::assert_that(config_ != nullptr, "assert failed: config_ != nullptr");
+  log::assert_that(memory_only_config_ != nullptr, "assert failed: memory_only_config_ != nullptr");
 }
 
 void Mutation::Add(MutationEntry entry) {

@@ -2177,8 +2177,8 @@ void btm_sec_check_pending_reqs(void) {
  *
  ******************************************************************************/
 void btm_sec_dev_reset(void) {
-  ASSERT_LOG(bluetooth::shim::GetController()->SupportsSimplePairing(),
-             "only controllers with SSP is supported");
+  log::assert_that(bluetooth::shim::GetController()->SupportsSimplePairing(),
+                   "only controllers with SSP is supported");
 
   /* set the default IO capabilities */
   btm_sec_cb.devcb.loc_io_caps = btif_storage_get_local_io_caps();
@@ -4954,7 +4954,7 @@ const char* tBTM_SEC_CB::btm_pair_state_descr(tBTM_PAIRING_STATE state) {
  ******************************************************************************/
 void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec,
                                  tBTM_STATUS btm_status, bool is_le_transport) {
-  ASSERT(p_dev_rec != nullptr);
+  log::assert_that(p_dev_rec != nullptr, "assert failed: p_dev_rec != nullptr");
   log::debug("transport={}, btm_status={}", is_le_transport ? "le" : "classic",
              btm_status_text(btm_status).c_str());
 

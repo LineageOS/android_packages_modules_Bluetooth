@@ -31,11 +31,11 @@ namespace bluetooth {
 namespace storage {
 
 LegacyConfigFile::LegacyConfigFile(std::string path) : path_(std::move(path)) {
-  ASSERT(!path_.empty());
+  log::assert_that(!path_.empty(), "assert failed: !path_.empty()");
 };
 
 std::optional<ConfigCache> LegacyConfigFile::Read(size_t temp_devices_capacity) {
-  ASSERT(!path_.empty());
+  log::assert_that(!path_.empty(), "assert failed: !path_.empty()");
   std::ifstream config_file(path_);
   if (!config_file || !config_file.is_open()) {
     log::error("unable to open file '{}', error: {}", path_, strerror(errno));

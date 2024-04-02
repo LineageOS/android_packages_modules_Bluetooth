@@ -869,7 +869,7 @@ static void bta_jv_start_discovery_cback(UNUSED_ATTR const RawAddress& bd_addr,
 void bta_jv_start_discovery(const RawAddress& bd_addr, uint16_t num_uuid,
                             bluetooth::Uuid* uuid_list,
                             uint32_t rfcomm_slot_id) {
-  ASSERT(uuid_list != nullptr);
+  log::assert_that(uuid_list != nullptr, "assert failed: uuid_list != nullptr");
   if (bta_jv_cb.sdp_cb.sdp_active) {
     log::warn(
         "Unable to start discovery as already in progress active_bd_addr{} "

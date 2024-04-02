@@ -26,6 +26,7 @@
 #define AVDT_API_H
 
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 
 #include <cstdint>
 #include <string>
@@ -55,8 +56,8 @@ typedef enum : uint16_t {
 } tAVDT_RESULT;
 
 inline tAVDT_RESULT ToAvdtResult(uint16_t result) {
-  ASSERT_LOG(result <= AVDT_WRITE_FAIL, "Unable to convert illegal result:%hu",
-             result);
+  bluetooth::log::assert_that(result <= AVDT_WRITE_FAIL,
+                              "Unable to convert illegal result:{}", result);
   return static_cast<tAVDT_RESULT>(result);
 }
 

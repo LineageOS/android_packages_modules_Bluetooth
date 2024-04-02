@@ -7,7 +7,7 @@ package pandora;
 // Service to trigger RFCOMM procedures.
 service RFCOMM {
   rpc ConnectToServer(ConnectionRequest) returns (ConnectionResponse);
-  rpc StartServer(ServerOptions) returns (StartServerResponse);
+  rpc StartServer(StartServerRequest) returns (StartServerResponse);
   rpc AcceptConnection(AcceptConnectionRequest) returns (AcceptConnectionResponse);
   rpc Disconnect(DisconnectionRequest) returns (DisconnectionResponse);
   rpc StopServer(StopServerRequest) returns (StopServerResponse);
@@ -28,7 +28,7 @@ message ConnectionResponse {
   RfcommConnection connection = 1;
 }
 
-message ServerOptions {
+message StartServerRequest {
   string name = 1;
   string uuid = 2;
 }

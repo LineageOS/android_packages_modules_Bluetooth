@@ -34,10 +34,10 @@
 
 #include "bta_api_data_types.h"
 #include "hci/le_rand_callback.h"
-#include "internal_include/bt_target.h"
 #include "macros.h"
 #include "os/log.h"
 #include "stack/btm/power_mode.h"
+#include "stack/include/bt_dev_class.h"
 #include "stack/include/bt_device_type.h"
 #include "stack/include/bt_name.h"
 #include "stack/include/btm_api_types.h"
@@ -121,9 +121,10 @@ typedef enum : uint8_t {
 } tBTA_PREF_ROLES;
 
 inline tBTA_PREF_ROLES toBTA_PREF_ROLES(uint8_t role) {
-  ASSERT_LOG(role <= BTA_PERIPHERAL_ROLE_ONLY,
-             "Passing illegal preferred role:0x%02x [0x%02x<=>0x%02x]", role,
-             BTA_ANY_ROLE, BTA_PERIPHERAL_ROLE_ONLY);
+  bluetooth::log::assert_that(
+      role <= BTA_PERIPHERAL_ROLE_ONLY,
+      "Passing illegal preferred role:0x{:02x} [0x{:02x}<=>0x{:02x}]", role,
+      int(BTA_ANY_ROLE), int(BTA_PERIPHERAL_ROLE_ONLY));
   return static_cast<tBTA_PREF_ROLES>(role);
 }
 
@@ -317,11 +318,6 @@ struct service_discovery_callbacks {
 
 /* Execute call back */
 typedef void(tBTA_DM_EXEC_CBACK)(void* p_param);
-
-/* Encryption callback*/
-typedef void(tBTA_DM_ENCRYPT_CBACK)(const RawAddress& bd_addr,
-                                    tBT_TRANSPORT transport,
-                                    tBTA_STATUS result);
 
 typedef void(tBTA_BLE_ENERGY_INFO_CBACK)(tBTM_BLE_TX_TIME_MS tx_time,
                                          tBTM_BLE_RX_TIME_MS rx_time,
@@ -954,6 +950,8 @@ template <>
 struct formatter<tBTA_DM_SEARCH_EVT> : enum_formatter<tBTA_DM_SEARCH_EVT> {};
 template <>
 struct formatter<tBTA_DM_ACL_EVT> : enum_formatter<tBTA_DM_ACL_EVT> {};
+template <>
+struct formatter<tBTA_PREF_ROLES> : enum_formatter<tBTA_PREF_ROLES> {};
 }  // namespace fmt
 
 #endif /* BTA_API_H */

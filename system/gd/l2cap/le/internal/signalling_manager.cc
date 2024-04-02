@@ -42,8 +42,8 @@ LeSignallingManager::LeSignallingManager(os::Handler* handler, Link* link,
                                          l2cap::internal::DynamicChannelAllocator* channel_allocator)
     : handler_(handler), link_(link), data_pipeline_manager_(data_pipeline_manager),
       dynamic_service_manager_(dynamic_service_manager), channel_allocator_(channel_allocator), alarm_(handler) {
-  ASSERT(handler_ != nullptr);
-  ASSERT(link_ != nullptr);
+  log::assert_that(handler_ != nullptr, "assert failed: handler_ != nullptr");
+  log::assert_that(link_ != nullptr, "assert failed: link_ != nullptr");
   signalling_channel_ =
       link_->AllocateFixedChannel(kLeSignallingCid, SecurityPolicy::NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK);
   signalling_channel_->GetQueueUpEnd()->RegisterDequeue(

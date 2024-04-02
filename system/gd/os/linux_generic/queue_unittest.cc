@@ -65,8 +65,10 @@ class QueueTest : public ::testing::Test {
   Handler* dequeue_handler_;
 
   void sync_enqueue_handler() {
-    ASSERT(enqueue_thread_ != nullptr);
-    ASSERT(enqueue_thread_->GetReactor()->WaitForIdle(2s));
+    log::assert_that(enqueue_thread_ != nullptr, "assert failed: enqueue_thread_ != nullptr");
+    log::assert_that(
+        enqueue_thread_->GetReactor()->WaitForIdle(2s),
+        "assert failed: enqueue_thread_->GetReactor()->WaitForIdle(2s)");
   }
 };
 

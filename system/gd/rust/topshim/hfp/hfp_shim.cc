@@ -94,7 +94,7 @@ static void call_hold_cb(bluetooth::headset::bthf_chld_type_t chld, RawAddress* 
       chld_rs = rusty::CallHoldCommand::AddHeldToConf;
       break;
     default:
-      ASSERT_LOG(false, "Unhandled enum value from C++");
+      log::fatal("Unhandled enum value from C++");
   }
   rusty::hfp_call_hold_callback(chld_rs, *addr);
 }
@@ -114,7 +114,7 @@ static headset::bthf_call_state_t from_rust_call_state(rusty::CallState state) {
     case rusty::CallState::Held:
       return headset::BTHF_CALL_STATE_HELD;
     default:
-      ASSERT_LOG(false, "Unhandled enum value from Rust");
+      log::fatal("Unhandled enum value from Rust");
   }
 }
 

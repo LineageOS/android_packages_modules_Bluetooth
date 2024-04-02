@@ -187,7 +187,7 @@ class RFCOMMService(rfcomm_grpc_aio.RFCOMMServicer):
 
         return empty_pb2.Empty()
 
-    async def StartServer(self, request: rfcomm_pb2.ServerOptions,
+    async def StartServer(self, request: rfcomm_pb2.StartServerRequest,
                           context: grpc.ServicerContext) -> rfcomm_pb2.StartServerResponse:
 
         class StartServerObserver(socket_manager.SocketManagerCallbacks):

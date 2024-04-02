@@ -775,7 +775,8 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
           lap, btm_cb.btm_inq_vars.inqparms.duration, 0),
       get_main_thread()->BindOnce(
           [](bluetooth::hci::CommandStatusView status_view) {
-            ASSERT(status_view.IsValid());
+            log::assert_that(status_view.IsValid(),
+                             "assert failed: status_view.IsValid()");
             auto status = status_view.GetStatus();
             if (status == bluetooth::hci::ErrorCode::SUCCESS) {
               BTIF_dm_report_inquiry_status_change(
@@ -1318,7 +1319,8 @@ static void btm_process_inq_results_standard(bluetooth::hci::EventView event) {
   }
 
   auto standard_view = bluetooth::hci::InquiryResultView::Create(event);
-  ASSERT(standard_view.IsValid());
+  log::assert_that(standard_view.IsValid(),
+                   "assert failed: standard_view.IsValid()");
   auto responses = standard_view.GetResponses();
 
   btm_cb.neighbor.classic_inquiry.results += responses.size();
@@ -1438,7 +1440,7 @@ static void btm_process_inq_results_rssi(bluetooth::hci::EventView event) {
   }
 
   auto rssi_view = bluetooth::hci::InquiryResultWithRssiView::Create(event);
-  ASSERT(rssi_view.IsValid());
+  log::assert_that(rssi_view.IsValid(), "assert failed: rssi_view.IsValid()");
   auto responses = rssi_view.GetResponses();
 
   btm_cb.neighbor.classic_inquiry.results += responses.size();
@@ -1582,7 +1584,8 @@ static void btm_process_inq_results_extended(bluetooth::hci::EventView event) {
   }
 
   auto extended_view = bluetooth::hci::ExtendedInquiryResultView::Create(event);
-  ASSERT(extended_view.IsValid());
+  log::assert_that(extended_view.IsValid(),
+                   "assert failed: extended_view.IsValid()");
 
   btm_cb.neighbor.classic_inquiry.results++;
   {
@@ -2428,7 +2431,7 @@ void btm_set_eir_uuid(const uint8_t* p_eir, tBTM_INQ_RESULTS* p_results) {
 
 static void on_inquiry_complete(bluetooth::hci::EventView event) {
   auto complete = bluetooth::hci::InquiryCompleteView::Create(event);
-  ASSERT(complete.IsValid());
+  log::assert_that(complete.IsValid(), "assert failed: complete.IsValid()");
   auto status = to_hci_status_code(static_cast<uint8_t>(complete.GetStatus()));
 
   btm_process_inq_complete(status, BTM_BR_INQUIRY_MASK);
@@ -2445,7 +2448,7 @@ static void on_inquiry_complete(bluetooth::hci::EventView event) {
  *
  ******************************************************************************/
 static void on_incoming_hci_event(bluetooth::hci::EventView event) {
-  ASSERT(event.IsValid());
+  log::assert_that(event.IsValid(), "assert failed: event.IsValid()");
   auto event_code = event.GetEventCode();
   switch (event_code) {
     case bluetooth::hci::EventCode::INQUIRY_COMPLETE:

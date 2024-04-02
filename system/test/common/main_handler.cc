@@ -17,6 +17,7 @@
 #include <base/functional/bind.h>
 #include <base/functional/callback_forward.h>
 #include <base/location.h>
+#include <bluetooth/log.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -39,29 +40,33 @@ void do_post_on_bt_main(BtMainClosure closure) { closure(); }
 
 bt_status_t do_in_main_thread(const base::Location& from_here,
                               base::OnceClosure task) {
-  ASSERT_LOG(main_thread.DoInThread(from_here, std::move(task)),
-             "Unable to run on main thread");
+  bluetooth::log::assert_that(
+      main_thread.DoInThread(from_here, std::move(task)),
+      "Unable to run on main thread");
   return BT_STATUS_SUCCESS;
 }
 
 bt_status_t do_in_main_thread_delayed(const base::Location& from_here,
                                       base::OnceClosure task,
                                       std::chrono::microseconds delay) {
-  ASSERT_LOG(!main_thread.DoInThreadDelayed(from_here, std::move(task), delay),
-             "Unable to run on main thread delayed");
+  bluetooth::log::assert_that(
+      !main_thread.DoInThreadDelayed(from_here, std::move(task), delay),
+      "Unable to run on main thread delayed");
   return BT_STATUS_SUCCESS;
 }
 
 void post_on_bt_main(BtMainClosure closure) {
-  ASSERT(do_in_main_thread(FROM_HERE, base::BindOnce(do_post_on_bt_main,
-                                                     std::move(closure))) ==
-         BT_STATUS_SUCCESS);
+  bluetooth::log::assert_that(
+      do_in_main_thread(
+          FROM_HERE, base::BindOnce(do_post_on_bt_main, std::move(closure))) ==
+          BT_STATUS_SUCCESS,
+      "Unable to post on main thread");
 }
 
 void main_thread_start_up() {
   main_thread.StartUp();
-  ASSERT_LOG(main_thread.IsRunning(),
-             "Unable to start message loop on main thread");
+  bluetooth::log::assert_that(main_thread.IsRunning(),
+                              "Unable to start message loop on main thread");
 }
 
 void main_thread_shut_down() { main_thread.ShutDown(); }

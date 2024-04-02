@@ -77,7 +77,7 @@ ConfigCache::ConfigCache(ConfigCache&& other) noexcept
       information_sections_(std::move(other.information_sections_)),
       persistent_devices_(std::move(other.persistent_devices_)),
       temporary_devices_(std::move(other.temporary_devices_)) {
-  ASSERT_LOG(
+  log::assert_that(
       other.persistent_config_changed_callback_ == nullptr,
       "Can't assign after setting the callback");
 }
@@ -88,7 +88,7 @@ ConfigCache& ConfigCache::operator=(ConfigCache&& other) noexcept {
   }
   std::lock_guard<std::recursive_mutex> my_lock(mutex_);
   std::lock_guard<std::recursive_mutex> others_lock(other.mutex_);
-  ASSERT_LOG(
+  log::assert_that(
       other.persistent_config_changed_callback_ == nullptr,
       "Can't assign after setting the callback");
   persistent_config_changed_callback_ = {};
@@ -184,8 +184,8 @@ void ConfigCache::SetProperty(std::string section, std::string property, std::st
   TrimAfterNewLine(section);
   TrimAfterNewLine(property);
   TrimAfterNewLine(value);
-  ASSERT_LOG(!section.empty(), "Empty section name not allowed");
-  ASSERT_LOG(!property.empty(), "Empty property name not allowed");
+  log::assert_that(!section.empty(), "Empty section name not allowed");
+  log::assert_that(!property.empty(), "Empty property name not allowed");
   if (!IsDeviceSection(section)) {
     auto section_iter = information_sections_.find(section);
     if (section_iter == information_sections_.end()) {

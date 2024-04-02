@@ -145,7 +145,7 @@ inline hci::Role ToHciRole(const hci_role_t& role) {
     case HCI_ROLE_PERIPHERAL:
       return hci::Role::PERIPHERAL;
     default:
-      ASSERT_LOG(false, "Unable to determine legacy role:%u", role);
+      log::fatal("Unable to determine legacy role:{}", role);
   }
 }
 
@@ -251,7 +251,7 @@ inline hci::DisconnectReason ToDisconnectReasonFromLegacy(
 }
 
 inline bool IsPacketFlushable(const BT_HDR* p_buf) {
-  ASSERT(p_buf != nullptr);
+  log::assert_that(p_buf != nullptr, "assert failed: p_buf != nullptr");
   return ToPacketData<const HciDataPreamble>(p_buf)->IsFlushable();
 }
 

@@ -173,11 +173,10 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
     /* Prepare the announcement */
     announcement.presentation_delay_us = 40000; /* us */
 
-    ASSERT_LOG(
-        subgroup_configs.size() == metadata_group.size(),
-        "The number of metadata subgroups %zu does not match the number of "
-        "subgroup configurations %zu.",
-        +metadata_group.size(), +subgroup_configs.size());
+    log::assert_that(subgroup_configs.size() == metadata_group.size(),
+                     "The number of metadata subgroups {} does not match the "
+                     "number of subgroup configurations {}.",
+                     metadata_group.size(), subgroup_configs.size());
 
     uint8_t subgroup_idx = 0;
     uint8_t bis_index = 0;
