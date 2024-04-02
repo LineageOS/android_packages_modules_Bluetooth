@@ -117,6 +117,12 @@ class VolumeControlImpl : public VolumeControl {
 
     auto device = volume_control_devices_.FindByAddress(address);
     if (!device) {
+      if (!BTM_IsLinkKeyKnown(address, BT_TRANSPORT_LE)) {
+        log::error("Connecting  {} when not bonded",
+                   ADDRESS_TO_LOGGABLE_CSTR(address));
+        callbacks_->OnConnectionState(ConnectionState::DISCONNECTED, address);
+        return;
+      }
       volume_control_devices_.Add(address, true);
     } else {
       device->connecting_actively = true;
@@ -671,6 +677,7 @@ class VolumeControlImpl : public VolumeControl {
     BTA_GATTC_CancelOpen(gatt_if_, address, false);
 
     Disconnect(address);
+    volume_control_devices_.Remove(address);
   }
 
   void OnGattDisconnected(uint16_t connection_id, tGATT_IF /*client_if*/,
