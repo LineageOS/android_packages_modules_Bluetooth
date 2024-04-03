@@ -27,26 +27,26 @@ void MockCsisClient::SetMockInstanceForTesting(MockCsisClient* mock) {
 
 void bluetooth::csis::CsisClient::Initialize(
     bluetooth::csis::CsisClientCallbacks* callbacks, base::Closure initCb) {
-  LOG_ASSERT(mock_csis_client) << "Mock CsisClient interface not set!";
+  log::assert_that(mock_csis_client, "Mock CsisClient interface not set!");
   mock_csis_client->Initialize(callbacks, initCb);
 }
 
 void bluetooth::csis::CsisClient::CleanUp() {
-  LOG_ASSERT(mock_csis_client) << "Mock CsisClient interface not set!";
+  log::assert_that(mock_csis_client, "Mock CsisClient interface not set!");
   mock_csis_client->CleanUp();
 }
 
 bluetooth::csis::CsisClient* bluetooth::csis::CsisClient::Get() {
-  LOG_ASSERT(mock_csis_client) << "Mock CsisClient interface not set!";
+  log::assert_that(mock_csis_client, "Mock CsisClient interface not set!");
   return mock_csis_client->Get();
 }
 
 void bluetooth::csis::CsisClient::DebugDump(int fd) {
-  LOG_ASSERT(mock_csis_client) << "Mock CsisClient interface not set!";
+  log::assert_that(mock_csis_client, "Mock CsisClient interface not set!");
   mock_csis_client->DebugDump(fd);
 }
 
 bool bluetooth::csis::CsisClient::IsCsisClientRunning() {
-  LOG_ASSERT(mock_csis_client) << "Mock CsisClient interface not set!";
+  log::assert_that(mock_csis_client, "Mock CsisClient interface not set!");
   return mock_csis_client->IsCsisClientRunning();
 }

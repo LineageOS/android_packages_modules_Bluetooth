@@ -1279,7 +1279,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
       ase = leAudioDevice->GetFirstActiveAse();
     }
 
-    LOG_ASSERT(ase) << __func__ << " shouldn't be called without an active ASE";
+    log::assert_that(ase, "shouldn't be called without an active ASE");
     if (ase->data_path_state == DataPathState::CONFIGURED) {
       RemoveDataPathByCisHandle(leAudioDevice, ase->cis_conn_hdl);
     }
@@ -1672,8 +1672,8 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     struct ase* ase;
     std::vector<EXT_CIS_CREATE_CFG> conn_pairs;
 
-    LOG_ASSERT(leAudioDevice)
-        << __func__ << " Shouldn't be called without an active device.";
+    log::assert_that(leAudioDevice,
+                     "Shouldn't be called without an active device.");
 
     /* Make sure CIG is there */
     if (group->cig.GetState() != CigState::CREATED) {
@@ -1684,8 +1684,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
 
     do {
       ase = leAudioDevice->GetFirstActiveAse();
-      LOG_ASSERT(ase) << __func__
-                      << " shouldn't be called without an active ASE";
+      log::assert_that(ase, "shouldn't be called without an active ASE");
       do {
         /* First is ase pair is Sink, second Source */
         auto ases_pair = leAudioDevice->GetAsesByCisConnHdl(ase->cis_conn_hdl);
@@ -1741,13 +1740,12 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
 
   static void ReleaseDataPath(LeAudioDeviceGroup* group) {
     LeAudioDevice* leAudioDevice = group->GetFirstActiveDevice();
-    LOG_ASSERT(leAudioDevice)
-        << __func__ << " Shouldn't be called without an active device.";
+    log::assert_that(leAudioDevice,
+                     "Shouldn't be called without an active device.");
 
     auto ase = leAudioDevice->GetFirstActiveAseByCisAndDataPathState(
         CisState::CONNECTED, DataPathState::CONFIGURED);
-    LOG_ASSERT(ase) << __func__
-                    << " Shouldn't be called without an active ASE.";
+    log::assert_that(ase, "Shouldn't be called without an active ASE.");
     RemoveDataPathByCisHandle(leAudioDevice, ase->cis_conn_hdl);
   }
 
@@ -2450,7 +2448,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     msg_stream << kLogAseEnableOp;
 
     ase = leAudioDevice->GetFirstActiveAse();
-    LOG_ASSERT(ase) << __func__ << " shouldn't be called without an active ASE";
+    log::assert_that(ase, "shouldn't be called without an active ASE");
     do {
       log::debug("device: {}, ase_id: {}, cis_id: {}, ase state: {}",
                  ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_), ase->id,
@@ -2498,7 +2496,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
 
   void PrepareAndSendDisable(LeAudioDevice* leAudioDevice) {
     ase* ase = leAudioDevice->GetFirstActiveAse();
-    LOG_ASSERT(ase) << __func__ << " shouldn't be called without an active ASE";
+    log::assert_that(ase, "shouldn't be called without an active ASE");
 
     std::stringstream msg_stream;
     msg_stream << kLogAseDisableOp;
@@ -2544,7 +2542,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
 
   void PrepareAndSendRelease(LeAudioDevice* leAudioDevice) {
     ase* ase = leAudioDevice->GetFirstActiveAse();
-    LOG_ASSERT(ase) << __func__ << " shouldn't be called without an active ASE";
+    log::assert_that(ase, "shouldn't be called without an active ASE");
 
     std::vector<uint8_t> ids;
     std::stringstream stream;

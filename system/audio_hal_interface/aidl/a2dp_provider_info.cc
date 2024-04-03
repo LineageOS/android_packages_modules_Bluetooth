@@ -261,7 +261,7 @@ std::optional<btav_a2dp_codec_index_t> ProviderInfo::SourceCodecIndex(
 
 std::optional<btav_a2dp_codec_index_t> ProviderInfo::SourceCodecIndex(
     uint8_t const* codec_info) const {
-  LOG_ASSERT(codec_info != nullptr) << "codec_info is unexpectedly null";
+  log::assert_that(codec_info != nullptr, "codec_info is unexpectedly null");
   auto codec_type = A2DP_GetCodecType(codec_info);
   switch (codec_type) {
     case A2DP_MEDIA_CT_SBC: {
@@ -308,7 +308,7 @@ std::optional<btav_a2dp_codec_index_t> ProviderInfo::SinkCodecIndex(
 
 std::optional<btav_a2dp_codec_index_t> ProviderInfo::SinkCodecIndex(
     uint8_t const* codec_info) const {
-  LOG_ASSERT(codec_info != nullptr) << "codec_info is unexpectedly null";
+  log::assert_that(codec_info != nullptr, "codec_info is unexpectedly null");
   auto codec_type = A2DP_GetCodecType(codec_info);
   switch (codec_type) {
     case A2DP_MEDIA_CT_SBC: {
