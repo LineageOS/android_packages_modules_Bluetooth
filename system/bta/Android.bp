@@ -637,7 +637,7 @@ cc_test {
     ],
     srcs: [
         ":TestCommonMockFunctions",
-        ":TestMockOsi",
+        ":TestStubOsi",
         "gatt/database.cc",
         "gatt/database_builder.cc",
         "test/common/bta_gatt_api_mock.cc",

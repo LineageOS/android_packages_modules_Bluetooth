@@ -815,7 +815,8 @@ class VolumeControlImpl : public VolumeControl {
                        INT_TO_PTR(op->operation_id_));
     devices_control_point_helper(
         op->devices_, op->opcode_,
-        op->arguments_.size() == 0 ? nullptr : &(op->arguments_));
+        op->arguments_.size() == 0 ? nullptr : &(op->arguments_),
+        op->operation_id_);
   }
 
   void CancelVolumeOperation(int operation_id) {
