@@ -16,15 +16,24 @@
 
 package android.bluetooth.le;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import android.os.ParcelUuid;
-import androidx.test.filters.SmallTest;
+import android.platform.test.flag.junit.SetFlagsRule;
+
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.util.HexDump;
 import com.android.modules.utils.BytesMatcher;
+
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
-import junit.framework.TestCase;
 
 /**
  * Unit test cases for {@link ScanRecord}.
@@ -32,7 +41,11 @@ import junit.framework.TestCase;
  * <p>To run this test, use adb shell am instrument -e class 'android.bluetooth.ScanRecordTest' -w
  * 'com.android.bluetooth.tests/android.bluetooth.BluetoothTestRunner'
  */
-public class ScanRecordTest extends TestCase {
+@RunWith(JUnit4.class)
+public class ScanRecordTest {
+
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+
     /** Example raw beacons captured from a Blue Charm BC011 */
     private static final String RECORD_URL =
             "0201060303AAFE1716AAFE10EE01626C7565636861726D626561636F6E730"
@@ -52,7 +65,7 @@ public class ScanRecordTest extends TestCase {
     private static final String RECORD_E2EE_EID =
             "0201061816AAFE400000000000000000000000000000000000000000";
 
-    @SmallTest
+    @Test
     public void testMatchesAnyField_Eddystone_Parser() {
         final List<String> found = new ArrayList<>();
         final Predicate<byte[]> matcher =
@@ -63,17 +76,17 @@ public class ScanRecordTest extends TestCase {
         ScanRecord.parseFromBytes(HexDump.hexStringToByteArray(RECORD_URL))
                 .matchesAnyField(matcher);
 
-        assertEquals(
-                Arrays.asList(
-                        "020106",
-                        "0303AAFE",
-                        "1716AAFE10EE01626C7565636861726D626561636F6E7300",
-                        "09168020691E0EFE1355",
-                        "1109426C7565436861726D5F313639363835"),
-                found);
+        assertThat(found)
+                .isEqualTo(
+                        Arrays.asList(
+                                "020106",
+                                "0303AAFE",
+                                "1716AAFE10EE01626C7565636861726D626561636F6E7300",
+                                "09168020691E0EFE1355",
+                                "1109426C7565436861726D5F313639363835"));
     }
 
-    @SmallTest
+    @Test
     public void testMatchesAnyField_Eddystone() {
         final BytesMatcher matcher = BytesMatcher.decode("⊆0016AAFE/00FFFFFF");
         assertMatchesAnyField(RECORD_URL, matcher);
@@ -83,7 +96,7 @@ public class ScanRecordTest extends TestCase {
         assertNotMatchesAnyField(RECORD_IBEACON, matcher);
     }
 
-    @SmallTest
+    @Test
     public void testMatchesAnyField_Eddystone_ExceptE2eeEid() {
         final BytesMatcher matcher =
                 BytesMatcher.decode("⊈0016AAFE40/00FFFFFFFF,⊆0016AAFE/00FFFFFF");
@@ -94,7 +107,7 @@ public class ScanRecordTest extends TestCase {
         assertNotMatchesAnyField(RECORD_IBEACON, matcher);
     }
 
-    @SmallTest
+    @Test
     public void testMatchesAnyField_iBeacon_Parser() {
         final List<String> found = new ArrayList<>();
         final Predicate<byte[]> matcher =
@@ -105,16 +118,16 @@ public class ScanRecordTest extends TestCase {
         ScanRecord.parseFromBytes(HexDump.hexStringToByteArray(RECORD_IBEACON))
                 .matchesAnyField(matcher);
 
-        assertEquals(
-                Arrays.asList(
-                        "020106",
-                        "1AFF4C000215426C7565436861726D426561636F6E730EFE1355C5",
-                        "09168020691E0EFE1355",
-                        "1109426C7565436861726D5F313639363835"),
-                found);
+        assertThat(found)
+                .isEqualTo(
+                        Arrays.asList(
+                                "020106",
+                                "1AFF4C000215426C7565436861726D426561636F6E730EFE1355C5",
+                                "09168020691E0EFE1355",
+                                "1109426C7565436861726D5F313639363835"));
     }
 
-    @SmallTest
+    @Test
     public void testMatchesAnyField_iBeacon() {
         final BytesMatcher matcher = BytesMatcher.decode("⊆00FF4C0002/00FFFFFFFF");
         assertNotMatchesAnyField(RECORD_URL, matcher);
@@ -124,7 +137,7 @@ public class ScanRecordTest extends TestCase {
         assertMatchesAnyField(RECORD_IBEACON, matcher);
     }
 
-    @SmallTest
+    @Test
     public void testParser() {
         byte[] scanRecord =
                 new byte[] {
@@ -163,43 +176,105 @@ public class ScanRecordTest extends TestCase {
                     0x02, // an unknown data type won't cause trouble
                 };
         ScanRecord data = ScanRecord.parseFromBytes(scanRecord);
-        assertEquals(0x1a, data.getAdvertiseFlags());
+
+        assertThat(data.getAdvertiseFlags()).isEqualTo(0x1a);
+
         ParcelUuid uuid1 = ParcelUuid.fromString("0000110A-0000-1000-8000-00805F9B34FB");
         ParcelUuid uuid2 = ParcelUuid.fromString("0000110B-0000-1000-8000-00805F9B34FB");
-        assertTrue(data.getServiceUuids().contains(uuid1));
-        assertTrue(data.getServiceUuids().contains(uuid2));
+        assertThat(data.getServiceUuids()).isNotNull();
+        assertThat(data.getServiceUuids().contains(uuid1)).isTrue();
+        assertThat(data.getServiceUuids().contains(uuid2)).isTrue();
 
-        assertEquals("Ped", data.getDeviceName());
-        assertEquals(-20, data.getTxPowerLevel());
+        assertThat(data.getDeviceName()).isEqualTo("Ped");
+        assertThat(data.getTxPowerLevel()).isEqualTo(-20);
 
-        assertTrue(data.getManufacturerSpecificData().get(0x00E0) != null);
-        assertArrayEquals(new byte[] {0x02, 0x15}, data.getManufacturerSpecificData().get(0x00E0));
+        assertThat(data.getManufacturerSpecificData().get(0x00E0)).isNotNull();
+        assertThat(data.getManufacturerSpecificData().get(0x00E0))
+                .isEqualTo(new byte[] {0x02, 0x15});
 
-        assertTrue(data.getServiceData().containsKey(uuid2));
-        assertArrayEquals(new byte[] {0x50, 0x64}, data.getServiceData().get(uuid2));
+        assertThat(data.getServiceData().containsKey(uuid2)).isTrue();
+        assertThat(data.getServiceData().get(uuid2)).isEqualTo(new byte[] {0x50, 0x64});
     }
 
-    // Assert two byte arrays are equal.
-    private static void assertArrayEquals(byte[] expected, byte[] actual) {
-        if (!Arrays.equals(expected, actual)) {
-            fail(
-                    "expected:<"
-                            + Arrays.toString(expected)
-                            + "> but was:<"
-                            + Arrays.toString(actual)
-                            + ">");
-        }
+    @Test
+    public void testParserMultipleManufacturerSpecificData() {
+        mSetFlagsRule.enableFlags(Flags.FLAG_SCAN_RECORD_MANUFACTURER_DATA_MERGE);
+
+        byte[] scanRecord =
+                new byte[] {
+                    0x02,
+                    0x01,
+                    0x1a, // advertising flags
+                    0x05,
+                    0x02,
+                    0x0b,
+                    0x11,
+                    0x0a,
+                    0x11, // 16 bit service uuids
+                    0x04,
+                    0x09,
+                    0x50,
+                    0x65,
+                    0x64, // name
+                    0x02,
+                    0x0A,
+                    (byte) 0xec, // tx power level
+                    0x05,
+                    0x16,
+                    0x0b,
+                    0x11,
+                    0x50,
+                    0x64, // service data
+                    0x05,
+                    (byte) 0xff,
+                    (byte) 0xe0,
+                    0x00,
+                    0x02,
+                    0x15, // manufacturer specific data #1
+                    0x05,
+                    (byte) 0xff,
+                    (byte) 0xe0,
+                    0x00,
+                    0x04,
+                    0x16, // manufacturer specific data #2
+                    0x03,
+                    0x50,
+                    0x01,
+                    0x02, // an unknown data type won't cause trouble
+                };
+
+        ScanRecord data = ScanRecord.parseFromBytes(scanRecord);
+
+        assertThat(data.getAdvertiseFlags()).isEqualTo(0x1a);
+
+        ParcelUuid uuid1 = ParcelUuid.fromString("0000110A-0000-1000-8000-00805F9B34FB");
+        ParcelUuid uuid2 = ParcelUuid.fromString("0000110B-0000-1000-8000-00805F9B34FB");
+        assertThat(data.getServiceUuids()).isNotNull();
+        assertThat(data.getServiceUuids().contains(uuid1)).isTrue();
+        assertThat(data.getServiceUuids().contains(uuid2)).isTrue();
+
+        assertThat(data.getDeviceName()).isEqualTo("Ped");
+        assertThat(data.getTxPowerLevel()).isEqualTo(-20);
+
+        assertThat(data.getManufacturerSpecificData().get(0x00E0)).isNotNull();
+        assertThat(data.getManufacturerSpecificData().get(0x00E0))
+                .isEqualTo(new byte[] {0x02, 0x15, 0x04, 0x16});
+
+        assertThat(data.getServiceData().containsKey(uuid2)).isTrue();
+        assertThat(data.getServiceData().get(uuid2)).isEqualTo(new byte[] {0x50, 0x64});
     }
 
     private static void assertMatchesAnyField(String record, BytesMatcher matcher) {
-        assertTrue(
-                ScanRecord.parseFromBytes(HexDump.hexStringToByteArray(record))
-                        .matchesAnyField(matcher));
+        assertThat(
+                        ScanRecord.parseFromBytes(HexDump.hexStringToByteArray(record))
+                                .matchesAnyField(matcher))
+                .isTrue();
     }
 
     private static void assertNotMatchesAnyField(String record, BytesMatcher matcher) {
-        assertFalse(
-                ScanRecord.parseFromBytes(HexDump.hexStringToByteArray(record))
-                        .matchesAnyField(matcher));
+        assertThat(
+                        ScanRecord.parseFromBytes(HexDump.hexStringToByteArray(record))
+                                .matchesAnyField(matcher))
+                .isFalse();
     }
 }

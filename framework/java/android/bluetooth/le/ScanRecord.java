@@ -28,8 +28,11 @@ import android.util.ArrayMap;
 import android.util.Log;
 import android.util.SparseArray;
 
+import com.android.bluetooth.flags.Flags;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -640,7 +643,21 @@ public final class ScanRecord {
                                         + (scanRecord[currentPos] & 0xFF);
                         byte[] manufacturerDataBytes =
                                 extractBytes(scanRecord, currentPos + 2, dataLength - 2);
-                        manufacturerData.put(manufacturerId, manufacturerDataBytes);
+                        if (Flags.scanRecordManufacturerDataMerge()) {
+                            if (manufacturerData.contains(manufacturerId)) {
+                                byte[] firstValue = manufacturerData.get(manufacturerId);
+                                ByteBuffer buffer =
+                                        ByteBuffer.allocate(
+                                                firstValue.length + manufacturerDataBytes.length);
+                                buffer.put(firstValue);
+                                buffer.put(manufacturerDataBytes);
+                                manufacturerData.put(manufacturerId, buffer.array());
+                            } else {
+                                manufacturerData.put(manufacturerId, manufacturerDataBytes);
+                            }
+                        } else {
+                            manufacturerData.put(manufacturerId, manufacturerDataBytes);
+                        }
                         break;
                     case DATA_TYPE_TRANSPORT_DISCOVERY_DATA:
                         // -1 / +1 to include the type in the extract

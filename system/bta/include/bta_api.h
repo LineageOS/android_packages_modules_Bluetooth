@@ -156,12 +156,7 @@ enum {
 typedef struct {
   uint8_t bta_dm_eir_min_name_len; /* minimum length of local name when it is
                                       shortened */
-#if (BTA_EIR_CANNED_UUID_LIST == TRUE)
-  uint8_t bta_dm_eir_uuid16_len; /* length of 16-bit UUIDs */
-  uint8_t* bta_dm_eir_uuid16;    /* 16-bit UUIDs */
-#else
   uint32_t uuid_mask[BTM_EIR_SERVICE_ARRAY_SIZE]; /* mask of UUID list in EIR */
-#endif
   int8_t* bta_dm_eir_inq_tx_power;     /* Inquiry TX power         */
   uint8_t bta_dm_eir_flag_len;         /* length of flags in bytes */
   uint8_t* bta_dm_eir_flags;           /* flags for EIR */

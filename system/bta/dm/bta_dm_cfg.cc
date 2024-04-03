@@ -623,33 +623,19 @@ const tBTM_PM_PWR_MD* p_bta_dm_pm_md = &bta_dm_pm_md[0];
  *                    (same reason of DM5)
  */
 
-#if (BTA_EIR_CANNED_UUID_LIST == TRUE)
-/* for example */
-const uint8_t bta_dm_eir_uuid16_list[] = {
-    0x08, 0x11, /* Headset */
-    0x1E, 0x11, /* Handsfree */
-    0x0E, 0x11, /* AV Remote Control */
-    0x0B, 0x11, /* Audio Sink */
-};
-#endif  // BTA_EIR_CANNED_UUID_LIST
-
 /* Extended Inquiry Response */
 const tBTA_DM_EIR_CONF bta_dm_eir_cfg = {
     50, /* minimum length of local name when it is shortened */
         /* if length of local name is longer than this and EIR has not enough */
         /* room for all UUID list then local name is shortened to this length */
-#if (BTA_EIR_CANNED_UUID_LIST == TRUE)
-    8,    (uint8_t*)bta_dm_eir_uuid16_list,
-#else     // BTA_EIR_CANNED_UUID_LIST
     {
         /* mask of UUID list in EIR */
         0xFFFFFFFF, /* LSB is the first UUID of the first 32 UUIDs in
                        BTM_EIR_UUID_LKUP_TBL */
         0xFFFFFFFF  /* LSB is the first UUID of the next 32 UUIDs in
                        BTM_EIR_UUID_LKUP_TBL */
-        /* BTM_EIR_UUID_LKUP_TBL can be overrided */
+                    /* BTM_EIR_UUID_LKUP_TBL can be overrided */
     },
-#endif    // BTA_EIR_CANNED_UUID_LIST
     NULL, /* Inquiry TX power         */
     0,    /* length of flags in bytes */
     NULL, /* flags for EIR */

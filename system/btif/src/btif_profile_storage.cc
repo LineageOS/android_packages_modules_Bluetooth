@@ -339,7 +339,7 @@ bt_status_t btif_storage_remove_hid_info(const tAclLinkSpec& link_spec) {
   btif_config_remove(bdstr, BTIF_STORAGE_KEY_HID_RECONNECT_ALLOWED);
 
   if (IS_FLAG_ENABLED(allow_switching_hid_and_hogp)) {
-    int db_version;
+    int db_version = 0;
     btif_config_get_int(bdstr, BTIF_STORAGE_KEY_HID_DB_VERSION, &db_version);
     if (db_version == STORAGE_HID_DB_VERSION) {
       btif_config_remove(bdstr, BTIF_STORAGE_KEY_HOGP_ATTR_MASK);
@@ -350,9 +350,9 @@ bt_status_t btif_storage_remove_hid_info(const tAclLinkSpec& link_spec) {
       btif_config_remove(bdstr, BTIF_STORAGE_KEY_HOGP_VERSION);
       btif_config_remove(bdstr, BTIF_STORAGE_KEY_HOGP_COUNTRY_CODE);
       btif_config_remove(bdstr, BTIF_STORAGE_KEY_HOGP_DESCRIPTOR);
-      btif_config_remove(bdstr, BTIF_STORAGE_KEY_HID_DB_VERSION);
       btif_config_remove(bdstr, BTIF_STORAGE_KEY_HOGP_RECONNECT_ALLOWED);
     }
+    btif_config_remove(bdstr, BTIF_STORAGE_KEY_HID_DB_VERSION);
   }
   return BT_STATUS_SUCCESS;
 }
