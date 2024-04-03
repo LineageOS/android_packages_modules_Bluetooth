@@ -17,6 +17,9 @@ package com.android.server.bluetooth
 
 import android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_APPLICATION_REQUEST
 import android.bluetooth.IBluetoothManager
+import android.bluetooth.IBluetoothManager.BT_SNOOP_LOG_MODE_DISABLED
+import android.bluetooth.IBluetoothManager.BT_SNOOP_LOG_MODE_FILTERED
+import android.bluetooth.IBluetoothManager.BT_SNOOP_LOG_MODE_FULL
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -24,6 +27,7 @@ import android.os.Message
 import android.os.Messenger
 import android.os.Parcelable
 import android.os.RemoteException
+import android.sysprop.BluetoothProperties
 
 private const val TAG = "Messenger"
 
@@ -158,6 +162,38 @@ internal class ServiceMessenger(
             is SystemServiceMessage.IsHearingAidSupported -> {
                 SystemServiceMessage.IsHearingAidSupported.Reply().apply {
                     value = managerService.isHearingAidProfileSupported()
+                }
+            }
+            is SystemServiceMessage.SetSnoopLog -> {
+                checker.enforcePrivileged(sendingUid)
+
+                val mode = obj.mode
+
+                BluetoothProperties.snoop_log_mode(
+                    when (mode) {
+                        BT_SNOOP_LOG_MODE_DISABLED ->
+                            BluetoothProperties.snoop_log_mode_values.DISABLED
+                        BT_SNOOP_LOG_MODE_FILTERED ->
+                            BluetoothProperties.snoop_log_mode_values.FILTERED
+                        BT_SNOOP_LOG_MODE_FULL -> BluetoothProperties.snoop_log_mode_values.FULL
+                        else -> null
+                    }
+                )
+                SystemServiceMessage.SetSnoopLog.Reply()
+            }
+            is SystemServiceMessage.GetSnoopLog -> {
+                checker.enforcePrivileged(sendingUid)
+                SystemServiceMessage.GetSnoopLog.Reply().apply {
+                    value =
+                        when (
+                            BluetoothProperties.snoop_log_mode()
+                                .orElse(BluetoothProperties.snoop_log_mode_values.DISABLED)
+                        ) {
+                            BluetoothProperties.snoop_log_mode_values.FILTERED ->
+                                BT_SNOOP_LOG_MODE_FILTERED
+                            BluetoothProperties.snoop_log_mode_values.FULL -> BT_SNOOP_LOG_MODE_FULL
+                            else -> BT_SNOOP_LOG_MODE_DISABLED
+                        }
                 }
             }
             else -> throw IllegalArgumentException("Invalid command: [${obj}] from ${sendingUid}")

@@ -5378,6 +5378,13 @@ public final class BluetoothAdapter {
                 && mode != BT_SNOOP_LOG_MODE_FULL) {
             throw new IllegalArgumentException("Invalid Bluetooth HCI snoop log mode param value");
         }
+        if (Flags.systemServerMessenger()) {
+            var data = new SystemServiceMessage.SetSnoopLog();
+            data.mode = mode;
+
+            mSystemServiceMessenger.send(data);
+            return BluetoothStatusCodes.SUCCESS;
+        }
         try {
             return mManagerService.setBtHciSnoopLogMode(mode);
         } catch (RemoteException e) {
@@ -5395,6 +5402,11 @@ public final class BluetoothAdapter {
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
     @BluetoothSnoopLogMode
     public int getBluetoothHciSnoopLoggingMode() {
+        if (Flags.systemServerMessenger()) {
+            var data = new SystemServiceMessage.GetSnoopLog();
+
+            return mSystemServiceMessenger.send(data).value;
+        }
         try {
             return mManagerService.getBtHciSnoopLogMode();
         } catch (RemoteException e) {

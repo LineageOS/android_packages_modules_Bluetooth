@@ -90,6 +90,14 @@ class SystemServiceMessenger {
         return send(data, SystemServiceMessage.IsHearingAidSupported.Reply.class);
     }
 
+    SystemServiceMessage.SetSnoopLog.Reply send(SystemServiceMessage.SetSnoopLog data) {
+        return send(data, SystemServiceMessage.SetSnoopLog.Reply.class);
+    }
+
+    SystemServiceMessage.GetSnoopLog.Reply send(SystemServiceMessage.GetSnoopLog data) {
+        return send(data, SystemServiceMessage.GetSnoopLog.Reply.class);
+    }
+
     private <T extends Parcelable, U> U send(T data, Class<U> replyClass) {
         CompletableFuture<U> future = new CompletableFuture();
 

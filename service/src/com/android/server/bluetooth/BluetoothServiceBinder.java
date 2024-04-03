@@ -374,6 +374,9 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
 
     @Override
     public int setBtHciSnoopLogMode(int mode) {
+        if (Flags.systemServerMessenger()) {
+            throw new IllegalStateException("Binder call unavailable when using messenger");
+        }
         BtPermissionUtils.enforcePrivileged(mContext);
 
         return postFromBinder(() -> mService.setBtHciSnoopLogMode(mode));
@@ -381,6 +384,9 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
 
     @Override
     public int getBtHciSnoopLogMode() {
+        if (Flags.systemServerMessenger()) {
+            throw new IllegalStateException("Binder call unavailable when using messenger");
+        }
         BtPermissionUtils.enforcePrivileged(mContext);
 
         return postFromBinder(() -> mService.getBtHciSnoopLogMode());
