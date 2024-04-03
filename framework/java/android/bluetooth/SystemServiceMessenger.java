@@ -80,6 +80,11 @@ class SystemServiceMessenger {
         return send(data, SystemServiceMessage.GetName.Reply.class);
     }
 
+    SystemServiceMessage.IsBleScanAvailable.Reply send(
+            SystemServiceMessage.IsBleScanAvailable data) {
+        return send(data, SystemServiceMessage.IsBleScanAvailable.Reply.class);
+    }
+
     private <T extends Parcelable, U> U send(T data, Class<U> replyClass) {
         CompletableFuture<U> future = new CompletableFuture();
 

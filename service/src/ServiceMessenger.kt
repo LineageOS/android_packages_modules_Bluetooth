@@ -150,6 +150,11 @@ internal class ServiceMessenger(
                         }
                 }
             }
+            is SystemServiceMessage.IsBleScanAvailable -> {
+                SystemServiceMessage.IsBleScanAvailable.Reply().apply {
+                    value = managerService.isBleScanAvailable()
+                }
+            }
             else -> throw IllegalArgumentException("Invalid command: [${obj}] from ${sendingUid}")
         }
     }

@@ -319,6 +319,7 @@ public class BluetoothServiceBinderTest {
 
     @Test
     public void isBleScanAvailable() {
+        mSetFlagsRule.disableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER);
         // No permission needed for this call
         mBinder.isBleScanAvailable();
         verify(mManagerService).isBleScanAvailable();

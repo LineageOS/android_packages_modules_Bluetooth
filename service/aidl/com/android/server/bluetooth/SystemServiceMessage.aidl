@@ -70,4 +70,10 @@ interface SystemServiceMessage {
             String value;
         }
     }
+
+    parcelable IsBleScanAvailable {
+        parcelable Reply {
+            boolean value;
+        }
+    }
 }
