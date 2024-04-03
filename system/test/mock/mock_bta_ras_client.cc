@@ -18,6 +18,8 @@
 
 class MockRasClient : public bluetooth::ras::RasClient {
   void Initialize() override {}
+  void RegisterCallbacks(
+      bluetooth::ras::RasClientCallbacks* /* callbacks */) override{};
   void Connect(const RawAddress& /* address */) override{};
 };
 
