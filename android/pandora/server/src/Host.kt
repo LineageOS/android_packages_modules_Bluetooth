@@ -34,6 +34,7 @@ import android.bluetooth.le.AdvertisingSetParameters
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanRecord
 import android.bluetooth.le.ScanResult
+import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -789,7 +790,8 @@ class Host(
                             error("scan failed")
                         }
                     }
-                bluetoothAdapter.bluetoothLeScanner.startScan(callback)
+                val scanSettings = ScanSettings.Builder().setLegacy(request.legacy).build()
+                bluetoothAdapter.bluetoothLeScanner.startScan(null, scanSettings, callback)
 
                 awaitClose { bluetoothAdapter.bluetoothLeScanner.stopScan(callback) }
             }
