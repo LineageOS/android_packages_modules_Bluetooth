@@ -1710,7 +1710,14 @@ public final class BluetoothAdapter {
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public boolean clearBluetooth() {
         try {
-            return mManagerService.factoryReset(mAttributionSource);
+            if (Flags.systemServerMessenger()) {
+                var data = new SystemServiceMessage.FactoryReset();
+                data.attributionSource = mAttributionSource;
+
+                return mSystemServiceMessenger.send(data).value;
+            } else {
+                return mManagerService.factoryReset(mAttributionSource);
+            }
         } catch (RemoteException e) {
             throw e.rethrowFromSystemServer();
         }

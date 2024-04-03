@@ -68,6 +68,10 @@ class SystemServiceMessenger {
         return send(data, SystemServiceMessage.Disable.Reply.class);
     }
 
+    SystemServiceMessage.FactoryReset.Reply send(SystemServiceMessage.FactoryReset data) {
+        return send(data, SystemServiceMessage.FactoryReset.Reply.class);
+    }
+
     private <T extends Parcelable, U> U send(T data, Class<U> replyClass) {
         CompletableFuture<U> future = new CompletableFuture();
 

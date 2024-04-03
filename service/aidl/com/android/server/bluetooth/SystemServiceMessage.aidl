@@ -49,4 +49,11 @@ interface SystemServiceMessage {
             boolean value;
         }
     }
+
+    parcelable FactoryReset {
+        AttributionSource attributionSource;
+        parcelable Reply {
+            boolean value;
+        }
+    }
 }
