@@ -866,12 +866,11 @@ struct codec_manager_impl {
       return;
     }
 
-    std::vector<
-        ::bluetooth::le_audio::set_configurations::AudioSetConfiguration>
-        adsp_capabilities =
-            ::bluetooth::audio::le_audio::get_offload_capabilities();
+    auto adsp_capabilities =
+        ::bluetooth::audio::le_audio::get_offload_capabilities();
 
-    storeLocalCapa(adsp_capabilities, offloading_preference);
+    storeLocalCapa(adsp_capabilities.unicast_offload_capabilities,
+                   offloading_preference);
 
     for (auto codec : offloading_preference) {
       auto it = btle_audio_codec_type_map_.find(codec.codec_type);
@@ -889,9 +888,9 @@ struct codec_manager_impl {
           AudioSetConfigurationProvider::Get()->GetConfigurations(ctx_type);
 
       for (const auto& software_audio_set_conf : *software_audio_set_confs) {
-        if (IsAudioSetConfigurationMatched(software_audio_set_conf,
-                                           offload_preference_set,
-                                           adsp_capabilities)) {
+        if (IsAudioSetConfigurationMatched(
+                software_audio_set_conf, offload_preference_set,
+                adsp_capabilities.unicast_offload_capabilities)) {
           log::info("Offload supported conf, context type: {}, settings -> {}",
                     (int)ctx_type, software_audio_set_conf->name);
           if (dual_bidirection_swb_supported_ &&
@@ -905,8 +904,8 @@ struct codec_manager_impl {
         }
       }
     }
-
-    UpdateSupportedBroadcastConfig(adsp_capabilities);
+    UpdateSupportedBroadcastConfig(
+        adsp_capabilities.broadcast_offload_capabilities);
   }
 
   CodecLocation codec_location_ = CodecLocation::HOST;

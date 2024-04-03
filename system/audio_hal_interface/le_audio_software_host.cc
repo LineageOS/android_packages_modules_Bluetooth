@@ -23,10 +23,12 @@ namespace audio {
 
 namespace le_audio {
 
-std::vector<::bluetooth::le_audio::set_configurations::AudioSetConfiguration>
-get_offload_capabilities() {
-  return std::vector<
-      ::bluetooth::le_audio::set_configurations::AudioSetConfiguration>(0);
+OffloadCapabilities get_offload_capabilities() {
+  return {
+      std::vector<
+          bluetooth::le_audio::set_configurations::AudioSetConfiguration>(0),
+      std::vector<
+          bluetooth::le_audio::set_configurations::AudioSetConfiguration>(0)};
 }
 
 LeAudioClientInterface* LeAudioClientInterface::Get() { return nullptr; }
