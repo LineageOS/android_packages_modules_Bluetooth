@@ -2,13 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.btservices"
 
 flag {
-    name: "airplane_ressources_in_app"
-    namespace: "bluetooth"
-    description: "User notification is done within app, not server"
-    bug: "303552318"
-}
-
-flag {
     name: "auto_on_feature"
     is_exported: true
     namespace: "bluetooth"
@@ -29,18 +22,3 @@ flag {
     description: "Remove complexity and non necessary initialization when simply binding"
     bug: "328698375"
 }
-
-flag {
-    name: "use_new_airplane_mode"
-    namespace: "bluetooth"
-    description: "Use the new implemention of airplane mode"
-    bug: "309033118"
-}
-
-flag {
-    name: "use_new_satellite_mode"
-    namespace: "bluetooth"
-    description: "Use the new implemention of satellite mode"
-    bug: "289584302"
-}
-
