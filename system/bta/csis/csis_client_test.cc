@@ -434,6 +434,9 @@ class CsisClientTest : public ::testing::Test {
     SetMockCsisLockCallback(&csis_lock_cb);
     callbacks.reset(new MockCsisCallbacks());
 
+    ON_CALL(btm_interface, IsLinkKeyKnown(_, _))
+        .WillByDefault(DoAll(Return(true)));
+
     ON_CALL(btm_interface, BTM_IsEncrypted(_, _))
         .WillByDefault(DoAll(Return(true)));
 
@@ -780,6 +783,21 @@ TEST_F(CsisClientTest, test_disconnected) {
   EXPECT_CALL(*callbacks,
               OnConnectionState(test_address, ConnectionState::DISCONNECTED));
   InjectDisconnectedEvent(test_address, 1);
+
+  TestAppUnregister();
+}
+
+TEST_F(CsisClientTest, test_connect_after_remove) {
+  TestAppRegister();
+  TestConnect(test_address);
+  InjectConnectedEvent(test_address, 1);
+  CsisClient::Get()->RemoveDevice(test_address);
+
+  EXPECT_CALL(*callbacks,
+              OnConnectionState(test_address, ConnectionState::DISCONNECTED));
+  ON_CALL(btm_interface, IsLinkKeyKnown(_, _)).WillByDefault(Return(false));
+  CsisClient::Get()->Connect(test_address);
+  Mock::VerifyAndClearExpectations(callbacks.get());
 
   TestAppUnregister();
 }
