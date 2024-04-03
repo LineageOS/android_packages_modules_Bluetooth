@@ -358,6 +358,7 @@ public class BluetoothServiceBinderTest {
 
     @Test
     public void isHearingAidProfileSupported() {
+        mSetFlagsRule.disableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER);
         // No permission needed for this call
         mBinder.isHearingAidProfileSupported();
         verify(mManagerService).isHearingAidProfileSupported();

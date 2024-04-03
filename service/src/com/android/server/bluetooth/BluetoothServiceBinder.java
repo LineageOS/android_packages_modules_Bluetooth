@@ -202,6 +202,9 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
 
     @Override
     public boolean isHearingAidProfileSupported() {
+        if (Flags.systemServerMessenger()) {
+            throw new IllegalStateException("Binder call unavailable when using messenger");
+        }
         return postFromBinder(() -> mService.isHearingAidProfileSupported());
     }
 

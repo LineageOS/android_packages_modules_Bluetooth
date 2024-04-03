@@ -76,4 +76,10 @@ interface SystemServiceMessage {
             boolean value;
         }
     }
+
+    parcelable IsHearingAidSupported {
+        parcelable Reply {
+            boolean value;
+        }
+    }
 }
