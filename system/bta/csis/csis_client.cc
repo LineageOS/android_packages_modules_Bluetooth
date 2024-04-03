@@ -246,10 +246,16 @@ class CsisClientImpl : public CsisClient {
   }
 
   void Connect(const RawAddress& address) override {
-    log::debug("{}", ADDRESS_TO_LOGGABLE_CSTR(address));
+    log::info("{}", ADDRESS_TO_LOGGABLE_CSTR(address));
 
     auto device = FindDeviceByAddress(address);
     if (device == nullptr) {
+      if (!BTM_IsLinkKeyKnown(address, BT_TRANSPORT_LE)) {
+        log::error("Connecting  {} when not bonded",
+                   ADDRESS_TO_LOGGABLE_CSTR(address));
+        callbacks_->OnConnectionState(address, ConnectionState::DISCONNECTED);
+        return;
+      }
       devices_.emplace_back(std::make_shared<CsisDevice>(address, true));
     } else {
       device->connecting_actively = true;
@@ -280,13 +286,19 @@ class CsisClientImpl : public CsisClient {
   }
 
   void RemoveDevice(const RawAddress& addr) override {
-    log::debug("{}", ADDRESS_TO_LOGGABLE_CSTR(addr));
+    log::info("{}", ADDRESS_TO_LOGGABLE_CSTR(addr));
 
     auto device = FindDeviceByAddress(addr);
-    if (!device) return;
+    if (device == nullptr) {
+      log::warn("{} not found", ADDRESS_TO_LOGGABLE_CSTR(addr));
+      return;
+    }
 
     Disconnect(addr);
 
+    if (device->GetNumberOfCsisInstances() == 0) {
+      RemoveCsisDevice(device);
+    }
     dev_groups_->RemoveDevice(addr);
   }
 
@@ -772,7 +784,14 @@ class CsisClientImpl : public CsisClient {
     return nullptr;
   }
 
+  void RemoveCsisDevice(std::shared_ptr<CsisDevice>& device) {
+    auto it = find_if(devices_.begin(), devices_.end(),
+                      CsisDevice::MatchAddress(device->addr));
+    devices_.erase(it);
+  }
+
   void RemoveCsisDevice(std::shared_ptr<CsisDevice>& device, int group_id) {
+    log::info("");
     auto it = find_if(devices_.begin(), devices_.end(),
                       CsisDevice::MatchAddress(device->addr));
     if (it == devices_.end()) return;
@@ -782,7 +801,7 @@ class CsisClientImpl : public CsisClient {
       if (!csis_group) {
         /* This could happen when remove device is called when bonding is
          * removed */
-        log::debug("group not found {}", group_id);
+        log::info("group not found {}", group_id);
         return;
       }
 
