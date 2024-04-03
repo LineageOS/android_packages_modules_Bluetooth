@@ -288,6 +288,15 @@ struct codec_manager_impl {
       bluetooth::le_audio::broadcast_offload_config broadcast_config;
       broadcast_config.stream_map.resize(
           core_config.GetChannelCountPerIsoStream());
+
+      // Enable the individual channels per BIS in the stream map
+      for (auto& [_, channels] : broadcast_config.stream_map) {
+        for (uint8_t i = 0; i < adsp_config.codec.channel_count_per_iso_stream;
+             ++i) {
+          channels |= (0b1 << i);
+        }
+      }
+
       broadcast_config.bits_per_sample =
           LeAudioCodecConfiguration::kBitsPerSample16;
       broadcast_config.sampling_rate = core_config.GetSamplingFrequencyHz();
@@ -437,13 +446,17 @@ struct codec_manager_impl {
     codec_params.Add(codec_spec_conf::kLeAudioLtvTypeOctetsPerCodecFrame,
                      offload_config->octets_per_frame);
 
+    // Note: We do not support a different channel count on each BIS within the
+    // same subgroup.
+    uint8_t allocated_channel_count =
+        offload_config->stream_map.size()
+            ? std::bitset<32>{offload_config->stream_map.at(0).second}.count()
+            : 1;
     bluetooth::le_audio::broadcaster::BroadcastSubgroupCodecConfig codec_config(
         bluetooth::le_audio::broadcaster::kLeAudioCodecIdLc3,
-        {bluetooth::le_audio::broadcaster::BroadcastSubgroupBisCodecConfig{
-            // num_bis
+        {bluetooth::le_audio::broadcaster::BroadcastSubgroupBisCodecConfig(
             static_cast<uint8_t>(offload_config->stream_map.size()),
-            codec_params,
-        }},
+            allocated_channel_count, codec_params)},
         offload_config->bits_per_sample);
 
     bluetooth::le_audio::broadcaster::BroadcastQosConfig qos_config(
