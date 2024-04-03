@@ -1,0 +1,12 @@
+package: "com.android.bluetooth.flags"
+container: "com.android.btservices"
+
+flag {
+    name: "randomize_device_level_media_ids"
+    namespace: "bluetooth"
+    description: "Randomize the media id of device level nodes in our browse tree by attaching a randomized string after the UUID, each time a device connects"
+    bug: "332367017"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
