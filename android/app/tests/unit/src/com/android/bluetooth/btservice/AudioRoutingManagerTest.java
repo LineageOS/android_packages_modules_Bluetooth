@@ -1176,9 +1176,7 @@ public class AudioRoutingManagerTest {
         if (device == null) {
             mAudioRoutingManager.removeActiveDevice(BluetoothProfile.A2DP, false);
         } else {
-            mTestLooper.startAutoDispatch();
             mAudioRoutingManager.activateDeviceProfile(device, BluetoothProfile.A2DP);
-            mTestLooper.stopAutoDispatch();
         }
     }
 
@@ -1227,9 +1225,7 @@ public class AudioRoutingManagerTest {
         if (device == null) {
             mAudioRoutingManager.removeActiveDevice(BluetoothProfile.HEADSET, false);
         } else {
-            mTestLooper.startAutoDispatch();
             mAudioRoutingManager.activateDeviceProfile(device, BluetoothProfile.HEADSET);
-            mTestLooper.stopAutoDispatch();
         }
     }
 
@@ -1272,9 +1268,7 @@ public class AudioRoutingManagerTest {
         if (device == null) {
             mAudioRoutingManager.removeActiveDevice(BluetoothProfile.HEARING_AID, false);
         } else {
-            mTestLooper.startAutoDispatch();
             mAudioRoutingManager.activateDeviceProfile(device, BluetoothProfile.HEARING_AID);
-            mTestLooper.stopAutoDispatch();
         }
     }
 
@@ -1315,9 +1309,7 @@ public class AudioRoutingManagerTest {
         if (device == null) {
             mAudioRoutingManager.removeActiveDevice(BluetoothProfile.LE_AUDIO, false);
         } else {
-            mTestLooper.startAutoDispatch();
             mAudioRoutingManager.activateDeviceProfile(device, BluetoothProfile.LE_AUDIO);
-            mTestLooper.stopAutoDispatch();
         }
     }
 
