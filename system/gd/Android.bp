@@ -366,6 +366,49 @@ cc_binary {
 }
 
 cc_test {
+    name: "bluetooth_test_with_timerfd",
+    test_suites: ["general-tests"],
+    defaults: [
+        "gd_defaults",
+        "mts_defaults",
+    ],
+    include_dirs: [
+        "packages/modules/Bluetooth/system",
+        "packages/modules/Bluetooth/system/include",
+        "packages/modules/Bluetooth/system/types",
+    ],
+    host_supported: true,
+    target: {
+        host: {
+            srcs: [
+                ":BluetoothOsSystemProperties_host",
+            ],
+        },
+        android: {
+            srcs: [
+                ":BluetoothOsSystemProperties_android",
+            ],
+        },
+    },
+    srcs: [
+        ":BluetoothOsTestSources_timerfd",
+    ],
+    static_libs: [
+        "libbluetooth_log",
+        "libchrome",
+        "libgmock",
+    ],
+    shared_libs: [
+        "libbase",
+        "liblog",
+    ],
+    sanitize: {
+        address: true,
+    },
+    min_sdk_version: "Tiramisu",
+}
+
+cc_test {
     name: "bluetooth_test_gd_unit",
     test_suites: ["general-tests"],
     defaults: [
