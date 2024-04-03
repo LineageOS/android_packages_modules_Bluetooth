@@ -132,6 +132,7 @@ class BleScannerInterface {
       base::Callback<void(uint8_t /* filt_type */, uint8_t /* avbl_space */,
                           uint8_t /* action */, uint8_t /* btm_status */)>;
 
+#if TARGET_FLOSS
   using MsftAdvMonitorAddCallback =
       base::Callback<void(uint8_t /* monitor_handle */, uint8_t /* status */)>;
 
@@ -141,6 +142,7 @@ class BleScannerInterface {
   using MsftAdvMonitorEnableCallback =
       base::Callback<void(uint8_t /* status */)>;
 
+#endif
   /** Registers a scanner with the stack */
   virtual void RegisterScanner(const bluetooth::Uuid& app_uuid,
                                RegisterCallback) = 0;
@@ -167,6 +169,7 @@ class BleScannerInterface {
   /** Enable / disable scan filter feature*/
   virtual void ScanFilterEnable(bool enable, EnableCallback cb) = 0;
 
+#if TARGET_FLOSS
   /** Is MSFT Extension supported? */
   virtual bool IsMsftSupported() = 0;
 
@@ -181,6 +184,7 @@ class BleScannerInterface {
   /** Enable / disable MSFT scan filter feature */
   virtual void MsftAdvMonitorEnable(bool enable,
                                     MsftAdvMonitorEnableCallback cb) = 0;
+#endif
 
   /** Sets the LE scan interval and window in units of N*0.625 msec */
   virtual void SetScanParameters(int scanner_id, uint8_t scan_type,

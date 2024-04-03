@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 #pragma once
+#if TARGET_FLOSS
 
 #include "hci/hci_packets.h"
 #include "hci/le_scanning_callback.h"
@@ -60,3 +61,4 @@ class MsftExtensionManager : public bluetooth::Module {
 
 }  // namespace hci
 }  // namespace bluetooth
+#endif
