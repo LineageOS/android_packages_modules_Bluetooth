@@ -191,7 +191,7 @@ void BTM_BleReadPhy(
                             base::Bind(&read_phy_cb, std::move(cb)));
 }
 
-void doNothing(uint8_t* data, uint16_t len) {}
+void doNothing(uint8_t* /* data */, uint16_t /* len */) {}
 
 void BTM_BleSetPhy(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
                    uint16_t phy_options) {

@@ -1069,7 +1069,7 @@ void btm_sco_connected(const RawAddress& bda, uint16_t hci_handle,
  ******************************************************************************/
 void btm_sco_connection_failed(tHCI_STATUS hci_status, const RawAddress& bda,
                                uint16_t hci_handle,
-                               tBTM_ESCO_DATA* p_esco_data) {
+                               tBTM_ESCO_DATA* /* p_esco_data */) {
   tSCO_CONN* p = &btm_cb.sco_cb.sco_db[0];
   uint16_t xx;
 

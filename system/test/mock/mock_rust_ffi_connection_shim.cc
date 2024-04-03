@@ -27,7 +27,7 @@ RustConnectionManager& GetConnectionManager() {
   return manager;
 }
 
-core::AddressWithType ResolveRawAddress(RawAddress bd_addr) {
+core::AddressWithType ResolveRawAddress(RawAddress /* bd_addr */) {
   inc_func_call_count(__func__);
   return {};
 }

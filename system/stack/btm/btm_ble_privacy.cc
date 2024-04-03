@@ -218,7 +218,7 @@ static void btm_ble_update_resolving_list(const RawAddress& pseudo_bda,
   }
 }
 
-static bool clear_resolving_list_bit(void* data, void* context) {
+static bool clear_resolving_list_bit(void* data, void* /* context */) {
   tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(data);
   p_dev_rec->ble.in_controller_list &= ~BTM_RESOLVING_LIST_BIT;
   return true;
