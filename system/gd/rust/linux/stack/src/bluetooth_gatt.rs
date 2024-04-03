@@ -705,11 +705,7 @@ pub struct BluetoothGattDescriptor {
 }
 
 impl BluetoothGattDescriptor {
-    pub(crate) fn new(
-        uuid: Uuid128Bit,
-        instance_id: i32,
-        permissions: i32,
-    ) -> BluetoothGattDescriptor {
+    pub fn new(uuid: Uuid128Bit, instance_id: i32, permissions: i32) -> BluetoothGattDescriptor {
         BluetoothGattDescriptor { uuid, instance_id, permissions }
     }
 }
@@ -747,7 +743,7 @@ impl BluetoothGattCharacteristic {
     pub const PERMISSION_WRITE_SIGNED: i32 = 1 << 7;
     pub const PERMISSION_WRITE_SIGNED_MITM: i32 = 1 << 8;
 
-    pub(crate) fn new(
+    pub fn new(
         uuid: Uuid128Bit,
         instance_id: i32,
         properties: i32,
