@@ -791,7 +791,10 @@ impl BluetoothGattService {
         }
     }
 
-    fn from_db(elements: Vec<BtGattDbElement>) -> Vec<BluetoothGattService> {
+    fn from_db(
+        elements: Vec<BtGattDbElement>,
+        with_included_service: bool,
+    ) -> Vec<BluetoothGattService> {
         let mut db_out: Vec<BluetoothGattService> = vec![];
 
         for elem in elements {
@@ -840,6 +843,9 @@ impl BluetoothGattService {
                 }
 
                 GattDbElementType::IncludedService => {
+                    if !with_included_service {
+                        continue;
+                    }
                     match db_out.last_mut() {
                         Some(s) => {
                             s.included_services.push(BluetoothGattService::new(
@@ -3176,7 +3182,7 @@ impl BtifGattClientCallbacks for BluetoothGatt {
                     |cb: &mut GattClientCallback| {
                         cb.on_search_complete(
                             addr.to_string(),
-                            BluetoothGattService::from_db(elements),
+                            BluetoothGattService::from_db(elements, true),
                             GattStatus::Success,
                         );
                         Some(())
@@ -3481,7 +3487,7 @@ impl BtifGattServerCallbacks for BluetoothGatt {
         elements: Vec<BtGattDbElement>,
         _count: usize,
     ) {
-        for service in BluetoothGattService::from_db(elements) {
+        for service in BluetoothGattService::from_db(elements, false) {
             if status == GattStatus::Success {
                 self.server_context_map.add_service(server_id, service.clone());
             }
