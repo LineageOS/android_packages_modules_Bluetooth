@@ -501,13 +501,24 @@ static void hh_open_handler(tBTA_HH_CONN& conn) {
     // Use current state if the device instance already exists
     btif_hh_device_t* p_dev = btif_hh_find_dev_by_link_spec(conn.link_spec);
     if (p_dev != nullptr) {
+      log::debug("Device instance found: {}, state: {}",
+                 p_dev->link_spec.ToRedactedStringForLogging(),
+                 bthh_connection_state_text(p_dev->dev_status));
       dev_status = p_dev->dev_status;
+    }
+
+    if (btif_hh_cb.pending_link_spec == conn.link_spec) {
+      log::verbose("Device connection was pending for: {}, status: {}",
+                   conn.link_spec.ToRedactedStringForLogging(),
+                   btif_hh_status_text(btif_hh_cb.status));
+      dev_status = BTHH_CONN_STATE_CONNECTING;
     }
 
     if (dev_status != BTHH_CONN_STATE_ACCEPTING &&
         dev_status != BTHH_CONN_STATE_CONNECTING) {
       log::warn("Reject Incoming HID Connection, device: {}, state: {}",
-                conn.link_spec.ToRedactedStringForLogging(), dev_status);
+                conn.link_spec.ToRedactedStringForLogging(),
+                bthh_connection_state_text(dev_status));
 
       if (p_dev != nullptr) {
         p_dev->dev_status = BTHH_CONN_STATE_DISCONNECTED;
