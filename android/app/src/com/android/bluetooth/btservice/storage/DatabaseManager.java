@@ -1084,12 +1084,11 @@ public class DatabaseManager {
      * @param database the Bluetooth storage {@link MetadataDatabase}
      */
     public void start(MetadataDatabase database) {
-        Log.d(TAG, "start()");
-
         if (database == null) {
-            Log.e(TAG, "stat failed, database is null.");
+            Log.e(TAG, "start failed, database is null.");
             return;
         }
+        Log.d(TAG, "start()");
 
         synchronized (mDatabaseLock) {
             mDatabase = database;
@@ -1124,6 +1123,12 @@ public class DatabaseManager {
 
     /** Close and de-init the DatabaseManager */
     public void cleanup() {
+        synchronized (mDatabaseLock) {
+            if (mDatabase == null) {
+                Log.w(TAG, "cleanup called on non started database");
+                return;
+            }
+        }
         removeUnusedMetadata();
         mAdapterService.unregisterReceiver(mReceiver);
         if (mHandlerThread != null) {
