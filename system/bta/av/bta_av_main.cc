@@ -848,8 +848,6 @@ static void bta_av_api_to_ssm(tBTA_AV_DATA* p_data) {
  *
  * Description      if this is audio channel, check if more than one audio
  *                  channel is connected & already started.
- *                  This function needs to be kept very similar to
- *                  bta_av_chk_2nd_start
  *
  * Returns          true, if need api_start
  *
