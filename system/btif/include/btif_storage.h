@@ -375,9 +375,6 @@ bt_status_t btif_storage_get_remote_addr_type(const RawAddress* remote_bd_addr,
 bt_status_t btif_storage_set_remote_addr_type(const RawAddress* remote_bd_addr,
                                               tBLE_ADDR_TYPE addr_type);
 
-bool btif_storage_get_remote_addr_type(const RawAddress& remote_bd_addr,
-                                       tBLE_ADDR_TYPE& addr_type);
-
 void btif_storage_add_groups(const RawAddress& addr);
 void btif_storage_load_bonded_groups(void);
 void btif_storage_remove_groups(const RawAddress& address);

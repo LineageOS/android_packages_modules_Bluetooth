@@ -290,22 +290,6 @@ struct btif_storage_get_remote_addr_type {
 extern struct btif_storage_get_remote_addr_type
     btif_storage_get_remote_addr_type;
 
-// Name: btif_storage_get_remote_addr_type2
-// Params: const RawAddress& remote_bd_addr, tBLE_ADDR_TYPE& addr_type
-// Return: bool
-struct btif_storage_get_remote_addr_type2 {
-  static bool return_value;
-  std::function<bool(const RawAddress& remote_bd_addr,
-                     tBLE_ADDR_TYPE& addr_type)>
-      body{[](const RawAddress& /* remote_bd_addr */,
-              tBLE_ADDR_TYPE& /* addr_type */) { return return_value; }};
-  bool operator()(const RawAddress& remote_bd_addr, tBLE_ADDR_TYPE& addr_type) {
-    return body(remote_bd_addr, addr_type);
-  };
-};
-extern struct btif_storage_get_remote_addr_type2
-    btif_storage_get_remote_addr_type2;
-
 // Name: btif_storage_get_remote_device_property
 // Params: const RawAddress* remote_bd_addr, bt_property_t* property
 // Return: bt_status_t
