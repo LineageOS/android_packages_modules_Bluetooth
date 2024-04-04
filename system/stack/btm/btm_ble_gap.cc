@@ -991,7 +991,7 @@ bool BTM_BleLocalPrivacyEnabled(void) {
   return (btm_cb.ble_ctr_cb.privacy_mode != BTM_PRIVACY_NONE);
 }
 
-static bool is_resolving_list_bit_set(void* data, void* context) {
+static bool is_resolving_list_bit_set(void* data, void* /* context */) {
   tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(data);
 
   if ((p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) != 0)
@@ -1135,7 +1135,7 @@ static void btm_sync_queue_advance() {
   btm_ble_sync_queue_handle(BTM_QUEUE_SYNC_ADVANCE_EVT, nullptr);
 }
 
-static void btm_ble_start_sync_timeout(void* data) {
+static void btm_ble_start_sync_timeout(void* /* data */) {
   log::debug("");
   sync_node_t* p_head = (sync_node_t*)list_front(sync_queue);
   uint8_t adv_sid = p_head->sid;
@@ -1704,9 +1704,9 @@ void btm_send_hci_set_scan_params(uint8_t scan_type, uint16_t scan_int,
 }
 
 /* Scan filter param config event */
-static void btm_ble_scan_filt_param_cfg_evt(uint8_t avbl_space,
-                                            tBTM_BLE_SCAN_COND_OP action_type,
-                                            tBTM_STATUS btm_status) {
+static void btm_ble_scan_filt_param_cfg_evt(
+    uint8_t /* avbl_space */, tBTM_BLE_SCAN_COND_OP /* action_type */,
+    tBTM_STATUS btm_status) {
   if (btm_status != btm_status_value(BTM_SUCCESS)) {
     log::error("{}", btm_status);
   } else {
@@ -1936,7 +1936,7 @@ static void btm_ble_update_adv_flag(uint8_t flag) {
  * Check ADV flag to make sure device is discoverable and match the search
  * condition
  */
-static uint8_t btm_ble_is_discoverable(const RawAddress& bda,
+static uint8_t btm_ble_is_discoverable(const RawAddress& /* bda */,
                                        std::vector<uint8_t> const& adv_data) {
   uint8_t scan_state = BTM_BLE_NOT_SCANNING;
 
@@ -2135,8 +2135,8 @@ DEV_CLASS btm_ble_get_appearance_as_cod(std::vector<uint8_t> const& data) {
  * Update adv packet information into inquiry result.
  */
 static void btm_ble_update_inq_result(tINQ_DB_ENT* p_i, uint8_t addr_type,
-                                      const RawAddress& bda, uint16_t evt_type,
-                                      uint8_t primary_phy,
+                                      const RawAddress& /* bda */,
+                                      uint16_t evt_type, uint8_t primary_phy,
                                       uint8_t secondary_phy,
                                       uint8_t advertising_sid, int8_t tx_power,
                                       int8_t rssi, uint16_t periodic_adv_int,
@@ -2959,7 +2959,8 @@ void btm_ble_decrement_link_topology_mask(uint8_t link_role) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_ble_update_mode_operation(uint8_t link_role, const RawAddress* bd_addr,
+void btm_ble_update_mode_operation(uint8_t /* link_role */,
+                                   const RawAddress* /* bd_addr */,
                                    tHCI_STATUS status) {
   if (status == HCI_ERR_ADVERTISING_TIMEOUT) {
     btm_cb.ble_ctr_cb.inq_var.adv_mode = BTM_BLE_ADV_DISABLE;

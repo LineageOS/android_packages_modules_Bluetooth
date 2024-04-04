@@ -1958,7 +1958,7 @@ tBTM_STATUS btm_initiate_rem_name(const RawAddress& remote_bda, uint8_t origin,
  *
  ******************************************************************************/
 void btm_process_remote_name(const RawAddress* bda, const BD_NAME bdn,
-                             uint16_t evt_len, tHCI_STATUS hci_status) {
+                             uint16_t /* evt_len */, tHCI_STATUS hci_status) {
   tBTM_REMOTE_DEV_NAME rem_name;
   tBTM_NAME_CMPL_CB* p_cb = btm_cb.btm_inq_vars.p_remname_cmpl_cb;
 

@@ -49,7 +49,7 @@ void init() {
 }
 
 // This is not used in Android.
-bool is_coding_format_supported(esco_coding_format_t coding_format) {
+bool is_coding_format_supported(esco_coding_format_t /* coding_format */) {
   return true;
 }
 
@@ -90,16 +90,16 @@ bool enable_offload(bool enable) {
 }
 
 // On Android, this is a no-op because the settings default to offloaded case.
-void set_codec_datapath(int codec_uuid) {}
+void set_codec_datapath(int /* codec_uuid */) {}
 
 // No packet size limits on Android since it will be offloaded.
-size_t get_packet_size(int codec) { return kDefaultPacketSize; }
+size_t get_packet_size(int /* codec */) { return kDefaultPacketSize; }
 
-void notify_sco_connection_change(RawAddress device, bool is_connected,
-                                  int codec) {
+void notify_sco_connection_change(RawAddress /* device */,
+                                  bool /* is_connected */, int /* codec */) {
   // Do nothing since this is handled by Android's audio hidl.
 }
 
 // On Android, this is a no-op because the settings default to work for Android.
-void update_esco_parameters(enh_esco_params_t* p_parms) {}
+void update_esco_parameters(enh_esco_params_t* /* p_parms */) {}
 }  // namespace hfp_hal_interface

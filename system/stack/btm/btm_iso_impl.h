@@ -341,7 +341,7 @@ struct iso_impl {
                        hci_reason_code_text((tHCI_REASON)(reason)).c_str()));
   }
 
-  void on_setup_iso_data_path(uint8_t* stream, uint16_t len) {
+  void on_setup_iso_data_path(uint8_t* stream, uint16_t /* len */) {
     uint8_t status;
     uint16_t conn_handle;
 
