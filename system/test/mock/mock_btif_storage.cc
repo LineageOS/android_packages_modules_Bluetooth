@@ -57,7 +57,6 @@ struct btif_storage_get_remote_addr_type btif_storage_get_remote_addr_type;
 struct btif_storage_get_remote_addr_type2 btif_storage_get_remote_addr_type2;
 struct btif_storage_get_remote_device_property
     btif_storage_get_remote_device_property;
-struct btif_storage_get_remote_device_type btif_storage_get_remote_device_type;
 struct btif_storage_get_remote_prop btif_storage_get_remote_prop;
 struct btif_storage_get_sr_supp_feat btif_storage_get_sr_supp_feat;
 struct btif_storage_get_stored_remote_name btif_storage_get_stored_remote_name;
@@ -109,7 +108,6 @@ bt_status_t btif_storage_get_remote_addr_type::return_value = BT_STATUS_SUCCESS;
 bool btif_storage_get_remote_addr_type2::return_value = false;
 bt_status_t btif_storage_get_remote_device_property::return_value =
     BT_STATUS_SUCCESS;
-bool btif_storage_get_remote_device_type::return_value = false;
 bt_status_t btif_storage_get_remote_prop::return_value = BT_STATUS_SUCCESS;
 uint8_t btif_storage_get_sr_supp_feat::return_value = 0;
 bool btif_storage_get_stored_remote_name::return_value = false;
@@ -233,12 +231,6 @@ bt_status_t btif_storage_get_remote_device_property(
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_storage_get_remote_device_property(
       remote_bd_addr, property);
-}
-bool btif_storage_get_remote_device_type(const RawAddress& remote_bd_addr,
-                                         tBT_DEVICE_TYPE& device_type) {
-  inc_func_call_count(__func__);
-  return test::mock::btif_storage::btif_storage_get_remote_device_type(
-      remote_bd_addr, device_type);
 }
 bt_status_t btif_storage_get_remote_prop(RawAddress* remote_addr,
                                          bt_property_type_t type, void* buf,

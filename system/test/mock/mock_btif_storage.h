@@ -323,23 +323,6 @@ struct btif_storage_get_remote_device_property {
 extern struct btif_storage_get_remote_device_property
     btif_storage_get_remote_device_property;
 
-// Name: btif_storage_get_remote_device_type
-// Params: const RawAddress& remote_bd_addr, tBT_DEVICE_TYPE& device_type
-// Return: bool
-struct btif_storage_get_remote_device_type {
-  static bool return_value;
-  std::function<bool(const RawAddress& remote_bd_addr,
-                     tBT_DEVICE_TYPE& device_type)>
-      body{[](const RawAddress& /* remote_bd_addr */,
-              tBT_DEVICE_TYPE& /* device_type */) { return return_value; }};
-  bool operator()(const RawAddress& remote_bd_addr,
-                  tBT_DEVICE_TYPE& device_type) {
-    return body(remote_bd_addr, device_type);
-  };
-};
-extern struct btif_storage_get_remote_device_type
-    btif_storage_get_remote_device_type;
-
 // Name: btif_storage_get_remote_prop
 // Params: RawAddress* remote_addr, bt_property_type_t type, void* buf, int
 // size, bt_property_t* property Return: bt_status_t

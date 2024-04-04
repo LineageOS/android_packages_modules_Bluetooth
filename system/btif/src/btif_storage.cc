@@ -1393,15 +1393,6 @@ bool btif_storage_get_remote_addr_type(const RawAddress& remote_bd_addr,
   return ret;
 }
 
-bool btif_storage_get_remote_device_type(const RawAddress& remote_bd_addr,
-                                         tBT_DEVICE_TYPE& device_type) {
-  int val;
-  bool ret = btif_config_get_int(remote_bd_addr.ToString(),
-                                 BTIF_STORAGE_KEY_DEV_TYPE, &val);
-  device_type = static_cast<tBT_DEVICE_TYPE>(val);
-  return ret;
-}
-
 /** Stores information about GATT server supported features */
 void btif_storage_set_gatt_sr_supp_feat(const RawAddress& addr, uint8_t feat) {
   do_in_jni_thread(
