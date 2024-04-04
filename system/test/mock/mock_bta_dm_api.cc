@@ -81,7 +81,6 @@ struct BTA_DmSetLocalDiRecord BTA_DmSetLocalDiRecord;
 struct BTA_DmSirkConfirmDeviceReply BTA_DmSirkConfirmDeviceReply;
 struct BTA_DmSirkSecCbRegister BTA_DmSirkSecCbRegister;
 struct BTA_EnableTestMode BTA_EnableTestMode;
-struct BTA_VendorInit BTA_VendorInit;
 struct BTA_dm_init BTA_dm_init;
 
 }  // namespace bta_dm_api
@@ -302,10 +301,6 @@ void BTA_DmSirkSecCbRegister(tBTA_DM_SEC_CBACK* p_cback) {
 void BTA_EnableTestMode(void) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_api::BTA_EnableTestMode();
-}
-void BTA_VendorInit(void) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_VendorInit();
 }
 void BTA_dm_init() {
   inc_func_call_count(__func__);

@@ -567,15 +567,6 @@ struct BTA_EnableTestMode {
 };
 extern struct BTA_EnableTestMode BTA_EnableTestMode;
 
-// Name: BTA_VendorInit
-// Params: void
-// Return: void
-struct BTA_VendorInit {
-  std::function<void(void)> body{[](void) {}};
-  void operator()(void) { body(); };
-};
-extern struct BTA_VendorInit BTA_VendorInit;
-
 // Name: BTA_dm_init
 // Params:
 // Return: void

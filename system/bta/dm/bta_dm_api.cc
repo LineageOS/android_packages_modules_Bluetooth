@@ -304,17 +304,6 @@ void BTA_DmBleCsisObserve(bool observe, tBTA_DM_SEARCH_CBACK* p_results_cb) {
 
 /*******************************************************************************
  *
- * Function         BTA_VendorInit
- *
- * Description      This function initializes vendor specific
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_VendorInit(void) { log::verbose("BTA_VendorInit"); }
-
-/*******************************************************************************
- *
  * Function         BTA_DmClearEventFilter
  *
  * Description      This function clears the event filter
