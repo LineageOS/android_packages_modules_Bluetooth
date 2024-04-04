@@ -47,12 +47,15 @@ bool AddressObfuscator::IsInitialized() {
 
 std::string AddressObfuscator::Obfuscate(const RawAddress& address) {
   std::lock_guard<std::recursive_mutex> lock(instance_mutex_);
-  CHECK(IsInitialized());
+  log::assert_that(IsInitialized(), "assert failed: IsInitialized()");
   std::array<uint8_t, EVP_MAX_MD_SIZE> result = {};
   unsigned int out_len = 0;
-  CHECK(::HMAC(EVP_sha256(), salt_256bit_.data(), salt_256bit_.size(),
-               address.address, address.kLength, result.data(),
-               &out_len) != nullptr);
+  log::assert_that(::HMAC(EVP_sha256(), salt_256bit_.data(),
+                          salt_256bit_.size(), address.address, address.kLength,
+                          result.data(), &out_len) != nullptr,
+                   "assert failed: ::HMAC(EVP_sha256(), salt_256bit_.data(), "
+                   "salt_256bit_.size(), address.address, address.kLength, "
+                   "result.data(), &out_len) != nullptr");
   CHECK_EQ(out_len, static_cast<unsigned int>(kOctet32Length));
   return std::string(reinterpret_cast<const char*>(result.data()), out_len);
 }

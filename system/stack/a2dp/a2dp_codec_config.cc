@@ -950,7 +950,8 @@ bool A2dpCodecs::setCodecOtaConfig(
               A2DP_CodecName(p_ota_codec_config));
     goto fail;
   }
-  CHECK(current_codec_config_ != nullptr);
+  log::assert_that(current_codec_config_ != nullptr,
+                   "assert failed: current_codec_config_ != nullptr");
 
   if (*p_restart_input || *p_restart_output) *p_config_updated = true;
 

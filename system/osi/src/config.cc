@@ -99,7 +99,7 @@ std::unique_ptr<config_t> config_new_empty(void) {
 }
 
 std::unique_ptr<config_t> config_new(const char* filename) {
-  CHECK(filename != nullptr);
+  log::assert_that(filename != nullptr, "assert failed: filename != nullptr");
 
   std::unique_ptr<config_t> config = config_new_empty();
 
@@ -209,7 +209,7 @@ void config_set_bool(config_t* config, const std::string& section,
 
 void config_set_string(config_t* config, const std::string& section,
                        const std::string& key, const std::string& value) {
-  CHECK(config);
+  log::assert_that(config != nullptr, "assert failed: config != nullptr");
 
   auto sec = section_find(*config, section);
   if (sec == config->sections.end()) {
@@ -236,7 +236,7 @@ void config_set_string(config_t* config, const std::string& section,
 }
 
 bool config_remove_section(config_t* config, const std::string& section) {
-  CHECK(config);
+  log::assert_that(config != nullptr, "assert failed: config != nullptr");
 
   auto sec = section_find(*config, section);
   if (sec == config->sections.end()) return false;
@@ -247,7 +247,7 @@ bool config_remove_section(config_t* config, const std::string& section) {
 
 bool config_remove_key(config_t* config, const std::string& section,
                        const std::string& key) {
-  CHECK(config);
+  log::assert_that(config != nullptr, "assert failed: config != nullptr");
   auto sec = section_find(*config, section);
   if (sec == config->sections.end()) return false;
 
@@ -263,7 +263,7 @@ bool config_remove_key(config_t* config, const std::string& section,
 }
 
 bool config_save(const config_t& config, const std::string& filename) {
-  CHECK(!filename.empty());
+  log::assert_that(!filename.empty(), "assert failed: !filename.empty()");
 
   // Steps to ensure content of config file gets to disk:
   //
@@ -372,8 +372,8 @@ error:
 }
 
 bool checksum_save(const std::string& checksum, const std::string& filename) {
-  CHECK(!checksum.empty()) << __func__ << ": checksum cannot be empty";
-  CHECK(!filename.empty()) << __func__ << ": filename cannot be empty";
+  log::assert_that(!checksum.empty(), "checksum cannot be empty");
+  log::assert_that(!filename.empty(), "filename cannot be empty");
 
   // Steps to ensure content of config checksum file gets to disk:
   //
@@ -479,8 +479,8 @@ static char* trim(char* str) {
 }
 
 static bool config_parse(FILE* fp, config_t* config) {
-  CHECK(fp != nullptr);
-  CHECK(config != nullptr);
+  log::assert_that(fp != nullptr, "assert failed: fp != nullptr");
+  log::assert_that(config != nullptr, "assert failed: config != nullptr");
 
   int line_num = 0;
   char line[4096];

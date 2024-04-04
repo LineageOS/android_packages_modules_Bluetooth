@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -261,7 +263,7 @@ typedef struct {
 } tSCO_CONN;
 
 /* SCO Management control block */
-typedef struct {
+struct tSCO_CB {
   tSCO_CONN sco_db[BTM_MAX_SCO_LINKS];
   enh_esco_params_t def_esco_parms;
   bool esco_supported;        /* true if 1.2 cntlr AND supports eSCO links */
@@ -285,7 +287,8 @@ typedef struct {
   void Free();
 
   uint16_t get_index(const tSCO_CONN* p_sco) const {
-    CHECK(p_sco != nullptr);
+    bluetooth::log::assert_that(p_sco != nullptr,
+                                "assert failed: p_sco != nullptr");
     const tSCO_CONN* p = sco_db;
     for (uint16_t xx = 0; xx < kMaxScoLinks; xx++, p++) {
       if (p_sco == p) {
@@ -294,8 +297,7 @@ typedef struct {
     }
     return 0xffff;
   }
-
-} tSCO_CB;
+};
 
 void btm_sco_chk_pend_rolechange(uint16_t hci_handle);
 void btm_sco_disc_chk_pend_for_modechange(uint16_t hci_handle);

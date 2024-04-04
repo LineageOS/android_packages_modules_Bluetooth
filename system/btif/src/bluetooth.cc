@@ -402,8 +402,8 @@ static bool interface_ready(void) { return bt_hal_cbacks != NULL; }
 void set_hal_cbacks(bt_callbacks_t* callbacks) { bt_hal_cbacks = callbacks; }
 
 static bool is_profile(const char* p1, const char* p2) {
-  CHECK(p1);
-  CHECK(p2);
+  log::assert_that(p1 != nullptr, "assert failed: p1 != nullptr");
+  log::assert_that(p2 != nullptr, "assert failed: p2 != nullptr");
   return strlen(p1) == strlen(p2) && strncmp(p1, p2, strlen(p2)) == 0;
 }
 

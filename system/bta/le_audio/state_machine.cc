@@ -3232,7 +3232,7 @@ void LeAudioGroupStateMachine::Cleanup() {
 }
 
 LeAudioGroupStateMachine* LeAudioGroupStateMachine::Get() {
-  CHECK(instance);
+  log::assert_that(instance != nullptr, "assert failed: instance != nullptr");
   return instance;
 }
 }  // namespace bluetooth::le_audio

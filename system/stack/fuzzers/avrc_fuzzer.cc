@@ -15,6 +15,7 @@
  */
 
 #include <base/functional/bind.h>
+#include <bluetooth/log.h>
 #include <fuzzer/FuzzedDataProvider.h>
 
 #include <cstdint>
@@ -35,6 +36,7 @@
 #include "types/bluetooth/uuid.h"
 
 using bluetooth::Uuid;
+using namespace bluetooth;
 
 // Verify the passed data is readable
 static void ConsumeData(const uint8_t* data, size_t size) {
@@ -58,25 +60,28 @@ class FakeBtStack {
   FakeBtStack() {
     test::mock::stack_l2cap_api::L2CA_DataWrite.body = [](uint16_t cid,
                                                           BT_HDR* hdr) {
-      CHECK(cid == kDummyCid);
+      log::assert_that(cid == kDummyCid, "assert failed: cid == kDummyCid");
       ConsumeData((const uint8_t*)hdr, hdr->offset + hdr->len);
       osi_free(hdr);
       return L2CAP_DW_SUCCESS;
     };
     test::mock::stack_l2cap_api::L2CA_DisconnectReq.body = [](uint16_t cid) {
-      CHECK(cid == kDummyCid);
+      log::assert_that(cid == kDummyCid, "assert failed: cid == kDummyCid");
       return true;
     };
     test::mock::stack_l2cap_api::L2CA_ConnectReq2.body =
         [](uint16_t psm, const RawAddress& p_bd_addr, uint16_t sec_level) {
-          CHECK(p_bd_addr == kDummyRemoteAddr);
+          log::assert_that(p_bd_addr == kDummyRemoteAddr,
+                           "assert failed: p_bd_addr == kDummyRemoteAddr");
           return kDummyCid;
         };
     test::mock::stack_l2cap_api::L2CA_Register2.body =
         [](uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info, bool enable_snoop,
            tL2CAP_ERTM_INFO* p_ertm_info, uint16_t my_mtu,
            uint16_t required_remote_mtu, uint16_t sec_level) {
-          CHECK(psm == AVCT_PSM || psm == AVCT_BR_PSM);
+          log::assert_that(
+              psm == AVCT_PSM || psm == AVCT_BR_PSM,
+              "assert failed: psm == AVCT_PSM || psm == AVCT_BR_PSM");
           if (psm == AVCT_PSM) {
             avct_appl = p_cb_info;
           } else if (psm == AVCT_BR_PSM) {

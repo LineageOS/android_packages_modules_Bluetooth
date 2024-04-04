@@ -54,7 +54,7 @@ ConnectionHandler* ConnectionHandler::instance_ = nullptr;
 std::recursive_mutex device_map_lock;
 
 ConnectionHandler* ConnectionHandler::Get() {
-  CHECK(instance_);
+  log::assert_that(instance_ != nullptr, "assert failed: instance_ != nullptr");
 
   return instance_;
 }
@@ -76,9 +76,9 @@ bool IsAbsoluteVolumeEnabled(const RawAddress* bdaddr) {
 bool ConnectionHandler::Initialize(const ConnectionCallback& callback,
                                    AvrcpInterface* avrcp, SdpInterface* sdp,
                                    VolumeInterface* vol) {
-  CHECK(instance_ == nullptr);
-  CHECK(avrcp != nullptr);
-  CHECK(sdp != nullptr);
+  log::assert_that(instance_ == nullptr, "assert failed: instance_ == nullptr");
+  log::assert_that(avrcp != nullptr, "assert failed: avrcp != nullptr");
+  log::assert_that(sdp != nullptr, "assert failed: sdp != nullptr");
 
   // TODO (apanicke): When transitioning to using this service, implement
   // SDP Initialization for AVRCP Here.
@@ -98,7 +98,7 @@ bool ConnectionHandler::Initialize(const ConnectionCallback& callback,
 }
 
 bool ConnectionHandler::CleanUp() {
-  CHECK(instance_ != nullptr);
+  log::assert_that(instance_ != nullptr, "assert failed: instance_ != nullptr");
 
   // TODO (apanicke): Cleanup the SDP Entries here
   std::lock_guard<std::recursive_mutex> lock(device_map_lock);
@@ -121,7 +121,7 @@ bool ConnectionHandler::CleanUp() {
 }
 
 void ConnectionHandler::InitForTesting(ConnectionHandler* handler) {
-  CHECK(instance_ == nullptr);
+  log::assert_that(instance_ == nullptr, "assert failed: instance_ == nullptr");
   instance_ = handler;
 }
 

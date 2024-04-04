@@ -25,6 +25,7 @@
 
 // Original included files, if any
 #include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include "include/check.h"
 #include "osi/include/future.h"
@@ -74,7 +75,7 @@ extern struct future_new_named future_new_named;
 struct future_new_immediate {
   future_t* return_value{0};
   std::function<future_t*(void* value)> body{[this](void* /* value */) {
-    CHECK(0);
+    bluetooth::log::fatal("unexpectedly called");
     return return_value;
   }};
   future_t* operator()(void* value) { return body(value); };

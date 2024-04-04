@@ -338,9 +338,11 @@ static tBTA_AV_SCB* bta_av_find_scb(tBTA_AV_CHNL chnl, uint8_t app_id) {
 void bta_av_free_scb(tBTA_AV_SCB* p_scb) {
   if (p_scb == nullptr) return;
   uint8_t scb_index = p_scb->hdi;
-  CHECK(scb_index < BTA_AV_NUM_STRS);
+  log::assert_that(scb_index < BTA_AV_NUM_STRS,
+                   "assert failed: scb_index < BTA_AV_NUM_STRS");
 
-  CHECK(p_scb == bta_av_cb.p_scb[scb_index]);
+  log::assert_that(p_scb == bta_av_cb.p_scb[scb_index],
+                   "assert failed: p_scb == bta_av_cb.p_scb[scb_index]");
   bta_av_cb.p_scb[scb_index] = nullptr;
   alarm_free(p_scb->avrc_ct_timer);
   list_free(p_scb->a2dp_list);

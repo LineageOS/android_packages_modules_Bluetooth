@@ -18,15 +18,17 @@
 #include "osi/include/allocator.h"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "check.h"
+using namespace bluetooth;
 
 char* osi_strdup(const char* str) {
   size_t size = strlen(str) + 1;  // + 1 for the null terminator
   char* new_string = (char*)malloc(size);
-  CHECK(new_string);
+  log::assert_that(new_string != nullptr,
+                   "assert failed: new_string != nullptr");
 
   if (!new_string) return NULL;
 
@@ -39,7 +41,8 @@ char* osi_strndup(const char* str, size_t len) {
   if (len < size) size = len;
 
   char* new_string = (char*)malloc(size + 1);
-  CHECK(new_string);
+  log::assert_that(new_string != nullptr,
+                   "assert failed: new_string != nullptr");
 
   if (!new_string) return NULL;
 
@@ -49,23 +52,25 @@ char* osi_strndup(const char* str, size_t len) {
 }
 
 void* osi_malloc(size_t size) {
-  CHECK(static_cast<ssize_t>(size) >= 0);
+  log::assert_that(static_cast<ssize_t>(size) >= 0,
+                   "assert failed: static_cast<ssize_t>(size) >= 0");
   void* ptr = malloc(size);
-  CHECK(ptr);
+  log::assert_that(ptr != nullptr, "assert failed: ptr != nullptr");
   return ptr;
 }
 
 void* osi_calloc(size_t size) {
-  CHECK(static_cast<ssize_t>(size) >= 0);
+  log::assert_that(static_cast<ssize_t>(size) >= 0,
+                   "assert failed: static_cast<ssize_t>(size) >= 0");
   void* ptr = calloc(1, size);
-  CHECK(ptr);
+  log::assert_that(ptr != nullptr, "assert failed: ptr != nullptr");
   return ptr;
 }
 
 void osi_free(void* ptr) { free(ptr); }
 
 void osi_free_and_reset(void** p_ptr) {
-  CHECK(p_ptr != NULL);
+  log::assert_that(p_ptr != NULL, "assert failed: p_ptr != NULL");
   osi_free(*p_ptr);
   *p_ptr = NULL;
 }

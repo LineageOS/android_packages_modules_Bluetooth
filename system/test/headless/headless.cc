@@ -96,7 +96,7 @@ void adapter_properties(bt_status_t status, int num_properties,
 
 void remote_device_properties(bt_status_t status, RawAddress* bd_addr,
                               int num_properties, ::bt_property_t* properties) {
-  CHECK(bd_addr != nullptr);
+  log::assert_that(bd_addr != nullptr, "assert failed: bd_addr != nullptr");
   const size_t num_callbacks = interface_api_callback_map_.size();
   auto callback_list = interface_api_callback_map_.find(__func__);
   if (callback_list != interface_api_callback_map_.end()) {
@@ -179,7 +179,8 @@ void acl_state_changed(bt_status_t status, RawAddress* remote_bd_addr,
                        bt_acl_state_t state, int transport_link_type,
                        bt_hci_error_code_t hci_reason,
                        bt_conn_direction_t direction, uint16_t acl_handle) {
-  CHECK(remote_bd_addr != nullptr);
+  log::assert_that(remote_bd_addr != nullptr,
+                   "assert failed: remote_bd_addr != nullptr");
   const size_t num_callbacks = interface_api_callback_map_.size();
   auto callback_list = interface_api_callback_map_.find(__func__);
   if (callback_list != interface_api_callback_map_.end()) {

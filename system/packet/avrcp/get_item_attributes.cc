@@ -31,7 +31,8 @@ GetItemAttributesResponseBuilder::MakeBuilder(Status status, size_t mtu) {
 
 size_t GetItemAttributesResponseBuilder::AddAttributeEntry(
     AttributeEntry entry) {
-  CHECK(entries_.size() < 0xFF);
+  log::assert_that(entries_.size() < 0xFF,
+                   "assert failed: entries_.size() < 0xFF");
 
   size_t remaining_space = mtu_ - size();
   if (entry.size() > remaining_space) {

@@ -35,8 +35,8 @@ class IsoModuleFacadeService : public IsoModuleFacade::Service {
  public:
   IsoModuleFacadeService(IsoModule* iso_module, AclManager* acl_manager, ::bluetooth::os::Handler* iso_handler)
       : iso_module_(iso_module), acl_manager_(acl_manager), iso_handler_(iso_handler) {
-    log::assert_that(iso_module_, "assert failed: iso_module_");
-    log::assert_that(iso_handler_, "assert failed: iso_handler_");
+    log::assert_that(iso_module_ != nullptr, "assert failed: iso_module_ != nullptr");
+    log::assert_that(iso_handler_ != nullptr, "assert failed: iso_handler_ != nullptr");
 
     iso_module_->GetIsoManager()->RegisterIsoEstablishedCallback(iso_handler_->Bind(
         [](::bluetooth::grpc::GrpcEventQueue<LeIsoEventsMsg>* le_iso_events_, uint16_t cis_connection_handle) {

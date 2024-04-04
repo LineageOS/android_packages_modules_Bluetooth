@@ -119,7 +119,8 @@ bt_status_t btsock_rfc_init(int poll_thread_handle, uid_set_t* set) {
     rfc_slots[i].fd = INVALID_FD;
     rfc_slots[i].app_fd = INVALID_FD;
     rfc_slots[i].incoming_queue = list_new(osi_free);
-    CHECK(rfc_slots[i].incoming_queue != NULL);
+    log::assert_that(rfc_slots[i].incoming_queue != NULL,
+                     "assert failed: rfc_slots[i].incoming_queue != NULL");
   }
 
   BTA_JvEnable(jv_dm_cback);
@@ -257,7 +258,9 @@ static rfc_slot_t* create_srv_accept_rfc_slot(rfc_slot_t* srv_rs,
   srv_rs->rfc_handle = new_listen_handle;
   srv_rs->rfc_port_handle = BTA_JvRfcommGetPortHdl(new_listen_handle);
 
-  CHECK(accept_rs->rfc_port_handle != srv_rs->rfc_port_handle);
+  log::assert_that(
+      accept_rs->rfc_port_handle != srv_rs->rfc_port_handle,
+      "assert failed: accept_rs->rfc_port_handle != srv_rs->rfc_port_handle");
 
   // now swap the slot id
   uint32_t new_listen_id = accept_rs->id;
@@ -284,10 +287,12 @@ bt_status_t btsock_rfc_control_req(uint8_t dlci, const RawAddress& bd_addr,
 bt_status_t btsock_rfc_listen(const char* service_name,
                               const Uuid* service_uuid, int channel,
                               int* sock_fd, int flags, int app_uid) {
-  CHECK(sock_fd != NULL);
-  CHECK((service_uuid != NULL) ||
-        (channel >= 1 && channel <= MAX_RFC_CHANNEL) ||
-        ((flags & BTSOCK_FLAG_NO_SDP) != 0));
+  log::assert_that(sock_fd != NULL, "assert failed: sock_fd != NULL");
+  log::assert_that(
+      (service_uuid != NULL) || (channel >= 1 && channel <= MAX_RFC_CHANNEL) ||
+          ((flags & BTSOCK_FLAG_NO_SDP) != 0),
+      "assert failed: (service_uuid != NULL) || (channel >= 1 && channel <= "
+      "MAX_RFC_CHANNEL) || ((flags & BTSOCK_FLAG_NO_SDP) != 0)");
 
   *sock_fd = INVALID_FD;
 
@@ -344,8 +349,11 @@ bt_status_t btsock_rfc_listen(const char* service_name,
 bt_status_t btsock_rfc_connect(const RawAddress* bd_addr,
                                const Uuid* service_uuid, int channel,
                                int* sock_fd, int flags, int app_uid) {
-  CHECK(sock_fd != NULL);
-  CHECK((service_uuid != NULL) || (channel >= 1 && channel <= MAX_RFC_CHANNEL));
+  log::assert_that(sock_fd != NULL, "assert failed: sock_fd != NULL");
+  log::assert_that(
+      (service_uuid != NULL) || (channel >= 1 && channel <= MAX_RFC_CHANNEL),
+      "assert failed: (service_uuid != NULL) || (channel >= 1 && channel <= "
+      "MAX_RFC_CHANNEL)");
 
   *sock_fd = INVALID_FD;
 
@@ -1066,7 +1074,7 @@ int bta_co_rfc_data_outgoing(uint32_t id, uint8_t* buf, uint16_t size) {
 }
 
 bt_status_t btsock_rfc_disconnect(const RawAddress* bd_addr) {
-  CHECK(bd_addr != NULL);
+  log::assert_that(bd_addr != NULL, "assert failed: bd_addr != NULL");
   if (!is_init_done()) {
     log::error("BT not ready");
     return BT_STATUS_NOT_READY;

@@ -453,7 +453,7 @@ static void btif_hh_start_vup_timer(const tAclLinkSpec& link_spec) {
   log::verbose("");
 
   btif_hh_device_t* p_dev = btif_hh_find_connected_dev_by_link_spec(link_spec);
-  CHECK(p_dev != NULL);
+  log::assert_that(p_dev != NULL, "assert failed: p_dev != NULL");
 
   alarm_free(p_dev->vup_timer);
   p_dev->vup_timer = alarm_new("btif_hh.vup_timer");
@@ -1407,7 +1407,7 @@ static void bte_hh_evt(tBTA_HH_EVT event, tBTA_HH* p_data) {
  ******************************************************************************/
 
 static void btif_hh_handle_evt(uint16_t event, char* p_param) {
-  CHECK(p_param != nullptr);
+  log::assert_that(p_param != nullptr, "assert failed: p_param != nullptr");
   tAclLinkSpec link_spec = *(tAclLinkSpec*)p_param;
 
   switch (event) {

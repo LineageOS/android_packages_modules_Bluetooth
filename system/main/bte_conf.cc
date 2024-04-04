@@ -36,7 +36,7 @@ using namespace bluetooth;
 // Parses the specified Device ID configuration file and registers the
 // Device ID records with SDP.
 void bte_load_did_conf(const char* p_path) {
-  CHECK(p_path != NULL);
+  log::assert_that(p_path != NULL, "assert failed: p_path != NULL");
 
   std::unique_ptr<config_t> config = config_new(p_path);
   if (!config) {

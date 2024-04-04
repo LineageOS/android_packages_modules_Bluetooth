@@ -702,7 +702,7 @@ static void btu_hcif_command_status_evt_with_cb_on_task(uint8_t status,
   uint8_t* stream = event->data + event->offset;
   STREAM_TO_UINT16(opcode, stream);
 
-  CHECK(status != 0);
+  log::assert_that(status != 0, "assert failed: status != 0");
 
   // stream + 1 to skip parameter length field
   // No need to check length since stream is written by us
