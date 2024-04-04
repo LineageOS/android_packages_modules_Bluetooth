@@ -741,7 +741,6 @@ void bta_av_stream_chg(tBTA_AV_SCB* p_scb, bool started);
 bool bta_av_is_scb_opening(tBTA_AV_SCB* p_scb);
 bool bta_av_is_scb_incoming(tBTA_AV_SCB* p_scb);
 void bta_av_set_scb_sst_init(tBTA_AV_SCB* p_scb);
-bool bta_av_is_scb_init(tBTA_AV_SCB* p_scb);
 void bta_av_set_scb_sst_incoming(tBTA_AV_SCB* p_scb);
 tBTA_AV_LCB* bta_av_find_lcb(const RawAddress& addr, uint8_t op);
 const char* bta_av_sst_code(uint8_t state);
