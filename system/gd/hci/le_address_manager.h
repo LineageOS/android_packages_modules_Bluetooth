@@ -180,9 +180,3 @@ class LeAddressManager {
 
 }  // namespace hci
 }  // namespace bluetooth
-
-namespace fmt {
-template <>
-struct formatter<bluetooth::hci::LeAddressManager::AddressPolicy>
-    : enum_formatter<bluetooth::hci::LeAddressManager::AddressPolicy> {};
-}  // namespace fmt
