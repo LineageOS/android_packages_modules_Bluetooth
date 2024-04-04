@@ -84,7 +84,7 @@ TEST_F(BtmInqActiveTest, btm_process_remote_name__typical) {
   ASSERT_STREQ((char*)kBdName, (char*)gBTM_REMOTE_DEV_NAME.remote_bd_name);
 }
 
-TEST_F(BtmInqActiveTest, DISABLED_btm_process_remote_name__no_name) {
+TEST_F(BtmInqActiveTest, btm_process_remote_name__no_name) {
   btm_process_remote_name(&kRawAddress, nullptr, 0, HCI_SUCCESS);
   ASSERT_FALSE(btm_cb.btm_inq_vars.p_remname_cmpl_cb);
   ASSERT_FALSE(btm_cb.btm_inq_vars.remname_active);
