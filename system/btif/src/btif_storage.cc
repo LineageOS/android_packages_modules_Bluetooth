@@ -1278,26 +1278,6 @@ bt_status_t btif_storage_get_ble_local_key(uint8_t key_type,
   return BT_STATUS_FAIL;
 }
 
-/*******************************************************************************
- *
- * Function         btif_storage_remove_ble_local_keys
- *
- * Description      BTIF storage API - Deletes the bonded device from NVRAM
- *
- * Returns          BT_STATUS_SUCCESS if the deletion was successful,
- *                  BT_STATUS_FAIL otherwise
- *
- ******************************************************************************/
-bt_status_t btif_storage_remove_ble_local_keys(void) {
-  bool ret = true;
-  for (size_t i = 0; i < std::size(BTIF_STORAGE_LOCAL_LE_KEYS); i++) {
-    auto key = BTIF_STORAGE_LOCAL_LE_KEYS[i];
-    if (btif_config_exist(BTIF_STORAGE_SECTION_ADAPTER, key.name))
-      ret &= btif_config_remove(BTIF_STORAGE_SECTION_ADAPTER, key.name);
-  }
-  return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
-}
-
 bt_status_t btif_in_fetch_bonded_ble_device(
     const std::string& remote_bd_addr, int add,
     btif_bonded_devices_t* p_bonded_devices) {

@@ -68,7 +68,6 @@ struct btif_storage_load_bonded_devices btif_storage_load_bonded_devices;
 struct btif_storage_load_le_devices btif_storage_load_le_devices;
 struct btif_storage_remove_ble_bonding_keys
     btif_storage_remove_ble_bonding_keys;
-struct btif_storage_remove_ble_local_keys btif_storage_remove_ble_local_keys;
 struct btif_storage_remove_bonded_device btif_storage_remove_bonded_device;
 struct btif_storage_remove_gatt_cl_db_hash btif_storage_remove_gatt_cl_db_hash;
 struct btif_storage_remove_gatt_cl_supp_feat
@@ -118,8 +117,6 @@ bool btif_storage_get_stored_remote_name::return_value = false;
 bool btif_storage_is_restricted_device::return_value = false;
 bt_status_t btif_storage_load_bonded_devices::return_value = BT_STATUS_SUCCESS;
 bt_status_t btif_storage_remove_ble_bonding_keys::return_value =
-    BT_STATUS_SUCCESS;
-bt_status_t btif_storage_remove_ble_local_keys::return_value =
     BT_STATUS_SUCCESS;
 bt_status_t btif_storage_remove_bonded_device::return_value = BT_STATUS_SUCCESS;
 bt_status_t btif_storage_set_adapter_property::return_value = BT_STATUS_SUCCESS;
@@ -285,10 +282,6 @@ bt_status_t btif_storage_remove_ble_bonding_keys(
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_storage_remove_ble_bonding_keys(
       remote_bd_addr);
-}
-bt_status_t btif_storage_remove_ble_local_keys(void) {
-  inc_func_call_count(__func__);
-  return test::mock::btif_storage::btif_storage_remove_ble_local_keys();
 }
 bt_status_t btif_storage_remove_bonded_device(
     const RawAddress* remote_bd_addr) {

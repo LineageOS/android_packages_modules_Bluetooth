@@ -366,7 +366,6 @@ bt_status_t btif_storage_add_ble_local_key(const Octet16& key,
                                            uint8_t key_type);
 bt_status_t btif_storage_remove_ble_bonding_keys(
     const RawAddress* remote_bd_addr);
-bt_status_t btif_storage_remove_ble_local_keys(void);
 bt_status_t btif_storage_get_ble_local_key(uint8_t key_type,
                                            Octet16* key_value);
 
