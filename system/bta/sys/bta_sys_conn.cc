@@ -365,22 +365,6 @@ void bta_sys_sco_unuse(UNUSED_ATTR tBTA_SYS_ID id, uint8_t app_id,
     bta_sys_cb.p_sco_cb(BTA_SYS_SCO_CLOSE, num_sco_links, app_id, peer_addr);
   }
 }
-/*******************************************************************************
- *
- * Function         bta_sys_chg_ssr_config
- *
- * Description      Called by BTA subsystems to indicate that the given app SSR
- *                  setting needs to be changed.
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_sys_chg_ssr_config(uint8_t id, uint8_t app_id, uint16_t max_latency,
-                            uint16_t min_tout) {
-  if (bta_sys_cb.p_ssr_cb) {
-    bta_sys_cb.p_ssr_cb(id, app_id, max_latency, min_tout);
-  }
-}
 
 /*******************************************************************************
  *
