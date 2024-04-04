@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-#include <base/logging.h>
 #include <gtest/gtest.h>
 #include <stdio.h>
 
 #include <cstdint>
 
-#include "include/check.h"
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/main_thread.h"
@@ -212,16 +210,15 @@ TEST_F(GattSrTest, gatts_process_write_req_request_prepare_write_typical) {
                           GATT_REQ_PREPARE_WRITE, length, p_data,
                           kGattCharacteristicType);
 
-  CHECK(test_state_.gatts_write_attr_perm_check.access_count_ == 1);
-  CHECK(test_state_.application_request_callback.conn_id_ == el_.gatt_if);
-  CHECK(test_state_.application_request_callback.trans_id_ == 0x12345678);
-  CHECK(test_state_.application_request_callback.type_ ==
-        GATTS_REQ_TYPE_WRITE_CHARACTERISTIC);
-  CHECK(test_state_.application_request_callback.data_.write_req.offset ==
-        0x1234);
-  CHECK(test_state_.application_request_callback.data_.write_req.is_prep ==
-        true);
-  CHECK(test_state_.application_request_callback.data_.write_req.len == 0);
+  ASSERT_EQ(test_state_.gatts_write_attr_perm_check.access_count_, 1);
+  ASSERT_EQ(test_state_.application_request_callback.conn_id_, el_.gatt_if);
+  ASSERT_EQ(test_state_.application_request_callback.trans_id_, 0x12345678u);
+  ASSERT_EQ(test_state_.application_request_callback.type_,
+            GATTS_REQ_TYPE_WRITE_CHARACTERISTIC);
+  ASSERT_EQ(test_state_.application_request_callback.data_.write_req.offset,
+            0x1234);
+  ASSERT_TRUE(test_state_.application_request_callback.data_.write_req.is_prep);
+  ASSERT_EQ(test_state_.application_request_callback.data_.write_req.len, 0);
 }
 
 TEST_F(GattSrTest, gatts_process_write_req_signed_command_write_no_data) {
@@ -255,16 +252,17 @@ TEST_F(GattSrTest, gatts_process_write_req_signed_command_write_typical) {
                           GATT_SIGN_CMD_WRITE, length, p_data,
                           kGattCharacteristicType);
 
-  CHECK(test_state_.gatts_write_attr_perm_check.access_count_ == 1);
-  CHECK(test_state_.application_request_callback.conn_id_ == el_.gatt_if);
-  CHECK(test_state_.application_request_callback.trans_id_ == 0x12345678);
-  CHECK(test_state_.application_request_callback.type_ ==
-        GATTS_REQ_TYPE_WRITE_CHARACTERISTIC);
-  CHECK(test_state_.application_request_callback.data_.write_req.offset == 0x0);
-  CHECK(test_state_.application_request_callback.data_.write_req.is_prep ==
-        false);
-  CHECK(test_state_.application_request_callback.data_.write_req.len ==
-        kDataLength);
+  ASSERT_EQ(test_state_.gatts_write_attr_perm_check.access_count_, 1);
+  ASSERT_EQ(test_state_.application_request_callback.conn_id_, el_.gatt_if);
+  ASSERT_EQ(test_state_.application_request_callback.trans_id_, 0x12345678u);
+  ASSERT_EQ(test_state_.application_request_callback.type_,
+            GATTS_REQ_TYPE_WRITE_CHARACTERISTIC);
+  ASSERT_EQ(test_state_.application_request_callback.data_.write_req.offset,
+            0x0);
+  ASSERT_FALSE(
+      test_state_.application_request_callback.data_.write_req.is_prep);
+  ASSERT_EQ(test_state_.application_request_callback.data_.write_req.len,
+            kDataLength);
 }
 
 TEST_F(GattSrTest, gatts_process_write_req_command_write_no_data) {
@@ -290,15 +288,17 @@ TEST_F(GattSrTest, gatts_process_write_req_command_write_typical) {
   gatts_process_write_req(tcb_, L2CAP_ATT_CID, el_, kHandle, GATT_CMD_WRITE,
                           length, p_data, kGattCharacteristicType);
 
-  CHECK(test_state_.gatts_write_attr_perm_check.access_count_ == 1);
-  CHECK(test_state_.application_request_callback.conn_id_ == el_.gatt_if);
-  CHECK(test_state_.application_request_callback.trans_id_ == 0x12345678);
-  CHECK(test_state_.application_request_callback.type_ ==
-        GATTS_REQ_TYPE_WRITE_CHARACTERISTIC);
-  CHECK(test_state_.application_request_callback.data_.write_req.offset == 0x0);
-  CHECK(test_state_.application_request_callback.data_.write_req.is_prep ==
-        false);
-  CHECK(test_state_.application_request_callback.data_.write_req.len == length);
+  ASSERT_EQ(test_state_.gatts_write_attr_perm_check.access_count_, 1);
+  ASSERT_EQ(test_state_.application_request_callback.conn_id_, el_.gatt_if);
+  ASSERT_EQ(test_state_.application_request_callback.trans_id_, 0x12345678u);
+  ASSERT_EQ(test_state_.application_request_callback.type_,
+            GATTS_REQ_TYPE_WRITE_CHARACTERISTIC);
+  ASSERT_EQ(test_state_.application_request_callback.data_.write_req.offset,
+            0x0);
+  ASSERT_FALSE(
+      test_state_.application_request_callback.data_.write_req.is_prep);
+  ASSERT_EQ(test_state_.application_request_callback.data_.write_req.len,
+            length);
 }
 
 TEST_F(GattSrTest, gatts_process_write_req_request_write_no_data) {
@@ -325,15 +325,17 @@ TEST_F(GattSrTest, gatts_process_write_req_request_write_typical) {
   gatts_process_write_req(tcb_, L2CAP_ATT_CID, el_, kHandle, GATT_REQ_WRITE,
                           length, p_data, kGattCharacteristicType);
 
-  CHECK(test_state_.gatts_write_attr_perm_check.access_count_ == 1);
-  CHECK(test_state_.application_request_callback.conn_id_ == el_.gatt_if);
-  CHECK(test_state_.application_request_callback.trans_id_ == 0x12345678);
-  CHECK(test_state_.application_request_callback.type_ ==
-        GATTS_REQ_TYPE_WRITE_CHARACTERISTIC);
-  CHECK(test_state_.application_request_callback.data_.write_req.offset == 0x0);
-  CHECK(test_state_.application_request_callback.data_.write_req.is_prep ==
-        false);
-  CHECK(test_state_.application_request_callback.data_.write_req.len == length);
+  ASSERT_EQ(test_state_.gatts_write_attr_perm_check.access_count_, 1);
+  ASSERT_EQ(test_state_.application_request_callback.conn_id_, el_.gatt_if);
+  ASSERT_EQ(test_state_.application_request_callback.trans_id_, 0x12345678u);
+  ASSERT_EQ(test_state_.application_request_callback.type_,
+            GATTS_REQ_TYPE_WRITE_CHARACTERISTIC);
+  ASSERT_EQ(test_state_.application_request_callback.data_.write_req.offset,
+            0x0);
+  ASSERT_FALSE(
+      test_state_.application_request_callback.data_.write_req.is_prep);
+  ASSERT_EQ(test_state_.application_request_callback.data_.write_req.len,
+            length);
 }
 
 TEST_F(GattSrRobustCachingTest,

@@ -1,6 +1,5 @@
 #include "osi/include/list.h"
 
-#include <base/logging.h>
 #include <gtest/gtest.h>
 
 #include "osi/include/osi.h"
@@ -143,8 +142,8 @@ TEST_F(ListTest, test_list_next) {
 }
 
 static bool list_callback_sum(void* data, void* context) {
-  CHECK(data);
-  CHECK(context);
+  EXPECT_NE(data, nullptr);
+  EXPECT_NE(context, nullptr);
   int* sum = (int*)context;
   int* value = (int*)data;
   *sum += *value;
@@ -152,8 +151,8 @@ static bool list_callback_sum(void* data, void* context) {
 }
 
 static bool list_callback_find_int(void* data, void* context) {
-  CHECK(data);
-  CHECK(context);
+  EXPECT_NE(data, nullptr);
+  EXPECT_NE(context, nullptr);
   return (*(int*)data != *(int*)context);
 }
 
