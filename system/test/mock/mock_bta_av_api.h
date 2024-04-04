@@ -147,18 +147,6 @@ struct BTA_AvOffloadStart {
 };
 extern struct BTA_AvOffloadStart BTA_AvOffloadStart;
 
-// Name: BTA_AvOffloadStartRsp
-// Params: tBTA_AV_HNDL hndl, tBTA_AV_STATUS status
-// Return: void
-struct BTA_AvOffloadStartRsp {
-  std::function<void(tBTA_AV_HNDL hndl, tBTA_AV_STATUS status)> body{
-      [](tBTA_AV_HNDL /* hndl */, tBTA_AV_STATUS /* status */) {}};
-  void operator()(tBTA_AV_HNDL hndl, tBTA_AV_STATUS status) {
-    body(hndl, status);
-  };
-};
-extern struct BTA_AvOffloadStartRsp BTA_AvOffloadStartRsp;
-
 // Name: BTA_AvOpen
 // Params: const RawAddress& bd_addr, tBTA_AV_HNDL handle, bool use_rc, uint16_t
 // uuid Return: void
