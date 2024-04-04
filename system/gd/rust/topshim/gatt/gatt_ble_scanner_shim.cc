@@ -109,13 +109,22 @@ std::vector<MsftAdvMonitorPattern> ConvertAdvMonitorPatterns(const ::rust::Vec<R
   return converted;
 }
 
+MsftAdvMonitorAddress ConvertAdvMonitorAddress(RustMsftAdvMonitorAddress rust_addr_info) {
+  MsftAdvMonitorAddress addr_info;
+  addr_info.addr_type = rust_addr_info.addr_type;
+  addr_info.bd_addr = rust_addr_info.bd_addr;
+  return addr_info;
+}
+
 MsftAdvMonitor ConvertAdvMonitor(const RustMsftAdvMonitor& monitor) {
   MsftAdvMonitor converted = {
       .rssi_threshold_high = monitor.rssi_high_threshold,
       .rssi_threshold_low = monitor.rssi_low_threshold,
       .rssi_threshold_low_time_interval = monitor.rssi_low_timeout,
       .rssi_sampling_period = monitor.rssi_sampling_period,
+      .condition_type = monitor.condition_type,
       .patterns = ConvertAdvMonitorPatterns(monitor.patterns),
+      .addr_info = ConvertAdvMonitorAddress(monitor.addr_info),
   };
   return converted;
 }

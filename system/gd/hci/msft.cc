@@ -16,6 +16,7 @@
 #if TARGET_FLOSS
 #include "hci/msft.h"
 
+#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
 #include <hardware/bt_common_types.h>
 
@@ -143,6 +144,31 @@ struct MsftExtensionManager::impl {
     if (!supports_msft_extensions()) {
       log::warn("Disallowed as MSFT extension is not supported.");
       return;
+    }
+
+    if (IS_FLAG_ENABLED(msft_addr_tracking_quirk)) {
+      if (monitor.condition_type != MSFT_CONDITION_TYPE_ADDRESS &&
+          monitor.condition_type != MSFT_CONDITION_TYPE_PATTERNS) {
+        log::warn("Disallowed as MSFT condition type {} is not supported.", monitor.condition_type);
+        return;
+      }
+
+      if (monitor.condition_type == MSFT_CONDITION_TYPE_ADDRESS) {
+        msft_adv_monitor_add_cb_ = cb;
+        Address addr;
+        Address::FromString(monitor.addr_info.bd_addr.ToString(), addr);
+        hci_layer_->EnqueueCommand(
+            MsftLeMonitorAdvConditionAddressBuilder::Create(
+                static_cast<OpCode>(msft_.opcode.value()),
+                monitor.rssi_threshold_high,
+                monitor.rssi_threshold_low,
+                monitor.rssi_threshold_low_time_interval,
+                monitor.rssi_sampling_period,
+                monitor.addr_info.addr_type,
+                addr),
+            module_handler_->BindOnceOn(this, &impl::on_msft_adv_monitor_add_complete));
+        return;
+      }
     }
 
     std::vector<MsftLeMonitorAdvConditionPattern> patterns;
