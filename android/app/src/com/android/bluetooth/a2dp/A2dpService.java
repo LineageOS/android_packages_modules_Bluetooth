@@ -1398,7 +1398,8 @@ public class A2dpService extends ProfileService {
             }
             if (Flags.audioRoutingCentralization()) {
                 return ((AudioRoutingManager) service.getActiveDeviceManager())
-                        .activateDeviceProfile(device, BluetoothProfile.A2DP);
+                        .activateDeviceProfile(device, BluetoothProfile.A2DP)
+                        .join();
             }
 
             if (device == null) {

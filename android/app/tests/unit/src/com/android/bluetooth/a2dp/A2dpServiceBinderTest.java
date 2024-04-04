@@ -45,6 +45,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
+import java.util.concurrent.CompletableFuture;
 
 public class A2dpServiceBinderTest {
     private static final AttributionSource sSource = new AttributionSource.Builder(0).build();
@@ -63,6 +64,9 @@ public class A2dpServiceBinderTest {
 
     @Before
     public void setUp() throws Exception {
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        future.complete(true);
+        doReturn(future).when(mAudioRoutingManager).activateDeviceProfile(any(), anyInt());
         doReturn(mAudioRoutingManager).when(mA2dpService).getActiveDeviceManager();
         doReturn(mPackageManager).when(mA2dpService).getPackageManager();
         ApplicationInfo appInfo = new ApplicationInfo();
