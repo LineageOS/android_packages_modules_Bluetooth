@@ -2932,59 +2932,6 @@ void bta_av_security_rej(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
 
 /*******************************************************************************
  *
- * Function         bta_av_chk_2nd_start
- *
- * Description      check if this is 2nd stream and if it needs to be started.
- *                  This function needs to be kept very similar to
- *                  bta_av_chk_start
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_av_chk_2nd_start(tBTA_AV_SCB* p_scb,
-                          UNUSED_ATTR tBTA_AV_DATA* p_data) {
-  log::info(
-      "peer {} channel:{} bta_av_cb.audio_open_cnt:{} role:0x{:x} "
-      "features:0x{:x}",
-      ADDRESS_TO_LOGGABLE_CSTR(p_scb->PeerAddress()), p_scb->chnl,
-      bta_av_cb.audio_open_cnt, p_scb->role, bta_av_cb.features);
-
-  if ((p_scb->chnl == BTA_AV_CHNL_AUDIO) && (bta_av_cb.audio_open_cnt >= 2) &&
-      (((p_scb->role & BTA_AV_ROLE_AD_ACP) == 0) ||  // Outgoing connection or
-       (bta_av_cb.features & BTA_AV_FEAT_ACP_START))) {  // Auto-starting option
-    // More than one audio channel is connected.
-    if (!(p_scb->role & BTA_AV_ROLE_SUSPEND_OPT)) {
-      // This channel does not need to be reconfigured.
-      // If there is other channel streaming, start the stream now.
-      bool new_started = false;
-      for (int i = 0; i < BTA_AV_NUM_STRS; i++) {
-        tBTA_AV_SCB* p_scbi = bta_av_cb.p_scb[i];
-        if (p_scb == p_scbi) {
-          continue;
-        }
-        if (p_scbi && p_scbi->chnl == BTA_AV_CHNL_AUDIO && p_scbi->co_started) {
-          if (!new_started) {
-            // Start the new stream
-            new_started = true;
-            log::info(
-                "starting new stream for peer {} because peer {} already "
-                "started",
-                ADDRESS_TO_LOGGABLE_CSTR(p_scb->PeerAddress()),
-                ADDRESS_TO_LOGGABLE_CSTR(p_scbi->PeerAddress()));
-            bta_av_ssm_execute(p_scb, BTA_AV_AP_START_EVT, NULL);
-          }
-          // May need to update the flush timeout of this already started stream
-          if (p_scbi->co_started != bta_av_cb.audio_open_cnt) {
-            p_scbi->co_started = bta_av_cb.audio_open_cnt;
-          }
-        }
-      }
-    }
-  }
-}
-
-/*******************************************************************************
- *
  * Function         bta_av_open_rc
  *
  * Description      Send a message to main SM to open RC channel.
