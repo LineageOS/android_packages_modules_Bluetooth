@@ -1,5 +1,7 @@
 //! Shim to provide more structured access to sysprops from Rust.
 
+use std::ffi::CString;
+
 use crate::bindings::root as bindings;
 use crate::utils::LTCheckedPtr;
 
@@ -19,9 +21,9 @@ pub enum PropertyI32 {
     VendorIdSource,
 }
 
-impl Into<(Vec<u8>, i32)> for PropertyI32 {
+impl Into<(CString, i32)> for PropertyI32 {
     /// Convert the property into the property key name and a default value.
-    fn into(self) -> (Vec<u8>, i32) {
+    fn into(self) -> (CString, i32) {
         let (key, default_value) = match self {
             // Inquiry scan interval = N * 0.625 ms; value of 36 = 22.5ms
             PropertyI32::LeInquiryScanInterval => ("bluetooth.core.le.inquiry_scan_interval", 36),
@@ -45,21 +47,17 @@ impl Into<(Vec<u8>, i32)> for PropertyI32 {
             PropertyI32::VendorIdSource => ("bluetooth.device_id.vendor_id_source", 0x1),
         };
 
-        (key.bytes().chain("\0".bytes()).collect::<Vec<u8>>(), default_value)
+        (CString::new(key).expect("CString::new failed on sysprop key"), default_value)
     }
 }
 
 /// Get the i32 value for a system property.
 pub fn get_i32(prop: PropertyI32) -> i32 {
-    let (key, default_value) = prop.into();
+    let (key, default_value): (CString, i32) = prop.into();
     let key_cptr = LTCheckedPtr::from(&key);
 
-    unsafe {
-        bindings::osi_property_get_int32(
-            key_cptr.cast_into::<std::os::raw::c_char>(),
-            default_value,
-        )
-    }
+    // SAFETY: Calling C++ function with compatible types (null terminated string and i32) is safe.
+    unsafe { bindings::osi_property_get_int32(key_cptr.into(), default_value) }
 }
 
 /// List of properties accessible to Rust. Add new ones here as they become
@@ -69,23 +67,22 @@ pub enum PropertyBool {
     LeAdvMonRtlQuirk,
 }
 
-impl Into<(Vec<u8>, bool)> for PropertyBool {
+impl Into<(CString, bool)> for PropertyBool {
     /// Convert the property into the property key name and a default value.
-    fn into(self) -> (Vec<u8>, bool) {
+    fn into(self) -> (CString, bool) {
         let (key, default_value) = match self {
             PropertyBool::LeAdvMonRtlQuirk => ("bluetooth.core.le.adv_mon_rtl_quirk", false),
         };
 
-        (key.bytes().chain("\0".bytes()).collect::<Vec<u8>>(), default_value)
+        (CString::new(key).expect("CString::new failed on sysprop key"), default_value)
     }
 }
 
 /// Get the boolean value for a system property.
 pub fn get_bool(prop: PropertyBool) -> bool {
-    let (key, default_value) = prop.into();
+    let (key, default_value): (CString, bool) = prop.into();
     let key_cptr = LTCheckedPtr::from(&key);
 
-    unsafe {
-        bindings::osi_property_get_bool(key_cptr.cast_into::<std::os::raw::c_char>(), default_value)
-    }
+    // SAFETY: Calling C++ function with compatible types (null terminated string and bool) is safe.
+    unsafe { bindings::osi_property_get_bool(key_cptr.into(), default_value) }
 }
