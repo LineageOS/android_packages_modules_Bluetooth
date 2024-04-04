@@ -2,6 +2,7 @@
 name = "btadapterd"
 version = "0.1.0"
 edition = "2018"
+build = "build.rs"
 
 [dependencies]
 bt_topshim = { path = "../../topshim" }
@@ -27,4 +28,3 @@ pkg-config = "0.3.19"
 [[bin]]
 name = "btadapterd"
 path = "src/main.rs"
-build = "build.rs"

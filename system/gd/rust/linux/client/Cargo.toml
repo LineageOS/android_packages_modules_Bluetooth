@@ -2,6 +2,7 @@
 name = "client"
 version = "0.1.0"
 edition = "2018"
+build = "build.rs"
 
 [dependencies]
 rustyline = "10"
@@ -32,4 +33,3 @@ pkg-config = "0.3.19"
 [[bin]]
 name = "btclient"
 path = "src/main.rs"
-build = "build.rs"
