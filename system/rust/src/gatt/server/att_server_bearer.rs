@@ -34,7 +34,8 @@ use super::{
 
 enum AttRequestState<T: AttDatabase> {
     Idle(AttRequestHandler<T>),
-    Pending(Option<OwnedHandle<()>>),
+    Pending { _task: OwnedHandle<()> },
+    Replacing,
 }
 
 /// The errors that can occur while trying to send a packet
@@ -153,7 +154,7 @@ impl<T: AttDatabase + Clone + 'static> WeakBoxRef<'_, AttServerBearer<T>> {
     }
 
     fn handle_request(&self, packet: AttView<'_>) {
-        let curr_request = self.curr_request.replace(AttRequestState::Pending(None));
+        let curr_request = self.curr_request.replace(AttRequestState::Replacing);
         self.curr_request.replace(match curr_request {
             AttRequestState::Idle(mut request_handler) => {
                 // even if the MTU is updated afterwards, 5.3 3F 3.4.2.2 states that the
@@ -187,12 +188,15 @@ impl<T: AttDatabase + Clone + 'static> WeakBoxRef<'_, AttServerBearer<T>> {
                         })
                     });
                 });
-                AttRequestState::Pending(Some(task.into()))
+                AttRequestState::Pending { _task: task.into() }
             }
-            AttRequestState::Pending(_) => {
+            AttRequestState::Pending { .. } => {
                 warn!("multiple ATT operations cannot simultaneously take place, dropping one");
                 // TODO(aryarahul) - disconnect connection here;
                 curr_request
+            }
+            AttRequestState::Replacing => {
+              panic!("Replacing is an ephemeral state");
             }
         });
     }
@@ -367,9 +371,14 @@ mod test {
             });
             conn.as_ref().handle_packet(req2.view());
             // handle first reply
-            let MockDatastoreEvents::Read(TCB_IDX, VALID_HANDLE, AttributeBackingType::Characteristic, data_resp) =
-                data_rx.recv().await.unwrap() else {
-                    unreachable!();
+            let MockDatastoreEvents::Read(
+                TCB_IDX,
+                VALID_HANDLE,
+                AttributeBackingType::Characteristic,
+                data_resp,
+            ) = data_rx.recv().await.unwrap()
+            else {
+                unreachable!();
             };
             data_resp.send(Ok(data.clone())).unwrap();
             trace!("reply sent from upper tester");
