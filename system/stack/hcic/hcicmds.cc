@@ -522,21 +522,6 @@ void btsnd_hcic_create_conn_cancel(const RawAddress& dest) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_accept_conn(const RawAddress& dest, uint8_t role) {
-  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
-  uint8_t* pp = (uint8_t*)(p + 1);
-
-  p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_ACCEPT_CONN;
-  p->offset = 0;
-
-  UINT16_TO_STREAM(pp, HCI_ACCEPT_CONNECTION_REQUEST);
-  UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_ACCEPT_CONN);
-  BDADDR_TO_STREAM(pp, dest);
-  UINT8_TO_STREAM(pp, role);
-
-  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
-}
-
 void btsnd_hcic_reject_conn(const RawAddress& dest, uint8_t reason) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
