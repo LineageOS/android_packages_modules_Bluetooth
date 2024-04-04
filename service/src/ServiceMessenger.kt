@@ -196,6 +196,23 @@ internal class ServiceMessenger(
                         }
                 }
             }
+            is SystemServiceMessage.IsAutoSupported -> {
+                checker.enforcePrivileged(sendingUid)
+                SystemServiceMessage.IsAutoSupported.Reply().apply {
+                    value = managerService.isAutoOnSupported()
+                }
+            }
+            is SystemServiceMessage.SetAutoOnEnabled -> {
+                checker.enforcePrivileged(sendingUid)
+                managerService.setAutoOnEnabled(obj.enabledStatus)
+                SystemServiceMessage.SetAutoOnEnabled.Reply()
+            }
+            is SystemServiceMessage.IsAutoEnabled -> {
+                checker.enforcePrivileged(sendingUid)
+                SystemServiceMessage.IsAutoEnabled.Reply().apply {
+                    value = managerService.isAutoOnEnabled()
+                }
+            }
             else -> throw IllegalArgumentException("Invalid command: [${obj}] from ${sendingUid}")
         }
     }

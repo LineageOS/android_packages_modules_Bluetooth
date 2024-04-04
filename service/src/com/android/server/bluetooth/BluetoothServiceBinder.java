@@ -394,6 +394,9 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
 
     @Override
     public boolean isAutoOnSupported() {
+        if (Flags.systemServerMessenger()) {
+            throw new IllegalStateException("Binder call unavailable when using messenger");
+        }
         BtPermissionUtils.enforcePrivileged(mContext);
         Log.d(TAG, "isAutoOnSupported()");
         return postFromBinder(() -> mService.isAutoOnSupported());
@@ -401,6 +404,9 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
 
     @Override
     public boolean isAutoOnEnabled() {
+        if (Flags.systemServerMessenger()) {
+            throw new IllegalStateException("Binder call unavailable when using messenger");
+        }
         BtPermissionUtils.enforcePrivileged(mContext);
         Log.d(TAG, "isAutoOnEnabled()");
         return postFromBinder(() -> mService.isAutoOnEnabled());
@@ -408,6 +414,9 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
 
     @Override
     public void setAutoOnEnabled(boolean status) {
+        if (Flags.systemServerMessenger()) {
+            throw new IllegalStateException("Binder call unavailable when using messenger");
+        }
         BtPermissionUtils.enforcePrivileged(mContext);
         Log.d(TAG, "setAutoOnEnabled(" + status + ")");
         postFromBinder(() -> mService.setAutoOnEnabled(status));

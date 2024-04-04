@@ -98,6 +98,18 @@ class SystemServiceMessenger {
         return send(data, SystemServiceMessage.GetSnoopLog.Reply.class);
     }
 
+    SystemServiceMessage.IsAutoSupported.Reply send(SystemServiceMessage.IsAutoSupported data) {
+        return send(data, SystemServiceMessage.IsAutoSupported.Reply.class);
+    }
+
+    SystemServiceMessage.IsAutoEnabled.Reply send(SystemServiceMessage.IsAutoEnabled data) {
+        return send(data, SystemServiceMessage.IsAutoEnabled.Reply.class);
+    }
+
+    SystemServiceMessage.SetAutoOnEnabled.Reply send(SystemServiceMessage.SetAutoOnEnabled data) {
+        return send(data, SystemServiceMessage.SetAutoOnEnabled.Reply.class);
+    }
+
     private <T extends Parcelable, U> U send(T data, Class<U> replyClass) {
         CompletableFuture<U> future = new CompletableFuture();
 
