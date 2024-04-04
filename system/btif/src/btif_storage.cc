@@ -1347,20 +1347,6 @@ bt_status_t btif_storage_set_remote_addr_type(const RawAddress* remote_bd_addr,
   return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 
-void btif_storage_set_remote_addr_type(const RawAddress& remote_bd_addr,
-                                       const tBLE_ADDR_TYPE& addr_type) {
-  if (!btif_config_set_int(remote_bd_addr.ToString(),
-                           BTIF_STORAGE_KEY_ADDR_TYPE,
-                           static_cast<int>(addr_type)))
-    log::error("Unable to set storage property");
-  else {
-#if TARGET_FLOSS
-    // Floss needs to get address type for diagnosis API.
-    btif_storage_invoke_addr_type_update(remote_bd_addr, addr_type);
-#endif
-  }
-}
-
 bool btif_has_ble_keys(const std::string& bdstr) {
   return btif_config_exist(bdstr, BTIF_STORAGE_KEY_LE_KEY_PENC);
 }

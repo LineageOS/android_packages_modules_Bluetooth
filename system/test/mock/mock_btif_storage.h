@@ -543,22 +543,6 @@ struct btif_storage_set_remote_addr_type {
 extern struct btif_storage_set_remote_addr_type
     btif_storage_set_remote_addr_type;
 
-// Name: btif_storage_set_remote_addr_type
-// Params: const RawAddress& remote_bd_addr, const tBLE_ADDR_TYPE& addr_type
-// Return: void
-struct btif_storage_set_remote_addr_type2 {
-  std::function<void(const RawAddress& remote_bd_addr,
-                     const tBLE_ADDR_TYPE& addr_type)>
-      body{[](const RawAddress& /* remote_bd_addr */,
-              const tBLE_ADDR_TYPE& /* addr_type */) {}};
-  void operator()(const RawAddress& remote_bd_addr,
-                  const tBLE_ADDR_TYPE& addr_type) {
-    body(remote_bd_addr, addr_type);
-  };
-};
-extern struct btif_storage_set_remote_addr_type2
-    btif_storage_set_remote_addr_type2;
-
 // Name: btif_storage_set_remote_device_property
 // Params: const RawAddress* remote_bd_addr, bt_property_t* property
 // Return: bt_status_t

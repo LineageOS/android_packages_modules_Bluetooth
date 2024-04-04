@@ -76,7 +76,6 @@ struct btif_storage_set_gatt_cl_db_hash btif_storage_set_gatt_cl_db_hash;
 struct btif_storage_set_gatt_cl_supp_feat btif_storage_set_gatt_cl_supp_feat;
 struct btif_storage_set_gatt_sr_supp_feat btif_storage_set_gatt_sr_supp_feat;
 struct btif_storage_set_remote_addr_type btif_storage_set_remote_addr_type;
-struct btif_storage_set_remote_addr_type2 btif_storage_set_remote_addr_type2;
 struct btif_storage_set_remote_device_property
     btif_storage_set_remote_device_property;
 
@@ -310,12 +309,6 @@ bt_status_t btif_storage_set_remote_addr_type(const RawAddress* remote_bd_addr,
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_storage_set_remote_addr_type(
       remote_bd_addr, addr_type);
-}
-void btif_storage_set_remote_addr_type(const RawAddress& remote_bd_addr,
-                                       const tBLE_ADDR_TYPE& addr_type) {
-  inc_func_call_count(__func__);
-  test::mock::btif_storage::btif_storage_set_remote_addr_type2(remote_bd_addr,
-                                                               addr_type);
 }
 bt_status_t btif_storage_set_remote_device_property(
     const RawAddress* remote_bd_addr, bt_property_t* property) {
