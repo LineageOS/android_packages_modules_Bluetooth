@@ -198,19 +198,6 @@ void BTM_BleReadControllerFeatures(tBTM_BLE_CTRL_FEATURES_CBACK* p_vsc_cback);
 
 /*******************************************************************************
  *
- * Function         BTM__BLEReadDiscoverability
- *
- * Description      This function is called to read the current LE
- *                  discoverability mode of the device.
- *
- * Returns          BTM_BLE_NON_DISCOVERABLE ,BTM_BLE_LIMITED_DISCOVERABLE or
- *                     BTM_BLE_GENRAL_DISCOVERABLE
- *
- ******************************************************************************/
-uint16_t BTM_BleReadDiscoverability();
-
-/*******************************************************************************
- *
  * Function         BTM_ReadDevInfo
  *
  * Description      This function is called to read the device/address type

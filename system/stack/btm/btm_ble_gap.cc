@@ -1403,23 +1403,6 @@ static uint8_t btm_set_conn_mode_adv_init_addr(
 
 /*******************************************************************************
  *
- * Function         BTM__BLEReadDiscoverability
- *
- * Description      This function is called to read the current LE
- *                  discoverability mode of the device.
- *
- * Returns          BTM_BLE_NON_DISCOVERABLE ,BTM_BLE_LIMITED_DISCOVERABLE or
- *                     BTM_BLE_GENRAL_DISCOVERABLE
- *
- ******************************************************************************/
-uint16_t BTM_BleReadDiscoverability() {
-  log::verbose("");
-
-  return (btm_cb.ble_ctr_cb.inq_var.discoverable_mode);
-}
-
-/*******************************************************************************
- *
  * Function         btm_ble_select_adv_interval
  *
  * Description      select adv interval based on device mode

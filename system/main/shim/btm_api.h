@@ -940,22 +940,6 @@ void BTM_BleReadControllerFeatures(tBTM_BLE_CTRL_FEATURES_CBACK* p_vsc_cback);
 
 /*******************************************************************************
  *
- * Function         BTM__BLEReadDiscoverability
- *
- * Description      This function is called to read the current LE
- *                  discoverability mode of the device.
- *
- * Returns          BTM_BLE_NON_DISCOVERABLE ,BTM_BLE_LIMITED_DISCOVERABLE or
- *                     BTM_BLE_GENRAL_DISCOVERABLE
- *
- ******************************************************************************/
-uint16_t BTM_BleReadDiscoverability();
-
-/**
- * This functions are called to configure the adv data payload filter condition
- */
-/*******************************************************************************
- *
  * Function         BTM_BleGetEnergyInfo
  *
  * Description      This function obtains the energy info

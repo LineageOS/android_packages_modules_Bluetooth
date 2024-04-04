@@ -104,10 +104,6 @@ tBTM_STATUS btm_ble_start_inquiry(uint8_t /* duration */) {
   inc_func_call_count(__func__);
   return BTM_SUCCESS;
 }
-uint16_t BTM_BleReadDiscoverability() {
-  inc_func_call_count(__func__);
-  return 0;
-}
 void BTM_BleGetDynamicAudioBuffer(
     tBTM_BT_DYNAMIC_AUDIO_BUFFER_CB /* p_dynamic_audio_buffer_cb*/[]) {
   inc_func_call_count(__func__);
