@@ -803,8 +803,8 @@ void process_ssr_event(tHCI_STATUS status, uint16_t handle,
 void btm_pm_on_sniff_subrating(tHCI_STATUS status, uint16_t handle,
                                uint16_t maximum_transmit_latency,
                                uint16_t maximum_receive_latency,
-                               uint16_t minimum_remote_timeout,
-                               uint16_t minimum_local_timeout) {
+                               uint16_t /* minimum_remote_timeout */,
+                               uint16_t /* minimum_local_timeout */) {
   process_ssr_event(status, handle, maximum_transmit_latency,
                     maximum_receive_latency);
 }

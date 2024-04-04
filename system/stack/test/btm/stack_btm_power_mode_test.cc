@@ -74,9 +74,10 @@ class StackBtmPowerMode : public testing::Test {
 
   void TearDown() override {
     ASSERT_EQ(BTM_SUCCESS,
-              BTM_PmRegister(BTM_PM_DEREG, &pm_id_,
-                             [](const RawAddress& p_bda, tBTM_PM_STATUS status,
-                                uint16_t value, tHCI_STATUS hci_status) {}));
+              BTM_PmRegister(
+                  BTM_PM_DEREG, &pm_id_,
+                  [](const RawAddress& /* p_bda */, tBTM_PM_STATUS /* status */,
+                     uint16_t /* value */, tHCI_STATUS /* hci_status */) {}));
     bluetooth::hci::testing::mock_controller_ = nullptr;
   }
 

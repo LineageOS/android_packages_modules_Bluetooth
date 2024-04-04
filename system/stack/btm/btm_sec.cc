@@ -181,7 +181,7 @@ static bool handleUnexpectedEncryptionChange() {
   return sHandleUnexpectedEncryptionChange;
 }
 
-void NotifyBondingCanceled(tBTM_STATUS btm_status) {
+void NotifyBondingCanceled(tBTM_STATUS /* btm_status */) {
   if (btm_sec_cb.api.p_bond_cancel_cmpl_callback) {
     btm_sec_cb.api.p_bond_cancel_cmpl_callback(BTM_SUCCESS);
   }
@@ -859,7 +859,8 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
  *  Note: After 2.1 parameters are not used and preserved here not to change API
  ******************************************************************************/
 tBTM_STATUS BTM_SecBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                        tBT_TRANSPORT transport, tBT_DEVICE_TYPE device_type) {
+                        tBT_TRANSPORT transport,
+                        tBT_DEVICE_TYPE /* device_type */) {
   if (transport == BT_TRANSPORT_AUTO) {
     if (addr_type == BLE_ADDR_PUBLIC) {
       transport =

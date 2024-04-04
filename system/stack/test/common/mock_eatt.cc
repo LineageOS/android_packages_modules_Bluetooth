@@ -36,7 +36,7 @@ struct EattExtension::impl : public MockEattExtension {
   bool IsRunning() { return mock_pimpl_ ? true : false; }
 };
 
-void EattExtension::AddFromStorage(const RawAddress& bd_addr) {}
+void EattExtension::AddFromStorage(const RawAddress& /* bd_addr */) {}
 
 EattExtension::EattExtension() : pimpl_(std::make_unique<impl>()) {}
 

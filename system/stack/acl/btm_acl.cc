@@ -642,7 +642,7 @@ tBTM_STATUS BTM_SwitchRoleToCentral(const RawAddress& remote_bd_addr) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
+void btm_acl_encrypt_change(uint16_t handle, uint8_t /* status */,
                             uint8_t encr_enable) {
   tACL_CONN* p = internal_.acl_get_connection_from_handle(handle);
   if (p == nullptr) {
@@ -813,7 +813,7 @@ extern void bta_gattc_continue_discovery_if_needed(const RawAddress& bd_addr,
  *
  ******************************************************************************/
 static void maybe_chain_more_commands_after_read_remote_version_complete(
-    uint8_t status, uint16_t handle) {
+    uint8_t /* status */, uint16_t handle) {
   tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
   if (p_acl_cb == nullptr) {
     log::warn("Received remote version complete for unknown device");
@@ -2524,8 +2524,8 @@ void btm_acl_disconnected(tHCI_STATUS status, uint16_t handle,
 }
 
 void acl_create_classic_connection(const RawAddress& bd_addr,
-                                   bool there_are_high_priority_channels,
-                                   bool is_bonding) {
+                                   bool /* there_are_high_priority_channels */,
+                                   bool /* is_bonding */) {
   return bluetooth::shim::ACL_CreateClassicConnection(bd_addr);
 }
 
@@ -2771,11 +2771,11 @@ void acl_process_extended_features(uint16_t handle, uint8_t current_page_number,
   }
 }
 
-void ACL_RegisterClient(struct acl_client_callback_s* callbacks) {
+void ACL_RegisterClient(struct acl_client_callback_s* /* callbacks */) {
   log::debug("UNIMPLEMENTED");
 }
 
-void ACL_UnregisterClient(struct acl_client_callback_s* callbacks) {
+void ACL_UnregisterClient(struct acl_client_callback_s* /* callbacks */) {
   log::debug("UNIMPLEMENTED");
 }
 

@@ -1519,9 +1519,9 @@ static uint8_t btm_ble_br_keys_req(tBTM_SEC_DEV_REC* p_dev_rec,
  * Returns          void
  *
  ******************************************************************************/
-void btm_ble_connected(const RawAddress& bda, uint16_t handle, uint8_t enc_mode,
-                       uint8_t role, tBLE_ADDR_TYPE addr_type,
-                       bool addr_matched,
+void btm_ble_connected(const RawAddress& bda, uint16_t handle,
+                       uint8_t /* enc_mode */, uint8_t role,
+                       tBLE_ADDR_TYPE addr_type, bool addr_matched,
                        bool can_read_discoverable_characteristics) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_or_alloc_dev(bda);
 
