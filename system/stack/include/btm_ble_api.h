@@ -428,8 +428,6 @@ void btm_ble_periodic_adv_report(uint16_t sync_handle, uint8_t tx_power,
                                  const uint8_t* periodic_data);
 void btm_ble_periodic_adv_sync_lost(uint16_t sync_handle);
 
-void btm_ble_biginfo_adv_report_rcvd(const uint8_t* param, uint16_t param_len);
-
 /*******************************************************************************
  *
  * Function         BTM_BleConfigPrivacy

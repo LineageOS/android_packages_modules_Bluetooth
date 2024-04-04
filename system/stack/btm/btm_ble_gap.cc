@@ -1322,58 +1322,6 @@ void btm_ble_periodic_adv_sync_lost(uint16_t sync_handle) {
 
 /*******************************************************************************
  *
- * Function        btm_ble_biginfo_adv_report_rcvd
- *
- * Description     Host receives this event when synced PA has BIGInfo
- *
- ******************************************************************************/
-void btm_ble_biginfo_adv_report_rcvd(const uint8_t* p, uint16_t param_len) {
-  log::debug("[PAST]: BIGINFO report received, len={}", param_len);
-  uint16_t sync_handle, iso_interval, max_pdu, max_sdu;
-  uint8_t num_bises, nse, bn, pto, irc, phy, framing, encryption;
-  uint32_t sdu_interval;
-
-  // 2 bytes for sync handle, 1 byte for num_bises, 1 byte for nse, 2 bytes for
-  // iso_interval, 1 byte each for bn, pto, irc, 2 bytes for max_pdu, 3 bytes
-  // for sdu_interval, 2 bytes for max_sdu, 1 byte each for phy, framing,
-  // encryption
-  if (param_len < 19) {
-    log::error("Insufficient data");
-    return;
-  }
-
-  STREAM_TO_UINT16(sync_handle, p);
-  STREAM_TO_UINT8(num_bises, p);
-  STREAM_TO_UINT8(nse, p);
-  STREAM_TO_UINT16(iso_interval, p);
-  STREAM_TO_UINT8(bn, p);
-  STREAM_TO_UINT8(pto, p);
-  STREAM_TO_UINT8(irc, p);
-  STREAM_TO_UINT16(max_pdu, p);
-  STREAM_TO_UINT24(sdu_interval, p);
-  STREAM_TO_UINT16(max_sdu, p);
-  STREAM_TO_UINT8(phy, p);
-  STREAM_TO_UINT8(framing, p);
-  STREAM_TO_UINT8(encryption, p);
-  log::debug(
-      "[PAST]:sync_handle {}, num_bises = {}, nse = {},iso_interval = {}, bn = "
-      "{}, pto = {}, irc = {}, max_pdu = {} sdu_interval = {}, max_sdu = {}, "
-      "phy = {}, framing = {}, encryption  = {}",
-      sync_handle, num_bises, nse, iso_interval, bn, pto, irc, max_pdu,
-      sdu_interval, max_sdu, phy, framing, encryption);
-
-  int index = btm_ble_get_psync_index_from_handle(sync_handle);
-  if (index == MAX_SYNC_TRANSACTION) {
-    log::error("[PSync]: index not found for handle {}", sync_handle);
-    return;
-  }
-  tBTM_BLE_PERIODIC_SYNC* ps = &btm_ble_pa_sync_cb.p_sync[index];
-  log::debug("[PSync]: invoking callback");
-  ps->biginfo_report_cb.Run(sync_handle, encryption ? true : false);
-}
-
-/*******************************************************************************
- *
  * Function         btm_set_conn_mode_adv_init_addr
  *
  * Description      set initator address type and local address type based on
