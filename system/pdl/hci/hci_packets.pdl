@@ -6893,6 +6893,22 @@ struct LeCsResultDataStructure {
   step_data : 8[],
 }
 
+enum ProcedureAbortReason : 4 {
+  NO_ABORT = 0x0,
+  LOCAL_HOST_OR_REMOTE = 0x1,
+  INSUFFICIENT_FILTERED_CHANNELS = 0x2,
+  INSTANT_HAS_PASSED = 0x3,
+  UNSPECIFIED = 0xF,
+}
+
+enum SubeventAbortReason : 4 {
+  NO_ABORT = 0x0,
+  LOCAL_HOST_OR_REMOTE = 0x1,
+  NO_CS_SYNC_RECEIVED = 0x2,
+  SCHEDULING_CONFLICTS_OR_LIMITED_RESOURCES = 0x3,
+  UNSPECIFIED = 0xF,
+}
+
 packet LeCsSubeventResult : LeMetaEvent (subevent_code = LE_CS_SUBEVENT_RESULT) {
   connection_handle : 12,
   _reserved_ : 4,
@@ -6906,7 +6922,8 @@ packet LeCsSubeventResult : LeMetaEvent (subevent_code = LE_CS_SUBEVENT_RESULT) 
   _reserved_ : 4,
   subevent_done_status : CsSubeventDoneStatus,
   _reserved_ : 4,
-  abort_reason : 8,
+  procedure_abort_reason : ProcedureAbortReason,
+  subevent_abort_reason : SubeventAbortReason,
   num_antenna_paths : 8,
   _count_(result_data_structures) : 8,
   result_data_structures : LeCsResultDataStructure[],
@@ -6921,7 +6938,8 @@ packet LeCsSubeventResultContinue : LeMetaEvent (subevent_code = LE_CS_SUBEVENT_
   _reserved_ : 4,
   subevent_done_status : CsSubeventDoneStatus,
   _reserved_ : 4,
-  abort_reason : 8,
+  procedure_abort_reason : ProcedureAbortReason,
+  subevent_abort_reason : SubeventAbortReason,
   num_antenna_paths : 8,
   _count_(result_data_structures) : 8,
   result_data_structures : LeCsResultDataStructure[],
