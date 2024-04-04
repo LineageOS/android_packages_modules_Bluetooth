@@ -27,6 +27,7 @@
 
 #include "dumpsys/filter.h"
 #include "dumpsys_data_generated.h"
+#include "main/shim/stack.h"
 #include "module.h"
 #include "module_dumper.h"
 #include "os/log.h"
@@ -156,13 +157,23 @@ void Dumpsys::impl::DumpWithArgsAsync(int fd, const char** args) const {
 }
 
 void Dumpsys::impl::DumpWithArgsSync(int fd, const char** args, std::promise<void> promise) {
-  DumpWithArgsAsync(fd, args);
+  if (IS_FLAG_ENABLED(dumpsys_acquire_stack_when_executing)) {
+    if (bluetooth::shim::Stack::GetInstance()->LockForDumpsys(
+            [=, *this]() { this->DumpWithArgsAsync(fd, args); })) {
+      log::info("Successful dumpsys procedure");
+    } else {
+      log::info("Failed dumpsys procedure as stack was not longer active");
+    }
+  } else {
+    DumpWithArgsAsync(fd, args);
+  }
   promise.set_value();
 }
 
 Dumpsys::Dumpsys(const std::string& pre_bundled_schema)
     : reflection_schema_(dumpsys::ReflectionSchema(pre_bundled_schema)) {}
 
+// DEPRECATED Flag: dumpsys_acquire_stack_when_executing
 void Dumpsys::Dump(int fd, const char** args) {
   if (fd <= 0) {
     return;
@@ -172,6 +183,7 @@ void Dumpsys::Dump(int fd, const char** args) {
   CallOn(pimpl_.get(), &Dumpsys::impl::DumpWithArgsSync, fd, args, std::move(promise));
   future.get();
 }
+// !DEPRECATED Flag: dumpsys_acquire_stack_when_executing
 
 void Dumpsys::Dump(int fd, const char** args, std::promise<void> promise) {
   if (fd <= 0) {
