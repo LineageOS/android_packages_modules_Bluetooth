@@ -150,7 +150,14 @@ class HasClientImpl : public HasClient {
   ~HasClientImpl() override = default;
 
   void Connect(const RawAddress& address) override {
-    DLOG(INFO) << __func__ << ": " <<  ADDRESS_TO_LOGGABLE_STR(address);
+    log::info("{}", ADDRESS_TO_LOGGABLE_CSTR(address));
+
+    if (!BTM_IsLinkKeyKnown(address, BT_TRANSPORT_LE)) {
+      log::error("Connecting  {} when not bonded",
+                 ADDRESS_TO_LOGGABLE_CSTR(address));
+      callbacks_->OnConnectionState(ConnectionState::DISCONNECTED, address);
+      return;
+    }
 
     std::vector<RawAddress> addresses = {address};
     auto csis_api = CsisClient::Get();
