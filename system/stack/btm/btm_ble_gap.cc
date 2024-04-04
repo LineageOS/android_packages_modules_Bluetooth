@@ -1320,10 +1320,6 @@ void btm_ble_periodic_adv_sync_lost(uint16_t sync_handle) {
   ps->remote_bda = RawAddress::kEmpty;
 }
 
-void btm_ble_periodic_syc_transfer_param_cmpl(uint8_t status) {
-  log::debug("[PAST]: status = {}", status);
-}
-
 /*******************************************************************************
  *
  * Function        btm_ble_biginfo_adv_report_rcvd
