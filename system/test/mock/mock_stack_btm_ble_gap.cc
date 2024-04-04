@@ -132,7 +132,6 @@ void BTM_BleSetScanParams(uint32_t /* scan_interval */,
 void btm_ble_decrement_link_topology_mask(uint8_t /* link_role */) {
   inc_func_call_count(__func__);
 }
-void btm_ble_dir_adv_tout(void) { inc_func_call_count(__func__); }
 void btm_ble_free() { inc_func_call_count(__func__); }
 void btm_ble_increment_link_topology_mask(uint8_t /* link_role */) {
   inc_func_call_count(__func__);
