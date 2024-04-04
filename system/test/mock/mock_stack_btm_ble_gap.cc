@@ -199,10 +199,6 @@ void btm_send_hci_set_scan_params(uint8_t /* scan_type */,
                                   uint8_t /* scan_filter_policy */) {
   inc_func_call_count(__func__);
 }
-void btm_ble_periodic_adv_sync_tx_rcvd(const uint8_t* /* p */,
-                                       uint16_t /* param_len */) {
-  inc_func_call_count(__func__);
-}
 void btm_ble_biginfo_adv_report_rcvd(const uint8_t* /* p */,
                                      uint16_t /* param_len */) {
   inc_func_call_count(__func__);

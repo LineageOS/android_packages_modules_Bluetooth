@@ -1415,46 +1415,6 @@ void btm_ble_biginfo_adv_report_rcvd(const uint8_t* p, uint16_t param_len) {
 
 /*******************************************************************************
  *
- * Function        btm_ble_periodic_adv_sync_tx_rcvd
- *
- * Description     Host receives this event when the controller receives sync
- *                 info of PA from the connected remote device and successfully
- *                 synced to PA associated with sync handle
- *
- ******************************************************************************/
-void btm_ble_periodic_adv_sync_tx_rcvd(const uint8_t* p, uint16_t param_len) {
-  log::debug("[PAST]: PAST received, param_len={}", param_len);
-  if (param_len < 19) {
-    log::error("Insufficient data");
-    return;
-  }
-  uint8_t status, adv_sid, address_type, adv_phy, clk_acc;
-  uint16_t pa_int, sync_handle, service_data, conn_handle;
-  RawAddress addr;
-  STREAM_TO_UINT8(status, p);
-  STREAM_TO_UINT16(conn_handle, p);
-  STREAM_TO_UINT16(service_data, p);
-  STREAM_TO_UINT16(sync_handle, p);
-  STREAM_TO_UINT8(adv_sid, p);
-  STREAM_TO_UINT8(address_type, p);
-  STREAM_TO_BDADDR(addr, p);
-  STREAM_TO_UINT8(adv_phy, p);
-  STREAM_TO_UINT16(pa_int, p);
-  STREAM_TO_UINT8(clk_acc, p);
-  log::verbose(
-      "[PAST]: status = {}, conn_handle = {}, service_data = {}, sync_handle = "
-      "{}, adv_sid = {}, address_type = {}, addr = {}, adv_phy = {}, pa_int = "
-      "{}, clk_acc = {}",
-      status, conn_handle, service_data, sync_handle, adv_sid, address_type,
-      ADDRESS_TO_LOGGABLE_CSTR(addr), adv_phy, pa_int, clk_acc);
-  if (syncRcvdCbRegistered) {
-    sync_rcvd_cb.Run(status, sync_handle, adv_sid, address_type, addr, adv_phy,
-                     pa_int);
-  }
-}
-
-/*******************************************************************************
- *
  * Function         btm_set_conn_mode_adv_init_addr
  *
  * Description      set initator address type and local address type based on
