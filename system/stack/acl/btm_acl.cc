@@ -1157,10 +1157,6 @@ bool BTM_IsAclConnectionUpAndHandleValid(const RawAddress& remote_bda,
   return p_acl->hci_handle != HCI_INVALID_HANDLE;
 }
 
-bool BTM_IsAclConnectionUpFromHandle(uint16_t hci_handle) {
-  return internal_.acl_get_connection_from_handle(hci_handle) != nullptr;
-}
-
 /*******************************************************************************
  *
  * Function         BTM_GetNumAclLinks

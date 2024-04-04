@@ -72,15 +72,6 @@ struct BTM_IsAclConnectionUpAndHandleValid {
 };
 extern struct BTM_IsAclConnectionUpAndHandleValid
     BTM_IsAclConnectionUpAndHandleValid;
-// Name: BTM_IsAclConnectionUpFromHandle
-// Params: uint16_t hci_handle
-// Returns: bool
-struct BTM_IsAclConnectionUpFromHandle {
-  std::function<bool(uint16_t hci_handle)> body{
-      [](uint16_t /* hci_handle */) { return false; }};
-  bool operator()(uint16_t hci_handle) { return body(hci_handle); };
-};
-extern struct BTM_IsAclConnectionUpFromHandle BTM_IsAclConnectionUpFromHandle;
 // Name: BTM_IsBleConnection
 // Params: uint16_t hci_handle
 // Returns: bool
