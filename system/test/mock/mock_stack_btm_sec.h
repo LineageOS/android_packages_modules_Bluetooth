@@ -45,19 +45,6 @@ namespace test {
 namespace mock {
 namespace stack_btm_sec {
 
-// Shared state between mocked functions and tests
-// Name: BTM_BothEndsSupportSecureConnections
-// Params: const RawAddress& bd_addr
-// Return: bool
-struct BTM_BothEndsSupportSecureConnections {
-  static bool return_value;
-  std::function<bool(const RawAddress& bd_addr)> body{
-      [](const RawAddress& /* bd_addr */) { return return_value; }};
-  bool operator()(const RawAddress& bd_addr) { return body(bd_addr); };
-};
-extern struct BTM_BothEndsSupportSecureConnections
-    BTM_BothEndsSupportSecureConnections;
-
 // Name: BTM_CanReadDiscoverableCharacteristics
 // Params: const RawAddress& bd_addr
 // Return: bool

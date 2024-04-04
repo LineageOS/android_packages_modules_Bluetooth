@@ -330,22 +330,6 @@ void BTM_RemoteOobDataReply(tBTM_STATUS res, const RawAddress& bd_addr,
 
 /*******************************************************************************
  *
- * Function         BTM_BothEndsSupportSecureConnections
- *
- * Description      This function is called to check if both the local device
- *                  and the peer device specified by bd_addr support BR/EDR
- *                  Secure Connections.
- *
- * Parameters:      bd_addr - address of the peer
- *
- * Returns          true if BR/EDR Secure Connections are supported by both
- *                  local and the remote device, else false.
- *
- ******************************************************************************/
-bool BTM_BothEndsSupportSecureConnections(const RawAddress& bd_addr);
-
-/*******************************************************************************
- *
  * Function         BTM_PeerSupportsSecureConnections
  *
  * Description      This function is called to check if the peer supports

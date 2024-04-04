@@ -39,8 +39,6 @@ namespace mock {
 namespace stack_btm_sec {
 
 // Function state capture and return values, if needed
-struct BTM_BothEndsSupportSecureConnections
-    BTM_BothEndsSupportSecureConnections;
 struct BTM_CanReadDiscoverableCharacteristics
     BTM_CanReadDiscoverableCharacteristics;
 struct BTM_ConfirmReqReply BTM_ConfirmReqReply;
@@ -118,7 +116,6 @@ namespace test {
 namespace mock {
 namespace stack_btm_sec {
 
-bool BTM_BothEndsSupportSecureConnections::return_value = false;
 bool BTM_CanReadDiscoverableCharacteristics::return_value = false;
 uint16_t BTM_GetClockOffset::return_value = 0;
 tBT_DEVICE_TYPE BTM_GetPeerDeviceTypeFromFeatures::return_value = 0;
@@ -153,11 +150,6 @@ bool BTM_IsRemoteNameKnown::return_value = false;
 }  // namespace test
 
 // Mocked functions, if any
-bool BTM_BothEndsSupportSecureConnections(const RawAddress& bd_addr) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_btm_sec::BTM_BothEndsSupportSecureConnections(
-      bd_addr);
-}
 bool BTM_CanReadDiscoverableCharacteristics(const RawAddress& bd_addr) {
   inc_func_call_count(__func__);
   return test::mock::stack_btm_sec::BTM_CanReadDiscoverableCharacteristics(
