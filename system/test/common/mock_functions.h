@@ -16,9 +16,6 @@
 
 #pragma once
 
-#include <map>
-#include <string>
-
 int get_func_call_size();
 
 int get_func_call_count(const char* fn);
