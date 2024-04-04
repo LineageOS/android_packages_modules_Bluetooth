@@ -799,11 +799,6 @@ void BTM_default_unblock_role_switch() {
                                         HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH);
 }
 
-void BTM_default_block_role_switch() {
-  internal_.btm_set_default_link_policy(btm_cb.acl_cb_.DefaultLinkPolicy() &
-                                        ~HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH);
-}
-
 extern void bta_gattc_continue_discovery_if_needed(const RawAddress& bd_addr,
                                                    uint16_t acl_handle);
 

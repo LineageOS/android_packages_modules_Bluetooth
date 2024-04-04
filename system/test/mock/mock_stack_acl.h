@@ -646,14 +646,6 @@ struct BTM_block_sniff_mode_for {
   void operator()(const RawAddress& peer_addr) { body(peer_addr); };
 };
 extern struct BTM_block_sniff_mode_for BTM_block_sniff_mode_for;
-// Name: BTM_default_block_role_switch
-// Params:
-// Returns: void
-struct BTM_default_block_role_switch {
-  std::function<void()> body{[]() { ; }};
-  void operator()() { body(); };
-};
-extern struct BTM_default_block_role_switch BTM_default_block_role_switch;
 // Name: BTM_default_unblock_role_switch
 // Params:
 // Returns: void
