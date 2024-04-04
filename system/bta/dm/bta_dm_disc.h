@@ -33,8 +33,6 @@ void bta_dm_disc_stop_device_discovery();
 void bta_dm_disc_start_service_discovery(service_discovery_callbacks cbacks,
                                          const RawAddress& bd_addr,
                                          tBT_TRANSPORT transport);
-void bta_dm_disc_stop_service_discovery(const RawAddress& bd_addr,
-                                        tBT_TRANSPORT transport);
 
 // Bta subsystem entrypoint and lifecycle
 bool bta_dm_search_sm_execute(const BT_HDR_RIGID* p_msg);

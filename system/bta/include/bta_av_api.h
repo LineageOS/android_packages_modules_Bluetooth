@@ -706,18 +706,6 @@ void BTA_AvSetLatency(tBTA_AV_HNDL handle, bool is_low_latency);
  ******************************************************************************/
 void BTA_AvOffloadStart(tBTA_AV_HNDL hndl);
 
-/*******************************************************************************
- *
- * Function         BTA_AvOffloadStartRsp
- *
- * Description      Response from vendor library indicating response for
- *                  OffloadStart.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_AvOffloadStartRsp(tBTA_AV_HNDL hndl, tBTA_AV_STATUS status);
-
 /**
  * Obtain the Channel Index for a peer.
  * If the peer already has associated internal state, the corresponding

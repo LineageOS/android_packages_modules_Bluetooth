@@ -369,21 +369,6 @@ struct bta_dm_ci_rmt_oob_act {
 };
 extern struct bta_dm_ci_rmt_oob_act bta_dm_ci_rmt_oob_act;
 
-// Name: bta_dm_close_acl
-// Params: const RawAddress& bd_addr, bool remove_dev, tBT_TRANSPORT transport
-// Return: void
-struct bta_dm_close_acl {
-  std::function<void(const RawAddress& bd_addr, bool remove_dev,
-                     tBT_TRANSPORT transport)>
-      body{[](const RawAddress& /* bd_addr */, bool /* remove_dev */,
-              tBT_TRANSPORT /* transport */) {}};
-  void operator()(const RawAddress& bd_addr, bool remove_dev,
-                  tBT_TRANSPORT transport) {
-    body(bd_addr, remove_dev, transport);
-  };
-};
-extern struct bta_dm_close_acl bta_dm_close_acl;
-
 // Name: bta_dm_confirm
 // Params: const RawAddress& bd_addr, bool accept
 // Return: void

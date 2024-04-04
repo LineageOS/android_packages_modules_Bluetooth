@@ -742,8 +742,6 @@ void SendRemoteNameRequest(const RawAddress& raw_address);
 
 bool BTM_IsScoActiveByBdaddr(const RawAddress& remote_bda);
 
-uint16_t BTM_GetClockOffset(const RawAddress& remote_bda);
-
 /* Read maximum data packet that can be sent over current connection */
 uint16_t BTM_GetMaxPacketSize(const RawAddress& addr);
 

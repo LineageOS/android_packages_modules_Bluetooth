@@ -1405,25 +1405,6 @@ void BTM_RemoteOobDataReply(tBTM_STATUS res, const RawAddress& bd_addr,
 
 /*******************************************************************************
  *
- * Function         BTM_BothEndsSupportSecureConnections
- *
- * Description      This function is called to check if both the local device
- *                  and the peer device specified by bd_addr support BR/EDR
- *                  Secure Connections.
- *
- * Parameters:      bd_addr - address of the peer
- *
- * Returns          true if BR/EDR Secure Connections are supported by both
- *                  local and the remote device, else false.
- *
- ******************************************************************************/
-bool BTM_BothEndsSupportSecureConnections(const RawAddress& bd_addr) {
-  return ((bluetooth::shim::GetController()->SupportsSecureConnections()) &&
-          (BTM_PeerSupportsSecureConnections(bd_addr)));
-}
-
-/*******************************************************************************
- *
  * Function         BTM_PeerSupportsSecureConnections
  *
  * Description      This function is called to check if the peer supports
@@ -4555,11 +4536,6 @@ void btm_sec_update_clock_offset(uint16_t handle, uint16_t clock_offset) {
   if (p_inq_info == NULL) return;
 
   p_inq_info->results.clock_offset = clock_offset | BTM_CLOCK_OFFSET_VALID;
-}
-
-uint16_t BTM_GetClockOffset(const RawAddress& remote_bda) {
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(remote_bda);
-  return (p_dev_rec) ? p_dev_rec->clock_offset : 0;
 }
 
 /******************************************************************

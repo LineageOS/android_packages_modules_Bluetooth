@@ -2413,11 +2413,6 @@ void bta_dm_disc_start_service_discovery(service_discovery_callbacks cbacks,
   bta_sys_sendmsg(p_msg);
 }
 
-void bta_dm_disc_stop_service_discovery(const RawAddress& /* bd_addr */,
-                                        tBT_TRANSPORT /* transport */) {
-  log::warn("Stop service discovery not yet implemented for legacy module");
-}
-
 #define DUMPSYS_TAG "shim::legacy::bta::dm"
 void DumpsysBtaDmDisc(int fd) {
   auto copy = search_state_history_.Pull();
