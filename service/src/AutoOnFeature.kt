@@ -30,7 +30,6 @@ import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.database.ContentObserver
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -140,16 +139,6 @@ public fun setUserEnabled(
         if (status) "bluetooth.value_auto_on_enabled" else "bluetooth.value_auto_on_disabled"
     )
     resetAutoOnTimerForUser(looper, context, state, callback_on)
-}
-
-// Listener is needed because code should be actionable prior to V API release
-public fun registerHiddenApiListener(
-    looper: Looper,
-    context: Context,
-    state: BluetoothAdapterState,
-    callback_on: () -> Unit
-) {
-    HiddenApiListener.registerUser(looper, context, state, callback_on)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -311,80 +300,4 @@ private fun setFeatureEnabledForUserUnchecked(context: Context, status: Boolean)
         )
     }
     return ret
-}
-
-// Listener is needed because code should be actionable prior to V API release
-@VisibleForTesting
-internal class HiddenApiListener
-private constructor(
-    looper: Looper,
-    private val context: Context,
-    state: BluetoothAdapterState,
-    callback_on: () -> Unit
-) {
-    companion object {
-        @VisibleForTesting internal var listener: HiddenApiListener? = null
-
-        fun registerUser(
-            looper: Looper,
-            context: Context,
-            state: BluetoothAdapterState,
-            callback_on: () -> Unit
-        ) {
-            // Remove observer on previous user
-            listener?.remove()
-            listener = HiddenApiListener(looper, context, state, callback_on)
-        }
-    }
-
-    private val handler = Handler(looper)
-
-    private val observer =
-        object : ContentObserver(handler) {
-            override fun onChange(selfChange: Boolean) {
-                var previousState = featureState
-                var newState =
-                    Settings.Secure.getInt(context.contentResolver, USER_SETTINGS_KEY, -1)
-                featureState = newState
-
-                if (previousState == newState) {
-                    Log.d(TAG, "HiddenApi: State is unchanged: ${newState}")
-                    return
-                }
-
-                if (previousState == -1) {
-                    Log.d(TAG, "HiddenApi: Feature default state got setup to ${newState}")
-                    return
-                }
-
-                Log.d(TAG, "HiddenApi: Feature state change from ${previousState} to ${newState}")
-
-                Counter.logIncrement("bluetooth.value_auto_on_hidden_usage")
-                Counter.logIncrement(
-                    if (newState == 1) "bluetooth.value_auto_on_enabled"
-                    else "bluetooth.value_auto_on_disabled"
-                )
-
-                resetAutoOnTimerForUser(looper, context, state, callback_on)
-            }
-        }
-
-    private var featureState =
-        Settings.Secure.getInt(context.contentResolver, USER_SETTINGS_KEY, -1)
-
-    init {
-        val notifyForDescendants = false
-
-        context.contentResolver.registerContentObserver(
-            Settings.Secure.getUriFor(USER_SETTINGS_KEY),
-            notifyForDescendants,
-            observer
-        )
-    }
-
-    @VisibleForTesting
-    internal fun remove() {
-        context.contentResolver.unregisterContentObserver(observer)
-        handler.removeCallbacksAndMessages(null)
-    }
 }
