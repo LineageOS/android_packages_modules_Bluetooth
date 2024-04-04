@@ -49,7 +49,7 @@ const char* dev_path = "/dev/uhid";
 static tBTA_HH_RPT_CACHE_ENTRY sReportCache[BTA_HH_NV_LOAD_MAX];
 #define BTA_HH_CACHE_REPORT_VERSION 1
 #define THREAD_NORMAL_PRIORITY 0
-#define BT_HH_THREAD "bt_hh_thread"
+#define BT_HH_THREAD_PREFIX "bt_hh_"
 #define BTA_HH_UHID_POLL_PERIOD_MS 50
 /* Max number of polling interrupt allowed */
 #define BTA_HH_UHID_INTERRUPT_COUNT_MAX 100
@@ -327,41 +327,10 @@ static int uhid_fd_poll(btif_hh_device_t* p_dev,
   return ret;
 }
 
-/*******************************************************************************
- *
- * Function btif_hh_poll_event_thread
- *
- * Description the polling thread which polls for event from UHID driver
- *
- * Returns void
- *
- ******************************************************************************/
-static void* btif_hh_poll_event_thread(void* arg) {
-  btif_hh_device_t* p_dev = (btif_hh_device_t*)arg;
-  std::array<struct pollfd, 1> pfds;
-  pid_t pid = gettid();
-
-  // This thread is created by bt_main_thread with RT priority. Lower the thread
-  // priority here since the tasks in this thread is not timing critical.
-  struct sched_param sched_params;
-  sched_params.sched_priority = THREAD_NORMAL_PRIORITY;
-  if (sched_setscheduler(pid, SCHED_OTHER, &sched_params)) {
-    log::error("Failed to set thread priority to normal: {}", strerror(errno));
-    p_dev->hh_poll_thread_id = -1;
-    p_dev->hh_keep_polling = 0;
-    uhid_fd_close(p_dev);
-    return 0;
-  }
-
-  pthread_setname_np(pthread_self(), BT_HH_THREAD);
-  log::debug("Host hid polling thread created name:{} pid:{} fd:{}",
-             BT_HH_THREAD, pid, p_dev->fd);
-
+static void uhid_start_polling(btif_hh_device_t* p_dev) {
+  std::array<struct pollfd, 1> pfds = {};
   pfds[0].fd = p_dev->fd;
   pfds[0].events = POLLIN;
-
-  // Set the uhid fd as non-blocking to ensure we never block the BTU thread
-  uhid_set_non_blocking(p_dev->fd);
 
   while (p_dev->hh_keep_polling) {
     int ret = uhid_fd_poll(p_dev, pfds);
@@ -383,6 +352,49 @@ static void* btif_hh_poll_event_thread(void* arg) {
         break;
       }
     }
+  }
+}
+
+static bool uhid_configure_thread(btif_hh_device_t* p_dev) {
+  pid_t pid = gettid();
+  // This thread is created by bt_main_thread with RT priority. Lower the thread
+  // priority here since the tasks in this thread is not timing critical.
+  struct sched_param sched_params;
+  sched_params.sched_priority = THREAD_NORMAL_PRIORITY;
+  if (sched_setscheduler(pid, SCHED_OTHER, &sched_params)) {
+    log::error("Failed to set thread priority to normal: {}", strerror(errno));
+    return false;
+  }
+
+  // Change the name of thread
+  char thread_name[16] = {};
+  sprintf(thread_name, BT_HH_THREAD_PREFIX "%02x:%02x",
+          p_dev->link_spec.addrt.bda.address[4],
+          p_dev->link_spec.addrt.bda.address[5]);
+  pthread_setname_np(pthread_self(), thread_name);
+  log::debug("Host hid polling thread created name:{} pid:{} fd:{}",
+             thread_name, pid, p_dev->fd);
+
+  // Set the uhid fd as non-blocking to ensure we never block the BTU thread
+  uhid_set_non_blocking(p_dev->fd);
+
+  return true;
+}
+
+/*******************************************************************************
+ *
+ * Function btif_hh_poll_event_thread
+ *
+ * Description the polling thread which polls for event from UHID driver
+ *
+ * Returns void
+ *
+ ******************************************************************************/
+static void* btif_hh_poll_event_thread(void* arg) {
+  btif_hh_device_t* p_dev = (btif_hh_device_t*)arg;
+
+  if (uhid_configure_thread(p_dev)) {
+    uhid_start_polling(p_dev);
   }
 
   /* Todo: Disconnect if loop exited due to a failure */
