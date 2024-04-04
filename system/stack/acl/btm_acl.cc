@@ -2025,21 +2025,6 @@ void btm_read_automatic_flush_timeout_complete(uint8_t* p) {
 
 /*******************************************************************************
  *
- * Function         btm_read_link_quality_timeout
- *
- * Description      Callback when reading the link quality times out.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_read_link_quality_timeout(UNUSED_ATTR void* data) {
-  tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_link_qual_cmpl_cb;
-  btm_cb.devcb.p_link_qual_cmpl_cb = NULL;
-  if (p_cb) (*p_cb)((void*)NULL);
-}
-
-/*******************************************************************************
- *
  * Function         btm_read_link_quality_complete
  *
  * Description      This function is called when the command complete message

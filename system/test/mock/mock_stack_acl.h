@@ -996,14 +996,6 @@ struct btm_read_link_quality_complete {
   void operator()(uint8_t* p, uint16_t evt_len) { body(p, evt_len); };
 };
 extern struct btm_read_link_quality_complete btm_read_link_quality_complete;
-// Name: btm_read_link_quality_timeout
-// Params: void* data
-// Returns: void
-struct btm_read_link_quality_timeout {
-  std::function<void(void* data)> body{[](void* /* data */) { ; }};
-  void operator()(void* data) { body(data); };
-};
-extern struct btm_read_link_quality_timeout btm_read_link_quality_timeout;
 // Name: btm_read_remote_ext_features
 // Params: uint16_t handle, uint8_t page_number
 // Returns: void
