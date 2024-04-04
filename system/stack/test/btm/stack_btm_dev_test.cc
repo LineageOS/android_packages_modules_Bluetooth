@@ -20,20 +20,13 @@
 
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_sec_cb.h"
-#include "test/common/mock_functions.h"
+#include "stack/test/btm/btm_test_fixtures.h"
 #include "test/mock/mock_main_shim_entry.h"
 
-class StackBtmTest : public testing::Test {
- public:
+class StackBtmDevTest : public BtmWithMocksTest {
  protected:
-  void SetUp() override { reset_mock_function_count_map(); }
-  void TearDown() override {}
-};
-
-class StackBtmDevTest : public StackBtmTest {
- protected:
-  void SetUp() override { StackBtmTest::SetUp(); }
-  void TearDown() override { StackBtmTest::TearDown(); }
+  void SetUp() override { BtmWithMocksTest::SetUp(); }
+  void TearDown() override { BtmWithMocksTest::TearDown(); }
 };
 
 TEST_F(StackBtmDevTest, btm_sec_allocate_dev_rec__no_list) {
