@@ -994,7 +994,8 @@ public class HearingAidService extends ProfileService {
 
             if (Flags.audioRoutingCentralization()) {
                 return ((AudioRoutingManager) service.mAdapterService.getActiveDeviceManager())
-                        .activateDeviceProfile(device, BluetoothProfile.HEARING_AID);
+                        .activateDeviceProfile(device, BluetoothProfile.HEARING_AID)
+                        .join();
             }
             if (device == null) {
                 return service.removeActiveDevice(false);
