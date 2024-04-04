@@ -41,6 +41,8 @@ bool is_gd_stack_started_up();
 /**
  * Checks if the dumpsys module has been started.
  *
+ * DEPRECATED Flag:dumpsys_acquire_stack_when_executing
+ *
  * @return true if specified module has started, false otherwise.
  */
 bool is_gd_dumpsys_module_started();
