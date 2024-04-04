@@ -104,10 +104,6 @@ tBTM_STATUS btm_ble_start_inquiry(uint8_t /* duration */) {
   inc_func_call_count(__func__);
   return BTM_SUCCESS;
 }
-uint16_t BTM_BleReadConnectability() {
-  inc_func_call_count(__func__);
-  return 0;
-}
 uint16_t BTM_BleReadDiscoverability() {
   inc_func_call_count(__func__);
   return 0;

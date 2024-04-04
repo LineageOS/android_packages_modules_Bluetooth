@@ -211,18 +211,6 @@ uint16_t BTM_BleReadDiscoverability();
 
 /*******************************************************************************
  *
- * Function         BTM__BLEReadConnectability
- *
- * Description      This function is called to read the current LE
- *                  connectibility mode of the device.
- *
- * Returns          BTM_BLE_NON_CONNECTABLE or BTM_BLE_CONNECTABLE
- *
- ******************************************************************************/
-uint16_t BTM_BleReadConnectability();
-
-/*******************************************************************************
- *
  * Function         BTM_ReadDevInfo
  *
  * Description      This function is called to read the device/address type
