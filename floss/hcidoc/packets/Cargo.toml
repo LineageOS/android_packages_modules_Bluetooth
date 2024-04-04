@@ -36,4 +36,4 @@ walkdir = "2.2"
 
 [lib]
 path = "lib.rs"
-crate-types = ["rlib"]
+crate-type = ["rlib"]

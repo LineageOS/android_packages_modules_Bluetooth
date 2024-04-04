@@ -707,6 +707,26 @@ class VolumeControlImpl : public VolumeControl {
     }
   }
 
+  void RemoveDeviceFromOperationList(const RawAddress& addr) {
+    if (ongoing_operations_.empty()) {
+      return;
+    }
+
+    for (auto& op : ongoing_operations_) {
+      auto it = find(op.devices_.begin(), op.devices_.end(), addr);
+      if (it == op.devices_.end()) {
+        continue;
+      }
+      op.devices_.erase(it);
+    }
+
+    // Remove operations with no devices
+    ongoing_operations_.erase(
+        std::remove_if(ongoing_operations_.begin(), ongoing_operations_.end(),
+                       [](auto& op) { return op.devices_.empty(); }),
+        ongoing_operations_.end());
+  }
+
   void RemoveDeviceFromOperationList(const RawAddress& addr, int operation_id) {
     auto op = find_if(ongoing_operations_.begin(), ongoing_operations_.end(),
                       [operation_id](auto& operation) {
@@ -790,8 +810,30 @@ class VolumeControlImpl : public VolumeControl {
     }
   }
 
-  static void operation_callback(void* data) {
-    instance->CancelVolumeOperation(PTR_TO_INT(data));
+  static void operation_timeout_callback(void* data) {
+    if (!instance) {
+      log::warn(" There is no instance.");
+      return;
+    }
+    instance->OperationMonitorTimeoutFired(PTR_TO_INT(data));
+  }
+
+  void OperationMonitorTimeoutFired(int operation_id) {
+    auto op = find_if(
+        ongoing_operations_.begin(), ongoing_operations_.end(),
+        [operation_id](auto& it) { return it.operation_id_ == operation_id; });
+
+    if (op == ongoing_operations_.end()) {
+      log::error("Could not find operation_id: {}", operation_id);
+      return;
+    }
+
+    log::warn("Operation {} is taking too long for devices:", operation_id);
+    for (const auto& addr : op->devices_) {
+      log::warn("  {},", ADDRESS_TO_LOGGABLE_CSTR(addr));
+    }
+    alarm_set_on_mloop(op->operation_timeout_, kOperationMonitorTimeoutMs,
+                       operation_timeout_callback, INT_TO_PTR(operation_id));
   }
 
   void StartQueueOperation(void) {
@@ -802,37 +844,23 @@ class VolumeControlImpl : public VolumeControl {
 
     auto op = &ongoing_operations_.front();
 
-    log::info("operation_id: {}", op->operation_id_);
+    log::info(" Current operation_id: {}", op->operation_id_);
 
     if (op->IsStarted()) {
-      log::info("wait until operation {} is complete", op->operation_id_);
+      log::info("Operation {} is started, wait until it is complete",
+                op->operation_id_);
       return;
     }
 
     op->Start();
 
-    alarm_set_on_mloop(op->operation_timeout_, 3000, operation_callback,
+    alarm_set_on_mloop(op->operation_timeout_, kOperationMonitorTimeoutMs,
+                       operation_timeout_callback,
                        INT_TO_PTR(op->operation_id_));
     devices_control_point_helper(
         op->devices_, op->opcode_,
-        op->arguments_.size() == 0 ? nullptr : &(op->arguments_));
-  }
-
-  void CancelVolumeOperation(int operation_id) {
-    log::info("canceling operation_id: {}", operation_id);
-
-    auto op = find_if(
-        ongoing_operations_.begin(), ongoing_operations_.end(),
-        [operation_id](auto& it) { return it.operation_id_ == operation_id; });
-
-    if (op == ongoing_operations_.end()) {
-      log::error("Could not find operation_id: {}", operation_id);
-      return;
-    }
-
-    /* Possibly close GATT operations */
-    ongoing_operations_.erase(op);
-    StartQueueOperation();
+        op->arguments_.size() == 0 ? nullptr : &(op->arguments_),
+        op->operation_id_);
   }
 
   void PrepareVolumeControlOperation(std::vector<RawAddress> devices,
@@ -1113,6 +1141,8 @@ class VolumeControlImpl : public VolumeControl {
   std::list<VolumeOperation> ongoing_operations_;
   int latest_operation_id_;
 
+  static constexpr uint64_t kOperationMonitorTimeoutMs = 3000;
+
   void verify_device_ready(VolumeControlDevice* device, uint16_t handle) {
     if (device->IsReady()) return;
 
@@ -1142,6 +1172,9 @@ class VolumeControlImpl : public VolumeControl {
 
   void device_cleanup_helper(VolumeControlDevice* device, bool notify) {
     device->Disconnect(gatt_if_);
+
+    RemoveDeviceFromOperationList(device->address);
+
     if (notify)
       callbacks_->OnConnectionState(ConnectionState::DISCONNECTED,
                                     device->address);

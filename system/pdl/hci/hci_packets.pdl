@@ -6893,6 +6893,22 @@ struct LeCsResultDataStructure {
   step_data : 8[],
 }
 
+enum ProcedureAbortReason : 4 {
+  NO_ABORT = 0x0,
+  LOCAL_HOST_OR_REMOTE = 0x1,
+  INSUFFICIENT_FILTERED_CHANNELS = 0x2,
+  INSTANT_HAS_PASSED = 0x3,
+  UNSPECIFIED = 0xF,
+}
+
+enum SubeventAbortReason : 4 {
+  NO_ABORT = 0x0,
+  LOCAL_HOST_OR_REMOTE = 0x1,
+  NO_CS_SYNC_RECEIVED = 0x2,
+  SCHEDULING_CONFLICTS_OR_LIMITED_RESOURCES = 0x3,
+  UNSPECIFIED = 0xF,
+}
+
 packet LeCsSubeventResult : LeMetaEvent (subevent_code = LE_CS_SUBEVENT_RESULT) {
   connection_handle : 12,
   _reserved_ : 4,
@@ -6906,7 +6922,8 @@ packet LeCsSubeventResult : LeMetaEvent (subevent_code = LE_CS_SUBEVENT_RESULT) 
   _reserved_ : 4,
   subevent_done_status : CsSubeventDoneStatus,
   _reserved_ : 4,
-  abort_reason : 8,
+  procedure_abort_reason : ProcedureAbortReason,
+  subevent_abort_reason : SubeventAbortReason,
   num_antenna_paths : 8,
   _count_(result_data_structures) : 8,
   result_data_structures : LeCsResultDataStructure[],
@@ -6921,7 +6938,8 @@ packet LeCsSubeventResultContinue : LeMetaEvent (subevent_code = LE_CS_SUBEVENT_
   _reserved_ : 4,
   subevent_done_status : CsSubeventDoneStatus,
   _reserved_ : 4,
-  abort_reason : 8,
+  procedure_abort_reason : ProcedureAbortReason,
+  subevent_abort_reason : SubeventAbortReason,
   num_antenna_paths : 8,
   _count_(result_data_structures) : 8,
   result_data_structures : LeCsResultDataStructure[],
@@ -7187,6 +7205,15 @@ packet MsftLeMonitorAdvConditionPatterns : MsftLeMonitorAdv (condition_type = MS
 test MsftLeMonitorAdvConditionPatterns {
   "\x1e\xfc\x0e\x03\x10\x05\x04\xaa\x01\x01\x06\x03\x00\x80\x81\x82\x83", // 1 pattern
   "\x70\xfd\x13\x03\x15\x04\x02\xbb\x01\x02\x04\x03\x00\x80\x81\x06\x0f\x00\x90\x91\x92\x93", // 2 patterns
+}
+
+packet MsftLeMonitorAdvConditionAddress : MsftLeMonitorAdv (condition_type = MSFT_CONDITION_TYPE_ADDRESS) {
+  addr_type: 8,
+  addr : Address,
+}
+
+test MsftLeMonitorAdvConditionAddress {
+    "\x1e\xfc\x0d\x03\x10\x05\x04\xaa\x04\x00\x03\x03\x05\xc4\x05\xc4",
 }
 
 packet MsftLeMonitorAdvConditionUuid : MsftLeMonitorAdv (condition_type = MSFT_CONDITION_TYPE_UUID) {

@@ -173,3 +173,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "msft_addr_tracking_quirk"
+    namespace: "bluetooth"
+    description: "Scanning with MSFT paddress tracking for Realtek BT controllers"
+    bug: "332438857"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

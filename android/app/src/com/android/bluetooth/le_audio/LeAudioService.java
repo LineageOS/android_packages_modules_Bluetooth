@@ -4393,7 +4393,8 @@ public class LeAudioService extends ProfileService {
 
             if (Flags.audioRoutingCentralization()) {
                 return ((AudioRoutingManager) service.mAdapterService.getActiveDeviceManager())
-                        .activateDeviceProfile(device, BluetoothProfile.LE_AUDIO);
+                        .activateDeviceProfile(device, BluetoothProfile.LE_AUDIO)
+                        .join();
             }
             if (device == null) {
                 return service.removeActiveDevice(true);

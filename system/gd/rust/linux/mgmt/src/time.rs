@@ -54,7 +54,7 @@ fn get_clock() -> ClockId {
 #[cfg(test)]
 mod tests {
     use super::Alarm;
-    use std::time::{Duration, Instant};
+    use std::time::Duration;
 
     #[test]
     fn alarm_cancel_after_expired() {
@@ -84,7 +84,6 @@ mod tests {
         // Otherwise it's still ready and select! won't work.
         let runtime = tokio::runtime::Runtime::new().unwrap();
         runtime.block_on(async {
-            let timer = Instant::now();
             let alarm = Alarm::new();
             alarm.reset(Duration::from_millis(10));
             alarm.expired().await;

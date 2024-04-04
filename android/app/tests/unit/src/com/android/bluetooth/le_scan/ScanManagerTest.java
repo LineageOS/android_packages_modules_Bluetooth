@@ -16,7 +16,11 @@
 
 package com.android.bluetooth.le_scan;
 
+import static android.bluetooth.BluetoothDevice.PHY_LE_CODED;
+import static android.bluetooth.BluetoothDevice.PHY_LE_1M_MASK;
+import static android.bluetooth.BluetoothDevice.PHY_LE_CODED_MASK;
 import static android.bluetooth.le.ScanSettings.CALLBACK_TYPE_ALL_MATCHES_AUTO_BATCH;
+import static android.bluetooth.le.ScanSettings.PHY_LE_ALL_SUPPORTED;
 import static android.bluetooth.le.ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY;
 import static android.bluetooth.le.ScanSettings.SCAN_MODE_BALANCED;
 import static android.bluetooth.le.ScanSettings.SCAN_MODE_LOW_LATENCY;
@@ -1547,7 +1551,7 @@ public class ScanManagerTest {
         scanModeMap.put(SCAN_MODE_AMBIENT_DISCOVERY, SCAN_MODE_AMBIENT_DISCOVERY);
 
         for (int i = 0; i < scanModeMap.size(); i++) {
-            int phy = 2;
+            int phy = PHY_LE_CODED;
             int ScanMode = scanModeMap.keyAt(i);
             int expectedScanMode = scanModeMap.get(ScanMode);
             Log.d(
@@ -1567,7 +1571,49 @@ public class ScanManagerTest {
 
             assertThat(client.settings.getPhy()).isEqualTo(phy);
             verify(mScanNativeInterface, atLeastOnce())
-                    .gattSetScanParameters(anyInt(), anyInt(), anyInt(), eq(phy));
+                    .gattSetScanParameters(anyInt(), anyInt(), anyInt(), eq(PHY_LE_CODED_MASK));
+        }
+    }
+
+    @Test
+    public void testSetScanPhyAllSupported() {
+        final boolean isFiltered = false;
+        final boolean isEmptyFilter = false;
+        // Set scan mode map {original scan mode (ScanMode) : expected scan mode (expectedScanMode)}
+        SparseIntArray scanModeMap = new SparseIntArray();
+        scanModeMap.put(SCAN_MODE_LOW_POWER, SCAN_MODE_LOW_POWER);
+        scanModeMap.put(SCAN_MODE_BALANCED, SCAN_MODE_BALANCED);
+        scanModeMap.put(SCAN_MODE_LOW_LATENCY, SCAN_MODE_LOW_LATENCY);
+        scanModeMap.put(SCAN_MODE_AMBIENT_DISCOVERY, SCAN_MODE_AMBIENT_DISCOVERY);
+
+        for (int i = 0; i < scanModeMap.size(); i++) {
+            int phy = PHY_LE_ALL_SUPPORTED;
+            int ScanMode = scanModeMap.keyAt(i);
+            boolean adapterServiceSupportsCoded = mAdapterService.isLeCodedPhySupported();
+            int expectedScanMode = scanModeMap.get(ScanMode);
+            int expectedPhy;
+
+            if (adapterServiceSupportsCoded) expectedPhy = PHY_LE_1M_MASK & PHY_LE_CODED_MASK;
+            else expectedPhy = PHY_LE_1M_MASK;
+
+            Log.d(
+                    TAG,
+                    "ScanMode: "
+                            + String.valueOf(ScanMode)
+                            + " expectedScanMode: "
+                            + String.valueOf(expectedScanMode));
+
+            // Turn on screen
+            sendMessageWaitForProcessed(createScreenOnOffMessage(true));
+            // Create scan client
+            ScanClient client =
+                    createScanClientWithPhy(i, isFiltered, isEmptyFilter, ScanMode, phy);
+            // Start scan
+            sendMessageWaitForProcessed(createStartStopScanMessage(true, client));
+
+            assertThat(client.settings.getPhy()).isEqualTo(phy);
+            verify(mScanNativeInterface, atLeastOnce())
+                    .gattSetScanParameters(anyInt(), anyInt(), anyInt(), eq(expectedPhy));
         }
     }
 }

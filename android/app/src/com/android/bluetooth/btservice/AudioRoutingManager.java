@@ -101,7 +101,7 @@ public class AudioRoutingManager extends ActiveDeviceManager {
      * @param profile The profile to be activated
      * @param receiver to post the results
      */
-    public boolean activateDeviceProfile(BluetoothDevice device, int profile) {
+    public CompletableFuture<Boolean> activateDeviceProfile(BluetoothDevice device, int profile) {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
 
         mHandler.post(
@@ -109,7 +109,7 @@ public class AudioRoutingManager extends ActiveDeviceManager {
                         future.complete(
                                 mHandler.activateDeviceProfile(
                                         mHandler.getAudioRoutingDevice(device), profile)));
-        return future.join();
+        return future;
     }
 
     /**

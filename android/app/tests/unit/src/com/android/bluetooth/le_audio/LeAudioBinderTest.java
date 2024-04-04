@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.le_audio;
 
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -53,6 +55,7 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public class LeAudioBinderTest {
 
@@ -82,6 +85,10 @@ public class LeAudioBinderTest {
         doReturn(false).when(mAdapterService).isQuietModeEnabled();
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
         doReturn(mAudioRoutingManager).when(mAdapterService).getActiveDeviceManager();
+
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        future.complete(true);
+        doReturn(future).when(mAudioRoutingManager).activateDeviceProfile(any(), anyInt());
 
         mLeAudioService =
                 spy(

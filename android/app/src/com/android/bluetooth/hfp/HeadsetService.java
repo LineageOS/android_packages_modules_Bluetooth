@@ -782,7 +782,8 @@ public class HeadsetService extends ProfileService {
 
             if (Flags.audioRoutingCentralization()) {
                 return ((AudioRoutingManager) service.mAdapterService.getActiveDeviceManager())
-                        .activateDeviceProfile(device, BluetoothProfile.HEADSET);
+                        .activateDeviceProfile(device, BluetoothProfile.HEADSET)
+                        .join();
             }
 
             return service.setActiveDevice(device);

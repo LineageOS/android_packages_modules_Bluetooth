@@ -21,19 +21,31 @@
 #include <vector>
 
 #include "common/init_flags.h"
+#include "common/strings.h"
 #include "hci/hci_layer_mock.h"
 #include "internal_include/bt_target.h"
 #include "stack/btm/btm_ble_sec.h"
 #include "stack/btm/btm_dev.h"
+#include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/btm/btm_sec_cb.h"
 #include "stack/btm/security_device_record.h"
-#include "test/common/mock_functions.h"
+#include "stack/test/btm/btm_test_fixtures.h"
 #include "test/mock/mock_main_shim_entry.h"
 #include "types/raw_address.h"
 
+extern tBTM_CB btm_cb;
+
+using namespace bluetooth;
+
 using testing::Return;
 using testing::Test;
+
+namespace {
+const RawAddress kRawAddress = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+const uint8_t kBdName[] = "kBdName";
+constexpr char kTimeFormat[] = "%Y-%m-%d %H:%M:%S";
+}  // namespace
 
 namespace bluetooth {
 namespace testing {
@@ -50,11 +62,11 @@ using bluetooth::testing::legacy::wipe_secrets_and_remove;
 constexpr size_t kBtmSecMaxDeviceRecords =
     static_cast<size_t>(BTM_SEC_MAX_DEVICE_RECORDS + 1);
 
-class StackBtmSecTest : public Test {
+class StackBtmSecTest : public BtmWithMocksTest {
  public:
  protected:
-  void SetUp() override { reset_mock_function_count_map(); }
-  void TearDown() override {}
+  void SetUp() override { BtmWithMocksTest::SetUp(); }
+  void TearDown() override { BtmWithMocksTest::TearDown(); }
 };
 
 class StackBtmSecWithQueuesTest : public StackBtmSecTest {
@@ -95,10 +107,10 @@ class StackBtmSecWithInitFreeTest : public StackBtmSecWithQueuesTest {
  protected:
   void SetUp() override {
     StackBtmSecWithQueuesTest::SetUp();
-    ::btm_sec_cb.Init(BTM_SEC_MODE_SC);
+    BTM_Sec_Init();
   }
   void TearDown() override {
-    ::btm_sec_cb.Free();
+    BTM_Sec_Free();
     StackBtmSecWithQueuesTest::TearDown();
   }
 };
@@ -268,4 +280,32 @@ TEST_F(StackBtmSecWithInitFreeTest, wipe_secrets_and_remove) {
   device_record->ble_hci_handle = ble_handle;
 
   wipe_secrets_and_remove(device_record);
+}
+
+TEST_F(StackBtmSecWithInitFreeTest, btm_sec_rmt_name_request_complete) {
+  btm_cb.history_ = std::make_shared<TimestampedStringCircularBuffer>(
+      kBtmLogHistoryBufferSize);
+
+  btm_sec_rmt_name_request_complete(&kRawAddress, kBdName, HCI_SUCCESS);
+  btm_sec_rmt_name_request_complete(nullptr, nullptr, HCI_SUCCESS);
+  btm_sec_rmt_name_request_complete(nullptr, kBdName, HCI_SUCCESS);
+  btm_sec_rmt_name_request_complete(&kRawAddress, nullptr, HCI_SUCCESS);
+
+  btm_sec_rmt_name_request_complete(&kRawAddress, kBdName, HCI_ERR_HW_FAILURE);
+  btm_sec_rmt_name_request_complete(nullptr, nullptr, HCI_ERR_HW_FAILURE);
+  btm_sec_rmt_name_request_complete(nullptr, kBdName, HCI_ERR_HW_FAILURE);
+  btm_sec_rmt_name_request_complete(&kRawAddress, nullptr, HCI_ERR_HW_FAILURE);
+
+  std::vector<common::TimestampedEntry<std::string>> history =
+      btm_cb.history_->Pull();
+  for (auto& record : history) {
+    time_t then = record.timestamp / 1000;
+    struct tm tm;
+    localtime_r(&then, &tm);
+    auto s2 = common::StringFormatTime(kTimeFormat, tm);
+    log::debug(" {}.{} {}", s2,
+               static_cast<unsigned int>(record.timestamp % 1000),
+               record.entry);
+  }
+  ASSERT_EQ(8U, history.size());
 }

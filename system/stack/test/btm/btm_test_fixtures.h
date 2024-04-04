@@ -14,25 +14,28 @@
  * limitations under the License.
  */
 
-#include "bta/include/bta_ras_api.h"
+#pragma once
 
-class MockRasClient : public bluetooth::ras::RasClient {
-  void Initialize() override {}
-  void RegisterCallbacks(
-      bluetooth::ras::RasClientCallbacks* /* callbacks */) override{};
-  void Connect(const RawAddress& /* address */) override{};
+#include <gtest/gtest.h>
+
+#include "test/common/mock_functions.h"
+#include "test/fake/fake_osi.h"
+
+class BtmWithFakesTest : public testing::Test {
+ protected:
+  void SetUp() override { fake_osi_ = std::make_unique<test::fake::FakeOsi>(); }
+
+  void TearDown() override { fake_osi_.reset(); }
+  std::unique_ptr<test::fake::FakeOsi> fake_osi_;
 };
 
-namespace bluetooth {
-namespace ras {
-
-RasClient* GetRasClient() {
-  static MockRasClient* instance = nullptr;
-  if (instance == nullptr) {
-    instance = new MockRasClient();
+// Setup any default or optional mocks
+class BtmWithMocksTest : public BtmWithFakesTest {
+ protected:
+  void SetUp() override {
+    BtmWithFakesTest::SetUp();
+    reset_mock_function_count_map();
   }
-  return instance;
-}
 
-}  // namespace ras
-}  // namespace bluetooth
+  void TearDown() override { BtmWithFakesTest::TearDown(); }
+};

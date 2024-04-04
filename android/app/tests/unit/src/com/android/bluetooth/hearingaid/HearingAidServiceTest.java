@@ -22,6 +22,7 @@ import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
@@ -72,6 +73,7 @@ import org.mockito.junit.MockitoRule;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 
 @MediumTest
@@ -108,6 +110,10 @@ public class HearingAidServiceTest {
 
         TestUtils.mockGetSystemService(
                 mContext, Context.AUDIO_SERVICE, AudioManager.class, mAudioManager);
+
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        future.complete(true);
+        doReturn(future).when(mAudioRoutingManager).activateDeviceProfile(any(), anyInt());
 
         if (Looper.myLooper() == null) {
             Looper.prepare();

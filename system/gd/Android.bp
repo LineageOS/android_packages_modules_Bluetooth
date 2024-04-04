@@ -289,6 +289,7 @@ cc_binary {
         ":BluetoothFacade_neighbor",
         ":BluetoothFacade_security_layer",
         ":BluetoothFacade_shim_layer",
+        ":TestMockMainShimStack",
         "facade/facade_main.cc",
         "facade/grpc_root_server.cc",
         "facade/read_only_property_server.cc",
@@ -363,6 +364,49 @@ cc_binary {
         address: true,
         cfi: true,
     },
+}
+
+cc_test {
+    name: "bluetooth_test_with_timerfd",
+    test_suites: ["general-tests"],
+    defaults: [
+        "gd_defaults",
+        "mts_defaults",
+    ],
+    include_dirs: [
+        "packages/modules/Bluetooth/system",
+        "packages/modules/Bluetooth/system/include",
+        "packages/modules/Bluetooth/system/types",
+    ],
+    host_supported: true,
+    target: {
+        host: {
+            srcs: [
+                ":BluetoothOsSystemProperties_host",
+            ],
+        },
+        android: {
+            srcs: [
+                ":BluetoothOsSystemProperties_android",
+            ],
+        },
+    },
+    srcs: [
+        ":BluetoothOsTestSources_timerfd",
+    ],
+    static_libs: [
+        "libbluetooth_log",
+        "libchrome",
+        "libgmock",
+    ],
+    shared_libs: [
+        "libbase",
+        "liblog",
+    ],
+    sanitize: {
+        address: true,
+    },
+    min_sdk_version: "Tiramisu",
 }
 
 cc_test {
@@ -486,6 +530,7 @@ cc_test {
         ":BluetoothDumpsysTestSources",
         ":BluetoothShimTestSources",
         ":TestCommonMockFunctions",
+        ":TestMockMainShimStack",
         "module_gdx_unittest.cc",
         "module_jniloop_unittest.cc",
         "module_mainloop_unittest.cc",

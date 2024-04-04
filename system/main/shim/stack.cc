@@ -36,7 +36,9 @@
 #include "hci/hci_layer.h"
 #include "hci/le_advertising_manager.h"
 #include "hci/le_scanning_manager.h"
+#if TARGET_FLOSS
 #include "hci/msft.h"
+#endif
 #include "hci/remote_name_request.h"
 #include "hci/vendor_specific_event_manager.h"
 #include "main/shim/acl.h"
@@ -90,7 +92,9 @@ void Stack::StartEverything() {
   modules.add<hci::AclManager>();
   modules.add<hci::RemoteNameRequestModule>();
   modules.add<hci::LeAdvertisingManager>();
+#if TARGET_FLOSS
   modules.add<hci::MsftExtensionManager>();
+#endif
   modules.add<hci::LeScanningManager>();
   modules.add<hci::DistanceMeasurementManager>();
   Start(&modules);

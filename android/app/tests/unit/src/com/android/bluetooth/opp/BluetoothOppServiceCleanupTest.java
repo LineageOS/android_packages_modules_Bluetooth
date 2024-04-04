@@ -29,17 +29,12 @@ import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.BluetoothMethodProxy;
-import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
@@ -47,37 +42,18 @@ import org.mockito.junit.MockitoRule;
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppServiceCleanupTest {
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
-
-    private boolean mIsAdapterServiceSet;
-
-    private Context mTargetContext;
-
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock private AdapterService mAdapterService;
-
-    @Before
-    public void setUp() throws Exception {
-        mTargetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-
-        TestUtils.setAdapterService(mAdapterService);
-        mIsAdapterServiceSet = true;
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        BluetoothMethodProxy.setInstanceForTesting(null);
-
-        if (mIsAdapterServiceSet) {
-            TestUtils.clearAdapterService(mAdapterService);
-        }
-    }
+    private final Context mTargetContext =
+            InstrumentationRegistry.getInstrumentation().getTargetContext();
 
     @Test
     @UiThreadTest
     public void testStopAndCleanup() {
         mSetFlagsRule.enableFlags(
                 Flags.FLAG_OPP_SERVICE_FIX_INDEX_OUT_OF_BOUNDS_EXCEPTION_IN_UPDATE_THREAD);
+
+        AdapterService adapterService = new AdapterService(mTargetContext);
 
         // Don't need to disable again since it will be handled in OppService.stop
         enableBtOppProvider();
@@ -89,7 +65,7 @@ public class BluetoothOppServiceCleanupTest {
         }
 
         try {
-            BluetoothOppService service = new BluetoothOppService(mTargetContext);
+            BluetoothOppService service = new BluetoothOppService(adapterService);
             service.start();
             service.setAvailable(true);
 

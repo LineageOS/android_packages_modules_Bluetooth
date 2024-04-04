@@ -17,6 +17,7 @@
 name = "bt_topshim"
 version = "0.0.1"
 edition = "2018"
+build = "build.rs"
 
 [dependencies]
 # BT dependencies
@@ -39,4 +40,3 @@ pkg-config = "0.3"
 
 [lib]
 path = "src/lib.rs"
-build = "build.rs"

@@ -29,6 +29,7 @@
 #include "stack/include/hfp_lc3_encoder.h"
 #include "stack/include/hfp_msbc_decoder.h"
 #include "stack/include/hfp_msbc_encoder.h"
+#include "stack/test/btm/btm_test_fixtures.h"
 #include "test/common/mock_functions.h"
 #include "udrv/include/uipc.h"
 
@@ -102,11 +103,11 @@ struct Lc3CodecInterface : bluetooth::core::CodecInterface {
   }
 };
 
-class ScoHciTest : public Test {
+class ScoHciTest : public BtmWithMocksTest {
  public:
  protected:
   void SetUp() override {
-    reset_mock_function_count_map();
+    BtmWithMocksTest::SetUp();
     mock_uipc_init_ret = nullptr;
     mock_uipc_read_ret = 0;
     mock_uipc_send_ret = true;
@@ -116,7 +117,7 @@ class ScoHciTest : public Test {
     GetInterfaceToProfiles()->msbcCodec = &msbc_codec;
     GetInterfaceToProfiles()->lc3Codec = &lc3_codec;
   }
-  void TearDown() override {}
+  void TearDown() override { BtmWithMocksTest::TearDown(); }
 };
 
 class ScoHciWithOpenCleanTest : public ScoHciTest {

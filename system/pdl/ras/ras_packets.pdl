@@ -7,15 +7,37 @@ enum PctFormat : 2 {
   PHASE = 1,
 }
 
-enum RangingDoneStatus : 8 {
+enum RangingDoneStatus : 4 {
   ALL_RESULTS_COMPLETE = 0x0,
   PARTIAL_RESULTS = 0x1,
   ABORTED = 0xF,
 }
 
-enum SubeventDoneStatus : 8 {
+enum SubeventDoneStatus : 4 {
   ALL_RESULTS_COMPLETE = 0x0,
   ABORTED = 0xF,
+}
+
+enum RangingAbortReason : 4 {
+  NO_ABORT = 0x0,
+  LOCAL_HOST_OR_REMOTE = 0x1,
+  INSUFFICIENT_FILTERED_CHANNELS = 0x2,
+  INSTANT_HAS_PASSED = 0x3,
+  UNSPECIFIED = 0xF,
+}
+
+enum SubeventAbortReason : 4 {
+  NO_ABORT = 0x0,
+  LOCAL_HOST_OR_REMOTE = 0x1,
+  NO_CS_SYNC_RECEIVED = 0x2,
+  SCHEDULING_CONFLICTS_OR_LIMITED_RESOURCES = 0x3,
+  UNSPECIFIED = 0xF,
+}
+
+struct StepMode {
+  mode_type : 2,
+  _reserved_ : 5,
+  aborted : 1,
 }
 
 struct RasSubeventHeader {
@@ -23,6 +45,8 @@ struct RasSubeventHeader {
   frequency_compensation : 16,
   ranging_done_status : RangingDoneStatus,
   subevent_done_status : SubeventDoneStatus,
+  ranging_abort_reason : RangingAbortReason,
+  subevent_abort_reason : SubeventAbortReason,
   reference_power_level : 8,
   num_steps_reported : 8,
 }
@@ -33,7 +57,7 @@ packet RasSubevent {
 }
 
 struct RangingHeader {
-  ranging_counter : 4,
+  ranging_counter : 12,
   configuration_id : 4,
   selected_tx_power : 8,
   antenna_paths_mask : 4,
@@ -47,9 +71,13 @@ struct SegmentationHeader {
   rolling_segment_counter: 6,
 }
 
-packet OnDemandRangingData {
+packet FirstRangingDataSegment {
   segmentation_header : SegmentationHeader,
-  ranging_counter : 16,
   ranging_header : RangingHeader,
-  ras_subevents : 8[],
+  data : 8[],
+}
+
+packet RangingDataSegment {
+  segmentation_header : SegmentationHeader,
+  data : 8[],
 }
