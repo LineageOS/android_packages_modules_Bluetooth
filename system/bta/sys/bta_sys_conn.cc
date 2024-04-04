@@ -64,19 +64,6 @@ void bta_sys_rm_register(tBTA_SYS_CONN_CBACK* p_cback) {
 void bta_sys_role_chg_register(tBTA_SYS_ROLE_SWITCH_CBACK* p_cback) {
   bta_sys_cb.p_role_cb = p_cback;
 }
-/*******************************************************************************
- *
- * Function         bta_sys_ssr_cfg_register
- *
- * Description      Called by BTA DM to register SSR configuration callback
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_sys_ssr_cfg_register(tBTA_SYS_SSR_CFG_CBACK* p_cback) {
-  bta_sys_cb.p_ssr_cb = p_cback;
-}
 
 /*******************************************************************************
  *

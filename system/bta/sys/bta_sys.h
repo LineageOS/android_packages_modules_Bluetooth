@@ -264,7 +264,6 @@ void bta_sys_idle(tBTA_SYS_ID id, uint8_t app_id, const RawAddress& peer_addr);
 void bta_sys_busy(tBTA_SYS_ID id, uint8_t app_id, const RawAddress& peer_addr);
 void bta_sys_reset_sniff(uint8_t id, uint8_t app_id,
                          const RawAddress& peer_addr);
-void bta_sys_ssr_cfg_register(tBTA_SYS_SSR_CFG_CBACK* p_cback);
 
 void bta_sys_role_chg_register(tBTA_SYS_ROLE_SWITCH_CBACK* p_cback);
 void bta_sys_notify_role_chg(const RawAddress& peer_addr, tHCI_ROLE new_role,

@@ -97,9 +97,6 @@ void bta_sys_sco_use(tBTA_SYS_ID /* id */, uint8_t /* app_id */,
                      const RawAddress& /* peer_addr */) {
   inc_func_call_count(__func__);
 }
-void bta_sys_ssr_cfg_register(tBTA_SYS_SSR_CFG_CBACK* /* p_cback */) {
-  inc_func_call_count(__func__);
-}
 void bta_sys_eir_register(tBTA_SYS_EIR_CBACK* /* p_cback */) {
   inc_func_call_count(__func__);
 }
