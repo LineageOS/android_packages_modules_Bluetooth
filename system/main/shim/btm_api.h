@@ -382,18 +382,6 @@ void BTM_BleAdvFilterParamSetup(
     std::unique_ptr<btgatt_filt_param_setup_t> p_filt_params,
     tBTM_BLE_PF_PARAM_CB cb);
 
-/*******************************************************************************
- *
- * Function          BTM_BleMaxMultiAdvInstanceCount
- *
- * Description      Returns the maximum number of multi adv instances supported
- *                  by the controller.
- *
- * Returns          Max multi adv instance count
- *
- ******************************************************************************/
-uint8_t BTM_BleMaxMultiAdvInstanceCount();
-
 void BTM_reset_complete();
 
 /*******************************************************************************

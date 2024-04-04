@@ -980,22 +980,6 @@ bool BTM_BleConfigPrivacy(bool privacy_mode) {
 
 /*******************************************************************************
  *
- * Function          BTM_BleMaxMultiAdvInstanceCount
- *
- * Description        Returns max number of multi adv instances supported by
- *                  controller
- *
- * Returns          Max multi adv instance count
- *
- ******************************************************************************/
-uint8_t BTM_BleMaxMultiAdvInstanceCount(void) {
-  return btm_cb.cmn_ble_vsc_cb.adv_inst_max < BTM_BLE_MULTI_ADV_MAX
-             ? btm_cb.cmn_ble_vsc_cb.adv_inst_max
-             : BTM_BLE_MULTI_ADV_MAX;
-}
-
-/*******************************************************************************
- *
  * Function         BTM_BleLocalPrivacyEnabled
  *
  * Description        Checks if local device supports private address

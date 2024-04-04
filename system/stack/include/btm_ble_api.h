@@ -267,18 +267,6 @@ bool BTM_ReadConnectedTransportAddress(RawAddress* remote_bda,
 
 /*******************************************************************************
  *
- * Function          BTM_BleMaxMultiAdvInstanceCount
- *
- * Description      Returns the maximum number of multi adv instances supported
- *                  by the controller.
- *
- * Returns          Max multi adv instance count
- *
- ******************************************************************************/
-uint8_t BTM_BleMaxMultiAdvInstanceCount();
-
-/*******************************************************************************
- *
  * Function         BTM_BleReceiverTest
  *
  * Description      This function is called to start the LE Receiver test

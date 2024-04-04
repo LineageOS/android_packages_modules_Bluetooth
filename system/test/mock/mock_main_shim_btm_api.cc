@@ -114,10 +114,6 @@ uint16_t bluetooth::shim::BTM_GetHCIConnHandle(
   inc_func_call_count(__func__);
   return 0;
 }
-uint8_t bluetooth::shim::BTM_BleMaxMultiAdvInstanceCount() {
-  inc_func_call_count(__func__);
-  return 0;
-}
 void bluetooth::shim::BTM_AddEirService(uint32_t* /* p_eir_uuid */,
                                         uint16_t /* uuid16 */) {
   inc_func_call_count(__func__);
