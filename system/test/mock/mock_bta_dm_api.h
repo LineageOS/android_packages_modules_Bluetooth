@@ -567,21 +567,6 @@ struct BTA_EnableTestMode {
 };
 extern struct BTA_EnableTestMode BTA_EnableTestMode;
 
-// Name: BTA_GetEirService
-// Params: const uint8_t* p_eir, size_t eir_len, tBTA_SERVICE_MASK* p_services
-// Return: void
-struct BTA_GetEirService {
-  std::function<void(const uint8_t* p_eir, size_t eir_len,
-                     tBTA_SERVICE_MASK* p_services)>
-      body{[](const uint8_t* /* p_eir */, size_t /* eir_len */,
-              tBTA_SERVICE_MASK* /* p_services */) {}};
-  void operator()(const uint8_t* p_eir, size_t eir_len,
-                  tBTA_SERVICE_MASK* p_services) {
-    body(p_eir, eir_len, p_services);
-  };
-};
-extern struct BTA_GetEirService BTA_GetEirService;
-
 // Name: BTA_VendorInit
 // Params: void
 // Return: void
