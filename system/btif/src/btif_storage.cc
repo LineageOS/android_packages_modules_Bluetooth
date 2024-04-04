@@ -1474,12 +1474,6 @@ bool btif_storage_is_restricted_device(const RawAddress* remote_bd_addr) {
                              BTIF_STORAGE_KEY_RESTRICTED, &val);
 }
 
-int btif_storage_get_num_bonded_devices(void) {
-  btif_bonded_devices_t bonded_devices;
-  btif_in_fetch_bonded_devices(&bonded_devices, 0);
-  return bonded_devices.num_devices;
-}
-
 // Get the name of a device from btif for interop database matching.
 bool btif_storage_get_stored_remote_name(const RawAddress& bd_addr,
                                          char* name) {

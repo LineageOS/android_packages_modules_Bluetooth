@@ -53,7 +53,6 @@ struct btif_storage_get_ble_local_key btif_storage_get_ble_local_key;
 struct btif_storage_get_gatt_cl_db_hash btif_storage_get_gatt_cl_db_hash;
 struct btif_storage_get_gatt_cl_supp_feat btif_storage_get_gatt_cl_supp_feat;
 struct btif_storage_get_local_io_caps btif_storage_get_local_io_caps;
-struct btif_storage_get_num_bonded_devices btif_storage_get_num_bonded_devices;
 struct btif_storage_get_remote_addr_type btif_storage_get_remote_addr_type;
 struct btif_storage_get_remote_addr_type2 btif_storage_get_remote_addr_type2;
 struct btif_storage_get_remote_device_property
@@ -108,7 +107,6 @@ bt_status_t btif_storage_get_ble_local_key::return_value = BT_STATUS_SUCCESS;
 Octet16 btif_storage_get_gatt_cl_db_hash::return_value = {};
 uint8_t btif_storage_get_gatt_cl_supp_feat::return_value = 0;
 tBTM_IO_CAP btif_storage_get_local_io_caps::return_value = 0;
-int btif_storage_get_num_bonded_devices::return_value = 0;
 bt_status_t btif_storage_get_remote_addr_type::return_value = BT_STATUS_SUCCESS;
 bool btif_storage_get_remote_addr_type2::return_value = false;
 bt_status_t btif_storage_get_remote_device_property::return_value =
@@ -221,10 +219,6 @@ uint8_t btif_storage_get_gatt_cl_supp_feat(const RawAddress& bd_addr) {
 tBTM_IO_CAP btif_storage_get_local_io_caps() {
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_storage_get_local_io_caps();
-}
-int btif_storage_get_num_bonded_devices(void) {
-  inc_func_call_count(__func__);
-  return test::mock::btif_storage::btif_storage_get_num_bonded_devices();
 }
 bt_status_t btif_storage_get_remote_addr_type(const RawAddress* remote_bd_addr,
                                               tBLE_ADDR_TYPE* addr_type) {

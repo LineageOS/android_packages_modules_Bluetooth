@@ -271,17 +271,6 @@ struct btif_storage_get_local_io_caps {
 };
 extern struct btif_storage_get_local_io_caps btif_storage_get_local_io_caps;
 
-// Name: btif_storage_get_num_bonded_devices
-// Params: void
-// Return: int
-struct btif_storage_get_num_bonded_devices {
-  static int return_value;
-  std::function<int(void)> body{[](void) { return return_value; }};
-  int operator()(void) { return body(); };
-};
-extern struct btif_storage_get_num_bonded_devices
-    btif_storage_get_num_bonded_devices;
-
 // Name: btif_storage_get_remote_addr_type
 // Params: const RawAddress* remote_bd_addr, tBLE_ADDR_TYPE addr_type
 // Return: bt_status_t
