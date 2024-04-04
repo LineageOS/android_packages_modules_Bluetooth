@@ -617,7 +617,6 @@ void gatt_sr_update_cback_cnt(tGATT_TCB& p_tcb, uint16_t cid, tGATT_IF gatt_if,
 void gatt_sr_update_prep_cnt(tGATT_TCB& tcb, tGATT_IF gatt_if, bool is_inc,
                              bool is_reset_first);
 
-uint8_t gatt_num_clcb_by_bd_addr(const RawAddress& bda);
 tGATT_TCB* gatt_find_tcb_by_cid(uint16_t lcid);
 tGATT_TCB* gatt_allocate_tcb_by_bdaddr(const RawAddress& bda,
                                        tBT_TRANSPORT transport);
