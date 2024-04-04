@@ -531,22 +531,6 @@ void bta_av_set_scb_sst_init(tBTA_AV_SCB* p_scb) {
   p_scb->state = next_state;
 }
 
-/*******************************************************************************
- *
- * Function         bta_av_set_scb_sst_incoming
- *
- * Description      Set SST state to incoming.
- *                  Use this function to change SST outside of state machine.
- *
- * Returns          None
- *
- ******************************************************************************/
-void bta_av_set_scb_sst_incoming(tBTA_AV_SCB* p_scb) {
-  if (p_scb) {
-    p_scb->state = BTA_AV_INCOMING_SST;
-  }
-}
-
 /*****************************************************************************
  *  Debug Functions
  ****************************************************************************/
