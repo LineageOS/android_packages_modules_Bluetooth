@@ -104,18 +104,6 @@ tBTM_STATUS btm_ble_start_inquiry(uint8_t /* duration */) {
   inc_func_call_count(__func__);
   return BTM_SUCCESS;
 }
-uint16_t BTM_BleReadConnectability() {
-  inc_func_call_count(__func__);
-  return 0;
-}
-uint16_t BTM_BleReadDiscoverability() {
-  inc_func_call_count(__func__);
-  return 0;
-}
-uint8_t BTM_BleMaxMultiAdvInstanceCount(void) {
-  inc_func_call_count(__func__);
-  return 0;
-}
 void BTM_BleGetDynamicAudioBuffer(
     tBTM_BT_DYNAMIC_AUDIO_BUFFER_CB /* p_dynamic_audio_buffer_cb*/[]) {
   inc_func_call_count(__func__);
@@ -132,7 +120,6 @@ void BTM_BleSetScanParams(uint32_t /* scan_interval */,
 void btm_ble_decrement_link_topology_mask(uint8_t /* link_role */) {
   inc_func_call_count(__func__);
 }
-void btm_ble_dir_adv_tout(void) { inc_func_call_count(__func__); }
 void btm_ble_free() { inc_func_call_count(__func__); }
 void btm_ble_increment_link_topology_mask(uint8_t /* link_role */) {
   inc_func_call_count(__func__);
@@ -197,13 +184,5 @@ void btm_send_hci_set_scan_params(uint8_t /* scan_type */,
                                   uint16_t /* scan_win */,
                                   tBLE_ADDR_TYPE /* addr_type_own */,
                                   uint8_t /* scan_filter_policy */) {
-  inc_func_call_count(__func__);
-}
-void btm_ble_periodic_adv_sync_tx_rcvd(const uint8_t* /* p */,
-                                       uint16_t /* param_len */) {
-  inc_func_call_count(__func__);
-}
-void btm_ble_biginfo_adv_report_rcvd(const uint8_t* /* p */,
-                                     uint16_t /* param_len */) {
   inc_func_call_count(__func__);
 }

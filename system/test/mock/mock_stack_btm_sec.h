@@ -45,19 +45,6 @@ namespace test {
 namespace mock {
 namespace stack_btm_sec {
 
-// Shared state between mocked functions and tests
-// Name: BTM_BothEndsSupportSecureConnections
-// Params: const RawAddress& bd_addr
-// Return: bool
-struct BTM_BothEndsSupportSecureConnections {
-  static bool return_value;
-  std::function<bool(const RawAddress& bd_addr)> body{
-      [](const RawAddress& /* bd_addr */) { return return_value; }};
-  bool operator()(const RawAddress& bd_addr) { return body(bd_addr); };
-};
-extern struct BTM_BothEndsSupportSecureConnections
-    BTM_BothEndsSupportSecureConnections;
-
 // Name: BTM_CanReadDiscoverableCharacteristics
 // Params: const RawAddress& bd_addr
 // Return: bool
@@ -81,19 +68,6 @@ struct BTM_ConfirmReqReply {
   };
 };
 extern struct BTM_ConfirmReqReply BTM_ConfirmReqReply;
-
-// Name: BTM_GetClockOffset
-// Params: const RawAddress& remote_bda
-// Return: uint16_t
-struct BTM_GetClockOffset {
-  static uint16_t return_value;
-  std::function<uint16_t(const RawAddress& remote_bda)> body{
-      [](const RawAddress& /* remote_bda */) { return return_value; }};
-  uint16_t operator()(const RawAddress& remote_bda) {
-    return body(remote_bda);
-  };
-};
-extern struct BTM_GetClockOffset BTM_GetClockOffset;
 
 // Name: BTM_GetPeerDeviceTypeFromFeatures
 // Params: const RawAddress& bd_addr

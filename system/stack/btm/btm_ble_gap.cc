@@ -980,22 +980,6 @@ bool BTM_BleConfigPrivacy(bool privacy_mode) {
 
 /*******************************************************************************
  *
- * Function          BTM_BleMaxMultiAdvInstanceCount
- *
- * Description        Returns max number of multi adv instances supported by
- *                  controller
- *
- * Returns          Max multi adv instance count
- *
- ******************************************************************************/
-uint8_t BTM_BleMaxMultiAdvInstanceCount(void) {
-  return btm_cb.cmn_ble_vsc_cb.adv_inst_max < BTM_BLE_MULTI_ADV_MAX
-             ? btm_cb.cmn_ble_vsc_cb.adv_inst_max
-             : BTM_BLE_MULTI_ADV_MAX;
-}
-
-/*******************************************************************************
- *
  * Function         BTM_BleLocalPrivacyEnabled
  *
  * Description        Checks if local device supports private address
@@ -1203,17 +1187,6 @@ static int btm_ble_get_psync_index(uint8_t adv_sid, RawAddress addr) {
   return i;
 }
 
-static int btm_ble_get_sync_transfer_index(uint16_t conn_handle) {
-  int i;
-  for (i = 0; i < MAX_SYNC_TRANSACTION; i++) {
-    if (btm_ble_pa_sync_cb.sync_transfer[i].conn_handle == conn_handle) {
-      log::debug("found index at {}", i);
-      return i;
-    }
-  }
-  return i;
-}
-
 /*******************************************************************************
  *
  * Function         btm_ble_periodic_adv_sync_established
@@ -1333,128 +1306,6 @@ void btm_ble_periodic_adv_sync_lost(uint16_t sync_handle) {
 
 /*******************************************************************************
  *
- * Function        btm_ble_periodic_syc_transfer_cmd_cmpl
- *
- * Description     PAST complete callback
- *
- ******************************************************************************/
-void btm_ble_periodic_syc_transfer_cmd_cmpl(uint8_t status,
-                                            uint16_t conn_handle) {
-  log::debug("[PAST]: status = {}, conn_handle ={}", status, conn_handle);
-
-  int index = btm_ble_get_sync_transfer_index(conn_handle);
-  if (index == MAX_SYNC_TRANSACTION) {
-    log::error("[PAST]:Invalid, conn_handle {} not found in DB", conn_handle);
-    return;
-  }
-
-  tBTM_BLE_PERIODIC_SYNC_TRANSFER* p_sync_transfer =
-      &btm_ble_pa_sync_cb.sync_transfer[index];
-  p_sync_transfer->cb.Run(status, p_sync_transfer->addr);
-
-  p_sync_transfer->in_use = false;
-  p_sync_transfer->conn_handle = -1;
-  p_sync_transfer->addr = RawAddress::kEmpty;
-}
-
-void btm_ble_periodic_syc_transfer_param_cmpl(uint8_t status) {
-  log::debug("[PAST]: status = {}", status);
-}
-
-/*******************************************************************************
- *
- * Function        btm_ble_biginfo_adv_report_rcvd
- *
- * Description     Host receives this event when synced PA has BIGInfo
- *
- ******************************************************************************/
-void btm_ble_biginfo_adv_report_rcvd(const uint8_t* p, uint16_t param_len) {
-  log::debug("[PAST]: BIGINFO report received, len={}", param_len);
-  uint16_t sync_handle, iso_interval, max_pdu, max_sdu;
-  uint8_t num_bises, nse, bn, pto, irc, phy, framing, encryption;
-  uint32_t sdu_interval;
-
-  // 2 bytes for sync handle, 1 byte for num_bises, 1 byte for nse, 2 bytes for
-  // iso_interval, 1 byte each for bn, pto, irc, 2 bytes for max_pdu, 3 bytes
-  // for sdu_interval, 2 bytes for max_sdu, 1 byte each for phy, framing,
-  // encryption
-  if (param_len < 19) {
-    log::error("Insufficient data");
-    return;
-  }
-
-  STREAM_TO_UINT16(sync_handle, p);
-  STREAM_TO_UINT8(num_bises, p);
-  STREAM_TO_UINT8(nse, p);
-  STREAM_TO_UINT16(iso_interval, p);
-  STREAM_TO_UINT8(bn, p);
-  STREAM_TO_UINT8(pto, p);
-  STREAM_TO_UINT8(irc, p);
-  STREAM_TO_UINT16(max_pdu, p);
-  STREAM_TO_UINT24(sdu_interval, p);
-  STREAM_TO_UINT16(max_sdu, p);
-  STREAM_TO_UINT8(phy, p);
-  STREAM_TO_UINT8(framing, p);
-  STREAM_TO_UINT8(encryption, p);
-  log::debug(
-      "[PAST]:sync_handle {}, num_bises = {}, nse = {},iso_interval = {}, bn = "
-      "{}, pto = {}, irc = {}, max_pdu = {} sdu_interval = {}, max_sdu = {}, "
-      "phy = {}, framing = {}, encryption  = {}",
-      sync_handle, num_bises, nse, iso_interval, bn, pto, irc, max_pdu,
-      sdu_interval, max_sdu, phy, framing, encryption);
-
-  int index = btm_ble_get_psync_index_from_handle(sync_handle);
-  if (index == MAX_SYNC_TRANSACTION) {
-    log::error("[PSync]: index not found for handle {}", sync_handle);
-    return;
-  }
-  tBTM_BLE_PERIODIC_SYNC* ps = &btm_ble_pa_sync_cb.p_sync[index];
-  log::debug("[PSync]: invoking callback");
-  ps->biginfo_report_cb.Run(sync_handle, encryption ? true : false);
-}
-
-/*******************************************************************************
- *
- * Function        btm_ble_periodic_adv_sync_tx_rcvd
- *
- * Description     Host receives this event when the controller receives sync
- *                 info of PA from the connected remote device and successfully
- *                 synced to PA associated with sync handle
- *
- ******************************************************************************/
-void btm_ble_periodic_adv_sync_tx_rcvd(const uint8_t* p, uint16_t param_len) {
-  log::debug("[PAST]: PAST received, param_len={}", param_len);
-  if (param_len < 19) {
-    log::error("Insufficient data");
-    return;
-  }
-  uint8_t status, adv_sid, address_type, adv_phy, clk_acc;
-  uint16_t pa_int, sync_handle, service_data, conn_handle;
-  RawAddress addr;
-  STREAM_TO_UINT8(status, p);
-  STREAM_TO_UINT16(conn_handle, p);
-  STREAM_TO_UINT16(service_data, p);
-  STREAM_TO_UINT16(sync_handle, p);
-  STREAM_TO_UINT8(adv_sid, p);
-  STREAM_TO_UINT8(address_type, p);
-  STREAM_TO_BDADDR(addr, p);
-  STREAM_TO_UINT8(adv_phy, p);
-  STREAM_TO_UINT16(pa_int, p);
-  STREAM_TO_UINT8(clk_acc, p);
-  log::verbose(
-      "[PAST]: status = {}, conn_handle = {}, service_data = {}, sync_handle = "
-      "{}, adv_sid = {}, address_type = {}, addr = {}, adv_phy = {}, pa_int = "
-      "{}, clk_acc = {}",
-      status, conn_handle, service_data, sync_handle, adv_sid, address_type,
-      ADDRESS_TO_LOGGABLE_CSTR(addr), adv_phy, pa_int, clk_acc);
-  if (syncRcvdCbRegistered) {
-    sync_rcvd_cb.Run(status, sync_handle, adv_sid, address_type, addr, adv_phy,
-                     pa_int);
-  }
-}
-
-/*******************************************************************************
- *
  * Function         btm_set_conn_mode_adv_init_addr
  *
  * Description      set initator address type and local address type based on
@@ -1548,39 +1399,6 @@ static uint8_t btm_set_conn_mode_adv_init_addr(
   /* if no privacy,do not set any peer address,*/
   /* local address type go by global privacy setting */
   return evt_type;
-}
-
-/*******************************************************************************
- *
- * Function         BTM__BLEReadDiscoverability
- *
- * Description      This function is called to read the current LE
- *                  discoverability mode of the device.
- *
- * Returns          BTM_BLE_NON_DISCOVERABLE ,BTM_BLE_LIMITED_DISCOVERABLE or
- *                     BTM_BLE_GENRAL_DISCOVERABLE
- *
- ******************************************************************************/
-uint16_t BTM_BleReadDiscoverability() {
-  log::verbose("");
-
-  return (btm_cb.ble_ctr_cb.inq_var.discoverable_mode);
-}
-
-/*******************************************************************************
- *
- * Function         BTM__BLEReadConnectability
- *
- * Description      This function is called to read the current LE
- *                  connectability mode of the device.
- *
- * Returns          BTM_BLE_NON_CONNECTABLE or BTM_BLE_CONNECTABLE
- *
- ******************************************************************************/
-uint16_t BTM_BleReadConnectability() {
-  log::verbose("");
-
-  return (btm_cb.ble_ctr_cb.inq_var.connectable_mode);
 }
 
 /*******************************************************************************
@@ -3058,22 +2876,6 @@ void btm_ble_write_adv_enable_complete(uint8_t* p, uint16_t evt_len) {
     /* toggle back the adv mode */
     btm_cb.ble_ctr_cb.inq_var.adv_mode = !btm_cb.ble_ctr_cb.inq_var.adv_mode;
   }
-}
-
-/*******************************************************************************
- *
- * Function         btm_ble_dir_adv_tout
- *
- * Description      when directed adv time out
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_ble_dir_adv_tout(void) {
-  btm_cb.ble_ctr_cb.inq_var.adv_mode = BTM_BLE_ADV_DISABLE;
-
-  /* make device fall back into undirected adv mode by default */
-  btm_cb.ble_ctr_cb.inq_var.directed_conn = BTM_BLE_ADV_IND_EVT;
 }
 
 /*******************************************************************************

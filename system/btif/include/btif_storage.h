@@ -353,8 +353,6 @@ void btif_storage_set_leaudio_has_acceptlist(const RawAddress& address,
  ******************************************************************************/
 bool btif_storage_is_restricted_device(const RawAddress* remote_bd_addr);
 
-int btif_storage_get_num_bonded_devices(void);
-
 bt_status_t btif_storage_add_ble_bonding_key(RawAddress* remote_bd_addr,
                                              const uint8_t* key,
                                              uint8_t key_type,
@@ -368,7 +366,6 @@ bt_status_t btif_storage_add_ble_local_key(const Octet16& key,
                                            uint8_t key_type);
 bt_status_t btif_storage_remove_ble_bonding_keys(
     const RawAddress* remote_bd_addr);
-bt_status_t btif_storage_remove_ble_local_keys(void);
 bt_status_t btif_storage_get_ble_local_key(uint8_t key_type,
                                            Octet16* key_value);
 
@@ -377,15 +374,6 @@ bt_status_t btif_storage_get_remote_addr_type(const RawAddress* remote_bd_addr,
 
 bt_status_t btif_storage_set_remote_addr_type(const RawAddress* remote_bd_addr,
                                               tBLE_ADDR_TYPE addr_type);
-
-bool btif_storage_get_remote_addr_type(const RawAddress& remote_bd_addr,
-                                       tBLE_ADDR_TYPE& addr_type);
-void btif_storage_set_remote_addr_type(const RawAddress& remote_bd_addr,
-                                       const tBLE_ADDR_TYPE& addr_type);
-bool btif_storage_get_remote_device_type(const RawAddress& remote_bd_addr,
-                                         tBT_DEVICE_TYPE& device_type);
-void btif_storage_set_remote_device_type(const RawAddress& remote_bd_addr,
-                                         const tBT_DEVICE_TYPE& device_type);
 
 void btif_storage_add_groups(const RawAddress& addr);
 void btif_storage_load_bonded_groups(void);

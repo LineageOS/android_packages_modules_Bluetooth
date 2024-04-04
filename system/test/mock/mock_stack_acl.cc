@@ -101,7 +101,6 @@ struct BTM_acl_after_controller_started BTM_acl_after_controller_started;
 struct BTM_block_role_switch_for BTM_block_role_switch_for;
 struct BTM_block_sniff_mode_for BTM_block_sniff_mode_for;
 struct btm_connection_request btm_connection_request;
-struct BTM_default_block_role_switch BTM_default_block_role_switch;
 struct BTM_default_unblock_role_switch BTM_default_unblock_role_switch;
 struct BTM_unblock_role_switch_for BTM_unblock_role_switch_for;
 struct BTM_unblock_sniff_mode_for BTM_unblock_sniff_mode_for;
@@ -424,10 +423,6 @@ void BTM_block_role_switch_for(const RawAddress& peer_addr) {
 void BTM_block_sniff_mode_for(const RawAddress& peer_addr) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::BTM_block_sniff_mode_for(peer_addr);
-}
-void BTM_default_block_role_switch() {
-  inc_func_call_count(__func__);
-  test::mock::stack_acl::BTM_default_block_role_switch();
 }
 void BTM_default_unblock_role_switch() {
   inc_func_call_count(__func__);
