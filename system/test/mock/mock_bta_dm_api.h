@@ -321,21 +321,6 @@ struct BTA_DmClearFilterAcceptList {
 };
 extern struct BTA_DmClearFilterAcceptList BTA_DmClearFilterAcceptList;
 
-// Name: BTA_DmCloseACL
-// Params: const RawAddress& bd_addr, bool remove_dev, tBT_TRANSPORT transport
-// Return: void
-struct BTA_DmCloseACL {
-  std::function<void(const RawAddress& bd_addr, bool remove_dev,
-                     tBT_TRANSPORT transport)>
-      body{[](const RawAddress& /* bd_addr */, bool /* remove_dev */,
-              tBT_TRANSPORT /* transport */) {}};
-  void operator()(const RawAddress& bd_addr, bool remove_dev,
-                  tBT_TRANSPORT transport) {
-    body(bd_addr, remove_dev, transport);
-  };
-};
-extern struct BTA_DmCloseACL BTA_DmCloseACL;
-
 // Name: BTA_DmConfirm
 // Params: const RawAddress& bd_addr, bool accept
 // Return: void

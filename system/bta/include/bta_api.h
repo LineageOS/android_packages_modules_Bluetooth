@@ -623,26 +623,6 @@ tBTA_STATUS BTA_DmSetLocalDiRecord(tSDP_DI_RECORD* p_device_info,
 
 /*******************************************************************************
  *
- *
- * Function         BTA_DmCloseACL
- *
- * Description      This function force to close an ACL connection and remove
- the
- *                  device from the security database list of known devices.
- *
- * Parameters:      bd_addr       - Address of the peer device
- *                  remove_dev    - remove device or not after link down
- *                  transport     - which transport to close
-
- *
- * Returns          void.
- *
- ******************************************************************************/
-void BTA_DmCloseACL(const RawAddress& bd_addr, bool remove_dev,
-                    tBT_TRANSPORT transport);
-
-/*******************************************************************************
- *
  * Function         BTA_DmSetBlePrefConnParams
  *
  * Description      This function is called to set the preferred connection

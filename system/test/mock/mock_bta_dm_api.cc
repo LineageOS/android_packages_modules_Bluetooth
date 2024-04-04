@@ -58,7 +58,6 @@ struct BTA_DmCheckLeAudioCapable BTA_DmCheckLeAudioCapable;
 struct BTA_DmClearEventFilter BTA_DmClearEventFilter;
 struct BTA_DmClearEventMask BTA_DmClearEventMask;
 struct BTA_DmClearFilterAcceptList BTA_DmClearFilterAcceptList;
-struct BTA_DmCloseACL BTA_DmCloseACL;
 struct BTA_DmConfirm BTA_DmConfirm;
 struct BTA_DmDisconnectAllAcls BTA_DmDisconnectAllAcls;
 struct BTA_DmDiscover BTA_DmDiscover;
@@ -207,11 +206,6 @@ void BTA_DmClearEventMask(void) {
 void BTA_DmClearFilterAcceptList(void) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_api::BTA_DmClearFilterAcceptList();
-}
-void BTA_DmCloseACL(const RawAddress& bd_addr, bool remove_dev,
-                    tBT_TRANSPORT transport) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmCloseACL(bd_addr, remove_dev, transport);
 }
 void BTA_DmConfirm(const RawAddress& bd_addr, bool accept) {
   inc_func_call_count(__func__);

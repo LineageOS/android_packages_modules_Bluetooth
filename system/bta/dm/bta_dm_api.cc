@@ -309,25 +309,6 @@ void BTA_DmBleRequestMaxTxDataLength(const RawAddress& remote_device) {
 
 /*******************************************************************************
  *
- * Function         BTA_DmCloseACL
- *
- * Description      This function force to close an ACL connection and remove
- *                  the device from the security database list of known devices.
- *
- * Parameters:      bd_addr       - Address of the peer device
- *                  remove_dev    - remove device or not after link down
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmCloseACL(const RawAddress& bd_addr, bool remove_dev,
-                    tBT_TRANSPORT transport) {
-  do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_close_acl, bd_addr,
-                                              remove_dev, transport));
-}
-
-/*******************************************************************************
- *
  * Function         BTA_DmBleScan
  *
  * Description      Start or stop the scan procedure.
