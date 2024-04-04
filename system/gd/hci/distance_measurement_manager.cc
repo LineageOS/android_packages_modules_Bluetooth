@@ -63,7 +63,7 @@ static constexpr uint32_t kMaxSubeventLen = 0x3d0900;         // 4s
 static constexpr uint8_t kToneAntennaConfigSelection = 0x07;  // 2x2
 static constexpr uint8_t kTxPwrDelta = 0x00;
 static constexpr uint8_t kProcedureDataBufferSize = 0x10;  // Buffer size of Procedure data
-static constexpr uint8_t kReportWithNoAbort = 0x00;
+static constexpr uint16_t kMtuForRasData = 507;            // 512 - 5
 
 struct DistanceMeasurementManager::impl {
   struct CsProcedureData {
@@ -85,13 +85,17 @@ struct DistanceMeasurementManager::impl {
         tone_quality_indicator_initiator.push_back(empty_vector);
         tone_quality_indicator_reflector.push_back(empty_vector);
       }
+      // RAS data
       segmentation_header_.first_segment_ = 1;
       segmentation_header_.last_segment_ = 0;
       segmentation_header_.rolling_segment_counter_ = 0;
       ranging_header_.ranging_counter_ = counter;
       ranging_header_.configuration_id_ = configuration_id;
       ranging_header_.selected_tx_power_ = selected_tx_power;
-      ranging_header_.antenna_paths_mask_ = 0x01;
+      ranging_header_.antenna_paths_mask_ = 0;
+      for (uint8_t i = 0; i < num_antenna_paths; i++) {
+        ranging_header_.antenna_paths_mask_ |= (1 << i);
+      }
       ranging_header_.pct_format_ = PctFormat::IQ;
     }
     // Procedure counter
@@ -120,7 +124,8 @@ struct DistanceMeasurementManager::impl {
     // RAS data
     SegmentationHeader segmentation_header_;
     RangingHeader ranging_header_;
-    std::vector<uint8_t> ras_subevents;  // raw data for multi_subevents;
+    std::vector<uint8_t> ras_raw_data_;  // raw data for multi_subevents;
+    uint16_t ras_raw_data_index_ = 0;
     RasSubeventHeader ras_subevent_header_;
     std::vector<uint8_t> ras_subevent_data_;
     uint8_t ras_subevent_counter_ = 0;
@@ -600,6 +605,7 @@ struct DistanceMeasurementManager::impl {
             cs_trackers_[connection_handle].address, METHOD_CS);
       }
     }
+    cs_delete_obsolete_data(event_view.GetConnectionHandle());
   }
 
   void on_cs_subevent(LeMetaEventView event) {
@@ -610,9 +616,10 @@ struct DistanceMeasurementManager::impl {
 
     // Common data for LE_CS_SUBEVENT_RESULT and LE_CS_SUBEVENT_RESULT_CONTINUE,
     uint16_t connection_handle = 0;
-    uint8_t abort_reason = kReportWithNoAbort;
     CsProcedureDoneStatus procedure_done_status;
     CsSubeventDoneStatus subevent_done_status;
+    ProcedureAbortReason procedure_abort_reason;
+    SubeventAbortReason subevent_abort_reason;
     std::vector<LeCsResultDataStructure> result_data_structures;
     if (event.GetSubeventCode() == SubeventCode::LE_CS_SUBEVENT_RESULT) {
       auto cs_event_result = LeCsSubeventResultView::Create(event);
@@ -621,9 +628,10 @@ struct DistanceMeasurementManager::impl {
         return;
       }
       connection_handle = cs_event_result.GetConnectionHandle();
-      abort_reason = cs_event_result.GetAbortReason();
       procedure_done_status = cs_event_result.GetProcedureDoneStatus();
       subevent_done_status = cs_event_result.GetSubeventDoneStatus();
+      procedure_abort_reason = cs_event_result.GetProcedureAbortReason();
+      subevent_abort_reason = cs_event_result.GetSubeventAbortReason();
       result_data_structures = cs_event_result.GetResultDataStructures();
       if (cs_trackers_.find(connection_handle) == cs_trackers_.end()) {
         log::warn("Can't find any tracker for {}", connection_handle);
@@ -638,20 +646,11 @@ struct DistanceMeasurementManager::impl {
         procedure_data->frequency_compensation.push_back(
             cs_event_result.GetFrequencyCompensation());
       }
-      uint16_t antenna_paths_mask = 0;
-      for (uint8_t i = 0; i < procedure_data->num_antenna_paths; i++) {
-        antenna_paths_mask |= (1 << i);
-      }
       // RAS
-      procedure_data->ranging_header_.antenna_paths_mask_ = antenna_paths_mask;
       log::debug("RAS Update subevent_header counter:{}", procedure_data->ras_subevent_counter_++);
       auto& ras_subevent_header = procedure_data->ras_subevent_header_;
       ras_subevent_header.start_acl_conn_event_ = cs_event_result.GetStartAclConnEvent();
       ras_subevent_header.frequency_compensation_ = cs_event_result.GetFrequencyCompensation();
-      ras_subevent_header.ranging_done_status_ =
-          static_cast<RangingDoneStatus>(cs_event_result.GetProcedureDoneStatus());
-      ras_subevent_header.subevent_done_status_ =
-          static_cast<SubeventDoneStatus>(cs_event_result.GetSubeventDoneStatus());
       ras_subevent_header.reference_power_level_ = cs_event_result.GetReferencePowerLevel();
       ras_subevent_header.num_steps_reported_ = 0;
     } else {
@@ -661,9 +660,10 @@ struct DistanceMeasurementManager::impl {
         return;
       }
       connection_handle = cs_event_result.GetConnectionHandle();
-      abort_reason = cs_event_result.GetAbortReason();
       procedure_done_status = cs_event_result.GetProcedureDoneStatus();
       subevent_done_status = cs_event_result.GetSubeventDoneStatus();
+      procedure_abort_reason = cs_event_result.GetProcedureAbortReason();
+      subevent_abort_reason = cs_event_result.GetSubeventAbortReason();
       result_data_structures = cs_event_result.GetResultDataStructures();
       if (cs_trackers_.find(connection_handle) == cs_trackers_.end()) {
         log::warn("Can't find any tracker for {}", connection_handle);
@@ -682,8 +682,10 @@ struct DistanceMeasurementManager::impl {
     if (procedure_done_status == CsProcedureDoneStatus::ABORTED ||
         subevent_done_status == CsSubeventDoneStatus::ABORTED) {
       log::warn(
-          "Received CS Subevent with abort reason: {:02x}, connection_handle:{}, counter:{}",
-          abort_reason,
+          "Received CS Subevent with procedure_abort_reason:{}, subevent_abort_reason:{}, "
+          "connection_handle:{}, counter:{}",
+          ProcedureAbortReasonText(procedure_abort_reason),
+          SubeventAbortReasonText(subevent_abort_reason),
           connection_handle,
           counter);
     }
@@ -694,10 +696,15 @@ struct DistanceMeasurementManager::impl {
     }
     procedure_data->ras_subevent_header_.num_steps_reported_ += result_data_structures.size();
 
-    if (abort_reason != kReportWithNoAbort) {
+    if (procedure_abort_reason != ProcedureAbortReason::NO_ABORT ||
+        subevent_abort_reason != SubeventAbortReason::NO_ABORT) {
       // Even the procedure is aborted, we should keep following process and
       // handle it when all corresponding remote data received.
       procedure_data->aborted = true;
+      procedure_data->ras_subevent_header_.ranging_abort_reason_ =
+          static_cast<RangingAbortReason>(procedure_abort_reason);
+      procedure_data->ras_subevent_header_.subevent_abort_reason_ =
+          static_cast<bluetooth::ras::SubeventAbortReason>(subevent_abort_reason);
     }
     parse_cs_result_data(
         result_data_structures, *procedure_data, cs_trackers_[connection_handle].role);
@@ -705,12 +712,21 @@ struct DistanceMeasurementManager::impl {
     procedure_data->local_status = procedure_done_status;
     check_cs_procedure_complete(procedure_data, connection_handle);
 
+    if (cs_trackers_[connection_handle].role == CsRole::INITIATOR) {
+      // Skip to send remote
+      return;
+    }
+
     // Send data to RAS server
     if (subevent_done_status != CsSubeventDoneStatus::PARTIAL_RESULTS) {
+      procedure_data->ras_subevent_header_.ranging_done_status_ =
+          static_cast<RangingDoneStatus>(procedure_done_status);
+      procedure_data->ras_subevent_header_.subevent_done_status_ =
+          static_cast<SubeventDoneStatus>(subevent_done_status);
       auto builder = RasSubeventBuilder::Create(
           procedure_data->ras_subevent_header_, procedure_data->ras_subevent_data_);
       auto subevent_raw = builder_to_bytes(std::move(builder));
-      append_vector(procedure_data->ras_subevents, subevent_raw);
+      append_vector(procedure_data->ras_raw_data_, subevent_raw);
       // erase buffer
       procedure_data->ras_subevent_data_.clear();
       send_on_demand_data(cs_trackers_[connection_handle].address, procedure_data);
@@ -718,26 +734,44 @@ struct DistanceMeasurementManager::impl {
   }
 
   void send_on_demand_data(Address address, CsProcedureData* procedure_data) {
-    if (procedure_data->local_status != CsProcedureDoneStatus::PARTIAL_RESULTS) {
+    // Check is last segment or not.
+    uint16_t unsent_data_size =
+        procedure_data->ras_raw_data_.size() - procedure_data->ras_raw_data_index_;
+    if (procedure_data->local_status != CsProcedureDoneStatus::PARTIAL_RESULTS &&
+        unsent_data_size <= kMtuForRasData) {
       procedure_data->segmentation_header_.last_segment_ = 1;
+    } else if (procedure_data->ras_raw_data_.size() < kMtuForRasData) {
+      log::info("waiting for more data, current size {}", procedure_data->ras_raw_data_.size());
+      return;
     }
-    auto builder = OnDemandRangingDataBuilder::Create(
-        procedure_data->segmentation_header_,
-        procedure_data->counter,
-        procedure_data->ranging_header_,
-        procedure_data->ras_subevents);
-    auto raw_data = builder_to_bytes(std::move(builder));
-    log::debug("counter: {}, size:{}", procedure_data->counter, (uint16_t)raw_data.size());
+
+    // Create raw data for segment_data;
+    uint16_t copy_size = unsent_data_size < kMtuForRasData ? unsent_data_size : kMtuForRasData;
+    auto copy_start = procedure_data->ras_raw_data_.begin() + procedure_data->ras_raw_data_index_;
+    auto copy_end = copy_start + copy_size;
+    std::vector<uint8_t> subevent_data(copy_start, copy_end);
+    procedure_data->ras_raw_data_index_ += copy_size;
+
+    auto builder =
+        RangingDataSegmentBuilder::Create(procedure_data->segmentation_header_, subevent_data);
+    auto segment_data = builder_to_bytes(std::move(builder));
+
+    log::debug("counter: {}, size:{}", procedure_data->counter, (uint16_t)segment_data.size());
     distance_measurement_callbacks_->OnRasFragmentReady(
         address,
         procedure_data->counter,
-        procedure_data->local_status != CsProcedureDoneStatus::PARTIAL_RESULTS,
-        raw_data);
+        procedure_data->segmentation_header_.last_segment_,
+        segment_data);
 
-    procedure_data->ras_subevents.clear();
     procedure_data->segmentation_header_.first_segment_ = 0;
     procedure_data->segmentation_header_.rolling_segment_counter_++;
     procedure_data->segmentation_header_.rolling_segment_counter_ %= 64;
+    if (procedure_data->segmentation_header_.last_segment_) {
+      // last segment sent, clear buffer
+      procedure_data->ras_raw_data_.clear();
+    } else if (unsent_data_size > kMtuForRasData) {
+      send_on_demand_data(address, procedure_data);
+    }
   }
 
   CsProcedureData* init_cs_procedure_data(
@@ -766,11 +800,24 @@ struct DistanceMeasurementManager::impl {
         cs_trackers_[connection_handle].config_id,
         cs_trackers_[connection_handle].selected_tx_power);
 
+    // Append ranging header raw data
+    std::vector<uint8_t> ranging_header_raw = {};
+    BitInserter bi(ranging_header_raw);
+    data_list.back().ranging_header_.Serialize(bi);
+    append_vector(data_list.back().ras_raw_data_, ranging_header_raw);
+
     if (data_list.size() > kProcedureDataBufferSize) {
       log::warn("buffer full, drop procedure data with counter: {}", data_list.front().counter);
       data_list.erase(data_list.begin());
     }
     return &data_list.back();
+  }
+
+  void cs_delete_obsolete_data(uint16_t connection_handle) {
+    std::vector<CsProcedureData>& data_list = cs_trackers_[connection_handle].procedure_data_list;
+    while (!data_list.empty()) {
+      data_list.erase(data_list.begin());
+    }
   }
 
   CsProcedureData* get_procedure_data(uint16_t connection_handle, uint16_t counter) {
