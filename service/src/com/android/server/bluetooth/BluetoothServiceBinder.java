@@ -284,11 +284,6 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
     }
 
     @Override
-    public boolean isBleAppPresent() {
-        return mBluetoothManagerService.isBleAppPresent();
-    }
-
-    @Override
     public boolean isHearingAidProfileSupported() {
         return mBluetoothManagerService.isHearingAidProfileSupported();
     }

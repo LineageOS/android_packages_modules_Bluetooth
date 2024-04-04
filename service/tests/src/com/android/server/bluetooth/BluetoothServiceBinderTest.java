@@ -329,14 +329,6 @@ public class BluetoothServiceBinderTest {
     }
 
     @Test
-    public void isBleAppPresent() {
-        // No permission needed for this call
-        mBinder.isBleAppPresent();
-        verify(mManagerService).isBleAppPresent();
-        verifyMock();
-    }
-
-    @Test
     public void isHearingAidProfileSupported() {
         // No permission needed for this call
         mBinder.isHearingAidProfileSupported();

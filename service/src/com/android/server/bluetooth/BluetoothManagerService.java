@@ -1065,7 +1065,7 @@ class BluetoothManagerService {
         mBleApps.clear();
     }
 
-    boolean isBleAppPresent() {
+    private boolean isBleAppPresent() {
         Log.d(TAG, "isBleAppPresent(): Number of BLE app registered: " + mBleApps.size());
         return mBleApps.size() > 0;
     }

@@ -55,8 +55,6 @@ interface IBluetoothManager
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     boolean disableBle(in AttributionSource attributionSource, IBinder b);
     @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
-    boolean isBleAppPresent();
-    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     boolean isHearingAidProfileSupported();
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
