@@ -32,7 +32,6 @@
 #include <string>
 #include <unordered_map>
 
-#include "btif_config_cache.h"
 #include "btif_keystore.h"
 #include "btif_metrics_logging.h"
 #include "common/address_obfuscator.h"
@@ -154,9 +153,6 @@ static void init_metric_id_allocator() {
 }
 
 static std::recursive_mutex config_lock;  // protects operations on |config|.
-
-// limited btif config cache capacity
-static BtifConfigCache btif_config_cache(TEMPORARY_SECTION_CAPACITY);
 
 // Module lifecycle functions
 

@@ -132,9 +132,6 @@
       "name": "net_test_btcore"
     },
     {
-      "name": "net_test_btif_config_cache"
-    },
-    {
       "name": "net_test_btif_hh"
     },
     {
@@ -293,9 +290,6 @@
     },
     {
       "name": "net_test_avrcp"
-    },
-    {
-      "name": "net_test_btif_config_cache"
     },
     {
       "name": "net_test_btpackets"
