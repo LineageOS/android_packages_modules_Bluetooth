@@ -80,7 +80,6 @@ struct btif_storage_set_remote_addr_type btif_storage_set_remote_addr_type;
 struct btif_storage_set_remote_addr_type2 btif_storage_set_remote_addr_type2;
 struct btif_storage_set_remote_device_property
     btif_storage_set_remote_device_property;
-struct btif_storage_set_remote_device_type btif_storage_set_remote_device_type;
 
 }  // namespace btif_storage
 }  // namespace mock
@@ -331,12 +330,6 @@ bt_status_t btif_storage_set_remote_device_property(
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_storage_set_remote_device_property(
       remote_bd_addr, property);
-}
-void btif_storage_set_remote_device_type(const RawAddress& remote_bd_addr,
-                                         const tBT_DEVICE_TYPE& device_type) {
-  inc_func_call_count(__func__);
-  test::mock::btif_storage::btif_storage_set_remote_device_type(remote_bd_addr,
-                                                                device_type);
 }
 // Mocked functions complete
 // END mockcify generation

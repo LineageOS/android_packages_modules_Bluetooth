@@ -1361,13 +1361,6 @@ void btif_storage_set_remote_addr_type(const RawAddress& remote_bd_addr,
   }
 }
 
-void btif_storage_set_remote_device_type(const RawAddress& remote_bd_addr,
-                                         const tBT_DEVICE_TYPE& device_type) {
-  if (!btif_config_set_int(remote_bd_addr.ToString(), BTIF_STORAGE_KEY_DEV_TYPE,
-                           static_cast<int>(device_type)))
-    log::error("Unable to set storage property");
-}
-
 bool btif_has_ble_keys(const std::string& bdstr) {
   return btif_config_exist(bdstr, BTIF_STORAGE_KEY_LE_KEY_PENC);
 }

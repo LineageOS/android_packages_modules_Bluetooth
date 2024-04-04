@@ -593,22 +593,6 @@ struct btif_storage_set_remote_device_property {
 extern struct btif_storage_set_remote_device_property
     btif_storage_set_remote_device_property;
 
-// Name: btif_storage_set_remote_device_type
-// Params: const RawAddress& remote_bd_addr, const tBT_DEVICE_TYPE& device_type
-// Return: void
-struct btif_storage_set_remote_device_type {
-  std::function<void(const RawAddress& remote_bd_addr,
-                     const tBT_DEVICE_TYPE& device_type)>
-      body{[](const RawAddress& /* remote_bd_addr */,
-              const tBT_DEVICE_TYPE& /* device_type */) {}};
-  void operator()(const RawAddress& remote_bd_addr,
-                  const tBT_DEVICE_TYPE& device_type) {
-    body(remote_bd_addr, device_type);
-  };
-};
-extern struct btif_storage_set_remote_device_type
-    btif_storage_set_remote_device_type;
-
 }  // namespace btif_storage
 }  // namespace mock
 }  // namespace test

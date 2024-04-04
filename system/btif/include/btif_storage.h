@@ -381,8 +381,6 @@ void btif_storage_set_remote_addr_type(const RawAddress& remote_bd_addr,
                                        const tBLE_ADDR_TYPE& addr_type);
 bool btif_storage_get_remote_device_type(const RawAddress& remote_bd_addr,
                                          tBT_DEVICE_TYPE& device_type);
-void btif_storage_set_remote_device_type(const RawAddress& remote_bd_addr,
-                                         const tBT_DEVICE_TYPE& device_type);
 
 void btif_storage_add_groups(const RawAddress& addr);
 void btif_storage_load_bonded_groups(void);
