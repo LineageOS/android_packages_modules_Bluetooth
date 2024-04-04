@@ -584,22 +584,6 @@ tBTA_STATUS BTA_DmGetCachedRemoteName(const RawAddress& remote_device,
 
 /*******************************************************************************
  *
- * Function         BTA_GetEirService
- *
- * Description      This function is called to get BTA service mask from EIR.
- *
- * Parameters       p_eir - pointer of EIR significant part
- *                  eir_len - EIR length
- *                  p_services - return the BTA service mask
- *
- * Returns          None
- *
- ******************************************************************************/
-void BTA_GetEirService(const uint8_t* p_eir, size_t eir_len,
-                       tBTA_SERVICE_MASK* p_services);
-
-/*******************************************************************************
- *
  * Function         BTA_DmGetConnectionState
  *
  * Description      Returns whether the remote device is currently connected.
@@ -620,26 +604,6 @@ bool BTA_DmGetConnectionState(const RawAddress& bd_addr);
  ******************************************************************************/
 tBTA_STATUS BTA_DmSetLocalDiRecord(tSDP_DI_RECORD* p_device_info,
                                    uint32_t* p_handle);
-
-/*******************************************************************************
- *
- *
- * Function         BTA_DmCloseACL
- *
- * Description      This function force to close an ACL connection and remove
- the
- *                  device from the security database list of known devices.
- *
- * Parameters:      bd_addr       - Address of the peer device
- *                  remove_dev    - remove device or not after link down
- *                  transport     - which transport to close
-
- *
- * Returns          void.
- *
- ******************************************************************************/
-void BTA_DmCloseACL(const RawAddress& bd_addr, bool remove_dev,
-                    tBT_TRANSPORT transport);
 
 /*******************************************************************************
  *
@@ -767,18 +731,6 @@ void BTA_DmBleRequestMaxTxDataLength(const RawAddress& remote_device);
  *
  ******************************************************************************/
 void BTA_DmBleGetEnergyInfo(tBTA_BLE_ENERGY_INFO_CBACK* p_cmpl_cback);
-
-/*******************************************************************************
- *
- * Function         BTA_BrcmInit
- *
- * Description      This function initializes Broadcom specific VS handler in
- *                  BTA
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_VendorInit(void);
 
 /*******************************************************************************
  *

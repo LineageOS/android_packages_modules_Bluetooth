@@ -554,42 +554,6 @@ void bta_dm_remove_device(const RawAddress& bd_addr) {
   }
 }
 
-/** This function forces to close the connection to a remote device and
- * optionaly remove the device from security database if required. */
-void bta_dm_close_acl(const RawAddress& bd_addr, bool remove_dev,
-                      tBT_TRANSPORT transport) {
-  uint8_t index;
-
-  log::verbose("bta_dm_close_acl");
-
-  if (BTM_IsAclConnectionUp(bd_addr, transport)) {
-    for (index = 0; index < bta_dm_cb.device_list.count; index++) {
-      if (bta_dm_cb.device_list.peer_device[index].peer_bdaddr == bd_addr)
-        break;
-    }
-    if (index != bta_dm_cb.device_list.count) {
-      if (remove_dev) {
-        log::info("Setting remove_dev_pending for {}",
-                  ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
-        bta_dm_cb.device_list.peer_device[index].remove_dev_pending = true;
-      }
-    } else {
-      log::error("unknown device, remove ACL failed");
-    }
-
-    /* Make sure device is not in acceptlist before we disconnect */
-    GATT_CancelConnect(0, bd_addr, false);
-
-    /* Disconnect the ACL link */
-    btm_remove_acl(bd_addr, transport);
-  }
-  /* if to remove the device from security database ? do it now */
-  else if (remove_dev) {
-    bta_dm_process_remove_device_no_callback(bd_addr);
-  }
-  /* otherwise, no action needed */
-}
-
 /*******************************************************************************
  *
  * Function         bta_dm_local_name_cback

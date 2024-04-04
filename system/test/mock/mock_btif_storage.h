@@ -271,17 +271,6 @@ struct btif_storage_get_local_io_caps {
 };
 extern struct btif_storage_get_local_io_caps btif_storage_get_local_io_caps;
 
-// Name: btif_storage_get_num_bonded_devices
-// Params: void
-// Return: int
-struct btif_storage_get_num_bonded_devices {
-  static int return_value;
-  std::function<int(void)> body{[](void) { return return_value; }};
-  int operator()(void) { return body(); };
-};
-extern struct btif_storage_get_num_bonded_devices
-    btif_storage_get_num_bonded_devices;
-
 // Name: btif_storage_get_remote_addr_type
 // Params: const RawAddress* remote_bd_addr, tBLE_ADDR_TYPE addr_type
 // Return: bt_status_t
@@ -301,22 +290,6 @@ struct btif_storage_get_remote_addr_type {
 extern struct btif_storage_get_remote_addr_type
     btif_storage_get_remote_addr_type;
 
-// Name: btif_storage_get_remote_addr_type2
-// Params: const RawAddress& remote_bd_addr, tBLE_ADDR_TYPE& addr_type
-// Return: bool
-struct btif_storage_get_remote_addr_type2 {
-  static bool return_value;
-  std::function<bool(const RawAddress& remote_bd_addr,
-                     tBLE_ADDR_TYPE& addr_type)>
-      body{[](const RawAddress& /* remote_bd_addr */,
-              tBLE_ADDR_TYPE& /* addr_type */) { return return_value; }};
-  bool operator()(const RawAddress& remote_bd_addr, tBLE_ADDR_TYPE& addr_type) {
-    return body(remote_bd_addr, addr_type);
-  };
-};
-extern struct btif_storage_get_remote_addr_type2
-    btif_storage_get_remote_addr_type2;
-
 // Name: btif_storage_get_remote_device_property
 // Params: const RawAddress* remote_bd_addr, bt_property_t* property
 // Return: bt_status_t
@@ -333,23 +306,6 @@ struct btif_storage_get_remote_device_property {
 };
 extern struct btif_storage_get_remote_device_property
     btif_storage_get_remote_device_property;
-
-// Name: btif_storage_get_remote_device_type
-// Params: const RawAddress& remote_bd_addr, tBT_DEVICE_TYPE& device_type
-// Return: bool
-struct btif_storage_get_remote_device_type {
-  static bool return_value;
-  std::function<bool(const RawAddress& remote_bd_addr,
-                     tBT_DEVICE_TYPE& device_type)>
-      body{[](const RawAddress& /* remote_bd_addr */,
-              tBT_DEVICE_TYPE& /* device_type */) { return return_value; }};
-  bool operator()(const RawAddress& remote_bd_addr,
-                  tBT_DEVICE_TYPE& device_type) {
-    return body(remote_bd_addr, device_type);
-  };
-};
-extern struct btif_storage_get_remote_device_type
-    btif_storage_get_remote_device_type;
 
 // Name: btif_storage_get_remote_prop
 // Params: RawAddress* remote_addr, bt_property_type_t type, void* buf, int
@@ -571,22 +527,6 @@ struct btif_storage_set_remote_addr_type {
 extern struct btif_storage_set_remote_addr_type
     btif_storage_set_remote_addr_type;
 
-// Name: btif_storage_set_remote_addr_type
-// Params: const RawAddress& remote_bd_addr, const tBLE_ADDR_TYPE& addr_type
-// Return: void
-struct btif_storage_set_remote_addr_type2 {
-  std::function<void(const RawAddress& remote_bd_addr,
-                     const tBLE_ADDR_TYPE& addr_type)>
-      body{[](const RawAddress& /* remote_bd_addr */,
-              const tBLE_ADDR_TYPE& /* addr_type */) {}};
-  void operator()(const RawAddress& remote_bd_addr,
-                  const tBLE_ADDR_TYPE& addr_type) {
-    body(remote_bd_addr, addr_type);
-  };
-};
-extern struct btif_storage_set_remote_addr_type2
-    btif_storage_set_remote_addr_type2;
-
 // Name: btif_storage_set_remote_device_property
 // Params: const RawAddress* remote_bd_addr, bt_property_t* property
 // Return: bt_status_t
@@ -603,22 +543,6 @@ struct btif_storage_set_remote_device_property {
 };
 extern struct btif_storage_set_remote_device_property
     btif_storage_set_remote_device_property;
-
-// Name: btif_storage_set_remote_device_type
-// Params: const RawAddress& remote_bd_addr, const tBT_DEVICE_TYPE& device_type
-// Return: void
-struct btif_storage_set_remote_device_type {
-  std::function<void(const RawAddress& remote_bd_addr,
-                     const tBT_DEVICE_TYPE& device_type)>
-      body{[](const RawAddress& /* remote_bd_addr */,
-              const tBT_DEVICE_TYPE& /* device_type */) {}};
-  void operator()(const RawAddress& remote_bd_addr,
-                  const tBT_DEVICE_TYPE& device_type) {
-    body(remote_bd_addr, device_type);
-  };
-};
-extern struct btif_storage_set_remote_device_type
-    btif_storage_set_remote_device_type;
 
 }  // namespace btif_storage
 }  // namespace mock

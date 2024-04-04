@@ -262,21 +262,6 @@ TEST_F(BtaInitializedTest,
       kRawAddress, BT_TRANSPORT_LE);
 }
 
-TEST_F(BtaInitializedTest,
-       bta_dm_disc_stop_service_discovery__BT_TRANSPORT_AUTO) {
-  bta_dm_disc_stop_service_discovery(kRawAddress, BT_TRANSPORT_AUTO);
-}
-
-TEST_F(BtaInitializedTest,
-       bta_dm_disc_stop_service_discovery__BT_TRANSPORT_BR_EDR) {
-  bta_dm_disc_stop_service_discovery(kRawAddress, BT_TRANSPORT_BR_EDR);
-}
-
-TEST_F(BtaInitializedTest,
-       bta_dm_disc_stop_service_discovery__BT_TRANSPORT_LE) {
-  bta_dm_disc_stop_service_discovery(kRawAddress, BT_TRANSPORT_LE);
-}
-
 TEST_F(BtaInitializedTest, init_bta_dm_search_cb__conn_id) {
   constexpr uint16_t kConnId = 123;
 
