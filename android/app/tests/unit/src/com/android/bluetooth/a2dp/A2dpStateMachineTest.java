@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.a2dp;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import static org.mockito.Mockito.*;
 
 import android.bluetooth.BluetoothA2dp;
@@ -38,9 +40,7 @@ import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.SilenceDeviceManager;
 
-import org.hamcrest.core.IsInstanceOf;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -146,8 +146,8 @@ public class A2dpStateMachineTest {
      */
     @Test
     public void testDefaultDisconnectedState() {
-        Assert.assertEquals(BluetoothProfile.STATE_DISCONNECTED,
-                mA2dpStateMachine.getConnectionState());
+        assertThat(mA2dpStateMachine.getConnectionState())
+                .isEqualTo(BluetoothProfile.STATE_DISCONNECTED);
     }
 
     /**
@@ -178,8 +178,8 @@ public class A2dpStateMachineTest {
         verify(mA2dpService, after(TIMEOUT_MS).never()).sendBroadcast(any(Intent.class),
                 anyString(), any(Bundle.class));
         // Check that we are in Disconnected state
-        Assert.assertThat(mA2dpStateMachine.getCurrentState(),
-                          IsInstanceOf.instanceOf(A2dpStateMachine.Disconnected.class));
+        assertThat(mA2dpStateMachine.getCurrentState())
+                .isInstanceOf(A2dpStateMachine.Disconnected.class);
     }
 
     /**
@@ -200,12 +200,12 @@ public class A2dpStateMachineTest {
         ArgumentCaptor<Intent> intentArgument1 = ArgumentCaptor.forClass(Intent.class);
         verify(mA2dpService, timeout(TIMEOUT_MS).times(1)).sendBroadcast(intentArgument1.capture(),
                 anyString(), any(Bundle.class));
-        Assert.assertEquals(BluetoothProfile.STATE_CONNECTING,
-                intentArgument1.getValue().getIntExtra(BluetoothProfile.EXTRA_STATE, -1));
+        assertThat(intentArgument1.getValue().getIntExtra(BluetoothProfile.EXTRA_STATE, -1))
+                .isEqualTo(BluetoothProfile.STATE_CONNECTING);
 
         // Check that we are in Connecting state
-        Assert.assertThat(mA2dpStateMachine.getCurrentState(),
-                          IsInstanceOf.instanceOf(A2dpStateMachine.Connecting.class));
+        assertThat(mA2dpStateMachine.getCurrentState())
+                .isInstanceOf(A2dpStateMachine.Connecting.class);
 
         // Send a message to trigger connection completed
         A2dpStackEvent connCompletedEvent =
@@ -215,20 +215,20 @@ public class A2dpStateMachineTest {
         mA2dpStateMachine.sendMessage(A2dpStateMachine.STACK_EVENT, connCompletedEvent);
 
         // Verify that the expected number of broadcasts are executed:
-        // - two calls to broadcastConnectionState(): Disconnected -> Conecting -> Connected
+        // - two calls to broadcastConnectionState(): Disconnected -> Connecting -> Connected
         // - one call to broadcastAudioState() when entering Connected state
         ArgumentCaptor<Intent> intentArgument2 = ArgumentCaptor.forClass(Intent.class);
         verify(mA2dpService, timeout(TIMEOUT_MS).times(3)).sendBroadcast(intentArgument2.capture(),
                 anyString(), any(Bundle.class));
         // Verify that the last broadcast was to change the A2DP playing state
         // to STATE_NOT_PLAYING
-        Assert.assertEquals(BluetoothA2dp.ACTION_PLAYING_STATE_CHANGED,
-                intentArgument2.getValue().getAction());
-        Assert.assertEquals(BluetoothA2dp.STATE_NOT_PLAYING,
-                intentArgument2.getValue().getIntExtra(BluetoothProfile.EXTRA_STATE, -1));
+        assertThat(intentArgument2.getValue().getAction())
+                .isEqualTo(BluetoothA2dp.ACTION_PLAYING_STATE_CHANGED);
+        assertThat(intentArgument2.getValue().getIntExtra(BluetoothProfile.EXTRA_STATE, -1))
+                .isEqualTo(BluetoothA2dp.STATE_NOT_PLAYING);
         // Check that we are in Connected state
-        Assert.assertThat(mA2dpStateMachine.getCurrentState(),
-                          IsInstanceOf.instanceOf(A2dpStateMachine.Connected.class));
+        assertThat(mA2dpStateMachine.getCurrentState())
+                .isInstanceOf(A2dpStateMachine.Connected.class);
     }
 
     /**
@@ -247,24 +247,24 @@ public class A2dpStateMachineTest {
         ArgumentCaptor<Intent> intentArgument1 = ArgumentCaptor.forClass(Intent.class);
         verify(mA2dpService, timeout(TIMEOUT_MS).times(1)).sendBroadcast(intentArgument1.capture(),
                 anyString(), any(Bundle.class));
-        Assert.assertEquals(BluetoothProfile.STATE_CONNECTING,
-                intentArgument1.getValue().getIntExtra(BluetoothProfile.EXTRA_STATE, -1));
+        assertThat(intentArgument1.getValue().getIntExtra(BluetoothProfile.EXTRA_STATE, -1))
+                .isEqualTo(BluetoothProfile.STATE_CONNECTING);
 
         // Check that we are in Connecting state
-        Assert.assertThat(mA2dpStateMachine.getCurrentState(),
-                IsInstanceOf.instanceOf(A2dpStateMachine.Connecting.class));
+        assertThat(mA2dpStateMachine.getCurrentState())
+                .isInstanceOf(A2dpStateMachine.Connecting.class);
 
         // Verify that one connection state broadcast is executed
         ArgumentCaptor<Intent> intentArgument2 = ArgumentCaptor.forClass(Intent.class);
         verify(mA2dpService, timeout(A2dpStateMachine.sConnectTimeoutMs * 2).times(
                 2)).sendBroadcast(intentArgument2.capture(), anyString(),
                 any(Bundle.class));
-        Assert.assertEquals(BluetoothProfile.STATE_DISCONNECTED,
-                intentArgument2.getValue().getIntExtra(BluetoothProfile.EXTRA_STATE, -1));
+        assertThat(intentArgument2.getValue().getIntExtra(BluetoothProfile.EXTRA_STATE, -1))
+                .isEqualTo(BluetoothProfile.STATE_DISCONNECTED);
 
         // Check that we are in Disconnected state
-        Assert.assertThat(mA2dpStateMachine.getCurrentState(),
-                          IsInstanceOf.instanceOf(A2dpStateMachine.Disconnected.class));
+        assertThat(mA2dpStateMachine.getCurrentState())
+                .isInstanceOf(A2dpStateMachine.Disconnected.class);
     }
 
     /**
@@ -287,24 +287,24 @@ public class A2dpStateMachineTest {
         ArgumentCaptor<Intent> intentArgument1 = ArgumentCaptor.forClass(Intent.class);
         verify(mA2dpService, timeout(TIMEOUT_MS).times(1)).sendBroadcast(intentArgument1.capture(),
                 anyString(), any(Bundle.class));
-        Assert.assertEquals(BluetoothProfile.STATE_CONNECTING,
-                intentArgument1.getValue().getIntExtra(BluetoothProfile.EXTRA_STATE, -1));
+        assertThat(intentArgument1.getValue().getIntExtra(BluetoothProfile.EXTRA_STATE, -1))
+                .isEqualTo(BluetoothProfile.STATE_CONNECTING);
 
         // Check that we are in Connecting state
-        Assert.assertThat(mA2dpStateMachine.getCurrentState(),
-                IsInstanceOf.instanceOf(A2dpStateMachine.Connecting.class));
+        assertThat(mA2dpStateMachine.getCurrentState())
+                .isInstanceOf(A2dpStateMachine.Connecting.class);
 
         // Verify that one connection state broadcast is executed
         ArgumentCaptor<Intent> intentArgument2 = ArgumentCaptor.forClass(Intent.class);
         verify(mA2dpService, timeout(A2dpStateMachine.sConnectTimeoutMs * 2).times(
                 2)).sendBroadcast(intentArgument2.capture(), anyString(),
                 any(Bundle.class));
-        Assert.assertEquals(BluetoothProfile.STATE_DISCONNECTED,
-                intentArgument2.getValue().getIntExtra(BluetoothProfile.EXTRA_STATE, -1));
+        assertThat(intentArgument2.getValue().getIntExtra(BluetoothProfile.EXTRA_STATE, -1))
+                .isEqualTo(BluetoothProfile.STATE_DISCONNECTED);
 
         // Check that we are in Disconnected state
-        Assert.assertThat(mA2dpStateMachine.getCurrentState(),
-                IsInstanceOf.instanceOf(A2dpStateMachine.Disconnected.class));
+        assertThat(mA2dpStateMachine.getCurrentState())
+                .isInstanceOf(A2dpStateMachine.Disconnected.class);
     }
 
     /**
