@@ -500,22 +500,10 @@ static void bta_dm_remote_name_cmpl(
     // It's enough to send callback to just one of them.
     if (bta_dm_search_cb.p_device_search_cback != nullptr) {
       tBTA_DM_SEARCH search_data = {
-          .disc_res =  // tBTA_DM_DISC_RES
-          {
-              .bd_addr = remote_name_msg.bd_addr,
-              .bd_name = {},
-              .services = {},
-              .device_type = {},
-              .num_uuids = 0UL,
-              .p_uuid_list = nullptr,
-              .result = (remote_name_msg.hci_status == HCI_SUCCESS)
-                            ? BTA_SUCCESS
-                            : BTA_FAILURE,
-              .hci_status = remote_name_msg.hci_status,
-          },
+          .name_res = {.bd_addr = remote_name_msg.bd_addr, .bd_name = {}},
       };
       if (remote_name_msg.hci_status == HCI_SUCCESS) {
-        bd_name_copy(search_data.disc_res.bd_name, remote_name_msg.bd_name);
+        bd_name_copy(search_data.name_res.bd_name, remote_name_msg.bd_name);
       }
       bta_dm_search_cb.p_device_search_cback(BTA_DM_NAME_READ_EVT,
                                              &search_data);
@@ -763,20 +751,11 @@ static void bta_dm_sdp_result(tBTA_DM_SDP_RESULT& sdp_event) {
                              bta_dm_search_cb.services_found,
                              bta_dm_search_cb.service_index));
 
-      auto msg = std::make_unique<tBTA_DM_MSG>(tBTA_DM_DISC_RESULT{});
-      auto& disc_result = std::get<tBTA_DM_DISC_RESULT>(*msg);
+      auto msg = std::make_unique<tBTA_DM_MSG>(tBTA_DM_SVC_RES{});
+      auto& disc_result = std::get<tBTA_DM_SVC_RES>(*msg);
 
-      disc_result.result.disc_res.result = BTA_SUCCESS;
-      disc_result.result.disc_res.num_uuids = uuid_list.size();
-      disc_result.result.disc_res.p_uuid_list = NULL;
-      if (uuid_list.size() > 0) {
-        // TODO(jpawlowski): make p_uuid_list into vector, and just copy
-        // vectors, but first get rid of bta_sys_sendmsg below.
-        disc_result.result.disc_res.p_uuid_list =
-            (Uuid*)osi_calloc(uuid_list.size() * sizeof(Uuid));
-        memcpy(disc_result.result.disc_res.p_uuid_list, uuid_list.data(),
-               uuid_list.size() * sizeof(Uuid));
-      }
+      disc_result.result = BTA_SUCCESS;
+      disc_result.uuids = std::move(uuid_list);
       // Copy the raw_data to the discovery result structure
       if (bta_dm_search_cb.p_sdp_db != NULL &&
           bta_dm_search_cb.p_sdp_db->raw_used != 0 &&
@@ -794,20 +773,18 @@ static void bta_dm_sdp_result(tBTA_DM_SDP_RESULT& sdp_event) {
       }
       /* Done with p_sdp_db. Free it */
       bta_dm_free_sdp_db();
-      disc_result.result.disc_res.services = bta_dm_search_cb.services_found;
+      disc_result.services = bta_dm_search_cb.services_found;
 
       // Piggy back the SCN over result field
       if (scn_found) {
-        disc_result.result.disc_res.result =
+        disc_result.result =
             static_cast<tBTA_STATUS>((3 + bta_dm_search_cb.peer_scn));
-        disc_result.result.disc_res.services |= BTA_USER_SERVICE_MASK;
+        disc_result.services |= BTA_USER_SERVICE_MASK;
 
         log::verbose("Piggy back the SCN over result field  SCN={}",
                      bta_dm_search_cb.peer_scn);
       }
-      disc_result.result.disc_res.bd_addr = bta_dm_search_cb.peer_bdaddr;
-      bd_name_from_char_pointer(disc_result.result.disc_res.bd_name,
-                                bta_dm_get_remname());
+      disc_result.bd_addr = bta_dm_search_cb.peer_bdaddr;
 
       bta_dm_search_sm_execute(BTA_DM_DISCOVERY_RESULT_EVT, std::move(msg));
     }
@@ -826,14 +803,12 @@ static void bta_dm_sdp_result(tBTA_DM_SDP_RESULT& sdp_event) {
     get_btm_client_interface().security.BTM_SecDeleteRmtNameNotifyCallback(
         &bta_dm_service_search_remname_cback);
 
-    auto msg = std::make_unique<tBTA_DM_MSG>(tBTA_DM_DISC_RESULT{});
-    auto& disc_result = std::get<tBTA_DM_DISC_RESULT>(*msg);
+    auto msg = std::make_unique<tBTA_DM_MSG>(tBTA_DM_SVC_RES{});
+    auto& disc_result = std::get<tBTA_DM_SVC_RES>(*msg);
 
-    disc_result.result.disc_res.result = BTA_FAILURE;
-    disc_result.result.disc_res.services = bta_dm_search_cb.services_found;
-    disc_result.result.disc_res.bd_addr = bta_dm_search_cb.peer_bdaddr;
-    bd_name_from_char_pointer(disc_result.result.disc_res.bd_name,
-                              bta_dm_get_remname());
+    disc_result.result = BTA_FAILURE;
+    disc_result.services = bta_dm_search_cb.services_found;
+    disc_result.bd_addr = bta_dm_search_cb.peer_bdaddr;
 
     bta_dm_search_sm_execute(BTA_DM_DISCOVERY_RESULT_EVT, std::move(msg));
   }
@@ -949,22 +924,20 @@ static void bta_dm_search_cmpl() {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_dm_disc_result(tBTA_DM_DISC_RESULT& disc_result) {
+static void bta_dm_disc_result(tBTA_DM_SVC_RES& disc_result) {
   log::verbose("");
 
   /* disc_res.device_type is set only when GATT discovery is finished in
    * bta_dm_gatt_disc_complete */
-  bool is_gatt_over_ble =
-      ((disc_result.result.disc_res.device_type & BT_DEVICE_TYPE_BLE) != 0);
+  bool is_gatt_over_ble = ((disc_result.device_type & BT_DEVICE_TYPE_BLE) != 0);
 
   /* if any BR/EDR service discovery has been done, report the event */
   if (!is_gatt_over_ble && (bta_dm_search_cb.services &
                             ((BTA_ALL_SERVICE_MASK | BTA_USER_SERVICE_MASK) &
                              ~BTA_BLE_SERVICE_MASK))) {
-    auto& r = disc_result.result.disc_res;
+    auto& r = disc_result;
     bta_dm_search_cb.service_search_cbacks.on_service_discovery_results(
-        r.bd_addr, r.bd_name, r.services, r.device_type, r.num_uuids,
-        r.p_uuid_list, r.result, r.hci_status);
+        r.bd_addr, r.services, r.device_type, r.uuids, r.result, r.hci_status);
   }
 
   get_gatt_interface().BTA_GATTC_CancelOpen(0, bta_dm_search_cb.peer_bdaddr,
@@ -982,19 +955,19 @@ static void bta_dm_disc_result(tBTA_DM_DISC_RESULT& disc_result) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_dm_search_result(tBTA_DM_DISC_RESULT& disc_result) {
+static void bta_dm_search_result(tBTA_DM_SVC_RES& disc_result) {
   log::verbose("searching:0x{:04x}, result:0x{:04x}", bta_dm_search_cb.services,
-               disc_result.result.disc_res.services);
+               disc_result.services);
 
   /* call back if application wants name discovery or found services that
    * application is searching */
   if ((!bta_dm_search_cb.services) ||
-      ((bta_dm_search_cb.services) && (disc_result.result.disc_res.services))) {
+      ((bta_dm_search_cb.services) && (disc_result.services))) {
     if (bta_dm_search_cb.service_search_cbacks.on_service_discovery_results) {
-      auto& r = disc_result.result.disc_res;
+      auto& r = disc_result;
       bta_dm_search_cb.service_search_cbacks.on_service_discovery_results(
-          r.bd_addr, r.bd_name, r.services, r.device_type, r.num_uuids,
-          r.p_uuid_list, r.result, r.hci_status);
+          r.bd_addr, r.services, r.device_type, r.uuids, r.result,
+          r.hci_status);
     } else {
       log::warn("Received search result without valid callback");
     }
@@ -1248,12 +1221,10 @@ static void bta_dm_find_services(const RawAddress& bd_addr) {
 
   /* no more services to be discovered */
   if (bta_dm_search_cb.service_index >= BTA_MAX_SERVICE_ID) {
-    auto msg = std::make_unique<tBTA_DM_MSG>(tBTA_DM_DISC_RESULT{});
-    auto& disc_result = std::get<tBTA_DM_DISC_RESULT>(*msg);
-    disc_result.result.disc_res.services = bta_dm_search_cb.services_found;
-    disc_result.result.disc_res.bd_addr = bta_dm_search_cb.peer_bdaddr;
-    bd_name_from_char_pointer(disc_result.result.disc_res.bd_name,
-                              bta_dm_get_remname());
+    auto msg = std::make_unique<tBTA_DM_MSG>(tBTA_DM_SVC_RES{});
+    auto& disc_result = std::get<tBTA_DM_SVC_RES>(*msg);
+    disc_result.services = bta_dm_search_cb.services_found;
+    disc_result.bd_addr = bta_dm_search_cb.peer_bdaddr;
 
     post_disc_evt(BTA_DM_DISCOVERY_RESULT_EVT, std::move(msg));
   }
@@ -1448,15 +1419,13 @@ static void bta_dm_discover_device(const RawAddress& remote_bd_addr) {
   }
 
   /* name discovery and service discovery are done for this device */
-  auto msg = std::make_unique<tBTA_DM_MSG>(tBTA_DM_DISC_RESULT{});
-  auto& disc_result = std::get<tBTA_DM_DISC_RESULT>(*msg);
+  auto msg = std::make_unique<tBTA_DM_MSG>(tBTA_DM_SVC_RES{});
+  auto& svc_result = std::get<tBTA_DM_SVC_RES>(*msg);
 
   /* initialize the data structure */
-  disc_result.result.disc_res.result = BTA_SUCCESS;
-  disc_result.result.disc_res.services = bta_dm_search_cb.services_found;
-  disc_result.result.disc_res.bd_addr = bta_dm_search_cb.peer_bdaddr;
-  bd_name_from_char_pointer(disc_result.result.disc_res.bd_name,
-                            bta_dm_get_remname());
+  svc_result.result = BTA_SUCCESS;
+  svc_result.services = bta_dm_search_cb.services_found;
+  svc_result.bd_addr = bta_dm_search_cb.peer_bdaddr;
 
   bta_dm_search_sm_execute(BTA_DM_DISCOVERY_RESULT_EVT, std::move(msg));
 }
@@ -1896,20 +1865,15 @@ static void gatt_close_timer_cb(void*) {
 static void bta_dm_gatt_disc_complete(uint16_t conn_id, tGATT_STATUS status) {
   log::verbose("conn_id = {}", conn_id);
 
-  auto msg = std::make_unique<tBTA_DM_MSG>(tBTA_DM_DISC_RESULT{});
-  auto& disc_result = std::get<tBTA_DM_DISC_RESULT>(*msg);
+  auto msg = std::make_unique<tBTA_DM_MSG>(tBTA_DM_SVC_RES{});
+  auto& svc_result = std::get<tBTA_DM_SVC_RES>(*msg);
 
   /* no more services to be discovered */
-  disc_result.result.disc_res.result =
-      (status == GATT_SUCCESS) ? BTA_SUCCESS : BTA_FAILURE;
+  svc_result.result = (status == GATT_SUCCESS) ? BTA_SUCCESS : BTA_FAILURE;
   log::verbose("service found: 0x{:08x}", bta_dm_search_cb.services_found);
-  disc_result.result.disc_res.services = bta_dm_search_cb.services_found;
-  disc_result.result.disc_res.num_uuids = 0;
-  disc_result.result.disc_res.p_uuid_list = NULL;
-  disc_result.result.disc_res.bd_addr = bta_dm_search_cb.peer_bdaddr;
-  bd_name_from_char_pointer(disc_result.result.disc_res.bd_name,
-                            bta_dm_get_remname());
-  disc_result.result.disc_res.device_type |= BT_DEVICE_TYPE_BLE;
+  svc_result.services = bta_dm_search_cb.services_found;
+  svc_result.bd_addr = bta_dm_search_cb.peer_bdaddr;
+  svc_result.device_type |= BT_DEVICE_TYPE_BLE;
 
   bta_dm_search_sm_execute(BTA_DM_DISCOVERY_RESULT_EVT, std::move(msg));
 
@@ -2230,10 +2194,10 @@ static void bta_dm_search_sm_execute(tBTA_DM_EVT event,
           bta_dm_search_cmpl();
           break;
         case BTA_DM_DISCOVERY_RESULT_EVT:
-          log::assert_that(std::holds_alternative<tBTA_DM_DISC_RESULT>(*msg),
+          log::assert_that(std::holds_alternative<tBTA_DM_SVC_RES>(*msg),
                            "bad message type: {}", msg->index());
 
-          bta_dm_search_result(std::get<tBTA_DM_DISC_RESULT>(*msg));
+          bta_dm_search_result(std::get<tBTA_DM_SVC_RES>(*msg));
           break;
         case BTA_DM_DISC_CLOSE_TOUT_EVT:
           bta_dm_close_gatt_conn();
@@ -2309,10 +2273,10 @@ static void bta_dm_search_sm_execute(tBTA_DM_EVT event,
           bta_dm_search_cmpl();
           break;
         case BTA_DM_DISCOVERY_RESULT_EVT:
-          log::assert_that(std::holds_alternative<tBTA_DM_DISC_RESULT>(*msg),
+          log::assert_that(std::holds_alternative<tBTA_DM_SVC_RES>(*msg),
                            "bad message type: {}", msg->index());
 
-          bta_dm_disc_result(std::get<tBTA_DM_DISC_RESULT>(*msg));
+          bta_dm_disc_result(std::get<tBTA_DM_SVC_RES>(*msg));
           break;
         case BTA_DM_API_SEARCH_EVT:
           log::assert_that(std::holds_alternative<tBTA_DM_API_SEARCH>(*msg),
@@ -2464,8 +2428,8 @@ void bta_dm_opportunistic_observe_results_cb(tBTM_INQ_RESULTS* p_inq,
 void bta_dm_queue_search(tBTA_DM_API_SEARCH& search) {
   ::bta_dm_queue_search(search);
 }
-void bta_dm_search_result(tBTA_DM_DISC_RESULT& disc_result) {
-  ::bta_dm_search_result(disc_result);
+void bta_dm_search_result(tBTA_DM_SVC_RES& svc_result) {
+  ::bta_dm_search_result(svc_result);
 }
 void bta_dm_search_timer_cback(void* data) {
   ::bta_dm_search_timer_cback(data);
