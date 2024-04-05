@@ -28,8 +28,6 @@
 #include <thread>
 #include <unordered_map>
 
-#include "check.h"
-
 namespace bluetooth {
 
 namespace common {

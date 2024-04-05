@@ -27,7 +27,6 @@
 
 #include "base/logging.h"  // LOG() stdout and android log
 #include "gd/os/log.h"
-#include "include/check.h"
 #include "include/hardware/bluetooth.h"
 #include "test/headless/bt_stack_info.h"
 #include "test/headless/interface.h"

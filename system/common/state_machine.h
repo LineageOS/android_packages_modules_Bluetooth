@@ -21,8 +21,6 @@
 #include <map>
 #include <utility>
 
-#include "include/check.h"
-
 namespace bluetooth {
 
 namespace common {

@@ -28,7 +28,6 @@
 
 #include <cstdint>
 
-#include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "os/logging/log_adapter.h"
 #include "osi/include/allocator.h"

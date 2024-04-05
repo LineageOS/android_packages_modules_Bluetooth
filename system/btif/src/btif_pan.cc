@@ -45,7 +45,6 @@
 #include "btif/include/btif_pan_internal.h"
 #include "btif/include/btif_sock_thread.h"
 #include "hci/controller_interface.h"
-#include "include/check.h"
 #include "include/hardware/bt_pan.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/entry.h"

@@ -39,7 +39,6 @@ static const char BTE_LOGMSG_MODULE[] = "bte_logmsg_module";
 #include <sstream>
 #include <type_traits>
 
-#include "check.h"
 #include "os/logging/log_adapter.h"
 
 /* Prints integral parameter x as hex string, with '0' fill */
