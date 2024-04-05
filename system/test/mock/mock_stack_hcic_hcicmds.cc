@@ -34,7 +34,6 @@ namespace mock {
 namespace stack_hcic_hcicmds {
 
 // Function state capture and return values, if needed
-struct btsnd_hcic_accept_conn btsnd_hcic_accept_conn;
 struct btsnd_hcic_accept_esco_conn btsnd_hcic_accept_esco_conn;
 struct btsnd_hcic_add_SCO_conn btsnd_hcic_add_SCO_conn;
 struct btsnd_hcic_auth_request btsnd_hcic_auth_request;
@@ -105,10 +104,6 @@ struct btsnd_hcic_write_voice_settings btsnd_hcic_write_voice_settings;
 }  // namespace test
 
 // Mocked functions, if any
-void btsnd_hcic_accept_conn(const RawAddress& dest, uint8_t role) {
-  inc_func_call_count(__func__);
-  test::mock::stack_hcic_hcicmds::btsnd_hcic_accept_conn(dest, role);
-}
 void btsnd_hcic_accept_esco_conn(const RawAddress& bd_addr,
                                  uint32_t transmit_bandwidth,
                                  uint32_t receive_bandwidth,

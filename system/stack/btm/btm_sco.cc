@@ -1553,26 +1553,6 @@ void BTM_EScoConnRsp(uint16_t sco_inx, uint8_t hci_status,
 
 /*******************************************************************************
  *
- * Function         btm_is_sco_active
- *
- * Description      This function is called to see if a SCO handle is already in
- *                  use.
- *
- * Returns          bool
- *
- ******************************************************************************/
-bool btm_is_sco_active(uint16_t handle) {
-  uint16_t xx;
-  tSCO_CONN* p = &btm_cb.sco_cb.sco_db[0];
-
-  for (xx = 0; xx < BTM_MAX_SCO_LINKS; xx++, p++) {
-    if (handle == p->hci_handle && p->state == SCO_ST_CONNECTED) return (true);
-  }
-  return (false);
-}
-
-/*******************************************************************************
- *
  * Function         BTM_GetNumScoLinks
  *
  * Description      This function returns the number of active sco links.

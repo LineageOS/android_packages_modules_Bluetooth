@@ -61,8 +61,6 @@ struct btm_clr_inq_db btm_clr_inq_db;
 struct btm_clr_inq_result_flt btm_clr_inq_result_flt;
 struct btm_inq_clear_ssp btm_inq_clear_ssp;
 struct btm_inq_db_find btm_inq_db_find;
-struct btm_inq_db_free btm_inq_db_free;
-struct btm_inq_db_init btm_inq_db_init;
 struct btm_inq_db_new btm_inq_db_new;
 struct btm_inq_db_reset btm_inq_db_reset;
 struct btm_inq_find_bdaddr btm_inq_find_bdaddr;
@@ -220,14 +218,6 @@ void btm_inq_clear_ssp(void) {
 tINQ_DB_ENT* btm_inq_db_find(const RawAddress& p_bda) {
   inc_func_call_count(__func__);
   return test::mock::stack_btm_inq::btm_inq_db_find(p_bda);
-}
-void btm_inq_db_free(void) {
-  inc_func_call_count(__func__);
-  test::mock::stack_btm_inq::btm_inq_db_free();
-}
-void btm_inq_db_init(void) {
-  inc_func_call_count(__func__);
-  test::mock::stack_btm_inq::btm_inq_db_init();
 }
 tINQ_DB_ENT* btm_inq_db_new(const RawAddress& p_bda, bool is_ble) {
   inc_func_call_count(__func__);

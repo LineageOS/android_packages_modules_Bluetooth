@@ -32,7 +32,6 @@
 #include <string>
 #include <unordered_map>
 
-#include "btif_config_cache.h"
 #include "btif_keystore.h"
 #include "btif_metrics_logging.h"
 #include "common/address_obfuscator.h"
@@ -64,17 +63,6 @@ static const std::string CONFIG_FILE_HASH = "hash";
 static const std::string encrypt_key_name_list[] = {
     "LinkKey",      "LE_KEY_PENC", "LE_KEY_PID",  "LE_KEY_LID",
     "LE_KEY_PCSRK", "LE_KEY_LENC", "LE_KEY_LCSRK"};
-
-static enum ConfigSource {
-  NOT_LOADED,
-  ORIGINAL,
-  BACKUP,
-  LEGACY,
-  NEW_FILE,
-  RESET
-} btif_config_source = NOT_LOADED;
-
-static char btif_config_time_created[TIME_STRING_LENGTH];
 
 /**
  * Read metrics salt from config file, if salt is invalid or does not exist,
@@ -165,9 +153,6 @@ static void init_metric_id_allocator() {
 }
 
 static std::recursive_mutex config_lock;  // protects operations on |config|.
-
-// limited btif config cache capacity
-static BtifConfigCache btif_config_cache(TEMPORARY_SECTION_CAPACITY);
 
 // Module lifecycle functions
 
@@ -336,45 +321,4 @@ bool btif_config_clear(void) {
   CHECK(bluetooth::shim::is_gd_stack_started_up());
   bluetooth::shim::BtifConfigInterface::Clear();
   return true;
-}
-
-void btif_debug_config_dump(int fd) {
-  dprintf(fd, "\nBluetooth Config:\n");
-
-  dprintf(fd, "  Config Source: ");
-  switch (btif_config_source) {
-    case NOT_LOADED:
-      dprintf(fd, "Not loaded\n");
-      break;
-    case ORIGINAL:
-      dprintf(fd, "Original file\n");
-      break;
-    case BACKUP:
-      dprintf(fd, "Backup file\n");
-      break;
-    case LEGACY:
-      dprintf(fd, "Legacy file\n");
-      break;
-    case NEW_FILE:
-      dprintf(fd, "New file\n");
-      break;
-    case RESET:
-      dprintf(fd, "Reset file\n");
-      break;
-  }
-
-  std::optional<std::string> file_source;
-  if (bluetooth::shim::is_gd_stack_started_up()) {
-    file_source =
-        bluetooth::shim::BtifConfigInterface::GetStr(INFO_SECTION, FILE_SOURCE);
-  } else {
-    file_source = btif_config_cache.GetString(INFO_SECTION, FILE_SOURCE);
-  }
-  if (!file_source) {
-    file_source.emplace("Original");
-  }
-  auto devices = btif_config_cache.GetPersistentSectionNames();
-  dprintf(fd, "  Devices loaded: %zu\n", devices.size());
-  dprintf(fd, "  File created/tagged: %s\n", btif_config_time_created);
-  dprintf(fd, "  File source: %s\n", file_source->c_str());
 }
