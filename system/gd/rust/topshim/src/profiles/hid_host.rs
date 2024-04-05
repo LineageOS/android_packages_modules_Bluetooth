@@ -238,7 +238,7 @@ impl HidHost {
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn disconnect(&self, addr: &mut RawAddress) -> BtStatus {
         let addr_ptr = LTCheckedPtrMut::from_ref(addr);
-        BtStatus::from(ccall!(self, disconnect, addr_ptr.into()))
+        BtStatus::from(ccall!(self, disconnect, addr_ptr.into(), true))
     }
 
     #[profile_enabled_or(BtStatus::NotReady)]

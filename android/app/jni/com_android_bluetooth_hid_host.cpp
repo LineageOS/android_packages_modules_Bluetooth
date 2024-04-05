@@ -271,7 +271,8 @@ static jboolean connectHidNative(JNIEnv* env, jobject /* object */,
 }
 
 static jboolean disconnectHidNative(JNIEnv* env, jobject /* object */,
-                                    jbyteArray address) {
+                                    jbyteArray address,
+                                    jboolean reconnect_allowed) {
   jbyte* addr;
   jboolean ret = JNI_TRUE;
   if (!sBluetoothHidInterface) return JNI_FALSE;
@@ -282,7 +283,8 @@ static jboolean disconnectHidNative(JNIEnv* env, jobject /* object */,
     return JNI_FALSE;
   }
 
-  bt_status_t status = sBluetoothHidInterface->disconnect((RawAddress*)addr);
+  bt_status_t status =
+      sBluetoothHidInterface->disconnect((RawAddress*)addr, reconnect_allowed);
   if (status != BT_STATUS_SUCCESS) {
     log::error("Failed disconnect hid channel, status: {}",
                bt_status_text(status));
@@ -500,7 +502,7 @@ int register_com_android_bluetooth_hid_host(JNIEnv* env) {
       {"initializeNative", "()V", (void*)initializeNative},
       {"cleanupNative", "()V", (void*)cleanupNative},
       {"connectHidNative", "([B)Z", (void*)connectHidNative},
-      {"disconnectHidNative", "([B)Z", (void*)disconnectHidNative},
+      {"disconnectHidNative", "([BZ)Z", (void*)disconnectHidNative},
       {"getProtocolModeNative", "([B)Z", (void*)getProtocolModeNative},
       {"virtualUnPlugNative", "([B)Z", (void*)virtualUnPlugNative},
       {"setProtocolModeNative", "([BB)Z", (void*)setProtocolModeNative},
