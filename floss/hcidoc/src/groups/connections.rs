@@ -612,6 +612,14 @@ impl OddDisconnectionsRule {
         self.last_feat_handle.clear();
         self.pending_disconnect_due_to_host_power_off.clear();
     }
+
+    fn process_system_note(&mut self, note: &String) {
+        // Carryover section doesn't contain the NOCP from the controller.
+        // The note may contain zero bytes, so don't check for exact string.
+        if note.contains("END OF CARRYOVER SECTION") {
+            self.nocp_by_handle.clear();
+        }
+    }
 }
 
 impl Rule for OddDisconnectionsRule {
@@ -805,6 +813,10 @@ impl Rule for OddDisconnectionsRule {
 
             // We don't do anything with RX packets yet.
             PacketChild::AclRx(_) => (),
+
+            PacketChild::SystemNote(note) => {
+                self.process_system_note(note);
+            }
 
             // End packet.inner match
             _ => (),
