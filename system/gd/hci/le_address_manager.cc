@@ -22,7 +22,6 @@
 #include "common/init_flags.h"
 #include "hci/octets.h"
 #include "include/macros.h"
-#include "os/log.h"
 #include "os/rand.h"
 
 namespace bluetooth {
@@ -39,11 +38,12 @@ enum class LeAddressManager::ClientState {
 
 std::string LeAddressManager::ClientStateText(const ClientState cs) {
   switch (cs) {
-    CASE_RETURN_TEXT(ClientState::WAITING_FOR_PAUSE);
-    CASE_RETURN_TEXT(ClientState::PAUSED);
-    CASE_RETURN_TEXT(ClientState::WAITING_FOR_RESUME);
-    CASE_RETURN_TEXT(ClientState::RESUMED);
+    CASE_RETURN_STRING(ClientState::WAITING_FOR_PAUSE);
+    CASE_RETURN_STRING(ClientState::PAUSED);
+    CASE_RETURN_STRING(ClientState::WAITING_FOR_RESUME);
+    CASE_RETURN_STRING(ClientState::RESUMED);
   }
+  RETURN_UNKNOWN_TYPE_STRING(ClientState, cs);
 }
 
 LeAddressManager::LeAddressManager(
