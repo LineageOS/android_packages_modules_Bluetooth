@@ -811,7 +811,7 @@ void gatt_indication_confirmation_timeout(void* data) {
  ******************************************************************************/
 void gatt_ind_ack_timeout(void* data) {
   tGATT_TCB* p_tcb = (tGATT_TCB*)data;
-  CHECK(p_tcb);
+  log::assert_that(p_tcb != nullptr, "assert failed: p_tcb != nullptr");
 
   log::warn("send ack now");
   p_tcb->ind_count = 0;

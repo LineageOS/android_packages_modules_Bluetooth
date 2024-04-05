@@ -2148,7 +2148,7 @@ void HasClient::Initialize(bluetooth::has::HasClientCallbacks* callbacks,
 bool HasClient::IsHasClientRunning() { return instance; }
 
 HasClient* HasClient::Get(void) {
-  CHECK(instance);
+  log::assert_that(instance != nullptr, "assert failed: instance != nullptr");
   return instance;
 };
 

@@ -328,9 +328,9 @@ static const enh_esco_params_t default_esco_parameters[ESCO_NUM_CODECS] = {
      .retransmission_effort = ESCO_RETRANSMISSION_QUALITY}};
 
 enh_esco_params_t esco_parameters_for_codec(esco_codec_t codec, bool offload) {
-  CHECK((int)codec >= 0) << "codec index " << (int)codec << "< 0";
-  CHECK(codec < ESCO_NUM_CODECS)
-      << "codec index " << (int)codec << " > " << ESCO_NUM_CODECS;
+  log::assert_that((int)codec >= 0, "codec index {}< 0", (int)codec);
+  log::assert_that(codec < ESCO_NUM_CODECS, "codec index {} > {}", (int)codec,
+                   ESCO_NUM_CODECS);
 
   std::vector<uint8_t> codecIds;
   if (IS_FLAG_ENABLED(use_dsp_codec_when_controller_does_not_support)) {
@@ -362,8 +362,8 @@ enh_esco_params_t esco_parameters_for_codec(esco_codec_t codec, bool offload) {
     return default_esco_parameters[codec];
   }
 
-  CHECK(codec < ESCO_LEGACY_NUM_CODECS)
-      << "legacy codec index " << (int)codec << " > " << ESCO_LEGACY_NUM_CODECS;
+  log::assert_that(codec < ESCO_LEGACY_NUM_CODECS, "legacy codec index {} > {}",
+                   (int)codec, ESCO_LEGACY_NUM_CODECS);
   enh_esco_params_t param = default_esco_parameters[codec];
   param.input_data_path = param.output_data_path = ESCO_DATA_PATH_HCI;
 

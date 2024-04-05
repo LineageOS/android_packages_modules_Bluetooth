@@ -70,7 +70,7 @@ static future_t* init() {
 #else   // !defined(__ANDROID__)
   const char* path = "bt_stack.conf";
 #endif  // defined(__ANDROID__)
-  CHECK(path != NULL);
+  log::assert_that(path != NULL, "assert failed: path != NULL");
 
   log::info("attempt to load stack conf from {}", path);
 

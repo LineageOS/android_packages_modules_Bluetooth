@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <bluetooth/log.h>
 #include <fuzzer/FuzzedDataProvider.h>
 
 #include <cstdint>
@@ -52,17 +53,21 @@ class FakeBtStack {
   FakeBtStack() {
     test::mock::stack_l2cap_api::L2CA_DataWrite.body = [](uint16_t cid,
                                                           BT_HDR* p_data) {
-      CHECK(cid == kDummyCid);
+      bluetooth::log::assert_that(cid == kDummyCid,
+                                  "assert failed: cid == kDummyCid");
       osi_free(p_data);
       return L2CAP_DW_SUCCESS;
     };
     test::mock::stack_l2cap_api::L2CA_DisconnectReq.body = [](uint16_t cid) {
-      CHECK(cid == kDummyCid);
+      bluetooth::log::assert_that(cid == kDummyCid,
+                                  "assert failed: cid == kDummyCid");
       return true;
     };
     test::mock::stack_l2cap_api::L2CA_ConnectReq2.body =
         [](uint16_t psm, const RawAddress& p_bd_addr, uint16_t sec_level) {
-          CHECK(p_bd_addr == kDummyRemoteAddr);
+          bluetooth::log::assert_that(
+              p_bd_addr == kDummyRemoteAddr,
+              "assert failed: p_bd_addr == kDummyRemoteAddr");
           return kDummyCid;
         };
     test::mock::stack_l2cap_api::L2CA_Register2.body =

@@ -69,8 +69,9 @@ static void work_queue_read_cb(void* context);
 static const size_t DEFAULT_WORK_QUEUE_CAPACITY = 128;
 
 thread_t* thread_new_sized(const char* name, size_t work_queue_capacity) {
-  CHECK(name != NULL);
-  CHECK(work_queue_capacity != 0);
+  log::assert_that(name != NULL, "assert failed: name != NULL");
+  log::assert_that(work_queue_capacity != 0,
+                   "assert failed: work_queue_capacity != 0");
 
   thread_t* ret = static_cast<thread_t*>(osi_calloc(sizeof(thread_t)));
 
@@ -121,15 +122,15 @@ void thread_free(thread_t* thread) {
 }
 
 void thread_join(thread_t* thread) {
-  CHECK(thread != NULL);
+  log::assert_that(thread != NULL, "assert failed: thread != NULL");
 
   if (!std::atomic_exchange(&thread->is_joined, true))
     pthread_join(thread->pthread, NULL);
 }
 
 bool thread_post(thread_t* thread, thread_fn func, void* context) {
-  CHECK(thread != NULL);
-  CHECK(func != NULL);
+  log::assert_that(thread != NULL, "assert failed: thread != NULL");
+  log::assert_that(func != NULL, "assert failed: func != NULL");
 
   // TODO(sharvil): if the current thread == |thread| and we've run out
   // of queue space, we should abort this operation, otherwise we'll
@@ -145,7 +146,7 @@ bool thread_post(thread_t* thread, thread_fn func, void* context) {
 }
 
 void thread_stop(thread_t* thread) {
-  CHECK(thread != NULL);
+  log::assert_that(thread != NULL, "assert failed: thread != NULL");
   reactor_stop(thread->reactor);
 }
 
@@ -179,27 +180,27 @@ bool thread_set_rt_priority(thread_t* thread, int priority) {
 }
 
 bool thread_is_self(const thread_t* thread) {
-  CHECK(thread != NULL);
+  log::assert_that(thread != NULL, "assert failed: thread != NULL");
   return !!pthread_equal(pthread_self(), thread->pthread);
 }
 
 reactor_t* thread_get_reactor(const thread_t* thread) {
-  CHECK(thread != NULL);
+  log::assert_that(thread != NULL, "assert failed: thread != NULL");
   return thread->reactor;
 }
 
 const char* thread_name(const thread_t* thread) {
-  CHECK(thread != NULL);
+  log::assert_that(thread != NULL, "assert failed: thread != NULL");
   return thread->name;
 }
 
 static void* run_thread(void* start_arg) {
-  CHECK(start_arg != NULL);
+  log::assert_that(start_arg != NULL, "assert failed: start_arg != NULL");
 
   struct start_arg* start = static_cast<struct start_arg*>(start_arg);
   thread_t* thread = start->thread;
 
-  CHECK(thread != NULL);
+  log::assert_that(thread != NULL, "assert failed: thread != NULL");
 
   if (prctl(PR_SET_NAME, (unsigned long)thread->name) == -1) {
     log::error("unable to set thread name: {}", strerror(errno));
@@ -243,7 +244,7 @@ static void* run_thread(void* start_arg) {
 }
 
 static void work_queue_read_cb(void* context) {
-  CHECK(context != NULL);
+  log::assert_that(context != NULL, "assert failed: context != NULL");
 
   fixed_queue_t* queue = (fixed_queue_t*)context;
   work_item_t* item = static_cast<work_item_t*>(fixed_queue_dequeue(queue));

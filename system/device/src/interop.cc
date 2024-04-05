@@ -219,12 +219,12 @@ static bool interop_config_remove(const std::string& section,
 
 bool interop_match_addr(const interop_feature_t feature,
                         const RawAddress* addr) {
-  CHECK(addr);
+  log::assert_that(addr != nullptr, "assert failed: addr != nullptr");
   return (interop_database_match_addr(feature, addr));
 }
 
 bool interop_match_name(const interop_feature_t feature, const char* name) {
-  CHECK(name);
+  log::assert_that(name != nullptr, "assert failed: name != nullptr");
   return (interop_database_match_name(feature, name));
 }
 
@@ -232,8 +232,9 @@ bool interop_match_addr_or_name(const interop_feature_t feature,
                                 const RawAddress* addr,
                                 bt_status_t (*get_remote_device_property)(
                                     const RawAddress*, bt_property_t*)) {
-  CHECK(addr);
-  CHECK(get_remote_device_property);
+  log::assert_that(addr != nullptr, "assert failed: addr != nullptr");
+  log::assert_that(get_remote_device_property != nullptr,
+                   "assert failed: get_remote_device_property != nullptr");
 
   bt_bdname_t bdname;
   bt_property_t prop_name;
@@ -267,9 +268,10 @@ bool interop_match_addr_get_max_lat(const interop_feature_t feature,
 
 void interop_database_add(const uint16_t feature, const RawAddress* addr,
                           size_t length) {
-  CHECK(addr);
-  CHECK(length > 0);
-  CHECK(length < sizeof(RawAddress));
+  log::assert_that(addr != nullptr, "assert failed: addr != nullptr");
+  log::assert_that(length > 0, "assert failed: length > 0");
+  log::assert_that(length < sizeof(RawAddress),
+                   "assert failed: length < sizeof(RawAddress)");
   interop_database_add_addr(feature, addr, length);
 }
 
@@ -458,7 +460,8 @@ error:
 }
 
 static void interop_config_flush(void) {
-  CHECK(config_dynamic.get() != NULL);
+  log::assert_that(config_dynamic.get() != NULL,
+                   "assert failed: config_dynamic.get() != NULL");
 
   pthread_mutex_lock(&file_lock);
   config_save(*config_dynamic, INTEROP_DYNAMIC_FILE_PATH);
@@ -467,7 +470,8 @@ static void interop_config_flush(void) {
 
 static bool interop_config_remove(const std::string& section,
                                   const std::string& key) {
-  CHECK(config_dynamic.get() != NULL);
+  log::assert_that(config_dynamic.get() != NULL,
+                   "assert failed: config_dynamic.get() != NULL");
 
   pthread_mutex_lock(&file_lock);
   bool ret = config_remove_key(config_dynamic.get(), section, key);
@@ -477,7 +481,8 @@ static bool interop_config_remove(const std::string& section,
 }
 
 static bool interop_config_remove_section(const std::string& section) {
-  CHECK(config_dynamic.get() != NULL);
+  log::assert_that(config_dynamic.get() != NULL,
+                   "assert failed: config_dynamic.get() != NULL");
 
   pthread_mutex_lock(&file_lock);
   bool ret = config_remove_section(config_dynamic.get(), section);
@@ -489,7 +494,8 @@ static bool interop_config_remove_section(const std::string& section) {
 static bool interop_config_set_str(const std::string& section,
                                    const std::string& key,
                                    const std::string& value) {
-  CHECK(config_dynamic.get() != NULL);
+  log::assert_that(config_dynamic.get() != NULL,
+                   "assert failed: config_dynamic.get() != NULL");
 
   pthread_mutex_lock(&file_lock);
   config_set_string(config_dynamic.get(), section, key, value);
@@ -658,7 +664,7 @@ static void interop_database_add_(interop_db_entry_t* db_entry, bool persist) {
 static bool interop_database_match(interop_db_entry_t* entry,
                                    interop_db_entry_t** ret_entry,
                                    interop_entry_type entry_type) {
-  CHECK(entry);
+  log::assert_that(entry != nullptr, "assert failed: entry != nullptr");
   bool found = false;
   pthread_mutex_lock(&interop_list_lock);
   if (interop_list == NULL || list_length(interop_list) == 0) {
@@ -670,7 +676,7 @@ static bool interop_database_match(interop_db_entry_t* entry,
 
   while (node != list_end(interop_list)) {
     interop_db_entry_t* db_entry = (interop_db_entry_t*)list_node(node);
-    CHECK(db_entry);
+    log::assert_that(db_entry != nullptr, "assert failed: db_entry != nullptr");
 
     if (entry->bl_type != db_entry->bl_type) {
       node = list_next(node);
@@ -1205,9 +1211,10 @@ static void interop_config_cleanup(void) {
 
 void interop_database_add_addr(const uint16_t feature, const RawAddress* addr,
                                size_t length) {
-  CHECK(addr);
-  CHECK(length > 0);
-  CHECK(length < sizeof(RawAddress));
+  log::assert_that(addr != nullptr, "assert failed: addr != nullptr");
+  log::assert_that(length > 0, "assert failed: length > 0");
+  log::assert_that(length < sizeof(RawAddress),
+                   "assert failed: length < sizeof(RawAddress)");
 
   interop_db_entry_t* entry =
       (interop_db_entry_t*)osi_calloc(sizeof(interop_db_entry_t));
@@ -1220,9 +1227,10 @@ void interop_database_add_addr(const uint16_t feature, const RawAddress* addr,
 }
 
 void interop_database_add_name(const uint16_t feature, const char* name) {
-  CHECK(name);
+  log::assert_that(name != nullptr, "assert failed: name != nullptr");
   const size_t name_length = strlen(name);
-  CHECK(name_length < KEY_MAX_LENGTH);
+  log::assert_that(name_length < KEY_MAX_LENGTH,
+                   "assert failed: name_length < KEY_MAX_LENGTH");
 
   interop_db_entry_t* entry =
       (interop_db_entry_t*)osi_calloc(sizeof(interop_db_entry_t));
@@ -1261,7 +1269,7 @@ void interop_database_add_vndr_prdt(const interop_feature_t feature,
 void interop_database_add_addr_max_lat(const interop_feature_t feature,
                                        const RawAddress* addr,
                                        uint16_t max_lat) {
-  CHECK(addr);
+  log::assert_that(addr != nullptr, "assert failed: addr != nullptr");
 
   interop_db_entry_t* entry =
       (interop_db_entry_t*)osi_calloc(sizeof(interop_db_entry_t));
@@ -1288,7 +1296,7 @@ void interop_database_add_addr_lmp_version(const interop_feature_t feature,
                                            const RawAddress* addr,
                                            uint8_t lmp_ver,
                                            uint16_t lmp_sub_ver) {
-  CHECK(addr);
+  log::assert_that(addr != nullptr, "assert failed: addr != nullptr");
 
   interop_db_entry_t* entry =
       (interop_db_entry_t*)osi_calloc(sizeof(interop_db_entry_t));
@@ -1325,7 +1333,7 @@ bool interop_database_match_manufacturer(const interop_feature_t feature,
 bool interop_database_match_name(const interop_feature_t feature,
                                  const char* name) {
   char trim_name[KEY_MAX_LENGTH] = {'\0'};
-  CHECK(name);
+  log::assert_that(name != nullptr, "assert failed: name != nullptr");
 
   strlcpy(trim_name, name, KEY_MAX_LENGTH);
   interop_db_entry_t entry;
@@ -1349,7 +1357,7 @@ bool interop_database_match_name(const interop_feature_t feature,
 
 bool interop_database_match_addr(const interop_feature_t feature,
                                  const RawAddress* addr) {
-  CHECK(addr);
+  log::assert_that(addr != nullptr, "assert failed: addr != nullptr");
 
   interop_db_entry_t entry;
 
@@ -1482,7 +1490,7 @@ bool interop_database_match_addr_get_lmp_ver(const interop_feature_t feature,
 
 bool interop_database_remove_name(const interop_feature_t feature,
                                   const char* name) {
-  CHECK(name);
+  log::assert_that(name != nullptr, "assert failed: name != nullptr");
 
   interop_db_entry_t entry;
 
@@ -1520,7 +1528,7 @@ bool interop_database_remove_manufacturer(const interop_feature_t feature,
 
 bool interop_database_remove_addr(const interop_feature_t feature,
                                   const RawAddress* addr) {
-  CHECK(addr);
+  log::assert_that(addr != nullptr, "assert failed: addr != nullptr");
 
   interop_db_entry_t entry;
 
@@ -1546,7 +1554,7 @@ bool interop_database_remove_feature(const interop_feature_t feature) {
   while (node != list_end(interop_list)) {
     interop_db_entry_t* entry =
         static_cast<interop_db_entry_t*>(list_node(node));
-    CHECK(entry);
+    log::assert_that(entry != nullptr, "assert failed: entry != nullptr");
 
     bool entry_match = false;
     if (entry->bl_entry_type == INTEROP_ENTRY_TYPE_DYNAMIC) {

@@ -694,7 +694,7 @@ static tGATT_STATUS gatts_validate_packet_format(uint8_t op_code, uint16_t& len,
   if (len < 2) return GATT_INVALID_PDU;
 
   /* parse uuid now */
-  CHECK(p_uuid);
+  log::assert_that(p_uuid != nullptr, "assert failed: p_uuid != nullptr");
   uint16_t uuid_len = (op_code == GATT_REQ_FIND_TYPE_VALUE) ? 2 : len;
   if (!gatt_parse_uuid_from_cmd(p_uuid, uuid_len, &p)) {
     log::verbose("Bad UUID");

@@ -16,12 +16,16 @@
  *
  ******************************************************************************/
 
+#include "osi/include/ringbuffer.h"
+
 #include <base/logging.h>
+#include <bluetooth/log.h>
 #include <stdlib.h>
 
 #include "check.h"
 #include "osi/include/allocator.h"
-#include "osi/include/ringbuffer.h"
+
+using namespace bluetooth;
 
 struct ringbuffer_t {
   size_t total;
@@ -48,18 +52,18 @@ void ringbuffer_free(ringbuffer_t* rb) {
 }
 
 size_t ringbuffer_available(const ringbuffer_t* rb) {
-  CHECK(rb);
+  log::assert_that(rb != nullptr, "assert failed: rb != nullptr");
   return rb->available;
 }
 
 size_t ringbuffer_size(const ringbuffer_t* rb) {
-  CHECK(rb);
+  log::assert_that(rb != nullptr, "assert failed: rb != nullptr");
   return rb->total - rb->available;
 }
 
 size_t ringbuffer_insert(ringbuffer_t* rb, const uint8_t* p, size_t length) {
-  CHECK(rb);
-  CHECK(p);
+  log::assert_that(rb != nullptr, "assert failed: rb != nullptr");
+  log::assert_that(p != nullptr, "assert failed: p != nullptr");
 
   if (length > ringbuffer_available(rb)) length = ringbuffer_available(rb);
 
@@ -73,7 +77,7 @@ size_t ringbuffer_insert(ringbuffer_t* rb, const uint8_t* p, size_t length) {
 }
 
 size_t ringbuffer_delete(ringbuffer_t* rb, size_t length) {
-  CHECK(rb);
+  log::assert_that(rb != nullptr, "assert failed: rb != nullptr");
 
   if (length > ringbuffer_size(rb)) length = ringbuffer_size(rb);
 
@@ -86,10 +90,11 @@ size_t ringbuffer_delete(ringbuffer_t* rb, size_t length) {
 
 size_t ringbuffer_peek(const ringbuffer_t* rb, off_t offset, uint8_t* p,
                        size_t length) {
-  CHECK(rb);
-  CHECK(p);
-  CHECK(offset >= 0);
-  CHECK((size_t)offset <= ringbuffer_size(rb));
+  log::assert_that(rb != nullptr, "assert failed: rb != nullptr");
+  log::assert_that(p != nullptr, "assert failed: p != nullptr");
+  log::assert_that(offset >= 0, "assert failed: offset >= 0");
+  log::assert_that((size_t)offset <= ringbuffer_size(rb),
+                   "assert failed: (size_t)offset <= ringbuffer_size(rb)");
 
   uint8_t* b = ((rb->head - rb->base + offset) % rb->total) + rb->base;
   const size_t bytes_to_copy = (offset + length > ringbuffer_size(rb))
@@ -105,8 +110,8 @@ size_t ringbuffer_peek(const ringbuffer_t* rb, off_t offset, uint8_t* p,
 }
 
 size_t ringbuffer_pop(ringbuffer_t* rb, uint8_t* p, size_t length) {
-  CHECK(rb);
-  CHECK(p);
+  log::assert_that(rb != nullptr, "assert failed: rb != nullptr");
+  log::assert_that(p != nullptr, "assert failed: p != nullptr");
 
   const size_t copied = ringbuffer_peek(rb, 0, p, length);
   rb->head += copied;

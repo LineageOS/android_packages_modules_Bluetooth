@@ -56,7 +56,7 @@ using namespace bluetooth;
 bool device_iot_config_has_section(const std::string& section) {
   if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return false;
 
-  CHECK(config != NULL);
+  log::assert_that(config != NULL, "assert failed: config != NULL");
 
   std::unique_lock<std::mutex> lock(config_lock);
   return config_has_section(*config, section);
@@ -66,7 +66,7 @@ bool device_iot_config_exist(const std::string& section,
                              const std::string& key) {
   if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return false;
 
-  CHECK(config != NULL);
+  log::assert_that(config != NULL, "assert failed: config != NULL");
 
   std::unique_lock<std::mutex> lock(config_lock);
   return config_has_key(*config, section, key);
@@ -76,7 +76,7 @@ bool device_iot_config_get_int(const std::string& section,
                                const std::string& key, int& value) {
   if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return false;
 
-  CHECK(config != NULL);
+  log::assert_that(config != NULL, "assert failed: config != NULL");
 
   std::unique_lock<std::mutex> lock(config_lock);
   bool ret = config_has_key(*config, section, key);
@@ -89,7 +89,7 @@ bool device_iot_config_set_int(const std::string& section,
                                const std::string& key, int value) {
   if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return false;
 
-  CHECK(config != NULL);
+  log::assert_that(config != NULL, "assert failed: config != NULL");
 
   std::unique_lock<std::mutex> lock(config_lock);
   char value_str[32] = {0};
@@ -106,7 +106,7 @@ bool device_iot_config_int_add_one(const std::string& section,
                                    const std::string& key) {
   if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return false;
 
-  CHECK(config != NULL);
+  log::assert_that(config != NULL, "assert failed: config != NULL");
 
   int result = 0;
   std::unique_lock<std::mutex> lock(config_lock);
@@ -126,7 +126,7 @@ bool device_iot_config_get_hex(const std::string& section,
                                const std::string& key, int& value) {
   if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return false;
 
-  CHECK(config != NULL);
+  log::assert_that(config != NULL, "assert failed: config != NULL");
 
   std::unique_lock<std::mutex> lock(config_lock);
   const std::string* stored_value =
@@ -149,7 +149,7 @@ bool device_iot_config_set_hex(const std::string& section,
                                int byte_num) {
   if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return false;
 
-  CHECK(config != NULL);
+  log::assert_that(config != NULL, "assert failed: config != NULL");
 
   char value_str[32] = {0};
   if (byte_num == 1)
@@ -187,9 +187,9 @@ bool device_iot_config_get_str(const std::string& section,
                                int* size_bytes) {
   if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return false;
 
-  CHECK(config != NULL);
-  CHECK(value != NULL);
-  CHECK(size_bytes != NULL);
+  log::assert_that(config != NULL, "assert failed: config != NULL");
+  log::assert_that(value != NULL, "assert failed: value != NULL");
+  log::assert_that(size_bytes != NULL, "assert failed: size_bytes != NULL");
 
   std::unique_lock<std::mutex> lock(config_lock);
   const std::string* stored_value =
@@ -208,7 +208,7 @@ bool device_iot_config_set_str(const std::string& section,
                                const std::string& value) {
   if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return false;
 
-  CHECK(config != NULL);
+  log::assert_that(config != NULL, "assert failed: config != NULL");
 
   std::unique_lock<std::mutex> lock(config_lock);
   if (device_iot_config_has_key_value(section, key, value)) return true;
@@ -224,9 +224,9 @@ bool device_iot_config_get_bin(const std::string& section,
                                size_t* length) {
   if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return false;
 
-  CHECK(config != NULL);
-  CHECK(value != NULL);
-  CHECK(length != NULL);
+  log::assert_that(config != NULL, "assert failed: config != NULL");
+  log::assert_that(value != NULL, "assert failed: value != NULL");
+  log::assert_that(length != NULL, "assert failed: length != NULL");
 
   std::unique_lock<std::mutex> lock(config_lock);
   const std::string* value_string =
@@ -258,7 +258,7 @@ size_t device_iot_config_get_bin_length(const std::string& section,
                                         const std::string& key) {
   if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return 0;
 
-  CHECK(config != NULL);
+  log::assert_that(config != NULL, "assert failed: config != NULL");
 
   std::unique_lock<std::mutex> lock(config_lock);
   const std::string* value_str = config_get_string(*config, section, key, NULL);
@@ -276,10 +276,11 @@ bool device_iot_config_set_bin(const std::string& section,
 
   const char* lookup = "0123456789abcdef";
 
-  CHECK(config != NULL);
+  log::assert_that(config != NULL, "assert failed: config != NULL");
 
   log::verbose("Key = {}", key);
-  if (length > 0) CHECK(value != NULL);
+  if (length > 0)
+    log::assert_that(value != NULL, "assert failed: value != NULL");
 
   char* str = (char*)osi_calloc(length * 2 + 1);
   if (str == NULL) {
@@ -309,7 +310,7 @@ bool device_iot_config_remove(const std::string& section,
                               const std::string& key) {
   if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return false;
 
-  CHECK(config != NULL);
+  log::assert_that(config != NULL, "assert failed: config != NULL");
 
   std::unique_lock<std::mutex> lock(config_lock);
   return config_remove_key(config.get(), section, key);
@@ -318,8 +319,8 @@ bool device_iot_config_remove(const std::string& section,
 void device_iot_config_flush(void) {
   if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return;
 
-  CHECK(config != NULL);
-  CHECK(config_timer != NULL);
+  log::assert_that(config != NULL, "assert failed: config != NULL");
+  log::assert_that(config_timer != NULL, "assert failed: config_timer != NULL");
 
   int event = alarm_is_scheduled(config_timer) ? IOT_CONFIG_SAVE_TIMER_FIRED_EVT
                                                : IOT_CONFIG_FLUSH_EVT;
@@ -331,8 +332,8 @@ void device_iot_config_flush(void) {
 bool device_iot_config_clear(void) {
   if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return true;
 
-  CHECK(config != NULL);
-  CHECK(config_timer != NULL);
+  log::assert_that(config != NULL, "assert failed: config != NULL");
+  log::assert_that(config_timer != NULL, "assert failed: config_timer != NULL");
 
   log::info("");
   alarm_cancel(config_timer);

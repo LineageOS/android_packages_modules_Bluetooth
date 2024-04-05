@@ -68,8 +68,10 @@ void Device::RegisterInterfaces(
     MediaInterface* media_interface, A2dpInterface* a2dp_interface,
     VolumeInterface* volume_interface,
     PlayerSettingsInterface* player_settings_interface) {
-  CHECK(media_interface);
-  CHECK(a2dp_interface);
+  log::assert_that(media_interface != nullptr,
+                   "assert failed: media_interface != nullptr");
+  log::assert_that(a2dp_interface != nullptr,
+                   "assert failed: a2dp_interface != nullptr");
   a2dp_interface_ = a2dp_interface;
   media_interface_ = media_interface;
   volume_interface_ = volume_interface;
@@ -110,7 +112,8 @@ bool Device::IsInSilenceMode() const {
 
 void Device::VendorPacketHandler(uint8_t label,
                                  std::shared_ptr<VendorPacket> pkt) {
-  CHECK(media_interface_);
+  log::assert_that(media_interface_ != nullptr,
+                   "assert failed: media_interface_ != nullptr");
   log::verbose("pdu={}", pkt->GetCommandPdu());
 
   if (!pkt->IsValid()) {
@@ -1661,7 +1664,8 @@ void Device::SetBrowsedPlayerResponse(
 void Device::SendMediaUpdate(bool metadata, bool play_status, bool queue) {
   bool is_silence = IsInSilenceMode();
 
-  CHECK(media_interface_);
+  log::assert_that(media_interface_ != nullptr,
+                   "assert failed: media_interface_ != nullptr");
   log::verbose("Metadata={} : play_status= {} : queue={} : is_silence={}",
                metadata, play_status, queue, is_silence);
 
@@ -1681,7 +1685,8 @@ void Device::SendMediaUpdate(bool metadata, bool play_status, bool queue) {
 
 void Device::SendFolderUpdate(bool available_players, bool addressed_player,
                               bool uids) {
-  CHECK(media_interface_);
+  log::assert_that(media_interface_ != nullptr,
+                   "assert failed: media_interface_ != nullptr");
   log::verbose("");
 
   if (available_players) {

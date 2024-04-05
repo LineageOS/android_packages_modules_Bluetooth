@@ -38,12 +38,16 @@ static std::unordered_map<const void*, bluetooth::shim::DumpsysFunction>
 
 void bluetooth::shim::RegisterDumpsysFunction(const void* token,
                                               DumpsysFunction func) {
-  CHECK(dumpsys_functions_.find(token) == dumpsys_functions_.end());
+  log::assert_that(dumpsys_functions_.find(token) == dumpsys_functions_.end(),
+                   "assert failed: dumpsys_functions_.find(token) == "
+                   "dumpsys_functions_.end()");
   dumpsys_functions_.insert({token, func});
 }
 
 void bluetooth::shim::UnregisterDumpsysFunction(const void* token) {
-  CHECK(dumpsys_functions_.find(token) != dumpsys_functions_.end());
+  log::assert_that(dumpsys_functions_.find(token) != dumpsys_functions_.end(),
+                   "assert failed: dumpsys_functions_.find(token) != "
+                   "dumpsys_functions_.end()");
   dumpsys_functions_.erase(token);
 }
 

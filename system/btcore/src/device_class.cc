@@ -16,13 +16,17 @@
  *
  ******************************************************************************/
 
+#include "btcore/include/device_class.h"
+
 #include <arpa/inet.h>
 #include <base/logging.h>
+#include <bluetooth/log.h>
 #include <endian.h>
 #include <string.h>
 
-#include "btcore/include/device_class.h"
 #include "check.h"
+
+using namespace bluetooth;
 
 typedef struct _bt_device_class_t {
   uint32_t unused : 2;  // LSBs
@@ -62,16 +66,17 @@ static void device_class_clr_major_service_(bt_device_class_t* dc, int bitmask);
 static void device_class_set_major_service_(bt_device_class_t* dc, int bitmask);
 
 void device_class_from_stream(bt_device_class_t* dc, const uint8_t* data) {
-  CHECK(dc != NULL);
-  CHECK(data != NULL);
+  log::assert_that(dc != NULL, "assert failed: dc != NULL");
+  log::assert_that(data != NULL, "assert failed: data != NULL");
   *dc = *(bt_device_class_t*)data;
 }
 
 int device_class_to_stream(const bt_device_class_t* dc, uint8_t* data,
                            size_t len) {
-  CHECK(dc != NULL);
-  CHECK(data != NULL);
-  CHECK(len >= sizeof(bt_device_class_t));
+  log::assert_that(dc != NULL, "assert failed: dc != NULL");
+  log::assert_that(data != NULL, "assert failed: data != NULL");
+  log::assert_that(len >= sizeof(bt_device_class_t),
+                   "assert failed: len >= sizeof(bt_device_class_t)");
   for (size_t i = 0; i < sizeof(bt_device_class_t); ++i) {
     data[i] = dc->_[i];
   }
@@ -79,8 +84,8 @@ int device_class_to_stream(const bt_device_class_t* dc, uint8_t* data,
 }
 
 void device_class_from_int(bt_device_class_t* dc, int data) {
-  CHECK(dc != NULL);
-  CHECK(data != 0);
+  log::assert_that(dc != NULL, "assert failed: dc != NULL");
+  log::assert_that(data != 0, "assert failed: data != 0");
   // Careful with endianess.
   dc->_[0] = data & 0xff;
   dc->_[1] = (data >> 8) & 0xff;
@@ -88,7 +93,7 @@ void device_class_from_int(bt_device_class_t* dc, int data) {
 }
 
 int device_class_to_int(const bt_device_class_t* dc) {
-  CHECK(dc != NULL);
+  log::assert_that(dc != NULL, "assert failed: dc != NULL");
   // Careful with endianess.
   int val = 0;
   memcpy(&val, dc, sizeof(*dc));
@@ -97,44 +102,44 @@ int device_class_to_int(const bt_device_class_t* dc) {
 
 bool device_class_equals(const bt_device_class_t* p1,
                          const bt_device_class_t* p2) {
-  CHECK(p1 != NULL);
-  CHECK(p2 != NULL);
+  log::assert_that(p1 != NULL, "assert failed: p1 != NULL");
+  log::assert_that(p2 != NULL, "assert failed: p2 != NULL");
   return (memcmp(p1, p2, sizeof(bt_device_class_t)) == 0);
 }
 
 bool device_class_copy(bt_device_class_t* dest, const bt_device_class_t* src) {
-  CHECK(dest != NULL);
-  CHECK(src != NULL);
+  log::assert_that(dest != NULL, "assert failed: dest != NULL");
+  log::assert_that(src != NULL, "assert failed: src != NULL");
   return (memcpy(dest, src, sizeof(bt_device_class_t)) == dest);
 }
 
 int device_class_get_major_device(const bt_device_class_t* dc) {
-  CHECK(dc != NULL);
+  log::assert_that(dc != NULL, "assert failed: dc != NULL");
   return DC(dc)->major_device;
 }
 
 void device_class_set_major_device(bt_device_class_t* dc, int val) {
-  CHECK(dc != NULL);
+  log::assert_that(dc != NULL, "assert failed: dc != NULL");
   DC(dc)->major_device = val;
 }
 
 int device_class_get_minor_device(const bt_device_class_t* dc) {
-  CHECK(dc != NULL);
+  log::assert_that(dc != NULL, "assert failed: dc != NULL");
   return DC(dc)->minor_device;
 }
 
 void device_class_set_minor_device(bt_device_class_t* dc, int val) {
-  CHECK(dc != NULL);
+  log::assert_that(dc != NULL, "assert failed: dc != NULL");
   DC(dc)->minor_device = val;
 }
 
 bool device_class_get_information(const bt_device_class_t* dc) {
-  CHECK(dc != NULL);
+  log::assert_that(dc != NULL, "assert failed: dc != NULL");
   return device_class_get_major_service_(dc, DC_INFORMATION);
 }
 
 void device_class_set_information(bt_device_class_t* dc, bool set) {
-  CHECK(dc != NULL);
+  log::assert_that(dc != NULL, "assert failed: dc != NULL");
   if (set)
     device_class_set_major_service_(dc, DC_INFORMATION);
   else
@@ -142,12 +147,12 @@ void device_class_set_information(bt_device_class_t* dc, bool set) {
 }
 
 bool device_class_get_limited(const bt_device_class_t* dc) {
-  CHECK(dc != NULL);
+  log::assert_that(dc != NULL, "assert failed: dc != NULL");
   return device_class_get_major_service_(dc, DC_LIMITED_DISCOVERABLE_MODE);
 }
 
 void device_class_set_limited(bt_device_class_t* dc, bool set) {
-  CHECK(dc != NULL);
+  log::assert_that(dc != NULL, "assert failed: dc != NULL");
   if (set)
     device_class_set_major_service_(dc, DC_LIMITED_DISCOVERABLE_MODE);
   else

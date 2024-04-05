@@ -851,7 +851,8 @@ void avdt_scb_init(void) {
  ******************************************************************************/
 AvdtpScb* avdt_scb_alloc(uint8_t peer_id,
                          const AvdtpStreamConfig& avdtp_stream_config) {
-  CHECK(peer_id < AVDT_NUM_LINKS);
+  log::assert_that(peer_id < AVDT_NUM_LINKS,
+                   "assert failed: peer_id < AVDT_NUM_LINKS");
 
   // Find available entry
   AvdtpScb* p_scb = &avdtp_cb.ccb[peer_id].scb[0];

@@ -15,6 +15,7 @@
  */
 
 #include <base/location.h>
+#include <bluetooth/log.h>
 #include <fuzzer/FuzzedDataProvider.h>
 #include <gmock/gmock.h>
 
@@ -40,6 +41,7 @@
 
 using bluetooth::Uuid;
 using testing::Return;
+using namespace bluetooth;
 
 // Verify the passed data is readable
 static void ConsumeData(const uint8_t* data, size_t size) {
@@ -208,25 +210,40 @@ static void Fuzz(const uint8_t* data, size_t size) {
                                                   bool, tL2CAP_LE_CFG_INFO*) {},
       .pL2CA_CreditBasedCollisionInd_Cb = [](const RawAddress&) {},
   };
-  CHECK(L2CA_Register2(BT_PSM_ATT, appl_info, false, nullptr, L2CAP_MTU_SIZE, 0,
-                       BTM_SEC_NONE));
-  CHECK(L2CA_RegisterLECoc(BT_PSM_EATT, appl_info, BTM_SEC_NONE, {}));
+  log::assert_that(L2CA_Register2(BT_PSM_ATT, appl_info, false, nullptr,
+                                  L2CAP_MTU_SIZE, 0, BTM_SEC_NONE),
+                   "assert failed: L2CA_Register2(BT_PSM_ATT, appl_info, "
+                   "false, nullptr, L2CAP_MTU_SIZE, 0, BTM_SEC_NONE)");
+  log::assert_that(L2CA_RegisterLECoc(BT_PSM_EATT, appl_info, BTM_SEC_NONE, {}),
+                   "assert failed: L2CA_RegisterLECoc(BT_PSM_EATT, appl_info, "
+                   "BTM_SEC_NONE, {{}})");
 
-  CHECK(L2CA_RegisterFixedChannel(L2CAP_ATT_CID, &reg));
-  CHECK(L2CA_ConnectFixedChnl(L2CAP_ATT_CID, kAttAddr));
-  CHECK(l2cble_conn_comp(kAttHndl, HCI_ROLE_CENTRAL, kAttAddr, BLE_ADDR_PUBLIC,
-                         100, 100, 100));
+  log::assert_that(
+      L2CA_RegisterFixedChannel(L2CAP_ATT_CID, &reg),
+      "assert failed: L2CA_RegisterFixedChannel(L2CAP_ATT_CID, &reg)");
+  log::assert_that(
+      L2CA_ConnectFixedChnl(L2CAP_ATT_CID, kAttAddr),
+      "assert failed: L2CA_ConnectFixedChnl(L2CAP_ATT_CID, kAttAddr)");
+  log::assert_that(
+      l2cble_conn_comp(kAttHndl, HCI_ROLE_CENTRAL, kAttAddr, BLE_ADDR_PUBLIC,
+                       100, 100, 100),
+      "assert failed: l2cble_conn_comp(kAttHndl, HCI_ROLE_CENTRAL, kAttAddr, "
+      "BLE_ADDR_PUBLIC, 100, 100, 100)");
 
-  CHECK(L2CA_RegisterFixedChannel(L2CAP_SMP_BR_CID, &reg));
-  CHECK(L2CA_ConnectFixedChnl(L2CAP_SMP_BR_CID, kSmpBrAddr));
+  log::assert_that(
+      L2CA_RegisterFixedChannel(L2CAP_SMP_BR_CID, &reg),
+      "assert failed: L2CA_RegisterFixedChannel(L2CAP_SMP_BR_CID, &reg)");
+  log::assert_that(
+      L2CA_ConnectFixedChnl(L2CAP_SMP_BR_CID, kSmpBrAddr),
+      "assert failed: L2CA_ConnectFixedChnl(L2CAP_SMP_BR_CID, kSmpBrAddr)");
   l2c_link_hci_conn_comp(HCI_SUCCESS, kSmpBrHndl, kSmpBrAddr);
 
   auto att_cid = L2CA_ConnectReq(BT_PSM_ATT, kAttAddr);
-  CHECK(att_cid != 0);
+  log::assert_that(att_cid != 0, "assert failed: att_cid != 0");
 
   tL2CAP_LE_CFG_INFO cfg;
   auto eatt_cid = L2CA_ConnectLECocReq(BT_PSM_EATT, kEattAddr, &cfg, 0);
-  CHECK(eatt_cid != 0);
+  log::assert_that(eatt_cid != 0, "assert failed: eatt_cid != 0");
 
   FuzzedDataProvider fdp(data, size);
 

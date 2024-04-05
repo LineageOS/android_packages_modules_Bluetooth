@@ -657,7 +657,7 @@ static void btif_update_remote_version_property(RawAddress* p_bd) {
   bt_remote_version_t info;
   bt_status_t status;
 
-  CHECK(p_bd != nullptr);
+  log::assert_that(p_bd != nullptr, "assert failed: p_bd != nullptr");
 
   const bool version_info_valid =
       BTM_ReadRemoteVersion(*p_bd, &lmp_ver, &mfct_set, &lmp_subver);

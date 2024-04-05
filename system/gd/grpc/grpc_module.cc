@@ -87,7 +87,7 @@ void GrpcModule::Unregister(GrpcFacadeModule* facade) {
     }
   }
 
-  log::assert_that(false, "assert failed: false");
+  log::fatal("module not found");
 }
 
 void GrpcModule::RunGrpcLoop() {

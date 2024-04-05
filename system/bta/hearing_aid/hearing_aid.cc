@@ -1201,7 +1201,7 @@ class HearingAidImpl : public HearingAid {
   }
 
   void OnAudioSuspend(const std::function<void()>& stop_audio_ticks) {
-    CHECK(stop_audio_ticks) << "stop_audio_ticks is empty";
+    log::assert_that((bool)stop_audio_ticks, "stop_audio_ticks is empty");
 
     if (!audio_running) {
       log::warn("Unexpected audio suspend");
@@ -1235,7 +1235,7 @@ class HearingAidImpl : public HearingAid {
   }
 
   void OnAudioResume(const std::function<void()>& start_audio_ticks) {
-    CHECK(start_audio_ticks) << "start_audio_ticks is empty";
+    log::assert_that((bool)start_audio_ticks, "start_audio_ticks is empty");
 
     if (audio_running) {
       log::error("Unexpected Audio Resume");

@@ -18,7 +18,7 @@
 #ifndef BTM_INT_TYPES_H
 #define BTM_INT_TYPES_H
 
-#include <gtest/gtest_prod.h>
+#include <bluetooth/log.h>
 
 #include <cstdint>
 #include <memory>
@@ -202,7 +202,8 @@ typedef struct tBTM_CB {
 
     history_ = std::make_shared<TimestampedStringCircularBuffer>(
         kBtmLogHistoryBufferSize);
-    CHECK(history_ != nullptr);
+    bluetooth::log::assert_that(history_ != nullptr,
+                                "assert failed: history_ != nullptr");
     history_->Push(std::string("Initialized btm history"));
   }
 

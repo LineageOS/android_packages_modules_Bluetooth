@@ -72,7 +72,7 @@ class LeAudioLogHistoryImpl : public LeAudioLogHistory {
   LeAudioLogHistoryImpl(void) {
     history_ = std::make_shared<TimestampedStringCircularBuffer>(
         kLeAudioLogHistoryBufferSize);
-    CHECK(history_ != nullptr);
+    log::assert_that(history_ != nullptr, "assert failed: history_ != nullptr");
     history_->Push(std::string("Initialized le_audio history"));
   }
 

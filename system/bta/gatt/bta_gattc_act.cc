@@ -294,7 +294,7 @@ void bta_gattc_process_api_open(const tBTA_GATTC_DATA* p_msg) {
 
 /** process connect API request */
 void bta_gattc_process_api_open_cancel(const tBTA_GATTC_DATA* p_msg) {
-  CHECK(p_msg != nullptr);
+  log::assert_that(p_msg != nullptr, "assert failed: p_msg != nullptr");
 
   uint16_t event = ((BT_HDR_RIGID*)p_msg)->event;
 
