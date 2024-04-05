@@ -190,7 +190,10 @@ public class HidHostService extends ProfileService {
                 break;
                 case MESSAGE_DISCONNECT: {
                     BluetoothDevice device = (BluetoothDevice) msg.obj;
-                    if (!disconnectHidNative(getByteAddress(device))) {
+                    int connectionPolicy = getConnectionPolicy(device);
+                    boolean reconnectAllowed =
+                            connectionPolicy == BluetoothProfile.CONNECTION_POLICY_ALLOWED;
+                    if (!disconnectHidNative(getByteAddress(device), reconnectAllowed)) {
                         broadcastConnectionState(device, BluetoothProfile.STATE_DISCONNECTING);
                         broadcastConnectionState(device, BluetoothProfile.STATE_DISCONNECTED);
                         break;
@@ -326,9 +329,7 @@ public class HidHostService extends ProfileService {
         }
     };
 
-    /**
-     * Handlers for incoming service calls
-     */
+    /** Handlers for incoming service calls */
     @VisibleForTesting
     static class BluetoothHidHostBinder extends IBluetoothHidHost.Stub
             implements IProfileServiceBinder {
@@ -1032,7 +1033,7 @@ public class HidHostService extends ProfileService {
 
     private native boolean connectHidNative(byte[] btAddress);
 
-    private native boolean disconnectHidNative(byte[] btAddress);
+    private native boolean disconnectHidNative(byte[] btAddress, boolean reconnect_allowed);
 
     private native boolean getProtocolModeNative(byte[] btAddress);
 
