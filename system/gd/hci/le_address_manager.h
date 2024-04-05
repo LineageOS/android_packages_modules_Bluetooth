@@ -110,12 +110,8 @@ class LeAddressManager {
   std::chrono::milliseconds maximum_rotation_time_;
 
  private:
-  enum ClientState {
-    WAITING_FOR_PAUSE,
-    PAUSED,
-    WAITING_FOR_RESUME,
-    RESUMED,
-  };
+  enum class ClientState;
+  std::string ClientStateText(const ClientState cs);
 
   enum CommandType {
     ROTATE_RANDOM_ADDRESS,
@@ -180,17 +176,12 @@ class LeAddressManager {
   uint8_t resolving_list_size_;
   std::queue<Command> cached_commands_;
   bool supports_ble_privacy_{false};
-
-  friend struct ::fmt::formatter<ClientState>;
 };
 
 }  // namespace hci
 }  // namespace bluetooth
 
 namespace fmt {
-template <>
-struct formatter<bluetooth::hci::LeAddressManager::ClientState>
-    : enum_formatter<bluetooth::hci::LeAddressManager::ClientState> {};
 template <>
 struct formatter<bluetooth::hci::LeAddressManager::AddressPolicy>
     : enum_formatter<bluetooth::hci::LeAddressManager::AddressPolicy> {};
