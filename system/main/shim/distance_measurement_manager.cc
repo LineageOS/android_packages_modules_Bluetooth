@@ -115,8 +115,9 @@ class DistanceMeasurementInterfaceImpl
         bluetooth::ToRawAddress(address), procedure_counter, is_last, raw_data);
   }
 
-  void OnRemoteData(RawAddress /* address */, std::vector<uint8_t> /* data */) {
-    // TODO(b/329043482) - push data to GD module and parse it
+  void OnRemoteData(RawAddress address, std::vector<uint8_t> data) {
+    bluetooth::shim::GetDistanceMeasurementManager()->HandleRemoteData(
+        bluetooth::ToGdAddress(address), data);
   }
 
  private:
