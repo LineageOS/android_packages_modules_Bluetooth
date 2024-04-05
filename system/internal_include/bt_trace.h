@@ -32,6 +32,8 @@ static const char BTE_LOGMSG_MODULE[] = "bte_logmsg_module";
 
 #ifdef __cplusplus
 
+#include <bluetooth/log.h>
+
 #include <array>
 #include <iomanip>
 #include <sstream>
@@ -88,7 +90,8 @@ inline std::string logbool(bool value) {
  */
 inline std::string& AppendField(std::string* p_result, bool append,
                                 const std::string& name) {
-  CHECK(p_result != nullptr);
+  bluetooth::log::assert_that(p_result != nullptr,
+                              "assert failed: p_result != nullptr");
   if (!append) return *p_result;
   if (!p_result->empty()) *p_result += "|";
   *p_result += name;

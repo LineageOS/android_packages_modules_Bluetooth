@@ -514,7 +514,7 @@ uint16_t BTM_IsInquiryActive(void) {
  ******************************************************************************/
 static void BTM_CancelLeScan() {
   if (!bluetooth::shim::is_classic_discovery_only_enabled()) {
-    CHECK(BTM_IsDeviceUp());
+    log::assert_that(BTM_IsDeviceUp(), "assert failed: BTM_IsDeviceUp()");
     if ((btm_cb.btm_inq_vars.inqparms.mode & BTM_BLE_INQUIRY_MASK) != 0)
       btm_ble_stop_inquiry();
   } else {
@@ -534,7 +534,7 @@ static void BTM_CancelLeScan() {
 void BTM_CancelInquiry(void) {
   log::verbose("");
 
-  CHECK(BTM_IsDeviceUp());
+  log::assert_that(BTM_IsDeviceUp(), "assert failed: BTM_IsDeviceUp()");
 
   btm_cb.neighbor.inquiry_history_->Push({
       .status = tBTM_INQUIRY_CMPL::CANCELED,

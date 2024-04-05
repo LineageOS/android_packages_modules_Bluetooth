@@ -146,7 +146,7 @@ static int uhid_write(int fd, const struct uhid_event* ev) {
 
 /* Internal function to parse the events received from UHID driver*/
 static int uhid_read_event(btif_hh_device_t* p_dev) {
-  CHECK(p_dev);
+  log::assert_that(p_dev != nullptr, "assert failed: p_dev != nullptr");
 
   struct uhid_event ev;
   memset(&ev, 0, sizeof(ev));
@@ -440,10 +440,12 @@ bool bta_hh_co_open(uint8_t dev_handle, uint8_t sub_class,
   p_dev->dev_status = BTHH_CONN_STATE_CONNECTED;
   p_dev->dev_handle = dev_handle;
   p_dev->get_rpt_id_queue = fixed_queue_new(SIZE_MAX);
-  CHECK(p_dev->get_rpt_id_queue);
+  log::assert_that(p_dev->get_rpt_id_queue,
+                   "assert failed: p_dev->get_rpt_id_queue");
 #if ENABLE_UHID_SET_REPORT
   p_dev->set_rpt_id_queue = fixed_queue_new(SIZE_MAX);
-  CHECK(p_dev->set_rpt_id_queue);
+  log::assert_that(p_dev->set_rpt_id_queue,
+                   "assert failed: p_dev->set_rpt_id_queue");
 #endif  // ENABLE_UHID_SET_REPORT
 
   log::debug("Return device status {}", p_dev->dev_status);

@@ -197,10 +197,12 @@ void OnTransmitPacketStatus(command_status_cb status_callback, void* context,
 static void transmit_command(const BT_HDR* command,
                              command_complete_cb complete_callback,
                              command_status_cb status_callback, void* context) {
-  CHECK(command != nullptr);
+  log::assert_that(command != nullptr, "assert failed: command != nullptr");
   const uint8_t* data = command->data + command->offset;
   size_t len = command->len;
-  CHECK(len >= (kCommandOpcodeSize + kCommandLengthSize));
+  log::assert_that(
+      len >= (kCommandOpcodeSize + kCommandLengthSize),
+      "assert failed: len >= (kCommandOpcodeSize + kCommandLengthSize)");
 
   // little endian command opcode
   uint16_t command_op_code = (data[1] << 8 | data[0]);
@@ -356,8 +358,11 @@ static void transmit_fragment(BT_HDR* packet, bool send_transmit_finished) {
 }
 static void dispatch_reassembled(BT_HDR* packet) {
   // Only ISO should be handled here
-  CHECK((packet->event & MSG_EVT_MASK) == MSG_HC_TO_STACK_HCI_ISO);
-  CHECK(!send_data_upwards.is_null());
+  log::assert_that((packet->event & MSG_EVT_MASK) == MSG_HC_TO_STACK_HCI_ISO,
+                   "assert failed: (packet->event & MSG_EVT_MASK) == "
+                   "MSG_HC_TO_STACK_HCI_ISO");
+  log::assert_that(!send_data_upwards.is_null(),
+                   "assert failed: !send_data_upwards.is_null()");
   send_data_upwards.Run(FROM_HERE, packet);
 }
 

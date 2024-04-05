@@ -380,8 +380,9 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
         // Check the outgoing connection state and address.
         CHECK_EQ(btif_hf_cb[idx].state, BTHF_CONNECTION_STATE_CONNECTING)
             << "Control block must be in connecting state when initiating";
-        CHECK(!btif_hf_cb[idx].connected_bda.IsEmpty())
-            << "Remote device address must not be empty when initiating";
+        log::assert_that(
+            !btif_hf_cb[idx].connected_bda.IsEmpty(),
+            "Remote device address must not be empty when initiating");
         // Check if the incoming open event and the outgoing connection are
         // for the same device.
         if (btif_hf_cb[idx].connected_bda != p_data->open.bd_addr) {

@@ -4559,7 +4559,7 @@ void btm_sec_update_clock_offset(uint16_t handle, uint16_t clock_offset) {
  *
  ******************************************************************************/
 tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec) {
-  CHECK(p_dev_rec != nullptr);
+  log::assert_that(p_dev_rec != nullptr, "assert failed: p_dev_rec != nullptr");
   log::debug(
       "security_required:0x{:x} security_flags:0x{:x} security_state:{}[{}]",
       p_dev_rec->sec_rec.security_required, p_dev_rec->sec_rec.sec_flags,

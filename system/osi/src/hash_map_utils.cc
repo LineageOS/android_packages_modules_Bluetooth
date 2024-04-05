@@ -17,17 +17,20 @@
  ******************************************************************************/
 
 #include "osi/include/hash_map_utils.h"
-#include <base/logging.h>  // CHECK()
+
+#include <bluetooth/log.h>
+
 #include <cstring>
 #include <map>
 #include <string>
+
 #include "check.h"
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"
 
 std::unordered_map<std::string, std::string>
 hash_map_utils_new_from_string_params(const char* params) {
-  CHECK(params != NULL);
+  bluetooth::log::assert_that(params != NULL, "assert failed: params != NULL");
 
   std::unordered_map<std::string, std::string> map;
 

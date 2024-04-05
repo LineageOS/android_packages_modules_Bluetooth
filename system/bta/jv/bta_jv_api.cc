@@ -122,7 +122,7 @@ void BTA_JvGetChannelId(int conn_type, uint32_t id, int32_t channel) {
   if (conn_type != BTA_JV_CONN_TYPE_RFCOMM &&
       conn_type != BTA_JV_CONN_TYPE_L2CAP &&
       conn_type != BTA_JV_CONN_TYPE_L2CAP_LE) {
-    CHECK(false) << "Invalid conn_type=" << conn_type;
+    log::fatal("Invalid conn_type={}", conn_type);
   }
 
   do_in_main_thread(FROM_HERE,
@@ -238,7 +238,7 @@ void BTA_JvL2capConnect(int conn_type, tBTA_SEC sec_mask, tBTA_JV_ROLE role,
       "l2cap_socket_id:{}",
       conn_type, role, remote_psm, ADDRESS_TO_LOGGABLE_CSTR(peer_bd_addr),
       l2cap_socket_id);
-  CHECK(p_cback);
+  log::assert_that(p_cback != nullptr, "assert failed: p_cback != nullptr");
 
   do_in_main_thread(FROM_HERE,
                     Bind(&bta_jv_l2cap_connect, conn_type, sec_mask, role,
@@ -289,7 +289,7 @@ void BTA_JvL2capStartServer(int conn_type, tBTA_SEC sec_mask, tBTA_JV_ROLE role,
                             uint32_t l2cap_socket_id) {
   log::verbose("conn_type:{}, role:{}, local_psm:{}, l2cap_socket_id:{}",
                conn_type, role, local_psm, l2cap_socket_id);
-  CHECK(p_cback);
+  log::assert_that(p_cback != nullptr, "assert failed: p_cback != nullptr");
 
   do_in_main_thread(FROM_HERE,
                     Bind(&bta_jv_l2cap_start_server, conn_type, sec_mask, role,

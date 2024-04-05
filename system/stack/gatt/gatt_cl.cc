@@ -229,7 +229,8 @@ void gatt_act_read(tGATT_CLCB* p_clcb, uint16_t offset) {
 void gatt_act_write(tGATT_CLCB* p_clcb, uint8_t sec_act) {
   tGATT_TCB& tcb = *p_clcb->p_tcb;
 
-  CHECK(p_clcb->p_attr_buf);
+  log::assert_that(p_clcb->p_attr_buf != nullptr,
+                   "assert failed: p_clcb->p_attr_buf != nullptr");
   tGATT_VALUE& attr = *((tGATT_VALUE*)p_clcb->p_attr_buf);
 
   uint16_t payload_size = gatt_tcb_get_payload_size(tcb, p_clcb->cid);
@@ -278,7 +279,7 @@ void gatt_act_write(tGATT_CLCB* p_clcb, uint8_t sec_act) {
       return;
 
     default:
-      CHECK(false) << "Unknown write type" << p_clcb->op_subtype;
+      log::fatal("Unknown write type {}", p_clcb->op_subtype);
       return;
   }
 }

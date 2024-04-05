@@ -891,7 +891,7 @@ void btm_read_remote_version_complete(tHCI_STATUS status, uint16_t handle,
  ******************************************************************************/
 void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
                                      uint8_t max_page_number) {
-  CHECK(p_acl_cb != nullptr);
+  log::assert_that(p_acl_cb != nullptr, "assert failed: p_acl_cb != nullptr");
   if (!p_acl_cb->peer_lmp_feature_valid[max_page_number]) {
     log::warn("Checking remote features but remote feature read is incomplete");
   }
@@ -1046,7 +1046,7 @@ void btm_read_remote_ext_features_failed(uint8_t status, uint16_t handle) {
  *
  ******************************************************************************/
 void StackAclBtmAcl::btm_establish_continue(tACL_CONN* p_acl) {
-  CHECK(p_acl != nullptr);
+  log::assert_that(p_acl != nullptr, "assert failed: p_acl != nullptr");
 
   if (p_acl->is_transport_br_edr()) {
     /* For now there are a some devices that do not like sending */
@@ -1087,7 +1087,7 @@ void btm_establish_continue_from_address(const RawAddress& bda,
  ******************************************************************************/
 tBTM_STATUS BTM_GetLinkSuperTout(const RawAddress& remote_bda,
                                  uint16_t* p_timeout) {
-  CHECK(p_timeout != nullptr);
+  log::assert_that(p_timeout != nullptr, "assert failed: p_timeout != nullptr");
   const tACL_CONN* p_acl =
       internal_.btm_bda_to_acl(remote_bda, BT_TRANSPORT_BR_EDR);
   if (p_acl == nullptr) {

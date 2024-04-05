@@ -74,7 +74,7 @@ static void rfc_mx_conf_cnf(tRFC_MCB* p_mcb, uint16_t result);
  *
  ******************************************************************************/
 void rfc_mx_sm_execute(tRFC_MCB* p_mcb, tRFC_MX_EVENT event, void* p_data) {
-  CHECK(p_mcb != nullptr) << __func__ << ": NULL mcb for event " << event;
+  log::assert_that(p_mcb != nullptr, "NULL mcb for event {}", event);
 
   log::info("RFCOMM peer:{} event:{} state:{}",
             ADDRESS_TO_LOGGABLE_CSTR(p_mcb->bd_addr), event,

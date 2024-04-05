@@ -380,7 +380,7 @@ void bta_hf_client_do_disc(tBTA_HF_CLIENT_CB* client_cb) {
  *
  ******************************************************************************/
 void bta_hf_client_free_db(tBTA_HF_CLIENT_DATA* p_data) {
-  CHECK(p_data != NULL);
+  log::assert_that(p_data != NULL, "assert failed: p_data != NULL");
   tBTA_HF_CLIENT_CB* client_cb =
       bta_hf_client_find_cb_by_handle(p_data->hdr.layer_specific);
   if (client_cb == NULL) {

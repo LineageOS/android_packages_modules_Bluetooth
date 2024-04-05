@@ -76,7 +76,7 @@ error:;
 }
 
 socket_t* socket_new_from_fd(int fd) {
-  CHECK(fd != INVALID_FD);
+  log::assert_that(fd != INVALID_FD, "assert failed: fd != INVALID_FD");
 
   socket_t* ret = (socket_t*)osi_calloc(sizeof(socket_t));
 
@@ -93,7 +93,7 @@ void socket_free(socket_t* socket) {
 }
 
 bool socket_listen(const socket_t* socket, port_t port) {
-  CHECK(socket != NULL);
+  log::assert_that(socket != NULL, "assert failed: socket != NULL");
 
   struct sockaddr_in addr;
   addr.sin_family = AF_INET;
@@ -113,7 +113,7 @@ bool socket_listen(const socket_t* socket, port_t port) {
 }
 
 socket_t* socket_accept(const socket_t* socket) {
-  CHECK(socket != NULL);
+  log::assert_that(socket != NULL, "assert failed: socket != NULL");
 
   int fd;
   OSI_NO_INTR(fd = accept(socket->fd, NULL, NULL));
@@ -129,8 +129,8 @@ socket_t* socket_accept(const socket_t* socket) {
 }
 
 ssize_t socket_read(const socket_t* socket, void* buf, size_t count) {
-  CHECK(socket != NULL);
-  CHECK(buf != NULL);
+  log::assert_that(socket != NULL, "assert failed: socket != NULL");
+  log::assert_that(buf != NULL, "assert failed: buf != NULL");
 
   ssize_t ret;
   OSI_NO_INTR(ret = recv(socket->fd, buf, count, MSG_DONTWAIT));
@@ -139,8 +139,8 @@ ssize_t socket_read(const socket_t* socket, void* buf, size_t count) {
 }
 
 ssize_t socket_write(const socket_t* socket, const void* buf, size_t count) {
-  CHECK(socket != NULL);
-  CHECK(buf != NULL);
+  log::assert_that(socket != NULL, "assert failed: socket != NULL");
+  log::assert_that(buf != NULL, "assert failed: buf != NULL");
 
   ssize_t ret;
   OSI_NO_INTR(ret = send(socket->fd, buf, count, MSG_DONTWAIT));
@@ -150,8 +150,8 @@ ssize_t socket_write(const socket_t* socket, const void* buf, size_t count) {
 
 ssize_t socket_write_and_transfer_fd(const socket_t* socket, const void* buf,
                                      size_t count, int fd) {
-  CHECK(socket != NULL);
-  CHECK(buf != NULL);
+  log::assert_that(socket != NULL, "assert failed: socket != NULL");
+  log::assert_that(buf != NULL, "assert failed: buf != NULL");
 
   if (fd == INVALID_FD) return socket_write(socket, buf, count);
 
@@ -183,7 +183,7 @@ ssize_t socket_write_and_transfer_fd(const socket_t* socket, const void* buf,
 }
 
 ssize_t socket_bytes_available(const socket_t* socket) {
-  CHECK(socket != NULL);
+  log::assert_that(socket != NULL, "assert failed: socket != NULL");
 
   int size = 0;
   if (ioctl(socket->fd, FIONREAD, &size) == -1) return -1;
@@ -192,7 +192,7 @@ ssize_t socket_bytes_available(const socket_t* socket) {
 
 void socket_register(socket_t* socket, reactor_t* reactor, void* context,
                      socket_cb read_cb, socket_cb write_cb) {
-  CHECK(socket != NULL);
+  log::assert_that(socket != NULL, "assert failed: socket != NULL");
 
   // Make sure the socket isn't currently registered.
   socket_unregister(socket);
@@ -209,21 +209,21 @@ void socket_register(socket_t* socket, reactor_t* reactor, void* context,
 }
 
 void socket_unregister(socket_t* socket) {
-  CHECK(socket != NULL);
+  log::assert_that(socket != NULL, "assert failed: socket != NULL");
 
   if (socket->reactor_object) reactor_unregister(socket->reactor_object);
   socket->reactor_object = NULL;
 }
 
 static void internal_read_ready(void* context) {
-  CHECK(context != NULL);
+  log::assert_that(context != NULL, "assert failed: context != NULL");
 
   socket_t* socket = static_cast<socket_t*>(context);
   socket->read_ready(socket, socket->context);
 }
 
 static void internal_write_ready(void* context) {
-  CHECK(context != NULL);
+  log::assert_that(context != NULL, "assert failed: context != NULL");
 
   socket_t* socket = static_cast<socket_t*>(context);
   socket->write_ready(socket, socket->context);
