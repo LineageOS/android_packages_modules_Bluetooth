@@ -15,6 +15,18 @@ cc_library {
     srcs: [
         "src/vlog_android.cc",
     ],
+
+    //                             WARNING
+    //
+    // Before adding any package to the visibility list of the _bluetooth_
+    // logging library: be aware that the burden of maintaining the dependents
+    // will _always_ fall on the library developer. Dependent repositories
+    // need to be updated for any breaking change.
+    //
+    // Always extend this list with strict package selection (e.g.
+    // "//hardware/interfaces/bluetooth/aidl/vts"), _never_ with open selection
+    // (e.g. "//vendor:__subpackages__").
+    //
     visibility: [
         "//hardware/interfaces/bluetooth/aidl/vts",
         "//packages/modules/Bluetooth:__subpackages__",
