@@ -58,12 +58,6 @@ typedef void(tBTM_CMPL_CB)(void* p1);
  */
 typedef void(tBTM_VSC_CMPL_CB)(tBTM_VSC_CMPL* p1);
 
-constexpr uint8_t BLE_EVT_CONNECTABLE_BIT = 0;
-constexpr uint8_t BLE_EVT_SCANNABLE_BIT = 1;
-constexpr uint8_t BLE_EVT_DIRECTED_BIT = 2;
-constexpr uint8_t BLE_EVT_SCAN_RESPONSE_BIT = 3;
-constexpr uint8_t BLE_EVT_LEGACY_BIT = 4;
-
 constexpr uint8_t PHY_LE_NO_PACKET = 0x00;
 constexpr uint8_t PHY_LE_1M = 0x01;
 constexpr uint8_t PHY_LE_2M = 0x02;
