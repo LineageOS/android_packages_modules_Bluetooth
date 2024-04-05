@@ -403,21 +403,6 @@ struct btsnd_hcic_rmt_ext_features {
 };
 extern struct btsnd_hcic_rmt_ext_features btsnd_hcic_rmt_ext_features;
 
-// Name: btsnd_hcic_rmt_name_req
-// Params: const RawAddress& bd_addr, uint8_t page_scan_rep_mode, uint8_t
-// page_scan_mode, uint16_t clock_offset Return: void
-struct btsnd_hcic_rmt_name_req {
-  std::function<void(const RawAddress& bd_addr, uint8_t page_scan_rep_mode,
-                     uint8_t page_scan_mode, uint16_t clock_offset)>
-      body{[](const RawAddress& /* bd_addr */, uint8_t /* page_scan_rep_mode */,
-              uint8_t /* page_scan_mode */, uint16_t /* clock_offset */) {}};
-  void operator()(const RawAddress& bd_addr, uint8_t page_scan_rep_mode,
-                  uint8_t page_scan_mode, uint16_t clock_offset) {
-    body(bd_addr, page_scan_rep_mode, page_scan_mode, clock_offset);
-  };
-};
-extern struct btsnd_hcic_rmt_name_req btsnd_hcic_rmt_name_req;
-
 // Name: btsnd_hcic_rmt_ver_req
 // Params: uint16_t handle
 // Return: void

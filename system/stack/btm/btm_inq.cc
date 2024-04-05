@@ -254,8 +254,8 @@ static const uint8_t* btm_eir_get_uuid_list(const uint8_t* p_eir,
                                             uint8_t* p_uuid_list_type);
 
 void SendRemoteNameRequest(const RawAddress& raw_address) {
-  btsnd_hcic_rmt_name_req(raw_address, HCI_PAGE_SCAN_REP_MODE_R1,
-                          HCI_MANDATARY_PAGE_SCAN_MODE, 0);
+  bluetooth::shim::ACL_RemoteNameRequest(raw_address, HCI_PAGE_SCAN_REP_MODE_R1,
+                                         HCI_MANDATARY_PAGE_SCAN_MODE, 0);
 }
 static void btm_process_cancel_complete(tHCI_STATUS status, uint8_t mode);
 static void on_incoming_hci_event(bluetooth::hci::EventView event);
@@ -1902,8 +1902,7 @@ tBTM_STATUS btm_initiate_rem_name(const RawAddress& remote_bda, uint8_t origin,
             clock_offset = clock_offset_in_cfg;
           }
         }
-
-        btsnd_hcic_rmt_name_req(
+        bluetooth::shim::ACL_RemoteNameRequest(
             remote_bda, p_cur->results.page_scan_rep_mode,
             p_cur->results.page_scan_mode, clock_offset);
       } else {
@@ -1912,9 +1911,9 @@ tBTM_STATUS btm_initiate_rem_name(const RawAddress& remote_bda, uint8_t origin,
         if (btif_get_device_clockoffset(remote_bda, &clock_offset_in_cfg)) {
           clock_offset = clock_offset_in_cfg;
         }
-        /* Otherwise use defaults and mark the clock offset as invalid */
-        btsnd_hcic_rmt_name_req(remote_bda, HCI_PAGE_SCAN_REP_MODE_R1,
-                                HCI_MANDATARY_PAGE_SCAN_MODE, clock_offset);
+        bluetooth::shim::ACL_RemoteNameRequest(
+            remote_bda, HCI_PAGE_SCAN_REP_MODE_R1, HCI_MANDATARY_PAGE_SCAN_MODE,
+            clock_offset);
       }
 
       btm_cb.btm_inq_vars.remname_active = true;
