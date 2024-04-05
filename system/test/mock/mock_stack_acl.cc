@@ -43,7 +43,6 @@ namespace stack_acl {
 struct BTM_BLE_IS_RESOLVE_BDA BTM_BLE_IS_RESOLVE_BDA;
 struct BTM_IsAclConnectionUp BTM_IsAclConnectionUp;
 struct BTM_IsAclConnectionUpAndHandleValid BTM_IsAclConnectionUpAndHandleValid;
-struct BTM_IsAclConnectionUpFromHandle BTM_IsAclConnectionUpFromHandle;
 struct BTM_IsBleConnection BTM_IsBleConnection;
 struct BTM_IsPhy2mSupported BTM_IsPhy2mSupported;
 struct BTM_ReadRemoteConnectionAddr BTM_ReadRemoteConnectionAddr;
@@ -137,7 +136,6 @@ struct btm_read_failed_contact_counter_complete
 struct btm_read_failed_contact_counter_timeout
     btm_read_failed_contact_counter_timeout;
 struct btm_read_link_quality_complete btm_read_link_quality_complete;
-struct btm_read_link_quality_timeout btm_read_link_quality_timeout;
 struct btm_read_remote_ext_features btm_read_remote_ext_features;
 struct btm_read_remote_ext_features_complete
     btm_read_remote_ext_features_complete;
@@ -178,10 +176,6 @@ bool BTM_IsAclConnectionUpAndHandleValid(const RawAddress& remote_bda,
   inc_func_call_count(__func__);
   return test::mock::stack_acl::BTM_IsAclConnectionUpAndHandleValid(remote_bda,
                                                                     transport);
-}
-bool BTM_IsAclConnectionUpFromHandle(uint16_t hci_handle) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_acl::BTM_IsAclConnectionUpFromHandle(hci_handle);
 }
 bool BTM_IsBleConnection(uint16_t hci_handle) {
   inc_func_call_count(__func__);
@@ -572,10 +566,6 @@ void btm_read_failed_contact_counter_timeout(void* data) {
 void btm_read_link_quality_complete(uint8_t* p, uint16_t evt_len) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_read_link_quality_complete(p, evt_len);
-}
-void btm_read_link_quality_timeout(void* data) {
-  inc_func_call_count(__func__);
-  test::mock::stack_acl::btm_read_link_quality_timeout(data);
 }
 void btm_read_remote_ext_features(uint16_t handle, uint8_t page_number) {
   inc_func_call_count(__func__);

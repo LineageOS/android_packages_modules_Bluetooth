@@ -187,7 +187,6 @@ cc_library_static {
         "src/btif_ble_scanner.cc",
         "src/btif_bqr.cc",
         "src/btif_config.cc",
-        "src/btif_config_cache.cc",
         "src/btif_core.cc",
         "src/btif_debug_conn.cc",
         "src/btif_dm.cc",
@@ -496,50 +495,6 @@ cc_test {
         address: true,
         cfi: true,
         misc_undefined: ["bounds"],
-    },
-}
-
-// btif config cache unit tests for target
-cc_test {
-    name: "net_test_btif_config_cache",
-    defaults: [
-        "fluoride_defaults",
-        "mts_defaults",
-    ],
-    test_suites: ["general-tests"],
-    host_supported: true,
-    test_options: {
-        unit_test: true,
-    },
-    include_dirs: btifCommonIncludes,
-    srcs: [
-        "src/btif_config_cache.cc",
-        "test/btif_config_cache_test.cc",
-    ],
-    header_libs: ["libbluetooth_headers"],
-    shared_libs: [
-        "libbase",
-        "libbinder_ndk",
-        "libcrypto",
-        "libcutils",
-        "liblog",
-    ],
-    static_libs: [
-        "libbluetooth-types",
-        "libbluetooth_crypto_toolbox",
-        "libbluetooth_log",
-        "libbt_shim_bridge",
-        "libc++fs",
-        "libchrome",
-        "libgmock",
-        "libosi",
-    ],
-    target: {
-        android: {
-            static_libs: [
-                "android.system.suspend.control-V1-ndk",
-            ],
-        },
     },
 }
 

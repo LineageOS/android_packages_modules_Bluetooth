@@ -39,16 +39,6 @@ namespace test {
 namespace mock {
 namespace stack_hcic_hcicmds {
 
-// Name: btsnd_hcic_accept_conn
-// Params: const RawAddress& dest, uint8_t role
-// Return: void
-struct btsnd_hcic_accept_conn {
-  std::function<void(const RawAddress& dest, uint8_t role)> body{
-      [](const RawAddress& /* dest */, uint8_t /* role */) {}};
-  void operator()(const RawAddress& dest, uint8_t role) { body(dest, role); };
-};
-extern struct btsnd_hcic_accept_conn btsnd_hcic_accept_conn;
-
 // Name: btsnd_hcic_accept_esco_conn
 // Params: const RawAddress& bd_addr, uint32_t transmit_bandwidth, uint32_t
 // receive_bandwidth, uint16_t max_latency, uint16_t content_fmt, uint8_t

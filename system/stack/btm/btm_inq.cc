@@ -1066,27 +1066,6 @@ void btm_inq_db_reset(void) {
   return;
 }
 
-/*******************************************************************************
- *
- * Function         btm_inq_db_init
- *
- * Description      This function is called at startup to initialize the inquiry
- *                  database.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_inq_db_init(void) {
-  alarm_free(btm_cb.btm_inq_vars.remote_name_timer);
-  btm_cb.btm_inq_vars.remote_name_timer =
-      alarm_new("btm_inq.remote_name_timer");
-  btm_inq_db_set_inq_by_rssi();
-}
-
-void btm_inq_db_free(void) {
-  alarm_free(btm_cb.btm_inq_vars.remote_name_timer);
-}
-
 void btm_inq_db_set_inq_by_rssi(void) {
   internal_.inq_by_rssi = osi_property_get_bool(PROPERTY_INQ_BY_RSSI, false);
 }

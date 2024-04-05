@@ -54,10 +54,6 @@ bool BTM_SecDeleteDevice(const RawAddress& /* bd_addr */) {
   inc_func_call_count(__func__);
   return false;
 }
-bool btm_dev_support_role_switch(const RawAddress& /* bd_addr */) {
-  inc_func_call_count(__func__);
-  return false;
-}
 bool btm_set_bond_type_dev(const RawAddress& /* bd_addr */,
                            tBTM_BOND_TYPE /* bond_type */) {
   inc_func_call_count(__func__);
