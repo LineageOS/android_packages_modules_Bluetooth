@@ -83,7 +83,7 @@ static sco_socket_t* listen_sco_socket;  // Not owned, do not free.
 static thread_t* thread;                 // Not owned, do not free.
 
 bt_status_t btsock_sco_init(thread_t* thread_) {
-  CHECK(thread_ != NULL);
+  log::assert_that(thread_ != NULL, "assert failed: thread_ != NULL");
 
   sco_sockets = list_new((list_free_cb)sco_socket_free_locked);
   if (!sco_sockets) return BT_STATUS_FAIL;
@@ -102,7 +102,7 @@ bt_status_t btsock_sco_cleanup(void) {
 }
 
 bt_status_t btsock_sco_listen(int* sock_fd, int /* flags */) {
-  CHECK(sock_fd != NULL);
+  log::assert_that(sock_fd != NULL, "assert failed: sock_fd != NULL");
 
   std::unique_lock<std::mutex> lock(sco_lock);
 
@@ -117,8 +117,8 @@ bt_status_t btsock_sco_listen(int* sock_fd, int /* flags */) {
 
 bt_status_t btsock_sco_connect(const RawAddress* bd_addr, int* sock_fd,
                                int /* flags */) {
-  CHECK(bd_addr != NULL);
-  CHECK(sock_fd != NULL);
+  log::assert_that(bd_addr != NULL, "assert failed: bd_addr != NULL");
+  log::assert_that(sock_fd != NULL, "assert failed: sock_fd != NULL");
 
   std::unique_lock<std::mutex> lock(sco_lock);
   sco_socket_t* sco_socket =
@@ -208,7 +208,7 @@ static sco_socket_t* sco_socket_find_locked(uint16_t sco_handle) {
 
 static void connection_request_cb(tBTM_ESCO_EVT event,
                                   tBTM_ESCO_EVT_DATA* data) {
-  CHECK(data != NULL);
+  log::assert_that(data != NULL, "assert failed: data != NULL");
 
   // Don't care about change of link parameters, only connection requests.
   if (event != BTM_ESCO_CONN_REQ_EVT) return;

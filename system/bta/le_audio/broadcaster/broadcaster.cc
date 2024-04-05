@@ -820,14 +820,16 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
   void OnSetupIsoDataPath(uint8_t status, uint16_t conn_handle,
                           uint8_t big_handle) override {
     auto broadcast_id = BroadcastIdFromBigHandle(big_handle);
-    CHECK(broadcasts_.count(broadcast_id) != 0);
+    log::assert_that(broadcasts_.count(broadcast_id) != 0,
+                     "assert failed: broadcasts_.count(broadcast_id) != 0");
     broadcasts_[broadcast_id]->OnSetupIsoDataPath(status, conn_handle);
   }
 
   void OnRemoveIsoDataPath(uint8_t status, uint16_t conn_handle,
                            uint8_t big_handle) override {
     auto broadcast_id = BroadcastIdFromBigHandle(big_handle);
-    CHECK(broadcasts_.count(broadcast_id) != 0);
+    log::assert_that(broadcasts_.count(broadcast_id) != 0,
+                     "assert failed: broadcasts_.count(broadcast_id) != 0");
     broadcasts_[broadcast_id]->OnRemoveIsoDataPath(status, conn_handle);
   }
 
@@ -836,7 +838,8 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
       case bluetooth::hci::iso_manager::kIsoEventBigOnCreateCmpl: {
         auto* evt = static_cast<big_create_cmpl_evt*>(data);
         auto broadcast_id = BroadcastIdFromBigHandle(evt->big_id);
-        CHECK(broadcasts_.count(broadcast_id) != 0);
+        log::assert_that(broadcasts_.count(broadcast_id) != 0,
+                         "assert failed: broadcasts_.count(broadcast_id) != 0");
         broadcasts_[broadcast_id]->HandleHciEvent(HCI_BLE_CREATE_BIG_CPL_EVT,
                                                   evt);
 
@@ -844,7 +847,8 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
       case bluetooth::hci::iso_manager::kIsoEventBigOnTerminateCmpl: {
         auto* evt = static_cast<big_terminate_cmpl_evt*>(data);
         auto broadcast_id = BroadcastIdFromBigHandle(evt->big_id);
-        CHECK(broadcasts_.count(broadcast_id) != 0);
+        log::assert_that(broadcasts_.count(broadcast_id) != 0,
+                         "assert failed: broadcasts_.count(broadcast_id) != 0");
         broadcasts_[broadcast_id]->HandleHciEvent(HCI_BLE_TERM_BIG_CPL_EVT,
                                                   evt);
         le_audio_source_hal_client_.reset();
@@ -1301,7 +1305,7 @@ bool LeAudioBroadcaster::IsLeAudioBroadcasterRunning() { return instance; }
 
 LeAudioBroadcaster* LeAudioBroadcaster::Get(void) {
   log::info("");
-  CHECK(instance);
+  log::assert_that(instance != nullptr, "assert failed: instance != nullptr");
   return instance;
 }
 

@@ -227,8 +227,8 @@ BluetoothAudioClientInterface::GetAudioCapabilities(SessionType session_type) {
 
   android::sp<IBluetoothAudioProvidersFactory_2_0> providersFactory =
       HalVersionManager::GetProvidersFactory_2_0();
-  CHECK(providersFactory != nullptr)
-      << "IBluetoothAudioProvidersFactory::getService() failed";
+  log::assert_that(providersFactory != nullptr,
+                   "IBluetoothAudioProvidersFactory::getService() failed");
 
   auto getProviderCapabilities_cb =
       [&capabilities](const hidl_vec<AudioCapabilities>& audioCapabilities) {
@@ -257,8 +257,8 @@ BluetoothAudioClientInterface::GetAudioCapabilities_2_1(
 
   android::sp<IBluetoothAudioProvidersFactory_2_1> providersFactory =
       HalVersionManager::GetProvidersFactory_2_1();
-  CHECK(providersFactory != nullptr)
-      << "IBluetoothAudioProvidersFactory::getService() failed";
+  log::assert_that(providersFactory != nullptr,
+                   "IBluetoothAudioProvidersFactory::getService() failed");
 
   auto getProviderCapabilities_cb =
       [&capabilities_2_1](
@@ -283,8 +283,8 @@ void BluetoothAudioClientInterface::FetchAudioProvider() {
 
   android::sp<IBluetoothAudioProvidersFactory_2_0> providersFactory =
       HalVersionManager::GetProvidersFactory_2_0();
-  CHECK(providersFactory != nullptr)
-      << "IBluetoothAudioProvidersFactory::getService() failed";
+  log::assert_that(providersFactory != nullptr,
+                   "IBluetoothAudioProvidersFactory::getService() failed");
 
   auto getProviderCapabilities_cb =
       [&capabilities = this->capabilities_](
@@ -331,7 +331,7 @@ void BluetoothAudioClientInterface::FetchAudioProvider() {
     log::fatal("BluetoothAudioHal::openProvider failure: {}",
                hidl_retval.description());
   }
-  CHECK(provider_ != nullptr);
+  log::assert_that(provider_ != nullptr, "assert failed: provider_ != nullptr");
 
   if (!provider_->linkToDeath(death_recipient_, 0).isOk()) {
     log::fatal("BluetoothAudioDeathRecipient failure: {}",
@@ -350,8 +350,8 @@ void BluetoothAudioClientInterface::FetchAudioProvider_2_1() {
 
   android::sp<IBluetoothAudioProvidersFactory_2_1> providersFactory =
       HalVersionManager::GetProvidersFactory_2_1();
-  CHECK(providersFactory != nullptr)
-      << "IBluetoothAudioProvidersFactory_2_1::getService() failed";
+  log::assert_that(providersFactory != nullptr,
+                   "IBluetoothAudioProvidersFactory_2_1::getService() failed");
 
   auto getProviderCapabilities_cb =
       [&capabilities_2_1 = this->capabilities_2_1_](
@@ -399,7 +399,8 @@ void BluetoothAudioClientInterface::FetchAudioProvider_2_1() {
     log::fatal("BluetoothAudioHal::openProvider failure: {}",
                hidl_retval.description());
   }
-  CHECK(provider_2_1_ != nullptr);
+  log::assert_that(provider_2_1_ != nullptr,
+                   "assert failed: provider_2_1_ != nullptr");
 
   if (!provider_2_1_->linkToDeath(death_recipient_, 0).isOk()) {
     log::fatal("BluetoothAudioDeathRecipient failure: {}",

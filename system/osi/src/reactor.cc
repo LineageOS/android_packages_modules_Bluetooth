@@ -122,17 +122,17 @@ void reactor_free(reactor_t* reactor) {
 }
 
 reactor_status_t reactor_start(reactor_t* reactor) {
-  CHECK(reactor != NULL);
+  log::assert_that(reactor != NULL, "assert failed: reactor != NULL");
   return run_reactor(reactor, 0);
 }
 
 reactor_status_t reactor_run_once(reactor_t* reactor) {
-  CHECK(reactor != NULL);
+  log::assert_that(reactor != NULL, "assert failed: reactor != NULL");
   return run_reactor(reactor, 1);
 }
 
 void reactor_stop(reactor_t* reactor) {
-  CHECK(reactor != NULL);
+  log::assert_that(reactor != NULL, "assert failed: reactor != NULL");
 
   eventfd_write(reactor->event_fd, EVENT_REACTOR_STOP);
 }
@@ -140,8 +140,8 @@ void reactor_stop(reactor_t* reactor) {
 reactor_object_t* reactor_register(reactor_t* reactor, int fd, void* context,
                                    void (*read_ready)(void* context),
                                    void (*write_ready)(void* context)) {
-  CHECK(reactor != NULL);
-  CHECK(fd != INVALID_FD);
+  log::assert_that(reactor != NULL, "assert failed: reactor != NULL");
+  log::assert_that(fd != INVALID_FD, "assert failed: fd != INVALID_FD");
 
   reactor_object_t* object =
       (reactor_object_t*)osi_calloc(sizeof(reactor_object_t));
@@ -173,7 +173,7 @@ reactor_object_t* reactor_register(reactor_t* reactor, int fd, void* context,
 bool reactor_change_registration(reactor_object_t* object,
                                  void (*read_ready)(void* context),
                                  void (*write_ready)(void* context)) {
-  CHECK(object != NULL);
+  log::assert_that(object != NULL, "assert failed: object != NULL");
 
   struct epoll_event event;
   memset(&event, 0, sizeof(event));
@@ -196,7 +196,7 @@ bool reactor_change_registration(reactor_object_t* object,
 }
 
 void reactor_unregister(reactor_object_t* obj) {
-  CHECK(obj != NULL);
+  log::assert_that(obj != NULL, "assert failed: obj != NULL");
 
   reactor_t* reactor = obj->reactor;
 
@@ -233,7 +233,7 @@ void reactor_unregister(reactor_object_t* obj) {
 // 0 |iterations| means loop forever.
 // |reactor| may not be NULL.
 static reactor_status_t run_reactor(reactor_t* reactor, int iterations) {
-  CHECK(reactor != NULL);
+  log::assert_that(reactor != NULL, "assert failed: reactor != NULL");
 
   reactor->run_thread = pthread_self();
   reactor->is_running = true;

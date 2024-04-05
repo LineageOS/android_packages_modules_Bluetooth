@@ -254,7 +254,8 @@ bool btif_a2dp_sink_restart_session(const RawAddress& old_peer_address,
             ADDRESS_TO_LOGGABLE_STR(old_peer_address),
             ADDRESS_TO_LOGGABLE_STR(new_peer_address));
 
-  CHECK(!new_peer_address.IsEmpty());
+  log::assert_that(!new_peer_address.IsEmpty(),
+                   "assert failed: !new_peer_address.IsEmpty()");
 
   if (!old_peer_address.IsEmpty()) {
     btif_a2dp_sink_end_session(old_peer_address);
@@ -540,7 +541,9 @@ static void btif_a2dp_sink_handle_inc_media(BT_HDR* p_msg) {
     return;
   }
 
-  CHECK(btif_a2dp_sink_cb.decoder_interface != nullptr);
+  log::assert_that(
+      btif_a2dp_sink_cb.decoder_interface != nullptr,
+      "assert failed: btif_a2dp_sink_cb.decoder_interface != nullptr");
   if (!btif_a2dp_sink_cb.decoder_interface->decode_packet(p_msg)) {
     log::error("decoding failed");
   }

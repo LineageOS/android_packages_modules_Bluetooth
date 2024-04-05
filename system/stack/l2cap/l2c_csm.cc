@@ -1720,7 +1720,7 @@ static const char* l2c_csm_get_event_name(tL2CEVT event) {
  *
  ******************************************************************************/
 void l2c_enqueue_peer_data(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
-  CHECK(p_ccb != nullptr);
+  log::assert_that(p_ccb != nullptr, "assert failed: p_ccb != nullptr");
 
   p_ccb->metrics.tx(p_buf->len);
 

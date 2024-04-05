@@ -164,7 +164,8 @@ alarm_t* alarm_new_periodic(const char* name) {
 static alarm_t* alarm_new_internal(const char* name, bool is_periodic) {
   // Make sure we have a list we can insert alarms into.
   if (!alarms && !lazy_initialize()) {
-    CHECK(false);  // if initialization failed, we should not continue
+    log::fatal("initialization failed");  // if initialization failed, we
+                                          // should not continue
     return NULL;
   }
 
@@ -196,7 +197,7 @@ void alarm_free(alarm_t* alarm) {
 }
 
 uint64_t alarm_get_remaining_ms(const alarm_t* alarm) {
-  CHECK(alarm != NULL);
+  log::assert_that(alarm != NULL, "assert failed: alarm != NULL");
   uint64_t remaining_ms = 0;
   uint64_t just_now_ms = now_ms();
 
@@ -222,9 +223,9 @@ void alarm_set_on_mloop(alarm_t* alarm, uint64_t interval_ms,
 static void alarm_set_internal(alarm_t* alarm, uint64_t period_ms,
                                alarm_callback_t cb, void* data,
                                fixed_queue_t* queue, bool for_msg_loop) {
-  CHECK(alarms != NULL);
-  CHECK(alarm != NULL);
-  CHECK(cb != NULL);
+  log::assert_that(alarms != NULL, "assert failed: alarms != NULL");
+  log::assert_that(alarm != NULL, "assert failed: alarm != NULL");
+  log::assert_that(cb != NULL, "assert failed: cb != NULL");
 
   std::lock_guard<std::mutex> lock(alarms_mutex);
 
@@ -240,7 +241,7 @@ static void alarm_set_internal(alarm_t* alarm, uint64_t period_ms,
 }
 
 void alarm_cancel(alarm_t* alarm) {
-  CHECK(alarms != NULL);
+  log::assert_that(alarms != NULL, "assert failed: alarms != NULL");
   if (!alarm) return;
 
   std::shared_ptr<std::recursive_mutex> local_mutex_ref;
@@ -303,7 +304,7 @@ void alarm_cleanup(void) {
 }
 
 static bool lazy_initialize(void) {
-  CHECK(alarms == NULL);
+  log::assert_that(alarms == NULL, "assert failed: alarms == NULL");
 
   // timer_t doesn't have an invalid value so we must track whether
   // the |timer| variable is valid ourselves.
@@ -384,7 +385,7 @@ error:
 }
 
 static uint64_t now_ms(void) {
-  CHECK(alarms != NULL);
+  log::assert_that(alarms != NULL, "assert failed: alarms != NULL");
 
   struct timespec ts;
   if (clock_gettime(CLOCK_ID, &ts) == -1) {
@@ -453,7 +454,7 @@ static void schedule_next_instance(alarm_t* alarm) {
 
 // NOTE: must be called with |alarms_mutex| held
 static void reschedule_root_alarm(void) {
-  CHECK(alarms != NULL);
+  log::assert_that(alarms != NULL, "assert failed: alarms != NULL");
 
   const bool timer_was_set = timer_set;
   alarm_t* next;
@@ -540,8 +541,8 @@ done:
 
 static void alarm_register_processing_queue(fixed_queue_t* queue,
                                             thread_t* thread) {
-  CHECK(queue != NULL);
-  CHECK(thread != NULL);
+  log::assert_that(queue != NULL, "assert failed: queue != NULL");
+  log::assert_that(thread != NULL, "assert failed: thread != NULL");
 
   fixed_queue_register_dequeue(queue, thread_get_reactor(thread),
                                alarm_queue_ready, NULL);
@@ -595,7 +596,7 @@ static void alarm_ready_mloop(alarm_t* alarm) {
 }
 
 static void alarm_queue_ready(fixed_queue_t* queue, UNUSED_ATTR void* context) {
-  CHECK(queue != NULL);
+  log::assert_that(queue != NULL, "assert failed: queue != NULL");
 
   std::unique_lock<std::mutex> lock(alarms_mutex);
   alarm_t* alarm = (alarm_t*)fixed_queue_try_dequeue(queue);
@@ -656,7 +657,7 @@ static void callback_dispatch(UNUSED_ATTR void* context) {
 }
 
 static bool timer_create_internal(const clockid_t clock_id, timer_t* timer) {
-  CHECK(timer != NULL);
+  log::assert_that(timer != NULL, "assert failed: timer != NULL");
 
   struct sigevent sigevent;
   // create timer with RT priority thread

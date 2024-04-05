@@ -74,7 +74,7 @@ void BtifAvrcpAudioErrorHandle() {
                                          AAUDIO_PERFORMANCE_MODE_LOW_LATENCY);
   AAudioStreamBuilder_setErrorCallback(builder, ErrorCallback, nullptr);
   result = AAudioStreamBuilder_openStream(builder, &stream);
-  CHECK(result == AAUDIO_OK);
+  log::assert_that(result == AAUDIO_OK, "assert failed: result == AAUDIO_OK");
   AAudioStreamBuilder_delete(builder);
 
   BtifAvrcpAudioTrack* trackHolder = static_cast<BtifAvrcpAudioTrack*>(s_AudioEngine.trackHandle);
@@ -112,11 +112,11 @@ void* BtifAvrcpAudioTrackCreate(int trackFreq, int bitsPerSample,
                                          AAUDIO_PERFORMANCE_MODE_LOW_LATENCY);
   AAudioStreamBuilder_setErrorCallback(builder, ErrorCallback, nullptr);
   result = AAudioStreamBuilder_openStream(builder, &stream);
-  CHECK(result == AAUDIO_OK);
+  log::assert_that(result == AAUDIO_OK, "assert failed: result == AAUDIO_OK");
   AAudioStreamBuilder_delete(builder);
 
   BtifAvrcpAudioTrack* trackHolder = new BtifAvrcpAudioTrack;
-  CHECK(trackHolder != NULL);
+  log::assert_that(trackHolder != NULL, "assert failed: trackHolder != NULL");
   trackHolder->stream = stream;
   trackHolder->bitsPerSample = bitsPerSample;
   trackHolder->channelCount = channelCount;
@@ -138,8 +138,9 @@ void BtifAvrcpAudioTrackStart(void* handle) {
     return;
   }
   BtifAvrcpAudioTrack* trackHolder = static_cast<BtifAvrcpAudioTrack*>(handle);
-  CHECK(trackHolder != NULL);
-  CHECK(trackHolder->stream != NULL);
+  log::assert_that(trackHolder != NULL, "assert failed: trackHolder != NULL");
+  log::assert_that(trackHolder->stream != NULL,
+                   "assert failed: trackHolder->stream != NULL");
   log::verbose("Track.cpp: btStartTrack");
   AAudioStream_requestStart(trackHolder->stream);
 }
@@ -261,8 +262,9 @@ constexpr int64_t kTimeoutNanos = 100 * 1000 * 1000;  // 100 ms
 int BtifAvrcpAudioTrackWriteData(void* handle, void* audioBuffer,
                                  int bufferLength) {
   BtifAvrcpAudioTrack* trackHolder = static_cast<BtifAvrcpAudioTrack*>(handle);
-  CHECK(trackHolder != NULL);
-  CHECK(trackHolder->stream != NULL);
+  log::assert_that(trackHolder != NULL, "assert failed: trackHolder != NULL");
+  log::assert_that(trackHolder->stream != NULL,
+                   "assert failed: trackHolder->stream != NULL");
   aaudio_result_t retval = -1;
 
   size_t sampleSize = sampleSizeFor(trackHolder);

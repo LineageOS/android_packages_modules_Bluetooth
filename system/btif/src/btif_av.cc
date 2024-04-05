@@ -1030,7 +1030,8 @@ void BtifAvEvent::DeepCopy(uint32_t event, const void* p_data,
 
   switch (event) {
     case BTA_AV_META_MSG_EVT: {
-      CHECK(data_length >= sizeof(tBTA_AV));
+      log::assert_that(data_length >= sizeof(tBTA_AV),
+                       "assert failed: data_length >= sizeof(tBTA_AV)");
       const tBTA_AV* av_src = (const tBTA_AV*)p_data;
       tBTA_AV* av_dest = (tBTA_AV*)data_;
       if (av_src->meta_msg.p_data && av_src->meta_msg.len) {
@@ -1984,7 +1985,9 @@ bool BtifAvStateMachine::StateIdle::ProcessEvent(uint32_t event, void* p_data) {
           }
           btif_rc_check_pending_cmd(p_bta_data->open.bd_addr);
         }
-        CHECK(peer_.PeerSep() == p_bta_data->open.sep);
+        log::assert_that(
+            peer_.PeerSep() == p_bta_data->open.sep,
+            "assert failed: peer_.PeerSep() == p_bta_data->open.sep");
 
         can_connect = peer_.IsSink()
                           ? btif_av_source.AllowedToConnect(peer_.PeerAddress())
@@ -2192,7 +2195,9 @@ bool BtifAvStateMachine::StateOpening::ProcessEvent(uint32_t event,
           }
           btif_rc_check_pending_cmd(p_bta_data->open.bd_addr);
         }
-        CHECK(peer_.PeerSep() == p_bta_data->open.sep);
+        log::assert_that(
+            peer_.PeerSep() == p_bta_data->open.sep,
+            "assert failed: peer_.PeerSep() == p_bta_data->open.sep");
         /** normally it can be checked in IDLE PENDING/CONNECT_REQ, in case:
          * 1 speacker connected to DUT and phone connect DUT, because
          * default

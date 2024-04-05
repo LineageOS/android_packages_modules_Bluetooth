@@ -880,10 +880,12 @@ bool A2dpCodecConfigAptx::setCodecConfig(const uint8_t* p_peer_codec_info,
     status = A2DP_BuildInfoAptx(AVDT_MEDIA_TYPE_AUDIO, &peer_info_cie,
                                 ota_codec_peer_config_);
   }
-  CHECK(status == A2DP_SUCCESS);
+  log::assert_that(status == A2DP_SUCCESS,
+                   "assert failed: status == A2DP_SUCCESS");
   status = A2DP_BuildInfoAptx(AVDT_MEDIA_TYPE_AUDIO, &result_config_cie,
                               ota_codec_config_);
-  CHECK(status == A2DP_SUCCESS);
+  log::assert_that(status == A2DP_SUCCESS,
+                   "assert failed: status == A2DP_SUCCESS");
 
   return true;
 
@@ -951,7 +953,8 @@ bool A2dpCodecConfigAptx::setPeerCodecCapabilities(
 
   status = A2DP_BuildInfoAptx(AVDT_MEDIA_TYPE_AUDIO, &peer_info_cie,
                               ota_codec_peer_capability_);
-  CHECK(status == A2DP_SUCCESS);
+  log::assert_that(status == A2DP_SUCCESS,
+                   "assert failed: status == A2DP_SUCCESS");
   return true;
 
 fail:

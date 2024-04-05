@@ -116,8 +116,9 @@ HalVersionManager::GetProvidersFactory_2_1() {
   }
   android::sp<IBluetoothAudioProvidersFactory_2_1> providers_factory =
       IBluetoothAudioProvidersFactory_2_1::getService();
-  CHECK(providers_factory)
-      << "V2_1::IBluetoothAudioProvidersFactory::getService() failed";
+  log::assert_that(
+      providers_factory != nullptr,
+      "V2_1::IBluetoothAudioProvidersFactory::getService() failed");
 
   log::info("V2_1::IBluetoothAudioProvidersFactory::getService() returned {}{}",
             fmt::ptr(providers_factory.get()),
@@ -134,8 +135,9 @@ HalVersionManager::GetProvidersFactory_2_0() {
   }
   android::sp<IBluetoothAudioProvidersFactory_2_0> providers_factory =
       IBluetoothAudioProvidersFactory_2_0::getService();
-  CHECK(providers_factory)
-      << "V2_0::IBluetoothAudioProvidersFactory::getService() failed";
+  log::assert_that(
+      providers_factory != nullptr,
+      "V2_0::IBluetoothAudioProvidersFactory::getService() failed");
 
   log::info("V2_0::IBluetoothAudioProvidersFactory::getService() returned {}{}",
             fmt::ptr(providers_factory.get()),
@@ -154,7 +156,8 @@ HalVersionManager::HalVersionManager() {
   }
 
   auto service_manager = android::hardware::defaultServiceManager1_2();
-  CHECK(service_manager != nullptr);
+  log::assert_that(service_manager != nullptr,
+                   "assert failed: service_manager != nullptr");
   size_t instance_count = 0;
   auto listManifestByInterface_cb =
       [&instance_count](

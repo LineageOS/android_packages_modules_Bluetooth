@@ -526,7 +526,9 @@ static void a2dp_aac_encode_frames(uint8_t nb_frame) {
   int pcm_bytes_per_frame = p_encoder_params->frame_length *
                             p_feeding_params->channel_count *
                             p_feeding_params->bits_per_sample / 8;
-  CHECK(pcm_bytes_per_frame <= static_cast<int>(sizeof(read_buffer)));
+  log::assert_that(pcm_bytes_per_frame <= static_cast<int>(sizeof(read_buffer)),
+                   "assert failed: pcm_bytes_per_frame <= "
+                   "static_cast<int>(sizeof(read_buffer))");
 
   // Setup the input buffer
   AACENC_BufDesc in_buf_desc;
@@ -552,8 +554,11 @@ static void a2dp_aac_encode_frames(uint8_t nb_frame) {
   out_buf_desc.bufferIdentifiers = out_buf_identifiers;
   out_buf_desc.bufSizes = out_buf_sizes;
   out_buf_desc.bufElSizes = out_buf_element_sizes;
-  CHECK(p_encoder_params->max_encoded_buffer_bytes <=
-        static_cast<int>(BT_DEFAULT_BUFFER_SIZE - sizeof(BT_HDR)));
+  log::assert_that(
+      p_encoder_params->max_encoded_buffer_bytes <=
+          static_cast<int>(BT_DEFAULT_BUFFER_SIZE - sizeof(BT_HDR)),
+      "assert failed: p_encoder_params->max_encoded_buffer_bytes <= "
+      "static_cast<int>(BT_DEFAULT_BUFFER_SIZE - sizeof(BT_HDR))");
 
   AACENC_InArgs aac_in_args;
   aac_in_args.numInSamples =

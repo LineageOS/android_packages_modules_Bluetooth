@@ -104,6 +104,7 @@ cc_test {
         "test/property_test.cc",
     ],
     shared_libs: [
+        "libbase",
         "liblog",
     ],
     static_libs: [

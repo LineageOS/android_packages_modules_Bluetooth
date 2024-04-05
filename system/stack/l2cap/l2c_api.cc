@@ -93,8 +93,8 @@ uint16_t L2CA_LeCreditThreshold() {
 }
 
 static bool check_l2cap_credit() {
-  CHECK(L2CA_LeCreditThreshold() < L2CA_LeCreditDefault())
-      << "Threshold must be smaller than default credits";
+  log::assert_that(L2CA_LeCreditThreshold() < L2CA_LeCreditDefault(),
+                   "Threshold must be smaller than default credits");
   return true;
 }
 

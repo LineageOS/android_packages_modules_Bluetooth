@@ -181,7 +181,8 @@ void bta_pan_sm_execute(tBTA_PAN_SCB* p_scb, uint16_t event,
   /* execute action functions */
   for (i = 0; i < BTA_PAN_ACTIONS; i++) {
     action = state_table[event][i];
-    CHECK(action < BTA_PAN_MAX_ACTIONS);
+    log::assert_that(action < BTA_PAN_MAX_ACTIONS,
+                     "assert failed: action < BTA_PAN_MAX_ACTIONS");
     if (action == BTA_PAN_IGNORE) continue;
     (*bta_pan_action[action])(p_scb, p_data);
   }
