@@ -23,6 +23,7 @@
 #include "internal_include/bt_target.h"
 #include "macros.h"
 #include "osi/include/alarm.h"
+#include "stack/btm/btm_eir.h"
 #include "stack/include/bt_device_type.h"
 #include "stack/include/bt_name.h"
 #include "stack/include/btm_api_types.h"
