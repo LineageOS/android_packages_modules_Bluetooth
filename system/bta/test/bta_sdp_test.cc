@@ -37,10 +37,8 @@ namespace bluetooth {
 namespace legacy {
 namespace testing {
 
-const tBTA_DM_SEARCH_CB& bta_dm_disc_search_cb();
-tBTA_DM_SEARCH_CB bta_dm_disc_get_search_cb();
-void bta_dm_disc_search_cb(const tBTA_DM_SEARCH_CB& search_cb);
-void bta_dm_sdp_result(tBTA_DM_MSG* p_data);
+tBTA_DM_SEARCH_CB& bta_dm_disc_search_cb();
+void bta_dm_sdp_result(tBTA_DM_SDP_RESULT& sdp_event);
 
 }  // namespace testing
 }  // namespace legacy
@@ -55,15 +53,9 @@ class BtaSdpTest : public BtaWithHwOnTest {
 
 class BtaSdpRegisteredTest : public BtaSdpTest {
  protected:
-  void SetUp() override {
-    BtaSdpTest::SetUp();
-    bta_sys_register(BTA_ID_DM_SEARCH, &bta_sys_reg);
-  }
+  void SetUp() override { BtaSdpTest::SetUp(); }
 
-  void TearDown() override {
-    bta_sys_deregister(BTA_ID_DM_SEARCH);
-    BtaSdpTest::TearDown();
-  }
+  void TearDown() override { BtaSdpTest::TearDown(); }
 
   tBTA_SYS_REG bta_sys_reg = {
       .evt_hdlr = [](const BT_HDR_RIGID* p_msg) -> bool {
@@ -77,21 +69,14 @@ class BtaSdpRegisteredTest : public BtaSdpTest {
 TEST_F(BtaSdpTest, nop) {}
 
 TEST_F(BtaSdpRegisteredTest, bta_dm_sdp_result_SDP_SUCCESS) {
-  tBTA_DM_SEARCH_CB search_cb =
-      bluetooth::legacy::testing::bta_dm_disc_get_search_cb();
+  tBTA_DM_SEARCH_CB& search_cb =
+      bluetooth::legacy::testing::bta_dm_disc_search_cb();
   search_cb.service_index = BTA_MAX_SERVICE_ID;
-  bluetooth::legacy::testing::bta_dm_disc_search_cb(search_cb);
 
-  tBTA_DM_MSG msg = {
-      .sdp_event =
-          {
-              .hdr = {},
-              .sdp_result = SDP_SUCCESS,
-          },
-  };
   mock_btm_client_interface.security.BTM_SecReadDevName =
       [](const RawAddress& bd_addr) -> const char* { return kName; };
   mock_btm_client_interface.security.BTM_SecDeleteRmtNameNotifyCallback =
       [](tBTM_RMT_NAME_CALLBACK*) -> bool { return true; };
-  bluetooth::legacy::testing::bta_dm_sdp_result(&msg);
+  tBTA_DM_SDP_RESULT result{.sdp_result = SDP_SUCCESS};
+  bluetooth::legacy::testing::bta_dm_sdp_result(result);
 }
