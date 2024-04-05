@@ -1157,10 +1157,6 @@ bool BTM_IsAclConnectionUpAndHandleValid(const RawAddress& remote_bda,
   return p_acl->hci_handle != HCI_INVALID_HANDLE;
 }
 
-bool BTM_IsAclConnectionUpFromHandle(uint16_t hci_handle) {
-  return internal_.acl_get_connection_from_handle(hci_handle) != nullptr;
-}
-
 /*******************************************************************************
  *
  * Function         BTM_GetNumAclLinks
@@ -2025,21 +2021,6 @@ void btm_read_automatic_flush_timeout_complete(uint8_t* p) {
     }
     (*p_cb)(&result);
   }
-}
-
-/*******************************************************************************
- *
- * Function         btm_read_link_quality_timeout
- *
- * Description      Callback when reading the link quality times out.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_read_link_quality_timeout(UNUSED_ATTR void* data) {
-  tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_link_qual_cmpl_cb;
-  btm_cb.devcb.p_link_qual_cmpl_cb = NULL;
-  if (p_cb) (*p_cb)((void*)NULL);
 }
 
 /*******************************************************************************

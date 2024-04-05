@@ -88,16 +88,6 @@ struct btsnd_hci_ble_remove_device_from_periodic_advertiser_list {
 extern struct btsnd_hci_ble_remove_device_from_periodic_advertiser_list
     btsnd_hci_ble_remove_device_from_periodic_advertiser_list;
 
-// Name: btsnd_hcic_accept_cis_req
-// Params: uint16_t conn_handle
-// Return: void
-struct btsnd_hcic_accept_cis_req {
-  std::function<void(uint16_t conn_handle)> body{
-      [](uint16_t /* conn_handle */) {}};
-  void operator()(uint16_t conn_handle) { body(conn_handle); };
-};
-extern struct btsnd_hcic_accept_cis_req btsnd_hcic_accept_cis_req;
-
 // Name: btsnd_hcic_ble_add_device_resolving_list
 // Params: uint8_t addr_type_peer, const RawAddress& bda_peer, const Octet16&
 // irk_peer, const Octet16& irk_local Return: void
@@ -124,33 +114,6 @@ struct btsnd_hcic_ble_clear_resolving_list {
 };
 extern struct btsnd_hcic_ble_clear_resolving_list
     btsnd_hcic_ble_clear_resolving_list;
-
-// Name: btsnd_hcic_ble_enh_rx_test
-// Params: uint8_t rx_chan, uint8_t phy, uint8_t mod_index
-// Return: void
-struct btsnd_hcic_ble_enh_rx_test {
-  std::function<void(uint8_t rx_chan, uint8_t phy, uint8_t mod_index)> body{
-      [](uint8_t /* rx_chan */, uint8_t /* phy */, uint8_t /* mod_index */) {}};
-  void operator()(uint8_t rx_chan, uint8_t phy, uint8_t mod_index) {
-    body(rx_chan, phy, mod_index);
-  };
-};
-extern struct btsnd_hcic_ble_enh_rx_test btsnd_hcic_ble_enh_rx_test;
-
-// Name: btsnd_hcic_ble_enh_tx_test
-// Params: uint8_t tx_chan, uint8_t data_len, uint8_t payload, uint8_t phy
-// Return: void
-struct btsnd_hcic_ble_enh_tx_test {
-  std::function<void(uint8_t tx_chan, uint8_t data_len, uint8_t payload,
-                     uint8_t phy)>
-      body{[](uint8_t /* tx_chan */, uint8_t /* data_len */,
-              uint8_t /* payload */, uint8_t /* phy */) {}};
-  void operator()(uint8_t tx_chan, uint8_t data_len, uint8_t payload,
-                  uint8_t phy) {
-    body(tx_chan, data_len, payload, phy);
-  };
-};
-extern struct btsnd_hcic_ble_enh_tx_test btsnd_hcic_ble_enh_tx_test;
 
 // Name: btsnd_hcic_ble_ltk_req_neg_reply
 // Params: uint16_t handle
@@ -617,21 +580,6 @@ struct btsnd_hcic_read_iso_link_quality {
   };
 };
 extern struct btsnd_hcic_read_iso_link_quality btsnd_hcic_read_iso_link_quality;
-
-// Name: btsnd_hcic_rej_cis_req
-// Params: uint16_t conn_handle, uint8_t reason,
-// base::OnceCallback<void(uint8_t*, uint16_t Return: void
-struct btsnd_hcic_rej_cis_req {
-  std::function<void(uint16_t, uint8_t,
-                     base::OnceCallback<void(uint8_t*, uint16_t)>)>
-      body{[](uint16_t /* conn_handle */, uint8_t /* reason */,
-              base::OnceCallback<void(uint8_t*, uint16_t)> /* cb */) {}};
-  void operator()(uint16_t conn_handle, uint8_t reason,
-                  base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
-    body(conn_handle, reason, std::move(cb));
-  };
-};
-extern struct btsnd_hcic_rej_cis_req btsnd_hcic_rej_cis_req;
 
 // Name: btsnd_hcic_remove_cig
 // Params: uint8_t cig_id, base::OnceCallback<void(uint8_t*, uint16_t

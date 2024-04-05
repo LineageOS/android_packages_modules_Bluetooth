@@ -58,6 +58,5 @@ size_t btif_config_get_bin_length(const std::string& section,
 std::vector<RawAddress> btif_config_get_paired_devices();
 
 bool btif_config_clear(void);
-void btif_debug_config_dump(int fd);
 bool btif_get_device_clockoffset(const RawAddress& bda, int* p_clock_offset);
 bool btif_set_device_clockoffset(const RawAddress& bda, int clock_offset);

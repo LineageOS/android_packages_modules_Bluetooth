@@ -72,15 +72,6 @@ struct BTM_IsAclConnectionUpAndHandleValid {
 };
 extern struct BTM_IsAclConnectionUpAndHandleValid
     BTM_IsAclConnectionUpAndHandleValid;
-// Name: BTM_IsAclConnectionUpFromHandle
-// Params: uint16_t hci_handle
-// Returns: bool
-struct BTM_IsAclConnectionUpFromHandle {
-  std::function<bool(uint16_t hci_handle)> body{
-      [](uint16_t /* hci_handle */) { return false; }};
-  bool operator()(uint16_t hci_handle) { return body(hci_handle); };
-};
-extern struct BTM_IsAclConnectionUpFromHandle BTM_IsAclConnectionUpFromHandle;
 // Name: BTM_IsBleConnection
 // Params: uint16_t hci_handle
 // Returns: bool
@@ -1005,14 +996,6 @@ struct btm_read_link_quality_complete {
   void operator()(uint8_t* p, uint16_t evt_len) { body(p, evt_len); };
 };
 extern struct btm_read_link_quality_complete btm_read_link_quality_complete;
-// Name: btm_read_link_quality_timeout
-// Params: void* data
-// Returns: void
-struct btm_read_link_quality_timeout {
-  std::function<void(void* data)> body{[](void* /* data */) { ; }};
-  void operator()(void* data) { body(data); };
-};
-extern struct btm_read_link_quality_timeout btm_read_link_quality_timeout;
 // Name: btm_read_remote_ext_features
 // Params: uint16_t handle, uint8_t page_number
 // Returns: void

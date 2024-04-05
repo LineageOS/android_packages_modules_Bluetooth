@@ -240,14 +240,6 @@ struct btif_config_clear {
   bool operator()(void) { return body(); };
 };
 extern struct btif_config_clear btif_config_clear;
-// Name: btif_debug_config_dump
-// Params: int fd
-// Returns: void
-struct btif_debug_config_dump {
-  std::function<void(int fd)> body{[](int /* fd */) {}};
-  void operator()(int fd) { body(fd); };
-};
-extern struct btif_debug_config_dump btif_debug_config_dump;
 
 }  // namespace btif_config
 }  // namespace mock

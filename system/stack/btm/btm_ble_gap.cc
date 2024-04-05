@@ -1119,17 +1119,6 @@ static void btm_ble_sync_queue_handle(uint16_t event, char* param) {
   btm_queue_sync_next();
 }
 
-void btm_queue_start_sync_req(uint8_t sid, RawAddress address, uint16_t skip,
-                              uint16_t timeout) {
-  log::debug("address = {}, sid = {}", ADDRESS_TO_LOGGABLE_CSTR(address), sid);
-  sync_node_t node = {};
-  node.sid = sid;
-  node.address = address;
-  node.skip = skip;
-  node.timeout = timeout;
-  btm_ble_sync_queue_handle(BTM_QUEUE_SYNC_REQ_EVT, (char*)&node);
-}
-
 static void btm_sync_queue_advance() {
   log::debug("");
   btm_ble_sync_queue_handle(BTM_QUEUE_SYNC_ADVANCE_EVT, nullptr);

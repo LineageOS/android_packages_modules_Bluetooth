@@ -824,7 +824,6 @@ static void dump(int fd, const char** arguments) {
   stack_debug_avdtp_api_dump(fd);
   btif_sock_dump(fd);
   bluetooth::avrcp::AvrcpService::DebugDump(fd);
-  btif_debug_config_dump(fd);
   gatt_tcb_dump(fd);
   bta_gatt_client_dump(fd);
   device_debug_iot_config_dump(fd);

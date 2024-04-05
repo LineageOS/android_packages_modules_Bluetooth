@@ -52,7 +52,6 @@ using namespace bluetooth;
 extern tBTM_CB btm_cb;
 
 bool BTM_ReadPowerMode(const RawAddress& remote_bda, tBTM_PM_MODE* p_mode);
-bool btm_dev_support_role_switch(const RawAddress& bd_addr);
 tBTM_STATUS btm_sec_disconnect(uint16_t handle, tHCI_STATUS reason,
                                std::string);
 void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
