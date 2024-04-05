@@ -52,7 +52,7 @@ void bta_dm_opportunistic_observe_results_cb(tBTM_INQ_RESULTS* p_inq,
                                              const uint8_t* p_eir,
                                              uint16_t eir_len);
 void bta_dm_queue_search(tBTA_DM_API_SEARCH& search);
-void bta_dm_search_result(tBTA_DM_DISC_RESULT& p_data);
+void bta_dm_search_result(tBTA_DM_SVC_RES& p_data);
 void bta_dm_search_timer_cback(void* data);
 void bta_dm_service_search_remname_cback(const RawAddress& bd_addr,
                                          DEV_CLASS dc, BD_NAME bd_name);
@@ -166,8 +166,8 @@ TEST_F(BtaInitializedTest, bta_dm_read_remote_device_name) {
 }
 
 TEST_F(BtaInitializedTest, bta_dm_search_result) {
-  tBTA_DM_DISC_RESULT disc_result = {};
-  bluetooth::legacy::testing::bta_dm_search_result(disc_result);
+  tBTA_DM_SVC_RES svc_result = {};
+  bluetooth::legacy::testing::bta_dm_search_result(svc_result);
 }
 
 TEST_F(BtaInitializedTest, bta_dm_search_timer_cback) {
@@ -222,8 +222,8 @@ TEST_F(BtaInitializedTest,
        bta_dm_disc_start_service_discovery__BT_TRANSPORT_AUTO) {
   bta_dm_disc_start_service_discovery(
       {nullptr, nullptr, nullptr,
-       [](RawAddress, BD_NAME, tBTA_SERVICE_MASK, tBT_DEVICE_TYPE, size_t,
-          bluetooth::Uuid*, tBTA_STATUS, tHCI_STATUS) {}},
+       [](RawAddress, tBTA_SERVICE_MASK, tBT_DEVICE_TYPE,
+          const std::vector<bluetooth::Uuid>&, tBTA_STATUS, tHCI_STATUS) {}},
       kRawAddress, BT_TRANSPORT_AUTO);
 }
 
@@ -231,8 +231,8 @@ TEST_F(BtaInitializedTest,
        bta_dm_disc_start_service_discovery__BT_TRANSPORT_BR_EDR) {
   bta_dm_disc_start_service_discovery(
       {nullptr, nullptr, nullptr,
-       [](RawAddress, BD_NAME, tBTA_SERVICE_MASK, tBT_DEVICE_TYPE, size_t,
-          bluetooth::Uuid*, tBTA_STATUS, tHCI_STATUS) {}},
+       [](RawAddress, tBTA_SERVICE_MASK, tBT_DEVICE_TYPE,
+          const std::vector<bluetooth::Uuid>&, tBTA_STATUS, tHCI_STATUS) {}},
       kRawAddress, BT_TRANSPORT_BR_EDR);
 }
 
@@ -240,8 +240,8 @@ TEST_F(BtaInitializedTest,
        bta_dm_disc_start_service_discovery__BT_TRANSPORT_LE) {
   bta_dm_disc_start_service_discovery(
       {nullptr, nullptr, nullptr,
-       [](RawAddress, BD_NAME, tBTA_SERVICE_MASK, tBT_DEVICE_TYPE, size_t,
-          bluetooth::Uuid*, tBTA_STATUS, tHCI_STATUS) {}},
+       [](RawAddress, tBTA_SERVICE_MASK, tBT_DEVICE_TYPE,
+          const std::vector<bluetooth::Uuid>&, tBTA_STATUS, tHCI_STATUS) {}},
       kRawAddress, BT_TRANSPORT_LE);
 }
 
