@@ -418,16 +418,6 @@ struct btsnd_hcic_rmt_name_req {
 };
 extern struct btsnd_hcic_rmt_name_req btsnd_hcic_rmt_name_req;
 
-// Name: btsnd_hcic_rmt_name_req_cancel
-// Params: const RawAddress& bd_addr
-// Return: void
-struct btsnd_hcic_rmt_name_req_cancel {
-  std::function<void(const RawAddress& bd_addr)> body{
-      [](const RawAddress& /* bd_addr */) {}};
-  void operator()(const RawAddress& bd_addr) { body(bd_addr); };
-};
-extern struct btsnd_hcic_rmt_name_req_cancel btsnd_hcic_rmt_name_req_cancel;
-
 // Name: btsnd_hcic_rmt_ver_req
 // Params: uint16_t handle
 // Return: void
