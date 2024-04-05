@@ -32,12 +32,14 @@ struct IsoManager::impl {
   impl(const IsoManager& iso_manager) : iso_manager_(iso_manager) {}
 
   void Start() {
-    LOG_ASSERT(!iso_impl_);
+    log::assert_that(iso_impl_ == nullptr,
+                     "assert failed: iso_impl_ == nullptr");
     iso_impl_ = std::make_unique<iso_impl>();
   }
 
   void Stop() {
-    LOG_ASSERT(iso_impl_);
+    log::assert_that(iso_impl_ != nullptr,
+                     "assert failed: iso_impl_ != nullptr");
     iso_impl_.reset();
   }
 

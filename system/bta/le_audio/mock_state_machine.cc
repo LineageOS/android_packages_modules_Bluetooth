@@ -24,12 +24,12 @@ static MockLeAudioGroupStateMachine* mock_machine = nullptr;
 void bluetooth::le_audio::LeAudioGroupStateMachine::Initialize(
     bluetooth::le_audio::LeAudioGroupStateMachine::Callbacks*
         state_machine_callbacks) {
-  LOG_ASSERT(mock_machine) << "Mock State Machine not set!";
+  log::assert_that(mock_machine, "Mock State Machine not set!");
   mock_machine->Initialize(state_machine_callbacks);
 }
 
 void bluetooth::le_audio::LeAudioGroupStateMachine::Cleanup(void) {
-  LOG_ASSERT(mock_machine) << "Mock State Machine not set!";
+  log::assert_that(mock_machine, "Mock State Machine not set!");
   mock_machine->Cleanup();
 }
 

@@ -17,6 +17,10 @@
 
 #include "bta_dm_api_mock.h"
 
+#include <bluetooth/log.h>
+
+using namespace bluetooth;
+
 static dm::MockBtaDmInterface* dm_interface = nullptr;
 
 void dm::SetMockBtaDmInterface(MockBtaDmInterface* mock_bta_dm_interface) {
@@ -24,21 +28,21 @@ void dm::SetMockBtaDmInterface(MockBtaDmInterface* mock_bta_dm_interface) {
 }
 
 void BTA_DmBleScan(bool start, uint8_t duration, bool low_latency_scan) {
-  LOG_ASSERT(dm_interface) << "Mock BTA DM interface not set!";
+  log::assert_that(dm_interface != nullptr, "Mock BTA DM interface not set!");
   return dm_interface->BTA_DmBleScan(start, duration, low_latency_scan);
 }
 
 void BTA_DmBleCsisObserve(bool observe, tBTA_DM_SEARCH_CBACK* p_results_cb) {
-  LOG_ASSERT(dm_interface) << "Mock BTA DM interface not set!";
+  log::assert_that(dm_interface != nullptr, "Mock BTA DM interface not set!");
   return dm_interface->BTA_DmBleCsisObserve(observe, p_results_cb);
 }
 
 void BTA_DmSirkSecCbRegister(tBTA_DM_SEC_CBACK* p_cback) {
-  LOG_ASSERT(dm_interface) << "Mock BTA DM interface not set!";
+  log::assert_that(dm_interface != nullptr, "Mock BTA DM interface not set!");
   return dm_interface->BTA_DmSirkSecCbRegister(p_cback);
 }
 
 void BTA_DmSirkConfirmDeviceReply(const RawAddress& bd_addr, bool accept) {
-  LOG_ASSERT(dm_interface) << "Mock BTA DM interface not set!";
+  log::assert_that(dm_interface != nullptr, "Mock BTA DM interface not set!");
   return dm_interface->BTA_DmSirkConfirmDeviceReply(bd_addr, accept);
 }

@@ -956,7 +956,7 @@ class HasClientTestBase : public ::testing::Test {
       std::vector<uint8_t> value, bool indicate, int index, int num_of_indices,
       GATT_WRITE_OP_CB cb, void* cb_data) {
     auto presets = current_peer_presets_.at(conn_id);
-    LOG_ASSERT(!presets.empty()) << __func__ << " Mocking error!";
+    log::assert_that(!presets.empty(), "Mocking error!");
 
     /* Index is a start index, not necessary is a valid index for the
      * peer device */
@@ -998,7 +998,7 @@ class HasClientTestBase : public ::testing::Test {
                                       uint8_t index, GATT_WRITE_OP_CB cb,
                                       void* cb_data) {
     auto presets = current_peer_presets_.at(conn_id);
-    LOG_ASSERT(!presets.empty()) << __func__ << " Mocking error!";
+    log::assert_that(!presets.empty(), "Mocking error!");
 
     auto preset = presets.find(index);
     if (preset == presets.end()) {

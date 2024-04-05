@@ -426,7 +426,8 @@ class BroadcastStateMachineImpl : public BroadcastStateMachine {
   }
 
   void OnSetupIsoDataPath(uint8_t status, uint16_t conn_hdl) override {
-    LOG_ASSERT(active_config_ != std::nullopt);
+    log::assert_that(active_config_ != std::nullopt,
+                     "assert failed: active_config_ != std::nullopt");
 
     if (status != 0) {
       log::error("Failure creating data path. Tearing down the BIG now.");
@@ -440,7 +441,9 @@ class BroadcastStateMachineImpl : public BroadcastStateMachine {
         active_config_->connection_handles.begin(),
         active_config_->connection_handles.end(),
         [conn_hdl](const auto& handle) { return conn_hdl == handle; });
-    LOG_ASSERT(handle_it != active_config_->connection_handles.end());
+    log::assert_that(
+        handle_it != active_config_->connection_handles.end(),
+        "assert failed: handle_it != active_config_->connection_handles.end()");
     handle_it = std::next(handle_it);
 
     if (handle_it == active_config_->connection_handles.end()) {
@@ -456,7 +459,8 @@ class BroadcastStateMachineImpl : public BroadcastStateMachine {
   }
 
   void OnRemoveIsoDataPath(uint8_t status, uint16_t conn_handle) override {
-    LOG_ASSERT(active_config_ != std::nullopt);
+    log::assert_that(active_config_ != std::nullopt,
+                     "assert failed: active_config_ != std::nullopt");
 
     if (status != 0) {
       log::error("Failure removing data path. Tearing down the BIG now.");
@@ -469,7 +473,9 @@ class BroadcastStateMachineImpl : public BroadcastStateMachine {
         active_config_->connection_handles.begin(),
         active_config_->connection_handles.end(),
         [conn_handle](const auto& handle) { return conn_handle == handle; });
-    LOG_ASSERT(handle_it != active_config_->connection_handles.end());
+    log::assert_that(
+        handle_it != active_config_->connection_handles.end(),
+        "assert failed: handle_it != active_config_->connection_handles.end()");
     handle_it = std::next(handle_it);
 
     if (handle_it == active_config_->connection_handles.end()) {
@@ -485,7 +491,8 @@ class BroadcastStateMachineImpl : public BroadcastStateMachine {
 
   void TriggerIsoDatapathSetup(uint16_t conn_handle) {
     log::info("conn_hdl={}", conn_handle);
-    LOG_ASSERT(active_config_ != std::nullopt);
+    log::assert_that(active_config_ != std::nullopt,
+                     "assert failed: active_config_ != std::nullopt");
 
     /* Note: If coding format is transparent, 'codec_id_company' and
      * 'codec_id_vendor' shall be ignored.
@@ -515,7 +522,8 @@ class BroadcastStateMachineImpl : public BroadcastStateMachine {
 
   void TriggerIsoDatapathTeardown(uint16_t conn_handle) {
     log::info("conn_hdl={}", conn_handle);
-    LOG_ASSERT(active_config_ != std::nullopt);
+    log::assert_that(active_config_ != std::nullopt,
+                     "assert failed: active_config_ != std::nullopt");
 
     SetMuted(true);
     IsoManager::GetInstance()->RemoveIsoDataPath(
