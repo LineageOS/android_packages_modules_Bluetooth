@@ -93,10 +93,6 @@ void btsnd_hcic_set_conn_encrypt(uint16_t handle, bool enable);
 void btsnd_hcic_rmt_name_req(const RawAddress& bd_addr,
                              uint8_t page_scan_rep_mode, uint8_t page_scan_mode,
                              uint16_t clock_offset);
-
-/* Remote Name Request Cancel */
-void btsnd_hcic_rmt_name_req_cancel(const RawAddress& bd_addr);
-
 /* Remote Extended Features */
 void btsnd_hcic_rmt_ext_features(uint16_t handle, uint8_t page_num);
 

@@ -25,8 +25,6 @@
  *
  ******************************************************************************/
 
-#define LOG_TAG "bluetooth"
-
 #include <base/logging.h>
 #include <bluetooth/log.h>
 #include <stddef.h>
@@ -46,11 +44,11 @@
 #include "hci/hci_layer.h"
 #include "include/check.h"
 #include "internal_include/bt_target.h"
+#include "main/shim/acl_api.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "main/shim/shim.h"
 #include "neighbor_inquiry.h"
-#include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
@@ -867,7 +865,8 @@ tBTM_STATUS BTM_CancelRemoteDeviceName(void) {
        * callback. */
       btm_inq_rmt_name_failed_cancelled();
     } else
-      btsnd_hcic_rmt_name_req_cancel(btm_cb.btm_inq_vars.remname_bda);
+      bluetooth::shim::ACL_CancelRemoteNameRequest(
+          btm_cb.btm_inq_vars.remname_bda);
     return (BTM_CMD_STARTED);
   } else
     return (BTM_WRONG_MODE);

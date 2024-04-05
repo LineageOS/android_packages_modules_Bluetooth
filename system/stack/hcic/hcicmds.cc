@@ -661,10 +661,6 @@ void btsnd_hcic_rmt_name_req(const RawAddress& bd_addr,
                                          page_scan_mode, clock_offset);
 }
 
-void btsnd_hcic_rmt_name_req_cancel(const RawAddress& bd_addr) {
-  bluetooth::shim::ACL_CancelRemoteNameRequest(bd_addr);
-}
-
 void btsnd_hcic_rmt_ext_features(uint16_t handle, uint8_t page_num) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
