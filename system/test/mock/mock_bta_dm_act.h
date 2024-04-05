@@ -505,12 +505,12 @@ struct bta_dm_rm_cback {
 extern struct bta_dm_rm_cback bta_dm_rm_cback;
 
 // Name: bta_dm_sdp_result
-// Params: tBTA_DM_MSG* p_data
+// Params: tBTA_DM_SDP_RESULT& sdp_event
 // Return: void
 struct bta_dm_sdp_result {
-  std::function<void(tBTA_DM_MSG* p_data)> body{
-      [](tBTA_DM_MSG* /* p_data */) {}};
-  void operator()(tBTA_DM_MSG* p_data) { body(p_data); };
+  std::function<void(tBTA_DM_SDP_RESULT& sdp_event)> body{
+      [](tBTA_DM_SDP_RESULT& /* sdp_event */) {}};
+  void operator()(tBTA_DM_SDP_RESULT& sdp_event) { body(sdp_event); };
 };
 extern struct bta_dm_sdp_result bta_dm_sdp_result;
 
@@ -531,16 +531,6 @@ struct bta_dm_search_cancel_notify {
   void operator()() { body(); };
 };
 extern struct bta_dm_search_cancel_notify bta_dm_search_cancel_notify;
-
-// Name: bta_dm_search_result
-// Params: tBTA_DM_MSG* p_data
-// Return: void
-struct bta_dm_search_result {
-  std::function<void(tBTA_DM_MSG* p_data)> body{
-      [](tBTA_DM_MSG* /* p_data */) {}};
-  void operator()(tBTA_DM_MSG* p_data) { body(p_data); };
-};
-extern struct bta_dm_search_result bta_dm_search_result;
 
 // Name: bta_dm_set_dev_name
 // Params: const std::vector<uint8_t>& name
