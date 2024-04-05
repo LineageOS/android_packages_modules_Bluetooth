@@ -36,8 +36,7 @@
 #include "internal_include/bt_target.h"
 #include "internal_include/bt_trace.h"
 #include "main/shim/entry.h"
-#include "os/log.h"
-#include "osi/include/osi.h"  // UNUSED_ATTR
+#include "os/logging/log_adapter.h"
 #include "osi/include/properties.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sco.h"
@@ -1329,8 +1328,7 @@ bool bta_ag_sco_is_opening(tBTA_AG_SCB* p_scb) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_ag_sco_listen(tBTA_AG_SCB* p_scb,
-                       UNUSED_ATTR const tBTA_AG_DATA& data) {
+void bta_ag_sco_listen(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
   log::info("{}", ADDRESS_TO_LOGGABLE_STR(p_scb->peer_addr));
   bta_ag_sco_event(p_scb, BTA_AG_SCO_LISTEN_E);
 }
@@ -1345,7 +1343,7 @@ void bta_ag_sco_listen(tBTA_AG_SCB* p_scb,
  * Returns          void
  *
  ******************************************************************************/
-void bta_ag_sco_open(tBTA_AG_SCB* p_scb, UNUSED_ATTR const tBTA_AG_DATA& data) {
+void bta_ag_sco_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
   if (!sco_allowed) {
     log::info("not opening sco, by policy");
     return;
@@ -1396,8 +1394,7 @@ void bta_ag_sco_open(tBTA_AG_SCB* p_scb, UNUSED_ATTR const tBTA_AG_DATA& data) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_ag_sco_close(tBTA_AG_SCB* p_scb,
-                      UNUSED_ATTR const tBTA_AG_DATA& data) {
+void bta_ag_sco_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
   /* if scb is in use */
   /* sco_idx is not allocated in SCO_CODEC_ST, still need to move to listen
    * state. */
@@ -1443,8 +1440,7 @@ void bta_ag_sco_codec_nego(tBTA_AG_SCB* p_scb, bool result) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_ag_sco_shutdown(tBTA_AG_SCB* p_scb,
-                         UNUSED_ATTR const tBTA_AG_DATA& data) {
+void bta_ag_sco_shutdown(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
   bta_ag_sco_event(p_scb, BTA_AG_SCO_SHUTDOWN_E);
 }
 
@@ -1458,8 +1454,7 @@ void bta_ag_sco_shutdown(tBTA_AG_SCB* p_scb,
  * Returns          void
  *
  ******************************************************************************/
-void bta_ag_sco_conn_open(tBTA_AG_SCB* p_scb,
-                          UNUSED_ATTR const tBTA_AG_DATA& data) {
+void bta_ag_sco_conn_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
   bta_ag_sco_event(p_scb, BTA_AG_SCO_CONN_OPEN_E);
   bta_sys_sco_open(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
 
@@ -1508,8 +1503,7 @@ void bta_ag_sco_conn_open(tBTA_AG_SCB* p_scb,
  * Returns          void
  *
  ******************************************************************************/
-void bta_ag_sco_conn_close(tBTA_AG_SCB* p_scb,
-                           UNUSED_ATTR const tBTA_AG_DATA& data) {
+void bta_ag_sco_conn_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
   /* clear current scb */
   bta_ag_cb.sco.p_curr_scb = nullptr;
   p_scb->sco_idx = BTM_INVALID_SCO_INDEX;

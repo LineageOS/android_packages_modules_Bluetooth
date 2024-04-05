@@ -31,7 +31,6 @@
 #include "bta/include/bta_hh_co.h"
 #include "bta/include/bta_le_audio_api.h"
 #include "device/include/interop.h"
-#include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"    // ARRAY_SIZE
 #include "stack/btm/btm_sec.h"  // BTM_
@@ -970,7 +969,7 @@ static void bta_hh_le_pri_service_discovery(tBTA_HH_DEV_CB* p_cb) {
  ******************************************************************************/
 static void bta_hh_le_encrypt_cback(const RawAddress* bd_addr,
                                     tBT_TRANSPORT transport,
-                                    UNUSED_ATTR void* p_ref_data,
+                                    void* /* p_ref_data */,
                                     tBTM_STATUS result) {
   tAclLinkSpec link_spec;
   link_spec.addrt.bda = *bd_addr;
@@ -1002,7 +1001,7 @@ static void bta_hh_le_encrypt_cback(const RawAddress* bd_addr,
  *
  ******************************************************************************/
 void bta_hh_security_cmpl(tBTA_HH_DEV_CB* p_cb,
-                          UNUSED_ATTR const tBTA_HH_DATA* p_buf) {
+                          const tBTA_HH_DATA* /* p_buf */) {
   log::verbose("addr:{}, status:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec),
                p_cb->status);
   if (p_cb->status == BTA_HH_OK) {
@@ -1100,7 +1099,7 @@ static void bta_hh_clear_service_cache(tBTA_HH_DEV_CB* p_cb) {
  *
  ******************************************************************************/
 void bta_hh_start_security(tBTA_HH_DEV_CB* p_cb,
-                           UNUSED_ATTR const tBTA_HH_DATA* p_buf) {
+                           const tBTA_HH_DATA* /* p_buf */) {
   log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec.addrt.bda));
   if (BTM_SecIsSecurityPending(p_cb->link_spec.addrt.bda)) {
     /* if security collision happened, wait for encryption done */

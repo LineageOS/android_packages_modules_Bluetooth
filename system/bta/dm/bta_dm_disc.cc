@@ -38,19 +38,14 @@
 #include "common/init_flags.h"
 #include "common/strings.h"
 #include "device/include/interop.h"
-#include "include/bind_helpers.h"
 #include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
-#include "os/log.h"
+#include "os/logging/log_adapter.h"
 #include "osi/include/allocator.h"
-#include "osi/include/fixed_queue.h"
-#include "osi/include/osi.h"          // UNUSED_ATTR
 #include "stack/btm/btm_int_types.h"  // TimestampedStringCircularBuffer
 #include "stack/btm/neighbor_inquiry.h"
-#include "stack/include/avrc_api.h"
 #include "stack/include/bt_dev_class.h"
-#include "stack/include/bt_hdr.h"
 #include "stack/include/bt_name.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_client_interface.h"
@@ -995,7 +990,7 @@ static void bta_dm_search_result(tBTA_DM_SVC_RES& disc_result) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_dm_search_timer_cback(UNUSED_ATTR void* data) {
+static void bta_dm_search_timer_cback(void* /* data */) {
   log::verbose("");
   bta_dm_search_cb.wait_disc = false;
 
@@ -1432,7 +1427,7 @@ static void bta_dm_discover_device(const RawAddress& remote_bd_addr) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_dm_sdp_callback(UNUSED_ATTR const RawAddress& bd_addr,
+static void bta_dm_sdp_callback(const RawAddress& /* bd_addr */,
                                 tSDP_STATUS sdp_status) {
   post_disc_evt(BTA_DM_SDP_RESULT_EVT,
                 std::make_unique<tBTA_DM_MSG>(
@@ -1522,7 +1517,7 @@ static void bta_dm_inq_cmpl_cb(void* /* p_result */) {
  *
  ******************************************************************************/
 static void bta_dm_service_search_remname_cback(const RawAddress& bd_addr,
-                                                UNUSED_ATTR DEV_CLASS dc,
+                                                DEV_CLASS /* dc */,
                                                 BD_NAME bd_name) {
   tBTM_REMOTE_DEV_NAME rem_name = {};
   tBTM_STATUS btm_status;
