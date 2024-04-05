@@ -563,7 +563,7 @@ class BluetoothManagerService {
                         String newAddress =
                                 intent.getStringExtra(BluetoothAdapter.EXTRA_BLUETOOTH_ADDRESS);
                         if (newAddress != null) {
-                            Log.d(TAG, "Bluetooth Adapter address changed to " + newAddress);
+                            Log.d(TAG, "Local address changed to …" + logAddress(newAddress));
                             storeNameAndAddress(null, newAddress);
                         } else {
                             Log.e(TAG, "No Bluetooth Adapter address parameter found");
@@ -773,22 +773,30 @@ class BluetoothManagerService {
                         .settingsSecureGetString(
                                 mContentResolver, Settings.Secure.BLUETOOTH_ADDRESS);
 
-        Log.d(TAG, "loadStoredNameAndAddress: Name=" + mName + ", Address=" + mAddress);
+        Log.d(TAG, "loadStoredNameAndAddress: Name=" + mName + ", Address=" + logAddress(mAddress));
+    }
+
+    private String logAddress(String address) {
+        if (address == null) {
+            return "[address is null]";
+        }
+        if (address.length() != 17) {
+            return "[address invalid]";
+        }
+        return "XX:XX:XX:XX:" + address.substring(address.length() - 5);
     }
 
     /**
      * Save the Bluetooth name and address in the persistent store. Only non-null values will be
      * saved.
-     *
-     * @param name
-     * @param address
      */
     private void storeNameAndAddress(String name, String address) {
+        final String logHeader = "storeNameAndAddress(" + name + ", " + logAddress(address) + "): ";
         if (name != null) {
             if (Settings.Secure.putString(mContentResolver, Settings.Secure.BLUETOOTH_NAME, name)) {
                 mName = name;
             } else {
-                Log.e(TAG, "Failed to store name=" + name + ". Name is still " + mName);
+                Log.e(TAG, logHeader + "Failed. Name is still " + mName);
             }
         }
 
@@ -797,14 +805,14 @@ class BluetoothManagerService {
                     mContentResolver, Settings.Secure.BLUETOOTH_ADDRESS, address)) {
                 mAddress = address;
             } else {
-                Log.e(TAG, "Failed to store address=" + address + ". Address is still " + mAddress);
+                Log.e(TAG, logHeader + "Failed. Address is still " + logAddress(mAddress));
             }
         }
 
         if ((mName != null) && (mAddress != null)) {
             Settings.Secure.putInt(mContentResolver, Settings.Secure.BLUETOOTH_ADDR_VALID, 1);
         }
-        Log.d(TAG, "storeNameAndAddress: Name=" + mName + ", Address=" + mAddress);
+        Log.d(TAG, logHeader + "Completed successfully");
     }
 
     IBluetooth registerAdapter(IBluetoothManagerCallback callback) {
@@ -2315,7 +2323,7 @@ class BluetoothManagerService {
         writer.println("Bluetooth Status");
         writer.println("  enabled: " + isEnabled());
         writer.println("  state: " + mState);
-        writer.println("  address: " + mAddress);
+        writer.println("  address: " + logAddress(mAddress));
         writer.println("  name: " + mName);
         if (mEnable) {
             long onDuration = SystemClock.elapsedRealtime() - mLastEnabledTime;
@@ -2422,7 +2430,7 @@ class BluetoothManagerService {
         proto.write(
                 BluetoothManagerServiceDumpProto.STATE_NAME,
                 BluetoothAdapter.nameForState(mState.get()));
-        proto.write(BluetoothManagerServiceDumpProto.ADDRESS, mAddress);
+        proto.write(BluetoothManagerServiceDumpProto.ADDRESS, logAddress(mAddress));
         proto.write(BluetoothManagerServiceDumpProto.NAME, mName);
         if (mEnable) {
             proto.write(BluetoothManagerServiceDumpProto.LAST_ENABLED_TIME_MS, mLastEnabledTime);
