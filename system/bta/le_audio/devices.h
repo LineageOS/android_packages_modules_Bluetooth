@@ -182,12 +182,9 @@ class LeAudioDevice {
       const set_configurations::AudioSetConfiguration* audio_set_conf,
       uint8_t direction, types::LeAudioContextType context_type,
       uint8_t* number_of_already_active_group_ase,
-      types::BidirectionalPair<types::AudioLocations>&
-          group_audio_locations_out,
-      const types::BidirectionalPair<types::AudioContexts>&
-          metadata_context_types,
-      const types::BidirectionalPair<std::vector<uint8_t>>& ccid_lists,
-      bool reuse_cis_id);
+      types::AudioLocations& group_audio_locations_out,
+      const types::AudioContexts& metadata_context_types,
+      const std::vector<uint8_t>& ccid_lists, bool reuse_cis_id);
 
   inline types::AudioContexts GetSupportedContexts(
       int direction = types::kLeAudioDirectionBoth) const {
@@ -223,11 +220,9 @@ class LeAudioDevice {
       const types::BidirectionalPair<types::AudioContexts>&
           metadata_context_types,
       types::BidirectionalPair<std::vector<uint8_t>> ccid_lists);
-  void SetMetadataToAse(
-      struct types::ase* ase,
-      const types::BidirectionalPair<types::AudioContexts>&
-          metadata_context_types,
-      types::BidirectionalPair<std::vector<uint8_t>> ccid_lists);
+  void SetMetadataToAse(struct types::ase* ase,
+                        const types::AudioContexts& metadata_context_types,
+                        const std::vector<uint8_t>& ccid_lists);
 
   void PrintDebugState(void);
   void DumpPacsDebugState(std::stringstream& stream);

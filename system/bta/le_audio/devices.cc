@@ -244,10 +244,9 @@ bool LeAudioDevice::ConfigureAses(
     const set_configurations::AudioSetConfiguration* audio_set_conf,
     uint8_t direction, LeAudioContextType context_type,
     uint8_t* number_of_already_active_group_ase,
-    BidirectionalPair<AudioLocations>& group_audio_locations_memo,
-    const BidirectionalPair<AudioContexts>& metadata_context_types,
-    const BidirectionalPair<std::vector<uint8_t>>& ccid_lists,
-    bool reuse_cis_id) {
+    AudioLocations& group_audio_locations_memo,
+    const AudioContexts& metadata_context_types,
+    const std::vector<uint8_t>& ccid_lists, bool reuse_cis_id) {
   /* First try to use the already configured ASE */
   auto ase = GetFirstActiveAseByDirection(direction);
   if (ase) {
@@ -324,7 +323,7 @@ bool LeAudioDevice::ConfigureAses(
       ase->codec_config.Add(
           codec_spec_conf::kLeAudioLtvTypeAudioChannelAllocation,
           PickAudioLocation(strategy, audio_locations,
-                            group_audio_locations_memo.get(direction)));
+                            group_audio_locations_memo));
 
       /* Get default value if no requirement for specific frame blocks per sdu
        */
@@ -975,15 +974,13 @@ void LeAudioDevice::SetAvailableContexts(
 }
 
 void LeAudioDevice::SetMetadataToAse(
-    struct types::ase* ase,
-    const BidirectionalPair<AudioContexts>& metadata_context_types,
-    BidirectionalPair<std::vector<uint8_t>> ccid_lists) {
+    struct types::ase* ase, const AudioContexts& metadata_context_types,
+    const std::vector<uint8_t>& ccid_lists) {
   /* Filter multidirectional audio context for each ase direction */
-  auto directional_audio_context = metadata_context_types.get(ase->direction) &
-                                   GetAvailableContexts(ase->direction);
+  auto directional_audio_context =
+      metadata_context_types & GetAvailableContexts(ase->direction);
   if (directional_audio_context.any()) {
-    ase->metadata =
-        GetMetadata(directional_audio_context, ccid_lists.get(ase->direction));
+    ase->metadata = GetMetadata(directional_audio_context, ccid_lists);
   } else {
     ase->metadata = GetMetadata(AudioContexts(LeAudioContextType::UNSPECIFIED),
                                 std::vector<uint8_t>());
@@ -1012,7 +1009,8 @@ bool LeAudioDevice::ActivateConfiguredAses(
       ase.active = true;
       ret = true;
       /* update metadata */
-      SetMetadataToAse(&ase, metadata_context_types, ccid_lists);
+      SetMetadataToAse(&ase, metadata_context_types.get(ase.direction),
+                       ccid_lists.get(ase.direction));
     }
   }
 

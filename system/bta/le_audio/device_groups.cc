@@ -1499,9 +1499,10 @@ bool LeAudioDeviceGroup::ConfigureAses(
       }
 
       if (!dev->ConfigureAses(audio_set_conf, direction, context_type,
-                              &active_ase_cnt, group_audio_locations_memo,
-                              metadata_context_types, ccid_lists,
-                              reuse_cis_id)) {
+                              &active_ase_cnt,
+                              group_audio_locations_memo.get(direction),
+                              metadata_context_types.get(direction),
+                              ccid_lists.get(direction), reuse_cis_id)) {
         return;
       }
 
