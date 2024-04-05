@@ -210,10 +210,12 @@ struct HasCtpGroupOpCoordinator {
   HasCtpGroupOpCoordinator(const std::vector<RawAddress>& targets,
                            HasCtpOp operation)
       : operation(operation) {
-    LOG_ASSERT(targets.size() != 0) << " Empty device list error.";
+    log::assert_that(targets.size() != 0, "Empty device list error.");
     if (targets.size() != 1) {
-      LOG_ASSERT(operation.IsGroupRequest()) << " Must be a group operation!";
-      LOG_ASSERT(operation.GetGroupId() != -1) << " Must set valid group_id!";
+      log::assert_that(operation.IsGroupRequest(),
+                       "Must be a group operation!");
+      log::assert_that(operation.GetGroupId() != -1,
+                       "Must set valid group_id!");
     }
 
     devices = std::list<RawAddress>(targets.cbegin(), targets.cend());
@@ -226,7 +228,7 @@ struct HasCtpGroupOpCoordinator {
     if (alarm_is_scheduled(operation_timeout_timer))
       alarm_cancel(operation_timeout_timer);
 
-    LOG_ASSERT(cb != nullptr) << " Timeout timer callback not set!";
+    log::assert_that(cb != nullptr, "Timeout timer callback not set!");
     alarm_set_on_mloop(operation_timeout_timer, kOperationTimeoutMs, cb,
                        nullptr);
   }

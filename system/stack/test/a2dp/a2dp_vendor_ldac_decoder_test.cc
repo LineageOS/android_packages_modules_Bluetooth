@@ -16,13 +16,10 @@
 
 #include "stack/include/a2dp_vendor_ldac_decoder.h"
 
-#include <base/logging.h>
 #include <gtest/gtest.h>
-#include <stdio.h>
 
 #include <cstdint>
 
-#include "include/check.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
 
@@ -55,6 +52,6 @@ class A2dpStackTest : public ::testing::Test {
 TEST_F(A2dpStackTest, DecodePacket_ZeroLength) {
   const std::vector<uint8_t> data;
   BT_HDR* p_buf = AllocateL2capPacket(data);
-  CHECK(!a2dp_vendor_ldac_decoder_decode_packet(p_buf));
+  ASSERT_FALSE(a2dp_vendor_ldac_decoder_decode_packet(p_buf));
   osi_free(p_buf);
 }

@@ -328,7 +328,8 @@ class CsisClientImpl : public CsisClient {
     while (prev_dev) {
       if (prev_dev->IsConnected()) {
         auto prev_csis_instance = prev_dev->GetCsisInstanceByGroupId(group_id);
-        LOG_ASSERT(prev_csis_instance) << " prev_csis_instance does not exist!";
+        log::assert_that(prev_csis_instance != nullptr,
+                         "prev_csis_instance does not exist!");
         SetLock(prev_dev, prev_csis_instance,
                 CsisLockState::CSIS_STATE_UNLOCKED);
       }
@@ -384,7 +385,7 @@ class CsisClientImpl : public CsisClient {
 
     /* All is good, continue. Try to send lock to other devices.*/
     auto csis_instance = device->GetCsisInstanceByGroupId(group_id);
-    LOG_ASSERT(csis_instance) << " csis_instance does not exist!";
+    log::assert_that(csis_instance != nullptr, "csis_instance does not exist!");
     csis_instance->SetLockState(target_lock_state);
 
     if (csis_group->GetLockTransitionCnt() == 0) {
@@ -411,7 +412,8 @@ class CsisClientImpl : public CsisClient {
 
       if (next_dev) {
         auto next_csis_inst = next_dev->GetCsisInstanceByGroupId(group_id);
-        LOG_ASSERT(csis_instance) << " csis_instance does not exist!";
+        log::assert_that(csis_instance != nullptr,
+                         "csis_instance does not exist!");
 #if CSIP_UPPER_TESTER_FORCE_TO_SEND_LOCK == FALSE
         if (next_csis_inst->GetLockState() ==
             CsisLockState::CSIS_STATE_LOCKED) {
@@ -539,7 +541,8 @@ class CsisClientImpl : public CsisClient {
       }
 
       auto csis_instance = csis_device->GetCsisInstanceByGroupId(group_id);
-      LOG_ASSERT(csis_instance) << " csis_instance does not exist!";
+      log::assert_that(csis_instance != nullptr,
+                       "csis_instance does not exist!");
       SetLock(csis_device, csis_instance, new_lock_state);
     } else {
       /* For unlocking, we don't have to monitor status of unlocking device,
@@ -548,7 +551,8 @@ class CsisClientImpl : public CsisClient {
        */
       auto csis_device = csis_group->GetLastDevice();
       auto csis_instance = csis_device->GetCsisInstanceByGroupId(group_id);
-      LOG_ASSERT(csis_instance) << " csis_instance does not exist!";
+      log::assert_that(csis_instance != nullptr,
+                       "csis_instance does not exist!");
       while (csis_device) {
         if ((csis_device->IsConnected()) &&
             ((csis_instance->GetLockState() != new_lock_state))) {
@@ -1645,7 +1649,8 @@ class CsisClientImpl : public CsisClient {
     if (group_id != bluetooth::groups::kGroupUnknown) {
       /* Group already exist. */
       csis_group = FindCsisGroup(group_id);
-      LOG_ASSERT(csis_group) << " group does not exist? " << group_id;
+      log::assert_that(csis_group != nullptr, "group does not exist? {}",
+                       group_id);
     } else {
       /* Now having SIRK we can decide if the device belongs to some group we
        * know or this is a new group
@@ -1661,7 +1666,9 @@ class CsisClientImpl : public CsisClient {
         /* Here it means, we have new group. Let's us create it */
         group_id =
             dev_groups_->AddDevice(device->addr, csis_instance->GetUuid());
-        LOG_ASSERT(group_id != bluetooth::groups::kGroupUnknown);
+        log::assert_that(
+            group_id != bluetooth::groups::kGroupUnknown,
+            "assert failed: group_id != bluetooth::groups::kGroupUnknown");
       } else {
         dev_groups_->AddDevice(device->addr, csis_instance->GetUuid(),
                                group_id);
