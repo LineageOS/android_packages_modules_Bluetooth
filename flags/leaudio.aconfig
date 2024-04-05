@@ -262,3 +262,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "le_audio_support_unidirectional_voice_assistant"
+    namespace: "bluetooth"
+    description: "Allow to create unidirectional stream for VOICEASSISTANT"
+    bug: "332510824"
+}
