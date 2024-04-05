@@ -14,3 +14,10 @@ flag {
     description: "Present RNR result during service discovery"
     bug: "321809163"
 }
+
+flag {
+    name: "rnr_reset_state_at_cancel"
+    namespace: "bluetooth"
+    description: "Clear rnr in-progress-state when rnr_cancel called"
+    bug: "333094503"
+}
