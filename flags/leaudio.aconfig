@@ -279,3 +279,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_broadcast_assistant_peripheral_entrustment"
+    namespace: "bluetooth"
+    description: "Give peripheral devices more responsibility for source handling"
+    bug: "333050419"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
