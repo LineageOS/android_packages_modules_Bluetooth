@@ -67,40 +67,39 @@ inline const T* Specialize(U* u) {
 
 typedef enum : uint8_t {
   /* SW sub-systems */
-  BTA_ID_SYS = 0,       /* system manager */
-                        /* BLUETOOTH PART - from = 0, to BTA_ID_BLUETOOTH_MAX */
-  BTA_ID_DM_SEARCH = 2, /* device manager search */
-  BTA_ID_DM_SEC = 3,    /* device manager security */
-  BTA_ID_DG = 4,        /* data gateway */
-  BTA_ID_AG = 5,        /* audio gateway */
-  BTA_ID_OPC = 6,       /* object push client */
-  BTA_ID_OPS = 7,       /* object push server */
-  BTA_ID_FTS = 8,       /* file transfer server */
-  BTA_ID_CT = 9,        /* cordless telephony terminal */
-  BTA_ID_FTC = 10,      /* file transfer client */
-  BTA_ID_SS = 11,       /* synchronization server */
-  BTA_ID_PR = 12,       /* Printer client */
-  BTA_ID_BIC = 13,      /* Basic Imaging Client */
-  BTA_ID_PAN = 14,      /* Personal Area Networking */
-  BTA_ID_BIS = 15,      /* Basic Imaging Server */
-  BTA_ID_ACC = 16,      /* Advanced Camera Client */
-  BTA_ID_SC = 17,       /* SIM Card Access server */
-  BTA_ID_AV = 18,       /* Advanced audio/video */
-  BTA_ID_AVK = 19,      /* Audio/video sink */
-  BTA_ID_HD = 20,       /* HID Device */
-  BTA_ID_CG = 21,       /* Cordless Gateway */
-  BTA_ID_BP = 22,       /* Basic Printing Client */
-  BTA_ID_HH = 23,       /* Human Interface Device Host */
-  BTA_ID_PBS = 24,      /* Phone Book Access Server */
-  BTA_ID_PBC = 25,      /* Phone Book Access Client */
-  BTA_ID_JV = 26,       /* Java */
-  BTA_ID_HS = 27,       /* Headset */
-  BTA_ID_MSE = 28,      /* Message Server Equipment */
-  BTA_ID_MCE = 29,      /* Message Client Equipment */
-  BTA_ID_HL = 30,       /* Health Device Profile*/
-  BTA_ID_GATTC = 31,    /* GATT Client */
-  BTA_ID_GATTS = 32,    /* GATT Client */
-  BTA_ID_SDP = 33,      /* SDP Client */
+  BTA_ID_SYS = 0,    /* system manager */
+                     /* BLUETOOTH PART - from = 0, to BTA_ID_BLUETOOTH_MAX */
+  BTA_ID_DM_SEC = 3, /* device manager security */
+  BTA_ID_DG = 4,     /* data gateway */
+  BTA_ID_AG = 5,     /* audio gateway */
+  BTA_ID_OPC = 6,    /* object push client */
+  BTA_ID_OPS = 7,    /* object push server */
+  BTA_ID_FTS = 8,    /* file transfer server */
+  BTA_ID_CT = 9,     /* cordless telephony terminal */
+  BTA_ID_FTC = 10,   /* file transfer client */
+  BTA_ID_SS = 11,    /* synchronization server */
+  BTA_ID_PR = 12,    /* Printer client */
+  BTA_ID_BIC = 13,   /* Basic Imaging Client */
+  BTA_ID_PAN = 14,   /* Personal Area Networking */
+  BTA_ID_BIS = 15,   /* Basic Imaging Server */
+  BTA_ID_ACC = 16,   /* Advanced Camera Client */
+  BTA_ID_SC = 17,    /* SIM Card Access server */
+  BTA_ID_AV = 18,    /* Advanced audio/video */
+  BTA_ID_AVK = 19,   /* Audio/video sink */
+  BTA_ID_HD = 20,    /* HID Device */
+  BTA_ID_CG = 21,    /* Cordless Gateway */
+  BTA_ID_BP = 22,    /* Basic Printing Client */
+  BTA_ID_HH = 23,    /* Human Interface Device Host */
+  BTA_ID_PBS = 24,   /* Phone Book Access Server */
+  BTA_ID_PBC = 25,   /* Phone Book Access Client */
+  BTA_ID_JV = 26,    /* Java */
+  BTA_ID_HS = 27,    /* Headset */
+  BTA_ID_MSE = 28,   /* Message Server Equipment */
+  BTA_ID_MCE = 29,   /* Message Client Equipment */
+  BTA_ID_HL = 30,    /* Health Device Profile*/
+  BTA_ID_GATTC = 31, /* GATT Client */
+  BTA_ID_GATTS = 32, /* GATT Client */
+  BTA_ID_SDP = 33,   /* SDP Client */
   BTA_ID_BLUETOOTH_MAX = 34, /* last BT profile */
 
   BTA_ID_MAX = (44 + BTA_DM_NUM_JV_ID),
@@ -109,7 +108,6 @@ typedef enum : uint8_t {
 inline std::string BtaIdSysText(const tBTA_SYS_ID& sys_id) {
   switch (sys_id) {
     CASE_RETURN_TEXT(BTA_ID_SYS);
-    CASE_RETURN_TEXT(BTA_ID_DM_SEARCH);
     CASE_RETURN_TEXT(BTA_ID_DM_SEC);
     CASE_RETURN_TEXT(BTA_ID_DG);
     CASE_RETURN_TEXT(BTA_ID_AG);
