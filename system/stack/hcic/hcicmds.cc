@@ -654,13 +654,6 @@ void btsnd_hcic_set_conn_encrypt(uint16_t handle, bool enable) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_rmt_name_req(const RawAddress& bd_addr,
-                             uint8_t page_scan_rep_mode, uint8_t page_scan_mode,
-                             uint16_t clock_offset) {
-  bluetooth::shim::ACL_RemoteNameRequest(bd_addr, page_scan_rep_mode,
-                                         page_scan_mode, clock_offset);
-}
-
 void btsnd_hcic_rmt_ext_features(uint16_t handle, uint8_t page_num) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);

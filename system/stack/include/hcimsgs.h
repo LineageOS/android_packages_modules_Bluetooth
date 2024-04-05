@@ -89,10 +89,6 @@ void btsnd_hcic_auth_request(uint16_t handle); /* Authentication Request */
 /* Set Connection Encryption */
 void btsnd_hcic_set_conn_encrypt(uint16_t handle, bool enable);
 
-/* Remote Name Request */
-void btsnd_hcic_rmt_name_req(const RawAddress& bd_addr,
-                             uint8_t page_scan_rep_mode, uint8_t page_scan_mode,
-                             uint16_t clock_offset);
 /* Remote Extended Features */
 void btsnd_hcic_rmt_ext_features(uint16_t handle, uint8_t page_num);
 
