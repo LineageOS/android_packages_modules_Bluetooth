@@ -288,6 +288,7 @@ pub enum PacketChild {
     AclTx(Acl),
     AclRx(Acl),
     NewIndex(NewIndex),
+    SystemNote(String),
 }
 
 impl<'a> TryFrom<&'a LinuxSnoopPacket> for PacketChild {
@@ -318,6 +319,11 @@ impl<'a> TryFrom<&'a LinuxSnoopPacket> for PacketChild {
             LinuxSnoopOpcodes::NewIndex => match NewIndex::parse(item.data.as_slice()) {
                 Ok(data) => Ok(PacketChild::NewIndex(data)),
                 Err(e) => Err(format!("Couldn't parse new index: {:?}", e)),
+            },
+
+            LinuxSnoopOpcodes::SystemNote => match String::from_utf8(item.data.to_vec()) {
+                Ok(data) => Ok(PacketChild::SystemNote(data)),
+                Err(e) => Err(format!("Couldn't parse system note: {:?}", e)),
             },
 
             // TODO(b/262928525) - Add packet handlers for more packet types.
