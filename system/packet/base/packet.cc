@@ -16,7 +16,8 @@
 
 #include "packet.h"
 
-#include <base/logging.h>
+#include <bluetooth/log.h>
+
 #include <algorithm>
 
 #include "check.h"
@@ -43,8 +44,10 @@ size_t Packet::get_length() const { return data_->size(); }
 
 // Iterators use the absolute index to access data.
 uint8_t Packet::get_at_index(size_t index) const {
-  CHECK_GE(index, packet_start_index_);
-  CHECK_LT(index, packet_end_index_);
+  log::assert_that(index >= packet_start_index_,
+                   "assert failed: index >= packet_start_index_");
+  log::assert_that(index < packet_end_index_,
+                   "assert failed: index < packet_end_index_");
   return data_->at(index);
 }
 

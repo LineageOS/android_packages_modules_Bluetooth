@@ -46,7 +46,6 @@
 #define LOG_TAG "bt_btif_hfc"
 #endif
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_hf_client.h>

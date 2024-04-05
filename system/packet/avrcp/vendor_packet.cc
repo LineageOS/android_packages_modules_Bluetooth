@@ -16,6 +16,8 @@
 
 #include "vendor_packet.h"
 
+#include <bluetooth/log.h>
+
 #include "internal_include/bt_trace.h"
 
 namespace bluetooth {
@@ -26,8 +28,8 @@ std::unique_ptr<VendorPacketBuilder> VendorPacketBuilder::MakeBuilder(
     std::unique_ptr<::bluetooth::PacketBuilder> payload) {
   // If the payload size is greater than max uint16_t
   // the packet should be fragmented
-  CHECK_LE(payload->size(), size_t(0xFFFF))
-      << __func__ << ": payload size bigger than uint16_t";
+  log::assert_that(payload->size() <= size_t(0xFFFF),
+                   "payload size bigger than uint16_t");
 
   std::unique_ptr<VendorPacketBuilder> builder(
       new VendorPacketBuilder(ctype, pdu, packet_type));
@@ -48,8 +50,8 @@ bool VendorPacketBuilder::Serialize(
   PacketBuilder::PushHeader(pkt);
 
   // Push the avrcp vendor command headers
-  CHECK_LT(payload_->size(), size_t(0xFFFF))
-      << __func__ << ": payload size bigger than uint16_t";
+  log::assert_that(payload_->size() < size_t(0xFFFF),
+                   "payload size bigger than uint16_t");
   PushHeader(pkt, payload_->size());
 
   // Push the payload for the packet

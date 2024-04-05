@@ -19,7 +19,6 @@
 #include "bta_hh_co.h"
 
 #include <android_bluetooth_flags.h>
-#include <base/logging.h>
 #include <fcntl.h>
 #include <linux/uhid.h>
 #include <poll.h>

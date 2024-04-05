@@ -27,7 +27,6 @@
 
 // Original included files, if any
 #include <base/files/file_util.h>
-#include <base/logging.h>
 #include <fcntl.h>
 #include <libgen.h>
 #include <stdio.h>

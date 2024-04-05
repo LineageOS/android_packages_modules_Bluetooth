@@ -24,7 +24,6 @@
 
 #define LOG_TAG "bt_bta_gattc"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include <cstdint>

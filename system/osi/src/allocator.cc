@@ -17,7 +17,6 @@
  ******************************************************************************/
 #include "osi/include/allocator.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <stdlib.h>
 #include <string.h>

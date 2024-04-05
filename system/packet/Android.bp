@@ -18,6 +18,7 @@ cc_library_static {
     static_libs: [
         "lib-bt-packets-avrcp",
         "lib-bt-packets-base",
+        "libbluetooth_log",
     ],
     apex_available: [
         "com.android.btservices",

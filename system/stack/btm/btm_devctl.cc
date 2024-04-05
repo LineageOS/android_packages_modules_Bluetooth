@@ -24,7 +24,7 @@
  ******************************************************************************/
 
 #define LOG_TAG "devctl"
-#include <base/logging.h>
+
 #include <bluetooth/log.h>
 #include <stddef.h>
 #include <stdlib.h>

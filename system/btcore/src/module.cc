@@ -20,7 +20,6 @@
 
 #include "btcore/include/module.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <dlfcn.h>
 #include <string.h>

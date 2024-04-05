@@ -18,7 +18,6 @@
 
 #include "gatt/database_builder.h"
 
-#include <base/logging.h>
 #include <gtest/gtest.h>
 
 #include <iterator>

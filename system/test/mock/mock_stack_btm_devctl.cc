@@ -20,7 +20,6 @@
  */
 #include "test/mock/mock_stack_btm_devctl.h"
 
-#include <base/logging.h>
 #include <stddef.h>
 #include <stdlib.h>
 

@@ -18,7 +18,6 @@
 
 #include "metric_id_allocator.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include <functional>

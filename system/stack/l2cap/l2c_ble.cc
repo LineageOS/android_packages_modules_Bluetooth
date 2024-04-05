@@ -24,7 +24,6 @@
 
 #define LOG_TAG "l2c_ble"
 
-#include <base/logging.h>
 #include <base/strings/stringprintf.h>
 #include <bluetooth/log.h>
 

@@ -18,7 +18,6 @@
 
 #include "btcore/include/hal_util.h"
 
-#include <base/logging.h>
 #include <base/strings/stringprintf.h>
 #include <dlfcn.h>
 #include <hardware/bluetooth.h>

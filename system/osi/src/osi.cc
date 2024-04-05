@@ -20,7 +20,6 @@
 
 #include "osi/include/osi.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <fcntl.h>
 #include <stdio.h>

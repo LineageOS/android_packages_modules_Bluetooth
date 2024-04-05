@@ -20,7 +20,6 @@
 
 #include "device/include/device_iot_config.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <ctype.h>
 #include <stdio.h>

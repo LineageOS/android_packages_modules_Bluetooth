@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include <base/logging.h>
 #include <fcntl.h>
 #ifdef __ANDROID__
 #include <statslog_bt.h>

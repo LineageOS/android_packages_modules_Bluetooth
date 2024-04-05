@@ -23,7 +23,6 @@
  ******************************************************************************/
 #define LOG_TAG "bta_gattc_main"
 
-#include <base/logging.h>
 #include <base/strings/stringprintf.h>
 #include <bluetooth/log.h>
 

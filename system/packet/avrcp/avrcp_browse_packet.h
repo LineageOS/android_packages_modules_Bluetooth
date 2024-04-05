@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include <base/logging.h>
 #include <iostream>
 
 #include "hardware/avrcp/avrcp_common.h"

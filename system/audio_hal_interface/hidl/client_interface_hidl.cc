@@ -19,7 +19,6 @@
 #include "client_interface_hidl.h"
 
 #include <android/hardware/bluetooth/audio/2.0/IBluetoothAudioPort.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <hidl/MQDescriptor.h>
 

@@ -24,7 +24,7 @@
 #include <functional>
 
 // Original included files, if any
-#include <base/logging.h>
+
 #include <string.h>
 
 #include "osi/include/fixed_queue.h"

@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-#include <base/logging.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -42,7 +41,7 @@ using bluetooth::groups::DeviceGroupsCallbacks;
 DeviceGroupsCallbacks* dev_callbacks;
 
 RawAddress GetTestAddress(int index) {
-  CHECK_LT(index, UINT8_MAX);
+  EXPECT_LT(index, UINT8_MAX);
   RawAddress result = {
       {0xC0, 0xDE, 0xC0, 0xDE, 0x00, static_cast<uint8_t>(index)}};
   return result;

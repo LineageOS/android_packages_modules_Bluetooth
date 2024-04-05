@@ -18,6 +18,8 @@
 
 #include "stack_test_packet_utils.h"
 
+#include <bluetooth/log.h>
+
 #include "hci/include/hci_layer.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
@@ -77,7 +79,8 @@ BT_HDR* AllocateWrappedIncomingL2capAclPacket(
 BT_HDR* AllocateWrappedOutgoingL2capAclPacket(const uint8_t* acl_packet_bytes,
                                               size_t buffer_length) {
   size_t acl_l2cap_header_size = 4 + L2CAP_PKT_OVERHEAD;
-  CHECK_GE(L2CAP_MIN_OFFSET, static_cast<int>(acl_l2cap_header_size));
+  log::assert_that(L2CAP_MIN_OFFSET >= static_cast<int>(acl_l2cap_header_size),
+                   "invalid acl l2cap header size");
   size_t packet_size =
       BT_HDR_SIZE + L2CAP_MIN_OFFSET + buffer_length - acl_l2cap_header_size;
   auto packet = reinterpret_cast<BT_HDR*>(osi_malloc(packet_size));

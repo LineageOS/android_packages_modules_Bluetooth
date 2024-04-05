@@ -19,7 +19,6 @@
 #include "le_scanning_manager.h"
 
 #include <base/functional/bind.h>
-#include <base/logging.h>
 #include <base/threading/thread.h>
 #include <bluetooth/log.h>
 #include <hardware/bluetooth.h>

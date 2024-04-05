@@ -22,7 +22,6 @@
 #include "device/include/interop.h"
 
 #include <assert.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <ctype.h>
 #include <fcntl.h>

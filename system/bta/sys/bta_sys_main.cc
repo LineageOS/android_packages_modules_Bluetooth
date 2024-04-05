@@ -25,7 +25,6 @@
 #define LOG_TAG "bt_bta_sys_main"
 
 #include <base/functional/bind.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include <cstring>

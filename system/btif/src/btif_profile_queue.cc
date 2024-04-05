@@ -30,7 +30,6 @@
 
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
-#include <base/logging.h>
 #include <base/strings/stringprintf.h>
 #include <bluetooth/log.h>
 #include <string.h>

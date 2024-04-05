@@ -20,7 +20,6 @@
 
 #include "osi/include/thread.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <malloc.h>
 #include <pthread.h>
