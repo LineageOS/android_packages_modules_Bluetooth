@@ -3627,8 +3627,7 @@ class LeAudioClientImpl : public LeAudioClient {
 
     LeAudioDeviceGroup* group = aseGroups_.FindById(group_id);
     LeAudioDevice* device = group->GetFirstActiveDevice();
-    LOG_ASSERT(device) << __func__
-                       << " Shouldn't be called without an active device.";
+    log::assert_that(device, "Shouldn't be called without an active device.");
 
     /* Assume 2 ases max just for now. */
     auto* stream_conf = GetStreamSinkConfiguration(group);
@@ -6261,10 +6260,10 @@ void LeAudioClient::Initialize(
     return;
   }
 
-  LOG_ASSERT(std::move(hal_2_1_verifier).Run())
-      << __func__
-      << ", LE Audio Client requires Bluetooth Audio HAL V2.1 at least. Either "
-         "disable LE Audio Profile, or update your HAL";
+  log::assert_that(
+      std::move(hal_2_1_verifier).Run(),
+      "LE Audio Client requires Bluetooth Audio HAL V2.1 at least. Either "
+      "disable LE Audio Profile, or update your HAL");
 
   IsoManager::GetInstance()->Start();
 

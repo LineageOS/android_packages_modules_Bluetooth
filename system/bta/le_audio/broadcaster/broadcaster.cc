@@ -897,8 +897,12 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
           instance->pending_broadcasts_.end(), [broadcast_id](auto& sm) {
             return (sm->GetBroadcastId() == broadcast_id);
           });
-      LOG_ASSERT(pending_broadcast != instance->pending_broadcasts_.end());
-      LOG_ASSERT(instance->broadcasts_.count(broadcast_id) == 0);
+      log::assert_that(pending_broadcast != instance->pending_broadcasts_.end(),
+                       "assert failed: pending_broadcast != "
+                       "instance->pending_broadcasts_.end()");
+      log::assert_that(
+          instance->broadcasts_.count(broadcast_id) == 0,
+          "assert failed: instance->broadcasts_.count(broadcast_id) == 0");
 
       if (initialized) {
         const uint32_t broadcast_id = (*pending_broadcast)->GetBroadcastId();

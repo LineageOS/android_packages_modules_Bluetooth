@@ -2924,7 +2924,7 @@ TEST_F(UnicastTestNoInit, InitializeNoHal_2_1) {
           base::Bind([](MockFunction<bool()>* foo) { return foo->Call(); },
                      &mock_hal_2_1_verifier),
           framework_encode_preference),
-      ", LE Audio Client requires Bluetooth Audio HAL V2.1 at least. Either "
+      "LE Audio Client requires Bluetooth Audio HAL V2.1 at least. Either "
       "disable LE Audio Profile, or update your HAL");
 }
 

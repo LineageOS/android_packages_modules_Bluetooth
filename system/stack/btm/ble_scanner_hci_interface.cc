@@ -37,7 +37,7 @@ static void status_callback(base::Callback<void(uint8_t)> cb, uint8_t* data,
                             uint16_t len) {
   uint8_t status;
 
-  LOG_ASSERT(len == 1) << "Received bad response length: " << len;
+  log::assert_that(len == 1, "Received bad response length: {}", len);
   STREAM_TO_UINT8(status, data);
 
   cb.Run(status);
@@ -48,12 +48,13 @@ static void status_handle_callback(base::Callback<void(uint8_t, uint16_t)> cb,
   uint8_t status;
   uint16_t handle = HCI_INVALID_HANDLE;
 
-  LOG_ASSERT((len > 0) && (len < 4)) << "Received bad response length: " << len;
+  log::assert_that((len > 0) && (len < 4), "Received bad response length: {}",
+                   len);
   uint8_t* pp = data;
   STREAM_TO_UINT8(status, pp);
 
   if (status == HCI_SUCCESS) {
-    LOG_ASSERT(len == 3) << "Received bad response length: " << len;
+    log::assert_that(len == 3, "Received bad response length: {}", len);
 
     STREAM_TO_UINT16(handle, pp);
     handle = handle & 0x0EFF;
@@ -301,7 +302,7 @@ class BleScannerCompleteImpl : public BleScannerListImpl,
 }  // namespace
 
 void BleScannerHciInterface::Initialize() {
-  LOG_ASSERT(instance == nullptr) << "Was already initialized.";
+  log::assert_that(instance == nullptr, "Was already initialized.");
 
   if ((bluetooth::shim::GetController()->GetLePeriodicAdvertiserListSize()) &&
       (bluetooth::shim::GetController()

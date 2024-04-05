@@ -903,7 +903,8 @@ struct eatt_impl {
     }
 
     if (!eatt_dev->eatt_tcb_) {
-      LOG_ASSERT(eatt_dev->eatt_channels.size() == 0);
+      log::assert_that(eatt_dev->eatt_channels.size() == 0,
+                       "assert failed: eatt_dev->eatt_channels.size() == 0");
       log::warn("no eatt channels found");
       return;
     }
