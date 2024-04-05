@@ -1044,15 +1044,9 @@ static void bta_dm_queue_search(tBTA_DM_API_SEARCH& search) {
  *
  ******************************************************************************/
 static void bta_dm_queue_disc(tBTA_DM_API_DISCOVER& discovery) {
-  // TODO fix that up, use something safe, not malloc!
-  tBTA_DM_API_DISCOVER* p_pending_discovery =
-      (tBTA_DM_API_DISCOVER*)osi_malloc(sizeof(tBTA_DM_API_DISCOVER));
-  memcpy(p_pending_discovery, &discovery, sizeof(tBTA_DM_API_DISCOVER));
-
   log::info("bta_dm_discovery: queuing service discovery to {}",
             ADDRESS_TO_LOGGABLE_CSTR(discovery.bd_addr));
-  fixed_queue_enqueue(bta_dm_search_cb.pending_discovery_queue,
-                      p_pending_discovery);
+  bta_dm_search_cb.pending_discovery_queue.push(discovery);
 }
 
 /*******************************************************************************
@@ -1065,14 +1059,14 @@ static void bta_dm_queue_disc(tBTA_DM_API_DISCOVER& discovery) {
  *
  ******************************************************************************/
 static void bta_dm_execute_queued_request() {
-  tBTA_DM_API_DISCOVER* p_pending_discovery =
-      (tBTA_DM_API_DISCOVER*)fixed_queue_try_dequeue(
-          bta_dm_search_cb.pending_discovery_queue);
-  if (p_pending_discovery) {
+  if (!bta_dm_search_cb.pending_discovery_queue.empty()) {
+    tBTA_DM_API_DISCOVER pending_discovery =
+        bta_dm_search_cb.pending_discovery_queue.front();
+    bta_dm_search_cb.pending_discovery_queue.pop();
     log::info("Start pending discovery");
-    post_disc_evt(BTA_DM_API_DISCOVER_EVT,
-                  std::make_unique<tBTA_DM_MSG>(
-                      tBTA_DM_API_DISCOVER{*p_pending_discovery}));
+    post_disc_evt(
+        BTA_DM_API_DISCOVER_EVT,
+        std::make_unique<tBTA_DM_MSG>(tBTA_DM_API_DISCOVER{pending_discovery}));
   } else if (bta_dm_search_cb.p_pending_search) {
     log::info("Start pending search");
     post_disc_evt(BTA_DM_API_SEARCH_EVT,
@@ -1107,7 +1101,7 @@ static void bta_dm_search_clear_queue() {
   bta_dm_search_cb.p_pending_search.reset();
   if (bluetooth::common::InitFlags::
           IsBtmDmFlushDiscoveryQueueOnSearchCancel()) {
-    fixed_queue_flush(bta_dm_search_cb.pending_discovery_queue, osi_free);
+    bta_dm_search_cb.pending_discovery_queue = {};
   }
 }
 
@@ -2321,7 +2315,7 @@ static void bta_dm_disc_reset() {
   alarm_free(bta_dm_search_cb.search_timer);
   alarm_free(bta_dm_search_cb.gatt_close_timer);
   bta_dm_search_cb.p_pending_search.reset();
-  fixed_queue_free(bta_dm_search_cb.pending_discovery_queue, osi_free);
+  bta_dm_search_cb.pending_discovery_queue = {};
   bta_dm_disc_init_search_cb(::bta_dm_search_cb);
 }
 
@@ -2330,7 +2324,7 @@ void bta_dm_disc_start(bool delay_close_gatt) {
   bta_dm_search_cb.search_timer = alarm_new("bta_dm_search.search_timer");
   bta_dm_search_cb.gatt_close_timer =
       delay_close_gatt ? alarm_new("bta_dm_search.gatt_close_timer") : nullptr;
-  bta_dm_search_cb.pending_discovery_queue = fixed_queue_new(SIZE_MAX);
+  bta_dm_search_cb.pending_discovery_queue = {};
 }
 
 void bta_dm_disc_acl_down(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
