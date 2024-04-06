@@ -19,7 +19,6 @@
 #include <base/functional/callback.h>
 #include <base/functional/callback_forward.h>
 #include <base/functional/callback_helpers.h>
-#include <base/logging.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -73,7 +72,7 @@ class LeAudioHealthStatusTest : public ::testing::Test {
 };
 
 RawAddress GetTestAddress(uint8_t index) {
-  CHECK_LT(index, UINT8_MAX);
+  EXPECT_LT(index, UINT8_MAX);
   RawAddress result = {{0xC0, 0xDE, 0xC0, 0xDE, 0x00, index}};
   return result;
 }

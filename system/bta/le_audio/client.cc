@@ -171,6 +171,11 @@ std::ostream& operator<<(std::ostream& os, const AudioState& audio_state) {
   return os;
 }
 
+namespace fmt {
+template <>
+struct formatter<AudioState> : ostream_formatter {};
+}  // namespace fmt
+
 namespace {
 void le_audio_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data);
 
@@ -842,7 +847,7 @@ class LeAudioClientImpl : public LeAudioClient {
     log::debug("configuration_context_type= {}",
                ToString(configuration_context_type));
 
-    DLOG(INFO) << __func__;
+    log::debug("");
     if (configuration_context_type >= LeAudioContextType::RFU) {
       log::error("stream context type is not supported: {}",
                  ToHexString(configuration_context_type));
@@ -2649,8 +2654,7 @@ class LeAudioClientImpl : public LeAudioClient {
     LeAudioDevice* leAudioDevice = leAudioDevices_.FindByConnId(conn_id);
 
     if (!leAudioDevice) {
-      DLOG(ERROR) << __func__ << ", skipping unknown leAudioDevice, conn_id: "
-                  << loghex(conn_id);
+      log::error("skipping unknown leAudioDevice, conn_id: 0x{:x}", conn_id);
       return;
     }
 
@@ -3137,8 +3141,7 @@ class LeAudioClientImpl : public LeAudioClient {
 
     if (audio_sender_state_ == AudioState::IDLE &&
         audio_receiver_state_ == AudioState::IDLE) {
-      DLOG(INFO) << __func__
-                 << " Device not streaming but active - nothing to do";
+      log::debug("Device not streaming but active - nothing to do");
       return;
     }
 
@@ -3369,8 +3372,8 @@ class LeAudioClientImpl : public LeAudioClient {
       sw_enc_right->Encode(data.data() + bytes_per_sample, 2, byte_count);
     }
 
-    DLOG(INFO) << __func__ << " left_cis_handle: " << +left_cis_handle
-               << " right_cis_handle: " << right_cis_handle;
+    log::debug("left_cis_handle: {} right_cis_handle: {}", left_cis_handle,
+               right_cis_handle);
     /* Send data to the controller */
     if (left_cis_handle)
       IsoManager::GetInstance()->SendIsoData(
@@ -4141,12 +4144,12 @@ class LeAudioClientImpl : public LeAudioClient {
       return;
     }
 
-    DLOG(INFO) << __func__ << " active_group_id: " << active_group_id_ << "\n"
-               << " audio_receiver_state: " << audio_receiver_state_ << "\n"
-               << " audio_sender_state: " << audio_sender_state_ << "\n"
-               << " configuration_context_type_: "
-               << ToHexString(configuration_context_type_) << "\n"
-               << " group " << (group ? " exist " : " does not exist ") << "\n";
+    log::debug(
+        "active_group_id: {}\n audio_receiver_state: {}\n audio_sender_state: "
+        "{}\n configuration_context_type_: {}\n group {}\n",
+        active_group_id_, audio_receiver_state_, audio_sender_state_,
+        ToHexString(configuration_context_type_),
+        (group ? " exist " : " does not exist "));
 
     switch (audio_sender_state_) {
       case AudioState::STARTED:
@@ -4416,12 +4419,12 @@ class LeAudioClientImpl : public LeAudioClient {
       return;
     }
 
-    DLOG(INFO) << __func__ << " active_group_id: " << active_group_id_ << "\n"
-               << " audio_receiver_state: " << audio_receiver_state_ << "\n"
-               << " audio_sender_state: " << audio_sender_state_ << "\n"
-               << " configuration_context_type_: "
-               << ToHexString(configuration_context_type_) << "\n"
-               << " group " << (group ? " exist " : " does not exist ") << "\n";
+    log::debug(
+        "active_group_id: {}\n audio_receiver_state: {}\n audio_sender_state: "
+        "{}\n configuration_context_type_: {}\n group {}\n",
+        active_group_id_, audio_receiver_state_, audio_sender_state_,
+        ToHexString(configuration_context_type_),
+        (group ? " exist " : " does not exist "));
 
     switch (audio_receiver_state_) {
       case AudioState::STARTED:
@@ -4649,7 +4652,7 @@ class LeAudioClientImpl : public LeAudioClient {
     }
 
     if (group->GetState() != AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
-      DLOG(INFO) << __func__ << " Group is not streaming ";
+      log::debug("Group is not streaming");
       return false;
     }
 

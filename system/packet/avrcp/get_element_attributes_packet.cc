@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-#include <algorithm>
-
 #include "get_element_attributes_packet.h"
+
+#include <bluetooth/log.h>
+
+#include <algorithm>
 
 namespace bluetooth {
 namespace avrcp {
@@ -92,8 +94,7 @@ GetElementAttributesResponseBuilder::MakeBuilder(size_t mtu) {
 
 size_t GetElementAttributesResponseBuilder::AddAttributeEntry(
     AttributeEntry entry) {
-  CHECK_LT(entries_.size(), size_t(0xFF))
-      << __func__ << ": attribute entry overflow";
+  log::assert_that(entries_.size() < size_t(0xFF), "attribute entry overflow");
 
   size_t remaining_space = mtu_ - size();
   if (entry.size() > remaining_space) {

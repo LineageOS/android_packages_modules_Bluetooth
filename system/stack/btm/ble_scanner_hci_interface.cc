@@ -18,7 +18,6 @@
 #include "ble_scanner_hci_interface.h"
 
 #include <base/functional/bind.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include "btm_api.h"

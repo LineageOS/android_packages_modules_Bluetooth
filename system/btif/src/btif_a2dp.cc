@@ -22,7 +22,6 @@
 #include "btif_a2dp.h"
 
 #include <android_bluetooth_flags.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <stdbool.h>
 

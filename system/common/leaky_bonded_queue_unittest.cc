@@ -17,7 +17,6 @@
  ******************************************************************************/
 #include "common/leaky_bonded_queue.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>

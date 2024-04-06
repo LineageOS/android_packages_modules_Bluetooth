@@ -18,7 +18,6 @@
 
 #include "osi/include/ringbuffer.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <stdlib.h>
 

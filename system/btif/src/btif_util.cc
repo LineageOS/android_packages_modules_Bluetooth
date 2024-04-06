@@ -30,7 +30,6 @@
 
 #include "btif_util.h"
 
-#include <base/logging.h>
 #include <ctype.h>
 #include <hardware/bt_av.h>
 #include <netinet/in.h>

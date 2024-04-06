@@ -16,7 +16,6 @@
  *
  ******************************************************************************/
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -124,7 +123,7 @@ void port_event_cback_1(uint32_t code, uint16_t port_handle) {
 }
 
 RawAddress GetTestAddress(int index) {
-  CHECK_LT(index, UINT8_MAX);
+  EXPECT_LT(index, UINT8_MAX);
   RawAddress result = {
       {0xAA, 0x00, 0x11, 0x22, 0x33, static_cast<uint8_t>(index)}};
   return result;

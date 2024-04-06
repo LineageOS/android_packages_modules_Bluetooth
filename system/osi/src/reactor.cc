@@ -20,7 +20,6 @@
 
 #include "osi/include/reactor.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <pthread.h>
 #include <stdlib.h>

@@ -16,7 +16,6 @@
  *
  ******************************************************************************/
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include "crypto_toolbox/crypto_toolbox.h"

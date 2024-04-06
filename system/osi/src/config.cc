@@ -19,7 +19,6 @@
 #include "osi/include/config.h"
 
 #include <base/files/file_util.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <ctype.h>
 #include <fcntl.h>

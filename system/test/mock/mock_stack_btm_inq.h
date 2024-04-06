@@ -26,7 +26,7 @@
 #include <functional>
 
 // Original included files, if any
-#include <base/logging.h>
+
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>

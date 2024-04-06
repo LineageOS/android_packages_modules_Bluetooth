@@ -365,7 +365,7 @@ void LeAudioDevice::RegisterPACs(
     std::vector<struct types::acs_ac_record>* pac_recs) {
   /* Clear PAC database for characteristic in case if re-read, indicated */
   if (!pac_db->empty()) {
-    DLOG(INFO) << __func__ << ", upgrade PACs for characteristic";
+    log::debug("upgrade PACs for characteristic");
     pac_db->clear();
   }
 

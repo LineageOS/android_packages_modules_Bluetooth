@@ -23,7 +23,6 @@
  ******************************************************************************/
 #define LOG_TAG "l2c_utils"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <stdio.h>
 #include <string.h>

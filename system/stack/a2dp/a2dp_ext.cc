@@ -16,7 +16,6 @@
 
 #include "a2dp_ext.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include "a2dp_codec_api.h"

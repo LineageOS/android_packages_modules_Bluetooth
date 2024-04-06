@@ -20,7 +20,6 @@
 #define LOG_TAG "device_iot_config"
 #include "device_iot_config_int.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <stdio.h>
 #include <string.h>

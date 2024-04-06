@@ -356,7 +356,8 @@ static bool bta_av_next_getcap(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 void bta_av_proc_stream_evt(uint8_t handle, const RawAddress& bd_addr,
                             uint8_t event, tAVDT_CTRL* p_data,
                             uint8_t scb_index) {
-  CHECK_LT(scb_index, BTA_AV_NUM_STRS);
+  log::assert_that(scb_index < BTA_AV_NUM_STRS,
+                   "assert failed: scb_index < BTA_AV_NUM_STRS");
   tBTA_AV_SCB* p_scb = bta_av_cb.p_scb[scb_index];
   uint16_t sec_len = 0;
 

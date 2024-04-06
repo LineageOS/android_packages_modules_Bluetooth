@@ -15,7 +15,6 @@
  */
 
 #include <base/functional/bind.h>
-#include <base/logging.h>
 #include <base/run_loop.h>
 #include <base/threading/thread.h>
 #include <benchmark/benchmark.h>
@@ -41,7 +40,8 @@ static std::unique_ptr<std::promise<void>> g_counter_promise = nullptr;
 
 void pthread_callback_batch(void* context) {
   auto queue = static_cast<fixed_queue_t*>(context);
-  CHECK_NE(queue, nullptr);
+  bluetooth::log::assert_that(queue != nullptr,
+                              "assert failed: queue != nullptr");
   fixed_queue_dequeue(queue);
   g_counter++;
   if (g_counter >= NUM_MESSAGES_TO_SEND) {
@@ -52,13 +52,15 @@ void pthread_callback_batch(void* context) {
 void callback_sequential(void* context) { g_counter_promise->set_value(); }
 
 void callback_sequential_queue(fixed_queue_t* queue, void* context) {
-  CHECK_NE(queue, nullptr);
+  bluetooth::log::assert_that(queue != nullptr,
+                              "assert failed: queue != nullptr");
   fixed_queue_dequeue(queue);
   g_counter_promise->set_value();
 }
 
 void callback_batch(fixed_queue_t* queue, void* data) {
-  CHECK_NE(queue, nullptr);
+  bluetooth::log::assert_that(queue != nullptr,
+                              "assert failed: queue != nullptr");
   fixed_queue_dequeue(queue);
   g_counter++;
   if (g_counter >= NUM_MESSAGES_TO_SEND) {

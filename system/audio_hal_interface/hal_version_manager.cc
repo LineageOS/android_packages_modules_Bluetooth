@@ -18,7 +18,6 @@
 
 #include <android/binder_manager.h>
 #include <android/hidl/manager/1.2/IServiceManager.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <hidl/ServiceManagement.h>
 

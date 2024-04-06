@@ -24,7 +24,7 @@
 #include <functional>
 
 // Original included files, if any
-#include <base/logging.h>
+
 #include <bluetooth/log.h>
 
 #include "include/check.h"

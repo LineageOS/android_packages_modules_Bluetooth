@@ -16,7 +16,6 @@
  *
  ******************************************************************************/
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include "hci/octets.h"

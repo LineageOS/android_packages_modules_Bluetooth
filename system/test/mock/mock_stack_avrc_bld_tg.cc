@@ -19,8 +19,6 @@
  *   Functions generated:3
  */
 
-#include <base/logging.h>
-
 #include "avrc_api.h"
 #include "avrc_defs.h"
 #include "stack/include/bt_hdr.h"

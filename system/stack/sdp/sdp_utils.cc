@@ -24,7 +24,6 @@
  *
  ******************************************************************************/
 #include <android_bluetooth_flags.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include <array>
@@ -193,7 +192,7 @@ static uint16_t sdpu_find_most_specific_service_uuid(tSDP_DISC_REC* p_rec) {
 
 void sdpu_log_attribute_metrics(const RawAddress& bda,
                                 tSDP_DISCOVERY_DB* p_db) {
-  CHECK_NE(p_db, nullptr);
+  log::assert_that(p_db != nullptr, "assert failed: p_db != nullptr");
   bool has_di_record = false;
   for (tSDP_DISC_REC* p_rec = p_db->p_first_rec; p_rec != nullptr;
        p_rec = p_rec->p_next_rec) {

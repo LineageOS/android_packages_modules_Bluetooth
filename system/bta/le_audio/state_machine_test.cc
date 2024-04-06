@@ -396,7 +396,7 @@ class StateMachineTestBase : public Test {
         .WillByDefault(
             [this](uint8_t cig_id,
                    bluetooth::hci::iso_manager::cig_create_params p) {
-              DLOG(INFO) << "CreateCig";
+              log::debug("CreateCig");
 
               auto& group = le_audio_device_groups_[cig_id];
               if (group) {
@@ -418,7 +418,7 @@ class StateMachineTestBase : public Test {
 
     ON_CALL(*mock_iso_manager_, RemoveCig)
         .WillByDefault([this](uint8_t cig_id, bool force) {
-          DLOG(INFO) << "CreateRemove";
+          log::debug("CreateRemove");
 
           auto& group = le_audio_device_groups_[cig_id];
           if (group) {
@@ -432,7 +432,7 @@ class StateMachineTestBase : public Test {
         .WillByDefault([this](uint16_t conn_handle,
                               bluetooth::hci::iso_manager::iso_data_path_params
                                   p) {
-          DLOG(INFO) << "SetupIsoDataPath";
+          log::debug("SetupIsoDataPath");
 
           auto dev_it =
               std::find_if(le_audio_devices_.begin(), le_audio_devices_.end(),
@@ -441,7 +441,7 @@ class StateMachineTestBase : public Test {
                              return (ases.sink || ases.source);
                            });
           if (dev_it == le_audio_devices_.end()) {
-            DLOG(ERROR) << "Device not found";
+            log::error("Device not found");
             return;
           }
 
@@ -457,7 +457,7 @@ class StateMachineTestBase : public Test {
 
     ON_CALL(*mock_iso_manager_, RemoveIsoDataPath)
         .WillByDefault([this](uint16_t conn_handle, uint8_t iso_direction) {
-          DLOG(INFO) << "RemoveIsoDataPath";
+          log::debug("RemoveIsoDataPath");
 
           auto dev_it =
               std::find_if(le_audio_devices_.begin(), le_audio_devices_.end(),
@@ -466,7 +466,7 @@ class StateMachineTestBase : public Test {
                              return (ases.sink || ases.source);
                            });
           if (dev_it == le_audio_devices_.end()) {
-            DLOG(ERROR) << "Device not found";
+            log::error("Device not found");
             return;
           }
 
@@ -483,10 +483,10 @@ class StateMachineTestBase : public Test {
     ON_CALL(*mock_iso_manager_, EstablishCis)
         .WillByDefault([this](bluetooth::hci::iso_manager::cis_establish_params
                                   conn_params) {
-          DLOG(INFO) << "EstablishCis";
+          log::debug("EstablishCis");
 
           if (do_not_send_cis_establish_event_) {
-            DLOG(INFO) << "Don't send cis establish event";
+            log::debug("Don't send cis establish event");
             return;
           }
 
@@ -498,7 +498,7 @@ class StateMachineTestBase : public Test {
                   return (ases.sink || ases.source);
                 });
             if (dev_it == le_audio_devices_.end()) {
-              DLOG(ERROR) << "Device not found";
+              log::error("Device not found");
               return;
             }
 
@@ -552,7 +552,7 @@ class StateMachineTestBase : public Test {
 
     ON_CALL(*mock_iso_manager_, DisconnectCis)
         .WillByDefault([this](uint16_t cis_handle, uint8_t reason) {
-          DLOG(INFO) << "DisconnectCis";
+          log::debug("DisconnectCis");
 
           auto dev_it =
               std::find_if(le_audio_devices_.begin(), le_audio_devices_.end(),
@@ -561,7 +561,7 @@ class StateMachineTestBase : public Test {
                              return (ases.sink || ases.source);
                            });
           if (dev_it == le_audio_devices_.end()) {
-            DLOG(ERROR) << "Device not found";
+            log::error("Device not found");
             return;
           }
 

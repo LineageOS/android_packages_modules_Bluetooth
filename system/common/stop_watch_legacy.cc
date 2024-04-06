@@ -18,7 +18,6 @@
 
 #include "common/stop_watch_legacy.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include <iomanip>

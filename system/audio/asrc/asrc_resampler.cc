@@ -16,7 +16,6 @@
 
 #include "asrc_resampler.h"
 
-#include <base/logging.h>
 #include <base/strings/stringprintf.h>
 #include <bluetooth/log.h>
 
@@ -160,14 +159,11 @@ class SourceAudioHalAsrc::ClockRecovery
       output_stats = output_stats_;
     }
 
-    LOG(INFO) << base::StringPrintf("Deviation: %6d us (%3.0f ppm)",
-                                    state.stream_time - state.local_time,
-                                    state.butter_drift)
-              << " | "
-              << base::StringPrintf("Output Fs: %5.2f Hz  drift: %2d us",
-                                    output_stats.sample_rate,
-                                    output_stats.drift_us)
-              << std::endl;
+    log::info(
+        "Deviation: {:6} us ({:3.0f} ppm) | Output Fs: {:5.2f} Hz  drift: {:2} "
+        "us",
+        state.stream_time - state.local_time, state.butter_drift,
+        output_stats.sample_rate, output_stats.drift_us);
   }
 
  public:

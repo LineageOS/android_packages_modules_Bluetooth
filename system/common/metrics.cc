@@ -19,7 +19,6 @@
 #include "metrics.h"
 
 #include <base/base64.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/le/enums.pb.h>
 #include <include/hardware/bt_av.h>

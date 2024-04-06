@@ -16,7 +16,6 @@
 
 #include "mmc/codec_client/codec_client.h"
 
-#include <base/logging.h>
 #include <base/timer/elapsed_timer.h>
 #include <bluetooth/log.h>
 #include <dbus/bus.h>

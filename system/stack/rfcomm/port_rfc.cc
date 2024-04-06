@@ -26,7 +26,6 @@
 #define LOG_TAG "rfcomm"
 
 #include <base/functional/callback.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 

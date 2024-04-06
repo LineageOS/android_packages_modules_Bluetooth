@@ -16,7 +16,6 @@
 
 #include "gatt_api.h"
 
-#include <base/logging.h>
 #include <gtest/gtest.h>
 
 #include "btm/btm_dev.h"

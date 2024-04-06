@@ -15,7 +15,6 @@
  *
  */
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include <mutex>

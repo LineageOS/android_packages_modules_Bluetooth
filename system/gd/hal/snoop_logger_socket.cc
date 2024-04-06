@@ -19,7 +19,6 @@
 #include "hal/snoop_logger_socket.h"
 
 #include <arpa/inet.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <fcntl.h>
 #include <netinet/in.h>

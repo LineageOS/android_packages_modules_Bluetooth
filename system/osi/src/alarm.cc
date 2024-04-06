@@ -21,7 +21,6 @@
 #include "osi/include/alarm.h"
 
 #include <base/cancelable_callback.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <fcntl.h>
 #include <hardware/bluetooth.h>

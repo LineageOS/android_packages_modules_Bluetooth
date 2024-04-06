@@ -21,7 +21,6 @@
 #include "btif/include/btif_sock.h"
 
 #include <base/functional/callback.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_sock.h>

@@ -17,8 +17,6 @@
 
 #include "mock_device_groups.h"
 
-#include <base/logging.h>
-
 static MockDeviceGroups* mock_groups = nullptr;
 
 void MockDeviceGroups::SetMockInstanceForTesting(MockDeviceGroups* groups) {
