@@ -118,3 +118,13 @@ void bluetooth::shim::ACL_SendConnectionParameterUpdateRequest(
     uint16_t /* max_ce_len */) {
   inc_func_call_count(__func__);
 }
+void bluetooth::shim::ACL_CancelRemoteNameRequest(
+    const RawAddress& /* addr */) {
+  inc_func_call_count(__func__);
+}
+void bluetooth::shim::ACL_RemoteNameRequest(const RawAddress& /* addr */,
+                                            uint8_t /* page_scan_rep_mode */,
+                                            uint8_t /* page_scan_mode */,
+                                            uint16_t /* clock_offset */) {
+  inc_func_call_count(__func__);
+}

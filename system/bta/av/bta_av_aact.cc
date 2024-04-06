@@ -2280,7 +2280,8 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     // The RTP Header marker bit for the A2DP Source encoder
     A2dpCodecConfig* codec_config =
         bta_av_get_a2dp_peer_current_codec(p_scb->PeerAddress());
-    CHECK(codec_config != nullptr);
+    log::assert_that(codec_config != nullptr,
+                     "assert failed: codec_config != nullptr");
     p_scb->use_rtp_header_marker_bit = codec_config->useRtpHeaderMarkerBit();
   }
 

@@ -84,8 +84,8 @@ const btsock_interface_t* btif_sock_get_interface(void) {
 }
 
 bt_status_t btif_sock_init(uid_set_t* uid_set) {
-  CHECK(thread_handle == -1);
-  CHECK(thread == NULL);
+  log::assert_that(thread_handle == -1, "assert failed: thread_handle == -1");
+  log::assert_that(thread == NULL, "assert failed: thread == NULL");
 
   bt_status_t status;
   btsock_thread_init();
@@ -157,7 +157,7 @@ static bt_status_t btsock_listen(btsock_type_t type, const char* service_name,
                                  const Uuid* service_uuid, int channel,
                                  int* sock_fd, int flags, int app_uid) {
   if ((flags & BTSOCK_FLAG_NO_SDP) == 0) {
-    CHECK(sock_fd != NULL);
+    log::assert_that(sock_fd != NULL, "assert failed: sock_fd != NULL");
   }
 
   *sock_fd = INVALID_FD;
@@ -209,8 +209,8 @@ static bt_status_t btsock_listen(btsock_type_t type, const char* service_name,
 static bt_status_t btsock_connect(const RawAddress* bd_addr, btsock_type_t type,
                                   const Uuid* uuid, int channel, int* sock_fd,
                                   int flags, int app_uid) {
-  CHECK(bd_addr != NULL);
-  CHECK(sock_fd != NULL);
+  log::assert_that(bd_addr != NULL, "assert failed: bd_addr != NULL");
+  log::assert_that(sock_fd != NULL, "assert failed: sock_fd != NULL");
 
   log::info(
       "Attempting socket connection for device: {}, type: {}, channel: {}, "
@@ -282,7 +282,7 @@ static void btsock_signaled(int fd, int type, int flags, uint32_t user_id) {
 }
 
 static bt_status_t btsock_disconnect_all(const RawAddress* bd_addr) {
-  CHECK(bd_addr != NULL);
+  log::assert_that(bd_addr != NULL, "assert failed: bd_addr != NULL");
 
   bt_status_t rfc_status = btsock_rfc_disconnect(bd_addr);
   bt_status_t l2cap_status = btsock_l2cap_disconnect(bd_addr);

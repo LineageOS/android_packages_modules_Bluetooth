@@ -371,7 +371,7 @@ static void bta_hh_start_sdp(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_hh_sdp_cmpl(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
-  CHECK(p_data != nullptr);
+  log::assert_that(p_data != nullptr, "assert failed: p_data != nullptr");
 
   tBTA_HH_CONN conn_dat;
   tBTA_HH_STATUS status = p_data->status;
@@ -519,7 +519,7 @@ void bta_hh_connect(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_hh_api_disc_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
-  CHECK(p_cb != nullptr);
+  log::assert_that(p_cb != nullptr, "assert failed: p_cb != nullptr");
 
   if (p_cb->link_spec.transport == BT_TRANSPORT_LE) {
     log::debug("Host initiating close to le device:{}",

@@ -99,7 +99,9 @@ static const size_t MAX_REASONABLE_REQUESTS = 20;
 static void queue_int_add(uint16_t uuid, const RawAddress& bda,
                           btif_connect_cb_t connect_cb) {
   // Sanity check to make sure we're not leaking connection requests
-  CHECK(connect_queue.size() < MAX_REASONABLE_REQUESTS);
+  log::assert_that(
+      connect_queue.size() < MAX_REASONABLE_REQUESTS,
+      "assert failed: connect_queue.size() < MAX_REASONABLE_REQUESTS");
 
   ConnectNode param(bda, uuid, connect_cb);
   for (const auto& node : connect_queue) {
@@ -187,7 +189,7 @@ void btif_queue_advance() {
 bt_status_t btif_queue_connect_next(void) {
   // The call must be on the JNI thread, otherwise the access to connect_queue
   // is not thread-safe.
-  CHECK(is_on_jni_thread());
+  log::assert_that(is_on_jni_thread(), "assert failed: is_on_jni_thread()");
 
   if (connect_queue.empty()) return BT_STATUS_FAIL;
   if (!stack_manager_get_interface()->get_stack_is_running())

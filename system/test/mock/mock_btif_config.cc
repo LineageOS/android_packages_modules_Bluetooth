@@ -54,7 +54,6 @@ struct btif_config_get_paired_devices btif_config_get_paired_devices;
 struct btif_config_remove btif_config_remove;
 struct btif_config_remove_device btif_config_remove_device;
 struct btif_config_clear btif_config_clear;
-struct btif_debug_config_dump btif_debug_config_dump;
 
 }  // namespace btif_config
 }  // namespace mock
@@ -132,10 +131,6 @@ bool btif_config_remove(const std::string& section, const std::string& key) {
 bool btif_config_clear(void) {
   inc_func_call_count(__func__);
   return test::mock::btif_config::btif_config_clear();
-}
-void btif_debug_config_dump(int fd) {
-  inc_func_call_count(__func__);
-  test::mock::btif_config::btif_debug_config_dump(fd);
 }
 
 // END mockcify generation

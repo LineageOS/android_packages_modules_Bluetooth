@@ -899,7 +899,7 @@ void smp_mask_enc_key(uint8_t loc_enc_size, Octet16* p_data) {
  * length of OCTET16_LEN. Result is stored in first argument.
  */
 void smp_xor_128(Octet16* a, const Octet16& b) {
-  CHECK(a);
+  log::assert_that(a != nullptr, "assert failed: a != nullptr");
   uint8_t i, *aa = a->data();
   const uint8_t* bb = b.data();
 

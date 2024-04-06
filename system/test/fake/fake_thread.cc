@@ -17,6 +17,7 @@
 #include "test/fake/fake_thread.h"
 
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 #include <gtest/gtest.h>
 #include <stdlib.h>
 
@@ -40,7 +41,8 @@ void thread_t::set_state(State state) {
 
 void thread_t::quiesce() {
   quiesce_t* quiesce = static_cast<quiesce_t*>(calloc(sizeof(quiesce_t), 1));
-  CHECK(quiesce != nullptr);
+  bluetooth::log::assert_that(quiesce != nullptr,
+                              "assert failed: quiesce != nullptr");
   quiesce->thread = this;
   thread_post(
       this,

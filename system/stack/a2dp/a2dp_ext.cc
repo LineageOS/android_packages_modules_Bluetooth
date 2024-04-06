@@ -28,7 +28,7 @@ static uint64_t codec_id(btav_a2dp_codec_index_t codec_index) {
   uint64_t id = 0;
   auto result = ::bluetooth::audio::a2dp::provider::codec_info(
       codec_index, &id, nullptr, nullptr);
-  LOG_ASSERT(result) << "provider::codec_info unexpectdly failed";
+  log::assert_that(result, "provider::codec_info unexpectdly failed");
   return id;
 }
 
@@ -43,7 +43,7 @@ A2dpCodecConfigExt::A2dpCodecConfigExt(btav_a2dp_codec_index_t codec_index,
   // Load the local capabilities from the provider info.
   auto result = ::bluetooth::audio::a2dp::provider::codec_info(
       codec_index, nullptr, ota_codec_config_, &codec_capability_);
-  LOG_ASSERT(result) << "provider::codec_info unexpectdly failed";
+  log::assert_that(result, "provider::codec_info unexpectdly failed");
   codec_selectable_capability_ = codec_capability_;
 }
 

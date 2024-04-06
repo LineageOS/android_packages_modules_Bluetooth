@@ -17,6 +17,8 @@
 
 #include "bta_gatt_queue_mock.h"
 
+#include <bluetooth/log.h>
+
 static gatt::MockBtaGattQueue* gatt_queue = nullptr;
 
 void gatt::SetMockBtaGattQueue(MockBtaGattQueue* mock_bta_gatt_queue) {
@@ -46,7 +48,7 @@ void BtaGattQueue::WriteDescriptor(uint16_t conn_id, uint16_t handle,
 }
 
 void BtaGattQueue::ConfigureMtu(uint16_t conn_id, uint16_t mtu) {
-  LOG_ASSERT(gatt_queue) << "Mock GATT queue not set!";
+  bluetooth::log::assert_that(gatt_queue, "Mock GATT queue not set!");
   gatt_queue->ConfigureMtu(conn_id, mtu);
 }
 
@@ -55,7 +57,7 @@ void BtaGattQueue::ReadMultiCharacteristic(uint16_t conn_id,
                                            bool variable_len,
                                            GATT_READ_MULTI_OP_CB cb,
                                            void* cb_data) {
-  LOG_ASSERT(gatt_queue) << "Mock GATT queue not set!";
+  bluetooth::log::assert_that(gatt_queue, "Mock GATT queue not set!");
   gatt_queue->ReadMultiCharacteristic(conn_id, p_read_multi, variable_len, cb,
                                       cb_data);
 }

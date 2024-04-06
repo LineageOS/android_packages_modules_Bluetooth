@@ -99,7 +99,8 @@ int main(int argc, char* argv[]) {
   base::RunLoop run_loop;
 
   auto service = std::make_unique<mmc::Service>(run_loop.QuitClosure());
-  CHECK(service->Init());
+  bluetooth::log::assert_that(service->Init(),
+                              "assert failed: service->Init()");
 
   run_loop.Run();
 

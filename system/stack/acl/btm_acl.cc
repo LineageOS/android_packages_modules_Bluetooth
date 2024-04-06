@@ -642,7 +642,7 @@ tBTM_STATUS BTM_SwitchRoleToCentral(const RawAddress& remote_bd_addr) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
+void btm_acl_encrypt_change(uint16_t handle, uint8_t /* status */,
                             uint8_t encr_enable) {
   tACL_CONN* p = internal_.acl_get_connection_from_handle(handle);
   if (p == nullptr) {
@@ -799,11 +799,6 @@ void BTM_default_unblock_role_switch() {
                                         HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH);
 }
 
-void BTM_default_block_role_switch() {
-  internal_.btm_set_default_link_policy(btm_cb.acl_cb_.DefaultLinkPolicy() &
-                                        ~HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH);
-}
-
 extern void bta_gattc_continue_discovery_if_needed(const RawAddress& bd_addr,
                                                    uint16_t acl_handle);
 
@@ -818,7 +813,7 @@ extern void bta_gattc_continue_discovery_if_needed(const RawAddress& bd_addr,
  *
  ******************************************************************************/
 static void maybe_chain_more_commands_after_read_remote_version_complete(
-    uint8_t status, uint16_t handle) {
+    uint8_t /* status */, uint16_t handle) {
   tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
   if (p_acl_cb == nullptr) {
     log::warn("Received remote version complete for unknown device");
@@ -896,7 +891,7 @@ void btm_read_remote_version_complete(tHCI_STATUS status, uint16_t handle,
  ******************************************************************************/
 void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
                                      uint8_t max_page_number) {
-  CHECK(p_acl_cb != nullptr);
+  log::assert_that(p_acl_cb != nullptr, "assert failed: p_acl_cb != nullptr");
   if (!p_acl_cb->peer_lmp_feature_valid[max_page_number]) {
     log::warn("Checking remote features but remote feature read is incomplete");
   }
@@ -1051,7 +1046,7 @@ void btm_read_remote_ext_features_failed(uint8_t status, uint16_t handle) {
  *
  ******************************************************************************/
 void StackAclBtmAcl::btm_establish_continue(tACL_CONN* p_acl) {
-  CHECK(p_acl != nullptr);
+  log::assert_that(p_acl != nullptr, "assert failed: p_acl != nullptr");
 
   if (p_acl->is_transport_br_edr()) {
     /* For now there are a some devices that do not like sending */
@@ -1092,7 +1087,7 @@ void btm_establish_continue_from_address(const RawAddress& bda,
  ******************************************************************************/
 tBTM_STATUS BTM_GetLinkSuperTout(const RawAddress& remote_bda,
                                  uint16_t* p_timeout) {
-  CHECK(p_timeout != nullptr);
+  log::assert_that(p_timeout != nullptr, "assert failed: p_timeout != nullptr");
   const tACL_CONN* p_acl =
       internal_.btm_bda_to_acl(remote_bda, BT_TRANSPORT_BR_EDR);
   if (p_acl == nullptr) {
@@ -1160,10 +1155,6 @@ bool BTM_IsAclConnectionUpAndHandleValid(const RawAddress& remote_bda,
     return false;
   }
   return p_acl->hci_handle != HCI_INVALID_HANDLE;
-}
-
-bool BTM_IsAclConnectionUpFromHandle(uint16_t hci_handle) {
-  return internal_.acl_get_connection_from_handle(hci_handle) != nullptr;
 }
 
 /*******************************************************************************
@@ -2034,21 +2025,6 @@ void btm_read_automatic_flush_timeout_complete(uint8_t* p) {
 
 /*******************************************************************************
  *
- * Function         btm_read_link_quality_timeout
- *
- * Description      Callback when reading the link quality times out.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_read_link_quality_timeout(UNUSED_ATTR void* data) {
-  tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_link_qual_cmpl_cb;
-  btm_cb.devcb.p_link_qual_cmpl_cb = NULL;
-  if (p_cb) (*p_cb)((void*)NULL);
-}
-
-/*******************************************************************************
- *
  * Function         btm_read_link_quality_complete
  *
  * Description      This function is called when the command complete message
@@ -2529,8 +2505,8 @@ void btm_acl_disconnected(tHCI_STATUS status, uint16_t handle,
 }
 
 void acl_create_classic_connection(const RawAddress& bd_addr,
-                                   bool there_are_high_priority_channels,
-                                   bool is_bonding) {
+                                   bool /* there_are_high_priority_channels */,
+                                   bool /* is_bonding */) {
   return bluetooth::shim::ACL_CreateClassicConnection(bd_addr);
 }
 
@@ -2776,11 +2752,11 @@ void acl_process_extended_features(uint16_t handle, uint8_t current_page_number,
   }
 }
 
-void ACL_RegisterClient(struct acl_client_callback_s* callbacks) {
+void ACL_RegisterClient(struct acl_client_callback_s* /* callbacks */) {
   log::debug("UNIMPLEMENTED");
 }
 
-void ACL_UnregisterClient(struct acl_client_callback_s* callbacks) {
+void ACL_UnregisterClient(struct acl_client_callback_s* /* callbacks */) {
   log::debug("UNIMPLEMENTED");
 }
 

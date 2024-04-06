@@ -270,26 +270,6 @@ void BTA_AvOffloadStart(tBTA_AV_HNDL hndl) {
 
 /*******************************************************************************
  *
- * Function         BTA_AvOffloadStartRsp
- *
- * Description      Response from vendor lib for A2DP Offload Start request.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_AvOffloadStartRsp(tBTA_AV_HNDL hndl, tBTA_AV_STATUS status) {
-  tBTA_AV_API_STATUS_RSP* p_buf =
-      (tBTA_AV_API_STATUS_RSP*)osi_malloc(sizeof(tBTA_AV_API_STATUS_RSP));
-
-  p_buf->hdr.event = BTA_AV_API_OFFLOAD_START_RSP_EVT;
-  p_buf->hdr.layer_specific = hndl;
-  p_buf->status = status;
-
-  bta_sys_sendmsg(p_buf);
-}
-
-/*******************************************************************************
- *
  * Function         BTA_AvStop
  *
  * Description      Stop audio/video stream data transfer.

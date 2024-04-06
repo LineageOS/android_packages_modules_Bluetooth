@@ -19,13 +19,15 @@
 #include "hci/include/buffer_allocator.h"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
 
 static void* buffer_alloc(size_t size) {
-  CHECK(size <= BT_DEFAULT_BUFFER_SIZE);
+  bluetooth::log::assert_that(size <= BT_DEFAULT_BUFFER_SIZE,
+                              "assert failed: size <= BT_DEFAULT_BUFFER_SIZE");
   return osi_malloc(size);
 }
 

@@ -820,8 +820,8 @@ void BtaAvCo::GetPeerEncoderParameters(
     const RawAddress& peer_address,
     tA2DP_ENCODER_INIT_PEER_PARAMS* p_peer_params) {
   uint16_t min_mtu = 0xFFFF;
-  CHECK(p_peer_params != nullptr) << "Peer address "
-                                  << ADDRESS_TO_LOGGABLE_STR(peer_address);
+  log::assert_that(p_peer_params != nullptr, "Peer address {}",
+                   ADDRESS_TO_LOGGABLE_STR(peer_address));
 
   std::lock_guard<std::recursive_mutex> lock(peer_cache_->codec_lock_);
 
@@ -1731,7 +1731,7 @@ int bta_av_co_get_encoder_effective_frame_size() {
 btav_a2dp_scmst_info_t bta_av_co_get_scmst_info(
     const RawAddress& peer_address) {
   BtaAvCoPeer* p_peer = bta_av_co_cb.peer_cache_->FindPeer(peer_address);
-  CHECK(p_peer != nullptr);
+  log::assert_that(p_peer != nullptr, "assert failed: p_peer != nullptr");
   btav_a2dp_scmst_info_t scmst_info{};
   scmst_info.enable_status = BTAV_A2DP_SCMST_DISABLED;
 

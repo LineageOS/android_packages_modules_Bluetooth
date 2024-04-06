@@ -29,6 +29,8 @@
 #include "osi/include/osi.h"
 #include "osi/semaphore.h"
 
+using namespace bluetooth;
+
 struct future_t {
   bool ready_can_be_called;
   semaphore_t* semaphore;  // NULL semaphore means immediate future
@@ -42,7 +44,7 @@ future_t* future_new(void) {
 
   ret->semaphore = semaphore_new(0);
   if (!ret->semaphore) {
-    bluetooth::log::error("unable to allocate memory for the semaphore.");
+    log::error("unable to allocate memory for the semaphore.");
     goto error;
   }
 
@@ -62,8 +64,9 @@ future_t* future_new_immediate(void* value) {
 }
 
 void future_ready(future_t* future, void* value) {
-  CHECK(future != NULL);
-  CHECK(future->ready_can_be_called);
+  log::assert_that(future != NULL, "assert failed: future != NULL");
+  log::assert_that(future->ready_can_be_called,
+                   "assert failed: future->ready_can_be_called");
 
   future->ready_can_be_called = false;
   future->result = value;
@@ -71,7 +74,7 @@ void future_ready(future_t* future, void* value) {
 }
 
 void* future_await(future_t* future) {
-  CHECK(future != NULL);
+  log::assert_that(future != NULL, "assert failed: future != NULL");
 
   // If the future is immediate, it will not have a semaphore
   if (future->semaphore) semaphore_wait(future->semaphore);

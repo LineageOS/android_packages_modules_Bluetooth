@@ -28,7 +28,6 @@
 #include "btif/include/btif_common.h"
 #include "common/message_loop_thread.h"
 #include "device/include/interop.h"
-#include "include/check.h"
 #include "include/hardware/bt_rc.h"
 #include "test/common/mock_functions.h"
 #include "test/mock/mock_osi_alarm.h"
@@ -66,7 +65,7 @@ void AvrcpService::ServiceInterfaceImpl::SetBipClientStatus(
 bool AvrcpService::ServiceInterfaceImpl::Cleanup() { return true; };
 
 AvrcpService* AvrcpService::Get() {
-  CHECK(instance_ == nullptr);
+  EXPECT_EQ(instance_, nullptr);
   instance_ = new AvrcpService();
   return instance_;
 }
@@ -144,8 +143,8 @@ TEST_F(BtifRcTest, get_element_attr_rsp) {
   btrc_element_attr_val_t p_attrs[BTRC_MAX_ELEM_ATTR_SIZE];
   uint8_t num_attr = BTRC_MAX_ELEM_ATTR_SIZE + 1;
 
-  CHECK(get_element_attr_rsp(kDeviceAddress, num_attr, p_attrs) ==
-        BT_STATUS_SUCCESS);
+  ASSERT_EQ(get_element_attr_rsp(kDeviceAddress, num_attr, p_attrs),
+            BT_STATUS_SUCCESS);
   ASSERT_EQ(1, get_func_call_count("AVRC_BldResponse"));
 }
 
@@ -157,7 +156,7 @@ TEST_F(BtifRcTest, btif_rc_get_addr_by_handle) {
   btif_rc_cb.rc_multi_cb[0].rc_handle = 0;
 
   btif_rc_get_addr_by_handle(0, bd_addr);
-  CHECK(kDeviceAddress == bd_addr);
+  ASSERT_EQ(kDeviceAddress, bd_addr);
 }
 
 static btrc_ctrl_callbacks_t default_btrc_ctrl_callbacks = {
@@ -268,11 +267,12 @@ TEST_F(BtifRcWithCallbacksTest, handle_rc_ctrl_features) {
   handle_rc_ctrl_features(&p_dev);
   ASSERT_EQ(1, get_func_call_count("AVRC_BldCommand"));
 
-  CHECK(std::future_status::ready == future.wait_for(std::chrono::seconds(2)));
+  ASSERT_EQ(std::future_status::ready,
+            future.wait_for(std::chrono::seconds(2)));
   auto res = future.get();
   log::info("FEATURES:{}", res.feature);
-  CHECK(res.feature == (BTRC_FEAT_ABSOLUTE_VOLUME | BTRC_FEAT_METADATA |
-                        BTRC_FEAT_BROWSE | BTRC_FEAT_COVER_ARTWORK));
+  ASSERT_EQ(res.feature, (BTRC_FEAT_ABSOLUTE_VOLUME | BTRC_FEAT_METADATA |
+                          BTRC_FEAT_BROWSE | BTRC_FEAT_COVER_ARTWORK));
 }
 
 class BtifRcBrowseConnectionTest : public BtifRcTest {
@@ -318,9 +318,10 @@ TEST_F(BtifRcBrowseConnectionTest, handle_rc_browse_connect) {
 
   /* process unit test  handle_rc_browse_connect */
   handle_rc_browse_connect(&browse_data);
-  CHECK(std::future_status::ready == future.wait_for(std::chrono::seconds(2)));
+  ASSERT_EQ(std::future_status::ready,
+            future.wait_for(std::chrono::seconds(2)));
   auto res = future.get();
-  CHECK(res.bt_state == true);
+  ASSERT_TRUE(res.bt_state);
 }
 
 class BtifRcConnectionTest : public BtifRcTest {
@@ -368,10 +369,10 @@ TEST_F(BtifRcConnectionTest, handle_rc_browse_connect) {
 
   /* process unit test  handle_rc_browse_connect */
   handle_rc_browse_connect(&browse_data);
-  CHECK(std::future_status::ready ==
-        g_btrc_connection_state_future.wait_for(std::chrono::seconds(2)));
+  ASSERT_EQ(std::future_status::ready,
+            g_btrc_connection_state_future.wait_for(std::chrono::seconds(2)));
   auto res = g_btrc_connection_state_future.get();
-  CHECK(res.bt_state == true);
+  ASSERT_TRUE(res.bt_state);
 }
 
 TEST_F(BtifRcConnectionTest, btif_rc_check_pending_cmd) {
@@ -386,10 +387,10 @@ TEST_F(BtifRcConnectionTest, btif_rc_check_pending_cmd) {
   btif_rc_check_pending_cmd(kDeviceAddress);
   ASSERT_EQ(1, get_func_call_count("AVRC_BldCommand"));
 
-  CHECK(std::future_status::ready ==
-        g_btrc_connection_state_future.wait_for(std::chrono::seconds(3)));
+  ASSERT_EQ(std::future_status::ready,
+            g_btrc_connection_state_future.wait_for(std::chrono::seconds(3)));
   auto res = g_btrc_connection_state_future.get();
-  CHECK(res.rc_state == true);
+  ASSERT_TRUE(res.rc_state);
 }
 
 TEST_F(BtifRcConnectionTest, bt_av_rc_open_evt) {
@@ -419,14 +420,14 @@ TEST_F(BtifRcConnectionTest, bt_av_rc_open_evt) {
 
   btif_rc_handler(BTA_AV_RC_OPEN_EVT, &data);
 
-  CHECK(btif_rc_cb.rc_multi_cb[data.rc_open.rc_handle].rc_connected == true);
-  CHECK(btif_rc_cb.rc_multi_cb[data.rc_open.rc_handle].rc_state ==
-        BTRC_CONNECTION_STATE_CONNECTED);
+  ASSERT_TRUE(btif_rc_cb.rc_multi_cb[data.rc_open.rc_handle].rc_connected);
+  ASSERT_EQ(btif_rc_cb.rc_multi_cb[data.rc_open.rc_handle].rc_state,
+            BTRC_CONNECTION_STATE_CONNECTED);
 
-  CHECK(std::future_status::ready ==
-        g_btrc_connection_state_future.wait_for(std::chrono::seconds(2)));
+  ASSERT_EQ(std::future_status::ready,
+            g_btrc_connection_state_future.wait_for(std::chrono::seconds(2)));
   auto res = g_btrc_connection_state_future.get();
-  CHECK(res.rc_state == true);
+  ASSERT_TRUE(res.rc_state);
 }
 
 class BtifTrackChangeCBTest : public BtifRcTest {

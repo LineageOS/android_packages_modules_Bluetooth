@@ -219,7 +219,7 @@ void BluetoothAudioClientInterface::FetchAudioProvider() {
     log::fatal("BluetoothAudioHal::openProvider failure: {}",
                aidl_retval.getDescription());
   }
-  CHECK(provider_ != nullptr);
+  log::assert_that(provider_ != nullptr, "assert failed: provider_ != nullptr");
 
   binder_status_t binder_status = AIBinder_linkToDeath(
       provider_factory->asBinder().get(), death_recipient_.get(), this);
@@ -642,7 +642,7 @@ size_t BluetoothAudioSourceClientInterface::WriteAudioData(const uint8_t* p_buf,
 
 void BluetoothAudioClientInterface::SetCodecPriority(CodecId codec_id,
                                                      int32_t priority) {
-  CHECK(provider_ != nullptr);
+  log::assert_that(provider_ != nullptr, "assert failed: provider_ != nullptr");
   auto aidl_retval = provider_->setCodecPriority(codec_id, priority);
   if (!aidl_retval.isOk()) {
     log::fatal("BluetoothAudioHal::setCodecPriority failure: {}",
@@ -660,7 +660,7 @@ BluetoothAudioClientInterface::GetLeAudioAseConfiguration(
         remoteSourceAudioCapabilities,
     std::vector<IBluetoothAudioProvider::LeAudioConfigurationRequirement>&
         requirements) {
-  CHECK(provider_ != nullptr);
+  log::assert_that(provider_ != nullptr, "assert failed: provider_ != nullptr");
 
   std::vector<IBluetoothAudioProvider::LeAudioAseConfigurationSetting>
       configurations;
@@ -684,7 +684,7 @@ IBluetoothAudioProvider::LeAudioAseQosConfigurationPair
 BluetoothAudioClientInterface::getLeAudioAseQosConfiguration(
     IBluetoothAudioProvider::LeAudioAseQosConfigurationRequirement&
         qosRequirement) {
-  CHECK(provider_ != nullptr);
+  log::assert_that(provider_ != nullptr, "assert failed: provider_ != nullptr");
 
   IBluetoothAudioProvider::LeAudioAseQosConfigurationPair qos_configuration;
   auto aidl_retval = provider_->getLeAudioAseQosConfiguration(
@@ -700,7 +700,7 @@ BluetoothAudioClientInterface::getLeAudioAseQosConfiguration(
 void BluetoothAudioClientInterface::onSinkAseMetadataChanged(
     IBluetoothAudioProvider::AseState state, int32_t cigId, int32_t cisId,
     std::optional<std::vector<std::optional<MetadataLtv>>>& metadata) {
-  CHECK(provider_ != nullptr);
+  log::assert_that(provider_ != nullptr, "assert failed: provider_ != nullptr");
 
   auto aidl_retval =
       provider_->onSinkAseMetadataChanged(state, cigId, cisId, metadata);
@@ -714,7 +714,7 @@ void BluetoothAudioClientInterface::onSinkAseMetadataChanged(
 void BluetoothAudioClientInterface::onSourceAseMetadataChanged(
     IBluetoothAudioProvider::AseState state, int32_t cigId, int32_t cisId,
     std::optional<std::vector<std::optional<MetadataLtv>>>& metadata) {
-  CHECK(provider_ != nullptr);
+  log::assert_that(provider_ != nullptr, "assert failed: provider_ != nullptr");
 
   auto aidl_retval =
       provider_->onSourceAseMetadataChanged(state, cigId, cisId, metadata);
@@ -732,7 +732,7 @@ BluetoothAudioClientInterface::getLeAudioBroadcastConfiguration(
         remoteSinkAudioCapabilities,
     const IBluetoothAudioProvider::LeAudioBroadcastConfigurationRequirement&
         requirement) {
-  CHECK(provider_ != nullptr);
+  log::assert_that(provider_ != nullptr, "assert failed: provider_ != nullptr");
 
   IBluetoothAudioProvider::LeAudioBroadcastConfigurationSetting setting;
   auto aidl_retval = provider_->getLeAudioBroadcastConfiguration(

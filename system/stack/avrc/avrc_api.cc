@@ -936,8 +936,10 @@ static void avrc_msg_cback(uint8_t handle, uint8_t label, uint8_t cr,
  *
  *****************************************************************************/
 static BT_HDR* avrc_pass_msg(tAVRC_MSG_PASS* p_msg) {
-  CHECK(p_msg != NULL);
-  CHECK(AVRC_CMD_BUF_SIZE > (AVRC_MIN_CMD_LEN + p_msg->pass_len));
+  log::assert_that(p_msg != NULL, "assert failed: p_msg != NULL");
+  log::assert_that(AVRC_CMD_BUF_SIZE > (AVRC_MIN_CMD_LEN + p_msg->pass_len),
+                   "assert failed: AVRC_CMD_BUF_SIZE > (AVRC_MIN_CMD_LEN + "
+                   "p_msg->pass_len)");
 
   BT_HDR* p_cmd = (BT_HDR*)osi_calloc(AVRC_CMD_BUF_SIZE);
   p_cmd->offset = AVCT_MSG_OFFSET;

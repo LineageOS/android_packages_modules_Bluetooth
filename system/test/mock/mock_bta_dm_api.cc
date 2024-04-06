@@ -58,7 +58,6 @@ struct BTA_DmCheckLeAudioCapable BTA_DmCheckLeAudioCapable;
 struct BTA_DmClearEventFilter BTA_DmClearEventFilter;
 struct BTA_DmClearEventMask BTA_DmClearEventMask;
 struct BTA_DmClearFilterAcceptList BTA_DmClearFilterAcceptList;
-struct BTA_DmCloseACL BTA_DmCloseACL;
 struct BTA_DmConfirm BTA_DmConfirm;
 struct BTA_DmDisconnectAllAcls BTA_DmDisconnectAllAcls;
 struct BTA_DmDiscover BTA_DmDiscover;
@@ -82,8 +81,6 @@ struct BTA_DmSetLocalDiRecord BTA_DmSetLocalDiRecord;
 struct BTA_DmSirkConfirmDeviceReply BTA_DmSirkConfirmDeviceReply;
 struct BTA_DmSirkSecCbRegister BTA_DmSirkSecCbRegister;
 struct BTA_EnableTestMode BTA_EnableTestMode;
-struct BTA_GetEirService BTA_GetEirService;
-struct BTA_VendorInit BTA_VendorInit;
 struct BTA_dm_init BTA_dm_init;
 
 }  // namespace bta_dm_api
@@ -208,11 +205,6 @@ void BTA_DmClearFilterAcceptList(void) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_api::BTA_DmClearFilterAcceptList();
 }
-void BTA_DmCloseACL(const RawAddress& bd_addr, bool remove_dev,
-                    tBT_TRANSPORT transport) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmCloseACL(bd_addr, remove_dev, transport);
-}
 void BTA_DmConfirm(const RawAddress& bd_addr, bool accept) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_api::BTA_DmConfirm(bd_addr, accept);
@@ -309,15 +301,6 @@ void BTA_DmSirkSecCbRegister(tBTA_DM_SEC_CBACK* p_cback) {
 void BTA_EnableTestMode(void) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_api::BTA_EnableTestMode();
-}
-void BTA_GetEirService(const uint8_t* p_eir, size_t eir_len,
-                       tBTA_SERVICE_MASK* p_services) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_GetEirService(p_eir, eir_len, p_services);
-}
-void BTA_VendorInit(void) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_VendorInit();
 }
 void BTA_dm_init() {
   inc_func_call_count(__func__);

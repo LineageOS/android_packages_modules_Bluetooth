@@ -61,8 +61,8 @@ class HasPreset {
   bool IsAvailable() const { return properties_ & kPropertyAvailable; }
 
   HasPreset& operator=(const HasPreset& other) {
-    LOG_ASSERT(index_ == other.GetIndex())
-        << "Assigning immutable preset index!";
+    log::assert_that(index_ == other.GetIndex(),
+                     "Assigning immutable preset index!");
 
     if ((this != &other) && (*this != other)) {
       index_ = other.GetIndex();

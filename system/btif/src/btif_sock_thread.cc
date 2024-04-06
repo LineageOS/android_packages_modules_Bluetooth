@@ -233,56 +233,6 @@ int btsock_thread_add_fd(int h, int fd, int type, int flags, uint32_t user_id) {
 
   return ret == sizeof(cmd);
 }
-
-bool btsock_thread_remove_fd_and_close(int thread_handle, int fd) {
-  if (thread_handle < 0 || thread_handle >= MAX_THREAD) {
-    log::error("invalid thread handle: {}", thread_handle);
-    return false;
-  }
-  if (fd == -1) {
-    log::error("invalid file descriptor.");
-    return false;
-  }
-
-  sock_cmd_t cmd = {CMD_REMOVE_FD, fd, 0, 0, 0};
-
-  ssize_t ret;
-  OSI_NO_INTR(ret = send(ts[thread_handle].cmd_fdw, &cmd, sizeof(cmd), 0));
-
-  return ret == sizeof(cmd);
-}
-
-int btsock_thread_post_cmd(int h, int type, const unsigned char* data, int size,
-                           uint32_t user_id) {
-  if (h < 0 || h >= MAX_THREAD) {
-    log::error("invalid bt thread handle:{}", h);
-    return false;
-  }
-  if (ts[h].cmd_fdw == -1) {
-    log::error("cmd socket is not created. socket thread may not initialized");
-    return false;
-  }
-  sock_cmd_t cmd = {CMD_USER_PRIVATE, 0, type, size, user_id};
-  sock_cmd_t* cmd_send = &cmd;
-  int size_send = sizeof(cmd);
-  if (data && size) {
-    size_send = sizeof(cmd) + size;
-    cmd_send = (sock_cmd_t*)alloca(size_send);
-    if (cmd_send) {
-      *cmd_send = cmd;
-      memcpy(cmd_send + 1, data, size);
-    } else {
-      log::error("alloca failed at h:{}, cmd type:{}, size:{}", h, type,
-                 size_send);
-      return false;
-    }
-  }
-
-  ssize_t ret;
-  OSI_NO_INTR(ret = send(ts[h].cmd_fdw, cmd_send, size_send, 0));
-
-  return ret == size_send;
-}
 int btsock_thread_wakeup(int h) {
   if (h < 0 || h >= MAX_THREAD) {
     log::error("invalid bt thread handle:{}", h);

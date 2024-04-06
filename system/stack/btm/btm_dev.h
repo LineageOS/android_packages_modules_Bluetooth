@@ -70,20 +70,6 @@ tBTM_SEC_DEV_REC* btm_sec_alloc_dev(const RawAddress& bd_addr);
 
 /*******************************************************************************
  *
- * Function         btm_dev_support_role_switch
- *
- * Description      This function is called by the L2CAP to check if remote
- *                  device supports role switch
- *
- * Parameters:      bd_addr       - Address of the peer device
- *
- * Returns          true if device is known and role switch is supported
- *
- ******************************************************************************/
-bool btm_dev_support_role_switch(const RawAddress& bd_addr);
-
-/*******************************************************************************
- *
  * Function         btm_find_dev_by_handle
  *
  * Description      Look for the record in the device database for the record

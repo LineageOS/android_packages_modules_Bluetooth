@@ -1179,19 +1179,6 @@ void bta_av_rc_close(tBTA_AV_CB* p_cb, tBTA_AV_DATA* p_data) {
 
 /*******************************************************************************
  *
- * Function         bta_av_rc_browse_close
- *
- * Description      Empty placeholder.
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_av_rc_browse_close(tBTA_AV_CB* p_cb, tBTA_AV_DATA* p_data) {
-  log::warn("empty placeholder does nothing!");
-}
-
-/*******************************************************************************
- *
  * Function         bta_av_get_shdl
  *
  * Returns          The index to p_scb[]

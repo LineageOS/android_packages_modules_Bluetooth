@@ -402,8 +402,8 @@ static bool interface_ready(void) { return bt_hal_cbacks != NULL; }
 void set_hal_cbacks(bt_callbacks_t* callbacks) { bt_hal_cbacks = callbacks; }
 
 static bool is_profile(const char* p1, const char* p2) {
-  CHECK(p1);
-  CHECK(p2);
+  log::assert_that(p1 != nullptr, "assert failed: p1 != nullptr");
+  log::assert_that(p2 != nullptr, "assert failed: p2 != nullptr");
   return strlen(p1) == strlen(p2) && strncmp(p1, p2, strlen(p2)) == 0;
 }
 
@@ -824,7 +824,6 @@ static void dump(int fd, const char** arguments) {
   stack_debug_avdtp_api_dump(fd);
   btif_sock_dump(fd);
   bluetooth::avrcp::AvrcpService::DebugDump(fd);
-  btif_debug_config_dump(fd);
   gatt_tcb_dump(fd);
   bta_gatt_client_dump(fd);
   device_debug_iot_config_dump(fd);

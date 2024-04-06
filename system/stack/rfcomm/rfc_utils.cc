@@ -324,7 +324,8 @@ void rfcomm_mcb_timer_timeout(void* data) {
 void rfc_sec_check_complete(const RawAddress* /* bd_addr */,
                             tBT_TRANSPORT /* transport */, void* p_ref_data,
                             tBTM_STATUS res) {
-  CHECK(p_ref_data != nullptr);
+  log::assert_that(p_ref_data != nullptr,
+                   "assert failed: p_ref_data != nullptr");
   tPORT* p_port = (tPORT*)p_ref_data;
 
   /* Verify that PORT is still waiting for Security to complete */

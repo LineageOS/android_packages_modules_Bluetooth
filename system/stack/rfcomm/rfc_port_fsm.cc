@@ -83,7 +83,7 @@ static void rfc_set_port_state(tPORT_STATE* port_pars, MX_FRAME* p_frame);
  *
  ******************************************************************************/
 void rfc_port_sm_execute(tPORT* p_port, tRFC_PORT_EVENT event, void* p_data) {
-  CHECK(p_port != nullptr) << __func__ << ": NULL port event " << event;
+  log::assert_that(p_port != nullptr, "NULL port event {}", event);
 
   // logs for state RFC_STATE_OPENED handled in rfc_port_sm_opened()
   if (p_port->rfc.state != RFC_STATE_OPENED) {

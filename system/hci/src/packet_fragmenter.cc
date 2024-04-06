@@ -92,11 +92,12 @@ static void init(const packet_fragmenter_callbacks_t* result_callbacks) {
 static void cleanup() { partial_iso_packets.clear(); }
 
 static void fragment_and_dispatch(BT_HDR* packet, uint16_t max_data_size) {
-  CHECK(packet != NULL);
+  log::assert_that(packet != NULL, "assert failed: packet != NULL");
 
   uint16_t event = packet->event & MSG_EVT_MASK;
 
-  CHECK(event == MSG_STACK_TO_HC_HCI_ISO);
+  log::assert_that(event == MSG_STACK_TO_HC_HCI_ISO,
+                   "assert failed: event == MSG_STACK_TO_HC_HCI_ISO");
 
   uint8_t* stream = packet->data + packet->offset;
   uint16_t max_packet_size = max_data_size + HCI_ISO_PREAMBLE_SIZE;
@@ -151,14 +152,17 @@ static void reassemble_and_dispatch(BT_HDR* packet) {
   uint16_t iso_full_len;
 
   uint16_t event = packet->event & MSG_EVT_MASK;
-  CHECK(event == MSG_HC_TO_STACK_HCI_ISO);
+  log::assert_that(event == MSG_HC_TO_STACK_HCI_ISO,
+                   "assert failed: event == MSG_HC_TO_STACK_HCI_ISO");
 
   STREAM_TO_UINT16(handle, stream);
   STREAM_TO_UINT16(iso_length, stream);
   // last 2 bits is RFU
   iso_length = iso_length & 0x3FFF;
 
-  CHECK(iso_length == packet->len - HCI_ISO_PREAMBLE_SIZE);
+  log::assert_that(
+      iso_length == packet->len - HCI_ISO_PREAMBLE_SIZE,
+      "assert failed: iso_length == packet->len - HCI_ISO_PREAMBLE_SIZE");
 
   uint8_t boundary_flag = GET_BOUNDARY_FLAG(handle);
   uint8_t ts_flag = HCI_ISO_GET_TS_FLAG(handle);

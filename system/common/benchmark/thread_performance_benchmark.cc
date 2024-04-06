@@ -19,6 +19,7 @@
 #include <base/run_loop.h>
 #include <base/threading/thread.h>
 #include <benchmark/benchmark.h>
+#include <bluetooth/log.h>
 
 #include <future>
 #include <memory>
@@ -426,7 +427,8 @@ int main(int argc, char** argv) {
   // Disable LOG() output from libchrome
   logging::LoggingSettings log_settings;
   log_settings.logging_dest = logging::LoggingDestination::LOG_NONE;
-  CHECK(logging::InitLogging(log_settings)) << "Failed to set up logging";
+  bluetooth::log::assert_that(logging::InitLogging(log_settings),
+                              "Failed to set up logging");
   ::benchmark::Initialize(&argc, argv);
   if (::benchmark::ReportUnrecognizedArguments(argc, argv)) {
     return 1;

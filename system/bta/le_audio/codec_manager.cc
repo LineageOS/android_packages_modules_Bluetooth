@@ -471,7 +471,9 @@ struct codec_manager_impl {
     }
 
     auto broadcast_config = supported_broadcast_config[broadcast_target_config];
-    LOG_ASSERT(conn_handle.size() == broadcast_config.stream_map.size());
+    log::assert_that(conn_handle.size() == broadcast_config.stream_map.size(),
+                     "assert failed: conn_handle.size() == "
+                     "broadcast_config.stream_map.size()");
 
     if (broadcast_config.stream_map.size() ==
         LeAudioCodecConfiguration::kChannelNumberStereo) {
@@ -906,13 +908,15 @@ struct CodecManager::impl {
 
   void Start(
       const std::vector<btle_audio_codec_config_t>& offloading_preference) {
-    LOG_ASSERT(!codec_manager_impl_);
+    log::assert_that(!codec_manager_impl_,
+                     "assert failed: !codec_manager_impl_");
     codec_manager_impl_ = std::make_unique<codec_manager_impl>();
     codec_manager_impl_->start(offloading_preference);
   }
 
   void Stop() {
-    LOG_ASSERT(codec_manager_impl_);
+    log::assert_that(codec_manager_impl_ != nullptr,
+                     "assert failed: codec_manager_impl_ != nullptr");
     codec_manager_impl_.reset();
   }
 

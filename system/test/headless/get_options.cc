@@ -73,7 +73,7 @@ void bluetooth::test::headless::GetOpt::Usage() const {
 
 void bluetooth::test::headless::GetOpt::ParseValue(
     char* optarg, std::list<std::string>& string_list) {
-  CHECK(optarg != nullptr);
+  log::assert_that(optarg != nullptr, "assert failed: optarg != nullptr");
   char* p = optarg;
   char* pp = optarg;
   while (*p != '\0') {

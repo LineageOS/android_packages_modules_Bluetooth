@@ -95,8 +95,6 @@ inline std::string connectability_state_machine_text(const ConnectabilityState& 
     CASE_RETURN_TEXT(ConnectabilityState::ARMING);
     CASE_RETURN_TEXT(ConnectabilityState::ARMED);
     CASE_RETURN_TEXT(ConnectabilityState::DISARMING);
-    default:
-      return base::StringPrintf("UNKNOWN[%d]", state);
   }
 }
 

@@ -181,7 +181,7 @@ static bool handleUnexpectedEncryptionChange() {
   return sHandleUnexpectedEncryptionChange;
 }
 
-void NotifyBondingCanceled(tBTM_STATUS btm_status) {
+void NotifyBondingCanceled(tBTM_STATUS /* btm_status */) {
   if (btm_sec_cb.api.p_bond_cancel_cmpl_callback) {
     btm_sec_cb.api.p_bond_cancel_cmpl_callback(BTM_SUCCESS);
   }
@@ -859,7 +859,8 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
  *  Note: After 2.1 parameters are not used and preserved here not to change API
  ******************************************************************************/
 tBTM_STATUS BTM_SecBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                        tBT_TRANSPORT transport, tBT_DEVICE_TYPE device_type) {
+                        tBT_TRANSPORT transport,
+                        tBT_DEVICE_TYPE /* device_type */) {
   if (transport == BT_TRANSPORT_AUTO) {
     if (addr_type == BLE_ADDR_PUBLIC) {
       transport =
@@ -1401,25 +1402,6 @@ void BTM_RemoteOobDataReply(tBTM_STATUS res, const RawAddress& bd_addr,
     acl_set_disconnect_reason(HCI_SUCCESS);
     btsnd_hcic_rem_oob_reply(bd_addr, c, r);
   }
-}
-
-/*******************************************************************************
- *
- * Function         BTM_BothEndsSupportSecureConnections
- *
- * Description      This function is called to check if both the local device
- *                  and the peer device specified by bd_addr support BR/EDR
- *                  Secure Connections.
- *
- * Parameters:      bd_addr - address of the peer
- *
- * Returns          true if BR/EDR Secure Connections are supported by both
- *                  local and the remote device, else false.
- *
- ******************************************************************************/
-bool BTM_BothEndsSupportSecureConnections(const RawAddress& bd_addr) {
-  return ((bluetooth::shim::GetController()->SupportsSecureConnections()) &&
-          (BTM_PeerSupportsSecureConnections(bd_addr)));
 }
 
 /*******************************************************************************
@@ -4557,11 +4539,6 @@ void btm_sec_update_clock_offset(uint16_t handle, uint16_t clock_offset) {
   p_inq_info->results.clock_offset = clock_offset | BTM_CLOCK_OFFSET_VALID;
 }
 
-uint16_t BTM_GetClockOffset(const RawAddress& remote_bda) {
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(remote_bda);
-  return (p_dev_rec) ? p_dev_rec->clock_offset : 0;
-}
-
 /******************************************************************
  * S T A T I C     F U N C T I O N S
  ******************************************************************/
@@ -4582,7 +4559,7 @@ uint16_t BTM_GetClockOffset(const RawAddress& remote_bda) {
  *
  ******************************************************************************/
 tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec) {
-  CHECK(p_dev_rec != nullptr);
+  log::assert_that(p_dev_rec != nullptr, "assert failed: p_dev_rec != nullptr");
   log::debug(
       "security_required:0x{:x} security_flags:0x{:x} security_state:{}[{}]",
       p_dev_rec->sec_rec.security_required, p_dev_rec->sec_rec.sec_flags,
