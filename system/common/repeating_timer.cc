@@ -17,7 +17,6 @@
 #include "repeating_timer.h"
 
 #include <base/functional/callback.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include "message_loop_thread.h"
@@ -134,9 +133,9 @@ void RepeatingTimer::RunTask() {
     log::error("message_loop_thread_ is null or is not running");
     return;
   }
-  CHECK_EQ(message_loop_thread_->GetThreadId(),
-           base::PlatformThread::CurrentId())
-      << ": task must run on message loop thread";
+  log::assert_that(
+      message_loop_thread_->GetThreadId() == base::PlatformThread::CurrentId(),
+      "task must run on message loop thread");
 
   int64_t period_us = period_.count();
   expected_time_next_task_us_ += period_us;

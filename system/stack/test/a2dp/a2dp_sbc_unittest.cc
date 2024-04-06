@@ -16,7 +16,6 @@
 
 #include "stack/include/a2dp_sbc.h"
 
-#include <base/logging.h>
 #include <gtest/gtest.h>
 #include <stdio.h>
 

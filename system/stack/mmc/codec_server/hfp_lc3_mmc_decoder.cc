@@ -16,7 +16,6 @@
 
 #include "mmc/codec_server/hfp_lc3_mmc_decoder.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <lc3.h>
 

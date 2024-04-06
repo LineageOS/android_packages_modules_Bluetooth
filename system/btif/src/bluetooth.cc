@@ -28,7 +28,6 @@
 #define LOG_TAG "bt_btif"
 
 #include <android_bluetooth_flags.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bluetooth_headset_interface.h>

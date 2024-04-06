@@ -19,6 +19,4 @@
 // After 822064, this was moved into base/notreached.h
 #if defined(BASE_VER) && BASE_VER >= 822064
 #include <base/notreached.h>
-#else
-#include <base/logging.h>
 #endif

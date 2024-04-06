@@ -16,8 +16,6 @@
 
 #include "mmc/metrics/mmc_rtt_logger.h"
 
-#include <base/logging.h>
-
 #include <algorithm>
 #include <cmath>
 #include <string>

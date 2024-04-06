@@ -17,7 +17,6 @@
  ******************************************************************************/
 #include "mock_l2cap_layer.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include "stack/include/bt_hdr.h"

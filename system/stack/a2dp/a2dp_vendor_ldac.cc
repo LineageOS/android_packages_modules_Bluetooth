@@ -25,7 +25,6 @@
 
 #include "a2dp_vendor_ldac.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <string.h>
 

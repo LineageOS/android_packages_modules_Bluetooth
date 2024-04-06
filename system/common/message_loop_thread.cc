@@ -18,7 +18,6 @@
 
 #include <base/functional/callback.h>
 #include <base/location.h>
-#include <base/logging.h>
 #include <base/strings/stringprintf.h>
 #include <base/time/time.h>
 #include <bluetooth/log.h>
@@ -114,9 +113,9 @@ void MessageLoopThread::ShutDown() {
       return;
     }
     shutting_down_ = true;
-    CHECK_NE(thread_id_, base::PlatformThread::CurrentId())
-        << __func__ << " should not be called on the thread itself. "
-        << "Otherwise, deadlock may happen.";
+    log::assert_that(thread_id_ != base::PlatformThread::CurrentId(),
+                     "should not be called on the thread itself. Otherwise, "
+                     "deadlock may happen.");
     run_loop_->QuitWhenIdle();
   }
   thread_->join();

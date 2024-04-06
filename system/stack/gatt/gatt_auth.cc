@@ -21,7 +21,7 @@
  *  this file contains GATT authentication handling functions
  *
  ******************************************************************************/
-#include <base/logging.h>
+
 #include <bluetooth/log.h>
 #include <string.h>
 

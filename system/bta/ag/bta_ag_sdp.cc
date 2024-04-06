@@ -25,7 +25,6 @@
 
 #include <base/functional/bind.h>
 #include <base/location.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include "bta/ag/bta_ag_int.h"

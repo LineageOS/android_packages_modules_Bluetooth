@@ -18,7 +18,6 @@
 
 #include "a2dp_vendor_opus_decoder.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <opus.h>
 

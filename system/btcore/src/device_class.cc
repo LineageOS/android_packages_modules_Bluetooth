@@ -19,7 +19,6 @@
 #include "btcore/include/device_class.h"
 
 #include <arpa/inet.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <endian.h>
 #include <string.h>

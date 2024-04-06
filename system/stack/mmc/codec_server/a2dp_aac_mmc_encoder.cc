@@ -24,7 +24,6 @@ extern "C" {
 #include <libavutil/samplefmt.h>
 }
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include "a2dp_aac.h"

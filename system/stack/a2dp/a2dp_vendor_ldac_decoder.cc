@@ -18,7 +18,6 @@
 
 #include "a2dp_vendor_ldac_decoder.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <dlfcn.h>
 #include <ldacBT.h>

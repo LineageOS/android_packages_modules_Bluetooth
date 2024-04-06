@@ -18,7 +18,6 @@
 
 #include "osi/include/fixed_queue.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <string.h>
 

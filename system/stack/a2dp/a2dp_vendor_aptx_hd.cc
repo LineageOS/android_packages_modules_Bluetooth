@@ -25,7 +25,6 @@
 
 #include "a2dp_vendor_aptx_hd.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <string.h>
 

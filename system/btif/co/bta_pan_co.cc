@@ -26,7 +26,6 @@
  ******************************************************************************/
 #include "bta_pan_co.h"
 
-#include <base/logging.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_pan.h>
 #include <string.h>

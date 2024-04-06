@@ -16,12 +16,12 @@
 
 #include "test/headless/get_options.h"
 
-#include <base/logging.h>
 #include <getopt.h>
 #include <stdio.h>
 #include <unistd.h>
 
 #include <list>
+#include <sstream>
 #include <string>
 
 #include "include/check.h"

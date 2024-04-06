@@ -19,7 +19,6 @@
  *   Functions generated:4
  */
 
-#include <base/logging.h>
 #include <openssl/hmac.h>
 
 #include <string>

@@ -19,7 +19,6 @@
 #include "osi/include/stack_power_telemetry.h"
 
 #include <android_bluetooth_flags.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <sys/stat.h>
 #include <time.h>

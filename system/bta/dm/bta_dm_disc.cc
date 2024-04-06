@@ -20,7 +20,6 @@
 
 #include <android_bluetooth_flags.h>
 #include <base/functional/bind.h>
-#include <base/logging.h>
 #include <base/strings/stringprintf.h>
 #include <bluetooth/log.h>
 #include <stddef.h>

@@ -21,7 +21,7 @@
  *  this file contains the GATT server functions
  *
  ******************************************************************************/
-#include <base/logging.h>
+
 #include <bluetooth/log.h>
 #include <string.h>
 

@@ -20,7 +20,6 @@
 
 #include "osi/semaphore.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <fcntl.h>
 #include <malloc.h>

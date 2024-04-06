@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include <optional>
 #include <string>
@@ -113,3 +113,8 @@ class HasPreset {
 
 }  // namespace has
 }  // namespace bluetooth::le_audio
+
+namespace fmt {
+template <>
+struct formatter<bluetooth::le_audio::has::HasPreset> : ostream_formatter {};
+}  // namespace fmt

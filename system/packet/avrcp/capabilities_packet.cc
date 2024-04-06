@@ -16,6 +16,8 @@
 
 #include "capabilities_packet.h"
 
+#include <bluetooth/log.h>
+
 #include "internal_include/bt_trace.h"
 
 namespace bluetooth {
@@ -96,9 +98,10 @@ GetCapabilitiesResponseBuilder::MakeEventsSupportedBuilder(Event event) {
 
 GetCapabilitiesResponseBuilder* GetCapabilitiesResponseBuilder::AddCompanyId(
     uint32_t company_id) {
-  CHECK_EQ(capability_, Capability::COMPANY_ID);
-  CHECK_LT(elements_.size(), size_t(0xFF))
-      << __func__ << ": maximum capability count reached";
+  log::assert_that(capability_ == Capability::COMPANY_ID,
+                   "assert failed: capability_ == Capability::COMPANY_ID");
+  log::assert_that(elements_.size() < size_t(0xFF),
+                   "maximum capability count reached");
 
   company_id &= 0x00FFFFFF;
   elements_.insert(company_id);
@@ -108,9 +111,11 @@ GetCapabilitiesResponseBuilder* GetCapabilitiesResponseBuilder::AddCompanyId(
 
 GetCapabilitiesResponseBuilder* GetCapabilitiesResponseBuilder::AddEvent(
     Event event) {
-  CHECK_EQ(capability_, Capability::EVENTS_SUPPORTED);
-  CHECK_LT(elements_.size(), size_t(0xFF))
-      << __func__ << ": maximum capability count reached";
+  log::assert_that(
+      capability_ == Capability::EVENTS_SUPPORTED,
+      "assert failed: capability_ == Capability::EVENTS_SUPPORTED");
+  log::assert_that(elements_.size() < size_t(0xFF),
+                   "maximum capability count reached");
 
   elements_.insert(static_cast<uint8_t>(event));
 

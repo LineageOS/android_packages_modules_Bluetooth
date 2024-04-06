@@ -15,20 +15,19 @@
  *  limitations under the License.
  *
  ******************************************************************************/
+#include "common/metrics.h"
+
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+#include <include/hardware/bt_av.h>
+
 #include <chrono>
 #include <cstdint>
 #include <string>
 #include <thread>
 #include <vector>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include <base/logging.h>
-#include <include/hardware/bt_av.h>
-
 #include "bluetooth/metrics/bluetooth.pb.h"
-#include "common/metrics.h"
 #include "common/time_util.h"
 
 #define BTM_COD_MAJOR_AUDIO_TEST 0x04

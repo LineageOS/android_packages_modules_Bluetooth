@@ -20,7 +20,6 @@
 
 #include "btif_config.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <openssl/rand.h>
 #include <unistd.h>
