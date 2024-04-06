@@ -284,7 +284,7 @@ class HasDevice : public GattServiceDevice {
     all_info.reserve(has_presets.size());
 
     for (auto const& preset : has_presets) {
-      DLOG(INFO) << __func__ << " preset: " << preset;
+      log::verbose("preset: {}", preset);
       all_info.push_back({.preset_index = preset.GetIndex(),
                           .writable = preset.IsWritable(),
                           .available = preset.IsAvailable(),

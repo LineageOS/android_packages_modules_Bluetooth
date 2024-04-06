@@ -18,7 +18,6 @@
 
 #include "btcore/include/property.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <string.h>
 

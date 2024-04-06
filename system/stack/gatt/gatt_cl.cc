@@ -24,7 +24,6 @@
 
 #define LOG_TAG "bluetooth"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <string.h>
 

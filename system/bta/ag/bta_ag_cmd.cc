@@ -19,7 +19,6 @@
 #define LOG_TAG "bta_ag_cmd"
 
 #include <android_bluetooth_flags.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include <cstdint>

@@ -22,5 +22,10 @@ cc_library_static {
         "com.android.btservices",
     ],
     min_sdk_version: "30",
-    static_libs: ["libchrome"],
+    shared_libs: [
+        "libbase",
+    ],
+    static_libs: [
+        "libbluetooth_log",
+    ],
 }

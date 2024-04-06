@@ -16,7 +16,6 @@
 
 // Adapted from change_path_packet_test.cc
 
-#include <base/logging.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 

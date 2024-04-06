@@ -18,7 +18,7 @@
 
 #include "address_obfuscator.h"
 
-#include <base/logging.h>
+#include <bluetooth/log.h>
 #include <openssl/hmac.h>
 
 #include <algorithm>
@@ -56,7 +56,9 @@ std::string AddressObfuscator::Obfuscate(const RawAddress& address) {
                    "assert failed: ::HMAC(EVP_sha256(), salt_256bit_.data(), "
                    "salt_256bit_.size(), address.address, address.kLength, "
                    "result.data(), &out_len) != nullptr");
-  CHECK_EQ(out_len, static_cast<unsigned int>(kOctet32Length));
+  log::assert_that(
+      out_len == static_cast<unsigned int>(kOctet32Length),
+      "assert failed: out_len == static_cast<unsigned int>(kOctet32Length)");
   return std::string(reinterpret_cast<const char*>(result.data()), out_len);
 }
 

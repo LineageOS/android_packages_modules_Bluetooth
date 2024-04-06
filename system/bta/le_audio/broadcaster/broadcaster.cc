@@ -16,7 +16,6 @@
  */
 
 #include <base/functional/bind.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <lc3.h>
 

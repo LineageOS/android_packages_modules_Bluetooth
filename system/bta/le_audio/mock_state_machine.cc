@@ -17,8 +17,6 @@
 
 #include "mock_state_machine.h"
 
-#include <base/logging.h>
-
 static MockLeAudioGroupStateMachine* mock_machine = nullptr;
 
 void bluetooth::le_audio::LeAudioGroupStateMachine::Initialize(

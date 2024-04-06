@@ -17,7 +17,6 @@
  ******************************************************************************/
 
 #include <base/files/file_util.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include <cstdint>

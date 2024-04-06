@@ -18,7 +18,6 @@
 
 #include "hfp_msbc_decoder.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include <cstring>

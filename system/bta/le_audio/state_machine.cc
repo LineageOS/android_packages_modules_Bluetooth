@@ -1700,8 +1700,8 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
             BTM_GetHCIConnHandle(leAudioDevice->address_, BT_TRANSPORT_LE);
         conn_pairs.push_back({.cis_conn_handle = ase->cis_conn_hdl,
                               .acl_conn_handle = acl_handle});
-        DLOG(INFO) << __func__ << " cis handle: " << +ase->cis_conn_hdl
-                   << " acl handle : " << loghex(+acl_handle);
+        log::debug("cis handle: {} acl handle : {}", ase->cis_conn_hdl,
+                   loghex(+acl_handle));
 
       } while ((ase = leAudioDevice->GetNextActiveAse(ase)));
     } while ((leAudioDevice = group->GetNextActiveDevice(leAudioDevice)));
@@ -3108,8 +3108,8 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
                    ase->data_path_state == DataPathState::IDLE) {
           DisconnectCisIfNeeded(group, leAudioDevice, ase);
         } else {
-          DLOG(INFO) << __func__ << ", Nothing to do ase data path state: "
-                     << static_cast<int>(ase->data_path_state);
+          log::debug("Nothing to do ase data path state: {}",
+                     static_cast<int>(ase->data_path_state));
         }
         break;
       }

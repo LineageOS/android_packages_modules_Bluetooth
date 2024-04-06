@@ -16,7 +16,6 @@
 
 #include "stack/include/a2dp_aac.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <gtest/gtest.h>
 #include <stdio.h>

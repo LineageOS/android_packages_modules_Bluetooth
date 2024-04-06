@@ -16,7 +16,6 @@
 
 #include "register_notification_packet.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include "include/check.h"

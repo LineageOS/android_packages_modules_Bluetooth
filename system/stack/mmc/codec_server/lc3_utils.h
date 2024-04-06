@@ -17,7 +17,6 @@
 #ifndef MMC_CODEC_SERVER_LC3_UTILS_H_
 #define MMC_CODEC_SERVER_LC3_UTILS_H_
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <lc3.h>
 

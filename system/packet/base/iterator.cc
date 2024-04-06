@@ -16,7 +16,7 @@
 
 #include "iterator.h"
 
-#include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include "check.h"
 #include "packet.h"
@@ -27,8 +27,10 @@ Iterator::Iterator(std::shared_ptr<const Packet> packet, size_t i) {
   packet_ = packet;
   index_ = i;
 
-  CHECK_GE(index_, packet->packet_start_index_);
-  CHECK_LE(index_, packet->packet_end_index_);
+  log::assert_that(index_ >= packet->packet_start_index_,
+                   "assert failed: index_ >= packet->packet_start_index_");
+  log::assert_that(index_ <= packet->packet_end_index_,
+                   "assert failed: index_ <= packet->packet_end_index_");
 }
 
 Iterator::Iterator(const Iterator& itr) { *this = itr; }
@@ -122,7 +124,8 @@ bool Iterator::operator>=(const Iterator& itr) const {
 }
 
 uint8_t Iterator::operator*() const {
-  CHECK_NE(index_, packet_->packet_end_index_);
+  log::assert_that(index_ != packet_->packet_end_index_,
+                   "assert failed: index_ != packet_->packet_end_index_");
 
   return packet_->get_at_index(index_);
 }

@@ -19,7 +19,5 @@
 // After 822064, this was moved into base/check.h and base/check_op.h
 #if defined(BASE_VER) && BASE_VER >= 822064
 #include <base/check.h> // CHECK/DCHECK
-#include <base/check_op.h> // CHECK_LE/DCHECK_LE/CHECK/_GT, etc
-#else
-#include <base/logging.h>
+#include <base/check_op.h>  // CHECK_LE/DCHECK_LE/CHECK/_GT, etc
 #endif

@@ -27,7 +27,6 @@
 
 #include "stack/btm/btm_sco.h"
 
-#include <base/logging.h>
 #include <base/strings/stringprintf.h>
 #include <bluetooth/log.h>
 

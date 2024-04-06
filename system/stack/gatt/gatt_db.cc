@@ -22,7 +22,6 @@
  *
  ******************************************************************************/
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <stdio.h>
 #include <string.h>

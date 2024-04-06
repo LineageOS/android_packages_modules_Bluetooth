@@ -16,7 +16,6 @@
 
 #define LOG_TAG "gatt"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include <list>

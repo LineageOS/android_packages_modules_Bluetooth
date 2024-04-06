@@ -75,6 +75,4 @@
 #undef LOG_DEBUG
 #endif
 
-#include <base/logging.h>
-
 // clang-format on

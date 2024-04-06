@@ -27,7 +27,6 @@
 
 #include "stack/include/pan_api.h"
 
-#include <base/logging.h>
 #include <base/strings/stringprintf.h>
 #include <bluetooth/log.h>
 

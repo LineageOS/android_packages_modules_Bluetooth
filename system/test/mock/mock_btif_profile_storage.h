@@ -32,7 +32,6 @@
 //       for this effort.  This compilation unit may compile as-is, or
 //       may need attention to prune from (or add to ) the inclusion set.
 #include <alloca.h>
-#include <base/logging.h>
 #include <stdlib.h>
 
 #include <vector>

@@ -21,7 +21,6 @@
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
 #include <base/location.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include <map>

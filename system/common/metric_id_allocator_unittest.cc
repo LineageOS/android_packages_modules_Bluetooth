@@ -18,7 +18,6 @@
 
 #include "common/metric_id_allocator.h"
 
-#include <base/logging.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 

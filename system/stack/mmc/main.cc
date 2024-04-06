@@ -18,6 +18,7 @@
 #include <base/check.h>
 #include <base/files/file_descriptor_watcher_posix.h>
 #include <base/files/file_util.h>
+#include <base/logging.h>
 #include <base/run_loop.h>
 #include <base/strings/stringprintf.h>
 #include <base/task/single_thread_task_executor.h>
@@ -41,8 +42,6 @@ const int kSyslogCritical = LOG_CRIT;
 #undef LOG_ERR
 #undef LOG_CRIT
 }  // namespace
-
-#include <base/logging.h>
 
 static bool MessageHandler(int severity, const char* file, int line,
                            size_t message_start, const std::string& message) {

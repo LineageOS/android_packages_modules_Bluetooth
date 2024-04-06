@@ -27,7 +27,6 @@
 #include "stack/include/l2c_api.h"
 
 #include <base/location.h>
-#include <base/logging.h>
 #include <base/strings/stringprintf.h>
 #include <bluetooth/log.h>
 

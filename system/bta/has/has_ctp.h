@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include <list>
@@ -180,7 +179,7 @@ struct HasCtpGroupOpCoordinator {
   static void Cleanup() {
     if (operation_timeout_timer != nullptr) {
       if (alarm_is_scheduled(operation_timeout_timer)) {
-        DLOG(INFO) << __func__ << +ref_cnt;
+        log::verbose("{}", ref_cnt);
         alarm_cancel(operation_timeout_timer);
       }
       alarm_free(operation_timeout_timer);

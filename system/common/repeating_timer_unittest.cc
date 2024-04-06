@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
+#include "repeating_timer.h"
+
 #include <base/functional/bind.h>
-#include <base/logging.h>
 #include <gtest/gtest.h>
+
 #include <future>
 
 #include "bind_helpers.h"
 #include "message_loop_thread.h"
-#include "repeating_timer.h"
 
 using bluetooth::common::MessageLoopThread;
 using bluetooth::common::RepeatingTimer;

@@ -18,7 +18,6 @@
 
 #include "database.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include <algorithm>

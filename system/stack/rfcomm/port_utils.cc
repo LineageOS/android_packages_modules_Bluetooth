@@ -24,7 +24,6 @@
 
 #define LOG_TAG "rfcomm_port_utils"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include <cstdint>

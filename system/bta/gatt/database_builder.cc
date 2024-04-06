@@ -18,7 +18,6 @@
 
 #include "bta/gatt/database_builder.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include <algorithm>

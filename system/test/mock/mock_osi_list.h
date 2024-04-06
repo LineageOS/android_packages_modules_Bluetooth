@@ -24,7 +24,6 @@
 #include <functional>
 
 // Original included files, if any
-#include <base/logging.h>
 
 #include "osi/include/allocator.h"
 #include "osi/include/list.h"

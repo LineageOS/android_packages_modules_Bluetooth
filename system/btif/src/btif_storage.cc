@@ -33,7 +33,6 @@
 #include "btif_storage.h"
 
 #include <alloca.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <stdlib.h>
 #include <string.h>
