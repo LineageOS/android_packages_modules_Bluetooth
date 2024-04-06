@@ -156,7 +156,7 @@ public class AvrcpControllerService extends ProfileService {
             mCoverArtManager = new AvrcpCoverArtManager(this, new ImageDownloadCallback());
         }
         sBrowseTree = new BrowseTree(null);
-        sService = this;
+        setAvrcpControllerService(this);
 
         // Start the media browser service.
         Intent startIntent = new Intent(this, BluetoothMediaBrowserService.class);
@@ -174,7 +174,7 @@ public class AvrcpControllerService extends ProfileService {
         }
         mDeviceStateMap.clear();
 
-        sService = null;
+        setAvrcpControllerService(null);
         sBrowseTree = null;
         if (mCoverArtManager != null) {
             mCoverArtManager.cleanup();
@@ -185,8 +185,14 @@ public class AvrcpControllerService extends ProfileService {
         mNativeInterface.cleanup();
     }
 
-    public static AvrcpControllerService getAvrcpControllerService() {
+    public static synchronized AvrcpControllerService getAvrcpControllerService() {
         return sService;
+    }
+
+    /** Testing API to inject a mock AvrcpControllerService */
+    @VisibleForTesting
+    public static synchronized void setAvrcpControllerService(AvrcpControllerService service) {
+        sService = service;
     }
 
     /**
