@@ -223,7 +223,6 @@ tBTA_JV_STATUS BTA_JvDeleteRecord(uint32_t handle) {
  *
  ******************************************************************************/
 void BTA_JvL2capConnect(tBTA_JV_CONN_TYPE conn_type, tBTA_SEC sec_mask,
-                        tBTA_JV_ROLE role,
                         std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info,
                         uint16_t remote_psm, uint16_t rx_mtu,
                         std::unique_ptr<tL2CAP_CFG_INFO> cfg,
@@ -231,15 +230,15 @@ void BTA_JvL2capConnect(tBTA_JV_CONN_TYPE conn_type, tBTA_SEC sec_mask,
                         tBTA_JV_L2CAP_CBACK* p_cback,
                         uint32_t l2cap_socket_id) {
   log::verbose(
-      "conn_type:{}, role:{}, remote_psm:{}, peer_bd_addr:{}, "
+      "conn_type:{}, remote_psm:{}, peer_bd_addr:{}, "
       "l2cap_socket_id:{}",
-      bta_jv_conn_type_text(conn_type), role, remote_psm, peer_bd_addr,
+      bta_jv_conn_type_text(conn_type), remote_psm, peer_bd_addr,
       l2cap_socket_id);
   log::assert_that(p_cback != nullptr, "assert failed: p_cback != nullptr");
 
   do_in_main_thread(FROM_HERE,
-                    Bind(&bta_jv_l2cap_connect, conn_type, sec_mask, role,
-                         remote_psm, rx_mtu, peer_bd_addr, base::Passed(&cfg),
+                    Bind(&bta_jv_l2cap_connect, conn_type, sec_mask, remote_psm,
+                         rx_mtu, peer_bd_addr, base::Passed(&cfg),
                          base::Passed(&ertm_info), p_cback, l2cap_socket_id));
 }
 
@@ -279,19 +278,17 @@ tBTA_JV_STATUS BTA_JvL2capClose(uint32_t handle) {
  *
  ******************************************************************************/
 void BTA_JvL2capStartServer(tBTA_JV_CONN_TYPE conn_type, tBTA_SEC sec_mask,
-                            tBTA_JV_ROLE role,
                             std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info,
                             uint16_t local_psm, uint16_t rx_mtu,
                             std::unique_ptr<tL2CAP_CFG_INFO> cfg,
                             tBTA_JV_L2CAP_CBACK* p_cback,
                             uint32_t l2cap_socket_id) {
-  log::verbose("conn_type:{}, role:{}, local_psm:{}, l2cap_socket_id:{}",
-               bta_jv_conn_type_text(conn_type), role, local_psm,
-               l2cap_socket_id);
+  log::verbose("conn_type:{}, local_psm:{}, l2cap_socket_id:{}",
+               bta_jv_conn_type_text(conn_type), local_psm, l2cap_socket_id);
   CHECK(p_cback);
 
   do_in_main_thread(FROM_HERE,
-                    Bind(&bta_jv_l2cap_start_server, conn_type, sec_mask, role,
+                    Bind(&bta_jv_l2cap_start_server, conn_type, sec_mask,
                          local_psm, rx_mtu, base::Passed(&cfg),
                          base::Passed(&ertm_info), p_cback, l2cap_socket_id));
 }
@@ -423,8 +420,7 @@ tBTA_JV_STATUS BTA_JvL2capWrite(uint32_t handle, uint32_t req_id, BT_HDR* msg,
  *                  tBTA_JV_STATUS::FAILURE, otherwise.
  *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvRfcommConnect(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
-                                   uint8_t remote_scn,
+tBTA_JV_STATUS BTA_JvRfcommConnect(tBTA_SEC sec_mask, uint8_t remote_scn,
                                    const RawAddress& peer_bd_addr,
                                    tBTA_JV_RFCOMM_CBACK* p_cback,
                                    uint32_t rfcomm_slot_id) {
@@ -479,8 +475,8 @@ tBTA_JV_STATUS BTA_JvRfcommClose(uint32_t handle, uint32_t rfcomm_slot_id) {
  *                  tBTA_JV_STATUS::FAILURE, otherwise.
  *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvRfcommStartServer(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
-                                       uint8_t local_scn, uint8_t max_session,
+tBTA_JV_STATUS BTA_JvRfcommStartServer(tBTA_SEC sec_mask, uint8_t local_scn,
+                                       uint8_t max_session,
                                        tBTA_JV_RFCOMM_CBACK* p_cback,
                                        uint32_t rfcomm_slot_id) {
   log::verbose("local_scn:{}, rfcomm_slot_id:{}", local_scn, rfcomm_slot_id);

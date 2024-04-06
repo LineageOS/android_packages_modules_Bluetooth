@@ -1025,8 +1025,8 @@ static void bta_jv_l2cap_client_cback(uint16_t gap_handle, uint16_t event,
 
 /* makes an l2cap client connection */
 void bta_jv_l2cap_connect(tBTA_JV_CONN_TYPE type, tBTA_SEC sec_mask,
-                          tBTA_JV_ROLE /* role */, uint16_t remote_psm,
-                          uint16_t rx_mtu, const RawAddress& peer_bd_addr,
+                          uint16_t remote_psm, uint16_t rx_mtu,
+                          const RawAddress& peer_bd_addr,
                           std::unique_ptr<tL2CAP_CFG_INFO> cfg_param,
                           std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info,
                           tBTA_JV_L2CAP_CBACK* p_cback,
@@ -1189,8 +1189,7 @@ static void bta_jv_l2cap_server_cback(uint16_t gap_handle, uint16_t event,
 
 /** starts an L2CAP server */
 void bta_jv_l2cap_start_server(tBTA_JV_CONN_TYPE type, tBTA_SEC sec_mask,
-                               tBTA_JV_ROLE /* role */, uint16_t local_psm,
-                               uint16_t rx_mtu,
+                               uint16_t local_psm, uint16_t rx_mtu,
                                std::unique_ptr<tL2CAP_CFG_INFO> cfg_param,
                                std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info,
                                tBTA_JV_L2CAP_CBACK* p_cback,

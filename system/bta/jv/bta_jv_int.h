@@ -154,16 +154,15 @@ void bta_jv_start_discovery(const RawAddress& bd_addr, uint16_t num_uuid,
 void bta_jv_create_record(uint32_t rfcomm_slot_id);
 void bta_jv_delete_record(uint32_t handle);
 void bta_jv_l2cap_connect(tBTA_JV_CONN_TYPE type, tBTA_SEC sec_mask,
-                          tBTA_JV_ROLE role, uint16_t remote_psm,
-                          uint16_t rx_mtu, const RawAddress& peer_bd_addr,
+                          uint16_t remote_psm, uint16_t rx_mtu,
+                          const RawAddress& peer_bd_addr,
                           std::unique_ptr<tL2CAP_CFG_INFO> cfg,
                           std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info,
                           tBTA_JV_L2CAP_CBACK* p_cback,
                           uint32_t l2cap_socket_id);
 void bta_jv_l2cap_close(uint32_t handle, tBTA_JV_L2C_CB* p_cb);
 void bta_jv_l2cap_start_server(tBTA_JV_CONN_TYPE type, tBTA_SEC sec_mask,
-                               tBTA_JV_ROLE role, uint16_t local_psm,
-                               uint16_t rx_mtu,
+                               uint16_t local_psm, uint16_t rx_mtu,
                                std::unique_ptr<tL2CAP_CFG_INFO> cfg_param,
                                std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info,
                                tBTA_JV_L2CAP_CBACK* p_cback,

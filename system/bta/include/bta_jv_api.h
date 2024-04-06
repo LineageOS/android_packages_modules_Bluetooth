@@ -106,20 +106,6 @@ typedef uint8_t tBTA_JV_L2CAP_REASON;
 enum { BTA_JV_DISC_NONE, BTA_JV_DISC_LIMITED, BTA_JV_DISC_GENERAL };
 typedef uint16_t tBTA_JV_DISC;
 
-typedef uint32_t tBTA_JV_ROLE;
-
-#define BTA_JV_SERVICE_LMTD_DISCOVER                                       \
-  BTM_COD_SERVICE_LMTD_DISCOVER                                  /* 0x0020 \
-                                                                    */
-#define BTA_JV_SERVICE_POSITIONING BTM_COD_SERVICE_POSITIONING   /* 0x0100 */
-#define BTA_JV_SERVICE_NETWORKING BTM_COD_SERVICE_NETWORKING     /* 0x0200 */
-#define BTA_JV_SERVICE_RENDERING BTM_COD_SERVICE_RENDERING       /* 0x0400 */
-#define BTA_JV_SERVICE_CAPTURING BTM_COD_SERVICE_CAPTURING       /* 0x0800 */
-#define BTA_JV_SERVICE_OBJ_TRANSFER BTM_COD_SERVICE_OBJ_TRANSFER /* 0x1000 */
-#define BTA_JV_SERVICE_AUDIO BTM_COD_SERVICE_AUDIO               /* 0x2000 */
-#define BTA_JV_SERVICE_TELEPHONY BTM_COD_SERVICE_TELEPHONY       /* 0x4000 */
-#define BTA_JV_SERVICE_INFORMATION BTM_COD_SERVICE_INFORMATION   /* 0x8000 */
-
 /* JV ID type */
 #define BTA_JV_PM_ID_1 1     /* PM example profile 1 */
 #define BTA_JV_PM_ID_2 2     /* PM example profile 2 */
@@ -575,7 +561,6 @@ tBTA_JV_STATUS BTA_JvDeleteRecord(uint32_t handle);
  *
  ******************************************************************************/
 void BTA_JvL2capConnect(tBTA_JV_CONN_TYPE conn_type, tBTA_SEC sec_mask,
-                        tBTA_JV_ROLE role,
                         std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info,
                         uint16_t remote_psm, uint16_t rx_mtu,
                         std::unique_ptr<tL2CAP_CFG_INFO> cfg,
@@ -609,7 +594,6 @@ tBTA_JV_STATUS BTA_JvL2capClose(uint32_t handle);
  *
  ******************************************************************************/
 void BTA_JvL2capStartServer(tBTA_JV_CONN_TYPE conn_type, tBTA_SEC sec_mask,
-                            tBTA_JV_ROLE role,
                             std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info,
                             uint16_t local_psm, uint16_t rx_mtu,
                             std::unique_ptr<tL2CAP_CFG_INFO> cfg,
@@ -690,8 +674,7 @@ tBTA_JV_STATUS BTA_JvL2capWrite(uint32_t handle, uint32_t req_id, BT_HDR* msg,
  *                  BTA_JV_FAILURE, otherwise.
  *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvRfcommConnect(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
-                                   uint8_t remote_scn,
+tBTA_JV_STATUS BTA_JvRfcommConnect(tBTA_SEC sec_mask, uint8_t remote_scn,
                                    const RawAddress& peer_bd_addr,
                                    tBTA_JV_RFCOMM_CBACK* p_cback,
                                    uint32_t rfcomm_slot_id);
@@ -723,8 +706,8 @@ tBTA_JV_STATUS BTA_JvRfcommClose(uint32_t handle, uint32_t rfcomm_slot_id);
  *                  BTA_JV_FAILURE, otherwise.
  *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvRfcommStartServer(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
-                                       uint8_t local_scn, uint8_t max_session,
+tBTA_JV_STATUS BTA_JvRfcommStartServer(tBTA_SEC sec_mask, uint8_t local_scn,
+                                       uint8_t max_session,
                                        tBTA_JV_RFCOMM_CBACK* p_cback,
                                        uint32_t rfcomm_slot_id);
 
