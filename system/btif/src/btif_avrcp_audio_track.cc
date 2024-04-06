@@ -24,7 +24,6 @@
 #endif
 
 #include <aaudio/AAudio.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <utils/StrongPointer.h>
 

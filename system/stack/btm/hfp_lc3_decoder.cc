@@ -18,7 +18,6 @@
 
 #include "hfp_lc3_decoder.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <lc3.h>
 

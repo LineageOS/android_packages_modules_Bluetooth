@@ -25,7 +25,6 @@
 
 #define LOG_TAG "l2c_ble_conn_params"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include "hci/controller_interface.h"

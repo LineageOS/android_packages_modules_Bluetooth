@@ -24,7 +24,6 @@
  ******************************************************************************/
 
 #include <base/functional/bind.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include "bta/ag/bta_ag_int.h"
@@ -221,14 +220,14 @@ void bta_ag_port_cback_6(uint32_t code, uint16_t port_handle) {
  ******************************************************************************/
 void bta_ag_setup_port(tBTA_AG_SCB* p_scb, uint16_t handle) {
   int port_callback_index = bta_ag_scb_to_idx(p_scb) - 1;
-  CHECK_GE(port_callback_index, 0)
-      << "invalid callback index, handle=" << handle << ", bd_addr"
-      << p_scb->peer_addr;
-  CHECK_LT(port_callback_index,
-           static_cast<int>(sizeof(bta_ag_port_cback_tbl) /
-                            sizeof(bta_ag_port_cback_tbl[0])))
-      << "callback index out of bound, handle=" << handle << ", bd_addr"
-      << p_scb->peer_addr;
+  log::assert_that(port_callback_index >= 0,
+                   "invalid callback index, handle={}, bd_addr={}", handle,
+                   ADDRESS_TO_LOGGABLE_STR(p_scb->peer_addr));
+  log::assert_that(
+      port_callback_index < static_cast<int>(sizeof(bta_ag_port_cback_tbl) /
+                                             sizeof(bta_ag_port_cback_tbl[0])),
+      "callback index out of bound, handle={}, bd_addr={}", handle,
+      ADDRESS_TO_LOGGABLE_STR(p_scb->peer_addr));
   PORT_SetEventMask(handle, BTA_AG_PORT_EV_MASK);
   PORT_SetEventCallback(handle, bta_ag_port_cback_tbl[port_callback_index]);
 }
@@ -249,14 +248,15 @@ void bta_ag_start_servers(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK services) {
     /* if service is set in mask */
     if (services & 1) {
       int management_callback_index = bta_ag_scb_to_idx(p_scb) - 1;
-      CHECK_GE(management_callback_index, 0)
-          << "invalid callback index, services=" << loghex(services)
-          << ", bd_addr=" << p_scb->peer_addr;
-      CHECK_LT(management_callback_index,
-               static_cast<int>(sizeof(bta_ag_mgmt_cback_tbl) /
-                                sizeof(bta_ag_mgmt_cback_tbl[0])))
-          << "callback index out of bound, services=" << loghex(services)
-          << ", bd_addr" << p_scb->peer_addr;
+      log::assert_that(management_callback_index >= 0,
+                       "invalid callback index, services=0x{:x}, bd_addr={}",
+                       services, ADDRESS_TO_LOGGABLE_STR(p_scb->peer_addr));
+      log::assert_that(
+          management_callback_index <
+              static_cast<int>(sizeof(bta_ag_mgmt_cback_tbl) /
+                               sizeof(bta_ag_mgmt_cback_tbl[0])),
+          "callback index out of bound, services=0x{:x}, bd_addr={}", services,
+          ADDRESS_TO_LOGGABLE_STR(p_scb->peer_addr));
       int status = RFCOMM_CreateConnectionWithSecurity(
           bta_ag_uuid[i], bta_ag_cb.profile[i].scn, true, BTA_AG_MTU,
           RawAddress::kAny, &(p_scb->serv_handle[i]),

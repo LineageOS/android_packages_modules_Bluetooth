@@ -1,5 +1,4 @@
 #include <android_bluetooth_sysprop.h>
-#include <base/logging.h>
 #include <gtest/gtest.h>
 
 #include "bta_hfp_api.h"

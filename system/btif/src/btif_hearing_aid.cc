@@ -20,7 +20,6 @@
 
 #include <base/functional/bind.h>
 #include <base/location.h>
-#include <base/logging.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_hearing_aid.h>
 

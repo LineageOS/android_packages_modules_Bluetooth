@@ -26,7 +26,6 @@
 
 #include "btif_rc.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <fcntl.h>
 #include <hardware/bluetooth.h>

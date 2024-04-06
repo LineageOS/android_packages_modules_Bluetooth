@@ -16,7 +16,6 @@
 
 #include "metrics_collector.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include <memory>

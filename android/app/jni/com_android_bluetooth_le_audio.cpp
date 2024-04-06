@@ -365,7 +365,7 @@ class LeAudioClientCallbacksImpl : public LeAudioClientCallbacks {
 
   void OnGroupStreamStatus(int group_id,
                            GroupStreamStatus group_stream_status) override {
-    LOG(INFO) << __func__;
+    log::info("");
 
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);

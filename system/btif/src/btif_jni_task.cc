@@ -18,7 +18,6 @@
 
 #include <base/functional/bind.h>
 #include <base/location.h>
-#include <base/logging.h>
 #include <base/threading/platform_thread.h>
 #include <bluetooth/log.h>
 

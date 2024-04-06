@@ -19,8 +19,6 @@
  *   Functions generated:20
  */
 
-#include <base/logging.h>
-
 #include "port_api.h"
 #include "test/common/mock_functions.h"
 #include "types/raw_address.h"

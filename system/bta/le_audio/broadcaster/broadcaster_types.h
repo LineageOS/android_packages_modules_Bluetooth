@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include <optional>

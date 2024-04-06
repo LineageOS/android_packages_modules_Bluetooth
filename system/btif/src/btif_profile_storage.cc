@@ -21,7 +21,6 @@
 
 #include <alloca.h>
 #include <android_bluetooth_flags.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <stdlib.h>
 #include <string.h>

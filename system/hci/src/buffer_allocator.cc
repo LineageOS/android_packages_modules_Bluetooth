@@ -18,7 +18,6 @@
 
 #include "hci/include/buffer_allocator.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include "include/check.h"

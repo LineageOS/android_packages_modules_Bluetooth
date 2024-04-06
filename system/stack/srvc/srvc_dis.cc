@@ -18,7 +18,6 @@
 
 #define LOG_TAG "bt_srvc"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include "gatt_api.h"

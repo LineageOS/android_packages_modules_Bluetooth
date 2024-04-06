@@ -2160,8 +2160,7 @@ void LeAudioDeviceGroups::Dump(int fd, int active_group_id) const {
 bool LeAudioDeviceGroups::IsAnyInTransition(void) const {
   for (auto& g : groups_) {
     if (g->IsInTransition()) {
-      DLOG(INFO) << __func__ << " group: " << g->group_id_
-                 << " is in transition";
+      log::debug("group: {} is in transition", g->group_id_);
       return true;
     }
   }

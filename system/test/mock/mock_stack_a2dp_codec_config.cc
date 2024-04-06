@@ -19,8 +19,6 @@
  *   Functions generated:67
  */
 
-#include <base/logging.h>
-
 #include <string>
 
 #include "a2dp_codec_api.h"

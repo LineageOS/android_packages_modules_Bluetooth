@@ -20,7 +20,6 @@
 
 #include "packet_fragmenter.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <string.h>
 

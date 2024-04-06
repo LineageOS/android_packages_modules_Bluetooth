@@ -18,7 +18,6 @@
 
 #include "main/shim/btm.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include <chrono>

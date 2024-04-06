@@ -32,7 +32,6 @@
 #include <android_bluetooth_sysprop.h>
 #include <base/at_exit.h>
 #include <base/functional/bind.h>
-#include <base/logging.h>
 #include <base/threading/platform_thread.h>
 #include <bluetooth/log.h>
 #include <signal.h>

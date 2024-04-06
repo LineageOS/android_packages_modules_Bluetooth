@@ -25,7 +25,6 @@
 #define LOG_TAG "bta_gattc_api"
 
 #include <base/functional/bind.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include <ios>

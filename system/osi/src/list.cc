@@ -1,6 +1,5 @@
 #include "osi/include/list.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 
 #include "check.h"

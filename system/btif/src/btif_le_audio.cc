@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_le_audio.h>
@@ -324,11 +323,11 @@ class LeAudioClientInterfaceImpl : public LeAudioClientInterface,
   }
 
   void SetUnicastMonitorMode(uint8_t direction, bool enable) {
-    DVLOG(2) << __func__ << " enable: " << enable;
+    log::verbose("enable: {}", enable);
     if (!initialized || !LeAudioClient::IsLeAudioClientRunning()) {
-      DVLOG(2) << __func__
-               << " Unicast monitoring mode set ignored, due to already"
-                  " started cleanup procedure or service being not read";
+      log::verbose(
+          "Unicast monitoring mode set ignored, due to already"
+          " started cleanup procedure or service being not read");
       return;
     }
 

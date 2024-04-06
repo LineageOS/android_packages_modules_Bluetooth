@@ -16,7 +16,6 @@
  *
  ******************************************************************************/
 
-#include <base/logging.h>
 #include <binder/ProcessState.h>
 #include <gtest/gtest.h>
 #include <fstream>

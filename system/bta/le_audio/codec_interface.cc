@@ -18,7 +18,6 @@
 
 #include "codec_interface.h"
 
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <lc3.h>
 

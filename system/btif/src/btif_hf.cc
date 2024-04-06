@@ -30,7 +30,6 @@
 #include <android_bluetooth_flags.h>
 #include <android_bluetooth_sysprop.h>
 #include <base/functional/callback.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 
@@ -378,8 +377,9 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
 
         // There is an outgoing connection.
         // Check the outgoing connection state and address.
-        CHECK_EQ(btif_hf_cb[idx].state, BTHF_CONNECTION_STATE_CONNECTING)
-            << "Control block must be in connecting state when initiating";
+        log::assert_that(
+            btif_hf_cb[idx].state == BTHF_CONNECTION_STATE_CONNECTING,
+            "Control block must be in connecting state when initiating");
         log::assert_that(
             !btif_hf_cb[idx].connected_bda.IsEmpty(),
             "Remote device address must not be empty when initiating");
@@ -895,11 +895,9 @@ bt_status_t HeadsetInterface::Init(Callbacks* callbacks, int max_hf_clients,
   } else {
     btif_hf_features &= ~BTA_AG_FEAT_INBAND;
   }
-  CHECK_LE(max_hf_clients, BTA_AG_MAX_NUM_CLIENTS)
-      << __func__
-      << "Too many HF clients,"
-         " maximum is "
-      << BTA_AG_MAX_NUM_CLIENTS << " was given " << max_hf_clients;
+  log::assert_that(max_hf_clients <= BTA_AG_MAX_NUM_CLIENTS,
+                   "Too many HF clients, maximum is {}, was given {}",
+                   BTA_AG_MAX_NUM_CLIENTS, max_hf_clients);
   btif_max_hf_clients = max_hf_clients;
   log::verbose(
       "btif_hf_features={}, max_hf_clients={}, inband_ringing_enabled={}",

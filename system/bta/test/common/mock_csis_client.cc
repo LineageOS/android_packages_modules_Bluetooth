@@ -17,8 +17,6 @@
 
 #include "mock_csis_client.h"
 
-#include <base/logging.h>
-
 static MockCsisClient* mock_csis_client;
 
 void MockCsisClient::SetMockInstanceForTesting(MockCsisClient* mock) {

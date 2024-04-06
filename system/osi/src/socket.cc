@@ -21,7 +21,6 @@
 #include "osi/include/socket.h"
 
 #include <asm/ioctls.h>
-#include <base/logging.h>
 #include <bluetooth/log.h>
 #include <netinet/in.h>
 #include <string.h>
